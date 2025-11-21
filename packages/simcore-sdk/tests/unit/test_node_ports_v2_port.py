@@ -614,7 +614,6 @@ async def test_valid_port(
         node_uuid: str
         r_clone_settings: Any | None = None
         io_log_redirect_cb: LogRedirectCB | None = _io_log_redirect_cb
-        aws_s3_cli_settings: Any | None = None
 
         @staticmethod
         async def get(key: str, progress_bar: ProgressBarData | None = None):
@@ -728,7 +727,7 @@ def test_invalid_port(common_fixtures: None, port_cfg: dict[str, Any]):
 
 
 @pytest.mark.parametrize(
-    "port_cfg", [(create_valid_port_config("data:*/*", key="set_some_inexisting_file"))]
+    "port_cfg", [create_valid_port_config("data:*/*", key="set_some_inexisting_file")]
 )
 async def test_invalid_file_type_setter(
     common_fixtures: None, project_id: str, node_uuid: str, port_cfg: dict[str, Any]

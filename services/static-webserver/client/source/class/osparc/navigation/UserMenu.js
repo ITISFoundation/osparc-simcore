@@ -70,7 +70,7 @@ qx.Class.define("osparc.navigation.UserMenu", {
           control = new qx.ui.menu.Button(this.tr("Billing Center"));
           osparc.utils.Utils.setIdToWidget(control, "userMenuBillingCenterBtn");
           control.addListener("execute", () => {
-            const walletsEnabled = osparc.desktop.credits.Utils.areWalletsEnabled();
+            const walletsEnabled = osparc.store.StaticInfo.isBillableProduct();
             if (walletsEnabled) {
               osparc.desktop.credits.BillingCenterWindow.openWindow();
             }
@@ -85,9 +85,22 @@ qx.Class.define("osparc.navigation.UserMenu", {
           control.addListener("execute", () => osparc.desktop.organizations.OrganizationsWindow.openWindow(), this);
           this.add(control);
           break;
+        case "help-button":
+          control = new qx.ui.menu.Button().set({
+            label: qx.locale.Manager.tr("Help & Support"),
+            icon: "@FontAwesome5Solid/question-circle/16",
+          });
+          control.addListener("execute", () => osparc.support.SupportCenter.openWindow());
+          this.add(control);
+          break;
         case "market":
           control = new qx.ui.menu.Button(this.tr("The Shop"));
           control.addListener("execute", () => osparc.vipMarket.MarketWindow.openWindow());
+          this.add(control);
+          break;
+        case "rocket-preview":
+          control = new qx.ui.menu.Button(this.tr("Rocket Preview"));
+          control.addListener("execute", () => osparc.wrapper.RocketPreview.openWindow());
           this.add(control);
           break;
         case "about":
@@ -153,7 +166,7 @@ qx.Class.define("osparc.navigation.UserMenu", {
         if (osparc.data.Permissions.getInstance().isAdmin()) {
           this.getChildControl("admin-center");
         }
-        if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
+        if (osparc.store.StaticInfo.isBillableProduct()) {
           this.getChildControl("billing-center");
         }
         this.getChildControl("organizations");
@@ -167,6 +180,10 @@ qx.Class.define("osparc.navigation.UserMenu", {
 
       if (osparc.product.Utils.showS4LStore()) {
         this.getChildControl("market");
+      }
+
+      if (osparc.utils.Utils.isDevelopmentPlatform() && osparc.wrapper.RocketPreview.existsBuild()) {
+        this.getChildControl("rocket-preview");
       }
 
       this.getChildControl("about");
@@ -205,7 +222,7 @@ qx.Class.define("osparc.navigation.UserMenu", {
         if (osparc.data.Permissions.getInstance().isAdmin()) {
           this.getChildControl("admin-center");
         }
-        if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
+        if (osparc.store.StaticInfo.isBillableProduct()) {
           this.getChildControl("billing-center");
         }
         this.getChildControl("organizations");
@@ -213,14 +230,7 @@ qx.Class.define("osparc.navigation.UserMenu", {
       this.addSeparator();
 
       // quick starts and manuals
-      osparc.store.Support.addQuickStartToMenu(this);
-      osparc.store.Support.addGuidedToursToMenu(this);
-      osparc.store.Support.addManualButtonsToMenu(this);
-      this.addSeparator();
-
-      // feedbacks
-      osparc.store.Support.addSupportButtonsToMenu(this);
-      osparc.store.Support.addReleaseNotesToMenu(this);
+      this.getChildControl("help-button");
       this.addSeparator();
 
       this.getChildControl("theme-switcher");

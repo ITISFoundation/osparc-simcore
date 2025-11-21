@@ -7,20 +7,22 @@ from copy import deepcopy
 from datetime import datetime
 from enum import Enum
 from types import TracebackType
-from typing import Any, Final, Protocol
+from typing import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
+    Any,
+    Final,
+    Protocol,
+    TypedDict,
+)
 
 import arrow
 from aiohttp import web
 from pydantic import TypeAdapter
-from typing_extensions import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
-    TypedDict,
-)
 
-from .application_keys import APP_CONFIG_KEY, APP_SETTINGS_KEY
+from .application_keys import APP_CONFIG_KEY
 
 _logger = logging.getLogger(__name__)
 
-APP_SETUP_COMPLETED_KEY: Final[str] = f"{__name__ }.setup"
+APP_SETUP_COMPLETED_KEY: Final[web.AppKey] = web.AppKey("setup_completed", list[str])
 
 
 class _SetupFunc(Protocol):
@@ -115,13 +117,14 @@ def _get_app_settings_and_field_name(
     arg_settings_name: str | None,
     setup_func_name: str,
     logger: logging.Logger,
+    app_settings_key: web.AppKey,
 ) -> tuple[_ApplicationSettings | None, str | None]:
-    app_settings: _ApplicationSettings | None = app.get(APP_SETTINGS_KEY)
+    app_settings: _ApplicationSettings | None = app.get(app_settings_key)
     settings_field_name = arg_settings_name
 
     if app_settings:
         if not settings_field_name:
-            # FIXME: hard-coded WEBSERVER_ temporary
+            # NOTE: hard-coded WEBSERVER_ temporary
             settings_field_name = f"WEBSERVER_{arg_module_name.split('.')[-1].upper()}"
 
         logger.debug("Checking addon's %s ", f"{settings_field_name=}")
@@ -246,6 +249,7 @@ def app_module_setup(
     module_name: str,
     category: ModuleCategory,
     *,
+    app_settings_key: web.AppKey,
     settings_name: str | None = None,
     depends: list[str] | None = None,
     logger: logging.Logger = _logger,
@@ -336,6 +340,7 @@ def app_module_setup(
                     settings_name,
                     setup_func.__name__,
                     logger,
+                    app_settings_key,
                 )
 
                 if (

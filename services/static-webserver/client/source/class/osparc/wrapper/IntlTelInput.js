@@ -49,30 +49,34 @@ qx.Class.define("osparc.wrapper.IntlTelInput", {
   },
   members: {
     init: function() {
-      // initialize the script loading
-      let intlTelInputPath = "intl-tel-input/js/intlTelInput.min.js";
-      let dataPath = "intl-tel-input/js/data.min.js";
-      let utilsPath = "intl-tel-input/js/utils.js";
-      let intlTelInputCss = "intl-tel-input/css/intlTelInput.css";
-      let intlTelInputCssUri = qx.util.ResourceManager.getInstance().toUri(intlTelInputCss);
-      qx.module.Css.includeStylesheet(intlTelInputCssUri);
-      let dynLoader = new qx.util.DynamicScriptLoader([
-        intlTelInputPath,
-        dataPath,
-        utilsPath
-      ]);
+      return new Promise((resolve, reject) => {
+        // initialize the script loading
+        let intlTelInputPath = "intl-tel-input/js/intlTelInput.min.js";
+        let dataPath = "intl-tel-input/js/data.min.js";
+        let utilsPath = "intl-tel-input/js/utils.js";
+        let intlTelInputCss = "intl-tel-input/css/intlTelInput.css";
+        let intlTelInputCssUri = qx.util.ResourceManager.getInstance().toUri(intlTelInputCss);
+        qx.module.Css.includeStylesheet(intlTelInputCssUri);
+        let dynLoader = new qx.util.DynamicScriptLoader([
+          intlTelInputPath,
+          dataPath,
+          utilsPath
+        ]);
 
-      dynLoader.addListenerOnce("ready", () => {
-        console.log(intlTelInputPath + " loaded");
-        this.setLibReady(true);
-      }, this);
+        dynLoader.addListenerOnce("ready", () => {
+          console.log(intlTelInputPath + " loaded");
+          this.setLibReady(true);
+          resolve();
+        }, this);
 
-      dynLoader.addListener("failed", e => {
-        let data = e.getData();
-        console.error("failed to load " + data.script);
-      }, this);
+        dynLoader.addListener("failed", e => {
+          let data = e.getData();
+          console.error("failed to load " + data.script);
+          reject(data);
+        }, this);
 
-      dynLoader.start();
+        dynLoader.start();
+      });
     }
   }
 });

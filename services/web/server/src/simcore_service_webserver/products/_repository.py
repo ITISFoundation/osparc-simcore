@@ -42,6 +42,7 @@ _PRODUCTS_COLUMNS = [
     products.c.display_name,
     products.c.short_name,
     products.c.host_regex,
+    products.c.base_url,
     products.c.support_email,
     products.c.product_owners_email,
     products.c.twilio_messaging_sid,
@@ -54,6 +55,9 @@ _PRODUCTS_COLUMNS = [
     products.c.max_open_studies_per_user,
     products.c.group_id,
     products.c.support_standard_group_id,
+    products.c.support_chatbot_user_id,
+    products.c.support_assigned_fogbugz_person_id,
+    products.c.support_assigned_fogbugz_project_id,
 ]
 
 assert {column.name for column in _PRODUCTS_COLUMNS}.issubset(  # nosec
@@ -61,7 +65,7 @@ assert {column.name for column in _PRODUCTS_COLUMNS}.issubset(  # nosec
 )
 
 
-def _to_domain(products_row: Row, payments: PaymentFields) -> Product:
+def _db_to_domain(products_row: Row, payments: PaymentFields) -> Product:
     return Product(
         **products_row._asdict(),
         is_payment_enabled=payments.enabled,
@@ -113,7 +117,7 @@ class ProductRepository(BaseRepository):
             async for row in rows:
                 name = row.name
                 payments = await _get_product_payment_fields(conn, product_name=name)
-                app_products.append(_to_domain(row, payments))
+                app_products.append(_db_to_domain(row, payments))
 
                 assert name in FRONTEND_APPS_AVAILABLE  # nosec
 
@@ -140,7 +144,7 @@ class ProductRepository(BaseRepository):
                 payments = await _get_product_payment_fields(
                     conn, product_name=row.name
                 )
-                return _to_domain(row, payments)
+                return _db_to_domain(row, payments)
             return None
 
     async def get_default_product_name(

@@ -4,7 +4,7 @@ from typing import cast
 
 from fastapi import FastAPI
 from models_library.api_schemas_catalog.services import (
-    MyServiceGet,
+    MyServicesRpcBatchGet,
     PageRpcLatestServiceGet,
     PageRpcServiceRelease,
     PageRpcServiceSummary,
@@ -20,13 +20,14 @@ from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from pydantic import TypeAdapter, ValidationError, validate_call
 from pyinstrument import Profiler
-from servicelib.logging_utils import log_decorator
 from servicelib.rabbitmq import RPCRouter
 from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
-    CatalogForbiddenError,
-    CatalogItemNotFoundError,
+    CatalogBatchNotFoundRpcError,
+    CatalogForbiddenRpcError,
+    CatalogItemNotFoundRpcError,
 )
 
+from ...errors import BatchNotFoundError
 from ...models.services_db import ServiceDBFilters
 from ...repository.groups import GroupsRepository
 from ...repository.services import ServicesRepository
@@ -59,7 +60,12 @@ def _profile_rpc_call(coro):
     return _wrapper
 
 
-@router.expose(reraise_if_error_type=(CatalogForbiddenError, ValidationError))
+@router.expose(
+    reraise_if_error_type=(
+        CatalogForbiddenRpcError,
+        ValidationError,
+    )
+)
 @_profile_rpc_call
 @validate_call(config={"arbitrary_types_allowed": True})
 async def list_services_paginated(
@@ -101,12 +107,11 @@ async def list_services_paginated(
 
 @router.expose(
     reraise_if_error_type=(
-        CatalogItemNotFoundError,
-        CatalogForbiddenError,
+        CatalogItemNotFoundRpcError,
+        CatalogForbiddenRpcError,
         ValidationError,
     )
 )
-@log_decorator(_logger, level=logging.DEBUG)
 @_profile_rpc_call
 @validate_call(config={"arbitrary_types_allowed": True})
 async def get_service(
@@ -136,12 +141,11 @@ async def get_service(
 
 @router.expose(
     reraise_if_error_type=(
-        CatalogItemNotFoundError,
-        CatalogForbiddenError,
+        CatalogItemNotFoundRpcError,
+        CatalogForbiddenRpcError,
         ValidationError,
     )
 )
-@log_decorator(_logger, level=logging.DEBUG)
 @validate_call(config={"arbitrary_types_allowed": True})
 async def update_service(
     app: FastAPI,
@@ -174,12 +178,11 @@ async def update_service(
 
 @router.expose(
     reraise_if_error_type=(
-        CatalogItemNotFoundError,
-        CatalogForbiddenError,
+        CatalogItemNotFoundRpcError,
+        CatalogForbiddenRpcError,
         ValidationError,
     )
 )
-@log_decorator(_logger, level=logging.DEBUG)
 @validate_call(config={"arbitrary_types_allowed": True})
 async def check_for_service(
     app: FastAPI,
@@ -202,8 +205,13 @@ async def check_for_service(
     )
 
 
-@router.expose(reraise_if_error_type=(CatalogForbiddenError, ValidationError))
-@log_decorator(_logger, level=logging.DEBUG)
+@router.expose(
+    reraise_if_error_type=(
+        CatalogForbiddenRpcError,
+        CatalogBatchNotFoundRpcError,
+        ValidationError,
+    )
+)
 @validate_call(config={"arbitrary_types_allowed": True})
 async def batch_get_my_services(
     app: FastAPI,
@@ -216,24 +224,35 @@ async def batch_get_my_services(
             ServiceVersion,
         ]
     ],
-) -> list[MyServiceGet]:
+) -> MyServicesRpcBatchGet:
     assert app.state.engine  # nosec
 
-    services_batch = await catalog_services.batch_get_user_services(
-        repo=ServicesRepository(app.state.engine),
-        groups_repo=GroupsRepository(app.state.engine),
-        product_name=product_name,
-        user_id=user_id,
-        ids=ids,
+    try:
+
+        batch_got = await catalog_services.batch_get_user_services(
+            repo=ServicesRepository(app.state.engine),
+            groups_repo=GroupsRepository(app.state.engine),
+            product_name=product_name,
+            user_id=user_id,
+            ids=ids,
+        )
+
+    except BatchNotFoundError as e:
+        ctx = e.error_context()
+        ctx["name"] = f"{ctx.get('missing_services',[])}"
+        raise CatalogBatchNotFoundRpcError(**ctx) from e
+
+    assert [
+        (sv.key, sv.release.version) for sv in batch_got.found_items
+    ] == ids  # nosec
+
+    return MyServicesRpcBatchGet(
+        found_items=batch_got.found_items,
+        missing_identifiers=batch_got.missing_identifiers,
     )
-
-    assert [(sv.key, sv.release.version) for sv in services_batch] == ids  # nosec
-
-    return services_batch
 
 
 @router.expose(reraise_if_error_type=(ValidationError,))
-@log_decorator(_logger, level=logging.DEBUG)
 @validate_call(config={"arbitrary_types_allowed": True})
 async def list_my_service_history_latest_first(
     app: FastAPI,
@@ -276,12 +295,11 @@ async def list_my_service_history_latest_first(
 
 @router.expose(
     reraise_if_error_type=(
-        CatalogItemNotFoundError,
-        CatalogForbiddenError,
+        CatalogItemNotFoundRpcError,
+        CatalogForbiddenRpcError,
         ValidationError,
     )
 )
-@log_decorator(_logger, level=logging.DEBUG)
 @validate_call(config={"arbitrary_types_allowed": True})
 async def get_service_ports(
     app: FastAPI,
@@ -313,7 +331,7 @@ async def get_service_ports(
     ]
 
 
-@router.expose(reraise_if_error_type=(CatalogForbiddenError, ValidationError))
+@router.expose(reraise_if_error_type=(CatalogForbiddenRpcError, ValidationError))
 @_profile_rpc_call
 @validate_call(config={"arbitrary_types_allowed": True})
 async def list_all_services_summaries_paginated(

@@ -657,7 +657,7 @@ qx.Class.define("osparc.desktop.WorkbenchView", {
       }, this);
 
       workbench.addListener("fileRequested", () => {
-        if (this.getStudy().getUi().getMode() === "workbench") {
+        if (["workbench", "pipeline"].includes(this.getStudy().getUi().getMode())) {
           const tabViewLeftPanel = this.getChildControl("side-panel-left-tabs");
           tabViewLeftPanel.setSelection([this.__storagePage]);
         }

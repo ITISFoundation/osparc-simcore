@@ -21,6 +21,8 @@ StandardError
     SEE https://www.postgresql.org/docs/current/errcodes-appendix.html
 """
 
+import warnings
+
 # NOTE: psycopg2.errors are created dynamically
 # pylint: disable=no-name-in-module
 from psycopg2 import (
@@ -45,6 +47,19 @@ from psycopg2.errors import (
 )
 
 assert issubclass(UniqueViolation, IntegrityError)  # nosec
+
+
+warnings.warn(
+    (
+        "DEPRECATED: The aiopg DBAPI exceptions in this module are no longer used. "
+        "Please use exceptions from the `sqlalchemy.exc` module instead. "
+        "See https://docs.sqlalchemy.org/en/21/core/exceptions.html for details. "
+        "This change is part of the migration to SQLAlchemy async support with asyncpg. "
+        "See migration issue: https://github.com/ITISFoundation/osparc-simcore/issues/4529"
+    ),
+    DeprecationWarning,
+    stacklevel=2,
+)
 
 __all__: tuple[str, ...] = (
     "CheckViolation",

@@ -1,10 +1,10 @@
 """
-    BaseOrm: A draft and basic, yet practical, aiopg-based ORM to simplify operations with postgres database
+BaseOrm: A draft and basic, yet practical, aiopg-based ORM to simplify operations with postgres database
 
-    - Aims to hide the functionality of aiopg
-    - Probably in the direction of the other more sophisticated libraries like (that we might adopt)
-        - the new async sqlalchemy ORM https://docs.sqlalchemy.org/en/14/orm/
-        - https://piccolo-orm.readthedocs.io/en/latest/index.html
+- Aims to hide the functionality of aiopg
+- Probably in the direction of the other more sophisticated libraries like (that we might adopt)
+    - the new async sqlalchemy ORM https://docs.sqlalchemy.org/en/14/orm/
+    - https://piccolo-orm.readthedocs.io/en/latest/index.html
 """
 
 # pylint: disable=no-value-for-parameter

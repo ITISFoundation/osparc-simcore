@@ -5,6 +5,7 @@
 # pylint: disable=too-many-instance-attributes
 
 import asyncio
+import datetime
 import json
 import logging
 import re
@@ -25,7 +26,9 @@ from common_library.json_serialization import json_dumps
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
 from dask_task_models_library.container_tasks.errors import (
     ServiceInputsUseFileToKeyMapButReceivesZipDataError,
+    ServiceOutOfMemoryError,
     ServiceRuntimeError,
+    ServiceTimeoutLoggingError,
 )
 from dask_task_models_library.container_tasks.events import TaskProgressEvent
 from dask_task_models_library.container_tasks.io import (
@@ -44,8 +47,9 @@ from models_library.rabbitmq_messages import LoggerRabbitMessage
 from models_library.services import ServiceMetaDataPublished
 from models_library.services_resources import BootMode
 from packaging import version
-from pydantic import AnyUrl, SecretStr, TypeAdapter
+from pydantic import AnyUrl, ByteSize, SecretStr, TypeAdapter
 from pytest_mock.plugin import MockerFixture
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.rabbitmq._client import RabbitMQClient
 from servicelib.rabbitmq._constants import BIND_TO_ALL_TOPICS
@@ -421,14 +425,17 @@ def sidecar_task(
     s3_settings: S3Settings,
 ) -> Callable[..., ServiceExampleParam]:
     def _creator(
-        command: list[str] | None = None, input_data: TaskInputData | None = None
+        service_key: str | None = None,
+        service_version: str | None = None,
+        command: list[str] | None = None,
+        input_data: TaskInputData | None = None,
     ) -> ServiceExampleParam:
         return ServiceExampleParam(
             docker_basic_auth=DockerBasicAuth(
                 server_address="docker.io", username="pytest", password=SecretStr("")
             ),
-            service_key="ubuntu",
-            service_version="latest",
+            service_key=service_key or "ubuntu",
+            service_version=service_version or "latest",
             command=command
             or ["/bin/bash", "-c", "echo 'hello I'm an empty ubuntu task!"],
             input_data=input_data or TaskInputData.model_validate({}),
@@ -810,7 +817,9 @@ async def test_run_computational_sidecar_dask_does_not_lose_messages_with_pubsub
 
 
 @pytest.mark.parametrize(
-    "integration_version, boot_mode", [("1.0.0", BootMode.CPU)], indirect=True
+    "integration_version, boot_mode, task_owner",
+    [("1.0.0", BootMode.CPU, "no_parent_node")],
+    indirect=True,
 )
 def test_failing_service_raises_exception(
     caplog_info_level: pytest.LogCaptureFixture,
@@ -824,7 +833,9 @@ def test_failing_service_raises_exception(
 
 
 @pytest.mark.parametrize(
-    "integration_version, boot_mode", [("1.0.0", BootMode.CPU)], indirect=True
+    "integration_version, boot_mode, task_owner",
+    [("1.0.0", BootMode.CPU, "no_parent_node")],
+    indirect=True,
 )
 def test_running_service_that_generates_unexpected_data_raises_exception(
     caplog_info_level: pytest.LogCaptureFixture,
@@ -839,7 +850,9 @@ def test_running_service_that_generates_unexpected_data_raises_exception(
 
 
 @pytest.mark.parametrize(
-    "integration_version, boot_mode", [("1.0.0", BootMode.CPU)], indirect=True
+    "integration_version, boot_mode, task_owner",
+    [("1.0.0", BootMode.CPU, "no_parent_node")],
+    indirect=True,
 )
 def test_running_service_with_incorrect_zip_data_that_uses_a_file_to_key_map_raises_exception(
     caplog_info_level: pytest.LogCaptureFixture,
@@ -853,22 +866,62 @@ def test_running_service_with_incorrect_zip_data_that_uses_a_file_to_key_map_rai
         )
 
 
+@pytest.fixture
+def with_short_max_silence_timeout(
+    app_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+) -> EnvVarsDict:
+    return app_environment | setenvs_from_dict(
+        monkeypatch,
+        {
+            "DASK_SIDECAR_MAX_LOG_SILENCE_TIMEOUT": f"{datetime.timedelta(seconds=0.5)}",
+        },
+    )
+
+
 @pytest.mark.parametrize(
-    "integration_version, boot_mode", [("1.0.0", BootMode.CPU)], indirect=True
+    "integration_version, boot_mode, task_owner",
+    [("1.0.0", BootMode.CPU, "no_parent_node")],
+    indirect=True,
 )
 def test_delayed_logging_with_small_timeout_raises_exception(
-    caplog: pytest.LogCaptureFixture,
+    app_environment: EnvVarsDict,
+    with_short_max_silence_timeout: EnvVarsDict,
+    dask_subsystem_mock: dict[str, mock.Mock],
+    sidecar_task: Callable[..., ServiceExampleParam],
+    mocked_get_image_labels: mock.Mock,
+):
+    """https://github.com/aio-libs/aiodocker/issues/901"""
+
+    # Configure the task to sleep first and then generate logs
+    waiting_task = sidecar_task(
+        command=[
+            "/bin/bash",
+            "-c",
+            'echo "Starting task"; sleep 5; echo "After sleep"',
+        ]
+    )
+
+    # Execute the task and expect a timeout exception in the logs
+    with pytest.raises(ServiceTimeoutLoggingError):
+        run_computational_sidecar(**waiting_task.sidecar_params())
+
+
+@pytest.mark.parametrize(
+    "integration_version, boot_mode, task_owner",
+    [("1.0.0", BootMode.CPU, "no_parent_node")],
+    indirect=True,
+)
+def test_run_sidecar_with_managed_monitor_container_log_task_raising(
     app_environment: EnvVarsDict,
     dask_subsystem_mock: dict[str, mock.Mock],
     sidecar_task: Callable[..., ServiceExampleParam],
     mocked_get_image_labels: mock.Mock,
     mocker: MockerFixture,
 ):
-    """https://github.com/aio-libs/aiodocker/issues/901"""
-    # Mock the timeout with a very small value
     mocker.patch(
-        "simcore_service_dask_sidecar.computational_sidecar.docker_utils._AIODOCKER_LOGS_TIMEOUT_S",
-        0.5,  # Small timeout that should cause failure
+        "simcore_service_dask_sidecar.computational_sidecar.core.managed_monitor_container_log_task",
+        side_effect=RuntimeError("Simulated log monitoring failure"),
     )
 
     # Configure the task to sleep first and then generate logs
@@ -881,17 +934,40 @@ def test_delayed_logging_with_small_timeout_raises_exception(
     )
 
     # Execute the task and expect a timeout exception in the logs
-    with caplog.at_level(logging.ERROR, logger="simcore_service_dask_sidecar"):
+    with pytest.raises(RuntimeError, match="Simulated log monitoring failure"):
         run_computational_sidecar(**waiting_task.sidecar_params())
-        assert len(caplog.records) == 1
-        record = caplog.records[0]
-        assert record.exc_info
-        assert isinstance(record.exc_info[1], TimeoutError)
-    caplog.clear()
-    mocker.patch(
-        "simcore_service_dask_sidecar.computational_sidecar.docker_utils._AIODOCKER_LOGS_TIMEOUT_S",
-        10,  # larger timeout to avoid issues
+
+
+# now a test that checks if a service goes out of memory
+@pytest.mark.parametrize(
+    "integration_version, boot_mode, task_owner",
+    [("1.0.0", BootMode.CPU, "no_parent_node")],
+    indirect=True,
+)
+def test_run_sidecar_with_service_exceeding_memory_limit(
+    app_environment: EnvVarsDict,
+    dask_client: distributed.Client,
+    sidecar_task: Callable[..., ServiceExampleParam],
+    mocked_get_image_labels: mock.Mock,
+):
+    # Configure the task to exceed memory limit
+    allocation_size = TypeAdapter(ByteSize).validate_python("100MB")
+    memory_exceeding_task = sidecar_task(
+        service_key="python",
+        service_version="3.11-slim",
+        command=[
+            "python",
+            "-c",
+            f"print('Allocating memory {allocation_size} bytes', flush=True); a = bytearray({allocation_size}); print('Allocating memory {allocation_size} bytes DONE', flush=True); import time; time.sleep(10)",
+        ],
     )
-    with caplog.at_level(logging.ERROR, logger="simcore_service_dask_sidecar"):
-        run_computational_sidecar(**waiting_task.sidecar_params())
-        assert len(caplog.records) == 0
+
+    # Execute the task and expect a runtime error due to memory limit exceeded
+
+    future = dask_client.submit(
+        run_computational_sidecar,
+        **memory_exceeding_task.sidecar_params(),
+        resources={"RAM": allocation_size * 3 // 4},  # set limit to 75% of allocation
+    )
+    with pytest.raises(ServiceOutOfMemoryError):
+        future.result()

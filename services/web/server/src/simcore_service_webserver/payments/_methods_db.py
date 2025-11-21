@@ -1,10 +1,9 @@
 import datetime
 import logging
 
-import simcore_postgres_database.aiopg_errors as db_errors
 import sqlalchemy as sa
+import sqlalchemy.exc
 from aiohttp import web
-from aiopg.sa.result import ResultProxy
 from models_library.api_schemas_webserver.wallets import PaymentMethodID
 from models_library.users import UserID
 from models_library.wallets import WalletID
@@ -13,10 +12,13 @@ from simcore_postgres_database.models.payments_methods import (
     InitPromptAckFlowState,
     payments_methods,
 )
-from sqlalchemy import literal_column
-from sqlalchemy.sql import func
+from simcore_postgres_database.utils_repos import (
+    pass_or_acquire_connection,
+    transaction_context,
+)
+from sqlalchemy.ext.asyncio import AsyncConnection
 
-from ..db.plugin import get_database_engine_legacy
+from ..db.plugin import get_asyncpg_engine
 from .errors import (
     PaymentMethodAlreadyAckedError,
     PaymentMethodNotFoundError,
@@ -26,7 +28,7 @@ from .errors import (
 _logger = logging.getLogger(__name__)
 
 
-class PaymentsMethodsDB(BaseModel):
+class PaymentsMethodsGetDB(BaseModel):
     payment_method_id: PaymentMethodID
     user_id: UserID
     wallet_id: WalletID
@@ -40,13 +42,14 @@ class PaymentsMethodsDB(BaseModel):
 
 async def insert_init_payment_method(
     app: web.Application,
+    connection: AsyncConnection | None = None,
     *,
     payment_method_id: str,
     user_id: UserID,
     wallet_id: WalletID,
     initiated_at: datetime.datetime,
 ) -> None:
-    async with get_database_engine_legacy(app).acquire() as conn:
+    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         try:
             await conn.execute(
                 payments_methods.insert().values(
@@ -56,21 +59,22 @@ async def insert_init_payment_method(
                     initiated_at=initiated_at,
                 )
             )
-        except db_errors.UniqueViolation as err:
+        except sqlalchemy.exc.IntegrityError as err:
             raise PaymentMethodUniqueViolationError(
                 payment_method_id=payment_method_id
             ) from err
 
 
 async def list_successful_payment_methods(
-    app,
+    app: web.Application,
+    connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
     wallet_id: WalletID,
-) -> list[PaymentsMethodsDB]:
-    async with get_database_engine_legacy(app).acquire() as conn:
-        result: ResultProxy = await conn.execute(
-            payments_methods.select()
+) -> list[PaymentsMethodsGetDB]:
+    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
+        result = await conn.execute(
+            sa.select(payments_methods)
             .where(
                 (payments_methods.c.user_id == user_id)
                 & (payments_methods.c.wallet_id == wallet_id)
@@ -78,43 +82,45 @@ async def list_successful_payment_methods(
             )
             .order_by(payments_methods.c.created.desc())
         )  # newest first
-        rows = await result.fetchall() or []
-        return TypeAdapter(list[PaymentsMethodsDB]).validate_python(rows)
+        rows = result.fetchall()
+        return TypeAdapter(list[PaymentsMethodsGetDB]).validate_python(rows)
 
 
 async def get_successful_payment_method(
-    app,
+    app: web.Application,
+    connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
     wallet_id: WalletID,
     payment_method_id: PaymentMethodID,
-) -> PaymentsMethodsDB:
-    async with get_database_engine_legacy(app).acquire() as conn:
-        result: ResultProxy = await conn.execute(
-            payments_methods.select().where(
+) -> PaymentsMethodsGetDB:
+    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
+        result = await conn.execute(
+            sa.select(payments_methods).where(
                 (payments_methods.c.user_id == user_id)
                 & (payments_methods.c.wallet_id == wallet_id)
                 & (payments_methods.c.payment_method_id == payment_method_id)
                 & (payments_methods.c.state == InitPromptAckFlowState.SUCCESS)
             )
         )
-        row = await result.first()
+        row = result.one_or_none()
         if row is None:
             raise PaymentMethodNotFoundError(payment_method_id=payment_method_id)
 
-        return PaymentsMethodsDB.model_validate(row)
+        return PaymentsMethodsGetDB.model_validate(row)
 
 
 async def get_pending_payment_methods_ids(
     app: web.Application,
+    connection: AsyncConnection | None = None,
 ) -> list[PaymentMethodID]:
-    async with get_database_engine_legacy(app).acquire() as conn:
+    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         result = await conn.execute(
             sa.select(payments_methods.c.payment_method_id)
             .where(payments_methods.c.completed_at.is_(None))
             .order_by(payments_methods.c.initiated_at.asc())  # oldest first
         )
-        rows = await result.fetchall() or []
+        rows = result.fetchall()
         return [
             TypeAdapter(PaymentMethodID).validate_python(row.payment_method_id)
             for row in rows
@@ -124,10 +130,11 @@ async def get_pending_payment_methods_ids(
 async def udpate_payment_method(
     app: web.Application,
     payment_method_id: PaymentMethodID,
+    connection: AsyncConnection | None = None,
     *,
     state: InitPromptAckFlowState,
     state_message: str | None,
-) -> PaymentsMethodsDB:
+) -> PaymentsMethodsGetDB:
     """
 
     Raises:
@@ -142,17 +149,16 @@ async def udpate_payment_method(
     if state_message:
         optional["state_message"] = state_message
 
-    async with get_database_engine_legacy(app).acquire() as conn, conn.begin():
-        row = await (
-            await conn.execute(
-                sa.select(
-                    payments_methods.c.initiated_at,
-                    payments_methods.c.completed_at,
-                )
-                .where(payments_methods.c.payment_method_id == payment_method_id)
-                .with_for_update()
+    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
+        result = await conn.execute(
+            sa.select(
+                payments_methods.c.initiated_at,
+                payments_methods.c.completed_at,
             )
-        ).fetchone()
+            .where(payments_methods.c.payment_method_id == payment_method_id)
+            .with_for_update()
+        )
+        row = result.one_or_none()
 
         if row is None:
             raise PaymentMethodNotFoundError(payment_method_id=payment_method_id)
@@ -162,24 +168,24 @@ async def udpate_payment_method(
 
         result = await conn.execute(
             payments_methods.update()
-            .values(completed_at=func.now(), state=state, **optional)
+            .values(completed_at=sa.func.now(), state=state, **optional)
             .where(payments_methods.c.payment_method_id == payment_method_id)
-            .returning(literal_column("*"))
+            .returning(payments_methods)
         )
-        row = await result.first()
-        assert row, "execute above should have caught this"  # nosec
+        row = result.one()
 
-        return PaymentsMethodsDB.model_validate(row)
+        return PaymentsMethodsGetDB.model_validate(row)
 
 
 async def delete_payment_method(
     app: web.Application,
+    connection: AsyncConnection | None = None,
     *,
     user_id: UserID,
     wallet_id: WalletID,
     payment_method_id: PaymentMethodID,
-):
-    async with get_database_engine_legacy(app).acquire() as conn:
+) -> None:
+    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         await conn.execute(
             payments_methods.delete().where(
                 (payments_methods.c.user_id == user_id)

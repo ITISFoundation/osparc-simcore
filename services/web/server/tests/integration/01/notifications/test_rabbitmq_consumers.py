@@ -26,9 +26,11 @@ from models_library.rabbitmq_messages import (
     ProgressType,
     RabbitEventMessageType,
 )
+from models_library.rpc.webserver import DEFAULT_WEBSERVER_RPC_NAMESPACE
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from redis import Redis
 from servicelib.aiohttp.application import create_safe_application
@@ -132,7 +134,6 @@ async def _assert_handler_called_with_json(
 @pytest.fixture
 async def client(
     docker_registry: str,
-    mock_redis_socket_timeout: None,
     aiohttp_client: Callable,
     app_config: dict[str, Any],
     rabbit_service: RabbitSettings,
@@ -140,10 +141,19 @@ async def client(
     redis_client: Redis,
     monkeypatch_setenv_from_app_config: Callable,
     simcore_services_ready: None,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> TestClient:
     app_config["storage"]["enabled"] = False
     app_config["db"]["postgres"]["minsize"] = 2
     monkeypatch_setenv_from_app_config(app_config)
+
+    setenvs_from_dict(
+        monkeypatch,
+        envs={
+            "WEBSERVER_RPC_NAMESPACE": DEFAULT_WEBSERVER_RPC_NAMESPACE,
+        },
+    )
+
     app = create_safe_application(app_config)
 
     assert setup_settings(app)

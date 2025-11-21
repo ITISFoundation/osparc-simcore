@@ -14,7 +14,6 @@ self._to_observe is protected by an asyncio Lock
 """
 
 import asyncio
-import contextlib
 import functools
 import logging
 import time
@@ -131,9 +130,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
         if self._trigger_observation_queue_task is not None:
             await self._trigger_observation_queue.put(None)
 
-            self._trigger_observation_queue_task.cancel()
-            with contextlib.suppress(asyncio.CancelledError):
-                await self._trigger_observation_queue_task
+            await cancel_wait_task(self._trigger_observation_queue_task, max_delay=None)
             self._trigger_observation_queue_task = None
             self._trigger_observation_queue = Queue()
 
@@ -142,7 +139,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
             x for x in self._service_observation_task.values() if isinstance(x, Task)
         ]
         for task in running_tasks:
-            task.cancel()
+            task.cancel("application shutdown, cancelling observation task")
         try:
             results = await asyncio.wait_for(
                 asyncio.gather(*running_tasks, return_exceptions=True),

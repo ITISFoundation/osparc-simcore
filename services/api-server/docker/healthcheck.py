@@ -18,18 +18,49 @@ Q&A:
 """
 
 import os
+import subprocess
 import sys
 from urllib.request import urlopen
+
+from simcore_service_api_server.core.settings import ApplicationSettings
 
 SUCCESS, UNHEALTHY = 0, 1
 
 # Disabled if boots with debugger
 ok = os.environ.get("SC_BOOT_MODE", "").lower() == "debug"
 
+app_settings = ApplicationSettings.create_from_envs()
+
+
+def _is_celery_worker_healthy():
+    assert app_settings.API_SERVER_CELERY
+    broker_url = app_settings.API_SERVER_CELERY.CELERY_RABBIT_BROKER.dsn
+
+    try:
+        result = subprocess.run(
+            [
+                "celery",
+                "--broker",
+                broker_url,
+                "inspect",
+                "ping",
+                "--destination",
+                "celery@" + os.getenv("API_SERVER_WORKER_NAME", "worker"),
+            ],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        return "pong" in result.stdout
+    except subprocess.CalledProcessError:
+        return False
+
+
 # Queries host
 # pylint: disable=consider-using-with
 ok = (
     ok
+    or (app_settings.API_SERVER_WORKER_MODE and _is_celery_worker_healthy())
     or urlopen(
         "{host}{baseurl}".format(
             host=sys.argv[1], baseurl=os.environ.get("SIMCORE_NODE_BASEPATH", "")

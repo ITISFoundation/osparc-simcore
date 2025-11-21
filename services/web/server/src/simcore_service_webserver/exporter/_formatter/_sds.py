@@ -11,7 +11,7 @@ from ...catalog import catalog_service
 from ...projects._projects_service import get_project_for_user
 from ...projects.exceptions import BaseProjectError
 from ...projects.models import ProjectDict
-from ...scicrunch.db import ResearchResourceRepository
+from ...scicrunch.scicrunch_service import SCICRUNCH_SERVICE_APPKEY
 from ..exceptions import SDSException
 from .template_json import write_template_json
 from .xlsx.code_description import (
@@ -70,10 +70,10 @@ async def _add_rrid_entries(
 ) -> None:
     rrid_entires: deque[RRIDEntry] = deque()
 
-    repo = ResearchResourceRepository(app)
+    service = app[SCICRUNCH_SERVICE_APPKEY]
     classifiers = project_data["classifiers"]
     for classifier in classifiers:
-        scicrunch_resource = await repo.get(rrid=classifier)
+        scicrunch_resource = await service.get_resource_atdb(rrid=classifier)
         if scicrunch_resource is None:
             continue
 

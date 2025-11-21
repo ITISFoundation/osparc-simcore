@@ -21,15 +21,16 @@ from uuid import UUID, uuid5
 from aiohttp import web
 from aiohttp_session import get_session
 from common_library.error_codes import create_error_code
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from models_library.projects import ProjectID
 from servicelib.aiohttp import status
 from servicelib.aiohttp.typing_extension import Handler
-from servicelib.logging_errors import create_troubleshootting_log_kwargs
 
 from ..constants import INDEX_RESOURCE_NAME
 from ..director_v2 import director_v2_service
 from ..dynamic_scheduler import api as dynamic_scheduler_service
 from ..products import products_web
+from ..projects import _projects_repository
 from ..projects._groups_repository import get_project_group
 from ..projects._projects_repository_legacy import ProjectDBAPI
 from ..projects.api import check_user_project_permission
@@ -141,10 +142,10 @@ async def copy_study_to_account(
     - Replaces template parameters by values passed in query
     - Avoids multiple copies of the same template on each account
     """
-    from ..projects._projects_repository_legacy import APP_PROJECT_DBAPI
+    from ..projects._projects_repository_legacy import PROJECT_DBAPI_APPKEY
     from ..projects.utils import clone_project_document, substitute_parameterized_inputs
 
-    db: ProjectDBAPI = request.config_dict[APP_PROJECT_DBAPI]
+    db: ProjectDBAPI = request.config_dict[PROJECT_DBAPI_APPKEY]
     template_parameters = dict(request.query)
 
     # assign new uuid to copy
@@ -221,6 +222,12 @@ async def copy_study_to_account(
             request.app, project_id=ProjectID(project["uuid"])
         )
 
+        await _projects_repository.copy_allow_guests_to_push_states_and_output_ports(
+            request.app,
+            from_project_uuid=template_project["uuid"],
+            to_project_uuid=project["uuid"],
+        )
+
     return project_uuid
 
 
@@ -268,7 +275,7 @@ def _handle_errors_with_error_page(handler: Handler):
                 msg=MSG_UNEXPECTED_DISPATCH_ERROR, error_code=error_code
             )
             _logger.exception(
-                **create_troubleshootting_log_kwargs(
+                **create_troubleshooting_log_kwargs(
                     user_error_msg,
                     error=err,
                     error_code=error_code,
@@ -341,7 +348,7 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
 
             user_error_msg = MSG_TOO_MANY_GUESTS
             _logger.exception(
-                **create_troubleshootting_log_kwargs(
+                **create_troubleshooting_log_kwargs(
                     user_error_msg,
                     error=exc,
                     error_code=error_code,
@@ -373,7 +380,7 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
 
         user_error_msg = MSG_UNEXPECTED_DISPATCH_ERROR
         _logger.exception(
-            **create_troubleshootting_log_kwargs(
+            **create_troubleshooting_log_kwargs(
                 user_error_msg,
                 error=exc,
                 error_code=error_code,

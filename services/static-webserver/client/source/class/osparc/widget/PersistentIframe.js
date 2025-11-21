@@ -301,11 +301,13 @@ qx.Class.define("osparc.widget.PersistentIframe", {
     },
 
     __handleIframeMessage: function(data, nodeId) {
-      if (data["type"]) {
-        switch (data["type"]) {
+      const action = data["type"];
+      if (action) {
+        const message = data["message"];
+        switch (action) {
+          case "changeTheme":
           case "theme": {
             // switch theme driven by the iframe
-            const message = data["message"];
             if (message && message.includes("osparc;theme=")) {
               const themeName = message.replace("osparc;theme=", "");
               const validThemes = osparc.ui.switch.ThemeSwitcher.getValidThemes();
@@ -319,13 +321,13 @@ qx.Class.define("osparc.widget.PersistentIframe", {
           }
           case "openMarket": {
             if (osparc.product.Utils.showS4LStore()) {
-              const category = data["message"] && data["message"]["category"];
+              const category = message && message["category"];
               setTimeout(() => osparc.vipMarket.MarketWindow.openWindow(nodeId, category), 100);
             }
             break;
           }
           case "openWallets": {
-            if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
+            if (osparc.store.StaticInfo.isBillableProduct()) {
               setTimeout(() => osparc.desktop.credits.BillingCenterWindow.openWindow(), 100);
             }
             break;
@@ -333,16 +335,16 @@ qx.Class.define("osparc.widget.PersistentIframe", {
           case "openFunction": {
             // this is the MetaModeling service trying to show function/template information
             let functionData = null;
-            if (data["message"] && data["message"]["uuid"]) {
+            if (message && message["uuid"]) {
               // new version, the uuid is from the function
               functionData = {
-                "uuid": data["message"]["uuid"],
+                "uuid": message["uuid"],
                 "resourceType": "function",
               };
-            } else if (data["message"] && data["message"]["functionId"]) {
+            } else if (message && message["functionId"]) {
               // old version, the uuid is from the template
               functionData = {
-                "uuid": data["message"]["functionId"],
+                "uuid": message["functionId"],
                 "resourceType": "functionedTemplate",
               };
             }
@@ -355,6 +357,18 @@ qx.Class.define("osparc.widget.PersistentIframe", {
                 showOpenButton: false,
               });
               window.setCaption("Function Details");
+            }
+            break;
+          }
+          // { type: "openSupport", message: {question: "", answer: ""} }
+          case "openSupport": {
+            const supportCenterWindow = osparc.support.SupportCenter.openWindow();
+            // for now prefill the text box with the question
+            if (message && message["question"]) {
+              supportCenterWindow.createConversation(
+                osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.ESCALATE_TO_SUPPORT,
+                `From your last question: "${message["question"]}"`
+              );
             }
             break;
           }

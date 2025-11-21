@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import Final
 
 from aiohttp import web
 from prometheus_client import Counter
@@ -22,8 +23,8 @@ from prometheus_client.registry import CollectorRegistry
 #
 
 
-MONITOR_SERVICE_STARTED = f"{__name__}.services_started"
-MONITOR_SERVICE_STOPPED = f"{__name__}.services_stopped"
+MONITOR_SERVICE_STARTED_APPKEY: Final = web.AppKey("MONITOR_SERVICE_STARTED", Counter)
+MONITOR_SERVICE_STOPPED_APPKEY: Final = web.AppKey("MONITOR_SERVICE_STOPPED", Counter)
 
 MONITOR_SERVICE_STARTED_LABELS: list[str] = [
     "service_key",
@@ -42,7 +43,7 @@ MONITOR_SERVICE_STOPPED_LABELS: list[str] = [
 def add_instrumentation(
     app: web.Application, reg: CollectorRegistry, app_name: str
 ) -> None:
-    app[MONITOR_SERVICE_STARTED] = Counter(
+    app[MONITOR_SERVICE_STARTED_APPKEY] = Counter(
         name="services_started_total",
         documentation="Counts the services started",
         labelnames=MONITOR_SERVICE_STARTED_LABELS,
@@ -51,7 +52,7 @@ def add_instrumentation(
         registry=reg,
     )
 
-    app[MONITOR_SERVICE_STOPPED] = Counter(
+    app[MONITOR_SERVICE_STOPPED_APPKEY] = Counter(
         name="services_stopped_total",
         documentation="Counts the services stopped",
         labelnames=MONITOR_SERVICE_STOPPED_LABELS,
@@ -73,7 +74,7 @@ def service_started(
     service_tag: str,
     simcore_user_agent: str,
 ) -> None:
-    app[MONITOR_SERVICE_STARTED].labels(
+    app[MONITOR_SERVICE_STARTED_APPKEY].labels(
         service_key=service_key,
         service_tag=service_tag,
         simcore_user_agent=simcore_user_agent,
@@ -88,7 +89,7 @@ def service_stopped(
     simcore_user_agent: str,
     result: ServiceResult | str,
 ) -> None:
-    app[MONITOR_SERVICE_STOPPED].labels(
+    app[MONITOR_SERVICE_STOPPED_APPKEY].labels(
         service_key=service_key,
         service_tag=service_tag,
         simcore_user_agent=simcore_user_agent,

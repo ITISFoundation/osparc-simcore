@@ -8,6 +8,7 @@ import re
 from typing import cast
 
 from aiohttp import web
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from models_library.api_schemas_webserver.projects import (
     ProjectDocument,
     ProjectDocumentVersion,
@@ -15,7 +16,6 @@ from models_library.api_schemas_webserver.projects import (
 from models_library.api_schemas_webserver.socketio import SocketIORoomStr
 from models_library.projects import ProjectID, ProjectTemplateType
 from models_library.projects import ProjectType as ProjectTypeAPI
-from servicelib.logging_errors import create_troubleshootting_log_kwargs
 from servicelib.logging_utils import log_context
 from servicelib.redis import (
     PROJECT_DB_UPDATE_REDIS_LOCK_KEY,
@@ -168,7 +168,7 @@ async def remove_project_documents_as_admin(app: web.Application) -> None:
                         f"Project {project_uuid} has {len(room_sessions)} connected users but is not in Redis Resources table"
                     )
                     _logger.error(
-                        **create_troubleshootting_log_kwargs(
+                        **create_troubleshooting_log_kwargs(
                             user_error_msg=f"Project {project_uuid} has {len(room_sessions)} connected users in the socket io room (This is not expected, as project resource is not in the Redis Resources table), keeping document just in case",
                             error=unexpected_state_error,
                             error_context={
@@ -187,7 +187,7 @@ async def remove_project_documents_as_admin(app: web.Application) -> None:
 
             except (KeyError, AttributeError, ValueError) as exc:
                 _logger.exception(
-                    **create_troubleshootting_log_kwargs(
+                    **create_troubleshooting_log_kwargs(
                         user_error_msg=f"Failed to check room participants for project {project_uuid}",
                         error=exc,
                         error_context={

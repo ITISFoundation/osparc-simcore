@@ -6,18 +6,14 @@ from datetime import timedelta
 from functools import wraps
 from typing import Any, Concatenate, Final, ParamSpec, TypeVar, overload
 
-from celery import Celery  # type: ignore[import-untyped]
-from celery.contrib.abortable import (  # type: ignore[import-untyped]
-    AbortableAsyncResult,
-    AbortableTask,
-)
+from celery import Celery, Task  # type: ignore[import-untyped]
 from celery.exceptions import Ignore  # type: ignore[import-untyped]
 from common_library.async_tools import cancel_wait_task
 from pydantic import NonNegativeInt
-from servicelib.celery.models import TaskID
+from servicelib.celery.models import TaskKey
 
 from .errors import encode_celery_transferrable_error
-from .utils import get_app_server
+from .worker.app_server import get_app_server
 
 _logger = logging.getLogger(__name__)
 
@@ -39,42 +35,42 @@ class TaskAbortedError(Exception): ...
 def _async_task_wrapper(
     app: Celery,
 ) -> Callable[
-    [Callable[Concatenate[AbortableTask, P], Coroutine[Any, Any, R]]],
-    Callable[Concatenate[AbortableTask, P], R],
+    [Callable[Concatenate[Task, P], Coroutine[Any, Any, R]]],
+    Callable[Concatenate[Task, P], R],
 ]:
     def decorator(
-        coro: Callable[Concatenate[AbortableTask, P], Coroutine[Any, Any, R]],
-    ) -> Callable[Concatenate[AbortableTask, P], R]:
+        coro: Callable[Concatenate[Task, P], Coroutine[Any, Any, R]],
+    ) -> Callable[Concatenate[Task, P], R]:
         @wraps(coro)
-        def wrapper(task: AbortableTask, *args: P.args, **kwargs: P.kwargs) -> R:
+        def wrapper(task: Task, *args: P.args, **kwargs: P.kwargs) -> R:
             app_server = get_app_server(app)
             # NOTE: task.request is a thread local object, so we need to pass the id explicitly
             assert task.request.id is not None  # nosec
 
-            async def run_task(task_id: TaskID) -> R:
+            async def _run_task(task_key: TaskKey) -> R:
                 try:
                     async with asyncio.TaskGroup() as tg:
-                        main_task = tg.create_task(
+                        async_io_task = tg.create_task(
                             coro(task, *args, **kwargs),
                         )
 
-                        async def abort_monitor():
-                            abortable_result = AbortableAsyncResult(task_id, app=app)
-                            while not main_task.done():
-                                if abortable_result.is_aborted():
+                        async def _abort_monitor():
+                            while not async_io_task.done():
+                                if not await app_server.task_manager.task_exists(
+                                    task_key
+                                ):
                                     await cancel_wait_task(
-                                        main_task,
+                                        async_io_task,
                                         max_delay=_DEFAULT_CANCEL_TASK_TIMEOUT.total_seconds(),
                                     )
-                                    AbortableAsyncResult(task_id, app=app).forget()
                                     raise TaskAbortedError
                                 await asyncio.sleep(
                                     _DEFAULT_ABORT_TASK_TIMEOUT.total_seconds()
                                 )
 
-                        tg.create_task(abort_monitor())
+                        tg.create_task(_abort_monitor())
 
-                    return main_task.result()
+                    return async_io_task.result()
                 except BaseExceptionGroup as eg:
                     task_aborted_errors, other_errors = eg.split(TaskAbortedError)
 
@@ -88,7 +84,7 @@ def _async_task_wrapper(
                     raise other_errors.exceptions[0] from eg
 
             return asyncio.run_coroutine_threadsafe(
-                run_task(task.request.id),
+                _run_task(task.request.id),
                 app_server.event_loop,
             ).result()
 
@@ -102,14 +98,14 @@ def _error_handling(
     delay_between_retries: timedelta,
     dont_autoretry_for: tuple[type[Exception], ...],
 ) -> Callable[
-    [Callable[Concatenate[AbortableTask, P], R]],
-    Callable[Concatenate[AbortableTask, P], R],
+    [Callable[Concatenate[Task, P], R]],
+    Callable[Concatenate[Task, P], R],
 ]:
     def decorator(
-        func: Callable[Concatenate[AbortableTask, P], R],
-    ) -> Callable[Concatenate[AbortableTask, P], R]:
+        func: Callable[Concatenate[Task, P], R],
+    ) -> Callable[Concatenate[Task, P], R]:
         @wraps(func)
-        def wrapper(task: AbortableTask, *args: P.args, **kwargs: P.kwargs) -> R:
+        def wrapper(task: Task, *args: P.args, **kwargs: P.kwargs) -> R:
             try:
                 return func(task, *args, **kwargs)
             except TaskAbortedError as exc:
@@ -144,7 +140,7 @@ def _error_handling(
 @overload
 def register_task(
     app: Celery,
-    fn: Callable[Concatenate[AbortableTask, TaskID, P], Coroutine[Any, Any, R]],
+    fn: Callable[Concatenate[Task, TaskKey, P], Coroutine[Any, Any, R]],
     task_name: str | None = None,
     timeout: timedelta | None = _DEFAULT_TASK_TIMEOUT,
     max_retries: NonNegativeInt = _DEFAULT_MAX_RETRIES,
@@ -156,7 +152,7 @@ def register_task(
 @overload
 def register_task(
     app: Celery,
-    fn: Callable[Concatenate[AbortableTask, P], R],
+    fn: Callable[Concatenate[Task, P], R],
     task_name: str | None = None,
     timeout: timedelta | None = _DEFAULT_TASK_TIMEOUT,
     max_retries: NonNegativeInt = _DEFAULT_MAX_RETRIES,
@@ -168,8 +164,8 @@ def register_task(
 def register_task(  # type: ignore[misc]
     app: Celery,
     fn: (
-        Callable[Concatenate[AbortableTask, TaskID, P], Coroutine[Any, Any, R]]
-        | Callable[Concatenate[AbortableTask, P], R]
+        Callable[Concatenate[Task, TaskKey, P], Coroutine[Any, Any, R]]
+        | Callable[Concatenate[Task, P], R]
     ),
     task_name: str | None = None,
     timeout: timedelta | None = _DEFAULT_TASK_TIMEOUT,
@@ -186,7 +182,7 @@ def register_task(  # type: ignore[misc]
         delay_between_retries -- dealy between each attempt in case of error (default: {_DEFAULT_WAIT_BEFORE_RETRY})
         dont_autoretry_for -- exceptions that should not be retried when raised by the task
     """
-    wrapped_fn: Callable[Concatenate[AbortableTask, P], R]
+    wrapped_fn: Callable[Concatenate[Task, P], R]
     if asyncio.iscoroutinefunction(fn):
         wrapped_fn = _async_task_wrapper(app)(fn)
     else:
@@ -202,7 +198,6 @@ def register_task(  # type: ignore[misc]
     app.task(
         name=task_name or fn.__name__,
         bind=True,
-        base=AbortableTask,
         time_limit=None if timeout is None else timeout.total_seconds(),
         pydantic=True,
     )(wrapped_fn)

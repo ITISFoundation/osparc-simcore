@@ -13,7 +13,7 @@ _logger = logging.getLogger(__name__)
 
 
 @log_decorator(_logger, level=logging.DEBUG)
-async def save_volume_state(
+async def update_volume_status(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
     node_id: NodeID,
@@ -23,7 +23,7 @@ async def save_volume_state(
     rpc_namespace = get_rpc_namespace(node_id)
     result = await rabbitmq_rpc_client.request(
         rpc_namespace,
-        TypeAdapter(RPCMethodName).validate_python("save_volume_state"),
+        TypeAdapter(RPCMethodName).validate_python("update_volume_status"),
         status=status,
         category=category,
     )

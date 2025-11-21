@@ -80,7 +80,10 @@ api_keys = sa.Table(
         "If set to NULL then the key does not expire.",
     ),
     sa.UniqueConstraint(
-        "display_name", "user_id", name="display_name_userid_uniqueness"
+        "display_name",
+        "user_id",
+        "product_name",
+        name="display_name_userid_product_name_uniqueness",
     ),
 )
 

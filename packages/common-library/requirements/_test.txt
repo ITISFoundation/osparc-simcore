@@ -2,27 +2,25 @@ annotated-types==0.7.0
     # via
     #   -c requirements/_base.txt
     #   pydantic
-coverage==7.6.12
+coverage==7.10.7
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-faker==36.1.1
+faker==37.8.0
     # via -r requirements/_test.in
 icdiff==2.0.7
     # via pytest-icdiff
-iniconfig==2.0.0
+iniconfig==2.1.0
     # via pytest
-packaging==24.2
-    # via
-    #   pytest
-    #   pytest-sugar
-pluggy==1.5.0
+packaging==25.0
+    # via pytest
+pluggy==1.6.0
     # via
     #   pytest
     #   pytest-cov
 pprintpp==0.4.0
     # via pytest-icdiff
-pydantic==2.11.7
+pydantic==2.11.9
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -37,7 +35,7 @@ pydantic-settings==2.7.0
     #   -r requirements/_test.in
 pygments==2.19.2
     # via pytest
-pytest==8.4.1
+pytest==8.4.2
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
@@ -46,35 +44,35 @@ pytest==8.4.1
     #   pytest-instafail
     #   pytest-mock
     #   pytest-sugar
-pytest-asyncio==1.0.0
+pytest-asyncio==1.2.0
     # via -r requirements/_test.in
-pytest-cov==6.2.1
+pytest-cov==7.0.0
     # via -r requirements/_test.in
 pytest-icdiff==0.9
     # via -r requirements/_test.in
 pytest-instafail==0.5.0
     # via -r requirements/_test.in
-pytest-mock==3.14.1
+pytest-mock==3.15.1
     # via -r requirements/_test.in
 pytest-runner==6.0.1
     # via -r requirements/_test.in
-pytest-sugar==1.0.0
+pytest-sugar==1.1.1
     # via -r requirements/_test.in
-python-dotenv==1.0.1
+python-dotenv==1.1.1
     # via
     #   -r requirements/_test.in
     #   pydantic-settings
-termcolor==2.5.0
+termcolor==3.1.0
     # via pytest-sugar
-typing-extensions==4.14.1
+typing-extensions==4.15.0
     # via
     #   -c requirements/_base.txt
     #   pydantic
     #   pydantic-core
     #   typing-inspection
-typing-inspection==0.4.1
+typing-inspection==0.4.2
     # via
     #   -c requirements/_base.txt
     #   pydantic
-tzdata==2025.1
+tzdata==2025.2
     # via faker

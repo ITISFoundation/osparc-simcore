@@ -6,6 +6,7 @@ from typing import Any, Final
 
 import aio_pika
 import aiormq
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from settings_library.rabbit import RabbitSettings
 
 from ..logging_utils import log_catch
@@ -29,33 +30,49 @@ class RabbitMQClientBase:
         exc: BaseException | None,
     ) -> None:
         if exc:
-            if isinstance(exc, asyncio.CancelledError):
-                _logger.info("Rabbit connection cancelled")
-            elif isinstance(exc, aiormq.exceptions.ConnectionClosed):
-                _logger.info("Rabbit connection closed: %s", exc)
+            if isinstance(
+                exc, asyncio.CancelledError | aiormq.exceptions.ConnectionClosed
+            ):
+                _logger.info(
+                    **create_troubleshooting_log_kwargs(
+                        "RabbitMQ connection closed",
+                        error=exc,
+                        error_context={"sender": sender},
+                    )
+                )
             else:
                 _logger.error(
-                    "Rabbit connection closed with exception from %s:%s",
-                    type(exc),
-                    exc,
+                    **create_troubleshooting_log_kwargs(
+                        "RabbitMQ connection closed with unexpected error",
+                        error=exc,
+                        error_context={"sender": sender},
+                    )
                 )
                 self._healthy_state = False
 
     def _channel_close_callback(
         self,
-        sender: Any,  # pylint: disable=unused-argument  # noqa: ARG002
+        sender: Any,
         exc: BaseException | None,
     ) -> None:
         if exc:
-            if isinstance(exc, asyncio.CancelledError):
-                _logger.info("Rabbit channel cancelled")
-            elif isinstance(exc, aiormq.exceptions.ChannelClosed):
-                _logger.info("Rabbit channel closed")
+            if isinstance(
+                exc, asyncio.CancelledError | aiormq.exceptions.ChannelClosed
+            ):
+                _logger.info(
+                    **create_troubleshooting_log_kwargs(
+                        "RabbitMQ channel closed",
+                        error=exc,
+                        error_context={"sender": sender},
+                    )
+                )
             else:
                 _logger.error(
-                    "Rabbit channel closed with exception from %s:%s",
-                    type(exc),
-                    exc,
+                    **create_troubleshooting_log_kwargs(
+                        "RabbitMQ channel closed with unexpected error",
+                        error=exc,
+                        error_context={"sender": sender},
+                    )
                 )
                 self._healthy_state = False
 

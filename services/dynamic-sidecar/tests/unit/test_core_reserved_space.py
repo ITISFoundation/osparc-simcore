@@ -7,7 +7,7 @@ from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
 from simcore_service_dynamic_sidecar.core.application import create_base_app
 from simcore_service_dynamic_sidecar.core.reserved_space import (
     _RESERVED_DISK_SPACE_NAME,
-    remove_reserved_disk_space,
+    free_reserved_disk_space,
 )
 
 
@@ -22,5 +22,5 @@ def test_reserved_disk_space_workflow(
         ByteSize
     ).validate_python("10MiB")
 
-    remove_reserved_disk_space()
+    free_reserved_disk_space()
     assert not _RESERVED_DISK_SPACE_NAME.exists()

@@ -58,6 +58,9 @@ async def create(
                 modified=func.now(),
                 product_name=product_name,
                 extra_context=extra_context,
+                is_read_by_user=False,  # New conversation is unread
+                is_read_by_support=False,  # New conversation is unread
+                last_message_created_at=func.now(),  # No messages yet
             )
             .returning(*_SELECTION_ARGS)
         )
@@ -174,6 +177,7 @@ async def list_all_support_conversations_for_support_user(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
+    product_name: ProductName,
     # pagination
     offset: NonNegativeInt,
     limit: NonNegativeInt,
@@ -184,7 +188,10 @@ async def list_all_support_conversations_for_support_user(
     base_query = (
         select(*_SELECTION_ARGS)
         .select_from(conversations)
-        .where(conversations.c.type == ConversationType.SUPPORT)
+        .where(
+            (conversations.c.type == ConversationType.SUPPORT)
+            & (conversations.c.product_name == product_name)
+        )
     )
 
     # Select total count from base_query
@@ -279,6 +286,9 @@ async def update(
         **updates.model_dump(exclude_unset=True),
         conversations.c.modified.name: func.now(),
     }
+    _name = _updates.get("name", "Default")
+    if _name is None:
+        _updates["name"] = "no name"
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         result = await conn.execute(

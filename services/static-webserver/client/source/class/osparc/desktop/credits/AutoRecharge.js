@@ -244,6 +244,7 @@ qx.Class.define("osparc.desktop.credits.AutoRecharge", {
         width: 300,
         appearance: "appmotion-buy-credits-select"
       });
+      paymentMethodField.getChildControl("arrow").syncAppearance(); // force sync to show the arrow
       paymentMethodLayout.add(paymentMethodField);
       const addNewPaymentMethod = new qx.ui.basic.Label(this.tr("Add Payment Method")).set({
         marginLeft: 15,

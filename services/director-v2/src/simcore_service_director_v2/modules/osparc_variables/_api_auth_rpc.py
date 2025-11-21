@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 from fastapi import FastAPI
-from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
+from models_library.api_schemas_webserver import DEFAULT_WEBSERVER_RPC_NAMESPACE
 from models_library.products import ProductName
 from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.rpc.webserver.auth.api_keys import ApiKeyGet
@@ -25,7 +25,7 @@ async def create_api_key(
 ) -> ApiKeyGet:
     rpc_client = get_rabbitmq_rpc_client(app)
     result = await rpc_client.request(
-        WEBSERVER_RPC_NAMESPACE,
+        DEFAULT_WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("create_api_key"),
         product_name=product_name,
         user_id=user_id,
@@ -44,7 +44,7 @@ async def delete_api_key_by_key(
 ) -> None:
     rpc_client = get_rabbitmq_rpc_client(app)
     await rpc_client.request(
-        WEBSERVER_RPC_NAMESPACE,
+        DEFAULT_WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("delete_api_key_by_key"),
         product_name=product_name,
         user_id=user_id,

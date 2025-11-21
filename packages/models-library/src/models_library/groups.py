@@ -1,13 +1,16 @@
-from typing import Annotated, Final, NamedTuple, TypeAlias
+from typing import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
+    Annotated,
+    Final,
+    NamedTuple,
+    TypeAlias,
+    TypedDict,
+)
 
 from common_library.basic_types import DEFAULT_FACTORY
 from common_library.groups_enums import GroupType as GroupType
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 from pydantic.config import JsonDict
 from pydantic.types import PositiveInt
-from typing_extensions import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
-    TypedDict,
-)
 
 from .users import UserID, UserNameID
 from .utils.common_validators import create_enums_pre_validator
@@ -15,12 +18,14 @@ from .utils.common_validators import create_enums_pre_validator
 EVERYONE_GROUP_ID: Final[int] = 1
 
 GroupID: TypeAlias = PositiveInt
+PrimaryGroupID: TypeAlias = Annotated[GroupID, Field(gt=EVERYONE_GROUP_ID)]
+StandardGroupID: TypeAlias = Annotated[GroupID, Field(gt=EVERYONE_GROUP_ID)]
 
 __all__: tuple[str, ...] = ("GroupType",)
 
 
 class Group(BaseModel):
-    gid: PositiveInt
+    gid: GroupID
     name: str
     description: str
     group_type: Annotated[GroupType, Field(alias="type")]
@@ -39,38 +44,59 @@ class Group(BaseModel):
 
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:
+        everyone: JsonDict = {
+            "gid": 1,
+            "name": "Everyone",
+            "type": "everyone",
+            "description": "all users",
+            "thumbnail": None,
+        }
+        user: JsonDict = {
+            "gid": 2,
+            "name": "User",
+            "description": "primary group",
+            "type": "primary",
+            "thumbnail": None,
+        }
+        organization: JsonDict = {
+            "gid": 3,
+            "name": "Organization",
+            "description": "standard group",
+            "type": "standard",
+            "thumbnail": None,
+            "inclusionRules": {},
+        }
+        product: JsonDict = {
+            "gid": 4,
+            "name": "Product",
+            "description": "standard group for products",
+            "type": "standard",
+            "thumbnail": None,
+        }
+        support: JsonDict = {
+            "gid": 5,
+            "name": "Support",
+            "description": "support group",
+            "type": "standard",
+            "thumbnail": None,
+        }
+        chatbot: JsonDict = {
+            "gid": 5,
+            "name": "Chatbot",
+            "description": "chatbot group",
+            "type": "primary",
+            "thumbnail": None,
+        }
+
         schema.update(
             {
                 "examples": [
-                    {
-                        "gid": 1,
-                        "name": "Everyone",
-                        "type": "everyone",
-                        "description": "all users",
-                        "thumbnail": None,
-                    },
-                    {
-                        "gid": 2,
-                        "name": "User",
-                        "description": "primary group",
-                        "type": "primary",
-                        "thumbnail": None,
-                    },
-                    {
-                        "gid": 3,
-                        "name": "Organization",
-                        "description": "standard group",
-                        "type": "standard",
-                        "thumbnail": None,
-                        "inclusionRules": {},
-                    },
-                    {
-                        "gid": 4,
-                        "name": "Product",
-                        "description": "standard group for products",
-                        "type": "standard",
-                        "thumbnail": None,
-                    },
+                    everyone,
+                    user,
+                    organization,
+                    product,
+                    support,
+                    chatbot,
                 ]
             }
         )

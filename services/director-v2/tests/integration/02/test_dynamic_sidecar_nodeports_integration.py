@@ -50,7 +50,10 @@ from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.host import get_localhost_ip
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from servicelib.fastapi.long_running_tasks.client import Client, periodic_task_result
+from servicelib.fastapi.long_running_tasks.client import (
+    HttpClient,
+    periodic_task_result,
+)
 from servicelib.long_running_tasks.models import (
     ProgressMessage,
     ProgressPercent,
@@ -705,7 +708,6 @@ async def _fetch_data_via_data_manager(
             io_log_redirect_cb=io_log_redirect_cb,
             r_clone_settings=r_clone_settings,
             progress_bar=progress_bar,
-            aws_s3_cli_settings=None,
         )
 
     return save_to
@@ -863,7 +865,7 @@ async def _assert_push_non_file_outputs(
         logger.debug("%s: %.2f %s", task_id, percent, message)
 
     async with periodic_task_result(
-        Client(
+        HttpClient(
             app=initialized_app,
             async_client=director_v2_client,
             base_url=TypeAdapter(AnyHttpUrl).validate_python(

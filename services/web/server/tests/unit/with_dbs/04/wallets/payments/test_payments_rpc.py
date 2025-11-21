@@ -9,7 +9,7 @@ from decimal import Decimal
 
 import pytest
 from aiohttp.test_utils import TestClient
-from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
+from models_library.api_schemas_webserver import DEFAULT_WEBSERVER_RPC_NAMESPACE
 from models_library.payments import InvoiceDataGet
 from models_library.rabbitmq_basic_types import RPCMethodName
 from pydantic import TypeAdapter
@@ -76,7 +76,7 @@ async def test_one_time_payment_worfklow(
     assert settings.PAYMENTS_FAKE_COMPLETION is False
 
     result = await rpc_client.request(
-        WEBSERVER_RPC_NAMESPACE,
+        DEFAULT_WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("get_invoice_data"),
         user_id=logged_user["id"],
         dollar_amount=Decimal(900),

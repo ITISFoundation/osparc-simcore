@@ -91,9 +91,10 @@ async def open_project(request: web.Request) -> web.Response:
             ),
         )
 
-        await projects_wallets_service.check_project_financial_status(
+        await projects_wallets_service.check_project_financial_status_and_wallet_access(
             request.app,
             project_id=path_params.project_id,
+            user_id=req_ctx.user_id,
             product_name=req_ctx.product_name,
         )
 
@@ -220,7 +221,7 @@ async def close_project(request: web.Request) -> web.Response:
             X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
         ),
     )
-    await project_logs.unsubscribe(request.app, path_params.project_id)
+
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
 

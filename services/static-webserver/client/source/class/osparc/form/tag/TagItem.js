@@ -104,8 +104,7 @@ qx.Class.define("osparc.form.tag.TagItem", {
           this.bind("color", control, "color");
           break;
         case "description":
-          control = new qx.ui.basic.Label().set({
-            rich: true,
+          control = new osparc.ui.basic.SafeLabel().set({
             allowGrowX: true,
             alignY: "middle",
           });

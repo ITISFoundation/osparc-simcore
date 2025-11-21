@@ -26,7 +26,7 @@ qx.Class.define("osparc.viewer.NavigationBar", {
         flex: 1
       });
 
-      this.getChildControl("help");
+      this.getChildControl("help-button");
       this.getChildControl("theme-switch");
     }
   }

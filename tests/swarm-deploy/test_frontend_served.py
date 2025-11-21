@@ -15,8 +15,7 @@ from yarl import URL
 
 async def test_deployed_services_running(
     simcore_stack_deployed_services: list[Service],
-):
-    ...
+): ...
 
 
 @pytest.mark.parametrize(

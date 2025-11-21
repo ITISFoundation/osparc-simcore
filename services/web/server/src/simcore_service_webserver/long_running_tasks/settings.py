@@ -4,7 +4,7 @@ from aiohttp import web
 from pydantic import Field
 from settings_library.base import BaseCustomSettings
 
-from ..constants import APP_SETTINGS_KEY
+from ..application_keys import APP_SETTINGS_APPKEY
 
 
 class LongRunningTasksSettings(BaseCustomSettings):
@@ -20,7 +20,7 @@ class LongRunningTasksSettings(BaseCustomSettings):
 
 
 def get_plugin_settings(app: web.Application) -> LongRunningTasksSettings:
-    settings = app[APP_SETTINGS_KEY].WEBSERVER_LONG_RUNNING_TASKS
+    settings = app[APP_SETTINGS_APPKEY].WEBSERVER_LONG_RUNNING_TASKS
     assert settings, "setup_settings not called?"  # nosec
     assert isinstance(settings, LongRunningTasksSettings)  # nosec
     return settings

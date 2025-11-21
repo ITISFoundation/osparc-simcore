@@ -5,6 +5,7 @@ Wraps interactions to the director-v2 service
 """
 
 import logging
+from typing import Final
 
 import aiohttp
 from aiohttp import ClientTimeout, web
@@ -99,13 +100,15 @@ class DirectorV2RestClient:
         )
 
 
-_APP_KEY = f"{__name__}.{DirectorV2RestClient.__name__}"
+DIRECTOR_V2_CLIENT_APPKEY: Final = web.AppKey(
+    "DIRECTOR_V2_CLIENT", DirectorV2RestClient
+)
 
 
 def set_directorv2_client(app: web.Application, obj: DirectorV2RestClient):
-    app[_APP_KEY] = obj
+    app[DIRECTOR_V2_CLIENT_APPKEY] = obj
 
 
 def get_directorv2_client(app: web.Application) -> DirectorV2RestClient:
-    app_key: DirectorV2RestClient = app[_APP_KEY]
+    app_key: DirectorV2RestClient = app[DIRECTOR_V2_CLIENT_APPKEY]
     return app_key

@@ -3,6 +3,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import asyncio
 import contextlib
 import re
 from collections.abc import AsyncIterator, Awaitable, Callable
@@ -14,7 +15,8 @@ from typing import Any, Final
 from unittest import mock
 
 import pytest
-from aiohttp.test_utils import TestClient
+import socketio
+from aiohttp.test_utils import TestClient, TestServer
 from aioresponses import aioresponses
 from common_library.json_serialization import json_dumps
 from faker import Faker
@@ -30,12 +32,14 @@ from pytest_mock import MockerFixture
 from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from pytest_simcore.helpers.webserver_parametrizations import SocketHandlers
 from pytest_simcore.helpers.webserver_projects import NewProject, delete_all_projects
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from settings_library.catalog import CatalogSettings
 from simcore_service_webserver.application_settings import get_application_settings
 from simcore_service_webserver.catalog.settings import get_plugin_settings
 from simcore_service_webserver.projects.models import ProjectDict
+from simcore_service_webserver.socketio.messages import SOCKET_IO_PROJECT_UPDATED_EVENT
 
 
 @pytest.fixture
@@ -494,9 +498,19 @@ def max_number_of_user_sessions(faker: Faker) -> int:
 
 
 @pytest.fixture
+def with_disabled_rtc_collaboration(
+    app_environment: EnvVarsDict,  # ensure pre-app startup envs
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    setenvs_from_dict(
+        monkeypatch,
+        {"WEBSERVER_REALTIME_COLLABORATION": "null"},
+    )
+
+
+@pytest.fixture
 def with_enabled_rtc_collaboration(
-    app_environment: EnvVarsDict,
-    with_dev_features_enabled: None,
+    app_environment: EnvVarsDict,  # ensure pre-app startup envs
     monkeypatch: pytest.MonkeyPatch,
     max_number_of_user_sessions: int,
 ) -> None:
@@ -512,8 +526,7 @@ def with_enabled_rtc_collaboration(
 
 @pytest.fixture
 def with_enabled_rtc_collaboration_limited_to_1_user(
-    app_environment: EnvVarsDict,
-    with_dev_features_enabled: None,
+    app_environment: EnvVarsDict,  # ensure pre-app startup envs
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     setenvs_from_dict(
@@ -524,3 +537,71 @@ def with_enabled_rtc_collaboration_limited_to_1_user(
             )
         },
     )
+
+
+@pytest.fixture
+async def client_on_running_server_factory(
+    client: TestClient,
+) -> AsyncIterator[Callable[[], TestClient]]:
+    # Creates clients connected to the same server as the reference client
+    #
+    # Implemented as aihttp_client but creates a client using a running server,
+    #  i.e. avoid client.start_server
+
+    assert isinstance(client.server, TestServer)
+
+    clients = []
+
+    def go() -> TestClient:
+        cli = TestClient(client.server, loop=asyncio.get_event_loop())
+        assert client.server.started
+        # AVOIDS client.start_server
+        clients.append(cli)
+        return cli
+
+    yield go
+
+    async def close_client_but_not_server(cli: TestClient) -> None:
+        # pylint: disable=protected-access
+        if not cli._closed:  # noqa: SLF001
+            for resp in cli._responses:  # noqa: SLF001
+                resp.close()
+            for ws in cli._websockets:  # noqa: SLF001
+                await ws.close()
+            await cli._session.close()  # noqa: SLF001
+            cli._closed = True  # noqa: SLF001
+
+    async def finalize():
+        while clients:
+            await close_client_but_not_server(clients.pop())
+
+    await finalize()
+
+
+@pytest.fixture
+async def create_socketio_connection_with_handlers(
+    create_socketio_connection: Callable[
+        [str | None, TestClient | None], Awaitable[tuple[socketio.AsyncClient, str]]
+    ],
+    mocker: MockerFixture,
+) -> Callable[
+    [str | None, TestClient],
+    Awaitable[tuple[socketio.AsyncClient, str, SocketHandlers]],
+]:
+    async def _(
+        client_session_id: str | None, client: TestClient
+    ) -> tuple[socketio.AsyncClient, str, SocketHandlers]:
+        sio, received_client_id = await create_socketio_connection(
+            client_session_id, client
+        )
+        assert sio.sid
+
+        event_handlers = SocketHandlers(
+            **{SOCKET_IO_PROJECT_UPDATED_EVENT: mocker.Mock()}
+        )
+
+        for event, handler in event_handlers.items():
+            sio.on(event, handler=handler)
+        return sio, received_client_id, event_handlers
+
+    return _

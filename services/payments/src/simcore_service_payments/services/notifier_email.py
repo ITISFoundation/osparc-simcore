@@ -10,12 +10,12 @@ from typing import Final
 import httpx
 from aiosmtplib import SMTP
 from attr import dataclass
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from jinja2 import DictLoader, Environment, select_autoescape
 from models_library.api_schemas_webserver.wallets import PaymentMethodTransaction
 from models_library.products import ProductName
 from models_library.users import UserID
 from pydantic import EmailStr
-from servicelib.logging_errors import create_troubleshootting_log_kwargs
 from settings_library.email import EmailProtocol, SMTPSettings
 from tenacity import (
     retry,
@@ -239,7 +239,7 @@ async def _create_user_email(
 
         except Exception as exc:  # pylint: disable=broad-exception-caught
             _logger.exception(
-                **create_troubleshootting_log_kwargs(
+                **create_troubleshooting_log_kwargs(
                     "Cannot attach invoice to payment. Email sent w/o attached pdf invoice",
                     error=exc,
                     error_context={

@@ -13,28 +13,31 @@ from common_library.users_enums import UserStatus
 from models_library.products import ProductName
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
-from simcore_service_webserver.login._login_repository_legacy import (
-    ActionLiteralStr,
-    AsyncpgStorage,
-    ConfirmationTokenDict,
+from simcore_service_webserver.login._confirmation_repository import (
+    ConfirmationRepository,
 )
+from simcore_service_webserver.login._models import ActionLiteralStr, Confirmation
 from simcore_service_webserver.users import _users_service
 from simcore_service_webserver.wallets import _api as _wallets_service
 from simcore_service_webserver.wallets import _db as _wallets_repository
 
 CreateTokenCallable: TypeAlias = Callable[
-    [int, ActionLiteralStr, str | None], Coroutine[Any, Any, ConfirmationTokenDict]
+    [int, ActionLiteralStr, str | None], Coroutine[Any, Any, Confirmation]
 ]
 
 
 @pytest.fixture
-async def create_valid_confirmation_token(db: AsyncpgStorage) -> CreateTokenCallable:
+async def create_valid_confirmation_token(
+    confirmation_repository: ConfirmationRepository,
+) -> CreateTokenCallable:
     """Fixture to create a valid confirmation token for a given action."""
 
     async def _create_token(
         user_id: int, action: ActionLiteralStr, data: str | None = None
-    ) -> ConfirmationTokenDict:
-        return await db.create_confirmation(user_id=user_id, action=action, data=data)
+    ) -> Confirmation:
+        return await confirmation_repository.create_confirmation(
+            user_id=user_id, action=action, data=data
+        )
 
     return _create_token
 
@@ -50,7 +53,7 @@ async def test_confirm_registration(
     confirmation = await create_valid_confirmation_token(
         target_user_id, "REGISTRATION", None
     )
-    code = confirmation["code"]
+    code = confirmation.code
 
     # clicks link to confirm registration
     response = await client.get(f"/v0/auth/confirmation/{code}")
@@ -91,7 +94,7 @@ async def test_confirm_change_email(
     confirmation = await create_valid_confirmation_token(
         user_id, "CHANGE_EMAIL", "new_" + registered_user["email"]
     )
-    code = confirmation["code"]
+    code = confirmation.code
 
     # clicks link to confirm registration
     response = await client.get(f"/v0/auth/confirmation/{code}")
@@ -112,7 +115,7 @@ async def test_confirm_reset_password(
     confirmation = await create_valid_confirmation_token(
         user_id, "RESET_PASSWORD", None
     )
-    code = confirmation["code"]
+    code = confirmation.code
 
     response = await client.get(f"/v0/auth/confirmation/{code}")
     assert response.status == status.HTTP_200_OK
@@ -134,7 +137,7 @@ async def test_handler_exception_logging(
 ):
     user_id = registered_user["id"]
     confirmation = await create_valid_confirmation_token(user_id, "REGISTRATION", None)
-    code = confirmation["code"]
+    code = confirmation.code
 
     with patch(
         "simcore_service_webserver.login._controller.rest.confirmation._handle_confirm_registration",

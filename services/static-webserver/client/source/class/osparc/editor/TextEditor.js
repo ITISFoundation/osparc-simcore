@@ -32,6 +32,15 @@ qx.Class.define("osparc.editor.TextEditor", {
     }
 
     this.__addButtons();
+
+    this.addListener("keydown", e => {
+      if (e.isCtrlPressed() && e.getKeyIdentifier() === "Enter") {
+        const text = this.getChildControl("text-area").getValue();
+        this.fireDataEvent("textChanged", text);
+        e.stopPropagation();
+        e.preventDefault();
+      }
+    }, this);
   },
 
   events: {

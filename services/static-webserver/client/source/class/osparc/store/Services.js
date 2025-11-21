@@ -66,8 +66,8 @@ qx.Class.define("osparc.store.Services", {
     getLatestCompatible: function(key, version) {
       const services = this.__servicesCached;
       if (key in services && version in services[key]) {
-        const historyEntry = osparc.service.Utils.extractVersionFromHistory(services[key][version]);
-        if (historyEntry["compatibility"] && historyEntry["compatibility"]["canUpdateTo"]) {
+        const historyEntry = osparc.service.Utils.getHistoryEntry(services[key][version]);
+        if (historyEntry && historyEntry["compatibility"] && historyEntry["compatibility"]["canUpdateTo"]) {
           const canUpdateTo = historyEntry["compatibility"]["canUpdateTo"];
           return {
             key: "key" in canUpdateTo ? canUpdateTo["key"] : key, // key is optional
@@ -95,10 +95,10 @@ qx.Class.define("osparc.store.Services", {
       const services = this.__servicesCached;
       if (
         key in services &&
-        version in services[key] &&
-        "released" in services[key][version]
+        version in services[key]
       ) {
-        return services[key][version]["released"];
+        const serviceMetadata = services[key][version];
+        return osparc.service.Utils.extractReleasedDateFromHistory(serviceMetadata);
       }
       return null;
     },
@@ -243,7 +243,7 @@ qx.Class.define("osparc.store.Services", {
                       }
                       serviceLatest = osparc.utils.Utils.deepCloneObject(olderNonRetired);
                       // make service metadata latest model like
-                      serviceLatest["release"] = osparc.service.Utils.extractVersionFromHistory(olderNonRetired);
+                      serviceLatest["release"] = osparc.service.Utils.getHistoryEntry(olderNonRetired);
                       break;
                     }
                   }

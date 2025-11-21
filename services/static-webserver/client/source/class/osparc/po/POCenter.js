@@ -18,7 +18,7 @@
 qx.Class.define("osparc.po.POCenter", {
   extend: osparc.ui.window.TabbedView,
 
-  construct: function() {
+  construct: function(openPage) {
     this.base(arguments);
 
     const miniProfile = osparc.desktop.account.MyAccount.createMiniProfileView().set({
@@ -26,27 +26,31 @@ qx.Class.define("osparc.po.POCenter", {
     });
     this.addWidgetToTabs(miniProfile);
 
-    this.__addActiveUsersPage();
     this.__addReviewUsersPage();
+    this.__addActiveUsersPage();
     this.__addPreRegistrationPage();
     this.__addInvitationsPage();
     this.__addProductPage();
-    this.__addMsgTemplatesPage();
+
+    if (openPage) {
+      this.__openPage(openPage);
+    }
   },
 
   members: {
+    __addReviewUsersPage: function() {
+      const title = this.tr("Review Users");
+      const iconSrc = "@FontAwesome5Solid/user-plus/22";
+      const usersPending = new osparc.po.UsersPending();
+      const page = this.addTab(title, iconSrc, usersPending);
+      page.pageId = "reviewUsers";
+    },
+
     __addActiveUsersPage: function() {
       const title = this.tr("Active Users");
       const iconSrc = "@FontAwesome5Solid/user/22";
       const users = new osparc.po.Users();
       this.addTab(title, iconSrc, users);
-    },
-
-    __addReviewUsersPage: function() {
-      const title = this.tr("Review Users");
-      const iconSrc = "@FontAwesome5Solid/user-plus/22";
-      const usersPending = new osparc.po.UsersPending();
-      this.addTab(title, iconSrc, usersPending);
     },
 
     __addPreRegistrationPage: function() {
@@ -70,11 +74,13 @@ qx.Class.define("osparc.po.POCenter", {
       this.addTab(title, iconSrc, productInfo);
     },
 
-    __addMsgTemplatesPage: function() {
-      const title = this.tr("Message Templates");
-      const iconSrc = "@FontAwesome5Solid/envelope-open/22";
-      const productInfo = new osparc.po.MessageTemplates();
-      this.addTab(title, iconSrc, productInfo);
-    }
+    __openPage: function(openPage) {
+      const tabsView = this.getChildControl("tabs-view");
+      const pages = tabsView.getChildren();
+      const page = pages.find(page => page.pageId && page.pageId === openPage);
+      if (page) {
+        tabsView.setSelection([page]);
+      }
+    },
   }
 });

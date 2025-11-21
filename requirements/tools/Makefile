@@ -14,7 +14,7 @@
 #
 .DEFAULT_GOAL := help
 
-PYTHON_VERSION=3.11.9
+PYTHON_VERSION=3.13.9
 
 # locations
 REPODIR := $(shell git rev-parse --show-toplevel)
@@ -75,7 +75,7 @@ only-tools: ## upgrades tools repo wide
 	# Upgrading ONLY _tools.in
 	@$(foreach p,${_tools-in},echo Touching $(p);touch $(p);$(MAKE_C) $(dir $(p)) reqs $(UPGRADE_OR_STARTSWITH_OR_CLEAN_OPTION);)
 
-reqs: guard-UPGRADE_OR_STARTSWITH_OR_CLEAN_OPTION ## updates test & tooling requirements
+reqs: ## updates test & tooling requirements
 	# Upgrading $(upgrade)$(startswith)$(if $(clean), cleaning) requirements
 	@$(foreach p,${_target-inputs},echo Touching $(p);touch $(p);$(MAKE_C) $(dir $(p)) reqs $(UPGRADE_OR_STARTSWITH_OR_CLEAN_OPTION);)
 

@@ -6,7 +6,7 @@ from settings_library.base import BaseCustomSettings
 from settings_library.utils_service import DEFAULT_AIOHTTP_PORT, MixinServiceSettings
 from yarl import URL
 
-from ..constants import APP_SETTINGS_KEY
+from ..application_keys import APP_SETTINGS_APPKEY
 
 
 class StorageSettings(BaseCustomSettings, MixinServiceSettings):
@@ -20,7 +20,7 @@ class StorageSettings(BaseCustomSettings, MixinServiceSettings):
 
 
 def get_plugin_settings(app: web.Application) -> StorageSettings:
-    settings = app[APP_SETTINGS_KEY].WEBSERVER_STORAGE
+    settings = app[APP_SETTINGS_APPKEY].WEBSERVER_STORAGE
     assert settings, "setup_settings not called?"  # nosec
     assert isinstance(settings, StorageSettings)  # nosec
     return settings

@@ -4,14 +4,14 @@ import logging
 
 from aiohttp import web
 from common_library.error_codes import create_error_code
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from common_library.user_messages import user_message
 from models_library.rest_error import ErrorGet
 from servicelib.aiohttp import status
-from servicelib.logging_errors import create_troubleshootting_log_kwargs
 from servicelib.rabbitmq._errors import RemoteMethodNotRegisteredError
 from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
-    CatalogForbiddenError,
-    CatalogItemNotFoundError,
+    CatalogForbiddenRpcError,
+    CatalogItemNotFoundRpcError,
 )
 
 from ..exception_handling import (
@@ -32,8 +32,8 @@ from .errors import (
 )
 
 # mypy: disable-error-code=truthy-function
-assert CatalogForbiddenError  # nosec
-assert CatalogItemNotFoundError  # nosec
+assert CatalogForbiddenRpcError  # nosec
+assert CatalogItemNotFoundRpcError  # nosec
 
 
 _logger = logging.getLogger(__name__)
@@ -42,7 +42,6 @@ _logger = logging.getLogger(__name__)
 async def _handler_catalog_client_errors(
     request: web.Request, exception: Exception
 ) -> web.Response:
-
     assert isinstance(  # nosec
         exception, CatalogResponseError | CatalogConnectionError
     ), f"check mapping, got {exception=}"
@@ -64,7 +63,7 @@ async def _handler_catalog_client_errors(
         # Log for further investigation
         oec = create_error_code(exception)
         _logger.exception(
-            **create_troubleshootting_log_kwargs(
+            **create_troubleshooting_log_kwargs(
                 user_msg,
                 error=exception,
                 error_code=oec,
@@ -91,14 +90,14 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
             _version=2,
         ),
     ),
-    CatalogForbiddenError: HttpErrorInfo(
+    CatalogForbiddenRpcError: HttpErrorInfo(
         status.HTTP_403_FORBIDDEN,
         user_message(
             "Access denied: You don't have permission to view this catalog item.",
             _version=2,
         ),
     ),
-    CatalogItemNotFoundError: HttpErrorInfo(
+    CatalogItemNotFoundRpcError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
         user_message(
             "This catalog item does not exist or has been removed.", _version=2

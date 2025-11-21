@@ -2,6 +2,7 @@ import logging
 from typing import Final
 
 from aiohttp import web
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from common_library.users_enums import UserRole
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
@@ -9,7 +10,6 @@ from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
 )
 from models_library.projects_nodes_io import NodeID
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
-from servicelib.logging_errors import create_troubleshootting_log_kwargs
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.utils import limited_as_completed, limited_gather
 
@@ -54,10 +54,13 @@ async def _remove_service(
                 )
             )
 
-    with log_catch(_logger, reraise=False), log_context(
-        _logger,
-        logging.INFO,
-        f"removing {(service.node_uuid, service.host)} with {save_service_state=}",
+    with (
+        log_catch(_logger, reraise=False),
+        log_context(
+            _logger,
+            logging.INFO,
+            f"removing {(service.node_uuid, service.host)} with {save_service_state=}",
+        ),
     ):
         await dynamic_scheduler_service.stop_dynamic_service(
             app,
@@ -113,7 +116,7 @@ async def remove_orphaned_services(
             potentially_running_service_ids.append(project_nodes)
         except BaseException as e:  # pylint:disable=broad-exception-caught
             _logger.warning(
-                create_troubleshootting_log_kwargs(
+                create_troubleshooting_log_kwargs(
                     (
                         "Skipping orpahn services removal, call to "
                         "`list_node_ids_in_project` raised"

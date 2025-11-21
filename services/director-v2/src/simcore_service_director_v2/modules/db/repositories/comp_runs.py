@@ -95,11 +95,12 @@ def _handle_foreign_key_violation(
 
 def _resolve_grouped_state(states: list[RunningState]) -> RunningState:
     # If any state is not a final state, return STARTED
+
     final_states = {
         RunningState.FAILED,
         RunningState.ABORTED,
         RunningState.SUCCESS,
-        RunningState.UNKNOWN,
+        RunningState.UNKNOWN,  # NOTE: this is NOT a final state, but happens when tasks are missing
     }
     if any(state not in final_states for state in states):
         return RunningState.STARTED
@@ -322,11 +323,14 @@ class CompRunsRepository(BaseRepository):
             total_count = await conn.scalar(count_query)
 
             items = [
-                ComputationRunRpcGet.model_validate(
-                    {
-                        **row,
-                        "state": DB_TO_RUNNING_STATE[row.state],
-                    }
+                ComputationRunRpcGet(
+                    project_uuid=row.project_uuid,
+                    iteration=row.iteration,
+                    state=DB_TO_RUNNING_STATE[row.state],
+                    info=row.info,
+                    submitted_at=row.submitted_at,
+                    started_at=row.started_at,
+                    ended_at=row.ended_at,
                 )
                 async for row in await conn.stream(list_query)
             ]
@@ -382,11 +386,14 @@ class CompRunsRepository(BaseRepository):
             total_count = await conn.scalar(count_query)
 
             items = [
-                ComputationRunRpcGet.model_validate(
-                    {
-                        **row,
-                        "state": DB_TO_RUNNING_STATE[row["state"]],
-                    }
+                ComputationRunRpcGet(
+                    project_uuid=row.project_uuid,
+                    iteration=row.iteration,
+                    state=DB_TO_RUNNING_STATE[row.state],
+                    info=row.info,
+                    submitted_at=row.submitted_at,
+                    started_at=row.started_at,
+                    ended_at=row.ended_at,
                 )
                 async for row in await conn.stream(list_query)
             ]
@@ -399,7 +406,6 @@ class CompRunsRepository(BaseRepository):
         product_name: str,
         user_id: UserID,
     ) -> list[CollectionRunID]:
-
         list_query = (
             sa.select(
                 comp_runs.c.collection_run_id,
@@ -493,17 +499,17 @@ class CompRunsRepository(BaseRepository):
             total_count = await conn.scalar(count_query)
             items = []
             async for row in await conn.stream(list_query):
-                db_states = [DB_TO_RUNNING_STATE[s] for s in row["states"]]
+                db_states = [DB_TO_RUNNING_STATE[s] for s in row.states]
                 resolved_state = _resolve_grouped_state(db_states)
                 items.append(
                     ComputationCollectionRunRpcGet(
-                        collection_run_id=row["collection_run_id"],
-                        project_ids=row["project_ids"],
+                        collection_run_id=row.collection_run_id,
+                        project_ids=row.project_ids,
                         state=resolved_state,
-                        info={} if row["info"] is None else row["info"],
-                        submitted_at=row["submitted_at"],
-                        started_at=row["started_at"],
-                        ended_at=row["ended_at"],
+                        info={} if row.info is None else row.info,
+                        submitted_at=row.submitted_at,
+                        started_at=row.started_at,
+                        ended_at=row.ended_at,
                     )
                 )
             return cast(int, total_count), items
@@ -525,7 +531,7 @@ class CompRunsRepository(BaseRepository):
                     iteration = await _get_next_iteration(conn, user_id, project_id)
 
                 result = await conn.execute(
-                    comp_runs.insert()  # pylint: disable=no-value-for-parameter
+                    comp_runs.insert()
                     .values(
                         user_id=user_id,
                         project_uuid=f"{project_id}",

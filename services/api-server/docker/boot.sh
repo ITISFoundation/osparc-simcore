@@ -39,23 +39,49 @@ APP_LOG_LEVEL=${API_SERVER_LOGLEVEL:-${LOG_LEVEL:-${LOGLEVEL:-INFO}}}
 SERVER_LOG_LEVEL=$(echo "${APP_LOG_LEVEL}" | tr '[:upper:]' '[:lower:]')
 echo "$INFO" "Log-level app/server: $APP_LOG_LEVEL/$SERVER_LOG_LEVEL"
 
-if [ "${SC_BOOT_MODE}" = "debug" ]; then
-  reload_dir_packages=$(fdfind src /devel/packages --exec echo '--reload-dir {} ' | tr '\n' ' ')
-
-  exec sh -c "
-    cd services/api-server/src/simcore_service_api_server && \
-    python -Xfrozen_modules=off -m debugpy --listen 0.0.0.0:${API_SERVER_REMOTE_DEBUG_PORT} -m \
-    uvicorn \
-      --factory main:app_factory \
-      --host 0.0.0.0 \
-      --reload \
-      $reload_dir_packages \
-      --reload-dir . \
-      --log-level \"${SERVER_LOG_LEVEL}\"
-  "
+if [ "${API_SERVER_WORKER_MODE}" = "true" ]; then
+  if [ "${SC_BOOT_MODE}" = "debug" ]; then
+    exec watchmedo auto-restart \
+      --directory /devel/packages \
+      --directory services/api-server \
+      --pattern "*.py" \
+      --recursive \
+      -- \
+      celery \
+      --app=simcore_service_api_server.modules.celery.worker.main:app \
+      worker --pool="${CELERY_POOL}" \
+      --loglevel="${API_SERVER_LOGLEVEL}" \
+      --concurrency="${CELERY_CONCURRENCY}" \
+      --hostname="${API_SERVER_WORKER_NAME}" \
+      --queues="${CELERY_QUEUES:-default}"
+  else
+    exec celery \
+      --app=simcore_service_api_server.modules.celery.worker.main:app \
+      worker --pool="${CELERY_POOL}" \
+      --loglevel="${API_SERVER_LOGLEVEL}" \
+      --concurrency="${CELERY_CONCURRENCY}" \
+      --hostname="${API_SERVER_WORKER_NAME}" \
+      --queues="${CELERY_QUEUES:-default}"
+  fi
 else
-  exec uvicorn \
-    --factory simcore_service_api_server.main:app_factory \
-    --host 0.0.0.0 \
-    --log-level "${SERVER_LOG_LEVEL}"
+  if [ "${SC_BOOT_MODE}" = "debug" ]; then
+    reload_dir_packages=$(fdfind src /devel/packages --exec echo '--reload-dir {} ' | tr '\n' ' ')
+
+    exec sh -c "
+      cd services/api-server/src/simcore_service_api_server && \
+      python -Xfrozen_modules=off -m debugpy --listen 0.0.0.0:${API_SERVER_REMOTE_DEBUG_PORT} -m \
+      uvicorn \
+        --factory main:app_factory \
+        --host 0.0.0.0 \
+        --reload \
+        $reload_dir_packages \
+        --reload-dir . \
+        --log-level \"${SERVER_LOG_LEVEL}\"
+    "
+  else
+    exec uvicorn \
+      --factory simcore_service_api_server.main:app_factory \
+      --host 0.0.0.0 \
+      --log-level "${SERVER_LOG_LEVEL}"
+  fi
 fi

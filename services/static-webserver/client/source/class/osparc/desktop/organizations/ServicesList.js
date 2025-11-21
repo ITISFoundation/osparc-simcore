@@ -43,11 +43,10 @@ qx.Class.define("osparc.desktop.organizations.ServicesList", {
     },
 
     __createIntroText: function() {
-      const msg = this.tr("This is the list of services shared with this Organization");
+      const msg = this.tr("This is the list of Apps shared with this Organization");
       const intro = new qx.ui.basic.Label().set({
         value: msg,
         alignX: "left",
-        rich: true,
         font: "text-13"
       });
       return intro;
@@ -63,8 +62,7 @@ qx.Class.define("osparc.desktop.organizations.ServicesList", {
 
     __getServicesList: function() {
       const servicesUIList = new qx.ui.form.List().set({
-        decorator: "no-border",
-        spacing: 3
+        appearance: "listing",
       });
 
       const servicesModel = this.__servicesModel = new qx.data.Array();
@@ -84,6 +82,9 @@ qx.Class.define("osparc.desktop.organizations.ServicesList", {
           }, item, id);
         },
         configureItem: item => {
+          item.set({
+            cursor: "default",
+          });
           item.subscribeToFilterGroup("organizationServicesList");
           item.addListener("openMoreInfo", e => {
             const serviceKey = e.getData()["key"];
@@ -122,7 +123,7 @@ qx.Class.define("osparc.desktop.organizations.ServicesList", {
           const orgServices = [];
           Object.keys(servicesLatest).forEach(key => {
             const serviceLatest = servicesLatest[key];
-            if (groupId in serviceLatest["accessRights"]) {
+            if (serviceLatest["accessRights"] && groupId in serviceLatest["accessRights"]) {
               orgServices.push(serviceLatest);
             }
           });

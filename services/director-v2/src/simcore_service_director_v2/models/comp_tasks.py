@@ -276,3 +276,15 @@ class ComputationTaskForRpcDBGet(BaseModel):
     image: dict[str, Any]
     started_at: dt.datetime | None
     ended_at: dt.datetime | None
+
+    @field_validator("state", mode="before")
+    @classmethod
+    def _convert_from_state_type_enum_if_needed(cls, v):
+        if isinstance(v, str):
+            # try to convert to a StateType, if it fails the validations will continue
+            # and pydantic will try to convert it to a RunninState later on
+            with suppress(ValueError):
+                v = StateType(v)
+        if isinstance(v, StateType):
+            return RunningState(DB_TO_RUNNING_STATE[v])
+        return v

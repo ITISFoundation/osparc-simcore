@@ -17,14 +17,15 @@ from servicelib.long_running_tasks import lrt_api
 from servicelib.long_running_tasks._serialization import (
     loads,
 )
-from servicelib.long_running_tasks.base_long_running_manager import (
-    BaseLongRunningManager,
-)
 from servicelib.long_running_tasks.errors import (
     TaskAlreadyRunningError,
     TaskNotCompletedError,
     TaskNotFoundError,
     TaskNotRegisteredError,
+    TaskRaisedUnserializableError,
+)
+from servicelib.long_running_tasks.manager import (
+    LongRunningManager,
 )
 from servicelib.long_running_tasks.models import (
     LRTNamespace,
@@ -37,7 +38,7 @@ from servicelib.long_running_tasks.task import TaskRegistry
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
-from tenacity import TryAgain
+from tenacity import TryAgain, retry, stop_after_attempt
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
@@ -77,19 +78,30 @@ async def a_background_task(
 
 
 async def fast_background_task(progress: TaskProgress) -> int:
-    """this task does nothing and returns a constant"""
     return 42
 
 
 async def failing_background_task(progress: TaskProgress):
-    """this task does nothing and returns a constant"""
     msg = "failing asap"
     raise _TetingError(msg)
+
+
+async def failing_unpicklable_background_task(progress: TaskProgress):
+    @retry(
+        stop=stop_after_attempt(2),
+        reraise=False,
+    )
+    async def _innter_fail() -> None:
+        msg = "always fails with retry"
+        raise _TetingError(msg)
+
+    await _innter_fail()
 
 
 TaskRegistry.register(a_background_task)
 TaskRegistry.register(fast_background_task)
 TaskRegistry.register(failing_background_task)
+TaskRegistry.register(failing_unpicklable_background_task)
 
 
 @pytest.fixture
@@ -103,9 +115,9 @@ async def long_running_manager(
     rabbit_service: RabbitSettings,
     get_long_running_manager: Callable[
         [RedisSettings, RabbitSettings, LRTNamespace | None],
-        Awaitable[BaseLongRunningManager],
+        Awaitable[LongRunningManager],
     ],
-) -> BaseLongRunningManager:
+) -> LongRunningManager:
     return await get_long_running_manager(
         use_in_memory_redis, rabbit_service, "rabbit-namespace"
     )
@@ -113,7 +125,7 @@ async def long_running_manager(
 
 @pytest.mark.parametrize("check_task_presence_before", [True, False])
 async def test_task_is_auto_removed(
-    long_running_manager: BaseLongRunningManager,
+    long_running_manager: LongRunningManager,
     check_task_presence_before: bool,
     empty_context: TaskContext,
 ):
@@ -158,7 +170,7 @@ async def test_task_is_auto_removed(
 
 @pytest.mark.parametrize("wait_multiplier", [1, 2, 3, 4, 5, 6])
 async def test_checked_task_is_not_auto_removed(
-    long_running_manager: BaseLongRunningManager,
+    long_running_manager: LongRunningManager,
     empty_context: TaskContext,
     wait_multiplier: int,
 ):
@@ -187,8 +199,8 @@ def _get_resutlt(result_field: ResultField) -> Any:
     return loads(result_field.str_result)
 
 
-async def test_fire_and_forget_task_is_not_auto_removed(
-    long_running_manager: BaseLongRunningManager, empty_context: TaskContext
+async def test_fire_and_forget_task_is_not_auto_removed_while_running(
+    long_running_manager: LongRunningManager, empty_context: TaskContext
 ):
     task_id = await lrt_api.start_task(
         long_running_manager.rpc_client,
@@ -199,23 +211,36 @@ async def test_fire_and_forget_task_is_not_auto_removed(
         fire_and_forget=True,
         task_context=empty_context,
     )
+
     await asyncio.sleep(3 * TEST_CHECK_STALE_INTERVAL_S)
     # the task shall still be present even if we did not check the status before
     status = await long_running_manager.tasks_manager.get_task_status(
         task_id, with_task_context=empty_context
     )
     assert not status.done, "task was removed although it is fire and forget"
-    # the task shall finish
-    await asyncio.sleep(4 * TEST_CHECK_STALE_INTERVAL_S)
-    # get the result
-    task_result = await long_running_manager.tasks_manager.get_task_result(
-        task_id, with_task_context=empty_context
-    )
-    assert _get_resutlt(task_result) == 42
+
+    async for attempt in AsyncRetrying(**_RETRY_PARAMS):
+        with attempt:
+            try:
+                await long_running_manager.tasks_manager.get_task_status(
+                    task_id, with_task_context=empty_context
+                )
+                raise TryAgain
+            except TaskNotFoundError:
+                pass
+
+    with pytest.raises(TaskNotFoundError):
+        await long_running_manager.tasks_manager.get_task_status(
+            task_id, with_task_context=empty_context
+        )
+    with pytest.raises(TaskNotFoundError):
+        await long_running_manager.tasks_manager.get_task_result(
+            task_id, with_task_context=empty_context
+        )
 
 
 async def test_get_result_of_unfinished_task_raises(
-    long_running_manager: BaseLongRunningManager, empty_context: TaskContext
+    long_running_manager: LongRunningManager, empty_context: TaskContext
 ):
     task_id = await lrt_api.start_task(
         long_running_manager.rpc_client,
@@ -232,7 +257,7 @@ async def test_get_result_of_unfinished_task_raises(
 
 
 async def test_unique_task_already_running(
-    long_running_manager: BaseLongRunningManager, empty_context: TaskContext
+    long_running_manager: LongRunningManager, empty_context: TaskContext
 ):
     async def unique_task(progress: TaskProgress):
         _ = progress
@@ -263,7 +288,7 @@ async def test_unique_task_already_running(
 
 
 async def test_start_multiple_not_unique_tasks(
-    long_running_manager: BaseLongRunningManager, empty_context: TaskContext
+    long_running_manager: LongRunningManager, empty_context: TaskContext
 ):
     async def not_unique_task(progress: TaskProgress):
         await asyncio.sleep(1)
@@ -283,7 +308,7 @@ async def test_start_multiple_not_unique_tasks(
 
 @pytest.mark.parametrize("is_unique", [True, False])
 async def test_get_task_id(
-    long_running_manager: BaseLongRunningManager, faker: Faker, is_unique: bool
+    long_running_manager: LongRunningManager, faker: Faker, is_unique: bool
 ):
     obj1 = long_running_manager.tasks_manager._get_task_id(  # noqa: SLF001
         faker.word(), is_unique=is_unique
@@ -295,7 +320,7 @@ async def test_get_task_id(
 
 
 async def test_get_status(
-    long_running_manager: BaseLongRunningManager, empty_context: TaskContext
+    long_running_manager: LongRunningManager, empty_context: TaskContext
 ):
     task_id = await lrt_api.start_task(
         long_running_manager.rpc_client,
@@ -316,7 +341,7 @@ async def test_get_status(
 
 
 async def test_get_status_missing(
-    long_running_manager: BaseLongRunningManager, empty_context: TaskContext
+    long_running_manager: LongRunningManager, empty_context: TaskContext
 ):
     with pytest.raises(TaskNotFoundError) as exec_info:
         await long_running_manager.tasks_manager.get_task_status(
@@ -326,7 +351,7 @@ async def test_get_status_missing(
 
 
 async def test_get_result(
-    long_running_manager: BaseLongRunningManager, empty_context: TaskContext
+    long_running_manager: LongRunningManager, empty_context: TaskContext
 ):
     task_id = await lrt_api.start_task(
         long_running_manager.rpc_client,
@@ -349,7 +374,7 @@ async def test_get_result(
 
 
 async def test_get_result_missing(
-    long_running_manager: BaseLongRunningManager, empty_context: TaskContext
+    long_running_manager: LongRunningManager, empty_context: TaskContext
 ):
     with pytest.raises(TaskNotFoundError) as exec_info:
         await long_running_manager.tasks_manager.get_task_result(
@@ -359,7 +384,7 @@ async def test_get_result_missing(
 
 
 async def test_get_result_finished_with_error(
-    long_running_manager: BaseLongRunningManager, empty_context: TaskContext
+    long_running_manager: LongRunningManager, empty_context: TaskContext
 ):
     task_id = await lrt_api.start_task(
         long_running_manager.rpc_client,
@@ -380,9 +405,34 @@ async def test_get_result_finished_with_error(
         task_id, with_task_context=empty_context
     )
     assert result.str_error is not None  # nosec
-    error = loads(result.str_error)
     with pytest.raises(_TetingError, match="failing asap"):
-        raise error
+        loads(result.str_error)
+
+
+async def test_get_result_finished_with_unpicklable_error(
+    long_running_manager: LongRunningManager, empty_context: TaskContext
+):
+    task_id = await lrt_api.start_task(
+        long_running_manager.rpc_client,
+        long_running_manager.lrt_namespace,
+        failing_unpicklable_background_task.__name__,
+        task_context=empty_context,
+    )
+    # wait for result
+    async for attempt in AsyncRetrying(**_RETRY_PARAMS):
+        with attempt:
+            assert (
+                await long_running_manager.tasks_manager.get_task_status(
+                    task_id, with_task_context=empty_context
+                )
+            ).done
+
+    result = await long_running_manager.tasks_manager.get_task_result(
+        task_id, with_task_context=empty_context
+    )
+    assert result.str_error is not None  # nosec
+    with pytest.raises(TaskRaisedUnserializableError, match="cannot pickle"):
+        loads(result.str_error)
 
 
 async def test_cancel_task_from_different_manager(
@@ -390,7 +440,7 @@ async def test_cancel_task_from_different_manager(
     use_in_memory_redis: RedisSettings,
     get_long_running_manager: Callable[
         [RedisSettings, RabbitSettings, LRTNamespace | None],
-        Awaitable[BaseLongRunningManager],
+        Awaitable[LongRunningManager],
     ],
     empty_context: TaskContext,
 ):
@@ -435,7 +485,7 @@ async def test_cancel_task_from_different_manager(
 
 
 async def test_remove_task(
-    long_running_manager: BaseLongRunningManager, empty_context: TaskContext
+    long_running_manager: LongRunningManager, empty_context: TaskContext
 ):
     task_id = await lrt_api.start_task(
         long_running_manager.rpc_client,
@@ -462,7 +512,7 @@ async def test_remove_task(
 
 
 async def test_remove_task_with_task_context(
-    long_running_manager: BaseLongRunningManager, empty_context: TaskContext
+    long_running_manager: LongRunningManager, empty_context: TaskContext
 ):
     task_id = await lrt_api.start_task(
         long_running_manager.rpc_client,
@@ -492,7 +542,7 @@ async def test_remove_task_with_task_context(
 
 
 async def test_remove_unknown_task(
-    long_running_manager: BaseLongRunningManager, empty_context: TaskContext
+    long_running_manager: LongRunningManager, empty_context: TaskContext
 ):
     with pytest.raises(TaskNotFoundError):
         await long_running_manager.tasks_manager.remove_task(
@@ -501,7 +551,7 @@ async def test_remove_unknown_task(
 
 
 async def test__cancelled_tasks_worker_equivalent_of_cancellation_from_a_different_process(
-    long_running_manager: BaseLongRunningManager, empty_context: TaskContext
+    long_running_manager: LongRunningManager, empty_context: TaskContext
 ):
     task_id = await lrt_api.start_task(
         long_running_manager.rpc_client,
@@ -511,8 +561,8 @@ async def test__cancelled_tasks_worker_equivalent_of_cancellation_from_a_differe
         total_sleep=10,
         task_context=empty_context,
     )
-    await long_running_manager.tasks_manager._tasks_data.mark_task_for_removal(  # noqa: SLF001
-        task_id, with_task_context=empty_context
+    await long_running_manager.tasks_manager._tasks_data.mark_for_removal(  # noqa: SLF001
+        task_id
     )
 
     async for attempt in AsyncRetrying(**_RETRY_PARAMS):
@@ -528,7 +578,7 @@ async def test__cancelled_tasks_worker_equivalent_of_cancellation_from_a_differe
 
 async def test_list_tasks(
     disable_stale_tasks_monitor: None,
-    long_running_manager: BaseLongRunningManager,
+    long_running_manager: LongRunningManager,
     empty_context: TaskContext,
 ):
     assert (
@@ -571,7 +621,7 @@ async def test_list_tasks(
 
 
 async def test_list_tasks_filtering(
-    long_running_manager: BaseLongRunningManager, empty_context: TaskContext
+    long_running_manager: LongRunningManager, empty_context: TaskContext
 ):
     await lrt_api.start_task(
         long_running_manager.rpc_client,
@@ -631,9 +681,7 @@ async def test_list_tasks_filtering(
     )
 
 
-async def test_define_task_name(
-    long_running_manager: BaseLongRunningManager, faker: Faker
-):
+async def test_define_task_name(long_running_manager: LongRunningManager, faker: Faker):
     task_name = faker.name()
     task_id = await lrt_api.start_task(
         long_running_manager.rpc_client,
@@ -648,7 +696,7 @@ async def test_define_task_name(
 
 async def test_start_not_registered_task(
     rabbitmq_rpc_client: RabbitMQRPCClient,
-    long_running_manager: BaseLongRunningManager,
+    long_running_manager: LongRunningManager,
 ):
     with pytest.raises(TaskNotRegisteredError):
         await lrt_api.start_task(

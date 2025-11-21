@@ -2,13 +2,14 @@ import logging
 from typing import NamedTuple
 
 import sqlalchemy as sa
+from aiocache import cached  # type: ignore[import-untyped]
 from models_library.products import ProductName
 from pydantic.types import PositiveInt
 from simcore_postgres_database.models.api_keys import api_keys as auth_api_keys_table
 from simcore_postgres_database.utils_repos import pass_or_acquire_connection
 from sqlalchemy.ext.asyncio import AsyncConnection
 
-from ._base import BaseRepository
+from ._base import AUTH_SESSION_TTL_SECONDS, BaseRepository
 
 _logger = logging.getLogger(__name__)
 
@@ -21,13 +22,24 @@ class UserAndProductTuple(NamedTuple):
 class ApiKeysRepository(BaseRepository):
     """Auth access"""
 
+    @cached(
+        ttl=AUTH_SESSION_TTL_SECONDS,
+        key_builder=lambda *_args, **kwargs: f"api_auth:{kwargs['api_key']}",
+        namespace=__name__,
+        noself=True,
+    )
     async def get_user(
         self,
         connection: AsyncConnection | None = None,
         *,
         api_key: str,
-        api_secret: str
+        api_secret: str,
     ) -> UserAndProductTuple | None:
+        """Validates API key and secret, returning user info if valid otherwise None.
+
+        WARNING: Cached for 120s TTL - secret validation occurs every 2 minutes.
+        NOTE: to disable caching set AIOCACHE_DISABLE=1
+        """
 
         stmt = sa.select(
             auth_api_keys_table.c.user_id,

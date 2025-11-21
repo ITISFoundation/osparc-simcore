@@ -62,7 +62,7 @@ install-dev install-prod install-ci: _check_venv_active ## install app in develo
 	# installing in $(subst install-,,$@) mode
 	@uv pip sync requirements/$(subst install-,,$@).txt
 	# installing playwright dependencies
-	@playwright install
+	@playwright install --with-deps
 
 
 RETRY_DURATION_SECONDS := 30
@@ -73,7 +73,7 @@ install-ci-up-simcore: install-ci  ## run registry and simcore stack locally (pu
 	@$(MAKE_C) $(REPO_BASE_DIR) local-registry
 	@$(_transfer-images-to-registry)
 	@$(_up_simcore)
-	@$(VENV_DIR)/bin/python utils/wait_for_services.py
+	@utils/wait_for_services.py
 
 	# giving access rights to images (this might take some time until the catalog is ready)
 	@for ((i=0; i<$(RETRY_DURATION_SECONDS); i+=$(RETRY_INTERVAL_SECONDS))); do \
@@ -139,9 +139,10 @@ SLEEPERS_INPUT_FILE := .e2e-playwright-sleepers-env.txt
 S4L_INPUT_FILE := .e2e-playwright-sim4life-env.txt
 JUPYTER_LAB_INPUT_FILE := .e2e-playwright-jupyterlab-env.txt
 CLASSIC_TIP_INPUT_FILE := .e2e-playwright-classictip-env.txt
+RSM_INPUT_FILE := .e2e-playwright-rsm-env.txt
 
 # Prompt the user for input and store it into variables
-$(SLEEPERS_INPUT_FILE) $(JUPYTER_LAB_INPUT_FILE) $(CLASSIC_TIP_INPUT_FILE) $(S4L_INPUT_FILE):
+$(SLEEPERS_INPUT_FILE) $(JUPYTER_LAB_INPUT_FILE) $(CLASSIC_TIP_INPUT_FILE) $(S4L_INPUT_FILE) $(RSM_INPUT_FILE):
 	@read -p "Enter your product URL: " PRODUCT_URL; \
 	read -p "Is the product billable [y/n]: " BILLABLE; \
 	read -p "Is the product lite [y/n]: " IS_LITE; \
@@ -149,6 +150,7 @@ $(SLEEPERS_INPUT_FILE) $(JUPYTER_LAB_INPUT_FILE) $(CLASSIC_TIP_INPUT_FILE) $(S4L
 	read -p "Enter your username: " USER_NAME; \
 	read -s -p "Enter your password: " PASSWORD; echo ""; \
 	echo "--product-url=$$PRODUCT_URL --user-name=$$USER_NAME --password=$$PASSWORD" > $@; \
+	echo "--log-cli-level=INFO --log-file-level=DEBUG --log-file=debug-logs.txt" >> $@; \
 	if [ "$$BILLABLE" = "y" ]; then \
 		echo "--product-billable" >> $@; \
 	fi; \
@@ -189,6 +191,20 @@ $(SLEEPERS_INPUT_FILE) $(JUPYTER_LAB_INPUT_FILE) $(CLASSIC_TIP_INPUT_FILE) $(S4L
 	elif [ "$@" = "$(SLEEPERS_INPUT_FILE)" ]; then \
 		read -p "Enter the number of sleepers: " NUM_SLEEPERS; \
 		echo "--num-sleepers=$$NUM_SLEEPERS" >> $@; \
+	elif [ "$@" = "$(RSM_INPUT_FILE)" ]; then \
+		read -p "Enter the service key (default to mmux-vite-app-sumo-write): " SERVICE_KEY; \
+		if [ -z "$$SERVICE_KEY" ]; then \
+			echo "No service key specified, using default."; \
+			echo "--service-key=mmux-vite-app-sumo-write" >> $@; \
+		else \
+			echo "--service-key=$$SERVICE_KEY" >> $@; \
+		fi; \
+		read -p "Enter the service version (default to latest): " SERVICE_VERSION; \
+		if [ -z "$$SERVICE_VERSION" ]; then \
+			echo "No service version specified, using default."; \
+		else \
+			echo "--service-version=$$SERVICE_VERSION" >> $@; \
+		fi; \
 	fi
 
 # Run the tests
@@ -202,7 +218,10 @@ test-jupyterlab-anywhere: _check_venv_active $(JUPYTER_LAB_INPUT_FILE) ## run ju
 	@$(call run_test, $(JUPYTER_LAB_INPUT_FILE), tests/jupyterlabs/test_jupyterlab.py)
 
 test-tip-anywhere: _check_venv_active $(CLASSIC_TIP_INPUT_FILE) ## run classic tip test and cache settings
-	$(call run_test, $(CLASSIC_TIP_INPUT_FILE), tests/tip/test_ti_plan.py)
+	@$(call run_test, $(CLASSIC_TIP_INPUT_FILE), tests/tip/test_ti_plan.py)
+
+test-response-surface-modeling-anywhere: _check_venv_active $(RSM_INPUT_FILE) ## run response surface modeling test and cache settings
+	@$(call run_test, $(RSM_INPUT_FILE), tests/metamodeling/test_response_surface_modeling.py)
 
 # Define the common test running function
 define run_test

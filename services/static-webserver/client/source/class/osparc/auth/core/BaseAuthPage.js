@@ -56,7 +56,7 @@ qx.Class.define("osparc.auth.core.BaseAuthPage", {
   },
 
   statics: {
-    FORM_WIDTH: 310
+    FORM_WIDTH: 330
   },
 
   /*

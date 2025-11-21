@@ -13,6 +13,7 @@ from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.rabbitmq_messages import InstrumentationRabbitMessage
 from models_library.rpc.webserver.auth.api_keys import generate_unique_api_key
 from models_library.service_settings_labels import SimcoreServiceLabels
+from models_library.services_types import ServiceRunID
 from models_library.shared_user_preferences import (
     AllowMetricsCollectionFrontendUserPreference,
 )
@@ -65,6 +66,7 @@ from ....db.repositories.user_preferences_frontend import (
     UserPreferencesFrontendRepository,
 )
 from ....director_v0 import DirectorV0Client
+from ....long_running_tasks import get_long_running_client_helper
 from ....osparc_variables._api_auth_rpc import delete_api_key_by_key
 from ...api_client import (
     SidecarsClient,
@@ -220,6 +222,7 @@ async def service_remove_sidecar_proxy_docker_networks_and_volumes(
     await task_progress.update(
         message="removing dynamic sidecar stack", percent=ProgressPercent(0.1)
     )
+
     await remove_dynamic_sidecar_stack(
         node_uuid=scheduler_data.node_uuid,
         swarm_stack_name=swarm_stack_name,
@@ -284,9 +287,21 @@ async def service_remove_sidecar_proxy_docker_networks_and_volumes(
     await app.state.dynamic_sidecar_scheduler.scheduler.remove_service_from_observation(
         scheduler_data.node_uuid
     )
+
+    await _cleanup_long_running_tasks(app, scheduler_data.run_id)
+
     await task_progress.update(
         message="finished removing resources", percent=ProgressPercent(1)
     )
+
+
+async def _cleanup_long_running_tasks(
+    app: FastAPI, service_run_id: ServiceRunID
+) -> None:
+    long_running_client_helper = get_long_running_client_helper(app)
+
+    sidecar_namespace = f"SIMCORE-SERVICE-DYNAMIC-SIDECAR-{service_run_id}"
+    await long_running_client_helper.cleanup(sidecar_namespace)
 
 
 async def attempt_pod_removal_and_data_saving(
@@ -389,7 +404,10 @@ async def attempt_pod_removal_and_data_saving(
             raise
 
     await service_remove_sidecar_proxy_docker_networks_and_volumes(
-        TaskProgress.create(), app, scheduler_data.node_uuid, settings.SWARM_STACK_NAME
+        TaskProgress.create(),
+        app,
+        scheduler_data.node_uuid,
+        settings.SWARM_STACK_NAME,
     )
 
     # remove sidecar's api client

@@ -13,6 +13,7 @@ from faker import Faker
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.openapi_specs import Entrypoint
+from servicelib.tracing import TracingConfig
 from simcore_service_webserver.application import create_application
 from simcore_service_webserver.application_settings import get_application_settings
 from simcore_service_webserver.rest._utils import get_openapi_specs_path
@@ -27,15 +28,18 @@ def openapi_specs_path(api_version_prefix: str) -> Path:
 @pytest.fixture
 def app_environment(
     mock_env_devel_environment: EnvVarsDict,
+    docker_compose_service_environment_dict: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
     faker: Faker,
 ) -> EnvVarsDict:
     # Needed to enable  WEBSERVER_ACTIVITY using PROMETEUS below
     monkeypatch.delenv("WEBSERVER_ACTIVITY", raising=False)
+    docker_compose_service_environment_dict.pop("WEBSERVER_ACTIVITY", None)
 
     return mock_env_devel_environment | setenvs_from_dict(
         monkeypatch,
         {
+            **docker_compose_service_environment_dict,
             # disable bundle configs
             "WEBSERVER_DB_LISTENER": "0",
             "WEBSERVER_GARBAGE_COLLECTOR": "null",
@@ -56,7 +60,10 @@ def app(app_environment: EnvVarsDict) -> web.Application:
     # - routings happen during setup!
     # - all plugins are setup but app is NOT started (i.e events are not triggered)
     #
-    app_ = create_application()
+    tracing_config = TracingConfig.create(
+        service_name="test-webserver", tracing_settings=None
+    )
+    app_ = create_application(tracing_config=tracing_config)
     print(get_application_settings(app_).model_dump_json(indent=1))
     return app_
 

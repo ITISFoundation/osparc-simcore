@@ -177,13 +177,21 @@ class NodeState(BaseModel):
 
     model_config = ConfigDict(
         extra="forbid",
-        populate_by_name=True,
+        validate_by_alias=True,
+        validate_by_name=True,
         json_schema_extra={
             "examples": [
+                # example with alias name
                 {
                     "modified": True,
                     "dependencies": [],
                     "currentStatus": "NOT_STARTED",
+                },
+                # example with field name
+                {
+                    "modified": True,
+                    "dependencies": [],
+                    "current_status": "NOT_STARTED",
                 },
                 {
                     "modified": True,
@@ -234,16 +242,19 @@ class Node(BaseModel):
         Field(
             ge=0,
             le=100,
-            description="the node progress value (deprecated in DB, still used for API only)",
-            deprecated=True,  # <-- Think this is not true, it is still used by the File Picker (frontend nodes)
+            description="the node progress value",
+            deprecated=True,  # NOTE: still used in the File Picker (frontend nodes) and must be removed first from there before retiring it here
+            # SEE https://github.com/ITISFoundation/osparc-simcore/issues/8365
         ),
     ] = None
 
-    thumbnail: Annotated[  # <-- (DEPRECATED) Can be removed
+    thumbnail: Annotated[
         str | HttpUrl | None,
         Field(
             description="url of the latest screenshot of the node",
             examples=["https://placeimg.com/171/96/tech/grayscale/?0.jpg"],
+            deprecated=True,
+            # SEE https://github.com/ITISFoundation/osparc-simcore/issues/8365
         ),
     ] = None
 
@@ -302,22 +313,31 @@ class Node(BaseModel):
         Field(default_factory=dict, description="values of output properties"),
     ] = DEFAULT_FACTORY
 
-    output_node: Annotated[bool | None, Field(deprecated=True, alias="outputNode")] = (
-        None  # <-- (DEPRECATED) Can be removed
-    )
+    output_node: Annotated[
+        bool | None,
+        Field(
+            deprecated=True,
+            alias="outputNode",
+            # SEE https://github.com/ITISFoundation/osparc-simcore/issues/8365
+        ),
+    ] = None
 
     output_nodes: Annotated[  # <-- (DEPRECATED) Can be removed
         list[NodeID] | None,
         Field(
             description="Used in group-nodes. Node IDs of those connected to the output",
             alias="outputNodes",
+            deprecated=True,
+            # SEE https://github.com/ITISFoundation/osparc-simcore/issues/8365
         ),
     ] = None
 
-    parent: Annotated[  # <-- (DEPRECATED) Can be removed
+    parent: Annotated[
         NodeID | None,
         Field(
             description="Parent's (group-nodes') node ID s. Used to group",
+            deprecated=True,
+            # SEE https://github.com/ITISFoundation/osparc-simcore/issues/8365
         ),
     ] = None
 
@@ -333,6 +353,9 @@ class Node(BaseModel):
         NodeState | None,
         Field(default_factory=NodeState, description="The node's state object"),
     ] = DEFAULT_FACTORY
+
+    # NOTE: requested_resources should be here! WARNING: this model is used both in database and rest api!
+    # Model for project_nodes table should NOT be Node but a different one !
 
     boot_options: Annotated[
         dict[EnvVarKey, str] | None,
@@ -453,12 +476,14 @@ class Node(BaseModel):
 
     model_config = ConfigDict(
         extra="forbid",
-        populate_by_name=True,
+        validate_by_name=True,
+        validate_by_alias=True,
         json_schema_extra=_update_json_schema_extra,
     )
 
 
 class PartialNode(Node):
-    key: Annotated[ServiceKey, Field(default=None)]
-    version: Annotated[ServiceVersion, Field(default=None)]
-    label: Annotated[str, Field(default=None)]
+    # NOTE: `type: ignore[assignment]` is needed because mypy gets confused when overriding the types by adding the Union with None
+    key: ServiceKey | None = None  # type: ignore[assignment]
+    version: ServiceVersion | None = None  # type: ignore[assignment]
+    label: str | None = None  # type: ignore[assignment]

@@ -1,6 +1,7 @@
 import logging
+import warnings
 
-from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
+from models_library.api_schemas_webserver import DEFAULT_WEBSERVER_RPC_NAMESPACE
 from models_library.basic_types import IDStr
 from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.rpc.webserver.auth.api_keys import ApiKeyCreate, ApiKeyGet
@@ -12,6 +13,13 @@ from .....rabbitmq import RabbitMQRPCClient
 
 _logger = logging.getLogger(__name__)
 
+warnings.warn(
+    f"The '{__name__}' module is deprecated and will be removed in a future release. "
+    "Please use 'rpc_interfaces.webserver.v1' instead.",
+    DeprecationWarning,
+    stacklevel=2,
+)
+
 
 @log_decorator(_logger, level=logging.DEBUG)
 async def create_api_key(
@@ -22,7 +30,7 @@ async def create_api_key(
     api_key: ApiKeyCreate,
 ) -> ApiKeyGet:
     result: ApiKeyGet = await rabbitmq_rpc_client.request(
-        WEBSERVER_RPC_NAMESPACE,
+        DEFAULT_WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("create_api_key"),
         user_id=user_id,
         product_name=product_name,
@@ -42,7 +50,7 @@ async def get_api_key(
     api_key_id: IDStr,
 ) -> ApiKeyGet:
     result: ApiKeyGet = await rabbitmq_rpc_client.request(
-        WEBSERVER_RPC_NAMESPACE,
+        DEFAULT_WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("get_api_key"),
         user_id=user_id,
         product_name=product_name,
@@ -61,7 +69,7 @@ async def delete_api_key_by_key(
     api_key: str,
 ) -> None:
     result = await rabbitmq_rpc_client.request(
-        WEBSERVER_RPC_NAMESPACE,
+        DEFAULT_WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("delete_api_key_by_key"),
         user_id=user_id,
         product_name=product_name,

@@ -1,3 +1,4 @@
+# pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
 # pylint: disable=too-many-arguments
 # pylint: disable=unused-argument
@@ -9,6 +10,7 @@ from typing import Any
 from unittest.mock import Mock
 
 import pytest
+import simcore_service_webserver.tasks._controller._rest
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from pytest_mock import MockerFixture
@@ -83,8 +85,9 @@ async def test_listing_tasks_with_list_inprocess_tasks_error(
     mock = Mock()
     mock.tasks_manager = _DummyTaskManager()
 
-    mocker.patch(
-        "servicelib.aiohttp.long_running_tasks._routes.get_long_running_manager",
+    mocker.patch.object(
+        simcore_service_webserver.tasks._controller._rest,
+        "get_long_running_manager",
         return_value=mock,
     )
 

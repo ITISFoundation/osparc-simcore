@@ -1,12 +1,13 @@
 import asyncio
 import logging
+import warnings
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import Any, Final
 
+from common_library.logging.logging_errors import create_troubleshooting_log_message
 from pydantic import PositiveFloat
 
-from ...logging_errors import create_troubleshootting_log_message
 from ...long_running_tasks.errors import TaskClientTimeoutError, TaskExceptionError
 from ...long_running_tasks.models import (
     ProgressCallback,
@@ -15,7 +16,7 @@ from ...long_running_tasks.models import (
     TaskId,
     TaskStatus,
 )
-from ._client import Client
+from ._client import HttpClient
 
 _logger = logging.getLogger(__name__)
 
@@ -69,7 +70,7 @@ class _ProgressManager:
 
 @asynccontextmanager
 async def periodic_task_result(
-    client: Client,
+    client: HttpClient,
     task_id: TaskId,
     *,
     task_timeout: PositiveFloat,
@@ -94,6 +95,13 @@ async def periodic_task_result(
     raises: the original expcetion the task raised, if any
     raises: `asyncio.TimeoutError` NOTE: the remote task will also be removed
     """
+
+    warnings.warn(
+        "This context manager is deprecated and will be removed in future releases. "
+        "Please use the `servicelib.long_running_tasks.lrt_api` instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
 
     progress_manager = _ProgressManager(progress_callback)
 
@@ -129,7 +137,7 @@ async def periodic_task_result(
         ) from e
     except Exception as e:
         _logger.warning(
-            create_troubleshootting_log_message(
+            create_troubleshooting_log_message(
                 user_error_msg=f"{task_id=} raised an exception",
                 error=e,
                 tip=f"Check the logs of the service responding to '{client.base_url}'",

@@ -16,26 +16,17 @@
 ************************************************************************ */
 
 qx.Class.define("osparc.ui.list.CollaboratorListItem", {
-  extend: osparc.ui.list.ListItem,
+  extend: osparc.ui.list.ListItemWithMenu,
 
   properties: {
     collabType: {
-      check: [0, 1, 2], // 0:all, 1:org, 2:user
+      check: [
+        "everyone",     // osparc.store.Groups.COLLAB_TYPE.EVERYONE
+        "support",      // osparc.store.Groups.COLLAB_TYPE.SUPPORT
+        "organization", // osparc.store.Groups.COLLAB_TYPE.ORGANIZATION
+        "user",         // osparc.store.Groups.COLLAB_TYPE.USER
+      ],
       event: "changeCollabType",
-      nullable: true
-    },
-
-    accessRights: {
-      check: "Object",
-      apply: "__applyAccessRights",
-      event: "changeAccessRights",
-      nullable: true
-    },
-
-    showOptions: {
-      check: "Boolean",
-      apply: "__applyShowOptions",
-      event: "changeShowOptions",
       nullable: true
     },
 
@@ -98,31 +89,6 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
       return roleInfo;
     },
 
-    _createChildControlImpl: function(id) {
-      let control;
-      switch (id) {
-        case "options": {
-          const iconSize = 25;
-          control = new qx.ui.form.MenuButton().set({
-            maxWidth: iconSize,
-            maxHeight: iconSize,
-            alignX: "center",
-            alignY: "middle",
-            icon: "@FontAwesome5Solid/ellipsis-v/"+(iconSize-11),
-            focusable: false
-          });
-          this._add(control, {
-            row: 0,
-            column: 3,
-            rowSpan: 2
-          });
-          break;
-        }
-      }
-
-      return control || this.base(arguments, id);
-    },
-
     // overridden
     _applyTitle: function(value) {
       if (value === null) {
@@ -143,13 +109,13 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
       if (value === null) {
         const collabType = this.getCollabType();
         switch (collabType) {
-          case 0:
+          case osparc.store.Groups.COLLAB_TYPE.EVERYONE:
             value = "@FontAwesome5Solid/globe/28";
             break;
-          case 1:
+          case osparc.store.Groups.COLLAB_TYPE.ORGANIZATION:
             value = "@FontAwesome5Solid/users/28";
             break;
-          case 2:
+          case osparc.store.Groups.COLLAB_TYPE.USER:
             value = "@FontAwesome5Solid/user/28";
             break;
         }
@@ -164,11 +130,14 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
       // highlight me
       const email = osparc.auth.Data.getInstance().getEmail();
       if (value && value.includes(email)) {
-        this.addState("selected");
+        this.setBackgroundColor("background-selected");
+      } else {
+        this.setBackgroundColor("background-main-2");
       }
     },
 
-    __applyAccessRights: function(value) {
+    // overridden
+    _applyAccessRights: function(value) {
       if (value === null) {
         return;
       }
@@ -271,10 +240,5 @@ qx.Class.define("osparc.ui.list.CollaboratorListItem", {
 
       return menu;
     },
-
-    __applyShowOptions: function(value) {
-      const optionsMenu = this.getChildControl("options");
-      optionsMenu.setVisibility(value ? "visible" : "excluded");
-    }
   }
 });

@@ -27,13 +27,13 @@ anyio==4.3.0
     #   httpx
     #   starlette
     #   watchfiles
-asyncpg==0.27.0
+asyncpg==0.30.0
     # via
     #   -c requirements/_base.txt
     #   asyncpg-stubs
-asyncpg-stubs==0.27.1
+asyncpg-stubs==0.30.2
     # via -r requirements/_test.in
-attrs==21.4.0
+attrs==25.4.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
@@ -60,7 +60,7 @@ click==8.2.1
     #   rich-toolkit
     #   typer
     #   uvicorn
-coverage==7.6.12
+coverage==7.10.7
     # via
     #   -r requirements/_test.in
     #   pytest-cov
@@ -81,17 +81,17 @@ faker==19.6.1
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-fakeredis==2.30.3
+fakeredis==2.31.3
     # via -r requirements/_test.in
 fastapi==0.116.1
     # via
     #   -r requirements/_test.in
     #   fastapi-pagination
-fastapi-cli==0.0.8
+fastapi-cli==0.0.13
     # via fastapi
-fastapi-cloud-cli==0.1.5
+fastapi-cloud-cli==0.3.0
     # via fastapi-cli
-fastapi-pagination==0.14.0
+fastapi-pagination==0.14.2
     # via -r requirements/_test.in
 flaky==3.8.1
     # via -r requirements/_test.in
@@ -100,7 +100,7 @@ frozenlist==1.4.1
     #   -c requirements/_base.txt
     #   aiohttp
     #   aiosignal
-greenlet==2.0.2
+greenlet==3.2.4
     # via
     #   -c requirements/_base.txt
     #   sqlalchemy
@@ -134,7 +134,7 @@ idna==3.3
     #   httpx
     #   requests
     #   yarl
-iniconfig==2.0.0
+iniconfig==2.1.0
     # via pytest
 jinja2==3.1.6
     # via
@@ -142,13 +142,19 @@ jinja2==3.1.6
     #   -c requirements/_base.txt
     #   fastapi
 jsonref==1.1.0
-    # via -r requirements/_test.in
-jsonschema==3.2.0
+    # via
+    #   -c requirements/_base.txt
+    #   -r requirements/_test.in
+jsonschema==4.25.1
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
     #   openapi-schema-validator
     #   openapi-spec-validator
+jsonschema-specifications==2025.9.1
+    # via
+    #   -c requirements/_base.txt
+    #   jsonschema
 lupa==2.5
     # via fakeredis
 mako==1.3.10
@@ -174,7 +180,7 @@ multidict==6.1.0
     #   -c requirements/_base.txt
     #   aiohttp
     #   yarl
-mypy==1.16.1
+mypy==1.18.2
     # via sqlalchemy
 mypy-extensions==1.1.0
     # via mypy
@@ -187,10 +193,9 @@ packaging==24.1
     #   -c requirements/_base.txt
     #   aioresponses
     #   pytest
-    #   pytest-sugar
 pathspec==0.12.1
     # via mypy
-pluggy==1.5.0
+pluggy==1.6.0
     # via
     #   pytest
     #   pytest-cov
@@ -219,12 +224,7 @@ pygments==2.15.1
     #   -c requirements/_base.txt
     #   pytest
     #   rich
-pyrsistent==0.18.1
-    # via
-    #   -c requirements/_base.txt
-    #   jsonschema
-    #   referencing
-pytest==8.4.1
+pytest==8.4.2
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
@@ -236,11 +236,11 @@ pytest==8.4.1
     #   pytest-mock
     #   pytest-sugar
     #   pytest-xdist
-pytest-asyncio==1.0.0
+pytest-asyncio==1.2.0
     # via -r requirements/_test.in
 pytest-benchmark==5.1.0
     # via -r requirements/_test.in
-pytest-cov==6.2.1
+pytest-cov==7.0.0
     # via -r requirements/_test.in
 pytest-docker==3.2.3
     # via -r requirements/_test.in
@@ -248,11 +248,11 @@ pytest-icdiff==0.9
     # via -r requirements/_test.in
 pytest-instafail==0.5.0
     # via -r requirements/_test.in
-pytest-mock==3.14.1
+pytest-mock==3.15.1
     # via -r requirements/_test.in
 pytest-runner==6.0.1
     # via -r requirements/_test.in
-pytest-sugar==1.0.0
+pytest-sugar==1.1.1
     # via -r requirements/_test.in
 pytest-xdist==3.8.0
     # via -r requirements/_test.in
@@ -267,7 +267,7 @@ python-dotenv==1.0.1
     #   uvicorn
 python-multipart==0.0.20
     # via fastapi
-pyyaml==6.0.1
+pyyaml==6.0.3
     # via
     #   -c requirements/../../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -279,9 +279,12 @@ redis==5.2.1
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
     #   fakeredis
-referencing==0.8.11
+referencing==0.35.1
     # via
     #   -c requirements/../../../../requirements/constraints.txt
+    #   -c requirements/_base.txt
+    #   jsonschema
+    #   jsonschema-specifications
     #   types-jsonschema
 requests==2.32.4
     # via
@@ -294,19 +297,21 @@ rich==14.1.0
     #   -c requirements/_base.txt
     #   rich-toolkit
     #   typer
-rich-toolkit==0.15.0
+rich-toolkit==0.15.1
     # via
     #   fastapi-cli
     #   fastapi-cloud-cli
-rignore==0.6.4
+rignore==0.7.0
     # via fastapi-cloud-cli
-sentry-sdk==2.35.0
-    # via fastapi-cloud-cli
-setuptools==80.9.0
+rpds-py==0.28.0
     # via
     #   -c requirements/_base.txt
     #   jsonschema
-    #   openapi-spec-validator
+    #   referencing
+sentry-sdk==2.39.0
+    # via fastapi-cloud-cli
+setuptools==80.9.0
+    # via openapi-spec-validator
 shellingham==1.5.4
     # via
     #   -c requirements/_base.txt
@@ -314,7 +319,6 @@ shellingham==1.5.4
 six==1.16.0
     # via
     #   -c requirements/_base.txt
-    #   jsonschema
     #   python-dateutil
 sniffio==1.3.1
     # via
@@ -324,7 +328,7 @@ sortedcontainers==2.4.0
     # via
     #   fakeredis
     #   hypothesis
-sqlalchemy==1.4.47
+sqlalchemy==1.4.54
     # via
     #   -c requirements/../../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -332,7 +336,7 @@ sqlalchemy==1.4.47
     #   alembic
 sqlalchemy2-stubs==0.0.2a38
     # via sqlalchemy
-starlette==0.47.2
+starlette==0.47.3
     # via
     #   -c requirements/../../../../requirements/constraints.txt
     #   fastapi
@@ -340,22 +344,22 @@ tenacity==8.5.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
-termcolor==2.5.0
+termcolor==3.1.0
     # via pytest-sugar
 typer==0.16.1
     # via
     #   -c requirements/_base.txt
     #   fastapi-cli
     #   fastapi-cloud-cli
-types-aiofiles==24.1.0.20241221
+types-aiofiles==24.1.0.20250822
     # via -r requirements/_test.in
-types-jsonschema==4.23.0.20241208
+types-jsonschema==4.25.1.20250822
     # via -r requirements/_test.in
-types-openpyxl==3.1.5.20241225
+types-openpyxl==3.1.5.20250919
     # via -r requirements/_test.in
-types-passlib==1.7.7.20241221
+types-passlib==1.7.7.20250602
     # via -r requirements/_test.in
-types-pyyaml==6.0.12.20241230
+types-pyyaml==6.0.12.20250915
     # via -r requirements/_test.in
 typing-extensions==4.14.1
     # via
@@ -368,7 +372,6 @@ typing-extensions==4.14.1
     #   pydantic-core
     #   rich-toolkit
     #   sqlalchemy2-stubs
-    #   starlette
     #   typer
     #   typing-inspection
 typing-inspection==0.4.1
@@ -382,7 +385,7 @@ urllib3==2.5.0
     #   docker
     #   requests
     #   sentry-sdk
-uvicorn==0.34.2
+uvicorn==0.37.0
     # via
     #   fastapi
     #   fastapi-cli
@@ -391,9 +394,9 @@ uvloop==0.21.0
     # via
     #   -c requirements/_base.txt
     #   uvicorn
-watchfiles==1.0.4
+watchfiles==1.1.1
     # via uvicorn
-websockets==15.0
+websockets==15.0.1
     # via
     #   -r requirements/_test.in
     #   uvicorn
@@ -401,4 +404,3 @@ yarl==1.20.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
-    #   referencing

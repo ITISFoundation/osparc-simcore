@@ -287,4 +287,8 @@ async def test_delete_job_assets_endpoint(
     assert storage_rest["delete_project_s3_assets"].called
 
     webserver_rpc = mocked_backend_services_apis_for_delete_job_assets["webserver_rpc"]
-    assert webserver_rpc["mark_project_as_job"].called
+    assert webserver_rpc["mocked_rabbit_rpc_client"].request.called
+    assert webserver_rpc["mocked_rabbit_rpc_client"].request.call_args.args == (
+        "wb-api-server",
+        "mark_project_as_job",
+    )

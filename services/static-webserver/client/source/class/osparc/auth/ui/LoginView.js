@@ -73,23 +73,27 @@ qx.Class.define("osparc.auth.ui.LoginView", {
       const email = new qx.ui.form.TextField().set({
         required: true
       });
-      email.getContentElement().setAttribute("autocomplete", "username");
+      email.getContentElement().setAttribute("autocomplete", "userName");
       osparc.utils.Utils.setIdToWidget(email, "loginUserEmailFld");
-      this._form.add(email, " Your email address", qx.util.Validate.email(), "email");
-      this.addListener("appear", () => {
+      this._form.add(email, " Email", qx.util.Validate.email(), "email");
+      const focusEmail = () => {
         email.focus();
         email.activate();
-      });
+      };
+      this.addListener("appear", () => {
+        focusEmail();
+        setTimeout(() => focusEmail(), 100); // refocus
+      }, this);
 
       const pass = new osparc.ui.form.PasswordField().set({
         required: true
       });
       pass.getChildControl("passwordField").getContentElement().setAttribute("autocomplete", "current-password");
       osparc.utils.Utils.setIdToWidget(pass.getChildControl("passwordField"), "loginPasswordFld");
-      this._form.add(pass, " Your password", null, "password");
+      this._form.add(pass, " Password", null, "password");
 
       this.beautifyFormFields();
-      const formRenderer = new qx.ui.form.renderer.SinglePlaceholder(this._form);
+      const formRenderer = new osparc.ui.form.renderer.LoginSinglePlaceholder(this._form);
       this.add(formRenderer);
 
       // buttons

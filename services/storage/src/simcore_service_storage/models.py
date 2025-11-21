@@ -2,7 +2,7 @@ import datetime
 import urllib.parse
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Annotated, Any, Literal, NamedTuple, TypeAlias
+from typing import Annotated, Any, Literal, NamedTuple, Self, TypeAlias
 from uuid import UUID
 
 import arrow
@@ -48,8 +48,7 @@ from pydantic import (
 )
 
 
-class DatasetMetaData(DatasetMetaDataGet):
-    ...
+class DatasetMetaData(DatasetMetaDataGet): ...
 
 
 def is_uuid(value: str) -> bool:
@@ -129,7 +128,7 @@ class FileMetaData(FileMetaDataGet):
         location_name: LocationName,
         sha256_checksum: SHA256Str | None,
         **file_meta_data_kwargs,
-    ):
+    ) -> Self:
         parts = file_id.split("/")
         now = arrow.utcnow().datetime
         fmd_kwargs = {
@@ -395,9 +394,11 @@ class PathMetaData(BaseModel):
             node_id=dir_fmd.node_id,
             created_at=dir_fmd.created_at,
             last_modified=dir_fmd.last_modified,
-            file_meta_data=None
-            if isinstance(s3_object, S3DirectoryMetaData)
-            else FileMetaData.from_s3_object_in_dir(s3_object, dir_fmd),
+            file_meta_data=(
+                None
+                if isinstance(s3_object, S3DirectoryMetaData)
+                else FileMetaData.from_s3_object_in_dir(s3_object, dir_fmd)
+            ),
         )
 
     def to_api_model(self) -> PathMetaDataGet:

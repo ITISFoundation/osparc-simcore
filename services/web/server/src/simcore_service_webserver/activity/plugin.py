@@ -1,15 +1,15 @@
 import logging
 
 from aiohttp import web
-from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
+from ..application_setup import ModuleCategory, app_setup_func
 from . import _handlers
 from .settings import get_plugin_settings
 
 _logger = logging.getLogger(__name__)
 
 
-@app_module_setup(
+@app_setup_func(
     "simcore_service_webserver.activity",
     category=ModuleCategory.ADDON,
     settings_name="WEBSERVER_ACTIVITY",

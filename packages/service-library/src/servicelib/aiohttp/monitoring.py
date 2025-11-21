@@ -20,6 +20,7 @@ from ..logging_utils import log_catch
 from ..prometheus_metrics import (
     PrometheusMetrics,
     get_prometheus_metrics,
+    record_asyncio_event_looop_metrics,
     record_request_metrics,
     record_response_metrics,
 )
@@ -27,20 +28,21 @@ from .typing_extension import Handler
 
 _logger = logging.getLogger(__name__)
 
-_PROMETHEUS_METRICS: Final[str] = f"{__name__}.prometheus_metrics"  # noqa: N816
+PROMETHEUS_METRICS_APPKEY: Final = web.AppKey("PROMETHEUS_METRICS", PrometheusMetrics)
+MONITORING_NAMESPACE_APPKEY: Final = web.AppKey("APP_MONITORING_NAMESPACE_KEY", str)
 
 
 def get_collector_registry(app: web.Application) -> CollectorRegistry:
-    metrics = app[_PROMETHEUS_METRICS]
-    assert isinstance(metrics, PrometheusMetrics)  # nosec
+    metrics = app[PROMETHEUS_METRICS_APPKEY]
     return metrics.registry
 
 
 async def metrics_handler(request: web.Request):
-    registry = get_collector_registry(request.app)
+    metrics = request.app[PROMETHEUS_METRICS_APPKEY]
+    await record_asyncio_event_looop_metrics(metrics)
 
     # NOTE: Cannot use ProcessPoolExecutor because registry is not pickable
-    result = await request.loop.run_in_executor(None, generate_latest, registry)
+    result = await request.loop.run_in_executor(None, generate_latest, metrics.registry)
     response = web.Response(body=result)
     response.content_type = CONTENT_TYPE_LATEST
     return response
@@ -70,7 +72,7 @@ def middleware_factory(
                 with log_catch(logger=_logger, reraise=False):
                     await enter_middleware_cb(request)
 
-            metrics = request.app[_PROMETHEUS_METRICS]
+            metrics = request.app[PROMETHEUS_METRICS_APPKEY]
             assert isinstance(metrics, PrometheusMetrics)  # nosec
 
             user_agent = request.headers.get(
@@ -129,7 +131,7 @@ def setup_monitoring(
     enter_middleware_cb: EnterMiddlewareCB | None = None,
     exit_middleware_cb: ExitMiddlewareCB | None = None,
 ):
-    app[_PROMETHEUS_METRICS] = get_prometheus_metrics()
+    app[PROMETHEUS_METRICS_APPKEY] = get_prometheus_metrics()
 
     # WARNING: ensure ERROR middleware is over this one
     #

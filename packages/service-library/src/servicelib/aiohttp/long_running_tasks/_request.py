@@ -1,10 +1,10 @@
-from typing import Any
+from typing import Any, Final
 
 from aiohttp import web
 
-from ._constants import RQT_LONG_RUNNING_TASKS_CONTEXT_KEY
+LONG_RUNNING_TASKS_CONTEXT_REQKEY: Final = f"{__name__}.long_running_tasks.context"
 
 
 def get_task_context(request: web.Request) -> dict[str, Any]:
-    output: dict[str, Any] = request[RQT_LONG_RUNNING_TASKS_CONTEXT_KEY]
-    return output
+    ctx: dict[str, Any] = request[LONG_RUNNING_TASKS_CONTEXT_REQKEY]
+    return ctx

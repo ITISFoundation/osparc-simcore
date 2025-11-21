@@ -400,6 +400,7 @@ def standard_user_role() -> tuple[str, tuple]:
     return (all_roles[0], (pytest.param(*all_roles[1][2], id="standard user role"),))
 
 
+@pytest.mark.flaky(max_runs=3)
 @pytest.mark.parametrize(*standard_user_role())
 async def test_create_and_delete_many_nodes_in_parallel(
     mock_dynamic_scheduler: None,

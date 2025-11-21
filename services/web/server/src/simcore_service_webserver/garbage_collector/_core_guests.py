@@ -8,7 +8,6 @@ from models_library.projects import ProjectID
 from models_library.users import UserID, UserNameID
 from redis.asyncio import Redis
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
-from simcore_postgres_database.aiopg_errors import DatabaseError
 from simcore_postgres_database.models.users import UserRole
 
 from ..projects._projects_repository_legacy import ProjectDBAPI
@@ -162,7 +161,6 @@ async def remove_guest_user_with_all_its_resources(
         await users_service.delete_user_without_projects(app, user_id=user_id)
 
     except (
-        DatabaseError,
         asyncpg.exceptions.PostgresError,
         ProjectNotFoundError,
         UserNotFoundError,

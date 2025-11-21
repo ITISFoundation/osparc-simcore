@@ -154,7 +154,7 @@ async def list_services(
         services_owner_emails,
     ) = await asyncio.gather(
         cached_registry_services(),
-        services_repo.batch_get_services_access_rights(
+        services_repo.batch_get_services_access_rights_or_none(
             key_versions=services_in_db,
             product_name=x_simcore_products_name,
         ),
@@ -162,6 +162,8 @@ async def list_services(
             {s.owner for s in services_in_db.values() if s.owner}
         ),
     )
+
+    services_access_rights = services_access_rights or {}
 
     # NOTE: for the details of the services:
     # 1. we get all the services from the director-v0 (TODO: move the registry to the catalog)
@@ -176,7 +178,7 @@ async def list_services(
                 _compose_service_details,
                 s,
                 services_in_db[s["key"], s["version"]],
-                services_access_rights[s["key"], s["version"]],
+                services_access_rights.get((s["key"], s["version"])) or [],
                 services_owner_emails.get(
                     services_in_db[s["key"], s["version"]].owner or 0
                 ),

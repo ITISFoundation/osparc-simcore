@@ -6,7 +6,7 @@ qx.Theme.define("osparc.theme.ColorLight", {
     "c00": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 0),
     "c01": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 0+5),
     "c02": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 0+10),
-    "c03": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 0+20),
+    "c03": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 0+17),
     "c04": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 0+25),
     "c05": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 0+35),
     "c06": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 0+50),
@@ -34,7 +34,7 @@ qx.Theme.define("osparc.theme.ColorLight", {
 
     "navigation_bar_background_color": "rgba(229, 229, 229, 0.8)",
     "fab_text": "contrasted-text-dark",
-    "fab-background": "rgba(255, 255, 255, 0.2)",
+    "fab-background": "rgba(0, 0, 0, 0.2)",
     "input_background": "rgba(209, 214, 218, 1)",
     "input_background_disable": "rgba(113, 157, 181, 0.04)",
     "hint-background": "rgba(201, 201, 201, 1)",
@@ -59,7 +59,7 @@ qx.Theme.define("osparc.theme.ColorLight", {
     "shadow": qx.core.Environment.get("css.rgba") ? "a-bit-transparent" : "bg-shadow",
 
     // window
-    "window-popup-background": "rgba(225, 225, 225, 1)",
+    "window-popup-background": "background-main-1",
     "window-caption-background": "background-main",
     "window-caption-background-active": "background-main-3",
     "window-caption-text": "text",
@@ -136,8 +136,6 @@ qx.Theme.define("osparc.theme.ColorLight", {
 
 
     // OSPARC
-    "workbench-edge-comp-active": "#888888",
-    "workbench-edge-api-active": "#444444",
     "workbench-start-hint": "#AFAFAF",
     "workbench-view-navbar": "c02",
     "workbench-view-splitter": "background-main-3",

@@ -481,7 +481,7 @@ def check_scheduler_is_still_the_same(
         )
 
 
-def check_communication_with_scheduler_is_open(client: distributed.Client):
+def check_communication_with_scheduler_is_open(client: distributed.Client) -> None:
     if (
         client.scheduler_comm
         and client.scheduler_comm.comm is not None
@@ -490,12 +490,9 @@ def check_communication_with_scheduler_is_open(client: distributed.Client):
         raise ComputationalBackendNotConnectedError
 
 
-def check_scheduler_status(client: distributed.Client):
+def check_scheduler_status(client: distributed.Client) -> None:
     client_status = client.status
     if client_status not in "running":
-        _logger.error(
-            "The computational backend is not connected!",
-        )
         raise ComputationalBackendNotConnectedError
 
 
@@ -504,7 +501,7 @@ def _can_task_run_on_worker(
 ) -> bool:
     def gen_check(
         task_resources: dict[str, Any], worker_resources: dict[str, Any]
-    ) -> Generator[bool, None, None]:
+    ) -> Generator[bool]:
         for name, required_value in task_resources.items():
             if required_value is None:
                 yield True

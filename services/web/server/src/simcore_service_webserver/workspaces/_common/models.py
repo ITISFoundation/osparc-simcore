@@ -16,7 +16,7 @@ from models_library.users import UserID
 from models_library.utils.common_validators import empty_str_to_none_pre_validator
 from models_library.workspaces import WorkspaceID
 from pydantic import BaseModel, BeforeValidator, ConfigDict, Field
-from servicelib.request_keys import RQT_USERID_KEY
+from servicelib.aiohttp.request_keys import RQT_USERID_KEY
 
 from ...constants import RQ_PRODUCT_KEY
 
@@ -32,15 +32,15 @@ class WorkspacesPathParams(StrictRequestParameters):
     workspace_id: WorkspaceID
 
 
-_WorkspacesListOrderQueryParams: type[
-    RequestParameters
-] = create_ordering_query_model_class(
-    ordering_fields={
-        "modified_at",
-        "name",
-    },
-    default=OrderBy(field=IDStr("modified_at"), direction=OrderDirection.DESC),
-    ordering_fields_api_to_column_map={"modified_at": "modified"},
+_WorkspacesListOrderQueryParams: type[RequestParameters] = (
+    create_ordering_query_model_class(
+        ordering_fields={
+            "modified_at",
+            "name",
+        },
+        default=OrderBy(field=IDStr("modified_at"), direction=OrderDirection.DESC),
+        ordering_fields_api_to_column_map={"modified_at": "modified"},
+    )
 )
 
 
@@ -49,13 +49,13 @@ class WorkspacesFilters(Filters):
         default=False,
         description="Set to true to list trashed, false to list non-trashed (default), None to list all",
     )
-    text: Annotated[
-        str | None, BeforeValidator(empty_str_to_none_pre_validator)
-    ] = Field(
-        default=None,
-        description="Multi column full text search",
-        max_length=100,
-        examples=["My Workspace"],
+    text: Annotated[str | None, BeforeValidator(empty_str_to_none_pre_validator)] = (
+        Field(
+            default=None,
+            description="Multi column full text search",
+            max_length=100,
+            examples=["My Workspace"],
+        )
     )
 
 
@@ -63,8 +63,7 @@ class WorkspacesListQueryParams(
     PageQueryParameters,
     FiltersQueryParameters[WorkspacesFilters],
     _WorkspacesListOrderQueryParams,  # type: ignore[misc, valid-type]
-):
-    ...
+): ...
 
 
 class WorkspacesGroupsPathParams(BaseModel):
@@ -80,5 +79,4 @@ class WorkspacesGroupsBodyParams(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-class WorkspaceTrashQueryParams(RemoveQueryParams):
-    ...
+class WorkspaceTrashQueryParams(RemoveQueryParams): ...

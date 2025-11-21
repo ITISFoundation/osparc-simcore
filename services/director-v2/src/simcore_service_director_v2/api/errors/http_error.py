@@ -1,9 +1,9 @@
 import logging
 from collections.abc import Awaitable, Callable
 
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from fastapi import HTTPException
 from fastapi.encoders import jsonable_encoder
-from servicelib.logging_errors import create_troubleshootting_log_kwargs
 from servicelib.status_codes_utils import is_5xx_server_error
 from starlette.requests import Request
 from starlette.responses import JSONResponse
@@ -34,7 +34,7 @@ def make_http_error_handler_for_exception(
 
         if is_5xx_server_error(status_code):
             _logger.exception(
-                **create_troubleshootting_log_kwargs(
+                **create_troubleshooting_log_kwargs(
                     f"HTTP error handler caught an {exception_cls.__name__} exception and responds with {status_code} status code",
                     error=exc,
                     error_context={"request": request, "status_code": status_code},

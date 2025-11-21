@@ -107,16 +107,19 @@ def app_products(expected_product_name: ProductName) -> OrderedDict[str, Product
     pp["tis"] = Product(
         name="tis",
         host_regex="tis",
+        base_url="https://tip.io",
         **column_defaults,
     )
     pp["osparc"] = Product(
         name="osparc",
         host_regex="osparc",
+        base_url="https://osparc.io",
         **column_defaults,
     )
     pp["s4l"] = Product(
         name="s4l",
         host_regex="s4l",
+        base_url="https://s4l.io",
         **column_defaults,
     )
 
@@ -272,7 +275,7 @@ def get_active_user_or_none_dbmock(
     basic_db_funs_mocked: None, mocker: MockerFixture
 ) -> MagicMock:
     return mocker.patch(
-        "simcore_service_webserver.security._authz_policy.get_active_user_or_none",
+        "simcore_service_webserver.security._authz_policy._authz_repository.get_active_user_or_none",
         autospec=True,
         return_value={"email": "foo@email.com", "id": 1, "role": UserRole.ADMIN},
     )
@@ -283,7 +286,7 @@ def is_user_in_product_name_dbmock(
     basic_db_funs_mocked: None, mocker: MockerFixture
 ) -> MagicMock:
     return mocker.patch(
-        "simcore_service_webserver.security._authz_policy.is_user_in_product_name",
+        "simcore_service_webserver.security._authz_policy._authz_repository.is_user_in_product_name",
         autospec=True,
         return_value=True,
     )

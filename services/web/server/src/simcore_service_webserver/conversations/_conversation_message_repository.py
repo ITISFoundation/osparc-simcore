@@ -24,7 +24,10 @@ from sqlalchemy.ext.asyncio import AsyncConnection
 from sqlalchemy.sql import select
 
 from ..db.plugin import get_asyncpg_engine
-from .errors import ConversationMessageErrorNotFoundError
+from .errors import (
+    ConversationErrorNotFoundError,
+    ConversationMessageErrorNotFoundError,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -56,7 +59,10 @@ async def create(
             )
             .returning(*_SELECTION_ARGS)
         )
-        row = result.one()
+        row = result.one_or_none()
+        if row is None:
+            raise ConversationErrorNotFoundError(conversation_id=conversation_id)
+
         return ConversationMessageGetDB.model_validate(row)
 
 
@@ -95,7 +101,7 @@ async def list_(
         )
     list_query = list_query.offset(offset).limit(limit)
 
-    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
+    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         total_count = await conn.scalar(count_query)
 
         result = await conn.stream(list_query)

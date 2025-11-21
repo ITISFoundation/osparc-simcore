@@ -22,6 +22,7 @@ from uuid import uuid4
 
 from aiohttp import web
 from common_library.json_serialization import json_dumps
+from common_library.logging.logging_base import get_log_record_extra
 from models_library.api_schemas_clusters_keeper.ec2_instances import EC2InstanceTypeGet
 from models_library.api_schemas_directorv2.dynamic_services import (
     DynamicServiceGet,
@@ -61,6 +62,10 @@ from models_library.projects_state import (
     ProjectStatus,
     RunningState,
 )
+from models_library.rabbitmq_messages import (
+    WebserverInternalEventRabbitMessage,
+    WebserverInternalEventRabbitMessageAction,
+)
 from models_library.resource_tracker import (
     HardwareInfo,
     PricingAndHardwareInfoTuple,
@@ -78,13 +83,16 @@ from models_library.utils.fastapi_encoders import jsonable_encoder
 from models_library.wallets import ZERO_CREDITS, WalletID, WalletInfo
 from models_library.workspaces import UserWorkspaceWithAccessRights
 from pydantic import ByteSize, PositiveInt, TypeAdapter
-from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.common_headers import (
     UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
     X_FORWARDED_PROTO,
     X_SIMCORE_USER_AGENT,
 )
-from servicelib.logging_utils import get_log_record_extra, log_context
+from servicelib.docker_utils import (
+    DYNAMIC_SIDECAR_MIN_CPUS,
+    estimate_dynamic_sidecar_resources_from_ec2_instance,
+)
+from servicelib.logging_utils import log_context
 from servicelib.rabbitmq import RemoteMethodNotRegisteredError, RPCServerError
 from servicelib.rabbitmq.rpc_interfaces.catalog import services as catalog_rpc
 from servicelib.rabbitmq.rpc_interfaces.clusters_keeper.ec2_instances import (
@@ -111,15 +119,18 @@ from simcore_postgres_database.webserver_models import ProjectType
 
 from ..application_settings import get_application_settings
 from ..catalog import catalog_service
+from ..constants import APP_FIRE_AND_FORGET_TASKS_KEY
 from ..director_v2 import director_v2_service
 from ..dynamic_scheduler import api as dynamic_scheduler_service
 from ..models import ClientSessionID
 from ..products import products_web
-from ..rabbitmq import get_rabbitmq_rpc_client
+from ..rabbitmq import get_rabbitmq_client, get_rabbitmq_rpc_client
 from ..redis import get_redis_lock_manager_client_sdk
 from ..resource_manager.models import UserSession
+from ..resource_manager.registry import get_registry
 from ..resource_manager.user_sessions import (
     PROJECT_ID_KEY,
+    SOCKET_ID_FIELDNAME,
     managed_resource,
 )
 from ..resource_usage import service as rut_api
@@ -154,7 +165,7 @@ from ._access_rights_service import (
 )
 from ._nodes_utils import set_reservation_same_as_limit, validate_new_service_resources
 from ._project_document_service import create_project_document_and_increment_version
-from ._projects_repository_legacy import APP_PROJECT_DBAPI, ProjectDBAPI
+from ._projects_repository_legacy import PROJECT_DBAPI_APPKEY, ProjectDBAPI
 from ._projects_repository_legacy_utils import PermissionStr
 from ._socketio_service import notify_project_document_updated
 from .exceptions import (
@@ -181,6 +192,67 @@ from .settings import ProjectsSettings, get_plugin_settings
 from .utils import extract_dns_without_default_port
 
 _logger = logging.getLogger(__name__)
+
+
+async def _publish_unsubscribe_from_project_logs_event(
+    app: web.Application, project_id: ProjectID, user_id: UserID
+) -> None:
+    """Publishes an unsubscribe event for project logs to all webserver replicas."""
+    rabbitmq_client = get_rabbitmq_client(app)
+    message = WebserverInternalEventRabbitMessage(
+        action=WebserverInternalEventRabbitMessageAction.UNSUBSCRIBE_FROM_PROJECT_LOGS_RABBIT_QUEUE,
+        data={"project_id": f"{project_id}"},
+    )
+    _logger.debug(
+        "No active socket connections detected for project %s by user %s. Sending unsubscribe event to all replicas.",
+        project_id,
+        user_id,
+    )
+    await rabbitmq_client.publish(message.channel_name, message)
+
+
+async def conditionally_unsubscribe_project_logs_across_replicas(
+    app: web.Application, project_id: ProjectID, user_id: UserID
+) -> None:
+    """
+    Unsubscribes from project logs only if no active socket connections remain for the project (across all users).
+
+    This function checks for actual socket connections rather than just user sessions,
+    ensuring logs are only unsubscribed when truly no users are connected. When no active
+    connections are detected, an unsubscribe event is sent via RabbitMQ to all webserver
+    replicas to coordinate the unsubscription across the entire cluster.
+
+    Note: With multiple webserver replicas, this ensures we don't unsubscribe until
+    the last socket is closed. However, another replica may still maintain an active
+    subscription even if no users are connected to it, as the RabbitMQ event ensures
+    all replicas receive the unsubscription notification.
+
+    Args:
+        app: The web application instance
+        project_id: The project ID to check for active connections
+        user_id: User ID to use for the resource session management
+    """
+    redis_resource_registry = get_registry(app)
+    with managed_resource(user_id, None, app) as user_session:
+        all_user_sessions_with_project = await user_session.find_users_of_resource(
+            app, key=PROJECT_ID_KEY, value=f"{project_id}"
+        )
+
+        # Check for each user session if it has an active socket_id
+        actually_used_sockets_on_project = 0
+        for user_session_key in all_user_sessions_with_project:
+            output = await redis_resource_registry.find_resources(
+                key=user_session_key, resource_name=SOCKET_ID_FIELDNAME
+            )
+            if output:
+                actually_used_sockets_on_project += 1
+
+        # Only unsubscribe from logs if there are no active socket connections to the project.
+        # NOTE: With multiple webserver replicas, this ensures we don't unsubscribe until
+        # the last socket is closed, though another replica may still maintain an active
+        # subscription even if no users are connected to it.
+        if actually_used_sockets_on_project == 0:
+            await _publish_unsubscribe_from_project_logs_event(app, project_id, user_id)
 
 
 async def patch_project_and_notify_users(
@@ -313,7 +385,7 @@ async def get_project_for_user(
 async def get_project_type(
     app: web.Application, project_uuid: ProjectID
 ) -> ProjectType:
-    db_legacy: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+    db_legacy: ProjectDBAPI = app[PROJECT_DBAPI_APPKEY]
     assert db_legacy  # nosec
     return await db_legacy.get_project_type(project_uuid)
 
@@ -321,7 +393,7 @@ async def get_project_type(
 async def get_project_dict_legacy(
     app: web.Application, project_uuid: ProjectID
 ) -> ProjectDict:
-    db_legacy: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+    db_legacy: ProjectDBAPI = app[PROJECT_DBAPI_APPKEY]
     assert db_legacy  # nosec
     project, _ = await db_legacy.get_project_dict_and_type(
         f"{project_uuid}",
@@ -381,7 +453,7 @@ async def patch_project_for_user(
     # preventing redundant updates in the originating session.
 
     patch_project_data = project_patch.to_domain_model()
-    db_legacy: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+    db_legacy: ProjectDBAPI = app[PROJECT_DBAPI_APPKEY]
 
     # 1. Get project
     project_db = await db_legacy.get_project_db(project_uuid=project_uuid)
@@ -584,12 +656,12 @@ async def update_project_node_resources_from_hardware_info(
             app, user_id, project_id, node_id, service_key, service_version
         )
         scalable_service_name = DEFAULT_SINGLE_SERVICE_NAME
-        new_cpus_value = float(selected_ec2_instance_type.cpus) - _CPUS_SAFE_MARGIN
-        new_ram_value = int(
-            selected_ec2_instance_type.ram
-            - _MACHINE_TOTAL_RAM_SAFE_MARGIN_RATIO * selected_ec2_instance_type.ram
-            - _SIDECARS_OPS_SAFE_RAM_MARGIN
+        new_cpus_value, new_ram_value = (
+            estimate_dynamic_sidecar_resources_from_ec2_instance(
+                selected_ec2_instance_type.cpus, selected_ec2_instance_type.ram
+            )
         )
+
         if DEFAULT_SINGLE_SERVICE_NAME not in node_resources:
             # NOTE: we go for the largest sub-service and scale it up/down
             scalable_service_name, hungry_service_resources = max(
@@ -612,17 +684,14 @@ async def update_project_node_resources_from_hardware_info(
                         }
                     )
             new_cpus_value = max(
-                float(selected_ec2_instance_type.cpus)
-                - _CPUS_SAFE_MARGIN
-                - other_services_resources["CPU"],
-                _MIN_NUM_CPUS,
+                new_cpus_value - other_services_resources["CPU"],
+                DYNAMIC_SIDECAR_MIN_CPUS,
             )
-            new_ram_value = int(
-                selected_ec2_instance_type.ram
-                - _MACHINE_TOTAL_RAM_SAFE_MARGIN_RATIO * selected_ec2_instance_type.ram
-                - other_services_resources["RAM"]
-                - _SIDECARS_OPS_SAFE_RAM_MARGIN
+
+            new_ram_value = max(
+                int(new_ram_value - other_services_resources["RAM"]), 128 * 1024 * 1024
             )
+
         # scale the service
         node_resources[scalable_service_name].resources["CPU"].set_value(new_cpus_value)
         node_resources[scalable_service_name].resources["RAM"].set_value(new_ram_value)
@@ -749,6 +818,13 @@ async def _start_dynamic_service(  # pylint: disable=too-many-statements  # noqa
         save_state = await has_user_project_access_rights(
             request.app, project_id=project_uuid, user_id=user_id, permission="write"
         )
+    if (
+        user_role == UserRole.GUEST
+        and await _projects_repository.allows_guests_to_push_states_and_output_ports(
+            request.app, project_uuid=f"{project_uuid}"
+        )
+    ):
+        save_state = True
 
     @exclusive(
         get_redis_lock_manager_client_sdk(request.app),
@@ -1107,7 +1183,7 @@ async def delete_project_node(
     )
 
     # remove the node from the db
-    db_legacy: ProjectDBAPI = request.app[APP_PROJECT_DBAPI]
+    db_legacy: ProjectDBAPI = request.app[PROJECT_DBAPI_APPKEY]
     assert db_legacy  # nosec
     await db_legacy.remove_project_node(
         user_id, project_uuid, NodeID(node_uuid), client_session_id=client_session_id
@@ -1128,7 +1204,7 @@ async def update_project_linked_product(
     with log_context(
         _logger, level=logging.DEBUG, msg="updating project linked product"
     ):
-        db_legacy: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+        db_legacy: ProjectDBAPI = app[PROJECT_DBAPI_APPKEY]
         await db_legacy.upsert_project_linked_product(project_id, product_name)
 
 
@@ -1182,7 +1258,7 @@ async def update_project_node_state(
 
 
 async def is_project_hidden(app: web.Application, project_id: ProjectID) -> bool:
-    db_legacy: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+    db_legacy: ProjectDBAPI = app[PROJECT_DBAPI_APPKEY]
     return await db_legacy.is_hidden(project_id)
 
 
@@ -1351,7 +1427,7 @@ async def list_node_ids_in_project(
     project_uuid: ProjectID,
 ) -> set[NodeID]:
     """Returns a set with all the node_ids from a project's workbench"""
-    db_legacy: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+    db_legacy: ProjectDBAPI = app[PROJECT_DBAPI_APPKEY]
     return await db_legacy.list_node_ids_in_project(project_uuid)
 
 
@@ -1360,7 +1436,7 @@ async def is_node_id_present_in_any_project_workbench(
     node_id: NodeID,
 ) -> bool:
     """If the node_id is presnet in one of the projects' workbenche returns True"""
-    db_legacy: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+    db_legacy: ProjectDBAPI = app[PROJECT_DBAPI_APPKEY]
     return await db_legacy.node_id_exists(node_id)
 
 
@@ -1528,7 +1604,7 @@ async def _leave_project_room(
         sio = get_socket_server(app)
         await sio.leave_room(socket_id, SocketIORoomStr.from_project_id(project_uuid))
     else:
-        _logger.error(
+        _logger.warning(
             "User %s/%s has no socket_id, cannot leave project room %s",
             user_id,
             client_session_id,
@@ -1745,6 +1821,10 @@ async def close_project_for_user(
             include_state=True,
         )
         await notify_project_state_update(app, project)
+
+    await conditionally_unsubscribe_project_logs_across_replicas(
+        app, project_uuid, user_id
+    )
 
 
 async def _get_project_share_state(

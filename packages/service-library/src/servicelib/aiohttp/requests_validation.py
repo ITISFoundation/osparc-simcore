@@ -10,7 +10,7 @@ but adapted to parse&validate path, query and body of an aiohttp's request
 import json.decoder
 from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import TypeVar
+from typing import Final, TypeVar
 
 from aiohttp import web
 from common_library.user_messages import user_message
@@ -22,6 +22,10 @@ from . import status
 
 ModelClass = TypeVar("ModelClass", bound=BaseModel)
 ModelOrListOrDictType = TypeVar("ModelOrListOrDictType", bound=BaseModel | list | dict)
+
+APP_JSON_SCHEMA_SPECS_KEY: Final = web.AppKey(
+    "APP_JSON_SCHEMA_SPECS_KEY", dict[str, object]
+)
 
 
 @contextmanager
@@ -190,7 +194,7 @@ async def parse_request_body_as(
             # NOTE: model_schema can be 'list[T]' or 'dict[T]' which raise TypeError
             # with issubclass(model_schema, BaseModel)
             assert issubclass(model_schema_cls, BaseModel)  # nosec
-            return model_schema_cls.model_validate(body)  # type: ignore [return-value]
+            return model_schema_cls.model_validate(body)
 
         # used for model_schema like 'list[T]' or 'dict[T]'
         return TypeAdapter(model_schema_cls).validate_python(body)  # type: ignore[no-any-return]

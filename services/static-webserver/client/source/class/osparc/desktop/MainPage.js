@@ -47,11 +47,17 @@ qx.Class.define("osparc.desktop.MainPage", {
 
     this._add(osparc.notification.RibbonNotifications.getInstance());
 
+    const navBarPromises = [];
     const navBar = this.__navBar = new osparc.navigation.NavigationBar();
-    navBar.populateLayout();
     navBar.addListener("backToDashboardPressed", () => this.__backToDashboardPressed(), this);
     navBar.addListener("openLogger", () => this.__openLogger(), this);
     this._add(navBar);
+    navBarPromises.push(osparc.store.Groups.getInstance().fetchGroups());
+    navBarPromises.push(osparc.store.PollTasks.getInstance().fetchTasks());
+    navBarPromises.push(osparc.store.Jobs.getInstance().fetchJobsLatest());
+    navBarPromises.push(osparc.store.ConversationsSupport.getInstance().fetchConversations());
+    Promise.all(navBarPromises)
+      .finally(() => navBar.populateLayout());
 
     // Some resources request before building the main stack
     osparc.MaintenanceTracker.getInstance().startTracker();
@@ -60,16 +66,14 @@ qx.Class.define("osparc.desktop.MainPage", {
 
     const store = osparc.store.Store.getInstance();
     const preloadPromises = [];
-    const walletsEnabled = osparc.desktop.credits.Utils.areWalletsEnabled();
+    const walletsEnabled = osparc.store.StaticInfo.isBillableProduct();
     if (walletsEnabled) {
-      preloadPromises.push(store.reloadCreditPrice());
-      preloadPromises.push(store.reloadWallets());
+      preloadPromises.push(store.fetchCreditPrice());
+      preloadPromises.push(store.fetchWallets());
     }
     preloadPromises.push(store.getAllClassifiers(true));
     preloadPromises.push(osparc.store.Tags.getInstance().fetchTags());
     preloadPromises.push(osparc.store.Products.getInstance().fetchUiConfig());
-    preloadPromises.push(osparc.store.PollTasks.getInstance().fetchTasks());
-    preloadPromises.push(osparc.store.Jobs.getInstance().fetchJobsLatest());
     preloadPromises.push(osparc.data.Permissions.getInstance().fetchPermissions());
     preloadPromises.push(osparc.data.Permissions.getInstance().fetchFunctionPermissions());
     Promise.all(preloadPromises)

@@ -11,8 +11,12 @@ import pytest_asyncio
 import sqlalchemy as sa
 from aiohttp import web
 from aiohttp.test_utils import TestServer
+from pytest_simcore.helpers.postgres_users import (
+    insert_and_get_user_and_secrets_lifespan,
+)
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.aiohttp.application import create_safe_application
+from simcore_postgres_database.models.users import UserRole
 from simcore_postgres_database.models.users_details import (
     users_pre_registration_details,
 )
@@ -57,7 +61,7 @@ def asyncpg_engine(
 @pytest.fixture
 async def pre_registration_details_db_cleanup(
     app: web.Application,
-) -> AsyncGenerator[None, None]:
+) -> AsyncGenerator[None]:
     """Fixture to clean up all pre-registration details after test"""
     yield
 
@@ -72,11 +76,6 @@ async def product_owner_user(
     asyncpg_engine: AsyncEngine,
 ) -> AsyncIterable[dict[str, Any]]:
     """A PO user in the database"""
-
-    from pytest_simcore.helpers.postgres_users import (
-        insert_and_get_user_and_secrets_lifespan,
-    )
-    from simcore_postgres_database.models.users import UserRole
 
     async with insert_and_get_user_and_secrets_lifespan(  # pylint:disable=contextmanager-generator-missing-cleanup
         asyncpg_engine,

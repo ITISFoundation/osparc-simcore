@@ -5,7 +5,7 @@ from pydantic import AliasChoices, Field
 from settings_library.base import BaseCustomSettings
 from settings_library.utils_service import MixinServiceSettings
 
-from ..constants import APP_SETTINGS_KEY
+from ..application_keys import APP_SETTINGS_APPKEY
 
 
 class DynamicSchedulerSettings(BaseCustomSettings, MixinServiceSettings):
@@ -42,7 +42,7 @@ class DynamicSchedulerSettings(BaseCustomSettings, MixinServiceSettings):
 
 
 def get_plugin_settings(app: web.Application) -> DynamicSchedulerSettings:
-    settings = app[APP_SETTINGS_KEY].WEBSERVER_DYNAMIC_SCHEDULER
+    settings = app[APP_SETTINGS_APPKEY].WEBSERVER_DYNAMIC_SCHEDULER
     assert settings, "setup_settings not called?"  # nosec
     assert isinstance(settings, DynamicSchedulerSettings)  # nosec
     return settings

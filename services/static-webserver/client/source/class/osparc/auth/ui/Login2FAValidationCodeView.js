@@ -80,7 +80,7 @@ qx.Class.define("osparc.auth.ui.Login2FAValidationCodeView", {
       });
 
       this.beautifyFormFields();
-      const formRenderer = new qx.ui.form.renderer.SinglePlaceholder(this._form);
+      const formRenderer = new osparc.ui.form.renderer.LoginSinglePlaceholder(this._form);
       this.add(formRenderer);
 
       // buttons
@@ -175,7 +175,7 @@ qx.Class.define("osparc.auth.ui.Login2FAValidationCodeView", {
       this.__validateCodeBtn.setFetching(true);
 
       const validationCodeTF = this._form.getItems()["validationCode"];
-      const validationCode = validationCodeTF.getValue();
+      const validationCode = validationCodeTF.getValue().trim();
 
       const loginFun = log => {
         this.__validateCodeBtn.setFetching(false);

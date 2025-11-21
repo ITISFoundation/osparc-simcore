@@ -4,26 +4,27 @@ SEE https://pypi.python.org/pypi/python-socketio
 SEE http://python-socketio.readthedocs.io/en/latest/
 """
 
-import contextlib
 import logging
 from typing import Any
 
 import socketio.exceptions  # type: ignore[import-untyped]
 from aiohttp import web
+from common_library.logging.logging_base import get_log_record_extra
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from models_library.api_schemas_webserver.socketio import SocketIORoomStr
 from models_library.products import ProductName
+from models_library.projects import ProjectID
 from models_library.socketio import SocketMessageDict
 from models_library.users import UserID
 from pydantic import TypeAdapter
 from servicelib.aiohttp.observer import emit
-from servicelib.logging_errors import create_troubleshootting_log_kwargs
-from servicelib.logging_utils import get_log_record_extra, log_context
-from servicelib.request_keys import RQT_USERID_KEY
+from servicelib.aiohttp.request_keys import RQT_USERID_KEY
+from servicelib.logging_utils import log_context
 
 from ..groups.api import list_user_groups_ids_with_read_access
 from ..login.decorators import login_required
 from ..products import products_web
-from ..resource_manager.user_sessions import managed_resource
+from ..resource_manager.user_sessions import PROJECT_ID_KEY, managed_resource
 from ._utils import EnvironDict, SocketID, get_socket_server, register_socketio_handler
 from .messages import SOCKET_IO_HEARTBEAT_EVENT, send_message_to_user
 
@@ -99,6 +100,21 @@ async def _set_user_in_group_rooms(
     await sio.enter_room(socket_id, SocketIORoomStr.from_user_id(user_id))
 
 
+async def _set_user_in_project_rooms(
+    app: web.Application, user_id: UserID, client_session_id: str, socket_id: SocketID
+) -> None:
+    """Adds user in project rooms in case he has any project open"""
+    project_ids = []
+    with managed_resource(user_id, client_session_id, app) as user_session:
+        project_ids = await user_session.find_all_resources_of_user(PROJECT_ID_KEY)
+
+    sio = get_socket_server(app)
+    for project_id in project_ids:
+        await sio.enter_room(
+            socket_id, SocketIORoomStr.from_project_id(ProjectID(project_id))
+        )
+
+
 #
 # socketio event handlers
 #
@@ -135,6 +151,7 @@ async def connect(
         )
 
         await _set_user_in_group_rooms(app, user_id, socket_id)
+        await _set_user_in_project_rooms(app, user_id, client_session_id, socket_id)
 
         _logger.debug("Sending set_heartbeat_emit_interval with %s", _EMIT_INTERVAL_S)
 
@@ -165,63 +182,58 @@ async def connect(
 @register_socketio_handler
 async def disconnect(socket_id: SocketID, app: web.Application) -> None:
     """socketio reserved handler for when the socket.io connection is disconnected."""
-    async with contextlib.AsyncExitStack() as stack:
-        # retrieve the socket session
-        try:
-            socketio_session = await stack.enter_async_context(
-                get_socket_server(app).session(socket_id)
-            )
+    try:
+        async with get_socket_server(app).session(socket_id) as socketio_session:
+            # if session is well formed, we can access its data
+            try:
+                user_id = socketio_session["user_id"]
+                client_session_id = socketio_session["client_session_id"]
+                product_name = socketio_session["product_name"]
 
-        except KeyError as err:
-            _logger.warning(
-                **create_troubleshootting_log_kwargs(
-                    f"Socket session {socket_id} not found during disconnect, already cleaned up",
-                    error=err,
-                    error_context={"socket_id": socket_id},
+            except KeyError as err:
+                _logger.exception(
+                    **create_troubleshooting_log_kwargs(
+                        f"Socket session {socket_id} does not have user_id or client_session_id during disconnect",
+                        error=err,
+                        error_context={
+                            "socket_id": socket_id,
+                            "socketio_session": socketio_session,
+                        },
+                        tip="Check if session is corrupted",
+                    )
                 )
+                return
+
+    except KeyError as err:
+        _logger.warning(
+            **create_troubleshooting_log_kwargs(
+                f"Socket session {socket_id} not found during disconnect, already cleaned up",
+                error=err,
+                error_context={"socket_id": socket_id},
             )
-            return
+        )
+        return
 
-        # session is wel formed, we can access its data
-        try:
-            user_id = socketio_session["user_id"]
-            client_session_id = socketio_session["client_session_id"]
-            product_name = socketio_session["product_name"]
+    # Notify disconnection to all replicas/plugins
+    with log_context(
+        _logger,
+        logging.INFO,
+        "disconnection of %s with %s",
+        f"{user_id=}",
+        f"{client_session_id=}",
+    ):
+        with managed_resource(user_id, client_session_id, app) as user_session:
+            await user_session.remove_socket_id()
 
-        except KeyError as err:
-            _logger.exception(
-                **create_troubleshootting_log_kwargs(
-                    f"Socket session {socket_id} does not have user_id or client_session_id during disconnect",
-                    error=err,
-                    error_context={
-                        "socket_id": socket_id,
-                        "socketio_session": socketio_session,
-                    },
-                    tip="Check if session is corrupted",
-                )
-            )
-            return
-
-        # Disconnecting
-        with log_context(
-            _logger,
-            logging.INFO,
-            "disconnection of %s with %s",
-            f"{user_id=}",
-            f"{client_session_id=}",
-        ):
-            with managed_resource(user_id, client_session_id, app) as user_session:
-                await user_session.remove_socket_id()
-
-            # signal same user other clients if available
-            await emit(
-                app,
-                "SIGNAL_USER_DISCONNECTED",
-                user_id,
-                client_session_id,
-                app,
-                product_name,
-            )
+        # signal same user other clients if available
+        await emit(
+            app,
+            "SIGNAL_USER_DISCONNECTED",
+            user_id,
+            client_session_id,
+            app,
+            product_name,
+        )
 
 
 @register_socketio_handler

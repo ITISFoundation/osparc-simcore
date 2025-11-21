@@ -24,7 +24,7 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
 
     this._setLayout(new qx.ui.layout.VBox(15));
 
-    if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
+    if (osparc.store.StaticInfo.isBillableProduct()) {
       this.__addCreditsIndicatorSettings();
     }
 
@@ -33,7 +33,7 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
       this.__addLowDiskSpaceSetting();
     }
 
-    if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
+    if (osparc.store.StaticInfo.isBillableProduct()) {
       this.__addInactivitySetting();
     }
 
@@ -46,7 +46,7 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
 
   members: {
     __addCreditsIndicatorSettings: function() {
-      const box = osparc.ui.window.TabbedView.createSectionBox(this.tr("Credits Indicator"));
+      const box = new osparc.widget.SectionBox(this.tr("Credits Indicator"));
 
       const form = new qx.ui.form.Form();
 
@@ -55,6 +55,7 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
       const walletIndicatorVisibilitySB = new qx.ui.form.SelectBox().set({
         allowGrowX: false
       });
+      walletIndicatorVisibilitySB.getChildControl("arrow").syncAppearance(); // force sync to show the arrow
       [{
         id: "always",
         label: "Always"
@@ -93,10 +94,9 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
     },
 
     __addInactivitySetting: function() {
-      const box = osparc.ui.window.TabbedView.createSectionBox(this.tr("Automatic Shutdown of Idle Instances"));
+      const box = new osparc.widget.SectionBox(this.tr("Automatic Shutdown of Idle Instances"));
 
-      const label = osparc.ui.window.TabbedView.createHelpLabel(this.tr("Enter 0 to disable this function"), "text-13-italic");
-      box.add(label);
+      box.addHelper(this.tr("Enter 0 to disable this function"));
 
       const form = new qx.ui.form.Form();
       const inactivitySpinner = new qx.ui.form.Spinner().set({
@@ -118,7 +118,7 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
     },
 
     __addJobConcurrencySetting: function() {
-      const box = osparc.ui.window.TabbedView.createSectionBox(this.tr("Job Concurrency"));
+      const box = new osparc.widget.SectionBox(this.tr("Job Concurrency"));
       const form = new qx.ui.form.Form();
       const jobConcurrencySpinner = new qx.ui.form.Spinner().set({
         minimum: 1,
@@ -136,9 +136,9 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
     },
 
     __addLowDiskSpaceSetting: function() {
-      const box = osparc.ui.window.TabbedView.createSectionBox(this.tr("Low Disk Space Threshold"));
-      const label = osparc.ui.window.TabbedView.createHelpLabel(this.tr("Set the warning Threshold for Low Disk Space availability"), "text-13-italic");
-      box.add(label);
+      const box = new osparc.widget.SectionBox(this.tr("Low Disk Space Threshold"));
+      box.addHelper(this.tr("Set the warning Threshold for Low Disk Space availability"));
+
       const form = new qx.ui.form.Form();
       const diskUsageSpinner = new qx.ui.form.Spinner().set({
         minimum: 1,
@@ -157,10 +157,8 @@ qx.Class.define("osparc.desktop.preferences.pages.GeneralPage", {
     },
 
     __addS4LUserPrivacySettings: function() {
-      const box = osparc.ui.window.TabbedView.createSectionBox("Privacy Settings");
-
-      const label = osparc.ui.window.TabbedView.createHelpLabel(this.tr("Help us improve Sim4Life user experience"), "text-13-italic");
-      box.add(label);
+      const box = new osparc.widget.SectionBox("Privacy Settings");
+      box.addHelper(this.tr("Help us improve Sim4Life user experience"));
 
       const preferencesSettings = osparc.Preferences.getInstance();
 

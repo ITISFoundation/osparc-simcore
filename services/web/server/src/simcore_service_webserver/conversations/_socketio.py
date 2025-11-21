@@ -106,7 +106,7 @@ async def _send_message_to_recipients(
         ...
 
 
-async def notify_conversation_created(
+async def notify_via_socket_conversation_created(
     app: web.Application,
     *,
     recipients: set[UserID],
@@ -126,7 +126,7 @@ async def notify_conversation_created(
     await _send_message_to_recipients(app, recipients, notification_message)
 
 
-async def notify_conversation_updated(
+async def notify_via_socket_conversation_updated(
     app: web.Application,
     *,
     recipients: set[UserID],
@@ -146,7 +146,7 @@ async def notify_conversation_updated(
     await _send_message_to_recipients(app, recipients, notification_message)
 
 
-async def notify_conversation_deleted(
+async def notify_via_socket_conversation_deleted(
     app: web.Application,
     *,
     recipients: set[UserID],
@@ -171,7 +171,7 @@ async def notify_conversation_deleted(
     await _send_message_to_recipients(app, recipients, notification_message)
 
 
-async def notify_conversation_message_created(
+async def notify_via_socket_conversation_message_created(
     app: web.Application,
     *,
     recipients: set[UserID],
@@ -191,7 +191,7 @@ async def notify_conversation_message_created(
     await _send_message_to_recipients(app, recipients, notification_message)
 
 
-async def notify_conversation_message_updated(
+async def notify_via_socket_conversation_message_updated(
     app: web.Application,
     *,
     recipients: set[UserID],
@@ -212,7 +212,7 @@ async def notify_conversation_message_updated(
     await _send_message_to_recipients(app, recipients, notification_message)
 
 
-async def notify_conversation_message_deleted(
+async def notify_via_socket_conversation_message_deleted(
     app: web.Application,
     *,
     recipients: set[UserID],

@@ -1,0 +1,66 @@
+.osparc-markdown {
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+/* paragraphs */
+.osparc-markdown p {
+  margin: 0;
+}
+.osparc-markdown p + p {
+  margin-top: .35em;
+}
+
+/* lists */
+.osparc-markdown ul,
+.osparc-markdown ol {
+  margin: .25em 0;
+  padding-left: 1.25em;
+}
+.osparc-markdown li {
+  margin: 0;
+  padding: 0;
+}
+
+/* blockquotes */
+.osparc-markdown blockquote {
+  margin: .25em 0;
+  padding-left: 0.6em;
+}
+
+/* code blocks */
+.osparc-markdown pre {
+  margin: .25em 0;
+  padding: .4em .6em;
+  border-radius: 4px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.osparc-markdown code {
+  font-family: monospace;
+  font-size: 0.95em;
+  padding: 0 .25em;
+  border-radius: 4px;
+}
+
+/* headings */
+.osparc-markdown h1,
+.osparc-markdown h2,
+.osparc-markdown h3,
+.osparc-markdown h4,
+.osparc-markdown h5,
+.osparc-markdown h6 {
+  margin: .4em 0 .25em;
+  line-height: 1.2;
+  font-weight: 600;
+  font-size: 1em; /* normalize size inside chat */
+}
+
+/* images */
+.osparc-markdown img {
+  max-width: 100%;
+  height: auto;
+  display: block;       /* avoids weird inline metrics */
+  margin: .25em 0;      /* matches your spacing scale */
+  border-radius: 4px;   /* optional: match bubble style */
+}

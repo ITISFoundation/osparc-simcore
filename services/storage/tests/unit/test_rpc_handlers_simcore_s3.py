@@ -24,7 +24,9 @@ from celery_library.task_manager import CeleryTaskManager
 from faker import Faker
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
-from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobResult
+from models_library.api_schemas_rpc_async_jobs.async_jobs import (
+    AsyncJobResult,
+)
 from models_library.api_schemas_rpc_async_jobs.exceptions import JobError
 from models_library.api_schemas_storage import STORAGE_RPC_NAMESPACE
 from models_library.api_schemas_storage.storage_schemas import (
@@ -52,6 +54,7 @@ from pytest_simcore.helpers.storage_utils_file_meta_data import (
 )
 from pytest_simcore.helpers.storage_utils_project import clone_project_data
 from servicelib.aiohttp import status
+from servicelib.celery.models import OwnerMetadata
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 from servicelib.rabbitmq._errors import RPCServerError
 from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import wait_and_get_result
@@ -68,6 +71,12 @@ pytest_simcore_core_services_selection = ["postgres", "rabbit"]
 pytest_simcore_ops_services_selection = ["adminer"]
 
 
+class _TestOwnerMetadata(OwnerMetadata):
+    user_id: UserID
+    product_name: ProductName
+    owner: str = "PYTEST_CLIENT_NAME"
+
+
 async def _request_copy_folders(
     rpc_client: RabbitMQRPCClient,
     user_id: UserID,
@@ -82,13 +91,17 @@ async def _request_copy_folders(
         logging.INFO,
         f"Copying folders from {source_project['uuid']} to {dst_project['uuid']}",
     ) as ctx:
-        async_job_get, async_job_name = await copy_folders_from_project(
+        async_job_get, owner_metadata = await copy_folders_from_project(
             rpc_client,
-            user_id=user_id,
-            product_name=product_name,
             body=FoldersBody(
                 source=source_project, destination=dst_project, nodes_map=nodes_map
             ),
+            owner_metadata=_TestOwnerMetadata(
+                user_id=user_id,
+                product_name=product_name,
+                owner="PYTEST_CLIENT_NAME",
+            ),
+            user_id=user_id,
         )
 
         async for async_job_result in wait_and_get_result(
@@ -96,7 +109,7 @@ async def _request_copy_folders(
             rpc_namespace=STORAGE_RPC_NAMESPACE,
             method_name=copy_folders_from_project.__name__,
             job_id=async_job_get.job_id,
-            job_filter=async_job_name,
+            owner_metadata=owner_metadata,
             client_timeout=client_timeout,
         ):
             ctx.logger.info("%s", f"<-- current state is {async_job_result=}")
@@ -524,12 +537,16 @@ async def _request_start_export_data(
         logging.INFO,
         f"Data export form {paths_to_export=}",
     ) as ctx:
-        async_job_get, async_job_name = await start_export_data(
+        async_job_get, owner_metadata = await start_export_data(
             rpc_client,
-            user_id=user_id,
-            product_name=product_name,
             paths_to_export=paths_to_export,
             export_as=export_as,
+            owner_metadata=_TestOwnerMetadata(
+                user_id=user_id,
+                product_name=product_name,
+                owner="PYTEST_CLIENT_NAME",
+            ),
+            user_id=user_id,
         )
 
         async for async_job_result in wait_and_get_result(
@@ -537,7 +554,7 @@ async def _request_start_export_data(
             rpc_namespace=STORAGE_RPC_NAMESPACE,
             method_name=start_export_data.__name__,
             job_id=async_job_get.job_id,
-            job_filter=async_job_name,
+            owner_metadata=owner_metadata,
             client_timeout=client_timeout,
         ):
             ctx.logger.info("%s", f"<-- current state is {async_job_result=}")

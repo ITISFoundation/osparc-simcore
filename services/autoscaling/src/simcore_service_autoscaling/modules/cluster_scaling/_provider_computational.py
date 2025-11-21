@@ -1,8 +1,13 @@
 import collections
+import dataclasses
 import logging
-from typing import cast
+from typing import Any, cast
 
 from aws_library.ec2 import EC2InstanceData, EC2Tags, Resources
+from aws_library.ec2._models import EC2InstanceType
+from dask_task_models_library.resource_constraints import (
+    estimate_dask_worker_resources_from_ec2_instance,
+)
 from fastapi import FastAPI
 from models_library.clusters import ClusterAuthentication
 from models_library.docker import DockerLabelKey
@@ -135,10 +140,14 @@ class ComputationalAutoscalingProvider:
         list_of_used_resources: list[Resources] = await logged_gather(
             *(self.compute_node_used_resources(app, i) for i in instances)
         )
-        counter = collections.Counter(dict.fromkeys(Resources.model_fields, 0))
+        counter: collections.Counter = collections.Counter()
         for result in list_of_used_resources:
-            counter.update(result.model_dump())
-        return Resources.model_validate(dict(counter))
+            counter.update(result.as_flat_dict())
+
+        flat_counter: dict[str, Any] = dict(counter)
+        flat_counter.setdefault("cpus", 0)
+        flat_counter.setdefault("ram", 0)
+        return Resources.from_flat_dict(flat_counter)
 
     async def compute_cluster_total_resources(
         self, app: FastAPI, instances: list[AssociatedInstance]
@@ -146,7 +155,9 @@ class ComputationalAutoscalingProvider:
         assert self  # nosec
         try:
             return await dask.compute_cluster_total_resources(
-                _scheduler_url(app), _scheduler_auth(app), instances
+                _scheduler_url(app),
+                _scheduler_auth(app),
+                [i.ec2_instance for i in instances],
             )
         except DaskNoWorkersError:
             return Resources.create_as_empty()
@@ -176,3 +187,33 @@ class ComputationalAutoscalingProvider:
     async def try_retire_nodes(self, app: FastAPI) -> None:
         assert self  # nosec
         await dask.try_retire_nodes(_scheduler_url(app), _scheduler_auth(app))
+
+    def add_instance_generic_resources(
+        self, app: FastAPI, instance: EC2InstanceData
+    ) -> None:
+        assert self  # nosec
+        assert app  # nosec
+        app_settings = get_application_settings(app)
+        assert app_settings.AUTOSCALING_DASK  # nosec
+        dask.add_instance_generic_resources(app_settings.AUTOSCALING_DASK, instance)
+
+    def adjust_instance_type_resources(
+        self, app: FastAPI, instance_type: EC2InstanceType
+    ) -> EC2InstanceType:
+        assert self  # nosec
+        assert app  # nosec
+        app_settings = get_application_settings(app)
+        assert app_settings.AUTOSCALING_DASK  # nosec
+        adjusted_cpus, adjusted_ram = estimate_dask_worker_resources_from_ec2_instance(
+            instance_type.resources.cpus, instance_type.resources.ram
+        )
+        replaced_instance_type = dataclasses.replace(
+            instance_type,
+            resources=instance_type.resources.model_copy(
+                update={"cpus": adjusted_cpus, "ram": ByteSize(adjusted_ram)}
+            ),
+        )
+        dask.add_instance_type_generic_resource(
+            app_settings.AUTOSCALING_DASK, replaced_instance_type
+        )
+        return replaced_instance_type

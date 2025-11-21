@@ -10,11 +10,13 @@ from servicelib.fastapi.tracing import (
     initialize_fastapi_app_tracing,
     setup_tracing,
 )
+from servicelib.tracing import TracingConfig
 
 from .. import exceptions
 from .._meta import API_VERSION, API_VTAG, APP_NAME
 from ..api.root import create_router
 from ..api.routes.health import router as health_router
+from ..clients.celery_task_manager import setup_task_manager
 from ..clients.postgres import setup_postgres
 from ..services_http import director_v2, storage, webserver
 from ..services_http.rabbitmq import setup_rabbitmq
@@ -48,14 +50,23 @@ def _label_title_and_version(settings: ApplicationSettings, title: str, version:
     return title, version
 
 
-def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
+def create_app(
+    settings: ApplicationSettings | None = None,
+    tracing_config: TracingConfig | None = None,
+) -> FastAPI:
     if settings is None:
         settings = ApplicationSettings.create_from_envs()
         _logger.info(
             "Application settings: %s",
             json_dumps(settings, indent=2, sort_keys=True),
         )
+    if tracing_config is None:
+        tracing_config = TracingConfig.create(
+            service_name=APP_NAME, tracing_settings=settings.API_SERVER_TRACING
+        )
+
     assert settings  # nosec
+    assert tracing_config  # nosec
 
     # Labeling
     title = "osparc.io public API"
@@ -79,20 +90,28 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
     add_pagination(app)
 
     app.state.settings = settings
+    app.state.tracing_config = tracing_config
 
     if settings.API_SERVER_TRACING:
-        setup_tracing(app, settings.API_SERVER_TRACING, APP_NAME)
+        setup_tracing(app, tracing_config)
 
     if settings.API_SERVER_POSTGRES:
         setup_postgres(app)
 
     setup_rabbitmq(app)
 
+    if settings.API_SERVER_CELERY:
+        setup_task_manager(app, settings.API_SERVER_CELERY)
+
     if app.state.settings.API_SERVER_PROMETHEUS_INSTRUMENTATION_ENABLED:
         setup_prometheus_instrumentation(app)
 
     if settings.API_SERVER_TRACING:
-        initialize_fastapi_app_tracing(app, add_response_trace_id_header=True)
+        initialize_fastapi_app_tracing(
+            app,
+            tracing_config=tracing_config,
+            add_response_trace_id_header=True,
+        )
 
     if settings.API_SERVER_WEBSERVER:
         webserver.setup(

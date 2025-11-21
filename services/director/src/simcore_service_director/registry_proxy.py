@@ -214,6 +214,9 @@ async def registry_request(
                         "application/vnd.docker.distribution.manifest.list.v2+json",
                         "application/vnd.docker.distribution.manifest.v1+prettyjws",
                         "application/json",
+                        # Add OCI media types so registries that serve OCI manifests/indexes are accepted
+                        "application/vnd.oci.image.manifest.v1+json",
+                        "application/vnd.oci.image.index.v1+json",
                     ]
                 )
             }
@@ -297,7 +300,7 @@ _SERVICE_TYPE_FILTER_MAP: Final[dict[ServiceType, tuple[str, ...]]] = {
 
 async def _list_repositories_gen(
     app: FastAPI, service_type: ServiceType, *, update_cache: bool
-) -> AsyncGenerator[list[str], None]:
+) -> AsyncGenerator[list[str]]:
     with log_context(_logger, logging.DEBUG, msg="listing repositories"):
         path = f"_catalog?n={get_application_settings(app).DIRECTOR_REGISTRY_CLIENT_MAX_NUMBER_OF_RETRIEVED_OBJECTS}"
         result, headers = await registry_request(
@@ -331,7 +334,7 @@ async def _list_repositories_gen(
 
 async def list_image_tags_gen(
     app: FastAPI, image_key: str, *, update_cache=False
-) -> AsyncGenerator[list[str], None]:
+) -> AsyncGenerator[list[str]]:
     with log_context(_logger, logging.DEBUG, msg=f"listing image tags in {image_key}"):
         path = f"{image_key}/tags/list?n={get_application_settings(app).DIRECTOR_REGISTRY_CLIENT_MAX_NUMBER_OF_RETRIEVED_OBJECTS}"
         tags, headers = await registry_request(
@@ -374,7 +377,7 @@ async def list_image_tags(app: FastAPI, image_key: str) -> list[str]:
     return image_tags
 
 
-_DOCKER_CONTENT_DIGEST_HEADER = "Docker-Content-Digest"
+_DOCKER_CONTENT_DIGEST_HEADER: Final[str] = "Docker-Content-Digest"
 
 
 async def get_image_digest(app: FastAPI, image: str, tag: str) -> str | None:
@@ -388,7 +391,8 @@ async def get_image_digest(app: FastAPI, image: str, tag: str) -> str | None:
     _, headers = await registry_request(app, path=path, method="GET", use_cache=True)
 
     headers = headers or {}
-    return headers.get(_DOCKER_CONTENT_DIGEST_HEADER, None)
+    docker_digest: str | None = headers.get(_DOCKER_CONTENT_DIGEST_HEADER, None)
+    return docker_digest
 
 
 async def get_image_labels(
@@ -409,13 +413,13 @@ async def get_image_labels(
             case 2:
                 # Image Manifest Version 2, Schema 2 -> defaults in registries v3 (https://distribution.github.io/distribution/spec/manifest-v2-2/)
                 media_type = request_result["mediaType"]
-                if (
-                    media_type
-                    == "application/vnd.docker.distribution.manifest.list.v2+json"
+                if media_type in (
+                    "application/vnd.docker.distribution.manifest.list.v2+json",
+                    "application/vnd.oci.image.index.v1+json",
                 ):
                     # default to x86_64 architecture
                     _logger.info(
-                        "Image %s:%s is a docker image with multiple architectures. "
+                        "Docker image %s:%s contains multiple architectures. "
                         "Currently defaulting to first architecture",
                         image,
                         tag,

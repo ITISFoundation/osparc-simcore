@@ -1,5 +1,6 @@
+from contextlib import suppress
+
 from aiohttp import web
-from models_library.basic_types import IDStr
 from models_library.emails import LowerCaseEmailStr
 from models_library.groups import (
     AccessRightsDict,
@@ -11,20 +12,21 @@ from models_library.groups import (
     StandardGroupUpdate,
 )
 from models_library.products import ProductName
-from models_library.users import UserID
+from models_library.users import UserID, UserNameID
 from pydantic import EmailStr
 
+from ..products.models import Product
 from ..users import users_service
 from . import _groups_repository
-from .exceptions import GroupsError
+from .exceptions import GroupNotFoundError, GroupsError
 
 #
 # GROUPS
 #
 
 
-async def get_group_from_gid(app: web.Application, group_id: GroupID) -> Group | None:
-    group_db = await _groups_repository.get_group_from_gid(app, group_id=group_id)
+async def get_group_by_gid(app: web.Application, group_id: GroupID) -> Group | None:
+    group_db = await _groups_repository.get_group_by_gid(app, group_id=group_id)
 
     if group_db:
         return Group.model_construct(**group_db.model_dump())
@@ -71,8 +73,56 @@ async def get_product_group_for_user(
     Returns product's group if user belongs to it, otherwise it
     raises GroupNotFoundError
     """
-    return await _groups_repository.get_product_group_for_user(
-        app, user_id=user_id, product_gid=product_gid
+    return await _groups_repository.get_any_group_for_user(
+        app, user_id=user_id, group_gid=product_gid
+    )
+
+
+async def get_user_profile_groups(
+    app: web.Application, *, user_id: UserID, product: Product
+) -> tuple[
+    GroupsByTypeTuple,
+    tuple[Group, AccessRightsDict] | None,
+    Group | None,
+    Group | None,
+]:
+    """
+    Get all groups needed for user profile including standard groups,
+    product group, and support group.
+
+    Returns:
+        Tuple of (groups_by_type, my_product_group, product_support_group)
+    """
+    groups_by_type = await list_user_groups_with_read_access(app, user_id=user_id)
+
+    my_product_group = None
+    if product.group_id:  # Product group is optional
+        with suppress(GroupNotFoundError):
+            my_product_group = await get_product_group_for_user(
+                app=app,
+                user_id=user_id,
+                product_gid=product.group_id,
+            )
+
+    product_support_group = None
+    if product.support_standard_group_id:  # Support group is optional
+        # NOTE: my_support_group can be part of groups_by_type.standard!
+        product_support_group = await get_group_by_gid(
+            app, product.support_standard_group_id
+        )
+
+    product_chatbot_primary_group = None
+    if product.support_chatbot_user_id:
+        _group_id = await users_service.get_user_primary_group_id(
+            app, user_id=product.support_chatbot_user_id
+        )
+        product_chatbot_primary_group = await get_group_by_gid(app, _group_id)
+
+    return (
+        groups_by_type,
+        my_product_group,
+        product_support_group,
+        product_chatbot_primary_group,
     )
 
 
@@ -224,6 +274,14 @@ async def is_user_by_email_in_group(
     )
 
 
+async def is_user_in_group(
+    app: web.Application, *, user_id: UserID, group_id: GroupID
+) -> bool:
+    return await _groups_repository.is_user_in_group(
+        app, user_id=user_id, group_id=group_id
+    )
+
+
 async def auto_add_user_to_groups(app: web.Application, user_id: UserID) -> None:
     user: dict = await users_service.get_user(app, user_id)
     return await _groups_repository.auto_add_user_to_groups(app, user=user)
@@ -250,7 +308,7 @@ async def add_user_in_group(
     *,
     # identifies
     new_by_user_id: UserID | None = None,
-    new_by_user_name: IDStr | None = None,
+    new_by_user_name: UserNameID | None = None,
     new_by_user_email: EmailStr | None = None,
     access_rights: AccessRightsDict | None = None,
 ) -> None:
@@ -259,10 +317,17 @@ async def add_user_in_group(
     Raises:
         UserInGroupNotFoundError
         GroupsException
+        GroupNotFoundError
+        UserInsufficientRightsError
     """
     if not _only_one_true(new_by_user_id, new_by_user_name, new_by_user_email):
         msg = "Invalid method call, required one of these: user id, username or user email, none provided"
         raise GroupsError(msg=msg)
+
+    # First check if caller has write access to the group
+    await _groups_repository.check_group_write_access(
+        app, caller_id=user_id, group_id=group_id
+    )
 
     # get target user to add to group
     if new_by_user_email:
@@ -277,7 +342,6 @@ async def add_user_in_group(
 
     return await _groups_repository.add_new_user_in_group(
         app,
-        caller_id=user_id,
         group_id=group_id,
         new_user_id=new_by_user_id,
         new_user_name=new_by_user_name,

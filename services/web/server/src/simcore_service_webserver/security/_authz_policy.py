@@ -10,24 +10,22 @@ from aiohttp import web
 from aiohttp_security.abc import (  # type: ignore[import-untyped]
     AbstractAuthorizationPolicy,
 )
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
+from common_library.users_enums import UserRole
 from models_library.products import ProductName
 from models_library.users import UserID
 from servicelib.aiohttp.db_asyncpg_engine import get_async_engine
-from servicelib.logging_errors import create_troubleshootting_log_kwargs
-from simcore_postgres_database.aiopg_errors import DatabaseError as AiopgDatabaseError
-from sqlalchemy.exc import DatabaseError as SQLAlchemyDatabaseError
+from sqlalchemy.exc import DatabaseError
 
+from . import _authz_repository
 from ._authz_access_model import (
     AuthContextDict,
     OptionalContext,
     RoleBasedAccessModel,
     has_access_by_role,
 )
-from ._authz_repository import (
-    ActiveUserIdAndRole,
-    get_active_user_or_none,
-    is_user_in_product_name,
-)
+from ._authz_access_roles import NAMED_GROUP_PERMISSIONS
+from ._authz_repository import ActiveUserIdAndRole
 from ._constants import MSG_AUTH_NOT_AVAILABLE, PERMISSION_PRODUCT_LOGIN_KEY
 from ._identity_web import IdentityStr
 
@@ -49,11 +47,12 @@ _AUTHZ_BURST_CACHE_TTL: Final = (
 def _handle_exceptions_as_503():
     try:
         yield
-    except (AiopgDatabaseError, SQLAlchemyDatabaseError) as err:
+    except DatabaseError as err:
         _logger.exception(
-            **create_troubleshootting_log_kwargs(
-                "Auth unavailable due to database error",
+            **create_troubleshooting_log_kwargs(
+                f"{MSG_AUTH_NOT_AVAILABLE}: Auth unavailable due to database error.",
                 error=err,
+                error_context={"origin": str(err.orig) if err.orig else None},
                 tip="Check database connection",
             )
         )
@@ -79,7 +78,7 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
             web.HTTPServiceUnavailable: if database raises an exception
         """
         with _handle_exceptions_as_503():
-            return await get_active_user_or_none(
+            return await _authz_repository.get_active_user_or_none(
                 get_async_engine(self._app), email=email
             )
 
@@ -96,8 +95,23 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
             web.HTTPServiceUnavailable: if database raises an exception
         """
         with _handle_exceptions_as_503():
-            return await is_user_in_product_name(
+            return await _authz_repository.is_user_in_product_name(
                 get_async_engine(self._app), user_id=user_id, product_name=product_name
+            )
+
+    @cached(
+        ttl=_AUTHZ_BURST_CACHE_TTL,
+        namespace=__name__,
+        key_builder=lambda f, *ag, **kw: f"{f.__name__}/{kw['user_id']}/{kw['group_id']}",
+    )
+    async def _is_user_in_group(self, *, user_id: UserID, group_id: int) -> bool:
+        """
+        Raises:
+            web.HTTPServiceUnavailable: if database raises an exception
+        """
+        with _handle_exceptions_as_503():
+            return await _authz_repository.is_user_in_group(
+                get_async_engine(self._app), user_id=user_id, group_id=group_id
             )
 
     @property
@@ -106,7 +120,11 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
 
     async def clear_cache(self):
         # pylint: disable=no-member
-        for fun in (self._get_authorized_user_or_none, self._has_access_to_product):
+        for fun in (
+            self._get_authorized_user_or_none,
+            self._has_access_to_product,
+            self._is_user_in_group,
+        ):
             autz_cache: BaseCache = fun.cache
             await autz_cache.clear()
 
@@ -161,17 +179,33 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
             "authorized_uid"
         ), f"{user_id}!={context.get('authorized_uid')}"
 
-        # product access
+        # PRODUCT access
         if permission == PERMISSION_PRODUCT_LOGIN_KEY:
             ok: bool = product_name is not None and await self._has_access_to_product(
                 user_id=user_id, product_name=product_name
             )
             return ok
 
-        # role-based access
-        return await has_access_by_role(
+        # ROLE-BASED access policy
+        role_allowed = await has_access_by_role(
             self._access_model,
             role=user_role,
             operation=permission,
             context=context,
         )
+
+        if role_allowed:
+            return True
+
+        # GROUP-BASED access policy (only if enabled in context and user is above GUEST role)
+        product_support_group_id = context.get("product_support_group_id", None)
+        group_allowed = (
+            product_support_group_id is not None
+            and user_role > UserRole.GUEST
+            and permission in NAMED_GROUP_PERMISSIONS.get("PRODUCT_SUPPORT_GROUP", [])
+            and await self._is_user_in_group(
+                user_id=user_id, group_id=product_support_group_id
+            )
+        )
+
+        return group_allowed  # noqa: RET504

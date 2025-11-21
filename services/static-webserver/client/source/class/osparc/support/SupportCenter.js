@@ -19,7 +19,7 @@ qx.Class.define("osparc.support.SupportCenter", {
   extend: osparc.ui.window.SingletonWindow,
 
   construct: function() {
-    this.base(arguments, "support-center", "Support");
+    this.base(arguments, "support-center");
 
     this.getChildControl("title").set({
       textAlign: "center",
@@ -35,24 +35,38 @@ qx.Class.define("osparc.support.SupportCenter", {
       showClose: true,
     });
 
-    this.getChildControl("conversations-intro-text");
-    this.getChildControl("conversations-list");
-    if (!osparc.store.Products.getInstance().amIASupportUser()) {
-      this.getChildControl("ask-a-question-button");
+    this.getLayout().set({
+      separator: "separator-vertical"
+    });
+
+    this.getChildControl("home-page");
+    if (osparc.store.Groups.getInstance().isSupportEnabled()) {
+      this.getChildControl("conversations-page");
+      this.getChildControl("conversation-page");
+      this.getChildControl("home-button");
+      this.getChildControl("conversations-button");
     }
+
+    this.__selectHomeStackPage();
   },
 
   statics: {
-    WINDOW_WIDTH: 430,
+    WINDOW_WIDTH: 450,
+    WINDOW_HEIGHT: 700,
+    REQUEST_CALL_MESSAGE: "Dear Support,\nI would like to make an appointment for a support call.",
 
     getMaxHeight: function() {
-      // height: max 80% of screen, or 600px
+      // height: max 80% of screen, or WINDOW_HEIGHTpx
       const clientHeight = document.documentElement.clientHeight;
-      return Math.min(600, parseInt(clientHeight * 0.8));
+      return Math.min(osparc.support.SupportCenter.WINDOW_HEIGHT, parseInt(clientHeight * 0.8));
     },
 
-    openWindow: function() {
+    openWindow: function(stackPage) {
       const supportCenterWindow = new osparc.support.SupportCenter();
+
+      if (stackPage === "conversations") {
+        supportCenterWindow.showConversations();
+      }
 
       const positionWindow = () => {
         supportCenterWindow.set({
@@ -77,68 +91,116 @@ qx.Class.define("osparc.support.SupportCenter", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "stack-layout":
+        case "main-stack":
           control = new qx.ui.container.Stack();
           this.add(control, {
             flex: 1
           });
           break;
-        case "conversations-layout":
-          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(15));
-          this.getChildControl("stack-layout").add(control);
-          break;
-        case "conversations-intro-text": {
-          control = new qx.ui.basic.Label().set({
-            rich: true,
-            font: "text-14",
-          });
-          const isSupportUser = osparc.store.Products.getInstance().amIASupportUser();
-          control.set({
-            value: isSupportUser ?
-              this.tr("Thanks for being here! Let's help every user feel supported.") :
-              this.tr("Need help or want to share feedback? You're in the right place."),
-          });
-          this.getChildControl("conversations-layout").add(control);
-          break;
-        }
-        case "conversations-list": {
-          control = new osparc.support.Conversations();
-          control.addListener("openConversation", e => {
-            const conversationId = e.getData();
-            this.openConversation(conversationId);
-          }, this);
-          const scroll = new qx.ui.container.Scroll();
-          scroll.add(control);
-          this.getChildControl("conversations-layout").add(scroll, {
-            flex: 1,
-          });
-          break;
-        }
-        case "ask-a-question-button":
-          control = new osparc.ui.form.FetchButton(this.tr("Ask a Question")).set({
-            appearance: "strong-button",
-            allowGrowX: false,
-            center: true,
+        case "buttons-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
             alignX: "center",
+          })).set({
+            visibility: osparc.store.Groups.getInstance().isSupportEnabled() ? "visible" : "excluded",
           });
-          control.addListener("execute", () => this.openConversation(null), this);
+          this.add(control);
+          break;
+        case "home-button":
+          control = new qx.ui.form.Button().set({
+            label: this.tr("Help & Support"),
+            icon: "@FontAwesome5Solid/question-circle/18",
+            backgroundColor: "transparent",
+            iconPosition: "top",
+            allowGrowX: true,
+            center: true,
+          });
+          control.addListener("execute", () => this.__selectHomeStackPage(), this);
+          this.getChildControl("buttons-layout").add(control, { flex: 1 });
+          break;
+        case "conversations-button":
+          control = new qx.ui.form.Button().set({
+            label: this.tr("Conversations"),
+            icon: "@FontAwesome5Solid/comments/18",
+            backgroundColor: "transparent",
+            iconPosition: "top",
+            allowGrowX: true,
+            center: true,
+          });
+          control.addListener("execute", () => this.showConversations(), this);
+          this.getChildControl("buttons-layout").add(control, { flex: 1 });
+          break;
+        case "home-page-layout":
+          control = new qx.ui.container.Scroll();
+          this.getChildControl("main-stack").add(control);
+          break;
+        case "home-page":
+          control = new osparc.support.HomePage();
+          control.addListener("createConversation", e => this.createConversation(e.getData()), this);
+          this.getChildControl("home-page-layout").add(control);
+          break;
+        case "conversations-layout":
+          control = new qx.ui.container.Scroll();
+          this.getChildControl("main-stack").add(control);
+          break;
+        case "conversations-stack":
+          control = new qx.ui.container.Stack();
           this.getChildControl("conversations-layout").add(control);
+          break;
+        case "conversations-page":
+          control = new osparc.support.ConversationsPage();
+          control.addListener("openConversation", e => this.openConversation(e.getData()), this);
+          control.addListener("createConversation", e => this.createConversation(e.getData()), this);
+          this.getChildControl("conversations-stack").add(control);
           break;
         case "conversation-page":
           control = new osparc.support.ConversationPage();
-          control.addListener("showConversations", () => this.__showConversations(), this);
-          this.getChildControl("stack-layout").add(control);
+          control.addListener("backToConversations", () => this.showConversations(), this);
+          this.getChildControl("conversations-stack").add(control);
           break;
       }
       return control || this.base(arguments, id);
     },
 
-    __showConversations: function() {
-      this.getChildControl("stack-layout").setSelection([this.getChildControl("conversations-layout")]);
+    __selectHomeStackPage: function() {
+      this.setCaption(this.tr("Help & Support"));
+      this.getChildControl("main-stack").setSelection([this.getChildControl("home-page-layout")]);
+      this.getChildControl("home-button").getChildControl("icon").set({
+        textColor: "strong-main",
+      });
+      this.getChildControl("conversations-button").getChildControl("icon").set({
+        textColor: "text",
+      });
+    },
+
+    __selectConversationsStackPage: function() {
+      this.setCaption(this.tr("Conversations"));
+      this.getChildControl("main-stack").setSelection([this.getChildControl("conversations-layout")]);
+      this.getChildControl("home-button").getChildControl("icon").set({
+        textColor: "text",
+      });
+      this.getChildControl("conversations-button").getChildControl("icon").set({
+        textColor: "strong-main",
+      });
+    },
+
+    showConversations: function() {
+      this.__selectConversationsStackPage();
+      this.getChildControl("conversations-stack").setSelection([this.getChildControl("conversations-page")]);
     },
 
     __showConversation: function() {
-      this.getChildControl("stack-layout").setSelection([this.getChildControl("conversation-page")]);
+      this.__selectConversationsStackPage();
+      const conversationPage = this.getChildControl("conversation-page");
+      this.getChildControl("conversations-stack").setSelection([conversationPage]);
+
+      const conversation = conversationPage.getConversation();
+      if (conversation) {
+        if (osparc.store.Groups.getInstance().amIASupportUser() && conversation.isReadBySupport() === false) {
+          conversation.markAsRead();
+        } else if (!osparc.store.Groups.getInstance().amIASupportUser() && conversation.isReadByUser() === false) {
+          conversation.markAsRead();
+        }
+      }
     },
 
     openConversation: function(conversationId) {
@@ -149,10 +211,13 @@ qx.Class.define("osparc.support.SupportCenter", {
             conversationPage.setConversation(conversation);
             this.__showConversation();
           });
-      } else {
-        conversationPage.setConversation(null);
-        this.__showConversation();
       }
+    },
+
+    createConversation: function(type, prefillText) {
+      const conversationPage = this.getChildControl("conversation-page");
+      conversationPage.proposeConversation(type, prefillText);
+      this.__showConversation();
     },
   }
 });

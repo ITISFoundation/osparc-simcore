@@ -1,6 +1,5 @@
-""" Keeps up-to-date all mock data in repo with schemas
+"""Keeps up-to-date all mock data in repo with schemas"""
 
-"""
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name

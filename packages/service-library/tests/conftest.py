@@ -112,7 +112,7 @@ async def _get_redis_client_sdk(
 
 @pytest.fixture
 async def get_redis_client_sdk(
-    mock_redis_socket_timeout: None, use_in_memory_redis: RedisSettings
+    use_in_memory_redis: RedisSettings,
 ) -> AsyncIterable[
     Callable[[RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]]
 ]:
@@ -122,7 +122,7 @@ async def get_redis_client_sdk(
 
 @pytest.fixture
 async def get_in_process_redis_client_sdk(
-    mock_redis_socket_timeout: None, redis_service: RedisSettings
+    redis_service: RedisSettings,
 ) -> AsyncIterable[
     Callable[[RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]]
 ]:

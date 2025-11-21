@@ -34,6 +34,14 @@ class TaskExceptionError(BaseLongRunningError):
     )
 
 
+class TaskRaisedUnserializableError(BaseLongRunningError):
+    msg_template: str = (
+        "Task {task_id} raised an exception that could not be serialized.\n"
+        "Original exception: '{original_exception_str}'\n"
+        "As a consequence, the following error was raised: '{exception}'"
+    )
+
+
 class TaskClientTimeoutError(BaseLongRunningError):
     msg_template: str = (
         "Timed out after {timeout} seconds while awaiting '{task_id}' to complete"

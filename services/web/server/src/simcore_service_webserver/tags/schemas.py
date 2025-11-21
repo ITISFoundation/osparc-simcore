@@ -1,13 +1,13 @@
-import re
-from typing import Annotated, Self
+from typing import Self
 
 from common_library.groups_dicts import AccessRightsDict
 from models_library.api_schemas_webserver._base import InputSchema, OutputSchema
 from models_library.groups import GroupID
 from models_library.rest_base import RequestParameters, StrictRequestParameters
+from models_library.string_types import ColorStr, DescriptionSafeStr, NameSafeStr
 from models_library.users import UserID
-from pydantic import Field, PositiveInt, StringConstraints
-from servicelib.request_keys import RQT_USERID_KEY
+from pydantic import Field, PositiveInt
+from servicelib.aiohttp.request_keys import RQT_USERID_KEY
 from simcore_postgres_database.utils_tags import TagAccessRightsDict, TagDict
 
 
@@ -19,21 +19,16 @@ class TagPathParams(StrictRequestParameters):
     tag_id: PositiveInt
 
 
-ColorStr = Annotated[
-    str, StringConstraints(pattern=re.compile(r"^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$"))
-]
-
-
 class TagUpdate(InputSchema):
-    name: str | None = None
-    description: str | None = None
+    name: NameSafeStr | None = None
+    description: DescriptionSafeStr | None = None
     color: ColorStr | None = None
     priority: int | None = None
 
 
 class TagCreate(InputSchema):
-    name: str
-    description: str | None = None
+    name: NameSafeStr
+    description: DescriptionSafeStr | None = None
     color: ColorStr
     priority: int | None = None
 

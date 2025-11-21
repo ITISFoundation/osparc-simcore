@@ -16,18 +16,17 @@ from celery_library.task import register_task
 from common_library.errors_classes import OsparcErrorMixin
 from faker import Faker
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
-    AsyncJobFilter,
     AsyncJobGet,
 )
 from models_library.api_schemas_rpc_async_jobs.exceptions import (
-    JobAbortedError,
     JobError,
+    JobMissingError,
 )
 from models_library.products import ProductName
 from models_library.rabbitmq_basic_types import RPCNamespace
 from models_library.users import UserID
 from pydantic import TypeAdapter
-from servicelib.celery.models import TaskFilter, TaskID, TaskMetadata
+from servicelib.celery.models import ExecutionMetadata, OwnerMetadata, TaskKey
 from servicelib.celery.task_manager import TaskManager
 from servicelib.rabbitmq import RabbitMQRPCClient, RPCRouter
 from servicelib.rabbitmq.rpc_interfaces.async_jobs import async_jobs
@@ -79,12 +78,11 @@ ASYNC_JOBS_RPC_NAMESPACE: Final[RPCNamespace] = TypeAdapter(
 
 @router.expose()
 async def rpc_sync_job(
-    task_manager: TaskManager, *, job_filter: AsyncJobFilter, **kwargs: Any
+    task_manager: TaskManager, *, owner_metadata: OwnerMetadata, **kwargs: Any
 ) -> AsyncJobGet:
     task_name = sync_job.__name__
-    task_filter = TaskFilter.model_validate(job_filter.model_dump())
     task_uuid = await task_manager.submit_task(
-        TaskMetadata(name=task_name), task_filter=task_filter, **kwargs
+        ExecutionMetadata(name=task_name), owner_metadata=owner_metadata, **kwargs
     )
 
     return AsyncJobGet(job_id=task_uuid, job_name=task_name)
@@ -92,12 +90,11 @@ async def rpc_sync_job(
 
 @router.expose()
 async def rpc_async_job(
-    task_manager: TaskManager, *, job_filter: AsyncJobFilter, **kwargs: Any
+    task_manager: TaskManager, *, owner_metadata: OwnerMetadata, **kwargs: Any
 ) -> AsyncJobGet:
     task_name = async_job.__name__
-    task_filter = TaskFilter.model_validate(job_filter.model_dump())
     task_uuid = await task_manager.submit_task(
-        TaskMetadata(name=task_name), task_filter=task_filter, **kwargs
+        ExecutionMetadata(name=task_name), owner_metadata=owner_metadata, **kwargs
     )
 
     return AsyncJobGet(job_id=task_uuid, job_name=task_name)
@@ -124,15 +121,15 @@ async def _process_action(action: str, payload: Any) -> Any:
     return None
 
 
-def sync_job(task: Task, task_id: TaskID, action: Action, payload: Any) -> Any:
+def sync_job(task: Task, task_key: TaskKey, action: Action, payload: Any) -> Any:
     _ = task
-    _ = task_id
+    _ = task_key
     return asyncio.run(_process_action(action, payload))
 
 
-async def async_job(task: Task, task_id: TaskID, action: Action, payload: Any) -> Any:
+async def async_job(task: Task, task_key: TaskKey, action: Action, payload: Any) -> Any:
     _ = task
-    _ = task_id
+    _ = task_key
     return await _process_action(action, payload)
 
 
@@ -141,13 +138,13 @@ async def async_job(task: Task, task_id: TaskID, action: Action, payload: Any) -
 
 @pytest.fixture
 async def register_rpc_routes(
-    async_jobs_rabbitmq_rpc_client: RabbitMQRPCClient, celery_task_manager: TaskManager
+    async_jobs_rabbitmq_rpc_client: RabbitMQRPCClient, task_manager: TaskManager
 ) -> None:
     await async_jobs_rabbitmq_rpc_client.register_router(
-        _async_jobs.router, ASYNC_JOBS_RPC_NAMESPACE, task_manager=celery_task_manager
+        _async_jobs.router, ASYNC_JOBS_RPC_NAMESPACE, task_manager=task_manager
     )
     await async_jobs_rabbitmq_rpc_client.register_router(
-        router, ASYNC_JOBS_RPC_NAMESPACE, task_manager=celery_task_manager
+        router, ASYNC_JOBS_RPC_NAMESPACE, task_manager=task_manager
     )
 
 
@@ -158,18 +155,18 @@ async def _start_task_via_rpc(
     user_id: UserID,
     product_name: ProductName,
     **kwargs: Any,
-) -> tuple[AsyncJobGet, AsyncJobFilter]:
-    job_filter = AsyncJobFilter(
-        user_id=user_id, product_name=product_name, client_name="pytest_client"
+) -> tuple[AsyncJobGet, OwnerMetadata]:
+    owner_metadata = OwnerMetadata(
+        user_id=user_id, product_name=product_name, owner="pytest_client"
     )
     async_job_get = await async_jobs.submit(
         rabbitmq_rpc_client=client,
         rpc_namespace=ASYNC_JOBS_RPC_NAMESPACE,
         method_name=rpc_task_name,
-        job_filter=job_filter,
+        owner_metadata=owner_metadata,
         **kwargs,
     )
-    return async_job_get, job_filter
+    return async_job_get, owner_metadata
 
 
 @pytest.fixture
@@ -197,7 +194,7 @@ async def _wait_for_job(
     rpc_client: RabbitMQRPCClient,
     *,
     async_job_get: AsyncJobGet,
-    job_filter: AsyncJobFilter,
+    owner_metadata: OwnerMetadata,
     stop_after: timedelta = timedelta(seconds=5),
 ) -> None:
 
@@ -212,7 +209,7 @@ async def _wait_for_job(
                 rpc_client,
                 rpc_namespace=ASYNC_JOBS_RPC_NAMESPACE,
                 job_id=async_job_get.job_id,
-                job_filter=job_filter,
+                owner_metadata=owner_metadata,
             )
             assert (
                 result.done is True
@@ -246,7 +243,7 @@ async def test_async_jobs_workflow(
     exposed_rpc_start: str,
     payload: Any,
 ):
-    async_job_get, job_filter = await _start_task_via_rpc(
+    async_job_get, owner_metadata = await _start_task_via_rpc(
         async_jobs_rabbitmq_rpc_client,
         rpc_task_name=exposed_rpc_start,
         user_id=user_id,
@@ -258,22 +255,21 @@ async def test_async_jobs_workflow(
     jobs = await async_jobs.list_jobs(
         async_jobs_rabbitmq_rpc_client,
         rpc_namespace=ASYNC_JOBS_RPC_NAMESPACE,
-        filter_="",  # currently not used
-        job_filter=job_filter,
+        owner_metadata=owner_metadata,
     )
     assert len(jobs) > 0
 
     await _wait_for_job(
         async_jobs_rabbitmq_rpc_client,
         async_job_get=async_job_get,
-        job_filter=job_filter,
+        owner_metadata=owner_metadata,
     )
 
     async_job_result = await async_jobs.result(
         async_jobs_rabbitmq_rpc_client,
         rpc_namespace=ASYNC_JOBS_RPC_NAMESPACE,
         job_id=async_job_get.job_id,
-        job_filter=job_filter,
+        owner_metadata=owner_metadata,
     )
     assert async_job_result.result == payload
 
@@ -292,7 +288,7 @@ async def test_async_jobs_cancel(
     product_name: ProductName,
     exposed_rpc_start: str,
 ):
-    async_job_get, job_filter = await _start_task_via_rpc(
+    async_job_get, owner_metadata = await _start_task_via_rpc(
         async_jobs_rabbitmq_rpc_client,
         rpc_task_name=exposed_rpc_start,
         user_id=user_id,
@@ -305,29 +301,30 @@ async def test_async_jobs_cancel(
         async_jobs_rabbitmq_rpc_client,
         rpc_namespace=ASYNC_JOBS_RPC_NAMESPACE,
         job_id=async_job_get.job_id,
-        job_filter=job_filter,
-    )
-
-    await _wait_for_job(
-        async_jobs_rabbitmq_rpc_client,
-        async_job_get=async_job_get,
-        job_filter=job_filter,
+        owner_metadata=owner_metadata,
     )
 
     jobs = await async_jobs.list_jobs(
         async_jobs_rabbitmq_rpc_client,
         rpc_namespace=ASYNC_JOBS_RPC_NAMESPACE,
-        filter_="",  # currently not used
-        job_filter=job_filter,
+        owner_metadata=owner_metadata,
     )
     assert async_job_get.job_id not in [job.job_id for job in jobs]
 
-    with pytest.raises(JobAbortedError):
+    with pytest.raises(JobMissingError):
+        await async_jobs.status(
+            async_jobs_rabbitmq_rpc_client,
+            rpc_namespace=ASYNC_JOBS_RPC_NAMESPACE,
+            job_id=async_job_get.job_id,
+            owner_metadata=owner_metadata,
+        )
+
+    with pytest.raises(JobMissingError):
         await async_jobs.result(
             async_jobs_rabbitmq_rpc_client,
             rpc_namespace=ASYNC_JOBS_RPC_NAMESPACE,
             job_id=async_job_get.job_id,
-            job_filter=job_filter,
+            owner_metadata=owner_metadata,
         )
 
 
@@ -357,7 +354,7 @@ async def test_async_jobs_raises(
     exposed_rpc_start: str,
     error: Exception,
 ):
-    async_job_get, job_filter = await _start_task_via_rpc(
+    async_job_get, owner_metadata = await _start_task_via_rpc(
         async_jobs_rabbitmq_rpc_client,
         rpc_task_name=exposed_rpc_start,
         user_id=user_id,
@@ -369,7 +366,7 @@ async def test_async_jobs_raises(
     await _wait_for_job(
         async_jobs_rabbitmq_rpc_client,
         async_job_get=async_job_get,
-        job_filter=job_filter,
+        owner_metadata=owner_metadata,
         stop_after=timedelta(minutes=1),
     )
 
@@ -378,7 +375,7 @@ async def test_async_jobs_raises(
             async_jobs_rabbitmq_rpc_client,
             rpc_namespace=ASYNC_JOBS_RPC_NAMESPACE,
             job_id=async_job_get.job_id,
-            job_filter=job_filter,
+            owner_metadata=owner_metadata,
         )
     assert exc.value.exc_type == type(error).__name__
     assert exc.value.exc_msg == f"{error}"

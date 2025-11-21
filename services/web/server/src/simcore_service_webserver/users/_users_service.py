@@ -189,22 +189,30 @@ async def list_user_permissions(
     return permissions
 
 
-async def get_user_invoice_address(
-    app: web.Application, *, user_id: UserID
-) -> UserInvoiceAddress:
-    user_billing_details: UserBillingDetails = (
-        await _users_repository.get_user_billing_details(
-            get_asyncpg_engine(app), user_id=user_id
-        )
+async def get_user_billing_details(
+    app: web.Application, *, user_id: UserID, product_name: ProductName
+) -> UserBillingDetails:
+    return await _users_repository.get_user_billing_details(
+        get_asyncpg_engine(app), user_id=user_id, product_name=product_name
     )
-    _user_billing_country = pycountry.countries.lookup(user_billing_details.country)
-    _user_billing_country_alpha_2_format = _user_billing_country.alpha_2
+
+
+async def get_user_invoice_address(
+    app: web.Application,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+) -> UserInvoiceAddress:
+    user_billing_details = await get_user_billing_details(
+        app, user_id=user_id, product_name=product_name
+    )
+
     return UserInvoiceAddress(
         line1=user_billing_details.address,
         state=user_billing_details.state,
         postal_code=user_billing_details.postal_code,
         city=user_billing_details.city,
-        country=_user_billing_country_alpha_2_format,
+        country=pycountry.countries.lookup(user_billing_details.country).alpha_2,
     )
 
 

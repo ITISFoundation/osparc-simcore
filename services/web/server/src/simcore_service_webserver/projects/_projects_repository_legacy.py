@@ -7,7 +7,7 @@
 
 import logging
 from contextlib import AsyncExitStack
-from typing import Any, Self, cast
+from typing import Any, Final, Self, cast
 from uuid import uuid1
 
 import sqlalchemy as sa
@@ -15,6 +15,7 @@ from aiohttp import web
 from aiopg.sa import Engine
 from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import ResultProxy, RowProxy
+from common_library.logging.logging_base import get_log_record_extra
 from models_library.basic_types import IDStr
 from models_library.folders import FolderQuery, FolderScope
 from models_library.groups import GroupID
@@ -39,8 +40,7 @@ from models_library.wallets import WalletDB, WalletID
 from models_library.workspaces import WorkspaceQuery, WorkspaceScope
 from pydantic import TypeAdapter
 from pydantic.types import PositiveInt
-from servicelib.aiohttp.application_keys import APP_AIOPG_ENGINE_KEY
-from servicelib.logging_utils import get_log_record_extra, log_context
+from servicelib.logging_utils import log_context
 from simcore_postgres_database.aiopg_errors import UniqueViolation
 from simcore_postgres_database.models.groups import user_to_groups
 from simcore_postgres_database.models.project_to_groups import project_to_groups
@@ -66,6 +66,7 @@ from simcore_postgres_database.webserver_models import (
     projects,
     users,
 )
+from simcore_service_webserver.constants import APP_AIOPG_ENGINE_KEY
 from sqlalchemy import func, literal_column, sql
 from sqlalchemy.dialects.postgresql import BOOLEAN, INTEGER
 from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -104,7 +105,6 @@ from .models import (
 
 _logger = logging.getLogger(__name__)
 
-APP_PROJECT_DBAPI = __name__ + ".ProjectDBAPI"
 ANY_USER = ANY_USER_ID_SENTINEL
 
 DEFAULT_ORDER_BY = OrderBy(
@@ -130,14 +130,14 @@ class ProjectDBAPI(BaseProjectDB):
 
     @classmethod
     def get_from_app_context(cls, app: web.Application) -> Self:
-        db = app[APP_PROJECT_DBAPI]
+        db = app[PROJECT_DBAPI_APPKEY]
         assert isinstance(db, cls)  # nosec
         return db
 
     @classmethod
     def set_once_in_app_context(cls, app: web.Application) -> Self:
-        if app.get(APP_PROJECT_DBAPI) is None:
-            app[APP_PROJECT_DBAPI] = cls(app)
+        if app.get(PROJECT_DBAPI_APPKEY) is None:
+            app[PROJECT_DBAPI_APPKEY] = ProjectDBAPI(app)
         return cls.get_from_app_context(app)
 
     @property
@@ -1335,6 +1335,9 @@ class ProjectDBAPI(BaseProjectDB):
                 project_uuid=project_uuid,
                 details="Project has more than one linked product. This needs manual intervention. Please contact oSparc support.",
             )
+
+
+PROJECT_DBAPI_APPKEY: Final = web.AppKey(ProjectDBAPI.__name__, ProjectDBAPI)
 
 
 def setup_projects_db(app: web.Application):

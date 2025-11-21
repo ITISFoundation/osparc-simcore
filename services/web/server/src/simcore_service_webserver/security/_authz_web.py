@@ -54,3 +54,29 @@ async def check_user_permission(
         else:
             msg += f" {permission}"
         raise web.HTTPForbidden(text=msg)
+
+
+async def check_user_permission_with_groups(
+    request: web.Request, permission: str
+) -> None:
+    """Checker that passes to authorized users with given permission via roles OR groups.
+
+    Raises:
+        web.HTTPUnauthorized: If user is not authorized
+        web.HTTPForbidden: If user is authorized but lacks both role and group permissions
+    """
+    from ..products import products_web
+
+    context = {
+        "authorized_uid": await check_user_authorized(request),
+        "enable_group_permissions": True,
+        "request": request,
+        "product_support_group_id": products_web.get_current_product(
+            request
+        ).support_standard_group_id,
+    }
+
+    allowed = await aiohttp_security.api.permits(request, permission, context)
+    if not allowed:
+        msg = f"You do not have sufficient access rights for {permission}"
+        raise web.HTTPForbidden(text=msg)

@@ -16,9 +16,6 @@ from simcore_service_webserver.scicrunch._resolver import ResolvedItem, resolve_
 from simcore_service_webserver.scicrunch.settings import SciCrunchSettings
 
 
-@pytest.mark.skip(
-    "requires a fix see case https://github.com/ITISFoundation/osparc-simcore/issues/5160"
-)
 @pytest.mark.parametrize(
     "name,rrid",
     TOOL_CITATIONS + ANTIBODY_CITATIONS + PLAMID_CITATIONS + ORGANISM_CITATIONS,
@@ -56,6 +53,7 @@ async def test_scicrunch_resolves_all_valid_rrids(
             )
         else:
             # proper_citation includes both 'name' and 'rrid' but in different formats!
+            # AND has been changing in time. BELOW are some of the formats found!
 
             #
             # NOTE: why CELL_LINE_CITATIONS are removed from test parametrization ?
@@ -64,13 +62,17 @@ async def test_scicrunch_resolves_all_valid_rrids(
             #   sometimes (BCRJ Cat# 0226, RRID:CVCL_0033) appears as first hit instead
             #   of the reference in CELL_LINE_CITATIONS
             #
+            valid_formats = (
+                f"({name}, RRID:{rrid})",
+                f"{name}, RRID:{rrid}",  # without parentheses
+                f"({name},RRID:{rrid})",
+                f"{name} (RRID:{rrid})",
+            )
+            resolved_citations = [
+                resolved.proper_citation for resolved in resolved_items
+            ]
 
             assert any(
-                resolved.proper_citation
-                in (
-                    f"({name}, RRID:{rrid})",
-                    f"({name},RRID:{rrid})",
-                    f"{name} (RRID:{rrid})",
-                )
-                for resolved in resolved_items
-            )
+                proper_citation in valid_formats
+                for proper_citation in resolved_citations
+            ), f"No proper_citation found with both {name=} and {rrid=}: {resolved_citations=} not in {valid_formats=}"

@@ -3,6 +3,7 @@ from typing import Annotated, Self, TypeVar
 
 from common_library.basic_types import DEFAULT_FACTORY
 from common_library.dict_tools import remap_keys
+from models_library.string_types import DescriptionSafeStr, NameSafeStr
 from pydantic import (
     AnyHttpUrl,
     AnyUrl,
@@ -27,7 +28,7 @@ from ..groups import (
     StandardGroupCreate,
     StandardGroupUpdate,
 )
-from ..users import UserID, UserNameID
+from ..users import UserID, UserNameID, UserNameSafeID
 from ..utils.common_validators import create__check_only_one_is_set__root_validator
 from ._base import InputSchema, OutputSchema, OutputSchemaWithoutCamelCase
 
@@ -54,14 +55,48 @@ class GroupAccessRights(BaseModel):
     )
 
 
-class GroupGet(OutputSchema):
-    gid: GroupID = Field(..., description="the group ID")
-    label: str = Field(..., description="the group name")
-    description: str = Field(..., description="the group description")
-    thumbnail: AnyUrl | None = Field(
-        default=None, description="url to the group thumbnail"
-    )
-    access_rights: GroupAccessRights = Field(..., alias="accessRights")
+class GroupGetBase(OutputSchema):
+    gid: Annotated[GroupID, Field(description="the group's unique ID")]
+    label: Annotated[str, Field(description="the group's display name")]
+    description: str
+    thumbnail: Annotated[
+        AnyUrl | None, Field(description="a link to the group's thumbnail")
+    ] = None
+
+    @field_validator("thumbnail", mode="before")
+    @classmethod
+    def _sanitize_thumbnail_input(cls, v):
+        if v:
+            # Enforces null if thumbnail is not valid URL or empty
+            with suppress(ValidationError):
+                return TypeAdapter(AnyHttpUrl).validate_python(v)
+        return None
+
+    @classmethod
+    def dump_basic_group_data(cls, group: Group) -> dict:
+        """Helper function to extract common group data for schema conversion"""
+        return remap_keys(
+            group.model_dump(
+                include={
+                    "gid",
+                    "name",
+                    "description",
+                    "thumbnail",
+                },
+                exclude={
+                    "inclusion_rules",  # deprecated
+                },
+                exclude_unset=True,
+                by_alias=False,
+            ),
+            rename={
+                "name": "label",
+            },
+        )
+
+
+class GroupGet(GroupGetBase):
+    access_rights: Annotated[GroupAccessRights, Field(alias="accessRights")]
 
     inclusion_rules: Annotated[
         dict[str, str],
@@ -77,24 +112,7 @@ class GroupGet(OutputSchema):
         # Adapts these domain models into this schema
         return cls.model_validate(
             {
-                **remap_keys(
-                    group.model_dump(
-                        include={
-                            "gid",
-                            "name",
-                            "description",
-                            "thumbnail",
-                        },
-                        exclude={
-                            "inclusion_rules",  # deprecated
-                        },
-                        exclude_unset=True,
-                        by_alias=False,
-                    ),
-                    rename={
-                        "name": "label",
-                    },
-                ),
+                **cls.dump_basic_group_data(group),
                 "access_rights": access_rights,
             }
         )
@@ -136,19 +154,10 @@ class GroupGet(OutputSchema):
 
     model_config = ConfigDict(json_schema_extra=_update_json_schema_extra)
 
-    @field_validator("thumbnail", mode="before")
-    @classmethod
-    def _sanitize_legacy_data(cls, v):
-        if v:
-            # Enforces null if thumbnail is not valid URL or empty
-            with suppress(ValidationError):
-                return TypeAdapter(AnyHttpUrl).validate_python(v)
-        return None
-
 
 class GroupCreate(InputSchema):
-    label: str
-    description: str
+    label: NameSafeStr
+    description: DescriptionSafeStr
     thumbnail: AnyUrl | None = None
 
     def to_domain_model(self) -> StandardGroupCreate:
@@ -165,8 +174,8 @@ class GroupCreate(InputSchema):
 
 
 class GroupUpdate(InputSchema):
-    label: str | None = None
-    description: str | None = None
+    label: NameSafeStr | None = None
+    description: DescriptionSafeStr | None = None
     thumbnail: AnyUrl | None = None
 
     def to_domain_model(self) -> StandardGroupUpdate:
@@ -187,6 +196,18 @@ class MyGroupsGet(OutputSchema):
     organizations: list[GroupGet] | None = None
     all: GroupGet
     product: GroupGet | None = None
+    support: Annotated[
+        GroupGetBase | None,
+        Field(
+            description="Group ID of the app support team or None if no support is defined for this product"
+        ),
+    ] = None
+    chatbot: Annotated[
+        GroupGetBase | None,
+        Field(
+            description="Group ID of the support chatbot user or None if no chatbot is defined for this product"
+        ),
+    ] = None
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -225,6 +246,18 @@ class MyGroupsGet(OutputSchema):
                     "description": "Open to all users",
                     "accessRights": {"read": True, "write": False, "delete": False},
                 },
+                "support": {
+                    "gid": "2",
+                    "label": "Support Team",
+                    "description": "The support team of the application",
+                    "thumbnail": "https://placekitten.com/15/15",
+                },
+                "chatbot": {
+                    "gid": "6",
+                    "label": "Chatbot User",
+                    "description": "The chatbot user of the application",
+                    "thumbnail": "https://placekitten.com/15/15",
+                },
             }
         }
     )
@@ -234,6 +267,8 @@ class MyGroupsGet(OutputSchema):
         cls,
         groups_by_type: GroupsByTypeTuple,
         my_product_group: tuple[Group, AccessRightsDict] | None,
+        product_support_group: Group | None,
+        product_chatbot_primary_group: Group | None,
     ) -> Self:
         assert groups_by_type.primary  # nosec
         assert groups_by_type.everyone  # nosec
@@ -247,6 +282,20 @@ class MyGroupsGet(OutputSchema):
             product=(
                 GroupGet.from_domain_model(*my_product_group)
                 if my_product_group
+                else None
+            ),
+            support=(
+                GroupGetBase.model_validate(
+                    GroupGetBase.dump_basic_group_data(product_support_group)
+                )
+                if product_support_group
+                else None
+            ),
+            chatbot=(
+                GroupGetBase.model_validate(
+                    GroupGetBase.dump_basic_group_data(product_chatbot_primary_group)
+                )
+                if product_chatbot_primary_group
                 else None
             ),
         )
@@ -345,7 +394,7 @@ class GroupUserAdd(InputSchema):
     """
 
     uid: UserID | None = None
-    user_name: Annotated[UserNameID | None, Field(alias="userName")] = None
+    user_name: Annotated[UserNameSafeID | None, Field(alias="userName")] = None
     email: Annotated[
         LowerCaseEmailStr | None,
         Field(

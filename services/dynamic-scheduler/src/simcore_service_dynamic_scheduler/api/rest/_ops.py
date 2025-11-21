@@ -5,7 +5,7 @@ from models_library.api_schemas_directorv2.dynamic_services import (
     DynamicServiceGet,
 )
 
-from ...services import scheduler_interface
+from ...services import common_interface
 from ._dependencies import (
     get_app,
 )
@@ -19,6 +19,6 @@ async def running_services(
 ) -> list[DynamicServiceGet]:
     """returns all running dynamic services. Used by ops internall to determine
     when it is safe to shutdown the platform"""
-    return await scheduler_interface.list_tracked_dynamic_services(
+    return await common_interface.list_tracked_dynamic_services(
         app, user_id=None, project_id=None
     )

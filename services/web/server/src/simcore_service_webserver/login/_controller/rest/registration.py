@@ -4,9 +4,9 @@ from datetime import UTC, datetime, timedelta
 from aiohttp import web
 from aiohttp.web import RouteTableDef
 from common_library.error_codes import create_error_code
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import parse_request_body_as
-from servicelib.logging_errors import create_troubleshootting_log_kwargs
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 from simcore_postgres_database.models.users import UserStatus
 
@@ -37,14 +37,10 @@ from ..._invitations_service import (
     check_other_registrations,
     extract_email_from_invitation,
 )
-from ..._login_repository_legacy import (
-    AsyncpgStorage,
-    ConfirmationTokenDict,
-    get_plugin_storage,
-)
 from ..._login_service import (
     notify_user_confirmation,
 )
+from ..._models import Confirmation
 from ...constants import (
     CODE_2FA_SMS_CODE_REQUIRED,
     MAX_2FA_CODE_RESEND,
@@ -55,11 +51,11 @@ from ...constants import (
     MSG_WEAK_PASSWORD,
 )
 from ...settings import (
-    LoginOptions,
     LoginSettingsForProduct,
-    get_plugin_options,
     get_plugin_settings,
 )
+from ._rest_dependencies import get_confirmation_service
+from ._rest_exceptions import handle_rest_requests_exceptions
 from .registration_schemas import (
     InvitationCheck,
     InvitationInfo,
@@ -78,6 +74,7 @@ routes = RouteTableDef()
     name="auth_check_registration_invitation",
 )
 @global_rate_limit_route(number_of_requests=30, interval_seconds=MINUTE)
+@handle_rest_requests_exceptions
 async def check_registration_invitation(request: web.Request):
     """
     Decrypts invitation and extracts associated email or
@@ -108,6 +105,7 @@ async def check_registration_invitation(request: web.Request):
 
 
 @routes.post(f"/{API_VTAG}/auth/register", name="auth_register")
+@handle_rest_requests_exceptions
 async def register(request: web.Request):
     """
     Starts user's registration by providing an email, password and
@@ -119,13 +117,11 @@ async def register(request: web.Request):
     settings: LoginSettingsForProduct = get_plugin_settings(
         request.app, product_name=product.name
     )
-    db: AsyncpgStorage = get_plugin_storage(request.app)
-    cfg: LoginOptions = get_plugin_options(request.app)
 
     registration = await parse_request_body_as(RegisterBody, request)
 
     await check_other_registrations(
-        request.app, email=registration.email, current_product=product, db=db, cfg=cfg
+        request.app, email=registration.email, current_product=product
     )
 
     # Check for weak passwords
@@ -174,8 +170,6 @@ async def register(request: web.Request):
             invitation_code,
             product=product,
             guest_email=registration.email,
-            db=db,
-            cfg=cfg,
             app=request.app,
         )
         if invitation.trial_account_days:
@@ -224,7 +218,8 @@ async def register(request: web.Request):
 
     if settings.LOGIN_REGISTRATION_CONFIRMATION_REQUIRED:
         # Confirmation required: send confirmation email
-        _confirmation: ConfirmationTokenDict = await db.create_confirmation(
+        confirmation_service = get_confirmation_service(request.app)
+        _confirmation: Confirmation = await confirmation_service.create_confirmation(
             user_id=user["id"],
             action="REGISTRATION",
             data=invitation.model_dump_json() if invitation else None,
@@ -232,7 +227,7 @@ async def register(request: web.Request):
 
         try:
             email_confirmation_url = _confirmation_web.make_confirmation_link(
-                request, _confirmation["code"]
+                request, _confirmation.code
             )
             email_template_path = await get_template_path(
                 request, "registration_email.jinja2"
@@ -255,7 +250,7 @@ async def register(request: web.Request):
             user_error_msg = MSG_CANT_SEND_MAIL
 
             _logger.exception(
-                **create_troubleshootting_log_kwargs(
+                **create_troubleshooting_log_kwargs(
                     user_error_msg,
                     error=err,
                     error_code=error_code,
@@ -270,7 +265,9 @@ async def register(request: web.Request):
                 )
             )
 
-            await db.delete_confirmation_and_user(user["id"], _confirmation)
+            await confirmation_service.delete_confirmation_and_user(
+                user_id=user["id"], confirmation=_confirmation
+            )
 
             raise web.HTTPServiceUnavailable(text=user_error_msg) from err
 
@@ -315,6 +312,7 @@ async def register(request: web.Request):
     name="auth_resend_2fa_code",
     max_access_count=MAX_2FA_CODE_RESEND,
 )
+@handle_rest_requests_exceptions
 async def register_phone(request: web.Request):
     """
     Submits phone registration
@@ -382,7 +380,7 @@ async def register_phone(request: web.Request):
         user_error_msg = "Currently we cannot register phone numbers"
 
         _logger.exception(
-            **create_troubleshootting_log_kwargs(
+            **create_troubleshooting_log_kwargs(
                 user_error_msg,
                 error=err,
                 error_code=error_code,

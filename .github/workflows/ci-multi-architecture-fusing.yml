@@ -8,7 +8,6 @@ on:
     branches:
       - "master"
 
-
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -21,7 +20,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-24.04]
-        python: ["3.11"]
+        python: ["3.13"]
     env:
       # secrets can be set in settings/secrets on github
       DOCKER_REGISTRY: ${{ secrets.DOCKER_REGISTRY }}

@@ -32,6 +32,37 @@ qx.Class.define("osparc.study.CreateFunction", {
     this.__buildLayout();
   },
 
+  statics: {
+    CREATE_FUNCTION_TEXT: qx.locale.Manager.tr(`
+      In order to Create a Function, the pipeline needs:
+      - at least one parameter and one probe (numbers)
+      - at least one computational app
+      - no dynamic apps
+    `),
+
+    isPotentialFunction: function(workbench) {
+      // const filePickers = osparc.study.Utils.extractFilePickers(workbench);
+      // const parameters = osparc.study.Utils.extractParameters(workbench);
+      // const probes = osparc.study.Utils.extractProbes(workbench);
+      // return (filePickers.length + parameters.length) && probes.length;
+
+      const parameters = osparc.study.Utils.extractFunctionableParameters(workbench);
+      const probes = osparc.study.Utils.extractFunctionableProbes(workbench);
+      const computationals = osparc.study.Utils.extractComputationalServices(workbench);
+      const dynamics = osparc.study.Utils.extractDynamicServices(workbench);
+
+      return Boolean(
+        (parameters.length && probes.length) &&
+        computationals.length > 0 &&
+        dynamics.length === 0
+      );
+    },
+
+    checkExposedInputsOutputs: function(exposedInputs, exposedOutputs) {
+      return Boolean(Object.values(exposedInputs).some(exposedInputValue => exposedInputValue) && Object.values(exposedOutputs).some(exposedOutputValue => exposedOutputValue));
+    },
+  },
+
   members: {
     __studyData: null,
     __form: null,
@@ -229,6 +260,7 @@ qx.Class.define("osparc.study.CreateFunction", {
         allowGrowX: false,
         alignX: "right"
       });
+      osparc.utils.Utils.setIdToWidget(createFunctionBtn, "create_function_btn");
       createFunctionBtn.addListener("execute", () => {
         if (this.__form.validate()) {
           this.__createFunction(defaultInputs, exposedInputs, exposedOutputs);
@@ -237,6 +269,12 @@ qx.Class.define("osparc.study.CreateFunction", {
     },
 
     __createFunction: function(defaultInputs, exposedInputs, exposedOutputs) {
+      if (!osparc.study.CreateFunction.checkExposedInputsOutputs(exposedInputs, exposedOutputs)) {
+        const msg = this.tr("Expose at least one input and one output");
+        osparc.FlashMessenger.logAs(msg, "ERROR");
+        return;
+      }
+
       this.__createFunctionBtn.setFetching(true);
 
       // first publish it as a hidden template

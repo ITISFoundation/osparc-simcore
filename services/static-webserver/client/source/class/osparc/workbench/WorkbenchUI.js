@@ -292,30 +292,38 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       this.openServiceCatalog(nodePos);
     },
 
-    openServiceCatalog: function(nodePos) {
-      if (this.getStudy().isReadOnly()) {
-        return null;
-      }
-      if (this.getStudy().isPipelineRunning()) {
-        osparc.FlashMessenger.logError(osparc.data.model.Workbench.CANT_ADD_NODE);
-        return null;
-      }
-      const srvCat = new osparc.workbench.ServiceCatalog();
-      srvCat.addListener("addService", async e => {
-        const {
-          service,
-          nodeLeftId,
-          nodeRightId
-        } = e.getData();
-        const nodeUI = await this.__addNode(service, nodePos);
-        if (nodeUI && nodeLeftId !== null || nodeRightId !== null) {
-          const newNodeId = nodeUI.getNodeId();
-          this._createEdgeBetweenNodes(nodeLeftId ? nodeLeftId : newNodeId, nodeRightId ? nodeRightId : newNodeId, true);
+    __openServiceCatalogWithContext: function(nodeUI, isNodeInput) {
+      const freePos = this.getStudy().getWorkbench().getFreePosition(nodeUI.getNode(), isNodeInput);
+      const srvCat = this.openServiceCatalog(freePos);
+      if (srvCat) {
+        if (isNodeInput) {
+          srvCat.setContext(null, nodeUI.getNodeId());
+        } else {
+          srvCat.setContext(nodeUI.getNodeId(), null);
         }
-      }, this);
-      srvCat.center();
-      srvCat.open();
-      return srvCat;
+      }
+    },
+
+    openServiceCatalog: function(nodePos) {
+      if (osparc.workbench.ServiceCatalog.canItBeOpened(this.getStudy())) {
+        const srvCat = new osparc.workbench.ServiceCatalog();
+        srvCat.addListener("addService", async e => {
+          const {
+            service,
+            nodeLeftId,
+            nodeRightId
+          } = e.getData();
+          const nodeUI = await this.__addNode(service, nodePos);
+          if (nodeUI && nodeLeftId !== null || nodeRightId !== null) {
+            const newNodeId = nodeUI.getNodeId();
+            this._createEdgeBetweenNodes(nodeLeftId ? nodeLeftId : newNodeId, nodeRightId ? nodeRightId : newNodeId, true);
+          }
+        }, this);
+        srvCat.center();
+        srvCat.open();
+        return srvCat;
+      }
+      return null;
     },
 
     __createTemporaryNodeUI: function(pos) {
@@ -540,7 +548,7 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
 
       nodeUI.addListener("dbltap", e => {
         this.fireDataEvent("nodeSelected", nodeUI.getNodeId());
-        if (nodeUI.getNode().canNodeStart()) {
+        if (nodeUI.getNode().canNodeStart() && !nodeUI.getNode().getStudy().getDisableServiceAutoStart()) {
           nodeUI.getNode().requestStartNode();
         }
         e.stopPropagation();
@@ -689,25 +697,23 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       nodeUI.addListener("markerClicked", e => this.__openMarkerEditor(e.getData()), this);
       nodeUI.addListener("infoNode", e => this.__openNodeInfo(e.getData()), this);
       nodeUI.addListener("removeNode", e => this.fireDataEvent("removeNode", e.getData()), this);
-
-      if (nodeUI.getNode().getPropsForm()) {
-        nodeUI.getNode().getPropsForm().addListener("highlightEdge", e => {
-          const {
-            highlight,
-            fromNodeId,
-            toNodeId,
-          } = e.getData();
-          const edgeFound = this.__edgesUI.find(edgeUI => {
-            const edge = edgeUI.getEdge();
-            const inputNode = edge.getInputNode();
-            const outputNode = edge.getOutputNode();
-            return (inputNode.getNodeId() === fromNodeId && outputNode.getNodeId() === toNodeId)
-          });
-          if (edgeFound) {
-            edgeFound.setHighlighted(highlight);
-          }
+      nodeUI.addListener("highlightEdge", e => {
+        const {
+          highlight,
+          fromNodeId,
+          toNodeId,
+        } = e.getData();
+        const edgeFound = this.__edgesUI.find(edgeUI => {
+          const edge = edgeUI.getEdge();
+          const inputNode = edge.getInputNode();
+          const outputNode = edge.getOutputNode();
+          return (inputNode.getNodeId() === fromNodeId && outputNode.getNodeId() === toNodeId)
         });
-      }
+        if (edgeFound) {
+          edgeFound.setHighlighted(highlight);
+        }
+      });
+      nodeUI.addListener("requestOpenServiceCatalog", e => this.__openServiceCatalogWithContext(nodeUI, e.getData()), this);
 
       return nodeUI;
     },
@@ -1048,8 +1054,8 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
       portLabel.setSource(osparc.workbench.NodeUI.PORT_CONNECTED);
 
       if (!this.__tempEdgeIsInput) {
-        const modified = nodeUI.getNode().getStatus().getModified();
-        const colorHex = osparc.workbench.EdgeUI.getEdgeColor(modified);
+        const output = nodeUI.getNode().getStatus().getOutput();
+        const colorHex = osparc.workbench.EdgeUI.getEdgeColor(output);
         osparc.wrapper.Svg.updateCurveColor(this.__tempEdgeRepr, colorHex);
       }
     },
@@ -1400,23 +1406,11 @@ qx.Class.define("osparc.workbench.WorkbenchUI", {
         },
         addServiceInput: {
           "text": "\uf090", // in
-          "action": () => {
-            const freePos = this.getStudy().getWorkbench().getFreePosition(nodeUI.getNode(), true);
-            const srvCat = this.openServiceCatalog(freePos);
-            if (srvCat) {
-              srvCat.setContext(null, nodeUI.getNodeId());
-            }
-          }
+          "action": () => this.__openServiceCatalogWithContext(nodeUI, true)
         },
         addServiceOutput: {
           "text": "\uf08b", // out
-          "action": () => {
-            const freePos = this.getStudy().getWorkbench().getFreePosition(nodeUI.getNode(), false);
-            const srvCat = this.openServiceCatalog(freePos);
-            if (srvCat) {
-              srvCat.setContext(nodeUI.getNodeId(), null);
-            }
-          }
+          "action": () => this.__openServiceCatalogWithContext(nodeUI, false)
         },
         noAction: {
           "text": "\uf05e", // verboten

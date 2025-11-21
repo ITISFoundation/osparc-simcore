@@ -50,7 +50,7 @@ class TaskData(BaseModel):
     task_id: str
     task_progress: TaskProgress
     # NOTE: this context lifetime is with the tracked task (similar to aiohttp storage concept)
-    task_context: dict[str, Any]
+    task_context: TaskContext
     fire_and_forget: Annotated[
         bool,
         Field(
@@ -71,6 +71,16 @@ class TaskData(BaseModel):
         ),
     ] = None
 
+    detected_as_done_at: Annotated[
+        datetime | None,
+        Field(
+            description=(
+                "used to remove the task when it's first detected as done "
+                "if a task was started as fire_and_forget=True"
+            )
+        ),
+    ] = None
+
     is_done: Annotated[
         bool,
         Field(description="True when the task finished running with or without errors"),
@@ -78,6 +88,10 @@ class TaskData(BaseModel):
     result_field: Annotated[
         ResultField | None, Field(description="the result of the task")
     ] = None
+    marked_for_removal: Annotated[
+        bool,
+        Field(description=("if True, indicates the task is marked for removal")),
+    ] = False
 
     model_config = ConfigDict(
         arbitrary_types_allowed=True,

@@ -5,9 +5,11 @@ from models_library.rest_base import RequestParameters
 from models_library.users import UserID
 from pydantic import ConfigDict, Field, StringConstraints
 from pydantic_extra_types.phone_numbers import PhoneNumberValidator
-from servicelib.request_keys import RQT_USERID_KEY
+from servicelib.aiohttp.request_keys import RQT_USERID_KEY
+from servicelib.celery.models import OwnerMetadata
 from servicelib.rest_constants import X_CLIENT_SESSION_ID_HEADER
 
+from ._meta import APP_NAME
 from .constants import RQ_PRODUCT_KEY
 
 PhoneNumberStr: TypeAlias = Annotated[
@@ -55,3 +57,11 @@ class ClientSessionHeaderParams(RequestParameters):
     model_config = ConfigDict(
         validate_by_name=True,
     )
+
+
+class WebServerOwnerMetadata(OwnerMetadata):
+    user_id: UserID
+    product_name: ProductName
+    owner: Annotated[
+        str, StringConstraints(pattern=rf"^{APP_NAME}$"), Field(frozen=True)
+    ] = APP_NAME

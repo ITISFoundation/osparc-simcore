@@ -47,7 +47,7 @@ class _ListConversationsQueryParams(PageQueryParameters):
     @field_validator("type")
     @classmethod
     def validate_type(cls, value):
-        if value is not None and value != ConversationType.SUPPORT:
+        if value is not None and value.is_support_type() is False:
             msg = "Only support type conversations are allowed"
             raise ValueError(msg)
         return value
@@ -70,7 +70,7 @@ async def create_conversation(request: web.Request):
     req_ctx = AuthenticatedRequestContext.model_validate(request)
     body_params = await parse_request_body_as(_ConversationsCreateBodyParams, request)
     # Ensure only support conversations are allowed
-    if body_params.type != ConversationType.SUPPORT:
+    if body_params.type.is_support_type() is False:
         raise_unsupported_type(body_params.type)
 
     _extra_context = body_params.extra_context or {}
@@ -101,7 +101,7 @@ async def list_conversations(request: web.Request):
     query_params = parse_request_query_parameters_as(
         _ListConversationsQueryParams, request
     )
-    if query_params.type != ConversationType.SUPPORT:
+    if query_params.type.is_support_type() is False:
         raise_unsupported_type(query_params.type)
 
     total, conversations = (
@@ -146,10 +146,10 @@ async def get_conversation(request: web.Request):
     conversation = await _conversation_service.get_conversation(
         request.app, conversation_id=path_params.conversation_id
     )
-    if conversation.type != ConversationType.SUPPORT:
+    if conversation.type.is_support_type() is False:
         raise_unsupported_type(conversation.type)
 
-    conversation = await _conversation_service.get_support_conversation_for_user(
+    conversation, _ = await _conversation_service.get_support_conversation_for_user(
         app=request.app,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
@@ -175,17 +175,14 @@ async def update_conversation(request: web.Request):
     conversation = await _conversation_service.get_conversation(
         request.app, conversation_id=path_params.conversation_id
     )
-    if conversation.type != ConversationType.SUPPORT:
+    if conversation.type.is_support_type() is False:
         raise_unsupported_type(conversation.type)
 
-    # Only support conversation creator can update conversation
-    _user_group_id = await users_service.get_user_primary_group_id(
-        request.app, user_id=req_ctx.user_id
-    )
-    await _conversation_service.get_conversation_for_user(
+    await _conversation_service.get_support_conversation_for_user(
         app=request.app,
+        user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
         conversation_id=path_params.conversation_id,
-        user_group_id=_user_group_id,
     )
 
     conversation = await conversations_service.update_conversation(
@@ -213,7 +210,7 @@ async def delete_conversation(request: web.Request):
     conversation = await _conversation_service.get_conversation(
         request.app, conversation_id=path_params.conversation_id
     )
-    if conversation.type != ConversationType.SUPPORT:
+    if conversation.type.is_support_type() is False:
         raise_unsupported_type(conversation.type)
 
     # Only support conversation creator can delete conversation

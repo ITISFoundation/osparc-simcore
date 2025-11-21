@@ -24,6 +24,9 @@ qx.Class.define("osparc.task.TasksContainer", {
     this.__tasks = new qx.data.Array();
 
     const tasksContainer = this.__tasksContainer = new qx.ui.container.Composite(new qx.ui.layout.VBox(3)).set({
+      appearance: "floating-menu",
+      padding: 8,
+      maxWidth: osparc.task.TaskUI.MAX_WIDTH + 2*8,
       zIndex: osparc.utils.Utils.FLOATING_Z_INDEX,
       visibility: "excluded"
     });

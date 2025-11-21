@@ -92,7 +92,7 @@ qx.Class.define("osparc.ui.markdown.Markdown", {
               if (linkRepresentation.type === "text") {
                 linkHtml += linkRepresentation.text;
               } else if (linkRepresentation.type === "image") {
-                linkHtml += `<img src="${linkRepresentation.href}" tile alt="${linkRepresentation.text}"></img>`;
+                linkHtml += `<img src="${linkRepresentation.href}" title alt="${linkRepresentation.text}"></img>`;
               }
             }
             linkHtml += `</a>`;
@@ -100,10 +100,13 @@ qx.Class.define("osparc.ui.markdown.Markdown", {
           }
         };
         marked.use({ renderer });
+        // By default, Markdown requires two spaces at the end of a line or a blank line between paragraphs to produce a line break.
+        // With this, a single line break (Enter) in your Markdown input will render as a <br> in HTML.
+        marked.setOptions({ breaks: true }); //
 
         const html = marked.parse(value);
 
-        const safeHtml = osparc.wrapper.DOMPurify.getInstance().sanitize(html);
+        const safeHtml = osparc.wrapper.DOMPurify.sanitize(html);
         this.setHtml(safeHtml);
 
         // for some reason the content is not immediately there

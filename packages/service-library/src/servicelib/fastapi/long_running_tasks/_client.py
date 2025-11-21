@@ -88,7 +88,7 @@ def retry_on_http_errors(
     assert asyncio.iscoroutinefunction(request_func)
 
     @functools.wraps(request_func)
-    async def request_wrapper(zelf: "Client", *args, **kwargs) -> Any:
+    async def request_wrapper(zelf: "HttpClient", *args, **kwargs) -> Any:
         async for attempt in AsyncRetrying(
             stop=stop_after_attempt(max_attempt_number=3),
             wait=wait_exponential(min=1),
@@ -106,7 +106,7 @@ def retry_on_http_errors(
     return request_wrapper
 
 
-class Client:
+class HttpClient:
     """
     This is a client that aims to simplify the requests to get the
     status, result and/or cancel of a long running task.

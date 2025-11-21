@@ -9,11 +9,10 @@ from aiodebug import log_slow_callbacks  # type: ignore[import-untyped]
 from aiohttp import web
 from aiohttp.log import access_logger
 from servicelib.logging_utils import async_loggers
+from servicelib.tracing import TracingConfig
 from simcore_service_webserver.application_settings import ApplicationSettings
 
 _NOISY_LOGGERS: Final[tuple[str, ...]] = (
-    "aio_pika",
-    "aiormq",
     "engineio",
     "engineio.server",
     "inotify.adapters",
@@ -30,7 +29,9 @@ _logger = logging.getLogger(__name__)
 CleanupEvent: TypeAlias = Callable[[web.Application], Awaitable[None]]
 
 
-def setup_logging(app_settings: ApplicationSettings) -> CleanupEvent:
+def setup_logging(
+    app_settings: ApplicationSettings, tracing_config: TracingConfig
+) -> CleanupEvent:
     exit_stack = AsyncExitStack()
     exit_stack.enter_context(
         async_loggers(
@@ -38,7 +39,7 @@ def setup_logging(app_settings: ApplicationSettings) -> CleanupEvent:
             noisy_loggers=_NOISY_LOGGERS,
             log_format_local_dev_enabled=app_settings.WEBSERVER_LOG_FORMAT_LOCAL_DEV_ENABLED,
             logger_filter_mapping=app_settings.WEBSERVER_LOG_FILTER_MAPPING,
-            tracing_settings=app_settings.WEBSERVER_TRACING,
+            tracing_config=tracing_config,
         )
     )
 

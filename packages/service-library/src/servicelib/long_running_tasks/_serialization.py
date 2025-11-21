@@ -78,4 +78,6 @@ def loads(obj_str: str) -> Any:
             msg = f"Could not reconstruct object from data: {data}"
             raise ValueError(msg) from e
 
+    if isinstance(data, Exception):
+        raise data
     return data

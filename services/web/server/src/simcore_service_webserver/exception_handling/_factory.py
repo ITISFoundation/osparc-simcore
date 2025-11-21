@@ -4,10 +4,10 @@ from typing import Any, NamedTuple, TypeAlias
 from aiohttp import web
 from common_library.error_codes import create_error_code
 from common_library.json_serialization import json_dumps
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from models_library.rest_error import ErrorGet
 from servicelib.aiohttp.rest_responses import safe_status_message
 from servicelib.aiohttp.web_exceptions_extension import get_all_aiohttp_http_exceptions
-from servicelib.logging_errors import create_troubleshootting_log_kwargs
 from servicelib.status_codes_utils import (
     get_code_display_name,
     is_5xx_server_error,
@@ -52,7 +52,9 @@ def create_error_response(error: ErrorGet, status_code: int) -> web.Response:
     assert is_error(status_code), f"{status_code=} must be an error [{error=}]"  # nosec
 
     return web.json_response(
-        data={"error": error.model_dump(exclude_unset=True, mode="json")},
+        data={
+            "error": error.model_dump(exclude_unset=True, mode="json", by_alias=True)
+        },
         dumps=json_dumps,
         reason=safe_status_message(get_code_display_name(status_code)),
         status=status_code,
@@ -88,7 +90,6 @@ def create_exception_handler_from_http_info(
         request: web.Request,
         exception: BaseException,
     ) -> web.Response:
-
         # safe formatting, i.e. does not raise
         user_msg = msg_template.format_map(
             _DefaultDict(getattr(exception, "__dict__", {}))
@@ -106,7 +107,7 @@ def create_exception_handler_from_http_info(
             }
 
             _logger.exception(
-                **create_troubleshootting_log_kwargs(
+                **create_troubleshooting_log_kwargs(
                     user_msg,
                     error=exception,
                     error_code=oec,

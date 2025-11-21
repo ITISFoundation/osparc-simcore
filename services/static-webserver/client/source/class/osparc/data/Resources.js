@@ -102,7 +102,7 @@ qx.Class.define("osparc.data.Resources", {
         endpoints: {
           get: {
             method: "GET",
-            url: "/{productName}/app-summary.json",
+            url: `/{productName}/app-summary.json?no-cache=${new Date().getTime()}`,
             isJsonFile: true
           }
         }
@@ -634,15 +634,19 @@ qx.Class.define("osparc.data.Resources", {
           },
           getPage: {
             method: "GET",
-            url: statics.API + "/functions?include_extras=true&offset={offset}&limit={limit}"
+            url: statics.API + "/functions?include_extras=true&offset={offset}&limit={limit}&order_by={orderBy}"
           },
           getPageSearch: {
             method: "GET",
-            url: statics.API + "/functions?include_extras=true&offset={offset}&limit={limit}&search={text}"
+            url: statics.API + "/functions?include_extras=true&offset={offset}&limit={limit}&search={text}&order_by={orderBy}"
           },
           create: {
             method: "POST",
             url: statics.API + "/functions"
+          },
+          delete: {
+            method: "DELETE",
+            url: statics.API + "/functions/{functionId}?force={force}"
           },
           patch: {
             method: "PATCH",
@@ -1127,9 +1131,13 @@ qx.Class.define("osparc.data.Resources", {
       },
       "poUsers": {
         endpoints: {
-          search: {
+          searchByEmail: {
             method: "GET",
             url: statics.API + "/admin/user-accounts:search?email={email}"
+          },
+          searchByGroupId: {
+            method: "GET",
+            url: statics.API + "/admin/user-accounts:search?primary_group_id={gId}"
           },
           getPendingUsers: {
             method: "GET",
@@ -1367,7 +1375,11 @@ qx.Class.define("osparc.data.Resources", {
           },
           multiDownload: {
             method: "POST",
-            url: statics.API + "/storage/locations/{locationId}/export-data"
+            url: statics.API + "/storage/locations/{locationId}:export-data"
+          },
+          searchFiles: {
+            method: "POST",
+            url: statics.API + "/storage/locations/{locationId}:search"
           },
           batchDelete: {
             method: "POST",
@@ -1515,7 +1527,7 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/conversations/{conversationId}"
           },
-          renameConversation: {
+          patchConversation: {
             method: "PATCH",
             url: statics.API + "/conversations/{conversationId}"
           },
@@ -1625,6 +1637,7 @@ qx.Class.define("osparc.data.Resources", {
 
           if ("resolveWResponse" in options && options.resolveWResponse) {
             response.params = params;
+            response.status = e.getRequest().getStatus();
             resolve(response);
           } else {
             resolve(data);
@@ -1643,6 +1656,7 @@ qx.Class.define("osparc.data.Resources", {
           let message = null;
           let status = null;
           let supportId = null;
+          let errors = [];
           if (e.getData().error) {
             const errorData = e.getData().error;
             if (errorData.message) {
@@ -1652,13 +1666,15 @@ qx.Class.define("osparc.data.Resources", {
             if (message === null && logs && logs.length) {
               message = logs[0].message;
             }
-            const errors = errorData.errors || [];
+            errors = errorData.errors || [];
             if (message === null && errors && errors.length) {
               message = errors[0].message;
             }
             status = errorData.status;
             if (errorData["support_id"]) {
               supportId = errorData["support_id"];
+            } else if (errorData["supportId"]) {
+              supportId = errorData["supportId"];
             }
           } else {
             const req = e.getRequest();
@@ -1690,6 +1706,9 @@ qx.Class.define("osparc.data.Resources", {
           const err = Error(message ? message : `Error while trying to fetch ${endpoint} ${resource}`);
           if (status) {
             err.status = status;
+          }
+          if (errors.length) {
+            err.errors = errors;
           }
           if (supportId) {
             err.supportId = supportId;

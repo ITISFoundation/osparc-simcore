@@ -12,12 +12,12 @@ from models_library.basic_regex import (
 from models_library.basic_types import NonNegativeDecimal
 from models_library.emails import LowerCaseEmailStr
 from models_library.products import ProductName, StripePriceID, StripeTaxRateID
-from models_library.utils.change_case import snake_to_camel
 from pydantic import (
     BaseModel,
     BeforeValidator,
     ConfigDict,
     Field,
+    HttpUrl,
     PositiveInt,
     field_serializer,
     field_validator,
@@ -71,20 +71,26 @@ class Product(BaseModel):
         Field(pattern=PUBLIC_VARIABLE_NAME_RE, validate_default=True),
     ]
 
-    display_name: Annotated[str, Field(..., description="Long display name")]
+    display_name: Annotated[str, Field(description="Long display name")]
     short_name: Annotated[
         str | None,
         Field(
-            None,
             pattern=re.compile(TWILIO_ALPHANUMERIC_SENDER_ID_RE),
             min_length=2,
             max_length=11,
             description="Short display name for SMS",
         ),
-    ]
+    ] = None
 
     host_regex: Annotated[
-        re.Pattern, BeforeValidator(str.strip), Field(..., description="Host regex")
+        re.Pattern,
+        BeforeValidator(lambda s: s.strip() if isinstance(s, str) else s),
+        Field(description="Host regex"),
+    ]
+
+    base_url: Annotated[
+        HttpUrl,
+        Field(description="Product Base URL"),
     ]
 
     support_email: Annotated[
@@ -116,7 +122,7 @@ class Product(BaseModel):
 
     manuals: list[Manual] | None = None
 
-    support: list[Forum | EmailFeedback | WebFeedback] | None = Field(None)
+    support: list[Forum | EmailFeedback | WebFeedback] | None = None
 
     login_settings: Annotated[
         ProductLoginSettingsDict,
@@ -143,12 +149,21 @@ class Product(BaseModel):
     support_standard_group_id: Annotated[
         int | None, Field(description="Support standard group ID, None if disabled")
     ] = None
+    support_chatbot_user_id: Annotated[
+        int | None, Field(description="Support chatbot user ID, None if disabled")
+    ] = None
+    support_assigned_fogbugz_person_id: Annotated[
+        int | None,
+        Field(description="Support assigned Fogbugz person ID, None if disabled"),
+    ] = None
+    support_assigned_fogbugz_project_id: Annotated[
+        int | None,
+        Field(description="Support assigned Fogbugz project ID, None if disabled"),
+    ] = None
 
     is_payment_enabled: Annotated[
         bool,
-        Field(
-            description="True if this product offers credits",
-        ),
+        Field(description="True if this product offers credits"),
     ] = False
 
     credits_per_usd: Annotated[
@@ -203,6 +218,7 @@ class Product(BaseModel):
                         # fake mandatory
                         "name": "osparc",
                         "host_regex": r"([\.-]{0,1}osparc[\.-])",
+                        "base_url": "https://osparc.io",
                         "twilio_messaging_sid": "1" * 34,
                         "registration_email_template": "osparc_registration_email",
                         "login_settings": {
@@ -223,6 +239,7 @@ class Product(BaseModel):
                         "display_name": "TI PT",
                         "short_name": "TIPI",
                         "host_regex": r"(^tis[\.-])|(^ti-solutions\.)|(^ti-plan\.)",
+                        "base_url": "https://tip.io",
                         "support_email": "support@foo.com",
                         "manual_url": "https://foo.com",
                         "issues_login_url": None,
@@ -238,6 +255,7 @@ class Product(BaseModel):
                         "display_name": "o²S²PARC FOO",
                         "short_name": "osparcf",
                         "host_regex": "([\\.-]{0,1}osparcf[\\.-])",
+                        "base_url": "https://osparc.io",
                         "support_email": "foo@osparcf.io",
                         "vendor": {
                             "url": "https://acme.com",
@@ -248,7 +266,6 @@ class Product(BaseModel):
                             "ui": {
                                 "logo_url": "https://acme.com/logo",
                                 "strong_color": "#123456",
-                                "project_alias": "study",
                             },
                         },
                         "issues": [
@@ -289,6 +306,8 @@ class Product(BaseModel):
                         },
                         "group_id": 12345,
                         "support_standard_group_id": 67890,
+                        "support_assigned_fogbugz_person_id": 112,
+                        "support_assigned_fogbugz_project_id": 72,
                         "is_payment_enabled": False,
                     },
                 ]
@@ -296,13 +315,13 @@ class Product(BaseModel):
         )
 
     model_config = ConfigDict(
-        alias_generator=snake_to_camel,
-        populate_by_name=True,
-        str_strip_whitespace=True,
-        frozen=True,
+        # NOTE: do not add aliases. Use ProductGet schema for rest API
         from_attributes=True,
-        extra="ignore",
+        frozen=True,
         json_schema_extra=_update_json_schema_extra,
+        str_strip_whitespace=True,
+        validate_by_name=True,
+        extra="ignore",
     )
 
     def to_statics(self) -> dict[str, Any]:
@@ -324,16 +343,16 @@ class Product(BaseModel):
                 "support": True,
                 "is_payment_enabled": True,
                 "is_dynamic_services_telemetry_enabled": True,
+                "support_standard_group_id": True,
             },
             exclude_none=True,
             exclude_unset=True,
-            by_alias=True,
         )
 
     def get_template_name_for(self, filename: str) -> str | None:
         """Checks for field marked with 'x_template_name' that fits the argument"""
         template_name = filename.removesuffix(".jinja2")
-        for name, field in self.model_fields.items():
+        for name, field in self.__class__.model_fields.items():
             if (
                 field.json_schema_extra
                 and field.json_schema_extra.get("x_template_name") == template_name  # type: ignore[union-attr]
@@ -341,3 +360,8 @@ class Product(BaseModel):
                 template_name_attribute: str = getattr(self, name)
                 return template_name_attribute
         return None
+
+
+class ProductBaseUrl(BaseModel):
+    scheme: str
+    host: str

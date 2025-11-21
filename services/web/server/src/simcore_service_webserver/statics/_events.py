@@ -7,6 +7,7 @@ from aiohttp import web
 from aiohttp.client import ClientSession
 from aiohttp.client_exceptions import ClientConnectionError, ClientError
 from common_library.json_serialization import json_dumps
+from models_library.utils.change_case import snake_to_camel
 from packaging.version import Version
 from servicelib.aiohttp.client_session import get_client_session
 from tenacity.asyncio import AsyncRetrying
@@ -17,12 +18,12 @@ from tenacity.wait import wait_fixed
 from yarl import URL
 
 from ..application_settings import ApplicationSettings, get_application_settings
-from ..constants import APP_PRODUCTS_KEY
 from ..products.models import Product
+from ..products.products_web import PRODUCTS_APPKEY
 from ._constants import (
-    APP_FRONTEND_CACHED_INDEXES_KEY,
-    APP_FRONTEND_CACHED_STATICS_JSON_KEY,
     FRONTEND_APPS_AVAILABLE,
+    FRONTEND_CACHED_INDEXES_APPKEY,
+    FRONTEND_CACHED_STATICS_JSON_APPKEY,
 )
 from .settings import (
     FrontEndAppSettings,
@@ -91,12 +92,16 @@ async def create_cached_indexes(app: web.Application) -> None:
         _logger.info("Storing index for %s", url)
         cached_indexes[frontend_name] = body
 
-    app[APP_FRONTEND_CACHED_INDEXES_KEY] = cached_indexes
+    app[FRONTEND_CACHED_INDEXES_APPKEY] = cached_indexes
 
 
 def _get_release_notes_vtag(vtag: str) -> str:
     version = Version(vtag)
     return f"v{version.major}.{version.minor}.0"
+
+
+def _get_product_data(product: Product) -> dict[str, Any]:
+    return {snake_to_camel(k): v for k, v in product.to_statics().items()}
 
 
 async def create_and_cache_statics_json(app: web.Application) -> None:
@@ -114,15 +119,16 @@ async def create_and_cache_statics_json(app: web.Application) -> None:
         common.update(frontend_settings.to_statics())
 
     # Adds products defined in db
-    products: dict[str, Product] = app[APP_PRODUCTS_KEY]
+    products = app[PRODUCTS_APPKEY]
     assert products  # nosec
 
-    app[APP_FRONTEND_CACHED_STATICS_JSON_KEY] = {}
+    app[FRONTEND_CACHED_STATICS_JSON_APPKEY] = {}
     for product in products.values():
         data = deepcopy(common)
 
         _logger.debug("Product %s", product.name)
-        data.update(product.to_statics())
+
+        data.update(_get_product_data(product))
 
         # Adds specifics to login settings
         if (p := product.login_settings) and (v := p.get("LOGIN_2FA_REQUIRED", None)):
@@ -141,11 +147,8 @@ async def create_and_cache_statics_json(app: web.Application) -> None:
             release_vtag = _get_release_notes_vtag(vtag)
             data["vcsReleaseUrl"] = template_url.format(vtag=release_vtag)
 
-        # Add support_standard_group_id
-        data["supportStandardGroupId"] = product.support_standard_group_id
-
         data_json = json_dumps(data)
         _logger.debug("Front-end statics.json: %s", data_json)
 
         # cache computed statics.json
-        app[APP_FRONTEND_CACHED_STATICS_JSON_KEY][product.name] = data_json
+        app[FRONTEND_CACHED_STATICS_JSON_APPKEY][product.name] = data_json

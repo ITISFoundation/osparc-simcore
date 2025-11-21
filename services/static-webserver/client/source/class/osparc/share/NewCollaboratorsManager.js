@@ -17,11 +17,12 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
       allowMaximize: false,
       showMinimize: false,
       showMaximize: false,
+      resizable: true,
       autoDestroy: true,
       modal: true,
       width: 430,
-      maxHeight: 500,
-      clickAwayClose: true
+      height: 500,
+      clickAwayClose: true,
     });
 
     this.__resourceData = resourceData;
@@ -76,8 +77,8 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
       switch (id) {
         case "intro-text": {
           let text = this.__showOrganizations ?
-            this.tr("Select organizations or users from the list or search by name, username or email.") :
-            this.tr("Select users from the list or search by name, username or email.");
+            this.tr("Select organizations or users from the list or search by name, userName or email.") :
+            this.tr("Select users from the list or search by name, userName or email.");
           text += "<br>" + this.tr("Keep in mind that users are only searchable based on the information they've chosen to make visible. To make yourself easier to find, adjust your visibility settings in My Account → Privacy.");
           control = new qx.ui.basic.Label().set({
             value: text,
@@ -120,9 +121,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
           break;
         }
         case "potential-collaborators-list": {
-          control = new qx.ui.container.Composite(new qx.ui.layout.VBox()).set({
-            minHeight: 160,
-          });
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox());
           const scrollContainer = new qx.ui.container.Scroll();
           scrollContainer.add(control);
           this.add(scrollContainer, {
@@ -149,7 +148,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
             allowGrowX: false,
             backgroundColor: "transparent",
           });
-          control.getChildControl("arrow").syncAppearance();
+          control.getChildControl("arrow").syncAppearance(); // force sync to show the arrow
           this.getChildControl("access-rights-layout").add(control);
           break;
         case "access-rights-helper": {
@@ -242,7 +241,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
       const text = this.getChildControl("text-filter").getChildControl("textfield").getValue();
       osparc.store.Users.getInstance().searchUsers(text)
         .then(users => {
-          users.forEach(user => user["collabType"] = 2);
+          users.forEach(user => user["collabType"] = osparc.store.Groups.COLLAB_TYPE.USER);
           this.__addPotentialCollaborators(users);
         })
         .catch(err => osparc.FlashMessenger.logError(err))
@@ -338,18 +337,21 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
       const potentialCollaborators = Object.values(this.__potentialCollaborators).concat(foundCollaborators);
       const potentialCollaboratorList = this.getChildControl("potential-collaborators-list");
 
+      // define the priority order
+      const collabTypeOrder = [
+        osparc.store.Groups.COLLAB_TYPE.EVERYONE,
+        osparc.store.Groups.COLLAB_TYPE.SUPPORT,
+        osparc.store.Groups.COLLAB_TYPE.ORGANIZATION,
+        osparc.store.Groups.COLLAB_TYPE.USER
+      ];
       // sort them first
       potentialCollaborators.sort((a, b) => {
-        if (a["collabType"] > b["collabType"]) {
-          return 1;
+        const typeDiff = collabTypeOrder.indexOf(a["collabType"]) - collabTypeOrder.indexOf(b["collabType"]);
+        if (typeDiff !== 0) {
+          return typeDiff;
         }
-        if (a["collabType"] < b["collabType"]) {
-          return -1;
-        }
-        if (a.getLabel() > b.getLabel()) {
-          return 1;
-        }
-        return -1;
+        // fallback: sort alphabetically by label
+        return a.getLabel().localeCompare(b.getLabel());
       });
 
       let existingCollabs = [];
@@ -383,7 +385,7 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
           return;
         }
         // maybe, do not list the organizations
-        if (this.__showOrganizations === false && potentialCollaborator["collabType"] !== 2) {
+        if (this.__showOrganizations === false && potentialCollaborator["collabType"] !== osparc.store.Groups.COLLAB_TYPE.USER) {
           return;
         }
         potentialCollaboratorList.add(this.__collaboratorButton(potentialCollaborator));

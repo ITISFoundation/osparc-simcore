@@ -19,9 +19,13 @@ from asgi_lifespan import LifespanManager
 from common_library.serialization import model_dump_with_secrets
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
+from models_library.api_schemas_directorv2.dynamic_services import (
+    ContainersComposeSpec,
+    ContainersCreate,
+)
 from models_library.api_schemas_dynamic_sidecar.containers import DockerComposeYamlStr
 from models_library.generated_models.docker_rest_api import ContainerState
-from models_library.generated_models.docker_rest_api import Status2 as ContainerStatus
+from models_library.generated_models.docker_rest_api import Status1 as ContainerStatus
 from models_library.rabbitmq_messages import (
     RabbitResourceTrackingHeartbeatMessage,
     RabbitResourceTrackingMessages,
@@ -32,8 +36,15 @@ from models_library.rabbitmq_messages import (
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from pydantic import AnyHttpUrl, TypeAdapter
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.long_running_tasks import (
+    assert_task_is_no_longer_present,
+    get_fastapi_long_running_manager,
+)
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
-from servicelib.fastapi.long_running_tasks.client import Client, periodic_task_result
+from servicelib.fastapi.long_running_tasks.client import (
+    HttpClient,
+    periodic_task_result,
+)
 from servicelib.fastapi.long_running_tasks.client import setup as client_setup
 from servicelib.long_running_tasks.errors import TaskExceptionError
 from servicelib.long_running_tasks.models import TaskId
@@ -41,10 +52,6 @@ from settings_library.rabbit import RabbitSettings
 from simcore_service_dynamic_sidecar._meta import API_VTAG
 from simcore_service_dynamic_sidecar.core.application import create_app
 from simcore_service_dynamic_sidecar.core.docker_utils import get_container_states
-from simcore_service_dynamic_sidecar.models.schemas.containers import (
-    ContainersComposeSpec,
-    ContainersCreate,
-)
 from simcore_service_dynamic_sidecar.models.shared_store import SharedStore
 from tenacity import AsyncRetrying, TryAgain
 from tenacity.stop import stop_after_delay
@@ -89,6 +96,7 @@ def backend_url() -> AnyHttpUrl:
 
 @pytest.fixture
 async def mock_environment(
+    fast_long_running_tasks_cancellation: None,
     mock_postgres_check: None,
     mock_registry_service: AsyncMock,
     mock_environment: EnvVarsDict,
@@ -138,10 +146,12 @@ async def httpx_async_client(
 
 
 @pytest.fixture
-async def client(
+async def http_client(
     app: FastAPI, httpx_async_client: AsyncClient, backend_url: AnyHttpUrl
-) -> Client:
-    return Client(app=app, async_client=httpx_async_client, base_url=f"{backend_url}")
+) -> HttpClient:
+    return HttpClient(
+        app=app, async_client=httpx_async_client, base_url=f"{backend_url}"
+    )
 
 
 @pytest.fixture
@@ -229,13 +239,13 @@ async def test_service_starts_and_closes_as_expected(
     mock_post_rabbit_message: AsyncMock,
     app: FastAPI,
     httpx_async_client: AsyncClient,
-    client: Client,
+    http_client: HttpClient,
     compose_spec: str,
     container_names: list[str],
     mock_metrics_params: CreateServiceMetricsAdditionalParams,
 ):
     async with periodic_task_result(
-        client=client,
+        client=http_client,
         task_id=await _get_task_id_create_service_containers(
             httpx_async_client, compose_spec, mock_metrics_params
         ),
@@ -248,7 +258,7 @@ async def test_service_starts_and_closes_as_expected(
     await _wait_for_containers_to_be_running(app)
 
     async with periodic_task_result(
-        client=client,
+        client=http_client,
         task_id=await _get_task_id_docker_compose_down(httpx_async_client),
         task_timeout=_CREATE_SERVICE_CONTAINERS_TIMEOUT,
         status_poll_interval=_FAST_STATUS_POLL,
@@ -282,7 +292,7 @@ async def test_user_services_fail_to_start(
     mock_post_rabbit_message: AsyncMock,
     app: FastAPI,
     httpx_async_client: AsyncClient,
-    client: Client,
+    http_client: HttpClient,
     compose_spec: str,
     mock_metrics_params: CreateServiceMetricsAdditionalParams,
     with_compose_down: bool,
@@ -290,7 +300,7 @@ async def test_user_services_fail_to_start(
 ):
     with pytest.raises(TaskExceptionError):
         async with periodic_task_result(
-            client=client,
+            client=http_client,
             task_id=await _get_task_id_create_service_containers(
                 httpx_async_client, compose_spec, mock_metrics_params
             ),
@@ -303,7 +313,7 @@ async def test_user_services_fail_to_start(
 
     if with_compose_down:
         async with periodic_task_result(
-            client=client,
+            client=http_client,
             task_id=await _get_task_id_docker_compose_down(httpx_async_client),
             task_timeout=_CREATE_SERVICE_CONTAINERS_TIMEOUT,
             status_poll_interval=_FAST_STATUS_POLL,
@@ -321,14 +331,14 @@ async def test_user_services_fail_to_stop_or_save_data(
     mock_post_rabbit_message: AsyncMock,
     app: FastAPI,
     httpx_async_client: AsyncClient,
-    client: Client,
+    http_client: HttpClient,
     compose_spec: str,
     container_names: list[str],
     mock_metrics_params: CreateServiceMetricsAdditionalParams,
     mock_user_services_fail_to_stop: None,
 ):
     async with periodic_task_result(
-        client=client,
+        client=http_client,
         task_id=await _get_task_id_create_service_containers(
             httpx_async_client, compose_spec, mock_metrics_params
         ),
@@ -346,14 +356,18 @@ async def test_user_services_fail_to_stop_or_save_data(
     # in case of manual intervention multiple stops will be sent
     _EXPECTED_STOP_MESSAGES = 4
     for _ in range(_EXPECTED_STOP_MESSAGES):
+        task_id = await _get_task_id_docker_compose_down(httpx_async_client)
         with pytest.raises(TaskExceptionError):
             async with periodic_task_result(
-                client=client,
-                task_id=await _get_task_id_docker_compose_down(httpx_async_client),
+                client=http_client,
+                task_id=task_id,
                 task_timeout=_CREATE_SERVICE_CONTAINERS_TIMEOUT,
                 status_poll_interval=_FAST_STATUS_POLL,
             ):
                 ...
+        await assert_task_is_no_longer_present(
+            get_fastapi_long_running_manager(app), task_id, {}
+        )
 
     # Ensure messages arrive in the expected order
     resource_tracking_messages = _get_resource_tracking_messages(
@@ -418,7 +432,7 @@ async def test_user_services_crash_when_running(
     mock_post_rabbit_message: AsyncMock,
     app: FastAPI,
     httpx_async_client: AsyncClient,
-    client: Client,
+    http_client: HttpClient,
     compose_spec: str,
     container_names: list[str],
     mock_metrics_params: CreateServiceMetricsAdditionalParams,
@@ -426,7 +440,7 @@ async def test_user_services_crash_when_running(
     expected_platform_state: SimcorePlatformStatus,
 ):
     async with periodic_task_result(
-        client=client,
+        client=http_client,
         task_id=await _get_task_id_create_service_containers(
             httpx_async_client, compose_spec, mock_metrics_params
         ),
@@ -477,13 +491,17 @@ async def test_user_services_crash_when_running(
     # will be sent due to manual intervention
     _EXPECTED_STOP_MESSAGES = 4
     for _ in range(_EXPECTED_STOP_MESSAGES):
+        task_id = await _get_task_id_docker_compose_down(httpx_async_client)
         async with periodic_task_result(
-            client=client,
-            task_id=await _get_task_id_docker_compose_down(httpx_async_client),
+            client=http_client,
+            task_id=task_id,
             task_timeout=_CREATE_SERVICE_CONTAINERS_TIMEOUT,
             status_poll_interval=_FAST_STATUS_POLL,
         ) as result:
             assert result is None
+        await assert_task_is_no_longer_present(
+            get_fastapi_long_running_manager(app), task_id, {}
+        )
 
     resource_tracking_messages = _get_resource_tracking_messages(
         mock_post_rabbit_message

@@ -3,16 +3,16 @@ import logging
 import time
 from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Final
+from typing import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
+    Final,
+    TypedDict,
+)
 
 from aiohttp import web
 from aiohttp_session import Session
 from pydantic import PositiveInt, validate_call
 from servicelib.aiohttp import status
 from servicelib.aiohttp.typing_extension import Handler
-from typing_extensions import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
-    TypedDict,
-)
 
 from .api import get_session
 from .settings import SessionSettings, get_plugin_settings

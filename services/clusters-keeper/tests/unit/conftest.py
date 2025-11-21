@@ -3,7 +3,6 @@
 # pylint:disable=redefined-outer-name
 
 import importlib.resources
-import json
 import random
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from pathlib import Path
@@ -17,6 +16,7 @@ import simcore_service_clusters_keeper.data
 import yaml
 from asgi_lifespan import LifespanManager
 from aws_library.ec2 import EC2InstanceBootSpecific
+from common_library.json_serialization import json_dumps
 from faker import Faker
 from fakeredis.aioredis import FakeRedis
 from fastapi import FastAPI
@@ -26,9 +26,11 @@ from pydantic import SecretStr
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.rabbitmq import RabbitMQRPCClient
+from servicelib.tracing import TracingConfig
 from settings_library.ec2 import EC2Settings
 from settings_library.rabbit import RabbitSettings
 from settings_library.ssm import SSMSettings
+from simcore_service_clusters_keeper._meta import APP_NAME
 from simcore_service_clusters_keeper.core.application import create_app
 from simcore_service_clusters_keeper.core.settings import (
     CLUSTERS_KEEPER_ENV_PREFIX,
@@ -130,26 +132,28 @@ def app_environment(
             "CLUSTERS_KEEPER_SSM_SECRET_ACCESS_KEY": faker.pystr(),
             "CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES": "{}",
             "CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX": faker.pystr(),
+            "CLUSTERS_KEEPER_DASK_NPROCS": f"{faker.pyint()}",
             "CLUSTERS_KEEPER_DASK_NTHREADS": f"{faker.pyint(min_value=0)}",
+            "CLUSTERS_KEEPER_DASK_NTHREADS_MULTIPLIER": f"{faker.pyint(min_value=1, max_value=10)}",
             "CLUSTERS_KEEPER_DASK_WORKER_SATURATION": f"{faker.pyfloat(min_value=0.1)}",
             "CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH": "{}",
             "PRIMARY_EC2_INSTANCES_KEY_NAME": faker.pystr(),
-            "PRIMARY_EC2_INSTANCES_SECURITY_GROUP_IDS": json.dumps(
+            "PRIMARY_EC2_INSTANCES_SECURITY_GROUP_IDS": json_dumps(
                 faker.pylist(allowed_types=(str,))
             ),
-            "PRIMARY_EC2_INSTANCES_SUBNET_ID": faker.pystr(),
-            "PRIMARY_EC2_INSTANCES_ALLOWED_TYPES": json.dumps(
+            "PRIMARY_EC2_INSTANCES_SUBNET_IDS": json_dumps(
+                faker.pylist(allowed_types=(str,))
+            ),
+            "PRIMARY_EC2_INSTANCES_ALLOWED_TYPES": json_dumps(
                 {
                     random.choice(  # noqa: S311
                         ec2_instances
-                    ): EC2InstanceBootSpecific.model_config["json_schema_extra"][
-                        "examples"
-                    ][
+                    ): EC2InstanceBootSpecific.model_json_schema()["examples"][
                         1
                     ]  # NOTE: we use example with custom script
                 }
             ),
-            "PRIMARY_EC2_INSTANCES_CUSTOM_TAGS": json.dumps(
+            "PRIMARY_EC2_INSTANCES_CUSTOM_TAGS": json_dumps(
                 {"osparc-tag": "the pytest tag is here"}
             ),
             "PRIMARY_EC2_INSTANCES_ATTACHED_IAM_PROFILE": "",  # must be empty since we would need to add it to moto as well
@@ -159,22 +163,22 @@ def app_environment(
             "PRIMARY_EC2_INSTANCES_PROMETHEUS_USERNAME": faker.user_name(),
             "PRIMARY_EC2_INSTANCES_PROMETHEUS_PASSWORD": faker.password(),
             "CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES": "{}",
-            "WORKERS_EC2_INSTANCES_ALLOWED_TYPES": json.dumps(
+            "WORKERS_EC2_INSTANCES_ALLOWED_TYPES": json_dumps(
                 {
                     ec2_type_name: random.choice(  # noqa: S311
-                        EC2InstanceBootSpecific.model_config["json_schema_extra"][
-                            "examples"
-                        ]
+                        EC2InstanceBootSpecific.model_json_schema()["examples"]
                     )
                     for ec2_type_name in ec2_instances
                 }
             ),
-            "WORKERS_EC2_INSTANCES_SECURITY_GROUP_IDS": json.dumps(
+            "WORKERS_EC2_INSTANCES_SECURITY_GROUP_IDS": json_dumps(
                 faker.pylist(allowed_types=(str,))
             ),
-            "WORKERS_EC2_INSTANCES_SUBNET_ID": faker.pystr(),
+            "WORKERS_EC2_INSTANCES_SUBNET_IDS": json_dumps(
+                faker.pylist(allowed_types=(str,))
+            ),
             "WORKERS_EC2_INSTANCES_KEY_NAME": faker.pystr(),
-            "WORKERS_EC2_INSTANCES_CUSTOM_TAGS": json.dumps(
+            "WORKERS_EC2_INSTANCES_CUSTOM_TAGS": json_dumps(
                 {"osparc-tag": "the pytest worker tag value is here"}
             ),
         },
@@ -194,10 +198,10 @@ def mocked_primary_ec2_instances_envs(
         monkeypatch,
         {
             "PRIMARY_EC2_INSTANCES_KEY_NAME": "osparc-pytest",
-            "PRIMARY_EC2_INSTANCES_SECURITY_GROUP_IDS": json.dumps(
+            "PRIMARY_EC2_INSTANCES_SECURITY_GROUP_IDS": json_dumps(
                 [aws_security_group_id]
             ),
-            "PRIMARY_EC2_INSTANCES_SUBNET_ID": aws_subnet_id,
+            "PRIMARY_EC2_INSTANCES_SUBNET_IDS": json_dumps([aws_subnet_id]),
         },
     )
     return app_environment | envs
@@ -251,7 +255,10 @@ async def initialized_app(
     app_environment: EnvVarsDict, is_pdb_enabled: bool
 ) -> AsyncIterator[FastAPI]:
     settings = ApplicationSettings.create_from_envs()
-    app = create_app(settings)
+    tracing_config = TracingConfig.create(
+        service_name=APP_NAME, tracing_settings=None  # disable tracing in tests
+    )
+    app = create_app(settings, tracing_config=tracing_config)
     async with LifespanManager(app, shutdown_timeout=None if is_pdb_enabled else 20):
         yield app
 

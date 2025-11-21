@@ -43,12 +43,8 @@ qx.Class.define("osparc.desktop.preferences.pages.TokensPage", {
 
     __createAPIKeysSection: function() {
       // layout
-      const box = osparc.ui.window.TabbedView.createSectionBox(this.tr("API Keys"));
-
-      const label = osparc.ui.window.TabbedView.createHelpLabel(this.tr(
-        "List API keys associated to your account."
-      ));
-      box.add(label);
+      const box = new osparc.widget.SectionBox(this.tr("API Keys"));
+      box.addHelper(this.tr("List API keys associated to your account."));
 
       const apiKeysList = this.__apiKeysList = new qx.ui.container.Composite(new qx.ui.layout.VBox(8));
       box.add(apiKeysList);
@@ -173,10 +169,8 @@ qx.Class.define("osparc.desktop.preferences.pages.TokensPage", {
 
     __createTokensSection: function() {
       // layout
-      const box = osparc.ui.window.TabbedView.createSectionBox(this.tr("API Tokens for External Services"));
-
-      const label = osparc.ui.window.TabbedView.createHelpLabel(this.tr("Provide the API tokens needed to access external services."));
-      box.add(label);
+      const box = new osparc.widget.SectionBox(this.tr("API Tokens for External Services"));
+      box.addHelper(this.tr("Provide the API tokens needed to access external services."));
 
       const validTokensGB = this.__validTokensGB = osparc.ui.window.TabbedView.createSectionBox(this.tr("Current Tokens"));
       box.add(validTokensGB);

@@ -15,7 +15,7 @@ from rich.progress import (
 )
 from servicelib.fastapi.http_client_thin import UnexpectedStatusError
 from servicelib.fastapi.long_running_tasks.client import (
-    Client,
+    HttpClient,
     periodic_task_result,
     setup,
 )
@@ -47,7 +47,7 @@ async def _minimal_app() -> AsyncIterator[FastAPI]:
 
 
 async def _track_and_display(
-    client: Client,
+    client: HttpClient,
     task_id: TaskId,
     update_interval: PositiveFloat,
     task_timeout: PositiveFloat,
@@ -105,7 +105,7 @@ async def async_close_and_save_service(
                     f"{node_id}", is_disabled=True
                 )
 
-        client = Client(
+        client = HttpClient(
             app=app,
             async_client=thin_dv2_localhost_client.client,
             base_url=f"{TypeAdapter(AnyHttpUrl).validate_python(thin_dv2_localhost_client.BASE_ADDRESS)}",

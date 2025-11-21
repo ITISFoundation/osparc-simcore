@@ -232,8 +232,11 @@ async def mock_dynamic_service_rpc(
     """
     Mocks the dynamic service RPC calls to avoid actual service calls during tests.
     """
-    return mocker.patch(
-        "servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.services.retrieve_inputs",
+    import servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.services
+
+    return mocker.patch.object(
+        servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.services,
+        "retrieve_inputs",
         autospec=True,
     )
 

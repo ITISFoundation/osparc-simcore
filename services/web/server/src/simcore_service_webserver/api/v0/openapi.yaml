@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: simcore-service-webserver
   description: Main service with an interface (http-API & websockets) to the web front-end
-  version: 0.75.0
+  version: 0.80.0
 servers:
 - url: ''
   description: webserver
@@ -772,6 +772,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_ConversationMessageRestGet_'
+  /v0/conversations/{conversation_id}/messages/{message_id}:trigger-chatbot:
+    post:
+      tags:
+      - conversations
+      summary: Trigger Chatbot Processing
+      operationId: trigger_chatbot_processing
+      parameters:
+      - name: conversation_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Conversation Id
+      - name: message_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Message Id
+      responses:
+        '204':
+          description: Successful Response
   /v0/groups:
     get:
       tags:
@@ -1798,12 +1822,36 @@ paths:
       parameters:
       - name: email
         in: query
-        required: true
+        required: false
         schema:
-          type: string
-          minLength: 3
-          maxLength: 200
+          anyOf:
+          - type: string
+            minLength: 3
+            maxLength: 200
+            pattern: ^[A-Za-z0-9 ._\*@-]*$
+          - type: 'null'
           title: Email
+      - name: primary_group_id
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: integer
+            exclusiveMinimum: true
+            minimum: 0
+          - type: 'null'
+          title: Primary Group Id
+      - name: user_name
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            minLength: 3
+            maxLength: 200
+            pattern: ^[A-Za-z0-9 ._\*@-]*$
+          - type: 'null'
+          title: User Name
       responses:
         '200':
           description: Successful Response
@@ -3764,6 +3812,13 @@ paths:
           type: string
           format: uuid
           title: Function Id
+      - name: force
+        in: query
+        required: false
+        schema:
+          type: boolean
+          default: false
+          title: Force
       responses:
         '204':
           description: Successful Response
@@ -3991,6 +4046,60 @@ paths:
             application/json:
               schema:
                 title: Response Get Async Job Result
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
+        '410':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Gone
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Internal Server Error
+  /v0/tasks/{task_id}/stream:
+    get:
+      tags:
+      - long-running-tasks
+      summary: Get Async Job Stream
+      description: Retrieves the stream of a task
+      operationId: get_async_job_stream
+      parameters:
+      - name: task_id
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Task Id
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 50
+          minimum: 1
+          default: 20
+          title: Limit
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_TaskStreamResponse_'
         '404':
           content:
             application/json:
@@ -4528,6 +4637,13 @@ paths:
           type: string
           pattern: ^simcore/services/((comp|dynamic|frontend))/([a-z0-9][a-z0-9_.-]*/)*([a-z0-9-_]+[a-z0-9])$
           title: Viewer Key
+      - name: viewer_version
+        in: query
+        required: true
+        schema:
+          type: string
+          pattern: ^(0|[1-9]\d*)(\.(0|[1-9]\d*)){2}(-(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*)(\.(0|[1-9]\d*|\d*[-a-zA-Z][-\da-zA-Z]*))*)?(\+[-\da-zA-Z]+(\.[-\da-zA-Z-]+)*)?$
+          title: Viewer Version
       - name: file_size
         in: query
         required: true
@@ -4554,12 +4670,6 @@ paths:
           - type: 'null'
           default: unknown
           title: File Name
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ServiceKeyVersion'
       responses:
         '302':
           description: Opens osparc and starts viewer for selected data
@@ -4693,7 +4803,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
-          description: Unprocessable Entity
+          description: Unprocessable Content
         '400':
           content:
             application/json:
@@ -4830,7 +4940,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
-          description: Unprocessable Entity
+          description: Unprocessable Content
         '400':
           content:
             application/json:
@@ -4892,7 +5002,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
-          description: Unprocessable Entity
+          description: Unprocessable Content
         '400':
           content:
             application/json:
@@ -4955,7 +5065,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
-          description: Unprocessable Entity
+          description: Unprocessable Content
         '400':
           content:
             application/json:
@@ -5019,7 +5129,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
-          description: Unprocessable Entity
+          description: Unprocessable Content
         '400':
           content:
             application/json:
@@ -5077,7 +5187,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
-          description: Unprocessable Entity
+          description: Unprocessable Content
         '400':
           content:
             application/json:
@@ -5140,7 +5250,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
-          description: Unprocessable Entity
+          description: Unprocessable Content
         '400':
           content:
             application/json:
@@ -5259,7 +5369,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
-          description: Unprocessable Entity
+          description: Unprocessable Content
         '400':
           content:
             application/json:
@@ -5322,7 +5432,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
-          description: Unprocessable Entity
+          description: Unprocessable Content
         '400':
           content:
             application/json:
@@ -7332,7 +7442,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CursorPage___T_Customized_PathMetaDataGet_'
+                $ref: '#/components/schemas/CursorPage_TypeVar_Customized_PathMetaDataGet_'
   /v0/storage/locations/{location_id}/paths/{path}:size:
     post:
       tags:
@@ -7720,7 +7830,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_FileUploadCompleteFutureResponse_'
-  /v0/storage/locations/{location_id}/export-data:
+  /v0/storage/locations/{location_id}:export-data:
     post:
       tags:
       - storage
@@ -7741,7 +7851,58 @@ paths:
             schema:
               $ref: '#/components/schemas/DataExportPost'
       responses:
-        '200':
+        '202':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_TaskGet_'
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Not Found
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Forbidden
+        '410':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Gone
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvelopedError'
+          description: Internal Server Error
+  /v0/storage/locations/{location_id}:search:
+    post:
+      tags:
+      - storage
+      summary: Search
+      description: Starts a files/folders search
+      operationId: search
+      parameters:
+      - name: location_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Location Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SearchBodyParams'
+      responses:
+        '202':
           description: Successful Response
           content:
             application/json:
@@ -7805,7 +7966,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
         '422':
-          description: Unprocessable Entity
+          description: Unprocessable Content
           content:
             application/json:
               schema:
@@ -7876,7 +8037,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
-          description: Unprocessable Entity
+          description: Unprocessable Content
         '400':
           content:
             application/json:
@@ -7936,7 +8097,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
-          description: Unprocessable Entity
+          description: Unprocessable Content
         '400':
           content:
             application/json:
@@ -7993,7 +8154,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
-          description: Unprocessable Entity
+          description: Unprocessable Content
         '400':
           content:
             application/json:
@@ -8054,7 +8215,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
-          description: Unprocessable Entity
+          description: Unprocessable Content
         '400':
           content:
             application/json:
@@ -8111,7 +8272,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
-          description: Unprocessable Entity
+          description: Unprocessable Content
         '400':
           content:
             application/json:
@@ -8172,7 +8333,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/EnvelopedError'
-          description: Unprocessable Entity
+          description: Unprocessable Content
         '400':
           content:
             application/json:
@@ -10129,6 +10290,16 @@ components:
             type: object
           - type: 'null'
           title: Extracontext
+        isReadByUser:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Isreadbyuser
+        isReadBySupport:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Isreadbysupport
       type: object
       title: ConversationPatch
     ConversationRestGet:
@@ -10157,6 +10328,11 @@ components:
           minimum: 0
         type:
           $ref: '#/components/schemas/ConversationType'
+        fogbugzCaseId:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Fogbugzcaseid
         created:
           type: string
           format: date-time
@@ -10170,6 +10346,16 @@ components:
             type: string
           type: object
           title: Extracontext
+        isReadByUser:
+          type: boolean
+          title: Isreadbyuser
+        isReadBySupport:
+          type: boolean
+          title: Isreadbysupport
+        lastMessageCreatedAt:
+          type: string
+          format: date-time
+          title: Lastmessagecreatedat
       type: object
       required:
       - conversationId
@@ -10178,9 +10364,13 @@ components:
       - projectUuid
       - userGroupId
       - type
+      - fogbugzCaseId
       - created
       - modified
       - extraContext
+      - isReadByUser
+      - isReadBySupport
+      - lastMessageCreatedAt
       title: ConversationRestGet
     ConversationType:
       type: string
@@ -10188,6 +10378,7 @@ components:
       - PROJECT_STATIC
       - PROJECT_ANNOTATION
       - SUPPORT
+      - SUPPORT_CALL
       title: ConversationType
     CountryInfoDict:
       properties:
@@ -10330,7 +10521,7 @@ components:
       - NOT_BILLED
       - REQUIRES_MANUAL_REVIEW
       title: CreditTransactionStatus
-    CursorPage___T_Customized_PathMetaDataGet_:
+    CursorPage_TypeVar_Customized_PathMetaDataGet_:
       properties:
         items:
           items:
@@ -10370,7 +10561,7 @@ components:
       type: object
       required:
       - items
-      title: CursorPage[~_T]Customized[PathMetaDataGet]
+      title: CursorPage[TypeVar]Customized[PathMetaDataGet]
     DatCoreFileLink:
       properties:
         store:
@@ -11261,6 +11452,19 @@ components:
           title: Error
       type: object
       title: Envelope[TaskStatus]
+    Envelope_TaskStreamResponse_:
+      properties:
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/TaskStreamResponse'
+          - type: 'null'
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[TaskStreamResponse]
     Envelope_Union_EmailTestFailed__EmailTestPassed__:
       properties:
         data:
@@ -12644,9 +12848,14 @@ components:
       properties:
         label:
           type: string
+          maxLength: 100
+          minLength: 1
+          pattern: ^[A-Za-z0-9 ._-]+$
           title: Label
         description:
           type: string
+          maxLength: 5000
+          minLength: 3
           title: Description
         thumbnail:
           anyOf:
@@ -12666,16 +12875,15 @@ components:
           type: integer
           exclusiveMinimum: true
           title: Gid
-          description: the group ID
+          description: the group's unique ID
           minimum: 0
         label:
           type: string
           title: Label
-          description: the group name
+          description: the group's display name
         description:
           type: string
           title: Description
-          description: the group description
         thumbnail:
           anyOf:
           - type: string
@@ -12683,7 +12891,7 @@ components:
             format: uri
           - type: 'null'
           title: Thumbnail
-          description: url to the group thumbnail
+          description: a link to the group's thumbnail
         accessRights:
           $ref: '#/components/schemas/GroupAccessRights'
         inclusionRules:
@@ -12699,16 +12907,50 @@ components:
       - description
       - accessRights
       title: GroupGet
+    GroupGetBase:
+      properties:
+        gid:
+          type: integer
+          exclusiveMinimum: true
+          title: Gid
+          description: the group's unique ID
+          minimum: 0
+        label:
+          type: string
+          title: Label
+          description: the group's display name
+        description:
+          type: string
+          title: Description
+        thumbnail:
+          anyOf:
+          - type: string
+            minLength: 1
+            format: uri
+          - type: 'null'
+          title: Thumbnail
+          description: a link to the group's thumbnail
+      type: object
+      required:
+      - gid
+      - label
+      - description
+      title: GroupGetBase
     GroupUpdate:
       properties:
         label:
           anyOf:
           - type: string
+            maxLength: 100
+            minLength: 1
+            pattern: ^[A-Za-z0-9 ._-]+$
           - type: 'null'
           title: Label
         description:
           anyOf:
           - type: string
+            maxLength: 5000
+            minLength: 3
           - type: 'null'
           title: Description
         thumbnail:
@@ -12733,7 +12975,7 @@ components:
           anyOf:
           - type: string
             maxLength: 100
-            minLength: 1
+            minLength: 4
           - type: 'null'
           title: Username
         email:
@@ -12761,7 +13003,7 @@ components:
           anyOf:
           - type: string
             maxLength: 100
-            minLength: 1
+            minLength: 4
           - type: 'null'
           title: Username
           description: None if private
@@ -13390,6 +13632,18 @@ components:
           anyOf:
           - $ref: '#/components/schemas/GroupGet'
           - type: 'null'
+        support:
+          anyOf:
+          - $ref: '#/components/schemas/GroupGetBase'
+          - type: 'null'
+          description: Group ID of the app support team or None if no support is defined
+            for this product
+        chatbot:
+          anyOf:
+          - $ref: '#/components/schemas/GroupGetBase'
+          - type: 'null'
+          description: Group ID of the support chatbot user or None if no chatbot
+            is defined for this product
       type: object
       required:
       - me
@@ -13404,6 +13658,11 @@ components:
           description: Open to all users
           gid: 1
           label: All
+        chatbot:
+          description: The chatbot user of the application
+          gid: '6'
+          label: Chatbot User
+          thumbnail: https://placekitten.com/15/15
         me:
           accessRights:
             delete: true
@@ -13428,6 +13687,11 @@ components:
           description: Some foundation
           gid: '16'
           label: Blue Fundation
+        support:
+          description: The support team of the application
+          gid: '2'
+          label: Support Team
+          thumbnail: https://placekitten.com/15/15
     MyPermissionGet:
       properties:
         name:
@@ -13463,6 +13727,49 @@ components:
       required:
       - phone
       title: MyPhoneRegister
+    MyProfileAddressGet:
+      properties:
+        institution:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Institution
+        address:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Address
+        city:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: City
+        state:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: State
+          description: State, province, canton, ...
+        postalCode:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Postalcode
+        country:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Country
+      type: object
+      required:
+      - institution
+      - address
+      - city
+      - state
+      - postalCode
+      - country
+      title: MyProfileAddressGet
+      description: Details provided upon registration and used e.g. for invoicing
     MyProfilePrivacyGet:
       properties:
         hideUsername:
@@ -13568,6 +13875,10 @@ components:
             $ref: '#/components/schemas/Preference'
           type: object
           title: Preferences
+        contact:
+          anyOf:
+          - $ref: '#/components/schemas/MyProfileAddressGet'
+          - type: 'null'
       type: object
       required:
       - id
@@ -13678,8 +13989,7 @@ components:
             minimum: 0.0
           - type: 'null'
           title: Progress
-          description: the node progress value (deprecated in DB, still used for API
-            only)
+          description: the node progress value
           deprecated: true
         thumbnail:
           anyOf:
@@ -13691,6 +14001,7 @@ components:
           - type: 'null'
           title: Thumbnail
           description: url of the latest screenshot of the node
+          deprecated: true
         runHash:
           anyOf:
           - type: string
@@ -13756,6 +14067,7 @@ components:
           - type: 'null'
           title: Outputnodes
           description: Used in group-nodes. Node IDs of those connected to the output
+          deprecated: true
         parent:
           anyOf:
           - type: string
@@ -13763,6 +14075,7 @@ components:
           - type: 'null'
           title: Parent
           description: Parent's (group-nodes') node ID s. Used to group
+          deprecated: true
         position:
           anyOf:
           - $ref: '#/components/schemas/Position'
@@ -13813,8 +14126,7 @@ components:
             minimum: 0.0
           - type: 'null'
           title: Progress
-          description: the node progress value (deprecated in DB, still used for API
-            only)
+          description: the node progress value
           deprecated: true
         thumbnail:
           anyOf:
@@ -13826,6 +14138,7 @@ components:
           - type: 'null'
           title: Thumbnail
           description: url of the latest screenshot of the node
+          deprecated: true
         runHash:
           anyOf:
           - type: string
@@ -13891,6 +14204,7 @@ components:
           - type: 'null'
           title: Outputnodes
           description: Used in group-nodes. Node IDs of those connected to the output
+          deprecated: true
         parent:
           anyOf:
           - type: string
@@ -13898,6 +14212,7 @@ components:
           - type: 'null'
           title: Parent
           description: Parent's (group-nodes') node ID s. Used to group
+          deprecated: true
         position:
           anyOf:
           - $ref: '#/components/schemas/Position'
@@ -15620,7 +15935,6 @@ components:
       - creationDate
       - lastChangeDate
       - trashedAt
-      - trashedBy
       - tags
       - dev
       - workspaceId
@@ -15823,7 +16137,6 @@ components:
       - creationDate
       - lastChangeDate
       - trashedAt
-      - trashedBy
       - tags
       - dev
       - workspaceId
@@ -15901,6 +16214,15 @@ components:
             $ref: '#/components/schemas/NodeServiceGet'
           type: array
           title: Services
+        missing:
+          anyOf:
+          - items:
+              $ref: '#/components/schemas/ServiceKeyVersion'
+            type: array
+          - type: 'null'
+          title: Missing
+          description: List of services defined in the project but that were not found
+            in the catalog
       type: object
       required:
       - projectUuid
@@ -16675,6 +16997,55 @@ components:
         \ - A worker has picked up the task and is executing it\n- SUCCESS - Task\
         \ finished successfully\n- FAILED - Task finished with an error\n- ABORTED\
         \ - Task was aborted before completion"
+    SearchBodyParams:
+      properties:
+        filters:
+          $ref: '#/components/schemas/SearchFilters'
+      type: object
+      required:
+      - filters
+      title: SearchBodyParams
+    SearchFilters:
+      properties:
+        namePattern:
+          type: string
+          title: Namepattern
+          description: Name pattern with wildcard support (*, ?). Minimum of 3 non-wildcard
+            characters required.
+        modifiedAt:
+          anyOf:
+          - $ref: '#/components/schemas/SearchTimerangeFilter'
+          - type: 'null'
+          description: Filter results based on modification date range
+        projectId:
+          anyOf:
+          - type: string
+            format: uuid
+          - type: 'null'
+          title: Projectid
+          description: If provided, only files within this project are searched
+      type: object
+      required:
+      - namePattern
+      title: SearchFilters
+    SearchTimerangeFilter:
+      properties:
+        from:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: From
+          description: Filter results before this date
+        until:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Until
+          description: Filter results after this date
+      type: object
+      title: SearchTimerangeFilter
     SelectBox:
       properties:
         structure:
@@ -17514,10 +17885,15 @@ components:
       properties:
         name:
           type: string
+          maxLength: 100
+          minLength: 1
+          pattern: ^[A-Za-z0-9 ._-]+$
           title: Name
         description:
           anyOf:
           - type: string
+            maxLength: 5000
+            minLength: 3
           - type: 'null'
           title: Description
         color:
@@ -17606,11 +17982,16 @@ components:
         name:
           anyOf:
           - type: string
+            maxLength: 100
+            minLength: 1
+            pattern: ^[A-Za-z0-9 ._-]+$
           - type: 'null'
           title: Name
         description:
           anyOf:
           - type: string
+            maxLength: 5000
+            minLength: 3
           - type: 'null'
           title: Description
         color:
@@ -17637,17 +18018,23 @@ components:
         status_href:
           type: string
           title: Status Href
-        result_href:
-          type: string
-          title: Result Href
         abort_href:
           type: string
           title: Abort Href
+        result_href:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Result Href
+        stream_href:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Stream Href
       type: object
       required:
       - task_id
       - status_href
-      - result_href
       - abort_href
       title: TaskGet
     TaskInfoDict:
@@ -17725,6 +18112,23 @@ components:
       - done
       - started
       title: TaskStatus
+    TaskStreamResponse:
+      properties:
+        items:
+          items:
+            additionalProperties: true
+            type: object
+          type: array
+          title: Items
+        end:
+          type: boolean
+          title: End
+      additionalProperties: false
+      type: object
+      required:
+      - items
+      - end
+      title: TaskStreamResponse
     TestEmail:
       properties:
         from_:
@@ -18016,6 +18420,8 @@ components:
         invitedBy:
           anyOf:
           - type: string
+            maxLength: 100
+            minLength: 4
           - type: 'null'
           title: Invitedby
         accountRequestStatus:
@@ -18024,9 +18430,9 @@ components:
           - type: 'null'
         accountRequestReviewedBy:
           anyOf:
-          - type: integer
-            exclusiveMinimum: true
-            minimum: 0
+          - type: string
+            maxLength: 100
+            minLength: 4
           - type: 'null'
           title: Accountrequestreviewedby
         accountRequestReviewedAt:
@@ -18051,6 +18457,30 @@ components:
           title: Products
           description: List of products this users is included or None if fields is
             unset
+        userId:
+          anyOf:
+          - type: integer
+            exclusiveMinimum: true
+            minimum: 0
+          - type: 'null'
+          title: Userid
+          description: Unique identifier of the user if an account was created
+        userName:
+          anyOf:
+          - type: string
+            maxLength: 100
+            minLength: 4
+          - type: 'null'
+          title: Username
+          description: Username of the user if an account was created
+        groupId:
+          anyOf:
+          - type: integer
+            exclusiveMinimum: true
+            minimum: 1
+          - type: 'null'
+          title: Groupid
+          description: Primary group ID of the user if an account was created
       type: object
       required:
       - firstName
@@ -18067,7 +18497,6 @@ components:
       - preRegistrationCreated
       - accountRequestStatus
       - registered
-      - status
       title: UserAccountGet
     UserAccountReject:
       properties:
@@ -18152,7 +18581,7 @@ components:
           anyOf:
           - type: string
             maxLength: 100
-            minLength: 1
+            minLength: 4
           - type: 'null'
           title: Username
         firstName:
@@ -18310,8 +18739,9 @@ components:
       properties:
         match:
           type: string
-          maxLength: 80
+          maxLength: 200
           minLength: 1
+          pattern: ^[A-Za-z0-9 ._@-]*$
           title: Match
           description: Search string to match with usernames and public profiles (e.g.
             emails, first/last name)

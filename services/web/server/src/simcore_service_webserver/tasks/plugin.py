@@ -1,7 +1,7 @@
 from aiohttp import web
 
 from ..rest.plugin import setup_rest
-from . import _rest
+from ._controller import _rest
 
 
 def setup_tasks(app: web.Application):

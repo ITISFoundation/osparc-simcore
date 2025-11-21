@@ -10,17 +10,21 @@ from simcore_postgres_database.models.groups_extra_properties import (
 )
 from simcore_postgres_database.models.projects import ProjectType, projects
 from simcore_postgres_database.models.projects_networks import projects_networks
+from simcore_postgres_database.models.projects_nodes import projects_nodes
 
-__all__ = [
+__all__: tuple[str, ...] = (
+    "NodeClass",
+    "ProjectType",
+    "StateType",
     "comp_pipeline",
+    "comp_run_snapshot_tasks",
     "comp_runs",
     "comp_tasks",
     "groups_extra_properties",
-    "NodeClass",
-    "projects_networks",
     "projects",
-    "ProjectType",
-    "StateType",
+    "projects_networks",
+    "projects_nodes",
     "user_to_groups",
-    "comp_run_snapshot_tasks",
-]
+)
+
+# nopycln: file

@@ -799,6 +799,268 @@ async def test_list_objects_partial_prefix(
     assert {_.as_path() for _ in objects} == expected_files
 
 
+@pytest.mark.parametrize(
+    "directory_size, min_file_size, max_file_size, depth",
+    [
+        (
+            TypeAdapter(ByteSize).validate_python("1Mib"),
+            TypeAdapter(ByteSize).validate_python("1B"),
+            TypeAdapter(ByteSize).validate_python("10Kib"),
+            2,
+        )
+    ],
+    ids=byte_size_ids,
+)
+async def test_list_entries_paginated_basic_functionality(
+    mocked_s3_server_envs: EnvVarsDict,
+    with_s3_bucket: S3BucketName,
+    with_uploaded_folder_on_s3: list[UploadedFile],
+    simcore_s3_api: SimcoreS3API,
+):
+    """Test basic functionality of list_entries_paginated with BFS traversal"""
+    assert len(with_uploaded_folder_on_s3) >= 1, "wrong initialization of test!"
+
+    # Collect all entries from all pages
+    all_entries: list[S3MetaData | S3DirectoryMetaData] = []
+    async for page_entries in simcore_s3_api.list_entries_paginated(
+        bucket=with_s3_bucket, prefix=""
+    ):
+        all_entries.extend(page_entries)
+
+    # Verify that we get both files and directories
+    files = [entry for entry in all_entries if isinstance(entry, S3MetaData)]
+    directories = [
+        entry for entry in all_entries if isinstance(entry, S3DirectoryMetaData)
+    ]
+
+    assert len(files) == len(
+        with_uploaded_folder_on_s3
+    ), "Should find all uploaded files"
+    assert len(directories) > 0, "Should find at least one directory"
+
+    # Verify all uploaded files are found
+    uploaded_keys = {file.s3_key for file in with_uploaded_folder_on_s3}
+    found_keys = {file.object_key for file in files}
+    assert uploaded_keys == found_keys, "All uploaded files should be found"
+
+
+@pytest.mark.parametrize(
+    "directory_size, min_file_size, max_file_size, depth",
+    [
+        (
+            TypeAdapter(ByteSize).validate_python("1Mib"),
+            TypeAdapter(ByteSize).validate_python("1B"),
+            TypeAdapter(ByteSize).validate_python("10Kib"),
+            1,
+        )
+    ],
+    ids=byte_size_ids,
+)
+async def test_list_entries_paginated_with_prefix(
+    mocked_s3_server_envs: EnvVarsDict,
+    with_s3_bucket: S3BucketName,
+    with_uploaded_folder_on_s3: list[UploadedFile],
+    simcore_s3_api: SimcoreS3API,
+):
+    """Test list_entries_paginated with a specific prefix"""
+    directories, _ = _get_paths_with_prefix(
+        with_uploaded_folder_on_s3, prefix_level=0, path_prefix=None
+    )
+    assert len(directories) >= 1, "Should have at least one directory"
+
+    first_directory = next(iter(directories))
+    prefix = f"{first_directory}/"
+
+    # List entries with the prefix
+    all_entries: list[S3MetaData | S3DirectoryMetaData] = []
+    async for page_entries in simcore_s3_api.list_entries_paginated(
+        bucket=with_s3_bucket, prefix=prefix
+    ):
+        all_entries.extend(page_entries)
+
+    # Verify that all entries start with the prefix
+    for entry in all_entries:
+        if isinstance(entry, S3MetaData):
+            assert entry.object_key.startswith(
+                prefix
+            ), f"File {entry.object_key} should start with prefix {prefix}"
+        elif isinstance(entry, S3DirectoryMetaData):
+            assert str(entry.prefix).startswith(
+                prefix
+            ), f"Directory {entry.prefix} should start with prefix {prefix}"
+
+
+async def test_list_entries_paginated_items_per_page_validation(
+    mocked_s3_server_envs: EnvVarsDict,
+    with_s3_bucket: S3BucketName,
+    simcore_s3_api: SimcoreS3API,
+    faker: Faker,
+):
+    """Test that list_entries_paginated validates items_per_page parameter"""
+    generator = simcore_s3_api.list_entries_paginated(
+        bucket=with_s3_bucket,
+        prefix="",
+        items_per_page=_AWS_MAX_ITEMS_PER_PAGE + 1,
+    )
+    with pytest.raises(ValueError, match=r"items_per_page must be <= \d+"):
+        await generator.__anext__()
+
+
+@pytest.mark.parametrize(
+    "directory_size, min_file_size, max_file_size, depth",
+    [
+        (
+            TypeAdapter(ByteSize).validate_python("500Kib"),
+            TypeAdapter(ByteSize).validate_python("1B"),
+            TypeAdapter(ByteSize).validate_python("5Kib"),
+            2,
+        )
+    ],
+    ids=byte_size_ids,
+)
+@pytest.mark.parametrize(
+    "items_per_page", [5, 10, 20], ids=lambda x: f"items_per_page={x}"
+)
+async def test_list_entries_paginated_pagination(
+    mocked_s3_server_envs: EnvVarsDict,
+    with_s3_bucket: S3BucketName,
+    with_uploaded_folder_on_s3: list[UploadedFile],
+    simcore_s3_api: SimcoreS3API,
+    items_per_page: int,
+):
+    """Test pagination functionality with different page sizes"""
+    all_entries: list[S3MetaData | S3DirectoryMetaData] = []
+    page_count = 0
+
+    async for page_entries in simcore_s3_api.list_entries_paginated(
+        bucket=with_s3_bucket, prefix="", items_per_page=items_per_page
+    ):
+        all_entries.extend(page_entries)
+        page_count += 1
+        # Each page should not exceed the specified limit
+        assert (
+            len(page_entries) <= items_per_page
+        ), f"Page size should not exceed {items_per_page}"
+
+    # Should have at least one page
+    assert page_count >= 1, "Should have at least one page of results"
+
+    # Verify total number of files matches uploaded files
+    files = [entry for entry in all_entries if isinstance(entry, S3MetaData)]
+    assert len(files) == len(
+        with_uploaded_folder_on_s3
+    ), "Should find all uploaded files across all pages"
+
+
+@pytest.mark.parametrize(
+    "directory_size, min_file_size, max_file_size, depth",
+    [
+        (
+            TypeAdapter(ByteSize).validate_python("1Mib"),
+            TypeAdapter(ByteSize).validate_python("1B"),
+            TypeAdapter(ByteSize).validate_python("10Kib"),
+            3,
+        )
+    ],
+    ids=byte_size_ids,
+)
+async def test_list_entries_paginated_breadth_first_traversal(
+    mocked_s3_server_envs: EnvVarsDict,
+    with_s3_bucket: S3BucketName,
+    with_uploaded_folder_on_s3: list[UploadedFile],
+    simcore_s3_api: SimcoreS3API,
+):
+    """Test that list_entries_paginated follows breadth-first traversal order"""
+    discovered_directories: list[Path] = []
+    all_entries: list[S3MetaData | S3DirectoryMetaData] = []
+
+    async for page_entries in simcore_s3_api.list_entries_paginated(
+        bucket=with_s3_bucket, prefix=""
+    ):
+        for entry in page_entries:
+            all_entries.append(entry)
+            if isinstance(entry, S3DirectoryMetaData):
+                discovered_directories.append(entry.as_path())
+
+    # Verify breadth-first order: directories at the same level should be discovered
+    # before directories at deeper levels
+    if len(discovered_directories) > 1:
+        # Group directories by depth level
+        directories_by_level: dict[int, list[Path]] = {}
+        for directory in discovered_directories:
+            level = len(directory.parts) - 1  # Subtract 1 because we start from root
+            directories_by_level.setdefault(level, []).append(directory)
+
+        # Check that all directories at level N are discovered before any at level N+1
+        sorted_levels = sorted(directories_by_level.keys())
+        for i in range(len(sorted_levels) - 1):
+            current_level = sorted_levels[i]
+            next_level = sorted_levels[i + 1]
+
+            # Find the last directory at current level and first at next level
+            current_level_dirs = directories_by_level[current_level]
+            next_level_dirs = directories_by_level[next_level]
+
+            last_current = max(
+                discovered_directories.index(d) for d in current_level_dirs
+            )
+            first_next = min(discovered_directories.index(d) for d in next_level_dirs)
+
+            assert last_current < first_next, (
+                f"BFS violated: level {current_level} directory found after "
+                f"level {next_level} directory"
+            )
+
+
+async def test_list_entries_paginated_empty_bucket(
+    mocked_s3_server_envs: EnvVarsDict,
+    with_s3_bucket: S3BucketName,
+    simcore_s3_api: SimcoreS3API,
+):
+    """Test list_entries_paginated with empty bucket"""
+    page_count = 0
+    async for page_entries in simcore_s3_api.list_entries_paginated(
+        bucket=with_s3_bucket, prefix=""
+    ):
+        page_count += 1
+        assert len(page_entries) == 0, "Empty bucket should return empty pages"
+
+    assert page_count == 0, "Empty bucket should yield no pages"
+
+
+@pytest.mark.parametrize(
+    "directory_size, min_file_size, max_file_size, depth",
+    [
+        (
+            TypeAdapter(ByteSize).validate_python("1Mib"),
+            TypeAdapter(ByteSize).validate_python("1B"),
+            TypeAdapter(ByteSize).validate_python("10Kib"),
+            None,
+        )
+    ],
+    ids=byte_size_ids,
+)
+async def test_list_entries_paginated_nonexistent_prefix(
+    mocked_s3_server_envs: EnvVarsDict,
+    with_s3_bucket: S3BucketName,
+    with_uploaded_folder_on_s3: list[UploadedFile],
+    simcore_s3_api: SimcoreS3API,
+    faker: Faker,
+):
+    """Test list_entries_paginated with a non-existent prefix"""
+    nonexistent_prefix = f"nonexistent_{faker.uuid4()}/deeper/path/"
+
+    page_count = 0
+    async for page_entries in simcore_s3_api.list_entries_paginated(
+        bucket=with_s3_bucket, prefix=nonexistent_prefix
+    ):
+        page_count += 1
+        assert len(page_entries) == 0, "Non-existent prefix should return empty pages"
+
+    # Should have no pages for non-existent prefix
+    assert page_count == 0, "Non-existent prefix should yield no pages"
+
+
 async def test_get_file_metadata(
     mocked_s3_server_envs: EnvVarsDict,
     with_s3_bucket: S3BucketName,

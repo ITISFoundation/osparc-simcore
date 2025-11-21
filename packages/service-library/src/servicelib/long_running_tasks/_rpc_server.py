@@ -15,7 +15,7 @@ from .models import (
 _logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from .base_long_running_manager import BaseLongRunningManager
+    from .manager import LongRunningManager
 
 
 router = RPCRouter()
@@ -23,7 +23,7 @@ router = RPCRouter()
 
 @router.expose(reraise_if_error_type=(BaseLongRunningError,))
 async def start_task(
-    long_running_manager: "BaseLongRunningManager",
+    long_running_manager: "LongRunningManager",
     *,
     registered_task_name: RegisteredTaskName,
     unique: bool = False,
@@ -44,7 +44,7 @@ async def start_task(
 
 @router.expose(reraise_if_error_type=(BaseLongRunningError,))
 async def list_tasks(
-    long_running_manager: "BaseLongRunningManager", *, task_context: TaskContext
+    long_running_manager: "LongRunningManager", *, task_context: TaskContext
 ) -> list[TaskBase]:
     return await long_running_manager.tasks_manager.list_tasks(
         with_task_context=task_context
@@ -53,7 +53,7 @@ async def list_tasks(
 
 @router.expose(reraise_if_error_type=(BaseLongRunningError,))
 async def get_task_status(
-    long_running_manager: "BaseLongRunningManager",
+    long_running_manager: "LongRunningManager",
     *,
     task_context: TaskContext,
     task_id: TaskId,
@@ -65,7 +65,7 @@ async def get_task_status(
 
 @router.expose(reraise_if_error_type=(BaseLongRunningError, RPCTransferrableTaskError))
 async def get_task_result(
-    long_running_manager: "BaseLongRunningManager",
+    long_running_manager: "LongRunningManager",
     *,
     task_context: TaskContext,
     task_id: TaskId,
@@ -88,20 +88,17 @@ async def get_task_result(
             await long_running_manager.tasks_manager.remove_task(
                 task_id,
                 with_task_context=task_context,
-                wait_for_removal=True,
+                wait_for_removal=False,
             )
 
 
 @router.expose(reraise_if_error_type=(BaseLongRunningError,))
 async def remove_task(
-    long_running_manager: "BaseLongRunningManager",
+    long_running_manager: "LongRunningManager",
     *,
     task_context: TaskContext,
     task_id: TaskId,
-    wait_for_removal: bool,
 ) -> None:
     await long_running_manager.tasks_manager.remove_task(
-        task_id,
-        with_task_context=task_context,
-        wait_for_removal=wait_for_removal,
+        task_id, with_task_context=task_context, wait_for_removal=False
     )

@@ -91,6 +91,29 @@ qx.Class.define("osparc.utils.Utils", {
 
     FLOATING_Z_INDEX: 1000001 + 1,
 
+    toolTipTextOnDisabledWidget: function(widget, toolTipText) {
+      if (widget && widget.getContentElement()) {
+        const el = widget.getContentElement();
+        el.removeAttribute("title");
+        el.setAttribute("title", toolTipText);
+      }
+    },
+
+    errorsToForm: function(form, errors) {
+      const items = form.getItems();
+      // reset validity
+      Object.values(items).forEach(item => item.setValid(true));
+      errors.forEach(error => {
+        const msg = error.message;
+        const field = error.field;
+        if (field && field in items) {
+          const item = items[field];
+          item.setValid(false);
+          item.setInvalidMessage(msg);
+        }
+      });
+    },
+
     getBounds: function(widget) {
       const bounds = widget.getBounds();
       const cel = widget.getContentElement();
@@ -527,10 +550,6 @@ qx.Class.define("osparc.utils.Utils", {
       return (["dev", "master"].includes(platformName));
     },
 
-    eventDrivenPatch: function() {
-      return osparc.utils.DisabledPlugins.isRTCEnabled();
-    },
-
     getEditButton: function(isVisible = true) {
       return new qx.ui.form.Button(null, "@FontAwesome5Solid/pencil-alt/12").set({
         appearance: "form-button-outlined",
@@ -561,10 +580,15 @@ qx.Class.define("osparc.utils.Utils", {
       return button;
     },
 
+    isDateLike: function(v) {
+      if (typeof v === "string") return !isNaN(new Date(v));
+      return false;
+    },
+
     /**
-      * @param value {Date Object} Date Object
+      * @param date {Date Object} Date Object
       */
-    formatDate: function(value) {
+    formatDate: function(date) {
       // create a date format like "Oct. 19, 11:31 AM" if it's this year
       const dateFormat = new qx.util.format.DateFormat(
         qx.locale.Date.getDateFormat("medium")
@@ -577,20 +601,20 @@ qx.Class.define("osparc.utils.Utils", {
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
 
-      if (today.toDateString() === value.toDateString()) {
+      if (today.toDateString() === date.toDateString()) {
         dateStr = qx.locale.Manager.tr("Today");
-      } else if (yesterday.toDateString() === value.toDateString()) {
+      } else if (yesterday.toDateString() === date.toDateString()) {
         dateStr = qx.locale.Manager.tr("Yesterday");
-      } else if (tomorrow.toDateString() === value.toDateString()) {
+      } else if (tomorrow.toDateString() === date.toDateString()) {
         dateStr = qx.locale.Manager.tr("Tomorrow");
       } else {
         const currentYear = today.getFullYear();
-        if (value.getFullYear() === currentYear) {
+        if (date.getFullYear() === currentYear) {
           // Remove the year if it's the current year
           const shortDateFormat = new qx.util.format.DateFormat("MMM d");
-          dateStr = shortDateFormat.format(value);
+          dateStr = shortDateFormat.format(date);
         } else {
-          dateStr = dateFormat.format(value);
+          dateStr = dateFormat.format(date);
         }
       }
       return dateStr;
@@ -603,21 +627,54 @@ qx.Class.define("osparc.utils.Utils", {
     },
 
     /**
-      * @param value {Date Object} Date Object
+      * @param date {Date Object} Date Object
       */
-    formatTime: function(value, long = false) {
+    formatTime: function(date, long = false) {
       const timeFormat = new qx.util.format.DateFormat(
         qx.locale.Date.getTimeFormat(long ? "long" : "short")
       );
-      const timeStr = timeFormat.format(value);
+      const timeStr = timeFormat.format(date);
       return timeStr;
     },
 
     /**
-      * @param value {Date Object} Date Object
+      * @param date {Date Object} Date Object
       */
-    formatDateAndTime: function(value) {
-      return osparc.utils.Utils.formatDate(value) + " " + osparc.utils.Utils.formatTime(value);
+    formatDateAndTime: function(date) {
+      return osparc.utils.Utils.formatDate(date) + " " + osparc.utils.Utils.formatTime(date);
+    },
+
+    /**
+     * @param {Date} date - The date to format.
+     * @returns {String} - The formatted date string with city name and timezone. Sep 4, 1986, 17:00 Zurich (GMT+02:00)
+     */
+    formatDateWithCityAndTZ: function(date) {
+      // Short date/time formatter
+      const options = {
+        year: "numeric",   // 1986
+        month: "short",    // Sep
+        day: "numeric",    // 4
+        hour: "numeric",   // 9
+        minute: "2-digit",
+        hour12: false,     // 24h format
+      };
+
+      const dtf = new Intl.DateTimeFormat("en-US", options);
+      const formatted = dtf.format(date);
+
+      // Timezone city
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const city = tz.split("/").pop().replace("_", " ");
+
+      // UTC offset (minutes → +HH:MM)
+      const offsetMinutes = -date.getTimezoneOffset(); // JS returns opposite sign
+      const sign = offsetMinutes >= 0 ? "+" : "-";
+      const absMinutes = Math.abs(offsetMinutes);
+      const hours = String(Math.floor(absMinutes / 60)).padStart(2, "0");
+      const minutes = String(absMinutes % 60).padStart(2, "0");
+      const offsetStr = `GMT${sign}${hours}:${minutes}`;
+
+      return `${formatted} ${city} (${offsetStr})`;
     },
 
     formatMsToHHMMSS: function(ms) {
@@ -727,6 +784,10 @@ qx.Class.define("osparc.utils.Utils", {
     uuidV4: function() {
       return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
         (c ^ window.crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16));
+    },
+
+    uuidToShort: function(uuid) {
+      return uuid.split("-")[0];
     },
 
     isInZ43: function() {
@@ -1151,6 +1212,18 @@ qx.Class.define("osparc.utils.Utils", {
         );
       }
       return str;
+    },
+
+    camelToTitle: function(str) {
+      return str
+        .replace(/([A-Z])/g, ' $1')          // insert space before capital letters
+        .replace(/^./, c => c.toUpperCase()); // capitalize first letter
+    },
+
+    convertKeysToTitles: function(obj) {
+      return Object.fromEntries(
+        Object.entries(obj).map(([key, value]) => [this.camelToTitle(key), value])
+      );
     },
 
     setIdToWidget: (qWidget, id) => {

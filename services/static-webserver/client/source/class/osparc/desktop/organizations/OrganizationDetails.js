@@ -33,12 +33,30 @@ qx.Class.define("osparc.desktop.organizations.OrganizationDetails", {
     "backToOrganizations": "qx.event.type.Event"
   },
 
+  statics: {
+    createTabPage: function(label, icon) {
+      const tabPage = new qx.ui.tabview.Page().set({
+        layout: new qx.ui.layout.VBox(),
+      });
+      if (label) {
+        tabPage.setLabel(label);
+      }
+      if (icon) {
+        tabPage.setIcon(icon);
+      }
+      tabPage.getChildControl("button").set({
+        font: "text-13"
+      });
+      return tabPage;
+    },
+  },
+
   members: {
     __orgModel: null,
     __titleLayout: null,
     __organizationListItem: null,
     __membersList: null,
-    __templatesList: null,
+    __tutorialsList: null,
     __servicesList: null,
 
     setCurrentOrg: function(organization) {
@@ -63,7 +81,7 @@ qx.Class.define("osparc.desktop.organizations.OrganizationDetails", {
 
       // set orgModel to the tab views
       this.__membersList.setCurrentOrg(organization);
-      this.__templatesList.setCurrentOrg(organization);
+      this.__tutorialsList.setCurrentOrg(organization);
       this.__servicesList.setCurrentOrg(organization);
     },
 
@@ -88,6 +106,10 @@ qx.Class.define("osparc.desktop.organizations.OrganizationDetails", {
         this.__titleLayout.remove(this.__organizationListItem);
       }
       const organizationListItem = this.__organizationListItem = new osparc.ui.list.OrganizationListItem();
+      organizationListItem.set({
+        cursor: "default",
+        backgroundColor: null,
+      });
       organizationListItem.getChildControl("options").exclude();
       organizationListItem.setShowDeleteButton(false);
       organizationListItem.addListener("openEditOrganization", () => this.__openEditOrganization());
@@ -126,46 +148,26 @@ qx.Class.define("osparc.desktop.organizations.OrganizationDetails", {
         });
     },
 
-    __createTabPage: function(label, icon) {
-      const tabPage = new qx.ui.tabview.Page().set({
-        layout: new qx.ui.layout.VBox()
-      });
-      if (label) {
-        tabPage.setLabel(label);
-      }
-      if (icon) {
-        tabPage.setIcon(icon);
-      }
-      tabPage.getChildControl("button").set({
-        font: "text-13"
-      });
-      return tabPage;
-    },
-
     __getTabs: function() {
       const tabView = new qx.ui.tabview.TabView().set({
         contentPadding: 10
       });
 
-      const membersListPage = this.__createTabPage(this.tr("Members"), "@FontAwesome5Solid/users/14");
+      const membersListPage = this.self().createTabPage(this.tr("Members"), "@FontAwesome5Solid/users/14");
       const membersList = this.__membersList = new osparc.desktop.organizations.MembersList();
       membersListPage.add(membersList, {
         flex: 1
       });
       tabView.add(membersListPage);
 
-      const templatesText = osparc.product.Utils.getTemplateAlias({
-        plural: true,
-        firstUpperCase: true
-      });
-      const templatesListPage = this.__createTabPage(templatesText, "@FontAwesome5Solid/copy/14");
-      const templatesList = this.__templatesList = new osparc.desktop.organizations.TutorialsList();
-      templatesListPage.add(templatesList, {
+      const tutorialsTabPage = this.self().createTabPage(this.tr("Tutorials"), "@FontAwesome5Solid/copy/14");
+      const tutorialsList = this.__tutorialsList = new osparc.desktop.organizations.TutorialsList();
+      tutorialsTabPage.add(tutorialsList, {
         flex: 1
       });
-      tabView.add(templatesListPage);
+      tabView.add(tutorialsTabPage);
 
-      const servicesListPage = this.__createTabPage(this.tr("Services"), "@FontAwesome5Solid/cogs/14");
+      const servicesListPage = this.self().createTabPage(this.tr("Apps"), "@FontAwesome5Solid/cogs/14");
       const servicesList = this.__servicesList = new osparc.desktop.organizations.ServicesList();
       servicesListPage.add(servicesList, {
         flex: 1

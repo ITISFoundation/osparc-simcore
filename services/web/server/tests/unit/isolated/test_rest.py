@@ -24,8 +24,7 @@ async def client(
     unused_tcp_port_factory: Callable,
     aiohttp_client: Callable[..., Awaitable[TestClient]],
     api_version_prefix: str,
-    mock_env_devel_environment: EnvVarsDict,
-    mock_env_deployer_pipeline: EnvVarsDict,
+    mock_webserver_service_environment: EnvVarsDict,
     mocked_db_setup_in_setup_security: MockType,
 ) -> TestClient:
     app = create_safe_application()

@@ -137,9 +137,9 @@ class DynamicServicesSchedulerSettings(BaseCustomSettings):
     DYNAMIC_SIDECAR_WAIT_FOR_SERVICE_TO_STOP: PositiveFloat = Field(
         60.0 * _MINUTE,
         description=(
-            "When stopping a service, depending on the amount of data to store, "
+            "When stopping a LEGACY service, depending on the amount of data to store, "
             "the operation might be very long. Also all relative created resources: "
-            "services, containsers, volumes and networks need to be removed. "
+            "services, containers, volumes and networks need to be removed. "
         ),
     )
 

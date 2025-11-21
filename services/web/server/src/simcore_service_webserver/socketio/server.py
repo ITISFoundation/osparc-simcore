@@ -10,7 +10,7 @@ from socketio import AsyncAioPikaManager, AsyncServer  # type: ignore[import-unt
 from ..rabbitmq_settings import get_plugin_settings as get_rabbitmq_settings
 from . import _handlers
 from ._utils import (
-    APP_CLIENT_SOCKET_SERVER_KEY,
+    CLIENT_SOCKET_SERVER_APPKEY,
     get_socket_server,
     register_socketio_handlers,
 )
@@ -30,7 +30,7 @@ async def _socketio_server_cleanup_ctx(app: web.Application) -> AsyncIterator[No
     )
     sio_server.attach(app)
 
-    app[APP_CLIENT_SOCKET_SERVER_KEY] = sio_server
+    app[CLIENT_SOCKET_SERVER_APPKEY] = sio_server
 
     register_socketio_handlers(app, _handlers)
 

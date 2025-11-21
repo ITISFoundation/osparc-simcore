@@ -3,7 +3,6 @@
 # NOTE: should be used once this is pydantic V2 comptible
 
 arrow
-docker
 faker
 httpx
 pydantic[email]

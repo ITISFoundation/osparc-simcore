@@ -1,8 +1,8 @@
 import logging
 
 from aiohttp import web
-from servicelib.aiohttp.application_setup import ensure_single_setup
 
+from ..application_setup import ensure_single_setup
 from ._controller.rest import user_preferences_rest
 from ._models import overwrite_user_preferences_defaults
 

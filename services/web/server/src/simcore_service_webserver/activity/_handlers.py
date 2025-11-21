@@ -6,8 +6,8 @@ import aiohttp.web
 from models_library.api_schemas_webserver.activity import ActivityStatusDict
 from pydantic import TypeAdapter
 from servicelib.aiohttp.client_session import get_client_session
+from servicelib.aiohttp.request_keys import RQT_USERID_KEY
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
-from servicelib.request_keys import RQT_USERID_KEY
 from yarl import URL
 
 from .._meta import API_VTAG

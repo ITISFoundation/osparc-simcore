@@ -1,8 +1,7 @@
 from common_library.errors_classes import OsparcErrorMixin
 
 
-class BaseServicesPreferencesError(OsparcErrorMixin, Exception):
-    ...
+class BaseServicesPreferencesError(OsparcErrorMixin, Exception): ...
 
 
 class DestinationIsNotADirectoryError(BaseServicesPreferencesError):

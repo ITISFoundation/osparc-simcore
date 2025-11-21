@@ -5,6 +5,7 @@ from pydantic.config import JsonDict
 
 from ..resource_tracker import HardwareInfo, PricingInfo
 from ..services import ServicePortKey
+from ..services_creation import CreateServiceMetricsAdditionalParams
 from ..services_resources import ServiceResourcesDict, ServiceResourcesDictHelpers
 from ..wallets import WalletInfo
 from .dynamic_services_service import RunningDynamicServiceDetails, ServiceDetails
@@ -104,3 +105,11 @@ class GetProjectInactivityResponse(BaseModel):
     is_inactive: bool
 
     model_config = ConfigDict(json_schema_extra={"example": {"is_inactive": "false"}})
+
+
+class ContainersComposeSpec(BaseModel):
+    docker_compose_yaml: str
+
+
+class ContainersCreate(BaseModel):
+    metrics_params: CreateServiceMetricsAdditionalParams

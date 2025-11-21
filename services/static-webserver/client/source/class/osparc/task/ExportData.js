@@ -22,7 +22,7 @@ qx.Class.define("osparc.task.ExportData", {
     this.base(arguments);
 
     this.setIcon(this.self().ICON+"/14");
-    this.setTitle(this.tr("Downloading files:"));
+    this.setTitle(this.tr("Preparing files:"));
   },
 
   statics: {
@@ -42,7 +42,7 @@ qx.Class.define("osparc.task.ExportData", {
 
         if (task.getAbortHref()) {
           const cancelButton = progressWindow.addCancelButton();
-          cancelButton.setLabel(qx.locale.Manager.tr("Ignore"));
+          cancelButton.setLabel(qx.locale.Manager.tr("Hide"));
           const abortButton = new qx.ui.form.Button().set({
             label: qx.locale.Manager.tr("Cancel"),
             center: true,

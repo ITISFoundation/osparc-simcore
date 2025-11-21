@@ -11,9 +11,8 @@
 import logging
 from typing import Annotated, Any, Final, Literal, TypeAlias
 
-import sqlalchemy as sa
 from aiohttp import web
-from aiopg.sa.result import RowProxy
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from pydantic import (
     BaseModel,
     Field,
@@ -23,12 +22,10 @@ from pydantic import (
     ValidationError,
     field_validator,
 )
-from servicelib.logging_errors import create_troubleshootting_log_kwargs
-from simcore_postgres_database.models.classifiers import group_classifiers
 
-from ..db.plugin import get_database_engine_legacy
-from ..scicrunch.db import ResearchResourceRepository
-from ..scicrunch.service_client import SciCrunch
+from ..scicrunch.errors import ScicrunchError
+from ..scicrunch.scicrunch_service import SCICRUNCH_SERVICE_APPKEY
+from ._classifiers_repository import GroupClassifierRepository
 
 _logger = logging.getLogger(__name__)
 MAX_SIZE_SHORT_MSG: Final[int] = 100
@@ -50,11 +47,13 @@ class ClassifierItem(BaseModel):
     )
     display_name: str
     short_description: str | None
-    url: HttpUrl | None = Field(
-        None,
-        description="Link to more information",
-        examples=["https://scicrunch.org/resources/Any/search?q=osparc&l=osparc"],
-    )
+    url: Annotated[
+        HttpUrl | None,
+        Field(
+            description="Link to more information",
+            examples=["https://scicrunch.org/resources/Any/search?q=osparc&l=osparc"],
+        ),
+    ] = None
 
     @field_validator("short_description", mode="before")
     @classmethod
@@ -73,87 +72,76 @@ class Classifiers(BaseModel):
     classifiers: dict[TreePath, ClassifierItem]
 
 
-# DATABASE --------
+# SERVICE LAYER --------
 
 
-class GroupClassifierRepository:
+class GroupClassifiersService:
     def __init__(self, app: web.Application):
-        self.engine = get_database_engine_legacy(app)
+        self.app = app
+        self._repo = GroupClassifierRepository.create_from_app(app)
 
-    async def _get_bundle(self, gid: int) -> RowProxy | None:
-        async with self.engine.acquire() as conn:
-            bundle: RowProxy | None = await conn.scalar(
-                sa.select(group_classifiers.c.bundle).where(
-                    group_classifiers.c.gid == gid
-                )
-            )
-            return bundle
-
-    async def get_classifiers_from_bundle(self, gid: int) -> dict[str, Any]:
-        bundle = await self._get_bundle(gid)
-        if bundle:
-            try:
-                # truncate bundle to what is needed and drop the rest
-                return Classifiers(**bundle).model_dump(
-                    exclude_unset=True, exclude_none=True
-                )
-            except ValidationError as err:
-                _logger.exception(
-                    **create_troubleshootting_log_kwargs(
-                        f"DB corrupt data in 'groups_classifiers' table. Invalid classifier for gid={gid}. Returning empty bundle.",
-                        error=err,
-                        error_context={
-                            "gid": gid,
-                            "bundle": bundle,
-                        },
+    async def get_group_classifiers(
+        self, gid: int, tree_view_mode: Literal["std"] = "std"
+    ) -> dict[str, Any]:
+        """Get classifiers for a group, either from bundle or dynamic tree view."""
+        if not await self._repo.group_uses_scicrunch(gid):
+            bundle = await self._repo.get_classifiers_from_bundle(gid)
+            if bundle:
+                try:
+                    # truncate bundle to what is needed and drop the rest
+                    return Classifiers(**bundle).model_dump(
+                        exclude_unset=True, exclude_none=True
                     )
-                )
-        return {}
+                except ValidationError as err:
+                    _logger.exception(
+                        **create_troubleshooting_log_kwargs(
+                            f"DB corrupt data in 'groups_classifiers' table. Invalid classifier for gid={gid}. Returning empty bundle.",
+                            error=err,
+                            error_context={
+                                "gid": gid,
+                                "bundle": bundle,
+                            },
+                        )
+                    )
+            return {}
 
-    async def group_uses_scicrunch(self, gid: int) -> bool:
-        async with self.engine.acquire() as conn:
-            value: RowProxy | None = await conn.scalar(
-                sa.select(group_classifiers.c.uses_scicrunch).where(
-                    group_classifiers.c.gid == gid
-                )
-            )
-            return bool(value)
-
-
-# HELPERS FOR API HANDLERS --------------
-
-
-async def build_rrids_tree_view(
-    app: web.Application, tree_view_mode: Literal["std"] = "std"
-) -> dict[str, Any]:
-    if tree_view_mode != "std":
-        raise web.HTTPNotImplemented(
-            text="Currently only 'std' option for the classifiers tree view is implemented"
-        )
-
-    scicrunch = SciCrunch.get_instance(app)
-    repo = ResearchResourceRepository(app)
-
-    flat_tree_view: dict[TreePath, ClassifierItem] = {}
-    for resource in await repo.list_resources():
+        # otherwise, build dynamic tree with RRIDs
         try:
-            validated_item = ClassifierItem(
-                classifier=resource.rrid,
-                display_name=resource.name.title(),
-                short_description=resource.description,
-                url=scicrunch.get_resolver_web_url(resource.rrid),
-            )
+            return await self._build_rrids_tree_view(tree_view_mode=tree_view_mode)
+        except ScicrunchError:
+            # Return empty view on any error (including ScicrunchError)
+            return {}
 
-            node = TypeAdapter(TreePath).validate_python(
-                validated_item.display_name.replace(":", " ")
-            )
-            flat_tree_view[node] = validated_item
+    async def _build_rrids_tree_view(
+        self, tree_view_mode: Literal["std"] = "std"
+    ) -> dict[str, Any]:
+        if tree_view_mode != "std":
+            msg = "Currently only 'std' option for the classifiers tree view is implemented"
+            raise NotImplementedError(msg)
 
-        except ValidationError as err:
-            _logger.warning(
-                "Cannot convert RRID into a classifier item. Skipping. Details: %s", err
-            )
+        service = self.app[SCICRUNCH_SERVICE_APPKEY]
 
-    return Classifiers.model_construct(classifiers=flat_tree_view).model_dump(
-        exclude_unset=True
-    )
+        flat_tree_view: dict[TreePath, ClassifierItem] = {}
+        for resource in await service.list_research_resources():
+            try:
+                validated_item = ClassifierItem(
+                    classifier=resource.rrid,
+                    display_name=resource.name.title(),
+                    short_description=resource.description,
+                    url=service.get_resolver_web_url(resource.rrid),
+                )
+
+                node = TypeAdapter(TreePath).validate_python(
+                    validated_item.display_name.replace(":", " ")
+                )
+                flat_tree_view[node] = validated_item
+
+            except ValidationError as err:
+                _logger.warning(
+                    "Cannot convert RRID into a classifier item. Skipping. Details: %s",
+                    err,
+                )
+
+        return Classifiers.model_construct(classifiers=flat_tree_view).model_dump(
+            exclude_unset=True
+        )

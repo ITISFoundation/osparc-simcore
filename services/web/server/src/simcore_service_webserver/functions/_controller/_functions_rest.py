@@ -44,6 +44,7 @@ from .._services_metadata import proxy as _services_metadata_proxy
 from .._services_metadata.proxy import ServiceMetadata
 from ._functions_rest_exceptions import handle_rest_requests_exceptions
 from ._functions_rest_schemas import (
+    FunctionDeleteQueryParams,
     FunctionFilters,
     FunctionGetQueryParams,
     FunctionGroupPathParams,
@@ -169,7 +170,7 @@ async def register_function(request: web.Request) -> web.Response:
 @login_required
 @permission_required("function.read")
 @handle_rest_requests_exceptions
-async def list_functions(request: web.Request) -> web.Response:
+async def list_functions(request: web.Request) -> web.Response:  # noqa: C901
     query_params: FunctionsListQueryParams = parse_request_query_parameters_as(
         FunctionsListQueryParams, request
     )
@@ -370,12 +371,18 @@ async def update_function(request: web.Request) -> web.Response:
 async def delete_function(request: web.Request) -> web.Response:
     path_params = parse_request_path_parameters_as(FunctionPathParams, request)
     function_id = path_params.function_id
+
+    query_params: FunctionDeleteQueryParams = parse_request_query_parameters_as(
+        FunctionDeleteQueryParams, request
+    )
+
     req_ctx = AuthenticatedRequestContext.model_validate(request)
     await _functions_service.delete_function(
         app=request.app,
-        function_id=function_id,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
+        function_id=function_id,
+        force=query_params.force,
     )
 
     return web.json_response(status=status.HTTP_204_NO_CONTENT)

@@ -21,7 +21,11 @@ qx.Class.define("osparc.desktop.preferences.pages.TagsPage", {
     const msg = this.tr("\
     Tags help you organize the ") + studiesLabel + this.tr(" in the Dashboard by categorizing topics, making it easier to search and filter. \
     Once the tags are created, they can be assigned to the ") + studyLabel + this.tr("  via 'More options...' on the ") + studyLabel + this.tr(" cards.");
-    const intro = osparc.ui.window.TabbedView.createHelpLabel(msg);
+    const intro = new qx.ui.basic.Label(msg).set({
+      font: "text-13",
+      rich: true,
+      wrap: true
+    });
     this._add(intro);
 
     this.__renderLayout();
@@ -32,7 +36,7 @@ qx.Class.define("osparc.desktop.preferences.pages.TagsPage", {
 
     __renderLayout: async function() {
       // Tags
-      this.__tagsContainer = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+      this.__tagsContainer = new qx.ui.container.Composite(new qx.ui.layout.VBox(2));
       this.__tagsContainer.set({
         paddingLeft: 10
       });
@@ -45,7 +49,15 @@ qx.Class.define("osparc.desktop.preferences.pages.TagsPage", {
       for (const tag of tags) {
         await osparc.store.Tags.getInstance().fetchAccessRights(tag);
       }
-      const tagItems = tags.map(tag => new osparc.form.tag.TagItem().set({tag}));
+      const tagItems = tags.map(tag => {
+        const tagItem = new osparc.form.tag.TagItem().set({
+          tag
+        });
+        tagItem.getChildControl("tag").set({
+          font: "text-12"
+        });
+        return tagItem;
+      });
       tagItems.forEach(tagItem => {
         this.__tagsContainer.add(tagItem);
         this.__attachTagItemEvents(tagItem);

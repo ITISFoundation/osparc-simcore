@@ -3,20 +3,24 @@
 # pylint:disable=no-name-in-module
 
 import json
+import logging
 from typing import Annotated
 
 import pytest
 from aiohttp import web
 from common_library.json_serialization import json_dumps
+from models_library.rpc.webserver import DEFAULT_WEBSERVER_RPC_NAMESPACE
 from pydantic import Field, HttpUrl, TypeAdapter
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_webserver.application_settings import (
     _X_FEATURE_UNDER_DEVELOPMENT,
-    APP_SETTINGS_KEY,
+    APP_SETTINGS_APPKEY,
     ApplicationSettings,
     setup_settings,
 )
+
+_logger = logging.getLogger(__name__)
 
 
 @pytest.fixture
@@ -31,8 +35,8 @@ def app_settings(
     settings = setup_settings(app)
     print("settings:\n", settings.model_dump_json(indent=1))
 
-    assert APP_SETTINGS_KEY in app
-    assert app[APP_SETTINGS_KEY] == settings
+    assert APP_SETTINGS_APPKEY in app
+    assert app[APP_SETTINGS_APPKEY] == settings
     return settings
 
 
@@ -71,8 +75,15 @@ def test_settings_to_client_statics(app_settings: ApplicationSettings):
 
 
 def test_settings_to_client_statics_plugins(
-    mock_webserver_service_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
+    mock_webserver_service_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
 ):
+    setenvs_from_dict(
+        monkeypatch,
+        {
+            "WEBSERVER_DEV_FEATURES_ENABLED": "1",
+        },
+    )
     monkeypatch.delenv("WEBSERVER_REALTIME_COLLABORATION", raising=False)
 
     # explicitly disable these plugins
@@ -223,3 +234,50 @@ def test_valid_application_settings(mock_webserver_service_environment: EnvVarsD
     assert settings
 
     assert settings == ApplicationSettings.create_from_envs()
+
+
+@pytest.fixture
+def mock_service_environment(
+    docker_compose_service_environment_dict,
+    service_name: str,
+    monkeypatch: pytest.MonkeyPatch,
+) -> EnvVarsDict:
+    # NOTE: the name of the service in real deploys are not necessarily the ones we have here in the docker-compose
+    # Typically they include prefixes with the deployment name e.g. master-webserver or staging-webserver instead of just webserver
+    _logger.info("Mocking envs for service: %s", service_name)
+
+    assert docker_compose_service_environment_dict
+    return setenvs_from_dict(monkeypatch, {**docker_compose_service_environment_dict})
+
+
+@pytest.mark.parametrize(
+    "service_name", ["webserver", "wb-db-event-listener", "wb-garbage-collector"]
+)
+def test_webserver_rpc_namespace_must_be_default(mock_service_environment: EnvVarsDict):
+    # NOTE: This requirement will change when https://github.com/ITISFoundation/osparc-simcore/issues/8448  is implemented
+    settings = ApplicationSettings.create_from_envs()
+    assert settings
+
+    assert settings.WEBSERVER_RPC_NAMESPACE == DEFAULT_WEBSERVER_RPC_NAMESPACE
+
+
+@pytest.mark.parametrize("service_name", ["wb-api-server"])
+def test_webserver_rpc_namespace_must_be_non_default(
+    mock_service_environment: EnvVarsDict,
+    env_devel_dict: EnvVarsDict,
+):
+    settings = ApplicationSettings.create_from_envs()
+    assert settings
+
+    assert settings.WEBSERVER_RPC_NAMESPACE != DEFAULT_WEBSERVER_RPC_NAMESPACE
+    assert env_devel_dict["WB_API_WEBSERVER_HOST"] == settings.WEBSERVER_RPC_NAMESPACE
+
+
+@pytest.mark.parametrize("service_name", ["wb-auth"])
+def test_webserver_rpc_namespace_must_be_disabled(
+    mock_service_environment: EnvVarsDict,
+):
+    settings = ApplicationSettings.create_from_envs()
+    assert settings
+
+    assert settings.WEBSERVER_RPC_NAMESPACE is None

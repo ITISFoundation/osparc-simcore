@@ -5,9 +5,10 @@ from collections import Counter
 from common_library.user_messages import user_message
 from servicelib.aiohttp import status
 from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
-    CatalogForbiddenError,
-    CatalogItemNotFoundError,
-    CatalogNotAvailableError,
+    CatalogBatchNotFoundRpcError,
+    CatalogForbiddenRpcError,
+    CatalogItemNotFoundRpcError,
+    CatalogNotAvailableRpcError,
 )
 
 from ...catalog._controller_rest_exceptions import catalog_exceptions_handlers_map
@@ -247,7 +248,7 @@ _CONVERSATION_ERRORS: ExceptionToHttpErrorMap = {
 
 
 _OTHER_ERRORS: ExceptionToHttpErrorMap = {
-    CatalogNotAvailableError: HttpErrorInfo(
+    CatalogNotAvailableRpcError: HttpErrorInfo(
         status.HTTP_503_SERVICE_UNAVAILABLE,
         user_message("The catalog service is currently unavailable.", _version=1),
     ),
@@ -257,16 +258,20 @@ _OTHER_ERRORS: ExceptionToHttpErrorMap = {
             "The clusters-keeper service is currently unavailable.", _version=1
         ),
     ),
-    CatalogForbiddenError: HttpErrorInfo(
+    CatalogForbiddenRpcError: HttpErrorInfo(
         status.HTTP_403_FORBIDDEN,
         user_message(
             "Access denied: You do not have sufficient permissions for {name}.",
             _version=1,
         ),
     ),
-    CatalogItemNotFoundError: HttpErrorInfo(
+    CatalogItemNotFoundRpcError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
         user_message("The requested item '{name}' was not found.", _version=1),
+    ),
+    CatalogBatchNotFoundRpcError: HttpErrorInfo(
+        status.HTTP_404_NOT_FOUND,
+        user_message("None of these items '{name}' could be found.", _version=1),
     ),
 }
 

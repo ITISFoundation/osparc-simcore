@@ -8,9 +8,10 @@ from collections.abc import AsyncIterator
 from datetime import timedelta
 
 from aiohttp import web
+from common_library.logging.logging_base import get_log_record_extra
 from models_library.users import UserID
 from servicelib.background_task_utils import exclusive_periodic
-from servicelib.logging_utils import get_log_record_extra, log_context
+from servicelib.logging_utils import log_context
 
 from ..login import login_service
 from ..redis import get_redis_lock_manager_client_sdk
@@ -44,7 +45,6 @@ async def notify_user_logout_all_sessions(
 
 
 async def _update_expired_users(app: web.Application):
-
     if updated := await users_service.update_expired_users(app):
         # expired users might be cached in the auth. If so, any request
         # with this user-id will get thru producing unexpected side-effects
@@ -68,7 +68,6 @@ async def _update_expired_users(app: web.Application):
 
 
 def create_background_task_for_trial_accounts(wait_s: float) -> CleanupContextFunc:
-
     async def _cleanup_ctx_fun(app: web.Application) -> AsyncIterator[None]:
         interval = timedelta(seconds=wait_s)
 

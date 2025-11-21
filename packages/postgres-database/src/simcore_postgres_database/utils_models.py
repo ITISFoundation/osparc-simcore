@@ -27,4 +27,4 @@ class FromRowMixin:
             raise TypeError(msg)
 
         field_names = [f.name for f in fields(cls)]
-        return cls(**{k: v for k, v in mapping.items() if k in field_names})  # type: ignore[return-value]
+        return cls(**{k: v for k, v in mapping.items() if k in field_names})

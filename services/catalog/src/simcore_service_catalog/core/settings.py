@@ -3,6 +3,7 @@ from functools import cached_property
 from typing import Annotated, Final
 
 from common_library.basic_types import DEFAULT_FACTORY
+from common_library.logging.logging_utils_filtering import LoggerName, MessageSubstring
 from models_library.api_schemas_catalog.services_specifications import (
     ServiceSpecifications,
 )
@@ -16,7 +17,6 @@ from pydantic import (
     PositiveInt,
     TypeAdapter,
 )
-from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.application import BaseApplicationSettings
 from settings_library.base import BaseCustomSettings
 from settings_library.http_client_request import ClientRequestSettings

@@ -3,6 +3,7 @@
 """
 
 import os
+from collections.abc import Mapping
 from io import StringIO
 from pathlib import Path
 
@@ -17,7 +18,7 @@ from .typing_env import EnvVarsDict, EnvVarsIterable
 
 
 def setenvs_from_dict(
-    monkeypatch: pytest.MonkeyPatch, envs: dict[str, str | bool]
+    monkeypatch: pytest.MonkeyPatch, envs: Mapping[str, str | bool]
 ) -> EnvVarsDict:
     env_vars = {}
 

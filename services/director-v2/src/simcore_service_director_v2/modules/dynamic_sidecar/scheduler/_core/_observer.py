@@ -1,13 +1,12 @@
 # pylint: disable=relative-beyond-top-level
 
-import asyncio
 import logging
 from copy import deepcopy
 from math import floor
 
 from common_library.error_codes import create_error_code
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from fastapi import FastAPI
-from servicelib.logging_errors import create_troubleshootting_log_kwargs
 
 from .....core.dynamic_services_settings.scheduler import (
     DynamicServicesSchedulerSettings,
@@ -138,8 +137,6 @@ async def observing_single_service(
     try:
         await _apply_observation_cycle(scheduler, scheduler_data)
         logger.debug("completed observation cycle of %s", f"{service_name=}")
-    except asyncio.CancelledError:  # pylint: disable=try-except-raise
-        raise  # pragma: no cover
     except Exception as exc:  # pylint: disable=broad-except
         service_name = scheduler_data.service_name
 
@@ -153,7 +150,7 @@ async def observing_single_service(
         error_code = create_error_code(exc)
 
         logger.exception(
-            **create_troubleshootting_log_kwargs(
+            **create_troubleshooting_log_kwargs(
                 user_error_msg,
                 error=exc,
                 error_context={

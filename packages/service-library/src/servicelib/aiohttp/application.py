@@ -23,9 +23,9 @@ _MAX_WAIT_TIME_TO_CANCEL_SECONDS = 5
 
 
 async def _cancel_all_fire_and_forget_registered_tasks(app: web.Application):
-    registered_tasks: set[asyncio.Task] = app[APP_FIRE_AND_FORGET_TASKS_KEY]
+    registered_tasks = app[APP_FIRE_AND_FORGET_TASKS_KEY]
     for task in registered_tasks:
-        task.cancel()
+        task.cancel("application shutdown, cancelling fire-and-forget task")
 
     try:
         results = await asyncio.wait_for(
@@ -37,7 +37,7 @@ async def _cancel_all_fire_and_forget_registered_tasks(app: web.Application):
                 "Following observation tasks completed with an unexpected error:%s",
                 f"{bad_results}",
             )
-    except asyncio.TimeoutError:
+    except TimeoutError:
         _logger.exception(
             "Timed-out waiting more than %s secs for %s to complete. Action: Check why this is blocking",
             _MAX_WAIT_TIME_TO_CANCEL_SECONDS,

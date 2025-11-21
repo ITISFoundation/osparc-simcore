@@ -15,7 +15,7 @@ _faker = Faker()
 
 
 async def test_list_jobs_by_resource_prefix(
-    mocked_rpc_client: MockType,
+    mocked_rabbit_rpc_client: MockType,
     job_service: JobService,
 ):
     # Test with default pagination parameters
@@ -26,7 +26,7 @@ async def test_list_jobs_by_resource_prefix(
     assert isinstance(jobs, list)
 
     assert len(jobs) == page_meta.count
-    assert mocked_rpc_client.request.call_args.args == (
+    assert mocked_rabbit_rpc_client.request.call_args.args == (
         "webserver",
         "list_projects_marked_as_jobs",
     )
@@ -38,7 +38,7 @@ async def test_list_jobs_by_resource_prefix(
 
 
 async def test_create_job(
-    mocked_rpc_client: MockType,
+    mocked_rabbit_rpc_client: MockType,
     job_service: JobService,
 ):
     # Create mock solver and inputs
@@ -81,7 +81,7 @@ async def test_create_job(
     assert "test-solver" in job.name
 
     # Verify API calls
-    assert mocked_rpc_client.request.call_args.args == (
+    assert mocked_rabbit_rpc_client.request.call_args.args == (
         "webserver",
         "mark_project_as_job",
     )

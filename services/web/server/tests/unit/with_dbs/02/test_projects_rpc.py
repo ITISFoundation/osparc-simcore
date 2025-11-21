@@ -4,12 +4,13 @@
 # pylint: disable=too-many-arguments
 
 
-from collections.abc import AsyncIterator, Awaitable, Callable
+from collections.abc import AsyncIterator
 from uuid import UUID
 
 import pytest
 from aiohttp.test_utils import TestClient
 from common_library.users_enums import UserRole
+from models_library.api_schemas_webserver.projects_metadata import MetadataDict
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.rpc.webserver.projects import (
@@ -22,19 +23,26 @@ from pydantic import ValidationError
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_users import NewUser, UserInfoDict
-from servicelib.rabbitmq import RabbitMQRPCClient
-from servicelib.rabbitmq.rpc_interfaces.webserver import projects as projects_rpc
 from servicelib.rabbitmq.rpc_interfaces.webserver.errors import (
     ProjectForbiddenRpcError,
     ProjectNotFoundRpcError,
 )
+from servicelib.rabbitmq.rpc_interfaces.webserver.v1 import WebServerRpcClient
 from settings_library.rabbit import RabbitSettings
-from simcore_service_webserver.application_settings import ApplicationSettings
+from simcore_service_webserver.application_settings import (
+    ApplicationSettings,
+)
 from simcore_service_webserver.projects.models import ProjectDict
 
 pytest_simcore_core_services_selection = [
     "rabbit",
 ]
+
+
+@pytest.fixture(scope="session")
+def service_name() -> str:
+    # Overrides  service_name fixture needed in docker_compose_service_environment_dict fixture
+    return "wb-api-server"
 
 
 @pytest.fixture
@@ -47,11 +55,13 @@ def user_role() -> UserRole:
 def app_environment(
     rabbit_service: RabbitSettings,
     app_environment: EnvVarsDict,
+    docker_compose_service_environment_dict: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
 ):
     new_envs = setenvs_from_dict(
         monkeypatch,
         {
+            **docker_compose_service_environment_dict,
             **app_environment,
             "RABBIT_HOST": rabbit_service.RABBIT_HOST,
             "RABBIT_PORT": f"{rabbit_service.RABBIT_PORT}",
@@ -67,16 +77,9 @@ def app_environment(
     return new_envs
 
 
-@pytest.fixture
-async def rpc_client(
-    rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
-) -> RabbitMQRPCClient:
-    return await rabbitmq_rpc_client("client")
-
-
 async def test_rpc_client_mark_project_as_job(
-    rpc_client: RabbitMQRPCClient,
     product_name: ProductName,
+    webserver_rpc_client: WebServerRpcClient,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
 ):
@@ -84,8 +87,7 @@ async def test_rpc_client_mark_project_as_job(
     project_uuid: ProjectID = UUID(user_project["uuid"])
     user_id = logged_user["id"]
 
-    await projects_rpc.mark_project_as_job(
-        rpc_client=rpc_client,
+    await webserver_rpc_client.projects.mark_project_as_job(
         product_name=product_name,
         user_id=user_id,
         project_uuid=project_uuid,
@@ -95,7 +97,7 @@ async def test_rpc_client_mark_project_as_job(
 
 
 async def test_rpc_client_list_my_projects_marked_as_jobs(
-    rpc_client: RabbitMQRPCClient,
+    webserver_rpc_client: WebServerRpcClient,
     product_name: ProductName,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
@@ -104,8 +106,7 @@ async def test_rpc_client_list_my_projects_marked_as_jobs(
     user_id = logged_user["id"]
 
     # Mark the project as a job first
-    await projects_rpc.mark_project_as_job(
-        rpc_client=rpc_client,
+    await webserver_rpc_client.projects.mark_project_as_job(
         product_name=product_name,
         user_id=user_id,
         project_uuid=project_uuid,
@@ -114,13 +115,14 @@ async def test_rpc_client_list_my_projects_marked_as_jobs(
     )
 
     # List projects marked as jobs
-    page: PageRpcProjectJobRpcGet = await projects_rpc.list_projects_marked_as_jobs(
-        rpc_client=rpc_client,
-        product_name=product_name,
-        user_id=user_id,
-        filters=ListProjectsMarkedAsJobRpcFilters(
-            job_parent_resource_name_prefix="solvers/solver123"
-        ),
+    page: PageRpcProjectJobRpcGet = (
+        await webserver_rpc_client.projects.list_projects_marked_as_jobs(
+            product_name=product_name,
+            user_id=user_id,
+            filters=ListProjectsMarkedAsJobRpcFilters(
+                job_parent_resource_name_prefix="solvers/solver123"
+            ),
+        )
     )
 
     assert page.meta.total == 1
@@ -154,7 +156,7 @@ async def other_user(
 
 
 async def test_errors_on_rpc_client_mark_project_as_job(
-    rpc_client: RabbitMQRPCClient,
+    webserver_rpc_client: WebServerRpcClient,
     product_name: ProductName,
     logged_user: UserInfoDict,
     other_user: UserInfoDict,
@@ -166,8 +168,7 @@ async def test_errors_on_rpc_client_mark_project_as_job(
     other_user_id = other_user["id"]
 
     with pytest.raises(ProjectForbiddenRpcError) as exc_info:
-        await projects_rpc.mark_project_as_job(
-            rpc_client=rpc_client,
+        await webserver_rpc_client.projects.mark_project_as_job(
             product_name=product_name,
             user_id=other_user_id,  # <-- no access
             project_uuid=project_uuid,
@@ -178,8 +179,7 @@ async def test_errors_on_rpc_client_mark_project_as_job(
     assert exc_info.value.error_context()["project_uuid"] == project_uuid
 
     with pytest.raises(ProjectNotFoundRpcError, match="not found"):
-        await projects_rpc.mark_project_as_job(
-            rpc_client=rpc_client,
+        await webserver_rpc_client.projects.mark_project_as_job(
             product_name=product_name,
             user_id=logged_user["id"],
             project_uuid=UUID("00000000-0000-0000-0000-000000000000"),  # <-- wont find
@@ -188,8 +188,7 @@ async def test_errors_on_rpc_client_mark_project_as_job(
         )
 
     with pytest.raises(ValidationError, match="job_parent_resource_name") as exc_info:
-        await projects_rpc.mark_project_as_job(
-            rpc_client=rpc_client,
+        await webserver_rpc_client.projects.mark_project_as_job(
             product_name=product_name,
             user_id=user_id,
             project_uuid=project_uuid,
@@ -203,7 +202,7 @@ async def test_errors_on_rpc_client_mark_project_as_job(
 
 
 async def test_rpc_client_list_projects_marked_as_jobs_with_metadata_filter(
-    rpc_client: RabbitMQRPCClient,
+    webserver_rpc_client: WebServerRpcClient,
     product_name: ProductName,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
@@ -215,8 +214,7 @@ async def test_rpc_client_list_projects_marked_as_jobs_with_metadata_filter(
     user_id = logged_user["id"]
 
     # Mark the project as a job
-    await projects_rpc.mark_project_as_job(
-        rpc_client=rpc_client,
+    await webserver_rpc_client.projects.mark_project_as_job(
         product_name=product_name,
         user_id=user_id,
         project_uuid=project_uuid,
@@ -225,7 +223,7 @@ async def test_rpc_client_list_projects_marked_as_jobs_with_metadata_filter(
     )
 
     # Set custom metadata on the project
-    custom_metadata = {
+    custom_metadata: MetadataDict = {
         "solver_type": "FEM",
         "mesh_cells": "10000",
         "domain": "biomedical",
@@ -239,14 +237,17 @@ async def test_rpc_client_list_projects_marked_as_jobs_with_metadata_filter(
     )
 
     # Test with exact match on metadata field
-    page: PageRpcProjectJobRpcGet = await projects_rpc.list_projects_marked_as_jobs(
-        rpc_client=rpc_client,
-        product_name=product_name,
-        user_id=user_id,
-        filters=ListProjectsMarkedAsJobRpcFilters(
-            job_parent_resource_name_prefix="solvers/solver123",
-            any_custom_metadata=[MetadataFilterItem(name="solver_type", pattern="FEM")],
-        ),
+    page: PageRpcProjectJobRpcGet = (
+        await webserver_rpc_client.projects.list_projects_marked_as_jobs(
+            product_name=product_name,
+            user_id=user_id,
+            filters=ListProjectsMarkedAsJobRpcFilters(
+                job_parent_resource_name_prefix="solvers/solver123",
+                any_custom_metadata=[
+                    MetadataFilterItem(name="solver_type", pattern="FEM")
+                ],
+            ),
+        )
     )
 
     assert page.meta.total == 1
@@ -254,8 +255,7 @@ async def test_rpc_client_list_projects_marked_as_jobs_with_metadata_filter(
     assert page.data[0].uuid == project_uuid
 
     # Test with pattern match on metadata field
-    page = await projects_rpc.list_projects_marked_as_jobs(
-        rpc_client=rpc_client,
+    page = await webserver_rpc_client.projects.list_projects_marked_as_jobs(
         product_name=product_name,
         user_id=user_id,
         filters=ListProjectsMarkedAsJobRpcFilters(
@@ -268,8 +268,7 @@ async def test_rpc_client_list_projects_marked_as_jobs_with_metadata_filter(
     assert page.data[0].uuid == project_uuid
 
     # Test with multiple metadata fields (any match should return the project)
-    page = await projects_rpc.list_projects_marked_as_jobs(
-        rpc_client=rpc_client,
+    page = await webserver_rpc_client.projects.list_projects_marked_as_jobs(
         product_name=product_name,
         user_id=user_id,
         filters=ListProjectsMarkedAsJobRpcFilters(
@@ -284,8 +283,7 @@ async def test_rpc_client_list_projects_marked_as_jobs_with_metadata_filter(
     assert len(page.data) == 1
 
     # Test with no matches
-    page = await projects_rpc.list_projects_marked_as_jobs(
-        rpc_client=rpc_client,
+    page = await webserver_rpc_client.projects.list_projects_marked_as_jobs(
         product_name=product_name,
         user_id=user_id,
         filters=ListProjectsMarkedAsJobRpcFilters(
@@ -299,8 +297,7 @@ async def test_rpc_client_list_projects_marked_as_jobs_with_metadata_filter(
     assert len(page.data) == 0
 
     # Test with combination of resource prefix and metadata
-    page = await projects_rpc.list_projects_marked_as_jobs(
-        rpc_client=rpc_client,
+    page = await webserver_rpc_client.projects.list_projects_marked_as_jobs(
         product_name=product_name,
         user_id=user_id,
         filters=ListProjectsMarkedAsJobRpcFilters(
@@ -316,7 +313,7 @@ async def test_rpc_client_list_projects_marked_as_jobs_with_metadata_filter(
 
 
 async def test_rpc_client_get_project_marked_as_job_found(
-    rpc_client: RabbitMQRPCClient,
+    webserver_rpc_client: WebServerRpcClient,
     product_name: ProductName,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
@@ -326,8 +323,7 @@ async def test_rpc_client_get_project_marked_as_job_found(
     job_parent_resource_name = "solvers/solver123/version/1.2.3"
 
     # Mark the project as a job first
-    await projects_rpc.mark_project_as_job(
-        rpc_client=rpc_client,
+    await webserver_rpc_client.projects.mark_project_as_job(
         product_name=product_name,
         user_id=user_id,
         project_uuid=project_uuid,
@@ -336,8 +332,7 @@ async def test_rpc_client_get_project_marked_as_job_found(
     )
 
     # Should be able to retrieve it
-    project_job = await projects_rpc.get_project_marked_as_job(
-        rpc_client=rpc_client,
+    project_job = await webserver_rpc_client.projects.get_project_marked_as_job(
         product_name=product_name,
         user_id=user_id,
         project_uuid=project_uuid,
@@ -349,7 +344,7 @@ async def test_rpc_client_get_project_marked_as_job_found(
 
 
 async def test_rpc_client_get_project_marked_as_job_not_found(
-    rpc_client: RabbitMQRPCClient,
+    webserver_rpc_client: WebServerRpcClient,
     product_name: ProductName,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
@@ -361,8 +356,7 @@ async def test_rpc_client_get_project_marked_as_job_not_found(
 
     # Do NOT mark the project as a job, so it should not be found
     with pytest.raises(ProjectNotFoundRpcError):
-        await projects_rpc.get_project_marked_as_job(
-            rpc_client=rpc_client,
+        await webserver_rpc_client.projects.get_project_marked_as_job(
             product_name=product_name,
             user_id=user_id,
             project_uuid=project_uuid,
@@ -371,7 +365,7 @@ async def test_rpc_client_get_project_marked_as_job_not_found(
 
 
 async def test_rpc_client_get_project_marked_as_job_forbidden(
-    rpc_client: RabbitMQRPCClient,
+    webserver_rpc_client: WebServerRpcClient,
     product_name: ProductName,
     logged_user: UserInfoDict,
     other_user: UserInfoDict,
@@ -384,8 +378,7 @@ async def test_rpc_client_get_project_marked_as_job_forbidden(
     job_parent_resource_name = "solvers/solver123/version/1.2.3"
 
     # Mark the project as a job as the owner
-    await projects_rpc.mark_project_as_job(
-        rpc_client=rpc_client,
+    await webserver_rpc_client.projects.mark_project_as_job(
         product_name=product_name,
         user_id=logged_user["id"],
         project_uuid=project_uuid,
@@ -395,8 +388,7 @@ async def test_rpc_client_get_project_marked_as_job_forbidden(
 
     # Try to get the project as another user (should not have access)
     with pytest.raises(ProjectForbiddenRpcError):
-        await projects_rpc.get_project_marked_as_job(
-            rpc_client=rpc_client,
+        await webserver_rpc_client.projects.get_project_marked_as_job(
             product_name=product_name,
             user_id=other_user["id"],
             project_uuid=project_uuid,
@@ -405,7 +397,7 @@ async def test_rpc_client_get_project_marked_as_job_forbidden(
 
 
 async def test_mark_and_get_project_job_storage_assets_deleted(
-    rpc_client: RabbitMQRPCClient,
+    webserver_rpc_client: WebServerRpcClient,
     product_name: ProductName,
     logged_user: UserInfoDict,
     user_project: ProjectDict,
@@ -419,8 +411,7 @@ async def test_mark_and_get_project_job_storage_assets_deleted(
     job_parent_resource_name = "solvers/solver123/version/1.2.3"
 
     # First mark as job with storage_assets_deleted=True
-    await projects_rpc.mark_project_as_job(
-        rpc_client=rpc_client,
+    await webserver_rpc_client.projects.mark_project_as_job(
         product_name=product_name,
         user_id=user_id,
         project_uuid=project_uuid,
@@ -429,8 +420,7 @@ async def test_mark_and_get_project_job_storage_assets_deleted(
     )
 
     # Retrieve and check
-    project_job = await projects_rpc.get_project_marked_as_job(
-        rpc_client=rpc_client,
+    project_job = await webserver_rpc_client.projects.get_project_marked_as_job(
         product_name=product_name,
         user_id=user_id,
         project_uuid=project_uuid,
@@ -439,8 +429,7 @@ async def test_mark_and_get_project_job_storage_assets_deleted(
     assert project_job.storage_assets_deleted is True
 
     # Mark again as job with storage_assets_deleted=False
-    await projects_rpc.mark_project_as_job(
-        rpc_client=rpc_client,
+    await webserver_rpc_client.projects.mark_project_as_job(
         product_name=product_name,
         user_id=user_id,
         project_uuid=project_uuid,
@@ -449,8 +438,7 @@ async def test_mark_and_get_project_job_storage_assets_deleted(
     )
 
     # Retrieve and check again
-    project_job = await projects_rpc.get_project_marked_as_job(
-        rpc_client=rpc_client,
+    project_job = await webserver_rpc_client.projects.get_project_marked_as_job(
         product_name=product_name,
         user_id=user_id,
         project_uuid=project_uuid,

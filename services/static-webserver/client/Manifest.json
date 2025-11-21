@@ -30,11 +30,12 @@
       "jsondiffpatch/jsondiffpatch-0.7.3.min.js",
       "jsontreeviewer/jsonTree.js",
       "marked/marked.min.js",
-      "DOMPurify/purify.min.js"
+      "DOMPurify/purify-3.2.7.min.js"
     ],
     "css": [
       "jsontreeviewer/jsonTree.css",
       "hint/hint.css",
+      "marked/markdown.css",
       "common/common.css"
     ]
   },

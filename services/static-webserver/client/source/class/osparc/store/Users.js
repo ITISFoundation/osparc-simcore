@@ -36,10 +36,10 @@ qx.Class.define("osparc.store.Users", {
   members: {
     __unknowns: null,
 
-    __fetchUser: function(groupId) {
+    __fetchUser: function(userGroupId) {
       const params = {
         url: {
-          gid: groupId
+          gid: userGroupId
         }
       };
       return osparc.data.Resources.fetch("users", "get", params)
@@ -48,22 +48,22 @@ qx.Class.define("osparc.store.Users", {
           return user;
         })
         .catch(() => {
-          this.__unknowns.push(groupId);
+          this.__unknowns.push(userGroupId);
           return null;
         });
     },
 
-    getUser: async function(groupId, fetchIfNotFound = true) {
-      if (this.__unknowns.includes(groupId)) {
+    getUser: async function(userGroupId, fetchIfNotFound = true) {
+      if (this.__unknowns.includes(userGroupId)) {
         return null;
       }
-      const userFound = this.getUsers().find(user => user.getGroupId() === groupId);
+      const userFound = this.getUsers().find(user => user.getGroupId() === userGroupId);
       if (userFound) {
         return userFound;
       }
       if (fetchIfNotFound) {
         try {
-          const user = await this.__fetchUser(groupId);
+          const user = await this.__fetchUser(userGroupId);
           if (user) {
             return user;
           }

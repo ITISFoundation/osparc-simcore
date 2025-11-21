@@ -14,8 +14,11 @@ from models_library.api_schemas_webserver.functions import (
 from models_library.products import ProductName
 from models_library.users import UserID
 from servicelib.utils import limited_gather
-from simcore_service_api_server._service_function_jobs import FunctionJobService
 
+from ..._service_function_jobs import FunctionJobService
+from ..._service_function_jobs_task_client import (
+    FunctionJobTaskClientService,
+)
 from ...models.pagination import Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
 from ...services_rpc.wb_api_server import WbApiRpcClient
@@ -28,6 +31,7 @@ from ..dependencies.models_schemas_function_filters import (
 )
 from ..dependencies.services import (
     get_function_job_service,
+    get_function_job_task_client_service,
 )
 from ..dependencies.webserver_rpc import get_wb_api_rpc_client
 from ._constants import (
@@ -258,8 +262,8 @@ async def function_job_collection_status(
     wb_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     user_id: Annotated[UserID, Depends(get_current_user_id)],  # Updated type
     product_name: Annotated[ProductName, Depends(get_product_name)],
-    function_job_service: Annotated[
-        FunctionJobService, Depends(get_function_job_service)
+    function_job_task_client_service: Annotated[
+        FunctionJobTaskClientService, Depends(get_function_job_task_client_service)
     ],
 ) -> FunctionJobCollectionStatus:
     function_job_collection = await get_function_job_collection(
@@ -271,7 +275,7 @@ async def function_job_collection_status(
 
     job_statuses = await limited_gather(
         *[
-            function_job_service.inspect_function_job(
+            function_job_task_client_service.inspect_function_job(
                 function_job=await get_function_job(
                     function_job_id=function_job_id,
                     wb_api_rpc=wb_api_rpc,

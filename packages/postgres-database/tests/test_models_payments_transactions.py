@@ -3,6 +3,7 @@
 # pylint: disable=unexpected-keyword-arg
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
+# pylint: disable=protected-access
 
 import decimal
 from collections.abc import Callable
@@ -10,8 +11,6 @@ from typing import Any
 
 import pytest
 import sqlalchemy as sa
-from aiopg.sa.connection import SAConnection
-from aiopg.sa.result import RowProxy
 from faker import Faker
 from pytest_simcore.helpers.faker_factories import random_payment_transaction, utcnow
 from simcore_postgres_database.models.payments_transactions import (
@@ -26,22 +25,25 @@ from simcore_postgres_database.utils_payments import (
     insert_init_payment_transaction,
     update_payment_transaction_state,
 )
+from simcore_postgres_database.utils_repos import transaction_context
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 
-async def test_numerics_precission_and_scale(connection: SAConnection):
+async def test_numerics_precission_and_scale(asyncpg_engine: AsyncEngine):
     # https://docs.sqlalchemy.org/en/20/core/type_basics.html#sqlalchemy.types.Numeric
     # precision: This parameter specifies the total number of digits that can be stored, both before and after the decimal point.
     # scale: This parameter specifies the number of digits that can be stored to the right of the decimal point.
 
-    for order_of_magnitude in range(8):
-        expected = 10**order_of_magnitude + 0.123
-        got = await connection.scalar(
-            payments_transactions.insert()
-            .values(**random_payment_transaction(price_dollars=expected))
-            .returning(payments_transactions.c.price_dollars)
-        )
-        assert isinstance(got, decimal.Decimal)
-        assert float(got) == expected
+    async with asyncpg_engine.begin() as connection:
+        for order_of_magnitude in range(8):
+            expected = 10**order_of_magnitude + 0.123
+            got = await connection.scalar(
+                payments_transactions.insert()
+                .values(**random_payment_transaction(price_dollars=expected))
+                .returning(payments_transactions.c.price_dollars)
+            )
+            assert isinstance(got, decimal.Decimal)
+            assert float(got) == expected
 
 
 def _remove_not_required(data: dict[str, Any]) -> dict[str, Any]:
@@ -58,7 +60,7 @@ def _remove_not_required(data: dict[str, Any]) -> dict[str, Any]:
 
 
 @pytest.fixture
-def init_transaction(connection: SAConnection):
+def init_transaction(asyncpg_engine: AsyncEngine):
     async def _init(payment_id: str):
         # get payment_id from payment-gateway
         values = _remove_not_required(random_payment_transaction(payment_id=payment_id))
@@ -67,7 +69,8 @@ def init_transaction(connection: SAConnection):
         values["initiated_at"] = utcnow()
 
         # insert
-        ok = await insert_init_payment_transaction(connection, **values)
+        async with asyncpg_engine.begin() as connection:
+            ok = await insert_init_payment_transaction(connection, **values)
         assert ok
 
         return values
@@ -81,24 +84,25 @@ def payment_id() -> str:
 
 
 async def test_init_transaction_sets_it_as_pending(
-    connection: SAConnection, init_transaction: Callable, payment_id: str
+    asyncpg_engine: AsyncEngine, init_transaction: Callable, payment_id: str
 ):
     values = await init_transaction(payment_id)
     assert values["payment_id"] == payment_id
 
     # check init-ed but not completed!
-    result = await connection.execute(
-        sa.select(
-            payments_transactions.c.completed_at,
-            payments_transactions.c.state,
-            payments_transactions.c.state_message,
-        ).where(payments_transactions.c.payment_id == payment_id)
-    )
-    row: RowProxy | None = await result.fetchone()
+    async with asyncpg_engine.connect() as connection:
+        result = await connection.execute(
+            sa.select(
+                payments_transactions.c.completed_at,
+                payments_transactions.c.state,
+                payments_transactions.c.state_message,
+            ).where(payments_transactions.c.payment_id == payment_id)
+        )
+    row = result.one_or_none()
     assert row is not None
 
     # tests that defaults are right?
-    assert dict(row.items()) == {
+    assert row._asdict() == {
         "completed_at": None,
         "state": PaymentTransactionState.PENDING,
         "state_message": None,
@@ -127,59 +131,64 @@ def invoice_url(faker: Faker, expected_state: PaymentTransactionState) -> str | 
     ],
 )
 async def test_complete_transaction(
-    connection: SAConnection,
+    asyncpg_engine: AsyncEngine,
     init_transaction: Callable,
     payment_id: str,
     expected_state: PaymentTransactionState,
     expected_message: str | None,
     invoice_url: str | None,
 ):
+    # init
     await init_transaction(payment_id)
 
-    payment_row = await update_payment_transaction_state(
-        connection,
-        payment_id=payment_id,
-        completion_state=expected_state,
-        state_message=expected_message,
-        invoice_url=invoice_url,
-    )
+    async with asyncpg_engine.connect() as connection:
+        # NOTE: internal function uses transaction
+        payment_row = await update_payment_transaction_state(
+            connection,
+            payment_id=payment_id,
+            completion_state=expected_state,
+            state_message=expected_message,
+            invoice_url=invoice_url,
+        )
 
-    assert isinstance(payment_row, PaymentTransactionRow)
-    assert payment_row.state_message == expected_message
-    assert payment_row.state == expected_state
-    assert payment_row.initiated_at < payment_row.completed_at
-    assert PaymentTransactionState(payment_row.state).is_completed()
+        assert isinstance(payment_row, PaymentTransactionRow)
+        assert payment_row.state_message == expected_message
+        assert payment_row.state == expected_state
+        assert payment_row.initiated_at < payment_row.completed_at
+        assert PaymentTransactionState(payment_row.state).is_completed()
 
 
 async def test_update_transaction_failures_and_exceptions(
-    connection: SAConnection,
+    asyncpg_engine: AsyncEngine,
     init_transaction: Callable,
     payment_id: str,
 ):
-    kwargs = {
-        "connection": connection,
-        "payment_id": payment_id,
-        "completion_state": PaymentTransactionState.SUCCESS,
-    }
 
-    ok = await update_payment_transaction_state(**kwargs)
-    assert isinstance(ok, PaymentNotFound)
-    assert not ok
+    async with asyncpg_engine.connect() as connection:
+        kwargs = {
+            "connection": connection,
+            "payment_id": payment_id,
+            "completion_state": PaymentTransactionState.SUCCESS,
+        }
 
-    # init & complete
-    await init_transaction(payment_id)
-    ok = await update_payment_transaction_state(**kwargs)
-    assert isinstance(ok, PaymentTransactionRow)
-    assert ok
+        ok = await update_payment_transaction_state(**kwargs)
+        assert isinstance(ok, PaymentNotFound)
+        assert not ok
 
-    # repeat -> fails
-    ok = await update_payment_transaction_state(**kwargs)
-    assert isinstance(ok, PaymentAlreadyAcked)
-    assert not ok
+        # init & complete
+        await init_transaction(payment_id)
+        ok = await update_payment_transaction_state(**kwargs)
+        assert isinstance(ok, PaymentTransactionRow)
+        assert ok
 
-    with pytest.raises(ValueError):
-        kwargs.update(completion_state=PaymentTransactionState.PENDING)
-        await update_payment_transaction_state(**kwargs)
+        # repeat -> fails
+        ok = await update_payment_transaction_state(**kwargs)
+        assert isinstance(ok, PaymentAlreadyAcked)
+        assert not ok
+
+        with pytest.raises(ValueError, match="cannot update state with"):  # noqa: PT012
+            kwargs.update(completion_state=PaymentTransactionState.PENDING)
+            await update_payment_transaction_state(**kwargs)
 
 
 @pytest.fixture
@@ -188,13 +197,19 @@ def user_id() -> int:
 
 
 @pytest.fixture
-def create_fake_user_transactions(connection: SAConnection, user_id: int) -> Callable:
+def create_fake_user_transactions(
+    asyncpg_engine: AsyncEngine, user_id: int
+) -> Callable:
+
+    assert asyncpg_engine
+
     async def _go(expected_total=5):
         payment_ids = []
         for _ in range(expected_total):
             values = _remove_not_required(random_payment_transaction(user_id=user_id))
 
-            payment_id = await insert_init_payment_transaction(connection, **values)
+            async with transaction_context(asyncpg_engine) as connection:
+                payment_id = await insert_init_payment_transaction(connection, **values)
             assert payment_id
             payment_ids.append(payment_id)
 
@@ -204,19 +219,21 @@ def create_fake_user_transactions(connection: SAConnection, user_id: int) -> Cal
 
 
 async def test_get_user_payments_transactions(
-    connection: SAConnection, create_fake_user_transactions: Callable, user_id: int
+    asyncpg_engine: AsyncEngine, create_fake_user_transactions: Callable, user_id: int
 ):
     expected_payments_ids = await create_fake_user_transactions()
     expected_total = len(expected_payments_ids)
 
     # test offset and limit defaults
-    total, rows = await get_user_payments_transactions(connection, user_id=user_id)
+    async with asyncpg_engine.connect() as connection:
+        total, rows = await get_user_payments_transactions(connection, user_id=user_id)
+
     assert total == expected_total
     assert [r.payment_id for r in rows] == expected_payments_ids[::-1], "newest first"
 
 
 async def test_get_user_payments_transactions_with_pagination_options(
-    connection: SAConnection, create_fake_user_transactions: Callable, user_id: int
+    asyncpg_engine: AsyncEngine, create_fake_user_transactions: Callable, user_id: int
 ):
     expected_payments_ids = await create_fake_user_transactions()
     expected_total = len(expected_payments_ids)
@@ -225,22 +242,23 @@ async def test_get_user_payments_transactions_with_pagination_options(
     offset = int(expected_total / 4)
     limit = int(expected_total / 2)
 
-    total, rows = await get_user_payments_transactions(
-        connection, user_id=user_id, limit=limit, offset=offset
-    )
-    assert total == expected_total
-    assert [r.payment_id for r in rows] == expected_payments_ids[::-1][
-        offset : (offset + limit)
-    ], "newest first"
+    async with asyncpg_engine.connect() as connection:
+        total, rows = await get_user_payments_transactions(
+            connection, user_id=user_id, limit=limit, offset=offset
+        )
+        assert total == expected_total
+        assert [r.payment_id for r in rows] == expected_payments_ids[::-1][
+            offset : (offset + limit)
+        ], "newest first"
 
-    # test  offset>=expected_total?
-    total, rows = await get_user_payments_transactions(
-        connection, user_id=user_id, offset=expected_total
-    )
-    assert not rows
+        # test  offset>=expected_total?
+        total, rows = await get_user_payments_transactions(
+            connection, user_id=user_id, offset=expected_total
+        )
+        assert not rows
 
-    # test  limit==0?
-    total, rows = await get_user_payments_transactions(
-        connection, user_id=user_id, limit=0
-    )
-    assert not rows
+        # test  limit==0?
+        total, rows = await get_user_payments_transactions(
+            connection, user_id=user_id, limit=0
+        )
+        assert not rows

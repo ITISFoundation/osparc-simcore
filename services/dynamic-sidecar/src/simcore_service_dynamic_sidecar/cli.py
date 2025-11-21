@@ -13,7 +13,10 @@ from ._meta import PROJECT_NAME
 from .core.application import create_base_app
 from .core.rabbitmq import setup_rabbitmq
 from .core.settings import ApplicationSettings
-from .modules.long_running_tasks import task_ports_outputs_push, task_save_state
+from .modules.long_running_tasks import (
+    push_user_services_output_ports,
+    save_user_services_state_paths,
+)
 from .modules.mounted_fs import MountedVolumes, setup_mounted_fs
 from .modules.outputs import OutputsManager, setup_outputs
 
@@ -76,7 +79,12 @@ def state_save():
             settings: ApplicationSettings = app.state.settings
             mounted_volumes: MountedVolumes = app.state.mounted_volumes
 
-            await task_save_state(TaskProgress.create(), settings, mounted_volumes, app)
+            await save_user_services_state_paths(
+                TaskProgress.create(),
+                app=app,
+                settings=settings,
+                mounted_volumes=mounted_volumes,
+            )
 
     asyncio.run(_async_save_state())
     _print_highlight("state save finished successfully")
@@ -89,7 +97,9 @@ def outputs_push():
     async def _async_outputs_push() -> None:
         async with _initialized_app() as app:
             outputs_manager: OutputsManager = app.state.outputs_manager
-            await task_ports_outputs_push(TaskProgress.create(), outputs_manager, app)
+            await push_user_services_output_ports(
+                TaskProgress.create(), app=app, outputs_manager=outputs_manager
+            )
 
     asyncio.run(_async_outputs_push())
     _print_highlight("output ports push finished successfully")

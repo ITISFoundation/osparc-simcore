@@ -3,6 +3,7 @@ import functools
 import logging
 from collections.abc import Callable
 from dataclasses import dataclass
+from typing import Final
 
 from aiohttp import BasicAuth, ClientResponseError, ClientSession, web
 from aiohttp.client_exceptions import ClientError
@@ -16,7 +17,7 @@ from pydantic import AnyHttpUrl
 from servicelib.aiohttp import status
 from yarl import URL
 
-from ..constants import APP_SETTINGS_KEY
+from ..application_keys import APP_SETTINGS_APPKEY
 from .errors import (
     InvalidInvitationError,
     InvitationsError,
@@ -151,15 +152,15 @@ class InvitationsServiceApi:
 # EVENTS
 #
 
-_APP_INVITATIONS_SERVICE_API_KEY = f"{__name__}.{InvitationsServiceApi.__name__}"
+_APPKEY: Final = web.AppKey(InvitationsServiceApi.__name__, InvitationsServiceApi)
 
 
 async def invitations_service_api_cleanup_ctx(app: web.Application):
-    service_api = await InvitationsServiceApi.create(
-        settings=app[APP_SETTINGS_KEY].WEBSERVER_INVITATIONS
-    )
+    settings = app[APP_SETTINGS_APPKEY].WEBSERVER_INVITATIONS
+    assert settings  # nosec
+    service_api = await InvitationsServiceApi.create(settings)
 
-    app[_APP_INVITATIONS_SERVICE_API_KEY] = service_api
+    app[_APPKEY] = service_api
 
     yield
 
@@ -170,6 +171,5 @@ async def invitations_service_api_cleanup_ctx(app: web.Application):
 
 
 def get_invitations_service_api(app: web.Application) -> InvitationsServiceApi:
-    assert app[_APP_INVITATIONS_SERVICE_API_KEY]  # nosec
-    service_api: InvitationsServiceApi = app[_APP_INVITATIONS_SERVICE_API_KEY]
-    return service_api
+    assert app[_APPKEY]  # nosec
+    return app[_APPKEY]

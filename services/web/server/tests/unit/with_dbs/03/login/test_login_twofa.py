@@ -5,6 +5,7 @@
 
 import asyncio
 import logging
+import re
 from contextlib import AsyncExitStack
 
 import pytest
@@ -22,7 +23,9 @@ from simcore_postgres_database.models.products import ProductLoginSettingsDict, 
 from simcore_service_webserver.application_settings import ApplicationSettings
 from simcore_service_webserver.db.models import UserStatus
 from simcore_service_webserver.login import _auth_service
-from simcore_service_webserver.login._login_repository_legacy import AsyncpgStorage
+from simcore_service_webserver.login._confirmation_repository import (
+    ConfirmationRepository,
+)
 from simcore_service_webserver.login._twofa_service import (
     _do_create_2fa_code,
     create_2fa_code,
@@ -120,10 +123,10 @@ async def test_2fa_code_operations(client: TestClient):
     assert await get_2fa_code(client.app, email) is None
 
 
-@pytest.mark.acceptance_test()
+@pytest.mark.acceptance_test
 async def test_workflow_register_and_login_with_2fa(
     client: TestClient,
-    db: AsyncpgStorage,
+    confirmation_repository: ConfirmationRepository,
     capsys: pytest.CaptureFixture,
     user_email: str,
     user_password: str,
@@ -401,7 +404,8 @@ async def test_send_email_code(
         product=Product(
             name="osparc",
             display_name="The Foo Product",
-            host_regex=r".+",
+            host_regex=re.compile(r".+"),
+            base_url="https://osparc.io",
             vendor={},
             short_name="foo",
             support_email=support_email,

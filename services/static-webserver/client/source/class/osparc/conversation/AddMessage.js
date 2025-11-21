@@ -44,7 +44,7 @@ qx.Class.define("osparc.conversation.AddMessage", {
     },
 
     message: {
-      check: "Object",
+      check: "osparc.data.model.Message",
       init: null,
       nullable: true,
       event: "changeMessage",
@@ -53,8 +53,9 @@ qx.Class.define("osparc.conversation.AddMessage", {
   },
 
   events: {
-    "messageAdded": "qx.event.type.Data",
-    "messageUpdated": "qx.event.type.Data",
+    "addMessage": "qx.event.type.Data",
+    "updateMessage": "qx.event.type.Data",
+    "notifyUser": "qx.event.type.Data",
   },
 
   members: {
@@ -62,63 +63,96 @@ qx.Class.define("osparc.conversation.AddMessage", {
       let control;
       switch (id) {
         case "add-comment-layout": {
-          const grid = new qx.ui.layout.Grid(8, 5);
-          grid.setColumnWidth(0, 32);
-          grid.setColumnFlex(1, 1);
-          control = new qx.ui.container.Composite(grid);
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(0));
           this._add(control, {
             flex: 1
           });
           break;
         }
-        case "thumbnail": {
+        case "avatar": {
           control = osparc.utils.Utils.createThumbnail(32);
-          const authData = osparc.auth.Data.getInstance();
-          const myUsername = authData.getUsername();
-          const myEmail = authData.getEmail();
+          const authStore = osparc.auth.Data.getInstance();
           control.set({
-            source: osparc.utils.Avatar.emailToThumbnail(myEmail, myUsername, 32)
+            source: authStore.getAvatar(32),
+            alignX: "center",
+            alignY: "middle",
+            marginRight: 8,
           });
-          const layout = this.getChildControl("add-comment-layout");
-          layout.add(control, {
-            row: 0,
-            column: 0
+          this.getChildControl("add-comment-layout").add(control);
+          break;
+        }
+        case "comment-field": {
+          control = new osparc.editor.MarkdownEditor();
+          control.addListener("textChanged", () => this.__addCommentPressed(), this);
+          control.setCompact(true);
+          const textArea = control.getChildControl("text-area");
+          textArea.set({
+            maxLength: osparc.data.model.Conversation.MAX_CONTENT_LENGTH,
+          });
+          textArea.addListener("appear", () => {
+            textArea.focus();
+            textArea.activate();
+          });
+          // make it visually connected to the button
+          textArea.getContentElement().setStyles({
+            "border-top-right-radius": "0px", // no roundness there to match the arrow button
+          });
+          // make it more compact
+          this.getChildControl("add-comment-layout").add(control, {
+            flex: 1
           });
           break;
         }
-        case "comment-field":
-          control = new osparc.editor.MarkdownEditor();
-          control.addListener("keydown", e => {
-            if (e.isCtrlPressed() && e.getKeyIdentifier() === "Enter") {
-              this.__addComment();
-              e.stopPropagation();
-              e.preventDefault();
-            }
-          }, this);
-          control.getChildControl("buttons").exclude();
-          const layout = this.getChildControl("add-comment-layout");
-          layout.add(control, {
-            row: 0,
-            column: 1
-          });
-          break;
         case "add-comment-button":
-          control = new qx.ui.form.Button(this.tr("Add message")).set({
-            appearance: "form-button",
+          control = new qx.ui.form.Button(null, "@FontAwesome5Solid/arrow-up/16").set({
+            toolTipText: this.tr("Ctrl+Enter"),
+            backgroundColor: "input_background",
             allowGrowX: false,
-            alignX: "right"
+            alignX: "right",
+            alignY: "middle",
           });
+          control.getContentElement().setStyles({
+            "border-bottom": "1px solid " + qx.theme.manager.Color.getInstance().resolve("default-button-active"),
+            "border-top-left-radius": "0px", // no roundness there to match the message field
+            "border-bottom-left-radius": "0px", // no roundness there to match the message field
+            "border-bottom-right-radius": "0px", // no roundness there to match the message field
+          });
+          const commentField = this.getChildControl("comment-field").getChildControl("text-area");
+          commentField.addListener("focus", () => {
+            control.getContentElement().setStyles({
+              "border-bottom": "1px solid " + qx.theme.manager.Color.getInstance().resolve("product-color"),
+            });
+          }, this);
+          commentField.addListener("focusout", () => {
+            control.getContentElement().setStyles({
+              "border-bottom": "1px solid " + qx.theme.manager.Color.getInstance().resolve("default-button-active"),
+            });
+          }, this);
           control.addListener("execute", this.__addCommentPressed, this);
+          this.getChildControl("add-comment-layout").add(control);
+          break;
+        case "footer-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
+            alignY: "middle"
+          }));
           this._add(control);
+          break;
+        case "no-permission-label":
+          control = new qx.ui.basic.Label(this.tr("Only users with write access can add comments.")).set({
+            allowGrowX: true,
+          });
+          this.getChildControl("footer-layout").addAt(control, 0, {
+            flex: 1
+          });
           break;
         case "notify-user-button":
           control = new qx.ui.form.Button("🔔 " + this.tr("Notify user")).set({
             appearance: "form-button",
             allowGrowX: false,
-            alignX: "right"
+            alignX: "right",
           });
           control.addListener("execute", () => this.__notifyUserTapped());
-          this._add(control);
+          this.getChildControl("footer-layout").addAt(control, 1);
           break;
       }
 
@@ -126,19 +160,22 @@ qx.Class.define("osparc.conversation.AddMessage", {
     },
 
     __buildLayout: function() {
-      this.getChildControl("thumbnail");
+      this.getChildControl("avatar");
       this.getChildControl("comment-field");
       this.getChildControl("add-comment-button");
     },
 
     __applyStudyData: function(studyData) {
+      const noPermissionLabel = this.getChildControl("no-permission-label");
       const notifyUserButton = this.getChildControl("notify-user-button");
       if (studyData) {
         const canIWrite = osparc.data.model.Study.canIWrite(studyData["accessRights"])
         this.getChildControl("add-comment-button").setEnabled(canIWrite);
+        noPermissionLabel.setVisibility(canIWrite ? "hidden" : "visible");
         notifyUserButton.show();
         notifyUserButton.setEnabled(canIWrite);
       } else {
+        noPermissionLabel.hide();
         notifyUserButton.exclude();
       }
     },
@@ -147,61 +184,20 @@ qx.Class.define("osparc.conversation.AddMessage", {
       if (message) {
         // edit mode
         const commentField = this.getChildControl("comment-field");
-        commentField.setText(message["content"]);
-
-        const addMessageButton = this.getChildControl("add-comment-button");
-        addMessageButton.setLabel(this.tr("Edit message"));
+        commentField.setText(message.getContent());
       }
     },
 
     __addCommentPressed: function() {
-      this.getMessage() ? this.__editComment() : this.__addComment();
+      this.getMessage() ? this.__editComment() : this.addComment();
     },
 
-    __addComment: function() {
-      const conversationId = this.getConversationId();
-      if (conversationId) {
-        this.__postMessage();
-      } else {
-        const studyData = this.getStudyData();
-        let promise = null;
-        if (studyData) {
-          // create new project conversation first
-          promise = osparc.store.ConversationsProject.getInstance().postConversation(studyData["uuid"])
-        } else {
-          // support conversation
-          const extraContext = {};
-          const currentStudy = osparc.store.Store.getInstance().getCurrentStudy()
-          if (currentStudy) {
-            extraContext["projectId"] = currentStudy.getUuid();
-          }
-          promise = osparc.store.ConversationsSupport.getInstance().postConversation(extraContext);
-        }
-        promise
-          .then(data => {
-            this.setConversationId(data["conversationId"]);
-            this.__postMessage();
-          });
-      }
-    },
-
-    __postMessage: function() {
+    addComment: function() {
       const commentField = this.getChildControl("comment-field");
       const content = commentField.getChildControl("text-area").getValue();
-      let promise = null;
       if (content) {
-        const studyData = this.getStudyData();
-        const conversationId = this.getConversationId();
-        if (studyData) {
-          promise = osparc.store.ConversationsProject.getInstance().postMessage(studyData["uuid"], conversationId, content);
-        } else {
-          promise = osparc.store.ConversationsSupport.getInstance().postMessage(conversationId, content);
-        }
-        promise
-          .then(data => {
-            this.fireDataEvent("messageAdded", data);
-            commentField.getChildControl("text-area").setValue("");
-          });
+        this.fireDataEvent("addMessage", content);
+        commentField.getChildControl("text-area").setValue("");
       }
     },
 
@@ -209,18 +205,7 @@ qx.Class.define("osparc.conversation.AddMessage", {
       const commentField = this.getChildControl("comment-field");
       const content = commentField.getChildControl("text-area").getValue();
       if (content) {
-        const studyData = this.getStudyData();
-        const conversationId = this.getConversationId();
-        const message = this.getMessage();
-        if (studyData) {
-          promise = osparc.store.ConversationsProject.getInstance().editMessage(studyData["uuid"], conversationId, message["messageId"], content);
-        } else {
-          promise = osparc.store.ConversationsSupport.getInstance().editMessage(conversationId, message["messageId"], content);
-        }
-        promise.then(data => {
-          this.fireDataEvent("messageUpdated", data);
-          commentField.getChildControl("text-area").setValue("");
-        });
+        this.fireDataEvent("updateMessage", content);
       }
     },
 
@@ -259,7 +244,7 @@ qx.Class.define("osparc.conversation.AddMessage", {
       // This check only works if the project is directly shared with the user.
       // If it's shared through a group, it might be a bit confusing
       if (userGid in studyData["accessRights"]) {
-        this.__addNotify(userGid);
+        this.__doNotifyUser(userGid);
       } else {
         const msg = this.tr("This user has no access to the project. Do you want to share it?");
         const win = new osparc.ui.window.Confirmation(msg).set({
@@ -276,7 +261,7 @@ qx.Class.define("osparc.conversation.AddMessage", {
             };
             osparc.store.Study.getInstance().addCollaborators(studyData, newCollaborators)
               .then(() => {
-                this.__addNotify(userGid);
+                this.__doNotifyUser(userGid);
                 const potentialCollaborators = osparc.store.Groups.getInstance().getPotentialCollaborators()
                 if (userGid in potentialCollaborators && "getUserId" in potentialCollaborators[userGid]) {
                   const uid = potentialCollaborators[userGid].getUserId();
@@ -289,47 +274,13 @@ qx.Class.define("osparc.conversation.AddMessage", {
       }
     },
 
-    __addNotify: function(userGid) {
+    __doNotifyUser: function(userGid) {
       const studyData = this.getStudyData();
       if (!studyData) {
         return;
       }
 
-      const conversationId = this.getConversationId();
-      if (conversationId) {
-        this.__postNotify(userGid);
-      } else {
-        // create new conversation first
-        osparc.store.ConversationsProject.getInstance().postConversation(studyData["uuid"])
-          .then(data => {
-            this.setConversationId(data["conversationId"]);
-            this.__postNotify(userGid);
-          });
-      }
-    },
-
-    __postNotify: function(userGid) {
-      const studyData = this.getStudyData();
-      if (!studyData) {
-        return;
-      }
-
-      if (userGid) {
-        const conversationId = this.getConversationId();
-        osparc.store.ConversationsProject.getInstance().notifyUser(studyData["uuid"], conversationId, userGid)
-          .then(data => {
-            this.fireDataEvent("messageAdded", data);
-            const potentialCollaborators = osparc.store.Groups.getInstance().getPotentialCollaborators();
-            if (userGid in potentialCollaborators) {
-              if ("getUserId" in potentialCollaborators[userGid]) {
-                const uid = potentialCollaborators[userGid].getUserId();
-                osparc.notification.Notifications.pushConversationNotification(uid, studyData["uuid"]);
-              }
-              const msg = "getLabel" in potentialCollaborators[userGid] ? potentialCollaborators[userGid].getLabel() + this.tr(" was notified") : this.tr("Notification sent");
-              osparc.FlashMessenger.logAs(msg, "INFO");
-            }
-          });
-      }
+      this.fireDataEvent("notifyUser", userGid);
     },
     /* NOTIFY USERS */
   }

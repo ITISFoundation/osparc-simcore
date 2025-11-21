@@ -8,6 +8,7 @@ import datetime
 import json
 import logging
 import random
+import secrets
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from copy import deepcopy
 from pathlib import Path
@@ -29,6 +30,7 @@ from aws_library.ec2 import (
     Resources,
 )
 from common_library.json_serialization import json_dumps
+from dask_task_models_library.container_tasks.utils import generate_dask_job_id
 from deepdiff import DeepDiff
 from faker import Faker
 from fakeredis.aioredis import FakeRedis
@@ -51,7 +53,11 @@ from models_library.generated_models.docker_rest_api import (
     Service,
     TaskSpec,
 )
+from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeID
 from models_library.services_metadata_runtime import SimcoreContainerLabels
+from models_library.services_types import ServiceKey, ServiceVersion
+from models_library.users import UserID
 from pydantic import ByteSize, NonNegativeInt, PositiveInt, TypeAdapter
 from pytest_mock import MockType
 from pytest_mock.plugin import MockerFixture
@@ -62,6 +68,7 @@ from pytest_simcore.helpers.monkeypatch_envs import (
     delenvs_from_dict,
     setenvs_from_dict,
 )
+from servicelib.tracing import TracingConfig
 from settings_library.rabbit import RabbitSettings
 from settings_library.ssm import SSMSettings
 from simcore_service_autoscaling.constants import PRE_PULLED_IMAGES_EC2_TAG_KEY
@@ -244,11 +251,6 @@ def app_environment(
         delenvs_from_dict(monkeypatch, mock_env_devel_environment, raising=False)
         return setenvs_from_dict(monkeypatch, {**external_envfile_dict})
 
-    assert "json_schema_extra" in EC2InstanceBootSpecific.model_config
-    assert isinstance(EC2InstanceBootSpecific.model_config["json_schema_extra"], dict)
-    assert isinstance(
-        EC2InstanceBootSpecific.model_config["json_schema_extra"]["examples"], list
-    )
     envs = setenvs_from_dict(
         monkeypatch,
         {
@@ -261,21 +263,19 @@ def app_environment(
             "SSM_ACCESS_KEY_ID": faker.pystr(),
             "SSM_SECRET_ACCESS_KEY": faker.pystr(),
             "EC2_INSTANCES_KEY_NAME": faker.pystr(),
-            "EC2_INSTANCES_SECURITY_GROUP_IDS": json.dumps(
+            "EC2_INSTANCES_SECURITY_GROUP_IDS": json_dumps(
                 faker.pylist(allowed_types=(str,))
             ),
-            "EC2_INSTANCES_SUBNET_ID": faker.pystr(),
-            "EC2_INSTANCES_ALLOWED_TYPES": json.dumps(
+            "EC2_INSTANCES_SUBNET_IDS": json_dumps(faker.pylist(allowed_types=(str,))),
+            "EC2_INSTANCES_ALLOWED_TYPES": json_dumps(
                 {
                     ec2_type_name: random.choice(  # noqa: S311
-                        EC2InstanceBootSpecific.model_config["json_schema_extra"][
-                            "examples"
-                        ]
+                        EC2InstanceBootSpecific.model_json_schema()["examples"]
                     )
                     for ec2_type_name in aws_allowed_ec2_instance_type_names
                 }
             ),
-            "EC2_INSTANCES_CUSTOM_TAGS": json.dumps(ec2_instance_custom_tags),
+            "EC2_INSTANCES_CUSTOM_TAGS": json_dumps(ec2_instance_custom_tags),
             "EC2_INSTANCES_ATTACHED_IAM_PROFILE": faker.pystr(),
         },
     )
@@ -292,25 +292,18 @@ def mocked_ec2_instances_envs(
     aws_allowed_ec2_instance_type_names: list[InstanceTypeType],
     aws_instance_profile: str,
 ) -> EnvVarsDict:
-    assert "json_schema_extra" in EC2InstanceBootSpecific.model_config
-    assert isinstance(EC2InstanceBootSpecific.model_config["json_schema_extra"], dict)
-    assert isinstance(
-        EC2InstanceBootSpecific.model_config["json_schema_extra"]["examples"], list
-    )
     envs = setenvs_from_dict(
         monkeypatch,
         {
             "EC2_INSTANCES_KEY_NAME": "osparc-pytest",
-            "EC2_INSTANCES_SECURITY_GROUP_IDS": json.dumps([aws_security_group_id]),
-            "EC2_INSTANCES_SUBNET_ID": aws_subnet_id,
-            "EC2_INSTANCES_ALLOWED_TYPES": json.dumps(
+            "EC2_INSTANCES_SECURITY_GROUP_IDS": json_dumps([aws_security_group_id]),
+            "EC2_INSTANCES_SUBNET_IDS": json_dumps([aws_subnet_id]),
+            "EC2_INSTANCES_ALLOWED_TYPES": json_dumps(
                 {
                     ec2_type_name: cast(
                         dict,
-                        random.choice(  # noqa: S311
-                            EC2InstanceBootSpecific.model_config["json_schema_extra"][
-                                "examples"
-                            ]
+                        secrets.choice(
+                            EC2InstanceBootSpecific.model_json_schema()["examples"]
                         ),
                     )
                     | {"ami_id": aws_ami_id}
@@ -371,11 +364,11 @@ def enabled_dynamic_mode(
         monkeypatch,
         {
             "AUTOSCALING_NODES_MONITORING": "{}",
-            "NODES_MONITORING_NODE_LABELS": json.dumps(["pytest.fake-node-label"]),
-            "NODES_MONITORING_SERVICE_LABELS": json.dumps(
+            "NODES_MONITORING_NODE_LABELS": json_dumps(["pytest.fake-node-label"]),
+            "NODES_MONITORING_SERVICE_LABELS": json_dumps(
                 ["pytest.fake-service-label"]
             ),
-            "NODES_MONITORING_NEW_NODES_LABELS": json.dumps(
+            "NODES_MONITORING_NEW_NODES_LABELS": json_dumps(
                 ["pytest.fake-new-node-label"]
             ),
         },
@@ -392,8 +385,8 @@ def enabled_computational_mode(
             "AUTOSCALING_DASK": "{}",
             "DASK_MONITORING_URL": faker.url(),
             "DASK_SCHEDULER_AUTH": "{}",
-            "DASK_MONITORING_USER_NAME": faker.user_name(),
-            "DASK_MONITORING_PASSWORD": faker.password(),
+            "DASK_NTHREADS": f"{faker.pyint(min_value=0, max_value=10)}",
+            "DASK_NTHREADS_MULTIPLIER": f"{faker.pyint(min_value=1, max_value=4)}",
         },
     )
 
@@ -428,7 +421,11 @@ _LIFESPAN_TIMEOUT: Final[int] = 10
 @pytest.fixture
 async def initialized_app(app_environment: EnvVarsDict) -> AsyncIterator[FastAPI]:
     settings = ApplicationSettings.create_from_envs()
-    app = create_app(settings)
+    tracing_config = TracingConfig.create(
+        service_name=settings.APP_NAME,
+        tracing_settings=None,  # disable tracing in tests
+    )
+    app = create_app(settings, tracing_config=tracing_config)
     # NOTE: the timeout is sometime too small for CI machines, and even larger machines
     async with LifespanManager(
         app, startup_timeout=_LIFESPAN_TIMEOUT, shutdown_timeout=_LIFESPAN_TIMEOUT
@@ -756,9 +753,9 @@ async def _assert_wait_for_service_state(
             assert tasks, f"no tasks available for {found_service['Spec']['Name']}"
             assert len(tasks) == 1
             service_task = tasks[0]
-            assert service_task["Status"]["State"] in expected_states, (
-                f"service {found_service['Spec']['Name']}'s task is {service_task['Status']['State']}"
-            )
+            assert (
+                service_task["Status"]["State"] in expected_states
+            ), f"service {found_service['Spec']['Name']}'s task is {service_task['Status']['State']}"
             ctx.logger.info(
                 "%s",
                 f"service {found_service['Spec']['Name']} is now {service_task['Status']['State']} {'.' * number_of_success['count']}",
@@ -792,7 +789,7 @@ def aws_allowed_ec2_instance_type_names_env(
     aws_allowed_ec2_instance_type_names: list[InstanceTypeType],
 ) -> EnvVarsDict:
     changed_envs: dict[str, str | bool] = {
-        "EC2_INSTANCES_ALLOWED_TYPES": json.dumps(aws_allowed_ec2_instance_type_names),
+        "EC2_INSTANCES_ALLOWED_TYPES": json_dumps(aws_allowed_ec2_instance_type_names),
     }
     return app_environment | setenvs_from_dict(monkeypatch, changed_envs)
 
@@ -866,8 +863,54 @@ def cluster() -> Callable[..., Cluster]:
 
 
 @pytest.fixture
+def service_version() -> ServiceVersion:
+    return "1.0.234"
+
+
+@pytest.fixture
+def service_key() -> ServiceKey:
+    return "simcore/services/dynamic/test"
+
+
+@pytest.fixture
+def node_id(faker: Faker) -> NodeID:
+    return faker.uuid4(cast_to=None)
+
+
+@pytest.fixture
+def project_id(faker: Faker) -> ProjectID:
+    return faker.uuid4(cast_to=None)
+
+
+@pytest.fixture
+def user_id(faker: Faker) -> UserID:
+    return faker.pyint(min_value=1)
+
+
+@pytest.fixture
+def fake_dask_job_id(
+    service_key: ServiceKey,
+    service_version: ServiceVersion,
+    user_id: UserID,
+    project_id: ProjectID,
+    faker: Faker,
+) -> Callable[[], str]:
+    def _() -> str:
+        return generate_dask_job_id(
+            service_key=service_key,
+            service_version=service_version,
+            user_id=user_id,
+            project_id=project_id,
+            node_id=faker.uuid4(cast_to=None),
+        )
+
+    return _
+
+
+@pytest.fixture
 async def create_dask_task(
     dask_spec_cluster_client: distributed.Client,
+    fake_dask_job_id: Callable[[], str],
 ) -> Callable[..., distributed.Future]:
     def _remote_pytest_fct(x: int, y: int) -> int:
         return x + y
@@ -882,6 +925,7 @@ async def create_dask_task(
             43,
             resources=required_resources,
             pure=False,
+            key=fake_dask_job_id(),
             **overrides,
         )
         assert future
@@ -985,9 +1029,7 @@ def create_associated_instance(
         assert (
             datetime.timedelta(seconds=10)
             < app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
-        ), (
-            "this tests relies on the fact that the time before termination is above 10 seconds"
-        )
+        ), "this tests relies on the fact that the time before termination is above 10 seconds"
         assert app_settings.AUTOSCALING_EC2_INSTANCES
         seconds_delta = (
             -datetime.timedelta(seconds=10)
@@ -1041,6 +1083,38 @@ def hot_buffer_instance_type(app_settings: ApplicationSettings) -> InstanceTypeT
     return cast(
         InstanceTypeType,
         next(iter(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES)),
+    )
+
+
+@pytest.fixture
+def hot_buffer_has_pre_pull(
+    app_settings: ApplicationSettings,
+    hot_buffer_instance_type: InstanceTypeType,
+) -> bool:
+    assert app_settings.AUTOSCALING_EC2_INSTANCES
+    return bool(
+        app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_COLD_START_DOCKER_IMAGES_PRE_PULLING
+        or app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
+            hot_buffer_instance_type
+        ].pre_pull_images
+    )
+
+
+@pytest.fixture
+def hot_buffer_expected_pre_pulled_images(
+    app_settings: ApplicationSettings,
+    hot_buffer_instance_type: InstanceTypeType,
+) -> list[DockerGenericTag]:
+    assert app_settings.AUTOSCALING_EC2_INSTANCES
+    return sorted(
+        set(
+            app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_COLD_START_DOCKER_IMAGES_PRE_PULLING
+        )
+        | set(
+            app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
+                hot_buffer_instance_type
+            ].pre_pull_images
+        )
     )
 
 
@@ -1128,12 +1202,12 @@ def ec2_instances_allowed_types_with_only_1_buffered(
             allowed_ec2_types.items(),
         )
     )
-    assert allowed_ec2_types_with_buffer_defined, (
-        "one type with buffer is needed for the tests!"
-    )
-    assert len(allowed_ec2_types_with_buffer_defined) == 1, (
-        "more than one type with buffer is disallowed in this test!"
-    )
+    assert (
+        allowed_ec2_types_with_buffer_defined
+    ), "one type with buffer is needed for the tests!"
+    assert (
+        len(allowed_ec2_types_with_buffer_defined) == 1
+    ), "more than one type with buffer is disallowed in this test!"
     return {
         TypeAdapter(InstanceTypeType).validate_python(k): v
         for k, v in allowed_ec2_types_with_buffer_defined.items()
@@ -1157,9 +1231,9 @@ def buffer_count(
         filter(_by_buffer_count, allowed_ec2_types.items())
     )
     assert allowed_ec2_types_with_buffer_defined, "you need one type with buffer"
-    assert len(allowed_ec2_types_with_buffer_defined) == 1, (
-        "more than one type with buffer is disallowed in this test!"
-    )
+    assert (
+        len(allowed_ec2_types_with_buffer_defined) == 1
+    ), "more than one type with buffer is disallowed in this test!"
     return next(iter(allowed_ec2_types_with_buffer_defined.values())).buffer_count
 
 
@@ -1209,7 +1283,9 @@ async def create_buffer_machines(
                 InstanceType=instance_type,
                 KeyName=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME,
                 SecurityGroupIds=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_SECURITY_GROUP_IDS,
-                SubnetId=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_SUBNET_ID,
+                SubnetId=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_SUBNET_IDS[
+                    0
+                ],
                 IamInstanceProfile={
                     "Arn": app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ATTACHED_IAM_PROFILE
                 },
@@ -1251,3 +1327,24 @@ async def create_buffer_machines(
         return instance_ids
 
     return _do
+
+
+@pytest.fixture
+def with_ec2_instances_cold_start_docker_images_pre_pulling(
+    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch, faker: Faker
+) -> EnvVarsDict:
+    images = TypeAdapter(list[DockerGenericTag]).validate_python(
+        [
+            "nginx:latest",
+            "itisfoundation/my-very-nice-service-in-common:latest",
+            "simcore/services/dynamic/another-nice-one:2.4.5161",
+            "asd",
+        ]
+    )
+    envs = setenvs_from_dict(
+        monkeypatch,
+        {
+            "EC2_INSTANCES_COLD_START_DOCKER_IMAGES_PRE_PULLING": json.dumps(images),
+        },
+    )
+    return app_environment | envs

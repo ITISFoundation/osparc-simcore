@@ -1,7 +1,11 @@
 from ..._errors import RPCInterfaceError
 
 
-class ProjectNotFoundRpcError(RPCInterfaceError): ...
+class ProjectNotFoundRpcError(  # pylint: disable=too-many-ancestors
+    RPCInterfaceError
+): ...
 
 
-class ProjectForbiddenRpcError(RPCInterfaceError): ...
+class ProjectForbiddenRpcError(  # pylint: disable=too-many-ancestors
+    RPCInterfaceError
+): ...

@@ -9,8 +9,8 @@ from models_library.api_schemas_webserver.products import (
 from models_library.rest_base import RequestParameters
 from models_library.users import UserID
 from pydantic import Field
+from servicelib.aiohttp.request_keys import RQT_USERID_KEY
 from servicelib.aiohttp.requests_validation import parse_request_body_as
-from servicelib.request_keys import RQT_USERID_KEY
 
 from .._meta import API_VTAG as VTAG
 from ..constants import RQ_PRODUCT_KEY

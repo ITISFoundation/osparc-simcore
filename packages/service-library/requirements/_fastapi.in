@@ -2,8 +2,10 @@
 # Dependencies for exclusive to fastapi-based services
 #
 #
+--constraint ../../../requirements/constraints.txt
+--constraint ./constraints.txt
 
-
+asgi-lifespan
 fastapi[standard]
 fastapi-lifespan-manager
 httpx[http2]

@@ -1,4 +1,4 @@
-""" Interface to communicate with the Resource Usage Tracker (RUT)
+"""Interface to communicate with the Resource Usage Tracker (RUT)
 
 - httpx client with base_url to PAYMENTS_RESOURCE_USAGE_TRACKER
 
@@ -19,7 +19,7 @@ from servicelib.fastapi.http_client import (
     BaseHTTPApi,
     HealthMixinMixin,
 )
-from servicelib.fastapi.tracing import setup_httpx_client_tracing
+from servicelib.fastapi.tracing import get_tracing_config, setup_httpx_client_tracing
 
 from ..core.errors import StripeRuntimeError
 from ..core.settings import ApplicationSettings
@@ -93,7 +93,10 @@ def setup_stripe(app: FastAPI):
         auth=_StripeBearerAuth(settings.PAYMENTS_STRIPE_API_SECRET.get_secret_value()),
     )
     if settings.PAYMENTS_TRACING:
-        setup_httpx_client_tracing(api.client)
+        setup_httpx_client_tracing(
+            api.client,
+            tracing_config=get_tracing_config(app),
+        )
 
     api.set_to_app_state(app)
     api.attach_lifespan_to(app)

@@ -1,11 +1,12 @@
+import datetime
 from functools import cached_property
 from pathlib import Path
 from typing import Annotated, Any, cast
 
+from common_library.logging.logging_utils_filtering import LoggerName, MessageSubstring
 from models_library.basic_types import LogLevel
 from pydantic import AliasChoices, Field, field_validator
 from servicelib.logging_utils import LogLevelInt
-from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.application import BaseApplicationSettings
 from settings_library.rabbit import RabbitSettings
 from settings_library.utils_logging import MixinLoggingSettings
@@ -62,6 +63,13 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     DASK_SIDECAR_RABBITMQ: Annotated[
         RabbitSettings | None, Field(json_schema_extra={"auto_default_from_env": True})
     ]
+
+    DASK_SIDECAR_MAX_LOG_SILENCE_TIMEOUT: Annotated[
+        datetime.timedelta,
+        Field(
+            description="Maximum duration a task can be silent (no logs) before being terminated",
+        ),
+    ] = datetime.timedelta(hours=1)
 
     @cached_property
     def log_level(self) -> LogLevelInt:

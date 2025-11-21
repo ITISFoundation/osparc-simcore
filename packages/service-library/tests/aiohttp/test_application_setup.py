@@ -37,17 +37,25 @@ def app_config() -> dict:
 
 
 @pytest.fixture
+def app_settings_key() -> web.AppKey:
+    return web.AppKey("test_app_settings", object)
+
+
+@pytest.fixture
 def app(app_config: dict) -> web.Application:
     _app = web.Application()
     _app[APP_CONFIG_KEY] = app_config
     return _app
 
 
-def test_setup_config_enabled(app_config: dict, app: web.Application):
+def test_setup_config_enabled(
+    app_config: dict, app: web.Application, app_settings_key: web.AppKey
+):
 
     @app_module_setup(
         "package.zee",
         ModuleCategory.ADDON,
+        app_settings_key=app_settings_key,
         # legacy support for config_enabled
         config_enabled="main.zee_enabled",
     )
@@ -63,15 +71,18 @@ def test_setup_config_enabled(app_config: dict, app: web.Application):
     assert not setup_zee(app, 2)
 
 
-def test_setup_dependencies(app: web.Application):
+def test_setup_dependencies(app: web.Application, app_settings_key: web.AppKey):
 
-    @app_module_setup("package.foo", ModuleCategory.ADDON)
+    @app_module_setup(
+        "package.foo", ModuleCategory.ADDON, app_settings_key=app_settings_key
+    )
     def setup_foo(app: web.Application) -> bool:
         return True
 
     @app_module_setup(
         "package.needs_foo",
         ModuleCategory.SYSTEM,
+        app_settings_key=app_settings_key,
         depends=[
             # This module needs foo to be setup first
             "package.foo",
@@ -94,8 +105,12 @@ def test_setup_dependencies(app: web.Application):
     ]
 
 
-def test_marked_setup(app_config: dict, app: web.Application):
-    @app_module_setup("package.foo", ModuleCategory.ADDON)
+def test_marked_setup(
+    app_config: dict, app: web.Application, app_settings_key: web.AppKey
+):
+    @app_module_setup(
+        "package.foo", ModuleCategory.ADDON, app_settings_key=app_settings_key
+    )
     def setup_foo(app: web.Application) -> bool:
         return True
 
@@ -107,8 +122,15 @@ def test_marked_setup(app_config: dict, app: web.Application):
     assert not setup_foo(app)
 
 
-def test_skip_setup(app: web.Application, mock_logger: MockType):
-    @app_module_setup("package.foo", ModuleCategory.ADDON, logger=mock_logger)
+def test_skip_setup(
+    app: web.Application, mock_logger: MockType, app_settings_key: web.AppKey
+):
+    @app_module_setup(
+        "package.foo",
+        ModuleCategory.ADDON,
+        app_settings_key=app_settings_key,
+        logger=mock_logger,
+    )
     def setup_foo(app: web.Application, *, raise_skip: bool = False) -> bool:
         if raise_skip:
             raise SkipModuleSetupError(reason="explicit skip")

@@ -12,10 +12,11 @@ from pydantic import (
 )
 
 from ..._invitations_service import ConfirmedInvitationData
-from ..._login_repository_legacy import (
+from ..._models import (
     ConfirmationTokenDict,
+    InputSchema,
+    check_confirm_password_match,
 )
-from ..._models import InputSchema, check_confirm_password_match
 
 
 class CodePathParam(BaseModel):

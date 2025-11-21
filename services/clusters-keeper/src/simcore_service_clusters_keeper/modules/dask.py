@@ -10,7 +10,7 @@ _logger = logging.getLogger(__name__)
 
 
 async def _wrap_client_async_routine(
-    client_coroutine: Coroutine[Any, Any, Any] | Any | None
+    client_coroutine: Coroutine[Any, Any, Any] | Any | None,
 ) -> Any:
     """Dask async behavior does not go well with Pylance as it returns
     a union of types. this wrapper makes both mypy and pylance happy"""

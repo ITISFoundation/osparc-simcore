@@ -1,7 +1,7 @@
 import logging
 
 from common_library.error_codes import create_error_code
-from servicelib.logging_errors import create_troubleshootting_log_kwargs
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from servicelib.status_codes_utils import is_5xx_server_error
 from starlette.requests import Request
 from starlette.responses import JSONResponse
@@ -20,7 +20,7 @@ async def backend_error_handler(request: Request, exc: Exception) -> JSONRespons
     if is_5xx_server_error(exc.status_code):
         support_id = create_error_code(exc)
         _logger.exception(
-            **create_troubleshootting_log_kwargs(
+            **create_troubleshooting_log_kwargs(
                 user_error_msg,
                 error=exc,
                 error_code=support_id,

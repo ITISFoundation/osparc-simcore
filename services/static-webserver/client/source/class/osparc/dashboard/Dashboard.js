@@ -53,17 +53,12 @@ qx.Class.define("osparc.dashboard.Dashboard", {
     osparc.wrapper.JsonDiffPatch.getInstance().init();
     osparc.wrapper.JsonTreeViewer.getInstance().init();
     osparc.wrapper.JsonFormatter.getInstance().init();
-    osparc.wrapper.DOMPurify.getInstance().init();
-    osparc.wrapper.RadialMenu.getInstance().init()
-      .then(loaded => {
-        if (loaded) {
-          // hack to trigger fonts loading
-          const menu = osparc.wrapper.RadialMenu.getInstance().createMenu();
-          menu.show();
-          menu.hide();
-        }
-      });
+    osparc.wrapper.RadialMenu.getInstance().init();
+
     this.__createMainViewLayout();
+
+
+    qx.event.message.Bus.getInstance().subscribe("showTab", msg => this.showTab(msg.getData()), this);
   },
 
   properties: {
@@ -97,6 +92,13 @@ qx.Class.define("osparc.dashboard.Dashboard", {
 
     getAppBrowser: function() {
       return this.__appBrowser;
+    },
+
+    showTab: function(tabId) {
+      const tabFound = this.getSelectables().find(s => s.id === tabId);
+      if (tabFound) {
+        this.setSelection([tabFound]);
+      }
     },
 
     __createMainViewLayout: function() {

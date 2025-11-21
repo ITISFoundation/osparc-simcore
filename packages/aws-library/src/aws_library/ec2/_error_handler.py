@@ -1,7 +1,16 @@
 import functools
 import logging
+import re
 from collections.abc import Callable, Coroutine
-from typing import TYPE_CHECKING, Any, Concatenate, ParamSpec, TypeVar
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Concatenate,
+    Final,
+    ParamSpec,
+    TypeVar,
+    cast,
+)
 
 from botocore import exceptions as botocore_exc
 
@@ -9,6 +18,7 @@ from ._errors import (
     EC2AccessError,
     EC2InstanceNotFoundError,
     EC2InstanceTypeInvalidError,
+    EC2InsufficientCapacityError,
     EC2NotConnectedError,
     EC2RuntimeError,
     EC2TimeoutError,
@@ -26,30 +36,46 @@ T = TypeVar("T")
 Self = TypeVar("Self", bound="SimcoreEC2API")
 
 
+_INSUFFICIENT_CAPACITY_ERROR_MSG_PATTERN: Final[re.Pattern] = re.compile(
+    r"sufficient (?P<instance_type>\S+) capacity in the Availability Zone you requested "
+    r"\((?P<failed_az>\S+)\)"
+)
+
+
 def _map_botocore_client_exception(
     botocore_error: botocore_exc.ClientError,
     *args,  # pylint: disable=unused-argument # noqa: ARG001
     **kwargs,  # pylint: disable=unused-argument # noqa: ARG001
 ) -> EC2AccessError:
-    status_code = int(
-        botocore_error.response.get("ResponseMetadata", {}).get("HTTPStatusCode")
-        or botocore_error.response.get("Error", {}).get("Code", -1)
+    # see https://boto3.amazonaws.com/v1/documentation/api/latest/guide/error-handling.html#parsing-error-responses-and-catching-exceptions-from-aws-services
+    status_code = cast(
+        int,
+        botocore_error.response.get("ResponseMetadata", {}).get("HTTPStatusCode", "-1"),
     )
+    error_code = botocore_error.response.get("Error", {}).get("Code", "Unknown")
+    error_msg = botocore_error.response.get("Error", {}).get("Message", "Unknown")
     operation_name = botocore_error.operation_name
-    match status_code, operation_name:
-        case 400, "StartInstances":
+    match error_code:
+        case "InvalidInstanceID.NotFound":
             return EC2InstanceNotFoundError()
-        case 400, "StopInstances":
-            return EC2InstanceNotFoundError()
-        case 400, "TerminateInstances":
-            return EC2InstanceNotFoundError()
-        case 400, "DescribeInstanceTypes":
+        case "InvalidInstanceType":
             return EC2InstanceTypeInvalidError()
+        case "InsufficientInstanceCapacity":
+            availability_zone = "unknown"
+            instance_type = "unknown"
+            if match := re.search(_INSUFFICIENT_CAPACITY_ERROR_MSG_PATTERN, error_msg):
+                instance_type = match.group("instance_type")
+                availability_zone = match.group("failed_az")
+
+            raise EC2InsufficientCapacityError(
+                availability_zones=availability_zone, instance_type=instance_type
+            )
         case _:
             return EC2AccessError(
+                status_code=status_code,
                 operation_name=operation_name,
-                code=status_code,
-                error=f"{botocore_error}",
+                code=error_code,
+                error=error_msg,
             )
 
 

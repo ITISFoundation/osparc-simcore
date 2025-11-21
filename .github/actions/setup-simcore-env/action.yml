@@ -5,12 +5,12 @@ inputs:
   python-version:
     description: 'Python version to use'
     required: false
-    default: '3.11'
+    default: '3.13'
 
   uv-version:
     description: 'UV version to use'
     required: false
-    default: '0.8.x'
+    default: '0.9.x'
 
   cache-dependency-glob:
     description: 'Glob pattern for cache dependency files'
@@ -52,7 +52,7 @@ runs:
         python-version: ${{ inputs.python-version }}
 
     - name: Install UV
-      uses: astral-sh/setup-uv@v6
+      uses: astral-sh/setup-uv@v7
       with:
         version: ${{ inputs.uv-version }}
         enable-cache: false

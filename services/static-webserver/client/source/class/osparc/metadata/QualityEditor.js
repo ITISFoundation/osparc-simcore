@@ -340,6 +340,7 @@ qx.Class.define("osparc.metadata.QualityEditor", {
         const targetRule = copyTSRTarget[ruleKey];
         if (targetRule.level !== undefined) {
           const targetsBox = new qx.ui.form.SelectBox();
+          targetsBox.getChildControl("arrow").syncAppearance(); // force sync to show the arrow
           const conformanceLevels = osparc.metadata.Quality.getConformanceLevel();
           Object.values(conformanceLevels).forEach(conformanceLevel => {
             let text = `${conformanceLevel.level} - `;
@@ -484,7 +485,7 @@ qx.Class.define("osparc.metadata.QualityEditor", {
       const myGid = osparc.auth.Data.getInstance().getGroupId();
       if (myGid) {
         if (osparc.utils.Resources.isService(this.__resourceData)) {
-          return osparc.service.Utils.canIWrite(this.__resourceData["accessRights"]);
+          return osparc.data.model.Service.canIWrite(this.__resourceData["accessRights"]);
         }
         return osparc.data.model.Study.canIWrite(this.__resourceData["accessRights"]);
       }

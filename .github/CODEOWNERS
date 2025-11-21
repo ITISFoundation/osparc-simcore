@@ -23,7 +23,7 @@ Makefile                                           @pcrespov @sanderegg
 /packages/settings-library/                        @pcrespov @sanderegg
 /requirements/                                     @pcrespov @matusdrobuliak66
 /services/agent/                                   @GitHK
-/services/api-server/                              @pcrespov
+/services/api-server/                              @pcrespov @bisgaard-itis @wvangeit
 /services/api-server/tests/unit/pact_broker/       @matusdrobuliak66
 /services/autoscaling/                             @sanderegg
 /services/catalog/                                 @pcrespov @sanderegg
@@ -36,7 +36,7 @@ Makefile                                           @pcrespov @sanderegg
 /services/efs-guardian/                            @matusdrobuliak66
 /services/invitations/                             @pcrespov
 /services/migration/                               @pcrespov
-/services/notifications/                           @GitHK
+/services/notifications/                           @pcrespov @giancarloromeo
 /services/payments/                                @pcrespov @matusdrobuliak66
 /services/resource-usage-tracker/                  @matusdrobuliak66
 /services/static-webserver/                        @GitHK

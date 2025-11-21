@@ -4,19 +4,20 @@ from typing import Any, ClassVar
 
 from common_library.json_serialization import json_dumps
 from fastapi import FastAPI
-from servicelib.async_utils import cancel_sequential_workers
 from servicelib.fastapi.logging_lifespan import create_logging_shutdown_event
 from servicelib.fastapi.openapi import (
     get_common_oas_options,
     override_fastapi_openapi_method,
 )
 from servicelib.fastapi.tracing import (
+    get_tracing_config,
     initialize_fastapi_app_tracing,
     setup_tracing,
 )
+from servicelib.tracing import TracingConfig
 from simcore_sdk.node_ports_common.exceptions import NodeNotFound
 
-from .._meta import API_VERSION, API_VTAG, APP_NAME, PROJECT_NAME, SUMMARY, __version__
+from .._meta import API_VERSION, API_VTAG, APP_NAME, SUMMARY, __version__
 from ..api.rest import get_main_router
 from ..api.rpc.routes import setup_rpc_api_routes
 from ..models.schemas.application_health import ApplicationHealth
@@ -41,13 +42,9 @@ from .reserved_space import setup as setup_reserved_space
 from .settings import ApplicationSettings
 from .utils import volumes_fix_permissions
 
-_NOISY_LOGGERS = (
-    "aio_pika",
-    "aiormq",
-    "httpcore",
-)
+_NOISY_LOGGERS = ("httpcore",)
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 #
 # https://patorjk.com/software/taag/#p=display&f=AMC%20Tubes&t=DYSIDECAR
@@ -118,15 +115,18 @@ class AppState:
 def create_base_app() -> FastAPI:
     # settings
     app_settings = ApplicationSettings.create_from_envs()
+    tracing_config = TracingConfig.create(
+        service_name=APP_NAME, tracing_settings=app_settings.DYNAMIC_SIDECAR_TRACING
+    )
     logging_shutdown_event = create_logging_shutdown_event(
         log_format_local_dev_enabled=app_settings.DY_SIDECAR_LOG_FORMAT_LOCAL_DEV_ENABLED,
         logger_filter_mapping=app_settings.DY_SIDECAR_LOG_FILTER_MAPPING,
-        tracing_settings=app_settings.DYNAMIC_SIDECAR_TRACING,
+        tracing_config=tracing_config,
         log_base_level=app_settings.log_level,
         noisy_loggers=_NOISY_LOGGERS,
     )
 
-    logger.info(
+    _logger.info(
         "Application settings: %s",
         json_dumps(app_settings, indent=2, sort_keys=True),
     )
@@ -145,6 +145,7 @@ def create_base_app() -> FastAPI:
     )
     override_fastapi_openapi_method(app)
     app.state.settings = app_settings
+    app.state.tracing_config = tracing_config
 
     app.include_router(get_main_router(app))
 
@@ -170,9 +171,10 @@ def create_app() -> FastAPI:
     setup_shared_store(app)
     app.state.application_health = ApplicationHealth()
     application_settings: ApplicationSettings = app.state.settings
+    tracing_config = get_tracing_config(app)
 
-    if application_settings.DYNAMIC_SIDECAR_TRACING:
-        setup_tracing(app, application_settings.DYNAMIC_SIDECAR_TRACING, PROJECT_NAME)
+    if tracing_config.tracing_enabled:
+        setup_tracing(app, tracing_config)
 
     setup_rabbitmq(app)
     setup_rpc_api_routes(app)
@@ -194,8 +196,11 @@ def create_app() -> FastAPI:
     if application_settings.are_prometheus_metrics_enabled:
         setup_prometheus_metrics(app)
 
-    if application_settings.DYNAMIC_SIDECAR_TRACING:
-        initialize_fastapi_app_tracing(app)
+    if tracing_config.tracing_enabled:
+        initialize_fastapi_app_tracing(
+            app,
+            tracing_config=tracing_config,
+        )
 
     # ERROR HANDLERS  ------------
     app.add_exception_handler(
@@ -217,17 +222,15 @@ def create_app() -> FastAPI:
     async def _on_shutdown() -> None:
         app_state = AppState(app)
         if docker_compose_yaml := app_state.compose_spec:
-            logger.info("Removing spawned containers")
+            _logger.info("Removing spawned containers")
 
             result = await docker_compose_down(docker_compose_yaml, app.state.settings)
 
-            logger.log(
+            _logger.log(
                 logging.INFO if result.success else logging.ERROR,
                 "Removed spawned containers:\n%s",
                 result.message,
             )
-
-        await cancel_sequential_workers()
 
         # FINISHED
         print(APP_FINISHED_BANNER_MSG, flush=True)  # noqa: T201

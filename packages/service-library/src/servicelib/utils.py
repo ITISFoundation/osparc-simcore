@@ -1,4 +1,4 @@
-""" General utils
+"""General utils
 
 IMPORTANT: lowest level module
    I order to avoid cyclic dependences, please
@@ -17,6 +17,8 @@ from collections.abc import (
     Generator,
     Iterable,
 )
+from functools import lru_cache
+from importlib import resources
 from pathlib import Path
 from typing import Any, Final, Literal, TypeVar, cast, overload
 
@@ -164,7 +166,7 @@ def ensure_ends_with(input_string: str, char: str) -> str:
 
 def partition_gen(
     input_list: Iterable, *, slice_size: NonNegativeInt
-) -> Generator[tuple[Any, ...], None, None]:
+) -> Generator[tuple[Any, ...]]:
     """
     Given an iterable and the slice_size yields tuples containing
     slice_size elements in them.
@@ -197,7 +199,7 @@ async def limited_as_completed(
     *,
     limit: int = _DEFAULT_LIMITED_CONCURRENCY,
     tasks_group_prefix: str | None = None,
-) -> AsyncGenerator[asyncio.Task[T], None]:
+) -> AsyncGenerator[asyncio.Task[T]]:
     """Runs awaitables using limited concurrent tasks and returns
     result futures unordered.
 
@@ -245,7 +247,7 @@ async def limited_as_completed(
                         future.set_name(f"{tasks_group_prefix}-{future.get_name()}")
                     pending_futures.add(future)
 
-                except (StopIteration, StopAsyncIteration):  # noqa: PERF203
+                except (StopIteration, StopAsyncIteration):
                     completed_all_awaitables = True
             if not pending_futures:
                 return
@@ -258,7 +260,7 @@ async def limited_as_completed(
 
     except asyncio.CancelledError:
         for future in pending_futures:
-            future.cancel()
+            future.cancel("limited_as_completed cancelled, cancelling pending tasks")
         await asyncio.gather(*pending_futures, return_exceptions=True)
         raise
 
@@ -294,8 +296,7 @@ async def limited_gather(
     log: logging.Logger = _DEFAULT_LOGGER,
     limit: int = _DEFAULT_LIMITED_CONCURRENCY,
     tasks_group_prefix: str | None = None,
-) -> list[T]:
-    ...
+) -> list[T]: ...
 
 
 @overload
@@ -305,8 +306,7 @@ async def limited_gather(
     log: logging.Logger = _DEFAULT_LOGGER,
     limit: int = _DEFAULT_LIMITED_CONCURRENCY,
     tasks_group_prefix: str | None = None,
-) -> list[T | BaseException]:
-    ...
+) -> list[T | BaseException]: ...
 
 
 async def limited_gather(
@@ -353,3 +353,11 @@ async def limited_gather(
 
     # NOTE: None is already contained in T
     return cast(list[T | BaseException], interim_results)
+
+
+@lru_cache
+def load_script(package: str, script_name: str) -> str:
+    with resources.as_file(
+        resources.files(package) / f"{script_name}.lua"
+    ) as script_file:
+        return script_file.read_text(encoding="utf-8").strip()

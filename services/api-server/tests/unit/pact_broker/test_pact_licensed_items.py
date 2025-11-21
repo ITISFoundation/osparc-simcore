@@ -3,7 +3,6 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
-import os
 
 import pytest
 from fastapi import FastAPI
@@ -13,11 +12,8 @@ from models_library.api_schemas_webserver.licensed_items import (
 )
 from pact.v3 import Verifier
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.typing_mock import HandlerMockFactory
 from simcore_service_api_server._meta import API_VERSION
-from simcore_service_api_server.api.dependencies.webserver_rpc import (
-    get_wb_api_rpc_client,
-)
-from simcore_service_api_server.services_rpc.wb_api_server import WbApiRpcClient
 
 # Fake response based on values from 05_licensed_items.json
 EXPECTED_LICENSED_ITEMS = [
@@ -137,23 +133,19 @@ class DummyRpcClient:
 
 
 @pytest.fixture
-async def mock_wb_api_server_rpc(app: FastAPI, mocker: MockerFixture) -> None:
+async def mock_wb_api_server_rpc(
+    app: FastAPI,
+    mocker: MockerFixture,
+    mocked_app_rpc_dependencies: None,
+    mock_handler_in_licenses_rpc_interface: HandlerMockFactory,
+) -> None:
 
-    app.dependency_overrides[get_wb_api_rpc_client] = lambda: WbApiRpcClient(
-        _client=DummyRpcClient()
+    mock_handler_in_licenses_rpc_interface(
+        "get_licensed_items", return_value=EXPECTED_LICENSED_ITEMS_PAGE
     )
 
-    mocker.patch(
-        "simcore_service_api_server.services_rpc.wb_api_server._get_licensed_items",
-        return_value=EXPECTED_LICENSED_ITEMS_PAGE,
-    )
 
-
-@pytest.mark.skipif(
-    not os.getenv("PACT_BROKER_URL"),
-    reason="This test runs only if PACT_BROKER_URL is provided",
-)
-def test_provider_against_pact(
+def test_osparc_api_server_licensed_items_pact(
     pact_broker_credentials: tuple[str, str, str],
     mock_wb_api_server_rpc: None,
     running_test_server_url: str,
@@ -177,7 +169,7 @@ def test_provider_against_pact(
 
     # NOTE: If you want to filter/test against specific contract use tags
     verifier = broker_builder.consumer_tags(
-        "licensed_items"  # <-- Here you define which pact to verify
+        "licensed_items"  # NOTE: Here you define which pact to verify
     ).build()
 
     # Set API version and run verification

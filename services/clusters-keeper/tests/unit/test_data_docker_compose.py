@@ -30,7 +30,7 @@ def test_redis_version_same_as_main_docker_compose(
 
 
 def test_all_services_run_on_manager_but_dask_sidecar(
-    clusters_keeper_docker_compose: dict[str, Any]
+    clusters_keeper_docker_compose: dict[str, Any],
 ):
     for service_name, service_config in clusters_keeper_docker_compose[
         "services"
@@ -39,7 +39,9 @@ def test_all_services_run_on_manager_but_dask_sidecar(
         assert "placement" in service_config["deploy"]
         assert "constraints" in service_config["deploy"]["placement"]
         assert service_config["deploy"]["placement"]["constraints"] == [
-            "node.role==worker"
-            if service_name == "dask-sidecar"
-            else "node.role==manager"
+            (
+                "node.role==worker"
+                if service_name == "dask-sidecar"
+                else "node.role==manager"
+            )
         ]

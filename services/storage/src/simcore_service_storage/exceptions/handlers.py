@@ -1,12 +1,12 @@
 import logging
 
-from asyncpg.exceptions import PostgresError
 from aws_library.s3 import S3AccessError, S3KeyNotFoundError
 from fastapi import FastAPI, status
 from servicelib.fastapi.http_error import (
     make_http_error_handler_for_exception,
     set_app_default_http_error_handlers,
 )
+from sqlalchemy.exc import DBAPIError
 
 from ..modules.datcore_adapter.datcore_adapter_exceptions import (
     DatcoreAdapterFileNotFoundError,
@@ -70,7 +70,7 @@ def set_exception_handlers(app: FastAPI) -> None:
         ),
     )
     for exc_3rd_party in (
-        PostgresError,
+        DBAPIError,
         S3AccessError,
     ):
         app.add_exception_handler(

@@ -7,6 +7,7 @@ from servicelib.fastapi.tracing import (
     initialize_fastapi_app_tracing,
     setup_tracing,
 )
+from servicelib.tracing import TracingConfig
 
 from .._meta import (
     API_VERSION,
@@ -22,7 +23,10 @@ from . import exceptions_handlers
 from .settings import ApplicationSettings
 
 
-def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
+def create_app(
+    settings: ApplicationSettings | None = None,
+    tracing_config: TracingConfig | None = None,
+) -> FastAPI:
 
     app = FastAPI(
         title=f"{PROJECT_NAME} web API",
@@ -36,10 +40,14 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
 
     # STATE
     app.state.settings = settings or ApplicationSettings()  # type: ignore[call-arg]
+    tracing_config = tracing_config or TracingConfig.create(
+        service_name=APP_NAME, tracing_settings=app.state.settings.INVITATIONS_TRACING
+    )
+    app.state.tracing_config = tracing_config
     assert app.state.settings.API_VERSION == API_VERSION  # nosec
 
-    if app.state.settings.INVITATIONS_TRACING:
-        setup_tracing(app, app.state.settings.INVITATIONS_TRACING, APP_NAME)
+    if tracing_config.tracing_enabled:
+        setup_tracing(app, tracing_config=tracing_config)
 
     # PLUGINS SETUP
     setup_api_routes(app)
@@ -47,8 +55,8 @@ def create_app(settings: ApplicationSettings | None = None) -> FastAPI:
     if app.state.settings.INVITATIONS_PROMETHEUS_INSTRUMENTATION_ENABLED:
         setup_prometheus_instrumentation(app)
 
-    if app.state.settings.INVITATIONS_TRACING:
-        initialize_fastapi_app_tracing(app)
+    if tracing_config.tracing_enabled:
+        initialize_fastapi_app_tracing(app, tracing_config=tracing_config)
 
     # ERROR HANDLERS
     exceptions_handlers.setup(app)

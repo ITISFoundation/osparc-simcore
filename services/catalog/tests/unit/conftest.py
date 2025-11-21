@@ -8,6 +8,7 @@
 
 import hashlib
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
+from copy import deepcopy
 from pathlib import Path
 from typing import Any, NamedTuple
 
@@ -32,6 +33,8 @@ from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.rabbitmq import RabbitMQRPCClient
+from servicelib.tracing import TracingConfig
+from simcore_service_catalog._meta import APP_NAME
 from simcore_service_catalog.core.application import create_app
 from simcore_service_catalog.core.settings import ApplicationSettings
 
@@ -72,14 +75,14 @@ def package_dir() -> Path:
     return dirpath
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def env_devel_dict(
     env_devel_dict: EnvVarsDict, external_envfile_dict: EnvVarsDict
 ) -> EnvVarsDict:
     if external_envfile_dict:
         assert "CATALOG_DEV_FEATURES_ENABLED" in external_envfile_dict
         assert "CATALOG_SERVICES_DEFAULT_RESOURCES" in external_envfile_dict
-        return external_envfile_dict
+        return deepcopy(external_envfile_dict)
     return env_devel_dict
 
 
@@ -145,7 +148,10 @@ async def app(
 
     # create instance
     assert app_environment
-    app_under_test = create_app()
+    tracing_config = TracingConfig.create(
+        service_name=APP_NAME, tracing_settings=None  # disable tracing in tests
+    )
+    app_under_test = create_app(tracing_config=tracing_config)
 
     assert spy_app.on_startup.call_count == 0
     assert spy_app.on_shutdown.call_count == 0
@@ -172,7 +178,10 @@ def client(
 
     # create instance
     assert app_environment
-    app_under_test = create_app()
+    tracing_config = TracingConfig.create(
+        service_name=APP_NAME, tracing_settings=None  # disable tracing in tests
+    )
+    app_under_test = create_app(tracing_config=tracing_config)
 
     assert (
         spy_app.on_startup.call_count == 0

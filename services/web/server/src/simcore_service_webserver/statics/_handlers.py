@@ -5,9 +5,9 @@ from servicelib.mimetype_constants import MIMETYPE_TEXT_HTML
 
 from ..products import products_web
 from ._constants import (
-    APP_FRONTEND_CACHED_INDEXES_KEY,
-    APP_FRONTEND_CACHED_STATICS_JSON_KEY,
     FRONTEND_APPS_AVAILABLE,
+    FRONTEND_CACHED_INDEXES_APPKEY,
+    FRONTEND_CACHED_STATICS_JSON_APPKEY,
 )
 
 _logger = logging.getLogger(__name__)
@@ -27,7 +27,7 @@ async def get_cached_frontend_index(request: web.Request):
     #
 
     cached_index_per_product: dict[str, str] = request.app[
-        APP_FRONTEND_CACHED_INDEXES_KEY
+        FRONTEND_CACHED_INDEXES_APPKEY
     ]
     if product_name not in cached_index_per_product:
         raise web.HTTPNotFound(text=f"No index.html found for {product_name}")
@@ -41,6 +41,6 @@ async def get_statics_json(request: web.Request):
     product_name = products_web.get_product_name(request)
 
     return web.Response(
-        body=request.app[APP_FRONTEND_CACHED_STATICS_JSON_KEY].get(product_name, None),
+        body=request.app[FRONTEND_CACHED_STATICS_JSON_APPKEY].get(product_name, None),
         content_type="application/json",
     )

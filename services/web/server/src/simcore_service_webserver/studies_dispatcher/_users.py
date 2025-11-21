@@ -22,12 +22,12 @@ from models_library.emails import LowerCaseEmailStr
 from models_library.users import UserID
 from pydantic import BaseModel, TypeAdapter
 from redis.exceptions import LockNotOwnedError
-from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.logging_utils import log_decorator
 from servicelib.utils import fire_and_forget_task
 from servicelib.utils_secrets import generate_password
 from simcore_postgres_database.utils_users import UsersRepo
 
+from ..constants import APP_FIRE_AND_FORGET_TASKS_KEY
 from ..db.plugin import get_asyncpg_engine
 from ..garbage_collector.settings import GUEST_USER_RC_LOCK_FORMAT
 from ..groups import api as groups_service
@@ -37,8 +37,7 @@ from ..redis import get_redis_lock_manager_client
 from ..security import security_service, security_web
 from ..users import users_service
 from ..users.exceptions import UserNotFoundError
-from ._constants import MSG_GUESTS_NOT_ALLOWED
-from ._errors import GuestUsersLimitError
+from ._errors import GuestUserNotAllowedError, GuestUsersLimitError
 from .settings import StudiesDispatcherSettings, get_plugin_settings
 
 _logger = logging.getLogger(__name__)
@@ -187,7 +186,7 @@ async def get_or_create_guest_user(
         allow_anonymous_or_guest_users -- if True, it will create a temporary GUEST account
 
     Raises:
-        web.HTTPUnauthorized if ANONYMOUS users are not allowed (either w/o auth or as GUEST)
+        GuestUserNotAllowedError if ANONYMOUS users are not allowed (either w/o auth or as GUEST)
 
     """
     user = None
@@ -205,7 +204,11 @@ async def get_or_create_guest_user(
 
     if not allow_anonymous_or_guest_users and (not user or user.get("role") == GUEST):
         # NOTE: if allow_anonymous_users=False then GUEST users are NOT allowed!
-        raise web.HTTPUnauthorized(text=MSG_GUESTS_NOT_ALLOWED)
+        raise GuestUserNotAllowedError(
+            allow_anonymous_or_guest_users=allow_anonymous_or_guest_users,
+            user=user,
+            is_anonymous_user=is_anonymous_user,
+        )
 
     assert isinstance(user, dict)  # nosec
 

@@ -195,6 +195,9 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
           ctrl.bindProperty("expirationYear", "expirationYear", null, item, id);
         },
         configureItem: item => {
+          item.set({
+            cursor: "default",
+          });
           item.addListener("openPaymentMethodDetails", e => this.__openPaymentMethodDetails(e.getData()));
           item.addListener("deletePaymentMethod", e => this.__deletePaymentMethod(e.getData()));
         }

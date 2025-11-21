@@ -68,8 +68,10 @@ def load_pre_pulled_images_from_tags(tags: EC2Tags) -> list[DockerGenericTag]:
     # AWS Tag values are limited to 256 characters so we chunk the images
     if PRE_PULLED_IMAGES_EC2_TAG_KEY in tags:
         # read directly
-        return TypeAdapter(list[DockerGenericTag]).validate_json(
-            tags[PRE_PULLED_IMAGES_EC2_TAG_KEY]
+        return sorted(
+            TypeAdapter(list[DockerGenericTag]).validate_json(
+                tags[PRE_PULLED_IMAGES_EC2_TAG_KEY]
+            )
         )
 
     assembled_json = "".join(
@@ -86,24 +88,35 @@ def load_pre_pulled_images_from_tags(tags: EC2Tags) -> list[DockerGenericTag]:
         )
     )
     if assembled_json:
-        return TypeAdapter(list[DockerGenericTag]).validate_json(assembled_json)
+        return sorted(TypeAdapter(list[DockerGenericTag]).validate_json(assembled_json))
     return []
+
+
+def list_pre_pulled_images_tag_keys(tags: EC2Tags) -> list[AWSTagKey]:
+    return [
+        TypeAdapter(AWSTagKey).validate_python(key)
+        for key in tags
+        if PRE_PULLED_IMAGES_EC2_TAG_KEY in key
+    ]
 
 
 def ec2_warm_buffer_startup_script(
     ec2_boot_specific: EC2InstanceBootSpecific, app_settings: ApplicationSettings
 ) -> str:
     startup_commands = ec2_boot_specific.custom_boot_scripts.copy()
-    if ec2_boot_specific.pre_pull_images:
+    assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
+    desired_pre_pull_images = utils_docker.compute_full_list_of_pre_pulled_images(
+        ec2_boot_specific, app_settings
+    )
+    if desired_pre_pull_images:
         assert app_settings.AUTOSCALING_REGISTRY  # nosec
+
         startup_commands.extend(
             (
                 utils_docker.get_docker_login_on_start_bash_command(
                     app_settings.AUTOSCALING_REGISTRY
                 ),
-                utils_docker.write_compose_file_command(
-                    ec2_boot_specific.pre_pull_images
-                ),
+                utils_docker.write_compose_file_command(desired_pre_pull_images),
             )
         )
     return " && ".join(startup_commands)

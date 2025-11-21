@@ -15,6 +15,10 @@ router = RPCRouter()
 @router.expose()
 @validate_call(config={"arbitrary_types_allowed": True})
 async def update_disk_usage(app: FastAPI, *, usage: dict[str, DiskUsage]) -> None:
+    """
+    Updates the report disk usage to the forntend via external tooling.
+    Used by the efs guardian.
+    """
     disk_usage_monitor = get_disk_usage_monitor(app)
 
     if disk_usage_monitor is None:

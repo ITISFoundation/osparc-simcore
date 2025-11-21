@@ -4,6 +4,7 @@ import logging
 from contextlib import suppress
 from typing import Literal, TypeVar
 
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from models_library.api_schemas_catalog.services import (
     LatestServiceGet,
     MyServiceGet,
@@ -13,6 +14,7 @@ from models_library.api_schemas_catalog.services import (
 )
 from models_library.api_schemas_directorv2.services import ServiceExtras
 from models_library.basic_types import VersionStr
+from models_library.batch_operations import create_batch_ids_validator
 from models_library.groups import GroupID
 from models_library.products import ProductName
 from models_library.rest_pagination import PageLimitInt, PageOffsetInt, PageTotalCount
@@ -22,16 +24,15 @@ from models_library.services_metadata_published import ServiceMetaDataPublished
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from pydantic import HttpUrl
-from servicelib.logging_errors import (
-    create_troubleshootting_log_kwargs,
-)
 from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
-    CatalogForbiddenError,
-    CatalogInconsistentError,
-    CatalogItemNotFoundError,
+    CatalogForbiddenRpcError,
+    CatalogInconsistentRpcError,
+    CatalogItemNotFoundRpcError,
 )
 
 from ..clients.director import DirectorClient
+from ..errors import BatchNotFoundError
+from ..models.catalog_services import BatchGetUserServicesResult
 from ..models.services_db import (
     ServiceAccessRightsDB,
     ServiceDBFilters,
@@ -108,7 +109,6 @@ def _to_latest_get_schema(
     access_rights_db: list[ServiceAccessRightsDB],
     service_manifest: ServiceMetaDataPublished,
 ) -> LatestServiceGet:
-
     assert len(service_db.history) == 0  # nosec
 
     return LatestServiceGet.model_validate(
@@ -174,11 +174,11 @@ async def _get_services_with_access_rights(
         return {}
 
     # Inject access-rights
-    access_rights = await repo.batch_get_services_access_rights(
+    access_rights = await repo.batch_get_services_access_rights_or_none(
         ((sc.key, sc.version) for sc in services), product_name=product_name
     )
     if not access_rights:
-        raise CatalogForbiddenError(
+        raise CatalogForbiddenRpcError(
             name="any service",
             user_id=user_id,
             product_name=product_name,
@@ -239,9 +239,9 @@ async def _get_services_manifests(
     if missing_services:
         msg = f"Found {len(missing_services)} services that are in the database but missing in the registry manifest"
         _logger.warning(
-            **create_troubleshootting_log_kwargs(
+            **create_troubleshooting_log_kwargs(
                 msg,
-                error=CatalogInconsistentError(
+                error=CatalogInconsistentRpcError(
                     missing_services=missing_services,
                     user_id=user_id,
                     product_name=product_name,
@@ -397,7 +397,6 @@ async def get_catalog_service(
     service_key: ServiceKey,
     service_version: ServiceVersion,
 ) -> ServiceGetV2:
-
     access_rights = await check_catalog_service_permissions(
         repo=repo,
         product_name=product_name,
@@ -415,7 +414,7 @@ async def get_catalog_service(
     )
     if not service:
         # no service found provided `access_rights`
-        raise CatalogForbiddenError(
+        raise CatalogForbiddenRpcError(
             name=f"{service_key}:{service_version}",
             service_key=service_key,
             service_version=service_version,
@@ -449,9 +448,8 @@ async def update_catalog_service(
     service_version: ServiceVersion,
     update: ServiceUpdateV2,
 ) -> ServiceGetV2:
-
     if is_function_service(service_key):
-        raise CatalogForbiddenError(
+        raise CatalogForbiddenRpcError(
             name=f"function service {service_key}:{service_version}",
             service_key=service_key,
             service_version=service_version,
@@ -482,7 +480,6 @@ async def update_catalog_service(
 
     # Updates service_access_rights (they can be added/removed/modified)
     if update.access_rights:
-
         # before
         previous_gids = [r.gid for r in access_rights]
 
@@ -553,7 +550,7 @@ async def check_catalog_service_permissions(
         product_name=product_name,
     )
     if not access_rights:
-        raise CatalogItemNotFoundError(
+        raise CatalogItemNotFoundRpcError(
             name=f"{service_key}:{service_version}",
             service_key=service_key,
             service_version=service_version,
@@ -578,7 +575,7 @@ async def check_catalog_service_permissions(
         )
 
     if not has_permission:
-        raise CatalogForbiddenError(
+        raise CatalogForbiddenRpcError(
             name=f"{service_key}:{service_version}",
             service_key=service_key,
             service_version=service_version,
@@ -589,94 +586,172 @@ async def check_catalog_service_permissions(
     return access_rights
 
 
+_BatchIdsValidator = create_batch_ids_validator(tuple[ServiceKey, ServiceVersion])
+
+
+def _evaluate_user_access_rights(
+    access_rights: list, user_group_ids: set[GroupID]
+) -> ServiceGroupAccessRightsV2:
+    """Evaluate user's access rights based on their group memberships."""
+    my_access_rights = ServiceGroupAccessRightsV2(execute=False, write=False)
+    for ar in access_rights:
+        if ar.gid in user_group_ids:
+            my_access_rights.execute |= ar.execute_access
+            my_access_rights.write |= ar.write_access
+    return my_access_rights
+
+
+def _find_service_owner(service_db, access_rights: list) -> GroupID | None:
+    """Find service owner from database or access rights."""
+    owner: GroupID | None = service_db.owner
+    if not owner:
+        # NOTE can be more than one. Just get first.
+        with suppress(StopIteration):
+            owner = next(
+                ar.gid for ar in access_rights if ar.write_access and ar.execute_access
+            )
+    return owner
+
+
+async def _get_service_compatibility(
+    repo: ServicesRepository,
+    product_name: ProductName,
+    user_id: UserID,
+    service_key: ServiceKey,
+    service_version: ServiceVersion,
+    my_access_rights: ServiceGroupAccessRightsV2,
+) -> Compatibility | None:
+    """Get service compatibility if user has access rights."""
+    if not (my_access_rights.execute or my_access_rights.write):
+        return None
+
+    history = await repo.get_service_history(
+        product_name=product_name,
+        user_id=user_id,
+        key=service_key,
+    )
+    compatibility_map = await evaluate_service_compatibility_map(
+        repo,
+        product_name=product_name,
+        user_id=user_id,
+        service_release_history=history,
+    )
+    return compatibility_map.get(service_version)
+
+
+async def _process_single_service(
+    repo: ServicesRepository,
+    product_name: ProductName,
+    user_id: UserID,
+    service_key: ServiceKey,
+    service_version: ServiceVersion,
+    services_access_rights: dict,
+    user_group_ids: set[GroupID],
+) -> MyServiceGet | None:
+    """Process a single service and return MyServiceGet or None if missing."""
+    # Check access rights
+    access_rights = services_access_rights.get((service_key, service_version), [])
+    if not access_rights:
+        return None
+
+    # Evaluate user's access rights
+    my_access_rights = _evaluate_user_access_rights(access_rights, user_group_ids)
+
+    # Get service metadata
+    service_db = await repo.get_service(
+        product_name=product_name,
+        key=service_key,
+        version=service_version,
+    )
+    if not service_db:
+        return None
+
+    # Find service owner
+    owner = _find_service_owner(service_db, access_rights)
+
+    # Evaluate compatibility
+    compatibility = await _get_service_compatibility(
+        repo, product_name, user_id, service_key, service_version, my_access_rights
+    )
+
+    return MyServiceGet(
+        key=service_db.key,
+        release=ServiceRelease(
+            version=service_db.version,
+            version_display=service_db.version_display,
+            released=service_db.created,
+            retired=service_db.deprecated,
+            compatibility=compatibility,
+        ),
+        owner=owner,
+        my_access_rights=my_access_rights,
+    )
+
+
 async def batch_get_user_services(
     repo: ServicesRepository,
     groups_repo: GroupsRepository,
     *,
     product_name: ProductName,
     user_id: UserID,
-    ids: list[
-        tuple[
-            ServiceKey,
-            ServiceVersion,
-        ]
-    ],
-) -> list[MyServiceGet]:
+    ids: list[tuple[ServiceKey, ServiceVersion]],
+) -> BatchGetUserServicesResult:
+    """Batch get user services.
 
-    services_access_rights = await repo.batch_get_services_access_rights(
-        key_versions=ids, product_name=product_name
+    - Allows partial success, i.e. some services might be found while others not.
+    - Silently deduplicates ids while preserving order.
+
+    Raises:
+        CatalogItemNotFoundError: When no services are found at all
+        ValidationError: if the ids are empty
+    """
+    unique_service_identifiers = _BatchIdsValidator.validate_python(ids)
+
+    services_access_rights = await repo.batch_get_services_access_rights_or_none(
+        key_versions=unique_service_identifiers, product_name=product_name
     )
+    if not services_access_rights:
+        raise BatchNotFoundError(
+            missing_services=unique_service_identifiers,
+            user_id=user_id,
+            product_name=product_name,
+        )
 
     user_groups = await groups_repo.list_user_groups(user_id=user_id)
     my_group_ids = {g.gid for g in user_groups}
 
-    my_services = []
-    for service_key, service_version in ids:
+    found = []
+    missing = []
 
-        # Evaluate user's access-rights to this service key:version
-        access_rights = services_access_rights.get((service_key, service_version), [])
-        my_access_rights = ServiceGroupAccessRightsV2(execute=False, write=False)
-        for ar in access_rights:
-            if ar.gid in my_group_ids:
-                my_access_rights.execute |= ar.execute_access
-                my_access_rights.write |= ar.write_access
+    for service_key, service_version in unique_service_identifiers:
+        # NOTE: parallel?
+        service_result = await _process_single_service(
+            repo,
+            product_name,
+            user_id,
+            service_key,
+            service_version,
+            services_access_rights,
+            my_group_ids,
+        )
 
-        # Get service metadata
-        service_db = await repo.get_service(
+        if service_result:
+            found.append(service_result)
+        else:
+            missing.append((service_key, service_version))
+
+    # Check for complete failure scenarios and raise appropriate exceptions
+    if not found:
+        # None of the services found
+        assert len(unique_service_identifiers) == len(missing)  # nosec
+        raise BatchNotFoundError(
+            missing_services=missing,
+            user_id=user_id,
             product_name=product_name,
-            key=service_key,
-            version=service_version,
-        )
-        assert service_db  # nosec
-
-        # Find service owner (if defined!)
-        owner: GroupID | None = service_db.owner
-        if not owner:
-            # NOTE can be more than one. Just get first.
-            with suppress(StopIteration):
-                owner = next(
-                    ar.gid
-                    for ar in access_rights
-                    if ar.write_access and ar.execute_access
-                )
-
-        # Evaluate `compatibility`
-        compatibility: Compatibility | None = None
-        if my_access_rights.execute or my_access_rights.write:
-            history = await repo.get_service_history(
-                # NOTE: that the service history might be different for each user
-                # since access rights are defined on a version basis (i.e. one use can have access to v1 but ot to v2)
-                product_name=product_name,
-                user_id=user_id,
-                key=service_key,
-            )
-            assert history  # nosec
-
-            compatibility_map = await evaluate_service_compatibility_map(
-                repo,
-                product_name=product_name,
-                user_id=user_id,
-                service_release_history=history,
-            )
-
-            compatibility = compatibility_map.get(service_db.version)
-
-        my_services.append(
-            MyServiceGet(
-                key=service_db.key,
-                release=ServiceRelease(
-                    version=service_db.version,
-                    version_display=service_db.version_display,
-                    released=service_db.created,
-                    retired=service_db.deprecated,
-                    compatibility=compatibility,
-                ),
-                owner=owner,
-                my_access_rights=my_access_rights,
-            )
         )
 
-    return my_services
+    # Success or partial success - return the result model
+    return BatchGetUserServicesResult(found_items=found, missing_identifiers=missing)
 
 
 async def list_user_service_release_history(
@@ -695,7 +770,6 @@ async def list_user_service_release_history(
     # result options
     include_compatibility: bool = False,
 ) -> tuple[PageTotalCount, list[ServiceRelease]]:
-
     total_count, history = await repo.get_service_history_page(
         # NOTE: that the service history might be different for each user
         # since access rights are defined on a version basis (i.e. one use can have access to v1 but ot to v2)

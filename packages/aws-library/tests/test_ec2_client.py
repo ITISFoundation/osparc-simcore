@@ -4,9 +4,9 @@
 
 
 import random
-from collections.abc import AsyncIterator, Callable
+from collections.abc import AsyncIterator, Awaitable, Callable
 from dataclasses import fields
-from typing import cast, get_args
+from typing import Any, Final, cast, get_args
 
 import botocore.exceptions
 import pytest
@@ -14,6 +14,8 @@ from aws_library.ec2._client import SimcoreEC2API
 from aws_library.ec2._errors import (
     EC2InstanceNotFoundError,
     EC2InstanceTypeInvalidError,
+    EC2InsufficientCapacityError,
+    EC2SubnetsNotEnoughIPsError,
     EC2TooManyInstancesError,
 )
 from aws_library.ec2._models import (
@@ -25,13 +27,15 @@ from aws_library.ec2._models import (
 )
 from faker import Faker
 from moto.server import ThreadedMotoServer
+from pydantic import TypeAdapter
+from pytest_mock import MockerFixture
 from settings_library.ec2 import EC2Settings
 from types_aiobotocore_ec2 import EC2Client
 from types_aiobotocore_ec2.literals import InstanceStateNameType, InstanceTypeType
 
 
 def _ec2_allowed_types() -> list[InstanceTypeType]:
-    return ["t2.nano", "m5.12xlarge", "g4dn.4xlarge"]
+    return ["m5.12xlarge"]
 
 
 @pytest.fixture(scope="session")
@@ -97,7 +101,7 @@ def ec2_instance_config(
         ami_id=aws_ami_id,
         key_name=faker.pystr(),
         security_group_ids=[aws_security_group_id],
-        subnet_id=aws_subnet_id,
+        subnet_ids=[aws_subnet_id],
         iam_instance_profile="",
     )
 
@@ -125,7 +129,7 @@ async def test_get_ec2_instance_capabilities_returns_all_options(
     assert instance_types
     # NOTE: this might need adaptation when moto is updated
     assert (
-        850 < len(instance_types) < 877
+        850 < len(instance_types) < 1003
     ), f"received {len(instance_types)}, the test might need adaptation"
 
 
@@ -415,6 +419,63 @@ async def test_stop_start_instances(
                 assert getattr(s, f.name) == getattr(c, f.name)
 
 
+async def test_start_instances_with_insufficient_instance_capacity(
+    simcore_ec2_api: SimcoreEC2API,
+    ec2_client: EC2Client,
+    faker: Faker,
+    ec2_instance_config: EC2InstanceConfig,
+    mocker: MockerFixture,
+):
+    # we have nothing running now in ec2
+    await _assert_no_instances_in_ec2(ec2_client)
+    # create some instance
+    _NUM_INSTANCES = 10
+    num_instances = faker.pyint(min_value=1, max_value=_NUM_INSTANCES)
+    created_instances = await simcore_ec2_api.launch_instances(
+        ec2_instance_config,
+        min_number_of_instances=num_instances,
+        number_of_instances=num_instances,
+    )
+    await _assert_instances_in_ec2(
+        ec2_client,
+        expected_num_reservations=1,
+        expected_num_instances=num_instances,
+        expected_instance_type=ec2_instance_config.type,
+        expected_tags=ec2_instance_config.tags,
+        expected_state="running",
+    )
+    # stop the instances
+    await simcore_ec2_api.stop_instances(created_instances)
+    await _assert_instances_in_ec2(
+        ec2_client,
+        expected_num_reservations=1,
+        expected_num_instances=num_instances,
+        expected_instance_type=ec2_instance_config.type,
+        expected_tags=ec2_instance_config.tags,
+        expected_state="stopped",
+    )
+
+    # Mock the EC2 client to simulate InsufficientInstanceCapacity on first subnet
+    async def mock_start_instances(*args, **kwargs) -> Any:
+        # no more machines, simulate insufficient capacity
+        error_response: dict[str, Any] = {
+            "Error": {
+                "Code": "InsufficientInstanceCapacity",
+                "Message": "An error occurred (InsufficientInstanceCapacity) when calling the StartInstances operation (reached max retries: 4): Insufficient capacity.",
+            },
+        }
+        raise botocore.exceptions.ClientError(error_response, "StartInstances")  # type: ignore
+
+    # Apply the mock
+    mocker.patch.object(
+        simcore_ec2_api.client, "start_instances", side_effect=mock_start_instances
+    )
+
+    # start the instances now
+    with pytest.raises(EC2InsufficientCapacityError):
+        await simcore_ec2_api.start_instances(created_instances)
+
+
 async def test_terminate_instance(
     simcore_ec2_api: SimcoreEC2API,
     ec2_client: EC2Client,
@@ -529,7 +590,8 @@ async def test_set_instance_tags(
 
     # now remove some, this should do nothing
     await simcore_ec2_api.remove_instances_tags(
-        created_instances, tag_keys=[AWSTagKey("whatever_i_dont_exist")]
+        created_instances,
+        tag_keys=[TypeAdapter(AWSTagKey).validate_python("whatever_i_dont_exist")],
     )
     await _assert_instances_in_ec2(
         ec2_client,
@@ -542,7 +604,11 @@ async def test_set_instance_tags(
     # now remove some real ones
     tag_key_to_remove = random.choice(list(new_tags))  # noqa: S311
     await simcore_ec2_api.remove_instances_tags(
-        created_instances, tag_keys=[tag_key_to_remove]
+        created_instances,
+        tag_keys=[
+            tag_key_to_remove,
+            TypeAdapter(AWSTagKey).validate_python("whatever_i_dont_exist"),
+        ],
     )
     new_tags.pop(tag_key_to_remove)
     await _assert_instances_in_ec2(
@@ -575,3 +641,426 @@ async def test_remove_instance_tags_not_existing_raises(
         await simcore_ec2_api.remove_instances_tags(
             [fake_ec2_instance_data()], tag_keys=[]
         )
+
+
+async def test_launch_instances_insufficient_capacity_fallback(
+    simcore_ec2_api: SimcoreEC2API,
+    ec2_client: EC2Client,
+    fake_ec2_instance_type: EC2InstanceType,
+    faker: Faker,
+    aws_subnet_id: str,
+    create_aws_subnet_id: Callable[[], Awaitable[str]],
+    aws_security_group_id: str,
+    aws_ami_id: str,
+    mocker: MockerFixture,
+):
+    await _assert_no_instances_in_ec2(ec2_client)
+
+    # Create additional valid subnets for testing
+    subnet1_id = aws_subnet_id
+    subnet2_id = await create_aws_subnet_id()
+
+    # Create a config with multiple valid subnet IDs
+    ec2_instance_config = EC2InstanceConfig(
+        type=fake_ec2_instance_type,
+        tags=faker.pydict(allowed_types=(str,)),
+        startup_script=faker.pystr(),
+        ami_id=aws_ami_id,
+        key_name=faker.pystr(),
+        security_group_ids=[aws_security_group_id],
+        subnet_ids=[subnet1_id, subnet2_id],
+        iam_instance_profile="",
+    )
+
+    # Mock the EC2 client to simulate InsufficientInstanceCapacity on first subnet
+    original_run_instances = simcore_ec2_api.client.run_instances
+    call_count = 0
+
+    async def mock_run_instances(*args, **kwargs) -> Any:
+        nonlocal call_count
+        call_count += 1
+        if call_count == 1:
+            assert kwargs["NetworkInterfaces"][0]["SubnetId"] == subnet1_id
+            # First call (first subnet) - simulate insufficient capacity
+            error_response: dict[str, Any] = {
+                "Error": {
+                    "Code": "InsufficientInstanceCapacity",
+                    "Message": "An error occurred (InsufficientInstanceCapacity) when calling the RunInstances operation (reached max retries: 4): We currently do not have sufficient g4dn.4xlarge capacity in the Availability Zone you requested (us-east-1a). Our system will be working on provisioning additional capacity. You can currently get g4dn.4xlarge capacity by not specifying an Availability Zone in your request or choosing us-east-1b, us-east-1c, us-east-1d, us-east-1f",
+                },
+            }
+            raise botocore.exceptions.ClientError(error_response, "RunInstances")  # type: ignore
+        # Second call (second subnet) - succeed normally
+        assert kwargs["NetworkInterfaces"][0]["SubnetId"] == subnet2_id
+        return await original_run_instances(*args, **kwargs)
+
+    # Apply the mock
+    mocker.patch.object(
+        simcore_ec2_api.client, "run_instances", side_effect=mock_run_instances
+    )
+    instances = await simcore_ec2_api.launch_instances(
+        ec2_instance_config,
+        min_number_of_instances=1,
+        number_of_instances=1,
+    )
+
+    # Verify that run_instances was called twice (once for each subnet)
+    assert call_count == 2
+
+    # Verify that the instance was created (in the second subnet)
+    await _assert_instances_in_ec2(
+        ec2_client,
+        expected_num_reservations=1,
+        expected_num_instances=1,
+        expected_instance_type=ec2_instance_config.type,
+        expected_tags=ec2_instance_config.tags,
+        expected_state="running",
+    )
+
+    # Verify the instance was created in the second subnet (since first failed)
+    instance_details = await ec2_client.describe_instances(
+        InstanceIds=[instances[0].id]
+    )
+    assert "Reservations" in instance_details
+    assert len(instance_details["Reservations"]) >= 1
+    assert "Instances" in instance_details["Reservations"][0]
+    assert len(instance_details["Reservations"][0]["Instances"]) >= 1
+    instance = instance_details["Reservations"][0]["Instances"][0]
+    assert "SubnetId" in instance
+    assert instance["SubnetId"] == subnet2_id
+
+
+async def test_launch_instances_all_subnets_insufficient_capacity_raises_error(
+    simcore_ec2_api: SimcoreEC2API,
+    ec2_client: EC2Client,
+    fake_ec2_instance_type: EC2InstanceType,
+    faker: Faker,
+    aws_subnet_id: str,
+    create_aws_subnet_id: Callable[[], Awaitable[str]],
+    aws_security_group_id: str,
+    aws_ami_id: str,
+    mocker: MockerFixture,
+):
+    await _assert_no_instances_in_ec2(ec2_client)
+
+    # Create additional valid subnets for testing
+    subnet1_id = aws_subnet_id
+    subnet2_id = await create_aws_subnet_id()
+    subnet3_id = await create_aws_subnet_id()
+
+    # Create a config with multiple valid subnet IDs
+    ec2_instance_config = EC2InstanceConfig(
+        type=fake_ec2_instance_type,
+        tags=faker.pydict(allowed_types=(str,)),
+        startup_script=faker.pystr(),
+        ami_id=aws_ami_id,
+        key_name=faker.pystr(),
+        security_group_ids=[aws_security_group_id],
+        subnet_ids=[subnet1_id, subnet2_id, subnet3_id],
+        iam_instance_profile="",
+    )
+
+    # Mock the EC2 client to simulate InsufficientInstanceCapacity on ALL subnets
+    call_count = 0
+
+    async def mock_run_instances(*args, **kwargs) -> Any:
+        nonlocal call_count
+        call_count += 1
+        # Always simulate insufficient capacity
+        error_response = {
+            "Error": {
+                "Code": "InsufficientInstanceCapacity",
+                "Message": "An error occurred (InsufficientInstanceCapacity) when calling the RunInstances operation (reached max retries: 4): We currently do not have sufficient g4dn.4xlarge capacity in the Availability Zone you requested (us-east-1a). Our system will be working on provisioning additional capacity. You can currently get g4dn.4xlarge capacity by not specifying an Availability Zone in your request or choosing us-east-1b, us-east-1c, us-east-1d, us-east-1f",
+            },
+        }
+        raise botocore.exceptions.ClientError(error_response, "RunInstances")  # type: ignore
+
+    # Apply the mock and expect EC2InsufficientCapacityError
+    mocker.patch.object(
+        simcore_ec2_api.client, "run_instances", side_effect=mock_run_instances
+    )
+    with pytest.raises(
+        EC2InsufficientCapacityError, match=fake_ec2_instance_type.name
+    ) as exc_info:
+        await simcore_ec2_api.launch_instances(
+            ec2_instance_config,
+            min_number_of_instances=1,
+            number_of_instances=1,
+        )
+
+    # Verify that run_instances was called for both subnets
+    assert call_count == 3
+
+    # Verify the error contains the expected information
+    assert hasattr(exc_info.value, "instance_type")
+    assert exc_info.value.instance_type == fake_ec2_instance_type.name  # type: ignore
+
+    # Verify no instances were created
+    await _assert_no_instances_in_ec2(ec2_client)
+
+
+async def test_launch_instances_partial_capacity_then_insufficient_capacity(
+    simcore_ec2_api: SimcoreEC2API,
+    ec2_client: EC2Client,
+    fake_ec2_instance_type: EC2InstanceType,
+    faker: Faker,
+    aws_subnet_id: str,
+    aws_security_group_id: str,
+    aws_ami_id: str,
+    mocker: MockerFixture,
+):
+    """Test that launch_instances handles partial capacity correctly.
+
+    First call: ask for 3 instances (min 1) -> should get 2, no error
+    Second call: ask for 3 instances (min 1) -> should raise EC2InsufficientCapacityError
+    """
+    await _assert_no_instances_in_ec2(ec2_client)
+
+    # Create a config with a single subnet (as requested)
+    ec2_instance_config = EC2InstanceConfig(
+        type=fake_ec2_instance_type,
+        tags=faker.pydict(allowed_types=(str,)),
+        startup_script=faker.pystr(),
+        ami_id=aws_ami_id,
+        key_name=faker.pystr(),
+        security_group_ids=[aws_security_group_id],
+        subnet_ids=[aws_subnet_id],  # Single subnet only
+        iam_instance_profile="",
+    )
+
+    # Mock the EC2 client to simulate partial capacity behavior
+    original_run_instances = simcore_ec2_api.client.run_instances
+    call_count = 0
+
+    async def mock_run_instances(*args, **kwargs):
+        nonlocal call_count
+        call_count += 1
+
+        if call_count == 1:
+            # First call: return only 2 instances when 3 were requested
+            # Simulate that the subnet has capacity for only 2 machines
+            required_instances = kwargs["MaxCount"]
+            kwargs_copy = kwargs.copy()
+            kwargs_copy["MinCount"] = required_instances - 1
+            kwargs_copy["MaxCount"] = required_instances - 1
+            return await original_run_instances(*args, **kwargs_copy)
+
+        # Second call: simulate insufficient capacity (subnet is full)
+        error_response = {
+            "Error": {
+                "Code": "InsufficientInstanceCapacity",
+                "Message": "An error occurred (InsufficientInstanceCapacity) when calling the RunInstances operation (reached max retries: 4): We currently do not have sufficient g4dn.4xlarge capacity in the Availability Zone you requested (us-east-1a). Our system will be working on provisioning additional capacity. You can currently get g4dn.4xlarge capacity by not specifying an Availability Zone in your request or choosing us-east-1b, us-east-1c, us-east-1d, us-east-1f",
+            },
+        }
+        raise botocore.exceptions.ClientError(error_response, "RunInstances")  # type: ignore
+
+    # Apply the mock for the first call
+    mocker.patch.object(
+        simcore_ec2_api.client, "run_instances", side_effect=mock_run_instances
+    )
+    # First call: ask for 3 instances (min 1) -> should get 2, no error
+    instances = await simcore_ec2_api.launch_instances(
+        ec2_instance_config,
+        min_number_of_instances=1,
+        number_of_instances=3,
+    )
+
+    # Verify we got 2 instances (partial capacity)
+    assert len(instances) == 2
+    assert call_count == 1
+
+    # Verify instances were created
+    await _assert_instances_in_ec2(
+        ec2_client,
+        expected_num_reservations=1,
+        expected_num_instances=2,
+        expected_instance_type=ec2_instance_config.type,
+        expected_tags=ec2_instance_config.tags,
+        expected_state="running",
+    )
+
+    # Second call: ask for 3 instances (min 1) -> should raise EC2InsufficientCapacityError
+    with pytest.raises(EC2InsufficientCapacityError) as exc_info:
+        await simcore_ec2_api.launch_instances(
+            ec2_instance_config,
+            min_number_of_instances=1,
+            number_of_instances=3,
+        )
+
+    # Verify that run_instances was called twice total
+    assert call_count == 2
+
+    # Verify the error contains the expected information
+    subnet_desc = await ec2_client.describe_subnets(SubnetIds=[aws_subnet_id])
+    assert hasattr(exc_info.value, "instance_type")
+    assert exc_info.value.instance_type == fake_ec2_instance_type.name  # type: ignore
+    assert exc_info.value.availability_zones == [  # type: ignore
+        subnet_desc["Subnets"][0]["AvailabilityZone"]  # type: ignore
+    ]
+
+    # Verify still only 2 instances exist (no new ones were created)
+    await _assert_instances_in_ec2(
+        ec2_client,
+        expected_num_reservations=1,
+        expected_num_instances=2,
+        expected_instance_type=ec2_instance_config.type,
+        expected_tags=ec2_instance_config.tags,
+        expected_state="running",
+    )
+
+
+_RESERVED_IPS: Final[int] = 5  # AWS reserves 5 IPs in each subnet
+
+
+@pytest.fixture
+async def with_small_subnet(
+    create_aws_subnet_id: Callable[..., Awaitable[str]],
+) -> tuple[str, int]:
+    """Creates a subnet with a single IP address to simulate InsufficientInstanceCapacity"""
+    single_ip_cidr = (
+        "10.0.11.0/29"  # /29 is the minimum allowed by AWS, gives 8 addresses
+    )
+    return (
+        await create_aws_subnet_id(single_ip_cidr),
+        8 - _RESERVED_IPS,
+    )  # 5 are reserved by AWS
+
+
+async def test_launch_instances_with_small_subnet(
+    simcore_ec2_api: SimcoreEC2API,
+    ec2_client: EC2Client,
+    fake_ec2_instance_type: EC2InstanceType,
+    faker: Faker,
+    with_small_subnet: tuple[str, int],
+    aws_subnet_id: str,
+    aws_security_group_id: str,
+    aws_ami_id: str,
+    mocker: MockerFixture,
+):
+    await _assert_no_instances_in_ec2(ec2_client)
+    small_subnet_id, capacity = with_small_subnet
+    # Create a config with a single subnet (as requested)
+    ec2_instance_config = EC2InstanceConfig(
+        type=fake_ec2_instance_type,
+        tags=faker.pydict(allowed_types=(str,)),
+        startup_script=faker.pystr(),
+        ami_id=aws_ami_id,
+        key_name=faker.pystr(),
+        security_group_ids=[aws_security_group_id],
+        subnet_ids=[small_subnet_id, aws_subnet_id],
+        iam_instance_profile="",
+    )
+
+    # first call shall work in the first subnet
+    instances = await simcore_ec2_api.launch_instances(
+        ec2_instance_config,
+        min_number_of_instances=capacity,
+        number_of_instances=capacity,
+    )
+
+    # Verify we got 2 instances (partial capacity)
+    assert len(instances) == capacity
+
+    # Verify instances were created
+    await _assert_instances_in_ec2(
+        ec2_client,
+        expected_num_reservations=1,
+        expected_num_instances=capacity,
+        expected_instance_type=ec2_instance_config.type,
+        expected_tags=ec2_instance_config.tags,
+        expected_state="running",
+    )
+
+    instances = await simcore_ec2_api.launch_instances(
+        ec2_instance_config,
+        min_number_of_instances=1,
+        number_of_instances=1,
+    )
+
+
+async def test_launch_instances_raises_ec2_subnets_not_enough_ips_error(
+    simcore_ec2_api: SimcoreEC2API,
+    ec2_client: EC2Client,
+    fake_ec2_instance_type: EC2InstanceType,
+    faker: Faker,
+    create_aws_subnet_id: Callable[..., Awaitable[str]],
+    aws_security_group_id: str,
+    aws_ami_id: str,
+    mocker: MockerFixture,
+) -> None:
+    """Test that EC2SubnetsNotEnoughIPsError is raised when subnets don't have enough IPs."""
+    await _assert_no_instances_in_ec2(ec2_client)
+
+    # Create additional small subnets
+    subnet1_id = await create_aws_subnet_id("10.0.200.0/29")  # 3 usable IPs
+    subnet2_id = await create_aws_subnet_id("10.0.201.0/29")  # 3 usable IPs
+
+    ec2_instance_config = EC2InstanceConfig(
+        type=fake_ec2_instance_type,
+        tags=faker.pydict(allowed_types=(str,)),
+        startup_script=faker.pystr(),
+        ami_id=aws_ami_id,
+        key_name=faker.pystr(),
+        security_group_ids=[aws_security_group_id],
+        subnet_ids=[subnet1_id, subnet2_id],
+        iam_instance_profile="",
+    )
+
+    with pytest.raises(EC2SubnetsNotEnoughIPsError) as exc_info:
+        await simcore_ec2_api.launch_instances(
+            ec2_instance_config,
+            min_number_of_instances=7,
+            number_of_instances=7,
+        )
+
+    error = exc_info.value
+    assert error.subnet_ids == [subnet1_id, subnet2_id]  # type: ignore
+    assert error.instance_type == fake_ec2_instance_type.name  # type: ignore
+    assert error.available_ips == 6  # type: ignore
+
+
+@pytest.mark.xfail(
+    reason="if the user asks for a minimum number of instances that cannot fit a subnet, then it currently raises! "
+    "it is currently not required that the instances are distributed among subnets"
+)
+async def test_launch_instances_distributes_instances_among_subnets(
+    simcore_ec2_api: SimcoreEC2API,
+    ec2_client: EC2Client,
+    fake_ec2_instance_type: EC2InstanceType,
+    faker: Faker,
+    create_aws_subnet_id: Callable[..., Awaitable[str]],
+    aws_security_group_id: str,
+    aws_ami_id: str,
+    mocker: MockerFixture,
+) -> None:
+    """Test that EC2SubnetsNotEnoughIPsError is raised when subnets don't have enough IPs."""
+    await _assert_no_instances_in_ec2(ec2_client)
+
+    # Create additional small subnets
+    subnet1_id = await create_aws_subnet_id("10.0.200.0/29")  # 3 usable IPs
+    subnet2_id = await create_aws_subnet_id("10.0.201.0/29")  # 3 usable IPs
+
+    ec2_instance_config = EC2InstanceConfig(
+        type=fake_ec2_instance_type,
+        tags=faker.pydict(allowed_types=(str,)),
+        startup_script=faker.pystr(),
+        ami_id=aws_ami_id,
+        key_name=faker.pystr(),
+        security_group_ids=[aws_security_group_id],
+        subnet_ids=[subnet1_id, subnet2_id],
+        iam_instance_profile="",
+    )
+
+    await simcore_ec2_api.launch_instances(
+        ec2_instance_config,
+        min_number_of_instances=5,
+        number_of_instances=5,
+    )
+
+    await _assert_instances_in_ec2(
+        ec2_client,
+        expected_num_reservations=1,
+        expected_num_instances=5,
+        expected_instance_type=ec2_instance_config.type,
+        expected_tags=ec2_instance_config.tags,
+        expected_state="running",
+    )

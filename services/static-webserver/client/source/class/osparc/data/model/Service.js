@@ -161,4 +161,13 @@ qx.Class.define("osparc.data.model.Service", {
       nullable: false
     },
   },
+
+  statics: {
+    canIWrite: function(serviceAccessRights) {
+      const groupsStore = osparc.store.Groups.getInstance();
+      const orgIDs = groupsStore.getOrganizationIds();
+      orgIDs.push(groupsStore.getMyGroupId());
+      return osparc.share.CollaboratorsService.canGroupsWrite(serviceAccessRights, orgIDs);
+    },
+  },
 });

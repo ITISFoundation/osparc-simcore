@@ -4,9 +4,10 @@ from typing import Annotated, Any, Final, Literal
 
 from aiohttp import web
 from common_library.basic_types import DEFAULT_FACTORY
-from common_library.exclude import Unset
+from common_library.logging.logging_utils_filtering import LoggerName, MessageSubstring
 from common_library.pydantic_fields_extension import is_nullable
 from models_library.basic_types import LogLevel, PortInt, VersionTag
+from models_library.rabbitmq_basic_types import RPCNamespace
 from models_library.utils.change_case import snake_to_camel
 from pydantic import (
     AliasChoices,
@@ -17,8 +18,8 @@ from pydantic import (
 )
 from pydantic.fields import Field
 from servicelib.logging_utils import LogLevelInt
-from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.application import BaseApplicationSettings
+from settings_library.celery import CelerySettings
 from settings_library.email import SMTPSettings
 from settings_library.postgres import PostgresSettings
 from settings_library.prometheus import PrometheusSettings
@@ -29,13 +30,15 @@ from settings_library.utils_logging import MixinLoggingSettings
 from settings_library.utils_service import DEFAULT_AIOHTTP_PORT
 
 from ._meta import API_VERSION, API_VTAG, APP_NAME
+from .application_keys import APP_SETTINGS_APPKEY
 from .catalog.settings import CatalogSettings
+from .chatbot.settings import ChatbotSettings
 from .collaboration.settings import RealTimeCollaborationSettings
-from .constants import APP_SETTINGS_KEY
 from .diagnostics.settings import DiagnosticsSettings
 from .director_v2.settings import DirectorV2Settings
 from .dynamic_scheduler.settings import DynamicSchedulerSettings
 from .exporter.settings import ExporterSettings
+from .fogbugz.settings import FogbugzSettings
 from .garbage_collector.settings import GarbageCollectorSettings
 from .invitations.settings import InvitationsSettings
 from .licenses.settings import LicensesSettings
@@ -154,6 +157,14 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         ),
     ] = DEFAULT_FACTORY
 
+    WEBSERVER_RPC_NAMESPACE: Annotated[
+        RPCNamespace | None,
+        Field(
+            description="Namespace for the RPC server (if any) otherwise None"
+            "NOTE that some webserver variants do NOT expose an RPC server e.g. wg-gargage-collector, wg-auth, etc"
+        ),
+    ]
+
     WEBSERVER_SERVER_HOST: Annotated[
         # TODO: find a better name!?
         str,
@@ -196,6 +207,19 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
             description="catalog service client's plugin",
         ),
     ]
+    WEBSERVER_CHATBOT: Annotated[
+        ChatbotSettings | None,
+        Field(
+            json_schema_extra={"auto_default_from_env": True},
+        ),
+    ]
+    WEBSERVER_CELERY: Annotated[
+        CelerySettings | None,
+        Field(
+            json_schema_extra={"auto_default_from_env": True},
+            description="celery plugin",
+        ),
+    ]
     WEBSERVER_DB: Annotated[
         PostgresSettings | None,
         Field(
@@ -235,6 +259,14 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
             description="exporter plugin",
         ),
     ]
+
+    WEBSERVER_FOGBUGZ: Annotated[
+        FogbugzSettings | None,
+        Field(
+            json_schema_extra={"auto_default_from_env": True},
+        ),
+    ]
+
     WEBSERVER_GARBAGE_COLLECTOR: Annotated[
         GarbageCollectorSettings | None,
         Field(
@@ -294,7 +326,6 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
             description="Enables real-time collaboration features",
             json_schema_extra={
                 "auto_default_from_env": True,
-                _X_FEATURE_UNDER_DEVELOPMENT: True,
             },
         ),
     ]
@@ -600,13 +631,9 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         return {snake_to_camel(k): v for k, v in data.items()}
 
 
-_unset = Unset.VALUE
-
-
 def setup_settings(app: web.Application) -> ApplicationSettings:
-
     settings: ApplicationSettings = ApplicationSettings.create_from_envs()
-    app[APP_SETTINGS_KEY] = settings
+    app[APP_SETTINGS_APPKEY] = settings
     _logger.debug(
         "Captured app settings:\n%s",
         lambda: settings.model_dump_json(indent=1),
@@ -615,6 +642,6 @@ def setup_settings(app: web.Application) -> ApplicationSettings:
 
 
 def get_application_settings(app: web.Application) -> ApplicationSettings:
-    settings: ApplicationSettings = app[APP_SETTINGS_KEY]
+    settings: ApplicationSettings = app[APP_SETTINGS_APPKEY]
     assert settings, "Forgot to setup plugin?"  # nosec
     return settings

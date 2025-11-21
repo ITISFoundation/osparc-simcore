@@ -35,10 +35,12 @@ SETUP = {
     "author": "Pedro Crespo-Valero (pcrespov)",
     "description": "Core service library for simcore (or servicelib)",
     "license": "MIT license",
-    "python_requires": "~=3.11",
+    "python_requires": "~=3.13",
     "install_requires": tuple(PROD_REQUIREMENTS),
     "packages": find_packages(where="src"),
-    "package_data": {"": ["py.typed"]},
+    "package_data": {
+        "": ["py.typed", "redis/lua/*.lua", "long_running_tasks/_lua/*.lua"]
+    },
     "package_dir": {"": "src"},
     "test_suite": "tests",
     "tests_require": tuple(TEST_REQUIREMENTS),

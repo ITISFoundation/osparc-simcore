@@ -29,6 +29,11 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
     layout.setColumnAlign(creditsCol, "right", "middle");
 
     this.__buildLayout();
+
+    this.set({
+      backgroundColor: "transparent",
+      cursor: "default",
+    });
   },
 
   properties: {
@@ -90,9 +95,8 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
           });
           break;
         case "subtitle":
-          control = new qx.ui.basic.Label().set({
+          control = new osparc.ui.basic.SafeLabel().set({
             font: "text-13",
-            rich: true
           });
           this._add(control, {
             row: 1,
@@ -153,7 +157,7 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
             rowSpan: 2
           });
           break;
-        case "favourite-button":
+        case "preferred-button":
           control = new qx.ui.form.Button().set({
             iconPosition: "right",
             width: 110, // make Primary and Secondary buttons same width
@@ -326,8 +330,11 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
     },
 
     __applyPreferredWallet: function(isPreferredWallet) {
-      const favouriteButton = this.getChildControl("favourite-button");
-      favouriteButton.setBackgroundColor("transparent");
+      const favouriteButton = this.getChildControl("preferred-button");
+      favouriteButton.set({
+        backgroundColor: "transparent",
+        width: 60,
+      });
       const favouriteButtonIcon = favouriteButton.getChildControl("icon");
       if (isPreferredWallet) {
         favouriteButton.set({

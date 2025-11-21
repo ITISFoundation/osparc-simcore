@@ -29,7 +29,7 @@ qx.Class.define("osparc.desktop.account.MyAccount", {
     this.__profilePage = this.__addProfilePage();
 
     // show Usage in My Account if wallets are not enabled. If they are enabled it will be in the BIlling Center
-    if (!osparc.desktop.credits.Utils.areWalletsEnabled()) {
+    if (!osparc.store.StaticInfo.isBillableProduct()) {
       if (osparc.data.Permissions.getInstance().canDo("usage.all.read")) {
         this.__usagePage = this.__addUsagePage();
       }
@@ -46,19 +46,21 @@ qx.Class.define("osparc.desktop.account.MyAccount", {
   },
 
   statics: {
-    createMiniProfileView: function(withSpacer = true) {
+    createMiniProfileView: function(userData) {
       const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(6)).set({
         alignX: "center",
         minWidth: 120,
         maxWidth: 150
       });
 
-      const authData = osparc.auth.Data.getInstance();
-      const username = authData.getUsername();
-      const email = authData.getEmail();
+      if (!userData) {
+        userData = osparc.auth.Data.getInstance();
+      }
+      const userName = userData.getUserName();
+      const email = userData.getEmail();
       const avatarSize = 80;
       const img = new qx.ui.basic.Image().set({
-        source: osparc.utils.Avatar.emailToThumbnail(email, username, avatarSize),
+        source: osparc.utils.Avatar.emailToThumbnail(email, userName, avatarSize),
         maxWidth: avatarSize,
         maxHeight: avatarSize,
         scale: true,
@@ -69,27 +71,27 @@ qx.Class.define("osparc.desktop.account.MyAccount", {
       });
       layout.add(img);
 
-      const usernameLabel = new qx.ui.basic.Label().set({
+      const userNameLabel = new qx.ui.basic.Label().set({
         font: "text-14",
         alignX: "center"
       });
-      authData.bind("username", usernameLabel, "value");
-      layout.add(usernameLabel);
+      userData.bind("userName", userNameLabel, "value");
+      layout.add(userNameLabel);
 
       const fullNameLabel = new qx.ui.basic.Label().set({
         font: "text-13",
         alignX: "center"
       });
       layout.add(fullNameLabel);
-      authData.bind("firstName", fullNameLabel, "value", {
-        converter: () => authData.getFullName()
+      userData.bind("firstName", fullNameLabel, "value", {
+        converter: () => userData.getFullName()
       });
-      authData.bind("lastName", fullNameLabel, "value", {
-        converter: () => authData.getFullName()
+      userData.bind("lastName", fullNameLabel, "value", {
+        converter: () => userData.getFullName()
       });
 
-      if (authData.getRole() !== "user") {
-        const role = authData.getFriendlyRole();
+      if (userData.getRole() !== "user") {
+        const role = userData.getFriendlyRole();
         const roleLabel = new qx.ui.basic.Label(role).set({
           font: "text-13",
           alignX: "center"
@@ -97,9 +99,7 @@ qx.Class.define("osparc.desktop.account.MyAccount", {
         layout.add(roleLabel);
       }
 
-      if (withSpacer) {
-        layout.add(new qx.ui.core.Spacer(15, 15));
-      }
+      layout.add(new qx.ui.core.Spacer(15, 15));
 
       return layout;
     }

@@ -28,7 +28,6 @@ qx.Class.define("osparc.widget.PreparingInputs", {
     const text = this.tr("To proceed, we need to prepare some inputs. You can check the progress logs here:");
     const title = new qx.ui.basic.Label(text).set({
       font: "text-14",
-      rich: true
     });
     this._add(title);
 

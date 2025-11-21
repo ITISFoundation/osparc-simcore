@@ -1,13 +1,13 @@
 from decimal import Decimal
 
 from aiohttp import web
-from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
 from models_library.emails import LowerCaseEmailStr
 from models_library.payments import InvoiceDataGet, UserInvoiceAddress
 from models_library.products import ProductName
 from models_library.users import UserID
 from servicelib.rabbitmq import RPCRouter
 
+from ..application_settings import get_application_settings
 from ..products import products_service
 from ..products.models import CreditResult
 from ..rabbitmq import get_rabbitmq_rpc_server
@@ -31,7 +31,9 @@ async def get_invoice_data(
         app, product_name=product_name
     )
     user_invoice_address: UserInvoiceAddress = (
-        await users_service.get_user_invoice_address(app, user_id=user_id)
+        await users_service.get_user_invoice_address(
+            app, product_name=product_name, user_id=user_id
+        )
     )
     user_info = await users_service.get_user_display_and_id_names(app, user_id=user_id)
 
@@ -47,4 +49,9 @@ async def get_invoice_data(
 
 async def register_rpc_routes_on_startup(app: web.Application):
     rpc_server = get_rabbitmq_rpc_server(app)
-    await rpc_server.register_router(router, WEBSERVER_RPC_NAMESPACE, app)
+    settings = get_application_settings(app)
+    if not settings.WEBSERVER_RPC_NAMESPACE:
+        msg = "RPC namespace is not configured"
+        raise ValueError(msg)
+
+    await rpc_server.register_router(router, settings.WEBSERVER_RPC_NAMESPACE, app)

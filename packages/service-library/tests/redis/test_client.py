@@ -104,9 +104,7 @@ async def test_redis_lock_with_ttl(
             assert not await ttl_lock.locked()
 
 
-async def test_redis_client_sdk_setup_shutdown(
-    mock_redis_socket_timeout: None, redis_service: RedisSettings
-):
+async def test_redis_client_sdk_setup_shutdown(redis_service: RedisSettings):
     # setup
     redis_resources_dns = redis_service.build_redis_dsn(RedisDatabase.RESOURCES)
     client = RedisClientSDK(redis_resources_dns, client_name="pytest")
@@ -130,7 +128,6 @@ async def test_redis_client_sdk_setup_shutdown(
 
 
 async def test_regression_fails_on_redis_service_outage(
-    mock_redis_socket_timeout: None,
     paused_container: Callable[[str], AbstractAsyncContextManager[None]],
     redis_client_sdk: RedisClientSDK,
 ):

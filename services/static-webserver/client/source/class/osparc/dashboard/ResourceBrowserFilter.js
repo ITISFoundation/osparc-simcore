@@ -57,8 +57,35 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
     __tagButtons: null,
     __appTypeButtons: null,
 
+    _createChildControlImpl: function(id) {
+      let control;
+      switch (id) {
+        case "filters-spacer":
+          control = new qx.ui.core.Spacer(10, 10);
+          this._add(control);
+          break;
+        case "shared-with-layout":
+          control = this.__createSharedWithFilterLayout();
+          this._add(control);
+          break;
+        case "app-type-layout":
+          control = this.__createAppTypeFilterLayout();
+          this._add(control);
+          break;
+        case "tags-layout": {
+          control = this.__createTagsFilterLayout();
+          const scrollView = new qx.ui.container.Scroll();
+          scrollView.add(control);
+          this._add(scrollView, {
+            flex: 1
+          });
+          break;
+        }
+      }
+      return control || null;
+    },
+
     __buildLayout: function() {
-      const filtersSpacer = new qx.ui.core.Spacer(10, 10);
       switch (this.__resourceType) {
         case "study": {
           this._add(this.__createWorkspacesAndFoldersTree());
@@ -72,28 +99,18 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
             this._add(this.__createFunctions());
           }
           this._add(this.__createTrashBin());
-          this._add(filtersSpacer);
-          const scrollView = new qx.ui.container.Scroll();
-          scrollView.add(this.__createTagsFilterLayout());
-          this._add(scrollView, {
-            flex: 1
-          });
+          this.getChildControl("filters-spacer");
           break;
         }
-        case "template": {
-          this._add(filtersSpacer);
-          this._add(this.__createSharedWithFilterLayout());
-          const scrollView = new qx.ui.container.Scroll();
-          scrollView.add(this.__createTagsFilterLayout());
-          this._add(scrollView, {
-            flex: 1
-          });
+        case "template":
+          this.getChildControl("filters-spacer");
+          this.getChildControl("shared-with-layout");
+          this.getChildControl("tags-layout");
           break;
-        }
         case "service":
-          this._add(filtersSpacer);
-          this._add(this.__createSharedWithFilterLayout());
-          this._add(this.__createAppTypeFilterLayout());
+          this.getChildControl("filters-spacer");
+          this.getChildControl("shared-with-layout");
+          this.getChildControl("app-type-layout");
           break;
       }
     },
@@ -354,12 +371,6 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
     __createTagsFilterLayout: function() {
       const tagsLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(2));
       osparc.utils.Utils.setIdToWidget(tagsLayout, this.__resourceType + "-tagsFilter");
-
-      this.__populateTags(tagsLayout, []);
-      osparc.store.Tags.getInstance().addListener("tagsChanged", () => {
-        this.__populateTags(tagsLayout, this.__getSelectedTagIds());
-      }, this);
-
       return tagsLayout;
     },
 
@@ -368,11 +379,17 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
       return selectedTagIds;
     },
 
-    __populateTags: function(tagsLayout, selectedTagIds) {
-      const maxTags = 5;
-      this.__tagButtons = [];
+    populateTags: function(presentTagIds = []) {
+      const selectedTagIds = this.__getSelectedTagIds();
+      const tagsLayout = this.getChildControl("tags-layout");
       tagsLayout.removeAll();
-      osparc.store.Tags.getInstance().getTags().forEach((tag, idx) => {
+      const maxTags = 10;
+      this.__tagButtons = [];
+      presentTagIds.forEach(tagId => {
+        const tag = osparc.store.Tags.getInstance().getTag(tagId);
+        if (!tag) {
+          return;
+        }
         const button = new qx.ui.form.ToggleButton(null, "@FontAwesome5Solid/tag/16");
         button.id = tag.getTagId();
         tag.bind("name", button, "label");
@@ -391,7 +408,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
           this.fireDataEvent("changeSelectedTags", selection);
         }, this);
 
-        button.setVisibility(idx >= maxTags ? "excluded" : "visible");
+        button.setVisibility(this.__tagButtons.length >= maxTags ? "excluded" : "visible");
 
         this.__tagButtons.push(button);
       });
@@ -426,6 +443,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
         myAccountWindow.openTags();
       });
       tagsLayout.add(editTagsButton);
+      editTagsButton.exclude(); // excluded for now, they will be used as categories
 
       if (this.__resourceType === "study") {
         tagsLayout.getChildren().forEach(item => item.setPaddingLeft(10)); // align them with the context

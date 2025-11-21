@@ -84,9 +84,9 @@ def openapi_specs_entrypoints(
 if has_aiohttp:
 
     @pytest.fixture
-    def create_aiohttp_app_rest_entrypoints() -> Callable[
-        [web.Application], set[Entrypoint]
-    ]:
+    def create_aiohttp_app_rest_entrypoints() -> (
+        Callable[[web.Application], set[Entrypoint]]
+    ):
         def _(app: web.Application):
             entrypoints: set[Entrypoint] = set()
 
