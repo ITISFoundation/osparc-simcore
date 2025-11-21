@@ -140,6 +140,7 @@ async def cancel_wait_task(
             exc,
             current_task.cancelling(),
         )
+        raise
     finally:
         if not task.done():
             current_exception = sys.exception()
