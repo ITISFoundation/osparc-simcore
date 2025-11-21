@@ -13,7 +13,6 @@ from models_library.conversations import (
     ConversationMessagePatchDB,
     ConversationMessageType,
     ConversationPatchDB,
-    ConversationType,
     ConversationUserType,
 )
 from models_library.products import ProductName
@@ -33,51 +32,34 @@ from . import (
     _conversation_service,
 )
 from ._socketio import (
-    notify_conversation_message_created,
-    notify_conversation_message_deleted,
-    notify_conversation_message_updated,
+    notify_via_socket_conversation_message_created,
+    notify_via_socket_conversation_message_deleted,
+    notify_via_socket_conversation_message_updated,
 )
 from .errors import ConversationError
 
 _logger = logging.getLogger(__name__)
 
-# Redis lock key for conversation message operations
-CONVERSATION_MESSAGE_REDIS_LOCK_KEY = "conversation_message_update:{}"
 
-
-async def create_message(
+async def _notify_conversation_message_created(
     app: web.Application,
     *,
+    project_id_or_none: ProjectID | None,
+    conversation_message: ConversationMessageGetDB,
     product_name: ProductName,
-    user_id: UserID,
-    project_id: ProjectID | None,
-    conversation_id: ConversationID,
-    # Creation attributes
-    content: str,
-    type_: ConversationMessageType,
-) -> ConversationMessageGetDB:
-    _user_group_id = await users_service.get_user_primary_group_id(app, user_id=user_id)
-
-    created_message = await _conversation_message_repository.create(
-        app,
-        conversation_id=conversation_id,
-        user_group_id=_user_group_id,
-        content=content,
-        type_=type_,
-    )
-
-    if project_id:
-        await notify_conversation_message_created(
+) -> None:
+    if project_id_or_none:
+        await notify_via_socket_conversation_message_created(
             app,
             recipients=await _conversation_service.get_recipients_from_project(
-                app, project_id
+                app, project_id_or_none
             ),
-            project_id=project_id,
-            conversation_message=created_message,
+            project_id=project_id_or_none,
+            conversation_message=conversation_message,
         )
     else:
         _conversation = await _conversation_service.get_conversation(
-            app, conversation_id=conversation_id
+            app, conversation_id=conversation_message.conversation_id
         )
         _conversation_creator_user = await users_service.get_user_id_from_gid(
             app, primary_gid=_conversation.user_group_id
@@ -87,111 +69,59 @@ async def create_message(
                 app, product_name=product_name
             )
         )
-        await notify_conversation_message_created(
+        await notify_via_socket_conversation_message_created(
             app,
             recipients=_product_group_users | {_conversation_creator_user},
             project_id=None,
-            conversation_message=created_message,
+            conversation_message=conversation_message,
         )
 
-    return created_message
 
-
-async def _create_support_message_with_first_check(
+async def create_message_and_notify(
     app: web.Application,
     *,
     product_name: ProductName,
     user_id: UserID,
-    conversation_user_type: ConversationUserType,
+    project_id_or_none: ProjectID | None,
     conversation_id: ConversationID,
     # Creation attributes
     content: str,
     type_: ConversationMessageType,
-) -> tuple[ConversationMessageGetDB, bool]:
-    """Create a message and check if it's the first one with Redis lock protection.
-
-    This function is protected by Redis exclusive lock because:
-    - the message creation and first message check must be kept in sync
-
-    Args:
-        app: The web application instance
-        user_id: ID of the user creating the message
-        project_id: ID of the project (optional)
-        conversation_id: ID of the conversation
-        content: Content of the message
-        type_: Type of the message
-
-    Returns:
-        Tuple containing the created message and whether it's the first message
-    """
-
-    # @exclusive(
-    #     get_redis_lock_manager_client_sdk(app),
-    #     lock_key=CONVERSATION_MESSAGE_REDIS_LOCK_KEY.format(conversation_id),
-    #     blocking=True,
-    #     blocking_timeout=None,  # NOTE: this is a blocking call, a timeout has undefined effects
-    # )
-    async def _create_support_message_and_check_if_it_is_first_message() -> (
-        tuple[ConversationMessageGetDB, bool]
-    ):
-        """This function is protected because
-        - the message creation and first message check must be kept in sync
-        """
-        created_message = await create_message(
-            app,
-            product_name=product_name,
-            user_id=user_id,
-            project_id=None,  # Support conversations don't use project_id
-            conversation_id=conversation_id,
-            content=content,
-            type_=type_,
-        )
-        _, messages = await _conversation_message_repository.list_(
-            app,
-            conversation_id=conversation_id,
-            offset=0,
-            limit=1,
-            order_by=OrderBy(
-                field=IDStr("created"), direction=OrderDirection.ASC
-            ),  # NOTE: ASC - first/oldest message first
-        )
-
-        is_first_message = False
-        if messages:
-            first_message = messages[0]
-            is_first_message = first_message.message_id == created_message.message_id
-
-        return created_message, is_first_message
-
-    message, is_first_message = (
-        await _create_support_message_and_check_if_it_is_first_message()
+) -> ConversationMessageGetDB:
+    message = await _create_message(
+        app,
+        user_id=user_id,
+        conversation_id=conversation_id,
+        content=content,
+        type_=type_,
     )
+    await _notify_conversation_message_created(
+        app,
+        project_id_or_none=project_id_or_none,
+        conversation_message=message,
+        product_name=product_name,
+    )
+    return message
 
-    # NOTE: Update conversation last modified (for frontend listing) and read states
-    match conversation_user_type:
-        case ConversationUserType.REGULAR_USER:
-            _is_read_by_user = True
-            _is_read_by_support = False
-        case ConversationUserType.SUPPORT_USER:
-            _is_read_by_user = False
-            _is_read_by_support = True
-        case ConversationUserType.CHATBOT_USER:
-            _is_read_by_user = False
-            _is_read_by_support = False
-        case _:
-            msg = f"Unknown conversation user type: {conversation_user_type}"
-            raise ConversationError(msg)
 
-    await _conversation_repository.update(
+async def _create_message(
+    app: web.Application,
+    *,
+    user_id: UserID,
+    conversation_id: ConversationID,
+    # Creation attributes
+    content: str,
+    type_: ConversationMessageType,
+) -> ConversationMessageGetDB:
+    _user_group_id = await users_service.get_user_primary_group_id(app, user_id=user_id)
+
+    return await _conversation_message_repository.create(
         app,
         conversation_id=conversation_id,
-        updates=ConversationPatchDB(
-            is_read_by_user=_is_read_by_user,
-            is_read_by_support=_is_read_by_support,
-            last_message_created_at=message.created,
-        ),
+        user_group_id=_user_group_id,
+        content=content,
+        type_=type_,
     )
-    return message, is_first_message
 
 
 async def _trigger_chatbot_processing(
@@ -224,15 +154,48 @@ async def create_support_message(
     content: str,
     type_: ConversationMessageType,
 ) -> ConversationMessageGetDB:
-    message, is_first_message = await _create_support_message_with_first_check(
-        app=app,
-        product_name=product_name,
+    # 1. Create message and notify
+
+    match conversation_user_type:
+        case ConversationUserType.REGULAR_USER:
+            _is_read_by_user = True
+            _is_read_by_support = False
+        case ConversationUserType.SUPPORT_USER:
+            _is_read_by_user = False
+            _is_read_by_support = True
+        case ConversationUserType.CHATBOT_USER:
+            _is_read_by_user = False
+            _is_read_by_support = False
+        case _:
+            msg = f"Unknown conversation user type: {conversation_user_type}"
+            raise ConversationError(msg)
+
+    message = await _create_message(
+        app,
         user_id=user_id,
-        conversation_user_type=conversation_user_type,
         conversation_id=conversation.conversation_id,
         content=content,
         type_=type_,
     )
+    # NOTE: Update conversation last modified (for frontend listing) and read states
+    await _conversation_repository.update(
+        app,
+        conversation_id=conversation.conversation_id,
+        updates=ConversationPatchDB(
+            is_read_by_user=_is_read_by_user,
+            is_read_by_support=_is_read_by_support,
+            last_message_created_at=message.created,
+        ),
+    )
+
+    await _notify_conversation_message_created(
+        app,
+        project_id_or_none=None,  # Support conversations don't use project_id,
+        conversation_message=message,
+        product_name=product_name,
+    )
+
+    # 2. Create or reopen FogBugz case if applicable
 
     product = products_service.get_product(app, product_name=product_name)
     fogbugz_settings_or_none = app[APP_SETTINGS_APPKEY].WEBSERVER_FOGBUGZ
@@ -251,9 +214,9 @@ async def create_support_message(
             conversation.conversation_id,
         )
 
-    elif is_first_message or conversation.fogbugz_case_id is None:
+    elif conversation.fogbugz_case_id is None:
         _logger.info(
-            "Support settings available, this is first message, creating FogBugz case for Conversation ID: %s",
+            "Support settings available, FogBugz doesn't exists, creating FogBugz case for Conversation ID: %s",
             conversation.conversation_id,
         )
         assert product.support_assigned_fogbugz_project_id  # nosec
@@ -283,9 +246,8 @@ async def create_support_message(
                 )
             )
     else:
-        assert not is_first_message  # nosec
         _logger.info(
-            "Support settings available, but this is NOT the first message, so we need to reopen a FogBugz case. Conversation ID: %s",
+            "Support settings available, Fogbugz case exists but it is closed, so we need to reopen a FogBugz case. Conversation ID: %s",
             conversation.conversation_id,
         )
         assert product.support_assigned_fogbugz_project_id  # nosec
@@ -313,19 +275,53 @@ async def create_support_message(
                 )
             )
 
-    if (
-        product.support_chatbot_user_id
-        and conversation.type == ConversationType.SUPPORT
-        and conversation_user_type == ConversationUserType.REGULAR_USER
-    ):
-        # If enabled, ask Chatbot to analyze the message history and respond
-        await _trigger_chatbot_processing(
-            app,
-            conversation=conversation,
-            last_message_id=message.message_id,
-        )
-
     return message
+
+
+async def trigger_chatbot_processing(
+    app: web.Application,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    conversation_user_type: ConversationUserType,
+    conversation: ConversationGetDB,
+    message_id: ConversationMessageID,
+) -> None:
+    assert product_name  # nosec
+
+    if conversation_user_type != ConversationUserType.REGULAR_USER:
+        _logger.warning(
+            "Chatbot processing can only be triggered by regular users. Conversation ID: %s, User ID: %s, Conversation User Type: %s",
+            conversation.conversation_id,
+            user_id,
+            conversation_user_type,
+        )
+        return
+
+    # Check if message is the last one in the conversation
+    _, messages = await _conversation_message_repository.list_(
+        app,
+        conversation_id=conversation.conversation_id,
+        offset=0,
+        limit=1,
+        order_by=OrderBy(
+            field=IDStr("created"), direction=OrderDirection.DESC
+        ),  # Latest message first
+    )
+    if not messages or messages[0].message_id != message_id:
+        _logger.warning(
+            "Chatbot processing can only be triggered for the last message in the conversation. Conversation ID: %s, Message ID: %s, Last Message ID: %s",
+            conversation.conversation_id,
+            message_id,
+            messages[0].message_id if messages else "N/A",
+        )
+        return
+
+    await _trigger_chatbot_processing(
+        app,
+        conversation=conversation,
+        last_message_id=message_id,
+    )
 
 
 async def get_message(
@@ -357,7 +353,7 @@ async def update_message(
     )
 
     if project_id:
-        await notify_conversation_message_updated(
+        await notify_via_socket_conversation_message_updated(
             app,
             recipients=await _conversation_service.get_recipients_from_project(
                 app, project_id
@@ -377,7 +373,7 @@ async def update_message(
                 app, product_name=product_name
             )
         )
-        await notify_conversation_message_updated(
+        await notify_via_socket_conversation_message_updated(
             app,
             recipients=_product_group_users | {_conversation_creator_user},
             project_id=None,
@@ -405,7 +401,7 @@ async def delete_message(
     _user_group_id = await users_service.get_user_primary_group_id(app, user_id=user_id)
 
     if project_id:
-        await notify_conversation_message_deleted(
+        await notify_via_socket_conversation_message_deleted(
             app,
             recipients=await _conversation_service.get_recipients_from_project(
                 app, project_id
@@ -427,7 +423,7 @@ async def delete_message(
                 app, product_name=product_name
             )
         )
-        await notify_conversation_message_deleted(
+        await notify_via_socket_conversation_message_deleted(
             app,
             recipients=_product_group_users | {_conversation_creator_user},
             user_group_id=_user_group_id,

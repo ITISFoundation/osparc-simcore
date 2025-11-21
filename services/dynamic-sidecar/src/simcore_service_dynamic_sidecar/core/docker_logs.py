@@ -84,7 +84,7 @@ class BackgroundLogFetcher:
             )
             return
 
-        task.cancel()
+        task.cancel("stopping log fetching task")
 
         # NOTE: sometime the docker engine causes a TimeoutError after the task is cancelled
         with suppress(CancelledError, TimeoutError):
