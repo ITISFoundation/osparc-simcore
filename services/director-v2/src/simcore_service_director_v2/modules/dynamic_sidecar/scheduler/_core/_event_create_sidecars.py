@@ -28,7 +28,6 @@ from .....core.dynamic_services_settings.scheduler import (
 )
 from .....core.dynamic_services_settings.sidecar import (
     DynamicSidecarSettings,
-    PlacementSettings,
 )
 from .....core.settings import AppSettings
 from .....models.dynamic_services_scheduler import NetworkId, SchedulerData
@@ -167,7 +166,7 @@ class CreateSidecars(DynamicSchedulerEvent):
         dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings = (
             app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
         )
-        dynamic_services_placement_settings: PlacementSettings = (
+        dynamic_services_placement_settings = (
             app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_PLACEMENT_SETTINGS
         )
 
