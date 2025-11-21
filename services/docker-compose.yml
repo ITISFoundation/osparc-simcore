@@ -1156,6 +1156,7 @@ services:
         - *common_logging_environments
         - *postgres_settings
         - *rabbit_settings
+        - *redis_settings
         - *tracing_open_telemetry_environments
 
       NOTIFICATIONS_LOGLEVEL: ${NOTIFICATIONS_LOGLEVEL}
