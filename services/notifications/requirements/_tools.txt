@@ -9,6 +9,7 @@ cfgv==3.4.0
 click==8.2.1
     # via
     #   -c requirements/_base.txt
+    #   -c requirements/_test.txt
     #   black
 dill==0.4.0
     # via pylint

@@ -5,6 +5,7 @@ from common_library.logging.logging_utils_filtering import LoggerName, MessageSu
 from models_library.basic_types import BootModeEnum, LogLevel
 from pydantic import AliasChoices, Field, field_validator
 from settings_library.base import BaseCustomSettings
+from settings_library.celery import CelerySettings
 from settings_library.postgres import PostgresSettings
 from settings_library.rabbit import RabbitSettings
 from settings_library.tracing import TracingSettings
@@ -25,11 +26,19 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
 
     SC_BOOT_MODE: BootModeEnum | None
 
-    NOTIFICATIONS_VOLUMES_LOG_FORMAT_LOCAL_DEV_ENABLED: Annotated[
+    NOTIFICATIONS_CELERY: Annotated[
+        CelerySettings,
+        Field(
+            description="Settings for Celery",
+            json_schema_extra={"auto_default_from_env": True},
+        ),
+    ]
+
+    NOTIFICATIONS_LOG_FORMAT_LOCAL_DEV_ENABLED: Annotated[
         bool,
         Field(
             validation_alias=AliasChoices(
-                "NOTIFICATIONS_VOLUMES_LOG_FORMAT_LOCAL_DEV_ENABLED",
+                "NOTIFICATIONS_LOG_FORMAT_LOCAL_DEV_ENABLED",
                 "LOG_FORMAT_LOCAL_DEV_ENABLED",
             ),
             description=(
@@ -39,12 +48,12 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         ),
     ] = False
 
-    NOTIFICATIONS_VOLUMES_LOG_FILTER_MAPPING: Annotated[
+    NOTIFICATIONS_LOG_FILTER_MAPPING: Annotated[
         dict[LoggerName, list[MessageSubstring]],
         Field(
             default_factory=dict,
             validation_alias=AliasChoices(
-                "NOTIFICATIONS_VOLUMES_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"
+                "NOTIFICATIONS_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"
             ),
             description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
         ),
@@ -74,6 +83,10 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     ]
 
     NOTIFICATIONS_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True
+
+    NOTIFICATIONS_WORKER_MODE: Annotated[
+        bool, Field(description="If True, run as a worker")
+    ] = False
 
     @field_validator("LOG_LEVEL")
     @classmethod
