@@ -99,21 +99,18 @@ async def cancel_wait_task(
     # mark for cancellation
     current_task = asyncio.current_task()
     assert current_task  # nosec
-    task.cancel(
+    cancelled = task.cancel(
         f"manually cancelling and waiting for task: {task.get_name()}, {current_task.cancelling()=}"
     )
+    _logger.debug("task %s marked for cancellation: %s", task.get_name(), cancelled)
     try:
         _logger.debug(
             "Starting cancellation of task: %s, current_task is canelling: %d",
             task.get_name(),
             current_task.cancelling(),
         )
-        await asyncio.shield(
-            # NOTE shield ensures that cancellation of the caller function won't stop you
-            # from observing the cancellation/finalization of task.
-            # Note that the shield is still cancelled, thus not blocking cancellation
-            asyncio.wait(task, timeout=max_delay)
-        )
+
+        await asyncio.wait(task, timeout=max_delay)
         _logger.debug(
             "Finished cancellation of task: %s, current_task is canelling: %d",
             task.get_name(),
