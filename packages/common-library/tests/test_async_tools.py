@@ -198,7 +198,9 @@ async def test_cancel_and_wait_timeout_on_slow_cleanup():
             task, max_delay=CLEANUP_TIME / 10
         )  # 0.2 seconds < 2 seconds cleanup
 
-    assert task.cancelled()
+    assert task.cancelling() == 1
+
+    assert not task.cancelled()
 
 
 async def test_with_delay():

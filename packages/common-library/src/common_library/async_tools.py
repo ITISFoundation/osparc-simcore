@@ -109,14 +109,17 @@ async def cancel_wait_task(
     _logger.debug("task %s marked for cancellation: %s", task.get_name(), cancelled)
     try:
         _logger.debug(
-            "Starting cancellation of task: %s, current_task is canelling: %d",
+            "Starting cancellation of task: %s, current_task is cancelling: %d",
             task.get_name(),
             current_task.cancelling(),
         )
-
-        await asyncio.wait((task,), timeout=max_delay)
+        # NOTE: using wait here so that the cancellation error on task is not propagated to us
+        done, pending = await asyncio.wait((task,), timeout=max_delay)
+        if pending:
+            raise TimeoutError  # noqa: TRY301
+        assert task in done  # nosec
         _logger.debug(
-            "Finished cancellation of task: %s, current_task is canelling: %d",
+            "Finished cancellation of task: %s, current_task is cancelling: %d",
             task.get_name(),
             current_task.cancelling(),
         )
