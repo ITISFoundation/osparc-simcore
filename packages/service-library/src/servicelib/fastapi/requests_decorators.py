@@ -76,7 +76,7 @@ def cancel_on_disconnect(handler: _HandlerWithRequestArg):
         # One has completed, cancel the other
         for t in pending:
             try:
-                await cancel_wait_task(t, max_delay=3)
+                await cancel_wait_task(t, max_delay=10)
             except BaseException:  # pylint: disable=broad-except
                 if t is handler_task:
                     raise
