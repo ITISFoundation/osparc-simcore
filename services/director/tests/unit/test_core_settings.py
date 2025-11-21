@@ -54,7 +54,8 @@ def test_docker_container_env_sample(monkeypatch: pytest.MonkeyPatch):
         DIRECTOR_SELF_SIGNED_SSL_FILENAME=
         DIRECTOR_SELF_SIGNED_SSL_SECRET_ID=
         DIRECTOR_SELF_SIGNED_SSL_SECRET_NAME=
-        DIRECTOR_SERVICES_CUSTOM_CONSTRAINTS=[node.labels.io.simcore.autoscaled-node!=true]
+        DIRECTOR_SERVICES_CUSTOM_CONSTRAINTS=["node.labels.io.simcore.autoscaled-node!=true"]
+        DIRECTOR_SERVICES_CUSTOM_LABELS={"com.example.description":"Accounting webapp"}
         EXTRA_HOSTS_SUFFIX=undefined
         GPG_KEY=0D96DF4D4110E5C43FBFB17F2D347EA6AA65421D
         HOME=/root

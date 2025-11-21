@@ -6,7 +6,7 @@ from typing import cast
 from common_library.logging.logging_utils_filtering import LoggerName, MessageSubstring
 from fastapi import FastAPI
 from models_library.basic_types import LogLevel, PortInt, VersionTag
-from models_library.docker import DockerPlacementConstraint
+from models_library.docker import DockerLabelKey, DockerPlacementConstraint
 from pydantic import AliasChoices, Field, NonNegativeInt, PositiveInt, field_validator
 from servicelib.logging_utils import LogLevelInt
 from settings_library.application import BaseApplicationSettings
@@ -65,6 +65,10 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     DIRECTOR_SERVICES_CUSTOM_CONSTRAINTS: list[DockerPlacementConstraint] = Field(
         default_factory=list,
         examples=['["node.labels.region==east", "one!=yes"]'],
+    )
+    DIRECTOR_SERVICES_CUSTOM_LABELS: dict[DockerLabelKey, str] = Field(
+        default_factory=dict,
+        examples=['{"com.example.description":"Accounting webapp"}'],
     )
 
     DIRECTOR_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS: dict[str, str]
