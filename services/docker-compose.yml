@@ -1161,6 +1161,9 @@ services:
 
       NOTIFICATIONS_LOGLEVEL: ${NOTIFICATIONS_LOGLEVEL}
       NOTIFICATIONS_TRACING: ${NOTIFICATIONS_TRACING}
+    networks: &notifications_networks
+      - default
+      - interactive_services_subnet
 
   not-worker:
     image: ${DOCKER_REGISTRY:-itisfoundation}/notifications:${DOCKER_IMAGE_TAG:-master-github-latest}
@@ -1176,6 +1179,7 @@ services:
       CELERY_CONCURRENCY: 100
       CELERY_POOL: threads
       CELERY_QUEUES: default
+    networks: *storage_networks
 
   dask-sidecar:
     image: ${DOCKER_REGISTRY:-itisfoundation}/dask-sidecar:${DOCKER_IMAGE_TAG:-latest}
