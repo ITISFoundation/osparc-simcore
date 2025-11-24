@@ -1170,7 +1170,7 @@ services:
       <<:
         - *notifications_environment
         - *smtp_settings
-      STORAGE_TRACING: "null"
+      NOTIFICATIONS_TRACING: "null"
       NOTIFICATIONS_WORKER_NAME: "not-worker-{{.Node.Hostname}}-{{.Task.Slot}}-{{.Task.ID}}"
       NOTIFICATIONS_WORKER_MODE: "true"
       CELERY_CONCURRENCY: 100
