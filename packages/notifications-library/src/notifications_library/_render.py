@@ -1,7 +1,5 @@
-import json
 import logging
 from pathlib import Path
-from typing import Any
 
 import notifications_library
 from common_library.json_serialization import json_dumps
