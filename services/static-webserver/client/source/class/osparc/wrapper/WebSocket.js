@@ -274,20 +274,24 @@ qx.Class.define("osparc.wrapper.WebSocket", {
           socket.on(name, fn);
         }
 
-        // add a duplicated slot listener to keep the messages cached
         socket.on(name, message => {
-          if (!(name in this.__cache)) {
-            this.__cache[name] = [];
-          }
-          const info = {
-            date: new Date(),
-            message: message ? message : "",
-          }
-          this.__cache[name].unshift(info);
-          if (this.__cache[name].length > 20) {
-            this.__cache[name].length = 20;
-          }
+          this.__handleMessageReceived(name, message);
         }, this);
+      }
+    },
+
+    __handleMessageReceived: function(eventName, message) {
+      // add a duplicated slot listener to keep the messages cached
+      if (!(eventName in this.__cache)) {
+        this.__cache[eventName] = [];
+      }
+      const info = {
+        date: new Date(),
+        message: message ? message : "",
+      }
+      this.__cache[eventName].unshift(info);
+      if (this.__cache[eventName].length > 20) {
+        this.__cache[eventName].length = 20;
       }
     },
 

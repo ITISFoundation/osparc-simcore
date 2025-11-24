@@ -26,22 +26,37 @@ qx.Class.define("osparc.store.Faker", {
       "I don't know",
       "Eu não sei",
       "I weiss nöd",
-      "Non lo so",
       "Je ne sais pas",
+      "Non lo so",
       "Ich weiß nicht",
-      "Δεν ξέρω",
-      "わかりません",
+      "Jeg ved det ikke",
+      "Я не знаю",
+      "Ik weet ni",
+      "Neviem",
     ],
   },
   members: {
     triggerChatbot: function(conversationId, messageId) {
-      const randomIdx = Math.floor(Math.random() * this.self().IDK.length);
-      const chatbotResponse = this.self().IDK[randomIdx];
-      return osparc.store.ConversationsSupport.getInstance().postMessage(
-        conversationId,
-        chatbotResponse,
-        messageId,
-      );
+      // wait a random time between 2 and 5 seconds to simulate building response
+      const delay = 2000 + Math.floor(Math.random() * 3000);
+      setTimeout(() => {
+        // and send a CONVERSATION_MESSAGE_CREATED websocket message to myself
+        const randomIdx = Math.floor(Math.random() * this.self().IDK.length);
+        const chatbotResponse = this.self().IDK[randomIdx];
+        const messageData = {
+          conversationId,
+          messageId: osparc.utils.Utils.generateUUID(),
+          sender: "chatbot",
+          content: chatbotResponse,
+          created: new Date().toISOString(),
+        }
+
+        const socket = osparc.wrapper.WebSocket.getInstance();
+        socket.__handleMessageReceived(
+          osparc.data.model.Conversation.CHANNELS.CONVERSATION_MESSAGE_CREATED,
+          messageData
+        );
+      }, delay);
     },
   }
 });
