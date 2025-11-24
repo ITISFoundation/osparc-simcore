@@ -14,7 +14,7 @@ from servicelib.long_running_tasks.long_running_client_helper import (
 from servicelib.long_running_tasks.models import LRTNamespace, TaskData
 from servicelib.redis._client import RedisClientSDK
 from settings_library.redis import RedisDatabase, RedisSettings
-from utils import strip_markd_for_removal_at
+from utils import without_marked_for_removal_at
 
 
 @pytest.fixture
@@ -72,9 +72,9 @@ async def test_cleanup_namespace(
     # entries exit
     marked_for_removal = deepcopy(task_data)
     marked_for_removal.marked_for_removal = True
-    assert [strip_markd_for_removal_at(x) for x in await store.list_tasks_data()] == [
-        marked_for_removal
-    ]
+    assert [
+        without_marked_for_removal_at(x) for x in await store.list_tasks_data()
+    ] == [marked_for_removal]
 
     # removes
     await long_running_client_helper.cleanup(lrt_namespace)

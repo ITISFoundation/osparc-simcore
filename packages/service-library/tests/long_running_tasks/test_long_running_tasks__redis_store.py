@@ -13,7 +13,7 @@ from servicelib.long_running_tasks._redis_store import (
 from servicelib.long_running_tasks.models import TaskData
 from servicelib.redis._client import RedisClientSDK
 from settings_library.redis import RedisDatabase, RedisSettings
-from utils import strip_markd_for_removal_at
+from utils import without_marked_for_removal_at
 
 
 def test_ensure_task_data_field_name_and_type():
@@ -110,7 +110,7 @@ async def test_workflow_multiple_redis_stores_with_different_namespaces(
     marked_as_removed_task_data.marked_for_removal = True
     for store in redis_stores:
         assert [
-            strip_markd_for_removal_at(x) for x in await store.list_tasks_data()
+            without_marked_for_removal_at(x) for x in await store.list_tasks_data()
         ] == [marked_as_removed_task_data]
 
     for store in redis_stores:
