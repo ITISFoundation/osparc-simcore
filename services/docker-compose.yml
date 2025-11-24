@@ -1165,16 +1165,16 @@ services:
       - default
       - interactive_services_subnet
 
-  notif-worker:
+  notifications-wrk:
     image: ${DOCKER_REGISTRY:-itisfoundation}/notifications:${DOCKER_IMAGE_TAG:-master-github-latest}
     init: true
-    hostname: "notif-worker-{{.Node.Hostname}}-{{.Task.Slot}}"
+    hostname: "notifications-wrk-{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
       <<:
         - *notifications_environment
         - *smtp_settings
       NOTIFICATIONS_TRACING: "null"
-      NOTIFICATIONS_WORKER_NAME: "notif-worker-{{.Node.Hostname}}-{{.Task.Slot}}-{{.Task.ID}}"
+      NOTIFICATIONS_WORKER_NAME: "notifications-wrk-{{.Node.Hostname}}-{{.Task.Slot}}-{{.Task.ID}}"
       NOTIFICATIONS_WORKER_MODE: "true"
       CELERY_CONCURRENCY: 100
       CELERY_POOL: threads
