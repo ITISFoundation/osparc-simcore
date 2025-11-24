@@ -31,7 +31,7 @@ qx.Class.define("osparc.ui.window.Window", {
     this.addListener("appear", () => this.__afterAppear(), this);
     this.addListener("move", () => this.__windowMoved(), this);
     // make the window smaller if it doesn't fit the screen
-    window.addEventListener("resize", () => this.__appResized());
+    window.addEventListener("resize", () => this.__keepWithinScreen());
 
     const commandEsc = new qx.ui.command.Command("Esc");
     commandEsc.addListener("execute", () => {
@@ -44,7 +44,13 @@ qx.Class.define("osparc.ui.window.Window", {
     clickAwayClose: {
       check: "Boolean",
       init: false
-    }
+    },
+
+    // it will be used to center the window within that element
+    centerOnElement: {
+      init: null,
+      nullable: true,
+    },
   },
 
   events: {
@@ -138,7 +144,20 @@ qx.Class.define("osparc.ui.window.Window", {
         modalFrame.style.opacity = 0.4;
       }
 
-      this.__appResized();
+      if (this.getCenterOnElement()) {
+        this.__centerWithinElement(this.getCenterOnElement());
+      }
+
+      this.__keepWithinScreen();
+    },
+
+    __centerWithinElement: function(element) {
+      const domElement = element.getContentElement().getDomElement();
+      const elemRect = domElement.getBoundingClientRect();
+      const winSizeHint = this.getSizeHint();
+      const left = elemRect.left + (elemRect.width - winSizeHint.width) / 2;
+      const top = elemRect.top + (elemRect.height - winSizeHint.height) / 2;
+      this.moveTo(left, top);
     },
 
     __windowMoved: function() {
@@ -173,7 +192,7 @@ qx.Class.define("osparc.ui.window.Window", {
       }
     },
 
-    __appResized: function() {
+    __keepWithinScreen: function() {
       // ensure it fits within the screen
       const bounds = this.getBounds() || this.getSizeHint(); // current window position/size
       const root = qx.core.Init.getApplication().getRoot();
@@ -233,6 +252,6 @@ qx.Class.define("osparc.ui.window.Window", {
   },
 
   destruct: function() {
-    window.removeEventListener("resize", () => this.__appResized());
+    window.removeEventListener("resize", () => this.__keepWithinScreen());
   },
 });

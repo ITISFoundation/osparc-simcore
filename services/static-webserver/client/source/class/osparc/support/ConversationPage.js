@@ -344,11 +344,12 @@ qx.Class.define("osparc.support.ConversationPage", {
         caption: this.tr("Delete"),
         confirmText: this.tr("Delete"),
         confirmAction: "delete",
+        centerOnElement: this,
       });
       win.open();
       win.addListener("close", () => {
         if (win.getConfirmed()) {
-          osparc.store.ConversationsSupport.getInstance().deleteConversation(conversation)
+          osparc.store.ConversationsSupport.getInstance().deleteConversation(conversation.getConversationId())
             .then(() => {
               this.setConversation(null);
               this.fireEvent("backToConversations");
