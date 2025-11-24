@@ -13,7 +13,7 @@ class UserData(BaseModel):
 
 class ProductUIData(BaseModel):
     project_alias: str
-    logo_url: str | None = None
+    logo_url: HttpUrl | None = None
     strong_color: str | None = None
 
 
@@ -21,8 +21,8 @@ class ProductData(BaseModel):
     product_name: ProductName
     display_name: str
     vendor_display_inline: str
-    support_email: str
-    homepage_url: str | None
+    support_email: EmailStr
+    homepage_url: HttpUrl | None
     ui: ProductUIData
 
 
