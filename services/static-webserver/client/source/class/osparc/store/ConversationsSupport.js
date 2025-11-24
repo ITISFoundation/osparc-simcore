@@ -276,12 +276,18 @@ qx.Class.define("osparc.store.ConversationsSupport", {
       if (conversation) {
         // Only the following properties can be updated:
         // name, extraContext, readByUser, readBySupport
-        conversation.set({
-          name: conversationData["name"],
-          extraContext: conversationData["extraContext"],
-          readByUser: conversationData["readByUser"],
-          readBySupport: conversationData["readBySupport"],
-        });
+        if (conversationData["name"]) {
+          conversation.setName(conversationData["name"]);
+        }
+        if (conversationData["extraContext"]) {
+          conversation.setExtraContext(conversationData["extraContext"]);
+        }
+        if (typeof conversationData["isReadByUser"] === "boolean") {
+          conversation.setReadByUser(conversationData["isReadByUser"]);
+        }
+        if (typeof conversationData["isReadBySupport"] === "boolean") {
+          conversation.setReadBySupport(conversationData["isReadBySupport"]);
+        }
       }
     },
   }
