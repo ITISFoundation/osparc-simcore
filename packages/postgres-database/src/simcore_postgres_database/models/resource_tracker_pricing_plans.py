@@ -1,5 +1,5 @@
-""" Pricing plan table
-"""
+"""Pricing plan table"""
+
 import enum
 
 import sqlalchemy as sa

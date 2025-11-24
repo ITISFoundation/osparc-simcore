@@ -2,7 +2,7 @@
 ARG UV_VERSION="0.9"
 FROM ghcr.io/astral-sh/uv:${UV_VERSION} AS uv_build
 # we docker image is built based on debian
-FROM python:3.11.9-buster
+FROM python:3.13.9-buster
 
 RUN curl https://rclone.org/install.sh | bash && \
   rclone --version

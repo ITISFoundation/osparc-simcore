@@ -20,11 +20,11 @@ router = APIRouter()
 async def check_service_health(
     rabbitmq_client: Annotated[
         RabbitMQClient, Depends(get_rabbitmq_client_from_request)
-    ]
+    ],
 ):
     if not rabbitmq_client.healthy:
         raise HealthCheckError(RABBITMQ_CLIENT_UNHEALTHY_MSG)
 
     return {
-        "timestamp": f"{__name__}@{datetime.datetime.now(tz=datetime.timezone.utc).isoformat()}"
+        "timestamp": f"{__name__}@{datetime.datetime.now(tz=datetime.UTC).isoformat()}"
     }

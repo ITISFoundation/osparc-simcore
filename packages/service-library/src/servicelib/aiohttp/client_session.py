@@ -11,7 +11,7 @@ from ..utils import (
 from .application_keys import APP_CLIENT_SESSION_KEY
 
 
-async def persistent_client_session(app: web.Application) -> AsyncGenerator[None, None]:
+async def persistent_client_session(app: web.Application) -> AsyncGenerator[None]:
     """Ensures a single client session per application
 
     IMPORTANT: Use this function ONLY in cleanup context , i.e.

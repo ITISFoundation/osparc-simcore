@@ -1,6 +1,6 @@
 SVG.ForiegnObject = function() {
   this.constructor.call(this, SVG.create('foreignObject'))
-  
+
   /* store type */
   this.type = 'foreignObject'
 }
@@ -14,7 +14,7 @@ SVG.extend(SVG.ForiegnObject, {
       for(a in attrs) newChild[a] = attrs[a]
     }
     this.node.appendChild(newChild)
-    return this  
+    return this
   },
   getChild: function (index) {
     return this.node.childNodes[index]

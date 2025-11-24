@@ -58,11 +58,8 @@ qx.Class.define("osparc.study.PricingUnitTier", {
           })
           this._add(control);
           break;
-        case "unitExtraInfo":
-          control = new qx.ui.basic.Label().set({
-            font: "text-13",
-            rich: true,
-          });
+        case "unitExtraInfoLayout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(2));
           this.bind("showUnitExtraInfo", control, "visibility", {
             converter: show => show ? "visible" : "excluded"
           });
@@ -76,8 +73,8 @@ qx.Class.define("osparc.study.PricingUnitTier", {
           this.bind("selected", control, "label", {
             converter: selected => selected ? "Selected" : "Select"
           });
-          this.bind("selected", control, "enabled", {
-            converter: selected => !selected
+          this.bind("selected", control, "icon", {
+            converter: selected => selected ? "@FontAwesome5Solid/check/12" : null
           });
           this.bind("showSelectButton", control, "visibility", {
             converter: show => show ? "visible" : "excluded"
@@ -108,12 +105,37 @@ qx.Class.define("osparc.study.PricingUnitTier", {
       }
 
       // add pricing unit extra info
-      const unitExtraInfo = this.getChildControl("unitExtraInfo");
-      let text = "";
+      const unitExtraInfoLayout = this.getChildControl("unitExtraInfoLayout");
       Object.entries(pricingUnit.getExtraInfo()).forEach(([key, value]) => {
-        text += `${key}: ${value}<br>`;
+        let icon = "";
+        let toolTipText = "";
+        switch (key) {
+          case "CPU":
+            icon = "@FontAwesome5Solid/microchip/13";
+            toolTipText = qx.locale.Manager.tr("CPU");
+            break;
+          case "RAM":
+            icon = "@FontAwesome5Solid/server/13";
+            toolTipText = qx.locale.Manager.tr("RAM");
+            break;
+          case "VRAM":
+            icon = "@FontAwesome5Solid/desktop/13";
+            toolTipText = qx.locale.Manager.tr("VRAM");
+            break;
+          case "SSD":
+            icon = "@FontAwesome5Solid/hdd/13";
+            toolTipText = qx.locale.Manager.tr("SSD");
+            break;
+        }
+        const atom = new qx.ui.basic.Atom().set({
+          label: String(value),
+          icon,
+          toolTipText,
+          font: "text-13",
+          gap: 5,
+        });
+        unitExtraInfoLayout.add(atom);
       });
-      unitExtraInfo.setValue(text);
 
       // add select button
       this.getChildControl("select-button");

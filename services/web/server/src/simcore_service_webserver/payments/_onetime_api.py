@@ -375,7 +375,6 @@ async def pay_with_payment_method(
     payment_method_id: PaymentMethodID,
     comment: str | None,
 ) -> PaymentTransaction:
-
     # wallet: check permissions
     await raise_for_wallet_payments_permissions(
         app, user_id=user_id, wallet_id=wallet_id, product_name=product_name

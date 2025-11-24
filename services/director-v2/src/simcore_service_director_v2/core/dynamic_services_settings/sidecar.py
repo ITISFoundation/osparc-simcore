@@ -11,7 +11,6 @@ from models_library.utils.common_validators import (
     ensure_unique_list_values_validator,
 )
 from pydantic import AliasChoices, Field, PositiveInt, ValidationInfo, field_validator
-from settings_library.aws_s3_cli import AwsS3CliSettings
 from settings_library.base import BaseCustomSettings
 from settings_library.efs import AwsEfsSettings
 from settings_library.r_clone import RCloneSettings as SettingsLibraryRCloneSettings
@@ -98,12 +97,14 @@ class PlacementSettings(BaseCustomSettings):
 
 
 class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
-    DYNAMIC_SIDECAR_ENDPOINT_SPECS_MODE_DNSRR_ENABLED: bool = Field(  # doc: https://docs.docker.com/engine/swarm/networking/#configure-service-discovery
-        default=False,
-        validation_alias=AliasChoices(
-            "DYNAMIC_SIDECAR_ENDPOINT_SPECS_MODE_DNSRR_ENABLED"
-        ),
-        description="dynamic-sidecar's service 'endpoint_spec' with {'Mode': 'dnsrr'}",
+    DYNAMIC_SIDECAR_ENDPOINT_SPECS_MODE_DNSRR_ENABLED: bool = (
+        Field(  # doc: https://docs.docker.com/engine/swarm/networking/#configure-service-discovery
+            default=False,
+            validation_alias=AliasChoices(
+                "DYNAMIC_SIDECAR_ENDPOINT_SPECS_MODE_DNSRR_ENABLED"
+            ),
+            description="dynamic-sidecar's service 'endpoint_spec' with {'Mode': 'dnsrr'}",
+        )
     )
     DYNAMIC_SIDECAR_SC_BOOT_MODE: Annotated[
         BootModeEnum,
@@ -136,9 +137,6 @@ class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
         json_schema_extra={"auto_default_from_env": True}
     )
 
-    DYNAMIC_SIDECAR_AWS_S3_CLI_SETTINGS: AwsS3CliSettings | None = Field(
-        json_schema_extra={"auto_default_from_env": True}
-    )
     DYNAMIC_SIDECAR_EFS_SETTINGS: AwsEfsSettings | None = Field(
         json_schema_extra={"auto_default_from_env": True}
     )

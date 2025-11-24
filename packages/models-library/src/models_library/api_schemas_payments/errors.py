@@ -1,7 +1,7 @@
 from common_library.errors_classes import OsparcErrorMixin
 
 
-class _BaseRpcApiError(OsparcErrorMixin, ValueError):
+class BaseRpcApiError(OsparcErrorMixin, ValueError):
     @classmethod
     def get_full_class_name(cls) -> str:
         # Can be used as unique code identifier
@@ -13,8 +13,12 @@ class _BaseRpcApiError(OsparcErrorMixin, ValueError):
 #
 
 
-class PaymentServiceUnavailableError(_BaseRpcApiError):
+class PaymentServiceUnavailableError(BaseRpcApiError):
     msg_template = "Payments are currently unavailable: {human_readable_detail}"
+
+
+class PaymentUnverifiedError(BaseRpcApiError):
+    msg_template = "The payment state could not be verified: {internal_details}"
 
 
 #
@@ -22,7 +26,7 @@ class PaymentServiceUnavailableError(_BaseRpcApiError):
 #
 
 
-class PaymentsError(_BaseRpcApiError):
+class PaymentsError(BaseRpcApiError):
     msg_template = "Error in payment transaction '{payment_id}'"
 
 
@@ -43,8 +47,7 @@ class PaymentAlreadyAckedError(PaymentsError):
 #
 
 
-class PaymentsMethodsError(_BaseRpcApiError):
-    ...
+class PaymentsMethodsError(BaseRpcApiError): ...
 
 
 class PaymentMethodNotFoundError(PaymentsMethodsError):

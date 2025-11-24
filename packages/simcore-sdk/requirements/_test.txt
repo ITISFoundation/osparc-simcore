@@ -282,7 +282,7 @@ referencing==0.35.1
     #   jsonschema
     #   jsonschema-path
     #   jsonschema-specifications
-regex==2025.9.18
+regex==2025.11.3
     # via cfn-lint
 requests==2.32.5
     # via
@@ -296,7 +296,7 @@ responses==0.25.8
     # via moto
 rfc3339-validator==0.1.4
     # via openapi-schema-validator
-rpds-py==0.27.1
+rpds-py==0.28.0
     # via
     #   -c requirements/_base.txt
     #   jsonschema
@@ -337,17 +337,13 @@ types-tqdm==4.67.0.20250809
 typing-extensions==4.15.0
     # via
     #   -c requirements/_base.txt
-    #   aiosignal
     #   alembic
     #   aws-sam-translator
     #   cfn-lint
     #   mypy
     #   pydantic
     #   pydantic-core
-    #   pytest-asyncio
     #   sqlalchemy2-stubs
-    #   types-aiobotocore
-    #   types-aiobotocore-s3
     #   typing-inspection
 typing-inspection==0.4.2
     # via

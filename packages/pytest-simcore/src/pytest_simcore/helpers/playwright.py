@@ -183,9 +183,7 @@ class RobustWebSocket:
                     )
                     self._attempt_reconnect(ctx.logger)
                 else:
-                    ctx.logger.warning(
-                        "%s⚠️ WebSocket closed.", _WEBSOCKET_MESSAGE_PREFIX
-                    )
+                    ctx.logger.info("%s WebSocket closed.", _WEBSOCKET_MESSAGE_PREFIX)
 
             def on_socketerror(error_msg: str) -> None:
                 ctx.logger.error(
@@ -617,7 +615,7 @@ def expected_service_running(
     press_start_button: bool,
     product_url: AnyUrl,
     is_service_legacy: bool,
-) -> Generator[ServiceRunning, None, None]:
+) -> Generator[ServiceRunning]:
     started = arrow.utcnow()
     with contextlib.ExitStack() as stack:
         ctx = stack.enter_context(

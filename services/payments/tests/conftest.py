@@ -4,6 +4,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+from copy import deepcopy
 from pathlib import Path
 
 import pytest
@@ -61,12 +62,12 @@ def external_envfile_dict(external_envfile_dict: EnvVarsDict) -> EnvVarsDict:
     return external_envfile_dict
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def env_devel_dict(
     env_devel_dict: EnvVarsDict, external_envfile_dict: EnvVarsDict
 ) -> EnvVarsDict:
     if external_envfile_dict:
-        return external_envfile_dict
+        return deepcopy(external_envfile_dict)
     return env_devel_dict
 
 

@@ -524,3 +524,115 @@ async def test_create_s3_export_abort_upload_upon_error(
                 user_id, [], progress_bar=progress_bar
             )
     await _assert_meta_data_entries_count(sqlalchemy_async_engine, count=0)
+
+
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+async def test_search_directories(
+    simcore_s3_dsm: SimcoreS3DataManager,
+    create_directory_with_files: Callable[
+        [str, ByteSize, int, int, ProjectID, NodeID],
+        Awaitable[
+            tuple[SimcoreS3FileID, tuple[NodeID, dict[SimcoreS3FileID, FileIDDict]]]
+        ],
+    ],
+    upload_file: Callable[..., Awaitable[tuple[Path, SimcoreS3FileID]]],
+    file_size: ByteSize,
+    user_id: UserID,
+    project_id: ProjectID,
+    node_id: NodeID,
+    faker: Faker,
+):
+    """Test that search functionality can find directories."""
+
+    # Create directories with different naming patterns
+    test_directories = [
+        ("test_dir_1", 3, 2),  # directory name, subdir_count, file_count
+        ("test_dir_1/subdir_a", 1, 1),
+        ("test_dir_2", 2, 3),
+        ("data_folder", 1, 2),
+        ("backup_directory", 2, 1),
+        ("config_dir", 1, 1),
+        ("temp_folder", 3, 2),
+    ]
+
+    # Create the directories
+    for dir_name, subdir_count, file_count in test_directories:
+        await create_directory_with_files(
+            dir_name,
+            file_size,
+            subdir_count,
+            file_count,
+            project_id,
+            node_id,
+        )
+
+    # Also upload some regular files with similar patterns for contrast
+    regular_files = [
+        "test_file.txt",
+        "data_document.pdf",
+        "backup_config.json",
+        "temp_settings.xml",
+    ]
+
+    for file_name in regular_files:
+        checksum: SHA256Str = TypeAdapter(SHA256Str).validate_python(faker.sha256())
+        await upload_file(file_size, file_name, sha256_checksum=checksum)
+
+    # Test 1: Search for directories with "test_dir" pattern
+    dir_results = await _search_files_by_pattern(
+        simcore_s3_dsm, user_id, "test_dir*", project_id
+    )
+    # Should find 2 directories: test_dir_1 and test_dir_2
+    assert len(dir_results) == 2
+    dir_names = {d.file_name for d in dir_results if d.is_directory}
+    assert dir_names == {"test_dir_1", "test_dir_2"}
+
+    # Test 2: Search for directories with "_dir" suffix
+    dir_results = await _search_files_by_pattern(
+        simcore_s3_dsm, user_id, "*_dir", project_id
+    )
+    assert len(dir_results) == 1  # test_dir_1, test_dir_2, config_dir
+    dir_names = {f.file_name for f in dir_results if f.is_directory}
+    assert dir_names == {"config_dir"}
+
+    # Test 3: Search for directories with "folder" in name
+    folder_results = await _search_files_by_pattern(
+        simcore_s3_dsm, user_id, "*folder*", project_id
+    )
+    assert len(folder_results) == 2  # data_folder, temp_folder
+    dir_names = {f.file_name for f in folder_results}
+    assert dir_names == {"data_folder", "temp_folder"}
+
+    # Test 4: Search with pattern that matches both files and directories
+    data_results = await _search_files_by_pattern(
+        simcore_s3_dsm, user_id, "data_*", project_id
+    )
+    # Should find both data_folder (directory) and data_document.pdf (file)
+    assert len(data_results) >= 2
+    # Check that we have both directory and file
+    has_directory = any(r.is_directory for r in data_results)
+    has_file = any(not r.is_directory for r in data_results)
+    assert has_directory
+    assert has_file
+
+    # Test 5: Search for backup pattern (should find both directory and file)
+    backup_results = await _search_files_by_pattern(
+        simcore_s3_dsm, user_id, "backup_*", project_id
+    )
+    assert len(backup_results) >= 2
+    # Should find backup_directory/ and backup_config.json
+    directory_names = {f.file_name for f in backup_results if f.is_directory}
+    file_names_only = {f.file_name for f in backup_results if not f.is_directory}
+    assert "backup_directory" in directory_names
+    assert "backup_config.json" in file_names_only
+
+    # Test 6: Search for subdirectories
+    subdir_results = await _search_files_by_pattern(
+        simcore_s3_dsm, user_id, "*subdir_*", project_id
+    )
+    assert len(subdir_results) == 1  # Only subdir_a

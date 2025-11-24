@@ -1,10 +1,11 @@
 """
 
- $ cd examples
- $ make install-ci
- $ make .env
+$ cd examples
+$ make install-ci
+$ make .env
 
 """
+
 import os
 import tempfile
 from pathlib import Path

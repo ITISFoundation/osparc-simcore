@@ -9,7 +9,7 @@ from models_library.conversations import ConversationMessageType, ConversationUs
 from models_library.rabbitmq_messages import WebserverChatbotRabbitMessage
 from models_library.rest_ordering import OrderBy, OrderDirection
 from pydantic import TypeAdapter
-from servicelib.logging_utils import log_catch, log_context
+from servicelib.logging_utils import log_context
 from servicelib.rabbitmq import RabbitMQClient
 
 from ..conversations import conversations_service
@@ -32,57 +32,83 @@ async def _process_chatbot_trigger_message(app: web.Application, data: bytes) ->
     rabbit_message = TypeAdapter(WebserverChatbotRabbitMessage).validate_json(data)
     assert app  # nosec
 
-    _product_name = rabbit_message.conversation.product_name
-    _product = products_service.get_product(app, product_name=_product_name)
+    with log_context(
+        _logger,
+        logging.DEBUG,
+        msg=f"Processing chatbot trigger message for conversation ID {rabbit_message.conversation.conversation_id}",
+    ):
+        _product_name = rabbit_message.conversation.product_name
+        _product = products_service.get_product(app, product_name=_product_name)
 
-    if _product.support_chatbot_user_id is None:
-        _logger.error(
-            "Product %s does not have support_chatbot_user_id configured, cannot process chatbot message. (This should not happen)",
-            _product_name,
-        )
-        return True  # return true to avoid re-processing
-
-    # Get last 20 messages for the conversation ID
-    _, messages = await conversations_service.list_messages_for_conversation(
-        app=app,
-        conversation_id=rabbit_message.conversation.conversation_id,
-        offset=0,
-        limit=20,
-        order_by=OrderBy(field=IDStr("created"), direction=OrderDirection.DESC),
-    )
-
-    _question_for_chatbot = ""
-    for inx, msg in enumerate(messages):
-        if inx == 0:
-            # Make last message stand out as the question
-            _question_for_chatbot += (
-                "User last message: \n"
-                f"{msg.content.strip()} \n\n"
-                "Previous messages in the conversation: \n"
+        if _product.support_chatbot_user_id is None:
+            _logger.error(
+                "Product %s does not have support_chatbot_user_id configured, cannot process chatbot message. (This should not happen)",
+                _product_name,
             )
-        else:
-            _question_for_chatbot += f"{msg.content.strip()}\n"
+            return True  # return true to avoid re-processing
 
-    # Talk to the chatbot service
-    chatbot_client = get_chatbot_rest_client(app)
-    chat_response = await chatbot_client.ask_question(_question_for_chatbot)
+        # Get last 20 messages for the conversation ID
+        with log_context(
+            _logger,
+            logging.DEBUG,
+            msg=f"Listed messages for conversation ID {rabbit_message.conversation.conversation_id}",
+        ):
+            _, messages = await conversations_service.list_messages_for_conversation(
+                app=app,
+                conversation_id=rabbit_message.conversation.conversation_id,
+                offset=0,
+                limit=20,
+                order_by=OrderBy(field=IDStr("created"), direction=OrderDirection.DESC),
+            )
 
-    try:
-        await conversations_service.create_support_message(
-            app=app,
-            product_name=rabbit_message.conversation.product_name,
-            user_id=_product.support_chatbot_user_id,
-            conversation_user_type=ConversationUserType.CHATBOT_USER,
-            conversation=rabbit_message.conversation,
-            content=chat_response.answer,
-            type_=ConversationMessageType.MESSAGE,
-        )
-    except ConversationErrorNotFoundError:
-        _logger.warning(
-            "Can not create a support message as conversation %s was not found",
+        _question_for_chatbot = ""
+        for inx, msg in enumerate(messages):
+            if inx == 0:
+                # Make last message stand out as the question
+                _question_for_chatbot += (
+                    "User last message: \n"
+                    f"{msg.content.strip()} \n\n"
+                    "Previous messages in the conversation: \n"
+                )
+            else:
+                _question_for_chatbot += f"{msg.content.strip()}\n"
+
+        # Talk to the chatbot service
+
+        with log_context(
+            _logger,
+            logging.DEBUG,
+            msg=f"Asking question from chatbot conversation ID {rabbit_message.conversation.conversation_id}",
+        ):
+            chatbot_client = get_chatbot_rest_client(app)
+            chat_response = await chatbot_client.ask_question(_question_for_chatbot)
+
+        try:
+            with log_context(
+                _logger,
+                logging.DEBUG,
+                msg=f"Creating support message in conversation ID {rabbit_message.conversation.conversation_id}",
+            ):
+                await conversations_service.create_support_message(
+                    app=app,
+                    product_name=rabbit_message.conversation.product_name,
+                    user_id=_product.support_chatbot_user_id,
+                    conversation_user_type=ConversationUserType.CHATBOT_USER,
+                    conversation=rabbit_message.conversation,
+                    content=chat_response.answer,
+                    type_=ConversationMessageType.MESSAGE,
+                )
+        except ConversationErrorNotFoundError:
+            _logger.warning(
+                "Can not create a support message as conversation %s was not found",
+                rabbit_message.conversation.conversation_id,
+            )
+
+        _logger.debug(
+            "Process_chatbot_trigger_message all good, returning True for conversation ID %s",
             rabbit_message.conversation.conversation_id,
         )
-    return True
+        return True
 
 
 async def _subscribe_to_rabbitmq(app) -> str:
@@ -102,19 +128,7 @@ async def _subscribe_to_rabbitmq(app) -> str:
 
 
 async def _unsubscribe_from_rabbitmq(app) -> None:
-    with (
-        log_context(
-            _logger,
-            logging.INFO,
-            msg=f"Unsubscribing from {WebserverChatbotRabbitMessage.get_channel_name()} channel",
-        ),
-        log_catch(_logger, reraise=False),
-    ):
-        rabbit_client: RabbitMQClient = get_rabbitmq_client(app)
-        if app[_RABBITMQ_WEBSERVER_CHATBOT_CONSUMER_APPKEY]:
-            await rabbit_client.unsubscribe(
-                app[_RABBITMQ_WEBSERVER_CHATBOT_CONSUMER_APPKEY]
-            )
+    assert app  # nosec
 
 
 async def on_cleanup_ctx_rabbitmq_consumer(

@@ -115,7 +115,7 @@ googleapis-common-protos==1.70.0
     # via
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http
-greenlet==3.1.1
+greenlet==3.2.4
     # via sqlalchemy
 grpcio==1.71.0
     # via opentelemetry-exporter-otlp-proto-grpc
@@ -182,7 +182,7 @@ jsonref==1.1.0
     # via
     #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
-jsonschema==4.23.0
+jsonschema==4.25.1
     # via
     #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
@@ -295,7 +295,7 @@ opentelemetry-util-http==0.55b1
     #   opentelemetry-instrumentation-fastapi
     #   opentelemetry-instrumentation-httpx
     #   opentelemetry-instrumentation-requests
-orjson==3.10.16
+orjson==3.11.4
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -338,7 +338,7 @@ protobuf==5.29.5
     #   opentelemetry-proto
 psutil==7.0.0
     # via -r requirements/../../../packages/service-library/requirements/_base.in
-psycopg2-binary==2.9.10
+psycopg2-binary==2.9.11
     # via sqlalchemy
 pycryptodome==3.22.0
     # via stream-zip
@@ -412,7 +412,7 @@ pydantic-settings==2.7.0
     #   -r requirements/../../../packages/settings-library/requirements/_base.in
 pygments==2.19.1
     # via rich
-pyinstrument==5.0.1
+pyinstrument==5.1.1
     # via -r requirements/../../../packages/service-library/requirements/_base.in
 python-dateutil==2.9.0.post0
     # via arrow
@@ -422,7 +422,7 @@ python-dotenv==1.1.0
     #   uvicorn
 python-multipart==0.0.20
     # via fastapi
-pyyaml==6.0.2
+pyyaml==6.0.3
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -489,7 +489,7 @@ rich-toolkit==0.15.0
     #   fastapi-cloud-cli
 rignore==0.6.4
     # via fastapi-cloud-cli
-rpds-py==0.24.0
+rpds-py==0.28.0
     # via
     #   jsonschema
     #   referencing
@@ -558,7 +558,6 @@ typing-extensions==4.14.1
     # via
     #   aiodebug
     #   alembic
-    #   anyio
     #   fastapi
     #   faststream
     #   opentelemetry-api
@@ -570,7 +569,6 @@ typing-extensions==4.14.1
     #   pydantic-core
     #   pydantic-extra-types
     #   rich-toolkit
-    #   starlette
     #   typer
     #   typing-inspection
 typing-inspection==0.4.0
@@ -600,7 +598,7 @@ uvicorn==0.34.2
     #   fastapi-cloud-cli
 uvloop==0.21.0
     # via uvicorn
-watchfiles==1.0.5
+watchfiles==1.1.1
     # via uvicorn
 websockets==15.0.1
     # via uvicorn

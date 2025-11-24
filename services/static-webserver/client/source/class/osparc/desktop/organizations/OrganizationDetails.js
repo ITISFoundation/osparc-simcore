@@ -56,7 +56,7 @@ qx.Class.define("osparc.desktop.organizations.OrganizationDetails", {
     __titleLayout: null,
     __organizationListItem: null,
     __membersList: null,
-    __templatesList: null,
+    __tutorialsList: null,
     __servicesList: null,
 
     setCurrentOrg: function(organization) {
@@ -81,7 +81,7 @@ qx.Class.define("osparc.desktop.organizations.OrganizationDetails", {
 
       // set orgModel to the tab views
       this.__membersList.setCurrentOrg(organization);
-      this.__templatesList.setCurrentOrg(organization);
+      this.__tutorialsList.setCurrentOrg(organization);
       this.__servicesList.setCurrentOrg(organization);
     },
 
@@ -160,18 +160,14 @@ qx.Class.define("osparc.desktop.organizations.OrganizationDetails", {
       });
       tabView.add(membersListPage);
 
-      const templatesText = osparc.product.Utils.getTemplateAlias({
-        plural: true,
-        firstUpperCase: true
-      });
-      const templatesListPage = this.self().createTabPage(templatesText, "@FontAwesome5Solid/copy/14");
-      const templatesList = this.__templatesList = new osparc.desktop.organizations.TutorialsList();
-      templatesListPage.add(templatesList, {
+      const tutorialsTabPage = this.self().createTabPage(this.tr("Tutorials"), "@FontAwesome5Solid/copy/14");
+      const tutorialsList = this.__tutorialsList = new osparc.desktop.organizations.TutorialsList();
+      tutorialsTabPage.add(tutorialsList, {
         flex: 1
       });
-      tabView.add(templatesListPage);
+      tabView.add(tutorialsTabPage);
 
-      const servicesListPage = this.self().createTabPage(this.tr("Services"), "@FontAwesome5Solid/cogs/14");
+      const servicesListPage = this.self().createTabPage(this.tr("Apps"), "@FontAwesome5Solid/cogs/14");
       const servicesList = this.__servicesList = new osparc.desktop.organizations.ServicesList();
       servicesListPage.add(servicesList, {
         flex: 1

@@ -4,15 +4,7 @@ from typing import Annotated, Any, Final
 import httpx
 from aiohttp import web
 from pydantic import BaseModel, Field
-from servicelib.aiohttp import status
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
-from tenacity import (
-    retry,
-    retry_if_exception_type,
-    retry_if_result,
-    stop_after_attempt,
-    wait_exponential,
-)
 
 from .settings import ChatbotSettings, get_plugin_settings
 
@@ -21,33 +13,6 @@ _logger = logging.getLogger(__name__)
 
 class ChatResponse(BaseModel):
     answer: Annotated[str, Field(description="Answer from the chatbot")]
-
-
-def _should_retry(response: httpx.Response | None) -> bool:
-    if response is None:
-        return True
-    return (
-        response.status_code >= status.HTTP_500_INTERNAL_SERVER_ERROR
-        or response.status_code == status.HTTP_429_TOO_MANY_REQUESTS
-    )
-
-
-_CHATBOT_RETRY = retry(
-    retry=(
-        retry_if_result(_should_retry)
-        | retry_if_exception_type(
-            (
-                httpx.ConnectError,
-                httpx.TimeoutException,
-                httpx.NetworkError,
-                httpx.ProtocolError,
-            )
-        )
-    ),
-    stop=stop_after_attempt(3),
-    wait=wait_exponential(multiplier=1, min=1, max=10),
-    reraise=True,
-)
 
 
 class ChatbotRestClient:
@@ -59,7 +24,6 @@ class ChatbotRestClient:
         """Fetches chatbot settings"""
         url = httpx.URL(self._chatbot_settings.base_url).join("/v1/chat/settings")
 
-        @_CHATBOT_RETRY
         async def _request() -> httpx.Response:
             return await self._client.get(url)
 
@@ -78,7 +42,6 @@ class ChatbotRestClient:
         """Asks a question to the chatbot"""
         url = httpx.URL(self._chatbot_settings.base_url).join("/v1/chat")
 
-        @_CHATBOT_RETRY
         async def _request() -> httpx.Response:
             return await self._client.post(
                 url,
@@ -102,14 +65,6 @@ class ChatbotRestClient:
                 "Failed to ask question to chatbot at %s", url
             )
             raise
-
-    async def __aenter__(self):
-        """Async context manager entry"""
-        return self
-
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        """Async context manager exit - cleanup client"""
-        await self._client.aclose()
 
 
 _APPKEY: Final = web.AppKey(ChatbotRestClient.__name__, ChatbotRestClient)

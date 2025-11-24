@@ -190,11 +190,9 @@ termcolor==3.1.0
 typing-extensions==4.15.0
     # via
     #   -c requirements/_base.txt
-    #   anyio
     #   flexcache
     #   flexparser
     #   pint
-    #   pytest-asyncio
 tzdata==2025.2
     # via
     #   -c requirements/_base.txt

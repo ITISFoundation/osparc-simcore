@@ -1,7 +1,8 @@
 import logging
-from typing import Any
+from typing import Annotated, Any
 
 from aiohttp import web
+from annotated_types import doc
 from common_library.users_enums import AccountRequestStatus
 from models_library.api_schemas_webserver.users import UserAccountGet
 from models_library.emails import LowerCaseEmailStr
@@ -10,9 +11,9 @@ from models_library.users import UserID
 from notifications_library._email import create_email_session
 from pydantic import HttpUrl
 from settings_library.email import SMTPSettings
-from simcore_service_webserver.products._service import get_product
 
 from ..db.plugin import get_asyncpg_engine
+from ..products._service import get_product
 from . import _accounts_repository, _users_repository
 from .exceptions import (
     AlreadyPreRegisteredError,
@@ -31,7 +32,10 @@ async def pre_register_user(
     app: web.Application,
     *,
     profile: UserAccountRestPreRegister,
-    creator_user_id: UserID | None,
+    creator_user_id: Annotated[
+        UserID | None,
+        doc("ID of the user creating the pre-registration (None for anonymous)"),
+    ],
     product_name: ProductName,
 ) -> UserAccountGet:
 
@@ -92,18 +96,18 @@ async def list_user_accounts(
     app: web.Application,
     *,
     product_name: ProductName,
-    filter_any_account_request_status: list[AccountRequestStatus] | None = None,
+    filter_any_account_request_status: Annotated[
+        list[AccountRequestStatus] | None,
+        doc("List of any account request statuses to filter by"),
+    ] = None,
     pagination_limit: int = 50,
     pagination_offset: int = 0,
-) -> tuple[list[dict[str, Any]], int]:
+) -> Annotated[
+    tuple[list[dict[str, Any]], int],
+    doc("Tuple containing (list of user dictionaries, total count of users)"),
+]:
     """
     Get a paginated list of users for admin view with filtering options.
-
-    Args:
-        app: The web application instance
-        filter_any_account_request_status: List of *any* account request statuses to filter by
-        pagination_limit: Maximum number of users to return
-        pagination_offset: Number of users to skip for pagination
 
     Returns:
         A tuple containing (list of user dictionaries, total count of users)
@@ -155,13 +159,14 @@ async def search_users_accounts(
     product_name: ProductName | None = None,
     include_products: bool = False,
 ) -> list[UserAccountGet]:
-    """
-    WARNING: this information is reserved for admin users. Note that the returned model include UserForAdminGet
+    """WARNING: this information is reserved for admin users. Note that the returned model include UserForAdminGet
 
     NOTE: Functions in the service layer typically validate the caller's access rights
     using parameters like product_name and user_id. However, this function skips
     such checks as it is designed for scenarios (e.g., background tasks) where
     no caller or context is available.
+
+    NOTE: list is limited to a maximum of 50 entries
     """
 
     if (
@@ -238,18 +243,14 @@ async def approve_user_account(
     pre_registration_email: LowerCaseEmailStr,
     product_name: ProductName,
     reviewer_id: UserID,
-    invitation_extras: dict[str, Any] | None = None,
-) -> int:
+    invitation_extras: Annotated[
+        dict[str, Any] | None, doc("Optional invitation data to store in extras field")
+    ] = None,
+) -> Annotated[int, doc("The ID of the approved pre-registration record")]:
     """Approve a user account based on their pre-registration email.
 
-    Args:
-        app: The web application instance
-        pre_registration_email: Email of the pre-registered user to approve
-        product_name: Product name for which the user is being approved
-        reviewer_id: ID of the user approving the account
-
     Returns:
-        int: The ID of the approved pre-registration record
+        The ID of the approved pre-registration record
 
     Raises:
         PendingPreRegistrationNotFoundError: If no pre-registration is found for the email/product
@@ -291,17 +292,9 @@ async def reject_user_account(
     pre_registration_email: LowerCaseEmailStr,
     product_name: ProductName,
     reviewer_id: UserID,
-) -> int:
+) -> Annotated[int, doc("The ID of the rejected pre-registration record")]:
     """Reject a user account based on their pre-registration email.
 
-    Args:
-        app: The web application instance
-        pre_registration_email: Email of the pre-registered user to reject
-        product_name: Product name for which the user is being rejected
-        reviewer_id: ID of the user rejecting the account
-
-    Returns:
-        int: The ID of the rejected pre-registration record
 
     Raises:
         PendingPreRegistrationNotFoundError: If no pre-registration is found for the email/product
@@ -343,9 +336,17 @@ def _create_product_and_user_data(
     user_email: LowerCaseEmailStr,
     first_name: str,
     last_name: str,
-):
+) -> Annotated[
+    tuple[Any, Any],
+    doc("Tuple containing (ProductData, UserData) objects for email rendering"),
+]:
     """Create ProductData and UserData objects for email rendering."""
-    from notifications_library._models import ProductData, ProductUIData, UserData
+
+    from notifications_library._models import (  # noqa: PLC0415
+        ProductData,
+        ProductUIData,
+        UserData,
+    )
 
     # Get product data from the app
     product = get_product(app, product_name=product_name)
@@ -399,13 +400,13 @@ async def send_approval_email_to_user(
     first_name: str,
     last_name: str,
 ) -> None:
-    from notifications_library._email import compose_email
-    from notifications_library._email_render import (
+    from notifications_library._email import compose_email  # noqa: PLC0415
+    from notifications_library._email_render import (  # noqa: PLC0415
         get_support_address,
         get_user_address,
         render_email_parts,
     )
-    from notifications_library._render import (
+    from notifications_library._render import (  # noqa: PLC0415
         create_render_environment_from_notifications_library,
     )
 
@@ -456,13 +457,13 @@ async def send_rejection_email_to_user(
     last_name: str,
     host: str,
 ) -> None:
-    from notifications_library._email import compose_email
-    from notifications_library._email_render import (
+    from notifications_library._email import compose_email  # noqa: PLC0415
+    from notifications_library._email_render import (  # noqa: PLC0415
         get_support_address,
         get_user_address,
         render_email_parts,
     )
-    from notifications_library._render import (
+    from notifications_library._render import (  # noqa: PLC0415
         create_render_environment_from_notifications_library,
     )
 

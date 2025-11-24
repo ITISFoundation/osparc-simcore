@@ -316,7 +316,7 @@ async def _parse_container_docker_logs(
                     log_file_path.parent.mkdir(parents=True, exist_ok=True)
                     async with aiofiles.open(log_file_path, mode="wb+") as log_fp:
                         async for log_line in cast(
-                            AsyncGenerator[str, None],
+                            AsyncGenerator[str],
                             container_for_long_running_logs.log(
                                 stdout=True,
                                 stderr=True,
@@ -437,7 +437,9 @@ def cancel_parent_on_child_exception(func: Callable[P, T]) -> Callable[P, T]:
         except Exception as exc:
             # Cancel parent task when child task fails (same as TaskGroup behavior)
             if parent_task and not parent_task.done():
-                parent_task.cancel()
+                parent_task.cancel(
+                    "child task raised an exception, cancelling parent task"
+                )
             raise exc from None
 
     return wrapper

@@ -4,7 +4,7 @@
 
 from collections import deque
 from pprint import pprint
-from typing import Any
+from typing import Annotated, Any
 
 import pytest
 from models_library.services import ServiceInput
@@ -12,7 +12,6 @@ from pydantic import Field, TypeAdapter, ValidationError
 from simcore_sdk.node_ports_v2 import exceptions
 from simcore_sdk.node_ports_v2.port import Port
 from simcore_sdk.node_ports_v2.ports_mapping import InputsList, OutputsList
-from typing_extensions import Annotated
 from utils_port_v2 import create_valid_port_config
 
 
