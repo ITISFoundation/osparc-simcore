@@ -36,6 +36,14 @@ qx.Class.define("osparc.store.Faker", {
     ],
   },
   members: {
+    sendSocketMessageToMyself: function(eventName, message) {
+      const socket = osparc.wrapper.WebSocket.getInstance().getSocket();
+      if (socket) {
+        const listeners = socket.listeners(eventName);
+        listeners.forEach(fn => fn(message));
+      }
+    },
+
     triggerChatbot: function(conversationId, messageId) {
       // wait a random time between 2 and 5 seconds to simulate building response
       const delay = 2000 + Math.floor(Math.random() * 3000);
@@ -55,8 +63,10 @@ qx.Class.define("osparc.store.Faker", {
         };
 
         // and send a CONVERSATION_MESSAGE_CREATED websocket message to myself
-        const socket = osparc.wrapper.WebSocket.getInstance();
-        // todo
+        this.sendSocketMessageToMyself(
+          osparc.data.model.Conversation.CHANNELS.CONVERSATION_MESSAGE_CREATED,
+          messageData
+        );
       }, delay);
     },
   }
