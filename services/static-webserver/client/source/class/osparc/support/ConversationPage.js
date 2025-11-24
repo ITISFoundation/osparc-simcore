@@ -118,12 +118,10 @@ qx.Class.define("osparc.support.ConversationPage", {
           });
           this.getChildControl("options-button").setMenu(control);
           break;
-        case "rename-conversation-button": {
+        case "rename-button": {
           control = new qx.ui.menu.Button().set({
             icon: "@FontAwesome5Solid/i-cursor/12",
             label: this.tr("Rename"),
-            alignX: "center",
-            alignY: "middle",
           });
           control.addListener("execute", () => this.__renameConversation());
           this.getChildControl("options-menu").addAt(control, 0);
@@ -133,23 +131,26 @@ qx.Class.define("osparc.support.ConversationPage", {
           control = new qx.ui.menu.Button().set({
             icon: "@FontAwesome5Solid/external-link-alt/12",
             label: this.tr("Open Project"),
-            alignX: "center",
-            alignY: "middle",
           });
           control.addListener("execute", () => this.__openProjectDetails());
           this.getChildControl("options-menu").addAt(control, 1);
           break;
-        case "copy-ticket-id-button": {
+        case "copy-ticket-id-button":
           control = new qx.ui.menu.Button().set({
             icon: "@FontAwesome5Solid/copy/12",
             label: this.tr("Copy Ticket ID"),
-            alignX: "center",
-            alignY: "middle",
           });
           control.addListener("execute", () => this.__copyTicketId());
           this.getChildControl("options-menu").addAt(control, 2);
           break;
-        }
+        case "delete-button":
+          control = new qx.ui.menu.Button().set({
+            icon: "@FontAwesome5Solid/trash-alt/12",
+            label: this.tr("Delete"),
+          });
+          control.addListener("execute", () => this.__deleteConversation(), this);
+          this.getChildControl("options-menu").addAt(control, 3);
+          break;
         case "main-stack":
           control = new qx.ui.container.Stack();
           this._add(control, {
@@ -272,9 +273,13 @@ qx.Class.define("osparc.support.ConversationPage", {
         updateExtraContext();
         conversation.addListener("changeExtraContext", () => updateExtraContext(), this);
 
-        this.getChildControl("rename-conversation-button");
+        const amIAuthor = conversation.isMyConversation();
+        this.getChildControl("rename-button").set({
+          enabled: amIAuthor ? "visible" : "excluded",
+        });
 
         const openProjectButton = this.getChildControl("open-project-button");
+        openProjectButton.exclude();
         if (conversation && conversation.getContextProjectId()) {
           openProjectButton.setVisibility("visible");
           osparc.store.Study.getInstance().getOne(conversation.getContextProjectId())
@@ -285,6 +290,10 @@ qx.Class.define("osparc.support.ConversationPage", {
         }
 
         this.getChildControl("copy-ticket-id-button");
+
+        this.getChildControl("delete-button").set({
+          enabled: amIAuthor ? "visible" : "excluded",
+        });
       }
 
       this.getChildControl("options-button").setVisibility(conversation ? "visible" : "excluded");
@@ -327,6 +336,26 @@ qx.Class.define("osparc.support.ConversationPage", {
       }, this);
       renamer.center();
       renamer.open();
+    },
+
+    __deleteConversation: function() {
+      const conversation = this.getConversation();
+      const win = new osparc.ui.window.Confirmation(this.tr("Delete conversation?")).set({
+        caption: this.tr("Delete"),
+        confirmText: this.tr("Delete"),
+        confirmAction: "delete",
+      });
+      win.open();
+      win.addListener("close", () => {
+        if (win.getConfirmed()) {
+          osparc.store.ConversationsSupport.getInstance().deleteConversation(conversation)
+            .then(() => {
+              this.setConversation(null);
+              this.fireEvent("backToConversations");
+            })
+            .catch(err => osparc.FlashMessenger.logError(err));
+        }
+      });
     },
 
     __getAddMessageField: function() {
