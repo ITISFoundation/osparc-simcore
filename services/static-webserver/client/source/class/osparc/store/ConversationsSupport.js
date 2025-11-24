@@ -266,6 +266,11 @@ qx.Class.define("osparc.store.ConversationsSupport", {
           messageId,
         },
       };
+
+      const useFaker = true;
+      if (useFaker) {
+        return osparc.store.Faker.getInstance().triggerChatbot(conversationId, messageId);
+      }
       return osparc.data.Resources.fetch("conversationsSupport", "triggerChatbot", params)
         .catch(err => osparc.FlashMessenger.logError(err));
     },
