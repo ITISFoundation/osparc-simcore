@@ -92,7 +92,7 @@ services:
       - ../packages:/devel/packages
       - ${HOST_UV_CACHE_DIR}:/home/scu/.cache/uv
 
-  not-worker:
+  notif-worker:
     volumes:
       - ./storage:/devel/services/storage
       - ../packages:/devel/packages
