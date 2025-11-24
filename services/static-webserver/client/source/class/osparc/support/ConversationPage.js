@@ -94,13 +94,13 @@ qx.Class.define("osparc.support.ConversationPage", {
           control = new qx.ui.container.Composite(new qx.ui.layout.VBox(2));
           this.getChildControl("conversation-header-center-layout").addAt(control, 1);
           break;
-        case "options-button":{
+        case "menu-button": {
           const buttonSize = 22;
-          control = new qx.ui.menu.Button().set({
+          control = new qx.ui.form.MenuButton().set({
             appearance: "form-button-outlined",
+            backgroundColor: "background-main-3",
             width: buttonSize,
             height: buttonSize,
-            padding: [0, 8, 0, 8],
             allowGrowX: false,
             allowGrowY: false,
             alignX: "center",
@@ -116,7 +116,7 @@ qx.Class.define("osparc.support.ConversationPage", {
             appearance: "menu-wider",
             position: "bottom-left",
           });
-          this.getChildControl("options-button").setMenu(control);
+          this.getChildControl("menu-button").setMenu(control);
           break;
         case "rename-button": {
           control = new qx.ui.menu.Button().set({
@@ -296,7 +296,7 @@ qx.Class.define("osparc.support.ConversationPage", {
         });
       }
 
-      this.getChildControl("options-button").setVisibility(conversation ? "visible" : "excluded");
+      this.getChildControl("menu-button").setVisibility(conversation ? "visible" : "excluded");
     },
 
     __openProjectDetails: function() {
