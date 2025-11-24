@@ -92,6 +92,10 @@ qx.Class.define("osparc.ui.window.Window", {
     center: function() {
       this.base(arguments);
 
+      if (this.getCenterOnElement()) {
+        this.__centerWithinElement(this.getCenterOnElement());
+      }
+
       this.__recenter = true;
     },
 
@@ -144,14 +148,14 @@ qx.Class.define("osparc.ui.window.Window", {
         modalFrame.style.opacity = 0.4;
       }
 
-      if (this.getCenterOnElement()) {
-        this.__centerWithinElement(this.getCenterOnElement());
-      }
-
       this.__keepWithinScreen();
     },
 
     __centerWithinElement: function(element) {
+      if (!element || !element.getContentElement()) {
+        return;
+      }
+
       const domElement = element.getContentElement().getDomElement();
       const elemRect = domElement.getBoundingClientRect();
       const winSizeHint = this.getSizeHint();
