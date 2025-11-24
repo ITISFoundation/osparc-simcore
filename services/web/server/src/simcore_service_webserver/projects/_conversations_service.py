@@ -173,11 +173,11 @@ async def create_project_conversation_message(
         project_id=project_uuid,
         permission="write",
     )
-    return await conversations_service.create_message(
+    return await conversations_service.create_message_and_notify(
         app,
         product_name=product_name,
         user_id=user_id,
-        project_id=project_uuid,
+        project_id_or_none=project_uuid,
         conversation_id=conversation_id,
         content=content,
         type_=message_type,

@@ -1,6 +1,6 @@
 # mypy: disable-error-code=truthy-function
 from ._conversation_message_service import (
-    create_message,
+    create_message_and_notify,
     create_support_message,
     delete_message,
     get_message,
@@ -17,7 +17,7 @@ from ._conversation_service import (
 
 __all__: tuple[str, ...] = (
     "create_conversation",
-    "create_message",
+    "create_message_and_notify",
     "delete_conversation",
     "delete_message",
     "get_conversation",
