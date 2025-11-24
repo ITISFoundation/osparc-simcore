@@ -69,7 +69,7 @@ qx.Class.define("osparc.store.ConversationsSupport", {
                 this.__updateConversation(conversationData);
                 break;
               case osparc.data.model.Conversation.CHANNELS.CONVERSATION_DELETED:
-                delete this.__conversationsCached[conversationData["conversationId"]];
+                this.__removeFromCache(conversationData["conversationId"]);
                 this.fireDataEvent("conversationDeleted", {
                   conversationId: conversationData["conversationId"],
                 });
@@ -149,6 +149,7 @@ qx.Class.define("osparc.store.ConversationsSupport", {
       };
       return osparc.data.Resources.fetch("conversationsSupport", "deleteConversation", params)
         .then(() => {
+          this.__removeFromCache(conversationId);
           this.fireDataEvent("conversationDeleted", {
             conversationId,
           });
@@ -288,6 +289,12 @@ qx.Class.define("osparc.store.ConversationsSupport", {
         if (typeof conversationData["isReadBySupport"] === "boolean") {
           conversation.setReadBySupport(conversationData["isReadBySupport"]);
         }
+      }
+    },
+
+    __removeFromCache: function(conversationId) {
+      if (conversationId in this.__conversationsCached) {
+        delete this.__conversationsCached[conversationId];
       }
     },
   }
