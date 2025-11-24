@@ -35,6 +35,7 @@ qx.Class.define("osparc.support.Conversation", {
       REPORT_OEC: "reportOEC",
       FOLLOW_UP: "followUp",
     },
+    TRIGGER_CHATBOT_DELAY: 2000,
   },
 
   members: {
@@ -153,7 +154,17 @@ qx.Class.define("osparc.support.Conversation", {
 
     __postMessage: function(content) {
       const conversationId = this.getConversation().getConversationId();
-      return osparc.store.ConversationsSupport.getInstance().postMessage(conversationId, content);
+      return osparc.store.ConversationsSupport.getInstance().postMessage(conversationId, content)
+        .then(messageData => {
+          if (osparc.store.Groups.getInstance().isChatbotEnabled()) {
+            // wait a bit before triggering the chatbot response
+            // if the user starts typing again, delete the timer
+            setTimeout(() => {
+              osparc.store.ConversationsSupport.getInstance().postChatbotResponseIfNeeded(conversationId);
+            }, this.self().TRIGGER_CHATBOT_DELAY);
+            return messageData;
+          }
+        });
     },
 
     __evaluateShareProject: function() {
