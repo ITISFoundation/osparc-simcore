@@ -40,22 +40,23 @@ qx.Class.define("osparc.store.Faker", {
       // wait a random time between 2 and 5 seconds to simulate building response
       const delay = 2000 + Math.floor(Math.random() * 3000);
       setTimeout(() => {
-        // and send a CONVERSATION_MESSAGE_CREATED websocket message to myself
+        // create a fake chatbot response
         const randomIdx = Math.floor(Math.random() * this.self().IDK.length);
         const chatbotResponse = this.self().IDK[randomIdx];
+        const chatbot = osparc.store.Groups.getInstance().getChatbot();
         const messageData = {
-          conversationId,
-          messageId: osparc.utils.Utils.generateUUID(),
-          sender: "chatbot",
           content: chatbotResponse,
+          conversationId,
           created: new Date().toISOString(),
-        }
+          messageId: osparc.utils.Utils.uuidV4(),
+          modified: new Date().toISOString(),
+          type: "MESSAGE",
+          userGroupId: chatbot.getGroupId(),
+        };
 
+        // and send a CONVERSATION_MESSAGE_CREATED websocket message to myself
         const socket = osparc.wrapper.WebSocket.getInstance();
-        socket.__handleMessageReceived(
-          osparc.data.model.Conversation.CHANNELS.CONVERSATION_MESSAGE_CREATED,
-          messageData
-        );
+        // todo
       }, delay);
     },
   }
