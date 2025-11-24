@@ -130,7 +130,7 @@ qx.Class.define("osparc.support.ConversationPage", {
         case "open-project-button":
           control = new qx.ui.menu.Button().set({
             icon: "@FontAwesome5Solid/external-link-alt/12",
-            label: this.tr("Open Project"),
+            label: this.tr("Project details"),
           });
           control.addListener("execute", () => this.__openProjectDetails());
           this.getChildControl("options-menu").addAt(control, 1);
@@ -273,9 +273,9 @@ qx.Class.define("osparc.support.ConversationPage", {
         updateExtraContext();
         conversation.addListener("changeExtraContext", () => updateExtraContext(), this);
 
-        const amIAuthor = conversation.isMyConversation();
+        const amIOwner = conversation.amIOwner();
         this.getChildControl("rename-button").set({
-          enabled: amIAuthor ? "visible" : "excluded",
+          enabled: amIOwner,
         });
 
         const openProjectButton = this.getChildControl("open-project-button");
@@ -292,7 +292,7 @@ qx.Class.define("osparc.support.ConversationPage", {
         this.getChildControl("copy-ticket-id-button");
 
         this.getChildControl("delete-button").set({
-          enabled: amIAuthor ? "visible" : "excluded",
+          enabled: amIOwner,
         });
       }
 
