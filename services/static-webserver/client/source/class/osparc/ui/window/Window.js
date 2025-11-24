@@ -159,8 +159,8 @@ qx.Class.define("osparc.ui.window.Window", {
       const domElement = element.getContentElement().getDomElement();
       const elemRect = domElement.getBoundingClientRect();
       const winSizeHint = this.getSizeHint();
-      const left = elemRect.left + (elemRect.width - winSizeHint.width) / 2;
-      const top = elemRect.top + (elemRect.height - winSizeHint.height) / 2;
+      const left = parseInt(elemRect.left + (elemRect.width - winSizeHint.width) / 2);
+      const top = parseInt(elemRect.top + (elemRect.height - winSizeHint.height) / 2);
       this.moveTo(left, top);
     },
 

@@ -328,6 +328,7 @@ qx.Class.define("osparc.support.ConversationPage", {
       }
       const renamer = new osparc.widget.Renamer(oldName).set({
         maxChars: osparc.data.model.Conversation.MAX_TITLE_LENGTH,
+        centerOnElement: this,
       });
       renamer.addListener("labelChanged", e => {
         renamer.close();
