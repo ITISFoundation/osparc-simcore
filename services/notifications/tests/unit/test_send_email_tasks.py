@@ -79,7 +79,7 @@ async def test_account_requested(
                         strong_color=faker.color_name(),
                     ),
                 ),
-                host=HttpUrl(faker.url()),
+                host=faker.hostname(),
                 ipinfo=fake_ipinfo,
             ),
             channel=EmailChannel(

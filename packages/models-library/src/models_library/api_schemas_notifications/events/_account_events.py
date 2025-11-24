@@ -34,7 +34,7 @@ class BaseAccountEvent(BaseModel):
 class AccountRequestedEvent(BaseAccountEvent):
     type: Literal["account_requested"] = "account_requested"
 
-    host: HttpUrl
+    host: str
 
     # NOTE: following are kept for backward compatibility
     product_info: dict[str, Any] = {}
