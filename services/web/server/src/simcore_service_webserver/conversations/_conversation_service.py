@@ -180,6 +180,7 @@ async def delete_conversation(
     user_id: UserID,
     project_id: ProjectID | None,
     conversation_id: ConversationID,
+    conversation_type: ConversationType,
 ) -> None:
     await _conversation_repository.delete(
         app,
@@ -196,6 +197,7 @@ async def delete_conversation(
             user_group_id=_user_group_id,
             project_id=project_id,
             conversation_id=conversation_id,
+            conversation_type=conversation_type,
         )
     else:
         _product_group_users = await get_recipients_from_product_support_group(
@@ -208,6 +210,7 @@ async def delete_conversation(
             user_group_id=_user_group_id,
             project_id=None,
             conversation_id=conversation_id,
+            conversation_type=conversation_type,
         )
 
 

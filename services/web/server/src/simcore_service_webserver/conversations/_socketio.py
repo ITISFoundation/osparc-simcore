@@ -154,6 +154,7 @@ async def notify_via_socket_conversation_deleted(
     user_group_id: GroupID,
     project_id: ProjectID | None,
     conversation_id: ConversationID,
+    conversation_type: ConversationType,
 ) -> None:
     notification_message = SocketMessageDict(
         event_type=SOCKET_IO_CONVERSATION_DELETED_EVENT,
@@ -163,7 +164,7 @@ async def notify_via_socket_conversation_deleted(
                 project_id=project_id,
                 conversation_id=conversation_id,
                 user_group_id=user_group_id,
-                type=ConversationType.PROJECT_STATIC,
+                type=conversation_type,
             ).model_dump(mode="json", by_alias=True),
         },
     )
