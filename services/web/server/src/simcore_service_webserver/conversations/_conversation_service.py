@@ -240,8 +240,10 @@ async def get_support_conversation_for_user(
 
     # Check if user is an AI bot
     if _chatbot_user_id and user_id == _chatbot_user_id:
+        conversation = await get_conversation(app, conversation_id=conversation_id)
+        assert conversation.type.is_support_type()  # nosec
         return (
-            await get_conversation(app, conversation_id=conversation_id),
+            conversation,
             ConversationUserType.CHATBOT_USER,
         )
 
@@ -251,18 +253,23 @@ async def get_support_conversation_for_user(
         )
         if _support_standard_group_id in _user_group_ids:
             # I am a support user
+            conversation = await get_conversation(app, conversation_id=conversation_id)
+            assert conversation.type.is_support_type()  # nosec
             return (
-                await get_conversation(app, conversation_id=conversation_id),
+                conversation,
                 ConversationUserType.SUPPORT_USER,
             )
 
+    # I am a regular user
     _user_group_id = await users_service.get_user_primary_group_id(app, user_id=user_id)
+    conversation = await get_conversation_for_user(
+        app,
+        conversation_id=conversation_id,
+        user_group_id=_user_group_id,
+    )
+    assert conversation.type.is_support_type()  # nosec
     return (
-        await get_conversation_for_user(
-            app,
-            conversation_id=conversation_id,
-            user_group_id=_user_group_id,
-        ),
+        conversation,
         ConversationUserType.REGULAR_USER,
     )
 
