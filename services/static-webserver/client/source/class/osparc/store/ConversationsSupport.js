@@ -39,8 +39,46 @@ qx.Class.define("osparc.store.ConversationsSupport", {
   },
 
   members: {
+    __conversationsCached: null,
+
+    init: function() {
+      this.fetchConversations();
+      this.listenToWS();
+    },
+
     getConversations: function() {
       return Object.values(this.__conversationsCached);
+    },
+
+    listenToWS: function() {
+      const socket = osparc.wrapper.WebSocket.getInstance();
+      const types = Object.values(osparc.store.ConversationsSupport.TYPES);
+      [
+        osparc.data.model.Conversation.CHANNELS.CONVERSATION_CREATED,
+        osparc.data.model.Conversation.CHANNELS.CONVERSATION_UPDATED,
+        osparc.data.model.Conversation.CHANNELS.CONVERSATION_DELETED,
+      ].forEach(eventName => {
+        const eventHandler = conversationData => {
+          if (conversationData && types.includes(conversationData["type"])) {
+            switch (eventName) {
+              case osparc.data.model.Conversation.CHANNELS.CONVERSATION_CREATED:
+                const conversation = this.__addToCache(conversationData);
+                this.fireDataEvent("conversationCreated", conversation);
+                break;
+              case osparc.data.model.Conversation.CHANNELS.CONVERSATION_UPDATED:
+                this.__updateConversation(conversationData);
+                break;
+              case osparc.data.model.Conversation.CHANNELS.CONVERSATION_DELETED:
+                this.__removeFromCache(conversationData["conversationId"]);
+                this.fireDataEvent("conversationDeleted", {
+                  conversationId: conversationData["conversationId"],
+                });
+                break;
+            }
+          }
+        };
+        socket.on(eventName, eventHandler, this);
+      });
     },
 
     fetchConversations: function() {
@@ -111,9 +149,10 @@ qx.Class.define("osparc.store.ConversationsSupport", {
       };
       return osparc.data.Resources.fetch("conversationsSupport", "deleteConversation", params)
         .then(() => {
+          this.__removeFromCache(conversationId);
           this.fireDataEvent("conversationDeleted", {
             conversationId,
-          })
+          });
         })
         .catch(err => osparc.FlashMessenger.logError(err));
     },
@@ -149,13 +188,6 @@ qx.Class.define("osparc.store.ConversationsSupport", {
       } else {
         patchData["isReadByUser"] = true;
       }
-      return this.__patchConversation(conversationId, patchData);
-    },
-
-    markAsResolved: function(conversationId) {
-      const patchData = {
-        resolved: true,
-      };
       return this.__patchConversation(conversationId, patchData);
     },
 
@@ -237,6 +269,33 @@ qx.Class.define("osparc.store.ConversationsSupport", {
       this.__conversationsCached[conversation.getConversationId()] = conversation;
       this.fireDataEvent("conversationAdded", conversation);
       return conversation;
+    },
+
+    __updateConversation: function(conversationData) {
+      const conversationId = conversationData["conversationId"];
+      const conversation = this.__conversationsCached[conversationId];
+      if (conversation) {
+        // Only the following properties can be updated:
+        // name, extraContext, readByUser, readBySupport
+        if (conversationData["name"]) {
+          conversation.setName(conversationData["name"]);
+        }
+        if (conversationData["extraContext"]) {
+          conversation.setExtraContext(conversationData["extraContext"]);
+        }
+        if (typeof conversationData["isReadByUser"] === "boolean") {
+          conversation.setReadByUser(conversationData["isReadByUser"]);
+        }
+        if (typeof conversationData["isReadBySupport"] === "boolean") {
+          conversation.setReadBySupport(conversationData["isReadBySupport"]);
+        }
+      }
+    },
+
+    __removeFromCache: function(conversationId) {
+      if (conversationId in this.__conversationsCached) {
+        delete this.__conversationsCached[conversationId];
+      }
     },
   }
 });

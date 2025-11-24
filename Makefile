@@ -389,10 +389,11 @@ up-devel: .stack-simcore-development.yml .init-swarm $(CLIENT_WEB_OUTPUT) ## Dep
 	# Start compile+watch front-end container [front-end]
 	@$(MAKE_C) services/static-webserver/client down compile-dev flags=--watch
 	@$(MAKE_C) services/dask-sidecar certificates
+	# Deploy ops and vendors stacks
+	@$(MAKE) .deploy-ops
+	@$(MAKE) .deploy-vendors
 	# Deploy stack $(SWARM_STACK_NAME) [back-end]
 	@docker stack deploy --detach=true --with-registry-auth -c $< $(SWARM_STACK_NAME)
-	@$(MAKE) .deploy-vendors
-	@$(MAKE) .deploy-ops
 	@$(_show_endpoints)
 	@$(MAKE_C) services/static-webserver/client follow-dev-logs
 
@@ -400,21 +401,24 @@ up-devel-frontend: .stack-simcore-development-frontend.yml .init-swarm ## Every 
 	# Start compile+watch front-end container [front-end]
 	@$(MAKE_C) services/static-webserver/client down compile-dev flags=--watch
 	@$(MAKE_C) services/dask-sidecar certificates
-	# Deploy stack $(SWARM_STACK_NAME)  [back-end]
-	@docker stack deploy --detach=true --with-registry-auth -c $< $(SWARM_STACK_NAME)
+	# Deploy ops and vendors stacks
 	@$(MAKE) .deploy-ops
 	@$(MAKE) .deploy-vendors
+	# Deploy stack $(SWARM_STACK_NAME)  [back-end]
+	@docker stack deploy --detach=true --with-registry-auth -c $< $(SWARM_STACK_NAME)
 	@$(_show_endpoints)
 	@$(MAKE_C) services/static-webserver/client follow-dev-logs
 
 
 up-prod: .stack-simcore-production.yml .init-swarm ## Deploys local production stack and ops stack (pass 'make ops_disabled=1 ops_ci=1 up-...' to disable or target=<service-name> to deploy a single service)
 ifeq ($(target),)
+	# Deploy ops and vendors stacks
+	@$(MAKE) .deploy-ops
+	@$(MAKE) .deploy-vendors
 	@$(MAKE_C) services/dask-sidecar certificates
 	# Deploy stack $(SWARM_STACK_NAME)
 	@docker stack deploy --detach=true --with-registry-auth -c $< $(SWARM_STACK_NAME)
-	@$(MAKE) .deploy-ops
-	@$(MAKE) .deploy-vendors
+
 else
 	# deploys ONLY $(target) service
 	@docker compose --file $< up --detach $(target)
@@ -449,6 +453,9 @@ ifneq ($(wildcard .stack-*), )
 endif
 	# Removing local registry if any
 	-@docker ps --all --quiet --filter "name=$(LOCAL_REGISTRY_HOSTNAME)" | xargs --no-run-if-empty docker rm --force
+	# Removing pre-created networks used by ops stack
+	-@docker network rm ${SWARM_STACK_NAME}_default 2>/dev/null || true
+	-@docker network rm ${SWARM_STACK_NAME}_interactive_services_subnet 2>/dev/null || true
 
 leave: ## Forces to stop all services, networks, etc by the node leaving the swarm
 	-docker swarm leave -f
@@ -458,6 +465,9 @@ leave: ## Forces to stop all services, networks, etc by the node leaving the swa
 .init-swarm:
 	# Ensures swarm is initialized (careful we use a default pool of 172.20.0.0/14. Ensure you do not use private IPs in that range!)
 	$(if $(SWARM_HOSTS),,docker swarm init --advertise-addr=$(get_my_ip) --default-addr-pool 172.20.0.0/14)
+	# Pre-create networks used by ops stack for ops-first deployment
+	-docker network create --driver overlay --attachable ${SWARM_STACK_NAME}_default 2>/dev/null || true
+	-docker network create --driver overlay --attachable ${SWARM_STACK_NAME}_interactive_services_subnet 2>/dev/null || true
 
 
 ## DOCKER TAGS  -------------------------------
@@ -506,6 +516,17 @@ push-version: tag-version
 	@export BUILD_TARGET=undefined; \
 	docker compose --file services/docker-compose-build.yml --file services/docker-compose-deploy.yml push
 
+pull-externals: ## pulls non-simcore external images defined in docker-compose.yml
+	# Pulling external images
+	@grep 'image:' services/docker-compose.yml | \
+		awk '{print $$2}' | \
+		grep -v '\$${DOCKER_IMAGE_TAG}' | \
+		grep -v '\$${DOCKER_REGISTRY}' | \
+		grep -v '\$${' | \
+		grep -v '^$$' | \
+		sort | uniq | \
+		xargs -r -n 1 docker pull
+
 
 ## ENVIRONMENT -------------------------------
 
@@ -526,10 +547,10 @@ push-version: tag-version
 .venv: .check-uv-installed
 	@uv venv $@
 	@echo "# upgrading tools to latest version in" && $@/bin/python --version
-	@uv pip list
+	@uv pip list --python $@
 
 devenv: .venv test_python_version .vscode/settings.json .vscode/launch.json ## create a development environment (configs, virtual-env, hooks, ...)
-	@uv pip --quiet install -r requirements/devenv.txt
+	@uv pip --quiet install --python $< --requirements requirements/devenv.txt
 	# Installing pre-commit hooks in current .git repo
 	@$</bin/pre-commit install
 	@echo "To activate the venv, execute 'source .venv/bin/activate'"
@@ -670,35 +691,49 @@ rm-registry: ## remove the registry and changes to host/file
 		echo removing entry in /etc/hosts...;\
 		sudo sed -i "/127.0.0.1 $(LOCAL_REGISTRY_HOSTNAME)/d" /etc/hosts,\
 		echo /etc/hosts is already cleaned)
-	@$(if $(shell jq -e '.["insecure-registries"]? | index("http://$(LOCAL_REGISTRY_HOSTNAME):5000")? // empty' /etc/docker/daemon.json),\
+	@$(if $(shell jq -e '."insecure-registries"? // [] | index("http://$(LOCAL_REGISTRY_HOSTNAME):5000") // empty' /etc/docker/daemon.json 2>/dev/null),\
 		echo removing entry in /etc/docker/daemon.json...;\
-		jq 'if .["insecure-registries"] then .["insecure-registries"] |= map(select(. != "http://$(LOCAL_REGISTRY_HOSTNAME):5000")) else . end' /etc/docker/daemon.json > /tmp/daemon.json && \
-		sudo mv /tmp/daemon.json /etc/docker/daemon.json &&\
+		sudo cp /etc/docker/daemon.json /etc/docker/daemon.json.backup-removal-$(shell date +%Y%m%d-%H%M%S) &&\
+		jq 'if .["insecure-registries"] then .["insecure-registries"] |= map(select(. != "http://$(LOCAL_REGISTRY_HOSTNAME):5000")) else . end' /etc/docker/daemon.json > /tmp/daemon.json.removal 2>/dev/null &&\
+		(jq empty /tmp/daemon.json.removal 2>/dev/null || (echo "ERROR: Generated invalid JSON during removal" && exit 1)) &&\
+		sudo mv /tmp/daemon.json.removal /etc/docker/daemon.json &&\
 		echo restarting engine... &&\
 		sudo service docker restart &&\
 		echo done,\
 		echo /etc/docker/daemon.json already cleaned)
+	# Clean up old backup files (optional)
+	@echo "Backup files available: $(shell ls -la /etc/docker/daemon.json.backup-* 2>/dev/null || echo 'none')"
 	# removing container and volume
 	-@docker rm --force $(LOCAL_REGISTRY_HOSTNAME)
 	-@docker volume rm $(LOCAL_REGISTRY_VOLUME)
 
 local-registry: .env ## creates a local docker registry and configure simcore to use it (NOTE: needs admin rights)
+	@command -v jq >/dev/null 2>&1 || { echo "jq missing; install jq first"; exit 1; }
 	@$(if $(shell grep "127.0.0.1 $(LOCAL_REGISTRY_HOSTNAME)" /etc/hosts),,\
-					echo configuring host file to redirect $(LOCAL_REGISTRY_HOSTNAME) to 127.0.0.1; \
-					sudo echo 127.0.0.1 $(LOCAL_REGISTRY_HOSTNAME) | sudo tee -a /etc/hosts;\
-					echo done)
-	@$(if $(shell test -f /etc/docker/daemon.json),, \
-			sudo touch /etc/docker/daemon.json)
-	@$(if $(shell jq -e '.["insecure-registries"]? | index("http://$(LOCAL_REGISTRY_HOSTNAME):5000")? // empty' /etc/docker/daemon.json),,\
-					echo configuring docker engine to use insecure local registry...; \
-					jq 'if .["insecure-registries"] | index("http://$(LOCAL_REGISTRY_HOSTNAME):5000") then . else .["insecure-registries"] += ["http://$(LOCAL_REGISTRY_HOSTNAME):5000"] end' /etc/docker/daemon.json > /tmp/daemon.json &&\
-					sudo mv /tmp/daemon.json /etc/docker/daemon.json &&\
-					echo restarting engine... &&\
-					sudo service docker restart &&\
-					sleep 5 &&\
-					echo done)
+		echo configuring host file to redirect $(LOCAL_REGISTRY_HOSTNAME) to 127.0.0.1; \
+		echo 127.0.0.1 $(LOCAL_REGISTRY_HOSTNAME) | sudo tee -a /etc/hosts >/dev/null;\
+		echo done)
+	@if [ ! -f /etc/docker/daemon.json ]; then \
+		echo "creating /etc/docker/daemon.json..."; \
+		echo "{}" | sudo tee /etc/docker/daemon.json >/dev/null; \
+	fi
+	# Create backup of existing daemon.json
+	@sudo cp /etc/docker/daemon.json /etc/docker/daemon.json.backup-$(shell date +%Y%m%d-%H%M%S)
+	@if jq -e '.["insecure-registries"]? // [] | map(select(. == "http://$(LOCAL_REGISTRY_HOSTNAME):5000")) | length > 0' /etc/docker/daemon.json >/dev/null 2>&1; then \
+		echo "Registry already configured in daemon.json"; \
+	else \
+		echo "configuring docker engine to use insecure local registry..."; \
+		jq 'if .["insecure-registries"] == null then .["insecure-registries"] = ["http://$(LOCAL_REGISTRY_HOSTNAME):5000"] elif (.["insecure-registries"] | type) == "array" and ((.["insecure-registries"] | index("http://$(LOCAL_REGISTRY_HOSTNAME):5000")) == null) then .["insecure-registries"] += ["http://$(LOCAL_REGISTRY_HOSTNAME):5000"] else . end' /etc/docker/daemon.json > /tmp/daemon.json.new 2>/dev/null && \
+		(jq empty /tmp/daemon.json.new 2>/dev/null || (echo "ERROR: Generated invalid JSON, restoring backup" && sudo cp /etc/docker/daemon.json.backup-* /etc/docker/daemon.json && rm -f /tmp/daemon.json.new && exit 1)) && \
+		sudo mv /tmp/daemon.json.new /etc/docker/daemon.json && \
+		echo "Successfully updated daemon.json (backup saved as daemon.json.backup-*)" && \
+		echo "restarting engine..." && \
+		sudo service docker restart && \
+		for i in $$(seq 1 10); do docker info >/dev/null 2>&1 && break || sleep 1; done && \
+		echo "done"; \
+	fi
 
-	@$(if $(shell docker ps --format="{{.Names}}" | grep registry),,\
+	@$(if $(shell docker ps --format="{{.Names}}" | grep -x "$(LOCAL_REGISTRY_HOSTNAME)"),,\
 					echo starting registry on http://$(LOCAL_REGISTRY_HOSTNAME):5000...; \
 					docker run \
 							--detach \
@@ -710,16 +745,17 @@ local-registry: .env ## creates a local docker registry and configure simcore to
 							registry:3)
 
 	# WARNING: environment file .env is now setup to use local registry on port 5000 without any security (take care!)...
-	@echo REGISTRY_AUTH=False >> .env
-	@echo REGISTRY_SSL=False >> .env
-	@echo REGISTRY_PATH=$(LOCAL_REGISTRY_HOSTNAME):5000 >> .env
-	@echo REGISTRY_URL=$(get_my_ip):5000 >> .env
-	@echo DIRECTOR_REGISTRY_CACHING=False >> .env
-	@echo CATALOG_BACKGROUND_TASK_REST_TIME=1 >> .env
+	@grep -qxF 'REGISTRY_AUTH=False' .env || echo REGISTRY_AUTH=False >> .env
+	@grep -qxF 'REGISTRY_SSL=False' .env || echo REGISTRY_SSL=False >> .env
+	@grep -qxF 'REGISTRY_PATH=$(LOCAL_REGISTRY_HOSTNAME):5000' .env || echo REGISTRY_PATH=$(LOCAL_REGISTRY_HOSTNAME):5000 >> .env
+	@grep -qxF 'REGISTRY_URL=$(get_my_ip):5000' .env || echo REGISTRY_URL=$(get_my_ip):5000 >> .env
+	@grep -qxF 'DIRECTOR_REGISTRY_CACHING=False' .env || echo DIRECTOR_REGISTRY_CACHING=False >> .env
+	@grep -qxF 'CATALOG_BACKGROUND_TASK_REST_TIME=1' .env || echo CATALOG_BACKGROUND_TASK_REST_TIME=1 >> .env
+	@echo listing images currently in registry...
 	# local registry set in $(LOCAL_REGISTRY_HOSTNAME):5000
 	# images currently in registry:
-	@sleep 3
-	curl --silent $(LOCAL_REGISTRY_HOSTNAME):5000/v2/_catalog | jq '.repositories'
+	@sleep 3  # Wait for registry to fully start
+	@curl --silent --retry 3 --retry-delay 2 $(LOCAL_REGISTRY_HOSTNAME):5000/v2/_catalog | jq '.repositories' 2>/dev/null || echo "Registry starting up..."
 
 info-registry: ## info on local registry (if any)
 	# ping API

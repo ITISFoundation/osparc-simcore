@@ -62,7 +62,7 @@ class OutputsWatcher:
             await self._observer_monitor.stop()
 
             if self._task_events_worker is not None:
-                self._task_events_worker.cancel()
+                self._task_events_worker.cancel("shutting down outputs watcher")
                 with suppress(CancelledError):
                     await self._task_events_worker
 

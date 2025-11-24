@@ -614,7 +614,6 @@ async def test_valid_port(
         node_uuid: str
         r_clone_settings: Any | None = None
         io_log_redirect_cb: LogRedirectCB | None = _io_log_redirect_cb
-        aws_s3_cli_settings: Any | None = None
 
         @staticmethod
         async def get(key: str, progress_bar: ProgressBarData | None = None):

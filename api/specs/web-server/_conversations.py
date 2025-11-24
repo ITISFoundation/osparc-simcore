@@ -147,3 +147,12 @@ async def delete_conversation_message(
 async def get_conversation_message(
     _params: Annotated[_ConversationMessagePathParams, Depends()],
 ): ...
+
+
+@router.post(
+    "/conversations/{conversation_id}/messages/{message_id}:trigger-chatbot",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def trigger_chatbot_processing(
+    _params: Annotated[_ConversationMessagePathParams, Depends()],
+): ...

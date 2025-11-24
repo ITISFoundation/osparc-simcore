@@ -191,7 +191,7 @@ class EventFilter:
             if task is None:
                 return
 
-            task.cancel()
+            task.cancel("shutting down EventFilter")
             with suppress(CancelledError):
                 await task
 

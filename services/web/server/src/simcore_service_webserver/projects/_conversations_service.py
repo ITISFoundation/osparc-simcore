@@ -121,12 +121,16 @@ async def delete_project_conversation(
         project_id=project_uuid,
         permission="write",
     )
+    conversation = await conversations_service.get_conversation(
+        app, conversation_id=conversation_id
+    )
     await conversations_service.delete_conversation(
         app,
         product_name=product_name,
         project_id=project_uuid,
         user_id=user_id,
         conversation_id=conversation_id,
+        conversation_type=conversation.type,
     )
 
 
@@ -173,11 +177,11 @@ async def create_project_conversation_message(
         project_id=project_uuid,
         permission="write",
     )
-    return await conversations_service.create_message(
+    return await conversations_service.create_message_and_notify(
         app,
         product_name=product_name,
         user_id=user_id,
-        project_id=project_uuid,
+        project_id_or_none=project_uuid,
         conversation_id=conversation_id,
         content=content,
         type_=message_type,

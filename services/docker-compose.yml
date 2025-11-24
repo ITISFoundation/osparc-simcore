@@ -378,7 +378,6 @@ services:
         - *registry_settings
         - *s3_settings
         - *tracing_open_telemetry_environments
-      AWS_S3_CLI_S3: ${AWS_S3_CLI_S3}
 
       CATALOG_HOST: ${CATALOG_HOST}
       CATALOG_PORT: ${CATALOG_PORT}
@@ -1396,7 +1395,7 @@ services:
       retries: 50
 
   traefik:
-    image: "traefik:v3.5.2@sha256:07ff0c6c2114233b82e1de8e9f4fee9974470cd8d42c22e4e158538d950e19ae"
+    image: "traefik:v3.6.1@sha256:fd5932c796f7e2db9fd6bff485ef693d53797f0ee8ad03dc68aa424ea6f21958"
     init: true
     hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     # https://github.com/traefik/traefik/blob/v3.5.2/docs/content/reference/static-configuration/env-ref.md

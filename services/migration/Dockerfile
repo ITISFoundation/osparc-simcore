@@ -100,7 +100,7 @@ COPY --chown=scu:scu services/migration/docker services/migration/docker
 HEALTHCHECK \
   --interval=10s \
   --timeout=5s \
-  --start-period=20s \
+  --start-period=60s \
   --start-interval=1s \
   --retries=5 \
   CMD [ "/bin/sh", "/home/scu/services/migration/docker/healthcheck.sh"]

@@ -90,9 +90,9 @@ async def test_project_conversations_full_workflow(
 ):
     mocks = mock_functions_factory(
         [
-            (conversation_service, "notify_conversation_created"),
-            (conversation_service, "notify_conversation_updated"),
-            (conversation_service, "notify_conversation_deleted"),
+            (conversation_service, "notify_via_socket_conversation_created"),
+            (conversation_service, "notify_via_socket_conversation_updated"),
+            (conversation_service, "notify_via_socket_conversation_deleted"),
         ]
     )
 
@@ -120,8 +120,8 @@ async def test_project_conversations_full_workflow(
     assert ConversationRestGet.model_validate(data)
     _first_conversation_id = data["conversationId"]
 
-    assert mocks.notify_conversation_created.call_count == 1
-    kwargs = mocks.notify_conversation_created.call_args.kwargs
+    assert mocks.notify_via_socket_conversation_created.call_count == 1
+    kwargs = mocks.notify_via_socket_conversation_created.call_args.kwargs
 
     assert f"{kwargs['project_id']}" == user_project["uuid"]
     assert kwargs["conversation"].name == "My conversation"
@@ -135,8 +135,8 @@ async def test_project_conversations_full_workflow(
     )
     assert ConversationRestGet.model_validate(data)
 
-    assert mocks.notify_conversation_created.call_count == 2
-    kwargs = mocks.notify_conversation_created.call_args.kwargs
+    assert mocks.notify_via_socket_conversation_created.call_count == 2
+    kwargs = mocks.notify_via_socket_conversation_created.call_args.kwargs
 
     assert f"{kwargs['project_id']}" == user_project["uuid"]
     assert kwargs["conversation"].name == "My conversation"
@@ -171,8 +171,8 @@ async def test_project_conversations_full_workflow(
     )
     assert data["name"] == updated_name
 
-    assert mocks.notify_conversation_updated.call_count == 1
-    kwargs = mocks.notify_conversation_updated.call_args.kwargs
+    assert mocks.notify_via_socket_conversation_updated.call_count == 1
+    kwargs = mocks.notify_via_socket_conversation_updated.call_args.kwargs
 
     assert f"{kwargs['project_id']}" == user_project["uuid"]
     assert kwargs["conversation"].name == updated_name
@@ -184,8 +184,8 @@ async def test_project_conversations_full_workflow(
         status.HTTP_204_NO_CONTENT,
     )
 
-    assert mocks.notify_conversation_deleted.call_count == 1
-    kwargs = mocks.notify_conversation_deleted.call_args.kwargs
+    assert mocks.notify_via_socket_conversation_deleted.call_count == 1
+    kwargs = mocks.notify_via_socket_conversation_deleted.call_args.kwargs
 
     assert f"{kwargs['conversation_id']}" == _first_conversation_id
 
@@ -219,9 +219,18 @@ async def test_project_conversation_messages_full_workflow(
 ):
     mocks = mock_functions_factory(
         [
-            (conversation_message_service, "notify_conversation_message_created"),
-            (conversation_message_service, "notify_conversation_message_updated"),
-            (conversation_message_service, "notify_conversation_message_deleted"),
+            (
+                conversation_message_service,
+                "notify_via_socket_conversation_message_created",
+            ),
+            (
+                conversation_message_service,
+                "notify_via_socket_conversation_message_updated",
+            ),
+            (
+                conversation_message_service,
+                "notify_via_socket_conversation_message_deleted",
+            ),
         ]
     )
 
@@ -252,8 +261,8 @@ async def test_project_conversation_messages_full_workflow(
     assert ConversationMessageRestGet.model_validate(data)
     _first_message_id = data["messageId"]
 
-    assert mocks.notify_conversation_message_created.call_count == 1
-    kwargs = mocks.notify_conversation_message_created.call_args.kwargs
+    assert mocks.notify_via_socket_conversation_message_created.call_count == 1
+    kwargs = mocks.notify_via_socket_conversation_message_created.call_args.kwargs
 
     assert f"{kwargs['project_id']}" == user_project["uuid"]
     assert kwargs["conversation_message"].content == "My first message"
@@ -268,8 +277,8 @@ async def test_project_conversation_messages_full_workflow(
     assert ConversationMessageRestGet.model_validate(data)
     _second_message_id = data["messageId"]
 
-    assert mocks.notify_conversation_message_created.call_count == 2
-    kwargs = mocks.notify_conversation_message_created.call_args.kwargs
+    assert mocks.notify_via_socket_conversation_message_created.call_count == 2
+    kwargs = mocks.notify_via_socket_conversation_message_created.call_args.kwargs
 
     assert user_project["uuid"] == f"{kwargs['project_id']}"
     assert kwargs["conversation_message"].content == "My second message"
@@ -300,8 +309,8 @@ async def test_project_conversation_messages_full_workflow(
         expected,
     )
 
-    assert mocks.notify_conversation_message_updated.call_count == 1
-    kwargs = mocks.notify_conversation_message_updated.call_args.kwargs
+    assert mocks.notify_via_socket_conversation_message_updated.call_count == 1
+    kwargs = mocks.notify_via_socket_conversation_message_updated.call_args.kwargs
 
     assert user_project["uuid"] == f"{kwargs['project_id']}"
     assert kwargs["conversation_message"].content == updated_content
@@ -336,8 +345,8 @@ async def test_project_conversation_messages_full_workflow(
         status.HTTP_204_NO_CONTENT,
     )
 
-    assert mocks.notify_conversation_message_deleted.call_count == 1
-    kwargs = mocks.notify_conversation_message_deleted.call_args.kwargs
+    assert mocks.notify_via_socket_conversation_message_deleted.call_count == 1
+    kwargs = mocks.notify_via_socket_conversation_message_deleted.call_args.kwargs
 
     assert f"{kwargs['project_id']}" == user_project["uuid"]
     assert f"{kwargs['conversation_id']}" == _conversation_id
@@ -434,8 +443,8 @@ async def test_project_conversation_messages_full_workflow(
             status.HTTP_204_NO_CONTENT,
         )
 
-        assert mocks.notify_conversation_message_deleted.call_count == 2
-        kwargs = mocks.notify_conversation_message_deleted.call_args.kwargs
+        assert mocks.notify_via_socket_conversation_message_deleted.call_count == 2
+        kwargs = mocks.notify_via_socket_conversation_message_deleted.call_args.kwargs
 
         assert f"{kwargs['project_id']}" == user_project["uuid"]
         assert f"{kwargs['conversation_id']}" == _conversation_id

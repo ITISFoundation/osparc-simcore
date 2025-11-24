@@ -104,7 +104,7 @@ async def test_conversation_messages_create_and_list(
     """Test creating and listing messages in a support conversation"""
     mocks = mock_functions_factory(
         [
-            (_conversation_message_service, "create_message"),
+            (_conversation_message_service, "create_support_message"),
             (_conversation_message_service, "list_messages_for_conversation"),
         ]
     )
@@ -119,7 +119,7 @@ async def test_conversation_messages_create_and_list(
         created=datetime.now(tz=UTC),
         modified=datetime.now(tz=UTC),
     )
-    mocks.create_message.return_value = mock_message
+    mocks.create_support_message.return_value = mock_message
 
     assert client.app
     create_url = client.app.router["create_conversation_message"].url_for(
@@ -135,7 +135,7 @@ async def test_conversation_messages_create_and_list(
     assert data["type"] == "MESSAGE"
     first_message_id = data["messageId"]
 
-    assert mocks.create_message.call_count == 1
+    assert mocks.create_support_message.call_count == 1
 
     # Mock the list_messages_for_conversation function
     mocks.list_messages_for_conversation.return_value = (1, [mock_message])
@@ -176,7 +176,7 @@ async def test_conversation_messages_get_update_delete(
     """Test getting, updating, and deleting messages in a support conversation"""
     mocks = mock_functions_factory(
         [
-            (_conversation_message_service, "create_message"),
+            (_conversation_message_service, "create_support_message"),
             (_conversation_message_service, "get_message"),
             (_conversation_message_service, "update_message"),
             (_conversation_message_service, "delete_message"),
@@ -194,7 +194,7 @@ async def test_conversation_messages_get_update_delete(
         created=datetime.now(tz=UTC),
         modified=datetime.now(tz=UTC),
     )
-    mocks.create_message.return_value = mock_message
+    mocks.create_support_message.return_value = mock_message
 
     assert client.app
     create_url = client.app.router["create_conversation_message"].url_for(
@@ -351,7 +351,7 @@ async def test_conversation_messages_different_types(
     """Test creating messages with different message types"""
     mocks = mock_functions_factory(
         [
-            (_conversation_message_service, "create_message"),
+            (_conversation_message_service, "create_support_message"),
         ]
     )
 
@@ -370,7 +370,7 @@ async def test_conversation_messages_different_types(
         created=datetime.now(tz=UTC),
         modified=datetime.now(tz=UTC),
     )
-    mocks.create_message.return_value = user_message
+    mocks.create_support_message.return_value = user_message
 
     body = {"content": "User message", "type": "MESSAGE"}
     resp = await client.post(f"{create_url}", json=body)
@@ -387,14 +387,14 @@ async def test_conversation_messages_different_types(
         created=datetime.now(tz=UTC),
         modified=datetime.now(tz=UTC),
     )
-    mocks.create_message.return_value = system_message
+    mocks.create_support_message.return_value = system_message
 
     body = {"content": "System message", "type": "NOTIFICATION"}
     resp = await client.post(f"{create_url}", json=body)
     data, _ = await assert_status(resp, status.HTTP_201_CREATED)
     assert data["type"] == "NOTIFICATION"
 
-    assert mocks.create_message.call_count == 2
+    assert mocks.create_support_message.call_count == 2
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
@@ -500,6 +500,13 @@ def mocked_get_current_product(mocker: MockerFixture) -> MockType:
     return mock
 
 
+@pytest.fixture
+def mocked_trigger_chatbot_processing(mocker: MockerFixture) -> MockType:
+    return mocker.patch.object(
+        _conversation_message_service, "_trigger_chatbot_processing"
+    )
+
+
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 async def test_conversation_messages_with_database(
     app_environment: EnvVarsDict,
@@ -507,6 +514,7 @@ async def test_conversation_messages_with_database(
     mocked_fogbugz_client: MockType,
     mocked_list_users_in_group: MockType,
     mocked_get_current_product: MockType,
+    mocked_trigger_chatbot_processing: MockType,
     logged_user: UserInfoDict,
 ):
     """Test conversation messages with direct database interaction"""
@@ -558,3 +566,15 @@ async def test_conversation_messages_with_database(
     assert mocked_fogbugz_client.reopen_case.called
     assert second_message_data["type"] == "MESSAGE"
     assert second_message_data["conversationId"] == conversation_id
+
+    # Trigger a chatbot processing on the second message via API
+    trigger_chatbot_processing_url = client.app.router[
+        "trigger_chatbot_processing"
+    ].url_for(
+        conversation_id=conversation_id, message_id=second_message_data["messageId"]
+    )
+    resp = await client.post(f"{trigger_chatbot_processing_url}")
+    second_message_data, _ = await assert_status(resp, status.HTTP_204_NO_CONTENT)
+
+    # Verify chatbot processing was triggered
+    assert mocked_trigger_chatbot_processing.call_count == 1
