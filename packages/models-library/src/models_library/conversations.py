@@ -24,6 +24,10 @@ class ConversationType(StrAutoEnum):
         auto()  # Something like sticky note, can be located anywhere in the pipeline UI
     )
     SUPPORT = auto()  # Support conversation
+    SUPPORT_CALL = auto()  # Support call conversation
+
+    def is_support_type(self) -> bool:
+        return self in {ConversationType.SUPPORT, ConversationType.SUPPORT_CALL}
 
 
 class ConversationMessageType(StrAutoEnum):

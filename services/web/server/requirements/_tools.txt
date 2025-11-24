@@ -51,8 +51,9 @@ pathspec==0.12.1
     #   -c requirements/_test.txt
     #   black
     #   mypy
-platformdirs==4.4.0
+platformdirs==4.5.0
     # via
+    #   -c requirements/_base.txt
     #   black
     #   pylint
     #   virtualenv
@@ -64,7 +65,7 @@ pyproject-hooks==1.2.0
     # via build
 pytokens==0.1.10
     # via black
-pyyaml==6.0.1
+pyyaml==6.0.3
     # via
     #   -c requirements/../../../../requirements/constraints.txt
     #   -c requirements/_base.txt

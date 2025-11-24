@@ -337,6 +337,11 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FUNCTIONS:
           this.__setIcon("@FontAwesome5Solid/search/24");
           title.setValue(this.tr("Functions results"));
+          break;
+        case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FILES:
+          this.__setIcon("@FontAwesome5Solid/search/24");
+          title.setValue(this.tr("Files results"));
+          break;
       }
     },
 
@@ -374,8 +379,10 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
       const shareIcon = this.__shareIcon = new qx.ui.basic.Image().set({
         alignY: "middle",
         allowGrowX: false,
-        allowShrinkX: false
+        allowShrinkX: false,
+        cursor: "pointer",
       });
+      shareIcon.addListener("tap", () => this.__openShareWith(), this);
       layout.addAt(shareIcon, 0);
       return shareIcon;
     },
@@ -385,8 +392,20 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
       const shareText = this.getChildControl("share-text");
       if (accessRights && Object.keys(accessRights).length) {
         osparc.dashboard.CardBase.populateShareIcon(shareIcon, accessRights);
-        shareText.setValue(Object.keys(accessRights).length + " members");
         shareIcon.show();
+        // count members
+        const membersCount = new Set();
+        const groupsStore = osparc.store.Groups.getInstance();
+        Object.keys(accessRights).forEach(groupId => {
+          const group = groupsStore.getOrganization(groupId);
+          if (group) {
+            Object.keys(group.getGroupMembers()).forEach(userId => membersCount.add(parseInt(userId)));
+          } else {
+            // individual user
+            membersCount.add(parseInt(groupId));
+          }
+        });
+        shareText.setValue(membersCount.size + " members");
         shareText.show();
       } else {
         shareIcon.exclude();

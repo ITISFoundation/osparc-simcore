@@ -5,19 +5,15 @@ from common_library.json_serialization import json_dumps
 from fastapi import FastAPI
 from servicelib.fastapi.logging_lifespan import create_logging_lifespan
 from servicelib.tracing import TracingConfig
+from simcore_service_notifications._meta import APP_NAME
 from simcore_service_notifications.core.application import create_app
 from simcore_service_notifications.core.settings import (
     ApplicationSettings,
 )
 
-from ._meta import APP_NAME
-
 _logger = logging.getLogger(__name__)
 
-_NOISY_LOGGERS: Final[tuple[str, ...]] = (
-    "aio_pika",
-    "aiormq",
-)
+_NOISY_LOGGERS: Final[tuple[str, ...]] = ()
 
 
 def app_factory() -> FastAPI:

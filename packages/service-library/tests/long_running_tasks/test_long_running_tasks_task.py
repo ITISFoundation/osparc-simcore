@@ -199,7 +199,7 @@ def _get_resutlt(result_field: ResultField) -> Any:
     return loads(result_field.str_result)
 
 
-async def test_fire_and_forget_task_is_not_auto_removed(
+async def test_fire_and_forget_task_is_not_auto_removed_while_running(
     long_running_manager: LongRunningManager, empty_context: TaskContext
 ):
     task_id = await lrt_api.start_task(
@@ -211,19 +211,32 @@ async def test_fire_and_forget_task_is_not_auto_removed(
         fire_and_forget=True,
         task_context=empty_context,
     )
+
     await asyncio.sleep(3 * TEST_CHECK_STALE_INTERVAL_S)
     # the task shall still be present even if we did not check the status before
     status = await long_running_manager.tasks_manager.get_task_status(
         task_id, with_task_context=empty_context
     )
     assert not status.done, "task was removed although it is fire and forget"
-    # the task shall finish
-    await asyncio.sleep(4 * TEST_CHECK_STALE_INTERVAL_S)
-    # get the result
-    task_result = await long_running_manager.tasks_manager.get_task_result(
-        task_id, with_task_context=empty_context
-    )
-    assert _get_resutlt(task_result) == 42
+
+    async for attempt in AsyncRetrying(**_RETRY_PARAMS):
+        with attempt:
+            try:
+                await long_running_manager.tasks_manager.get_task_status(
+                    task_id, with_task_context=empty_context
+                )
+                raise TryAgain
+            except TaskNotFoundError:
+                pass
+
+    with pytest.raises(TaskNotFoundError):
+        await long_running_manager.tasks_manager.get_task_status(
+            task_id, with_task_context=empty_context
+        )
+    with pytest.raises(TaskNotFoundError):
+        await long_running_manager.tasks_manager.get_task_result(
+            task_id, with_task_context=empty_context
+        )
 
 
 async def test_get_result_of_unfinished_task_raises(

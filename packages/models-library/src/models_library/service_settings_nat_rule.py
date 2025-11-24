@@ -83,7 +83,7 @@ class NATRule(BaseModel):
 
     model_config = ConfigDict(arbitrary_types_allowed=True, validate_assignment=True)
 
-    def iter_tcp_ports(self) -> Generator[PortInt, None, None]:
+    def iter_tcp_ports(self) -> Generator[PortInt]:
         for port in self.tcp_ports:
             if isinstance(port, _PortRange):
                 yield from (

@@ -395,14 +395,16 @@ async def compute_cluster_used_resources(
     docker_client: AutoscalingDocker, nodes: list[Node]
 ) -> Resources:
     """Returns the total amount of resources (reservations) used on each of the given nodes"""
-    list_of_used_resources = await logged_gather(
+    list_of_used_resources: list[Resources] = await logged_gather(
         *(compute_node_used_resources(docker_client, node) for node in nodes)
     )
-    counter = collections.Counter(dict.fromkeys(list(Resources.model_fields), 0))
+    flat_counter: collections.Counter = collections.Counter()
     for result in list_of_used_resources:
-        counter.update(result.model_dump())
+        flat_counter.update(result.as_flat_dict())
+    flat_counter.setdefault("cpus", 0)
+    flat_counter.setdefault("ram", 0)
 
-    return Resources.model_validate(dict(counter))
+    return Resources.from_flat_dict(dict(flat_counter))
 
 
 _COMMAND_TIMEOUT_S = 10

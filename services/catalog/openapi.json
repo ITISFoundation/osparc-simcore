@@ -613,6 +613,23 @@
   },
   "components": {
     "schemas": {
+      "AppArmor": {
+        "properties": {
+          "Mode": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Mode1"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "AppArmor",
+        "description": "Options for configuring AppArmor on the container"
+      },
       "Author": {
         "properties": {
           "name": {
@@ -749,6 +766,45 @@
             ],
             "title": "Nonrecursive",
             "description": "Disable recursive bind mount.",
+            "default": false
+          },
+          "CreateMountpoint": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Createmountpoint",
+            "description": "Create mount point on host if missing",
+            "default": false
+          },
+          "ReadOnlyNonRecursive": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Readonlynonrecursive",
+            "description": "Make the mount non-recursively read-only, but still leave the mount recursive\n(unless NonRecursive is set to true in conjunction).\n",
+            "default": false
+          },
+          "ReadOnlyForceRecursive": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Readonlyforcerecursive",
+            "description": "Raise an error if the mount cannot be made recursively read-only.",
             "default": false
           }
         },
@@ -1103,7 +1159,7 @@
           "Mode": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/Mode1"
+                "$ref": "#/components/schemas/Mode3"
               },
               {
                 "type": "null"
@@ -1372,6 +1428,18 @@
             ],
             "title": "Startperiod",
             "description": "Start period for the container to initialize before starting\nhealth-retries countdown in nanoseconds. It should be 0 or at least\n1000000 (1 ms). 0 means inherit.\n"
+          },
+          "StartInterval": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Startinterval",
+            "description": "The time to wait between checks in nanoseconds during the start period.\nIt should be 0 or at least 1000000 (1 ms). 0 means inherit.\n"
           }
         },
         "type": "object",
@@ -1442,7 +1510,8 @@
         "enum": [
           "default",
           "process",
-          "hyperv"
+          "hyperv",
+          ""
         ],
         "title": "Isolation1",
         "description": "Isolation technology of the containers running the service.\n(Windows only)"
@@ -1522,6 +1591,23 @@
         "description": "Specifies the log driver to use for tasks created from this spec. If\nnot present, the default one for the swarm will be used, finally\nfalling back to the engine default if not specified."
       },
       "Mode": {
+        "type": "string",
+        "enum": [
+          "default",
+          "unconfined",
+          "custom"
+        ],
+        "title": "Mode"
+      },
+      "Mode1": {
+        "type": "string",
+        "enum": [
+          "default",
+          "disabled"
+        ],
+        "title": "Mode1"
+      },
+      "Mode2": {
         "properties": {
           "Replicated": {
             "anyOf": [
@@ -1571,16 +1657,16 @@
           }
         },
         "type": "object",
-        "title": "Mode",
+        "title": "Mode2",
         "description": "Scheduling mode for the service."
       },
-      "Mode1": {
+      "Mode3": {
         "type": "string",
         "enum": [
           "vip",
           "dnsrr"
         ],
-        "title": "Mode1",
+        "title": "Mode3",
         "description": "The mode of resolution to use for internal load balancing between tasks."
       },
       "Mount": {
@@ -1618,7 +1704,7 @@
                 "type": "null"
               }
             ],
-            "description": "The mount type. Available types:\n\n- `bind` Mounts a file or directory from the host into the container. Must exist prior to creating the container.\n- `volume` Creates a volume with the given name and options (or uses a pre-existing volume with the same name and options). These are **not** removed when the container is removed.\n- `tmpfs` Create a tmpfs with the given options. The mount source cannot be specified for tmpfs.\n- `npipe` Mounts a named pipe from the host into the container. Must exist prior to creating the container.\n"
+            "description": "The mount type. Available types:\n\n- `bind` Mounts a file or directory from the host into the container. Must exist prior to creating the container.\n- `volume` Creates a volume with the given name and options (or uses a pre-existing volume with the same name and options). These are **not** removed when the container is removed.\n- `tmpfs` Create a tmpfs with the given options. The mount source cannot be specified for tmpfs.\n- `npipe` Mounts a named pipe from the host into the container. Must exist prior to creating the container.\n- `cluster` a Swarm cluster volume\n"
           },
           "ReadOnly": {
             "anyOf": [
@@ -2078,6 +2164,40 @@
               }
             ],
             "description": "SELinux labels of the container"
+          },
+          "Seccomp": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Seccomp"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Options for configuring seccomp on the container"
+          },
+          "AppArmor": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AppArmor"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Options for configuring AppArmor on the container"
+          },
+          "NoNewPrivileges": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nonewprivileges",
+            "description": "Configuration of the no_new_privs bit in the container"
           }
         },
         "type": "object",
@@ -2461,6 +2581,35 @@
         "type": "object",
         "title": "SeLinuxContext",
         "description": "SELinux labels of the container"
+      },
+      "Seccomp": {
+        "properties": {
+          "Mode": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Mode"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "Profile": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile",
+            "description": "The custom seccomp profile as a json object"
+          }
+        },
+        "type": "object",
+        "title": "Seccomp",
+        "description": "Options for configuring seccomp on the container"
       },
       "Secret": {
         "properties": {
@@ -3208,7 +3357,7 @@
           "Mode": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/Mode"
+                "$ref": "#/components/schemas/Mode2"
               },
               {
                 "type": "null"
@@ -3251,7 +3400,7 @@
               }
             ],
             "title": "Networks",
-            "description": "Specifies which networks the service should attach to."
+            "description": "Specifies which networks the service should attach to.\n\nDeprecated: This field is deprecated since v1.44. The Networks field in TaskSpec should be used instead.\n"
           },
           "EndpointSpec": {
             "anyOf": [
@@ -3538,10 +3687,11 @@
           "bind",
           "volume",
           "tmpfs",
-          "npipe"
+          "npipe",
+          "cluster"
         ],
         "title": "Type2",
-        "description": "The mount type. Available types:\n\n- `bind` Mounts a file or directory from the host into the container. Must exist prior to creating the container.\n- `volume` Creates a volume with the given name and options (or uses a pre-existing volume with the same name and options). These are **not** removed when the container is removed.\n- `tmpfs` Create a tmpfs with the given options. The mount source cannot be specified for tmpfs.\n- `npipe` Mounts a named pipe from the host into the container. Must exist prior to creating the container."
+        "description": "The mount type. Available types:\n\n- `bind` Mounts a file or directory from the host into the container. Must exist prior to creating the container.\n- `volume` Creates a volume with the given name and options (or uses a pre-existing volume with the same name and options). These are **not** removed when the container is removed.\n- `tmpfs` Create a tmpfs with the given options. The mount source cannot be specified for tmpfs.\n- `npipe` Mounts a named pipe from the host into the container. Must exist prior to creating the container.\n- `cluster` a Swarm cluster volume"
       },
       "Ulimit": {
         "properties": {

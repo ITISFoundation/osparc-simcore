@@ -139,10 +139,6 @@ sniffio==1.3.1
     #   httpx
 termcolor==3.1.0
     # via pytest-sugar
-typing-extensions==4.14.1
-    # via
-    #   -c requirements/_base.txt
-    #   pytest-asyncio
 tzdata==2025.2
     # via faker
 urllib3==2.5.0

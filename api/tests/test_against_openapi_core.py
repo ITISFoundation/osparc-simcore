@@ -1,8 +1,9 @@
-""" Tests all openapi specs against openapi-core functionality
+"""Tests all openapi specs against openapi-core functionality
 
-    - Checks that openapi specs do work properly with openapi-core
-    - The key issue is jsonschema RefResolver!
+- Checks that openapi specs do work properly with openapi-core
+- The key issue is jsonschema RefResolver!
 """
+
 # pylint:disable=unused-variable
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name

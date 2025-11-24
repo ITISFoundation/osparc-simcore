@@ -17,7 +17,7 @@ from simcore_service_webserver.groups import _groups_repository
 @pytest.fixture
 async def create_test_group(
     client: TestClient, logged_user: UserInfoDict
-) -> AsyncGenerator[Callable[..., Coroutine[Any, Any, Any]], None]:
+) -> AsyncGenerator[Callable[..., Coroutine[Any, Any, Any]]]:
     """Fixture that creates a standard group and ensures cleanup."""
     created_groups = []
 

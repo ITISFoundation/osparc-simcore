@@ -87,6 +87,7 @@ qx.Class.define("osparc.store.Store", {
         "searchTemplates",        // osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_TEMPLATES,
         "searchPublicTemplates",  // osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PUBLIC_TEMPLATES,
         "searchFunctions",        // osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FUNCTIONS,
+        "searchFiles",            // osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FILES,
       ],
       init: "studiesAndFolders",
       nullable: false,
@@ -435,7 +436,7 @@ qx.Class.define("osparc.store.Store", {
       return null;
     },
 
-    reloadCreditPrice: function() {
+    fetchCreditPrice: function() {
       const store = osparc.store.Store.getInstance();
       store.setCreditPrice(null);
 
@@ -488,15 +489,22 @@ qx.Class.define("osparc.store.Store", {
       return 0;
     },
 
-    reloadWallets: function() {
+    fetchWallets: function() {
       return new Promise((resolve, reject) => {
         osparc.data.Resources.fetch("wallets", "get")
           .then(walletsData => {
+            let personalWalletFound = false;
             const wallets = [];
+            const myGroupId = osparc.auth.Data.getInstance().getGroupId();
             walletsData.forEach(walletReducedData => {
+              personalWalletFound = personalWalletFound || myGroupId === walletReducedData["owner"];
               const wallet = new osparc.data.model.Wallet(walletReducedData);
               wallets.push(wallet);
             });
+            if (!personalWalletFound) {
+              const msg = this.tr("No personal wallet found, some functionalities might not work properly. Please contact support.");
+              osparc.FlashMessenger.logAs(msg, "WARNING");
+            }
             this.setWallets(wallets);
 
             // 1) fetch the access rights

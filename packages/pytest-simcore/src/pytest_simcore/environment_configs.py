@@ -5,6 +5,7 @@
 
 import logging
 import re
+from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
@@ -86,10 +87,18 @@ def skip_if_no_external_envfile(external_envfile_dict: EnvVarsDict) -> None:
 
 
 @pytest.fixture(scope="session")
-def env_devel_dict(env_devel_file: Path) -> EnvVarsDict:
+def _env_devel_dict_session(env_devel_file: Path) -> EnvVarsDict:
     assert env_devel_file.exists()
     assert env_devel_file.name == ".env-devel"
+    # Loads and interpolates .env-devel file
     return load_dotenv(env_devel_file, verbose=True, interpolate=True)
+
+
+@pytest.fixture
+def env_devel_dict(_env_devel_dict_session: EnvVarsDict) -> EnvVarsDict:
+    # NOTE: Returns a copy of the session scoped env_devel_dict on every
+    # test run to avoid cross-test pollution.
+    return deepcopy(_env_devel_dict_session)
 
 
 @pytest.fixture

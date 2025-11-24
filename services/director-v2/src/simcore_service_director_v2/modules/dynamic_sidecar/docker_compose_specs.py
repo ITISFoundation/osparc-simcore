@@ -296,7 +296,9 @@ async def assemble_spec(  # pylint: disable=too-many-arguments # noqa: PLR0913
         app.state.settings.DIRECTOR_V2_DOCKER_REGISTRY
     )
 
-    docker_compose_version = app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER.DYNAMIC_SIDECAR_DOCKER_COMPOSE_VERSION
+    docker_compose_version = (
+        app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER.DYNAMIC_SIDECAR_DOCKER_COMPOSE_VERSION
+    )
 
     egress_proxy_settings: EgressProxySettings = (
         app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR_EGRESS_PROXY_SETTINGS
@@ -346,21 +348,19 @@ async def assemble_spec(  # pylint: disable=too-many-arguments # noqa: PLR0913
             service_version=service_version,
             product_name=product_name,
         )
-        simcore_service_labels = (
-            await resolve_and_substitute_session_variables_in_model(
-                app=app,
-                model=simcore_service_labels,
-                # NOTE: at this point all OsparcIdentifiers have to be replaced
-                # an error will be raised otherwise
-                safe=False,
-                user_id=user_id,
-                product_name=product_name,
-                product_api_base_url=product_api_base_url,
-                project_id=project_id,
-                node_id=node_id,
-                service_run_id=service_run_id,
-                wallet_id=wallet_id,
-            )
+        simcore_service_labels = await resolve_and_substitute_session_variables_in_model(
+            app=app,
+            model=simcore_service_labels,
+            # NOTE: at this point all OsparcIdentifiers have to be replaced
+            # an error will be raised otherwise
+            safe=False,
+            user_id=user_id,
+            product_name=product_name,
+            product_api_base_url=product_api_base_url,
+            project_id=project_id,
+            node_id=node_id,
+            service_run_id=service_run_id,
+            wallet_id=wallet_id,
         )
 
         add_egress_configuration(

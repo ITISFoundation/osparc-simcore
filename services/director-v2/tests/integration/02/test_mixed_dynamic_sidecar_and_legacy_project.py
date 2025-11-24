@@ -189,8 +189,15 @@ async def ensure_services_stopped(
             for service_name in service_names:
                 # if node_uuid is present in the service name it needs to be removed
                 if node_uuid in service_name:
-                    delete_result = await docker_client.services.delete(service_name)
-                    assert delete_result is True
+                    try:
+                        delete_result = await docker_client.services.delete(
+                            service_name
+                        )
+                        assert delete_result is True
+                    except aiodocker.exceptions.DockerError as e:
+                        assert (
+                            e.status == 404
+                        ), f"Unexpected error when deleting service: {e}"
 
         project_id = f"{dy_static_file_server_project.uuid}"
 

@@ -3,11 +3,12 @@
 # pylint: disable=unused-variable
 
 
+from typing import Annotated
+
 import pytest
 from models_library.errors import ErrorDict
 from pydantic import BaseModel, Field, ValidationError
 from pydantic.version import version_short
-from typing_extensions import Annotated
 
 
 def test_pydantic_error_dict():

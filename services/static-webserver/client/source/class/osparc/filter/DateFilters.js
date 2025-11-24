@@ -5,13 +5,13 @@
  * Authors: Ignacio Pascual (ignapas)
  */
 
-qx.Class.define("osparc.desktop.credits.DateFilters", {
+qx.Class.define("osparc.filter.DateFilters", {
   extend: qx.ui.core.Widget,
 
   construct() {
     this.base(arguments);
-    this._setLayout(new qx.ui.layout.HBox(7));
-    this._buildLayout();
+    this._setLayout(new qx.ui.layout.HBox(6));
+    this.__buildLayout();
   },
 
   events: {
@@ -19,7 +19,7 @@ qx.Class.define("osparc.desktop.credits.DateFilters", {
   },
 
   members: {
-    _buildLayout() {
+    __buildLayout() {
       this._removeAll();
 
       // Range defaults: today
@@ -76,7 +76,7 @@ qx.Class.define("osparc.desktop.credits.DateFilters", {
         lastYear.setYear(today.getFullYear() - 1);
         this.__from.setValue(lastYear);
         this.__until.setValue(today);
-      })
+      });
       this._add(lastYearBtn);
     },
 
@@ -86,13 +86,13 @@ qx.Class.define("osparc.desktop.credits.DateFilters", {
       container.add(lbl);
       const datepicker = new qx.ui.form.DateField();
       datepicker.setValue(initDate ? initDate : new Date());
-      datepicker.addListener("changeValue", e => this._changeHandler(e));
+      datepicker.addListener("changeValue", e => this.__changeHandler(e));
       container.add(datepicker);
       this._add(container);
       return datepicker;
     },
 
-    _changeHandler(e) {
+    __changeHandler: function(e) {
       const timestampFrom = this.__from.getValue().getTime();
       const timestampUntil = this.__until.getValue().getTime();
       if (timestampFrom > timestampUntil) {
@@ -105,21 +105,17 @@ qx.Class.define("osparc.desktop.credits.DateFilters", {
         }
         return;
       }
-      const from = osparc.utils.Utils.formatDateYyyyMmDd(this.__from.getValue());
-      const until = osparc.utils.Utils.formatDateYyyyMmDd(this.__until.getValue());
-      this.fireDataEvent("change", {
-        from,
-        until
-      });
+      const value = this.getValue();
+      this.fireDataEvent("change", value);
     },
 
-    getValue() {
-      const from = osparc.utils.Utils.formatDateYyyyMmDd(this.__from.getValue())
-      const until = osparc.utils.Utils.formatDateYyyyMmDd(this.__until.getValue())
+    getValue: function() {
+      const from = osparc.utils.Utils.formatDateYyyyMmDd(this.__from.getValue());
+      const until = osparc.utils.Utils.formatDateYyyyMmDd(this.__until.getValue());
       return {
         from,
         until
-      }
+      };
     }
   }
 });

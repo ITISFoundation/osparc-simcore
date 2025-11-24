@@ -1,32 +1,41 @@
-from enum import Enum
-from typing import Annotated
+from typing import Annotated, Generic
 
+from common_library.basic_types import DEFAULT_FACTORY
 from common_library.json_serialization import json_dumps
-from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, field_validator
+from pydantic import (
+    BaseModel,
+    BeforeValidator,
+    ConfigDict,
+    Field,
+    field_validator,
+)
 
 from .basic_types import IDStr
+from .list_operations import OrderClause, OrderDirection, TField, check_ordering_list
 from .rest_base import RequestParameters
-from .utils.common_validators import parse_json_pre_validator
+from .utils.common_validators import (
+    parse_json_pre_validator,
+)
 
-
-class OrderDirection(str, Enum):
-    ASC = "asc"
-    DESC = "desc"
+__all__: tuple[str, ...] = ("OrderDirection",)
 
 
 class OrderBy(BaseModel):
-    # Based on https://google.aip.dev/132#ordering
-    field: IDStr = Field(..., description="field name identifier")
-    direction: OrderDirection = Field(
-        default=OrderDirection.ASC,
-        description=(
-            f"As [A,B,C,...] if `{OrderDirection.ASC.value}`"
-            f" or [Z,Y,X, ...] if `{OrderDirection.DESC.value}`"
+    # NOTE: use instead OrderClause[TField] where TField is Literal of valid fields
+    field: Annotated[IDStr, Field(description="field name identifier")]
+    direction: Annotated[
+        OrderDirection,
+        Field(
+            description=(
+                f"As [A,B,C,...] if `{OrderDirection.ASC.value}`"
+                f" or [Z,Y,X, ...] if `{OrderDirection.DESC.value}`"
+            )
         ),
-    )
+    ] = OrderDirection.ASC
 
 
 class _BaseOrderQueryParams(RequestParameters):
+    # Use OrderingQueryParams instead for more flexible ordering
     order_by: OrderBy
 
 
@@ -91,12 +100,10 @@ def create_ordering_query_model_class(
             return _ordering_fields_api_to_column_map.get(v) or v
 
     assert "json_schema_extra" in _OrderBy.model_config  # nosec
-    assert isinstance(_OrderBy.model_config["json_schema_extra"], dict)  # nosec
-    assert isinstance(  # nosec
-        _OrderBy.model_config["json_schema_extra"]["examples"], list
-    )
-    order_by_example = _OrderBy.model_config["json_schema_extra"]["examples"][0]
+
+    order_by_example = _OrderBy.model_json_schema()["examples"][0]
     order_by_example_json = json_dumps(order_by_example)
+
     assert _OrderBy.model_validate(order_by_example), "Example is invalid"  # nosec
 
     converted_default = _OrderBy.model_validate(
@@ -104,17 +111,82 @@ def create_ordering_query_model_class(
         default.model_dump()
     )
 
-    class _OrderQueryParams(_BaseOrderQueryParams):
+    class _OrderJsonQueryParams(_BaseOrderQueryParams):
         order_by: Annotated[
-            _OrderBy, BeforeValidator(parse_json_pre_validator)
-        ] = Field(
-            default=converted_default,
-            description=(
-                f"Order by field (`{msg_field_options}`) and direction (`{msg_direction_options}`). "
-                f"The default sorting order is `{json_dumps(default)}`."
+            _OrderBy,
+            BeforeValidator(parse_json_pre_validator),
+            Field(
+                description=(
+                    f"Order by field (`{msg_field_options}`) and direction (`{msg_direction_options}`). "
+                    f"The default sorting order is `{json_dumps(default)}`."
+                ),
+                examples=[order_by_example],
+                json_schema_extra={"example_json": order_by_example_json},
             ),
-            examples=[order_by_example],
-            json_schema_extra={"example_json": order_by_example_json},
-        )
+        ] = converted_default
 
-    return _OrderQueryParams
+    return _OrderJsonQueryParams
+
+
+def _parse_order_by(v):
+    if not v:
+        return []
+
+    if isinstance(v, list):
+        v = ",".join(v)
+
+    if not isinstance(v, str):
+        msg = "order_by must be a string"
+        raise TypeError(msg)
+
+    # 1. from comma-separated string to list of OrderClause
+    clauses = []
+    for t in v.split(","):
+        token = t.strip()
+        if not token:
+            continue
+        if token.startswith("-"):
+            clauses.append((token[1:], OrderDirection.DESC))
+        elif token.startswith("+"):
+            clauses.append((token[1:], OrderDirection.ASC))
+        else:
+            clauses.append((token, OrderDirection.ASC))
+
+    # 2. check for duplicates and conflicting directions
+    return [
+        {"field": field, "direction": direction}
+        for field, direction in check_ordering_list(clauses)
+    ]
+
+
+class OrderingQueryParams(BaseModel, Generic[TField]):
+    """
+    This class is designed to parse query parameters for ordering results in an API request.
+
+    It supports multiple ordering clauses and allows for flexible sorting options.
+
+    NOTE: It only parses strings and validates into list[OrderClause[TField]]
+    where TField is a type variable representing valid field names.
+
+
+    For example:
+
+        /my/path?order_by=field1,-field2,+field3
+
+    would sort by field1 ascending, field2 descending, and field3 ascending.
+    """
+
+    order_by: Annotated[
+        list[OrderClause[TField]],
+        BeforeValidator(_parse_order_by),
+        Field(default_factory=list),
+    ] = DEFAULT_FACTORY
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {"order_by": "-created_at,name,+gender"},
+                {"order_by": ""},
+            ],
+        }
+    )

@@ -1,9 +1,8 @@
-""" Groups table
+"""Groups table
 
-    - List of groups in the framework
-    - Groups have a ID, name and a list of users that belong to the group
+- List of groups in the framework
+- Groups have a ID, name and a list of users that belong to the group
 """
-
 
 import sqlalchemy as sa
 from common_library.groups_enums import GroupType

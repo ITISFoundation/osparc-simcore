@@ -26,7 +26,7 @@ def test_create_runtime_spec_impl(tests_data_dir: Path):
         }
     )
 
-    pm_spec = random.choice([pm_spec1, pm_spec2])
+    pm_spec = random.choice([pm_spec1, pm_spec2])  # noqa: S311
 
     # A develop mode --
 
@@ -50,7 +50,7 @@ def test_create_runtime_spec_impl(tests_data_dir: Path):
     volumes += [
         ServiceVolume(
             type="bind",
-            source=f"{pid / nid /'state'/ workdir.name}",
+            source=f"{pid / nid / 'state' / workdir.name}",
             target=f"{workdir}",
         )
         for workdir in pm_spec.state_paths

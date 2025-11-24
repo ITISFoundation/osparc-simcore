@@ -163,48 +163,44 @@ qx.Class.define("osparc.auth.Manager", {
     },
 
     login: function(email, password) {
-      return new Promise((resolve, reject) => {
-        const params = {
+      const params = {
+        data: {
           email,
           password
-        };
-        const url = osparc.data.Resources.resources["auth"].endpoints["postLogin"].url;
-        const xhr = new XMLHttpRequest();
-        xhr.onload = () => {
-          const resp = JSON.parse(xhr.responseText);
-          if (xhr.status === 202) {
-            const data = resp.data;
-            const message = osparc.auth.core.Utils.extractMessage(data);
-            const retryAfter = osparc.auth.core.Utils.extractRetryAfter(data)
-            resolve({
-              status: xhr.status,
-              message,
-              retryAfter,
-              nextStep: data["name"]
-            });
-          } else if (xhr.status === 200) {
-            osparc.data.Resources.fetch("profile", "getOne")
+        },
+      };
+      const options = {
+        resolveWResponse: true // we need the status code
+      };
+      return osparc.data.Resources.fetch("auth", "postLogin", params, options)
+        .then(resp => {
+          const {
+            status,
+            data,
+            error,
+          } = resp;
+
+          if (status === 202) {
+            return {
+              status,
+              message: osparc.auth.core.Utils.extractMessage(data),
+              retryAfter: osparc.auth.core.Utils.extractRetryAfter(data),
+              nextStep: data.name
+            };
+          } else if (status === 200) {
+            return osparc.data.Resources.fetch("profile", "getOne")
               .then(profile => {
                 this.__loginUser(profile);
-                const data = resp.data;
-                const message = osparc.auth.core.Utils.extractMessage(data);
-                resolve({
-                  status: xhr.status,
-                  message
-                });
-              })
-              .catch(err => reject(err));
-          } else if (resp.error == null) {
-            reject({message: this.tr("Unsuccessful Login")});
-          } else {
-            reject(resp.error);
+                return {
+                  status,
+                  message: osparc.auth.core.Utils.extractMessage(data)
+                };
+              });
           }
-        };
-        xhr.onerror = err => reject(err);
-        xhr.open("POST", url, true);
-        xhr.setRequestHeader("Content-Type", "application/json");
-        xhr.send(JSON.stringify(params));
-      });
+          // other/unexpected statuses
+          return Promise.reject(error || { message: this.tr("Unsuccessful Login") });
+        })
+        .catch(err => Promise.reject(err));
     },
 
     logout: function() {

@@ -1,7 +1,7 @@
-""" A service-independent module with aiopg utils
+"""A service-independent module with aiopg utils
 
-    This module was necessary because simcore-sdk (an aiohttp-independent package) still needs some
-    of the helpers here.
+This module was necessary because simcore-sdk (an aiohttp-independent package) still needs some
+of the helpers here.
 """
 
 import logging

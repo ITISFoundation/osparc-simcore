@@ -71,6 +71,16 @@ class TaskData(BaseModel):
         ),
     ] = None
 
+    detected_as_done_at: Annotated[
+        datetime | None,
+        Field(
+            description=(
+                "used to remove the task when it's first detected as done "
+                "if a task was started as fire_and_forget=True"
+            )
+        ),
+    ] = None
+
     is_done: Annotated[
         bool,
         Field(description="True when the task finished running with or without errors"),

@@ -201,7 +201,7 @@ def account_request_form(
 @pytest.fixture
 async def pre_registration_details_db_cleanup(
     client: TestClient,
-) -> AsyncGenerator[None, None]:
+) -> AsyncGenerator[None]:
     """Fixture to clean up all pre-registration details after test"""
 
     assert client.app

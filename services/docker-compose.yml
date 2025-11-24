@@ -7,7 +7,6 @@ x-dask-tls-secrets: &dask_tls_secrets
 # mode: 444 # not supported by docker stack compose as of 26.0.0
 
 ## common environs
-
 x-common-logging: &common_logging_environments
   LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
   LOG_FILTER_MAPPING: ${LOG_FILTER_MAPPING}
@@ -147,7 +146,7 @@ services:
         - traefik.http.services.${SWARM_STACK_NAME}_api-server.loadbalancer.healthcheck.timeout=1000ms
         # NOTE: keep in sync with fallback router (rule and entrypoint)
         - traefik.http.routers.${SWARM_STACK_NAME}_api-server.rule=(Path(`/`) || Path(`/v0`) ||  PathPrefix(`/v0/`) || Path(`/api/v0/openapi.json`))
-        - traefik.http.routers.${SWARM_STACK_NAME}_api-server.entrypoints=simcore_api
+        - traefik.http.routers.${SWARM_STACK_NAME}_api-server.entrypoints=simcoreapi
         - traefik.http.routers.${SWARM_STACK_NAME}_api-server.priority=3
         - traefik.http.routers.${SWARM_STACK_NAME}_api-server.middlewares=${SWARM_STACK_NAME}_gzip@swarm,ratelimit-${SWARM_STACK_NAME}_api-server,inflightreq-${SWARM_STACK_NAME}_api-server
     networks: &api_server_networks
@@ -379,7 +378,6 @@ services:
         - *registry_settings
         - *s3_settings
         - *tracing_open_telemetry_environments
-      AWS_S3_CLI_S3: ${AWS_S3_CLI_S3}
 
       CATALOG_HOST: ${CATALOG_HOST}
       CATALOG_PORT: ${CATALOG_PORT}
@@ -561,7 +559,7 @@ services:
     hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     networks:
       - default
-      - docker-api-network
+      - docker_api_subnet
     environment:
       <<:
         - *common_logging_environments
@@ -603,7 +601,7 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
-      - docker-api-network
+      - docker_api_subnet
 
   static-webserver:
     image: ${DOCKER_REGISTRY:-itisfoundation}/static-webserver:${DOCKER_IMAGE_TAG:-latest}
@@ -1397,43 +1395,46 @@ services:
       retries: 50
 
   traefik:
-    image: "traefik:v3.5.2@sha256:07ff0c6c2114233b82e1de8e9f4fee9974470cd8d42c22e4e158538d950e19ae"
+    image: "traefik:v3.6.1@sha256:fd5932c796f7e2db9fd6bff485ef693d53797f0ee8ad03dc68aa424ea6f21958"
     init: true
     hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
-    command:
-      - "--api=true"
-      - "--api.dashboard=true"
-      - "--ping=true"
-      - "--entryPoints.ping.address=:9082"
-      - "--ping.entryPoint=ping"
-      - "--log.level=WARN" # WARN, not WARNING
-      - "--accesslog=false"
-      - "--metrics.prometheus=true"
-      - "--metrics.prometheus.addEntryPointsLabels=true"
-      - "--metrics.prometheus.addServicesLabels=true"
-      - "--entryPoints.metrics.address=:8082"
-      - "--metrics.prometheus.entryPoint=metrics"
-      - "--entryPoints.http.address=:80"
-      - "--entryPoints.http.forwardedHeaders.insecure"
-      - "--entryPoints.http.transport.respondingTimeouts.readTimeout=21600s" #6h, for https://github.com/traefik/traefik/issues/10805 large file uploads
-      - "--entryPoints.http.transport.respondingTimeouts.writeTimeout=21600s" #6h, for https://github.com/traefik/traefik/issues/10805 large file downloads
-      - "--entryPoints.simcore_api.address=:10081"
-      - "--entryPoints.simcore_api.forwardedHeaders.insecure"
-      - "--entryPoints.simcore_api.transport.respondingTimeouts.readTimeout=21600s" #6h, for https://github.com/traefik/traefik/issues/10805 large file uploads
-      - "--entryPoints.simcore_api.transport.respondingTimeouts.writeTimeout=21600s" #6h, for https://github.com/traefik/traefik/issues/10805 large file downloads
-      - "--entryPoints.traefik_monitor.address=:8080"
-      - "--entryPoints.traefik_monitor.forwardedHeaders.insecure"
-      - "--providers.swarm.endpoint=unix:///var/run/docker.sock"
-      - "--providers.swarm.network=${SWARM_STACK_NAME}_default"
-      # https://github.com/traefik/traefik/issues/7886
-      - "--providers.swarm.refreshSeconds=1"
-      - "--providers.swarm.exposedByDefault=false"
-      - "--providers.swarm.constraints=Label(`io.simcore.zone`, `${TRAEFIK_SIMCORE_ZONE}`)"
-      - "--tracing"
-      - "--tracing.addinternals"
-      - "--tracing.otlp=true"
-      - "--tracing.otlp.http=true"
-      - "--tracing.sampleRate=${TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY}"
+    # https://github.com/traefik/traefik/blob/v3.5.2/docs/content/reference/static-configuration/env-ref.md
+    environment:
+      TRAEFIK_API: "true"
+      TRAEFIK_API_DASHBOARD: "true"
+      TRAEFIK_PING: "true"
+      TRAEFIK_ENTRYPOINTS_PING_ADDRESS: ":9082"
+      TRAEFIK_PING_ENTRYPOINT: "ping"
+      TRAEFIK_LOG_LEVEL: "WARN"
+      TRAEFIK_ACCESSLOG: "false"
+      TRAEFIK_ACCESSLOG_FORMAT: "json"
+      TRAEFIK_METRICS_PROMETHEUS: "true"
+      TRAEFIK_METRICS_PROMETHEUS_ADDENTRYPOINTSLABELS: "true"
+      TRAEFIK_METRICS_PROMETHEUS_ADDSERVICESLABELS: "true"
+      TRAEFIK_ENTRYPOINTS_METRICS_ADDRESS: ":8082"
+      TRAEFIK_METRICS_PROMETHEUS_ENTRYPOINT: "metrics"
+      TRAEFIK_ENTRYPOINTS_HTTP_ADDRESS: ":80"
+      TRAEFIK_ENTRYPOINTS_HTTP_FORWARDEDHEADERS_INSECURE: "true"
+      # 6h, for https://github.com/traefik/traefik/issues/10805 large file uploads
+      TRAEFIK_ENTRYPOINTS_HTTP_TRANSPORT_RESPONDINGTIMEOUTS_READTIMEOUT: "21600s"
+      # 6h, for https://github.com/traefik/traefik/issues/10805 large file downloads
+      TRAEFIK_ENTRYPOINTS_HTTP_TRANSPORT_RESPONDINGTIMEOUTS_WRITETIMEOUT: "21600s"
+      TRAEFIK_ENTRYPOINTS_SIMCOREAPI_ADDRESS: ":10081"
+      TRAEFIK_ENTRYPOINTS_SIMCOREAPI_FORWARDEDHEADERS_INSECURE: "true"
+      TRAEFIK_ENTRYPOINTS_SIMCOREAPI_TRANSPORT_RESPONDINGTIMEOUTS_READTIMEOUT: "21600s"
+      TRAEFIK_ENTRYPOINTS_SIMCOREAPI_TRANSPORT_RESPONDINGTIMEOUTS_WRITETIMEOUT: "21600s"
+      TRAEFIK_ENTRYPOINTS_TRAEFIKMONITOR_ADDRESS: ":8080"
+      TRAEFIK_ENTRYPOINTS_TRAEFIKMONITOR_FORWARDEDHEADERS_INSECURE: "true"
+      TRAEFIK_PROVIDERS_SWARM_ENDPOINT: "unix:///var/run/docker.sock"
+      TRAEFIK_PROVIDERS_SWARM_NETWORK: "${SWARM_STACK_NAME}_default"
+      TRAEFIK_PROVIDERS_SWARM_REFRESHSECONDS: "1" # https://github.com/traefik/traefik/issues/7886
+      TRAEFIK_PROVIDERS_SWARM_EXPOSEDBYDEFAULT: "false"
+      TRAEFIK_PROVIDERS_SWARM_CONSTRAINTS: "Label(`io.simcore.zone`, `${TRAEFIK_SIMCORE_ZONE}`)"
+      TRAEFIK_TRACING: "true"
+      TRAEFIK_TRACING_ADDINTERNALS: "true"
+      TRAEFIK_TRACING_OTLP: "true"
+      TRAEFIK_TRACING_OTLP_HTTP: "true"
+      TRAEFIK_TRACING_SAMPLERATE: "${TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY}"
     healthcheck:
       # NOTE: this healthcheck to check if traefik is up and running must be run on the ping entrypoint defined in command!
       test: traefik healthcheck --ping --ping.entryPoint=ping --entryPoints.ping.address=:9082
@@ -1487,7 +1488,7 @@ services:
         ### Fallback for api-server
         - traefik.http.routers.${SWARM_STACK_NAME}_api-server_fallback.rule=(Path(`/`) || Path(`/v0`) ||  PathPrefix(`/v0/`) || Path(`/api/v0/openapi.json`))
         - traefik.http.routers.${SWARM_STACK_NAME}_api-server_fallback.service=${SWARM_STACK_NAME}_api-server_fallback
-        - traefik.http.routers.${SWARM_STACK_NAME}_api-server_fallback.entrypoints=simcore_api
+        - traefik.http.routers.${SWARM_STACK_NAME}_api-server_fallback.entrypoints=simcoreapi
         - traefik.http.routers.${SWARM_STACK_NAME}_api-server_fallback.priority=1
         # always fail and return 503 via unhealthy loadbalancer healthcheck
         - traefik.http.services.${SWARM_STACK_NAME}_api-server_fallback.loadbalancer.server.port=0 # port is required (otherwise traefik service is not created)
@@ -1557,8 +1558,8 @@ networks:
     internal: false
     labels:
       com.simcore.description: "computational services network"
-  docker-api-network:
-    name: ${SWARM_STACK_NAME}_docker-api-network
+  docker_api_subnet:
+    name: ${SWARM_STACK_NAME}_docker_api_subnet
     driver: overlay
     attachable: true
     internal: true

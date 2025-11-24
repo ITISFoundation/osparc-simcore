@@ -1,8 +1,9 @@
-from pydantic import BaseModel, ConfigDict, ValidationInfo, field_validator
-from pydantic.config import JsonDict
-from typing_extensions import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
+from typing import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
     TypedDict,
 )
+
+from pydantic import BaseModel, ConfigDict, ValidationInfo, field_validator
+from pydantic.config import JsonDict
 
 from .basic_types import EnvVarKey
 

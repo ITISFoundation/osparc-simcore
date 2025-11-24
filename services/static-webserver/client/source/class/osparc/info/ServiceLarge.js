@@ -152,7 +152,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
         vBox.add(infoLayout);
 
         // Resources info if not billable
-        if (!osparc.desktop.credits.Utils.areWalletsEnabled()) {
+        if (!osparc.store.StaticInfo.isBillableProduct()) {
           const resources = this.__createResources();
           if (resources) {
             vBox.add(resources);

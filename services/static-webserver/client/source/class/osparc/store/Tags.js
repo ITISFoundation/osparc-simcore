@@ -26,7 +26,8 @@ qx.Class.define("osparc.store.Tags", {
   },
 
   events: {
-    "tagsChanged": "qx.event.type.Data",
+    "tagAdded": "qx.event.type.Data",
+    "tagRemoved": "qx.event.type.Data",
   },
 
   members: {
@@ -59,13 +60,19 @@ qx.Class.define("osparc.store.Tags", {
     },
 
     postTag: function(newTagData) {
+      newTagData.name.trim();
+      newTagData.description.trim();
+      if (newTagData.description === "") {
+        // the backend does not like empty descriptions
+        delete newTagData.description;
+      }
       const params = {
         data: newTagData
       };
       return osparc.data.Resources.getInstance().fetch("tags", "post", params)
         .then(tagData => {
           const tag = this.__addToCache(tagData);
-          this.fireDataEvent("tagsChanged", tag);
+          this.fireDataEvent("tagAdded", tag);
           return tag;
         });
     },
@@ -81,7 +88,7 @@ qx.Class.define("osparc.store.Tags", {
           const tag = this.getTag(tagId);
           if (tag) {
             this.__deleteFromCache(tagId);
-            this.fireDataEvent("tagsChanged", tag);
+            this.fireDataEvent("tagRemoved", tag);
           }
         })
         .catch(console.error);

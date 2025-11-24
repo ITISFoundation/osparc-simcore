@@ -174,7 +174,7 @@ def setup(
     - `stale_task_detect_timeout` interval after which atask is considered stale
     """
 
-    async def on_cleanup_ctx(app: web.Application) -> AsyncGenerator[None, None]:
+    async def on_cleanup_ctx(app: web.Application) -> AsyncGenerator[None]:
         register_custom_serialization(HTTPException, AiohttpHTTPExceptionSerializer)
 
         # add error handlers
