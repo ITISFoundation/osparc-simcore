@@ -4,15 +4,10 @@ from pathlib import Path
 from typing import Any
 
 import notifications_library
-from common_library.json_serialization import pydantic_encoder
+from common_library.json_serialization import json_dumps
 from jinja2 import Environment, FileSystemLoader, PackageLoader, select_autoescape
-from models_library.utils._original_fastapi_encoders import jsonable_encoder
 
 _logger = logging.getLogger(__name__)
-
-
-def _safe_json_dumps(obj: Any, **kwargs) -> str:
-    return json.dumps(jsonable_encoder(obj), default=pydantic_encoder, **kwargs)
 
 
 def create_render_environment_from_notifications_library(**kwargs) -> Environment:
@@ -21,7 +16,7 @@ def create_render_environment_from_notifications_library(**kwargs) -> Environmen
         autoescape=select_autoescape(["html", "xml"]),
         **kwargs
     )
-    env.globals["dumps"] = _safe_json_dumps
+    env.globals["dumps"] = json_dumps
     return env
 
 
@@ -34,5 +29,5 @@ def create_render_environment_from_folder(top_dir: Path) -> Environment:
             ["html", "xml"],
         ),
     )
-    env.globals["dumps"] = _safe_json_dumps
+    env.globals["dumps"] = json_dumps
     return env
