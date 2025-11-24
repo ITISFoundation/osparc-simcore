@@ -51,8 +51,8 @@ async def send_email_notification(
     task_key: TaskKey,
     notification: NotificationRequest,
 ) -> None:
-    _ = task
-    _ = task_key
+    assert task  # nosec
+    assert task_key  # nosec
 
     assert isinstance(notification.channel, EmailChannel)  # nosec
 
