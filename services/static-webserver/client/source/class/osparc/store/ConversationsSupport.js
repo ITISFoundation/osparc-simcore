@@ -65,11 +65,9 @@ qx.Class.define("osparc.store.ConversationsSupport", {
                 const conversation = this.__addToCache(conversationData);
                 this.fireDataEvent("conversationCreated", conversation);
                 break;
-              /*
               case osparc.data.model.Conversation.CHANNELS.CONVERSATION_UPDATED:
-                this.__conversationsCached[conversationData["conversationId"]]?.setProperties(conversationData);
+                this.__updateConversation(conversationData);
                 break;
-              */
               case osparc.data.model.Conversation.CHANNELS.CONVERSATION_DELETED:
                 delete this.__conversationsCached[conversationData["conversationId"]];
                 this.fireDataEvent("conversationDeleted", {
@@ -270,6 +268,21 @@ qx.Class.define("osparc.store.ConversationsSupport", {
       this.__conversationsCached[conversation.getConversationId()] = conversation;
       this.fireDataEvent("conversationAdded", conversation);
       return conversation;
+    },
+
+    __updateConversation: function(conversationData) {
+      const conversationId = conversationData["conversationId"];
+      const conversation = this.__conversationsCached[conversationId];
+      if (conversation) {
+        // Only the following properties can be updated:
+        // name, extraContext, readByUser, readBySupport
+        conversation.set({
+          name: conversationData["name"],
+          extraContext: conversationData["extraContext"],
+          readByUser: conversationData["readByUser"],
+          readBySupport: conversationData["readBySupport"],
+        });
+      }
     },
   }
 });
