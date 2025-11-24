@@ -92,6 +92,16 @@ services:
       - ../packages:/devel/packages
       - ${HOST_UV_CACHE_DIR}:/home/scu/.cache/uv
 
+  not-worker:
+    volumes:
+      - ./storage:/devel/services/storage
+      - ../packages:/devel/packages
+      - ${HOST_UV_CACHE_DIR}:/home/scu/.cache/uv
+    environment:
+      <<: *common_environment
+      NOTIFICATIONS_PROFILING : ${STORAGE_PROFILING}
+      NOTIFICATIONS_LOGLEVEL: DEBUG
+
   clusters-keeper:
     environment:
       <<: *common_environment
