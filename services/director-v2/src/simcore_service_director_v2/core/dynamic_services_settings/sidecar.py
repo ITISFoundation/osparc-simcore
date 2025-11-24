@@ -58,7 +58,9 @@ class RCloneSettings(SettingsLibraryRCloneSettings):
 class PlacementSettings(BaseCustomSettings):
     # This is just a service placement constraint, see
     # https://docs.docker.com/engine/swarm/services/#control-service-placement.
-    DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS: list[DockerPlacementConstraint] = Field(
+    DIRECTOR_V2_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS: list[
+        DockerPlacementConstraint
+    ] = Field(
         default_factory=list,
         examples=['["node.labels.region==east", "one!=yes"]'],
     )
@@ -76,7 +78,7 @@ class PlacementSettings(BaseCustomSettings):
     )
 
     _unique_custom_constraints = field_validator(
-        "DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS",
+        "DIRECTOR_V2_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS",
     )(ensure_unique_list_values_validator)
 
     _unique_resource_placement_constraints_substitutions = field_validator(

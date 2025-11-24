@@ -285,14 +285,14 @@ async def _create_docker_service_params(
         | app_settings.DIRECTOR_SERVICES_CUSTOM_LABELS,
         "networks": [internal_network_id] if internal_network_id else [],
     }
-    if app_settings.DIRECTOR_SERVICES_CUSTOM_CONSTRAINTS:
+    if app_settings.DIRECTOR_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS:
         _logger.debug(
             "adding custom constraints %s ",
-            app_settings.DIRECTOR_SERVICES_CUSTOM_CONSTRAINTS,
+            app_settings.DIRECTOR_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS,
         )
         docker_params["task_template"]["Placement"][
             "Constraints"
-        ] += app_settings.DIRECTOR_SERVICES_CUSTOM_CONSTRAINTS
+        ] += app_settings.DIRECTOR_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS
 
     # some services define strip_path:true if they need the path to be stripped away
     if (

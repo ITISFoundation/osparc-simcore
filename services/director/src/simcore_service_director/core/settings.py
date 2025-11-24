@@ -62,9 +62,11 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         ..., description="cache time to live value (defaults to 15 minutes)"
     )
 
-    DIRECTOR_SERVICES_CUSTOM_CONSTRAINTS: list[DockerPlacementConstraint] = Field(
-        default_factory=list,
-        examples=['["node.labels.region==east", "one!=yes"]'],
+    DIRECTOR_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS: list[DockerPlacementConstraint] = (
+        Field(
+            default_factory=list,
+            examples=['["node.labels.region==east", "one!=yes"]'],
+        )
     )
     DIRECTOR_SERVICES_CUSTOM_LABELS: dict[DockerLabelKey, str] = Field(
         default_factory=dict,

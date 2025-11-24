@@ -480,7 +480,7 @@ async def get_dynamic_sidecar_spec(  # pylint:disable=too-many-arguments# noqa: 
         app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_PLACEMENT_SETTINGS
     )
     placement_constraints = deepcopy(
-        placement_settings.DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS
+        placement_settings.DIRECTOR_V2_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS
     )
     # if service has a pricing plan apply constraints for autoscaling
     if hardware_info and len(hardware_info.aws_ec2_instances) == 1:
