@@ -1,6 +1,6 @@
-from typing import Literal
+from typing import Annotated, Literal
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 class EmailAddress(BaseModel):
@@ -16,7 +16,12 @@ class EmailAttachment(BaseModel):
 class EmailChannel(BaseModel):
     type: Literal["email"] = "email"
 
-    from_addr: EmailAddress
-    to_addr: EmailAddress
-    reply_to_addr: EmailAddress | None = None
+    from_: Annotated[EmailAddress, Field(alias="from")]
+    to: EmailAddress
+    reply_to: EmailAddress | None = None
     attachments: list[EmailAttachment] | None = None
+
+    model_config = ConfigDict(
+        validate_by_alias=True,
+        validate_by_name=True,
+    )

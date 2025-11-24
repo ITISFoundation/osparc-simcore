@@ -83,8 +83,8 @@ async def test_account_requested(
                 ipinfo=fake_ipinfo,
             ),
             channel=EmailChannel(
-                from_addr=EmailAddress(addr_spec=faker.email()),
-                to_addr=EmailAddress(
+                from_=EmailAddress(addr_spec=faker.email()),
+                to=EmailAddress(
                     addr_spec=user_email,
                 ),
             ),
@@ -142,8 +142,8 @@ async def test_account_approved(
                 link=HttpUrl(faker.url()),
             ),
             channel=EmailChannel(
-                from_addr=EmailAddress(addr_spec=faker.email()),
-                to_addr=EmailAddress(
+                from_=EmailAddress(addr_spec=faker.email()),
+                to=EmailAddress(
                     addr_spec=user_email,
                 ),
             ),
@@ -201,8 +201,8 @@ async def test_account_rejected(
                 reason=faker.sentence(),
             ),
             channel=EmailChannel(
-                from_addr=EmailAddress(addr_spec=faker.email()),
-                to_addr=EmailAddress(
+                from_=EmailAddress(addr_spec=faker.email()),
+                to=EmailAddress(
                     addr_spec=user_email,
                 ),
             ),

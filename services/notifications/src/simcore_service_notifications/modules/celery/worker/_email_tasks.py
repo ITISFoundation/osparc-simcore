@@ -33,11 +33,16 @@ def _create_email_message(notification: NotificationRequest) -> EmailMessage:
     )
 
     return compose_email(
-        Address(**notification.channel.from_addr.model_dump()),
-        Address(**notification.channel.to_addr.model_dump()),
+        Address(**notification.channel.from_.model_dump()),
+        Address(**notification.channel.to.model_dump()),
         subject=parts.subject,
         content_text=parts.text_content,
         content_html=parts.html_content,
+        reply_to=(
+            Address(**notification.channel.reply_to.model_dump())
+            if notification.channel.reply_to
+            else None
+        ),
     )
 
 
