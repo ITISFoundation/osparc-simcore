@@ -552,6 +552,7 @@ async def test_search_directories(
     # Create directories with different naming patterns
     test_directories = [
         ("test_dir_1", 3, 2),  # directory name, subdir_count, file_count
+        ("test_dir_1/subdir_a", 1, 1),
         ("test_dir_2", 2, 3),
         ("data_folder", 1, 2),
         ("backup_directory", 2, 1),
@@ -629,3 +630,9 @@ async def test_search_directories(
     file_names_only = {f.file_name for f in backup_results if not f.is_directory}
     assert "backup_directory" in directory_names
     assert "backup_config.json" in file_names_only
+
+    # Test 6: Search for subdirectories
+    subdir_results = await _search_files_by_pattern(
+        simcore_s3_dsm, user_id, "*subdir_*", project_id
+    )
+    assert len(subdir_results) == 1  # Only subdir_a
