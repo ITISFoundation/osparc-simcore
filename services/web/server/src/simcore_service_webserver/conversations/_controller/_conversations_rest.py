@@ -229,6 +229,7 @@ async def delete_conversation(request: web.Request):
         user_id=req_ctx.user_id,
         project_id=None,  # Support conversations don't use project_id
         conversation_id=path_params.conversation_id,
+        conversation_type=conversation.type,
     )
 
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
