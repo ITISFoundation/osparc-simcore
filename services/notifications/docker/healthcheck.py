@@ -33,7 +33,7 @@ ok = os.getenv("SC_BOOT_MODE", "").lower() == "debug"
 app_settings = ApplicationSettings.create_from_envs()
 
 
-def _is_celery_worker_healthy():
+def _is_celery_worker_healthy() -> bool:
     assert app_settings.NOTIFICATIONS_CELERY
     broker_url = app_settings.NOTIFICATIONS_CELERY.CELERY_RABBIT_BROKER.dsn
 

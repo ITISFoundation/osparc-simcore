@@ -11,7 +11,7 @@ from models_library.utils._original_fastapi_encoders import jsonable_encoder
 _logger = logging.getLogger(__name__)
 
 
-def _safe_json_dumps(obj: Any, **kwargs):
+def _safe_json_dumps(obj: Any, **kwargs) -> str:
     return json.dumps(jsonable_encoder(obj), default=pydantic_encoder, **kwargs)
 
 

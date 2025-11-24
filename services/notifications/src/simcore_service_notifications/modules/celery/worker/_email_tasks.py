@@ -23,7 +23,7 @@ from settings_library.email import SMTPSettings
 _logger = logging.getLogger(__name__)
 
 
-def _create_email_message(notification: NotificationRequest):
+def _create_email_message(notification: NotificationRequest) -> EmailMessage:
     parts = render_email_parts(
         env=create_render_environment_from_notifications_library(
             undefined=StrictUndefined
