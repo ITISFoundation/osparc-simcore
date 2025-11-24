@@ -43,7 +43,7 @@ jobs:
           version: "0.9.x"
           enable-cache: false
       - name: checkout source branch
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Generate openapi specs
         run: |
           make devenv
@@ -68,7 +68,7 @@ jobs:
         with:
           python-version: "3.13"
       - name: checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Set environment variables based on event type
         run: |
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
@@ -96,7 +96,7 @@ jobs:
         with:
           python-version: "3.13"
       - name: checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Set environment variables based on event type
         run: |
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
