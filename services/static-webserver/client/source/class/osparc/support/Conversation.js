@@ -160,7 +160,10 @@ qx.Class.define("osparc.support.Conversation", {
             // wait a bit before triggering the chatbot response
             // if the user starts typing again, delete the timer
             setTimeout(() => {
-              osparc.store.ConversationsSupport.getInstance().triggerChatbot(conversationId, messageData["messageId"]);
+              osparc.store.ConversationsSupport.getInstance().triggerChatbot(conversationId, messageData["messageId"])
+                .then(() => {
+                  this.getChildControl("thinking-response").setVisibility("visible");
+                });
             }, this.self().TRIGGER_CHATBOT_DELAY);
             return messageData;
           }

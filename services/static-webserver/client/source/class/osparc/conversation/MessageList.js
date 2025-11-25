@@ -75,6 +75,14 @@ qx.Class.define("osparc.conversation.MessageList", {
           control.addListener("execute", () => this.__reloadMessages(false));
           this._addAt(control, 2);
           break;
+        case "thinking-response":
+          control = new qx.ui.basic.Label(this.tr("thinking...")).set({
+            font: "text-13-italic",
+            visibility: "excluded",
+            marginLeft: 50,
+          });
+          this._addAt(control, 3);
+          break;
         case "add-message":
           control = new osparc.conversation.AddMessage().set({
             padding: 5,
@@ -82,7 +90,7 @@ qx.Class.define("osparc.conversation.MessageList", {
           this.bind("conversation", control, "conversationId", {
             converter: conversation => conversation ? conversation.getConversationId() : null
           });
-          this._addAt(control, 3);
+          this._addAt(control, 4);
           break;
       }
       return control || this.base(arguments, id);
