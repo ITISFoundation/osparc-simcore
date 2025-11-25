@@ -211,7 +211,8 @@ async def _create_docker_service_params(
             ): "osparc",  # fixed no legacy available in other products
             _to_simcore_runtime_docker_label_key("cpu_limit"): "0",
             _to_simcore_runtime_docker_label_key("memory_limit"): "0",
-        },
+        }
+        | app_settings.DIRECTOR_SERVICES_CUSTOM_LABELS,
         "Mounts": [],
     }
 
@@ -280,17 +281,18 @@ async def _create_docker_service_params(
             f"traefik.http.routers.{service_name}.entrypoints": "http",
             f"traefik.http.routers.{service_name}.priority": "10",
             f"traefik.http.routers.{service_name}.middlewares": f"{app_settings.DIRECTOR_SWARM_STACK_NAME}_gzip@swarm",
-        },
+        }
+        | app_settings.DIRECTOR_SERVICES_CUSTOM_LABELS,
         "networks": [internal_network_id] if internal_network_id else [],
     }
-    if app_settings.DIRECTOR_SERVICES_CUSTOM_CONSTRAINTS:
+    if app_settings.DIRECTOR_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS:
         _logger.debug(
             "adding custom constraints %s ",
-            app_settings.DIRECTOR_SERVICES_CUSTOM_CONSTRAINTS,
+            app_settings.DIRECTOR_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS,
         )
-        docker_params["task_template"]["Placement"]["Constraints"] += [
-            app_settings.DIRECTOR_SERVICES_CUSTOM_CONSTRAINTS
-        ]
+        docker_params["task_template"]["Placement"][
+            "Constraints"
+        ] += app_settings.DIRECTOR_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS
 
     # some services define strip_path:true if they need the path to be stripped away
     if (
