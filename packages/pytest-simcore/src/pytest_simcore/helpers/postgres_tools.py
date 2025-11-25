@@ -18,8 +18,11 @@ class PostgresTestConfig(TypedDict):
 
 
 def force_drop_all_tables(sa_sync_engine: sa.engine.Engine):
+    inspector = sa.inspect(sa_sync_engine)
+    tables = inspector.get_table_names()
+
     with sa_sync_engine.begin() as conn:
-        conn.execute(sa.DDL("DROP TABLE IF EXISTS alembic_version"))
+        conn.execute(sa.DDL("DROP TABLE IF EXISTS alembic_version CASCADE"))
         conn.execute(
             # NOTE: terminates all open transactions before droping all tables
             # This solves https://github.com/ITISFoundation/osparc-simcore/issues/7008
@@ -29,6 +32,9 @@ def force_drop_all_tables(sa_sync_engine: sa.engine.Engine):
                 "WHERE state = 'idle in transaction';"
             )
         )
+        for table in tables:
+            conn.execute(sa.text(f'DROP TABLE IF EXISTS "{table}" CASCADE'))
+
         # SEE https://github.com/ITISFoundation/osparc-simcore/issues/1776
         metadata.drop_all(bind=conn)
 
