@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from random import randbytes, shuffle
 from shutil import move, rmtree
+from threading import Thread
 from typing import Any, Final
 from unittest.mock import AsyncMock
 
@@ -265,21 +266,30 @@ async def _random_events_in_path(
         await awaitable
 
 
-def _generate_event_burst(path: Path, subfolder: str | None = None) -> None:
-    full_dir_path = path if subfolder is None else path / subfolder
-    full_dir_path.mkdir(parents=True, exist_ok=True)
-    file_path_1 = full_dir_path / "file1.txt"
-    file_path_2 = full_dir_path / "file2.txt"
+async def _generate_event_burst(path: Path, subfolder: str | None = None) -> None:
+    event = asyncio.Event()
 
-    # create
-    file_path_1.touch()
-    # modified
-    file_path_1.write_text("lorem ipsum")
-    # move
-    move(str(file_path_1), str(file_path_2))
-    # delete
-    file_path_2.unlink()
-    # let fs events trigger
+    def _worker() -> None:
+        full_dir_path = path if subfolder is None else path / subfolder
+        full_dir_path.mkdir(parents=True, exist_ok=True)
+        file_path_1 = full_dir_path / "file1.txt"
+        file_path_2 = full_dir_path / "file2.txt"
+
+        # create
+        file_path_1.touch()
+        # modified
+        file_path_1.write_text("lorem ipsum")
+        # move
+        move(str(file_path_1), str(file_path_2))
+        # delete
+        file_path_2.unlink()
+        # let fs events trigger
+        event.set()
+
+    thread = Thread(target=_worker, daemon=True)
+    thread.start()
+    thread.join()
+    await event.wait()
 
 
 async def _wait_for_events_to_trigger() -> None:
@@ -300,7 +310,9 @@ async def test_run_observer(
     await outputs_watcher.enable_event_propagation()
 
     # generates the first event chain
-    _generate_event_burst(outputs_watcher.outputs_context.outputs_path, port_keys[0])
+    await _generate_event_burst(
+        outputs_watcher.outputs_context.outputs_path, port_keys[0]
+    )
 
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
@@ -308,7 +320,9 @@ async def test_run_observer(
             assert mock_event_filter_upload_trigger.call_count == 1
 
     # generates the second event chain
-    _generate_event_burst(outputs_watcher.outputs_context.outputs_path, port_keys[1])
+    await _generate_event_burst(
+        outputs_watcher.outputs_context.outputs_path, port_keys[1]
+    )
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
             await asyncio.sleep(0)
