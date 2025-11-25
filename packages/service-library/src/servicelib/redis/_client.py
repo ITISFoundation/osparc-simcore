@@ -94,7 +94,7 @@ class RedisClientSDK:
 
         _logger.info(
             "Connection to %s succeeded with %s",
-            f"redis at {redact_url(self.redis_dsn)}",
+            f"Redis at dsn={redact_url(self.redis_dsn)}",
             f"{self._client=}",
         )
 
