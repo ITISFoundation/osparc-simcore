@@ -9,7 +9,7 @@ from pathlib import Path
 from random import randbytes, shuffle
 from shutil import move, rmtree
 from threading import Thread
-from typing import Final
+from typing import Any, Final
 from unittest.mock import AsyncMock
 
 import aiofiles
@@ -46,10 +46,11 @@ from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
-_TENACITY_RETRY_PARAMS = {
+_TENACITY_RETRY_PARAMS: Final[dict[str, Any]] = {
     "reraise": True,
     "retry": retry_if_exception_type(AssertionError),
     "wait": wait_fixed(0.01),
+    "stop": stop_after_delay(10),
 }
 
 TICK_INTERVAL: Final[PositiveFloat] = 0.001
@@ -196,7 +197,7 @@ def file_generation_info(request: pytest.FixtureRequest) -> FileGenerationInfo:
 # UTILS
 
 
-async def random_events_in_path(  # noqa: C901
+async def random_events_in_path(
     *,
     port_key_path: Path,
     files_per_port_key: NonNegativeInt,
@@ -286,13 +287,6 @@ async def _generate_event_burst(tmp_path: Path, subfolder: str | None = None) ->
     thread.join()
 
 
-async def _wait_for_events_to_trigger() -> None:
-    event_wait_interval = WAIT_INTERVAL * 10 + 1
-    print("WAIT FOR", event_wait_interval)
-    await asyncio.sleep(event_wait_interval)
-
-
-@pytest.mark.flaky(max_runs=3)
 async def test_run_observer(
     mock_event_filter_upload_trigger: AsyncMock,
     outputs_watcher: OutputsWatcher,
@@ -304,15 +298,20 @@ async def test_run_observer(
     await _generate_event_burst(
         outputs_watcher.outputs_context.outputs_path, port_keys[0]
     )
-    await _wait_for_events_to_trigger()
-    assert mock_event_filter_upload_trigger.call_count == 1
+
+    async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
+        with attempt:
+            await asyncio.sleep(0)
+            assert mock_event_filter_upload_trigger.call_count == 1
 
     # generates the second event chain
     await _generate_event_burst(
         outputs_watcher.outputs_context.outputs_path, port_keys[1]
     )
-    await _wait_for_events_to_trigger()
-    assert mock_event_filter_upload_trigger.call_count == 2
+    async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
+        with attempt:
+            await asyncio.sleep(0)
+            assert mock_event_filter_upload_trigger.call_count == 2
 
 
 async def test_does_not_trigger_on_attribute_change(
@@ -321,8 +320,9 @@ async def test_does_not_trigger_on_attribute_change(
     port_keys: list[str],
     outputs_watcher: OutputsWatcher,
 ):
-    await _wait_for_events_to_trigger()
-    await outputs_watcher.enable_event_propagation()
+    async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
+        with attempt:
+            await outputs_watcher.enable_event_propagation()
 
     # crate a file in the directory
     mounted_volumes.disk_outputs_path.mkdir(parents=True, exist_ok=True)
@@ -330,18 +330,21 @@ async def test_does_not_trigger_on_attribute_change(
     file_path_1.parent.mkdir(parents=True, exist_ok=True)
     file_path_1.touch()
 
-    await _wait_for_events_to_trigger()
-    assert mock_event_filter_upload_trigger.call_count == 1
+    async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
+        with attempt:
+            await asyncio.sleep(0)
+            assert mock_event_filter_upload_trigger.call_count == 1
 
     # apply an attribute change
     file_path_1.chmod(0o744)
 
-    await _wait_for_events_to_trigger()
     # same call count as before, event was ignored
-    assert mock_event_filter_upload_trigger.call_count == 1
+    async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
+        with attempt:
+            await asyncio.sleep(0)
+            assert mock_event_filter_upload_trigger.call_count == 1
 
 
-@pytest.mark.flaky(max_runs=3)
 async def test_port_key_sequential_event_generation(
     mock_long_running_upload_outputs: AsyncMock,
     mounted_volumes: MountedVolumes,
@@ -376,14 +379,12 @@ async def test_port_key_sequential_event_generation(
     )
     print(f"max {sleep_for=} interval")
     async for attempt in AsyncRetrying(
-        **_TENACITY_RETRY_PARAMS, stop=stop_after_delay(sleep_for)
+        **{**_TENACITY_RETRY_PARAMS, "stop": stop_after_delay(sleep_for)}
     ):
         with attempt:
             assert mock_long_running_upload_outputs.call_count > 0
 
-    async for attempt in AsyncRetrying(
-        **_TENACITY_RETRY_PARAMS, stop=stop_after_delay(10)
-    ):
+    async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
             uploaded_port_keys: set[str] = set()
             for call_args in mock_long_running_upload_outputs.call_args_list:
