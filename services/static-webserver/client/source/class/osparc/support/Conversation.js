@@ -45,7 +45,7 @@ qx.Class.define("osparc.support.Conversation", {
       let control;
       switch (id) {
         case "thinking-response":
-          control = new qx.ui.basic.Label(this.tr("thinking...")).set({
+          control = new qx.ui.basic.Label(this.tr("thinking")).set({
             font: "text-13-italic",
             visibility: "excluded",
             marginLeft: 50,
@@ -158,24 +158,53 @@ qx.Class.define("osparc.support.Conversation", {
       if (conversation) {
         conversation.setReadBy(true);
       }
+
+      if (
+        osparc.store.Groups.getInstance().isChatbotEnabled() &&
+        osparc.store.Groups.getInstance().getChatbot().getGroupId() === message.getUserGroupId ()
+      ) {
+        this.getChildControl("thinking-response").setVisibility("excluded");
+      }
     },
 
     __postMessage: function(content) {
       const conversationId = this.getConversation().getConversationId();
       return osparc.store.ConversationsSupport.getInstance().postMessage(conversationId, content)
         .then(messageData => {
-          if (osparc.store.Groups.getInstance().isChatbotEnabled()) {
-            // wait a bit before triggering the chatbot response
-            // if the user starts typing again, delete the timer
-            setTimeout(() => {
-              osparc.store.ConversationsSupport.getInstance().triggerChatbot(conversationId, messageData["messageId"])
-                .then(() => {
-                  this.getChildControl("thinking-response").setVisibility("visible");
-                });
-            }, this.self().TRIGGER_CHATBOT_DELAY);
-            return messageData;
+          if (
+            osparc.store.Groups.getInstance().isChatbotEnabled() &&
+            !osparc.store.Groups.getInstance().amIASupportUser()
+          ) {
+            this.__startTriggerChatbotTimer(conversationId, messageData["messageId"]);
           }
+          return messageData;
         });
+    },
+
+    __startTriggerChatbotTimer: function(conversationId, messageId) {
+      const thinkingResponseLabel = this.getChildControl("thinking-response");
+      thinkingResponseLabel.set({
+        value: this.tr("thinking"),
+        visibility: "visible",
+      })
+      // wait a bit before triggering the chatbot response
+      // if the user starts typing again, delete the timer
+      this.__triggerChatbotTimer = setTimeout(() => {
+        osparc.store.ConversationsSupport.getInstance().triggerChatbot(conversationId, messageId)
+          .then(() => {
+            thinkingResponseLabel.set({
+              value: this.tr("thinking..."),
+            });
+          });
+      }, this.self().TRIGGER_CHATBOT_DELAY);
+    },
+
+    __userTypingStarted: function() {
+      this.getChildControl("thinking-response").setVisibility("excluded");
+      if (this.__triggerChatbotTimer) {
+        clearTimeout(this.__triggerChatbotTimer);
+        this.__triggerChatbotTimer = null;
+      }
     },
 
     __evaluateShareProject: function() {
