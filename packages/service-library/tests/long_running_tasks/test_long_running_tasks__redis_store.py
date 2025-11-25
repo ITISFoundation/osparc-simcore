@@ -1,13 +1,13 @@
 # pylint:disable=redefined-outer-name
 
+import datetime
 from collections.abc import AsyncIterable, Callable
 from contextlib import AbstractAsyncContextManager
-from copy import deepcopy
 
 import pytest
 from pydantic import TypeAdapter
 from servicelib.long_running_tasks._redis_store import (
-    _MARKED_FOR_REMOVAL_FIELD,
+    _MARKED_FOR_REMOVAL_AT_FIELD,
     RedisStore,
 )
 from servicelib.long_running_tasks.models import TaskData
@@ -18,9 +18,9 @@ from utils import without_marked_for_removal_at
 
 def test_ensure_task_data_field_name_and_type():
     # NOTE: ensure thse do not change, if you want to change them remeber that the db is invalid
-    assert _MARKED_FOR_REMOVAL_FIELD == "marked_for_removal"
-    field = TaskData.model_fields[_MARKED_FOR_REMOVAL_FIELD]
-    assert field.annotation is bool
+    assert _MARKED_FOR_REMOVAL_AT_FIELD == "marked_for_removal_at"
+    field = TaskData.model_fields[_MARKED_FOR_REMOVAL_AT_FIELD]
+    assert field.annotation == datetime.datetime | None
 
 
 @pytest.fixture
@@ -106,12 +106,10 @@ async def test_workflow_multiple_redis_stores_with_different_namespaces(
         await store.add_task_data(task_data.task_id, task_data)
         await store.mark_for_removal(task_data.task_id)
 
-    marked_as_removed_task_data = deepcopy(task_data)
-    marked_as_removed_task_data.marked_for_removal = True
     for store in redis_stores:
         assert [
             without_marked_for_removal_at(x) for x in await store.list_tasks_data()
-        ] == [marked_as_removed_task_data]
+        ] == [task_data]
 
     for store in redis_stores:
         await store.delete_task_data(task_data.task_id)

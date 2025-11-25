@@ -5,7 +5,7 @@ import inspect
 import logging
 import urllib.parse
 from contextlib import suppress
-from typing import Any, ClassVar, Final, Protocol, TypeAlias
+from typing import Any, ClassVar, Final, Protocol
 from uuid import uuid4
 
 from common_library.async_tools import cancel_wait_task
@@ -54,7 +54,7 @@ _MAX_EXCLUSIVE_TASK_CANCEL_TIMEOUT: Final[NonNegativeFloat] = 5
 _TASK_REMOVAL_MAX_WAIT: Final[NonNegativeFloat] = 60
 _PARALLEL_TASKS_CANCELLATION: Final[int] = 5
 
-AllowedErrrors: TypeAlias = tuple[type[BaseException], ...]
+type AllowedErrrors = tuple[type[BaseException], ...]
 
 
 class TaskProtocol(Protocol):

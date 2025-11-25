@@ -2,7 +2,6 @@
 
 from collections.abc import AsyncIterable, Callable
 from contextlib import AbstractAsyncContextManager
-from copy import deepcopy
 
 import pytest
 from faker import Faker
@@ -70,11 +69,9 @@ async def test_cleanup_namespace(
     await store.mark_for_removal(task_data.task_id)
 
     # entries exit
-    marked_for_removal = deepcopy(task_data)
-    marked_for_removal.marked_for_removal = True
     assert [
         without_marked_for_removal_at(x) for x in await store.list_tasks_data()
-    ] == [marked_for_removal]
+    ] == [task_data]
 
     # removes
     await long_running_client_helper.cleanup(lrt_namespace)

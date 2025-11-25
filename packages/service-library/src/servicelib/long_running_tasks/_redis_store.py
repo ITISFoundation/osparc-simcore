@@ -14,7 +14,6 @@ from .models import LRTNamespace, TaskData, TaskId
 
 _STORE_TYPE_TASK_DATA: Final[str] = "TD"
 _LIST_CONCURRENCY: Final[int] = 3
-_MARKED_FOR_REMOVAL_FIELD: Final[str] = "marked_for_removal"
 _MARKED_FOR_REMOVAL_AT_FIELD: Final[str] = "marked_for_removal_at"
 
 
@@ -138,10 +137,9 @@ class RedisStore:
                 self._get_redis_task_data_key(task_id),
                 mapping=_to_redis_hash_mapping(
                     {
-                        _MARKED_FOR_REMOVAL_FIELD: True,
                         _MARKED_FOR_REMOVAL_AT_FIELD: datetime.datetime.now(
                             tz=datetime.UTC
-                        ),
+                        )
                     }
                 ),
             )
@@ -150,7 +148,8 @@ class RedisStore:
     async def is_marked_for_removal(self, task_id: TaskId) -> bool:
         result = await handle_redis_returns_union_types(
             self._redis.hget(
-                self._get_redis_task_data_key(task_id), _MARKED_FOR_REMOVAL_FIELD
+                self._get_redis_task_data_key(task_id), _MARKED_FOR_REMOVAL_AT_FIELD
             )
         )
-        return False if result is None else json_loads(result)
+        decoded_result = None if result is None else json_loads(result)
+        return decoded_result is not None
