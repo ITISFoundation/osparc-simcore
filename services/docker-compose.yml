@@ -1180,7 +1180,7 @@ services:
       NOTIFICATIONS_WORKER_MODE: "true"
       CELERY_CONCURRENCY: 100
       CELERY_POOL: threads
-      CELERY_QUEUES: default
+      CELERY_QUEUES: notifications
     networks: *notifications_networks
 
   dask-sidecar:
