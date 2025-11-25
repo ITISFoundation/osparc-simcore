@@ -270,7 +270,7 @@ def test_EC2_INSTANCES_ALLOWED_TYPES_empty_not_allowed_with_main_field_env_var( 
     error = exc_info.value.errors()[0]
 
     assert error["type"] == "value_error"
-    assert error["input"] == {}
+    assert error["input"] == "{}"
     assert error["loc"] == ("AUTOSCALING_EC2_INSTANCES", "EC2_INSTANCES_ALLOWED_TYPES")
 
     # NOTE: input captured via EnvSettingsWithAutoDefaultSource
