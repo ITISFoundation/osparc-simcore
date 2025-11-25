@@ -129,6 +129,7 @@ async def list_support_conversations_for_user(
     connection: AsyncConnection | None = None,
     *,
     user_group_id: GroupID,
+    product_name: ProductName,
     # pagination
     offset: NonNegativeInt,
     limit: NonNegativeInt,
@@ -141,7 +142,12 @@ async def list_support_conversations_for_user(
         .select_from(conversations)
         .where(
             (conversations.c.user_group_id == user_group_id)
-            & (conversations.c.type == ConversationType.SUPPORT)
+            & (
+                conversations.c.type.in_(
+                    (ConversationType.SUPPORT, ConversationType.SUPPORT_CALL)
+                )
+                & (conversations.c.product_name == product_name)
+            )
         )
     )
 
@@ -189,7 +195,11 @@ async def list_all_support_conversations_for_support_user(
         select(*_SELECTION_ARGS)
         .select_from(conversations)
         .where(
-            (conversations.c.type == ConversationType.SUPPORT)
+            (
+                conversations.c.type.in_(
+                    (ConversationType.SUPPORT, ConversationType.SUPPORT_CALL)
+                )
+            )
             & (conversations.c.product_name == product_name)
         )
     )
@@ -227,16 +237,12 @@ async def get(
     connection: AsyncConnection | None = None,
     *,
     conversation_id: ConversationID,
-    type_: ConversationType | None = None,
 ) -> ConversationGetDB:
     select_query = (
         select(*_SELECTION_ARGS)
         .select_from(conversations)
         .where(conversations.c.conversation_id == f"{conversation_id}")
     )
-
-    if type_ is not None:
-        select_query = select_query.where(conversations.c.type == type_)
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         result = await conn.execute(select_query)
@@ -252,7 +258,6 @@ async def get_for_user(
     *,
     conversation_id: ConversationID,
     user_group_id: GroupID,
-    type_: ConversationType | None = None,
 ) -> ConversationGetDB:
     select_query = (
         select(*_SELECTION_ARGS)
@@ -262,9 +267,6 @@ async def get_for_user(
             & (conversations.c.user_group_id == user_group_id)
         )
     )
-
-    if type_ is not None:
-        select_query = select_query.where(conversations.c.type == type_)
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         result = await conn.execute(select_query)
