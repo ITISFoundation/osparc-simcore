@@ -224,8 +224,8 @@ async def random_events_in_path(
     ) -> None:
         async with aiofiles.open(file_path, "wb") as file:
             for _ in range(size // chunk_size):
-                await file.write(randbytes(chunk_size))
-            await file.write(randbytes(size % chunk_size))
+                await file.write(randbytes(chunk_size))  # noqa: S311
+            await file.write(randbytes(size % chunk_size))  # noqa: S311
         assert file_path.stat().st_size == size
 
     async def _move_existing_file(file_path: Path) -> None:
