@@ -38,6 +38,15 @@ qx.Class.define("osparc.support.Conversation", {
     TRIGGER_CHATBOT_DELAY: 2000,
   },
 
+  properties: {
+    chatbotTriggerState: {
+      check: ["idle", "waiting", "triggered"],
+      init: "idle",
+      nullable: false,
+      event: "changeChatbotTriggerState",
+    },
+  },
+
   members: {
     __bookACallInfo: null,
     __triggerChatbotTimer: null,
@@ -50,6 +59,19 @@ qx.Class.define("osparc.support.Conversation", {
             font: "text-13-italic",
             visibility: "excluded",
             marginLeft: 50,
+          });
+          this.bind("chatbotTriggerState", control, "value", {
+            converter: val => {
+              if (val === "waiting") {
+                return this.tr("thinking");
+              } else if (val === "triggered") {
+                return this.tr("thinking...");
+              }
+              return "";
+            }
+          });
+          this.bind("chatbotTriggerState", control, "visibility", {
+            converter: val => val !== "idle" ? "visible" : "excluded"
           });
           this._addAt(control, osparc.conversation.MessageList.POS.THINKING_RESPONSE);
           break;
@@ -145,6 +167,8 @@ qx.Class.define("osparc.support.Conversation", {
           this.__startTriggerChatbotTimer();
         }
       }, this);
+
+      this.getChildControl("thinking-response");
     },
 
     // overridden
@@ -184,12 +208,12 @@ qx.Class.define("osparc.support.Conversation", {
       const conversationId = this.getConversation().getConversationId();
       return osparc.store.ConversationsSupport.getInstance().postMessage(conversationId, content)
         .then(messageData => {
-          this.__startTriggerChatbotTimer(conversationId, messageData["messageId"]);
+          this.__startTriggerChatbotTimer();
           return messageData;
         });
     },
 
-    __startTriggerChatbotTimer: function(conversationId, messageId) {
+    __startTriggerChatbotTimer: function() {
       // trigger chatbot only if:
       // - chatbot is enabled
       // - current user is not a support user
@@ -207,25 +231,20 @@ qx.Class.define("osparc.support.Conversation", {
       // clear any previous timer
       this.__clearTriggerChatbotTimer();
 
-      const thinkingResponseLabel = this.getChildControl("thinking-response");
-      thinkingResponseLabel.set({
-        value: this.tr("thinking"),
-        visibility: "visible",
-      });
+      // show thinking response
+      this.setChatbotTriggerState("waiting");
       // wait a bit before triggering the chatbot response
       // if the user starts typing again, the timer will be cleared
+      const conversationId = this.getConversation().getConversationId();
+      const messageId = this.getConversation().getLastMessage().getMessageId();
       this.__triggerChatbotTimer = setTimeout(() => {
         osparc.store.ConversationsSupport.getInstance().triggerChatbot(conversationId, messageId)
-          .then(() => {
-            thinkingResponseLabel.set({
-              value: this.tr("thinking..."),
-            });
-          });
+          .then(() => this.setChatbotTriggerState("triggered"));
       }, this.self().TRIGGER_CHATBOT_DELAY);
     },
 
     __clearTriggerChatbotTimer: function() {
-      this.getChildControl("thinking-response").setVisibility("excluded");
+      this.setChatbotTriggerState("idle");
 
       if (this.__triggerChatbotTimer) {
         clearTimeout(this.__triggerChatbotTimer);
