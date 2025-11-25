@@ -164,7 +164,7 @@ qx.Class.define("osparc.support.Conversation", {
           // if the user is typing, clear any previous chatbot trigger timer
           this.__clearTriggerChatbotTimer();
         } else {
-          // if the user stopped typing, start the chatbot trigger timer
+          // if the user stopped typing, start the chatbot trigger timer if needed
           this.__startTriggerChatbotTimer();
         }
       }, this);
@@ -201,6 +201,7 @@ qx.Class.define("osparc.support.Conversation", {
         osparc.store.Groups.getInstance().isChatbotEnabled() &&
         osparc.store.Groups.getInstance().getChatbot().getGroupId() === message.getUserGroupId()
       ) {
+        this.setChatbotTriggerState("idle");
         this.__clearTriggerChatbotTimer();
       }
     },
@@ -242,12 +243,16 @@ qx.Class.define("osparc.support.Conversation", {
       this.__triggerChatbotTimer = setTimeout(() => {
         this.__triggerChatbotTimer = null;
         osparc.store.ConversationsSupport.getInstance().triggerChatbot(conversationId, messageId)
-          .then(() => this.setChatbotTriggerState("triggered"));
+          .then(() => this.setChatbotTriggerState("triggered"))
+          .catch(() => this.setChatbotTriggerState("idle"));
       }, this.self().TRIGGER_CHATBOT_DELAY);
     },
 
     __clearTriggerChatbotTimer: function() {
-      this.setChatbotTriggerState("idle");
+      // if the chatbot was already triggered, it can't be cleared
+      if (this.getChatbotTriggerState() === "waiting") {
+        this.setChatbotTriggerState("idle");
+      }
 
       if (this.__triggerChatbotTimer) {
         clearTimeout(this.__triggerChatbotTimer);
