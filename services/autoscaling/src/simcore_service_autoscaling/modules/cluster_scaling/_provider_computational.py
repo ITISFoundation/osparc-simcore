@@ -64,10 +64,9 @@ class ComputationalAutoscalingProvider:
         assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
         return {
             DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY: ec2_instance_data.type
-            | app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
-                ec2_instance_data.type
-            ].custom_node_labels
-        }
+        } | app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
+            ec2_instance_data.type
+        ].custom_node_labels
 
     async def list_unrunnable_tasks(self, app: FastAPI) -> list[DaskTask]:
         assert self  # nosec
