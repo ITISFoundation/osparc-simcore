@@ -329,6 +329,43 @@ def test_EC2_INSTANCES_ALLOWED_TYPES_invalid_instance_names(  # noqa: N802
         {
             "EC2_INSTANCES_ALLOWED_TYPES": json.dumps(
                 {
+                    "t3.micro": {
+                        "ami_id": faker.pystr(),
+                        "pre_pull_images": [],
+                        "custom_node_labels": {"invalid/label": "value"},
+                    }
+                }
+            )
+        },
+    )
+    caplog.clear()
+    with caplog.at_level(logging.WARNING):
+        settings = ApplicationSettings.create_from_envs()
+        assert settings.AUTOSCALING_EC2_INSTANCES is None
+
+        assert (
+            _AUTO_DEFAULT_FACTORY_RESOLVES_TO_NONE_FSTRING.format(
+                field_name="AUTOSCALING_EC2_INSTANCES"
+            )
+            in caplog.text
+        )
+
+
+def test_EC2_INSTANCES_ALLOWED_TYPES_invalid_custom_node_labels(  # noqa: N802
+    app_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+    faker: Faker,
+    caplog: pytest.LogCaptureFixture,
+):
+    settings = ApplicationSettings.create_from_envs()
+    assert settings.AUTOSCALING_EC2_INSTANCES
+
+    # passing an invalid image tag name will fail
+    setenvs_from_dict(
+        monkeypatch,
+        {
+            "EC2_INSTANCES_ALLOWED_TYPES": json.dumps(
+                {
                     faker.pystr(): {
                         "ami_id": faker.pystr(),
                         "pre_pull_images": [],
