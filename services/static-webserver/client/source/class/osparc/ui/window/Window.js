@@ -31,7 +31,7 @@ qx.Class.define("osparc.ui.window.Window", {
     this.addListener("appear", () => this.__afterAppear(), this);
     this.addListener("move", () => this.__windowMoved(), this);
     // make the window smaller if it doesn't fit the screen
-    window.addEventListener("resize", this.__keepWithinScreen);
+    window.addEventListener("resize", this.__keepWithinScreen.bind(this));
 
     const commandEsc = new qx.ui.command.Command("Esc");
     commandEsc.addListener("execute", () => {
@@ -256,6 +256,6 @@ qx.Class.define("osparc.ui.window.Window", {
   },
 
   destruct: function() {
-    window.removeEventListener("resize", this.__keepWithinScreen);
+    window.removeEventListener("resize", this.__keepWithinScreen.bind(this));
   },
 });
