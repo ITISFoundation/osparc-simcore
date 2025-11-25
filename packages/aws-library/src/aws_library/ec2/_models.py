@@ -6,7 +6,7 @@ from typing import Annotated, Final
 
 import sh  # type: ignore[import-untyped]
 from common_library.basic_types import DEFAULT_FACTORY
-from models_library.docker import DockerGenericTag
+from models_library.docker import DockerGenericTag, DockerLabelKey
 from pydantic import (
     BaseModel,
     ByteSize,
@@ -294,6 +294,10 @@ class EC2InstanceBootSpecific(BaseModel):
         NonNegativeInt,
         Field(description="number of buffer EC2s to keep (defaults to 0)"),
     ] = 0
+    custom_node_labels: Annotated[
+        dict[DockerLabelKey, str],
+        Field(default_factory=dict, description="type specific docker node labels"),
+    ] = DEFAULT_FACTORY
 
     @field_validator("custom_boot_scripts")
     @classmethod
