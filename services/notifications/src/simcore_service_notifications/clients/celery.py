@@ -16,6 +16,8 @@ async def task_manager_lifespan(app: FastAPI) -> AsyncIterator[State]:
     settings: ApplicationSettings = app.state.settings
     celery_settings = settings.NOTIFICATIONS_CELERY
 
+    assert celery_settings is not None  # nosec
+
     redis_client_sdk = RedisClientSDK(
         celery_settings.CELERY_REDIS_RESULT_BACKEND.build_redis_dsn(
             RedisDatabase.CELERY_TASKS
