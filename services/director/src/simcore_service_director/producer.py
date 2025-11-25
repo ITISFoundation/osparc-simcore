@@ -231,13 +231,7 @@ async def _create_docker_service_params(
         "name": service_name,
         "task_template": {
             "ContainerSpec": container_spec,
-            "Placement": {
-                "Constraints": (
-                    ["node.role==worker"]
-                    if await docker_utils.swarm_has_worker_nodes()
-                    else []
-                )
-            },
+            "Placement": {"Constraints": ([])},
             "RestartPolicy": {
                 "Condition": "on-failure",
                 "Delay": app_settings.DIRECTOR_SERVICES_RESTART_POLICY_DELAY_S
