@@ -1152,7 +1152,6 @@ services:
     image: ${DOCKER_REGISTRY:-itisfoundation}/notifications:${DOCKER_IMAGE_TAG:-latest}
     init: true
     hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
-
     environment: &notifications_environment
       <<:
         - *common_logging_environments
@@ -1168,7 +1167,7 @@ services:
       - interactive_services_subnet
 
   notifications-wrk:
-    image: ${DOCKER_REGISTRY:-itisfoundation}/notifications:${DOCKER_IMAGE_TAG:-master-github-latest}
+    image: ${DOCKER_REGISTRY:-itisfoundation}/notifications:${DOCKER_IMAGE_TAG:-latest}
     init: true
     hostname: "notifications-wrk-{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
@@ -1265,7 +1264,7 @@ services:
       - storage_subnet
 
   sto-worker:
-    image: ${DOCKER_REGISTRY:-itisfoundation}/storage:${DOCKER_IMAGE_TAG:-master-github-latest}
+    image: ${DOCKER_REGISTRY:-itisfoundation}/storage:${DOCKER_IMAGE_TAG:-latest}
     init: true
     hostname: "sto-worker-{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
@@ -1278,7 +1277,7 @@ services:
     networks: *storage_networks
 
   sto-worker-cpu-bound:
-    image: ${DOCKER_REGISTRY:-itisfoundation}/storage:${DOCKER_IMAGE_TAG:-master-github-latest}
+    image: ${DOCKER_REGISTRY:-itisfoundation}/storage:${DOCKER_IMAGE_TAG:-latest}
     init: true
     hostname: "sto-worker-cpu-bound-{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
