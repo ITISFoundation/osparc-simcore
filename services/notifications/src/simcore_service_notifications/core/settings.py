@@ -27,7 +27,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     SC_BOOT_MODE: BootModeEnum | None
 
     NOTIFICATIONS_CELERY: Annotated[
-        CelerySettings,
+        CelerySettings | None,
         Field(
             description="Settings for Celery",
             json_schema_extra={"auto_default_from_env": True},
