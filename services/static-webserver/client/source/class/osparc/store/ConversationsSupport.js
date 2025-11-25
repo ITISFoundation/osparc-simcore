@@ -259,6 +259,21 @@ qx.Class.define("osparc.store.ConversationsSupport", {
         .catch(err => osparc.FlashMessenger.logError(err));
     },
 
+    triggerChatbot: function(conversationId, messageId) {
+      const params = {
+        url: {
+          conversationId,
+          messageId,
+        },
+      };
+
+      if (osparc.store.StaticInfo.isLocalEnv()) {
+        return osparc.store.Faker.getInstance().triggerChatbot(conversationId, messageId);
+      }
+      return osparc.data.Resources.fetch("conversationsSupport", "triggerChatbot", params)
+        .catch(err => osparc.FlashMessenger.logError(err));
+    },
+
     __addToCache: function(conversationData) {
       // check if already cached
       if (conversationData["conversationId"] in this.__conversationsCached) {
