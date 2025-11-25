@@ -1,6 +1,6 @@
 from asyncio import Lock
 from pathlib import Path
-from typing import Final, TypeAlias
+from typing import Final
 
 import aiofiles
 from fastapi import FastAPI
@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field, PrivateAttr
 
 from ..core.settings import ApplicationSettings
 
-ContainerNameStr: TypeAlias = str
+type ContainerNameStr = str
 
 STORE_FILE_NAME: Final[str] = "data.json"
 
