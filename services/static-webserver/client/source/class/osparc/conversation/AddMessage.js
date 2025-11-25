@@ -49,7 +49,14 @@ qx.Class.define("osparc.conversation.AddMessage", {
       nullable: true,
       event: "changeMessage",
       apply: "__applyMessage",
-    }
+    },
+
+    typing: {
+      check: "Boolean",
+      init: false,
+      nullable: false,
+      event: "changeTyping",
+    },
   },
 
   events: {
@@ -93,6 +100,9 @@ qx.Class.define("osparc.conversation.AddMessage", {
             textArea.focus();
             textArea.activate();
           });
+          textArea.addListener("input", () => {
+            this.setTyping(textArea.getValue().length > 0);
+          }, this);
           // make it visually connected to the button
           textArea.getContentElement().setStyles({
             "border-top-right-radius": "0px", // no roundness there to match the arrow button
