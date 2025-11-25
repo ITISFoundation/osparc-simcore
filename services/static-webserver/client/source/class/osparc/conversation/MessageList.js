@@ -102,6 +102,7 @@ qx.Class.define("osparc.conversation.MessageList", {
     _buildLayout: function() {
       this.getChildControl("spacer-top");
       this.getChildControl("messages-container");
+      this.getChildControl("load-more-button");
       this.getChildControl("add-message");
     },
 

@@ -53,12 +53,13 @@ qx.Class.define("osparc.store.Faker", {
         const randomIdx = Math.floor(Math.random() * this.self().IDK.length);
         const chatbotResponse = this.self().IDK[randomIdx];
         const chatbot = osparc.store.Groups.getInstance().getChatbot();
+        const now = new Date().toISOString();
         const messageData = {
           content: chatbotResponse,
           conversationId,
-          created: new Date().toISOString(),
+          created: now,
           messageId: osparc.utils.Utils.uuidV4(),
-          modified: new Date().toISOString(),
+          modified: now,
           type: "MESSAGE",
           userGroupId: chatbot.getGroupId(),
         };

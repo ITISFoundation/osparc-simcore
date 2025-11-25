@@ -57,21 +57,22 @@ qx.Class.define("osparc.support.Conversation", {
         case "thinking-response":
           control = new qx.ui.basic.Label(this.tr("thinking")).set({
             font: "text-13-italic",
-            visibility: "excluded",
             marginLeft: 50,
           });
           this.bind("chatbotTriggerState", control, "value", {
             converter: val => {
-              if (val === "waiting") {
-                return this.tr("thinking");
-              } else if (val === "triggered") {
-                return this.tr("thinking...");
+              switch (val) {
+                case "waiting":
+                  return this.tr("thinking");
+                case "triggered":
+                  return this.tr("thinking...");
+                case "idle":
+                  return "";
               }
-              return "";
             }
           });
           this.bind("chatbotTriggerState", control, "visibility", {
-            converter: val => val !== "idle" ? "visible" : "excluded"
+            converter: val => val === "idle" ? "excluded" : "visible"
           });
           this._addAt(control, osparc.conversation.MessageList.POS.THINKING_RESPONSE);
           break;
@@ -222,6 +223,7 @@ qx.Class.define("osparc.support.Conversation", {
       if (
         !osparc.store.Groups.getInstance().isChatbotEnabled() ||
         osparc.store.Groups.getInstance().amIASupportUser() ||
+        !this.getConversation() ||
         this.getConversation().getType() !== osparc.store.ConversationsSupport.TYPES.SUPPORT ||
         this.getConversation().getLastMessage() && this.getConversation().getLastMessage().getUserGroupId() !== osparc.store.Groups.getInstance().getMyGroupId()
       ) {
@@ -238,6 +240,7 @@ qx.Class.define("osparc.support.Conversation", {
       const conversationId = this.getConversation().getConversationId();
       const messageId = this.getConversation().getLastMessage().getMessageId();
       this.__triggerChatbotTimer = setTimeout(() => {
+        this.__triggerChatbotTimer = null;
         osparc.store.ConversationsSupport.getInstance().triggerChatbot(conversationId, messageId)
           .then(() => this.setChatbotTriggerState("triggered"));
       }, this.self().TRIGGER_CHATBOT_DELAY);
