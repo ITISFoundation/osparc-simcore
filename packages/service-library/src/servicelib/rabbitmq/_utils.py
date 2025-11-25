@@ -41,7 +41,9 @@ class RabbitMQRetryPolicyUponInitialization:
 async def is_rabbitmq_responsive(url: str) -> bool:
     """True if responsive or raises an error"""
     with log_context(
-        _logger, logging.INFO, msg=f"checking RabbitMQ connection at {redact_url(url)=}"
+        _logger,
+        logging.INFO,
+        msg=f"checking RabbitMQ connection at url={redact_url(url)}",
     ):
         async with await aio_pika.connect(url):
             _logger.info("rabbitmq connection established")
