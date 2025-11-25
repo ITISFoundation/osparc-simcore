@@ -134,6 +134,17 @@ qx.Class.define("osparc.support.Conversation", {
             });
         }
       });
+
+      addMessages.addListener("changeTyping", e => {
+        const isTyping = e.getData();
+        if (isTyping) {
+          // if the user is typing, clear any previous chatbot trigger timer
+          this.__clearTriggerChatbotTimer();
+        } else {
+          // if the user stopped typing, start the chatbot trigger timer
+          this.__startTriggerChatbotTimer();
+        }
+      }, this);
     },
 
     // overridden
@@ -172,31 +183,36 @@ qx.Class.define("osparc.support.Conversation", {
       const conversationId = this.getConversation().getConversationId();
       return osparc.store.ConversationsSupport.getInstance().postMessage(conversationId, content)
         .then(messageData => {
-          if (
-            osparc.store.Groups.getInstance().isChatbotEnabled() &&
-            this.getConversation().getType() === osparc.store.ConversationsSupport.TYPES.SUPPORT &&
-            !osparc.store.Groups.getInstance().amIASupportUser()
-          ) {
-            this.__startTriggerChatbotTimer(conversationId, messageData["messageId"]);
-          }
+          this.__startTriggerChatbotTimer(conversationId, messageData["messageId"]);
           return messageData;
         });
     },
 
     __startTriggerChatbotTimer: function(conversationId, messageId) {
+      // trigger chatbot only if:
+      // - chatbot is enabled
+      // - current user is not a support user
+      // - conversation is of type SUPPORT
+      // - conversation's last message is mine
+      if (
+        !osparc.store.Groups.getInstance().isChatbotEnabled() ||
+        osparc.store.Groups.getInstance().amIASupportUser() ||
+        this.getConversation().getType() !== osparc.store.ConversationsSupport.TYPES.SUPPORT ||
+        this.getConversation().getLastMessage() && this.getConversation().getLastMessage().getUserGroupId() !== osparc.store.Groups.getInstance().getMyGroupId()
+      ) {
+        return;
+      }
+
+      // clear any previous timer
+      this.__clearTriggerChatbotTimer();
+
       const thinkingResponseLabel = this.getChildControl("thinking-response");
       thinkingResponseLabel.set({
         value: this.tr("thinking"),
         visibility: "visible",
       });
-      // clear any previous timer
-      this.__clearTriggerChatbotTimer();
-      if (this.__triggerChatbotTimer) {
-        clearTimeout(this.__triggerChatbotTimer);
-        this.__triggerChatbotTimer = null;
-      }
       // wait a bit before triggering the chatbot response
-      // if the user starts typing again, delete the timer
+      // if the user starts typing again, the timer will be cleared
       this.__triggerChatbotTimer = setTimeout(() => {
         osparc.store.ConversationsSupport.getInstance().triggerChatbot(conversationId, messageId)
           .then(() => {
@@ -205,11 +221,6 @@ qx.Class.define("osparc.support.Conversation", {
             });
           });
       }, this.self().TRIGGER_CHATBOT_DELAY);
-    },
-
-    __userTypingStarted: function() {
-      this.getChildControl("thinking-response").setVisibility("excluded");
-      this.__clearTriggerChatbotTimer();
     },
 
     __clearTriggerChatbotTimer: function() {

@@ -100,9 +100,10 @@ qx.Class.define("osparc.conversation.AddMessage", {
             textArea.focus();
             textArea.activate();
           });
-          textArea.addListener("input", () => {
-            this.setTyping(textArea.getValue().length > 0);
-          }, this);
+          [
+            "input",
+            "changeValue",
+          ].forEach(evtName => textArea.addListener(evtName, () => this.setTyping(textArea.getValue().length > 0), this));
           // make it visually connected to the button
           textArea.getContentElement().setStyles({
             "border-top-right-radius": "0px", // no roundness there to match the arrow button
