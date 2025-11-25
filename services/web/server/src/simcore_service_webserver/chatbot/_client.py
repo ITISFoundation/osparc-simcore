@@ -54,6 +54,7 @@ class ChatbotRestClient:
                     "Content-Type": MIMETYPE_APPLICATION_JSON,
                     "Accept": MIMETYPE_APPLICATION_JSON,
                 },
+                timeout=httpx.Timeout(60.0),
             )
 
         try:

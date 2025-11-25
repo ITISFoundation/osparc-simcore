@@ -110,13 +110,10 @@ async def get_conversation(
     app: web.Application,
     *,
     conversation_id: ConversationID,
-    # filters
-    type_: ConversationType | None = None,
 ) -> ConversationGetDB:
     return await _conversation_repository.get(
         app,
         conversation_id=conversation_id,
-        type_=type_,
     )
 
 
@@ -125,13 +122,11 @@ async def get_conversation_for_user(
     *,
     conversation_id: ConversationID,
     user_group_id: UserID,
-    type_: ConversationType | None = None,
 ) -> ConversationGetDB:
     return await _conversation_repository.get_for_user(
         app,
         conversation_id=conversation_id,
         user_group_id=user_group_id,
-        type_=type_,
     )
 
 
@@ -245,10 +240,10 @@ async def get_support_conversation_for_user(
 
     # Check if user is an AI bot
     if _chatbot_user_id and user_id == _chatbot_user_id:
+        conversation = await get_conversation(app, conversation_id=conversation_id)
+        assert conversation.type.is_support_type()  # nosec
         return (
-            await get_conversation(
-                app, conversation_id=conversation_id, type_=ConversationType.SUPPORT
-            ),
+            conversation,
             ConversationUserType.CHATBOT_USER,
         )
 
@@ -258,21 +253,23 @@ async def get_support_conversation_for_user(
         )
         if _support_standard_group_id in _user_group_ids:
             # I am a support user
+            conversation = await get_conversation(app, conversation_id=conversation_id)
+            assert conversation.type.is_support_type()  # nosec
             return (
-                await get_conversation(
-                    app, conversation_id=conversation_id, type_=ConversationType.SUPPORT
-                ),
+                conversation,
                 ConversationUserType.SUPPORT_USER,
             )
 
+    # I am a regular user
     _user_group_id = await users_service.get_user_primary_group_id(app, user_id=user_id)
+    conversation = await get_conversation_for_user(
+        app,
+        conversation_id=conversation_id,
+        user_group_id=_user_group_id,
+    )
+    assert conversation.type.is_support_type()  # nosec
     return (
-        await get_conversation_for_user(
-            app,
-            conversation_id=conversation_id,
-            user_group_id=_user_group_id,
-            type_=ConversationType.SUPPORT,
-        ),
+        conversation,
         ConversationUserType.REGULAR_USER,
     )
 
@@ -311,6 +308,7 @@ async def list_support_conversations_for_user(
     return await _conversation_repository.list_support_conversations_for_user(
         app,
         user_group_id=_user_group_id,
+        product_name=product_name,
         offset=offset,
         limit=limit,
         order_by=OrderBy(
