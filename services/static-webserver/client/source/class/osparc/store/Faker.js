@@ -35,6 +35,7 @@ qx.Class.define("osparc.store.Faker", {
       "Neviem",
     ],
   },
+
   members: {
     sendSocketMessageToMyself: function(eventName, message) {
       const socket = osparc.wrapper.WebSocket.getInstance().getSocket();
@@ -45,8 +46,8 @@ qx.Class.define("osparc.store.Faker", {
     },
 
     triggerChatbot: function(conversationId, messageId) {
-      // wait a random time between 2 and 5 seconds to simulate building response
-      const delay = 2000 + Math.floor(Math.random() * 3000);
+      // wait a random time between 3 and 6 seconds to simulate building response
+      const delay = 3000 + Math.floor(Math.random() * 3000);
       setTimeout(() => {
         // create a fake chatbot response
         const randomIdx = Math.floor(Math.random() * this.self().IDK.length);
@@ -68,6 +69,8 @@ qx.Class.define("osparc.store.Faker", {
           messageData
         );
       }, delay);
+
+      return new Promise((resolve) => resolve());
     },
   }
 });
