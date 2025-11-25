@@ -150,10 +150,12 @@ def test_services_custom_constraints(
     project_env_devel_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setenv("DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS", custom_constraints)
+    monkeypatch.setenv(
+        "DIRECTOR_V2_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS", custom_constraints
+    )
     settings = AppSettings.create_from_envs()
     custom_constraints = (
-        settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR_PLACEMENT_SETTINGS.DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS
+        settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR_PLACEMENT_SETTINGS.DIRECTOR_V2_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS
     )
     assert isinstance(custom_constraints, list)
     assert expected == custom_constraints
@@ -185,7 +187,9 @@ def test_services_custom_constraint_failures(
     project_env_devel_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setenv("DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS", custom_constraints)
+    monkeypatch.setenv(
+        "DIRECTOR_V2_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS", custom_constraints
+    )
     with pytest.raises(DefaultFromEnvFactoryError):
         AppSettings.create_from_envs()
 
@@ -196,7 +200,7 @@ def test_services_custom_constraints_default_empty_list(
     settings = AppSettings.create_from_envs()
     assert (
         []
-        == settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR_PLACEMENT_SETTINGS.DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS
+        == settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR_PLACEMENT_SETTINGS.DIRECTOR_V2_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS
     )
 
 
