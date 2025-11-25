@@ -2,7 +2,7 @@ import datetime
 import re
 import tempfile
 from dataclasses import dataclass
-from typing import Annotated, Final, TypeAlias
+from typing import Annotated, Final
 
 import sh  # type: ignore[import-untyped]
 from common_library.basic_types import DEFAULT_FACTORY
@@ -24,7 +24,7 @@ from pydantic import (
 from pydantic.config import JsonDict
 from types_aiobotocore_ec2.literals import InstanceStateNameType, InstanceTypeType
 
-GenericResourceValueType: TypeAlias = StrictInt | StrictFloat | str
+type GenericResourceValueType = StrictInt | StrictFloat | str
 
 
 class Resources(BaseModel, frozen=True):
@@ -197,12 +197,12 @@ class EC2InstanceType:
     resources: Resources
 
 
-InstancePrivateDNSName: TypeAlias = str
+type InstancePrivateDNSName = str
 
 
 AWS_TAG_KEY_MIN_LENGTH: Final[int] = 1
 AWS_TAG_KEY_MAX_LENGTH: Final[int] = 128
-AWSTagKey: TypeAlias = Annotated[
+type AWSTagKey = Annotated[
     # see [https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html#tag-restrictions]
     str,
     StringConstraints(
@@ -215,7 +215,7 @@ AWSTagKey: TypeAlias = Annotated[
 
 AWS_TAG_VALUE_MIN_LENGTH: Final[int] = 0
 AWS_TAG_VALUE_MAX_LENGTH: Final[int] = 256
-AWSTagValue: TypeAlias = Annotated[
+type AWSTagValue = Annotated[
     # see [https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html#tag-restrictions]
     # quotes []{} were added as it allows to json encode. it seems to be accepted as a value
     str,
@@ -227,7 +227,7 @@ AWSTagValue: TypeAlias = Annotated[
 ]
 
 
-EC2Tags: TypeAlias = dict[AWSTagKey, AWSTagValue]
+type EC2Tags = dict[AWSTagKey, AWSTagValue]
 
 
 @dataclass(frozen=True)
@@ -269,8 +269,8 @@ class EC2InstanceConfig:
     iam_instance_profile: str
 
 
-AMIIdStr: TypeAlias = str
-CommandStr: TypeAlias = str
+type AMIIdStr = str
+type CommandStr = str
 
 
 class EC2InstanceBootSpecific(BaseModel):
