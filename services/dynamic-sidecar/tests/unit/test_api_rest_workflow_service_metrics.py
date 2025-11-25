@@ -107,7 +107,7 @@ async def mock_environment(
         monkeypatch,
         {
             **mock_environment,
-            "RESOURCE_TRACKING_HEARTBEAT_INTERVAL": f"{_BASE_HEART_BEAT_INTERVAL}",
+            "RESOURCE_TRACKING_HEARTBEAT_INTERVAL": f"PT{_BASE_HEART_BEAT_INTERVAL}S",
             "RABBIT_SETTINGS": json.dumps(
                 model_dump_with_secrets(rabbit_service, show_secrets=True)
             ),
