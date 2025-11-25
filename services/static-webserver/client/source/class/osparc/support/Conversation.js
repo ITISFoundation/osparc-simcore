@@ -176,7 +176,7 @@ qx.Class.define("osparc.support.Conversation", {
         osparc.store.Groups.getInstance().isChatbotEnabled() &&
         osparc.store.Groups.getInstance().getChatbot().getGroupId() === message.getUserGroupId()
       ) {
-        this.getChildControl("thinking-response").setVisibility("excluded");
+        this.__clearTriggerChatbotTimer();
       }
     },
 
@@ -225,6 +225,8 @@ qx.Class.define("osparc.support.Conversation", {
     },
 
     __clearTriggerChatbotTimer: function() {
+      this.getChildControl("thinking-response").setVisibility("excluded");
+
       if (this.__triggerChatbotTimer) {
         clearTimeout(this.__triggerChatbotTimer);
         this.__triggerChatbotTimer = null;
