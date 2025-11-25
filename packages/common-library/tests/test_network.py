@@ -48,6 +48,7 @@ def test_is_ip_address(host: str, expected: bool):
             "ftp://user:***@ftp.example.com/files",
         ),
         ("amqp://admin:mysecret@rabbit:5672", "amqp://admin:***@rabbit:5672"),
+        ("redis://:adminadmin@redis:6379/3", "redis://:***@redis:6379/3"),
         # URLs with password and query/fragment
         (
             "https://user:pass@example.com/path?query=value",
@@ -62,7 +63,7 @@ def test_is_ip_address(host: str, expected: bool):
             "https://user:***@example.com/path?query=value#fragment",
         ),
         # URLs with password but no username (edge case)
-        ("https://:password@example.com", "https://example.com"),
+        ("https://:password@example.com", "https://:***@example.com"),
         # URLs with special characters in password
         ("https://user:p@ss%40word@example.com", "https://user:***@example.com"),
         ("https://user:p:a:s:s@example.com", "https://user:***@example.com"),

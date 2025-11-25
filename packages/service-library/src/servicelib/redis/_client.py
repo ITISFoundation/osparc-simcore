@@ -10,6 +10,7 @@ import redis.asyncio as aioredis
 import redis.exceptions
 import tenacity
 from common_library.async_tools import cancel_wait_task
+from common_library.network import redact_url
 from redis.asyncio.lock import Lock
 from redis.asyncio.retry import Retry
 from redis.backoff import ExponentialBackoff
@@ -93,7 +94,7 @@ class RedisClientSDK:
 
         _logger.info(
             "Connection to %s succeeded with %s",
-            f"redis at {self.redis_dsn=}",
+            f"redis at {redact_url(self.redis_dsn)}",
             f"{self._client=}",
         )
 

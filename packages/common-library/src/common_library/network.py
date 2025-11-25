@@ -18,12 +18,11 @@ def redact_url(url: str) -> str:
 
     if parsed.username:
         new_netloc = f"{parsed.username}:***@{parsed.hostname}"
-        if parsed.port:
-            new_netloc = f"{new_netloc}:{parsed.port}"
     else:
-        new_netloc = parsed.hostname or ""
-        if parsed.port:
-            new_netloc = f"{new_netloc}:{parsed.port}"
+        new_netloc = f":***@{parsed.hostname}"
+
+    if parsed.port:
+        new_netloc = f"{new_netloc}:{parsed.port}"
 
     return urllib.parse.urlunparse(
         (
