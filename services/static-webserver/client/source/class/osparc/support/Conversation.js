@@ -171,9 +171,10 @@ qx.Class.define("osparc.support.Conversation", {
         conversation.setReadBy(true);
       }
 
+      // hide thinking response if the message is from the chatbot
       if (
         osparc.store.Groups.getInstance().isChatbotEnabled() &&
-        osparc.store.Groups.getInstance().getChatbot().getGroupId() === message.getUserGroupId ()
+        osparc.store.Groups.getInstance().getChatbot().getGroupId() === message.getUserGroupId()
       ) {
         this.getChildControl("thinking-response").setVisibility("excluded");
       }
