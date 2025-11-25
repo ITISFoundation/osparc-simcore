@@ -39,6 +39,7 @@ from simcore_service_dynamic_sidecar.modules.outputs._event_filter import (
     BaseDelayPolicy,
 )
 from simcore_service_dynamic_sidecar.modules.outputs._manager import OutputsManager
+from simcore_service_dynamic_sidecar.modules.outputs._watcher import OutputsWatcher
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
@@ -61,24 +62,19 @@ _UPLOAD_DURATION: Final[PositiveFloat] = _TICK_INTERVAL * 10
 
 @pytest.fixture
 def mounted_volumes(faker: Faker, tmp_path: Path) -> Iterator[MountedVolumes]:
-    safe_tmp_subdir = tmp_path / faker.uuid4()
-    safe_tmp_subdir.mkdir(parents=True, exist_ok=True)
-    assert safe_tmp_subdir.exists()
-    assert safe_tmp_subdir.is_dir()
-
     mounted_volumes = MountedVolumes(
         service_run_id=ServiceRunID.get_resource_tracking_run_id_for_dynamic(),
         node_id=faker.uuid4(cast_to=None),
-        inputs_path=safe_tmp_subdir / "inputs",
-        outputs_path=safe_tmp_subdir / "outputs",
+        inputs_path=tmp_path / "inputs",
+        outputs_path=tmp_path / "outputs",
         user_preferences_path=None,
         state_paths=[],
         state_exclude=set(),
         compose_namespace="",
-        dy_volumes=safe_tmp_subdir,
+        dy_volumes=tmp_path,
     )
     yield mounted_volumes
-    rmtree(safe_tmp_subdir)
+    rmtree(tmp_path)
 
 
 @pytest.fixture
@@ -116,11 +112,11 @@ async def outputs_watcher(
     mocker: MockerFixture,
     outputs_context: OutputsContext,
     outputs_manager: OutputsManager,
-) -> AsyncIterator[outputs_watcher_core.OutputsWatcher]:
+) -> AsyncIterator[OutputsWatcher]:
     mocker.patch.object(
         outputs_watcher_core, "DEFAULT_OBSERVER_TIMEOUT", _TICK_INTERVAL
     )
-    outputs_watcher = outputs_watcher_core.OutputsWatcher(
+    outputs_watcher = OutputsWatcher(
         outputs_manager=outputs_manager, outputs_context=outputs_context
     )
     await outputs_watcher.start()
@@ -130,8 +126,7 @@ async def outputs_watcher(
 
 @pytest.fixture
 def mock_event_filter_upload_trigger(
-    mocker: MockerFixture,
-    outputs_watcher: outputs_watcher_core.OutputsWatcher,
+    mocker: MockerFixture, outputs_watcher: OutputsWatcher
 ) -> AsyncMock:
     mock_enqueue = AsyncMock(return_value=None)
 
@@ -298,7 +293,7 @@ async def _wait_for_events_to_trigger() -> None:
 
 async def test_run_observer(
     mock_event_filter_upload_trigger: AsyncMock,
-    outputs_watcher: outputs_watcher_core.OutputsWatcher,
+    outputs_watcher: OutputsWatcher,
     port_keys: list[str],
 ) -> None:
     await _wait_for_events_to_trigger()
@@ -324,7 +319,7 @@ async def test_does_not_trigger_on_attribute_change(
     mock_event_filter_upload_trigger: AsyncMock,
     mounted_volumes: MountedVolumes,
     port_keys: list[str],
-    outputs_watcher: outputs_watcher_core.OutputsWatcher,
+    outputs_watcher: OutputsWatcher,
 ):
     await _wait_for_events_to_trigger()
     await outputs_watcher.enable_event_propagation()
@@ -353,7 +348,7 @@ async def test_does_not_trigger_on_attribute_change(
 async def test_port_key_sequential_event_generation(
     mock_long_running_upload_outputs: AsyncMock,
     mounted_volumes: MountedVolumes,
-    outputs_watcher: outputs_watcher_core.OutputsWatcher,
+    outputs_watcher: OutputsWatcher,
     files_per_port_key: NonNegativeInt,
     file_generation_info: FileGenerationInfo,
     port_keys: list[str],
