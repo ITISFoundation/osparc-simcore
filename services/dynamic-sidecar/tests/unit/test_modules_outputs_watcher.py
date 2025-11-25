@@ -8,7 +8,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from random import randbytes, shuffle
 from shutil import move, rmtree
-from threading import Thread
 from typing import Any, Final
 from unittest.mock import AsyncMock
 
@@ -271,26 +270,27 @@ async def _random_events_in_path(
         await awaitable
 
 
-async def _generate_event_burst(path: Path, subfolder: str | None = None) -> None:
-    def _worker():
-        full_dir_path = path if subfolder is None else path / subfolder
-        full_dir_path.mkdir(parents=True, exist_ok=True)
-        file_path_1 = full_dir_path / "file1.txt"
-        file_path_2 = full_dir_path / "file2.txt"
+def _generate_event_burst(path: Path, subfolder: str | None = None) -> None:
+    full_dir_path = path if subfolder is None else path / subfolder
+    full_dir_path.mkdir(parents=True, exist_ok=True)
+    file_path_1 = full_dir_path / "file1.txt"
+    file_path_2 = full_dir_path / "file2.txt"
 
-        # create
-        file_path_1.touch()
-        # modified
-        file_path_1.write_text("lorem ipsum")
-        # move
-        move(str(file_path_1), str(file_path_2))
-        # delete
-        file_path_2.unlink()
-        # let fs events trigger
+    # create
+    file_path_1.touch()
+    # modified
+    file_path_1.write_text("lorem ipsum")
+    # move
+    move(str(file_path_1), str(file_path_2))
+    # delete
+    file_path_2.unlink()
+    # let fs events trigger
 
-    thread = Thread(target=_worker, daemon=True)
-    thread.start()
-    thread.join()
+
+async def _wait_for_events_to_trigger() -> None:
+    event_wait_interval = _WAIT_INTERVAL * 10 + 1
+    print("WAIT FOR", event_wait_interval)
+    await asyncio.sleep(event_wait_interval)
 
 
 # TESTS
@@ -301,12 +301,11 @@ async def test_run_observer(
     outputs_watcher: outputs_watcher_core.OutputsWatcher,
     port_keys: list[str],
 ) -> None:
+    await _wait_for_events_to_trigger()
     await outputs_watcher.enable_event_propagation()
 
     # generates the first event chain
-    await _generate_event_burst(
-        outputs_watcher.outputs_context.outputs_path, port_keys[0]
-    )
+    _generate_event_burst(outputs_watcher.outputs_context.outputs_path, port_keys[0])
 
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
@@ -314,9 +313,7 @@ async def test_run_observer(
             assert mock_event_filter_upload_trigger.call_count == 1
 
     # generates the second event chain
-    await _generate_event_burst(
-        outputs_watcher.outputs_context.outputs_path, port_keys[1]
-    )
+    _generate_event_burst(outputs_watcher.outputs_context.outputs_path, port_keys[1])
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
             await asyncio.sleep(0)
@@ -329,10 +326,7 @@ async def test_does_not_trigger_on_attribute_change(
     port_keys: list[str],
     outputs_watcher: outputs_watcher_core.OutputsWatcher,
 ):
-    event_wait_interval = _WAIT_INTERVAL * 10 + 1
-    print("WAIT FOR", event_wait_interval)
-    await asyncio.sleep(event_wait_interval)
-
+    await _wait_for_events_to_trigger()
     await outputs_watcher.enable_event_propagation()
 
     # crate a file in the directory
