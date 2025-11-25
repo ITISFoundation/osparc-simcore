@@ -173,6 +173,7 @@ qx.Class.define("osparc.support.Conversation", {
         .then(messageData => {
           if (
             osparc.store.Groups.getInstance().isChatbotEnabled() &&
+            this.getConversation().getType() === osparc.store.ConversationsSupport.TYPES.SUPPORT &&
             !osparc.store.Groups.getInstance().amIASupportUser()
           ) {
             this.__startTriggerChatbotTimer(conversationId, messageData["messageId"]);
