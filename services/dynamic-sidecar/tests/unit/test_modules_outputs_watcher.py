@@ -382,10 +382,12 @@ async def test_port_key_sequential_event_generation(
         **{**_TENACITY_RETRY_PARAMS, "stop": stop_after_delay(sleep_for)}
     ):
         with attempt:
+            await asyncio.sleep(0)
             assert mock_long_running_upload_outputs.call_count > 0
 
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
+            await asyncio.sleep(0)
             uploaded_port_keys: set[str] = set()
             for call_args in mock_long_running_upload_outputs.call_args_list:
                 uploaded_port_keys |= set(call_args.kwargs["port_keys"])
