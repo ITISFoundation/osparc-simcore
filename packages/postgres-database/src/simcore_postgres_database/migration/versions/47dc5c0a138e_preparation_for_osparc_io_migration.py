@@ -106,6 +106,22 @@ def upgrade():
         unique=False,
     )
     op.drop_index("ix_projects_comments_project_uuid", table_name="projects_comments")
+
+    # NOTE: I am adding this manually >>>>
+    op.execute(
+        "ALTER TABLE projects_comments DROP CONSTRAINT IF EXISTS fk_projects_comments_project_uuid;"
+    )
+    op.execute(
+        "ALTER TABLE projects_to_wallet DROP CONSTRAINT IF EXISTS fk_projects_comments_project_uuid;"
+    )
+    op.execute(
+        """  ALTER TABLE projects_to_wallet
+            ADD CONSTRAINT fk_projects_wallet_project_uuid
+            FOREIGN KEY (project_uuid)
+            REFERENCES projects(uuid);"""
+    )
+    # NOTE: I am adding this manually <<<<
+
     op.drop_table("projects_comments")
     op.drop_constraint("api_keys_user_id_fkey", "api_keys", type_="foreignkey")
     op.create_foreign_key(
