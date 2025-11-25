@@ -29,6 +29,12 @@ class ConversationType(StrAutoEnum):
     def is_support_type(self) -> bool:
         return self in {ConversationType.SUPPORT, ConversationType.SUPPORT_CALL}
 
+    def is_project_type(self) -> bool:
+        return self in {
+            ConversationType.PROJECT_STATIC,
+            ConversationType.PROJECT_ANNOTATION,
+        }
+
 
 class ConversationMessageType(StrAutoEnum):
     MESSAGE = auto()
