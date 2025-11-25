@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Annotated
 
 from models_library.basic_types import BootModeEnum, PortInt
-from models_library.docker import DockerPlacementConstraint
+from models_library.docker import DockerLabelKey, DockerPlacementConstraint
 from models_library.utils.common_validators import (
     ensure_unique_dict_values_validator,
     ensure_unique_list_values_validator,
@@ -58,7 +58,9 @@ class RCloneSettings(SettingsLibraryRCloneSettings):
 class PlacementSettings(BaseCustomSettings):
     # This is just a service placement constraint, see
     # https://docs.docker.com/engine/swarm/services/#control-service-placement.
-    DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS: list[DockerPlacementConstraint] = Field(
+    DIRECTOR_V2_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS: list[
+        DockerPlacementConstraint
+    ] = Field(
         default_factory=list,
         examples=['["node.labels.region==east", "one!=yes"]'],
     )
@@ -76,7 +78,7 @@ class PlacementSettings(BaseCustomSettings):
     )
 
     _unique_custom_constraints = field_validator(
-        "DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS",
+        "DIRECTOR_V2_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS",
     )(ensure_unique_list_values_validator)
 
     _unique_resource_placement_constraints_substitutions = field_validator(
@@ -144,6 +146,15 @@ class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
     DYNAMIC_SIDECAR_PLACEMENT_SETTINGS: PlacementSettings = Field(
         json_schema_extra={"auto_default_from_env": True}
     )
+
+    DYNAMIC_SIDECAR_CUSTOM_LABELS: Annotated[
+        dict[DockerLabelKey, str],
+        Field(
+            default_factory=dict,
+            description="Custom labels to add to the dynamic-sidecar service",
+            examples=[{"label_key": "label_value"}],
+        ),
+    ]
 
     #
     # DEVELOPMENT ONLY config

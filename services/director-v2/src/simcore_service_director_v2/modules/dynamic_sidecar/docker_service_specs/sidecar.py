@@ -473,13 +473,14 @@ async def get_dynamic_sidecar_spec(  # pylint:disable=too-many-arguments# noqa: 
             scheduler_data.callbacks_mapping,
         )
         | standard_simcore_docker_labels
+        | app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_CUSTOM_LABELS
     )
 
     placement_settings = (
         app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_PLACEMENT_SETTINGS
     )
     placement_constraints = deepcopy(
-        placement_settings.DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS
+        placement_settings.DIRECTOR_V2_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS
     )
     # if service has a pricing plan apply constraints for autoscaling
     if hardware_info and len(hardware_info.aws_ec2_instances) == 1:
@@ -523,7 +524,8 @@ async def get_dynamic_sidecar_spec(  # pylint:disable=too-many-arguments# noqa: 
                 "Hosts": [],
                 "Image": dynamic_sidecar_settings.DYNAMIC_SIDECAR_IMAGE,
                 "Init": True,
-                "Labels": standard_simcore_docker_labels,
+                "Labels": standard_simcore_docker_labels
+                | app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_CUSTOM_LABELS,
                 "Mounts": mounts,
                 "Secrets": (
                     [

@@ -1,7 +1,7 @@
 from collections.abc import AsyncIterable
 
 import pytest
-from servicelib.async_utils import cancel_sequential_workers
+from servicelib.async_utils import _sequential_jobs_contexts
 
 
 @pytest.fixture
@@ -16,7 +16,12 @@ async def ensure_run_in_sequence_context_is_empty() -> AsyncIterable[None]:
     """
 
     # nothing on-startup
+    assert (
+        len(_sequential_jobs_contexts) == 0
+    ), "Not all contexts were cleaned up on startup"
 
     yield
 
-    await cancel_sequential_workers()
+    assert (
+        len(_sequential_jobs_contexts) == 0
+    ), "Not all contexts were cleaned up on teardown"
