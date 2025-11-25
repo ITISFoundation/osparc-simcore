@@ -527,7 +527,7 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
         else:
             task_data = await self._tasks_data.get_task_data(task_id)
             if (
-                task_data
+                task_data is not None
                 and task_data.marked_for_removal_at is not None
                 and datetime.datetime.now(tz=datetime.UTC)
                 - task_data.marked_for_removal_at
