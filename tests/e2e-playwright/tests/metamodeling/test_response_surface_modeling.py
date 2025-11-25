@@ -99,7 +99,7 @@ def test_response_surface_modeling(
         [ServiceType, str, str | None, str | None], dict[str, Any]
     ],
     log_in_and_out: RobustWebSocket,
-    local_service_key: str,
+    service_key: str,
     service_version: str | None,
     product_url: AnyUrl,
     is_service_legacy: bool,
