@@ -48,19 +48,30 @@ qx.Class.define("osparc.conversation.MessageList", {
     "messagesChanged": "qx.event.type.Event",
   },
 
+  statics: {
+    POS: {
+      SPACER_TOP: 0,
+      MESSAGES_CONTAINER: 1,
+      LOAD_MORE_BUTTON: 2,
+      THINKING_RESPONSE: 3,
+      ADD_MESSAGE: 4,
+      SHARE_PROJECT_LAYOUT: 5,
+    },
+  },
+
   members: {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
         case "spacer-top":
           control = new qx.ui.core.Spacer();
-          this._addAt(control, 0, {
+          this._addAt(control, this.self().POS.SPACER_TOP, {
             flex: 100 // high number to keep even a one message list at the bottom
           });
           break;
         case "messages-container-scroll":
           control = new qx.ui.container.Scroll();
-          this._addAt(control, 1, {
+          this._addAt(control, this.self().POS.MESSAGES_CONTAINER, {
             flex: 1
           });
           break;
@@ -73,15 +84,7 @@ qx.Class.define("osparc.conversation.MessageList", {
         case "load-more-button":
           control = new osparc.ui.form.FetchButton(this.tr("Load more messages..."));
           control.addListener("execute", () => this.__reloadMessages(false));
-          this._addAt(control, 2);
-          break;
-        case "thinking-response":
-          control = new qx.ui.basic.Label(this.tr("thinking...")).set({
-            font: "text-13-italic",
-            visibility: "excluded",
-            marginLeft: 50,
-          });
-          this._addAt(control, 3);
+          this._addAt(control, this.self().POS.LOAD_MORE_BUTTON);
           break;
         case "add-message":
           control = new osparc.conversation.AddMessage().set({
@@ -90,7 +93,7 @@ qx.Class.define("osparc.conversation.MessageList", {
           this.bind("conversation", control, "conversationId", {
             converter: conversation => conversation ? conversation.getConversationId() : null
           });
-          this._addAt(control, 4);
+          this._addAt(control, this.self().POS.ADD_MESSAGE);
           break;
       }
       return control || this.base(arguments, id);

@@ -44,12 +44,20 @@ qx.Class.define("osparc.support.Conversation", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
+        case "thinking-response":
+          control = new qx.ui.basic.Label(this.tr("thinking...")).set({
+            font: "text-13-italic",
+            visibility: "excluded",
+            marginLeft: 50,
+          });
+          this._addAt(control, osparc.conversation.MessageList.POS.THINKING_RESPONSE);
+          break;
         case "share-project-layout":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox()).set({
             backgroundColor: "strong-main",
             decorator: "rounded",
           });
-          this._addAt(control, 5);
+          this._addAt(control, osparc.conversation.MessageList.POS.SHARE_PROJECT_LAYOUT);
           break;
         case "share-project-checkbox":
           control = new qx.ui.form.CheckBox().set({
