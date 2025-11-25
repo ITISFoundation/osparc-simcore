@@ -17,7 +17,7 @@ class ChatResponse(BaseModel):
 
 class ChatbotRestClient:
     def __init__(self, chatbot_settings: ChatbotSettings) -> None:
-        self._client = httpx.AsyncClient()
+        self._client = httpx.AsyncClient()  # MD: todo
         self._chatbot_settings = chatbot_settings
 
     async def get_settings(self) -> dict[str, Any]:
@@ -54,6 +54,7 @@ class ChatbotRestClient:
                     "Content-Type": MIMETYPE_APPLICATION_JSON,
                     "Accept": MIMETYPE_APPLICATION_JSON,
                 },
+                timeout=httpx.Timeout(60.0),
             )
 
         try:
