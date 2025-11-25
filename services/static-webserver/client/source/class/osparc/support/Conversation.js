@@ -40,6 +40,7 @@ qx.Class.define("osparc.support.Conversation", {
 
   members: {
     __bookACallInfo: null,
+    __triggerChatbotTimer: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -187,7 +188,13 @@ qx.Class.define("osparc.support.Conversation", {
       thinkingResponseLabel.set({
         value: this.tr("thinking"),
         visibility: "visible",
-      })
+      });
+      // clear any previous timer
+      this.__clearTriggerChatbotTimer();
+      if (this.__triggerChatbotTimer) {
+        clearTimeout(this.__triggerChatbotTimer);
+        this.__triggerChatbotTimer = null;
+      }
       // wait a bit before triggering the chatbot response
       // if the user starts typing again, delete the timer
       this.__triggerChatbotTimer = setTimeout(() => {
@@ -202,6 +209,10 @@ qx.Class.define("osparc.support.Conversation", {
 
     __userTypingStarted: function() {
       this.getChildControl("thinking-response").setVisibility("excluded");
+      this.__clearTriggerChatbotTimer();
+    },
+
+    __clearTriggerChatbotTimer: function() {
       if (this.__triggerChatbotTimer) {
         clearTimeout(this.__triggerChatbotTimer);
         this.__triggerChatbotTimer = null;
