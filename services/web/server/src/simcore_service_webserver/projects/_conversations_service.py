@@ -149,9 +149,12 @@ async def get_project_conversation(
         project_id=project_uuid,
         permission="read",
     )
-    return await conversations_service.get_conversation(
+    conversation = await conversations_service.get_conversation(
         app, conversation_id=conversation_id
     )
+    assert conversation.project_uuid == project_uuid  # nosec
+    assert conversation.type.is_project_type()  # nosec
+    return conversation
 
 
 #
