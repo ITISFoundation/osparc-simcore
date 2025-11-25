@@ -33,6 +33,7 @@ _DEFAULT_RESPONSE_TO_WAIT_FOR: Final[re.Pattern] = re.compile(
 
 _STUDY_FUNCTION_NAME: Final[str] = "playwright_test_study_for_rsm"
 _FUNCTION_NAME: Final[str] = "playwright_test_function"
+EXPECTED_MOGA_KEY: Final[str] = "moga"
 
 
 @pytest.fixture
@@ -98,7 +99,7 @@ def test_response_surface_modeling(
         [ServiceType, str, str | None, str | None], dict[str, Any]
     ],
     log_in_and_out: RobustWebSocket,
-    service_key: str,
+    local_service_key: str,
     service_version: str | None,
     product_url: AnyUrl,
     is_service_legacy: bool,
@@ -226,13 +227,13 @@ def test_response_surface_modeling(
         "mmux-vite-app-uq-write",
     ]
 
-    for service_key in service_keys:
+    for local_service_key in service_keys:
         with log_context(
             logging.INFO,
-            f"Waiting for {service_key} to be responsive (waiting for {_DEFAULT_RESPONSE_TO_WAIT_FOR})",
+            f"Waiting for {local_service_key} to be responsive (waiting for {_DEFAULT_RESPONSE_TO_WAIT_FOR})",
         ):
             project_data = create_project_from_service_dashboard(
-                ServiceType.DYNAMIC, service_key, None, service_version
+                ServiceType.DYNAMIC, local_service_key, None, service_version
             )
             assert (
                 "workbench" in project_data
@@ -264,7 +265,7 @@ def test_response_surface_modeling(
             service_iframe.get_by_role("button", name="SELECT").nth(0).click()
 
         with log_context(logging.INFO, "Filling the input parameters..."):
-            min_test_id = "Mean" if "uq" in service_key.lower() else "Min"
+            min_test_id = "Mean" if "uq" in local_service_key.lower() else "Min"
             min_inputs = service_iframe.locator(
                 f'[mmux-testid="input-block-{min_test_id}"] input[type="number"]'
             )
@@ -276,7 +277,9 @@ def test_response_surface_modeling(
                 logging.info(f"Filled {min_test_id} input {i} with value {i + 1}")
                 assert input_field.input_value() == str(i + 1)
 
-            max_test_id = "Standard Deviation" if "uq" in service_key.lower() else "Max"
+            max_test_id = (
+                "Standard Deviation" if "uq" in local_service_key.lower() else "Max"
+            )
             max_inputs = service_iframe.locator(
                 f'[mmux-testid="input-block-{max_test_id}"] input[type="number"]'
             )
@@ -294,7 +297,7 @@ def test_response_surface_modeling(
             page.keyboard.press("Tab")
             page.wait_for_timeout(1000)
 
-        if "moga" in service_key.lower():
+        if EXPECTED_MOGA_KEY in local_service_key.lower():
             with log_context(logging.INFO, "Filling the output parameters..."):
                 output_plus_button = service_iframe.locator(
                     '[mmux-testid="add-output-var-btn"]'
@@ -329,7 +332,7 @@ def test_response_surface_modeling(
 
         with log_context(logging.INFO, "Waiting for the sampling to complete..."):
 
-            def all_completed():
+            def all_completed(service_iframe):
                 status_cells = service_iframe.locator(
                     'div[role="gridcell"][data-field="status"]'
                 )
@@ -343,7 +346,7 @@ def test_response_surface_modeling(
                         return False
                 return True
 
-            while not all_completed():
+            while not all_completed(service_iframe):
                 logging.info("⏳ Waiting for all status cells to be completed...")
                 page.wait_for_timeout(3000)
                 service_iframe.locator(
