@@ -128,6 +128,7 @@ def upgrade():
         ondelete="CASCADE",
     )
 
+    # NOTE: this was automatically generated, but does not work with PostgresSQL, so we use op.execute
     # op.alter_column(
     #     "file_meta_data",
     #     "user_id",
@@ -300,6 +301,8 @@ def downgrade():
     op.drop_constraint(
         "fk_file_meta_data_user_id_users", "file_meta_data", type_="foreignkey"
     )
+
+    # NOTE: this was automatically generated, but does not work with PostgresSQL, so we use op.execute
     # op.alter_column(
     #     "file_meta_data",
     #     "user_id",
