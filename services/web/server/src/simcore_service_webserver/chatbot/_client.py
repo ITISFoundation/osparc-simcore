@@ -17,7 +17,7 @@ class ChatResponse(BaseModel):
 
 class ChatbotRestClient:
     def __init__(self, chatbot_settings: ChatbotSettings) -> None:
-        self._client = httpx.AsyncClient()  # MD: todo
+        self._client = httpx.AsyncClient()
         self._chatbot_settings = chatbot_settings
 
     async def get_settings(self) -> dict[str, Any]:
