@@ -40,7 +40,6 @@ from simcore_service_dynamic_sidecar.modules.outputs._event_filter import (
     BaseDelayPolicy,
 )
 from simcore_service_dynamic_sidecar.modules.outputs._manager import OutputsManager
-from simcore_service_dynamic_sidecar.modules.outputs._watcher import OutputsWatcher
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
@@ -53,9 +52,9 @@ _TENACITY_RETRY_PARAMS: Final[dict[str, Any]] = {
     "stop": stop_after_delay(10),
 }
 
-TICK_INTERVAL: Final[PositiveFloat] = 0.001
-WAIT_INTERVAL: Final[PositiveFloat] = TICK_INTERVAL * 10
-UPLOAD_DURATION: Final[PositiveFloat] = TICK_INTERVAL * 10
+_TICK_INTERVAL: Final[PositiveFloat] = 0.001
+_WAIT_INTERVAL: Final[PositiveFloat] = _TICK_INTERVAL * 10
+_UPLOAD_DURATION: Final[PositiveFloat] = _TICK_INTERVAL * 10
 
 
 # FIXTURES
@@ -63,19 +62,24 @@ UPLOAD_DURATION: Final[PositiveFloat] = TICK_INTERVAL * 10
 
 @pytest.fixture
 def mounted_volumes(faker: Faker, tmp_path: Path) -> Iterator[MountedVolumes]:
+    safe_tmp_subdir = tmp_path / faker.uuid4()
+    safe_tmp_subdir.mkdir(parents=True, exist_ok=True)
+    assert safe_tmp_subdir.exists()
+    assert safe_tmp_subdir.is_dir()
+
     mounted_volumes = MountedVolumes(
         service_run_id=ServiceRunID.get_resource_tracking_run_id_for_dynamic(),
         node_id=faker.uuid4(cast_to=None),
-        inputs_path=tmp_path / "inputs",
-        outputs_path=tmp_path / "outputs",
+        inputs_path=safe_tmp_subdir / "inputs",
+        outputs_path=safe_tmp_subdir / "outputs",
         user_preferences_path=None,
         state_paths=[],
         state_exclude=set(),
         compose_namespace="",
-        dy_volumes=tmp_path,
+        dy_volumes=safe_tmp_subdir,
     )
     yield mounted_volumes
-    rmtree(tmp_path)
+    rmtree(safe_tmp_subdir)
 
 
 @pytest.fixture
@@ -100,7 +104,7 @@ async def outputs_manager(
         outputs_context=outputs_context,
         port_notifier=port_notifier,
         io_log_redirect_cb=None,
-        task_monitor_interval_s=TICK_INTERVAL,
+        task_monitor_interval_s=_TICK_INTERVAL,
         progress_cb=None,
     )
     await outputs_manager.start()
@@ -113,9 +117,11 @@ async def outputs_watcher(
     mocker: MockerFixture,
     outputs_context: OutputsContext,
     outputs_manager: OutputsManager,
-) -> AsyncIterator[OutputsWatcher]:
-    mocker.patch.object(outputs_watcher_core, "DEFAULT_OBSERVER_TIMEOUT", TICK_INTERVAL)
-    outputs_watcher = OutputsWatcher(
+) -> AsyncIterator[outputs_watcher_core.OutputsWatcher]:
+    mocker.patch.object(
+        outputs_watcher_core, "DEFAULT_OBSERVER_TIMEOUT", _TICK_INTERVAL
+    )
+    outputs_watcher = outputs_watcher_core.OutputsWatcher(
         outputs_manager=outputs_manager, outputs_context=outputs_context
     )
     await outputs_watcher.start()
@@ -126,7 +132,7 @@ async def outputs_watcher(
 @pytest.fixture
 def mock_event_filter_upload_trigger(
     mocker: MockerFixture,
-    outputs_watcher: OutputsWatcher,
+    outputs_watcher: outputs_watcher_core.OutputsWatcher,
 ) -> AsyncMock:
     mock_enqueue = AsyncMock(return_value=None)
 
@@ -138,10 +144,10 @@ def mock_event_filter_upload_trigger(
 
     class FastDelayPolicy(BaseDelayPolicy):
         def get_min_interval(self) -> NonNegativeFloat:
-            return WAIT_INTERVAL
+            return _WAIT_INTERVAL
 
         def get_wait_interval(self, _: NonNegativeInt) -> NonNegativeFloat:
-            return WAIT_INTERVAL
+            return _WAIT_INTERVAL
 
     outputs_watcher._event_filter.delay_policy = FastDelayPolicy()  # noqa: SLF001
 
@@ -151,7 +157,7 @@ def mock_event_filter_upload_trigger(
 @pytest.fixture
 def mock_long_running_upload_outputs(mocker: MockerFixture) -> Iterator[AsyncMock]:
     async def mock_upload_outputs(*args, **kwargs) -> None:
-        await asyncio.sleep(UPLOAD_DURATION)
+        await asyncio.sleep(_UPLOAD_DURATION)
 
     return mocker.patch(
         "simcore_service_dynamic_sidecar.modules.outputs._manager.upload_outputs",
@@ -197,7 +203,7 @@ def file_generation_info(request: pytest.FixtureRequest) -> FileGenerationInfo:
 # UTILS
 
 
-async def random_events_in_path(
+async def _random_events_in_path(
     *,
     port_key_path: Path,
     files_per_port_key: NonNegativeInt,
@@ -265,9 +271,9 @@ async def random_events_in_path(
         await awaitable
 
 
-async def _generate_event_burst(tmp_path: Path, subfolder: str | None = None) -> None:
+async def _generate_event_burst(path: Path, subfolder: str | None = None) -> None:
     def _worker():
-        full_dir_path = tmp_path if subfolder is None else tmp_path / subfolder
+        full_dir_path = path if subfolder is None else path / subfolder
         full_dir_path.mkdir(parents=True, exist_ok=True)
         file_path_1 = full_dir_path / "file1.txt"
         file_path_2 = full_dir_path / "file2.txt"
@@ -287,9 +293,12 @@ async def _generate_event_burst(tmp_path: Path, subfolder: str | None = None) ->
     thread.join()
 
 
+# TESTS
+
+
 async def test_run_observer(
     mock_event_filter_upload_trigger: AsyncMock,
-    outputs_watcher: OutputsWatcher,
+    outputs_watcher: outputs_watcher_core.OutputsWatcher,
     port_keys: list[str],
 ) -> None:
     await outputs_watcher.enable_event_propagation()
@@ -318,11 +327,13 @@ async def test_does_not_trigger_on_attribute_change(
     mock_event_filter_upload_trigger: AsyncMock,
     mounted_volumes: MountedVolumes,
     port_keys: list[str],
-    outputs_watcher: OutputsWatcher,
+    outputs_watcher: outputs_watcher_core.OutputsWatcher,
 ):
-    async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
-        with attempt:
-            await outputs_watcher.enable_event_propagation()
+    event_wait_interval = _WAIT_INTERVAL * 10 + 1
+    print("WAIT FOR", event_wait_interval)
+    await asyncio.sleep(event_wait_interval)
+
+    await outputs_watcher.enable_event_propagation()
 
     # crate a file in the directory
     mounted_volumes.disk_outputs_path.mkdir(parents=True, exist_ok=True)
@@ -348,7 +359,7 @@ async def test_does_not_trigger_on_attribute_change(
 async def test_port_key_sequential_event_generation(
     mock_long_running_upload_outputs: AsyncMock,
     mounted_volumes: MountedVolumes,
-    outputs_watcher: OutputsWatcher,
+    outputs_watcher: outputs_watcher_core.OutputsWatcher,
     files_per_port_key: NonNegativeInt,
     file_generation_info: FileGenerationInfo,
     port_keys: list[str],
@@ -360,7 +371,7 @@ async def test_port_key_sequential_event_generation(
     for port_key in port_keys:
         port_dir = mounted_volumes.disk_outputs_path / port_key
         port_dir.mkdir(parents=True, exist_ok=True)
-        await random_events_in_path(
+        await _random_events_in_path(
             port_key_path=port_dir,
             files_per_port_key=files_per_port_key,
             size=file_generation_info.size,
