@@ -374,6 +374,21 @@ class EC2InstanceBootSpecific(BaseModel):
                         ],
                         "buffer_count": 10,
                     },
+                    {
+                        # AMI + pre-pull + buffer count + custom node labels
+                        "ami_id": "ami-123456789abcdef",
+                        "pre_pull_images": [
+                            "nginx:latest",
+                            "itisfoundation/my-very-nice-service:latest",
+                            "simcore/services/dynamic/another-nice-one:2.4.5",
+                            "asd",
+                        ],
+                        "buffer_count": 10,
+                        "custom_node_labels": {
+                            "io.simcore.project-id": "value1",
+                            "io.simcore.user-id": "value2",
+                        },
+                    },
                 ]
             }
         )
