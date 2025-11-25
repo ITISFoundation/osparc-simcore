@@ -267,8 +267,7 @@ qx.Class.define("osparc.store.ConversationsSupport", {
         },
       };
 
-      const useFaker = true;
-      if (useFaker) {
+      if (osparc.store.StaticInfo.isLocalEnv()) {
         return osparc.store.Faker.getInstance().triggerChatbot(conversationId, messageId);
       }
       return osparc.data.Resources.fetch("conversationsSupport", "triggerChatbot", params)
