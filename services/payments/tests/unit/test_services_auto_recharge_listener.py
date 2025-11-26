@@ -4,7 +4,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
+from collections.abc import AsyncIterator, Awaitable, Callable
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from unittest import mock
@@ -423,27 +423,45 @@ async def test_was_wallet_topped_up_recently_true(
 
 
 @pytest.fixture()
-def populate_payment_transaction_db_with_older_trans(
-    postgres_db: sa.engine.Engine, wallet_id: int
-) -> Iterator[None]:
-    with postgres_db.connect() as con:
-        current_timestamp = datetime.now(tz=UTC)
-        current_timestamp_minus_10_minutes = current_timestamp - timedelta(minutes=10)
+async def populate_payment_transaction_db_with_older_trans(
+    sqlalchemy_async_engine, wallet_id: int
+) -> AsyncIterator[None]:
+    async with insert_and_get_user_and_secrets_lifespan(
+        sqlalchemy_async_engine
+    ) as user_row:
+        async with insert_and_get_product_lifespan(
+            sqlalchemy_async_engine, name="s4l"
+        ) as product_row:
+            product_name = product_row["name"]
+            async with insert_and_get_wallet_lifespan(
+                sqlalchemy_async_engine,
+                product_name=product_name,
+                user_group_id=user_row["primary_gid"],
+                wallet_id=wallet_id,
+            ):
+                async with sqlalchemy_async_engine.begin() as con:
+                    current_timestamp = datetime.now(tz=UTC)
+                    current_timestamp_minus_10_minutes = current_timestamp - timedelta(
+                        minutes=10
+                    )
 
-        con.execute(
-            payments_transactions.insert().values(
-                **random_payment_transaction(
-                    price_dollars=Decimal(9500),
-                    wallet_id=wallet_id,
-                    state=PaymentTransactionState.SUCCESS,
-                    initiated_at=current_timestamp_minus_10_minutes,
-                )
-            )
-        )
+                    await con.execute(
+                        payments_transactions.insert().values(
+                            **random_payment_transaction(
+                                price_dollars=Decimal(9500),
+                                wallet_id=wallet_id,
+                                user_id=user_row["id"],
+                                product_name=product_name,
+                                state=PaymentTransactionState.SUCCESS,
+                                initiated_at=current_timestamp_minus_10_minutes,
+                            )
+                        )
+                    )
 
-        yield
+                yield
 
-        con.execute(payments_transactions.delete())
+                async with sqlalchemy_async_engine.begin() as con:
+                    await con.execute(payments_transactions.delete())
 
 
 async def test_was_wallet_topped_up_recently_false(
