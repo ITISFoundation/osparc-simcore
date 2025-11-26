@@ -39,11 +39,7 @@
       "common/common.css",
       "iconfont/fontawesome7/css/all.css"
     ],
-    "iconfont/fontawesome7": [
-      "source/resource/iconfont/fontawesome7/webfonts/fa-brands-400.woff2",
-      "source/resource/iconfont/fontawesome7/webfonts/fa-regular-400.woff2",
-      "source/resource/iconfont/fontawesome7/webfonts/fa-solid-900.woff2"
-    ]
+    "iconfont/fontawesome7": "source/resource/iconfont/fontawesome7"
   },
   "requires": {
     "@qooxdoo/compiler": "^1.0.0-beta",
