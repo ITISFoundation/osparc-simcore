@@ -397,7 +397,7 @@ def setup_logging_for_test(
         ("http://opentelemetry-collector", 4318, 0.05),
     ],
     indirect=True,
-)
+)  # NOTE: The order of these fixtures are important for caplog to work correctly
 async def test_trace_id_in_logs_only_when_sampled(
     tracing_settings_in: Callable[[], dict[str, Any]],
     mock_otel_collector: InMemorySpanExporter,
