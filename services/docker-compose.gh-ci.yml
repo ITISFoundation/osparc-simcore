@@ -56,9 +56,6 @@ services:
   service-integration:
     healthcheck:
       timeout: 10s
-  static-webserver:
-    healthcheck:
-      timeout: 10s
   storage:
     healthcheck:
       timeout: 10s
