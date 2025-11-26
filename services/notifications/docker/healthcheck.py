@@ -37,6 +37,11 @@ def _is_celery_worker_healthy() -> bool:
     assert app_settings.NOTIFICATIONS_CELERY
     broker_url = app_settings.NOTIFICATIONS_CELERY.CELERY_RABBIT_BROKER.dsn
 
+    worker_name = os.getenv("NOTIFICATIONS_WORKER_NAME")
+    if not worker_name:
+        msg = "Environment variable NOTIFICATIONS_WORKER_NAME is not set"
+        raise ValueError(msg)
+
     try:
         result = subprocess.run(
             [
@@ -46,7 +51,7 @@ def _is_celery_worker_healthy() -> bool:
                 "inspect",
                 "ping",
                 "--destination",
-                "celery@" + os.getenv("NOTIFICATIONS_WORKER_NAME", "worker"),
+                "celery@" + worker_name,
             ],
             capture_output=True,
             text=True,

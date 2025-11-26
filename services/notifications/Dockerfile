@@ -149,7 +149,7 @@ RUN chmod +x services/notifications/docker/*.sh
 # https://docs.docker.com/reference/dockerfile/#healthcheck
 HEALTHCHECK \
   --interval=10s \
-  --timeout=5s \
+  --timeout=10s \
   --start-period=90s \
   --start-interval=1s \
   --retries=5 \
