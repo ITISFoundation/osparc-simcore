@@ -1037,7 +1037,7 @@ async def test_repeating_step(
 
 
 async def _wait_for_deferred_to_finalize() -> None:
-    # give some time for backtround referred to propagete finish and run handlers
+    # give some time for background deferred to finish
     await asyncio.sleep(1)
 
 
@@ -1417,8 +1417,8 @@ async def test_errors_with_restart_operation_step_in_error(
     if not in_manual_intervention:
         # force restart of step as it would be in manual intervention
         # this is not allowed
-        with pytest.raises(StepNotWaitingForManualInterventionError):  # noqa: PT012
-            await _wait_for_deferred_to_finalize()
+        await _wait_for_deferred_to_finalize()
+        with pytest.raises(StepNotWaitingForManualInterventionError):
             await Core.get_from_app_state(
                 selected_app
             ).restart_operation_step_stuck_in_error(
