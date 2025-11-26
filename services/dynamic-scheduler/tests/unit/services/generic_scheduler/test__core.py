@@ -1036,7 +1036,11 @@ async def test_repeating_step(
     await ensure_keys_in_store(selected_app, expected_keys=set())
 
 
-@pytest.mark.flaky(max_runs=3)
+async def _wait_for_deferred_to_finalize() -> None:
+    # give some time for backtround referred to propagete finish and run handlers
+    await asyncio.sleep(1)
+
+
 @pytest.mark.parametrize("app_count", [10])
 @pytest.mark.parametrize(
     "operation, expected_order, expected_keys, after_restart_expected_order",
@@ -1154,6 +1158,7 @@ async def test_wait_for_manual_intervention(
         step_group_name=step_group_name,
         steps=expected_order[-1].steps,
     )
+    await _wait_for_deferred_to_finalize()
 
     # even if cancelled, state of waiting for manual intervention remains the same
     await _ensure_one_step_in_manual_intervention(
@@ -1205,7 +1210,6 @@ async def test_operation_is_not_cancellable(
         await cancel_operation(selected_app, schedule_id)
 
 
-@pytest.mark.flaky(max_runs=3)
 @pytest.mark.parametrize("app_count", [10])
 @pytest.mark.parametrize(
     "operation, expected_order, expected_keys, after_restart_expected_order",
@@ -1339,6 +1343,8 @@ async def test_restart_revert_operation_step_in_error(
         operation, match=_FailOnExecuteAndRevertBS
     )
     _GlobalStepIssueTracker.set_issue_solved()
+
+    await _wait_for_deferred_to_finalize()
     await limited_gather(
         *(
             restart_operation_step_stuck_during_revert(
@@ -1412,21 +1418,14 @@ async def test_errors_with_restart_operation_step_in_error(
         # force restart of step as it would be in manual intervention
         # this is not allowed
         with pytest.raises(StepNotWaitingForManualInterventionError):  # noqa: PT012
-            # wait for the error to be set in the store
-            async for attempt in AsyncRetrying(
-                **{
-                    **_RETRY_PARAMS,
-                    "retry": retry_if_exception_type(StepNotInErrorStateError),
-                }
-            ):
-                with attempt:
-                    await Core.get_from_app_state(
-                        selected_app
-                    ).restart_operation_step_stuck_in_error(
-                        schedule_id,
-                        _FCR1.get_step_name(),
-                        in_manual_intervention=True,
-                    )
+            await _wait_for_deferred_to_finalize()
+            await Core.get_from_app_state(
+                selected_app
+            ).restart_operation_step_stuck_in_error(
+                schedule_id,
+                _FCR1.get_step_name(),
+                in_manual_intervention=True,
+            )
 
 
 @pytest.mark.parametrize("app_count", [10])
