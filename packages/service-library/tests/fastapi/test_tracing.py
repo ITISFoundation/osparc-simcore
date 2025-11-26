@@ -410,7 +410,7 @@ async def test_trace_id_in_logs_only_when_sampled(
     With a low sampling probability (0.05), most requests won't be sampled, so their logs
     should not contain trace IDs.
     """
-    n_requests = 200
+    n_requests = 1000
 
     tracing_config = setup_logging_for_test
 
