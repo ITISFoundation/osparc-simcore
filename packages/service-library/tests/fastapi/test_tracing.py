@@ -447,7 +447,7 @@ async def test_trace_id_in_logs_only_when_sampled(
         for record in caplog.records:
             if record.name == "test_handler":
                 otel_trace_id = getattr(record, "otelTraceID", None)
-                if otel_trace_id is not None and otel_trace_id != "0":
+                if otel_trace_id is not None and otel_trace_id != "not_recorded":
                     trace_ids_in_logs.add(otel_trace_id)
 
         tracing_settings = tracing_config.tracing_settings

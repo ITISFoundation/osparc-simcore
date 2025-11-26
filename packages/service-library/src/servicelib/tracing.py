@@ -84,8 +84,8 @@ def setup_log_tracing(tracing_config: TracingConfig):
     def log_hook(span: trace.Span, record: logging.LogRecord):
         # ensure trace_ids are not logged when span is not recorded/sampled
         if span and not span.is_recording():
-            record.otelSpanID = "0"
-            record.otelTraceID = "0"
+            record.otelSpanID = "not_recorded"
+            record.otelTraceID = "not_recorded"
 
     if tracing_config.tracing_enabled:
         LoggingInstrumentor().instrument(
