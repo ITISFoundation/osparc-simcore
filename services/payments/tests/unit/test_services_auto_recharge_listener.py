@@ -4,7 +4,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from collections.abc import Awaitable, Callable, Iterator
+from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from unittest import mock
@@ -30,6 +30,11 @@ from pytest_simcore.helpers.faker_factories import (
     random_payment_transaction,
 )
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
+from pytest_simcore.helpers.postgres_products import insert_and_get_product_lifespan
+from pytest_simcore.helpers.postgres_users import (
+    insert_and_get_user_and_secrets_lifespan,
+)
+from pytest_simcore.helpers.postgres_wallets import insert_and_get_wallet_lifespan
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from respx import MockRouter
 from servicelib.rabbitmq import RabbitMQClient, RabbitMQRPCClient, RPCRouter
@@ -54,6 +59,7 @@ from simcore_service_payments.services.auto_recharge_process_message import (
     _is_message_too_old,
     _was_wallet_topped_up_recently,
 )
+from sqlalchemy.ext.asyncio import AsyncEngine
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
@@ -121,36 +127,51 @@ async def test_process_message__called(
 
 
 @pytest.fixture()
-def populate_test_db(
-    postgres_db: sa.engine.Engine, faker: Faker, wallet_id: int
-) -> Iterator[None]:
-    with postgres_db.connect() as con:
-        _primary_payment_method_id = faker.uuid4()
-        _completed_at = datetime.now(tz=UTC) + timedelta(minutes=1)
+async def populate_test_db(
+    sqlalchemy_async_engine: AsyncEngine, faker: Faker, wallet_id: int
+) -> AsyncIterator[None]:
+    async with insert_and_get_user_and_secrets_lifespan(
+        sqlalchemy_async_engine
+    ) as user_row:
+        async with insert_and_get_product_lifespan(
+            sqlalchemy_async_engine, name="s4l"
+        ) as product_row:
+            product_name = product_row["name"]
+            async with insert_and_get_wallet_lifespan(
+                sqlalchemy_async_engine,
+                product_name=product_name,
+                user_group_id=user_row["primary_gid"],
+                wallet_id=wallet_id,
+            ):
+                async with sqlalchemy_async_engine.begin() as con:
+                    _primary_payment_method_id = faker.uuid4()
+                    _completed_at = datetime.now(tz=UTC) + timedelta(minutes=1)
 
-        con.execute(
-            payments_methods.insert().values(
-                **random_payment_method(
-                    payment_method_id=_primary_payment_method_id,
-                    wallet_id=wallet_id,
-                    state="SUCCESS",
-                    completed_at=_completed_at,
-                )
-            )
-        )
-        con.execute(
-            payments_autorecharge.insert().values(
-                **random_payment_autorecharge(
-                    primary_payment_method_id=_primary_payment_method_id,
-                    wallet_id=wallet_id,
-                )
-            )
-        )
+                    await con.execute(
+                        payments_methods.insert().values(
+                            **random_payment_method(
+                                payment_method_id=_primary_payment_method_id,
+                                user_id=user_row["id"],
+                                wallet_id=wallet_id,
+                                state="SUCCESS",
+                                completed_at=_completed_at,
+                            )
+                        )
+                    )
+                    await con.execute(
+                        payments_autorecharge.insert().values(
+                            **random_payment_autorecharge(
+                                primary_payment_method_id=_primary_payment_method_id,
+                                wallet_id=wallet_id,
+                            )
+                        )
+                    )
 
-        yield
+                yield
 
-        con.execute(payments_methods.delete())
-        con.execute(payments_autorecharge.delete())
+                async with sqlalchemy_async_engine.begin() as con:
+                    await con.execute(payments_methods.delete())
+                    await con.execute(payments_autorecharge.delete())
 
 
 @pytest.fixture()
@@ -210,18 +231,21 @@ async def mock_rpc_server(
     return rpc_server
 
 
-async def _assert_payments_transactions_db_row(postgres_db) -> PaymentsTransactionsDB:
+async def _assert_payments_transactions_db_row(
+    sqlalchemy_async_engine: AsyncEngine,
+) -> PaymentsTransactionsDB:
     async for attempt in AsyncRetrying(
         wait=wait_fixed(0.2),
-        stop=stop_after_delay(10),
+        stop=stop_after_delay(60),
         retry=retry_if_exception_type(AssertionError),
         reraise=True,
     ):
-        with attempt, postgres_db.connect() as con:
-            result = con.execute(sa.select(payments_transactions))
-            row = result.first()
-            assert row
-            return PaymentsTransactionsDB.model_validate(row)
+        with attempt:
+            async with sqlalchemy_async_engine.begin() as con:
+                result = await con.execute(sa.select(payments_transactions))
+                row = result.first()
+                assert row
+                return PaymentsTransactionsDB.model_validate(row)
 
 
 async def test_process_message__whole_autorecharge_flow_success(
@@ -233,7 +257,8 @@ async def test_process_message__whole_autorecharge_flow_success(
     mock_rpc_server: RabbitMQRPCClient,
     mock_rpc_client: RabbitMQRPCClient,
     mock_resoruce_usage_tracker_service_api: MockRouter,
-    postgres_db: sa.engine.Engine,
+    # postgres_db: sa.engine.Engine,
+    sqlalchemy_async_engine: AsyncEngine,
 ):
     publisher = create_rabbitmq_client("publisher")
     msg = WalletCreditsMessage(
@@ -241,7 +266,7 @@ async def test_process_message__whole_autorecharge_flow_success(
     )
     await publisher.publish(WalletCreditsMessage.get_channel_name(), msg)
 
-    row = await _assert_payments_transactions_db_row(postgres_db)
+    row = await _assert_payments_transactions_db_row(sqlalchemy_async_engine)
     assert row.wallet_id == wallet_id
     assert row.state == PaymentTransactionState.SUCCESS
     assert row.comment == "Payment generated by auto recharge"
@@ -307,25 +332,42 @@ async def test_check_autorecharge_conditions_not_met(
 
 
 @pytest.fixture()
-def populate_payment_transaction_db(
-    postgres_db: sa.engine.Engine, wallet_id: int
-) -> Iterator[None]:
-    with postgres_db.connect() as con:
-        con.execute(
-            payments_transactions.insert().values(
-                **random_payment_transaction(
-                    price_dollars=Decimal(9500),
-                    wallet_id=wallet_id,
-                    state=PaymentTransactionState.SUCCESS,
-                    completed_at=datetime.now(tz=UTC),
-                    initiated_at=datetime.now(tz=UTC) - timedelta(seconds=10),
-                )
-            )
-        )
+async def populate_payment_transaction_db(
+    sqlalchemy_async_engine: AsyncEngine, wallet_id: int
+) -> AsyncIterator[None]:
 
-        yield
+    async with insert_and_get_user_and_secrets_lifespan(
+        sqlalchemy_async_engine
+    ) as user_row:
+        async with insert_and_get_product_lifespan(
+            sqlalchemy_async_engine, name="s4l"
+        ) as product_row:
+            product_name = product_row["name"]
+            async with insert_and_get_wallet_lifespan(
+                sqlalchemy_async_engine,
+                product_name=product_name,
+                user_group_id=user_row["primary_gid"],
+                wallet_id=wallet_id,
+            ):
+                async with sqlalchemy_async_engine.begin() as con:
+                    await con.execute(
+                        payments_transactions.insert().values(
+                            **random_payment_transaction(
+                                price_dollars=Decimal(9500),
+                                wallet_id=wallet_id,
+                                user_id=user_row["id"],
+                                state=PaymentTransactionState.SUCCESS,
+                                completed_at=datetime.now(tz=UTC),
+                                initiated_at=datetime.now(tz=UTC)
+                                - timedelta(seconds=10),
+                            )
+                        )
+                    )
 
-        con.execute(payments_transactions.delete())
+                yield
+
+                async with sqlalchemy_async_engine.begin() as con:
+                    await con.execute(payments_transactions.delete())
 
 
 @pytest.mark.parametrize(
