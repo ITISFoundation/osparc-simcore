@@ -306,11 +306,9 @@ class Core(SingletonInAppStateMixin):
             "deferred_task_uid",
         ]
         if in_manual_intervention:
-            requires_manual_intervention: bool = False
-            with suppress(NoDataFoundError):
-                requires_manual_intervention = await step_proxy.read(
-                    "requires_manual_intervention"
-                )
+            requires_manual_intervention = await get_requires_manual_intervention(
+                step_proxy
+            )
 
             if requires_manual_intervention is False:
                 raise StepNotWaitingForManualInterventionError(step_name=step_name)
