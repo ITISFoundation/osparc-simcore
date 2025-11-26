@@ -641,11 +641,20 @@ qx.Theme.define("osparc.theme.Appearance", {
           decorator += "-invalid";
         }
 
+        let backgroundColor;
+        if (states.readonly) {
+          backgroundColor = "transparent";
+        } else if (states.disabled) {
+          backgroundColor = "input_background_disable";
+        } else {
+          backgroundColor = "input_background";
+        }
+
         return {
           decorator: decorator,
           padding: padding,
           textColor: textColor,
-          backgroundColor: states.disabled ? "input_background_disable" : "input_background"
+          backgroundColor: backgroundColor
         };
       }
     },
