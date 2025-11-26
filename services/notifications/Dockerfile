@@ -148,9 +148,9 @@ RUN chmod +x services/notifications/docker/*.sh
 
 # https://docs.docker.com/reference/dockerfile/#healthcheck
 HEALTHCHECK \
-  --interval=10s \
+  --interval=30s \
   --timeout=15s \
-  --start-period=90s \
+  --start-period=65s \
   --start-interval=1s \
   --retries=5 \
   CMD ["python3", "services/notifications/docker/healthcheck.py", "http://localhost:8000/"]

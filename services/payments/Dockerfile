@@ -151,9 +151,9 @@ RUN chmod +x services/payments/docker/*.sh
 
 # https://docs.docker.com/reference/dockerfile/#healthcheck
 HEALTHCHECK \
-  --interval=10s \
+  --interval=30s \
   --timeout=15s \
-  --start-period=20s \
+  --start-period=65s \
   --start-interval=1s \
   --retries=5 \
   CMD ["python3", "services/payments/docker/healthcheck.py", "http://localhost:8000/"]

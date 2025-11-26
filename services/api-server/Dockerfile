@@ -149,9 +149,10 @@ COPY --chown=scu:scu services/api-server/docker services/api-server/docker
 RUN chmod +x services/api-server/docker/*.sh
 
 
-HEALTHCHECK --interval=10s \
+HEALTHCHECK \
+  --interval=30s \
   --timeout=15s \
-  --start-period=20s \
+  --start-period=65s \
   --start-interval=1s \
   --retries=5 \
   CMD ["python3", "services/api-server/docker/healthcheck.py", "http://localhost:8000/"]
