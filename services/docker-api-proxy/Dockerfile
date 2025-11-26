@@ -25,7 +25,7 @@ RUN apk add --no-cache \
 # https://docs.docker.com/reference/dockerfile/#healthcheck
 HEALTHCHECK \
   --interval=10s \
-  --timeout=5s \
+  --timeout=15s \
   --start-period=20s \
   --start-interval=1s \
   --retries=5 \

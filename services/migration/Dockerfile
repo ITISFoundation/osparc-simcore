@@ -99,7 +99,7 @@ COPY --chown=scu:scu services/migration/docker services/migration/docker
 # https://docs.docker.com/reference/dockerfile/#healthcheck
 HEALTHCHECK \
   --interval=10s \
-  --timeout=5s \
+  --timeout=15s \
   --start-period=60s \
   --start-interval=1s \
   --retries=5 \
