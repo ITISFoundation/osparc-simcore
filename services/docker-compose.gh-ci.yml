@@ -1,64 +1,10 @@
 services:
-  agent:
-    healthcheck:
-      timeout: 10s
   api-server:
-    healthcheck:
-      timeout: 10s
-  autoscaling:
-    healthcheck:
-      timeout: 10s
-  catalog:
-    healthcheck:
-      timeout: 10s
-  clusters-keeper:
-    healthcheck:
-      timeout: 10s
-  dask-sidecar:
-    healthcheck:
-      timeout: 10s
-  datcore-adapter:
-    healthcheck:
-      timeout: 10s
-  director:
-    healthcheck:
-      timeout: 10s
-  director-v2:
-    healthcheck:
-      timeout: 10s
-  docker-api-proxy:
-    healthcheck:
-      timeout: 10s
-  dynamic-sidecar:
-    healthcheck:
-      timeout: 10s
-  dynamic-scheduler:
-    healthcheck:
-      timeout: 10s
-  efs-guardian:
-    healthcheck:
-      timeout: 10s
-  invitations:
-    healthcheck:
-      timeout: 10s
-  migration:
     healthcheck:
       timeout: 10s
   notifications:
     healthcheck:
       timeout: 10s
-  payments:
-    healthcheck:
-      timeout: 10s
-  resource-usage-tracker:
-    healthcheck:
-      timeout: 10s
-  service-integration:
-    healthcheck:
-      timeout: 10s
   storage:
-    healthcheck:
-      timeout: 10s
-  webserver:
     healthcheck:
       timeout: 10s
