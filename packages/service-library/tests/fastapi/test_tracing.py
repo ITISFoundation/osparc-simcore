@@ -456,6 +456,7 @@ async def test_trace_id_in_logs_only_when_sampled(
 
         tracing_settings = tracing_config.tracing_settings
         assert tracing_settings is not None
+        assert len(trace_ids_in_logs) > 0 and len(sampled_trace_ids) > 0
         assert (
             trace_ids_in_logs == sampled_trace_ids
         ), f"{tracing_settings.TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY=} | {n_requests=} | {len(sampled_trace_ids)=} | {len(trace_ids_in_logs)=}"
