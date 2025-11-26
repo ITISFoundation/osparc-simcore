@@ -38,7 +38,7 @@
       "marked/markdown.css",
       "common/common.css"
     ],
-    "iconfont/fontawesome7" : "source/resource/iconfont/fontawesome7"
+    "iconfont/fontawesome7": "source/resource/iconfont/fontawesome7"
   },
   "requires": {
     "@qooxdoo/compiler": "^1.0.0-beta",
