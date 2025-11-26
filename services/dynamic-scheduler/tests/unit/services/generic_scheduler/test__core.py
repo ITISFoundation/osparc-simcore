@@ -15,7 +15,7 @@ import pytest
 from asgi_lifespan import LifespanManager
 from asyncpg import NoDataFoundError
 from fastapi import FastAPI
-from pydantic import NonNegativeInt, TypeAdapter
+from pydantic import NonNegativeFloat, NonNegativeInt, TypeAdapter
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.utils import limited_gather
 from settings_library.rabbit import RabbitSettings
@@ -93,6 +93,7 @@ _RETRY_PARAMS: Final[dict[str, Any]] = {
 
 _PARALLEL_APP_CREATION: Final[NonNegativeInt] = 5
 _PARALLEL_RESTARTS: Final[NonNegativeInt] = 5
+_DEFERRED_FINALIZATION_TIMEOUT: Final[NonNegativeFloat] = 1.0
 
 
 @pytest.fixture
@@ -1038,7 +1039,7 @@ async def test_repeating_step(
 
 async def _wait_for_deferred_to_finalize() -> None:
     # give some time for background deferred to finish
-    await asyncio.sleep(1)
+    await asyncio.sleep(_DEFERRED_FINALIZATION_TIMEOUT)
 
 
 @pytest.mark.parametrize("app_count", [10])
