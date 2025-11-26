@@ -1353,7 +1353,6 @@ async def test_restart_revert_operation_step_in_error(
     await ensure_keys_in_store(selected_app, expected_keys=set())
 
 
-@pytest.mark.flaky(max_runs=3)
 @pytest.mark.parametrize("app_count", [10])
 @pytest.mark.parametrize("in_manual_intervention", [True, False])
 async def test_errors_with_restart_operation_step_in_error(
@@ -1412,14 +1411,22 @@ async def test_errors_with_restart_operation_step_in_error(
     if not in_manual_intervention:
         # force restart of step as it would be in manual intervention
         # this is not allowed
-        with pytest.raises(StepNotWaitingForManualInterventionError):
-            await Core.get_from_app_state(
-                selected_app
-            ).restart_operation_step_stuck_in_error(
-                schedule_id,
-                _FCR1.get_step_name(),
-                in_manual_intervention=True,
-            )
+        with pytest.raises(StepNotWaitingForManualInterventionError):  # noqa: PT012
+            # wait for the error to be set in the store
+            async for attempt in AsyncRetrying(
+                **{
+                    **_RETRY_PARAMS,
+                    "retry": retry_if_exception_type(StepNotInErrorStateError),
+                }
+            ):
+                with attempt:
+                    await Core.get_from_app_state(
+                        selected_app
+                    ).restart_operation_step_stuck_in_error(
+                        schedule_id,
+                        _FCR1.get_step_name(),
+                        in_manual_intervention=True,
+                    )
 
 
 @pytest.mark.parametrize("app_count", [10])
