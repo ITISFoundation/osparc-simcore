@@ -24,9 +24,9 @@ RUN apk add --no-cache \
 # Health check to ensure the proxy is running
 # https://docs.docker.com/reference/dockerfile/#healthcheck
 HEALTHCHECK \
-  --interval=30s \
-  --timeout=15s \
-  --start-period=65s \
+  --interval=10s \
+  --timeout=5s \
+  --start-period=20s \
   --start-interval=1s \
   --retries=5 \
   CMD curl --fail-with-body --user ${DOCKER_API_PROXY_USER}:${DOCKER_API_PROXY_PASSWORD} http://localhost:8888/version

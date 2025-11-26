@@ -154,9 +154,9 @@ RUN chmod +x services/dask-sidecar/docker/*.sh
 # Otherwise the worker will take random ports to serve the /health entrypoint.
 # https://docs.docker.com/reference/dockerfile/#healthcheck
 HEALTHCHECK \
-  --interval=30s \
-  --timeout=15s \
-  --start-period=65s \
+  --interval=10s \
+  --timeout=5s \
+  --start-period=20s \
   --start-interval=1s \
   --retries=5 \
   CMD ["curl", "-Lf", "http://127.0.0.1:8787/health"]

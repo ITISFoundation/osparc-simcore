@@ -151,9 +151,9 @@ RUN chmod +x services/invitations/docker/*.sh
 
 # https://docs.docker.com/reference/dockerfile/#healthcheck
 HEALTHCHECK \
-  --interval=30s \
-  --timeout=15s \
-  --start-period=65s \
+  --interval=10s \
+  --timeout=5s \
+  --start-period=20s \
   --start-interval=1s \
   --retries=5 \
   CMD ["python3", "services/invitations/docker/healthcheck.py", "http://localhost:8000/"]

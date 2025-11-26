@@ -192,7 +192,7 @@ RUN chmod +x services/dynamic-sidecar/docker/*.sh
 # https://docs.docker.com/reference/dockerfile/#healthcheck
 HEALTHCHECK \
   --interval=10s \
-  --timeout=15s \
+  --timeout=5s \
   --start-period=180s \
   --start-interval=1s \
   --retries=5 \
