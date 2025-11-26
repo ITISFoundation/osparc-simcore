@@ -93,7 +93,9 @@ async def payment_method(
             product_name = product_row["name"]
 
             async with insert_and_get_wallet_lifespan(
-                asyncpg_engine, product_name=product_name, user_id=user_id
+                asyncpg_engine,
+                product_name=product_name,
+                user_group_id=user_row["primary_gid"],
             ) as wallet_row:
 
                 raw_payment_method_values = random_payment_method(

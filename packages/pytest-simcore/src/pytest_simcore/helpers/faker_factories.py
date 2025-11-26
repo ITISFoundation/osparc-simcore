@@ -449,7 +449,7 @@ def random_payment_transaction(
 
 def random_wallet(
     product_name: str,
-    user_id: int,
+    user_group_id: int,
     fake: Faker = DEFAULT_FAKER,
     **overrides,
 ) -> dict[str, Any]:
@@ -461,7 +461,7 @@ def random_wallet(
         "wallet_id": fake.pyint(),
         "name": fake.word(),
         "description": fake.word(),
-        "owner": user_id,
+        "owner": user_group_id,
         "thumbnail": fake.url(),
         "status": "ACTIVE",
         "created": utcnow(),

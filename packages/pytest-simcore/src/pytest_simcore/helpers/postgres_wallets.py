@@ -14,7 +14,7 @@ async def insert_and_get_wallet_lifespan(
     sqlalchemy_async_engine: AsyncEngine,
     *,
     product_name: str,
-    user_id: int,
+    user_group_id: int,
     **overrides
 ):
     async with contextlib.AsyncExitStack() as stack:
@@ -24,7 +24,7 @@ async def insert_and_get_wallet_lifespan(
                 sqlalchemy_async_engine,
                 table=wallets,
                 values=random_wallet(
-                    product_name=product_name, user_id=user_id, **overrides
+                    product_name=product_name, user_group_id=user_group_id, **overrides
                 ),
                 pk_col=wallets.c.wallet_id,
             )
