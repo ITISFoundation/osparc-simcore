@@ -112,7 +112,8 @@ qx.Theme.define("osparc.theme.Decoration", {
     "form-input-disabled": {
       include: "form-input",
       style: {
-        color: "text-disabled"
+        // this affects the border color
+        color: "transparent"
       }
     },
 
