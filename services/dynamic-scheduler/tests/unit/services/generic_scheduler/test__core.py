@@ -15,7 +15,7 @@ import pytest
 from asgi_lifespan import LifespanManager
 from asyncpg import NoDataFoundError
 from fastapi import FastAPI
-from pydantic import NonNegativeInt, TypeAdapter
+from pydantic import NonNegativeFloat, NonNegativeInt, TypeAdapter
 from pytest_simcore.helpers.dynamic_scheduler import (
     EXECUTED,
     REVERTED,
@@ -92,6 +92,7 @@ _RETRY_PARAMS: Final[dict[str, Any]] = {
 
 _PARALLEL_APP_CREATION: Final[NonNegativeInt] = 5
 _PARALLEL_RESTARTS: Final[NonNegativeInt] = 5
+_DEFERRED_FINALIZATION_TIMEOUT: Final[NonNegativeFloat] = 1.0
 
 
 @pytest.fixture
@@ -1036,7 +1037,11 @@ async def test_repeating_step(
     await ensure_keys_in_store(selected_app, expected_keys=set())
 
 
-@pytest.mark.flaky(max_runs=3)
+async def _wait_for_deferred_to_finalize() -> None:
+    # give some time for background deferred to finish
+    await asyncio.sleep(_DEFERRED_FINALIZATION_TIMEOUT)
+
+
 @pytest.mark.parametrize("app_count", [10])
 @pytest.mark.parametrize(
     "operation, expected_order, expected_keys, after_restart_expected_order",
@@ -1154,6 +1159,7 @@ async def test_wait_for_manual_intervention(
         step_group_name=step_group_name,
         steps=expected_order[-1].steps,
     )
+    await _wait_for_deferred_to_finalize()
 
     # even if cancelled, state of waiting for manual intervention remains the same
     await _ensure_one_step_in_manual_intervention(
@@ -1205,7 +1211,6 @@ async def test_operation_is_not_cancellable(
         await cancel_operation(selected_app, schedule_id)
 
 
-@pytest.mark.flaky(max_runs=3)
 @pytest.mark.parametrize("app_count", [10])
 @pytest.mark.parametrize(
     "operation, expected_order, expected_keys, after_restart_expected_order",
@@ -1339,6 +1344,8 @@ async def test_restart_revert_operation_step_in_error(
         operation, match=_FailOnExecuteAndRevertBS
     )
     _GlobalStepIssueTracker.set_issue_solved()
+
+    await _wait_for_deferred_to_finalize()
     await limited_gather(
         *(
             restart_operation_step_stuck_during_revert(
@@ -1353,7 +1360,6 @@ async def test_restart_revert_operation_step_in_error(
     await ensure_keys_in_store(selected_app, expected_keys=set())
 
 
-@pytest.mark.flaky(max_runs=3)
 @pytest.mark.parametrize("app_count", [10])
 @pytest.mark.parametrize("in_manual_intervention", [True, False])
 async def test_errors_with_restart_operation_step_in_error(
@@ -1412,6 +1418,7 @@ async def test_errors_with_restart_operation_step_in_error(
     if not in_manual_intervention:
         # force restart of step as it would be in manual intervention
         # this is not allowed
+        await _wait_for_deferred_to_finalize()
         with pytest.raises(StepNotWaitingForManualInterventionError):
             await Core.get_from_app_state(
                 selected_app
