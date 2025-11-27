@@ -148,65 +148,65 @@ async def create_fake_payment_method_in_db(
     Callable[[PaymentMethodID, WalletID, UserID], Awaitable[PaymentsMethodsDB]]
 ]:
     _repo = PaymentsMethodsRepo(app.state.engine)
-    _created = []
-    _exit_stacks: list[AsyncExitStack] = []
+    _created: list[PaymentsMethodsDB] = []
 
-    async def _(
+    stack = AsyncExitStack()
+    await stack.__aenter__()  # start the stack for the whole test
+
+    async def _create(
         payment_method_id: PaymentMethodID,
         wallet_id: WalletID,
         user_id: UserID,
     ) -> PaymentsMethodsDB:
-        stack = AsyncExitStack()
-        _exit_stacks.append(stack)
-
-        async with stack:
-            user_row = await stack.enter_async_context(
-                insert_and_get_user_and_secrets_lifespan(
-                    sqlalchemy_async_engine, id=user_id
-                )
+        user_row = await stack.enter_async_context(
+            insert_and_get_user_and_secrets_lifespan(
+                sqlalchemy_async_engine, id=user_id
             )
-            product_row = await stack.enter_async_context(
-                insert_and_get_product_lifespan(
-                    sqlalchemy_async_engine, name=product["name"]
-                )
-            )
-            product_name = product_row["name"]
-            await stack.enter_async_context(
-                insert_and_get_wallet_lifespan(
-                    sqlalchemy_async_engine,
-                    product_name=product_name,
-                    user_group_id=user_row["primary_gid"],
-                    wallet_id=wallet_id,
-                )
-            )
-
-            acked = await payments_methods.insert_payment_method(
-                repo=_repo,
-                payment_method_id=payment_method_id,
-                user_id=user_id,
-                wallet_id=wallet_id,
-                ack=AckPaymentMethod(
-                    success=True,
-                    message=f"Created with {create_fake_payment_method_in_db.__name__}",
-                ),
-            )
-            _created.append(acked)
-
-            # Keep context managers alive by popping the stack
-            stack.pop_all()
-            return acked
-
-    yield _
-
-    # Cleanup in reverse order: first payment methods, then context managers
-    for acked in _created:
-        await _repo.delete_payment_method(
-            acked.payment_method_id, user_id=acked.user_id, wallet_id=acked.wallet_id
         )
 
-    # Close all context managers (wallet, product, user) in reverse order
-    for stack in reversed(_exit_stacks):
-        await stack.aclose()
+        product_row = await stack.enter_async_context(
+            insert_and_get_product_lifespan(
+                sqlalchemy_async_engine, name=product["name"]
+            )
+        )
+
+        await stack.enter_async_context(
+            insert_and_get_wallet_lifespan(
+                sqlalchemy_async_engine,
+                product_name=product_row["name"],
+                user_group_id=user_row["primary_gid"],
+                wallet_id=wallet_id,
+            )
+        )
+
+        acked = await payments_methods.insert_payment_method(
+            repo=_repo,
+            payment_method_id=payment_method_id,
+            user_id=user_id,
+            wallet_id=wallet_id,
+            ack=AckPaymentMethod(
+                success=True,
+                message=f"Created with {create_fake_payment_method_in_db.__name__}",
+            ),
+        )
+        _created.append(acked)
+        return acked
+
+    try:
+        # yield the factory to the test
+        yield _create
+    finally:
+        # your explicit cleanup of created payment methods
+        for acked in _created:
+            await _repo.delete_payment_method(
+                acked.payment_method_id,
+                user_id=acked.user_id,
+                wallet_id=acked.wallet_id,
+            )
+
+        # now tear down *all* registered context managers in reverse order
+        await stack.__aexit__(None, None, None)
+        print("✅ Cleaned up fake payment methods and context managers")
 
 
 MAX_TIME_FOR_APP_TO_STARTUP = 10

@@ -13,6 +13,11 @@ import pytest
 import sqlalchemy as sa
 from faker import Faker
 from pytest_simcore.helpers.faker_factories import random_payment_transaction, utcnow
+from pytest_simcore.helpers.postgres_products import insert_and_get_product_lifespan
+from pytest_simcore.helpers.postgres_users import (
+    insert_and_get_user_and_secrets_lifespan,
+)
+from pytest_simcore.helpers.postgres_wallets import insert_and_get_wallet_lifespan
 from simcore_postgres_database.models.payments_transactions import (
     PaymentTransactionState,
     payments_transactions,
@@ -34,16 +39,31 @@ async def test_numerics_precission_and_scale(asyncpg_engine: AsyncEngine):
     # precision: This parameter specifies the total number of digits that can be stored, both before and after the decimal point.
     # scale: This parameter specifies the number of digits that can be stored to the right of the decimal point.
 
-    async with asyncpg_engine.begin() as connection:
-        for order_of_magnitude in range(8):
-            expected = 10**order_of_magnitude + 0.123
-            got = await connection.scalar(
-                payments_transactions.insert()
-                .values(**random_payment_transaction(price_dollars=expected))
-                .returning(payments_transactions.c.price_dollars)
-            )
-            assert isinstance(got, decimal.Decimal)
-            assert float(got) == expected
+    async with insert_and_get_user_and_secrets_lifespan(asyncpg_engine) as user_row:
+        async with insert_and_get_product_lifespan(asyncpg_engine) as product_row:
+            product_name = product_row["name"]
+            async with insert_and_get_wallet_lifespan(
+                asyncpg_engine,
+                product_name=product_name,
+                user_group_id=user_row["primary_gid"],
+            ) as wallet_row:
+                async with asyncpg_engine.begin() as connection:
+                    for order_of_magnitude in range(8):
+                        expected = 10**order_of_magnitude + 0.123
+                        got = await connection.scalar(
+                            payments_transactions.insert()
+                            .values(
+                                **random_payment_transaction(
+                                    price_dollars=expected,
+                                    user_id=user_row["id"],
+                                    product_name=product_name,
+                                    wallet_id=wallet_row["wallet_id"],
+                                )
+                            )
+                            .returning(payments_transactions.c.price_dollars)
+                        )
+                        assert isinstance(got, decimal.Decimal)
+                        assert float(got) == expected
 
 
 def _remove_not_required(data: dict[str, Any]) -> dict[str, Any]:
@@ -62,18 +82,33 @@ def _remove_not_required(data: dict[str, Any]) -> dict[str, Any]:
 @pytest.fixture
 def init_transaction(asyncpg_engine: AsyncEngine):
     async def _init(payment_id: str):
-        # get payment_id from payment-gateway
-        values = _remove_not_required(random_payment_transaction(payment_id=payment_id))
+        async with insert_and_get_user_and_secrets_lifespan(asyncpg_engine) as user_row:
+            async with insert_and_get_product_lifespan(asyncpg_engine) as product_row:
+                product_name = product_row["name"]
+                async with insert_and_get_wallet_lifespan(
+                    asyncpg_engine,
+                    product_name=product_name,
+                    user_group_id=user_row["primary_gid"],
+                ) as wallet_row:
+                    # get payment_id from payment-gateway
+                    values = _remove_not_required(
+                        random_payment_transaction(
+                            payment_id=payment_id,
+                            user_id=user_row["id"],
+                            product_name=product_name,
+                            wallet_id=wallet_row["wallet_id"],
+                        )
+                    )
 
-        # init successful: set timestamp
-        values["initiated_at"] = utcnow()
+                    # init successful: set timestamp
+                    values["initiated_at"] = utcnow()
 
-        # insert
-        async with asyncpg_engine.begin() as connection:
-            ok = await insert_init_payment_transaction(connection, **values)
-        assert ok
+                    # insert
+                    async with asyncpg_engine.begin() as connection:
+                        ok = await insert_init_payment_transaction(connection, **values)
+                    assert ok
 
-        return values
+                    return values
 
     return _init
 
