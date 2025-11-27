@@ -151,3 +151,13 @@ class JobAssetsMissingError(BaseBackEndError):
 class CeleryTaskNotFoundError(BaseBackEndError):
     msg_template = "Task {task_uuid} not found"
     status_code = status.HTTP_404_NOT_FOUND
+
+
+class SolverJobOutputRequestButNotSucceededError(BaseBackEndError):
+    msg_template = "Solver job '{job_id}' not succeeded, when output is requested. Current state: {state}"
+    status_code = status.HTTP_409_CONFLICT
+
+
+class StudyJobOutputRequestButNotSucceededError(BaseBackEndError):
+    msg_template = "Study job '{job_id}' not succeeded, when output is requested. Current state: {state}"
+    status_code = status.HTTP_409_CONFLICT

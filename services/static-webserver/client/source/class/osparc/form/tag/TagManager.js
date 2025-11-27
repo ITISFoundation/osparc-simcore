@@ -42,7 +42,9 @@ qx.Class.define("osparc.form.tag.TagManager", {
       if (!title) {
         title = qx.locale.Manager.tr("Apply Tags");
       }
-      return osparc.ui.window.Window.popUpInWindow(tagManager, title, 300, null).set({
+      const width = 400;
+      const maxHeight = 500;
+      return osparc.ui.window.Window.popUpInWindow(tagManager, title, width).set({
         allowMinimize: false,
         allowMaximize: false,
         showMinimize: false,
@@ -50,7 +52,8 @@ qx.Class.define("osparc.form.tag.TagManager", {
         clickAwayClose: true,
         movable: true,
         resizable: true,
-        showClose: true
+        showClose: true,
+        maxHeight,
       });
     }
   },
@@ -58,11 +61,15 @@ qx.Class.define("osparc.form.tag.TagManager", {
   members: {
     __studyData: null,
     __resourceId: null,
+    __introLabel: null,
     __selectedTags: null,
     __tagsContainer: null,
     __addTagButton: null,
 
     __renderLayout: function() {
+      const introLabel = this.__introLabel = osparc.dashboard.ResourceDetails.createIntroLabel();
+      this._add(introLabel);
+
       const filter = new osparc.filter.TextFilter("name", "studyBrowserTagManager").set({
         allowStretchX: true,
         margin: [0, 10, 5, 10]
@@ -81,7 +88,8 @@ qx.Class.define("osparc.form.tag.TagManager", {
         label: this.tr("New Tag"),
         icon: "@FontAwesome5Solid/plus/14",
         alignX: "center",
-        allowGrowX: false
+        allowGrowX: false,
+        marginTop: 10,
       });
       addTagButton.addListener("execute", () => {
         this.__repopulateTags();
@@ -118,6 +126,12 @@ qx.Class.define("osparc.form.tag.TagManager", {
     setStudyData: function(studyData) {
       this.__studyData = studyData;
       this.__resourceId = studyData["uuid"];
+
+      const resourceAlias = osparc.product.Utils.resourceTypeToAlias(this.__studyData["resourceType"], {plural: true}) || "projects";
+      this.__introLabel.set({
+        value: this.tr("Manage and apply tags to better organize your " + resourceAlias + ". Select from existing tags or create new ones, then save your changes when ready."),
+      });
+
       this.__selectedTags.removeAll();
       this.__selectedTags.append(studyData["tags"]);
       this.__repopulateTags();

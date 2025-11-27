@@ -14,6 +14,7 @@ from models_library.rest_pagination import MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
 from models_library.workspaces import WorkspaceID
 from pydantic import NonNegativeInt, PositiveInt
 from simcore_postgres_database.models.projects import projects
+from simcore_postgres_database.models.projects_extensions import projects_extensions
 from simcore_postgres_database.models.users import users
 from simcore_postgres_database.utils_repos import (
     get_columns_from_db_model,
@@ -289,3 +290,52 @@ async def delete_project(
         if row is None:
             raise ProjectNotFoundError(project_uuid=project_uuid)
         return ProjectDBGet.model_validate(row)
+
+
+async def allows_guests_to_push_states_and_output_ports(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    project_uuid: str,
+) -> bool:
+    async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
+        result: bool | None = await conn.scalar(
+            sa.select(
+                projects_extensions.c.allow_guests_to_push_states_and_output_ports
+            ).where(projects_extensions.c.project_uuid == project_uuid)
+        )
+        return result if result is not None else False
+
+
+async def _set_allow_guests_to_push_states_and_output_ports(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    project_uuid: str,
+) -> None:
+    async with transaction_context(get_asyncpg_engine(app), connection) as conn:
+        await conn.execute(
+            sa.insert(projects_extensions).values(
+                project_uuid=project_uuid,
+                allow_guests_to_push_states_and_output_ports=True,
+            )
+        )
+
+
+async def copy_allow_guests_to_push_states_and_output_ports(
+    app: web.Application,
+    connection: AsyncConnection | None = None,
+    *,
+    from_project_uuid: str,
+    to_project_uuid: str,
+) -> None:
+    # get setting from template project
+    allow_guests = await allows_guests_to_push_states_and_output_ports(
+        app, connection, project_uuid=from_project_uuid
+    )
+
+    # set same setting in new project if True
+    if allow_guests:
+        await _set_allow_guests_to_push_states_and_output_ports(
+            app, connection, project_uuid=to_project_uuid
+        )

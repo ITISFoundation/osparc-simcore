@@ -211,7 +211,7 @@ async def storage_subsystem_mock_override(
         nodes_map: NodesMap,
         user_id: UserID,
         product_name: str,
-    ) -> AsyncGenerator[AsyncJobComposedResult, None]:
+    ) -> AsyncGenerator[AsyncJobComposedResult]:
         print(
             f"MOCK copying data project {source_project['uuid']} -> {destination_project['uuid']} "
             f"with {len(nodes_map)} s3 objects by user={user_id}"

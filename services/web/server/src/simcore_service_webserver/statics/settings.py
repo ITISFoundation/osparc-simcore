@@ -3,16 +3,16 @@
 Typically dumped in statics.json
 """
 
-from typing import Any
+from typing import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
+    Any,
+    TypedDict,
+)
 
 import pycountry
 from aiohttp import web
 from models_library.utils.change_case import snake_to_camel
 from pydantic import AliasChoices, AnyHttpUrl, Field, TypeAdapter
 from settings_library.base import BaseCustomSettings
-from typing_extensions import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
-    TypedDict,
-)
 
 from ..application_keys import APP_SETTINGS_APPKEY
 

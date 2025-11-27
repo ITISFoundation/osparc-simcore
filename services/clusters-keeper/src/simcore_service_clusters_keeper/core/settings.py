@@ -13,6 +13,7 @@ from models_library.basic_types import (
     VersionTag,
 )
 from models_library.clusters import ClusterAuthentication
+from models_library.docker import DockerGenericTag
 from pydantic import (
     AliasChoices,
     Field,
@@ -82,6 +83,13 @@ class WorkersEC2InstancesSettings(BaseCustomSettings):
             description="Defines which EC2 instances are considered as candidates for new EC2 instance and their respective boot specific parameters",
         ),
     ]
+    WORKERS_EC2_INSTANCES_COLD_START_DOCKER_IMAGES_PRE_PULLING: Annotated[
+        list[DockerGenericTag],
+        Field(
+            description="List of docker images to pre-pull on cold started new EC2 instances",
+            default_factory=list,
+        ),
+    ] = DEFAULT_FACTORY
 
     WORKERS_EC2_INSTANCES_KEY_NAME: Annotated[
         str,
@@ -170,7 +178,6 @@ class PrimaryEC2InstancesSettings(BaseCustomSettings):
             description="Defines which EC2 instances are considered as candidates for new EC2 instance and their respective boot specific parameters",
         ),
     ]
-
     PRIMARY_EC2_INSTANCES_MAX_INSTANCES: Annotated[
         int,
         Field(

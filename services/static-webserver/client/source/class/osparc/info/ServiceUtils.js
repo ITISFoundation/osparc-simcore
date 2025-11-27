@@ -101,8 +101,7 @@ qx.Class.define("osparc.info.ServiceUtils", {
       * @param serviceData {Object} Serialized Service Object
       */
     createAuthors: function(serviceData) {
-      const authors = new qx.ui.basic.Label().set({
-        rich: true,
+      const authors = new osparc.ui.basic.SafeLabel().set({
         wrap: true,
         maxWidth: 220,
       });

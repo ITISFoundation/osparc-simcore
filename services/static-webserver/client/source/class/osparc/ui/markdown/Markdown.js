@@ -106,7 +106,7 @@ qx.Class.define("osparc.ui.markdown.Markdown", {
 
         const html = marked.parse(value);
 
-        const safeHtml = osparc.wrapper.DOMPurify.getInstance().sanitize(html);
+        const safeHtml = osparc.wrapper.DOMPurify.sanitize(html);
         this.setHtml(safeHtml);
 
         // for some reason the content is not immediately there

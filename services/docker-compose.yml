@@ -7,7 +7,6 @@ x-dask-tls-secrets: &dask_tls_secrets
 # mode: 444 # not supported by docker stack compose as of 26.0.0
 
 ## common environs
-
 x-common-logging: &common_logging_environments
   LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
   LOG_FILTER_MAPPING: ${LOG_FILTER_MAPPING}
@@ -23,7 +22,6 @@ x-tracing-open-telemetry: &tracing_open_telemetry_environments
   TRACING_OPENTELEMETRY_COLLECTOR_BATCH_SIZE: ${TRACING_OPENTELEMETRY_COLLECTOR_BATCH_SIZE}
   TRACING_OPENTELEMETRY_COLLECTOR_PORT: ${TRACING_OPENTELEMETRY_COLLECTOR_PORT}
   TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY: ${TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY}
-
 
 ## third-party party services
 x-postgres-settings: &postgres_settings
@@ -66,14 +64,12 @@ x-s3-settings: &s3_settings
   S3_REGION: ${S3_REGION}
   S3_SECRET_KEY: ${S3_SECRET_KEY}
 
-
 x-smtp-settings: &smtp_settings
   SMTP_HOST: ${SMTP_HOST}
   SMTP_PORT: ${SMTP_PORT}
   SMTP_USERNAME: ${SMTP_USERNAME}
   SMTP_PASSWORD: ${SMTP_PASSWORD}
   SMTP_PROTOCOL: ${SMTP_PROTOCOL}
-
 
 ## simcore stack services
 
@@ -107,7 +103,6 @@ x-invitations-settings: &invitations_settings
   INVITATIONS_PASSWORD: ${INVITATIONS_PASSWORD}
   INVITATIONS_SECRET_KEY: ${INVITATIONS_SECRET_KEY}
   INVITATIONS_OSPARC_URL: ${INVITATIONS_OSPARC_URL}
-
 
 services:
   api-server:
@@ -151,12 +146,11 @@ services:
         - traefik.http.services.${SWARM_STACK_NAME}_api-server.loadbalancer.healthcheck.timeout=1000ms
         # NOTE: keep in sync with fallback router (rule and entrypoint)
         - traefik.http.routers.${SWARM_STACK_NAME}_api-server.rule=(Path(`/`) || Path(`/v0`) ||  PathPrefix(`/v0/`) || Path(`/api/v0/openapi.json`))
-        - traefik.http.routers.${SWARM_STACK_NAME}_api-server.entrypoints=simcore_api
+        - traefik.http.routers.${SWARM_STACK_NAME}_api-server.entrypoints=simcoreapi
         - traefik.http.routers.${SWARM_STACK_NAME}_api-server.priority=3
         - traefik.http.routers.${SWARM_STACK_NAME}_api-server.middlewares=${SWARM_STACK_NAME}_gzip@swarm,ratelimit-${SWARM_STACK_NAME}_api-server,inflightreq-${SWARM_STACK_NAME}_api-server
     networks: &api_server_networks
       - default
-
 
   api-worker:
     image: ${DOCKER_REGISTRY:-itisfoundation}/api-server:${DOCKER_IMAGE_TAG:-latest}
@@ -168,9 +162,9 @@ services:
       API_SERVER_WORKER_NAME: "api-worker-{{.Node.Hostname}}-{{.Task.Slot}}-{{.Task.ID}}"
       API_SERVER_WORKER_MODE: "true"
       CELERY_CONCURRENCY: ${API_SERVER_CELERY_CONCURRENCY}
-      CELERY_QUEUES: "api_worker_queue"
+      CELERY_POOL: threads
+      CELERY_QUEUES: api_worker_queue
     networks: *api_server_networks
-
 
   autoscaling:
     image: ${DOCKER_REGISTRY:-itisfoundation}/autoscaling:${DOCKER_IMAGE_TAG:-latest}
@@ -203,17 +197,18 @@ services:
 
       AUTOSCALING_EC2_INSTANCES: ${AUTOSCALING_EC2_INSTANCES} # used to enable/disable
       EC2_INSTANCES_ALLOWED_TYPES: ${EC2_INSTANCES_ALLOWED_TYPES}
+      EC2_INSTANCES_ATTACHED_IAM_PROFILE: ${EC2_INSTANCES_ATTACHED_IAM_PROFILE}
+      EC2_INSTANCES_COLD_START_DOCKER_IMAGES_PRE_PULLING: ${EC2_INSTANCES_COLD_START_DOCKER_IMAGES_PRE_PULLING}
+      EC2_INSTANCES_CUSTOM_TAGS: ${EC2_INSTANCES_CUSTOM_TAGS}
+      EC2_INSTANCES_KEY_NAME: ${EC2_INSTANCES_KEY_NAME}
       EC2_INSTANCES_MACHINES_BUFFER: ${EC2_INSTANCES_MACHINES_BUFFER}
       EC2_INSTANCES_MAX_INSTANCES: ${EC2_INSTANCES_MAX_INSTANCES}
       EC2_INSTANCES_MAX_START_TIME: ${EC2_INSTANCES_MAX_START_TIME}
       EC2_INSTANCES_NAME_PREFIX: ${EC2_INSTANCES_NAME_PREFIX}
       EC2_INSTANCES_SECURITY_GROUP_IDS: ${EC2_INSTANCES_SECURITY_GROUP_IDS}
       EC2_INSTANCES_SUBNET_IDS: ${EC2_INSTANCES_SUBNET_IDS}
-      EC2_INSTANCES_KEY_NAME: ${EC2_INSTANCES_KEY_NAME}
       EC2_INSTANCES_TIME_BEFORE_DRAINING: ${EC2_INSTANCES_TIME_BEFORE_DRAINING}
       EC2_INSTANCES_TIME_BEFORE_TERMINATION: ${EC2_INSTANCES_TIME_BEFORE_TERMINATION}
-      EC2_INSTANCES_CUSTOM_TAGS: ${EC2_INSTANCES_CUSTOM_TAGS}
-      EC2_INSTANCES_ATTACHED_IAM_PROFILE: ${EC2_INSTANCES_ATTACHED_IAM_PROFILE}
 
       AUTOSCALING_NODES_MONITORING: ${AUTOSCALING_NODES_MONITORING} # dyn autoscaling envvar
       NODES_MONITORING_NODE_LABELS: ${NODES_MONITORING_NODE_LABELS}
@@ -327,6 +322,7 @@ services:
       WORKERS_EC2_INSTANCES_MAX_START_TIME: ${WORKERS_EC2_INSTANCES_MAX_START_TIME}
       WORKERS_EC2_INSTANCES_SECURITY_GROUP_IDS: ${WORKERS_EC2_INSTANCES_SECURITY_GROUP_IDS}
       WORKERS_EC2_INSTANCES_SUBNET_IDS: ${WORKERS_EC2_INSTANCES_SUBNET_IDS}
+      WORKERS_EC2_INSTANCES_COLD_START_DOCKER_IMAGES_PRE_PULLING: ${WORKERS_EC2_INSTANCES_COLD_START_DOCKER_IMAGES_PRE_PULLING}
       WORKERS_EC2_INSTANCES_CUSTOM_TAGS: ${WORKERS_EC2_INSTANCES_CUSTOM_TAGS}
       CLUSTERS_KEEPER_TRACING: ${CLUSTERS_KEEPER_TRACING}
     secrets: *dask_tls_secrets
@@ -350,7 +346,8 @@ services:
       DIRECTOR_PUBLISHED_HOST_NAME: ${DIRECTOR_PUBLISHED_HOST_NAME}
       DIRECTOR_REGISTRY_CACHING_TTL: ${DIRECTOR_REGISTRY_CACHING_TTL}
       DIRECTOR_REGISTRY_CACHING: ${DIRECTOR_REGISTRY_CACHING}
-      DIRECTOR_SERVICES_CUSTOM_CONSTRAINTS: ${DIRECTOR_SERVICES_CUSTOM_CONSTRAINTS}
+      DIRECTOR_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS: ${DIRECTOR_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS}
+      DIRECTOR_SERVICES_CUSTOM_LABELS: ${DIRECTOR_SERVICES_CUSTOM_LABELS}
       DIRECTOR_TRACING: ${DIRECTOR_TRACING}
 
       SIMCORE_SERVICES_NETWORK_NAME: interactive_services_subnet
@@ -382,7 +379,6 @@ services:
         - *registry_settings
         - *s3_settings
         - *tracing_open_telemetry_environments
-      AWS_S3_CLI_S3: ${AWS_S3_CLI_S3}
 
       CATALOG_HOST: ${CATALOG_HOST}
       CATALOG_PORT: ${CATALOG_PORT}
@@ -399,12 +395,13 @@ services:
 
       DIRECTOR_V2_DEV_FEATURES_ENABLED: ${DIRECTOR_V2_DEV_FEATURES_ENABLED}
       DIRECTOR_V2_DYNAMIC_SCHEDULER_CLOSE_SERVICES_VIA_FRONTEND_WHEN_CREDITS_LIMIT_REACHED: ${DIRECTOR_V2_DYNAMIC_SCHEDULER_CLOSE_SERVICES_VIA_FRONTEND_WHEN_CREDITS_LIMIT_REACHED}
-      DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS: ${DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS}
+      DIRECTOR_V2_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS: ${DIRECTOR_V2_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS}
       DIRECTOR_V2_PROFILING: ${DIRECTOR_V2_PROFILING}
       DIRECTOR_V2_DYNAMIC_SIDECAR_SLEEP_AFTER_CONTAINER_REMOVAL: ${DIRECTOR_V2_DYNAMIC_SIDECAR_SLEEP_AFTER_CONTAINER_REMOVAL}
 
       DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED: ${DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED}
 
+      DYNAMIC_SIDECAR_CUSTOM_LABELS: ${DYNAMIC_SIDECAR_CUSTOM_LABELS}
       DYNAMIC_SIDECAR_ENDPOINT_SPECS_MODE_DNSRR_ENABLED: ${DYNAMIC_SIDECAR_ENDPOINT_SPECS_MODE_DNSRR_ENABLED}
       DYNAMIC_SIDECAR_ENABLE_VOLUME_LIMITS: ${DYNAMIC_SIDECAR_ENABLE_VOLUME_LIMITS}
       DYNAMIC_SIDECAR_IMAGE: ${DYNAMIC_SIDECAR_IMAGE}
@@ -429,7 +426,6 @@ services:
 
       RESOURCE_USAGE_TRACKER_HOST: ${RESOURCE_USAGE_TRACKER_HOST}
       RESOURCE_USAGE_TRACKER_PORT: ${RESOURCE_USAGE_TRACKER_EXTERNAL_PORT}
-
 
       STORAGE_HOST: ${STORAGE_HOST}
       STORAGE_PORT: ${STORAGE_PORT}
@@ -559,14 +555,13 @@ services:
       RESOURCE_USAGE_TRACKER_TRACING: ${RESOURCE_USAGE_TRACKER_TRACING}
       RESOURCE_USAGE_TRACKER_PORT: ${RESOURCE_USAGE_TRACKER_PORT}
 
-
   dynamic-schdlr:
     image: ${DOCKER_REGISTRY:-itisfoundation}/dynamic-scheduler:${DOCKER_IMAGE_TAG:-latest}
     init: true
     hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     networks:
       - default
-      - docker-api-network
+      - docker_api_subnet
     environment:
       <<:
         - *common_logging_environments
@@ -594,8 +589,6 @@ services:
       DYNAMIC_SCHEDULER_USE_INTERNAL_SCHEDULER: ${DYNAMIC_SCHEDULER_USE_INTERNAL_SCHEDULER}
       DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT: ${DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT}
 
-
-
   docker-api-proxy:
     image: ${DOCKER_REGISTRY:-itisfoundation}/docker-api-proxy:${DOCKER_IMAGE_TAG:-latest}
     init: true
@@ -610,7 +603,7 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
-      - docker-api-network
+      - docker_api_subnet
 
   static-webserver:
     image: ${DOCKER_REGISTRY:-itisfoundation}/static-webserver:${DOCKER_IMAGE_TAG:-latest}
@@ -713,6 +706,8 @@ services:
       PROMETHEUS_URL: ${WEBSERVER_PROMETHEUS_URL}
 
       WEBSERVER_CATALOG: ${WEBSERVER_CATALOG}
+      WEBSERVER_CHATBOT: ${WEBSERVER_CHATBOT}
+      WEBSERVER_CONVERSATIONS: "true"
 
       # WEBSERVER_CREDIT_COMPUTATION
       WEBSERVER_CREDIT_COMPUTATION_ENABLED: ${WEBSERVER_CREDIT_COMPUTATION_ENABLED}
@@ -882,6 +877,9 @@ services:
       WEBSERVER_PORT: ${WB_API_WEBSERVER_PORT}
       WEBSERVER_RPC_NAMESPACE: ${WB_API_WEBSERVER_HOST}
       WEBSERVER_STATICWEB: "null"
+      WEBSERVER_CONVERSATIONS: "false" # override *webserver_environment
+      WEBSERVER_CHATBOT: "null" # override *webserver_environment
+      WEBSERVER_FOGBUGZ: "null" # override *webserver_environment
 
       # NOTE: keep in sync with the prefix form the hostname
       LONG_RUNNING_TASKS_NAMESPACE_SUFFIX: api
@@ -923,6 +921,8 @@ services:
       WEBSERVER_ACTIVITY: ${WB_DB_EL_ACTIVITY}
       WEBSERVER_ANNOUNCEMENTS: ${WB_DB_EL_ANNOUNCEMENTS}
       WEBSERVER_CATALOG: ${WB_DB_EL_CATALOG}
+      WEBSERVER_CHATBOT: "null"
+      WEBSERVER_CONVERSATIONS: "false"
       WEBSERVER_CELERY: "null"
       WEBSERVER_DB_LISTENER: ${WB_DB_EL_DB_LISTENER}
       WEBSERVER_DIAGNOSTICS: ${WB_DB_EL_DIAGNOSTICS}
@@ -951,7 +951,6 @@ services:
       WEBSERVER_TRACING: ${WB_DB_EL_TRACING}
       WEBSERVER_USERS: ${WB_DB_EL_USERS}
       WEBSERVER_WALLETS: ${WB_DB_EL_WALLETS}
-
 
       RESOURCE_MANAGER_RESOURCE_TTL_S: ${RESOURCE_MANAGER_RESOURCE_TTL_S}
 
@@ -982,7 +981,6 @@ services:
 
       GUNICORN_CMD_ARGS: ${WEBSERVER_GUNICORN_CMD_ARGS}
 
-
       # NOTE: keep in sync with the prefix form the hostname
       LONG_RUNNING_TASKS_NAMESPACE_SUFFIX: gc
 
@@ -1006,6 +1004,8 @@ services:
       WEBSERVER_ACTIVITY: ${WB_GC_ACTIVITY}
       WEBSERVER_ANNOUNCEMENTS: ${WB_GC_ANNOUNCEMENTS}
       WEBSERVER_CATALOG: ${WB_GC_CATALOG}
+      WEBSERVER_CHATBOT: "null"
+      WEBSERVER_CONVERSATIONS: "false"
       WEBSERVER_CELERY: "null"
       WEBSERVER_DB_LISTENER: ${WB_GC_DB_LISTENER}
       WEBSERVER_DIAGNOSTICS: ${WB_GC_DIAGNOSTICS}
@@ -1078,10 +1078,11 @@ services:
       SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE}
       SESSION_COOKIE_HTTPONLY: ${SESSION_COOKIE_HTTPONLY}
 
-
       WEBSERVER_ACTIVITY: "null"
       WEBSERVER_ANNOUNCEMENTS: 0
       WEBSERVER_CATALOG: "null"
+      WEBSERVER_CHATBOT: "null"
+      WEBSERVER_CONVERSATIONS: "false"
       WEBSERVER_CELERY: "null"
       WEBSERVER_DB_LISTENER: 0
       WEBSERVER_DIRECTOR_V2: "null"
@@ -1219,7 +1220,6 @@ services:
       DATCORE_ADAPTER_LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
       DATCORE_ADAPTER_TRACING: ${DATCORE_ADAPTER_TRACING}
 
-
   storage:
     image: ${DOCKER_REGISTRY:-itisfoundation}/storage:${DOCKER_IMAGE_TAG:-latest}
     init: true
@@ -1254,6 +1254,7 @@ services:
       STORAGE_WORKER_NAME: "sto-worker-{{.Node.Hostname}}-{{.Task.Slot}}-{{.Task.ID}}"
       STORAGE_WORKER_MODE: "true"
       CELERY_CONCURRENCY: 100
+      CELERY_POOL: threads
     networks: *storage_networks
 
   sto-worker-cpu-bound:
@@ -1266,7 +1267,8 @@ services:
       STORAGE_WORKER_NAME: "sto-worker-cpu-bound-{{.Node.Hostname}}-{{.Task.Slot}}-{{.Task.ID}}"
       STORAGE_WORKER_MODE: "true"
       CELERY_CONCURRENCY: 1
-      CELERY_QUEUES: "cpu_bound"
+      CELERY_QUEUES: cpu_bound
+      CELERY_POOL: prefork
     networks: *storage_networks
 
   rabbit:
@@ -1318,7 +1320,15 @@ services:
       - default
       - interactive_services_subnet
     healthcheck:
-      test: [ "CMD", "pg_isready", "--username", "${POSTGRES_USER}", "--dbname", "${POSTGRES_DB}" ]
+      test:
+        [
+          "CMD",
+          "pg_isready",
+          "--username",
+          "${POSTGRES_USER}",
+          "--dbname",
+          "${POSTGRES_DB}",
+        ]
       interval: 5s
       retries: 5
     # NOTES: this is not yet compatible with portainer deployment but could work also for other containers
@@ -1332,19 +1342,24 @@ services:
     #   - net.ipv4.tcp_keepalive_probes=9
     #   - net.ipv4.tcp_keepalive_time=600
     #
-    command:
-      [
+    command: [
         "postgres",
-        "-c", "tcp_keepalives_idle=600",
-        "-c", "tcp_keepalives_interval=600",
-        "-c", "tcp_keepalives_count=5",
-        "-c", "max_connections=413",
-        "-c", "shared_buffers=256MB",
+        "-c",
+        "tcp_keepalives_idle=600",
+        "-c",
+        "tcp_keepalives_interval=600",
+        "-c",
+        "tcp_keepalives_count=5",
+        "-c",
+        "max_connections=413",
+        "-c",
+        "shared_buffers=256MB",
         # statement_timeout is set to 120 seconds (120_000 in ms), so that long running queries
         # are killed after 2 minutes. Since simcore services have timeout of 1 minute, so longer
         # queries will not be used. Setting >1 minutes to be safe
         # https://github.com/ITISFoundation/osparc-simcore/issues/7682#issuecomment-2923048445
-        "-c", "statement_timeout=120000"
+        "-c",
+        "statement_timeout=120000",
       ]
 
   redis:
@@ -1356,7 +1371,19 @@ services:
       # also aof (append only) is also enabled such that we get full durability at the expense
       # of backup size. The backup is written into /data.
       # https://redis.io/topics/persistence
-      [ "redis-server", "--save", "60 1", "--loglevel", "verbose", "--databases", "11", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD}" ]
+      [
+        "redis-server",
+        "--save",
+        "60 1",
+        "--loglevel",
+        "verbose",
+        "--databases",
+        "11",
+        "--appendonly",
+        "yes",
+        "--requirepass",
+        "${REDIS_PASSWORD}",
+      ]
     networks:
       - default
       - autoscaling_subnet
@@ -1364,49 +1391,52 @@ services:
     volumes:
       - redis-data:/data
     healthcheck:
-      test: [ "CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping" ]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
       interval: 5s
       timeout: 30s
       retries: 50
 
   traefik:
-    image: "traefik:v3.5.2@sha256:07ff0c6c2114233b82e1de8e9f4fee9974470cd8d42c22e4e158538d950e19ae"
+    image: "traefik:v3.6.1@sha256:fd5932c796f7e2db9fd6bff485ef693d53797f0ee8ad03dc68aa424ea6f21958"
     init: true
     hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
-    command:
-      - "--api=true"
-      - "--api.dashboard=true"
-      - "--ping=true"
-      - "--entryPoints.ping.address=:9082"
-      - "--ping.entryPoint=ping"
-      - "--log.level=WARN" # WARN, not WARNING
-      - "--accesslog=false"
-      - "--metrics.prometheus=true"
-      - "--metrics.prometheus.addEntryPointsLabels=true"
-      - "--metrics.prometheus.addServicesLabels=true"
-      - "--entryPoints.metrics.address=:8082"
-      - "--metrics.prometheus.entryPoint=metrics"
-      - "--entryPoints.http.address=:80"
-      - "--entryPoints.http.forwardedHeaders.insecure"
-      - "--entryPoints.http.transport.respondingTimeouts.readTimeout=21600s" #6h, for https://github.com/traefik/traefik/issues/10805 large file uploads
-      - "--entryPoints.http.transport.respondingTimeouts.writeTimeout=21600s" #6h, for https://github.com/traefik/traefik/issues/10805 large file downloads
-      - "--entryPoints.simcore_api.address=:10081"
-      - "--entryPoints.simcore_api.forwardedHeaders.insecure"
-      - "--entryPoints.simcore_api.transport.respondingTimeouts.readTimeout=21600s" #6h, for https://github.com/traefik/traefik/issues/10805 large file uploads
-      - "--entryPoints.simcore_api.transport.respondingTimeouts.writeTimeout=21600s" #6h, for https://github.com/traefik/traefik/issues/10805 large file downloads
-      - "--entryPoints.traefik_monitor.address=:8080"
-      - "--entryPoints.traefik_monitor.forwardedHeaders.insecure"
-      - "--providers.swarm.endpoint=unix:///var/run/docker.sock"
-      - "--providers.swarm.network=${SWARM_STACK_NAME}_default"
-      # https://github.com/traefik/traefik/issues/7886
-      - "--providers.swarm.refreshSeconds=1"
-      - "--providers.swarm.exposedByDefault=false"
-      - "--providers.swarm.constraints=Label(`io.simcore.zone`, `${TRAEFIK_SIMCORE_ZONE}`)"
-      - "--tracing"
-      - "--tracing.addinternals"
-      - "--tracing.otlp=true"
-      - "--tracing.otlp.http=true"
-      - "--tracing.sampleRate=${TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY}"
+    # https://github.com/traefik/traefik/blob/v3.5.2/docs/content/reference/static-configuration/env-ref.md
+    environment:
+      TRAEFIK_API: "true"
+      TRAEFIK_API_DASHBOARD: "true"
+      TRAEFIK_PING: "true"
+      TRAEFIK_ENTRYPOINTS_PING_ADDRESS: ":9082"
+      TRAEFIK_PING_ENTRYPOINT: "ping"
+      TRAEFIK_LOG_LEVEL: "WARN"
+      TRAEFIK_ACCESSLOG: "false"
+      TRAEFIK_ACCESSLOG_FORMAT: "json"
+      TRAEFIK_METRICS_PROMETHEUS: "true"
+      TRAEFIK_METRICS_PROMETHEUS_ADDENTRYPOINTSLABELS: "true"
+      TRAEFIK_METRICS_PROMETHEUS_ADDSERVICESLABELS: "true"
+      TRAEFIK_ENTRYPOINTS_METRICS_ADDRESS: ":8082"
+      TRAEFIK_METRICS_PROMETHEUS_ENTRYPOINT: "metrics"
+      TRAEFIK_ENTRYPOINTS_HTTP_ADDRESS: ":80"
+      TRAEFIK_ENTRYPOINTS_HTTP_FORWARDEDHEADERS_INSECURE: "true"
+      # 6h, for https://github.com/traefik/traefik/issues/10805 large file uploads
+      TRAEFIK_ENTRYPOINTS_HTTP_TRANSPORT_RESPONDINGTIMEOUTS_READTIMEOUT: "21600s"
+      # 6h, for https://github.com/traefik/traefik/issues/10805 large file downloads
+      TRAEFIK_ENTRYPOINTS_HTTP_TRANSPORT_RESPONDINGTIMEOUTS_WRITETIMEOUT: "21600s"
+      TRAEFIK_ENTRYPOINTS_SIMCOREAPI_ADDRESS: ":10081"
+      TRAEFIK_ENTRYPOINTS_SIMCOREAPI_FORWARDEDHEADERS_INSECURE: "true"
+      TRAEFIK_ENTRYPOINTS_SIMCOREAPI_TRANSPORT_RESPONDINGTIMEOUTS_READTIMEOUT: "21600s"
+      TRAEFIK_ENTRYPOINTS_SIMCOREAPI_TRANSPORT_RESPONDINGTIMEOUTS_WRITETIMEOUT: "21600s"
+      TRAEFIK_ENTRYPOINTS_TRAEFIKMONITOR_ADDRESS: ":8080"
+      TRAEFIK_ENTRYPOINTS_TRAEFIKMONITOR_FORWARDEDHEADERS_INSECURE: "true"
+      TRAEFIK_PROVIDERS_SWARM_ENDPOINT: "unix:///var/run/docker.sock"
+      TRAEFIK_PROVIDERS_SWARM_NETWORK: "${SWARM_STACK_NAME}_default"
+      TRAEFIK_PROVIDERS_SWARM_REFRESHSECONDS: "1" # https://github.com/traefik/traefik/issues/7886
+      TRAEFIK_PROVIDERS_SWARM_EXPOSEDBYDEFAULT: "false"
+      TRAEFIK_PROVIDERS_SWARM_CONSTRAINTS: "Label(`io.simcore.zone`, `${TRAEFIK_SIMCORE_ZONE}`)"
+      TRAEFIK_TRACING: "true"
+      TRAEFIK_TRACING_ADDINTERNALS: "true"
+      TRAEFIK_TRACING_OTLP: "true"
+      TRAEFIK_TRACING_OTLP_HTTP: "true"
+      TRAEFIK_TRACING_SAMPLERATE: "${TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY}"
     healthcheck:
       # NOTE: this healthcheck to check if traefik is up and running must be run on the ping entrypoint defined in command!
       test: traefik healthcheck --ping --ping.entryPoint=ping --entryPoints.ping.address=:9082
@@ -1460,7 +1490,7 @@ services:
         ### Fallback for api-server
         - traefik.http.routers.${SWARM_STACK_NAME}_api-server_fallback.rule=(Path(`/`) || Path(`/v0`) ||  PathPrefix(`/v0/`) || Path(`/api/v0/openapi.json`))
         - traefik.http.routers.${SWARM_STACK_NAME}_api-server_fallback.service=${SWARM_STACK_NAME}_api-server_fallback
-        - traefik.http.routers.${SWARM_STACK_NAME}_api-server_fallback.entrypoints=simcore_api
+        - traefik.http.routers.${SWARM_STACK_NAME}_api-server_fallback.entrypoints=simcoreapi
         - traefik.http.routers.${SWARM_STACK_NAME}_api-server_fallback.priority=1
         # always fail and return 503 via unhealthy loadbalancer healthcheck
         - traefik.http.services.${SWARM_STACK_NAME}_api-server_fallback.loadbalancer.server.port=0 # port is required (otherwise traefik service is not created)
@@ -1530,8 +1560,8 @@ networks:
     internal: false
     labels:
       com.simcore.description: "computational services network"
-  docker-api-network:
-    name: ${SWARM_STACK_NAME}_docker-api-network
+  docker_api_subnet:
+    name: ${SWARM_STACK_NAME}_docker_api_subnet
     driver: overlay
     attachable: true
     internal: true

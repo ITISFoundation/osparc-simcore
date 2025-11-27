@@ -1,12 +1,13 @@
 import datetime
 from collections.abc import Mapping
 from enum import Enum
-from typing import Annotated, Any, Literal, TypeAlias
+from typing import Annotated, Any, Final, Literal, TypeAlias
 from uuid import UUID
 
 from models_library import projects
 from models_library.basic_regex import UUID_RE_BASE
 from models_library.basic_types import ConstrainedStr
+from models_library.batch_operations import BatchCreateEnvelope
 from models_library.groups import GroupID
 from models_library.products import ProductName
 from models_library.services_types import ServiceKey, ServiceVersion
@@ -14,6 +15,7 @@ from models_library.users import UserID
 from models_library.utils.enums import StrAutoEnum
 from pydantic import BaseModel, ConfigDict, Field
 
+from .batch_operations import BatchGetEnvelope, BatchUpdateEnvelope
 from .projects import ProjectID
 from .utils.change_case import snake_to_camel
 
@@ -23,6 +25,7 @@ FunctionJobID: TypeAlias = UUID
 FileID: TypeAlias = UUID
 
 InputTypes: TypeAlias = FileID | float | int | bool | str | list
+_MAX_LIST_LENGTH: Final[int] = 50
 
 
 class FunctionSchemaClass(str, Enum):
@@ -80,8 +83,9 @@ FunctionInputs: TypeAlias = dict[str, Any] | None
 
 FunctionInputsList: TypeAlias = Annotated[
     list[FunctionInputs],
-    Field(max_length=50),
+    Field(max_length=_MAX_LIST_LENGTH),
 ]
+
 
 FunctionOutputs: TypeAlias = dict[str, Any] | None
 
@@ -238,6 +242,9 @@ FunctionJob: TypeAlias = Annotated[
     ProjectFunctionJob | PythonCodeFunctionJob | SolverFunctionJob,
     Field(discriminator="function_class"),
 ]
+FunctionJobList: TypeAlias = Annotated[
+    list[FunctionJob], Field(max_length=_MAX_LIST_LENGTH)
+]
 
 
 class RegisteredFunctionJobBase(FunctionJobBase):
@@ -264,11 +271,40 @@ RegisteredFunctionJob: TypeAlias = Annotated[
     Field(discriminator="function_class"),
 ]
 
+
+class BatchCreateRegisteredFunctionJobs(BatchCreateEnvelope[RegisteredFunctionJob]):
+    pass
+
+
+class BatchUpdateRegisteredFunctionJobs(BatchUpdateEnvelope[RegisteredFunctionJob]):
+    pass
+
+
+class BatchGetCachedRegisteredFunctionJobs(
+    BatchGetEnvelope[RegisteredFunctionJob, FunctionInputs]
+):
+    pass
+
+
 RegisteredFunctionJobPatch = Annotated[
     RegisteredProjectFunctionJobPatch
     | RegisteredPythonCodeFunctionJobPatch
     | RegisteredSolverFunctionJobPatch,
     Field(discriminator="function_class"),
+]
+
+
+class FunctionJobPatchRequest(BaseModel):
+    uid: FunctionJobID
+    patch: RegisteredFunctionJobPatch
+
+
+FunctionJobPatchRequestList: TypeAlias = Annotated[
+    list[FunctionJobPatchRequest],
+    Field(
+        max_length=_MAX_LIST_LENGTH,
+        description="List of function job patch requests",
+    ),
 ]
 
 
@@ -338,6 +374,20 @@ class FunctionJobDB(BaseModel):
 class RegisteredFunctionJobDB(FunctionJobDB):
     uuid: FunctionJobID
     created: datetime.datetime
+
+
+class BatchGetCachedRegisteredFunctionJobsDB(
+    BatchGetEnvelope[RegisteredFunctionJobDB, FunctionInputs]
+):
+    pass
+
+
+class BatchCreateRegisteredFunctionJobsDB(BatchCreateEnvelope[RegisteredFunctionJobDB]):
+    pass
+
+
+class BatchUpdateRegisteredFunctionJobsDB(BatchUpdateEnvelope[RegisteredFunctionJobDB]):
+    pass
 
 
 class RegisteredFunctionJobWithStatusDB(FunctionJobDB):

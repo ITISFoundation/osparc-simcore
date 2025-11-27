@@ -9,6 +9,7 @@ from fastapi import FastAPI
 from ...celery.app_server import BaseAppServer
 from ...celery.task_manager import TaskManager
 
+_STARTUP_TIMEOUT: Final[float] = datetime.timedelta(minutes=5).total_seconds()
 _SHUTDOWN_TIMEOUT: Final[float] = datetime.timedelta(seconds=10).total_seconds()
 
 _logger = logging.getLogger(__name__)
@@ -27,9 +28,10 @@ class FastAPIAppServer(BaseAppServer[FastAPI]):
     ) -> None:
         async with LifespanManager(
             self.app,
-            startup_timeout=None,  # waits for full app initialization (DB migrations, etc.)
+            startup_timeout=_STARTUP_TIMEOUT,
             shutdown_timeout=_SHUTDOWN_TIMEOUT,
         ):
-            _logger.info("fastapi app initialized")
+            _logger.info("FastAPI initialized: %s", self.app)
             startup_completed_event.set()
             await self.shutdown_event.wait()  # NOTE: wait here until shutdown is requested
+            _logger.info("FastAPI shutdown completed: %s", self.app)

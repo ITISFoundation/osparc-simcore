@@ -305,7 +305,10 @@ def s4l_products_db_name(
     with postgres_db.connect() as conn:
         conn.execute(
             products.insert().values(
-                name=s4l_product_name, host_regex="pytest", display_name="pytest"
+                name=s4l_product_name,
+                host_regex="pytest",
+                base_url="https://pytest.com",
+                display_name="pytest",
             )
         )
 

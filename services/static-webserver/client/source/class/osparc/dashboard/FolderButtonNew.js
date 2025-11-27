@@ -61,7 +61,6 @@ qx.Class.define("osparc.dashboard.FolderButtonNew", {
           control = new qx.ui.basic.Label(this.tr("New folder")).set({
             anonymous: true,
             font: "text-14",
-            rich: true,
           });
           this._add(control, {
             ...osparc.dashboard.FolderButtonBase.POS.TITLE,

@@ -154,10 +154,9 @@ qx.Class.define("osparc.ui.list.ListItem", {
           });
           break;
         case "title":
-          control = new qx.ui.basic.Label().set({
+          control = new osparc.ui.basic.SafeLabel().set({
             font: "text-14",
             selectable: true,
-            rich: true,
           });
           this._add(control, {
             row: 0,
@@ -165,10 +164,9 @@ qx.Class.define("osparc.ui.list.ListItem", {
           });
           break;
         case "subtitle":
-          control = new qx.ui.basic.Label().set({
+          control = new osparc.ui.basic.SafeLabel().set({
             font: "text-13",
             selectable: true,
-            rich: true,
           });
           this._add(control, {
             row: 1,

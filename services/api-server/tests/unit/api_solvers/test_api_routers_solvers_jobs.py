@@ -3,6 +3,9 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
+import datetime
+import uuid
+from collections.abc import Callable
 from pathlib import Path
 from pprint import pprint
 from typing import Any
@@ -14,7 +17,8 @@ import httpx
 import pytest
 from faker import Faker
 from fastapi import FastAPI
-from models_library.services import ServiceMetaDataPublished
+from models_library.projects import ProjectID
+from models_library.projects_state import RunningState
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import AnyUrl, HttpUrl, TypeAdapter
 from pytest_mock import MockType
@@ -129,23 +133,8 @@ def mocked_directorv2_rest_api(
 def test_download_presigned_link(
     presigned_download_link: AnyUrl, tmp_path: Path, project_id: str, node_id: str
 ):
-    """Cheks that the generation of presigned_download_link works as expected"""
+    """Checks that the generation of presigned_download_link works as expected"""
     r = httpx.get(f"{presigned_download_link}")
-    ## pprint(dict(r.headers))
-    # r.headers looks like:
-    # {
-    #  'access-control-allow-origin': '*',
-    #  'connection': 'close',
-    #  'content-length': '491',
-    #  'content-md5': 'HoY5Kfgqb9VSdS44CYBxnA==',
-    #  'content-type': 'binary/octet-stream',
-    #  'date': 'Thu, 19 May 2022 22:16:48 GMT',
-    #  'etag': '"1e863929f82a6fd552752e380980719c"',
-    #  'last-modified': 'Thu, 19 May 2022 22:16:48 GMT',
-    #  'server': 'Werkzeug/2.1.2 Python/3.9.12',
-    #  'x-amz-version-id': 'null',
-    #  'x-amzn-requestid': 'WMAPXWFR2G4EJRVYBNJDRHTCXJ7NBRMDN7QQNHTQ5RYAQ34ZZNAL'
-    # }
     assert r.status_code == status.HTTP_200_OK
 
     expected_fname = f"{project_id}-{node_id}.log"
@@ -194,6 +183,55 @@ async def test_solver_logs(
 
     assert f"{resp.url}" == f"{presigned_download_link}"
     pprint(dict(resp.headers))  # noqa: T203
+
+
+@pytest.mark.parametrize(
+    "job_outputs, project_id, job_state, expected_output, expected_status_code, expected_error_message",
+    [
+        (
+            None,
+            uuid.uuid4(),
+            RunningState.STARTED,
+            None,
+            status.HTTP_409_CONFLICT,
+            "not succeeded, when output is requested",
+        ),
+    ],
+)
+async def test_solver_job_outputs(
+    client: httpx.AsyncClient,
+    auth: httpx.BasicAuth,
+    job_outputs: dict[str, Any] | None,
+    project_id: ProjectID,
+    job_state: RunningState,
+    expected_output: dict[str, Any] | None,
+    mock_method_in_jobs_service: Callable[[str, Any], MockType],
+    expected_status_code: int,
+    expected_error_message: str | None,
+    solver_key: str,
+    solver_version: str,
+) -> None:
+
+    job_status = JobStatus(
+        state=job_state,
+        job_id=project_id,
+        submitted_at=datetime.datetime.now(tz=datetime.UTC),
+        started_at=datetime.datetime.now(tz=datetime.UTC),
+        stopped_at=datetime.datetime.now(tz=datetime.UTC),
+        progress=0,
+    )
+    mock_method_in_jobs_service("inspect_solver_job", job_status)
+
+    response = await client.get(
+        f"{API_VTAG}/solvers/{solver_key}/releases/{solver_version}/jobs/{project_id}/outputs",
+        auth=auth,
+    )
+    assert response.status_code == expected_status_code
+    data = response.json()
+    if expected_error_message:
+        assert "not succeeded, when output is requested" in data["errors"][0]
+    if expected_output:
+        assert data == expected_output
 
 
 @pytest.mark.acceptance_test(
@@ -310,12 +348,6 @@ async def test_run_solver_job(
         "classifiers",
         "owner",
     } == set(oas["components"]["schemas"]["ServiceGet"]["required"])
-
-    example = next(
-        e
-        for e in ServiceMetaDataPublished.model_json_schema()["examples"]
-        if "boot-options" in e
-    )
 
     # ---------------------------------------------------------------------------------------------------------
 

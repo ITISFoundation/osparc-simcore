@@ -107,16 +107,19 @@ def app_products(expected_product_name: ProductName) -> OrderedDict[str, Product
     pp["tis"] = Product(
         name="tis",
         host_regex="tis",
+        base_url="https://tip.io",
         **column_defaults,
     )
     pp["osparc"] = Product(
         name="osparc",
         host_regex="osparc",
+        base_url="https://osparc.io",
         **column_defaults,
     )
     pp["s4l"] = Product(
         name="s4l",
         host_regex="s4l",
+        base_url="https://s4l.io",
         **column_defaults,
     )
 

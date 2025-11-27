@@ -101,10 +101,12 @@ qx.Class.define("osparc.dashboard.GroupedCardContainer", {
             allowGrowX: false
           });
           control.getChildControl("icon").set(osparc.utils.Utils.getThumbnailProps(32));
-          control.getChildControl("label").set({
+          const atomLabel = control.getChildControl("label");
+          atomLabel.set({
             rich: true,
             wrap: true
-          })
+          });
+          osparc.wrapper.DOMPurify.sanitizeLabel(atomLabel);
           control.getContentElement().setStyles({
             "border-top-left-radius": "4px",
             "border-top-right-radius": "4px"

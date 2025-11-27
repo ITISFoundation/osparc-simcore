@@ -1,5 +1,5 @@
-""" Extends `aiohttp.web_exceptions` classes to match `status` codes
-    and adds helper functions.
+"""Extends `aiohttp.web_exceptions` classes to match `status` codes
+and adds helper functions.
 """
 
 import inspect
@@ -72,9 +72,9 @@ def get_all_aiohttp_http_exceptions(
     return status_to_http_exception_map
 
 
-_STATUS_CODE_TO_HTTP_ERRORS: dict[
-    int, type[HTTPError]
-] = get_all_aiohttp_http_exceptions(HTTPError)
+_STATUS_CODE_TO_HTTP_ERRORS: dict[int, type[HTTPError]] = (
+    get_all_aiohttp_http_exceptions(HTTPError)
+)
 
 
 def get_http_error_class_or_none(status_code: int) -> type[HTTPError] | None:

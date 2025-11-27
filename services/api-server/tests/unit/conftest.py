@@ -62,6 +62,7 @@ from pytest_simcore.simcore_webserver_projects_rest_api import GET_PROJECT
 from requests.auth import HTTPBasicAuth
 from respx import MockRouter
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
+from simcore_service_api_server._service_jobs import JobService
 from simcore_service_api_server.api.dependencies.authentication import Identity
 from simcore_service_api_server.core.application import create_app
 from simcore_service_api_server.core.settings import ApplicationSettings
@@ -185,7 +186,7 @@ async def client(
         yield httpx_async_client
 
 
-## MOCKED Repositories --------------------------------------------------
+# MOCKED Repositories --------------------------------------------------
 
 
 @pytest.fixture
@@ -227,7 +228,7 @@ def auth(
     return HTTPBasicAuth(user_api_key, user_api_secret)
 
 
-## MOCKED S3 service --------------------------------------------------
+# MOCKED S3 service --------------------------------------------------
 
 
 @pytest.fixture
@@ -255,7 +256,7 @@ def mocked_s3_server_url() -> Iterator[HttpUrl]:
     print(f"<-- stopped mock S3 server on {endpoint_url}")
 
 
-## MOCKED res/web APIs from simcore services ------------------------------------------
+# MOCKED res/web APIs from simcore services ------------------------------------------
 
 
 @pytest.fixture
@@ -1034,3 +1035,24 @@ def openapi_dev_specs(project_slug_dir: Path) -> dict[str, Any]:
     )
     assert openapi_file.is_file()
     return json.loads(openapi_file.read_text())
+
+
+@pytest.fixture()
+def mock_method_in_jobs_service(
+    mocked_app_rpc_dependencies: None,
+    mocker: MockerFixture,
+) -> Callable[[str, Any, Exception | None], MockType]:
+    def _create(
+        method_name: str = "",
+        return_value: Any = None,
+        exception: Exception | None = None,
+    ) -> MockType:
+
+        return mocker.patch.object(
+            JobService,
+            method_name,
+            return_value=return_value,
+            side_effect=exception,
+        )
+
+    return _create

@@ -95,9 +95,8 @@ qx.Class.define("osparc.desktop.wallets.WalletListItem", {
           });
           break;
         case "subtitle":
-          control = new qx.ui.basic.Label().set({
+          control = new osparc.ui.basic.SafeLabel().set({
             font: "text-13",
-            rich: true
           });
           this._add(control, {
             row: 1,

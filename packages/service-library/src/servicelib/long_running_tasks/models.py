@@ -2,7 +2,7 @@
 from collections.abc import Awaitable, Callable, Coroutine
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from typing import Annotated, Any, TypeAlias
+from typing import Annotated, Any
 
 from common_library.basic_types import DEFAULT_FACTORY
 from models_library.api_schemas_long_running_tasks.base import (
@@ -19,18 +19,18 @@ from models_library.api_schemas_long_running_tasks.tasks import (
 )
 from pydantic import BaseModel, ConfigDict, Field, PositiveFloat, model_validator
 
-TaskType: TypeAlias = Callable[..., Coroutine[Any, Any, Any]]
+type TaskType = Callable[..., Coroutine[Any, Any, Any]]
 
-ProgressCallback: TypeAlias = Callable[
+type ProgressCallback = Callable[
     [ProgressMessage, ProgressPercent | None, TaskId], Awaitable[None]
 ]
 
-RequestBody: TypeAlias = Any
-TaskContext: TypeAlias = dict[str, Any]
+type RequestBody = Any
+type TaskContext = dict[str, Any]
 
-LRTNamespace: TypeAlias = str
+type LRTNamespace = str
 
-RegisteredTaskName: TypeAlias = str
+type RegisteredTaskName = str
 
 
 class ResultField(BaseModel):
@@ -71,6 +71,16 @@ class TaskData(BaseModel):
         ),
     ] = None
 
+    detected_as_done_at: Annotated[
+        datetime | None,
+        Field(
+            description=(
+                "used to remove the task when it's first detected as done "
+                "if a task was started as fire_and_forget=True"
+            )
+        ),
+    ] = None
+
     is_done: Annotated[
         bool,
         Field(description="True when the task finished running with or without errors"),
@@ -78,10 +88,21 @@ class TaskData(BaseModel):
     result_field: Annotated[
         ResultField | None, Field(description="the result of the task")
     ] = None
-    marked_for_removal: Annotated[
-        bool,
-        Field(description=("if True, indicates the task is marked for removal")),
-    ] = False
+
+    @property
+    def marked_for_removal(self) -> bool:
+        return self.marked_for_removal_at is not None
+
+    marked_for_removal_at: Annotated[
+        datetime | None,
+        Field(
+            description=(
+                "In some cases we have an entry in Redis but no task to remove, to ensure "
+                "proper cleanup, wait some time after the marke_for_remval and then remove "
+                "the entry form Redis"
+            )
+        ),
+    ] = None
 
     model_config = ConfigDict(
         arbitrary_types_allowed=True,

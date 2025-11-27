@@ -290,7 +290,7 @@ async def test_replier_responds_with_not_locally_defined_object_instance(
         # the server's request will just time out. I would prefer a cleaner interface.
         # There is no change of intercepting this message.
         with pytest.raises(
-            AttributeError, match=r"Can't pickle local object .+.<locals>.Custom"
+            AttributeError, match=r"Can't get local object .+.<locals>.Custom"
         ):
             await rpc_client.request(
                 namespace, RPCMethodName("a_name"), x=10, timeout_s=1

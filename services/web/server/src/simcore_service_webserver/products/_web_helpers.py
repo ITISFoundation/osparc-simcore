@@ -1,4 +1,5 @@
 import contextlib
+import logging
 from pathlib import Path
 
 import aiofiles
@@ -18,6 +19,8 @@ from .errors import (
     UnknownProductError,
 )
 from .models import Product
+
+_logger = logging.getLogger(__name__)
 
 
 def get_product_name(request: web.Request) -> str:

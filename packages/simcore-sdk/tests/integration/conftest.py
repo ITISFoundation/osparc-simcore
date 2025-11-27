@@ -20,14 +20,12 @@ from models_library.users import UserID
 from pydantic import TypeAdapter
 from pytest_simcore.helpers.faker_factories import random_project, random_user
 from pytest_simcore.helpers.postgres_tools import sync_insert_and_get_row_lifespan
-from settings_library.aws_s3_cli import AwsS3CliSettings
 from settings_library.r_clone import RCloneSettings, S3Provider
 from settings_library.s3 import S3Settings
 from simcore_postgres_database.models.comp_tasks import comp_tasks
 from simcore_postgres_database.models.file_meta_data import file_meta_data
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.users import users
-from simcore_sdk.node_ports_common.aws_s3_cli import is_aws_s3_cli_available
 from simcore_sdk.node_ports_common.r_clone import is_r_clone_available
 from yarl import URL
 
@@ -321,31 +319,10 @@ async def r_clone_settings_factory(
 
 
 @pytest.fixture
-async def aws_s3_cli_settings_factory(
-    minio_s3_settings: S3Settings, storage_service: URL
-) -> Callable[[], Awaitable[AwsS3CliSettings]]:
-    async def _factory() -> AwsS3CliSettings:
-        settings = AwsS3CliSettings(AWS_S3_CLI_S3=minio_s3_settings)
-        if not await is_aws_s3_cli_available(settings):
-            pytest.skip("aws cli not installed")
-
-        return settings
-
-    return _factory
-
-
-@pytest.fixture
 async def r_clone_settings(
     r_clone_settings_factory: Callable[[], Awaitable[RCloneSettings]],
 ) -> RCloneSettings:
     return await r_clone_settings_factory()
-
-
-@pytest.fixture
-async def aws_s3_cli_settings(
-    aws_s3_cli_settings_factory: Callable[[], Awaitable[AwsS3CliSettings]],
-) -> AwsS3CliSettings:
-    return await aws_s3_cli_settings_factory()
 
 
 @pytest.fixture

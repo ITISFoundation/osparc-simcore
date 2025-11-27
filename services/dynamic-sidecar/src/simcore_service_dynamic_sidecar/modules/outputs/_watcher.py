@@ -62,7 +62,7 @@ class OutputsWatcher:
             await self._observer_monitor.stop()
 
             if self._task_events_worker is not None:
-                self._task_events_worker.cancel()
+                self._task_events_worker.cancel("shutting down outputs watcher")
                 with suppress(CancelledError):
                     await self._task_events_worker
 
@@ -103,7 +103,7 @@ async def enable_event_propagation(app: FastAPI) -> None:
 
 
 @asynccontextmanager
-async def event_propagation_disabled(app: FastAPI) -> AsyncGenerator[None, None]:
+async def event_propagation_disabled(app: FastAPI) -> AsyncGenerator[None]:
     try:
         await disable_event_propagation(app)
         yield None

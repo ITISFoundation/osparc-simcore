@@ -42,18 +42,17 @@ class LicensedItemCheckoutPathParams(StrictRequestParameters):
     licensed_item_checkout_id: LicensedItemCheckoutID
 
 
-_LicensedItemsCheckoutsListOrderQueryParams: type[
-    RequestParameters
-] = create_ordering_query_model_class(
-    ordering_fields={
-        "started_at",
-    },
-    default=OrderBy(field=IDStr("started_at"), direction=OrderDirection.DESC),
+_LicensedItemsCheckoutsListOrderQueryParams: type[RequestParameters] = (
+    create_ordering_query_model_class(
+        ordering_fields={
+            "started_at",
+        },
+        default=OrderBy(field=IDStr("started_at"), direction=OrderDirection.DESC),
+    )
 )
 
 
 class LicensedItemsCheckoutsListQueryParams(
     PageQueryParameters,
     _LicensedItemsCheckoutsListOrderQueryParams,  # type: ignore[misc, valid-type]
-):
-    ...
+): ...

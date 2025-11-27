@@ -114,7 +114,7 @@ qx.Class.define("osparc.ui.markdown.MarkdownChat", {
 
         const html = marked.parse(value);
 
-        const safeHtml = osparc.wrapper.DOMPurify.getInstance().sanitize(html);
+        const safeHtml = osparc.wrapper.DOMPurify.sanitize(html);
 
         // flow-root prevents margin collapsing; inline style avoids extra stylesheet juggling
         const max = this.getMeasurerMaxWidth() || 220;

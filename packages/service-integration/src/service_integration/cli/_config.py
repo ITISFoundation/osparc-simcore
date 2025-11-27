@@ -45,7 +45,6 @@ def _create_config_from_compose_spec(
     )
 
     if compose_spec.services:
-
         has_multiple_services: Final[int] = len(compose_spec.services)
 
         def _save(service_name: str, filename: Path, model: BaseModel):
@@ -66,11 +65,14 @@ def _create_config_from_compose_spec(
 
         for service_name in compose_spec.services:
             try:
-
-                if build_labels := compose_spec.services[
-                    service_name
-                ].build.labels:  # AttributeError if build is str
-
+                build_spec = compose_spec.services[service_name].build
+                if not build_spec:
+                    msg = "no build spec found"
+                    raise ValueError(msg)  # noqa: TRY301
+                if isinstance(build_spec, str):
+                    msg = "build spec is a string"
+                    raise TypeError(msg)  # noqa: TRY301
+                if build_labels := build_spec.labels:
                     labels = _get_labels_or_raise(build_labels)
                     meta_cfg = MetadataConfig.from_labels_annotations(labels)
                     _save(service_name, metadata_path, meta_cfg)

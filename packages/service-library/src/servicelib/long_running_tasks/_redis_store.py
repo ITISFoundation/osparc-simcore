@@ -1,18 +1,20 @@
-from typing import Any, Final
+import datetime
+from typing import Any, ClassVar, Final
 
 import redis.asyncio as aioredis
 from common_library.json_serialization import json_dumps, json_loads
 from pydantic import TypeAdapter
+from redis.commands.core import AsyncScript
 from settings_library.redis import RedisDatabase, RedisSettings
 
 from ..redis._client import RedisClientSDK
 from ..redis._utils import handle_redis_returns_union_types
-from ..utils import limited_gather
+from ..utils import limited_gather, load_script
 from .models import LRTNamespace, TaskData, TaskId
 
 _STORE_TYPE_TASK_DATA: Final[str] = "TD"
 _LIST_CONCURRENCY: Final[int] = 3
-_MARKED_FOR_REMOVAL_FIELD: Final[str] = "marked_for_removal"
+_MARKED_FOR_REMOVAL_AT_FIELD: Final[str] = "marked_for_removal_at"
 
 
 def _to_redis_hash_mapping(data: dict[str, Any]) -> dict[str, str]:
@@ -27,7 +29,23 @@ def to_redis_namespace(lrt_namespace: LRTNamespace) -> str:
     return lrt_namespace.upper()
 
 
+def _flatten_dict(updates: dict[str, Any]) -> list[str]:
+    flat_list: list[str] = []
+    for k, v in updates.items():
+        flat_list.append(k)
+        flat_list.append(json_dumps(v))
+    return flat_list
+
+
 class RedisStore:
+    hset_if_key_exists: ClassVar[AsyncScript | None] = None
+
+    @classmethod
+    def _register_scripts(cls, redis_client: RedisClientSDK) -> None:
+        cls.hset_if_key_exists = redis_client.redis.register_script(
+            load_script("servicelib.long_running_tasks._lua", "hset_if_key_exists")
+        )
+
     def __init__(self, redis_settings: RedisSettings, lrt_namespace: LRTNamespace):
         self.redis_settings = redis_settings
         self.redis_namespace = to_redis_namespace(lrt_namespace)
@@ -40,6 +58,7 @@ class RedisStore:
             client_name=f"long_running_tasks_store_{self.redis_namespace}",
         )
         await self._client.setup()
+        self._register_scripts(self._client)
 
     async def shutdown(self) -> None:
         if self._client:
@@ -82,11 +101,9 @@ class RedisStore:
         *,
         updates: dict[str, Any],
     ) -> None:
-        await handle_redis_returns_union_types(
-            self._redis.hset(
-                self._get_redis_task_data_key(task_id),
-                mapping=_to_redis_hash_mapping(updates),
-            )
+        assert self.hset_if_key_exists is not None  # nosec
+        await self.hset_if_key_exists(  # pylint: disable=not-callable
+            keys=[self._get_redis_task_data_key(task_id)], args=_flatten_dict(updates)
         )
 
     async def list_tasks_data(self) -> list[TaskData]:
@@ -118,14 +135,21 @@ class RedisStore:
         await handle_redis_returns_union_types(
             self._redis.hset(
                 self._get_redis_task_data_key(task_id),
-                mapping=_to_redis_hash_mapping({_MARKED_FOR_REMOVAL_FIELD: True}),
+                mapping=_to_redis_hash_mapping(
+                    {
+                        _MARKED_FOR_REMOVAL_AT_FIELD: datetime.datetime.now(
+                            tz=datetime.UTC
+                        )
+                    }
+                ),
             )
         )
 
     async def is_marked_for_removal(self, task_id: TaskId) -> bool:
         result = await handle_redis_returns_union_types(
             self._redis.hget(
-                self._get_redis_task_data_key(task_id), _MARKED_FOR_REMOVAL_FIELD
+                self._get_redis_task_data_key(task_id), _MARKED_FOR_REMOVAL_AT_FIELD
             )
         )
-        return False if result is None else json_loads(result)
+        decoded_result = None if result is None else json_loads(result)
+        return decoded_result is not None

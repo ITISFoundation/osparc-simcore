@@ -109,7 +109,6 @@ async def upload_outputs(  # pylint:disable=too-many-statements  # noqa: PLR0915
         ),
         r_clone_settings=None,
         io_log_redirect_cb=io_log_redirect_cb,
-        aws_s3_cli_settings=None,
         db_manager=db_manager,
     )
 
@@ -342,7 +341,6 @@ async def download_target_ports(
         ),
         r_clone_settings=None,
         io_log_redirect_cb=io_log_redirect_cb,
-        aws_s3_cli_settings=None,
         db_manager=db_manager,
     )
 

@@ -1,7 +1,7 @@
-""" Contains model's metadata
+"""Contains model's metadata
 
-    - Collects all table's schemas
-    - Metadata object needed to explicitly define table schemas
+- Collects all table's schemas
+- Metadata object needed to explicitly define table schemas
 """
 
 from typing import cast

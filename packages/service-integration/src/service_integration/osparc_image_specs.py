@@ -1,17 +1,15 @@
-""" Defines different Image Specification (image-spec) for osparc user services
-
-"""
+"""Defines different Image Specification (image-spec) for osparc user services"""
 
 from typing import Any
 
 from models_library.utils.labels_annotations import LabelsAnnotationsDict
-from service_integration.compose_spec_model import (
-    BuildItem,
+
+from .compose_spec_model import (
+    Build,
     ComposeSpecification,
     ListOrDict,
     Service,
 )
-
 from .osparc_config import DockerComposeOverwriteConfig, MetadataConfig, RuntimeConfig
 from .settings import AppSettings
 
@@ -23,7 +21,7 @@ def create_image_spec(
     runtime_cfg: RuntimeConfig | None = None,
     *,
     extra_labels: LabelsAnnotationsDict | None = None,
-    **_context
+    **_context,
 ) -> ComposeSpecification:
     """Creates the image-spec provided the osparc-config and a given context (e.g. development)
 
@@ -40,14 +38,14 @@ def create_image_spec(
     assert docker_compose_overwrite_cfg.services  # nosec
 
     build = docker_compose_overwrite_cfg.services[service_name].build
-    assert isinstance(build, BuildItem)  # nosec
+    assert isinstance(build, Build)  # nosec
     if not build.context:
         build.context = "./"
 
     build.labels = ListOrDict(root=labels)
 
     overwrite_options = build.model_dump(exclude_none=True, serialize_as_any=True)
-    build_spec = BuildItem(**overwrite_options)
+    build_spec = Build(**overwrite_options)
 
     service_kwargs: dict[str, Any] = {
         "image": meta_cfg.image_name(settings),
@@ -59,6 +57,5 @@ def create_image_spec(
         ].depends_on
 
     return ComposeSpecification(
-        version=settings.COMPOSE_VERSION,
         services={service_name: Service(**service_kwargs)},
     )

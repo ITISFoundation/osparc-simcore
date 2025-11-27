@@ -1,6 +1,6 @@
 annotated-types==0.7.0
     # via pydantic
-orjson==3.11.3
+orjson==3.11.4
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_base.in

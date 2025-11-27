@@ -156,7 +156,12 @@ qx.Class.define("osparc.dashboard.TutorialBrowser", {
 
       this._addResourceFilter();
       this.__populateTags();
-      osparc.store.Tags.getInstance().addListener("tagsChanged", () => this.__populateTags(), this);
+      [
+        "tagAdded",
+        "tagRemoved",
+      ].forEach(eventType => {
+        osparc.store.Tags.getInstance().addListener(eventType, () => this.__populateTags(), this);
+      });
 
       this._resourcesContainer.addListener("changeVisibility", () => this.__evaluateUpdateAllButton());
 

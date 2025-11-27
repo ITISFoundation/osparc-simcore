@@ -319,6 +319,6 @@ class EventHandlerObserver:
             self._stop_observer_process()
             self._keep_running = False
             if self._task_health_worker is not None:
-                self._task_health_worker.cancel()
+                self._task_health_worker.cancel("stopping health worker")
                 with suppress(CancelledError):
                     await self._task_health_worker

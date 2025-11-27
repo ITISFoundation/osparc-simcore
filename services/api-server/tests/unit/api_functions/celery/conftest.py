@@ -14,21 +14,18 @@ from celery.contrib.testing.worker import (  # pylint: disable=no-name-in-module
     TestWorkController,
     start_worker,
 )
-from celery.signals import (  # pylint: disable=no-name-in-module
-    worker_init,
-    worker_shutdown,
-)
-from celery.worker.worker import WorkController  # pylint: disable=no-name-in-module
-from celery_library.signals import on_worker_init, on_worker_shutdown
+from celery.signals import worker_init, worker_shutdown
+from celery_library.worker.signals import _worker_init_wrapper, _worker_shutdown_wrapper
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import delenvs_from_dict, setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.fastapi.celery.app_server import FastAPIAppServer
+from servicelib.tracing import TracingConfig
 from settings_library.redis import RedisSettings
-from simcore_service_api_server.celery_worker.worker_main import setup_worker_tasks
 from simcore_service_api_server.clients import celery_task_manager
 from simcore_service_api_server.core.application import create_app
 from simcore_service_api_server.core.settings import ApplicationSettings
+from simcore_service_api_server.modules.celery.worker.tasks import register_worker_tasks
 
 
 @pytest.fixture(scope="session")
@@ -112,26 +109,28 @@ def add_worker_tasks() -> bool:
 
 @pytest.fixture
 async def with_api_server_celery_worker(
-    app_environment: EnvVarsDict,
     celery_app: Celery,
-    monkeypatch: pytest.MonkeyPatch,
     register_celery_tasks: Callable[[Celery], None],
     add_worker_tasks: bool,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> AsyncIterator[TestWorkController]:
+    tracing_config = TracingConfig.create(
+        tracing_settings=None,  # disable tracing in tests
+        service_name="api-server-worker-test",
+    )
     # Signals must be explicitily connected
     monkeypatch.setenv("API_SERVER_WORKER_MODE", "true")
     app_settings = ApplicationSettings.create_from_envs()
 
-    app_server = FastAPIAppServer(app=create_app(app_settings))
+    app_server = FastAPIAppServer(app=create_app(app_settings, tracing_config))
 
-    def _on_worker_init_wrapper(sender: WorkController, **kwargs):
-        return on_worker_init(sender, app_server=app_server, **kwargs)
-
-    worker_init.connect(_on_worker_init_wrapper)
-    worker_shutdown.connect(on_worker_shutdown)
+    _init_wrapper = _worker_init_wrapper(celery_app, lambda: app_server)
+    _shutdown_wrapper = _worker_shutdown_wrapper(celery_app)
+    worker_init.connect(_init_wrapper)
+    worker_shutdown.connect(_shutdown_wrapper)
 
     if add_worker_tasks:
-        setup_worker_tasks(celery_app)
+        register_worker_tasks(celery_app)
     register_celery_tasks(celery_app)
 
     with start_worker(

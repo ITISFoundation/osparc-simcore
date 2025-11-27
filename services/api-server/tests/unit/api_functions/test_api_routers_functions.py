@@ -19,6 +19,8 @@ from fastapi import FastAPI
 from httpx import AsyncClient
 from models_library.api_schemas_long_running_tasks.tasks import TaskGet
 from models_library.functions import (
+    FunctionJobList,
+    FunctionJobPatchRequest,
     FunctionUserAccessRights,
     FunctionUserApiAccessRights,
     ProjectFunction,
@@ -26,11 +28,14 @@ from models_library.functions import (
     RegisteredFunctionJob,
     RegisteredProjectFunction,
     RegisteredProjectFunctionJob,
+    RegisteredProjectFunctionJobPatch,
+    RegisteredSolverFunctionJobPatch,
 )
 from models_library.functions_errors import (
     FunctionIDNotFoundError,
     FunctionReadAccessDeniedError,
 )
+from models_library.products import ProductName
 from models_library.rest_pagination import PageMetaInfoLimitOffset
 from models_library.users import UserID
 from pydantic import EmailStr
@@ -46,12 +51,12 @@ from servicelib.common_headers import (
 from servicelib.rabbitmq import RabbitMQRPCClient
 from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.api.dependencies.authentication import Identity
-from simcore_service_api_server.celery_worker.worker_tasks import functions_tasks
 from simcore_service_api_server.models.api_resources import JobLinks
 from simcore_service_api_server.models.domain.functions import (
     PreRegisteredFunctionJobData,
 )
 from simcore_service_api_server.models.schemas.jobs import JobInputs
+from simcore_service_api_server.modules.celery.worker import _functions_tasks
 from simcore_service_api_server.services_rpc.wb_api_server import WbApiRpcClient
 
 _faker = Faker()
@@ -407,7 +412,7 @@ async def test_run_project_function(
     mocked_webserver_rpc_api: dict[str, MockType],
     app: FastAPI,
     client: AsyncClient,
-    mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
+    mock_handler_in_functions_rpc_interface: Callable,
     fake_registered_project_function: RegisteredProjectFunction,
     fake_registered_project_function_job: RegisteredFunctionJob,
     auth: httpx.BasicAuth,
@@ -426,13 +431,13 @@ async def test_run_project_function(
         app_server.app = app
         return app_server
 
-    mocker.patch.object(functions_tasks, "get_app_server", _get_app_server)
+    mocker.patch.object(_functions_tasks, "get_app_server", _get_app_server)
 
     def _get_rabbitmq_rpc_client(app: FastAPI) -> RabbitMQRPCClient:
         return mocker.MagicMock(spec=RabbitMQRPCClient)
 
     mocker.patch.object(
-        functions_tasks, "get_rabbitmq_rpc_client", _get_rabbitmq_rpc_client
+        _functions_tasks, "get_rabbitmq_rpc_client", _get_rabbitmq_rpc_client
     )
 
     async def _get_wb_api_rpc_client(app: FastAPI) -> WbApiRpcClient:
@@ -442,7 +447,7 @@ async def test_run_project_function(
         return WbApiRpcClient.get_from_app_state(app)
 
     mocker.patch.object(
-        functions_tasks, "get_wb_api_rpc_client", _get_wb_api_rpc_client
+        _functions_tasks, "get_wb_api_rpc_client", _get_wb_api_rpc_client
     )
 
     def _default_side_effect(
@@ -471,8 +476,16 @@ async def test_run_project_function(
         "get_function", fake_registered_project_function
     )
     mock_handler_in_functions_rpc_interface("find_cached_function_jobs", [])
+
+    async def _register_function_job_side_effect(
+        user_id: UserID,
+        function_jobs: FunctionJobList,
+        product_name: ProductName,
+    ):
+        return [fake_registered_project_function_job] * len(function_jobs)
+
     mock_handler_in_functions_rpc_interface(
-        "register_function_job", fake_registered_project_function_job
+        "register_function_job", side_effect=_register_function_job_side_effect
     )
     mock_handler_in_functions_rpc_interface(
         "get_functions_user_api_access_rights",
@@ -483,8 +496,27 @@ async def test_run_project_function(
             read_functions=True,
         ),
     )
+
+    async def _patch_registered_function_job(
+        product_name: ProductName,
+        user_id: UserID,
+        function_job_patch_request: FunctionJobPatchRequest,
+    ):
+        patch = function_job_patch_request.patch
+        assert isinstance(
+            patch, (RegisteredProjectFunctionJobPatch, RegisteredSolverFunctionJobPatch)
+        )
+        job = fake_registered_project_function_job.model_copy(
+            update={
+                "job_creation_task_id": patch.job_creation_task_id,
+                "uid": function_job_patch_request.uid,
+            }
+        )
+        return job
+
     mock_handler_in_functions_rpc_interface(
-        "patch_registered_function_job", fake_registered_project_function_job
+        "patch_registered_function_job",
+        side_effect=_patch_registered_function_job,
     )
 
     pre_registered_function_job_data = PreRegisteredFunctionJobData(
@@ -492,7 +524,7 @@ async def test_run_project_function(
         function_job_id=fake_registered_project_function.uid,
     )
 
-    job = await functions_tasks.run_function(
+    job = await _functions_tasks.run_function(
         task=MagicMock(spec=Task),
         task_key=TaskKey(_faker.uuid4()),
         user_identity=user_identity,

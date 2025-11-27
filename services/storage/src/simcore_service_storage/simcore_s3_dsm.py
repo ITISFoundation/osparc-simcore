@@ -91,6 +91,7 @@ from .utils.simcore_s3_dsm_utils import (
     expand_directory,
     get_accessible_project_ids,
     get_directory_file_id,
+    is_nested_level_file_id,
     list_child_paths_from_repository,
     list_child_paths_from_s3,
 )
@@ -103,6 +104,7 @@ from .utils.utils import (
 
 _NO_CONCURRENCY: Final[int] = 1
 _MAX_PARALLEL_S3_CALLS: Final[NonNegativeInt] = 10
+
 
 _logger = logging.getLogger(__name__)
 
@@ -459,7 +461,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
 
         if (
             not is_directory
-        ):  # NOTE: Delete is not needed for directories that are synced via an external tool (rclone/aws s3 cli).
+        ):  # NOTE: Delete is not needed for directories that are synced via an external tool (rclone).
             # ensure file is deleted first in case it already exists
             # https://github.com/ITISFoundation/osparc-simcore/pull/5108
             await self.delete_file(
@@ -731,15 +733,18 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
                     connection=connection, file_ids=[file_id]
                 )
 
-                if parent_dir_fmds := await file_meta_data_repo.list_filter_with_partial_file_id(
-                    connection=connection,
-                    user_or_project_filter=UserOrProjectFilter(
-                        user_id=user_id, project_ids=[]
-                    ),
-                    file_id_prefix=compute_file_id_prefix(file_id, 2),
-                    partial_file_id=None,
-                    is_directory=True,
-                    sha256_checksum=None,
+                # NOTE: if the file was at root level, we do not have to update the parent (not tracked in the DB)
+                if is_nested_level_file_id(file_id) and (
+                    parent_dir_fmds := await file_meta_data_repo.list_filter_with_partial_file_id(
+                        connection=connection,
+                        user_or_project_filter=UserOrProjectFilter(
+                            user_id=user_id, project_ids=[]
+                        ),
+                        file_id_prefix=compute_file_id_prefix(file_id, 2),
+                        partial_file_id=None,
+                        is_directory=True,
+                        sha256_checksum=None,
+                    )
                 ):
                     parent_dir_fmd = max(
                         parent_dir_fmds, key=lambda fmd: len(fmd.file_id)
@@ -987,6 +992,117 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
 
         return current_page_results
 
+    def _process_s3_directory_entry(
+        self,
+        user_id: UserID,
+        s3_entry: S3DirectoryMetaData,
+        name_pattern_lower: str,
+        min_parts_for_valid_s3_object: int,
+    ) -> FileMetaData | None:
+        prefix_str = str(s3_entry.prefix)
+
+        # Handle both cases: with and without trailing slash
+        # For prefixes like "project_id/node_id/directory_name/" or "project_id/node_id/directory_name"
+        prefix_parts = Path(prefix_str).parts
+
+        # Extract the directory name (last part of the path)
+        # Skip intermediate paths that don't have enough parts
+        if len(prefix_parts) < min_parts_for_valid_s3_object:
+            return None
+
+        directory_name = prefix_parts[-1]
+
+        # Check if this directory matches the search pattern
+        if not fnmatch.fnmatch(directory_name.lower(), name_pattern_lower):
+            return None
+
+        # Construct the file_id for SimcoreS3FileID validation
+        # SimcoreS3FileID expects: project_id/node_id/filename_or_directory_name
+        file_id_str = f"{'/'.join(prefix_parts[:-1])}/{directory_name}"
+
+        try:
+            validated_file_id = TypeAdapter(SimcoreS3FileID).validate_python(
+                file_id_str
+            )
+        except ValidationError as exc:
+            # Log invalid S3 directory prefixes that don't match SimcoreS3FileID pattern
+            _logger.debug(
+                "Skipping S3 directory with invalid file_id pattern: %s (error: %s)",
+                file_id_str,
+                exc,
+            )
+            return None
+
+        return FileMetaData.from_simcore_node(
+            user_id=user_id,
+            file_id=validated_file_id,
+            bucket=self.simcore_bucket_name,
+            location_id=self.get_location_id(),
+            location_name=self.get_location_name(),
+            sha256_checksum=None,
+            file_size=UNDEFINED_SIZE,
+            entity_tag=None,
+            is_directory=True,
+        )
+
+    def _process_s3_file_entry(
+        self,
+        user_id: UserID,
+        s3_entry: S3MetaData,
+        name_pattern_lower: str,
+        min_parts_for_valid_s3_object: int,
+        modified_at: tuple[datetime.datetime | None, datetime.datetime | None] | None,
+    ) -> FileMetaData | None:
+        filename = Path(s3_entry.object_key).name
+
+        if not (
+            fnmatch.fnmatch(filename.lower(), name_pattern_lower)
+            and len(s3_entry.object_key.split("/")) >= min_parts_for_valid_s3_object
+        ):
+            return None
+
+        last_modified_from, last_modified_until = modified_at or (None, None)
+
+        # Apply time filters
+        if (
+            last_modified_from
+            and s3_entry.last_modified
+            and s3_entry.last_modified < last_modified_from
+        ):
+            return None
+
+        if (
+            last_modified_until
+            and s3_entry.last_modified
+            and s3_entry.last_modified > last_modified_until
+        ):
+            return None
+
+        try:
+            validated_file_id = TypeAdapter(SimcoreS3FileID).validate_python(
+                s3_entry.object_key
+            )
+        except ValidationError as exc:
+            _logger.debug(
+                "Skipping S3 object with invalid file_id pattern: %s (error: %s)",
+                s3_entry.object_key,
+                exc,
+            )
+            return None
+
+        return FileMetaData.from_simcore_node(
+            user_id=user_id,
+            file_id=validated_file_id,
+            bucket=self.simcore_bucket_name,
+            location_id=self.get_location_id(),
+            location_name=self.get_location_name(),
+            sha256_checksum=None,
+            file_size=s3_entry.size,
+            entity_tag=s3_entry.e_tag,
+            is_directory=False,
+            last_modified=s3_entry.last_modified,
+        )
+
     async def _search_project_s3_files(
         self,
         user_id: UserID,
@@ -995,59 +1111,39 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
         modified_at: (
             tuple[datetime.datetime | None, datetime.datetime | None] | None
         ) = None,
-    ) -> AsyncGenerator[FileMetaData, None]:
+    ) -> AsyncGenerator[FileMetaData]:
         """Search S3 files in a specific project and yield individual results."""
         s3_client = get_s3_client(self.app)
         min_parts_for_valid_s3_object = 2
 
         try:
-            async for s3_objects in s3_client.list_objects_paginated(
+            name_pattern_lower = name_pattern.lower()
+            async for s3_entries in s3_client.list_entries_paginated(
                 bucket=self.simcore_bucket_name,
                 prefix=f"{proj_id}/",
                 items_per_page=500,  # fetch larger batches for efficiency
             ):
-                for s3_obj in s3_objects:
-                    filename = Path(s3_obj.object_key).name
+                for s3_entry in s3_entries:
+                    file_metadata: FileMetaData | None = None
 
-                    if not (
-                        fnmatch.fnmatch(filename, name_pattern)
-                        and len(s3_obj.object_key.split("/"))
-                        >= min_parts_for_valid_s3_object
-                    ):
-                        continue
+                    if isinstance(s3_entry, S3DirectoryMetaData):
+                        file_metadata = self._process_s3_directory_entry(
+                            user_id,
+                            s3_entry,
+                            name_pattern_lower,
+                            min_parts_for_valid_s3_object,
+                        )
+                    elif isinstance(s3_entry, S3MetaData):
+                        file_metadata = self._process_s3_file_entry(
+                            user_id,
+                            s3_entry,
+                            name_pattern_lower,
+                            min_parts_for_valid_s3_object,
+                            modified_at,
+                        )
 
-                    last_modified_from, last_modified_until = modified_at or (
-                        None,
-                        None,
-                    )
-                    if (
-                        last_modified_from
-                        and s3_obj.last_modified
-                        and s3_obj.last_modified < last_modified_from
-                    ):
-                        continue
-
-                    if (
-                        last_modified_until
-                        and s3_obj.last_modified
-                        and s3_obj.last_modified > last_modified_until
-                    ):
-                        continue
-
-                    file_meta = FileMetaData.from_simcore_node(
-                        user_id=user_id,
-                        file_id=TypeAdapter(SimcoreS3FileID).validate_python(
-                            s3_obj.object_key
-                        ),
-                        bucket=self.simcore_bucket_name,
-                        location_id=self.get_location_id(),
-                        location_name=self.get_location_name(),
-                        sha256_checksum=None,
-                        file_size=s3_obj.size,
-                        last_modified=s3_obj.last_modified,
-                        entity_tag=s3_obj.e_tag,
-                    )
-                    yield file_meta
+                    if file_metadata is not None:
+                        yield file_metadata
 
         except S3KeyNotFoundError as exc:
             _logger.debug("No files found in S3 for project %s: %s", proj_id, exc)
@@ -1063,7 +1159,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
             tuple[datetime.datetime | None, datetime.datetime | None] | None
         ) = None,
         limit: NonNegativeInt = 100,
-    ) -> AsyncGenerator[list[FileMetaData], None]:
+    ) -> AsyncGenerator[list[FileMetaData]]:
         """
         Search for files in S3 using a wildcard pattern for filenames.
         Returns results as an async generator that yields pages of results.

@@ -62,7 +62,7 @@ install-dev install-prod install-ci: _check_venv_active ## install app in develo
 	# installing in $(subst install-,,$@) mode
 	@uv pip sync requirements/$(subst install-,,$@).txt
 	# installing playwright dependencies
-	@playwright install
+	@playwright install --with-deps
 
 
 RETRY_DURATION_SECONDS := 30
@@ -73,7 +73,7 @@ install-ci-up-simcore: install-ci  ## run registry and simcore stack locally (pu
 	@$(MAKE_C) $(REPO_BASE_DIR) local-registry
 	@$(_transfer-images-to-registry)
 	@$(_up_simcore)
-	@$(VENV_DIR)/bin/python utils/wait_for_services.py
+	@utils/wait_for_services.py
 
 	# giving access rights to images (this might take some time until the catalog is ready)
 	@for ((i=0; i<$(RETRY_DURATION_SECONDS); i+=$(RETRY_INTERVAL_SECONDS))); do \
@@ -150,6 +150,7 @@ $(SLEEPERS_INPUT_FILE) $(JUPYTER_LAB_INPUT_FILE) $(CLASSIC_TIP_INPUT_FILE) $(S4L
 	read -p "Enter your username: " USER_NAME; \
 	read -s -p "Enter your password: " PASSWORD; echo ""; \
 	echo "--product-url=$$PRODUCT_URL --user-name=$$USER_NAME --password=$$PASSWORD" > $@; \
+	echo "--log-cli-level=INFO --log-file-level=DEBUG --log-file=debug-logs.txt" >> $@; \
 	if [ "$$BILLABLE" = "y" ]; then \
 		echo "--product-billable" >> $@; \
 	fi; \

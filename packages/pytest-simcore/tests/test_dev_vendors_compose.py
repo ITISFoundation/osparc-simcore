@@ -16,7 +16,7 @@ _SERVICE_TO_MIDDLEWARE_MAPPING: Final[dict[str, str]] = {
 
 
 def test_dev_vendors_docker_compose_auth_enabled(
-    dev_vendors_docker_compose: dict[str, str]
+    dev_vendors_docker_compose: dict[str, str],
 ):
 
     assert isinstance(dev_vendors_docker_compose["services"], dict)

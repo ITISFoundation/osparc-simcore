@@ -32,7 +32,7 @@ qx.Class.define("osparc.desktop.credits.UsageTable", {
 
     columnModel.setDataCellRenderer(this.self().COLS.COST.column, new qx.ui.table.cellrenderer.Number());
 
-    if (!osparc.desktop.credits.Utils.areWalletsEnabled()) {
+    if (!osparc.store.StaticInfo.isBillableProduct()) {
       columnModel.setColumnVisible(this.self().COLS.COST.column, false);
       columnModel.setColumnVisible(this.self().COLS.USER.column, false);
     }

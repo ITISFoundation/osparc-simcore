@@ -12,7 +12,10 @@ from aiohttp.test_utils import TestClient
 from common_library.dict_tools import remap_keys
 from models_library.projects_nodes_io import NodeID
 from models_library.services_resources import ServiceResourcesDictHelpers
+from simcore_postgres_database import webserver_models
 from simcore_postgres_database.utils_projects_nodes import ProjectNodeCreate
+from simcore_postgres_database.utils_repos import transaction_context
+from simcore_service_webserver.db.plugin import get_asyncpg_engine
 from simcore_service_webserver.projects._groups_repository import (
     update_or_insert_project_group,
 )
@@ -129,11 +132,12 @@ async def create_project(
 
 
 async def delete_all_projects(app: web.Application):
-    from simcore_postgres_database.webserver_models import projects
 
-    db = app[PROJECT_DBAPI_APPKEY]
-    async with db.engine.acquire() as conn:
-        query = projects.delete()
+    engine = get_asyncpg_engine(app)
+    assert engine  # nosec
+
+    async with transaction_context(engine) as conn:
+        query = webserver_models.projects.delete()
         await conn.execute(query)
 
 

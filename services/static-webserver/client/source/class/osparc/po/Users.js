@@ -19,6 +19,17 @@
 qx.Class.define("osparc.po.Users", {
   extend: osparc.po.BaseView,
 
+  statics: {
+    GRID_POS: {
+      USERNAME: 0,
+      EMAIL: 1,
+      DATE: 2,
+      ACCOUNT_REQUEST_STATUS: 3,
+      STATUS: 4,
+      INFO: 5,
+    }
+  },
+
   members: {
     _createChildControlImpl: function(id) {
       let control;
@@ -37,6 +48,12 @@ qx.Class.define("osparc.po.Users", {
             flex: 1
           });
           break;
+        case "found-users-layout": {
+          const grid = new qx.ui.layout.Grid(15, 5);
+          control = new qx.ui.container.Composite(grid);
+          this.getChildControl("found-users-container").add(control);
+          break;
+        }
       }
       return control || this.base(arguments, id);
     },
@@ -70,6 +87,8 @@ qx.Class.define("osparc.po.Users", {
       searchBtn.set({
         appearance: "form-button"
       });
+      const commandEsc = new qx.ui.command.Command("Enter");
+      searchBtn.setCommand(commandEsc);
       searchBtn.addListener("execute", () => {
         if (!osparc.data.Permissions.getInstance().canDo("user.users.search", true)) {
           return;
@@ -100,11 +119,88 @@ qx.Class.define("osparc.po.Users", {
       return form;
     },
 
-    __populateFoundUsersLayout: function(respData) {
-      const foundUsersContainer = this.getChildControl("found-users-container");
-      osparc.utils.Utils.removeAllChildren(foundUsersContainer);
-      const usersRespViewer = new osparc.ui.basic.JsonTreeWidget(respData, "users-data");
-      foundUsersContainer.add(usersRespViewer);
-    }
+    __createHeaderLabel: function(value) {
+      const label = new qx.ui.basic.Label(value).set({
+        font: "text-16",
+        textColor: "text"
+      });
+      return label;
+    },
+
+    __addHeader: function() {
+      const foundUsersLayout = this.getChildControl("found-users-layout");
+      foundUsersLayout.add(this.__createHeaderLabel(this.tr("Username")), {
+        row: 0,
+        column: this.self().GRID_POS.USERNAME,
+      });
+      foundUsersLayout.add(this.__createHeaderLabel(this.tr("Email")), {
+        row: 0,
+        column: this.self().GRID_POS.EMAIL,
+      });
+      foundUsersLayout.add(this.__createHeaderLabel(this.tr("Date")), {
+        row: 0,
+        column: this.self().GRID_POS.DATE,
+      });
+      foundUsersLayout.add(this.__createHeaderLabel(this.tr("Request")), {
+        row: 0,
+        column: this.self().GRID_POS.ACCOUNT_REQUEST_STATUS,
+      });
+      foundUsersLayout.add(this.__createHeaderLabel(this.tr("Status")), {
+        row: 0,
+        column: this.self().GRID_POS.STATUS,
+      });
+    },
+
+    __populateFoundUsersLayout: function(foundUsers) {
+      const foundUsersLayout = this.getChildControl("found-users-layout");
+      foundUsersLayout.removeAll();
+
+      this.__addHeader();
+      foundUsers.forEach((user, index) => {
+        const row = index + 1;
+
+        const userNameLabel = new qx.ui.basic.Label(user["username"]).set({
+          selectable: true,
+        });
+        foundUsersLayout.add(userNameLabel, {
+          row,
+          column: this.self().GRID_POS.USERNAME,
+        });
+
+        const emailLabel = new qx.ui.basic.Label(user["email"]).set({
+          selectable: true,
+        });
+        foundUsersLayout.add(emailLabel, {
+          row,
+          column: this.self().GRID_POS.EMAIL,
+        });
+
+        const dateData = user["preRegistrationCreated"] || user["accountRequestReviewedAt"];
+        const date = dateData ? osparc.utils.Utils.formatDateAndTime(new Date(dateData)) : "-";
+        const dateLabel = new qx.ui.basic.Label(date);
+        foundUsersLayout.add(dateLabel, {
+          row,
+          column: this.self().GRID_POS.DATE,
+        });
+
+        const accountRequestStatusLabel = new qx.ui.basic.Label(user["accountRequestStatus"]);
+        foundUsersLayout.add(accountRequestStatusLabel, {
+          row,
+          column: this.self().GRID_POS.ACCOUNT_REQUEST_STATUS,
+        });
+
+        const statusLabel = new qx.ui.basic.Label(user["status"]);
+        foundUsersLayout.add(statusLabel, {
+          row,
+          column: this.self().GRID_POS.STATUS,
+        });
+
+        const infoButton = osparc.po.UsersPending.createInfoButton(user);
+        foundUsersLayout.add(infoButton, {
+          row,
+          column: this.self().GRID_POS.INFO,
+        });
+      });
+    },
   }
 });

@@ -21,10 +21,9 @@ qx.Class.define("osparc.info.Utils", {
 
   statics: {
     createTitle: function() {
-      const label = new qx.ui.basic.Label().set({
+      const label = new osparc.ui.basic.SafeLabel().set({
         font: "text-14",
         maxWidth: 600,
-        rich: true,
         wrap: true
       });
       return label;

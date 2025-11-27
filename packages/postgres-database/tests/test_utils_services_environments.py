@@ -34,7 +34,9 @@ MappedExpectedSecretes: TypeAlias = dict[str, ExpectedSecrets]
 async def product_name(connection: SAConnection) -> str:
     a_product_name = "a_prod"
     await connection.execute(
-        products.insert().values(name=a_product_name, host_regex="")
+        products.insert().values(
+            name=a_product_name, host_regex="", base_url="http://example.com"
+        )
     )
     yield a_product_name
     await connection.execute(products.delete())

@@ -62,7 +62,7 @@ def ssm_exception_handler(
     """
 
     def decorator(
-        func: Callable[Concatenate[Self, P], Coroutine[Any, Any, R]]
+        func: Callable[Concatenate[Self, P], Coroutine[Any, Any, R]],
     ) -> Callable[Concatenate[Self, P], Coroutine[Any, Any, R]]:
         @functools.wraps(func)
         async def wrapper(self: Self, *args: P.args, **kwargs: P.kwargs) -> R:

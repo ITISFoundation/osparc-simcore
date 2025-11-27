@@ -56,7 +56,7 @@ def socketio_server(client: TestClient) -> Any:
 @pytest.fixture
 async def project_documents_setup(
     redis_document_client: Any, sample_project_uuids: list[ProjectID]
-) -> AsyncGenerator[list[str], None]:
+) -> AsyncGenerator[list[str]]:
     """Setup project documents in Redis and cleanup after test."""
     test_keys = []
 

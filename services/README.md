@@ -59,5 +59,5 @@ See details in [docker-compose.local.yml](docker-compose.local.yml).
 ##### Local registry
 
 ```!bash
-  make local-registry 
+  make local-registry
 ```

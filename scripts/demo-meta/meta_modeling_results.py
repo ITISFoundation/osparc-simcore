@@ -1,6 +1,4 @@
-""" Demo script: retrieves results of all user's meta-study using osparc_webapi's client
-
-"""
+"""Demo script: retrieves results of all user's meta-study using osparc_webapi's client"""
 
 from collections import defaultdict
 from uuid import UUID

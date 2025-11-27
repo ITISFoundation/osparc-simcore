@@ -30,6 +30,7 @@ from ..constants import INDEX_RESOURCE_NAME
 from ..director_v2 import director_v2_service
 from ..dynamic_scheduler import api as dynamic_scheduler_service
 from ..products import products_web
+from ..projects import _projects_repository
 from ..projects._groups_repository import get_project_group
 from ..projects._projects_repository_legacy import ProjectDBAPI
 from ..projects.api import check_user_project_permission
@@ -219,6 +220,12 @@ async def copy_study_to_account(
         )
         await dynamic_scheduler_service.update_projects_networks(
             request.app, project_id=ProjectID(project["uuid"])
+        )
+
+        await _projects_repository.copy_allow_guests_to_push_states_and_output_ports(
+            request.app,
+            from_project_uuid=template_project["uuid"],
+            to_project_uuid=project["uuid"],
         )
 
     return project_uuid

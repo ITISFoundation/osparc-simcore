@@ -1,6 +1,4 @@
-""" RPC client-side for the RPC server at the payments service
-
-"""
+"""RPC client-side for the RPC server at the payments service"""
 
 import logging
 from decimal import Decimal

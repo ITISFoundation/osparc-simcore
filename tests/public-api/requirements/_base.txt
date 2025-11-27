@@ -30,7 +30,7 @@ mdurl==0.1.2
     # via markdown-it-py
 nest-asyncio==1.6.0
     # via osparc
-orjson==3.11.3
+orjson==3.11.4
     # via
     #   -c requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
@@ -86,7 +86,6 @@ typer==0.19.2
     # via -r requirements/../../../packages/settings-library/requirements/_base.in
 typing-extensions==4.15.0
     # via
-    #   anyio
     #   pydantic
     #   pydantic-core
     #   pydantic-extra-types

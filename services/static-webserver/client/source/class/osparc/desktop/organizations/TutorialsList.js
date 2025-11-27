@@ -47,7 +47,6 @@ qx.Class.define("osparc.desktop.organizations.TutorialsList", {
       const intro = new qx.ui.basic.Label().set({
         value: msg,
         alignX: "left",
-        rich: true,
         font: "text-13"
       });
       return intro;
@@ -62,13 +61,13 @@ qx.Class.define("osparc.desktop.organizations.TutorialsList", {
     },
 
     __getTutorialsList: function() {
-      const templatesUIList = new qx.ui.form.List().set({
+      const tutorialsListUI = new qx.ui.form.List().set({
         appearance: "listing",
       });
 
-      const templatesModel = this.__tutorialsModel = new qx.data.Array();
-      const templatesCtrl = new qx.data.controller.List(templatesModel, templatesUIList, "name");
-      templatesCtrl.setDelegate({
+      const tutorialsModel = this.__tutorialsModel = new qx.data.Array();
+      const tutorialsCtrl = new qx.data.controller.List(tutorialsModel, tutorialsListUI, "name");
+      tutorialsCtrl.setDelegate({
         createItem: () => new osparc.desktop.organizations.SharedResourceListItem("template"),
         bindItem: (ctrl, item, id) => {
           ctrl.bindProperty("uuid", "model", null, item, id);
@@ -104,12 +103,12 @@ qx.Class.define("osparc.desktop.organizations.TutorialsList", {
         }
       });
 
-      return templatesUIList;
+      return tutorialsListUI;
     },
 
     __reloadOrgTutorials: function() {
-      const templatesModel = this.__tutorialsModel;
-      templatesModel.removeAll();
+      const tutorialsModel = this.__tutorialsModel;
+      tutorialsModel.removeAll();
 
       const orgModel = this.__currentOrg;
       if (orgModel === null) {
@@ -123,7 +122,7 @@ qx.Class.define("osparc.desktop.organizations.TutorialsList", {
           orgTemplates.forEach(orgTemplate => {
             const orgTemplateCopy = osparc.utils.Utils.deepCloneObject(orgTemplate);
             orgTemplateCopy["orgId"] = groupId;
-            templatesModel.append(qx.data.marshal.Json.createModel(orgTemplateCopy));
+            tutorialsModel.append(qx.data.marshal.Json.createModel(orgTemplateCopy));
           });
         });
     }

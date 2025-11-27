@@ -52,7 +52,7 @@ def users_repo(
 
 @pytest.fixture
 async def api_key_in_db(
-    create_fake_api_keys: Callable[[PositiveInt], AsyncGenerator[ApiKeyInDB, None]],
+    create_fake_api_keys: Callable[[PositiveInt], AsyncGenerator[ApiKeyInDB]],
 ) -> ApiKeyInDB:
     """Creates a single API key in DB for testing purposes"""
     return await anext(create_fake_api_keys(1))

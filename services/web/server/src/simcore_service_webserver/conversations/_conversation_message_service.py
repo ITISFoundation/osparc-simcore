@@ -13,19 +13,18 @@ from models_library.conversations import (
     ConversationMessagePatchDB,
     ConversationMessageType,
     ConversationPatchDB,
+    ConversationUserType,
 )
 from models_library.products import ProductName
 from models_library.projects import ProjectID
+from models_library.rabbitmq_messages import WebserverChatbotRabbitMessage
 from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.rest_pagination import PageTotalCount
 from models_library.users import UserID
-from servicelib.redis import exclusive
-from simcore_service_webserver.application_keys import APP_SETTINGS_APPKEY
-from simcore_service_webserver.groups import api as group_service
-from yarl import URL
 
+from ..application_keys import APP_SETTINGS_APPKEY
 from ..products import products_service
-from ..redis import get_redis_lock_manager_client_sdk
+from ..rabbitmq import get_rabbitmq_client
 from ..users import users_service
 from . import (
     _conversation_message_repository,
@@ -33,36 +32,82 @@ from . import (
     _conversation_service,
 )
 from ._socketio import (
-    notify_conversation_message_created,
-    notify_conversation_message_deleted,
-    notify_conversation_message_updated,
+    notify_via_socket_conversation_message_created,
+    notify_via_socket_conversation_message_deleted,
+    notify_via_socket_conversation_message_updated,
 )
+from .errors import ConversationError
 
 _logger = logging.getLogger(__name__)
 
-# Redis lock key for conversation message operations
-CONVERSATION_MESSAGE_REDIS_LOCK_KEY = "conversation_message_update:{}"
 
-
-async def _get_recipients_from_product_support_group(
-    app: web.Application, product_name: ProductName
-) -> set[UserID]:
-    product = products_service.get_product(app, product_name=product_name)
-    _support_standard_group_id = product.support_standard_group_id
-    if _support_standard_group_id:
-        users = await group_service.list_group_members(
-            app, group_id=_support_standard_group_id
+async def _notify_conversation_message_created(
+    app: web.Application,
+    *,
+    project_id_or_none: ProjectID | None,
+    conversation_message: ConversationMessageGetDB,
+    product_name: ProductName,
+) -> None:
+    if project_id_or_none:
+        await notify_via_socket_conversation_message_created(
+            app,
+            recipients=await _conversation_service.get_recipients_from_project(
+                app, project_id_or_none
+            ),
+            project_id=project_id_or_none,
+            conversation_message=conversation_message,
         )
-        return {user.id for user in users}
-    return set()
+    else:
+        _conversation = await _conversation_service.get_conversation(
+            app, conversation_id=conversation_message.conversation_id
+        )
+        _conversation_creator_user = await users_service.get_user_id_from_gid(
+            app, primary_gid=_conversation.user_group_id
+        )
+        _product_group_users = (
+            await _conversation_service.get_recipients_from_product_support_group(
+                app, product_name=product_name
+            )
+        )
+        await notify_via_socket_conversation_message_created(
+            app,
+            recipients=_product_group_users | {_conversation_creator_user},
+            project_id=None,
+            conversation_message=conversation_message,
+        )
 
 
-async def create_message(
+async def create_message_and_notify(
     app: web.Application,
     *,
     product_name: ProductName,
     user_id: UserID,
-    project_id: ProjectID | None,
+    project_id_or_none: ProjectID | None,
+    conversation_id: ConversationID,
+    # Creation attributes
+    content: str,
+    type_: ConversationMessageType,
+) -> ConversationMessageGetDB:
+    message = await _create_message(
+        app,
+        user_id=user_id,
+        conversation_id=conversation_id,
+        content=content,
+        type_=type_,
+    )
+    await _notify_conversation_message_created(
+        app,
+        project_id_or_none=project_id_or_none,
+        conversation_message=message,
+        product_name=product_name,
+    )
+    return message
+
+
+async def _create_message(
+    app: web.Application,
+    *,
+    user_id: UserID,
     conversation_id: ConversationID,
     # Creation attributes
     content: str,
@@ -70,7 +115,7 @@ async def create_message(
 ) -> ConversationMessageGetDB:
     _user_group_id = await users_service.get_user_primary_group_id(app, user_id=user_id)
 
-    created_message = await _conversation_message_repository.create(
+    return await _conversation_message_repository.create(
         app,
         conversation_id=conversation_id,
         user_group_id=_user_group_id,
@@ -78,122 +123,24 @@ async def create_message(
         type_=type_,
     )
 
-    if project_id:
-        await notify_conversation_message_created(
-            app,
-            recipients=await _conversation_service.get_recipients_from_project(
-                app, project_id
-            ),
-            project_id=project_id,
-            conversation_message=created_message,
-        )
-    else:
-        _conversation = await _conversation_service.get_conversation(
-            app, conversation_id=conversation_id
-        )
-        _conversation_creator_user = await users_service.get_user_id_from_gid(
-            app, primary_gid=_conversation.user_group_id
-        )
-        _product_group_users = await _get_recipients_from_product_support_group(
-            app, product_name=product_name
-        )
-        await notify_conversation_message_created(
-            app,
-            recipients=_product_group_users | {_conversation_creator_user},
-            project_id=None,
-            conversation_message=created_message,
-        )
 
-    return created_message
-
-
-async def _create_support_message_with_first_check(
+async def _trigger_chatbot_processing(
     app: web.Application,
-    *,
-    product_name: ProductName,
-    user_id: UserID,
-    is_support_user: bool,
-    conversation_id: ConversationID,
-    # Creation attributes
-    content: str,
-    type_: ConversationMessageType,
-) -> tuple[ConversationMessageGetDB, bool]:
-    """Create a message and check if it's the first one with Redis lock protection.
-
-    This function is protected by Redis exclusive lock because:
-    - the message creation and first message check must be kept in sync
-
-    Args:
-        app: The web application instance
-        user_id: ID of the user creating the message
-        project_id: ID of the project (optional)
-        conversation_id: ID of the conversation
-        content: Content of the message
-        type_: Type of the message
-
-    Returns:
-        Tuple containing the created message and whether it's the first message
-    """
-
-    @exclusive(
-        get_redis_lock_manager_client_sdk(app),
-        lock_key=CONVERSATION_MESSAGE_REDIS_LOCK_KEY.format(conversation_id),
-        blocking=True,
-        blocking_timeout=None,  # NOTE: this is a blocking call, a timeout has undefined effects
+    conversation: ConversationGetDB,
+    last_message_id: ConversationMessageID,
+) -> None:
+    """Triggers chatbot processing for a specific conversation."""
+    rabbitmq_client = get_rabbitmq_client(app)
+    message = WebserverChatbotRabbitMessage(
+        conversation=conversation,
+        last_message_id=last_message_id,
     )
-    async def _create_support_message_and_check_if_it_is_first_message() -> (
-        tuple[ConversationMessageGetDB, bool]
-    ):
-        """This function is protected because
-        - the message creation and first message check must be kept in sync
-        """
-        created_message = await create_message(
-            app,
-            product_name=product_name,
-            user_id=user_id,
-            project_id=None,  # Support conversations don't use project_id
-            conversation_id=conversation_id,
-            content=content,
-            type_=type_,
-        )
-        _, messages = await _conversation_message_repository.list_(
-            app,
-            conversation_id=conversation_id,
-            offset=0,
-            limit=1,
-            order_by=OrderBy(
-                field=IDStr("created"), direction=OrderDirection.ASC
-            ),  # NOTE: ASC - first/oldest message first
-        )
-
-        is_first_message = False
-        if messages:
-            first_message = messages[0]
-            is_first_message = first_message.message_id == created_message.message_id
-
-        return created_message, is_first_message
-
-    message, is_first_message = (
-        await _create_support_message_and_check_if_it_is_first_message()
+    _logger.info(
+        "Publishing chatbot processing message with conversation id %s and last message id %s.",
+        conversation.conversation_id,
+        last_message_id,
     )
-
-    # NOTE: Update conversation last modified (for frontend listing) and read states
-    if is_support_user:
-        _is_read_by_user = False
-        _is_read_by_support = True
-    else:
-        _is_read_by_user = True
-        _is_read_by_support = False
-    await _conversation_repository.update(
-        app,
-        conversation_id=conversation_id,
-        updates=ConversationPatchDB(
-            is_read_by_user=_is_read_by_user,
-            is_read_by_support=_is_read_by_support,
-            last_message_created_at=message.created,
-        ),
-    )
-    return message, is_first_message
+    await rabbitmq_client.publish(message.channel_name, message)
 
 
 async def create_support_message(
@@ -201,27 +148,60 @@ async def create_support_message(
     *,
     product_name: ProductName,
     user_id: UserID,
-    is_support_user: bool,
+    conversation_user_type: ConversationUserType,
     conversation: ConversationGetDB,
-    request_url: URL,
-    request_host: str,
     # Creation attributes
     content: str,
     type_: ConversationMessageType,
 ) -> ConversationMessageGetDB:
-    message, is_first_message = await _create_support_message_with_first_check(
-        app=app,
-        product_name=product_name,
+    # 1. Create message and notify
+
+    match conversation_user_type:
+        case ConversationUserType.REGULAR_USER:
+            _is_read_by_user = True
+            _is_read_by_support = False
+        case ConversationUserType.SUPPORT_USER:
+            _is_read_by_user = False
+            _is_read_by_support = True
+        case ConversationUserType.CHATBOT_USER:
+            _is_read_by_user = False
+            _is_read_by_support = False
+        case _:
+            msg = f"Unknown conversation user type: {conversation_user_type}"
+            raise ConversationError(msg)
+
+    message = await _create_message(
+        app,
         user_id=user_id,
-        is_support_user=is_support_user,
         conversation_id=conversation.conversation_id,
         content=content,
         type_=type_,
     )
+    # NOTE: Update conversation last modified (for frontend listing) and read states
+    await _conversation_repository.update(
+        app,
+        conversation_id=conversation.conversation_id,
+        updates=ConversationPatchDB(
+            is_read_by_user=_is_read_by_user,
+            is_read_by_support=_is_read_by_support,
+            last_message_created_at=message.created,
+        ),
+    )
+
+    await _notify_conversation_message_created(
+        app,
+        project_id_or_none=None,  # Support conversations don't use project_id,
+        conversation_message=message,
+        product_name=product_name,
+    )
+
+    # 2. Create or reopen FogBugz case if applicable
 
     product = products_service.get_product(app, product_name=product_name)
     fogbugz_settings_or_none = app[APP_SETTINGS_APPKEY].WEBSERVER_FOGBUGZ
-    _conversation_url = f"{request_url.scheme}://{request_url.host}/#/conversation/{conversation.conversation_id}"
+    _conversation_url = (
+        f"{product.base_url}#/conversation/{conversation.conversation_id}"
+    )
 
     if (
         product.support_standard_group_id is None
@@ -233,11 +213,10 @@ async def create_support_message(
             "Support settings NOT available, so no need to create FogBugz case. Conversation ID: %s",
             conversation.conversation_id,
         )
-        return message
 
-    if is_first_message or conversation.fogbugz_case_id is None:
-        _logger.debug(
-            "Support settings available, this is first message, creating FogBugz case for Conversation ID: %s",
+    elif conversation.fogbugz_case_id is None:
+        _logger.info(
+            "Support settings available, FogBugz doesn't exists, creating FogBugz case for Conversation ID: %s",
             conversation.conversation_id,
         )
         assert product.support_assigned_fogbugz_project_id  # nosec
@@ -249,7 +228,7 @@ async def create_support_message(
                 user_id=user_id,
                 message_content=message.content,
                 conversation_url=_conversation_url,
-                host=request_host,
+                host=product.base_url.host or "unknown",
                 product_support_assigned_fogbugz_project_id=product.support_assigned_fogbugz_project_id,
                 fogbugz_url=str(fogbugz_settings_or_none.FOGBUGZ_URL),
             )
@@ -267,9 +246,8 @@ async def create_support_message(
                 )
             )
     else:
-        assert not is_first_message  # nosec
-        _logger.debug(
-            "Support settings available, but this is NOT the first message, so we need to reopen a FogBugz case. Conversation ID: %s",
+        _logger.info(
+            "Support settings available, Fogbugz case exists but it is closed, so we need to reopen a FogBugz case. Conversation ID: %s",
             conversation.conversation_id,
         )
         assert product.support_assigned_fogbugz_project_id  # nosec
@@ -298,6 +276,52 @@ async def create_support_message(
             )
 
     return message
+
+
+async def trigger_chatbot_processing(
+    app: web.Application,
+    *,
+    product_name: ProductName,
+    user_id: UserID,
+    conversation_user_type: ConversationUserType,
+    conversation: ConversationGetDB,
+    message_id: ConversationMessageID,
+) -> None:
+    assert product_name  # nosec
+
+    if conversation_user_type != ConversationUserType.REGULAR_USER:
+        _logger.warning(
+            "Chatbot processing can only be triggered by regular users. Conversation ID: %s, User ID: %s, Conversation User Type: %s",
+            conversation.conversation_id,
+            user_id,
+            conversation_user_type,
+        )
+        return
+
+    # Check if message is the last one in the conversation
+    _, messages = await _conversation_message_repository.list_(
+        app,
+        conversation_id=conversation.conversation_id,
+        offset=0,
+        limit=1,
+        order_by=OrderBy(
+            field=IDStr("created"), direction=OrderDirection.DESC
+        ),  # Latest message first
+    )
+    if not messages or messages[0].message_id != message_id:
+        _logger.warning(
+            "Chatbot processing can only be triggered for the last message in the conversation. Conversation ID: %s, Message ID: %s, Last Message ID: %s",
+            conversation.conversation_id,
+            message_id,
+            messages[0].message_id if messages else "N/A",
+        )
+        return
+
+    await _trigger_chatbot_processing(
+        app,
+        conversation=conversation,
+        last_message_id=message_id,
+    )
 
 
 async def get_message(
@@ -329,7 +353,7 @@ async def update_message(
     )
 
     if project_id:
-        await notify_conversation_message_updated(
+        await notify_via_socket_conversation_message_updated(
             app,
             recipients=await _conversation_service.get_recipients_from_project(
                 app, project_id
@@ -344,10 +368,12 @@ async def update_message(
         _conversation_creator_user = await users_service.get_user_id_from_gid(
             app, primary_gid=_conversation.user_group_id
         )
-        _product_group_users = await _get_recipients_from_product_support_group(
-            app, product_name=product_name
+        _product_group_users = (
+            await _conversation_service.get_recipients_from_product_support_group(
+                app, product_name=product_name
+            )
         )
-        await notify_conversation_message_updated(
+        await notify_via_socket_conversation_message_updated(
             app,
             recipients=_product_group_users | {_conversation_creator_user},
             project_id=None,
@@ -375,7 +401,7 @@ async def delete_message(
     _user_group_id = await users_service.get_user_primary_group_id(app, user_id=user_id)
 
     if project_id:
-        await notify_conversation_message_deleted(
+        await notify_via_socket_conversation_message_deleted(
             app,
             recipients=await _conversation_service.get_recipients_from_project(
                 app, project_id
@@ -392,10 +418,12 @@ async def delete_message(
         _conversation_creator_user = await users_service.get_user_id_from_gid(
             app, primary_gid=_conversation.user_group_id
         )
-        _product_group_users = await _get_recipients_from_product_support_group(
-            app, product_name=product_name
+        _product_group_users = (
+            await _conversation_service.get_recipients_from_product_support_group(
+                app, product_name=product_name
+            )
         )
-        await notify_conversation_message_deleted(
+        await notify_via_socket_conversation_message_deleted(
             app,
             recipients=_product_group_users | {_conversation_creator_user},
             user_group_id=_user_group_id,
@@ -412,13 +440,16 @@ async def list_messages_for_conversation(
     # pagination
     offset: int = 0,
     limit: int = 20,
+    # ordering
+    order_by: OrderBy | None = None,
 ) -> tuple[PageTotalCount, list[ConversationMessageGetDB]]:
     return await _conversation_message_repository.list_(
         app,
         conversation_id=conversation_id,
         offset=offset,
         limit=limit,
-        order_by=OrderBy(
+        order_by=order_by
+        or OrderBy(
             field=IDStr("created"), direction=OrderDirection.DESC
         ),  # NOTE: Message should be ordered by creation date (latest first)
     )

@@ -1,3 +1,3 @@
 """
-    Plugin to interact with the 'invitations' service
+Plugin to interact with the 'invitations' service
 """

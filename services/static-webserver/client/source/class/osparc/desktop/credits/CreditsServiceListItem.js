@@ -93,12 +93,11 @@ qx.Class.define("osparc.desktop.credits.CreditsServiceListItem", {
           break;
         }
         case "title":
-          control = new qx.ui.basic.Label().set({
+          control = new osparc.ui.basic.SafeLabel().set({
             font: "text-12",
             alignY: "middle",
             maxWidth: 200,
             allowGrowX: true,
-            rich: true,
           });
           this._add(control, this.self().GRID.NAME);
           break;

@@ -1,6 +1,6 @@
-""" Common retry policies to access services
+"""Common retry policies to access services
 
-    Other than tenacity, this module SHOULD NOT have other dependencies
+Other than tenacity, this module SHOULD NOT have other dependencies
 """
 
 import logging
@@ -30,5 +30,4 @@ class PostgresRetryPolicyUponInitialization:
         }
 
 
-class RedisRetryPolicyUponInitialization(PostgresRetryPolicyUponInitialization):
-    ...
+class RedisRetryPolicyUponInitialization(PostgresRetryPolicyUponInitialization): ...

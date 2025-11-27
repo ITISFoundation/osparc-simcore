@@ -606,7 +606,7 @@ def create_new_project_and_delete(  # noqa: C901, PLR0915
                     stack.enter_context(
                         log_in_and_out.expect_event(
                             "framereceived",
-                            SocketIOProjectClosedWaiter(ctx.logger),
+                            SocketIOProjectClosedWaiter(),
                             timeout=_PROJECT_CLOSING_TIMEOUT,
                         )
                     )

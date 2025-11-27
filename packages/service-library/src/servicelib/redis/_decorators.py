@@ -30,12 +30,18 @@ _EXCLUSIVE_AUTO_EXTEND_TASK_NAME: Final[str] = (
 
 
 @periodic(interval=DEFAULT_LOCK_TTL / 2, raise_on_error=True)
-async def _periodic_auto_extender(lock: Lock, started_event: asyncio.Event) -> None:
+async def _periodic_reacquisition(
+    lock: Lock,
+    started_event: asyncio.Event,
+    cancellation_event: asyncio.Event,
+) -> None:
+    if cancellation_event.is_set():
+        raise asyncio.CancelledError
     await auto_extend_lock(lock)
     started_event.set()
 
 
-def exclusive(
+def exclusive(  # noqa: PLR0915
     redis_client: RedisClientSDK | Callable[..., RedisClientSDK],
     *,
     lock_key: str | Callable[..., str],
@@ -98,17 +104,20 @@ def exclusive(
             lock_acquisition_time = arrow.utcnow()
             try:
                 async with asyncio.TaskGroup() as tg:
-                    started_event = asyncio.Event()
+                    auto_reacquisition_started = asyncio.Event()
+                    cancellation_event = asyncio.Event()
                     # first create a task that will auto-extend the lock
-                    auto_extend_lock_task = tg.create_task(
-                        _periodic_auto_extender(lock, started_event),
+                    auto_reacquisition_task = tg.create_task(
+                        _periodic_reacquisition(
+                            lock, auto_reacquisition_started, cancellation_event
+                        ),
                         name=_EXCLUSIVE_AUTO_EXTEND_TASK_NAME.format(
                             redis_lock_key=redis_lock_key
                         ),
                     )
                     # NOTE: In case the work thread is raising right away,
                     # this ensures the extend task ran once and ensure cancellation works
-                    await started_event.wait()
+                    await auto_reacquisition_started.wait()
 
                     # then the task that runs the user code
                     assert asyncio.iscoroutinefunction(coro)  # nosec
@@ -118,11 +127,14 @@ def exclusive(
                             module_name=coro.__module__, func_name=coro.__name__
                         ),
                     )
-                    res = await work_task
-                    # cancel the auto-extend task (work is done)
-                    # NOTE: if we do not explicitely await the task inside the context manager
-                    # it sometimes hangs forever (Python issue?)
-                    await cancel_wait_task(auto_extend_lock_task, max_delay=None)
+                    try:
+                        # NOTE: this try/finally ensures that cancellation_event is set when we exit the context
+                        # even in case of exceptions
+                        res = await work_task
+                    finally:
+                        # cancel the auto-extend task (work is done)
+                        cancellation_event.set()  # NOTE: this ensure cancellation is effective
+                        await cancel_wait_task(auto_reacquisition_task, max_delay=None)
                 return res
 
             except BaseExceptionGroup as eg:

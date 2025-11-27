@@ -4,7 +4,10 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import datetime
 import json
+import uuid
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any, Final
 from uuid import UUID
@@ -14,6 +17,7 @@ import pytest
 import respx
 from faker import Faker
 from fastapi import status
+from models_library.projects_state import RunningState
 from pytest_mock import MockType
 from pytest_simcore.helpers.httpx_calls_capture_models import (
     CreateRespxMockCallback,
@@ -278,22 +282,53 @@ async def test_create_study_job(
     assert _default_side_effect.post_called
 
 
+@pytest.mark.parametrize(
+    "project_id, job_state, expected_status_code, expected_error_message",
+    [
+        (
+            uuid.uuid4(),
+            RunningState.STARTED,
+            status.HTTP_409_CONFLICT,
+            "not succeeded, when output is requested",
+        ),
+        (
+            uuid.uuid4(),
+            RunningState.SUCCESS,
+            status.HTTP_200_OK,
+            None,
+        ),
+    ],
+)
 async def test_get_study_job_outputs(
     client: httpx.AsyncClient,
     fake_study_id: UUID,
     auth: httpx.BasicAuth,
+    project_id: UUID,
+    job_state: RunningState,
+    expected_status_code: int,
+    expected_error_message: str | None,
     mocked_webserver_rest_api_base: respx.MockRouter,
     mocked_webserver_rpc_api: dict[str, MockType],
+    mock_method_in_jobs_service: Callable[[str, Any], MockType],
 ):
-    job_id = "cfe9a77a-f71e-11ee-8fca-0242ac140008"
+
+    job_status = JobStatus(
+        state=job_state,
+        job_id=project_id,
+        submitted_at=datetime.datetime.now(tz=datetime.UTC),
+        started_at=datetime.datetime.now(tz=datetime.UTC),
+        stopped_at=datetime.datetime.now(tz=datetime.UTC),
+        progress=0,
+    )
+    mock_method_in_jobs_service("inspect_study_job", job_status)
 
     capture = {
-        "name": "GET /projects/cfe9a77a-f71e-11ee-8fca-0242ac140008/outputs",
-        "description": "<Request('GET', 'http://webserver:8080/v0/projects/cfe9a77a-f71e-11ee-8fca-0242ac140008/outputs')>",
+        "name": f"GET /projects/{project_id}/outputs",
+        "description": f"<Request('GET', 'http://webserver:8080/v0/projects/{project_id}/outputs')>",
         "method": "GET",
         "host": "webserver",
         "path": {
-            "path": "/v0/projects/{project_id}/outputs",
+            "path": f"/v0/projects/{project_id}/outputs",
             "path_parameters": [
                 {
                     "in": "path",
@@ -321,21 +356,24 @@ async def test_get_study_job_outputs(
     }
 
     mocked_webserver_rest_api_base.get(
-        path=capture["path"]["path"].format(project_id=job_id)
+        path=capture["path"]["path"].format(project_id=project_id)
     ).respond(
         status_code=capture["status_code"],
         json=capture["response_body"],
     )
 
     response = await client.post(
-        f"{API_VTAG}/studies/{fake_study_id}/jobs/{job_id}/outputs",
+        f"{API_VTAG}/studies/{fake_study_id}/jobs/{project_id}/outputs",
         auth=auth,
     )
-    assert response.status_code == status.HTTP_200_OK
-    job_outputs = JobOutputs(**response.json())
+    assert response.status_code == expected_status_code
+    if expected_error_message:
+        assert expected_error_message in response.text
+    else:
+        job_outputs = JobOutputs(**response.json())
 
-    assert str(job_outputs.job_id) == job_id
-    assert job_outputs.results == {}
+        assert str(job_outputs.job_id) == str(project_id)
+        assert job_outputs.results == {}
 
 
 async def test_get_job_logs(
@@ -373,9 +411,20 @@ async def test_get_study_outputs(
     mocked_directorv2_rest_api_base: respx.MockRouter,
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
+    mock_method_in_jobs_service: Callable[[str, Any], MockType],
 ):
 
     _study_id = "e9f34992-436c-11ef-a15d-0242ac14000c"
+
+    job_status = JobStatus(
+        state=RunningState.SUCCESS,
+        job_id=uuid.UUID(_study_id),
+        submitted_at=datetime.datetime.now(tz=datetime.UTC),
+        started_at=datetime.datetime.now(tz=datetime.UTC),
+        stopped_at=datetime.datetime.now(tz=datetime.UTC),
+        progress=0,
+    )
+    mock_method_in_jobs_service("inspect_study_job", job_status)
 
     create_respx_mock_from_capture(
         respx_mocks=[

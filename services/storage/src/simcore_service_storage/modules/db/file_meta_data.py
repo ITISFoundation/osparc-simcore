@@ -2,7 +2,7 @@ import contextlib
 import datetime
 from collections.abc import AsyncGenerator
 from pathlib import Path
-from typing import TypeAlias
+from typing import Annotated, TypeAlias
 
 import sqlalchemy as sa
 from models_library.basic_types import SHA256Str
@@ -10,7 +10,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, validate_call
 from simcore_postgres_database.storage_models import file_meta_data
 from simcore_postgres_database.utils_repos import (
     pass_or_acquire_connection,
@@ -35,16 +35,15 @@ TotalChildren: TypeAlias = int
 
 
 class _PathsCursorParameters(BaseModel):
+    # NOTE: this is a cursor do not put things that can grow unbounded as this goes then through REST APIs or such
     offset: int
     file_prefix: Path | None
-    project_ids: list[ProjectID] | None
     partial: bool
 
 
 def _init_pagination(
     cursor: GenericCursor | None,
     *,
-    filter_by_project_ids: list[ProjectID] | None,
     filter_by_file_prefix: Path | None,
     is_partial_prefix: bool,
 ) -> _PathsCursorParameters:
@@ -53,7 +52,6 @@ def _init_pagination(
     return _PathsCursorParameters(
         offset=0,
         file_prefix=filter_by_file_prefix,
-        project_ids=filter_by_project_ids,
         partial=is_partial_prefix,
     )
 
@@ -229,11 +227,14 @@ class FileMetaDataRepository(BaseRepository):
                         return None
         return None
 
+    @validate_call(config={"arbitrary_types_allowed": True})
     async def list_child_paths(
         self,
         *,
         connection: AsyncConnection | None = None,
-        filter_by_project_ids: list[ProjectID] | None,
+        filter_by_project_ids: Annotated[
+            list[ProjectID] | None, Field(max_length=10000)
+        ],
         filter_by_file_prefix: Path | None,
         cursor: GenericCursor | None,
         limit: int,
@@ -241,11 +242,13 @@ class FileMetaDataRepository(BaseRepository):
     ) -> tuple[list[PathMetaData], GenericCursor | None, TotalChildren]:
         """returns a list of FileMetaDataAtDB that are one level deep.
         e.g. when no filter is used, these are top level objects
+
+        NOTE: if filter_by_project_ids is huge, this will raise ValidationError and someone needs to fix it!
+        Maybe using a DB join
         """
 
         cursor_params = _init_pagination(
             cursor,
-            filter_by_project_ids=filter_by_project_ids,
             filter_by_file_prefix=filter_by_file_prefix,
             is_partial_prefix=is_partial_prefix,
         )
@@ -278,9 +281,9 @@ class FileMetaDataRepository(BaseRepository):
                         file_meta_data.c.file_id.like(search_prefix),
                         (
                             file_meta_data.c.project_id.in_(
-                                [f"{_}" for _ in cursor_params.project_ids]
+                                [f"{_}" for _ in filter_by_project_ids]
                             )
-                            if cursor_params.project_ids
+                            if filter_by_project_ids
                             else True
                         ),
                     )
@@ -303,9 +306,9 @@ class FileMetaDataRepository(BaseRepository):
                 )
                 .where(
                     file_meta_data.c.project_id.in_(
-                        [f"{_}" for _ in cursor_params.project_ids]
+                        [f"{_}" for _ in filter_by_project_ids]
                     )
-                    if cursor_params.project_ids
+                    if filter_by_project_ids
                     else True
                 )
                 .cte("ranked_files")
@@ -405,7 +408,7 @@ class FileMetaDataRepository(BaseRepository):
         self,
         *,
         connection: AsyncConnection | None = None,
-    ) -> AsyncGenerator[FileMetaDataAtDB, None]:
+    ) -> AsyncGenerator[FileMetaDataAtDB]:
         """returns all the theoretically valid fmds (e.g. upload_expires_at column is null)"""
         async with pass_or_acquire_connection(self.db_engine, connection) as conn:
             async for row in await conn.stream(
