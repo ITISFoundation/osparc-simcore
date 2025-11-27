@@ -5,7 +5,7 @@ import inspect
 import logging
 import urllib.parse
 from contextlib import suppress
-from typing import Any, ClassVar, Final, Protocol, TypeAlias
+from typing import Any, ClassVar, Final, Protocol
 from uuid import uuid4
 
 from common_library.async_tools import cancel_wait_task
@@ -54,7 +54,7 @@ _MAX_EXCLUSIVE_TASK_CANCEL_TIMEOUT: Final[NonNegativeFloat] = 5
 _TASK_REMOVAL_MAX_WAIT: Final[NonNegativeFloat] = 60
 _PARALLEL_TASKS_CANCELLATION: Final[int] = 5
 
-AllowedErrrors: TypeAlias = tuple[type[BaseException], ...]
+type AllowedErrrors = tuple[type[BaseException], ...]
 
 
 class TaskProtocol(Protocol):
@@ -517,8 +517,28 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
 
         task_to_cancel = self._created_tasks.pop(task_id, None)
         if task_to_cancel is not None:
-            await cancel_wait_task(task_to_cancel)
-            await self._tasks_data.delete_task_data(task_id)
+            with log_context(
+                _logger,
+                logging.DEBUG,
+                f"Removing asyncio task related to task_id='{task_id}'",
+            ):
+                await cancel_wait_task(task_to_cancel)
+                await self._tasks_data.delete_task_data(task_id)
+        else:
+            task_data = await self._tasks_data.get_task_data(task_id)
+            if (
+                task_data is not None
+                and task_data.marked_for_removal_at is not None
+                and datetime.datetime.now(tz=datetime.UTC)
+                - task_data.marked_for_removal_at
+                > datetime.timedelta(seconds=_TASK_REMOVAL_MAX_WAIT)
+            ):
+                with log_context(
+                    _logger,
+                    logging.DEBUG,
+                    f"Force removing {task_id=} from Redis after waiting for {_TASK_REMOVAL_MAX_WAIT} seconds",
+                ):
+                    await self._tasks_data.delete_task_data(task_id)
 
     async def remove_task(
         self,
