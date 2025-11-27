@@ -1,16 +1,35 @@
+x-common-healthchecks: &common-healthchecks
+  interval: 30s
+  timeout: 10s
+  start_period: 60s
+
 services:
   api-server:
     healthcheck:
-      interval: 30s
-      timeout: 10s
-      start_period: 60s
+      <<:
+        - *common-healthchecks
+
+  api-worker:
+    healthcheck:
+      <<:
+        - *common-healthchecks
+
   notifications:
     healthcheck:
-      interval: 30s
-      timeout: 15s
-      start_period: 60s
+      <<:
+        - *common-healthchecks
+
   storage:
     healthcheck:
-      interval: 30s
-      timeout: 15s
-      start_period: 60s
+      <<:
+        - *common-healthchecks
+
+  sto-worker:
+    healthcheck:
+      <<:
+        - *common-healthchecks
+
+  sto-worker-cpu-bound:
+    healthcheck:
+      <<:
+        - *common-healthchecks
