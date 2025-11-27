@@ -26,6 +26,9 @@ services:
   notifications:
     <<: *common-healthchecks
 
+  notifications-wrk:
+    <<: *common-healthchecks
+
   storage:
     <<: *common-healthchecks
 
