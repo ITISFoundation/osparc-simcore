@@ -20,6 +20,9 @@ services:
   dask-sidecar:
     <<: *common-healthchecks
 
+  director-v2:
+    <<: *common-healthchecks
+
   notifications:
     <<: *common-healthchecks
 
@@ -30,4 +33,13 @@ services:
     <<: *common-healthchecks
 
   sto-worker-cpu-bound:
+    <<: *common-healthchecks
+
+  wb-db-event-listener:
+    <<: *common-healthchecks
+
+  wb-garbage-collector:
+    <<: *common-healthchecks
+
+  webserver:
     <<: *common-healthchecks
