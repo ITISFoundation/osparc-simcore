@@ -50,9 +50,11 @@ qx.Class.define("osparc.Application", {
 
       await this.__preloadCalls();
 
+      osparc.iconfont.FontAwesome7.init();
+
       this.__preventAutofillBrowserStyles();
       this.__loadCommonCss();
-      osparc.iconfont.FontAwesome7.init();
+
       this.__updateTabName();
       if (osparc.utils.Utils.isDevelopmentPlatform()) {
         this.__updateMetaTags();
