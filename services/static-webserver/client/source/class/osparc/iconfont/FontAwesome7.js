@@ -28,7 +28,6 @@ qx.Class.define("osparc.iconfont.FontAwesome7", {
     init: function() {
       const path = "iconfont/fontawesome7/css/all.css";
       const uri = qx.util.ResourceManager.getInstance().toUri(path);
-      // qx.bom.Stylesheet.includeStylesheet(uri);
       qx.module.Css.includeStylesheet(uri);
     },
   }
