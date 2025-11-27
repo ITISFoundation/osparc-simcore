@@ -2,6 +2,7 @@
 
 
 import importlib
+import logging
 import random
 import string
 from collections.abc import Callable
@@ -21,6 +22,7 @@ from servicelib.fastapi.tracing import (
     get_tracing_instrumentation_lifespan,
     initialize_fastapi_app_tracing,
 )
+from servicelib.logging_utils import setup_loggers
 from servicelib.tracing import (
     _OSPARC_TRACE_ID_HEADER,
     _PROFILE_ATTRIBUTE_NAME,
@@ -364,3 +366,97 @@ async def test_TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY_effective(
             <= n_traces
             <= expected_num_traces + tolerance
         ), f"Expected roughly {expected_num_traces} distinct trace ids, got {n_traces}"
+
+
+@pytest.fixture
+def setup_logging_for_test(
+    set_and_clean_settings_env_vars: Callable[[], None],
+) -> TracingConfig:
+    """Setup logging with tracing instrumentation before caplog captures logs."""
+    tracing_settings = TracingSettings()
+    tracing_config = TracingConfig.create(
+        tracing_settings=tracing_settings, service_name="Mock-OpenTelemetry-Pytest"
+    )
+
+    # Setup logging with tracing instrumentation
+    # This configures logging before caplog adds its handler
+    setup_loggers(
+        log_format_local_dev_enabled=False,
+        logger_filter_mapping={},
+        tracing_config=tracing_config,
+        log_base_level=logging.INFO,
+        noisy_loggers=None,
+    )
+
+    return tracing_config
+
+
+@pytest.mark.parametrize(
+    "tracing_settings_in",
+    [
+        ("http://opentelemetry-collector", 4318, 0.05),
+    ],
+    indirect=True,
+)  # NOTE: The order of these fixtures are important for caplog to work correctly
+async def test_trace_id_in_logs_only_when_sampled(
+    tracing_settings_in: Callable[[], dict[str, Any]],
+    mock_otel_collector: InMemorySpanExporter,
+    mocked_app: FastAPI,
+    setup_logging_for_test: TracingConfig,
+    caplog: pytest.LogCaptureFixture,
+):
+    """
+    This test verifies that trace IDs appear in logs only when the corresponding trace is sampled.
+    With a low sampling probability (0.05), most requests won't be sampled, so their logs
+    should not contain trace IDs.
+    """
+    n_requests = 1000
+
+    tracing_config = setup_logging_for_test
+
+    test_logger = logging.getLogger("test_handler")
+    caplog.set_level(logging.INFO, logger="test_handler")
+
+    async def handler():
+        test_logger.info("Handler executed")
+        return PlainTextResponse("ok")
+
+    mocked_app.get("/")(handler)
+
+    async for _ in get_tracing_instrumentation_lifespan(
+        tracing_config=tracing_config,
+    )(app=mocked_app):
+        initialize_fastapi_app_tracing(
+            mocked_app, tracing_config=tracing_config, add_response_trace_id_header=True
+        )
+        client = TestClient(mocked_app)
+
+        for _ in range(n_requests):
+            client.get("/")
+
+        # Get all sampled trace IDs from the span exporter
+        sampled_trace_ids = {
+            format(span.context.trace_id, "032x")
+            for span in mock_otel_collector.get_finished_spans()
+            if span.context is not None
+        }
+
+        # Check log records
+        trace_ids_in_logs = set()
+
+        for record in caplog.records:
+            if record.name == "test_handler":
+                otel_trace_id = getattr(record, "otelTraceID", None)
+                if (
+                    otel_trace_id is not None
+                    and otel_trace_id != "not_recorded"
+                    and otel_trace_id != "0"
+                ):
+                    trace_ids_in_logs.add(otel_trace_id)
+
+        tracing_settings = tracing_config.tracing_settings
+        assert tracing_settings is not None
+        assert len(trace_ids_in_logs) > 0 and len(sampled_trace_ids) > 0
+        assert (
+            trace_ids_in_logs == sampled_trace_ids
+        ), f"{tracing_settings.TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY=} | {n_requests=} | {len(sampled_trace_ids)=} | {len(trace_ids_in_logs)=}"
