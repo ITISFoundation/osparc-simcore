@@ -96,12 +96,13 @@ projects = sa.Table(
         default=None,
     ),
     # CHILDREN/CONTENT--------------------------
-    sa.Column(
-        "workbench",
-        sa.JSON,
-        nullable=False,
-        doc="Pipeline with the project's workflow. Schema in models_library.projects.Workbench",
-    ),
+    # NOTE: commented out to check who still uses this
+    # sa.Column(
+    #     "workbench",
+    #     sa.JSON,
+    #     nullable=False,
+    #     doc="Pipeline with the project's workflow. Schema in models_library.projects.Workbench",
+    # ),
     # FRONT-END ----------------------------
     sa.Column(
         "ui",
