@@ -15,6 +15,12 @@
 
 ************************************************************************ */
 
+/**
+ * Make sure FA7 fonts are copied into the build.
+ *
+ * @asset(iconfont/fontawesome7/webfonts/*)
+ */
+
 qx.Class.define("osparc.iconfont.FontAwesome7", {
   type: "static",
 
