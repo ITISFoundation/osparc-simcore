@@ -11,6 +11,15 @@ services:
   api-worker:
     <<: *common-healthchecks
 
+  catalog:
+    <<: *common-healthchecks
+
+  dask-scheduler:
+    <<: *common-healthchecks
+
+  dask-sidecar:
+    <<: *common-healthchecks
+
   notifications:
     <<: *common-healthchecks
 
