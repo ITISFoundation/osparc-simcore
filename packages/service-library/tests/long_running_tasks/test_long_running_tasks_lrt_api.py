@@ -101,7 +101,7 @@ async def _assert_task_status(
     is_done: bool
 ) -> None:
     result = await lrt_api.get_task_status(
-        rabbitmq_rpc_client, long_running_manager.lrt_namespace, TaskContext(), task_id
+        rabbitmq_rpc_client, long_running_manager.lrt_namespace, {}, task_id
     )
     assert result.done is is_done
 
@@ -117,7 +117,7 @@ async def _assert_task_status_on_random_manager(
         result = await lrt_api.get_task_status(
             rabbitmq_rpc_client,
             _get_long_running_manager(long_running_managers).lrt_namespace,
-            TaskContext(),
+            {},
             task_id,
         )
         assert result.done is is_done

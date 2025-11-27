@@ -2,7 +2,6 @@
 
 from collections.abc import AsyncIterable, Callable
 from contextlib import AbstractAsyncContextManager
-from copy import deepcopy
 
 import pytest
 from faker import Faker
@@ -14,6 +13,7 @@ from servicelib.long_running_tasks.long_running_client_helper import (
 from servicelib.long_running_tasks.models import LRTNamespace, TaskData
 from servicelib.redis._client import RedisClientSDK
 from settings_library.redis import RedisDatabase, RedisSettings
+from utils import without_marked_for_removal_at
 
 
 @pytest.fixture
@@ -69,9 +69,9 @@ async def test_cleanup_namespace(
     await store.mark_for_removal(task_data.task_id)
 
     # entries exit
-    marked_for_removal = deepcopy(task_data)
-    marked_for_removal.marked_for_removal = True
-    assert await store.list_tasks_data() == [marked_for_removal]
+    assert [
+        without_marked_for_removal_at(x) for x in await store.list_tasks_data()
+    ] == [task_data]
 
     # removes
     await long_running_client_helper.cleanup(lrt_namespace)
