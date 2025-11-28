@@ -26,7 +26,7 @@ RUN apk add --no-cache \
 HEALTHCHECK \
   --interval=10s \
   --timeout=5s \
-  --start-period=60s \
+  --start-period=20s \
   --start-interval=1s \
   --retries=5 \
   CMD curl --fail-with-body --user ${DOCKER_API_PROXY_USER}:${DOCKER_API_PROXY_PASSWORD} http://localhost:8888/version

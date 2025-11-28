@@ -160,7 +160,7 @@ RUN chmod +x services/agent/docker/*.sh
 HEALTHCHECK \
   --interval=10s \
   --timeout=5s \
-  --start-period=60s \
+  --start-period=20s \
   --start-interval=1s \
   --retries=5 \
   CMD ["python3", "services/agent/docker/healthcheck.py", "http://localhost:8000/health"]

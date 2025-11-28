@@ -154,7 +154,7 @@ RUN chmod +x services/datcore-adapter/docker/*.sh
 HEALTHCHECK \
   --interval=10s \
   --timeout=5s \
-  --start-period=60s \
+  --start-period=20s \
   --start-interval=1s \
   --retries=5 \
   CMD ["python3", "services/datcore-adapter/docker/healthcheck.py", "http://localhost:8000/v0/live"]
