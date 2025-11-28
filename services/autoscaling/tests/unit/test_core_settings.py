@@ -360,7 +360,7 @@ def test_EC2_INSTANCES_ALLOWED_TYPES_invalid_custom_node_labels(  # noqa: N802
     settings = ApplicationSettings.create_from_envs()
     assert settings.AUTOSCALING_EC2_INSTANCES
 
-    # passing an invalid image tag name will fail
+    # passing an instance type with missing or invalid custom node labels will fail
     setenvs_from_dict(
         monkeypatch,
         {
