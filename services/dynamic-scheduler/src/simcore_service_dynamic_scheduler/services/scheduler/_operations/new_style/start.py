@@ -1,17 +1,12 @@
 from ....generic_scheduler import BaseStepGroup, Operation, SingleStepGroup
-from .._common_steps import (
-    RegisterScheduleId,
-    SetCurrentStateRunning,
-    UnRegisterScheduleId,
-)
+from .._common_steps import SetCurrentScheduleId, SetCurrentStateRunning
 
 _steps: list[BaseStepGroup] = []
 
 
 def get_operation() -> Operation:
     return Operation(
-        SingleStepGroup(RegisterScheduleId),
+        SingleStepGroup(SetCurrentScheduleId),
         *_steps,
         SingleStepGroup(SetCurrentStateRunning),
-        SingleStepGroup(UnRegisterScheduleId),
     )

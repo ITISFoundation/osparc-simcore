@@ -11,7 +11,7 @@ _MIN_STEPS_IN_OPERATION: Final[NonNegativeInt] = 3
 def get_scheduler_oepration_name(
     operation_type: OperationType, suffix: str
 ) -> SchedulerOperationName:
-    return SchedulerOperationName(f"{operation_type.value}_{suffix}")
+    return f"{operation_type.value}_{suffix}"
 
 
 def get_scheduler_operation_type_or_raise(

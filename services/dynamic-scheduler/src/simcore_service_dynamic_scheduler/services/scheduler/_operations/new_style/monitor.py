@@ -2,7 +2,7 @@ from datetime import timedelta
 from typing import Final
 
 from ....generic_scheduler import BaseStepGroup, Operation, SingleStepGroup
-from .._common_steps import DoNothing, RegisterScheduleId
+from .._common_steps import DoNothing, SetCurrentScheduleId
 
 _WAIT_BEFORE_REPEAT: Final[timedelta] = timedelta(seconds=5)
 
@@ -15,6 +15,6 @@ _steps: list[BaseStepGroup] = [
 
 def get_operation() -> Operation:
     return Operation(
-        SingleStepGroup(RegisterScheduleId),
+        SingleStepGroup(SetCurrentScheduleId),
         *_steps,
     )

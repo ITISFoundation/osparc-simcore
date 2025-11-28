@@ -1,9 +1,8 @@
 from enum import auto
-from typing import TypeAlias
 
 from models_library.utils.enums import StrAutoEnum
 
-SchedulerOperationName: TypeAlias = str
+type SchedulerOperationName = str
 
 
 class DesiredState(StrAutoEnum):
@@ -16,3 +15,8 @@ class OperationType(StrAutoEnum):
     START = auto()
     MONITOR = auto()
     STOP = auto()
+
+
+class SchedulingProfile(StrAutoEnum):
+    LEGACY = auto()
+    NEW_STYLE = auto()
