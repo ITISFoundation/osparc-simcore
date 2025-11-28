@@ -20,10 +20,10 @@ Q&A:
 
 
 import os
-import subprocess
 import sys
 from urllib.request import urlopen
 
+from celery_library.worker.heartbeat import is_healthy
 from simcore_service_storage.core.settings import ApplicationSettings
 
 SUCCESS, UNHEALTHY = 0, 1
@@ -37,33 +37,9 @@ ok = os.getenv("SC_BOOT_MODE", "").lower() == "debug"
 app_settings = ApplicationSettings.create_from_envs()
 
 
-def _is_celery_worker_healthy():
-    assert app_settings.STORAGE_CELERY
-    broker_url = app_settings.STORAGE_CELERY.CELERY_RABBIT_BROKER.dsn
-
-    try:
-        result = subprocess.run(
-            [
-                "celery",
-                "--broker",
-                broker_url,
-                "inspect",
-                "ping",
-                "--destination",
-                "celery@" + os.getenv("STORAGE_WORKER_NAME", "worker"),
-            ],
-            capture_output=True,
-            text=True,
-            check=True,
-        )
-        return "pong" in result.stdout
-    except subprocess.CalledProcessError:
-        return False
-
-
 ok = (
     ok
-    or (app_settings.STORAGE_WORKER_MODE and _is_celery_worker_healthy())
+    or (app_settings.STORAGE_WORKER_MODE and is_healthy())
     or urlopen(
         "{host}{baseurl}".format(
             host=sys.argv[1], baseurl=os.environ.get("SIMCORE_NODE_BASEPATH", "")
