@@ -48,9 +48,9 @@ qx.Class.define("osparc.Application", {
         qx.log.appender.Native;
       }
 
-      await this.__preloadCalls();
-
       osparc.iconfont.FontAwesome7.init();
+
+      await this.__preloadCalls();
 
       this.__preventAutofillBrowserStyles();
       this.__loadCommonCss();
