@@ -59,7 +59,7 @@ qx.Class.define("osparc.support.SupportButton", {
       let control;
       switch (id) {
         case "icon": {
-          control = new qx.ui.basic.Image("@FontAwesome5Solid/question-circle/24");
+          control = new qx.ui.basic.Image("@FontAwesome5Regular/question-circle/24");
           const iconContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox().set({
             alignY: "middle",
           })).set({
