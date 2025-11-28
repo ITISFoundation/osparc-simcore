@@ -16,10 +16,10 @@ Q&A:
         - SEE https://blog.sixeyed.com/docker-healthchecks-why-not-to-use-curl-or-iwr/
 """
 import os
-import subprocess
 import sys
 from urllib.request import urlopen
 
+from celery_library.worker.heartbeat import is_heartbeat_fresh
 from simcore_service_notifications.core.application import ApplicationSettings
 
 SUCCESS, UNHEALTHY = 0, 1
@@ -33,38 +33,9 @@ ok = os.getenv("SC_BOOT_MODE", "").lower() == "debug"
 app_settings = ApplicationSettings.create_from_envs()
 
 
-def _is_celery_worker_healthy() -> bool:
-    assert app_settings.NOTIFICATIONS_CELERY
-    broker_url = app_settings.NOTIFICATIONS_CELERY.CELERY_RABBIT_BROKER.dsn
-
-    worker_name = os.getenv("NOTIFICATIONS_WORKER_NAME")
-    if not worker_name:
-        msg = "Environment variable NOTIFICATIONS_WORKER_NAME is not set"
-        raise ValueError(msg)
-
-    try:
-        result = subprocess.run(
-            [
-                "celery",
-                "--broker",
-                broker_url,
-                "inspect",
-                "ping",
-                "--destination",
-                "celery@" + worker_name,
-            ],
-            capture_output=True,
-            text=True,
-            check=True,
-        )
-        return "pong" in result.stdout
-    except subprocess.CalledProcessError:
-        return False
-
-
 ok = (
     ok
-    or (app_settings.NOTIFICATIONS_WORKER_MODE and _is_celery_worker_healthy())
+    or (app_settings.NOTIFICATIONS_WORKER_MODE and is_heartbeat_fresh())
     or urlopen(
         "{host}{baseurl}".format(
             host=sys.argv[1], baseurl=os.environ.get("SIMCORE_NODE_BASEPATH", "")
