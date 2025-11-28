@@ -74,4 +74,4 @@ def register_worker_signals(
             )
             worker_shutdown.connect(_worker_shutdown_wrapper(app), weak=False)
 
-    heartbeat_sent.connect(write_last_heartbeat, weak=False)
+    heartbeat_sent.connect(lambda **_kwargs: write_last_heartbeat(), weak=False)
