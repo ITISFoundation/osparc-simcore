@@ -67,7 +67,7 @@ class EC2InstancesSettings(BaseCustomSettings):
     ]
 
     EC2_INSTANCES_COLD_START_DOCKER_IMAGES_PRE_PULLING: Annotated[
-        list[DockerGenericTag],
+        Json[list[DockerGenericTag]],
         Field(
             description="List of docker images to pre-pull on cold started new EC2 instances",
             default_factory=list,
