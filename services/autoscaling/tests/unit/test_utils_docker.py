@@ -7,6 +7,7 @@ import asyncio
 import datetime
 import itertools
 import random
+import secrets
 from collections.abc import AsyncIterator, Awaitable, Callable
 from copy import deepcopy
 from typing import Any
@@ -1028,10 +1029,23 @@ def test_get_new_node_docker_tags(
     app_settings: ApplicationSettings,
     fake_ec2_instance_data: Callable[..., EC2InstanceData],
 ):
-    ec2_instance_data = fake_ec2_instance_data()
+    random_ec2_type = secrets.choice(
+        list(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES)
+    )
+
+    ec2_instance_data = fake_ec2_instance_data(type=random_ec2_type)
     node_docker_tags = get_new_node_docker_tags(app_settings, ec2_instance_data)
     assert node_docker_tags
     assert DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY in node_docker_tags
+    for (
+        key,
+        value,
+    ) in app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
+        random_ec2_type
+    ].custom_node_labels.items():
+        assert key in node_docker_tags
+        assert node_docker_tags[key] == value
+
     assert app_settings.AUTOSCALING_NODES_MONITORING
     for (
         tag_key
@@ -1046,6 +1060,9 @@ def test_get_new_node_docker_tags(
         DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY,
         *app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS,
         *app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NEW_NODES_LABELS,
+        *app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
+            random_ec2_type
+        ].custom_node_labels.keys(),
     ]
     for tag_key in node_docker_tags:
         assert tag_key in all_keys
