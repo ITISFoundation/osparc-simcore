@@ -289,7 +289,6 @@ CPU_COUNT = $(shell cat /proc/cpuinfo | grep processor | wc -l )
 	scripts/docker/docker-stack-config.bash -e .env \
 		services/docker-compose.yml \
 		services/docker-compose.local.yml \
-		$(if $(gh_ci),services/docker-compose.gh-ci.yml,) \
 		> $@
 
 
