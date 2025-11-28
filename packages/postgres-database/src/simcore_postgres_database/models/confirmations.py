@@ -58,6 +58,7 @@ confirmations = sa.Table(
         ["user_id"],
         [users.c.id],
         name="user_confirmation_fkey",
+        onupdate=RefActions.CASCADE,
         ondelete=RefActions.CASCADE,
     ),
 )
