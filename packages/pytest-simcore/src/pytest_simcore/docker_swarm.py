@@ -317,8 +317,8 @@ async def docker_stack(
     simcore_docker_network: docker.models.networks.Network,
     interactive_services_subnet_docker_network: docker.models.networks.Network,
     docker_client: docker.client.DockerClient,
-    ops_docker_compose_file: Path,
     core_docker_compose_file: Path,
+    ops_docker_compose_file: Path,
     keep_docker_up: bool,
     env_vars_for_docker_compose: EnvVarsDict,
 ) -> AsyncIterator[dict]:
