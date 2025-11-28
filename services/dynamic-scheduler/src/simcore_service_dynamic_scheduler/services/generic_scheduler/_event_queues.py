@@ -17,8 +17,9 @@ class ExecuteCompletedQueue(BaseEventQueue):
         await get_after_event_manager(self.app).safe_on_event_type(
             EventType.ON_EXECUTEDD_COMPLETED,
             event.schedule_id,
-            event.operation_name,
-            event.initial_context,
+            event.to_start,
+            on_execute_completed=event.on_execute_completed,
+            on_revert_completed=event.on_revert_completed,
         )
 
 
@@ -29,6 +30,7 @@ class RevertCompletedQueue(BaseEventQueue):
         await get_after_event_manager(self.app).safe_on_event_type(
             EventType.ON_REVERT_COMPLETED,
             event.schedule_id,
-            event.operation_name,
-            event.initial_context,
+            event.to_start,
+            on_execute_completed=event.on_execute_completed,
+            on_revert_completed=event.on_revert_completed,
         )

@@ -172,9 +172,14 @@ async def test_workflow(
     await ensure_keys_in_store(after_event_manager.app, expected_keys=set())
 
     await after_event_manager.safe_on_event_type(
-        event_type, schedule_id, operation_name, initial_context
+        event_type, schedule_id, OperationToStart(operation_name, initial_context)
     )
 
     assert mock_start_operation.call_args_list == [
-        call(after_event_manager.app, operation_name, initial_context)
+        call(
+            after_event_manager.app,
+            OperationToStart(operation_name, initial_context),
+            on_execute_completed=None,
+            on_revert_completed=None,
+        )
     ]

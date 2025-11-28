@@ -178,7 +178,7 @@ class _ProcessManager:
 
     async def _async_worker(self, operation_name: OperationName) -> None:
         async with _get_app(self.multiprocessing_queue) as app:
-            await start_operation(app, operation_name, {})
+            await start_operation(app, OperationToStart(operation_name, {}))
             while True:  # noqa: ASYNC110
                 await asyncio.sleep(1)
 
@@ -470,8 +470,7 @@ async def test_run_operation_after(
 
     schedule_id = await start_operation(
         app,
-        _INITIAL_OP_NAME,
-        {},
+        OperationToStart(_INITIAL_OP_NAME, {}),
         on_execute_completed=on_execute_completed,
         on_revert_completed=on_revert_completed,
     )
@@ -516,17 +515,20 @@ async def test_missing_initial_context_key_from_operation(
     )
 
     # 1. check it works
-    await start_operation(app, bad_operation_name, good_initial_context)
+    await start_operation(
+        app, OperationToStart(bad_operation_name, good_initial_context)
+    )
 
     # 2. check it raises with a bad context
     with pytest.raises(OperationInitialContextKeyNotFoundError):
-        await start_operation(app, bad_operation_name, bad_initial_context)
+        await start_operation(
+            app, OperationToStart(bad_operation_name, bad_initial_context)
+        )
 
     with pytest.raises(OperationInitialContextKeyNotFoundError):
         await start_operation(
             app,
-            good_operation_name,
-            good_initial_context,
+            OperationToStart(good_operation_name, good_initial_context),
             on_execute_completed=bad_operation_to_start,
             on_revert_completed=None,
         )
@@ -534,14 +536,15 @@ async def test_missing_initial_context_key_from_operation(
     with pytest.raises(OperationInitialContextKeyNotFoundError):
         await start_operation(
             app,
-            good_operation_name,
-            good_initial_context,
+            OperationToStart(good_operation_name, good_initial_context),
             on_execute_completed=None,
             on_revert_completed=bad_operation_to_start,
         )
 
     # 3. register_to_start_after... raises with a bad context
-    schedule_id = await start_operation(app, bad_operation_name, good_initial_context)
+    schedule_id = await start_operation(
+        app, OperationToStart(bad_operation_name, good_initial_context)
+    )
 
     with pytest.raises(OperationInitialContextKeyNotFoundError):
         await register_to_start_after_on_executed_completed(

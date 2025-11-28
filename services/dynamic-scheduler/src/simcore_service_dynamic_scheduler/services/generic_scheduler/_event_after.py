@@ -6,13 +6,7 @@ from servicelib.logging_utils import log_context
 
 from ._core import start_operation
 from ._errors import OperationInitialContextKeyNotFoundError
-from ._models import (
-    EventType,
-    OperationContext,
-    OperationName,
-    OperationToStart,
-    ScheduleId,
-)
+from ._models import EventType, OperationToStart, ScheduleId
 from ._operation import OperationRegistry
 from ._store import OperationEventsProxy, Store
 
@@ -75,25 +69,29 @@ class AfterEventManager(SingletonInAppStateMixin):
         self,
         event_type: EventType,
         schedule_id: ScheduleId,
-        operation_name: OperationName,
-        initial_context: OperationContext,
+        to_start: OperationToStart,
+        *,
+        on_execute_completed: OperationToStart | None = None,
+        on_revert_completed: OperationToStart | None = None,
     ) -> None:
         with log_context(
             _logger,
             logging.DEBUG,
-            f"processing {event_type=} for {schedule_id=} {operation_name=} {initial_context=}",
+            f"processing {event_type=} for {schedule_id=} {to_start=}",
             log_duration=True,
         ):
 
             new_schedule_id = await start_operation(
-                self.app, operation_name, initial_context
+                self.app,
+                to_start,
+                on_execute_completed=on_execute_completed,
+                on_revert_completed=on_revert_completed,
             )
             _logger.debug(
                 "Finished execution of event_type='%s' for schedule_id='%s'. "
-                "Started new_schedule_id='%s' from operation_name='%s' with initial_context='%s'",
+                "Started new_schedule_id='%s' from to_start='%s'",
                 event_type,
                 schedule_id,
                 new_schedule_id,
-                operation_name,
-                initial_context,
+                to_start,
             )

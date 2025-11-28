@@ -93,30 +93,32 @@ class Core(SingletonInAppStateMixin):
 
     async def start_operation(
         self,
-        operation_name: OperationName,
-        initial_operation_context: OperationContext,
+        operation_to_start: OperationToStart,
         on_execute_completed: OperationToStart | None,
         on_revert_completed: OperationToStart | None,
     ) -> ScheduleId:
         """start an operation by it's given name and providing an initial context"""
         schedule_id: ScheduleId = f"{uuid4()}"
 
-        initial_operation_context[ReservedContextKeys.SCHEDULE_ID] = schedule_id
+        operation_to_start.initial_context[ReservedContextKeys.SCHEDULE_ID] = (
+            schedule_id
+        )
 
         # check if operation is registered
-        operation = OperationRegistry.get_operation(operation_name)
+        operation = OperationRegistry.get_operation(operation_to_start.operation_name)
 
         for required_key in operation.initial_context_required_keys:
-            if required_key not in initial_operation_context:
+            if required_key not in operation_to_start.initial_context:
                 raise OperationInitialContextKeyNotFoundError(
-                    operation_name=operation_name, required_key=required_key
+                    operation_name=operation_to_start.operation_name,
+                    required_key=required_key,
                 )
 
         # NOTE: to ensure reproducibility of operations, the
         # operation steps cannot overwrite keys in the
         # initial context with their results
         raise_if_overwrites_any_operation_provided_key(
-            operation, initial_operation_context
+            operation, operation_to_start.initial_context
         )
 
         schedule_data_proxy = ScheduleDataStoreProxy(
@@ -124,7 +126,7 @@ class Core(SingletonInAppStateMixin):
         )
         await schedule_data_proxy.create_or_update_multiple(
             {
-                "operation_name": operation_name,
+                "operation_name": operation_to_start.operation_name,
                 "group_index": 0,
                 "is_executing": True,
             }
@@ -133,9 +135,11 @@ class Core(SingletonInAppStateMixin):
         operation_content_proxy = OperationContextProxy(
             store=self._store,
             schedule_id=schedule_id,
-            operation_name=operation_name,
+            operation_name=operation_to_start.operation_name,
         )
-        await operation_content_proxy.create_or_update(initial_operation_context)
+        await operation_content_proxy.create_or_update(
+            operation_to_start.initial_context
+        )
 
         if on_execute_completed:
             await register_to_start_after_on_executed_completed(
@@ -187,7 +191,7 @@ class Core(SingletonInAppStateMixin):
             operation_name=operation_name,
             group_index=group_index,
             step_group=step_group,
-            is_executing=is_executing,
+            is_executing=True,
         )
 
         # not allowed to cancel while waiting for manual intervention
@@ -209,13 +213,16 @@ class Core(SingletonInAppStateMixin):
             with log_context(
                 _logger,
                 logging.DEBUG,
-                f"Cancelling step {step_name=} of {operation_name=} for {schedule_id=}",
+                f"cancelling step {step_name=} of {operation_name=} for {schedule_id=}",
             ):
                 with suppress(NoDataFoundError):
                     deferred_task_uid = await step_proxy.read("deferred_task_uid")
                     # the deferred task might not be running when this is called
                     # e.g. cancelling a repeating operation
-                    await DeferredRunner.cancel(deferred_task_uid)
+                    with log_context(
+                        _logger, logging.DEBUG, f"cancelling {deferred_task_uid=}"
+                    ):
+                        await DeferredRunner.cancel(deferred_task_uid)
 
                 await step_proxy.create_or_update("status", StepStatus.CANCELLED)
 
@@ -225,12 +232,16 @@ class Core(SingletonInAppStateMixin):
                     schedule_id=schedule_id,
                     operation_name=operation_name,
                     step_group_name=step_group_name,
-                    is_executing=is_executing,
+                    is_executing=True,
                 )
                 if (
                     await group_proxy.increment_and_get_done_steps_count()
                     == expected_steps_count
                 ):
+                    # all steps cancelled, move to revert
+                    await schedule_data_proxy.create_or_update(
+                        "is_executing", value=False
+                    )
                     await enqueue_schedule_event(self.app, schedule_id)
 
         await limited_gather(
@@ -442,30 +453,29 @@ class Core(SingletonInAppStateMixin):
         step_group_name = step_group.get_step_group_name(index=group_index)
         base_message = f"{step_group_name=} in {operation_name=} for {schedule_id=}"
 
-        if step_group.repeat_steps is True and is_executing:
-            with log_context(_logger, logging.DEBUG, f"REPEATING {base_message}"):
-                await self._advance_as_repeating(
-                    steps_statuses,
-                    schedule_data_proxy,
-                    schedule_id,
-                    operation_name,
-                    group_index,
-                    step_group,
-                    group_step_proxies,
-                )
-
-        elif is_executing:
-            with log_context(_logger, logging.DEBUG, f"CREATING {base_message}"):
-                await self._advance_as_creating(
-                    steps_statuses,
-                    schedule_data_proxy,
-                    schedule_id,
-                    operation_name,
-                    group_index,
-                    step_group,
-                    operation,
-                )
-
+        if is_executing:
+            if step_group.repeat_steps:
+                with log_context(_logger, logging.DEBUG, f"REPEATING {base_message}"):
+                    await self._advance_as_repeating(
+                        steps_statuses,
+                        schedule_data_proxy,
+                        schedule_id,
+                        operation_name,
+                        group_index,
+                        step_group,
+                        group_step_proxies,
+                    )
+            else:
+                with log_context(_logger, logging.DEBUG, f"CREATING {base_message}"):
+                    await self._advance_as_creating(
+                        steps_statuses,
+                        schedule_data_proxy,
+                        schedule_id,
+                        operation_name,
+                        group_index,
+                        step_group,
+                        operation,
+                    )
         else:
             with log_context(_logger, logging.DEBUG, f"REVERTING {base_message}"):
                 await self._advance_as_reverting(
@@ -569,8 +579,9 @@ class Core(SingletonInAppStateMixin):
                     await enqueue_execute_completed_event(
                         self.app,
                         schedule_id,
-                        on_executed_operation_name,
-                        on_executed_initial_context,
+                        OperationToStart(
+                            on_executed_operation_name, on_executed_initial_context
+                        ),
                     )
 
             return
@@ -663,6 +674,12 @@ class Core(SingletonInAppStateMixin):
                 await cleanup_after_finishing(
                     self._store, schedule_id=schedule_id, is_executing=False
                 )
+                _logger.debug(
+                    "Revert completed for schedule_id='%s', checking next step %s %s",
+                    schedule_id,
+                    on_reverted_operation_name,
+                    on_reverted_initial_context,
+                )
                 if (
                     on_reverted_operation_name is not None
                     and on_reverted_initial_context is not None
@@ -670,8 +687,9 @@ class Core(SingletonInAppStateMixin):
                     await enqueue_revert_completed_event(
                         self.app,
                         schedule_id,
-                        on_reverted_operation_name,
-                        on_reverted_initial_context,
+                        OperationToStart(
+                            on_reverted_operation_name, on_reverted_initial_context
+                        ),
                     )
                 return
 
@@ -740,15 +758,13 @@ class Core(SingletonInAppStateMixin):
 
 async def start_operation(
     app: FastAPI,
-    operation_name: OperationName,
-    initial_operation_context: OperationContext,
+    operation_to_start: OperationToStart,
     *,
     on_execute_completed: OperationToStart | None = None,
     on_revert_completed: OperationToStart | None = None,
 ) -> ScheduleId:
     return await Core.get_from_app_state(app).start_operation(
-        operation_name,
-        initial_operation_context,
+        operation_to_start,
         on_execute_completed,
         on_revert_completed,
     )

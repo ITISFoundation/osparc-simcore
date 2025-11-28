@@ -13,15 +13,16 @@ from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.rabbit import RabbitSettings
-from simcore_service_dynamic_scheduler.services.generic_scheduler._event import (
+from simcore_service_dynamic_scheduler.services.generic_scheduler import (
+    OperationToStart,
     enqueue_execute_completed_event,
     enqueue_revert_completed_event,
+)
+from simcore_service_dynamic_scheduler.services.generic_scheduler._event import (
     enqueue_schedule_event,
 )
 from simcore_service_dynamic_scheduler.services.generic_scheduler._models import (
     EventType,
-    OperationContext,
-    OperationName,
     ScheduleId,
 )
 from tenacity import (
@@ -152,17 +153,12 @@ async def test_enqueue_schedule_event_raises_error(
 def get_mock_safe_on_event_type(
     mocker: MockerFixture,
 ) -> Callable[
-    [
-        Callable[
-            [EventType, ScheduleId, OperationName, OperationContext], Awaitable[None]
-        ]
-    ],
-    Mock,
+    [Callable[[EventType, ScheduleId, OperationToStart], Awaitable[None]]], Mock
 ]:
 
     def _(
         side_effect: Callable[
-            [EventType, ScheduleId, OperationName, OperationContext], Awaitable[None]
+            [EventType, ScheduleId, OperationToStart], Awaitable[None]
         ],
     ) -> Mock:
         another_mock = Mock()
@@ -170,11 +166,13 @@ def get_mock_safe_on_event_type(
         async def _mock(
             event_type: EventType,
             schedule_id: ScheduleId,
-            operation_name: OperationName,
-            initial_context: OperationContext,
+            to_start: OperationToStart,
+            *,
+            on_execute_completed: OperationToStart | None = None,
+            on_revert_completed: OperationToStart | None = None,
         ) -> None:
-            await side_effect(event_type, schedule_id, operation_name, initial_context)
-            another_mock(event_type, schedule_id, operation_name, initial_context)
+            await side_effect(event_type, schedule_id, to_start)
+            another_mock(event_type, schedule_id, to_start)
 
         core_mock = Mock()
         core_mock.safe_on_event_type = _mock
@@ -190,13 +188,7 @@ def get_mock_safe_on_event_type(
 @pytest.mark.parametrize("expected_event_type", EventType)
 async def test_enqueue_event_type(
     get_mock_safe_on_event_type: Callable[
-        [
-            Callable[
-                [EventType, ScheduleId, OperationName, OperationContext],
-                Awaitable[None],
-            ]
-        ],
-        Mock,
+        [Callable[[EventType, ScheduleId, OperationToStart], Awaitable[None]]], Mock
     ],
     app: FastAPI,
     expected_event_type: EventType,
@@ -205,8 +197,10 @@ async def test_enqueue_event_type(
     async def _side_effect_nothing(
         event_type: EventType,
         schedule_id: ScheduleId,
-        operation_name: OperationName,
-        initial_context: OperationContext,
+        to_start: OperationToStart,
+        *,
+        on_execute_completed: OperationToStart | None = None,
+        on_revert_completed: OperationToStart | None = None,
     ) -> None:
         pass
 
@@ -215,9 +209,13 @@ async def test_enqueue_event_type(
     schedule_id = TypeAdapter(ScheduleId).validate_python(f"{uuid4()}")
     match expected_event_type:
         case EventType.ON_EXECUTEDD_COMPLETED:
-            await enqueue_execute_completed_event(app, schedule_id, "op1", {})
+            await enqueue_execute_completed_event(
+                app, schedule_id, OperationToStart("op1", {})
+            )
         case EventType.ON_REVERT_COMPLETED:
-            await enqueue_revert_completed_event(app, schedule_id, "op1", {})
+            await enqueue_revert_completed_event(
+                app, schedule_id, OperationToStart("op1", {})
+            )
         case _:
             pytest.fail("unsupported case")
 
@@ -225,20 +223,14 @@ async def test_enqueue_event_type(
         with attempt:
             await asyncio.sleep(0)  # wait for event to trigger
             assert mock.call_args_list == [
-                call(expected_event_type, schedule_id, "op1", {})
+                call(expected_event_type, schedule_id, OperationToStart("op1", {}))
             ]
 
 
 @pytest.mark.parametrize("expected_event_type", EventType)
 async def test_enqueue_event_type_raises_error(
     get_mock_safe_on_event_type: Callable[
-        [
-            Callable[
-                [EventType, ScheduleId, OperationName, OperationContext],
-                Awaitable[None],
-            ]
-        ],
-        Mock,
+        [Callable[[EventType, ScheduleId, OperationToStart], Awaitable[None]]], Mock
     ],
     app: FastAPI,
     caplog: pytest.LogCaptureFixture,
@@ -249,8 +241,7 @@ async def test_enqueue_event_type_raises_error(
     async def _side_effect_raise_error(
         event_type: EventType,
         schedule_id: ScheduleId,
-        operation_name: OperationName,
-        initial_context: OperationContext,
+        to_start: OperationToStart,
     ) -> None:
         msg = "always failing here as requested"
         raise RuntimeError(msg)
@@ -261,9 +252,13 @@ async def test_enqueue_event_type_raises_error(
 
     match expected_event_type:
         case EventType.ON_EXECUTEDD_COMPLETED:
-            await enqueue_execute_completed_event(app, schedule_id, "op1", {})
+            await enqueue_execute_completed_event(
+                app, schedule_id, OperationToStart("op1", {})
+            )
         case EventType.ON_REVERT_COMPLETED:
-            await enqueue_revert_completed_event(app, schedule_id, "op1", {})
+            await enqueue_revert_completed_event(
+                app, schedule_id, OperationToStart("op1", {})
+            )
         case _:
             pytest.fail("unsupported case")
 

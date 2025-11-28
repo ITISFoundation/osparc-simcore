@@ -36,6 +36,7 @@ from simcore_service_dynamic_scheduler.services.generic_scheduler import (
     BaseStep,
     Operation,
     OperationName,
+    OperationToStart,
     ParallelStepGroup,
     ProvidedOperationContext,
     RequiredOperationContext,
@@ -739,7 +740,9 @@ async def test_execute_revert_order(
 ):
     register_operation(operation_name, operation)
 
-    schedule_id = await start_operation(selected_app, operation_name, {})
+    schedule_id = await start_operation(
+        selected_app, OperationToStart(operation_name, {})
+    )
     assert TypeAdapter(ScheduleId).validate_python(schedule_id)
 
     await ensure_expected_order(steps_call_order, expected_order)
@@ -858,7 +861,9 @@ async def test_fails_during_revert_is_in_error_state(
 ):
     register_operation(operation_name, operation)
 
-    schedule_id = await start_operation(selected_app, operation_name, {})
+    schedule_id = await start_operation(
+        selected_app, OperationToStart(operation_name, {})
+    )
     assert TypeAdapter(ScheduleId).validate_python(schedule_id)
 
     await ensure_expected_order(steps_call_order, expected_order)
@@ -925,7 +930,9 @@ async def test_cancelled_finishes_nicely(
 ):
     register_operation(operation_name, operation)
 
-    schedule_id = await start_operation(selected_app, operation_name, {})
+    schedule_id = await start_operation(
+        selected_app, OperationToStart(operation_name, {})
+    )
     assert TypeAdapter(ScheduleId).validate_python(schedule_id)
 
     await ensure_expected_order(steps_call_order, expected_before_cancel_order)
@@ -1038,7 +1045,9 @@ async def test_repeating_step(
 ):
     register_operation(operation_name, operation)
 
-    schedule_id = await start_operation(selected_app, operation_name, {})
+    schedule_id = await start_operation(
+        selected_app, OperationToStart(operation_name, {})
+    )
     assert TypeAdapter(ScheduleId).validate_python(schedule_id)
 
     await ensure_expected_order(
@@ -1157,7 +1166,9 @@ async def test_wait_for_manual_intervention(
 ):
     register_operation(operation_name, operation)
 
-    schedule_id = await start_operation(selected_app, operation_name, {})
+    schedule_id = await start_operation(
+        selected_app, OperationToStart(operation_name, {})
+    )
     assert TypeAdapter(ScheduleId).validate_python(schedule_id)
 
     formatted_expected_keys = {k.format(schedule_id=schedule_id) for k in expected_keys}
@@ -1222,7 +1233,9 @@ async def test_operation_is_not_cancellable(
     operation = Operation(SingleStepGroup(_S1), is_cancellable=False)
     register_operation(operation_name, operation)
 
-    schedule_id = await start_operation(selected_app, operation_name, {})
+    schedule_id = await start_operation(
+        selected_app, OperationToStart(operation_name, {})
+    )
 
     # even if cancelled, state of waiting for manual intervention remains the same
     with pytest.raises(OperationNotCancellableError):
@@ -1339,7 +1352,9 @@ async def test_restart_revert_operation_step_in_error(
 ):
     register_operation(operation_name, operation)
 
-    schedule_id = await start_operation(selected_app, operation_name, {})
+    schedule_id = await start_operation(
+        selected_app, OperationToStart(operation_name, {})
+    )
     assert TypeAdapter(ScheduleId).validate_python(schedule_id)
 
     formatted_expected_keys = {k.format(schedule_id=schedule_id) for k in expected_keys}
@@ -1395,7 +1410,9 @@ async def test_errors_with_restart_operation_step_in_error(
     )
     register_operation(operation_name, operation)
 
-    schedule_id = await start_operation(selected_app, operation_name, {})
+    schedule_id = await start_operation(
+        selected_app, OperationToStart(operation_name, {})
+    )
     assert TypeAdapter(ScheduleId).validate_python(schedule_id)
 
     await ensure_expected_order(
@@ -1525,7 +1542,9 @@ async def test_operation_context_usage(
 
     register_operation(operation_name, operation)
 
-    schedule_id = await start_operation(selected_app, operation_name, initial_context)
+    schedule_id = await start_operation(
+        selected_app, OperationToStart(operation_name, initial_context)
+    )
     assert TypeAdapter(ScheduleId).validate_python(schedule_id)
 
     # NOTE: might fail because it raised ProvidedOperationContextKeysAreMissingError check logs
@@ -1580,7 +1599,9 @@ async def test_operation_initial_context_using_key_provided_by_step(
     register_operation(operation_name, operation)
 
     with pytest.raises(InitialOperationContextKeyNotAllowedError):
-        await start_operation(selected_app, operation_name, initial_context)
+        await start_operation(
+            selected_app, OperationToStart(operation_name, initial_context)
+        )
 
     await ensure_keys_in_store(selected_app, expected_keys=set())
 
@@ -1717,7 +1738,9 @@ async def test_step_does_not_provide_declared_key_or_is_none(
 
     register_operation(operation_name, operation)
 
-    schedule_id = await start_operation(selected_app, operation_name, initial_context)
+    schedule_id = await start_operation(
+        selected_app, OperationToStart(operation_name, initial_context)
+    )
     assert TypeAdapter(ScheduleId).validate_python(schedule_id)
 
     await _ensure_log_mesage(caplog, message=expected_error_str)
@@ -1743,6 +1766,8 @@ async def test_get_operation_name_or_none(
     operation = Operation(SingleStepGroup(_S1))
     register_operation(operation_name, operation)
 
-    schedule_id = await start_operation(selected_app, operation_name, {})
+    schedule_id = await start_operation(
+        selected_app, OperationToStart(operation_name, {})
+    )
 
     assert await get_operation_name_or_none(selected_app, schedule_id) == operation_name
