@@ -134,8 +134,9 @@ async def get_cluster_workers(
         ],
         tags={
             EC2_NAME_TAG_KEY: TypeAdapter(AWSTagValue).validate_python(
-                f"{get_cluster_name(app_settings, user_id=user_id, wallet_id=wallet_id, is_manager=False)}*"
+                f"{get_cluster_name(app_settings, user_id=user_id, wallet_id=wallet_id, is_manager=False)}"
             )
+            + "*"  # NOTE: this is done this way as * is a special char in AWS tag filtering
         },
     )
     return ec2_instance_data
