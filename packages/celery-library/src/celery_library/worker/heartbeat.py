@@ -12,9 +12,6 @@ def update_heartbeat() -> None:
 
 
 def is_healthy(threshold_seconds: int = 10) -> bool:
-    if not HEARTBEAT_FILE.exists():
-        return False
-
     try:
         heartbeat = float(HEARTBEAT_FILE.read_text(encoding="utf-8").strip())
     except (OSError, ValueError):
