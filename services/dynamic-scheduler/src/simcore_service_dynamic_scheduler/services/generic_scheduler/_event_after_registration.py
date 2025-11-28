@@ -16,16 +16,36 @@ def _get_after_event_manager(app: FastAPI) -> "AfterEventManager":
 
 
 async def register_to_start_after_on_executed_completed(
-    app: FastAPI, schedule_id: ScheduleId, *, to_start: OperationToStart | None
+    app: FastAPI,
+    schedule_id: ScheduleId,
+    *,
+    to_start: OperationToStart | None,
+    on_execute_completed: OperationToStart | None = None,
+    on_revert_completed: OperationToStart | None = None,
 ) -> None:
+    """raises raises NoDataFoundError"""
     await _get_after_event_manager(app).register_to_start_after(
-        schedule_id, EventType.ON_EXECUTEDD_COMPLETED, to_start=to_start
+        schedule_id,
+        EventType.ON_EXECUTED_COMPLETED,
+        to_start=to_start,
+        on_execute_completed=on_execute_completed,
+        on_revert_completed=on_revert_completed,
     )
 
 
 async def register_to_start_after_on_reverted_completed(
-    app: FastAPI, schedule_id: ScheduleId, *, to_start: OperationToStart | None
+    app: FastAPI,
+    schedule_id: ScheduleId,
+    *,
+    to_start: OperationToStart | None,
+    on_execute_completed: OperationToStart | None = None,
+    on_revert_completed: OperationToStart | None = None,
 ) -> None:
+    """raises raises NoDataFoundError"""
     await _get_after_event_manager(app).register_to_start_after(
-        schedule_id, EventType.ON_REVERT_COMPLETED, to_start=to_start
+        schedule_id,
+        EventType.ON_REVERT_COMPLETED,
+        to_start=to_start,
+        on_execute_completed=on_execute_completed,
+        on_revert_completed=on_revert_completed,
     )

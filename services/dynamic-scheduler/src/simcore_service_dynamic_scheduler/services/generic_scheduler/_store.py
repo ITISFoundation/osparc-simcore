@@ -13,9 +13,9 @@ from ._errors import NoDataFoundError
 from ._lifecycle_protocol import SupportsLifecycle
 from ._models import (
     EventType,
-    OperationContext,
     OperationErrorType,
     OperationName,
+    OperationToStart,
     ProvidedOperationContext,
     RequiredOperationContext,
     ScheduleId,
@@ -442,9 +442,10 @@ class OperationContextProxy:
         await self._store.delete(self._get_hash_key())
 
 
-class _EventDict(TypedDict):
-    operation_name: NotRequired[OperationName]
-    initial_context: NotRequired[OperationContext]
+class _OperationEventsDict(TypedDict):
+    to_start: NotRequired[OperationToStart]
+    on_execute_completed: NotRequired[OperationToStart | None]
+    on_revert_completed: NotRequired[OperationToStart | None]
 
 
 class OperationEventsProxy:
@@ -462,29 +463,42 @@ class OperationEventsProxy:
 
     @overload
     async def create_or_update(
-        self, key: Literal["initial_context"], value: OperationContext
+        self, key: Literal["to_start"], value: OperationToStart
     ) -> None: ...
     @overload
     async def create_or_update(
-        self, key: Literal["operation_name"], value: OperationName
+        self, key: Literal["on_execute_completed"], value: OperationToStart | None
+    ) -> None: ...
+    @overload
+    async def create_or_update(
+        self, key: Literal["on_revert_completed"], value: OperationToStart | None
     ) -> None: ...
     async def create_or_update(self, key: str, value: Any) -> None:
         await self._store.set_key_in_hash(self._get_hash_key(), key, value)
 
-    async def create_or_update_multiple(self, updates: _EventDict) -> None:
+    async def create_or_update_multiple(self, updates: _OperationEventsDict) -> None:
         await self._store.set_keys_in_hash(self._get_hash_key(), updates=updates)  # type: ignore[arg-type]
 
     @overload
-    async def read(self, key: Literal["operation_name"]) -> OperationName: ...
+    async def read(self, key: Literal["to_start"]) -> OperationToStart: ...
     @overload
-    async def read(self, key: Literal["initial_context"]) -> OperationContext: ...
+    async def read(
+        self, key: Literal["on_execute_completed"]
+    ) -> OperationToStart | None: ...
+    @overload
+    async def read(
+        self, key: Literal["on_revert_completed"]
+    ) -> OperationToStart | None: ...
     async def read(self, key: str) -> Any:
         """raises NoDataFoundError if the key is not present in the hash"""
         hash_key = self._get_hash_key()
         (result,) = await self._store.get_keys_from_hash(hash_key, key)
-        if result is None:
-            raise NoDataFoundError(key=key, hash_key=hash_key)
-        return result
+
+        match key:
+            case "to_start" | "on_execute_completed" | "on_revert_completed":
+                return OperationToStart(**result) if result else None
+
+        raise NoDataFoundError(key=key, hash_key=hash_key)
 
     async def delete(self) -> None:
         await self._store.delete(self._get_hash_key())
