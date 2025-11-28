@@ -14,7 +14,7 @@ from ...generic_scheduler import (
     start_operation,
 )
 from .. import _opration_names
-from .._models import DesiredState, SchedulingProfile
+from .._models import DesiredState, SchedulingProfileType
 from .._redis import RedisServiceStateManager
 from ._common_steps import SetCurrentScheduleId
 from ._profiles import RegsteredSchedulingProfiles
@@ -22,38 +22,38 @@ from ._profiles import RegsteredSchedulingProfiles
 _logger = logging.getLogger(__name__)
 
 
-class _CacheSchedulingProfile(BaseStep):
+class _CacheSchedulingProfileType(BaseStep):
     """
     Computes and stores the scheduling profile to be used when enforcing
     """
 
     @classmethod
     def get_execute_requires_context_keys(cls) -> set[str]:
-        return {"node_id", "scheduling_profile"}
+        return {"node_id", "scheduling_profile_type"}
 
     @classmethod
     def get_execute_provides_context_keys(cls) -> set[str]:
-        return {"scheduling_profile"}
+        return {"scheduling_profile_type"}
 
     @classmethod
     async def execute(
         cls, app: FastAPI, required_context: RequiredOperationContext
     ) -> ProvidedOperationContext | None:
         node_id: NodeID = required_context["node_id"]
-        scheduling_profile: SchedulingProfile | None = required_context[
-            "scheduling_profile"
+        scheduling_profile_type: SchedulingProfileType | None = required_context[
+            "scheduling_profile_type"
         ]
 
         # allows to skip lengthy check
-        if scheduling_profile is not None:
-            return {"scheduling_profile": scheduling_profile}
+        if scheduling_profile_type is not None:
+            return {"scheduling_profile_type": scheduling_profile_type}
 
         # TODO: this will be done in a future PR, for now it stays mocked
         _ = app
         _ = node_id
-        scheduling_profile = SchedulingProfile.LEGACY
+        scheduling_profile_type = SchedulingProfileType.LEGACY
 
-        return {"scheduling_profile": scheduling_profile}
+        return {"scheduling_profile_type": scheduling_profile_type}
 
 
 def _get_start_monitor_stop_initial_context(node_id: NodeID) -> OperationContext:
@@ -63,14 +63,16 @@ def _get_start_monitor_stop_initial_context(node_id: NodeID) -> OperationContext
 class _Enforce(BaseStep):
     @classmethod
     def get_execute_requires_context_keys(cls) -> set[str]:
-        return {"node_id", "scheduling_profile"}
+        return {"node_id", "scheduling_profile_type"}
 
     @classmethod
     async def execute(
         cls, app: FastAPI, required_context: RequiredOperationContext
     ) -> ProvidedOperationContext | None:
         node_id: NodeID = required_context["node_id"]
-        scheduling_profile: SchedulingProfile = required_context["scheduling_profile"]
+        scheduling_profile_type: SchedulingProfileType = required_context[
+            "scheduling_profile_type"
+        ]
 
         service_state_manager = RedisServiceStateManager(app=app, node_id=node_id)
 
@@ -78,7 +80,7 @@ class _Enforce(BaseStep):
         assert desired_state is not None  # nosec
         current_state = await service_state_manager.read("current_state")
 
-        profile_data = RegsteredSchedulingProfiles.get_profile_data(scheduling_profile)
+        profile = RegsteredSchedulingProfiles.get_profile(scheduling_profile_type)
 
         initial_context = _get_start_monitor_stop_initial_context(node_id)
         enforce_operation = OperationToStart(
@@ -94,7 +96,7 @@ class _Enforce(BaseStep):
         if current_state == desired_state == DesiredState.RUNNING:
             await start_operation(
                 app,
-                profile_data.monitor_name,
+                profile.monitor_name,
                 initial_context,
                 on_execute_completed=enforce_operation,
                 on_revert_completed=enforce_operation,
@@ -111,7 +113,7 @@ class _Enforce(BaseStep):
             case DesiredState.RUNNING:
                 await start_operation(
                     app,
-                    profile_data.start_name,
+                    profile.start_name,
                     initial_context,
                     on_execute_completed=enforce_operation,
                     on_revert_completed=enforce_operation,
@@ -119,7 +121,7 @@ class _Enforce(BaseStep):
             case DesiredState.STOPPED:
                 await start_operation(
                     app,
-                    profile_data.stop_name,
+                    profile.stop_name,
                     initial_context,
                     on_execute_completed=enforce_operation,
                     on_revert_completed=enforce_operation,
@@ -131,6 +133,6 @@ class _Enforce(BaseStep):
 def get_operation() -> Operation:
     return Operation(
         SingleStepGroup(SetCurrentScheduleId),
-        SingleStepGroup(_CacheSchedulingProfile),
+        SingleStepGroup(_CacheSchedulingProfileType),
         SingleStepGroup(_Enforce),
     )

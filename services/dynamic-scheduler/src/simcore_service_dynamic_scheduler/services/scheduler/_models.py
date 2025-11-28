@@ -17,6 +17,6 @@ class OperationType(StrAutoEnum):
     STOP = auto()
 
 
-class SchedulingProfile(StrAutoEnum):
+class SchedulingProfileType(StrAutoEnum):
     LEGACY = auto()
     NEW_STYLE = auto()
