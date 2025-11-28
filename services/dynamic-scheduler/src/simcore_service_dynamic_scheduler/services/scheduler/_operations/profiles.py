@@ -24,31 +24,35 @@ class RegsteredSchedulingProfiles:
     _REGISTEERED_MODES: ClassVar[dict[SchedulingProfileType, SchedulingProfile]] = {}
 
     @classmethod
-    def add(
+    def register(
         cls,
-        schedule_mode: SchedulingProfileType,
+        scheduling_profile_type: SchedulingProfileType,
         *,
         start_operation: Operation,
         monitor_operation: Operation,
         stop_operation: Operation,
     ) -> None:
-        cls._REGISTEERED_MODES[schedule_mode] = SchedulingProfile(
+        cls._REGISTEERED_MODES[scheduling_profile_type] = SchedulingProfile(
             start_name=get_scheduler_oepration_name(
                 OperationType.START,
-                schedule_mode,
+                scheduling_profile_type,
             ),
             start_operation=start_operation,
             monitor_name=get_scheduler_oepration_name(
                 OperationType.MONITOR,
-                schedule_mode,
+                scheduling_profile_type,
             ),
             monitor_operation=monitor_operation,
             stop_name=get_scheduler_oepration_name(
                 OperationType.STOP,
-                schedule_mode,
+                scheduling_profile_type,
             ),
             stop_operation=stop_operation,
         )
+
+    @classmethod
+    def unregister(cls, scheduling_profile_type: SchedulingProfileType) -> None:
+        cls._REGISTEERED_MODES.pop(scheduling_profile_type, None)
 
     @classmethod
     def get_profile(
@@ -61,17 +65,21 @@ class RegsteredSchedulingProfiles:
         yield from cls._REGISTEERED_MODES.values()
 
 
-# add all supported profiles here
+def register_profiles() -> None:
+    RegsteredSchedulingProfiles.register(
+        SchedulingProfileType.LEGACY,
+        start_operation=legacy.start.get_operation(),
+        monitor_operation=legacy.monitor.get_operation(),
+        stop_operation=legacy.stop.get_operation(),
+    )
+    RegsteredSchedulingProfiles.register(
+        SchedulingProfileType.NEW_STYLE,
+        start_operation=new_style.start.get_operation(),
+        monitor_operation=new_style.monitor.get_operation(),
+        stop_operation=new_style.stop.get_operation(),
+    )
 
-RegsteredSchedulingProfiles.add(
-    SchedulingProfileType.LEGACY,
-    start_operation=legacy.start.get_operation(),
-    monitor_operation=legacy.monitor.get_operation(),
-    stop_operation=legacy.stop.get_operation(),
-)
-RegsteredSchedulingProfiles.add(
-    SchedulingProfileType.NEW_STYLE,
-    start_operation=new_style.start.get_operation(),
-    monitor_operation=new_style.monitor.get_operation(),
-    stop_operation=new_style.stop.get_operation(),
-)
+
+def unregister_profiles() -> None:
+    RegsteredSchedulingProfiles.unregister(SchedulingProfileType.LEGACY)
+    RegsteredSchedulingProfiles.unregister(SchedulingProfileType.NEW_STYLE)

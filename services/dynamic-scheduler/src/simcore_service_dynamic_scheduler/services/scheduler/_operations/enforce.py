@@ -17,7 +17,7 @@ from .. import _opration_names
 from .._models import DesiredState, SchedulingProfileType
 from .._redis import RedisServiceStateManager
 from ._common_steps import SetCurrentScheduleId
-from ._profiles import RegsteredSchedulingProfiles
+from .profiles import RegsteredSchedulingProfiles
 
 _logger = logging.getLogger(__name__)
 

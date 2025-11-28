@@ -6,7 +6,7 @@ from ...generic_scheduler import Operation, OperationRegistry, SingleStepGroup
 from .. import _opration_names
 from . import enforce
 from ._common_steps import SetCurrentScheduleId
-from ._profiles import RegsteredSchedulingProfiles
+from .profiles import RegsteredSchedulingProfiles
 
 _MIN_STEPS_IN_OPERATION: Final[NonNegativeInt] = 2
 
