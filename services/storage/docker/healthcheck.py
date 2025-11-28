@@ -6,9 +6,9 @@
 Example of usage in a Dockerfile
 ```
     COPY --chown=scu:scu docker/healthcheck.py docker/healthcheck.py
-    HEALTHCHECK --interval=30s \
-                --timeout=30s \
-                --start-period=1s \
+    HEALTHCHECK --interval=10s \
+                --timeout=5s \
+                --start-period=60s \
                 --retries=3 \
                 CMD python3 docker/healthcheck.py http://localhost:8080/v0/
 ```
