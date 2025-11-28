@@ -1,8 +1,9 @@
+import tempfile
 import time
 from pathlib import Path
+from typing import Final
 
-HEARTBEAT_FILE = Path("/tmp/celery_heartbeat")  # noqa: S108
-
+HEARTBEAT_FILE: Final[Path] = Path(tempfile.gettempdir()) / "celery_heartbeat"
 
 def update_heartbeat() -> None:
     tmp_file = HEARTBEAT_FILE.with_suffix(".tmp")
