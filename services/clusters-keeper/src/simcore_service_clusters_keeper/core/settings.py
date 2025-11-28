@@ -17,7 +17,6 @@ from models_library.docker import DockerGenericTag
 from pydantic import (
     AliasChoices,
     Field,
-    Json,
     NonNegativeFloat,
     NonNegativeInt,
     PositiveInt,
@@ -79,13 +78,13 @@ class ClustersKeeperSSMSettings(SSMSettings):
 
 class WorkersEC2InstancesSettings(BaseCustomSettings):
     WORKERS_EC2_INSTANCES_ALLOWED_TYPES: Annotated[
-        Json[dict[str, EC2InstanceBootSpecific]],
+        dict[str, EC2InstanceBootSpecific],
         Field(
             description="Defines which EC2 instances are considered as candidates for new EC2 instance and their respective boot specific parameters",
         ),
     ]
     WORKERS_EC2_INSTANCES_COLD_START_DOCKER_IMAGES_PRE_PULLING: Annotated[
-        Json[list[DockerGenericTag]],
+        list[DockerGenericTag],
         Field(
             description="List of docker images to pre-pull on cold started new EC2 instances",
             default_factory=list,
@@ -119,7 +118,7 @@ class WorkersEC2InstancesSettings(BaseCustomSettings):
     ] = 10
     # NAME PREFIX is not exposed since we override it anyway
     WORKERS_EC2_INSTANCES_SECURITY_GROUP_IDS: Annotated[
-        Json[list[str]],
+        list[str],
         Field(
             min_length=1,
             description="A security group acts as a virtual firewall for your EC2 instances to control incoming and outgoing traffic"
@@ -128,7 +127,7 @@ class WorkersEC2InstancesSettings(BaseCustomSettings):
         ),
     ]
     WORKERS_EC2_INSTANCES_SUBNET_IDS: Annotated[
-        Json[list[str]],
+        list[str],
         Field(
             min_length=1,
             description="A subnet is a range of IP addresses in your VPC "
@@ -154,7 +153,7 @@ class WorkersEC2InstancesSettings(BaseCustomSettings):
     ] = datetime.timedelta(minutes=3)
 
     WORKERS_EC2_INSTANCES_CUSTOM_TAGS: Annotated[
-        Json[EC2Tags],
+        EC2Tags,
         Field(
             description="Allows to define tags that should be added to the created EC2 instance default tags. "
             "a tag must have a key and an optional value. see [https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html]",
@@ -174,7 +173,7 @@ class WorkersEC2InstancesSettings(BaseCustomSettings):
 
 class PrimaryEC2InstancesSettings(BaseCustomSettings):
     PRIMARY_EC2_INSTANCES_ALLOWED_TYPES: Annotated[
-        Json[dict[str, EC2InstanceBootSpecific]],
+        dict[str, EC2InstanceBootSpecific],
         Field(
             description="Defines which EC2 instances are considered as candidates for new EC2 instance and their respective boot specific parameters",
         ),
@@ -186,7 +185,7 @@ class PrimaryEC2InstancesSettings(BaseCustomSettings):
         ),
     ] = 10
     PRIMARY_EC2_INSTANCES_SECURITY_GROUP_IDS: Annotated[
-        Json[list[str]],
+        list[str],
         Field(
             min_length=1,
             description="A security group acts as a virtual firewall for your EC2 instances to control incoming and outgoing traffic"
@@ -195,7 +194,7 @@ class PrimaryEC2InstancesSettings(BaseCustomSettings):
         ),
     ]
     PRIMARY_EC2_INSTANCES_SUBNET_IDS: Annotated[
-        Json[list[str]],
+        list[str],
         Field(
             min_length=1,
             description="A subnet is a range of IP addresses in your VPC "
@@ -214,7 +213,7 @@ class PrimaryEC2InstancesSettings(BaseCustomSettings):
         ),
     ]
     PRIMARY_EC2_INSTANCES_CUSTOM_TAGS: Annotated[
-        Json[EC2Tags],
+        EC2Tags,
         Field(
             description="Allows to define tags that should be added to the created EC2 instance default tags. "
             "a tag must have a key and an optional value. see [https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html]",
