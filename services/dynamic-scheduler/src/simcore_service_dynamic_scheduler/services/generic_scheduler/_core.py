@@ -47,7 +47,6 @@ from ._event_after_registration import (
 )
 from ._models import (
     EventType,
-    OperationContext,
     OperationErrorType,
     OperationName,
     OperationToStart,
@@ -557,31 +556,30 @@ class Core(SingletonInAppStateMixin):
 
                 # 1b) if reached the end of the EXECUTE operation -> remove all created data [EMIT execute complete event]
                 on_executed_proxy = OperationEventsProxy(
-                    self._store, schedule_id, EventType.ON_EXECUTEDD_COMPLETED
+                    self._store, schedule_id, EventType.ON_EXECUTED_COMPLETED
                 )
-                on_executed_operation_name: OperationName | None = None
-                on_executed_initial_context: OperationContext | None = None
+                on_executed_to_start: OperationToStart | None = None
+                on_executed_on_execute_completed: OperationToStart | None = None
+                on_executed_on_revert_completed: OperationToStart | None = None
                 if await on_executed_proxy.exists():
-                    on_executed_operation_name = await on_executed_proxy.read(
-                        "operation_name"
+                    on_executed_to_start = await on_executed_proxy.read("to_start")
+                    on_executed_on_execute_completed = await on_executed_proxy.read(
+                        "on_execute_completed"
                     )
-                    on_executed_initial_context = await on_executed_proxy.read(
-                        "initial_context"
+                    on_executed_on_revert_completed = await on_executed_proxy.read(
+                        "on_revert_completed"
                     )
 
                 await cleanup_after_finishing(
                     self._store, schedule_id=schedule_id, is_executing=True
                 )
-                if (
-                    on_executed_operation_name is not None
-                    and on_executed_initial_context is not None
-                ):
+                if on_executed_to_start is not None:
                     await enqueue_execute_completed_event(
                         self.app,
                         schedule_id,
-                        OperationToStart(
-                            on_executed_operation_name, on_executed_initial_context
-                        ),
+                        on_executed_to_start,
+                        on_execute_completed=on_executed_on_execute_completed,
+                        on_revert_completed=on_executed_on_revert_completed,
                     )
 
             return
@@ -661,35 +659,28 @@ class Core(SingletonInAppStateMixin):
                 on_reverted_proxy = OperationEventsProxy(
                     self._store, schedule_id, EventType.ON_REVERT_COMPLETED
                 )
-                on_reverted_operation_name: OperationName | None = None
-                on_reverted_initial_context: OperationContext | None = None
+                on_reverted_to_start: OperationToStart | None = None
+                on_reverted_on_execute_completed: OperationToStart | None = None
+                on_reverted_on_revert_completed: OperationToStart | None = None
                 if await on_reverted_proxy.exists():
-                    on_reverted_operation_name = await on_reverted_proxy.read(
-                        "operation_name"
+                    on_reverted_to_start = await on_reverted_proxy.read("to_start")
+                    on_reverted_on_execute_completed = await on_reverted_proxy.read(
+                        "on_execute_completed"
                     )
-                    on_reverted_initial_context = await on_reverted_proxy.read(
-                        "initial_context"
+                    on_reverted_on_revert_completed = await on_reverted_proxy.read(
+                        "on_revert_completed"
                     )
 
                 await cleanup_after_finishing(
                     self._store, schedule_id=schedule_id, is_executing=False
                 )
-                _logger.debug(
-                    "Revert completed for schedule_id='%s', checking next step %s %s",
-                    schedule_id,
-                    on_reverted_operation_name,
-                    on_reverted_initial_context,
-                )
-                if (
-                    on_reverted_operation_name is not None
-                    and on_reverted_initial_context is not None
-                ):
+                if on_reverted_to_start is not None:
                     await enqueue_revert_completed_event(
                         self.app,
                         schedule_id,
-                        OperationToStart(
-                            on_reverted_operation_name, on_reverted_initial_context
-                        ),
+                        on_reverted_to_start,
+                        on_execute_completed=on_reverted_on_execute_completed,
+                        on_revert_completed=on_reverted_on_revert_completed,
                     )
                 return
 

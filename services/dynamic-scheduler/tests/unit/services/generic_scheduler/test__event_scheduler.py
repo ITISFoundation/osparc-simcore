@@ -15,10 +15,10 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.rabbit import RabbitSettings
 from simcore_service_dynamic_scheduler.services.generic_scheduler import (
     OperationToStart,
-    enqueue_execute_completed_event,
-    enqueue_revert_completed_event,
 )
 from simcore_service_dynamic_scheduler.services.generic_scheduler._event import (
+    enqueue_execute_completed_event,
+    enqueue_revert_completed_event,
     enqueue_schedule_event,
 )
 from simcore_service_dynamic_scheduler.services.generic_scheduler._models import (
@@ -208,7 +208,7 @@ async def test_enqueue_event_type(
 
     schedule_id = TypeAdapter(ScheduleId).validate_python(f"{uuid4()}")
     match expected_event_type:
-        case EventType.ON_EXECUTEDD_COMPLETED:
+        case EventType.ON_EXECUTED_COMPLETED:
             await enqueue_execute_completed_event(
                 app, schedule_id, OperationToStart("op1", {})
             )
@@ -251,7 +251,7 @@ async def test_enqueue_event_type_raises_error(
     schedule_id = TypeAdapter(ScheduleId).validate_python(f"{uuid4()}")
 
     match expected_event_type:
-        case EventType.ON_EXECUTEDD_COMPLETED:
+        case EventType.ON_EXECUTED_COMPLETED:
             await enqueue_execute_completed_event(
                 app, schedule_id, OperationToStart("op1", {})
             )

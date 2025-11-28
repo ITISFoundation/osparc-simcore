@@ -18,10 +18,10 @@ from simcore_service_dynamic_scheduler.services.generic_scheduler._models import
 )
 from simcore_service_dynamic_scheduler.services.generic_scheduler._store import (
     EventType,
-    OperationContext,
     OperationContextProxy,
     OperationEventsProxy,
     OperationRemovalProxy,
+    OperationToStart,
     ScheduleDataStoreProxy,
     StepGroupProxy,
     StepStoreProxy,
@@ -423,11 +423,34 @@ async def test_operation_removal_proxy(store: Store, schedule_id: ScheduleId):
     await proxy.delete()
 
 
-async def test_operation_events_proxy(store: Store, schedule_id: ScheduleId):
-    operation_name = "op1"
-    initial_context: OperationContext = {"k1": "v1", "k2": 2}
-
-    event_type = EventType.ON_EXECUTEDD_COMPLETED
+@pytest.mark.parametrize(
+    "to_start, on_execute_completed, on_revert_completed",
+    [
+        (
+            OperationToStart("op1", {"k1": "v1"}),
+            None,
+            None,
+        ),
+        (
+            OperationToStart("op2", {"k2": 2}),
+            OperationToStart("op3", {"k3": True}),
+            None,
+        ),
+        (
+            OperationToStart("op4", {"k4": 3.14}),
+            OperationToStart("op5", {"k5": [1, 2, 3]}),
+            OperationToStart("op6", {"k6": {"a": "b"}}),
+        ),
+    ],
+)
+async def test_operation_events_proxy(
+    store: Store,
+    schedule_id: ScheduleId,
+    to_start: OperationToStart,
+    on_execute_completed: OperationToStart | None,
+    on_revert_completed: OperationToStart | None,
+):
+    event_type = EventType.ON_EXECUTED_COMPLETED
     proxy = OperationEventsProxy(store, schedule_id, event_type)
     hash_key = f"SCH:{schedule_id}:EVENTS:{event_type}"
 
@@ -436,15 +459,22 @@ async def test_operation_events_proxy(store: Store, schedule_id: ScheduleId):
     await _assert_keys_in_hash(store, hash_key, set())
 
     await proxy.create_or_update_multiple(
-        {"operation_name": operation_name, "initial_context": initial_context}
+        {
+            "to_start": to_start,
+            "on_execute_completed": on_execute_completed,
+            "on_revert_completed": on_revert_completed,
+        }
     )
     assert await proxy.exists() is True
 
     await _assert_keys(store, {hash_key})
-    await _assert_keys_in_hash(store, hash_key, {"operation_name", "initial_context"})
+    await _assert_keys_in_hash(
+        store, hash_key, {"to_start", "on_execute_completed", "on_revert_completed"}
+    )
 
-    assert await proxy.read("operation_name") == operation_name
-    assert await proxy.read("initial_context") == initial_context
+    assert await proxy.read("to_start") == to_start
+    assert await proxy.read("on_execute_completed") == on_execute_completed
+    assert await proxy.read("on_revert_completed") == on_revert_completed
 
     await proxy.delete()
     assert await proxy.exists() is False

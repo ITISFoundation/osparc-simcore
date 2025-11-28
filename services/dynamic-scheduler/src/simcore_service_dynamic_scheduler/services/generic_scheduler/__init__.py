@@ -11,7 +11,6 @@ from ._deferred_runner import (
     get_step_store_proxy,
 )
 from ._errors import NoDataFoundError
-from ._event import enqueue_execute_completed_event, enqueue_revert_completed_event
 from ._event_after_registration import (
     register_to_start_after_on_executed_completed,
     register_to_start_after_on_reverted_completed,
@@ -44,8 +43,6 @@ __all__: tuple[str, ...] = (
     "BaseStep",
     "BaseStepGroup",
     "cancel_operation",
-    "enqueue_execute_completed_event",
-    "enqueue_revert_completed_event",
     "generic_scheduler_lifespan",
     "get_operation_context_proxy",
     "get_operation_name_or_none",

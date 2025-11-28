@@ -31,6 +31,8 @@ class AfterEventManager(SingletonInAppStateMixin):
         event_type: EventType,
         *,
         to_start: OperationToStart | None,
+        on_execute_completed: OperationToStart | None = None,
+        on_revert_completed: OperationToStart | None = None,
     ) -> None:
 
         events_proxy = OperationEventsProxy(self._store, schedule_id, event_type)
@@ -54,8 +56,9 @@ class AfterEventManager(SingletonInAppStateMixin):
 
         await events_proxy.create_or_update_multiple(
             {
-                "initial_context": to_start.initial_context,
-                "operation_name": to_start.operation_name,
+                "to_start": to_start,
+                "on_execute_completed": on_execute_completed,
+                "on_revert_completed": on_revert_completed,
             }
         )
         _logger.debug(
@@ -77,7 +80,7 @@ class AfterEventManager(SingletonInAppStateMixin):
         with log_context(
             _logger,
             logging.DEBUG,
-            f"processing {event_type=} for {schedule_id=} {to_start=}",
+            f"processing {event_type=} for {schedule_id=} {to_start=} {on_execute_completed=} {on_revert_completed=}",
             log_duration=True,
         ):
 
@@ -89,9 +92,11 @@ class AfterEventManager(SingletonInAppStateMixin):
             )
             _logger.debug(
                 "Finished execution of event_type='%s' for schedule_id='%s'. "
-                "Started new_schedule_id='%s' from to_start='%s'",
+                "Started new_schedule_id='%s' from to_start='%s' on_execute_completed='%s' on_revert_completed='%s'",
                 event_type,
                 schedule_id,
                 new_schedule_id,
                 to_start,
+                on_execute_completed,
+                on_revert_completed,
             )

@@ -15,7 +15,7 @@ class ExecuteCompletedQueue(BaseEventQueue):
         self, event: OperationToStartEvent
     ) -> None:
         await get_after_event_manager(self.app).safe_on_event_type(
-            EventType.ON_EXECUTEDD_COMPLETED,
+            EventType.ON_EXECUTED_COMPLETED,
             event.schedule_id,
             event.to_start,
             on_execute_completed=event.on_execute_completed,
