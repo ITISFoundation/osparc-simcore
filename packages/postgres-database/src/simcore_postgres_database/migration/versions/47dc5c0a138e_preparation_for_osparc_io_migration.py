@@ -108,6 +108,8 @@ def upgrade():
     op.drop_index("ix_projects_comments_project_uuid", table_name="projects_comments")
 
     # NOTE: I am adding this manually >>>>
+    # Seems that when projects_to_wallet table was created, by mistake the FK was named: fk_projects_comments_project_uuid
+    # Which now causes trouble when dropping the projects_comments table which also has this foreign key name in its definition
     op.execute(
         "ALTER TABLE projects_comments DROP CONSTRAINT IF EXISTS fk_projects_comments_project_uuid;"
     )
