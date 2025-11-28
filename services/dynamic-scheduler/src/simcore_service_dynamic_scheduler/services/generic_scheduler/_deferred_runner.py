@@ -1,3 +1,4 @@
+import asyncio
 from datetime import timedelta
 
 from fastapi import FastAPI
@@ -167,7 +168,10 @@ class DeferredRunner(BaseDeferredHandler[None]):
                 *step.get_execute_requires_context_keys()
             )
 
+            await asyncio.sleep(step.get_sleep_before_execute().total_seconds())
             step_provided_operation_context = await step.execute(app, required_context)
+            await asyncio.sleep(step.get_sleep_after_execute().total_seconds())
+
             provided_operation_context = step_provided_operation_context or {}
             execute_provides_keys = step.get_execute_provides_context_keys()
 
@@ -179,7 +183,10 @@ class DeferredRunner(BaseDeferredHandler[None]):
                 *step.get_revert_requires_context_keys()
             )
 
+            await asyncio.sleep(step.get_sleep_before_revert().total_seconds())
             step_provided_operation_context = await step.revert(app, required_context)
+            await asyncio.sleep(step.get_sleep_after_revert().total_seconds())
+
             provided_operation_context = step_provided_operation_context or {}
             revert_provides_keys = step.get_revert_provides_context_keys()
 
