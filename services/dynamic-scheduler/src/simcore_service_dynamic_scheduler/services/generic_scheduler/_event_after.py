@@ -62,10 +62,10 @@ class AfterEventManager(SingletonInAppStateMixin):
             }
         )
         _logger.debug(
-            "Registered event_type='%s' to_start='%s' for schedule_id='%s'",
+            "Registered event_type='%s' for schedule_id='%s' to_start='%s'",
             event_type,
-            to_start,
             schedule_id,
+            to_start,
         )
 
     async def safe_on_event_type(

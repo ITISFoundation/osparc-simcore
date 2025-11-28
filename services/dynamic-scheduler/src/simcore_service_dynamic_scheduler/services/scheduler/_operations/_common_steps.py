@@ -10,7 +10,7 @@ from ...generic_scheduler import (
     ReservedContextKeys,
     ScheduleId,
 )
-from .._models import DesiredState
+from .._models import UserRequestedState
 from .._redis import RedisServiceStateManager
 
 _logger = logging.getLogger(__name__)
@@ -47,8 +47,9 @@ class SetCurrentStateRunning(BaseStep):
 
         service_state_manager = RedisServiceStateManager(app=app, node_id=node_id)
         await service_state_manager.create_or_update(
-            "current_state", DesiredState.RUNNING
+            "current_state", UserRequestedState.RUNNING
         )
+        return None
 
 
 class SetCurrentStateStopped(BaseStep):
@@ -64,8 +65,9 @@ class SetCurrentStateStopped(BaseStep):
 
         service_state_manager = RedisServiceStateManager(app=app, node_id=node_id)
         await service_state_manager.create_or_update(
-            "current_state", DesiredState.STOPPED
+            "current_state", UserRequestedState.STOPPED
         )
+        return None
 
 
 class DoNothing(BaseStep):

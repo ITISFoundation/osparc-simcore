@@ -5,7 +5,7 @@ from models_library.utils.enums import StrAutoEnum
 type SchedulerOperationName = str
 
 
-class DesiredState(StrAutoEnum):
+class UserRequestedState(StrAutoEnum):
     RUNNING = auto()
     STOPPED = auto()
 

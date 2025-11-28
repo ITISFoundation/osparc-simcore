@@ -14,7 +14,9 @@ from pydantic import TypeAdapter
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.redis import RedisSettings
 from simcore_service_dynamic_scheduler.services.generic_scheduler import ScheduleId
-from simcore_service_dynamic_scheduler.services.scheduler._models import DesiredState
+from simcore_service_dynamic_scheduler.services.scheduler._models import (
+    UserRequestedState,
+)
 from simcore_service_dynamic_scheduler.services.scheduler._redis import (
     RedisServiceStateManager,
 )
@@ -88,13 +90,13 @@ async def test_redis_service_state(
     assert await state_manager.exists() is False
 
     # 2. create some entries
-    await state_manager.create_or_update("desired_state", DesiredState.RUNNING)
+    await state_manager.create_or_update("desired_state", UserRequestedState.RUNNING)
     # already works with one entry regarless of which one is
     assert await state_manager.exists() is True
-    assert await state_manager.read("desired_state") == DesiredState.RUNNING
+    assert await state_manager.read("desired_state") == UserRequestedState.RUNNING
 
-    await state_manager.create_or_update("current_state", DesiredState.STOPPED)
-    assert await state_manager.read("current_state") == DesiredState.STOPPED
+    await state_manager.create_or_update("current_state", UserRequestedState.STOPPED)
+    assert await state_manager.read("current_state") == UserRequestedState.STOPPED
 
     await state_manager.create_or_update("current_schedule_id", schedule_id)
     assert await state_manager.read("current_schedule_id") == schedule_id
@@ -119,21 +121,21 @@ async def test_redis_service_state(
 
     await state_manager.create_or_update_multiple(
         {
-            "desired_state": DesiredState.STOPPED,
+            "desired_state": UserRequestedState.STOPPED,
             "desired_stop_data": dynamic_service_stop,
             "desired_start_data": dynamic_service_start,
             "current_schedule_id": schedule_id,
-            "current_state": DesiredState.STOPPED,
+            "current_state": UserRequestedState.STOPPED,
             "current_start_data": dynamic_service_start,
             "current_stop_data": dynamic_service_stop,
         }
     )
     assert await state_manager.exists() is True
-    assert await state_manager.read("desired_state") == DesiredState.STOPPED
+    assert await state_manager.read("desired_state") == UserRequestedState.STOPPED
     assert await state_manager.read("desired_start_data") == dynamic_service_start
     assert await state_manager.read("desired_stop_data") == dynamic_service_stop
     assert await state_manager.read("current_schedule_id") == schedule_id
-    assert await state_manager.read("current_state") == DesiredState.STOPPED
+    assert await state_manager.read("current_state") == UserRequestedState.STOPPED
     assert await state_manager.read("current_start_data") == dynamic_service_start
     assert await state_manager.read("current_stop_data") == dynamic_service_stop
 

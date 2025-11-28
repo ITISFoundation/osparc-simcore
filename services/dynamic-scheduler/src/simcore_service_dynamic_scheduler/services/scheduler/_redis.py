@@ -15,7 +15,7 @@ from servicelib.redis._utils import handle_redis_returns_union_types
 from settings_library.redis import RedisDatabase, RedisSettings
 
 from ..generic_scheduler import ScheduleId
-from ._models import DesiredState
+from ._models import UserRequestedState
 
 _SERVICE_STATE_NAMESPACE: Final[str] = "SS"
 
@@ -55,11 +55,11 @@ class RedisStore(SingletonInAppStateMixin):
 
 
 class _UpdateServiceStateDict(TypedDict):
-    desired_state: NotRequired[DesiredState]
+    desired_state: NotRequired[UserRequestedState]
     desired_start_data: NotRequired[DynamicServiceStart]
     desired_stop_data: NotRequired[DynamicServiceStop]
 
-    current_state: NotRequired[DesiredState]
+    current_state: NotRequired[UserRequestedState]
     current_start_data: NotRequired[DynamicServiceStart]
     current_stop_data: NotRequired[DynamicServiceStop]
 
@@ -84,7 +84,7 @@ class RedisServiceStateManager:
 
     @overload
     async def create_or_update(
-        self, key: Literal["desired_state"], value: DesiredState
+        self, key: Literal["desired_state"], value: UserRequestedState
     ) -> None: ...
     @overload
     async def create_or_update(
@@ -96,7 +96,7 @@ class RedisServiceStateManager:
     ) -> None: ...
     @overload
     async def create_or_update(
-        self, key: Literal["current_state"], value: DesiredState
+        self, key: Literal["current_state"], value: UserRequestedState
     ) -> None: ...
     @overload
     async def create_or_update(
@@ -123,7 +123,9 @@ class RedisServiceStateManager:
         )
 
     @overload
-    async def read(self, key: Literal["desired_state"]) -> DesiredState | None: ...
+    async def read(
+        self, key: Literal["desired_state"]
+    ) -> UserRequestedState | None: ...
     @overload
     async def read(
         self, key: Literal["desired_start_data"]
@@ -133,7 +135,9 @@ class RedisServiceStateManager:
         self, key: Literal["desired_stop_data"]
     ) -> DynamicServiceStop | None: ...
     @overload
-    async def read(self, key: Literal["current_state"]) -> DesiredState | None: ...
+    async def read(
+        self, key: Literal["current_state"]
+    ) -> UserRequestedState | None: ...
     @overload
     async def read(
         self, key: Literal["current_start_data"]

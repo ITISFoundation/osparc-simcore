@@ -11,10 +11,10 @@ from ...generic_scheduler import (
     ProvidedOperationContext,
     RequiredOperationContext,
     SingleStepGroup,
-    start_operation,
+    register_to_start_after_on_executed_completed,
 )
 from .. import _opration_names
-from .._models import DesiredState, SchedulingProfileType
+from .._models import SchedulingProfileType, UserRequestedState
 from .._redis import RedisServiceStateManager
 from ._common_steps import SetCurrentScheduleId
 from .profiles import RegsteredSchedulingProfiles
@@ -79,6 +79,8 @@ class _Enforce(BaseStep):
         desired_state = await service_state_manager.read("desired_state")
         assert desired_state is not None  # nosec
         current_state = await service_state_manager.read("current_state")
+        current_schedule_id = await service_state_manager.read("current_schedule_id")
+        assert current_schedule_id is not None  # nosec
 
         profile = RegsteredSchedulingProfiles.get_profile(scheduling_profile_type)
 
@@ -88,44 +90,48 @@ class _Enforce(BaseStep):
         )
 
         _logger.debug(
-            "Deciding based on current='%s' and desired='%s'",
+            "Deciding for current_schedule_id='%s' based on current='%s' and desired='%s', with profile='%s'",
+            current_schedule_id,
             current_state,
             desired_state,
+            profile,
         )
-
-        if current_state == desired_state == DesiredState.RUNNING:
-            await start_operation(
+        if current_state == desired_state == UserRequestedState.RUNNING:
+            await register_to_start_after_on_executed_completed(
                 app,
-                profile.monitor_name,
-                initial_context,
+                current_schedule_id,
+                to_start=OperationToStart(profile.monitor_name, initial_context),
                 on_execute_completed=enforce_operation,
                 on_revert_completed=enforce_operation,
             )
+            _logger.debug("selected operation: monitor")
             return None
 
-        if current_state == desired_state == DesiredState.STOPPED:
+        if current_state == desired_state == UserRequestedState.STOPPED:
             # do nothing reached the end of everything just remove
             await service_state_manager.delete()
             _logger.debug("node_di='%s' removed from tracking", node_id)
             return None
 
         match desired_state:
-            case DesiredState.RUNNING:
-                await start_operation(
+            case UserRequestedState.RUNNING:
+                await register_to_start_after_on_executed_completed(
                     app,
-                    profile.start_name,
-                    initial_context,
+                    current_schedule_id,
+                    to_start=OperationToStart(profile.start_name, initial_context),
                     on_execute_completed=enforce_operation,
                     on_revert_completed=enforce_operation,
                 )
-            case DesiredState.STOPPED:
-                await start_operation(
+                _logger.debug("selected operation: start")
+            case UserRequestedState.STOPPED:
+                await register_to_start_after_on_executed_completed(
                     app,
-                    profile.stop_name,
-                    initial_context,
+                    current_schedule_id,
+                    to_start=OperationToStart(profile.stop_name, initial_context),
                     on_execute_completed=enforce_operation,
                     on_revert_completed=enforce_operation,
                 )
+                _logger.debug("selected operation: stop")
 
         return None
 
