@@ -3,7 +3,7 @@
   "info": {
     "title": "simcore-service-notifications",
     "description": "Service used for sending notifications to users via different channels",
-    "version": "0.0.1"
+    "version": "0.1.0"
   },
   "servers": [
     {

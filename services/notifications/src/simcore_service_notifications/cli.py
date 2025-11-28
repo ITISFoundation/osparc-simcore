@@ -2,8 +2,10 @@ import logging
 import os
 
 import typer
+from settings_library.celery import CelerySettings
 from settings_library.postgres import PostgresSettings
 from settings_library.rabbit import RabbitSettings
+from settings_library.redis import RedisSettings
 from settings_library.utils_cli import (
     create_settings_command,
     create_version_callback,
@@ -68,6 +70,35 @@ def echo_dotenv(ctx: typer.Context, *, minimal: bool = True) -> None:
                 RABBIT_USER=os.environ.get("RABBIT_USER", "replace-with-rabbit-user"),
                 RABBIT_PASSWORD=os.environ.get(
                     "RABBIT_PASSWORD", "replace-with-rabbit-password"
+                ),
+            ),
+        ),
+        NOTIFICATIONS_CELERY=os.environ.get(
+            "NOTIFICATIONS_CELERY",
+            CelerySettings.create_from_envs(
+                CELERY_RABBIT_BROKER=os.environ.get(
+                    "CELERY_RABBIT_BROKER",
+                    RabbitSettings.create_from_envs(
+                        RABBIT_HOST=os.environ.get(
+                            "RABBIT_HOST", "replace-with-celery-rabbit-host"
+                        ),
+                        RABBIT_SECURE=os.environ.get("RABBIT_SECURE", "True"),
+                        RABBIT_USER=os.environ.get(
+                            "RABBIT_USER", "replace-with-celery-rabbit-user"
+                        ),
+                        RABBIT_PASSWORD=os.environ.get(
+                            "RABBIT_PASSWORD", "replace-with-celery-rabbit-password"
+                        ),
+                    ),
+                ),
+                CELERY_REDIS_RESULT_BACKEND=os.environ.get(
+                    "CELERY_REDIS_RESULT_BACKEND",
+                    RedisSettings.create_from_envs(
+                        REDIS_HOST=os.environ.get(
+                            "REDIS_HOST", "replace-with-celery-redis-host"
+                        ),
+                        REDIS_PORT=os.environ.get("REDIS_PORT", "6379"),
+                    ),
                 ),
             ),
         ),

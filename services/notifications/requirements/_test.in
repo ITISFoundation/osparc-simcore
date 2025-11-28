@@ -15,9 +15,11 @@ asgi-lifespan
 coverage
 docker
 faker
+fakeredis
 httpx
 pytest
 pytest-asyncio
+pytest-celery
 pytest-cov
 pytest-mock
 pytest-runner

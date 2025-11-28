@@ -4,9 +4,9 @@
 Example of usage in a Dockerfile
 ```
     COPY --chown=scu:scu docker/healthcheck.py docker/healthcheck.py
-    HEALTHCHECK --interval=30s \
-                --timeout=30s \
-                --start-period=1s \
+    HEALTHCHECK --interval=10s \
+                --timeout=5s \
+                --start-period=60s \
                 --retries=3 \
                 CMD python3 docker/healthcheck.py http://localhost:8000/
 ```
@@ -19,15 +19,23 @@ import os
 import sys
 from urllib.request import urlopen
 
+from celery_library.worker.heartbeat import is_heartbeat_fresh
+from simcore_service_notifications.core.application import ApplicationSettings
+
 SUCCESS, UNHEALTHY = 0, 1
 
-# Disabled if boots with debugger (e.g. debug, pdb-debug, debug-ptvsd, debugpy, etc)
-ok = "debug" in os.environ.get("SC_BOOT_MODE", "").lower()
+# Disabled if boots with debugger
+ok = os.getenv("SC_BOOT_MODE", "").lower() == "debug"
 
 # Queries host
 # pylint: disable=consider-using-with
+
+app_settings = ApplicationSettings.create_from_envs()
+
+
 ok = (
     ok
+    or (app_settings.NOTIFICATIONS_WORKER_MODE and is_heartbeat_fresh())
     or urlopen(
         "{host}{baseurl}".format(
             host=sys.argv[1], baseurl=os.environ.get("SIMCORE_NODE_BASEPATH", "")
