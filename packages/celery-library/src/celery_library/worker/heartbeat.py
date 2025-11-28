@@ -17,7 +17,7 @@ def is_heartbeat_fresh(threshold_seconds: int = 10) -> bool:
 
     try:
         heartbeat = float(HEARTBEAT_FILE.read_text(encoding="utf-8").strip())
-    except (PermissionError, OSError, ValueError):
+    except (OSError, ValueError):
         return False
 
     return (time.time() - heartbeat) <= threshold_seconds
