@@ -37,7 +37,7 @@
       "hint/hint.css",
       "marked/markdown.css",
       "common/common.css",
-      "iconfont/fontawesome7/css/all.css"
+      "iconfont/fontawesome7/fa7-fonts.css"
     ]
   },
   "requires": {
