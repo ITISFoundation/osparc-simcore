@@ -1,4 +1,3 @@
-import asyncio
 import logging
 from collections.abc import Iterable
 from contextlib import suppress
@@ -446,6 +445,7 @@ class Core(SingletonInAppStateMixin):
         if step_group.repeat_steps is True and is_executing:
             with log_context(_logger, logging.DEBUG, f"REPEATING {base_message}"):
                 await self._advance_as_repeating(
+                    steps_statuses,
                     schedule_data_proxy,
                     schedule_id,
                     operation_name,
@@ -479,6 +479,7 @@ class Core(SingletonInAppStateMixin):
 
     async def _advance_as_repeating(
         self,
+        steps_statuses: dict[StepName, StepStatus],
         schedule_data_proxy: ScheduleDataStoreProxy,
         schedule_id: ScheduleId,
         operation_name: OperationName,
@@ -487,27 +488,19 @@ class Core(SingletonInAppStateMixin):
         group_step_proxies: dict[StepName, StepStoreProxy],
     ) -> None:
         # REPEATING logic:
-        # 1) sleep before repeating
-        # 2) if any of the repeating steps was cancelled -> move to revert
-        # 3) -> restart all steps in the group
+        # 1) if any of the repeating steps was cancelled -> move to revert
+        # 2) -> restart all steps in the group
 
         step_proxies: Iterable[StepStoreProxy] = group_step_proxies.values()
 
-        # 1) sleep before repeating
-        await asyncio.sleep(current_step_group.wait_before_repeat.total_seconds())
-
-        # 2) if any of the repeating steps was cancelled -> move to revert
-
-        # since some time passed, query all steps statuses again,
-        # a cancellation request might have been requested
-        steps_stauses = await get_steps_statuses(step_proxies)
-        if any(status == StepStatus.CANCELLED for status in steps_stauses.values()):
+        # 1) if any of the repeating steps was cancelled -> move to revert
+        if any(status == StepStatus.CANCELLED for status in steps_statuses.values()):
             # NOTE:
             await schedule_data_proxy.create_or_update("is_executing", value=False)
             await enqueue_schedule_event(self.app, schedule_id)
             return
 
-        # 3) -> restart all steps in the group
+        # 2) -> restart all steps in the group
         await limited_gather(
             *(x.delete() for x in step_proxies), limit=PARALLEL_REQUESTS
         )
@@ -763,7 +756,7 @@ async def start_operation(
 
 async def cancel_operation(app: FastAPI, schedule_id: ScheduleId) -> None:
     """
-    Unstruct scheduler to revert all steps completed until
+    Instruct scheduler to revert all steps completed until
     now for the running operation.
 
     `reverting` refers to the act of reverting the effects of a step

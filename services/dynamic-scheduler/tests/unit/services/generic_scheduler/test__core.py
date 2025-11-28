@@ -944,65 +944,83 @@ _FAST_REPEAT_INTERVAL: Final[timedelta] = timedelta(seconds=0.1)
 _REPAT_COUNT: Final[NonNegativeInt] = 10
 
 
+class _S1R(_S1):
+    @classmethod
+    def get_sleep_after_execute(cls) -> timedelta:
+        return _FAST_REPEAT_INTERVAL
+
+
+class _S2R(_S2):
+    @classmethod
+    def get_sleep_after_execute(cls) -> timedelta:
+        return _FAST_REPEAT_INTERVAL
+
+
+class _RS1R(_RS1):
+    @classmethod
+    def get_sleep_after_execute(cls) -> timedelta:
+        return _FAST_REPEAT_INTERVAL
+
+    @classmethod
+    def get_sleep_after_revert(cls) -> timedelta:
+        return _FAST_REPEAT_INTERVAL
+
+
+class _RS2R(_RS2):
+    @classmethod
+    def get_sleep_after_execute(cls) -> timedelta:
+        return _FAST_REPEAT_INTERVAL
+
+    @classmethod
+    def get_sleep_after_revert(cls) -> timedelta:
+        return _FAST_REPEAT_INTERVAL
+
+
 @pytest.mark.parametrize("app_count", [10])
 @pytest.mark.parametrize(
     "operation, expected_before_cancel_order, expected_order",
     [
         pytest.param(
             Operation(
-                SingleStepGroup(
-                    _S1, repeat_steps=True, wait_before_repeat=_FAST_REPEAT_INTERVAL
-                ),
+                SingleStepGroup(_S1R, repeat_steps=True),
             ),
-            [ExecuteSequence(_S1) for _ in range(_REPAT_COUNT)],
+            [ExecuteSequence(_S1R) for _ in range(_REPAT_COUNT)],
             [
-                *[ExecuteSequence(_S1) for _ in range(_REPAT_COUNT)],
-                RevertSequence(_S1),
+                *[ExecuteSequence(_S1R) for _ in range(_REPAT_COUNT)],
+                RevertSequence(_S1R),
             ],
             id="s1(r)",
         ),
         pytest.param(
             Operation(
-                ParallelStepGroup(
-                    _S1,
-                    _S2,
-                    repeat_steps=True,
-                    wait_before_repeat=_FAST_REPEAT_INTERVAL,
-                ),
+                ParallelStepGroup(_S1R, _S2R, repeat_steps=True),
             ),
-            [ExecuteRandom(_S1, _S2) for _ in range(_REPAT_COUNT)],
+            [ExecuteRandom(_S1R, _S2R) for _ in range(_REPAT_COUNT)],
             [
-                *[ExecuteRandom(_S1, _S2) for _ in range(_REPAT_COUNT)],
-                RevertRandom(_S1, _S2),
+                *[ExecuteRandom(_S1R, _S2R) for _ in range(_REPAT_COUNT)],
+                RevertRandom(_S1R, _S2R),
             ],
             id="p2(r)",
         ),
         pytest.param(
             Operation(
-                SingleStepGroup(
-                    _RS1, repeat_steps=True, wait_before_repeat=_FAST_REPEAT_INTERVAL
-                ),
+                SingleStepGroup(_RS1R, repeat_steps=True),
             ),
-            [ExecuteSequence(_RS1) for _ in range(_REPAT_COUNT)],
+            [ExecuteSequence(_RS1R) for _ in range(_REPAT_COUNT)],
             [
-                *[ExecuteSequence(_RS1) for _ in range(_REPAT_COUNT)],
-                RevertSequence(_RS1),
+                *[ExecuteSequence(_RS1R) for _ in range(_REPAT_COUNT)],
+                RevertSequence(_RS1R),
             ],
             id="s1(rf)",
         ),
         pytest.param(
             Operation(
-                ParallelStepGroup(
-                    _RS1,
-                    _RS2,
-                    repeat_steps=True,
-                    wait_before_repeat=_FAST_REPEAT_INTERVAL,
-                ),
+                ParallelStepGroup(_RS1R, _RS2R, repeat_steps=True),
             ),
-            [ExecuteRandom(_RS1, _RS2) for _ in range(_REPAT_COUNT)],
+            [ExecuteRandom(_RS1R, _RS2R) for _ in range(_REPAT_COUNT)],
             [
-                *[ExecuteRandom(_RS1, _RS2) for _ in range(_REPAT_COUNT)],
-                RevertRandom(_RS1, _RS2),
+                *[ExecuteRandom(_RS1R, _RS2R) for _ in range(_REPAT_COUNT)],
+                RevertRandom(_RS1R, _RS2R),
             ],
             id="p2(rf)",
         ),
@@ -1389,6 +1407,7 @@ async def test_errors_with_restart_operation_step_in_error(
         ],
     )
 
+    assert isinstance(operation.step_groups[-1], ParallelStepGroup)
     await _esnure_steps_have_status(
         selected_app,
         schedule_id,
