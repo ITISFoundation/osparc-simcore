@@ -22,10 +22,9 @@ from ._profiles import RegsteredSchedulingProfiles
 _logger = logging.getLogger(__name__)
 
 
-class _Prepare(BaseStep):
+class _CacheSchedulingProfile(BaseStep):
     """
-    Figures if a service is legacy or not,
-    only if it was not previously detenrimined
+    Computes and stores the scheduling profile to be used when enforcing
     """
 
     @classmethod
@@ -132,6 +131,6 @@ class _Enforce(BaseStep):
 def get_operation() -> Operation:
     return Operation(
         SingleStepGroup(SetCurrentScheduleId),
-        SingleStepGroup(_Prepare),
+        SingleStepGroup(_CacheSchedulingProfile),
         SingleStepGroup(_Enforce),
     )
