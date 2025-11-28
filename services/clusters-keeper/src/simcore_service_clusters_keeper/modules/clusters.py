@@ -128,7 +128,7 @@ async def get_cluster_workers(
 ) -> list[EC2InstanceData]:
     app_settings = get_application_settings(app)
     assert app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES  # nosec
-    ec2_instance_data: list[EC2InstanceData] = await get_ec2_client(app).get_instances(
+    return await get_ec2_client(app).get_instances(
         key_names=[
             app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.WORKERS_EC2_INSTANCES_KEY_NAME
         ],
@@ -139,7 +139,6 @@ async def get_cluster_workers(
             + "*"  # NOTE: this is done this way as * is a special char in AWS tag filtering
         },
     )
-    return ec2_instance_data
 
 
 async def cluster_heartbeat(
