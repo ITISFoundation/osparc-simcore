@@ -14,7 +14,7 @@ from servicelib.celery.app_server import BaseAppServer
 from settings_library.celery import CeleryPoolType, CelerySettings
 
 from .app_server import get_app_server, set_app_server
-from .heartbeat import write_last_heartbeat
+from .heartbeat import update_heartbeat
 
 
 def _worker_init_wrapper(
@@ -74,4 +74,4 @@ def register_worker_signals(
             )
             worker_shutdown.connect(_worker_shutdown_wrapper(app), weak=False)
 
-    heartbeat_sent.connect(lambda **_kwargs: write_last_heartbeat(), weak=False)
+    heartbeat_sent.connect(lambda **_kwargs: update_heartbeat(), weak=False)

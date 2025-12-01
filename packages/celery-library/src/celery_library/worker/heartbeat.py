@@ -1,20 +1,19 @@
+import tempfile
 import time
 from pathlib import Path
+from typing import Final
 
-HEARTBEAT_FILE = Path("/tmp/celery_heartbeat")  # noqa: S108
+HEARTBEAT_FILE: Final[Path] = Path(tempfile.gettempdir()) / "celery_heartbeat"
 
 
-def write_last_heartbeat() -> None:
+def update_heartbeat() -> None:
     tmp_file = HEARTBEAT_FILE.with_suffix(".tmp")
-    with tmp_file.open("w") as f:
-        f.write(f"{time.time()}")
+    tmp_file.write_text(f"{time.time()}")
+    # NOTE: atomic replace
     tmp_file.replace(HEARTBEAT_FILE)
 
 
-def is_heartbeat_fresh(threshold_seconds: int = 10) -> bool:
-    if not HEARTBEAT_FILE.exists():
-        return False
-
+def is_healthy(threshold_seconds: int = 10) -> bool:
     try:
         heartbeat = float(HEARTBEAT_FILE.read_text(encoding="utf-8").strip())
     except (OSError, ValueError):
