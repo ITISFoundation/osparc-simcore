@@ -355,7 +355,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
       // increase fake progress:
       // - every second
       // - up to 95%
-      // - by 5% each time
+      // - by 5% each time (it fits in about 20 seconds)
       // - make sure the backend didn't already update it
       this.__sidecarFakeProgressTimer = setInterval(() => {
         const sidecarProgress = this.getSidecarPulling();
