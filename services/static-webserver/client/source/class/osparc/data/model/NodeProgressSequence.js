@@ -362,7 +362,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
         if (sidecarProgress.value < 0.95) {
           const newValue = Math.min(sidecarProgress.value + 0.05, 0.95);
           this.setSidecarPulling({
-            progressLabel: `${(newValue * 100).toFixed(2)}%`,
+            progressLabel: `${(osparc.utils.Utils.safeToFixed(newValue * 100, 0))}%`,
             value: newValue
           });
         } else {

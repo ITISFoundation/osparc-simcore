@@ -91,6 +91,11 @@ qx.Class.define("osparc.utils.Utils", {
 
     FLOATING_Z_INDEX: 1000001 + 1,
 
+    safeToFixed: function(value, n) {
+      const factor = Math.pow(10, n);
+      return (Math.round((value + Number.EPSILON) * factor) / factor).toFixed(n);
+    },
+
     toolTipTextOnDisabledWidget: function(widget, toolTipText) {
       if (widget && widget.getContentElement()) {
         const el = widget.getContentElement();
