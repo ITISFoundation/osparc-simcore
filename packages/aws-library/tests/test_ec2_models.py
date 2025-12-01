@@ -145,6 +145,11 @@ def test_resources_ge_operator(
             True,
         ),
         (
+            Resources(cpus=15, ram=ByteSize(1), generic_resources={"GPU": 1}),
+            Resources(cpus=20, ram=ByteSize(128)),
+            True,
+        ),
+        (
             Resources(cpus=0.1, ram=ByteSize(1), generic_resources={"GPU": 1}),
             Resources(cpus=0.1, ram=ByteSize(1), generic_resources={"GPU": 1}),
             False,
