@@ -377,5 +377,13 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
         this.__sidecarFakeProgressTimer = null;
       }
     },
+  },
+
+  destruct: function() {
+    // stop __sidecarFakeProgressTimer on class destructor
+    if (this.__sidecarFakeProgressTimer) {
+      clearInterval(this.__sidecarFakeProgressTimer);
+      this.__sidecarFakeProgressTimer = null;
+    }
   }
 });
