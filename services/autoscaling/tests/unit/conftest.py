@@ -1007,6 +1007,13 @@ def random_fake_available_instances(faker: Faker) -> list[EC2InstanceType]:
             resources=Resources(cpus=n, ram=ByteSize(n)),
         )
         for n in range(1, 30)
+    ] + [
+        EC2InstanceType(
+            name=random.choice(get_args(InstanceTypeType)),  # noqa: S311
+            resources=Resources(
+                cpus=15, ram=ByteSize(128), generic_resources={"gpu": 12}
+            ),
+        )
     ]
     random.shuffle(list_of_instances)
     return list_of_instances
