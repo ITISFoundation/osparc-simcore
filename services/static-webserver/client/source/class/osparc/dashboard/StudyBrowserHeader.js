@@ -288,8 +288,7 @@ qx.Class.define("osparc.dashboard.StudyBrowserHeader", {
             workspace.bind("accessRights", this, "accessRights");
             workspace.bind("myAccessRights", this, "myAccessRights");
           } else {
-            // this.__setIcon("@FontAwesome5Solid/home/24");
-            this.__setIcon("@FontAwesome7Brands/github/24");
+            this.__setIcon("@FontAwesome5Solid/home/24");
             title.setValue(this.tr("My Workspace"));
           }
           break;

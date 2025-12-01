@@ -219,7 +219,9 @@ qx.Class.define("osparc.dashboard.ResourceBrowserFilter", {
         value: false,
         appearance: "filter-toggle-button",
         label: this.tr("Recently Deleted"),
-        icon: "@FontAwesome5Solid/trash-alt/16",
+        // icon: "@FontAwesome5Solid/trash-alt/16",
+        icon: "@FontAwesome7Brands/github/24",
+        // icon: "@FontAwesome7Brands/github",
         paddingLeft: 10, // align it with the context
       });
       trashButton.addListener("changeValue", e => {
