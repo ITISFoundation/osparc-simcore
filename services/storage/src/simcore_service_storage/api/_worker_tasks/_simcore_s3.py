@@ -8,6 +8,7 @@ from celery import Task  # type: ignore[import-untyped]
 from celery_library.worker.app_server import get_app_server
 from models_library.api_schemas_storage.search_async_jobs import SearchResultItem
 from models_library.api_schemas_storage.storage_schemas import (
+    UNDEFINED_SIZE,
     FoldersBody,
     LinkType,
     PresignedLink,
@@ -162,16 +163,21 @@ async def search(
             project_id=project_id,
             name_pattern=name_pattern,
             modified_at=modified_at,
+            limit=1,  # NOTE: yield items as they come
         ):
+            if not items:
+                continue
+
             data = [
                 TaskStreamItem(
                     data=SearchResultItem(
                         name=item.file_name,
                         project_id=item.project_id,
-                        created_at=item.created_at,
-                        modified_at=item.last_modified,
+                        # NOTE: dirs in S3 are virtual, so we do not have created_at, last_modified info
+                        created_at=None if item.is_directory else item.created_at,
+                        modified_at=None if item.is_directory else item.last_modified,
                         is_directory=item.is_directory,
-                        size=item.file_size,
+                        size=UNDEFINED_SIZE if item.is_directory else item.file_size,
                         path=item.object_name,
                     )
                 )

@@ -159,6 +159,14 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       return toolbar;
     },
 
+    createIntroLabel: function(text) {
+      return new qx.ui.basic.Label(text).set({
+        font: "text-14",
+        rich: true,
+        wrap: true,
+      });
+    },
+
     disableIfInUse: function(resourceData, widget) {
       if (resourceData["resourceType"] === "study") {
         // disable if it's being used
@@ -523,7 +531,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
     },
 
     __addBillingPage: function() {
-      if (!osparc.desktop.credits.Utils.areWalletsEnabled()) {
+      if (!osparc.store.StaticInfo.isBillableProduct()) {
         return;
       }
       if (osparc.utils.Resources.isStudyLike(this.__resourceData) && !osparc.data.model.Study.canIWrite(this.__resourceData["accessRights"])) {
@@ -655,30 +663,22 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         let collaboratorsView = null;
         if (osparc.utils.Resources.isService(resourceData)) {
           collaboratorsView = new osparc.share.CollaboratorsService(resourceData);
-          collaboratorsView.addListener("updateAccessRights", e => {
-            const updatedData = e.getData();
-            this.__fireUpdateEvent(resourceData, updatedData);
-          }, this);
         } else if (osparc.utils.Resources.isFunction(resourceData)) {
           collaboratorsView = new osparc.share.CollaboratorsFunction(resourceData);
-          collaboratorsView.addListener("updateAccessRights", e => {
-            const updatedData = e.getData();
-            this.__fireUpdateEvent(resourceData, updatedData);
-          }, this);
-        } else {
+        } else if (osparc.utils.Resources.isStudy(resourceData)) {
           collaboratorsView = new osparc.share.CollaboratorsStudy(resourceData);
-          if (osparc.utils.Resources.isStudy(resourceData)) {
-            collaboratorsView.getChildControl("study-link").show();
-          } else if (osparc.utils.Resources.isTemplate(resourceData)) {
-            collaboratorsView.getChildControl("template-link").show();
-          } else if (osparc.utils.Resources.isTutorial(resourceData)) {
-            collaboratorsView.getChildControl("template-link").show();
-          }
-          collaboratorsView.addListener("updateAccessRights", e => {
-            const updatedData = e.getData();
-            this.__fireUpdateEvent(resourceData, updatedData);
-          }, this);
+          collaboratorsView.getChildControl("study-link").show();
+        } else if (
+          osparc.utils.Resources.isTemplate(resourceData) ||
+          osparc.utils.Resources.isTutorial(resourceData)
+        ) {
+          collaboratorsView = new osparc.share.CollaboratorsStudy(resourceData);
+          collaboratorsView.getChildControl("template-link").show();
         }
+        collaboratorsView.addListener("updateAccessRights", e => {
+          const updatedData = e.getData();
+          this.__fireUpdateEvent(resourceData, updatedData);
+        }, this);
         page.addToContent(collaboratorsView);
         this.__widgets.push(collaboratorsView);
       }
@@ -862,7 +862,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
               enabled: osparc.data.model.Study.canIWrite(this.__resourceData["accessRights"])
             });
             // eslint-disable-next-line no-underscore-dangle
-            servicesBootOpts._add(new qx.ui.core.Spacer(null, 15));
+            servicesBootOpts._add(new qx.ui.core.Spacer(null, 5));
             // eslint-disable-next-line no-underscore-dangle
             servicesBootOpts._add(autoStartButton);
           }

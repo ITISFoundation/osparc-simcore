@@ -102,7 +102,7 @@ async def test_conversations_create_and_list(
     """Test creating and listing support conversations"""
     mocks = mock_functions_factory(
         [
-            (_conversation_service, "notify_conversation_created"),
+            (_conversation_service, "notify_via_socket_conversation_created"),
         ]
     )
 
@@ -132,7 +132,7 @@ async def test_conversations_create_and_list(
     assert data["name"] == "Support Request - Bug Report"
     assert data["type"] == "SUPPORT"
 
-    assert mocks.notify_conversation_created.call_count == 0
+    assert mocks.notify_via_socket_conversation_created.call_count == 1
 
     # Test creating a second support conversation
     body = {"name": "Support Request - Feature Request", "type": "SUPPORT"}
@@ -144,7 +144,7 @@ async def test_conversations_create_and_list(
     assert ConversationRestGet.model_validate(data)
     second_conversation_id = data["conversationId"]
 
-    assert mocks.notify_conversation_created.call_count == 0
+    assert mocks.notify_via_socket_conversation_created.call_count == 2
 
     # Test creating conversation with invalid type should fail
     body = {"name": "Invalid Type", "type": "PROJECT_STATIC"}
@@ -184,9 +184,9 @@ async def test_conversations_update_and_delete(
     """Test updating and deleting support conversations"""
     mocks = mock_functions_factory(
         [
-            (_conversation_service, "notify_conversation_created"),
-            (_conversation_service, "notify_conversation_updated"),
-            (_conversation_service, "notify_conversation_deleted"),
+            (_conversation_service, "notify_via_socket_conversation_created"),
+            (_conversation_service, "notify_via_socket_conversation_updated"),
+            (_conversation_service, "notify_via_socket_conversation_deleted"),
         ]
     )
 
@@ -219,7 +219,7 @@ async def test_conversations_update_and_delete(
     data, _ = await assert_status(resp, expected)
     assert data["name"] == updated_name
 
-    assert mocks.notify_conversation_updated.call_count == 0
+    assert mocks.notify_via_socket_conversation_updated.call_count == 1
 
     # Verify the update by getting the conversation again
     resp = await client.get(f"{get_url}?type=SUPPORT")
@@ -233,7 +233,7 @@ async def test_conversations_update_and_delete(
     resp = await client.delete(f"{delete_url}?type=SUPPORT")
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
-    assert mocks.notify_conversation_deleted.call_count == 0
+    assert mocks.notify_via_socket_conversation_deleted.call_count == 1
 
     # Verify deletion by listing conversations
     resp = await client.get(f"{base_url}?type=SUPPORT")

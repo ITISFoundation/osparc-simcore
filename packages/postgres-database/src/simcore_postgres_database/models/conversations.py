@@ -13,6 +13,7 @@ class ConversationType(enum.Enum):
     PROJECT_STATIC = "PROJECT_STATIC"  # Static conversation for the project
     PROJECT_ANNOTATION = "PROJECT_ANNOTATION"  # Something like sticky note, can be located anywhere in the pipeline UI
     SUPPORT = "SUPPORT"  # Support conversation
+    SUPPORT_CALL = "SUPPORT_CALL"  # Support call conversation
 
 
 conversations = sa.Table(

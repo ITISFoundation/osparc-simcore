@@ -1,6 +1,4 @@
-""" osparc's service common library
-
-"""
+"""osparc's service common library"""
 
 #
 # NOTE:

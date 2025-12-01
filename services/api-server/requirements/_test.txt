@@ -53,11 +53,11 @@ billiard==4.2.1
     # via
     #   -c requirements/_base.txt
     #   celery
-boto3==1.40.44
+boto3==1.40.60
     # via
     #   aws-sam-translator
     #   moto
-botocore==1.40.44
+botocore==1.40.60
     # via
     #   aws-xray-sdk
     #   boto3
@@ -65,7 +65,7 @@ botocore==1.40.44
     #   s3transfer
 botocore-stubs==1.40.33
     # via types-boto3
-celery==5.5.3
+celery==5.6.0
     # via
     #   -c requirements/_base.txt
     #   pytest-celery
@@ -134,6 +134,10 @@ ecdsa==0.19.1
     #   moto
     #   python-jose
     #   sshpubkeys
+exceptiongroup==1.3.1
+    # via
+    #   -c requirements/_base.txt
+    #   celery
 faker==37.8.0
     # via -r requirements/_test.in
 fakeredis==2.31.3
@@ -155,7 +159,7 @@ frozenlist==1.5.0
     #   aiosignal
 graphql-core==3.2.6
     # via moto
-greenlet==3.1.1
+greenlet==3.2.4
     # via
     #   -c requirements/_base.txt
     #   sqlalchemy
@@ -219,7 +223,7 @@ jsonschema==3.2.0
     #   openapi-spec-validator
 junit-xml==1.9
     # via cfn-lint
-kombu==5.5.4
+kombu==5.6.1
     # via
     #   -c requirements/_base.txt
     #   celery
@@ -306,7 +310,7 @@ pygments==2.18.0
     # via
     #   -c requirements/_base.txt
     #   pytest
-pyinstrument==5.0.0
+pyinstrument==5.1.1
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
@@ -348,7 +352,7 @@ python-jose==3.5.0
     # via moto
 pytz==2025.2
     # via moto
-pyyaml==6.0.2
+pyyaml==6.0.3
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -377,7 +381,7 @@ responses==0.25.8
     # via moto
 respx==0.22.0
     # via -r requirements/_test.in
-rpds-py==0.27.1
+rpds-py==0.28.0
     # via referencing
 rsa==4.9.1
     # via
@@ -444,15 +448,11 @@ typing-extensions==4.14.1
     # via
     #   -c requirements/_base.txt
     #   alembic
-    #   anyio
     #   fastapi
     #   mypy
     #   pydantic
     #   pydantic-core
-    #   pytest-asyncio
     #   sqlalchemy2-stubs
-    #   starlette
-    #   types-boto3
     #   typing-inspection
 typing-inspection==0.4.1
     # via
@@ -463,6 +463,10 @@ tzdata==2025.2
     #   -c requirements/_base.txt
     #   faker
     #   kombu
+tzlocal==5.3.1
+    # via
+    #   -c requirements/_base.txt
+    #   celery
 urllib3==2.5.0
     # via
     #   -c requirements/../../../requirements/constraints.txt

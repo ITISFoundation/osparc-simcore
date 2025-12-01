@@ -58,7 +58,7 @@ qx.Class.define("osparc.desktop.credits.Transactions", {
 
       // FEATURE TOGGLE
       // const filterContainer = new qx.ui.container.Composite(new qx.ui.layout.HBox())
-      // this.__dateFilters = new osparc.desktop.credits.DateFilters();
+      // this.__dateFilters = new osparc.filter.DateFilters();
       // this.__dateFilters.addListener("change", e => this.__saveFilters(e.getData()));
       // filterContainer.add(this.__dateFilters);
 

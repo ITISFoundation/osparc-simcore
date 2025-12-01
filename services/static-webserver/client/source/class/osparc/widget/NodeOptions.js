@@ -54,7 +54,7 @@ qx.Class.define("osparc.widget.NodeOptions", {
       let showStartStopButton = false;
 
       // Tier Selection
-      if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
+      if (osparc.store.StaticInfo.isBillableProduct()) {
         const tierSelectionView = new osparc.node.TierSelectionView(node);
         sections.push(tierSelectionView);
 
@@ -94,19 +94,22 @@ qx.Class.define("osparc.widget.NodeOptions", {
       }
 
       if (showStartStopButton) {
+        const layout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
         // Only available to dynamic services
-        const instructions = new qx.ui.basic.Label(this.tr("To proceed with the following actions, the service needs to be Stopped.")).set({
+        const instructions = new qx.ui.basic.Label(this.tr("To change the following options, the service needs to be stopped.")).set({
           font: "text-13",
           rich: true,
           wrap: true
         });
-        this._add(instructions);
+        layout.add(instructions);
 
         const startStopButton = new osparc.node.StartStopButton();
         startStopButton.setNode(node);
-        this._add(startStopButton);
+        layout.add(startStopButton);
 
         startStopButton.getChildControl("stop-button").bind("visibility", instructions, "visibility");
+
+        this._add(layout);
       }
 
       sections.forEach(section => this._add(section));

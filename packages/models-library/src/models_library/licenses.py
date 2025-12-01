@@ -1,12 +1,20 @@
 from datetime import date, datetime
 from enum import auto
-from typing import Annotated, Any, NamedTuple, NewType, NotRequired, TypeAlias, cast
+from typing import (
+    Annotated,
+    Any,
+    NamedTuple,
+    NewType,
+    NotRequired,
+    TypeAlias,
+    TypedDict,
+    cast,
+)
 from uuid import UUID
 
 from models_library.resource_tracker import PricingPlanId
 from pydantic import BaseModel, ConfigDict, PositiveInt, StringConstraints
 from pydantic.config import JsonDict
-from typing_extensions import TypedDict
 
 from .products import ProductName
 from .resource_tracker import PricingPlanId

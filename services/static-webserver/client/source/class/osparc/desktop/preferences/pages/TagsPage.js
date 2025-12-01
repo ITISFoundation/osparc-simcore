@@ -36,7 +36,7 @@ qx.Class.define("osparc.desktop.preferences.pages.TagsPage", {
 
     __renderLayout: async function() {
       // Tags
-      this.__tagsContainer = new qx.ui.container.Composite(new qx.ui.layout.VBox(10));
+      this.__tagsContainer = new qx.ui.container.Composite(new qx.ui.layout.VBox(2));
       this.__tagsContainer.set({
         paddingLeft: 10
       });
@@ -49,7 +49,15 @@ qx.Class.define("osparc.desktop.preferences.pages.TagsPage", {
       for (const tag of tags) {
         await osparc.store.Tags.getInstance().fetchAccessRights(tag);
       }
-      const tagItems = tags.map(tag => new osparc.form.tag.TagItem().set({tag}));
+      const tagItems = tags.map(tag => {
+        const tagItem = new osparc.form.tag.TagItem().set({
+          tag
+        });
+        tagItem.getChildControl("tag").set({
+          font: "text-12"
+        });
+        return tagItem;
+      });
       tagItems.forEach(tagItem => {
         this.__tagsContainer.add(tagItem);
         this.__attachTagItemEvents(tagItem);

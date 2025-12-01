@@ -139,7 +139,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
             x for x in self._service_observation_task.values() if isinstance(x, Task)
         ]
         for task in running_tasks:
-            task.cancel()
+            task.cancel("application shutdown, cancelling observation task")
         try:
             results = await asyncio.wait_for(
                 asyncio.gather(*running_tasks, return_exceptions=True),

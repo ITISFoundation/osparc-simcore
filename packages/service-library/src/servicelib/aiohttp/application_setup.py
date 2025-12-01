@@ -7,14 +7,16 @@ from copy import deepcopy
 from datetime import datetime
 from enum import Enum
 from types import TracebackType
-from typing import Any, Final, Protocol
+from typing import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
+    Any,
+    Final,
+    Protocol,
+    TypedDict,
+)
 
 import arrow
 from aiohttp import web
 from pydantic import TypeAdapter
-from typing_extensions import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
-    TypedDict,
-)
 
 from .application_keys import APP_CONFIG_KEY
 

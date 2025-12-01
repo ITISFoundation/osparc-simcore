@@ -54,7 +54,6 @@ typing-extensions==4.15.0
     # via
     #   pydantic
     #   pydantic-core
-    #   pytest-asyncio
     #   typing-inspection
 typing-inspection==0.4.2
     # via pydantic

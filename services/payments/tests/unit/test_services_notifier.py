@@ -4,9 +4,8 @@
 # pylint: disable=too-many-arguments
 
 
-from collections.abc import AsyncIterable, Callable
+from collections.abc import AsyncIterable, Awaitable, Callable
 from contextlib import _AsyncGeneratorContextManager
-from typing import Awaitable
 from unittest.mock import AsyncMock
 
 import arrow

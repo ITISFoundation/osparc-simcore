@@ -51,6 +51,7 @@ async def list_groups(request: web.Request):
         groups_by_type,
         my_product_group,
         product_support_group,
+        product_chatbot_primary_group,
     ) = await _groups_service.get_user_profile_groups(
         request.app, user_id=req_ctx.user_id, product=product
     )
@@ -59,7 +60,10 @@ async def list_groups(request: web.Request):
     assert groups_by_type.everyone  # nosec
 
     my_groups = MyGroupsGet.from_domain_model(
-        groups_by_type, my_product_group, product_support_group
+        groups_by_type,
+        my_product_group,
+        product_support_group,
+        product_chatbot_primary_group,
     )
 
     return envelope_json_response(my_groups)

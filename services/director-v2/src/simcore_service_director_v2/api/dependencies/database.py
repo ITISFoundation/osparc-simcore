@@ -37,10 +37,10 @@ def get_base_repository(engine: AsyncEngine, repo_type: type[RepoType]) -> RepoT
 
 def get_repository(
     repo_type: type[RepoType],
-) -> Callable[..., AsyncGenerator[RepoType, None]]:
+) -> Callable[..., AsyncGenerator[RepoType]]:
     async def _get_repo(
         engine: Annotated[AsyncEngine, Depends(_get_db_engine)],
-    ) -> AsyncGenerator[RepoType, None]:
+    ) -> AsyncGenerator[RepoType]:
         yield get_base_repository(engine=engine, repo_type=repo_type)
 
     return _get_repo

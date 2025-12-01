@@ -1,28 +1,59 @@
-import json
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.13"
+# dependencies = [
+#     "aiodocker",
+#     "aiofiles",
+#     "arrow",
+#     "pyyaml",
+#     "rich",
+#     "tenacity",
+#     "typer",
+# ]
+# ///
+
+import asyncio
 import logging
 import os
 import sys
+import time
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
+import aiodocker
 import arrow
-import docker
+import typer
 import yaml
-from tenacity import RetryError, Retrying
+from rich.console import Console
+from rich.panel import Panel
+from rich.progress import (
+    BarColumn,
+    Progress,
+    SpinnerColumn,
+    TextColumn,
+    TimeElapsedColumn,
+)
+from rich.table import Table
+from tenacity import retry, retry_if_result, stop_after_delay, wait_fixed
 from tenacity.before_sleep import before_sleep_log
-from tenacity.stop import stop_after_delay
-from tenacity.wait import wait_fixed
 
-logger = logging.getLogger(__name__)
+# Configure logging to be less verbose for prettier output
+logging.basicConfig(level=logging.ERROR)
+_logger = logging.getLogger(__name__)
 
-current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+_console = Console()
 
-WAIT_BEFORE_RETRY = 10
-MAX_WAIT_TIME = 5 * 60
+_current_dir = (
+    Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
+)
+
+_WAIT_BEFORE_RETRY = 10
+_MAX_WAIT_TIME = 10 * 60
 
 # SEE https://docs.docker.com/engine/swarm/how-swarm-mode-works/swarm-task-states/
 
-PRE_STATES = [
+_PRE_STATES = [
     "new",  # The task was initialized.
     "pending",  # Resources for the task were allocated.
     "assigned",  # Docker assigned the task to nodes.
@@ -31,9 +62,9 @@ PRE_STATES = [
     "starting",  # Docker is starting the task.
 ]
 
-RUNNING_STATE = "running"  # The task is executing.
+_RUNNING_STATE = "running"  # The task is executing.
 
-FAILED_STATES = [
+_FAILED_STATES = [
     "complete",  # The task exited without an error code.
     "failed",  # The task exited with an error code.
     "shutdown",  # Docker requested the task to shut down.
@@ -43,23 +74,119 @@ FAILED_STATES = [
 ]
 
 
-def get_tasks_summary(service_tasks):
-    msg = ""
-    for task in service_tasks:
-        status: dict = task["Status"]
-        msg += f"- task ID:{task['ID']}, CREATED: {task['CreatedAt']}, UPDATED: {task['UpdatedAt']}, DESIRED_STATE: {task['DesiredState']}, STATE: {status['State']}"
-        error = status.get("Err")
-        if error:
-            msg += f", ERROR: {error}"
-        msg += "\n"
-
-    return msg
+def _get_status_emoji_and_color(state: str) -> tuple[str, str]:
+    """Get emoji and color for service state."""
+    if state == _RUNNING_STATE:
+        return "✅", "green"
+    if state in _PRE_STATES:
+        return "🔄", "yellow"
+    if state in _FAILED_STATES:
+        return "❌", "red"
+    return "❓", "white"
 
 
-def osparc_simcore_root_dir() -> Path:
+def _create_services_table(
+    service_statuses: dict[str, dict[str, Any]],
+) -> Table:
+    """Create a rich table showing service statuses, ops services first, then simcore."""
+    table = Table(
+        title="🐳 Docker Swarm Services Status",
+        show_header=True,
+        header_style="bold magenta",
+    )
+
+    table.add_column("Service", style="cyan", width=25)
+    table.add_column("Status", justify="center", width=10)
+    table.add_column("Replicas", justify="center", width=10)
+    table.add_column("Start Time", justify="right", width=12)
+    table.add_column("Tasks Summary", width=60)
+
+    ops_services = _ops_services()
+    core_services = _core_services()
+
+    # Helper to add a row for a service
+    def _add_service_row(service_name: str, status: dict[str, Any]):
+        emoji, color = _get_status_emoji_and_color(status["state"])
+
+        replicas_text = f"{status['running_replicas']}/{status['expected_replicas']}"
+        if status["running_replicas"] == status["expected_replicas"]:
+            replicas_style = "green"
+        elif status["running_replicas"] > 0:
+            replicas_style = "yellow"
+        else:
+            replicas_style = "red"
+
+        start_time_text = (
+            f"{status['start_time']:.1f}s" if status["start_time"] is not None else "⏳"
+        )
+
+        # Compact task summary, sorted alphabetically by state
+        tasks_summary = ""
+        if status.get("task_states"):
+            state_counts = {}
+            for state in status["task_states"]:
+                state_counts[state] = state_counts.get(state, 0) + 1
+
+            # Sort states alphabetically for consistent alignment
+            summary_parts = [
+                f"{_get_status_emoji_and_color(state)[0]} {state}: {state_counts[state]}"
+                for state in sorted(state_counts.keys())
+            ]
+            tasks_summary = " | ".join(summary_parts)
+
+        table.add_row(
+            service_name,
+            f"[{color}]{emoji}[/{color}]",
+            f"[{replicas_style}]{replicas_text}[/{replicas_style}]",
+            (
+                f"[green]{start_time_text}[/green]"
+                if status["start_time"] is not None
+                else f"[yellow]{start_time_text}[/yellow]"
+            ),
+            tasks_summary,
+        )
+
+    # Add ops services first, in canonical order
+    if ops_services:
+        table.add_row(
+            "[bold yellow]⚙️  Ops Services[/bold yellow]",
+            "",
+            "",
+            "",
+            "",
+            style="bold yellow",
+        )
+        for service_name in ops_services:
+            status = service_statuses.get(service_name)
+            if status:
+                _add_service_row(service_name, status)
+
+    # Add simcore services, in canonical order
+    if core_services:
+        table.add_row(
+            "[bold blue]🔧 Simcore Services[/bold blue]",
+            "",
+            "",
+            "",
+            "",
+            style="bold blue",
+        )
+        for service_name in core_services:
+            status = service_statuses.get(service_name)
+            if status:
+                _add_service_row(service_name, status)
+
+    # Add separator row if both sections have services
+    if ops_services and core_services:
+        table.add_row("", "", "", "", "", style="dim")
+
+    return table
+
+
+def _osparc_simcore_root_dir() -> Path:
     WILDCARD = "services/web/server"
 
-    root_dir = Path(current_dir)
+    root_dir = Path(_current_dir)
     while not any(root_dir.glob(WILDCARD)) and root_dir != Path("/"):
         root_dir = root_dir.parent
 
@@ -71,114 +198,228 @@ def osparc_simcore_root_dir() -> Path:
     return root_dir
 
 
-def core_docker_compose_file() -> Path:
-    stack_files = list(osparc_simcore_root_dir().glob(".stack-simcore*"))
+def _core_docker_compose_file() -> Path:
+    stack_files = list(_osparc_simcore_root_dir().glob(".stack-simcore*"))
     assert stack_files
     return stack_files[0]
 
 
-def core_services() -> list[str]:
-    with core_docker_compose_file().open() as fp:
+def _core_services() -> list[str]:
+    with _core_docker_compose_file().open() as fp:
         dc_specs = yaml.safe_load(fp)
         return list(dc_specs["services"].keys())
 
 
-def ops_docker_compose_file() -> Path:
-    return osparc_simcore_root_dir() / ".stack-ops.yml"
+def _ops_docker_compose_file() -> Path:
+    return _osparc_simcore_root_dir() / ".stack-ops.yml"
 
 
-def ops_services() -> list[str]:
-    with ops_docker_compose_file().open() as fp:
+def _ops_services() -> list[str]:
+    with _ops_docker_compose_file().open() as fp:
         dc_specs = yaml.safe_load(fp)
         return list(dc_specs["services"].keys())
 
 
-def _to_datetime(docker_timestamp: str) -> datetime:
-    # docker follows RFC3339Nano timestamp which is based on ISO 8601
-    # https://medium.easyread.co/understanding-about-rfc-3339-for-datetime-formatting-in-software-engineering-940aa5d5f68a
-    # This is acceptable in ISO 8601 and RFC 3339 (with T)
-    # 2019-10-12T07:20:50.52Z
-    # This is only accepted in RFC 3339 (without T)
-    # 2019-10-12 07:20:50.52Z
-    dt: datetime = arrow.get(docker_timestamp).datetime
-    return dt
+def _by_service_creation(service: dict[str, Any]) -> datetime:
+    datetime_str = service["CreatedAt"]
+    return arrow.get(datetime_str).datetime
 
 
-def _by_service_creation(service) -> datetime:
-    datetime_str = service.attrs["CreatedAt"]
-    return _to_datetime(datetime_str)
+@retry(
+    stop=stop_after_delay(_MAX_WAIT_TIME),
+    wait=wait_fixed(_WAIT_BEFORE_RETRY),
+    before_sleep=before_sleep_log(_logger, logging.WARNING),
+)
+async def _retrieve_started_services() -> list[dict[str, Any]]:
+    expected_services = _core_services() + _ops_services()
+    started_services: list[dict[str, Any]] = []
+    async with aiodocker.Docker() as client:
+        services_list = await client.services.list()
 
-
-def wait_for_services() -> int:
-    expected_services = core_services() + ops_services()
-    started_services = []
-    client = docker.from_env()
-    try:
-        for attempt in Retrying(
-            stop=stop_after_delay(MAX_WAIT_TIME),
-            wait=wait_fixed(WAIT_BEFORE_RETRY),
-            before_sleep=before_sleep_log(logger, logging.WARNING),
-        ):
-            with attempt:
-                started_services = sorted(
-                    (
-                        s
-                        for s in client.services.list()
-                        if s.name.split("_")[-1] in expected_services
-                    ),
-                    key=_by_service_creation,
-                )
-
-                assert len(started_services), "no services started!"
-                assert len(expected_services) == len(started_services), (
-                    "Some services are missing or unexpected:\n"
-                    f"expected: {len(expected_services)} {expected_services}\n"
-                    f"got: {len(started_services)} {[s.name for s in started_services]}"
-                )
-    except RetryError:
-        print(
-            f"found these services: {len(started_services)} {[s.name for s in started_services]}\nexpected services: {len(expected_services)} {expected_services}"
+        started_services = sorted(
+            (
+                s
+                for s in services_list
+                if s["Spec"]["Name"].split("_")[-1] in expected_services
+            ),
+            key=_by_service_creation,
         )
-        return os.EX_SOFTWARE
+        assert started_services, "no services started!"
+        assert len(expected_services) == len(started_services), (
+            "Some services are missing or unexpected:\n"
+            f"expected: {len(expected_services)} {expected_services}\n"
+            f"got: {len(started_services)} {[s['Spec']['Name'] for s in started_services]}"
+        )
+    return started_services
 
-    for service in started_services:
-        assert service
-        assert service.attrs
+
+async def _check_service_status(
+    service: dict[str, Any],
+    service_statuses: dict[str, dict[str, Any]],
+    ops_services: list[str],
+) -> bool:
+    """Check service status and update the status dict. Returns True if service is ready."""
+    async with aiodocker.Docker() as client:
         expected_replicas = (
-            service.attrs["Spec"]["Mode"]["Replicated"]["Replicas"]
-            if "Replicated" in service.attrs["Spec"]["Mode"]
-            else len(client.nodes.list())  # we are in global mode
+            service["Spec"]["Mode"]["Replicated"]["Replicas"]
+            if "Replicated" in service["Spec"]["Mode"]
+            else len(await client.nodes.list())
         )
-        assert hasattr(service, "name")
-        print(f"Service: {service.name} expects {expected_replicas} replicas", "-" * 10)
+        service_name = service["Spec"]["Name"].split("_")[-1]
 
-        try:
-            for attempt in Retrying(
-                stop=stop_after_delay(MAX_WAIT_TIME),
-                wait=wait_fixed(WAIT_BEFORE_RETRY),
-            ):
-                with attempt:
-                    service_tasks: list[dict] = service.tasks()  #  freeze
-                    print(get_tasks_summary(service_tasks))
+        service_tasks: list[dict[str, Any]] = await client.tasks.list(
+            filters={"service": service["Spec"]["Name"]}
+        )
 
-                    #
-                    # NOTE: a service could set 'ready' as desired-state instead of 'running' if
-                    # it constantly breaks and the swarm desides to "stop trying".
-                    #
-                    valid_replicas = sum(
-                        task["Status"]["State"] == RUNNING_STATE
-                        for task in service_tasks
-                    )
-                    assert valid_replicas == expected_replicas
-        except RetryError:
-            print(
-                f"ERROR: Service {service.name} failed to start {expected_replicas} replica/s"
+        running_replicas = sum(
+            task["Status"]["State"] == _RUNNING_STATE for task in service_tasks
+        )
+        task_states = [task["Status"]["State"] for task in service_tasks]
+
+        # Consistent status logic
+        if running_replicas == expected_replicas and expected_replicas > 0:
+            state = _RUNNING_STATE
+        elif any(task["Status"]["State"] in _FAILED_STATES for task in service_tasks):
+            state = "failed"
+        elif running_replicas > 0:
+            state = "starting"
+        else:
+            state = "pending"
+
+        # Calculate start time: service CreatedAt -> latest running task Timestamp
+        start_time = None
+        running_tasks = [
+            task for task in service_tasks if task["Status"]["State"] == _RUNNING_STATE
+        ]
+        if running_tasks:
+            service_created_at = arrow.get(service["CreatedAt"]).datetime
+            latest_started_at = max(
+                arrow.get(task["Status"]["Timestamp"]).datetime
+                for task in running_tasks
+                if "Timestamp" in task["Status"]
             )
-            print(json.dumps(service.attrs, indent=1))
-            return os.EX_SOFTWARE
+            start_time = (latest_started_at - service_created_at).total_seconds()
+
+        service_type = "ops" if service_name in ops_services else "simcore"
+
+        service_statuses[service_name] = {
+            "state": state,
+            "expected_replicas": expected_replicas,
+            "running_replicas": running_replicas,
+            "task_states": task_states,
+            "start_time": start_time,
+            "service_type": service_type,
+        }
+
+        return running_replicas == expected_replicas and expected_replicas > 0
+
+
+async def _wait_for_services() -> int:
+    """Wait for all services to start and display progress with rich components."""
+    _console.print(
+        Panel.fit(
+            "🚀 [bold blue]Waiting for osparc-simcore services to start...[/bold blue]",
+            border_style="blue",
+        )
+    )
+
+    started_services: list[dict[str, Any]] = await _retrieve_started_services()
+    ops_services = _ops_services()
+
+    service_statuses: dict[str, dict[str, Any]] = {}
+    global_start_time = time.time()
+
+    # Initialize service statuses
+    for service in started_services:
+        service_name = service["Spec"]["Name"].split("_")[-1]
+        service_type = "ops" if service_name in ops_services else "simcore"
+        service_statuses[service_name] = {
+            "state": "starting",
+            "expected_replicas": 0,
+            "running_replicas": 0,
+            "task_states": [],
+            "start_time": None,
+            "service_type": service_type,
+        }
+
+    # Create progress bar
+    progress = Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        BarColumn(complete_style="green"),
+        TextColumn("{task.completed}/{task.total}"),
+        TimeElapsedColumn(),
+        console=_console,
+    )
+
+    task = progress.add_task("Started services...", total=len(started_services))
+
+    @retry(
+        stop=stop_after_delay(_MAX_WAIT_TIME),
+        wait=wait_fixed(5),  # Wait 5 seconds between retries
+        retry=retry_if_result(lambda result: not result),  # Retry if result is False
+        before_sleep=before_sleep_log(_logger, logging.INFO),
+    )
+    async def _check_all_services_ready() -> bool:
+        """Check if all services are ready and print status."""
+        # Check status of all services
+        ready_services = []
+        for service in started_services:
+            is_ready = await _check_service_status(
+                service, service_statuses, ops_services
+            )
+            if is_ready:
+                ready_services.append(service)
+
+        # Update progress
+        progress.update(task, completed=len(ready_services))
+
+        # Create and print the display elements
+        table = _create_services_table(service_statuses)
+
+        # Print services table
+        _console.print(
+            Panel(
+                table,
+                title="🐳 Docker Swarm Services Monitor",
+                border_style="magenta",
+            )
+        )
+
+        # Print overall progress
+        _console.print(
+            Panel(
+                progress,
+                title=f"⏱️  Overall Progress ({len(ready_services)}/{len(started_services)} services ready)",
+                border_style="blue",
+            )
+        )
+
+        # Return True if all services are ready, False otherwise
+        return len(ready_services) == len(started_services)
+
+    # Wait for all services to be ready
+    await _check_all_services_ready()
+
+    # Final summary
+    total_time = time.time() - global_start_time
+    _console.print(
+        f"\n🎉 [bold green]All services are ready![/bold green] Total time: [bold]{total_time:.1f}s[/bold]"
+    )
 
     return os.EX_OK
 
 
+def main() -> None:
+    try:
+        asyncio.run(_wait_for_services())
+    except KeyboardInterrupt as exc:
+        _console.print("\n[red]❌ Operation cancelled by user[/red]")
+        raise typer.Abort from exc
+    except Exception as exc:
+        _console.print(f"\n[red]❌ Error: {exc}[/red]")
+        raise typer.Abort from exc
+
+
 if __name__ == "__main__":
-    sys.exit(wait_for_services())
+    typer.run(main)

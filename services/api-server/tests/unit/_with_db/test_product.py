@@ -27,7 +27,7 @@ from simcore_service_api_server.models.schemas.model_adapter import (
 async def test_product_webserver(
     client: httpx.AsyncClient,
     mocked_webserver_rest_api_base: respx.MockRouter,
-    create_fake_api_keys: Callable[[PositiveInt], AsyncGenerator[ApiKeyInDB, None]],
+    create_fake_api_keys: Callable[[PositiveInt], AsyncGenerator[ApiKeyInDB]],
     faker: Faker,
 ):
     assert client
@@ -80,7 +80,7 @@ async def test_product_webserver(
 async def test_product_catalog(
     client: httpx.AsyncClient,
     mocked_catalog_rpc_api: dict[str, MockType],
-    create_fake_api_keys: Callable[[PositiveInt], AsyncGenerator[ApiKeyInDB, None]],
+    create_fake_api_keys: Callable[[PositiveInt], AsyncGenerator[ApiKeyInDB]],
 ):
     assert client
 

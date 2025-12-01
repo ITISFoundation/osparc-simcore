@@ -8,7 +8,6 @@ from common_library.json_serialization import json_dumps, json_loads
 from models_library.projects_nodes_io import NodeID
 from models_library.utils.nodes import compute_node_hash
 from packaging import version
-from settings_library.aws_s3_cli import AwsS3CliSettings
 from settings_library.r_clone import RCloneSettings
 
 from ..node_ports_common.dbmanager import DBManager
@@ -38,7 +37,6 @@ async def load(
     io_log_redirect_cb: LogRedirectCB | None,
     auto_update: bool = False,
     r_clone_settings: RCloneSettings | None = None,
-    aws_s3_cli_settings: AwsS3CliSettings | None = None,
 ) -> Nodeports:
     """creates a nodeport object from a row from comp_tasks"""
     log.debug(
@@ -100,7 +98,6 @@ async def load(
         auto_update=auto_update,
         r_clone_settings=r_clone_settings,
         io_log_redirect_cb=io_log_redirect_cb,
-        aws_s3_cli_settings=aws_s3_cli_settings,
     )
     log.debug(
         "created node_ports_v2 object %s",

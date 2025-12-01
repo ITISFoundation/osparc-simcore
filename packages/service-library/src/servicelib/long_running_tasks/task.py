@@ -5,7 +5,7 @@ import inspect
 import logging
 import urllib.parse
 from contextlib import suppress
-from typing import Any, ClassVar, Final, Protocol, TypeAlias
+from typing import Any, ClassVar, Final, Protocol
 from uuid import uuid4
 
 from common_library.async_tools import cancel_wait_task
@@ -54,7 +54,7 @@ _MAX_EXCLUSIVE_TASK_CANCEL_TIMEOUT: Final[NonNegativeFloat] = 5
 _TASK_REMOVAL_MAX_WAIT: Final[NonNegativeFloat] = 60
 _PARALLEL_TASKS_CANCELLATION: Final[int] = 5
 
-AllowedErrrors: TypeAlias = tuple[type[BaseException], ...]
+type AllowedErrrors = tuple[type[BaseException], ...]
 
 
 class TaskProtocol(Protocol):
@@ -113,7 +113,33 @@ async def _get_tasks_to_remove(
 
     for tracked_task in await tracked_tasks.list_tasks_data():
         if tracked_task.fire_and_forget:
-            continue
+            # fire and forget tasks also need to be remove from tracking
+            # when detectes as done, start counting how much time has elapsed
+            # if over stale_task_detect_timeout_s remove the task
+
+            # wait for task to complete
+            if not tracked_task.is_done:
+                continue
+
+            # mark detected as done
+            if tracked_task.detected_as_done_at is None:
+                await tracked_tasks.update_task_data(
+                    tracked_task.task_id,
+                    updates={
+                        "detected_as_done_at": datetime.datetime.now(tz=datetime.UTC)
+                    },
+                )
+                continue
+
+            # if enough time passes remove the task
+            elapsed_since_done = (
+                utc_now - tracked_task.detected_as_done_at
+            ).total_seconds()
+            if elapsed_since_done > stale_task_detect_timeout_s:
+                tasks_to_remove.append(
+                    (tracked_task.task_id, tracked_task.task_context)
+                )
+                continue
 
         if tracked_task.last_status_check is None:
             # the task just added or never received a poll request
@@ -317,6 +343,7 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
         """
         self._started_event_task_tasks_monitor.set()
         task_id: TaskId
+
         for task_id in set(self._created_tasks.keys()):
             if task := self._created_tasks.get(task_id, None):
                 is_done = task.done()
@@ -490,8 +517,28 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
 
         task_to_cancel = self._created_tasks.pop(task_id, None)
         if task_to_cancel is not None:
-            await cancel_wait_task(task_to_cancel)
-            await self._tasks_data.delete_task_data(task_id)
+            with log_context(
+                _logger,
+                logging.DEBUG,
+                f"Removing asyncio task related to task_id='{task_id}'",
+            ):
+                await cancel_wait_task(task_to_cancel)
+                await self._tasks_data.delete_task_data(task_id)
+        else:
+            task_data = await self._tasks_data.get_task_data(task_id)
+            if (
+                task_data is not None
+                and task_data.marked_for_removal_at is not None
+                and datetime.datetime.now(tz=datetime.UTC)
+                - task_data.marked_for_removal_at
+                > datetime.timedelta(seconds=_TASK_REMOVAL_MAX_WAIT)
+            ):
+                with log_context(
+                    _logger,
+                    logging.DEBUG,
+                    f"Force removing {task_id=} from Redis after waiting for {_TASK_REMOVAL_MAX_WAIT} seconds",
+                ):
+                    await self._tasks_data.delete_task_data(task_id)
 
     async def remove_task(
         self,

@@ -14,6 +14,7 @@ from pydantic import (
     AnyUrl,
     Field,
     NonNegativeInt,
+    PositiveInt,
     TypeAdapter,
     field_validator,
     model_validator,
@@ -239,6 +240,18 @@ class DaskMonitoringSettings(BaseCustomSettings):
         ClusterAuthentication,
         Field(
             description="defines the authentication of the clusters created via clusters-keeper (can be None or TLS)",
+        ),
+    ]
+    DASK_NTHREADS: Annotated[
+        NonNegativeInt,
+        Field(
+            description="if >0, it overrides the default number of threads per process in the dask-sidecars, (see description in dask-sidecar)",
+        ),
+    ]
+    DASK_NTHREADS_MULTIPLIER: Annotated[
+        PositiveInt,
+        Field(
+            description="if >1, it overrides the default number of threads per process in the dask-sidecars, by multiplying the number of vCPUs with this factor (see description in dask-sidecar)",
         ),
     ]
 

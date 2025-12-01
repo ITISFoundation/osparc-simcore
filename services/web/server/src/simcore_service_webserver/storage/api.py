@@ -113,7 +113,7 @@ async def copy_data_folders_from_project(
     nodes_map: NodesMap,
     user_id: UserID,
     product_name: ProductName,
-) -> AsyncGenerator[AsyncJobComposedResult, None]:
+) -> AsyncGenerator[AsyncJobComposedResult]:
     with log_context(_logger, logging.DEBUG, msg=f"copy {nodes_map=}"):
         rabbitmq_client = get_rabbitmq_rpc_client(app)
         async for job_composed_result in submit_and_wait(

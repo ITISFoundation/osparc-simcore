@@ -52,7 +52,7 @@ pylint==3.3.8
     # via -r requirements/../../../requirements/devenv.txt
 pytokens==0.1.10
     # via black
-pyyaml==6.0.1
+pyyaml==6.0.3
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
@@ -65,7 +65,6 @@ tomlkit==0.13.3
 typing-extensions==4.14.1
     # via
     #   -c requirements/_base.txt
-    #   -c requirements/_test.txt
     #   mypy
 virtualenv==20.34.0
     # via pre-commit

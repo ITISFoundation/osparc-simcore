@@ -4,7 +4,6 @@ from typing import Any, ClassVar
 
 from common_library.json_serialization import json_dumps
 from fastapi import FastAPI
-from servicelib.async_utils import cancel_sequential_workers
 from servicelib.fastapi.logging_lifespan import create_logging_shutdown_event
 from servicelib.fastapi.openapi import (
     get_common_oas_options,
@@ -43,11 +42,7 @@ from .reserved_space import setup as setup_reserved_space
 from .settings import ApplicationSettings
 from .utils import volumes_fix_permissions
 
-_NOISY_LOGGERS = (
-    "aio_pika",
-    "aiormq",
-    "httpcore",
-)
+_NOISY_LOGGERS = ("httpcore",)
 
 _logger = logging.getLogger(__name__)
 
@@ -236,8 +231,6 @@ def create_app() -> FastAPI:
                 "Removed spawned containers:\n%s",
                 result.message,
             )
-
-        await cancel_sequential_workers()
 
         # FINISHED
         print(APP_FINISHED_BANNER_MSG, flush=True)  # noqa: T201

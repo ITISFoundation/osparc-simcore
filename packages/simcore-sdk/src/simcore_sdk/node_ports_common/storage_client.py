@@ -1,10 +1,10 @@
 import datetime
 import logging
-from collections.abc import AsyncIterator, Callable
+from collections.abc import AsyncIterator, Callable, Coroutine
 from contextlib import asynccontextmanager
 from functools import wraps
 from json import JSONDecodeError
-from typing import Any, Coroutine, ParamSpec, TypeAlias, TypeVar
+from typing import Any, ParamSpec, TypeAlias, TypeVar
 from urllib.parse import quote
 
 from aiohttp import ClientResponse, ClientSession

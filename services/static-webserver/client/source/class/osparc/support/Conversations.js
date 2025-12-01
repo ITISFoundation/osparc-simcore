@@ -28,15 +28,11 @@ qx.Class.define("osparc.support.Conversations", {
     this.__filterButtons = [];
     this.__filterButtons.push(this.getChildControl("filter-all-button"));
     this.__filterButtons.push(this.getChildControl("filter-unread-button"));
-    /*
-    if (osparc.store.Groups.getInstance().amIASupportUser()) {
-      this.__filterButtons.push(this.getChildControl("filter-open-button"));
-    }
-    */
 
     this.__fetchConversations();
 
     this.__listenToNewConversations();
+    this.__listenToConversationDeleted();
   },
 
   properties: {
@@ -99,18 +95,6 @@ qx.Class.define("osparc.support.Conversations", {
           });
           this.getChildControl("filters-layout").add(control);
           break;
-        case "filter-open-button":
-          control = new qx.ui.form.ToggleButton(this.tr("Open"));
-          control.set({
-            toolTipText: this.tr("Show only open conversations"),
-            ...this.self().FILTER_BUTTON_AESTHETIC,
-          });
-          control.addListener("execute", () => {
-            this.setCurrentFilter("open");
-            this.__applyCurrentFilter("open");
-          });
-          this.getChildControl("filters-layout").add(control);
-          break;
         case "loading-button":
           control = new osparc.ui.form.FetchButton();
           this._addAt(control, 1);
@@ -146,9 +130,6 @@ qx.Class.define("osparc.support.Conversations", {
         case "unread":
           this.getChildControl("filter-unread-button").setValue(true);
           break;
-        case "open":
-          this.getChildControl("filter-open-button").setValue(true);
-          break;
       }
 
       this.__conversationListItems.forEach(conversationItem => {
@@ -159,13 +140,6 @@ qx.Class.define("osparc.support.Conversations", {
             break;
           case "unread":
             conversation.getReadBy() ? conversationItem.exclude() : conversationItem.show();
-            break;
-          case "open":
-            if (conversation.getResolved() === false) {
-              conversationItem.show();
-            } else {
-              conversationItem.exclude();
-            }
             break;
         }
       });
@@ -179,9 +153,6 @@ qx.Class.define("osparc.support.Conversations", {
             break;
           case "unread":
             msg = this.tr("No unread conversations");
-            break;
-          case "open":
-            msg = this.tr("No open conversations");
             break;
         }
         this.getChildControl("no-messages-label").set({
@@ -221,6 +192,13 @@ qx.Class.define("osparc.support.Conversations", {
       });
     },
 
+    __listenToConversationDeleted: function() {
+      osparc.store.ConversationsSupport.getInstance().addListener("conversationDeleted", e => {
+        const conversationId = e.getData()["conversationId"];
+        this.__removeConversationPage(conversationId);
+      });
+    },
+
     __addConversation: function(conversation) {
       // ignore it if it was already there
       const conversationId = conversation.getConversationId();
@@ -251,7 +229,21 @@ qx.Class.define("osparc.support.Conversations", {
         const bDate = bConversation.getLastMessageCreatedAt() || bConversation.getModified();
         return bDate - aDate;
       });
-      this.__conversationListItems.forEach(item => conversationsLayout.add(item));
+      this.__conversationListItems.forEach(item => {
+        if (item.getContentElement()) {
+          conversationsLayout.add(item);
+        }
+      });
+    },
+
+    __removeConversationPage: function(conversationId) {
+      const conversationItem = this.__getConversationItem(conversationId);
+      if (conversationItem) {
+        if (this.getChildControl("conversations-layout")) {
+          this.getChildControl("conversations-layout").remove(conversationItem);
+        }
+        this.__conversationListItems = this.__conversationListItems.filter(item => item !== conversationItem);
+      }
     },
   },
 });

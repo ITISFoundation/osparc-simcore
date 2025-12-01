@@ -1,6 +1,4 @@
-""" osparc's simcore-sdk library
-
-"""
+"""osparc's simcore-sdk library"""
 
 from importlib.metadata import version
 

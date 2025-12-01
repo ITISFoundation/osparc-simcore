@@ -71,7 +71,7 @@ class RequestCancellationMiddleware:
                         _message_poller(request, queue, receive)
                     )
                     await handler_task
-                    poller_task.cancel()
+                    poller_task.cancel("handler completed, cancelling poller")
             except* _ClientDisconnectedError:
                 if not handler_task.done():
                     _logger.info(

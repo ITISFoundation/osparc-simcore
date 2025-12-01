@@ -30,8 +30,7 @@ _S3_CONFIG_KEY_SOURCE: Final[str] = "s3-source"
 _logger = logging.getLogger(__name__)
 
 
-class BaseRCloneError(OsparcErrorMixin, RuntimeError):
-    ...
+class BaseRCloneError(OsparcErrorMixin, RuntimeError): ...
 
 
 class RCloneFailedError(BaseRCloneError):

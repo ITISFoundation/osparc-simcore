@@ -8,7 +8,7 @@ from common_library.logging.logging_utils_filtering import GeneralLogFilter
 
 
 @pytest.fixture
-def logger_with_filter() -> Generator[tuple[logging.Logger, list[str]], None, None]:
+def logger_with_filter() -> Generator[tuple[logging.Logger, list[str]]]:
     # Set up a logger for testing
     logger = logging.getLogger("uvicorn.access")
     logger.setLevel(logging.DEBUG)

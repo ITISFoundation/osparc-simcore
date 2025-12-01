@@ -90,13 +90,11 @@ async def stop_dynamic_service(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
     dynamic_service_stop: DynamicServiceStop,
-    timeout_s: NonNegativeInt,
 ) -> None:
     result = await rabbitmq_rpc_client.request(
         DYNAMIC_SCHEDULER_RPC_NAMESPACE,
         _RPC_METHOD_NAME_ADAPTER.validate_python("stop_dynamic_service"),
         dynamic_service_stop=dynamic_service_stop,
-        timeout_s=timeout_s,
     )
     assert result is None  # nosec
 

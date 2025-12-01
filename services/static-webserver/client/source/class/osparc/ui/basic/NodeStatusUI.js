@@ -127,7 +127,7 @@ qx.Class.define("osparc.ui.basic.NodeStatusUI", {
     },
 
     __setupFilePicker: function() {
-      osparc.service.StatusUI.setupFilePickerIcon(this.getNode(), this.getChildControl("icon"));
+      this.getChildControl("icon").exclude();
 
       this.getNode().bind("outputs", this.getChildControl("label"), "value", {
         converter: outputs => {

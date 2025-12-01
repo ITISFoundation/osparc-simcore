@@ -9,7 +9,7 @@ import pytest
 import yaml
 from pydantic import BaseModel
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
-from service_integration.compose_spec_model import BuildItem, Service
+from service_integration.compose_spec_model import Build, Service
 from service_integration.osparc_config import (
     DockerComposeOverwriteConfig,
     MetadataConfig,
@@ -43,7 +43,7 @@ def test_create_image_spec_impl(tests_data_dir: Path, settings: AppSettings):
     assert runtime_cfg.callbacks_mapping is not None
 
     # assemble docker-compose
-    build_spec = BuildItem(
+    build_spec = Build(
         context=".",
         dockerfile="Dockerfile",
         labels={

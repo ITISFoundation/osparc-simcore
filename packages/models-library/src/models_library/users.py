@@ -1,19 +1,32 @@
 import datetime
-from typing import Annotated, TypeAlias
-
-from common_library.users_enums import UserRole
-from pydantic import BaseModel, ConfigDict, Field, PositiveInt, StringConstraints
-from pydantic.config import JsonDict
-from typing_extensions import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
+from typing import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
+    Annotated,
+    TypeAlias,
     TypedDict,
 )
+
+from common_library.users_enums import UserRole
+from models_library.string_types import validate_input_xss_safety
+from pydantic import (
+    AfterValidator,
+    BaseModel,
+    ConfigDict,
+    Field,
+    PositiveInt,
+    StringConstraints,
+)
+from pydantic.config import JsonDict
 
 from .emails import LowerCaseEmailStr
 
 UserID: TypeAlias = PositiveInt
 UserNameID: TypeAlias = Annotated[
-    str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)
+    str, StringConstraints(strip_whitespace=True, min_length=4, max_length=100)
 ]
+UserNameSafeID: TypeAlias = Annotated[
+    UserNameID, AfterValidator(validate_input_xss_safety)
+]
+
 
 FirstNameStr: TypeAlias = Annotated[
     str, StringConstraints(strip_whitespace=True, max_length=255)

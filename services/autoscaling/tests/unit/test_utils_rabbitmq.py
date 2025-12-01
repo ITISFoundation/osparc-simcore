@@ -123,31 +123,6 @@ async def running_service_tasks(
 
 
 @pytest.fixture
-def service_version() -> ServiceVersion:
-    return "1.0.0"
-
-
-@pytest.fixture
-def service_key() -> ServiceKey:
-    return "simcore/services/dynamic/test"
-
-
-@pytest.fixture
-def node_id(faker: Faker) -> NodeID:
-    return faker.uuid4(cast_to=None)
-
-
-@pytest.fixture
-def project_id(faker: Faker) -> ProjectID:
-    return faker.uuid4(cast_to=None)
-
-
-@pytest.fixture
-def user_id(faker: Faker) -> UserID:
-    return faker.pyint(min_value=1)
-
-
-@pytest.fixture
 def dask_task(
     service_key: ServiceKey,
     service_version: ServiceVersion,

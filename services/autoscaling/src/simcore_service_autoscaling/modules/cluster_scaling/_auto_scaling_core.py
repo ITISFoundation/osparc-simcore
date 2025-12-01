@@ -94,23 +94,32 @@ async def _analyze_current_cluster(
     docker_nodes: list[Node] = await auto_scaling_mode.get_monitored_nodes(app)
 
     # get the EC2 instances we have
-    existing_ec2_instances = await get_ec2_client(app).get_instances(
+    existing_ec2_instances: list[EC2InstanceData] = await get_ec2_client(
+        app
+    ).get_instances(
         key_names=[app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME],
         tags=auto_scaling_mode.get_ec2_tags(app),
         state_names=["pending", "running"],
     )
 
-    terminated_ec2_instances = await get_ec2_client(app).get_instances(
+    terminated_ec2_instances: list[EC2InstanceData] = await get_ec2_client(
+        app
+    ).get_instances(
         key_names=[app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME],
         tags=auto_scaling_mode.get_ec2_tags(app),
         state_names=["terminated"],
     )
 
-    warm_buffer_ec2_instances = await get_ec2_client(app).get_instances(
+    warm_buffer_ec2_instances: list[EC2InstanceData] = await get_ec2_client(
+        app
+    ).get_instances(
         key_names=[app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME],
         tags=get_deactivated_warm_buffer_ec2_tags(auto_scaling_mode.get_ec2_tags(app)),
         state_names=["stopped"],
     )
+
+    for i in itertools.chain(existing_ec2_instances, warm_buffer_ec2_instances):
+        auto_scaling_mode.add_instance_generic_resources(app, i)
 
     attached_ec2s, pending_ec2s = associate_ec2_instances_with_nodes(
         docker_nodes, existing_ec2_instances
@@ -343,7 +352,9 @@ async def _try_attach_pending_ec2s(
     )
 
 
-async def _sorted_allowed_instance_types(app: FastAPI) -> list[EC2InstanceType]:
+async def _sorted_allowed_instance_types(
+    app: FastAPI, auto_scaling_mode: AutoscalingProvider
+) -> list[EC2InstanceType]:
     app_settings: ApplicationSettings = app.state.settings
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
     ec2_client = get_ec2_client(app)
@@ -366,8 +377,10 @@ async def _sorted_allowed_instance_types(app: FastAPI) -> list[EC2InstanceType]:
         # NOTE: will raise ValueError if allowed_instance_types not in allowed_instance_type_names
         return allowed_instance_type_names.index(f"{instance_type.name}")
 
-    allowed_instance_types.sort(key=_as_selection)
-    return allowed_instance_types
+    return [
+        auto_scaling_mode.adjust_instance_type_resources(app, instance_type)
+        for instance_type in sorted(allowed_instance_types, key=_as_selection)
+    ]
 
 
 async def _activate_and_notify(
@@ -728,15 +741,15 @@ async def _find_needed_instances(
             task_required_resources = auto_scaling_mode.get_task_required_resources(
                 task
             )
-            task_required_ec2_instance = (
-                await auto_scaling_mode.get_task_defined_instance(app, task)
+            task_required_ec2 = await auto_scaling_mode.get_task_defined_instance(
+                app, task
             )
 
             # first check if we can assign the task to one of the newly tobe created instances
             if _try_assign_task_to_ec2_instance_type(
                 task,
                 instances=needed_new_instance_types_for_tasks,
-                task_required_ec2_instance=task_required_ec2_instance,
+                task_required_ec2_instance=task_required_ec2,
                 task_required_resources=task_required_resources,
             ):
                 continue
@@ -744,12 +757,12 @@ async def _find_needed_instances(
             # so we need to find what we can create now
             try:
                 # check if exact instance type is needed first
-                if task_required_ec2_instance:
+                if task_required_ec2:
                     defined_ec2 = find_selected_instance_type_for_task(
-                        task_required_ec2_instance,
+                        task_required_ec2,
                         available_ec2_types,
                         task,
-                        auto_scaling_mode.get_task_required_resources(task),
+                        task_required_resources,
                     )
                     needed_new_instance_types_for_tasks.append(
                         AssignedTasksToInstanceType(
@@ -763,7 +776,7 @@ async def _find_needed_instances(
                     # we go for best fitting type
                     best_ec2_instance = utils_ec2.find_best_fitting_ec2_instance(
                         available_ec2_types,
-                        auto_scaling_mode.get_task_required_resources(task),
+                        task_required_resources,
                         score_type=utils_ec2.closest_instance_policy,
                     )
                     needed_new_instance_types_for_tasks.append(
@@ -783,12 +796,12 @@ async def _find_needed_instances(
                 _logger.exception("Unexpected error:")
 
     _logger.info(
-        "found following %s needed instances: %s",
+        "found %d required instances: %s",
         len(needed_new_instance_types_for_tasks),
-        [
-            f"{i.instance_type.name}:{i.instance_type.resources} takes {len(i.assigned_tasks)} task{'s' if len(i.assigned_tasks) > 1 else ''}"
+        ", ".join(
+            f"{i.instance_type.name}:{i.instance_type.resources} for {len(i.assigned_tasks)} task{'s' if len(i.assigned_tasks) > 1 else ''}"
             for i in needed_new_instance_types_for_tasks
-        ],
+        ),
     )
 
     num_instances_per_type = collections.defaultdict(
@@ -1575,7 +1588,10 @@ async def auto_scale_cluster(
     the additional load.
     """
     # current state
-    allowed_instance_types = await _sorted_allowed_instance_types(app)
+    allowed_instance_types = await _sorted_allowed_instance_types(
+        app, auto_scaling_mode
+    )
+
     cluster = await _analyze_current_cluster(
         app, auto_scaling_mode, allowed_instance_types
     )

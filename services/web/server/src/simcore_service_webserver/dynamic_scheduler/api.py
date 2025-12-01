@@ -3,6 +3,7 @@ from contextlib import AsyncExitStack
 from functools import partial
 
 from aiohttp import web
+from common_library.json_serialization import json_dumps
 from models_library.api_schemas_directorv2.dynamic_services import (
     DynamicServiceGet,
     GetProjectInactivityResponse,
@@ -28,6 +29,13 @@ from servicelib.progress_bar import ProgressBarData
 from servicelib.rabbitmq import RabbitMQClient, RPCServerError
 from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler import services
 from servicelib.utils import logged_gather
+from tenacity import (
+    AsyncRetrying,
+    RetryCallState,
+    TryAgain,
+    stop_after_delay,
+    wait_fixed,
+)
 
 from ..rabbitmq import get_rabbitmq_client, get_rabbitmq_rpc_client
 from .settings import DynamicSchedulerSettings, get_plugin_settings
@@ -71,6 +79,22 @@ async def run_dynamic_service(
     )
 
 
+def _wait_for_idle_retry_error(node_id: NodeID, retry_state: RetryCallState):
+    _logger.info(
+        "Service '%s' is still being tracked after %s",
+        node_id,
+        json_dumps(retry_state.retry_object.statistics),
+    )
+
+
+def _wait_for_idle_before_sleep(node_id: NodeID, retry_state: RetryCallState):
+    _logger.debug(
+        "Waiting for service %s to become idle: %s",
+        node_id,
+        json_dumps(retry_state.retry_object.statistics),
+    )
+
+
 async def stop_dynamic_service(
     app: web.Application,
     *,
@@ -81,14 +105,32 @@ async def stop_dynamic_service(
         if progress:
             await stack.enter_async_context(progress)
 
-        settings: DynamicSchedulerSettings = get_plugin_settings(app)
+        rpc_client = get_rabbitmq_rpc_client(app)
         await services.stop_dynamic_service(
-            get_rabbitmq_rpc_client(app),
-            dynamic_service_stop=dynamic_service_stop,
-            timeout_s=int(
+            rpc_client, dynamic_service_stop=dynamic_service_stop
+        )
+
+        # wait for the service to be stopped, until it becomes idle
+        settings: DynamicSchedulerSettings = get_plugin_settings(app)
+        async for attempt in AsyncRetrying(
+            wait=wait_fixed(1.0),
+            stop=stop_after_delay(
                 settings.DYNAMIC_SCHEDULER_STOP_SERVICE_TIMEOUT.total_seconds()
             ),
-        )
+            before_sleep=partial(
+                _wait_for_idle_before_sleep, dynamic_service_stop.node_id
+            ),
+            reraise=False,
+            retry_error_callback=partial(
+                _wait_for_idle_retry_error, dynamic_service_stop.node_id
+            ),
+        ):
+            with attempt:
+                service_status = await services.get_service_status(
+                    rpc_client, node_id=dynamic_service_stop.node_id
+                )
+                if not isinstance(service_status, NodeGetIdle):
+                    raise TryAgain
 
 
 async def _post_progress_message(

@@ -1,17 +1,14 @@
-import os
-import time
-from pathlib import Path
-from tqdm import tqdm
-import shutil
 import json
 import logging
+import os
+import shutil
 import zipfile
+from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Optional, List
 
 import osparc
-from osparc.models import File, Solver, Job, JobStatus, JobInputs, JobOutputs
 from osparc.api import FilesApi, SolversApi
+from osparc.models import File, Job, JobInputs, JobOutputs, JobStatus, Solver
 
 
 class OSparcServerException(Exception):
@@ -53,14 +50,14 @@ class OsparcSolver:
         self._solvers_api = SolversApi(self._api_client)
         self._users_api.get_my_profile()  # validate access
 
-        self._solver: Optional[Solver] = None
+        self._solver: Solver | None = None
 
         # Job dependent data
-        self._job: Optional[Job] = None
-        self._status: Optional[JobStatus] = None
+        self._job: Job | None = None
+        self._status: JobStatus | None = None
 
     @handle_api_exceptions(OSparcServerException)
-    def _generate_isolve_log(self) -> List[str]:
+    def _generate_isolve_log(self) -> list[str]:
         """
         Unpacks the zip file containing iSolve logs and reads them in as a string
         """
@@ -69,13 +66,13 @@ class OsparcSolver:
                 self._solver_key, self._solver_version, self._job.id
             )
         )
-        log: List[str] = []
+        log: list[str] = []
         with TemporaryDirectory() as tmp_dir:
             with zipfile.ZipFile(log_zip, "r") as zip_ref:
                 zip_ref.extractall(tmp_dir)
             for pth in Path(tmp_dir).iterdir():
                 if pth.is_file() and pth.name.endswith(".logs"):
-                    with open(pth, "r") as f:
+                    with open(pth) as f:
                         log.append(f.read())
         os.remove(log_zip)
         return log
@@ -116,7 +113,7 @@ class OsparcSolver:
                 logging.error(
                     f"Failed job {self._job.id} with status {self._status.state}"
                 )
-                log: List[str] = [
+                log: list[str] = [
                     f"Failed to solve job with status {self._status.state}",
                     "Server log:",
                 ]

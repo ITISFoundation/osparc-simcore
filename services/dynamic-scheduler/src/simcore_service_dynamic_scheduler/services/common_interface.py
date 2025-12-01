@@ -1,3 +1,6 @@
+from datetime import timedelta
+from typing import Final
+
 from fastapi import FastAPI
 from models_library.api_schemas_directorv2.dynamic_services import (
     DynamicServiceGet,
@@ -14,10 +17,19 @@ from models_library.projects_nodes_io import NodeID
 from models_library.services_types import ServicePortKey
 from models_library.users import UserID
 from pydantic import NonNegativeInt
+from servicelib.utils import fire_and_forget_task
 
 from ..core.settings import ApplicationSettings
+from .catalog._public_client import CatalogPublicClient
 from .director_v2 import DirectorV2Client
-from .service_tracker import set_request_as_running, set_request_as_stopped
+from .fire_and_forget import FireAndForgetCollection
+from .service_tracker import (
+    get_tracked_service,
+    set_request_as_running,
+    set_request_as_stopped,
+)
+
+_NEW_STYLE_SERVICES_STOP_TIMEOUT: Final[timedelta] = timedelta(minutes=5)
 
 
 async def list_tracked_dynamic_services(
@@ -74,11 +86,39 @@ async def stop_dynamic_service(
         raise NotImplementedError
 
     director_v2_client = DirectorV2Client.get_from_app_state(app)
+
+    tracked_service = await get_tracked_service(app, dynamic_service_stop.node_id)
+
+    if tracked_service and tracked_service.dynamic_service_start:
+        service_labels = await CatalogPublicClient.get_from_app_state(
+            app
+        ).get_docker_image_labels(
+            tracked_service.dynamic_service_start.key,
+            tracked_service.dynamic_service_start.version,
+        )
+        if not service_labels.needs_dynamic_sidecar:
+            # LEGACY services
+            fire_and_forget_task(
+                director_v2_client.stop_dynamic_service(
+                    node_id=dynamic_service_stop.node_id,
+                    simcore_user_agent=dynamic_service_stop.simcore_user_agent,
+                    save_state=dynamic_service_stop.save_state,
+                    timeout=settings.DYNAMIC_SCHEDULER_STOP_SERVICE_TIMEOUT,
+                ),
+                task_suffix_name=(
+                    f"stop_dynamic_service_node_{dynamic_service_stop.node_id}"
+                ),
+                fire_and_forget_tasks_collection=FireAndForgetCollection.get_from_app_state(
+                    app
+                ).tasks_collection,
+            )
+            return
+
     await director_v2_client.stop_dynamic_service(
         node_id=dynamic_service_stop.node_id,
         simcore_user_agent=dynamic_service_stop.simcore_user_agent,
         save_state=dynamic_service_stop.save_state,
-        timeout=settings.DYNAMIC_SCHEDULER_STOP_SERVICE_TIMEOUT,
+        timeout=_NEW_STYLE_SERVICES_STOP_TIMEOUT,
     )
 
 

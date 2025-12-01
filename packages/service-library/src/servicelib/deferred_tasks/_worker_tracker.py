@@ -87,7 +87,7 @@ class WorkerTracker:
             # it's result in case of cancellation.
             # As a side effect it produces a RuntimeWarning coroutine: '...' was never awaited
             # which cannot be suppressed
-            task.cancel()
+            task.cancel("manually cancelling the deferred task")
             return True
         return False
 

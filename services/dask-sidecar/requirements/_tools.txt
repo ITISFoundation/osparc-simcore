@@ -1,12 +1,12 @@
-astroid==3.3.11
+astroid==4.0.2
     # via pylint
-black==25.9.0
+black==25.11.0
     # via -r requirements/../../../requirements/devenv.txt
 bump2version==1.0.1
     # via -r requirements/../../../requirements/devenv.txt
 cfgv==3.4.0
     # via pre-commit
-click==8.2.1
+click==8.3.1
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_test.txt
@@ -15,11 +15,11 @@ dill==0.4.0
     # via pylint
 distlib==0.4.0
     # via virtualenv
-filelock==3.19.1
+filelock==3.20.0
     # via virtualenv
 identify==2.6.15
     # via pre-commit
-isort==6.1.0
+isort==7.0.0
     # via
     #   -r requirements/../../../requirements/devenv.txt
     #   pylint
@@ -42,34 +42,34 @@ pathspec==0.12.1
     # via
     #   black
     #   mypy
-platformdirs==4.4.0
+platformdirs==4.5.0
     # via
     #   black
     #   pylint
     #   virtualenv
-pre-commit==4.3.0
+pre-commit==4.4.0
     # via -r requirements/../../../requirements/devenv.txt
-pylint==3.3.8
+pylint==4.0.3
     # via -r requirements/../../../requirements/devenv.txt
-pytokens==0.1.10
+pytokens==0.3.0
     # via black
-pyyaml==6.0.2
+pyyaml==6.0.3
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   -c requirements/_test.txt
     #   pre-commit
     #   watchdog
-ruff==0.13.3
+ruff==0.14.5
     # via -r requirements/../../../requirements/devenv.txt
 tomlkit==0.13.3
     # via pylint
-typing-extensions==4.14.1
+typing-extensions==4.15.0
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_test.txt
     #   mypy
-virtualenv==20.34.0
+virtualenv==20.35.4
     # via pre-commit
 watchdog==6.0.0
     # via -r requirements/_tools.in

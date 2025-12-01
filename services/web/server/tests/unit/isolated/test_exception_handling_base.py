@@ -20,16 +20,13 @@ from simcore_service_webserver.exception_handling._base import (
 # Some custom errors in my service
 
 
-class BaseError(WebServerBaseError):
-    ...
+class BaseError(WebServerBaseError): ...
 
 
-class OneError(BaseError):
-    ...
+class OneError(BaseError): ...
 
 
-class OtherError(BaseError):
-    ...
+class OtherError(BaseError): ...
 
 
 def test_sort_concrete_first():
