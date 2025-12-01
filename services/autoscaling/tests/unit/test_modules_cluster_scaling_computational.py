@@ -464,6 +464,20 @@ async def test_cluster_scaling_with_task_with_too_much_resources_starts_nothing(
         ),
         pytest.param(
             _ScaleUpParams(
+                imposed_instance_type=None,
+                task_resources=Resources(
+                    cpus=1,
+                    ram=TypeAdapter(ByteSize).validate_python("115Gib"),
+                    generic_resources={"GPU": 1},
+                ),
+                num_tasks=1,
+                expected_instance_type="g4dn.4xlarge",
+                expected_num_instances=1,
+            ),
+            id="No explicit instance defined but GPU requested",
+        ),
+        pytest.param(
+            _ScaleUpParams(
                 imposed_instance_type="g4dn.2xlarge",
                 task_resources=None,
                 num_tasks=1,
