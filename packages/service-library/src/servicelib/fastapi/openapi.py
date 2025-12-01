@@ -1,5 +1,4 @@
-""" Common utils for core/application openapi specs
-"""
+"""Common utils for core/application openapi specs"""
 
 import re
 import types

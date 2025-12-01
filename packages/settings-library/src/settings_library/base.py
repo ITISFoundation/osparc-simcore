@@ -137,7 +137,6 @@ class BaseCustomSettings(BaseSettings):
             auto_default_from_env = _is_auto_default_from_env_enabled(field)
             field_type = get_type(field)
             is_not_literal = not is_literal(field)
-
             if is_not_literal and issubclass(field_type, BaseCustomSettings):
                 if auto_default_from_env:
                     # Builds a default factory `Field(default_factory=create_settings_from_env(field))`

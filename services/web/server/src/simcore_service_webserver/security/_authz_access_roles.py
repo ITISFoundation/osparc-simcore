@@ -4,10 +4,11 @@ This definition is consumed by the security._access_model to build an access mod
 The access model is created upon setting up of the security subsystem
 """
 
-from simcore_postgres_database.models.users import UserRole
-from typing_extensions import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
+from typing import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
     TypedDict,
 )
+
+from simcore_postgres_database.models.users import UserRole
 
 
 class PermissionDict(TypedDict, total=False):

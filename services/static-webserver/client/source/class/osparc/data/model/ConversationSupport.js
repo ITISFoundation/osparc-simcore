@@ -31,10 +31,9 @@ qx.Class.define("osparc.data.model.ConversationSupport", {
     this.set({
       projectId: conversationData.projectUuid || null,
       extraContext: conversationData.extraContext || null,
-      fogbugzCaseId: conversationData.fogbugz_case_id || null,
+      fogbugzCaseId: conversationData["fogbugz_case_id"] || null,
       readByUser: Boolean(conversationData.isReadByUser),
       readBySupport: Boolean(conversationData.isReadBySupport),
-      resolved: null,
     });
 
     this.__fetchFirstAndLastMessages();
@@ -96,13 +95,6 @@ qx.Class.define("osparc.data.model.ConversationSupport", {
       nullable: false,
       init: null,
       event: "changeReadBySupport",
-    },
-
-    resolved: {
-      check: "Boolean",
-      nullable: true,
-      init: null,
-      event: "changeResolved",
     },
   },
 
@@ -174,22 +166,13 @@ qx.Class.define("osparc.data.model.ConversationSupport", {
         .then(() => this.setReadBy(true));
     },
 
-    markAsResolved: function() {
-      osparc.store.ConversationsSupport.getInstance().markAsResolved(this.getConversationId())
-        .then(() => {
-          this.setResolved(true);
-          osparc.FlashMessenger.logAs(qx.locale.Manager.tr("The case has been marked as resolved"), "INFO");
-        })
-        .catch(err => osparc.FlashMessenger.logError(err));
-    },
-
     // overriden
-    _addMessage: function(messageData) {
+    _addMessage: function(messageData, markAsUnread = true) {
       const message = this.base(arguments, messageData);
       this.__evalFirstAndLastMessage();
 
       // mark conversation as unread if the message is from the other party
-      if (!osparc.data.model.Message.isMyMessage(message)) {
+      if (markAsUnread && !osparc.data.model.Message.isMyMessage(message)) {
         this.setReadBy(false);
       }
       return message;

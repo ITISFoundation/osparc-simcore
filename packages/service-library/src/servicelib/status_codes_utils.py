@@ -1,20 +1,20 @@
-""" Usage
+"""Usage
 
-    - on aiohttp services
-        from servicelib.aiohttp import status
-        from servicelib.status_codes_utils import is_success
+- on aiohttp services
+    from servicelib.aiohttp import status
+    from servicelib.status_codes_utils import is_success
 
-        assert is_success(status.HTTP_200_OK)
+    assert is_success(status.HTTP_200_OK)
 
 
-    - on fastapi services
+- on fastapi services
 
-        from fastapi import status
-        from servicelib.status_codes_utils import is_success
+    from fastapi import status
+    from servicelib.status_codes_utils import is_success
 
-        assert is_success(status.HTTP_200_OK)
+    assert is_success(status.HTTP_200_OK)
 
-    NOTE: https://github.com/encode/httpx/blob/master/httpx/_status_codes.py
+NOTE: https://github.com/encode/httpx/blob/master/httpx/_status_codes.py
 """
 
 import types
@@ -42,9 +42,9 @@ def get_code_display_name(status_code: int) -> str:
         return _INVALID_STATUS_CODE_MSG
 
 
-_CODE_DESCRIPTION_TEMPLATE: Final[
-    str
-] = "{description}. See https://developer.mozilla.org/en-US/docs/Web/HTTP/Status{url_suffix}"
+_CODE_DESCRIPTION_TEMPLATE: Final[str] = (
+    "{description}. See https://developer.mozilla.org/en-US/docs/Web/HTTP/Status{url_suffix}"
+)
 
 
 def get_code_description(status_code: int) -> str:

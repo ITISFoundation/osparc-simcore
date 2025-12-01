@@ -55,6 +55,7 @@ from ...settings import (
     get_plugin_settings,
 )
 from ._rest_dependencies import get_confirmation_service
+from ._rest_exceptions import handle_rest_requests_exceptions
 from .registration_schemas import (
     InvitationCheck,
     InvitationInfo,
@@ -73,6 +74,7 @@ routes = RouteTableDef()
     name="auth_check_registration_invitation",
 )
 @global_rate_limit_route(number_of_requests=30, interval_seconds=MINUTE)
+@handle_rest_requests_exceptions
 async def check_registration_invitation(request: web.Request):
     """
     Decrypts invitation and extracts associated email or
@@ -103,6 +105,7 @@ async def check_registration_invitation(request: web.Request):
 
 
 @routes.post(f"/{API_VTAG}/auth/register", name="auth_register")
+@handle_rest_requests_exceptions
 async def register(request: web.Request):
     """
     Starts user's registration by providing an email, password and
@@ -309,6 +312,7 @@ async def register(request: web.Request):
     name="auth_resend_2fa_code",
     max_access_count=MAX_2FA_CODE_RESEND,
 )
+@handle_rest_requests_exceptions
 async def register_phone(request: web.Request):
     """
     Submits phone registration

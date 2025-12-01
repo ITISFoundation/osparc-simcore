@@ -75,7 +75,7 @@ qx.Class.define("osparc.WindowSizeTracker", {
         this.setTooSmall("logout");
       } else if (width < this.self().WIDTH_COMPACT_BREAKPOINT) {
         this.setTooSmall("shortText");
-      } else if (width < this.self().WIDTH_BREAKPOINT) {
+      } else if (width < this.self().WIDTH_BREAKPOINT || height < this.self().HEIGHT_BREAKPOINT) {
         this.setTooSmall("longText");
       } else {
         this.setTooSmall(null);

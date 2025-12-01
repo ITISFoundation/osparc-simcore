@@ -84,6 +84,7 @@ async def get_user_profile_groups(
     GroupsByTypeTuple,
     tuple[Group, AccessRightsDict] | None,
     Group | None,
+    Group | None,
 ]:
     """
     Get all groups needed for user profile including standard groups,
@@ -110,7 +111,19 @@ async def get_user_profile_groups(
             app, product.support_standard_group_id
         )
 
-    return groups_by_type, my_product_group, product_support_group
+    product_chatbot_primary_group = None
+    if product.support_chatbot_user_id:
+        _group_id = await users_service.get_user_primary_group_id(
+            app, user_id=product.support_chatbot_user_id
+        )
+        product_chatbot_primary_group = await get_group_by_gid(app, _group_id)
+
+    return (
+        groups_by_type,
+        my_product_group,
+        product_support_group,
+        product_chatbot_primary_group,
+    )
 
 
 #

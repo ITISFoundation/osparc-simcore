@@ -6,8 +6,8 @@ MSG_2FA_CODE_SENT: Final[str] = user_message(
     "A verification code has been sent via SMS to {phone_number}.", _version=1
 )
 MSG_2FA_UNAVAILABLE: Final[str] = user_message(
-    "Two-factor authentication is temporarily unavailable. Please try again later.",
-    _version=1,
+    "The two-factor authentication service is currently unavailable. Please try again in a few minutes.",
+    _version=2,
 )
 MSG_ACTIVATED: Final[str] = user_message(
     "Your account has been successfully activated.", _version=1
@@ -17,8 +17,8 @@ MSG_ACTIVATION_REQUIRED: Final[str] = user_message(
     _version=1,
 )
 MSG_AUTH_FAILED: Final[str] = user_message(
-    "We couldn't sign you in with those credentials. Please check your email and password and try again.",
-    _version=1,
+    "The provided credentials are incorrect. Please verify your email and password.",
+    _version=2,
 )
 MSG_CANT_SEND_MAIL: Final[str] = user_message(
     "We're unable to send emails at this time. Please try again later.", _version=1
@@ -99,17 +99,19 @@ MSG_WRONG_2FA_CODE__INVALID: Final[str] = user_message(
     _version=2,
 )
 MSG_WRONG_2FA_CODE__EXPIRED: Final[str] = user_message(
-    "The verification code is either incorrect or has expired. Please request a new verification code and try again.",
-    _version=3,
+    "The verification code has expired or is incorrect. Please request a new code and try again.",
+    _version=4,
 )
 MSG_WRONG_CAPTCHA__INVALID: Final[str] = user_message(
     "The CAPTCHA entered is incorrect. Please try again.", _version=1
 )
 MSG_WRONG_PASSWORD: Final[str] = user_message(
-    "The password is incorrect. Please try again.", _version=1
+    "The password does not match the one associated with this email address. Please try again.",
+    _version=3,
 )
 MSG_WEAK_PASSWORD: Final[str] = user_message(
-    "Password must be at least {LOGIN_PASSWORD_MIN_LENGTH} characters long.", _version=1
+    "Your password must contain at least {LOGIN_PASSWORD_MIN_LENGTH} characters for security.",
+    _version=2,
 )
 MSG_INVITATIONS_CONTACT_SUFFIX: Final[str] = user_message(
     "Please contact our support team to request a new invitation.", _version=1

@@ -5,15 +5,15 @@
 - Every product has a front-end with exactly the same name
 """
 
-from typing import Literal
+from typing import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
+    Literal,
+    TypedDict,
+)
 
 import sqlalchemy as sa
 from common_library.json_serialization import json_dumps
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.sql import func
-from typing_extensions import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
-    TypedDict,
-)
 
 from ._common import RefActions
 from .base import metadata

@@ -11,8 +11,7 @@ ContextDict: TypeAlias = dict[str, Any]
 ContextGetter: TypeAlias = Callable[[ContextDict], Any]
 
 
-class CaptureError(ValueError):
-    ...
+class CaptureError(ValueError): ...
 
 
 def factory_context_getter(parameter_name: str) -> ContextGetter:

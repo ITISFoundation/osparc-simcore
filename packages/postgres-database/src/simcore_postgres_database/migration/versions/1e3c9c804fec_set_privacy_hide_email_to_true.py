@@ -5,6 +5,7 @@ Revises: d31c23845017
 Create Date: 2025-01-03 10:16:58.531083+00:00
 
 """
+
 from alembic import op
 from sqlalchemy.sql import expression
 

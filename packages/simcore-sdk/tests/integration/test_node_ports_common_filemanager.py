@@ -23,10 +23,8 @@ from pydantic import BaseModel, ByteSize, TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.parametrizations import byte_size_ids
 from servicelib.progress_bar import ProgressBarData
-from settings_library.aws_s3_cli import AwsS3CliSettings
 from settings_library.r_clone import RCloneSettings
 from simcore_sdk.node_ports_common import exceptions, filemanager
-from simcore_sdk.node_ports_common.aws_s3_cli import AwsS3CliFailedError
 from simcore_sdk.node_ports_common.filemanager import UploadedFile, UploadedFolder
 from simcore_sdk.node_ports_common.r_clone import RCloneFailedError
 from yarl import URL
@@ -45,31 +43,25 @@ pytest_simcore_ops_services_selection = ["minio", "adminer"]
 
 class _SyncSettings(BaseModel):
     r_clone_settings: RCloneSettings | None
-    aws_s3_cli_settings: AwsS3CliSettings | None
 
 
 @pytest.fixture(
-    params=[(True, False), (False, True), (False, False)],
+    params=[(True,), (False,)],
     ids=[
         "RClone enabled",
-        "AwsS3Cli enabled",
-        "Both RClone and AwsS3Cli disabled",
+        "Both RClone disabled",
     ],
 )
 async def optional_sync_settings(
     r_clone_settings_factory: Callable[[], Awaitable[RCloneSettings]],
-    aws_s3_cli_settings_factory: Callable[[], Awaitable[AwsS3CliSettings]],
     request: pytest.FixtureRequest,
 ) -> _SyncSettings:
-    _rclone_enabled, _aws_s3_cli_enabled = request.param
+    _rclone_enabled = request.param[0]
 
     _r_clone_settings = await r_clone_settings_factory() if _rclone_enabled else None
-    _aws_s3_cli_settings = (
-        await aws_s3_cli_settings_factory() if _aws_s3_cli_enabled else None
-    )
 
     return _SyncSettings(
-        r_clone_settings=_r_clone_settings, aws_s3_cli_settings=_aws_s3_cli_settings
+        r_clone_settings=_r_clone_settings,
     )
 
 
@@ -115,7 +107,6 @@ async def test_valid_upload_download(
             r_clone_settings=optional_sync_settings.r_clone_settings,
             io_log_redirect_cb=None,
             progress_bar=progress_bar,
-            aws_s3_cli_settings=optional_sync_settings.aws_s3_cli_settings,
         )
         assert isinstance(upload_result, UploadedFile)
         store_id, e_tag = upload_result.store_id, upload_result.etag
@@ -139,7 +130,6 @@ async def test_valid_upload_download(
             io_log_redirect_cb=None,
             r_clone_settings=optional_sync_settings.r_clone_settings,
             progress_bar=progress_bar,
-            aws_s3_cli_settings=optional_sync_settings.aws_s3_cli_settings,
         )
         assert progress_bar._current_steps == pytest.approx(2)  # noqa: SLF001
     assert download_file_path.exists()
@@ -180,7 +170,6 @@ async def test_valid_upload_download_using_file_object(
             ),
             r_clone_settings=optional_sync_settings.r_clone_settings,
             io_log_redirect_cb=None,
-            aws_s3_cli_settings=optional_sync_settings.aws_s3_cli_settings,
         )
         assert isinstance(upload_result, UploadedFile)
         store_id, e_tag = upload_result.store_id, upload_result.etag
@@ -203,7 +192,6 @@ async def test_valid_upload_download_using_file_object(
             io_log_redirect_cb=None,
             r_clone_settings=optional_sync_settings.r_clone_settings,
             progress_bar=progress_bar,
-            aws_s3_cli_settings=optional_sync_settings.aws_s3_cli_settings,
         )
     assert progress_bar._current_steps == pytest.approx(1)  # noqa: SLF001
     assert download_file_path.exists()
@@ -222,11 +210,6 @@ def mocked_upload_file_raising_exceptions(mocker: MockerFixture) -> None:
         "simcore_sdk.node_ports_common.file_io_utils._upload_file_part",
         autospec=True,
         side_effect=ClientError,
-    )
-    mocker.patch(
-        "simcore_sdk.node_ports_common.filemanager.aws_s3_cli.sync_local_to_s3",
-        autospec=True,
-        side_effect=AwsS3CliFailedError,
     )
 
 
@@ -258,7 +241,6 @@ async def test_failed_upload_is_properly_removed_from_storage(
             path_to_upload=file_path,
             r_clone_settings=optional_sync_settings.r_clone_settings,
             io_log_redirect_cb=None,
-            aws_s3_cli_settings=optional_sync_settings.aws_s3_cli_settings,
         )
     with pytest.raises(exceptions.S3InvalidPathError):
         await filemanager.get_file_metadata(
@@ -294,7 +276,6 @@ async def test_failed_upload_after_valid_upload_keeps_last_valid_state(
         path_to_upload=file_path,
         r_clone_settings=optional_sync_settings.r_clone_settings,
         io_log_redirect_cb=None,
-        aws_s3_cli_settings=optional_sync_settings.aws_s3_cli_settings,
     )
     assert isinstance(upload_result, UploadedFile)
     store_id, e_tag = upload_result.store_id, upload_result.etag
@@ -326,7 +307,6 @@ async def test_failed_upload_after_valid_upload_keeps_last_valid_state(
             path_to_upload=file_path,
             r_clone_settings=optional_sync_settings.r_clone_settings,
             io_log_redirect_cb=None,
-            aws_s3_cli_settings=optional_sync_settings.aws_s3_cli_settings,
         )
     # the file shall be back to its original state
     file_metadata = await filemanager.get_file_metadata(
@@ -375,7 +355,6 @@ async def test_invalid_file_path(
                 io_log_redirect_cb=None,
                 r_clone_settings=optional_sync_settings.r_clone_settings,
                 progress_bar=progress_bar,
-                aws_s3_cli_settings=optional_sync_settings.aws_s3_cli_settings,
             )
 
 
@@ -430,7 +409,6 @@ async def test_errors_upon_invalid_file_identifiers(
                 io_log_redirect_cb=None,
                 r_clone_settings=optional_sync_settings.r_clone_settings,
                 progress_bar=progress_bar,
-                aws_s3_cli_settings=optional_sync_settings.aws_s3_cli_settings,
             )
 
     with pytest.raises(exceptions.S3InvalidPathError):
@@ -448,7 +426,6 @@ async def test_errors_upon_invalid_file_identifiers(
                 io_log_redirect_cb=None,
                 r_clone_settings=optional_sync_settings.r_clone_settings,
                 progress_bar=progress_bar,
-                aws_s3_cli_settings=optional_sync_settings.aws_s3_cli_settings,
             )
 
 
@@ -490,25 +467,7 @@ async def test_invalid_store(
                 io_log_redirect_cb=None,
                 r_clone_settings=optional_sync_settings.r_clone_settings,
                 progress_bar=progress_bar,
-                aws_s3_cli_settings=optional_sync_settings.aws_s3_cli_settings,
             )
-
-
-@pytest.fixture(
-    params=[True, False],
-    ids=["with RClone", "with AwsS3Cli"],
-)
-def sync_settings(
-    r_clone_settings: RCloneSettings,
-    aws_s3_cli_settings: AwsS3CliSettings,
-    request: pytest.FixtureRequest,
-) -> _SyncSettings:
-    is_rclone_enabled = request.param
-
-    return _SyncSettings(
-        r_clone_settings=r_clone_settings if is_rclone_enabled else None,
-        aws_s3_cli_settings=aws_s3_cli_settings if not is_rclone_enabled else None,
-    )
 
 
 @pytest.mark.parametrize("is_directory", [False, True])
@@ -518,8 +477,8 @@ async def test_valid_metadata(
     user_id: int,
     create_valid_file_uuid: Callable[[str, Path], SimcoreS3FileID],
     s3_simcore_location: LocationID,
-    sync_settings: _SyncSettings,
     is_directory: bool,
+    r_clone_settings: RCloneSettings,
 ):
     # first we go with a non-existing file
     file_path = Path(tmpdir) / "a-subdir" / "test.test"
@@ -550,8 +509,7 @@ async def test_valid_metadata(
         s3_object=file_id,
         path_to_upload=path_to_upload,
         io_log_redirect_cb=None,
-        r_clone_settings=sync_settings.r_clone_settings,
-        aws_s3_cli_settings=sync_settings.aws_s3_cli_settings,
+        r_clone_settings=r_clone_settings,
     )
     if is_directory:
         assert isinstance(upload_result, UploadedFolder)
@@ -662,7 +620,7 @@ async def test_upload_path_source_is_a_folder(
     user_id: int,
     s3_simcore_location: LocationID,
     files_in_folder: int,
-    sync_settings: _SyncSettings,
+    r_clone_settings: RCloneSettings,
 ):
     source_dir = tmp_path / f"source-{faker.uuid4()}"
     source_dir.mkdir(parents=True, exist_ok=True)
@@ -685,8 +643,7 @@ async def test_upload_path_source_is_a_folder(
         s3_object=s3_object,
         path_to_upload=source_dir,
         io_log_redirect_cb=None,
-        r_clone_settings=sync_settings.r_clone_settings,
-        aws_s3_cli_settings=sync_settings.aws_s3_cli_settings,
+        r_clone_settings=r_clone_settings,
     )
     assert isinstance(upload_result, UploadedFolder)
     assert source_dir.exists()
@@ -699,9 +656,8 @@ async def test_upload_path_source_is_a_folder(
             s3_object=s3_object,
             local_path=download_dir,
             io_log_redirect_cb=None,
-            r_clone_settings=sync_settings.r_clone_settings,
+            r_clone_settings=r_clone_settings,
             progress_bar=progress_bar,
-            aws_s3_cli_settings=sync_settings.aws_s3_cli_settings,
         )
     assert download_dir.exists()
 

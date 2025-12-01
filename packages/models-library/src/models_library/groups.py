@@ -1,13 +1,16 @@
-from typing import Annotated, Final, NamedTuple, TypeAlias
+from typing import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
+    Annotated,
+    Final,
+    NamedTuple,
+    TypeAlias,
+    TypedDict,
+)
 
 from common_library.basic_types import DEFAULT_FACTORY
 from common_library.groups_enums import GroupType as GroupType
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 from pydantic.config import JsonDict
 from pydantic.types import PositiveInt
-from typing_extensions import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
-    TypedDict,
-)
 
 from .users import UserID, UserNameID
 from .utils.common_validators import create_enums_pre_validator
@@ -77,6 +80,13 @@ class Group(BaseModel):
             "type": "standard",
             "thumbnail": None,
         }
+        chatbot: JsonDict = {
+            "gid": 5,
+            "name": "Chatbot",
+            "description": "chatbot group",
+            "type": "primary",
+            "thumbnail": None,
+        }
 
         schema.update(
             {
@@ -86,6 +96,7 @@ class Group(BaseModel):
                     organization,
                     product,
                     support,
+                    chatbot,
                 ]
             }
         )

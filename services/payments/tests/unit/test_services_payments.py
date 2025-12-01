@@ -10,6 +10,7 @@ import asyncio
 from collections.abc import Awaitable, Callable
 from unittest.mock import MagicMock
 
+import httpx
 import pytest
 from fastapi import FastAPI
 from models_library.api_schemas_webserver.wallets import PaymentMethodID
@@ -32,7 +33,10 @@ from simcore_service_payments.services import payments
 from simcore_service_payments.services.notifier import NotifierService
 from simcore_service_payments.services.notifier_email import EmailProvider
 from simcore_service_payments.services.notifier_ws import WebSocketProvider
-from simcore_service_payments.services.payments_gateway import PaymentsGatewayApi
+from simcore_service_payments.services.payments_gateway import (
+    PaymentsGatewayApi,
+    UnverifiedPaymentError,
+)
 from simcore_service_payments.services.resource_usage_tracker import (
     ResourceUsageTrackerApi,
 )
@@ -81,11 +85,40 @@ def mock_ws_provider(mocker: MockerFixture) -> MagicMock:
     return mock
 
 
-async def test_fails_to_pay_with_payment_method_without_funds(
-    app: FastAPI,
+@pytest.fixture
+def notifier_service(
+    mock_email_provider: MagicMock,
+    mock_ws_provider: MagicMock,
+) -> NotifierService:
+    return NotifierService(mock_email_provider, mock_ws_provider)
+
+
+@pytest.fixture
+async def no_funds_payment_method_id(
     create_fake_payment_method_in_db: Callable[
         [PaymentMethodID, WalletID, UserID], Awaitable[PaymentsMethodsDB]
     ],
+    no_funds_payment_method_id: PaymentMethodID,
+    wallet_id: WalletID,
+    user_id: UserID,
+    payments_clean_db: None,
+) -> PaymentMethodID:
+    """Creates a payment method in the DB that the gateway will consider as having no funds
+
+    NOTE: EXTENDS the fixture in conftest.py::no_funds_payment_method_id by adding it in db
+    """
+    payment_method_without_funds = await create_fake_payment_method_in_db(
+        payment_method_id=no_funds_payment_method_id,
+        wallet_id=wallet_id,
+        user_id=user_id,
+    )
+
+    assert no_funds_payment_method_id == payment_method_without_funds.payment_method_id
+    return payment_method_without_funds.payment_method_id
+
+
+async def test_fails_to_pay_with_payment_method_without_funds(
+    app: FastAPI,
     no_funds_payment_method_id: PaymentMethodID,
     mock_payments_gateway_service_or_none: MockRouter | None,
     wallet_id: WalletID,
@@ -93,36 +126,27 @@ async def test_fails_to_pay_with_payment_method_without_funds(
     user_id: UserID,
     user_name: IDStr,
     user_email: EmailStr,
-    payments_clean_db: None,
+    notifier_service: NotifierService,
     mocker: MockerFixture,
     mock_email_provider: MagicMock,
     mock_ws_provider: MagicMock,
 ):
     if mock_payments_gateway_service_or_none is None:
         pytest.skip(
-            "cannot run thist test against external because it setup a payment method"
+            "cannot run this test against external because it sets up a payment method"
         )
-
-    payment_method_without_funds = await create_fake_payment_method_in_db(
-        payment_method_id=no_funds_payment_method_id,
-        wallet_id=wallet_id,
-        user_id=user_id,
-    )
 
     rut = ResourceUsageTrackerApi.get_from_app_state(app)
     rut_create_credit_transaction = mocker.spy(rut, "create_credit_transaction")
-
-    # Mocker providers
-    notifier = NotifierService(mock_email_provider, mock_ws_provider)
 
     payment = await payments.pay_with_payment_method(
         gateway=PaymentsGatewayApi.get_from_app_state(app),
         rut=rut,
         repo_transactions=PaymentsTransactionsRepo(db_engine=app.state.engine),
         repo_methods=PaymentsMethodsRepo(db_engine=app.state.engine),
-        notifier=notifier,
+        notifier=notifier_service,
         #
-        payment_method_id=payment_method_without_funds.payment_method_id,
+        payment_method_id=no_funds_payment_method_id,
         amount_dollars=100,
         target_credits=100,
         product_name="my_product",
@@ -148,7 +172,7 @@ async def test_fails_to_pay_with_payment_method_without_funds(
 
     # check notifications triggered as background tasks
     await asyncio.sleep(0.1)
-    assert len(notifier._background_tasks) == 0  # noqa: SLF001
+    assert len(notifier_service._background_tasks) == 0  # noqa: SLF001
 
     assert mock_email_provider.notify_payment_completed.called
     assert (
@@ -164,3 +188,52 @@ async def test_fails_to_pay_with_payment_method_without_funds(
 
     # Websockets notification should be in the exclude list
     assert not mock_ws_provider.notify_payment_completed.called
+
+
+async def test_gateway_server_timesout_during_payment(
+    mock_payments_gateway_service_api_base: MockRouter,
+    no_funds_payment_method_id: PaymentMethodID,
+    app: FastAPI,
+    wallet_id: WalletID,
+    wallet_name: IDStr,
+    user_id: UserID,
+    user_name: IDStr,
+    user_email: EmailStr,
+    notifier_service: NotifierService,
+    payments_clean_db: None,
+):
+    rut = ResourceUsageTrackerApi.get_from_app_state(app)
+
+    # ConnectTimeout: covers DNS resolution + TCP + TLS handshake.
+    # WriteTimeout: covers sending the request body (if any).
+    # ReadTimeout: covers after the request is sent, while waiting for or reading the response (including waiting for the first byte).
+
+    mock_payments_gateway_service_api_base.post(
+        path__regex=r"/payment-methods/(?P<pm_id>[\w-]+):pay$",
+        name="pay_with_payment_method",
+    ).mock(side_effect=httpx.ReadTimeout("Read timeout simulated for testing"))
+
+    with pytest.raises(UnverifiedPaymentError) as exc_info:
+        await payments.pay_with_payment_method(
+            gateway=PaymentsGatewayApi.get_from_app_state(app),
+            rut=rut,
+            repo_transactions=PaymentsTransactionsRepo(db_engine=app.state.engine),
+            repo_methods=PaymentsMethodsRepo(db_engine=app.state.engine),
+            notifier=notifier_service,
+            #
+            payment_method_id=no_funds_payment_method_id,
+            amount_dollars=100,
+            target_credits=100,
+            product_name="my_product",
+            wallet_id=wallet_id,
+            wallet_name=wallet_name,
+            user_id=user_id,
+            user_name=user_name,
+            user_email=user_email,
+            user_address=UserInvoiceAddress(country="CH"),
+            stripe_price_id="stripe-id",
+            stripe_tax_rate_id="stripe-id",
+            comment="test_failure_in_pay_with_payment_method",
+        )
+
+    assert exc_info.value.operation_id == "PaymentsGatewayApi.pay_with_payment_method"

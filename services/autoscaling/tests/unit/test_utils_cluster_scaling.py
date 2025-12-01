@@ -75,6 +75,24 @@ async def test_associate_ec2_instances_with_nodes_with_no_correspondence(
     assert len(non_associated_instances) == len(ec2_instances)
 
 
+async def test_associate_ec2_instances_with_nodes_with_invalid_dns(
+    fake_ec2_instance_data: Callable[..., EC2InstanceData],
+    node: Callable[..., DockerNode],
+):
+    nodes = [node() for _ in range(10)]
+    ec2_instances = [
+        fake_ec2_instance_data(aws_private_dns="invalid-dns-name") for _ in range(10)
+    ]
+
+    (
+        associated_instances,
+        non_associated_instances,
+    ) = associate_ec2_instances_with_nodes(nodes, ec2_instances)
+
+    assert not associated_instances
+    assert non_associated_instances
+
+
 async def test_associate_ec2_instances_with_corresponding_nodes(
     fake_ec2_instance_data: Callable[..., EC2InstanceData],
     node: Callable[..., DockerNode],

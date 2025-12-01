@@ -21,11 +21,12 @@ from models_library.rest_pagination import PageTotalCount
 from models_library.users import UserID
 
 from ..conversations._socketio import (
-    notify_conversation_created,
-    notify_conversation_deleted,
-    notify_conversation_updated,
+    notify_via_socket_conversation_created,
+    notify_via_socket_conversation_deleted,
+    notify_via_socket_conversation_updated,
 )
 from ..fogbugz import FogbugzCaseCreate, get_fogbugz_rest_client
+from ..groups import api as group_service
 from ..groups.api import list_user_groups_ids_with_read_access
 from ..products import products_service
 from ..projects._groups_repository import list_project_groups
@@ -46,6 +47,19 @@ async def get_recipients_from_project(
         if group.read
         for user in await get_users_in_group(app, gid=group.gid)
     }
+
+
+async def get_recipients_from_product_support_group(
+    app: web.Application, product_name: ProductName
+) -> set[UserID]:
+    product = products_service.get_product(app, product_name=product_name)
+    _support_standard_group_id = product.support_standard_group_id
+    if _support_standard_group_id:
+        users = await group_service.list_group_members(
+            app, group_id=_support_standard_group_id
+        )
+        return {user.id for user in users}
+    return set()
 
 
 async def create_conversation(
@@ -72,10 +86,20 @@ async def create_conversation(
     )
 
     if project_uuid:
-        await notify_conversation_created(
+        await notify_via_socket_conversation_created(
             app,
             recipients=await get_recipients_from_project(app, project_uuid),
             project_id=project_uuid,
+            conversation=created_conversation,
+        )
+    else:
+        _product_group_users = await get_recipients_from_product_support_group(
+            app, product_name=product_name
+        )
+        await notify_via_socket_conversation_created(
+            app,
+            recipients=_product_group_users | {user_id},
+            project_id=None,
             conversation=created_conversation,
         )
 
@@ -86,13 +110,10 @@ async def get_conversation(
     app: web.Application,
     *,
     conversation_id: ConversationID,
-    # filters
-    type_: ConversationType | None = None,
 ) -> ConversationGetDB:
     return await _conversation_repository.get(
         app,
         conversation_id=conversation_id,
-        type_=type_,
     )
 
 
@@ -101,13 +122,11 @@ async def get_conversation_for_user(
     *,
     conversation_id: ConversationID,
     user_group_id: UserID,
-    type_: ConversationType | None = None,
 ) -> ConversationGetDB:
     return await _conversation_repository.get_for_user(
         app,
         conversation_id=conversation_id,
         user_group_id=user_group_id,
-        type_=type_,
     )
 
 
@@ -126,10 +145,23 @@ async def update_conversation(
     )
 
     if project_id:
-        await notify_conversation_updated(
+        await notify_via_socket_conversation_updated(
             app,
             recipients=await get_recipients_from_project(app, project_id),
             project_id=project_id,
+            conversation=updated_conversation,
+        )
+    else:
+        _product_group_users = await get_recipients_from_product_support_group(
+            app, product_name=updated_conversation.product_name
+        )
+        _conversation_creator_user = await users_service.get_user_id_from_gid(
+            app, primary_gid=updated_conversation.user_group_id
+        )
+        await notify_via_socket_conversation_updated(
+            app,
+            recipients=_product_group_users | {_conversation_creator_user},
+            project_id=None,
             conversation=updated_conversation,
         )
 
@@ -143,6 +175,7 @@ async def delete_conversation(
     user_id: UserID,
     project_id: ProjectID | None,
     conversation_id: ConversationID,
+    conversation_type: ConversationType,
 ) -> None:
     await _conversation_repository.delete(
         app,
@@ -152,13 +185,27 @@ async def delete_conversation(
     _user_group_id = await users_service.get_user_primary_group_id(app, user_id=user_id)
 
     if project_id:
-        await notify_conversation_deleted(
+        await notify_via_socket_conversation_deleted(
             app,
             recipients=await get_recipients_from_project(app, project_id),
             product_name=product_name,
             user_group_id=_user_group_id,
             project_id=project_id,
             conversation_id=conversation_id,
+            conversation_type=conversation_type,
+        )
+    else:
+        _product_group_users = await get_recipients_from_product_support_group(
+            app, product_name=product_name
+        )
+        await notify_via_socket_conversation_deleted(
+            app,
+            recipients=_product_group_users | {user_id},
+            product_name=product_name,
+            user_group_id=_user_group_id,
+            project_id=None,
+            conversation_id=conversation_id,
+            conversation_type=conversation_type,
         )
 
 
@@ -193,10 +240,10 @@ async def get_support_conversation_for_user(
 
     # Check if user is an AI bot
     if _chatbot_user_id and user_id == _chatbot_user_id:
+        conversation = await get_conversation(app, conversation_id=conversation_id)
+        assert conversation.type.is_support_type()  # nosec
         return (
-            await get_conversation(
-                app, conversation_id=conversation_id, type_=ConversationType.SUPPORT
-            ),
+            conversation,
             ConversationUserType.CHATBOT_USER,
         )
 
@@ -206,21 +253,23 @@ async def get_support_conversation_for_user(
         )
         if _support_standard_group_id in _user_group_ids:
             # I am a support user
+            conversation = await get_conversation(app, conversation_id=conversation_id)
+            assert conversation.type.is_support_type()  # nosec
             return (
-                await get_conversation(
-                    app, conversation_id=conversation_id, type_=ConversationType.SUPPORT
-                ),
+                conversation,
                 ConversationUserType.SUPPORT_USER,
             )
 
+    # I am a regular user
     _user_group_id = await users_service.get_user_primary_group_id(app, user_id=user_id)
+    conversation = await get_conversation_for_user(
+        app,
+        conversation_id=conversation_id,
+        user_group_id=_user_group_id,
+    )
+    assert conversation.type.is_support_type()  # nosec
     return (
-        await get_conversation_for_user(
-            app,
-            conversation_id=conversation_id,
-            user_group_id=_user_group_id,
-            type_=ConversationType.SUPPORT,
-        ),
+        conversation,
         ConversationUserType.REGULAR_USER,
     )
 
@@ -259,6 +308,7 @@ async def list_support_conversations_for_user(
     return await _conversation_repository.list_support_conversations_for_user(
         app,
         user_group_id=_user_group_id,
+        product_name=product_name,
         offset=offset,
         limit=limit,
         order_by=OrderBy(

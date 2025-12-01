@@ -29,6 +29,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
 
     this.__workspacesList = [];
     this.__foldersList = [];
+    this.__filesList = [];
     this.__resourcesList = [];
     this.__groupedContainersList = [];
     this.__resourceType = resourceType || "study";
@@ -41,14 +42,16 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       const foldersContainer = this.__foldersContainer = new osparc.dashboard.CardContainer();
       this.__foldersContainer.exclude();
       this._add(foldersContainer);
+
+      const filesContainer = this.__filesContainer = new osparc.dashboard.CardContainer();
+      filesContainer.getLayout().set({
+        spacingY: osparc.dashboard.ListButtonBase.SPACING,
+      });
+      this.__filesContainer.exclude();
+      this._add(filesContainer);
     }
 
-    const noResourcesFound = this.__noResourcesFound = new qx.ui.basic.Label("No resources found").set({
-      visibility: "excluded",
-      font: "text-14"
-    });
-    noResourcesFound.exclude();
-    this._add(noResourcesFound);
+    this.getChildControl("no-resources-found");
 
     const nonGroupedContainer = this.__nonGroupedContainer = this.__createFlatList();
     this._add(nonGroupedContainer);
@@ -98,6 +101,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
     "changeContext": "qx.event.type.Data",
     "studyToFolderRequested": "qx.event.type.Data",
     "folderToFolderRequested": "qx.event.type.Data",
+    "openLocation": "qx.event.type.Data",
   },
 
   statics: {
@@ -128,22 +132,52 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
         spacingY: spacing
       });
     },
+
+    fitToContainer: function(card, container) {
+      const __fitToContainer = () => {
+        const bounds = container.getBounds() || container.getSizeHint();
+        card.setWidth(bounds.width);
+      };
+      [
+        "appear",
+        "resize",
+      ].forEach(ev => {
+        container.addListener(ev, () => __fitToContainer());
+      });
+      __fitToContainer();
+    },
   },
 
   members: {
     __foldersList: null,
     __workspacesList: null,
+    __filesList: null,
     __resourcesList: null,
     __groupedContainersList: null,
     __foldersContainer: null,
     __workspacesContainer: null,
+    __filesContainer: null,
     __nonGroupedContainer: null,
     __groupedContainers: null,
     __resourceType: null,
-    __noResourcesFound: null,
     __noResourcesFoundTimer: null,
 
-    __evaluateNoResourcesFoundLabel: function() {
+    _createChildControlImpl: function(id) {
+      let control;
+      switch (id) {
+        case "no-resources-found":
+          control = new qx.ui.basic.Label().set({
+            value: this.tr("No Resources found"),
+            visibility: "excluded",
+            font: "text-14",
+          });
+          this._add(control);
+          break;
+      }
+      return control || this.base(arguments, id);
+    },
+
+    __getNotFoundText: function() {
       let text = null;
       switch (this.__resourceType) {
         case "study": {
@@ -175,23 +209,33 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
         case "service":
           text = this.tr("No Apps found");
           break;
-        default:
-          text = this.tr("No Resources found");
-          break;
       }
+      return text;
+    },
 
-      this.__noResourcesFound.exclude();
+    __evaluateNoResourcesFoundLabel: function() {
+      const noResourcesFound = this.getChildControl("no-resources-found");
+      noResourcesFound.exclude();
       if (this.__noResourcesFoundTimer) {
         clearTimeout(this.__noResourcesFoundTimer);
       }
-      if (text && this.__resourcesList.length === 0) {
+
+      if (this.__resourcesList.length === 0) {
         // delay it a bit to avoid the initial flickering
         this.__noResourcesFoundTimer = setTimeout(() => {
-          this.__noResourcesFound.set({
-            value: text,
-            visibility: "visible",
-          });
+          this.showNoResourcesFound();
         }, 2000);
+      }
+    },
+
+    showNoResourcesFound: function() {
+      const text = this.__getNotFoundText();
+      if (text) {
+        const noResourcesFound = this.getChildControl("no-resources-found");
+        noResourcesFound.set({
+          value: text,
+        });
+        noResourcesFound.show();
       }
     },
 
@@ -320,17 +364,7 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       container.add(card);
 
       if (this.getMode() === "list") {
-        const fitToContainer = () => {
-          const bounds = container.getBounds() || container.getSizeHint();
-          card.setWidth(bounds.width);
-        };
-        [
-          "appear",
-          "resize",
-        ].forEach(ev => {
-          container.addListener(ev, () => fitToContainer());
-        });
-        fitToContainer();
+        this.self().fitToContainer(card, container);
       }
     },
 
@@ -525,6 +559,39 @@ qx.Class.define("osparc.dashboard.ResourceContainerManager", {
       return card;
     },
     // /FOLDERS
+
+    // FILES
+    setFilesToList: function(filesList) {
+      this.__filesList = filesList;
+    },
+
+    reloadFiles: function() {
+      if (this.__filesContainer) {
+        this.__filesContainer.removeAll();
+        this.__filesContainer.exclude();
+      }
+      let fileCards = [];
+      this.__filesList.forEach(fileData => fileCards.push(this.__fileToCard(fileData)));
+      return fileCards;
+    },
+
+    __fileToCard: function(fileData) {
+      const card = this.__createFileCard(fileData);
+      this.__filesContainer.add(card);
+      this.__filesContainer.show();
+      this.self().fitToContainer(card, this.__filesContainer);
+      return card;
+    },
+
+    __createFileCard: function(fileData) {
+      const file = new osparc.data.model.File(fileData);
+      const card = new osparc.dashboard.FileButtonItem(file);
+      [
+        "openLocation",
+      ].forEach(eName => card.addListener(eName, e => this.fireDataEvent(eName, e.getData())));
+      return card;
+    },
+    // /FILES
 
     __moveNoGroupToLast: function() {
       const idx = this.__groupedContainers.getChildren().findIndex(grpContainer => grpContainer === this.__getGroupContainer("no-group"));

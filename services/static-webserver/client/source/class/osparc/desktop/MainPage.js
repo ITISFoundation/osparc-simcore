@@ -55,7 +55,7 @@ qx.Class.define("osparc.desktop.MainPage", {
     navBarPromises.push(osparc.store.Groups.getInstance().fetchGroups());
     navBarPromises.push(osparc.store.PollTasks.getInstance().fetchTasks());
     navBarPromises.push(osparc.store.Jobs.getInstance().fetchJobsLatest());
-    navBarPromises.push(osparc.store.ConversationsSupport.getInstance().fetchConversations());
+    navBarPromises.push(osparc.store.ConversationsSupport.getInstance().init());
     Promise.all(navBarPromises)
       .finally(() => navBar.populateLayout());
 
@@ -66,10 +66,10 @@ qx.Class.define("osparc.desktop.MainPage", {
 
     const store = osparc.store.Store.getInstance();
     const preloadPromises = [];
-    const walletsEnabled = osparc.desktop.credits.Utils.areWalletsEnabled();
+    const walletsEnabled = osparc.store.StaticInfo.isBillableProduct();
     if (walletsEnabled) {
-      preloadPromises.push(store.reloadCreditPrice());
-      preloadPromises.push(store.reloadWallets());
+      preloadPromises.push(store.fetchCreditPrice());
+      preloadPromises.push(store.fetchWallets());
     }
     preloadPromises.push(store.getAllClassifiers(true));
     preloadPromises.push(osparc.store.Tags.getInstance().fetchTags());

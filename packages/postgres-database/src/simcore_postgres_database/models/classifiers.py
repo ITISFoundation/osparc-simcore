@@ -1,11 +1,10 @@
-""" Table to store the classifiers defined by every group
+"""Table to store the classifiers defined by every group
 
-   In this initial version:
-    - Every entry to the table is a set of classifiers associated to a group
-    - The definitions of all classifiers as stored as a json in the 'bundle' column
-    - Notice that the definition of classifier follows a
+In this initial version:
+ - Every entry to the table is a set of classifiers associated to a group
+ - The definitions of all classifiers as stored as a json in the 'bundle' column
+ - Notice that the definition of classifier follows a
 """
-
 
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import JSONB

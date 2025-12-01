@@ -708,7 +708,6 @@ async def _fetch_data_via_data_manager(
             io_log_redirect_cb=io_log_redirect_cb,
             r_clone_settings=r_clone_settings,
             progress_bar=progress_bar,
-            aws_s3_cli_settings=None,
         )
 
     return save_to

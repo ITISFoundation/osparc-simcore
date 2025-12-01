@@ -20,6 +20,7 @@ from models_library.api_schemas_webserver.functions import (
     RegisteredProjectFunctionJob,
 )
 from models_library.functions import (
+    FunctionJob,
     FunctionJobStatus,
     RegisteredProjectFunction,
     RegisteredProjectFunctionJobWithStatus,
@@ -65,15 +66,22 @@ async def test_delete_function_job(
 
 async def test_register_function_job(
     client: AsyncClient,
-    mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
+    mock_handler_in_functions_rpc_interface: Callable,
     fake_project_function_job: ProjectFunctionJob,
     fake_registered_project_function_job: RegisteredProjectFunctionJob,
     auth: httpx.BasicAuth,
 ) -> None:
     """Test the register_function_job endpoint."""
 
+    async def _register_function_job_side_effect(
+        user_id: UserID,
+        function_job: FunctionJob,
+        product_name: ProductName,
+    ):
+        return fake_registered_project_function_job
+
     mock_handler_in_functions_rpc_interface(
-        "register_function_job", fake_registered_project_function_job
+        "register_function_job", side_effect=_register_function_job_side_effect
     )
 
     response = await client.post(

@@ -38,7 +38,7 @@ async def _logs_fetcher_worker(
         logger.debug("Streaming logs from %s, image %s", container_name, image_name)
         try:
             async for line in cast(
-                AsyncGenerator[str, None],
+                AsyncGenerator[str],
                 container.log(stdout=True, stderr=True, follow=True),
             ):
                 await dispatch_log(image_name=image_name, message=line)
@@ -84,8 +84,8 @@ class BackgroundLogFetcher:
             )
             return
 
-        task.cancel()
-        
+        task.cancel("stopping log fetching task")
+
         # NOTE: sometime the docker engine causes a TimeoutError after the task is cancelled
         with suppress(CancelledError, TimeoutError):
             await task

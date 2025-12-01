@@ -1,5 +1,4 @@
-""" resource_tracker_service_runs table
-"""
+"""resource_tracker_service_runs table"""
 
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import UUID

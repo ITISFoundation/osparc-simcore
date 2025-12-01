@@ -59,6 +59,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       SEARCH_TEMPLATES: "searchTemplates",
       SEARCH_PUBLIC_TEMPLATES: "searchPublicTemplates",
       SEARCH_FUNCTIONS: "searchFunctions",
+      SEARCH_FILES: "searchFiles",
     }
   },
 
@@ -75,6 +76,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         "searchTemplates",        // osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_TEMPLATES,
         "searchPublicTemplates",  // osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PUBLIC_TEMPLATES,
         "searchFunctions",        // osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FUNCTIONS,
+        "searchFiles",            // osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FILES,
       ],
       nullable: false,
       init: "studiesAndFolders",
@@ -113,8 +115,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __sortByButton: null,
     __workspacesList: null,
     __foldersList: null,
-    __loadingFolders: null,
+    __filesList: null,
     __loadingWorkspaces: null,
+    __loadingFolders: null,
     __lastUrlParams: null,
 
     // overridden
@@ -176,7 +179,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     reloadMoreResources: function() {
-      this.__reloadStudies();
+      if (this.getCurrentContext() === osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FILES) {
+        this.__reloadSearchFiles();
+      } else {
+        this.__reloadStudies();
+      }
     },
 
     __reloadWorkspaces: function() {
@@ -410,6 +417,78 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         });
     },
 
+    __reloadSearchFiles: function() {
+      if (
+        !osparc.auth.Manager.getInstance().isLoggedIn() ||
+        this.getCurrentContext() !== osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FILES ||
+        this._loadingResourcesBtn.isFetching()
+      ) {
+        return;
+      }
+
+      this._loadingResourcesBtn.setFetching(true);
+      this._loadingResourcesBtn.setVisibility("visible");
+      const filterData = this._searchBarFilter.getFilterData();
+      const text = filterData.text ? encodeURIComponent(filterData.text) : "";
+      const streamTasks = osparc.store.StreamTasks.getInstance();
+      const existingStream = streamTasks.getStreamTask("files_search", text);
+      if (existingStream) {
+        this.__fetchFilesFromStream(existingStream);
+      } else {
+        streamTasks.abortStreamTasks();
+        const streamPromise = osparc.store.Data.getInstance().searchFiles(text);
+        const pollingInterval = 2000;
+        streamTasks.createStreamTask("files_search", text, streamPromise, pollingInterval)
+          .then(newStream => this.__fetchFilesFromStream(newStream));
+      }
+    },
+
+    __fetchFilesFromStream: function(stream) {
+      stream.fetchStream()
+        .then(streamData => {
+          const items = streamData["data"]["items"] || [];
+          const end = streamData["data"]["end"] || false;
+          stream.setEnd(end);
+          if (items.length) {
+            this.__addFilesToList(items);
+          }
+          // keep it not null to allow further fetching
+          this._resourcesContainer.getFlatList().nextRequest = !end;
+          // show no files found only if the stream ended and no files were found
+          if (end && this.__filesList.length === 0) {
+            this._resourcesContainer.getChildControl("no-resources-found").set({
+              value: this.tr("No Files found"),
+              visibility: "visible",
+            });
+          }
+        })
+        .catch(err => {
+          osparc.FlashMessenger.logError(err);
+          // stop fetching
+          if (this._resourcesContainer.getFlatList()) {
+            this._resourcesContainer.getFlatList().nextRequest = null;
+          }
+        })
+        .finally(() => {
+          if (this._resourcesContainer.getFlatList() && this._resourcesContainer.getFlatList().nextRequest) {
+            this._loadingResourcesBtn.set({
+              visibility: "visible",
+              fetching: true
+            });
+            // delay the next request to avoid flooding the server
+            setTimeout(() => {
+              this._loadingResourcesBtn.setFetching(false); // make it false before calling moreResourcesRequired
+              this._moreResourcesRequired();
+            }, 2000);
+          } else if (this._loadingResourcesBtn) {
+            this._loadingResourcesBtn.set({
+              visibility: "excluded",
+              fetching: false
+            });
+          }
+        });
+    },
+
     __resetStudiesList: function() {
       this._resourcesList = [];
       // It will remove the study cards
@@ -441,18 +520,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           }, delay);
         }
       });
-    },
-
-    __setFoldersToList: function(folders) {
-      this.__foldersList = folders;
-      folders.forEach(folder => folder["resourceType"] = "folder");
-      this.__reloadFolderCards();
-    },
-
-    __setWorkspacesToList: function(workspaces) {
-      this.__workspacesList = workspaces;
-      workspaces.forEach(workspace => workspace["resourceType"] = "workspace");
-      this.__reloadWorkspaceCards();
     },
 
     _reloadCards: function() {
@@ -487,6 +554,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     // WORKSPACES
+    __setWorkspacesToList: function(workspaces) {
+      this.__workspacesList = workspaces;
+      workspaces.forEach(workspace => workspace["resourceType"] = "workspace");
+      this.__reloadWorkspaceCards();
+    },
+
     __reloadWorkspaceCards: function() {
       this._resourcesContainer.setWorkspacesToList(this.__workspacesList);
       this._resourcesContainer.reloadWorkspaces();
@@ -553,6 +626,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     // /WORKSPACES
 
     // FOLDERS
+    __setFoldersToList: function(folders) {
+      this.__foldersList = folders;
+      folders.forEach(folder => folder["resourceType"] = "folder");
+      this.__reloadFolderCards();
+    },
+
     __reloadFolderCards: function() {
       this._resourcesContainer.setFoldersToList(this.__foldersList);
       this._resourcesContainer.reloadFolders();
@@ -696,6 +775,59 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
     // /FOLDERS
 
+    // FILES
+    __setFilesToList: function(files) {
+      this.__filesList = files;
+      files.forEach(file => file["resourceType"] = "file");
+      this.__reloadFileCards();
+    },
+
+    __addFilesToList: function(filesList) {
+      filesList.forEach(fileData => {
+        const idx = this.__filesList.findIndex(fl => fl["path"] === fileData["path"]);
+        if (idx === -1) {
+          this.__filesList.push(fileData);
+        }
+      });
+      this.__reloadFileCards();
+    },
+
+    __reloadFileCards: function() {
+      this._resourcesContainer.setFilesToList(this.__filesList);
+      this._resourcesContainer.reloadFiles();
+    },
+
+    __resetFilesList: function() {
+      this._resourcesList = [];
+      // It will remove the file cards
+      this._reloadCards();
+    },
+
+    _openLocation: function(fileData) {
+      const projectId = fileData["projectId"];
+      const path = fileData["path"];
+      this.__openStudyDetails(projectId, path);
+    },
+
+    __openStudyDetails: function(projectId, path) {
+      osparc.store.Study.getInstance().getOne(projectId)
+        .then(studyData => {
+          if (studyData) {
+            const studyDataCopy = osparc.data.model.Study.deepCloneStudyObject(studyData);
+            studyDataCopy["resourceType"] = "study";
+            const {
+              resourceDetails,
+              window,
+            } = osparc.dashboard.ResourceDetails.popUpInWindow(studyDataCopy);
+            resourceDetails.addListener("openStudy", () => {
+              const openCB = () => window.close();
+              this._startStudyById(projectId, openCB);
+            });
+          }
+        });
+    },
+    // /FILES
+
     __configureStudyCards: function(cards) {
       cards.forEach(card => {
         card.setMultiSelectionMode(this.getMultiSelection());
@@ -770,7 +902,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       });
 
       const tagsStore = osparc.store.Tags.getInstance();
-      tagsStore.addListener("tagsChanged", () => {
+      tagsStore.addListener("tagRemoved", () => {
         this.invalidateStudies();
         this.__reloadStudies();
       }, this);
@@ -920,6 +1052,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS:
           requestParams.type = "user";
           break;
+        case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FILES:
+          // nothing to add
+          break;
       }
 
       if (this.getCurrentContext().includes("search")) {
@@ -996,6 +1131,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     invalidateFunctions: function() {
       this.__resetStudiesList();
+      if (this._resourcesContainer.getFlatList()) {
+        this._resourcesContainer.getFlatList().nextRequest = null;
+      }
+    },
+
+    invalidateFiles: function() {
+      this.__resetFilesList();
       if (this._resourcesContainer.getFlatList()) {
         this._resourcesContainer.getFlatList().nextRequest = null;
       }
@@ -1222,6 +1364,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FUNCTIONS:
           curatedContext = osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FUNCTIONS;
           break;
+        case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FILES:
+          curatedContext = osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FILES;
+          break;
         default:
           curatedContext = osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS;
           break;
@@ -1252,6 +1397,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_TEMPLATES,
           osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PUBLIC_TEMPLATES,
           osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FUNCTIONS,
+          osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FILES,
         ].includes(searchContext)) {
           this._changeContext(searchContext);
         }
@@ -1327,6 +1473,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             backToContext = osparc.dashboard.StudyBrowser.CONTEXT.FUNCTIONS;
           }
           break;
+        case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FILES:
+          if (isSearchContext) {
+            searchContext = osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FILES;
+          } else {
+            backToContext = osparc.dashboard.StudyBrowser.CONTEXT.PROJECTS;
+          }
+          break;
         default:
           if (isSearchContext) {
             searchContext = osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_PROJECTS;
@@ -1378,6 +1531,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       // reset lists
       this.__setWorkspacesToList([]);
       this.__setFoldersToList([]);
+      this.__setFilesToList([]);
       this._resourcesList = [];
       this._resourcesContainer.setResourcesToList(this._resourcesList);
       this._resourcesContainer.reloadCards("studies");
@@ -1444,6 +1598,14 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           this._loadingResourcesBtn.setFetching(false);
           this.invalidateFunctions();
           this.__reloadStudies();
+          break;
+        case osparc.dashboard.StudyBrowser.CONTEXT.SEARCH_FILES:
+          this._searchBarFilter.getChildControl("text-field").setPlaceholder("Search Files");
+          // Files can't be sorted and don't support list view
+          this._toolbar.exclude();
+          this._loadingResourcesBtn.setFetching(false);
+          this.invalidateFiles();
+          this.__reloadSearchFiles();
           break;
         case osparc.dashboard.StudyBrowser.CONTEXT.TRASH:
           this._searchBarFilter.resetFilters();
@@ -1912,7 +2074,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const studyDataButton = this.__getStudyDataMenuButton(card);
       menu.add(studyDataButton);
 
-      if (osparc.desktop.credits.Utils.areWalletsEnabled()) {
+      if (osparc.store.StaticInfo.isBillableProduct()) {
         const billingsSettingsButton = this.__getBillingMenuButton(card);
         menu.add(billingsSettingsButton);
       }

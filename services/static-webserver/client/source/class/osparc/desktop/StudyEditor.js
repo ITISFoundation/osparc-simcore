@@ -604,6 +604,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }
 
       const nodeId = socketData["node_id"];
+      const portId = socketData["port_key"];
       const workbench = this.getStudy().getWorkbench();
       const node = workbench.getNode(nodeId);
       if (!node) {
@@ -613,52 +614,16 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         return;
       }
 
-      const propsForm = node.getPropsForm();
-      if (msgName === "stateInputPorts" && propsForm) {
-        const portId = socketData["port_key"];
+      const input = node.getInput(portId);
+      if (msgName === "stateInputPorts" && input) {
         const status = socketData["status"];
-        switch (status) {
-          case "DOWNLOAD_STARTED":
-            propsForm.retrievingPortData(
-              portId,
-              osparc.form.renderer.PropForm.RETRIEVE_STATUS.downloading
-            );
-            break;
-          case "DOWNLOAD_FINISHED_SUCCESSFULLY":
-            propsForm.retrievedPortData(portId, true);
-            break;
-          case "DOWNLOAD_WAS_ABORTED":
-          case "DOWNLOAD_FINISHED_WITH_ERROR":
-            propsForm.retrievedPortData(portId, false);
-            break;
-        }
+        input.setStatus(status);
       }
 
-      const outputsForm = node.getOutputsForm();
-      if (msgName === "stateOutputPorts" && outputsForm) {
-        const portId = socketData["port_key"];
+      const output = node.getOutput(portId);
+      if (msgName === "stateOutputPorts" && output) {
         const status = socketData["status"];
-        switch (status) {
-          case "UPLOAD_STARTED":
-            outputsForm.setRetrievingStatus(
-              portId,
-              osparc.form.renderer.PropForm.RETRIEVE_STATUS.uploading
-            );
-            break;
-          case "UPLOAD_FINISHED_SUCCESSFULLY":
-            outputsForm.setRetrievingStatus(
-              portId,
-              osparc.form.renderer.PropForm.RETRIEVE_STATUS.succeed
-            );
-            break;
-          case "UPLOAD_WAS_ABORTED":
-          case "UPLOAD_FINISHED_WITH_ERROR":
-            outputsForm.setRetrievingStatus(
-              portId,
-              osparc.form.renderer.PropForm.RETRIEVE_STATUS.failed
-            );
-            break;
-        }
+        output.setStatus(status);
       }
     },
 

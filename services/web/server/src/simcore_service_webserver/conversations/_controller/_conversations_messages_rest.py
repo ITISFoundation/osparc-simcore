@@ -9,7 +9,6 @@ from models_library.conversations import (
     ConversationMessageID,
     ConversationMessagePatchDB,
     ConversationMessageType,
-    ConversationType,
 )
 from models_library.rest_pagination import (
     Page,
@@ -72,7 +71,7 @@ async def create_conversation_message(request: web.Request):
     _conversation = await _conversation_service.get_conversation(
         request.app, conversation_id=path_params.conversation_id
     )
-    if _conversation.type != ConversationType.SUPPORT:
+    if _conversation.type.is_support_type() is False:
         raise_unsupported_type(_conversation.type)
 
     # This function takes care of granting support user access to the message
@@ -116,7 +115,7 @@ async def list_conversation_messages(request: web.Request):
     _conversation = await _conversation_service.get_conversation(
         request.app, conversation_id=path_params.conversation_id
     )
-    if _conversation.type != ConversationType.SUPPORT:
+    if _conversation.type.is_support_type() is False:
         raise_unsupported_type(_conversation.type)
 
     # This function takes care of granting support user access to the message
@@ -170,7 +169,7 @@ async def get_conversation_message(request: web.Request):
     _conversation = await _conversation_service.get_conversation(
         request.app, conversation_id=path_params.conversation_id
     )
-    if _conversation.type != ConversationType.SUPPORT:
+    if _conversation.type.is_support_type() is False:
         raise_unsupported_type(_conversation.type)
 
     # This function takes care of granting support user access to the message
@@ -208,7 +207,7 @@ async def update_conversation_message(request: web.Request):
     _conversation = await _conversation_service.get_conversation(
         request.app, conversation_id=path_params.conversation_id
     )
-    if _conversation.type != ConversationType.SUPPORT:
+    if _conversation.type.is_support_type() is False:
         raise_unsupported_type(_conversation.type)
 
     # This function takes care of granting support user access to the message
@@ -248,7 +247,7 @@ async def delete_conversation_message(request: web.Request):
     _conversation = await _conversation_service.get_conversation(
         request.app, conversation_id=path_params.conversation_id
     )
-    if _conversation.type != ConversationType.SUPPORT:
+    if _conversation.type.is_support_type() is False:
         raise_unsupported_type(_conversation.type)
 
     # This function takes care of granting support user access to the message
@@ -265,6 +264,46 @@ async def delete_conversation_message(request: web.Request):
         user_id=req_ctx.user_id,
         project_id=None,  # Support conversations don't use project_id
         conversation_id=path_params.conversation_id,
+        message_id=path_params.message_id,
+    )
+
+    return web.json_response(status=status.HTTP_204_NO_CONTENT)
+
+
+@routes.post(
+    f"/{VTAG}/conversations/{{conversation_id}}/messages/{{message_id}}:trigger-chatbot",
+    name="trigger_chatbot_processing",
+)
+@login_required
+@_handle_exceptions
+async def trigger_chatbot_processing(request: web.Request):
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
+    path_params = parse_request_path_parameters_as(
+        _ConversationMessagePathParams, request
+    )
+
+    _conversation = await _conversation_service.get_conversation(
+        request.app, conversation_id=path_params.conversation_id
+    )
+    if _conversation.type.is_support_type() is False:
+        raise_unsupported_type(_conversation.type)
+
+    # This function takes care of granting support user access to the message
+    conversation_db, conversation_user_type = (
+        await _conversation_service.get_support_conversation_for_user(
+            app=request.app,
+            user_id=req_ctx.user_id,
+            product_name=req_ctx.product_name,
+            conversation_id=path_params.conversation_id,
+        )
+    )
+
+    await _conversation_message_service.trigger_chatbot_processing(
+        app=request.app,
+        product_name=req_ctx.product_name,
+        user_id=req_ctx.user_id,
+        conversation_user_type=conversation_user_type,
+        conversation=conversation_db,
         message_id=path_params.message_id,
     )
 

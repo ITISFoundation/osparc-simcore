@@ -5,8 +5,8 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable
 
 import pytest
 from playwright.sync_api import expect

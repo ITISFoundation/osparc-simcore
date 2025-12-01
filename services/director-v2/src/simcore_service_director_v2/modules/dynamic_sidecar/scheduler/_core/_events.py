@@ -98,9 +98,9 @@ class GetStatus(DynamicSchedulerEvent):
         )
 
         try:
-            containers_inspect: dict[
-                str, Any
-            ] = await sidecars_client.containers_inspect(dynamic_sidecar_endpoint)
+            containers_inspect: dict[str, Any] = (
+                await sidecars_client.containers_inspect(dynamic_sidecar_endpoint)
+            )
         except BaseHttpClientError as e:
             were_service_containers_previously_present = (
                 len(scheduler_data.dynamic_sidecar.containers_inspect) > 0

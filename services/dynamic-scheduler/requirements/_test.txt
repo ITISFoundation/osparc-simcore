@@ -27,7 +27,9 @@ faker==37.8.0
     # via -r requirements/_test.in
 fakeredis==2.31.3
     # via -r requirements/_test.in
-greenlet==3.1.1
+flaky==3.8.1
+    # via -r requirements/_test.in
+greenlet==3.2.4
     # via
     #   -c requirements/_base.txt
     #   playwright
@@ -155,10 +157,8 @@ types-psycopg2==2.9.21.20250915
 typing-extensions==4.14.1
     # via
     #   -c requirements/_base.txt
-    #   anyio
     #   mypy
     #   pyee
-    #   pytest-asyncio
     #   sqlalchemy2-stubs
 tzdata==2025.2
     # via faker

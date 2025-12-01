@@ -10,7 +10,6 @@ from pydantic import TypeAdapter
 from servicelib.archiving_utils import unarchive_dir
 from servicelib.logging_utils import log_context
 from servicelib.progress_bar import ProgressBarData
-from settings_library.aws_s3_cli import AwsS3CliSettings
 from settings_library.r_clone import RCloneSettings
 
 from ..node_ports_common import filemanager
@@ -44,7 +43,6 @@ async def _push_directory(
     r_clone_settings: RCloneSettings,
     exclude_patterns: set[str] | None = None,
     progress_bar: ProgressBarData,
-    aws_s3_cli_settings: AwsS3CliSettings | None,
 ) -> None:
     s3_object = __create_s3_object_key(project_id, node_uuid, source_path)
     with log_context(
@@ -60,7 +58,6 @@ async def _push_directory(
             io_log_redirect_cb=io_log_redirect_cb,
             progress_bar=progress_bar,
             exclude_patterns=exclude_patterns,
-            aws_s3_cli_settings=aws_s3_cli_settings,
         )
 
 
@@ -73,7 +70,6 @@ async def _pull_directory(
     io_log_redirect_cb: LogRedirectCB,
     r_clone_settings: RCloneSettings,
     progress_bar: ProgressBarData,
-    aws_s3_cli_settings: AwsS3CliSettings | None,
     save_to: Path | None = None,
 ) -> None:
     save_to_path = destination_path if save_to is None else save_to
@@ -90,7 +86,6 @@ async def _pull_directory(
             io_log_redirect_cb=io_log_redirect_cb,
             r_clone_settings=r_clone_settings,
             progress_bar=progress_bar,
-            aws_s3_cli_settings=aws_s3_cli_settings,
         )
 
 
@@ -125,7 +120,6 @@ async def _pull_legacy_archive(
                 io_log_redirect_cb=io_log_redirect_cb,
                 r_clone_settings=None,
                 progress_bar=sub_prog,
-                aws_s3_cli_settings=None,
             )
             _logger.info("completed pull of %s.", archive_path)
 
@@ -198,7 +192,6 @@ async def push(  # pylint: disable=too-many-arguments
     r_clone_settings: RCloneSettings,
     exclude_patterns: set[str] | None = None,
     progress_bar: ProgressBarData,
-    aws_s3_cli_settings: AwsS3CliSettings | None,
     legacy_state: LegacyState | None,
     application_name: str,
 ) -> None:
@@ -213,7 +206,6 @@ async def push(  # pylint: disable=too-many-arguments
         exclude_patterns=exclude_patterns,
         io_log_redirect_cb=io_log_redirect_cb,
         progress_bar=progress_bar,
-        aws_s3_cli_settings=aws_s3_cli_settings,
     )
 
     archive_exists = await _state_metadata_entry_exists(
@@ -261,7 +253,6 @@ async def pull(
     io_log_redirect_cb: LogRedirectCB,
     r_clone_settings: RCloneSettings,
     progress_bar: ProgressBarData,
-    aws_s3_cli_settings: AwsS3CliSettings | None,
     legacy_state: LegacyState | None,
 ) -> None:
     """restores the state folder"""
@@ -332,7 +323,6 @@ async def pull(
             io_log_redirect_cb=io_log_redirect_cb,
             r_clone_settings=r_clone_settings,
             progress_bar=progress_bar,
-            aws_s3_cli_settings=aws_s3_cli_settings,
         )
         return
 

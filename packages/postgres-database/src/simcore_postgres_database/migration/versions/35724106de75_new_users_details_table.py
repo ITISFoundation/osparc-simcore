@@ -5,6 +5,7 @@ Revises: 20d60d2663ad
 Create Date: 2024-03-05 13:13:37.921956+00:00
 
 """
+
 from typing import Final
 
 import sqlalchemy as sa
@@ -21,9 +22,9 @@ depends_on = None
 # TRIGGERS ------------------------
 _TABLE_NAME: Final[str] = "users_pre_registration_details"
 _TRIGGER_NAME: Final[str] = "trigger_auto_update"  # NOTE: scoped on table
-_PROCEDURE_NAME: Final[
-    str
-] = f"{_TABLE_NAME}_auto_update_modified()"  # NOTE: scoped on database
+_PROCEDURE_NAME: Final[str] = (
+    f"{_TABLE_NAME}_auto_update_modified()"  # NOTE: scoped on database
+)
 
 modified_timestamp_trigger = sa.DDL(
     f"""

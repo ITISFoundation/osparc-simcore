@@ -22,7 +22,7 @@ def _instrumented_ec2_client_method(
     Callable[P, Coroutine[Any, Any, R]],
 ]:
     def decorator(
-        func: Callable[P, Coroutine[Any, Any, R]]
+        func: Callable[P, Coroutine[Any, Any, R]],
     ) -> Callable[P, Coroutine[Any, Any, R]]:
         @functools.wraps(func)
         async def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:

@@ -2,10 +2,10 @@
 exclude: "^.venv$|^.cache$|^.pytest_cache$"
 fail_fast: false
 default_language_version:
-  python: python3.11
+  python: python3.13
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: check-added-large-files
         args: ["--maxkb=1024"]
@@ -22,27 +22,27 @@ repos:
       - id: no-commit-to-branch
   # NOTE: Keep order as pyupgrade (will update code) then pycln (remove unused imports), then isort (sort them) and black (final formatting)
   - repo: https://github.com/asottile/pyupgrade
-    rev: v3.20.0
+    rev: v3.21.1
     hooks:
       - id: pyupgrade
         args:
-          - "--py311-plus"
+          - "--py313-plus"
         name: upgrade code
         exclude: ^scripts/maintenance/computational-clusters/autoscaled_monitor/cli\.py$ # Optional get replaced and typer does not like it
   - repo: https://github.com/hadialqattan/pycln
-    rev: v2.5.0
+    rev: v2.6.0
     hooks:
       - id: pycln
         args: [--all, --expand-stars]
         name: prune imports
   - repo: https://github.com/PyCQA/isort
-    rev: 6.0.1
+    rev: 7.0.0
     hooks:
       - id: isort
         args: ["--profile", "black"]
         name: sort imports
   - repo: https://github.com/psf/black
-    rev: 25.1.0
+    rev: 25.11.0
     hooks:
       - id: black
         name: black format code

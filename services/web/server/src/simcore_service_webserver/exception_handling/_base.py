@@ -127,7 +127,7 @@ class ExceptionHandlingContextManager(AbstractAsyncContextManager):
 
 
 def exception_handling_decorator(
-    exception_handlers_map: dict[type[Exception], AiohttpExceptionHandler]
+    exception_handlers_map: dict[type[Exception], AiohttpExceptionHandler],
 ) -> Callable[[WebHandler], WebHandler]:
     """Creates a decorator to manage exceptions raised in a given route handler.
     Ensures consistent exception management across decorated handlers.
@@ -155,7 +155,7 @@ def exception_handling_decorator(
 
 
 def exception_handling_middleware(
-    exception_handlers_map: dict[type[Exception], AiohttpExceptionHandler]
+    exception_handlers_map: dict[type[Exception], AiohttpExceptionHandler],
 ) -> WebMiddleware:
     """Constructs middleware to handle exceptions raised across app routes
 

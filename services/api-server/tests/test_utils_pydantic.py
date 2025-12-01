@@ -100,8 +100,7 @@ def fastapi_schema() -> dict[str, Any]:
     app = FastAPI()
 
     @app.get("/", response_model=_FakeModel)
-    def _h():
-        ...
+    def _h(): ...
 
     openapi = app.openapi()
     return openapi["components"]["schemas"][_FakeModel.__name__]

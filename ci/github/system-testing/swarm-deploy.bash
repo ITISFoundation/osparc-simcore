@@ -13,6 +13,7 @@ IFS=$'\n\t'
 
 install() {
   make devenv
+  make pull-externals
   # shellcheck source=/dev/null
   source .venv/bin/activate
   pushd tests/swarm-deploy

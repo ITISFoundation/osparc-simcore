@@ -266,6 +266,7 @@ async def test_share_project_user_roles(
     rabbit_service: RabbitSettings,
     mock_dynamic_scheduler: None,
     client: TestClient,
+    other_client: TestClient,
     logged_user: dict,
     primary_group: dict[str, str],
     standard_groups: list[dict[str, str]],
@@ -274,9 +275,10 @@ async def test_share_project_user_roles(
     expected: ExpectedResponse,
     storage_subsystem_mock,
     mocked_dynamic_services_interface: dict[str, mock.Mock],
-    project_db_cleaner,
     request_create_project: Callable[..., Awaitable[ProjectDict]],
     exit_stack: contextlib.AsyncExitStack,
+    project_db_cleaner,
+    aiohttp_client: Callable,
 ):
     # Use-case: test how different user roles can access shared projects
     # Test with full access rights for all roles
@@ -300,9 +302,12 @@ async def test_share_project_user_roles(
         # user 1 can always get to his project
         await assert_get_same_project(client, new_project, expected.ok)
 
-    # get another user logged in now
+    #
+    # get another user logged in now. We create a new client to avoid session conflicts with request_create_project
+    # cleanup
+    #
     await log_client_in(
-        client,
+        other_client,
         {"role": user_role.name},
         enable_check=user_role != UserRole.ANONYMOUS,
         exit_stack=exit_stack,
@@ -310,13 +315,13 @@ async def test_share_project_user_roles(
     if new_project:
         # user 2 can get the project if they have proper role permissions
         await assert_get_same_project(
-            client,
+            other_client,
             new_project,
             expected.ok,
         )
 
         # user 2 can list projects if they have proper role permissions
-        list_projects = await _list_projects(client, expected.ok)
+        list_projects = await _list_projects(other_client, expected.ok)
         expected_project_count = 1 if user_role != UserRole.ANONYMOUS else 0
         assert len(list_projects) == expected_project_count
 
@@ -325,13 +330,13 @@ async def test_share_project_user_roles(
         project_update["name"] = "my super name"
         project_update.pop("accessRights")
         await _replace_project(
-            client,
+            other_client,
             project_update,
             expected.no_content,
         )
 
         # user 2 can delete projects if they have proper role permissions
-        resp = await _delete_project(client, new_project)
+        resp = await _delete_project(other_client, new_project)
         await assert_status(
             resp,
             expected_status_code=expected.no_content,

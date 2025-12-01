@@ -113,7 +113,7 @@ def _compute_tqdm_miniters(byte_size: int) -> float:
 
 async def _file_object_chunk_reader(
     file_object: IO, *, offset: int, total_bytes_to_read: int
-) -> AsyncGenerator[bytes, None]:
+) -> AsyncGenerator[bytes]:
     await asyncio.get_event_loop().run_in_executor(None, file_object.seek, offset)
     num_read_bytes = 0
     while chunk := await asyncio.get_event_loop().run_in_executor(
@@ -125,7 +125,7 @@ async def _file_object_chunk_reader(
 
 async def _file_chunk_reader(
     file: Path, *, offset: int, total_bytes_to_read: int
-) -> AsyncGenerator[bytes, None]:
+) -> AsyncGenerator[bytes]:
     async with aiofiles.open(file, "rb") as f:
         await f.seek(offset)
         num_read_bytes = 0
