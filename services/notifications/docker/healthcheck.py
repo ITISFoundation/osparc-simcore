@@ -19,7 +19,7 @@ import os
 import sys
 from urllib.request import urlopen
 
-from celery_library.worker.heartbeat import is_heartbeat_fresh
+from celery_library.worker.heartbeat import is_healthy
 from simcore_service_notifications.core.application import ApplicationSettings
 
 SUCCESS, UNHEALTHY = 0, 1
@@ -35,7 +35,7 @@ app_settings = ApplicationSettings.create_from_envs()
 
 ok = (
     ok
-    or (app_settings.NOTIFICATIONS_WORKER_MODE and is_heartbeat_fresh())
+    or (app_settings.NOTIFICATIONS_WORKER_MODE and is_healthy())
     or urlopen(
         "{host}{baseurl}".format(
             host=sys.argv[1], baseurl=os.environ.get("SIMCORE_NODE_BASEPATH", "")
