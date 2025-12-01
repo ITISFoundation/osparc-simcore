@@ -95,7 +95,7 @@ qx.Class.define("osparc.utils.Utils", {
     // avoids floating-point artifacts
     safeToFixed: function(value, n) {
       const factor = Math.pow(10, n);
-      return (Math.round((value + Number.EPSILON) * factor) / factor).toFixed(n);
+      return parseFloat((Math.round((value + Number.EPSILON) * factor) / factor).toFixed(n));
     },
 
     toolTipTextOnDisabledWidget: function(widget, toolTipText) {

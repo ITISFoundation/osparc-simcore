@@ -194,7 +194,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
           value: report["actual_value"] / report["total"]
         }
       }
-      const percentage = parseFloat((report["actual_value"] / report["total"] * 100).toFixed(2))
+      const percentage = osparc.utils.Utils.safeToFixed(report["actual_value"] / report["total"] * 100, 2);
       return {
         progressLabel: `${percentage}%`,
         value: report["actual_value"] / report["total"]
