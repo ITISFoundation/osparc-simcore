@@ -107,7 +107,7 @@ class SchedulerPublicInterface(ABC):
         node_uuid: NodeID,
         can_save: bool | None,
         *,
-        skip_observation_recreation: bool = False,
+        skip_observation_recreation: bool,
     ) -> None:
         """The service will be removed as soon as possible"""
 
