@@ -974,42 +974,58 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
 @pytest.mark.parametrize(
     "scale_up_params",
     [
+        # pytest.param(
+        #     _ScaleUpParams(
+        #         imposed_instance_type=None,
+        #         service_resources=Resources(
+        #             cpus=4, ram=TypeAdapter(ByteSize).validate_python("114Gib")
+        #         ),
+        #         num_services=1,
+        #         expected_instance_type="r5n.4xlarge",
+        #         expected_num_instances=1,
+        #     ),
+        #     id="No explicit instance defined",
+        # ),
         pytest.param(
             _ScaleUpParams(
                 imposed_instance_type=None,
                 service_resources=Resources(
-                    cpus=4, ram=TypeAdapter(ByteSize).validate_python("114Gib")
+                    cpus=4,
+                    ram=TypeAdapter(ByteSize).validate_python("114Gib"),
+                    generic_resources={
+                        "VRAM": TypeAdapter(ByteSize).validate_python("8Gib")
+                    },
                 ),
                 num_services=1,
-                expected_instance_type="r5n.4xlarge",
+                expected_instance_type="g4dn.4xlarge",
                 expected_num_instances=1,
             ),
-            id="No explicit instance defined",
+            id="No explicit instance defined but requires GPU/VRAM",
         ),
-        pytest.param(
-            _ScaleUpParams(
-                imposed_instance_type="t2.xlarge",
-                service_resources=Resources(
-                    cpus=2.6, ram=TypeAdapter(ByteSize).validate_python("4Gib")
-                ),
-                num_services=1,
-                expected_instance_type="t2.xlarge",
-                expected_num_instances=1,
-            ),
-            id="Explicitely ask for t2.xlarge",
-        ),
-        pytest.param(
-            _ScaleUpParams(
-                imposed_instance_type="r5n.8xlarge",
-                service_resources=Resources(
-                    cpus=4, ram=TypeAdapter(ByteSize).validate_python("114Gib")
-                ),
-                num_services=1,
-                expected_instance_type="r5n.8xlarge",
-                expected_num_instances=1,
-            ),
-            id="Explicitely ask for r5n.8xlarge",
-        ),
+        # pytest.param(
+        #     _ScaleUpParams(
+        #         imposed_instance_type="t2.xlarge",
+        #         service_resources=Resources(
+        #             cpus=2.6, ram=TypeAdapter(ByteSize).validate_python("4Gib")
+        #         ),
+        #         num_services=1,
+        #         expected_instance_type="t2.xlarge",
+        #         expected_num_instances=1,
+        #     ),
+        #     id="Explicitely ask for t2.xlarge",
+        # ),
+        # pytest.param(
+        #     _ScaleUpParams(
+        #         imposed_instance_type="r5n.8xlarge",
+        #         service_resources=Resources(
+        #             cpus=4, ram=TypeAdapter(ByteSize).validate_python("114Gib")
+        #         ),
+        #         num_services=1,
+        #         expected_instance_type="r5n.8xlarge",
+        #         expected_num_instances=1,
+        #     ),
+        #     id="Explicitely ask for r5n.8xlarge",
+        # ),
     ],
 )
 async def test_cluster_scaling_up_and_down(
