@@ -282,7 +282,7 @@ async def create_services_batch(
         [dict[str, Any], dict[DockerLabelKey, str], str, list[str]], Awaitable[Service]
     ],
     task_template: dict[str, Any],
-    create_task_reservations: Callable[[int, int], dict[str, Any]],
+    create_task_reservations: Callable[[int, int, dict], dict[str, Any]],
     service_monitored_labels: dict[DockerLabelKey, str],
     osparc_docker_label_keys: SimcoreContainerLabels,
 ) -> Callable[[_ScaleUpParams], Awaitable[list[Service]]]:
@@ -294,6 +294,7 @@ async def create_services_batch(
                     | create_task_reservations(
                         int(scale_up_params.service_resources.cpus),
                         scale_up_params.service_resources.ram,
+                        scale_up_params.service_resources.generic_resources,
                     ),
                     service_monitored_labels
                     | osparc_docker_label_keys.to_simcore_runtime_docker_labels(),
@@ -985,6 +986,22 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
                 expected_num_instances=1,
             ),
             id="No explicit instance defined",
+        ),
+        pytest.param(
+            _ScaleUpParams(
+                imposed_instance_type=None,
+                service_resources=Resources(
+                    cpus=4,
+                    ram=TypeAdapter(ByteSize).validate_python("114Gib"),
+                    generic_resources={
+                        "VRAM": TypeAdapter(ByteSize).validate_python("8Gib")
+                    },
+                ),
+                num_services=1,
+                expected_instance_type="g4dn.8xlarge",
+                expected_num_instances=1,
+            ),
+            id="No explicit instance defined but requires GPU/VRAM",
         ),
         pytest.param(
             _ScaleUpParams(

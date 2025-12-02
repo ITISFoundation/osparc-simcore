@@ -282,41 +282,57 @@ async def compute_cluster_total_resources(nodes: list[Node]) -> Resources:
 def get_max_resources_from_docker_task(task: Task) -> Resources:
     """returns the highest values for resources based on both docker reservations and limits"""
     assert task.spec  # nosec
-    if task.spec.resources:
-        return Resources(
-            cpus=max(
-                (
-                    (
-                        task.spec.resources.reservations
-                        and task.spec.resources.reservations.nano_cp_us
-                    )
-                    or 0
-                ),
-                (
-                    (
-                        task.spec.resources.limits
-                        and task.spec.resources.limits.nano_cp_us
-                    )
-                    or 0
-                ),
-            )
-            / _NANO_CPU,
-            ram=TypeAdapter(ByteSize).validate_python(
-                max(
-                    (
-                        task.spec.resources.reservations
-                        and task.spec.resources.reservations.memory_bytes
-                    )
-                    or 0,
-                    (
-                        task.spec.resources.limits
-                        and task.spec.resources.limits.memory_bytes
-                    )
-                    or 0,
+
+    if not task.spec.resources:
+        return Resources(cpus=0, ram=ByteSize(0))
+
+    generic_resources: dict[str, int | float | str] = {}
+    if (
+        task.spec.resources.reservations
+        and task.spec.resources.reservations.generic_resources
+    ):
+        for res in task.spec.resources.reservations.generic_resources.root:
+            if res.named_resource_spec:
+                assert res.named_resource_spec.kind is not None  # nosec
+                assert res.named_resource_spec.value is not None  # nosec
+                generic_resources[res.named_resource_spec.kind] = (
+                    res.named_resource_spec.value
                 )
+            if res.discrete_resource_spec:
+                assert res.discrete_resource_spec.kind is not None  # nosec
+                assert res.discrete_resource_spec.value is not None  # nosec
+                generic_resources[res.discrete_resource_spec.kind] = (
+                    res.discrete_resource_spec.value
+                )
+
+    return Resources(
+        cpus=max(
+            (
+                (
+                    task.spec.resources.reservations
+                    and task.spec.resources.reservations.nano_cp_us
+                )
+                or 0
+            ),
+            (
+                (task.spec.resources.limits and task.spec.resources.limits.nano_cp_us)
+                or 0
             ),
         )
-    return Resources(cpus=0, ram=ByteSize(0))
+        / _NANO_CPU,
+        ram=TypeAdapter(ByteSize).validate_python(
+            max(
+                (
+                    task.spec.resources.reservations
+                    and task.spec.resources.reservations.memory_bytes
+                )
+                or 0,
+                (task.spec.resources.limits and task.spec.resources.limits.memory_bytes)
+                or 0,
+            )
+        ),
+        generic_resources=generic_resources,
+    )
 
 
 async def get_task_instance_restriction(

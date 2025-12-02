@@ -47,13 +47,26 @@ async def test_find_best_fitting_ec2_instance_closest_instance_policy_with_resou
 @pytest.mark.parametrize(
     "needed_resources,expected_ec2_instance",
     [
-        (
-            Resources(cpus=n, ram=ByteSize(n)),
-            EC2InstanceType(
-                name="c5ad.12xlarge", resources=Resources(cpus=n, ram=ByteSize(n))
-            ),
-        )
-        for n in range(1, 30)
+        *[
+            (
+                Resources(cpus=n, ram=ByteSize(n)),
+                EC2InstanceType(
+                    name="c5ad.12xlarge", resources=Resources(cpus=n, ram=ByteSize(n))
+                ),
+            )
+            for n in range(1, 30)
+        ],
+        *[
+            (
+                Resources(cpus=15, ram=ByteSize(128), generic_resources={"gpu": 1}),
+                EC2InstanceType(
+                    name="c5ad.12xlarge",
+                    resources=Resources(
+                        cpus=15, ram=ByteSize(128), generic_resources={"gpu": 12}
+                    ),
+                ),
+            )
+        ],
     ],
     ids=str,
 )
