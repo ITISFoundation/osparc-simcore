@@ -78,7 +78,7 @@ def closest_instance_policy(
     The higher the score the better the fit.
     """
     # if the instance does not satisfy the requested resources return 0
-    if not (ec2_instance.resources > resources):
+    if not (ec2_instance.resources >= resources):
         # NOTE: this is the construction such that if any of the
         # resources in resources is larger it will return True
         return 0

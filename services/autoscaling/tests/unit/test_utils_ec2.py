@@ -61,7 +61,9 @@ async def test_find_best_fitting_ec2_instance_closest_instance_policy_with_resou
                 Resources(cpus=15, ram=ByteSize(128), generic_resources={"gpu": 1}),
                 EC2InstanceType(
                     name="c5ad.12xlarge",
-                    resources=Resources(cpus=15, ram=ByteSize(128)),
+                    resources=Resources(
+                        cpus=15, ram=ByteSize(128), generic_resources={"gpu": 12}
+                    ),
                 ),
             )
         ],
