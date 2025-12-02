@@ -71,7 +71,7 @@ from pydantic import ByteSize, TypeAdapter, ValidationError
         (
             Resources(cpus=0.1, ram=ByteSize(1), generic_resources={"GPU": "2"}),
             Resources(cpus=0.1, ram=ByteSize(1), generic_resources={"GPU": 2}),
-            True,  # string resources are not comparable so "2" is considered larger
+            False,  # string resources are not comparable so "2" is NOT considered larger
         ),
         (
             Resources(cpus=0.1, ram=ByteSize(1), generic_resources={"SSE": "yes"}),
@@ -99,6 +99,7 @@ from pydantic import ByteSize, TypeAdapter, ValidationError
             False,
         ),
     ],
+    ids=str,
 )
 def test_resources_ge_operator(
     a: Resources, b: Resources, a_greater_or_equal_than_b: bool
@@ -145,6 +146,11 @@ def test_resources_ge_operator(
             True,
         ),
         (
+            Resources(cpus=15, ram=ByteSize(1), generic_resources={"GPU": 1}),
+            Resources(cpus=20, ram=ByteSize(128)),
+            False,  # NOTE: CPU and RAM are not enough
+        ),
+        (
             Resources(cpus=0.1, ram=ByteSize(1), generic_resources={"GPU": 1}),
             Resources(cpus=0.1, ram=ByteSize(1), generic_resources={"GPU": 1}),
             False,
@@ -167,7 +173,7 @@ def test_resources_ge_operator(
         (
             Resources(cpus=0.1, ram=ByteSize(1), generic_resources={"GPU": "2"}),
             Resources(cpus=0.1, ram=ByteSize(1), generic_resources={"GPU": 2}),
-            True,  # string resources are not comparable, so a > b
+            False,  # string resources are not comparable, so a is not greater than b
         ),
         (
             Resources(cpus=0.1, ram=ByteSize(1), generic_resources={"SSE": "yes"}),
@@ -195,6 +201,7 @@ def test_resources_ge_operator(
             False,
         ),
     ],
+    ids=str,
 )
 def test_resources_gt_operator(a: Resources, b: Resources, a_greater_than_b: bool):
     assert (a > b) is a_greater_than_b
@@ -244,6 +251,7 @@ def test_resources_gt_operator(a: Resources, b: Resources, a_greater_than_b: boo
             ),
         ),  # string resources are ignored in summation
     ],
+    ids=str,
 )
 def test_resources_add(a: Resources, b: Resources, result: Resources):
     assert a + b == result
