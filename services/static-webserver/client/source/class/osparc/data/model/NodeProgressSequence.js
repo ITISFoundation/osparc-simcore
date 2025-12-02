@@ -292,7 +292,9 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
         this.__stopSidecarPullingFakeProgress();
       }
 
-      if (value.value > 0) {
+      if (value.value === 1) {
+        // on non autoscaled deployments, there is no cluster upscaling phase
+        // when the sidecar pulling is done, make sure the cluster upscaling is also set to 100%
         const defaultEndVals = this.getDefaultEndValues();
         this.setClusterUpScaling(defaultEndVals);
       }
@@ -354,15 +356,16 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
     __startSidecarPullingFakeProgress: function() {
       // increase fake progress:
       // - every second
-      // - up to 95%
-      // - by 5% each time (it fits in about 20 seconds)
+      // - up to 99%
+      // - by progressStep each time: fill it in about 60 seconds
       // - make sure the backend didn't already update it
       this.__sidecarFakeProgressTimer = setInterval(() => {
+        const progressStep = 1/60;
         const sidecarProgress = this.getSidecarPulling();
-        if (sidecarProgress.value < 0.95) {
-          const newValue = Math.min(sidecarProgress.value + 0.05, 0.95);
+        if (sidecarProgress.value < 0.99) {
+          const newValue = Math.min(sidecarProgress.value + progressStep, 0.99);
           this.setSidecarPulling({
-            progressLabel: `${(osparc.utils.Utils.safeToFixed(newValue * 100, 0))}%`,
+            progressLabel: `${(osparc.utils.Utils.safeToFixed(newValue * 100, 1))}%`,
             value: newValue
           });
         } else {
