@@ -96,6 +96,7 @@ def closest_instance_policy(
     generic_usage_ratio = 1.0
     for resource_name, resource_value in resources.generic_resources.items():
         if isinstance(resource_value, str):
+            # NOTE: for string resources we cannot compute a ratio
             continue
         # the resource exist on the instance otherwise > would have returned 0 above
         ec2_resource_value = ec2_instance.resources.generic_resources[resource_name]
