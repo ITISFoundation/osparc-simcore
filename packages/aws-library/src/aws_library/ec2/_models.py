@@ -1,4 +1,3 @@
-import contextlib
 import datetime
 import re
 import tempfile
@@ -62,7 +61,7 @@ class Resources(BaseModel, frozen=True):
     def __gt__(self, other: "Resources") -> bool:
         """operator for > comparison
         if self has resources greater than other, returns True
-        This will return True only if all of the resources in self are greater than other
+        VERY IMPORTANT: This will return True only if all of the resources in self are greater than other
 
         Note that generic_resources are compared only if they are numeric
         Non-numeric generic resources must only be defined in self
@@ -89,10 +88,14 @@ class Resources(BaseModel, frozen=True):
                 assert isinstance(a, str)  # nosec
                 assert isinstance(b, int | float | str)  # nosec
                 # let's try to get a boolean out of the values to compare them
-                with contextlib.suppress(ValidationError):
+                try:
                     a_as_boolean = TypeAdapter(bool).validate_python(a)
                     b_as_boolean = TypeAdapter(bool).validate_python(b)
                     if not a_as_boolean and b_as_boolean:
+                        return False
+                except ValidationError:
+                    if a != b:
+                        # This is the case where we have non comparable strings
                         return False
 
         # here we have either everything greater or equal or non-comparable strings
