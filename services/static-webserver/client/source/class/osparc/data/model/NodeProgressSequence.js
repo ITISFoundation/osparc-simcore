@@ -194,7 +194,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
           value: report["actual_value"] / report["total"]
         }
       }
-      const percentage = parseFloat((report["actual_value"] / report["total"] * 100).toFixed(2))
+      const percentage = osparc.utils.Utils.safeToFixed(report["actual_value"] / report["total"] * 100, 2);
       return {
         progressLabel: `${percentage}%`,
         value: report["actual_value"] / report["total"]
@@ -282,6 +282,16 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
     },
 
     __applySidecarPulling: function(value) {
+      // the sidecar pulling progress goes from 0 to 1 in about 20" with no intermediate updates from the backend
+      if (value.value === 0) {
+        // start fake progress when the frontend gets a 0% and stop it gets a 100%
+        this.__startSidecarPullingFakeProgress();
+      } else if (value.value === 1) {
+        // stop fake progress when the backend reports 100%
+        // by setting it to 100%
+        this.__stopSidecarPullingFakeProgress();
+      }
+
       if (value.value > 0) {
         const defaultEndVals = this.getDefaultEndValues();
         this.setClusterUpScaling(defaultEndVals);
@@ -339,6 +349,33 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
       osparc.widget.ProgressSequence.updateTaskProgress(this.__pullingInputsLayout, value);
 
       this.__computeOverallProgress();
-    }
+    },
+
+    __startSidecarPullingFakeProgress: function() {
+      // increase fake progress:
+      // - every second
+      // - up to 95%
+      // - by 5% each time (it fits in about 20 seconds)
+      // - make sure the backend didn't already update it
+      this.__sidecarFakeProgressTimer = setInterval(() => {
+        const sidecarProgress = this.getSidecarPulling();
+        if (sidecarProgress.value < 0.95) {
+          const newValue = Math.min(sidecarProgress.value + 0.05, 0.95);
+          this.setSidecarPulling({
+            progressLabel: `${(osparc.utils.Utils.safeToFixed(newValue * 100, 0))}%`,
+            value: newValue
+          });
+        } else {
+          this.__stopSidecarPullingFakeProgress();
+        }
+      }, 1000);
+    },
+
+    __stopSidecarPullingFakeProgress: function() {
+      if (this.__sidecarFakeProgressTimer) {
+        clearInterval(this.__sidecarFakeProgressTimer);
+        this.__sidecarFakeProgressTimer = null;
+      }
+    },
   }
 });
