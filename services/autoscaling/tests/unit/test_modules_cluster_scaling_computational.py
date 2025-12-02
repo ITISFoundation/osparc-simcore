@@ -468,10 +468,13 @@ async def test_cluster_scaling_with_task_with_too_much_resources_starts_nothing(
                 task_resources=Resources(
                     cpus=1,
                     ram=TypeAdapter(ByteSize).validate_python("115Gib"),
-                    generic_resources={"GPU": 1},
+                    generic_resources={
+                        "GPU": 1,
+                        "VRAM": TypeAdapter(ByteSize).validate_python("8Gib"),
+                    },
                 ),
                 num_tasks=1,
-                expected_instance_type="g4dn.4xlarge",
+                expected_instance_type="g4dn.8xlarge",
                 expected_num_instances=1,
             ),
             id="No explicit instance defined but GPU requested",
