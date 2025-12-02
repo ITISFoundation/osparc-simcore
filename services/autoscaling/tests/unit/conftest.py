@@ -678,6 +678,11 @@ async def create_service(
         }
         if not base_labels:
             excluded_paths.add("root['container_spec']['labels']")
+        if (
+            not original_task_template_model.resources.reservations.generic_resources.root
+        ):
+            # NOTE: if not generic resources reservation is done, docker removes it from the task inspection
+            excluded_paths.add("root['resources']['reservations']['generic_resources']")
         for reservation in ["memory_bytes", "nano_cp_us"]:
             if (
                 original_task_template_model.resources
