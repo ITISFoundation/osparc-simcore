@@ -569,12 +569,30 @@ NUM_CPUS: TypeAlias = PositiveInt
 
 @pytest.fixture
 def create_task_reservations() -> Callable[[NUM_CPUS, int], dict[str, Any]]:
-    def _creator(num_cpus: NUM_CPUS, memory: ByteSize | int) -> dict[str, Any]:
+    def _creator(
+        num_cpus: NUM_CPUS,
+        memory: ByteSize | int,
+        generic_resources: dict[str, int | float | str] | None = None,
+    ) -> dict[str, Any]:
         return {
             "Resources": {
                 "Reservations": {
                     "NanoCPUs": num_cpus * _GIGA_NANO_CPU,
                     "MemoryBytes": int(memory),
+                    "GenericResources": (
+                        [
+                            {
+                                (
+                                    "NamedResourceSpec"
+                                    if isinstance(v, str)
+                                    else "DiscreteResourceSpec"
+                                ): {"Kind": k, "Value": v}
+                            }
+                            for k, v in generic_resources.items()
+                        ]
+                        if generic_resources
+                        else []
+                    ),
                 }
             }
         }
@@ -660,6 +678,14 @@ async def create_service(
         }
         if not base_labels:
             excluded_paths.add("root['container_spec']['labels']")
+        if (
+            original_task_template_model.resources
+            and original_task_template_model.resources.reservations
+            and original_task_template_model.resources.reservations.generic_resources
+            and not original_task_template_model.resources.reservations.generic_resources.root
+        ):
+            # NOTE: if not generic resources reservation is done, docker removes it from the task inspection
+            excluded_paths.add("root['resources']['reservations']['generic_resources']")
         for reservation in ["memory_bytes", "nano_cp_us"]:
             if (
                 original_task_template_model.resources
@@ -1007,6 +1033,13 @@ def random_fake_available_instances(faker: Faker) -> list[EC2InstanceType]:
             resources=Resources(cpus=n, ram=ByteSize(n)),
         )
         for n in range(1, 30)
+    ] + [
+        EC2InstanceType(
+            name=random.choice(get_args(InstanceTypeType)),  # noqa: S311
+            resources=Resources(
+                cpus=15, ram=ByteSize(128), generic_resources={"gpu": 12}
+            ),
+        )
     ]
     random.shuffle(list_of_instances)
     return list_of_instances
