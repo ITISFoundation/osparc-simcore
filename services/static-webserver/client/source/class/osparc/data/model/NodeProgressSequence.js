@@ -150,6 +150,7 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
     __pullingInputsLayout: null,
     __disclaimerTimer: null,
     __disclaimerText: null,
+    __sidecarFakeProgressTimer: null,
 
     getDefaultStartValues: function() {
       return {
@@ -354,6 +355,8 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
     },
 
     __startSidecarPullingFakeProgress: function() {
+      // stop any previous timer
+      this.__stopSidecarPullingFakeProgress();
       // increase fake progress:
       // - every second
       // - up to 99%
