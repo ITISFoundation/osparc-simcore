@@ -112,7 +112,7 @@ class SimcoreEC2API:
                 assert "SizeInMiB" in instance["MemoryInfo"]  # nosec
 
                 # Extract GPU information if available
-                generic_resources = {}
+                generic_resources: dict[str, int | float | str] = {}
                 if "GpuInfo" in instance:
                     gpu_info = instance["GpuInfo"]
                     assert "Gpus" in gpu_info  # nosec
