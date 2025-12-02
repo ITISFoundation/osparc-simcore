@@ -569,12 +569,30 @@ NUM_CPUS: TypeAlias = PositiveInt
 
 @pytest.fixture
 def create_task_reservations() -> Callable[[NUM_CPUS, int], dict[str, Any]]:
-    def _creator(num_cpus: NUM_CPUS, memory: ByteSize | int) -> dict[str, Any]:
+    def _creator(
+        num_cpus: NUM_CPUS,
+        memory: ByteSize | int,
+        generic_resources: dict[str, int | float | str] | None = None,
+    ) -> dict[str, Any]:
         return {
             "Resources": {
                 "Reservations": {
                     "NanoCPUs": num_cpus * _GIGA_NANO_CPU,
                     "MemoryBytes": int(memory),
+                    "GenericResources": (
+                        [
+                            {
+                                (
+                                    "NamedResourceSpec"
+                                    if isinstance(v, str)
+                                    else "DiscreteResourceSpec"
+                                ): {"Kind": k, "Value": v}
+                            }
+                            for k, v in generic_resources.items()
+                        ]
+                        if generic_resources
+                        else []
+                    ),
                 }
             }
         }

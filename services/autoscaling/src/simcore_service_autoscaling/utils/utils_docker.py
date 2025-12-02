@@ -282,7 +282,27 @@ async def compute_cluster_total_resources(nodes: list[Node]) -> Resources:
 def get_max_resources_from_docker_task(task: Task) -> Resources:
     """returns the highest values for resources based on both docker reservations and limits"""
     assert task.spec  # nosec
+
     if task.spec.resources:
+        generic_resources: dict[str, int | float | str] = {}
+        if (
+            task.spec.resources.reservations
+            and task.spec.resources.reservations.generic_resources
+        ):
+            for res in task.spec.resources.reservations.generic_resources.root:
+                if res.named_resource_spec:
+                    assert res.named_resource_spec.kind is not None  # nosec
+                    assert res.named_resource_spec.value is not None  # nosec
+                    generic_resources[res.named_resource_spec.kind] = (
+                        res.named_resource_spec.value
+                    )
+                if res.discrete_resource_spec:
+                    assert res.discrete_resource_spec.kind is not None  # nosec
+                    assert res.discrete_resource_spec.value is not None  # nosec
+                    generic_resources[res.discrete_resource_spec.kind] = (
+                        res.discrete_resource_spec.value
+                    )
+
         return Resources(
             cpus=max(
                 (
@@ -315,6 +335,7 @@ def get_max_resources_from_docker_task(task: Task) -> Resources:
                     or 0,
                 )
             ),
+            generic_resources=generic_resources,
         )
     return Resources(cpus=0, ram=ByteSize(0))
 
