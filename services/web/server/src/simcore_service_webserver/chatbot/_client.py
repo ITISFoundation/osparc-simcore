@@ -7,6 +7,7 @@ from aiohttp import web
 from pydantic import BaseModel, Field
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 
+from .exceptions import NoResponseFromChatbotError
 from .settings import ChatbotSettings, get_plugin_settings
 
 _logger = logging.getLogger(__name__)
@@ -75,7 +76,8 @@ class ChatbotRestClient:
             response = await _request()
             response.raise_for_status()
             chat_response = ChatResponse.model_validate(response.json())
-            assert len(chat_response.choices) > 0, "Chatbot returned no answers"
+            if len(chat_response.choices) == 0:
+                raise NoResponseFromChatbotError("No choices returned from chatbot")
             return chat_response.choices[0].message
 
         except Exception:

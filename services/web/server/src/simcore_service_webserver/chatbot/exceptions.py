@@ -5,4 +5,6 @@ class BaseChatbotException(Exception):
 class InvalidUserMessageError(BaseChatbotException):
     """Raised when the user message is invalid"""
 
-    pass
+
+class NoResponseFromChatbotError(BaseChatbotException):
+    """Raised when no response is received from the chatbot"""
