@@ -33,16 +33,18 @@ ok = os.getenv("SC_BOOT_MODE", "").lower() == "debug"
 app_settings = ApplicationSettings.create_from_envs()
 
 
-ok = (
-    ok
-    or (app_settings.NOTIFICATIONS_WORKER_MODE and is_healthy())
-    or urlopen(
-        "{host}{baseurl}".format(
-            host=sys.argv[1], baseurl=os.environ.get("SIMCORE_NODE_BASEPATH", "")
-        )  # adds a base-path if defined in environ
-    ).getcode()
-    == 200
-)
+if app_settings.NOTIFICATIONS_WORKER_MODE:
+    ok = ok or is_healthy()
+else:
+    ok = (
+        ok
+        or urlopen(
+            "{host}{baseurl}".format(
+                host=sys.argv[1], baseurl=os.environ.get("SIMCORE_NODE_BASEPATH", "")
+            )  # adds a base-path if defined in environ
+        ).getcode()
+        == 200
+    )
 
 
 sys.exit(SUCCESS if ok else UNHEALTHY)
