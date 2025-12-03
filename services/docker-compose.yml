@@ -1165,7 +1165,6 @@ services:
       NOTIFICATIONS_WORKER_MODE: "false"
     networks: &notifications_networks
       - default
-      - interactive_services_subnet
 
   notifications-wrk:
     image: ${DOCKER_REGISTRY:-itisfoundation}/notifications:${DOCKER_IMAGE_TAG:-latest}
