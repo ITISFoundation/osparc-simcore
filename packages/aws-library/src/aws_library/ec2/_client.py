@@ -110,6 +110,26 @@ class SimcoreEC2API:
                 assert "DefaultVCpus" in instance["VCpuInfo"]  # nosec
                 assert "MemoryInfo" in instance  # nosec
                 assert "SizeInMiB" in instance["MemoryInfo"]  # nosec
+
+                # Extract GPU information if available
+                generic_resources: dict[str, int | float | str] = {}
+                if "GpuInfo" in instance:
+                    gpu_info = instance["GpuInfo"]
+                    assert "Gpus" in gpu_info  # nosec
+                    # Sum up all GPUs (some instances have multiple GPU types)
+                    total_gpus = sum(gpu.get("Count", 0) for gpu in gpu_info["Gpus"])
+                    total_vram_mib = sum(
+                        gpu.get("Count", 0)
+                        * gpu.get("MemoryInfo", {}).get("SizeInMiB", 0)
+                        for gpu in gpu_info["Gpus"]
+                    )
+
+                    if total_gpus > 0:
+                        generic_resources["GPU"] = total_gpus
+                    if total_vram_mib > 0:
+                        # Convert MiB to bytes for consistency with RAM
+                        generic_resources["VRAM"] = total_vram_mib * 1024 * 1024
+
                 list_instances.append(
                     EC2InstanceType(
                         name=instance["InstanceType"],
@@ -118,6 +138,7 @@ class SimcoreEC2API:
                             ram=ByteSize(
                                 int(instance["MemoryInfo"]["SizeInMiB"]) * 1024 * 1024
                             ),
+                            generic_resources=generic_resources,
                         ),
                     )
                 )
