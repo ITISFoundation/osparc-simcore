@@ -98,7 +98,7 @@ async def _process_chatbot_trigger_message(app: web.Application, data: bytes) ->
                 "Here is the context within which the user's question is asked: "
                 f"username: '{_user_info.name}'"
                 f"product: '{_product_name}'"
-                "Make your answers concise, to the point and addressed directly to the user, using the username."
+                "Make your answers concise, to the point and refer to the user by their username."
             ),
         )
         messages.append(context_message)
