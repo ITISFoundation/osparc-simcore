@@ -111,7 +111,7 @@ async def _process_chatbot_trigger_message(app: web.Application, data: bytes) ->
             msg=f"Asking question from chatbot conversation ID {rabbit_message.conversation.conversation_id}",
         ):
             chatbot_client = get_chatbot_rest_client(app)
-            response_message = await chatbot_client.ask(messages)
+            response_message = await chatbot_client.send(messages)
 
         try:
             with log_context(

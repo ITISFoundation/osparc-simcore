@@ -34,6 +34,6 @@ async def test_chatbot_client(
 
     user_msg = Message(role="user", content=faker.sentence())
     developer_msg = Message(role="developer", content=faker.sentence())
-    output = await chatbot_client.ask(messages=[user_msg, developer_msg])
+    output = await chatbot_client.send(messages=[user_msg, developer_msg])
     assert isinstance(output, ResponseMessage)
     assert output.content == "42"
