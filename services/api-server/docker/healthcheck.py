@@ -29,8 +29,6 @@ SUCCESS, UNHEALTHY = 0, 1
 # Disabled if boots with debugger
 is_debug = os.environ.get("SC_BOOT_MODE", "").lower() == "debug"
 
-app_settings = ApplicationSettings.create_from_envs()
-
 
 def is_service_healthy() -> bool:
     settings = ApplicationSettings.create_from_envs()
