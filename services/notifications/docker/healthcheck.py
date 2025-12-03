@@ -30,11 +30,11 @@ is_debug = os.getenv("SC_BOOT_MODE", "").lower() == "debug"
 # Queries host
 # pylint: disable=consider-using-with
 
-app_settings = ApplicationSettings.create_from_envs()
-
 
 def is_service_healthy() -> bool:
-    if app_settings.NOTIFICATIONS_WORKER_MODE:
+    settings = ApplicationSettings.create_from_envs()
+
+    if settings.NOTIFICATIONS_WORKER_MODE:
         return is_healthy()
     return (
         urlopen(
