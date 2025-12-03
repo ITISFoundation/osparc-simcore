@@ -25,7 +25,7 @@ from simcore_service_notifications.core.application import ApplicationSettings
 SUCCESS, UNHEALTHY = 0, 1
 
 # Disabled if boots with debugger
-ok = os.getenv("SC_BOOT_MODE", "").lower() == "debug"
+is_debug = os.getenv("SC_BOOT_MODE", "").lower() == "debug"
 
 # Queries host
 # pylint: disable=consider-using-with
@@ -33,12 +33,11 @@ ok = os.getenv("SC_BOOT_MODE", "").lower() == "debug"
 app_settings = ApplicationSettings.create_from_envs()
 
 
-if app_settings.NOTIFICATIONS_WORKER_MODE:
-    ok = ok or is_healthy()
-else:
-    ok = (
-        ok
-        or urlopen(
+def is_service_healthy() -> bool:
+    if app_settings.NOTIFICATIONS_WORKER_MODE:
+        return is_healthy()
+    return (
+        urlopen(
             "{host}{baseurl}".format(
                 host=sys.argv[1], baseurl=os.environ.get("SIMCORE_NODE_BASEPATH", "")
             )  # adds a base-path if defined in environ
@@ -47,4 +46,4 @@ else:
     )
 
 
-sys.exit(SUCCESS if ok else UNHEALTHY)
+sys.exit(SUCCESS if is_debug or is_service_healthy() else UNHEALTHY)
