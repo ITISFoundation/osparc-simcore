@@ -12,6 +12,11 @@ import respx
 from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from simcore_service_webserver.chatbot._client import (
+    ChatResponse,
+    ResponseItem,
+    ResponseMessage,
+)
 from simcore_service_webserver.products import products_service
 
 
@@ -35,14 +40,16 @@ def mocked_chatbot_api() -> Iterator[respx.MockRouter]:
 
     # Define responses in the order they will be called during the test
     chatbot_answer_responses = [
-        {"answer": "42"},
+        ChatResponse(
+            choices=[ResponseItem(index=0, message=ResponseMessage(content="42"))]
+        )
     ]
 
     with respx.mock(base_url=_BASE_URL) as mock:
         # Create a side_effect that returns responses in sequence
-        mock.post(path="/v1/chat").mock(
+        mock.post(path="/v1/chat/completions").mock(
             side_effect=[
-                httpx.Response(200, json=response)
+                httpx.Response(200, json=response.model_dump(mode="json"))
                 for response in chatbot_answer_responses
             ]
         )
