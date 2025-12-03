@@ -29,6 +29,6 @@ async def test_chatbot_client(
     chatbot_client = get_chatbot_rest_client(client.app)
     assert chatbot_client
 
-    output = await chatbot_client.ask_question("What is the meaning of life?")
+    output = await chatbot_client.ask("What is the meaning of life?")
     assert isinstance(output, ChatResponse)
     assert output.answer == "42"

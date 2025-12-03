@@ -11,6 +11,7 @@ from models_library.rest_ordering import OrderBy, OrderDirection
 from pydantic import TypeAdapter
 from servicelib.logging_utils import log_context
 from servicelib.rabbitmq import RabbitMQClient
+from simcore_service_webserver.chatbot.exceptions import InvalidUserMessageError
 
 from ..conversations import conversations_service
 from ..conversations.errors import ConversationErrorNotFoundError
@@ -40,10 +41,10 @@ async def _process_chatbot_trigger_message(app: web.Application, data: bytes) ->
         msg=f"Processing chatbot trigger message for conversation ID {rabbit_message.conversation.conversation_id}",
     ):
         _product_name = rabbit_message.conversation.product_name
-        _user_group_id = rabbit_message.conversation.user_group_id
+        _user_primary_gid = rabbit_message.conversation.user_group_id
         _product = products_service.get_product(app, product_name=_product_name)
         _user_id = await users_service.get_user_id_from_gid(
-            app=app, primary_gid=_user_group_id
+            app=app, primary_gid=_user_primary_gid
         )
         _user_info = await users_service.get_user_name_and_email(
             app=app, user_id=_user_id
@@ -55,6 +56,9 @@ async def _process_chatbot_trigger_message(app: web.Application, data: bytes) ->
                 _product_name,
             )
             return True  # return true to avoid re-processing
+        _chatbot_primary_gid = await users_service.get_user_primary_group_id(
+            app=app, user_id=_product.support_chatbot_user_id
+        )
 
         # Get last 20 messages for the conversation ID
         with log_context(
@@ -74,9 +78,16 @@ async def _process_chatbot_trigger_message(app: web.Application, data: bytes) ->
                 )
             )
 
-        _get_role = lambda user_group_id: (
-            "user" if user_group_id == _user_group_id else "assistant"
-        )
+        def _get_role(message_group_id):
+            if message_group_id == _user_primary_gid:
+                return "user"
+            elif message_group_id == _chatbot_primary_gid:
+                return "assistant"
+            else:
+                raise InvalidUserMessageError(
+                    f"Message from user {message_group_id=} in conversation {rabbit_message.conversation.conversation_id=} neither matches user {_user_primary_gid=} nor chatbot user {_chatbot_primary_gid=}"
+                )
+
         messages = [
             Message(role=_get_role(msg.user_group_id), content=msg.content)
             for msg in messages_in_db
