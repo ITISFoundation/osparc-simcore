@@ -16,6 +16,8 @@ from ..conversations import conversations_service
 from ..conversations.errors import ConversationErrorNotFoundError
 from ..products import products_service
 from ..rabbitmq import get_rabbitmq_client
+from ..users import users_service
+from ._client import Message
 from .chatbot_service import get_chatbot_rest_client
 
 _logger = logging.getLogger(__name__)
@@ -38,7 +40,14 @@ async def _process_chatbot_trigger_message(app: web.Application, data: bytes) ->
         msg=f"Processing chatbot trigger message for conversation ID {rabbit_message.conversation.conversation_id}",
     ):
         _product_name = rabbit_message.conversation.product_name
+        _user_group_id = rabbit_message.conversation.user_group_id
         _product = products_service.get_product(app, product_name=_product_name)
+        _user_id = await users_service.get_user_id_from_gid(
+            app=app, primary_gid=_user_group_id
+        )
+        _user_info = await users_service.get_user_name_and_email(
+            app=app, user_id=_user_id
+        )
 
         if _product.support_chatbot_user_id is None:
             _logger.error(
@@ -53,25 +62,35 @@ async def _process_chatbot_trigger_message(app: web.Application, data: bytes) ->
             logging.DEBUG,
             msg=f"Listed messages for conversation ID {rabbit_message.conversation.conversation_id}",
         ):
-            _, messages = await conversations_service.list_messages_for_conversation(
-                app=app,
-                conversation_id=rabbit_message.conversation.conversation_id,
-                offset=0,
-                limit=20,
-                order_by=OrderBy(field=IDStr("created"), direction=OrderDirection.DESC),
+            _, messages_in_db = (
+                await conversations_service.list_messages_for_conversation(
+                    app=app,
+                    conversation_id=rabbit_message.conversation.conversation_id,
+                    offset=0,
+                    limit=20,
+                    order_by=OrderBy(
+                        field=IDStr("created"), direction=OrderDirection.DESC
+                    ),
+                )
             )
 
-        _question_for_chatbot = ""
-        for inx, msg in enumerate(messages):
-            if inx == 0:
-                # Make last message stand out as the question
-                _question_for_chatbot += (
-                    "User last message: \n"
-                    f"{msg.content.strip()} \n\n"
-                    "Previous messages in the conversation: \n"
-                )
-            else:
-                _question_for_chatbot += f"{msg.content.strip()}\n"
+        _get_role = lambda user_group_id: (
+            "user" if user_group_id == _user_group_id else "assistant"
+        )
+        messages = [
+            Message(role=_get_role(msg.user_group_id), content=msg.content)
+            for msg in messages_in_db
+        ]
+        context_message = Message(
+            role="developer",
+            content=(
+                "Here is the context within which the user's question is asked: "
+                f"username: '{_user_info.name}'"
+                f"product: '{_product_name}'"
+                "Make your answers concise, to the point and addressed directly to the user, using the username."
+            ),
+        )
+        messages.append(context_message)
 
         # Talk to the chatbot service
 
@@ -81,7 +100,7 @@ async def _process_chatbot_trigger_message(app: web.Application, data: bytes) ->
             msg=f"Asking question from chatbot conversation ID {rabbit_message.conversation.conversation_id}",
         ):
             chatbot_client = get_chatbot_rest_client(app)
-            chat_response = await chatbot_client.ask_question(_question_for_chatbot)
+            response_message = await chatbot_client.ask(messages)
 
         try:
             with log_context(
@@ -95,7 +114,7 @@ async def _process_chatbot_trigger_message(app: web.Application, data: bytes) ->
                     user_id=_product.support_chatbot_user_id,
                     conversation_user_type=ConversationUserType.CHATBOT_USER,
                     conversation=rabbit_message.conversation,
-                    content=chat_response.answer,
+                    content=response_message.content,
                     type_=ConversationMessageType.MESSAGE,
                 )
         except ConversationErrorNotFoundError:

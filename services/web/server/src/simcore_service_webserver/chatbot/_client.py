@@ -1,5 +1,6 @@
 import logging
-from typing import Annotated, Any, Final
+from operator import index
+from typing import Annotated, Any, Final, Literal
 
 import httpx
 from aiohttp import web
@@ -11,8 +12,22 @@ from .settings import ChatbotSettings, get_plugin_settings
 _logger = logging.getLogger(__name__)
 
 
+class ResponseMessage(BaseModel):
+    content: str
+
+
+class ResponseItem(BaseModel):
+    index: int
+    message: ResponseMessage
+
+
 class ChatResponse(BaseModel):
-    answer: Annotated[str, Field(description="Answer from the chatbot")]
+    choices: Annotated[list[ResponseItem], Field(description="Answer from the chatbot")]
+
+
+class Message(BaseModel):
+    role: Literal["user", "assistant", "developer"]
+    content: Annotated[str, Field(description="Content of the message")]
 
 
 class ChatbotRestClient:
@@ -38,17 +53,16 @@ class ChatbotRestClient:
             )
             raise
 
-    async def ask_question(self, question: str) -> ChatResponse:
+    async def ask(self, messages: list[Message]) -> ResponseMessage:
         """Asks a question to the chatbot"""
-        url = httpx.URL(self._chatbot_settings.base_url).join("/v1/chat")
+        url = httpx.URL(self._chatbot_settings.base_url).join("/v1/chat/completions")
 
         async def _request() -> httpx.Response:
             return await self._client.post(
                 url,
                 json={
-                    "question": question,
-                    "llm": self._chatbot_settings.CHATBOT_LLM_MODEL,
-                    "embedding_model": self._chatbot_settings.CHATBOT_EMBEDDING_MODEL,
+                    "messages": [msg.model_dump(mode="json") for msg in messages],
+                    "model": self._chatbot_settings.CHATBOT_MODEL,
                 },
                 headers={
                     "Content-Type": MIMETYPE_APPLICATION_JSON,
@@ -60,7 +74,10 @@ class ChatbotRestClient:
         try:
             response = await _request()
             response.raise_for_status()
-            return ChatResponse.model_validate(response.json())
+            chat_response = ChatResponse.model_validate(response.json())
+            assert len(chat_response.choices) > 0, "Chatbot returned no answers"
+            return chat_response.choices[0].message
+
         except Exception:
             _logger.error(  # noqa: TRY400
                 "Failed to ask question to chatbot at %s", url
