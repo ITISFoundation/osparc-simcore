@@ -73,7 +73,11 @@ class ProjectInfo:
 
 
 def _display_status_message(message: str, status: str = "info") -> None:
-    """Display a formatted status message."""
+    """Display a formatted status message with an icon and color based on status type.
+
+    Prints a message to the console with appropriate visual formatting including
+    status-specific icons and colors for better user experience.
+    """
     status_map = {
         "info": ("ℹ️", "blue"),  # noqa: RUF001
         "success": ("✓", "green"),
