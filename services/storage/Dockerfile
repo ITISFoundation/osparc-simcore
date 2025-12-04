@@ -164,7 +164,7 @@ RUN chmod +x services/storage/docker/*.sh
 HEALTHCHECK \
   --interval=10s \
   --timeout=5s \
-  --start-period=20s \
+  --start-period=90s \
   --start-interval=1s \
   --retries=5 \
   CMD ["python3", "/home/scu/services/storage/docker/healthcheck.py", "http://localhost:8080/v0/"]
