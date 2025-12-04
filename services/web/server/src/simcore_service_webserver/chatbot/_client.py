@@ -18,7 +18,7 @@ class ResponseMessage(BaseModel):
 
 
 class ResponseItem(BaseModel):
-    index: int
+    index: int  # 0-based index of the response
     message: ResponseMessage
 
 
