@@ -4,14 +4,17 @@
 # pylint: disable=too-many-arguments
 # pylint: disable=too-many-statements
 
-from collections.abc import Iterator
+from collections.abc import AsyncIterator, Iterator
 
 import httpx
 import pytest
 import respx
+from aiohttp.test_utils import TestClient
+from faker import Faker
 from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from pytest_simcore.helpers.webserver_users import NewUser, UserInfoDict
 from simcore_service_webserver.chatbot._client import (
     ChatResponse,
     ResponseItem,
@@ -35,13 +38,14 @@ def app_environment(
 
 
 @pytest.fixture
-def mocked_chatbot_api() -> Iterator[respx.MockRouter]:
+def mocked_chatbot_api(faker: Faker) -> Iterator[respx.MockRouter]:
     _BASE_URL = "http://chatbot:8000"
 
     # Define responses in the order they will be called during the test
     chatbot_answer_responses = [
         ChatResponse(
-            choices=[ResponseItem(index=0, message=ResponseMessage(content="42"))]
+            id=f"{faker.uuid4()}",
+            choices=[ResponseItem(index=0, message=ResponseMessage(content="42"))],
         )
     ]
 
@@ -57,9 +61,22 @@ def mocked_chatbot_api() -> Iterator[respx.MockRouter]:
 
 
 @pytest.fixture
-def mocked_get_current_product(mocker: MockerFixture) -> MockType:
+async def chatbot_user(client: TestClient) -> AsyncIterator[UserInfoDict]:
+    async with NewUser(
+        user_data={
+            "name": "chatbot user",
+        },
+        app=client.app,
+    ) as user_info:
+        yield user_info
+
+
+@pytest.fixture
+def mocked_get_current_product(
+    chatbot_user: UserInfoDict, mocker: MockerFixture
+) -> MockType:
     mock = mocker.patch.object(products_service, "get_product")
     mocked_product = mocker.Mock()
-    mocked_product.support_chatbot_user_id = 123
+    mocked_product.support_chatbot_user_id = chatbot_user["id"]
     mock.return_value = mocked_product
     return mock
