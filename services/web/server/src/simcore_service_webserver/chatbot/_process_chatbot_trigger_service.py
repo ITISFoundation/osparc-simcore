@@ -11,7 +11,6 @@ from models_library.rest_ordering import OrderBy, OrderDirection
 from pydantic import TypeAdapter
 from servicelib.logging_utils import log_context
 from servicelib.rabbitmq import RabbitMQClient
-from simcore_service_webserver.chatbot.exceptions import InvalidUserMessageError
 
 from ..conversations import conversations_service
 from ..conversations.errors import ConversationErrorNotFoundError
@@ -20,6 +19,7 @@ from ..rabbitmq import get_rabbitmq_client
 from ..users import users_service
 from ._client import Message
 from .chatbot_service import get_chatbot_rest_client
+from .exceptions import InvalidUserMessageError
 
 _logger = logging.getLogger(__name__)
 
