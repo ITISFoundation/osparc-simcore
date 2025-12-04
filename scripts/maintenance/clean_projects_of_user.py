@@ -110,6 +110,14 @@ async def get_project_for_user(
     )
 
 
+async def get_user_project_count(client: AsyncClient) -> int:
+    """Fetch the total number of projects for the user."""
+    r = await client.get("/projects", params={"type": "user", "limit": 1})
+    r.raise_for_status()
+    response_dict = r.json()
+    return response_dict.get("_meta", {}).get("total", 0)
+
+
 async def projects_iterator(
     client: AsyncClient,
     page_size: int = DEFAULT_PAGE_SIZE,
@@ -342,21 +350,31 @@ async def clean_all_projects(
     """Handle deletion of all projects for a user."""
     console.print()
 
+    with console.status("[cyan]Checking project count...[/cyan]"):
+        total_projects = await get_user_project_count(client)
+
+    if total_projects == 0:
+        _display_status_message("No projects found to delete", "warning")
+        return 0
+
+    _display_status_message(f"Found {total_projects} projects", "info")
+
     if not dry_run:
         console.print(
-            f"\n[bold yellow]Are you sure you want to delete ALL projects for {username}?[/bold yellow]"
+            f"\n[bold yellow]Are you sure you want to delete ALL {total_projects} projects for {username}?[/bold yellow]"
         )
         if not typer.confirm(""):
             _display_status_message("Deletion cancelled", "info")
             return 0
     else:
         _display_status_message(
-            "Starting DRY-RUN (no projects will be deleted)", "warning"
+            f"Starting DRY-RUN ({total_projects} projects would be deleted)", "warning"
         )
 
     _display_status_message("Fetching and processing projects...", "info")
 
     stats = DeletionStats(start_time=datetime.now(tz=UTC))
+    stats.total_projects = total_projects
 
     with Progress(
         SpinnerColumn(),
@@ -367,15 +385,11 @@ async def clean_all_projects(
         TimeRemainingColumn(),
         console=console,
     ) as progress:
-        task_id = progress.add_task("[cyan]Processing projects...[/cyan]", total=None)
-
-        def set_total(total: int) -> None:
-            progress.update(task_id, total=total)
-            stats.total_projects = total
-
-        projects_iter = projects_iterator(
-            client, page_size=page_size, on_total_count=set_total
+        task_id = progress.add_task(
+            "[cyan]Processing projects...[/cyan]", total=total_projects
         )
+
+        projects_iter = projects_iterator(client, page_size=page_size)
 
         stats.deleted_count = await process_deletion_batches(
             client,
