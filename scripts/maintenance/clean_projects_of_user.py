@@ -277,7 +277,16 @@ async def process_deletion_stream(
     batch_size: int,
     dry_run: bool,
 ) -> tuple[int, list[ProjectInfo]]:
-    """Process projects in batches for deletion using streaming."""
+    """Process projects for deletion in batches using streaming approach.
+
+    Continuously fetches and processes projects in batches until no more projects
+    are available or an error occurs. Handles pagination automatically and provides
+    progress tracking for the deletion operation.
+
+    Returns:
+        A tuple containing the total number of successfully deleted projects and
+        a list of projects that failed to be deleted.
+    """
     deleted_count = 0
     all_failed_projects: list[ProjectInfo] = []
     offset = 0
