@@ -10,7 +10,7 @@
 # ///
 
 import asyncio
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Annotated
@@ -22,6 +22,7 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.progress import (
     BarColumn,
+    MofNCompleteColumn,
     Progress,
     SpinnerColumn,
     TextColumn,
@@ -109,7 +110,9 @@ async def get_project_for_user(
 
 
 async def projects_iterator(
-    client: AsyncClient, page_size: int = DEFAULT_PAGE_SIZE
+    client: AsyncClient,
+    page_size: int = DEFAULT_PAGE_SIZE,
+    on_total_count: Callable[[int], None] | None = None,
 ) -> AsyncGenerator[ProjectInfo]:
     """
     Async generator that yields projects page by page.
@@ -118,6 +121,7 @@ async def projects_iterator(
     without loading all into memory at once.
     """
     next_link: str | None = "/projects"
+    is_first_page = True
 
     while next_link:
         r = await client.get(next_link, params={"type": "user", "limit": page_size})
@@ -128,6 +132,12 @@ async def projects_iterator(
 
         response_dict = r.json()
         projects_data = response_dict.get("data", [])
+
+        if is_first_page and on_total_count:
+            total = response_dict.get("_meta", {}).get("total")
+            if total is not None:
+                on_total_count(total)
+            is_first_page = False
 
         for project_data in projects_data:
             yield ProjectInfo(
@@ -207,9 +217,10 @@ def _display_summary_report(
 
 async def process_deletion_batches(
     client: AsyncClient,
-    projects_iter: AsyncGenerator[ProjectInfo],
+    page_size: int,
     batch_size: int = DEFAULT_BATCH_SIZE,
     stats: DeletionStats | None = None,
+    dry_run: bool = False,
 ) -> tuple[int, int, list[ProjectInfo]]:
     """
     Process project deletions in batches.
@@ -229,42 +240,73 @@ async def process_deletion_batches(
         SpinnerColumn(),
         TextColumn("[progress.description]{task.description}"),
         BarColumn(),
+        MofNCompleteColumn(),
         TextColumn("[progress.percentage]{task.percentage:>3.1f}%"),
         TimeRemainingColumn(),
         console=console,
     ) as progress:
-        task = progress.add_task("[cyan]Fetching projects...[/cyan]", total=None)
+        task = progress.add_task("[cyan]Processing projects...[/cyan]", total=None)
+
+        def set_total(total: int) -> None:
+            progress.update(task, total=total)
+            if stats:
+                stats.total_projects = total
+
+        projects_iter = projects_iterator(
+            client, page_size=page_size, on_total_count=set_total
+        )
 
         async for project in projects_iter:
-            batch.append(project)
-            stats.total_projects += 1
-            progress.update(task, total=stats.total_projects)
+            progress.update(task, advance=1)
 
+            if dry_run:
+                progress.console.print(
+                    f"[dim]Would delete project: {project.uuid} ({project.name})[/dim]"
+                )
+                continue
+
+            batch.append(project)
             if len(batch) >= batch_size:
                 # Process this batch
                 progress.update(
-                    task, description="[cyan]Deleting batch of projects...[/cyan]"
+                    task,
+                    description=f"[cyan]Deleting batch of {len(batch)} projects...[/cyan]",
                 )
                 deleted_in_batch = await _delete_batch(client, batch, progress)
                 deleted_count += deleted_in_batch
+                progress.console.print(
+                    f"[green]Deleted batch of {len(batch)} projects[/green]"
+                )
 
                 for proj in batch:
                     if proj.status == "failed":
                         failed_projects.append(proj)
+                        progress.console.print(
+                            f"[red]Failed to delete {proj.uuid}: {proj.error_message}[/red]"
+                        )
                     elif proj.status == "deleted":
                         deleted_count += 1
 
                 batch = []
 
         # Process remaining projects
-        if batch:
-            progress.update(task, description="[cyan]Deleting final batch...[/cyan]")
+        if batch and not dry_run:
+            progress.update(
+                task,
+                description=f"[cyan]Deleting final batch of {len(batch)} projects...[/cyan]",
+            )
             deleted_in_batch = await _delete_batch(client, batch, progress)
             deleted_count += deleted_in_batch
+            progress.console.print(
+                f"[green]Deleted final batch of {len(batch)} projects[/green]"
+            )
 
             for proj in batch:
                 if proj.status == "failed":
                     failed_projects.append(proj)
+                    progress.console.print(
+                        f"[red]Failed to delete {proj.uuid}: {proj.error_message}[/red]"
+                    )
                 elif proj.status == "deleted":
                     deleted_count += 1
 
@@ -359,10 +401,19 @@ async def clean(
 
             # Handle multiple projects deletion
             console.print()
-            _display_status_message("Fetching all projects...", "info")
 
-            # Count projects first with iterator
-            projects_iter = projects_iterator(client, page_size=page_size)
+            if not dry_run:
+                if not typer.confirm(
+                    f"\n[bold yellow]Are you sure you want to delete ALL projects for {username}?[/bold yellow]"
+                ):
+                    _display_status_message("Deletion cancelled", "info")
+                    return 0
+            else:
+                _display_status_message(
+                    "Starting DRY-RUN (no projects will be deleted)", "warning"
+                )
+
+            _display_status_message("Fetching and processing projects...", "info")
 
             (
                 deleted_count,
@@ -370,9 +421,10 @@ async def clean(
                 failed_projects,
             ) = await process_deletion_batches(
                 client,
-                projects_iter,
+                page_size=page_size,
                 batch_size=batch_size,
                 stats=stats,
+                dry_run=dry_run,
             )
 
             if stats.total_projects == 0:
@@ -386,15 +438,9 @@ async def clean(
 
             if dry_run:
                 _display_status_message(
-                    f"DRY-RUN: {stats.total_projects} projects would be deleted (not actually deleted)",
+                    f"DRY-RUN: {stats.total_projects} projects would have been deleted",
                     "warning",
                 )
-                return 0
-
-            if not typer.confirm(
-                f"\n[bold yellow]Delete all {stats.total_projects} projects?[/bold yellow]"
-            ):
-                _display_status_message("Deletion cancelled", "info")
                 return 0
 
             stats.end_time = datetime.now(tz=UTC)
