@@ -1,10 +1,15 @@
-class BaseChatbotException(Exception):
+from common_library.errors_classes import OsparcErrorMixin
+
+
+class BaseChatbotException(OsparcErrorMixin, Exception):
     """Base exception for chatbot errors"""
 
 
-class InvalidUserMessageError(BaseChatbotException):
-    """Raised when the user message is invalid"""
+class InvalidUserInConversationError(BaseChatbotException):
+    msg_template = "Encountered unexpected user {primary_group_id} in conversation {conversation_id}"
 
 
 class NoResponseFromChatbotError(BaseChatbotException):
-    """Raised when no response is received from the chatbot"""
+    msg_template = (
+        "No response received from chatbot for chat completion {chat_completion_id}"
+    )

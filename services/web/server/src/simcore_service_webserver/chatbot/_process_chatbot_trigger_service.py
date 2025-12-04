@@ -19,7 +19,7 @@ from ..rabbitmq import get_rabbitmq_client
 from ..users import users_service
 from ._client import Message
 from .chatbot_service import get_chatbot_rest_client
-from .exceptions import InvalidUserMessageError
+from .exceptions import InvalidUserInConversationError
 
 _logger = logging.getLogger(__name__)
 
@@ -89,7 +89,10 @@ async def _process_chatbot_trigger_message(app: web.Application, data: bytes) ->
                     f"{rabbit_message.conversation.conversation_id} neither matches user "
                     f"{_user_primary_gid} nor chatbot user {_chatbot_primary_gid}"
                 )
-                raise InvalidUserMessageError(msg)
+                raise InvalidUserInConversationError(
+                    primary_group_id=message_group_id,
+                    conversation_id=rabbit_message.conversation.conversation_id,
+                )
 
         messages = [
             Message(role=_get_role(msg.user_group_id), content=msg.content)
@@ -98,7 +101,7 @@ async def _process_chatbot_trigger_message(app: web.Application, data: bytes) ->
         context_message = Message(
             role="developer",
             content=(
-                "Here is the context within which the user's question is asked: "
+                "Here is the context within which the user's question is asked. "
                 f"username: '{_user_info.name}' "
                 f"product: '{_product_name}' "
                 "Make your answers concise, to the point and refer to the user by their username."

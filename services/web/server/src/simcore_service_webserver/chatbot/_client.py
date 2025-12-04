@@ -23,6 +23,7 @@ class ResponseItem(BaseModel):
 
 
 class ChatResponse(BaseModel):
+    id: str  # unique identifier for the chat response
     choices: Annotated[list[ResponseItem], Field(description="Answer from the chatbot")]
 
 
@@ -77,7 +78,7 @@ class ChatbotRestClient:
             response.raise_for_status()
             chat_response = ChatResponse.model_validate(response.json())
             if len(chat_response.choices) == 0:
-                raise NoResponseFromChatbotError("No choices returned from chatbot")
+                raise NoResponseFromChatbotError(chat_completion_id=chat_response.id)
             return chat_response.choices[0].message
 
         except Exception:
