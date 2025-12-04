@@ -27,23 +27,24 @@ from simcore_service_api_server.core.settings import ApplicationSettings
 SUCCESS, UNHEALTHY = 0, 1
 
 # Disabled if boots with debugger
-ok = os.environ.get("SC_BOOT_MODE", "").lower() == "debug"
-
-app_settings = ApplicationSettings.create_from_envs()
+is_debug_mode = os.environ.get("SC_BOOT_MODE", "").lower() == "debug"
 
 
-# Queries host
-# pylint: disable=consider-using-with
-ok = (
-    ok
-    or (app_settings.API_SERVER_WORKER_MODE and is_healthy())
-    or urlopen(
-        "{host}{baseurl}".format(
-            host=sys.argv[1], baseurl=os.environ.get("SIMCORE_NODE_BASEPATH", "")
-        )  # adds a base-path if defined in environ
-    ).getcode()
-    == 200
-)
+def is_service_healthy() -> bool:
+    settings = ApplicationSettings.create_from_envs()
+
+    if settings.API_SERVER_WORKER_MODE:
+        return is_healthy()
+
+    return (
+        # Queries host
+        urlopen(
+            "{host}{baseurl}".format(
+                host=sys.argv[1], baseurl=os.environ.get("SIMCORE_NODE_BASEPATH", "")
+            )  # adds a base-path if defined in environ
+        ).getcode()
+        == 200
+    )
 
 
-sys.exit(SUCCESS if ok else UNHEALTHY)
+sys.exit(SUCCESS if is_debug_mode or is_service_healthy() else UNHEALTHY)
