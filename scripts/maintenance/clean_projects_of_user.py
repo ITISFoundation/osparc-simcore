@@ -513,10 +513,13 @@ async def clean(
 
 
 def main(
-    endpoint: str,
-    username: str,
-    password: str,
-    project_id: str | None = None,
+    endpoint: Annotated[str, typer.Argument(help="oSparc type endpoint URL")],
+    username: Annotated[str, typer.Argument(help="User's email address")],
+    password: Annotated[str, typer.Argument(help="User's password")],
+    project_id: Annotated[
+        str | None,
+        typer.Option(help="optional project UUID if only one project shall be deleted"),
+    ] = None,
     *,
     batch_size: Annotated[
         int,
@@ -533,7 +536,7 @@ def main(
         ),
     ] = False,
 ) -> int:
-    """Clean all projects for a given user."""
+    """Clean all projects for a given user and endpoint."""
     console.print(Panel("[bold cyan]osparc-simcore Project Cleaner[/bold cyan]"))
 
     return asyncio.run(
