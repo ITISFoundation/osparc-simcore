@@ -520,6 +520,10 @@ async def clean(
         return 1
 
 
+app = typer.Typer(pretty_exceptions_enable=False)
+
+
+@app.command()
 def main(
     endpoint: Annotated[str, typer.Argument(help="oSparc type endpoint URL")],
     username: Annotated[str, typer.Argument(help="User's email address")],
@@ -560,4 +564,4 @@ def main(
 
 
 if __name__ == "__main__":
-    typer.run(main)
+    app()
