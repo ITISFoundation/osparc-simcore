@@ -457,8 +457,7 @@ async def clean(
     password: SecretStr,
     project_id: str | None,
     *,
-    batch_size: int = DEFAULT_BATCH_SIZE,
-    page_size: int = DEFAULT_PAGE_SIZE,
+    batch_size: int,
     dry_run: bool = False,
 ) -> int:
     """
@@ -527,14 +526,6 @@ def main(
             help="Number of projects to delete concurrently",
         ),
     ] = DEFAULT_BATCH_SIZE,
-    page_size: Annotated[
-        int,
-        typer.Option(
-            "--page-size",
-            "-p",
-            help="Number of projects per API page",
-        ),
-    ] = DEFAULT_PAGE_SIZE,
     dry_run: Annotated[
         bool,
         typer.Option(
@@ -552,7 +543,6 @@ def main(
             SecretStr(password),
             project_id,
             batch_size=batch_size,
-            page_size=page_size,
             dry_run=dry_run,
         )
     )
