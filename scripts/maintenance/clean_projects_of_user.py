@@ -5,6 +5,7 @@
 #     "httpx",
 #     "pydantic[email]",
 #     "rich",
+#     "tenacity",
 #     "typer",
 # ]
 # ///
@@ -29,6 +30,7 @@ from rich.progress import (
     TimeRemainingColumn,
 )
 from rich.table import Table
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
 
 DEFAULT_TIMEOUT = Timeout(30.0)
 DEFAULT_BATCH_SIZE = 10
@@ -210,13 +212,26 @@ async def _process_batch(
     )
 
     tasks = [delete_project(client, project) for project in batch]
-    results = await asyncio.gather(*tasks, return_exceptions=False)
+    results = await asyncio.gather(*tasks, return_exceptions=True)
 
     deleted_count = 0
     failed_projects = []
 
-    for proj in results:
+    for i, result in enumerate(results):
         progress.update(task_id, advance=1)
+        project = batch[i]
+
+        if isinstance(result, Exception):
+            project.status = "failed"
+            project.error_message = f"Exception: {result}"
+            failed_projects.append(project)
+            progress.console.print(
+                f"[red]Failed to delete {project.uuid}: {project.error_message}[/red]"
+            )
+            continue
+
+        # result is ProjectInfo
+        proj = result
         if proj.status == "failed":
             failed_projects.append(proj)
             progress.console.print(
@@ -227,6 +242,33 @@ async def _process_batch(
 
     progress.console.print(f"[green]Deleted batch of {len(batch)} projects[/green]")
     return deleted_count, failed_projects
+
+
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_fixed(1),
+    retry=retry_if_exception_type((HTTPStatusError, Exception)),
+    reraise=True,
+)
+async def _fetch_batch(client: AsyncClient, batch_size: int, offset: int) -> list[dict]:
+    """Fetch a batch of projects with retries."""
+    try:
+        r = await client.get(
+            "/projects",
+            params={
+                "type": "all",
+                "limit": batch_size,
+                "offset": offset,
+                "show_hidden": True,
+            },
+        )
+        r.raise_for_status()
+        return r.json().get("data", [])
+    except HTTPStatusError as exc:
+        if exc.response.status_code == 404:
+            # Treat 404 as empty list (end of stream)
+            return []
+        raise
 
 
 async def process_deletion_stream(
@@ -243,18 +285,13 @@ async def process_deletion_stream(
     offset = 0
 
     while True:
-        r = await client.get(
-            "/projects",
-            params={
-                "type": "all",
-                "limit": batch_size,
-                "offset": offset,
-                "show_hidden": True,
-            },
-        )
-        r.raise_for_status()
-        data = r.json()
-        projects_data = data.get("data", [])
+        try:
+            projects_data = await _fetch_batch(client, batch_size, offset)
+        except Exception as exc:  # pylint: disable=broad-except
+            progress.console.print(
+                f"[red]Error fetching projects after retries: {exc}[/red]"
+            )
+            break
 
         if not projects_data:
             break
@@ -493,7 +530,7 @@ def main(
     """Clean all projects for a given user."""
     console.print(Panel("[bold cyan]osparc-simcore Project Cleaner[/bold cyan]"))
 
-    return asyncio.get_event_loop().run_until_complete(
+    return asyncio.run(
         clean(
             URL(endpoint),
             TypeAdapter(EmailStr).validate_python(username),
