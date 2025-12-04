@@ -74,7 +74,7 @@ class ProjectInfo:
 def _display_status_message(message: str, status: str = "info") -> None:
     """Display a formatted status message."""
     status_map = {
-        "info": ("ℹ️", "blue"),
+        "info": ("ℹ️", "blue"),  # noqa: RUF001
         "success": ("✓", "green"),
         "warning": ("⚠", "yellow"),
         "error": ("✗", "red"),
@@ -218,6 +218,7 @@ def _display_summary_report(
 
 async def _process_batch(
     client: AsyncClient,
+    *,
     batch: list[ProjectInfo],
     progress: Progress,
     task_id: TaskID,
@@ -261,6 +262,7 @@ async def _process_batch(
 
 async def process_deletion_batches(
     client: AsyncClient,
+    *,
     projects_iter: AsyncGenerator[ProjectInfo],
     progress: Progress,
     task_id: TaskID,
@@ -275,20 +277,24 @@ async def process_deletion_batches(
         batch.append(project)
 
         if len(batch) >= batch_size:
-            count, _ = await _process_batch(client, batch, progress, task_id, dry_run)
+            count, _ = await _process_batch(
+                client, batch=batch, progress=progress, task_id=task_id, dry_run=dry_run
+            )
             deleted_count += count
             batch = []
 
     # Process remaining projects
     if batch:
-        count, _ = await _process_batch(client, batch, progress, task_id, dry_run)
+        count, _ = await _process_batch(
+            client, batch=batch, progress=progress, task_id=task_id, dry_run=dry_run
+        )
         deleted_count += count
 
     return deleted_count
 
 
 async def clean_single_project(
-    client: AsyncClient, project_id: str, dry_run: bool
+    client: AsyncClient, *, project_id: str, dry_run: bool
 ) -> int:
     """Handle deletion of a single project."""
     with console.status("[cyan]Fetching project...[/cyan]"):
@@ -326,6 +332,7 @@ async def clean_single_project(
 
 async def clean_all_projects(
     client: AsyncClient,
+    *,
     page_size: int,
     batch_size: int,
     dry_run: bool,
@@ -370,9 +377,9 @@ async def clean_all_projects(
 
         stats.deleted_count = await process_deletion_batches(
             client,
-            projects_iter,
-            progress,
-            task_id,
+            projects_iter=projects_iter,
+            progress=progress,
+            task_id=task_id,
             batch_size=batch_size,
             dry_run=dry_run,
         )
@@ -430,10 +437,16 @@ async def clean(
             await login_user(client, username, password)
 
             if project_id:
-                return await clean_single_project(client, project_id, dry_run)
+                return await clean_single_project(
+                    client, project_id=project_id, dry_run=dry_run
+                )
 
             return await clean_all_projects(
-                client, page_size, batch_size, dry_run, username
+                client,
+                page_size=page_size,
+                batch_size=batch_size,
+                dry_run=dry_run,
+                username=username,
             )
 
     except HTTPStatusError as exc:
