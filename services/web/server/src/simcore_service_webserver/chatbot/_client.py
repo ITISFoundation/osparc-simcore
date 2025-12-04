@@ -30,6 +30,9 @@ class ChatResponse(BaseModel):
 class Message(BaseModel):
     role: Literal["user", "assistant", "developer"]
     content: Annotated[str, Field(description="Content of the message")]
+    name: Annotated[
+        str | None, Field(description="Optional name of the message sender")
+    ] = None
 
 
 class ChatbotRestClient:
@@ -63,7 +66,10 @@ class ChatbotRestClient:
             return await self._client.post(
                 url,
                 json={
-                    "messages": [msg.model_dump(mode="json") for msg in messages],
+                    "messages": [
+                        msg.model_dump(mode="json", exclude_none=True)
+                        for msg in messages
+                    ],
                     "model": self._chatbot_settings.CHATBOT_MODEL,
                 },
                 headers={

@@ -1,11 +1,13 @@
 import functools
 import logging
 from collections.abc import AsyncIterator
-from typing import Final
+from os import name
+from typing import Final, Literal, NamedTuple
 
 from aiohttp import web
 from models_library.basic_types import IDStr
 from models_library.conversations import ConversationMessageType, ConversationUserType
+from models_library.groups import GroupID
 from models_library.rabbitmq_messages import WebserverChatbotRabbitMessage
 from models_library.rest_ordering import OrderBy, OrderDirection
 from pydantic import TypeAdapter
@@ -14,12 +16,12 @@ from servicelib.rabbitmq import RabbitMQClient
 
 from ..conversations import conversations_service
 from ..conversations.errors import ConversationErrorNotFoundError
+from ..groups.api import list_group_members
 from ..products import products_service
 from ..rabbitmq import get_rabbitmq_client
 from ..users import users_service
 from ._client import Message
 from .chatbot_service import get_chatbot_rest_client
-from .exceptions import InvalidUserInConversationError
 
 _logger = logging.getLogger(__name__)
 
@@ -31,6 +33,42 @@ _RABBITMQ_WEBSERVER_CHATBOT_CONSUMER_APPKEY: Final = web.AppKey(
 _CHATBOT_PROCESS_MESSAGE_TTL_IN_MS = 2 * 60 * 60 * 1000  # 2 hours
 
 
+class _Role(NamedTuple):
+    role: Literal["user", "assistant", "developer"]
+    name: str | None = None
+
+
+_SUPPORT_ROLE_NAME: Final[str] = "support-team-member"
+
+_CHATBOT_INSTRUCTION_MESSAGE: Final[
+    str
+] = """
+    This conversation takes place in the context of the {product} product. Only answer questions related to this product.
+    The user '{support_role_name}' is a support team member and is assisting users of the {product} product
+    with their inquiries. Help the user by providing answers to their questions. Make your answers concise and to the point.
+    Refer to the user by their name and be friendly.
+    """
+
+
+async def _get_role(
+    *,
+    app: web.Application,
+    message_gid: GroupID,
+    chatbot_primary_gid: GroupID,
+    support_group_primary_gids: set[GroupID],
+) -> _Role:
+    if message_gid == chatbot_primary_gid:
+        return _Role(role="assistant")
+    elif message_gid in support_group_primary_gids:
+        return _Role(role="user", name=_SUPPORT_ROLE_NAME)
+    else:
+        user_id = await users_service.get_user_id_from_gid(
+            app=app, primary_gid=message_gid
+        )
+        user_full_name = await users_service.get_user_fullname(app=app, user_id=user_id)
+        return _Role(role="user", name=user_full_name["first_name"])
+
+
 async def _process_chatbot_trigger_message(app: web.Application, data: bytes) -> bool:
     rabbit_message = TypeAdapter(WebserverChatbotRabbitMessage).validate_json(data)
     assert app  # nosec
@@ -40,24 +78,26 @@ async def _process_chatbot_trigger_message(app: web.Application, data: bytes) ->
         logging.DEBUG,
         msg=f"Processing chatbot trigger message for conversation ID {rabbit_message.conversation.conversation_id}",
     ):
-        _product_name = rabbit_message.conversation.product_name
-        _user_primary_gid = rabbit_message.conversation.user_group_id
-        _product = products_service.get_product(app, product_name=_product_name)
-        _user_id = await users_service.get_user_id_from_gid(
-            app=app, primary_gid=_user_primary_gid
-        )
-        _user_info = await users_service.get_user_name_and_email(
-            app=app, user_id=_user_id
-        )
+        product_name = rabbit_message.conversation.product_name
+        product = products_service.get_product(app, product_name=product_name)
 
-        if _product.support_chatbot_user_id is None:
+        if product.support_chatbot_user_id is None:
             _logger.error(
                 "Product %s does not have support_chatbot_user_id configured, cannot process chatbot message. (This should not happen)",
-                _product_name,
+                product_name,
             )
             return True  # return true to avoid re-processing
-        _chatbot_primary_gid = await users_service.get_user_primary_group_id(
-            app=app, user_id=_product.support_chatbot_user_id
+        support_group_primary_gids = set()
+        if product.support_standard_group_id is not None:
+            support_group_primary_gids = {
+                elm.primary_gid
+                for elm in await list_group_members(
+                    app, product.support_standard_group_id
+                )
+            }
+
+        chatbot_primary_gid = await users_service.get_user_primary_group_id(
+            app=app, user_id=product.support_chatbot_user_id
         )
 
         # Get last 20 messages for the conversation ID
@@ -78,34 +118,27 @@ async def _process_chatbot_trigger_message(app: web.Application, data: bytes) ->
                 )
             )
 
-        def _get_role(message_group_id):
-            if message_group_id == _user_primary_gid:
-                return "user"
-            elif message_group_id == _chatbot_primary_gid:
-                return "assistant"
-            else:
-                raise InvalidUserInConversationError(
-                    primary_group_id=message_group_id,
-                    conversation_id=rabbit_message.conversation.conversation_id,
-                )
-
-        messages = [
-            Message(role=_get_role(msg.user_group_id), content=msg.content)
-            for msg in messages_in_db
-        ]
+        messages = []
+        for msg in messages_in_db:
+            role = await _get_role(
+                app=app,
+                message_gid=msg.user_group_id,
+                chatbot_primary_gid=chatbot_primary_gid,
+                support_group_primary_gids=support_group_primary_gids,
+            )
+            messages.append(
+                Message(role=role.role, name=role.name, content=msg.content)
+            )
         context_message = Message(
             role="developer",
-            content=(
-                "Here is the context within which the user's question is asked. "
-                f"username: '{_user_info.name}' "
-                f"product: '{_product_name}' "
-                "Make your answers concise, to the point and refer to the user by their username."
+            content=_CHATBOT_INSTRUCTION_MESSAGE.format(
+                product=product_name,
+                support_role_name=_SUPPORT_ROLE_NAME,
             ),
         )
         messages.append(context_message)
 
         # Talk to the chatbot service
-
         with log_context(
             _logger,
             logging.DEBUG,
@@ -123,7 +156,7 @@ async def _process_chatbot_trigger_message(app: web.Application, data: bytes) ->
                 await conversations_service.create_support_message(
                     app=app,
                     product_name=rabbit_message.conversation.product_name,
-                    user_id=_product.support_chatbot_user_id,
+                    user_id=product.support_chatbot_user_id,
                     conversation_user_type=ConversationUserType.CHATBOT_USER,
                     conversation=rabbit_message.conversation,
                     content=response_message.content,
