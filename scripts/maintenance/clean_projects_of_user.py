@@ -148,7 +148,7 @@ def _display_projects_table(projects: list[ProjectInfo]) -> None:
 
     for project in projects:
         name = project.name or "[dim]Unknown[/dim]"
-        table.add_row(project.uuid[:8] + "...", name)
+        table.add_row(project.uuid, name)
 
     console.print(table)
 
@@ -180,7 +180,7 @@ def _display_summary_report(
 
         for project in failed_projects:
             error_table.add_row(
-                project.uuid[:8] + "...",
+                project.uuid,
                 project.error_message or "Unknown error",
             )
 
