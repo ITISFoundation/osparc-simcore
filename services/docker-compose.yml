@@ -1152,16 +1152,35 @@ services:
     image: ${DOCKER_REGISTRY:-itisfoundation}/notifications:${DOCKER_IMAGE_TAG:-latest}
     init: true
     hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
-
-    environment:
+    environment: &notifications_environment
       <<:
         - *common_logging_environments
         - *postgres_settings
         - *rabbit_settings
+        - *redis_settings
         - *tracing_open_telemetry_environments
 
       NOTIFICATIONS_LOGLEVEL: ${NOTIFICATIONS_LOGLEVEL}
       NOTIFICATIONS_TRACING: ${NOTIFICATIONS_TRACING}
+      NOTIFICATIONS_WORKER_MODE: "false"
+    networks: &notifications_networks
+      - default
+
+  notifications-worker:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/notifications:${DOCKER_IMAGE_TAG:-latest}
+    init: true
+    hostname: "notifications-worker-{{.Node.Hostname}}-{{.Task.Slot}}"
+    environment:
+      <<:
+        - *notifications_environment
+        - *smtp_settings
+      NOTIFICATIONS_TRACING: "null"
+      NOTIFICATIONS_WORKER_NAME: "notifications-worker-{{.Node.Hostname}}-{{.Task.Slot}}-{{.Task.ID}}"
+      NOTIFICATIONS_WORKER_MODE: "true"
+      CELERY_CONCURRENCY: 100
+      CELERY_POOL: threads
+      CELERY_QUEUES: notifications
+    networks: *notifications_networks
 
   dask-sidecar:
     image: ${DOCKER_REGISTRY:-itisfoundation}/dask-sidecar:${DOCKER_IMAGE_TAG:-latest}
@@ -1245,7 +1264,7 @@ services:
       - storage_subnet
 
   sto-worker:
-    image: ${DOCKER_REGISTRY:-itisfoundation}/storage:${DOCKER_IMAGE_TAG:-master-github-latest}
+    image: ${DOCKER_REGISTRY:-itisfoundation}/storage:${DOCKER_IMAGE_TAG:-latest}
     init: true
     hostname: "sto-worker-{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
@@ -1258,7 +1277,7 @@ services:
     networks: *storage_networks
 
   sto-worker-cpu-bound:
-    image: ${DOCKER_REGISTRY:-itisfoundation}/storage:${DOCKER_IMAGE_TAG:-master-github-latest}
+    image: ${DOCKER_REGISTRY:-itisfoundation}/storage:${DOCKER_IMAGE_TAG:-latest}
     init: true
     hostname: "sto-worker-cpu-bound-{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
