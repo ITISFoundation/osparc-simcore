@@ -98,7 +98,7 @@ async def get_project_for_user(
 ) -> ProjectInfo | None:
     """Fetch a single project by ID."""
     path = f"/projects/{project_id}"
-    r = await client.get(path, params={"type": "user"})
+    r = await client.get(path, params={"type": "all", "show_hidden": True})
     r.raise_for_status()
     assert r.status_code == codes.OK  # nosec
     response_dict = r.json()
@@ -111,7 +111,9 @@ async def get_project_for_user(
 
 async def get_user_project_count(client: AsyncClient) -> int:
     """Fetch the total number of projects for the user."""
-    r = await client.get("/projects", params={"type": "user", "limit": 1})
+    r = await client.get(
+        "/projects", params={"type": "all", "limit": 1, "show_hidden": True}
+    )
     r.raise_for_status()
     response_dict = r.json()
     return response_dict.get("_meta", {}).get("total", 0)
@@ -242,7 +244,13 @@ async def process_deletion_stream(
 
     while True:
         r = await client.get(
-            "/projects", params={"type": "user", "limit": batch_size, "offset": offset}
+            "/projects",
+            params={
+                "type": "all",
+                "limit": batch_size,
+                "offset": offset,
+                "show_hidden": True,
+            },
         )
         r.raise_for_status()
         data = r.json()
