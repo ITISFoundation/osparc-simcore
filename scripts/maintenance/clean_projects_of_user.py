@@ -274,8 +274,8 @@ async def process_deletion_stream(
     *,
     progress: Progress,
     task_id: TaskID,
-    batch_size: int = 50,
-    dry_run: bool = False,
+    batch_size: int,
+    dry_run: bool,
 ) -> tuple[int, list[ProjectInfo]]:
     """Process projects in batches for deletion using streaming."""
     deleted_count = 0
