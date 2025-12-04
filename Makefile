@@ -188,13 +188,14 @@ $(foreach service, $(SERVICES_NAMES_TO_BUILD),\
 		export $(subst -,_,$(shell echo $(service) | tr a-z A-Z))_VERSION=$(shell cat services/$(service)/VERSION);\
 	,) \
 )\
-docker buildx bake --allow=fs.read=.. --allow=fs.write=$(local-dest) \
+docker buildx bake --allow=fs.read=.. \
 	$(if $(findstring -devel,$@),,\
 	--set *.platform=$(DOCKER_TARGET_PLATFORMS) \
 	)\
 	$(if $(findstring $(comma),$(DOCKER_TARGET_PLATFORMS)),,\
 		$(if $(local-dest),\
 			$(foreach service, $(SERVICES_NAMES_TO_BUILD),\
+			--allow=fs.write=$(local-dest) \
 			--set $(service).output="type=docker$(comma)dest=$(local-dest)/$(service).tar") \
 			,--load\
 		)\
