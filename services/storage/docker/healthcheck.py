@@ -31,9 +31,6 @@ SUCCESS, UNHEALTHY = 0, 1
 # Disabled if boots with debugger
 is_debug_mode = os.getenv("SC_BOOT_MODE", "").lower() == "debug"
 
-# Queries host
-# pylint: disable=consider-using-with
-
 
 def is_service_healthy() -> bool:
     settings = ApplicationSettings.create_from_envs()
@@ -42,6 +39,7 @@ def is_service_healthy() -> bool:
         return is_healthy()
 
     return (
+        # Queries host
         urlopen(
             "{host}{baseurl}".format(
                 host=sys.argv[1], baseurl=os.environ.get("SIMCORE_NODE_BASEPATH", "")
