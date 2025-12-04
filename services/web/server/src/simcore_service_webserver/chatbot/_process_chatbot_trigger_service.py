@@ -84,11 +84,6 @@ async def _process_chatbot_trigger_message(app: web.Application, data: bytes) ->
             elif message_group_id == _chatbot_primary_gid:
                 return "assistant"
             else:
-                msg = (
-                    f"Message from user {message_group_id} in conversation "
-                    f"{rabbit_message.conversation.conversation_id} neither matches user "
-                    f"{_user_primary_gid} nor chatbot user {_chatbot_primary_gid}"
-                )
                 raise InvalidUserInConversationError(
                     primary_group_id=message_group_id,
                     conversation_id=rabbit_message.conversation.conversation_id,
