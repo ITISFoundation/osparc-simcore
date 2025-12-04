@@ -10,7 +10,6 @@
 # ///
 
 import asyncio
-from collections.abc import AsyncGenerator, Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Annotated
@@ -116,46 +115,6 @@ async def get_user_project_count(client: AsyncClient) -> int:
     r.raise_for_status()
     response_dict = r.json()
     return response_dict.get("_meta", {}).get("total", 0)
-
-
-async def projects_iterator(
-    client: AsyncClient,
-    page_size: int = DEFAULT_PAGE_SIZE,
-    on_total_count: Callable[[int], None] | None = None,
-) -> AsyncGenerator[ProjectInfo]:
-    """
-    Async generator that yields projects page by page.
-
-    Handles pagination automatically and yields projects one at a time
-    without loading all into memory at once.
-    """
-    next_link: str | None = "/projects"
-    is_first_page = True
-
-    while next_link:
-        r = await client.get(next_link, params={"type": "user", "limit": page_size})
-        r.raise_for_status()
-
-        if r.status_code != codes.OK:
-            break
-
-        response_dict = r.json()
-        projects_data = response_dict.get("data", [])
-
-        if is_first_page and on_total_count:
-            total = response_dict.get("_meta", {}).get("total")
-            if total is not None:
-                on_total_count(total)
-            is_first_page = False
-
-        for project_data in projects_data:
-            yield ProjectInfo(
-                uuid=project_data.get("uuid"),
-                name=project_data.get("name"),
-            )
-
-        # Get next page link if available
-        next_link = response_dict.get("_links", {}).get("next")
 
 
 async def delete_project(client: AsyncClient, project: ProjectInfo) -> ProjectInfo:
@@ -268,37 +227,51 @@ async def _process_batch(
     return deleted_count, failed_projects
 
 
-async def process_deletion_batches(
+async def process_deletion_stream(
     client: AsyncClient,
     *,
-    projects_iter: AsyncGenerator[ProjectInfo],
     progress: Progress,
     task_id: TaskID,
     batch_size: int = 50,
     dry_run: bool = False,
-) -> int:
-    """Process projects in batches for deletion."""
-    batch: list[ProjectInfo] = []
+) -> tuple[int, list[ProjectInfo]]:
+    """Process projects in batches for deletion using streaming."""
     deleted_count = 0
+    all_failed_projects: list[ProjectInfo] = []
+    offset = 0
 
-    async for project in projects_iter:
-        batch.append(project)
+    while True:
+        r = await client.get(
+            "/projects", params={"type": "user", "limit": batch_size, "offset": offset}
+        )
+        r.raise_for_status()
+        data = r.json()
+        projects_data = data.get("data", [])
 
-        if len(batch) >= batch_size:
-            count, _ = await _process_batch(
-                client, batch=batch, progress=progress, task_id=task_id, dry_run=dry_run
+        if not projects_data:
+            break
+
+        batch = [
+            ProjectInfo(
+                uuid=p.get("uuid"),
+                name=p.get("name"),
             )
-            deleted_count += count
-            batch = []
+            for p in projects_data
+        ]
 
-    # Process remaining projects
-    if batch:
-        count, _ = await _process_batch(
+        count, failed = await _process_batch(
             client, batch=batch, progress=progress, task_id=task_id, dry_run=dry_run
         )
-        deleted_count += count
 
-    return deleted_count
+        deleted_count += count
+        all_failed_projects.extend(failed)
+
+        if dry_run:
+            offset += len(batch)
+        else:
+            offset += len(failed)
+
+    return deleted_count, all_failed_projects
 
 
 async def clean_single_project(
@@ -342,7 +315,6 @@ async def clean_single_project(
 async def clean_all_projects(
     client: AsyncClient,
     *,
-    page_size: int,
     batch_size: int,
     dry_run: bool,
     username: str,
@@ -389,16 +361,14 @@ async def clean_all_projects(
             "[cyan]Processing projects...[/cyan]", total=total_projects
         )
 
-        projects_iter = projects_iterator(client, page_size=page_size)
-
-        stats.deleted_count = await process_deletion_batches(
+        stats.deleted_count, failed_projects = await process_deletion_stream(
             client,
-            projects_iter=projects_iter,
             progress=progress,
             task_id=task_id,
             batch_size=batch_size,
             dry_run=dry_run,
         )
+        stats.failed_count = len(failed_projects)
 
     if stats.total_projects == 0:
         _display_status_message("No projects found", "warning")
@@ -416,7 +386,7 @@ async def clean_all_projects(
 
     stats.end_time = datetime.now(tz=UTC)
     console.print()
-    _display_summary_report(stats, [])
+    _display_summary_report(stats, failed_projects)
 
     return 0
 
@@ -459,7 +429,6 @@ async def clean(
 
             return await clean_all_projects(
                 client,
-                page_size=page_size,
                 batch_size=batch_size,
                 dry_run=dry_run,
                 username=username,
