@@ -13,7 +13,7 @@
 import asyncio
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from typing import Annotated
+from typing import Annotated, Any
 
 import typer
 from httpx import URL, AsyncClient, HTTPStatusError, Timeout, codes
@@ -233,7 +233,14 @@ async def _process_batch(
                 f"[red]Failed to delete {project.uuid}: {project.error_message}[/red]"
             )
             continue
-
+        if isinstance(result, BaseException):
+            project.status = "failed"
+            project.error_message = f"BaseException: {result}"
+            failed_projects.append(project)
+            progress.console.print(
+                f"[red]Failed to delete {project.uuid}: {project.error_message}[/red]"
+            )
+            continue
         # result is ProjectInfo
         proj = result
         if proj.status == "failed":
@@ -254,7 +261,9 @@ async def _process_batch(
     retry=retry_if_exception_type((HTTPStatusError, Exception)),
     reraise=True,
 )
-async def _fetch_batch(client: AsyncClient, batch_size: int, offset: int) -> list[dict]:
+async def _fetch_batch(
+    client: AsyncClient, batch_size: int, offset: int
+) -> list[dict[str, Any]]:
     """Fetch a batch of projects with retries."""
     r = await client.get(
         "/projects",
@@ -313,8 +322,8 @@ async def process_deletion_stream(
 
         batch = [
             ProjectInfo(
-                uuid=p.get("uuid"),
-                name=p.get("name"),
+                uuid=p["uuid"],
+                name=p["name"],
             )
             for p in projects_data
         ]
@@ -469,7 +478,6 @@ async def clean(
         password: User password
         project_id: Optional specific project to delete
         batch_size: Number of projects to delete concurrently
-        page_size: Number of projects per API page
         dry_run: If True, only show what would be deleted without deleting
 
     Returns:
