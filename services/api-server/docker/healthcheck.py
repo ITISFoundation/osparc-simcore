@@ -27,7 +27,7 @@ from simcore_service_api_server.core.settings import ApplicationSettings
 SUCCESS, UNHEALTHY = 0, 1
 
 # Disabled if boots with debugger
-is_debug = os.environ.get("SC_BOOT_MODE", "").lower() == "debug"
+is_debug_mode = os.environ.get("SC_BOOT_MODE", "").lower() == "debug"
 
 
 def is_service_healthy() -> bool:
@@ -35,7 +35,9 @@ def is_service_healthy() -> bool:
 
     if settings.API_SERVER_WORKER_MODE:
         return is_healthy()
+
     return (
+        # Queries host
         urlopen(
             "{host}{baseurl}".format(
                 host=sys.argv[1], baseurl=os.environ.get("SIMCORE_NODE_BASEPATH", "")
@@ -45,4 +47,4 @@ def is_service_healthy() -> bool:
     )
 
 
-sys.exit(SUCCESS if is_debug or is_service_healthy() else UNHEALTHY)
+sys.exit(SUCCESS if is_debug_mode or is_service_healthy() else UNHEALTHY)
