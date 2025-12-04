@@ -495,7 +495,7 @@ async def clean(
 
     except HTTPStatusError as exc:
         error_panel = Panel(
-            f"HTTP Error {exc.response.status_code}\\n{exc.response.text}",
+            f"HTTP Error {exc.response.status_code}\n{exc.response.text}",
             title="[bold red]API Error[/bold red]",
             style="red",
         )
