@@ -1,11 +1,19 @@
-#! /usr/bin/env python3
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.13"
+# dependencies = [
+#     "httpx",
+#     "pydantic[email]",
+#     "typer",
+# ]
+# ///
 
 import asyncio
 from typing import Any
 
 import typer
 from httpx import URL, AsyncClient, HTTPStatusError, Timeout, codes
-from pydantic import EmailStr, SecretStr
+from pydantic import EmailStr, SecretStr, TypeAdapter
 
 DEFAULT_TIMEOUT = Timeout(30.0)
 
@@ -23,10 +31,10 @@ async def get_project_for_user(
 ) -> dict[str, Any] | None:
     path = f"/projects/{project_id}"
     r = await client.get(path, params={"type": "user"})
-    if r.status_code == 200:
-        response_dict = r.json()
-        data = response_dict["data"]
-        return data
+    r.raise_for_status()
+    assert r.status_code == codes.OK  # nosec
+    response_dict = r.json()
+    return response_dict["data"]
 
 
 async def get_all_projects_for_user(
@@ -34,7 +42,7 @@ async def get_all_projects_for_user(
 ) -> list[dict[str, Any]]:
     path = next_link if next_link else "/projects"
     r = await client.get(path, params={"type": "user"})
-    if r.status_code == 200:
+    if r.status_code == codes.OK:
         response_dict = r.json()
         data = response_dict["data"]
         next_link = response_dict.get("_links", {}).get("next", None)
@@ -111,7 +119,12 @@ def main(
     endpoint: str, username: str, password: str, project_id: str | None = None
 ) -> int:
     return asyncio.get_event_loop().run_until_complete(
-        clean(URL(endpoint), EmailStr(username), SecretStr(password), project_id)
+        clean(
+            URL(endpoint),
+            TypeAdapter(EmailStr).validate_python(username),
+            SecretStr(password),
+            project_id,
+        )
     )
 
 
