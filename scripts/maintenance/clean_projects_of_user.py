@@ -25,6 +25,7 @@ from rich.progress import (
     MofNCompleteColumn,
     Progress,
     SpinnerColumn,
+    TaskID,
     TextColumn,
     TimeRemainingColumn,
 )
@@ -215,26 +216,138 @@ def _display_summary_report(
         console.print(error_table)
 
 
-async def process_deletion_batches(
+async def _process_batch(
     client: AsyncClient,
-    page_size: int,
-    batch_size: int = DEFAULT_BATCH_SIZE,
-    stats: DeletionStats | None = None,
-    dry_run: bool = False,
-) -> tuple[int, int, list[ProjectInfo]]:
-    """
-    Process project deletions in batches.
+    batch: list[ProjectInfo],
+    progress: Progress,
+    task_id: TaskID,
+    dry_run: bool,
+) -> tuple[int, list[ProjectInfo]]:
+    """Process a single batch of projects."""
+    if not batch:
+        return 0, []
 
-    Yields batches of projects to delete without loading all into memory.
-    Returns count of deleted, failed, and list of failed projects.
-    """
-    if stats is None:
-        stats = DeletionStats()
+    if dry_run:
+        for project in batch:
+            progress.console.print(
+                f"[dim]Would delete project: {project.uuid} ({project.name})[/dim]"
+            )
+            progress.update(task_id, advance=1)
+        return 0, []
+
+    progress.update(
+        task_id, description=f"[cyan]Deleting batch of {len(batch)} projects...[/cyan]"
+    )
+
+    tasks = [delete_project(client, project) for project in batch]
+    results = await asyncio.gather(*tasks, return_exceptions=False)
 
     deleted_count = 0
-    failed_projects: list[ProjectInfo] = []
+    failed_projects = []
 
+    for proj in results:
+        progress.update(task_id, advance=1)
+        if proj.status == "failed":
+            failed_projects.append(proj)
+            progress.console.print(
+                f"[red]Failed to delete {proj.uuid}: {proj.error_message}[/red]"
+            )
+        elif proj.status == "deleted":
+            deleted_count += 1
+
+    progress.console.print(f"[green]Deleted batch of {len(batch)} projects[/green]")
+    return deleted_count, failed_projects
+
+
+async def process_deletion_batches(
+    client: AsyncClient,
+    projects_iter: AsyncGenerator[ProjectInfo],
+    progress: Progress,
+    task_id: TaskID,
+    batch_size: int = 50,
+    dry_run: bool = False,
+) -> int:
+    """Process projects in batches for deletion."""
     batch: list[ProjectInfo] = []
+    deleted_count = 0
+
+    async for project in projects_iter:
+        batch.append(project)
+
+        if len(batch) >= batch_size:
+            count, _ = await _process_batch(client, batch, progress, task_id, dry_run)
+            deleted_count += count
+            batch = []
+
+    # Process remaining projects
+    if batch:
+        count, _ = await _process_batch(client, batch, progress, task_id, dry_run)
+        deleted_count += count
+
+    return deleted_count
+
+
+async def clean_single_project(
+    client: AsyncClient, project_id: str, dry_run: bool
+) -> int:
+    """Handle deletion of a single project."""
+    with console.status("[cyan]Fetching project...[/cyan]"):
+        project = await get_project_for_user(client, project_id)
+
+    if not project:
+        _display_status_message(f"Project {project_id} not found!", "error")
+        return 1
+
+    console.print()
+    _display_projects_table([project])
+
+    if dry_run:
+        _display_status_message(
+            "DRY-RUN: Project would be deleted (not actually deleted)",
+            "warning",
+        )
+        return 0
+
+    if not typer.confirm("\n[bold yellow]Delete this project?[/bold yellow]"):
+        _display_status_message("Deletion cancelled", "info")
+        return 0
+
+    result = await delete_project(client, project)
+
+    if result.status == "deleted":
+        _display_status_message("Project successfully deleted", "success")
+        return 0
+
+    _display_status_message(
+        f"Failed to delete project: {result.error_message}", "error"
+    )
+    return 1
+
+
+async def clean_all_projects(
+    client: AsyncClient,
+    page_size: int,
+    batch_size: int,
+    dry_run: bool,
+    username: str,
+) -> int:
+    """Handle deletion of all projects for a user."""
+    console.print()
+
+    if not dry_run:
+        if not typer.confirm(
+            f"\n[bold yellow]Are you sure you want to delete ALL projects for {username}?[/bold yellow]"
+        ):
+            _display_status_message("Deletion cancelled", "info")
+            return 0
+    else:
+        _display_status_message(
+            "Starting DRY-RUN (no projects will be deleted)", "warning"
+        )
+
+    _display_status_message("Fetching and processing projects...", "info")
+
+    stats = DeletionStats(start_time=datetime.now(tz=UTC))
 
     with Progress(
         SpinnerColumn(),
@@ -245,84 +358,44 @@ async def process_deletion_batches(
         TimeRemainingColumn(),
         console=console,
     ) as progress:
-        task = progress.add_task("[cyan]Processing projects...[/cyan]", total=None)
+        task_id = progress.add_task("[cyan]Processing projects...[/cyan]", total=None)
 
         def set_total(total: int) -> None:
-            progress.update(task, total=total)
-            if stats:
-                stats.total_projects = total
+            progress.update(task_id, total=total)
+            stats.total_projects = total
 
         projects_iter = projects_iterator(
             client, page_size=page_size, on_total_count=set_total
         )
 
-        async for project in projects_iter:
-            progress.update(task, advance=1)
+        stats.deleted_count = await process_deletion_batches(
+            client,
+            projects_iter,
+            progress,
+            task_id,
+            batch_size=batch_size,
+            dry_run=dry_run,
+        )
 
-            if dry_run:
-                progress.console.print(
-                    f"[dim]Would delete project: {project.uuid} ({project.name})[/dim]"
-                )
-                continue
+    if stats.total_projects == 0:
+        _display_status_message("No projects found", "warning")
+        return 1
 
-            batch.append(project)
-            if len(batch) >= batch_size:
-                # Process this batch
-                progress.update(
-                    task,
-                    description=f"[cyan]Deleting batch of {len(batch)} projects...[/cyan]",
-                )
-                deleted_in_batch = await _delete_batch(client, batch, progress)
-                deleted_count += deleted_in_batch
-                progress.console.print(
-                    f"[green]Deleted batch of {len(batch)} projects[/green]"
-                )
+    console.print()
+    _display_status_message(f"Found {stats.total_projects} projects total", "info")
 
-                for proj in batch:
-                    if proj.status == "failed":
-                        failed_projects.append(proj)
-                        progress.console.print(
-                            f"[red]Failed to delete {proj.uuid}: {proj.error_message}[/red]"
-                        )
-                    elif proj.status == "deleted":
-                        deleted_count += 1
+    if dry_run:
+        _display_status_message(
+            f"DRY-RUN: {stats.total_projects} projects would have been deleted",
+            "warning",
+        )
+        return 0
 
-                batch = []
+    stats.end_time = datetime.now(tz=UTC)
+    console.print()
+    _display_summary_report(stats, [])
 
-        # Process remaining projects
-        if batch and not dry_run:
-            progress.update(
-                task,
-                description=f"[cyan]Deleting final batch of {len(batch)} projects...[/cyan]",
-            )
-            deleted_in_batch = await _delete_batch(client, batch, progress)
-            deleted_count += deleted_in_batch
-            progress.console.print(
-                f"[green]Deleted final batch of {len(batch)} projects[/green]"
-            )
-
-            for proj in batch:
-                if proj.status == "failed":
-                    failed_projects.append(proj)
-                    progress.console.print(
-                        f"[red]Failed to delete {proj.uuid}: {proj.error_message}[/red]"
-                    )
-                elif proj.status == "deleted":
-                    deleted_count += 1
-
-    stats.deleted_count = deleted_count
-    stats.failed_count = len(failed_projects)
-    return deleted_count, len(failed_projects), failed_projects
-
-
-async def _delete_batch(
-    client: AsyncClient, batch: list[ProjectInfo], progress: Progress
-) -> int:
-    """Delete a batch of projects concurrently."""
-    tasks = [delete_project(client, project) for project in batch]
-    results = await asyncio.gather(*tasks, return_exceptions=False)
-
-    return sum(1 for proj in results if proj.status == "deleted")
+    return 0
 
 
 async def clean(
@@ -350,112 +423,22 @@ async def clean(
     Returns:
         Exit code (0 for success, 1 for failure)
     """
-    stats = DeletionStats(start_time=datetime.now(tz=UTC))
-
     try:
         async with AsyncClient(
             base_url=endpoint.join("v0"), timeout=DEFAULT_TIMEOUT, follow_redirects=True
         ) as client:
             await login_user(client, username, password)
 
-            # Handle single project deletion
             if project_id:
-                with console.status("[cyan]Fetching project...[/cyan]"):
-                    project = await get_project_for_user(client, project_id)
+                return await clean_single_project(client, project_id, dry_run)
 
-                if not project:
-                    _display_status_message(f"Project {project_id} not found!", "error")
-                    return 1
-
-                console.print()
-                _display_projects_table([project])
-
-                if dry_run:
-                    _display_status_message(
-                        "DRY-RUN: Project would be deleted (not actually deleted)",
-                        "warning",
-                    )
-                    return 0
-
-                if not typer.confirm(
-                    "\n[bold yellow]Delete this project?[/bold yellow]"
-                ):
-                    _display_status_message("Deletion cancelled", "info")
-                    return 0
-
-                result = await delete_project(client, project)
-                stats.total_projects = 1
-                stats.end_time = datetime.now(tz=UTC)
-
-                if result.status == "deleted":
-                    stats.deleted_count = 1
-                    _display_status_message("Project successfully deleted", "success")
-                else:
-                    stats.failed_count = 1
-                    _display_status_message(
-                        f"Failed to delete project: {result.error_message}", "error"
-                    )
-                    return 1
-
-                return 0
-
-            # Handle multiple projects deletion
-            console.print()
-
-            if not dry_run:
-                if not typer.confirm(
-                    f"\n[bold yellow]Are you sure you want to delete ALL projects for {username}?[/bold yellow]"
-                ):
-                    _display_status_message("Deletion cancelled", "info")
-                    return 0
-            else:
-                _display_status_message(
-                    "Starting DRY-RUN (no projects will be deleted)", "warning"
-                )
-
-            _display_status_message("Fetching and processing projects...", "info")
-
-            (
-                deleted_count,
-                failed_count,
-                failed_projects,
-            ) = await process_deletion_batches(
-                client,
-                page_size=page_size,
-                batch_size=batch_size,
-                stats=stats,
-                dry_run=dry_run,
+            return await clean_all_projects(
+                client, page_size, batch_size, dry_run, username
             )
-
-            if stats.total_projects == 0:
-                _display_status_message("No projects found", "warning")
-                return 1
-
-            console.print()
-            _display_status_message(
-                f"Found {stats.total_projects} projects total", "info"
-            )
-
-            if dry_run:
-                _display_status_message(
-                    f"DRY-RUN: {stats.total_projects} projects would have been deleted",
-                    "warning",
-                )
-                return 0
-
-            stats.end_time = datetime.now(tz=UTC)
-            console.print()
-            _display_summary_report(stats, failed_projects)
-
-            if failed_count > 0:
-                return 1
-
-            return 0
 
     except HTTPStatusError as exc:
-        stats.end_time = datetime.now(tz=UTC)
         error_panel = Panel(
-            f"HTTP Error {exc.response.status_code}\n{exc.response.text}",
+            f"HTTP Error {exc.response.status_code}\\n{exc.response.text}",
             title="[bold red]API Error[/bold red]",
             style="red",
         )
@@ -463,7 +446,6 @@ async def clean(
         return 1
 
     except Exception as exc:  # pylint: disable=broad-except
-        stats.end_time = datetime.now(tz=UTC)
         error_panel = Panel(
             f"{type(exc).__name__}: {exc}",
             title="[bold red]Unexpected Error[/bold red]",
