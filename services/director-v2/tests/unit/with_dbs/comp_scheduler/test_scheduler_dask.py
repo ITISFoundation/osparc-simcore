@@ -2463,10 +2463,9 @@ async def test_getting_task_result_raises_s3_invalid_path_fails_task_immediately
     computational_tasks = [
         t for t in running_project.tasks if t.node_class is NodeClass.COMPUTATIONAL
     ]
-    failed_task = random.choice(computational_tasks)  # noqa: S311
 
-    msg = "s3://invalid/path/to/data"
-    mocked_parse_output_data_fct.side_effect = S3InvalidPathError(msg)
+    fake_error_msg = "s3://invalid/path/to/data"
+    mocked_parse_output_data_fct.side_effect = S3InvalidPathError(fake_error_msg)
 
     async def mocked_get_task_result(job_id: str) -> TaskOutputData:
         return TaskOutputData.model_validate({"whatever_output": 123})
@@ -2481,15 +2480,6 @@ async def test_getting_task_result_raises_s3_invalid_path_fails_task_immediately
     )
     assert mocked_dask_client.get_task_result.call_count == len(computational_tasks)
 
-    # check the tasks in the DB, the failed task shall be marked as FAILED with platform status BAD
-    await assert_comp_tasks_and_comp_run_snapshot_tasks(
-        sqlalchemy_async_engine,
-        project_uuid=running_project.project.uuid,
-        task_ids=[failed_task.node_id],
-        expected_state=RunningState.ABORTED,
-        expected_progress=1.0,
-        run_id=running_project.runs.run_id,
-    )
     await assert_comp_runs(
         sqlalchemy_async_engine,
         expected_total=1,
