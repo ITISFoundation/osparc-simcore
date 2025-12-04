@@ -12,18 +12,26 @@ from servicelib.fastapi.postgres_lifespan import (
     postgres_database_lifespan,
 )
 
-from .._meta import APP_FINISHED_BANNER_MSG, APP_STARTED_BANNER_MSG
+from .._meta import (
+    APP_SHUTDOWN_BANNER_MSG,
+    APP_STARTED_BANNER_MSG,
+    APP_WORKER_STARTED_BANNER_MSG,
+)
 from ..api.rpc.routing import rpc_api_routes_lifespan
+from ..clients.celery import task_manager_lifespan
 from ..clients.postgres import postgres_lifespan
 from ..clients.rabbitmq import rabbitmq_lifespan
 from .settings import ApplicationSettings
 
 
-async def _banner_lifespan(app: FastAPI) -> AsyncIterator[State]:
-    _ = app
-    print(APP_STARTED_BANNER_MSG, flush=True)  # noqa: T201
+async def _app_banner_lifespan(app: FastAPI) -> AsyncIterator[State]:
+    settings: ApplicationSettings = app.state.settings
+    if settings.NOTIFICATIONS_WORKER_MODE:
+        print(APP_WORKER_STARTED_BANNER_MSG, flush=True)  # noqa: T201
+    else:
+        print(APP_STARTED_BANNER_MSG, flush=True)  # noqa: T201
     yield {}
-    print(APP_FINISHED_BANNER_MSG, flush=True)  # noqa: T201
+    print(APP_SHUTDOWN_BANNER_MSG, flush=True)  # noqa: T201
 
 
 async def _settings_lifespan(app: FastAPI) -> AsyncIterator[State]:
@@ -37,6 +45,7 @@ async def _settings_lifespan(app: FastAPI) -> AsyncIterator[State]:
 
 
 def create_app_lifespan(
+    settings: ApplicationSettings,
     logging_lifespan: Lifespan | None = None,
 ) -> LifespanManager[FastAPI]:
     # WARNING: order matters
@@ -49,15 +58,19 @@ def create_app_lifespan(
     app_lifespan.add(postgres_database_lifespan)
     app_lifespan.add(postgres_lifespan)
 
-    # - rabbitmq
-    app_lifespan.add(rabbitmq_lifespan)
+    if not settings.NOTIFICATIONS_WORKER_MODE:
+        # - rabbitmq
+        app_lifespan.add(rabbitmq_lifespan)
 
-    # - rpc api routes
-    app_lifespan.add(rpc_api_routes_lifespan)
+        # - rpc api routes
+        app_lifespan.add(rpc_api_routes_lifespan)
+
+    # - celery task manager
+    app_lifespan.add(task_manager_lifespan)
 
     # - prometheus instrumentation
     app_lifespan.add(prometheus_instrumentation_lifespan)
 
-    app_lifespan.add(_banner_lifespan)
+    app_lifespan.add(_app_banner_lifespan)
 
     return app_lifespan
