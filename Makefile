@@ -195,7 +195,7 @@ docker buildx bake --allow=fs.read=.. \
 	$(if $(findstring $(comma),$(DOCKER_TARGET_PLATFORMS)),,\
 		$(if $(local-dest),\
 			$(foreach service, $(SERVICES_NAMES_TO_BUILD),\
-			--allow=fs.write=$(local-dest) \
+      --allow=fs.write=$(local-dest) \
 			--set $(service).output="type=docker$(comma)dest=$(local-dest)/$(service).tar") \
 			,--load\
 		)\
