@@ -252,23 +252,17 @@ async def _process_batch(
 )
 async def _fetch_batch(client: AsyncClient, batch_size: int, offset: int) -> list[dict]:
     """Fetch a batch of projects with retries."""
-    try:
-        r = await client.get(
-            "/projects",
-            params={
-                "type": "all",
-                "limit": batch_size,
-                "offset": offset,
-                "show_hidden": True,
-            },
-        )
-        r.raise_for_status()
-        return r.json().get("data", [])
-    except HTTPStatusError as exc:
-        if exc.response.status_code == 404:
-            # Treat 404 as empty list (end of stream)
-            return []
-        raise
+    r = await client.get(
+        "/projects",
+        params={
+            "type": "all",
+            "limit": batch_size,
+            "offset": offset,
+            "show_hidden": True,
+        },
+    )
+    r.raise_for_status()
+    return r.json().get("data", [])
 
 
 async def process_deletion_stream(
@@ -287,6 +281,14 @@ async def process_deletion_stream(
     while True:
         try:
             projects_data = await _fetch_batch(client, batch_size, offset)
+        except HTTPStatusError as exc:
+            if exc.response.status_code == codes.NOT_FOUND:
+                # After retries, if we still get 404, assume end of stream
+                break
+            progress.console.print(
+                f"[red]Error fetching projects after retries: {exc}[/red]"
+            )
+            break
         except Exception as exc:  # pylint: disable=broad-except
             progress.console.print(
                 f"[red]Error fetching projects after retries: {exc}[/red]"
