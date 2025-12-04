@@ -314,7 +314,8 @@ async def clean_single_project(
         )
         return 0
 
-    if not typer.confirm("\n[bold yellow]Delete this project?[/bold yellow]"):
+    console.print("\n[bold yellow]Delete this project?[/bold yellow]")
+    if not typer.confirm(""):
         _display_status_message("Deletion cancelled", "info")
         return 0
 
@@ -342,9 +343,10 @@ async def clean_all_projects(
     console.print()
 
     if not dry_run:
-        if not typer.confirm(
+        console.print(
             f"\n[bold yellow]Are you sure you want to delete ALL projects for {username}?[/bold yellow]"
-        ):
+        )
+        if not typer.confirm(""):
             _display_status_message("Deletion cancelled", "info")
             return 0
     else:
