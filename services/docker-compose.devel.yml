@@ -92,7 +92,7 @@ services:
       - ../packages:/devel/packages
       - ${HOST_UV_CACHE_DIR}:/home/scu/.cache/uv
 
-  notifications-wrk:
+  notifications-worker:
     environment:
       <<: *common_environment
       NOTIFICATIONS_PROFILING : ${NOTIFICATIONS_PROFILING}

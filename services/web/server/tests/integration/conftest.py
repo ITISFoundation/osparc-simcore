@@ -69,7 +69,7 @@ def webserver_environ(
         "director",
         "docker-api-proxy",
         "dynamic-schdlr",
-        "notifications-wrk",
+        "notifications-worker",
         "sto-worker",
         "sto-worker-cpu-bound",
     ]
