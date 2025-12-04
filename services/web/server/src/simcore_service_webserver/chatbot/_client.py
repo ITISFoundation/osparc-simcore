@@ -55,7 +55,7 @@ class ChatbotRestClient:
             raise
 
     async def send(self, messages: list[Message]) -> ResponseMessage:
-        """Asks a question to the chatbot"""
+        """Send a list of messages to the chatbot and returns the chatbot's response message."""
         url = httpx.URL(self._chatbot_settings.base_url).join("/v1/chat/completions")
 
         async def _request() -> httpx.Response:
