@@ -273,7 +273,9 @@ async def process_deletion_batches(
     return deleted_count, len(failed_projects), failed_projects
 
 
-async def _delete_batch(client: AsyncClient, batch: list[ProjectInfo], progress) -> int:
+async def _delete_batch(
+    client: AsyncClient, batch: list[ProjectInfo], progress: Progress
+) -> int:
     """Delete a batch of projects concurrently."""
     tasks = [delete_project(client, project) for project in batch]
     results = await asyncio.gather(*tasks, return_exceptions=False)
@@ -310,7 +312,7 @@ async def clean(
 
     try:
         async with AsyncClient(
-            base_url=endpoint.join("v0"), timeout=DEFAULT_TIMEOUT
+            base_url=endpoint.join("v0"), timeout=DEFAULT_TIMEOUT, follow_redirects=True
         ) as client:
             await login_user(client, username, password)
 
