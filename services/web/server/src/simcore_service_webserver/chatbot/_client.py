@@ -1,5 +1,4 @@
 import logging
-from operator import index
 from typing import Annotated, Any, Final, Literal
 
 import httpx

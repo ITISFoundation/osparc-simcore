@@ -1,7 +1,6 @@
 import functools
 import logging
 from collections.abc import AsyncIterator
-from os import name
 from typing import Final, Literal, NamedTuple
 
 from aiohttp import web
