@@ -35,15 +35,17 @@ def is_service_healthy() -> bool:
     settings = ApplicationSettings.create_from_envs()
 
     if settings.NOTIFICATIONS_WORKER_MODE:
+        print("Healthcheck: checking celery worker health")
         return is_healthy()
-    return (
-        urlopen(
-            "{host}{baseurl}".format(
-                host=sys.argv[1], baseurl=os.environ.get("SIMCORE_NODE_BASEPATH", "")
-            )  # adds a base-path if defined in environ
-        ).getcode()
-        == 200
-    )
+
+    print("Healthcheck: checking HTTP service health")
+    code = urlopen(
+        "{host}{baseurl}".format(
+            host=sys.argv[1], baseurl=os.environ.get("SIMCORE_NODE_BASEPATH", "")
+        )  # adds a base-path if defined in environ
+    ).getcode()
+    print(f"Healthcheck: HTTP status code={code}")
+    return code == 200
 
 
 sys.exit(SUCCESS if is_debug or is_service_healthy() else UNHEALTHY)
