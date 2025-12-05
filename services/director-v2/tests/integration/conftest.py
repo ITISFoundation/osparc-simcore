@@ -5,18 +5,19 @@
 import asyncio
 import uuid
 from collections.abc import AsyncIterator, Awaitable, Callable
+from typing import Any
 from unittest.mock import AsyncMock
 
 import httpx
 import pytest
 import sqlalchemy as sa
 from models_library.api_schemas_directorv2.computations import ComputationGet
-from models_library.projects import ProjectAtDB
+from models_library.projects import ProjectID
 from models_library.users import UserID
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_postgres_database.models.comp_tasks import comp_tasks
-from simcore_postgres_database.models.projects import projects
+from simcore_postgres_database.models.projects_nodes import projects_nodes
 from starlette import status
 from tenacity import retry
 from tenacity.retry import retry_if_exception_type
@@ -35,31 +36,40 @@ def mock_env(mock_env: EnvVarsDict, minio_s3_settings_envs: EnvVarsDict) -> EnvV
 def update_project_workbench_with_comp_tasks(
     postgres_db: sa.engine.Engine,
 ) -> Callable:
-    def updator(project_uuid: str):
-        with postgres_db.connect() as con:
+    def _updator(project_uuid: str):
+        with postgres_db.connect() as con, con.begin():
+
+            # select all projects_nodes for this project
             result = con.execute(
-                projects.select().where(projects.c.uuid == project_uuid)
+                projects_nodes.select().where(
+                    projects_nodes.c.project_uuid == project_uuid
+                )
             )
-            prj_row = result.first()
-            assert prj_row
-            prj_workbench = prj_row.workbench
+            project_nodes_map: dict[str, Any] = {
+                row.node_id: row._asdict() for row in result
+            }
 
+            # comp_tasks get and run_hash and outputs
             result = con.execute(
-                comp_tasks.select().where(comp_tasks.c.project_id == project_uuid)
+                comp_tasks.select().where(comp_tasks.c.project_id == f"{project_uuid}")
             )
-            # let's get the results and run_hash
-            for task_row in result:
-                # pass these to the project workbench
-                prj_workbench[task_row.node_id]["outputs"] = task_row.outputs
-                prj_workbench[task_row.node_id]["runHash"] = task_row.run_hash
+            comp_tasks_rows = result.fetchall()
+            for task_row in comp_tasks_rows:
+                project_nodes_map[task_row.node_id]["outputs"] = task_row.outputs
+                project_nodes_map[task_row.node_id]["run_hash"] = task_row.run_hash
 
-            con.execute(
-                projects.update()  # pylint:disable=no-value-for-parameter
-                .values(workbench=prj_workbench)
-                .where(projects.c.uuid == project_uuid)
-            )
+            # update projects_nodes with comp_tasks data
+            for node_id, node_data in project_nodes_map.items():
+                con.execute(
+                    projects_nodes.update()  # pylint:disable=no-value-for-parameter
+                    .values(**node_data)
+                    .where(
+                        (projects_nodes.c.node_id == node_id)
+                        & (projects_nodes.c.project_uuid == project_uuid)
+                    )
+                )
 
-    return updator
+    return _updator
 
 
 @pytest.fixture(scope="session")
@@ -85,7 +95,7 @@ async def create_pipeline(
     async def _creator(
         client: httpx.AsyncClient,
         *,
-        project: ProjectAtDB,
+        project_uuid: ProjectID,
         user_id: UserID,
         product_name: str,
         product_api_base_url: str,
@@ -96,7 +106,7 @@ async def create_pipeline(
             COMPUTATION_URL,
             json={
                 "user_id": user_id,
-                "project_id": str(project.uuid),
+                "project_id": str(project_uuid),
                 "start_pipeline": start_pipeline,
                 "product_name": product_name,
                 "product_api_base_url": product_api_base_url,

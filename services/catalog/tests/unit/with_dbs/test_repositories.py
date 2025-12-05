@@ -23,9 +23,10 @@ from models_library.users import UserID
 from packaging import version
 from pydantic import EmailStr, HttpUrl, TypeAdapter
 from pytest_simcore.helpers.catalog_services import CreateFakeServiceDataCallable
-from pytest_simcore.helpers.faker_factories import random_project
+from pytest_simcore.helpers.faker_factories import random_project, random_project_node
 from pytest_simcore.helpers.postgres_tools import insert_and_get_row_lifespan
 from simcore_postgres_database.models.projects import ProjectType, projects
+from simcore_postgres_database.models.projects_nodes import projects_nodes
 from simcore_service_catalog.models.services_db import (
     ServiceAccessRightsDB,
     ServiceDBFilters,
@@ -812,19 +813,39 @@ async def test_list_services_from_published_templates(
                     type=ProjectType.TEMPLATE,
                     published=True,
                     prj_owner=user["id"],
-                    workbench={
-                        "node-1": {
-                            "key": "simcore/services/dynamic/jupyterlab",
-                            "version": "1.0.0",
-                        },
-                        "node-2": {
-                            "key": "simcore/services/frontend/file-picker",
-                            "version": "1.0.0",
-                        },
-                    },
                 ),
                 pk_col=projects.c.uuid,
                 pk_value="template-1",
+            )
+        )
+        await stack.enter_async_context(
+            insert_and_get_row_lifespan(
+                sqlalchemy_async_engine,
+                table=projects_nodes,
+                values=random_project_node(
+                    node_id="node-1.1",
+                    project_uuid="template-1",
+                    key="simcore/services/dynamic/jupyterlab",
+                    version="1.0.0",
+                    label="jupyterlab",
+                ),
+                pk_col=projects_nodes.c.node_id,
+                pk_value="node-1.1",
+            )
+        )
+        await stack.enter_async_context(
+            insert_and_get_row_lifespan(
+                sqlalchemy_async_engine,
+                table=projects_nodes,
+                values=random_project_node(
+                    node_id="node-1.2",
+                    project_uuid="template-1",
+                    key="simcore/services/frontend/file-picker",
+                    version="1.0.0",
+                    label="file-picker",
+                ),
+                pk_col=projects_nodes.c.node_id,
+                pk_value="node-1.2",
             )
         )
         await stack.enter_async_context(
@@ -836,15 +857,24 @@ async def test_list_services_from_published_templates(
                     type=ProjectType.TEMPLATE,
                     published=False,
                     prj_owner=user["id"],
-                    workbench={
-                        "node-1": {
-                            "key": "simcore/services/dynamic/some-service",
-                            "version": "2.0.0",
-                        },
-                    },
                 ),
                 pk_col=projects.c.uuid,
                 pk_value="template-2",
+            )
+        )
+        await stack.enter_async_context(
+            insert_and_get_row_lifespan(
+                sqlalchemy_async_engine,
+                table=projects_nodes,
+                values=random_project_node(
+                    node_id="node-2.1",
+                    project_uuid="template-2",
+                    key="simcore/services/dynamic/some-service",
+                    version="2.0.0",
+                    label="some-service",
+                ),
+                pk_col=projects_nodes.c.node_id,
+                pk_value="node-2.1",
             )
         )
 
@@ -874,19 +904,39 @@ async def test_list_services_from_published_templates_with_invalid_service(
                     type=ProjectType.TEMPLATE,
                     published=True,
                     prj_owner=user["id"],
-                    workbench={
-                        "node-1": {
-                            "key": "simcore/services/frontend/file-picker",
-                            "version": "1.0.0",
-                        },
-                        "node-2": {
-                            "key": "simcore/services/dynamic/invalid-service",
-                            "version": "invalid",
-                        },
-                    },
                 ),
                 pk_col=projects.c.uuid,
                 pk_value="template-1",
+            )
+        )
+        await stack.enter_async_context(
+            insert_and_get_row_lifespan(
+                sqlalchemy_async_engine,
+                table=projects_nodes,
+                values=random_project_node(
+                    node_id="node-1.1",
+                    project_uuid="template-1",
+                    key="simcore/services/frontend/file-picker",
+                    version="1.0.0",
+                    label="file-picker",
+                ),
+                pk_col=projects_nodes.c.node_id,
+                pk_value="node-1.1",
+            )
+        )
+        await stack.enter_async_context(
+            insert_and_get_row_lifespan(
+                sqlalchemy_async_engine,
+                table=projects_nodes,
+                values=random_project_node(
+                    node_id="node-1.2",
+                    project_uuid="template-1",
+                    key="simcore/services/dynamic/invalid-service",
+                    version="invalid",  # NOTE: invalid version
+                    label="invalid-service",
+                ),
+                pk_col=projects_nodes.c.node_id,
+                pk_value="node-1.2",
             )
         )
 
@@ -897,7 +947,7 @@ async def test_list_services_from_published_templates_with_invalid_service(
         # Assert: Validate the results
         assert len(services) == 0  # No valid services should be returned
         assert (
-            "service {'key': 'simcore/services/dynamic/invalid-service', 'version': 'invalid'} could not be validated"
+            "service with key=simcore/services/dynamic/invalid-service and version=invalid could not be validated"
             in caplog.text
         )
 
