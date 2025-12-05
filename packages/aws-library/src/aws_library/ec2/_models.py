@@ -2,11 +2,11 @@ import datetime
 import re
 import tempfile
 from dataclasses import dataclass
-from typing import Annotated, Final, TypeAlias
+from typing import Annotated, Final
 
 import sh  # type: ignore[import-untyped]
 from common_library.basic_types import DEFAULT_FACTORY
-from models_library.docker import DockerGenericTag
+from models_library.docker import DockerGenericTag, DockerLabelKey
 from pydantic import (
     BaseModel,
     ByteSize,
@@ -24,7 +24,7 @@ from pydantic import (
 from pydantic.config import JsonDict
 from types_aiobotocore_ec2.literals import InstanceStateNameType, InstanceTypeType
 
-GenericResourceValueType: TypeAlias = StrictInt | StrictFloat | str
+type GenericResourceValueType = StrictInt | StrictFloat | str
 
 
 class Resources(BaseModel, frozen=True):
@@ -197,12 +197,12 @@ class EC2InstanceType:
     resources: Resources
 
 
-InstancePrivateDNSName: TypeAlias = str
+type InstancePrivateDNSName = str
 
 
 AWS_TAG_KEY_MIN_LENGTH: Final[int] = 1
 AWS_TAG_KEY_MAX_LENGTH: Final[int] = 128
-AWSTagKey: TypeAlias = Annotated[
+type AWSTagKey = Annotated[
     # see [https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html#tag-restrictions]
     str,
     StringConstraints(
@@ -215,7 +215,7 @@ AWSTagKey: TypeAlias = Annotated[
 
 AWS_TAG_VALUE_MIN_LENGTH: Final[int] = 0
 AWS_TAG_VALUE_MAX_LENGTH: Final[int] = 256
-AWSTagValue: TypeAlias = Annotated[
+type AWSTagValue = Annotated[
     # see [https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html#tag-restrictions]
     # quotes []{} were added as it allows to json encode. it seems to be accepted as a value
     str,
@@ -227,7 +227,7 @@ AWSTagValue: TypeAlias = Annotated[
 ]
 
 
-EC2Tags: TypeAlias = dict[AWSTagKey, AWSTagValue]
+type EC2Tags = dict[AWSTagKey, AWSTagValue]
 
 
 @dataclass(frozen=True)
@@ -269,8 +269,8 @@ class EC2InstanceConfig:
     iam_instance_profile: str
 
 
-AMIIdStr: TypeAlias = str
-CommandStr: TypeAlias = str
+type AMIIdStr = str
+type CommandStr = str
 
 
 class EC2InstanceBootSpecific(BaseModel):
@@ -294,6 +294,10 @@ class EC2InstanceBootSpecific(BaseModel):
         NonNegativeInt,
         Field(description="number of buffer EC2s to keep (defaults to 0)"),
     ] = 0
+    custom_node_labels: Annotated[
+        dict[DockerLabelKey, str],
+        Field(default_factory=dict, description="type specific docker node labels"),
+    ] = DEFAULT_FACTORY
 
     @field_validator("custom_boot_scripts")
     @classmethod
@@ -369,6 +373,21 @@ class EC2InstanceBootSpecific(BaseModel):
                             "asd",
                         ],
                         "buffer_count": 10,
+                    },
+                    {
+                        # AMI + pre-pull + buffer count + custom node labels
+                        "ami_id": "ami-123456789abcdef",
+                        "pre_pull_images": [
+                            "nginx:latest",
+                            "itisfoundation/my-very-nice-service:latest",
+                            "simcore/services/dynamic/another-nice-one:2.4.5",
+                            "asd",
+                        ],
+                        "buffer_count": 10,
+                        "custom_node_labels": {
+                            "io.simcore.project-id": "value1",
+                            "io.simcore.user-id": "value2",
+                        },
                     },
                 ]
             }
