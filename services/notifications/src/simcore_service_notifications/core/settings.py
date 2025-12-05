@@ -2,7 +2,7 @@ from typing import Annotated
 
 from common_library.basic_types import DEFAULT_FACTORY
 from common_library.logging.logging_utils_filtering import LoggerName, MessageSubstring
-from models_library.basic_types import BootModeEnum, LogLevel
+from models_library.basic_types import LogLevel
 from pydantic import AliasChoices, Field, field_validator
 from settings_library.application import BaseApplicationSettings
 from settings_library.celery import CelerySettings
@@ -23,8 +23,6 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
             ),
         ),
     ] = LogLevel.WARNING
-
-    SC_BOOT_MODE: BootModeEnum | None
 
     NOTIFICATIONS_CELERY: Annotated[
         CelerySettings | None,

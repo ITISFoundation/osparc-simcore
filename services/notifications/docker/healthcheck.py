@@ -15,12 +15,12 @@ Q&A:
     1. why not to use curl instead of a python script?
         - SEE https://blog.sixeyed.com/docker-healthchecks-why-not-to-use-curl-or-iwr/
 """
+
 import os
 import sys
 from urllib.request import urlopen
 
 from celery_library.worker.heartbeat import is_healthy
-from pydantic import TypeAdapter
 
 SUCCESS, UNHEALTHY = 0, 1
 
@@ -29,9 +29,12 @@ is_debug = os.getenv("SC_BOOT_MODE", "").lower() == "debug"
 
 
 def is_service_healthy() -> bool:
-    worker_mode = TypeAdapter(bool).validate_python(
-        os.getenv("NOTIFICATIONS_WORKER_MODE", "False")
-    )
+    worker_mode = os.getenv("NOTIFICATIONS_WORKER_MODE", "false").lower() in {
+        "true",
+        "1",
+        "yes",
+    }
+
     if worker_mode:
         return is_healthy()
 

@@ -39,6 +39,27 @@ dump_docker_logs() {
     service_name=$(docker service inspect "$service_id" --format="{{.Spec.Name}}")
     echo "Dumping logs for $service_name"
     (timeout 30 docker service logs --timestamps --tail=500 --details "$service_id" >"$out_dir/$service_name.log" 2>&1) || true
+
+    # dump service inspect
+    service_dir="$out_dir/$service_name"
+    mkdir --parents "$service_dir"
+    docker service inspect "$service_id" >"$service_dir/service_inspect.json" 2>&1 || true
+
+    # dump task inspects
+    for task_id in $(docker service ps "$service_id" -q); do
+      task_info=$(docker inspect "$task_id" --format="{{.Status.ContainerStatus.ContainerID}} {{index .Spec.ContainerSpec.Labels \"com.docker.swarm.task.name\"}}" 2>/dev/null || echo "")
+      if [ -n "$task_info" ]; then
+        container_id=$(echo "$task_info" | awk '{print $1}')
+        task_name=$(echo "$task_info" | awk '{print $2}' | sed 's/.*\.//')
+        # Fallback to task_id if task_name is empty
+        if [ -z "$task_name" ]; then
+          task_name="$task_id"
+        fi
+        if [ -n "$container_id" ]; then
+          docker inspect "$container_id" >"$service_dir/container_${task_name}.json" 2>&1 || true
+        fi
+      fi
+    done
   done
 }
 
