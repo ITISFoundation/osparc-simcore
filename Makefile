@@ -426,6 +426,55 @@ else
 endif
 	@$(_show_endpoints)
 
+# Infrastructure services for phased deployment
+INFRA_SERVICES := postgres redis rabbit migration
+INFRA_STACK_CONFIG := .stack-simcore-production-infra.yml
+MAX_WAIT_ITERATIONS := 150
+WAIT_INTERVAL_SECS := 2
+
+define _wait_for_service
+	@count=0; \
+	while [ $$count -lt $(MAX_WAIT_ITERATIONS) ]; do \
+		if [ "$$(docker service ps $(SWARM_STACK_NAME)_$(1) --filter "desired-state=$(2)" --format "{{.CurrentState}}" 2>/dev/null | grep -c $(3))" -gt 0 ] 2>/dev/null; then \
+			break; \
+		fi; \
+		echo -n "."; sleep $(WAIT_INTERVAL_SECS); count=$$((count + 1)); \
+	done
+endef
+
+up-prod-phased: .stack-simcore-production.yml .init-swarm ## Deploys production stack in two phases: infrastructure first, then application services
+	# Deploy ops and vendors stacks
+	@$(MAKE) .deploy-ops
+	@$(MAKE) .deploy-vendors
+	@$(MAKE_C) services/dask-sidecar certificates
+	# Phase 1: Deploy infrastructure services only ($(INFRA_SERVICES))
+	@echo "Phase 1: Deploying infrastructure services..."
+	@docker run --rm -i mikefarah/yq:4 \
+		'del(.services | to_entries[] | select(.key != "redis" and .key != "postgres" and .key != "rabbit" and .key != "migration") | .key)' \
+		< $< > $(INFRA_STACK_CONFIG)
+	@docker stack deploy --detach=true --with-registry-auth -c $(INFRA_STACK_CONFIG) $(SWARM_STACK_NAME)
+	# Wait for infrastructure to be ready (Ctrl+C to skip)
+	@echo "Waiting for infrastructure services to be healthy..."
+	@count=0; \
+	while [ $$count -lt $(MAX_WAIT_ITERATIONS) ]; do \
+		if docker service ls --filter "name=$(SWARM_STACK_NAME)" --format "{{.Name}}" | grep -q "$(SWARM_STACK_NAME)_postgres" && \
+		   [ "$$(docker service ps $(SWARM_STACK_NAME)_postgres --filter "desired-state=running" --format "{{.CurrentState}}" 2>/dev/null | grep -c Running)" -gt 0 ] && \
+		   [ "$$(docker service ps $(SWARM_STACK_NAME)_redis --filter "desired-state=running" --format "{{.CurrentState}}" 2>/dev/null | grep -c Running)" -gt 0 ] && \
+		   [ "$$(docker service ps $(SWARM_STACK_NAME)_rabbit --filter "desired-state=running" --format "{{.CurrentState}}" 2>/dev/null | grep -c Running)" -gt 0 ]; then \
+			echo " ready!"; break; \
+		fi; \
+		echo -n "."; sleep $(WAIT_INTERVAL_SECS); count=$$((count + 1)); \
+	done
+	# Wait for migration to complete (Ctrl+C to skip)
+	@echo "Waiting for migration service to complete..."
+	$(call _wait_for_service,migration,shutdown,Complete)
+	@echo " migration complete!"
+	# Phase 2: Deploy all services
+	@echo "Phase 2: Deploying all application services..."
+	@docker stack deploy --detach=true --with-registry-auth -c $< $(SWARM_STACK_NAME)
+	@rm -f $(INFRA_STACK_CONFIG)
+	@$(_show_endpoints)
+
 up-version: .stack-simcore-version.yml .init-swarm ## Deploys versioned stack '$(DOCKER_REGISTRY)/{service}:$(DOCKER_IMAGE_TAG)' and ops stack (pass 'make ops_disabled=1 up-...' to disable)
 	@$(MAKE_C) services/dask-sidecar certificates
 	# Deploy stack $(SWARM_STACK_NAME)
