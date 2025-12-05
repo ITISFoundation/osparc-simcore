@@ -24,7 +24,7 @@ import sys
 from urllib.request import urlopen
 
 from celery_library.worker.heartbeat import is_healthy
-from simcore_service_storage.core.settings import ApplicationSettings
+from pydantic import TypeAdapter
 
 SUCCESS, UNHEALTHY = 0, 1
 
@@ -33,16 +33,17 @@ is_debug_mode = os.getenv("SC_BOOT_MODE", "").lower() == "debug"
 
 
 def is_service_healthy() -> bool:
-    settings = ApplicationSettings.create_from_envs()
-
-    if settings.STORAGE_WORKER_MODE:
+    worker_mode = TypeAdapter(bool).validate_python(
+        os.getenv("STORAGE_WORKER_MODE", "False")
+    )
+    if worker_mode:
         return is_healthy()
 
     return (
         # Queries host
         urlopen(
             "{host}{baseurl}".format(
-                host=sys.argv[1], baseurl=os.environ.get("SIMCORE_NODE_BASEPATH", "")
+                host=sys.argv[1], baseurl=os.getenv("SIMCORE_NODE_BASEPATH", "")
             )  # adds a base-path if defined in environ
         ).getcode()
         == 200
