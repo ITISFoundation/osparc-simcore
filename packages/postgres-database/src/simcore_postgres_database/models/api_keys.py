@@ -37,7 +37,12 @@ api_keys = sa.Table(
     sa.Column(
         "user_id",
         sa.BigInteger(),
-        sa.ForeignKey(users.c.id, ondelete=RefActions.CASCADE),
+        sa.ForeignKey(
+            users.c.id,
+            ondelete=RefActions.CASCADE,
+            onupdate=RefActions.CASCADE,
+            name="fk_api_keys_to_user_id",
+        ),
         nullable=False,
         doc="Identified user",
     ),
