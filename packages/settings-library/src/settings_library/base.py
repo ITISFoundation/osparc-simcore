@@ -52,10 +52,9 @@ def _create_settings_from_env(field_name: str, info: FieldInfo):
 
 
 def _is_auto_default_from_env_enabled(field: FieldInfo) -> bool:
-    return bool(
-        field.json_schema_extra is not None
-        and field.json_schema_extra.get("auto_default_from_env", False)  # type: ignore[union-attr]
-    )
+    if field.json_schema_extra and isinstance(field.json_schema_extra, dict):
+        return bool(field.json_schema_extra.get("auto_default_from_env", False))
+    return False
 
 
 _MARKED_AS_UNSET: Final[dict] = {}
