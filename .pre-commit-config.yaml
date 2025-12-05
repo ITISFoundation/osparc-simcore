@@ -64,5 +64,4 @@ repos:
     rev: v1.40.0
     hooks:
       - id: typos
-        args: [--write-changes]
         name: spellchecker
