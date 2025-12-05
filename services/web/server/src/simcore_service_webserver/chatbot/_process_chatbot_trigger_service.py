@@ -59,14 +59,11 @@ async def _get_role(
 ) -> _Role:
     if message_gid == chatbot_primary_gid:
         return _Role(role="assistant")
-    elif message_gid in support_group_primary_gids:
+    if message_gid in support_group_primary_gids:
         return _Role(role="user", name=_SUPPORT_ROLE_NAME)
-    else:
-        user_id = await users_service.get_user_id_from_gid(
-            app=app, primary_gid=message_gid
-        )
-        user_full_name = await users_service.get_user_fullname(app=app, user_id=user_id)
-        return _Role(role="user", name=user_full_name["first_name"])
+    user_id = await users_service.get_user_id_from_gid(app=app, primary_gid=message_gid)
+    user_full_name = await users_service.get_user_fullname(app=app, user_id=user_id)
+    return _Role(role="user", name=user_full_name["first_name"])
 
 
 @log_decorator(_logger, logging.DEBUG)
