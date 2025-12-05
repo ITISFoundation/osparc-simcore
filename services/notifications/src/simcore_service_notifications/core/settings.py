@@ -4,7 +4,7 @@ from common_library.basic_types import DEFAULT_FACTORY
 from common_library.logging.logging_utils_filtering import LoggerName, MessageSubstring
 from models_library.basic_types import BootModeEnum, LogLevel
 from pydantic import AliasChoices, Field, field_validator
-from settings_library.base import BaseCustomSettings
+from settings_library.application import BaseApplicationSettings
 from settings_library.celery import CelerySettings
 from settings_library.postgres import PostgresSettings
 from settings_library.rabbit import RabbitSettings
@@ -12,7 +12,7 @@ from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
 
 
-class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
+class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     LOG_LEVEL: Annotated[
         LogLevel,
         Field(
