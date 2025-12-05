@@ -46,7 +46,7 @@ _CHATBOT_INSTRUCTION_MESSAGE: Final[
     This conversation takes place in the context of the {product} product. Only answer questions related to this product.
     The user '{support_role_name}' is a support team member and is assisting users of the {product} product
     with their inquiries. Help the user by providing answers to their questions. Make your answers concise and to the point.
-    Refer to the user by their name and be friendly.
+    Address users by their name. Be friendly and accommodating.
     """
 
 
