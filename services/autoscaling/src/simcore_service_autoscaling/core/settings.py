@@ -70,7 +70,7 @@ class EC2InstancesSettings(BaseCustomSettings):
         Json[list[DockerGenericTag]],
         Field(
             description="List of docker images to pre-pull on cold started new EC2 instances",
-            default_factory=list,
+            default_factory=lambda: "[]",
         ),
     ] = DEFAULT_FACTORY
 
