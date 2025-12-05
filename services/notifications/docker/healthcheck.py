@@ -20,23 +20,23 @@ import sys
 from urllib.request import urlopen
 
 from celery_library.worker.heartbeat import is_healthy
-from simcore_service_notifications.core.application import ApplicationSettings
+from pydantic import TypeAdapter
 
 SUCCESS, UNHEALTHY = 0, 1
 
 # Disabled if boots with debugger
 is_debug = os.getenv("SC_BOOT_MODE", "").lower() == "debug"
 
-# Queries host
-# pylint: disable=consider-using-with
-
 
 def is_service_healthy() -> bool:
-    settings = ApplicationSettings.create_from_envs()
-
-    if settings.NOTIFICATIONS_WORKER_MODE:
+    worker_mode = TypeAdapter(bool).validate_python(
+        os.getenv("NOTIFICATIONS_WORKER_MODE", "False")
+    )
+    if worker_mode:
         return is_healthy()
+
     return (
+        # Queries host
         urlopen(
             "{host}{baseurl}".format(
                 host=sys.argv[1], baseurl=os.environ.get("SIMCORE_NODE_BASEPATH", "")
