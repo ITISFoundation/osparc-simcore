@@ -430,6 +430,11 @@ endif
 INFRA_SERVICES := postgres redis rabbit migration
 MAX_WAIT_ITERATIONS := 150
 WAIT_INTERVAL_SECS := 2
+YQ_IMAGE := mikefarah/yq:4
+
+# Generate yq filter for keeping only infra services
+# e.g., ".key == "postgres" or .key == "redis" or .key == "rabbit" or .key == "migration""
+_YQ_INFRA_FILTER := $(shell echo $(INFRA_SERVICES) | awk '{for(i=1;i<=NF;i++) printf "%s.key == \"%s\"%s", (i>1?" or ":""), $$i, (i<NF?"":" ")}')
 
 define _wait_for_running
 	@count=0; \
@@ -441,7 +446,7 @@ define _wait_for_running
 	if [ $$count -ge $(MAX_WAIT_ITERATIONS) ]; then \
 		echo " TIMEOUT"; echo "ERROR: Service $(1) failed to start"; exit 1; \
 	fi; \
-	echo " OK"
+		echo " OK"
 endef
 
 up-prod-phased: .stack-simcore-production.yml .init-swarm ## Deploys production stack in two phases: infrastructure first, then application services
@@ -451,15 +456,12 @@ up-prod-phased: .stack-simcore-production.yml .init-swarm ## Deploys production 
 	@$(MAKE_C) services/dask-sidecar certificates
 	# Phase 1: Deploy infrastructure services only
 	@echo "Phase 1: Deploying infrastructure services ($(INFRA_SERVICES))..."
-	@docker run --rm -i mikefarah/yq:4 \
-		'.services |= with_entries(select(.key == "postgres" or .key == "redis" or .key == "rabbit" or .key == "migration"))' \
+	@docker run --rm -i $(YQ_IMAGE) \
+		'.services |= with_entries(select($(_YQ_INFRA_FILTER)))' \
 		< $< > .stack-infra-tmp.yml
 	@docker stack deploy --detach=true --with-registry-auth -c .stack-infra-tmp.yml $(SWARM_STACK_NAME)
 	@echo "Waiting for infrastructure services to be ready..."
-	$(call _wait_for_running,postgres)
-	$(call _wait_for_running,redis)
-	$(call _wait_for_running,rabbit)
-	$(call _wait_for_running,migration)
+	@$(foreach service,$(INFRA_SERVICES),$(call _wait_for_running,$(service)))
 	# Phase 2: Deploy all services
 	@echo "Phase 2: Deploying all application services..."
 	@docker stack deploy --detach=true --with-registry-auth -c $< $(SWARM_STACK_NAME)
