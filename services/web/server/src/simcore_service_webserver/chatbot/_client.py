@@ -4,7 +4,7 @@ from typing import Annotated, Any, Final, Literal
 
 import httpx
 from aiohttp import web
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 
 from .exceptions import NoResponseFromChatbotError
@@ -33,6 +33,13 @@ class Message(BaseModel):
     name: Annotated[
         str | None, Field(description="Optional name of the message sender")
     ] = None
+
+    @model_validator(mode="after")
+    def check_name_requires_user_role(self) -> "Message":
+        if self.name is not None and self.role != "user":
+            msg = "Currently the chatbot only supports name for the user role"
+            raise ValueError(msg)
+        return self
 
 
 class ChatbotRestClient:
