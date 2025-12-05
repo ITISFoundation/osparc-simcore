@@ -41,7 +41,7 @@ def is_service_healthy() -> bool:
         # Queries host
         urlopen(
             "{host}{baseurl}".format(
-                host=sys.argv[1], baseurl=os.environ.get("SIMCORE_NODE_BASEPATH", "")
+                host=sys.argv[1], baseurl=os.getenv("SIMCORE_NODE_BASEPATH", "")
             )  # adds a base-path if defined in environ
         ).getcode()
         == 200
