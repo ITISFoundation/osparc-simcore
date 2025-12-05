@@ -18,6 +18,7 @@ from models_library.services_types import ServicePortKey
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from servicelib.long_running_tasks.models import ProgressCallback, TaskProgress
+from servicelib.tracing import TracingContext
 
 from ....core.dynamic_services_settings.scheduler import (
     DynamicServicesSchedulerSettings,
@@ -78,6 +79,7 @@ class DynamicSidecarsScheduler(SchedulerInternalsInterface, SchedulerPublicInter
         request_simcore_user_agent: str,
         *,
         can_save: bool,
+        tracing_context: TracingContext | None = None,
     ) -> None:
         return await self.scheduler.add_service(
             service=service,
@@ -102,10 +104,12 @@ class DynamicSidecarsScheduler(SchedulerInternalsInterface, SchedulerPublicInter
         node_uuid: NodeID,
         can_save: bool | None,
         *,
-        skip_observation_recreation: bool = False,
+        skip_observation_recreation: bool,
     ) -> None:
         return await self.scheduler.mark_service_for_removal(
-            node_uuid, can_save, skip_observation_recreation=skip_observation_recreation
+            node_uuid=node_uuid,
+            can_save=can_save,
+            skip_observation_recreation=skip_observation_recreation,
         )
 
     async def mark_all_services_in_wallet_for_removal(
