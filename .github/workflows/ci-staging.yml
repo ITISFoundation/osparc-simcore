@@ -27,7 +27,7 @@ jobs:
     env:
       TO_TAG_PREFIX: staging-github
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - name: find branch name
