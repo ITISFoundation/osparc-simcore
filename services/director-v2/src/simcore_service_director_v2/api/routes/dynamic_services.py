@@ -186,7 +186,9 @@ async def stop_dynamic_service(
     assert request  # nosec
 
     try:
-        await scheduler.mark_service_for_removal(node_uuid, can_save)
+        await scheduler.mark_service_for_removal(
+            node_uuid=node_uuid, can_save=can_save, skip_observation_recreation=False
+        )
     except DynamicSidecarNotFoundError:
         # legacy service? if it's not then a 404 will anyway be received
         # forward to director-v0

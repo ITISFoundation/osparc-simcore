@@ -145,7 +145,9 @@ async def test_regression_break_endless_loop_cancellation_edge_case(
     # NOTE: this will create the observation task as well!
     # Simulates user action like going back to the dashboard.
     await dynamic_sidecar_scheduler.mark_service_for_removal(
-        scheduler_data_from_http_request.node_uuid, can_save=can_save
+        scheduler_data_from_http_request.node_uuid,
+        can_save=can_save,
+        skip_observation_recreation=False,
     )
 
     assert (
