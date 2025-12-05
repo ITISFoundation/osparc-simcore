@@ -308,8 +308,8 @@ def test_EC2_INSTANCES_ALLOWED_TYPES_empty_not_allowed_without_main_field_env_va
 
         assert (
             _AUTO_DEFAULT_FACTORY_RESOLVES_TO_NONE_FSTRING.format(
-                field_name="AUTOSCALING_EC2_INSTANCES"
-            )
+                field_name="AUTOSCALING_EC2_INSTANCES", err="pytest"
+            ).split("pytest")[0]
             in caplog.text
         )
 
@@ -345,8 +345,8 @@ def test_EC2_INSTANCES_ALLOWED_TYPES_invalid_instance_names(  # noqa: N802
 
         assert (
             _AUTO_DEFAULT_FACTORY_RESOLVES_TO_NONE_FSTRING.format(
-                field_name="AUTOSCALING_EC2_INSTANCES"
-            )
+                field_name="AUTOSCALING_EC2_INSTANCES", err="pytest"
+            ).split("pytest")[0]
             in caplog.text
         )
 
@@ -381,7 +381,7 @@ def test_EC2_INSTANCES_ALLOWED_TYPES_invalid_custom_node_labels(  # noqa: N802
 
         assert (
             _AUTO_DEFAULT_FACTORY_RESOLVES_TO_NONE_FSTRING.format(
-                field_name="AUTOSCALING_EC2_INSTANCES"
-            )
+                field_name="AUTOSCALING_EC2_INSTANCES", err="pytest"
+            ).split("pytest")[0]
             in caplog.text
         )
