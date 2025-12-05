@@ -175,7 +175,7 @@ ENV SC_HEALTHCHECK_TIMEOUT=120s
 HEALTHCHECK \
   --interval=10s \
   --timeout=5s \
-  --start-period=90s \
+  --start-period=20s \
   --start-interval=1s \
   --retries=5 \
   CMD ["python3", "/home/scu/services/web/server/docker/healthcheck.py", "http://localhost:8080/v0/health"]
