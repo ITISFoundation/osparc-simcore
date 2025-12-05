@@ -428,18 +428,20 @@ endif
 
 # Infrastructure services for phased deployment
 INFRA_SERVICES := postgres redis rabbit migration
-INFRA_STACK_CONFIG := .stack-simcore-production-infra.yml
 MAX_WAIT_ITERATIONS := 150
 WAIT_INTERVAL_SECS := 2
 
-define _wait_for_service
+define _wait_for_running
 	@count=0; \
 	while [ $$count -lt $(MAX_WAIT_ITERATIONS) ]; do \
-		if [ "$$(docker service ps $(SWARM_STACK_NAME)_$(1) --filter "desired-state=$(2)" --format "{{.CurrentState}}" 2>/dev/null | grep -c $(3))" -gt 0 ] 2>/dev/null; then \
-			break; \
-		fi; \
+		running=$$(docker service ps $(SWARM_STACK_NAME)_$(1) --filter "desired-state=running" --format "{{.CurrentState}}" 2>/dev/null | grep -c "^Running" || true); \
+		[ "$$running" -gt 0 ] && break; \
 		echo -n "."; sleep $(WAIT_INTERVAL_SECS); count=$$((count + 1)); \
-	done
+	done; \
+	if [ $$count -ge $(MAX_WAIT_ITERATIONS) ]; then \
+		echo " TIMEOUT"; echo "ERROR: Service $(1) failed to start"; exit 1; \
+	fi; \
+	echo " OK"
 endef
 
 up-prod-phased: .stack-simcore-production.yml .init-swarm ## Deploys production stack in two phases: infrastructure first, then application services
@@ -447,32 +449,21 @@ up-prod-phased: .stack-simcore-production.yml .init-swarm ## Deploys production 
 	@$(MAKE) .deploy-ops
 	@$(MAKE) .deploy-vendors
 	@$(MAKE_C) services/dask-sidecar certificates
-	# Phase 1: Deploy infrastructure services only ($(INFRA_SERVICES))
-	@echo "Phase 1: Deploying infrastructure services..."
+	# Phase 1: Deploy infrastructure services only
+	@echo "Phase 1: Deploying infrastructure services ($(INFRA_SERVICES))..."
 	@docker run --rm -i mikefarah/yq:4 \
-		'del(.services | to_entries[] | select(.key != "redis" and .key != "postgres" and .key != "rabbit" and .key != "migration") | .key)' \
-		< $< > $(INFRA_STACK_CONFIG)
-	@docker stack deploy --detach=true --with-registry-auth -c $(INFRA_STACK_CONFIG) $(SWARM_STACK_NAME)
-	# Wait for infrastructure to be ready (Ctrl+C to skip)
-	@echo "Waiting for infrastructure services to be healthy..."
-	@count=0; \
-	while [ $$count -lt $(MAX_WAIT_ITERATIONS) ]; do \
-		if docker service ls --filter "name=$(SWARM_STACK_NAME)" --format "{{.Name}}" | grep -q "$(SWARM_STACK_NAME)_postgres" && \
-		   [ "$$(docker service ps $(SWARM_STACK_NAME)_postgres --filter "desired-state=running" --format "{{.CurrentState}}" 2>/dev/null | grep -c Running)" -gt 0 ] && \
-		   [ "$$(docker service ps $(SWARM_STACK_NAME)_redis --filter "desired-state=running" --format "{{.CurrentState}}" 2>/dev/null | grep -c Running)" -gt 0 ] && \
-		   [ "$$(docker service ps $(SWARM_STACK_NAME)_rabbit --filter "desired-state=running" --format "{{.CurrentState}}" 2>/dev/null | grep -c Running)" -gt 0 ]; then \
-			echo " ready!"; break; \
-		fi; \
-		echo -n "."; sleep $(WAIT_INTERVAL_SECS); count=$$((count + 1)); \
-	done
-	# Wait for migration to complete (Ctrl+C to skip)
-	@echo "Waiting for migration service to complete..."
-	$(call _wait_for_service,migration,shutdown,Complete)
-	@echo " migration complete!"
+		'.services |= with_entries(select(.key == "postgres" or .key == "redis" or .key == "rabbit" or .key == "migration"))' \
+		< $< > .stack-infra-tmp.yml
+	@docker stack deploy --detach=true --with-registry-auth -c .stack-infra-tmp.yml $(SWARM_STACK_NAME)
+	@echo "Waiting for infrastructure services to be ready..."
+	$(call _wait_for_running,postgres)
+	$(call _wait_for_running,redis)
+	$(call _wait_for_running,rabbit)
+	$(call _wait_for_running,migration)
 	# Phase 2: Deploy all services
 	@echo "Phase 2: Deploying all application services..."
 	@docker stack deploy --detach=true --with-registry-auth -c $< $(SWARM_STACK_NAME)
-	@rm -f $(INFRA_STACK_CONFIG)
+	@rm -f .stack-infra-tmp.yml
 	@$(_show_endpoints)
 
 up-version: .stack-simcore-version.yml .init-swarm ## Deploys versioned stack '$(DOCKER_REGISTRY)/{service}:$(DOCKER_IMAGE_TAG)' and ops stack (pass 'make ops_disabled=1 up-...' to disable)
