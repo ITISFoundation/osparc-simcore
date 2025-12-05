@@ -19,22 +19,31 @@ import os
 import sys
 from urllib.request import urlopen
 
+from celery_library.worker.heartbeat import is_healthy
+from simcore_service_notifications.core.application import ApplicationSettings
+
 SUCCESS, UNHEALTHY = 0, 1
 
-# Disabled if boots with debugger (e.g. debug, pdb-debug, debug-ptvsd, debugpy, etc)
-ok = "debug" in os.environ.get("SC_BOOT_MODE", "").lower()
+# Disabled if boots with debugger
+is_debug = os.getenv("SC_BOOT_MODE", "").lower() == "debug"
 
 # Queries host
 # pylint: disable=consider-using-with
-ok = (
-    ok
-    or urlopen(
-        "{host}{baseurl}".format(
-            host=sys.argv[1], baseurl=os.environ.get("SIMCORE_NODE_BASEPATH", "")
-        )  # adds a base-path if defined in environ
-    ).getcode()
-    == 200
-)
 
 
-sys.exit(SUCCESS if ok else UNHEALTHY)
+def is_service_healthy() -> bool:
+    settings = ApplicationSettings.create_from_envs()
+
+    if settings.NOTIFICATIONS_WORKER_MODE:
+        return is_healthy()
+    return (
+        urlopen(
+            "{host}{baseurl}".format(
+                host=sys.argv[1], baseurl=os.environ.get("SIMCORE_NODE_BASEPATH", "")
+            )  # adds a base-path if defined in environ
+        ).getcode()
+        == 200
+    )
+
+
+sys.exit(SUCCESS if is_debug or is_service_healthy() else UNHEALTHY)

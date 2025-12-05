@@ -5,6 +5,7 @@ from typing import Final
 
 HEARTBEAT_FILE: Final[Path] = Path(tempfile.gettempdir()) / "celery_heartbeat"
 
+
 def update_heartbeat() -> None:
     tmp_file = HEARTBEAT_FILE.with_suffix(".tmp")
     tmp_file.write_text(f"{time.time()}")
