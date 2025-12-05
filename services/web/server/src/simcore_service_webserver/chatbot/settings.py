@@ -14,8 +14,7 @@ class ChatbotSettings(BaseCustomSettings, MixinServiceSettings):
 
     CHATBOT_HOST: str
     CHATBOT_PORT: PortInt
-    CHATBOT_LLM_MODEL: str = "gpt-3.5-turbo"
-    CHATBOT_EMBEDDING_MODEL: str = "openai/text-embedding-3-large"
+    CHATBOT_MODEL: str = "gpt-4o-mini"
 
     @cached_property
     def base_url(self) -> str:
