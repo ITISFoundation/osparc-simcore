@@ -27,10 +27,10 @@ Keeps a list notes with relevant information about releases of python package. S
 
 ## Improvements
 
-- An automatic way to "prune" a requirements list in a package: it is very common forgeting removing dependencies from the ``requirements.txt`` that we are not using anymore ... or as a result of a classic *copy&paste* snippet from another listing.
+- An automatic way to "prune" a requirements list in a package: it is very common forgetting removing dependencies from the ``requirements.txt`` that we are not using anymore ... or as a result of a classic *copy&paste* snippet from another listing.
 - Create a ``blocklist/passlist`` of requirements. Add a comment that justify every selection
 - Integrate better dependenabot:
   - currently it only covers two packages of this repository
   - due to the hybrid nature of this repo, we cannot take full advantage of this great tool
-- Several backports above show some of the dependencies that will dissapear with a python upgrade!
+- Several backports above show some of the dependencies that will disappear with a python upgrade!
 - TODO: compare pip-compile output vs freeze to check whether some dependencies are NOT pinned!

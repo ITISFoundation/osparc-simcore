@@ -1,10 +1,10 @@
 ## Package version dispersion
 
-The same package listed in different requirements should have as similar version as possible througout the repository.
+The same package listed in different requirements should have as similar version as possible throughout the repository.
 
 Different versions of the same package is denoted here as *dispersion*.
 
-Dispersion can be monitored in the tables created after ugprades using ``requirements/tools/check_changes.py`` or simply
+Dispersion can be monitored in the tables created after upgrades using ``requirements/tools/check_changes.py`` or simply
 ``cmd
 make devenv
 source .venv/bin/activate
@@ -53,4 +53,4 @@ but we prefer to do it one by one and commit changes so that any issue can be tr
 
 TIP: Check the **Repo-wide overview of libraries** table in the report. Observe the libraries with multiple version in ``version-*`` columns. Note that we can use the script to unifyunify:
   - Those with no ``version-base`` and multiple in ``version-test``
-  - Thos with multiple in ``version-base`` and non in ``version-test``
+  - Those with multiple in ``version-base`` and non in ``version-test``

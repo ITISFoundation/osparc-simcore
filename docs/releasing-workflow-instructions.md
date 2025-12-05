@@ -90,7 +90,7 @@ with:
 
 ### Release example
 
-The team decides to release to production the lastest staging version of ``DAJIA`` sprint. Next release version, following semantic versioning and previous releases, is `v5.6.0`. The images will be retaged by github actions CI as:
+The team decides to release to production the latest staging version of ``DAJIA`` sprint. Next release version, following semantic versioning and previous releases, is `v5.6.0`. The images will be retaged by github actions CI as:
 
 - ``itisfoundation/webserver:release-github-v5.6.0-2020-09-02--19-30.560eq50f3babb6537580c0e03b85b9a8209bbf10``
 - ``itisfoundation/webserver:release-github-latest``
@@ -143,7 +143,7 @@ A bug was found in version 1.2.0 of the simcore stack. The team decides to fix i
     git checkout -b hotfix_v1_4_x
     # develop the fix here, git commit, git push, have someone review your code
 
-    git commit -m "this is my awsome fix for this problematic issue"
+    git commit -m "this is my awesome fix for this problematic issue"
 
 
     # WARNING: never push this branch BEFORE the actual release is completed. pcrespov did it and the release CI job could not push images!!
