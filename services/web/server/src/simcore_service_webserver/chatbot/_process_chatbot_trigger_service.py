@@ -11,7 +11,7 @@ from models_library.groups import GroupID
 from models_library.rabbitmq_messages import WebserverChatbotRabbitMessage
 from models_library.rest_ordering import OrderBy, OrderDirection
 from pydantic import TypeAdapter
-from servicelib.logging_utils import log_context
+from servicelib.logging_utils import log_catch, log_context, log_decorator
 from servicelib.rabbitmq import RabbitMQClient
 
 from ..conversations import conversations_service
@@ -69,15 +69,12 @@ async def _get_role(
         return _Role(role="user", name=user_full_name["first_name"])
 
 
+@log_decorator(_logger, logging.DEBUG)
 async def _process_chatbot_trigger_message(app: web.Application, data: bytes) -> bool:
     rabbit_message = TypeAdapter(WebserverChatbotRabbitMessage).validate_json(data)
     assert app  # nosec
 
-    with log_context(
-        _logger,
-        logging.DEBUG,
-        msg=f"Processing chatbot trigger message for conversation ID {rabbit_message.conversation.conversation_id}",
-    ):
+    with log_catch(logger=_logger, reraise=False):
         product_name = rabbit_message.conversation.product_name
         product = products_service.get_product(app, product_name=product_name)
 
