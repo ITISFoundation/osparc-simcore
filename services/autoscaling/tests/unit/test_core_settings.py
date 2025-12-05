@@ -189,8 +189,8 @@ def test_EC2_INSTANCES_ALLOWED_TYPES_passing_invalid_image_tags(  # noqa: N802
 
         assert (
             _AUTO_DEFAULT_FACTORY_RESOLVES_TO_NONE_FSTRING.format(
-                field_name="AUTOSCALING_EC2_INSTANCES"
-            )
+                field_name="AUTOSCALING_EC2_INSTANCES", err="pytest"
+            ).split("pytest")[0]
             in caplog.text
         )
 
@@ -281,8 +281,8 @@ def test_EC2_INSTANCES_ALLOWED_TYPES_empty_not_allowed_with_main_field_env_var( 
 
         assert (
             _AUTO_DEFAULT_FACTORY_RESOLVES_TO_NONE_FSTRING.format(
-                field_name="AUTOSCALING_EC2_INSTANCES"
-            )
+                field_name="AUTOSCALING_EC2_INSTANCES", err="pytest"
+            ).split("pytest")[0]
             in caplog.text
         )
 
