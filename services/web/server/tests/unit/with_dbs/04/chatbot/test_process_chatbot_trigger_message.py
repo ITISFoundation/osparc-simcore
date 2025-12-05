@@ -14,10 +14,12 @@ from models_library.conversations import (
     ConversationMessageGetDB,
     ConversationMessageType,
 )
+from models_library.groups import GroupMember
 from models_library.rabbitmq_messages import WebserverChatbotRabbitMessage
 from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_users import UserInfoDict
+from simcore_service_webserver.chatbot import _process_chatbot_trigger_service
 from simcore_service_webserver.chatbot._process_chatbot_trigger_service import (
     _process_chatbot_trigger_message,
 )
@@ -26,7 +28,11 @@ from simcore_service_webserver.conversations import conversations_service
 
 @pytest.fixture
 def mocked_conversations_service(
-    mocker: MockerFixture, user: UserInfoDict, chatbot_user: UserInfoDict, faker: Faker
+    mocker: MockerFixture,
+    user: UserInfoDict,
+    chatbot_user: UserInfoDict,
+    support_team_user: UserInfoDict,
+    faker: Faker,
 ) -> dict:
     # Mock message objects with content attribute
     conversation_id = faker.uuid4()
@@ -39,7 +45,18 @@ def mocked_conversations_service(
         created=faker.date_time_this_year(),
         modified=faker.date_time_this_year(),
     )
+
     mock_message_2 = ConversationMessageGetDB(
+        message_id=faker.uuid4(),
+        user_group_id=int(support_team_user["primary_gid"]),
+        conversation_id=conversation_id,
+        content="Great, I will let the bot help you.",
+        type=ConversationMessageType.MESSAGE,
+        created=faker.date_time_this_year(),
+        modified=faker.date_time_this_year(),
+    )
+
+    mock_message_3 = ConversationMessageGetDB(
         message_id=faker.uuid4(),
         user_group_id=int(chatbot_user["primary_gid"]),
         conversation_id=conversation_id,
@@ -49,7 +66,7 @@ def mocked_conversations_service(
         modified=faker.date_time_this_year(),
     )
 
-    mock_message_3 = ConversationMessageGetDB(
+    mock_message_4 = ConversationMessageGetDB(
         message_id=faker.uuid4(),
         user_group_id=int(user["primary_gid"]),
         conversation_id=conversation_id,
@@ -59,7 +76,7 @@ def mocked_conversations_service(
         modified=faker.date_time_this_year(),
     )
 
-    mock_messages = [mock_message_1, mock_message_2, mock_message_3]
+    mock_messages = [mock_message_1, mock_message_2, mock_message_3, mock_message_4]
 
     # Mock list_messages_for_conversation
     list_messages_mock = mocker.patch.object(
@@ -79,11 +96,32 @@ def mocked_conversations_service(
     }
 
 
+@pytest.fixture
+async def mocked_list_groups_members(
+    mocker: MockerFixture, support_team_user: UserInfoDict
+) -> MockType:
+    mocked_list_group_members = mocker.patch.object(
+        _process_chatbot_trigger_service, "list_group_members"
+    )
+    mocked_list_group_members.return_value = [
+        GroupMember(
+            id=support_team_user["id"],
+            primary_gid=int(support_team_user["primary_gid"]),
+            name=support_team_user["name"],
+            first_name=support_team_user.get("first_name"),
+            last_name=support_team_user.get("last_name"),
+            email=support_team_user["email"],
+        )
+    ]
+    return mocked_list_group_members
+
+
 async def test_process_chatbot_trigger_message(
     app_environment: EnvVarsDict,
     client: TestClient,
     user: UserInfoDict,
     mocked_get_current_product: MockType,
+    mocked_list_groups_members: MockType,
     mocked_chatbot_api: respx.MockRouter,
     mocked_conversations_service: dict,
 ):
@@ -111,7 +149,9 @@ async def test_process_chatbot_trigger_message(
         "utf-8"
     )
     assert "Hello, I need help with my simulation" in _last_request_content
+    assert "Great, I will let the bot help you." in _last_request_content
     assert "Sure, I'd be happy to help you with that." in _last_request_content
     assert "It's not working properly" in _last_request_content
 
     mocked_conversations_service["create_message"].assert_called_once()
+    mocked_list_groups_members.assert_called_once()

@@ -72,6 +72,17 @@ async def chatbot_user(client: TestClient) -> AsyncIterator[UserInfoDict]:
 
 
 @pytest.fixture
+async def support_team_user(client: TestClient) -> AsyncIterator[UserInfoDict]:
+    async with NewUser(
+        user_data={
+            "name": "support team user",
+        },
+        app=client.app,
+    ) as user_info:
+        yield user_info
+
+
+@pytest.fixture
 def mocked_get_current_product(
     chatbot_user: UserInfoDict, mocker: MockerFixture
 ) -> MockType:
