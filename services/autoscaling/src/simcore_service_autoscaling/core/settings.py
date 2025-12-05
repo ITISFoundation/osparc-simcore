@@ -13,6 +13,7 @@ from pydantic import (
     AliasChoices,
     AnyUrl,
     Field,
+    Json,
     NonNegativeInt,
     PositiveInt,
     TypeAdapter,
@@ -58,7 +59,7 @@ class AutoscalingEC2Settings(EC2Settings):
 
 class EC2InstancesSettings(BaseCustomSettings):
     EC2_INSTANCES_ALLOWED_TYPES: Annotated[
-        dict[str, EC2InstanceBootSpecific],
+        Json[dict[str, EC2InstanceBootSpecific]],
         Field(
             description="Defines which EC2 instances are considered as candidates for new EC2 instance and their respective boot specific parameters"
             "NOTE: minimum length >0",
@@ -66,10 +67,10 @@ class EC2InstancesSettings(BaseCustomSettings):
     ]
 
     EC2_INSTANCES_COLD_START_DOCKER_IMAGES_PRE_PULLING: Annotated[
-        list[DockerGenericTag],
+        Json[list[DockerGenericTag]],
         Field(
             description="List of docker images to pre-pull on cold started new EC2 instances",
-            default_factory=list,
+            default_factory=lambda: "[]",
         ),
     ] = DEFAULT_FACTORY
 
@@ -114,7 +115,7 @@ class EC2InstancesSettings(BaseCustomSettings):
     ] = "autoscaling"
 
     EC2_INSTANCES_SECURITY_GROUP_IDS: Annotated[
-        list[str],
+        Json[list[str]],
         Field(
             min_length=1,
             description="A security group acts as a virtual firewall for your EC2 instances to control incoming and outgoing traffic"
@@ -123,7 +124,7 @@ class EC2InstancesSettings(BaseCustomSettings):
         ),
     ]
     EC2_INSTANCES_SUBNET_IDS: Annotated[
-        list[str],
+        Json[list[str]],
         Field(
             min_length=1,
             description="A subnet is a range of IP addresses in your VPC "
@@ -157,7 +158,7 @@ class EC2InstancesSettings(BaseCustomSettings):
     ] = datetime.timedelta(seconds=30)
 
     EC2_INSTANCES_CUSTOM_TAGS: Annotated[
-        EC2Tags,
+        Json[EC2Tags],
         Field(
             description="Allows to define tags that should be added to the created EC2 instance default tags. "
             "a tag must have a key and an optional value. see [https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html]",

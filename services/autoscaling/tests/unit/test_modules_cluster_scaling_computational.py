@@ -604,7 +604,9 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     mock_docker_find_node_with_name_returns_fake_node.reset_mock()
     expected_docker_node_tags = {
         DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY: scale_up_params.expected_instance_type
-    }
+    } | app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
+        scale_up_params.expected_instance_type
+    ].custom_node_labels
     assert mock_docker_tag_node.call_count == 3
     assert fake_node.spec
     assert fake_node.spec.labels

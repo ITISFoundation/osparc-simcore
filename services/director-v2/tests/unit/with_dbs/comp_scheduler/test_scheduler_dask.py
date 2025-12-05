@@ -57,6 +57,7 @@ from servicelib.rabbitmq import RabbitMQClient
 from servicelib.rabbitmq._constants import BIND_TO_ALL_TOPICS
 from simcore_postgres_database.models.comp_runs import comp_runs
 from simcore_postgres_database.models.comp_tasks import NodeClass
+from simcore_sdk.node_ports_common.exceptions import S3InvalidPathError
 from simcore_service_director_v2.core.errors import (
     ClustersKeeperNotAvailableError,
     ComputationalBackendNotConnectedError,
@@ -2430,6 +2431,55 @@ async def test_getting_task_result_raises_exception_does_not_fail_task_and_retri
     )
     # NOTE: we do not check all tasks here as some are depending on random others
     # so some are ABORTED and others are FAILED depending on the random sample above
+    await assert_comp_runs(
+        sqlalchemy_async_engine,
+        expected_total=1,
+        expected_state=RunningState.FAILED,
+        where_statement=and_(
+            comp_runs.c.user_id == running_project.project.prj_owner,
+            comp_runs.c.project_uuid == f"{running_project.project.uuid}",
+        ),
+    )
+
+
+async def test_getting_task_result_raises_s3_invalid_path_fails_task_immediately_and_mark_platform_as_bad(
+    with_disabled_auto_scheduling: mock.Mock,
+    with_disabled_scheduler_publisher: mock.Mock,
+    mocked_dask_client: mock.MagicMock,
+    initialized_app: FastAPI,
+    scheduler_api: BaseCompScheduler,
+    sqlalchemy_async_engine: AsyncEngine,
+    running_project: RunningProject,
+    mocked_parse_output_data_fct: mock.Mock,
+):
+    # this tests the behavior of the scheduling when the dask client cannot retrieve
+    # the result of a task because the data is not found in S3. In this case the task
+    # should be marked as FAILED immediately and the platform status set to BAD
+    async def mocked_get_tasks_status(job_ids: list[str]) -> list[RunningState]:
+        return [RunningState.SUCCESS for j in job_ids]
+
+    mocked_dask_client.get_tasks_status.side_effect = mocked_get_tasks_status
+
+    computational_tasks = [
+        t for t in running_project.tasks if t.node_class is NodeClass.COMPUTATIONAL
+    ]
+
+    fake_error_msg = "s3://invalid/path/to/data"
+    mocked_parse_output_data_fct.side_effect = S3InvalidPathError(fake_error_msg)
+
+    async def mocked_get_task_result(job_id: str) -> TaskOutputData:
+        return TaskOutputData.model_validate({"whatever_output": 123})
+
+    mocked_dask_client.get_task_result.side_effect = mocked_get_task_result
+    # calling apply should not raise
+    assert running_project.project.prj_owner
+    await scheduler_api.apply(
+        user_id=running_project.project.prj_owner,
+        project_id=running_project.project.uuid,
+        iteration=1,
+    )
+    assert mocked_dask_client.get_task_result.call_count == len(computational_tasks)
+
     await assert_comp_runs(
         sqlalchemy_async_engine,
         expected_total=1,

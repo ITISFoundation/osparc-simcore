@@ -355,7 +355,7 @@ async def _try_attach_pending_ec2s(
 async def _sorted_allowed_instance_types(
     app: FastAPI, auto_scaling_mode: AutoscalingProvider
 ) -> list[EC2InstanceType]:
-    app_settings: ApplicationSettings = app.state.settings
+    app_settings = get_application_settings(app)
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
     ec2_client = get_ec2_client(app)
 

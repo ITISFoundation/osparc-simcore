@@ -10,6 +10,7 @@ from typing import Final
 from aws_library.ec2 import AWSTagKey, AWSTagValue, EC2InstanceType, EC2Tags, Resources
 from aws_library.ec2._models import EC2InstanceData
 from common_library.json_serialization import json_dumps
+from pydantic import TypeAdapter
 
 from .._meta import VERSION
 from ..core.errors import (
@@ -22,25 +23,44 @@ from ..core.settings import ApplicationSettings
 _logger = logging.getLogger(__name__)
 
 _EC2_INTERNAL_DNS_RE: Final[re.Pattern] = re.compile(r"^(?P<host_name>ip-[^.]+)\..+$")
+_SIMCORE_AUTOSCALING_VERSION_TAG_KEY: Final[AWSTagKey] = TypeAdapter(
+    AWSTagKey
+).validate_python("io.simcore.autoscaling.version")
+_SIMCORE_AUTOSCALING_NODE_LABELS_TAG_KEY: Final[AWSTagKey] = TypeAdapter(
+    AWSTagKey
+).validate_python("io.simcore.autoscaling.monitored_nodes_labels")
+_SIMCORE_AUTOSCALING_SERVICE_LABELS_TAG_KEY: Final[AWSTagKey] = TypeAdapter(
+    AWSTagKey
+).validate_python("io.simcore.autoscaling.monitored_services_labels")
+_SIMCORE_AUTOSCALING_DASK_SCHEDULER_URL_TAG_KEY: Final[AWSTagKey] = TypeAdapter(
+    AWSTagKey
+).validate_python("io.simcore.autoscaling.dask-scheduler_url")
+_EC2_NAME_TAG_KEY: Final[AWSTagKey] = TypeAdapter(AWSTagKey).validate_python("Name")
 
 
 def get_ec2_tags_dynamic(app_settings: ApplicationSettings) -> EC2Tags:
     assert app_settings.AUTOSCALING_NODES_MONITORING  # nosec
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
     return {
-        AWSTagKey("io.simcore.autoscaling.version"): AWSTagValue(f"{VERSION}"),
-        AWSTagKey("io.simcore.autoscaling.monitored_nodes_labels"): AWSTagValue(
+        _SIMCORE_AUTOSCALING_VERSION_TAG_KEY: TypeAdapter(AWSTagValue).validate_python(
+            f"{VERSION}"
+        ),
+        _SIMCORE_AUTOSCALING_NODE_LABELS_TAG_KEY: TypeAdapter(
+            AWSTagValue
+        ).validate_python(
             json_dumps(
                 app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS
             )
         ),
-        AWSTagKey("io.simcore.autoscaling.monitored_services_labels"): AWSTagValue(
+        _SIMCORE_AUTOSCALING_SERVICE_LABELS_TAG_KEY: TypeAdapter(
+            AWSTagValue
+        ).validate_python(
             json_dumps(
                 app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_SERVICE_LABELS
             )
         ),
         # NOTE: this one gets special treatment in AWS GUI and is applied to the name of the instance
-        AWSTagKey("Name"): AWSTagValue(
+        _EC2_NAME_TAG_KEY: TypeAdapter(AWSTagValue).validate_python(
             f"{app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_NAME_PREFIX}-{app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME}"
         ),
     } | app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_CUSTOM_TAGS
@@ -50,12 +70,14 @@ def get_ec2_tags_computational(app_settings: ApplicationSettings) -> EC2Tags:
     assert app_settings.AUTOSCALING_DASK  # nosec
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
     return {
-        AWSTagKey("io.simcore.autoscaling.version"): AWSTagValue(f"{VERSION}"),
-        AWSTagKey("io.simcore.autoscaling.dask-scheduler_url"): AWSTagValue(
-            f"{app_settings.AUTOSCALING_DASK.DASK_MONITORING_URL}"
+        _SIMCORE_AUTOSCALING_VERSION_TAG_KEY: TypeAdapter(AWSTagValue).validate_python(
+            f"{VERSION}"
         ),
+        _SIMCORE_AUTOSCALING_DASK_SCHEDULER_URL_TAG_KEY: TypeAdapter(
+            AWSTagValue
+        ).validate_python(f"{app_settings.AUTOSCALING_DASK.DASK_MONITORING_URL}"),
         # NOTE: this one gets special treatment in AWS GUI and is applied to the name of the instance
-        AWSTagKey("Name"): AWSTagValue(
+        _EC2_NAME_TAG_KEY: TypeAdapter(AWSTagValue).validate_python(
             f"{app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_NAME_PREFIX}-{app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME}"
         ),
     } | app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_CUSTOM_TAGS
