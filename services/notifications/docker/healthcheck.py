@@ -28,20 +28,20 @@ SUCCESS, UNHEALTHY = 0, 1
 # Disabled if boots with debugger
 is_debug = os.getenv("SC_BOOT_MODE", "").lower() == "debug"
 
-# Queries host
-# pylint: disable=consider-using-with
-
 
 def is_service_healthy() -> bool:
     worker_mode = TypeAdapter(bool).validate_python(
-        os.environ.get("NOTIFICATIONS_WORKER_MODE", "False")
+        os.getenv("NOTIFICATIONS_WORKER_MODE", "False")
     )
+
     if worker_mode:
         return is_healthy()
+
     return (
+        # Queries host
         urlopen(
             "{host}{baseurl}".format(
-                host=sys.argv[1], baseurl=os.environ.get("SIMCORE_NODE_BASEPATH", "")
+                host=sys.argv[1], baseurl=os.getenv("SIMCORE_NODE_BASEPATH", "")
             )  # adds a base-path if defined in environ
         ).getcode()
         == 200
