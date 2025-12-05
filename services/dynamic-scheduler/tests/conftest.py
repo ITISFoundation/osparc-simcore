@@ -127,6 +127,11 @@ def disable_generic_scheduler_lifespan(mocker: MockerFixture) -> None:
 
 
 @pytest.fixture
+def disable_scheduler_lifespan(mocker: MockerFixture) -> None:
+    mocker.patch(f"{_EVENTS_MODULE}.scheduler_lifespan")
+
+
+@pytest.fixture
 def disable_postgres_lifespan(
     mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch
 ) -> None:

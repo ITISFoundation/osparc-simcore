@@ -11,6 +11,7 @@ from faker import Faker
 from fastapi import FastAPI
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.dynamic_scheduler import ensure_keys_in_store
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
@@ -39,7 +40,6 @@ from simcore_service_dynamic_scheduler.services.generic_scheduler._store import 
     OperationEventsProxy,
     Store,
 )
-from utils import ensure_keys_in_store
 
 pytest_simcore_core_services_selection = [
     "rabbit",
@@ -52,6 +52,7 @@ pytest_simcore_ops_services_selection = [
 
 @pytest.fixture
 def app_environment(
+    disable_scheduler_lifespan: None,
     disable_postgres_lifespan: None,
     disable_service_tracker_lifespan: None,
     disable_notifier_lifespan: None,
@@ -171,9 +172,14 @@ async def test_workflow(
     await ensure_keys_in_store(after_event_manager.app, expected_keys=set())
 
     await after_event_manager.safe_on_event_type(
-        event_type, schedule_id, operation_name, initial_context
+        event_type, schedule_id, OperationToStart(operation_name, initial_context)
     )
 
     assert mock_start_operation.call_args_list == [
-        call(after_event_manager.app, operation_name, initial_context)
+        call(
+            after_event_manager.app,
+            OperationToStart(operation_name, initial_context),
+            on_execute_completed=None,
+            on_revert_completed=None,
+        )
     ]
