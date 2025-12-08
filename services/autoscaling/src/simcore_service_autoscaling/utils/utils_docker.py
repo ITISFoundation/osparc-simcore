@@ -580,6 +580,7 @@ def get_new_node_docker_tags(
     app_settings: ApplicationSettings, ec2_instance: EC2InstanceData
 ) -> dict[DockerLabelKey, str]:
     assert app_settings.AUTOSCALING_NODES_MONITORING  # nosec
+    assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
     return (
         dict.fromkeys(
             app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS,
@@ -590,6 +591,9 @@ def get_new_node_docker_tags(
             "true",
         )
         | {DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY: ec2_instance.type}
+        | app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
+            ec2_instance.type
+        ].custom_node_labels
     )
 
 
