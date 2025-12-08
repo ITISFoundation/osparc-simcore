@@ -923,7 +923,6 @@ class ProjectDBAPI(BaseProjectDB):
             partial_workbench_data,
             user_id=user_id,
             project_uuid=f"{project_uuid}",
-            product_name=product_name,
             allow_workbench_changes=allow_workbench_changes,
         )
 
@@ -952,7 +951,6 @@ class ProjectDBAPI(BaseProjectDB):
         *,
         user_id: int,
         project_uuid: str,
-        product_name: str | None = None,
         allow_workbench_changes: bool,
     ) -> tuple[ProjectDict, dict[NodeIDStr, Any]]:
         """patches an EXISTING project workbench from a user
