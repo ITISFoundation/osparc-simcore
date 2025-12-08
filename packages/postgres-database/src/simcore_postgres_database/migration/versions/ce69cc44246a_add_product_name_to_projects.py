@@ -8,6 +8,7 @@ Create Date: 2025-12-08 14:14:07.573764+00:00
 
 import sqlalchemy as sa
 from alembic import op
+from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision = "ce69cc44246a"
@@ -40,8 +41,55 @@ def upgrade():
         ondelete="CASCADE",
     )
 
+    op.drop_table("projects_to_products")
+
 
 def downgrade():
+    op.create_table(
+        "projects_to_products",
+        sa.Column(
+            "project_uuid",
+            sa.String,
+            sa.ForeignKey(
+                "projects.uuid",
+                onupdate="CASCADE",
+                ondelete="CASCADE",
+                name="fk_projects_to_products_product_uuid",
+            ),
+            nullable=False,
+            doc="Project unique ID",
+        ),
+        sa.Column(
+            "product_name",
+            sa.String,
+            sa.ForeignKey(
+                "products.name",
+                onupdate="CASCADE",
+                ondelete="CASCADE",
+                name="fk_projects_to_products_product_name",
+            ),
+            nullable=False,
+            doc="Products unique name",
+        ),
+        # TIME STAMPS ----
+        sa.Column(
+            "created",
+            postgresql.TIMESTAMP(timezone=True),
+            server_default=sa.text("now()"),
+            autoincrement=False,
+            nullable=False,
+        ),
+        sa.Column(
+            "modified",
+            postgresql.TIMESTAMP(timezone=True),
+            server_default=sa.text("now()"),
+            autoincrement=False,
+            nullable=False,
+        ),
+        sa.UniqueConstraint("project_uuid", "product_name"),
+        sa.Index("idx_projects_to_products_product_name", "product_name"),
+    )
+
     op.execute(
         """
         INSERT INTO projects_to_products (project_uuid, product_name, created, modified)
