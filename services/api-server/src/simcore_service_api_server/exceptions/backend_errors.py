@@ -158,6 +158,11 @@ class SolverJobOutputRequestButNotSucceededError(BaseBackEndError):
     status_code = status.HTTP_409_CONFLICT
 
 
+class SolverJobNotStoppedYetError(BaseBackEndError):
+    msg_template = "Solver job '{job_id}' not stopped yet. Current status: {state}"
+    status_code = status.HTTP_409_CONFLICT
+
+
 class StudyJobOutputRequestButNotSucceededError(BaseBackEndError):
     msg_template = "Study job '{job_id}' not succeeded, when output is requested. Current state: {state}"
     status_code = status.HTTP_409_CONFLICT
