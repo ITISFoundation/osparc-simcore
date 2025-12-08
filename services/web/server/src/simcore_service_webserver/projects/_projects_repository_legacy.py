@@ -1001,10 +1001,7 @@ class ProjectDBAPI(BaseProjectDB):
             )
             project = await result.fetchone()
             assert project  # nosec
-            if product_name:
-                await self.upsert_project_linked_product(
-                    ProjectID(project_uuid), product_name, conn=db_connection
-                )
+
             user_email = await self._get_user_email(db_connection, project.prj_owner)
 
             tags = await self._get_tags_by_project(
