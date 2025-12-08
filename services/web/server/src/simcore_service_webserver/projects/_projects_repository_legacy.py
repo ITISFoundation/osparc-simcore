@@ -159,7 +159,6 @@ class ProjectDBAPI(BaseProjectDB):
         insert_values: ProjectDict,
         *,
         force_project_uuid: bool,
-        product_name: str,
         project_tag_ids: list[int],
         project_nodes: dict[NodeID, ProjectNodeCreate] | None,
     ) -> ProjectDict:
@@ -204,13 +203,6 @@ class ProjectDBAPI(BaseProjectDB):
                             # NOTE: Retry is over transaction context
                             # to rollout when a new insert is required
                             raise TryAgain from err
-
-                        # Associate product to project: projects_to_product
-                        await self.upsert_project_linked_product(
-                            project_uuid=project_uuid,
-                            product_name=product_name,
-                            conn=conn,
-                        )
 
                         # Associate tags to project: study_tags
                         assert project_index is not None  # nosec
@@ -304,6 +296,7 @@ class ProjectDBAPI(BaseProjectDB):
                 # needs to be refactored!!! use arrow (https://github.com/ITISFoundation/osparc-simcore/issues/3797)
                 "creation_date": now_str(),
                 "last_change_date": now_str(),
+                "product_name": product_name,
             }
         )
 
@@ -335,7 +328,6 @@ class ProjectDBAPI(BaseProjectDB):
         inserted_project = await self._insert_project_in_db(
             insert_values,
             force_project_uuid=force_project_uuid,
-            product_name=product_name,
             project_tag_ids=project_tag_ids,
             project_nodes=project_nodes,
         )
