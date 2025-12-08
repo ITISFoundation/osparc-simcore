@@ -190,7 +190,7 @@ projects = sa.Table(
             "products.name",
             onupdate=RefActions.CASCADE,
             ondelete=RefActions.CASCADE,
-            name="fk_projects_to_products_product_name",
+            name="fk_projects_to_product_name",
         ),
         nullable=False,
         doc="Product to which this project belongs",
