@@ -30,7 +30,5 @@ def upgrade():
 
 
 def downgrade():
-    op.drop_constraint(
-        "fk_projects_to_products_product_name", "projects", type_="foreignkey"
-    )
+    op.drop_constraint("fk_projects_to_products_name", "projects", type_="foreignkey")
     op.drop_column("projects", "product_name")
