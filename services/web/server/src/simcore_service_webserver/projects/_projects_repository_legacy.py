@@ -13,7 +13,6 @@ from uuid import uuid1
 import sqlalchemy as sa
 from aiohttp import web
 from aiopg.sa import Engine
-from aiopg.sa.connection import SAConnection
 from aiopg.sa.result import ResultProxy, RowProxy
 from common_library.logging.logging_base import get_log_record_extra
 from models_library.basic_types import IDStr
@@ -348,22 +347,6 @@ class ProjectDBAPI(BaseProjectDB):
         # Convert to dict parsable by ProjectGet model
         return convert_to_schema_names(inserted_project, user_email)
 
-    async def upsert_project_linked_product(
-        self,
-        project_uuid: ProjectID,
-        product_name: str,
-        conn: SAConnection | None = None,
-    ) -> None:
-        async with AsyncExitStack() as stack:
-            if not conn:
-                conn = await stack.enter_async_context(self.engine.acquire())
-                assert conn  # nosec
-            await conn.execute(
-                pg_insert(projects_to_products)
-                .values(project_uuid=f"{project_uuid}", product_name=product_name)
-                .on_conflict_do_nothing()
-            )
-
     @staticmethod
     def _create_private_workspace_query(
         *,
@@ -397,13 +380,11 @@ class ProjectDBAPI(BaseProjectDB):
                 sa.select(
                     *PROJECT_DB_COLS,
                     projects.c.workbench,
-                    projects_to_products.c.product_name,
+                    projects.c.product_name,
                     projects_to_folders.c.folder_id,
                 )
                 .select_from(
-                    projects.join(my_access_rights_subquery)
-                    .join(projects_to_products)
-                    .join(
+                    projects.join(my_access_rights_subquery).join(
                         projects_to_folders,
                         (
                             (projects_to_folders.c.project_uuid == projects.c.uuid)
@@ -414,7 +395,7 @@ class ProjectDBAPI(BaseProjectDB):
                 )
                 .where(
                     (projects.c.workspace_id.is_(None))  # <-- Private workspace
-                    & (projects_to_products.c.product_name == product_name)
+                    & (projects.c.product_name == product_name)
                 )
             )
 
@@ -456,7 +437,7 @@ class ProjectDBAPI(BaseProjectDB):
                 sa.select(
                     *PROJECT_DB_COLS,
                     projects.c.workbench,
-                    projects_to_products.c.product_name,
+                    projects.c.product_name,
                     projects_to_folders.c.folder_id,
                 )
                 .select_from(
@@ -464,9 +445,7 @@ class ProjectDBAPI(BaseProjectDB):
                         my_workspace_access_rights_subquery,
                         projects.c.workspace_id
                         == my_workspace_access_rights_subquery.c.workspace_id,
-                    )
-                    .join(projects_to_products)
-                    .join(
+                    ).join(
                         projects_to_folders,
                         (
                             (projects_to_folders.c.project_uuid == projects.c.uuid)
@@ -475,7 +454,7 @@ class ProjectDBAPI(BaseProjectDB):
                         isouter=True,
                     )
                 )
-                .where(projects_to_products.c.product_name == product_name)
+                .where(projects.c.product_name == product_name)
             )
             assert (  # nosec
                 my_workspace_access_rights_subquery.description
@@ -813,9 +792,9 @@ class ProjectDBAPI(BaseProjectDB):
     async def get_project_product(self, project_uuid: ProjectID) -> ProductName:
         async with self.engine.acquire() as conn:
             result = await conn.execute(
-                sa.select(projects_to_products.c.product_name)
-                .join(projects)
-                .where(projects.c.uuid == f"{project_uuid}")
+                sa.select(projects.c.product_name).where(
+                    projects.c.uuid == f"{project_uuid}"
+                )
             )
             row = await result.fetchone()
             if row is None:
