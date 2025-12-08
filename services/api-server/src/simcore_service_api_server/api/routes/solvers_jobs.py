@@ -12,7 +12,10 @@ from models_library.projects_nodes_io import NodeID
 from pydantic.types import PositiveInt
 
 from ..._service_jobs import JobService, compose_solver_job_resource_name
-from ...exceptions.backend_errors import ProjectAlreadyStartedError
+from ...exceptions.backend_errors import (
+    ProjectAlreadyStartedError,
+    SolverJobNotStoppedYetError,
+)
 from ...exceptions.service_errors_utils import DEFAULT_BACKEND_SERVICE_STATUS_CODES
 from ...models.basic_types import VersionStr
 from ...models.schemas.errors import ErrorGet
@@ -159,6 +162,11 @@ async def delete_job_assets(
         job_parent_resource_name=job_parent_resource_name, job_id=job_id
     )
     assert project_job_rpc_get.uuid == job_id  # nosec
+    job_status = await job_service.inspect_solver_job(
+        solver_key=solver_key, version=version, job_id=job_id
+    )
+    if job_status.stopped_at is None:
+        raise SolverJobNotStoppedYetError(job_id=job_id, state=job_status.state)
 
     await job_service.delete_job_assets(
         job_parent_resource_name=job_parent_resource_name, job_id=job_id
