@@ -13,7 +13,7 @@ from servicelib.progress_bar import ProgressBarData
 from servicelib.r_clone_utils import config_file
 from servicelib.utils import logged_gather
 from settings_library.r_clone import RCloneSettings
-from settings_library.utils_r_clone import get_r_clone_config
+from settings_library.utils_r_clone import get_s3_r_clone_config
 
 from ._utils import BaseLogParser
 from .r_clone_utils import (
@@ -81,7 +81,6 @@ async def _async_r_clone_command(
         [asyncio.create_task(_read_stream(proc.stdout, [*r_clone_log_parsers]))]
     )
 
-    # NOTE: ANE not sure why you do this call here. The above one already reads out the stream.
     _stdout, _stderr = await proc.communicate()
 
     command_output = command_result_parser.get_output()
@@ -135,7 +134,7 @@ async def _get_folder_size(
     folder: Path,
     s3_config_key: str,
 ) -> ByteSize:
-    r_clone_config_file_content = get_r_clone_config(
+    r_clone_config_file_content = get_s3_r_clone_config(
         r_clone_settings, s3_config_key=s3_config_key
     )
     async with config_file(r_clone_config_file_content) as config_file_name:
@@ -179,7 +178,7 @@ async def _sync_sources(
         s3_config_key=s3_config_key,
     )
 
-    r_clone_config_file_content = get_r_clone_config(
+    r_clone_config_file_content = get_s3_r_clone_config(
         r_clone_settings, s3_config_key=s3_config_key
     )
     async with config_file(r_clone_config_file_content) as config_file_name:

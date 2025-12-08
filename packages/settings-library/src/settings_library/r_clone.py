@@ -9,6 +9,7 @@ from .s3 import S3Settings
 
 class S3Provider(StrEnum):
     AWS = "AWS"
+    AWS_MOTO = "AWS_MOTO"
     CEPH = "CEPH"
     MINIO = "MINIO"
 
