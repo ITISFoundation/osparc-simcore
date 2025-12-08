@@ -39,7 +39,6 @@ from servicelib.aiohttp import status
 from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 from settings_library.rabbit import RabbitSettings
 from simcore_postgres_database.models.products import products
-from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.groups._groups_service import get_product_group_for_user
@@ -253,7 +252,7 @@ async def test_list_projects(
     if data:
         assert len(data) == 1
 
-        # standad project
+        # standard project
         got = data[0]
         project_state = got.pop("state")
         project_permalink = got.pop("permalink", None)
@@ -324,7 +323,7 @@ def s4l_product_headers(s4l_products_db_name: ProductName) -> dict[str, str]:
 
 
 @pytest.fixture
-async def logged_user_registed_in_two_products(
+async def logged_user_registered_in_two_products(
     client: TestClient, logged_user: UserInfoDict, s4l_products_db_name: ProductName
 ):
     assert client.app
@@ -369,11 +368,11 @@ async def logged_user_registed_in_two_products(
         (UserRole.USER, status.HTTP_200_OK),
     ],
 )
-async def test_list_projects_with_innaccessible_services(
+async def test_list_projects_with_inaccessible_services(
     s4l_products_db_name: ProductName,
     client: TestClient,
     mocked_dynamic_services_interface: dict[str, mock.MagicMock],
-    logged_user_registed_in_two_products: UserInfoDict,
+    logged_user_registered_in_two_products: UserInfoDict,
     user_project: dict[str, Any],
     template_project: dict[str, Any],
     expected: HTTPStatus,

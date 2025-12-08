@@ -839,7 +839,6 @@ class ProjectDBAPI(BaseProjectDB):
         user_id: UserID,
         project_uuid: ProjectID,
         node_id: NodeID,
-        product_name: str | None,
         new_node_data: dict[str, Any],
         client_session_id: ClientSessionID | None,
     ) -> tuple[ProjectDict, dict[NodeIDStr, Any]]:
@@ -856,7 +855,6 @@ class ProjectDBAPI(BaseProjectDB):
                 partial_workbench_data,
                 user_id=user_id,
                 project_uuid=project_uuid,
-                product_name=product_name,
                 allow_workbench_changes=False,
                 client_session_id=client_session_id,
             )
@@ -866,7 +864,6 @@ class ProjectDBAPI(BaseProjectDB):
         *,
         user_id: UserID,
         project_uuid: ProjectID,
-        product_name: str | None,
         partial_workbench_data: dict[NodeIDStr, dict[str, Any]],
         client_session_id: ClientSessionID | None,
     ) -> tuple[ProjectDict, dict[NodeIDStr, Any]]:
@@ -884,7 +881,6 @@ class ProjectDBAPI(BaseProjectDB):
                 partial_workbench_data,
                 user_id=user_id,
                 project_uuid=project_uuid,
-                product_name=product_name,
                 allow_workbench_changes=False,
                 client_session_id=client_session_id,
             )
@@ -895,7 +891,6 @@ class ProjectDBAPI(BaseProjectDB):
         *,
         user_id: UserID,
         project_uuid: ProjectID,
-        product_name: str | None = None,
         allow_workbench_changes: bool,
         client_session_id: ClientSessionID | None,
     ) -> tuple[ProjectDict, dict[NodeIDStr, Any]]:
@@ -1018,12 +1013,11 @@ class ProjectDBAPI(BaseProjectDB):
         project_id: ProjectID,
         node: ProjectNodeCreate,
         old_struct_node: Node,
-        product_name: str,
         client_session_id: ClientSessionID | None,
     ) -> None:
         # NOTE: permission check is done currently in update_project_workbench!
         partial_workbench_data: dict[NodeIDStr, Any] = {
-            NodeIDStr(f"{node.node_id}"): jsonable_encoder(
+            TypeAdapter(NodeIDStr).validate_python(f"{node.node_id}"): jsonable_encoder(
                 old_struct_node,
                 exclude_unset=True,
             ),
@@ -1035,7 +1029,6 @@ class ProjectDBAPI(BaseProjectDB):
             partial_workbench_data,
             user_id=user_id,
             project_uuid=project_id,
-            product_name=product_name,
             allow_workbench_changes=True,
             client_session_id=client_session_id,
         )
@@ -1049,7 +1042,7 @@ class ProjectDBAPI(BaseProjectDB):
     ) -> None:
         # NOTE: permission check is done currently in update_project_workbench!
         partial_workbench_data: dict[NodeIDStr, Any] = {
-            NodeIDStr(f"{node_id}"): None,
+            TypeAdapter(NodeIDStr).validate_python(f"{node_id}"): None,
         }
         await self._update_project_workbench_with_lock_and_notify(
             partial_workbench_data,

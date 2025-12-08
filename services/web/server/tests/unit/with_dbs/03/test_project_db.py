@@ -27,7 +27,6 @@ from pytest_simcore.helpers.webserver_login import log_client_in
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.utils import logged_gather
 from simcore_postgres_database.models.projects import ProjectType, projects
-from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_postgres_database.models.users import UserRole
 from simcore_postgres_database.utils_projects_nodes import ProjectNodesRepo
 from simcore_service_webserver.projects._groups_repository import (
@@ -124,20 +123,6 @@ def _assert_added_project(
 
     # the rest of the keys shall be the same as the original
     assert added_prj == expected_prj
-
-
-def _assert_projects_to_product_db_row(
-    postgres_db: sa.engine.Engine, project: dict[str, Any], product_name: str
-):
-    with postgres_db.connect() as conn:
-        rows = conn.execute(
-            sa.select(projects_to_products).where(
-                projects_to_products.c.project_uuid == f"{project['uuid']}"
-            )
-        ).fetchall()
-    assert rows
-    assert len(rows) == 1
-    assert rows[0][projects_to_products.c.product_name] == product_name
 
 
 async def _assert_projects_nodes_db_rows(
@@ -259,7 +244,6 @@ async def test_insert_project_to_db(
         },
     )
     _assert_project_db_row(postgres_db, new_project, type=ProjectType.TEMPLATE)
-    _assert_projects_to_product_db_row(postgres_db, new_project, osparc_product_name)
     await _assert_projects_nodes_db_rows(aiopg_engine, new_project)
 
     # adding a project with a fake user id raises
@@ -293,7 +277,6 @@ async def test_insert_project_to_db(
         new_project,
         prj_owner=logged_user["id"],
     )
-    _assert_projects_to_product_db_row(postgres_db, new_project, osparc_product_name)
     await _assert_projects_nodes_db_rows(aiopg_engine, new_project)
 
     # adding a project with a logged user and forcing as template, should create a TEMPLATE project owned by the user
@@ -319,7 +302,6 @@ async def test_insert_project_to_db(
         prj_owner=logged_user["id"],
         type=ProjectType.TEMPLATE,
     )
-    _assert_projects_to_product_db_row(postgres_db, new_project, osparc_product_name)
     await _assert_projects_nodes_db_rows(aiopg_engine, new_project)
     # add a project with a uuid that is already present, using force_project_uuid shall raise
     with pytest.raises(UniqueViolation):
@@ -357,7 +339,6 @@ async def test_insert_project_to_db(
         new_project,
         prj_owner=logged_user["id"],
     )
-    _assert_projects_to_product_db_row(postgres_db, new_project, osparc_product_name)
     await _assert_projects_nodes_db_rows(aiopg_engine, new_project)
 
 

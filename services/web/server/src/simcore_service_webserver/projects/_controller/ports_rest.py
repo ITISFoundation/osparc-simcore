@@ -106,7 +106,9 @@ async def update_project_inputs(request: web.Request) -> web.Response:
         if node_id not in current_inputs:
             raise web.HTTPBadRequest(text=f"Invalid input key [{node_id}]")
 
-        workbench[node_id].outputs = {KeyIDStr("out_1"): input_update.value}
+        workbench[node_id].outputs = {
+            TypeAdapter(KeyIDStr).validate_python("out_1"): input_update.value
+        }
         partial_workbench_data[node_id] = workbench[node_id].model_dump(
             include={"outputs"}, exclude_unset=True
         )
@@ -124,7 +126,6 @@ async def update_project_inputs(request: web.Request) -> web.Response:
     updated_project, _ = await db.update_project_multiple_node_data(
         user_id=req_ctx.user_id,
         project_uuid=path_params.project_id,
-        product_name=req_ctx.product_name,
         partial_workbench_data=jsonable_encoder(partial_workbench_data),
         client_session_id=header_params.client_session_id,
     )
@@ -184,7 +185,7 @@ async def get_project_outputs(request: web.Request) -> web.Response:
 class ProjectMetadataPortGet(BaseModel):
     key: NodeID = Field(
         ...,
-        description="Project port's unique identifer. Same as the UUID of the associated port node",
+        description="Project port's unique identifier. Same as the UUID of the associated port node",
     )
     kind: Literal["input", "output"]
     content_schema: JsonSchemaDict | None = Field(
