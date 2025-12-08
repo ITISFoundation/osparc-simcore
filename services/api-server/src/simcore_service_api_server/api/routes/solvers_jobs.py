@@ -141,7 +141,8 @@ async def delete_job(
 @router.delete(
     "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/assets",
     status_code=status.HTTP_204_NO_CONTENT,
-    responses=JOBS_STATUS_CODES,
+    responses=JOBS_STATUS_CODES
+    | {status.HTTP_409_CONFLICT: {"description": "Job not finished yet"}},
     description=create_route_description(
         base="Deletes assets associated with an existing solver job. N.B. this renders the solver job un-startable",
         changelog=[
