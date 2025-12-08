@@ -5,10 +5,10 @@ from typing import Any
 
 from aiohttp.test_utils import TestClient
 from servicelib.aiohttp import status
-from simcore_service_webserver.login._invitations_service import create_invitation_token
-from simcore_service_webserver.login._login_repository_legacy import (
-    get_plugin_storage,
+from simcore_service_webserver.login._controller.rest._rest_dependencies import (
+    get_confirmation_service,
 )
+from simcore_service_webserver.login._invitations_service import create_invitation_token
 from simcore_service_webserver.login.constants import MSG_LOGGED_IN
 from simcore_service_webserver.security import security_service
 from yarl import URL
@@ -132,7 +132,7 @@ class NewInvitation(NewUser):
         self.confirmation = None
         self.trial_days = trial_days
         self.extra_credits_in_usd = extra_credits_in_usd
-        self.db = get_plugin_storage(self.app)
+        self.confirmation_service = get_confirmation_service(client.app)
 
     async def __aenter__(self) -> "NewInvitation":
         # creates host user
@@ -140,7 +140,7 @@ class NewInvitation(NewUser):
         self.user = await super().__aenter__()
 
         self.confirmation = await create_invitation_token(
-            self.db,
+            self.client.app,
             user_id=self.user["id"],
             user_email=self.user["email"],
             tag=self.tag,
@@ -150,5 +150,11 @@ class NewInvitation(NewUser):
         return self
 
     async def __aexit__(self, *args):
-        if await self.db.get_confirmation(self.confirmation):
-            await self.db.delete_confirmation(self.confirmation)
+        if self.confirmation:
+            # Try to get confirmation by filter and delete if it exists
+            confirmation = await self.confirmation_service.get_confirmation(
+                filter_dict={"code": self.confirmation["code"]}
+            )
+            if confirmation:
+                await self.confirmation_service.delete_confirmation(confirmation)
+        return await super().__aexit__(*args)

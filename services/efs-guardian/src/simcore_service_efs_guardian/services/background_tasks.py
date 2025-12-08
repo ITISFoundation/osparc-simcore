@@ -43,9 +43,9 @@ async def removal_policy_task(app: FastAPI) -> None:
 
     base_start_timestamp = datetime.now(tz=UTC)
 
-    efs_project_ids: list[
-        ProjectID
-    ] = await efs_manager.list_projects_across_whole_efs()
+    efs_project_ids: list[ProjectID] = (
+        await efs_manager.list_projects_across_whole_efs()
+    )
     _logger.info(
         "Number of projects that are currently in the EFS file system: %s",
         len(efs_project_ids),

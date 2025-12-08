@@ -54,7 +54,12 @@ from pytest_simcore.helpers.aws_ec2 import (
 )
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
-from simcore_service_autoscaling.constants import BUFFER_MACHINE_TAG_KEY
+from simcore_service_autoscaling.constants import (
+    BUFFER_MACHINE_TAG_KEY,
+    MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY,
+    MACHINE_PULLING_EC2_TAG_KEY,
+    PRE_PULLED_IMAGES_EC2_TAG_KEY,
+)
 from simcore_service_autoscaling.core.settings import ApplicationSettings
 from simcore_service_autoscaling.models import AssociatedInstance, Cluster
 from simcore_service_autoscaling.modules.cluster_scaling._auto_scaling_core import (
@@ -205,6 +210,7 @@ def minimal_configuration(
     mocked_ssm_server_envs: EnvVarsDict,
     enabled_dynamic_mode: EnvVarsDict,
     mocked_ec2_instances_envs: EnvVarsDict,
+    with_ec2_instances_cold_start_docker_images_pre_pulling: EnvVarsDict,
     disabled_rabbitmq: None,
     disable_autoscaling_background_task: None,
     disable_buffers_pool_background_task: None,
@@ -276,7 +282,7 @@ async def create_services_batch(
         [dict[str, Any], dict[DockerLabelKey, str], str, list[str]], Awaitable[Service]
     ],
     task_template: dict[str, Any],
-    create_task_reservations: Callable[[int, int], dict[str, Any]],
+    create_task_reservations: Callable[[int, int, dict], dict[str, Any]],
     service_monitored_labels: dict[DockerLabelKey, str],
     osparc_docker_label_keys: SimcoreContainerLabels,
 ) -> Callable[[_ScaleUpParams], Awaitable[list[Service]]]:
@@ -288,6 +294,7 @@ async def create_services_batch(
                     | create_task_reservations(
                         int(scale_up_params.service_resources.cpus),
                         scale_up_params.service_resources.ram,
+                        scale_up_params.service_resources.generic_resources,
                     ),
                     service_monitored_labels
                     | osparc_docker_label_keys.to_simcore_runtime_docker_labels(),
@@ -364,6 +371,9 @@ async def test_cluster_scaling_with_no_services_and_machine_buffer_starts_expect
     ec2_client: EC2Client,
     ec2_instance_custom_tags: dict[str, str],
     instance_type_filters: Sequence[FilterTypeDef],
+    hot_buffer_instance_type: InstanceTypeType,
+    hot_buffer_has_pre_pull: bool,
+    hot_buffer_expected_pre_pulled_images: list[DockerGenericTag],
 ):
     assert app_settings.AUTOSCALING_EC2_INSTANCES
     await auto_scale_cluster(
@@ -373,12 +383,7 @@ async def test_cluster_scaling_with_no_services_and_machine_buffer_starts_expect
         ec2_client,
         expected_num_reservations=1,
         expected_num_instances=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER,
-        expected_instance_type=cast(
-            InstanceTypeType,
-            next(
-                iter(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES)
-            ),
-        ),
+        expected_instance_type=hot_buffer_instance_type,
         expected_instance_state="running",
         expected_additional_tag_keys=list(ec2_instance_custom_tags),
         instance_filters=instance_type_filters,
@@ -391,6 +396,16 @@ async def test_cluster_scaling_with_no_services_and_machine_buffer_starts_expect
     )
     mock_rabbitmq_post_message.reset_mock()
     # calling again should attach the new nodes to the reserve, but nothing should start
+    # it will also trigger pre-pulling of images if there is pre-pulling
+    expected_pre_pull_tag_keys = (
+        [
+            MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY,
+            MACHINE_PULLING_EC2_TAG_KEY,
+            PRE_PULLED_IMAGES_EC2_TAG_KEY,
+        ]
+        if hot_buffer_has_pre_pull
+        else []
+    )
     await auto_scale_cluster(
         app=initialized_app, auto_scaling_mode=DynamicAutoscalingProvider()
     )
@@ -398,14 +413,12 @@ async def test_cluster_scaling_with_no_services_and_machine_buffer_starts_expect
         ec2_client,
         expected_num_reservations=1,
         expected_num_instances=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER,
-        expected_instance_type=cast(
-            InstanceTypeType,
-            next(
-                iter(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES)
-            ),
-        ),
+        expected_instance_type=hot_buffer_instance_type,
         expected_instance_state="running",
-        expected_additional_tag_keys=list(ec2_instance_custom_tags),
+        expected_additional_tag_keys=list(
+            ec2_instance_custom_tags.keys() | expected_pre_pull_tag_keys
+        ),
+        expected_pre_pulled_images=hot_buffer_expected_pre_pulled_images or None,
         instance_filters=instance_type_filters,
     )
     assert fake_node.description
@@ -425,10 +438,14 @@ async def test_cluster_scaling_with_no_services_and_machine_buffer_starts_expect
             / 1e9,
             "ram": app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
             * fake_node.description.resources.memory_bytes,
+            "generic_resources": {},
         },
     )
 
-    # calling it again should not create anything new
+    # calling it again should not create anything new, pre-pulling should be done
+    expected_pre_pull_tag_keys = (
+        [PRE_PULLED_IMAGES_EC2_TAG_KEY] if hot_buffer_has_pre_pull else []
+    )
     for _ in range(10):
         await auto_scale_cluster(
             app=initialized_app, auto_scaling_mode=DynamicAutoscalingProvider()
@@ -437,14 +454,12 @@ async def test_cluster_scaling_with_no_services_and_machine_buffer_starts_expect
         ec2_client,
         expected_num_reservations=1,
         expected_num_instances=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER,
-        expected_instance_type=cast(
-            InstanceTypeType,
-            next(
-                iter(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES)
-            ),
-        ),
+        expected_instance_type=hot_buffer_instance_type,
         expected_instance_state="running",
-        expected_additional_tag_keys=list(ec2_instance_custom_tags),
+        expected_additional_tag_keys=list(
+            ec2_instance_custom_tags.keys() | expected_pre_pull_tag_keys
+        ),
+        expected_pre_pulled_images=hot_buffer_expected_pre_pulled_images or None,
         instance_filters=instance_type_filters,
     )
 
@@ -596,13 +611,19 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
     )
     assert fake_attached_node.spec.labels
     assert app_settings.AUTOSCALING_NODES_MONITORING
-    expected_docker_node_tags = dict.fromkeys(
-        app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS
-        + app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NEW_NODES_LABELS,
-        "true",
-    ) | {
-        DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY: scale_up_params.expected_instance_type
-    }
+    expected_docker_node_tags = (
+        dict.fromkeys(
+            app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS
+            + app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NEW_NODES_LABELS,
+            "true",
+        )
+        | {
+            DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY: scale_up_params.expected_instance_type
+        }
+        | app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
+            scale_up_params.expected_instance_type
+        ].custom_node_labels
+    )
     fake_attached_node.spec.labels |= expected_docker_node_tags | {
         _OSPARC_SERVICE_READY_LABEL_KEY: "false"
     }
@@ -699,11 +720,9 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
         cluster_total_resources={
             "cpus": fake_attached_node.description.resources.nano_cp_us / 1e9,
             "ram": fake_attached_node.description.resources.memory_bytes,
+            "generic_resources": {},
         },
-        cluster_used_resources={
-            "cpus": float(0),
-            "ram": 0,
-        },
+        cluster_used_resources={"cpus": float(0), "ram": 0, "generic_resources": {}},
         instances_running=scale_up_params.expected_num_instances,
     )
     mock_rabbitmq_post_message.reset_mock()
@@ -966,7 +985,7 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
             _ScaleUpParams(
                 imposed_instance_type=None,
                 service_resources=Resources(
-                    cpus=4, ram=TypeAdapter(ByteSize).validate_python("128Gib")
+                    cpus=4, ram=TypeAdapter(ByteSize).validate_python("114Gib")
                 ),
                 num_services=1,
                 expected_instance_type="r5n.4xlarge",
@@ -976,9 +995,25 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
         ),
         pytest.param(
             _ScaleUpParams(
+                imposed_instance_type=None,
+                service_resources=Resources(
+                    cpus=4,
+                    ram=TypeAdapter(ByteSize).validate_python("114Gib"),
+                    generic_resources={
+                        "VRAM": TypeAdapter(ByteSize).validate_python("8Gib")
+                    },
+                ),
+                num_services=1,
+                expected_instance_type="g4dn.8xlarge",
+                expected_num_instances=1,
+            ),
+            id="No explicit instance defined but requires GPU/VRAM",
+        ),
+        pytest.param(
+            _ScaleUpParams(
                 imposed_instance_type="t2.xlarge",
                 service_resources=Resources(
-                    cpus=4, ram=TypeAdapter(ByteSize).validate_python("4Gib")
+                    cpus=2.6, ram=TypeAdapter(ByteSize).validate_python("4Gib")
                 ),
                 num_services=1,
                 expected_instance_type="t2.xlarge",
@@ -990,7 +1025,7 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
             _ScaleUpParams(
                 imposed_instance_type="r5n.8xlarge",
                 service_resources=Resources(
-                    cpus=4, ram=TypeAdapter(ByteSize).validate_python("128Gib")
+                    cpus=4, ram=TypeAdapter(ByteSize).validate_python("114Gib")
                 ),
                 num_services=1,
                 expected_instance_type="r5n.8xlarge",
@@ -1153,7 +1188,7 @@ async def test_cluster_scaling_up_and_down_against_aws(
                 ),
                 num_services=10,
                 expected_instance_type="r5n.4xlarge",  # 1 GPU, 16 CPUs, 128GiB
-                expected_num_instances=4,
+                expected_num_instances=5,
             ),
             id="sim4life-light",
         ),
@@ -1242,7 +1277,7 @@ async def test_cluster_scaling_up_starts_multiple_instances(
             _ScaleUpParams(
                 imposed_instance_type="g4dn.2xlarge",  # 1 GPU, 8 CPUs, 32GiB
                 service_resources=Resources(
-                    cpus=8, ram=TypeAdapter(ByteSize).validate_python("15Gib")
+                    cpus=6.6, ram=TypeAdapter(ByteSize).validate_python("15Gib")
                 ),
                 num_services=12,
                 expected_instance_type="g4dn.2xlarge",  # 1 GPU, 8 CPUs, 32GiB
@@ -1251,7 +1286,7 @@ async def test_cluster_scaling_up_starts_multiple_instances(
             _ScaleUpParams(
                 imposed_instance_type="g4dn.8xlarge",  # 32CPUs, 128GiB
                 service_resources=Resources(
-                    cpus=32, ram=TypeAdapter(ByteSize).validate_python("20480MB")
+                    cpus=30.6, ram=TypeAdapter(ByteSize).validate_python("20480MB")
                 ),
                 num_services=7,
                 expected_instance_type="g4dn.8xlarge",  # 32CPUs, 128GiB
@@ -1544,7 +1579,7 @@ async def test_cluster_adapts_machines_on_the_fly(  # noqa: PLR0915
             _ScaleUpParams(
                 imposed_instance_type=None,
                 service_resources=Resources(
-                    cpus=4, ram=TypeAdapter(ByteSize).validate_python("128Gib")
+                    cpus=4, ram=TypeAdapter(ByteSize).validate_python("114Gib")
                 ),
                 num_services=1,
                 expected_instance_type="r5n.4xlarge",
@@ -2101,6 +2136,8 @@ async def test_warm_buffers_only_replace_hot_buffer_if_service_is_started_issue7
     ],
     create_services_batch: Callable[[_ScaleUpParams], Awaitable[list[Service]]],
     hot_buffer_instance_type: InstanceTypeType,
+    hot_buffer_has_pre_pull: bool,
+    hot_buffer_expected_pre_pulled_images: list[DockerGenericTag],
     spied_cluster_analysis: MockType,
     instance_type_filters: Sequence[FilterTypeDef],
     stopped_instance_type_filters: Sequence[FilterTypeDef],
@@ -2138,7 +2175,7 @@ async def test_warm_buffers_only_replace_hot_buffer_if_service_is_started_issue7
         expected_additional_tag_keys=list(ec2_instance_custom_tags),
         instance_filters=instance_type_filters,
     )
-    # this brings a new analysis
+    # this brings a new analysis and will start pre-pulling images
     await auto_scale_cluster(
         app=initialized_app, auto_scaling_mode=DynamicAutoscalingProvider()
     )
@@ -2153,13 +2190,19 @@ async def test_warm_buffers_only_replace_hot_buffer_if_service_is_started_issue7
     )
     assert fake_attached_node_base.spec.labels
     assert app_settings.AUTOSCALING_NODES_MONITORING
-    expected_docker_node_tags = dict.fromkeys(
-        app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS
-        + app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NEW_NODES_LABELS,
-        "true",
-    ) | {
-        DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY: f"{hot_buffer_instance_type}"
-    }
+    expected_docker_node_tags = (
+        dict.fromkeys(
+            app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS
+            + app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NEW_NODES_LABELS,
+            "true",
+        )
+        | {
+            DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY: f"{hot_buffer_instance_type}"
+        }
+        | app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
+            hot_buffer_instance_type
+        ].custom_node_labels
+    )
     fake_attached_node_base.spec.labels |= expected_docker_node_tags | {
         _OSPARC_SERVICE_READY_LABEL_KEY: "false"
     }
@@ -2181,14 +2224,21 @@ async def test_warm_buffers_only_replace_hot_buffer_if_service_is_started_issue7
         return_value=fake_hot_buffer_nodes,
     )
 
+    # there we are done pre-pulling images
     await auto_scale_cluster(app=initialized_app, auto_scaling_mode=auto_scaling_mode)
+    expected_pre_pull_tag_keys = (
+        [PRE_PULLED_IMAGES_EC2_TAG_KEY] if hot_buffer_has_pre_pull else []
+    )
     await assert_autoscaled_dynamic_ec2_instances(
         ec2_client,
         expected_num_reservations=1,
         expected_num_instances=num_hot_buffer,
         expected_instance_type=hot_buffer_instance_type,
         expected_instance_state="running",
-        expected_additional_tag_keys=list(ec2_instance_custom_tags),
+        expected_additional_tag_keys=list(
+            ec2_instance_custom_tags.keys() | expected_pre_pull_tag_keys
+        ),
+        expected_pre_pulled_images=hot_buffer_expected_pre_pulled_images or None,
         instance_filters=instance_type_filters,
     )
     spied_cluster = assert_cluster_state(
@@ -2223,7 +2273,10 @@ async def test_warm_buffers_only_replace_hot_buffer_if_service_is_started_issue7
         expected_num_instances=num_hot_buffer,
         expected_instance_type=hot_buffer_instance_type,
         expected_instance_state="running",
-        expected_additional_tag_keys=list(ec2_instance_custom_tags),
+        expected_additional_tag_keys=list(
+            ec2_instance_custom_tags.keys() | expected_pre_pull_tag_keys
+        ),
+        expected_pre_pulled_images=hot_buffer_expected_pre_pulled_images or None,
         instance_filters=instance_type_filters,
     )
     await assert_autoscaled_dynamic_warm_pools_ec2_instances(
@@ -2269,7 +2322,10 @@ async def test_warm_buffers_only_replace_hot_buffer_if_service_is_started_issue7
         expected_num_instances=num_hot_buffer,
         expected_instance_type=hot_buffer_instance_type,
         expected_instance_state="running",
-        expected_additional_tag_keys=list(ec2_instance_custom_tags),
+        expected_additional_tag_keys=list(
+            ec2_instance_custom_tags.keys() | expected_pre_pull_tag_keys
+        ),
+        expected_pre_pulled_images=hot_buffer_expected_pre_pulled_images or None,
         instance_filters=instance_type_filters,
     )
     await assert_autoscaled_dynamic_warm_pools_ec2_instances(
@@ -2454,9 +2510,6 @@ def mock_start_instances_to_raise_insufficient_capacity_error(
     )
 
 
-@pytest.mark.xfail(
-    reason="bug described in https://github.com/ITISFoundation/osparc-simcore/issues/8273"
-)
 @pytest.mark.parametrize(
     # NOTE: only the main test test_cluster_scaling_up_and_down is run with all options
     "with_docker_join_drained",
@@ -2495,7 +2548,7 @@ async def test_fresh_instance_is_launched_if_warm_buffers_cannot_start_due_to_in
         InstanceTypeType,
         next(iter(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES)),
     )
-    await create_buffer_machines(1, warm_buffer_instance_type, "stopped", None)
+    await create_buffer_machines(3, warm_buffer_instance_type, "stopped", None)
 
     # create several tasks that needs more power
     scale_up_params = _ScaleUpParams(

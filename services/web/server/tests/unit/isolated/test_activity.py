@@ -69,6 +69,8 @@ def app_environment(
             "POSTGRES_HOST": "postgres",
             "POSTGRES_MAXSIZE": "10",
             "POSTGRES_MINSIZE": "10",
+            "POSTGRES_MAX_POOLSIZE": "10",
+            "POSTGRES_MAX_OVERFLOW": "20",
             "POSTGRES_PASSWORD": "simcore",
             "POSTGRES_PORT": "5432",
             "POSTGRES_USER": "simcore",
@@ -86,6 +88,7 @@ def app_environment(
             "WEBSERVER_LOGLEVEL": "DEBUG",
             "WEBSERVER_PORT": "8080",
             "WEBSERVER_STUDIES_ACCESS_ENABLED": "True",
+            "WEBSERVER_RPC_NAMESPACE": "null",
         },
     )
 

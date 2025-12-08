@@ -266,6 +266,24 @@ def fake_task(fake_task_file: Path) -> CompTaskAtDB:
             RunningState.WAITING_FOR_RESOURCES,
             id="published and waiting for resources = waiting for resources",
         ),
+        pytest.param(
+            [
+                (RunningState.SUCCESS),
+                (RunningState.WAITING_FOR_RESOURCES),
+                (RunningState.PUBLISHED),
+            ],
+            RunningState.STARTED,
+            id="success, published and waiting for resources = waiting for resources",
+        ),
+        pytest.param(
+            [
+                (RunningState.SUCCESS),
+                (RunningState.WAITING_FOR_CLUSTER),
+                (RunningState.PUBLISHED),
+            ],
+            RunningState.STARTED,
+            id="success, published and waiting for cluster = waiting for resources",
+        ),
     ],
 )
 def test_get_pipeline_state_from_task_states(

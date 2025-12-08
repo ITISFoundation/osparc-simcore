@@ -62,7 +62,8 @@ def _assert_metrics_contain_entry(
         )
         assert len(filtered_samples) == 1
         sample = filtered_samples[0]
-        assert sample.value == value
+        if value is not None:
+            assert sample.value == value
         print(f"Found {metric_name=} with expected {value=}")
         return
 
@@ -134,4 +135,25 @@ async def test_request_with_simcore_user_agent(client: TestClient, faker: Faker)
             "simcore_user_agent": faker_simcore_user_agent,
         },
         value=1,
+    )
+
+
+async def test_asyncio_event_loop_tasks(client: TestClient):
+    response = await client.get("/monitored_request")
+    assert response.status == status.HTTP_200_OK
+    data = await response.json()
+    assert data
+    assert "data" in data
+    assert data["data"] == "OK"
+
+    response = await client.get("/metrics")
+    assert response.status == status.HTTP_200_OK
+    metrics_as_text = await response.text()
+
+    _assert_metrics_contain_entry(
+        metrics_as_text,
+        metric_name="asyncio_event_loop_tasks",
+        sample_name="asyncio_event_loop_tasks",
+        labels={},
+        value=None,
     )

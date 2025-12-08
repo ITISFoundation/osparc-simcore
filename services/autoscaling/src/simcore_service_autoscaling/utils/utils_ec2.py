@@ -10,6 +10,7 @@ from typing import Final
 from aws_library.ec2 import AWSTagKey, AWSTagValue, EC2InstanceType, EC2Tags, Resources
 from aws_library.ec2._models import EC2InstanceData
 from common_library.json_serialization import json_dumps
+from pydantic import TypeAdapter
 
 from .._meta import VERSION
 from ..core.errors import (
@@ -22,25 +23,44 @@ from ..core.settings import ApplicationSettings
 _logger = logging.getLogger(__name__)
 
 _EC2_INTERNAL_DNS_RE: Final[re.Pattern] = re.compile(r"^(?P<host_name>ip-[^.]+)\..+$")
+_SIMCORE_AUTOSCALING_VERSION_TAG_KEY: Final[AWSTagKey] = TypeAdapter(
+    AWSTagKey
+).validate_python("io.simcore.autoscaling.version")
+_SIMCORE_AUTOSCALING_NODE_LABELS_TAG_KEY: Final[AWSTagKey] = TypeAdapter(
+    AWSTagKey
+).validate_python("io.simcore.autoscaling.monitored_nodes_labels")
+_SIMCORE_AUTOSCALING_SERVICE_LABELS_TAG_KEY: Final[AWSTagKey] = TypeAdapter(
+    AWSTagKey
+).validate_python("io.simcore.autoscaling.monitored_services_labels")
+_SIMCORE_AUTOSCALING_DASK_SCHEDULER_URL_TAG_KEY: Final[AWSTagKey] = TypeAdapter(
+    AWSTagKey
+).validate_python("io.simcore.autoscaling.dask-scheduler_url")
+_EC2_NAME_TAG_KEY: Final[AWSTagKey] = TypeAdapter(AWSTagKey).validate_python("Name")
 
 
 def get_ec2_tags_dynamic(app_settings: ApplicationSettings) -> EC2Tags:
     assert app_settings.AUTOSCALING_NODES_MONITORING  # nosec
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
     return {
-        AWSTagKey("io.simcore.autoscaling.version"): AWSTagValue(f"{VERSION}"),
-        AWSTagKey("io.simcore.autoscaling.monitored_nodes_labels"): AWSTagValue(
+        _SIMCORE_AUTOSCALING_VERSION_TAG_KEY: TypeAdapter(AWSTagValue).validate_python(
+            f"{VERSION}"
+        ),
+        _SIMCORE_AUTOSCALING_NODE_LABELS_TAG_KEY: TypeAdapter(
+            AWSTagValue
+        ).validate_python(
             json_dumps(
                 app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS
             )
         ),
-        AWSTagKey("io.simcore.autoscaling.monitored_services_labels"): AWSTagValue(
+        _SIMCORE_AUTOSCALING_SERVICE_LABELS_TAG_KEY: TypeAdapter(
+            AWSTagValue
+        ).validate_python(
             json_dumps(
                 app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_SERVICE_LABELS
             )
         ),
         # NOTE: this one gets special treatment in AWS GUI and is applied to the name of the instance
-        AWSTagKey("Name"): AWSTagValue(
+        _EC2_NAME_TAG_KEY: TypeAdapter(AWSTagValue).validate_python(
             f"{app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_NAME_PREFIX}-{app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME}"
         ),
     } | app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_CUSTOM_TAGS
@@ -50,12 +70,14 @@ def get_ec2_tags_computational(app_settings: ApplicationSettings) -> EC2Tags:
     assert app_settings.AUTOSCALING_DASK  # nosec
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
     return {
-        AWSTagKey("io.simcore.autoscaling.version"): AWSTagValue(f"{VERSION}"),
-        AWSTagKey("io.simcore.autoscaling.dask-scheduler_url"): AWSTagValue(
-            f"{app_settings.AUTOSCALING_DASK.DASK_MONITORING_URL}"
+        _SIMCORE_AUTOSCALING_VERSION_TAG_KEY: TypeAdapter(AWSTagValue).validate_python(
+            f"{VERSION}"
         ),
+        _SIMCORE_AUTOSCALING_DASK_SCHEDULER_URL_TAG_KEY: TypeAdapter(
+            AWSTagValue
+        ).validate_python(f"{app_settings.AUTOSCALING_DASK.DASK_MONITORING_URL}"),
         # NOTE: this one gets special treatment in AWS GUI and is applied to the name of the instance
-        AWSTagKey("Name"): AWSTagValue(
+        _EC2_NAME_TAG_KEY: TypeAdapter(AWSTagValue).validate_python(
             f"{app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_NAME_PREFIX}-{app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME}"
         ),
     } | app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_CUSTOM_TAGS
@@ -74,22 +96,36 @@ def closest_instance_policy(
     ec2_instance: EC2InstanceType,
     resources: Resources,
 ) -> float:
-    if (
-        ec2_instance.resources.cpus < resources.cpus
-        or ec2_instance.resources.ram < resources.ram
-    ):
+    """Scores how well an EC2 instance fits the requested resources.
+    The higher the score the better the fit.
+    """
+    # if the instance does not satisfy the requested resources return 0
+    if not (ec2_instance.resources >= resources):
+        # NOTE: this is the construction such that if any of the
+        # resources in resources is larger it will return True
         return 0
+
+    if ec2_instance.resources == resources:
+        return 100.0
+
     # compute a score for all the instances that are above expectations
     # best is the exact ec2 instance
     assert ec2_instance.resources.cpus > 0  # nosec
     assert ec2_instance.resources.ram > 0  # nosec
-    cpu_ratio = float(ec2_instance.resources.cpus - resources.cpus) / float(
-        ec2_instance.resources.cpus
-    )
-    ram_ratio = float(ec2_instance.resources.ram - resources.ram) / float(
-        ec2_instance.resources.ram
-    )
-    return 100 * (1.0 - cpu_ratio) * (1.0 - ram_ratio)
+    max_cpu_usage_ratio = float(resources.cpus) / float(ec2_instance.resources.cpus)
+    max_ram_usage_ratio = float(resources.ram) / float(ec2_instance.resources.ram)
+    # for generic resources we could add more ratios here
+    generic_usage_ratio = 1.0
+    for resource_name, resource_value in resources.generic_resources.items():
+        if isinstance(resource_value, str):
+            # NOTE: for string resources we cannot compute a ratio
+            continue
+        # the resource exist on the instance otherwise > would have returned 0 above
+        ec2_resource_value = ec2_instance.resources.generic_resources[resource_name]
+        usage_ratio = float(resource_value) / float(ec2_resource_value)
+        generic_usage_ratio *= usage_ratio
+
+    return 100 * max_cpu_usage_ratio * max_ram_usage_ratio * generic_usage_ratio
 
 
 def find_best_fitting_ec2_instance(

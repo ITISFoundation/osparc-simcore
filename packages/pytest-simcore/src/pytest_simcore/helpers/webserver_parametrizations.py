@@ -1,4 +1,4 @@
-from typing import NamedTuple
+from typing import NamedTuple, TypedDict
 from unittest import mock
 
 from servicelib.aiohttp import status
@@ -120,3 +120,7 @@ class MockedStorageSubsystem(NamedTuple):
     delete_project: mock.MagicMock
     delete_node: mock.MagicMock
     get_project_total_size_simcore_s3: mock.MagicMock
+
+
+class SocketHandlers(TypedDict):
+    SOCKET_IO_PROJECT_UPDATED_EVENT: mock.Mock

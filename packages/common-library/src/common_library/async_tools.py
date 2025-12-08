@@ -2,11 +2,14 @@ import asyncio
 import datetime
 import functools
 import logging
+import sys
 from collections.abc import Awaitable, Callable, Coroutine
 from concurrent.futures import Executor
 from functools import wraps
 from inspect import isawaitable
 from typing import Any, ParamSpec, TypeVar, overload
+
+from .logging.logging_errors import create_troubleshooting_log_kwargs
 
 _logger = logging.getLogger(__name__)
 
@@ -90,31 +93,89 @@ async def cancel_wait_task(
         CancelledError: raised ONLY if owner is being cancelled.
     """
 
-    cancelling = task.cancel()
-    if not cancelling:
-        return  # task was alredy cancelled
+    # NOTE: if this function is cancelled, all the sync methods will still be called
+    # before propagating the CancelledError, therefore the task will still be properly cancelled
 
-    assert task.cancelling()  # nosec
-    assert not task.cancelled()  # nosec
+    if task.done():
+        # nothing to do here
+        return
 
+    # mark for cancellation
+    current_task = asyncio.current_task()
+    assert current_task  # nosec
+    cancelled = task.cancel(
+        f"manually cancelling and waiting for task: {task.get_name()}, {current_task.cancelling()=}"
+    )
+    _logger.debug("task %s marked for cancellation: %s", task.get_name(), cancelled)
     try:
-
-        await asyncio.shield(
-            # NOTE shield ensures that cancellation of the caller function won't stop you
-            # from observing the cancellation/finalization of task.
-            asyncio.wait_for(task, timeout=max_delay)
-        )
-
-    except asyncio.CancelledError:
-        if not task.cancelled():
-            # task owner function is being cancelled -> propagate cancellation
-            raise
-
-        # else: task cancellation is complete, we can safely ignore it
         _logger.debug(
-            "Task %s cancellation is complete",
+            "Starting cancellation of task: %s, current_task is cancelling: %d",
             task.get_name(),
+            current_task.cancelling(),
         )
+        # NOTE: using wait here so that the cancellation error on task is not propagated to us
+        done, pending = await asyncio.wait((task,), timeout=max_delay)
+        if pending:
+            raise TimeoutError  # noqa: TRY301
+        assert task in done  # nosec
+        _logger.debug(
+            "Finished cancellation of task: %s, current_task is cancelling: %d",
+            task.get_name(),
+            current_task.cancelling(),
+        )
+        if not task.cancelled() and (task_exception := task.exception()):
+            assert task_exception  # nosec
+            _logger.debug(
+                "Task %s raised exception after cancellation: %s",
+                task.get_name(),
+                task_exception,
+            )
+
+            raise task_exception
+    except TimeoutError as exc:
+        _logger.exception(
+            **create_troubleshooting_log_kwargs(
+                f"Timeout while cancelling task {task.get_name()} after {max_delay} seconds",
+                error=exc,
+                error_context={
+                    "task_name": task.get_name(),
+                    "max_delay": max_delay,
+                    "current_task_cancelling": current_task.cancelling(),
+                },
+            )
+        )
+        raise
+    except asyncio.CancelledError as exc:
+        _logger.debug(
+            "Cancellation of task %s was itself cancelled: %s, current_task cancelling=%d",
+            task.get_name(),
+            exc,
+            current_task.cancelling(),
+        )
+        raise
+    finally:
+        if not task.done():
+            current_exception = sys.exception()
+            _logger.error(
+                **create_troubleshooting_log_kwargs(
+                    f"Failed to cancel task {task.get_name()}",
+                    error=(
+                        current_exception if current_exception else Exception("Unknown")
+                    ),
+                    error_context={
+                        "task_name": task.get_name(),
+                        "max_delay": max_delay,
+                        "current_task_cancelling": current_task.cancelling(),
+                    },
+                    tip="Consider increasing max_delay or fixing the task to handle cancellations properly",
+                )
+            )
+        else:
+            _logger.debug(
+                "Task %s cancelled, current_task cancelling=%d",
+                task.get_name(),
+                current_task.cancelling(),
+            )
 
 
 def delayed_start(

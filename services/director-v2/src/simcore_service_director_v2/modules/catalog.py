@@ -11,7 +11,7 @@ from models_library.services import ServiceKey, ServiceVersion
 from models_library.services_resources import ServiceResourcesDict
 from models_library.users import UserID
 from pydantic import TypeAdapter
-from servicelib.fastapi.tracing import setup_httpx_client_tracing
+from servicelib.fastapi.tracing import get_tracing_config, setup_httpx_client_tracing
 from settings_library.catalog import CatalogSettings
 from settings_library.tracing import TracingSettings
 
@@ -35,7 +35,10 @@ def setup(
             timeout=app.state.settings.CLIENT_REQUEST.HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT,
         )
         if tracing_settings:
-            setup_httpx_client_tracing(client=client)
+            setup_httpx_client_tracing(
+                client=client,
+                tracing_config=get_tracing_config(app),
+            )
 
         CatalogClient.create(
             app,

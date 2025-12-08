@@ -8,6 +8,7 @@ class BaseBackEndError(ApiServerBaseError):
     """status_code: the default return status which will be returned to the client calling the
     api-server (in case this exception is raised)"""
 
+    msg_template = "The api-server encountered an error when contacting the backend"
     status_code = status.HTTP_502_BAD_GATEWAY
 
     @classmethod
@@ -144,4 +145,19 @@ class LicensedItemCheckoutNotFoundError(BaseBackEndError):
 
 class JobAssetsMissingError(BaseBackEndError):
     msg_template = "Job assets missing for job {job_id}"
+    status_code = status.HTTP_409_CONFLICT
+
+
+class CeleryTaskNotFoundError(BaseBackEndError):
+    msg_template = "Task {task_uuid} not found"
+    status_code = status.HTTP_404_NOT_FOUND
+
+
+class SolverJobOutputRequestButNotSucceededError(BaseBackEndError):
+    msg_template = "Solver job '{job_id}' not succeeded, when output is requested. Current state: {state}"
+    status_code = status.HTTP_409_CONFLICT
+
+
+class StudyJobOutputRequestButNotSucceededError(BaseBackEndError):
+    msg_template = "Study job '{job_id}' not succeeded, when output is requested. Current state: {state}"
     status_code = status.HTTP_409_CONFLICT

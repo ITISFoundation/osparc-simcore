@@ -1,19 +1,22 @@
 """user's session plugin"""
 
 import logging
+from typing import Final
 
 import aiohttp_session
 from aiohttp import web
-from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 from settings_library.utils_session import DEFAULT_SESSION_COOKIE_NAME
 
+from ..application_setup import ModuleCategory, app_setup_func
 from ._cookie_storage import SharedCookieEncryptedCookieStorage
 from .settings import SessionSettings, get_plugin_settings
 
 _logger = logging.getLogger(__name__)
 
+APP_SESSION_KEY: Final = web.AppKey("APP_SESSION_KEY", object)
 
-@app_module_setup(
+
+@app_setup_func(
     __name__, ModuleCategory.ADDON, settings_name="WEBSERVER_SESSION", logger=_logger
 )
 def setup_session(app: web.Application):

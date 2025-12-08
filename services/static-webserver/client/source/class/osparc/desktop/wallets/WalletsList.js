@@ -90,9 +90,7 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
 
     __createWalletsList: function(widgetId) {
       const walletsUIList = new qx.ui.form.List().set({
-        decorator: "no-border",
-        spacing: 3,
-        backgroundColor: "transparent",
+        appearance: "listing",
         height: null,
         focusable: false
       });
@@ -118,7 +116,6 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
         },
         configureItem: item => {
           item.subscribeToFilterGroup("walletsList");
-
           item.addListener("openEditWallet", e => this.__openEditWallet(e.getData()));
           item.addListener("openShareWallet", e => this.__walletSelected(e.getData()));
           item.addListener("buyCredits", e => this.fireDataEvent("buyCredits", e.getData()));
@@ -218,10 +215,9 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
 
     __createHeader: function(label, showCurrently) {
       const header = new qx.ui.container.Composite(new qx.ui.layout.HBox());
-      const userWallets = new qx.ui.basic.Label().set({
+      const userWallets = new osparc.ui.basic.SafeLabel().set({
         value: label,
         alignX: "left",
-        rich: true,
         font: "text-14"
       });
       header.add(userWallets);
@@ -229,8 +225,8 @@ qx.Class.define("osparc.desktop.wallets.WalletsList", {
         flex: 1
       });
       if (showCurrently) {
-        const selectColumn = new qx.ui.basic.Label(this.tr("Currently in use")).set({
-          marginRight: 18
+        const selectColumn = new qx.ui.basic.Label(this.tr("Preferred")).set({
+          marginRight: 8 // align it with the "preferred-button"
         });
         header.add(selectColumn)
       }

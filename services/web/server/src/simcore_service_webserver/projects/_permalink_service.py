@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Protocol, cast
+from typing import Final, Protocol
 
 from aiohttp import web
 from models_library.api_schemas_webserver.permalinks import ProjectPermalink
@@ -10,7 +10,6 @@ from yarl import URL
 from .exceptions import PermalinkFactoryError, PermalinkNotAllowedError
 from .models import ProjectDict
 
-_PROJECT_PERMALINK = f"{__name__}"
 _logger = logging.getLogger(__name__)
 
 
@@ -24,16 +23,21 @@ class CreateLinkCoroutine(Protocol):
     ) -> ProjectPermalink: ...
 
 
+_PROJECT_PERMALINK_FACTORY_APPKEY: Final = web.AppKey(
+    "PROJECT_PERMALINK_FACTORY", CreateLinkCoroutine
+)
+
+
 def register_factory(app: web.Application, factory_coro: CreateLinkCoroutine):
-    if _create := app.get(_PROJECT_PERMALINK):
+    if _create := app.get(_PROJECT_PERMALINK_FACTORY_APPKEY):
         msg = f"Permalink factory can only be set once: registered {_create}"
         raise PermalinkFactoryError(msg)
-    app[_PROJECT_PERMALINK] = factory_coro
+    app[_PROJECT_PERMALINK_FACTORY_APPKEY] = factory_coro
 
 
 def _get_factory(app: web.Application) -> CreateLinkCoroutine:
-    if _create := app.get(_PROJECT_PERMALINK):
-        return cast(CreateLinkCoroutine, _create)
+    if _create := app.get(_PROJECT_PERMALINK_FACTORY_APPKEY):
+        return _create
 
     msg = "Undefined permalink factory. Check plugin initialization."
     raise PermalinkFactoryError(msg)

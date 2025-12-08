@@ -4,6 +4,7 @@
 # pylint: disable=too-many-arguments
 # pylint: disable=too-many-statements
 
+import json
 from collections.abc import Iterator
 
 import httpx
@@ -94,11 +95,20 @@ async def test_fogubugz_client(
     fogbugz_client = get_fogbugz_rest_client(client.app)
     assert fogbugz_client
 
+    _json = {"first_key": "test", "second_key": "test2"}
+    _description = f"""
+    Dear Support Team,
+
+    We have received a support request.
+
+    Extra content: {json.dumps(_json)}
+    """
+
     case_id = await fogbugz_client.create_case(
         data=FogbugzCaseCreate(
-            fogbugz_project_id="45",
+            fogbugz_project_id=45,
             title="Matus Test Automatic Creation of Fogbugz Case",
-            description="This is a test case",
+            description=_description,
         )
     )
     assert case_id == _IXBUG_DUMMY
@@ -110,6 +120,10 @@ async def test_fogubugz_client(
     status = await fogbugz_client.get_case_status(case_id)
     assert status == "Resolved (Completed)"
 
-    await fogbugz_client.reopen_case(case_id, assigned_fogbugz_person_id="281")
+    await fogbugz_client.reopen_case(
+        case_id,
+        assigned_fogbugz_person_id="281",
+        reopen_msg="Reopening the case with customer request",
+    )
     status = await fogbugz_client.get_case_status(case_id)
     assert status == "Active"

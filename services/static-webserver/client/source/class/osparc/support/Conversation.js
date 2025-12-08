@@ -17,96 +17,71 @@
 
 
 qx.Class.define("osparc.support.Conversation", {
-  extend: qx.ui.core.Widget,
+  extend: osparc.conversation.MessageList,
 
   /**
     * @param conversation {osparc.data.model.Conversation} Conversation
     */
   construct: function(conversation) {
-    this.base(arguments);
+    this.base(arguments, conversation);
+  },
 
-    this.__messages = [];
-
-    this._setLayout(new qx.ui.layout.VBox(5));
-
-    this.__buildLayout();
-
-    if (conversation) {
-      this.setConversation(conversation);
-    }
+  statics: {
+    SYSTEM_MESSAGE_TYPE: {
+      ASK_A_QUESTION: "askAQuestion",
+      BOOK_A_CALL: "bookACall",
+      BOOK_A_CALL_3RD: "bookACall3rd",
+      ESCALATE_TO_SUPPORT: "escalateToSupport",
+      REPORT_OEC: "reportOEC",
+      FOLLOW_UP: "followUp",
+    },
+    TRIGGER_CHATBOT_DELAY: 2000,
   },
 
   properties: {
-    conversation: {
-      check: "osparc.data.model.Conversation",
-      init: null,
-      nullable: true,
-      event: "changeConversation",
-      apply: "__applyConversation",
-    },
-
-    studyId: {
-      check: "String",
-      init: null,
-      nullable: true,
-      event: "changeStudyId",
-      apply: "__applyStudyId",
+    chatbotTriggerState: {
+      check: ["idle", "waiting", "triggered"],
+      init: "idle",
+      nullable: false,
+      event: "changeChatbotTriggerState",
     },
   },
 
   members: {
-    __messages: null,
+    __bookACallInfo: null,
+    __triggerChatbotTimer: null,
 
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "spacer-top":
-          control = new qx.ui.core.Spacer();
-          this._addAt(control, 0, {
-            flex: 100 // high number to keep even a one message list at the bottom
+        case "thinking-response":
+          control = new qx.ui.basic.Label(this.tr("thinking")).set({
+            font: "text-13-italic",
+            marginLeft: 50,
           });
-          break;
-        case "messages-container-scroll":
-          control = new qx.ui.container.Scroll();
-          this._addAt(control, 1, {
-            flex: 1
+          this.bind("chatbotTriggerState", control, "value", {
+            converter: val => {
+              switch (val) {
+                case "waiting":
+                  return this.tr("thinking");
+                case "triggered":
+                  return this.tr("thinking...");
+                case "idle":
+                  return "";
+              }
+            }
           });
-          break;
-        case "messages-container":
-          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5)).set({
-            alignY: "middle"
+          this.bind("chatbotTriggerState", control, "visibility", {
+            converter: val => val === "idle" ? "excluded" : "visible"
           });
-          this.getChildControl("messages-container-scroll").add(control);
-          break;
-        case "load-more-button":
-          control = new osparc.ui.form.FetchButton(this.tr("Load more messages..."));
-          control.addListener("execute", () => this.__reloadMessages(false));
-          this._addAt(control, 2);
-          break;
-        case "support-suggestion":
-          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5)).set({
-            alignY: "middle"
-          });
-          this._addAt(control, 3);
-          break;
-        case "add-message":
-          control = new osparc.conversation.AddMessage().set({
-            padding: 5,
-          });
-          this.bind("conversation", control, "conversationId", {
-            converter: conversation => conversation ? conversation.getConversationId() : null
-          });
-          // make it more compact
-          control.getChildControl("comment-field").getChildControl("tabs").getChildControl("bar").exclude();
-          control.getChildControl("comment-field").getChildControl("subtitle").exclude();
-          this._addAt(control, 4);
+          this._addAt(control, osparc.conversation.MessageList.POS.THINKING_RESPONSE);
           break;
         case "share-project-layout":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox()).set({
             backgroundColor: "strong-main",
             decorator: "rounded",
           });
-          this._addAt(control, 5);
+          this._addAt(control, osparc.conversation.MessageList.POS.SHARE_PROJECT_LAYOUT);
           break;
         case "share-project-checkbox":
           control = new qx.ui.form.CheckBox().set({
@@ -118,96 +93,218 @@ qx.Class.define("osparc.support.Conversation", {
           this.getChildControl("share-project-layout").add(new qx.ui.core.Spacer(), { flex: 1 });
           this.getChildControl("share-project-layout").add(control);
           this.getChildControl("share-project-layout").add(new qx.ui.core.Spacer(), { flex: 1 });
+          control.addListener("tap", () => this.__shareProjectWithSupport(control.getValue()), this);
           break;
       }
       return control || this.base(arguments, id);
     },
 
-    __buildLayout: function() {
-      this.getChildControl("spacer-top");
-      this.getChildControl("messages-container");
+    _buildLayout: function() {
+      this.base(arguments);
+
       const addMessages = this.getChildControl("add-message");
-      addMessages.addListener("messageAdded", e => {
-        const data = e.getData();
-        if (data["conversationId"] && this.getConversation() === null) {
-          osparc.store.ConversationsSupport.getInstance().getConversation(data["conversationId"])
-            .then(conversation => {
-              this.setConversation(conversation);
-            });
+      addMessages.addListener("addMessage", e => {
+        const content = e.getData();
+        const conversation = this.getConversation();
+        if (conversation) {
+          this.__postMessage(content);
         } else {
-          this.getConversation().addMessage(data);
-          this.addMessage(data);
+          // create new conversation first
+          const extraContext = {};
+          const currentStudy = osparc.store.Store.getInstance().getCurrentStudy()
+          if (currentStudy) {
+            extraContext["projectId"] = currentStudy.getUuid();
+          }
+          // clone first, it will be reset when setting the conversation
+          const bookACallInfo = this.__bookACallInfo ? Object.assign({}, this.__bookACallInfo) : null;
+          const type = bookACallInfo ? osparc.store.ConversationsSupport.TYPES.SUPPORT_CALL : osparc.store.ConversationsSupport.TYPES.SUPPORT;
+          osparc.store.ConversationsSupport.getInstance().postConversation(extraContext, type)
+            .then(data => {
+              const newConversation = new osparc.data.model.ConversationSupport(data);
+              this.setConversation(newConversation);
+              let prePostMessagePromise = new Promise((resolve) => resolve());
+              if (bookACallInfo) {
+                // add a first message
+                let msg = "Book a Call";
+                if (bookACallInfo) {
+                  msg += `\n- Topic: ${bookACallInfo["topic"]}`;
+                  if ("extraInfo" in bookACallInfo) {
+                    msg += `\n- Extra Info: ${bookACallInfo["extraInfo"]}`;
+                  }
+                }
+                prePostMessagePromise = this.__postMessage(msg);
+                // rename the conversation
+                newConversation.renameConversation("Book a Call");
+                // share project if needed
+                if (bookACallInfo["share-project"] && currentStudy) {
+                  this.__shareProjectWithSupport(true);
+                }
+              }
+              prePostMessagePromise
+                .then(() => {
+                  // add the actual message
+                  return this.__postMessage(content);
+                })
+                .then(() => {
+                  if (
+                    !osparc.store.Groups.getInstance().isChatbotEnabled() ||
+                    type === osparc.store.ConversationsSupport.TYPES.SUPPORT_CALL
+                  ) {
+                    // only add follow up message if there is no chatbot support
+                    setTimeout(() => this.addSystemMessage(this.self().SYSTEM_MESSAGE_TYPE.FOLLOW_UP), 1000);
+                  }
+                });
+            });
         }
       });
+
+      addMessages.addListener("changeTyping", e => {
+        const isTyping = e.getData();
+        if (isTyping) {
+          // if the user is typing, clear any previous chatbot trigger timer
+          this.__clearTriggerChatbotTimer();
+        } else {
+          // if the user stopped typing, start the chatbot trigger timer if needed
+          this.__startTriggerChatbotTimer();
+        }
+      }, this);
+
+      this.getChildControl("thinking-response");
     },
 
-    __applyConversation: function(conversation) {
-      this.__reloadMessages(true);
+    // overridden
+    clearAllMessages: function() {
+      this.base(arguments);
 
+      this.__bookACallInfo = null;
+    },
+
+    _applyConversation: function(conversation) {
+      this.base(arguments, conversation);
+
+      this.__bookACallInfo = null;
+      this.__evaluateShareProject();
+    },
+
+    // overridden
+    _messageAdded: function(message) {
+      this.base(arguments, message);
+
+      // keep conversation read
+      const conversation = this.getConversation();
       if (conversation) {
-        conversation.addListener("messageAdded", e => {
-          const data = e.getData();
-          this.addMessage(data);
-        });
-        conversation.addListener("messageUpdated", e => {
-          const data = e.getData();
-          this.updateMessage(data);
-        });
-        conversation.addListener("messageDeleted", e => {
-          const data = e.getData();
-          this.deleteMessage(data);
-        });
+        conversation.setReadBy(true);
       }
 
-      this.__populateShareProjectCheckbox();
+      // hide thinking response if the message is from the chatbot
+      if (
+        osparc.store.Groups.getInstance().isChatbotEnabled() &&
+        osparc.store.Groups.getInstance().getChatbot().getGroupId() === message.getUserGroupId()
+      ) {
+        this.setChatbotTriggerState("idle");
+        this.__clearTriggerChatbotTimer();
+      }
     },
 
-    __populateShareProjectCheckbox: function() {
-      const conversation = this.getConversation();
+    __postMessage: function(content) {
+      const conversationId = this.getConversation().getConversationId();
+      return osparc.store.ConversationsSupport.getInstance().postMessage(conversationId, content)
+        .then(messageData => {
+          this.__startTriggerChatbotTimer();
+          return messageData;
+        });
+    },
 
-      const shareProjectCB = this.getChildControl("share-project-checkbox");
+    __startTriggerChatbotTimer: function() {
+      // trigger chatbot only if:
+      // - chatbot is enabled
+      // - current user is not a support user
+      // - conversation is of type SUPPORT
+      // - conversation's last message is mine
+      if (
+        !osparc.store.Groups.getInstance().isChatbotEnabled() ||
+        osparc.store.Groups.getInstance().amIASupportUser() ||
+        !this.getConversation() ||
+        this.getConversation().getType() !== osparc.store.ConversationsSupport.TYPES.SUPPORT ||
+        this.getConversation().getLastMessage() && this.getConversation().getLastMessage().getUserGroupId() !== osparc.store.Groups.getInstance().getMyGroupId()
+      ) {
+        return;
+      }
+
+      // clear any previous timer
+      this.__clearTriggerChatbotTimer();
+
+      // show thinking response
+      this.setChatbotTriggerState("waiting");
+      // wait a bit before triggering the chatbot response
+      // if the user starts typing again, the timer will be cleared
+      const conversationId = this.getConversation().getConversationId();
+      const messageId = this.getConversation().getLastMessage().getMessageId();
+      this.__triggerChatbotTimer = setTimeout(() => {
+        this.__triggerChatbotTimer = null;
+        osparc.store.ConversationsSupport.getInstance().triggerChatbot(conversationId, messageId)
+          .then(() => this.setChatbotTriggerState("triggered"))
+          .catch(() => this.setChatbotTriggerState("idle"));
+      }, this.self().TRIGGER_CHATBOT_DELAY);
+    },
+
+    __clearTriggerChatbotTimer: function() {
+      // if the chatbot was already triggered, it can't be cleared
+      if (this.getChatbotTriggerState() === "waiting") {
+        this.setChatbotTriggerState("idle");
+      }
+
+      if (this.__triggerChatbotTimer) {
+        clearTimeout(this.__triggerChatbotTimer);
+        this.__triggerChatbotTimer = null;
+      }
+    },
+
+    __evaluateShareProject: function() {
       const shareProjectLayout = this.getChildControl("share-project-layout");
-      const currentStudy = osparc.store.Store.getInstance().getCurrentStudy();
-      let showCB = false;
-      let enabledCB = false;
-      if (conversation === null && currentStudy) {
-        // initiating conversation
-        showCB = true;
-        enabledCB = true;
-      } else if (conversation) {
-        // it was already set
-        showCB = conversation.getContextProjectId();
-        enabledCB = conversation.amIOwner();
+      let showLayout = false;
+      let enabledLayout = false;
+      const conversation = this.getConversation();
+      if (conversation) {
+        showLayout = Boolean(conversation.getContextProjectId());
+        enabledLayout = conversation.amIOwner();
       }
       shareProjectLayout.set({
-        visibility: showCB ? "visible" : "excluded",
-        enabled: enabledCB,
+        visibility: showLayout ? "visible" : "excluded",
+        enabled: enabledLayout,
       });
 
+      if (showLayout) {
+        this.__populateShareProjectCB();
+        const currentStudy = osparc.store.Store.getInstance().getCurrentStudy();
+        if (currentStudy) {
+          currentStudy.addListener("changeAccessRights", () => this.__populateShareProjectCB(), this);
+        }
+      }
+    },
+
+    __populateShareProjectCB: function() {
+      const conversation = this.getConversation();
       if (conversation && conversation.getContextProjectId()) {
         const projectId = conversation.getContextProjectId();
         osparc.store.Study.getInstance().getOne(projectId)
           .then(studyData => {
             let isAlreadyShared = false;
             const accessRights = studyData["accessRights"];
-            const supportGroupId = osparc.store.Products.getInstance().getSupportGroupId();
+            const supportGroupId = osparc.store.Groups.getInstance().getSupportGroup().getGroupId();
             if (supportGroupId && supportGroupId in accessRights) {
               isAlreadyShared = true;
             } else {
               isAlreadyShared = false;
             }
+            const shareProjectCB = this.getChildControl("share-project-checkbox");
             shareProjectCB.setValue(isAlreadyShared);
-            shareProjectCB.removeListener("changeValue", this.__shareProjectWithSupport, this);
-            if (showCB) {
-              shareProjectCB.addListener("changeValue", this.__shareProjectWithSupport, this);
-            }
           });
       }
     },
 
-    __shareProjectWithSupport: function(e) {
-      const share = e.getData();
-      const supportGroupId = osparc.store.Products.getInstance().getSupportGroupId();
+    __shareProjectWithSupport: function(share) {
+      const supportGroupId = osparc.store.Groups.getInstance().getSupportGroup().getGroupId();
       const projectId = this.getConversation().getContextProjectId();
       osparc.store.Study.getInstance().getOne(projectId)
         .then(studyData => {
@@ -222,114 +319,44 @@ qx.Class.define("osparc.support.Conversation", {
         });
     },
 
-    __reloadMessages: function(removeMessages = true) {
-      const messagesContainer = this.getChildControl("messages-container");
-      const loadMoreMessages = this.getChildControl("load-more-button");
-      if (this.getConversation() === null) {
-        messagesContainer.hide();
-        loadMoreMessages.hide();
-        return;
-      }
+    addSystemMessage: function(type) {
+      type = type || osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.ASK_A_QUESTION;
 
-      messagesContainer.show();
-      loadMoreMessages.show();
-      loadMoreMessages.setFetching(true);
-
-      if (removeMessages) {
-        this.__messages = [];
-        messagesContainer.removeAll();
-      }
-
-      this.getConversation().getNextMessages()
-        .then(resp => {
-          const messages = resp["data"];
-          messages.forEach(message => this.addMessage(message));
-          if (resp["_links"]["next"] === null && loadMoreMessages) {
-            loadMoreMessages.exclude();
-          }
-        })
-        .finally(() => loadMoreMessages.setFetching(false));
-    },
-
-    addMessage: function(message) {
-      // ignore it if it was already there
-      const messageIndex = this.__messages.findIndex(msg => msg["messageId"] === message["messageId"]);
-      if (messageIndex !== -1) {
-        return;
-      }
-
-      // determine insertion index for latest‐first order
-      const newTime = new Date(message["created"]);
-      let insertAt = this.__messages.findIndex(m => new Date(m["created"]) > newTime);
-      if (insertAt === -1) {
-        insertAt = this.__messages.length;
-      }
-
-      // Insert the message in the messages array
-      this.__messages.splice(insertAt, 0, message);
-
-      // Add the UI element to the messages list
-      let control = null;
-      switch (message["type"]) {
-        case "MESSAGE":
-          control = new osparc.conversation.MessageUI(message);
-          control.addListener("messageUpdated", e => this.updateMessage(e.getData()));
-          control.addListener("messageDeleted", e => this.deleteMessage(e.getData()));
+      let msg = null;
+      const greet = "Hi " + osparc.auth.Data.getInstance().getUserName() + ",\n";
+      switch (type) {
+        case osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.ASK_A_QUESTION:
+          msg = greet + "Have a question or feedback?\nWe are happy to assist!";
           break;
-        case "NOTIFICATION":
-          control = new osparc.conversation.NotificationUI(message);
+        case osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.BOOK_A_CALL:
+          msg = greet + "Let us know what your availability is and we will get back to you shortly to schedule a meeting.";
+          break;
+        case osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.ESCALATE_TO_SUPPORT:
+          msg = greet + "Our support team will take it from here — please confirm or edit your question below to get started.";
+          break;
+        case osparc.support.Conversation.SYSTEM_MESSAGE_TYPE.FOLLOW_UP:
+          msg = "A support ticket has been created.\nOur team will review your request and contact you soon.";
           break;
       }
-      if (control) {
-        // insert into the UI at the same position
-        const messagesContainer = this.getChildControl("messages-container");
-        messagesContainer.addAt(control, insertAt);
-      }
-
-      // scroll to bottom
-      // add timeout to ensure the scroll happens after the UI is updated
-      setTimeout(() => {
-        const messagesScroll = this.getChildControl("messages-container-scroll");
-        messagesScroll.scrollToY(messagesScroll.getChildControl("pane").getScrollMaxY());
-      }, 50);
-    },
-
-    deleteMessage: function(message) {
-      // remove it from the messages array
-      const messageIndex = this.__messages.findIndex(msg => msg["messageId"] === message["messageId"]);
-      if (messageIndex === -1) {
-        return;
-      }
-      this.__messages.splice(messageIndex, 1);
-
-      // Remove the UI element from the messages list
-      const messagesContainer = this.getChildControl("messages-container");
-      const children = messagesContainer.getChildren();
-      const controlIndex = children.findIndex(
-        ctrl => ("getMessage" in ctrl && ctrl.getMessage()["messageId"] === message["messageId"])
-      );
-      if (controlIndex > -1) {
-        messagesContainer.remove(children[controlIndex]);
+      if (msg) {
+        const now = new Date();
+        const systemMessageData = {
+          "conversationId": null,
+          "content": msg,
+          "created": now.toISOString(),
+          "messageId": `system-${now.getTime()}`,
+          "modified": now.toISOString(),
+          "type": "MESSAGE",
+          "userGroupId": osparc.data.model.Message.SYSTEM_MESSAGE_ID,
+        };
+        const systemMessage = new osparc.data.model.Message(systemMessageData);
+        const messageUI = new osparc.conversation.MessageUI(systemMessage);
+        this.getChildControl("messages-container").add(messageUI);
       }
     },
 
-    updateMessage: function(message) {
-      // Replace the message in the messages array
-      const messageIndex = this.__messages.findIndex(msg => msg["messageId"] === message["messageId"]);
-      if (messageIndex === -1) {
-        return;
-      }
-      this.__messages[messageIndex] = message;
-
-      // Update the UI element from the messages list
-      const messagesContainer = this.getChildControl("messages-container");
-      const messageUI = messagesContainer.getChildren().find(control => {
-        return "getMessage" in control && control.getMessage()["messageId"] === message["messageId"];
-      });
-      if (messageUI) {
-        // Force a new reference
-        messageUI.setMessage(Object.assign({}, message));
-      }
+    addBookACallInfo: function(bookACallInfo) {
+      this.__bookACallInfo = bookACallInfo;
     },
   }
 });

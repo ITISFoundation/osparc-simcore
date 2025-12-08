@@ -17,7 +17,6 @@ import jsondiff
 import pytest
 from aiocache.base import BaseCache
 from aiohttp import web
-from psycopg2 import DatabaseError
 from pytest_mock import MockerFixture
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.security._authz_access_model import (
@@ -30,6 +29,7 @@ from simcore_service_webserver.security._authz_access_roles import (
 )
 from simcore_service_webserver.security._authz_policy import AuthorizationPolicy
 from simcore_service_webserver.security._authz_repository import ActiveUserIdAndRole
+from sqlalchemy.exc import DatabaseError
 
 
 @pytest.fixture
@@ -277,13 +277,15 @@ def mock_db(mocker: MockerFixture) -> MagicMock:
         assert engine == "FAKE-ENGINE"
 
         if "db-failure" in email:
-            raise DatabaseError
+            raise DatabaseError(
+                statement="SELECT 1", params=None, orig=Exception("fake db error")
+            )
 
         # inactive user or not found
         return copy.deepcopy(users_db.get(email))
 
     mock_db_fun = mocker.patch(
-        "simcore_service_webserver.security._authz_policy.get_active_user_or_none",
+        "simcore_service_webserver.security._authz_policy._authz_repository.get_active_user_or_none",
         autospec=True,
         side_effect=_fake_db,
     )

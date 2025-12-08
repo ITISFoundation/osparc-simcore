@@ -1,10 +1,10 @@
 # Citations according to https://scicrunch.org/resources
 """
-    NOTES:
+NOTES:
 
-    - scicrunch API ONLY recognizes RRIDs from SciCrunch registry of tools (i.e. with prefix "SCR")
-    - scicrunch web search handles ALL RRIDs (see below example of citations from other)
-    - scicrunch API does NOT uses 'RRID:' prefix in rrid request parameters
+- scicrunch API ONLY recognizes RRIDs from SciCrunch registry of tools (i.e. with prefix "SCR")
+- scicrunch web search handles ALL RRIDs (see below example of citations from other)
+- scicrunch API does NOT uses 'RRID:' prefix in rrid request parameters
 
 """
 
@@ -13,8 +13,12 @@ import re
 
 def split_citations(citations: list[str]) -> list[tuple[str, str]]:
     def _split(citation: str) -> tuple[str, str]:
+        assert citation.startswith("("), f"Got {citation=}"
+        assert citation.endswith(")"), f"Got {citation=}"
+        # make sure there is a comma before RRID: so we can split
         if "," not in citation:
             citation = citation.replace("(", "(,")
+
         name, rrid = re.match(r"^\((.*),\s*RRID:(.+)\)$", citation).groups()
         return name, rrid
 

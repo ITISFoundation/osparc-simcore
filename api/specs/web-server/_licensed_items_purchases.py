@@ -1,5 +1,4 @@
-""" Helper script to generate OAS automatically
-"""
+"""Helper script to generate OAS automatically"""
 
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
@@ -45,8 +44,7 @@ router = APIRouter(
 async def list_wallet_licensed_items_purchases(
     _path: Annotated[WalletsPathParams, Depends()],
     _query: Annotated[as_query(LicensedItemsPurchasesListQueryParams), Depends()],
-):
-    ...
+): ...
 
 
 @router.get(
@@ -55,5 +53,4 @@ async def list_wallet_licensed_items_purchases(
 )
 async def get_licensed_item_purchase(
     _path: Annotated[LicensedItemsPurchasesPathParams, Depends()],
-):
-    ...
+): ...

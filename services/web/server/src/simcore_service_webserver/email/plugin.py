@@ -1,8 +1,8 @@
-""" Plugin to send emails and render email templates
+"""Plugin to send emails and render email templates
 
 
- SMTP: Simple Mail Transfer Protocol
- MIME: Multipurpose Internet Mail Extensions
+SMTP: Simple Mail Transfer Protocol
+MIME: Multipurpose Internet Mail Extensions
 
 """
 
@@ -11,15 +11,15 @@ import logging
 import aiohttp_jinja2
 import jinja_app_loader  # type: ignore[import-untyped]
 from aiohttp import web
-from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
 from .._resources import webserver_resources
+from ..application_setup import ModuleCategory, app_setup_func
 from . import _handlers
 
 log = logging.getLogger(__name__)
 
 
-@app_module_setup(
+@app_setup_func(
     __name__, ModuleCategory.ADDON, settings_name="WEBSERVER_EMAIL", logger=log
 )
 def setup_email(app: web.Application):

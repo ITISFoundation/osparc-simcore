@@ -8,18 +8,17 @@ loads(dumps(my_object))
 
 """
 
-import asyncio
 import logging
-import traceback
 from collections.abc import Callable, Iterable
-from copy import deepcopy
 from dataclasses import dataclass
 from http.client import HTTPException
-from typing import Any, Final, cast
+from typing import Final, cast
 
 import distributed
+import distributed.client
 from aiohttp import ClientResponseError
 from common_library.json_serialization import json_dumps
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
 from dask_task_models_library.container_tasks.errors import TaskCancelledError
 from dask_task_models_library.container_tasks.events import TaskProgressEvent
@@ -49,7 +48,6 @@ from dask_task_models_library.resource_constraints import (
     create_ec2_resource_constraint_key,
 )
 from fastapi import FastAPI
-from models_library.api_schemas_directorv2.clusters import ClusterDetails, Scheduler
 from models_library.clusters import ClusterAuthentication, ClusterTypeInModel
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -57,9 +55,10 @@ from models_library.projects_state import RunningState
 from models_library.resource_tracker import HardwareInfo
 from models_library.services import ServiceRunID
 from models_library.users import UserID
-from pydantic import TypeAdapter, ValidationError
+from pydantic import ValidationError
 from pydantic.networks import AnyUrl
-from servicelib.logging_utils import log_catch, log_context
+from servicelib.logging_utils import log_context
+from servicelib.utils import limited_gather
 from settings_library.s3 import S3Settings
 from simcore_sdk.node_ports_common.exceptions import NodeportsException
 from simcore_sdk.node_ports_v2 import FileLinkType
@@ -70,6 +69,7 @@ from tenacity.wait import wait_fixed
 
 from ..core.errors import (
     ComputationalBackendNoS3AccessError,
+    ComputationalBackendNotConnectedError,
     ComputationalBackendTaskNotFoundError,
     ComputationalBackendTaskResultsNotReadyError,
     TaskSchedulingError,
@@ -90,10 +90,11 @@ from .db import get_db_engine
 _logger = logging.getLogger(__name__)
 
 
-_DASK_DEFAULT_TIMEOUT_S: Final[int] = 35
+_DASK_DEFAULT_TIMEOUT_S: Final[int] = 10
 
 
 _UserCallbackInSepThread = Callable[[], None]
+_MAX_CONCURRENT_CLIENT_CONNECTIONS: Final[int] = 1
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
@@ -241,17 +242,14 @@ class DaskClient:
             )
             # NOTE: the callback is running in a secondary thread, and takes a future as arg
             task_future.add_done_callback(lambda _: callback())
-            await distributed.Variable(job_id, client=self.backend.client).set(
-                task_future
-            )
 
             await dask_utils.wrap_client_async_routine(
                 self.backend.client.publish_dataset(task_future, name=job_id)
             )
 
-            _logger.debug(
+            _logger.info(
                 "Dask task %s started [%s]",
-                f"{task_future.key=}",
+                f"{job_id=}",
                 f"{node_image.command=}",
             )
             return PublishedComputationTask(node_id=node_id, job_id=DaskJobID(job_id))
@@ -425,7 +423,11 @@ class DaskClient:
             # we are interested in the last event
             return TaskProgressEvent.model_validate_json(dask_events[-1][1])
 
-        return await asyncio.gather(*(_get_task_progress(job_id) for job_id in job_ids))
+        return await limited_gather(
+            *(_get_task_progress(job_id) for job_id in job_ids),
+            log=_logger,
+            limit=_MAX_CONCURRENT_CLIENT_CONNECTIONS,
+        )
 
     async def get_tasks_status(self, job_ids: Iterable[str]) -> list[RunningState]:
         dask_utils.check_scheduler_is_still_the_same(
@@ -446,36 +448,69 @@ class DaskClient:
             parsed_event = TaskLifeCycleState.model_validate(dask_events[-1][1])
 
             if parsed_event.state == RunningState.FAILED:
+                log_error_context = {
+                    "job_id": job_id,
+                    "dask-scheduler": self.backend.scheduler_id,
+                }
                 try:
                     # find out if this was a cancellation
-                    var = distributed.Variable(job_id, client=self.backend.client)
-                    future: distributed.Future = await var.get(
+                    task_future: distributed.Future = (
+                        await dask_utils.wrap_client_async_routine(
+                            self.backend.client.get_dataset(name=job_id)
+                        )
+                    )
+                    exception = await task_future.exception(
                         timeout=_DASK_DEFAULT_TIMEOUT_S
                     )
-                    exception = await future.exception(timeout=_DASK_DEFAULT_TIMEOUT_S)
                     assert isinstance(exception, Exception)  # nosec
 
                     if isinstance(exception, TaskCancelledError):
+                        _logger.info(
+                            **create_troubleshooting_log_kwargs(
+                                f"Task {job_id} was aborted by user",
+                                error=exception,
+                                error_context=log_error_context,
+                            )
+                        )
                         return RunningState.ABORTED
                     assert exception  # nosec
-                    _logger.warning(
-                        "Task  %s completed in error:\n%s\nTrace:\n%s",
-                        job_id,
-                        exception,
-                        "".join(traceback.format_exception(exception)),
+                    _logger.info(
+                        **create_troubleshooting_log_kwargs(
+                            f"Task {job_id} completed with an error",
+                            error=exception,
+                            error_context=log_error_context,
+                        )
                     )
                     return RunningState.FAILED
-                except TimeoutError:
+                except TimeoutError as exc:
+                    _logger.exception(
+                        **create_troubleshooting_log_kwargs(
+                            f"Task {job_id} exception could not be retrieved due to timeout",
+                            error=exc,
+                            error_context=log_error_context,
+                            tip="The dask-scheduler is probably under load, this should resolve itself later.",
+                        ),
+                    )
+                    return RunningState.UNKNOWN
+                except KeyError as exc:
+                    # the task does not exist
                     _logger.warning(
-                        "Task  %s could not be retrieved from dask-scheduler, it is lost\n"
-                        "TIP:If the task was unpublished this can happen, or if the dask-scheduler was restarted.",
-                        job_id,
+                        **create_troubleshooting_log_kwargs(
+                            f"Task {job_id} not found. State is UNKNOWN.",
+                            error=exc,
+                            error_context=log_error_context,
+                            tip="If the task is supposed to exist, the dask-schdeler has probably restarted. Check its status.",
+                        ),
                     )
                     return RunningState.UNKNOWN
 
             return parsed_event.state
 
-        return await asyncio.gather(*(_get_task_state(job_id) for job_id in job_ids))
+        return await limited_gather(
+            *(_get_task_state(job_id) for job_id in job_ids),
+            log=_logger,
+            limit=_MAX_CONCURRENT_CLIENT_CONNECTIONS,
+        )
 
     async def abort_computation_task(self, job_id: str) -> None:
         # Dask future may be cancelled, but only a future that was not already taken by
@@ -503,6 +538,8 @@ class DaskClient:
 
     async def get_task_result(self, job_id: str) -> TaskOutputData:
         _logger.debug("getting result of %s", f"{job_id=}")
+        dask_utils.check_communication_with_scheduler_is_open(self.backend.client)
+        dask_utils.check_scheduler_status(self.backend.client)
         try:
             task_future: distributed.Future = (
                 await dask_utils.wrap_client_async_routine(
@@ -517,16 +554,15 @@ class DaskClient:
             raise ComputationalBackendTaskNotFoundError(job_id=job_id) from exc
         except distributed.TimeoutError as exc:
             raise ComputationalBackendTaskResultsNotReadyError(job_id=job_id) from exc
+        except (
+            distributed.client.FutureCancelledError,
+            distributed.client.FuturesCancelledError,
+        ) as exc:
+            raise ComputationalBackendNotConnectedError from exc
 
     async def release_task_result(self, job_id: str) -> None:
         _logger.debug("releasing results for %s", f"{job_id=}")
         try:
-            # NOTE: The distributed Variable holds the future of the tasks in the dask-scheduler
-            # Alas, deleting the variable is done asynchronously and there is no way to ensure
-            # the variable was effectively deleted.
-            # This is annoying as one can re-create the variable without error.
-            var = distributed.Variable(job_id, client=self.backend.client)
-            await asyncio.get_event_loop().run_in_executor(None, var.delete)
             # first check if the key exists
             await dask_utils.wrap_client_async_routine(
                 self.backend.client.get_dataset(name=job_id)
@@ -538,50 +574,3 @@ class DaskClient:
 
         except KeyError:
             _logger.warning("Unknown task cannot be unpublished: %s", f"{job_id=}")
-
-    async def get_cluster_details(self) -> ClusterDetails:
-        dask_utils.check_scheduler_is_still_the_same(
-            self.backend.scheduler_id, self.backend.client
-        )
-        dask_utils.check_communication_with_scheduler_is_open(self.backend.client)
-        dask_utils.check_scheduler_status(self.backend.client)
-        scheduler_info = self.backend.client.scheduler_info()
-        scheduler_status = self.backend.client.status
-        dashboard_link = self.backend.client.dashboard_link
-
-        def _get_worker_used_resources(
-            dask_scheduler: distributed.Scheduler,
-        ) -> dict[str, dict]:
-            used_resources = {}
-            for worker_name, worker_state in dask_scheduler.workers.items():
-                used_resources[worker_name] = worker_state.used_resources
-            return used_resources
-
-        with log_catch(_logger, reraise=False):
-            # NOTE: this runs directly on the dask-scheduler and may rise exceptions
-            used_resources_per_worker: dict[str, dict[str, Any]] = (
-                await dask_utils.wrap_client_async_routine(
-                    self.backend.client.run_on_scheduler(_get_worker_used_resources)
-                )
-            )
-
-            # let's update the scheduler info, with default to 0s since sometimes
-            # workers are destroyed/created without us knowing right away
-            for worker_name, worker_info in scheduler_info.get("workers", {}).items():
-                used_resources: dict[str, float] = deepcopy(
-                    worker_info.get("resources", {})
-                )
-                # reset default values
-                for res_name in used_resources:
-                    used_resources[res_name] = 0
-                # if the scheduler has info, let's override them
-                used_resources = used_resources_per_worker.get(
-                    worker_name, used_resources
-                )
-                worker_info.update(used_resources=used_resources)
-
-        assert dashboard_link  # nosec
-        return ClusterDetails(
-            scheduler=Scheduler(status=scheduler_status, **scheduler_info),
-            dashboard_link=TypeAdapter(AnyUrl).validate_python(dashboard_link),
-        )

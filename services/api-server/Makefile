@@ -28,7 +28,9 @@ reqs: ## compiles pip requirements (.in -> .txt)
 
 define _create_and_validate_openapi
 	# generating openapi specs file under $< (NOTE: Skips DEV FEATURES since this OAS is the 'offically released'!)
-	@source .env; \
+	set -o allexport; \
+	source .env; \
+	set +o allexport; \
 	export API_SERVER_DEV_FEATURES_ENABLED=$1; \
 	python3 -c "import json; from $(APP_PACKAGE_NAME).main import *; print( json.dumps(app_factory().openapi(), indent=2) )" > $@
 
@@ -93,11 +95,5 @@ test-api: ## Runs schemathesis against development server (NOTE: make up-devel f
 		"$(APP_URL)/api/v0/openapi.json"
 
 
-test-pacts: guard-PACT_BROKER_USERNAME guard-PACT_BROKER_PASSWORD guard-PACT_BROKER_URL _check_venv_active ## Test pacts
+test-pacts: guard-PACT_BROKER_USERNAME guard-PACT_BROKER_PASSWORD guard-PACT_BROKER_URL _check_venv_active ## Test pacts. Usage: PACT_BROKER_USERNAME=your_username PACT_BROKER_PASSWORD=your_password PACT_BROKER_URL=your_broker_url make test-pacts
 	pytest tests/unit/pact_broker/test*
-
-# Usage:
-# PACT_BROKER_USERNAME=your_username \
-# PACT_BROKER_PASSWORD=your_password \
-# PACT_BROKER_URL=your_broker_url \
-# make test-pacts

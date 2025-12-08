@@ -137,7 +137,7 @@ async def _retry_docker_compose_create(
 @asynccontextmanager
 async def _reset_on_error(
     shared_store: SharedStore,
-) -> AsyncGenerator[None, None]:
+) -> AsyncGenerator[None]:
     try:
         yield None
     except Exception:
@@ -197,7 +197,7 @@ async def create_user_services(
 
         await progress.update(message="creating and starting containers", percent=0.90)
         await post_sidecar_log_message(
-            app, "starting service containers", log_level=logging.INFO
+            app, "starting user service containers", log_level=logging.INFO
         )
         await _retry_docker_compose_create(shared_store.compose_spec, settings)
         await progress_bar.update()
@@ -215,7 +215,7 @@ async def create_user_services(
 
     if compose_start_result.success:
         await post_sidecar_log_message(
-            app, "user services started", log_level=logging.INFO
+            app, "user service containers started", log_level=logging.INFO
         )
         _logger.debug(message)
         for container_name in shared_store.container_names:
@@ -361,7 +361,6 @@ async def _restore_state_folder(
         ),
         r_clone_settings=settings.DY_SIDECAR_R_CLONE_SETTINGS,
         progress_bar=progress_bar,
-        aws_s3_cli_settings=settings.DY_SIDECAR_AWS_S3_CLI_SETTINGS,
         legacy_state=_get_legacy_state_with_dy_volumes_path(settings),
     )
 
@@ -436,7 +435,6 @@ async def _save_state_folder(
             post_sidecar_log_message, app, log_level=logging.INFO
         ),
         progress_bar=progress_bar,
-        aws_s3_cli_settings=settings.DY_SIDECAR_AWS_S3_CLI_SETTINGS,
         legacy_state=_get_legacy_state_with_dy_volumes_path(settings),
         application_name=f"{APP_NAME}-{settings.DY_SIDECAR_NODE_ID}",
     )

@@ -2,6 +2,7 @@ import logging
 from collections.abc import Awaitable, Callable
 from typing import TypeVar
 
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from fastapi import FastAPI, HTTPException, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
@@ -11,7 +12,6 @@ from fastapi.requests import Request
 from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 
-from ..logging_errors import create_troubleshootting_log_kwargs
 from ..status_codes_utils import is_5xx_server_error
 
 validation_error_response_definition["properties"] = {
@@ -57,7 +57,7 @@ def make_http_error_handler_for_exception(
 
         if is_5xx_server_error(status_code):
             _logger.exception(
-                create_troubleshootting_log_kwargs(
+                create_troubleshooting_log_kwargs(
                     f"A 5XX server error happened in current service. Responding with {error_content} and {status_code} status code",
                     error=exc,
                     error_context={

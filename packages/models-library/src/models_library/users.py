@@ -1,18 +1,31 @@
 import datetime
-from typing import Annotated, TypeAlias
-
-from common_library.users_enums import UserRole
-from models_library.basic_types import IDStr
-from pydantic import BaseModel, ConfigDict, Field, PositiveInt, StringConstraints
-from pydantic.config import JsonDict
-from typing_extensions import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
+from typing import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
+    Annotated,
+    TypeAlias,
     TypedDict,
 )
+
+from common_library.users_enums import UserRole
+from models_library.string_types import validate_input_xss_safety
+from pydantic import (
+    AfterValidator,
+    BaseModel,
+    ConfigDict,
+    Field,
+    PositiveInt,
+    StringConstraints,
+)
+from pydantic.config import JsonDict
 
 from .emails import LowerCaseEmailStr
 
 UserID: TypeAlias = PositiveInt
-UserNameID: TypeAlias = IDStr
+UserNameID: TypeAlias = Annotated[
+    str, StringConstraints(strip_whitespace=True, min_length=4, max_length=100)
+]
+UserNameSafeID: TypeAlias = Annotated[
+    UserNameID, AfterValidator(validate_input_xss_safety)
+]
 
 
 FirstNameStr: TypeAlias = Annotated[
@@ -71,8 +84,11 @@ class UserBillingDetails(BaseModel):
     institution: str | None
     address: str | None
     city: str | None
-    state: str | None = Field(description="State, province, canton, ...")
-    country: str  # Required for taxes
+    state: Annotated[str | None, Field(description="State, province, canton, ...")]
+    country: Annotated[
+        str,
+        Field(description="Billing country (with standardize name) required for taxes"),
+    ]
     postal_code: str | None
     phone: str | None
 

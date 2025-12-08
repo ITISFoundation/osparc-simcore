@@ -1,13 +1,13 @@
 """
-    Plugin to interact with the invitations service
+Plugin to interact with the invitations service
 """
 
 import logging
 
 from aiohttp import web
-from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
-from ..constants import APP_SETTINGS_KEY
+from ..application_keys import APP_SETTINGS_APPKEY
+from ..application_setup import ModuleCategory, app_setup_func
 from ..db.plugin import setup_db
 from ..products.plugin import setup_products
 from . import _rest
@@ -16,14 +16,14 @@ from ._client import invitations_service_api_cleanup_ctx
 _logger = logging.getLogger(__name__)
 
 
-@app_module_setup(
+@app_setup_func(
     __name__,
     ModuleCategory.ADDON,
     settings_name="WEBSERVER_INVITATIONS",
     logger=_logger,
 )
 def setup_invitations(app: web.Application):
-    assert app[APP_SETTINGS_KEY].WEBSERVER_INVITATIONS  # nosec
+    assert app[APP_SETTINGS_APPKEY].WEBSERVER_INVITATIONS  # nosec
 
     setup_db(app)
     setup_products(app)

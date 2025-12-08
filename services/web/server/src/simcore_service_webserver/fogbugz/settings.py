@@ -1,7 +1,8 @@
 from aiohttp import web
 from pydantic import AnyUrl, SecretStr
-from servicelib.aiohttp.application_keys import APP_SETTINGS_KEY
 from settings_library.base import BaseCustomSettings
+
+from ..application_keys import APP_SETTINGS_APPKEY
 
 
 class FogbugzSettings(BaseCustomSettings):
@@ -10,7 +11,7 @@ class FogbugzSettings(BaseCustomSettings):
 
 
 def get_plugin_settings(app: web.Application) -> FogbugzSettings:
-    settings = app[APP_SETTINGS_KEY].WEBSERVER_FOGBUGZ
+    settings = app[APP_SETTINGS_APPKEY].WEBSERVER_FOGBUGZ
     assert settings, "plugin.setup_fogbugz not called?"  # nosec
     assert isinstance(settings, FogbugzSettings)  # nosec
     return settings

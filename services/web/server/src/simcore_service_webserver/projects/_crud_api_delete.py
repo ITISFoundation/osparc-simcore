@@ -12,9 +12,9 @@ from typing import Protocol
 from aiohttp import web
 from models_library.projects import ProjectID
 from models_library.users import UserID
-from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.utils import fire_and_forget_task
 
+from ..constants import APP_FIRE_AND_FORGET_TASKS_KEY
 from ..director_v2 import director_v2_service
 from ..storage.api import delete_data_folders_of_project
 from ..users.exceptions import UserNotFoundError

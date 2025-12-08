@@ -29,6 +29,7 @@ log = logging.getLogger(__name__)
 
 
 _SERVICES_TO_SKIP: Final[set[str]] = {
+    "api-worker",
     "agent",  # global mode deploy (NO exposed ports, has http API)
     "dask-sidecar",  # global mode deploy (NO exposed ports, **NO** http API)
     "migration",
@@ -38,6 +39,7 @@ _SERVICES_TO_SKIP: Final[set[str]] = {
     "static-webserver",
     "traefik",
     "whoami",
+    "notifications-worker",
     "sto-worker",
     "sto-worker-cpu-bound",
     "traefik-config-placeholder",

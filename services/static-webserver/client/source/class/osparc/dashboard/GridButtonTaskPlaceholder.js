@@ -62,11 +62,10 @@ qx.Class.define("osparc.dashboard.GridButtonTaskPlaceholder", {
       let layout;
       switch (id) {
         case "state-label": {
-          control = new qx.ui.basic.Label().set({
+          control = new osparc.ui.basic.SafeLabel().set({
             textColor: "contrasted-text-dark",
             allowGrowX: true,
             allowShrinkX: true,
-            rich: true,
             anonymous: true,
             font: "text-12",
             allowGrowY: true,

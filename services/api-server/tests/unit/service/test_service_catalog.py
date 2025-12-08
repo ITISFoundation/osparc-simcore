@@ -31,7 +31,7 @@ def _to_solver_schema(
 async def test_catalog_service_read_solvers(
     product_name: ProductName,
     user_id: UserID,
-    mocked_rpc_client: MockType,
+    mocked_rabbit_rpc_client: MockType,
     catalog_service: CatalogService,
 ):
     # Step 1: List latest releases in a page
@@ -72,20 +72,20 @@ async def test_catalog_service_read_solvers(
     assert any(port.kind == "output" for port in ports), "Should contain output ports"
 
     # checks calls to rpc
-    assert mocked_rpc_client.request.call_count == 4
-    assert mocked_rpc_client.request.call_args_list[0].args == (
+    assert mocked_rabbit_rpc_client.request.call_count == 4
+    assert mocked_rabbit_rpc_client.request.call_args_list[0].args == (
         "catalog",
         "list_services_paginated",
     )
-    assert mocked_rpc_client.request.call_args_list[1].args == (
+    assert mocked_rabbit_rpc_client.request.call_args_list[1].args == (
         "catalog",
         "list_my_service_history_latest_first",
     )
-    assert mocked_rpc_client.request.call_args_list[2].args == (
+    assert mocked_rabbit_rpc_client.request.call_args_list[2].args == (
         "catalog",
         "get_service",
     )
-    assert mocked_rpc_client.request.call_args_list[3].args == (
+    assert mocked_rabbit_rpc_client.request.call_args_list[3].args == (
         "catalog",
         "get_service_ports",
     )

@@ -22,7 +22,8 @@ def task_schedule() -> TaskScheduleModel:
     return TypeAdapter(TaskScheduleModel).validate_python(
         {
             "timeout": timedelta(seconds=1),
-            "execution_attempts": 1,
+            "total_attempts": 1,
+            "execution_attempts": 2,
             "class_unique_reference": "mock",
             "start_context": {},
             "state": TaskState.SCHEDULED,

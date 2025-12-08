@@ -2,6 +2,7 @@ import asyncio
 import logging
 
 from aiohttp import web
+from common_library.logging.logging_base import get_log_record_extra
 from models_library.api_schemas_webserver.wallets import (
     CreateWalletPayment,
     GetWalletAutoRecharge,
@@ -15,16 +16,16 @@ from models_library.api_schemas_webserver.wallets import (
 from models_library.rest_pagination import Page, PageQueryParameters
 from models_library.rest_pagination_utils import paginate_data
 from servicelib.aiohttp import status
-from servicelib.aiohttp.application_keys import APP_FIRE_AND_FORGET_TASKS_KEY
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
     parse_request_query_parameters_as,
 )
-from servicelib.logging_utils import get_log_record_extra, log_context
+from servicelib.logging_utils import log_context
 from servicelib.utils import fire_and_forget_task
 
 from .._meta import API_VTAG as VTAG
+from ..constants import APP_FIRE_AND_FORGET_TASKS_KEY
 from ..login.decorators import login_required
 from ..payments import api
 from ..payments.api import (

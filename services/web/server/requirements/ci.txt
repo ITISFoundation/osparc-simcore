@@ -14,6 +14,7 @@
 --requirement _tools.txt
 
 # installs this repo's packages
+simcore-celery-library @ ../../../packages/celery-library
 simcore-common-library @ ../../../packages/common-library
 simcore-models-library @ ../../../packages/models-library
 simcore-notifications-library @ ../../../packages/notifications-library/

@@ -40,12 +40,10 @@ qx.Class.define("osparc.ui.window.Progress", {
             allowGrowY: false,
             allowGrowX: true,
             margin: 0,
+            decorator: "rounded",
           });
           control.getChildControl("progress").set({
             backgroundColor: "strong-main"
-          });
-          control.getContentElement().setStyles({
-            "border-radius": "4px"
           });
           this.addAt(control, 1);
           break;

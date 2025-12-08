@@ -77,7 +77,7 @@
         "x": 1073,
         "y": 307
       },
-      "progress": 100,
+      "progress": 100.0,
       "state": {
         "currentStatus": "NOT_STARTED",
         "lock_state": {

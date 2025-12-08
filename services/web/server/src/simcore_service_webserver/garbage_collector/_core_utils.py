@@ -5,11 +5,12 @@ from aiohttp import web
 from models_library.groups import Group, GroupID, GroupType
 from models_library.projects import ProjectID
 from models_library.users import UserID
-from simcore_postgres_database.aiopg_errors import DatabaseError
+from simcore_postgres_database.aiopg_errors import DatabaseError as AiopgDatabaseError
+from sqlalchemy.exc import DatabaseError
 
-from ..groups.api import get_group_from_gid
+from ..groups.api import get_group_by_gid
 from ..projects._projects_repository_legacy import (
-    APP_PROJECT_DBAPI,
+    PROJECT_DBAPI_APPKEY,
     ProjectAccessRights,
 )
 from ..projects.api import (
@@ -83,7 +84,7 @@ async def get_new_project_owner_gid(
     standard_groups = {}  # groups of users, multiple users can be part of this
     primary_groups = {}  # each individual user has a unique primary group
     for other_gid in other_users_access_rights:
-        group: Group | None = await get_group_from_gid(app=app, group_id=int(other_gid))
+        group: Group | None = await get_group_by_gid(app=app, group_id=int(other_gid))
 
         # only process for users and groups with write access right
         if group is None:
@@ -137,7 +138,6 @@ async def replace_current_owner(
         )
 
     except (
-        DatabaseError,
         asyncpg.exceptions.PostgresError,
         ProjectNotFoundError,
         UserNotFoundError,
@@ -170,7 +170,9 @@ async def replace_current_owner(
             app, project_id=ProjectID(project_uuid), group_id=user_primary_gid
         )
         # Update project owner in projects table
-        await app[APP_PROJECT_DBAPI].update_project_owner_without_checking_permissions(
+        await app[
+            PROJECT_DBAPI_APPKEY
+        ].update_project_owner_without_checking_permissions(
             new_project_owner=new_project_owner_id,
             new_project_access_rights=project["accessRights"],
             project_uuid=project_uuid,
@@ -186,8 +188,8 @@ async def replace_current_owner(
         )
 
     except (
+        AiopgDatabaseError,
         DatabaseError,
-        asyncpg.exceptions.PostgresError,
         ProjectNotFoundError,
         UserNotFoundError,
     ):

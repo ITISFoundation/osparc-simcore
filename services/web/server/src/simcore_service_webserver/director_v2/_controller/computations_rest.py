@@ -21,14 +21,13 @@ from models_library.rest_pagination import Page
 from models_library.rest_pagination_utils import paginate_data
 from models_library.users import UserID
 from pydantic import Field
+from servicelib.aiohttp.request_keys import RQT_USERID_KEY
 from servicelib.aiohttp.requests_validation import (
     parse_request_path_parameters_as,
     parse_request_query_parameters_as,
 )
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
-from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
-from servicelib.tracing import with_profiled_span
 
 from ..._meta import API_VTAG as VTAG
 from ...constants import RQ_PRODUCT_KEY
@@ -203,7 +202,6 @@ async def list_computations_latest_iteration_tasks(
     name="list_computation_collection_runs",
 )
 @login_required
-@with_profiled_span
 @permission_required("services.pipeline.*")
 @permission_required("project.read")
 async def list_computation_collection_runs(request: web.Request) -> web.Response:

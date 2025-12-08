@@ -12,7 +12,6 @@ from models_library.api_schemas_api_server.functions import (
     FunctionID,
     FunctionInputs,
     FunctionInputSchema,
-    FunctionJob,
     FunctionJobCollection,
     FunctionJobCollectionID,
     FunctionJobCollectionsListFilters,
@@ -24,10 +23,18 @@ from models_library.api_schemas_api_server.functions import (
 )
 from models_library.api_schemas_webserver.licensed_items import LicensedItemRpcGetPage
 from models_library.functions import (
+    BatchCreateRegisteredFunctionJobs,
+    BatchUpdateRegisteredFunctionJobs,
+    FunctionInputsList,
+    FunctionJob,
+    FunctionJobList,
+    FunctionJobPatchRequest,
+    FunctionJobPatchRequestList,
     FunctionJobStatus,
     FunctionOutputs,
     FunctionUserAccessRights,
     FunctionUserApiAccessRights,
+    RegisteredFunctionJobWithStatus,
 )
 from models_library.licenses import LicensedItemID
 from models_library.products import ProductName
@@ -63,30 +70,17 @@ from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
 from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
     NotEnoughAvailableSeatsError,
 )
-from servicelib.rabbitmq.rpc_interfaces.webserver import projects as projects_rpc
 from servicelib.rabbitmq.rpc_interfaces.webserver.errors import (
     ProjectForbiddenRpcError,
     ProjectNotFoundRpcError,
 )
-from servicelib.rabbitmq.rpc_interfaces.webserver.functions import (
-    functions_rpc_interface,
-)
-from servicelib.rabbitmq.rpc_interfaces.webserver.licenses.licensed_items import (
-    checkout_licensed_item_for_wallet as _checkout_licensed_item_for_wallet,
-)
-from servicelib.rabbitmq.rpc_interfaces.webserver.licenses.licensed_items import (
-    get_available_licensed_items_for_wallet as _get_available_licensed_items_for_wallet,
-)
-from servicelib.rabbitmq.rpc_interfaces.webserver.licenses.licensed_items import (
-    get_licensed_items as _get_licensed_items,
-)
-from servicelib.rabbitmq.rpc_interfaces.webserver.licenses.licensed_items import (
-    release_licensed_item_for_wallet as _release_licensed_item_for_wallet,
-)
+from servicelib.rabbitmq.rpc_interfaces.webserver.v1 import WebServerRpcClient
 from simcore_service_api_server.models.basic_types import NameValueTuple
 
+from ..core.settings import WebServerSettings
 from ..exceptions.backend_errors import (
     CanNotCheckoutServiceIsNotRunningError,
+    ConfigurationError,
     InsufficientNumberOfSeatsError,
     JobForbiddenAccessError,
     JobNotFoundError,
@@ -135,14 +129,13 @@ def _create_licensed_items_get_page(
 @dataclass
 class WbApiRpcClient(SingletonInAppStateMixin):
     app_state_name = "wb_api_rpc_client"
-    _client: RabbitMQRPCClient
+    _rpc_client: WebServerRpcClient
 
     @_exception_mapper(rpc_exception_map={})
     async def get_licensed_items(
         self, *, product_name: ProductName, page_params: PaginationParams
     ) -> Page[LicensedItemGet]:
-        licensed_items_page = await _get_licensed_items(
-            rabbitmq_rpc_client=self._client,
+        licensed_items_page = await self._rpc_client.licenses.get_licensed_items(
             product_name=product_name,
             offset=page_params.offset,
             limit=page_params.limit,
@@ -160,13 +153,14 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         user_id: UserID,
         page_params: PaginationParams,
     ) -> Page[LicensedItemGet]:
-        licensed_items_page = await _get_available_licensed_items_for_wallet(
-            rabbitmq_rpc_client=self._client,
-            product_name=product_name,
-            wallet_id=wallet_id,
-            user_id=user_id,
-            offset=page_params.offset,
-            limit=page_params.limit,
+        licensed_items_page = (
+            await self._rpc_client.licenses.get_available_licensed_items_for_wallet(
+                product_name=product_name,
+                wallet_id=wallet_id,
+                user_id=user_id,
+                offset=page_params.offset,
+                limit=page_params.limit,
+            )
         )
         return _create_licensed_items_get_page(
             licensed_items_page=licensed_items_page, page_params=page_params
@@ -190,14 +184,15 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         num_of_seats: int,
         service_run_id: ServiceRunID,
     ) -> LicensedItemCheckoutGet:
-        licensed_item_checkout_get = await _checkout_licensed_item_for_wallet(
-            self._client,
-            product_name=product_name,
-            user_id=user_id,
-            wallet_id=wallet_id,
-            licensed_item_id=licensed_item_id,
-            num_of_seats=num_of_seats,
-            service_run_id=service_run_id,
+        licensed_item_checkout_get = (
+            await self._rpc_client.licenses.checkout_licensed_item_for_wallet(
+                product_name=product_name,
+                user_id=user_id,
+                wallet_id=wallet_id,
+                licensed_item_id=licensed_item_id,
+                num_of_seats=num_of_seats,
+                service_run_id=service_run_id,
+            )
         )
         return LicensedItemCheckoutGet(
             licensed_item_checkout_id=licensed_item_checkout_get.licensed_item_checkout_id,
@@ -224,11 +219,12 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         user_id: UserID,
         licensed_item_checkout_id: LicensedItemCheckoutID,
     ) -> LicensedItemCheckoutGet:
-        licensed_item_checkout_get = await _release_licensed_item_for_wallet(
-            self._client,
-            product_name=product_name,
-            user_id=user_id,
-            licensed_item_checkout_id=licensed_item_checkout_id,
+        licensed_item_checkout_get = (
+            await self._rpc_client.licenses.release_licensed_item_for_wallet(
+                product_name=product_name,
+                user_id=user_id,
+                licensed_item_checkout_id=licensed_item_checkout_id,
+            )
         )
         return LicensedItemCheckoutGet(
             licensed_item_checkout_id=licensed_item_checkout_get.licensed_item_checkout_id,
@@ -249,10 +245,9 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         user_id: UserID,
         project_uuid: ProjectID,
         job_parent_resource_name: RelativeResourceName,
-        storage_assets_deleted: bool,
+        storage_assets_deleted: bool,  # noqa: FBT001
     ):
-        await projects_rpc.mark_project_as_job(
-            rpc_client=self._client,
+        await self._rpc_client.projects.mark_project_as_job(
             product_name=product_name,
             user_id=user_id,
             project_uuid=project_uuid,
@@ -274,8 +269,7 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         project_id: ProjectID,
         job_parent_resource_name: RelativeResourceName,
     ) -> ProjectJobRpcGet:
-        return await projects_rpc.get_project_marked_as_job(
-            rpc_client=self._client,
+        return await self._rpc_client.projects.get_project_marked_as_job(
             product_name=product_name,
             user_id=user_id,
             project_uuid=project_id,
@@ -308,8 +302,7 @@ class WbApiRpcClient(SingletonInAppStateMixin):
             ),
         )
 
-        return await projects_rpc.list_projects_marked_as_jobs(
-            rpc_client=self._client,
+        return await self._rpc_client.projects.list_projects_marked_as_jobs(
             product_name=product_name,
             user_id=user_id,
             filters=filters,
@@ -319,8 +312,7 @@ class WbApiRpcClient(SingletonInAppStateMixin):
     async def register_function(
         self, *, user_id: UserID, product_name: ProductName, function: Function
     ) -> RegisteredFunction:
-        return await functions_rpc_interface.register_function(
-            self._client,
+        return await self._rpc_client.functions.register_function(
             function=function,
             user_id=user_id,
             product_name=product_name,
@@ -329,8 +321,7 @@ class WbApiRpcClient(SingletonInAppStateMixin):
     async def get_function(
         self, *, user_id: UserID, product_name: ProductName, function_id: FunctionID
     ) -> RegisteredFunction:
-        return await functions_rpc_interface.get_function(
-            self._client,
+        return await self._rpc_client.functions.get_function(
             user_id=user_id,
             product_name=product_name,
             function_id=function_id,
@@ -339,8 +330,7 @@ class WbApiRpcClient(SingletonInAppStateMixin):
     async def delete_function(
         self, *, user_id: UserID, product_name: ProductName, function_id: FunctionID
     ) -> None:
-        return await functions_rpc_interface.delete_function(
-            self._client,
+        return await self._rpc_client.functions.delete_function(
             user_id=user_id,
             product_name=product_name,
             function_id=function_id,
@@ -355,8 +345,7 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         pagination_limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
     ) -> tuple[list[RegisteredFunction], PageMetaInfoLimitOffset]:
 
-        return await functions_rpc_interface.list_functions(
-            self._client,
+        return await self._rpc_client.functions.list_functions(
             user_id=user_id,
             product_name=product_name,
             pagination_offset=pagination_offset,
@@ -374,8 +363,31 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         filter_by_function_job_ids: list[FunctionJobID] | None = None,
         filter_by_function_job_collection_id: FunctionJobCollectionID | None = None,
     ) -> tuple[list[RegisteredFunctionJob], PageMetaInfoLimitOffset]:
-        return await functions_rpc_interface.list_function_jobs(
-            self._client,
+        return await self._rpc_client.functions.list_function_jobs(
+            user_id=user_id,
+            product_name=product_name,
+            pagination_offset=pagination_offset,
+            pagination_limit=pagination_limit,
+            filter_by_function_id=filter_by_function_id,
+            filter_by_function_job_ids=filter_by_function_job_ids,
+            filter_by_function_job_collection_id=filter_by_function_job_collection_id,
+        )
+
+    async def list_function_jobs_with_status(
+        self,
+        *,
+        user_id: UserID,
+        product_name: ProductName,
+        pagination_offset: PageOffsetInt = 0,
+        pagination_limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
+        filter_by_function_id: FunctionID | None = None,
+        filter_by_function_job_ids: list[FunctionJobID] | None = None,
+        filter_by_function_job_collection_id: FunctionJobCollectionID | None = None,
+    ) -> tuple[
+        list[RegisteredFunctionJobWithStatus],
+        PageMetaInfoLimitOffset,
+    ]:
+        return await self._rpc_client.functions.list_function_jobs_with_status(
             user_id=user_id,
             product_name=product_name,
             pagination_offset=pagination_offset,
@@ -394,8 +406,7 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         pagination_limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
         filters: FunctionJobCollectionsListFilters | None = None,
     ) -> tuple[list[RegisteredFunctionJobCollection], PageMetaInfoLimitOffset]:
-        return await functions_rpc_interface.list_function_job_collections(
-            self._client,
+        return await self._rpc_client.functions.list_function_job_collections(
             user_id=user_id,
             product_name=product_name,
             pagination_offset=pagination_offset,
@@ -411,8 +422,7 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         function_id: FunctionID,
         inputs: FunctionInputs,
     ) -> RegisteredFunctionJob:
-        return await functions_rpc_interface.run_function(
-            self._client,
+        return await self._rpc_client.functions.run_function(
             user_id=user_id,
             product_name=product_name,
             function_id=function_id,
@@ -426,8 +436,7 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         product_name: ProductName,
         function_job_id: FunctionJobID,
     ) -> RegisteredFunctionJob:
-        return await functions_rpc_interface.get_function_job(
-            self._client,
+        return await self._rpc_client.functions.get_function_job(
             user_id=user_id,
             product_name=product_name,
             function_job_id=function_job_id,
@@ -441,8 +450,7 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         function_id: FunctionID,
         title: str,
     ) -> RegisteredFunction:
-        return await functions_rpc_interface.update_function_title(
-            self._client,
+        return await self._rpc_client.functions.update_function_title(
             user_id=user_id,
             product_name=product_name,
             function_id=function_id,
@@ -457,8 +465,7 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         function_id: FunctionID,
         description: str,
     ) -> RegisteredFunction:
-        return await functions_rpc_interface.update_function_description(
-            self._client,
+        return await self._rpc_client.functions.update_function_description(
             user_id=user_id,
             product_name=product_name,
             function_id=function_id,
@@ -472,28 +479,68 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         product_name: ProductName,
         function_job_id: FunctionJobID,
     ) -> None:
-        return await functions_rpc_interface.delete_function_job(
-            self._client,
+        return await self._rpc_client.functions.delete_function_job(
             user_id=user_id,
             product_name=product_name,
             function_job_id=function_job_id,
         )
 
     async def register_function_job(
-        self, *, user_id: UserID, function_job: FunctionJob, product_name: ProductName
+        self,
+        *,
+        user_id: UserID,
+        function_job: FunctionJob,
+        product_name: ProductName,
     ) -> RegisteredFunctionJob:
-        return await functions_rpc_interface.register_function_job(
-            self._client,
+        return await self._rpc_client.functions.register_function_job(
             user_id=user_id,
             product_name=product_name,
             function_job=function_job,
         )
 
+    async def batch_register_function_jobs(
+        self,
+        *,
+        user_id: UserID,
+        function_jobs: FunctionJobList,
+        product_name: ProductName,
+    ) -> BatchCreateRegisteredFunctionJobs:
+        return await self._rpc_client.functions.batch_register_function_jobs(
+            user_id=user_id,
+            product_name=product_name,
+            function_jobs=function_jobs,
+        )
+
+    async def patch_registered_function_job(
+        self,
+        *,
+        user_id: UserID,
+        product_name: ProductName,
+        function_job_patch_request: FunctionJobPatchRequest,
+    ) -> RegisteredFunctionJob:
+        return await self._rpc_client.functions.patch_registered_function_job(
+            user_id=user_id,
+            product_name=product_name,
+            function_job_patch_request=function_job_patch_request,
+        )
+
+    async def batch_patch_registered_function_job(
+        self,
+        *,
+        product_name: ProductName,
+        user_id: UserID,
+        function_job_patch_requests: FunctionJobPatchRequestList,
+    ) -> BatchUpdateRegisteredFunctionJobs:
+        return await self._rpc_client.functions.batch_patch_registered_function_job(
+            product_name=product_name,
+            user_id=user_id,
+            function_job_patch_requests=function_job_patch_requests,
+        )
+
     async def get_function_input_schema(
         self, *, user_id: UserID, product_name: ProductName, function_id: FunctionID
     ) -> FunctionInputSchema:
-        return await functions_rpc_interface.get_function_input_schema(
-            self._client,
+        return await self._rpc_client.functions.get_function_input_schema(
             user_id=user_id,
             product_name=product_name,
             function_id=function_id,
@@ -502,8 +549,7 @@ class WbApiRpcClient(SingletonInAppStateMixin):
     async def get_function_output_schema(
         self, *, user_id: UserID, product_name: ProductName, function_id: FunctionID
     ) -> FunctionOutputSchema:
-        return await functions_rpc_interface.get_function_output_schema(
-            self._client,
+        return await self._rpc_client.functions.get_function_output_schema(
             user_id=user_id,
             product_name=product_name,
             function_id=function_id,
@@ -516,8 +562,7 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         product_name: ProductName,
         function_job_id: FunctionJobID,
     ) -> FunctionJobStatus:
-        return await functions_rpc_interface.get_function_job_status(
-            self._client,
+        return await self._rpc_client.functions.get_function_job_status(
             user_id=user_id,
             product_name=product_name,
             function_job_id=function_job_id,
@@ -530,8 +575,7 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         product_name: ProductName,
         function_job_id: FunctionJobID,
     ) -> FunctionOutputs:
-        return await functions_rpc_interface.get_function_job_outputs(
-            self._client,
+        return await self._rpc_client.functions.get_function_job_outputs(
             user_id=user_id,
             product_name=product_name,
             function_job_id=function_job_id,
@@ -544,13 +588,14 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         user_id: UserID,
         product_name: ProductName,
         job_status: FunctionJobStatus,
+        check_write_permissions: bool = True,
     ) -> FunctionJobStatus:
-        return await functions_rpc_interface.update_function_job_status(
-            self._client,
+        return await self._rpc_client.functions.update_function_job_status(
             function_job_id=function_job_id,
             user_id=user_id,
             product_name=product_name,
             job_status=job_status,
+            check_write_permissions=check_write_permissions,
         )
 
     async def update_function_job_outputs(
@@ -560,13 +605,14 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         user_id: UserID,
         product_name: ProductName,
         outputs: FunctionOutputs,
+        check_write_permissions: bool = True,
     ) -> FunctionOutputs:
-        return await functions_rpc_interface.update_function_job_outputs(
-            self._client,
+        return await self._rpc_client.functions.update_function_job_outputs(
             function_job_id=function_job_id,
             user_id=user_id,
             product_name=product_name,
             outputs=outputs,
+            check_write_permissions=check_write_permissions,
         )
 
     async def find_cached_function_jobs(
@@ -575,14 +621,15 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         user_id: UserID,
         product_name: ProductName,
         function_id: FunctionID,
-        inputs: FunctionInputs,
-    ) -> list[RegisteredFunctionJob] | None:
-        return await functions_rpc_interface.find_cached_function_jobs(
-            self._client,
+        inputs: FunctionInputsList,
+        status_filter: list[FunctionJobStatus] | None,
+    ) -> list[RegisteredFunctionJob | None]:
+        return await self._rpc_client.functions.find_cached_function_jobs(
             user_id=user_id,
             product_name=product_name,
             function_id=function_id,
             inputs=inputs,
+            cached_job_statuses=status_filter,
         )
 
     async def get_function_job_collection(
@@ -592,8 +639,7 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         product_name: ProductName,
         function_job_collection_id: FunctionJobCollectionID,
     ) -> RegisteredFunctionJobCollection:
-        return await functions_rpc_interface.get_function_job_collection(
-            self._client,
+        return await self._rpc_client.functions.get_function_job_collection(
             user_id=user_id,
             product_name=product_name,
             function_job_collection_id=function_job_collection_id,
@@ -606,8 +652,7 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         function_job_collection: FunctionJobCollection,
         product_name: ProductName,
     ) -> RegisteredFunctionJobCollection:
-        return await functions_rpc_interface.register_function_job_collection(
-            self._client,
+        return await self._rpc_client.functions.register_function_job_collection(
             user_id=user_id,
             function_job_collection=function_job_collection,
             product_name=product_name,
@@ -620,8 +665,7 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         product_name: ProductName,
         function_job_collection_id: FunctionJobCollectionID,
     ) -> None:
-        return await functions_rpc_interface.delete_function_job_collection(
-            self._client,
+        return await self._rpc_client.functions.delete_function_job_collection(
             user_id=user_id,
             product_name=product_name,
             function_job_collection_id=function_job_collection_id,
@@ -634,8 +678,7 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         product_name: ProductName,
         function_id: FunctionID,
     ) -> FunctionUserAccessRights:
-        return await functions_rpc_interface.get_function_user_permissions(
-            self._client,
+        return await self._rpc_client.functions.get_function_user_permissions(
             user_id=user_id,
             product_name=product_name,
             function_id=function_id,
@@ -647,13 +690,24 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         user_id: UserID,
         product_name: ProductName,
     ) -> FunctionUserApiAccessRights:
-        return await functions_rpc_interface.get_functions_user_api_access_rights(
-            self._client,
+        return await self._rpc_client.functions.get_functions_user_api_access_rights(
             user_id=user_id,
             product_name=product_name,
         )
 
 
-def setup(app: FastAPI, rabbitmq_rmp_client: RabbitMQRPCClient):
-    wb_api_rpc_client = WbApiRpcClient(_client=rabbitmq_rmp_client)
+def _create_obj(app: FastAPI, rabbitmq_rpc_client: RabbitMQRPCClient):
+    webserver_settings: WebServerSettings = app.state.settings.API_SERVER_WEBSERVER
+    if not webserver_settings:
+        raise ConfigurationError(tip="Webserver settings are not configured")
+
+    return WbApiRpcClient(
+        _rpc_client=WebServerRpcClient(
+            rabbitmq_rpc_client, webserver_settings.WEBSERVER_RPC_NAMESPACE
+        ),
+    )
+
+
+def setup(app: FastAPI, rabbitmq_rpc_client: RabbitMQRPCClient):
+    wb_api_rpc_client = _create_obj(app, rabbitmq_rpc_client)
     wb_api_rpc_client.set_to_app_state(app=app)

@@ -2,11 +2,13 @@ import asyncio
 import logging
 
 from aiohttp import web
+from common_library.error_codes import create_error_code
 from common_library.json_serialization import json_dumps
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
+from common_library.user_messages import user_message
 from models_library.api_schemas_catalog.service_access_rights import (
     ServiceAccessRightsGet,
 )
-from models_library.api_schemas_catalog.services import MyServiceGet
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStop,
@@ -23,9 +25,11 @@ from models_library.api_schemas_webserver.projects_nodes import (
     NodeServiceGet,
     ProjectNodeServicesGet,
 )
+from models_library.basic_types import IDStr
 from models_library.groups import EVERYONE_GROUP_ID, Group, GroupID, GroupType
 from models_library.projects import Project, ProjectID
 from models_library.projects_nodes_io import NodeID, NodeIDStr
+from models_library.rest_error import ErrorGet
 from models_library.services import ServiceKeyVersion
 from models_library.services_resources import ServiceResourcesDict
 from models_library.services_types import ServiceKey, ServiceVersion
@@ -57,7 +61,8 @@ from simcore_postgres_database.models.users import UserRole
 from ..._meta import API_VTAG as VTAG
 from ...catalog import catalog_service
 from ...dynamic_scheduler import api as dynamic_scheduler_service
-from ...groups.api import get_group_from_gid, list_all_user_groups_ids
+from ...exception_handling import create_error_response
+from ...groups import api as groups_service
 from ...groups.exceptions import GroupNotFoundError
 from ...login.decorators import login_required
 from ...models import ClientSessionHeaderParams
@@ -304,7 +309,7 @@ async def _stop_dynamic_service_task(
     *,
     app: web.Application,
     dynamic_service_stop: DynamicServiceStop,
-):
+) -> web.Response:
     _ = progress
     # NOTE: _handle_project_nodes_exceptions only decorate handlers
     try:
@@ -323,8 +328,33 @@ async def _stop_dynamic_service_task(
         return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
     except (RPCServerError, ServiceWaitingForManualInterventionError) as exc:
-        # in case there is an error reply as not found
-        raise web.HTTPNotFound(text=f"{exc}") from exc
+        error_code = getattr(exc, "error_code", None) or create_error_code(exc)
+        user_error_msg = user_message(
+            f"Could not stop dynamic service {dynamic_service_stop.project_id}.{dynamic_service_stop.node_id}"
+        )
+        _logger.debug(
+            **create_troubleshooting_log_kwargs(
+                user_error_msg,
+                error=exc,
+                error_code=error_code,
+                error_context={
+                    "project_id": dynamic_service_stop.project_id,
+                    "node_id": dynamic_service_stop.node_id,
+                    "user_id": dynamic_service_stop.user_id,
+                    "save_state": dynamic_service_stop.save_state,
+                    "simcore_user_agent": dynamic_service_stop.simcore_user_agent,
+                },
+            )
+        )
+        # ANE: in case there is an error reply as not found
+        return create_error_response(
+            error=ErrorGet(
+                message=user_error_msg,
+                support_id=IDStr(error_code),
+                status=status.HTTP_404_NOT_FOUND,
+            ),
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
 
     except ServiceWasNotFoundError:
         # in case the service is not found reply as all OK
@@ -332,9 +362,7 @@ async def _stop_dynamic_service_task(
 
 
 def register_stop_dynamic_service_task(app: web.Application) -> None:
-    TaskRegistry.register(
-        _stop_dynamic_service_task, allowed_errors=(web.HTTPNotFound,), app=app
-    )
+    TaskRegistry.register(_stop_dynamic_service_task, app=app)
 
 
 @routes.post(
@@ -518,20 +546,32 @@ async def get_project_services(request: web.Request) -> web.Response:
         )
     )
 
-    services: list[MyServiceGet] = await catalog_service.batch_get_my_services(
-        request.app,
-        product_name=req_ctx.product_name,
-        user_id=req_ctx.user_id,
-        services_ids=services_in_project,
-    )
+    services = []
+    missing = None
+
+    if services_in_project:
+        batch_got = await catalog_service.batch_get_my_services(
+            request.app,
+            product_name=req_ctx.product_name,
+            user_id=req_ctx.user_id,
+            services_ids=services_in_project,
+        )
+        services = [
+            NodeServiceGet.model_validate(sv, from_attributes=True)
+            for sv in batch_got.found_items
+        ]
+        missing = (
+            [
+                ServiceKeyVersion(key=k, version=v)
+                for k, v in batch_got.missing_identifiers
+            ]
+            if batch_got.missing_identifiers
+            else None
+        )
 
     return envelope_json_response(
         ProjectNodeServicesGet(
-            project_uuid=path_params.project_id,
-            services=[
-                NodeServiceGet.model_validate(sv, from_attributes=True)
-                for sv in services
-            ],
+            project_uuid=path_params.project_id, services=services, missing=missing
         )
     )
 
@@ -578,7 +618,7 @@ async def get_project_services_access_for_gid(request: web.Request) -> web.Respo
     groups_to_compare = {EVERYONE_GROUP_ID}
 
     # Get the group from the provided group ID
-    _sharing_with_group: Group | None = await get_group_from_gid(
+    _sharing_with_group: Group | None = await groups_service.get_group_by_gid(
         app=request.app, group_id=query_params.for_gid
     )
 
@@ -591,7 +631,7 @@ async def get_project_services_access_for_gid(request: web.Request) -> web.Respo
         _user_id = await users_service.get_user_id_from_gid(
             app=request.app, primary_gid=query_params.for_gid
         )
-        user_groups_ids = await list_all_user_groups_ids(
+        user_groups_ids = await groups_service.list_all_user_groups_ids(
             app=request.app, user_id=_user_id
         )
         groups_to_compare.update(set(user_groups_ids))

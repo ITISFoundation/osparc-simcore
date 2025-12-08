@@ -175,7 +175,7 @@ qx.Class.define("osparc.auth.ui.Login2FAValidationCodeView", {
       this.__validateCodeBtn.setFetching(true);
 
       const validationCodeTF = this._form.getItems()["validationCode"];
-      const validationCode = validationCodeTF.getValue();
+      const validationCode = validationCodeTF.getValue().trim();
 
       const loginFun = log => {
         this.__validateCodeBtn.setFetching(false);

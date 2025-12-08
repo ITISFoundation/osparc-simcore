@@ -22,7 +22,6 @@ from pydantic import (
 from pydantic.config import JsonDict
 
 from ..api_schemas_long_running_tasks.tasks import TaskGet
-from ..basic_types import LongTruncatedStr, ShortTruncatedStr
 from ..emails import LowerCaseEmailStr
 from ..folders import FolderID
 from ..groups import GroupID
@@ -41,6 +40,7 @@ from ..projects_state import (
     ProjectShareStatus,
     ProjectStateRunningState,
 )
+from ..string_types import LongTruncatedStr, ShortTruncatedStr
 from ..utils._original_fastapi_encoders import jsonable_encoder
 from ..utils.common_validators import (
     empty_str_to_none_pre_validator,
@@ -126,7 +126,7 @@ class ProjectGet(OutputSchema):
 
     # display
     name: str
-    description: str
+    description: Annotated[str, BeforeValidator(none_to_empty_str_pre_validator)]
     thumbnail: HttpUrl | Literal[""]
 
     type: ProjectType
@@ -144,7 +144,7 @@ class ProjectGet(OutputSchema):
     trashed_at: datetime | None
     trashed_by: Annotated[
         GroupID | None, Field(description="The primary gid of the user who trashed")
-    ]
+    ] = None
 
     # labeling
     tags: list[int]
@@ -165,10 +165,6 @@ class ProjectGet(OutputSchema):
 
     workspace_id: WorkspaceID | None
     folder_id: FolderID | None
-
-    _empty_description = field_validator("description", mode="before")(
-        none_to_empty_str_pre_validator
-    )
 
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:

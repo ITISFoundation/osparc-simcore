@@ -65,6 +65,7 @@ _TASK_TO_PIPELINE_CONVERSIONS = {
         RunningState.PENDING,
         RunningState.NOT_STARTED,
         RunningState.WAITING_FOR_CLUSTER,
+        RunningState.WAITING_FOR_RESOURCES,
     ): RunningState.STARTED,
 }
 

@@ -17,13 +17,18 @@ from dataclasses import dataclass
 from datetime import datetime
 from inspect import getframeinfo, stack
 from pathlib import Path
-from typing import Any, Final, NotRequired, TypeAlias, TypedDict, TypeVar
+from typing import Any, Final, TypeAlias, TypedDict, TypeVar
 
 from common_library.json_serialization import json_dumps
-from settings_library.tracing import TracingSettings
+from common_library.logging.logging_base import LogExtra
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
+from common_library.logging.logging_utils_filtering import (
+    GeneralLogFilter,
+    LoggerName,
+    MessageSubstring,
+)
 
-from .logging_utils_filtering import GeneralLogFilter, LoggerName, MessageSubstring
-from .tracing import setup_log_tracing
+from .tracing import TracingConfig, setup_log_tracing
 from .utils_secrets import mask_sensitive_data
 
 _logger = logging.getLogger(__name__)
@@ -60,27 +65,6 @@ COLORS = {
 }
 
 
-class LogExtra(TypedDict):
-    log_uid: NotRequired[str]
-    log_oec: NotRequired[str]
-
-
-def get_log_record_extra(
-    *,
-    user_id: int | str | None = None,
-    error_code: str | None = None,
-) -> LogExtra | None:
-    extra: LogExtra = {}
-
-    if user_id:
-        assert int(user_id) > 0  # nosec
-        extra["log_uid"] = f"{user_id}"
-    if error_code:
-        extra["log_oec"] = error_code
-
-    return extra or None
-
-
 class CustomFormatter(logging.Formatter):
     """Custom Formatter does these 2 things:
     1. Overrides 'funcName' with the value of 'func_name_override', if it exists.
@@ -93,11 +77,16 @@ class CustomFormatter(logging.Formatter):
 
     def format(self, record) -> str:
         if hasattr(record, "func_name_override"):
-            record.funcName = record.func_name_override
+            record.funcName = (
+                record.func_name_override
+            )  # pyright: ignore[reportAttributeAccessIssue]
         if hasattr(record, "file_name_override"):
-            record.filename = record.file_name_override
+            record.filename = (
+                record.file_name_override
+            )  # pyright: ignore[reportAttributeAccessIssue]
 
-        optional_keys = LogExtra.__optional_keys__ | frozenset(  # pylint: disable=no-member
+        # pylint: disable=no-member
+        optional_keys = LogExtra.__optional_keys__ | frozenset(
             ["otelTraceID", "otelSpanID"]
         )
         for name in optional_keys:
@@ -192,7 +181,7 @@ def _dampen_noisy_loggers(
 def _configure_common_logging_settings(
     *,
     log_format_local_dev_enabled: bool,
-    tracing_settings: TracingSettings | None,
+    tracing_config: TracingConfig,
     log_base_level: LogLevelInt,
     noisy_loggers: tuple[str, ...] | None,
 ) -> logging.Formatter:
@@ -204,9 +193,7 @@ def _configure_common_logging_settings(
     _setup_base_logging_level(log_base_level)
     if noisy_loggers is not None:
         _dampen_noisy_loggers(noisy_loggers)
-    if tracing_settings is not None:
-        setup_log_tracing(tracing_settings=tracing_settings)
-
+    setup_log_tracing(tracing_config=tracing_config)
     return _setup_logging_formatter(
         log_format_local_dev_enabled=log_format_local_dev_enabled,
     )
@@ -230,7 +217,7 @@ def setup_loggers(
     *,
     log_format_local_dev_enabled: bool,
     logger_filter_mapping: dict[LoggerName, list[MessageSubstring]],
-    tracing_settings: TracingSettings | None,
+    tracing_config: TracingConfig,
     log_base_level: LogLevelInt,
     noisy_loggers: tuple[str, ...] | None,
 ) -> None:
@@ -272,7 +259,7 @@ def setup_loggers(
     """
     formatter = _configure_common_logging_settings(
         log_format_local_dev_enabled=log_format_local_dev_enabled,
-        tracing_settings=tracing_settings,
+        tracing_config=tracing_config,
         log_base_level=log_base_level,
         noisy_loggers=noisy_loggers,
     )
@@ -338,7 +325,7 @@ def async_loggers(
     *,
     log_format_local_dev_enabled: bool,
     logger_filter_mapping: dict[LoggerName, list[MessageSubstring]],
-    tracing_settings: TracingSettings | None,
+    tracing_config: TracingConfig,
     log_base_level: LogLevelInt,
     noisy_loggers: tuple[str, ...] | None,
 ) -> Iterator[None]:
@@ -386,7 +373,7 @@ def async_loggers(
     """
     formatter = _configure_common_logging_settings(
         log_format_local_dev_enabled=log_format_local_dev_enabled,
-        tracing_settings=tracing_settings,
+        tracing_config=tracing_config,
         log_base_level=log_base_level,
         noisy_loggers=noisy_loggers,
     )
@@ -572,7 +559,12 @@ def log_catch(logger: logging.Logger, *, reraise: bool = True) -> Iterator[None]
         logger.debug("call was cancelled")
         raise
     except Exception as exc:  # pylint: disable=broad-except
-        logger.exception("Unhandled exception:")
+        logger.exception(
+            **create_troubleshooting_log_kwargs(
+                "Caught unhandled exception",
+                error=exc,
+            )
+        )
         if reraise:
             raise exc from exc
 

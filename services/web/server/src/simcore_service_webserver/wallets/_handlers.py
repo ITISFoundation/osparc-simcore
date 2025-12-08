@@ -1,7 +1,14 @@
 import functools
 import logging
+from typing import Final
 
 from aiohttp import web
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
+from common_library.user_messages import user_message
+from models_library.api_schemas_payments.errors import (
+    BaseRpcApiError,
+    PaymentUnverifiedError,
+)
 from models_library.api_schemas_webserver.wallets import (
     CreateWalletBodyParams,
     PutWalletBodyParams,
@@ -9,19 +16,25 @@ from models_library.api_schemas_webserver.wallets import (
     WalletGetWithAvailableCredits,
 )
 from models_library.rest_base import RequestParameters, StrictRequestParameters
+from models_library.rest_error import ErrorGet
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import Field
+from servicelib.aiohttp import status
+from servicelib.aiohttp.request_keys import RQT_USERID_KEY
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
 )
 from servicelib.aiohttp.typing_extension import Handler
-from servicelib.request_keys import RQT_USERID_KEY
 
 from .._meta import API_VTAG as VTAG
 from ..application_settings_utils import requires_dev_feature_enabled
 from ..constants import RQ_PRODUCT_KEY
+from ..exception_handling import (
+    create_error_context_from_request,
+    create_error_response,
+)
 from ..login.decorators import login_required
 from ..payments.errors import (
     InvalidPaymentMethodError,
@@ -54,7 +67,40 @@ from .errors import (
 _logger = logging.getLogger(__name__)
 
 
-def handle_wallets_exceptions(handler: Handler):
+def _create_error_response_with_support_id_and_logging(
+    request: web.Request,
+    exception: BaseRpcApiError,
+    user_msg: str,
+    status_code: int,
+) -> web.Response:
+    """Helper function to create error response and produce traceable logs in the server."""
+    error_code = exception.get_or_create_error_code()
+
+    _logger.exception(
+        **create_troubleshooting_log_kwargs(
+            user_msg,
+            error=exception,
+            error_context={
+                **create_error_context_from_request(request),
+            },
+            error_code=error_code,
+        )
+    )
+    error = ErrorGet.model_construct(
+        message=user_msg, support_id=error_code, status=status_code
+    )
+    return create_error_response(error, status_code=error.status)
+
+
+_MSG_PAYMENT_SERVICE_FAILURE: Final = user_message(
+    "Payment processing is currently unavailable. "
+    "Please hold off on retrying and contact support for help completing your payment. "
+    "Our team has been notified and is already looking into it.",
+    _version=1,
+)
+
+
+def handle_wallets_exceptions(handler: Handler):  # noqa: C901
     @functools.wraps(handler)
     async def wrapper(request: web.Request) -> web.StreamResponse:
         try:
@@ -68,6 +114,14 @@ def handle_wallets_exceptions(handler: Handler):
         ) as exc:
             raise web.HTTPNotFound(text=f"{exc}") from exc
 
+        except PaymentUnverifiedError as exc:
+            return _create_error_response_with_support_id_and_logging(
+                request,
+                exc,
+                _MSG_PAYMENT_SERVICE_FAILURE,
+                status.HTTP_502_BAD_GATEWAY,
+            )
+
         except (
             PaymentUniqueViolationError,
             PaymentCompletedError,
@@ -78,7 +132,12 @@ def handle_wallets_exceptions(handler: Handler):
             raise web.HTTPConflict(text=f"{exc}") from exc
 
         except PaymentServiceUnavailableError as exc:
-            raise web.HTTPServiceUnavailable(text=f"{exc}") from exc
+            return _create_error_response_with_support_id_and_logging(
+                request,
+                exc,
+                _MSG_PAYMENT_SERVICE_FAILURE,
+                status.HTTP_502_BAD_GATEWAY,
+            )
 
         except WalletAccessForbiddenError as exc:
             raise web.HTTPForbidden(text=f"{exc}") from exc

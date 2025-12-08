@@ -6,7 +6,6 @@ from typing import Any, Final
 
 from attr import dataclass
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
-    AsyncJobFilter,
     AsyncJobGet,
     AsyncJobId,
     AsyncJobResult,
@@ -27,6 +26,7 @@ from tenacity import (
     wait_random_exponential,
 )
 
+from ....celery.models import OwnerMetadata
 from ....rabbitmq import RemoteMethodNotRegisteredError
 from ... import RabbitMQRPCClient
 
@@ -41,13 +41,13 @@ async def cancel(
     *,
     rpc_namespace: RPCNamespace,
     job_id: AsyncJobId,
-    job_filter: AsyncJobFilter,
+    owner_metadata: OwnerMetadata,
 ) -> None:
     await rabbitmq_rpc_client.request(
         rpc_namespace,
         TypeAdapter(RPCMethodName).validate_python("cancel"),
         job_id=job_id,
-        job_filter=job_filter,
+        owner_metadata=owner_metadata,
         timeout_s=_DEFAULT_TIMEOUT_S,
     )
 
@@ -57,13 +57,13 @@ async def status(
     *,
     rpc_namespace: RPCNamespace,
     job_id: AsyncJobId,
-    job_filter: AsyncJobFilter,
+    owner_metadata: OwnerMetadata,
 ) -> AsyncJobStatus:
     _result = await rabbitmq_rpc_client.request(
         rpc_namespace,
         TypeAdapter(RPCMethodName).validate_python("status"),
         job_id=job_id,
-        job_filter=job_filter,
+        owner_metadata=owner_metadata,
         timeout_s=_DEFAULT_TIMEOUT_S,
     )
     assert isinstance(_result, AsyncJobStatus)
@@ -75,13 +75,13 @@ async def result(
     *,
     rpc_namespace: RPCNamespace,
     job_id: AsyncJobId,
-    job_filter: AsyncJobFilter,
+    owner_metadata: OwnerMetadata,
 ) -> AsyncJobResult:
     _result = await rabbitmq_rpc_client.request(
         rpc_namespace,
         TypeAdapter(RPCMethodName).validate_python("result"),
         job_id=job_id,
-        job_filter=job_filter,
+        owner_metadata=owner_metadata,
         timeout_s=_DEFAULT_TIMEOUT_S,
     )
     assert isinstance(_result, AsyncJobResult)
@@ -92,14 +92,12 @@ async def list_jobs(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
     rpc_namespace: RPCNamespace,
-    filter_: str,
-    job_filter: AsyncJobFilter,
+    owner_metadata: OwnerMetadata,
 ) -> list[AsyncJobGet]:
     _result: list[AsyncJobGet] = await rabbitmq_rpc_client.request(
         rpc_namespace,
         TypeAdapter(RPCMethodName).validate_python("list_jobs"),
-        filter_=filter_,
-        job_filter=job_filter,
+        owner_metadata=owner_metadata,
         timeout_s=_DEFAULT_TIMEOUT_S,
     )
     return _result
@@ -110,13 +108,13 @@ async def submit(
     *,
     rpc_namespace: RPCNamespace,
     method_name: str,
-    job_filter: AsyncJobFilter,
+    owner_metadata: OwnerMetadata,
     **kwargs,
 ) -> AsyncJobGet:
     _result = await rabbitmq_rpc_client.request(
         rpc_namespace,
         TypeAdapter(RPCMethodName).validate_python(method_name),
-        job_filter=job_filter,
+        owner_metadata=owner_metadata,
         **kwargs,
         timeout_s=_DEFAULT_TIMEOUT_S,
     )
@@ -140,9 +138,9 @@ async def _wait_for_completion(
     rpc_namespace: RPCNamespace,
     method_name: RPCMethodName,
     job_id: AsyncJobId,
-    job_filter: AsyncJobFilter,
+    owner_metadata: OwnerMetadata,
     client_timeout: datetime.timedelta,
-) -> AsyncGenerator[AsyncJobStatus, None]:
+) -> AsyncGenerator[AsyncJobStatus]:
     try:
         async for attempt in AsyncRetrying(
             stop=stop_after_delay(client_timeout.total_seconds()),
@@ -156,7 +154,7 @@ async def _wait_for_completion(
                     rabbitmq_rpc_client,
                     rpc_namespace=rpc_namespace,
                     job_id=job_id,
-                    job_filter=job_filter,
+                    owner_metadata=owner_metadata,
                 )
                 yield job_status
                 if not job_status.done:
@@ -191,9 +189,9 @@ async def wait_and_get_result(
     rpc_namespace: RPCNamespace,
     method_name: str,
     job_id: AsyncJobId,
-    job_filter: AsyncJobFilter,
+    owner_metadata: OwnerMetadata,
     client_timeout: datetime.timedelta,
-) -> AsyncGenerator[AsyncJobComposedResult, None]:
+) -> AsyncGenerator[AsyncJobComposedResult]:
     """when a job is already submitted this will wait for its completion
     and return the composed result"""
     try:
@@ -203,7 +201,7 @@ async def wait_and_get_result(
             rpc_namespace=rpc_namespace,
             method_name=method_name,
             job_id=job_id,
-            job_filter=job_filter,
+            owner_metadata=owner_metadata,
             client_timeout=client_timeout,
         ):
             assert job_status is not None  # nosec
@@ -217,7 +215,7 @@ async def wait_and_get_result(
                     rabbitmq_rpc_client,
                     rpc_namespace=rpc_namespace,
                     job_id=job_id,
-                    job_filter=job_filter,
+                    owner_metadata=owner_metadata,
                 ),
             )
     except (TimeoutError, CancelledError) as error:
@@ -226,7 +224,7 @@ async def wait_and_get_result(
                 rabbitmq_rpc_client,
                 rpc_namespace=rpc_namespace,
                 job_id=job_id,
-                job_filter=job_filter,
+                owner_metadata=owner_metadata,
             )
         except Exception as exc:
             raise exc from error  # NOSONAR
@@ -238,17 +236,17 @@ async def submit_and_wait(
     *,
     rpc_namespace: RPCNamespace,
     method_name: str,
-    job_filter: AsyncJobFilter,
+    owner_metadata: OwnerMetadata,
     client_timeout: datetime.timedelta,
     **kwargs,
-) -> AsyncGenerator[AsyncJobComposedResult, None]:
+) -> AsyncGenerator[AsyncJobComposedResult]:
     async_job_rpc_get = None
     try:
         async_job_rpc_get = await submit(
             rabbitmq_rpc_client,
             rpc_namespace=rpc_namespace,
             method_name=method_name,
-            job_filter=job_filter,
+            owner_metadata=owner_metadata,
             **kwargs,
         )
     except (TimeoutError, CancelledError) as error:
@@ -258,7 +256,7 @@ async def submit_and_wait(
                     rabbitmq_rpc_client,
                     rpc_namespace=rpc_namespace,
                     job_id=async_job_rpc_get.job_id,
-                    job_filter=job_filter,
+                    owner_metadata=owner_metadata,
                 )
             except Exception as exc:
                 raise exc from error
@@ -269,7 +267,7 @@ async def submit_and_wait(
         rpc_namespace=rpc_namespace,
         method_name=method_name,
         job_id=async_job_rpc_get.job_id,
-        job_filter=job_filter,
+        owner_metadata=owner_metadata,
         client_timeout=client_timeout,
     ):
         yield wait_and_

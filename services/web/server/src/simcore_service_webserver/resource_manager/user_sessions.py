@@ -2,12 +2,12 @@ import logging
 from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
-from functools import cached_property
 from typing import Final
 
 from aiohttp import web
+from common_library.logging.logging_base import get_log_record_extra
 from models_library.users import UserID
-from servicelib.logging_utils import get_log_record_extra, log_context
+from servicelib.logging_utils import log_context
 
 from .models import ResourcesDict, UserSession
 from .registry import (
@@ -19,10 +19,10 @@ from .settings import get_plugin_settings
 _logger = logging.getLogger(__name__)
 
 
-_SOCKET_ID_FIELDNAME: Final[str] = "socket_id"
+SOCKET_ID_FIELDNAME: Final[str] = "socket_id"
 PROJECT_ID_KEY: Final[str] = "project_id"
 
-assert _SOCKET_ID_FIELDNAME in ResourcesDict.__annotations__  # nosec
+assert SOCKET_ID_FIELDNAME in ResourcesDict.__annotations__  # nosec
 assert PROJECT_ID_KEY in ResourcesDict.__annotations__  # nosec
 
 
@@ -63,7 +63,7 @@ class UserSessionResourcesRegistry:
     def _registry(self) -> RedisResourceRegistry:
         return get_registry(self.app)
 
-    @cached_property
+    @property
     def resource_key(self) -> UserSession:
         return UserSession(
             user_id=self.user_id,
@@ -80,7 +80,7 @@ class UserSessionResourcesRegistry:
         )
 
         await self._registry.set_resource(
-            self.resource_key, (_SOCKET_ID_FIELDNAME, socket_id)
+            self.resource_key, (SOCKET_ID_FIELDNAME, socket_id)
         )
         # NOTE: hearthbeat is not emulated in tests, make sure that with very small GC intervals
         # the resources do not expire; this value is usually in the order of minutes
@@ -112,7 +112,7 @@ class UserSessionResourcesRegistry:
             extra=get_log_record_extra(user_id=self.user_id),
         )
 
-        await self._registry.remove_resource(self.resource_key, _SOCKET_ID_FIELDNAME)
+        await self._registry.remove_resource(self.resource_key, SOCKET_ID_FIELDNAME)
         await self._registry.set_key_alive(
             self.resource_key,
             expiration_time=_get_service_deletion_timeout(self.app),
@@ -131,13 +131,13 @@ class UserSessionResourcesRegistry:
             "user %s/tab %s finding %s from registry...",
             self.user_id,
             self.client_session_id,
-            _SOCKET_ID_FIELDNAME,
+            SOCKET_ID_FIELDNAME,
             extra=get_log_record_extra(user_id=self.user_id),
         )
 
         return await self._registry.find_resources(
             UserSession(user_id=self.user_id, client_session_id="*"),
-            _SOCKET_ID_FIELDNAME,
+            SOCKET_ID_FIELDNAME,
         )
 
     async def find_all_resources_of_user(self, key: str) -> list[str]:
@@ -147,8 +147,11 @@ class UserSessionResourcesRegistry:
             msg=f"{self.user_id=} finding all {key} from registry",
             extra=get_log_record_extra(user_id=self.user_id),
         ):
-            return await get_registry(self.app).find_resources(
-                UserSession(user_id=self.user_id, client_session_id="*"), key
+            return await self._registry.find_resources(
+                UserSession(
+                    user_id=self.user_id, client_session_id="*"
+                ),  #  <-- this one checks for all user tabs
+                key,
             )
 
     async def find(self, resource_name: str) -> list[str]:
@@ -160,7 +163,10 @@ class UserSessionResourcesRegistry:
             extra=get_log_record_extra(user_id=self.user_id),
         )
 
-        return await self._registry.find_resources(self.resource_key, resource_name)
+        return await self._registry.find_resources(
+            self.resource_key,
+            resource_name,  # <-- when initialized with specific tab (client_session_id), checks only that tab otherwise all tabs
+        )
 
     async def add(self, key: str, value: str) -> None:
         _logger.debug(

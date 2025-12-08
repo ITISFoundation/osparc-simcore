@@ -83,27 +83,12 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
       this._form.add(phone, this.tr("Phone Number"), null, "phone");
 
 
-      const organization = new qx.ui.form.TextField();
-      doubleSpaced.push(organization);
-      switch (osparc.product.Utils.getProductName()) {
-        case "s4l":
-          this._form.add(organization, this.tr("Company Name"), null, "company");
-          organization.setRequired(true);
-          break;
-        case "s4lacad":
-        case "s4ldesktopacad":
-          this._form.add(organization, this.tr("University"), null, "university");
-          organization.setRequired(true);
-          break;
-        case "tiplite":
-          this._form.add(organization, this.tr("University"), null, "university");
-          break;
-        case "tis":
-          this._form.add(organization, this.tr("Organization"), null, "organization");
-          break;
-        case "osparc":
-          this._form.add(organization, this.tr("Research Group/Organization"), null, "organization");
-          break;
+      const institution = new qx.ui.form.TextField();
+      doubleSpaced.push(institution);
+      const institutionAlias = osparc.product.Utils.getInstitutionAlias();
+      this._form.add(institution, institutionAlias.label, null, institutionAlias.key);
+      if (institutionAlias.required) {
+        institution.setRequired(true);
       }
 
 
@@ -128,6 +113,7 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
       const country = new qx.ui.form.SelectBox().set({
         required: true
       });
+      country.getChildControl("arrow").syncAppearance(); // force sync to show the arrow
       doubleSpaced.push(country);
       const countries = osparc.store.StaticInfo.getCountries();
       countries.forEach(c => {
@@ -159,50 +145,9 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
         case "s4lacad":
         case "s4ldesktopacad": {
           const application = new qx.ui.form.SelectBox();
-          [{
-            id: "other",
-            label: "Other"
-          }, {
-            id: "Antenna_Design_for_Wireless_Communication",
-            label: "Antenna Design for Wireless Communication"
-          }, {
-            id: "Bioelectronics,_Electroceuticals_and_Neuroprosthetics",
-            label: "Bioelectronics, Electroceuticals & Neuroprosthetics"
-          }, {
-            id: "Safety_and_Efficacy_Assessment",
-            label: "Safety & Efficacy Assessment"
-          }, {
-            id: "Exposure_and_Compliance",
-            label: "Exposure & Compliance"
-          }, {
-            id: "Focused_Ultrasound",
-            label: "Focused Ultrasound"
-          }, {
-            id: "In_Silico_Trials",
-            label: "In <i>Silico</i> Trials"
-          }, {
-            id: "Implant_Design",
-            label: "Implant Design"
-          }, {
-            id: "Magnetic_Resonance_Imaging",
-            label: "Magnetic Resonance Imaging"
-          }, {
-            id: "Neurostimulation",
-            label: "Neurostimulation"
-          }, {
-            id: "Personalized_Medicine",
-            label: "Personalized Medicine"
-          }, {
-            id: "Thermal_Therapies",
-            label: "Thermal Therapies"
-          }, {
-            id: "Wireless_Power_Transfer_Systems",
-            label: "Wireless Power Transfer Systems"
-          }, {
-            id: "Vascular_Flow_and_Perfusion",
-            label: "Vascular Flow & Perfusion"
-          }].forEach(appData => {
-            const lItem = new qx.ui.form.ListItem(appData.label, null, appData.id).set({
+          application.getChildControl("arrow").syncAppearance(); // force sync to show the arrow
+          osparc.product.Utils.S4L_TOPICS.forEach(topic => {
+            const lItem = new qx.ui.form.ListItem(topic.label, null, topic.id).set({
               rich: true
             });
             application.add(lItem);
@@ -217,6 +162,7 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
         }
         case "osparc": {
           const application = new qx.ui.form.SelectBox();
+          application.getChildControl("arrow").syncAppearance(); // force sync to show the arrow
           [{
             id: "other",
             label: "Other"
@@ -264,6 +210,7 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
 
 
       const hear = new qx.ui.form.SelectBox();
+      hear.getChildControl("arrow").syncAppearance(); // force sync to show the arrow
       let hearOptions = [];
       switch (osparc.product.Utils.getProductName()) {
         case "osparc":

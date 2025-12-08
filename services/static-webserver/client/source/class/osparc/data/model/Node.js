@@ -120,14 +120,16 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     inputs: {
-      check: "Object",
-      // nullable: false,
+      check: "Array",
+      nullable: false,
+      init: [],
       event: "changeInputs"
     },
 
     outputs: {
-      check: "Object",
+      check: "Array",
       nullable: false,
+      init: [],
       event: "changeOutputs",
       apply: "__applyOutputs",
     },
@@ -196,7 +198,6 @@ qx.Class.define("osparc.data.model.Node", {
   },
 
   events: {
-    "updateStudyDocument": "qx.event.type.Event",
     "projectDocumentChanged": "qx.event.type.Data",
     "reloadModel": "qx.event.type.Event",
     "retrieveInputs": "qx.event.type.Data",
@@ -331,6 +332,7 @@ qx.Class.define("osparc.data.model.Node", {
       }
 
       const bootModeSB = new qx.ui.form.SelectBox();
+      bootModeSB.getChildControl("arrow").syncAppearance(); // force sync to show the arrow
       this.populateBootModes(bootModeSB, nodeMetadata, workbench, nodeId);
       return bootModeSB;
     },
@@ -456,27 +458,27 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     getInput: function(inputId) {
-      return this.getInputs()[inputId];
+      return this.getInputs().find(input => input.getPortKey() === inputId);
     },
 
     getOutput: function(outputId) {
-      return this.getOutputs()[outputId];
+      return this.getOutputs().find(output => output.getPortKey() === outputId);
     },
 
     getFirstOutput: function() {
       const outputs = this.getOutputs();
-      if (Object.keys(outputs).length) {
-        return outputs[Object.keys(outputs)[0]];
+      if (outputs.length) {
+        return outputs[0];
       }
       return null;
     },
 
     hasInputs: function() {
-      return Object.keys(this.getInputs()).length;
+      return this.getInputs().length;
     },
 
     hasOutputs: function() {
-      return Object.keys(this.getOutputs()).length;
+      return this.getOutputs().length;
     },
 
     fetchMetadataAndPopulate: function(nodeData, nodeUiData) {
@@ -490,6 +492,7 @@ qx.Class.define("osparc.data.model.Node", {
           this.populateNodeUIData(nodeData);
           // new place to store the position and marker
           this.populateNodeUIData(nodeUiData);
+          this.listenToChanges();
         })
         .catch(err => {
           console.log(err);
@@ -504,21 +507,30 @@ qx.Class.define("osparc.data.model.Node", {
           this.setLabel(metadata.name);
         }
         if (metadata.inputs) {
-          this.setInputs(metadata.inputs);
+          const inputs = [];
+          Object.keys(metadata.inputs).forEach(inputKey => {
+            const portData = metadata.inputs[inputKey];
+            const input = new osparc.data.model.NodePort(this.getNodeId(), portData, true);
+            inputs.push(input);
+          });
+          this.setInputs(inputs);
           if (Object.keys(metadata.inputs).length) {
             this.__addSettings(metadata.inputs);
           }
           if (this.getPropsForm()) {
             this.getPropsForm().makeInputsDynamic();
           }
-        } else {
-          this.setInputs({});
         }
+        const outputs = [];
         if (metadata.outputs) {
-          this.setOutputs(metadata.outputs);
-        } else {
-          this.setOutputs({});
+          Object.keys(metadata.outputs).forEach(outputKey => {
+            const portData = metadata.outputs[outputKey];
+            const output = new osparc.data.model.NodePort(this.getNodeId(), portData, false);
+            outputs.push(output);
+            output.addListener("changeValue", () => this.fireDataEvent("changeOutputs", this.getOutputs()), this);
+          });
         }
+        this.setOutputs(outputs);
       }
     },
 
@@ -765,57 +777,42 @@ qx.Class.define("osparc.data.model.Node", {
       }
     },
 
-    setOutputData: function(outputs) {
-      if (outputs) {
+    setOutputData: function(outputsData) {
+      if (outputsData) {
         let hasOutputs = false;
-        Object.keys(this.getOutputs()).forEach(outputKey => {
-          if (outputKey in outputs) {
-            this.setOutputs({
-              ...this.getOutputs(),
-              [outputKey]: {
-                ...this.getOutputs()[outputKey],
-                value: outputs[outputKey]
-              }
-            });
+        Object.keys(outputsData).forEach(outputKey => {
+          const output = this.getOutput(outputKey);
+          if (output) {
+            output.setValue(outputsData[outputKey]);
             hasOutputs = true;
-          } else {
-            this.setOutputs({
-              ...this.getOutputs(),
-              [outputKey]: {
-                ...this.getOutputs()[outputKey],
-                value: ""
-              }
-            });
           }
-        })
+        });
         this.getStatus().setHasOutputs(hasOutputs);
 
         if (hasOutputs && (this.isFilePicker() || this.isParameter() || this.isDynamic())) {
           this.getStatus().setModified(false);
         }
-
-        // event was fired in the outputs setter
-        // this.fireDataEvent("changeOutputs", this.getOutputs());
       }
     },
 
-    __getOutputData: function(outputKey) {
-      const outputs = this.getOutputs();
-      if (outputKey in outputs && "value" in outputs[outputKey]) {
-        return outputs[outputKey]["value"];
+    __getOutputValue: function(outputKey) {
+      const output = this.getOutput(outputKey);
+      if (output) {
+        return output.getValue();
       }
       return null;
     },
 
-    __getOutputsData: function() {
-      const outputsData = {};
-      Object.keys(this.getOutputs()).forEach(outKey => {
-        const outData = this.__getOutputData(outKey);
-        if (outData !== null) {
-          outputsData[outKey] = outData;
+    __getOutputValues: function() {
+      const outputValues = {};
+      this.getOutputs().forEach(output => {
+        const portKey = output.getPortKey();
+        const outputValue = this.__getOutputValue(portKey);
+        if (outputValue !== null) {
+          outputValues[portKey] = outputValue;
         }
       });
-      return outputsData;
+      return outputValues;
     },
 
     requestFileUploadAbort: function() {
@@ -868,21 +865,35 @@ qx.Class.define("osparc.data.model.Node", {
         return;
       }
 
-      // create automatic port connections
-      let autoConnections = 0;
-      const outPorts = node1.getOutputs();
-      const inPorts = node2.getInputs();
-      for (const outPort in outPorts) {
-        for (const inPort in inPorts) {
-          if (await node2.addPortLink(inPort, node1.getNodeId(), outPort)) {
-            autoConnections++;
-            break;
+      const autoConnectPorts = async () => {
+        // create automatic port connections
+        let autoConnections = 0;
+        const outputs = node1.getOutputs();
+        const inputs = node2.getInputs();
+        for (const output of outputs) {
+          for (const input of inputs) {
+            if (await node2.addPortLink(input.getPortKey(), node1.getNodeId(), output.getPortKey())) {
+              autoConnections++;
+              break; // stop checking more inputs for this output
+            }
           }
         }
+        if (autoConnections) {
+          const flashMessenger = osparc.FlashMessenger.getInstance();
+          flashMessenger.logAs(autoConnections + this.tr(" ports auto connected"), "INFO");
+        }
       }
-      if (autoConnections) {
-        const flashMessenger = osparc.FlashMessenger.getInstance();
-        flashMessenger.logAs(autoConnections + this.tr(" ports auto connected"), "INFO");
+      if (node1.getMetadata() && node2.getMetadata()) {
+        autoConnectPorts();
+      } else {
+        // wait for both metadata to be loaded
+        const onMetadataChanged = () => {
+          if (node1.getMetadata() && node2.getMetadata()) {
+            autoConnectPorts();
+          }
+        };
+        node1.addListenerOnce("changeMetadata", onMetadataChanged, this);
+        node2.addListenerOnce("changeMetadata", onMetadataChanged, this);
       }
     },
 
@@ -1051,7 +1062,7 @@ qx.Class.define("osparc.data.model.Node", {
     },
 
     __initParameter: function() {
-      if (this.isParameter() && this.__getOutputData("out_1") === null) {
+      if (this.isParameter() && this.__getOutputValue(osparc.data.model.NodePort.PARAM_PORT_KEY) === null) {
         const type = osparc.node.ParameterEditor.getParameterOutputType(this);
         // set default values if none
         let val = null;
@@ -1109,9 +1120,13 @@ qx.Class.define("osparc.data.model.Node", {
             const {
               data
             } = resp;
-            if (portKey) {
+            if (portKey && this.getInput(portKey)) {
               const sizeBytes = (data && ("size_bytes" in data)) ? data["size_bytes"] : 0;
-              this.getPropsForm().retrievedPortData(portKey, true, sizeBytes);
+              if (sizeBytes === 0) {
+                this.getInput(portKey).setStatus("DOWNLOAD_FINISHED_EMPTY");
+              } else {
+                this.getInput(portKey).setStatus("DOWNLOAD_FINISHED_SUCCESSFULLY");
+              }
             }
           }, this);
           [
@@ -1122,8 +1137,8 @@ qx.Class.define("osparc.data.model.Node", {
               const {
                 error
               } = e.getTarget().getResponse();
-              if (portKey) {
-                this.getPropsForm().retrievedPortData(portKey, false);
+              if (portKey && this.getInput(portKey)) {
+                this.getInput(portKey).setStatus("DOWNLOAD_FINISHED_WITH_ERROR");
               }
               console.error(failure, error);
               const errorMsgData = {
@@ -1136,8 +1151,8 @@ qx.Class.define("osparc.data.model.Node", {
           });
           updReq.send();
 
-          if (portKey) {
-            this.getPropsForm().retrievingPortData(portKey);
+          if (portKey && this.getInput(portKey)) {
+            this.getInput(portKey).setStatus("DOWNLOAD_STARTED");
           }
         }
       }
@@ -1313,7 +1328,7 @@ qx.Class.define("osparc.data.model.Node", {
       }
       const newMetadata = osparc.store.Services.getLatest("simcore/services/frontend/data-iterator/int-range")
       if (newMetadata) {
-        const value = this.__getOutputData("out_1");
+        const value = this.__getOutputValue(osparc.data.model.NodePort.PARAM_PORT_KEY);
         const label = this.getLabel();
         this.set({
           key: newMetadata["key"],
@@ -1411,16 +1426,17 @@ qx.Class.define("osparc.data.model.Node", {
           case "outputs":
             if (this.isFilePicker() || this.isParameter()) {
               this.addListener("changeOutputs", e => {
-                let data = e.getData();
+                const outputs = e.getData();
+                let outputValues = {};
                 if (this.isFilePicker()) {
-                  data = osparc.file.FilePicker.serializeOutput(this.getOutputs());
-                } else if (this.isParameter()) {
-                  data = this.__getOutputsData();
+                  outputValues = osparc.file.FilePicker.serializeOutput(outputs);
+                } else {
+                  outputValues = this.__getOutputValues();
                 }
                 this.fireDataEvent("projectDocumentChanged", {
                   "op": "replace",
                   "path": `/workbench/${nodeId}/outputs`,
-                  "value": data,
+                  "value": outputValues,
                   "osparc-resource": "node",
                 });
               }, this);
@@ -1496,7 +1512,7 @@ qx.Class.define("osparc.data.model.Node", {
             break;
           case "outputs": {
             const updatedPortKey = path.split("/")[4];
-            const currentOutputs = this.isFilePicker() ? osparc.file.FilePicker.serializeOutput(this.getOutputs()) : this.__getOutputsData();
+            const currentOutputs = this.isFilePicker() ? osparc.file.FilePicker.serializeOutput(this.getOutputs()) : this.__getOutputValues();
             currentOutputs[updatedPortKey] = value;
             this.setOutputData(currentOutputs);
             break;
@@ -1539,7 +1555,7 @@ qx.Class.define("osparc.data.model.Node", {
         nodeEntry.outputs = osparc.file.FilePicker.serializeOutput(this.getOutputs());
         nodeEntry.progress = this.getStatus().getProgress();
       } else if (this.isParameter()) {
-        nodeEntry.outputs = this.__getOutputsData();
+        nodeEntry.outputs = this.__getOutputValues();
       }
 
       // remove null entries from the payload

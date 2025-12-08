@@ -140,13 +140,6 @@ qx.Class.define("osparc.service.Utils", {
       return "";
     },
 
-    canIWrite: function(serviceAccessRights) {
-      const groupsStore = osparc.store.Groups.getInstance();
-      const orgIDs = groupsStore.getOrganizationIds();
-      orgIDs.push(groupsStore.getMyGroupId());
-      return osparc.share.CollaboratorsService.canGroupsWrite(serviceAccessRights, orgIDs);
-    },
-
     DEPRECATED_SERVICE_TEXT: qx.locale.Manager.tr("Service deprecated"),
     DEPRECATED_DYNAMIC_INSTRUCTIONS: qx.locale.Manager.tr("Please go back to the dashboard and Update the Service or download its data and upload it to an updated version"),
     DEPRECATED_COMPUTATIONAL_INSTRUCTIONS: qx.locale.Manager.tr("Please instantiate an updated version"),
@@ -254,9 +247,9 @@ qx.Class.define("osparc.service.Utils", {
     },
 
     getParameterType: function(metadata) {
-      let type = metadata["outputs"]["out_1"]["type"];
+      let type = metadata["outputs"][osparc.data.model.NodePort.PARAM_PORT_KEY]["type"];
       if (type === "ref_contentSchema") {
-        type = metadata["outputs"]["out_1"]["contentSchema"]["type"];
+        type = metadata["outputs"][osparc.data.model.NodePort.PARAM_PORT_KEY]["contentSchema"]["type"];
       }
       return type;
     },
@@ -265,9 +258,9 @@ qx.Class.define("osparc.service.Utils", {
       if (
         parameterData &&
         parameterData["outputs"] &&
-        parameterData["outputs"]["out_1"]
+        parameterData["outputs"][osparc.data.model.NodePort.PARAM_PORT_KEY]
       ) {
-        return parameterData["outputs"]["out_1"];
+        return parameterData["outputs"][osparc.data.model.NodePort.PARAM_PORT_KEY];
       }
       return null;
     },

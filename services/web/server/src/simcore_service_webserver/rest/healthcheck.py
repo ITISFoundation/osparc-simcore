@@ -1,4 +1,4 @@
-""" Service healthcheck
+"""Service healthcheck
 
 
 ## Types of health checks
@@ -43,19 +43,19 @@ Taken from https://medium.com/polarsquad/how-should-i-answer-a-health-check-aa1f
 Taken from https://docs.docker.com/engine/reference/builder/#healthcheck
 """
 
-
 import asyncio
 import inspect
 from collections.abc import Awaitable, Callable
-from typing import TypeAlias
-
-from aiohttp import web
-from aiosignal import Signal
-from typing_extensions import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
+from typing import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
+    Final,
+    TypeAlias,
     TypedDict,
 )
 
-from ..constants import APP_SETTINGS_KEY
+from aiohttp import web
+from aiosignal import Signal
+
+from ..application_keys import APP_SETTINGS_APPKEY
 
 _HealthCheckSlot = Callable[[web.Application], Awaitable[None]]
 
@@ -81,7 +81,7 @@ class HealthCheck:
 
         # The docker engine healthcheck: If a single run of the check takes longer than *timeout* seconds
         # then the check is considered to have failed. Therefore there is no need to continue run
-        self._timeout: int | None = app[APP_SETTINGS_KEY].SC_HEALTHCHECK_TIMEOUT
+        self._timeout: int | None = app[APP_SETTINGS_APPKEY].SC_HEALTHCHECK_TIMEOUT
 
     def __repr__(self):
         return f"<HealthCheck timeout={self._timeout}, #on_healthcheck-slots={len(self._on_healthcheck)}>"
@@ -96,7 +96,7 @@ class HealthCheck:
     @staticmethod
     def get_app_info(app: web.Application) -> HealthInfoDict:
         """Minimal (header) health report is information about the app"""
-        settings = app[APP_SETTINGS_KEY]
+        settings = app[APP_SETTINGS_APPKEY]
         return HealthInfoDict(
             name=settings.APP_NAME,
             version=settings.API_VERSION,
@@ -122,6 +122,9 @@ class HealthCheck:
             heath_report: HealthInfoDict = self.get_app_info(app)
             return heath_report
 
-        except asyncio.TimeoutError as err:
+        except TimeoutError as err:
             msg = "Service is slowing down"
             raise HealthCheckError(msg) from err
+
+
+HEALTHCHECK_APPKEY: Final = web.AppKey("HEALTHCHECK_APPKEY", HealthCheck)

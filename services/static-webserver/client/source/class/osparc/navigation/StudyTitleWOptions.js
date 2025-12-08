@@ -51,22 +51,15 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
           control = new qx.ui.menu.Button().set({
             label: this.tr("Information..."),
             icon: "@MaterialIcons/info_outline/14",
-            ...this.self().BUTTON_OPTIONS
           });
-          control.addListener("execute", () => {
-            let widget = null;
-            if (this.getStudy().isPipelineMononode()) {
-              widget = new osparc.info.MergedLarge(this.getStudy());
-            } else {
-              widget = new osparc.info.StudyLarge(this.getStudy());
-            }
-            const title = this.tr("Information");
-            const width = osparc.info.CardLarge.WIDTH;
-            const height = osparc.info.CardLarge.HEIGHT;
-            osparc.ui.window.Window.popUpInWindow(widget, title, width, height).set({
-              maxHeight: height
-            });
+          control.addListener("execute", () => this.__openStudyDetails(), this);
+          break;
+        case "study-menu-share":
+          control = new qx.ui.menu.Button().set({
+            label: this.tr("Share..."),
+            icon: "@FontAwesome5Solid/share-alt/14",
           });
+          control.addListener("execute", () => this.__openAccessRights(), this);
           break;
         case "study-menu-reload":
           control = new qx.ui.menu.Button().set({
@@ -100,6 +93,7 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
           const optionsMenu = new qx.ui.menu.Menu();
           optionsMenu.setAppearance("menu-wider");
           optionsMenu.add(this.getChildControl("study-menu-info"));
+          optionsMenu.add(this.getChildControl("study-menu-share"));
           optionsMenu.add(this.getChildControl("study-menu-reload"));
           optionsMenu.add(this.getChildControl("study-menu-conversations"));
           if (osparc.product.Utils.showConvertToPipeline()) {
@@ -122,6 +116,7 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
             inputFont: "text-14",
             maxWidth: 300
           });
+          osparc.utils.Utils.setIdToWidget(control, "studyTitleRenamer");
           control.addListener("editValue", e => {
             const newLabel = e.getData();
             this.getStudy().setName(newLabel);
@@ -130,6 +125,32 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
           break;
       }
       return control || this.base(arguments, id);
+    },
+
+    __openStudyDetails: function() {
+      let widget = null;
+      if (this.getStudy().isPipelineMononode()) {
+        widget = new osparc.info.MergedLarge(this.getStudy());
+      } else {
+        widget = new osparc.info.StudyLarge(this.getStudy());
+      }
+      const title = this.tr("Information");
+      const width = osparc.info.CardLarge.WIDTH;
+      const height = osparc.info.CardLarge.HEIGHT;
+      osparc.ui.window.Window.popUpInWindow(widget, title, width, height).set({
+        maxHeight: height
+      });
+    },
+
+    __openAccessRights: function() {
+      const studyData = this.getStudy().serialize();
+      studyData["resourceType"] = this.getStudy().getTemplateType() ? "template" : "study";
+      const collaboratorsView = osparc.info.StudyUtils.openAccessRights(studyData);
+      collaboratorsView.addListener("updateAccessRights", e => {
+        const updatedData = e.getData();
+        this.getStudy().setAccessRights(updatedData["accessRights"]);
+        this.fireDataEvent("updateStudy", updatedData);
+      }, this);
     },
 
     __reloadIFrame: function() {
@@ -143,6 +164,12 @@ qx.Class.define("osparc.navigation.StudyTitleWOptions", {
       if (study) {
         const editTitle = this.getChildControl("edit-title-label");
         study.bind("name", editTitle, "value");
+
+        const shareButton = this.getChildControl("study-menu-share");
+        shareButton.set({
+          visibility: osparc.auth.Data.getInstance().isGuest() ? "excluded" : "visible",
+          enabled: osparc.data.model.Study.canIWrite(study.getAccessRights()),
+        });
 
         const reloadButton = this.getChildControl("study-menu-reload");
         study.getUi().bind("mode", reloadButton, "visibility", {

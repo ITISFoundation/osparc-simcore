@@ -42,7 +42,7 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
   },
 
   statics: {
-    ITEM_HEIGHT: 35,
+    ITEM_HEIGHT: 40,
     SPACING: 5,
     POS: {
       THUMBNAIL: 0,
@@ -75,12 +75,11 @@ qx.Class.define("osparc.dashboard.ListButtonBase", {
           break;
         }
         case "title":
-          control = new qx.ui.basic.Label().set({
+          control = new osparc.ui.basic.SafeLabel().set({
             textColor: "contrasted-text-light",
             font: "text-14",
             alignY: "middle",
             maxWidth: 300,
-            rich: true,
           });
           this._add(control, {
             row: 0,

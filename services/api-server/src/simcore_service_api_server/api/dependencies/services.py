@@ -3,12 +3,15 @@
 from collections.abc import Callable
 from typing import Annotated
 
-from fastapi import Depends, HTTPException, Request, status
+from fastapi import Depends, FastAPI, HTTPException, Request, status
 from models_library.products import ProductName
 from models_library.users import UserID
+from servicelib.fastapi.dependencies import get_app
 from servicelib.rabbitmq import RabbitMQRPCClient
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ..._service_function_jobs import FunctionJobService
+from ..._service_function_jobs_task_client import FunctionJobTaskClientService
 from ..._service_functions import FunctionService
 from ..._service_jobs import JobService
 from ..._service_programs import ProgramService
@@ -21,6 +24,8 @@ from ...services_rpc.director_v2 import DirectorV2Service
 from ...services_rpc.storage import StorageService
 from ...services_rpc.wb_api_server import WbApiRpcClient
 from ...utils.client_base import BaseServiceClientApi
+from ..dependencies.celery import get_task_manager
+from ..dependencies.database import get_db_asyncpg_engine
 from .authentication import get_current_user_id, get_product_name
 from .rabbitmq import get_rabbitmq_rpc_client
 from .webserver_http import get_webserver_session
@@ -151,12 +156,48 @@ def get_function_service(
 def get_function_job_service(
     web_rpc_api: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     job_service: Annotated[JobService, Depends(get_job_service)],
+    function_service: Annotated[FunctionService, Depends(get_function_service)],
     user_id: Annotated[UserID, Depends(get_current_user_id)],
     product_name: Annotated[ProductName, Depends(get_product_name)],
+    webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
+    storage_service: Annotated[StorageService, Depends(get_storage_service)],
 ) -> FunctionJobService:
     return FunctionJobService(
         _web_rpc_client=web_rpc_api,
         _job_service=job_service,
+        _function_service=function_service,
+        _storage_client=storage_service,
+        _webserver_api=webserver_api,
         user_id=user_id,
         product_name=product_name,
+    )
+
+
+def get_function_job_task_client_service(
+    app: Annotated[FastAPI, Depends(get_app)],
+    web_rpc_api: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
+    job_service: Annotated[JobService, Depends(get_job_service)],
+    function_service: Annotated[FunctionService, Depends(get_function_service)],
+    function_job_service: Annotated[
+        FunctionJobService, Depends(get_function_job_service)
+    ],
+    user_id: Annotated[UserID, Depends(get_current_user_id)],
+    product_name: Annotated[ProductName, Depends(get_product_name)],
+    webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
+    storage_service: Annotated[StorageService, Depends(get_storage_service)],
+    async_pg_engine: Annotated[AsyncEngine, Depends(get_db_asyncpg_engine)],
+) -> FunctionJobTaskClientService:
+
+    task_manager = get_task_manager(app)
+    return FunctionJobTaskClientService(
+        _web_rpc_client=web_rpc_api,
+        _job_service=job_service,
+        _function_service=function_service,
+        _function_job_service=function_job_service,
+        _storage_client=storage_service,
+        _webserver_api=webserver_api,
+        user_id=user_id,
+        product_name=product_name,
+        _celery_task_manager=task_manager,
+        _async_pg_engine=async_pg_engine,
     )

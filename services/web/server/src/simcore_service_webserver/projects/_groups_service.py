@@ -16,7 +16,7 @@ from ..users import users_service
 from . import _groups_repository
 from ._access_rights_service import check_user_project_permission
 from ._groups_models import ProjectGroupGetDB
-from ._projects_repository_legacy import APP_PROJECT_DBAPI, ProjectDBAPI
+from ._projects_repository_legacy import PROJECT_DBAPI_APPKEY, ProjectDBAPI
 from .exceptions import ProjectInvalidRightsError
 
 _logger = logging.getLogger(__name__)
@@ -111,7 +111,7 @@ async def replace_project_group(
         permission="write",
     )
 
-    project_db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+    project_db: ProjectDBAPI = app[PROJECT_DBAPI_APPKEY]
     project = await project_db.get_project_db(project_id)
     project_owner_user: dict = await users_service.get_user(app, project.prj_owner)
     if project_owner_user["primary_gid"] == group_id:
@@ -157,7 +157,7 @@ async def delete_project_group(
             permission="delete",
         )
 
-    project_db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+    project_db: ProjectDBAPI = app[PROJECT_DBAPI_APPKEY]
     project = await project_db.get_project_db(project_id)
     project_owner_user: dict = await users_service.get_user(app, project.prj_owner)
     if (

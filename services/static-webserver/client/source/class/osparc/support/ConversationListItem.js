@@ -26,10 +26,14 @@ qx.Class.define("osparc.support.ConversationListItem", {
     layout.setSpacingY(0);
 
     // decorate
-    this.getChildControl("thumbnail").getContentElement().setStyles({
-      "border-radius": "16px"
+    this.getChildControl("thumbnail").setDecorator("circled");
+    this.getChildControl("title").set({
+      rich: false, // let ellipsis work
     });
     this.getChildControl("subtitle").set({
+      rich: false, // let ellipsis work
+    });
+    this.getChildControl("sub-subtitle").set({
       textColor: "text-disabled",
     });
   },
@@ -42,34 +46,112 @@ qx.Class.define("osparc.support.ConversationListItem", {
       event: "changeConversation",
       apply: "__applyConversation",
     },
+
+    subSubtitle: {
+      check : "String",
+      apply : "__applySubSubtitle",
+      nullable : true
+    },
   },
 
   members: {
+    _createChildControlImpl: function(id, hash) {
+      let control;
+      switch(id) {
+        case "sub-subtitle":
+          control = new qx.ui.basic.Label().set({
+            font: "text-12",
+            selectable: true,
+            rich: true,
+          });
+          this._add(control, {
+            row: 2,
+            column: 1
+          });
+          break;
+        case "unread-badge":
+          control = new osparc.ui.basic.Chip(this.tr("Unread")).set({
+            statusColor: "success",
+            font: "text-12",
+            allowGrowY: false,
+            alignX: "right",
+          });
+          this.getChildControl("third-column-layout").addAt(control, 1, {
+            flex: 1
+          });
+          break;
+      }
+      return control || this.base(arguments, id);
+    },
+
     __applyConversation: function(conversation) {
       conversation.bind("nameAlias", this, "title");
 
-      this.__populateWithLastMessage();
-      conversation.addListener("changeLastMessage", this.__populateWithLastMessage, this);
+      this.__lastMessageChanged();
+      conversation.addListener("changeLastMessage", this.__lastMessageChanged, this);
+
+      this.__firstMessageChanged();
+      conversation.addListener("changeFirstMessage", this.__firstMessageChanged, this);
+
+      conversation.bind("lastMessageCreatedAt", this, "role", {
+        converter: val => {
+          return val ? osparc.utils.Utils.formatDateAndTime(val) : "";
+        },
+      });
+
+      const unreadBadge = this.getChildControl("unread-badge");
+      const propName = osparc.store.Groups.getInstance().amIASupportUser() ? "readBySupport" : "readByUser";
+      conversation.bind(propName, unreadBadge, "visibility", {
+        converter: val => val === false ? "visible" : "excluded"
+      });
     },
 
-    __populateWithLastMessage: function() {
-      const lastMessage = this.getConversation().getLastMessage();
+    __lastMessageChanged: function() {
+      const conversation = this.getConversation();
+      const lastMessage = conversation.getLastMessage();
       if (lastMessage) {
-        const date = osparc.utils.Utils.formatDateAndTime(new Date(lastMessage.created));
-        this.set({
-          subtitle: date,
-        });
-        const userGroupId = lastMessage.userGroupId;
+        const userGroupId = lastMessage.getUserGroupId();
         osparc.store.Users.getInstance().getUser(userGroupId)
           .then(user => {
             if (user) {
               this.set({
                 thumbnail: user.getThumbnail(),
-                subtitle: user.getLabel() + " - " + date,
+                subtitle: user.getLabel() + ": " + lastMessage.getContent(),
               });
             }
           });
       }
     },
-  }
+
+    __firstMessageChanged: function() {
+      const conversation = this.getConversation();
+      const firstMessage = conversation.getFirstMessage();
+      if (firstMessage) {
+        const userGroupId = firstMessage.getUserGroupId();
+        osparc.store.Users.getInstance().getUser(userGroupId)
+          .then(user => {
+            if (user) {
+              const amISupporter = osparc.store.Groups.getInstance().amIASupportUser();
+              let subSubtitle = "Started";
+              if (amISupporter) {
+                subSubtitle += " by " + user.getLabel();
+              }
+              const date = osparc.utils.Utils.formatDateAndTime(firstMessage.getCreated());
+              subSubtitle += " on " + date;
+              this.set({
+                subSubtitle,
+              });
+            }
+          });
+      }
+    },
+
+    __applySubSubtitle: function(value) {
+      if (value === null) {
+        return;
+      }
+      const label = this.getChildControl("sub-subtitle");
+      label.setValue(value);
+    },
+  },
 });

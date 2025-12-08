@@ -81,7 +81,7 @@ services:
       retries: 5
 
   redis-commander:
-    image: rediscommander/redis-commander:latest
+    image: ghcr.io/joeferner/redis-commander:latest
     init: true
     environment:
       - >-
@@ -100,6 +100,7 @@ services:
       # If you add/remove a db, do not forget to update the --databases entry in the docker-compose.yml
     ports:
       - "18081:8081"
+    user: redis
     networks:
       - simcore_default
   opentelemetry-collector:
@@ -116,7 +117,6 @@ services:
       - interactive_services_subnet
     environment:
       TRACING_OPENTELEMETRY_COLLECTOR_BATCH_SIZE: ${TRACING_OPENTELEMETRY_COLLECTOR_BATCH_SIZE}
-      TRACING_OPENTELEMETRY_COLLECTOR_SAMPLING_PERCENTAGE: ${TRACING_OPENTELEMETRY_COLLECTOR_SAMPLING_PERCENTAGE}
       TRACING_OPENTELEMETRY_COLLECTOR_EXPORTER_ENDPOINT: ${TRACING_OPENTELEMETRY_COLLECTOR_EXPORTER_ENDPOINT}
 volumes:
   minio_data:

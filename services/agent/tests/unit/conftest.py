@@ -131,7 +131,7 @@ async def create_dynamic_sidecar_volume(
 
 @pytest.fixture
 def create_dynamic_sidecar_volumes(
-    create_dynamic_sidecar_volume: Callable[[NodeID, bool, str], Awaitable[str]]
+    create_dynamic_sidecar_volume: Callable[[NodeID, bool, str], Awaitable[str]],
 ) -> Callable[[NodeID, bool], Awaitable[set[str]]]:
     async def _(node_id: NodeID, in_use: bool) -> set[str]:
         volume_names: set[str] = set()

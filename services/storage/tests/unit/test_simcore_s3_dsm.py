@@ -168,6 +168,224 @@ async def test_upload_and_search(
         assert file.file_name in {"file1", "file2"}
 
 
+async def _search_files_by_pattern(
+    simcore_s3_dsm: SimcoreS3DataManager,
+    user_id: UserID,
+    name_pattern: str,
+    project_id: ProjectID | None = None,
+    items_per_page: int = 10,
+) -> list[FileMetaData]:
+    """Helper function to search files and collect all results."""
+    results = []
+    async for page in simcore_s3_dsm.search(
+        user_id=user_id,
+        name_pattern=name_pattern,
+        project_id=project_id,
+        limit=items_per_page,
+    ):
+        results.extend(page)
+    return results
+
+
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+async def test_search_files(
+    simcore_s3_dsm: SimcoreS3DataManager,
+    upload_file: Callable[..., Awaitable[tuple[Path, SimcoreS3FileID]]],
+    file_size: ByteSize,
+    user_id: UserID,
+    project_id: ProjectID,
+    faker: Faker,
+):
+    # Upload files with different patterns
+    test_files = [
+        ("test_file1.txt", "*.txt"),
+        ("test_file2.txt", "*.txt"),
+        ("document.pdf", "*.pdf"),
+        ("data_file.csv", "data_*.csv"),
+        ("backup_file.bak", "backup_*"),
+        ("config.json", "*.json"),
+        ("temp_data.tmp", "temp_*"),
+        ("file_a.log", "file_?.log"),
+        ("file_b.log", "file_?.log"),
+        ("file_10.log", "file_??.log"),
+        ("report1.txt", "report?.txt"),
+        ("report2.txt", "report?.txt"),
+    ]
+
+    uploaded_files = []
+    for file_name, _ in test_files:
+        checksum: SHA256Str = TypeAdapter(SHA256Str).validate_python(faker.sha256())
+        _, file_id = await upload_file(file_size, file_name, sha256_checksum=checksum)
+        uploaded_files.append((file_name, file_id, checksum))
+
+    # Test 1: Search for all .txt files
+    txt_results = await _search_files_by_pattern(
+        simcore_s3_dsm, user_id, "*.txt", project_id
+    )
+    assert (
+        len(txt_results) == 4
+    )  # test_file1.txt, test_file2.txt, report1.txt, report2.txt
+    txt_names = {file.file_name for file in txt_results}
+    assert txt_names == {
+        "test_file1.txt",
+        "test_file2.txt",
+        "report1.txt",
+        "report2.txt",
+    }
+
+    # Test 2: Search with specific prefix pattern
+    data_results = await _search_files_by_pattern(
+        simcore_s3_dsm, user_id, "data_*", project_id
+    )
+    assert len(data_results) == 1
+    assert data_results[0].file_name == "data_file.csv"
+
+    # Test 3: Search with pattern that matches multiple extensions
+    temp_results = await _search_files_by_pattern(
+        simcore_s3_dsm, user_id, "temp_*", project_id
+    )
+    assert len(temp_results) == 1
+    assert temp_results[0].file_name == "temp_data.tmp"
+
+    # Test 4: Search with pattern that doesn't match anything
+    no_match_results = await _search_files_by_pattern(
+        simcore_s3_dsm, user_id, "nonexistent_*", project_id
+    )
+    assert len(no_match_results) == 0
+
+    # Test 5: Search without project_id restriction (all accessible projects)
+    all_results = await _search_files_by_pattern(simcore_s3_dsm, user_id, "*")
+    assert len(all_results) >= len(test_files)
+
+    # Verify that each result has expected FileMetaData structure
+    for file_meta in all_results:
+        assert isinstance(file_meta, FileMetaData)
+        assert file_meta.file_name is not None
+        assert file_meta.file_id is not None
+        assert file_meta.user_id == user_id
+        assert file_meta.project_id is not None
+
+    # Test 6: Test ? wildcard - single character match
+    single_char_results = await _search_files_by_pattern(
+        simcore_s3_dsm, user_id, "file_?.log", project_id
+    )
+    # Should find 2 files: file_a.log and file_b.log (but not file_10.log)
+    assert len(single_char_results) == 2
+    single_char_names = {file.file_name for file in single_char_results}
+    assert single_char_names == {"file_a.log", "file_b.log"}
+
+    # Test 7: Test ?? wildcard - two character match
+    double_char_results = await _search_files_by_pattern(
+        simcore_s3_dsm, user_id, "file_??.log", project_id
+    )
+    # Should find 1 file: file_10.log
+    assert len(double_char_results) == 1
+    assert double_char_results[0].file_name == "file_10.log"
+
+    # Test 8: Test ? wildcard with specific prefix and suffix
+    report_results = await _search_files_by_pattern(
+        simcore_s3_dsm, user_id, "report?.txt", project_id
+    )
+    # Should find 2 files: report1.txt and report2.txt
+    assert len(report_results) == 2
+    report_names = {file.file_name for file in report_results}
+    assert report_names == {"report1.txt", "report2.txt"}
+
+    # Test 9: Test pagination with small page size
+    paginated_results = []
+    page_count = 0
+    async for page in simcore_s3_dsm.search(
+        user_id=user_id,
+        name_pattern="*",
+        project_id=project_id,
+        limit=2,  # Small page size to test pagination
+    ):
+        paginated_results.extend(page)
+        page_count += 1
+        # Each page should have at most 2 items
+        assert len(page) <= 2
+
+    # Should have multiple pages and all our files
+    assert page_count >= 6  # At least 12 files / 2 per page = 6 pages
+    assert len(paginated_results) == len(test_files)
+
+
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+async def test_search_files_case_insensitive(
+    simcore_s3_dsm: SimcoreS3DataManager,
+    upload_file: Callable[..., Awaitable[tuple[Path, SimcoreS3FileID]]],
+    file_size: ByteSize,
+    user_id: UserID,
+    project_id: ProjectID,
+    faker: Faker,
+):
+    mixed_case_files = [
+        ("TestFile.TXT", "*.txt"),
+        ("MyDocument.PDF", "*.pdf"),
+        ("DataFile.CSV", "data*.csv"),
+        ("ConfigFile.JSON", "config*"),
+        ("BackupData.BAK", "*.bak"),
+        ("CamelCaseFile.txt", "camelcase*"),
+        ("XMLDataFile.xml", "*.XML"),
+        ("config.json", "CONFIG*"),
+    ]
+
+    for file_name, _ in mixed_case_files:
+        checksum: SHA256Str = TypeAdapter(SHA256Str).validate_python(faker.sha256())
+        await upload_file(file_size, file_name, sha256_checksum=checksum)
+
+    # Test case-insensitive extension matching
+    case_insensitive_txt = await _search_files_by_pattern(
+        simcore_s3_dsm, user_id, "*.txt", project_id
+    )
+    txt_file_names = {file.file_name for file in case_insensitive_txt}
+    assert "TestFile.TXT" in txt_file_names
+    assert "CamelCaseFile.txt" in txt_file_names
+
+    # Test case-insensitive prefix matching
+    case_insensitive_data = await _search_files_by_pattern(
+        simcore_s3_dsm, user_id, "data*", project_id
+    )
+    data_file_names = {file.file_name for file in case_insensitive_data}
+    assert "DataFile.CSV" in data_file_names
+
+    # Test mixed case pattern matching
+    case_insensitive_config = await _search_files_by_pattern(
+        simcore_s3_dsm, user_id, "CONFIG*", project_id
+    )
+    config_file_names = {file.file_name for file in case_insensitive_config}
+    assert "ConfigFile.JSON" in config_file_names
+    assert "config.json" in config_file_names
+
+    case_insensitive_xml = await _search_files_by_pattern(
+        simcore_s3_dsm, user_id, "*.XML", project_id
+    )
+    xml_file_names = {file.file_name for file in case_insensitive_xml}
+    assert "XMLDataFile.xml" in xml_file_names
+
+    camelcase_results = await _search_files_by_pattern(
+        simcore_s3_dsm, user_id, "camelcase*", project_id
+    )
+    assert len(camelcase_results) == 1
+    assert camelcase_results[0].file_name == "CamelCaseFile.txt"
+
+    pdf_results = await _search_files_by_pattern(
+        simcore_s3_dsm, user_id, "*.PDF", project_id
+    )
+    pdf_file_names = {file.file_name for file in pdf_results}
+    assert "MyDocument.PDF" in pdf_file_names
+
+
 @pytest.fixture
 async def paths_for_export(
     random_project_with_files: Callable[
@@ -306,3 +524,115 @@ async def test_create_s3_export_abort_upload_upon_error(
                 user_id, [], progress_bar=progress_bar
             )
     await _assert_meta_data_entries_count(sqlalchemy_async_engine, count=0)
+
+
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+async def test_search_directories(
+    simcore_s3_dsm: SimcoreS3DataManager,
+    create_directory_with_files: Callable[
+        [str, ByteSize, int, int, ProjectID, NodeID],
+        Awaitable[
+            tuple[SimcoreS3FileID, tuple[NodeID, dict[SimcoreS3FileID, FileIDDict]]]
+        ],
+    ],
+    upload_file: Callable[..., Awaitable[tuple[Path, SimcoreS3FileID]]],
+    file_size: ByteSize,
+    user_id: UserID,
+    project_id: ProjectID,
+    node_id: NodeID,
+    faker: Faker,
+):
+    """Test that search functionality can find directories."""
+
+    # Create directories with different naming patterns
+    test_directories = [
+        ("test_dir_1", 3, 2),  # directory name, subdir_count, file_count
+        ("test_dir_1/subdir_a", 1, 1),
+        ("test_dir_2", 2, 3),
+        ("data_folder", 1, 2),
+        ("backup_directory", 2, 1),
+        ("config_dir", 1, 1),
+        ("temp_folder", 3, 2),
+    ]
+
+    # Create the directories
+    for dir_name, subdir_count, file_count in test_directories:
+        await create_directory_with_files(
+            dir_name,
+            file_size,
+            subdir_count,
+            file_count,
+            project_id,
+            node_id,
+        )
+
+    # Also upload some regular files with similar patterns for contrast
+    regular_files = [
+        "test_file.txt",
+        "data_document.pdf",
+        "backup_config.json",
+        "temp_settings.xml",
+    ]
+
+    for file_name in regular_files:
+        checksum: SHA256Str = TypeAdapter(SHA256Str).validate_python(faker.sha256())
+        await upload_file(file_size, file_name, sha256_checksum=checksum)
+
+    # Test 1: Search for directories with "test_dir" pattern
+    dir_results = await _search_files_by_pattern(
+        simcore_s3_dsm, user_id, "test_dir*", project_id
+    )
+    # Should find 2 directories: test_dir_1 and test_dir_2
+    assert len(dir_results) == 2
+    dir_names = {d.file_name for d in dir_results if d.is_directory}
+    assert dir_names == {"test_dir_1", "test_dir_2"}
+
+    # Test 2: Search for directories with "_dir" suffix
+    dir_results = await _search_files_by_pattern(
+        simcore_s3_dsm, user_id, "*_dir", project_id
+    )
+    assert len(dir_results) == 1  # test_dir_1, test_dir_2, config_dir
+    dir_names = {f.file_name for f in dir_results if f.is_directory}
+    assert dir_names == {"config_dir"}
+
+    # Test 3: Search for directories with "folder" in name
+    folder_results = await _search_files_by_pattern(
+        simcore_s3_dsm, user_id, "*folder*", project_id
+    )
+    assert len(folder_results) == 2  # data_folder, temp_folder
+    dir_names = {f.file_name for f in folder_results}
+    assert dir_names == {"data_folder", "temp_folder"}
+
+    # Test 4: Search with pattern that matches both files and directories
+    data_results = await _search_files_by_pattern(
+        simcore_s3_dsm, user_id, "data_*", project_id
+    )
+    # Should find both data_folder (directory) and data_document.pdf (file)
+    assert len(data_results) >= 2
+    # Check that we have both directory and file
+    has_directory = any(r.is_directory for r in data_results)
+    has_file = any(not r.is_directory for r in data_results)
+    assert has_directory
+    assert has_file
+
+    # Test 5: Search for backup pattern (should find both directory and file)
+    backup_results = await _search_files_by_pattern(
+        simcore_s3_dsm, user_id, "backup_*", project_id
+    )
+    assert len(backup_results) >= 2
+    # Should find backup_directory/ and backup_config.json
+    directory_names = {f.file_name for f in backup_results if f.is_directory}
+    file_names_only = {f.file_name for f in backup_results if not f.is_directory}
+    assert "backup_directory" in directory_names
+    assert "backup_config.json" in file_names_only
+
+    # Test 6: Search for subdirectories
+    subdir_results = await _search_files_by_pattern(
+        simcore_s3_dsm, user_id, "*subdir_*", project_id
+    )
+    assert len(subdir_results) == 1  # Only subdir_a

@@ -189,8 +189,8 @@ def test_EC2_INSTANCES_ALLOWED_TYPES_passing_invalid_image_tags(  # noqa: N802
 
         assert (
             _AUTO_DEFAULT_FACTORY_RESOLVES_TO_NONE_FSTRING.format(
-                field_name="AUTOSCALING_EC2_INSTANCES"
-            )
+                field_name="AUTOSCALING_EC2_INSTANCES", err="pytest"
+            ).split("pytest")[0]
             in caplog.text
         )
 
@@ -270,7 +270,7 @@ def test_EC2_INSTANCES_ALLOWED_TYPES_empty_not_allowed_with_main_field_env_var( 
     error = exc_info.value.errors()[0]
 
     assert error["type"] == "value_error"
-    assert error["input"] == {}
+    assert error["input"] == "{}"
     assert error["loc"] == ("AUTOSCALING_EC2_INSTANCES", "EC2_INSTANCES_ALLOWED_TYPES")
 
     # NOTE: input captured via EnvSettingsWithAutoDefaultSource
@@ -281,8 +281,8 @@ def test_EC2_INSTANCES_ALLOWED_TYPES_empty_not_allowed_with_main_field_env_var( 
 
         assert (
             _AUTO_DEFAULT_FACTORY_RESOLVES_TO_NONE_FSTRING.format(
-                field_name="AUTOSCALING_EC2_INSTANCES"
-            )
+                field_name="AUTOSCALING_EC2_INSTANCES", err="pytest"
+            ).split("pytest")[0]
             in caplog.text
         )
 
@@ -308,8 +308,8 @@ def test_EC2_INSTANCES_ALLOWED_TYPES_empty_not_allowed_without_main_field_env_va
 
         assert (
             _AUTO_DEFAULT_FACTORY_RESOLVES_TO_NONE_FSTRING.format(
-                field_name="AUTOSCALING_EC2_INSTANCES"
-            )
+                field_name="AUTOSCALING_EC2_INSTANCES", err="pytest"
+            ).split("pytest")[0]
             in caplog.text
         )
 
@@ -324,6 +324,43 @@ def test_EC2_INSTANCES_ALLOWED_TYPES_invalid_instance_names(  # noqa: N802
     assert settings.AUTOSCALING_EC2_INSTANCES
 
     # passing an invalid image tag name will fail
+    setenvs_from_dict(
+        monkeypatch,
+        {
+            "EC2_INSTANCES_ALLOWED_TYPES": json.dumps(
+                {
+                    "t3.micro": {
+                        "ami_id": faker.pystr(),
+                        "pre_pull_images": [],
+                        "custom_node_labels": {"invalid/label": "value"},
+                    }
+                }
+            )
+        },
+    )
+    caplog.clear()
+    with caplog.at_level(logging.WARNING):
+        settings = ApplicationSettings.create_from_envs()
+        assert settings.AUTOSCALING_EC2_INSTANCES is None
+
+        assert (
+            _AUTO_DEFAULT_FACTORY_RESOLVES_TO_NONE_FSTRING.format(
+                field_name="AUTOSCALING_EC2_INSTANCES", err="pytest"
+            ).split("pytest")[0]
+            in caplog.text
+        )
+
+
+def test_EC2_INSTANCES_ALLOWED_TYPES_invalid_custom_node_labels(  # noqa: N802
+    app_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+    faker: Faker,
+    caplog: pytest.LogCaptureFixture,
+):
+    settings = ApplicationSettings.create_from_envs()
+    assert settings.AUTOSCALING_EC2_INSTANCES
+
+    # passing an instance type with missing or invalid custom node labels will fail
     setenvs_from_dict(
         monkeypatch,
         {
@@ -344,7 +381,7 @@ def test_EC2_INSTANCES_ALLOWED_TYPES_invalid_instance_names(  # noqa: N802
 
         assert (
             _AUTO_DEFAULT_FACTORY_RESOLVES_TO_NONE_FSTRING.format(
-                field_name="AUTOSCALING_EC2_INSTANCES"
-            )
+                field_name="AUTOSCALING_EC2_INSTANCES", err="pytest"
+            ).split("pytest")[0]
             in caplog.text
         )

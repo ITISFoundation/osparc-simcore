@@ -1,11 +1,12 @@
+from aiohttp import web
+
 from ..constants import FRONTEND_APP_DEFAULT, FRONTEND_APPS_AVAILABLE
 
 STATIC_DIRNAMES = FRONTEND_APPS_AVAILABLE | {"resource", "transpiled"}
 
-APP_FRONTEND_CACHED_INDEXES_KEY = f"{__name__}.cached_indexes"
-APP_FRONTEND_CACHED_STATICS_JSON_KEY = f"{__name__}.cached_statics_json"
-
-APP_CLIENTAPPS_SETTINGS_KEY = f"{__file__}.client_apps_settings"
+FRONTEND_CACHED_INDEXES_APPKEY = web.AppKey("FRONTEND_CACHED_INDEXES", dict)
+FRONTEND_CACHED_STATICS_JSON_APPKEY = web.AppKey("FRONTEND_CACHED_STATICS_JSON", dict)
+CLIENTAPPS_SETTINGS_APPKEY = web.AppKey("CLIENTAPPS_SETTINGS", dict)
 
 
 __all__: tuple[str, ...] = (

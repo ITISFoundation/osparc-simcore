@@ -13,8 +13,7 @@ class _BaseAppError(OsparcErrorMixin, ValueError):
 #
 
 
-class PaymentsGatewayError(_BaseAppError):
-    ...
+class PaymentsGatewayError(_BaseAppError): ...
 
 
 class PaymentsGatewayNotReadyError(PaymentsGatewayError):

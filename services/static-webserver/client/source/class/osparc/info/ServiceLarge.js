@@ -110,7 +110,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
 
       if (
         this.getService()["descriptionUi"] &&
-        !osparc.service.Utils.canIWrite(this.getService()["accessRights"])
+        !osparc.data.model.Service.canIWrite(this.getService()["accessRights"])
       ) {
         // In case of service instance, show also the copy Id buttons too
         const buttonsLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(10));
@@ -152,7 +152,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
         vBox.add(infoLayout);
 
         // Resources info if not billable
-        if (!osparc.desktop.credits.Utils.areWalletsEnabled()) {
+        if (!osparc.store.StaticInfo.isBillableProduct()) {
           const resources = this.__createResources();
           if (resources) {
             vBox.add(resources);
@@ -177,7 +177,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
         alignY: "middle"
       }));
       layout.add(view);
-      if (osparc.service.Utils.canIWrite(this.getService()["accessRights"])) {
+      if (osparc.data.model.Service.canIWrite(this.getService()["accessRights"])) {
         const editBtn = osparc.utils.Utils.getEditButton();
         editBtn.addListener("execute", () => cb.call(this), this);
         layout.add(editBtn);
@@ -221,7 +221,7 @@ qx.Class.define("osparc.info.ServiceLarge", {
     },
 
     __infoElements: function() {
-      const canIWrite = osparc.service.Utils.canIWrite(this.getService()["accessRights"]);
+      const canIWrite = osparc.data.model.Service.canIWrite(this.getService()["accessRights"]);
 
       const infoLayout = {
         "THUMBNAIL": {

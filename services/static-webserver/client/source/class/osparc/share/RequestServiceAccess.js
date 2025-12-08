@@ -60,16 +60,14 @@ qx.Class.define("osparc.share.RequestServiceAccess", {
       cantReadServicesData.forEach((cantReadServiceData, idx) => {
         const userGroupId = cantReadServiceData["owner"];
         if (userGroupId) {
-          const username = new qx.ui.basic.Label().set({
-            rich: true,
+          const userName = new qx.ui.basic.Label().set({
             selectable: true,
           });
-          layout.add(username, {
+          layout.add(userName, {
             row: idx+1,
             column: 0
           });
           const email = new qx.ui.basic.Label().set({
-            rich: true,
             selectable: true,
           });
           layout.add(email, {
@@ -78,7 +76,6 @@ qx.Class.define("osparc.share.RequestServiceAccess", {
           });
           const appLabel = new qx.ui.basic.Label().set({
             value: `${cantReadServiceData["key"]}:${osparc.service.Utils.extractVersionDisplay(cantReadServiceData["release"])}`,
-            rich: true,
             selectable: true,
           });
           layout.add(appLabel, {
@@ -88,11 +85,11 @@ qx.Class.define("osparc.share.RequestServiceAccess", {
 
           osparc.store.Users.getInstance().getUser(userGroupId)
             .then(user => {
-              username.setValue(user ? user.getLabel() : this.tr("Unknown user"));
+              userName.setValue(user ? user.getLabel() : this.tr("Unknown user"));
               email.setValue(user ? user.getEmail() : "Unknown email");
             })
             .catch(() => {
-              username.setValue(this.tr("Unknown user"));
+              userName.setValue(this.tr("Unknown user"));
               email.setValue("Unknown email");
             });
         }

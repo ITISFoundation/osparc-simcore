@@ -64,10 +64,12 @@ def webserver_environ(
     #   the test webserver is built-up in webserver_service fixture that runs
     #   on the host.
     EXCLUDED_SERVICES = [
+        "api-worker",
         "dask-scheduler",
         "director",
         "docker-api-proxy",
         "dynamic-schdlr",
+        "notifications-worker",
         "sto-worker",
         "sto-worker-cpu-bound",
     ]

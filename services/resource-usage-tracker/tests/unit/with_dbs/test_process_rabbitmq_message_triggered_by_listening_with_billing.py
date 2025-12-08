@@ -1,7 +1,7 @@
 import asyncio
+from collections.abc import Callable, Iterator
 from datetime import datetime, timezone
 from decimal import Decimal
-from typing import Callable, Iterator
 
 import pytest
 import sqlalchemy as sa

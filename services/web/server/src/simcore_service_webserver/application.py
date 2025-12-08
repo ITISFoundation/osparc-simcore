@@ -4,15 +4,15 @@
 import logging
 from collections.abc import Callable
 from pprint import pformat
-from typing import Any
+from typing import Any, Final
 
 from aiohttp import web
 from servicelib.aiohttp.application import create_safe_application
-from simcore_service_webserver.collaboration.bootstrap import (
-    setup_realtime_collaboration,
-)
+from servicelib.aiohttp.tracing import TRACING_CONFIG_KEY
+from servicelib.tracing import TracingConfig
 
 from ._meta import (
+    APP_NAME,
     WELCOME_AUTH_APP_MSG,
     WELCOME_DB_LISTENER_MSG,
     WELCOME_GC_MSG,
@@ -24,6 +24,10 @@ from .announcements.plugin import setup_announcements
 from .api_keys.plugin import setup_api_keys
 from .application_settings import get_application_settings, setup_settings
 from .catalog.plugin import setup_catalog
+from .celery.plugin import setup_celery
+from .collaboration.bootstrap import (
+    setup_realtime_collaboration,
+)
 from .conversations.plugin import setup_conversations
 from .db.plugin import setup_db
 from .db_listener.plugin import setup_db_listener
@@ -32,7 +36,6 @@ from .director_v2.plugin import setup_director_v2
 from .dynamic_scheduler.plugin import setup_dynamic_scheduler
 from .email.plugin import setup_email
 from .exporter.plugin import setup_exporter
-from .fogbugz.plugin import setup_fogbugz
 from .folders.plugin import setup_folders
 from .functions.plugin import setup_functions
 from .garbage_collector.plugin import setup_garbage_collector
@@ -69,6 +72,9 @@ from .workspaces.plugin import setup_workspaces
 
 _logger = logging.getLogger(__name__)
 
+# Define common app keys used across the webserver
+APP_WEBSERVER_SETTINGS_KEY: Final = web.AppKey("APP_WEBSERVER_SETTINGS_KEY", object)
+
 
 def _create_welcome_banner(banner_msg: str) -> Callable:
     """Creates a welcome banner function with optional GC and DB listener messages"""
@@ -95,18 +101,20 @@ def _create_finished_banner() -> Callable:
     return _finished_banner
 
 
-def create_application() -> web.Application:
+def create_application(tracing_config: TracingConfig) -> web.Application:
     """
     Initializes service
     """
     app = create_safe_application()
     setup_settings(app)
+    app[TRACING_CONFIG_KEY] = tracing_config
 
     # WARNING: setup order matters
     # NOTE: compute setup order https://github.com/ITISFoundation/osparc-simcore/issues/1142
 
     # core modules
-    setup_app_tracing(app)  # WARNING: must be UPPERMOST middleware
+    if tracing_config.tracing_enabled:
+        setup_app_tracing(app)  # WARNING: must be UPPERMOST middleware
     setup_db(app)
     setup_redis(app)
     setup_session(app)
@@ -167,7 +175,6 @@ def create_application() -> web.Application:
 
     # conversations
     setup_conversations(app)
-    setup_fogbugz(app)  # Needed for support conversations
 
     # licenses
     setup_licenses(app)
@@ -185,6 +192,9 @@ def create_application() -> web.Application:
     setup_exporter(app)
     setup_realtime_collaboration(app)
 
+    # Celery
+    setup_celery(app)
+
     # NOTE: *last* events
     app.on_startup.append(_create_welcome_banner(WELCOME_MSG))
     app.on_shutdown.append(_create_finished_banner())
@@ -198,6 +208,10 @@ def create_application_auth() -> web.Application:
     app = create_safe_application()
 
     settings = setup_settings(app)
+    tracing_config = TracingConfig.create(
+        settings.WEBSERVER_TRACING, service_name=APP_NAME
+    )
+    app[TRACING_CONFIG_KEY] = tracing_config
     assert settings.WEBSERVER_APP_FACTORY_NAME == "WEBSERVER_AUTHZ_APP_FACTORY"  # nosec
 
     # Monitoring and diagnostics

@@ -6,7 +6,7 @@ qx.Theme.define("osparc.theme.ColorDark", {
     "c00": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 105),
     "c01": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 105-5),
     "c02": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 105-10),
-    "c03": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 105-20),
+    "c03": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 105-17),
     "c04": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 105-25),
     "c05": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 105-35),
     "c06": osparc.theme.colorProvider.ColorProvider.getColor("color.scales.static.base", 105-50),
@@ -59,7 +59,7 @@ qx.Theme.define("osparc.theme.ColorDark", {
     "shadow": qx.core.Environment.get("css.rgba") ? "a-bit-transparent" : "bg-shadow",
 
     // window
-    "window-popup-background": "rgba(66, 66, 66, 1)",
+    "window-popup-background": "background-main-1",
     "window-caption-background": "background-main",
     "window-caption-background-active": "background-main-3",
     "window-caption-text": "text",
@@ -136,8 +136,6 @@ qx.Theme.define("osparc.theme.ColorDark", {
 
 
     // OSPARC
-    "workbench-edge-comp-active": "#777777",
-    "workbench-edge-api-active": "#BBBBBB",
     "workbench-start-hint": "#505050",
     "workbench-view-navbar": "c00",
     "workbench-view-splitter": "#000000",

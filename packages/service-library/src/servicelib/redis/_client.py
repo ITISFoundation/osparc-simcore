@@ -10,6 +10,7 @@ import redis.asyncio as aioredis
 import redis.exceptions
 import tenacity
 from common_library.async_tools import cancel_wait_task
+from common_library.network import redact_url
 from redis.asyncio.lock import Lock
 from redis.asyncio.retry import Retry
 from redis.backoff import ExponentialBackoff
@@ -20,7 +21,6 @@ from ._constants import (
     DEFAULT_DECODE_RESPONSES,
     DEFAULT_HEALTH_CHECK_INTERVAL,
     DEFAULT_LOCK_TTL,
-    DEFAULT_SOCKET_TIMEOUT,
 )
 
 _logger = logging.getLogger(__name__)
@@ -49,6 +49,7 @@ class RedisClientSDK:
     _client: aioredis.Redis = field(init=False)
     _task_health_check: Task | None = None
     _started_event_task_health_check: asyncio.Event | None = None
+    _cancelled_event_task_health_check: asyncio.Event | None = None
     _is_healthy: bool = False
 
     @property
@@ -65,20 +66,24 @@ class RedisClientSDK:
                 redis.exceptions.ConnectionError,
             ],
             retry_on_timeout=True,
-            socket_timeout=DEFAULT_SOCKET_TIMEOUT.total_seconds(),
+            socket_timeout=None,  # NOTE: setting a timeout here can lead to issues with long running commands
             encoding="utf-8",
             decode_responses=self.decode_responses,
             client_name=self.client_name,
         )
         self._is_healthy = False
         self._started_event_task_health_check = asyncio.Event()
+        self._cancelled_event_task_health_check = asyncio.Event()
 
     async def setup(self) -> None:
         @periodic(interval=self.health_check_interval)
         async def _periodic_check_health() -> None:
             assert self._started_event_task_health_check  # nosec
+            assert self._cancelled_event_task_health_check  # nosec
             self._started_event_task_health_check.set()
             self._is_healthy = await self.ping()
+            if self._cancelled_event_task_health_check.is_set():
+                raise asyncio.CancelledError
 
         self._task_health_check = asyncio.create_task(
             _periodic_check_health(),
@@ -89,7 +94,7 @@ class RedisClientSDK:
 
         _logger.info(
             "Connection to %s succeeded with %s",
-            f"redis at {self.redis_dsn=}",
+            f"Redis at dsn={redact_url(self.redis_dsn)}",
             f"{self._client=}",
         )
 
@@ -100,10 +105,9 @@ class RedisClientSDK:
             if self._task_health_check:
                 assert self._started_event_task_health_check  # nosec
                 await self._started_event_task_health_check.wait()
-
-                await cancel_wait_task(
-                    self._task_health_check, max_delay=_HEALTHCHECK_TIMEOUT_S
-                )
+                assert self._cancelled_event_task_health_check  # nosec
+                self._cancelled_event_task_health_check.set()
+                await cancel_wait_task(self._task_health_check, max_delay=None)
 
             await self._client.aclose(close_connection_pool=True)
 

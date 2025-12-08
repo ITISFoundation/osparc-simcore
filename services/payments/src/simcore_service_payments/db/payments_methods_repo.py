@@ -1,6 +1,5 @@
 import datetime
 
-import simcore_postgres_database.aiopg_errors as db_errors
 import sqlalchemy as sa
 from arrow import utcnow
 from models_library.api_schemas_payments.errors import (
@@ -16,6 +15,7 @@ from simcore_postgres_database.models.payments_methods import (
     InitPromptAckFlowState,
     payments_methods,
 )
+from sqlalchemy.exc import IntegrityError
 
 from ..models.db import PaymentsMethodsDB
 from .base import BaseRepository
@@ -42,7 +42,7 @@ class PaymentsMethodsRepo(BaseRepository):
                 )
                 return payment_method_id
 
-        except db_errors.UniqueViolation as err:
+        except IntegrityError as err:
             raise PaymentMethodUniqueViolationError(
                 payment_method_id=payment_method_id
             ) from err

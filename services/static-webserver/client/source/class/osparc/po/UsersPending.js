@@ -35,6 +35,7 @@ qx.Class.define("osparc.po.UsersPending", {
         minimum: 0,
         maximum: 1000,
         value: osparc.product.Utils.getDefaultWelcomeCredits(),
+        visibility: osparc.store.StaticInfo.isBillableProduct() ? "visible" : "excluded",
       });
       form.add(extraCreditsInUsd, qx.locale.Manager.tr("Welcome Credits (USD)"), null, "credits");
 
@@ -79,10 +80,19 @@ qx.Class.define("osparc.po.UsersPending", {
       const infoButton = new qx.ui.form.Button(null, "@MaterialIcons/info_outline/14");
       infoButton.addListener("execute", () => {
         const container = new qx.ui.container.Scroll();
-        container.add(new osparc.ui.basic.JsonTreeWidget(infoMetadata, "pendingUserInfo"));
+        container.add(new osparc.ui.basic.JsonTreeWidget(infoMetadata, "userInfo"));
         osparc.ui.window.Window.popUpInWindow(container, qx.locale.Manager.tr("User Info"));
       });
       return infoButton;
+    },
+
+    extractDate: function(pendingUser) {
+      if (pendingUser.accountRequestStatus === "PENDING" && pendingUser.preRegistrationCreated) {
+        return pendingUser.preRegistrationCreated;
+      } else if (pendingUser.accountRequestReviewedAt) {
+        return pendingUser.accountRequestReviewedAt;
+      }
+      return null;
     },
   },
 
@@ -90,12 +100,26 @@ qx.Class.define("osparc.po.UsersPending", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
+        case "header-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
+            alignY: "middle"
+          }));
+          this._add(control);
+          break;
         case "reload-button":
           control = new qx.ui.form.Button(this.tr("Reload")).set({
             allowGrowX: false,
           });
           control.addListener("execute", () => this.__reload());
-          this._add(control);
+          this.getChildControl("header-layout").add(control);
+          break;
+        case "intro-text":
+          control = new qx.ui.basic.Label(this.tr("List of pending users or approved/rejected, but not yet registered:")).set({
+            font: "text-14",
+            textColor: "text",
+            allowGrowX: true
+          });
+          this.getChildControl("header-layout").add(control);
           break;
         case "pending-users-container":
           control = new qx.ui.container.Scroll();
@@ -115,6 +139,7 @@ qx.Class.define("osparc.po.UsersPending", {
 
     _buildLayout: function() {
       this.getChildControl("reload-button");
+      this.getChildControl("intro-text");
       this.getChildControl("pending-users-container");
       this.__addHeader();
       this.__populatePendingUsersLayout();
@@ -160,25 +185,24 @@ qx.Class.define("osparc.po.UsersPending", {
       pendingUsers.forEach(pendingUser => {
         grid.setRowAlign(row, "left", "middle");
 
-        pendingUsersLayout.add(new qx.ui.basic.Label(pendingUser.firstName + " " + pendingUser.lastName), {
+        const fullNameLabel = new qx.ui.basic.Label(pendingUser.firstName + " " + pendingUser.lastName).set({
+          selectable: true,
+        });
+        pendingUsersLayout.add(fullNameLabel, {
           row,
           column: 0,
         });
 
-        pendingUsersLayout.add(new qx.ui.basic.Label(pendingUser.email), {
+        const emailLabel = new qx.ui.basic.Label(pendingUser.email).set({
+          selectable: true,
+        });
+        pendingUsersLayout.add(emailLabel, {
           row,
           column: 1,
         });
 
-        let date = null;
-        switch (pendingUser.accountRequestStatus) {
-          case "PENDING":
-            date = pendingUser.preRegistrationRequestedAt ? osparc.utils.Utils.formatDateAndTime(new Date(pendingUser.preRegistrationRequestedAt)) : "-";
-            break;
-          default:
-            date = pendingUser.accountRequestReviewedAt ? osparc.utils.Utils.formatDateAndTime(new Date(pendingUser.accountRequestReviewedAt)) : "-";
-            break;
-        }
+        const dateData = this.self().extractDate(pendingUser);
+        const date = dateData ? osparc.utils.Utils.formatDateAndTime(new Date(dateData)) : "-";
         pendingUsersLayout.add(new qx.ui.basic.Label(date), {
           row,
           column: 2,
@@ -246,18 +270,10 @@ qx.Class.define("osparc.po.UsersPending", {
           const pendingUsers = resps[0];
           const reviewedUsers = resps[1];
           const sortByDate = (a, b) => {
-            let dateA = new Date(0); // default to epoch if no date is available
-            if (a.accountRequestStatus === "PENDING" && a.preRegistrationRequestedAt) {
-              dateA = new Date(a.preRegistrationRequestedAt);
-            } else if (a.accountRequestReviewedAt) {
-              dateA = new Date(a.accountRequestReviewedAt);
-            }
-            let dateB = new Date(0); // default to epoch if no date is available
-            if (b.accountRequestStatus === "PENDING" && b.preRegistrationRequestedAt) {
-              dateB = new Date(b.preRegistrationRequestedAt);
-            } else if (b.accountRequestReviewedAt) {
-              dateB = new Date(b.accountRequestReviewedAt);
-            }
+            const dateDataA = this.self().extractDate(a);
+            const dateA = dateDataA ? new Date(dateDataA) : new Date(0); // default to epoch if no date is available
+            const dateDataB = this.self().extractDate(b);
+            const dateB = dateDataB ? new Date(dateDataB) : new Date(0); // default to epoch if no date is available
             return dateB - dateA; // sort by most recent first
           };
           pendingUsers.sort(sortByDate);

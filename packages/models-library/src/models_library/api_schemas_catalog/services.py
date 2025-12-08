@@ -6,6 +6,7 @@ from models_library.rpc_pagination import PageRpc
 from pydantic import ConfigDict, Field, HttpUrl, NonNegativeInt
 from pydantic.config import JsonDict
 
+from ..batch_operations import BatchGetEnvelope
 from ..boot_options import BootOptions
 from ..emails import LowerCaseEmailStr
 from ..groups import GroupID
@@ -418,6 +419,46 @@ class MyServiceGet(CatalogOutputSchema):
 
     owner: GroupID | None
     my_access_rights: ServiceGroupAccessRightsV2
+
+
+class MyServicesRpcBatchGet(
+    CatalogOutputSchema,
+    BatchGetEnvelope[MyServiceGet, tuple[ServiceKey, ServiceVersion]],
+):
+    """Result for batch get user services operations"""
+
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        missing: Any = [("simcore/services/comp/itis/sleeper", "100.2.3")]
+        schema.update(
+            {
+                "examples": [
+                    {
+                        "found_items": [
+                            {
+                                "key": missing[0][0],
+                                "release": {
+                                    "version": "2.2.1",
+                                    "version_display": "Winter Release",
+                                    "released": "2026-07-21T15:00:00",
+                                },
+                                "owner": 42,
+                                "my_access_rights": {
+                                    "execute": True,
+                                    "write": False,
+                                },
+                            }
+                        ],
+                        "missing_identifiers": missing,
+                    }
+                ]
+            }
+        )
+
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra=_update_json_schema_extra,
+    )
 
 
 class ServiceListFilters(Filters):

@@ -14,15 +14,18 @@ from pathlib import Path
 
 import pytest
 from aiohttp import web
-from aioresponses import aioresponses as AioResponsesMock  # noqa: N812
+from aioresponses import aioresponses as AioResponsesMock
+from pytest_mock import MockerFixture  # noqa: N812
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.aiohttp.application import create_safe_application
 from servicelib.aiohttp.client_session import get_client_session
 from simcore_service_webserver.application_settings import setup_settings
-from simcore_service_webserver.scicrunch.plugin import setup_scicrunch
-from simcore_service_webserver.scicrunch.service_client import (
+from simcore_service_webserver.scicrunch._client import (
     ResearchResource,
     SciCrunch,
+)
+from simcore_service_webserver.scicrunch.plugin import (
+    setup_scicrunch,
 )
 
 
@@ -101,16 +104,30 @@ async def mock_scicrunch_service_resolver(
 
 @pytest.fixture
 async def app(
-    mock_env_devel_environment: EnvVarsDict,
+    mock_webserver_service_environment: EnvVarsDict,
     aiohttp_server: Callable,
+    mocker: MockerFixture,
 ) -> web.Application:
     app_ = create_safe_application()
 
+    # mock access to db in this test-suite
+    mock_setup_db = mocker.patch(
+        "simcore_service_webserver.scicrunch.plugin.setup_db",
+        return_value=True,
+    )
+
+    get_async_engine = mocker.patch(
+        "simcore_service_webserver.db.base_repository._asyncpg.get_async_engine",
+    )
+
     setup_settings(app_)
     setup_scicrunch(app_)
+    assert mock_setup_db.called
+    assert not get_async_engine.called
 
     server = await aiohttp_server(app_)
     assert server.app == app_
+    assert get_async_engine.called
     return server.app
 
 

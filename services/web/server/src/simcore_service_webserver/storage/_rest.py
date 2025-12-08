@@ -5,14 +5,17 @@ Mostly resolves and redirect to storage API
 
 import logging
 import urllib.parse
-from typing import Any, Final, NamedTuple
+from typing import Annotated, Any, Final, NamedTuple
 from urllib.parse import quote, unquote
 
 from aiohttp import ClientTimeout, web
 from models_library.api_schemas_long_running_tasks.tasks import (
     TaskGet,
 )
-from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobGet
+from models_library.api_schemas_rpc_async_jobs.async_jobs import (
+    AsyncJobGet,
+)
+from models_library.api_schemas_storage.search_async_jobs import SEARCH_TASK_NAME
 from models_library.api_schemas_storage.storage_schemas import (
     FileUploadCompleteResponse,
     FileUploadCompletionBody,
@@ -22,21 +25,30 @@ from models_library.api_schemas_storage.storage_schemas import (
 from models_library.api_schemas_webserver.storage import (
     BatchDeletePathsBodyParams,
     DataExportPost,
+    SearchBodyParams,
     StorageLocationPathParams,
     StoragePathComputeSizeParams,
 )
 from models_library.projects_nodes_io import LocationID
 from models_library.utils.change_case import camel_to_snake
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import AnyUrl, BaseModel, ByteSize, TypeAdapter, field_validator
+from pydantic import (
+    AfterValidator,
+    AnyUrl,
+    BaseModel,
+    ByteSize,
+    TypeAdapter,
+)
 from servicelib.aiohttp import status
 from servicelib.aiohttp.client_session import get_client_session
+from servicelib.aiohttp.request_keys import RQT_USERID_KEY
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
     parse_request_path_parameters_as,
     parse_request_query_parameters_as,
 )
 from servicelib.aiohttp.rest_responses import create_data_response
+from servicelib.celery.models import ExecutionMetadata, OwnerMetadata
 from servicelib.common_headers import X_FORWARDED_PROTO
 from servicelib.rabbitmq.rpc_interfaces.storage.paths import (
     compute_path_size as remote_compute_path_size,
@@ -45,20 +57,20 @@ from servicelib.rabbitmq.rpc_interfaces.storage.paths import (
     delete_paths as remote_delete_paths,
 )
 from servicelib.rabbitmq.rpc_interfaces.storage.simcore_s3 import start_export_data
-from servicelib.request_keys import RQT_USERID_KEY
 from servicelib.rest_responses import unwrap_envelope
 from yarl import URL
 
 from .._meta import API_VTAG
+from ..celery import get_task_manager
 from ..login.decorators import login_required
-from ..models import AuthenticatedRequestContext
+from ..models import AuthenticatedRequestContext, WebServerOwnerMetadata
 from ..rabbitmq import get_rabbitmq_rpc_client
 from ..security.decorators import permission_required
-from ..tasks._exception_handlers import handle_export_data_exceptions
+from ..tasks._controller._rest_exceptions import handle_rest_requests_exceptions
 from .schemas import StorageFileIDStr
 from .settings import StorageSettings, get_plugin_settings
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 def _get_base_storage_url(app: web.Application) -> URL:
@@ -136,6 +148,7 @@ async def _forward_request_to_storage(
     async with session.request(
         method.upper(), url, ssl=False, json=body, **kwargs
     ) as resp:
+        _logger.debug("Forwarded request to storage %s %s: %s", method, url, resp)
         match resp.status:
             case status.HTTP_422_UNPROCESSABLE_ENTITY:
                 raise web.HTTPUnprocessableEntity(
@@ -206,10 +219,15 @@ async def compute_path_size(request: web.Request) -> web.Response:
     rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)
     async_job, _ = await remote_compute_path_size(
         rabbitmq_rpc_client,
-        user_id=req_ctx.user_id,
-        product_name=req_ctx.product_name,
         location_id=path_params.location_id,
         path=path_params.path,
+        owner_metadata=OwnerMetadata.model_validate(
+            WebServerOwnerMetadata(
+                user_id=req_ctx.user_id,
+                product_name=req_ctx.product_name,
+            ).model_dump()
+        ),
+        user_id=req_ctx.user_id,
     )
 
     return _create_data_response_from_async_job(request, async_job)
@@ -229,10 +247,15 @@ async def batch_delete_paths(request: web.Request):
     rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)
     async_job, _ = await remote_delete_paths(
         rabbitmq_rpc_client,
-        user_id=req_ctx.user_id,
-        product_name=req_ctx.product_name,
         location_id=path_params.location_id,
         paths=body.paths,
+        owner_metadata=OwnerMetadata.model_validate(
+            WebServerOwnerMetadata(
+                user_id=req_ctx.user_id,
+                product_name=req_ctx.product_name,
+            ).model_dump()
+        ),
+        user_id=req_ctx.user_id,
     )
     return _create_data_response_from_async_job(request, async_job)
 
@@ -468,23 +491,24 @@ async def delete_file(request: web.Request) -> web.Response:
     return create_data_response(payload, status=resp_status)
 
 
+def _allow_only_simcore(v: int) -> int:
+    if v != 0:
+        msg = (
+            f"Only simcore (location_id='0'), provided location_id='{v}' is not allowed"
+        )
+        raise ValueError(msg)
+    return v
+
+
 @routes.post(
-    _storage_locations_prefix + "/{location_id}/export-data", name="export_data"
+    _storage_locations_prefix + "/{location_id}:export-data", name="export_data"
 )
 @login_required
 @permission_required("storage.files.*")
-@handle_export_data_exceptions
+@handle_rest_requests_exceptions
 async def export_data(request: web.Request) -> web.Response:
     class _PathParams(BaseModel):
-        location_id: LocationID
-
-        @field_validator("location_id")
-        @classmethod
-        def allow_only_simcore(cls, v: int) -> int:
-            if v != 0:
-                msg = f"Only simcore (location_id='0'), provided location_id='{v}' is not allowed"
-                raise ValueError(msg)
-            return v
+        location_id: Annotated[LocationID, AfterValidator(_allow_only_simcore)]
 
     rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)
     _req_ctx = AuthenticatedRequestContext.model_validate(request)
@@ -494,18 +518,74 @@ async def export_data(request: web.Request) -> web.Response:
     )
     async_job_rpc_get, _ = await start_export_data(
         rabbitmq_rpc_client=rabbitmq_rpc_client,
-        user_id=_req_ctx.user_id,
-        product_name=_req_ctx.product_name,
         paths_to_export=export_data_post.paths,
         export_as="path",
+        owner_metadata=OwnerMetadata.model_validate(
+            WebServerOwnerMetadata(
+                user_id=_req_ctx.user_id,
+                product_name=_req_ctx.product_name,
+            ).model_dump()
+        ),
+        user_id=_req_ctx.user_id,
     )
     _job_id = f"{async_job_rpc_get.job_id}"
     return create_data_response(
         TaskGet(
             task_id=_job_id,
+            task_name=async_job_rpc_get.job_name,
             status_href=f"{request.url.with_path(str(request.app.router['get_async_job_status'].url_for(task_id=_job_id)))}",
             abort_href=f"{request.url.with_path(str(request.app.router['cancel_async_job'].url_for(task_id=_job_id)))}",
             result_href=f"{request.url.with_path(str(request.app.router['get_async_job_result'].url_for(task_id=_job_id)))}",
+        ),
+        status=status.HTTP_202_ACCEPTED,
+    )
+
+
+@routes.post(_storage_locations_prefix + "/{location_id}:search", name="search")
+@login_required
+@permission_required("storage.files.*")
+@handle_rest_requests_exceptions
+async def search(request: web.Request) -> web.Response:
+    class _PathParams(BaseModel):
+        location_id: Annotated[LocationID, AfterValidator(_allow_only_simcore)]
+
+    _req_ctx = AuthenticatedRequestContext.model_validate(request)
+    parse_request_path_parameters_as(_PathParams, request)
+    search_body = await parse_request_body_as(
+        model_schema_cls=SearchBodyParams, request=request
+    )
+
+    task_uuid = await get_task_manager(request.app).submit_task(
+        ExecutionMetadata(
+            name=SEARCH_TASK_NAME,
+        ),
+        owner_metadata=OwnerMetadata.model_validate(
+            WebServerOwnerMetadata(
+                user_id=_req_ctx.user_id,
+                product_name=_req_ctx.product_name,
+            ).model_dump()
+        ),
+        user_id=_req_ctx.user_id,
+        name_pattern=search_body.filters.name_pattern,
+        modified_at=(
+            (
+                search_body.filters.modified_at.from_,
+                search_body.filters.modified_at.until,
+            )
+            if search_body.filters.modified_at
+            else None
+        ),
+        project_id=search_body.filters.project_id,
+    )
+
+    _task_id = f"{task_uuid}"
+    return create_data_response(
+        TaskGet(
+            task_id=_task_id,
+            task_name=SEARCH_TASK_NAME,
+            status_href=f"{request.url.with_path(str(request.app.router['get_async_job_status'].url_for(task_id=_task_id)))}",
+            abort_href=f"{request.url.with_path(str(request.app.router['cancel_async_job'].url_for(task_id=_task_id)))}",
+            stream_href=f"{request.url.with_path(str(request.app.router['get_async_job_stream'].url_for(task_id=_task_id)))}",
         ),
         status=status.HTTP_202_ACCEPTED,
     )

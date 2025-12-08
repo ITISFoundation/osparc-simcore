@@ -22,7 +22,7 @@ from settings_library.utils_service import (
     URLPart,
 )
 
-from ..constants import APP_SETTINGS_KEY
+from ..application_keys import APP_SETTINGS_APPKEY
 
 
 class PaymentsSettings(BaseCustomSettings, MixinServiceSettings):
@@ -119,7 +119,7 @@ class PaymentsSettings(BaseCustomSettings, MixinServiceSettings):
 
 
 def get_plugin_settings(app: web.Application) -> PaymentsSettings:
-    settings = app[APP_SETTINGS_KEY].WEBSERVER_PAYMENTS
+    settings = app[APP_SETTINGS_APPKEY].WEBSERVER_PAYMENTS
     assert settings, "setup_settings not called?"  # nosec
     assert isinstance(settings, PaymentsSettings)  # nosec
     return settings

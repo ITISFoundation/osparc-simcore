@@ -31,16 +31,14 @@ class BaseAppServer(ABC, Generic[T]):
         return self._shutdown_event
 
     @property
+    @abstractmethod
     def task_manager(self) -> TaskManager:
-        return self._task_manager
-
-    @task_manager.setter
-    def task_manager(self, manager: TaskManager) -> None:
-        self._task_manager = manager
+        raise NotImplementedError
 
     @abstractmethod
-    async def lifespan(
+    async def run_until_shutdown(
         self,
         startup_completed_event: threading.Event,
     ) -> None:
+        """Used to initialize the app server until shutdown event is set."""
         raise NotImplementedError

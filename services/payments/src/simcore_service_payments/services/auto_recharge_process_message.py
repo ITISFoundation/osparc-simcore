@@ -3,8 +3,9 @@ from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from typing import cast
 
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from fastapi import FastAPI
-from models_library.api_schemas_webserver import WEBSERVER_RPC_NAMESPACE
+from models_library.api_schemas_webserver import DEFAULT_WEBSERVER_RPC_NAMESPACE
 from models_library.api_schemas_webserver.wallets import (
     GetWalletAutoRecharge,
     PaymentMethodID,
@@ -36,6 +37,8 @@ _logger = logging.getLogger(__name__)
 
 
 async def process_message(app: FastAPI, data: bytes) -> bool:
+    # pylint: disable=too-many-return-statements
+
     rabbit_message = TypeAdapter(WalletCreditsMessage).validate_json(data)
     _logger.debug("Process msg: %s", rabbit_message)
 
@@ -54,6 +57,7 @@ async def process_message(app: FastAPI, data: bytes) -> bool:
     )
     if await _check_autorecharge_conditions_not_met(wallet_auto_recharge):
         return True  # We do not auto recharge
+
     assert wallet_auto_recharge is not None  # nosec
     assert wallet_auto_recharge.payment_method_id is not None  # nosec
 
@@ -82,9 +86,36 @@ async def process_message(app: FastAPI, data: bytes) -> bool:
 
     # Step 7: Perform auto-recharge
     if settings.PAYMENTS_AUTORECHARGE_ENABLED:
-        await _perform_auto_recharge(
-            app, rabbit_message, payment_method_db, wallet_auto_recharge
-        )
+        try:
+            await _perform_auto_recharge(
+                app, rabbit_message, payment_method_db, wallet_auto_recharge
+            )
+        except Exception as e:  # pylint: disable=broad-except
+            _logger.exception(
+                **create_troubleshooting_log_kwargs(
+                    "Auto-recharge payment failed. Message will be acknowledged to prevent risk of double payment on retry.",
+                    error=e,
+                    error_context={
+                        "wallet_id": str(rabbit_message.wallet_id),
+                        "payment_method_id": str(
+                            wallet_auto_recharge.payment_method_id
+                        ),
+                        "top_up_amount_in_usd": str(
+                            wallet_auto_recharge.top_up_amount_in_usd
+                        ),
+                        "product_name": rabbit_message.product_name,
+                    },
+                    tip=(
+                        "IMPORTANT: This may result in payments without credits added if the error was due to an unverified payment. "
+                        "Verify that payment was processed and credits were added to the wallet."
+                    ),
+                ),
+            )
+            return (
+                # IMPORTANT: Auto-recharge failed but we return True to acknowledge message so it does not retry!
+                True
+            )
+
     return True
 
 
@@ -164,7 +195,7 @@ async def _perform_auto_recharge(
     rabbitmq_rpc_client = get_rabbitmq_rpc_client(app)
 
     result = await rabbitmq_rpc_client.request(
-        WEBSERVER_RPC_NAMESPACE,
+        DEFAULT_WEBSERVER_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("get_invoice_data"),
         user_id=payment_method_db.user_id,
         dollar_amount=wallet_auto_recharge.top_up_amount_in_usd,

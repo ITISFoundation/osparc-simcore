@@ -2,7 +2,9 @@ from functools import cached_property
 from typing import Annotated
 
 from common_library.basic_types import DEFAULT_FACTORY
+from common_library.logging.logging_utils_filtering import LoggerName, MessageSubstring
 from models_library.basic_types import BootModeEnum, LogLevel
+from models_library.rabbitmq_basic_types import RPCNamespace
 from pydantic import (
     AliasChoices,
     Field,
@@ -11,8 +13,8 @@ from pydantic import (
     SecretStr,
     field_validator,
 )
-from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.base import BaseCustomSettings
+from settings_library.celery import CelerySettings
 from settings_library.director_v2 import DirectorV2Settings
 from settings_library.postgres import PostgresSettings
 from settings_library.rabbit import RabbitSettings
@@ -27,7 +29,6 @@ from settings_library.webserver import WebServerSettings as WebServerBaseSetting
 
 
 class WebServerSettings(WebServerBaseSettings, MixinSessionSettings):
-
     WEBSERVER_SESSION_SECRET_KEY: Annotated[
         SecretStr,
         Field(
@@ -40,6 +41,14 @@ class WebServerSettings(WebServerBaseSettings, MixinSessionSettings):
         ),
     ]
     WEBSERVER_SESSION_NAME: str = DEFAULT_SESSION_COOKIE_NAME
+
+    WEBSERVER_RPC_NAMESPACE: Annotated[
+        RPCNamespace,
+        Field(
+            description="Namespace for the RPC server."
+            "IMPORTANT: this is typically `wb-api-server` service variant of the `webserver` image"
+        ),
+    ]
 
     @field_validator("WEBSERVER_SESSION_SECRET_KEY")
     @classmethod
@@ -102,6 +111,10 @@ class ApplicationSettings(BasicSettings):
     # DOCKER BOOT
     SC_BOOT_MODE: BootModeEnum | None = None
 
+    API_SERVER_CELERY: Annotated[
+        CelerySettings | None, Field(json_schema_extra={"auto_default_from_env": True})
+    ] = None
+
     API_SERVER_POSTGRES: Annotated[
         PostgresSettings | None,
         Field(json_schema_extra={"auto_default_from_env": True}),
@@ -141,6 +154,10 @@ class ApplicationSettings(BasicSettings):
             json_schema_extra={"auto_default_from_env": True},
         ),
     ]
+
+    API_SERVER_WORKER_MODE: Annotated[
+        bool, Field(description="If True, the API server runs in worker mode")
+    ] = False
 
     @cached_property
     def debug(self) -> bool:

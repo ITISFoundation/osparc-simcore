@@ -1,7 +1,8 @@
 import asyncio
 import datetime
 import functools
-from typing import Awaitable, Callable, ParamSpec, TypeVar
+from collections.abc import Awaitable, Callable
+from typing import ParamSpec, TypeVar
 
 import arrow
 from mypy_boto3_ec2.service_resource import Instance

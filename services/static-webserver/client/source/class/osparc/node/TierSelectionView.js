@@ -24,6 +24,11 @@ qx.Class.define("osparc.node.TierSelectionView", {
 
   members: {
     _applyNode: function(node) {
+      if (osparc.data.model.Node.isFrontend(node.getMetadata())) {
+        // Frontend services do not have tiers
+        return;
+      }
+
       this.__populateLayout();
 
       this.base(arguments, node);
@@ -32,17 +37,18 @@ qx.Class.define("osparc.node.TierSelectionView", {
     __populateLayout: function() {
       this._removeAll();
 
-      this._add(new qx.ui.basic.Label(this.tr("Tiers")).set({
+      this._add(new qx.ui.basic.Label(this.tr("Tiers & Costs")).set({
         font: "text-14"
       }));
 
-      const tiersLayout = new qx.ui.container.Composite(new qx.ui.layout.HBox(5));
+      const tiersLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(5));
       this._add(tiersLayout);
 
       const tierBox = new qx.ui.form.SelectBox().set({
         allowGrowX: false,
         allowGrowY: false
       });
+      tierBox.getChildControl("arrow").syncAppearance(); // force sync to show the arrow
       tiersLayout.add(tierBox);
 
       const node = this.getNode();
@@ -75,6 +81,7 @@ qx.Class.define("osparc.node.TierSelectionView", {
                 pricingUnits.forEach(pricingUnit => {
                   const pUnitUI = new osparc.study.PricingUnitTier(pricingUnit).set({
                     showEditButton: false,
+                    padding: 5,
                   });
                   pUnitUI.getChildControl("name").exclude();
                   pUnitUI.exclude();

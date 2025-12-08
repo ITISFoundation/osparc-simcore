@@ -1,9 +1,9 @@
 import logging
 from collections.abc import Awaitable, Callable
 
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from fastapi import HTTPException, status
 from fastapi.encoders import jsonable_encoder
-from servicelib.logging_errors import create_troubleshootting_log_kwargs
 from servicelib.status_codes_utils import is_5xx_server_error
 from starlette.requests import Request
 from starlette.responses import JSONResponse
@@ -18,7 +18,7 @@ async def http_error_handler(request: Request, exc: Exception) -> JSONResponse:
 
     if is_5xx_server_error(exc.status_code):
         _logger.exception(
-            **create_troubleshootting_log_kwargs(
+            **create_troubleshooting_log_kwargs(
                 "Unexpected error happened in the Resource Usage Tracker. Please contact support.",
                 error=exc,
                 error_context={

@@ -15,8 +15,14 @@ from servicelib.logging_utils import log_context
 from servicelib.utils import logged_gather
 
 from ...notifications import project_logs
-from ...resource_manager.user_sessions import PROJECT_ID_KEY, managed_resource
-from .._projects_service import retrieve_and_notify_project_locked_state
+from ...resource_manager.user_sessions import (
+    PROJECT_ID_KEY,
+    managed_resource,
+)
+from .._projects_service import (
+    conditionally_unsubscribe_project_logs_across_replicas,
+    retrieve_and_notify_project_locked_state,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -67,15 +73,6 @@ async def _on_user_disconnected(
 
     assert len(projects) <= 1, "At the moment, at most one project per session"  # nosec
 
-    with log_context(
-        _logger,
-        logging.DEBUG,
-        msg=f"user disconnects and unsubscribes from following {projects=}",
-    ):
-        await logged_gather(
-            *[project_logs.unsubscribe(app, ProjectID(prj)) for prj in projects]
-        )
-
     await logged_gather(
         *[
             retrieve_and_notify_project_locked_state(
@@ -84,6 +81,11 @@ async def _on_user_disconnected(
             for prj in projects
         ]
     )
+
+    for _project_id in projects:  # At the moment, only 1 is expected
+        await conditionally_unsubscribe_project_logs_across_replicas(
+            app, ProjectID(_project_id), user_id
+        )
 
 
 def setup_project_observer_events(app: web.Application) -> None:

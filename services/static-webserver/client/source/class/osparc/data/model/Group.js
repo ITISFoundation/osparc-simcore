@@ -28,11 +28,17 @@ qx.Class.define("osparc.data.model.Group", {
   construct: function(groupData) {
     this.base(arguments);
 
+    const defaultAccessRights = {
+      "read": false,
+      "write": false,
+      "delete": false,
+    };
+
     this.set({
       groupId: groupData.gid,
       label: groupData.label,
       description: groupData.description,
-      accessRights: groupData.accessRights,
+      accessRights: groupData.accessRights || defaultAccessRights,
       thumbnail: groupData.thumbnail,
       groupMembers: {},
     });
@@ -82,7 +88,7 @@ qx.Class.define("osparc.data.model.Group", {
     },
 
     groupType: {
-      check: ["me", "organization", "productEveryone", "everyone"],
+      check: ["me", "organization", "support", "chatbot", "productEveryone", "everyone"],
       nullable: false,
       init: null,
     },
@@ -96,7 +102,7 @@ qx.Class.define("osparc.data.model.Group", {
   statics: {
     getProperties: function() {
       return Object.keys(qx.util.PropertyUtil.getProperties(osparc.data.model.Group));
-    }
+    },
   },
 
   members: {
@@ -104,8 +110,8 @@ qx.Class.define("osparc.data.model.Group", {
       return Object.values(this.getGroupMembers()).find(user => user.getUserId() === userId);
     },
 
-    getGroupMemberByUsername: function(username) {
-      return Object.values(this.getGroupMembers()).find(user => user.getUsername() === username);
+    getGroupMemberByUserName: function(userName) {
+      return Object.values(this.getGroupMembers()).find(user => user.getUserName() === userName);
     },
 
     getGroupMemberByLogin: function(userEmail) {

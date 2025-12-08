@@ -37,10 +37,10 @@ def pytest_addoption(parser: pytest.Parser) -> None:
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def pact_broker_credentials(
     request: pytest.FixtureRequest,
-):
+) -> tuple[str, str, str]:
     # Get credentials from either CLI arguments or environment variables
     broker_url = request.config.getoption("--broker-url", None) or os.getenv(
         "PACT_BROKER_URL"
@@ -64,18 +64,20 @@ def pact_broker_credentials(
     ]
 
     if missing:
-        pytest.fail(
-            f"Missing Pact Broker credentials: {', '.join(missing)}. Set them as environment variables or pass them as CLI arguments."
+        pytest.skip(
+            reason="This test runs only if pact broker credentials are provided. "
+            f"Missing Pact Broker credentials: {', '.join(missing)}. "
+            "Set them as environment variables or pass them as CLI arguments. "
         )
+
+    assert broker_url
+    assert broker_username
+    assert broker_password
 
     return broker_url, broker_username, broker_password
 
 
-def mock_get_current_identity() -> Identity:
-    return Identity(user_id=1, product_name="osparc", email="test@itis.swiss")
-
-
-@pytest.fixture()
+@pytest.fixture
 def running_test_server_url(
     app: FastAPI,
 ):
@@ -84,8 +86,12 @@ def running_test_server_url(
     The 'mocked_catalog_service' fixture ensures the function is already
     patched by the time we start the server.
     """
+
     # Override
-    app.dependency_overrides[get_current_identity] = mock_get_current_identity
+    def _mock_get_current_identity() -> Identity:
+        return Identity(user_id=1, product_name="osparc", email="test@itis.swiss")
+
+    app.dependency_overrides[get_current_identity] = _mock_get_current_identity
 
     port = unused_port()
     base_url = f"http://localhost:{port}"
@@ -106,5 +112,6 @@ def running_test_server_url(
 
     yield base_url  # , before_server_start
 
+    app.dependency_overrides.pop(get_current_identity, None)
     server.should_exit = True
     thread.join()

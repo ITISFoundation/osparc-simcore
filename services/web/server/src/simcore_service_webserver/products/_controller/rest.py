@@ -10,7 +10,10 @@ from servicelib.aiohttp.requests_validation import parse_request_path_parameters
 
 from ..._meta import API_VTAG as VTAG
 from ...login.decorators import login_required
-from ...security.decorators import permission_required
+from ...security.decorators import (
+    group_or_role_permission_required,
+    permission_required,
+)
 from ...utils_aiohttp import envelope_json_response
 from .. import _service, products_web
 from .._repository import ProductRepository
@@ -46,7 +49,7 @@ async def _get_current_product_price(request: web.Request):
 
 @routes.get(f"/{VTAG}/products/{{product_name}}", name="get_product")
 @login_required
-@permission_required("product.details.*")
+@group_or_role_permission_required("product.details.*")
 @handle_rest_requests_exceptions
 async def _get_product(request: web.Request):
     req_ctx = ProductsRequestContext.model_validate(request)

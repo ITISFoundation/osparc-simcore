@@ -65,7 +65,7 @@ class DockerComposeOverwriteConfig(ComposeSpecification):
     def create_default(
         cls, service_name: str | None = None
     ) -> "DockerComposeOverwriteConfig":
-        model: "DockerComposeOverwriteConfig" = cls.model_validate(
+        return cls.model_validate(
             {
                 "services": {
                     service_name: {
@@ -76,14 +76,12 @@ class DockerComposeOverwriteConfig(ComposeSpecification):
                 }
             }
         )
-        return model
 
     @classmethod
     def from_yaml(cls, path: Path) -> "DockerComposeOverwriteConfig":
         with path.open() as fh:
             data = yaml_safe_load(fh)
-        model: "DockerComposeOverwriteConfig" = cls.model_validate(data)
-        return model
+        return cls.model_validate(data)
 
 
 class MetadataConfig(ServiceMetaDataPublished):

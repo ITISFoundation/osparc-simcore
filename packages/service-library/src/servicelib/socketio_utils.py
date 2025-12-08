@@ -38,6 +38,6 @@ async def cleanup_socketio_async_pubsub_manager(server_manager):
                 "AsyncPubSubManager._thread",
             ]
         ):
-            task.cancel()
+            task.cancel("cleaning up socketio background task")
             cancelled_tasks.append(task)
     await asyncio.gather(*cancelled_tasks, return_exceptions=True)

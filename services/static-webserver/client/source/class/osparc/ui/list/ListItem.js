@@ -63,6 +63,7 @@ qx.Class.define("osparc.ui.list.ListItem", {
       decorator: "rounded",
     });
 
+    this.setBackgroundColor("background-main-2");
     this.addListener("pointerover", this._onPointerOver, this);
     this.addListener("pointerout", this._onPointerOut, this);
   },
@@ -114,6 +115,10 @@ qx.Class.define("osparc.ui.list.ListItem", {
     }
   },
 
+  statics: {
+    MAX_ROWS: 3,
+  },
+
   members: { // eslint-disable-line qx-rules/no-refs-in-members
     // overridden
     _forwardStates: {
@@ -130,7 +135,6 @@ qx.Class.define("osparc.ui.list.ListItem", {
       this.addState("hovered");
     },
 
-
     /**
      * Event handler for the pointer out event.
      */
@@ -146,12 +150,13 @@ qx.Class.define("osparc.ui.list.ListItem", {
           this._add(control, {
             row: 0,
             column: 0,
-            rowSpan: 2
+            rowSpan: this.self().MAX_ROWS,
           });
           break;
         case "title":
-          control = new qx.ui.basic.Label().set({
-            font: "text-14"
+          control = new osparc.ui.basic.SafeLabel().set({
+            font: "text-14",
+            selectable: true,
           });
           this._add(control, {
             row: 0,
@@ -159,9 +164,9 @@ qx.Class.define("osparc.ui.list.ListItem", {
           });
           break;
         case "subtitle":
-          control = new qx.ui.basic.Label().set({
+          control = new osparc.ui.basic.SafeLabel().set({
             font: "text-13",
-            rich: true
+            selectable: true,
           });
           this._add(control, {
             row: 1,
@@ -180,15 +185,22 @@ qx.Class.define("osparc.ui.list.ListItem", {
             column: 1
           });
           break;
-        case "role":
-          control = new qx.ui.basic.Label().set({
-            font: "text-13",
+        case "third-column-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(5).set({
             alignY: "middle"
-          });
+          }));
           this._add(control, {
             row: 0,
             column: 2,
-            rowSpan: 2
+            rowSpan: this.self().MAX_ROWS,
+          });
+          break;
+        case "role":
+          control = new qx.ui.basic.Label().set({
+            font: "text-13",
+          });
+          this.getChildControl("third-column-layout").addAt(control, 0, {
+            flex: 1
           });
           break;
       }

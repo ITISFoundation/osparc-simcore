@@ -288,6 +288,7 @@ async def test_create_and_link_user_from_pre_registration(
 async def test_get_billing_details_from_pre_registration(
     asyncpg_engine: AsyncEngine,
     pre_registered_user: tuple[str, dict[str, Any]],
+    product: dict[str, Any],
 ):
     """Test that billing details can be retrieved from pre-registration data."""
     pre_email, fake_pre_registration_data = pre_registered_user
@@ -309,7 +310,9 @@ async def test_get_billing_details_from_pre_registration(
         )
 
     # Get billing details
-    invoice_data = await repo.get_billing_details(user_id=new_user.id)
+    invoice_data = await repo.get_billing_details(
+        user_id=new_user.id, product_name=product["name"]
+    )
     assert invoice_data is not None
 
     # Test UserAddress model conversion

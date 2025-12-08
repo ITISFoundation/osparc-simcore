@@ -366,13 +366,20 @@ async def get_user_products(
 
 
 async def get_user_billing_details(
-    engine: AsyncEngine, connection: AsyncConnection | None = None, *, user_id: UserID
+    engine: AsyncEngine,
+    connection: AsyncConnection | None = None,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
 ) -> UserBillingDetails:
     """
+    Returns UserBillingDetails for the given user when registered in a product or None
     Raises:
         BillingDetailsNotFoundError
     """
-    row = await UsersRepo(engine).get_billing_details(connection, user_id=user_id)
+    row = await UsersRepo(engine).get_billing_details(
+        connection, product_name=product_name, user_id=user_id
+    )
     if not row:
         raise BillingDetailsNotFoundError(user_id=user_id)
     return UserBillingDetails.model_validate(row)

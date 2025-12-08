@@ -386,13 +386,19 @@ def mock_payments_gateway_service_or_none(
 ) -> MockRouter | None:
     # EITHER tests against external payments-gateway
     if payments_gateway_url := external_envfile_dict.get("PAYMENTS_GATEWAY_URL"):
-        print("🚨 EXTERNAL: these tests are running against", f"{payments_gateway_url=}")
+        print(
+            "🚨 EXTERNAL: these tests are running against", f"{payments_gateway_url=}"
+        )
         mock_payments_gateway_service_api_base.stop()
         return None
 
     # OR tests against mock payments-gateway
     mock_payments_routes(mock_payments_gateway_service_api_base)
     mock_payments_methods_routes(mock_payments_gateway_service_api_base)
+
+    # NOTE: For timeout tests, the mock will be configured directly in the test
+    # since it needs to override the normal payment behavior
+
     return mock_payments_gateway_service_api_base
 
 

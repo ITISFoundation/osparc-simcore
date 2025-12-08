@@ -25,6 +25,7 @@ pytest_plugins = [
     "pytest_simcore.cli_runner",
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_swarm",
+    "pytest_simcore.docker",
     "pytest_simcore.environment_configs",
     "pytest_simcore.faker_projects_data",
     "pytest_simcore.faker_users_data",
@@ -118,6 +119,11 @@ def disable_notifier_lifespan(mocker: MockerFixture) -> None:
 @pytest.fixture
 def disable_status_monitor_lifespan(mocker: MockerFixture) -> None:
     mocker.patch(f"{_EVENTS_MODULE}.status_monitor_lifespan")
+
+
+@pytest.fixture
+def disable_generic_scheduler_lifespan(mocker: MockerFixture) -> None:
+    mocker.patch(f"{_EVENTS_MODULE}.generic_scheduler_lifespan")
 
 
 @pytest.fixture

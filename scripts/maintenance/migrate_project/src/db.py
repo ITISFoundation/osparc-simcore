@@ -1,6 +1,7 @@
 from collections import deque
+from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Any, Deque, Iterator
+from typing import Any, Deque
 from uuid import UUID
 
 import typer

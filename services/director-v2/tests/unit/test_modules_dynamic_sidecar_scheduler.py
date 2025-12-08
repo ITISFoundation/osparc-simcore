@@ -97,7 +97,7 @@ async def _assert_get_dynamic_services_mocked(
     scheduler_data: SchedulerData,
     mock_service_running: AsyncMock,
     expected_status: str,
-) -> AsyncGenerator[RunningDynamicServiceDetails, None]:
+) -> AsyncGenerator[RunningDynamicServiceDetails]:
     with _mock_containers_docker_status(scheduler_data):
         await scheduler.scheduler.add_service_from_scheduler_data(scheduler_data)
         # put mocked data
@@ -113,7 +113,7 @@ async def _assert_get_dynamic_services_mocked(
         yield stack_status
 
         await scheduler.mark_service_for_removal(
-            scheduler_data.node_uuid, can_save=True
+            scheduler_data.node_uuid, can_save=True, skip_observation_recreation=False
         )
         assert (
             scheduler_data.service_name
@@ -259,7 +259,9 @@ async def test_scheduler_add_remove(
     if with_observation_cycle:
         await manually_trigger_scheduler()
 
-    await scheduler.mark_service_for_removal(scheduler_data.node_uuid, can_save=True)
+    await scheduler.mark_service_for_removal(
+        scheduler_data.node_uuid, can_save=True, skip_observation_recreation=False
+    )
     if with_observation_cycle:
         await manually_trigger_scheduler()
 
@@ -354,7 +356,7 @@ async def test_remove_missing_no_error(
 ) -> None:
     with pytest.raises(DynamicSidecarNotFoundError) as execinfo:
         await scheduler.mark_service_for_removal(
-            scheduler_data.node_uuid, can_save=True
+            scheduler_data.node_uuid, can_save=True, skip_observation_recreation=False
         )
     assert "not found" in str(execinfo.value)
 

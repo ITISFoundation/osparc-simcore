@@ -26,6 +26,28 @@ qx.Theme.define("osparc.theme.Decoration", {
       }
     },
 
+    "circled": {
+      style: {
+        radius: 16
+      }
+    },
+
+    "chat-bubble": {
+      style: {
+        radius: 4,
+        // width: 1,
+        // color: "text-disabled",
+        backgroundColor: "background-main-2",
+      }
+    },
+
+    "separator-strong": {
+      style: {
+        widthTop: 1,
+        colorTop: "product-color",
+      }
+    },
+
     "border-simple": {
       include: "border",
       style: {
@@ -90,7 +112,8 @@ qx.Theme.define("osparc.theme.Decoration", {
     "form-input-disabled": {
       include: "form-input",
       style: {
-        color: "text-disabled"
+        // this affects the border color
+        color: "transparent"
       }
     },
 
@@ -258,9 +281,10 @@ qx.Theme.define("osparc.theme.Decoration", {
       }
     },
 
-    "no-border-2": {
+    "no-border-0": {
       style: {
-        width: 0
+        width: 0,
+        color: "transparent"
       }
     },
 

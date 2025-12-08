@@ -11,27 +11,34 @@ from models_library.groups import AccessRightsDict
 from models_library.rest_filters import Filters
 from models_library.rest_pagination import PageQueryParameters
 from pydantic import (
+    AfterValidator,
     BaseModel,
     ConfigDict,
     EmailStr,
     Field,
-    StringConstraints,
     ValidationInfo,
     field_validator,
+    model_validator,
 )
 from pydantic.config import JsonDict
 
 from ..basic_types import IDStr
 from ..emails import LowerCaseEmailStr
-from ..groups import AccessRightsDict, Group, GroupID, GroupsByTypeTuple
+from ..groups import AccessRightsDict, Group, GroupID, GroupsByTypeTuple, PrimaryGroupID
 from ..products import ProductName
 from ..rest_base import RequestParameters
+from ..string_types import (
+    GlobPatternSafeStr,
+    SearchPatternSafeStr,
+    validate_input_xss_safety,
+)
 from ..users import (
     FirstNameStr,
     LastNameStr,
     MyProfile,
     UserID,
     UserNameID,
+    UserNameSafeID,
     UserPermission,
     UserThirdPartyToken,
 )
@@ -62,6 +69,17 @@ class MyProfilePrivacyPatch(InputSchema):
     hide_email: bool | None = None
 
 
+class MyProfileAddressGet(OutputSchema):
+    """Details provided upon registration and used e.g. for invoicing"""
+
+    institution: str | None
+    address: str | None
+    city: str | None
+    state: Annotated[str | None, Field(description="State, province, canton, ...")]
+    postal_code: str | None
+    country: str | None
+
+
 class MyProfileRestGet(OutputSchemaWithoutCamelCase):
     id: UserID
     user_name: Annotated[
@@ -72,7 +90,14 @@ class MyProfileRestGet(OutputSchemaWithoutCamelCase):
     login: LowerCaseEmailStr
     phone: str | None = None
 
-    role: Literal["ANONYMOUS", "GUEST", "USER", "TESTER", "PRODUCT_OWNER", "ADMIN"]
+    role: Literal[
+        "ANONYMOUS",
+        "GUEST",
+        "USER",
+        "TESTER",
+        "PRODUCT_OWNER",
+        "ADMIN",
+    ]
     groups: MyGroupsGet | None = None
     gravatar_id: Annotated[str | None, Field(deprecated=True)] = None
 
@@ -86,6 +111,7 @@ class MyProfileRestGet(OutputSchemaWithoutCamelCase):
 
     privacy: MyProfilePrivacyGet
     preferences: AggregatedPreferences
+    contact: MyProfileAddressGet | None = None
 
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:
@@ -103,6 +129,25 @@ class MyProfileRestGet(OutputSchemaWithoutCamelCase):
                             "hide_username": 0,
                             "hide_fullname": 0,
                             "hide_email": 1,
+                        },
+                    },
+                    {
+                        "id": 1,
+                        "login": "minimal@user.com",
+                        "userName": "minuser",
+                        "role": "USER",
+                        "preferences": {},
+                        "privacy": {
+                            "hide_username": False,
+                            "hide_fullname": False,
+                            "hide_email": False,
+                        },
+                        "provided": {
+                            "address": "123 Main St",
+                            "city": "Sampleville",
+                            "state": "CA",
+                            "postal_code": "12345",
+                            "country": "Wonderland",
                         },
                     },
                 ]
@@ -132,8 +177,11 @@ class MyProfileRestGet(OutputSchemaWithoutCamelCase):
         my_groups_by_type: GroupsByTypeTuple,
         my_product_group: tuple[Group, AccessRightsDict] | None,
         my_preferences: AggregatedPreferences,
+        my_support_group: Group | None,
+        my_chatbot_user_group: Group | None,
+        profile_contact: MyProfileAddressGet | None = None,
     ) -> Self:
-        data = remap_keys(
+        profile_data = remap_keys(
             my_profile.model_dump(
                 include={
                     "id",
@@ -151,16 +199,33 @@ class MyProfileRestGet(OutputSchemaWithoutCamelCase):
             rename={"email": "login"},
         )
         return cls(
-            **data,
-            groups=MyGroupsGet.from_domain_model(my_groups_by_type, my_product_group),
+            **profile_data,
+            groups=MyGroupsGet.from_domain_model(
+                my_groups_by_type,
+                my_product_group,
+                my_support_group,
+                my_chatbot_user_group,
+            ),
             preferences=my_preferences,
+            contact=profile_contact,
         )
 
 
+FirstNameSafeStr = Annotated[
+    FirstNameStr,
+    AfterValidator(validate_input_xss_safety),
+]
+
+LastNameSafeStr = Annotated[
+    LastNameStr,
+    AfterValidator(validate_input_xss_safety),
+]
+
+
 class MyProfileRestPatch(InputSchemaWithoutCamelCase):
-    first_name: FirstNameStr | None = None
-    last_name: LastNameStr | None = None
-    user_name: Annotated[IDStr | None, Field(alias="userName", min_length=4)] = None
+    first_name: FirstNameSafeStr | None = None
+    last_name: LastNameSafeStr | None = None
+    user_name: Annotated[UserNameSafeID | None, Field(alias="userName")] = None
     # NOTE: phone is updated via a dedicated endpoint!
 
     privacy: MyProfilePrivacyPatch | None = None
@@ -218,8 +283,7 @@ class UsersGetParams(RequestParameters):
 
 class UsersSearch(InputSchema):
     match_: Annotated[
-        str,
-        StringConstraints(strip_whitespace=True, min_length=1, max_length=80),
+        SearchPatternSafeStr,
         Field(
             description="Search string to match with usernames and public profiles (e.g. emails, first/last name)",
             alias="match",
@@ -272,13 +336,31 @@ class UserAccountReject(InputSchema):
 
 class UserAccountSearchQueryParams(RequestParameters):
     email: Annotated[
-        str,
+        GlobPatternSafeStr | None,
         Field(
-            min_length=3,
-            max_length=200,
             description="complete or glob pattern for an email",
         ),
-    ]
+    ] = None
+    primary_group_id: Annotated[
+        GroupID | None,
+        Field(
+            description="Filter by primary group ID",
+        ),
+    ] = None
+    user_name: Annotated[
+        GlobPatternSafeStr | None,
+        Field(
+            description="complete or glob pattern for a username",
+        ),
+    ] = None
+
+    @model_validator(mode="after")
+    def _validate_at_least_one_filter(self) -> Self:
+        field_names = list(self.__class__.model_fields)
+        if not any(getattr(self, field_name, None) for field_name in field_names):
+            msg = f"At least one filter {field_names} must be provided"
+            raise ValueError(msg)
+        return self
 
 
 class UserAccountGet(OutputSchema):
@@ -304,18 +386,36 @@ class UserAccountGet(OutputSchema):
     # pre-registration NOTE: that some users have no pre-registartion and therefore all options here can be none
     pre_registration_id: int | None
     pre_registration_created: datetime | None
-    invited_by: str | None = None
+    invited_by: UserNameID | None = None
     account_request_status: AccountRequestStatus | None
-    account_request_reviewed_by: UserID | None = None
+    account_request_reviewed_by: UserNameID | None = None
     account_request_reviewed_at: datetime | None = None
 
     # user status
     registered: bool
-    status: UserStatus | None
+    status: UserStatus | None = None
     products: Annotated[
         list[ProductName] | None,
         Field(
             description="List of products this users is included or None if fields is unset",
+        ),
+    ] = None
+
+    # user (if an account was created)
+    user_id: Annotated[
+        UserID | None,
+        Field(description="Unique identifier of the user if an account was created"),
+    ] = None
+    user_name: Annotated[
+        UserNameID | None,
+        Field(description="Username of the user if an account was created"),
+    ] = None
+    user_primary_group_id: Annotated[
+        PrimaryGroupID | None,
+        Field(
+            description="Primary group ID of the user if an account was created",
+            alias="groupId",
+            # SEE https://github.com/ITISFoundation/osparc-simcore/pull/8358#issuecomment-3279491740
         ),
     ] = None
 

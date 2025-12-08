@@ -16,6 +16,6 @@ def test_settings_infered_from_default_tests_config(
         k: f"{v}" for k, v in convert_to_environ_vars(default_app_cfg).items()
     }
 
-    settings = ApplicationSettings.create_from_envs()
+    settings = ApplicationSettings.create_from_envs(WEBSERVER_RPC_NAMESPACE=None)
 
     assert convert_to_app_config(settings)

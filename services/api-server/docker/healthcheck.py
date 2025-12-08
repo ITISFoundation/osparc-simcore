@@ -21,22 +21,31 @@ import os
 import sys
 from urllib.request import urlopen
 
+from celery_library.worker.heartbeat import is_healthy
+from pydantic import TypeAdapter
+
 SUCCESS, UNHEALTHY = 0, 1
 
 # Disabled if boots with debugger
-ok = os.environ.get("SC_BOOT_MODE", "").lower() == "debug"
-
-# Queries host
-# pylint: disable=consider-using-with
-ok = (
-    ok
-    or urlopen(
-        "{host}{baseurl}".format(
-            host=sys.argv[1], baseurl=os.environ.get("SIMCORE_NODE_BASEPATH", "")
-        )  # adds a base-path if defined in environ
-    ).getcode()
-    == 200
-)
+is_debug_mode = os.environ.get("SC_BOOT_MODE", "").lower() == "debug"
 
 
-sys.exit(SUCCESS if ok else UNHEALTHY)
+def is_service_healthy() -> bool:
+    worker_mode = TypeAdapter(bool).validate_python(
+        os.getenv("API_SERVER_WORKER_MODE", "False")
+    )
+    if worker_mode:
+        return is_healthy()
+
+    return (
+        # Queries host
+        urlopen(
+            "{host}{baseurl}".format(
+                host=sys.argv[1], baseurl=os.getenv("SIMCORE_NODE_BASEPATH", "")
+            )  # adds a base-path if defined in environ
+        ).getcode()
+        == 200
+    )
+
+
+sys.exit(SUCCESS if is_debug_mode or is_service_healthy() else UNHEALTHY)

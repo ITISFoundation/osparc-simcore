@@ -34,9 +34,7 @@ from ...services_http.jobs import (
     replace_custom_metadata,
     stop_project,
 )
-from ...services_http.storage import StorageApi
 from ...services_http.study_job_models_converters import (
-    create_job_outputs_from_project_outputs,
     get_study_job_rest_interface_links,
 )
 from ...services_http.webserver import AuthSession
@@ -279,19 +277,12 @@ async def inspect_study_job(
 async def get_study_job_outputs(
     study_id: StudyID,
     job_id: JobID,
-    user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
-    webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
-    storage_client: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
+    job_service: Annotated[JobService, Depends(get_job_service)],
 ):
-    job_name = compose_study_job_resource_name(study_id, job_id)
-    _logger.debug("Getting Job Outputs for '%s'", job_name)
-
-    project_outputs = await webserver_api.get_project_outputs(project_id=job_id)
-    job_outputs: JobOutputs = await create_job_outputs_from_project_outputs(
-        job_id, project_outputs, user_id, storage_client
+    return await job_service.get_study_job_outputs(
+        study_id=study_id,
+        job_id=job_id,
     )
-
-    return job_outputs
 
 
 @router.get(

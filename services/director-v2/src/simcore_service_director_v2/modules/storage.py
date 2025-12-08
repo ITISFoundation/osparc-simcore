@@ -1,14 +1,12 @@
-""" Module that takes care of communications with director v0 service
+"""Module that takes care of communications with director v0 service"""
 
-
-"""
 import logging
 from dataclasses import dataclass
 
 import httpx
 from fastapi import FastAPI, HTTPException
 from models_library.users import UserID
-from servicelib.fastapi.tracing import setup_httpx_client_tracing
+from servicelib.fastapi.tracing import get_tracing_config, setup_httpx_client_tracing
 from servicelib.logging_utils import log_decorator
 from settings_library.s3 import S3Settings
 from settings_library.storage import StorageSettings
@@ -40,7 +38,10 @@ def setup(
             timeout=app.state.settings.CLIENT_REQUEST.HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT,
         )
         if tracing_settings:
-            setup_httpx_client_tracing(client=client)
+            setup_httpx_client_tracing(
+                client=client,
+                tracing_config=get_tracing_config(app),
+            )
         StorageClient.create(
             app,
             client=client,

@@ -4,6 +4,7 @@ from typing import Annotated, Final, Literal, cast
 
 from aws_library.ec2 import EC2InstanceBootSpecific, EC2Tags
 from common_library.basic_types import DEFAULT_FACTORY
+from common_library.logging.logging_utils_filtering import LoggerName, MessageSubstring
 from fastapi import FastAPI
 from models_library.basic_types import (
     BootModeEnum,
@@ -12,9 +13,11 @@ from models_library.basic_types import (
     VersionTag,
 )
 from models_library.clusters import ClusterAuthentication
+from models_library.docker import DockerGenericTag
 from pydantic import (
     AliasChoices,
     Field,
+    Json,
     NonNegativeFloat,
     NonNegativeInt,
     PositiveInt,
@@ -24,7 +27,6 @@ from pydantic import (
 )
 from pydantic_settings import SettingsConfigDict
 from servicelib.logging_utils import LogLevelInt
-from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.base import BaseCustomSettings
 from settings_library.docker_registry import RegistrySettings
 from settings_library.ec2 import EC2Settings
@@ -77,11 +79,18 @@ class ClustersKeeperSSMSettings(SSMSettings):
 
 class WorkersEC2InstancesSettings(BaseCustomSettings):
     WORKERS_EC2_INSTANCES_ALLOWED_TYPES: Annotated[
-        dict[str, EC2InstanceBootSpecific],
+        Json[dict[str, EC2InstanceBootSpecific]],
         Field(
             description="Defines which EC2 instances are considered as candidates for new EC2 instance and their respective boot specific parameters",
         ),
     ]
+    WORKERS_EC2_INSTANCES_COLD_START_DOCKER_IMAGES_PRE_PULLING: Annotated[
+        Json[list[DockerGenericTag]],
+        Field(
+            description="List of docker images to pre-pull on cold started new EC2 instances",
+            default_factory=lambda: "[]",
+        ),
+    ] = DEFAULT_FACTORY
 
     WORKERS_EC2_INSTANCES_KEY_NAME: Annotated[
         str,
@@ -110,7 +119,7 @@ class WorkersEC2InstancesSettings(BaseCustomSettings):
     ] = 10
     # NAME PREFIX is not exposed since we override it anyway
     WORKERS_EC2_INSTANCES_SECURITY_GROUP_IDS: Annotated[
-        list[str],
+        Json[list[str]],
         Field(
             min_length=1,
             description="A security group acts as a virtual firewall for your EC2 instances to control incoming and outgoing traffic"
@@ -119,7 +128,7 @@ class WorkersEC2InstancesSettings(BaseCustomSettings):
         ),
     ]
     WORKERS_EC2_INSTANCES_SUBNET_IDS: Annotated[
-        list[str],
+        Json[list[str]],
         Field(
             min_length=1,
             description="A subnet is a range of IP addresses in your VPC "
@@ -145,7 +154,7 @@ class WorkersEC2InstancesSettings(BaseCustomSettings):
     ] = datetime.timedelta(minutes=3)
 
     WORKERS_EC2_INSTANCES_CUSTOM_TAGS: Annotated[
-        EC2Tags,
+        Json[EC2Tags],
         Field(
             description="Allows to define tags that should be added to the created EC2 instance default tags. "
             "a tag must have a key and an optional value. see [https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html]",
@@ -165,12 +174,11 @@ class WorkersEC2InstancesSettings(BaseCustomSettings):
 
 class PrimaryEC2InstancesSettings(BaseCustomSettings):
     PRIMARY_EC2_INSTANCES_ALLOWED_TYPES: Annotated[
-        dict[str, EC2InstanceBootSpecific],
+        Json[dict[str, EC2InstanceBootSpecific]],
         Field(
             description="Defines which EC2 instances are considered as candidates for new EC2 instance and their respective boot specific parameters",
         ),
     ]
-
     PRIMARY_EC2_INSTANCES_MAX_INSTANCES: Annotated[
         int,
         Field(
@@ -178,7 +186,7 @@ class PrimaryEC2InstancesSettings(BaseCustomSettings):
         ),
     ] = 10
     PRIMARY_EC2_INSTANCES_SECURITY_GROUP_IDS: Annotated[
-        list[str],
+        Json[list[str]],
         Field(
             min_length=1,
             description="A security group acts as a virtual firewall for your EC2 instances to control incoming and outgoing traffic"
@@ -187,7 +195,7 @@ class PrimaryEC2InstancesSettings(BaseCustomSettings):
         ),
     ]
     PRIMARY_EC2_INSTANCES_SUBNET_IDS: Annotated[
-        list[str],
+        Json[list[str]],
         Field(
             min_length=1,
             description="A subnet is a range of IP addresses in your VPC "
@@ -206,7 +214,7 @@ class PrimaryEC2InstancesSettings(BaseCustomSettings):
         ),
     ]
     PRIMARY_EC2_INSTANCES_CUSTOM_TAGS: Annotated[
-        EC2Tags,
+        Json[EC2Tags],
         Field(
             description="Allows to define tags that should be added to the created EC2 instance default tags. "
             "a tag must have a key and an optional value. see [https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html]",
@@ -427,12 +435,27 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         ),
     ]
 
+    CLUSTERS_KEEPER_DASK_NPROCS: Annotated[
+        int,
+        Field(
+            description="overrides the default number of worker processes in the dask-sidecars, setting it to negative values will use dask defaults (see description in 'dask worker --help')",
+        ),
+    ]
+
     CLUSTERS_KEEPER_DASK_NTHREADS: Annotated[
         NonNegativeInt,
         Field(
-            description="overrides the default number of threads in the dask-sidecars, setting it to 0 will use the default (see description in dask-sidecar)",
+            description="overrides the default number of threads per process in the dask-sidecars, setting it to 0 will use the default (see description in dask-sidecar)",
         ),
     ]
+
+    CLUSTERS_KEEPER_DASK_NTHREADS_MULTIPLIER: Annotated[
+        PositiveInt,
+        Field(
+            description="multiplier for the default number of threads per process in the dask-sidecars, (see description in dask-sidecar)",
+            le=10,
+        ),
+    ] = 1
 
     CLUSTERS_KEEPER_DASK_WORKER_SATURATION: Annotated[
         NonNegativeFloat | Literal["inf"],

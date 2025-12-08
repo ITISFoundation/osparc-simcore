@@ -3,22 +3,25 @@ from functools import cached_property
 from typing import Annotated, Final, Self, cast
 
 from aws_library.ec2 import EC2InstanceBootSpecific, EC2Tags
+from common_library.basic_types import DEFAULT_FACTORY
+from common_library.logging.logging_utils_filtering import LoggerName, MessageSubstring
 from fastapi import FastAPI
 from models_library.basic_types import LogLevel, PortInt, VersionTag
 from models_library.clusters import ClusterAuthentication
-from models_library.docker import DockerLabelKey
+from models_library.docker import DockerGenericTag, DockerLabelKey
 from pydantic import (
     AliasChoices,
     AnyUrl,
     Field,
+    Json,
     NonNegativeInt,
+    PositiveInt,
     TypeAdapter,
     field_validator,
     model_validator,
 )
 from pydantic_settings import SettingsConfigDict
 from servicelib.logging_utils import LogLevelInt
-from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.application import BaseApplicationSettings
 from settings_library.base import BaseCustomSettings
 from settings_library.docker_registry import RegistrySettings
@@ -56,12 +59,20 @@ class AutoscalingEC2Settings(EC2Settings):
 
 class EC2InstancesSettings(BaseCustomSettings):
     EC2_INSTANCES_ALLOWED_TYPES: Annotated[
-        dict[str, EC2InstanceBootSpecific],
+        Json[dict[str, EC2InstanceBootSpecific]],
         Field(
             description="Defines which EC2 instances are considered as candidates for new EC2 instance and their respective boot specific parameters"
             "NOTE: minimum length >0",
         ),
     ]
+
+    EC2_INSTANCES_COLD_START_DOCKER_IMAGES_PRE_PULLING: Annotated[
+        Json[list[DockerGenericTag]],
+        Field(
+            description="List of docker images to pre-pull on cold started new EC2 instances",
+            default_factory=lambda: "[]",
+        ),
+    ] = DEFAULT_FACTORY
 
     EC2_INSTANCES_KEY_NAME: Annotated[
         str,
@@ -104,7 +115,7 @@ class EC2InstancesSettings(BaseCustomSettings):
     ] = "autoscaling"
 
     EC2_INSTANCES_SECURITY_GROUP_IDS: Annotated[
-        list[str],
+        Json[list[str]],
         Field(
             min_length=1,
             description="A security group acts as a virtual firewall for your EC2 instances to control incoming and outgoing traffic"
@@ -113,7 +124,7 @@ class EC2InstancesSettings(BaseCustomSettings):
         ),
     ]
     EC2_INSTANCES_SUBNET_IDS: Annotated[
-        list[str],
+        Json[list[str]],
         Field(
             min_length=1,
             description="A subnet is a range of IP addresses in your VPC "
@@ -147,7 +158,7 @@ class EC2InstancesSettings(BaseCustomSettings):
     ] = datetime.timedelta(seconds=30)
 
     EC2_INSTANCES_CUSTOM_TAGS: Annotated[
-        EC2Tags,
+        Json[EC2Tags],
         Field(
             description="Allows to define tags that should be added to the created EC2 instance default tags. "
             "a tag must have a key and an optional value. see [https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html]",
@@ -230,6 +241,18 @@ class DaskMonitoringSettings(BaseCustomSettings):
         ClusterAuthentication,
         Field(
             description="defines the authentication of the clusters created via clusters-keeper (can be None or TLS)",
+        ),
+    ]
+    DASK_NTHREADS: Annotated[
+        NonNegativeInt,
+        Field(
+            description="if >0, it overrides the default number of threads per process in the dask-sidecars, (see description in dask-sidecar)",
+        ),
+    ]
+    DASK_NTHREADS_MULTIPLIER: Annotated[
+        PositiveInt,
+        Field(
+            description="if >1, it overrides the default number of threads per process in the dask-sidecars, by multiplying the number of vCPUs with this factor (see description in dask-sidecar)",
         ),
     ]
 

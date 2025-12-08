@@ -1,10 +1,15 @@
 {% extends 'base.html' %}
 {% block title %} {% include 'on_account_requested.email.subject.txt' %} {% endblock %}
 {% block content %}
-<p>Dear Support team
+<p>Dear Support team</p>
 
 <p>
-  We have received the following request form for an account in {{ product.display_name }} from <b>{{ host }}</b>
+  We have received the following request form for an account in :
+<ol>
+  <li>Product: <b>{{ product.display_name }}</b></li>
+  <li>Host: <b>{{ host }}</b></li>
+  <li>PO center: <b>https://{{ host }}/#/review-users</b></li>
+</ol>
 </p>
 
 <pre>

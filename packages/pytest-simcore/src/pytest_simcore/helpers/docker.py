@@ -15,7 +15,7 @@ from tenacity.stop import stop_after_attempt
 from tenacity.wait import wait_fixed
 
 
-# NOTE: CANNOT use models_library.generated_models.docker_rest_api.Status2 because some of the
+# NOTE: CANNOT use models_library.generated_models.docker_rest_api.Status1 because some of the
 # packages tests installations do not include this library!!
 class ContainerStatus(str, Enum):
     """
@@ -37,7 +37,7 @@ class ContainerStatus(str, Enum):
 
 _COLOR_ENCODING_RE = re.compile(r"\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[mGK]")
 _MAX_PATH_CHAR_LEN_ALLOWED = 260
-_kFILENAME_TOO_LONG = 36
+_FILENAME_TOO_LONG = 36
 _NORMPATH_COUNT = 0
 
 
@@ -94,7 +94,7 @@ def get_service_published_port(
         )
 
         for target_port in ports_to_look_for:
-            target_port = int(target_port)
+            target_port = int(target_port)  # noqa: PLW2901
             for p in service_ports:
                 if p["TargetPort"] == target_port:
                     published_port = p["PublishedPort"]
@@ -158,7 +158,7 @@ def run_docker_compose_config(
     args = [f"{docker_compose_path}", *bash_options]
     print(" ".join(args))
 
-    process = subprocess.run(
+    process = subprocess.run(  # noqa: S603
         args,
         cwd=project_dir,
         capture_output=True,
@@ -189,7 +189,7 @@ def shorten_path(filename: str) -> Path:
     # This helper function tries to normalize the path
     # Another possibility would be that the path has some
     # problematic characters but so far we did not find any case ...
-    global _NORMPATH_COUNT  # pylint: disable=global-statement
+    global _NORMPATH_COUNT  # pylint: disable=global-statement  # noqa: PLW0603
 
     if len(filename) > _MAX_PATH_CHAR_LEN_ALLOWED:
         _NORMPATH_COUNT += 1
@@ -215,7 +215,7 @@ def safe_artifact_name(name: str) -> str:
     return BANNED_CHARS_FOR_ARTIFACTS.sub("_", name)
 
 
-def save_docker_infos(destination_dir: Path):
+def save_docker_infos(destination_dir: Path):  # noqa: C901
     client = docker.from_env()
 
     # Includes stop containers, which might be e.g. failing tasks
@@ -228,7 +228,7 @@ def save_docker_infos(destination_dir: Path):
             destination_dir.mkdir(parents=True, exist_ok=True)
 
         except OSError as err:
-            if err.errno == _kFILENAME_TOO_LONG:
+            if err.errno == _FILENAME_TOO_LONG:
                 destination_dir = shorten_path(err.filename)
                 destination_dir.mkdir(parents=True, exist_ok=True)
 
@@ -245,7 +245,7 @@ def save_docker_infos(destination_dir: Path):
                     )
 
                 except OSError as err:
-                    if err.errno == _kFILENAME_TOO_LONG:
+                    if err.errno == _FILENAME_TOO_LONG:
                         shorten_path(err.filename).write_text(
                             _COLOR_ENCODING_RE.sub("", logs)
                         )
@@ -256,12 +256,12 @@ def save_docker_infos(destination_dir: Path):
                         json.dumps(container.attrs, indent=2)
                     )
                 except OSError as err:
-                    if err.errno == _kFILENAME_TOO_LONG:
+                    if err.errno == _FILENAME_TOO_LONG:
                         shorten_path(err.filename).write_text(
                             json.dumps(container.attrs, indent=2)
                         )
 
-            except Exception as err:  # pylint: disable=broad-except  # noqa: PERF203
+            except Exception as err:  # pylint: disable=broad-except
                 if container.status != ContainerStatus.created:
                     print(
                         f"Error while dumping {container.name=}, {container.status=}.\n\t{err=}"

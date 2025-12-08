@@ -16,7 +16,6 @@ _logger = logging.getLogger(__name__)
 async def dask_setup(scheduler: distributed.Scheduler) -> None:
     """This is a special function recognized by dask when starting with flag --preload"""
     assert scheduler  # nosec
-
     settings = ApplicationSettings.create_from_envs()
     setup_app_logging(settings)
 

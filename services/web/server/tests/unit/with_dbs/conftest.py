@@ -2,6 +2,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
+# pylint: disable=protected-access
 
 import random
 import sys
@@ -44,7 +45,7 @@ from models_library.services_enums import ServiceState
 from models_library.users import UserID
 from pydantic import ByteSize, TypeAdapter
 from pytest_docker.plugin import Services
-from pytest_mock import MockerFixture
+from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers import postgres_tools
 from pytest_simcore.helpers.faker_factories import random_product
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
@@ -53,11 +54,13 @@ from pytest_simcore.helpers.webserver_parametrizations import MockedStorageSubsy
 from pytest_simcore.helpers.webserver_projects import NewProject
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from redis import Redis
-from servicelib.aiohttp.application_keys import APP_AIOPG_ENGINE_KEY
+from servicelib import tracing
 from servicelib.common_aiopg_utils import DSN
+from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import (
     AsyncJobComposedResult,
 )
+from servicelib.rabbitmq.rpc_interfaces.webserver.v1 import WebServerRpcClient
 from settings_library.email import SMTPSettings
 from settings_library.redis import RedisDatabase, RedisSettings
 from simcore_postgres_database.models.groups_extra_properties import (
@@ -70,8 +73,14 @@ from simcore_postgres_database.utils_products import (
     get_or_create_product_group,
 )
 from simcore_service_webserver.application import create_application
+from simcore_service_webserver.application_settings import (
+    get_application_settings,
+)
 from simcore_service_webserver.application_settings_utils import AppConfigDict
-from simcore_service_webserver.constants import INDEX_RESOURCE_NAME
+from simcore_service_webserver.constants import (
+    APP_AIOPG_ENGINE_KEY,
+    INDEX_RESOURCE_NAME,
+)
 from simcore_service_webserver.db.plugin import get_database_engine_legacy
 from simcore_service_webserver.projects.models import ProjectDict
 from simcore_service_webserver.projects.utils import NodesMap
@@ -147,6 +156,7 @@ def app_environment(
     mock_env_devel_environment: EnvVarsDict,
     storage_test_server_port: int,
     monkeypatch_setenv_from_app_config: Callable[[AppConfigDict], EnvVarsDict],
+    service_name: str,
 ) -> EnvVarsDict:
     # WARNING: this fixture is commonly overriden. Check before renaming.
     """overridable fixture that defines the ENV for the webserver application
@@ -171,7 +181,8 @@ def app_environment(
             {
                 # this emulates hostname: "wb-{{.Node.Hostname}}-{{.Task.Slot}}" in docker-compose that
                 # affects PostgresSettings.POSTGRES_CLIENT_NAME
-                "HOSTNAME": "wb-test_host.0"
+                "HOSTNAME": "wb-test_host.0",
+                "WEBSERVER_RPC_NAMESPACE": service_name,
             },
         )
     )
@@ -218,7 +229,10 @@ async def web_server(
     assert app_environment
 
     # original APP
-    app = create_application()
+    tracing_config = tracing.TracingConfig.create(
+        service_name="test-webserver", tracing_settings=None
+    )
+    app = create_application(tracing_config=tracing_config)
 
     disable_static_webserver(app)
 
@@ -247,6 +261,43 @@ async def client(
     """
     # WARNING: this fixture is commonly overriden. Check before renaming.
     return await aiohttp_client(web_server)
+
+
+@pytest.fixture
+async def other_client(
+    client: TestClient, aiohttp_client: Callable, web_server: TestServer
+) -> TestClient:
+    """Creates another client connected to the same app as 'client' fixture
+    This is convenient to login with multiple users in the same app instance
+    without interfering with each other's session cookies
+    """
+    assert client.app
+    client2 = await aiohttp_client(web_server)
+    assert client2 != client
+    return client2
+
+
+@pytest.fixture
+async def webserver_rpc_client(
+    rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
+    client: TestClient,  # app started
+) -> WebServerRpcClient:
+    """Returns a web-server RPC client connected to the web-server service"""
+
+    # ensure app is started
+    app = client.app
+    assert app
+    assert client.server.started
+
+    # get RPC namespace from settings
+    settings = get_application_settings(app)  # nosec
+    assert settings.WEBSERVER_RPC_NAMESPACE
+    rpc_namespace = settings.WEBSERVER_RPC_NAMESPACE
+
+    # Create the rabbit client
+    rabbit_client = await rabbitmq_rpc_client(f"client-for-{rpc_namespace}")
+
+    return WebServerRpcClient(rabbit_client, rpc_namespace)
 
 
 @pytest.fixture(scope="session")
@@ -366,7 +417,7 @@ async def storage_subsystem_mock(
         nodes_map: NodesMap,
         user_id: UserID,
         product_name: str,
-    ) -> AsyncGenerator[AsyncJobComposedResult, None]:
+    ) -> AsyncGenerator[AsyncJobComposedResult]:
         print(
             f"MOCK copying data project {source_project['uuid']} -> {destination_project['uuid']} "
             f"with {len(nodes_map)} s3 objects by user={user_id}"
@@ -673,6 +724,19 @@ def mocked_notifications_plugin(mocker: MockerFixture) -> dict[str, mock.Mock]:
     )
 
     return {"subscribe": mocked_subscribe, "unsubscribe": mocked_unsubscribe}
+
+
+@pytest.fixture
+def mocked_conditionally_unsubscribe_project_logs(
+    mocker: MockerFixture,
+) -> MockType:
+    import simcore_service_webserver.projects._projects_service  # noqa: PLC0415
+
+    return mocker.patch.object(
+        simcore_service_webserver.projects._projects_service,  # noqa: SLF001
+        "conditionally_unsubscribe_project_logs_across_replicas",
+        autospec=True,
+    )
 
 
 @pytest.fixture

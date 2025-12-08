@@ -13,7 +13,7 @@ from models_library.api_schemas_directorv2.dynamic_services_service import (
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
-from servicelib.fastapi.tracing import setup_httpx_client_tracing
+from servicelib.fastapi.tracing import get_tracing_config, setup_httpx_client_tracing
 from servicelib.logging_utils import log_decorator
 from settings_library.director_v0 import DirectorV0Settings
 from settings_library.tracing import TracingSettings
@@ -40,7 +40,10 @@ def setup(
             timeout=app.state.settings.CLIENT_REQUEST.HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT,
         )
         if tracing_settings:
-            setup_httpx_client_tracing(client=client)
+            setup_httpx_client_tracing(
+                client=client,
+                tracing_config=get_tracing_config(app),
+            )
         DirectorV0Client.create(
             app,
             client=client,

@@ -100,15 +100,15 @@ qx.Class.define("osparc.study.Conversations", {
     __listenToConversationWS: function() {
       this.__wsHandlers = [];
 
+      const types = Object.values(osparc.store.ConversationsSupport.TYPES);
       const socket = osparc.wrapper.WebSocket.getInstance();
-
       [
         osparc.data.model.Conversation.CHANNELS.CONVERSATION_CREATED,
         osparc.data.model.Conversation.CHANNELS.CONVERSATION_UPDATED,
         osparc.data.model.Conversation.CHANNELS.CONVERSATION_DELETED,
       ].forEach(eventName => {
         const eventHandler = conversation => {
-          if (conversation) {
+          if (conversation && types.includes(conversation["type"])) {
             switch (eventName) {
               case osparc.data.model.Conversation.CHANNELS.CONVERSATION_CREATED:
                 if (conversation["projectId"] === this.getStudyData()["uuid"]) {
@@ -163,8 +163,7 @@ qx.Class.define("osparc.study.Conversations", {
       const studyData = this.getStudyData();
       let conversationPage = null;
       if (conversationData) {
-        conversationPage = new osparc.study.Conversation(studyData, conversationData);
-        conversationPage.setLabel(conversationData["name"]);
+        conversationPage = new osparc.study.ConversationPage(studyData, conversationData);
         const conversationId = conversationData["conversationId"];
         osparc.store.ConversationsProject.getInstance().addListener("conversationDeleted", e => {
           const data = e.getData();
@@ -173,9 +172,8 @@ qx.Class.define("osparc.study.Conversations", {
           }
         });
       } else {
-        // create a temporary conversation
-        conversationPage = new osparc.study.Conversation(studyData);
-        conversationPage.setLabel(this.tr("new"));
+        // create a temporary conversation page
+        conversationPage = new osparc.study.ConversationPage(studyData);
       }
       return conversationPage;
     },

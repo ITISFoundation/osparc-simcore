@@ -23,7 +23,18 @@ _APPLICATION_VERSION_TAG: Final[EC2Tags] = TypeAdapter(EC2Tags).validate_python(
 HEARTBEAT_TAG_KEY: Final[AWSTagKey] = TypeAdapter(AWSTagKey).validate_python(
     "last_heartbeat"
 )
-CLUSTER_NAME_PREFIX: Final[str] = "osparc-computational-cluster-"
+_CLUSTER_NAME_PREFIX: Final[str] = "osparc-computational-cluster-"
+_EC2_MINIMAL_APPLICATION_TAG_KEY: Final[AWSTagKey] = TypeAdapter(
+    AWSTagKey
+).validate_python(
+    ".".join(
+        [
+            _APPLICATION_TAG_KEY,
+            "deploy",
+        ]
+    )
+)
+EC2_NAME_TAG_KEY: Final[AWSTagKey] = TypeAdapter(AWSTagKey).validate_python("Name")
 
 
 def get_cluster_name(
@@ -33,12 +44,12 @@ def get_cluster_name(
     wallet_id: WalletID | None,
     is_manager: bool,
 ) -> str:
-    return f"{app_settings.CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX}{CLUSTER_NAME_PREFIX}{'manager' if is_manager else 'worker'}-{app_settings.SWARM_STACK_NAME}-user_id:{user_id}-wallet_id:{wallet_id}"
+    return f"{app_settings.CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX}{_CLUSTER_NAME_PREFIX}{'manager' if is_manager else 'worker'}-{app_settings.SWARM_STACK_NAME}-user_id:{user_id}-wallet_id:{wallet_id}"
 
 
 def _minimal_identification_tag(app_settings: ApplicationSettings) -> EC2Tags:
     return {
-        AWSTagKey(".".join([_APPLICATION_TAG_KEY, "deploy",])): AWSTagValue(
+        _EC2_MINIMAL_APPLICATION_TAG_KEY: TypeAdapter(AWSTagValue).validate_python(
             f"{app_settings.CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX}{app_settings.SWARM_STACK_NAME}"
         )
     }
@@ -53,13 +64,13 @@ def creation_ec2_tags(
         | _APPLICATION_VERSION_TAG
         | {
             # NOTE: this one gets special treatment in AWS GUI and is applied to the name of the instance
-            AWSTagKey("Name"): AWSTagValue(
+            EC2_NAME_TAG_KEY: TypeAdapter(AWSTagValue).validate_python(
                 get_cluster_name(
                     app_settings, user_id=user_id, wallet_id=wallet_id, is_manager=True
                 )
             ),
-            USER_ID_TAG_KEY: AWSTagValue(f"{user_id}"),
-            WALLET_ID_TAG_KEY: AWSTagValue(f"{wallet_id}"),
+            USER_ID_TAG_KEY: TypeAdapter(AWSTagValue).validate_python(f"{user_id}"),
+            WALLET_ID_TAG_KEY: TypeAdapter(AWSTagValue).validate_python(f"{wallet_id}"),
             ROLE_TAG_KEY: MANAGER_ROLE_TAG_VALUE,
         }
         | app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_CUSTOM_TAGS
@@ -75,8 +86,8 @@ def ec2_instances_for_user_wallet_filter(
 ) -> EC2Tags:
     return (
         _minimal_identification_tag(app_settings)
-        | {USER_ID_TAG_KEY: AWSTagValue(f"{user_id}")}
-        | {WALLET_ID_TAG_KEY: AWSTagValue(f"{wallet_id}")}
+        | {USER_ID_TAG_KEY: TypeAdapter(AWSTagValue).validate_python(f"{user_id}")}
+        | {WALLET_ID_TAG_KEY: TypeAdapter(AWSTagValue).validate_python(f"{wallet_id}")}
     )
 
 
@@ -95,8 +106,8 @@ def wallet_id_from_instance_tags(tags: EC2Tags) -> WalletID | None:
     wallet_id_str = tags[WALLET_ID_TAG_KEY]
     if wallet_id_str == "None":
         return None
-    return WalletID(wallet_id_str)
+    return TypeAdapter(WalletID).validate_python(wallet_id_str)
 
 
 def user_id_from_instance_tags(tags: EC2Tags) -> UserID:
-    return UserID(tags[USER_ID_TAG_KEY])
+    return TypeAdapter(UserID).validate_python(tags[USER_ID_TAG_KEY])

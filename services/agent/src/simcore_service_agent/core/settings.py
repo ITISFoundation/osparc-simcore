@@ -2,10 +2,10 @@ from datetime import timedelta
 from typing import Annotated
 
 from common_library.basic_types import DEFAULT_FACTORY
+from common_library.logging.logging_utils_filtering import LoggerName, MessageSubstring
 from models_library.basic_types import BootModeEnum, LogLevel
 from models_library.docker import DockerNodeID
 from pydantic import AliasChoices, AnyHttpUrl, Field, field_validator
-from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
 from settings_library.base import BaseCustomSettings
 from settings_library.r_clone import S3Provider
 from settings_library.rabbit import RabbitSettings

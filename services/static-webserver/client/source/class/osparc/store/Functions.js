@@ -165,6 +165,20 @@ qx.Class.define("osparc.store.Functions", {
         });
     },
 
+    deleteFunction: function(functionId, force = false) {
+      const params = {
+        url: {
+          functionId,
+          force,
+        }
+      };
+      return osparc.data.Resources.fetch("functions", "delete", params)
+        .catch(error => {
+          console.error("Error deleting function:", error);
+          throw error; // Rethrow the error to propagate it to the caller
+        });
+    },
+
     __putCollaborator: function(functionData, gid, newPermissions) {
       const params = {
         url: {

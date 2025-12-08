@@ -14,6 +14,7 @@ from servicelib.fastapi.tracing import (
     initialize_fastapi_app_tracing,
     setup_tracing,
 )
+from servicelib.tracing import TracingConfig
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from .._meta import API_VERSION, API_VTAG, APP_NAME
@@ -30,7 +31,7 @@ from .settings import ApplicationSettings
 _logger = logging.getLogger(__name__)
 
 
-def create_app(settings: ApplicationSettings) -> FastAPI:
+def create_app(settings: ApplicationSettings, tracing_config: TracingConfig) -> FastAPI:
     app = FastAPI(
         debug=settings.SC_BOOT_MODE
         in [BootModeEnum.DEBUG, BootModeEnum.DEVELOPMENT, BootModeEnum.LOCAL],
@@ -45,12 +46,12 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     add_pagination(app)
 
     app.state.settings = settings
+    app.state.tracing_config = tracing_config
 
-    if app.state.settings.DATCORE_ADAPTER_TRACING:
+    if tracing_config.tracing_enabled:
         setup_tracing(
             app,
-            app.state.settings.DATCORE_ADAPTER_TRACING,
-            APP_NAME,
+            tracing_config,
         )
     if app.state.settings.DATCORE_ADAPTER_PROMETHEUS_INSTRUMENTATION_ENABLED:
         setup_prometheus_instrumentation(app)
@@ -62,8 +63,8 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
         )
     app.add_middleware(GZipMiddleware)
 
-    if app.state.settings.DATCORE_ADAPTER_TRACING:
-        initialize_fastapi_app_tracing(app)
+    if tracing_config.tracing_enabled:
+        initialize_fastapi_app_tracing(app, tracing_config=tracing_config)
 
     # events
     app.add_event_handler("startup", on_startup)

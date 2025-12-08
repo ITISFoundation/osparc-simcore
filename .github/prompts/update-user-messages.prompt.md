@@ -1,6 +1,7 @@
 ---
 mode: 'edit'
 description: 'Update user messages'
+model: Claude Sonnet 3.5
 ---
 
 This prompt guide is for updating user-facing messages in ${file} or ${selection}
@@ -43,7 +44,17 @@ When modifying user messages, follow **as close as possible** these rules:
    user_message("Unable to load project.", _version=1)
    ```
 
-3. **Message Style**: Follow **strictly** the guidelines in `${workspaceFolder}/docs/user-messages-guidelines.md`
+3. **Message Style**: Follow **STRICTLY ALL 10 GUIDELINES** in `${workspaceFolder}/docs/user-messages-guidelines.md`:
+   - Be Clear and Concise
+   - Provide Specific and Actionable Information
+   - Avoid Technical Jargon
+   - Use a Polite and Non-Blaming Tone
+   - Avoid Negative Words and Phrases
+   - Place Messages Appropriately
+   - Use Inline Validation When Possible
+   - Avoid Using All-Caps and Excessive Punctuation
+   - **Use Humor Sparingly** - Avoid casual phrases like "Oops!", "Whoops!", or overly informal language
+   - Offer Alternative Solutions or Support
 
 4. **Preserve Context**: Ensure the modified message conveys the same meaning and context as the original.
 
@@ -56,8 +67,10 @@ When modifying user messages, follow **as close as possible** these rules:
    # After
    user_message("Your session has expired. Please log in again.", _version=3)
    ```
+
 6. **Replace 'Study' by 'Project'**: If the message contains the word 'Study', replace it with 'Project' to align with our terminology.
 
+7. **Professional Tone**: Maintain a professional, helpful tone. Avoid humor, casual expressions, or overly informal language that might not be appropriate for all users or situations.
 
 ## Examples
 
@@ -91,4 +104,14 @@ return HttpErrorInfo(status.HTTP_404_NOT_FOUND, user_message("User not found.", 
 return HttpErrorInfo(status.HTTP_404_NOT_FOUND, user_message("The requested user could not be found.", _version=2))
 ```
 
-Remember: The goal is to improve clarity and helpfulness for end-users while maintaining accurate versioning for tracking changes.
+### Example 4: Removing Humor (Guideline 9)
+
+```python
+# Before
+user_message("Oops! Something went wrong, but we've noted it down and we'll sort it out ASAP. Thanks for your patience!")
+
+# After
+user_message("Something went wrong on our end. We've been notified and will resolve this issue as soon as possible. Thank you for your patience.", _version=1)
+```
+
+Remember: The goal is to improve clarity and helpfulness for end-users while maintaining accurate versioning for tracking changes. **Always check that your updated messages comply with ALL 10 guidelines, especially avoiding humor and maintaining a professional tone.**

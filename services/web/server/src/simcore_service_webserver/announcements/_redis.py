@@ -1,8 +1,8 @@
-""" Repository layer using redis
-"""
+"""Repository layer using redis"""
 
 import logging
-from typing import Awaitable, Final
+from collections.abc import Awaitable
+from typing import Final
 
 import redis.asyncio as aioredis
 from aiohttp import web

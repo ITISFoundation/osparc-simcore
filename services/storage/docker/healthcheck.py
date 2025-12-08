@@ -20,56 +20,34 @@ Q&A:
 
 
 import os
-import subprocess
 import sys
 from urllib.request import urlopen
 
-from simcore_service_storage.core.settings import ApplicationSettings
+from celery_library.worker.heartbeat import is_healthy
+from pydantic import TypeAdapter
 
 SUCCESS, UNHEALTHY = 0, 1
 
 # Disabled if boots with debugger
-ok = os.getenv("SC_BOOT_MODE", "").lower() == "debug"
-
-# Queries host
-# pylint: disable=consider-using-with
-
-app_settings = ApplicationSettings.create_from_envs()
+is_debug_mode = os.getenv("SC_BOOT_MODE", "").lower() == "debug"
 
 
-def _is_celery_worker_healthy():
-    assert app_settings.STORAGE_CELERY
-    broker_url = app_settings.STORAGE_CELERY.CELERY_RABBIT_BROKER.dsn
+def is_service_healthy() -> bool:
+    worker_mode = TypeAdapter(bool).validate_python(
+        os.getenv("STORAGE_WORKER_MODE", "False")
+    )
+    if worker_mode:
+        return is_healthy()
 
-    try:
-        result = subprocess.run(
-            [
-                "celery",
-                "--broker",
-                broker_url,
-                "inspect",
-                "ping",
-                "--destination",
-                "celery@" + os.getenv("STORAGE_WORKER_NAME", "worker"),
-            ],
-            capture_output=True,
-            text=True,
-            check=True,
-        )
-        return "pong" in result.stdout
-    except subprocess.CalledProcessError:
-        return False
+    return (
+        # Queries host
+        urlopen(
+            "{host}{baseurl}".format(
+                host=sys.argv[1], baseurl=os.getenv("SIMCORE_NODE_BASEPATH", "")
+            )  # adds a base-path if defined in environ
+        ).getcode()
+        == 200
+    )
 
 
-ok = (
-    ok
-    or (app_settings.STORAGE_WORKER_MODE and _is_celery_worker_healthy())
-    or urlopen(
-        "{host}{baseurl}".format(
-            host=sys.argv[1], baseurl=os.environ.get("SIMCORE_NODE_BASEPATH", "")
-        )  # adds a base-path if defined in environ
-    ).getcode()
-    == 200
-)
-
-sys.exit(SUCCESS if ok else UNHEALTHY)
+sys.exit(SUCCESS if is_debug_mode or is_service_healthy() else UNHEALTHY)

@@ -8,6 +8,7 @@ from typing import Final
 
 from fastapi import FastAPI, Request, Response, status
 from fastapi_lifespan_manager import State
+from opentelemetry.instrumentation.fastapi import _get_route_details
 from prometheus_client import CollectorRegistry
 from prometheus_client.openmetrics.exposition import (
     CONTENT_TYPE_LATEST,
@@ -23,6 +24,7 @@ from ..common_headers import (
 from ..prometheus_metrics import (
     PrometheusMetrics,
     get_prometheus_metrics,
+    record_asyncio_event_looop_metrics,
     record_request_metrics,
     record_response_metrics,
 )
@@ -39,7 +41,8 @@ class PrometheusMiddleware(BaseHTTPMiddleware):
     async def dispatch(
         self, request: Request, call_next: RequestResponseEndpoint
     ) -> Response:
-        canonical_endpoint = request.url.path
+        canonical_endpoint = _get_route_details(request.scope)
+        canonical_endpoint = canonical_endpoint or request.url.path
 
         user_agent = request.headers.get(
             X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
@@ -56,11 +59,6 @@ class PrometheusMiddleware(BaseHTTPMiddleware):
                 response = await call_next(request)
                 status_code = response.status_code
 
-                # path_params are not available before calling call_next
-                # https://github.com/encode/starlette/issues/685#issuecomment-550240999
-                for k, v in request.path_params.items():
-                    key = "{" + k + "}"
-                    canonical_endpoint = canonical_endpoint.replace(f"/{v}", f"/{key}")
         except Exception:  # pylint: disable=broad-except
             # NOTE: The prometheus metrics middleware should be "outside" exception handling
             # middleware. See https://fastapi.tiangolo.com/advanced/middleware/#adding-asgi-middlewares
@@ -91,6 +89,7 @@ def _startup(app: FastAPI) -> None:
     async def metrics_endpoint(request: Request) -> Response:
         prometheus_metrics = request.app.state.prometheus_metrics
         assert isinstance(prometheus_metrics, PrometheusMetrics)  # nosec
+        await record_asyncio_event_looop_metrics(prometheus_metrics)
 
         content = await asyncio.get_event_loop().run_in_executor(
             None, generate_latest, prometheus_metrics.registry

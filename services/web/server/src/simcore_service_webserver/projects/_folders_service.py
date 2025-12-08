@@ -9,7 +9,7 @@ from models_library.users import UserID
 from ..folders import _folders_repository as folders_folders_repository
 from . import _folders_repository
 from ._access_rights_service import get_user_project_access_rights
-from ._projects_repository_legacy import APP_PROJECT_DBAPI, ProjectDBAPI
+from ._projects_repository_legacy import PROJECT_DBAPI_APPKEY, ProjectDBAPI
 from .exceptions import ProjectInvalidRightsError
 
 _logger = logging.getLogger(__name__)
@@ -23,7 +23,7 @@ async def move_project_into_folder(
     folder_id: FolderID | None,
     product_name: ProductName,
 ) -> None:
-    project_api: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+    project_api: ProjectDBAPI = app[PROJECT_DBAPI_APPKEY]
     project_db = await project_api.get_project_db(project_id)
 
     # Check access to project

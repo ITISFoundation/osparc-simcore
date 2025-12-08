@@ -1,4 +1,5 @@
 # pylint: disable=no-member
+# pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
 # pylint: disable=too-many-arguments
 # pylint: disable=unused-argument
@@ -29,10 +30,13 @@ from models_library.api_schemas_long_running_tasks.base import (
 from models_library.projects_nodes_io import NodeID
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from pytest_mock.plugin import MockerFixture
+from pytest_simcore.helpers.long_running_tasks import (
+    assert_task_is_no_longer_present,
+    get_fastapi_long_running_manager,
+)
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.fastapi.long_running_tasks._manager import FastAPILongRunningManager
 from servicelib.long_running_tasks import lrt_api
-from servicelib.long_running_tasks.errors import TaskNotFoundError
 from servicelib.long_running_tasks.models import LRTNamespace, TaskId
 from servicelib.long_running_tasks.task import TaskRegistry
 from servicelib.rabbitmq import RabbitMQRPCClient
@@ -517,6 +521,7 @@ async def test_create_containers_task_invalid_yaml_spec(
 async def test_same_task_id_is_returned_if_task_exists(
     mock_sidecar_lrts: None,
     rpc_client: RabbitMQRPCClient,
+    app: FastAPI,
     node_id: NodeID,
     lrt_namespace: LRTNamespace,
     mocker: MockerFixture,
@@ -536,11 +541,10 @@ async def test_same_task_id_is_returned_if_task_exists(
         )
 
     async def _assert_task_removed(task_id: TaskId) -> None:
-        await lrt_api.remove_task(
-            rpc_client, lrt_namespace, {}, task_id, wait_for_removal=True
+        await lrt_api.remove_task(rpc_client, lrt_namespace, {}, task_id)
+        await assert_task_is_no_longer_present(
+            get_fastapi_long_running_manager(app), task_id, {}
         )
-        with pytest.raises(TaskNotFoundError):
-            await lrt_api.get_task_status(rpc_client, lrt_namespace, {}, task_id)
 
     task_id = await _get_awaitable()
     assert task_id.endswith("unique")

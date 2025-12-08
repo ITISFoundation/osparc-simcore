@@ -4,6 +4,7 @@ from collections.abc import AsyncIterable, Callable
 from contextlib import AbstractAsyncContextManager
 
 import pytest
+from faker import Faker
 from pydantic import TypeAdapter
 from servicelib.long_running_tasks._redis_store import RedisStore
 from servicelib.long_running_tasks.long_running_client_helper import (
@@ -12,6 +13,7 @@ from servicelib.long_running_tasks.long_running_client_helper import (
 from servicelib.long_running_tasks.models import LRTNamespace, TaskData
 from servicelib.redis._client import RedisClientSDK
 from settings_library.redis import RedisDatabase, RedisSettings
+from utils import without_marked_for_removal_at
 
 
 @pytest.fixture
@@ -22,8 +24,8 @@ def task_data() -> TaskData:
 
 
 @pytest.fixture
-def lrt_namespace() -> LRTNamespace:
-    return "TEST-NAMESPACE"
+def lrt_namespace(faker: Faker) -> LRTNamespace:
+    return TypeAdapter(LRTNamespace).validate_python(f"test-namespace:{faker.uuid4()}")
 
 
 @pytest.fixture
@@ -34,7 +36,7 @@ async def store(
     ],
     lrt_namespace: LRTNamespace,
 ) -> AsyncIterable[RedisStore]:
-    store = RedisStore(redis_settings=use_in_memory_redis, namespace=lrt_namespace)
+    store = RedisStore(redis_settings=use_in_memory_redis, lrt_namespace=lrt_namespace)
 
     await store.setup()
     yield store
@@ -64,20 +66,18 @@ async def test_cleanup_namespace(
 ) -> None:
     # create entries in both sides
     await store.add_task_data(task_data.task_id, task_data)
-    await store.mark_task_for_removal(task_data.task_id, task_data.task_context)
+    await store.mark_for_removal(task_data.task_id)
 
     # entries exit
-    assert await store.list_tasks_data() == [task_data]
-    assert await store.list_tasks_to_remove() == {
-        task_data.task_id: task_data.task_context
-    }
+    assert [
+        without_marked_for_removal_at(x) for x in await store.list_tasks_data()
+    ] == [task_data]
 
     # removes
     await long_running_client_helper.cleanup(lrt_namespace)
 
     # entris were removed
     assert await store.list_tasks_data() == []
-    assert await store.list_tasks_to_remove() == {}
 
     # ensore it does not raise errors if there is nothing to remove
     await long_running_client_helper.cleanup(lrt_namespace)

@@ -8,12 +8,12 @@ import logging
 import re
 from contextlib import suppress
 from copy import deepcopy
-from pathlib import Path
 from typing import Final, cast
 
 import arrow
 import yaml
 from aws_library.ec2 import EC2InstanceData, Resources
+from aws_library.ec2._models import EC2InstanceBootSpecific
 from models_library.docker import (
     DockerGenericTag,
     DockerLabelKey,
@@ -36,6 +36,11 @@ from servicelib.utils import logged_gather
 from settings_library.docker_registry import RegistrySettings
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
+from ..constants import (
+    DOCKER_COMPOSE_CMD,
+    DOCKER_COMPOSE_PULL_SCRIPT_PATH,
+    PRE_PULL_COMPOSE_PATH,
+)
 from ..core.settings import ApplicationSettings
 from ..models import AssociatedInstance
 from ..modules.docker import AutoscalingDocker
@@ -277,41 +282,57 @@ async def compute_cluster_total_resources(nodes: list[Node]) -> Resources:
 def get_max_resources_from_docker_task(task: Task) -> Resources:
     """returns the highest values for resources based on both docker reservations and limits"""
     assert task.spec  # nosec
-    if task.spec.resources:
-        return Resources(
-            cpus=max(
-                (
-                    (
-                        task.spec.resources.reservations
-                        and task.spec.resources.reservations.nano_cp_us
-                    )
-                    or 0
-                ),
-                (
-                    (
-                        task.spec.resources.limits
-                        and task.spec.resources.limits.nano_cp_us
-                    )
-                    or 0
-                ),
-            )
-            / _NANO_CPU,
-            ram=TypeAdapter(ByteSize).validate_python(
-                max(
-                    (
-                        task.spec.resources.reservations
-                        and task.spec.resources.reservations.memory_bytes
-                    )
-                    or 0,
-                    (
-                        task.spec.resources.limits
-                        and task.spec.resources.limits.memory_bytes
-                    )
-                    or 0,
+
+    if not task.spec.resources:
+        return Resources(cpus=0, ram=ByteSize(0))
+
+    generic_resources: dict[str, int | float | str] = {}
+    if (
+        task.spec.resources.reservations
+        and task.spec.resources.reservations.generic_resources
+    ):
+        for res in task.spec.resources.reservations.generic_resources.root:
+            if res.named_resource_spec:
+                assert res.named_resource_spec.kind is not None  # nosec
+                assert res.named_resource_spec.value is not None  # nosec
+                generic_resources[res.named_resource_spec.kind] = (
+                    res.named_resource_spec.value
                 )
+            if res.discrete_resource_spec:
+                assert res.discrete_resource_spec.kind is not None  # nosec
+                assert res.discrete_resource_spec.value is not None  # nosec
+                generic_resources[res.discrete_resource_spec.kind] = (
+                    res.discrete_resource_spec.value
+                )
+
+    return Resources(
+        cpus=max(
+            (
+                (
+                    task.spec.resources.reservations
+                    and task.spec.resources.reservations.nano_cp_us
+                )
+                or 0
+            ),
+            (
+                (task.spec.resources.limits and task.spec.resources.limits.nano_cp_us)
+                or 0
             ),
         )
-    return Resources(cpus=0, ram=ByteSize(0))
+        / _NANO_CPU,
+        ram=TypeAdapter(ByteSize).validate_python(
+            max(
+                (
+                    task.spec.resources.reservations
+                    and task.spec.resources.reservations.memory_bytes
+                )
+                or 0,
+                (task.spec.resources.limits and task.spec.resources.limits.memory_bytes)
+                or 0,
+            )
+        ),
+        generic_resources=generic_resources,
+    )
 
 
 async def get_task_instance_restriction(
@@ -390,14 +411,16 @@ async def compute_cluster_used_resources(
     docker_client: AutoscalingDocker, nodes: list[Node]
 ) -> Resources:
     """Returns the total amount of resources (reservations) used on each of the given nodes"""
-    list_of_used_resources = await logged_gather(
+    list_of_used_resources: list[Resources] = await logged_gather(
         *(compute_node_used_resources(docker_client, node) for node in nodes)
     )
-    counter = collections.Counter(dict.fromkeys(list(Resources.model_fields), 0))
+    flat_counter: collections.Counter = collections.Counter()
     for result in list_of_used_resources:
-        counter.update(result.model_dump())
+        flat_counter.update(result.as_flat_dict())
+    flat_counter.setdefault("cpus", 0)
+    flat_counter.setdefault("ram", 0)
 
-    return Resources.model_validate(dict(counter))
+    return Resources.from_flat_dict(dict(flat_counter))
 
 
 _COMMAND_TIMEOUT_S = 10
@@ -443,12 +466,6 @@ def get_docker_login_on_start_bash_command(registry_settings: RegistrySettings) 
     )
 
 
-_DOCKER_COMPOSE_CMD: Final[str] = "docker compose"
-_PRE_PULL_COMPOSE_PATH: Final[Path] = Path("/docker-pull.compose.yml")
-_DOCKER_COMPOSE_PULL_SCRIPT_PATH: Final[Path] = Path("/docker-pull-script.sh")
-_CRONJOB_LOGS_PATH: Final[Path] = Path("/var/log/docker-pull-cronjob.log")
-
-
 def write_compose_file_command(
     docker_tags: list[DockerGenericTag],
 ) -> str:
@@ -459,7 +476,7 @@ def write_compose_file_command(
         },
     }
     compose_yaml = yaml.safe_dump(compose)
-    return " ".join(["echo", f'"{compose_yaml}"', ">", f"{_PRE_PULL_COMPOSE_PATH}"])
+    return " ".join(["echo", f'"{compose_yaml}"', ">", f"{PRE_PULL_COMPOSE_PATH}"])
 
 
 def get_docker_pull_images_on_start_bash_command(
@@ -471,15 +488,15 @@ def get_docker_pull_images_on_start_bash_command(
     write_docker_compose_pull_script_cmd = " ".join(
         [
             "echo",
-            f'"#!/bin/sh\necho Pulling started at \\$(date)\n{_DOCKER_COMPOSE_CMD} --project-name=autoscaleprepull --file={_PRE_PULL_COMPOSE_PATH} pull --ignore-pull-failures"',
+            f'"#!/bin/sh\necho Pulling started at \\$(date)\n{DOCKER_COMPOSE_CMD} --project-name=autoscaleprepull --file={PRE_PULL_COMPOSE_PATH} pull --ignore-pull-failures"',
             ">",
-            f"{_DOCKER_COMPOSE_PULL_SCRIPT_PATH}",
+            f"{DOCKER_COMPOSE_PULL_SCRIPT_PATH}",
         ]
     )
     make_docker_compose_script_executable = " ".join(
-        ["chmod", "+x", f"{_DOCKER_COMPOSE_PULL_SCRIPT_PATH}"]
+        ["chmod", "+x", f"{DOCKER_COMPOSE_PULL_SCRIPT_PATH}"]
     )
-    docker_compose_pull_cmd = " ".join([f".{_DOCKER_COMPOSE_PULL_SCRIPT_PATH}"])
+    docker_compose_pull_cmd = " ".join([f".{DOCKER_COMPOSE_PULL_SCRIPT_PATH}"])
     return " && ".join(
         [
             write_compose_file_command(docker_tags),
@@ -488,23 +505,6 @@ def get_docker_pull_images_on_start_bash_command(
             docker_compose_pull_cmd,
         ]
     )
-
-
-def get_docker_pull_images_crontab(interval: datetime.timedelta) -> str:
-    # check the interval is within 1 < 60 minutes
-    checked_interval = round(interval.total_seconds() / 60)
-
-    crontab_entry = " ".join(
-        [
-            "echo",
-            f'"*/{checked_interval or 1} * * * * root',
-            f"{_DOCKER_COMPOSE_PULL_SCRIPT_PATH}",
-            f'>> {_CRONJOB_LOGS_PATH} 2>&1"',
-            ">>",
-            "/etc/crontab",
-        ]
-    )
-    return " && ".join([crontab_entry])
 
 
 async def find_node_with_name(
@@ -580,6 +580,7 @@ def get_new_node_docker_tags(
     app_settings: ApplicationSettings, ec2_instance: EC2InstanceData
 ) -> dict[DockerLabelKey, str]:
     assert app_settings.AUTOSCALING_NODES_MONITORING  # nosec
+    assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
     return (
         dict.fromkeys(
             app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS,
@@ -590,6 +591,9 @@ def get_new_node_docker_tags(
             "true",
         )
         | {DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY: ec2_instance.type}
+        | app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
+            ec2_instance.type
+        ].custom_node_labels
     )
 
 
@@ -722,3 +726,13 @@ async def attach_node(
 def is_node_ready(node: Node) -> bool:
     assert node.status  # nosec
     return bool(node.status.state is NodeState.ready)
+
+
+def compute_full_list_of_pre_pulled_images(
+    ec2_boot_specific: EC2InstanceBootSpecific, app_settings: ApplicationSettings
+) -> list[DockerGenericTag]:
+    assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
+    common_images = (
+        app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_COLD_START_DOCKER_IMAGES_PRE_PULLING
+    )
+    return sorted(set(common_images) | set(ec2_boot_specific.pre_pull_images))

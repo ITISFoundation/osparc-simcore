@@ -9,6 +9,7 @@ aiocache==0.12.3
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/_base.in
+    #   -r requirements/_base.in
 aiodebug==2.3.0
     # via
     #   -r requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
@@ -114,7 +115,7 @@ attrs==24.2.0
     #   jsonschema
 billiard==4.2.1
     # via celery
-celery==5.5.3
+celery==5.6.0
     # via -r requirements/../../../packages/celery-library/requirements/_base.in
 certifi==2024.8.30
     # via
@@ -230,8 +231,10 @@ email-validator==2.2.0
     # via
     #   fastapi
     #   pydantic
-exceptiongroup==1.2.2
-    # via aio-pika
+exceptiongroup==1.3.1
+    # via
+    #   aio-pika
+    #   celery
 fast-depends==2.4.12
     # via faststream
 fastapi==0.116.1
@@ -265,7 +268,7 @@ googleapis-common-protos==1.70.0
     # via
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-exporter-otlp-proto-http
-greenlet==3.1.1
+greenlet==3.2.4
     # via sqlalchemy
 grpcio==1.68.1
     # via opentelemetry-exporter-otlp-proto-grpc
@@ -381,6 +384,14 @@ jinja2==3.1.6
     #   -c requirements/../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
     #   fastapi
+jsonref==1.1.0
+    # via
+    #   -r requirements/../../../packages/celery-library/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
 jsonschema==3.2.0
     # via
     #   -c requirements/./constraints.txt
@@ -390,7 +401,7 @@ jsonschema==3.2.0
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
-kombu==5.5.4
+kombu==5.6.1
     # via celery
 mako==1.3.10
     # via
@@ -547,7 +558,7 @@ opentelemetry-util-http==0.55b1
     #   opentelemetry-instrumentation-fastapi
     #   opentelemetry-instrumentation-httpx
     #   opentelemetry-instrumentation-requests
-orjson==3.10.12
+orjson==3.11.4
     # via
     #   -c requirements/../../../packages/celery-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/celery-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -626,7 +637,7 @@ pamqp==3.3.0
     # via aiormq
 parse==1.20.2
     # via -r requirements/_base.in
-pint==0.24.4
+pint==0.25
     # via -r requirements/../../../packages/simcore-sdk/requirements/_base.in
 platformdirs==4.3.6
     # via pint
@@ -647,7 +658,7 @@ psutil==6.1.0
     #   -r requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
-psycopg2-binary==2.9.10
+psycopg2-binary==2.9.11
     # via sqlalchemy
 pycparser==2.22
     # via cffi
@@ -826,7 +837,7 @@ pydantic-settings==2.7.0
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/_base.in
 pygments==2.18.0
     # via rich
-pyinstrument==5.0.0
+pyinstrument==5.1.1
     # via
     #   -r requirements/../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
@@ -843,7 +854,7 @@ python-dotenv==1.0.1
     #   uvicorn
 python-multipart==0.0.19
     # via fastapi
-pyyaml==6.0.2
+pyyaml==6.0.3
     # via
     #   -c requirements/../../../packages/celery-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/celery-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -1098,7 +1109,6 @@ typing-extensions==4.14.1
     # via
     #   aiodebug
     #   alembic
-    #   anyio
     #   fastapi
     #   fastapi-pagination
     #   faststream
@@ -1114,13 +1124,14 @@ typing-extensions==4.14.1
     #   pydantic-core
     #   pydantic-extra-types
     #   rich-toolkit
-    #   starlette
     #   typer
     #   typing-inspection
 typing-inspection==0.4.1
     # via pydantic
 tzdata==2025.2
     # via kombu
+tzlocal==5.3.1
+    # via celery
 urllib3==2.5.0
     # via
     #   -c requirements/../../../packages/celery-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -1177,7 +1188,7 @@ vine==5.1.0
     #   amqp
     #   celery
     #   kombu
-watchfiles==1.0.0
+watchfiles==1.1.1
     # via uvicorn
 wcwidth==0.2.13
     # via prompt-toolkit

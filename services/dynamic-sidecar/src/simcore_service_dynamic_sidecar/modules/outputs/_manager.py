@@ -26,7 +26,7 @@ _logger = logging.getLogger(__name__)
 
 
 async def _cancel_task(task: Task, task_cancellation_timeout_s: PositiveFloat) -> None:
-    task.cancel()
+    task.cancel("cancelling task")
     with suppress(CancelledError), log_catch(_logger, reraise=False):
         await wait((task,), timeout=task_cancellation_timeout_s)
 

@@ -140,7 +140,7 @@ qx.Class.define("osparc.study.Utils", {
                       // update task
                       osparc.widget.ProgressSequence.updateTaskProgress(existingTask, {
                         value: percent,
-                        progressLabel: parseFloat((percent*100).toFixed(2)) + "%"
+                        progressLabel: osparc.utils.Utils.safeToFixed(percent * 100, 2) + "%"
                       });
                     } else {
                       // new task
@@ -185,6 +185,7 @@ qx.Class.define("osparc.study.Utils", {
       const templateTypeSB = new qx.ui.form.SelectBox().set({
         allowGrowX: false,
       });
+      templateTypeSB.getChildControl("arrow").syncAppearance(); // force sync to show the arrow
       const templateTypes = [{
         label: "Template",
         id: osparc.data.model.StudyUI.TEMPLATE_TYPE,
@@ -270,30 +271,6 @@ qx.Class.define("osparc.study.Utils", {
       return parameters;
     },
 
-    isPotentialFunction: function(workbench) {
-      // in order to create a function, the pipeline needs:
-      // - at least one parameter or one probe
-      //   - for now, only float types are allowed
-      // - at least one computational service
-      // - no dynamic services
-
-      // const filePickers = osparc.study.Utils.extractFilePickers(workbench);
-      // const parameters = osparc.study.Utils.extractParameters(workbench);
-      // const probes = osparc.study.Utils.extractProbes(workbench);
-      // return (filePickers.length + parameters.length) && probes.length;
-
-      const parameters = osparc.study.Utils.extractFunctionableParameters(workbench);
-      const probes = osparc.study.Utils.extractFunctionableProbes(workbench);
-      const computationals = osparc.study.Utils.extractComputationalServices(workbench);
-      const dynamics = osparc.study.Utils.extractDynamicServices(workbench);
-
-      return (
-        (parameters.length || probes.length) &&
-        computationals.length > 0 &&
-        dynamics.length === 0
-      );
-    },
-
     getCantReadServices: function(studyServices = []) {
       return studyServices.filter(studyService => studyService["myAccessRights"]["execute"] === false);
     },
@@ -375,37 +352,34 @@ qx.Class.define("osparc.study.Utils", {
     },
 
     state: {
+      __getShareState: function(state) {
+        if (state && "shareState" in state) {
+          return state["shareState"];
+        }
+        return null;
+      },
+
       getProjectStatus: function(state) {
-        if (
-          state &&
-          "shareState" in state &&
-          "status" in state["shareState"]
-        ) {
-          return state["shareState"]["status"];
+        const shareState = this.__getShareState(state);
+        if (shareState && "status" in shareState) {
+          return shareState["status"];
         }
         return null;
       },
 
       isProjectLocked: function(state) {
-        if (
-          state &&
-          "shareState" in state &&
-          "locked" in state["shareState"]
-        ) {
-          return state["shareState"]["locked"];
+        const shareState = this.__getShareState(state);
+        if (shareState && "locked" in shareState) {
+          return shareState["locked"];
         }
         return false;
       },
 
       getCurrentGroupIds: function(state) {
-        if (
-          state &&
-          "shareState" in state &&
-          "currentUserGroupids" in state["shareState"]
-        ) {
-          return state["shareState"]["currentUserGroupids"];
+        const shareState = this.__getShareState(state);
+        if (shareState && "currentUserGroupids" in shareState) {
+          return shareState["currentUserGroupids"];
         }
-
         return [];
       },
 
@@ -449,7 +423,7 @@ qx.Class.define("osparc.study.Utils", {
           return "UNKNOWN_SERVICES";
         }
       }
-      if (studyData["state"] && studyData["state"]["shareState"] && studyData["state"]["shareState"]["locked"]) {
+      if (this.state.isProjectLocked(studyData["state"])) {
         return "IN_USE";
       }
       if (this.isInDebt(studyData)) {

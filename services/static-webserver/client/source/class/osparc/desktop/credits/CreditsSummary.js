@@ -112,6 +112,7 @@ qx.Class.define("osparc.desktop.credits.CreditsSummary", {
             alignX: "center",
             backgroundColor: "transparent"
           });
+          control.getChildControl("arrow").syncAppearance(); // force sync to show the arrow
           this.self().TIME_RANGES.forEach(tr => {
             const trItem = new qx.ui.form.ListItem(tr.label, null, tr.key);
             control.add(trItem);

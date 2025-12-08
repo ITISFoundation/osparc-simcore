@@ -20,7 +20,7 @@ qx.Class.define("osparc.conversation.MessageUI", {
   extend: qx.ui.core.Widget,
 
   /**
-    * @param message {Object} message data
+    * @param message {osparc.data.model.Message} message
     * @param studyData {Object?null} serialized Study Data
     */
   construct: function(message, studyData = null) {
@@ -28,20 +28,12 @@ qx.Class.define("osparc.conversation.MessageUI", {
 
     this.__studyData = studyData;
 
-    const layout = new qx.ui.layout.Grid(12, 2);
-    layout.setColumnFlex(1, 1); // content
-    this._setLayout(layout);
+    this._setLayout(new qx.ui.layout.HBox(10));
     this.setPadding(5);
 
     this.set({
       message,
     });
-  },
-
-  statics: {
-    isMyMessage: function(message) {
-      return message && osparc.auth.Data.getInstance().getGroupId() === message["userGroupId"];
-    }
   },
 
   events: {
@@ -51,37 +43,37 @@ qx.Class.define("osparc.conversation.MessageUI", {
 
   properties: {
     message: {
-      check: "Object",
+      check: "osparc.data.model.Message",
       init: null,
       nullable: false,
-      apply: "__applyMessage",
+      apply: "_applyMessage",
     },
   },
 
   members: {
     _createChildControlImpl: function(id) {
-      const isMyMessage = this.self().isMyMessage(this.getMessage());
+      const isMyMessage = osparc.data.model.Message.isMyMessage(this.getMessage());
       let control;
       switch (id) {
-        case "thumbnail":
-          control = osparc.utils.Utils.createThumbnail(32).set({
+        case "avatar":
+          control = new osparc.ui.basic.UserThumbnail(32).set({
             marginTop: 4,
+            alignY: "top",
           });
-          this._add(control, {
-            row: 0,
-            column: isMyMessage ? 2 : 0,
-            rowSpan: 2,
-          });
+          this._addAt(control, isMyMessage ? 1 : 0);
+          break;
+        case "main-layout":
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox(2).set({
+            alignX: isMyMessage ? "right" : "left"
+          }));
+          this._addAt(control, isMyMessage ? 0 : 1, { flex: 1});
           break;
         case "header-layout":
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
             alignX: isMyMessage ? "right" : "left"
           }));
           control.addAt(new qx.ui.basic.Label("-"), 1);
-          this._add(control, {
-            row: 0,
-            column: 1
-          });
+          this.getChildControl("main-layout").addAt(control, 0);
           break;
         case "user-name":
           control = new qx.ui.basic.Label().set({
@@ -97,25 +89,21 @@ qx.Class.define("osparc.conversation.MessageUI", {
           });
           this.getChildControl("header-layout").addAt(control, isMyMessage ? 0 : 2);
           break;
-        case "message-content":
-          control = new osparc.ui.markdown.Markdown().set({
-            noMargin: true,
-            allowGrowX: true,
+        case "message-bubble":
+          control = new qx.ui.container.Composite(new qx.ui.layout.VBox().set({
+            alignX: isMyMessage ? "right" : "left"
+          })).set({
+            decorator: "chat-bubble",
+            allowGrowX: false,
+            padding: 8,
           });
-          control.getContentElement().setStyles({
-            "text-align": isMyMessage ? "right" : "left",
-          });
-          this._add(control, {
-            row: 1,
-            column: 1,
-          });
+          const bubbleStyle = isMyMessage ? { "border-top-right-radius": "0px" } : { "border-top-left-radius": "0px" };
+          control.getContentElement().setStyles(bubbleStyle);
+          this.getChildControl("main-layout").addAt(control, 1);
           break;
-        case "spacer":
-          control = new qx.ui.core.Spacer();
-          this._add(control, {
-            row: 1,
-            column: isMyMessage ? 0 : 2,
-          });
+        case "message-content":
+          control = new osparc.ui.markdown.MarkdownChat();
+          this.getChildControl("message-bubble").add(control);
           break;
         case "menu-button": {
           const buttonSize = 22;
@@ -126,14 +114,10 @@ qx.Class.define("osparc.conversation.MessageUI", {
             allowGrowY: false,
             marginTop: 4,
             alignY: "top",
-            icon: "@FontAwesome5Solid/ellipsis-v/14",
+            icon: "@FontAwesome5Solid/ellipsis-v/12",
             focusable: false
           });
-          this._add(control, {
-            row: 0,
-            column: 3,
-            rowSpan: 2,
-          });
+          this._addAt(control, 2);
           break;
         }
       }
@@ -141,46 +125,41 @@ qx.Class.define("osparc.conversation.MessageUI", {
       return control || this.base(arguments, id);
     },
 
-    __applyMessage: function(message) {
-      const isMyMessage = this.self().isMyMessage(message);
-      this._getLayout().setColumnFlex(isMyMessage ? 0 : 2, 3); // spacer
-
-      const thumbnail = this.getChildControl("thumbnail");
-
-      const userName = this.getChildControl("user-name");
-
-      const createdDateData = new Date(message["created"]);
-      const createdDate = osparc.utils.Utils.formatDateAndTime(createdDateData);
-      const lastUpdate = this.getChildControl("last-updated");
-      if (message["created"] === message["modified"]) {
-        lastUpdate.setValue(createdDate);
-      } else {
-        const updatedDateData = new Date(message["modified"]);
-        const updatedDate = osparc.utils.Utils.formatDateAndTime(updatedDateData);
-        lastUpdate.setValue(createdDate + " (" + this.tr("edited") + " "+ updatedDate + ")");
-      }
+    _applyMessage: function(message) {
+      const updateLastUpdate = () => {
+        const createdDate = osparc.utils.Utils.formatDateAndTime(message.getCreated());
+        let value = "";
+        if (message.getCreated().getTime() === message.getModified().getTime()) {
+          value = createdDate;
+        } else {
+          const updatedDate = osparc.utils.Utils.formatDateAndTime(message.getModified());
+          value = createdDate + " (" + this.tr("edited") + " "+ updatedDate + ")";
+        }
+        this.getChildControl("last-updated").setValue(value);
+      };
+      updateLastUpdate();
+      message.addListener("changeModified", () => updateLastUpdate());
 
       const messageContent = this.getChildControl("message-content");
-      messageContent.setValue(message["content"]);
+      message.bind("content", messageContent, "value");
 
-      osparc.store.Users.getInstance().getUser(message["userGroupId"])
-        .then(user => {
-          if (user) {
-            thumbnail.setSource(user.getThumbnail());
-            userName.setValue(user.getLabel());
-          } else {
-            thumbnail.setSource(osparc.utils.Avatar.emailToThumbnail());
+      const avatar = this.getChildControl("avatar");
+      const userName = this.getChildControl("user-name");
+      if (osparc.data.model.Message.isSupportMessage(message)) {
+        userName.setValue("Support");
+      } else {
+        osparc.store.Users.getInstance().getUser(message.getUserGroupId())
+          .then(user => {
+            avatar.setUser(user);
+            userName.setValue(user ? user.getLabel() : "Unknown user");
+          })
+          .catch(() => {
+            avatar.setSource(osparc.utils.Avatar.emailToThumbnail());
             userName.setValue("Unknown user");
-          }
-        })
-        .catch(() => {
-            thumbnail.setSource(osparc.utils.Avatar.emailToThumbnail());
-            userName.setValue("Unknown user");
-        });
+          });
+      }
 
-      this.getChildControl("spacer");
-
-      if (this.self().isMyMessage(message)) {
+      if (osparc.data.model.Message.isMyMessage(message)) {
         const menuButton = this.getChildControl("menu-button");
 
         const menu = new qx.ui.menu.Menu().set({
@@ -203,18 +182,27 @@ qx.Class.define("osparc.conversation.MessageUI", {
 
       const addMessage = new osparc.conversation.AddMessage().set({
         studyData: this.__studyData,
-        conversationId: message["conversationId"],
+        conversationId: message.getConversationId(),
         message,
       });
+      addMessage.getChildControl("notify-user-button").exclude();
       const title = this.tr("Edit message");
-      const win = osparc.ui.window.Window.popUpInWindow(addMessage, title, 570, 135).set({
+      const win = osparc.ui.window.Window.popUpInWindow(addMessage, title, 570, 120).set({
         clickAwayClose: false,
         resizable: true,
         showClose: true,
       });
-      addMessage.addListener("messageUpdated", e => {
-        win.close();
-        this.fireDataEvent("messageUpdated", e.getData());
+      addMessage.addListener("updateMessage", e => {
+        const content = e.getData();
+        if (this.__studyData) {
+          promise = osparc.store.ConversationsProject.getInstance().editMessage(message, content, this.__studyData["uuid"]);
+        } else {
+          promise = osparc.store.ConversationsSupport.getInstance().editMessage(message, content);
+        }
+        promise.then(data => {
+          win.close();
+          this.fireDataEvent("messageUpdated", data);
+        });
       });
     },
 
@@ -231,7 +219,7 @@ qx.Class.define("osparc.conversation.MessageUI", {
         if (win.getConfirmed()) {
           let promise = null;
           if (this.__studyData) {
-            promise = osparc.store.ConversationsProject.getInstance().deleteMessage(message);
+            promise = osparc.store.ConversationsProject.getInstance().deleteMessage(message, this.__studyData["uuid"]);
           } else {
             promise = osparc.store.ConversationsSupport.getInstance().deleteMessage(message);
           }

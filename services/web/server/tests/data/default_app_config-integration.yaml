@@ -24,7 +24,6 @@ db:
   enabled: true
   postgres:
     database: ${POSTGRES_DB}
-    endpoint: ${POSTGRES_ENDPOINT}
     host: ${POSTGRES_HOST}
     maxsize: 50
     minsize: 2

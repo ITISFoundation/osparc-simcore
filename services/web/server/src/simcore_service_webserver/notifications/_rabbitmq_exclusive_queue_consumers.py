@@ -1,11 +1,12 @@
 import asyncio
 import logging
 from collections import defaultdict
-from collections.abc import AsyncIterator, Generator
+from collections.abc import AsyncIterator, Generator, MutableMapping
 from typing import Final
 
 from aiohttp import web
 from models_library.groups import GroupID
+from models_library.projects import ProjectID
 from models_library.projects_state import RUNNING_STATE_COMPLETED_STATES
 from models_library.rabbitmq_messages import (
     ComputationalPipelineStatusMessage,
@@ -15,12 +16,15 @@ from models_library.rabbitmq_messages import (
     ProgressRabbitMessageProject,
     ProgressType,
     WalletCreditsMessage,
+    WebserverInternalEventRabbitMessage,
+    WebserverInternalEventRabbitMessageAction,
 )
 from models_library.socketio import SocketMessageDict
 from pydantic import TypeAdapter
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.utils import limited_gather, logged_gather
+from simcore_sdk.node_ports_common.exceptions import ProjectNotFoundError
 
 from ..projects import _nodes_service, _projects_service
 from ..rabbitmq import get_rabbitmq_client
@@ -34,13 +38,18 @@ from ..socketio.messages import (
 )
 from ..socketio.models import WebSocketNodeProgress, WebSocketProjectProgress
 from ..wallets import api as wallets_service
+from . import project_logs
 from ._rabbitmq_consumers_common import SubcribeArgumentsTuple, subscribe_to_rabbitmq
 
 _logger = logging.getLogger(__name__)
 
-_APP_RABBITMQ_CONSUMERS_KEY: Final[str] = f"{__name__}.rabbit_consumers"
-APP_WALLET_SUBSCRIPTIONS_KEY: Final[str] = "wallet_subscriptions"
-APP_WALLET_SUBSCRIPTION_LOCK_KEY: Final[str] = "wallet_subscription_lock"
+_RABBITMQ_CONSUMERS_APPKEY: Final = web.AppKey("RABBITMQ_CONSUMERS", MutableMapping)
+WALLET_SUBSCRIPTIONS_COUNT_APPKEY: Final = web.AppKey(
+    "WALLET_SUBSCRIPTIONS_COUNT", defaultdict  # wallet_id -> subscriber count
+)
+WALLET_SUBSCRIPTION_LOCK_APPKEY: Final = web.AppKey(
+    "WALLET_SUBSCRIPTION_LOCK", asyncio.Lock
+)
 
 
 async def _notify_comp_node_progress(
@@ -89,12 +98,21 @@ async def _computational_pipeline_status_message_parser(
     app: web.Application, data: bytes
 ) -> bool:
     rabbit_message = ComputationalPipelineStatusMessage.model_validate_json(data)
-    project = await _projects_service.get_project_for_user(
-        app,
-        f"{rabbit_message.project_id}",
-        rabbit_message.user_id,
-        include_state=True,
-    )
+    try:
+        project = await _projects_service.get_project_for_user(
+            app,
+            f"{rabbit_message.project_id}",
+            rabbit_message.user_id,
+            include_state=True,
+        )
+    except ProjectNotFoundError:
+        _logger.warning(
+            "Cannot notify user %s about project %s status: project not found",
+            rabbit_message.user_id,
+            rabbit_message.project_id,
+        )
+        return True  # <-- telling RabbitMQ that message was processed
+
     if rabbit_message.run_result in RUNNING_STATE_COMPLETED_STATES:
         # the pipeline finished, the frontend needs to update all computational nodes
         computational_node_ids = (
@@ -147,14 +165,50 @@ async def _events_message_parser(app: web.Application, data: bytes) -> bool:
     return True
 
 
+async def _webserver_internal_events_message_parser(
+    app: web.Application, data: bytes
+) -> bool:
+    """
+    Handles internal webserver events that need to be propagated to other webserver replicas
+
+    Ex. Log unsubscription is triggered by user closing a project, which is a REST API call
+    that can reach any webserver replica. Then this event is propagated to all replicas
+    so that the one holding the websocket connection can unsubscribe from the logs queue.
+    """
+
+    rabbit_message = WebserverInternalEventRabbitMessage.model_validate_json(data)
+
+    if (
+        rabbit_message.action
+        == WebserverInternalEventRabbitMessageAction.UNSUBSCRIBE_FROM_PROJECT_LOGS_RABBIT_QUEUE
+    ):
+        _project_id = rabbit_message.data.get("project_id")
+
+        if _project_id:
+            _logger.debug(
+                "Received UNSUBSCRIBE_FROM_PROJECT_LOGS_RABBIT_QUEUE event for project %s",
+                _project_id,
+            )
+            await project_logs.unsubscribe(app, ProjectID(_project_id))
+        else:
+            _logger.error(
+                "Missing project_id in UNSUBSCRIBE_FROM_PROJECT_LOGS_RABBIT_QUEUE event, this should never happen, investigate!"
+            )
+
+    else:
+        _logger.warning(
+            "Unknown webserver internal event message action %s", rabbit_message.action
+        )
+
+    return True
+
+
 async def _osparc_credits_message_parser(app: web.Application, data: bytes) -> bool:
     rabbit_message = TypeAdapter(WalletCreditsMessage).validate_json(data)
     wallet_groups = await wallets_service.list_wallet_groups_with_read_access_by_wallet(
         app, wallet_id=rabbit_message.wallet_id
     )
-    rooms_to_notify: Generator[GroupID, None, None] = (
-        item.gid for item in wallet_groups
-    )
+    rooms_to_notify: Generator[GroupID] = (item.gid for item in wallet_groups)
     for room in rooms_to_notify:
         await send_message_to_standard_group(
             app,
@@ -188,6 +242,11 @@ _EXCHANGE_TO_PARSER_CONFIG: Final[tuple[SubcribeArgumentsTuple, ...]] = (
         {},
     ),
     SubcribeArgumentsTuple(
+        WebserverInternalEventRabbitMessage.get_channel_name(),
+        _webserver_internal_events_message_parser,
+        {},
+    ),
+    SubcribeArgumentsTuple(
         WalletCreditsMessage.get_channel_name(),
         _osparc_credits_message_parser,
         {"topics": []},
@@ -209,7 +268,7 @@ async def _unsubscribe_from_rabbitmq(app) -> None:
         await logged_gather(
             *(
                 rabbit_client.unsubscribe(queue_name)
-                for queue_name, _ in app[_APP_RABBITMQ_CONSUMERS_KEY].values()
+                for queue_name, _ in app[_RABBITMQ_CONSUMERS_APPKEY].values()
             ),
         )
 
@@ -217,14 +276,17 @@ async def _unsubscribe_from_rabbitmq(app) -> None:
 async def on_cleanup_ctx_rabbitmq_consumers(
     app: web.Application,
 ) -> AsyncIterator[None]:
-    app[_APP_RABBITMQ_CONSUMERS_KEY] = await subscribe_to_rabbitmq(
+    app[_RABBITMQ_CONSUMERS_APPKEY] = await subscribe_to_rabbitmq(
         app, _EXCHANGE_TO_PARSER_CONFIG
     )
 
-    app[APP_WALLET_SUBSCRIPTIONS_KEY] = defaultdict(
+    app[WALLET_SUBSCRIPTIONS_COUNT_APPKEY] = defaultdict(
         int
-    )  # wallet_id -> subscriber count
-    app[APP_WALLET_SUBSCRIPTION_LOCK_KEY] = asyncio.Lock()  # Ensures exclusive access
+        # wallet_id -> subscriber count
+    )
+    app[WALLET_SUBSCRIPTION_LOCK_APPKEY] = asyncio.Lock(
+        # Ensures exclusive access to wallet subscription changes
+    )
 
     yield
 

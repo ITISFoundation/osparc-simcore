@@ -2,7 +2,6 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, TypeAlias
 
-from aiopg.sa.result import RowProxy
 from common_library.dict_tools import remap_keys
 from models_library.api_schemas_webserver.projects import ProjectPatch
 from models_library.api_schemas_webserver.projects_ui import StudyUI
@@ -19,7 +18,6 @@ from pydantic import BaseModel, ConfigDict, HttpUrl, field_validator
 from simcore_postgres_database.models.projects import ProjectTemplateType, ProjectType
 
 ProjectDict: TypeAlias = dict[str, Any]
-ProjectProxy: TypeAlias = RowProxy
 
 
 class ProjectTypeAPI(str, Enum):

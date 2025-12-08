@@ -19,11 +19,50 @@ qx.Theme.define("osparc.theme.Appearance", {
   extend: osparc.theme.common.Appearance,
 
   appearances: {
+    "listing": {
+      style: () => {
+        return {
+          decorator: "no-border",
+          spacing: 3,
+          backgroundColor: "transparent"
+        };
+      }
+    },
+
+    "iframe-no-border": {
+      style: () => {
+        return {
+          backgroundColor: "transparent",
+          decorator: "no-border-0"
+        };
+      }
+    },
+
     "strong-ui": {
       style: () => {
         return {
           textColor: "white",
           backgroundColor: "product-color",
+        };
+      }
+    },
+
+    "help-list-button": {
+      include: "button",
+      style() {
+        return {
+          font: "text-14",
+          allowGrowX: true,
+          minHeight: 29,
+          center: false
+        };
+      }
+    },
+    "help-list-button/label": {
+      style() {
+        return {
+          textAlign: "left",
+          allowGrowX: true
         };
       }
     },
@@ -602,11 +641,20 @@ qx.Theme.define("osparc.theme.Appearance", {
           decorator += "-invalid";
         }
 
+        let backgroundColor;
+        if (states.readonly) {
+          backgroundColor = "transparent";
+        } else if (states.disabled) {
+          backgroundColor = "input_background_disable";
+        } else {
+          backgroundColor = "input_background";
+        }
+
         return {
           decorator: decorator,
           padding: padding,
           textColor: textColor,
-          backgroundColor: states.disabled ? "input_background_disable" : "input_background"
+          backgroundColor: backgroundColor
         };
       }
     },
@@ -1037,8 +1085,8 @@ qx.Theme.define("osparc.theme.Appearance", {
       include: "form-button",
       style: state => ({
         decorator: state.hovered || state.focused ? "form-button-danger-hover" : "form-button-danger",
-        backgroundColor: state.hovered || state.focused ? "default-button-hover-background" : "error",
-        textColor: "black",
+        backgroundColor: state.hovered || state.focused || state.disabled ? "default-button-hover-background" : "error",
+        textColor: state.disabled ? "text": "black",
       })
     },
 

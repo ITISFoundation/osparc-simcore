@@ -124,7 +124,12 @@ async def test_list_all_solvers_jobs(
         assert job.runner_url is not None
         assert job.outputs_url is not None
 
-    assert mocked_backend.webserver_rpc["list_projects_marked_as_jobs"].called
+    assert mocked_backend.webserver_rpc[
+        "mocked_rabbit_rpc_client"
+    ].request.call_args.args == (
+        "wb-api-server",
+        "list_projects_marked_as_jobs",
+    )
 
 
 async def test_list_all_solvers_jobs_with_metadata_filter(
@@ -164,11 +169,15 @@ async def test_list_all_solvers_jobs_with_metadata_filter(
     assert jobs_page.offset == 0
 
     # Check that the backend was called with the correct filter parameters
-    assert mocked_backend.webserver_rpc["list_projects_marked_as_jobs"].called
+    call_args = mocked_backend.webserver_rpc[
+        "mocked_rabbit_rpc_client"
+    ].request.call_args
+    assert call_args.args == (
+        "wb-api-server",
+        "list_projects_marked_as_jobs",
+    )
 
     # Get the call args to verify filter parameters were passed correctly
-    call_args = mocked_backend.webserver_rpc["list_projects_marked_as_jobs"].call_args
-
     # The filter_any_custom_metadata parameter should contain our filters
     # The exact structure will depend on how your mocked function is called
     assert call_args is not None

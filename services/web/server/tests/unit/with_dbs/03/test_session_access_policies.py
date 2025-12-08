@@ -12,8 +12,8 @@ from aiohttp import ClientResponse, web
 from aiohttp.test_utils import TestClient
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.aiohttp import status
+from simcore_service_webserver.application_keys import APP_SETTINGS_APPKEY
 from simcore_service_webserver.application_settings import ApplicationSettings
-from simcore_service_webserver.constants import APP_SETTINGS_KEY
 from simcore_service_webserver.login.constants import (
     MAX_2FA_CODE_RESEND,
     MAX_2FA_CODE_TRIALS,
@@ -31,7 +31,7 @@ from simcore_service_webserver.session.plugin import setup_session
 @pytest.fixture
 async def client(
     aiohttp_client: Callable,
-    mock_env_devel_environment: EnvVarsDict,
+    app_environment: EnvVarsDict,
 ) -> TestClient:
     routes = web.RouteTableDef()
 
@@ -109,7 +109,7 @@ async def client(
 
     # build app with session -------------------------------------------------
     app = web.Application()
-    app[APP_SETTINGS_KEY] = ApplicationSettings.create_from_envs()
+    app[APP_SETTINGS_APPKEY] = ApplicationSettings.create_from_envs()
     setup_session(app)
 
     app.add_routes(routes)

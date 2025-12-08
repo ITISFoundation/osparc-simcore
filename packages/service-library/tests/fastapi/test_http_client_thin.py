@@ -24,6 +24,7 @@ from servicelib.fastapi.http_client_thin import (
     expect_status,
     retry_on_errors,
 )
+from servicelib.tracing import TracingConfig
 
 _TIMEOUT_OVERWRITE: Final[int] = 1
 
@@ -71,8 +72,11 @@ def request_timeout() -> int:
 
 @pytest.fixture
 async def thick_client(request_timeout: int) -> AsyncIterable[FakeThickClient]:
+    tracing_config = TracingConfig.create(
+        service_name="test-client", tracing_settings=None
+    )
     async with FakeThickClient(
-        total_retry_interval=request_timeout, tracing_settings=None
+        total_retry_interval=request_timeout, tracing_config=tracing_config
     ) as client:
         yield client
 
@@ -99,8 +103,11 @@ async def test_retry_on_errors(
     test_url: str,
     caplog_info_level: pytest.LogCaptureFixture,
 ) -> None:
+    tracing_config = TracingConfig.create(
+        service_name="test-client", tracing_settings=None
+    )
     client = FakeThickClient(
-        total_retry_interval=request_timeout, tracing_settings=None
+        total_retry_interval=request_timeout, tracing_config=tracing_config
     )
 
     with pytest.raises(ClientHttpError):
@@ -125,7 +132,12 @@ async def test_retry_on_errors_by_error_type(
                 request=Request(method="GET", url=test_url),
             )
 
-    client = ATestClient(total_retry_interval=request_timeout, tracing_settings=None)
+    tracing_config = TracingConfig.create(
+        service_name="test-client", tracing_settings=None
+    )
+    client = ATestClient(
+        total_retry_interval=request_timeout, tracing_config=tracing_config
+    )
 
     with pytest.raises(ClientHttpError):
         await client.raises_request_error()
@@ -151,7 +163,12 @@ async def test_retry_on_errors_raises_client_http_error(
             msg = "mock_http_error"
             raise HTTPError(msg)
 
-    client = ATestClient(total_retry_interval=request_timeout, tracing_settings=None)
+    tracing_config = TracingConfig.create(
+        service_name="test-client", tracing_settings=None
+    )
+    client = ATestClient(
+        total_retry_interval=request_timeout, tracing_config=tracing_config
+    )
 
     with pytest.raises(ClientHttpError):
         await client.raises_http_error()
@@ -165,7 +182,10 @@ async def test_methods_do_not_return_response(
             """this method will be ok even if no code is used"""
 
     # OK
-    OKTestClient(total_retry_interval=request_timeout, tracing_settings=None)
+    tracing_config = TracingConfig.create(
+        service_name="test-client", tracing_settings=None
+    )
+    OKTestClient(total_retry_interval=request_timeout, tracing_config=tracing_config)
 
     class FailWrongAnnotationTestClient(BaseThinClient):
         async def public_method_wrong_annotation(self) -> None:
@@ -173,7 +193,8 @@ async def test_methods_do_not_return_response(
 
     with pytest.raises(AssertionError, match="should return an instance"):
         FailWrongAnnotationTestClient(
-            total_retry_interval=request_timeout, tracing_settings=None
+            total_retry_interval=request_timeout,
+            tracing_config=tracing_config,
         )
 
     class FailNoAnnotationTestClient(BaseThinClient):
@@ -182,7 +203,8 @@ async def test_methods_do_not_return_response(
 
     with pytest.raises(AssertionError, match="should return an instance"):
         FailNoAnnotationTestClient(
-            total_retry_interval=request_timeout, tracing_settings=None
+            total_retry_interval=request_timeout,
+            tracing_config=tracing_config,
         )
 
 
@@ -207,8 +229,11 @@ async def test_expect_state_decorator(
     respx_mock.get(url_get_200_ok).mock(return_value=Response(codes.OK))
     respx_mock.get(get_wrong_state).mock(return_value=Response(codes.OK))
 
+    tracing_config = TracingConfig.create(
+        service_name="test-client", tracing_settings=None
+    )
     test_client = ATestClient(
-        total_retry_interval=request_timeout, tracing_settings=None
+        total_retry_interval=request_timeout, tracing_config=tracing_config
     )
 
     # OK
@@ -230,8 +255,11 @@ async def test_retry_timeout_overwrite(
     request_timeout: int,
     caplog_info_level: pytest.LogCaptureFixture,
 ) -> None:
+    tracing_config = TracingConfig.create(
+        service_name="test-client", tracing_settings=None
+    )
     client = FakeThickClient(
-        total_retry_interval=request_timeout, tracing_settings=None
+        total_retry_interval=request_timeout, tracing_config=tracing_config
     )
 
     caplog_info_level.clear()

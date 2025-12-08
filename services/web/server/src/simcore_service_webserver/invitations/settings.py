@@ -1,4 +1,4 @@
-""" Settings for the invitations plugin
+"""Settings for the invitations plugin
 
 NOTE: do not move them to settings_library since (so far) only the
 webserver should interact with this
@@ -17,7 +17,7 @@ from settings_library.utils_service import (
     URLPart,
 )
 
-from ..constants import APP_SETTINGS_KEY
+from ..application_keys import APP_SETTINGS_APPKEY
 
 _INVITATION_VTAG_V1: Final[VersionTag] = TypeAdapter(VersionTag).validate_python("v1")
 
@@ -60,7 +60,7 @@ class InvitationsSettings(BaseCustomSettings, MixinServiceSettings):
 
 
 def get_plugin_settings(app: web.Application) -> InvitationsSettings:
-    settings = app[APP_SETTINGS_KEY].WEBSERVER_INVITATIONS
+    settings = app[APP_SETTINGS_APPKEY].WEBSERVER_INVITATIONS
     assert settings, "setup_settings not called?"  # nosec
     assert isinstance(settings, InvitationsSettings)  # nosec
     return settings

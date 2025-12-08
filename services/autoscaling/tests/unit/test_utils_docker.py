@@ -7,6 +7,7 @@ import asyncio
 import datetime
 import itertools
 import random
+import secrets
 from collections.abc import AsyncIterator, Awaitable, Callable
 from copy import deepcopy
 from typing import Any
@@ -50,11 +51,11 @@ from simcore_service_autoscaling.utils.utils_docker import (
     attach_node,
     compute_cluster_total_resources,
     compute_cluster_used_resources,
+    compute_full_list_of_pre_pulled_images,
     compute_node_used_resources,
     compute_tasks_needed_resources,
     find_node_with_name,
     get_docker_login_on_start_bash_command,
-    get_docker_pull_images_crontab,
     get_docker_pull_images_on_start_bash_command,
     get_docker_swarm_join_bash_command,
     get_max_resources_from_docker_task,
@@ -1028,10 +1029,23 @@ def test_get_new_node_docker_tags(
     app_settings: ApplicationSettings,
     fake_ec2_instance_data: Callable[..., EC2InstanceData],
 ):
-    ec2_instance_data = fake_ec2_instance_data()
+    random_ec2_type = secrets.choice(
+        list(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES)
+    )
+
+    ec2_instance_data = fake_ec2_instance_data(type=random_ec2_type)
     node_docker_tags = get_new_node_docker_tags(app_settings, ec2_instance_data)
     assert node_docker_tags
     assert DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY in node_docker_tags
+    for (
+        key,
+        value,
+    ) in app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
+        random_ec2_type
+    ].custom_node_labels.items():
+        assert key in node_docker_tags
+        assert node_docker_tags[key] == value
+
     assert app_settings.AUTOSCALING_NODES_MONITORING
     for (
         tag_key
@@ -1046,6 +1060,9 @@ def test_get_new_node_docker_tags(
         DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY,
         *app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS,
         *app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NEW_NODES_LABELS,
+        *app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
+            random_ec2_type
+        ].custom_node_labels.keys(),
     ]
     for tag_key in node_docker_tags:
         assert tag_key in all_keys
@@ -1076,34 +1093,6 @@ def test_get_docker_pull_images_on_start_bash_command(
     images: list[DockerGenericTag], expected_cmd: str
 ):
     assert get_docker_pull_images_on_start_bash_command(images) == expected_cmd
-
-
-@pytest.mark.parametrize(
-    "interval, expected_cmd",
-    [
-        (
-            datetime.timedelta(minutes=20),
-            'echo "*/20 * * * * root /docker-pull-script.sh >> /var/log/docker-pull-cronjob.log 2>&1" >> /etc/crontab',
-        ),
-        (
-            datetime.timedelta(seconds=20),
-            'echo "*/1 * * * * root /docker-pull-script.sh >> /var/log/docker-pull-cronjob.log 2>&1" >> /etc/crontab',
-        ),
-        (
-            datetime.timedelta(seconds=200),
-            'echo "*/3 * * * * root /docker-pull-script.sh >> /var/log/docker-pull-cronjob.log 2>&1" >> /etc/crontab',
-        ),
-        (
-            datetime.timedelta(days=3),
-            'echo "*/4320 * * * * root /docker-pull-script.sh >> /var/log/docker-pull-cronjob.log 2>&1" >> /etc/crontab',
-        ),
-    ],
-    ids=str,
-)
-def test_get_docker_pull_images_crontab(
-    interval: datetime.timedelta, expected_cmd: str
-):
-    assert get_docker_pull_images_crontab(interval) == expected_cmd
 
 
 def test_is_node_ready_and_available(create_fake_node: Callable[..., Node]):
@@ -1313,3 +1302,37 @@ async def test_attach_node(
     assert is_node_ready_and_available(host_node, availability=Availability.active)
     # but not osparc ready
     assert not is_node_osparc_ready(updated_node)
+
+
+def test_compute_full_list_of_pre_pulled_images(
+    disabled_rabbitmq: None,
+    disabled_ec2: None,
+    disabled_ssm: None,
+    mocked_redis_server: None,
+    enabled_dynamic_mode: EnvVarsDict,
+    disable_autoscaling_background_task: None,
+    with_ec2_instances_cold_start_docker_images_pre_pulling: EnvVarsDict,
+    app_settings: ApplicationSettings,
+):
+    assert app_settings.AUTOSCALING_EC2_INSTANCES
+    assert (
+        app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_COLD_START_DOCKER_IMAGES_PRE_PULLING
+    ), "this test requires some common docker images"
+
+    for (
+        instance_type,
+        instance_boot_specific,
+    ) in app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES.items():
+        returned_list = compute_full_list_of_pre_pulled_images(
+            instance_boot_specific, app_settings
+        )
+        assert (
+            sorted(returned_list) == returned_list
+        ), f"the list for {instance_type} should be sorted"
+        assert len(returned_list) == len(
+            set(returned_list)
+        ), f"the list for {instance_type} should not have duplicates"
+        assert all(
+            i in returned_list
+            for i in app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_COLD_START_DOCKER_IMAGES_PRE_PULLING
+        )

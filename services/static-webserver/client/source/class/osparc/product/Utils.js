@@ -42,11 +42,9 @@ qx.Class.define("osparc.product.Utils", {
     },
 
     getStudyAlias: function(options = {}) {
-      let alias = null;
+      let alias = qx.locale.Manager.tr("project");
       if (options.plural) {
         alias = qx.locale.Manager.tr("projects");
-      } else {
-        alias = qx.locale.Manager.tr("project");
       }
 
       if (options.firstUpperCase) {
@@ -59,11 +57,9 @@ qx.Class.define("osparc.product.Utils", {
     },
 
     getTemplateAlias: function(options = {}) {
-      let alias = null;
+      let alias = qx.locale.Manager.tr("template");
       if (options.plural) {
         alias = qx.locale.Manager.tr("templates");
-      } else {
-        alias = qx.locale.Manager.tr("template");
       }
 
       if (options.firstUpperCase) {
@@ -153,6 +149,40 @@ qx.Class.define("osparc.product.Utils", {
           return this.getAppAlias(options);
       }
       return resourceType;
+    },
+
+    getInstitutionAlias: function() {
+      switch (osparc.product.Utils.getProductName()) {
+        case "s4l":
+          return {
+            label: qx.locale.Manager.tr("Company Name"),
+            key: "company",
+            required: true,
+          };
+        case "s4lacad":
+        case "s4llite":
+          return {
+            label: qx.locale.Manager.tr("University"),
+            key: "university",
+            required: true,
+          };
+        case "tiplite":
+          return {
+            label: qx.locale.Manager.tr("University"),
+            key: "university",
+          };
+        case "tis":
+          return {
+            label: qx.locale.Manager.tr("Organization"),
+            key: "organization",
+          };
+        case "osparc":
+        default:
+          return {
+            label: qx.locale.Manager.tr("Research Group/Organization"),
+            key: "organization",
+          };
+      }
     },
 
     getLogoPath: function(longLogo = true) {
@@ -418,8 +448,54 @@ qx.Class.define("osparc.product.Utils", {
       return Boolean(osparc.store.Products.getInstance().getGroupedServicesUiConfig());
     },
 
-    isSupportEnabled: function() {
-      return Boolean(osparc.store.Products.getInstance().getSupportGroupId());
+    isBookACallEnabled: function() {
+      return osparc.utils.Utils.isDevelopmentPlatform();
     },
+
+    S4L_TOPICS: [
+      {
+        id: "other",
+        label: "Other"
+      }, {
+        id: "Antenna_Design_for_Wireless_Communication",
+        label: "Antenna Design for Wireless Communication"
+      }, {
+        id: "Bioelectronics,_Electroceuticals_and_Neuroprosthetics",
+        label: "Bioelectronics, Electroceuticals & Neuroprosthetics"
+      }, {
+        id: "Safety_and_Efficacy_Assessment",
+        label: "Safety & Efficacy Assessment"
+      }, {
+        id: "Exposure_and_Compliance",
+        label: "Exposure & Compliance"
+      }, {
+        id: "Focused_Ultrasound",
+        label: "Focused Ultrasound"
+      }, {
+        id: "In_Silico_Trials",
+        label: "In <i>Silico</i> Trials"
+      }, {
+        id: "Implant_Design",
+        label: "Implant Design"
+      }, {
+        id: "Magnetic_Resonance_Imaging",
+        label: "Magnetic Resonance Imaging"
+      }, {
+        id: "Neurostimulation",
+        label: "Neurostimulation"
+      }, {
+        id: "Personalized_Medicine",
+        label: "Personalized Medicine"
+      }, {
+        id: "Thermal_Therapies",
+        label: "Thermal Therapies"
+      }, {
+        id: "Wireless_Power_Transfer_Systems",
+        label: "Wireless Power Transfer Systems"
+      }, {
+        id: "Vascular_Flow_and_Perfusion",
+        label: "Vascular Flow & Perfusion"
+      }
+    ],
   }
 });

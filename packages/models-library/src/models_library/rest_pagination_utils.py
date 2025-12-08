@@ -1,10 +1,12 @@
 from math import ceil
-from typing import Any, Protocol, runtime_checkable
+from typing import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
+    Any,
+    Protocol,
+    TypedDict,
+    runtime_checkable,
+)
 
 from pydantic import AnyHttpUrl, TypeAdapter
-from typing_extensions import (  # https://docs.pydantic.dev/latest/api/standard_library_types/#typeddict
-    TypedDict,
-)
 
 from .rest_pagination import PageLinks, PageMetaInfoLimitOffset
 
@@ -19,16 +21,14 @@ from .rest_pagination import PageLinks, PageMetaInfoLimitOffset
 
 @runtime_checkable
 class _YarlURL(Protocol):
-    def update_query(self, query) -> "_YarlURL":
-        ...
+    def update_query(self, query) -> "_YarlURL": ...
 
 
 class _StarletteURL(Protocol):
     # SEE starlette.data_structures.URL
     #  in https://github.com/encode/starlette/blob/master/starlette/datastructures.py#L130
 
-    def replace_query_params(self, **kwargs: Any) -> "_StarletteURL":
-        ...
+    def replace_query_params(self, **kwargs: Any) -> "_StarletteURL": ...
 
 
 _URLType = _YarlURL | _StarletteURL
@@ -82,20 +82,53 @@ def paginate_data(
         _links=PageLinks(
             self=_replace_query(request_url, {"offset": offset, "limit": limit}),
             first=_replace_query(request_url, {"offset": 0, "limit": limit}),
-            prev=_replace_query(
-                request_url, {"offset": max(offset - limit, 0), "limit": limit}
-            )
-            if offset > 0
-            else None,
-            next=_replace_query(
-                request_url,
-                {"offset": min(offset + limit, last_page * limit), "limit": limit},
-            )
-            if offset < (last_page * limit)
-            else None,
+            prev=(
+                _replace_query(
+                    request_url, {"offset": max(offset - limit, 0), "limit": limit}
+                )
+                if offset > 0
+                else None
+            ),
+            next=(
+                _replace_query(
+                    request_url,
+                    {"offset": min(offset + limit, last_page * limit), "limit": limit},
+                )
+                if offset < (last_page * limit)
+                else None
+            ),
             last=_replace_query(
                 request_url, {"offset": last_page * limit, "limit": limit}
             ),
         ),
+        data=data,
+    )
+
+
+def paginate_stream_chunk(
+    chunk: list[Any],
+    *,
+    request_url: _URLType,
+    cursor: int,
+    has_more: bool,
+) -> PageDict:
+    data = [
+        item.model_dump() if hasattr(item, "model_dump") else item for item in chunk
+    ]
+
+    return PageDict(
+        _meta={
+            "cursor": cursor,
+            "count": len(chunk),
+            "has_more": has_more,
+        },
+        _links={
+            "self": _replace_query(request_url, {"cursor": cursor}),
+            "next": (
+                _replace_query(request_url, {"cursor": cursor + len(chunk)})
+                if has_more
+                else None
+            ),
+        },
         data=data,
     )

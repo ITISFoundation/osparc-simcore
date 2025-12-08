@@ -57,6 +57,12 @@ class WorkerTracker:
             result_to_return = TaskResultSuccess(value=task_result)
         except asyncio.CancelledError:
             result_to_return = TaskResultCancelledError()
+            # NOTE: if the task is itself cancelled it shall re-raise: see https://superfastpython.com/asyncio-cancellederror-consumed/
+            current_task = asyncio.current_task()
+            assert current_task is not None  # nosec
+            if current_task.cancelling() > 0:
+                # owner function is being cancelled -> propagate cancellation
+                raise
         except Exception as e:  # pylint:disable=broad-exception-caught
             result_to_return = TaskResultError(
                 error=_format_exception(e),
@@ -81,7 +87,7 @@ class WorkerTracker:
             # it's result in case of cancellation.
             # As a side effect it produces a RuntimeWarning coroutine: '...' was never awaited
             # which cannot be suppressed
-            task.cancel()
+            task.cancel("manually cancelling the deferred task")
             return True
         return False
 

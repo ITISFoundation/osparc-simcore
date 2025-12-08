@@ -11,7 +11,7 @@ from servicelib.aiohttp.monitor_services import (
     service_stopped,
 )
 from servicelib.logging_utils import log_catch, log_context
-from servicelib.rabbitmq import RabbitMQClient
+from servicelib.rabbitmq import ConsumerTag, ExchangeName, QueueName, RabbitMQClient
 from servicelib.utils import logged_gather
 
 from ..rabbitmq import get_rabbitmq_client
@@ -19,7 +19,9 @@ from ._rabbitmq_consumers_common import SubcribeArgumentsTuple, subscribe_to_rab
 
 _logger = logging.getLogger(__name__)
 
-_APP_RABBITMQ_CONSUMERS_KEY: Final[str] = f"{__name__}.rabbit_consumers"
+_APP_RABBITMQ_CONSUMERS_APPKEY: Final = web.AppKey(
+    "APP_RABBITMQ_CONSUMERS_APPKEY", dict[ExchangeName, tuple[QueueName, ConsumerTag]]
+)
 
 
 async def _instrumentation_message_parser(app: web.Application, data: bytes) -> bool:
@@ -43,7 +45,12 @@ async def _instrumentation_message_parser(app: web.Application, data: bytes) -> 
     return True
 
 
-_EXCHANGE_TO_PARSER_CONFIG: Final[tuple[SubcribeArgumentsTuple, ...,]] = (
+_EXCHANGE_TO_PARSER_CONFIG: Final[
+    tuple[
+        SubcribeArgumentsTuple,
+        ...,
+    ]
+] = (
     SubcribeArgumentsTuple(
         InstrumentationRabbitMessage.get_channel_name(),
         _instrumentation_message_parser,
@@ -60,7 +67,7 @@ async def _unsubscribe_from_rabbitmq(app) -> None:
         await logged_gather(
             *(
                 rabbit_client.unsubscribe_consumer(*queue_consumer_map)
-                for queue_consumer_map in app[_APP_RABBITMQ_CONSUMERS_KEY].values()
+                for queue_consumer_map in app[_APP_RABBITMQ_CONSUMERS_APPKEY].values()
             ),
         )
 
@@ -68,7 +75,7 @@ async def _unsubscribe_from_rabbitmq(app) -> None:
 async def on_cleanup_ctx_rabbitmq_consumers(
     app: web.Application,
 ) -> AsyncIterator[None]:
-    app[_APP_RABBITMQ_CONSUMERS_KEY] = await subscribe_to_rabbitmq(
+    app[_APP_RABBITMQ_CONSUMERS_APPKEY] = await subscribe_to_rabbitmq(
         app, _EXCHANGE_TO_PARSER_CONFIG
     )
     yield

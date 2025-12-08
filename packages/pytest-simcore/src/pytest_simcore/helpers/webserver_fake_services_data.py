@@ -1,6 +1,7 @@
 """
-    NOTE: avoid creating dependencies
+NOTE: avoid creating dependencies
 """
+
 from typing import Any
 
 FAKE_FILE_CONSUMER_SERVICES = [
@@ -55,7 +56,7 @@ def list_fake_file_consumers() -> list[dict[str, Any]]:
     consumers = []
     for service in FAKE_FILE_CONSUMER_SERVICES:
         for consumable in service["consumes"]:
-            filetype, port, *_ = consumable.split(":") + ["input_1"]
+            filetype, port, *_ = [*consumable.split(":"), "input_1"]
             consumer = {
                 "key": service["key"],
                 "version": service["version"],

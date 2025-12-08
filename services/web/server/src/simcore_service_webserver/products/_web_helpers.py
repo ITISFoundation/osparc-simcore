@@ -1,21 +1,26 @@
 import contextlib
+import logging
 from pathlib import Path
 
 import aiofiles
 from aiohttp import web
 from models_library.products import ProductName
+from models_library.users import UserID
 from simcore_postgres_database.utils_products_prices import ProductPriceInfo
 
 from .._resources import webserver_resources
 from ..constants import RQ_PRODUCT_KEY
+from ..groups import api as groups_service
 from . import _service
-from ._web_events import APP_PRODUCTS_TEMPLATES_DIR_KEY
+from ._web_events import PRODUCTS_TEMPLATES_DIR_APPKEY
 from .errors import (
     FileTemplateNotFoundError,
     ProductNotFoundError,
     UnknownProductError,
 )
 from .models import Product
+
+_logger = logging.getLogger(__name__)
 
 
 def get_product_name(request: web.Request) -> str:
@@ -36,6 +41,22 @@ def get_current_product(request: web.Request) -> Product:
         request.app, product_name=product_name
     )
     return current_product
+
+
+async def is_user_in_product_support_group(
+    request: web.Request, *, user_id: UserID
+) -> bool:
+    """Checks if the user belongs to the support group of the given product.
+    If the product does not have a support group, returns False.
+    """
+    product = get_current_product(request)
+    if product.support_standard_group_id is None:
+        return False
+    return await groups_service.is_user_in_group(
+        app=request.app,
+        user_id=user_id,
+        group_id=product.support_standard_group_id,
+    )
 
 
 def _get_current_product_or_none(request: web.Request) -> Product | None:
@@ -92,7 +113,7 @@ async def _get_product_specific_template_path(
     request: web.Request, product: Product, filename: str
 ) -> Path | None:
     if template_name := product.get_template_name_for(filename):
-        template_dir: Path = request.app[APP_PRODUCTS_TEMPLATES_DIR_KEY]
+        template_dir: Path = request.app[PRODUCTS_TEMPLATES_DIR_APPKEY]
         template_path = template_dir / template_name
         if not template_path.exists():
             await _cache_template_content(request, template_path, template_name)

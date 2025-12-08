@@ -25,6 +25,15 @@ from faker import Faker
 DEFAULT_FAKER: Final = Faker()
 
 
+def random_service_key(fake: Faker = DEFAULT_FAKER, *, name: str | None = None) -> str:
+    suffix = fake.unique.pystr(min_chars=2) if name is None else name
+    return f"simcore/services/{fake.random_element(['dynamic', 'comp', 'frontend'])}/{suffix.lower()}"
+
+
+def random_service_version(fake: Faker = DEFAULT_FAKER) -> str:
+    return ".".join([str(fake.pyint(0, 100)) for _ in range(3)])
+
+
 def random_icon_url(fake: Faker):
     return fake.image_url(width=16, height=16)
 
@@ -187,6 +196,26 @@ def random_project(fake: Faker = DEFAULT_FAKER, **overrides) -> dict[str, Any]:
     return data
 
 
+def random_project_node(fake: Faker = DEFAULT_FAKER, **overrides) -> dict[str, Any]:
+    """Generates random fake data project nodes DATABASE table"""
+    from simcore_postgres_database.models.projects_nodes import projects_nodes
+
+    fake_name = fake.name()
+
+    data = {
+        "node_id": fake.uuid4(),
+        "project_uuid": fake.uuid4(),
+        "key": random_service_key(fake, name=fake_name),
+        "version": random_service_version(fake),
+        "label": fake_name,
+    }
+
+    assert set(data.keys()).issubset({c.name for c in projects_nodes.columns})
+
+    data.update(overrides)
+    return data
+
+
 def random_group(fake: Faker = DEFAULT_FAKER, **overrides) -> dict[str, Any]:
     from simcore_postgres_database.models.groups import groups
     from simcore_postgres_database.webserver_models import GroupType
@@ -256,6 +285,7 @@ def fake_task_factory(
 def random_product(
     *,
     group_id: int | None = None,
+    support_standard_group_id: int | None = None,
     registration_email_template: str | None = None,
     fake: Faker = DEFAULT_FAKER,
     **overrides,
@@ -276,6 +306,7 @@ def random_product(
         "display_name": suffix.capitalize().replace("_", " "),
         "short_name": suffix[:4],
         "host_regex": r"[a-zA-Z0-9]+\.com",
+        "base_url": f"https://{suffix}.com",
         "support_email": f"support@{suffix}.io",
         "product_owners_email": fake.random_element(
             elements=[f"product-owners@{suffix}.io", None]
@@ -294,7 +325,6 @@ def random_product(
             ui=VendorUI(
                 logo_url="https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/refs/heads/master/services/static-webserver/client/source/resource/osparc/osparc-black.svg",
                 strong_color=fake.color(),
-                project_alias=fake.random_element(elements=["project", "study"]),
             ),
         ),
         "registration_email_template": registration_email_template,
@@ -303,6 +333,7 @@ def random_product(
         "priority": fake.pyint(0, 10),
         "max_open_studies_per_user": fake.pyint(1, 10),
         "group_id": group_id,
+        "support_standard_group_id": support_standard_group_id,
     }
 
     if ui := fake.random_element(
@@ -482,7 +513,7 @@ def random_service_meta_data(
 ) -> dict[str, Any]:
     from simcore_postgres_database.models.services import services_meta_data
 
-    _version = ".".join([str(fake.pyint()) for _ in range(3)])
+    _version = random_service_version(fake)
     _name = fake.name()
 
     data: dict[str, Any] = {
@@ -569,4 +600,95 @@ def random_itis_vip_available_download_item(
     }
 
     data.update(**overrides)
+    return data
+
+
+def random_service_consume_filetype(
+    *,
+    service_key: str,
+    service_version: str,
+    fake: Faker = DEFAULT_FAKER,
+    **overrides,
+) -> dict[str, Any]:
+    from simcore_postgres_database.models.services_consume_filetypes import (
+        services_consume_filetypes,
+    )
+
+    data = {
+        "service_key": service_key,
+        "service_version": service_version,
+        "service_display_name": fake.company(),
+        "service_input_port": fake.word(),
+        "filetype": fake.random_element(["CSV", "VTK", "H5", "JSON", "TXT"]),
+        "preference_order": fake.pyint(min_value=0, max_value=10),
+        "is_guest_allowed": fake.pybool(),
+    }
+
+    assert set(data.keys()).issubset(  # nosec
+        {c.name for c in services_consume_filetypes.columns}
+    )
+
+    data.update(overrides)
+    return data
+
+
+def random_group_classifier(
+    *,
+    gid: int,
+    fake: Faker = DEFAULT_FAKER,
+    **overrides,
+) -> dict[str, Any]:
+    from simcore_postgres_database.models.classifiers import group_classifiers
+
+    data = {
+        "gid": gid,
+        "bundle": {
+            "vcs_ref": fake.lexify(text="???????"),
+            "vcs_url": "https://organization.classifiers.git",
+            "build_date": "2021-01-20T15:19:30Z",
+            "classifiers": {
+                "project::dak": {
+                    "url": None,
+                    "logo": None,
+                    "aliases": [],
+                    "related": [],
+                    "markdown": "",
+                    "released": None,
+                    "classifier": "project::dak",
+                    "created_by": fake.user_name(),
+                    "github_url": None,
+                    "display_name": "DAK",
+                    "wikipedia_url": None,
+                    "short_description": None,
+                },
+                "organization::zmt": {
+                    "url": "https://zmt.swiss/",
+                    "logo": None,
+                    "aliases": ["Zurich MedTech AG"],
+                    "related": [],
+                    "markdown": fake.text(),
+                    "released": None,
+                    "classifier": "organization::zmt",
+                    "created_by": fake.user_name(),
+                    "github_url": None,
+                    "display_name": "ZMT",
+                    "wikipedia_url": None,
+                    "short_description": "ZMT is a member of Zurich43",
+                },
+            },
+            "collections": {
+                "jupyterlab-math": {
+                    "items": ["crespo/osparc-demo"],
+                    "markdown": fake.text(),
+                    "created_by": fake.user_name(),
+                    "display_name": "jupyterlab-math",
+                }
+            },
+        },
+        "uses_scicrunch": False,
+    }
+
+    assert set(data.keys()).issubset({c.name for c in group_classifiers.columns})
+
+    data.update(overrides)
     return data

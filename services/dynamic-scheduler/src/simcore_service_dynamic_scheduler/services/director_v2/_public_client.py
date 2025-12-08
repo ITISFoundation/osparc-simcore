@@ -80,7 +80,7 @@ class DirectorV2Client(SingletonInAppStateMixin, AttachLifespanMixin):
         node_id: NodeID,
         simcore_user_agent: str,
         save_state: bool,
-        timeout: datetime.timedelta  # noqa: ASYNC109
+        timeout: datetime.timedelta,  # noqa: ASYNC109
     ) -> None:
         try:
             await self.thin_client.delete_dynamic_service(
@@ -95,7 +95,8 @@ class DirectorV2Client(SingletonInAppStateMixin, AttachLifespanMixin):
                 == status.HTTP_409_CONFLICT
             ):
                 raise ServiceWaitingForManualInterventionError(
-                    node_id=node_id
+                    node_id=node_id,
+                    unexpected_status_error=f"{e}",
                 ) from None
             if (
                 e.response.status_code  # type: ignore[attr-defined] # pylint:disable=no-member
@@ -110,7 +111,7 @@ class DirectorV2Client(SingletonInAppStateMixin, AttachLifespanMixin):
         *,
         node_id: NodeID,
         port_keys: list[ServicePortKey],
-        timeout: datetime.timedelta  # noqa: ASYNC109
+        timeout: datetime.timedelta,  # noqa: ASYNC109
     ) -> RetrieveDataOutEnveloped:
         response = await self.thin_client.dynamic_service_retrieve(
             node_id=node_id, port_keys=port_keys, timeout=timeout
@@ -148,3 +149,5 @@ async def director_v2_lifespan(app: FastAPI) -> AsyncIterator[State]:
     public_client.set_to_app_state(app)
 
     yield {}
+
+    public_client.pop_from_app_state(app)

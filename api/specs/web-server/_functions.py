@@ -23,6 +23,7 @@ from simcore_service_webserver.functions._controller._functions_rest import (
     FunctionGroupPathParams,
 )
 from simcore_service_webserver.functions._controller._functions_rest_schemas import (
+    FunctionDeleteQueryParams,
     FunctionGetQueryParams,
     FunctionPathParams,
     FunctionsListQueryParams,
@@ -80,6 +81,7 @@ async def update_function(
 )
 async def delete_function(
     _path: Annotated[FunctionPathParams, Depends()],
+    _query: Annotated[as_query(FunctionDeleteQueryParams), Depends()],
 ): ...
 
 

@@ -34,8 +34,8 @@ from respx.router import MockRouter
 from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.catalog import services as catalog_rpc
 from servicelib.rabbitmq.rpc_interfaces.catalog.errors import (
-    CatalogForbiddenError,
-    CatalogItemNotFoundError,
+    CatalogForbiddenRpcError,
+    CatalogItemNotFoundRpcError,
 )
 
 pytest_simcore_core_services_selection = [
@@ -371,7 +371,7 @@ async def test_rpc_get_service_not_found_error(
     user_id: UserID,
 ):
 
-    with pytest.raises(CatalogItemNotFoundError, match="unknown"):
+    with pytest.raises(CatalogItemNotFoundRpcError, match="unknown"):
         await catalog_rpc.get_service(
             rpc_client,
             product_name=product_name,
@@ -408,7 +408,7 @@ async def test_rpc_check_for_service(
     product_name: ProductName,
     user_id: UserID,
 ):
-    with pytest.raises(CatalogItemNotFoundError, match="unknown"):
+    with pytest.raises(CatalogItemNotFoundRpcError, match="unknown"):
         await catalog_rpc.check_for_service(
             rpc_client,
             product_name=product_name,
@@ -450,7 +450,7 @@ async def test_rpc_get_service_access_rights(
     assert other_user["primary_gid"] not in service.access_rights
 
     # other_user does not have EXECUTE access -----------------
-    with pytest.raises(CatalogForbiddenError, match=service_key):
+    with pytest.raises(CatalogForbiddenRpcError, match=service_key):
         await catalog_rpc.get_service(
             rpc_client,
             product_name=product_name,
@@ -460,7 +460,7 @@ async def test_rpc_get_service_access_rights(
         )
 
     # other_user does not have WRITE access
-    with pytest.raises(CatalogForbiddenError, match=service_key):
+    with pytest.raises(CatalogForbiddenRpcError, match=service_key):
         await catalog_rpc.update_service(
             rpc_client,
             product_name=product_name,
@@ -501,7 +501,7 @@ async def test_rpc_get_service_access_rights(
         service_version=service_version,
     )
 
-    with pytest.raises(CatalogForbiddenError, match=service_key):
+    with pytest.raises(CatalogForbiddenRpcError, match=service_key):
         await catalog_rpc.update_service(
             rpc_client,
             product_name=product_name,
@@ -608,12 +608,15 @@ async def test_rpc_batch_get_my_services(
         (other_service_key, other_service_version),
     ]
 
-    my_services = await catalog_rpc.batch_get_my_services(
+    batch_got = await catalog_rpc.batch_get_my_services(
         rpc_client,
         product_name=product_name,
         user_id=user_id,
         ids=ids,
     )
+
+    my_services = batch_got.found_items
+    assert batch_got.missing_identifiers == []
 
     assert len(my_services) == 2
 
@@ -757,7 +760,7 @@ async def test_rpc_get_service_ports_not_found(
     non_existent_key = "simcore/services/comp/non-existent-service"
 
     # Test service not found scenario
-    with pytest.raises(CatalogItemNotFoundError, match="non-existent-service"):
+    with pytest.raises(CatalogItemNotFoundRpcError, match="non-existent-service"):
         await catalog_rpc.get_service_ports(
             rpc_client,
             product_name=product_name,
@@ -808,7 +811,7 @@ async def test_rpc_get_service_ports_permission_denied(
     await services_db_tables_injector([fake_restricted_service])
 
     # Attempt to access without permission
-    with pytest.raises(CatalogForbiddenError):
+    with pytest.raises(CatalogForbiddenRpcError):
         await catalog_rpc.get_service_ports(
             rpc_client,
             product_name=product_name,

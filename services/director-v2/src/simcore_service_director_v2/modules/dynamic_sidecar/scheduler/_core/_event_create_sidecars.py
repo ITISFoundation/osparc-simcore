@@ -28,8 +28,8 @@ from .....core.dynamic_services_settings.scheduler import (
 )
 from .....core.dynamic_services_settings.sidecar import (
     DynamicSidecarSettings,
-    PlacementSettings,
 )
+from .....core.settings import AppSettings
 from .....models.dynamic_services_scheduler import NetworkId, SchedulerData
 from .....utils.db import get_repository
 from .....utils.dict_utils import nested_update
@@ -93,32 +93,35 @@ async def _create_proxy_service(
     swarm_network_id: NetworkId,
     swarm_network_name: str,
 ):
+    app_settings: AppSettings = app.state.settings
     proxy_settings: DynamicSidecarProxySettings = (
         app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR_PROXY_SETTINGS
     )
     scheduler_data.proxy_admin_api_port = (
         proxy_settings.DYNAMIC_SIDECAR_CADDY_ADMIN_API_PORT
     )
-
     dynamic_services_settings: DynamicServicesSettings = (
         app.state.settings.DYNAMIC_SERVICES
     )
 
-    dynamic_sidecar_proxy_create_service_params: dict[
-        str, Any
-    ] = get_dynamic_proxy_spec(
-        scheduler_data=scheduler_data,
-        dynamic_services_settings=dynamic_services_settings,
-        dynamic_sidecar_network_id=dynamic_sidecar_network_id,
-        swarm_network_id=swarm_network_id,
-        swarm_network_name=swarm_network_name,
+    dynamic_sidecar_proxy_create_service_params: dict[str, Any] = (
+        get_dynamic_proxy_spec(
+            scheduler_data=scheduler_data,
+            dynamic_services_settings=dynamic_services_settings,
+            dynamic_sidecar_network_id=dynamic_sidecar_network_id,
+            swarm_network_id=swarm_network_id,
+            swarm_network_name=swarm_network_name,
+        )
     )
     _logger.debug(
         "dynamic-sidecar-proxy create_service_params %s",
         json_dumps(dynamic_sidecar_proxy_create_service_params),
     )
 
-    await create_service_and_get_id(dynamic_sidecar_proxy_create_service_params)
+    await create_service_and_get_id(
+        dynamic_sidecar_proxy_create_service_params,
+        app_settings.DIRECTOR_V2_DOCKER_HUB_REGISTRY,
+    )
 
 
 class CreateSidecars(DynamicSchedulerEvent):
@@ -156,13 +159,14 @@ class CreateSidecars(DynamicSchedulerEvent):
         rabbitmq_client: RabbitMQClient = app.state.rabbitmq_client
         await rabbitmq_client.publish(message.channel_name, message)
 
+        app_settings: AppSettings = app.state.settings
         dynamic_sidecar_settings: DynamicSidecarSettings = (
             app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
         )
         dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings = (
             app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
         )
-        dynamic_services_placement_settings: PlacementSettings = (
+        dynamic_services_placement_settings = (
             app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_PLACEMENT_SETTINGS
         )
 
@@ -244,18 +248,20 @@ class CreateSidecars(DynamicSchedulerEvent):
 
         # WARNING: do NOT log, this structure has secrets in the open
         # If you want to log, please use an obfuscator
-        dynamic_sidecar_service_spec_base: AioDockerServiceSpec = await get_dynamic_sidecar_spec(
-            scheduler_data=scheduler_data,
-            dynamic_sidecar_settings=dynamic_sidecar_settings,
-            dynamic_services_scheduler_settings=dynamic_services_scheduler_settings,
-            swarm_network_id=swarm_network_id,
-            settings=settings,
-            app_settings=app.state.settings,
-            hardware_info=scheduler_data.hardware_info,
-            has_quota_support=dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_ENABLE_VOLUME_LIMITS,
-            metrics_collection_allowed=metrics_collection_allowed,
-            user_extra_properties=user_extra_properties,
-            rpc_client=rpc_client,
+        dynamic_sidecar_service_spec_base: AioDockerServiceSpec = (
+            await get_dynamic_sidecar_spec(
+                scheduler_data=scheduler_data,
+                dynamic_sidecar_settings=dynamic_sidecar_settings,
+                dynamic_services_scheduler_settings=dynamic_services_scheduler_settings,
+                swarm_network_id=swarm_network_id,
+                settings=settings,
+                app_settings=app.state.settings,
+                hardware_info=scheduler_data.hardware_info,
+                has_quota_support=dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_ENABLE_VOLUME_LIMITS,
+                metrics_collection_allowed=metrics_collection_allowed,
+                user_extra_properties=user_extra_properties,
+                rpc_client=rpc_client,
+            )
         )
 
         user_specific_service_spec = (
@@ -278,7 +284,8 @@ class CreateSidecars(DynamicSchedulerEvent):
         )
         await rabbitmq_client.publish(rabbit_message.channel_name, rabbit_message)
         dynamic_sidecar_id = await create_service_and_get_id(
-            dynamic_sidecar_service_final_spec
+            dynamic_sidecar_service_final_spec,
+            app_settings.DIRECTOR_V2_DOCKER_HUB_REGISTRY,
         )
         # constrain service to the same node
         scheduler_data.dynamic_sidecar.docker_node_id = (

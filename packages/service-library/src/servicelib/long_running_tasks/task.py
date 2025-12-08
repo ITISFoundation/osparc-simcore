@@ -5,13 +5,13 @@ import inspect
 import logging
 import urllib.parse
 from contextlib import suppress
-from typing import Any, ClassVar, Final, Protocol, TypeAlias
+from typing import Any, ClassVar, Final, Protocol
 from uuid import uuid4
 
 from common_library.async_tools import cancel_wait_task
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from models_library.api_schemas_long_running_tasks.base import TaskProgress
 from pydantic import NonNegativeFloat, PositiveFloat
-from servicelib.utils import limited_gather
 from settings_library.redis import RedisDatabase, RedisSettings
 from tenacity import (
     AsyncRetrying,
@@ -21,9 +21,9 @@ from tenacity import (
 )
 
 from ..background_task import create_periodic_task
-from ..logging_errors import create_troubleshootting_log_kwargs
 from ..logging_utils import log_catch, log_context
 from ..redis import RedisClientSDK, exclusive
+from ..utils import limited_gather
 from ._redis_store import RedisStore
 from ._serialization import dumps
 from .errors import (
@@ -54,7 +54,7 @@ _MAX_EXCLUSIVE_TASK_CANCEL_TIMEOUT: Final[NonNegativeFloat] = 5
 _TASK_REMOVAL_MAX_WAIT: Final[NonNegativeFloat] = 60
 _PARALLEL_TASKS_CANCELLATION: Final[int] = 5
 
-AllowedErrrors: TypeAlias = tuple[type[BaseException], ...]
+type AllowedErrrors = tuple[type[BaseException], ...]
 
 
 class TaskProtocol(Protocol):
@@ -113,7 +113,33 @@ async def _get_tasks_to_remove(
 
     for tracked_task in await tracked_tasks.list_tasks_data():
         if tracked_task.fire_and_forget:
-            continue
+            # fire and forget tasks also need to be remove from tracking
+            # when detectes as done, start counting how much time has elapsed
+            # if over stale_task_detect_timeout_s remove the task
+
+            # wait for task to complete
+            if not tracked_task.is_done:
+                continue
+
+            # mark detected as done
+            if tracked_task.detected_as_done_at is None:
+                await tracked_tasks.update_task_data(
+                    tracked_task.task_id,
+                    updates={
+                        "detected_as_done_at": datetime.datetime.now(tz=datetime.UTC)
+                    },
+                )
+                continue
+
+            # if enough time passes remove the task
+            elapsed_since_done = (
+                utc_now - tracked_task.detected_as_done_at
+            ).total_seconds()
+            if elapsed_since_done > stale_task_detect_timeout_s:
+                tasks_to_remove.append(
+                    (tracked_task.task_id, tracked_task.task_context)
+                )
+                continue
 
         if tracked_task.last_status_check is None:
             # the task just added or never received a poll request
@@ -282,7 +308,7 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
             # we just print the status from where one can infer the above
             with suppress(TaskNotFoundError):
                 task_status = await self.get_task_status(
-                    task_id, with_task_context=task_context
+                    task_id, with_task_context=task_context, exclude_to_remove=False
                 )
                 with log_context(
                     _logger,
@@ -300,17 +326,24 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
         """
         self._started_event_task_cancelled_tasks_removal.set()
 
-        to_remove = await self._tasks_data.list_tasks_to_remove()
-        for task_id in to_remove:
-            await self._attempt_to_remove_local_task(task_id)
+        tasks_data = await self._tasks_data.list_tasks_data()
+        await limited_gather(
+            *(
+                self._attempt_to_remove_local_task(x.task_id)
+                for x in tasks_data
+                if x.marked_for_removal is True
+            ),
+            limit=_PARALLEL_TASKS_CANCELLATION,
+        )
 
-    async def _tasks_monitor(self) -> None:
+    async def _tasks_monitor(self) -> None:  # noqa: C901
         """
         A task which monitors locally running tasks and updates their status
         in the Redis store when they are done.
         """
         self._started_event_task_tasks_monitor.set()
         task_id: TaskId
+
         for task_id in set(self._created_tasks.keys()):
             if task := self._created_tasks.get(task_id, None):
                 is_done = task.done()
@@ -335,13 +368,19 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
                     result_field = ResultField(
                         str_error=dumps(TaskCancelledError(task_id=task_id))
                     )
+                    # NOTE: if the task is itself cancelled it shall re-raise: see https://superfastpython.com/asyncio-cancellederror-consumed/
+                    current_task = asyncio.current_task()
+                    assert current_task is not None  # nosec
+                    if current_task.cancelling() > 0:
+                        # owner function is being cancelled -> propagate cancellation
+                        raise
                 except Exception as e:  # pylint:disable=broad-except
                     allowed_errors = TaskRegistry.get_allowed_errors(
                         task_data.registered_task_name
                     )
                     if type(e) not in allowed_errors:
                         _logger.exception(
-                            **create_troubleshootting_log_kwargs(
+                            **create_troubleshooting_log_kwargs(
                                 (
                                     f"Execution of {task_id=} finished with unexpected error, "
                                     f"only the following {allowed_errors=} are permitted"
@@ -360,7 +399,7 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
                         Exception  # pylint:disable=broad-except
                     ) as serialization_error:
                         _logger.exception(
-                            **create_troubleshootting_log_kwargs(
+                            **create_troubleshooting_log_kwargs(
                                 (
                                     f"Execution of {task_id=} finished with an error "
                                     f"which could not be serialized"
@@ -390,12 +429,14 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
             return [
                 TaskBase(task_id=task.task_id)
                 for task in (await self._tasks_data.list_tasks_data())
+                if task.marked_for_removal is False
             ]
 
         return [
             TaskBase(task_id=task.task_id)
             for task in (await self._tasks_data.list_tasks_data())
             if task.task_context == with_task_context
+            and task.marked_for_removal is False
         ]
 
     async def _get_tracked_task(
@@ -412,7 +453,11 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
         return task_data
 
     async def get_task_status(
-        self, task_id: TaskId, with_task_context: TaskContext
+        self,
+        task_id: TaskId,
+        with_task_context: TaskContext,
+        *,
+        exclude_to_remove: bool = True,
     ) -> TaskStatus:
         """
         returns: the status of the task, along with updates
@@ -420,6 +465,9 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
 
         raises TaskNotFoundError if the task cannot be found
         """
+        if exclude_to_remove and await self._tasks_data.is_marked_for_removal(task_id):
+            raise TaskNotFoundError(task_id=task_id)
+
         task_data = await self._get_tracked_task(task_id, with_task_context)
 
         await self._tasks_data.update_task_data(
@@ -454,6 +502,9 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
         raises TaskNotFoundError if the task cannot be found
         raises TaskNotCompletedError if the task is not completed
         """
+        if await self._tasks_data.is_marked_for_removal(task_id):
+            raise TaskNotFoundError(task_id=task_id)
+
         tracked_task = await self._get_tracked_task(task_id, with_task_context)
 
         if not tracked_task.is_done or tracked_task.result_field is None:
@@ -466,9 +517,28 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
 
         task_to_cancel = self._created_tasks.pop(task_id, None)
         if task_to_cancel is not None:
-            await cancel_wait_task(task_to_cancel)
-            await self._tasks_data.completed_task_removal(task_id)
-            await self._tasks_data.delete_task_data(task_id)
+            with log_context(
+                _logger,
+                logging.DEBUG,
+                f"Removing asyncio task related to task_id='{task_id}'",
+            ):
+                await cancel_wait_task(task_to_cancel)
+                await self._tasks_data.delete_task_data(task_id)
+        else:
+            task_data = await self._tasks_data.get_task_data(task_id)
+            if (
+                task_data is not None
+                and task_data.marked_for_removal_at is not None
+                and datetime.datetime.now(tz=datetime.UTC)
+                - task_data.marked_for_removal_at
+                > datetime.timedelta(seconds=_TASK_REMOVAL_MAX_WAIT)
+            ):
+                with log_context(
+                    _logger,
+                    logging.DEBUG,
+                    f"Force removing {task_id=} from Redis after waiting for {_TASK_REMOVAL_MAX_WAIT} seconds",
+                ):
+                    await self._tasks_data.delete_task_data(task_id)
 
     async def remove_task(
         self,
@@ -481,11 +551,12 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
         cancels and removes task
         raises TaskNotFoundError if the task cannot be found
         """
+        if await self._tasks_data.is_marked_for_removal(task_id):
+            raise TaskNotFoundError(task_id=task_id)
+
         tracked_task = await self._get_tracked_task(task_id, with_task_context)
 
-        await self._tasks_data.mark_task_for_removal(
-            tracked_task.task_id, tracked_task.task_context
-        )
+        await self._tasks_data.mark_for_removal(tracked_task.task_id)
 
         if not wait_for_removal:
             return

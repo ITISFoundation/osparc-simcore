@@ -14,7 +14,6 @@ self._to_observe is protected by an asyncio Lock
 """
 
 import asyncio
-import contextlib
 import functools
 import logging
 import time
@@ -131,9 +130,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
         if self._trigger_observation_queue_task is not None:
             await self._trigger_observation_queue.put(None)
 
-            self._trigger_observation_queue_task.cancel()
-            with contextlib.suppress(asyncio.CancelledError):
-                await self._trigger_observation_queue_task
+            await cancel_wait_task(self._trigger_observation_queue_task, max_delay=None)
             self._trigger_observation_queue_task = None
             self._trigger_observation_queue = Queue()
 
@@ -142,7 +139,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
             x for x in self._service_observation_task.values() if isinstance(x, Task)
         ]
         for task in running_tasks:
-            task.cancel()
+            task.cancel("application shutdown, cancelling observation task")
         try:
             results = await asyncio.wait_for(
                 asyncio.gather(*running_tasks, return_exceptions=True),
@@ -326,7 +323,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
         node_uuid: NodeID,
         can_save: bool | None,
         *,
-        skip_observation_recreation: bool = False,
+        skip_observation_recreation: bool,
     ) -> None:
         """Marks service for removal, causing RemoveMarkedService to trigger"""
         async with self._lock:
@@ -396,6 +393,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
             await self.mark_service_for_removal(
                 scheduler_data.node_uuid,
                 can_save=scheduler_data.dynamic_sidecar.service_removal_state.can_save,
+                skip_observation_recreation=False,
             )
 
     async def is_service_awaiting_manual_intervention(self, node_uuid: NodeID) -> bool:

@@ -66,11 +66,11 @@ async def _get_all_associated_worker_instances(
     worker_instances: set[EC2InstanceData] = set()
     for instance in primary_instances:
         assert "user_id" in instance.tags  # nosec
-        user_id = UserID(instance.tags[_USER_ID_TAG_KEY])
+        user_id = TypeAdapter(UserID).validate_python(instance.tags[_USER_ID_TAG_KEY])
         assert "wallet_id" in instance.tags  # nosec
         # NOTE: wallet_id can be None
         wallet_id = (
-            WalletID(instance.tags[_WALLET_ID_TAG_KEY])
+            TypeAdapter(WalletID).validate_python(instance.tags[_WALLET_ID_TAG_KEY])
             if instance.tags[_WALLET_ID_TAG_KEY] != "None"
             else None
         )
@@ -230,9 +230,9 @@ async def check_clusters(app: FastAPI) -> None:
             await ec2_client.set_instances_tags(
                 started_instances_ready_for_command,
                 tags={
-                    DOCKER_STACK_DEPLOY_COMMAND_EC2_TAG_KEY: AWSTagValue(
-                        ssm_command.command_id
-                    ),
+                    DOCKER_STACK_DEPLOY_COMMAND_EC2_TAG_KEY: TypeAdapter(
+                        AWSTagValue
+                    ).validate_python(ssm_command.command_id),
                 },
             )
 

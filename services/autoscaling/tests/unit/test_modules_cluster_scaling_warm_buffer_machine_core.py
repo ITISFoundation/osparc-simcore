@@ -314,6 +314,7 @@ class _BufferMachineParams:
     ],
 )
 async def test_monitor_buffer_machines_terminates_supernumerary_instances(
+    patch_ec2_client_launch_instances_min_number_of_instances: mock.Mock,
     minimal_configuration: None,
     fake_pre_pull_images: list[DockerGenericTag],
     ec2_client: EC2Client,

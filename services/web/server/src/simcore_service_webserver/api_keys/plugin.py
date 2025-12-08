@@ -1,9 +1,9 @@
 import logging
 
 from aiohttp import web
-from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
 
-from ..constants import APP_SETTINGS_KEY
+from ..application_keys import APP_SETTINGS_APPKEY
+from ..application_setup import ModuleCategory, app_setup_func
 from ..db.plugin import setup_db
 from ..products.plugin import setup_products
 from ..rabbitmq import setup_rabbitmq
@@ -13,14 +13,14 @@ from ._controller import rest, rpc
 _logger = logging.getLogger(__name__)
 
 
-@app_module_setup(
+@app_setup_func(
     "simcore_service_webserver.api_keys",
     ModuleCategory.ADDON,
     settings_name="WEBSERVER_API_KEYS",
     logger=_logger,
 )
 def setup_api_keys(app: web.Application):
-    assert app[APP_SETTINGS_KEY].WEBSERVER_API_KEYS  # nosec
+    assert app[APP_SETTINGS_APPKEY].WEBSERVER_API_KEYS  # nosec
     setup_db(app)
     setup_products(app)
 
@@ -30,5 +30,5 @@ def setup_api_keys(app: web.Application):
 
     # rpc api
     setup_rabbitmq(app)
-    if app[APP_SETTINGS_KEY].WEBSERVER_RABBITMQ:
+    if app[APP_SETTINGS_APPKEY].WEBSERVER_RABBITMQ:
         app.on_startup.append(rpc.register_rpc_routes_on_startup)

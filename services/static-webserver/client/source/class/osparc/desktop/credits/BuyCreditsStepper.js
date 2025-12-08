@@ -68,7 +68,7 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsStepper", {
               const { paymentId, paymentFormUrl } = data;
               this.setPaymentId(paymentId)
               this.__iframe = new qx.ui.embed.Iframe(paymentFormUrl).set({
-                decorator: "no-border-2"
+                decorator: "no-border-0"
               });
               this.add(this.__iframe);
               this.setSelection([this.__iframe])

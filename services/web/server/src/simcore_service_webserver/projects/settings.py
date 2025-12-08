@@ -4,7 +4,7 @@ from aiohttp import web
 from pydantic import ByteSize, Field, NonNegativeInt, TypeAdapter
 from settings_library.base import BaseCustomSettings
 
-from ..constants import APP_SETTINGS_KEY
+from ..application_keys import APP_SETTINGS_APPKEY
 
 
 class ProjectsSettings(BaseCustomSettings):
@@ -25,7 +25,7 @@ class ProjectsSettings(BaseCustomSettings):
 
 
 def get_plugin_settings(app: web.Application) -> ProjectsSettings:
-    settings = app[APP_SETTINGS_KEY].WEBSERVER_PROJECTS
+    settings = app[APP_SETTINGS_APPKEY].WEBSERVER_PROJECTS
     assert settings, "setup_settings not called?"  # nosec
     assert isinstance(settings, ProjectsSettings)  # nosec
     return settings

@@ -31,7 +31,7 @@ from simcore_service_clusters_keeper.modules.clusters import (
 )
 from simcore_service_clusters_keeper.utils.ec2 import (
     _APPLICATION_TAG_KEY,
-    CLUSTER_NAME_PREFIX,
+    _CLUSTER_NAME_PREFIX,
     HEARTBEAT_TAG_KEY,
 )
 from types_aiobotocore_ec2 import EC2Client
@@ -50,8 +50,7 @@ def _base_configuration(
     mocked_ec2_server_envs: EnvVarsDict,
     mocked_primary_ec2_instances_envs: EnvVarsDict,
     mocked_ssm_server_envs: EnvVarsDict,
-) -> None:
-    ...
+) -> None: ...
 
 
 async def _assert_cluster_instance_created(
@@ -74,7 +73,7 @@ async def _assert_cluster_instance_created(
     _EXPECTED_TAGS: dict[str, str] = {
         f"{_APPLICATION_TAG_KEY}.deploy": f"{app_settings.CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX}{app_settings.SWARM_STACK_NAME}",
         f"{_APPLICATION_TAG_KEY}.version": f"{APP_VERSION}",
-        "Name": f"{app_settings.CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX}{CLUSTER_NAME_PREFIX}manager-{app_settings.SWARM_STACK_NAME}-user_id:{user_id}-wallet_id:{wallet_id}",
+        "Name": f"{app_settings.CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX}{_CLUSTER_NAME_PREFIX}manager-{app_settings.SWARM_STACK_NAME}-user_id:{user_id}-wallet_id:{wallet_id}",
         "user_id": f"{user_id}",
         "wallet_id": f"{wallet_id}",
         "role": "manager",

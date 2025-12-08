@@ -3,7 +3,7 @@
 # NOTES:
 # - port 3000 used for ptsv
 #
-x-common-environment: &common-environment
+x-common_environment: &common_environment
   # Enforces *_DEBUG option in all services. ONLY allowed in devel-mode!
   DEBUG : "true"
   # Enforces app to boot debug mode (see docker/boot.sh). ONLY allowed in devel-mode!
@@ -13,7 +13,17 @@ x-common-environment: &common-environment
 services:
   api-server:
     environment:
-      <<: *common-environment
+      <<: *common_environment
+      API_SERVER_PROFILING : ${API_SERVER_PROFILING}
+      API_SERVER_LOGLEVEL: DEBUG
+    volumes:
+      - ./api-server:/devel/services/api-server
+      - ../packages:/devel/packages
+      - ${HOST_UV_CACHE_DIR}:/home/scu/.cache/uv
+
+  api-worker:
+    environment:
+      <<: *common_environment
       API_SERVER_PROFILING : ${API_SERVER_PROFILING}
       API_SERVER_LOGLEVEL: DEBUG
     volumes:
@@ -23,7 +33,7 @@ services:
 
   autoscaling:
     environment:
-      <<: *common-environment
+      <<: *common_environment
       AUTOSCALING_LOGLEVEL: DEBUG
 
     volumes:
@@ -33,7 +43,7 @@ services:
 
   invitations:
     environment:
-      <<: *common-environment
+      <<: *common_environment
       INVITATIONS_LOGLEVEL: DEBUG
     volumes:
       - ./invitations:/devel/services/invitations
@@ -42,7 +52,7 @@ services:
 
   payments:
     environment:
-      <<: *common-environment
+      <<: *common_environment
       PAYMENTS_LOGLEVEL: DEBUG
     volumes:
       - ./payments:/devel/services/payments
@@ -51,7 +61,7 @@ services:
 
   dynamic-schdlr:
     environment:
-      <<: *common-environment
+      <<: *common_environment
       DYNAMIC_SCHEDULER_PROFILING : ${DYNAMIC_SCHEDULER_PROFILING}
       DYNAMIC_SCHEDULER_LOGLEVEL: DEBUG
     volumes:
@@ -63,7 +73,7 @@ services:
 
   catalog:
     environment:
-      <<: *common-environment
+      <<: *common_environment
       CATALOG_PROFILING : ${CATALOG_PROFILING}
       DYNAMIC_SIDECAR_MOUNT_PATH_DEV : ${PWD}/services/dynamic-sidecar
       CATALOG_LOGLEVEL: DEBUG
@@ -74,7 +84,17 @@ services:
 
   notifications:
     environment:
-      <<: *common-environment
+      <<: *common_environment
+      NOTIFICATIONS_PROFILING : ${NOTIFICATIONS_PROFILING}
+      NOTIFICATIONS_LOGLEVEL: DEBUG
+    volumes:
+      - ./notifications:/devel/services/notifications
+      - ../packages:/devel/packages
+      - ${HOST_UV_CACHE_DIR}:/home/scu/.cache/uv
+
+  notifications-worker:
+    environment:
+      <<: *common_environment
       NOTIFICATIONS_PROFILING : ${NOTIFICATIONS_PROFILING}
       NOTIFICATIONS_LOGLEVEL: DEBUG
     volumes:
@@ -84,7 +104,7 @@ services:
 
   clusters-keeper:
     environment:
-      <<: *common-environment
+      <<: *common_environment
       CLUSTERS_KEEPER_LOGLEVEL: DEBUG
     volumes:
       - ./clusters-keeper:/devel/services/clusters-keeper
@@ -93,7 +113,7 @@ services:
 
   datcore-adapter:
     environment:
-      <<: *common-environment
+      <<: *common_environment
       DATCORE_ADAPTER_LOGLEVEL: DEBUG
     volumes:
       - ./datcore-adapter:/devel/services/datcore-adapter
@@ -111,7 +131,7 @@ services:
 
   director-v2:
     environment:
-      <<: *common-environment
+      <<: *common_environment
       DIRECTOR_V2_PROFILING : ${DIRECTOR_V2_PROFILING}
       DYNAMIC_SIDECAR_MOUNT_PATH_DEV : ${PWD}/services/dynamic-sidecar
       DIRECTOR_V2_LOGLEVEL: DEBUG
@@ -123,7 +143,7 @@ services:
 
   efs-guardian:
     environment:
-      <<: *common-environment
+      <<: *common_environment
       EFS_GUARDIAN_LOGLEVEL: DEBUG
     volumes:
       - ./efs-guardian:/devel/services/efs-guardian
@@ -145,7 +165,7 @@ services:
       - ../packages:/devel/packages
       - ${HOST_UV_CACHE_DIR}:/home/scu/.cache/uv
     environment: &webserver_environment_devel
-      <<: *common-environment
+      <<: *common_environment
       DEBUG: 1 # NOTE: gunicorn expects an int not a boolean
       WEBSERVER_LOGLEVEL: DEBUG
       WEBSERVER_PROFILING: ${WEBSERVER_PROFILING}
@@ -182,7 +202,7 @@ services:
       - ${ETC_HOSTNAME:-/etc/hostname}:/home/scu/hostname:ro
 
     environment:
-      <<: *common-environment
+      <<: *common_environment
       SIDECAR_LOGLEVEL: DEBUG
     ports:
       - "3000"
@@ -192,7 +212,7 @@ services:
   dask-scheduler:
     volumes: *dask-sidecar_volumes_devel
     environment:
-      <<: *common-environment
+      <<: *common_environment
       SIDECAR_LOGLEVEL: DEBUG
     ports:
       - "3000"
@@ -202,7 +222,7 @@ services:
 
   resource-usage-tracker:
     environment:
-      <<: *common-environment
+      <<: *common_environment
       RESOURCE_USAGE_TRACKER_LOGLEVEL: DEBUG
     volumes:
       - ./resource-usage-tracker:/devel/services/resource-usage-tracker
@@ -215,7 +235,7 @@ services:
       - ../packages:/devel/packages
       - ${HOST_UV_CACHE_DIR}:/home/scu/.cache/uv
     environment:
-      <<: *common-environment
+      <<: *common_environment
       STORAGE_PROFILING : ${STORAGE_PROFILING}
       STORAGE_LOGLEVEL: DEBUG
 
@@ -225,7 +245,7 @@ services:
       - ../packages:/devel/packages
       - ${HOST_UV_CACHE_DIR}:/home/scu/.cache/uv
     environment:
-      <<: *common-environment
+      <<: *common_environment
       STORAGE_PROFILING : ${STORAGE_PROFILING}
       STORAGE_LOGLEVEL: DEBUG
 
@@ -235,13 +255,13 @@ services:
       - ../packages:/devel/packages
       - ${HOST_UV_CACHE_DIR}:/home/scu/.cache/uv
     environment:
-      <<: *common-environment
+      <<: *common_environment
       STORAGE_PROFILING : ${STORAGE_PROFILING}
       STORAGE_LOGLEVEL: DEBUG
 
   agent:
     environment:
-      <<: *common-environment
+      <<: *common_environment
       AGENT_LOGLEVEL: DEBUG
     volumes:
       - ./agent:/devel/services/agent

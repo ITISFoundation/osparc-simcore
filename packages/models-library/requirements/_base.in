@@ -5,6 +5,7 @@
 --requirement ../../../packages/common-library/requirements/_base.in
 
 arrow
+jsonref
 jsonschema
 orjson
 pydantic-extra-types

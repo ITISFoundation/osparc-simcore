@@ -190,7 +190,7 @@ def test_classic_ti_plan(  # noqa: PLR0915
         # configuration done, push and wait for the 1 output
         with log_context(logging.INFO, "Check outputs", logger=ctx.logger):
             waiter = SocketIOWaitNodeForOutputs(
-                ctx.logger, expected_number_of_outputs=1, node_id=node_ids[0]
+                expected_number_of_outputs=1, node_id=node_ids[0]
             )
             with log_in_and_out.expect_event(
                 "framereceived", waiter

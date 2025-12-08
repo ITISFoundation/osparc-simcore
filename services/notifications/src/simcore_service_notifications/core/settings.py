@@ -1,17 +1,18 @@
 from typing import Annotated
 
 from common_library.basic_types import DEFAULT_FACTORY
-from models_library.basic_types import BootModeEnum, LogLevel
+from common_library.logging.logging_utils_filtering import LoggerName, MessageSubstring
+from models_library.basic_types import LogLevel
 from pydantic import AliasChoices, Field, field_validator
-from servicelib.logging_utils_filtering import LoggerName, MessageSubstring
-from settings_library.base import BaseCustomSettings
+from settings_library.application import BaseApplicationSettings
+from settings_library.celery import CelerySettings
 from settings_library.postgres import PostgresSettings
 from settings_library.rabbit import RabbitSettings
 from settings_library.tracing import TracingSettings
 from settings_library.utils_logging import MixinLoggingSettings
 
 
-class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
+class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     LOG_LEVEL: Annotated[
         LogLevel,
         Field(
@@ -23,13 +24,19 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         ),
     ] = LogLevel.WARNING
 
-    SC_BOOT_MODE: BootModeEnum | None
+    NOTIFICATIONS_CELERY: Annotated[
+        CelerySettings | None,
+        Field(
+            description="Settings for Celery",
+            json_schema_extra={"auto_default_from_env": True},
+        ),
+    ]
 
-    NOTIFICATIONS_VOLUMES_LOG_FORMAT_LOCAL_DEV_ENABLED: Annotated[
+    NOTIFICATIONS_LOG_FORMAT_LOCAL_DEV_ENABLED: Annotated[
         bool,
         Field(
             validation_alias=AliasChoices(
-                "NOTIFICATIONS_VOLUMES_LOG_FORMAT_LOCAL_DEV_ENABLED",
+                "NOTIFICATIONS_LOG_FORMAT_LOCAL_DEV_ENABLED",
                 "LOG_FORMAT_LOCAL_DEV_ENABLED",
             ),
             description=(
@@ -39,12 +46,12 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         ),
     ] = False
 
-    NOTIFICATIONS_VOLUMES_LOG_FILTER_MAPPING: Annotated[
+    NOTIFICATIONS_LOG_FILTER_MAPPING: Annotated[
         dict[LoggerName, list[MessageSubstring]],
         Field(
             default_factory=dict,
             validation_alias=AliasChoices(
-                "NOTIFICATIONS_VOLUMES_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"
+                "NOTIFICATIONS_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"
             ),
             description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
         ),
@@ -74,6 +81,10 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     ]
 
     NOTIFICATIONS_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True
+
+    NOTIFICATIONS_WORKER_MODE: Annotated[
+        bool, Field(description="If True, run as a worker")
+    ] = False
 
     @field_validator("LOG_LEVEL")
     @classmethod

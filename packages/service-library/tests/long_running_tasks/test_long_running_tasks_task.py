@@ -3,17 +3,21 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-
 import asyncio
 import urllib.parse
 from collections.abc import Awaitable, Callable
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 import pytest
 from faker import Faker
 from models_library.api_schemas_long_running_tasks.base import ProgressMessage
-from servicelib.long_running_tasks import lrt_api
+from pytest_mock import MockerFixture
+from servicelib.long_running_tasks import lrt_api, task
+from servicelib.long_running_tasks._redis_store import (
+    _MARKED_FOR_REMOVAL_AT_FIELD,
+    _to_redis_hash_mapping,
+)
 from servicelib.long_running_tasks._serialization import (
     loads,
 )
@@ -64,10 +68,10 @@ class _TetingError(Exception):
 async def a_background_task(
     progress: TaskProgress,
     raise_when_finished: bool,
-    total_sleep: int,
+    total_sleep: float,
 ) -> int:
     """sleeps and raises an error or returns 42"""
-    for i in range(total_sleep):
+    for i in range(int(total_sleep)):
         await asyncio.sleep(1)
         await progress.update(percent=(i + 1) / total_sleep)
     if raise_when_finished:
@@ -199,7 +203,7 @@ def _get_resutlt(result_field: ResultField) -> Any:
     return loads(result_field.str_result)
 
 
-async def test_fire_and_forget_task_is_not_auto_removed(
+async def test_fire_and_forget_task_is_not_auto_removed_while_running(
     long_running_manager: LongRunningManager, empty_context: TaskContext
 ):
     task_id = await lrt_api.start_task(
@@ -211,19 +215,32 @@ async def test_fire_and_forget_task_is_not_auto_removed(
         fire_and_forget=True,
         task_context=empty_context,
     )
+
     await asyncio.sleep(3 * TEST_CHECK_STALE_INTERVAL_S)
     # the task shall still be present even if we did not check the status before
     status = await long_running_manager.tasks_manager.get_task_status(
         task_id, with_task_context=empty_context
     )
     assert not status.done, "task was removed although it is fire and forget"
-    # the task shall finish
-    await asyncio.sleep(4 * TEST_CHECK_STALE_INTERVAL_S)
-    # get the result
-    task_result = await long_running_manager.tasks_manager.get_task_result(
-        task_id, with_task_context=empty_context
-    )
-    assert _get_resutlt(task_result) == 42
+
+    async for attempt in AsyncRetrying(**_RETRY_PARAMS):
+        with attempt:
+            try:
+                await long_running_manager.tasks_manager.get_task_status(
+                    task_id, with_task_context=empty_context
+                )
+                raise TryAgain
+            except TaskNotFoundError:
+                pass
+
+    with pytest.raises(TaskNotFoundError):
+        await long_running_manager.tasks_manager.get_task_status(
+            task_id, with_task_context=empty_context
+        )
+    with pytest.raises(TaskNotFoundError):
+        await long_running_manager.tasks_manager.get_task_result(
+            task_id, with_task_context=empty_context
+        )
 
 
 async def test_get_result_of_unfinished_task_raises(
@@ -548,8 +565,8 @@ async def test__cancelled_tasks_worker_equivalent_of_cancellation_from_a_differe
         total_sleep=10,
         task_context=empty_context,
     )
-    await long_running_manager.tasks_manager._tasks_data.mark_task_for_removal(  # noqa: SLF001
-        task_id, with_task_context=empty_context
+    await long_running_manager.tasks_manager._tasks_data.mark_for_removal(  # noqa: SLF001
+        task_id
     )
 
     async for attempt in AsyncRetrying(**_RETRY_PARAMS):
@@ -691,3 +708,68 @@ async def test_start_not_registered_task(
             long_running_manager.lrt_namespace,
             "not_registered_task",
         )
+
+
+@pytest.fixture
+def disable_all_task_manager_background_tasks(mocker: MockerFixture) -> None:
+    class_in_module = "servicelib.long_running_tasks.task.TasksManager"
+
+    mocker.patch(f"{class_in_module}._stale_tasks_monitor")
+    mocker.patch(f"{class_in_module}._cancelled_tasks_removal")
+    mocker.patch(f"{class_in_module}._tasks_monitor")
+
+    original_init = task.TasksManager.__init__
+
+    def _mocked_init(self, *args, **kwargs):
+        original_init(self, *args, **kwargs)
+        # Custom code to run after __init__
+        self._started_event_task_stale_tasks_monitor.set()
+        self._started_event_task_cancelled_tasks_removal.set()
+        self._started_event_task_tasks_monitor.set()
+
+    mocker.patch.object(task.TasksManager, "__init__", _mocked_init)
+
+
+async def test_removes_from_tracking_without_task(
+    disable_all_task_manager_background_tasks: None,
+    long_running_manager: LongRunningManager,
+    faker: Faker,
+):
+    task_name = faker.name()
+    task_id = await lrt_api.start_task(
+        long_running_manager.rpc_client,
+        long_running_manager.lrt_namespace,
+        a_background_task.__name__,
+        raise_when_finished=False,
+        total_sleep=1e10,
+        task_name=task_name,
+    )
+
+    # pylint:disable=protected-access
+    tasks_manager = long_running_manager.tasks_manager
+
+    # NOTE: emulating situation whre task is Redis but no asyncio task is present for over X minutes
+    del tasks_manager._created_tasks[task_id]  # noqa: SLF001
+    await tasks_manager._tasks_data.mark_for_removal(task_id)  # noqa: SLF001
+    # chainging the timeout so this could go faster
+    await tasks_manager._tasks_data._redis.hset(  # noqa: SLF001
+        tasks_manager._tasks_data._get_redis_task_data_key(task_id),  # noqa: SLF001
+        mapping=_to_redis_hash_mapping(
+            {
+                _MARKED_FOR_REMOVAL_AT_FIELD: (datetime.fromtimestamp(0, tz=UTC)),
+            }
+        ),
+    )  # type: ignore
+
+    # Redis entry exists
+    assert (
+        await tasks_manager._tasks_data.get_task_data(task_id)  # noqa: SLF001
+        is not None
+    )
+
+    await tasks_manager._attempt_to_remove_local_task(task_id)  # noqa: SLF001
+
+    # Redis entry no exists
+    assert (
+        await tasks_manager._tasks_data.get_task_data(task_id) is None  # noqa: SLF001
+    )

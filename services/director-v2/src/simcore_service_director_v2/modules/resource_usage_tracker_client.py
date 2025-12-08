@@ -1,5 +1,4 @@
-""" Interface to communicate with the resource usage tracker
-"""
+"""Interface to communicate with the resource usage tracker"""
 
 import contextlib
 import logging
@@ -23,7 +22,7 @@ from models_library.resource_tracker import (
 )
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.wallets import WalletID
-from servicelib.fastapi.tracing import setup_httpx_client_tracing
+from servicelib.fastapi.tracing import get_tracing_config, setup_httpx_client_tracing
 
 from ..core.errors import PricingPlanUnitNotFoundError
 from ..core.settings import AppSettings
@@ -37,12 +36,17 @@ class ResourceUsageTrackerClient:
     exit_stack: contextlib.AsyncExitStack
 
     @classmethod
-    def create(cls, settings: AppSettings) -> "ResourceUsageTrackerClient":
+    def create(
+        cls, app: FastAPI, settings: AppSettings
+    ) -> "ResourceUsageTrackerClient":
         client = httpx.AsyncClient(
             base_url=settings.DIRECTOR_V2_RESOURCE_USAGE_TRACKER.api_base_url,
         )
         if settings.DIRECTOR_V2_TRACING:
-            setup_httpx_client_tracing(client=client)
+            setup_httpx_client_tracing(
+                client=client,
+                tracing_config=get_tracing_config(app),
+            )
         exit_stack = contextlib.AsyncExitStack()
 
         return cls(client=client, exit_stack=exit_stack)
@@ -166,7 +170,7 @@ class ResourceUsageTrackerClient:
         assert not hasattr(app.state, "resource_usage_api")  # nosec
         app_settings: AppSettings = app.state.settings
 
-        app.state.resource_usage_api = api = cls.create(app_settings)
+        app.state.resource_usage_api = api = cls.create(app, app_settings)
 
         async def on_startup():
             await api.start()

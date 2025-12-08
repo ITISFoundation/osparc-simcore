@@ -1,8 +1,9 @@
-""" Repository pattern, errors and data structures for models.tags
-"""
+"""Repository pattern, errors and data structures for models.tags"""
+
+from typing import TypedDict
+
 from common_library.errors_classes import OsparcErrorMixin
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
-from typing_extensions import TypedDict
 
 from .utils_repos import pass_or_acquire_connection, transaction_context
 from .utils_tags_sql import (

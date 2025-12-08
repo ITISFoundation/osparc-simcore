@@ -6,7 +6,7 @@ from models_library.users import UserID
 from ..db.plugin import get_database_engine_legacy
 from ..workspaces.api import get_workspace
 from ._access_rights_repository import get_project_owner
-from ._projects_repository_legacy import APP_PROJECT_DBAPI, ProjectDBAPI
+from ._projects_repository_legacy import PROJECT_DBAPI_APPKEY, ProjectDBAPI
 from ._projects_repository_legacy_utils import PermissionStr
 from .exceptions import ProjectInvalidRightsError, ProjectNotFoundError
 from .models import UserProjectAccessRightsWithWorkspace
@@ -43,7 +43,7 @@ async def get_user_project_access_rights(
     If project belongs to shared workspace (workspace_id not None) then it is resolved
     via user <--> groups <--> workspace_access_rights
     """
-    db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+    db: ProjectDBAPI = app[PROJECT_DBAPI_APPKEY]
 
     project_db = await db.get_project_db(project_id)
     if project_db.workspace_id:
@@ -88,7 +88,7 @@ async def has_user_project_access_rights(
     permission: PermissionStr,
 ) -> bool:
     try:
-        db: ProjectDBAPI = app[APP_PROJECT_DBAPI]
+        db: ProjectDBAPI = app[PROJECT_DBAPI_APPKEY]
         product_name = await db.get_project_product(project_uuid=project_id)
 
         prj_access_rights = await get_user_project_access_rights(

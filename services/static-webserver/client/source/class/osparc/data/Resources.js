@@ -102,7 +102,7 @@ qx.Class.define("osparc.data.Resources", {
         endpoints: {
           get: {
             method: "GET",
-            url: "/{productName}/app-summary.json",
+            url: `/{productName}/app-summary.json?no-cache=${new Date().getTime()}`,
             isJsonFile: true
           }
         }
@@ -644,6 +644,10 @@ qx.Class.define("osparc.data.Resources", {
             method: "POST",
             url: statics.API + "/functions"
           },
+          delete: {
+            method: "DELETE",
+            url: statics.API + "/functions/{functionId}?force={force}"
+          },
           patch: {
             method: "PATCH",
             url: statics.API + "/functions/{functionId}?include_extras=true"
@@ -1127,9 +1131,13 @@ qx.Class.define("osparc.data.Resources", {
       },
       "poUsers": {
         endpoints: {
-          search: {
+          searchByEmail: {
             method: "GET",
             url: statics.API + "/admin/user-accounts:search?email={email}"
+          },
+          searchByGroupId: {
+            method: "GET",
+            url: statics.API + "/admin/user-accounts:search?primary_group_id={gId}"
           },
           getPendingUsers: {
             method: "GET",
@@ -1367,7 +1375,11 @@ qx.Class.define("osparc.data.Resources", {
           },
           multiDownload: {
             method: "POST",
-            url: statics.API + "/storage/locations/{locationId}/export-data"
+            url: statics.API + "/storage/locations/{locationId}:export-data"
+          },
+          searchFiles: {
+            method: "POST",
+            url: statics.API + "/storage/locations/{locationId}:search"
           },
           batchDelete: {
             method: "POST",
@@ -1515,7 +1527,7 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/conversations/{conversationId}"
           },
-          renameConversation: {
+          patchConversation: {
             method: "PATCH",
             url: statics.API + "/conversations/{conversationId}"
           },
@@ -1538,6 +1550,10 @@ qx.Class.define("osparc.data.Resources", {
           getMessagesPage: {
             method: "GET",
             url: statics.API + "/conversations/{conversationId}/messages?offset={offset}&limit={limit}"
+          },
+          triggerChatbot: {
+            method: "POST",
+            url: statics.API + "/conversations/{conversationId}/messages/{messageId}:trigger-chatbot",
           },
         }
       },
@@ -1625,6 +1641,7 @@ qx.Class.define("osparc.data.Resources", {
 
           if ("resolveWResponse" in options && options.resolveWResponse) {
             response.params = params;
+            response.status = e.getRequest().getStatus();
             resolve(response);
           } else {
             resolve(data);
@@ -1660,6 +1677,8 @@ qx.Class.define("osparc.data.Resources", {
             status = errorData.status;
             if (errorData["support_id"]) {
               supportId = errorData["support_id"];
+            } else if (errorData["supportId"]) {
+              supportId = errorData["supportId"];
             }
           } else {
             const req = e.getRequest();

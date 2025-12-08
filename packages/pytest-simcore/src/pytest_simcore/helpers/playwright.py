@@ -143,6 +143,7 @@ class SocketIOEvent:
 
 
 SOCKETIO_MESSAGE_PREFIX: Final[str] = "42"
+_WEBSOCKET_MESSAGE_PREFIX: Final[str] = "📡OSPARC-WEBSOCKET: "
 
 
 @dataclass
@@ -165,20 +166,29 @@ class RobustWebSocket:
         ) as ctx:
 
             def on_framesent(payload: str | bytes) -> None:
-                ctx.logger.debug("⬇️ Frame sent: %s", payload)
+                ctx.logger.debug(
+                    "%s⬇️ Frame sent: %s", _WEBSOCKET_MESSAGE_PREFIX, payload
+                )
 
             def on_framereceived(payload: str | bytes) -> None:
-                ctx.logger.debug("⬆️ Frame received: %s", payload)
+                ctx.logger.debug(
+                    "%s⬆️ Frame received: %s", _WEBSOCKET_MESSAGE_PREFIX, payload
+                )
 
             def on_close(_: WebSocket) -> None:
                 if self.auto_reconnect:
-                    ctx.logger.warning("⚠️ WebSocket closed. Attempting to reconnect...")
+                    ctx.logger.warning(
+                        "%s⚠️ WebSocket closed. Attempting to reconnect...",
+                        _WEBSOCKET_MESSAGE_PREFIX,
+                    )
                     self._attempt_reconnect(ctx.logger)
                 else:
-                    ctx.logger.warning("⚠️ WebSocket closed.")
+                    ctx.logger.info("%s WebSocket closed.", _WEBSOCKET_MESSAGE_PREFIX)
 
             def on_socketerror(error_msg: str) -> None:
-                ctx.logger.error("❌ WebSocket error: %s", error_msg)
+                ctx.logger.error(
+                    "%s❌ WebSocket error: %s", _WEBSOCKET_MESSAGE_PREFIX, error_msg
+                )
 
             # Attach core event listeners
             self.ws.on("framesent", on_framesent)
@@ -265,20 +275,24 @@ def retrieve_node_progress_from_decoded_message(
 
 @dataclass
 class SocketIOProjectClosedWaiter:
-    logger: logging.Logger
-
     def __call__(self, message: str) -> bool:
-        # socket.io encodes messages like so
-        # https://stackoverflow.com/questions/24564877/what-do-these-numbers-mean-in-socket-io-payload
-        if message.startswith(SOCKETIO_MESSAGE_PREFIX):
-            decoded_message = decode_socketio_42_message(message)
-            if (
-                (decoded_message.name == _OSparcMessages.PROJECT_STATE_UPDATED.value)
-                and (decoded_message.obj["data"]["shareState"]["status"] == "CLOSED")
-                and (decoded_message.obj["data"]["shareState"]["locked"] is False)
-            ):
-                self.logger.info("project successfully closed")
-                return True
+        with log_context(logging.DEBUG, msg=f"handling websocket {message=}") as ctx:
+            # socket.io encodes messages like so
+            # https://stackoverflow.com/questions/24564877/what-do-these-numbers-mean-in-socket-io-payload
+            if message.startswith(SOCKETIO_MESSAGE_PREFIX):
+                decoded_message = decode_socketio_42_message(message)
+                if (
+                    (
+                        decoded_message.name
+                        == _OSparcMessages.PROJECT_STATE_UPDATED.value
+                    )
+                    and (
+                        decoded_message.obj["data"]["shareState"]["status"] == "CLOSED"
+                    )
+                    and (decoded_message.obj["data"]["shareState"]["locked"] is False)
+                ):
+                    ctx.logger.info("project successfully closed")
+                    return True
 
         return False
 
@@ -304,40 +318,25 @@ class SocketIOProjectStateUpdatedWaiter:
 
 @dataclass
 class SocketIOWaitNodeForOutputs:
-    logger: logging.Logger
     expected_number_of_outputs: int
     node_id: str
 
     def __call__(self, message: str) -> bool:
-        if message.startswith(SOCKETIO_MESSAGE_PREFIX):
-            decoded_message = decode_socketio_42_message(message)
-            if decoded_message.name == _OSparcMessages.NODE_UPDATED:
-                assert "data" in decoded_message.obj
-                assert "node_id" in decoded_message.obj
-                if decoded_message.obj["node_id"] == self.node_id:
-                    assert "outputs" in decoded_message.obj["data"]
+        with log_context(logging.DEBUG, msg=f"handling websocket {message=}"):
+            if message.startswith(SOCKETIO_MESSAGE_PREFIX):
+                decoded_message = decode_socketio_42_message(message)
+                if decoded_message.name == _OSparcMessages.NODE_UPDATED:
+                    assert "data" in decoded_message.obj
+                    assert "node_id" in decoded_message.obj
+                    if decoded_message.obj["node_id"] == self.node_id:
+                        assert "outputs" in decoded_message.obj["data"]
 
-                    return (
-                        len(decoded_message.obj["data"]["outputs"])
-                        == self.expected_number_of_outputs
-                    )
+                        return (
+                            len(decoded_message.obj["data"]["outputs"])
+                            == self.expected_number_of_outputs
+                        )
 
         return False
-
-
-@dataclass
-class SocketIOOsparcMessagePrinter:
-    include_logger_messages: bool = False
-
-    def __call__(self, message: str) -> None:
-        osparc_messages = [_.value for _ in _OSparcMessages]
-        if not self.include_logger_messages:
-            osparc_messages.pop(osparc_messages.index(_OSparcMessages.LOGGER.value))
-
-        if message.startswith(SOCKETIO_MESSAGE_PREFIX):
-            decoded_message: SocketIOEvent = decode_socketio_42_message(message)
-            if decoded_message.name in osparc_messages:
-                print("WS Message:", decoded_message.name, decoded_message.obj)
 
 
 _FAIL_FAST_DYNAMIC_SERVICE_STATES: Final[tuple[str, ...]] = ("idle", "failed")
@@ -416,7 +415,6 @@ _SOCKET_IO_NODE_PROGRESS_WAITER_MAX_IDLE_TIMEOUT: Final[timedelta] = timedelta(
 @dataclass
 class SocketIONodeProgressCompleteWaiter:
     node_id: str
-    logger: logging.Logger
     max_idle_timeout: timedelta = _SOCKET_IO_NODE_PROGRESS_WAITER_MAX_IDLE_TIMEOUT
     _current_progress: dict[NodeProgressType, float] = field(
         default_factory=defaultdict
@@ -426,71 +424,75 @@ class SocketIONodeProgressCompleteWaiter:
     _result: bool = False
 
     def __call__(self, message: str) -> bool:
-        # socket.io encodes messages like so
-        # https://stackoverflow.com/questions/24564877/what-do-these-numbers-mean-in-socket-io-payload
-        if message.startswith(SOCKETIO_MESSAGE_PREFIX):
-            decoded_message = decode_socketio_42_message(message)
-            self._received_messages.append(decoded_message)
-            if (
-                (decoded_message.name == _OSparcMessages.SERVICE_STATUS.value)
-                and (decoded_message.obj["service_uuid"] == self.node_id)
-                and (
-                    decoded_message.obj["service_state"]
-                    in _FAIL_FAST_DYNAMIC_SERVICE_STATES
-                )
-            ):
-                # NOTE: this is a fail fast for dynamic services that fail to start
-                self.logger.error(
-                    "❌ node %s failed with state %s, failing fast ❌",
-                    self.node_id,
-                    decoded_message.obj["service_state"],
-                )
-                self._result = False
-                return True
-            if decoded_message.name == _OSparcMessages.NODE_PROGRESS.value:
-                node_progress_event = retrieve_node_progress_from_decoded_message(
-                    decoded_message
-                )
-                if node_progress_event.node_id == self.node_id:
-                    new_progress = (
-                        node_progress_event.current_progress
-                        / node_progress_event.total_progress
+        with log_context(logging.DEBUG, msg=f"handling websocket {message=}") as ctx:
+            # socket.io encodes messages like so
+            # https://stackoverflow.com/questions/24564877/what-do-these-numbers-mean-in-socket-io-payload
+            if message.startswith(SOCKETIO_MESSAGE_PREFIX):
+                decoded_message = decode_socketio_42_message(message)
+                self._received_messages.append(decoded_message)
+                if (
+                    (decoded_message.name == _OSparcMessages.SERVICE_STATUS.value)
+                    and (decoded_message.obj["service_uuid"] == self.node_id)
+                    and (
+                        decoded_message.obj["service_state"]
+                        in _FAIL_FAST_DYNAMIC_SERVICE_STATES
                     )
-                    self._last_progress_time = datetime.now(UTC)
-                    if (
-                        node_progress_event.progress_type not in self._current_progress
-                    ) or (
-                        new_progress
-                        != self._current_progress[node_progress_event.progress_type]
-                    ):
-                        self._current_progress[node_progress_event.progress_type] = (
+                ):
+                    # NOTE: this is a fail fast for dynamic services that fail to start
+                    ctx.logger.error(
+                        "❌ node %s failed with state %s, failing fast ❌",
+                        self.node_id,
+                        decoded_message.obj["service_state"],
+                    )
+                    self._result = False
+                    return True
+                if decoded_message.name == _OSparcMessages.NODE_PROGRESS.value:
+                    node_progress_event = retrieve_node_progress_from_decoded_message(
+                        decoded_message
+                    )
+                    if node_progress_event.node_id == self.node_id:
+                        new_progress = (
+                            node_progress_event.current_progress
+                            / node_progress_event.total_progress
+                        )
+                        self._last_progress_time = datetime.now(UTC)
+                        if (
+                            node_progress_event.progress_type
+                            not in self._current_progress
+                        ) or (
                             new_progress
-                        )
+                            != self._current_progress[node_progress_event.progress_type]
+                        ):
+                            self._current_progress[
+                                node_progress_event.progress_type
+                            ] = new_progress
 
-                        self.logger.info(
-                            "Current startup progress [expected %d types]: %s",
-                            len(NodeProgressType.required_types_for_started_service()),
-                            f"{json.dumps({k: round(v, 2) for k, v in self._current_progress.items()})}",
-                        )
+                            ctx.logger.info(
+                                "Current startup progress [expected %d types]: %s",
+                                len(
+                                    NodeProgressType.required_types_for_started_service()
+                                ),
+                                f"{json.dumps({k: round(v, 2) for k, v in self._current_progress.items()})}",
+                            )
 
-                done = self._completed_successfully()
-                if done:
-                    self._result = True  # NOTE: might have failed but it is not sure. so we set the result to True
-                    self.logger.info("✅ Service start completed successfully!! ✅")
-                return done
+                    done = self._completed_successfully()
+                    if done:
+                        self._result = True  # NOTE: might have failed but it is not sure. so we set the result to True
+                        ctx.logger.info("✅ Service start completed successfully!! ✅")
+                    return done
 
-        time_since_last_progress = datetime.now(UTC) - self._last_progress_time
-        if time_since_last_progress > self.max_idle_timeout:
-            self.logger.warning(
-                "⚠️ %s passed since the last received progress message. "
-                "The service %s might be stuck, or we missed some messages ⚠️",
-                time_since_last_progress,
-                self.node_id,
-            )
-            self._result = True
-            return True
+            time_since_last_progress = datetime.now(UTC) - self._last_progress_time
+            if time_since_last_progress > self.max_idle_timeout:
+                ctx.logger.warning(
+                    "⚠️ %s passed since the last received progress message. "
+                    "The service %s might be stuck, or we missed some messages ⚠️",
+                    time_since_last_progress,
+                    self.node_id,
+                )
+                self._result = True
+                return True
 
-        return False
+            return False
 
     def _completed_successfully(self) -> bool:
         return all(
@@ -613,7 +615,7 @@ def expected_service_running(
     press_start_button: bool,
     product_url: AnyUrl,
     is_service_legacy: bool,
-) -> Generator[ServiceRunning, None, None]:
+) -> Generator[ServiceRunning]:
     started = arrow.utcnow()
     with contextlib.ExitStack() as stack:
         ctx = stack.enter_context(
@@ -631,7 +633,6 @@ def expected_service_running(
         else:
             waiter = SocketIONodeProgressCompleteWaiter(
                 node_id=node_id,
-                logger=ctx.logger,
                 max_idle_timeout=min(
                     _SOCKET_IO_NODE_PROGRESS_WAITER_MAX_IDLE_TIMEOUT,
                     timedelta(seconds=timeout / 1000 - 10),
@@ -693,7 +694,6 @@ def wait_for_service_running(
         else:
             waiter = SocketIONodeProgressCompleteWaiter(
                 node_id=node_id,
-                logger=ctx.logger,
                 max_idle_timeout=min(
                     _SOCKET_IO_NODE_PROGRESS_WAITER_MAX_IDLE_TIMEOUT,
                     timedelta(seconds=timeout / 1000 - 10),

@@ -6,6 +6,8 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any, TypeVar
 
+from common_library.error_codes import create_error_code
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from models_library.rabbitmq_basic_types import RPCMethodName
 
 from ..logging_utils import log_context
@@ -13,8 +15,11 @@ from ._errors import RPCServerError
 
 DecoratedCallable = TypeVar("DecoratedCallable", bound=Callable[..., Any])
 
-# NOTE: this is equivalent to http access logs
-_logger = logging.getLogger("rpc.access")
+
+_logger = logging.getLogger(
+    # NOTE: this logger is equivalent to http access logs
+    "rpc.access"
+)
 
 
 def _create_func_msg(func, args: tuple[Any, ...], kwargs: dict[str, Any]) -> str:
@@ -64,9 +69,19 @@ class RPCRouter:
                         ):
                             raise
 
+                        error_code = create_error_code(exc)
                         _logger.exception(
-                            "Unhandled exception on the rpc-server side. Re-raising as %s.",
-                            RPCServerError.__name__,
+                            # NOTE: equivalent to a 500 http status code error
+                            **create_troubleshooting_log_kwargs(
+                                f"Unhandled exception on the rpc-server side for '{func.__name__}'",
+                                error=exc,
+                                error_code=error_code,
+                                error_context={
+                                    "rpc_method": func.__name__,
+                                    "args": args,
+                                    "kwargs": kwargs,
+                                },
+                            )
                         )
                         # NOTE: we do not return internal exceptions over RPC
                         formatted_traceback = "\n".join(
@@ -77,6 +92,7 @@ class RPCRouter:
                             exc_type=f"{exc.__class__.__module__}.{exc.__class__.__name__}",
                             exc_message=f"{exc}",
                             traceback=f"{formatted_traceback}",
+                            error_code=error_code,
                         ) from None
 
             self.routes[RPCMethodName(func.__name__)] = _wrapper

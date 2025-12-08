@@ -2,16 +2,15 @@
 # pylint:disable=unused-argument
 
 import asyncio
-import contextlib
 import datetime
 import itertools
 import json
 import random
 import sys
-from collections.abc import AsyncIterable, AsyncIterator, Awaitable, Callable
+from collections.abc import AsyncIterable, Awaitable, Callable
 from contextlib import AbstractAsyncContextManager, AsyncExitStack, suppress
 from pathlib import Path
-from typing import Any, Protocol
+from typing import Any
 
 import psutil
 import pytest
@@ -20,6 +19,7 @@ from common_library.json_serialization import json_dumps
 from common_library.serialization import model_dump_with_secrets
 from pydantic import NonNegativeFloat, NonNegativeInt
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.paused_container import pause_rabbit, pause_redis
 from servicelib.rabbitmq import RabbitMQClient
 from servicelib.redis import RedisClientSDK
 from servicelib.sequences_utils import partition_gen
@@ -332,59 +332,6 @@ async def rabbit_client(
     return create_rabbitmq_client("pinger")
 
 
-class ClientWithPingProtocol(Protocol):
-    async def ping(self) -> bool: ...
-
-
-class ServiceManager:
-    def __init__(
-        self,
-        redis_client: RedisClientSDK,
-        rabbit_client: RabbitMQClient,
-        paused_container: Callable[[str], AbstractAsyncContextManager[None]],
-    ) -> None:
-        self.redis_client = redis_client
-        self.rabbit_client = rabbit_client
-        self.paused_container = paused_container
-
-    @contextlib.asynccontextmanager
-    async def _paused_container(
-        self, container_name: str, client: ClientWithPingProtocol
-    ) -> AsyncIterator[None]:
-        async with self.paused_container(container_name):
-            async for attempt in AsyncRetrying(
-                wait=wait_fixed(0.1),
-                stop=stop_after_delay(10),
-                reraise=True,
-                retry=retry_if_exception_type(AssertionError),
-            ):
-                with attempt:
-                    assert await client.ping() is False
-            yield
-
-        async for attempt in AsyncRetrying(
-            wait=wait_fixed(0.1),
-            stop=stop_after_delay(10),
-            reraise=True,
-            retry=retry_if_exception_type(AssertionError),
-        ):
-            with attempt:
-                assert await client.ping() is True
-
-    @contextlib.asynccontextmanager
-    async def pause_rabbit(self) -> AsyncIterator[None]:
-        async with self._paused_container("rabbit", self.rabbit_client):
-            yield
-
-    @contextlib.asynccontextmanager
-    async def pause_redis(self) -> AsyncIterator[None]:
-        # save db for clean restore point
-        await self.redis_client.redis.save()
-
-        async with self._paused_container("redis", self.redis_client):
-            yield
-
-
 @pytest.fixture
 def mock_default_socket_timeout(mocker: MockerFixture) -> None:
     mocker.patch(
@@ -397,7 +344,6 @@ def mock_default_socket_timeout(mocker: MockerFixture) -> None:
 @pytest.mark.parametrize("deferred_tasks_to_start", [100])
 @pytest.mark.parametrize("service", ["rabbit", "redis"])
 async def test_workflow_with_third_party_services_outages(
-    mock_default_socket_timeout: None,
     paused_container: Callable[[str], AbstractAsyncContextManager[None]],
     redis_client_sdk_deferred_tasks: RedisClientSDK,
     rabbit_client: RabbitMQClient,
@@ -408,9 +354,6 @@ async def test_workflow_with_third_party_services_outages(
     deferred_tasks_to_start: int,
     service: str,
 ):
-    service_manager = ServiceManager(
-        redis_client_sdk_deferred_tasks, rabbit_client, paused_container
-    )
 
     async with _RemoteProcessLifecycleManager(
         await get_remote_process(),
@@ -434,14 +377,16 @@ async def test_workflow_with_third_party_services_outages(
         match service:
             case "rabbit":
                 print("[rabbit]: pausing")
-                async with service_manager.pause_rabbit():
+                async with pause_rabbit(paused_container, rabbit_client):
                     print("[rabbit]: paused")
                     await _sleep_in_interval(0.2, 0.4)
                 print("[rabbit]: resumed")
 
             case "redis":
                 print("[redis]: pausing")
-                async with service_manager.pause_redis():
+                async with pause_redis(
+                    paused_container, redis_client_sdk_deferred_tasks
+                ):
                     print("[redis]: paused")
                     await _sleep_in_interval(0.2, 0.4)
                 print("[redis]: resumed")

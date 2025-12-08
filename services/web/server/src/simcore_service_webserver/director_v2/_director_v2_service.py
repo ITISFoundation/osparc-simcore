@@ -2,6 +2,7 @@ import logging
 from uuid import UUID
 
 from aiohttp import web
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from models_library.api_schemas_directorv2.computations import (
     TasksOutputs,
     TasksSelection,
@@ -16,7 +17,6 @@ from pydantic import TypeAdapter
 from pydantic.types import PositiveInt
 from servicelib.aiohttp import status
 from servicelib.exception_utils import suppress_exceptions
-from servicelib.logging_errors import create_troubleshootting_log_kwargs
 from servicelib.logging_utils import log_decorator
 from simcore_postgres_database.utils_groups_extra_properties import (
     GroupExtraProperties,
@@ -80,7 +80,7 @@ async def create_or_update_pipeline(
 
     except DirectorV2ServiceError as exc:
         _logger.exception(
-            **create_troubleshootting_log_kwargs(
+            **create_troubleshooting_log_kwargs(
                 f"Could not create pipeline from project {project_id}",
                 error=exc,
                 error_context={**body, "backend_url": backend_url},

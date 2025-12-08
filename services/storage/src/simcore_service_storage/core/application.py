@@ -18,9 +18,11 @@ from servicelib.fastapi.monitoring import (
 from servicelib.fastapi.openapi import override_fastapi_openapi_method
 from servicelib.fastapi.profiler import ProfilerMiddleware
 from servicelib.fastapi.tracing import (
+    get_tracing_config,
     initialize_fastapi_app_tracing,
     setup_tracing,
 )
+from servicelib.tracing import TracingConfig
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from .._meta import (
@@ -46,7 +48,9 @@ from .settings import ApplicationSettings
 _logger = logging.getLogger(__name__)
 
 
-def create_app(settings: ApplicationSettings) -> FastAPI:  # noqa: C901
+def create_app(
+    settings: ApplicationSettings, tracing_config: TracingConfig
+) -> FastAPI:  # noqa: C901
     app = FastAPI(
         debug=settings.SC_BOOT_MODE
         in [BootModeEnum.DEBUG, BootModeEnum.DEVELOPMENT, BootModeEnum.LOCAL],
@@ -62,19 +66,23 @@ def create_app(settings: ApplicationSettings) -> FastAPI:  # noqa: C901
 
     # STATE
     app.state.settings = settings
+    app.state.tracing_config = tracing_config
 
-    if settings.STORAGE_TRACING:
-        setup_tracing(app, settings.STORAGE_TRACING, APP_NAME)
+    if tracing_config.tracing_enabled:
+        setup_tracing(app, tracing_config)
 
     setup_db(app)
     setup_s3(app)
-    setup_client_session(app, tracing_settings=settings.STORAGE_TRACING)
+    setup_client_session(
+        app,
+        tracing_config=get_tracing_config(app),
+    )
 
-    if settings.STORAGE_CELERY and not settings.STORAGE_WORKER_MODE:
+    if settings.STORAGE_CELERY:
+        setup_task_manager(app, settings=settings.STORAGE_CELERY)
+
+    if not settings.STORAGE_WORKER_MODE:
         setup_rabbitmq(app)
-
-        setup_task_manager(app, celery_settings=settings.STORAGE_CELERY)
-
         setup_rpc_routes(app)
 
     setup_rest_api_routes(app, API_VTAG)
@@ -102,8 +110,8 @@ def create_app(settings: ApplicationSettings) -> FastAPI:  # noqa: C901
     if settings.STORAGE_MONITORING_ENABLED:
         setup_prometheus_instrumentation(app)
 
-    if settings.STORAGE_TRACING:
-        initialize_fastapi_app_tracing(app)
+    if tracing_config.tracing_enabled:
+        initialize_fastapi_app_tracing(app, tracing_config=tracing_config)
 
     async def _on_startup() -> None:
         if settings.STORAGE_WORKER_MODE:

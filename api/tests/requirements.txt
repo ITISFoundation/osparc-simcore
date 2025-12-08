@@ -1,6 +1,6 @@
 aiohappyeyeballs==2.6.1
     # via aiohttp
-aiohttp==3.12.14
+aiohttp==3.12.15
     # via
     #   -c ../../requirements/constraints.txt
     #   -r requirements.in
@@ -11,13 +11,13 @@ attrs==25.3.0
     #   aiohttp
     #   jsonschema
     #   referencing
-certifi==2025.7.9
+certifi==2025.8.3
     # via
     #   -c ../../requirements/constraints.txt
     #   requests
-charset-normalizer==3.4.2
+charset-normalizer==3.4.3
     # via requests
-coverage==7.9.2
+coverage==7.10.7
     # via
     #   -r requirements.in
     #   pytest-cov
@@ -33,7 +33,7 @@ iniconfig==2.1.0
     # via pytest
 isodate==0.7.2
     # via openapi-core
-jsonschema==4.24.0
+jsonschema==4.25.1
     # via
     #   openapi-core
     #   openapi-schema-validator
@@ -42,17 +42,17 @@ jsonschema-path==0.3.4
     # via
     #   openapi-core
     #   openapi-spec-validator
-jsonschema-specifications==2025.4.1
+jsonschema-specifications==2025.9.1
     # via
     #   jsonschema
     #   openapi-schema-validator
-lazy-object-proxy==1.11.0
+lazy-object-proxy==1.12.0
     # via openapi-spec-validator
-markupsafe==3.0.2
+markupsafe==3.0.3
     # via werkzeug
-more-itertools==10.7.0
+more-itertools==10.8.0
     # via openapi-core
-multidict==6.6.3
+multidict==6.6.4
     # via
     #   aiohttp
     #   yarl
@@ -65,9 +65,7 @@ openapi-schema-validator==0.6.3
 openapi-spec-validator==0.7.2
     # via openapi-core
 packaging==25.0
-    # via
-    #   pytest
-    #   pytest-sugar
+    # via pytest
 parse==1.20.2
     # via openapi-core
 pathable==0.4.4
@@ -82,22 +80,22 @@ propcache==0.3.2
     #   yarl
 pygments==2.19.2
     # via pytest
-pytest==8.4.1
+pytest==8.4.2
     # via
     #   -r requirements.in
     #   pytest-asyncio
     #   pytest-cov
     #   pytest-instafail
     #   pytest-sugar
-pytest-asyncio==1.0.0
+pytest-asyncio==1.2.0
     # via -r requirements.in
-pytest-cov==6.2.1
+pytest-cov==7.0.0
     # via -r requirements.in
 pytest-instafail==0.5.0
     # via -r requirements.in
-pytest-sugar==1.0.0
+pytest-sugar==1.1.1
     # via -r requirements.in
-pyyaml==6.0.2
+pyyaml==6.0.3
     # via
     #   -c ../../requirements/constraints.txt
     #   jsonschema-path
@@ -107,11 +105,11 @@ referencing==0.35.1
     #   jsonschema
     #   jsonschema-path
     #   jsonschema-specifications
-requests==2.32.4
+requests==2.32.5
     # via jsonschema-path
 rfc3339-validator==0.1.4
     # via openapi-schema-validator
-rpds-py==0.26.0
+rpds-py==0.28.0
     # via
     #   jsonschema
     #   referencing
@@ -119,10 +117,8 @@ six==1.17.0
     # via rfc3339-validator
 termcolor==3.1.0
     # via pytest-sugar
-typing-extensions==4.14.1
-    # via
-    #   aiosignal
-    #   openapi-core
+typing-extensions==4.15.0
+    # via openapi-core
 urllib3==2.5.0
     # via
     #   -c ../../requirements/constraints.txt

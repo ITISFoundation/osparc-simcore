@@ -154,7 +154,12 @@ async def test_regression_group_id_is_not_unique(
         return result.first()[0]
 
     def _insert_product(con: sa.engine.Connection, group_id: int, name: str) -> int:
-        product_config = {"name": name, "group_id": group_id, "host_regex": ""}
+        product_config = {
+            "name": name,
+            "group_id": group_id,
+            "host_regex": "",
+            "base_url": "http://localhost",
+        }
         con.execute(products.insert().values(product_config))
 
     def _insert_groups_extra_properties(

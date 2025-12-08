@@ -70,7 +70,7 @@ qx.Class.define("osparc.desktop.MainPageHandler", {
             const msg = qx.locale.Manager.tr("Project not found");
             throw new Error(msg);
           }
-          this.loadStudy(studyData);
+          return this.loadStudy(studyData); // return so errors propagate
         })
         .catch(err => {
           osparc.FlashMessenger.logError(err);
@@ -97,14 +97,14 @@ qx.Class.define("osparc.desktop.MainPageHandler", {
 
       // check if there is any linked node missing
       if (osparc.study.Utils.isAnyLinkedNodeMissing(studyData)) {
-        const msg = `${qx.locale.Manager.tr("We encountered an issue with the")} ${studyAlias} <br>${qx.locale.Manager.tr("Please contact support.")}`;
+        const msg = `${qx.locale.Manager.tr("We found an issue with some links.")}<br>${qx.locale.Manager.tr("They will be removed.")}`;
         throw new Error(msg);
       }
 
       this.setLoadingPageHeader(qx.locale.Manager.tr("Loading ") + studyData.name);
       this.showLoadingPage();
 
-      osparc.store.Services.getStudyServicesMetadata(studyData)
+      return osparc.store.Services.getStudyServicesMetadata(studyData)
         .finally(() => {
           const inaccessibleServices = osparc.store.Services.getInaccessibleServices(studyData["workbench"]);
           if (inaccessibleServices.length) {

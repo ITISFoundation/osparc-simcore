@@ -4,9 +4,6 @@ from contextlib import suppress
 from dataclasses import dataclass
 
 import sqlalchemy as sa
-from aiohttp import web
-from aiopg.sa.connection import SAConnection
-from aiopg.sa.engine import Engine
 from models_library.groups import EVERYONE_GROUP_ID
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.services_constants import (
@@ -22,11 +19,12 @@ from simcore_postgres_database.models.services import (
 from simcore_postgres_database.models.services_consume_filetypes import (
     services_consume_filetypes,
 )
+from simcore_postgres_database.utils_repos import pass_or_acquire_connection
 from simcore_postgres_database.utils_services import create_select_latest_services_query
+from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
-from ..db.plugin import get_database_engine_legacy
-from ._errors import ServiceNotFound
-from .settings import StudiesDispatcherSettings, get_plugin_settings
+from ._errors import ServiceNotFoundError
+from .settings import StudiesDispatcherSettings
 
 LARGEST_PAGE_SIZE = 1000
 
@@ -44,7 +42,10 @@ class ServiceMetaData:
     file_extensions: list[str]
 
 
-async def _get_service_filetypes(conn: SAConnection) -> dict[ServiceKey, list[str]]:
+async def _get_service_filetypes(
+    engine: AsyncEngine,
+    connection: AsyncConnection | None = None,
+) -> dict[ServiceKey, list[str]]:
     query = sa.select(
         services_consume_filetypes.c.service_key,
         sa.func.array_agg(
@@ -52,14 +53,17 @@ async def _get_service_filetypes(conn: SAConnection) -> dict[ServiceKey, list[st
         ).label("list_of_file_types"),
     ).group_by(services_consume_filetypes.c.service_key)
 
-    result = await conn.execute(query)
-    rows = await result.fetchall()
+    async with pass_or_acquire_connection(engine, connection) as conn:
+        result = await conn.execute(query)
+        rows = result.fetchall()
 
-    return {row.service_key: row.list_of_file_types for row in rows}
+        return {row.service_key: row.list_of_file_types for row in rows}
 
 
 async def iter_latest_product_services(
-    app: web.Application,
+    settings: StudiesDispatcherSettings,
+    engine: AsyncEngine,
+    connection: AsyncConnection | None = None,
     *,
     product_name: str,
     page_number: PositiveInt = 1,  # 1-based
@@ -67,9 +71,6 @@ async def iter_latest_product_services(
 ) -> AsyncIterator[ServiceMetaData]:
     assert page_number >= 1  # nosec
     assert ((page_number - 1) * page_size) >= 0  # nosec
-
-    engine: Engine = get_database_engine_legacy(app)
-    settings: StudiesDispatcherSettings = get_plugin_settings(app)
 
     # Select query for latest version of the service
     latest_services = create_select_latest_services_query().alias("latest_services")
@@ -109,10 +110,10 @@ async def iter_latest_product_services(
     # pagination
     query = query.limit(page_size).offset((page_number - 1) * page_size)
 
-    async with engine.acquire() as conn:
-        service_filetypes = await _get_service_filetypes(conn)
+    async with pass_or_acquire_connection(engine, connection) as conn:
+        service_filetypes = await _get_service_filetypes(engine, conn)
 
-        async for row in await conn.execute(query):
+        async for row in await conn.stream(query):
             yield ServiceMetaData(
                 key=row.key,
                 version=row.version,
@@ -135,14 +136,13 @@ class ValidService:
 
 @log_decorator(_logger, level=logging.DEBUG)
 async def validate_requested_service(
-    app: web.Application,
+    engine: AsyncEngine,
+    connection: AsyncConnection | None = None,
     *,
     service_key: ServiceKey,
     service_version: ServiceVersion,
 ) -> ValidService:
-    engine: Engine = get_database_engine_legacy(app)
-
-    async with engine.acquire() as conn:
+    async with pass_or_acquire_connection(engine, connection) as conn:
         query = sa.select(
             services_meta_data.c.name,
             services_meta_data.c.key,
@@ -153,10 +153,10 @@ async def validate_requested_service(
         )
 
         result = await conn.execute(query)
-        row = await result.fetchone()
+        row = result.one_or_none()
 
         if row is None:
-            raise ServiceNotFound(
+            raise ServiceNotFoundError(
                 service_key=service_key, service_version=service_version
             )
 

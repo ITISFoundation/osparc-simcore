@@ -12,6 +12,7 @@ from collections.abc import AsyncGenerator, AsyncIterator, Callable
 from copy import deepcopy
 from pathlib import Path
 from pprint import pformat
+from typing import Any
 from unittest import mock
 
 import pytest
@@ -74,7 +75,7 @@ async def _get_user_projects(client) -> list[ProjectDict]:
     return projects
 
 
-def _assert_same_projects(got: dict, expected: dict):
+def _assert_same_projects(got: dict[str, Any], expected: dict[str, Any]):
     exclude = {
         "accessRights",
         "creationDate",
@@ -89,9 +90,10 @@ def _assert_same_projects(got: dict, expected: dict):
         "type",
         "templateType",
     }
-    for key in expected:
-        if key not in exclude:
-            assert got[key] == expected[key], f"Failed in {key}"
+    expected_values = {k: v for k, v in expected.items() if k not in exclude}
+    got_values = {k: got[k] for k in expected if k not in exclude}
+
+    assert got_values == expected_values
 
 
 def _is_user_authenticated(session: ClientSession) -> bool:
@@ -172,8 +174,11 @@ def mocks_on_projects_api(mocker: MockerFixture) -> None:
     """
     All projects in this module are UNLOCKED
     """
-    mocker.patch(
-        "simcore_service_webserver.projects._projects_service._get_project_share_state",
+    import simcore_service_webserver.projects._projects_service
+
+    mocker.patch.object(
+        simcore_service_webserver.projects._projects_service,
+        "_get_project_share_state",
         return_value=ProjectShareState(
             locked=False, status=ProjectStatus.CLOSED, current_user_groupids=[]
         ),
@@ -206,7 +211,7 @@ async def storage_subsystem_mock_override(
         nodes_map: NodesMap,
         user_id: UserID,
         product_name: str,
-    ) -> AsyncGenerator[AsyncJobComposedResult, None]:
+    ) -> AsyncGenerator[AsyncJobComposedResult]:
         print(
             f"MOCK copying data project {source_project['uuid']} -> {destination_project['uuid']} "
             f"with {len(nodes_map)} s3 objects by user={user_id}"
@@ -306,7 +311,8 @@ async def _assert_redirected_to_study(
 
 
 async def test_access_to_invalid_study(client: TestClient, faker: Faker):
-    response = await client.get(f"/study/{faker.uuid4()}")
+    invalid_project_id = faker.uuid4()
+    response = await client.get(f"/study/{invalid_project_id}")
 
     _assert_redirected_to_error_page(
         response,

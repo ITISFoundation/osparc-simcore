@@ -171,5 +171,5 @@ def iter_origins(request: web.Request) -> Iterator[tuple[str, str]]:
 
 def get_api_base_url(request: web.Request) -> str:
     scheme, host = next(iter_origins(request))
-    api_host = api_host = host if is_ip_address(host) else f"api.{host}"
+    api_host = host if is_ip_address(host) else f"api.{host}"
     return f"{scheme}://{api_host}"

@@ -2,16 +2,15 @@ import logging
 from functools import wraps
 
 from aiohttp import web
-from models_library.utils.fastapi_encoders import jsonable_encoder
-from servicelib.aiohttp.application_setup import ModuleCategory, app_module_setup
-from servicelib.aiohttp.long_running_tasks._constants import (
-    RQT_LONG_RUNNING_TASKS_CONTEXT_KEY,
+from servicelib.aiohttp.long_running_tasks import (
+    LONG_RUNNING_TASKS_CONTEXT_REQKEY,
 )
 from servicelib.aiohttp.long_running_tasks.server import setup
 from servicelib.aiohttp.typing_extension import Handler
 
 from .. import rabbitmq_settings, redis
 from .._meta import API_VTAG, APP_NAME
+from ..application_setup import ModuleCategory, app_setup_func
 from ..login.decorators import login_required
 from ..models import AuthenticatedRequestContext
 from ..projects.plugin import register_projects_long_running_tasks
@@ -31,13 +30,15 @@ def webserver_request_context_decorator(handler: Handler):
     ) -> web.StreamResponse:
         """this task context callback tries to get the user_id from the query if available"""
         req_ctx = AuthenticatedRequestContext.model_validate(request)
-        request[RQT_LONG_RUNNING_TASKS_CONTEXT_KEY] = jsonable_encoder(req_ctx)
+        request[LONG_RUNNING_TASKS_CONTEXT_REQKEY] = req_ctx.model_dump(
+            mode="json", by_alias=True
+        )
         return await handler(request)
 
     return _test_task_context_decorator
 
 
-@app_module_setup(
+@app_setup_func(
     __name__,
     ModuleCategory.ADDON,
     settings_name="WEBSERVER_LONG_RUNNING_TASKS",

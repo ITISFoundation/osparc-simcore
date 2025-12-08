@@ -19,53 +19,62 @@ qx.Class.define("osparc.store.Support", {
       return osparc.store.VendorInfo.getManuals();
     },
 
-    addSupportConversationsToMenu: function(menu) {
-      if (osparc.product.Utils.isSupportEnabled()) {
-        const supportCenterButton = new qx.ui.menu.Button().set({
-          icon: "@FontAwesome5Regular/question-circle/16",
-        });
-        const amISupporter = () => {
-          const isSupportUser = osparc.store.Products.getInstance().amIASupportUser();
-          supportCenterButton.set({
-            label: isSupportUser ? qx.locale.Manager.tr("Support Center") : qx.locale.Manager.tr("Support"),
-          });
-        };
-        amISupporter();
-        osparc.store.Groups.getInstance().addListener("organizationsChanged", () => amISupporter());
-        supportCenterButton.addListener("execute", () => {
-          osparc.support.SupportCenter.openWindow();
-        });
-        menu.add(supportCenterButton);
+    __getQuickStartInfo: function() {
+      const quickStart = osparc.product.quickStart.Utils.getQuickStart();
+      if (quickStart) {
+        return {
+          label: qx.locale.Manager.tr("Introduction"),
+          icon: "@FontAwesome5Solid/graduation-cap/14",
+          callback: () => {
+            const tutorialWindow = quickStart.tutorial();
+            tutorialWindow.center();
+            tutorialWindow.open();
+          }
+        }
       }
+      return null;
     },
 
     addQuickStartToMenu: function(menu) {
-      const quickStart = osparc.product.quickStart.Utils.getQuickStart();
-      if (quickStart) {
-        const qsButton = new qx.ui.menu.Button(qx.locale.Manager.tr("Quick Start"), "@FontAwesome5Solid/graduation-cap/14");
+      const quickStartInfo = this.__getQuickStartInfo();
+      if (quickStartInfo) {
+        const qsButton = new qx.ui.menu.Button(quickStartInfo.label, quickStartInfo.icon);
         qsButton.getChildControl("label").set({
           rich: true
         });
-        qsButton.addListener("execute", () => {
-          const tutorialWindow = quickStart.tutorial();
-          tutorialWindow.center();
-          tutorialWindow.open();
-        });
+        qsButton.addListener("execute", () => quickStartInfo.callback());
         menu.add(qsButton);
       }
     },
 
-    addGuidedToursToMenu: function(menu) {
-      const guidedToursButton = new qx.ui.menu.Button(qx.locale.Manager.tr("Guided Tours"), "@FontAwesome5Solid/graduation-cap/14");
-      guidedToursButton.exclude();
-      menu.add(guidedToursButton);
+    getQuickStartButton: function() {
+      const quickStartInfo = this.__getQuickStartInfo();
+      if (quickStartInfo) {
+        const qsButton = new qx.ui.form.Button(quickStartInfo.label, quickStartInfo.icon);
+        qsButton.getChildControl("label").set({
+          rich: true
+        });
+        qsButton.addListener("execute", () => quickStartInfo.callback());
+        return qsButton;
+      }
+      return null;
+    },
+
+    __getGuidedToursInfo: function() {
+      return {
+        label: qx.locale.Manager.tr("Guided Tours"),
+        icon: "@FontAwesome5Solid/graduation-cap/14",
+      }
+    },
+
+    populateGuidedToursButton: function(button) {
       const fetchTours = osparc.product.tours.Tours.getTours();
       if (fetchTours) {
         fetchTours
           .then(tours => {
             if (tours) {
-              guidedToursButton.show();
-              guidedToursButton.addListener("execute", () => {
+              button.show();
+              button.addListener("execute", () => {
                 const toursManager = new osparc.tours.Manager();
                 toursManager.setTours(tours);
                 toursManager.start();
@@ -73,6 +82,22 @@ qx.Class.define("osparc.store.Support", {
             }
           });
       }
+    },
+
+    addGuidedToursToMenu: function(menu) {
+      const guidedToursInfo = this.__getGuidedToursInfo();
+      const guidedToursButton = new qx.ui.menu.Button(guidedToursInfo.label, guidedToursInfo.icon);
+      guidedToursButton.exclude();
+      menu.add(guidedToursButton);
+      this.populateGuidedToursButton(guidedToursButton);
+    },
+
+    getGuidedToursButton: function() {
+      const guidedToursInfo = this.__getGuidedToursInfo();
+      const guidedToursButton = new qx.ui.form.Button(guidedToursInfo.label, guidedToursInfo.icon);
+      guidedToursButton.exclude();
+      this.populateGuidedToursButton(guidedToursButton);
+      return guidedToursButton;
     },
 
     addManualsToMenu: function(menu) {
@@ -101,71 +126,154 @@ qx.Class.define("osparc.store.Support", {
       }
     },
 
-    addSupportButtonsToMenu: function(menu) {
-      const issues = osparc.store.VendorInfo.getIssues();
-      const supports = osparc.store.VendorInfo.getSupports();
-      issues.forEach(issueInfo => {
-        const label = issueInfo["label"];
-        const issueButton = new qx.ui.menu.Button(label, "@FontAwesome5Solid/comments/14");
-        issueButton.getChildControl("label").set({
+    getManualButtons: function() {
+      const manuals = osparc.store.Support.getManuals();
+      const manualButtons = [];
+      manuals.forEach(manual => {
+        const manualBtn = new qx.ui.form.Button(manual.label, "@FontAwesome5Solid/book/14");
+        manualBtn.getChildControl("label").set({
           rich: true
         });
-        issueButton.addListener("execute", () => {
-          const issueConfirmationWindow = new osparc.ui.window.Dialog(label + " " + qx.locale.Manager.tr("Information"), null,
-            qx.locale.Manager.tr("To create an issue, you must have an account and be already logged-in.")
-          );
-          const contBtn = new qx.ui.form.Button(qx.locale.Manager.tr("Continue"), "@FontAwesome5Solid/external-link-alt/14");
-          contBtn.addListener("execute", () => {
-            window.open(issueInfo["new_url"]);
-            issueConfirmationWindow.close();
-          }, this);
-          const loginBtn = new qx.ui.form.Button(qx.locale.Manager.tr("Log in in ") + label, "@FontAwesome5Solid/external-link-alt/14");
-          loginBtn.addListener("execute", () => window.open(issueInfo["login_url"]), this);
-          issueConfirmationWindow.addButton(contBtn);
-          issueConfirmationWindow.addButton(loginBtn);
-          issueConfirmationWindow.addCancelButton();
-          issueConfirmationWindow.open();
-        }, this);
-        menu.add(issueButton);
+        manualBtn.addListener("execute", () => window.open(manual.url), this);
+        manualButtons.push(manualBtn);
       });
+      return manualButtons;
+    },
 
-      if (issues.length && supports.length) {
-        menu.addSeparator();
-      }
-
-      supports.forEach(supportInfo => {
-        const supportBtn = new qx.ui.menu.Button(supportInfo["label"]);
-        supportBtn.getChildControl("label").set({
-          rich: true
+    __getIssueInfos: function() {
+      const issuesInfos = [];
+      const issues = osparc.store.VendorInfo.getIssues();
+      issues.forEach(issueInfo => {
+        issuesInfos.push({
+          label: issueInfo["label"],
+          icon: "@FontAwesome5Solid/comments/14",
+          callback: () => {
+            const issueConfirmationWindow = new osparc.ui.window.Dialog(issueInfo["label"] + " " + qx.locale.Manager.tr("Information"), null,
+              qx.locale.Manager.tr("To create an issue, you must have an account and be already logged-in.")
+            );
+            const continueBtn = new qx.ui.form.Button(qx.locale.Manager.tr("Continue"), "@FontAwesome5Solid/external-link-alt/14");
+            continueBtn.addListener("execute", () => {
+              window.open(issueInfo["new_url"]);
+              issueConfirmationWindow.close();
+            }, this);
+            const loginBtn = new qx.ui.form.Button(qx.locale.Manager.tr("Log in in ") + issueInfo["label"], "@FontAwesome5Solid/external-link-alt/14");
+            loginBtn.addListener("execute", () => window.open(issueInfo["login_url"]), this);
+            issueConfirmationWindow.addButton(continueBtn);
+            issueConfirmationWindow.addButton(loginBtn);
+            issueConfirmationWindow.addCancelButton();
+            issueConfirmationWindow.open();
+          },
         });
+      });
+      return issuesInfos;
+    },
+
+    __getSupportInfos: function() {
+      const supportInfos = [];
+      const supports = osparc.store.VendorInfo.getSupports();
+      supports.forEach(supportInfo => {
+        const label = supportInfo["label"];
         let icon = null;
-        let cb = null;
+        let callback = null;
         switch (supportInfo["kind"]) {
           case "web":
             icon = "@FontAwesome5Solid/link/14";
-            cb = () => window.open(supportInfo["url"]);
+            callback = () => window.open(supportInfo["url"]);
             break;
           case "forum":
             icon = "@FontAwesome5Solid/comments/14";
-            cb = () => window.open(supportInfo["url"]);
+            callback = () => window.open(supportInfo["url"]);
             break;
           case "email":
+            if (osparc.store.Groups.getInstance().isSupportEnabled()) {
+              // if support is enabled, ignore the email option
+              return;
+            }
             icon = "@FontAwesome5Solid/envelope/14";
-            cb = () => this.__openSendEmailFeedbackDialog(supportInfo["email"]);
+            callback = () => this.__openSendEmailFeedbackDialog(supportInfo["email"]);
             break;
         }
-        supportBtn.setIcon(icon);
-        supportBtn.addListener("execute", () => cb(), this);
+        supportInfos.push({
+          label,
+          icon,
+          callback,
+        });
+      });
+      return supportInfos;
+    },
+
+    addSupportButtonsToMenu: function(menu) {
+      const issuesInfos = this.__getIssueInfos();
+      issuesInfos.forEach(issueInfo => {
+        const issueButton = new qx.ui.menu.Button(issueInfo.label, issueInfo.icon);
+        issueButton.getChildControl("label").set({
+          rich: true
+        });
+        issueButton.addListener("execute", issueInfo.callback, this);
+        menu.add(issueButton);
+      });
+
+      const supportInfos = this.__getSupportInfos();
+      if (issuesInfos.length && supportInfos.length) {
+        menu.addSeparator();
+      }
+
+      supportInfos.forEach(supportInfo => {
+        const supportBtn = new qx.ui.menu.Button(supportInfo.label, supportInfo.icon);
+        supportBtn.getChildControl("label").set({
+          rich: true
+        });
+        supportBtn.addListener("execute", supportInfo.callback, this);
         menu.add(supportBtn);
       });
     },
 
-    addReleaseNotesToMenu: function(menu) {
+    getSupportButtons: function() {
+      const buttons = [];
+      const issuesInfos = this.__getIssueInfos();
+      issuesInfos.forEach(issueInfo => {
+        const issueButton = new qx.ui.form.Button(issueInfo.label, issueInfo.icon);
+        issueButton.getChildControl("label").set({
+          rich: true
+        });
+        issueButton.addListener("execute", issueInfo.callback, this);
+        buttons.push(issueButton);
+      });
+
+      const supportInfos = this.__getSupportInfos();
+      supportInfos.forEach(supportInfo => {
+        const supportBtn = new qx.ui.form.Button(supportInfo.label, supportInfo.icon);
+        supportBtn.getChildControl("label").set({
+          rich: true
+        });
+        supportBtn.addListener("execute", supportInfo.callback, this);
+        buttons.push(supportBtn);
+      });
+      return buttons;
+    },
+
+    __getReleaseInfo: function() {
       const releaseTag = osparc.utils.Utils.getReleaseTag();
       const releaseLink = osparc.utils.Utils.getReleaseLink();
-      const releaseBtn = new qx.ui.menu.Button(qx.locale.Manager.tr("Release Notes") + " " + releaseTag, "@FontAwesome5Solid/book/14");
-      releaseBtn.addListener("execute", () => window.open(releaseLink), this);
+      return {
+        label: qx.locale.Manager.tr("What's New in") + " " + releaseTag,
+        icon: "@FontAwesome5Solid/bullhorn/14",
+        callback: () => { window.open(releaseLink); },
+      };
+    },
+
+    addReleaseNotesToMenu: function(menu) {
+      const releaseInfo = this.__getReleaseInfo();
+      const releaseBtn = new qx.ui.menu.Button(releaseInfo.label, releaseInfo.icon);
+      releaseBtn.addListener("execute", releaseInfo.callback, this);
       menu.add(releaseBtn);
+    },
+
+    getReleaseNotesButton: function() {
+      const releaseInfo = this.__getReleaseInfo();
+      const releaseBtn = new qx.ui.form.Button(releaseInfo.label, releaseInfo.icon);
+      releaseBtn.addListener("execute", releaseInfo.callback, this);
+      return releaseBtn;
     },
 
     mailToLink: function(email, subject, centered = true) {

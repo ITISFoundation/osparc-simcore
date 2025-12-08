@@ -6,6 +6,8 @@ from typing import Final
 from uuid import uuid4
 
 import aio_pika
+from aiormq import ChannelInvalidStateError
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from pydantic import NonNegativeInt
 
 from ..logging_utils import log_catch, log_context
@@ -52,12 +54,19 @@ def _get_x_death_count(message: aio_pika.abc.AbstractIncomingMessage) -> int:
     return count
 
 
-async def _safe_nack(
+async def _nack_message(
     message_handler: MessageHandler,
     max_retries_upon_error: int,
     message: aio_pika.abc.AbstractIncomingMessage,
 ) -> None:
     count = _get_x_death_count(message)
+    _logger.debug(
+        "Nacking message '%s' from handler '%s', death count %s, max retries %s",
+        message.message_id,
+        message_handler,
+        count,
+        max_retries_upon_error,
+    )
     if count < max_retries_upon_error:
         _logger.warning(
             (
@@ -72,7 +81,7 @@ async def _safe_nack(
         # NOTE: puts message to the Dead Letter Exchange
         await message.nack(requeue=False)
     else:
-        _logger.exception(
+        _logger.error(
             "Handler '%s' is giving up on message '%s' with body '%s'",
             message_handler,
             message,
@@ -85,21 +94,60 @@ async def _on_message(
     max_retries_upon_error: int,
     message: aio_pika.abc.AbstractIncomingMessage,
 ) -> None:
-    async with message.process(requeue=True, ignore_processed=True):
-        try:
+    log_error_context = {
+        "message_id": message.message_id,
+        "message_body": message.body,
+        "message_handler": f"{message_handler}",
+    }
+    try:
+        async with message.process(requeue=True, ignore_processed=True):
             with log_context(
                 _logger,
                 logging.DEBUG,
-                msg=f"Received message from {message.exchange=}, {message.routing_key=}",
+                msg=f"Processing message {message.exchange=}, {message.routing_key=}",
             ):
-                if not await message_handler(message.body):
-                    await _safe_nack(message_handler, max_retries_upon_error, message)
-        except Exception:  # pylint: disable=broad-exception-caught
-            _logger.exception(
-                "Exception raised when handling message. TIP: review your code"
+                try:
+                    with log_context(
+                        _logger,
+                        logging.DEBUG,
+                        msg=f"Received message from {message.exchange=}, {message.routing_key=}",
+                    ):
+                        if not await message_handler(message.body):
+                            with log_context(
+                                _logger,
+                                logging.DEBUG,
+                                msg=f"Nack message {message.exchange=}, {message.routing_key=}",
+                            ):
+                                await _nack_message(
+                                    message_handler, max_retries_upon_error, message
+                                )
+                except Exception as exc:  # pylint: disable=broad-exception-caught
+                    _logger.exception(
+                        **create_troubleshooting_log_kwargs(
+                            "Unhandled exception raised in message handler or when nacking message",
+                            error=exc,
+                            error_context=log_error_context,
+                            tip="This could indicate an error in the message handler, please check the message handler code",
+                        )
+                    )
+                    with log_catch(_logger, reraise=False):
+                        await _nack_message(
+                            message_handler, max_retries_upon_error, message
+                        )
+
+    except ChannelInvalidStateError as exc:
+        # NOTE: this error can happen as can be seen in aio-pika code
+        # see https://github.com/mosquito/aio-pika/blob/master/aio_pika/robust_queue.py
+        _logger.exception(
+            **create_troubleshooting_log_kwargs(
+                "Cannot process message because channel is closed. Message will be requeued by RabbitMQ",
+                error=exc,
+                error_context=log_error_context,
+                tip="This could indicate the message handler takes > 30 minutes to complete "
+                "(default time the RabbitMQ broker waits to close a channel when a "
+                "message is not acknowledged) or an issue in RabbitMQ broker itself.",
             )
-            with log_catch(_logger, reraise=False):
-                await _safe_nack(message_handler, max_retries_upon_error, message)
+        )
 
 
 @dataclass
@@ -144,6 +192,7 @@ class RabbitMQClient(RabbitMQClientBase):
     async def _get_channel(self) -> aio_pika.abc.AbstractChannel:
         assert self._connection_pool  # nosec
         async with self._connection_pool.acquire() as connection:
+            assert isinstance(connection, aio_pika.RobustConnection)  # nosec
             channel: aio_pika.abc.AbstractChannel = await connection.channel()
             channel.close_callbacks.add(self._channel_close_callback)
             return channel

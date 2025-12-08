@@ -1,5 +1,9 @@
 import base64
 import pickle
+from functools import wraps
+
+from celery.exceptions import CeleryError  # type: ignore[import-untyped]
+from common_library.errors_classes import OsparcErrorMixin
 
 
 class TransferrableCeleryError(Exception):
@@ -22,3 +26,26 @@ def decode_celery_transferrable_error(error: TransferrableCeleryError) -> Except
     assert isinstance(error, TransferrableCeleryError)  # nosec
     result: Exception = pickle.loads(base64.b64decode(error.args[0]))  # noqa: S301
     return result
+
+
+class TaskSubmissionError(OsparcErrorMixin, Exception):
+    msg_template = "Unable to submit task {task_name} with key '{task_key}' and params {task_params}"
+
+
+class TaskNotFoundError(OsparcErrorMixin, Exception):
+    msg_template = "Task with uuid '{task_uuid}' and owner_metadata '{owner_metadata}' was not found"
+
+
+class TaskManagerError(OsparcErrorMixin, Exception):
+    msg_template = "An internal error occurred"
+
+
+def handle_celery_errors(func):
+    @wraps(func)
+    async def wrapper(*args, **kwargs):
+        try:
+            return await func(*args, **kwargs)
+        except CeleryError as exc:
+            raise TaskManagerError from exc
+
+    return wrapper

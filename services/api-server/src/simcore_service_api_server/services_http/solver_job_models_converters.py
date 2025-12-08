@@ -64,7 +64,7 @@ def create_node_inputs_from_job_inputs(
 
     node_inputs: dict[InputID, InputTypes] = {}
     for name, value in inputs.values.items():
-        assert TypeAdapter(ArgumentTypes).validate_python(value) == value  # type: ignore # nosec
+        assert TypeAdapter(ArgumentTypes).validate_python(value) == value  # nosec
         assert TypeAdapter(KeyIDStr).validate_python(name) is not None  # nosec
 
         if isinstance(value, File):

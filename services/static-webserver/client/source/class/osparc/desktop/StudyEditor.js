@@ -155,8 +155,6 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     __viewsStack: null,
     __workbenchView: null,
     __slideshowView: null,
-    __autoSaveTimer: null,
-    __savingTimer: null,
     __studyEditorIdlingTracker: null,
     __lastSyncedProjectDocument: null,
     __lastSyncedProjectVersion: null,
@@ -267,10 +265,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         }
       }
 
-      if (osparc.data.model.Study.canIWrite(study.getAccessRights())) {
-        this.__startAutoSaveTimer();
-        this.__startSavingTimer();
-      } else {
+      if (!osparc.data.model.Study.canIWrite(study.getAccessRights())) {
         const msg = this.self().READ_ONLY_TEXT;
         osparc.FlashMessenger.logAs(msg, "WARNING");
       }
@@ -292,13 +287,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         this.nodeSelected(nodeId);
       }, this);
 
-      if (osparc.utils.Utils.eventDrivenPatch()) {
-        study.listenToChanges(); // this includes the listener on the workbench and ui
-        study.addListener("projectDocumentChanged", e => this.projectDocumentChanged(e.getData()), this);
-      } else {
-        workbench.addListener("updateStudyDocument", () => this.updateStudyDocument());
-        workbench.addListener("restartAutoSaveTimer", () => this.__restartAutoSaveTimer());
-      }
+      study.listenToChanges(); // this includes the listener on the workbench and ui
+      study.addListener("projectDocumentChanged", e => this.__projectDocumentChanged(e.getData()), this);
 
       if (osparc.utils.DisabledPlugins.isRTCEnabled()) {
         this.__listenToProjectDocument();
@@ -323,9 +313,32 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       this.__listenToNodeUpdated();
       this.__listenToNodeProgress();
       this.__listenToNoMoreCreditsEvents();
-      this.__listenToEvent();
+      this.__listenToServiceCustomEvents();
       this.__listenToServiceStatus();
       this.__listenToStatePorts();
+
+      const socket = osparc.wrapper.WebSocket.getInstance();
+      [
+        "connect",
+        "reconnect",
+      ].forEach(evtName => {
+        socket.addListener(evtName, () => {
+          // after a reconnect, re-sync the project document
+          console.log("WebSocket reconnected, re-syncing project document");
+          const studyId = this.getStudy().getUuid();
+          osparc.store.Study.getInstance().getOne(studyId)
+            .then(latestStudyData => {
+              const latestData = {
+                "version": this.__lastSyncedProjectVersion, // do not increase the version
+                "document": latestStudyData,
+              };
+              this.__applyProjectDocument(latestData);
+            })
+            .catch(err => {
+              console.error("Failed to re-sync project document after WebSocket reconnect:", err);
+            });
+        });
+      });
     },
 
     __listenToProjectDocument: function() {
@@ -524,7 +537,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }
     },
 
-    __listenToEvent: function() {
+    __listenToServiceCustomEvents: function() {
       const socket = osparc.wrapper.WebSocket.getInstance();
 
       // callback for events
@@ -591,6 +604,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }
 
       const nodeId = socketData["node_id"];
+      const portId = socketData["port_key"];
       const workbench = this.getStudy().getWorkbench();
       const node = workbench.getNode(nodeId);
       if (!node) {
@@ -600,52 +614,16 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         return;
       }
 
-      const propsForm = node.getPropsForm();
-      if (msgName === "stateInputPorts" && propsForm) {
-        const portId = socketData["port_key"];
+      const input = node.getInput(portId);
+      if (msgName === "stateInputPorts" && input) {
         const status = socketData["status"];
-        switch (status) {
-          case "DOWNLOAD_STARTED":
-            propsForm.retrievingPortData(
-              portId,
-              osparc.form.renderer.PropForm.RETRIEVE_STATUS.downloading
-            );
-            break;
-          case "DOWNLOAD_FINISHED_SUCCESSFULLY":
-            propsForm.retrievedPortData(portId, true);
-            break;
-          case "DOWNLOAD_WAS_ABORTED":
-          case "DOWNLOAD_FINISHED_WITH_ERROR":
-            propsForm.retrievedPortData(portId, false);
-            break;
-        }
+        input.setStatus(status);
       }
 
-      const outputsForm = node.getOutputsForm();
-      if (msgName === "stateOutputPorts" && outputsForm) {
-        const portId = socketData["port_key"];
+      const output = node.getOutput(portId);
+      if (msgName === "stateOutputPorts" && output) {
         const status = socketData["status"];
-        switch (status) {
-          case "UPLOAD_STARTED":
-            outputsForm.setRetrievingStatus(
-              portId,
-              osparc.form.renderer.PropForm.RETRIEVE_STATUS.uploading
-            );
-            break;
-          case "UPLOAD_FINISHED_SUCCESSFULLY":
-            outputsForm.setRetrievingStatus(
-              portId,
-              osparc.form.renderer.PropForm.RETRIEVE_STATUS.succeed
-            );
-            break;
-          case "UPLOAD_WAS_ABORTED":
-          case "UPLOAD_FINISHED_WITH_ERROR":
-            outputsForm.setRetrievingStatus(
-              portId,
-              osparc.form.renderer.PropForm.RETRIEVE_STATUS.failed
-            );
-            break;
-        }
+        output.setStatus(status);
       }
     },
 
@@ -737,13 +715,14 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       osparc.data.Resources.fetch("runPipeline", "startPipeline", params)
         .then(resp => this.__onPipelineSubmitted(resp))
         .catch(err => {
-          let msg = err.message;
           const errStatus = err.status;
           if (errStatus == "409") {
-            this.getStudyLogger().error(null, "Pipeline is already running");
+            osparc.FlashMessenger.logError(err);
+            const msg = osparc.FlashMessenger.extractMessage(err);
+            this.getStudyLogger().error(null, msg);
           } else if (errStatus == "422") {
             this.getStudyLogger().info(null, "The pipeline is up-to-date");
-            msg = this.tr("The pipeline is up-to-date. Do you want to re-run it?");
+            const msg = this.tr("The pipeline is up-to-date. Do you want to re-run it?");
             const win = new osparc.ui.window.Confirmation(msg).set({
               caption: this.tr("Re-run"),
               confirmText: this.tr("Run"),
@@ -953,67 +932,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     },
     // ------------------ IDLING TRACKER ------------------
 
-    // ------------------ AUTO SAVER ------------------
-    __startAutoSaveTimer: function() {
-      if (osparc.utils.Utils.eventDrivenPatch()) {
-        // If event driven patch is enabled, auto save is not needed
-        return;
-      }
-
-      // Save every 3 seconds
-      const timer = this.__autoSaveTimer = new qx.event.Timer(this.self().AUTO_SAVE_INTERVAL);
-      timer.addListener("interval", () => {
-        if (!osparc.wrapper.WebSocket.getInstance().isConnected()) {
-          return;
-        }
-        this.__checkStudyChanges();
-      }, this);
-      timer.start();
-    },
-
-    __stopAutoSaveTimer: function() {
-      if (this.__autoSaveTimer && this.__autoSaveTimer.isEnabled()) {
-        this.__autoSaveTimer.stop();
-        this.__autoSaveTimer.setEnabled(false);
-      }
-    },
-
-    __restartAutoSaveTimer: function() {
-      if (this.__autoSaveTimer && this.__autoSaveTimer.isEnabled()) {
-        this.__autoSaveTimer.restart();
-      }
-    },
-    // ------------------ AUTO SAVER ------------------
-
-    // ---------------- SAVING TIMER ------------------
-    __startSavingTimer: function() {
-      if (osparc.utils.Utils.eventDrivenPatch()) {
-        // If event driven patch is enabled, saving timer indicator is not needed
-        return;
-      }
-
-      const timer = this.__savingTimer = new qx.event.Timer(this.self().DIFF_CHECK_INTERVAL);
-      timer.addListener("interval", () => {
-        if (!osparc.wrapper.WebSocket.getInstance().isConnected()) {
-          return;
-        }
-        this.getStudy().setSavePending(this.didStudyChange());
-      }, this);
-      timer.start();
-    },
-
-    __stopSavingTimer: function() {
-      if (this.__savingTimer && this.__savingTimer.isEnabled()) {
-        this.__savingTimer.stop();
-        this.__savingTimer.setEnabled(false);
-      }
-    },
-    // ---------------- SAVING TIMER ------------------
-
     __stopTimers: function() {
       this.__stopIdlingTracker();
-      this.__stopAutoSaveTimer();
-      this.__stopSavingTimer();
     },
 
     __getStudyDiffs: function() {
@@ -1040,21 +960,10 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       return changed;
     },
 
-    __checkStudyChanges: function() {
-      if (this.didStudyChange()) {
-        if (this.__updatingStudy > 0) {
-          // throttle update
-          this.__updateThrottled = true;
-        } else {
-          this.updateStudyDocument();
-        }
-      }
-    },
-
     /**
      * @param {JSON Patch} data It will soon be used to patch the project document https://datatracker.ietf.org/doc/html/rfc6902
      */
-    projectDocumentChanged: function(patchData) {
+    __projectDocumentChanged: function(patchData) {
       patchData["userGroupId"] = osparc.auth.Data.getInstance().getGroupId();
       // avoid echo loop
       if (this.__blockUpdates) {

@@ -2,36 +2,46 @@ import inspect
 from collections.abc import Awaitable, Callable
 from functools import wraps
 from types import ModuleType
-from typing import Any
+from typing import Any, Final, TypeAlias
 
 from aiohttp import web
 from socketio import AsyncServer  # type: ignore[import-untyped]
 
-APP_CLIENT_SOCKET_DECORATED_HANDLERS_KEY = f"{__name__}.socketio_handlers"
-APP_CLIENT_SOCKET_SERVER_KEY = f"{__name__}.socketio_socketio"
+_CLIENT_SOCKET_DECORATED_HANDLERS_APPKEY: Final = web.AppKey(
+    "CLIENT_SOCKET_DECORATED_HANDLERS", list[Callable]
+)
+CLIENT_SOCKET_SERVER_APPKEY: Final = web.AppKey(
+    # NOTE: AsyncServer stub library is missing
+    "CLIENT_SOCKET_SERVER",
+    AsyncServer,
+)
 
 
 def get_socket_server(app: web.Application) -> AsyncServer:
-    return app[APP_CLIENT_SOCKET_SERVER_KEY]
+    return app[CLIENT_SOCKET_SERVER_APPKEY]
 
 
 # The socket ID that was assigned to the client
-SocketID = str
+SocketID: TypeAlias = str
 
 # The environ argument is a dictionary in standard WSGI format containing the request information, including HTTP headers
-EnvironDict = dict[str, Any]
+EnvironDict: TypeAlias = dict[str, Any]
 
 # Connect event
-SocketioConnectEventHandler = Callable[
+SocketioConnectEventHandler: TypeAlias = Callable[
     [SocketID, EnvironDict, web.Application], Awaitable[None]
 ]
 
 # Disconnect event
-SocketioDisconnectEventHandler = Callable[[SocketID, web.Application], Awaitable[None]]
+SocketioDisconnectEventHandler: TypeAlias = Callable[
+    [SocketID, web.Application], Awaitable[None]
+]
 
 # Event
-AnyData = Any
-SocketioEventHandler = Callable[[SocketID, AnyData, web.Application], Awaitable[None]]
+AnyData: TypeAlias = Any
+SocketioEventHandler: TypeAlias = Callable[
+    [SocketID, AnyData, web.Application], Awaitable[None]
+]
 
 _socketio_handlers_registry: list[
     (
@@ -76,7 +86,7 @@ def register_socketio_handlers(app: web.Application, module: ModuleType):
     partial_fcts = [
         _socket_io_handler(app)(func_handler) for func_handler in member_fcts
     ]
-    app[APP_CLIENT_SOCKET_DECORATED_HANDLERS_KEY] = partial_fcts
+    app[_CLIENT_SOCKET_DECORATED_HANDLERS_APPKEY] = partial_fcts
 
     # register the fcts
     for func in partial_fcts:

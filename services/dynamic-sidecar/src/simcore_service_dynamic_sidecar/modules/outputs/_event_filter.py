@@ -6,7 +6,7 @@ from asyncio import CancelledError, Queue, Task, create_task
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import suppress
 from dataclasses import dataclass
-from typing import Final, TypeAlias
+from typing import Final
 
 from pydantic import (
     ByteSize,
@@ -22,7 +22,7 @@ from watchdog.observers.api import DEFAULT_OBSERVER_TIMEOUT
 from ._directory_utils import get_directory_total_size
 from ._manager import OutputsManager
 
-PortEvent: TypeAlias = str | None
+type PortEvent = str | None
 
 _logger = logging.getLogger(__name__)
 
@@ -191,7 +191,7 @@ class EventFilter:
             if task is None:
                 return
 
-            task.cancel()
+            task.cancel("shutting down EventFilter")
             with suppress(CancelledError):
                 await task
 

@@ -69,6 +69,11 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
 
   statics: {
     sortOrganizations: function(a, b) {
+      const collabTypeOrder = osparc.store.Groups.COLLAB_TYPE_ORDER;
+      const typeDiff = collabTypeOrder.indexOf(a.getGroupType()) - collabTypeOrder.indexOf(b.getGroupType());
+      if (typeDiff !== 0) {
+        return typeDiff;
+      }
       const sorted = osparc.share.Collaborators.sortByAccessRights(a.getAccessRights(), b.getAccessRights());
       if (sorted !== 0) {
         return sorted;
@@ -84,7 +89,7 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
     getOrgModel: function(orgId) {
       let org = null;
       this.__orgsModel.forEach(orgModel => {
-        if (orgModel.getGroupId() === parseInt(orgId)) {
+        if ("getGroupId" in orgModel && orgModel.getGroupId() === parseInt(orgId)) {
           org = orgModel;
         }
       });
@@ -121,10 +126,9 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
 
     __getOrganizationsList: function() {
       const orgsUIList = this.__orgsUIList = new qx.ui.form.List().set({
-        decorator: "no-border",
-        spacing: 3,
+        appearance: "listing",
         height: 150,
-        width: 150
+        width: 150,
       });
       osparc.utils.Utils.setIdToWidget(orgsUIList, "organizationsList");
       orgsUIList.addListener("changeSelection", e => this.__organizationSelected(e.getData()), this);
@@ -141,15 +145,15 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
           ctrl.bindProperty("description", "subtitle", null, item, id);
           ctrl.bindProperty("groupMembers", "groupMembers", null, item, id);
           ctrl.bindProperty("accessRights", "accessRights", null, item, id);
+          // handle separator
+          ctrl.bindProperty("isSeparator", "enabled", {
+            converter: val => !val // disable clicks on separator
+          }, item, id);
         },
         configureItem: item => {
           item.subscribeToFilterGroup("organizationsList");
           osparc.utils.Utils.setIdToWidget(item, "organizationListItem");
-          const thumbnail = item.getChildControl("thumbnail");
-          thumbnail.getContentElement()
-            .setStyles({
-              "border-radius": "16px"
-            });
+          item.getChildControl("thumbnail").setDecorator("circled");
 
           item.addListener("openEditOrganization", e => {
             const orgKey = e.getData();
@@ -159,6 +163,16 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
           item.addListener("deleteOrganization", e => {
             const orgKey = e.getData();
             this.__deleteOrganization(orgKey);
+          });
+          item.addListener("changeEnabled", e => {
+            if (!e.getData()) {
+              item.set({
+                minHeight: 1,
+                maxHeight: 1,
+                backgroundColor: "transparent",
+                decorator: "separator-strong",
+              });
+            }
           });
         }
       });
@@ -184,7 +198,28 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
       const groupsStore = osparc.store.Groups.getInstance();
       const orgs = Object.values(groupsStore.getOrganizations());
       orgs.sort(this.self().sortOrganizations);
-      orgs.forEach(org => orgsModel.append(org));
+
+      // insert a separator between product and non-product groups
+      const productGroup = [
+        osparc.store.Groups.COLLAB_TYPE.EVERYONE,
+        osparc.store.Groups.COLLAB_TYPE.SUPPORT,
+      ];
+      const hasProductGroup = orgs.some(org => productGroup.includes(org.getGroupType()));
+      const hasNonProductGroup = orgs.some(org => !productGroup.includes(org.getGroupType()));
+      let separatorInserted = false;
+      orgs.forEach(org => {
+        const isProductGroup = productGroup.includes(org.getGroupType());
+        // Only insert separator if both sides exist
+        if (!isProductGroup && hasProductGroup && hasNonProductGroup && !separatorInserted) {
+          const separator = {
+            isSeparator: true
+          };
+          orgsModel.append(qx.data.marshal.Json.createModel(separator));
+          separatorInserted = true;
+        }
+        orgsModel.append(org);
+      });
+
       this.setOrganizationsLoaded(true);
       if (orgId) {
         this.fireDataEvent("organizationSelected", orgId);

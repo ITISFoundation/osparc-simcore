@@ -63,6 +63,23 @@ qx.Class.define("osparc.store.Study", {
       return osparc.data.Resources.fetch("studies", "getOne", params)
     },
 
+    getAllMyStudies: function() {
+      const params = {
+        url: {
+          orderBy: JSON.stringify({
+            field: "last_change_date",
+            direction: "desc"
+          }),
+          text: "",
+        }
+      };
+      // getPageSearch with no text filter returns all studies
+      return osparc.data.Resources.getInstance().getAllPages("studies", params, "getPageSearch")
+        .then(allStudies => {
+          return allStudies;
+        });
+    },
+
     openStudy: function(studyId, autoStart = true) {
       const params = {
         url: {
@@ -380,6 +397,16 @@ qx.Class.define("osparc.store.Study", {
         });
     },
 
+    __updateCurrentStudyAccessRights: function(updatedStudyData) {
+      const currentStudy = osparc.store.Store.getInstance().getCurrentStudy();
+      if (currentStudy && currentStudy.getUuid() === updatedStudyData["uuid"]) {
+        currentStudy.set({
+          accessRights: updatedStudyData["accessRights"],
+          lastChangeDate: new Date(updatedStudyData["lastChangeDate"]),
+        });
+      }
+    },
+
     addCollaborators: function(studyData, newCollaborators) {
       const promises = [];
       Object.keys(newCollaborators).forEach(gid => {
@@ -398,6 +425,7 @@ qx.Class.define("osparc.store.Study", {
             studyData["accessRights"][gid] = newCollaborators[gid];
           });
           studyData["lastChangeDate"] = new Date().toISOString();
+          this.__updateCurrentStudyAccessRights(studyData);
         })
         .catch(err => {
           osparc.FlashMessenger.logError(err);
@@ -416,6 +444,7 @@ qx.Class.define("osparc.store.Study", {
         .then(() => {
           delete studyData["accessRights"][gid];
           studyData["lastChangeDate"] = new Date().toISOString();
+          this.__updateCurrentStudyAccessRights(studyData);
         })
         .catch(err => {
           osparc.FlashMessenger.logError(err);
@@ -435,6 +464,7 @@ qx.Class.define("osparc.store.Study", {
         .then(() => {
           studyData["accessRights"][gid] = newPermissions;
           studyData["lastChangeDate"] = new Date().toISOString();
+          this.__updateCurrentStudyAccessRights(studyData);
         })
         .catch(err => {
           osparc.FlashMessenger.logError(err);

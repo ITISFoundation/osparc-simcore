@@ -13,6 +13,7 @@ from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.rabbitmq_messages import InstrumentationRabbitMessage
 from models_library.rpc.webserver.auth.api_keys import generate_unique_api_key
 from models_library.service_settings_labels import SimcoreServiceLabels
+from models_library.services_types import ServiceRunID
 from models_library.shared_user_preferences import (
     AllowMetricsCollectionFrontendUserPreference,
 )
@@ -286,17 +287,20 @@ async def service_remove_sidecar_proxy_docker_networks_and_volumes(
     await app.state.dynamic_sidecar_scheduler.scheduler.remove_service_from_observation(
         scheduler_data.node_uuid
     )
+
+    await _cleanup_long_running_tasks(app, scheduler_data.run_id)
+
     await task_progress.update(
         message="finished removing resources", percent=ProgressPercent(1)
     )
 
-    await _cleanup_long_running_tasks(app, scheduler_data.node_uuid)
 
-
-async def _cleanup_long_running_tasks(app: FastAPI, node_id: NodeID) -> None:
+async def _cleanup_long_running_tasks(
+    app: FastAPI, service_run_id: ServiceRunID
+) -> None:
     long_running_client_helper = get_long_running_client_helper(app)
 
-    sidecar_namespace = f"SIMCORE-SERVICE-DYNAMIC-SIDECAR-{node_id}"
+    sidecar_namespace = f"SIMCORE-SERVICE-DYNAMIC-SIDECAR-{service_run_id}"
     await long_running_client_helper.cleanup(sidecar_namespace)
 
 

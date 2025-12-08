@@ -6,6 +6,7 @@ from servicelib.fastapi.tracing import (
     initialize_fastapi_app_tracing,
     setup_tracing,
 )
+from servicelib.tracing import TracingConfig
 
 from .._meta import (
     API_VERSION,
@@ -34,7 +35,7 @@ from .settings import ApplicationSettings
 _logger = logging.getLogger(__name__)
 
 
-def create_app(settings: ApplicationSettings) -> FastAPI:
+def create_app(settings: ApplicationSettings, tracing_config: TracingConfig) -> FastAPI:
     app = FastAPI(
         debug=settings.RESOURCE_USAGE_TRACKER_DEBUG,
         title=f"{PROJECT_NAME} web API",
@@ -51,11 +52,10 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
     assert app.state.settings.API_VERSION == API_VERSION  # nosec
 
     # PLUGINS SETUP
-    if app.state.settings.RESOURCE_USAGE_TRACKER_TRACING:
+    if tracing_config.tracing_enabled:
         setup_tracing(
             app,
-            app.state.settings.RESOURCE_USAGE_TRACKER_TRACING,
-            app.state.settings.APP_NAME,
+            tracing_config,
         )
     setup_api_routes(app)
     fire_and_forget_setup(app)
@@ -73,8 +73,11 @@ def create_app(settings: ApplicationSettings) -> FastAPI:
 
     setup_process_message_running_service(app)  # Requires Rabbit
 
-    if app.state.settings.RESOURCE_USAGE_TRACKER_TRACING:
-        initialize_fastapi_app_tracing(app)
+    if tracing_config.tracing_enabled:
+        initialize_fastapi_app_tracing(
+            app,
+            tracing_config=tracing_config,
+        )
 
     # ERROR HANDLERS
     setup_exception_handlers(app)

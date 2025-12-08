@@ -188,9 +188,10 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
           break;
         }
         case "title":
-          control = new qx.ui.basic.Label().set({
+          control = new osparc.ui.basic.SafeLabel().set({
             textColor: "contrasted-text-light",
             font: "text-14",
+            rich: false, // do not allow multi-line titles
           });
           layout = this.getChildControl("header");
           layout.add(control, this.self().HPOS.TITLE);
@@ -205,12 +206,11 @@ qx.Class.define("osparc.dashboard.GridButtonBase", {
           break;
         }
         case "subtitle-text": {
-          control = new qx.ui.basic.Label().set({
+          control = new osparc.ui.basic.SafeLabel().set({
             textColor: "contrasted-text-dark",
             alignY: "middle",
             allowGrowX: true,
             allowShrinkX: true,
-            rich: true,
             anonymous: true,
             font: "text-12",
             allowGrowY: false

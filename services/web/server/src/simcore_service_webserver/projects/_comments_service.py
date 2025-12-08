@@ -10,7 +10,7 @@ from models_library.projects_comments import (
 from models_library.users import UserID
 from pydantic import PositiveInt
 
-from ._projects_repository_legacy import APP_PROJECT_DBAPI, ProjectDBAPI
+from ._projects_repository_legacy import PROJECT_DBAPI_APPKEY, ProjectDBAPI
 
 log = logging.getLogger(__name__)
 
@@ -23,7 +23,7 @@ log = logging.getLogger(__name__)
 async def create_project_comment(
     request: web.Request, project_uuid: ProjectID, user_id: UserID, contents: str
 ) -> CommentID:
-    db: ProjectDBAPI = request.app[APP_PROJECT_DBAPI]
+    db: ProjectDBAPI = request.app[PROJECT_DBAPI_APPKEY]
 
     comment_id: CommentID = await db.create_project_comment(
         project_uuid, user_id, contents
@@ -37,7 +37,7 @@ async def list_project_comments(
     offset: PositiveInt,
     limit: int,
 ) -> list[ProjectsCommentsAPI]:
-    db: ProjectDBAPI = request.app[APP_PROJECT_DBAPI]
+    db: ProjectDBAPI = request.app[PROJECT_DBAPI_APPKEY]
 
     projects_comments_db_model: list[ProjectsCommentsDB] = (
         await db.list_project_comments(project_uuid, offset, limit)
@@ -53,7 +53,7 @@ async def total_project_comments(
     request: web.Request,
     project_uuid: ProjectID,
 ) -> PositiveInt:
-    db: ProjectDBAPI = request.app[APP_PROJECT_DBAPI]
+    db: ProjectDBAPI = request.app[PROJECT_DBAPI_APPKEY]
 
     project_comments_total: PositiveInt = await db.total_project_comments(project_uuid)
     return project_comments_total
@@ -65,7 +65,7 @@ async def update_project_comment(
     project_uuid: ProjectID,
     contents: str,
 ) -> ProjectsCommentsAPI:
-    db: ProjectDBAPI = request.app[APP_PROJECT_DBAPI]
+    db: ProjectDBAPI = request.app[PROJECT_DBAPI_APPKEY]
 
     projects_comments_db_model: ProjectsCommentsDB = await db.update_project_comment(
         comment_id, project_uuid, contents
@@ -77,7 +77,7 @@ async def update_project_comment(
 
 
 async def delete_project_comment(request: web.Request, comment_id: CommentID) -> None:
-    db: ProjectDBAPI = request.app[APP_PROJECT_DBAPI]
+    db: ProjectDBAPI = request.app[PROJECT_DBAPI_APPKEY]
 
     await db.delete_project_comment(comment_id)
 
@@ -85,7 +85,7 @@ async def delete_project_comment(request: web.Request, comment_id: CommentID) ->
 async def get_project_comment(
     request: web.Request, comment_id: CommentID
 ) -> ProjectsCommentsAPI:
-    db: ProjectDBAPI = request.app[APP_PROJECT_DBAPI]
+    db: ProjectDBAPI = request.app[PROJECT_DBAPI_APPKEY]
 
     projects_comments_db_model: ProjectsCommentsDB = await db.get_project_comment(
         comment_id

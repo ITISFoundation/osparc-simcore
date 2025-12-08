@@ -1,9 +1,13 @@
+# pylint: disable=too-many-instance-attributes
+
 import logging
 from dataclasses import dataclass
 from pathlib import Path
 from uuid import UUID
 
 from common_library.exclude import as_dict_exclude_none
+from fastapi import status
+from fastapi.exceptions import HTTPException
 from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobGet
 from models_library.api_schemas_webserver.projects import (
     ProjectCreateNew,
@@ -15,31 +19,37 @@ from models_library.function_services_catalog.services import file_picker
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes import InputID, InputTypes
-from models_library.projects_nodes_io import NodeID
-from models_library.rest_pagination import (
-    PageMetaInfoLimitOffset,
-    PageOffsetInt,
-)
+from models_library.projects_nodes_io import BaseFileLink, NodeID
+from models_library.projects_state import RunningState
+from models_library.rest_pagination import PageMetaInfoLimitOffset, PageOffsetInt
 from models_library.rpc.webserver.projects import ProjectJobRpcGet
 from models_library.rpc_pagination import PageLimitInt
 from models_library.users import UserID
+from models_library.wallets import ZERO_CREDITS
 from servicelib.logging_utils import log_context
+from sqlalchemy.ext.asyncio import AsyncEngine
 
-from ._service_solvers import (
-    SolverService,
+from ._service_solvers import SolverService
+from .exceptions.backend_errors import (
+    JobAssetsMissingError,
+    SolverJobOutputRequestButNotSucceededError,
+    StudyJobOutputRequestButNotSucceededError,
 )
-from .exceptions.backend_errors import JobAssetsMissingError
-from .exceptions.custom_errors import SolverServiceListJobsFiltersError
-from .models.api_resources import (
-    JobLinks,
-    RelativeResourceName,
-    compose_resource_name,
+from .exceptions.custom_errors import (
+    InsufficientCreditsError,
+    MissingWalletError,
+    SolverServiceListJobsFiltersError,
 )
+from .models.api_resources import JobLinks, RelativeResourceName, compose_resource_name
 from .models.basic_types import NameValueTuple, VersionStr
+from .models.domain.files import File as DomainFile
+from .models.schemas.files import File as SchemaFile
 from .models.schemas.jobs import (
+    ArgumentTypes,
     Job,
     JobID,
     JobInputs,
+    JobOutputs,
     JobPricingSpecification,
     JobStatus,
 )
@@ -54,9 +64,11 @@ from .services_http.solver_job_models_converters import (
     create_jobstatus_from_task,
     create_new_project_for_job,
 )
-from .services_http.storage import StorageApi
+from .services_http.solver_job_outputs import ResultsTypes, get_solver_output_results
+from .services_http.storage import StorageApi, to_file_api_model
 from .services_http.study_job_models_converters import (
     create_job_from_study,
+    create_job_outputs_from_project_outputs,
     get_project_and_file_inputs_from_job_inputs,
 )
 from .services_http.webserver import AuthSession
@@ -92,6 +104,7 @@ class JobService:
     _storage_rest_client: StorageApi
     _directorv2_rpc_client: DirectorV2Service
     _solver_service: SolverService
+
     user_id: UserID
     product_name: ProductName
 
@@ -273,12 +286,11 @@ class JobService:
         file_ids = await self._directorv2_rpc_client.get_computation_task_log_file_ids(
             project_id=job_id
         )
-        async_job_get = await self._storage_rpc_client.start_data_export(
+        return await self._storage_rpc_client.start_data_export(
             paths_to_export=[
                 Path(elm.file_id) for elm in file_ids if elm.file_id is not None
             ],
         )
-        return async_job_get
 
     async def get_job(
         self, job_parent_resource_name: RelativeResourceName, job_id: JobID
@@ -289,6 +301,110 @@ class JobService:
             user_id=self.user_id,
             project_id=job_id,
             job_parent_resource_name=job_parent_resource_name,
+        )
+
+    async def get_solver_job_outputs(
+        self,
+        solver_key: SolverKeyId,
+        version: VersionStr,
+        job_id: JobID,
+        async_pg_engine: AsyncEngine,
+    ) -> JobOutputs:
+        job_name = compose_solver_job_resource_name(solver_key, version, job_id)
+        _logger.debug("Get Job '%s' outputs", job_name)
+
+        job_status = await self.inspect_solver_job(
+            solver_key=solver_key, version=version, job_id=job_id
+        )
+
+        if job_status.state != RunningState.SUCCESS:
+            raise SolverJobOutputRequestButNotSucceededError(
+                job_id=job_id, state=job_status.state
+            )
+
+        project_marked_as_job = await self.get_job(
+            job_id=job_id,
+            job_parent_resource_name=Solver.compose_resource_name(
+                key=solver_key, version=version
+            ),
+        )
+        node_ids = list(project_marked_as_job.workbench.keys())
+        assert len(node_ids) == 1  # nosec
+
+        if project_marked_as_job.storage_assets_deleted:
+            _logger.warning("Storage data for job '%s' has been deleted", job_name)
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT, detail="Assets have been deleted"
+            )
+
+        product_price = await self._web_rest_client.get_product_price()
+        if product_price.usd_per_credit is not None:
+            wallet = await self._web_rest_client.get_project_wallet(
+                project_id=project_marked_as_job.uuid
+            )
+            if wallet is None:
+                raise MissingWalletError(job_id=project_marked_as_job.uuid)
+            wallet_with_credits = await self._web_rest_client.get_wallet(
+                wallet_id=wallet.wallet_id
+            )
+            if wallet_with_credits.available_credits <= ZERO_CREDITS:
+                raise InsufficientCreditsError(
+                    wallet_name=wallet_with_credits.name,
+                    wallet_credit_amount=wallet_with_credits.available_credits,
+                )
+
+        outputs: dict[str, ResultsTypes] = await get_solver_output_results(
+            user_id=self.user_id,
+            project_uuid=job_id,
+            node_uuid=UUID(node_ids[0]),
+            db_engine=async_pg_engine,
+        )
+
+        results: dict[str, ArgumentTypes] = {}
+        for name, value in outputs.items():
+            if isinstance(value, BaseFileLink):
+                file_id: UUID = DomainFile.create_id(*value.path.split("/"))
+
+                found = await self._storage_rest_client.search_owned_files(
+                    user_id=self.user_id, file_id=file_id, limit=1
+                )
+                if found:
+                    assert len(found) == 1  # nosec
+                    results[name] = SchemaFile.from_domain_model(
+                        to_file_api_model(found[0])
+                    )
+                else:
+                    api_file = await self._storage_rest_client.create_soft_link(
+                        user_id=self.user_id,
+                        target_s3_path=value.path,
+                        as_file_id=file_id,
+                    )
+                    results[name] = SchemaFile.from_domain_model(api_file)
+            else:
+                results[name] = value
+
+        return JobOutputs(job_id=job_id, results=results)
+
+    async def get_study_job_outputs(
+        self,
+        study_id: StudyID,
+        job_id: JobID,
+    ) -> JobOutputs:
+        job_name = compose_study_job_resource_name(study_id, job_id)
+        _logger.debug("Getting Job Outputs for '%s'", job_name)
+
+        job_status = await self.inspect_study_job(job_id=job_id)
+
+        if job_status.state != RunningState.SUCCESS:
+            raise StudyJobOutputRequestButNotSucceededError(
+                job_id=job_id, state=job_status.state
+            )
+        project_outputs = await self._web_rest_client.get_project_outputs(
+            project_id=job_id
+        )
+
+        return await create_job_outputs_from_project_outputs(
+            job_id, project_outputs, self.user_id, self._storage_rest_client
         )
 
     async def delete_job_assets(

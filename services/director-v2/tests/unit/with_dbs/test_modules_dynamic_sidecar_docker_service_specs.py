@@ -67,11 +67,9 @@ def mock_env(
     env_vars = mock_env.copy()
     env_vars.update(
         {
-            "AWS_S3_CLI_S3": '{"S3_ACCESS_KEY":"12345678","S3_BUCKET_NAME":"simcore","S3_ENDPOINT":"http://172.17.0.1:9001","S3_REGION":"us-east-1","S3_SECRET_KEY":"12345678"}',
             "DYNAMIC_SIDECAR_IMAGE": "local/dynamic-sidecar:MOCK",
             "LOG_LEVEL": "DEBUG",
             "POSTGRES_DB": "test",
-            "POSTGRES_ENDPOINT": "localhost:5432",
             "POSTGRES_HOST": "localhost",
             "POSTGRES_PASSWORD": "test",
             "POSTGRES_PORT": "5432",
@@ -255,10 +253,6 @@ def expected_dynamic_sidecar_spec(
                         '"test","REGISTRY_PW":"test","REGISTRY_SSL":false}'
                     ),
                     "DY_DOCKER_HUB_REGISTRY_SETTINGS": "null",
-                    "DY_SIDECAR_AWS_S3_CLI_SETTINGS": (
-                        '{"AWS_S3_CLI_S3":{"S3_ACCESS_KEY":"12345678","S3_BUCKET_NAME":"simcore",'
-                        '"S3_ENDPOINT":"http://172.17.0.1:9001/","S3_REGION":"us-east-1","S3_SECRET_KEY":"12345678"}}'
-                    ),
                     "DY_SIDECAR_CALLBACKS_MAPPING": (
                         '{"metrics":{"service":"rt-web","command":"ls","timeout":1.0},"before_shutdown"'
                         ':[{"service":"rt-web","command":"ls","timeout":1.0},{"service":"s4l-core",'
@@ -275,7 +269,6 @@ def expected_dynamic_sidecar_spec(
                     "POSTGRES_PORT": "5432",
                     "POSTGRES_USER": "test",
                     "POSTGRES_PASSWORD": "test",
-                    "POSTGRES_ENDPOINT": "localhost:5432",
                     "RABBIT_HOST": "rabbit",
                     "RABBIT_PASSWORD": "adminadmin",
                     "RABBIT_PORT": "5672",

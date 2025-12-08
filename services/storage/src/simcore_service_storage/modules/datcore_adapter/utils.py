@@ -6,7 +6,9 @@ from models_library.api_schemas_datcore_adapter.datasets import (
 from models_library.api_schemas_datcore_adapter.datasets import (
     FileMetaData as DatCoreFileMetaData,
 )
-from models_library.api_schemas_datcore_adapter.datasets import PackageMetaData
+from models_library.api_schemas_datcore_adapter.datasets import (
+    PackageMetaData,
+)
 from models_library.api_schemas_storage.storage_schemas import DatCoreDatasetName
 from models_library.users import UserID
 from pydantic import ByteSize
@@ -91,7 +93,9 @@ def create_path_meta_data_from_datcore_fmd(
         user_id=user_id,
         created_at=dat_core_fmd.created_at,
         last_modified=dat_core_fmd.last_modified_at,
-        file_meta_data=None
-        if dat_core_fmd.data_type == DatCoreDataType.FOLDER
-        else create_fmd_from_datcore_fmd(user_id, dat_core_fmd),
+        file_meta_data=(
+            None
+            if dat_core_fmd.data_type == DatCoreDataType.FOLDER
+            else create_fmd_from_datcore_fmd(user_id, dat_core_fmd)
+        ),
     )

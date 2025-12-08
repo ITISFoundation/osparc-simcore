@@ -492,9 +492,6 @@ def create_new_project_and_delete(  # noqa: C901, PLR0915
         template_id: str | None,
         service_version: str | None,
     ) -> dict[str, Any]:
-        assert (
-            len(created_project_uuids) == 0
-        ), "misuse of this fixture! only 1 study can be opened at a time. Otherwise please modify the fixture"
         with log_context(
             logging.INFO, f"Open project in {product_url=} as {is_product_billable=}"
         ) as ctx:
@@ -597,22 +594,29 @@ def create_new_project_and_delete(  # noqa: C901, PLR0915
     yield _
 
     # go back to dashboard and wait for project to close
-    with ExitStack() as stack:
-        for project_uuid in created_project_uuids:
-            ctx = stack.enter_context(
-                log_context(logging.INFO, f"Wait for closed project {project_uuid=}")
+    with log_context(logging.INFO, "Go back to dashboard") as ctx1:
+        if page.get_by_test_id("dashboardBtn").is_visible():
+            with ExitStack() as stack:
+                for project_uuid in created_project_uuids:
+                    ctx = stack.enter_context(
+                        log_context(
+                            logging.INFO, f"Wait for closed project {project_uuid=}"
+                        )
+                    )
+                    stack.enter_context(
+                        log_in_and_out.expect_event(
+                            "framereceived",
+                            SocketIOProjectClosedWaiter(),
+                            timeout=_PROJECT_CLOSING_TIMEOUT,
+                        )
+                    )
+                if created_project_uuids:
+                    page.get_by_test_id("dashboardBtn").click()
+                    page.get_by_test_id("confirmDashboardBtn").click()
+        else:
+            ctx1.logger.warning(
+                "Cannot go back to dashboard, 'dashboard' button is not visible, we are probably already there"
             )
-            stack.enter_context(
-                log_in_and_out.expect_event(
-                    "framereceived",
-                    SocketIOProjectClosedWaiter(ctx.logger),
-                    timeout=_PROJECT_CLOSING_TIMEOUT,
-                )
-            )
-        if created_project_uuids:
-            with log_context(logging.INFO, "Go back to dashboard"):
-                page.get_by_test_id("dashboardBtn").click()
-                page.get_by_test_id("confirmDashboardBtn").click()
 
     for project_uuid in created_project_uuids:
         with log_context(
@@ -749,7 +753,7 @@ def create_project_from_service_dashboard(
             expected_states,
             True,
             None,
-            service_version,  # noqa: FBT003
+            service_version,
         )
 
     return _

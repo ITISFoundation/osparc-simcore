@@ -23,7 +23,6 @@ on:
         default: "master"
         type: environment
 
-
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -35,13 +34,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: setup python environment
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
-          python-version: "3.11"
+          python-version: "3.13"
       - name: install uv
-        uses: astral-sh/setup-uv@v6
+        uses: astral-sh/setup-uv@v7
         with:
-          version: "0.6.x"
+          version: "0.9.x"
           enable-cache: false
       - name: checkout source branch
         uses: actions/checkout@v5
@@ -65,9 +64,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: setup python environment
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
-          python-version: "3.11"
+          python-version: "3.13"
       - name: checkout
         uses: actions/checkout@v5
       - name: Set environment variables based on event type
@@ -93,9 +92,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: setup python environment
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
-          python-version: "3.11"
+          python-version: "3.13"
       - name: checkout
         uses: actions/checkout@v5
       - name: Set environment variables based on event type

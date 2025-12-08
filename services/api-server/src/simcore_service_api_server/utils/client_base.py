@@ -5,7 +5,7 @@ from typing import Final
 import httpx
 from fastapi import FastAPI
 from httpx import AsyncClient, Timeout
-from servicelib.fastapi.tracing import setup_httpx_client_tracing
+from servicelib.fastapi.tracing import get_tracing_config, setup_httpx_client_tracing
 from settings_library.tracing import TracingSettings
 
 from .app_data import AppDataMixin
@@ -60,7 +60,10 @@ def setup_client_instance(
         timeout=Timeout(_DEFAULT_BASE_SERVICE_CLIENT_API_TIMEOUT_SECONDS),
     )
     if tracing_settings:
-        setup_httpx_client_tracing(client)
+        setup_httpx_client_tracing(
+            client,
+            tracing_config=get_tracing_config(app),
+        )
 
     # events
     def _create_instance() -> None:

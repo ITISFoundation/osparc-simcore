@@ -1,8 +1,8 @@
 import logging
-from contextlib import suppress
 
 from aiohttp import web
 from models_library.api_schemas_webserver.users import (
+    MyProfileAddressGet,
     MyProfileRestGet,
     MyProfileRestPatch,
     UserGet,
@@ -15,10 +15,10 @@ from servicelib.aiohttp.requests_validation import (
 from simcore_service_webserver.application_settings_utils import (
     requires_dev_feature_enabled,
 )
+from simcore_service_webserver.users.exceptions import BillingDetailsNotFoundError
 
 from ...._meta import API_VTAG
 from ....groups import api as groups_service
-from ....groups.exceptions import GroupNotFoundError
 from ....login.decorators import login_required
 from ....products import products_web
 from ....products.models import Product
@@ -51,30 +51,43 @@ async def get_my_profile(request: web.Request) -> web.Response:
     product: Product = products_web.get_current_product(request)
     req_ctx = UsersRequestContext.model_validate(request)
 
-    groups_by_type = await groups_service.list_user_groups_with_read_access(
-        request.app, user_id=req_ctx.user_id
+    # Get groups
+    (
+        groups_by_type,
+        my_product_group,
+        product_support_group,
+        product_chatbot_primary_group,
+    ) = await groups_service.get_user_profile_groups(
+        request.app, user_id=req_ctx.user_id, product=product
     )
 
-    assert groups_by_type.primary
-    assert groups_by_type.everyone
+    assert groups_by_type.primary  # nosec
+    assert groups_by_type.everyone  # nosec
 
-    my_product_group = None
-
-    if product.group_id:
-        with suppress(GroupNotFoundError):
-            # Product is optional
-            my_product_group = await groups_service.get_product_group_for_user(
-                app=request.app,
-                user_id=req_ctx.user_id,
-                product_gid=product.group_id,
-            )
-
+    # Get profile and preferences
     my_profile, preferences = await _users_service.get_my_profile(
         request.app, user_id=req_ctx.user_id, product_name=req_ctx.product_name
     )
 
+    # Get profile address
+    try:
+        user_billing_details = await _users_service.get_user_billing_details(
+            request.app, product_name=product.name, user_id=req_ctx.user_id
+        )
+        my_address = MyProfileAddressGet.model_validate(
+            user_billing_details, from_attributes=True
+        )
+    except BillingDetailsNotFoundError:
+        my_address = None
+
     profile = MyProfileRestGet.from_domain_model(
-        my_profile, groups_by_type, my_product_group, preferences
+        my_profile,
+        groups_by_type,
+        my_product_group,
+        preferences,
+        product_support_group,
+        product_chatbot_primary_group,
+        my_address,
     )
 
     return envelope_json_response(profile)
@@ -164,9 +177,7 @@ async def my_phone_confirm(request: web.Request) -> web.Response:
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
 
-#
-# USERS (public)
-#
+# Public Users API endpoints
 
 
 @routes.post(f"/{API_VTAG}/users:search", name="search_users")

@@ -3,7 +3,6 @@ import logging
 from typing import Annotated, Final
 
 import httpx
-from common_library.json_serialization import json_dumps
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from models_library.api_schemas_directorv2.dynamic_services import (
@@ -25,11 +24,6 @@ from servicelib.rabbitmq import RabbitMQClient
 from servicelib.utils import logged_gather
 from starlette import status
 from starlette.datastructures import URL
-from tenacity import RetryCallState, TryAgain
-from tenacity.asyncio import AsyncRetrying
-from tenacity.before_sleep import before_sleep_log
-from tenacity.stop import stop_after_delay
-from tenacity.wait import wait_fixed
 
 from ...api.dependencies.catalog import get_catalog_client
 from ...api.dependencies.database import get_repository
@@ -186,16 +180,15 @@ async def stop_dynamic_service(
     node_uuid: NodeID,
     director_v0_client: Annotated[DirectorV0Client, Depends(get_director_v0_client)],
     scheduler: Annotated[DynamicSidecarsScheduler, Depends(get_scheduler)],
-    dynamic_services_settings: Annotated[
-        DynamicServicesSettings, Depends(get_dynamic_services_settings)
-    ],
     *,
     can_save: bool | None = True,
 ) -> NoContentResponse | RedirectResponse:
     assert request  # nosec
 
     try:
-        await scheduler.mark_service_for_removal(node_uuid, can_save)
+        await scheduler.mark_service_for_removal(
+            node_uuid=node_uuid, can_save=can_save, skip_observation_recreation=False
+        )
     except DynamicSidecarNotFoundError:
         # legacy service? if it's not then a 404 will anyway be received
         # forward to director-v0
@@ -208,34 +201,6 @@ async def stop_dynamic_service(
 
     if await scheduler.is_service_awaiting_manual_intervention(node_uuid):
         raise HTTPException(status.HTTP_409_CONFLICT, detail="waiting_for_intervention")
-
-    # Service was marked for removal, the scheduler will
-    # take care of stopping cleaning up all allocated resources:
-    # services, containers, volumes and networks.
-    # Once the service is no longer being tracked this can return
-    dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings = (
-        dynamic_services_settings.DYNAMIC_SCHEDULER
-    )
-
-    def _log_error(retry_state: RetryCallState):
-        logger.error(
-            "Service with %s could not be untracked after %s",
-            f"{node_uuid=}",
-            f"{json_dumps(retry_state.retry_object.statistics)}",
-        )
-
-    async for attempt in AsyncRetrying(
-        wait=wait_fixed(1.0),
-        stop=stop_after_delay(
-            dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_WAIT_FOR_SERVICE_TO_STOP
-        ),
-        before_sleep=before_sleep_log(logger=logger, log_level=logging.INFO),
-        reraise=False,
-        retry_error_callback=_log_error,
-    ):
-        with attempt:
-            if scheduler.is_service_tracked(node_uuid):
-                raise TryAgain
 
     return NoContentResponse()
 
