@@ -1047,7 +1047,6 @@ async def add_project_node(
                 "label": service_key.split("/")[-1],
             }
         ),
-        product_name,
         client_session_id=client_session_id,
     )
 
@@ -1228,7 +1227,6 @@ async def update_project_node_state(
         user_id=user_id,
         project_uuid=project_id,
         node_id=node_id,
-        product_name=None,
         new_node_data={"state": {"currentStatus": new_state}},
         client_session_id=client_session_id,
     )
@@ -1302,7 +1300,6 @@ async def patch_project_node(
         user_id=user_id,
         project_uuid=project_id,
         node_id=node_id,
-        product_name=product_name,
         new_node_data=_node_patch_exclude_unset,
         client_session_id=client_session_id,
     )
@@ -1378,7 +1375,6 @@ async def update_project_node_outputs(
         user_id=user_id,
         project_uuid=project_id,
         node_id=node_id,
-        product_name=None,
         new_node_data={"outputs": new_outputs, "runHash": new_run_hash},
         client_session_id=client_session_id,
     )
