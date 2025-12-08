@@ -48,7 +48,6 @@ from simcore_postgres_database.models.project_to_groups import project_to_groups
 from simcore_postgres_database.models.projects_nodes import projects_nodes
 from simcore_postgres_database.models.projects_tags import projects_tags
 from simcore_postgres_database.models.projects_to_folders import projects_to_folders
-from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_postgres_database.models.projects_to_wallet import projects_to_wallet
 from simcore_postgres_database.models.wallets import wallets
 from simcore_postgres_database.models.workspaces_access_rights import (
@@ -100,7 +99,6 @@ from ._projects_repository_legacy_utils import (
 )
 from ._socketio_service import notify_project_document_updated
 from .exceptions import (
-    ProjectDeleteError,
     ProjectInvalidRightsError,
     ProjectNodeResourcesInsufficientRightsError,
     ProjectNotFoundError,
@@ -275,7 +273,7 @@ class ProjectDBAPI(BaseProjectDB):
     ) -> dict[str, Any]:
         """Inserts a new project in the database
 
-        - A valid uuid is automaticaly assigned to the project except if force_project_uuid=False. In the latter case,
+        - A valid uuid is automatically assigned to the project except if force_project_uuid=False. In the latter case,
         - passing project_nodes=None will auto-generate default ProjectNodeCreate, default resources will then be used.
         invalid uuid will raise an exception.
 
@@ -1365,30 +1363,6 @@ class ProjectDBAPI(BaseProjectDB):
             if row:
                 return ProjectType(row[projects.c.type])
         raise ProjectNotFoundError(project_uuid=project_uuid)
-
-    #
-    # MISC
-    #
-
-    async def check_project_has_only_one_product(self, project_uuid: ProjectID) -> None:
-        async with self.engine.acquire() as conn:
-            num_products_linked_to_project = await conn.scalar(
-                sa.select(func.count())
-                .select_from(projects_to_products)
-                .where(projects_to_products.c.project_uuid == f"{project_uuid}")
-            )
-            assert isinstance(num_products_linked_to_project, int)  # nosec
-        if num_products_linked_to_project > 1:
-            # NOTE:
-            # in agreement with @odeimaiz :
-            #
-            # we decided that this precise use-case where we have a project in 2 products at the same time does not exist now and its chances to ever come is small -> therefore we do not treat it for now
-            # nevertheless in case it would be done this way (which would by the way need a manual intervention already to set it up), at least it would not be possible to delete the project in one product to prevent some unwanted deletion.
-            # reduce time to develop by not implementing something that might never be necessary
-            raise ProjectDeleteError(
-                project_uuid=project_uuid,
-                details="Project has more than one linked product. This needs manual intervention. Please contact oSparc support.",
-            )
 
 
 PROJECT_DBAPI_APPKEY: Final = web.AppKey(ProjectDBAPI.__name__, ProjectDBAPI)
