@@ -1,0 +1,36 @@
+"""Add product_name to projects
+
+Revision ID: ce69cc44246a
+Revises: a85557c02d71
+Create Date: 2025-12-08 14:14:07.573764+00:00
+
+"""
+
+import sqlalchemy as sa
+from alembic import op
+
+# revision identifiers, used by Alembic.
+revision = "ce69cc44246a"
+down_revision = "a85557c02d71"
+branch_labels = None
+depends_on = None
+
+
+def upgrade():
+    op.add_column("projects", sa.Column("product_name", sa.String(), nullable=False))
+    op.create_foreign_key(
+        "fk_projects_to_products_product_name",
+        "projects",
+        "products",
+        ["product_name"],
+        ["name"],
+        onupdate="CASCADE",
+        ondelete="CASCADE",
+    )
+
+
+def downgrade():
+    op.drop_constraint(
+        "fk_projects_to_products_product_name", "projects", type_="foreignkey"
+    )
+    op.drop_column("projects", "product_name")

@@ -123,7 +123,7 @@ projects = sa.Table(
         sa.Boolean,
         nullable=False,
         default=False,
-        doc="If true, the project is publicaly accessible via the studies dispatcher (i.e. no registration required)",
+        doc="If true, the project is publicly accessible via the studies dispatcher (i.e. no registration required)",
     ),
     sa.Column(
         "hidden",
@@ -173,7 +173,7 @@ projects = sa.Table(
         JSONB,
         nullable=False,
         server_default=sa.text("'{}'::jsonb"),
-        doc="Free JSON with quality assesment based on TSR",
+        doc="Free JSON with quality assessment based on TSR",
     ),
     # DEPRECATED ----------------------------
     sa.Column(
@@ -182,6 +182,18 @@ projects = sa.Table(
         nullable=False,
         server_default=sa.text("'{}'::jsonb"),
         doc="DEPRECATED: Read/write/delete access rights of each group (gid) on this project",
+    ),
+    sa.Column(
+        "product_name",
+        sa.String,
+        sa.ForeignKey(
+            "products.name",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.CASCADE,
+            name="fk_projects_to_products_product_name",
+        ),
+        nullable=False,
+        doc="Product to which this project belongs",
     ),
     ### INDEXES ----------------------------
     sa.Index(
