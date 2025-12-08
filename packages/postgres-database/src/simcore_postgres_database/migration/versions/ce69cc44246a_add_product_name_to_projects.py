@@ -19,7 +19,7 @@ depends_on = None
 def upgrade():
     op.add_column("projects", sa.Column("product_name", sa.String(), nullable=False))
     op.create_foreign_key(
-        "fk_projects_to_products_product_name",
+        "fk_projects_to_products_name",
         "projects",
         "products",
         ["product_name"],
