@@ -323,7 +323,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
         node_uuid: NodeID,
         can_save: bool | None,
         *,
-        skip_observation_recreation: bool = False,
+        skip_observation_recreation: bool,
     ) -> None:
         """Marks service for removal, causing RemoveMarkedService to trigger"""
         async with self._lock:
@@ -393,6 +393,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
             await self.mark_service_for_removal(
                 scheduler_data.node_uuid,
                 can_save=scheduler_data.dynamic_sidecar.service_removal_state.can_save,
+                skip_observation_recreation=False,
             )
 
     async def is_service_awaiting_manual_intervention(self, node_uuid: NodeID) -> bool:
