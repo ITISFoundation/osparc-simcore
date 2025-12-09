@@ -283,16 +283,6 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
     },
 
     __applySidecarPulling: function(value) {
-      // the sidecar pulling progress goes from 0 to 1 in about 20" with no intermediate updates from the backend
-      if (value.value === 0) {
-        // start fake progress when the frontend gets a 0% and stop it gets a 100%
-        this.__startSidecarPullingFakeProgress();
-      } else if (value.value === 1) {
-        // stop fake progress when the backend reports 100%
-        // by setting it to 100%
-        this.__stopSidecarPullingFakeProgress();
-      }
-
       if (value.value === 1) {
         // on non autoscaled deployments, there is no cluster upscaling phase
         // when the sidecar pulling is done, make sure the cluster upscaling is also set to 100%
