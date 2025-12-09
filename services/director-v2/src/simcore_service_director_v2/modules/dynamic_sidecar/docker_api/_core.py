@@ -47,7 +47,7 @@ NO_PENDING_OVERWRITE = {
     ServiceState.RUNNING,
 }
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 async def get_swarm_network(simcore_services_network_name: DockerNetworkName) -> dict:
@@ -122,14 +122,10 @@ async def create_service_and_get_id(
             }
             kwargs["registry"] = registry_settings.resolved_registry_url
 
-        logging.debug("Creating service with\n%s", json_dumps(kwargs, indent=1))
+        # convert to a list if networks instead of target: id/name
+        _logger.debug("Creating service with\n%s", json_dumps(kwargs, indent=1))
         service_start_result = await client.services.create(**kwargs)
-
-        log.debug(
-            "Started service %s with\n%s",
-            service_start_result,
-            json_dumps(kwargs, indent=1),
-        )
+        _logger.debug("Started service %s", service_start_result)
 
     if "ID" not in service_start_result:
         msg = f"Error while starting service: {service_start_result!s}"
@@ -349,7 +345,7 @@ async def remove_dynamic_sidecar_network(network_name: str) -> bool:
             "Docker takes some time to establish that the network has no more "
             "containers attached to it."
         )
-        log.warning(message)
+        _logger.warning(message)
         return False
 
 
@@ -383,7 +379,7 @@ async def get_or_create_networks_ids(
 
     async with docker_client() as client:
         existing_networks_names = {x["Name"] for x in await client.networks.list()}
-        log.debug("existing_networks_names=%s", existing_networks_names)
+        _logger.debug("existing_networks_names=%s", existing_networks_names)
 
         # create networks if missing
         for network in networks:
@@ -406,7 +402,7 @@ async def get_or_create_networks_ids(
                     # multiple calls to this function can be processed in parallel
                     # this will cause creation to fail, it is OK to assume it already
                     # exist an raise an error (see below)
-                    log.info(
+                    _logger.info(
                         "Network %s might already exist, skipping creation", network
                     )
 
@@ -453,7 +449,7 @@ async def try_to_remove_network(network_name: str) -> None:
         try:
             await network.delete()
         except aiodocker.exceptions.DockerError:
-            log.warning("Could not remove network %s", network_name)
+            _logger.warning("Could not remove network %s", network_name)
 
 
 async def _update_service_spec(
@@ -520,7 +516,7 @@ async def update_scheduler_data_label(scheduler_data: SchedulerData) -> None:
         )
     except GenericDockerError as e:
         if e.original_exception.status == status.HTTP_404_NOT_FOUND:
-            log.info(
+            _logger.info(
                 "Skipped labels update for service '%s' which could not be found.",
                 scheduler_data.service_name,
             )
@@ -537,4 +533,4 @@ async def constrain_service_to_node(
             }
         },
     )
-    log.info("Constraining service %s to node %s", service_name, docker_node_id)
+    _logger.info("Constraining service %s to node %s", service_name, docker_node_id)

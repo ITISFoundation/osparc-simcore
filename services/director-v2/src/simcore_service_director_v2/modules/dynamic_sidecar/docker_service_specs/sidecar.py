@@ -504,7 +504,7 @@ async def get_dynamic_sidecar_spec(  # pylint:disable=too-many-arguments# noqa: 
         "endpoint_spec": {"Ports": ports} if ports else {},
         "labels": service_labels,
         "name": scheduler_data.service_name,
-        "networks": [
+        "networks": [  # NOTE: this is deprecated in docker v1.44 and is replaced by task_template/Networks
             {"Target": swarm_network_id},
             *get_prometheus_monitoring_networks(
                 dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_PROMETHEUS_MONITORING_NETWORKS,
@@ -549,6 +549,13 @@ async def get_dynamic_sidecar_spec(  # pylint:disable=too-many-arguments# noqa: 
                     else None
                 ),
             },
+            "Networks": [
+                {"Target": swarm_network_id},
+                *get_prometheus_monitoring_networks(
+                    dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_PROMETHEUS_MONITORING_NETWORKS,
+                    scheduler_data.callbacks_mapping,
+                ),
+            ],
             "Placement": {"Constraints": placement_constraints},
             "RestartPolicy": DOCKER_CONTAINER_SPEC_RESTART_POLICY_DEFAULTS,
             # this will get overwritten
