@@ -386,7 +386,6 @@ async def test_list_projects_with_inaccessible_services(
     assert len(data) == 2
 
     # use-case 2: calling with another product name returns 0 projects
-    # because projects are linked to osparc product in projects_to_products table
     data, *_ = await _list_and_assert_projects(
         client, expected, headers=s4l_product_headers
     )
