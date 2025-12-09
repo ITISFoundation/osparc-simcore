@@ -186,9 +186,7 @@ class CeleryTaskManager:
     @handle_celery_errors
     async def list_tasks(self, owner_metadata: OwnerMetadata) -> list[Task]:
         with log_context(
-            _logger,
-            logging.DEBUG,
-            msg=f"Listing tasks: {owner_metadata=}",
+            _logger, logging.DEBUG, "Listing tasks: owner_metadata=%s", owner_metadata
         ):
             return await self._task_store.list_tasks(owner_metadata)
 
@@ -204,9 +202,7 @@ class CeleryTaskManager:
     @handle_celery_errors
     async def set_task_stream_done(self, task_key: TaskKey) -> None:
         with log_context(
-            _logger,
-            logging.DEBUG,
-            msg=f"Set task stream done: {task_key=}",
+            _logger, logging.DEBUG, "Set task stream done: task_key= %s", task_key
         ):
             if not await self.task_exists(task_key):
                 raise TaskNotFoundError(task_key=task_key)
@@ -216,9 +212,7 @@ class CeleryTaskManager:
     @handle_celery_errors
     async def set_task_stream_last_update(self, task_key: TaskKey) -> None:
         with log_context(
-            _logger,
-            logging.DEBUG,
-            msg=f"Set task stream last update: {task_key=}",
+            _logger, logging.DEBUG, "Set task stream last update: task_key=%s", task_key
         ):
             if not await self.task_exists(task_key):
                 raise TaskNotFoundError(task_key=task_key)
@@ -232,7 +226,9 @@ class CeleryTaskManager:
         with log_context(
             _logger,
             logging.DEBUG,
-            msg=f"Push task stream items: {task_key=} {items=}",
+            "Push task stream items: task_key=%s items=%s",
+            task_key,
+            items,
         ):
             if not await self.task_exists(task_key):
                 raise TaskNotFoundError(task_key=task_key)
@@ -250,7 +246,11 @@ class CeleryTaskManager:
         with log_context(
             _logger,
             logging.DEBUG,
-            msg=f"Pull task results: {owner_metadata=} {task_uuid=} {offset=} {limit=}",
+            "Pull task results: owner_metadata=%s task_uuid=%s offset=%s limit=%s",
+            owner_metadata,
+            task_uuid,
+            offset,
+            limit,
         ):
             task_key = owner_metadata.model_dump_task_key(task_uuid=task_uuid)
             if not await self.task_exists(task_key):
