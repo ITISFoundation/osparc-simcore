@@ -84,7 +84,10 @@ async def export_data(
     with log_context(
         _logger,
         logging.INFO,
-        f"'{task_key}' export data (for {user_id=}) from selection: {paths_to_export}",
+        "export data task (%s) (for user=%s) from selection: %s",
+        task_key,
+        user_id,
+        paths_to_export,
     ):
         dsm = get_dsm_provider(get_app_server(task.app).app).get(
             SimcoreS3DataManager.get_location_id()
