@@ -214,6 +214,18 @@ class CeleryTaskManager:
             await self._task_store.set_task_stream_done(task_key)
 
     @handle_celery_errors
+    async def set_task_stream_last_update(self, task_key: TaskKey) -> None:
+        with log_context(
+            _logger,
+            logging.DEBUG,
+            msg=f"Set task stream last update: {task_key=}",
+        ):
+            if not await self.task_exists(task_key):
+                raise TaskNotFoundError(task_key=task_key)
+
+            await self._task_store.set_task_stream_last_update(task_key)
+
+    @handle_celery_errors
     async def push_task_stream_items(
         self, task_key: TaskKey, *items: TaskStreamItem
     ) -> None:

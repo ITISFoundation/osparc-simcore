@@ -195,6 +195,16 @@ class RedisTaskStore:
             )
         )
 
+    async def set_task_stream_last_update(self, task_key: TaskKey) -> None:
+        stream_meta_key = _build_redis_stream_meta_key(task_key)
+        await handle_redis_returns_union_types(
+            self._redis_client_sdk.redis.hset(
+                name=stream_meta_key,
+                key=_CELERY_TASK_STREAM_LAST_UPDATE_KEY,
+                value=datetime.now(UTC).isoformat(),
+            )
+        )
+
     async def pull_task_stream_items(
         self, task_key: TaskKey, limit: int = 20
     ) -> tuple[list[TaskStreamItem], bool, datetime | None]:
