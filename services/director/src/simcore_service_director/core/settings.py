@@ -9,6 +9,7 @@ from models_library.basic_types import LogLevel, PortInt, VersionTag
 from models_library.docker import DockerLabelKey, DockerPlacementConstraint
 from pydantic import AliasChoices, Field, NonNegativeInt, PositiveInt, field_validator
 from servicelib.logging_utils import LogLevelInt
+from settings_library import CUSTOM_PLACEMENT_LABEL_KEYS
 from settings_library.application import BaseApplicationSettings
 from settings_library.docker_registry import RegistrySettings
 from settings_library.postgres import PostgresSettings
@@ -73,11 +74,26 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         examples=['{"com.example.description":"Accounting webapp"}'],
     )
 
+    DIRECTOR_CUSTOM_PLACEMENT_LABELS: dict[str, str] = Field(
+        default_factory=dict,
+        description="Dynamic placement labels for service node placement. Keys must be in CUSTOM_PLACEMENT_LABEL_KEYS.",
+        examples=['{"product_name": "osparc", "user_id": "{user_id}"}'],
+    )
+
     DIRECTOR_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS: dict[str, str]
 
     DIRECTOR_SERVICES_RESTART_POLICY_MAX_ATTEMPTS: int = 10
     DIRECTOR_SERVICES_RESTART_POLICY_DELAY_S: int = 12
     DIRECTOR_SERVICES_STATE_MONITOR_S: int = 8
+
+    @field_validator("DIRECTOR_CUSTOM_PLACEMENT_LABELS")
+    @classmethod
+    def _validate_custom_placement_labels(cls, v: dict[str, str]) -> dict[str, str]:
+        invalid_keys = set(v.keys()) - set(CUSTOM_PLACEMENT_LABEL_KEYS)
+        if invalid_keys:
+            msg = f"Invalid placement label keys {invalid_keys}. Must be one of {CUSTOM_PLACEMENT_LABEL_KEYS}"
+            raise ValueError(msg)
+        return v
 
     DIRECTOR_TRAEFIK_SIMCORE_ZONE: str = Field(
         ...,

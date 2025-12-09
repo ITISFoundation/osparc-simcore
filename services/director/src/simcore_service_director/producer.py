@@ -293,6 +293,38 @@ async def _create_docker_service_params(
             "Constraints"
         ] += app_settings.DIRECTOR_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS
 
+    # add dynamic placement labels based on template configuration
+    if app_settings.DIRECTOR_CUSTOM_PLACEMENT_LABELS:
+        label_values = {
+            "product_name": "osparc",
+            "user_id": user_id,
+            "project_id": project_id,
+            "node_id": node_uuid,
+        }
+        for (
+            label_key,
+            label_template,
+        ) in app_settings.DIRECTOR_CUSTOM_PLACEMENT_LABELS.items():
+            # resolve template if it contains placeholders
+            try:
+                resolved_value = label_template.format(**label_values)
+                if resolved_value:
+                    constraint = f"node.labels.{label_key}=={resolved_value}"
+                    docker_params["task_template"]["Placement"]["Constraints"].append(
+                        constraint
+                    )
+                    _logger.debug(
+                        "adding dynamic placement label constraint: %s",
+                        constraint,
+                    )
+            except KeyError as err:
+                _logger.warning(
+                    "could not resolve template %s for label %s: %s",
+                    label_template,
+                    label_key,
+                    err,
+                )
+
     # some services define strip_path:true if they need the path to be stripped away
     if (
         isinstance(reverse_proxy_settings, dict)

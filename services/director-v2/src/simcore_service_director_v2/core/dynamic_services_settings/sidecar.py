@@ -11,6 +11,7 @@ from models_library.utils.common_validators import (
     ensure_unique_list_values_validator,
 )
 from pydantic import AliasChoices, Field, PositiveInt, ValidationInfo, field_validator
+from settings_library import CUSTOM_PLACEMENT_LABEL_KEYS
 from settings_library.base import BaseCustomSettings
 from settings_library.efs import AwsEfsSettings
 from settings_library.r_clone import RCloneSettings as SettingsLibraryRCloneSettings
@@ -77,6 +78,17 @@ class PlacementSettings(BaseCustomSettings):
         examples=['{"AIRAM": "node.labels.custom==true"}'],
     )
 
+    DIRECTOR_V2_DYNAMIC_SIDECAR_CUSTOM_PLACEMENT_LABELS: dict[str, str] = Field(
+        default_factory=dict,
+        description=(
+            "Dynamic sidecar custom placement labels for flexible node targeting. "
+            "Keys must be from: " + ", ".join(CUSTOM_PLACEMENT_LABEL_KEYS) + ". "
+            "Values are template strings supporting: {user_id}, {project_id}, {product_name}, "
+            "{node_id}, {group_id}, {wallet_id}. Missing template values cause the label to be skipped."
+        ),
+        examples=['{{"product_name": "platform", "user_id": "user_{user_id}"}}'],
+    )
+
     _unique_custom_constraints = field_validator(
         "DIRECTOR_V2_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS",
     )(ensure_unique_list_values_validator)
@@ -84,6 +96,21 @@ class PlacementSettings(BaseCustomSettings):
     _unique_resource_placement_constraints_substitutions = field_validator(
         "DIRECTOR_V2_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS",
     )(ensure_unique_dict_values_validator)
+
+    @field_validator("DIRECTOR_V2_DYNAMIC_SIDECAR_CUSTOM_PLACEMENT_LABELS")
+    @classmethod
+    def validate_custom_placement_labels_keys(
+        cls, value: dict[str, str]
+    ) -> dict[str, str]:
+        """Validate that all keys are in the allowed set."""
+        invalid_keys = set(value.keys()) - set(CUSTOM_PLACEMENT_LABEL_KEYS)
+        if invalid_keys:
+            msg = (
+                f"Invalid custom placement label keys: {invalid_keys}. "
+                f"Allowed keys: {set(CUSTOM_PLACEMENT_LABEL_KEYS)}"
+            )
+            raise ValueError(msg)
+        return value
 
     @field_validator("DIRECTOR_V2_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS")
     @classmethod
@@ -173,7 +200,7 @@ class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
 
     DYNAMIC_SIDECAR_EXPOSE_PORT: bool = Field(
         default=False,
-        description="Publishes the service on localhost for debuging and testing [DEVELOPMENT ONLY]"
+        description="Publishes the service on localhost for debugging and testing [DEVELOPMENT ONLY]"
         "Can be used to access swagger doc from the host as http://127.0.0.1:30023/dev/doc "
         "where 30023 is the host published port",
         validate_default=True,

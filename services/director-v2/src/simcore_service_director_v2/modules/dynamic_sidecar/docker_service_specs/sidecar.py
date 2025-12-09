@@ -499,6 +499,35 @@ async def get_dynamic_sidecar_spec(  # pylint:disable=too-many-arguments# noqa: 
             if resource_name in placement_substitutions:
                 placement_constraints.append(placement_substitutions[resource_name])
 
+    # Add dynamic sidecar custom placement labels as constraints
+    custom_placement_labels = (
+        placement_settings.DIRECTOR_V2_DYNAMIC_SIDECAR_CUSTOM_PLACEMENT_LABELS
+    )
+    label_values = {
+        "user_id": str(scheduler_data.user_id),
+        "project_id": str(scheduler_data.project_id),
+        "node_id": str(scheduler_data.node_uuid),
+        "product_name": scheduler_data.product_name or "",
+        "group_id": "",  # Not available in SchedulerData
+        "wallet_id": "",  # Not available in SchedulerData
+    }
+    for label_key, label_template in custom_placement_labels.items():
+        try:
+            resolved_value = label_template.format(**label_values)
+            if resolved_value:  # skip if template resolved to empty string
+                placement_constraints.append(
+                    TypeAdapter(DockerPlacementConstraint).validate_python(
+                        f"node.labels.{label_key}=={resolved_value}",
+                    )
+                )
+        except KeyError:
+            # Skip labels with unresolvable template values
+            _logger.debug(
+                "Skipping custom placement label %s: template %s has unresolvable values",
+                label_key,
+                label_template,
+            )
+
     #  -----------
     create_service_params = {
         "endpoint_spec": {"Ports": ports} if ports else {},

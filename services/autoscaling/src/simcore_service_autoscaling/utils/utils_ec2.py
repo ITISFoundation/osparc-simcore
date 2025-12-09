@@ -1,5 +1,6 @@
 """Free helper functions for AWS API"""
 
+import json
 import logging
 import re
 from collections import OrderedDict
@@ -11,6 +12,7 @@ from aws_library.ec2 import AWSTagKey, AWSTagValue, EC2InstanceType, EC2Tags, Re
 from aws_library.ec2._models import EC2InstanceData
 from common_library.json_serialization import json_dumps
 from pydantic import TypeAdapter
+from settings_library import CUSTOM_PLACEMENT_LABEL_KEYS
 
 from .._meta import VERSION
 from ..core.errors import (
@@ -35,7 +37,36 @@ _SIMCORE_AUTOSCALING_SERVICE_LABELS_TAG_KEY: Final[AWSTagKey] = TypeAdapter(
 _SIMCORE_AUTOSCALING_DASK_SCHEDULER_URL_TAG_KEY: Final[AWSTagKey] = TypeAdapter(
     AWSTagKey
 ).validate_python("io.simcore.autoscaling.dask-scheduler_url")
+_SIMCORE_AUTOSCALING_CUSTOM_PLACEMENT_LABELS_TAG_KEY: Final[AWSTagKey] = TypeAdapter(
+    AWSTagKey
+).validate_python("io.simcore.autoscaling.ec2_instance.docker_node_labels")
 _EC2_NAME_TAG_KEY: Final[AWSTagKey] = TypeAdapter(AWSTagKey).validate_python("Name")
+
+
+def serialize_custom_placement_labels_to_ec2_tag(
+    labels: dict[str, str],
+) -> str:
+    """Serialize custom placement labels to a JSON string for EC2 tag storage."""
+    # Only include labels that are in the approved set
+    filtered_labels = {
+        k: v for k, v in labels.items() if k in CUSTOM_PLACEMENT_LABEL_KEYS
+    }
+    return json_dumps(filtered_labels) if filtered_labels else "{}"
+
+
+def deserialize_custom_placement_labels_from_ec2_tag(
+    tag_value: str | None,
+) -> dict[str, str]:
+    """Deserialize custom placement labels from EC2 tag value."""
+    if not tag_value:
+        return {}
+    try:
+        return json.loads(tag_value)
+    except (json.JSONDecodeError, TypeError):
+        _logger.warning(
+            "Failed to deserialize custom placement labels from tag: %s", tag_value
+        )
+        return {}
 
 
 def get_ec2_tags_dynamic(app_settings: ApplicationSettings) -> EC2Tags:
