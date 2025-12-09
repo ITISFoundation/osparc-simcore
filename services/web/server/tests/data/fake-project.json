@@ -91,6 +91,5 @@
   "dev": {},
   "workspaceId": null,
   "type": "STANDARD",
-  "templateType": null,
-  "productName": "osparc"
+  "templateType": null
 }
