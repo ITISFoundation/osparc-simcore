@@ -97,7 +97,7 @@ async def create_project(
             "access_rights": {"1": {"read": True, "write": True, "delete": True}},
             "thumbnail": "",
             "workbench": {},
-            "prdoduct_name": product_name,
+            "product_name": product_name,
         }
         project_config.update(**project_overrides)
         async with sqlalchemy_async_engine.connect() as con, con.begin():
