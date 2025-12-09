@@ -200,7 +200,7 @@ _DELAY_FOR_REMOVING_DISCONNECTED_NODES_S: Final[int] = 30
 
 async def _cleanup_disconnected_nodes(app: FastAPI, cluster: Cluster) -> Cluster:
     utc_now = arrow.utcnow().datetime
-    removeable_nodes = [
+    removable_nodes = [
         node
         for node in cluster.disconnected_nodes
         if node.updated_at
@@ -209,8 +209,8 @@ async def _cleanup_disconnected_nodes(app: FastAPI, cluster: Cluster) -> Cluster
             > _DELAY_FOR_REMOVING_DISCONNECTED_NODES_S
         )
     ]
-    if removeable_nodes:
-        await utils_docker.remove_nodes(get_docker_client(app), nodes=removeable_nodes)
+    if removable_nodes:
+        await utils_docker.remove_nodes(get_docker_client(app), nodes=removable_nodes)
     return dataclasses.replace(cluster, disconnected_nodes=[])
 
 
@@ -628,18 +628,53 @@ def _try_assign_task_to_ec2_instance(
     instances: list[AssociatedInstance] | list[NonAssociatedInstance],
     task_required_ec2_instance: InstanceTypeType | None,
     task_required_resources: Resources,
+    task_required_labels: dict[str, str] | None = None,
 ) -> bool:
+    if task_required_labels is None:
+        task_required_labels = {}
+
     for instance in instances:
+        # Check EC2 instance type
         if task_required_ec2_instance and (
             task_required_ec2_instance != instance.ec2_instance.type
         ):
             continue
+
+        # Check custom placement labels if this is an AssociatedInstance (has a node)
+        if isinstance(instance, AssociatedInstance):
+            # Extract node labels
+            node_labels = {}
+            if instance.node.spec and instance.node.spec.labels:
+                node_labels = instance.node.spec.labels
+
+            # If task has no labels, it should only go to unlabeled nodes
+            if not task_required_labels:
+                if node_labels:
+                    continue
+            else:
+                # Task requires labels: they must match exactly
+                # Check if all required labels are present and match
+                for label_key, label_value in task_required_labels.items():
+                    if node_labels.get(label_key) != label_value:
+                        break
+                else:
+                    # All required labels match, proceed to resource check
+                    pass
+                # If we didn't break (all labels matched), we would execute the else block
+                # If we did break (a label didn't match), continue to next instance
+                if any(
+                    node_labels.get(label_key) != label_value
+                    for label_key, label_value in task_required_labels.items()
+                ):
+                    continue
+
+        # Check resources
         if instance.has_resources_for_task(task_required_resources):
             instance.assign_task(task, task_required_resources)
             _logger.debug(
                 "%s",
-                f"assigned task with {task_required_resources=}, {task_required_ec2_instance=} to "
-                f"{instance.ec2_instance.id=}:{instance.ec2_instance.type=}, "
+                f"assigned task with {task_required_resources=}, {task_required_ec2_instance=}, "
+                f"{task_required_labels=} to {instance.ec2_instance.id=}:{instance.ec2_instance.type=}, "
                 f"{instance.available_resources=}, {instance.ec2_instance.resources=}",
             )
             return True
@@ -686,6 +721,8 @@ async def _assign_tasks_to_current_cluster(
             - The same cluster instance passed as input.
     """
     unassigned_tasks = []
+    docker_client = get_docker_client(app)
+
     assignment_predicates = [
         functools.partial(_try_assign_task_to_ec2_instance, instances=instances)
         for instances in (
@@ -702,12 +739,17 @@ async def _assign_tasks_to_current_cluster(
         task_required_ec2_instance = await auto_scaling_mode.get_task_defined_instance(
             app, task
         )
+        # Extract custom placement labels from task constraints
+        task_required_labels = await utils_docker.get_task_custom_placement_labels(
+            docker_client, task
+        )
 
         if any(
             is_assigned(
                 task,
                 task_required_ec2_instance=task_required_ec2_instance,
                 task_required_resources=task_required_resources,
+                task_required_labels=task_required_labels,
             )
             for is_assigned in assignment_predicates
         ):
@@ -1092,7 +1134,7 @@ def _find_terminateable_instances(
     terminateable_nodes: list[AssociatedInstance] = []
 
     for instance in cluster.drained_nodes:
-        node_last_updated = utils_docker.get_node_last_readyness_update(instance.node)
+        node_last_updated = utils_docker.get_node_last_readiness_update(instance.node)
         elapsed_time_since_drained = (
             datetime.datetime.now(datetime.UTC) - node_last_updated
         )
