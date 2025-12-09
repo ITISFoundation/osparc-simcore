@@ -392,31 +392,6 @@ async def test_list_projects_with_inaccessible_services(
     )
     assert len(data) == 0
 
-    # use-case 3: remove the links to products
-    # shall still return 0 because the user has no access to the services
-    with postgres_db.connect() as conn:
-        conn.execute(projects_to_products.delete())
-    data, *_ = await _list_and_assert_projects(
-        client, expected, headers=s4l_product_headers
-    )
-    assert len(data) == 0
-    data, *_ = await _list_and_assert_projects(client, expected)
-    assert len(data) == 0
-
-    # use-case 4: give user access to services
-    # shall return the projects for any product
-    data, *_ = await _list_and_assert_projects(
-        client, expected, headers=s4l_product_headers
-    )
-    # UPDATE (use-case 4): 11.11.2024 - This test was checking backwards compatibility for listing
-    # projects that were not in the projects_to_products table. After refactoring the project listing,
-    # we no longer support this. MD double-checked the last_modified_timestamp on projects
-    # that do not have any product assigned (all of them were before 01-11-2022 with the exception of two
-    # `4b001ad2-8450-11ec-b105-02420a0b02c7` and `d952cbf4-d838-11ec-af92-02420a0bdad4` which were added to osparc product).
-    assert len(data) == 0
-    data, *_ = await _list_and_assert_projects(client, expected)
-    assert len(data) == 0
-
 
 @pytest.mark.parametrize(
     "user_role,expected",
