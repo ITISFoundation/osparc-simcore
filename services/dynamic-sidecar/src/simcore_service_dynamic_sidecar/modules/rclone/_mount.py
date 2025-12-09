@@ -3,7 +3,7 @@ import logging
 import os
 from collections.abc import Awaitable, Callable
 from contextlib import AsyncExitStack
-from datetime import timedelta
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any, Final
 from uuid import uuid4
@@ -39,6 +39,8 @@ _DEFAULT_REMOTE_CONTROL_HOST: Final[str] = "localhost"
 _MAX_WAIT_RC_HTTP_INTERFACE_READY: Final[timedelta] = timedelta(seconds=10)
 _DEFAULT_UPDATE_INTERVAL: Final[timedelta] = timedelta(seconds=1)
 _DEFAULT_R_CLONE_CLIENT_REQUEST_TIMEOUT: Final[timedelta] = timedelta(seconds=5)
+
+_DEFAULT_MOUNT_ACTIVITY_UPDATE_INTERVAL: Final[timedelta] = timedelta(seconds=5)
 
 
 class _BaseRcloneMountError(OsparcErrorMixin, RuntimeError):
@@ -290,6 +292,7 @@ class TrackedMount:
         remote_path: Path,
         local_mount_path: Path,
         vfs_cache_path: Path,
+        mount_activity_update_interval: timedelta = _DEFAULT_MOUNT_ACTIVITY_UPDATE_INTERVAL,
     ) -> None:
         self.settings = settings
         self.mount_type = remote_type
@@ -298,20 +301,37 @@ class TrackedMount:
         self.local_mount_path = local_mount_path
         self.vfs_cache_path = vfs_cache_path
 
-        async def _handler(
-            mount_activity: MountActivity,
-        ) -> None:
-            _logger.debug("mount_activity=%s", mount_activity)
-
         self.rc_interface = RCloneRCInterfaceClient(
             remote_control_port=rc_port,
             r_clone_mount_settings=settings.R_CLONE_MOUNT_SETTINGS,
-            update_handler=_handler,
+            update_handler=self._progress_handler,
         )
+        self._last_mount_activity: MountActivity | None = None
+        self._last_mount_activity_update: datetime = datetime.fromtimestamp(0, UTC)
+        self._mount_activity_update_interval = mount_activity_update_interval
 
         # used internally to handle the mount command
         self._daemon_manager: DaemonProcessManager | None = None
         self._cleanup_stack = AsyncExitStack()
+
+    async def _progress_handler(self, mount_activity: MountActivity) -> None:
+        now = datetime.now(UTC)
+
+        enough_time_passed = (
+            now - self._last_mount_activity_update
+            > self._mount_activity_update_interval
+        )
+
+        if enough_time_passed and self._last_mount_activity != mount_activity:
+            self._last_mount_activity = mount_activity
+            self._last_mount_activity_update = now
+
+            # NOTE: this could also be useful if pushed to the UI
+            _logger.info(
+                "Activity for '%s': %s",
+                self.local_mount_path,
+                self._last_mount_activity,
+            )
 
     async def setup(self) -> None:
         pass
