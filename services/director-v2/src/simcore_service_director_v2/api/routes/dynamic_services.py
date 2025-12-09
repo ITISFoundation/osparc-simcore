@@ -18,6 +18,7 @@ from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import SimcoreServiceLabels
 from models_library.users import UserID
 from pydantic import NonNegativeFloat, NonNegativeInt
+from servicelib import tracing
 from servicelib.fastapi.requests_decorators import cancel_on_disconnect
 from servicelib.logging_utils import log_decorator
 from servicelib.rabbitmq import RabbitMQClient
@@ -141,6 +142,7 @@ async def create_dynamic_service(
             request_scheme=x_dynamic_sidecar_request_scheme,
             request_simcore_user_agent=x_simcore_user_agent,
             can_save=service.can_save,
+            tracing_context=tracing.get_context(),
         )
 
     return await scheduler.get_stack_status(service.node_uuid)

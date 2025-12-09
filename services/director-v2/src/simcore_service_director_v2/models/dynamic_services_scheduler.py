@@ -42,6 +42,7 @@ from pydantic import (
     TypeAdapter,
     field_validator,
 )
+from servicelib import tracing
 from servicelib.exception_utils import DelayedExceptionHandler
 
 from ..constants import (
@@ -460,6 +461,9 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         default=None,
         description="contains harware information so we know on which hardware to run the service",
     )
+    tracing_context: tracing.TracingContext | None = Field(
+        default=None, description="contains tracing context to be used"
+    )
 
     @property
     def get_proxy_endpoint(self) -> AnyHttpUrl:
@@ -531,6 +535,7 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
             "wallet_info": service.wallet_info,
             "pricing_info": service.pricing_info,
             "hardware_info": service.hardware_info,
+            "tracing_context": service.tracing_context,
         }
         if run_id:
             obj_dict["run_id"] = run_id

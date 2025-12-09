@@ -41,7 +41,9 @@ from models_library.services_types import ServicePortKey
 from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import NonNegativeFloat
+from servicelib import tracing
 from servicelib.background_task import create_periodic_task
+from servicelib.fastapi.tracing import get_tracing_config
 from servicelib.long_running_tasks.models import ProgressCallback, TaskProgress
 from servicelib.redis import RedisClientsManager, exclusive
 from settings_library.redis import RedisDatabase
@@ -241,7 +243,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
             request_dns=request_dns,
             request_scheme=request_scheme,
             request_simcore_user_agent=request_simcore_user_agent,
-            can_save=can_save,
+            can_save=can_save,  # meepmoop
         )
         scheduler_data.dynamic_sidecar.instrumentation.start_requested_at = (
             arrow.utcnow().datetime
@@ -536,21 +538,23 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
         service_name: ServiceName,
     ) -> asyncio.Task:
         scheduler_data: SchedulerData = self._to_observe[service_name]
-        observation_task = asyncio.create_task(
-            observing_single_service(
-                scheduler=self,
-                service_name=service_name,
-                scheduler_data=scheduler_data,
-                dynamic_scheduler=dynamic_scheduler,
-            ),
-            name=f"{__name__}.observe_{service_name}",
-        )
-        observation_task.add_done_callback(
-            functools.partial(
-                lambda s, _: self._service_observation_task.pop(s, None),
-                service_name,
+        with tracing.use_tracing_context(scheduler_data.tracing_context):
+            observation_task = asyncio.create_task(
+                observing_single_service(
+                    scheduler=self,
+                    service_name=service_name,
+                    scheduler_data=scheduler_data,
+                    dynamic_scheduler=dynamic_scheduler,
+                    tracer=get_tracing_config().tracer_provider.get_tracer(__name__),
+                ),
+                name=f"{__name__}.observe_{service_name}",
             )
-        )
+            observation_task.add_done_callback(
+                functools.partial(
+                    lambda s, _: self._service_observation_task.pop(s, None),
+                    service_name,
+                )
+            )
         logger.debug("created %s for %s", f"{observation_task=}", f"{service_name=}")
         return observation_task
 
