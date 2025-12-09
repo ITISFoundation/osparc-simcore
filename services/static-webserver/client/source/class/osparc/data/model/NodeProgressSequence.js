@@ -343,35 +343,5 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
 
       this.__computeOverallProgress();
     },
-
-    __startSidecarPullingFakeProgress: function() {
-      // stop any previous timer
-      this.__stopSidecarPullingFakeProgress();
-      // increase fake progress:
-      // - every second
-      // - up to 99%
-      // - by progressStep each time: fill it in about 60 seconds
-      // - make sure the backend didn't already update it
-      this.__sidecarFakeProgressTimer = setInterval(() => {
-        const progressStep = 1/60;
-        const sidecarProgress = this.getSidecarPulling();
-        if (sidecarProgress.value < 0.99) {
-          const newValue = Math.min(sidecarProgress.value + progressStep, 0.99);
-          this.setSidecarPulling({
-            progressLabel: `${(osparc.utils.Utils.safeToFixed(newValue * 100, 1))}%`,
-            value: newValue
-          });
-        } else {
-          this.__stopSidecarPullingFakeProgress();
-        }
-      }, 1000);
-    },
-
-    __stopSidecarPullingFakeProgress: function() {
-      if (this.__sidecarFakeProgressTimer) {
-        clearInterval(this.__sidecarFakeProgressTimer);
-        this.__sidecarFakeProgressTimer = null;
-      }
-    },
   }
 });
