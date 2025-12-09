@@ -186,10 +186,7 @@ COPY --chown=scu:scu --from=prod-only-deps  ${DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_D
 COPY --chown=scu:scu services/dynamic-sidecar/docker services/dynamic-sidecar/docker
 RUN chmod +x services/dynamic-sidecar/docker/*.sh
 
-# NOTE: the start period of 3 minutes is to allow the dynamic-sidecar
-# enough time to connect to the externald dependencies. some times the docker
-# networks take time to get created
-# https://docs.docker.com/reference/dockerfile/#healthcheck
+# NOTE: sometimes docker network may take some time to resolve DNS, thus the longer start-period
 HEALTHCHECK \
   --interval=10s \
   --timeout=5s \
