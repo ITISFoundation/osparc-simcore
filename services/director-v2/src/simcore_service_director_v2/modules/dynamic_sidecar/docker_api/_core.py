@@ -284,10 +284,7 @@ async def are_sidecar_and_proxy_services_present(
             swarm_stack_name=swarm_stack_name,
             return_only_sidecars=False,
         )
-    if len(stack_services) != _NUM_SIDECAR_STACK_SERVICES:
-        return False
-
-    return True
+    return len(stack_services) == _NUM_SIDECAR_STACK_SERVICES
 
 
 async def _list_docker_services(
