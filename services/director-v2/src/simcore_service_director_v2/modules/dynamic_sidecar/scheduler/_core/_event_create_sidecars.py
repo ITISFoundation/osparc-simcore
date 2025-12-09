@@ -275,33 +275,50 @@ class CreateSidecars(DynamicSchedulerEvent):
         dynamic_sidecar_service_final_spec = _merge_service_base_and_user_specs(
             dynamic_sidecar_service_spec_base, user_specific_service_spec
         )
-        rabbit_message = ProgressRabbitMessageNode.model_construct(
+        sidecar_pull_started_msg = ProgressRabbitMessageNode.model_construct(
             user_id=scheduler_data.user_id,
             project_id=scheduler_data.project_id,
             node_id=scheduler_data.node_uuid,
             progress_type=ProgressType.SIDECARS_PULLING,
             report=ProgressReport(actual_value=0, total=1),
         )
-        await rabbitmq_client.publish(rabbit_message.channel_name, rabbit_message)
+        await rabbitmq_client.publish(
+            ProgressRabbitMessageNode.get_channel_name(), sidecar_pull_started_msg
+        )
         dynamic_sidecar_id = await create_service_and_get_id(
             dynamic_sidecar_service_final_spec,
             app_settings.DIRECTOR_V2_DOCKER_HUB_REGISTRY,
         )
+        await rabbitmq_client.publish(
+            ProgressRabbitMessageNode.get_channel_name(),
+            sidecar_pull_started_msg.model_copy(
+                update={"report": ProgressReport(actual_value=0.1, total=1)}
+            ),
+        )
+
         # constrain service to the same node
+        async def progress_update(current: float) -> None:
+            await rabbitmq_client.publish(
+                ProgressRabbitMessageNode.get_channel_name(),
+                sidecar_pull_started_msg.model_copy(
+                    update={"report": ProgressReport(actual_value=current, total=1)}
+                ),
+            )
+
         scheduler_data.dynamic_sidecar.docker_node_id = (
             await get_dynamic_sidecar_placement(
-                dynamic_sidecar_id, dynamic_services_scheduler_settings
+                dynamic_sidecar_id,
+                dynamic_services_scheduler_settings,
+                progress_update=progress_update,
             )
         )
 
-        rabbit_message = ProgressRabbitMessageNode.model_construct(
-            user_id=scheduler_data.user_id,
-            project_id=scheduler_data.project_id,
-            node_id=scheduler_data.node_uuid,
-            progress_type=ProgressType.SIDECARS_PULLING,
-            report=ProgressReport(actual_value=1, total=1),
+        await rabbitmq_client.publish(
+            ProgressRabbitMessageNode.get_channel_name(),
+            sidecar_pull_started_msg.model_copy(
+                update={"report": ProgressReport(actual_value=1, total=1)}
+            ),
         )
-        await rabbitmq_client.publish(rabbit_message.channel_name, rabbit_message)
 
         await constrain_service_to_node(
             service_name=scheduler_data.service_name,
