@@ -31,9 +31,9 @@ def mock_liveness_timeout(mocker: MockerFixture) -> None:
         # Force a short timeout for all liveness checks
         kwargs["max_delay"] = timedelta(seconds=0.5)
         kwargs["check_interval"] = timedelta(seconds=0.1)
-        return await original_wait_for_service_liveness(
+        return await original_wait_for_service_liveness(  # pylint: disable=missing-kwoa
             *args, **kwargs
-        )  # pylint: disable=missing-kwoa
+        )
 
     # Patch in all modules that import it
     for module in [
