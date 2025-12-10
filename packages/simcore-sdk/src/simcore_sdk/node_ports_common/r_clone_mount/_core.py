@@ -16,7 +16,7 @@ from models_library.progress_bar import ProgressReport
 from models_library.projects_nodes_io import StorageFileID
 from pydantic import BaseModel, NonNegativeFloat
 from servicelib.container_utils import run_command_in_container
-from servicelib.logging_utils import log_catch
+from servicelib.logging_utils import log_catch, log_context
 from servicelib.r_clone_utils import config_file
 from servicelib.utils import unused_port
 from settings_library.r_clone import RCloneMountSettings, RCloneSettings
@@ -402,45 +402,62 @@ class RCloneMountManager:
         local_mount_path: Path,
         vfs_cache_path_overwrite: Path | None = None,
     ) -> None:
-        mount_id = self._get_mount_id(local_mount_path)
-        if mount_id in self._started_mounts:
-            tracked_mount = self._started_mounts[mount_id]
-            raise MountAlreadyStartedError(local_mount_path=local_mount_path)
+        with log_context(
+            _logger,
+            logging.INFO,
+            f"mounting {local_mount_path=} from {remote_path=}",
+            log_duration=True,
+        ):
+            mount_id = self._get_mount_id(local_mount_path)
+            if mount_id in self._started_mounts:
+                tracked_mount = self._started_mounts[mount_id]
+                raise MountAlreadyStartedError(local_mount_path=local_mount_path)
 
-        vfs_cache_path = (
-            vfs_cache_path_overwrite or self._common_vfs_cache_path
-        ) / mount_id
-        vfs_cache_path.mkdir(parents=True, exist_ok=True)
+            vfs_cache_path = (
+                vfs_cache_path_overwrite or self._common_vfs_cache_path
+            ) / mount_id
+            vfs_cache_path.mkdir(parents=True, exist_ok=True)
 
-        free_port = await asyncio.get_running_loop().run_in_executor(None, unused_port)
+            free_port = await asyncio.get_running_loop().run_in_executor(
+                None, unused_port
+            )
 
-        tracked_mount = TrackedMount(
-            self.r_clone_settings,
-            remote_type,
-            rc_port=free_port,
-            remote_path=remote_path,
-            local_mount_path=local_mount_path,
-            vfs_cache_path=vfs_cache_path,
-        )
-        await tracked_mount.start_mount()
+            tracked_mount = TrackedMount(
+                self.r_clone_settings,
+                remote_type,
+                rc_port=free_port,
+                remote_path=remote_path,
+                local_mount_path=local_mount_path,
+                vfs_cache_path=vfs_cache_path,
+            )
+            await tracked_mount.start_mount()
 
-        self._started_mounts[mount_id] = tracked_mount
+            self._started_mounts[mount_id] = tracked_mount
 
     async def wait_for_transfers_to_complete(self, local_mount_path: Path) -> None:
-        mount_id = self._get_mount_id(local_mount_path)
-        if mount_id not in self._started_mounts:
-            raise MountNotStartedError(local_mount_path=local_mount_path)
+        with log_context(
+            _logger,
+            logging.INFO,
+            f"wait for transfers to complete {local_mount_path=}",
+            log_duration=True,
+        ):
+            mount_id = self._get_mount_id(local_mount_path)
+            if mount_id not in self._started_mounts:
+                raise MountNotStartedError(local_mount_path=local_mount_path)
 
-        tracked_mount = self._started_mounts[mount_id]
-        await tracked_mount.rc_interface.wait_for_all_transfers_to_complete()
+            tracked_mount = self._started_mounts[mount_id]
+            await tracked_mount.rc_interface.wait_for_all_transfers_to_complete()
 
     async def stop_mount(self, local_mount_path: Path) -> None:
-        mount_id = self._get_mount_id(local_mount_path)
-        if mount_id not in self._started_mounts:
-            raise MountNotStartedError(local_mount_path=local_mount_path)
+        with log_context(
+            _logger, logging.INFO, f"unmounting {local_mount_path=}", log_duration=True
+        ):
+            mount_id = self._get_mount_id(local_mount_path)
+            if mount_id not in self._started_mounts:
+                raise MountNotStartedError(local_mount_path=local_mount_path)
 
-        tracked_mount = self._started_mounts[mount_id]
-        await tracked_mount.stop_mount()
+            tracked_mount = self._started_mounts[mount_id]
+            await tracked_mount.stop_mount()
 
     async def setup(self) -> None:
         pass
