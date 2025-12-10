@@ -1,3 +1,5 @@
+from common_library.user_messages import user_message
+
 from ._base import ApiServerBaseError
 
 
@@ -10,4 +12,7 @@ class LogStreamerNotRegisteredError(LogStreamingBaseError):
 
 
 class LogStreamerRegistrationConflictError(LogStreamingBaseError):
-    msg_template = "A stream was already connected to {job_id}. Only a single stream can be connected at the time"
+    msg_template = user_message(
+        "A stream is already connected to {job_id}. Only one stream can be connected at a time.",
+        _version=1,
+    )
