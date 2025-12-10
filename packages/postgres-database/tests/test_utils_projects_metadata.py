@@ -199,7 +199,7 @@ async def test_set_project_ancestors_with_invalid_parents(
         )
 
     #
-    another_project = await create_fake_project(connection, user, hidden=False)
+    another_project = await create_fake_project(connection, user, product, hidden=False)
     another_project_node = await create_fake_projects_node(another_project["uuid"])
     with pytest.raises(DBProjectInvalidParentNodeError):
         await utils_projects_metadata.set_project_ancestors(
@@ -218,7 +218,9 @@ async def test_set_project_ancestors_with_invalid_parents(
         )
 
     # mix a node from one project and a parent project
-    yet_another_project = await create_fake_project(connection, user, hidden=False)
+    yet_another_project = await create_fake_project(
+        connection, user, product, hidden=False
+    )
     with pytest.raises(DBProjectInvalidParentNodeError):
         await utils_projects_metadata.set_project_ancestors(
             connection_factory,
@@ -240,17 +242,21 @@ async def test_set_project_ancestors(
     connection: SAConnection,
     connection_factory: SAConnection | AsyncConnection,
     create_fake_user: Callable[..., Awaitable[RowProxy]],
+    create_fake_product: Callable[..., Awaitable[RowProxy]],
     create_fake_project: Callable[..., Awaitable[RowProxy]],
     create_fake_projects_node: Callable[[uuid.UUID], Awaitable[ProjectNode]],
 ):
     user: RowProxy = await create_fake_user(connection)
+    product: RowProxy = await create_fake_product("test-product")
 
     # create grand-parent
-    grand_parent_project = await create_fake_project(connection, user, hidden=False)
+    grand_parent_project = await create_fake_project(
+        connection, user, product, hidden=False
+    )
     grand_parent_node = await create_fake_projects_node(grand_parent_project["uuid"])
 
     # create parent
-    parent_project = await create_fake_project(connection, user, hidden=False)
+    parent_project = await create_fake_project(connection, user, product, hidden=False)
     parent_node = await create_fake_projects_node(parent_project["uuid"])
 
     # create child
