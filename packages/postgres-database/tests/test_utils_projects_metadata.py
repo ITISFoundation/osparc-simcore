@@ -50,11 +50,15 @@ async def test_set_project_custom_metadata(
     connection: SAConnection,
     connection_factory: SAConnection | AsyncConnection,
     create_fake_user: Callable[..., Awaitable[RowProxy]],
+    create_fake_product: Callable[..., Awaitable[RowProxy]],
     create_fake_project: Callable[..., Awaitable[RowProxy]],
     faker: Faker,
 ):
     user: RowProxy = await create_fake_user(connection)
-    project: RowProxy = await create_fake_project(connection, user, hidden=True)
+    product: RowProxy = await create_fake_product("test-product")
+    project: RowProxy = await create_fake_project(
+        connection, user, product, hidden=True
+    )
 
     # subresource is attached to parent
     user_metadata = {"float": 3.14, "int": 42, "string": "foo", "bool": True}
@@ -173,7 +177,7 @@ async def test_set_project_ancestors_with_invalid_parents(
             parent_node_id=random_node_id,
         )
 
-    # these would make it a parent of itself which is forbiden
+    # these would make it a parent of itself which is forbidden
     with pytest.raises(DBProjectInvalidAncestorsError):
         await utils_projects_metadata.set_project_ancestors(
             connection_factory,
