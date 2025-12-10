@@ -1,13 +1,16 @@
-# Configures spell-checker
-# Usage:
+# typos spell-checker
+#
+# config .typos.toml
+#   SEE https://github.com/crate-ci/typos/blob/master/docs/reference.md
+#
+# usage:
 #.   uvx typos --help
 #
-# Inline marks:
+# inline marks:
 #.  # spellchecker:disable-line
 #.  # spellchecker:<on|off>
 #.  # spellchecker:ignore-next-line
 #
-# SEE https://github.com/crate-ci/typos/blob/master/docs/reference.md
 
 [files]
 extend-exclude = [
