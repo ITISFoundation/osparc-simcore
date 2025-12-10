@@ -120,11 +120,15 @@ async def test_set_project_ancestors_with_invalid_parents(
     connection_factory: SAConnection | AsyncConnection,
     create_fake_user: Callable[..., Awaitable[RowProxy]],
     create_fake_project: Callable[..., Awaitable[RowProxy]],
+    create_fake_product: Callable[..., Awaitable[RowProxy]],
     create_fake_projects_node: Callable[[uuid.UUID], Awaitable[ProjectNode]],
     faker: Faker,
 ):
     user: RowProxy = await create_fake_user(connection)
-    project: RowProxy = await create_fake_project(connection, user, hidden=True)
+    product: RowProxy = await create_fake_product("test-product")
+    project: RowProxy = await create_fake_project(
+        connection, user, product, hidden=True
+    )
     project_node = await create_fake_projects_node(project["uuid"])
 
     # this is empty
