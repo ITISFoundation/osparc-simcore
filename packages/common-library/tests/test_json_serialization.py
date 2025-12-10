@@ -88,7 +88,7 @@ def _expected_json_dumps(obj: Any, default=pydantic_encoder, **json_dumps_kwargs
         ),  # NOTE: only one-to-one with indent=2
     ],
 )
-def test_compatiblity_with_json_interface(
+def test_compatibility_with_json_interface(
     fake_data_dict: dict[str, Any], kwargs: dict[str, Any]
 ):
     orjson_dump = JsonNamespace.dumps(fake_data_dict, **kwargs)

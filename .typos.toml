@@ -1,11 +1,18 @@
 # Configures spell-checker
 #
+# INLINE:
+#  # spellchecker:disable-line
+#  # spellchecker:<on|off>
+#  # spellchecker:ignore-next-line
+#
 # SEE https://github.com/crate-ci/typos/blob/master/docs/reference.md
 
 [files]
 extend-exclude = [
       ".gitignore",
       "**/migration/**",
+          "**/*.svg",
+          "**/*.css",
 ]
 ignore-hidden = true
 ignore-files = true
@@ -23,7 +30,7 @@ locale = "en"
 extend-ignore-re = [
     # e.g. "# spellchecker:disable-line"
     "(?Rm)^.*(#|//)\\s*spellchecker:disable-line$",
-    # e.g. "# spellchecker:<on|off> ""
+    # e.g. "# spellchecker:<on|off>"
     "(?s)(#|//)\\s*spellchecker:off.*?\\n\\s*(#|//)\\s*spellchecker:on",
     # e.g. # spellchecker:ignore-next-line
     "(#|//)\\s*spellchecker:ignore-next-line\\n.*",
@@ -43,3 +50,5 @@ extend-ignore-identifiers-re = []
 
 [default.extend-identifiers]
 # <typo> = "<correction>"
+instance_datas = "instance_datas"
+cMIS = "cMIS"

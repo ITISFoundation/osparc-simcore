@@ -255,7 +255,7 @@
       ]
     },
     {
-      "name": "Python: Remote Attach dynamic-schduler (SCALE 1 replica first)",
+      "name": "Python: Remote Attach dynamic-scheduler (SCALE 1 replica first)",
       "type": "debugpy",
       "request": "attach",
       "connect": {

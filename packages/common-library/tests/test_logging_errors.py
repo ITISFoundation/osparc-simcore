@@ -11,7 +11,7 @@ from common_library.logging.logging_errors import (
 )
 
 
-def test_create_troubleshotting_log_message(caplog: pytest.LogCaptureFixture):
+def test_create_troubleshooting_log_message(caplog: pytest.LogCaptureFixture):
     class MyError(OsparcErrorMixin, RuntimeError):
         msg_template = "My error {user_id}"
 

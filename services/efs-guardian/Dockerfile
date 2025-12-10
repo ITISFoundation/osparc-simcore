@@ -198,7 +198,7 @@ CMD ["/bin/sh", "services/efs-guardian/docker/boot.sh"]
 
 # --------------------------Development stage -------------------
 # Source code accessible in host but runs in container
-# Runs as myu with same gid/uid as host
+# Runs as my with same gid/uid as host
 # Placed at the end to speed-up the build if images targeting production
 #
 #  + /devel         WORKDIR
