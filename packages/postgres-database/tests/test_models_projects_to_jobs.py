@@ -6,6 +6,7 @@
 import json
 from collections.abc import Iterator
 from copy import deepcopy
+from typing import Any
 
 import pytest
 import simcore_postgres_database.cli
@@ -52,6 +53,27 @@ def sync_engine(
     postgres_tools.force_drop_all_tables(sync_engine)
 
 
+def _prepare_data(
+    params: dict[str, Any],
+    excluded_columns: list[str] | None = None,
+    default_values: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    prepared_params = deepcopy(params)
+    for col, value in params.items():
+        if excluded_columns and col in excluded_columns:
+            prepared_params.pop(col, None)
+            continue
+
+        if isinstance(value, dict):
+            prepared_params[col] = json.dumps(value)
+
+    if default_values:
+        for col, value in default_values.items():
+            prepared_params.setdefault(col, value)
+
+    return prepared_params
+
+
 def test_populate_projects_to_jobs_during_migration(
     sync_engine: sqlalchemy.engine.Engine, faker: Faker
 ):
@@ -95,20 +117,15 @@ def test_populate_projects_to_jobs_during_migration(
 
         # product
         product_name = faker.word()
-        product_data = random_product(
-            name=product_name,
+        product_data = _prepare_data(
+            random_product(
+                name=product_name,
+            ),
+            excluded_columns=[
+                "base_url",
+                "support_standard_group_id",
+            ],  # NOTE: columns not present at that migration tim
         )
-        excluded_columns = [
-            "base_url",
-            "support_standard_group_id",
-        ]  # NOTE: columns not present at that migration tim
-        for col, value in deepcopy(product_data).items():
-            if col in excluded_columns:
-                product_data.pop(col, None)
-                continue
-
-            if isinstance(value, dict):
-                product_data[col] = json.dumps(value)
 
         columns = list(product_data.keys())
         values_clause = ", ".join(f":{col}" for col in columns)
@@ -174,17 +191,11 @@ def test_populate_projects_to_jobs_during_migration(
         # NOTE: cannot use `projects` table directly here because it changes
         # throughout time
         for prj in projects_data:
-            for col in excluded_columns:
-                prj.pop(col, None)
+            prj_prepared = _prepare_data(
+                prj, excluded_columns, client_default_column_values
+            )
 
-            for key, value in client_default_column_values.items():
-                prj.setdefault(key, value)
-
-            for key, value in prj.items():
-                if isinstance(value, dict):
-                    prj[key] = json.dumps(value)
-
-            columns = list(prj.keys())
+            columns = list(prj_prepared.keys())
             values_clause = ", ".join(f":{col}" for col in columns)
             columns_clause = ", ".join(columns)
             stmt = sa.text(
@@ -192,7 +203,7 @@ def test_populate_projects_to_jobs_during_migration(
                 INSERT INTO projects ({columns_clause})
                 VALUES ({values_clause})
                 """  # noqa: S608
-            ).bindparams(**prj)
+            ).bindparams(**prj_prepared)
             conn.execute(stmt)
 
             # projects_to_products
@@ -201,7 +212,7 @@ def test_populate_projects_to_jobs_during_migration(
             INSERT INTO projects_to_products (project_uuid, product_name)
             VALUES (:project_uuid, :product_name)
                 """
-            ).bindparams(project_uuid=prj["uuid"], product_name=product_name)
+            ).bindparams(project_uuid=prj_prepared["uuid"], product_name=product_name)
             conn.execute(stmt)
 
     # MIGRATE UPGRADE: this should populate
