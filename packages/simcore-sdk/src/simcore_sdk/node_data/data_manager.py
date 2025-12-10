@@ -184,16 +184,6 @@ async def _delete_legacy_archive(
     )
 
 
-async def _use_r_clone_mounting(
-    application_name: str, user_id: UserID, product_name: ProductName
-) -> bool:
-    return (
-        await DBManager(application_name=application_name).get_group_extra_properties(
-            user_id=user_id, product_name=product_name
-        )
-    ).use_r_clone_mounting
-
-
 async def _stop_mount(
     mount_manager: RCloneMountManager, destination_path: Path
 ) -> None:
@@ -218,7 +208,7 @@ async def push(  # pylint: disable=too-many-arguments  # noqa: PLR0913
 ) -> None:
     """pushes and removes the legacy archive if present"""
 
-    if _use_r_clone_mounting(application_name, user_id, product_name):
+    if await mount_manager.was_mount_started(source_path):
         await _stop_mount(mount_manager, source_path)
     else:
         await _push_directory(
@@ -277,7 +267,14 @@ async def _start_mount_if_required(
     node_uuid: NodeID,
     destination_path: Path,
 ) -> None:
-    if not _use_r_clone_mounting(application_name, user_id, product_name):
+    group_extra_properties = await DBManager(
+        application_name=application_name
+    ).get_group_extra_properties(user_id=user_id, product_name=product_name)
+
+    _logger.debug("group_extra_properties=%s", group_extra_properties)
+
+    if group_extra_properties.use_r_clone_mounting is False:
+        _logger.debug("RClone mounting not required")
         return
 
     s3_object = __create_s3_object_key(project_id, node_uuid, destination_path)
