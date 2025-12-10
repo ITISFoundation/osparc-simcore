@@ -55,6 +55,7 @@ from ..modules.inputs import InputsState
 from ..modules.mounted_fs import MountedVolumes
 from ..modules.notifications._notifications_ports import PortNotifier
 from ..modules.outputs import OutputsManager, event_propagation_disabled
+from ..modules.r_clone_mount_manager import get_r_clone_mount_manager
 from .long_running_tasks_utils import (
     ensure_read_permissions_on_user_service_data,
     run_before_shutdown_actions,
@@ -351,7 +352,9 @@ async def _restore_state_folder(
     progress_bar: ProgressBarData,
     state_path: Path,
 ) -> None:
+    assert settings.DY_SIDECAR_PRODUCT_NAME is not None  # nosec
     await data_manager.pull(
+        product_name=settings.DY_SIDECAR_PRODUCT_NAME,
         user_id=settings.DY_SIDECAR_USER_ID,
         project_id=settings.DY_SIDECAR_PROJECT_ID,
         node_uuid=settings.DY_SIDECAR_NODE_ID,
@@ -362,6 +365,8 @@ async def _restore_state_folder(
         r_clone_settings=settings.DY_SIDECAR_R_CLONE_SETTINGS,
         progress_bar=progress_bar,
         legacy_state=_get_legacy_state_with_dy_volumes_path(settings),
+        application_name=f"{APP_NAME}-{settings.DY_SIDECAR_NODE_ID}",
+        mount_manager=get_r_clone_mount_manager(app),
     )
 
 
@@ -424,7 +429,9 @@ async def _save_state_folder(
     state_path: Path,
     mounted_volumes: MountedVolumes,
 ) -> None:
+    assert settings.DY_SIDECAR_PRODUCT_NAME is not None  # nosec
     await data_manager.push(
+        product_name=settings.DY_SIDECAR_PRODUCT_NAME,
         user_id=settings.DY_SIDECAR_USER_ID,
         project_id=settings.DY_SIDECAR_PROJECT_ID,
         node_uuid=settings.DY_SIDECAR_NODE_ID,
@@ -437,6 +444,7 @@ async def _save_state_folder(
         progress_bar=progress_bar,
         legacy_state=_get_legacy_state_with_dy_volumes_path(settings),
         application_name=f"{APP_NAME}-{settings.DY_SIDECAR_NODE_ID}",
+        mount_manager=get_r_clone_mount_manager(app),
     )
 
 
