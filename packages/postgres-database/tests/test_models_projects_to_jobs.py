@@ -5,6 +5,7 @@
 
 import json
 from collections.abc import Iterator
+from copy import deepcopy
 
 import pytest
 import simcore_postgres_database.cli
@@ -14,7 +15,11 @@ import sqlalchemy.exc
 from common_library.users_enums import UserRole
 from faker import Faker
 from pytest_simcore.helpers import postgres_tools
-from pytest_simcore.helpers.faker_factories import random_project, random_user
+from pytest_simcore.helpers.faker_factories import (
+    random_product,
+    random_project,
+    random_user,
+)
 from simcore_postgres_database.models.projects import ProjectType, projects
 from simcore_postgres_database.models.projects_to_jobs import projects_to_jobs
 
@@ -88,6 +93,36 @@ def test_populate_projects_to_jobs_during_migration(
         result = conn.execute(stmt)
         user_id = result.scalar()
 
+        # product
+        product_name = faker.word()
+        product_data = random_product(
+            name=product_name,
+        )
+        excluded_columns = [
+            "base_url",
+            "support_standard_group_id",
+        ]  # NOTE: columns not present at that migration tim
+        for col, value in deepcopy(product_data).items():
+            if col in excluded_columns:
+                product_data.pop(col, None)
+                continue
+
+            if isinstance(value, dict):
+                product_data[col] = json.dumps(value)
+
+        columns = list(product_data.keys())
+        values_clause = ", ".join(f":{col}" for col in columns)
+        columns_clause = ", ".join(columns)
+        stmt = sa.text(
+            f"""
+            INSERT INTO products ({columns_clause})
+            VALUES ({values_clause})
+            RETURNING name
+            """  # noqa: S608
+        ).bindparams(**product_data)
+        result = conn.execute(stmt)
+        product_name = result.scalar()
+
         SPACES = " " * 3
         projects_data = [
             random_project(
@@ -132,9 +167,16 @@ def test_populate_projects_to_jobs_during_migration(
             "workspace_id": None,
         }
 
+        excluded_columns = [
+            "product_name"
+        ]  # NOTE: columns not present at that migration time
+
         # NOTE: cannot use `projects` table directly here because it changes
         # throughout time
         for prj in projects_data:
+            for col in excluded_columns:
+                prj.pop(col, None)
+
             for key, value in client_default_column_values.items():
                 prj.setdefault(key, value)
 
@@ -151,6 +193,15 @@ def test_populate_projects_to_jobs_during_migration(
                 VALUES ({values_clause})
                 """  # noqa: S608
             ).bindparams(**prj)
+            conn.execute(stmt)
+
+            # projects_to_products
+            stmt = sa.text(
+                """
+            INSERT INTO projects_to_products (project_uuid, product_name)
+            VALUES (:project_uuid, :product_name)
+                """
+            ).bindparams(project_uuid=prj["uuid"], product_name=product_name)
             conn.execute(stmt)
 
     # MIGRATE UPGRADE: this should populate
