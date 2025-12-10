@@ -165,6 +165,10 @@ ruff: $(REPO_BASE_DIR)/.ruff.toml ## runs ruff (python fast linter) on src and t
 		$(CURDIR)/src \
 		$(CURDIR)/tests
 
+.PHONY: typos
+typos: $(REPO_BASE_DIR)/.ruff.toml ## runs typos spell checker
+	@pre-commit run typos --files $(shell find $(CURDIR) -type f \( -name '*.py' -o -name '*.md' -o -name '*.js' \))
+
 .PHONY: mypy
 mypy: $(REPO_BASE_DIR)/mypy.ini ## runs mypy python static type-checker on this services's code. Use AFTER make install-*
 	@mypy \
