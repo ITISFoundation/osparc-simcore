@@ -1,6 +1,8 @@
+from datetime import timedelta
 from enum import StrEnum
 from typing import Annotated
 
+from common_library.pydantic_validators import validate_numeric_string_as_timedelta
 from pydantic import Field, NonNegativeInt
 
 from .base import BaseCustomSettings
@@ -12,6 +14,21 @@ class S3Provider(StrEnum):
     AWS_MOTO = "AWS_MOTO"
     CEPH = "CEPH"
     MINIO = "MINIO"
+
+
+class RCloneMountSettings(BaseCustomSettings):
+    """all settings related to mounting go here"""
+
+    R_CLONE_MOUNT_TRANSFERS_COMPLETED_TIMEOUT: timedelta = Field(
+        default=timedelta(minutes=60),
+        description="max amount of time to wait when closing the rclone mount",
+    )
+
+    _validate_r_clone_mount_transfers_completed_timeout = (
+        validate_numeric_string_as_timedelta(
+            "R_CLONE_MOUNT_TRANSFERS_COMPLETED_TIMEOUT"
+        )
+    )
 
 
 class RCloneSettings(BaseCustomSettings):
@@ -63,3 +80,7 @@ class RCloneSettings(BaseCustomSettings):
             description="`--order-by X`: sets the order of file upload, e.g., 'size,mixed'",
         ),
     ] = "size,mixed"
+
+    R_CLONE_MOUNT_SETTINGS: RCloneMountSettings = Field(
+        json_schema_extra={"auto_default_from_env": True}
+    )
