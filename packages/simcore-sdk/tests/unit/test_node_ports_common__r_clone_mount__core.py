@@ -19,6 +19,7 @@ from botocore.client import Config
 from faker import Faker
 from models_library.api_schemas_storage.storage_schemas import S3BucketName
 from models_library.basic_types import PortInt
+from models_library.projects_nodes_io import StorageFileID
 from pydantic import ByteSize, TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
@@ -27,11 +28,11 @@ from servicelib.file_utils import create_sha256_checksum
 from servicelib.logging_utils import _dampen_noisy_loggers
 from servicelib.utils import limited_gather
 from settings_library.r_clone import RCloneSettings
-from simcore_sdk.node_ports_common._r_clone_mount import RCloneMountManager, _core
-from simcore_sdk.node_ports_common._r_clone_mount._config_provider import (
+from simcore_sdk.node_ports_common.r_clone_mount import RCloneMountManager, _core
+from simcore_sdk.node_ports_common.r_clone_mount._config_provider import (
     MountRemoteType,
 )
-from simcore_sdk.node_ports_common._r_clone_mount._core import (
+from simcore_sdk.node_ports_common.r_clone_mount._core import (
     DaemonProcessManager,
 )
 from types_aiobotocore_s3 import S3Client
@@ -189,16 +190,39 @@ async def test_daemon_container_process(r_clone_container: str):
 
 
 @pytest.fixture
-def mock_environment(monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
+def vfs_cache_path(tmpdir: Path) -> Path:
+    # path inside the docker container where the vfs cache will be stored
+    # for tests this can be just placed in the tmp directory ?
+    # TODO: for better tests it's better that is mounted as a volume
+    return Path("/tmp/rclone_cache")  # noqa: S108
+
+
+@pytest.fixture
+def remote_path(faker: Faker) -> StorageFileID:
+    return TypeAdapter(StorageFileID).validate_python(
+        f"{faker.uuid4()}/{faker.uuid4()}/mounted-path"
+    )
+
+
+@pytest.fixture
+def bucket_name() -> S3BucketName:
+    return TypeAdapter(S3BucketName).validate_python("osparc-data")
+
+
+@pytest.fixture
+def mock_environment(
+    monkeypatch: pytest.MonkeyPatch, vfs_cache_path: Path, bucket_name: S3BucketName
+) -> EnvVarsDict:
     return setenvs_from_dict(
         monkeypatch,
         {
             "R_CLONE_PROVIDER": "AWS_MOTO",
             "S3_ENDPOINT": "http://moto:5000",
             "S3_ACCESS_KEY": "test",
-            "S3_BUCKET_NAME": "test",
+            "S3_BUCKET_NAME": bucket_name,
             "S3_SECRET_KEY": "test",
             "S3_REGION": "us-east-1",
+            "R_CLONE_MOUNT_VFS_CACHE_PATH": f"{vfs_cache_path}",
         },
     )
 
@@ -206,11 +230,6 @@ def mock_environment(monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
 @pytest.fixture
 def r_clone_settings(mock_environment: EnvVarsDict) -> RCloneSettings:
     return RCloneSettings.create_from_envs()
-
-
-@pytest.fixture
-def remote_path() -> Path:
-    return Path("test")
 
 
 @pytest.fixture
@@ -229,13 +248,6 @@ async def s3_client(r_clone_settings: RCloneSettings) -> AsyncIterable[S3Client]
     async with session_client as client:
         client = cast(S3Client, client)
         yield client
-
-
-@pytest.fixture
-def bucket_name(r_clone_settings: RCloneSettings) -> S3BucketName:
-    return TypeAdapter(S3BucketName).validate_python(
-        r_clone_settings.R_CLONE_S3.S3_BUCKET_NAME
-    )
 
 
 def _secure_randint(a: int, b: int) -> int:
@@ -286,7 +298,7 @@ async def create_files_in_s3(
     s3_client: S3Client,
     bucket_name: S3BucketName,
     faker: Faker,
-    remote_path: Path,
+    remote_path: StorageFileID,
     local_s3_content_path: Path,
 ) -> AsyncIterable[None]:
 
@@ -329,17 +341,9 @@ async def create_files_in_s3(
 @pytest.fixture
 def mock_rc_port_with_default(mocker: MockerFixture) -> None:
     mocker.patch(
-        "simcore_sdk.node_ports_common._r_clone_mount._core.unused_port",
+        "simcore_sdk.node_ports_common.r_clone_mount._core.unused_port",
         return_value=_MONITORING_PORT,
     )
-
-
-@pytest.fixture
-def vfs_cache_path(tmpdir: Path) -> Path:
-    # path inside the docker container where the vfs cache will be stored
-    # for tests this can be just placed in the tmp directory ?
-    # TODO: for better tests it's better that is mounted as a volume
-    return Path("/tmp/rclone_cache")  # noqa: S108
 
 
 @pytest.fixture
@@ -348,9 +352,8 @@ async def single_mount_r_clone_mount_manager(
     r_clone_container: str,
     mock_config_file: None,
     r_clone_settings: RCloneSettings,
-    vfs_cache_path: Path,
 ) -> AsyncIterable[RCloneMountManager]:
-    r_clone_mount_manager = RCloneMountManager(r_clone_settings, vfs_cache_path)
+    r_clone_mount_manager = RCloneMountManager(r_clone_settings)
 
     yield r_clone_mount_manager
 
@@ -374,21 +377,17 @@ async def _get_file_checksums_from_local_path(
 
 
 async def _get_file_checksums_from_container(
-    remote_path: Path,
-    r_clone_container: str,
-    bucket_name: S3BucketName,
+    path_in_container: Path, r_clone_container: str
 ) -> dict[Path, str]:
     remote_checksum_and_files = await run_command_in_container(
         r_clone_container,
-        command=f"find {remote_path} -type f -exec sha256sum {{}} \\;",
+        command=f"find {path_in_container} -type f -exec sha256sum {{}} \\;",
         timeout=30,
     )
 
     def _parse_entry(entry: str) -> tuple[Path, str]:
         checksum, file_path = entry.strip().split()
-        relative_path = (
-            Path(file_path).relative_to(remote_path).relative_to(Path(bucket_name))
-        )
+        relative_path = Path(file_path).relative_to(path_in_container)
         return relative_path, checksum
 
     return dict(
@@ -397,8 +396,7 @@ async def _get_file_checksums_from_container(
 
 
 async def _get_files_from_s3(
-    s3_client: S3Client,
-    bucket_name: S3BucketName,
+    s3_client: S3Client, bucket_name: S3BucketName, remote_path: StorageFileID
 ) -> dict[Path, str]:
     """Download files from S3 and return their SHA256 checksums."""
     files_in_bucket = await s3_client.list_objects_v2(Bucket=bucket_name)
@@ -406,7 +404,7 @@ async def _get_files_from_s3(
     async def _get_file_checksum(key: str) -> tuple[Path, str]:
         response = await s3_client.get_object(Bucket=bucket_name, Key=key)
         checksum = await create_sha256_checksum(response["Body"])
-        return Path(key).relative_to(Path(bucket_name)), checksum
+        return Path(key).relative_to(Path(remote_path)), checksum
 
     results = await limited_gather(
         *[
@@ -423,11 +421,12 @@ async def _assert_local_content_in_s3(
     s3_client: S3Client,
     bucket_name: S3BucketName,
     local_s3_content_path: Path,
+    remote_path: StorageFileID,
 ) -> None:
     files_local_folder = await _get_file_checksums_from_local_path(
         local_s3_content_path
     )
-    files_from_s3 = await _get_files_from_s3(s3_client, bucket_name)
+    files_from_s3 = await _get_files_from_s3(s3_client, bucket_name, remote_path)
 
     assert files_local_folder == files_from_s3
 
@@ -437,18 +436,21 @@ async def _assert_same_files_in_all_places(
     bucket_name: S3BucketName,
     r_clone_container: str,
     r_clone_local_mount_path: Path,
+    remote_path: StorageFileID,
 ) -> None:
     files_from_container = await _get_file_checksums_from_container(
-        r_clone_local_mount_path, r_clone_container, bucket_name
+        r_clone_local_mount_path, r_clone_container
     )
-    files_from_s3 = await _get_files_from_s3(s3_client, bucket_name)
+    files_from_s3 = await _get_files_from_s3(s3_client, bucket_name, remote_path)
     assert files_from_container == files_from_s3
 
 
-async def _change_file_in_container(remote_path: Path, r_clone_container: str) -> None:
+async def _change_file_in_container(
+    path_in_container: Path, r_clone_container: str
+) -> None:
     await run_command_in_container(
         r_clone_container,
-        command=f"dd if=/dev/urandom of={remote_path} bs={_get_random_file_size()} count=1",
+        command=f"dd if=/dev/urandom of={path_in_container} bs={_get_random_file_size()} count=1",
         timeout=30,
     )
 
@@ -462,25 +464,24 @@ async def test_tracked_mount_waits_for_files_before_finalizing(
     bucket_name: S3BucketName,
     r_clone_container: str,
     local_s3_content_path: Path,
-    remote_path: Path,
+    remote_path: StorageFileID,
 ):
     await single_mount_r_clone_mount_manager.start_mount(
         MountRemoteType.S3, remote_path, r_clone_local_mount_path
     )
 
-    await _assert_local_content_in_s3(s3_client, bucket_name, local_s3_content_path)
+    await _assert_local_content_in_s3(
+        s3_client, bucket_name, local_s3_content_path, remote_path
+    )
 
     def _get_random_file_in_container() -> Path:
-        return (
-            r_clone_local_mount_path
-            / bucket_name
-            / secrets.choice(
-                [x for x in local_s3_content_path.rglob("*") if x.is_file()]
-            ).relative_to(local_s3_content_path)
-        )
+        return r_clone_local_mount_path / secrets.choice(
+            [x for x in local_s3_content_path.rglob("*") if x.is_file()]
+        ).relative_to(local_s3_content_path)
 
     # change and check all is the same
     files_to_change = {_get_random_file_in_container() for _ in range(15)}
+
     await limited_gather(
         *[_change_file_in_container(x, r_clone_container) for x in files_to_change],
         limit=10,
@@ -490,10 +491,7 @@ async def test_tracked_mount_waits_for_files_before_finalizing(
         r_clone_local_mount_path
     )
     await _assert_same_files_in_all_places(
-        s3_client,
-        bucket_name,
-        r_clone_container,
-        r_clone_local_mount_path,
+        s3_client, bucket_name, r_clone_container, r_clone_local_mount_path, remote_path
     )
 
     await single_mount_r_clone_mount_manager.stop_mount(r_clone_local_mount_path)

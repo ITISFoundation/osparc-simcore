@@ -2,6 +2,7 @@ import logging
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
+from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, StorageFileID
 from models_library.service_settings_labels import LegacyState
@@ -16,6 +17,7 @@ from ..node_ports_common import filemanager
 from ..node_ports_common.constants import SIMCORE_LOCATION
 from ..node_ports_common.dbmanager import DBManager
 from ..node_ports_common.file_io_utils import LogRedirectCB
+from ..node_ports_common.r_clone_mount import MountRemoteType, RCloneMountManager
 
 _logger = logging.getLogger(__name__)
 
@@ -182,7 +184,25 @@ async def _delete_legacy_archive(
     )
 
 
-async def push(  # pylint: disable=too-many-arguments
+async def _use_r_clone_mounting(
+    application_name: str, user_id: UserID, product_name: ProductName
+) -> bool:
+    return (
+        await DBManager(application_name=application_name).get_group_extra_properties(
+            user_id=user_id, product_name=product_name
+        )
+    ).use_r_clone_mounting
+
+
+async def _stop_mount(
+    mount_manager: RCloneMountManager, destination_path: Path
+) -> None:
+    await mount_manager.wait_for_transfers_to_complete(destination_path)
+    await mount_manager.stop_mount(destination_path)
+
+
+async def push(  # pylint: disable=too-many-arguments  # noqa: PLR0913
+    product_name: ProductName,
     user_id: UserID,
     project_id: ProjectID,
     node_uuid: NodeID,
@@ -194,19 +214,23 @@ async def push(  # pylint: disable=too-many-arguments
     progress_bar: ProgressBarData,
     legacy_state: LegacyState | None,
     application_name: str,
+    mount_manager: RCloneMountManager,
 ) -> None:
     """pushes and removes the legacy archive if present"""
 
-    await _push_directory(
-        user_id=user_id,
-        project_id=project_id,
-        node_uuid=node_uuid,
-        source_path=source_path,
-        r_clone_settings=r_clone_settings,
-        exclude_patterns=exclude_patterns,
-        io_log_redirect_cb=io_log_redirect_cb,
-        progress_bar=progress_bar,
-    )
+    if _use_r_clone_mounting(application_name, user_id, product_name):
+        await _stop_mount(mount_manager, source_path)
+    else:
+        await _push_directory(
+            user_id=user_id,
+            project_id=project_id,
+            node_uuid=node_uuid,
+            source_path=source_path,
+            r_clone_settings=r_clone_settings,
+            exclude_patterns=exclude_patterns,
+            io_log_redirect_cb=io_log_redirect_cb,
+            progress_bar=progress_bar,
+        )
 
     archive_exists = await _state_metadata_entry_exists(
         user_id=user_id,
@@ -244,7 +268,24 @@ async def push(  # pylint: disable=too-many-arguments
                 )
 
 
-async def pull(
+async def _start_mount_if_required(
+    mount_manager: RCloneMountManager,
+    application_name: str,
+    product_name: ProductName,
+    user_id: UserID,
+    project_id: ProjectID,
+    node_uuid: NodeID,
+    destination_path: Path,
+) -> None:
+    if not _use_r_clone_mounting(application_name, user_id, product_name):
+        return
+
+    s3_object = __create_s3_object_key(project_id, node_uuid, destination_path)
+    await mount_manager.start_mount(MountRemoteType.S3, s3_object, destination_path)
+
+
+async def pull(  # pylint: disable=too-many-arguments  # noqa: PLR0913
+    product_name: ProductName,
     user_id: UserID,
     project_id: ProjectID,
     node_uuid: NodeID,
@@ -254,6 +295,8 @@ async def pull(
     r_clone_settings: RCloneSettings,
     progress_bar: ProgressBarData,
     legacy_state: LegacyState | None,
+    application_name: str,
+    mount_manager: RCloneMountManager,
 ) -> None:
     """restores the state folder"""
 
@@ -286,6 +329,15 @@ async def pull(
                     progress_bar=progress_bar,
                     legacy_destination_path=legacy_state.old_state_path,
                 )
+                await _start_mount_if_required(
+                    mount_manager,
+                    application_name,
+                    product_name,
+                    user_id,
+                    project_id,
+                    node_uuid,
+                    destination_path,
+                )
             return
 
     state_archive_exists = await _state_metadata_entry_exists(
@@ -304,6 +356,15 @@ async def pull(
                 destination_path=destination_path,
                 io_log_redirect_cb=io_log_redirect_cb,
                 progress_bar=progress_bar,
+            )
+            await _start_mount_if_required(
+                mount_manager,
+                application_name,
+                product_name,
+                user_id,
+                project_id,
+                node_uuid,
+                destination_path,
             )
         return
 
@@ -324,6 +385,24 @@ async def pull(
             r_clone_settings=r_clone_settings,
             progress_bar=progress_bar,
         )
+        await _start_mount_if_required(
+            mount_manager,
+            application_name,
+            product_name,
+            user_id,
+            project_id,
+            node_uuid,
+            destination_path,
+        )
         return
 
+    await _start_mount_if_required(
+        mount_manager,
+        application_name,
+        product_name,
+        user_id,
+        project_id,
+        node_uuid,
+        destination_path,
+    )
     _logger.debug("No content previously saved for '%s'", destination_path)

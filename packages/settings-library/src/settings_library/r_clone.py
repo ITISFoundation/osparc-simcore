@@ -1,5 +1,6 @@
 from datetime import timedelta
 from enum import StrEnum
+from pathlib import Path
 from typing import Annotated
 
 from common_library.pydantic_validators import validate_numeric_string_as_timedelta
@@ -19,9 +20,20 @@ class S3Provider(StrEnum):
 class RCloneMountSettings(BaseCustomSettings):
     """all settings related to mounting go here"""
 
-    R_CLONE_MOUNT_TRANSFERS_COMPLETED_TIMEOUT: timedelta = Field(
-        default=timedelta(minutes=60),
-        description="max amount of time to wait when closing the rclone mount",
+    R_CLONE_MOUNT_TRANSFERS_COMPLETED_TIMEOUT: Annotated[
+        timedelta,
+        Field(
+            description="max amount of time to wait when closing the rclone mount",
+        ),
+    ] = timedelta(minutes=60)
+
+    R_CLONE_MOUNT_VFS_CACHE_PATH: Annotated[
+        Path,
+        Field(
+            description="common directory where all vfs-caches will be mounted to",
+        ),
+    ] = Path(
+        "/tmp/vfs-caching"  # noqa: S108
     )
 
     _validate_r_clone_mount_transfers_completed_timeout = (

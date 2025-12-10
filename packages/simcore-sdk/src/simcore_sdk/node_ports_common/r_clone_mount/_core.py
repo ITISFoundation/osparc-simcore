@@ -13,6 +13,7 @@ from common_library.errors_classes import OsparcErrorMixin
 from httpx import AsyncClient
 from models_library.basic_types import PortInt
 from models_library.progress_bar import ProgressReport
+from models_library.projects_nodes_io import StorageFileID
 from pydantic import BaseModel, NonNegativeFloat
 from servicelib.container_utils import run_command_in_container
 from servicelib.logging_utils import log_catch
@@ -118,7 +119,7 @@ class DaemonProcessManager:
 
 def _get_rclone_mount_command(
     config_file_path: str,
-    remote_path: Path,
+    remote_path: StorageFileID,
     local_mount_path: Path,
     vfs_cache_path: Path,
     rc_addr: str,
@@ -138,8 +139,8 @@ def _get_rclone_mount_command(
         "--vfs-cache-mode full",
         "--vfs-write-back",
         "1s",  # write-back delay    TODO: could be part of the settings?
-        "--vfs-fast-fingerprint",  # recommended for s3 backend
-        "--no-modtime",  # don't read/write the modification time
+        "--vfs-fast-fingerprint",  # recommended for s3 backend  TODO: could be part of the settings?
+        "--no-modtime",  # don't read/write the modification time    TODO: could be part of the settings?
         "--cache-dir",
         f"{vfs_cache_path}",
         "--rc",
@@ -296,7 +297,7 @@ class TrackedMount:
         remote_type: MountRemoteType,
         *,
         rc_port: PortInt,
-        remote_path: Path,
+        remote_path: StorageFileID,
         local_mount_path: Path,
         vfs_cache_path: Path,
         mount_activity_update_interval: timedelta = _DEFAULT_MOUNT_ACTIVITY_UPDATE_INTERVAL,
@@ -356,7 +357,7 @@ class TrackedMount:
         self._daemon_manager = DaemonProcessManager(
             command=_get_rclone_mount_command(
                 config_file_path=config_file_path,
-                remote_path=self.remote_path,
+                remote_path=f"{self.r_clone_settings.R_CLONE_S3.S3_BUCKET_NAME}/{self.remote_path}",
                 local_mount_path=self.local_mount_path,
                 vfs_cache_path=self.vfs_cache_path,
                 rc_addr=f"0.0.0.0:{self.rc_port}",
@@ -382,11 +383,11 @@ class TrackedMount:
 
 
 class RCloneMountManager:
-    def __init__(
-        self, r_clone_settings: RCloneSettings, common_vfs_cache_path: Path
-    ) -> None:
+    def __init__(self, r_clone_settings: RCloneSettings) -> None:
         self.r_clone_settings = r_clone_settings
-        self.common_vfs_cache_path = common_vfs_cache_path
+        self._common_vfs_cache_path = (
+            self.r_clone_settings.R_CLONE_MOUNT_SETTINGS.R_CLONE_MOUNT_VFS_CACHE_PATH
+        )
 
         self._started_mounts: dict[str, TrackedMount] = {}
 
@@ -397,7 +398,7 @@ class RCloneMountManager:
     async def start_mount(
         self,
         remote_type: MountRemoteType,
-        remote_path: Path,
+        remote_path: StorageFileID,
         local_mount_path: Path,
         vfs_cache_path_overwrite: Path | None = None,
     ) -> None:
@@ -407,7 +408,7 @@ class RCloneMountManager:
             raise MountAlreadyStartedError(local_mount_path=local_mount_path)
 
         vfs_cache_path = (
-            vfs_cache_path_overwrite or self.common_vfs_cache_path
+            vfs_cache_path_overwrite or self._common_vfs_cache_path
         ) / mount_id
         vfs_cache_path.mkdir(parents=True, exist_ok=True)
 
