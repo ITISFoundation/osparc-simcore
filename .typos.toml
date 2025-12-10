@@ -1,0 +1,45 @@
+# Configures spell-checker
+#
+# SEE https://github.com/crate-ci/typos/blob/master/docs/reference.md
+
+[files]
+extend-exclude = [
+      ".gitignore",
+      "**/migration/**",
+]
+ignore-hidden = true
+ignore-files = true
+ignore-dot = true
+ignore-vcs = true
+ignore-global = true
+ignore-parent = true
+
+[default]
+binary = false
+check-filename = true
+check-file = true
+unicode=true
+locale = "en"
+extend-ignore-re = [
+    # e.g. "# spellchecker:disable-line"
+    "(?Rm)^.*(#|//)\\s*spellchecker:disable-line$",
+    # e.g. "# spellchecker:<on|off> ""
+    "(?s)(#|//)\\s*spellchecker:off.*?\\n\\s*(#|//)\\s*spellchecker:on",
+    # e.g. # spellchecker:ignore-next-line
+    "(#|//)\\s*spellchecker:ignore-next-line\\n.*",
+
+    # UUIDs
+    '"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}"',
+    '"[0-9a-fA-F]{8}_[0-9a-fA-F]{4}_[1-5][0-9a-fA-F]{3}_[89abAB][0-9a-fA-F]{3}_[0-9a-fA-F]{12}"',
+    '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}_',
+
+    # Secrets
+    "[A-Za-z]+://\\S{3,50}:(\\S{8,50})@[\\dA-Za-z#%&+./:=?_~-]+", # URLs
+]
+extend-ignore-identifiers-re = []
+
+[default.extend-words]
+# <typo> = "<correction>"
+
+[default.extend-identifiers]
+# <typo> = "<correction>"
