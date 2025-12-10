@@ -54,7 +54,7 @@ def downgrade():
                 "projects.uuid",
                 onupdate="CASCADE",
                 ondelete="CASCADE",
-                name="fk_projects_to_products_product_uuid",
+                name="fk_projects_to_products_project_uuid",
             ),
             nullable=False,
             doc="Project unique ID",
