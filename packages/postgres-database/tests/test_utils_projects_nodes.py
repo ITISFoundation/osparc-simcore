@@ -330,6 +330,7 @@ async def test_delete_project_delete_all_nodes(
 async def test_multiple_creation_deletion_of_nodes(
     aiopg_engine: Engine,
     registered_user: RowProxy,
+    registered_product: RowProxy,
     create_fake_project: Callable[..., Awaitable[RowProxy]],
     create_fake_projects_node: Callable[..., ProjectNodeCreate],
     num_concurrent_workflows: int,
@@ -338,7 +339,9 @@ async def test_multiple_creation_deletion_of_nodes(
 
     async def _workflow() -> None:
         async with aiopg_engine.acquire() as connection:
-            project = await create_fake_project(connection, registered_user)
+            project = await create_fake_project(
+                connection, registered_user, registered_product
+            )
             projects_nodes_repo = ProjectNodesRepo(project_uuid=project.uuid)
 
             await projects_nodes_repo.add(
