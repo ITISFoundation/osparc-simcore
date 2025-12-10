@@ -47,19 +47,6 @@ class ResourceTrackingSettings(BaseApplicationSettings):
     )
 
 
-class RCloneMountSettings(BaseApplicationSettings):
-    R_CLONE_MOUNT_TRANSFERS_COMPLETED_TIMEOUT: timedelta = Field(
-        default=timedelta(minutes=60),
-        description="max amount of time to wait when closing the rclone mount",
-    )
-
-    _validate_r_clone_mount_transfers_completed_timeout = (
-        validate_numeric_string_as_timedelta(
-            "R_CLONE_MOUNT_TRANSFERS_COMPLETED_TIMEOUT"
-        )
-    )
-
-
 class SystemMonitorSettings(BaseApplicationSettings):
     DY_SIDECAR_SYSTEM_MONITOR_TELEMETRY_ENABLE: bool = Field(
         default=False, description="enabled/disabled disk usage monitoring"
@@ -213,10 +200,6 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     DYNAMIC_SIDECAR_TRACING: TracingSettings | None = Field(
         json_schema_extra={"auto_default_from_env": True},
         description="settings for opentelemetry tracing",
-    )
-
-    R_CLONE_MOUNT_SETTINGS: RCloneMountSettings = Field(
-        json_schema_extra={"auto_default_from_env": True}
     )
 
     @property
