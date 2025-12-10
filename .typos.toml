@@ -1,9 +1,11 @@
 # Configures spell-checker
+# Usage:
+#.   uvx typos --help
 #
-# INLINE:
-#  # spellchecker:disable-line
-#  # spellchecker:<on|off>
-#  # spellchecker:ignore-next-line
+# Inline marks:
+#.  # spellchecker:disable-line
+#.  # spellchecker:<on|off>
+#.  # spellchecker:ignore-next-line
 #
 # SEE https://github.com/crate-ci/typos/blob/master/docs/reference.md
 
