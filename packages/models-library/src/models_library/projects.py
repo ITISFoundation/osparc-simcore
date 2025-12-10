@@ -270,7 +270,7 @@ class Project(BaseProjectModel):
             alias="productName",
             examples=["osparc", "s4l"],
         ),
-    ] = "osparc"
+    ]
 
     model_config = ConfigDict(
         # NOTE: this is a security measure until we get rid of the ProjectDict variants
