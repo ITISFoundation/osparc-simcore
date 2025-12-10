@@ -1,6 +1,6 @@
 import logging
 import re
-from collections.abc import Mapping
+from collections.abc import Awaitable, Callable, Mapping
 from typing import Any, Final
 
 import aiodocker
@@ -32,7 +32,12 @@ from ....core.dynamic_services_settings.scheduler import (
 )
 from ....models.dynamic_services_scheduler import NetworkId, SchedulerData, ServiceId
 from ....utils.dict_utils import get_leaf_key_paths, nested_update
-from ..docker_states import TASK_STATES_RUNNING, extract_task_state
+from ..docker_states import (
+    TASK_STATES_COMPLETE,
+    TASK_STATES_FAILED,
+    TASK_STATES_RUNNING,
+    extract_task_state,
+)
 from ..errors import DockerServiceNotFoundError, DynamicSidecarError, GenericDockerError
 from ._utils import docker_client
 
@@ -176,9 +181,24 @@ async def _get_service_latest_task(service_id: str) -> Mapping[str, Any]:
         raise
 
 
+_TASK_STATE_TO_PROGRESS_MAPPING: Final[dict[str, float]] = (
+    {
+        "pending": 0.2,
+        "assigned": 0.4,
+        "preparing": 0.6,
+        "starting": 0.8,
+        "running": 1.0,
+    }
+    | dict.fromkeys(TASK_STATES_COMPLETE, 1.0)
+    | dict.fromkeys(TASK_STATES_FAILED, 1.0)
+)
+
+
 async def get_dynamic_sidecar_placement(
     service_id: str,
     dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings,
+    *,
+    progress_update: Callable[[float], Awaitable[None]] | None = None,
 ) -> DockerNodeID:
     """
     Waits until the service has a task in `running` state and
@@ -207,6 +227,12 @@ async def get_dynamic_sidecar_placement(
         """
         task = await _get_service_latest_task(service_id)
         service_state = task["Status"]["State"]
+        if progress_update:
+            # estimate progress based on task state
+
+            await progress_update(
+                _TASK_STATE_TO_PROGRESS_MAPPING.get(service_state, 0.0)
+            )
 
         if service_state not in TASK_STATES_RUNNING:
             raise TryAgain

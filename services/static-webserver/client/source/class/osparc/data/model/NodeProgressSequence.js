@@ -283,16 +283,6 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
     },
 
     __applySidecarPulling: function(value) {
-      // the sidecar pulling progress goes from 0 to 1 in about 20" with no intermediate updates from the backend
-      if (value.value === 0) {
-        // start fake progress when the frontend gets a 0% and stop it gets a 100%
-        this.__startSidecarPullingFakeProgress();
-      } else if (value.value === 1) {
-        // stop fake progress when the backend reports 100%
-        // by setting it to 100%
-        this.__stopSidecarPullingFakeProgress();
-      }
-
       if (value.value === 1) {
         // on non autoscaled deployments, there is no cluster upscaling phase
         // when the sidecar pulling is done, make sure the cluster upscaling is also set to 100%
@@ -352,36 +342,6 @@ qx.Class.define("osparc.data.model.NodeProgressSequence", {
       osparc.widget.ProgressSequence.updateTaskProgress(this.__pullingInputsLayout, value);
 
       this.__computeOverallProgress();
-    },
-
-    __startSidecarPullingFakeProgress: function() {
-      // stop any previous timer
-      this.__stopSidecarPullingFakeProgress();
-      // increase fake progress:
-      // - every second
-      // - up to 99%
-      // - by progressStep each time: fill it in about 60 seconds
-      // - make sure the backend didn't already update it
-      this.__sidecarFakeProgressTimer = setInterval(() => {
-        const progressStep = 1/60;
-        const sidecarProgress = this.getSidecarPulling();
-        if (sidecarProgress.value < 0.99) {
-          const newValue = Math.min(sidecarProgress.value + progressStep, 0.99);
-          this.setSidecarPulling({
-            progressLabel: `${(osparc.utils.Utils.safeToFixed(newValue * 100, 1))}%`,
-            value: newValue
-          });
-        } else {
-          this.__stopSidecarPullingFakeProgress();
-        }
-      }, 1000);
-    },
-
-    __stopSidecarPullingFakeProgress: function() {
-      if (this.__sidecarFakeProgressTimer) {
-        clearInterval(this.__sidecarFakeProgressTimer);
-        this.__sidecarFakeProgressTimer = null;
-      }
     },
   }
 });

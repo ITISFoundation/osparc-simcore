@@ -84,7 +84,10 @@ async def export_data(
     with log_context(
         _logger,
         logging.INFO,
-        f"'{task_key}' export data (for {user_id=}) fom selection: {paths_to_export}",
+        "export data task (%s) (for user=%s) from selection: %s",
+        task_key,
+        user_id,
+        paths_to_export,
     ):
         dsm = get_dsm_provider(get_app_server(task.app).app).get(
             SimcoreS3DataManager.get_location_id()
@@ -166,6 +169,8 @@ async def search(
             limit=1,  # NOTE: yield items as they come
         ):
             if not items:
+                # NOTE: still set the last update time to signal progress in search
+                await app_server.task_manager.set_task_stream_last_update(task_key)
                 continue
 
             data = [
