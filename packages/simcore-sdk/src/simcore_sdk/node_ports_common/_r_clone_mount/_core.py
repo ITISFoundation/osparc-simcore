@@ -48,7 +48,7 @@ class _ProcessAlreadyStartedError(_BaseRcloneMountError):
     msg_template: str = "Process already started with pid='{pid}' via '{command}'"
 
 
-class _MountAlreadyStartedError(_BaseRcloneMountError):
+class _TrackedMountAlreadyStartedError(_BaseRcloneMountError):
     msg_template: str = (
         "Mount process already stareted with pid='{pid}' via '{command}'"
     )
@@ -60,6 +60,14 @@ class _WaitingForTransfersToCompleteError(_BaseRcloneMountError):
 
 class _WaitingForQueueToBeEmptyError(_BaseRcloneMountError):
     msg_template: str = "Waiting for VFS queue to be empty: queue={queue}"
+
+
+class MountAlreadyStartedError(_BaseRcloneMountError):
+    msg_template: str = "Mount already started for local path='{local_mount_path}'"
+
+
+class MountNotStartedError(_BaseRcloneMountError):
+    msg_template: str = "Mount not started for local path='{local_mount_path}'"
 
 
 def _get_command__pid_of_background_command(command: str) -> str:
@@ -337,7 +345,7 @@ class TrackedMount:
 
     async def start_mount(self) -> None:
         if self._daemon_manager is not None:
-            raise _MountAlreadyStartedError(
+            raise _TrackedMountAlreadyStartedError(
                 pid=self._daemon_manager.pid, command=self._daemon_manager.command
             )
 
@@ -394,6 +402,10 @@ class RCloneMountManager:
         vfs_cache_path_overwrite: Path | None = None,
     ) -> None:
         mount_id = self._get_mount_id(local_mount_path)
+        if mount_id in self._started_mounts:
+            tracked_mount = self._started_mounts[mount_id]
+            raise MountAlreadyStartedError(local_mount_path=local_mount_path)
+
         vfs_cache_path = (
             vfs_cache_path_overwrite or self.common_vfs_cache_path
         ) / mount_id
@@ -415,21 +427,25 @@ class RCloneMountManager:
 
     async def wait_for_transfers_to_complete(self, local_mount_path: Path) -> None:
         mount_id = self._get_mount_id(local_mount_path)
-        tracked_mount = self._started_mounts[mount_id]
+        if mount_id not in self._started_mounts:
+            raise MountNotStartedError(local_mount_path=local_mount_path)
 
+        tracked_mount = self._started_mounts[mount_id]
         await tracked_mount.rc_interface.wait_for_all_transfers_to_complete()
 
     async def stop_mount(self, local_mount_path: Path) -> None:
         mount_id = self._get_mount_id(local_mount_path)
-        tracked_mount = self._started_mounts[mount_id]
+        if mount_id not in self._started_mounts:
+            raise MountNotStartedError(local_mount_path=local_mount_path)
 
+        tracked_mount = self._started_mounts[mount_id]
         await tracked_mount.stop_mount()
 
     async def setup(self) -> None:
         pass
 
     async def teardown(self) -> None:
-        # await for all to terminate, limited gather
+        # shutdown still ongoing mounts
         await asyncio.gather(
             *[mount.teardown() for mount in self._started_mounts.values()]
         )
