@@ -260,7 +260,9 @@ async def test_set_project_ancestors(
     parent_node = await create_fake_projects_node(parent_project["uuid"])
 
     # create child
-    child_project: RowProxy = await create_fake_project(connection, user, hidden=True)
+    child_project: RowProxy = await create_fake_project(
+        connection, user, product, hidden=True
+    )
 
     # set ancestry, first the parents
     updated_parent_metadata = await utils_projects_metadata.set_project_ancestors(
