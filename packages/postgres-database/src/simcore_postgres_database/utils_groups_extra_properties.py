@@ -40,6 +40,7 @@ class GroupExtraProperties(FromRowMixin):
     created: datetime.datetime
     modified: datetime.datetime
     enable_efs: bool
+    use_r_clone_mounting: bool
 
 
 def _list_table_entries_ordered_by_group_type_stmt(user_id: int, product_name: str):
