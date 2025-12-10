@@ -304,8 +304,12 @@ async def create_fake_project(
 ) -> AsyncIterator[Callable[..., Awaitable[RowProxy]]]:
     created_project_uuids = []
 
-    async def _creator(conn, user: RowProxy, **overrides) -> RowProxy:
-        prj_to_insert = random_project(prj_owner=user.id, **overrides)
+    async def _creator(
+        conn, user: RowProxy, product: RowProxy, **overrides
+    ) -> RowProxy:
+        prj_to_insert = random_project(
+            prj_owner=user.id, product_name=product[0], **overrides
+        )
         result = await conn.execute(
             projects.insert().values(**prj_to_insert).returning(projects)
         )

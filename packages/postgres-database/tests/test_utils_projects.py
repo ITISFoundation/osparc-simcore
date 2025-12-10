@@ -40,12 +40,23 @@ async def registered_user(
 
 
 @pytest.fixture
+async def registered_product(
+    connection: SAConnection,
+    create_fake_product: Callable[..., Awaitable[RowProxy]],
+) -> RowProxy:
+    product = await create_fake_product(connection)
+    assert product
+    return product
+
+
+@pytest.fixture
 async def registered_project(
     connection: SAConnection,
     registered_user: RowProxy,
+    registered_product: RowProxy,
     create_fake_project: Callable[..., Awaitable[RowProxy]],
 ) -> AsyncIterator[dict[str, Any]]:
-    project = await create_fake_project(connection, registered_user)
+    project = await create_fake_project(connection, registered_user, registered_product)
     assert project
 
     yield dict(project)
