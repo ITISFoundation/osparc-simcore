@@ -41,10 +41,9 @@ async def registered_user(
 
 @pytest.fixture
 async def registered_product(
-    connection: SAConnection,
     create_fake_product: Callable[..., Awaitable[RowProxy]],
 ) -> RowProxy:
-    product = await create_fake_product(connection)
+    product = await create_fake_product("test-product")
     assert product
     return product
 
