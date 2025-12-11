@@ -38,7 +38,7 @@ services:
       - "-c"
       - "fsync=off"
   adminer:
-    image: adminer:4.8.1
+    image: adminer:5.4.1
     init: true
     environment:
       - ADMINER_DEFAULT_SERVER=postgres
@@ -67,7 +67,7 @@ services:
         "--appendonly",
         "yes",
         "--requirepass",
-        "${TEST_REDIS_PASSWORD}"
+        "${TEST_REDIS_PASSWORD}",
       ]
   redis-commander:
     init: true
