@@ -491,7 +491,7 @@ async def get_dynamic_sidecar_spec(  # pylint:disable=too-many-arguments# noqa: 
             )
         )
 
-    placement_substitutions: dict[str, DockerPlacementConstraint] = (
+    placement_substitutions = (
         placement_settings.DIRECTOR_V2_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS
     )
     for image_resources in scheduler_data.service_resources.values():
@@ -500,18 +500,22 @@ async def get_dynamic_sidecar_spec(  # pylint:disable=too-many-arguments# noqa: 
                 placement_constraints.append(placement_substitutions[resource_name])
 
     # Add dynamic sidecar custom placement labels as constraints
-    custom_placement_labels = (
+    osparc_custom_placement_constraints = (
         placement_settings.DIRECTOR_V2_DYNAMIC_SIDECAR_OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS
     )
     label_values = {
-        "user_id": str(scheduler_data.user_id),
-        "project_id": str(scheduler_data.project_id),
-        "node_id": str(scheduler_data.node_uuid),
-        "product_name": scheduler_data.product_name or "",
+        "user_id": scheduler_data.user_id,
+        "project_id": scheduler_data.project_id,
+        "node_id": scheduler_data.node_uuid,
+        "product_name": scheduler_data.product_name,
         "group_id": "",  # Not available in SchedulerData
-        "wallet_id": "",  # Not available in SchedulerData
+        "wallet_id": (
+            scheduler_data.wallet_info.wallet_id
+            if scheduler_data.wallet_info
+            else "None"
+        ),
     }
-    for label_key, label_template in custom_placement_labels.items():
+    for label_key, label_template in osparc_custom_placement_constraints.items():
         try:
             resolved_value = label_template.format(**label_values)
             if resolved_value:  # skip if template resolved to empty string
