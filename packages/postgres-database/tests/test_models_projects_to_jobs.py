@@ -124,7 +124,7 @@ def test_populate_projects_to_jobs_during_migration(
             excluded_columns=[
                 "base_url",
                 "support_standard_group_id",
-            ],  # NOTE: columns not present at that migration tim
+            ],  # NOTE: columns not present at that migration time
         )
 
         columns = list(product_data.keys())

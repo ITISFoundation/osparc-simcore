@@ -308,7 +308,7 @@ async def create_fake_project(
         conn, user: RowProxy, product: RowProxy, **overrides
     ) -> RowProxy:
         prj_to_insert = random_project(
-            prj_owner=user.id, product_name=product[0], **overrides
+            prj_owner=user.id, product_name=product.name, **overrides
         )
         result = await conn.execute(
             projects.insert().values(**prj_to_insert).returning(projects)
