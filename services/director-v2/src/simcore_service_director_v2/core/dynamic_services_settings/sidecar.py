@@ -6,7 +6,7 @@ from typing import Annotated
 
 from models_library.basic_types import BootModeEnum, PortInt
 from models_library.docker import (
-    CUSTOM_PLACEMENT_LABEL_KEYS,
+    OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS,
     DockerLabelKey,
     DockerPlacementConstraint,
 )
@@ -85,7 +85,9 @@ class PlacementSettings(BaseCustomSettings):
         default_factory=dict,
         description=(
             "Dynamic sidecar custom placement labels for flexible node targeting. "
-            "Keys must be from: " + ", ".join(CUSTOM_PLACEMENT_LABEL_KEYS) + ". "
+            "Keys must be from: "
+            + ", ".join(OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS)
+            + ". "
             "Values are template strings supporting: {user_id}, {project_id}, {product_name}, "
             "{node_id}, {group_id}, {wallet_id}. Missing template values cause the label to be skipped."
         ),
@@ -106,11 +108,13 @@ class PlacementSettings(BaseCustomSettings):
         cls, value: dict[str, str]
     ) -> dict[str, str]:
         """Validate that all keys are in the allowed set."""
-        invalid_keys = set(value.keys()) - set(CUSTOM_PLACEMENT_LABEL_KEYS)
+        invalid_keys = set(value.keys()) - set(
+            OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS
+        )
         if invalid_keys:
             msg = (
                 f"Invalid custom placement label keys: {invalid_keys}. "
-                f"Allowed keys: {set(CUSTOM_PLACEMENT_LABEL_KEYS)}"
+                f"Allowed keys: {set(OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS)}"
             )
             raise ValueError(msg)
         return value

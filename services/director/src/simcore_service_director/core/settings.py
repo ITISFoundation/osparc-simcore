@@ -7,7 +7,7 @@ from common_library.logging.logging_utils_filtering import LoggerName, MessageSu
 from fastapi import FastAPI
 from models_library.basic_types import LogLevel, PortInt, VersionTag
 from models_library.docker import (
-    CUSTOM_PLACEMENT_LABEL_KEYS,
+    OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS,
     DockerLabelKey,
     DockerPlacementConstraint,
 )
@@ -92,9 +92,11 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     @field_validator("DIRECTOR_CUSTOM_PLACEMENT_LABELS")
     @classmethod
     def _validate_custom_placement_labels(cls, v: dict[str, str]) -> dict[str, str]:
-        invalid_keys = set(v.keys()) - set(CUSTOM_PLACEMENT_LABEL_KEYS)
+        invalid_keys = set(v.keys()) - set(
+            OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS
+        )
         if invalid_keys:
-            msg = f"Invalid placement label keys {invalid_keys}. Must be one of {CUSTOM_PLACEMENT_LABEL_KEYS}"
+            msg = f"Invalid placement label keys {invalid_keys}. Must be one of {OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS}"
             raise ValueError(msg)
         return v
 

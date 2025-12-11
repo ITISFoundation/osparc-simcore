@@ -15,7 +15,7 @@ import yaml
 from aws_library.ec2 import EC2InstanceData, Resources
 from aws_library.ec2._models import EC2InstanceBootSpecific
 from models_library.docker import (
-    CUSTOM_PLACEMENT_LABEL_KEYS,
+    OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS,
     DockerGenericTag,
     DockerLabelKey,
 )
@@ -363,7 +363,7 @@ async def get_task_custom_placement_labels(
         service_placement_constraints = (
             service_inspect.spec.task_template.placement.constraints
         )
-        for label_key in CUSTOM_PLACEMENT_LABEL_KEYS:
+        for label_key in OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS:
             label_prefix = f"node.labels.{label_key}=="
             for constraint in service_placement_constraints:
                 if constraint.startswith(label_prefix):
@@ -698,7 +698,7 @@ async def set_node_found_empty(
     if empty:
         new_tags[_OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY] = arrow.utcnow().isoformat()
         # Remove custom placement labels when node becomes empty
-        for label_key in CUSTOM_PLACEMENT_LABEL_KEYS:
+        for label_key in OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS:
             new_tags.pop(label_key, None)
     else:
         new_tags.pop(_OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY, None)

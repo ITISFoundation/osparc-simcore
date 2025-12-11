@@ -3,6 +3,7 @@ from typing import Annotated, TypeAlias
 
 from pydantic import (
     StringConstraints,
+    TypeAdapter,
 )
 
 from .basic_regex import DOCKER_GENERIC_TAG_KEY_RE, DOCKER_LABEL_KEY_REGEX
@@ -42,12 +43,11 @@ DockerNodeID: TypeAlias = Annotated[
 
 # Docker placement labels for node-specific constraints
 # These keys are used to identify custom placement labels that can be applied to docker nodes
-# and are stripped when nodes become empty for reuse
-CUSTOM_PLACEMENT_LABEL_KEYS: tuple[str, ...] = (
-    "product_name",
-    "user_id",
-    "project_id",
-    "node_id",
-    "group_id",
-    "wallet_id",
+OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS: tuple[DockerLabelKey, ...] = (
+    TypeAdapter(DockerLabelKey).validate_python("product_name"),
+    TypeAdapter(DockerLabelKey).validate_python("user_id"),
+    TypeAdapter(DockerLabelKey).validate_python("project_id"),
+    TypeAdapter(DockerLabelKey).validate_python("node_id"),
+    TypeAdapter(DockerLabelKey).validate_python("group_id"),
+    TypeAdapter(DockerLabelKey).validate_python("wallet_id"),
 )
