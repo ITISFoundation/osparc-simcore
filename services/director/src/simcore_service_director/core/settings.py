@@ -1,8 +1,9 @@
 import datetime
 import warnings
 from functools import cached_property
-from typing import cast
+from typing import Annotated, cast
 
+from common_library.basic_types import DEFAULT_FACTORY
 from common_library.logging.logging_utils_filtering import LoggerName, MessageSubstring
 from fastapi import FastAPI
 from models_library.basic_types import LogLevel, PortInt, VersionTag
@@ -34,61 +35,74 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     APP_NAME: str = APP_NAME
     API_VTAG: VersionTag = API_VTAG
 
-    DIRECTOR_DEBUG: bool = Field(
-        default=False,
-        description="Debug mode",
-        validation_alias=AliasChoices("DIRECTOR_DEBUG", "DEBUG"),
-    )
+    DIRECTOR_DEBUG: Annotated[
+        bool,
+        Field(
+            description="Debug mode",
+            validation_alias=AliasChoices("DIRECTOR_DEBUG", "DEBUG"),
+        ),
+    ] = False
     DIRECTOR_REMOTE_DEBUG_PORT: PortInt = 3000
 
-    DIRECTOR_LOG_LEVEL: LogLevel = Field(
-        ..., validation_alias=AliasChoices("DIRECTOR_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL")
-    )
-    DIRECTOR_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
-        ...,
-        validation_alias=AliasChoices(
-            "DIRECTOR_LOG_FORMAT_LOCAL_DEV_ENABLED",
-            "LOG_FORMAT_LOCAL_DEV_ENABLED",
-        ),
-        description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
-    )
-    DIRECTOR_LOG_FILTER_MAPPING: dict[LoggerName, list[MessageSubstring]] = Field(
-        default_factory=dict,
-        validation_alias=AliasChoices(
-            "DIRECTOR_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"
-        ),
-        description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
-    )
-    DIRECTOR_TRACING: TracingSettings | None = Field(
-        description="settings for opentelemetry tracing",
-        json_schema_extra={"auto_default_from_env": True},
-    )
-
-    DIRECTOR_DEFAULT_MAX_NANO_CPUS: NonNegativeInt = Field(default=0)
-    DIRECTOR_DEFAULT_MAX_MEMORY: NonNegativeInt = Field(default=0)
-    DIRECTOR_REGISTRY_CACHING: bool = Field(
-        ..., description="cache the docker registry internally"
-    )
-    DIRECTOR_REGISTRY_CACHING_TTL: datetime.timedelta = Field(
-        ..., description="cache time to live value (defaults to 15 minutes)"
-    )
-
-    DIRECTOR_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS: list[DockerPlacementConstraint] = (
+    DIRECTOR_LOG_LEVEL: Annotated[
+        LogLevel,
         Field(
-            default_factory=list,
-            examples=['["node.labels.region==east", "one!=yes"]'],
-        )
-    )
-    DIRECTOR_SERVICES_CUSTOM_LABELS: dict[DockerLabelKey, str] = Field(
-        default_factory=dict,
-        examples=['{"com.example.description":"Accounting webapp"}'],
-    )
+            validation_alias=AliasChoices("DIRECTOR_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL")
+        ),
+    ]
+    DIRECTOR_LOG_FORMAT_LOCAL_DEV_ENABLED: Annotated[
+        bool,
+        Field(
+            validation_alias=AliasChoices(
+                "DIRECTOR_LOG_FORMAT_LOCAL_DEV_ENABLED", "LOG_FORMAT_LOCAL_DEV_ENABLED"
+            ),
+            description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
+        ),
+    ]
+    DIRECTOR_LOG_FILTER_MAPPING: Annotated[
+        dict[LoggerName, list[MessageSubstring]],
+        Field(
+            validation_alias=AliasChoices(
+                "DIRECTOR_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"
+            ),
+            description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
+        ),
+    ] = DEFAULT_FACTORY
+    DIRECTOR_TRACING: Annotated[
+        TracingSettings | None,
+        Field(
+            description="settings for opentelemetry tracing",
+            json_schema_extra={"auto_default_from_env": True},
+        ),
+    ] = None
 
-    DIRECTOR_OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS: Json[dict[str, str]] = Field(
-        default_factory=dict,
-        description="Dynamic placement labels for service node placement. Keys must be in CUSTOM_PLACEMENT_LABEL_KEYS.",
-        examples=['{"product_name": "osparc", "user_id": "{user_id}"}'],
-    )
+    DIRECTOR_DEFAULT_MAX_NANO_CPUS: NonNegativeInt = 0
+    DIRECTOR_DEFAULT_MAX_MEMORY: NonNegativeInt = 0
+    DIRECTOR_REGISTRY_CACHING: Annotated[
+        bool, Field(description="cache the docker registry internally")
+    ]
+    DIRECTOR_REGISTRY_CACHING_TTL: Annotated[
+        datetime.timedelta,
+        Field(description="cache time to live value (defaults to 15 minutes)"),
+    ]
+
+    DIRECTOR_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS: Annotated[
+        list[DockerPlacementConstraint],
+        Field(examples=['["node.labels.region==east", "one!=yes"]']),
+    ] = DEFAULT_FACTORY
+    DIRECTOR_SERVICES_CUSTOM_LABELS: Annotated[
+        dict[DockerLabelKey, str],
+        Field(examples=['{"com.example.description":"Accounting webapp"}']),
+    ] = DEFAULT_FACTORY
+
+    DIRECTOR_OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS: Annotated[
+        Json[dict[str, str]],
+        Field(
+            default_factory=lambda: "{}",
+            description="Dynamic placement labels for service node placement. Keys must be in CUSTOM_PLACEMENT_LABEL_KEYS.",
+            examples=['{"product_name": "osparc", "user_id": "{user_id}"}'],
+        ),
+    ] = DEFAULT_FACTORY
 
     DIRECTOR_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS: dict[str, str]
 
@@ -109,50 +123,66 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
             raise ValueError(msg)
         return v
 
-    DIRECTOR_TRAEFIK_SIMCORE_ZONE: str = Field(
-        ...,
-        validation_alias=AliasChoices(
-            "DIRECTOR_TRAEFIK_SIMCORE_ZONE", "TRAEFIK_SIMCORE_ZONE"
+    DIRECTOR_TRAEFIK_SIMCORE_ZONE: Annotated[
+        str,
+        Field(
+            validation_alias=AliasChoices(
+                "DIRECTOR_TRAEFIK_SIMCORE_ZONE", "TRAEFIK_SIMCORE_ZONE"
+            )
         ),
-    )
+    ]
 
-    DIRECTOR_REGISTRY: RegistrySettings = Field(
-        description="settings for the private registry deployed with the platform",
-        json_schema_extra={"auto_default_from_env": True},
-    )
-
-    DIRECTOR_POSTGRES: PostgresSettings = Field(
-        ..., json_schema_extra={"auto_default_from_env": True}
-    )
-    STORAGE_ENDPOINT: str = Field(..., description="storage endpoint without scheme")
-
-    DIRECTOR_PUBLISHED_HOST_NAME: str = Field(
-        ...,
-        validation_alias=AliasChoices(
-            "DIRECTOR_PUBLISHED_HOST_NAME", "PUBLISHED_HOST_NAME"
+    DIRECTOR_REGISTRY: Annotated[
+        RegistrySettings,
+        Field(
+            description="settings for the private registry deployed with the platform",
+            json_schema_extra={"auto_default_from_env": True},
         ),
-    )
+    ]
 
-    DIRECTOR_SWARM_STACK_NAME: str = Field(
-        ...,
-        validation_alias=AliasChoices("DIRECTOR_SWARM_STACK_NAME", "SWARM_STACK_NAME"),
-    )
+    DIRECTOR_POSTGRES: Annotated[
+        PostgresSettings, Field(json_schema_extra={"auto_default_from_env": True})
+    ]
+    STORAGE_ENDPOINT: Annotated[
+        str, Field(description="storage endpoint without scheme")
+    ]
 
-    DIRECTOR_SIMCORE_SERVICES_NETWORK_NAME: str | None = Field(
-        # used to find the right network name
-        ...,
-        validation_alias=AliasChoices(
-            "DIRECTOR_SIMCORE_SERVICES_NETWORK_NAME",
-            "SIMCORE_SERVICES_NETWORK_NAME",
+    DIRECTOR_PUBLISHED_HOST_NAME: Annotated[
+        str,
+        Field(
+            validation_alias=AliasChoices(
+                "DIRECTOR_PUBLISHED_HOST_NAME", "PUBLISHED_HOST_NAME"
+            )
         ),
-    )
+    ]
 
-    DIRECTOR_MONITORING_ENABLED: bool = Field(
-        ...,
-        validation_alias=AliasChoices(
-            "DIRECTOR_MONITORING_ENABLED", "MONITORING_ENABLED"
+    DIRECTOR_SWARM_STACK_NAME: Annotated[
+        str,
+        Field(
+            validation_alias=AliasChoices(
+                "DIRECTOR_SWARM_STACK_NAME", "SWARM_STACK_NAME"
+            )
         ),
-    )
+    ]
+
+    DIRECTOR_SIMCORE_SERVICES_NETWORK_NAME: Annotated[
+        str | None,
+        Field(
+            validation_alias=AliasChoices(
+                "DIRECTOR_SIMCORE_SERVICES_NETWORK_NAME",
+                "SIMCORE_SERVICES_NETWORK_NAME",
+            )
+        ),
+    ]
+
+    DIRECTOR_MONITORING_ENABLED: Annotated[
+        bool,
+        Field(
+            validation_alias=AliasChoices(
+                "DIRECTOR_MONITORING_ENABLED", "MONITORING_ENABLED"
+            )
+        ),
+    ]
 
     DIRECTOR_REGISTRY_CLIENT_MAX_KEEPALIVE_CONNECTIONS: NonNegativeInt = 5
     DIRECTOR_REGISTRY_CLIENT_TIMEOUT: datetime.timedelta = datetime.timedelta(
