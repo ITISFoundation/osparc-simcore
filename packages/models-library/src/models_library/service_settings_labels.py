@@ -35,7 +35,7 @@ _BaseConfig = ConfigDict(
 
 
 class ContainerSpec(BaseModel):
-    """Implements entries that can be overriden for https://docs.docker.com/engine/api/v1.41/#operation/ServiceCreate
+    """Implements entries that can be overridden for https://docs.docker.com/engine/api/v1.41/#operation/ServiceCreate
     request body: TaskTemplate -> ContainerSpec
     """
 
@@ -127,7 +127,7 @@ class SimcoreServiceSettingLabelEntry(BaseModel):
                     {
                         "name": "constraints",
                         "type": "string",
-                        "value": ["node.platform.os == linux"],
+                        "value": ["node.platform.os==linux"],
                     },
                     # SEE service_settings_labels.py::ContainerSpec
                     {
@@ -277,7 +277,7 @@ class PathMappingsLabel(BaseModel):
             try:
                 TypeAdapter(ByteSize).validate_python(size_str)
             except ValidationError as e:
-                msg = f"Provided size='{size_str}' contains invalid charactes: {e!s}"
+                msg = f"Provided size='{size_str}' contains invalid characters: {e!s}"
                 raise ValueError(msg) from e
 
             inputs_path: Path | None = info.data.get("inputs_path")

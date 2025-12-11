@@ -99,7 +99,6 @@ def test_service_settings():
 def test_correctly_detect_dynamic_sidecar_boot(
     model_cls: type[BaseModel], example_name: str, example_data: Any
 ):
-
     model_instance = assert_validation_model(
         model_cls, example_name=example_name, example_data=example_data
     )
@@ -170,10 +169,10 @@ def test_path_mappings_label_unsupported_size_constraints():
                 "volume_size_limits": {"/ok_input_path": "1d"},
             },
         )
-    assert "Provided size='1d' contains invalid charactes:" in f"{exec_into.value}"
+    assert "Provided size='1d' contains invalid characters:" in f"{exec_into.value}"
 
 
-def test_path_mappings_label_defining_constraing_on_missing_path():
+def test_path_mappings_label_defining_constraints_on_missing_path():
     with pytest.raises(ValidationError) as exec_into:
         PathMappingsLabel.model_validate(
             {
@@ -470,7 +469,7 @@ def service_labels() -> dict[str, str]:
                 {
                     "name": "constraints",
                     "type": "string",
-                    "value": ["node.platform.os == $OSPARC_VARIABLE_OS_TYPE_LINUX"],
+                    "value": ["node.platform.os==$OSPARC_VARIABLE_OS_TYPE_LINUX"],
                 },
                 {
                     "name": "ContainerSpec",

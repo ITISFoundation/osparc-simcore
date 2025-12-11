@@ -144,7 +144,7 @@ def start_request_data(
             {
                 "name": "constraints",
                 "type": "string",
-                "value": ["node.platform.os == linux"],
+                "value": ["node.platform.os==linux"],
             },
         ],
         "paths_mapping": {
