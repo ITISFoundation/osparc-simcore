@@ -4,7 +4,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Annotated
 
-from common_library.basic_types import DEFAULT_FACTORY, BootModeEnum, PortInt
+from common_library.basic_types import DEFAULT_FACTORY, BootModeEnum
 from models_library.docker import (
     OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS,
     DockerLabelKey,
@@ -23,6 +23,7 @@ from pydantic import (
     field_validator,
 )
 from settings_library.base import BaseCustomSettings
+from settings_library.basic_types import PortInt
 from settings_library.efs import AwsEfsSettings
 from settings_library.r_clone import RCloneSettings as SettingsLibraryRCloneSettings
 from settings_library.utils_logging import MixinLoggingSettings
