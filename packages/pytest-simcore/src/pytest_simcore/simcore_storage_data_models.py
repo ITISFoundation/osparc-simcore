@@ -2,6 +2,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+import contextlib
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from typing import Any
@@ -14,11 +15,13 @@ from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from pydantic import TypeAdapter
 from simcore_postgres_database.models.project_to_groups import project_to_groups
+from simcore_postgres_database.models.projects_nodes import projects_nodes
 from simcore_postgres_database.storage_models import projects, users
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
 from .helpers.faker_factories import DEFAULT_FAKER, random_project
+from .helpers.postgres_tools import insert_and_get_row_lifespan
 from .helpers.postgres_users import insert_and_get_user_and_secrets_lifespan
 
 
@@ -214,32 +217,38 @@ def share_with_collaborator(
 @pytest.fixture
 async def create_project_node(
     user_id: UserID, sqlalchemy_async_engine: AsyncEngine, faker: Faker
-) -> Callable[..., Awaitable[NodeID]]:
-    async def _creator(
-        project_id: ProjectID, node_id: NodeID | None = None, **kwargs
-    ) -> NodeID:
-        async with sqlalchemy_async_engine.begin() as conn:
-            result = await conn.execute(
-                sa.select(projects.c.workbench).where(
-                    projects.c.uuid == f"{project_id}"
-                )
-            )
-            row = result.fetchone()
-            assert row
-            project_workbench: dict[str, Any] = row.workbench
-            new_node_id = node_id or NodeID(f"{faker.uuid4()}")
-            node_data = {
+) -> AsyncIterator[Callable[..., Awaitable[tuple[NodeID, dict[str, Any]]]]]:
+    created_node_entries: list[tuple[NodeID, ProjectID]] = []
+
+    async with contextlib.AsyncExitStack() as stack:
+
+        async def _creator(
+            project_id: ProjectID, node_id: NodeID | None = None, **kwargs
+        ) -> tuple[NodeID, dict[str, Any]]:
+            new_node_id = node_id or NodeID(faker.uuid4())
+            node_values = {
+                "node_id": f"{new_node_id}",
+                "project_uuid": f"{project_id}",
                 "key": "simcore/services/frontend/file-picker",
                 "version": "1.0.0",
                 "label": "pytest_fake_node",
+                **kwargs,
             }
-            node_data.update(**kwargs)
-            project_workbench.update({f"{new_node_id}": node_data})
-            await conn.execute(
-                projects.update()
-                .where(projects.c.uuid == f"{project_id}")
-                .values(workbench=project_workbench)
-            )
-        return new_node_id
 
-    return _creator
+            node_row = await stack.enter_async_context(
+                insert_and_get_row_lifespan(
+                    sqlalchemy_async_engine,
+                    table=projects_nodes,
+                    values=node_values,
+                    pk_col=projects_nodes.c.node_id,
+                    pk_value=f"{new_node_id}",
+                )
+            )
+
+            created_node_entries.append((new_node_id, project_id))
+            return new_node_id, node_row
+
+        yield _creator
+
+    # Cleanup is handled automatically by insert_and_get_row_lifespan
+    print("Deleting ", created_node_entries)

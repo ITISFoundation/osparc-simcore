@@ -4,7 +4,6 @@ import sqlalchemy as sa
 from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.users import UserID
-from pydantic import TypeAdapter
 from simcore_postgres_database.models.groups import user_to_groups
 from simcore_postgres_database.models.project_to_groups import project_to_groups
 from simcore_postgres_database.models.projects import projects
@@ -18,6 +17,8 @@ from simcore_postgres_database.utils_repos import (
 )
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncConnection
+
+from simcore_service_webserver.projects._projects_repository_legacy_utils import get_project_workbench
 
 from ..db.base_repository import BaseRepository
 from .models import ProjectDBGet, ProjectJobDBGet
@@ -178,7 +179,6 @@ class ProjectJobsRepository(BaseRepository):
         list_query = (
             sa.select(
                 *_PROJECT_DB_COLS,
-                projects.c.workbench,
                 base_query.c.job_parent_resource_name,
                 base_query.c.storage_assets_deleted,
             )
@@ -201,10 +201,10 @@ class ProjectJobsRepository(BaseRepository):
             total_count = await conn.scalar(total_query)
             assert isinstance(total_count, int)  # nosec
 
-            result = await conn.execute(list_query)
-            projects_list = TypeAdapter(list[ProjectJobDBGet]).validate_python(
-                result.fetchall()
-            )
+            projects_list = []
+            async for project_row in await conn.stream(list_query):
+                workbench = await get_project_workbench(conn, project_row.uuid)
+                projects_list.append(ProjectJobDBGet.model_validate({**project_row, "workbench": workbench}))
 
             return total_count, projects_list
 
@@ -221,7 +221,6 @@ class ProjectJobsRepository(BaseRepository):
         query = (
             sa.select(
                 *_PROJECT_DB_COLS,
-                projects.c.workbench,
                 projects_to_jobs.c.job_parent_resource_name,
                 projects_to_jobs.c.storage_assets_deleted,
             )
@@ -244,4 +243,6 @@ class ProjectJobsRepository(BaseRepository):
             row = result.first()
             if row is None:
                 return None
-            return TypeAdapter(ProjectJobDBGet).validate_python(row)
+
+            workbench = await get_project_workbench(conn, row.uuid)
+            return ProjectJobDBGet.model_validate({**row, "workbench": workbench})

@@ -29,7 +29,7 @@ from pytest_simcore.helpers.parametrizations import (
 from servicelib.aiohttp import status
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 
-pytest_simcore_core_services_selection = ["postgres"]
+pytest_simcore_core_services_selection = ["postgres", "rabbit"]
 pytest_simcore_ops_services_selection = ["adminer"]
 
 

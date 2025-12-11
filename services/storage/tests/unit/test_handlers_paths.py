@@ -8,6 +8,7 @@
 
 
 import random
+import secrets
 from collections.abc import Awaitable, Callable
 from pathlib import Path
 from typing import Any, TypeAlias
@@ -31,6 +32,7 @@ from pytest_simcore.helpers.httpx_assert_checks import assert_status
 from pytest_simcore.helpers.storage_utils import FileIDDict, ProjectWithFilesParams
 from servicelib.fastapi.rest_pagination import CustomizedPathsCursorPage
 from simcore_postgres_database.models.projects import projects
+from simcore_postgres_database.models.projects_nodes import projects_nodes
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -159,16 +161,16 @@ async def test_list_paths_pagination(
     user_id: UserID,
     with_random_project_with_files: tuple[
         dict[str, Any],
+        dict[NodeID, dict[str, Any]],
         dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
     ],
 ):
-    project, list_of_files = with_random_project_with_files
-    num_nodes = len(list(project["workbench"]))
+    project, nodes, list_of_files = with_random_project_with_files
 
     # ls the nodes (DB-based)
     file_filter = Path(project["uuid"])
     expected_paths = sorted(
-        ((file_filter / node_key, False) for node_key in project["workbench"]),
+        ((file_filter / f"{node_id}", False) for node_id in nodes),
         key=lambda x: x[0],
     )
     await _assert_list_paths(
@@ -178,12 +180,12 @@ async def test_list_paths_pagination(
         user_id,
         file_filter=file_filter,
         expected_paths=expected_paths,
-        limit=int(num_nodes / 2 + 0.5),
+        limit=int(len(nodes) / 2 + 0.5),
     )
 
     # ls in the workspace (S3-based)
     # ls in the workspace
-    selected_node_id = NodeID(random.choice(list(project["workbench"])))  # noqa: S311
+    selected_node_id = random.choice(list(nodes))  # noqa: S311
     selected_node_s3_keys = [
         Path(s3_object_id) for s3_object_id in list_of_files[selected_node_id]
     ]
@@ -242,11 +244,12 @@ async def test_list_paths_pagination_large_page(
     user_id: UserID,
     with_random_project_with_files: tuple[
         dict[str, Any],
+        dict[NodeID, dict[str, Any]],
         dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
     ],
 ):
-    project, list_of_files = with_random_project_with_files
-    selected_node_id = NodeID(random.choice(list(project["workbench"])))  # noqa: S311
+    project, nodes, list_of_files = with_random_project_with_files
+    selected_node_id = random.choice(list(nodes))  # noqa: S311
     selected_node_s3_keys = [
         Path(s3_object_id) for s3_object_id in list_of_files[selected_node_id]
     ]
@@ -294,7 +297,11 @@ async def test_list_paths(
     random_project_with_files: Callable[
         [ProjectWithFilesParams],
         Awaitable[
-            tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]
+            tuple[
+                dict[str, Any],
+                dict[NodeID, dict[str, Any]],
+                dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
+            ]
         ],
     ],
     project_params: ProjectWithFilesParams,
@@ -307,7 +314,10 @@ async def test_list_paths(
 
     # ls root returns our projects
     expected_paths = sorted(
-        ((Path(f"{prj_db['uuid']}"), False) for prj_db, _ in project_to_files_mapping),
+        (
+            (Path(f"{prj_db['uuid']}"), False)
+            for prj_db, _, _ in project_to_files_mapping
+        ),
         key=lambda x: x[0],
     )
     await _assert_list_paths(
@@ -320,7 +330,7 @@ async def test_list_paths(
     )
 
     # ls with only some part of the path should return only the projects that match
-    selected_project, selected_project_files = random.choice(  # noqa: S311
+    selected_project, selected_nodes, selected_project_files = secrets.choice(
         project_to_files_mapping
     )
     partial_file_filter = Path(
@@ -342,7 +352,7 @@ async def test_list_paths(
     # now we ls inside one of the projects returns the nodes
     file_filter = Path(selected_project["uuid"])
     expected_paths = sorted(
-        ((file_filter / node_key, False) for node_key in selected_project["workbench"]),
+        ((file_filter / f"{node_id}", False) for node_id in selected_nodes),
         key=lambda x: x[0],
     )
     await _assert_list_paths(
@@ -355,9 +365,7 @@ async def test_list_paths(
     )
 
     # now we ls in one of the nodes
-    selected_node_id = NodeID(
-        random.choice(list(selected_project["workbench"]))  # noqa: S311
-    )
+    selected_node_id = random.choice(list(selected_nodes))  # noqa: S311
     selected_node_s3_keys = [
         Path(s3_object_id) for s3_object_id in selected_project_files[selected_node_id]
     ]
@@ -458,34 +466,46 @@ async def test_list_paths_with_display_name_containing_slashes(
     user_id: UserID,
     with_random_project_with_files: tuple[
         dict[str, Any],
+        dict[NodeID, dict[str, Any]],
         dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
     ],
     sqlalchemy_async_engine: AsyncEngine,
 ):
-    project, list_of_files = with_random_project_with_files
+    project, nodes, list_of_files = with_random_project_with_files
     project_name_with_slashes = "soméà$èq¨thing with/ slas/h/es/"
     node_name_with_non_ascii = "my node / is not ascii: éàèù"
-    # adjust project to contain "difficult" characters
+
     async with sqlalchemy_async_engine.begin() as conn:
+        # update project to contain "difficult" characters
         result = await conn.execute(
             sa.update(projects)
             .where(projects.c.uuid == project["uuid"])
             .values(name=project_name_with_slashes)
-            .returning(sa.literal_column(f"{projects.c.name}, {projects.c.workbench}"))
+            .returning(projects.c.name)
         )
         row = result.one()
         assert row.name == project_name_with_slashes
-        project_workbench = row.workbench
-        assert len(project_workbench) == 1
-        node = next(iter(project_workbench.values()))
-        node["label"] = node_name_with_non_ascii
-        result = await conn.execute(
-            sa.update(projects)
+
+        # update a node (first occurrence) to contain "difficult" characters
+        subquery = (
+            sa.select(projects_nodes.c.node_id)
+            .select_from(projects_nodes.join(projects))
             .where(projects.c.uuid == project["uuid"])
-            .values(workbench=project_workbench)
-            .returning(sa.literal_column(f"{projects.c.name}, {projects.c.workbench}"))
+            .order_by(projects_nodes.c.node_id)
+            .limit(1)
         )
-        row = result.one()
+        first_row = await conn.execute(subquery)
+        first_id = first_row.scalar_one_or_none()
+
+        if first_id:
+            result = await conn.execute(
+                sa.update(projects_nodes)
+                .where(projects_nodes.c.node_id == first_id)
+                .values(label=node_name_with_non_ascii)
+                .returning(projects_nodes.c.label)
+            )
+            row = result.one()
+            assert row.label == node_name_with_non_ascii
 
     # ls the root
     file_filter = None
@@ -507,7 +527,7 @@ async def test_list_paths_with_display_name_containing_slashes(
     # ls the nodes to ensure / is still there between project and node
     file_filter = Path(project["uuid"])
     expected_paths = sorted(
-        ((file_filter / node_key, False) for node_key in project["workbench"]),
+        ((file_filter / f"{node_id}", False) for node_id in nodes),
         key=lambda x: x[0],
     )
     assert len(expected_paths) == 1, "test configuration problem"
@@ -526,7 +546,7 @@ async def test_list_paths_with_display_name_containing_slashes(
     ), "display path parts should be url encoded"
 
     # ls in the node workspace
-    selected_node_id = NodeID(random.choice(list(project["workbench"])))  # noqa: S311
+    selected_node_id = random.choice(list(nodes))  # noqa: S311
     selected_node_s3_keys = [
         Path(s3_object_id) for s3_object_id in list_of_files[selected_node_id]
     ]
@@ -625,6 +645,7 @@ async def test_path_compute_size(
     user_id: UserID,
     with_random_project_with_files: tuple[
         dict[str, Any],
+        dict[NodeID, dict[str, Any]],
         dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
     ],
     project_params: ProjectWithFilesParams,
@@ -632,7 +653,7 @@ async def test_path_compute_size(
     assert (
         len(project_params.allowed_file_sizes) == 1
     ), "test preconditions are not filled! allowed file sizes should have only 1 option for this test"
-    project, list_of_files = with_random_project_with_files
+    project, nodes, list_of_files = with_random_project_with_files
 
     total_num_files = sum(
         len(files_in_node) for files_in_node in list_of_files.values()
@@ -651,7 +672,7 @@ async def test_path_compute_size(
     )
 
     # get size of one of the nodes
-    selected_node_id = NodeID(random.choice(list(project["workbench"])))  # noqa: S311
+    selected_node_id = random.choice(list(nodes))  # noqa: S311
     path = Path(project["uuid"]) / f"{selected_node_id}"
     selected_node_s3_keys = [
         Path(s3_object_id) for s3_object_id in list_of_files[selected_node_id]

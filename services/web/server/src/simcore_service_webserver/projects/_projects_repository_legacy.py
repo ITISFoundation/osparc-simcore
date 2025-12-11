@@ -36,7 +36,7 @@ from models_library.resource_tracker import (
 )
 from models_library.rest_ordering import OrderBy, OrderDirection
 from models_library.users import UserID
-from models_library.utils.fastapi_encoders import jsonable_encoder
+from models_library.utils._original_fastapi_encoders import jsonable_encoder
 from models_library.wallets import WalletDB, WalletID
 from models_library.workspaces import WorkspaceQuery, WorkspaceScope
 from pydantic import TypeAdapter
@@ -96,6 +96,7 @@ from ._projects_repository_legacy_utils import (
     convert_to_db_names,
     convert_to_schema_names,
     create_project_access_rights,
+    get_project_workbench,
     patch_workbench,
 )
 from ._socketio_service import notify_project_document_updated
@@ -178,7 +179,7 @@ class ProjectDBAPI(BaseProjectDB):
                 with attempt:
                     async with conn.begin():
                         project_index = None
-                        project_uuid = ProjectID(f"{insert_values['uuid']}")
+                        project_uuid = ProjectID(insert_values["uuid"])
 
                         try:
                             result: ResultProxy = await conn.execute(
@@ -225,41 +226,10 @@ class ProjectDBAPI(BaseProjectDB):
                         )
                         selected_values["tags"] = project_tag_ids
 
-                        # NOTE: this will at some point completely replace workbench in the DB
-                        if selected_values["workbench"]:
-                            project_nodes_repo = ProjectNodesRepo(
-                                project_uuid=project_uuid
+                        if project_nodes:
+                            await ProjectNodesRepo(project_uuid=project_uuid).add(
+                                conn, nodes=list(project_nodes.values())
                             )
-                            if project_nodes is None:
-                                project_nodes = {
-                                    NodeID(node_id): ProjectNodeCreate(
-                                        node_id=NodeID(node_id),
-                                        required_resources={},
-                                        key=node_info.get("key"),
-                                        version=node_info.get("version"),
-                                        label=node_info.get("label"),
-                                    )
-                                    for node_id, node_info in selected_values[
-                                        "workbench"
-                                    ].items()
-                                }
-
-                            nodes = [
-                                project_nodes.get(
-                                    NodeID(node_id),
-                                    ProjectNodeCreate(
-                                        node_id=NodeID(node_id),
-                                        required_resources={},
-                                        key=node_info.get("key"),
-                                        version=node_info.get("version"),
-                                        label=node_info.get("label"),
-                                    ),
-                                )
-                                for node_id, node_info in selected_values[
-                                    "workbench"
-                                ].items()
-                            ]
-                            await project_nodes_repo.add(conn, nodes=nodes)
         return selected_values
 
     async def insert_project(
@@ -324,16 +294,47 @@ class ProjectDBAPI(BaseProjectDB):
         # ensure we have the minimal amount of data here
         # All non-default in projects table
         insert_values.setdefault("name", "New Study")
-        insert_values.setdefault("workbench", {})
         insert_values.setdefault("workspace_id", None)
 
         # must be valid uuid
         try:
-            ProjectID(str(insert_values.get("uuid")))
+            ProjectID(f"{insert_values.get('uuid')}")
         except ValueError:
             if force_project_uuid:
                 raise
             insert_values["uuid"] = f"{uuid1()}"
+
+        # extract workbench nodes
+        workbench: dict[str, Any] = insert_values.pop("workbench", {})
+        project_nodes = project_nodes or {}
+
+        # Get valid ProjectNodeCreate fields, excluding node_id since it's set separately
+        valid_fields = ProjectNodeCreate.get_field_names(exclude={"node_id"})
+
+        # Mapping from camelCase (workbench) to snake_case (ProjectNodeCreate)
+        field_mapping = {
+            "inputAccess": "input_access",
+            "inputNodes": "input_nodes",
+            "inputsRequired": "inputs_required",
+            "inputsUnits": "inputs_units",
+            "outputNodes": "output_nodes",
+            "runHash": "run_hash",
+            "bootOptions": "boot_options",
+        }
+
+        project_nodes |= {
+            NodeID(node_id): ProjectNodeCreate(
+                node_id=NodeID(node_id),
+                **{
+                    str(field_mapping.get(field, field)): value
+                    for field, value in Node.model_validate(project_workbench_node)
+                    .model_dump(mode="json", by_alias=True)
+                    .items()
+                    if field_mapping.get(field, field) in valid_fields
+                },
+            )
+            for node_id, project_workbench_node in workbench.items()
+        }
 
         inserted_project = await self._insert_project_in_db(
             insert_values,
@@ -342,6 +343,8 @@ class ProjectDBAPI(BaseProjectDB):
             project_tag_ids=project_tag_ids,
             project_nodes=project_nodes,
         )
+
+        inserted_project["workbench"] = workbench
 
         async with self.engine.acquire() as conn:
             # Returns created project with names as in the project schema
@@ -398,7 +401,6 @@ class ProjectDBAPI(BaseProjectDB):
             private_workspace_query = (
                 sa.select(
                     *PROJECT_DB_COLS,
-                    projects.c.workbench,
                     projects_to_products.c.product_name,
                     projects_to_folders.c.folder_id,
                 )
@@ -457,7 +459,6 @@ class ProjectDBAPI(BaseProjectDB):
             shared_workspace_query = (
                 sa.select(
                     *PROJECT_DB_COLS,
-                    projects.c.workbench,
                     projects_to_products.c.product_name,
                     projects_to_folders.c.folder_id,
                 )
@@ -681,8 +682,11 @@ class ProjectDBAPI(BaseProjectDB):
                 # Therefore, if we use this model, it will return those default values, which is not backward-compatible
                 # with the frontend. The frontend would need to check and adapt how it handles default values in
                 # Workbench nodes, which are currently not returned if not set in the DB.
-                ProjectListAtDB.model_validate(row)
-                prjs_output.append(dict(row.items()))
+                prj_dict = dict(row.items()) | {
+                    "workbench": await get_project_workbench(conn, row.uuid),
+                }
+                ProjectListAtDB.model_validate(prj_dict)
+                prjs_output.append(prj_dict)
 
             return (
                 prjs_output,
@@ -729,7 +733,6 @@ class ProjectDBAPI(BaseProjectDB):
             result = await conn.execute(
                 sa.select(
                     *PROJECT_DB_COLS,
-                    projects.c.workbench,
                 ).where(projects.c.uuid == f"{project_uuid}")
             )
             row = await result.fetchone()
@@ -1067,6 +1070,7 @@ class ProjectDBAPI(BaseProjectDB):
         project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)
         async with self.engine.acquire() as conn:
             await project_nodes_repo.add(conn, nodes=[node])
+
         await self._update_project_workbench_with_lock_and_notify(
             partial_workbench_data,
             user_id=user_id,

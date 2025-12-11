@@ -32,8 +32,8 @@ from servicelib.status_codes_utils import get_code_display_name
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from simcore_postgres_database.models.comp_runs_collections import comp_runs_collections
-from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.projects_metadata import projects_metadata
+from simcore_postgres_database.models.projects_nodes import projects_nodes
 from simcore_postgres_database.models.users import UserRole
 from simcore_postgres_database.webserver_models import (
     NodeClass,
@@ -265,14 +265,12 @@ async def _get_project_workbench_from_db(
     # this check is only there to check the comp_pipeline is there
     print(f"--> looking for project {project_id=} in projects table...")
     async with sqlalchemy_async_engine.connect() as conn:
-        project_in_db = (
-            await conn.execute(sa.select(projects).where(projects.c.uuid == project_id))
-        ).one()
+        result = await conn.execute(
+            sa.select(projects_nodes).where(projects_nodes.c.project_uuid == project_id)
+        )
+        rows = result.mappings().all()
 
-    print(
-        f"<-- found following workbench: {json_dumps(project_in_db.workbench, indent=2)}"
-    )
-    return project_in_db.workbench
+    return {row["node_id"]: dict(row) for row in rows}
 
 
 async def _assert_and_wait_for_pipeline_state(
@@ -342,16 +340,16 @@ async def _assert_and_wait_for_comp_task_states_to_be_transmitted_in_projects(
 
                 # if this one is in, the other should also be but let's check it carefully
                 assert node_values.run_hash
-                assert "runHash" in node_in_project_table
-                assert node_values.run_hash == node_in_project_table["runHash"]
+                assert "run_hash" in node_in_project_table
+                assert node_values.run_hash == node_in_project_table["run_hash"]
 
                 assert node_values.state
                 assert "state" in node_in_project_table
-                assert "currentStatus" in node_in_project_table["state"]
+                assert "current_status" in node_in_project_table["state"]
                 # NOTE: beware that the comp_tasks has StateType and Workbench has RunningState (sic)
                 assert (
                     DB_TO_RUNNING_STATE[node_values.state].value
-                    == node_in_project_table["state"]["currentStatus"]
+                    == node_in_project_table["state"]["current_status"]
                 )
             print(
                 "--> tasks were properly transferred! "
