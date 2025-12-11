@@ -11,7 +11,7 @@ from typing import Final
 from aws_library.ec2 import AWSTagKey, AWSTagValue, EC2InstanceType, EC2Tags, Resources
 from aws_library.ec2._models import EC2InstanceData
 from common_library.json_serialization import json_dumps
-from models_library.docker import CUSTOM_PLACEMENT_LABEL_KEYS
+from models_library.docker import OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS
 from pydantic import TypeAdapter
 
 from .._meta import VERSION
@@ -49,7 +49,9 @@ def serialize_custom_placement_labels_to_ec2_tag(
     """Serialize custom placement labels to a JSON string for EC2 tag storage."""
     # Only include labels that are in the approved set
     filtered_labels = {
-        k: v for k, v in labels.items() if k in CUSTOM_PLACEMENT_LABEL_KEYS
+        k: v
+        for k, v in labels.items()
+        if k in OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS
     }
     return json_dumps(filtered_labels) if filtered_labels else "{}"
 
