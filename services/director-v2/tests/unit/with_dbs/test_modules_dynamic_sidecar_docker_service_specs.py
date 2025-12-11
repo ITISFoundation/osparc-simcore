@@ -397,7 +397,7 @@ def expected_dynamic_sidecar_spec(
             "Placement": {
                 "Constraints": [
                     f"node.labels.{DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY}=={hardware_info.aws_ec2_instances[0]}",
-                    "node.platform.os == linux",
+                    "node.platform.os==linux",
                 ]
             },
             "Resources": {
