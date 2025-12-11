@@ -127,7 +127,10 @@ def get_dynamic_proxy_spec(
             cpu_limit=float(CPU_10_PERCENT) / 1e9,
         ).to_simcore_runtime_docker_labels(),
         "name": scheduler_data.proxy_service_name,
-        "networks": [swarm_network_id, dynamic_sidecar_network_id],
+        "networks": [  # NOTE: this is deprecated in docker v1.44 and is replaced by task_template/Networks
+            swarm_network_id,
+            dynamic_sidecar_network_id,
+        ],
         "task_template": {
             "ContainerSpec": {
                 "Env": {},
@@ -153,6 +156,10 @@ def get_dynamic_proxy_spec(
                 ],
                 "Mounts": mounts,
             },
+            "Networks": [
+                {"Target": swarm_network_id},
+                {"Target": dynamic_sidecar_network_id},
+            ],
             "Placement": {
                 "Constraints": [
                     "node.platform.os == linux",

@@ -5,7 +5,7 @@ from datetime import timedelta
 from typing import Final
 
 from common_library.errors_classes import OsparcErrorMixin
-from tenacity import AsyncRetrying, RetryCallState, TryAgain
+from tenacity import AsyncRetrying, RetryCallState, TryAgain, stop_never
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_fixed
 
@@ -13,7 +13,6 @@ _logger = logging.getLogger(__name__)
 
 
 _DEFAULT_CHECK_INTERVAL: Final[timedelta] = timedelta(seconds=1)
-_DEFAULT_TIMEOUT_INTERVAL: Final[timedelta] = timedelta(seconds=30)
 
 
 class CouldNotReachServiceError(OsparcErrorMixin, Exception):
@@ -46,12 +45,16 @@ async def _attempt_to_wait_for_handler(
     service_name: str,
     endpoint: str,
     check_interval: timedelta,
-    timeout: timedelta,
+    max_delay: timedelta | None,
     **kwargs,
 ) -> None:
     async for attempt in AsyncRetrying(
         wait=wait_fixed(check_interval),
-        stop=stop_after_delay(timeout.total_seconds()),
+        stop=(
+            stop_never
+            if max_delay is None
+            else stop_after_delay(max_delay.total_seconds())
+        ),
         before_sleep=_before_sleep_log(_logger, service_name, endpoint),
         reraise=True,
     ):
@@ -66,7 +69,7 @@ async def wait_for_service_liveness(
     service_name: str,
     endpoint: str,
     check_interval: timedelta | None = None,
-    timeout: timedelta | None = None,
+    max_delay: timedelta | None = None,
     **kwargs,
 ) -> None:
     """waits for async_handler to return ``True`` or ``None`` instead of
@@ -79,8 +82,8 @@ async def wait_for_service_liveness(
 
     Keyword Arguments:
         check_interval -- interval at which service check is ran (default: {_DEFAULT_CHECK_INTERVAL})
-        timeout -- stops trying to contact service and raises ``CouldNotReachServiceError``
-            (default: {_DEFAULT_TIMEOUT_INTERVAL})
+        max_delay -- stops trying to contact service after max_delay and raises ``CouldNotReachServiceError``
+            (default: None - no timeout)
 
     Raises:
         CouldNotReachServiceError: if it was not able to contact the service in time
@@ -88,8 +91,6 @@ async def wait_for_service_liveness(
 
     if check_interval is None:
         check_interval = _DEFAULT_CHECK_INTERVAL
-    if timeout is None:
-        timeout = _DEFAULT_TIMEOUT_INTERVAL
 
     try:
         start = time.time()
@@ -99,7 +100,7 @@ async def wait_for_service_liveness(
             service_name=service_name,
             endpoint=endpoint,
             check_interval=check_interval,
-            timeout=timeout,
+            max_delay=max_delay,
             **kwargs,
         )
         elapsed_ms = (time.time() - start) * 1000
