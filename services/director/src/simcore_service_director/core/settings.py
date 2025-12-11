@@ -77,7 +77,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         examples=['{"com.example.description":"Accounting webapp"}'],
     )
 
-    DIRECTOR_CUSTOM_PLACEMENT_LABELS: dict[str, str] = Field(
+    DIRECTOR_OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS: dict[str, str] = Field(
         default_factory=dict,
         description="Dynamic placement labels for service node placement. Keys must be in CUSTOM_PLACEMENT_LABEL_KEYS.",
         examples=['{"product_name": "osparc", "user_id": "{user_id}"}'],
@@ -89,9 +89,11 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     DIRECTOR_SERVICES_RESTART_POLICY_DELAY_S: int = 12
     DIRECTOR_SERVICES_STATE_MONITOR_S: int = 8
 
-    @field_validator("DIRECTOR_CUSTOM_PLACEMENT_LABELS")
+    @field_validator("DIRECTOR_OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS")
     @classmethod
-    def _validate_custom_placement_labels(cls, v: dict[str, str]) -> dict[str, str]:
+    def _validate_osparc_custom_placement_constraints_keys(
+        cls, v: dict[str, str]
+    ) -> dict[str, str]:
         invalid_keys = set(v.keys()) - set(
             OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS
         )

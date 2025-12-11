@@ -294,7 +294,7 @@ async def _create_docker_service_params(
         ] += app_settings.DIRECTOR_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS
 
     # add dynamic placement labels based on template configuration
-    if app_settings.DIRECTOR_CUSTOM_PLACEMENT_LABELS:
+    if app_settings.DIRECTOR_OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS:
         label_values = {
             "product_name": "osparc",
             "user_id": user_id,
@@ -304,7 +304,7 @@ async def _create_docker_service_params(
         for (
             label_key,
             label_template,
-        ) in app_settings.DIRECTOR_CUSTOM_PLACEMENT_LABELS.items():
+        ) in app_settings.DIRECTOR_OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS.items():
             # resolve template if it contains placeholders
             try:
                 resolved_value = label_template.format(**label_values)
