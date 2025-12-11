@@ -49,7 +49,7 @@ def test_make_version(
     """
     As Makefile recipe:
 
-        version-service-patch version-service-minor version-service-major: $(metatada) ## kernel/service versioning as patch
+        version-service-patch version-service-minor version-service-major: $(metadata) ## kernel/service versioning as patch
                 simcore-service-integrator bump-version --metadata-file $<  --upgrade $(subst version-service-,,$@)
     """
     # ensures current_metadata fixture worked as expected

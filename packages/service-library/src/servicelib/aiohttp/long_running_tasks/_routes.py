@@ -58,7 +58,7 @@ async def get_task_result(request: web.Request) -> web.Response | Any:
     path_params = parse_request_path_parameters_as(_PathParam, request)
     long_running_manager = get_long_running_manager(request.app)
 
-    # NOTE: this might raise an exception that will be catched by the _error_handlers
+    # NOTE: this might raise an exception that will be caught by the _error_handlers
     return await lrt_api.get_task_result(
         long_running_manager.rpc_client,
         long_running_manager.lrt_namespace,

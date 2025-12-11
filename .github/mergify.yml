@@ -1,7 +1,7 @@
 queue_rules:
   - name: default
-    queue_conditions: # condtions to be met to add the PR to the queue (manually or automatically)
-      # general prerequisits fo accept the PR in the queue
+    queue_conditions: # conditions to be met to add the PR to the queue (manually or automatically)
+      # general prerequisites for accept the PR in the queue
       - label=🤖-automerge # let Mergify know that the PR can be merged (added manually)
       - label!=🤖-do-not-merge # block Mergify from merging the PR (added manually)
       - base=master

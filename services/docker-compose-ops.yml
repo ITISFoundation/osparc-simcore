@@ -9,7 +9,7 @@
 #
 # $ make ops_disabled=1 up-devel
 # $ make ops_disabled=1 up-prod
-# $ make ops_disabled=1 up-vesioned
+# $ make ops_disabled=1 up-versioned
 # $ make ops_disabled=1 up-latest
 #
 # Nonetheless, notice that minio is a service used from simcore stack. Therefore, disabling ops stack

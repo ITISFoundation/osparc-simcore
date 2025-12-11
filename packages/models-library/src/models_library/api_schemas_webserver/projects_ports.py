@@ -9,7 +9,7 @@ from ._base import InputSchemaWithoutCamelCase, OutputSchema
 class _ProjectIOBase(BaseModel):
     key: NodeID = Field(
         ...,
-        description="Project port's unique identifer. Same as the UUID of the associated port node",
+        description="Project port's unique identifier. Same as the UUID of the associated port node",
     )
     value: Any = Field(..., description="Value assigned to this i/o port")
 

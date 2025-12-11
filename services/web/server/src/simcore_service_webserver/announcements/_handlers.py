@@ -1,4 +1,4 @@
-"""Controler layer to expose to the web rest API"""
+"""Controller layer to expose to the web rest API"""
 
 from aiohttp import web
 
