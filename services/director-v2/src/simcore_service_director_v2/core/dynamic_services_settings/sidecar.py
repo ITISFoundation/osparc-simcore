@@ -14,7 +14,14 @@ from models_library.utils.common_validators import (
     ensure_unique_dict_values_validator,
     ensure_unique_list_values_validator,
 )
-from pydantic import AliasChoices, Field, PositiveInt, ValidationInfo, field_validator
+from pydantic import (
+    AliasChoices,
+    Field,
+    Json,
+    PositiveInt,
+    ValidationInfo,
+    field_validator,
+)
 from settings_library.base import BaseCustomSettings
 from settings_library.efs import AwsEfsSettings
 from settings_library.r_clone import RCloneSettings as SettingsLibraryRCloneSettings
@@ -81,8 +88,8 @@ class PlacementSettings(BaseCustomSettings):
         examples=['{"AIRAM": "node.labels.custom==true"}'],
     )
 
-    DIRECTOR_V2_DYNAMIC_SIDECAR_OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS: dict[
-        str, str
+    DIRECTOR_V2_DYNAMIC_SIDECAR_OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS: Json[
+        dict[str, str]
     ] = Field(
         default_factory=dict,
         description=(
