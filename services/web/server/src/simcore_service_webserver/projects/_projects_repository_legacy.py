@@ -372,7 +372,6 @@ class ProjectDBAPI(BaseProjectDB):
                 sa.select(
                     *PROJECT_DB_COLS,
                     projects.c.workbench,
-                    projects.c.product_name,
                     projects_to_folders.c.folder_id,
                 )
                 .select_from(
@@ -429,7 +428,6 @@ class ProjectDBAPI(BaseProjectDB):
                 sa.select(
                     *PROJECT_DB_COLS,
                     projects.c.workbench,
-                    projects.c.product_name,
                     projects_to_folders.c.folder_id,
                 )
                 .select_from(
