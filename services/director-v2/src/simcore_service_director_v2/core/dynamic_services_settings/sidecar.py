@@ -108,7 +108,7 @@ class PlacementSettings(BaseCustomSettings):
         "DIRECTOR_V2_DYNAMIC_SIDECAR_OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS"
     )
     @classmethod
-    def validate_custom_placement_labels_keys(
+    def validate_osparc_custom_docker_placement_constraints_keys(
         cls, value: dict[str, str]
     ) -> dict[str, str]:
         """Validate that all keys are in the allowed set."""
