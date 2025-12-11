@@ -14,7 +14,7 @@ integrates with osparc.
 
 import logging
 from pathlib import Path
-from typing import Annotated, Any, Final, Literal
+from typing import Annotated, Any, Final, Literal, Self
 
 from common_library.basic_types import DEFAULT_FACTORY
 from models_library.basic_types import SHA256Str
@@ -184,6 +184,13 @@ class SettingsItem(BaseModel):
         if (type_ := info.data.get("type_")) and type_ == "ContainerSpec":
             ContainerSpec.model_validate(v)
         return v
+
+    @model_validator(mode="after")
+    def _not_allowed_in_both_specs(self) -> Self:
+        if self.name == "constraints":
+            # constraints shall not contain spaces
+            self.value = [_.replace(" ", "") for _ in self.value]
+        return self
 
 
 class ValidatingDynamicSidecarServiceLabels(DynamicSidecarServiceLabels):
