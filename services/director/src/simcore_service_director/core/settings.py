@@ -62,6 +62,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     DIRECTOR_LOG_FILTER_MAPPING: Annotated[
         dict[LoggerName, list[MessageSubstring]],
         Field(
+            default_factory=dict,
             validation_alias=AliasChoices(
                 "DIRECTOR_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"
             ),
@@ -74,7 +75,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
             description="settings for opentelemetry tracing",
             json_schema_extra={"auto_default_from_env": True},
         ),
-    ] = None
+    ]
 
     DIRECTOR_DEFAULT_MAX_NANO_CPUS: NonNegativeInt = 0
     DIRECTOR_DEFAULT_MAX_MEMORY: NonNegativeInt = 0
@@ -88,11 +89,16 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
 
     DIRECTOR_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS: Annotated[
         list[DockerPlacementConstraint],
-        Field(examples=['["node.labels.region==east", "one!=yes"]']),
+        Field(
+            default_factory=list, examples=['["node.labels.region==east", "one!=yes"]']
+        ),
     ] = DEFAULT_FACTORY
     DIRECTOR_SERVICES_CUSTOM_LABELS: Annotated[
         dict[DockerLabelKey, str],
-        Field(examples=['{"com.example.description":"Accounting webapp"}']),
+        Field(
+            default_factory=dict,
+            examples=['{"com.example.description":"Accounting webapp"}'],
+        ),
     ] = DEFAULT_FACTORY
 
     DIRECTOR_OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS: Annotated[
@@ -109,19 +115,6 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     DIRECTOR_SERVICES_RESTART_POLICY_MAX_ATTEMPTS: int = 10
     DIRECTOR_SERVICES_RESTART_POLICY_DELAY_S: int = 12
     DIRECTOR_SERVICES_STATE_MONITOR_S: int = 8
-
-    @field_validator("DIRECTOR_OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS")
-    @classmethod
-    def _validate_osparc_custom_placement_constraints_keys(
-        cls, v: dict[str, str]
-    ) -> dict[str, str]:
-        invalid_keys = set(v.keys()) - set(
-            OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS
-        )
-        if invalid_keys:
-            msg = f"Invalid placement label keys {invalid_keys}. Must be one of {OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS}"
-            raise ValueError(msg)
-        return v
 
     DIRECTOR_TRAEFIK_SIMCORE_ZONE: Annotated[
         str,
@@ -190,6 +183,19 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     )
     DIRECTOR_REGISTRY_CLIENT_MAX_CONCURRENT_CALLS: PositiveInt = 20
     DIRECTOR_REGISTRY_CLIENT_MAX_NUMBER_OF_RETRIEVED_OBJECTS: PositiveInt = 30
+
+    @field_validator("DIRECTOR_OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS")
+    @classmethod
+    def _validate_osparc_custom_placement_constraints_keys(
+        cls, v: dict[str, str]
+    ) -> dict[str, str]:
+        invalid_keys = set(v.keys()) - set(
+            OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS
+        )
+        if invalid_keys:
+            msg = f"Invalid placement label keys {invalid_keys}. Must be one of {OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS}"
+            raise ValueError(msg)
+        return v
 
     @field_validator("DIRECTOR_REGISTRY_CLIENT_TIMEOUT")
     @classmethod
