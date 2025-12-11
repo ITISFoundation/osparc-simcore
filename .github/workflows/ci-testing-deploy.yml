@@ -1028,7 +1028,7 @@ jobs:
   unit-test-dynamic-sidecar:
     needs: changes
     if: ${{ needs.changes.outputs.dynamic-sidecar == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
-    timeout-minutes: 25 # if this timeout gets too small, then split the tests
+    timeout-minutes: 19 # if this timeout gets too small, then split the tests
     name: "[unit] dynamic-sidecar"
     runs-on: ${{ matrix.os }}
     strategy:
