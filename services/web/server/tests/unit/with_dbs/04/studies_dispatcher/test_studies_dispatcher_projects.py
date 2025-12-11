@@ -133,6 +133,7 @@ async def test_add_new_project_from_model_instance(
     if only_service:
         project = _create_project_with_service(
             project_id=project_id,
+            product_name=osparc_product_name,
             service_id=viewer_id,
             owner=user,
             service_info=ServiceInfo.model_validate(viewer_info),
