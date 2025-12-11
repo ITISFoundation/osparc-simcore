@@ -68,3 +68,5 @@ typing-extensions==4.14.1
     #   mypy
 virtualenv==20.34.0
     # via pre-commit
+watchdog==6.0.0
+    # via -r requirements/_tools.in
