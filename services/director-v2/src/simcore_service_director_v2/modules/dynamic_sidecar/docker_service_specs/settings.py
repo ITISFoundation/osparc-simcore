@@ -189,6 +189,7 @@ def update_service_params_from_settings(
     if constraints:
         assert isinstance(constraints, list)  # nosec
         constraints = list(set(constraints))
+        constraints.sort()
         # a docker placement constraint does not contain spaces
         create_service_params["task_template"]["Placement"]["Constraints"] = [
             c.replace(" ", "") for c in constraints
