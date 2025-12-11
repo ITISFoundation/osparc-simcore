@@ -5,14 +5,13 @@
 # pylint: disable=unused-variable
 
 
-from collections.abc import Awaitable, Callable, Iterator
+from collections.abc import Awaitable, Callable
 from http import HTTPStatus
 from unittest import mock
 from unittest.mock import MagicMock, call
 
 import pytest
 import socketio
-import sqlalchemy as sa
 from aiohttp.test_utils import TestClient
 from faker import Faker
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
@@ -32,8 +31,6 @@ from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.redis import with_project_locked
-from simcore_postgres_database.models.products import products
-from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects import _crud_api_delete
@@ -187,42 +184,6 @@ async def test_delete_multiple_opened_project_forbidden(
             pytest.fail("socket io connection should not fail")
 
     await _request_delete_project(client, user_project, expected_forbidden)
-
-
-@pytest.fixture
-def user_project_in_2_products(
-    logged_user: UserInfoDict,
-    user_project: ProjectDict,
-    postgres_db: sa.engine.Engine,
-    faker: Faker,
-) -> Iterator[ProjectDict]:
-    fake_product_name = faker.name()
-    with postgres_db.connect() as conn:
-        conn.execute(
-            products.insert().values(
-                name=fake_product_name, host_regex="", base_url="http://localhost"
-            )
-        )
-        conn.execute(
-            projects_to_products.insert().values(
-                project_uuid=user_project["uuid"], product_name=fake_product_name
-            )
-        )
-    yield user_project
-    # cleanup
-    with postgres_db.connect() as conn:
-        conn.execute(products.delete().where(products.c.name == fake_product_name))
-
-
-@pytest.mark.parametrize(*standard_role_response())
-async def test_delete_project_in_multiple_products_forbidden(
-    client: TestClient,
-    logged_user: UserInfoDict,
-    user_project_in_2_products: ProjectDict,
-    expected: ExpectedResponse,
-):
-    assert client.app
-    await _request_delete_project(client, user_project_in_2_products, expected.conflict)
 
 
 @pytest.mark.parametrize(*standard_role_response())

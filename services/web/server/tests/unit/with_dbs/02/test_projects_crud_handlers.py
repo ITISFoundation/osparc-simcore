@@ -39,7 +39,6 @@ from servicelib.aiohttp import status
 from servicelib.rest_constants import X_PRODUCT_NAME_HEADER
 from settings_library.rabbit import RabbitSettings
 from simcore_postgres_database.models.products import products
-from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_service_webserver._meta import api_version_prefix
 from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.groups._groups_service import get_product_group_for_user
@@ -253,7 +252,7 @@ async def test_list_projects(
     if data:
         assert len(data) == 1
 
-        # standad project
+        # standard project
         got = data[0]
         project_state = got.pop("state")
         project_permalink = got.pop("permalink", None)
@@ -324,7 +323,7 @@ def s4l_product_headers(s4l_products_db_name: ProductName) -> dict[str, str]:
 
 
 @pytest.fixture
-async def logged_user_registed_in_two_products(
+async def logged_user_registered_in_two_products(
     client: TestClient, logged_user: UserInfoDict, s4l_products_db_name: ProductName
 ):
     assert client.app
@@ -369,11 +368,11 @@ async def logged_user_registed_in_two_products(
         (UserRole.USER, status.HTTP_200_OK),
     ],
 )
-async def test_list_projects_with_innaccessible_services(
+async def test_list_projects_with_inaccessible_services(
     s4l_products_db_name: ProductName,
     client: TestClient,
     mocked_dynamic_services_interface: dict[str, mock.MagicMock],
-    logged_user_registed_in_two_products: UserInfoDict,
+    logged_user_registered_in_two_products: UserInfoDict,
     user_project: dict[str, Any],
     template_project: dict[str, Any],
     expected: HTTPStatus,
@@ -387,35 +386,9 @@ async def test_list_projects_with_innaccessible_services(
     assert len(data) == 2
 
     # use-case 2: calling with another product name returns 0 projects
-    # because projects are linked to osparc product in projects_to_products table
     data, *_ = await _list_and_assert_projects(
         client, expected, headers=s4l_product_headers
     )
-    assert len(data) == 0
-
-    # use-case 3: remove the links to products
-    # shall still return 0 because the user has no access to the services
-    with postgres_db.connect() as conn:
-        conn.execute(projects_to_products.delete())
-    data, *_ = await _list_and_assert_projects(
-        client, expected, headers=s4l_product_headers
-    )
-    assert len(data) == 0
-    data, *_ = await _list_and_assert_projects(client, expected)
-    assert len(data) == 0
-
-    # use-case 4: give user access to services
-    # shall return the projects for any product
-    data, *_ = await _list_and_assert_projects(
-        client, expected, headers=s4l_product_headers
-    )
-    # UPDATE (use-case 4): 11.11.2024 - This test was checking backwards compatibility for listing
-    # projects that were not in the projects_to_products table. After refactoring the project listing,
-    # we no longer support this. MD double-checked the last_modified_timestamp on projects
-    # that do not have any product assigned (all of them were before 01-11-2022 with the exception of two
-    # `4b001ad2-8450-11ec-b105-02420a0b02c7` and `d952cbf4-d838-11ec-af92-02420a0bdad4` which were added to osparc product).
-    assert len(data) == 0
-    data, *_ = await _list_and_assert_projects(client, expected)
     assert len(data) == 0
 
 

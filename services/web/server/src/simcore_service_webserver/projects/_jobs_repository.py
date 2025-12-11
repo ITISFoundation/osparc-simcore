@@ -10,7 +10,6 @@ from simcore_postgres_database.models.project_to_groups import project_to_groups
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.projects_metadata import projects_metadata
 from simcore_postgres_database.models.projects_to_jobs import projects_to_jobs
-from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_postgres_database.utils_repos import (
     get_columns_from_db_model,
     pass_or_acquire_connection,
@@ -128,11 +127,6 @@ class ProjectJobsRepository(BaseRepository):
             sa.select(projects_to_jobs)
             .select_from(
                 projects_to_jobs.join(
-                    projects_to_products,
-                    projects_to_jobs.c.project_uuid
-                    == projects_to_products.c.project_uuid,
-                )
-                .join(
                     project_to_groups,
                     projects_to_jobs.c.project_uuid == project_to_groups.c.project_uuid,
                 )
@@ -147,7 +141,7 @@ class ProjectJobsRepository(BaseRepository):
                 )
             )
             .where(
-                projects_to_products.c.product_name == product_name,
+                projects.c.product_name == product_name,
                 project_to_groups.c.gid.in_(sa.select(user_groups_query.c.gid)),
                 project_to_groups.c.read.is_(True),
                 projects.c.workspace_id.is_(
@@ -189,7 +183,7 @@ class ProjectJobsRepository(BaseRepository):
                 )
             )
             .order_by(
-                projects.c.creation_date.desc(),  # latests first
+                projects.c.creation_date.desc(),  # latest first
                 projects.c.id.desc(),
             )
             .limit(pagination_limit)

@@ -51,12 +51,23 @@ async def registered_user(
 
 
 @pytest.fixture
+async def registered_product(
+    connection: SAConnection,
+    create_fake_product: Callable[..., Awaitable[RowProxy]],
+) -> RowProxy:
+    product = await create_fake_product("test-product")
+    assert product
+    return product
+
+
+@pytest.fixture
 async def registered_project(
     connection: SAConnection,
     registered_user: RowProxy,
+    registered_product: RowProxy,
     create_fake_project: Callable[..., Awaitable[RowProxy]],
 ) -> dict[str, Any]:
-    project = await create_fake_project(connection, registered_user)
+    project = await create_fake_project(connection, registered_user, registered_product)
     assert project
     return dict(project)
 
@@ -319,6 +330,7 @@ async def test_delete_project_delete_all_nodes(
 async def test_multiple_creation_deletion_of_nodes(
     aiopg_engine: Engine,
     registered_user: RowProxy,
+    registered_product: RowProxy,
     create_fake_project: Callable[..., Awaitable[RowProxy]],
     create_fake_projects_node: Callable[..., ProjectNodeCreate],
     num_concurrent_workflows: int,
@@ -327,7 +339,9 @@ async def test_multiple_creation_deletion_of_nodes(
 
     async def _workflow() -> None:
         async with aiopg_engine.acquire() as connection:
-            project = await create_fake_project(connection, registered_user)
+            project = await create_fake_project(
+                connection, registered_user, registered_product
+            )
             projects_nodes_repo = ProjectNodesRepo(project_uuid=project.uuid)
 
             await projects_nodes_repo.add(
@@ -354,6 +368,7 @@ async def test_get_project_id_from_node_id(
     connection_factory: SAConnection | AsyncConnection,
     projects_nodes_repo: ProjectNodesRepo,
     registered_user: RowProxy,
+    registered_product: RowProxy,
     create_fake_project: Callable[..., Awaitable[RowProxy]],
     create_fake_projects_node: Callable[..., ProjectNodeCreate],
 ):
@@ -361,7 +376,9 @@ async def test_get_project_id_from_node_id(
 
     async def _workflow() -> dict[uuid.UUID, list[uuid.UUID]]:
         async with aiopg_engine.acquire() as connection:
-            project = await create_fake_project(connection, registered_user)
+            project = await create_fake_project(
+                connection, registered_user, registered_product
+            )
             projects_nodes_repo = ProjectNodesRepo(project_uuid=project.uuid)
 
             list_of_nodes = await projects_nodes_repo.add(
@@ -405,13 +422,18 @@ async def test_get_project_id_from_node_id_raises_if_multiple_projects_with_same
     connection_factory: SAConnection | AsyncConnection,
     projects_nodes_repo: ProjectNodesRepo,
     registered_user: RowProxy,
+    registered_product: RowProxy,
     create_fake_project: Callable[..., Awaitable[RowProxy]],
     create_fake_projects_node: Callable[..., ProjectNodeCreate],
 ):
-    project1 = await create_fake_project(connection, registered_user)
+    project1 = await create_fake_project(
+        connection, registered_user, registered_product
+    )
     project1_repo = ProjectNodesRepo(project_uuid=project1.uuid)
 
-    project2 = await create_fake_project(connection, registered_user)
+    project2 = await create_fake_project(
+        connection, registered_user, registered_product
+    )
     project2_repo = ProjectNodesRepo(project_uuid=project2.uuid)
 
     shared_node = create_fake_projects_node()
