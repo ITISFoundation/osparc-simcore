@@ -508,7 +508,6 @@ async def get_dynamic_sidecar_spec(  # pylint:disable=too-many-arguments# noqa: 
         "project_id": scheduler_data.project_id,
         "node_id": scheduler_data.node_uuid,
         "product_name": scheduler_data.product_name,
-        "group_id": "",  # Not available in SchedulerData
         "wallet_id": (
             scheduler_data.wallet_info.wallet_id
             if scheduler_data.wallet_info
