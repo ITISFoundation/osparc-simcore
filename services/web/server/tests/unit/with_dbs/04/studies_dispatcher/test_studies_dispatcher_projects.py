@@ -141,6 +141,7 @@ async def test_add_new_project_from_model_instance(
     else:
         project = _create_project_with_filepicker_and_service(
             project_id,
+            osparc_product_name,
             file_picker_id,
             viewer_id,
             owner=user,
