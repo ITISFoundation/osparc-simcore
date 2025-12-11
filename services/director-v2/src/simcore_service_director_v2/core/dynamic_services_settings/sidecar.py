@@ -5,13 +5,16 @@ from pathlib import Path
 from typing import Annotated
 
 from models_library.basic_types import BootModeEnum, PortInt
-from models_library.docker import DockerLabelKey, DockerPlacementConstraint
+from models_library.docker import (
+    CUSTOM_PLACEMENT_LABEL_KEYS,
+    DockerLabelKey,
+    DockerPlacementConstraint,
+)
 from models_library.utils.common_validators import (
     ensure_unique_dict_values_validator,
     ensure_unique_list_values_validator,
 )
 from pydantic import AliasChoices, Field, PositiveInt, ValidationInfo, field_validator
-from settings_library import CUSTOM_PLACEMENT_LABEL_KEYS
 from settings_library.base import BaseCustomSettings
 from settings_library.efs import AwsEfsSettings
 from settings_library.r_clone import RCloneSettings as SettingsLibraryRCloneSettings

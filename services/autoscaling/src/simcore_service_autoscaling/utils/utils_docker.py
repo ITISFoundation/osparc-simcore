@@ -15,6 +15,7 @@ import yaml
 from aws_library.ec2 import EC2InstanceData, Resources
 from aws_library.ec2._models import EC2InstanceBootSpecific
 from models_library.docker import (
+    CUSTOM_PLACEMENT_LABEL_KEYS,
     DockerGenericTag,
     DockerLabelKey,
 )
@@ -33,7 +34,6 @@ from pydantic import ByteSize, TypeAdapter, ValidationError
 from servicelib.docker_utils import to_datetime
 from servicelib.logging_utils import log_context
 from servicelib.utils import logged_gather
-from settings_library import CUSTOM_PLACEMENT_LABEL_KEYS
 from settings_library.docker_registry import RegistrySettings
 from types_aiobotocore_ec2.literals import InstanceTypeType
 

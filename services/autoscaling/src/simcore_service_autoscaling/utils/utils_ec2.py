@@ -11,8 +11,8 @@ from typing import Final
 from aws_library.ec2 import AWSTagKey, AWSTagValue, EC2InstanceType, EC2Tags, Resources
 from aws_library.ec2._models import EC2InstanceData
 from common_library.json_serialization import json_dumps
+from models_library.docker import CUSTOM_PLACEMENT_LABEL_KEYS
 from pydantic import TypeAdapter
-from settings_library import CUSTOM_PLACEMENT_LABEL_KEYS
 
 from .._meta import VERSION
 from ..core.errors import (
