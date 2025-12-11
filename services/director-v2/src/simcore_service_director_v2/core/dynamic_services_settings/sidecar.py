@@ -69,12 +69,15 @@ class RCloneSettings(SettingsLibraryRCloneSettings):
 class PlacementSettings(BaseCustomSettings):
     DIRECTOR_V2_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS: Annotated[
         list[DockerPlacementConstraint],
-        Field(examples=['["node.labels.region==east", "one!=yes"]']),
+        Field(
+            default_factory=list, examples=['["node.labels.region==east", "one!=yes"]']
+        ),
     ] = DEFAULT_FACTORY
 
     DIRECTOR_V2_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS: Annotated[
         dict[str, DockerPlacementConstraint],
         Field(
+            default_factory=dict,
             description="Use placement constraints in place of generic resources, for details see https://github.com/ITISFoundation/osparc-simcore/issues/5250 When `None` (default), uses generic resources",
             examples=['{"AIRAM": "node.labels.custom==true"}'],
         ),
@@ -83,6 +86,7 @@ class PlacementSettings(BaseCustomSettings):
     DIRECTOR_V2_DYNAMIC_SIDECAR_OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS: Annotated[
         Json[dict[str, str]],
         Field(
+            default_factory=lambda: "{}",
             description="Dynamic sidecar custom placement labels for flexible node targeting. Keys must be from: "
             + ", ".join(OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS)
             + ". Values are template strings supporting: {user_id}, {project_id}, {product_name}, {node_id}, {group_id}, {wallet_id}. Missing template values cause the label to be skipped.",
@@ -183,6 +187,7 @@ class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
     DYNAMIC_SIDECAR_CUSTOM_LABELS: Annotated[
         dict[DockerLabelKey, str],
         Field(
+            default_factory=dict,
             description="Custom labels to add to the dynamic-sidecar service",
             examples=[{"label_key": "label_value"}],
         ),
