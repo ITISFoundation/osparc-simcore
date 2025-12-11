@@ -162,7 +162,7 @@ def get_dynamic_proxy_spec(
             ],
             "Placement": {
                 "Constraints": [
-                    "node.platform.os == linux",
+                    "node.platform.os==linux",
                     f"node.id == {scheduler_data.dynamic_sidecar.docker_node_id}",
                 ]
             },
