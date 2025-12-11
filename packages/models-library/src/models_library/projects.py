@@ -132,15 +132,6 @@ class ProjectAtDB(BaseProjectModel):
         Field(description="Defines if a study is available publicly"),
     ] = False
 
-    product_name: Annotated[
-        ProductName,
-        Field(
-            description="Product to which the project belongs",
-            alias="productName",
-            examples=["osparc", "s4l"],
-        ),
-    ]
-
     @field_validator("project_type", mode="before")
     @classmethod
     def _convert_sql_alchemy_enum(cls, v):
@@ -271,6 +262,15 @@ class Project(BaseProjectModel):
             description="stores the study quality assessment",
         ),
     ] = DEFAULT_FACTORY
+
+    product_name: Annotated[
+        ProductName,
+        Field(
+            description="Product to which the project belongs",
+            alias="productName",
+            examples=["osparc", "s4l"],
+        ),
+    ]
 
     model_config = ConfigDict(
         # NOTE: this is a security measure until we get rid of the ProjectDict variants
