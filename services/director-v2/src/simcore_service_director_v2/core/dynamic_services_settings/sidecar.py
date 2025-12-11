@@ -81,7 +81,9 @@ class PlacementSettings(BaseCustomSettings):
         examples=['{"AIRAM": "node.labels.custom==true"}'],
     )
 
-    DIRECTOR_V2_DYNAMIC_SIDECAR_CUSTOM_PLACEMENT_LABELS: dict[str, str] = Field(
+    DIRECTOR_V2_DYNAMIC_SIDECAR_OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS: dict[
+        str, str
+    ] = Field(
         default_factory=dict,
         description=(
             "Dynamic sidecar custom placement labels for flexible node targeting. "
@@ -102,7 +104,9 @@ class PlacementSettings(BaseCustomSettings):
         "DIRECTOR_V2_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS",
     )(ensure_unique_dict_values_validator)
 
-    @field_validator("DIRECTOR_V2_DYNAMIC_SIDECAR_CUSTOM_PLACEMENT_LABELS")
+    @field_validator(
+        "DIRECTOR_V2_DYNAMIC_SIDECAR_OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS"
+    )
     @classmethod
     def validate_custom_placement_labels_keys(
         cls, value: dict[str, str]

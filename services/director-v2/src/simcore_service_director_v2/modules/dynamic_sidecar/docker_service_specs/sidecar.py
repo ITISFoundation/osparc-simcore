@@ -501,7 +501,7 @@ async def get_dynamic_sidecar_spec(  # pylint:disable=too-many-arguments# noqa: 
 
     # Add dynamic sidecar custom placement labels as constraints
     custom_placement_labels = (
-        placement_settings.DIRECTOR_V2_DYNAMIC_SIDECAR_CUSTOM_PLACEMENT_LABELS
+        placement_settings.DIRECTOR_V2_DYNAMIC_SIDECAR_OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS
     )
     label_values = {
         "user_id": str(scheduler_data.user_id),
