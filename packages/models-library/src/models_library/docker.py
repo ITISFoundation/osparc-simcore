@@ -44,9 +44,9 @@ DockerNodeID: TypeAlias = Annotated[
 # Docker placement labels for node-specific constraints
 # These keys are used to identify custom placement labels that can be applied to docker nodes
 OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS: tuple[DockerLabelKey, ...] = (
-    TypeAdapter(DockerLabelKey).validate_python("product_name"),
-    TypeAdapter(DockerLabelKey).validate_python("user_id"),
-    TypeAdapter(DockerLabelKey).validate_python("project_id"),
-    TypeAdapter(DockerLabelKey).validate_python("node_id"),
-    TypeAdapter(DockerLabelKey).validate_python("wallet_id"),
+    TypeAdapter(DockerLabelKey).validate_python("product-name"),
+    TypeAdapter(DockerLabelKey).validate_python("user-id"),
+    TypeAdapter(DockerLabelKey).validate_python("project-id"),
+    TypeAdapter(DockerLabelKey).validate_python("node-id"),
+    TypeAdapter(DockerLabelKey).validate_python("wallet-id"),
 )
