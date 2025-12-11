@@ -459,6 +459,16 @@ async def _create_docker_service_params(
             placement_substitutions[generic_resource_kind]
         ]
 
+    # Sanitize and clean repeated constraints.
+    constraints = docker_params["task_template"]["Placement"]["Constraints"]
+    if constraints:
+        assert isinstance(constraints, list)  # nosec
+        constraints = list(set(constraints))
+        # a docker placement constraint does not contain spaces
+        docker_params["task_template"]["Placement"]["Constraints"] = [
+            c.replace(" ", "") for c in constraints
+        ]
+
     # attach the service to the swarm network dedicated to services
     swarm_network = await _get_swarm_network(client, app_settings=app_settings)
     swarm_network_id = swarm_network["Id"]
