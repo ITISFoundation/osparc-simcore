@@ -263,15 +263,6 @@ class Project(BaseProjectModel):
         ),
     ] = DEFAULT_FACTORY
 
-    product_name: Annotated[
-        ProductName,
-        Field(
-            description="Product to which the project belongs",
-            alias="productName",
-            examples=["osparc", "s4l"],
-        ),
-    ]
-
     model_config = ConfigDict(
         # NOTE: this is a security measure until we get rid of the ProjectDict variants
         extra="forbid",
