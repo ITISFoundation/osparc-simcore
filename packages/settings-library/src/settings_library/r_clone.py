@@ -36,6 +36,14 @@ class RCloneMountSettings(BaseCustomSettings):
         "/tmp/vfs-caching"  # noqa: S108
     )
 
+    R_CLONE_VERSION: Annotated[
+        str | None,
+        Field(
+            pattern=r"^\d+\.\d+\.\d+$",
+            description="version of rclone to use for the mounts",
+        ),
+    ] = None
+
     _validate_r_clone_mount_transfers_completed_timeout = (
         validate_numeric_string_as_timedelta(
             "R_CLONE_MOUNT_TRANSFERS_COMPLETED_TIMEOUT"
