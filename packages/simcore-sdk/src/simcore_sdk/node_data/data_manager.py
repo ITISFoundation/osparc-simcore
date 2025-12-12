@@ -292,11 +292,11 @@ async def _start_mount_if_required(
     )
 
     await mount_manager.start_mount(
-        node_id,
-        MountRemoteType.S3,
-        s3_object,
         destination_path,
         index,
+        node_id=node_id,
+        remote_type=MountRemoteType.S3,
+        remote_path=s3_object,
         handler_get_bind_path=handler_get_bind_path,
     )
 

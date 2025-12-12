@@ -550,11 +550,12 @@ class RCloneMountManager:
 
     async def start_mount(
         self,
+        local_mount_path: Path,
+        index: NonNegativeInt,
+        *,
         node_id: NodeID,
         remote_type: MountRemoteType,
         remote_path: StorageFileID,
-        local_mount_path: Path,
-        index: NonNegativeInt,
         handler_get_bind_path: GetBindPathProtocol,
         vfs_cache_path_overwrite: Path | None = None,
     ) -> None:
