@@ -19,6 +19,7 @@ from ..node_ports_common.dbmanager import DBManager
 from ..node_ports_common.file_io_utils import LogRedirectCB
 from ..node_ports_common.r_clone_mount import (
     GetBindPathProtocol,
+    MountActivityProtocol,
     MountRemoteType,
     RCloneMountManager,
 )
@@ -279,6 +280,7 @@ async def _start_mount_if_required(
     destination_path: Path,
     index: NonNegativeInt,
     handler_get_bind_path: GetBindPathProtocol,
+    handler_mount_activity: MountActivityProtocol,
     *,
     use_r_clone_mount: bool,
 ) -> None:
@@ -298,6 +300,7 @@ async def _start_mount_if_required(
         remote_type=MountRemoteType.S3,
         remote_path=s3_object,
         handler_get_bind_path=handler_get_bind_path,
+        handler_mount_activity=handler_mount_activity,
     )
 
 
@@ -316,6 +319,7 @@ async def pull(  # pylint: disable=too-many-arguments  # noqa: PLR0913
     application_name: str,
     mount_manager: RCloneMountManager,
     handler_get_bind_path: GetBindPathProtocol,
+    handler_mount_activity: MountActivityProtocol,
 ) -> None:
     """restores the state folder"""
 
@@ -360,6 +364,7 @@ async def pull(  # pylint: disable=too-many-arguments  # noqa: PLR0913
                     destination_path,
                     index,
                     handler_get_bind_path,
+                    handler_mount_activity,
                     use_r_clone_mount=use_r_clone_mount,
                 )
             return
@@ -389,6 +394,7 @@ async def pull(  # pylint: disable=too-many-arguments  # noqa: PLR0913
                 destination_path,
                 index,
                 handler_get_bind_path,
+                handler_mount_activity,
                 use_r_clone_mount=use_r_clone_mount,
             )
         return
@@ -410,6 +416,7 @@ async def pull(  # pylint: disable=too-many-arguments  # noqa: PLR0913
                 destination_path,
                 index,
                 handler_get_bind_path,
+                handler_mount_activity,
                 use_r_clone_mount=use_r_clone_mount,
             )
         else:
@@ -433,6 +440,7 @@ async def pull(  # pylint: disable=too-many-arguments  # noqa: PLR0913
         destination_path,
         index,
         handler_get_bind_path,
+        handler_mount_activity,
         use_r_clone_mount=use_r_clone_mount,
     )
     _logger.debug("No content previously saved for '%s'", destination_path)

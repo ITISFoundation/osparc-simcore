@@ -19,6 +19,7 @@ from servicelib.long_running_tasks.task import TaskProtocol, TaskRegistry
 from servicelib.progress_bar import ProgressBarData
 from servicelib.utils import logged_gather
 from simcore_sdk.node_data import data_manager
+from simcore_sdk.node_ports_common.r_clone_mount import MountActivity
 from tenacity import retry
 from tenacity.before_sleep import before_sleep_log
 from tenacity.retry import retry_if_result
@@ -345,6 +346,34 @@ def _get_legacy_state_with_dy_volumes_path(
     )
 
 
+async def _handler_get_bind_path(
+    settings: ApplicationSettings, mounted_volumes: MountedVolumes, path: Path
+) -> dict:
+    not_dy_volume = path.relative_to(settings.DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR)
+    matcher = f":/{not_dy_volume}"
+
+    async for entry in mounted_volumes.iter_state_paths_to_docker_volumes(
+        settings.DY_SIDECAR_RUN_ID
+    ):
+        if entry.endswith(matcher):
+            mount_str = entry.replace(f"/{not_dy_volume}", f"{path}")
+            source, target = mount_str.split(":")
+            return {
+                "Type": "bind",
+                "Source": source,
+                "Target": target,
+                "BindOptions": {"Propagation": "rshared"},
+            }
+
+    msg = f"Could not resolve volume path for {path}"
+    raise RuntimeError(msg)
+
+
+async def _handler_mount_activity(state_path: Path, activity: MountActivity) -> None:
+    # in the future this should go to the fornted
+    _logger.info("Mount activity for '%s': %s", state_path, activity)
+
+
 async def _restore_state_folder(
     app: FastAPI,
     *,
@@ -354,25 +383,6 @@ async def _restore_state_folder(
     index: NonNegativeInt,
     mounted_volumes: MountedVolumes,
 ) -> None:
-    async def _resolve_volume_path(path: Path) -> dict:
-        not_dy_volume = path.relative_to(settings.DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR)
-        matcher = f":/{not_dy_volume}"
-
-        async for entry in mounted_volumes.iter_state_paths_to_docker_volumes(
-            settings.DY_SIDECAR_RUN_ID
-        ):
-            if entry.endswith(matcher):
-                mount_str = entry.replace(f"/{not_dy_volume}", f"{path}")
-                source, target = mount_str.split(":")
-                return {
-                    "Type": "bind",
-                    "Source": source,
-                    "Target": target,
-                    "BindOptions": {"Propagation": "rshared"},
-                }
-
-        msg = f"Could not resolve volume path for {path}"
-        raise RuntimeError(msg)
 
     assert settings.DY_SIDECAR_PRODUCT_NAME is not None  # nosec
     await data_manager.pull(
@@ -390,7 +400,10 @@ async def _restore_state_folder(
         legacy_state=_get_legacy_state_with_dy_volumes_path(settings),
         application_name=f"{APP_NAME}-{settings.DY_SIDECAR_NODE_ID}",
         mount_manager=get_r_clone_mount_manager(app),
-        handler_get_bind_path=_resolve_volume_path,
+        handler_get_bind_path=functools.partial(
+            _handler_get_bind_path, settings, mounted_volumes
+        ),
+        handler_mount_activity=_handler_mount_activity,
     )
 
 
