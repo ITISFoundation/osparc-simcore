@@ -12,6 +12,7 @@ import pytest
 from aws_library.s3._models import S3ObjectKey
 from faker import Faker
 from models_library.basic_types import SHA256Str
+from models_library.products import ProductName
 from models_library.progress_bar import ProgressReport
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
@@ -171,6 +172,7 @@ async def test_upload_and_search(
 async def _search_files_by_pattern(
     simcore_s3_dsm: SimcoreS3DataManager,
     user_id: UserID,
+    product_name: ProductName,
     name_pattern: str,
     project_id: ProjectID | None = None,
     items_per_page: int = 10,
@@ -178,7 +180,8 @@ async def _search_files_by_pattern(
     """Helper function to search files and collect all results."""
     results = []
     async for page in simcore_s3_dsm.search(
-        user_id=user_id,
+        user_id,
+        product_name,
         name_pattern=name_pattern,
         project_id=project_id,
         limit=items_per_page,
@@ -198,6 +201,7 @@ async def test_search_files(
     upload_file: Callable[..., Awaitable[tuple[Path, SimcoreS3FileID]]],
     file_size: ByteSize,
     user_id: UserID,
+    product_name: ProductName,
     project_id: ProjectID,
     faker: Faker,
 ):
@@ -225,7 +229,11 @@ async def test_search_files(
 
     # Test 1: Search for all .txt files
     txt_results = await _search_files_by_pattern(
-        simcore_s3_dsm, user_id, "*.txt", project_id
+        simcore_s3_dsm,
+        user_id,
+        product_name,
+        "*.txt",
+        project_id,
     )
     assert (
         len(txt_results) == 4
@@ -240,26 +248,40 @@ async def test_search_files(
 
     # Test 2: Search with specific prefix pattern
     data_results = await _search_files_by_pattern(
-        simcore_s3_dsm, user_id, "data_*", project_id
+        simcore_s3_dsm,
+        user_id,
+        product_name,
+        "data_*",
+        project_id,
     )
     assert len(data_results) == 1
     assert data_results[0].file_name == "data_file.csv"
 
     # Test 3: Search with pattern that matches multiple extensions
     temp_results = await _search_files_by_pattern(
-        simcore_s3_dsm, user_id, "temp_*", project_id
+        simcore_s3_dsm,
+        user_id,
+        product_name,
+        "temp_*",
+        project_id,
     )
     assert len(temp_results) == 1
     assert temp_results[0].file_name == "temp_data.tmp"
 
     # Test 4: Search with pattern that doesn't match anything
     no_match_results = await _search_files_by_pattern(
-        simcore_s3_dsm, user_id, "nonexistent_*", project_id
+        simcore_s3_dsm,
+        user_id,
+        product_name,
+        "nonexistent_*",
+        project_id,
     )
     assert len(no_match_results) == 0
 
     # Test 5: Search without project_id restriction (all accessible projects)
-    all_results = await _search_files_by_pattern(simcore_s3_dsm, user_id, "*")
+    all_results = await _search_files_by_pattern(
+        simcore_s3_dsm, user_id, product_name, "*"
+    )
     assert len(all_results) >= len(test_files)
 
     # Verify that each result has expected FileMetaData structure
@@ -272,7 +294,11 @@ async def test_search_files(
 
     # Test 6: Test ? wildcard - single character match
     single_char_results = await _search_files_by_pattern(
-        simcore_s3_dsm, user_id, "file_?.log", project_id
+        simcore_s3_dsm,
+        user_id,
+        product_name,
+        "file_?.log",
+        project_id,
     )
     # Should find 2 files: file_a.log and file_b.log (but not file_10.log)
     assert len(single_char_results) == 2
@@ -281,7 +307,11 @@ async def test_search_files(
 
     # Test 7: Test ?? wildcard - two character match
     double_char_results = await _search_files_by_pattern(
-        simcore_s3_dsm, user_id, "file_??.log", project_id
+        simcore_s3_dsm,
+        user_id,
+        product_name,
+        "file_??.log",
+        project_id,
     )
     # Should find 1 file: file_10.log
     assert len(double_char_results) == 1
@@ -289,7 +319,11 @@ async def test_search_files(
 
     # Test 8: Test ? wildcard with specific prefix and suffix
     report_results = await _search_files_by_pattern(
-        simcore_s3_dsm, user_id, "report?.txt", project_id
+        simcore_s3_dsm,
+        user_id,
+        product_name,
+        "report?.txt",
+        project_id,
     )
     # Should find 2 files: report1.txt and report2.txt
     assert len(report_results) == 2
@@ -300,7 +334,8 @@ async def test_search_files(
     paginated_results = []
     page_count = 0
     async for page in simcore_s3_dsm.search(
-        user_id=user_id,
+        user_id,
+        product_name,
         name_pattern="*",
         project_id=project_id,
         limit=2,  # Small page size to test pagination
