@@ -19,6 +19,7 @@ from models_library.api_schemas_storage.storage_schemas import (
     S3BucketName,
 )
 from models_library.basic_types import SHA256Str
+from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import (
     LocationID,
@@ -196,6 +197,7 @@ class UploadLinks:
 
 class StorageQueryParamsBase(BaseModel):
     user_id: UserID
+    product_name: ProductName
     model_config = ConfigDict(populate_by_name=True)
 
 
