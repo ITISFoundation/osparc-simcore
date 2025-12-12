@@ -184,7 +184,7 @@ async def get_project_outputs(request: web.Request) -> web.Response:
 class ProjectMetadataPortGet(BaseModel):
     key: NodeID = Field(
         ...,
-        description="Project port's unique identifer. Same as the UUID of the associated port node",
+        description="Project port's unique identifier. Same as the UUID of the associated port node",
     )
     kind: Literal["input", "output"]
     content_schema: JsonSchemaDict | None = Field(

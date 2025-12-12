@@ -35,7 +35,7 @@ _TO_OCI = {
     "vcs-ref": "revision",
     "vendor": "vendor",
     "name": "title",
-    "description": "descripton",
+    "description": "description",
     "usage": "documentation",
 }
 
@@ -177,11 +177,11 @@ class LabelSchemaAnnotations(BaseModel):
 
         WARNING: label-schema has be deprecated in favor of OCI image specs
         """
-        convertable_data = self.model_dump(
+        convertible_data = self.model_dump(
             include=set(_TO_OCI.keys()), exclude_unset=True, exclude_none=True
         )
-        assert set(convertable_data.keys()).issubset(  # nosec
+        assert set(convertible_data.keys()).issubset(  # nosec
             set(type(self).model_fields.keys())
         )  # nosec
 
-        return {_TO_OCI[key]: value for key, value in convertable_data.items()}
+        return {_TO_OCI[key]: value for key, value in convertible_data.items()}

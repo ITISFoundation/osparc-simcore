@@ -72,9 +72,10 @@ MAKE_C := $(MAKE) --no-print-directory --directory
 # COMMON TASKS
 #
 
-
+# spellchecker:ignore-next-line
 .PHONY: hel%
 # thanks to https://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
+# spellchecker:ignore-next-line
 hel%:
 	@echo "usage: make [target] ..."
 	@echo ""
@@ -221,6 +222,7 @@ pip-freeze: ## dumps current environ and base.txt [diagnostics]
 
 .PHONY: _check_python_version _check_venv_active
 
+# spellchecker:ignore-next-line
 _check_python_versio%:
 	# Checking that runs with correct python version
 	@python3 -c "import sys; current_version=[int(d) for d in '$(EXPECTED_PYTHON_VERSION)'.split('.')]; assert sys.version_info[:2]==tuple(current_version[:2]), f'Expected python $(EXPECTED_PYTHON_VERSION), got {sys.version_info}'"

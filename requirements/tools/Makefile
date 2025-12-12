@@ -68,7 +68,7 @@ touch: ## touches all package requirement inputs
 	# First aligns time-stamps: ensures compiled timestamp is older than target inputs
 	@$(foreach p,${_all-txt},touch $(p);)
 	@$(foreach p,${_all-in},touch $(p);)
-	# Touchs all target input requirements
+	# Touches all target input requirements
 	@$(foreach p,${_target-inputs},touch $(p);)
 
 only-tools: ## upgrades tools repo wide
@@ -106,7 +106,7 @@ build build-nc: ## builds tooling image ${IMAGE_NAME}
 
 
 .PHONY: run
-run: build ## Runs upgrade in a container [WARNING! UNDER DEV. USE CAREFULY]
+run: build ## Runs upgrade in a container [WARNING! UNDER DEV. USE CAREFULLY]
 	docker run -it \
 		--workdir="/home/$(USER)" \
 		--volume="/etc/group:/etc/group:ro" \

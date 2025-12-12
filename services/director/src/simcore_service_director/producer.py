@@ -231,6 +231,9 @@ async def _create_docker_service_params(
         "name": service_name,
         "task_template": {
             "ContainerSpec": container_spec,
+            "Networks": (
+                [{"Target": internal_network_id}] if internal_network_id else []
+            ),
             "Placement": {"Constraints": ([])},
             "RestartPolicy": {
                 "Condition": "on-failure",
@@ -277,7 +280,9 @@ async def _create_docker_service_params(
             f"traefik.http.routers.{service_name}.middlewares": f"{app_settings.DIRECTOR_SWARM_STACK_NAME}_gzip@swarm",
         }
         | app_settings.DIRECTOR_SERVICES_CUSTOM_LABELS,
-        "networks": [internal_network_id] if internal_network_id else [],
+        "networks": (
+            [internal_network_id] if internal_network_id else []
+        ),  # NOTE: this is deprecated in docker v1.44 and is replaced by task_template/Networks
     }
     if app_settings.DIRECTOR_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS:
         _logger.debug(
@@ -427,6 +432,7 @@ async def _create_docker_service_params(
     swarm_network_id = swarm_network["Id"]
     swarm_network_name = swarm_network["Name"]
     docker_params["networks"].append(swarm_network_id)
+    docker_params["task_template"]["Networks"].append({"Target": swarm_network_id})
     docker_params["labels"]["traefik.swarm.network"] = swarm_network_name
 
     # set labels for CPU and Memory limits

@@ -4,6 +4,7 @@ import time
 from collections.abc import AsyncIterator
 from datetime import timedelta
 
+from common_library.network import redact_url
 from models_library.healthchecks import IsNonResponsive, IsResponsive, LivenessResult
 from settings_library.postgres import PostgresSettings
 from sqlalchemy.exc import SQLAlchemyError
@@ -80,7 +81,7 @@ async def with_async_pg_engine(
         with log_context(
             _logger,
             logging.DEBUG,
-            f"connection to db {settings.dsn_with_async_sqlalchemy}",
+            f"connection to db {redact_url(settings.dsn_with_async_sqlalchemy)}",
         ):
             server_settings = {
                 "application_name": settings.client_name(

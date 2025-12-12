@@ -49,6 +49,10 @@ def test_is_ip_address(host: str, expected: bool):
         ),
         ("amqp://admin:mysecret@rabbit:5672", "amqp://admin:***@rabbit:5672"),
         ("redis://:adminadmin@redis:6379/3", "redis://:***@redis:6379/3"),
+        (
+            "postgresql+asyncpg://user:pass@db.example.com:5432/database",
+            "postgresql+asyncpg://user:***@db.example.com:5432/database",
+        ),
         # URLs with password and query/fragment
         (
             "https://user:pass@example.com/path?query=value",

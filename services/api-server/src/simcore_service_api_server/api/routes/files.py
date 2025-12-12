@@ -227,7 +227,7 @@ async def upload_file(
     # using a pre-signed link. This is far from ideal since we are using the api-server as a
     # passby service for all uploaded data which can be a lot.
     # Next refactor should consider a solution that directly uploads from the client to S3
-    # avoiding the data trafic via this service
+    # avoiding the data traffic via this service
 
     assert request  # nosec
 
@@ -274,7 +274,7 @@ async def upload_file(
 # two of them. Tried something like upload_file( files: Union[list[UploadFile], File] ) but it
 # produces an error in the generated openapi.json
 #
-# Since there is no inmediate need of this functions, we decided to disable it
+# Since there is no immediate need of this functions, we decided to disable it
 # but keep it here as a reminder for future re-designs
 #
 async def upload_files(files: list[UploadFile] = FileParam(...)):

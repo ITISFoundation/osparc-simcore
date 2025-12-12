@@ -34,7 +34,7 @@ async def list_latest_services():
     response_model=Envelope[list[Viewer]],
 )
 async def list_viewers(file_type: str | None = None):
-    """Lists all publically available viewers
+    """Lists all publicly available viewers
 
     Notice that this might contain multiple services for the same filetype
 
@@ -51,7 +51,7 @@ async def list_default_viewers(file_type: str | None = None):
 
     This was interfaced as a subcollection of viewers because it is a very common use-case
 
-    Only publicaly available viewers
+    Only publicly available viewers
 
     If file_type is provided, then it filters viewer for that filetype
     """
