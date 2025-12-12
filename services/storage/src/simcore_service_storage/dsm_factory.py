@@ -48,12 +48,19 @@ class BaseDataManager(ABC):
         """returns True if user with user_id is authorized to access the storage"""
 
     @abstractmethod
-    async def list_datasets(self, user_id: UserID) -> list[DatasetMetaData]:
+    async def list_datasets(
+        self, user_id: UserID, product_name: ProductName
+    ) -> list[DatasetMetaData]:
         """returns all the top level datasets a user has access to"""
 
     @abstractmethod
     async def list_files_in_dataset(
-        self, user_id: UserID, dataset_id: str, *, expand_dirs: bool
+        self,
+        user_id: UserID,
+        product_name: ProductName,
+        dataset_id: str,
+        *,
+        expand_dirs: bool,
     ) -> list[FileMetaData]:
         """returns all the file meta data inside dataset with dataset_id"""
         # NOTE: expand_dirs will be replaced by pagination in the future
