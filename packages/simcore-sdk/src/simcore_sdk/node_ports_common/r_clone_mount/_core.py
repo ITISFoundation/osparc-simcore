@@ -46,7 +46,7 @@ _DOCKER_PREFIX_MOUNT: Final[str] = "rcm"
 
 _NOT_FOUND: Final[int] = 404
 
-type MountId = str
+type _MountId = str
 
 
 class _BaseRcloneMountError(OsparcErrorMixin, RuntimeError):
@@ -218,12 +218,12 @@ class ContainerManager:
         await self._cleanup_stack.aclose()
 
 
-def _get_mount_id(local_mount_path: Path, index: NonNegativeInt) -> MountId:
-    # reversing string to avoid collisions
+def _get_mount_id(local_mount_path: Path, index: NonNegativeInt) -> _MountId:
+    # unique reproducible id for this mount
     return f"{index}{local_mount_path}".replace("/", "_")[::-1]
 
 
-_COMMAND_TEMPLATE: Final[str] = dedent(
+_R_CLONE_MOUNT_TEMPLATE: Final[str] = dedent(
     """
 cat <<EOF > /tmp/rclone.conf
 {r_clone_config_content}
@@ -244,32 +244,32 @@ def _get_rclone_mount_command(
     rc_password: str,
 ) -> str:
     escaped_remote_path = f"{remote_path}".lstrip("/")
-    command_array: list[str] = [
-        "rclone",
-        "--config",
-        "/tmp/rclone.conf",  # noqa: S108
-        "-vv",
-        "mount",
-        f"{CONFIG_KEY}:{escaped_remote_path}",
-        f"{local_mount_path}",
-        "--vfs-cache-mode full",
-        "--vfs-write-back",
-        "1s",  # write-back delay    TODO: could be part of the settings?
-        "--vfs-fast-fingerprint",  # recommended for s3 backend  TODO: could be part of the settings?
-        "--no-modtime",  # don't read/write the modification time    TODO: could be part of the settings?
-        "--cache-dir",
-        f"{vfs_cache_path}",
-        "--rc",
-        f"--rc-addr={rc_addr}",
-        "--rc-enable-metrics",
-        f"--rc-user='{rc_user}'",
-        f"--rc-pass='{rc_password}'",
-        "--allow-non-empty",
-        "--allow-other",
-    ]
-    r_clone_command = " ".join(command_array)
-
-    return _COMMAND_TEMPLATE.format(
+    r_clone_command = " ".join(
+        [
+            "rclone",
+            "--config",
+            "/tmp/rclone.conf",  # noqa: S108
+            "-vv",
+            "mount",
+            f"{CONFIG_KEY}:{escaped_remote_path}",
+            f"{local_mount_path}",
+            "--vfs-cache-mode full",
+            "--vfs-write-back",
+            "5s",  # write-back delay    TODO: could be part of the settings?
+            "--vfs-fast-fingerprint",  # recommended for s3 backend  TODO: could be part of the settings?
+            "--no-modtime",  # don't read/write the modification time    TODO: could be part of the settings?
+            "--cache-dir",
+            f"{vfs_cache_path}",
+            "--rc",
+            f"--rc-addr={rc_addr}",
+            "--rc-enable-metrics",
+            f"--rc-user='{rc_user}'",
+            f"--rc-pass='{rc_password}'",
+            "--allow-non-empty",
+            "--allow-other",
+        ]
+    )
+    return _R_CLONE_MOUNT_TEMPLATE.format(
         r_clone_config_content=r_clone_config_content,
         r_clone_command=r_clone_command,
     )
@@ -546,7 +546,7 @@ class RCloneMountManager:
             self.r_clone_settings.R_CLONE_MOUNT_SETTINGS.R_CLONE_MOUNT_VFS_CACHE_PATH
         )
 
-        self._started_mounts: dict[MountId, TrackedMount] = {}
+        self._started_mounts: dict[_MountId, TrackedMount] = {}
 
     async def start_mount(
         self,
@@ -558,46 +558,40 @@ class RCloneMountManager:
         handler_get_bind_path: GetBindPathProtocol,
         vfs_cache_path_overwrite: Path | None = None,
     ) -> None:
-        try:
-            with log_context(
-                _logger,
-                logging.INFO,
-                f"mounting {local_mount_path=} from {remote_path=}",
-                log_duration=True,
-            ):
-                mount_id = _get_mount_id(local_mount_path, index)
-                if mount_id in self._started_mounts:
-                    tracked_mount = self._started_mounts[mount_id]
-                    raise MountAlreadyStartedError(local_mount_path=local_mount_path)
+        with log_context(
+            _logger,
+            logging.INFO,
+            f"mounting {local_mount_path=} from {remote_path=}",
+            log_duration=True,
+        ):
+            mount_id = _get_mount_id(local_mount_path, index)
+            if mount_id in self._started_mounts:
+                tracked_mount = self._started_mounts[mount_id]
+                raise MountAlreadyStartedError(local_mount_path=local_mount_path)
 
-                vfs_cache_path = (
-                    vfs_cache_path_overwrite or self._common_vfs_cache_path
-                ) / mount_id
-                vfs_cache_path.mkdir(parents=True, exist_ok=True)
+            vfs_cache_path = (
+                vfs_cache_path_overwrite or self._common_vfs_cache_path
+            ) / mount_id
+            vfs_cache_path.mkdir(parents=True, exist_ok=True)
 
-                free_port = await asyncio.get_running_loop().run_in_executor(
-                    None, unused_port
-                )
+            free_port = await asyncio.get_running_loop().run_in_executor(
+                None, unused_port
+            )
 
-                tracked_mount = TrackedMount(
-                    node_id,
-                    self.r_clone_settings,
-                    remote_type,
-                    rc_port=free_port,
-                    remote_path=remote_path,
-                    local_mount_path=local_mount_path,
-                    index=index,
-                    vfs_cache_path=vfs_cache_path,
-                    handler_get_bind_path=handler_get_bind_path,
-                )
-                await tracked_mount.start_mount()
+            tracked_mount = TrackedMount(
+                node_id,
+                self.r_clone_settings,
+                remote_type,
+                rc_port=free_port,
+                remote_path=remote_path,
+                local_mount_path=local_mount_path,
+                index=index,
+                vfs_cache_path=vfs_cache_path,
+                handler_get_bind_path=handler_get_bind_path,
+            )
+            await tracked_mount.start_mount()
 
-                self._started_mounts[mount_id] = tracked_mount
-        except Exception:
-            _logger.exception("SOMETHING WENT WRONG WAITING HERE FOR DEBUGGING")
-            await asyncio.sleep(100000)  # let rclone write logs
-
-            raise
+            self._started_mounts[mount_id] = tracked_mount
 
     async def wait_for_transfers_to_complete(
         self, local_mount_path: Path, index: NonNegativeInt
@@ -627,6 +621,7 @@ class RCloneMountManager:
         ):
             mount_id = _get_mount_id(local_mount_path, index)
             if mount_id not in self._started_mounts:
+                # TODO: check if this is running on docker, then shutdown -> otherwise sidecar will break
                 raise MountNotStartedError(local_mount_path=local_mount_path)
 
             tracked_mount = self._started_mounts[mount_id]
