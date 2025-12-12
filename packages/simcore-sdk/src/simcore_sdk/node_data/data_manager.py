@@ -17,17 +17,21 @@ from ..node_ports_common import filemanager
 from ..node_ports_common.constants import SIMCORE_LOCATION
 from ..node_ports_common.dbmanager import DBManager
 from ..node_ports_common.file_io_utils import LogRedirectCB
-from ..node_ports_common.r_clone_mount import MountRemoteType, RCloneMountManager
+from ..node_ports_common.r_clone_mount import (
+    GetBindPathProtocol,
+    MountRemoteType,
+    RCloneMountManager,
+)
 
 _logger = logging.getLogger(__name__)
 
 
 def __create_s3_object_key(
-    project_id: ProjectID, node_uuid: NodeID, file_path: Path | str
+    project_id: ProjectID, node_id: NodeID, file_path: Path | str
 ) -> StorageFileID:
     file_name = file_path.name if isinstance(file_path, Path) else file_path
     return TypeAdapter(StorageFileID).validate_python(
-        f"{project_id}/{node_uuid}/{file_name}"
+        f"{project_id}/{node_id}/{file_name}"
     )
 
 
@@ -264,8 +268,9 @@ async def _start_mount_if_required(
     product_name: ProductName,
     user_id: UserID,
     project_id: ProjectID,
-    node_uuid: NodeID,
+    node_id: NodeID,
     destination_path: Path,
+    handler_get_bind_path: GetBindPathProtocol,
 ) -> None:
     group_extra_properties = await DBManager(
         application_name=application_name
@@ -277,8 +282,14 @@ async def _start_mount_if_required(
         _logger.debug("RClone mounting not required")
         return
 
-    s3_object = __create_s3_object_key(project_id, node_uuid, destination_path)
-    await mount_manager.start_mount(MountRemoteType.S3, s3_object, destination_path)
+    s3_object = __create_s3_object_key(project_id, node_id, destination_path)
+    await mount_manager.start_mount(
+        node_id,
+        MountRemoteType.S3,
+        s3_object,
+        destination_path,
+        handler_get_bind_path=handler_get_bind_path,
+    )
 
 
 async def pull(  # pylint: disable=too-many-arguments  # noqa: PLR0913
@@ -294,6 +305,7 @@ async def pull(  # pylint: disable=too-many-arguments  # noqa: PLR0913
     legacy_state: LegacyState | None,
     application_name: str,
     mount_manager: RCloneMountManager,
+    handler_get_bind_path: GetBindPathProtocol,
 ) -> None:
     """restores the state folder"""
 
@@ -334,6 +346,7 @@ async def pull(  # pylint: disable=too-many-arguments  # noqa: PLR0913
                     project_id,
                     node_uuid,
                     destination_path,
+                    handler_get_bind_path,
                 )
             return
 
@@ -362,6 +375,7 @@ async def pull(  # pylint: disable=too-many-arguments  # noqa: PLR0913
                 project_id,
                 node_uuid,
                 destination_path,
+                handler_get_bind_path,
             )
         return
 
@@ -390,6 +404,7 @@ async def pull(  # pylint: disable=too-many-arguments  # noqa: PLR0913
             project_id,
             node_uuid,
             destination_path,
+            handler_get_bind_path,
         )
         return
 
@@ -401,5 +416,6 @@ async def pull(  # pylint: disable=too-many-arguments  # noqa: PLR0913
         project_id,
         node_uuid,
         destination_path,
+        handler_get_bind_path,
     )
     _logger.debug("No content previously saved for '%s'", destination_path)
