@@ -14,6 +14,7 @@ from models_library.api_schemas_storage.storage_schemas import (
     PresignedLink,
 )
 from models_library.api_schemas_webserver.storage import PathToExport
+from models_library.products import ProductName
 from models_library.progress_bar import ProgressReport
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import StorageFileID
@@ -145,6 +146,7 @@ async def search(
     task_key: TaskKey,
     *,
     user_id: UserID,
+    product_name: ProductName,
     project_id: ProjectID | None,
     name_pattern: str,
     modified_at: tuple[datetime.datetime | None, datetime.datetime | None] | None,
@@ -163,6 +165,7 @@ async def search(
 
         async for items in dsm.search(
             user_id=user_id,
+            product_name=product_name,
             project_id=project_id,
             name_pattern=name_pattern,
             modified_at=modified_at,

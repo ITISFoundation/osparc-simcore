@@ -1550,6 +1550,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
     async def create_s3_export(
         self,
         user_id: UserID,
+        product_name: ProductName,
         object_keys: list[S3ObjectKey],
         *,
         progress_bar: ProgressBarData,
@@ -1568,7 +1569,10 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
 
             try:
                 accessible_projects_ids = await get_accessible_project_ids(
-                    get_db_engine(self.app), user_id=user_id, project_id=project_id
+                    get_db_engine(self.app),
+                    user_id=user_id,
+                    product_name=product_name,
+                    project_id=project_id,
                 )
             except ProjectAccessRightError as err:
                 raise AccessRightError(
