@@ -196,7 +196,6 @@ async def _stop_mount(
 
 
 async def push(  # pylint: disable=too-many-arguments  # noqa: PLR0913
-    product_name: ProductName,
     user_id: UserID,
     project_id: ProjectID,
     node_uuid: NodeID,
@@ -283,6 +282,11 @@ async def _start_mount_if_required(
         return
 
     s3_object = __create_s3_object_key(project_id, node_id, destination_path)
+
+    await filemanager.create_r_clone_mounted_directory_entry(
+        user_id=user_id, s3_object=s3_object, store_id=SIMCORE_LOCATION
+    )
+
     await mount_manager.start_mount(
         node_id,
         MountRemoteType.S3,
