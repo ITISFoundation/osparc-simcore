@@ -535,7 +535,7 @@ async def _request_start_export_data(
 ) -> str:
     with log_context(
         logging.INFO,
-        f"Data export form {paths_to_export=}",
+        f"data export from {paths_to_export=}",
     ) as ctx:
         async_job_get, owner_metadata = await start_export_data(
             rpc_client,
@@ -547,6 +547,7 @@ async def _request_start_export_data(
                 owner="PYTEST_CLIENT_NAME",
             ),
             user_id=user_id,
+            product_name=product_name,
         )
 
         async for async_job_result in wait_and_get_result(
