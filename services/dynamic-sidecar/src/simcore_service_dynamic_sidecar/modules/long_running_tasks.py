@@ -11,7 +11,7 @@ from models_library.api_schemas_long_running_tasks.base import TaskProgress
 from models_library.generated_models.docker_rest_api import ContainerState
 from models_library.rabbitmq_messages import ProgressType, SimcorePlatformStatus
 from models_library.service_settings_labels import LegacyState
-from pydantic import PositiveInt
+from pydantic import NonNegativeInt, PositiveInt
 from servicelib.fastapi import long_running_tasks
 from servicelib.file_utils import log_directory_changes
 from servicelib.logging_utils import log_context
@@ -351,6 +351,7 @@ async def _restore_state_folder(
     settings: ApplicationSettings,
     progress_bar: ProgressBarData,
     state_path: Path,
+    index: NonNegativeInt,
     mounted_volumes: MountedVolumes,
 ) -> None:
     async def _resolve_volume_path(path: Path) -> dict:
@@ -380,6 +381,7 @@ async def _restore_state_folder(
         project_id=settings.DY_SIDECAR_PROJECT_ID,
         node_uuid=settings.DY_SIDECAR_NODE_ID,
         destination_path=Path(state_path),
+        index=index,
         io_log_redirect_cb=functools.partial(
             post_sidecar_log_message, app, log_level=logging.INFO
         ),
@@ -431,9 +433,10 @@ async def restore_user_services_state_paths(
                     settings=settings,
                     progress_bar=root_progress,
                     state_path=path,
+                    index=k,
                     mounted_volumes=mounted_volumes,
                 )
-                for path in mounted_volumes.disk_state_paths_iter()
+                for k, path in enumerate(mounted_volumes.disk_state_paths_iter())
             ),
             max_concurrency=CONCURRENCY_STATE_SAVE_RESTORE,
             reraise=True,  # this should raise if there is an issue
@@ -453,6 +456,7 @@ async def _save_state_folder(
     settings: ApplicationSettings,
     progress_bar: ProgressBarData,
     state_path: Path,
+    index: NonNegativeInt,
     mounted_volumes: MountedVolumes,
 ) -> None:
     assert settings.DY_SIDECAR_PRODUCT_NAME is not None  # nosec
@@ -461,6 +465,7 @@ async def _save_state_folder(
         project_id=settings.DY_SIDECAR_PROJECT_ID,
         node_uuid=settings.DY_SIDECAR_NODE_ID,
         source_path=state_path,
+        index=index,
         r_clone_settings=settings.DY_SIDECAR_R_CLONE_SETTINGS,
         exclude_patterns=mounted_volumes.state_exclude,
         io_log_redirect_cb=functools.partial(
@@ -502,9 +507,10 @@ async def save_user_services_state_paths(
                     settings=settings,
                     progress_bar=root_progress,
                     state_path=state_path,
+                    index=k,
                     mounted_volumes=mounted_volumes,
                 )
-                for state_path in state_paths
+                for k, state_path in enumerate(state_paths)
             ],
             max_concurrency=CONCURRENCY_STATE_SAVE_RESTORE,
         )

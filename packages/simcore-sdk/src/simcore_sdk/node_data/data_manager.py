@@ -7,7 +7,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, StorageFileID
 from models_library.service_settings_labels import LegacyState
 from models_library.users import UserID
-from pydantic import TypeAdapter
+from pydantic import NonNegativeInt, TypeAdapter
 from servicelib.archiving_utils import unarchive_dir
 from servicelib.logging_utils import log_context
 from servicelib.progress_bar import ProgressBarData
@@ -189,10 +189,10 @@ async def _delete_legacy_archive(
 
 
 async def _stop_mount(
-    mount_manager: RCloneMountManager, destination_path: Path
+    mount_manager: RCloneMountManager, destination_path: Path, index: NonNegativeInt
 ) -> None:
-    await mount_manager.wait_for_transfers_to_complete(destination_path)
-    await mount_manager.stop_mount(destination_path)
+    await mount_manager.wait_for_transfers_to_complete(destination_path, index)
+    await mount_manager.stop_mount(destination_path, index)
 
 
 async def push(  # pylint: disable=too-many-arguments  # noqa: PLR0913
@@ -200,6 +200,7 @@ async def push(  # pylint: disable=too-many-arguments  # noqa: PLR0913
     project_id: ProjectID,
     node_uuid: NodeID,
     source_path: Path,
+    index: NonNegativeInt,
     *,
     io_log_redirect_cb: LogRedirectCB,
     r_clone_settings: RCloneSettings,
@@ -211,8 +212,8 @@ async def push(  # pylint: disable=too-many-arguments  # noqa: PLR0913
 ) -> None:
     """pushes and removes the legacy archive if present"""
 
-    if await mount_manager.was_mount_started(source_path):
-        await _stop_mount(mount_manager, source_path)
+    if await mount_manager.was_mount_started(source_path, index):
+        await _stop_mount(mount_manager, source_path, index)
     else:
         await _push_directory(
             user_id=user_id,
@@ -269,6 +270,7 @@ async def _start_mount_if_required(
     project_id: ProjectID,
     node_id: NodeID,
     destination_path: Path,
+    index: NonNegativeInt,
     handler_get_bind_path: GetBindPathProtocol,
 ) -> None:
     group_extra_properties = await DBManager(
@@ -292,6 +294,7 @@ async def _start_mount_if_required(
         MountRemoteType.S3,
         s3_object,
         destination_path,
+        index,
         handler_get_bind_path=handler_get_bind_path,
     )
 
@@ -302,6 +305,7 @@ async def pull(  # pylint: disable=too-many-arguments  # noqa: PLR0913
     project_id: ProjectID,
     node_uuid: NodeID,
     destination_path: Path,
+    index: NonNegativeInt,
     *,
     io_log_redirect_cb: LogRedirectCB,
     r_clone_settings: RCloneSettings,
@@ -350,6 +354,7 @@ async def pull(  # pylint: disable=too-many-arguments  # noqa: PLR0913
                     project_id,
                     node_uuid,
                     destination_path,
+                    index,
                     handler_get_bind_path,
                 )
             return
@@ -379,6 +384,7 @@ async def pull(  # pylint: disable=too-many-arguments  # noqa: PLR0913
                 project_id,
                 node_uuid,
                 destination_path,
+                index,
                 handler_get_bind_path,
             )
         return
@@ -391,6 +397,7 @@ async def pull(  # pylint: disable=too-many-arguments  # noqa: PLR0913
         is_archive=False,
     )
     if state_directory_exists:
+        # TODO: no more pullig here just mounting!
         await _pull_directory(
             user_id=user_id,
             project_id=project_id,
@@ -408,6 +415,7 @@ async def pull(  # pylint: disable=too-many-arguments  # noqa: PLR0913
             project_id,
             node_uuid,
             destination_path,
+            index,
             handler_get_bind_path,
         )
         return
@@ -420,6 +428,7 @@ async def pull(  # pylint: disable=too-many-arguments  # noqa: PLR0913
         project_id,
         node_uuid,
         destination_path,
+        index,
         handler_get_bind_path,
     )
     _logger.debug("No content previously saved for '%s'", destination_path)

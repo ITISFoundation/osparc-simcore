@@ -19,7 +19,7 @@ from httpx import AsyncClient
 from models_library.basic_types import PortInt
 from models_library.progress_bar import ProgressReport
 from models_library.projects_nodes_io import NodeID, StorageFileID
-from pydantic import BaseModel
+from pydantic import BaseModel, NonNegativeInt
 from servicelib.logging_utils import log_context
 from servicelib.utils import unused_port
 from settings_library.r_clone import RCloneMountSettings, RCloneSettings
@@ -42,7 +42,7 @@ _DEFAULT_R_CLONE_CLIENT_REQUEST_TIMEOUT: Final[timedelta] = timedelta(seconds=5)
 
 _DEFAULT_MOUNT_ACTIVITY_UPDATE_INTERVAL: Final[timedelta] = timedelta(seconds=5)
 
-_DOCKER_PREFIX_MOUNT: Final[str] = "rclone-mount"
+_DOCKER_PREFIX_MOUNT: Final[str] = "rcm"
 
 _NOT_FOUND: Final[int] = 404
 
@@ -91,6 +91,7 @@ class ContainerManager:
         r_clone_version: str,
         remote_control_port: PortInt,
         local_mount_path: Path,
+        index: NonNegativeInt,
         r_clone_config_content: str,
         remote_path: str,
         vfs_cache_path: Path,
@@ -103,6 +104,7 @@ class ContainerManager:
         self.r_clone_version = r_clone_version
         self.remote_control_port = remote_control_port
         self.local_mount_path = local_mount_path
+        self.index = index
         self.r_clone_config_content = r_clone_config_content
         self.handler_get_bind_path = handler_get_bind_path
 
@@ -124,15 +126,13 @@ class ContainerManager:
 
     @cached_property
     def r_clone_container_name(self) -> str:
-        return f"{_DOCKER_PREFIX_MOUNT}-c{self.node_id}{_get_mount_id(self.local_mount_path)}"[
-            :63
-        ]
+        mount_id = _get_mount_id(self.local_mount_path, self.index)
+        return f"{_DOCKER_PREFIX_MOUNT}-c-{self.node_id}{mount_id}"[:63]
 
     @cached_property
     def _r_clone_network_name(self) -> str:
-        return f"{_DOCKER_PREFIX_MOUNT}-n{self.node_id}{_get_mount_id(self.local_mount_path)}"[
-            :63
-        ]
+        mount_id = _get_mount_id(self.local_mount_path, self.index)
+        return f"{_DOCKER_PREFIX_MOUNT}-c-{self.node_id}{mount_id}"[:63]
 
     @property
     def _aiodocker_client(self) -> aiodocker.Docker:
@@ -181,6 +181,7 @@ class ContainerManager:
                 "HostConfig": {
                     "NetworkMode": self._r_clone_network_name,
                     "Binds": [],
+                    # TODO: mount the VFS cache directory somewhere to have better performance
                     "Mounts": [await self.handler_get_bind_path(self.local_mount_path)],
                     "Devices": [
                         {
@@ -217,8 +218,9 @@ class ContainerManager:
         await self._cleanup_stack.aclose()
 
 
-def _get_mount_id(local_mount_path: Path) -> MountId:
-    return f"{local_mount_path}".replace("/", "_")
+def _get_mount_id(local_mount_path: Path, index: NonNegativeInt) -> MountId:
+    # reversing string to avoid collisions
+    return f"{index}{local_mount_path}".replace("/", "_")[::-1]
 
 
 _COMMAND_TEMPLATE: Final[str] = dedent(
@@ -365,7 +367,11 @@ class RCloneRCInterfaceClient:
             mount_activity = MountActivity(
                 transferring=(
                     {
-                        x["name"]: ProgressReport(actual_value=x["percentage"] / 100)
+                        x["name"]: ProgressReport(
+                            actual_value=(
+                                x["percentage"] / 100 if "percentage" in x else 0.0
+                            )
+                        )
                         for x in core_stats["transferring"]
                     }
                     if "transferring" in core_stats
@@ -431,6 +437,7 @@ class TrackedMount:
         rc_port: PortInt,
         remote_path: StorageFileID,
         local_mount_path: Path,
+        index: NonNegativeInt,
         vfs_cache_path: Path,
         handler_get_bind_path: GetBindPathProtocol,
         mount_activity_update_interval: timedelta = _DEFAULT_MOUNT_ACTIVITY_UPDATE_INTERVAL,
@@ -441,6 +448,7 @@ class TrackedMount:
         self.rc_port = rc_port
         self.remote_path = remote_path
         self.local_mount_path = local_mount_path
+        self.index = index
         self.vfs_cache_path = vfs_cache_path
         self.rc_user = f"{uuid4()}"
         self.rc_password = f"{uuid4()}"
@@ -502,6 +510,7 @@ class TrackedMount:
             r_clone_version=self.r_clone_settings.R_CLONE_MOUNT_SETTINGS.R_CLONE_VERSION,
             remote_control_port=self.rc_port,
             local_mount_path=self.local_mount_path,
+            index=self.index,
             r_clone_config_content=r_clone_config_content,
             remote_path=f"{self.r_clone_settings.R_CLONE_S3.S3_BUCKET_NAME}/{self.remote_path}",
             vfs_cache_path=self.vfs_cache_path,
@@ -552,6 +561,7 @@ class RCloneMountManager:
         remote_type: MountRemoteType,
         remote_path: StorageFileID,
         local_mount_path: Path,
+        index: NonNegativeInt,
         handler_get_bind_path: GetBindPathProtocol,
         vfs_cache_path_overwrite: Path | None = None,
     ) -> None:
@@ -562,7 +572,7 @@ class RCloneMountManager:
                 f"mounting {local_mount_path=} from {remote_path=}",
                 log_duration=True,
             ):
-                mount_id = _get_mount_id(local_mount_path)
+                mount_id = _get_mount_id(local_mount_path, index)
                 if mount_id in self._started_mounts:
                     tracked_mount = self._started_mounts[mount_id]
                     raise MountAlreadyStartedError(local_mount_path=local_mount_path)
@@ -583,6 +593,7 @@ class RCloneMountManager:
                     rc_port=free_port,
                     remote_path=remote_path,
                     local_mount_path=local_mount_path,
+                    index=index,
                     vfs_cache_path=vfs_cache_path,
                     handler_get_bind_path=handler_get_bind_path,
                 )
@@ -595,29 +606,33 @@ class RCloneMountManager:
 
             raise
 
-    async def wait_for_transfers_to_complete(self, local_mount_path: Path) -> None:
+    async def wait_for_transfers_to_complete(
+        self, local_mount_path: Path, index: NonNegativeInt
+    ) -> None:
         with log_context(
             _logger,
             logging.INFO,
             f"wait for transfers to complete {local_mount_path=}",
             log_duration=True,
         ):
-            mount_id = _get_mount_id(local_mount_path)
+            mount_id = _get_mount_id(local_mount_path, index)
             if mount_id not in self._started_mounts:
                 raise MountNotStartedError(local_mount_path=local_mount_path)
 
             tracked_mount = self._started_mounts[mount_id]
             await tracked_mount.rc_interface.wait_for_all_transfers_to_complete()
 
-    async def was_mount_started(self, local_mount_path: Path) -> bool:
-        mount_id = _get_mount_id(local_mount_path)
+    async def was_mount_started(
+        self, local_mount_path: Path, index: NonNegativeInt
+    ) -> bool:
+        mount_id = _get_mount_id(local_mount_path, index)
         return mount_id in self._started_mounts
 
-    async def stop_mount(self, local_mount_path: Path) -> None:
+    async def stop_mount(self, local_mount_path: Path, index: NonNegativeInt) -> None:
         with log_context(
             _logger, logging.INFO, f"unmounting {local_mount_path=}", log_duration=True
         ):
-            mount_id = _get_mount_id(local_mount_path)
+            mount_id = _get_mount_id(local_mount_path, index)
             if mount_id not in self._started_mounts:
                 raise MountNotStartedError(local_mount_path=local_mount_path)
 
