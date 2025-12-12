@@ -38,7 +38,7 @@ _logger = logging.getLogger(__name__)
 
 _MAX_WAIT_RC_HTTP_INTERFACE_READY: Final[timedelta] = timedelta(seconds=10)
 _DEFAULT_UPDATE_INTERVAL: Final[timedelta] = timedelta(seconds=1)
-_DEFAULT_R_CLONE_CLIENT_REQUEST_TIMEOUT: Final[timedelta] = timedelta(seconds=5)
+_DEFAULT_R_CLONE_CLIENT_REQUEST_TIMEOUT: Final[timedelta] = timedelta(seconds=20)
 
 _DEFAULT_MOUNT_ACTIVITY_UPDATE_INTERVAL: Final[timedelta] = timedelta(seconds=5)
 
@@ -80,39 +80,47 @@ def _get_self_container_id() -> str:
     return os.environ["HOSTNAME"]
 
 
-class GetBindPathProtocol(Protocol):
-    async def __call__(self, path: Path) -> dict: ...
+class MountActivity(BaseModel):
+    transferring: dict[str, ProgressReport]
+    queued: list[str]
+
+
+class GetBindPathsProtocol(Protocol):
+    async def __call__(self, state_path: Path) -> list: ...
+
+
+class MountActivityProtocol(Protocol):
+    async def __call__(self, state_path: Path, activity: MountActivity) -> None: ...
 
 
 class ContainerManager:
     def __init__(
         self,
+        mount_settings: RCloneMountSettings,
         node_id: NodeID,
-        r_clone_version: str,
         remote_control_port: PortInt,
         local_mount_path: Path,
         index: NonNegativeInt,
         r_clone_config_content: str,
         remote_path: str,
-        vfs_cache_path: Path,
         rc_user: str,
         rc_password: str,
         *,
-        handler_get_bind_path: GetBindPathProtocol,
+        handler_get_bind_paths: GetBindPathsProtocol,
     ) -> None:
+        self.mount_settings = mount_settings
         self.node_id = node_id
-        self.r_clone_version = r_clone_version
         self.remote_control_port = remote_control_port
         self.local_mount_path = local_mount_path
         self.index = index
         self.r_clone_config_content = r_clone_config_content
-        self.handler_get_bind_path = handler_get_bind_path
+        self.handler_get_bind_paths = handler_get_bind_paths
 
         self.command = _get_rclone_mount_command(
+            mount_settings=mount_settings,
             r_clone_config_content=r_clone_config_content,
             remote_path=remote_path,
             local_mount_path=self.local_mount_path,
-            vfs_cache_path=vfs_cache_path,
             rc_addr=f"0.0.0.0:{remote_control_port}",
             rc_user=rc_user,
             rc_password=rc_password,
@@ -171,18 +179,13 @@ class ContainerManager:
         # create rclone container attached to the network
         self._r_clone_container = await self._aiodocker_client.containers.run(
             config={
-                "Image": f"rclone/rclone:{self.r_clone_version}",
-                "Entrypoint": [
-                    "/bin/sh",
-                    "-c",
-                    f"{self.command} && sleep 100000 || sleep 100000000 ",
-                ],
+                "Image": f"rclone/rclone:{self.mount_settings.R_CLONE_VERSION}",
+                "Entrypoint": ["/bin/sh", "-c", f"{self.command}"],
                 "ExposedPorts": {f"{self.remote_control_port}/tcp": {}},
                 "HostConfig": {
                     "NetworkMode": self._r_clone_network_name,
                     "Binds": [],
-                    # TODO: mount the VFS cache directory somewhere to have better performance
-                    "Mounts": [await self.handler_get_bind_path(self.local_mount_path)],
+                    "Mounts": await self.handler_get_bind_paths(self.local_mount_path),
                     "Devices": [
                         {
                             "PathOnHost": "/dev/fuse",
@@ -225,7 +228,7 @@ def _get_mount_id(local_mount_path: Path, index: NonNegativeInt) -> _MountId:
 
 _R_CLONE_MOUNT_TEMPLATE: Final[str] = dedent(
     """
-cat <<EOF > /tmp/rclone.conf
+cat <<EOF > {r_clone_config_path}
 {r_clone_config_content}
 EOF
 
@@ -235,10 +238,10 @@ EOF
 
 
 def _get_rclone_mount_command(
+    mount_settings: RCloneMountSettings,
     r_clone_config_content: str,
     remote_path: StorageFileID,
     local_mount_path: Path,
-    vfs_cache_path: Path,
     rc_addr: str,
     rc_user: str,
     rc_password: str,
@@ -248,18 +251,24 @@ def _get_rclone_mount_command(
         [
             "rclone",
             "--config",
-            "/tmp/rclone.conf",  # noqa: S108
+            f"{mount_settings.R_CLONE_CONFIG_FILE_PATH}",
             "-vv",
             "mount",
             f"{CONFIG_KEY}:{escaped_remote_path}",
             f"{local_mount_path}",
             "--vfs-cache-mode full",
             "--vfs-write-back",
-            "5s",  # write-back delay    TODO: could be part of the settings?
-            "--vfs-fast-fingerprint",  # recommended for s3 backend  TODO: could be part of the settings?
-            "--no-modtime",  # don't read/write the modification time    TODO: could be part of the settings?
+            mount_settings.R_CLONE_MOUNT_VFS_WRITE_BACK,
+            "--vfs-cache-max-size",
+            mount_settings.R_CLONE_MOUNT_VFS_CACHE_MAX_SIZE,
+            (
+                "--vfs-fast-fingerprint"
+                if mount_settings.R_CLONE_MOUNT_VFS_CACHE_MAX_SIZE
+                else ""
+            ),
+            ("--no-modtime" if mount_settings.R_CLONE_MOUNT_NO_MODTIME else ""),
             "--cache-dir",
-            f"{vfs_cache_path}",
+            f"{mount_settings.R_CLONE_MOUNT_VFS_CACHE_PATH}",
             "--rc",
             f"--rc-addr={rc_addr}",
             "--rc-enable-metrics",
@@ -270,14 +279,10 @@ def _get_rclone_mount_command(
         ]
     )
     return _R_CLONE_MOUNT_TEMPLATE.format(
+        r_clone_config_path=mount_settings.R_CLONE_CONFIG_FILE_PATH,
         r_clone_config_content=r_clone_config_content,
         r_clone_command=r_clone_command,
     )
-
-
-class MountActivity(BaseModel):
-    transferring: dict[str, ProgressReport]
-    queued: list[str]
 
 
 class RCloneRCInterfaceClient:
@@ -431,8 +436,8 @@ class TrackedMount:
         remote_path: StorageFileID,
         local_mount_path: Path,
         index: NonNegativeInt,
-        vfs_cache_path: Path,
-        handler_get_bind_path: GetBindPathProtocol,
+        handler_get_bind_paths: GetBindPathsProtocol,
+        handler_mount_activity: MountActivityProtocol,
         mount_activity_update_interval: timedelta = _DEFAULT_MOUNT_ACTIVITY_UPDATE_INTERVAL,
     ) -> None:
         self.node_id = node_id
@@ -442,10 +447,10 @@ class TrackedMount:
         self.remote_path = remote_path
         self.local_mount_path = local_mount_path
         self.index = index
-        self.vfs_cache_path = vfs_cache_path
         self.rc_user = f"{uuid4()}"
         self.rc_password = f"{uuid4()}"
-        self.handler_get_bind_path = handler_get_bind_path
+        self.handler_get_bind_paths = handler_get_bind_paths
+        self.handler_mount_activity = handler_mount_activity
 
         self._last_mount_activity: MountActivity | None = None
         self._last_mount_activity_update: datetime = datetime.fromtimestamp(0, UTC)
@@ -473,12 +478,7 @@ class TrackedMount:
             self._last_mount_activity = mount_activity
             self._last_mount_activity_update = now
 
-            # NOTE: this could also be useful if pushed to the UI
-            _logger.info(
-                "Activity for '%s': %s",
-                self.local_mount_path,
-                self._last_mount_activity,
-            )
+            await self.handler_mount_activity(self.local_mount_path, mount_activity)
 
     async def teardown(self) -> None:
         await self.stop_mount()
@@ -499,17 +499,16 @@ class TrackedMount:
             raise RuntimeError(msg)
 
         self._container_manager = ContainerManager(
+            mount_settings=self.r_clone_settings.R_CLONE_MOUNT_SETTINGS,
             node_id=self.node_id,
-            r_clone_version=self.r_clone_settings.R_CLONE_MOUNT_SETTINGS.R_CLONE_VERSION,
             remote_control_port=self.rc_port,
             local_mount_path=self.local_mount_path,
             index=self.index,
             r_clone_config_content=r_clone_config_content,
             remote_path=f"{self.r_clone_settings.R_CLONE_S3.S3_BUCKET_NAME}/{self.remote_path}",
-            vfs_cache_path=self.vfs_cache_path,
             rc_user=self.rc_user,
             rc_password=self.rc_password,
-            handler_get_bind_path=self.handler_get_bind_path,
+            handler_get_bind_paths=self.handler_get_bind_paths,
         )
 
         self._rc_interface: RCloneRCInterfaceClient | None = RCloneRCInterfaceClient(
@@ -542,13 +541,11 @@ class TrackedMount:
 class RCloneMountManager:
     def __init__(self, r_clone_settings: RCloneSettings) -> None:
         self.r_clone_settings = r_clone_settings
-        self._common_vfs_cache_path = (
-            self.r_clone_settings.R_CLONE_MOUNT_SETTINGS.R_CLONE_MOUNT_VFS_CACHE_PATH
-        )
 
+        # TODO: make this stateless and go via aiodocker to avoid issues when restartign the container
         self._started_mounts: dict[_MountId, TrackedMount] = {}
 
-    async def start_mount(
+    async def ensure_mounted(
         self,
         local_mount_path: Path,
         index: NonNegativeInt,
@@ -556,9 +553,10 @@ class RCloneMountManager:
         node_id: NodeID,
         remote_type: MountRemoteType,
         remote_path: StorageFileID,
-        handler_get_bind_path: GetBindPathProtocol,
-        vfs_cache_path_overwrite: Path | None = None,
+        handler_get_bind_paths: GetBindPathsProtocol,
+        handler_mount_activity: MountActivityProtocol,
     ) -> None:
+        # TODO: rename to ENSURE MOUNT EXISTS
         with log_context(
             _logger,
             logging.INFO,
@@ -569,11 +567,6 @@ class RCloneMountManager:
             if mount_id in self._started_mounts:
                 tracked_mount = self._started_mounts[mount_id]
                 raise MountAlreadyStartedError(local_mount_path=local_mount_path)
-
-            vfs_cache_path = (
-                vfs_cache_path_overwrite or self._common_vfs_cache_path
-            ) / mount_id
-            vfs_cache_path.mkdir(parents=True, exist_ok=True)
 
             free_port = await asyncio.get_running_loop().run_in_executor(
                 None, unused_port
@@ -587,8 +580,8 @@ class RCloneMountManager:
                 remote_path=remote_path,
                 local_mount_path=local_mount_path,
                 index=index,
-                vfs_cache_path=vfs_cache_path,
-                handler_get_bind_path=handler_get_bind_path,
+                handler_get_bind_paths=handler_get_bind_paths,
+                handler_mount_activity=handler_mount_activity,
             )
             await tracked_mount.start_mount()
 
@@ -597,6 +590,8 @@ class RCloneMountManager:
     async def wait_for_transfers_to_complete(
         self, local_mount_path: Path, index: NonNegativeInt
     ) -> None:
+        # if mount is not present it just returns immediately
+
         with log_context(
             _logger,
             logging.INFO,
@@ -613,10 +608,14 @@ class RCloneMountManager:
     async def was_mount_started(
         self, local_mount_path: Path, index: NonNegativeInt
     ) -> bool:
+        # checks if mount is present or not
         mount_id = _get_mount_id(local_mount_path, index)
         return mount_id in self._started_mounts
 
-    async def stop_mount(self, local_mount_path: Path, index: NonNegativeInt) -> None:
+    async def ensure_unmounted(
+        self, local_mount_path: Path, index: NonNegativeInt
+    ) -> None:
+        # TODO: rename to ENSURE mount does not exist
         with log_context(
             _logger, logging.INFO, f"unmounting {local_mount_path=}", log_duration=True
         ):
@@ -629,6 +628,7 @@ class RCloneMountManager:
             await tracked_mount.stop_mount()
 
     async def setup(self) -> None:
+        # TODO: add a process which ensures that the mounts keep running -> register some local data to restart the mount process if it dies (even on accident manually)
         pass
 
     async def teardown(self) -> None:
@@ -639,4 +639,9 @@ class RCloneMountManager:
         self._started_mounts.clear()
 
 
-# TODO: oauth atuthorization pattern needs to be setup for non S3 providers
+# NOTES:
+# There are multiple layers in place here
+# - docker api to create/remove containers and networks
+# - rclone container management
+# - rclone process status management via its rc http interface
+# - mounts management

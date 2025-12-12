@@ -1,6 +1,6 @@
 from ._config_provider import MountRemoteType
 from ._core import (
-    GetBindPathProtocol,
+    GetBindPathsProtocol,
     MountActivity,
     MountActivityProtocol,
     MountAlreadyStartedError,
@@ -9,7 +9,7 @@ from ._core import (
 )
 
 __all__: tuple[str, ...] = (
-    "GetBindPathProtocol",
+    "GetBindPathsProtocol",
     "MountActivity",
     "MountActivityProtocol",
     "MountAlreadyStartedError",

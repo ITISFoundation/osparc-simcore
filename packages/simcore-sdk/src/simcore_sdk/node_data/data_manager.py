@@ -18,7 +18,7 @@ from ..node_ports_common.constants import SIMCORE_LOCATION
 from ..node_ports_common.dbmanager import DBManager
 from ..node_ports_common.file_io_utils import LogRedirectCB
 from ..node_ports_common.r_clone_mount import (
-    GetBindPathProtocol,
+    GetBindPathsProtocol,
     MountActivityProtocol,
     MountRemoteType,
     RCloneMountManager,
@@ -279,7 +279,7 @@ async def _start_mount_if_required(
     node_id: NodeID,
     destination_path: Path,
     index: NonNegativeInt,
-    handler_get_bind_path: GetBindPathProtocol,
+    handler_get_bind_paths: GetBindPathsProtocol,
     handler_mount_activity: MountActivityProtocol,
     *,
     use_r_clone_mount: bool,
@@ -299,7 +299,7 @@ async def _start_mount_if_required(
         node_id=node_id,
         remote_type=MountRemoteType.S3,
         remote_path=s3_object,
-        handler_get_bind_path=handler_get_bind_path,
+        handler_get_bind_paths=handler_get_bind_paths,
         handler_mount_activity=handler_mount_activity,
     )
 
@@ -318,7 +318,7 @@ async def pull(  # pylint: disable=too-many-arguments  # noqa: PLR0913
     legacy_state: LegacyState | None,
     application_name: str,
     mount_manager: RCloneMountManager,
-    handler_get_bind_path: GetBindPathProtocol,
+    handler_get_bind_paths: GetBindPathsProtocol,
     handler_mount_activity: MountActivityProtocol,
 ) -> None:
     """restores the state folder"""
@@ -363,7 +363,7 @@ async def pull(  # pylint: disable=too-many-arguments  # noqa: PLR0913
                     node_uuid,
                     destination_path,
                     index,
-                    handler_get_bind_path,
+                    handler_get_bind_paths,
                     handler_mount_activity,
                     use_r_clone_mount=use_r_clone_mount,
                 )
@@ -393,7 +393,7 @@ async def pull(  # pylint: disable=too-many-arguments  # noqa: PLR0913
                 node_uuid,
                 destination_path,
                 index,
-                handler_get_bind_path,
+                handler_get_bind_paths,
                 handler_mount_activity,
                 use_r_clone_mount=use_r_clone_mount,
             )
@@ -415,7 +415,7 @@ async def pull(  # pylint: disable=too-many-arguments  # noqa: PLR0913
                 node_uuid,
                 destination_path,
                 index,
-                handler_get_bind_path,
+                handler_get_bind_paths,
                 handler_mount_activity,
                 use_r_clone_mount=use_r_clone_mount,
             )
@@ -439,7 +439,7 @@ async def pull(  # pylint: disable=too-many-arguments  # noqa: PLR0913
         node_uuid,
         destination_path,
         index,
-        handler_get_bind_path,
+        handler_get_bind_paths,
         handler_mount_activity,
         use_r_clone_mount=use_r_clone_mount,
     )
