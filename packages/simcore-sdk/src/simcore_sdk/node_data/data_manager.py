@@ -262,25 +262,27 @@ async def push(  # pylint: disable=too-many-arguments  # noqa: PLR0913
                 )
 
 
+async def _requires_r_clone_mounting(
+    application_name: str, user_id: UserID, product_name: ProductName
+) -> bool:
+    group_extra_properties = await DBManager(
+        application_name=application_name
+    ).get_group_extra_properties(user_id=user_id, product_name=product_name)
+    return group_extra_properties.use_r_clone_mounting is True
+
+
 async def _start_mount_if_required(
     mount_manager: RCloneMountManager,
-    application_name: str,
-    product_name: ProductName,
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
     destination_path: Path,
     index: NonNegativeInt,
     handler_get_bind_path: GetBindPathProtocol,
+    *,
+    use_r_clone_mount: bool,
 ) -> None:
-    group_extra_properties = await DBManager(
-        application_name=application_name
-    ).get_group_extra_properties(user_id=user_id, product_name=product_name)
-
-    _logger.debug("group_extra_properties=%s", group_extra_properties)
-
-    if group_extra_properties.use_r_clone_mounting is False:
-        _logger.debug("RClone mounting not required")
+    if not use_r_clone_mount:
         return
 
     s3_object = __create_s3_object_key(project_id, node_id, destination_path)
@@ -317,6 +319,10 @@ async def pull(  # pylint: disable=too-many-arguments  # noqa: PLR0913
 ) -> None:
     """restores the state folder"""
 
+    use_r_clone_mount = await _requires_r_clone_mounting(
+        application_name, user_id, product_name
+    )
+
     if legacy_state and legacy_state.new_state_path == destination_path:
         _logger.info(
             "trying to restore from legacy_state=%s, destination_path=%s",
@@ -348,14 +354,13 @@ async def pull(  # pylint: disable=too-many-arguments  # noqa: PLR0913
                 )
                 await _start_mount_if_required(
                     mount_manager,
-                    application_name,
-                    product_name,
                     user_id,
                     project_id,
                     node_uuid,
                     destination_path,
                     index,
                     handler_get_bind_path,
+                    use_r_clone_mount=use_r_clone_mount,
                 )
             return
 
@@ -378,14 +383,13 @@ async def pull(  # pylint: disable=too-many-arguments  # noqa: PLR0913
             )
             await _start_mount_if_required(
                 mount_manager,
-                application_name,
-                product_name,
                 user_id,
                 project_id,
                 node_uuid,
                 destination_path,
                 index,
                 handler_get_bind_path,
+                use_r_clone_mount=use_r_clone_mount,
             )
         return
 
@@ -397,38 +401,38 @@ async def pull(  # pylint: disable=too-many-arguments  # noqa: PLR0913
         is_archive=False,
     )
     if state_directory_exists:
-        # TODO: no more pullig here just mounting!
-        await _pull_directory(
-            user_id=user_id,
-            project_id=project_id,
-            node_uuid=node_uuid,
-            destination_path=destination_path,
-            io_log_redirect_cb=io_log_redirect_cb,
-            r_clone_settings=r_clone_settings,
-            progress_bar=progress_bar,
-        )
-        await _start_mount_if_required(
-            mount_manager,
-            application_name,
-            product_name,
-            user_id,
-            project_id,
-            node_uuid,
-            destination_path,
-            index,
-            handler_get_bind_path,
-        )
+        if use_r_clone_mount:
+            await _start_mount_if_required(
+                mount_manager,
+                user_id,
+                project_id,
+                node_uuid,
+                destination_path,
+                index,
+                handler_get_bind_path,
+                use_r_clone_mount=use_r_clone_mount,
+            )
+        else:
+            await _pull_directory(
+                user_id=user_id,
+                project_id=project_id,
+                node_uuid=node_uuid,
+                destination_path=destination_path,
+                io_log_redirect_cb=io_log_redirect_cb,
+                r_clone_settings=r_clone_settings,
+                progress_bar=progress_bar,
+            )
+
         return
 
     await _start_mount_if_required(
         mount_manager,
-        application_name,
-        product_name,
         user_id,
         project_id,
         node_uuid,
         destination_path,
         index,
         handler_get_bind_path,
+        use_r_clone_mount=use_r_clone_mount,
     )
     _logger.debug("No content previously saved for '%s'", destination_path)
