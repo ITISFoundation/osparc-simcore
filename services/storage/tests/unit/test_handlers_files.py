@@ -994,7 +994,7 @@ async def test_download_file_from_inside_a_directory(
         bucket=storage_s3_bucket,
         file=file_to_upload_in_dir,
         object_key=s3_file_id,
-        bytes_transfered_cb=None,
+        bytes_transferred_cb=None,
     )
     assert (
         await storage_s3_client.object_exists(

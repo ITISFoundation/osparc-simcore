@@ -50,5 +50,6 @@
   },
   "workspaceId": null,
   "type": "TEMPLATE",
-  "templateType": "TEMPLATE"
+  "templateType": "TEMPLATE",
+  "productName": "osparc"
 }

@@ -7,6 +7,7 @@ from models_library.api_schemas_webserver.projects import ProjectPatch
 from models_library.api_schemas_webserver.projects_ui import StudyUI
 from models_library.folders import FolderID
 from models_library.groups import GroupID
+from models_library.products import ProductName
 from models_library.projects import ClassifierID, NodesDict, ProjectID
 from models_library.users import UserID
 from models_library.utils.common_validators import (
@@ -35,7 +36,7 @@ class ProjectTypeAPI(str, Enum):
 
 
 class ProjectDBGet(BaseModel):
-    # NOTE: model intented to read one-to-one columns of the `projects` table
+    # NOTE: model intended to read one-to-one columns of the `projects` table
     id: int
     type: ProjectType
     template_type: ProjectTemplateType | None
@@ -57,6 +58,8 @@ class ProjectDBGet(BaseModel):
     trashed: datetime | None
     trashed_by: UserID | None  # == user.id (who trashed)
     trashed_explicitly: bool = False
+
+    product_name: ProductName
 
     # config
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)

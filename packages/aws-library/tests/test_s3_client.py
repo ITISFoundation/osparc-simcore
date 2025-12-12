@@ -289,14 +289,14 @@ class _UploadProgressCallback:
     file_size: int
     action: str
     logger: logging.Logger
-    _total_bytes_transfered: int = 0
+    _total_bytes_transferred: int = 0
 
     def __call__(self, bytes_transferred: int, *, file_name: str) -> None:
-        self._total_bytes_transfered += bytes_transferred
-        assert self._total_bytes_transfered <= self.file_size
+        self._total_bytes_transferred += bytes_transferred
+        assert self._total_bytes_transferred <= self.file_size
         self.logger.info(
             "progress: %s",
-            f"{self.action} {file_name=} {self._total_bytes_transfered} / {self.file_size} bytes",
+            f"{self.action} {file_name=} {self._total_bytes_transferred} / {self.file_size} bytes",
         )
 
 
@@ -305,14 +305,14 @@ class _CopyProgressCallback:
     file_size: int
     action: str
     logger: logging.Logger
-    _total_bytes_transfered: int = 0
+    _total_bytes_transferred: int = 0
 
     def __call__(self, total_bytes_copied: int, *, file_name: str) -> None:
-        self._total_bytes_transfered = total_bytes_copied
-        assert self._total_bytes_transfered <= self.file_size
+        self._total_bytes_transferred = total_bytes_copied
+        assert self._total_bytes_transferred <= self.file_size
         self.logger.info(
             "progress: %s",
-            f"{self.action} {file_name=} {self._total_bytes_transfered} / {self.file_size} bytes",
+            f"{self.action} {file_name=} {self._total_bytes_transferred} / {self.file_size} bytes",
         )
 
 
@@ -339,7 +339,7 @@ async def upload_file(
                 bucket=with_s3_bucket,
                 file=file,
                 object_key=object_key,
-                bytes_transfered_cb=progress_cb,
+                bytes_transferred_cb=progress_cb,
             )
         # there is no response from aioboto3...
         assert not response
@@ -432,7 +432,7 @@ async def copy_file(
                 bucket=with_s3_bucket,
                 src_object_key=src_key,
                 dst_object_key=dst_key,
-                bytes_transfered_cb=progress_cb,
+                bytes_transferred_cb=progress_cb,
             )
         copied_object_keys.append(dst_key)
         return dst_key
@@ -467,7 +467,7 @@ async def copy_files_recursively(
                 bucket=with_s3_bucket,
                 src_prefix=src_prefix,
                 dst_prefix=dst_prefix,
-                bytes_transfered_cb=progress_cb,
+                bytes_transferred_cb=progress_cb,
             )
 
         dst_directory_metadata = await simcore_s3_api.get_directory_metadata(
@@ -1599,7 +1599,7 @@ async def test_upload_file_invalid_raises(
             bucket=non_existing_s3_bucket,
             file=file,
             object_key=faker.pystr(),
-            bytes_transfered_cb=None,
+            bytes_transferred_cb=None,
         )
 
 
@@ -1654,7 +1654,7 @@ async def test_copy_file_invalid_raises(
             bucket=non_existing_s3_bucket,
             src_object_key=uploaded_file.s3_key,
             dst_object_key=dst_object_key,
-            bytes_transfered_cb=None,
+            bytes_transferred_cb=None,
         )
     fake_src_key = faker.file_name()
     with pytest.raises(S3KeyNotFoundError, match=rf"{fake_src_key}"):
@@ -1662,7 +1662,7 @@ async def test_copy_file_invalid_raises(
             bucket=with_s3_bucket,
             src_object_key=fake_src_key,
             dst_object_key=dst_object_key,
-            bytes_transfered_cb=None,
+            bytes_transferred_cb=None,
         )
 
 
@@ -1838,7 +1838,7 @@ async def test_copy_files_recursively_raises(
             bucket=non_existing_s3_bucket,
             src_prefix="",
             dst_prefix="",
-            bytes_transfered_cb=None,
+            bytes_transferred_cb=None,
         )
 
 
@@ -1924,7 +1924,7 @@ def test_upload_file_performance(
     ],
     ids=byte_size_ids,
 )
-def test_copy_recurively_performance(
+def test_copy_recursively_performance(
     mocked_s3_server_envs: EnvVarsDict,
     with_uploaded_folder_on_s3: list[UploadedFile],
     copy_files_recursively: Callable[[str, str], Awaitable[str]],
@@ -2070,7 +2070,7 @@ async def path_s3_files_for_archive(
 
 @pytest.fixture
 def archive_download_path(tmp_path: Path, faker: Faker) -> Iterator[Path]:
-    path = tmp_path / f"downlaoded_ardhive_{faker.uuid4()}.zip"
+    path = tmp_path / f"downloaded_ardhive_{faker.uuid4()}.zip"
     yield path
     if path.exists():
         path.unlink()
@@ -2119,7 +2119,7 @@ async def test_workflow_compress_s3_objects_and_local_files_in_a_single_archive_
     # - files are read form disk and S3
     # - a zip archive is created on the go
     # - the zip archive is streamed to S3 as soon as chunks inside it are created
-    # Uses no disk and constant memory for the entire opration.
+    # Uses no disk and constant memory for the entire operation.
 
     # 1. assemble and upload zip archive
 

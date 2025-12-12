@@ -18,7 +18,6 @@ from simcore_postgres_database.models.comp_pipeline import StateType, comp_pipel
 from simcore_postgres_database.models.comp_tasks import comp_tasks
 from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.projects import ProjectType, projects
-from simcore_postgres_database.models.projects_to_products import projects_to_products
 from simcore_postgres_database.models.services import services_access_rights
 from simcore_postgres_database.models.users import UserRole, UserStatus
 from simcore_postgres_database.utils_projects_nodes import (
@@ -98,6 +97,7 @@ async def create_project(
             "access_rights": {"1": {"read": True, "write": True, "delete": True}},
             "thumbnail": "",
             "workbench": {},
+            "product_name": product_name,
         }
         project_config.update(**project_overrides)
         async with sqlalchemy_async_engine.connect() as con, con.begin():
@@ -127,12 +127,6 @@ async def create_project(
                     )
                     for node_id, node_data in inserted_project.workbench.items()
                 ],
-            )
-            await con.execute(
-                projects_to_products.insert().values(
-                    project_uuid=f"{inserted_project.uuid}",
-                    product_name=product_name,
-                )
             )
         print(f"--> created {inserted_project=}")
         created_project_ids.append(f"{inserted_project.uuid}")
