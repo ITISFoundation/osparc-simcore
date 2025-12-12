@@ -7,6 +7,7 @@ from fastapi import FastAPI
 from models_library.projects_nodes_io import NodeID
 from models_library.services import ServiceRunID
 from servicelib.docker_constants import PREFIX_DYNAMIC_SIDECAR_VOLUMES
+from settings_library.r_clone import DEFAULT_VFS_CACHE_PATH
 
 from ..core.docker_utils import get_volume_by_label
 from ..core.settings import ApplicationSettings
@@ -96,6 +97,10 @@ class MountedVolumes:
     @cached_property
     def disk_outputs_path(self) -> Path:
         return _ensure_path(self._dy_volumes / self.outputs_path.relative_to("/"))
+
+    @cached_property
+    def vfs_cache_path(self) -> Path:
+        return _ensure_path(self._dy_volumes / DEFAULT_VFS_CACHE_PATH.relative_to("/"))
 
     def disk_state_paths_iter(self) -> Iterator[Path]:
         for state_path in self.state_paths:

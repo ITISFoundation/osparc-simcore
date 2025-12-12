@@ -29,6 +29,7 @@ from ..modules.mounted_fs import MountedVolumes, setup_mounted_fs
 from ..modules.notifications import setup_notifications
 from ..modules.outputs import setup_outputs
 from ..modules.prometheus_metrics import setup_prometheus_metrics
+from ..modules.r_clone_mount_manager import setup_r_clone_mount_manager
 from ..modules.resource_tracking import setup_resource_tracking
 from ..modules.system_monitor import setup_system_monitor
 from ..modules.user_services_preferences import setup_user_services_preferences
@@ -192,6 +193,8 @@ def create_app() -> FastAPI:
     setup_attribute_monitor(app)
 
     setup_user_services_preferences(app)
+
+    setup_r_clone_mount_manager(app)
 
     if application_settings.are_prometheus_metrics_enabled:
         setup_prometheus_metrics(app)

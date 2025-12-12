@@ -62,7 +62,7 @@ class ComputationalBackendSettings(BaseCustomSettings):
     COMPUTATIONAL_BACKEND_PER_CLUSTER_MAX_DISTRIBUTED_CONCURRENT_CONNECTIONS: Annotated[
         PositiveInt,
         Field(
-            description="defines how many concurrent connections to each dask scheduler are allowed accross all director-v2 replicas"
+            description="defines how many concurrent connections to each dask scheduler are allowed across all director-v2 replicas"
         ),
     ] = 20
     COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL: Annotated[
@@ -203,7 +203,7 @@ class AppSettings(BaseApplicationSettings, MixinLoggingSettings):
         datetime.timedelta,
         Field(
             description="Service scheduler heartbeat (everytime a heartbeat is sent into RabbitMQ)"
-            " (default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)"
+            " (default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formatting)"
         ),
     ] = DEFAULT_RESOURCE_USAGE_HEARTBEAT_INTERVAL
 

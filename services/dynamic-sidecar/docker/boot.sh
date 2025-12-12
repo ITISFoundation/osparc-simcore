@@ -48,6 +48,10 @@ DYNAMIC_SIDECAR_REMOTE_DEBUGGING_PORT=${DYNAMIC_SIDECAR_REMOTE_DEBUGGING_PORT:-3
 SERVER_LOG_LEVEL=$(echo "${APP_LOG_LEVEL}" | tr '[:upper:]' '[:lower:]')
 echo "$INFO" "Log-level app/server: $APP_LOG_LEVEL/$SERVER_LOG_LEVEL"
 
+R_CLONE_VERSION=$(rclone version | head -n1 | awk '{print $2}' | sed 's/^v//') && \
+  echo "R_CLONE_VERSION=${R_CLONE_VERSION}" && \
+  export R_CLONE_VERSION
+
 if [ "${SC_BOOT_MODE}" = "debug" ]; then
   reload_dir_packages=$(fdfind src /devel/packages --exec echo '--reload-dir {} ' | tr '\n' ' ')
 
