@@ -351,7 +351,28 @@ async def _restore_state_folder(
     settings: ApplicationSettings,
     progress_bar: ProgressBarData,
     state_path: Path,
+    mounted_volumes: MountedVolumes,
 ) -> None:
+    async def _resolve_volume_path(path: Path) -> dict:
+        not_dy_volume = path.relative_to(settings.DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR)
+        matcher = f":/{not_dy_volume}"
+
+        async for entry in mounted_volumes.iter_state_paths_to_docker_volumes(
+            settings.DY_SIDECAR_RUN_ID
+        ):
+            if entry.endswith(matcher):
+                mount_str = entry.replace(f"/{not_dy_volume}", f"{path}")
+                source, target = mount_str.split(":")
+                return {
+                    "Type": "bind",
+                    "Source": source,
+                    "Target": target,
+                    "BindOptions": {"Propagation": "rshared"},
+                }
+
+        msg = f"Could not resolve volume path for {path}"
+        raise RuntimeError(msg)
+
     assert settings.DY_SIDECAR_PRODUCT_NAME is not None  # nosec
     await data_manager.pull(
         product_name=settings.DY_SIDECAR_PRODUCT_NAME,
@@ -367,6 +388,7 @@ async def _restore_state_folder(
         legacy_state=_get_legacy_state_with_dy_volumes_path(settings),
         application_name=f"{APP_NAME}-{settings.DY_SIDECAR_NODE_ID}",
         mount_manager=get_r_clone_mount_manager(app),
+        handler_get_bind_path=_resolve_volume_path,
     )
 
 
@@ -405,7 +427,11 @@ async def restore_user_services_state_paths(
         await logged_gather(
             *(
                 _restore_state_folder(
-                    app, settings=settings, progress_bar=root_progress, state_path=path
+                    app,
+                    settings=settings,
+                    progress_bar=root_progress,
+                    state_path=path,
+                    mounted_volumes=mounted_volumes,
                 )
                 for path in mounted_volumes.disk_state_paths_iter()
             ),
