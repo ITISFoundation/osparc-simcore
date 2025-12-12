@@ -192,7 +192,7 @@ async def _stop_mount(
     mount_manager: RCloneMountManager, destination_path: Path, index: NonNegativeInt
 ) -> None:
     await mount_manager.wait_for_transfers_to_complete(destination_path, index)
-    await mount_manager.stop_mount(destination_path, index)
+    await mount_manager.ensure_unmounted(destination_path, index)
 
 
 async def push(  # pylint: disable=too-many-arguments  # noqa: PLR0913
@@ -291,7 +291,7 @@ async def _start_mount_if_required(
         user_id=user_id, s3_object=s3_object, store_id=SIMCORE_LOCATION
     )
 
-    await mount_manager.start_mount(
+    await mount_manager.ensure_mounted(
         destination_path,
         index,
         node_id=node_id,
