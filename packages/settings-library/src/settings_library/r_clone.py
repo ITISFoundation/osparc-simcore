@@ -9,7 +9,7 @@ from pydantic import Field, NonNegativeInt
 from .base import BaseCustomSettings
 from .s3 import S3Settings
 
-DEFAULT_VFS_CACHE_PATH: Final[Path] = Path("/vfs-caching")
+DEFAULT_VFS_CACHE_PATH: Final[Path] = Path("/vfs-cache")
 DEFAULT_VFS_CACHE_MAX_SIZE: Final[str] = "500G"
 
 
