@@ -457,7 +457,6 @@ async def _save_state_folder(
 ) -> None:
     assert settings.DY_SIDECAR_PRODUCT_NAME is not None  # nosec
     await data_manager.push(
-        product_name=settings.DY_SIDECAR_PRODUCT_NAME,
         user_id=settings.DY_SIDECAR_USER_ID,
         project_id=settings.DY_SIDECAR_PROJECT_ID,
         node_uuid=settings.DY_SIDECAR_NODE_ID,
