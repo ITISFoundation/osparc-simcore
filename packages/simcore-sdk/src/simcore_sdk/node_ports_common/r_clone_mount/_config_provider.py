@@ -9,6 +9,7 @@ CONFIG_KEY: Final[str] = "MOUNT_REMOTE"
 
 class MountRemoteType(Enum):
     S3 = auto()
+    # NOTE: oauth atuthorization pattern needs to be setup for non S3 providers
 
 
 def get_config_content(

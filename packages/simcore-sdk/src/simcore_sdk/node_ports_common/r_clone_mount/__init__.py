@@ -1,6 +1,8 @@
 from ._config_provider import MountRemoteType
 from ._core import (
     GetBindPathProtocol,
+    MountActivity,
+    MountActivityProtocol,
     MountAlreadyStartedError,
     MountNotStartedError,
     RCloneMountManager,
@@ -8,6 +10,8 @@ from ._core import (
 
 __all__: tuple[str, ...] = (
     "GetBindPathProtocol",
+    "MountActivity",
+    "MountActivityProtocol",
     "MountAlreadyStartedError",
     "MountNotStartedError",
     "MountRemoteType",
