@@ -243,9 +243,6 @@ def _get_rclone_mount_command(
     rc_user: str,
     rc_password: str,
 ) -> str:
-    # jupyter gid and uid form the user inside
-    uid = 1000
-    gid = 100
     escaped_remote_path = f"{remote_path}".lstrip("/")
     command_array: list[str] = [
         "rclone",
@@ -269,10 +266,6 @@ def _get_rclone_mount_command(
         f"--rc-pass='{rc_password}'",
         "--allow-non-empty",
         "--allow-other",
-        "--uid",
-        f"{uid}",
-        "--gid",
-        f"{gid}",
     ]
     r_clone_command = " ".join(command_array)
 
