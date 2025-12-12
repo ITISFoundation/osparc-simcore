@@ -48,6 +48,74 @@ _NOT_FOUND: Final[int] = 404
 
 type _MountId = str
 
+_R_CLONE_MOUNT_TEMPLATE: Final[str] = dedent(
+    """
+cat <<EOF > {r_clone_config_path}
+{r_clone_config_content}
+EOF
+
+{r_clone_command}
+"""
+)
+
+
+def _get_rclone_mount_command(
+    mount_settings: RCloneMountSettings,
+    r_clone_config_content: str,
+    remote_path: StorageFileID,
+    local_mount_path: Path,
+    remote_control_port: PortInt,
+    rc_user: str,
+    rc_password: str,
+) -> str:
+    escaped_remote_path = f"{remote_path}".lstrip("/")
+    r_clone_command = " ".join(
+        [
+            "rclone",
+            "--config",
+            f"{mount_settings.R_CLONE_CONFIG_FILE_PATH}",
+            "-vv",
+            "mount",
+            f"{CONFIG_KEY}:{escaped_remote_path}",
+            f"{local_mount_path}",
+            "--vfs-cache-mode full",
+            "--vfs-write-back",
+            mount_settings.R_CLONE_MOUNT_VFS_WRITE_BACK,
+            "--vfs-cache-max-size",
+            mount_settings.R_CLONE_MOUNT_VFS_CACHE_MAX_SIZE,
+            (
+                "--vfs-fast-fingerprint"
+                if mount_settings.R_CLONE_MOUNT_VFS_CACHE_MAX_SIZE
+                else ""
+            ),
+            ("--no-modtime" if mount_settings.R_CLONE_MOUNT_NO_MODTIME else ""),
+            "--cache-dir",
+            f"{mount_settings.R_CLONE_MOUNT_VFS_CACHE_PATH}",
+            "--rc",
+            f"--rc-addr=0.0.0.0:{remote_control_port}",
+            "--rc-enable-metrics",
+            f"--rc-user='{rc_user}'",
+            f"--rc-pass='{rc_password}'",
+            "--allow-non-empty",
+            "--allow-other",
+        ]
+    )
+    return _R_CLONE_MOUNT_TEMPLATE.format(
+        r_clone_config_path=mount_settings.R_CLONE_CONFIG_FILE_PATH,
+        r_clone_config_content=r_clone_config_content,
+        r_clone_command=r_clone_command,
+    )
+
+
+def _get_self_container_id() -> str:
+    # in docker the hostname is the container id
+    return os.environ["HOSTNAME"]
+
+
+def _get_mount_id(local_mount_path: Path, index: NonNegativeInt) -> _MountId:
+    # unique reproducible id for this mount
+    return f"{index}{local_mount_path}".replace("/", "_")[::-1]
+
 
 class _BaseRcloneMountError(OsparcErrorMixin, RuntimeError):
     pass
@@ -73,11 +141,6 @@ class MountAlreadyStartedError(_BaseRcloneMountError):
 
 class MountNotStartedError(_BaseRcloneMountError):
     msg_template: str = "Mount not started for local path='{local_mount_path}'"
-
-
-def _get_self_container_id() -> str:
-    # in docker the hostname is the container id
-    return os.environ["HOSTNAME"]
 
 
 class MountActivity(BaseModel):
@@ -121,7 +184,7 @@ class ContainerManager:
             r_clone_config_content=r_clone_config_content,
             remote_path=remote_path,
             local_mount_path=self.local_mount_path,
-            rc_addr=f"0.0.0.0:{remote_control_port}",
+            remote_control_port=remote_control_port,
             rc_user=rc_user,
             rc_password=rc_password,
         )
@@ -219,70 +282,6 @@ class ContainerManager:
         await self._r_clone_container.delete()
 
         await self._cleanup_stack.aclose()
-
-
-def _get_mount_id(local_mount_path: Path, index: NonNegativeInt) -> _MountId:
-    # unique reproducible id for this mount
-    return f"{index}{local_mount_path}".replace("/", "_")[::-1]
-
-
-_R_CLONE_MOUNT_TEMPLATE: Final[str] = dedent(
-    """
-cat <<EOF > {r_clone_config_path}
-{r_clone_config_content}
-EOF
-
-{r_clone_command}
-"""
-)
-
-
-def _get_rclone_mount_command(
-    mount_settings: RCloneMountSettings,
-    r_clone_config_content: str,
-    remote_path: StorageFileID,
-    local_mount_path: Path,
-    rc_addr: str,
-    rc_user: str,
-    rc_password: str,
-) -> str:
-    escaped_remote_path = f"{remote_path}".lstrip("/")
-    r_clone_command = " ".join(
-        [
-            "rclone",
-            "--config",
-            f"{mount_settings.R_CLONE_CONFIG_FILE_PATH}",
-            "-vv",
-            "mount",
-            f"{CONFIG_KEY}:{escaped_remote_path}",
-            f"{local_mount_path}",
-            "--vfs-cache-mode full",
-            "--vfs-write-back",
-            mount_settings.R_CLONE_MOUNT_VFS_WRITE_BACK,
-            "--vfs-cache-max-size",
-            mount_settings.R_CLONE_MOUNT_VFS_CACHE_MAX_SIZE,
-            (
-                "--vfs-fast-fingerprint"
-                if mount_settings.R_CLONE_MOUNT_VFS_CACHE_MAX_SIZE
-                else ""
-            ),
-            ("--no-modtime" if mount_settings.R_CLONE_MOUNT_NO_MODTIME else ""),
-            "--cache-dir",
-            f"{mount_settings.R_CLONE_MOUNT_VFS_CACHE_PATH}",
-            "--rc",
-            f"--rc-addr={rc_addr}",
-            "--rc-enable-metrics",
-            f"--rc-user='{rc_user}'",
-            f"--rc-pass='{rc_password}'",
-            "--allow-non-empty",
-            "--allow-other",
-        ]
-    )
-    return _R_CLONE_MOUNT_TEMPLATE.format(
-        r_clone_config_path=mount_settings.R_CLONE_CONFIG_FILE_PATH,
-        r_clone_config_content=r_clone_config_content,
-        r_clone_command=r_clone_command,
-    )
 
 
 class RCloneRCInterfaceClient:
