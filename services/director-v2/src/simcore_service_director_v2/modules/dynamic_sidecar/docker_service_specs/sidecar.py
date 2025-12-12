@@ -322,6 +322,18 @@ async def _get_mounts(
                 )
             )
 
+    if scheduler_data.paths_mapping.state_paths:
+        mounts.append(
+            DynamicSidecarVolumesPathsResolver.mount_vfs_cache(
+                swarm_stack_name=dynamic_services_scheduler_settings.SWARM_STACK_NAME,
+                node_uuid=scheduler_data.node_uuid,
+                service_run_id=scheduler_data.run_id,
+                project_id=scheduler_data.project_id,
+                user_id=scheduler_data.user_id,
+                has_quota_support=has_quota_support,
+            )
+        )
+
     if dynamic_sidecar_path := dynamic_sidecar_settings.DYNAMIC_SIDECAR_MOUNT_PATH_DEV:
         # Settings validators guarantees that this never happens in production mode
         assert (

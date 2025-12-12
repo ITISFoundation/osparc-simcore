@@ -20,8 +20,18 @@ from settings_library.efs import (
     WRITE_SIZE,
     AwsEfsSettings,
 )
+from settings_library.r_clone import DEFAULT_VFS_CACHE_MAX_SIZE, DEFAULT_VFS_CACHE_PATH
 
-DY_SIDECAR_SHARED_STORE_PATH: Final[Path] = Path("/shared-store")
+_BASE_PATH: Path = Path("/dy-volumes")
+# below are subfolders in `_BASE_PATH`
+_DY_SIDECAR_SUBFOLDER_SHARED_STORE: Final[Path] = Path("/shared-store")
+_DY_SIDECAR_SUBFOLDER_VFS_CACHE: Final[Path] = DEFAULT_VFS_CACHE_PATH
+
+
+# DEFAULT LIMITS
+_LIMIT_SHARED_STORE: Final[str] = "1M"
+_LIMIT_VFS_CACHE: Final[str] = DEFAULT_VFS_CACHE_MAX_SIZE
+_LIMIT_USER_PREFERENCES: Final[str] = "10M"
 
 
 def _get_efs_volume_driver_config(
@@ -42,12 +52,10 @@ def _get_efs_volume_driver_config(
 
 
 class DynamicSidecarVolumesPathsResolver:
-    BASE_PATH: Path = Path("/dy-volumes")
-
     @classmethod
     def target(cls, path: Path) -> str:
         """Returns a folder path within `/dy-volumes` folder"""
-        target_path = cls.BASE_PATH / path.relative_to("/")
+        target_path = _BASE_PATH / path.relative_to("/")
         return f"{target_path}"
 
     @classmethod
@@ -128,12 +136,33 @@ class DynamicSidecarVolumesPathsResolver:
     ) -> dict[str, Any]:
         return cls.mount_entry(
             swarm_stack_name=swarm_stack_name,
-            path=DY_SIDECAR_SHARED_STORE_PATH,
+            path=_DY_SIDECAR_SUBFOLDER_SHARED_STORE,
             node_uuid=node_uuid,
             service_run_id=service_run_id,
             project_id=project_id,
             user_id=user_id,
-            volume_size_limit="1M" if has_quota_support else None,
+            volume_size_limit=_LIMIT_SHARED_STORE if has_quota_support else None,
+        )
+
+    @classmethod
+    def mount_vfs_cache(
+        cls,
+        service_run_id: ServiceRunID,
+        node_uuid: NodeID,
+        project_id: ProjectID,
+        user_id: UserID,
+        swarm_stack_name: str,
+        *,
+        has_quota_support: bool,
+    ) -> dict[str, Any]:
+        return cls.mount_entry(
+            swarm_stack_name=swarm_stack_name,
+            path=_DY_SIDECAR_SUBFOLDER_VFS_CACHE,
+            node_uuid=node_uuid,
+            service_run_id=service_run_id,
+            project_id=project_id,
+            user_id=user_id,
+            volume_size_limit=_LIMIT_VFS_CACHE if has_quota_support else None,
         )
 
     @classmethod
@@ -158,7 +187,7 @@ class DynamicSidecarVolumesPathsResolver:
             # NOTE: the contents of this volume will be zipped and much
             # be at most `_MAX_PREFERENCES_TOTAL_SIZE`, this 10M accounts
             # for files and data that can be compressed a lot
-            volume_size_limit="10M" if has_quota_support else None,
+            volume_size_limit=_LIMIT_USER_PREFERENCES if has_quota_support else None,
         )
 
     @classmethod
