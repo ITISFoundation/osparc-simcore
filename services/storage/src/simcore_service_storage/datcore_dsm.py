@@ -270,6 +270,7 @@ class DatCoreDataManager(BaseDataManager):
     async def list_files(
         self,
         user_id: UserID,
+        product_name: ProductName,
         *,
         expand_dirs: bool,
         uuid_filter: str,
