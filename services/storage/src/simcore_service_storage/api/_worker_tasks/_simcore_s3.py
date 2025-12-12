@@ -77,6 +77,7 @@ async def export_data(
     task_key: TaskKey,
     *,
     user_id: UserID,
+    product_name: ProductName,
     paths_to_export: list[PathToExport],
 ) -> StorageFileID:
     """
@@ -113,7 +114,7 @@ async def export_data(
             progress_report_cb=_progress_cb,
         ) as progress_bar:
             return await dsm.create_s3_export(
-                user_id, object_keys, progress_bar=progress_bar
+                user_id, product_name, object_keys, progress_bar=progress_bar
             )
 
 
@@ -122,13 +123,18 @@ async def export_data_as_download_link(
     task_key: TaskKey,
     *,
     user_id: UserID,
+    product_name: ProductName,
     paths_to_export: list[PathToExport],
 ) -> PresignedLink:
     """
     AccessRightError: in case user can't access project
     """
     s3_object = await export_data(
-        task=task, task_key=task_key, user_id=user_id, paths_to_export=paths_to_export
+        task,
+        task_key,
+        user_id=user_id,
+        product_name=product_name,
+        paths_to_export=paths_to_export,
     )
 
     dsm = get_dsm_provider(get_app_server(task.app).app).get(
