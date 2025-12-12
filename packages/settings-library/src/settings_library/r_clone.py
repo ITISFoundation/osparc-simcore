@@ -1,13 +1,16 @@
 from datetime import timedelta
 from enum import StrEnum
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Final
 
 from common_library.pydantic_validators import validate_numeric_string_as_timedelta
 from pydantic import Field, NonNegativeInt
 
 from .base import BaseCustomSettings
 from .s3 import S3Settings
+
+DEFAULT_VFS_CACHE_PATH: Final[Path] = Path("/vfs-caching")
+DEFAULT_VFS_CACHE_MAX_SIZE: Final[str] = "500G"
 
 
 class S3Provider(StrEnum):
@@ -18,8 +21,6 @@ class S3Provider(StrEnum):
 
 
 class RCloneMountSettings(BaseCustomSettings):
-    """all settings related to mounting go here"""
-
     R_CLONE_MOUNT_TRANSFERS_COMPLETED_TIMEOUT: Annotated[
         timedelta,
         Field(
@@ -27,28 +28,65 @@ class RCloneMountSettings(BaseCustomSettings):
         ),
     ] = timedelta(minutes=60)
 
-    R_CLONE_MOUNT_VFS_CACHE_PATH: Annotated[
-        Path,
-        Field(
-            description="common directory where all vfs-caches will be mounted to",
-        ),
-    ] = Path(
-        "/tmp/vfs-caching"  # noqa: S108
-    )
-
-    R_CLONE_VERSION: Annotated[
-        str | None,
-        Field(
-            pattern=r"^\d+\.\d+\.\d+$",
-            description="version of rclone to use for the mounts",
-        ),
-    ] = None
-
     _validate_r_clone_mount_transfers_completed_timeout = (
         validate_numeric_string_as_timedelta(
             "R_CLONE_MOUNT_TRANSFERS_COMPLETED_TIMEOUT"
         )
     )
+
+    # CONTAINER
+
+    R_CLONE_VERSION: Annotated[
+        str | None,
+        Field(
+            pattern=r"^\d+\.\d+\.\d+$",
+            description="version of rclone for the container image",
+        ),
+    ] = None
+
+    R_CLONE_CONFIG_FILE_PATH: Annotated[
+        Path,
+        Field(
+            description="path inside the container where the rclone config file is located",
+        ),
+    ] = Path("/tmo/rclone.conf")
+
+    # CLI command `rclone mount`
+
+    R_CLONE_MOUNT_VFS_CACHE_PATH: Annotated[
+        Path,
+        Field(
+            description="`--cache-dir X`: sets the path to use for vfs cache",
+        ),
+    ] = DEFAULT_VFS_CACHE_PATH
+
+    R_CLONE_MOUNT_VFS_CACHE_MAX_SIZE: Annotated[
+        str,
+        Field(
+            description="`--vfs-cache-max-size X`: sets the maximum size of the vfs cache",
+        ),
+    ] = DEFAULT_VFS_CACHE_MAX_SIZE
+
+    R_CLONE_MOUNT_VFS_WRITE_BACK: Annotated[
+        str,
+        Field(
+            description="`--vfs-write-back X`: sets the time to wait before writing back data to the remote",
+        ),
+    ] = "5s"
+
+    R_CLONE_MOUNT_VFS_FAST_FINGERPRINT: Annotated[
+        bool,
+        Field(
+            description="whether to use `--vfs-fast-fingerprint` option",
+        ),
+    ] = True
+
+    R_CLONE_MOUNT_NO_MODTIME: Annotated[
+        bool,
+        Field(
+            description="whether to use `--no-modtime` option",
+        ),
+    ] = True
 
 
 class RCloneSettings(BaseCustomSettings):
