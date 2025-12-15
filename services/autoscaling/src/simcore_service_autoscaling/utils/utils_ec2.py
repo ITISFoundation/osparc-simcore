@@ -1,6 +1,5 @@
 """Free helper functions for AWS API"""
 
-import json
 import logging
 import re
 from collections import OrderedDict
@@ -12,7 +11,11 @@ from aws_library.ec2 import AWSTagKey, AWSTagValue, EC2InstanceType, EC2Tags, Re
 from aws_library.ec2._models import EC2InstanceData
 from common_library.json_serialization import json_dumps
 from models_library.docker import OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS
+from orjson import JSONDecodeError
 from pydantic import TypeAdapter
+from simcore_service_director_v2.modules.dynamic_sidecar.docker_service_specs.settings import (
+    json_loads,
+)
 
 from .._meta import VERSION
 from ..core.errors import (
@@ -63,8 +66,8 @@ def deserialize_custom_placement_labels_from_ec2_tag(
     if not tag_value:
         return {}
     try:
-        return json.loads(tag_value)
-    except (json.JSONDecodeError, TypeError):
+        return json_loads(tag_value)
+    except (JSONDecodeError, TypeError):
         _logger.warning(
             "Failed to deserialize custom placement labels from tag: %s", tag_value
         )
