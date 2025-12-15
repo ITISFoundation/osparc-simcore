@@ -145,7 +145,7 @@ class MountActivityProtocol(Protocol):
     async def __call__(self, state_path: Path, activity: MountActivity) -> None: ...
 
 
-class ContainerManager:
+class ContainerManager:  # stateless
     def __init__(
         self,
         mount_settings: RCloneMountSettings,
@@ -227,7 +227,7 @@ class ContainerManager:
             )
 
 
-class RCloneRCInterfaceClient:
+class RCloneRCHttpClient:  # HAS STATE
     def __init__(
         self,
         remote_control_port: PortInt,
@@ -297,6 +297,7 @@ class RCloneRCInterfaceClient:
         return await self._request("POST", "rc/noop")
 
     async def _mount_activity_worker(self) -> None:
+        # TODO: extract logic from interface
         while self._continue_running:
             await asyncio.sleep(self._update_interval_seconds)
 
@@ -367,7 +368,7 @@ class RCloneRCInterfaceClient:
         await _()
 
 
-class TrackedMount:
+class TrackedMount:  # HAS STATE -> links RCClone it's OK
     def __init__(
         self,
         node_id: NodeID,
@@ -414,13 +415,14 @@ class TrackedMount:
             handler_get_bind_paths=self.handler_get_bind_paths,
         )
 
-        self._rc_interface: RCloneRCInterfaceClient | None = None
-        self._cleanup_stack = AsyncExitStack()
-
-    @property
-    def rc_interface(self) -> RCloneRCInterfaceClient:
-        assert self._rc_interface is not None  # nosec
-        return self._rc_interface
+        self.rc_http_client = RCloneRCHttpClient(
+            remote_control_port=self.rc_port,
+            r_clone_mount_settings=self.r_clone_settings.R_CLONE_MOUNT_SETTINGS,
+            remote_control_host=self._container_manager.r_clone_container_name,
+            rc_user=self.rc_user,
+            rc_password=self.rc_password,
+            update_handler=self._progress_handler,
+        )
 
     async def _progress_handler(self, mount_activity: MountActivity) -> None:
         now = datetime.now(UTC)
@@ -436,37 +438,23 @@ class TrackedMount:
 
             await self.handler_mount_activity(self.local_mount_path, mount_activity)
 
-    async def teardown(self) -> None:
-        await self.stop_mount()
-
     async def start_mount(self) -> None:
 
         if self.r_clone_settings.R_CLONE_MOUNT_SETTINGS.R_CLONE_VERSION is None:
             msg = "R_CLONE_VERSION setting is not set"
             raise RuntimeError(msg)
 
-        self._rc_interface: RCloneRCInterfaceClient | None = RCloneRCInterfaceClient(
-            remote_control_port=self.rc_port,
-            r_clone_mount_settings=self.r_clone_settings.R_CLONE_MOUNT_SETTINGS,
-            remote_control_host=self._container_manager.r_clone_container_name,
-            rc_user=self.rc_user,
-            rc_password=self.rc_password,
-            update_handler=self._progress_handler,
-        )
-
         await self._container_manager.create()
-        await self.rc_interface.setup()
-        await self.rc_interface.wait_for_interface_to_be_ready()
+
+        await self.rc_http_client.setup()
+        await self.rc_http_client.wait_for_interface_to_be_ready()
 
     async def stop_mount(self) -> None:
 
-        await self.rc_interface.wait_for_all_transfers_to_complete()
-        await self.rc_interface.teardown()
-        self._rc_interface = None
+        await self.rc_http_client.wait_for_all_transfers_to_complete()
+        await self.rc_http_client.teardown()
 
         await self._container_manager.remove()
-
-        await self._cleanup_stack.aclose()
 
 
 class RCloneMountManager:
@@ -539,7 +527,7 @@ class RCloneMountManager:
                 raise MountNotStartedError(local_mount_path=local_mount_path)
 
             tracked_mount = self._started_mounts[mount_id]
-            await tracked_mount.rc_interface.wait_for_all_transfers_to_complete()
+            await tracked_mount.rc_http_client.wait_for_all_transfers_to_complete()
 
     async def was_mount_started(
         self, local_mount_path: Path, index: NonNegativeInt
@@ -571,7 +559,7 @@ class RCloneMountManager:
     async def teardown(self) -> None:
         # shutdown still ongoing mounts
         await asyncio.gather(
-            *[mount.teardown() for mount in self._started_mounts.values()]
+            *[mount.stop_mount() for mount in self._started_mounts.values()]
         )
         self._started_mounts.clear()
 
