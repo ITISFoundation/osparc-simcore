@@ -75,6 +75,13 @@ class MountedVolumes:
         )
 
     @cached_property
+    def volume_name_vfs_cache(self) -> str:
+        return (
+            f"{PREFIX_DYNAMIC_SIDECAR_VOLUMES}_{self.service_run_id}_{self.node_id}"
+            f"_{_name_from_full_path(DEFAULT_VFS_CACHE_PATH)[::-1]}"
+        )
+
+    @cached_property
     def volume_user_preferences(self) -> str | None:
         if self.user_preferences_path is None:
             return None
@@ -140,6 +147,12 @@ class MountedVolumes:
             self.volume_name_outputs, service_run_id
         )
         return f"{bind_path}:{self.outputs_path}"
+
+    async def get_vfs_cache_docker_volume(self, service_run_id: ServiceRunID) -> str:
+        bind_path: Path = await self._get_bind_path_from_label(
+            self.volume_name_vfs_cache, service_run_id
+        )
+        return f"{bind_path}:{self.vfs_cache_path}"
 
     async def get_user_preferences_path_volume(
         self, service_run_id: ServiceRunID
