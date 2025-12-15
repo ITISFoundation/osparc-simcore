@@ -807,7 +807,7 @@
     },
     "productName": {
       "type": "string",
-      "description": "Product to which the project belongs "
+      "description": "Product to which the project belongs"
     }
   }
 }
