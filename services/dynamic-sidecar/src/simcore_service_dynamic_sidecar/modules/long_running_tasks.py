@@ -18,7 +18,6 @@ from servicelib.logging_utils import log_context
 from servicelib.long_running_tasks.task import TaskProtocol, TaskRegistry
 from servicelib.progress_bar import ProgressBarData
 from servicelib.utils import logged_gather
-from settings_library.r_clone import DEFAULT_VFS_CACHE_PATH
 from simcore_sdk.node_data import data_manager
 from simcore_sdk.node_ports_common.r_clone_mount import MountActivity
 from tenacity import retry
@@ -353,14 +352,17 @@ _EXPECTED_BIND_PATHS_COUNT: Final[NonNegativeInt] = 2
 async def _handler_get_bind_path(
     settings: ApplicationSettings, mounted_volumes: MountedVolumes, state_path: Path
 ) -> list:
-    vfs_cache_path = f"{mounted_volumes.vfs_cache_path}"
-    vfs_source, vfs_target = vfs_cache_path.replace(
-        f"/{DEFAULT_VFS_CACHE_PATH}",
-        f"{settings.DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR}{DEFAULT_VFS_CACHE_PATH}",
+    vfs_cache_path = await mounted_volumes.get_vfs_cache_docker_volume(
+        settings.DY_SIDECAR_RUN_ID
+    )
+
+    vfs_source, vfs_target = (
+        f"{vfs_cache_path}".replace(
+            f"{settings.DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR}", ""
+        )
     ).split(":")
 
     bind_paths: list[dict] = [
-        # TODO: verify this is correct, path might be slightly off
         {
             "Type": "bind",
             "Source": vfs_source,
