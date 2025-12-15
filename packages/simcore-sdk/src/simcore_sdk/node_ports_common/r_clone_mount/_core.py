@@ -1,7 +1,6 @@
 import asyncio
 import logging
 from collections.abc import Awaitable, Callable
-from contextlib import AsyncExitStack
 from datetime import UTC, datetime, timedelta
 from functools import cached_property
 from pathlib import Path
@@ -250,16 +249,14 @@ class RCloneRCHttpClient:  # HAS STATE
         self._rc_host = remote_control_host
         self._rc_port = remote_control_port
 
-        self._cleanup_stack = AsyncExitStack()
-        self._client: AsyncClient | None = None
-
         self._continue_running: bool = True
         self._mount_activity_task: asyncio.Task | None = None
 
+    @property
+    def _client(self) -> AsyncClient:
+        return AsyncClient(timeout=self._r_clone_client_timeout.total_seconds())
+
     async def setup(self) -> None:
-        self._client = await self._cleanup_stack.enter_async_context(
-            AsyncClient(timeout=self._r_clone_client_timeout.total_seconds())
-        )
         self._mount_activity_task = asyncio.create_task(self._mount_activity_worker())
 
     async def teardown(self) -> None:
@@ -267,8 +264,6 @@ class RCloneRCHttpClient:  # HAS STATE
             self._continue_running = False
             await self._mount_activity_task
             self._mount_activity_task = None
-
-        await self._cleanup_stack.aclose()
 
     @property
     def _base_url(self) -> str:
@@ -296,31 +291,32 @@ class RCloneRCHttpClient:  # HAS STATE
     async def _rc_noop(self) -> dict:
         return await self._request("POST", "rc/noop")
 
+    async def get_mount_activity(self) -> MountActivity:
+        core_stats, vfs_queue = await asyncio.gather(
+            self._post_core_stats(), self._post_vfs_queue()
+        )
+
+        return MountActivity(
+            transferring=(
+                {
+                    x["name"]: ProgressReport(
+                        actual_value=(
+                            x["percentage"] / 100 if "percentage" in x else 0.0
+                        )
+                    )
+                    for x in core_stats["transferring"]
+                }
+                if "transferring" in core_stats
+                else {}
+            ),
+            queued=[x["name"] for x in vfs_queue["queue"]],
+        )
+
     async def _mount_activity_worker(self) -> None:
         # TODO: extract logic from interface
         while self._continue_running:
             await asyncio.sleep(self._update_interval_seconds)
-
-            core_stats, vfs_queue = await asyncio.gather(
-                self._post_core_stats(), self._post_vfs_queue()
-            )
-
-            mount_activity = MountActivity(
-                transferring=(
-                    {
-                        x["name"]: ProgressReport(
-                            actual_value=(
-                                x["percentage"] / 100 if "percentage" in x else 0.0
-                            )
-                        )
-                        for x in core_stats["transferring"]
-                    }
-                    if "transferring" in core_stats
-                    else {}
-                ),
-                queued=[x["name"] for x in vfs_queue["queue"]],
-            )
-
+            mount_activity = await self.get_mount_activity()
             await self._update_handler(mount_activity)
 
     @retry(
