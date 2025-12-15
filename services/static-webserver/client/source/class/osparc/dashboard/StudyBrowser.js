@@ -1781,6 +1781,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       osparc.utils.Utils.setIdToWidget(trashButton, "deleteStudiesBtn");
       trashButton.addListener("execute", () => {
         const selection = this._resourcesContainer.getSelection();
+        const studiesData = selection.map(button => this.__getStudyData(button.getUuid()));
         const preferencesSettings = osparc.Preferences.getInstance();
         if (preferencesSettings.getConfirmDeleteStudy()) {
           const win = this.__createConfirmTrashWindow(selection.map(button => button.getTitle()));
@@ -1788,11 +1789,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           win.open();
           win.addListener("close", () => {
             if (win.getConfirmed()) {
-              this.__trashStudies(selection.map(button => this.__getStudyData(button.getUuid())), false);
+              this.__trashStudies(studiesData);
             }
           }, this);
         } else {
-          this.__trashStudies(selection.map(button => this.__getStudyData(button.getUuid())), false);
+          this.__trashStudies(studiesData);
         }
       }, this);
       return trashButton;
