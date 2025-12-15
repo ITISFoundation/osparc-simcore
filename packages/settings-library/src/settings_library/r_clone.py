@@ -49,7 +49,9 @@ class RCloneMountSettings(BaseCustomSettings):
         Field(
             description="path inside the container where the rclone config file is located",
         ),
-    ] = Path("/tmo/rclone.conf")
+    ] = Path(
+        "/tmp/rclone.conf"  # noqa: S108
+    )
 
     # CLI command `rclone mount`
 
