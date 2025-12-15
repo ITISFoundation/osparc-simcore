@@ -13,6 +13,7 @@ from typing import NamedTuple
 from aiohttp import web
 from common_library.json_serialization import json_loads
 from models_library.api_schemas_webserver.projects_ui import StudyUI
+from models_library.products import ProductName
 from models_library.projects import DateTimeStr, Project, ProjectID, ProjectType
 from models_library.projects_access import AccessRights, GroupIDStr
 from models_library.projects_nodes import Node
@@ -86,6 +87,7 @@ def _create_project(
     owner: UserInfo,
     workbench: dict[str, Node],
     workbench_ui: dict[str, dict],
+    product_name: ProductName,
 ) -> Project:
     # Access rights policy
     access_rights = AccessRights(read=True, write=True, delete=True)  # will keep a copy
@@ -110,11 +112,13 @@ def _create_project(
                 "workbench": workbench_ui,
             }
         ).model_dump(mode="json", exclude_unset=True),
+        product_name=product_name,
     )
 
 
 def _create_project_with_service(
     project_id: ProjectID,
+    product_name: ProductName,
     service_id: NodeID,
     owner: UserInfo,
     service_info: ServiceInfo,
@@ -138,11 +142,13 @@ def _create_project_with_service(
         workbench_ui={
             f"{service_id}": {"position": {"x": 633, "y": 229}},
         },
+        product_name=product_name,
     )
 
 
 def _create_project_with_filepicker_and_service(
     project_id: ProjectID,
+    product_name: ProductName,
     file_picker_id: NodeID,
     viewer_id: NodeID,
     owner: UserInfo,
@@ -182,6 +188,7 @@ def _create_project_with_filepicker_and_service(
             f"{file_picker_id}": {"position": {"x": 305, "y": 229}},
             f"{viewer_id}": {"position": {"x": 633, "y": 229}},
         },
+        product_name=product_name,
     )
 
 
@@ -299,6 +306,7 @@ async def get_or_create_project_with_file_and_service(
     if not exists:
         project = _create_project_with_filepicker_and_service(
             project_uid,
+            product_name,
             file_picker_id,
             service_id,
             user,
@@ -339,6 +347,7 @@ async def get_or_create_project_with_service(
     except (ProjectNotFoundError, ProjectInvalidRightsError):
         project = _create_project_with_service(
             project_id=project_uid,
+            product_name=product_name,
             service_id=service_id,
             owner=user,
             service_info=service_info,
@@ -390,6 +399,7 @@ async def get_or_create_project_with_file(
             workbench_ui={
                 f"{file_picker_id}": {"position": {"x": 305, "y": 229}},
             },
+            product_name=product_name,
         )
 
         await _add_new_project(

@@ -134,11 +134,6 @@ async def open_project(request: web.Request) -> web.Response:
             _socket_id, SocketIORoomStr.from_project_id(path_params.project_id)
         )
 
-        # the project can be opened, let's update its product links
-        await _projects_service.update_project_linked_product(
-            request.app, path_params.project_id, req_ctx.product_name
-        )
-
         # we now need to receive logs for that project
         await project_logs.subscribe(request.app, path_params.project_id)
 
@@ -146,7 +141,7 @@ async def open_project(request: web.Request) -> web.Response:
         if not query_params.disable_service_auto_start:
             with contextlib.suppress(ProjectStartsTooManyDynamicNodesError):
                 # NOTE: this method raises that exception when the number of dynamic
-                # services in the project is highter than the maximum allowed per project
+                # services in the project is higher than the maximum allowed per project
                 # the project shall still open though.
                 await _projects_service.run_project_dynamic_services(
                     request,
