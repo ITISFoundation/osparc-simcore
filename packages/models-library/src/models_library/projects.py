@@ -267,7 +267,6 @@ class Project(BaseProjectModel):
         ProductName,
         Field(
             description="Product to which the project belongs",
-            alias="productName",
             examples=["osparc", "s4l"],
         ),
     ]
