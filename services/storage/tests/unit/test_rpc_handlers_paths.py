@@ -74,7 +74,7 @@ async def _assert_compute_path_size(
     path: Path,
     expected_total_size: int,
 ) -> ByteSize:
-    async_job, async_job_name = await compute_path_size(
+    async_job, _ = await compute_path_size(
         storage_rpc_client,
         location_id=location_id,
         path=path,
@@ -82,11 +82,12 @@ async def _assert_compute_path_size(
             user_id=user_id, product_name=product_name, owner="pytest_client_name"
         ),
         user_id=user_id,
+        product_name=product_name,
     )
     async for job_composed_result in wait_and_get_result(
         storage_rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
-        method_name=RPCMethodName(compute_path_size.__name__),
+        method_name=TypeAdapter(RPCMethodName).validate_python("compute_path_size"),
         job_id=async_job.job_id,
         owner_metadata=TestOwnerMetadata(
             user_id=user_id, product_name=product_name, owner="pytest_client_name"
@@ -289,9 +290,9 @@ async def test_path_compute_size_inexistent_path(
         storage_rabbitmq_rpc_client,
         location_id,
         user_id,
+        product_name,
         path=Path(faker.file_path(absolute=False)),
         expected_total_size=0,
-        product_name=product_name,
     )
 
 
