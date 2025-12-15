@@ -9,12 +9,14 @@ from typing import Any, Final, Protocol
 from uuid import uuid4
 
 import httpx
+from common_library.async_tools import cancel_wait_task
 from common_library.errors_classes import OsparcErrorMixin
 from httpx import AsyncClient
 from models_library.basic_types import PortInt
 from models_library.progress_bar import ProgressReport
 from models_library.projects_nodes_io import NodeID, StorageFileID
 from pydantic import BaseModel, NonNegativeInt
+from servicelib.background_task import create_periodic_task
 from servicelib.logging_utils import log_context
 from servicelib.utils import unused_port
 from settings_library.r_clone import RCloneMountSettings, RCloneSettings
@@ -144,7 +146,7 @@ class MountActivityProtocol(Protocol):
     async def __call__(self, state_path: Path, activity: MountActivity) -> None: ...
 
 
-class ContainerManager:  # stateless
+class StatelessContainerManager:  # stateless
     def __init__(
         self,
         mount_settings: RCloneMountSettings,
@@ -226,7 +228,7 @@ class ContainerManager:  # stateless
             )
 
 
-class RCloneRCHttpClient:  # HAS STATE
+class StatelessRCloneRCHttpClient:  # HAS STATE
     def __init__(
         self,
         remote_control_port: PortInt,
@@ -249,36 +251,23 @@ class RCloneRCHttpClient:  # HAS STATE
         self._rc_host = remote_control_host
         self._rc_port = remote_control_port
 
-        self._continue_running: bool = True
-        self._mount_activity_task: asyncio.Task | None = None
-
-    @property
-    def _client(self) -> AsyncClient:
-        return AsyncClient(timeout=self._r_clone_client_timeout.total_seconds())
-
-    async def setup(self) -> None:
-        self._mount_activity_task = asyncio.create_task(self._mount_activity_worker())
-
-    async def teardown(self) -> None:
-        if self._mount_activity_task is not None:
-            self._continue_running = False
-            await self._mount_activity_task
-            self._mount_activity_task = None
-
     @property
     def _base_url(self) -> str:
         return f"http://{self._rc_host}:{self._rc_port}"
 
     async def _request(self, method: str, path: str) -> Any:
-        assert self._client is not None  # nosec
-
         request_url = f"{self._base_url}/{path}"
         _logger.debug("Sending '%s %s' request", method, request_url)
-        response = await self._client.request(
-            method, request_url, auth=(self._rc_user, self._rc_password)
-        )
-        response.raise_for_status()
-        result = response.json()
+
+        async with AsyncClient(
+            timeout=self._r_clone_client_timeout.total_seconds()
+        ) as client:
+            response = await client.request(
+                method, request_url, auth=(self._rc_user, self._rc_password)
+            )
+            response.raise_for_status()
+            result = response.json()
+
         _logger.debug("'%s %s' replied with: %s", method, path, result)
         return result
 
@@ -312,13 +301,6 @@ class RCloneRCHttpClient:  # HAS STATE
             queued=[x["name"] for x in vfs_queue["queue"]],
         )
 
-    async def _mount_activity_worker(self) -> None:
-        # TODO: extract logic from interface
-        while self._continue_running:
-            await asyncio.sleep(self._update_interval_seconds)
-            mount_activity = await self.get_mount_activity()
-            await self._update_handler(mount_activity)
-
     @retry(
         wait=wait_fixed(1),
         stop=stop_after_delay(_MAX_WAIT_RC_HTTP_INTERFACE_READY.total_seconds()),
@@ -328,6 +310,13 @@ class RCloneRCHttpClient:  # HAS STATE
     )
     async def wait_for_interface_to_be_ready(self) -> None:
         await self._rc_noop()
+
+    async def is_responsive(self) -> bool:
+        try:
+            await self._rc_noop()
+            return True
+        except httpx.HTTPError:
+            return False
 
     async def wait_for_all_transfers_to_complete(self) -> None:
         """
@@ -364,7 +353,7 @@ class RCloneRCHttpClient:  # HAS STATE
         await _()
 
 
-class TrackedMount:  # HAS STATE -> links RCClone it's OK
+class TrackedMount:
     def __init__(
         self,
         node_id: NodeID,
@@ -394,9 +383,10 @@ class TrackedMount:  # HAS STATE -> links RCClone it's OK
         self._last_mount_activity: MountActivity | None = None
         self._last_mount_activity_update: datetime = datetime.fromtimestamp(0, UTC)
         self._mount_activity_update_interval = mount_activity_update_interval
+        self._task_mount_activity: asyncio.Task[None] | None = None
 
         # used internally to handle the mount command
-        self._container_manager = ContainerManager(
+        self._container_manager = StatelessContainerManager(
             mount_settings=self.r_clone_settings.R_CLONE_MOUNT_SETTINGS,
             node_id=self.node_id,
             remote_control_port=self.rc_port,
@@ -411,16 +401,16 @@ class TrackedMount:  # HAS STATE -> links RCClone it's OK
             handler_get_bind_paths=self.handler_get_bind_paths,
         )
 
-        self.rc_http_client = RCloneRCHttpClient(
+        self._rc_http_client = StatelessRCloneRCHttpClient(
             remote_control_port=self.rc_port,
             r_clone_mount_settings=self.r_clone_settings.R_CLONE_MOUNT_SETTINGS,
             remote_control_host=self._container_manager.r_clone_container_name,
             rc_user=self.rc_user,
             rc_password=self.rc_password,
-            update_handler=self._progress_handler,
+            update_handler=self._handler_mount_activity,
         )
 
-    async def _progress_handler(self, mount_activity: MountActivity) -> None:
+    async def _handler_mount_activity(self, mount_activity: MountActivity) -> None:
         now = datetime.now(UTC)
 
         enough_time_passed = (
@@ -434,23 +424,33 @@ class TrackedMount:  # HAS STATE -> links RCClone it's OK
 
             await self.handler_mount_activity(self.local_mount_path, mount_activity)
 
+    async def _worker_mount_activity(self) -> None:
+        mount_activity = await self._rc_http_client.get_mount_activity()
+        await self._handler_mount_activity(mount_activity)
+
     async def start_mount(self) -> None:
-
-        if self.r_clone_settings.R_CLONE_MOUNT_SETTINGS.R_CLONE_VERSION is None:
-            msg = "R_CLONE_VERSION setting is not set"
-            raise RuntimeError(msg)
-
         await self._container_manager.create()
 
-        await self.rc_http_client.setup()
-        await self.rc_http_client.wait_for_interface_to_be_ready()
+        await self._rc_http_client.wait_for_interface_to_be_ready()
+
+        self._task_mount_activity = create_periodic_task(
+            self._worker_mount_activity,
+            interval=self._mount_activity_update_interval,
+            task_name=f"rclone-mount-activity-{_get_mount_id(self.local_mount_path, self.index)}",
+        )
 
     async def stop_mount(self) -> None:
-
-        await self.rc_http_client.wait_for_all_transfers_to_complete()
-        await self.rc_http_client.teardown()
+        await self._rc_http_client.wait_for_all_transfers_to_complete()
 
         await self._container_manager.remove()
+        if self._task_mount_activity is not None:
+            await cancel_wait_task(self._task_mount_activity)
+
+    async def wait_for_all_transfers_to_complete(self) -> None:
+        await self._rc_http_client.wait_for_all_transfers_to_complete()
+
+    async def is_responsive(self) -> bool:
+        return await self._rc_http_client.is_responsive()
 
 
 class RCloneMountManager:
@@ -460,8 +460,8 @@ class RCloneMountManager:
             msg = "R_CLONE_VERSION setting is not set"
             raise RuntimeError(msg)
 
-        # TODO: make this stateless and go via aiodocker to avoid issues when restartign the container
-        self._started_mounts: dict[_MountId, TrackedMount] = {}
+        self._tracked_mounts: dict[_MountId, TrackedMount] = {}
+        self._task_ensure_mounts_working: asyncio.Task[None] | None = None
 
     async def ensure_mounted(
         self,
@@ -484,8 +484,8 @@ class RCloneMountManager:
             log_duration=True,
         ):
             mount_id = _get_mount_id(local_mount_path, index)
-            if mount_id in self._started_mounts:
-                tracked_mount = self._started_mounts[mount_id]
+            if mount_id in self._tracked_mounts:
+                tracked_mount = self._tracked_mounts[mount_id]
                 raise MountAlreadyStartedError(local_mount_path=local_mount_path)
 
             free_port = await asyncio.get_running_loop().run_in_executor(
@@ -505,32 +505,12 @@ class RCloneMountManager:
             )
             await tracked_mount.start_mount()
 
-            self._started_mounts[mount_id] = tracked_mount
+            self._tracked_mounts[mount_id] = tracked_mount
 
-    async def wait_for_transfers_to_complete(
-        self, local_mount_path: Path, index: NonNegativeInt
-    ) -> None:
-        # if mount is not present it just returns immediately
-
-        with log_context(
-            _logger,
-            logging.INFO,
-            f"wait for transfers to complete {local_mount_path=}",
-            log_duration=True,
-        ):
-            mount_id = _get_mount_id(local_mount_path, index)
-            if mount_id not in self._started_mounts:
-                raise MountNotStartedError(local_mount_path=local_mount_path)
-
-            tracked_mount = self._started_mounts[mount_id]
-            await tracked_mount.rc_http_client.wait_for_all_transfers_to_complete()
-
-    async def was_mount_started(
-        self, local_mount_path: Path, index: NonNegativeInt
-    ) -> bool:
-        # checks if mount is present or not
+    def is_mount_tracked(self, local_mount_path: Path, index: NonNegativeInt) -> bool:
+        """True if if a mount is being tracked"""
         mount_id = _get_mount_id(local_mount_path, index)
-        return mount_id in self._started_mounts
+        return mount_id in self._tracked_mounts
 
     async def ensure_unmounted(
         self, local_mount_path: Path, index: NonNegativeInt
@@ -540,29 +520,37 @@ class RCloneMountManager:
             _logger, logging.INFO, f"unmounting {local_mount_path=}", log_duration=True
         ):
             mount_id = _get_mount_id(local_mount_path, index)
-            if mount_id not in self._started_mounts:
-                # TODO: check if this is running on docker, then shutdown -> otherwise sidecar will break
-                raise MountNotStartedError(local_mount_path=local_mount_path)
+            tracked_mount = self._tracked_mounts[mount_id]
 
-            tracked_mount = self._started_mounts[mount_id]
+            await tracked_mount.wait_for_all_transfers_to_complete()
+
             await tracked_mount.stop_mount()
 
-    async def setup(self) -> None:
-        # TODO: add a process which ensures that the mounts keep running -> register some local data to restart the mount process if it dies (even on accident manually)
+    async def _worker_ensure_mounts_working(self) -> None:
+        with log_context(_logger, logging.DEBUG, "Ensuring rclone mounts are working"):
+            for mount in self._tracked_mounts.values():
+                if not await mount.is_responsive():
+                    with log_context(
+                        _logger,
+                        logging.WARNING,
+                        f"RClone mount for local path='{mount.local_mount_path}' is not responsive, restarting it",
+                    ):
+                        await mount.stop_mount()
+                        await mount.start_mount()
 
-        pass
+    async def setup(self) -> None:
+        self._task_ensure_mounts_working = create_periodic_task(
+            self._worker_ensure_mounts_working,
+            interval=timedelta(seconds=10),
+            task_name="rclone-mount-ensure-mounts-working",
+        )
 
     async def teardown(self) -> None:
         # shutdown still ongoing mounts
         await asyncio.gather(
-            *[mount.stop_mount() for mount in self._started_mounts.values()]
+            *[mount.stop_mount() for mount in self._tracked_mounts.values()]
         )
-        self._started_mounts.clear()
+        self._tracked_mounts.clear()
 
-
-# NOTES:
-# There are multiple layers in place here
-# - docker api to create/remove containers and networks
-# - rclone container management
-# - rclone process status management via its rc http interface
-# - mounts management
+        if self._task_ensure_mounts_working is not None:
+            await cancel_wait_task(self._task_ensure_mounts_working)

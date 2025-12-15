@@ -192,7 +192,6 @@ async def _delete_legacy_archive(
 async def _stop_mount(
     mount_manager: RCloneMountManager, destination_path: Path, index: NonNegativeInt
 ) -> None:
-    await mount_manager.wait_for_transfers_to_complete(destination_path, index)
     await mount_manager.ensure_unmounted(destination_path, index)
 
 
@@ -213,7 +212,7 @@ async def push(  # pylint: disable=too-many-arguments  # noqa: PLR0913
 ) -> None:
     """pushes and removes the legacy archive if present"""
 
-    if await mount_manager.was_mount_started(source_path, index):
+    if mount_manager.is_mount_tracked(source_path, index):
         await _stop_mount(mount_manager, source_path, index)
     else:
         await _push_directory(
