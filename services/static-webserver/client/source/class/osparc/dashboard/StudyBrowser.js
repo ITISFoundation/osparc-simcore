@@ -878,7 +878,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         }
         studiesCont.setLastSelectedIndex(studiesCont.getIndex(item));
       } else {
-        const studyData = this.__getStudyData(item.getUuid(), false);
+        const studyData = this.__getStudyData(item.getUuid());
         this._openResourceDetails(studyData);
         this.resetSelection();
       }
@@ -1788,11 +1788,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           win.open();
           win.addListener("close", () => {
             if (win.getConfirmed()) {
-              this.__trashStudies(selection.map(button => this.__getStudyData(button.getUuid(), false)), false);
+              this.__trashStudies(selection.map(button => this.__getStudyData(button.getUuid())), false);
             }
           }, this);
         } else {
-          this.__trashStudies(selection.map(button => this.__getStudyData(button.getUuid(), false)), false);
+          this.__trashStudies(selection.map(button => this.__getStudyData(button.getUuid())), false);
         }
       }, this);
       return trashButton;
@@ -1813,11 +1813,11 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           win.open();
           win.addListener("close", () => {
             if (win.getConfirmed()) {
-              this.__doDeleteStudies(selection.map(button => this.__getStudyData(button.getUuid(), false)), false);
+              this.__doDeleteStudies(selection.map(button => this.__getStudyData(button.getUuid())), false);
             }
           }, this);
         } else {
-          this.__doDeleteStudies(selection.map(button => this.__getStudyData(button.getUuid(), false)), false);
+          this.__doDeleteStudies(selection.map(button => this.__getStudyData(button.getUuid())), false);
         }
       }, this);
       return deleteButton;
@@ -2310,13 +2310,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     _emptyProjectIconClicked: function(studyId) {
-      const studyData = this.__getStudyData(studyId, false);
+      const studyData = this.__getStudyData(studyId);
       const deleteAccess = studyData && osparc.data.model.Study.canIDelete(studyData["accessRights"]);
       if (deleteAccess) {
         if (this.getCurrentContext() === osparc.dashboard.StudyBrowser.CONTEXT.TRASH) {
-          this.__deleteStudyRequested(this.__getStudyData(studyId));
+          this.__deleteStudyRequested(studyData);
         } else {
-          this.__trashStudyRequested(this.__getStudyData(studyId));
+          this.__trashStudyRequested(studyData);
         }
       }
     },
