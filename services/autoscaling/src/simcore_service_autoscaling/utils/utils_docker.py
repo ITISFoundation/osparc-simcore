@@ -336,14 +336,14 @@ def get_max_resources_from_docker_task(task: Task) -> Resources:
     )
 
 
-async def get_task_custom_placement_labels(
+async def get_task_osparc_custom_docker_placement_constraints(
     docker_client: AutoscalingDocker, task: Task
-) -> dict[str, str]:
+) -> dict[DockerLabelKey, str]:
     """Extract custom placement labels from task placement constraints.
 
     Returns a dict mapping label keys (from CUSTOM_PLACEMENT_LABEL_KEYS) to their values.
     """
-    custom_labels: dict[str, str] = {}
+    custom_labels: dict[DockerLabelKey, str] = {}
 
     with contextlib.suppress(ValidationError):
         assert task.service_id  # nosec
