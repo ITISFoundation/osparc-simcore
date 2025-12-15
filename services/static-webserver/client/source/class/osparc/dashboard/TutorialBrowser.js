@@ -259,7 +259,11 @@ qx.Class.define("osparc.dashboard.TutorialBrowser", {
     },
 
     _emptyProjectIconClicked: function(templateId) {
-      this._deleteTemplateRequested(this.__getTemplateData(templateId));
+      const templateData = this.__getTemplateData(templateId);
+      const deleteAccess = templateData && osparc.data.model.Study.canIDelete(templateData["accessRights"]);
+      if (deleteAccess) {
+        this._deleteTemplateRequested(templateData);
+      }
     },
     // MENU //
 
