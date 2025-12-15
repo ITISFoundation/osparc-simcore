@@ -184,12 +184,15 @@ class ContainerManager:
 
     async def create(self):
         async with _docker_utils.get_or_crate_docker_session(None) as client:
+            # ensure nothing was left from previous runs
             await _docker_utils.remove_container_if_exists(
                 client, self.r_clone_container_name
             )
             await _docker_utils.remove_network_if_exists(
                 client, self.r_clone_container_name
             )
+
+            # create network + container and connect to sidecar
             await _docker_utils.create_network_and_connect_sidecar_container(
                 client, self._r_clone_network_name
             )
@@ -251,19 +254,19 @@ class RCloneRCInterfaceClient:
         self._client: AsyncClient | None = None
 
         self._continue_running: bool = True
-        self._transfer_monitor: asyncio.Task | None = None
+        self._mount_activity_task: asyncio.Task | None = None
 
     async def setup(self) -> None:
         self._client = await self._cleanup_stack.enter_async_context(
             AsyncClient(timeout=self._r_clone_client_timeout.total_seconds())
         )
-        self._transfer_monitor = asyncio.create_task(self._monitor())
+        self._mount_activity_task = asyncio.create_task(self._mount_activity_worker())
 
     async def teardown(self) -> None:
-        if self._transfer_monitor is not None:
+        if self._mount_activity_task is not None:
             self._continue_running = False
-            await self._transfer_monitor
-            self._transfer_monitor = None
+            await self._mount_activity_task
+            self._mount_activity_task = None
 
         await self._cleanup_stack.aclose()
 
@@ -293,7 +296,7 @@ class RCloneRCInterfaceClient:
     async def _rc_noop(self) -> dict:
         return await self._request("POST", "rc/noop")
 
-    async def _monitor(self) -> None:
+    async def _mount_activity_worker(self) -> None:
         while self._continue_running:
             await asyncio.sleep(self._update_interval_seconds)
 
