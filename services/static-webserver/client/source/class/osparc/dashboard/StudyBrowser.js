@@ -2310,10 +2310,14 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     _emptyProjectIconClicked: function(studyId) {
-      if (this.getCurrentContext() === osparc.dashboard.StudyBrowser.CONTEXT.TRASH) {
-        this.__deleteStudyRequested(this.__getStudyData(studyId));
-      } else {
-        this.__trashStudyRequested(this.__getStudyData(studyId));
+      const studyData = this.__getStudyData(studyId, false);
+      const deleteAccess = studyData && osparc.data.model.Study.canIDelete(studyData["accessRights"]);
+      if (deleteAccess) {
+        if (this.getCurrentContext() === osparc.dashboard.StudyBrowser.CONTEXT.TRASH) {
+          this.__deleteStudyRequested(this.__getStudyData(studyId));
+        } else {
+          this.__trashStudyRequested(this.__getStudyData(studyId));
+        }
       }
     },
 
