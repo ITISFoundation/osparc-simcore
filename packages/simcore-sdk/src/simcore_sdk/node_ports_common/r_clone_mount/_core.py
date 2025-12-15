@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import os
 from collections.abc import Awaitable, Callable
 from contextlib import AsyncExitStack
 from datetime import UTC, datetime, timedelta
@@ -106,11 +105,6 @@ def _get_rclone_mount_command(
     )
 
 
-def _get_self_container_id() -> str:
-    # in docker the hostname is the container id
-    return os.environ["HOSTNAME"]
-
-
 def _get_mount_id(local_mount_path: Path, index: NonNegativeInt) -> _MountId:
     # unique reproducible id for this mount
     return f"{index}{local_mount_path}".replace("/", "_")[::-1]
@@ -172,17 +166,11 @@ class ContainerManager:
         self.local_mount_path = local_mount_path
         self.index = index
         self.r_clone_config_content = r_clone_config_content
-        self.handler_get_bind_paths = handler_get_bind_paths
+        self.remote_path = remote_path
+        self.rc_user = rc_user
+        self.rc_password = rc_password
 
-        self.command = _get_rclone_mount_command(
-            mount_settings=mount_settings,
-            r_clone_config_content=r_clone_config_content,
-            remote_path=remote_path,
-            local_mount_path=self.local_mount_path,
-            remote_control_port=remote_control_port,
-            rc_user=rc_user,
-            rc_password=rc_password,
-        )
+        self.handler_get_bind_paths = handler_get_bind_paths
 
     @cached_property
     def r_clone_container_name(self) -> str:
@@ -210,7 +198,15 @@ class ContainerManager:
             await _docker_utils.create_r_clone_container(
                 client,
                 self.r_clone_container_name,
-                self.command,
+                command=_get_rclone_mount_command(
+                    mount_settings=self.mount_settings,
+                    r_clone_config_content=self.r_clone_config_content,
+                    remote_path=self.remote_path,
+                    local_mount_path=self.local_mount_path,
+                    remote_control_port=self.remote_control_port,
+                    rc_user=self.rc_user,
+                    rc_password=self.rc_password,
+                ),
                 r_clone_version=self.mount_settings.R_CLONE_VERSION,
                 remote_control_port=self.remote_control_port,
                 r_clone_network_name=self._r_clone_network_name,
@@ -400,7 +396,21 @@ class TrackedMount:
         self._mount_activity_update_interval = mount_activity_update_interval
 
         # used internally to handle the mount command
-        self._container_manager: ContainerManager | None = None
+        self._container_manager = ContainerManager(
+            mount_settings=self.r_clone_settings.R_CLONE_MOUNT_SETTINGS,
+            node_id=self.node_id,
+            remote_control_port=self.rc_port,
+            local_mount_path=self.local_mount_path,
+            index=self.index,
+            r_clone_config_content=get_config_content(
+                self.r_clone_settings, self.mount_type
+            ),
+            remote_path=f"{self.r_clone_settings.R_CLONE_S3.S3_BUCKET_NAME}/{self.remote_path}",
+            rc_user=self.rc_user,
+            rc_password=self.rc_password,
+            handler_get_bind_paths=self.handler_get_bind_paths,
+        )
+
         self._rc_interface: RCloneRCInterfaceClient | None = None
         self._cleanup_stack = AsyncExitStack()
 
@@ -427,32 +437,10 @@ class TrackedMount:
         await self.stop_mount()
 
     async def start_mount(self) -> None:
-        if self._container_manager is not None:
-            raise _ContainerAlreadyStartedError(
-                container=self._container_manager.r_clone_container_name,
-                command=self._container_manager.command,
-            )
-
-        r_clone_config_content = get_config_content(
-            self.r_clone_settings, self.mount_type
-        )
 
         if self.r_clone_settings.R_CLONE_MOUNT_SETTINGS.R_CLONE_VERSION is None:
             msg = "R_CLONE_VERSION setting is not set"
             raise RuntimeError(msg)
-
-        self._container_manager = ContainerManager(
-            mount_settings=self.r_clone_settings.R_CLONE_MOUNT_SETTINGS,
-            node_id=self.node_id,
-            remote_control_port=self.rc_port,
-            local_mount_path=self.local_mount_path,
-            index=self.index,
-            r_clone_config_content=r_clone_config_content,
-            remote_path=f"{self.r_clone_settings.R_CLONE_S3.S3_BUCKET_NAME}/{self.remote_path}",
-            rc_user=self.rc_user,
-            rc_password=self.rc_password,
-            handler_get_bind_paths=self.handler_get_bind_paths,
-        )
 
         self._rc_interface: RCloneRCInterfaceClient | None = RCloneRCInterfaceClient(
             remote_control_port=self.rc_port,
@@ -468,15 +456,12 @@ class TrackedMount:
         await self.rc_interface.wait_for_interface_to_be_ready()
 
     async def stop_mount(self) -> None:
-        if self._container_manager is None:
-            return
 
         await self.rc_interface.wait_for_all_transfers_to_complete()
         await self.rc_interface.teardown()
         self._rc_interface = None
 
         await self._container_manager.remove()
-        self._container_manager = None
 
         await self._cleanup_stack.aclose()
 

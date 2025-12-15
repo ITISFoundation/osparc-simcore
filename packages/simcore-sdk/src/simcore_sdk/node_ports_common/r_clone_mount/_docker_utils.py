@@ -36,8 +36,8 @@ async def get_or_crate_docker_session(docker: Docker | None) -> AsyncIterator[Do
 async def create_r_clone_container(
     docker: Docker | None,
     container_name: str,
-    command: str,
     *,
+    command: str,
     r_clone_version: str,
     remote_control_port: PortInt,
     r_clone_network_name: str,
