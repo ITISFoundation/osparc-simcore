@@ -46,7 +46,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
     "updateHypertool": "qx.event.type.Data",
     "publishTemplate": "qx.event.type.Data",
     "tagClicked": "qx.event.type.Data",
-    "emptyStudyClicked": "qx.event.type.Data"
+    "emptyProjectIconClicked": "qx.event.type.Data",
   },
 
   statics: {
@@ -1167,7 +1167,7 @@ qx.Class.define("osparc.dashboard.CardBase", {
       });
       control.addListener("tap", e => {
         e.stopPropagation();
-        this.fireDataEvent("emptyStudyClicked", this.getUuid());
+        this.fireDataEvent("emptyProjectIconClicked", this.getUuid());
       }, this);
       return control;
     },

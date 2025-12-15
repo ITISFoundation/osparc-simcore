@@ -1059,7 +1059,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       if (this.getCurrentContext().includes("search")) {
         // Use the ``search`` functionality only if the user types some text
-        // tags should only be used to filter the current context (search context ot workspace/folder context)
+        // tags should only be used to filter the current context (search context or workspace/folder context)
         const filterData = this._searchBarFilter.getFilterData();
         if (filterData.text) {
           requestParams.text = filterData.text ? encodeURIComponent(filterData.text) : ""; // name, description and uuid
@@ -2049,8 +2049,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         menu.add(convertToPipelineButton);
       }
 
-      if (osparc.product.Utils.showExportCMis()) {
-        const exportStudyButton = this.__getExportCMisMenuButton(studyData);
+      if (osparc.product.Utils.showExportCMIS()) {
+        const exportStudyButton = this.__getExportCMISMenuButton(studyData);
         menu.add(exportStudyButton);
       }
 
@@ -2300,7 +2300,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .then(() => this._updateStudyData(studyData))
     },
 
-    __getExportCMisMenuButton: function(studyData) {
+    __getExportCMISMenuButton: function(studyData) {
       const exportButton = new qx.ui.menu.Button(this.tr("Export cMIS"), "@FontAwesome5Solid/cloud-download-alt/12");
       exportButton["exportCMISButton"] = true;
       const isDisabled = osparc.utils.DisabledPlugins.isExportDisabled();
@@ -2309,7 +2309,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return exportButton;
     },
 
-    _deleteResourceRequested: function(studyId) {
+    _emptyProjectIconClicked: function(studyId) {
       if (this.getCurrentContext() === osparc.dashboard.StudyBrowser.CONTEXT.TRASH) {
         this.__deleteStudyRequested(this.__getStudyData(studyId));
       } else {

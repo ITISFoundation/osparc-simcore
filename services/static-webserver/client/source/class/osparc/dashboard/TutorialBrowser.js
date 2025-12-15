@@ -258,7 +258,7 @@ qx.Class.define("osparc.dashboard.TutorialBrowser", {
       return this._resourcesList.find(template => template.uuid === id);
     },
 
-    _deleteResourceRequested: function(templateId) {
+    _emptyProjectIconClicked: function(templateId) {
       this._deleteTemplateRequested(this.__getTemplateData(templateId));
     },
     // MENU //
