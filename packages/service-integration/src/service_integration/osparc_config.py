@@ -1,4 +1,4 @@
-"""'osparc config' is a set of stardard file forms (yaml) that the user fills to describe how his/her service works and
+"""'osparc config' is a set of standard file forms (yaml) that the user fills to describe how his/her service works and
 integrates with osparc.
 
     - config files are stored under '.osparc/' folder in the root repo folder (analogous to other configs like .github, .vscode, etc)

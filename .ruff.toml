@@ -18,7 +18,7 @@ lint.select = [
   "ICN",   # [https://github.com/joaopalmeiro/flake8-import-conventions]
   "ISC",   # [https://pypi.org/project/flake8-implicit-str-concat/]
   "N",     # [https://pypi.org/project/pep8-naming/]
-  "NPY",   # NumPy-speficic rules
+  "NPY",   # NumPy-specific rules
   "PERF",  # [https://pypi.org/project/perflint/]
   "PIE",   # [https://pypi.org/project/flake8-pie/]
   "PL",    # [https://pypi.org/project/pylint/]
@@ -59,7 +59,7 @@ target-version = "py313"
   "PLR0913", # too many arguments
   "N806",    # Uppercase variables in functions
   "PT001",   # use pytest.fixture over pytest.fixture() whatsoever
-  "PT004",   # does not return anythin, add leading underscore
+  "PT004",   # does not return anything, add leading underscore
   "ERA001",  # found commented out code
   "FBT001",  # Boolean positional arg in function definition
 ]

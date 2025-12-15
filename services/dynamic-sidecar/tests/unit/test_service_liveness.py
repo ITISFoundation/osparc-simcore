@@ -31,7 +31,7 @@ async def test_wait_for_service_liveness_ok(
         service_name="test_service",
         endpoint="http://fake.endpoint_string",
         check_interval=check_interval,
-        timeout=timeout,
+        max_delay=timeout,
     )
 
 
@@ -52,6 +52,6 @@ async def test_wait_for_service_liveness_fails(
             service_name="test_service",
             endpoint="http://fake.endpoint_string",
             check_interval=check_interval,
-            timeout=timeout,
+            max_delay=timeout,
         )
     assert "Could not contact service" in f"{exc_info.value}"

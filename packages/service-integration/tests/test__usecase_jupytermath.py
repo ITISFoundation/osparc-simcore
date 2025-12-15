@@ -185,7 +185,7 @@ def test_ooil_compose_wo_arguments(
     ].keys()
 
     # NOTE: generally it is not a good idea to compare serialized values. It is difficult to debug
-    # when it fails and a failure is not always indicative of a real error e.g. orjson serializes diffferently
+    # when it fails and a failure is not always indicative of a real error e.g. orjson serializes differently
     # to json.
     for k in label_keys:
 

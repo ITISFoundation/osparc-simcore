@@ -7,7 +7,7 @@ IFS=$'\n\t'
 
 image_name="$(basename $0):latest"
 
-# derefernce json-schemas for easy comparison
+# dereference json-schemas for easy comparison
 # SEE https://github.com/davidkelley/json-dereference-cli
 docker buildx build --load --tag "$image_name" - <<EOF
 FROM node:12.18.2

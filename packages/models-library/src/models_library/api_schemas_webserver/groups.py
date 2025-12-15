@@ -231,7 +231,7 @@ class MyGroupsGet(OutputSchema):
                     },
                     {
                         "gid": "16",
-                        "label": "Blue Fundation",
+                        "label": "Blue Foundation",
                         "description": "Some foundation",
                         "accessRights": {
                             "read": True,

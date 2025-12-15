@@ -11,7 +11,7 @@ class DaskTaskResources(TypedDict, total=False):
     # threads is a constant of 1 (enforced by static type checkers via Literal)
     # NOTE: a dask worker can take a task if it has a free thread,
     # regardless of its resources so we need to be careful when interpreting
-    # the resources, adding the thread here will mimick this
+    # the resources, adding the thread here will mimic this
     threads: Required[Literal[1]]
 
 

@@ -1,6 +1,6 @@
 
 # NOTE: this stack is only for development and testing of vendor services.
-# the actualy code is deployed inside the ops repository.
+# the actually code is deployed inside the ops repository.
 
 services:
 

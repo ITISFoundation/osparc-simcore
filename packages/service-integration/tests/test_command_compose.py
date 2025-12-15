@@ -26,7 +26,7 @@ def test_make_docker_compose_meta(
     tmp_path: Path,
 ):
     """
-    docker-compose-build.yml: $(metatada)
+    docker-compose-build.yml: $(metadata)
         # Injects metadata from $< as labels
         simcore-service-integrator compose --metadata $< --to-spec-file $@
     """
