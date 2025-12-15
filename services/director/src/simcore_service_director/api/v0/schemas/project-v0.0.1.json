@@ -14,7 +14,8 @@
     "creationDate",
     "lastChangeDate",
     "thumbnail",
-    "workbench"
+    "workbench",
+    "productName"
   ],
   "properties": {
     "uuid": {
@@ -803,6 +804,10 @@
           ]
         }
       ]
+    },
+    "productName": {
+      "type": "string",
+      "description": "Product to which the project belongs "
     }
   }
 }
