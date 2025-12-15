@@ -10,10 +10,7 @@ from textwrap import dedent
 from typing import Any, Final, Protocol
 from uuid import uuid4
 
-import aiodocker
 import httpx
-from aiodocker.containers import DockerContainer
-from aiodocker.networks import DockerNetwork
 from common_library.errors_classes import OsparcErrorMixin
 from httpx import AsyncClient
 from models_library.basic_types import PortInt
@@ -31,7 +28,9 @@ from tenacity import (
     wait_fixed,
 )
 
+from . import _docker_utils
 from ._config_provider import CONFIG_KEY, MountRemoteType, get_config_content
+from ._models import GetBindPathsProtocol
 
 _logger = logging.getLogger(__name__)
 
@@ -148,10 +147,6 @@ class MountActivity(BaseModel):
     queued: list[str]
 
 
-class GetBindPathsProtocol(Protocol):
-    async def __call__(self, state_path: Path) -> list: ...
-
-
 class MountActivityProtocol(Protocol):
     async def __call__(self, state_path: Path, activity: MountActivity) -> None: ...
 
@@ -189,12 +184,6 @@ class ContainerManager:
             rc_password=rc_password,
         )
 
-        self._cleanup_stack = AsyncExitStack()
-        self._client: aiodocker.Docker | None = None
-
-        self._r_clone_container: DockerContainer | None = None
-        self._r_clone_network: DockerNetwork | None = None
-
     @cached_property
     def r_clone_container_name(self) -> str:
         mount_id = _get_mount_id(self.local_mount_path, self.index)
@@ -205,83 +194,38 @@ class ContainerManager:
         mount_id = _get_mount_id(self.local_mount_path, self.index)
         return f"{_DOCKER_PREFIX_MOUNT}-c-{self.node_id}{mount_id}"[:63]
 
-    @property
-    def _aiodocker_client(self) -> aiodocker.Docker:
-        assert self._client is not None  # nosec
-        return self._client
-
-    async def start(self):
-        self._client = await self._cleanup_stack.enter_async_context(aiodocker.Docker())
-        # TODO: toss away docker session when done with it do not maintain object in memory to avoid issues
-        # better more robust way of doing it
-
-        try:
-            existing_container = await self._aiodocker_client.containers.get(
-                self.r_clone_container_name
+    async def create(self):
+        async with _docker_utils.get_or_crate_docker_session(None) as client:
+            await _docker_utils.remove_container_if_exists(
+                client, self.r_clone_container_name
             )
-            await existing_container.delete(force=True)
-        except aiodocker.exceptions.DockerError as e:
-            if e.status != _NOT_FOUND:
-                raise
-
-        try:
-            existing_network = DockerNetwork(
-                self._aiodocker_client, self._r_clone_network_name
+            await _docker_utils.remove_network_if_exists(
+                client, self.r_clone_container_name
             )
-            await existing_network.show()
-            await existing_network.delete()
-        except aiodocker.exceptions.DockerError as e:
-            if e.status != _NOT_FOUND:
-                raise
+            await _docker_utils.create_network_and_connect_sidecar_container(
+                client, self._r_clone_network_name
+            )
 
-        self._r_clone_network = await self._aiodocker_client.networks.create(
-            {"Name": self._r_clone_network_name, "Attachable": True}
-        )
-        await self._r_clone_network.connect({"Container": _get_self_container_id()})
+            assert self.mount_settings.R_CLONE_VERSION is not None  # nosec
+            await _docker_utils.create_r_clone_container(
+                client,
+                self.r_clone_container_name,
+                self.command,
+                r_clone_version=self.mount_settings.R_CLONE_VERSION,
+                remote_control_port=self.remote_control_port,
+                r_clone_network_name=self._r_clone_network_name,
+                local_mount_path=self.local_mount_path,
+                handler_get_bind_paths=self.handler_get_bind_paths,
+            )
 
-        # create rclone container attached to the network
-        self._r_clone_container = await self._aiodocker_client.containers.run(
-            config={
-                "Image": f"rclone/rclone:{self.mount_settings.R_CLONE_VERSION}",
-                "Entrypoint": ["/bin/sh", "-c", f"{self.command}"],
-                "ExposedPorts": {f"{self.remote_control_port}/tcp": {}},
-                "HostConfig": {
-                    "NetworkMode": self._r_clone_network_name,
-                    "Binds": [],
-                    "Mounts": await self.handler_get_bind_paths(self.local_mount_path),
-                    "Devices": [
-                        {
-                            "PathOnHost": "/dev/fuse",
-                            "PathInContainer": "/dev/fuse",
-                            "CgroupPermissions": "rwm",
-                        }
-                    ],
-                    "CapAdd": ["SYS_ADMIN"],
-                    "SecurityOpt": ["apparmor:unconfined", "seccomp:unconfined"],
-                },
-            },
-            name=self.r_clone_container_name,
-        )
-        container_inspect = await self._r_clone_container.show()
-        _logger.debug(
-            "Started rclone mount container '%s' with command='%s' (inspect=%s)",
-            self.r_clone_container_name,
-            self.command,
-            container_inspect,
-        )
-
-    async def stop(self):
-        assert self._r_clone_container is not None  # nosec
-        assert self._r_clone_network is not None  # nosec
-
-        await self._r_clone_container.stop()
-
-        await self._r_clone_network.disconnect({"Container": _get_self_container_id()})
-        await self._r_clone_network.delete()
-
-        await self._r_clone_container.delete()
-
-        await self._cleanup_stack.aclose()
+    async def remove(self):
+        async with _docker_utils.get_or_crate_docker_session(None) as client:
+            await _docker_utils.remove_container_if_exists(
+                client, self.r_clone_container_name
+            )
+            await _docker_utils.remove_network_if_exists(
+                client, self.r_clone_container_name
+            )
 
 
 class RCloneRCInterfaceClient:
@@ -519,7 +463,7 @@ class TrackedMount:
             update_handler=self._progress_handler,
         )
 
-        await self._container_manager.start()
+        await self._container_manager.create()
         await self.rc_interface.setup()
         await self.rc_interface.wait_for_interface_to_be_ready()
 
@@ -531,7 +475,7 @@ class TrackedMount:
         await self.rc_interface.teardown()
         self._rc_interface = None
 
-        await self._container_manager.stop()
+        await self._container_manager.remove()
         self._container_manager = None
 
         await self._cleanup_stack.aclose()
@@ -540,6 +484,9 @@ class TrackedMount:
 class RCloneMountManager:
     def __init__(self, r_clone_settings: RCloneSettings) -> None:
         self.r_clone_settings = r_clone_settings
+        if self.r_clone_settings.R_CLONE_MOUNT_SETTINGS.R_CLONE_VERSION is None:
+            msg = "R_CLONE_VERSION setting is not set"
+            raise RuntimeError(msg)
 
         # TODO: make this stateless and go via aiodocker to avoid issues when restartign the container
         self._started_mounts: dict[_MountId, TrackedMount] = {}
@@ -555,7 +502,9 @@ class RCloneMountManager:
         handler_get_bind_paths: GetBindPathsProtocol,
         handler_mount_activity: MountActivityProtocol,
     ) -> None:
-        # TODO: rename to ENSURE MOUNT EXISTS
+        # check if rlcone mount exists
+        #
+
         with log_context(
             _logger,
             logging.INFO,
@@ -614,7 +563,7 @@ class RCloneMountManager:
     async def ensure_unmounted(
         self, local_mount_path: Path, index: NonNegativeInt
     ) -> None:
-        # TODO: rename to ENSURE mount does not exist
+        # make sure this is done using stateless docker api calls
         with log_context(
             _logger, logging.INFO, f"unmounting {local_mount_path=}", log_duration=True
         ):
@@ -628,6 +577,7 @@ class RCloneMountManager:
 
     async def setup(self) -> None:
         # TODO: add a process which ensures that the mounts keep running -> register some local data to restart the mount process if it dies (even on accident manually)
+
         pass
 
     async def teardown(self) -> None:
