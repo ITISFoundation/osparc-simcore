@@ -983,15 +983,16 @@ async def _cap_needed_instances(
         tags=ec2_tags,
     )
     current_number_of_instances = len(current_instances)
+    # 1. Check current capacity, raise if already at max
     if (
         current_number_of_instances
         >= app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES
     ):
-        # ok that is already too much
         raise EC2TooManyInstancesError(
             num_instances=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES
         )
 
+    # 2. Check if needed instances fit, otherwise cap proportionally
     total_number_of_needed_instances = sum(needed_instances.values())
     if (
         current_number_of_instances + total_number_of_needed_instances
@@ -1000,70 +1001,63 @@ async def _cap_needed_instances(
         # ok that fits no need to do anything here
         return needed_instances
 
-    # Aggregate by instance type for capacity checking
-    needed_by_type: dict[EC2InstanceType, int] = {}
-    for instance_batch, count in needed_instances.items():
-        needed_by_type[instance_batch.instance_type] = (
-            needed_by_type.get(instance_batch.instance_type, 0) + count
-        )
-
+    # 3. we need to cap
     max_number_of_creatable_instances = (
         app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES
         - current_number_of_instances
     )
 
-    # Cap by type using existing round-robin algorithm
-    capped_by_type = {
-        k: 1
-        for count, k in enumerate(needed_by_type)
-        if (count + 1) <= max_number_of_creatable_instances
-    }
-
-    if len(capped_by_type) < len(needed_by_type):
-        # Distribute capped counts proportionally back to InstanceToLaunch entries
-        result: dict[InstanceToLaunch, int] = collections.defaultdict(int)
-        for instance_type in capped_by_type:
-            # Find all batches of this type
-            batches_of_type = [
-                (batch, count)
-                for batch, count in needed_instances.items()
-                if batch.instance_type == instance_type
-            ]
-            # Give each batch proportionally (at least 1 if capped > 0)
-            for batch, _ in batches_of_type:
-                result[batch] = 1
-        return dict(result)
-
-    # All instance types were added, now increase counts proportionally
-    while sum(capped_by_type.values()) < max_number_of_creatable_instances:
-        for instance_type, num_to_create in needed_by_type.items():
-            if sum(capped_by_type.values()) == max_number_of_creatable_instances:
+    # Start by creating 1 instance of each needed type
+    needed_by_type = collections.Counter(
+        {
+            instance_batch.instance_type: count
+            for instance_batch, count in needed_instances.items()
+        }
+    )
+    if max_number_of_creatable_instances < len(needed_by_type):
+        # Not enough capacity for creating 1 instance of each type, create as many as possible
+        capped_instances: dict[InstanceToLaunch, int] = {}
+        for idx, instance_batch in enumerate(needed_instances.keys()):
+            if (idx + 1) > max_number_of_creatable_instances:
                 break
-            if num_to_create > capped_by_type[instance_type]:
+            capped_instances[instance_batch] = 1
+        return capped_instances
+
+    capped_by_type: collections.Counter[EC2InstanceType] = collections.Counter(
+        {
+            instance_type: 1
+            for idx, instance_type in enumerate(needed_by_type)
+            if (idx + 1) <= max_number_of_creatable_instances
+        }
+    )
+
+    # Increase counts round-robin until capacity reached
+    while capped_by_type.total() < max_number_of_creatable_instances:
+        for instance_type in needed_by_type:
+            if capped_by_type.total() == max_number_of_creatable_instances:
+                break
+            if needed_by_type[instance_type] > capped_by_type[instance_type]:
                 capped_by_type[instance_type] += 1
 
-    # Distribute capped counts proportionally back to InstanceToLaunch entries
+    # Distribute capped counts proportionally to InstanceToLaunch batches
     result: dict[InstanceToLaunch, int] = {}
     for instance_batch, original_count in needed_instances.items():
         instance_type = instance_batch.instance_type
         capped_total = capped_by_type[instance_type]
         original_total = needed_by_type[instance_type]
 
-        # Proportional allocation
         proportional_count = int(original_count * capped_total / original_total)
         if proportional_count > 0:
             result[instance_batch] = proportional_count
 
     # Handle rounding errors - distribute remaining instances
-    total_allocated = sum(result.values())
-    remaining = max_number_of_creatable_instances - total_allocated
-    if remaining > 0:
-        for instance_batch in needed_instances:
-            if remaining == 0:
-                break
-            if instance_batch in result:
-                result[instance_batch] += 1
-                remaining -= 1
+    remaining = max_number_of_creatable_instances - sum(result.values())
+    for instance_batch in needed_instances:
+        if remaining == 0:
+            break
+        if instance_batch in result:
+            result[instance_batch] += 1
+            remaining -= 1
 
     return result
 
