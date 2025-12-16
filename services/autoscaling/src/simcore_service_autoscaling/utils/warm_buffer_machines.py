@@ -1,10 +1,7 @@
-from collections.abc import Iterable
-from operator import itemgetter
 from typing import Final
 
-from aws_library.ec2 import AWS_TAG_VALUE_MAX_LENGTH, AWSTagKey, AWSTagValue, EC2Tags
+from aws_library.ec2 import AWSTagKey, AWSTagValue, EC2Tags
 from aws_library.ec2._models import EC2InstanceBootSpecific
-from common_library.json_serialization import json_dumps
 from models_library.docker import DockerGenericTag
 from pydantic import TypeAdapter
 
@@ -13,10 +10,14 @@ from ..constants import (
     BUFFER_MACHINE_TAG_KEY,
     DEACTIVATED_BUFFER_MACHINE_EC2_TAGS,
     PRE_PULLED_IMAGES_EC2_TAG_KEY,
-    PRE_PULLED_IMAGES_RE,
 )
 from ..core.settings import ApplicationSettings
 from . import utils_docker
+from .utils_ec2 import (
+    dump_as_ec2_tags,
+    list_chunked_tag_keys,
+    load_from_ec2_tags,
+)
 
 _NAME_EC2_TAG_KEY: Final[AWSTagKey] = TypeAdapter(AWSTagKey).validate_python("Name")
 
@@ -37,67 +38,55 @@ def is_warm_buffer_machine(tags: EC2Tags) -> bool:
     return bool(BUFFER_MACHINE_TAG_KEY in tags)
 
 
-def dump_pre_pulled_images_as_tags(images: Iterable[DockerGenericTag]) -> EC2Tags:
-    # AWS Tag Values are limited to 256 characaters so we chunk the images
-    # into smaller chunks
-    jsonized_images = json_dumps(images)
-    assert AWS_TAG_VALUE_MAX_LENGTH  # nosec
-    if len(jsonized_images) > AWS_TAG_VALUE_MAX_LENGTH:
-        # let's chunk the string
-        chunk_size = AWS_TAG_VALUE_MAX_LENGTH
-        chunks = [
-            jsonized_images[i : i + chunk_size]
-            for i in range(0, len(jsonized_images), chunk_size)
-        ]
-        return {
-            TypeAdapter(AWSTagKey)
-            .validate_python(f"{PRE_PULLED_IMAGES_EC2_TAG_KEY}_{i}"): TypeAdapter(
-                AWSTagValue
-            )
-            .validate_python(c)
-            for i, c in enumerate(chunks)
-        }
-    return {
-        PRE_PULLED_IMAGES_EC2_TAG_KEY: TypeAdapter(AWSTagValue).validate_python(
-            json_dumps(images)
-        )
-    }
+def dump_pre_pulled_images_as_tags(images: list[DockerGenericTag]) -> EC2Tags:
+    """Serialize pre-pulled images to EC2 tags with automatic chunking.
+
+    Uses generic chunking utility to handle AWS tag size limits transparently.
+
+    Args:
+        images: List of Docker image tags to serialize
+
+    Returns:
+        EC2Tags dict with either single or chunked tags
+    """
+    return dump_as_ec2_tags(images, base_tag_key=PRE_PULLED_IMAGES_EC2_TAG_KEY)
 
 
 def load_pre_pulled_images_from_tags(tags: EC2Tags) -> list[DockerGenericTag]:
-    # AWS Tag values are limited to 256 characters so we chunk the images
-    if PRE_PULLED_IMAGES_EC2_TAG_KEY in tags:
-        # read directly
-        return sorted(
-            TypeAdapter(list[DockerGenericTag]).validate_json(
-                tags[PRE_PULLED_IMAGES_EC2_TAG_KEY]
-            )
-        )
+    """Deserialize pre-pulled images from EC2 tags.
 
-    assembled_json = "".join(
-        map(
-            itemgetter(1),
-            sorted(
-                (
-                    (int(m.group(1)), value)
-                    for key, value in tags.items()
-                    if (m := PRE_PULLED_IMAGES_RE.match(key))
-                ),
-                key=itemgetter(0),
-            ),
-        )
+    Handles both single tag and chunked tag formats.
+    Returns sorted list of images, or empty list if no tags found.
+
+    Args:
+        tags: EC2Tags dict to load from
+
+    Returns:
+        Sorted list of Docker image tags
+
+    Raises:
+        Ec2TagDeserializationError: If tag data is malformed
+    """
+    images = load_from_ec2_tags(
+        tags,
+        base_tag_key=PRE_PULLED_IMAGES_EC2_TAG_KEY,
+        type_adapter=TypeAdapter(list[DockerGenericTag]),
     )
-    if assembled_json:
-        return sorted(TypeAdapter(list[DockerGenericTag]).validate_json(assembled_json))
-    return []
+    return sorted(images) if images is not None else []
 
 
 def list_pre_pulled_images_tag_keys(tags: EC2Tags) -> list[AWSTagKey]:
-    return [
-        TypeAdapter(AWSTagKey).validate_python(key)
-        for key in tags
-        if PRE_PULLED_IMAGES_EC2_TAG_KEY in key
-    ]
+    """List all EC2 tag keys related to pre-pulled images.
+
+    Identifies both single and chunked tag formats.
+
+    Args:
+        tags: EC2Tags dict to search
+
+    Returns:
+        List of matching tag keys
+    """
+    return list_chunked_tag_keys(tags, base_tag_key=PRE_PULLED_IMAGES_EC2_TAG_KEY)
 
 
 def ec2_warm_buffer_startup_script(

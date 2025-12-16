@@ -4,23 +4,32 @@ import logging
 import re
 from collections import OrderedDict
 from collections.abc import Callable
+from operator import itemgetter
 from textwrap import dedent
 from typing import Final
 
-from aws_library.ec2 import AWSTagKey, AWSTagValue, EC2InstanceType, EC2Tags, Resources
+from aws_library.ec2 import (
+    AWS_TAG_VALUE_MAX_LENGTH,
+    AWSTagKey,
+    AWSTagValue,
+    EC2InstanceType,
+    EC2Tags,
+    Resources,
+)
 from aws_library.ec2._models import EC2InstanceData
 from common_library.json_serialization import json_dumps
-from models_library.docker import OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS
+from models_library.docker import (
+    OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS,
+    DockerLabelKey,
+)
 from orjson import JSONDecodeError
 from pydantic import TypeAdapter
-from simcore_service_director_v2.modules.dynamic_sidecar.docker_service_specs.settings import (
-    json_loads,
-)
 
 from .._meta import VERSION
 from ..core.errors import (
     ConfigurationError,
     Ec2InvalidDnsNameError,
+    Ec2TagDeserializationError,
     TaskBestFittingInstanceNotFoundError,
 )
 from ..core.settings import ApplicationSettings
@@ -46,32 +55,218 @@ _SIMCORE_AUTOSCALING_CUSTOM_PLACEMENT_LABELS_TAG_KEY: Final[AWSTagKey] = TypeAda
 _EC2_NAME_TAG_KEY: Final[AWSTagKey] = TypeAdapter(AWSTagKey).validate_python("Name")
 
 
-def serialize_custom_placement_labels_to_ec2_tag(
-    labels: dict[str, str],
-) -> str:
-    """Serialize custom placement labels to a JSON string for EC2 tag storage."""
+def _create_chunked_tag_pattern(base_key: AWSTagKey) -> re.Pattern:
+    """Create a regex pattern for matching both single and chunked EC2 tags.
+
+    Args:
+        base_key: The base tag key to match (e.g., "io.simcore.autoscaling.pre_pulled_images")
+
+    Returns:
+        A compiled regex pattern that matches:
+        - Single tag format: base_key
+        - Chunked tag format: base_key_0, base_key_1, base_key_2, etc.
+
+    Examples:
+        >>> pattern = create_chunked_tag_pattern("my.tag")
+        >>> pattern.match("my.tag")  # Matches single tag
+        >>> pattern.match("my.tag_0")  # Matches first chunk
+        >>> pattern.match("my.tag_123")  # Matches chunk 123
+    """
+    return re.compile(rf"^{re.escape(base_key)}(_\d+)?$")
+
+
+def dump_as_ec2_tags[T](data: T, *, base_tag_key: AWSTagKey) -> EC2Tags:
+    """Serialize data to EC2 tags, chunking only if necessary to fit AWS tag size limits.
+
+    AWS Tag Values are limited to 256 characters. This function serializes the data
+    to JSON and stores it in either:
+    - A single tag (base_tag_key) if the JSON is <= 256 chars
+    - Multiple chunked tags (base_tag_key_0, base_tag_key_1, ...) if > 256 chars
+
+    Args:
+        data: Any JSON-serializable data (list, dict, etc.)
+        base_tag_key: The base key for the EC2 tag(s)
+
+    Returns:
+        EC2Tags dict with either a single tag or multiple chunked tags
+
+    Examples:
+        >>> # Small data fits in single tag
+        >>> dump_as_ec2_tags(["image:v1"], "images")
+        {"images": '["image:v1"]'}
+
+        >>> # Large data gets chunked
+        >>> dump_as_ec2_tags(large_list, "images")
+        {"images_0": "...", "images_1": "...", "images_2": "..."}
+    """
+    jsonized_data = json_dumps(data)
+    assert AWS_TAG_VALUE_MAX_LENGTH  # nosec
+
+    # If data fits in single tag, use simple format
+    if len(jsonized_data) <= AWS_TAG_VALUE_MAX_LENGTH:
+        return {base_tag_key: TypeAdapter(AWSTagValue).validate_python(jsonized_data)}
+
+    # Data exceeds limit, chunk it
+    chunks = [
+        jsonized_data[i : i + AWS_TAG_VALUE_MAX_LENGTH]
+        for i in range(0, len(jsonized_data), AWS_TAG_VALUE_MAX_LENGTH)
+    ]
+
+    return {
+        TypeAdapter(AWSTagKey)
+        .validate_python(f"{base_tag_key}_{i}"): TypeAdapter(AWSTagValue)
+        .validate_python(chunk)
+        for i, chunk in enumerate(chunks)
+    }
+
+
+def load_from_ec2_tags[T](
+    tags: EC2Tags, *, base_tag_key: AWSTagKey, type_adapter: TypeAdapter[T]
+) -> T | None:
+    """Load and deserialize data from EC2 tags, handling both single and chunked formats.
+
+    When data is JSON-serialized:
+    - If <= AWS_TAG_VALUE_MAX_LENGTH (e.g. 256) chars: stored in a single tag with key base_tag_key
+    - If > AWS_TAG_VALUE_MAX_LENGTH chars: stored in chunked tags (base_tag_key_0, base_tag_key_1, ...)
+
+    Args:
+        tags: EC2Tags dict to load from
+        base_tag_key: The base key used when dumping the data
+        type_adapter: TypeAdapter for validating and typing the deserialized data
+
+    Returns:
+        The deserialized and validated data of type T, or None if no tags found
+
+    Raises:
+        Ec2TagDeserializationError: If JSON is malformed or deserialization fails
+
+    Examples:
+        >>> # Single tag format (small data)
+        >>> tags = {"images": '["image:v1"]'}
+        >>> load_from_ec2_tags(tags, "images", TypeAdapter(list[str]))
+        ["image:v1"]
+
+        >>> # Chunked format (large data)
+        >>> tags = {"images_0": "...", "images_1": "...", "images_2": "..."}
+        >>> load_from_ec2_tags(tags, "images", TypeAdapter(list[str]))
+        [...]
+
+        >>> # No tags found returns None
+        >>> load_from_ec2_tags({}, "images", TypeAdapter(list[str]))
+        None
+    """
+    # Check for single tag format first (used when data is small enough for single tag)
+    if base_tag_key in tags:
+        try:
+            return type_adapter.validate_json(tags[base_tag_key])
+        except (JSONDecodeError, TypeError, ValueError) as exc:
+            raise Ec2TagDeserializationError(
+                tag_key=base_tag_key, reason=str(exc)
+            ) from exc
+
+    # Check for chunked format (base_tag_key_0, base_tag_key_1, ...)
+    # Note: if we have chunked tags, base_tag_key itself will NOT be in tags
+    pattern = _create_chunked_tag_pattern(base_tag_key)
+    matching_tags = [
+        (int(match.group(1).lstrip("_")), value)
+        for key, value in tags.items()
+        if (match := pattern.match(key)) and match.group(1) is not None
+    ]
+
+    if not matching_tags:
+        # No tags found
+        return None
+
+    # Assemble chunks in order
+    try:
+        assembled_json = "".join(
+            map(itemgetter(1), sorted(matching_tags, key=itemgetter(0)))
+        )
+        return type_adapter.validate_json(assembled_json)
+    except (JSONDecodeError, TypeError, ValueError) as exc:
+        raise Ec2TagDeserializationError(tag_key=base_tag_key, reason=str(exc)) from exc
+
+
+def list_chunked_tag_keys(tags: EC2Tags, *, base_tag_key: AWSTagKey) -> list[AWSTagKey]:
+    """List all EC2 tag keys that match the base key (single or chunked format).
+
+    This function identifies both:
+    - Single tag format: base_tag_key
+    - Chunked format: base_tag_key_0, base_tag_key_1, base_tag_key_2, ...
+
+    Args:
+        tags: EC2Tags dict to search
+        base_tag_key: The base key to match
+
+    Returns:
+        List of matching tag keys
+
+    Examples:
+        >>> tags = {"images_0": "...", "images_1": "...", "other": "..."}
+        >>> list_chunked_tag_keys(tags, "images")
+        ["images_0", "images_1"]
+
+        >>> tags = {"images": "...", "other": "..."}
+        >>> list_chunked_tag_keys(tags, "images")
+        ["images"]
+    """
+    pattern = _create_chunked_tag_pattern(base_tag_key)
+    return [
+        TypeAdapter(AWSTagKey).validate_python(key)
+        for key in tags
+        if pattern.match(key)
+    ]
+
+
+def dump_custom_placement_labels_as_tags(
+    labels: dict[DockerLabelKey, str],
+) -> EC2Tags:
+    """Serialize custom placement labels to EC2 tags with chunking support.
+
+    Only includes labels from the approved set (OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS).
+    Uses chunking if the serialized data exceeds AWS tag size limits.
+
+    Args:
+        labels: Dict of placement constraint labels to serialize
+
+    Returns:
+        EC2Tags dict with either single or chunked tags
+    """
     # Only include labels that are in the approved set
     filtered_labels = {
         k: v
         for k, v in labels.items()
         if k in OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS
     }
-    return json_dumps(filtered_labels) if filtered_labels else "{}"
+    return dump_as_ec2_tags(
+        filtered_labels,
+        base_tag_key=_SIMCORE_AUTOSCALING_CUSTOM_PLACEMENT_LABELS_TAG_KEY,
+    )
 
 
-def deserialize_custom_placement_labels_from_ec2_tag(
-    tag_value: str | None,
-) -> dict[str, str]:
-    """Deserialize custom placement labels from EC2 tag value."""
-    if not tag_value:
-        return {}
-    try:
-        return json_loads(tag_value)
-    except (JSONDecodeError, TypeError):
-        _logger.warning(
-            "Failed to deserialize custom placement labels from tag: %s", tag_value
-        )
-        return {}
+def load_custom_placement_labels_from_tags(
+    tags: EC2Tags,
+) -> dict[DockerLabelKey, str]:
+    """Deserialize custom placement labels from EC2 tags.
+
+    Handles both single tag and chunked tag formats. Returns empty dict
+    if no placement labels are found.
+
+    Args:
+        tags: EC2Tags dict to load from
+
+    Returns:
+        Dict of placement constraint labels (empty dict if no tags found)
+
+    Raises:
+        Ec2TagDeserializationError: If tag data is malformed
+    """
+    result = load_from_ec2_tags(
+        tags,
+        base_tag_key=_SIMCORE_AUTOSCALING_CUSTOM_PLACEMENT_LABELS_TAG_KEY,
+        type_adapter=TypeAdapter(dict[DockerLabelKey, str]),
+    )
+    return result if result is not None else {}
 
 
 def get_ec2_tags_dynamic(app_settings: ApplicationSettings) -> EC2Tags:

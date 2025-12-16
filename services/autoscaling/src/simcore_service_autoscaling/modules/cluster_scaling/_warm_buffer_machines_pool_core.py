@@ -29,6 +29,7 @@ from aws_library.ssm import (
     SSMCommandExecutionResultError,
     SSMCommandExecutionTimeoutError,
 )
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from fastapi import FastAPI
 from pydantic import NonNegativeInt
 from servicelib.logging_utils import log_context
@@ -40,6 +41,7 @@ from ...constants import (
     MACHINE_PULLING_EC2_TAG_KEY,
     PREPULL_COMMAND_NAME,
 )
+from ...core.errors import Ec2TagDeserializationError
 from ...core.settings import get_application_settings
 from ...models import WarmBufferPool, WarmBufferPoolManager
 from ...utils import utils_docker
@@ -239,10 +241,19 @@ async def _terminate_instances_with_invalid_pre_pulled_images(
         )
 
         for instance in all_pre_pulled_instances:
-            pre_pulled_images = load_pre_pulled_images_from_tags(instance.tags)
-            if (
-                pre_pulled_images is not None
-            ) and pre_pulled_images != desired_pre_pull_images:
+            try:
+                pre_pulled_images = load_pre_pulled_images_from_tags(instance.tags)
+            except Ec2TagDeserializationError as exc:
+                _logger.exception(
+                    **create_troubleshooting_log_kwargs(
+                        f"Failed to load pre-pulled images from tags for {instance.id}, using empty list",
+                        error=exc,
+                        tip=f"Check the instance {instance.id} tags for syntax correctness.",
+                    )
+                )
+                pre_pulled_images = []
+
+            if pre_pulled_images != desired_pre_pull_images:
                 _logger.info(
                     "%s",
                     f"{instance.id=} has invalid {pre_pulled_images=}, expected is {desired_pre_pull_images=}",
