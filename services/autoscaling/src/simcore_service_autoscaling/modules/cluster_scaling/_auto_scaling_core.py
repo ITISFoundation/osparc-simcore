@@ -24,6 +24,7 @@ from aws_library.ec2._models import AWSTagKey
 from aws_library.ssm._errors import SSMAccessError
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from fastapi import FastAPI
+from models_library.docker import DockerLabelKey
 from models_library.generated_models.docker_rest_api import Node
 from models_library.rabbitmq_messages import ProgressType
 from servicelib.logging_utils import log_catch, log_context
@@ -631,10 +632,10 @@ def _try_assign_task_to_ec2_instance(
     instances: list[AssociatedInstance] | list[NonAssociatedInstance],
     task_required_ec2_instance: InstanceTypeType | None,
     task_required_resources: Resources,
-    task_required_labels: dict[str, str] | None = None,
+    task_required_docker_node_labels: dict[DockerLabelKey, str],
 ) -> bool:
-    if task_required_labels is None:
-        task_required_labels = {}
+    if task_required_docker_node_labels is None:
+        task_required_docker_node_labels = {}
 
     for instance in instances:
         # Check EC2 instance type
@@ -643,33 +644,19 @@ def _try_assign_task_to_ec2_instance(
         ):
             continue
 
-        # Check custom placement labels if this is an AssociatedInstance (has a node)
-        if isinstance(instance, AssociatedInstance):
-            # Extract node labels
-            node_labels = {}
-            if instance.node.spec and instance.node.spec.labels:
-                node_labels = instance.node.spec.labels
-
-            # If task has no labels, it should only go to unlabeled nodes
-            if not task_required_labels:
-                if node_labels:
-                    continue
-            else:
-                # Task requires labels: they must match exactly
-                # Check if all required labels are present and match
-                for label_key, label_value in task_required_labels.items():
-                    if node_labels.get(label_key) != label_value:
-                        break
-                else:
-                    # All required labels match, proceed to resource check
-                    pass
-                # If we didn't break (all labels matched), we would execute the else block
-                # If we did break (a label didn't match), continue to next instance
-                if any(
-                    node_labels.get(label_key) != label_value
-                    for label_key, label_value in task_required_labels.items()
-                ):
-                    continue
+        # Check custom placement labels
+        if (
+            isinstance(instance, AssociatedInstance)
+            and task_required_docker_node_labels
+        ):
+            assert instance.node.spec  # nosec
+            node_labels = instance.node.spec.labels if instance.node.spec.labels else {}
+            # Verify that all required labels match
+            if any(
+                node_labels.get(label_key) != label_value
+                for label_key, label_value in task_required_docker_node_labels.items()
+            ):
+                continue
 
         # Check resources
         if instance.has_resources_for_task(task_required_resources):
@@ -677,7 +664,7 @@ def _try_assign_task_to_ec2_instance(
             _logger.debug(
                 "%s",
                 f"assigned task with {task_required_resources=}, {task_required_ec2_instance=}, "
-                f"{task_required_labels=} to {instance.ec2_instance.id=}:{instance.ec2_instance.type=}, "
+                f"{task_required_docker_node_labels=} to {instance.ec2_instance.id=}:{instance.ec2_instance.type=}, "
                 f"{instance.available_resources=}, {instance.ec2_instance.resources=}",
             )
             return True
@@ -750,7 +737,7 @@ async def _assign_tasks_to_current_cluster(
                 task,
                 task_required_ec2_instance=task_required_ec2_instance,
                 task_required_resources=task_required_resources,
-                task_required_labels=task_required_labels,
+                task_required_docker_node_labels=task_required_labels,
             )
             for is_assigned in assignment_predicates
         ):
