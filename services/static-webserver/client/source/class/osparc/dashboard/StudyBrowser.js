@@ -2312,7 +2312,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       let win = null;
       const deleteAction = this.__deleteOrRemoveMe(studyData);
       switch (deleteAction) {
-        case "trash":
+        case "delete":
           win = this.__createConfirmTrashWindow([studyData.name]);
           break;
         case "remove":
@@ -2332,15 +2332,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __deleteStudyRequested: function(studyData) {
       const deleteAction = this.__deleteOrRemoveMe(studyData);
-      switch (deleteAction) {
-        case "delete":
-          win = this.__createConfirmDeleteWindow([studyData.name]);
-          break;
-        case "remove":
-          win = this.__createConfirmRemoveForMeWindow(studyData.name);
-          break;
-      }
-      if (win) {
+      if (deleteAction === "delete") {
+        const win = this.__createConfirmDeleteWindow([studyData.name]);
         win.center();
         win.open();
         win.addListener("close", () => {
@@ -2563,15 +2556,28 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __trashStudy: function(studyData) {
-      osparc.store.Study.getInstance().trashStudy(studyData.uuid)
-        .then(() => {
-          this.__removeFromList(studyData.uuid);
-          const msg = this.tr("Successfully deleted");
-          osparc.FlashMessenger.logAs(msg, "INFO");
-          this._resourceFilter.setTrashEmpty(false);
-        })
-        .catch(err => osparc.FlashMessenger.logError(err))
-        .finally(() => this.resetSelection());
+      const deleteAction = this.__deleteOrRemoveMe(studyData);
+      if (deleteAction === "remove") {
+        this.__removeMeFromCollaborators(studyData)
+          .then(() => {
+            this.__removeFromList(studyData.uuid);
+            const msg = this.tr("Successfully removed");
+            osparc.FlashMessenger.logAs(msg, "INFO");
+          })
+          .catch(err => osparc.FlashMessenger.logError(err))
+          .finally(() => this.resetSelection());
+        return;
+      } else if (deleteAction === "delete") {
+        osparc.store.Study.getInstance().trashStudy(studyData.uuid)
+          .then(() => {
+            this.__removeFromList(studyData.uuid);
+            const msg = this.tr("Successfully deleted");
+            osparc.FlashMessenger.logAs(msg, "INFO");
+            this._resourceFilter.setTrashEmpty(false);
+          })
+          .catch(err => osparc.FlashMessenger.logError(err))
+          .finally(() => this.resetSelection());
+      }
     },
 
     __trashStudies: function(studiesData) {
@@ -2622,6 +2628,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         default:
           const errMsg = this.tr("You don't have permissions to delete or remove this project.");
           operationPromise = new Promise((resolve, reject) => reject(errMsg));
+          break;
       }
       operationPromise
         .then(() => this.__removeFromList(studyData.uuid))
