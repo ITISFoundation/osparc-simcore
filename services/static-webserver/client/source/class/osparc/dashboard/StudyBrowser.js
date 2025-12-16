@@ -1807,20 +1807,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       osparc.utils.Utils.setIdToWidget(deleteButton, "deleteStudiesBtn");
       deleteButton.addListener("execute", () => {
         const selection = this._resourcesContainer.getSelection();
-        const studiesData = selection.map(button => this.__getStudyData(button.getUuid()));
-        const preferencesSettings = osparc.Preferences.getInstance();
-        if (preferencesSettings.getConfirmDeleteStudy()) {
-          const win = this.__createConfirmDeleteWindow(selection.map(button => button.getTitle()));
-          win.center();
-          win.open();
-          win.addListener("close", () => {
-            if (win.getConfirmed()) {
-              this.__deleteStudies(studiesData, false);
-            }
-          }, this);
-        } else {
-          this.__deleteStudies(studiesData, false);
-        }
+        this.__deleteStudiesRequested(selection);
       }, this);
       return deleteButton;
     },
@@ -2574,9 +2561,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __deleteOrRemoveMe: function(studyData) {
       const deleteAccess = osparc.data.model.Study.canIDelete(studyData["accessRights"]);
       const myGid = osparc.auth.Data.getInstance().getGroupId();
+      const amICollaborator = myGid in studyData["accessRights"];
       const collabGids = Object.keys(studyData["accessRights"]);
-      const amICollaborator = collabGids.indexOf(myGid) > -1;
-      return (!deleteAccess && collabGids.length > 1 && amICollaborator) ? "remove" : "delete";
+      return (!deleteAccess && amICollaborator && collabGids.length > 1) ? "remove" : "delete";
     },
 
     __removeMeFromCollaborators: function(studyData) {
@@ -2599,6 +2586,24 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .then(() => this.__removeFromList(studyData.uuid))
         .catch(err => osparc.FlashMessenger.logError(err))
         .finally(() => this.resetSelection());
+    },
+
+    __deleteStudiesRequested: function(selection) {
+      const studiesData = selection.map(button => this.__getStudyData(button.getUuid()));
+      const preferencesSettings = osparc.Preferences.getInstance();
+      if (preferencesSettings.getConfirmDeleteStudy()) {
+        // const win = this.__deleteOrRemoveMe(studyData) === "remove" ? this.__createConfirmRemoveForMeWindow(studyData.name) : this.__createConfirmDeleteWindow([studyData.name]);
+        const win = this.__createConfirmDeleteWindow(selection.map(button => button.getTitle()));
+        win.center();
+        win.open();
+        win.addListener("close", () => {
+          if (win.getConfirmed()) {
+            this.__deleteStudies(studiesData, false);
+          }
+        }, this);
+      } else {
+        this.__deleteStudies(studiesData, false);
+      }
     },
 
     __deleteStudies: function(studiesData) {
