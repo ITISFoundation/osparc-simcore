@@ -39,6 +39,7 @@ from models_library.api_schemas_storage.storage_schemas import (
     UploadedPart,
 )
 from models_library.basic_types import SHA256Str
+from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.projects_nodes_io import LocationID, SimcoreS3FileID, StorageFileID
@@ -327,6 +328,7 @@ async def create_upload_file_link_v2(
     initialized_app: FastAPI,
     client: httpx.AsyncClient,
     user_id: UserID,
+    product_name: ProductName,
     location_id: LocationID,
 ) -> AsyncIterator[Callable[..., Awaitable[FileUploadSchema]]]:
     file_params: list[tuple[UserID, int, SimcoreS3FileID]] = []
@@ -340,7 +342,7 @@ async def create_upload_file_link_v2(
             "upload_file",
             location_id=f"{location_id}",
             file_id=file_id,
-        ).with_query(**query_kwargs, user_id=user_id)
+        ).with_query(**query_kwargs, user_id=user_id, product_name=product_name)
         assert (
             "file_size" in url.query
         ), "V2 call to upload file must contain file_size field!"

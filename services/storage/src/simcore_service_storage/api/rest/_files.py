@@ -230,7 +230,9 @@ async def upload_file(
             ),
             encoded=True,
         )
-        .with_query(user_id=query_params.user_id)
+        .with_query(
+            user_id=query_params.user_id, product_name=query_params.product_name
+        )
     )
 
     complete_url = (
@@ -246,7 +248,9 @@ async def upload_file(
             ),
             encoded=True,
         )
-        .with_query(user_id=query_params.user_id)
+        .with_query(
+            user_id=query_params.user_id, product_name=query_params.product_name
+        )
     )
 
     v2_response = FileUploadSchema(
