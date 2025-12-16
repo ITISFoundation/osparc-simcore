@@ -2506,18 +2506,19 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __trashStudy: function(studyData) {
       const deleteAction = this.__getDeleteAction(studyData);
       switch (deleteAction) {
-        case "remove":
+        case "remove": {
           const myGid = osparc.auth.Data.getInstance().getGroupId();
           osparc.store.Study.getInstance().removeCollaborator(studyData, myGid)
-            .then(() => {
-              this.__removeFromList(studyData.uuid);
-              const msg = this.tr("Successfully removed");
-              osparc.FlashMessenger.logAs(msg, "INFO");
-            })
-            .catch(err => osparc.FlashMessenger.logError(err))
-            .finally(() => this.resetSelection());
+          .then(() => {
+            this.__removeFromList(studyData.uuid);
+            const msg = this.tr("Successfully removed");
+            osparc.FlashMessenger.logAs(msg, "INFO");
+          })
+          .catch(err => osparc.FlashMessenger.logError(err))
+          .finally(() => this.resetSelection());
           break;
-       case "trash":
+        }
+        case "trash":
           osparc.store.Study.getInstance().trashStudy(studyData.uuid)
             .then(() => {
               this.__removeFromList(studyData.uuid);
