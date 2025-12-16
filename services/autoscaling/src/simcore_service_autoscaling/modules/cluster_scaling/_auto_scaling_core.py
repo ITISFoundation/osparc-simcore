@@ -94,6 +94,9 @@ class InstanceToLaunch:
     instance_type: EC2InstanceType
     node_labels: dict[DockerLabelKey, str]
 
+    def __hash__(self) -> int:
+        return hash((self.instance_type, frozenset(self.node_labels.items())))
+
 
 _logger = logging.getLogger(__name__)
 
