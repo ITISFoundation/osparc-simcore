@@ -2631,7 +2631,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __createConfirmRemoveForMeWindow: function(studyName) {
-      const msg = `'${studyName} ` + this.tr("will be removed from your list. Collaborators will still have access.");
+      const msg = `'${studyName}' ` + this.tr("will be removed from your list. Collaborators will still have access.");
       const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
         caption: this.tr("Remove"),
         confirmText: this.tr("Remove"),
