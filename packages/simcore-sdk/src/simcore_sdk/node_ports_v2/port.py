@@ -214,6 +214,7 @@ class Port(BaseServiceIOModel):
                     await port_utils.get_download_link_from_storage(
                         # pylint: disable=protected-access
                         user_id=self._node_ports.user_id,
+                        product_name=self._node_ports.product_name,
                         value=self.value,
                         link_type=file_link_type,
                     )
@@ -273,6 +274,7 @@ class Port(BaseServiceIOModel):
                 # this is a link from storage
                 value = await port_utils.pull_file_from_store(
                     user_id=self._node_ports.user_id,
+                    product_name=self._node_ports.product_name,
                     key=self.key,
                     file_to_key_map=self.file_to_key_map,
                     value=self.value,
@@ -295,7 +297,7 @@ class Port(BaseServiceIOModel):
                 # otherwise, this is a BasicValueTypes
                 value = self.value
 
-            # don't atempt conversion of None it fails
+            # don't attempt conversion of None it fails
             if value is None:
                 return None
 
@@ -402,6 +404,7 @@ class Port(BaseServiceIOModel):
             new_filelink: FileLink = await port_utils.get_file_link_from_url(
                 new_item_value,
                 self._node_ports.user_id,
+                self._node_ports.product_name,
                 self._node_ports.project_id,
                 self._node_ports.node_uuid,
             )
