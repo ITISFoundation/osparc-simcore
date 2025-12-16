@@ -151,8 +151,8 @@ class MountNotStartedError(_BaseRcloneMountError):
     msg_template: str = "Mount not started for local path='{local_mount_path}'"
 
 
-class StatelessContainerManager:  # stateless
-    def __init__(
+class StatelessContainerManager:  # pylint:disable=too-many-instance-attributes
+    def __init__(  # pylint:disable=too-many-arguments
         self,
         mount_settings: RCloneMountSettings,
         node_id: NodeID,
@@ -233,7 +233,7 @@ class StatelessContainerManager:  # stateless
             )
 
 
-class StatelessRCloneRCHttpClient:  # HAS STATE
+class StatelessRCloneRCHttpClient:
     def __init__(
         self,
         remote_control_port: PortInt,
@@ -358,8 +358,8 @@ class StatelessRCloneRCHttpClient:  # HAS STATE
         await _()
 
 
-class TrackedMount:
-    def __init__(
+class TrackedMount:  # pylint:disable=too-many-instance-attributes
+    def __init__(  # pylint:disable=too-many-arguments
         self,
         node_id: NodeID,
         r_clone_settings: RCloneSettings,
@@ -486,9 +486,6 @@ class RCloneMountManager:
         handler_get_bind_paths: GetBindPathsProtocol,
         handler_mount_activity: MountActivityProtocol,
     ) -> None:
-        # check if rlcone mount exists
-        #
-
         with log_context(
             _logger,
             logging.INFO,
@@ -527,7 +524,6 @@ class RCloneMountManager:
     async def ensure_unmounted(
         self, local_mount_path: Path, index: NonNegativeInt
     ) -> None:
-        # make sure this is done using stateless docker api calls
         with log_context(
             _logger, logging.INFO, f"unmounting {local_mount_path=}", log_duration=True
         ):
