@@ -54,6 +54,11 @@ from ...models import (
     NonAssociatedInstance,
 )
 from ...utils import utils_docker, utils_ec2
+from ...utils.buffer_machines import (
+    dump_pre_pulled_images_as_tags,
+    list_pre_pulled_images_tag_keys,
+    load_pre_pulled_images_from_tags,
+)
 from ...utils.cluster_scaling import (
     associate_ec2_instances_with_nodes,
     ec2_startup_script,
@@ -67,12 +72,9 @@ from ...utils.rabbitmq import (
     post_tasks_progress_message,
 )
 from ...utils.warm_buffer_machines import (
-    dump_pre_pulled_images_as_tags,
     get_activated_warm_buffer_ec2_tags,
     get_deactivated_warm_buffer_ec2_tags,
     is_warm_buffer_machine,
-    list_pre_pulled_images_tag_keys,
-    load_pre_pulled_images_from_tags,
 )
 from ..docker import get_docker_client
 from ..ec2 import get_ec2_client

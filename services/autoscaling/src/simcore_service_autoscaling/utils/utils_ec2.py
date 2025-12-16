@@ -187,7 +187,7 @@ def load_from_ec2_tags[T](
         raise Ec2TagDeserializationError(tag_key=base_tag_key, reason=str(exc)) from exc
 
 
-def list_chunked_tag_keys(tags: EC2Tags, *, base_tag_key: AWSTagKey) -> list[AWSTagKey]:
+def list_tag_keys(tags: EC2Tags, *, base_tag_key: AWSTagKey) -> list[AWSTagKey]:
     """List all EC2 tag keys that match the base key (single or chunked format).
 
     This function identifies both:

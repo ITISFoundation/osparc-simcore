@@ -45,11 +45,13 @@ from ...core.errors import Ec2TagDeserializationError
 from ...core.settings import get_application_settings
 from ...models import WarmBufferPool, WarmBufferPoolManager
 from ...utils import utils_docker
-from ...utils.warm_buffer_machines import (
+from ...utils.buffer_machines import (
     dump_pre_pulled_images_as_tags,
+    load_pre_pulled_images_from_tags,
+)
+from ...utils.warm_buffer_machines import (
     ec2_warm_buffer_startup_script,
     get_deactivated_warm_buffer_ec2_tags,
-    load_pre_pulled_images_from_tags,
 )
 from ..ec2 import get_ec2_client
 from ..instrumentation import get_instrumentation, has_instrumentation

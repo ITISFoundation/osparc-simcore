@@ -28,7 +28,7 @@ from simcore_service_autoscaling.utils.utils_ec2 import (
     find_best_fitting_ec2_instance,
     get_ec2_tags_computational,
     get_ec2_tags_dynamic,
-    list_chunked_tag_keys,
+    list_tag_keys,
     load_custom_placement_labels_from_tags,
     load_from_ec2_tags,
     node_host_name_from_ec2_private_dns,
@@ -257,7 +257,7 @@ def test_list_chunked_tag_keys_single_format():
         TypeAdapter(AWSTagKey).validate_python("other.key"): "other",
     }
 
-    keys = list_chunked_tag_keys(tags, base_tag_key=base_key)
+    keys = list_tag_keys(tags, base_tag_key=base_key)
 
     assert len(keys) == 1
     assert keys[0] == base_key
@@ -272,7 +272,7 @@ def test_list_chunked_tag_keys_chunked_format():
         TypeAdapter(AWSTagKey).validate_python("other.key"): "other",
     }
 
-    keys = list_chunked_tag_keys(tags, base_tag_key=base_key)
+    keys = list_tag_keys(tags, base_tag_key=base_key)
 
     assert len(keys) == 3
     assert TypeAdapter(AWSTagKey).validate_python("test.key_0") in keys
