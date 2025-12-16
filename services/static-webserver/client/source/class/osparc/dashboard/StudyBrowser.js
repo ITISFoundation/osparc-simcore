@@ -2021,11 +2021,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         menu.add(renameStudyButton);
       }
 
-      if (writeAccess) {
-        const editThumbnailButton = this.__getThumbnailStudyMenuButton(studyData);
-        menu.add(editThumbnailButton);
-      }
-
       const duplicateStudyButton = this.__getDuplicateMenuButton(studyData);
       menu.add(duplicateStudyButton);
 
@@ -2063,8 +2058,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         const billingsSettingsButton = this.__getBillingMenuButton(card);
         menu.add(billingsSettingsButton);
       }
-
-      menu.addSeparator();
 
       const moveToButton = this.__getMoveStudyToMenuButton(studyData);
       if (moveToButton) {
@@ -2115,27 +2108,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         renamer.open();
       }, this);
       return renameButton;
-    },
-
-    __getThumbnailStudyMenuButton: function(studyData) {
-      const thumbButton = new qx.ui.menu.Button(this.tr("Thumbnail..."), "@FontAwesome5Solid/image/12");
-      thumbButton.addListener("execute", () => {
-        osparc.editor.ThumbnailSuggestions.extractThumbnailSuggestions(studyData)
-          .then(suggestions => {
-            const title = this.tr("Edit Thumbnail");
-            const oldThumbnail = studyData.thumbnail;
-            const thumbnailEditor = new osparc.editor.ThumbnailEditor(oldThumbnail, suggestions);
-            const win = osparc.ui.window.Window.popUpInWindow(thumbnailEditor, title, suggestions.length > 2 ? 500 : 350, 280);
-            thumbnailEditor.addListener("updateThumbnail", e => {
-              win.close();
-              const newUrl = e.getData();
-              this.__updateThumbnail(studyData, newUrl);
-            }, this);
-            thumbnailEditor.addListener("cancel", () => win.close());
-          })
-          .catch(err => console.error(err));
-      }, this);
-      return thumbButton;
     },
 
     __updateName: function(studyData, name) {
