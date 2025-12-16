@@ -2880,6 +2880,9 @@
               }
             }
           },
+          "409": {
+            "description": "Job not finished yet"
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -12251,7 +12254,7 @@
             "type": "string",
             "format": "uuid",
             "title": "Key name",
-            "description": "port identifier name.Correponds to the UUID of the parameter/probe node in the study"
+            "description": "port identifier name.Corresponds to the UUID of the parameter/probe node in the study"
           },
           "kind": {
             "type": "string",

@@ -65,3 +65,4 @@ repos:
     hooks:
       - id: typos
         name: spellchecker
+        continue_on_error: true

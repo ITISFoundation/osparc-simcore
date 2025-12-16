@@ -13,7 +13,7 @@ from service_integration.yaml_utils import yaml_safe_load
 
 #
 # NOTE: cannot create a yaml file because the pre-commit hooks fail
-# to recongnize '!include'  keyword when running YAML checkers
+# to recognize '!include'  keyword when running YAML checkers
 #
 YAML_BODY = """\
 compose-spec: !include {0}

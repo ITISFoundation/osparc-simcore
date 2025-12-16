@@ -6,6 +6,7 @@ from typing import Final
 
 from common_library.error_codes import create_error_code
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
+from common_library.user_messages import user_message
 from models_library.rabbitmq_messages import LoggerRabbitMessage
 from models_library.users import UserID
 from pydantic import NonNegativeInt
@@ -62,7 +63,9 @@ class LogDistributor:
             )
             queue = self._log_streamers.get(item.job_id)
             if queue is None:
-                msg = f"Could not forward log because a logstreamer associated with job_id={item.job_id} was not registered"
+                msg = user_message(
+                    f"Could not forward log because a logstreamer associated with job_id={item.job_id} was not registered"
+                )
                 raise LogStreamerNotRegisteredError(job_id=item.job_id, details=msg)
             await queue.put(item)
             return True

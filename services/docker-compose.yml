@@ -661,7 +661,7 @@ services:
   webserver:
     image: ${DOCKER_REGISTRY:-itisfoundation}/webserver:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: "wb-{{.Node.Hostname}}-{{.Task.Slot}}" # the hostname is used in conjonction with other services and must be unique see https://github.com/ITISFoundation/osparc-simcore/pull/5931
+    hostname: "wb-{{.Node.Hostname}}-{{.Task.Slot}}" # the hostname is used in conjunction with other services and must be unique see https://github.com/ITISFoundation/osparc-simcore/pull/5931
     environment: &webserver_environment
       <<:
         - *catalog_settings
@@ -806,7 +806,7 @@ services:
       WEBSERVER_DB_LISTENER: ${WEBSERVER_DB_LISTENER}
       WEBSERVER_ANNOUNCEMENTS: ${WEBSERVER_ANNOUNCEMENTS}
       WEBSERVER_NOTIFICATIONS: ${WEBSERVER_NOTIFICATIONS}
-      WEBSERVER_FUNCTIONS: ${WEBSERVER_FUNCTIONS} # neede for front-end
+      WEBSERVER_FUNCTIONS: ${WEBSERVER_FUNCTIONS} # needed for front-end
       WEBSERVER_GROUPS: ${WEBSERVER_GROUPS}
       WEBSERVER_PRODUCTS: ${WEBSERVER_PRODUCTS}
       WEBSERVER_PUBLICATIONS: ${WEBSERVER_PUBLICATIONS}
@@ -830,7 +830,7 @@ services:
         - traefik.http.services.${SWARM_STACK_NAME}_webserver.loadbalancer.healthcheck.path=/v0/
         - traefik.http.services.${SWARM_STACK_NAME}_webserver.loadbalancer.healthcheck.interval=2000ms
         - traefik.http.services.${SWARM_STACK_NAME}_webserver.loadbalancer.healthcheck.timeout=1000ms
-        # NOTE: stickyness must remain only for specific endpoints, see https://github.com/ITISFoundation/osparc-simcore/pull/4180
+        # NOTE: stickiness must remain only for specific endpoints, see https://github.com/ITISFoundation/osparc-simcore/pull/4180
         - traefik.http.middlewares.${SWARM_STACK_NAME}_webserver_retry.retry.attempts=2
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver.service=${SWARM_STACK_NAME}_webserver
         # NOTE: keep in sync with fallback router (rule and entrypoint)
@@ -869,7 +869,7 @@ services:
   wb-api-server:
     image: ${DOCKER_REGISTRY:-itisfoundation}/webserver:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: "api-{{.Node.Hostname}}-{{.Task.Slot}}" # the hostname is used in conjonction with other services and must be unique see https://github.com/ITISFoundation/osparc-simcore/pull/5931
+    hostname: "api-{{.Node.Hostname}}-{{.Task.Slot}}" # the hostname is used in conjunction with other services and must be unique see https://github.com/ITISFoundation/osparc-simcore/pull/5931
     environment:
       <<: *webserver_environment
       WEBSERVER_FUNCTIONS: ${WEBSERVER_FUNCTIONS} # needed for api-server
@@ -889,7 +889,7 @@ services:
   wb-db-event-listener:
     image: ${DOCKER_REGISTRY:-itisfoundation}/webserver:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: "db-{{.Node.Hostname}}-{{.Task.Slot}}" # the hostname is used in conjonction with other services and must be unique see https://github.com/ITISFoundation/osparc-simcore/pull/5931
+    hostname: "db-{{.Node.Hostname}}-{{.Task.Slot}}" # the hostname is used in conjunction with other services and must be unique see https://github.com/ITISFoundation/osparc-simcore/pull/5931
     environment:
       <<:
         - *common_logging_environments
@@ -965,7 +965,7 @@ services:
   wb-garbage-collector:
     image: ${DOCKER_REGISTRY:-itisfoundation}/webserver:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: "gc-{{.Node.Hostname}}-{{.Task.Slot}}" # the hostname is used in conjonction with other services and must be unique see https://github.com/ITISFoundation/osparc-simcore/pull/5931
+    hostname: "gc-{{.Node.Hostname}}-{{.Task.Slot}}" # the hostname is used in conjunction with other services and must be unique see https://github.com/ITISFoundation/osparc-simcore/pull/5931
     environment:
       <<:
         - *common_logging_environments
@@ -1045,7 +1045,7 @@ services:
   wb-auth:
     image: ${DOCKER_REGISTRY:-itisfoundation}/webserver:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: "auth-{{.Node.Hostname}}-{{.Task.Slot}}" # the hostname is used in conjonction with other services and must be unique see https://github.com/ITISFoundation/osparc-simcore/pull/5931
+    hostname: "auth-{{.Node.Hostname}}-{{.Task.Slot}}" # the hostname is used in conjunction with other services and must be unique see https://github.com/ITISFoundation/osparc-simcore/pull/5931
     environment:
       <<:
         - *postgres_settings

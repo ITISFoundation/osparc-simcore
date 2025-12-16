@@ -275,7 +275,9 @@ def repo_wide_changes(exclude: set | None = None) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="CLI to use")
-    parser.add_argument("--changed-reqs", action="store_true", help="print oly changed")
+    parser.add_argument(
+        "--changed-reqs", action="store_true", help="print only changed"
+    )
     args = parser.parse_args()
 
     if args.changed_reqs:
