@@ -73,6 +73,7 @@ async def test_list_dataset_files_metadata(
     initialized_app: FastAPI,
     client: AsyncClient,
     user_id: UserID,
+    product_name: ProductName,
     project_id: ProjectID,
     location_id: LocationID,
     file_size: ByteSize,
@@ -87,7 +88,7 @@ async def test_list_dataset_files_metadata(
             "list_dataset_files_metadata",
             location_id=location_id,
             dataset_id=project_id,
-        ).with_query(user_id=user_id)
+        ).with_query(user_id=user_id, product_name=product_name)
 
         response = await client.get(f"{url}")
         list_fmds, error = assert_status(
