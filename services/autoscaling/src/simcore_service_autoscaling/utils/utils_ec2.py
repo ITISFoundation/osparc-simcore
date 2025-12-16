@@ -22,7 +22,6 @@ from models_library.docker import (
     OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS,
     DockerLabelKey,
 )
-from orjson import JSONDecodeError
 from pydantic import TypeAdapter
 
 from .._meta import VERSION
@@ -179,8 +178,8 @@ def load_from_ec2_tags[T](
             map(itemgetter(1), sorted(matching_tags, key=itemgetter(0)))
         )
         return type_adapter.validate_json(assembled_json)
-    except (JSONDecodeError, TypeError, ValueError) as exc:
-        raise Ec2TagDeserializationError(tag_key=base_tag_key, reason=str(exc)) from exc
+    except ValueError as exc:
+        raise Ec2TagDeserializationError(tag_key=base_tag_key) from exc
 
 
 def list_tag_keys(tags: EC2Tags, *, base_tag_key: AWSTagKey) -> list[AWSTagKey]:
