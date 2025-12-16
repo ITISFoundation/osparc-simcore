@@ -326,7 +326,9 @@ async def complete_upload_file(
             ),
             encoded=True,
         )
-        .with_query(user_id=query_params.user_id)
+        .with_query(
+            user_id=query_params.user_id, product_name=query_params.product_name
+        )
     )
     complete_task_state_url = f"{route}"
 

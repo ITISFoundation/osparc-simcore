@@ -1071,7 +1071,7 @@ async def storage_rabbitmq_rpc_client(
 
 @pytest.fixture
 def product_name(faker: Faker) -> str:
-    return faker.name()
+    return faker.word()
 
 
 @pytest.fixture
