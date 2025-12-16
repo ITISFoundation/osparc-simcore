@@ -2584,8 +2584,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __deleteStudiesRequested: function(studiesData) {
-      // OM: check this
-      // const win = this.__getDeleteAction(studyData) === "remove" ? this.__createConfirmRemoveForMeWindow(studyData.name) : this.__createConfirmDeleteWindow([studyData.name]);
       const win = this.__createConfirmDeleteWindow(studiesData.map(studyData => studyData["name"]));
       win.center();
       win.open();
