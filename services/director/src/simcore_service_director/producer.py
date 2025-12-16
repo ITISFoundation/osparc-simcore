@@ -293,7 +293,7 @@ async def _create_docker_service_params(
             "Constraints"
         ] += app_settings.DIRECTOR_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS
 
-    # add dynamic placement labels based on template configuration
+    # add dynamic placement constraints based on custom templates from configuration
     if app_settings.DIRECTOR_OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS:
         label_values = {
             "product_name": "osparc",
