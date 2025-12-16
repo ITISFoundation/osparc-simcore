@@ -15,6 +15,7 @@ from models_library.api_schemas_storage.storage_schemas import (
     DatasetMetaDataGet,
     FileMetaDataGet,
 )
+from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import LocationID, SimcoreS3FileID
 from models_library.users import UserID
@@ -37,6 +38,7 @@ async def test_list_dataset_files_metadata_with_no_files_returns_empty_array(
     initialized_app: FastAPI,
     client: AsyncClient,
     user_id: UserID,
+    product_name: ProductName,
     project_id: ProjectID,
     location_id: LocationID,
     fake_datcore_tokens: tuple[str, str],
@@ -47,7 +49,7 @@ async def test_list_dataset_files_metadata_with_no_files_returns_empty_array(
         "list_dataset_files_metadata",
         location_id=location_id,
         dataset_id=project_id,
-    ).with_query(user_id=user_id)
+    ).with_query(user_id=user_id, product_name=product_name)
 
     response = await client.get(f"{url}")
     data, error = assert_status(response, status.HTTP_200_OK, list[FileMetaDataGet])
