@@ -2079,6 +2079,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         menu.addSeparator();
         const trashButton = this.__getTrashStudyMenuButton(studyData, false);
         menu.add(trashButton);
+      } else if (writeAccess) {
+        menu.addSeparator();
+        const trashButton = this.__getRemoveStudyMenuButton(studyData, true);
+        menu.add(trashButton);
       }
 
       card.evaluateMenuButtons();
@@ -2308,7 +2312,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __trashStudyRequested: function(studyData) {
       const preferencesSettings = osparc.Preferences.getInstance();
       if (preferencesSettings.getConfirmDeleteStudy()) {
-        const win = this.__createConfirmTrashWindow([studyData.name]);
+        const win = this.__deleteOrRemoveMe(studyData) === "remove" ? this.__createConfirmRemoveForMeWindow(studyData.name) : this.__createConfirmTrashWindow([studyData.name]);
         win.center();
         win.open();
         win.addListener("close", () => {
@@ -2338,14 +2342,25 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __getTrashStudyMenuButton: function(studyData) {
-      const trashButton = new qx.ui.menu.Button(this.tr("Delete"), "@FontAwesome5Solid/trash/12");
+      const trashButton = new qx.ui.menu.Button(this.tr("Remove"), "@FontAwesome5Solid/trash/12");
       trashButton["deleteButton"] = true;
       trashButton.set({
         appearance: "menu-button"
       });
       osparc.utils.Utils.setIdToWidget(trashButton, "studyItemMenuDelete");
-      trashButton.addListener("execute", () => this.__trashStudyRequested(studyData), this);
+      trashButton.addListener("execute", () => this.__removeStudyRequested(studyData), this);
       return trashButton;
+    },
+
+    __getRemoveStudyMenuButton: function(studyData) {
+      const removeButton = new qx.ui.menu.Button(this.tr("Remove"), "@FontAwesome5Solid/trash/12");
+      removeButton["removeButton"] = true;
+      removeButton.set({
+        appearance: "menu-button"
+      });
+      osparc.utils.Utils.setIdToWidget(removeButton, "studyItemMenuRemove");
+      removeButton.addListener("execute", () => this.__removeStudyRequested(studyData), this);
+      return removeButton;
     },
 
     __getDeleteStudyMenuButton: function(studyData) {
@@ -2553,12 +2568,27 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       studiesData.forEach(studyData => this.__trashStudy(studyData));
     },
 
+    /*
+    Determines whether the user can delete the study or just remove themselves as collaborator
+    Returns:
+      "delete" -> user can delete the study
+      "remove" -> user can remove themselves as collaborator
+      "none"   -> user cannot delete nor remove themselves
+    */
     __deleteOrRemoveMe: function(studyData) {
       const deleteAccess = osparc.data.model.Study.canIDelete(studyData["accessRights"]);
+      if (deleteAccess) {
+        return "delete";
+      }
+      // check if I'm collaborator
+      const writeAccess = osparc.data.model.Study.canIWrite(studyData["accessRights"]);
       const myGid = osparc.auth.Data.getInstance().getGroupId();
       const amICollaborator = myGid in studyData["accessRights"];
       const collabGids = Object.keys(studyData["accessRights"]);
-      return (!deleteAccess && amICollaborator && collabGids.length > 1) ? "remove" : "delete";
+      if (writeAccess && amICollaborator && collabGids.length > 1) {
+        return "remove";
+      }
+      return "none";
     },
 
     __removeMeFromCollaborators: function(studyData) {
