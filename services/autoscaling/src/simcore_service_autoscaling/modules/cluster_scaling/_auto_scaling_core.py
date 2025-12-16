@@ -634,9 +634,6 @@ def _try_assign_task_to_ec2_instance(
     task_required_resources: Resources,
     task_required_docker_node_labels: dict[DockerLabelKey, str],
 ) -> bool:
-    if task_required_docker_node_labels is None:
-        task_required_docker_node_labels = {}
-
     for instance in instances:
         # Check EC2 instance type
         if task_required_ec2_instance and (
