@@ -2305,25 +2305,46 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __trashStudyRequested: function(studyData) {
-      const win = this.__deleteOrRemoveMe(studyData) === "remove" ? this.__createConfirmRemoveForMeWindow(studyData.name) : this.__createConfirmTrashWindow([studyData.name]);
-      win.center();
-      win.open();
-      win.addListener("close", () => {
-        if (win.getConfirmed()) {
-          this.__trashStudy(studyData);
-        }
-      }, this);
+      const action = this.__deleteOrRemoveMe(studyData);
+      let win = null;
+      switch (action) {
+        case "trash":
+          win = this.__createConfirmTrashWindow([studyData.name]);
+          break;
+        case "remove":
+          win = this.__createConfirmRemoveForMeWindow(studyData.name);
+          break;
+      }
+      if (win) {
+        win.center();
+        win.open();
+        win.addListener("close", () => {
+          if (win.getConfirmed()) {
+            this.__trashStudy(studyData);
+          }
+        }, this);
+      }
     },
 
     __deleteStudyRequested: function(studyData) {
-      const win = this.__deleteOrRemoveMe(studyData) === "remove" ? this.__createConfirmRemoveForMeWindow(studyData.name) : this.__createConfirmDeleteWindow([studyData.name]);
-      win.center();
-      win.open();
-      win.addListener("close", () => {
-        if (win.getConfirmed()) {
-          this.__deleteStudy(studyData);
-        }
-      }, this);
+      const action = this.__deleteOrRemoveMe(studyData);
+      switch (action) {
+        case "delete":
+          win = this.__createConfirmDeleteWindow([studyData.name]);
+          break;
+        case "remove":
+          win = this.__createConfirmRemoveForMeWindow(studyData.name);
+          break;
+      }
+      if (win) {
+        win.center();
+        win.open();
+        win.addListener("close", () => {
+          if (win.getConfirmed()) {
+            this.__deleteStudy(studyData);
+          }
+        }, this);
+      }
     },
 
     __getTrashStudyMenuButton: function(studyData) {
@@ -2586,11 +2607,17 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __deleteStudy: function(studyData) {
       let operationPromise = null;
-      if (this.__deleteOrRemoveMe(studyData) === "remove") {
-        operationPromise = this.__removeMeFromCollaborators(studyData);
-      } else {
-        // delete study
-        operationPromise = osparc.store.Study.getInstance().deleteStudy(studyData.uuid);
+      const action = this.__deleteOrRemoveMe(studyData);
+      switch (action) {
+        case "delete":
+          operationPromise = osparc.store.Study.getInstance().deleteStudy(studyData.uuid);
+          break;
+        case "remove":
+          operationPromise = this.__removeMeFromCollaborators(studyData);
+          break;
+        default:
+          const errMsg = this.tr("You don't have permissions to delete or remove yourself from this project.");
+          operationPromise = new Promise((resolve, reject) => reject(errMsg));
       }
       operationPromise
         .then(() => this.__removeFromList(studyData.uuid))
