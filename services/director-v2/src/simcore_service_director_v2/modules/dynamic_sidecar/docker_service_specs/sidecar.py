@@ -1,6 +1,6 @@
 import logging
 from copy import deepcopy
-from typing import Any, NamedTuple
+from typing import Any, Final, NamedTuple
 
 from common_library.json_serialization import json_dumps
 from common_library.serialization import model_dump_with_secrets
@@ -407,6 +407,11 @@ def _get_ports(
     return ports
 
 
+_NO_DEFINED_WALLET_ID_LABEL_VALUE: Final[str] = TypeAdapter(str).validate_python(
+    f"{None}"
+)
+
+
 async def get_dynamic_sidecar_spec(  # pylint:disable=too-many-arguments# noqa: PLR0913
     scheduler_data: SchedulerData,
     dynamic_sidecar_settings: DynamicSidecarSettings,
@@ -511,7 +516,7 @@ async def get_dynamic_sidecar_spec(  # pylint:disable=too-many-arguments# noqa: 
         "wallet_id": (
             scheduler_data.wallet_info.wallet_id
             if scheduler_data.wallet_info
-            else "None"
+            else _NO_DEFINED_WALLET_ID_LABEL_VALUE
         ),
     }
     for label_key, label_template in osparc_custom_placement_constraints.items():
