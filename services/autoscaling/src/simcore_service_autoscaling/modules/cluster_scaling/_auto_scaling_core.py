@@ -1043,6 +1043,7 @@ async def _cap_needed_instances(
         instance_type = instance_batch.instance_type
         capped_total = capped_by_type[instance_type]
         original_total = needed_by_type[instance_type]
+        assert original_total > 0  # nosec
 
         proportional_count = int(original_count * capped_total / original_total)
         if proportional_count > 0:
