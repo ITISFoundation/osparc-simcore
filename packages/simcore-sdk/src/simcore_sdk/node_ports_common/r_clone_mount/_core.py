@@ -8,10 +8,8 @@ from textwrap import dedent
 from typing import Any, Final
 from uuid import uuid4
 
-import httpx
 from common_library.async_tools import cancel_wait_task
-from common_library.errors_classes import OsparcErrorMixin
-from httpx import AsyncClient
+from httpx import AsyncClient, HTTPError
 from models_library.basic_types import PortInt
 from models_library.progress_bar import ProgressReport
 from models_library.projects_nodes_io import NodeID, StorageFileID
@@ -30,11 +28,16 @@ from tenacity import (
 
 from . import _docker_utils
 from ._config_provider import CONFIG_KEY, MountRemoteType, get_config_content
+from ._errors import (
+    MountAlreadyStartedError,
+    WaitingForQueueToBeEmptyError,
+    WaitingForTransfersToCompleteError,
+)
 from ._models import (
     GetBindPathsProtocol,
     MountActivity,
     MountActivityProtocol,
-    ShutdownHandlerProtocol,
+    RequestShutdownProtocol,
 )
 
 _logger = logging.getLogger(__name__)
@@ -127,31 +130,11 @@ def _get_rclone_mount_command(
 
 
 def _get_mount_id(local_mount_path: Path, index: NonNegativeInt) -> _MountId:
-    # unique reproducible id for this mount
+    # unique reproducible id for the mount
     return f"{index}{local_mount_path}".replace("/", "_")[::-1]
 
 
-class _BaseRcloneMountError(OsparcErrorMixin, RuntimeError):
-    pass
-
-
-class _WaitingForTransfersToCompleteError(_BaseRcloneMountError):
-    msg_template: str = "Waiting for all transfers to complete"
-
-
-class _WaitingForQueueToBeEmptyError(_BaseRcloneMountError):
-    msg_template: str = "Waiting for VFS queue to be empty: queue={queue}"
-
-
-class MountAlreadyStartedError(_BaseRcloneMountError):
-    msg_template: str = "Mount already started for local path='{local_mount_path}'"
-
-
-class MountNotStartedError(_BaseRcloneMountError):
-    msg_template: str = "Mount not started for local path='{local_mount_path}'"
-
-
-class StatelessContainerManager:  # pylint:disable=too-many-instance-attributes
+class ContainerManager:  # pylint:disable=too-many-instance-attributes
     def __init__(  # pylint:disable=too-many-arguments
         self,
         mount_settings: RCloneMountSettings,
@@ -233,7 +216,7 @@ class StatelessContainerManager:  # pylint:disable=too-many-instance-attributes
             )
 
 
-class StatelessRCloneRCHttpClient:
+class RemoteControlHttpClient:
     def __init__(
         self,
         remote_control_port: PortInt,
@@ -310,7 +293,7 @@ class StatelessRCloneRCHttpClient:
         wait=wait_fixed(1),
         stop=stop_after_delay(_MAX_WAIT_RC_HTTP_INTERFACE_READY.total_seconds()),
         reraise=True,
-        retry=retry_if_exception_type(httpx.HTTPError),
+        retry=retry_if_exception_type(HTTPError),
         before_sleep=before_sleep_log(_logger, logging.WARNING),
     )
     async def wait_for_interface_to_be_ready(self) -> None:
@@ -320,7 +303,7 @@ class StatelessRCloneRCHttpClient:
         try:
             await self._rc_noop()
             return True
-        except httpx.HTTPError:
+        except HTTPError:
             return False
 
     async def wait_for_all_transfers_to_complete(self) -> None:
@@ -336,7 +319,7 @@ class StatelessRCloneRCHttpClient:
             ),
             reraise=True,
             retry=retry_if_exception_type(
-                (_WaitingForQueueToBeEmptyError, _WaitingForTransfersToCompleteError)
+                (WaitingForQueueToBeEmptyError, WaitingForTransfersToCompleteError)
             ),
             before_sleep=before_sleep_log(_logger, logging.WARNING),
         )
@@ -349,11 +332,11 @@ class StatelessRCloneRCHttpClient:
                 core_stats["transfers"] != core_stats["totalTransfers"]
                 or "transferring" in core_stats
             ):
-                raise _WaitingForTransfersToCompleteError
+                raise WaitingForTransfersToCompleteError
 
             queue = vfs_queue["queue"]
             if len(queue) != 0:
-                raise _WaitingForQueueToBeEmptyError(queue=queue)
+                raise WaitingForQueueToBeEmptyError(queue=queue)
 
         await _()
 
@@ -391,7 +374,7 @@ class TrackedMount:  # pylint:disable=too-many-instance-attributes
         self._task_mount_activity: asyncio.Task[None] | None = None
 
         # used internally to handle the mount command
-        self._container_manager = StatelessContainerManager(
+        self._container_manager = ContainerManager(
             mount_settings=self.r_clone_settings.R_CLONE_MOUNT_SETTINGS,
             node_id=self.node_id,
             remote_control_port=self.rc_port,
@@ -406,7 +389,7 @@ class TrackedMount:  # pylint:disable=too-many-instance-attributes
             handler_get_bind_paths=self.handler_get_bind_paths,
         )
 
-        self._rc_http_client = StatelessRCloneRCHttpClient(
+        self._rc_http_client = RemoteControlHttpClient(
             remote_control_port=self.rc_port,
             r_clone_mount_settings=self.r_clone_settings.R_CLONE_MOUNT_SETTINGS,
             remote_control_host=self._container_manager.r_clone_container_name,
@@ -464,10 +447,10 @@ class RCloneMountManager:
         self,
         r_clone_settings: RCloneSettings,
         *,
-        request_shutdown_handler: ShutdownHandlerProtocol,
+        handler_request_shutdown: RequestShutdownProtocol,
     ) -> None:
         self.r_clone_settings = r_clone_settings
-        self.request_shutdown_handler = request_shutdown_handler
+        self.handler_request_shutdown = handler_request_shutdown
         if self.r_clone_settings.R_CLONE_MOUNT_SETTINGS.R_CLONE_VERSION is None:
             msg = "R_CLONE_VERSION setting is not set"
             raise RuntimeError(msg)
@@ -557,7 +540,7 @@ class RCloneMountManager:
                     # NOTE: since the mount is bind mounted, we ensure that it restarts properly
                     # then we shutdown the service since the user service will have an out of date
                     # FUSE mount.
-                    await self.request_shutdown_handler()
+                    await self.handler_request_shutdown()
 
     async def setup(self) -> None:
         self._task_ensure_mounts_working = create_periodic_task(

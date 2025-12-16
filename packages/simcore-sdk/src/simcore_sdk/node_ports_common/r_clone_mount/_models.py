@@ -18,5 +18,5 @@ class MountActivityProtocol(Protocol):
     async def __call__(self, state_path: Path, activity: MountActivity) -> None: ...
 
 
-class ShutdownHandlerProtocol(Protocol):
+class RequestShutdownProtocol(Protocol):
     async def __call__(self) -> None: ...
