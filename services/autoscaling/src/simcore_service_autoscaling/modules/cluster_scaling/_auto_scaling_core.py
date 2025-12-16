@@ -915,15 +915,14 @@ async def _find_needed_instances(
         ),
     )
 
-    # Build dict of instances with their counts to batch identical instances
-    instances_with_counts: dict[InstanceToLaunch, int] = collections.defaultdict(int)
-
-    for assigned_instance in needed_new_instance_types_for_tasks:
-        instance_to_launch = InstanceToLaunch(
+    # Build counts of identical instance batches using Counter
+    instances_with_counts = collections.Counter(
+        InstanceToLaunch(
             instance_type=assigned_instance.instance_type,
             node_labels=assigned_instance.osparc_custom_node_labels.copy(),
         )
-        instances_with_counts[instance_to_launch] += 1
+        for assigned_instance in needed_new_instance_types_for_tasks
+    )
 
     # 2. check the hot buffer needs
     app_settings = get_application_settings(app)
@@ -943,10 +942,9 @@ async def _find_needed_instances(
             - len(cluster.hot_buffer_drained_nodes)
         ):
             default_instance_type = get_hot_buffer_type(available_ec2_types)
-            hot_buffer_instance = InstanceToLaunch(
-                instance_type=default_instance_type, node_labels={}
-            )
-            instances_with_counts[hot_buffer_instance] += num_missing_nodes
+            instances_with_counts[
+                InstanceToLaunch(instance_type=default_instance_type, node_labels={})
+            ] += num_missing_nodes
 
     _logger.info(
         "prepared %d batches of instances to launch: %s",
