@@ -2021,8 +2021,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         menu.add(renameStudyButton);
       }
 
-      const duplicateStudyButton = this.__getDuplicateMenuButton(studyData);
-      menu.add(duplicateStudyButton);
+      if (writeAccess) {
+        const tagsButton = this._getTagsMenuButton(card);
+        if (tagsButton) {
+          menu.add(tagsButton);
+        }
+      }
 
       if (writeAccess && osparc.product.Utils.showConvertToPipeline()) {
         const convertToPipelineButton = this.__getConvertToPipelineMenuButton(studyData);
@@ -2044,12 +2048,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         }
       }
 
-      if (writeAccess) {
-        const tagsButton = this._getTagsMenuButton(card);
-        if (tagsButton) {
-          menu.add(tagsButton);
-        }
-      }
+      const duplicateStudyButton = this.__getDuplicateMenuButton(studyData);
+      menu.add(duplicateStudyButton);
 
       const studyDataButton = this.__getStudyDataMenuButton(card);
       menu.add(studyDataButton);
