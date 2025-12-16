@@ -95,17 +95,6 @@ class InstanceToLaunch:
     node_labels: dict[DockerLabelKey, str]
 
 
-@dataclasses.dataclass(frozen=True, kw_only=True)
-class NeededInstances:
-    """Result of computing what instances need to be launched.
-
-    Each instance in the list has exclusive labels - only the labels required
-    by the tasks assigned to that specific instance.
-    """
-
-    instances: list[InstanceToLaunch]
-
-
 _logger = logging.getLogger(__name__)
 
 
@@ -845,7 +834,7 @@ async def _find_needed_instances(
     available_ec2_types: list[EC2InstanceType],
     cluster: Cluster,
     auto_scaling_mode: AutoscalingProvider,
-) -> NeededInstances:
+) -> dict[InstanceToLaunch, int]:
     # 1. check first the pending task needs
     # Track which tasks get assigned to which new instances
     needed_new_instance_types_for_tasks: list[AssignedTasksToInstanceType] = []
@@ -926,14 +915,17 @@ async def _find_needed_instances(
         ),
     )
 
-    # Build list of instances with exclusive labels per instance
-    instances_to_launch = [
-        InstanceToLaunch(
+    # Build dict of instances with their counts to batch identical instances
+    from collections import defaultdict
+
+    instances_with_counts: dict[InstanceToLaunch, int] = defaultdict(int)
+
+    for assigned_instance in needed_new_instance_types_for_tasks:
+        instance_to_launch = InstanceToLaunch(
             instance_type=assigned_instance.instance_type,
-            node_labels=assigned_instance.osparc_custom_node_labels,
+            node_labels=assigned_instance.osparc_custom_node_labels.copy(),
         )
-        for assigned_instance in needed_new_instance_types_for_tasks
-    ]
+        instances_with_counts[instance_to_launch] += 1
 
     # 2. check the hot buffer needs
     app_settings = get_application_settings(app)
@@ -953,18 +945,21 @@ async def _find_needed_instances(
             - len(cluster.hot_buffer_drained_nodes)
         ):
             default_instance_type = get_hot_buffer_type(available_ec2_types)
-            # Hot buffer instances have no specific labels (empty dict)
-            instances_to_launch.extend(
-                InstanceToLaunch(instance_type=default_instance_type, node_labels={})
-                for _ in range(num_missing_nodes)
+            hot_buffer_instance = InstanceToLaunch(
+                instance_type=default_instance_type, node_labels={}
             )
+            instances_with_counts[hot_buffer_instance] += num_missing_nodes
 
     _logger.info(
-        "prepared %d instances to launch with specific labels",
-        len(instances_to_launch),
+        "prepared %d batches of instances to launch: %s",
+        len(instances_with_counts),
+        ", ".join(
+            f"{count}x {instance.instance_type.name} with labels {instance.node_labels}"
+            for instance, count in instances_with_counts.items()
+        ),
     )
 
-    return NeededInstances(instances=instances_to_launch)
+    return dict(instances_with_counts)
 
 
 async def _cap_needed_instances(
@@ -1036,7 +1031,7 @@ async def _cap_needed_instances(
 
 async def _launch_instances(
     app: FastAPI,
-    instances_to_launch: list[InstanceToLaunch],
+    instances_to_launch: dict[InstanceToLaunch, int],
     tasks: list,
     auto_scaling_mode: AutoscalingProvider,
 ) -> list[EC2InstanceData]:
@@ -1050,12 +1045,15 @@ async def _launch_instances(
     base_tags = auto_scaling_mode.get_ec2_tags(app)
 
     # Check capacity before launching
-    needed_instances_by_type = collections.Counter(
-        i.instance_type for i in instances_to_launch
-    )
+    needed_instances_by_type: dict[EC2InstanceType, int] = {}
+    for instance_batch, count in instances_to_launch.items():
+        needed_instances_by_type[instance_batch.instance_type] = (
+            needed_instances_by_type.get(instance_batch.instance_type, 0) + count
+        )
+
     try:
         capped_needed_machines = await _cap_needed_instances(
-            app, dict(needed_instances_by_type), base_tags
+            app, needed_instances_by_type, base_tags
         )
     except EC2TooManyInstancesError:
         await post_tasks_log_message(
@@ -1068,37 +1066,40 @@ async def _launch_instances(
         return []
 
     # Cap the instances to launch based on capacity
-    capped_instances: list[InstanceToLaunch] = []
+    capped_instances: dict[InstanceToLaunch, int] = {}
     remaining_capacity = dict(capped_needed_machines)
-    for instance in instances_to_launch:
-        if remaining_capacity.get(instance.instance_type, 0) > 0:
-            capped_instances.append(instance)
-            remaining_capacity[instance.instance_type] -= 1
+    for instance_batch, count in instances_to_launch.items():
+        available = remaining_capacity.get(instance_batch.instance_type, 0)
+        if available > 0:
+            # Cap the count to available capacity
+            capped_count = min(count, available)
+            capped_instances[instance_batch] = capped_count
+            remaining_capacity[instance_batch.instance_type] -= capped_count
 
-    # Launch each instance with its specific labels
+    # Launch batched instances with their specific labels
     results = await asyncio.gather(
         *[
             ec2_client.launch_instances(
                 EC2InstanceConfig(
-                    type=instance.instance_type,
+                    type=instance_batch.instance_type,
                     tags=(
                         base_tags
                         | (
                             utils_ec2.dump_custom_placement_labels_as_tags(
-                                instance.node_labels
+                                instance_batch.node_labels
                             )
-                            if instance.node_labels
+                            if instance_batch.node_labels
                             else {}
                         )
                     ),
                     startup_script=await ec2_startup_script(
                         app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
-                            instance.instance_type.name
+                            instance_batch.instance_type.name
                         ],
                         app_settings,
                     ),
                     ami_id=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
-                        instance.instance_type.name
+                        instance_batch.instance_type.name
                     ].ami_id,
                     key_name=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME,
                     security_group_ids=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_SECURITY_GROUP_IDS,
@@ -1106,10 +1107,10 @@ async def _launch_instances(
                     iam_instance_profile=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ATTACHED_IAM_PROFILE,
                 ),
                 min_number_of_instances=1,  # NOTE: we want at least 1 if possible
-                number_of_instances=1,  # Launch one instance per InstanceToLaunch
+                number_of_instances=capped_count,  # Launch batch of instances with same type and labels
                 max_total_number_of_instances=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES,
             )
-            for instance in capped_instances
+            for instance_batch, capped_count in capped_instances.items()
         ],
         return_exceptions=True,
     )
@@ -1480,10 +1481,10 @@ async def _scale_up_cluster(
     assert app_settings.AUTOSCALING_EC2_ACCESS  # nosec
 
     # let's start these
-    needed_instances = await _find_needed_instances(
+    instances_to_launch = await _find_needed_instances(
         app, unassigned_tasks, allowed_instance_types, cluster, auto_scaling_mode
     )
-    if needed_instances.instances:
+    if instances_to_launch:
         await post_tasks_log_message(
             app,
             tasks=unassigned_tasks,
@@ -1492,7 +1493,7 @@ async def _scale_up_cluster(
         )
         new_pending_instances = await _launch_instances(
             app,
-            needed_instances.instances,
+            instances_to_launch,
             unassigned_tasks,
             auto_scaling_mode,
         )
