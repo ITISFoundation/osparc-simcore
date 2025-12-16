@@ -7,7 +7,7 @@ from servicelib.rest_constants import RESPONSE_MODEL_POLICY
 from yarl import URL
 
 from .. import _permalink_service
-from .._crud_api_read import _paralell_update
+from .._crud_api_read import _parallel_update
 from ..models import ProjectDict
 
 
@@ -26,7 +26,7 @@ async def aggregate_data_to_projects_from_request(
         for prj in projects
     ]
 
-    updated_projects: list[ProjectDict] = await _paralell_update(
+    updated_projects: list[ProjectDict] = await _parallel_update(
         *update_permalink_per_project,
     )
     return updated_projects

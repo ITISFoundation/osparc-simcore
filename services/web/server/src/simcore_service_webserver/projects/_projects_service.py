@@ -4,7 +4,7 @@
 - Operations on projects
     - are NOT handlers, therefore do not return web.Response
     - return data and successful HTTP responses (or raise them)
-    - upon failure raise errors that can be also HTTP reponses
+    - upon failure raise errors that can be also HTTP responses
 """
 
 import asyncio
@@ -92,7 +92,6 @@ from servicelib.docker_utils import (
     DYNAMIC_SIDECAR_MIN_CPUS,
     estimate_dynamic_sidecar_resources_from_ec2_instance,
 )
-from servicelib.logging_utils import log_context
 from servicelib.rabbitmq import RemoteMethodNotRegisteredError, RPCServerError
 from servicelib.rabbitmq.rpc_interfaces.catalog import services as catalog_rpc
 from servicelib.rabbitmq.rpc_interfaces.clusters_keeper.ec2_instances import (
@@ -551,7 +550,7 @@ async def submit_delete_project_task(
     simcore_user_agent: str,
 ) -> asyncio.Task:
     """
-    Marks a project as deleted and schedules a task to performe the entire removal workflow
+    Marks a project as deleted and schedules a task to perform the entire removal workflow
     using user_id's permissions.
 
     If this task is already scheduled, it returns it otherwise it creates a new one.
@@ -1048,7 +1047,6 @@ async def add_project_node(
                 "label": service_key.split("/")[-1],
             }
         ),
-        product_name,
         client_session_id=client_session_id,
     )
 
@@ -1198,16 +1196,6 @@ async def delete_project_node(
     )
 
 
-async def update_project_linked_product(
-    app: web.Application, project_id: ProjectID, product_name: str
-) -> None:
-    with log_context(
-        _logger, level=logging.DEBUG, msg="updating project linked product"
-    ):
-        db_legacy: ProjectDBAPI = app[PROJECT_DBAPI_APPKEY]
-        await db_legacy.upsert_project_linked_product(project_id, product_name)
-
-
 async def update_project_node_state(
     app: web.Application,
     user_id: UserID,
@@ -1239,7 +1227,6 @@ async def update_project_node_state(
         user_id=user_id,
         project_uuid=project_id,
         node_id=node_id,
-        product_name=None,
         new_node_data={"state": {"currentStatus": new_state}},
         client_session_id=client_session_id,
     )
@@ -1313,7 +1300,6 @@ async def patch_project_node(
         user_id=user_id,
         project_uuid=project_id,
         node_id=node_id,
-        product_name=product_name,
         new_node_data=_node_patch_exclude_unset,
         client_session_id=client_session_id,
     )
@@ -1389,7 +1375,6 @@ async def update_project_node_outputs(
         user_id=user_id,
         project_uuid=project_id,
         node_id=node_id,
-        product_name=None,
         new_node_data={"outputs": new_outputs, "runHash": new_run_hash},
         client_session_id=client_session_id,
     )
@@ -1786,7 +1771,7 @@ async def close_project_for_user(
         # remove the project from our list of opened ones
         await user_session.remove(key=PROJECT_ID_KEY)
 
-        # remove the clent session from the project room
+        # remove the client session from the project room
         await _leave_project_room(
             app=app,
             user_id=user_id,
@@ -2267,7 +2252,7 @@ async def remove_project_dynamic_services(
             else None
         ),
     )
-    async def _locked_stop_dynamic_serivces_in_project() -> None:
+    async def _locked_stop_dynamic_services_in_project() -> None:
         # save the state if the user is not a guest. if we do not know we save in any case.
         with suppress(
             RPCServerError,
@@ -2283,7 +2268,7 @@ async def remove_project_dynamic_services(
                 save_state=save_state,
             )
 
-    await _locked_stop_dynamic_serivces_in_project()
+    await _locked_stop_dynamic_services_in_project()
 
 
 _CONCURRENT_NOTIFICATIONS_LIMIT: Final[int] = 10
