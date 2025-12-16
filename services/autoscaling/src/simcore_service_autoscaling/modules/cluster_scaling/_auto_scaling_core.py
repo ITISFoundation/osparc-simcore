@@ -1146,7 +1146,7 @@ async def _launch_instances(
             new_pending_instances.append(r)
 
     log_message = (
-        f"{sum(capped_needed_machines.values())} new machines launched"
+        f"{sum(capped_instances.values())} new machines launched"
         f", it might take up to {timedelta_as_minute_second(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_START_TIME)} minutes to start, Please wait..."
     )
     await post_tasks_log_message(
