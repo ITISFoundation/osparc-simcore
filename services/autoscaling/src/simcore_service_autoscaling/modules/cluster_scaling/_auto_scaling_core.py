@@ -1540,24 +1540,9 @@ async def _handle_pre_pull_status(
                 ],
             )
         case _:
-            try:
-                pre_pulled_images = load_pre_pulled_images_from_tags(
-                    node.ec2_instance.tags
-                )
-            except Ec2TagDeserializationError as exc:
-                _logger.exception(
-                    **create_troubleshooting_log_kwargs(
-                        f"Failed to load pre-pulled images from tags for {node.ec2_instance.id}, using empty list",
-                        error=exc,
-                        tip=f"Check the instance {node.ec2_instance.id} tags for syntax correctness.",
-                    )
-                )
-                pre_pulled_images = []
-
             _logger.info(
-                "%s is pre-pulling %s, status is %s",
+                "%s is pre-pulling images, status is %s",
                 node.ec2_instance.id,
-                pre_pulled_images,
                 ssm_command.status,
             )
             # skip the instance this time as this is still ongoing
