@@ -963,11 +963,13 @@ async def _find_needed_instances(
 
 
 async def _cap_needed_instances(
-    app: FastAPI, needed_instances: dict[EC2InstanceType, int], ec2_tags: EC2Tags
-) -> dict[EC2InstanceType, int]:
-    """caps the needed instances dict[EC2InstanceType, int] to the maximal allowed number of instances by
-    1. limiting to 1 per asked type
-    2. increasing each by 1 until the maximum allowed number of instances is reached
+    app: FastAPI, needed_instances: dict[InstanceToLaunch, int], ec2_tags: EC2Tags
+) -> dict[InstanceToLaunch, int]:
+    """Caps the needed instances dict[InstanceToLaunch, int] to the maximal allowed number of instances.
+
+    Uses proportional distribution when capping is needed - if we need 10 instances of a type but can only
+    create 5, each batch with that type gets proportionally reduced.
+
     NOTE: the maximum allowed number of instances contains the current number of running/pending machines
 
     Raises:
@@ -998,35 +1000,72 @@ async def _cap_needed_instances(
         # ok that fits no need to do anything here
         return needed_instances
 
-    # this is asking for too many, so let's cap them
+    # Aggregate by instance type for capacity checking
+    needed_by_type: dict[EC2InstanceType, int] = {}
+    for instance_batch, count in needed_instances.items():
+        needed_by_type[instance_batch.instance_type] = (
+            needed_by_type.get(instance_batch.instance_type, 0) + count
+        )
+
     max_number_of_creatable_instances = (
         app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES
         - current_number_of_instances
     )
 
-    # we start with 1 machine of each type until the max
-    capped_needed_instances = {
+    # Cap by type using existing round-robin algorithm
+    capped_by_type = {
         k: 1
-        for count, k in enumerate(needed_instances)
+        for count, k in enumerate(needed_by_type)
         if (count + 1) <= max_number_of_creatable_instances
     }
 
-    if len(capped_needed_instances) < len(needed_instances):
-        # there were too many types for the number of possible instances
-        return capped_needed_instances
+    if len(capped_by_type) < len(needed_by_type):
+        # Distribute capped counts proportionally back to InstanceToLaunch entries
+        result: dict[InstanceToLaunch, int] = collections.defaultdict(int)
+        for instance_type in capped_by_type:
+            # Find all batches of this type
+            batches_of_type = [
+                (batch, count)
+                for batch, count in needed_instances.items()
+                if batch.instance_type == instance_type
+            ]
+            # Give each batch proportionally (at least 1 if capped > 0)
+            for batch, _ in batches_of_type:
+                result[batch] = 1
+        return dict(result)
 
-    # all instance types were added, now create more of them if possible
-    while sum(capped_needed_instances.values()) < max_number_of_creatable_instances:
-        for instance_type, num_to_create in needed_instances.items():
-            if (
-                sum(capped_needed_instances.values())
-                == max_number_of_creatable_instances
-            ):
+    # All instance types were added, now increase counts proportionally
+    while sum(capped_by_type.values()) < max_number_of_creatable_instances:
+        for instance_type, num_to_create in needed_by_type.items():
+            if sum(capped_by_type.values()) == max_number_of_creatable_instances:
                 break
-            if num_to_create > capped_needed_instances[instance_type]:
-                capped_needed_instances[instance_type] += 1
+            if num_to_create > capped_by_type[instance_type]:
+                capped_by_type[instance_type] += 1
 
-    return capped_needed_instances
+    # Distribute capped counts proportionally back to InstanceToLaunch entries
+    result: dict[InstanceToLaunch, int] = {}
+    for instance_batch, original_count in needed_instances.items():
+        instance_type = instance_batch.instance_type
+        capped_total = capped_by_type[instance_type]
+        original_total = needed_by_type[instance_type]
+
+        # Proportional allocation
+        proportional_count = int(original_count * capped_total / original_total)
+        if proportional_count > 0:
+            result[instance_batch] = proportional_count
+
+    # Handle rounding errors - distribute remaining instances
+    total_allocated = sum(result.values())
+    remaining = max_number_of_creatable_instances - total_allocated
+    if remaining > 0:
+        for instance_batch in needed_instances:
+            if remaining == 0:
+                break
+            if instance_batch in result:
+                result[instance_batch] += 1
+                remaining -= 1
+
+    return result
 
 
 async def _launch_instances(
@@ -1044,16 +1083,10 @@ async def _launch_instances(
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
     base_tags = auto_scaling_mode.get_ec2_tags(app)
 
-    # Check capacity before launching
-    needed_instances_by_type: dict[EC2InstanceType, int] = {}
-    for instance_batch, count in instances_to_launch.items():
-        needed_instances_by_type[instance_batch.instance_type] = (
-            needed_instances_by_type.get(instance_batch.instance_type, 0) + count
-        )
-
+    # Cap instances based on cluster capacity
     try:
-        capped_needed_machines = await _cap_needed_instances(
-            app, needed_instances_by_type, base_tags
+        capped_instances = await _cap_needed_instances(
+            app, instances_to_launch, base_tags
         )
     except EC2TooManyInstancesError:
         await post_tasks_log_message(
@@ -1064,17 +1097,6 @@ async def _launch_instances(
             level=logging.ERROR,
         )
         return []
-
-    # Cap the instances to launch based on capacity
-    capped_instances: dict[InstanceToLaunch, int] = {}
-    remaining_capacity = dict(capped_needed_machines)
-    for instance_batch, count in instances_to_launch.items():
-        available = remaining_capacity.get(instance_batch.instance_type, 0)
-        if available > 0:
-            # Cap the count to available capacity
-            capped_count = min(count, available)
-            capped_instances[instance_batch] = capped_count
-            remaining_capacity[instance_batch.instance_type] -= capped_count
 
     # Launch batched instances with their specific labels
     results = await asyncio.gather(
