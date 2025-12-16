@@ -2301,12 +2301,10 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     _emptyProjectIconClicked: function(studyId) {
       const studyData = this.__getStudyData(studyId);
       const deleteAccess = studyData && osparc.data.model.Study.canIDelete(studyData["accessRights"]);
-      if (deleteAccess) {
-        if (this.getCurrentContext() === osparc.dashboard.StudyBrowser.CONTEXT.TRASH) {
-          this.__deleteStudyRequested(studyData);
-        } else {
-          this.__trashStudyRequested(studyData);
-        }
+      if (this.getCurrentContext() === osparc.dashboard.StudyBrowser.CONTEXT.TRASH && deleteAccess) {
+        this.__deleteStudyRequested(studyData);
+      } else {
+        this.__trashStudyRequested(studyData);
       }
     },
 
