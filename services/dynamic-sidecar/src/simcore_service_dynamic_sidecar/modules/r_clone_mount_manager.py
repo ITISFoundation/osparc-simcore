@@ -17,12 +17,12 @@ from ..core.settings import ApplicationSettings
 _logger = logging.getLogger(__file__)
 
 
-async def _request_shutdown(app: FastAPI) -> None:
+async def _handle_shutdown_request(app: FastAPI) -> None:
     settings: ApplicationSettings = app.state.settings
     client = get_rabbitmq_rpc_client(app)
 
     with log_context(
-        _logger, logging.INFO, "requesting service shutdown from dynamic-scheduler"
+        _logger, logging.INFO, "requesting service shutdown via dynamic-scheduler"
     ):
         await stop_dynamic_service(
             client,
@@ -51,7 +51,7 @@ def setup_r_clone_mount_manager(app: FastAPI):
 
         app.state.r_clone_mount_manager = r_clone_mount_manager = RCloneMountManager(
             settings.DY_SIDECAR_R_CLONE_SETTINGS,
-            handler_request_shutdown=partial(_request_shutdown, app),
+            handler_request_shutdown=partial(_handle_shutdown_request, app),
         )
         await r_clone_mount_manager.setup()
 
