@@ -190,6 +190,7 @@ def test_create_job_from_project(faker: Faker):
                 },
                 "state": {"value": "SUCCESS"},
             },
+            "productName": "osparc",
         },
     )
 

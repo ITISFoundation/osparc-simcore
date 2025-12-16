@@ -89,6 +89,7 @@ def _assert_same_projects(got: dict[str, Any], expected: dict[str, Any]):
         "workbench",
         "type",
         "templateType",
+        "productName",
     }
     expected_values = {k: v for k, v in expected.items() if k not in exclude}
     got_values = {k: got[k] for k in expected if k not in exclude}
