@@ -1571,11 +1571,11 @@ async def _pre_pull_docker_images_on_idle_hot_buffers(
                 updated_node.ec2_instance.tags
             )
         except Ec2TagDeserializationError as exc:
-            _logger.exception(
+            _logger.warning(
                 **create_troubleshooting_log_kwargs(
-                    f"Failed to load pre-pulled images from tags for {updated_node.ec2_instance.id}, using empty list",
+                    f"Failed to load pre-pulled images from tags for {updated_node.ec2_instance.id}, defaulting to empty list",
                     error=exc,
-                    tip=f"Check the instance {node.ec2_instance.id} tags for syntax correctness.",
+                    tip=f"Check the instance {node.ec2_instance.id} tags for syntax correctness. The images will be likely replaced.",
                 )
             )
             pre_pulled_images = []
