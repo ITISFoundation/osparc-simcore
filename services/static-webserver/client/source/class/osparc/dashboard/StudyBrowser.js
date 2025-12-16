@@ -1787,7 +1787,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         win.open();
         win.addListener("close", () => {
           if (win.getConfirmed()) {
-            this.__trashStudies(studiesData);
+            studiesData.forEach(studyData => this.__trashStudy(studyData));
           }
         }, this);
       }, this);
@@ -2537,10 +2537,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
     },
 
-    __trashStudies: function(studiesData) {
-      studiesData.forEach(studyData => this.__trashStudy(studyData));
-    },
-
     /*
     Determines whether the user can delete the study or just remove themselves as collaborator
     Returns:
@@ -2602,13 +2598,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       win.open();
       win.addListener("close", () => {
         if (win.getConfirmed()) {
-          this.__deleteStudies(studiesData, false);
+          studiesData.forEach(studyData => this.__deleteStudy(studyData));
         }
       }, this);
-    },
-
-    __deleteStudies: function(studiesData) {
-      studiesData.forEach(studyData => this.__deleteStudy(studyData));
     },
 
     __createConfirmTrashWindow: function(studyNames) {
