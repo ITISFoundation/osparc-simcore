@@ -2360,18 +2360,18 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         appearance: "menu-button"
       });
       osparc.utils.Utils.setIdToWidget(trashButton, "studyItemMenuDelete");
-      trashButton.addListener("execute", () => this.__removeStudyRequested(studyData), this);
+      trashButton.addListener("execute", () => this.__trashStudyRequested(studyData), this);
       return trashButton;
     },
 
     __getRemoveStudyMenuButton: function(studyData) {
-      const removeButton = new qx.ui.menu.Button(this.tr("Remove"), "@FontAwesome5Solid/trash/12");
+      const removeButton = new qx.ui.menu.Button(this.tr("Delete"), "@FontAwesome5Solid/trash/12");
       removeButton["removeButton"] = true;
       removeButton.set({
         appearance: "menu-button"
       });
       osparc.utils.Utils.setIdToWidget(removeButton, "studyItemMenuRemove");
-      removeButton.addListener("execute", () => this.__removeStudyRequested(studyData), this);
+      removeButton.addListener("execute", () => this.__trashStudyRequested(studyData), this);
       return removeButton;
     },
 
@@ -2622,7 +2622,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           operationPromise = this.__removeMeFromCollaborators(studyData);
           break;
         default:
-          const errMsg = this.tr("You don't have permissions to delete or remove yourself from this project.");
+          const errMsg = this.tr("You don't have permissions to delete or remove this project.");
           operationPromise = new Promise((resolve, reject) => reject(errMsg));
       }
       operationPromise
