@@ -727,7 +727,6 @@ async def _assign_tasks_to_current_cluster(
         task_required_ec2_instance = await auto_scaling_mode.get_task_defined_instance(
             app, task
         )
-        # Extract custom placement labels from task constraints
         task_required_labels = (
             await auto_scaling_mode.get_task_instance_required_docker_tags(app, task)
         )
