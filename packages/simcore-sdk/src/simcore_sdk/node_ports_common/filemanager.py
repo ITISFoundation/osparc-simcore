@@ -13,6 +13,7 @@ from models_library.api_schemas_storage.storage_schemas import (
     UploadedPart,
 )
 from models_library.basic_types import SHA256Str
+from models_library.products import ProductName
 from models_library.projects_nodes_io import LocationID, LocationName, StorageFileID
 from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize, TypeAdapter
@@ -62,6 +63,7 @@ async def complete_file_upload(
 async def get_download_link_from_s3(
     *,
     user_id: UserID,
+    product_name: ProductName,
     store_name: LocationName | None,
     store_id: LocationID | None,
     s3_object: StorageFileID,
@@ -83,6 +85,7 @@ async def get_download_link_from_s3(
             file_id=s3_object,
             location_id=store_id,
             user_id=user_id,
+            product_name=product_name,
             link_type=link_type,
         )
         return URL(f"{file_link}")
@@ -120,6 +123,7 @@ async def get_upload_links_from_s3(
 async def download_path_from_s3(
     *,
     user_id: UserID,
+    product_name: ProductName,
     store_name: LocationName | None,
     store_id: LocationID | None,
     s3_object: StorageFileID,
@@ -151,10 +155,11 @@ async def download_path_from_s3(
             session, user_id, store_name, store_id
         )
         file_meta_data: FileMetaDataGet = await _get_file_meta_data(
+            client_session=session,
             user_id=user_id,
+            product_name=product_name,
             s3_object=s3_object,
             store_id=store_id,
-            client_session=session,
         )
 
         if file_meta_data.is_directory and not await r_clone.is_r_clone_available(
@@ -166,6 +171,7 @@ async def download_path_from_s3(
         # get the s3 link
         download_link = await get_download_link_from_s3(
             user_id=user_id,
+            product_name=product_name,
             store_name=store_name,
             store_id=store_id,
             s3_object=s3_object,
@@ -454,6 +460,7 @@ async def _upload_to_s3(
 
 async def _get_file_meta_data(
     user_id: UserID,
+    product_name: ProductName,
     store_id: LocationID,
     s3_object: StorageFileID,
     client_session: ClientSession | None = None,
@@ -463,9 +470,10 @@ async def _get_file_meta_data(
 
         file_metadata: FileMetaDataGet = await storage_client.get_file_metadata(
             session=session,
-            file_id=s3_object,
-            location_id=store_id,
             user_id=user_id,
+            product_name=product_name,
+            location_id=store_id,
+            file_id=s3_object,
         )
         _logger.debug(
             "Result for metadata s3_object=%s, result=%s",
@@ -477,6 +485,7 @@ async def _get_file_meta_data(
 
 async def entry_exists(
     user_id: UserID,
+    product_name: ProductName,
     store_id: LocationID,
     s3_object: StorageFileID,
     client_session: ClientSession | None = None,
@@ -489,7 +498,7 @@ async def entry_exists(
     """
     try:
         file_metadata: FileMetaDataGet = await _get_file_meta_data(
-            user_id, store_id, s3_object, client_session
+            user_id, product_name, store_id, s3_object, client_session
         )
         result: bool = (
             file_metadata.file_id == s3_object
@@ -511,6 +520,7 @@ class FileMetaData:
 
 async def get_file_metadata(
     user_id: UserID,
+    product_name: ProductName,
     store_id: LocationID,
     s3_object: StorageFileID,
     client_session: ClientSession | None = None,
@@ -519,10 +529,11 @@ async def get_file_metadata(
     :raises S3InvalidPathError
     """
     file_metadata: FileMetaDataGet = await _get_file_meta_data(
+        client_session=client_session,
         user_id=user_id,
+        product_name=product_name,
         store_id=store_id,
         s3_object=s3_object,
-        client_session=client_session,
     )
     assert file_metadata.location_id is not None  # nosec
     assert file_metadata.entity_tag is not None  # nosec
@@ -534,6 +545,7 @@ async def get_file_metadata(
 
 async def delete_file(
     user_id: UserID,
+    product_name: ProductName,
     store_id: LocationID,
     s3_object: StorageFileID,
     client_session: ClientSession | None = None,
@@ -541,5 +553,9 @@ async def delete_file(
     async with ClientSessionContextManager(client_session) as session:
         _logger.debug("Will delete file for s3_object=%s", s3_object)
         await storage_client.delete_file(
-            session=session, file_id=s3_object, location_id=store_id, user_id=user_id
+            session=session,
+            user_id=user_id,
+            product_name=product_name,
+            location_id=store_id,
+            file_id=s3_object,
         )
