@@ -5,7 +5,7 @@ from datetime import UTC, datetime, timedelta
 from functools import cached_property
 from pathlib import Path
 from textwrap import dedent
-from typing import Any, Final, Protocol
+from typing import Any, Final
 from uuid import uuid4
 
 import httpx
@@ -15,7 +15,7 @@ from httpx import AsyncClient
 from models_library.basic_types import PortInt
 from models_library.progress_bar import ProgressReport
 from models_library.projects_nodes_io import NodeID, StorageFileID
-from pydantic import BaseModel, NonNegativeInt
+from pydantic import NonNegativeInt
 from servicelib.background_task import create_periodic_task
 from servicelib.logging_utils import log_context
 from servicelib.utils import unused_port
@@ -30,7 +30,12 @@ from tenacity import (
 
 from . import _docker_utils
 from ._config_provider import CONFIG_KEY, MountRemoteType, get_config_content
-from ._models import GetBindPathsProtocol
+from ._models import (
+    GetBindPathsProtocol,
+    MountActivity,
+    MountActivityProtocol,
+    ShutdownHandlerProtocol,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -130,12 +135,6 @@ class _BaseRcloneMountError(OsparcErrorMixin, RuntimeError):
     pass
 
 
-class _ContainerAlreadyStartedError(_BaseRcloneMountError):
-    msg_template: str = (
-        "Mount process already stareted via container='{container}' with command='{command}'"
-    )
-
-
 class _WaitingForTransfersToCompleteError(_BaseRcloneMountError):
     msg_template: str = "Waiting for all transfers to complete"
 
@@ -150,19 +149,6 @@ class MountAlreadyStartedError(_BaseRcloneMountError):
 
 class MountNotStartedError(_BaseRcloneMountError):
     msg_template: str = "Mount not started for local path='{local_mount_path}'"
-
-
-class MountActivity(BaseModel):
-    transferring: dict[str, ProgressReport]
-    queued: list[str]
-
-
-class MountActivityProtocol(Protocol):
-    async def __call__(self, state_path: Path, activity: MountActivity) -> None: ...
-
-
-class ShutdownHandlerProtocol(Protocol):
-    async def __call__(self) -> None: ...
 
 
 class StatelessContainerManager:  # stateless

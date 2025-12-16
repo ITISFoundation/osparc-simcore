@@ -1,12 +1,15 @@
 from ._config_provider import MountRemoteType
 from ._core import (
-    MountActivity,
-    MountActivityProtocol,
     MountAlreadyStartedError,
     MountNotStartedError,
     RCloneMountManager,
 )
-from ._models import GetBindPathsProtocol
+from ._models import (
+    GetBindPathsProtocol,
+    MountActivity,
+    MountActivityProtocol,
+    ShutdownHandlerProtocol,
+)
 
 __all__: tuple[str, ...] = (
     "GetBindPathsProtocol",
@@ -16,4 +19,5 @@ __all__: tuple[str, ...] = (
     "MountNotStartedError",
     "MountRemoteType",
     "RCloneMountManager",
+    "ShutdownHandlerProtocol",
 )
