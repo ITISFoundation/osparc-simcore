@@ -1,7 +1,47 @@
+import logging
+from functools import partial
+
 from fastapi import FastAPI
+from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
+    DynamicServiceStop,
+)
+from servicelib.logging_utils import log_context
+from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.services import (
+    stop_dynamic_service,
+)
 from simcore_sdk.node_ports_common.r_clone_mount import RCloneMountManager
 
+from ..core.rabbitmq import get_rabbitmq_rpc_client, post_sidecar_log_message
 from ..core.settings import ApplicationSettings
+
+_logger = logging.getLogger(__file__)
+
+
+async def _request_shutdown(app: FastAPI) -> None:
+    settings: ApplicationSettings = app.state.settings
+    client = get_rabbitmq_rpc_client(app)
+
+    with log_context(
+        _logger, logging.INFO, "requesting service shutdown from dynamic-scheduler"
+    ):
+        await stop_dynamic_service(
+            client,
+            dynamic_service_stop=DynamicServiceStop(
+                user_id=settings.DY_SIDECAR_USER_ID,
+                project_id=settings.DY_SIDECAR_PROJECT_ID,
+                node_id=settings.DY_SIDECAR_NODE_ID,
+                simcore_user_agent="",
+                save_state=True,
+            ),
+        )
+        await post_sidecar_log_message(
+            app,
+            (
+                "Your service was closed due to an issue that would create unexpected behavior. "
+                "No data was lost. Thank you for your understanding."
+            ),
+            log_level=logging.WARNING,
+        )
 
 
 def setup_r_clone_mount_manager(app: FastAPI):
@@ -10,7 +50,8 @@ def setup_r_clone_mount_manager(app: FastAPI):
     async def _on_startup() -> None:
 
         app.state.r_clone_mount_manager = r_clone_mount_manager = RCloneMountManager(
-            settings.DY_SIDECAR_R_CLONE_SETTINGS
+            settings.DY_SIDECAR_R_CLONE_SETTINGS,
+            request_shutdown_handler=partial(_request_shutdown, app),
         )
         await r_clone_mount_manager.setup()
 

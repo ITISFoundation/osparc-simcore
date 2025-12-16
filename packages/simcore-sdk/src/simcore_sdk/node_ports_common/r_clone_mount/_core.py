@@ -43,17 +43,31 @@ _DEFAULT_MOUNT_ACTIVITY_UPDATE_INTERVAL: Final[timedelta] = timedelta(seconds=5)
 
 _DOCKER_PREFIX_MOUNT: Final[str] = "rcm"
 
-_NOT_FOUND: Final[int] = 404
-
 type _MountId = str
 
 _R_CLONE_MOUNT_TEMPLATE: Final[str] = dedent(
     """
+set -e
+
+MOUNT_POINT='{local_mount_path}'
+
+cleanup() {{
+  echo 'STARTED CLEANUP...'
+  umount -f "$MOUNT_POINT" || true
+  echo 'FINISHED CLEANUP'
+}}
+trap cleanup SIGTERM SIGINT
+
 cat <<EOF > {r_clone_config_path}
 {r_clone_config_content}
 EOF
 
-{r_clone_command}
+{r_clone_command} 2>&1 &
+
+RCLONE_PID=$!
+wait "$RCLONE_PID"
+echo "rclone exited, running cleanup (if not already triggered)..."
+cleanup
 """
 )
 
@@ -103,6 +117,7 @@ def _get_rclone_mount_command(
         r_clone_config_path=mount_settings.R_CLONE_CONFIG_FILE_PATH,
         r_clone_config_content=r_clone_config_content,
         r_clone_command=r_clone_command,
+        local_mount_path=local_mount_path,
     )
 
 
@@ -144,6 +159,10 @@ class MountActivity(BaseModel):
 
 class MountActivityProtocol(Protocol):
     async def __call__(self, state_path: Path, activity: MountActivity) -> None: ...
+
+
+class ShutdownHandlerProtocol(Protocol):
+    async def __call__(self) -> None: ...
 
 
 class StatelessContainerManager:  # stateless
@@ -439,8 +458,9 @@ class TrackedMount:
             task_name=f"rclone-mount-activity-{_get_mount_id(self.local_mount_path, self.index)}",
         )
 
-    async def stop_mount(self) -> None:
-        await self._rc_http_client.wait_for_all_transfers_to_complete()
+    async def stop_mount(self, *, skip_transfer_wait: bool = False) -> None:
+        if not skip_transfer_wait:
+            await self._rc_http_client.wait_for_all_transfers_to_complete()
 
         await self._container_manager.remove()
         if self._task_mount_activity is not None:
@@ -454,8 +474,14 @@ class TrackedMount:
 
 
 class RCloneMountManager:
-    def __init__(self, r_clone_settings: RCloneSettings) -> None:
+    def __init__(
+        self,
+        r_clone_settings: RCloneSettings,
+        *,
+        request_shutdown_handler: ShutdownHandlerProtocol,
+    ) -> None:
         self.r_clone_settings = r_clone_settings
+        self.request_shutdown_handler = request_shutdown_handler
         if self.r_clone_settings.R_CLONE_MOUNT_SETTINGS.R_CLONE_VERSION is None:
             msg = "R_CLONE_VERSION setting is not set"
             raise RuntimeError(msg)
@@ -527,16 +553,29 @@ class RCloneMountManager:
             await tracked_mount.stop_mount()
 
     async def _worker_ensure_mounts_working(self) -> None:
+        mount_restored = False
         with log_context(_logger, logging.DEBUG, "Ensuring rclone mounts are working"):
             for mount in self._tracked_mounts.values():
                 if not await mount.is_responsive():
                     with log_context(
                         _logger,
                         logging.WARNING,
-                        f"RClone mount for local path='{mount.local_mount_path}' is not responsive, restarting it",
+                        f"Restoring mount for path='{mount.local_mount_path}'",
                     ):
-                        await mount.stop_mount()
+                        await mount.stop_mount(skip_transfer_wait=True)
                         await mount.start_mount()
+                        mount_restored = True
+
+            if mount_restored:
+                with log_context(
+                    _logger,
+                    logging.WARNING,
+                    "Requesting service shutdown due to mount restoration",
+                ):
+                    # NOTE: since the mount is bind mounted, we ensure that it restarts properly
+                    # then we shutdown the service since the user service will have an out of date
+                    # FUSE mount.
+                    await self.request_shutdown_handler()
 
     async def setup(self) -> None:
         self._task_ensure_mounts_working = create_periodic_task(
