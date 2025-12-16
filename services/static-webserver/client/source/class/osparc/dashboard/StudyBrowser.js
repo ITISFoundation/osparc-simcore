@@ -1985,9 +1985,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __populateStudyCardMenu: function(card) {
       const menu = card.getMenu();
       const studyData = card.getResourceData();
+      const writeAccess = osparc.data.model.Study.canIWrite(studyData["accessRights"]);
 
       if (this.getCurrentContext() === osparc.dashboard.StudyBrowser.CONTEXT.TRASH && Boolean(studyData["trashedAt"])) {
-        const writeAccess = osparc.data.model.Study.canIWrite(studyData["accessRights"]);
         if (writeAccess) {
           menu.addSeparator();
           const untrashButton = this.__getUntrashStudyMenuButton(studyData);
@@ -2005,7 +2005,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         }
         return;
       }
-
 
       const openButton = this._getOpenMenuButton(studyData);
       if (openButton) {
