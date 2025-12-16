@@ -724,8 +724,6 @@ async def _assign_tasks_to_current_cluster(
             - The same cluster instance passed as input.
     """
     unassigned_tasks = []
-    docker_client = get_docker_client(app)
-
     assignment_predicates = [
         functools.partial(_try_assign_task_to_ec2_instance, instances=instances)
         for instances in (
@@ -743,8 +741,8 @@ async def _assign_tasks_to_current_cluster(
             app, task
         )
         # Extract custom placement labels from task constraints
-        task_required_labels = await utils_docker.get_task_custom_placement_labels(
-            docker_client, task
+        task_required_labels = (
+            await auto_scaling_mode.get_task_instance_required_docker_tags(app, task)
         )
 
         if any(
