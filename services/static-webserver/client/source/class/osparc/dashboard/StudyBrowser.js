@@ -2070,14 +2070,20 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         menu.add(moveToButton);
       }
 
-      if (deleteAccess) {
-        menu.addSeparator();
-        const trashButton = this.__getTrashStudyMenuButton(studyData, false);
-        menu.add(trashButton);
-      } else if (writeAccess) {
-        menu.addSeparator();
-        const trashButton = this.__getRemoveStudyMenuButton(studyData, true);
-        menu.add(trashButton);
+      const deleteAction = this.__deleteOrRemoveMe(studyData);
+      switch (deleteAction) {
+        case "delete": {
+          menu.addSeparator();
+          const trashButton = this.__getTrashStudyMenuButton(studyData, false);
+          menu.add(trashButton);
+          break;
+        }
+        case "remove": {
+          menu.addSeparator();
+          const removeButton = this.__getRemoveStudyMenuButton(studyData, false);
+          menu.add(removeButton);
+          break;
+        }
       }
 
       card.evaluateMenuButtons();
@@ -2305,9 +2311,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __trashStudyRequested: function(studyData) {
-      const action = this.__deleteOrRemoveMe(studyData);
       let win = null;
-      switch (action) {
+      const deleteAction = this.__deleteOrRemoveMe(studyData);
+      switch (deleteAction) {
         case "trash":
           win = this.__createConfirmTrashWindow([studyData.name]);
           break;
@@ -2327,8 +2333,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __deleteStudyRequested: function(studyData) {
-      const action = this.__deleteOrRemoveMe(studyData);
-      switch (action) {
+      const deleteAction = this.__deleteOrRemoveMe(studyData);
+      switch (deleteAction) {
         case "delete":
           win = this.__createConfirmDeleteWindow([studyData.name]);
           break;
@@ -2348,7 +2354,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __getTrashStudyMenuButton: function(studyData) {
-      const trashButton = new qx.ui.menu.Button(this.tr("Remove"), "@FontAwesome5Solid/trash/12");
+      const trashButton = new qx.ui.menu.Button(this.tr("Delete"), "@FontAwesome5Solid/trash/12");
       trashButton["deleteButton"] = true;
       trashButton.set({
         appearance: "menu-button"
@@ -2607,8 +2613,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __deleteStudy: function(studyData) {
       let operationPromise = null;
-      const action = this.__deleteOrRemoveMe(studyData);
-      switch (action) {
+      const deleteAction = this.__deleteOrRemoveMe(studyData);
+      switch (deleteAction) {
         case "delete":
           operationPromise = osparc.store.Study.getInstance().deleteStudy(studyData.uuid);
           break;
