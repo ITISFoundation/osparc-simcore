@@ -1782,19 +1782,14 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       trashButton.addListener("execute", () => {
         const selection = this._resourcesContainer.getSelection();
         const studiesData = selection.map(button => this.__getStudyData(button.getUuid()));
-        const preferencesSettings = osparc.Preferences.getInstance();
-        if (preferencesSettings.getConfirmDeleteStudy()) {
-          const win = this.__createConfirmTrashWindow(selection.map(button => button.getTitle()));
-          win.center();
-          win.open();
-          win.addListener("close", () => {
-            if (win.getConfirmed()) {
-              this.__trashStudies(studiesData);
-            }
-          }, this);
-        } else {
-          this.__trashStudies(studiesData);
-        }
+        const win = this.__createConfirmTrashWindow(selection.map(button => button.getTitle()));
+        win.center();
+        win.open();
+        win.addListener("close", () => {
+          if (win.getConfirmed()) {
+            this.__trashStudies(studiesData);
+          }
+        }, this);
       }, this);
       return trashButton;
     },
@@ -2310,35 +2305,25 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __trashStudyRequested: function(studyData) {
-      const preferencesSettings = osparc.Preferences.getInstance();
-      if (preferencesSettings.getConfirmDeleteStudy()) {
-        const win = this.__deleteOrRemoveMe(studyData) === "remove" ? this.__createConfirmRemoveForMeWindow(studyData.name) : this.__createConfirmTrashWindow([studyData.name]);
-        win.center();
-        win.open();
-        win.addListener("close", () => {
-          if (win.getConfirmed()) {
-            this.__trashStudy(studyData);
-          }
-        }, this);
-      } else {
-        this.__trashStudy(studyData);
-      }
+      const win = this.__deleteOrRemoveMe(studyData) === "remove" ? this.__createConfirmRemoveForMeWindow(studyData.name) : this.__createConfirmTrashWindow([studyData.name]);
+      win.center();
+      win.open();
+      win.addListener("close", () => {
+        if (win.getConfirmed()) {
+          this.__trashStudy(studyData);
+        }
+      }, this);
     },
 
     __deleteStudyRequested: function(studyData) {
-      const preferencesSettings = osparc.Preferences.getInstance();
-      if (preferencesSettings.getConfirmDeleteStudy()) {
-        const win = this.__deleteOrRemoveMe(studyData) === "remove" ? this.__createConfirmRemoveForMeWindow(studyData.name) : this.__createConfirmDeleteWindow([studyData.name]);
-        win.center();
-        win.open();
-        win.addListener("close", () => {
-          if (win.getConfirmed()) {
-            this.__deleteStudy(studyData);
-          }
-        }, this);
-      } else {
-        this.__deleteStudy(studyData);
-      }
+      const win = this.__deleteOrRemoveMe(studyData) === "remove" ? this.__createConfirmRemoveForMeWindow(studyData.name) : this.__createConfirmDeleteWindow([studyData.name]);
+      win.center();
+      win.open();
+      win.addListener("close", () => {
+        if (win.getConfirmed()) {
+          this.__deleteStudy(studyData);
+        }
+      }, this);
     },
 
     __getTrashStudyMenuButton: function(studyData) {
@@ -2615,20 +2600,15 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __deleteStudiesRequested: function(selection) {
       const studiesData = selection.map(button => this.__getStudyData(button.getUuid()));
-      const preferencesSettings = osparc.Preferences.getInstance();
-      if (preferencesSettings.getConfirmDeleteStudy()) {
-        // const win = this.__deleteOrRemoveMe(studyData) === "remove" ? this.__createConfirmRemoveForMeWindow(studyData.name) : this.__createConfirmDeleteWindow([studyData.name]);
-        const win = this.__createConfirmDeleteWindow(selection.map(button => button.getTitle()));
-        win.center();
-        win.open();
-        win.addListener("close", () => {
-          if (win.getConfirmed()) {
-            this.__deleteStudies(studiesData, false);
-          }
-        }, this);
-      } else {
-        this.__deleteStudies(studiesData, false);
-      }
+      // const win = this.__deleteOrRemoveMe(studyData) === "remove" ? this.__createConfirmRemoveForMeWindow(studyData.name) : this.__createConfirmDeleteWindow([studyData.name]);
+      const win = this.__createConfirmDeleteWindow(selection.map(button => button.getTitle()));
+      win.center();
+      win.open();
+      win.addListener("close", () => {
+        if (win.getConfirmed()) {
+          this.__deleteStudies(studiesData, false);
+        }
+      }, this);
     },
 
     __deleteStudies: function(studiesData) {
