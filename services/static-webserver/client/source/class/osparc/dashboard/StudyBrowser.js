@@ -1782,14 +1782,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       trashButton.addListener("execute", () => {
         const selection = this._resourcesContainer.getSelection();
         const studiesData = selection.map(button => this.__getStudyData(button.getUuid()));
-        const win = this.__createConfirmTrashWindow(selection.map(button => button.getTitle()));
-        win.center();
-        win.open();
-        win.addListener("close", () => {
-          if (win.getConfirmed()) {
-            studiesData.forEach(studyData => this.__trashStudy(studyData));
-          }
-        }, this);
+        this.__trashStudiesRequested(studiesData);
       }, this);
       return trashButton;
     },
@@ -2599,6 +2592,17 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       win.addListener("close", () => {
         if (win.getConfirmed()) {
           studiesData.forEach(studyData => this.__deleteStudy(studyData));
+        }
+      }, this);
+    },
+
+    __trashStudiesRequested: function(studiesData) {
+      const win = this.__createConfirmTrashWindow(studiesData.map(studyData => studyData["name"]));
+      win.center();
+      win.open();
+      win.addListener("close", () => {
+        if (win.getConfirmed()) {
+          studiesData.forEach(studyData => this.__trashStudy(studyData));
         }
       }, this);
     },
