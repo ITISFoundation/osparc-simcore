@@ -164,6 +164,7 @@ async def test_search_files(
     initialized_app: FastAPI,
     client: httpx.AsyncClient,
     user_id: UserID,
+    product_name: ProductName,
     upload_file: Callable[..., Awaitable[tuple[Path, SimcoreS3FileID]]],
     faker: Faker,
     search_startswith: bool,
@@ -177,6 +178,7 @@ async def test_search_files(
         jsonable_encoder(
             {
                 "user_id": user_id,
+                "product_name": product_name,
                 "kind": kind,
             },
             exclude_none=True,
