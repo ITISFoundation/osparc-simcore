@@ -1,8 +1,8 @@
 """added use_r_clone_mounting field
 
-Revision ID: 611b7fa01f1c
-Revises: a85557c02d71
-Create Date: 2025-12-10 12:40:46.573251+00:00
+Revision ID: e4db35fe8054
+Revises: ce69cc44246a
+Create Date: 2025-12-16 11:43:36.941571+00:00
 
 """
 
@@ -10,8 +10,8 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = "611b7fa01f1c"
-down_revision = "a85557c02d71"
+revision = "e4db35fe8054"
+down_revision = "ce69cc44246a"
 branch_labels = None
 depends_on = None
 
