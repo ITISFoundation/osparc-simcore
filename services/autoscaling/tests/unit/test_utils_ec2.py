@@ -28,6 +28,7 @@ from simcore_service_autoscaling.utils.utils_ec2 import (
     find_best_fitting_ec2_instance,
     get_ec2_tags_computational,
     get_ec2_tags_dynamic,
+    list_custom_placement_label_tag_keys,
     list_tag_keys,
     load_custom_placement_labels_from_tags,
     load_from_ec2_tags,
@@ -287,10 +288,12 @@ def test_dump_and_load_custom_placement_labels():
 
     tags = dump_custom_placement_labels_as_tags(labels)
     loaded_labels = load_custom_placement_labels_from_tags(tags)
+    tags_keys = list_custom_placement_label_tag_keys(tags)
 
     # Should only contain valid labels
     assert loaded_labels == {valid_label: "value1"}
     assert "invalid.label" not in loaded_labels
+    assert list(tags.keys()) == tags_keys
 
 
 def test_load_custom_placement_labels_from_empty_tags():

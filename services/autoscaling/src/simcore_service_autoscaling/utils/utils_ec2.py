@@ -265,6 +265,22 @@ def load_custom_placement_labels_from_tags(
     return result if result is not None else {}
 
 
+def list_custom_placement_label_tag_keys(tags: EC2Tags) -> list[AWSTagKey]:
+    """List all custom placement label tag keys from EC2 tags.
+
+    Identifies both single and chunked tag formats for custom placement labels.
+
+    Args:
+        tags: EC2Tags dict to search
+
+    Returns:
+        List of matching tag keys (empty list if none found)
+    """
+    return list_tag_keys(
+        tags, base_tag_key=_SIMCORE_AUTOSCALING_CUSTOM_PLACEMENT_LABELS_TAG_KEY
+    )
+
+
 def get_ec2_tags_dynamic(app_settings: ApplicationSettings) -> EC2Tags:
     assert app_settings.AUTOSCALING_NODES_MONITORING  # nosec
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
