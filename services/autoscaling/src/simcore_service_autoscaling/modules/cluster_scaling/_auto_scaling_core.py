@@ -916,9 +916,7 @@ async def _find_needed_instances(
     )
 
     # Build dict of instances with their counts to batch identical instances
-    from collections import defaultdict
-
-    instances_with_counts: dict[InstanceToLaunch, int] = defaultdict(int)
+    instances_with_counts: dict[InstanceToLaunch, int] = collections.defaultdict(int)
 
     for assigned_instance in needed_new_instance_types_for_tasks:
         instance_to_launch = InstanceToLaunch(
