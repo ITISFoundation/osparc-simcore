@@ -1052,9 +1052,9 @@ qx.Class.define("osparc.dashboard.CardBase", {
         if (moveToButton) {
           moveToButton.setEnabled(osparc.study.Utils.canMoveTo(resourceData));
         }
-        const trashButton = menuButtons.find(menuBtn => "trashButton" in menuBtn);
-        if (trashButton) {
-          trashButton.setEnabled(osparc.study.Utils.canBeDeleted(resourceData));
+        const deleteButton = menuButtons.find(menuBtn => "deleteButton" in menuBtn);
+        if (deleteButton) {
+          deleteButton.setEnabled(osparc.study.Utils.canBeDeleted(resourceData));
         }
       }
     },

@@ -2079,11 +2079,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         menu.addSeparator();
         const trashButton = this.__getTrashStudyMenuButton(studyData, false);
         menu.add(trashButton);
-      } else if (this.__deleteOrRemoveMe(studyData) === "remove") {
-        // if I'm a collaborator, let me remove myself from the study. In that case it would be a Delete for me
-        menu.addSeparator();
-        const deleteButton = this.__getDeleteStudyMenuButton(studyData, false);
-        menu.add(deleteButton);
       }
 
       card.evaluateMenuButtons();
@@ -2344,23 +2339,13 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __getTrashStudyMenuButton: function(studyData) {
       const trashButton = new qx.ui.menu.Button(this.tr("Delete"), "@FontAwesome5Solid/trash/12");
-      trashButton["trashButton"] = true;
+      trashButton["deleteButton"] = true;
       trashButton.set({
         appearance: "menu-button"
       });
       osparc.utils.Utils.setIdToWidget(trashButton, "studyItemMenuDelete");
       trashButton.addListener("execute", () => this.__trashStudyRequested(studyData), this);
       return trashButton;
-    },
-
-    __getUntrashStudyMenuButton: function(studyData) {
-      const restoreButton = new qx.ui.menu.Button(this.tr("Restore"), "@MaterialIcons/restore_from_trash/16");
-      restoreButton["untrashButton"] = true;
-      restoreButton.set({
-        appearance: "menu-button"
-      });
-      restoreButton.addListener("execute", () => this.__untrashStudy(studyData), this);
-      return restoreButton;
     },
 
     __getDeleteStudyMenuButton: function(studyData) {
@@ -2372,6 +2357,16 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       osparc.utils.Utils.setIdToWidget(deleteButton, "studyItemMenuDelete");
       deleteButton.addListener("execute", () => this.__deleteStudyRequested(studyData), this);
       return deleteButton;
+    },
+
+    __getUntrashStudyMenuButton: function(studyData) {
+      const restoreButton = new qx.ui.menu.Button(this.tr("Restore"), "@MaterialIcons/restore_from_trash/16");
+      restoreButton["untrashButton"] = true;
+      restoreButton.set({
+        appearance: "menu-button"
+      });
+      restoreButton.addListener("execute", () => this.__untrashStudy(studyData), this);
+      return restoreButton;
     },
 
     __getDeleteFunctionMenuButton: function(functionData) {
