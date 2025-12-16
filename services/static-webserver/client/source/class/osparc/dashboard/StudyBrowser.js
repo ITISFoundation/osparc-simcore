@@ -1996,10 +1996,20 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             const untrashButton = this.__getUntrashStudyMenuButton(studyData);
             menu.add(untrashButton);
           }
-          if (deleteAccess) {
-            const deleteButton = this.__getDeleteStudyMenuButton(studyData, false);
-            menu.addSeparator();
-            menu.add(deleteButton);
+          const deleteAction = this.__getDeleteAction(studyData);
+          switch (deleteAction) {
+            case "delete": {
+              const deleteButton = this.__getDeleteStudyMenuButton(studyData, false);
+              deleteButton.setLabel(this.tr("Delete permanently"));
+              menu.addSeparator();
+              menu.add(deleteButton);
+            }
+            case "remove": {
+              const deleteButton = this.__getDeleteStudyMenuButton(studyData, false);
+              deleteButton.setLabel(this.tr("Remove"));
+              menu.add(deleteButton);
+              break;
+            }
           }
         }
         return;
@@ -2070,18 +2080,14 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         menu.add(moveToButton);
       }
 
-      const deleteAction = this.__deleteOrRemoveMe(studyData);
+      const deleteAction = this.__getDeleteAction(studyData);
       switch (deleteAction) {
-        case "delete": {
-          menu.addSeparator();
-          const trashButton = this.__getTrashStudyMenuButton(studyData, false);
-          menu.add(trashButton);
-          break;
-        }
+        case "delete":
+        case "trash":
         case "remove": {
           menu.addSeparator();
-          const removeButton = this.__getRemoveStudyMenuButton(studyData, false);
-          menu.add(removeButton);
+          const trashButton = this.__getDeleteStudyMenuButton(studyData, false);
+          menu.add(trashButton);
           break;
         }
       }
@@ -2310,9 +2316,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __trashStudyRequested: function(studyData) {
       let win = null;
-      const deleteAction = this.__deleteOrRemoveMe(studyData);
+      const deleteAction = this.__getDeleteAction(studyData);
       switch (deleteAction) {
-        case "delete":
+        case "trash":
           win = this.__createConfirmTrashWindow([studyData.name]);
           break;
         case "remove":
@@ -2331,7 +2337,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __deleteStudyRequested: function(studyData) {
-      const deleteAction = this.__deleteOrRemoveMe(studyData);
+      const deleteAction = this.__getDeleteAction(studyData);
       if (deleteAction === "delete") {
         const win = this.__createConfirmDeleteWindow([studyData.name]);
         win.center();
@@ -2344,30 +2350,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
     },
 
-    __getTrashStudyMenuButton: function(studyData) {
-      const trashButton = new qx.ui.menu.Button(this.tr("Delete"), "@FontAwesome5Solid/trash/12");
-      trashButton["deleteButton"] = true;
-      trashButton.set({
-        appearance: "menu-button"
-      });
-      osparc.utils.Utils.setIdToWidget(trashButton, "studyItemMenuDelete");
-      trashButton.addListener("execute", () => this.__trashStudyRequested(studyData), this);
-      return trashButton;
-    },
-
-    __getRemoveStudyMenuButton: function(studyData) {
-      const removeButton = new qx.ui.menu.Button(this.tr("Delete"), "@FontAwesome5Solid/trash/12");
-      removeButton["removeButton"] = true;
-      removeButton.set({
-        appearance: "menu-button"
-      });
-      osparc.utils.Utils.setIdToWidget(removeButton, "studyItemMenuRemove");
-      removeButton.addListener("execute", () => this.__trashStudyRequested(studyData), this);
-      return removeButton;
-    },
-
     __getDeleteStudyMenuButton: function(studyData) {
-      const deleteButton = new qx.ui.menu.Button(this.tr("Delete permanently"), "@FontAwesome5Solid/trash/12");
+      const deleteButton = new qx.ui.menu.Button(this.tr("Delete"), "@FontAwesome5Solid/trash/12");
       deleteButton["deleteButton"] = true;
       deleteButton.set({
         appearance: "menu-button"
@@ -2556,27 +2540,29 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __trashStudy: function(studyData) {
-      const deleteAction = this.__deleteOrRemoveMe(studyData);
-      if (deleteAction === "remove") {
-        this.__removeMeFromCollaborators(studyData)
-          .then(() => {
-            this.__removeFromList(studyData.uuid);
-            const msg = this.tr("Successfully removed");
-            osparc.FlashMessenger.logAs(msg, "INFO");
-          })
-          .catch(err => osparc.FlashMessenger.logError(err))
-          .finally(() => this.resetSelection());
-        return;
-      } else if (deleteAction === "delete") {
-        osparc.store.Study.getInstance().trashStudy(studyData.uuid)
-          .then(() => {
-            this.__removeFromList(studyData.uuid);
-            const msg = this.tr("Successfully deleted");
-            osparc.FlashMessenger.logAs(msg, "INFO");
-            this._resourceFilter.setTrashEmpty(false);
-          })
-          .catch(err => osparc.FlashMessenger.logError(err))
-          .finally(() => this.resetSelection());
+      const deleteAction = this.__getDeleteAction(studyData);
+      switch (deleteAction) {
+        case "remove":
+          this.__removeMeFromCollaborators(studyData)
+            .then(() => {
+              this.__removeFromList(studyData.uuid);
+              const msg = this.tr("Successfully removed");
+              osparc.FlashMessenger.logAs(msg, "INFO");
+            })
+            .catch(err => osparc.FlashMessenger.logError(err))
+            .finally(() => this.resetSelection());
+          break;
+       case "trash":
+          osparc.store.Study.getInstance().trashStudy(studyData.uuid)
+            .then(() => {
+              this.__removeFromList(studyData.uuid);
+              const msg = this.tr("Successfully deleted");
+              osparc.FlashMessenger.logAs(msg, "INFO");
+              this._resourceFilter.setTrashEmpty(false);
+            })
+            .catch(err => osparc.FlashMessenger.logError(err))
+            .finally(() => this.resetSelection());
+          break;
       }
     },
 
@@ -2588,13 +2574,18 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     Determines whether the user can delete the study or just remove themselves as collaborator
     Returns:
       "delete" -> user can delete the study
+      "trash"  -> user can trash the study
       "remove" -> user can remove themselves as collaborator
       "none"   -> user cannot delete nor remove themselves
     */
-    __deleteOrRemoveMe: function(studyData) {
+    __getDeleteAction: function(studyData) {
       const deleteAccess = osparc.data.model.Study.canIDelete(studyData["accessRights"]);
       if (deleteAccess) {
-        return "delete";
+        if (this.getCurrentContext() === osparc.dashboard.StudyBrowser.CONTEXT.TRASH && Boolean(studyData["trashedAt"])) {
+          return "delete";
+        } else {
+          return "trash";
+        }
       }
       // check if I'm collaborator
       const writeAccess = osparc.data.model.Study.canIWrite(studyData["accessRights"]);
@@ -2617,7 +2608,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __deleteStudy: function(studyData) {
       let operationPromise = null;
-      const deleteAction = this.__deleteOrRemoveMe(studyData);
+      const deleteAction = this.__getDeleteAction(studyData);
       switch (deleteAction) {
         case "delete":
           operationPromise = osparc.store.Study.getInstance().deleteStudy(studyData.uuid);
@@ -2638,7 +2629,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __deleteStudiesRequested: function(selection) {
       const studiesData = selection.map(button => this.__getStudyData(button.getUuid()));
-      // const win = this.__deleteOrRemoveMe(studyData) === "remove" ? this.__createConfirmRemoveForMeWindow(studyData.name) : this.__createConfirmDeleteWindow([studyData.name]);
+      // const win = this.__getDeleteAction(studyData) === "remove" ? this.__createConfirmRemoveForMeWindow(studyData.name) : this.__createConfirmDeleteWindow([studyData.name]);
       const win = this.__createConfirmDeleteWindow(selection.map(button => button.getTitle()));
       win.center();
       win.open();
