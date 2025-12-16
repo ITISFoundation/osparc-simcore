@@ -759,7 +759,6 @@ def _try_assign_task_to_ec2_instance_type(
 
         # Compatible! Assign task and merge labels
         instance.assign_task(task, task_required_resources)
-        instance.merge_labels(task_required_labels)
         _logger.debug(
             "%s",
             f"assigned task with {task_required_resources=}, {task_required_ec2_instance=}, labels={task_required_labels} to "

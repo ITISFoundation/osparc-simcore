@@ -44,10 +44,6 @@ class AssignedTasksToInstanceType(_TaskAssignmentMixin):
                 return False
         return True
 
-    def merge_labels(self, task_labels: dict) -> None:
-        """Merge task labels into instance's node labels."""
-        self.osparc_custom_node_labels.update(task_labels)
-
 
 @dataclass(frozen=True, kw_only=True, slots=True)
 class _BaseInstance(_TaskAssignmentMixin):
