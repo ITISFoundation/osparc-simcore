@@ -35,7 +35,7 @@ class Ec2InvalidDnsNameError(AutoscalingRuntimeError):
 
 
 class Ec2TagDeserializationError(AutoscalingRuntimeError):
-    msg_template: str = "Failed to deserialize EC2 tag {tag_key}: {reason}"
+    msg_template: str = "Failed to deserialize EC2 tag {tag_key}"
 
 
 class DaskSchedulerNotFoundError(AutoscalingRuntimeError):

@@ -157,10 +157,8 @@ def load_from_ec2_tags[T](
     if base_tag_key in tags:
         try:
             return type_adapter.validate_json(tags[base_tag_key])
-        except (JSONDecodeError, TypeError, ValueError) as exc:
-            raise Ec2TagDeserializationError(
-                tag_key=base_tag_key, reason=str(exc)
-            ) from exc
+        except ValueError as exc:
+            raise Ec2TagDeserializationError(tag_key=base_tag_key) from exc
 
     # Check for chunked format (base_tag_key_0, base_tag_key_1, ...)
     # Note: if we have chunked tags, base_tag_key itself will NOT be in tags
