@@ -131,8 +131,7 @@ qx.Class.define("osparc.auth.ui.RequestAccount", {
             country.setSelection([countryFound])
           }
         })
-        .catch(err => {
-          console.error(err);
+        .catch(() => {
           const emptyItem = new qx.ui.form.ListItem("", null, "");
           country.add(emptyItem);
           country.setSelection([emptyItem]);

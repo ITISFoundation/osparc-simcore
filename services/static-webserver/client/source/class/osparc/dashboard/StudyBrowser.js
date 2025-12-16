@@ -703,7 +703,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       moveFolderTo.addListener("cancel", () => win.close());
     },
 
-    __doMoveFolder: function(folderId, destWorkspaceId, destFolderId) {
+    __moveFolder: function(folderId, destWorkspaceId, destFolderId) {
       osparc.store.Folders.getInstance().moveFolderToWorkspace(folderId, destWorkspaceId) // first move to workspace
         .then(() => osparc.store.Folders.getInstance().moveFolderToFolder(folderId, destFolderId)) // then move to folder
         .then(() => this.__reloadFolders())
@@ -712,12 +712,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __folderToFolderRequested: function(folderId, workspaceId, destWorkspaceId, destFolderId) {
       if (destWorkspaceId === workspaceId) {
-        this.__doMoveFolder(folderId, destWorkspaceId, destFolderId);
+        this.__moveFolder(folderId, destWorkspaceId, destFolderId);
       } else {
         const confirmationWin = this.__showMoveToDifferentWorkspaceWarningMessage();
         confirmationWin.addListener("close", () => {
           if (confirmationWin.getConfirmed()) {
-            this.__doMoveFolder(folderId, destWorkspaceId, destFolderId);
+            this.__moveFolder(folderId, destWorkspaceId, destFolderId);
           }
         }, this);
       }
@@ -878,7 +878,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         }
         studiesCont.setLastSelectedIndex(studiesCont.getIndex(item));
       } else {
-        const studyData = this.__getStudyData(item.getUuid(), false);
+        const studyData = this.__getStudyData(item.getUuid());
         this._openResourceDetails(studyData);
         this.resetSelection();
       }
@@ -1059,7 +1059,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       if (this.getCurrentContext().includes("search")) {
         // Use the ``search`` functionality only if the user types some text
-        // tags should only be used to filter the current context (search context ot workspace/folder context)
+        // tags should only be used to filter the current context (search context or workspace/folder context)
         const filterData = this._searchBarFilter.getFilterData();
         if (filterData.text) {
           requestParams.text = filterData.text ? encodeURIComponent(filterData.text) : ""; // name, description and uuid
@@ -1651,7 +1651,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
       this._resourceFilter.addListener("trashStudyRequested", e => {
         const studyData = e.getData();
-        this.__trashStudyRequested(studyData);
+        this.__deleteOrTrashStudyRequested(studyData);
       });
       this._resourceFilter.addListener("trashFolderRequested", e => {
         const folderId = e.getData();
@@ -1752,7 +1752,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
             const selection = this._resourcesContainer.getSelection();
             selection.forEach(button => {
               const studyData = button.getResourceData();
-              this.__doMoveStudy(studyData, destWorkspaceId, destFolderId);
+              this.__moveStudy(studyData, destWorkspaceId, destFolderId);
             });
             this.resetSelection();
             this.setMultiSelection(false);
@@ -1781,19 +1781,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       osparc.utils.Utils.setIdToWidget(trashButton, "deleteStudiesBtn");
       trashButton.addListener("execute", () => {
         const selection = this._resourcesContainer.getSelection();
-        const preferencesSettings = osparc.Preferences.getInstance();
-        if (preferencesSettings.getConfirmDeleteStudy()) {
-          const win = this.__createConfirmTrashWindow(selection.map(button => button.getTitle()));
-          win.center();
-          win.open();
-          win.addListener("close", () => {
-            if (win.getConfirmed()) {
-              this.__trashStudies(selection.map(button => this.__getStudyData(button.getUuid(), false)), false);
-            }
-          }, this);
-        } else {
-          this.__trashStudies(selection.map(button => this.__getStudyData(button.getUuid(), false)), false);
-        }
+        const studiesData = selection.map(button => this.__getStudyData(button.getUuid()));
+        this.__trashStudiesRequested(studiesData);
       }, this);
       return trashButton;
     },
@@ -1806,19 +1795,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       osparc.utils.Utils.setIdToWidget(deleteButton, "deleteStudiesBtn");
       deleteButton.addListener("execute", () => {
         const selection = this._resourcesContainer.getSelection();
-        const preferencesSettings = osparc.Preferences.getInstance();
-        if (preferencesSettings.getConfirmDeleteStudy()) {
-          const win = this.__createConfirmDeleteWindow(selection.map(button => button.getTitle()));
-          win.center();
-          win.open();
-          win.addListener("close", () => {
-            if (win.getConfirmed()) {
-              this.__doDeleteStudies(selection.map(button => this.__getStudyData(button.getUuid(), false)), false);
-            }
-          }, this);
-        } else {
-          this.__doDeleteStudies(selection.map(button => this.__getStudyData(button.getUuid(), false)), false);
-        }
+        const studiesData = selection.map(button => this.__getStudyData(button.getUuid()));
+        this.__deleteStudiesRequested(studiesData);
       }, this);
       return deleteButton;
     },
@@ -2001,21 +1979,22 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     __populateStudyCardMenu: function(card) {
       const menu = card.getMenu();
       const studyData = card.getResourceData();
-
       const writeAccess = osparc.data.model.Study.canIWrite(studyData["accessRights"]);
-      const deleteAccess = osparc.data.model.Study.canIDelete(studyData["accessRights"]);
 
-      if (this.getCurrentContext() === osparc.dashboard.StudyBrowser.CONTEXT.TRASH) {
-        const trashed = Boolean(studyData["trashedAt"]);
-        if (trashed) {
-          if (writeAccess) {
-            const untrashButton = this.__getUntrashStudyMenuButton(studyData);
-            menu.add(untrashButton);
-          }
-          if (deleteAccess) {
-            const deleteButton = this.__getDeleteStudyMenuButton(studyData, false);
+      if (this.getCurrentContext() === osparc.dashboard.StudyBrowser.CONTEXT.TRASH && Boolean(studyData["trashedAt"])) {
+        if (writeAccess) {
+          menu.addSeparator();
+          const untrashButton = this.__getUntrashStudyMenuButton(studyData);
+          menu.add(untrashButton);
+        }
+        const deleteAction = this.__getDeleteAction(studyData);
+        switch (deleteAction) {
+          case "delete":
+          case "remove": {
             menu.addSeparator();
+            const deleteButton = this.__getDeleteStudyMenuButton(studyData, false);
             menu.add(deleteButton);
+            break;
           }
         }
         return;
@@ -2037,20 +2016,19 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
 
       if (writeAccess) {
-        const editThumbnailButton = this.__getThumbnailStudyMenuButton(studyData);
-        menu.add(editThumbnailButton);
+        const tagsButton = this._getTagsMenuButton(card);
+        if (tagsButton) {
+          menu.add(tagsButton);
+        }
       }
-
-      const duplicateStudyButton = this.__getDuplicateMenuButton(studyData);
-      menu.add(duplicateStudyButton);
 
       if (writeAccess && osparc.product.Utils.showConvertToPipeline()) {
         const convertToPipelineButton = this.__getConvertToPipelineMenuButton(studyData);
         menu.add(convertToPipelineButton);
       }
 
-      if (osparc.product.Utils.showExportCMis()) {
-        const exportStudyButton = this.__getExportCMisMenuButton(studyData);
+      if (osparc.product.Utils.showExportCMIS()) {
+        const exportStudyButton = this.__getExportCMISMenuButton(studyData);
         menu.add(exportStudyButton);
       }
 
@@ -2064,12 +2042,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         }
       }
 
-      if (writeAccess) {
-        const tagsButton = this._getTagsMenuButton(card);
-        if (tagsButton) {
-          menu.add(tagsButton);
-        }
-      }
+      const duplicateStudyButton = this.__getDuplicateMenuButton(studyData);
+      menu.add(duplicateStudyButton);
 
       const studyDataButton = this.__getStudyDataMenuButton(card);
       menu.add(studyDataButton);
@@ -2079,22 +2053,21 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         menu.add(billingsSettingsButton);
       }
 
-      menu.addSeparator();
-
       const moveToButton = this.__getMoveStudyToMenuButton(studyData);
       if (moveToButton) {
         menu.add(moveToButton);
       }
 
-      if (deleteAccess) {
-        menu.addSeparator();
-        const trashButton = this.__getTrashStudyMenuButton(studyData, false);
-        menu.add(trashButton);
-      } else if (this.__deleteOrRemoveMe(studyData) === "remove") {
-        // if I'm a collaborator, let me remove myself from the study. In that case it would be a Delete for me
-        menu.addSeparator();
-        const deleteButton = this.__getDeleteStudyMenuButton(studyData, false);
-        menu.add(deleteButton);
+      const deleteAction = this.__getDeleteAction(studyData);
+      switch (deleteAction) {
+        case "delete":
+        case "trash":
+        case "remove": {
+          menu.addSeparator();
+          const deleteButton = this.__getDeleteStudyMenuButton(studyData, false);
+          menu.add(deleteButton);
+          break;
+        }
       }
 
       card.evaluateMenuButtons();
@@ -2131,27 +2104,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return renameButton;
     },
 
-    __getThumbnailStudyMenuButton: function(studyData) {
-      const thumbButton = new qx.ui.menu.Button(this.tr("Thumbnail..."), "@FontAwesome5Solid/image/12");
-      thumbButton.addListener("execute", () => {
-        osparc.editor.ThumbnailSuggestions.extractThumbnailSuggestions(studyData)
-          .then(suggestions => {
-            const title = this.tr("Edit Thumbnail");
-            const oldThumbnail = studyData.thumbnail;
-            const thumbnailEditor = new osparc.editor.ThumbnailEditor(oldThumbnail, suggestions);
-            const win = osparc.ui.window.Window.popUpInWindow(thumbnailEditor, title, suggestions.length > 2 ? 500 : 350, 280);
-            thumbnailEditor.addListener("updateThumbnail", e => {
-              win.close();
-              const newUrl = e.getData();
-              this.__updateThumbnail(studyData, newUrl);
-            }, this);
-            thumbnailEditor.addListener("cancel", () => win.close());
-          })
-          .catch(err => console.error(err));
-      }, this);
-      return thumbButton;
-    },
-
     __updateName: function(studyData, name) {
       osparc.store.Study.getInstance().patchStudyData(studyData, "name", name)
         .then(() => this._updateStudyData(studyData))
@@ -2180,7 +2132,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return studyBillingSettingsButton;
     },
 
-    __doMoveStudy: function(studyData, destWorkspaceId, destFolderId) {
+    __moveStudy: function(studyData, destWorkspaceId, destFolderId) {
       this.__moveStudyToWorkspace(studyData, destWorkspaceId) // first move to workspace
         .then(() => this.__moveStudyToFolder(studyData, destFolderId)) // then move to folder
         .then(() => this.__removeFromList(studyData["uuid"]))
@@ -2189,12 +2141,12 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
 
     __studyToFolderRequested: function(studyData, destWorkspaceId, destFolderId) {
       if (studyData["workspaceId"] === destWorkspaceId) {
-        this.__doMoveStudy(studyData, destWorkspaceId, destFolderId);
+        this.__moveStudy(studyData, destWorkspaceId, destFolderId);
       } else {
         const confirmationWin = this.__showMoveToDifferentWorkspaceWarningMessage();
         confirmationWin.addListener("close", () => {
           if (confirmationWin.getConfirmed()) {
-            this.__doMoveStudy(studyData, destWorkspaceId, destFolderId);
+            this.__moveStudy(studyData, destWorkspaceId, destFolderId);
           }
         }, this);
       }
@@ -2300,7 +2252,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .then(() => this._updateStudyData(studyData))
     },
 
-    __getExportCMisMenuButton: function(studyData) {
+    __getExportCMISMenuButton: function(studyData) {
       const exportButton = new qx.ui.menu.Button(this.tr("Export cMIS"), "@FontAwesome5Solid/cloud-download-alt/12");
       exportButton["exportCMISButton"] = true;
       const isDisabled = osparc.utils.DisabledPlugins.isExportDisabled();
@@ -2309,55 +2261,68 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return exportButton;
     },
 
-    _deleteResourceRequested: function(studyId) {
-      if (this.getCurrentContext() === osparc.dashboard.StudyBrowser.CONTEXT.TRASH) {
-        this.__deleteStudyRequested(this.__getStudyData(studyId));
-      } else {
-        this.__trashStudyRequested(this.__getStudyData(studyId));
+    _emptyProjectIconClicked: function(studyId) {
+      const studyData = this.__getStudyData(studyId);
+      const deleteAction = this.__getDeleteAction(studyData);
+      switch (deleteAction) {
+        case "delete":
+        case "trash":
+        case "remove":
+          this.__deleteOrTrashStudyRequested(studyData);
+          break;
       }
     },
 
-    __trashStudyRequested: function(studyData) {
-      const preferencesSettings = osparc.Preferences.getInstance();
-      if (preferencesSettings.getConfirmDeleteStudy()) {
-        const win = this.__createConfirmTrashWindow([studyData.name]);
+    __deleteOrTrashStudyRequested: function(studyData) {
+      let win = null;
+      const deleteAction = this.__getDeleteAction(studyData);
+      switch (deleteAction) {
+        case "delete":
+          win = this.__createConfirmDeleteWindow([studyData.name]);
+          break;
+        case "trash":
+          win = this.__createConfirmTrashWindow([studyData.name]);
+          break;
+        case "remove":
+          win = this.__createConfirmRemoveForMeWindow(studyData.name);
+          break;
+      }
+      if (win) {
         win.center();
         win.open();
         win.addListener("close", () => {
           if (win.getConfirmed()) {
-            this.__trashStudy(studyData);
+            if (this.getCurrentContext() === osparc.dashboard.StudyBrowser.CONTEXT.TRASH && Boolean(studyData["trashedAt"])) {
+              this.__deleteStudy(studyData);
+            } else {
+              this.__trashStudy(studyData);
+            }
           }
         }, this);
-      } else {
-        this.__trashStudy(studyData);
       }
     },
 
-    __deleteStudyRequested: function(studyData) {
-      const preferencesSettings = osparc.Preferences.getInstance();
-      if (preferencesSettings.getConfirmDeleteStudy()) {
-        const win = this.__deleteOrRemoveMe(studyData) === "remove" ? this.__createConfirmRemoveForMeWindow(studyData.name) : this.__createConfirmDeleteWindow([studyData.name]);
-        win.center();
-        win.open();
-        win.addListener("close", () => {
-          if (win.getConfirmed()) {
-            this.__doDeleteStudy(studyData);
-          }
-        }, this);
-      } else {
-        this.__doDeleteStudy(studyData);
+    __getDeleteStudyMenuButton: function(studyData) {
+      const deleteButton = new qx.ui.menu.Button(null, "@FontAwesome5Solid/trash/12");
+      const deleteAction = this.__getDeleteAction(studyData);
+      switch (deleteAction) {
+        case "delete":
+          deleteButton.setLabel(this.tr("Delete permanently"));
+          break;
+        case "trash":
+          deleteButton.setLabel(this.tr("Delete"));
+          break;
+        case "remove":
+          deleteButton.setLabel(this.tr("Remove"));
+          break;
       }
-    },
-
-    __getTrashStudyMenuButton: function(studyData) {
-      const trashButton = new qx.ui.menu.Button(this.tr("Delete"), "@FontAwesome5Solid/trash/12");
-      trashButton["trashButton"] = true;
-      trashButton.set({
+      deleteButton["deleteButton"] = true;
+      deleteButton.set({
         appearance: "menu-button"
       });
-      osparc.utils.Utils.setIdToWidget(trashButton, "studyItemMenuDelete");
-      trashButton.addListener("execute", () => this.__trashStudyRequested(studyData), this);
-      return trashButton;
+      osparc.utils.Utils.setIdToWidget(deleteButton, "studyItemMenuDelete");
+      deleteButton.addListener("execute", () => this.__deleteOrTrashStudyRequested(studyData), this);
+      return deleteButton;
     },
 
     __getUntrashStudyMenuButton: function(studyData) {
@@ -2368,17 +2333,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       });
       restoreButton.addListener("execute", () => this.__untrashStudy(studyData), this);
       return restoreButton;
-    },
-
-    __getDeleteStudyMenuButton: function(studyData) {
-      const deleteButton = new qx.ui.menu.Button(this.tr("Delete permanently"), "@FontAwesome5Solid/trash/12");
-      deleteButton["deleteButton"] = true;
-      deleteButton.set({
-        appearance: "menu-button"
-      });
-      osparc.utils.Utils.setIdToWidget(deleteButton, "studyItemMenuDelete");
-      deleteButton.addListener("execute", () => this.__deleteStudyRequested(studyData), this);
-      return deleteButton;
     },
 
     __getDeleteFunctionMenuButton: function(functionData) {
@@ -2550,44 +2504,79 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __trashStudy: function(studyData) {
-      osparc.store.Study.getInstance().trashStudy(studyData.uuid)
-        .then(() => {
-          this.__removeFromList(studyData.uuid);
-          const msg = this.tr("Successfully deleted");
-          osparc.FlashMessenger.logAs(msg, "INFO");
-          this._resourceFilter.setTrashEmpty(false);
-        })
-        .catch(err => osparc.FlashMessenger.logError(err))
-        .finally(() => this.resetSelection());
+      const deleteAction = this.__getDeleteAction(studyData);
+      switch (deleteAction) {
+        case "remove": {
+          const myGid = osparc.auth.Data.getInstance().getGroupId();
+          osparc.store.Study.getInstance().removeCollaborator(studyData, myGid)
+          .then(() => {
+            this.__removeFromList(studyData.uuid);
+            const msg = this.tr("Successfully removed");
+            osparc.FlashMessenger.logAs(msg, "INFO");
+          })
+          .catch(err => osparc.FlashMessenger.logError(err))
+          .finally(() => this.resetSelection());
+          break;
+        }
+        case "trash":
+          osparc.store.Study.getInstance().trashStudy(studyData.uuid)
+            .then(() => {
+              this.__removeFromList(studyData.uuid);
+              const msg = this.tr("Successfully deleted");
+              osparc.FlashMessenger.logAs(msg, "INFO");
+              this._resourceFilter.setTrashEmpty(false);
+            })
+            .catch(err => osparc.FlashMessenger.logError(err))
+            .finally(() => this.resetSelection());
+          break;
+      }
     },
 
-    __trashStudies: function(studiesData) {
-      studiesData.forEach(studyData => this.__trashStudy(studyData));
-    },
-
-    __deleteOrRemoveMe: function(studyData) {
+    /*
+    Determines whether the user can delete the study or just remove themselves as collaborator
+    Returns:
+      "delete" -> user can delete the study
+      "trash"  -> user can trash the study
+      "remove" -> user can remove themselves as collaborator
+      "none"   -> user cannot delete nor remove themselves
+    */
+    __getDeleteAction: function(studyData) {
       const deleteAccess = osparc.data.model.Study.canIDelete(studyData["accessRights"]);
+      if (deleteAccess) {
+        if (this.getCurrentContext() === osparc.dashboard.StudyBrowser.CONTEXT.TRASH && Boolean(studyData["trashedAt"])) {
+          return "delete";
+        } else {
+          return "trash";
+        }
+      }
+      // check if I'm collaborator
+      const writeAccess = osparc.data.model.Study.canIWrite(studyData["accessRights"]);
       const myGid = osparc.auth.Data.getInstance().getGroupId();
+      const amICollaborator = myGid in studyData["accessRights"];
       const collabGids = Object.keys(studyData["accessRights"]);
-      const amICollaborator = collabGids.indexOf(myGid) > -1;
-      return (!deleteAccess && collabGids.length > 1 && amICollaborator) ? "remove" : "delete";
+      if (writeAccess && amICollaborator && collabGids.length > 1) {
+        return "remove";
+      }
+      return "none";
     },
 
-    __removeMeFromCollaborators: function(studyData) {
-      const arCopy = osparc.utils.Utils.deepCloneObject(studyData["accessRights"]);
-      // remove me from collaborators
-      const myGid = osparc.auth.Data.getInstance().getGroupId();
-      delete arCopy[myGid];
-      return osparc.store.Study.getInstance().patchStudyData(studyData, "accessRights", arCopy);
-    },
-
-    __doDeleteStudy: function(studyData) {
+    __deleteStudy: function(studyData) {
       let operationPromise = null;
-      if (this.__deleteOrRemoveMe(studyData) === "remove") {
-        operationPromise = this.__removeMeFromCollaborators(studyData);
-      } else {
-        // delete study
-        operationPromise = osparc.store.Study.getInstance().deleteStudy(studyData.uuid);
+      const deleteAction = this.__getDeleteAction(studyData);
+      switch (deleteAction) {
+        case "delete":
+          operationPromise = osparc.store.Study.getInstance().deleteStudy(studyData.uuid);
+          break;
+        case "remove": {
+          const myGid = osparc.auth.Data.getInstance().getGroupId();
+          operationPromise = osparc.store.Study.getInstance().removeCollaborator(studyData, myGid);
+          break;
+        }
+        default: {
+          const errMsg = this.tr("You don't have permissions to delete or remove this project.");
+          operationPromise = new Promise((resolve, reject) => reject(errMsg));
+          break;
+        }
       }
       operationPromise
         .then(() => this.__removeFromList(studyData.uuid))
@@ -2595,8 +2584,26 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         .finally(() => this.resetSelection());
     },
 
-    __doDeleteStudies: function(studiesData) {
-      studiesData.forEach(studyData => this.__doDeleteStudy(studyData));
+    __deleteStudiesRequested: function(studiesData) {
+      const win = this.__createConfirmDeleteWindow(studiesData.map(studyData => studyData["name"]));
+      win.center();
+      win.open();
+      win.addListener("close", () => {
+        if (win.getConfirmed()) {
+          studiesData.forEach(studyData => this.__deleteStudy(studyData));
+        }
+      }, this);
+    },
+
+    __trashStudiesRequested: function(studiesData) {
+      const win = this.__createConfirmTrashWindow(studiesData.map(studyData => studyData["name"]));
+      win.center();
+      win.open();
+      win.addListener("close", () => {
+        if (win.getConfirmed()) {
+          studiesData.forEach(studyData => this.__trashStudy(studyData));
+        }
+      }, this);
     },
 
     __createConfirmTrashWindow: function(studyNames) {
@@ -2619,7 +2626,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
     },
 
     __createConfirmRemoveForMeWindow: function(studyName) {
-      const msg = `'${studyName} ` + this.tr("will be removed from your list. Collaborators will still have access.");
+      const msg = `'${studyName}' ` + this.tr("will be removed from your list. Collaborators will still have access.");
       const confirmationWin = new osparc.ui.window.Confirmation(msg).set({
         caption: this.tr("Remove"),
         confirmText: this.tr("Remove"),
