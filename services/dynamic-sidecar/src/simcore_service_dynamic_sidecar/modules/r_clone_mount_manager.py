@@ -51,7 +51,7 @@ def setup_r_clone_mount_manager(app: FastAPI):
 
         app.state.r_clone_mount_manager = r_clone_mount_manager = RCloneMountManager(
             settings.DY_SIDECAR_R_CLONE_SETTINGS,
-            request_shutdown_handler=partial(_request_shutdown, app),
+            handler_request_shutdown=partial(_request_shutdown, app),
         )
         await r_clone_mount_manager.setup()
 
