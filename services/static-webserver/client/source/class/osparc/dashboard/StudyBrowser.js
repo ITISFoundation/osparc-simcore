@@ -2513,7 +2513,8 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       const deleteAction = this.__getDeleteAction(studyData);
       switch (deleteAction) {
         case "remove":
-          this.__removeMeFromCollaborators(studyData)
+          const myGid = osparc.auth.Data.getInstance().getGroupId();
+          osparc.store.Study.getInstance().removeCollaborator(studyData, myGid)
             .then(() => {
               this.__removeFromList(studyData.uuid);
               const msg = this.tr("Successfully removed");
@@ -2568,14 +2569,6 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       return "none";
     },
 
-    __removeMeFromCollaborators: function(studyData) {
-      const arCopy = osparc.utils.Utils.deepCloneObject(studyData["accessRights"]);
-      // remove me from collaborators
-      const myGid = osparc.auth.Data.getInstance().getGroupId();
-      delete arCopy[myGid];
-      return osparc.store.Study.getInstance().patchStudyData(studyData, "accessRights", arCopy);
-    },
-
     __deleteStudy: function(studyData) {
       let operationPromise = null;
       const deleteAction = this.__getDeleteAction(studyData);
@@ -2583,13 +2576,16 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
         case "delete":
           operationPromise = osparc.store.Study.getInstance().deleteStudy(studyData.uuid);
           break;
-        case "remove":
-          operationPromise = this.__removeMeFromCollaborators(studyData);
+        case "remove": {
+          const myGid = osparc.auth.Data.getInstance().getGroupId();
+          operationPromise = osparc.store.Study.getInstance().removeCollaborator(studyData, myGid);
           break;
-        default:
+        }
+        default: {
           const errMsg = this.tr("You don't have permissions to delete or remove this project.");
           operationPromise = new Promise((resolve, reject) => reject(errMsg));
           break;
+        }
       }
       operationPromise
         .then(() => this.__removeFromList(studyData.uuid))
