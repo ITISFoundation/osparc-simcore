@@ -407,6 +407,17 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
     },
 
     __addPages: function() {
+      const studyStore = osparc.store.Study.getInstance();
+      studyStore.addListener("studyStateChanged", e => {
+        const {
+          studyId,
+          state,
+        } = e.getData();
+        if ("uuid" in this.__resourceData && studyId === this.__resourceData["uuid"] ) {
+          this.__studyStateChanged(state);
+        }
+      });
+
       const tabsView = this.getChildControl("tabs-view");
 
       // keep selected page
@@ -554,7 +565,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         const lazyLoadContent = () => {
           const billingSettings = new osparc.study.BillingSettings(resourceData);
           this.self().disableIfInUse(resourceData, billingSettings);
-          billingSettings.addListener("debtPayed", () => {
+          billingSettings.addListener("debtPaid", () => {
             page.payDebtButton.set({
               visibility: osparc.study.Utils.isInDebt(resourceData) ? "visible" : "excluded"
             });
@@ -1022,6 +1033,16 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
         dataAccess.addListener("tap", () => osparc.jobs.ActivityOverview.popUpInWindow(resourceData));
         this.addWidgetToTabs(dataAccess);
       }
+    },
+
+    __studyStateChanged: function(state) {
+      this.__resourceData.state = osparc.utils.Utils.deepCloneObject(state);
+      this.getChildControl("tabs-view").getChildren().forEach(page => {
+        if (page.openButton) {
+          const openText = osparc.dashboard.ResourceBrowserBase.getOpenText(this.__resourceData);
+          page.openButton.setLabel(openText);
+        }
+      });
     },
 
     // overridden
