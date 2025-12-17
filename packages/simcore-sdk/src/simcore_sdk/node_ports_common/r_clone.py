@@ -12,7 +12,7 @@ from pydantic import AnyUrl, BaseModel, ByteSize
 from servicelib.progress_bar import ProgressBarData
 from servicelib.r_clone_utils import config_file
 from servicelib.utils import logged_gather
-from settings_library.r_clone import RCloneSettings
+from settings_library.r_clone import RCloneSettings, get_rclone_common_optimizations
 from settings_library.utils_r_clone import get_s3_r_clone_config
 
 from ._utils import BaseLogParser
@@ -186,24 +186,7 @@ async def _sync_sources(
             "rclone",
             "--config",
             config_file_name,
-            "--retries",
-            f"{r_clone_settings.R_CLONE_OPTION_RETRIES}",
-            "--transfers",
-            f"{r_clone_settings.R_CLONE_OPTION_TRANSFERS}",
-            # below two options reduce to a minimum the memory footprint
-            # https://forum.rclone.org/t/how-to-set-a-memory-limit/10230/4
-            "--buffer-size",  # docs https://rclone.org/docs/#buffer-size-size
-            r_clone_settings.R_CLONE_OPTION_BUFFER_SIZE,
-            "--checkers",
-            f"{r_clone_settings.R_CLONE_OPTION_CHECKERS}",
-            "--s3-upload-concurrency",
-            f"{r_clone_settings.R_CLONE_S3_UPLOAD_CONCURRENCY}",
-            "--s3-chunk-size",
-            r_clone_settings.R_CLONE_CHUNK_SIZE,
-            # handles the order of file upload
-            "--order-by",
-            r_clone_settings.R_CLONE_ORDER_BY,
-            "--fast-list",
+            *get_rclone_common_optimizations(r_clone_settings),
             "--use-json-log",
             # frequent polling for faster progress updates
             "--stats",
