@@ -212,9 +212,8 @@ class ContainerManager:  # pylint:disable=too-many-instance-attributes
                 client, self._r_clone_network_name
             )
 
-            assert (
-                self.r_clone_settings.R_CLONE_MOUNT_SETTINGS.R_CLONE_VERSION is not None
-            )  # nosec
+            mount_settings = self.r_clone_settings.R_CLONE_MOUNT_SETTINGS
+            assert mount_settings.R_CLONE_VERSION is not None  # nosec
             await _docker_utils.create_r_clone_container(
                 client,
                 self.r_clone_container_name,
@@ -227,10 +226,12 @@ class ContainerManager:  # pylint:disable=too-many-instance-attributes
                     rc_user=self.rc_user,
                     rc_password=self.rc_password,
                 ),
-                r_clone_version=self.r_clone_settings.R_CLONE_MOUNT_SETTINGS.R_CLONE_VERSION,
+                r_clone_version=mount_settings.R_CLONE_VERSION,
                 remote_control_port=self.remote_control_port,
                 r_clone_network_name=self._r_clone_network_name,
                 local_mount_path=self.local_mount_path,
+                memory_limit=mount_settings.R_CLONE_MEMORY_LIMIT,
+                nano_cpus=mount_settings.R_CLONE_NANO_CPUS,
                 handler_get_bind_paths=self.handler_get_bind_paths,
             )
 

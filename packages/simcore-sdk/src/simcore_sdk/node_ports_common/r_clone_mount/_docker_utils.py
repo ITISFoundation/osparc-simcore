@@ -9,6 +9,7 @@ from aiodocker import Docker
 from aiodocker.exceptions import DockerError
 from aiodocker.networks import DockerNetwork
 from models_library.basic_types import PortInt
+from pydantic import ByteSize, NonNegativeInt
 
 from ._models import GetBindPathsProtocol
 
@@ -42,6 +43,8 @@ async def create_r_clone_container(
     remote_control_port: PortInt,
     r_clone_network_name: str,
     local_mount_path: Path,
+    memory_limit: ByteSize,
+    nano_cpus: NonNegativeInt,
     handler_get_bind_paths: GetBindPathsProtocol,
 ) -> None:
     async with get_or_crate_docker_session(docker) as client:
@@ -64,6 +67,9 @@ async def create_r_clone_container(
                     ],
                     "CapAdd": ["SYS_ADMIN"],
                     "SecurityOpt": ["apparmor:unconfined", "seccomp:unconfined"],
+                    "Memory": memory_limit,
+                    "MemorySwap": memory_limit,
+                    "NanoCpus": nano_cpus,
                 },
             },
             name=container_name,

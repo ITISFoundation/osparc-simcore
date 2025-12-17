@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Annotated, Final
 
 from common_library.pydantic_validators import validate_numeric_string_as_timedelta
-from pydantic import Field, NonNegativeInt
+from pydantic import ByteSize, Field, NonNegativeInt, TypeAdapter
 
 from .base import BaseCustomSettings
 from .s3 import S3Settings
@@ -15,6 +15,8 @@ DEFAULT_VFS_CACHE_MAX_SIZE: Final[str] = "10G"
 
 _TRANSFER_COUNT: Final[NonNegativeInt] = 30
 _TPS_PER_TRANSFER: Final[NonNegativeInt] = 7
+
+_ONE_NANO_CPU: Final[NonNegativeInt] = int(1e9)
 
 
 class S3Provider(StrEnum):
@@ -63,6 +65,14 @@ class RCloneMountSettings(BaseCustomSettings):
             description="whether to enable debug logs for the rclone mount command",
         ),
     ] = False
+
+    R_CLONE_MEMORY_LIMIT: Annotated[
+        ByteSize, Field(description="memory limit for the rclone mount container")
+    ] = TypeAdapter(ByteSize).validate_python("1GiB")
+
+    R_CLONE_NANO_CPUS: Annotated[
+        NonNegativeInt, Field(description="CPU limit for the rclone mount container")
+    ] = (1 * _ONE_NANO_CPU)
 
     # CLI command `rclone mount`
 
