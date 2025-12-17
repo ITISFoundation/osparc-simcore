@@ -2001,6 +2001,7 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
       }
 
       const openButton = this._getOpenMenuButton(studyData);
+      card.openButton = openButton;
       if (openButton) {
         menu.add(openButton);
       }

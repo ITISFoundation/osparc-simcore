@@ -896,6 +896,12 @@ qx.Class.define("osparc.dashboard.CardBase", {
     __showCurrentUserGroupIds: function(currentUserGroupIds) {
       const avatarGroup = this.getChildControl("avatar-group");
       avatarGroup.setUserGroupIds(currentUserGroupIds);
+
+      if (this.openButton) {
+        const resourceData = this.getResourceData();
+        const openText = osparc.dashboard.ResourceBrowserBase.getOpenText(resourceData);
+        this.openButton.setLabel(openText);
+      }
     },
 
     __showBlockedCardFromStatus: function(reason, state) {
