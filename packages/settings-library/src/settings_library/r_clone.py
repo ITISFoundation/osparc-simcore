@@ -30,7 +30,7 @@ class RCloneMountSettings(BaseCustomSettings):
     R_CLONE_MOUNT_TRANSFERS_COMPLETED_TIMEOUT: Annotated[
         timedelta,
         Field(
-            description="max amount of time to wait when closing the rclone mount",
+            description="max amount of time to wait for rclone mount command to finish",
         ),
     ] = timedelta(minutes=60)
 
@@ -42,7 +42,7 @@ class RCloneMountSettings(BaseCustomSettings):
 
     # CONTAINER
 
-    R_CLONE_VERSION: Annotated[
+    R_CLONE_CONTAINER_VERSION: Annotated[
         str | None,
         Field(
             pattern=r"^\d+\.\d+\.\d+$",
@@ -50,7 +50,7 @@ class RCloneMountSettings(BaseCustomSettings):
         ),
     ] = None
 
-    R_CLONE_CONFIG_FILE_PATH: Annotated[
+    R_CLONE_CONTAINER_CONFIG_FILE_PATH: Annotated[
         Path,
         Field(
             description="path inside the container where the rclone config file is located",
@@ -59,18 +59,18 @@ class RCloneMountSettings(BaseCustomSettings):
         "/tmp/rclone.conf"  # noqa: S108
     )
 
-    R_CLONE_MOUNT_SHOW_DEBUG_LOGS: Annotated[
+    R_CLONE_CONTAINER_MOUNT_SHOW_DEBUG_LOGS: Annotated[
         bool,
         Field(
             description="whether to enable debug logs for the rclone mount command",
         ),
     ] = False
 
-    R_CLONE_MEMORY_LIMIT: Annotated[
+    R_CLONE_CONTAINER_MEMORY_LIMIT: Annotated[
         ByteSize, Field(description="memory limit for the rclone mount container")
     ] = TypeAdapter(ByteSize).validate_python("1GiB")
 
-    R_CLONE_NANO_CPUS: Annotated[
+    R_CLONE_CONTAINER_NANO_CPUS: Annotated[
         NonNegativeInt, Field(description="CPU limit for the rclone mount container")
     ] = (1 * _ONE_NANO_CPU)
 

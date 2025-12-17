@@ -102,8 +102,8 @@ def _get_rclone_mount_command(
         [
             "rclone",
             "--config",
-            f"{mount_settings.R_CLONE_CONFIG_FILE_PATH}",
-            ("-vv" if mount_settings.R_CLONE_MOUNT_SHOW_DEBUG_LOGS else ""),
+            f"{mount_settings.R_CLONE_CONTAINER_CONFIG_FILE_PATH}",
+            ("-vv" if mount_settings.R_CLONE_CONTAINER_MOUNT_SHOW_DEBUG_LOGS else ""),
             "mount",
             f"{CONFIG_KEY}:{escaped_remote_path}",
             f"{local_mount_path}",
@@ -148,7 +148,7 @@ def _get_rclone_mount_command(
         ]
     )
     return _R_CLONE_MOUNT_TEMPLATE.format(
-        r_clone_config_path=mount_settings.R_CLONE_CONFIG_FILE_PATH,
+        r_clone_config_path=mount_settings.R_CLONE_CONTAINER_CONFIG_FILE_PATH,
         r_clone_config_content=r_clone_config_content,
         r_clone_command=r_clone_command,
         local_mount_path=local_mount_path,
@@ -213,7 +213,7 @@ class ContainerManager:  # pylint:disable=too-many-instance-attributes
             )
 
             mount_settings = self.r_clone_settings.R_CLONE_MOUNT_SETTINGS
-            assert mount_settings.R_CLONE_VERSION is not None  # nosec
+            assert mount_settings.R_CLONE_CONTAINER_VERSION is not None  # nosec
             await _docker_utils.create_r_clone_container(
                 client,
                 self.r_clone_container_name,
@@ -226,12 +226,12 @@ class ContainerManager:  # pylint:disable=too-many-instance-attributes
                     rc_user=self.rc_user,
                     rc_password=self.rc_password,
                 ),
-                r_clone_version=mount_settings.R_CLONE_VERSION,
+                r_clone_version=mount_settings.R_CLONE_CONTAINER_VERSION,
                 remote_control_port=self.remote_control_port,
                 r_clone_network_name=self._r_clone_network_name,
                 local_mount_path=self.local_mount_path,
-                memory_limit=mount_settings.R_CLONE_MEMORY_LIMIT,
-                nano_cpus=mount_settings.R_CLONE_NANO_CPUS,
+                memory_limit=mount_settings.R_CLONE_CONTAINER_MEMORY_LIMIT,
+                nano_cpus=mount_settings.R_CLONE_CONTAINER_NANO_CPUS,
                 handler_get_bind_paths=self.handler_get_bind_paths,
             )
 
@@ -481,7 +481,10 @@ class RCloneMountManager:
     ) -> None:
         self.r_clone_settings = r_clone_settings
         self.handler_request_shutdown = handler_request_shutdown
-        if self.r_clone_settings.R_CLONE_MOUNT_SETTINGS.R_CLONE_VERSION is None:
+        if (
+            self.r_clone_settings.R_CLONE_MOUNT_SETTINGS.R_CLONE_CONTAINER_VERSION
+            is None
+        ):
             msg = "R_CLONE_VERSION setting is not set"
             raise RuntimeError(msg)
 
