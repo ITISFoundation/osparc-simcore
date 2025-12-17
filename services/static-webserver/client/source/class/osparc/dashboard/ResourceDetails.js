@@ -413,7 +413,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
           studyId,
           state,
         } = e.getData();
-        if ("uuid" in this.__resourceData && studyId === this.__resourceData["uuid"] ) {
+        if ("uuid" in this.__resourceData && studyId === this.__resourceData["uuid"]) {
           this.__studyStateChanged(state);
         }
       });
