@@ -15,6 +15,7 @@ from models_library.api_schemas_storage.storage_schemas import (
     DatasetMetaDataGet,
     FileMetaDataGet,
 )
+from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import LocationID, SimcoreS3FileID
 from models_library.users import UserID
@@ -71,6 +72,7 @@ async def test_list_dataset_files_metadata(
     initialized_app: FastAPI,
     client: AsyncClient,
     user_id: UserID,
+    product_name: ProductName,
     project_id: ProjectID,
     location_id: LocationID,
     file_size: ByteSize,
@@ -85,7 +87,7 @@ async def test_list_dataset_files_metadata(
             "list_dataset_files_metadata",
             location_id=location_id,
             dataset_id=project_id,
-        ).with_query(user_id=user_id)
+        ).with_query(user_id=user_id, product_name=f"{product_name}")
 
         response = await client.get(f"{url}")
         list_fmds, error = assert_status(
@@ -122,7 +124,7 @@ async def test_list_datasets_metadata(
     ).with_query(user_id=user_id)
 
     response = await client.get(f"{url}")
-    list_datasets, error = assert_status(
+    list_datasets, _ = assert_status(
         response, status.HTTP_200_OK, list[DatasetMetaDataGet]
     )
     assert response.status_code == status.HTTP_200_OK
@@ -143,6 +145,7 @@ async def test_ensure_expand_dirs_defaults_true(
     initialized_app: FastAPI,
     client: AsyncClient,
     user_id: UserID,
+    product_name: ProductName,
     project_id: ProjectID,
     location_id: LocationID,
 ):
@@ -157,7 +160,7 @@ async def test_ensure_expand_dirs_defaults_true(
         "list_dataset_files_metadata",
         location_id=location_id,
         dataset_id=project_id,
-    ).with_query(user_id=user_id)
+    ).with_query(user_id=user_id, product_name=product_name)
 
     await client.get(f"{url}")
 
