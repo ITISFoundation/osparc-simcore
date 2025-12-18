@@ -1388,7 +1388,7 @@ async def test_upload_file_is_directory_and_remove_content(
     directory_in_s3 = await create_empty_directory(DIR_NAME, project_id, node_id)
 
     files_and_directories: list[FileMetaDataGet] = await _list_files_and_directories(
-        initialized_app, client, user_id, location_id
+        initialized_app, client, user_id, product_name, location_id
     )
     assert len(files_and_directories) == 1
 
@@ -1409,7 +1409,7 @@ async def test_upload_file_is_directory_and_remove_content(
     )
 
     files_and_directories: list[FileMetaDataGet] = await _list_files_and_directories(
-        initialized_app, client, user_id, location_id
+        initialized_app, client, user_id, product_name, location_id
     )
     assert len(files_and_directories) == 1
 
@@ -1466,7 +1466,7 @@ async def test_upload_file_is_directory_and_remove_content(
     assert len(list_of_files) == 0
 
     files_and_directories = await _list_files_and_directories(
-        initialized_app, client, user_id, location_id
+        initialized_app, client, user_id, product_name, location_id
     )
     assert len(files_and_directories) == 0
 
