@@ -520,20 +520,12 @@ async def get_dynamic_sidecar_spec(  # pylint:disable=too-many-arguments# noqa: 
         ),
     }
     for label_key, label_template in osparc_custom_placement_constraints.items():
-        try:
-            resolved_value = label_template.format(**label_values)
-            if resolved_value:  # skip if template resolved to empty string
-                placement_constraints.append(
-                    TypeAdapter(DockerPlacementConstraint).validate_python(
-                        f"node.labels.{label_key}=={resolved_value}",
-                    )
+        resolved_value = label_template.format(**label_values)
+        if resolved_value:  # skip if template resolved to empty string
+            placement_constraints.append(
+                TypeAdapter(DockerPlacementConstraint).validate_python(
+                    f"node.labels.{label_key}=={resolved_value}",
                 )
-        except KeyError:
-            # Skip labels with unresolvable template values
-            _logger.debug(
-                "Skipping custom placement label %s: template %s has unresolvable values",
-                label_key,
-                label_template,
             )
 
     #  -----------

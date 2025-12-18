@@ -306,23 +306,15 @@ async def _create_docker_service_params(
             label_template,
         ) in app_settings.DIRECTOR_OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS.items():
             # resolve template if it contains placeholders
-            try:
-                resolved_value = label_template.format(**label_values)
-                if resolved_value:
-                    constraint = f"node.labels.{label_key}=={resolved_value}"
-                    docker_params["task_template"]["Placement"]["Constraints"].append(
-                        constraint
-                    )
-                    _logger.debug(
-                        "adding dynamic placement label constraint: %s",
-                        constraint,
-                    )
-            except KeyError as err:
-                _logger.warning(
-                    "could not resolve template %s for label %s: %s",
-                    label_template,
-                    label_key,
-                    err,
+            resolved_value = label_template.format(**label_values)
+            if resolved_value:
+                constraint = f"node.labels.{label_key}=={resolved_value}"
+                docker_params["task_template"]["Placement"]["Constraints"].append(
+                    constraint
+                )
+                _logger.debug(
+                    "adding dynamic placement label constraint: %s",
+                    constraint,
                 )
 
     # some services define strip_path:true if they need the path to be stripped away
