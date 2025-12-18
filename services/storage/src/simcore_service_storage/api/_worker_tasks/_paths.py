@@ -39,6 +39,7 @@ async def delete_paths(
     task: Task,
     task_key: TaskKey,
     user_id: UserID,
+    product_name: ProductName,
     location_id: LocationID,
     paths: set[Path],
 ) -> None:
@@ -46,7 +47,7 @@ async def delete_paths(
     with log_context(
         _logger,
         logging.INFO,
-        msg=f"delete {paths=} in {location_id=} for {user_id=}",
+        msg=f"delete {paths=} in {location_id=} for {user_id=} {product_name=}",
     ):
         dsm = get_dsm_provider(get_app_server(task.app).app).get(location_id)
         files_ids: set[StorageFileID] = {
