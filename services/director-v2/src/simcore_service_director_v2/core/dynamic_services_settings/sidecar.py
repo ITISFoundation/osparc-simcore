@@ -85,13 +85,13 @@ class PlacementSettings(BaseCustomSettings):
     ] = DEFAULT_FACTORY
 
     DIRECTOR_V2_DYNAMIC_SIDECAR_OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS: Annotated[
-        Json[dict[str, str]],
+        Json[dict[DockerPlacementConstraint, str]],
         Field(
             default_factory=lambda: "{}",
             description="Dynamic sidecar custom placement labels for flexible node targeting. Keys must be from: "
             + ", ".join(OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS)
             + ". Values are template strings supporting: {user_id}, {project_id}, {product_name}, {node_id}, {group_id}, {wallet_id}. Missing template values cause the label to be skipped.",
-            examples=['{{"product_name": "platform", "user_id": "user_{user_id}"}}'],
+            examples=['{{"product-name": "platform", "user-id": "user_{user_id}"}}'],
         ),
     ] = DEFAULT_FACTORY
 

@@ -102,11 +102,11 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     ] = DEFAULT_FACTORY
 
     DIRECTOR_OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS: Annotated[
-        Json[dict[str, str]],
+        Json[dict[DockerPlacementConstraint, str]],
         Field(
             default_factory=lambda: "{}",
             description="Dynamic placement labels for service node placement. Keys must be in CUSTOM_PLACEMENT_LABEL_KEYS.",
-            examples=['{"product_name": "osparc", "user_id": "{user_id}"}'],
+            examples=['{"product-name": "osparc", "user-id": "{user_id}"}'],
         ),
     ] = DEFAULT_FACTORY
 
