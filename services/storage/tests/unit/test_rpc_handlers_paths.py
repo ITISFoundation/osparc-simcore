@@ -125,7 +125,7 @@ async def _assert_delete_paths(
     async for job_composed_result in wait_and_get_result(
         storage_rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
-        method_name=delete_paths.__name__,
+        method_name=compute_path_size.__name__,
         job_id=async_job.job_id,
         owner_metadata=TestOwnerMetadata(
             user_id=user_id, product_name=product_name, owner="pytest_client_name"
