@@ -428,7 +428,7 @@ async def _create_and_delete_folders_from_project(
         initialized_app,
         "delete_folders_of_project",
         folder_id=project_id,
-    ).with_query(user_id=f"{user_id}")
+    ).with_query(user_id=f"{user_id}", product_name=f"{product_name}")
     resp = await client.delete(f"{url}")
     assert_status(resp, status.HTTP_204_NO_CONTENT, None)
 
@@ -439,7 +439,11 @@ async def _create_and_delete_folders_from_project(
             initialized_app,
             "list_files_metadata",
             location_id=f"{SimcoreS3DataManager.get_location_id()}",
-        ).with_query(user_id=f"{user_id}", uuid_filter=f"{project_id}")
+        ).with_query(
+            user_id=f"{user_id}",
+            product_name=f"{product_name}",
+            uuid_filter=f"{project_id}",
+        )
         resp = await client.get(f"{url}")
         data, error = assert_status(resp, status.HTTP_200_OK, list[FileMetaDataGet])
         assert not error
