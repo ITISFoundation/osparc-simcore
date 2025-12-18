@@ -1,3 +1,8 @@
+# pylint: disable=no-value-for-parameter
+# pylint: disable=redefined-outer-name
+# pylint: disable=unused-argument
+# pylint: disable=unused-variable
+
 import pytest
 from aws_library.ec2._errors import EC2TooManyInstancesError
 from aws_library.ec2._models import EC2InstanceType, Resources
