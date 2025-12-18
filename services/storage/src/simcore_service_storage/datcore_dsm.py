@@ -13,6 +13,7 @@ from models_library.api_schemas_storage.storage_schemas import (
     UploadedPart,
 )
 from models_library.basic_types import SHA256Str
+from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import LocationID, LocationName, StorageFileID
 from models_library.users import UserID
@@ -81,14 +82,25 @@ class DatCoreDataManager(BaseDataManager):
             )
         return False
 
-    async def list_datasets(self, user_id: UserID) -> list[DatasetMetaData]:
+    async def list_datasets(
+        self, user_id: UserID, product_name: ProductName
+    ) -> list[DatasetMetaData]:
+        _ = product_name
+
         api_token, api_secret = await self._get_datcore_tokens(user_id)
         api_token, api_secret = _check_api_credentials(api_token, api_secret)
         return await datcore_adapter.list_all_datasets(self.app, api_token, api_secret)
 
     async def list_files_in_dataset(
-        self, user_id: UserID, dataset_id: str, *, expand_dirs: bool
+        self,
+        user_id: UserID,
+        product_name: ProductName,
+        dataset_id: str,
+        *,
+        expand_dirs: bool,
     ) -> list[FileMetaData]:
+        _ = product_name, expand_dirs
+
         api_token, api_secret = await self._get_datcore_tokens(user_id)
         api_token, api_secret = _check_api_credentials(api_token, api_secret)
         return await datcore_adapter.list_all_files_metadatas_in_dataset(
@@ -98,12 +110,15 @@ class DatCoreDataManager(BaseDataManager):
     async def list_paths(
         self,
         user_id: UserID,
+        product_name: ProductName,
         *,
         file_filter: Path | None,
         cursor: GenericCursor | None,
         limit: NonNegativeInt,
     ) -> tuple[list[PathMetaData], GenericCursor | None, TotalNumber | None]:
         """returns a page of the file meta data a user has access to"""
+        _ = product_name
+
         api_token, api_secret = await self._get_datcore_tokens(user_id)
         api_token, api_secret = _check_api_credentials(api_token, api_secret)
         if not file_filter:
@@ -191,8 +206,12 @@ class DatCoreDataManager(BaseDataManager):
             1,
         )
 
-    async def compute_path_size(self, user_id: UserID, *, path: Path) -> ByteSize:
+    async def compute_path_size(
+        self, user_id: UserID, product_name: ProductName, *, path: Path
+    ) -> ByteSize:
         """returns the total size of an arbitrary path"""
+        _ = product_name
+
         api_token, api_secret = await self._get_datcore_tokens(user_id)
         api_token, api_secret = _check_api_credentials(api_token, api_secret)
 
@@ -216,7 +235,11 @@ class DatCoreDataManager(BaseDataManager):
             while paths_to_process:
                 current_path = paths_to_process.pop()
                 paths, cursor, _ = await self.list_paths(
-                    user_id, file_filter=current_path, cursor=None, limit=50
+                    user_id,
+                    product_name=product_name,
+                    file_filter=current_path,
+                    cursor=None,
+                    limit=50,
                 )
 
                 while paths:
@@ -237,7 +260,11 @@ class DatCoreDataManager(BaseDataManager):
 
                     if cursor:
                         paths, cursor, _ = await self.list_paths(
-                            user_id, file_filter=current_path, cursor=cursor, limit=50
+                            user_id,
+                            product_name=product_name,
+                            file_filter=current_path,
+                            cursor=cursor,
+                            limit=50,
                         )
                     else:
                         break
@@ -251,11 +278,14 @@ class DatCoreDataManager(BaseDataManager):
     async def list_files(
         self,
         user_id: UserID,
+        product_name: ProductName,
         *,
         expand_dirs: bool,
         uuid_filter: str,
         project_id: ProjectID | None,
     ) -> list[FileMetaData]:
+        _ = product_name, expand_dirs, uuid_filter, project_id
+
         api_token, api_secret = await self._get_datcore_tokens(user_id)
         api_token, api_secret = _check_api_credentials(api_token, api_secret)
         return await datcore_adapter.list_all_datasets_files_metadatas(
