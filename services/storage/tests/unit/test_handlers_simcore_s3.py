@@ -18,6 +18,7 @@ from models_library.api_schemas_storage.storage_schemas import (
     FileMetaDataGet,
 )
 from models_library.basic_types import SHA256Str
+from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import SimcoreS3FileID
 from models_library.users import UserID
@@ -91,15 +92,21 @@ async def uploaded_file_ids(
 
 @pytest.fixture
 async def search_files_query_params(
-    query_params_choice: str, user_id: UserID
+    query_params_choice: str, user_id: UserID, product_name: ProductName
 ) -> SearchFilesQueryParams:
     match query_params_choice:
         case "default":
-            q = SearchFilesQueryParams(user_id=user_id, kind="owned")
+            q = SearchFilesQueryParams(
+                user_id=user_id, product_name=product_name, kind="owned"
+            )
         case "limited":
-            q = SearchFilesQueryParams(user_id=user_id, kind="owned", limit=1)
+            q = SearchFilesQueryParams(
+                user_id=user_id, product_name=product_name, kind="owned", limit=1
+            )
         case "with_offset":
-            q = SearchFilesQueryParams(user_id=user_id, kind="owned", offset=1)
+            q = SearchFilesQueryParams(
+                user_id=user_id, product_name=product_name, kind="owned", offset=1
+            )
         case _:
             pytest.fail(f"Undefined {query_params_choice=}")
     return q

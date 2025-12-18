@@ -39,6 +39,7 @@ from models_library.api_schemas_storage.storage_schemas import (
     UploadedPart,
 )
 from models_library.basic_types import SHA256Str
+from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.projects_nodes_io import LocationID, SimcoreS3FileID, StorageFileID
@@ -327,6 +328,7 @@ async def create_upload_file_link_v2(
     initialized_app: FastAPI,
     client: httpx.AsyncClient,
     user_id: UserID,
+    product_name: ProductName,
     location_id: LocationID,
 ) -> AsyncIterator[Callable[..., Awaitable[FileUploadSchema]]]:
     file_params: list[tuple[UserID, int, SimcoreS3FileID]] = []
@@ -340,7 +342,7 @@ async def create_upload_file_link_v2(
             "upload_file",
             location_id=f"{location_id}",
             file_id=file_id,
-        ).with_query(**query_kwargs, user_id=user_id)
+        ).with_query(**query_kwargs, user_id=user_id, product_name=product_name)
         assert (
             "file_size" in url.query
         ), "V2 call to upload file must contain file_size field!"
@@ -655,6 +657,7 @@ async def delete_directory(
     initialized_app: FastAPI,
     client: httpx.AsyncClient,
     user_id: UserID,
+    product_name: ProductName,
     location_id: LocationID,
 ) -> Callable[[StorageFileID], Awaitable[None]]:
     async def _dir_remover(directory_s3: StorageFileID) -> None:
@@ -664,7 +667,7 @@ async def delete_directory(
             "delete_file",
             location_id=f"{location_id}",
             file_id=directory_s3,
-        ).with_query(user_id=user_id)
+        ).with_query(user_id=user_id, product_name=product_name)
 
         response = await client.delete(f"{delete_url}")
         assert_status(response, status.HTTP_204_NO_CONTENT, None)
@@ -673,7 +676,9 @@ async def delete_directory(
         # even if one file is left this will detect it
         list_files_metadata_url = url_from_operation_id(
             client, initialized_app, "list_files_metadata", location_id=f"{location_id}"
-        ).with_query(user_id=user_id, uuid_filter=directory_s3)
+        ).with_query(
+            user_id=user_id, product_name=product_name, uuid_filter=directory_s3
+        )
         response = await client.get(f"{list_files_metadata_url}")
         data, error = assert_status(response, status.HTTP_200_OK, list[FileMetaDataGet])
         assert error is None
@@ -1069,7 +1074,7 @@ async def storage_rabbitmq_rpc_client(
 
 @pytest.fixture
 def product_name(faker: Faker) -> str:
-    return faker.name()
+    return faker.word()
 
 
 @pytest.fixture

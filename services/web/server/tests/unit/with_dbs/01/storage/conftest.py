@@ -30,6 +30,7 @@ from models_library.api_schemas_storage.storage_schemas import (
     PathMetaDataGet,
 )
 from models_library.generics import Envelope
+from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import LocationID, StorageFileID
 from models_library.users import UserID
@@ -186,6 +187,7 @@ def fake_storage_app(storage_vtag: str) -> FastAPI:  # noqa: C901
     )
     async def upload_file(
         user_id: UserID,
+        product_name: ProductName,
         location_id: LocationID,
         file_id: StorageFileID,
         request: Request,
@@ -206,7 +208,7 @@ def fake_storage_app(storage_vtag: str) -> FastAPI:  # noqa: C901
                 ),
                 encoded=True,
             )
-            .with_query(user_id=user_id)
+            .with_query(user_id=user_id, product_name=product_name)
         )
 
         complete_url = (
@@ -222,7 +224,7 @@ def fake_storage_app(storage_vtag: str) -> FastAPI:  # noqa: C901
                 ),
                 encoded=True,
             )
-            .with_query(user_id=user_id)
+            .with_query(user_id=user_id, product_name=product_name)
         )
         response = FileUploadSchema.model_validate(
             random.choice(  # noqa: S311
