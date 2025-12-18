@@ -62,6 +62,7 @@ from yarl import URL
 
 from .._meta import API_VTAG
 from ..celery import get_task_manager
+from ..constants import RQ_PRODUCT_KEY
 from ..login.decorators import login_required
 from ..models import AuthenticatedRequestContext, WebServerOwnerMetadata
 from ..rabbitmq import get_rabbitmq_rpc_client
@@ -86,7 +87,8 @@ def _get_storage_vtag(app: web.Application) -> str:
 
 def _to_storage_url(request: web.Request) -> URL:
     """Converts web-api url to storage-api url"""
-    userid = request[RQT_USERID_KEY]
+    user_id = request[RQT_USERID_KEY]
+    product_name = request[RQ_PRODUCT_KEY]
 
     # storage service API endpoint
     url = _get_base_storage_url(request.app)
@@ -106,7 +108,7 @@ def _to_storage_url(request: web.Request) -> URL:
     return (
         url.joinpath(fastapi_encoded_suffix, encoded=True)
         .with_query({camel_to_snake(k): v for k, v in request.query.items()})
-        .update_query(user_id=userid)
+        .update_query(user_id=user_id, product_name=product_name)
     )
 
 
