@@ -186,7 +186,7 @@ class SettingsItem(BaseModel):
         return v
 
     @model_validator(mode="after")
-    def _not_allowed_in_both_specs(self) -> Self:
+    def remove_invalid_spaces_in_constraints_model(self) -> Self:
         if self.name == "constraints":
             # constraints shall not contain spaces
             self.value = [_.replace(" ", "") for _ in self.value]
