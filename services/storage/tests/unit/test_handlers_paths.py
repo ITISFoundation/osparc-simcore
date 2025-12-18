@@ -23,6 +23,7 @@ from models_library.api_schemas_storage.storage_schemas import (
     PathTotalSizeCreate,
 )
 from models_library.api_schemas_webserver.storage import MAX_NUMBER_OF_PATHS_PER_PAGE
+from models_library.products import ProductName
 from models_library.projects_nodes_io import LocationID, NodeID, SimcoreS3FileID
 from models_library.users import UserID
 from pydantic import ByteSize, TypeAdapter
@@ -577,6 +578,7 @@ async def _assert_compute_path_size(
     client: httpx.AsyncClient,
     location_id: LocationID,
     user_id: UserID,
+    product_name: ProductName,
     *,
     path: Path,
     expected_total_size: int,
@@ -587,7 +589,7 @@ async def _assert_compute_path_size(
         "compute_path_size",
         location_id=f"{location_id}",
         path=f"{path}",
-    ).with_query(user_id=user_id)
+    ).with_query(user_id=user_id, product_name=product_name)
     response = await client.post(f"{url}")
 
     received, _ = assert_status(
@@ -623,6 +625,7 @@ async def test_path_compute_size(
     client: httpx.AsyncClient,
     location_id: LocationID,
     user_id: UserID,
+    product_name: ProductName,
     with_random_project_with_files: tuple[
         dict[str, Any],
         dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
@@ -646,6 +649,7 @@ async def test_path_compute_size(
         client,
         location_id,
         user_id,
+        product_name,
         path=path,
         expected_total_size=expected_total_size,
     )
@@ -664,6 +668,7 @@ async def test_path_compute_size(
         client,
         location_id,
         user_id,
+        product_name,
         path=path,
         expected_total_size=expected_total_size,
     )
@@ -683,6 +688,7 @@ async def test_path_compute_size(
         client,
         location_id,
         user_id,
+        product_name,
         path=path,
         expected_total_size=expected_total_size,
     )
@@ -702,6 +708,7 @@ async def test_path_compute_size(
         client,
         location_id,
         user_id,
+        product_name,
         path=path,
         expected_total_size=expected_total_size,
     )
@@ -727,6 +734,7 @@ async def test_path_compute_size(
             client,
             location_id,
             user_id,
+            product_name,
             path=workspace_subfolder,
             expected_total_size=expected_total_size,
         )
@@ -739,6 +747,7 @@ async def test_path_compute_size_inexistent_path(
     client: httpx.AsyncClient,
     location_id: LocationID,
     user_id: UserID,
+    product_name: ProductName,
     faker: Faker,
     fake_datcore_tokens: tuple[str, str],
 ):
@@ -747,6 +756,7 @@ async def test_path_compute_size_inexistent_path(
         client,
         location_id,
         user_id,
+        product_name=product_name,
         path=Path(faker.file_path(absolute=False)),
         expected_total_size=0,
     )
