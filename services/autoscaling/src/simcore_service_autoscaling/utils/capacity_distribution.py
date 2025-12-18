@@ -57,6 +57,8 @@ def _distribute_capped_counts_proportionally(
     gets proportionally reduced. Handles rounding errors by distributing remainder.
     """
     result: dict[InstanceToLaunch, int] = {}
+    allocated_by_type: collections.Counter[EC2InstanceType] = collections.Counter()
+
     for instance_batch, original_count in needed_instances.items():
         instance_type = instance_batch.instance_type
         capped_total = capped_by_type[instance_type]
@@ -66,14 +68,22 @@ def _distribute_capped_counts_proportionally(
         proportional_count = int(original_count * capped_total / original_total)
         if proportional_count > 0:
             result[instance_batch] = proportional_count
+            allocated_by_type[instance_type] += proportional_count
 
     # Handle rounding errors - distribute remaining instances
     remaining = max_instances - sum(result.values())
-    for instance_batch in needed_instances:
+    for instance_batch, instance_desired_count in needed_instances.items():
         if remaining == 0:
             break
-        if instance_batch in result:
-            result[instance_batch] += 1
+        instance_type = instance_batch.instance_type
+        current = result.get(instance_batch, 0)
+        # Do not exceed per-type cap or batch's original request
+        if (
+            allocated_by_type[instance_type] < capped_by_type[instance_type]
+            and current < instance_desired_count
+        ):
+            result[instance_batch] = current + 1
+            allocated_by_type[instance_type] += 1
             remaining -= 1
 
     return result
@@ -125,12 +135,9 @@ async def cap_needed_instances(
     )
 
     # Aggregate by instance type
-    needed_by_type = collections.Counter(
-        {
-            instance_batch.instance_type: count
-            for instance_batch, count in needed_instances.items()
-        }
-    )
+    needed_by_type: collections.Counter[EC2InstanceType] = collections.Counter()
+    for instance_batch, count in needed_instances.items():
+        needed_by_type[instance_batch.instance_type] += count
 
     # Early exit if we can't even create 1 of each type
     if max_number_of_creatable_instances < len(needed_by_type):
