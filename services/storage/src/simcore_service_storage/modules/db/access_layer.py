@@ -1,4 +1,4 @@
-"""Helper functions to determin access-rights on stored data
+"""Helper functions to determine access-rights on stored data
 
 # DRAFT Rationale:
 
@@ -40,6 +40,7 @@ import logging
 
 import sqlalchemy as sa
 from models_library.groups import GroupID
+from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import StorageFileID
 from models_library.users import UserID
@@ -144,26 +145,29 @@ def my_shared_workspace_access_rights_subquery(user_group_ids: list[GroupID]):
 
 
 async def _list_user_projects_access_rights_with_read_access(
-    connection: AsyncConnection, user_id: UserID
+    conn: AsyncConnection,
+    user_id: UserID,
+    product_name: ProductName,
 ) -> list[ProjectID]:
     """
     Returns access-rights of user (user_id) over all OWNED or SHARED projects
     """
 
-    user_group_ids: list[GroupID] = await _get_user_groups_ids(connection, user_id)
-    _my_access_rights_subquery = my_private_workspace_access_rights_subquery(
+    user_group_ids: list[GroupID] = await _get_user_groups_ids(conn, user_id)
+    my_access_rights_subquery = my_private_workspace_access_rights_subquery(
         user_group_ids
     )
 
     private_workspace_query = (
-        sa.select(
-            projects.c.uuid,
+        sa.select(projects.c.uuid)
+        .select_from(projects.join(my_access_rights_subquery))
+        .where(
+            (projects.c.workspace_id.is_(None))
+            & (projects.c.product_name == f"{product_name}")
         )
-        .select_from(projects.join(_my_access_rights_subquery))
-        .where(projects.c.workspace_id.is_(None))
     )
 
-    _my_workspace_access_rights_subquery = my_shared_workspace_access_rights_subquery(
+    my_workspace_access_rights_subquery = my_shared_workspace_access_rights_subquery(
         user_group_ids
     )
 
@@ -171,19 +175,22 @@ async def _list_user_projects_access_rights_with_read_access(
         sa.select(projects.c.uuid)
         .select_from(
             projects.join(
-                _my_workspace_access_rights_subquery,
+                my_workspace_access_rights_subquery,
                 projects.c.workspace_id
-                == _my_workspace_access_rights_subquery.c.workspace_id,
+                == my_workspace_access_rights_subquery.c.workspace_id,
             )
         )
-        .where(projects.c.workspace_id.is_not(None))
+        .where(
+            (projects.c.workspace_id.is_not(None))
+            & (projects.c.product_name == f"{product_name}")
+        )
     )
 
     combined_query = sa.union_all(private_workspace_query, shared_workspace_query)
 
     projects_access_rights = []
 
-    async for row in await connection.stream(combined_query):
+    async for row in await conn.stream(combined_query):
         assert isinstance(row.uuid, str)  # nosec
 
         projects_access_rights.append(ProjectID(row.uuid))
@@ -375,10 +382,16 @@ class AccessLayerRepository(BaseRepository):
         )
 
     async def get_readable_project_ids(
-        self, *, connection: AsyncConnection | None = None, user_id: UserID
+        self,
+        *,
+        connection: AsyncConnection | None = None,
+        user_id: UserID,
+        product_name: ProductName,
     ) -> list[ProjectID]:
         """Returns a list of projects where user has granted read-access"""
         async with pass_or_acquire_connection(self.db_engine, connection) as conn:
             return await _list_user_projects_access_rights_with_read_access(
-                conn, user_id
+                conn,
+                user_id,
+                product_name,
             )
