@@ -118,13 +118,9 @@ def _get_rclone_mount_command(
             mount_settings.R_CLONE_MOUNT_VFS_CACHE_MIN_FREE_SPACE,
             "--vfs-cache-poll-interval",
             mount_settings.R_CLONE_CACHE_POLL_INTERVAL,
+            "--write-back-cache",
             "--vfs-write-back",
             mount_settings.R_CLONE_MOUNT_VFS_WRITE_BACK,
-            (
-                "--vfs-fast-fingerprint"
-                if mount_settings.R_CLONE_MOUNT_VFS_FAST_FINGERPRINT
-                else ""
-            ),
             "--cache-dir",
             f"{mount_settings.R_CLONE_MOUNT_VFS_CACHE_PATH}",
             "--dir-cache-time",
@@ -135,7 +131,9 @@ def _get_rclone_mount_command(
             f"{mount_settings.R_CLONE_TPSLIMIT}",
             "--tpslimit-burst",
             f"{mount_settings.R_CLONE_TPSLIMIT_BURST}",
-            ("--no-modtime" if mount_settings.R_CLONE_MOUNT_NO_MODTIME else ""),
+            "--no-modtime",
+            "--max-buffer-memory",
+            mount_settings.R_CLONE_MAX_BUFFER_MEMORY,
             # REMOTE CONTROL
             "--rc",
             f"--rc-addr=0.0.0.0:{remote_control_port}",
@@ -283,10 +281,7 @@ class RemoteControlHttpClient:
                 method, request_url, auth=(self._rc_user, self._rc_password)
             )
             response.raise_for_status()
-            result = response.json()
-
-        _logger.debug("'%s %s' replied with: %s", method, path, result)
-        return result
+            return response.json()
 
     async def _post_core_stats(self) -> dict:
         return await self._request("POST", "core/stats")
