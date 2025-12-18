@@ -247,3 +247,17 @@ class WarmBufferPoolManager:
                 getattr(flat_pool, f.name).update(getattr(buffer_pool, f.name))
 
         return flat_pool
+
+
+@dataclass(frozen=True, kw_only=True)
+class InstanceToLaunch:
+    """Represents a single EC2 instance to launch with its specific labels.
+
+    Each instance gets ONLY the labels from its assigned tasks (exclusive labels).
+    """
+
+    instance_type: EC2InstanceType
+    node_labels: dict[DockerLabelKey, str]
+
+    def __hash__(self) -> int:
+        return hash((self.instance_type, frozenset(self.node_labels.items())))
