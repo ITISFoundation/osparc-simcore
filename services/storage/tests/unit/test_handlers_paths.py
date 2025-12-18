@@ -63,6 +63,7 @@ async def _assert_list_paths(
     client: httpx.AsyncClient,
     location_id: LocationID,
     user_id: UserID,
+    product_name: ProductName,
     *,
     file_filter: Path | None,
     limit: int = 25,
@@ -79,6 +80,7 @@ async def _assert_list_paths(
             client, initialized_app, "list_paths", location_id=f"{location_id}"
         ).with_query(
             user_id=user_id,
+            product_name=product_name,
             size=limit,
         )
         if next_cursor:
@@ -124,6 +126,7 @@ async def test_list_paths_root_folder_of_empty_returns_nothing(
     client: httpx.AsyncClient,
     location_id: LocationID,
     user_id: UserID,
+    product_name: ProductName,
     fake_datcore_tokens: tuple[str, str],
 ):
     await _assert_list_paths(
@@ -131,6 +134,7 @@ async def test_list_paths_root_folder_of_empty_returns_nothing(
         client,
         location_id,
         user_id,
+        product_name,
         file_filter=None,
         expected_paths=[],
     )
@@ -158,6 +162,7 @@ async def test_list_paths_pagination(
     client: httpx.AsyncClient,
     location_id: LocationID,
     user_id: UserID,
+    product_name: ProductName,
     with_random_project_with_files: tuple[
         dict[str, Any],
         dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
@@ -177,6 +182,7 @@ async def test_list_paths_pagination(
         client,
         location_id,
         user_id,
+        product_name,
         file_filter=file_filter,
         expected_paths=expected_paths,
         limit=int(num_nodes / 2 + 0.5),
@@ -197,6 +203,7 @@ async def test_list_paths_pagination(
         client,
         location_id,
         user_id,
+        product_name,
         file_filter=workspace_file_filter,
         expected_paths=expected_paths,
         limit=1,
@@ -213,6 +220,7 @@ async def test_list_paths_pagination(
             client,
             location_id,
             user_id,
+            product_name,
             file_filter=selected_path_filter[0],
             expected_paths=expected_paths,
             check_total=False,
@@ -241,6 +249,7 @@ async def test_list_paths_pagination_large_page(
     client: httpx.AsyncClient,
     location_id: LocationID,
     user_id: UserID,
+    product_name: ProductName,
     with_random_project_with_files: tuple[
         dict[str, Any],
         dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
@@ -260,6 +269,7 @@ async def test_list_paths_pagination_large_page(
         client,
         location_id,
         user_id,
+        product_name,
         file_filter=workspace_file_filter,
         expected_paths=expected_paths,
         check_total=False,
@@ -292,6 +302,7 @@ async def test_list_paths(
     client: httpx.AsyncClient,
     location_id: LocationID,
     user_id: UserID,
+    product_name: ProductName,
     random_project_with_files: Callable[
         [ProjectWithFilesParams],
         Awaitable[
@@ -316,6 +327,7 @@ async def test_list_paths(
         client,
         location_id,
         user_id,
+        product_name,
         file_filter=None,
         expected_paths=expected_paths,
     )
@@ -336,6 +348,7 @@ async def test_list_paths(
         client,
         location_id,
         user_id,
+        product_name,
         file_filter=partial_file_filter,
         expected_paths=partial_expected_paths,
     )
@@ -351,6 +364,7 @@ async def test_list_paths(
         client,
         location_id,
         user_id,
+        product_name,
         file_filter=file_filter,
         expected_paths=expected_paths,
     )
@@ -372,6 +386,7 @@ async def test_list_paths(
         client,
         location_id,
         user_id,
+        product_name,
         file_filter=file_filter,
         expected_paths=expected_node_files,
     )
@@ -386,6 +401,7 @@ async def test_list_paths(
         client,
         location_id,
         user_id,
+        product_name,
         file_filter=node_outputs_file_filter,
         expected_paths=expected_paths,
     )
@@ -400,6 +416,7 @@ async def test_list_paths(
         client,
         location_id,
         user_id,
+        product_name,
         file_filter=node_outputs_file_filter,
         expected_paths=expected_paths,
     )
@@ -414,6 +431,7 @@ async def test_list_paths(
         client,
         location_id,
         user_id,
+        product_name,
         file_filter=workspace_file_filter,
         expected_paths=expected_paths,
         check_total=False,
@@ -429,6 +447,7 @@ async def test_list_paths(
             client,
             location_id,
             user_id,
+            product_name,
             file_filter=selected_path_filter[0],
             expected_paths=expected_paths,
             check_total=False,
@@ -457,6 +476,7 @@ async def test_list_paths_with_display_name_containing_slashes(
     client: httpx.AsyncClient,
     location_id: LocationID,
     user_id: UserID,
+    product_name: ProductName,
     with_random_project_with_files: tuple[
         dict[str, Any],
         dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
@@ -497,6 +517,7 @@ async def test_list_paths_with_display_name_containing_slashes(
         client,
         location_id,
         user_id,
+        product_name,
         file_filter=file_filter,
         expected_paths=expected_paths,
     )
@@ -517,6 +538,7 @@ async def test_list_paths_with_display_name_containing_slashes(
         client,
         location_id,
         user_id,
+        product_name,
         file_filter=file_filter,
         expected_paths=expected_paths,
     )
@@ -540,6 +562,7 @@ async def test_list_paths_with_display_name_containing_slashes(
         client,
         location_id,
         user_id,
+        product_name,
         file_filter=workspace_file_filter,
         expected_paths=expected_paths,
         check_total=False,
@@ -556,6 +579,7 @@ async def test_list_paths_with_display_name_containing_slashes(
             client,
             location_id,
             user_id,
+            product_name,
             file_filter=selected_path_filter[0],
             expected_paths=expected_paths,
             check_total=False,

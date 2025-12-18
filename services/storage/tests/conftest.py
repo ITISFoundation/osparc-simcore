@@ -301,6 +301,7 @@ async def get_file_meta_data(
     initialized_app: FastAPI,
     client: httpx.AsyncClient,
     user_id: UserID,
+    product_name: ProductName,
     location_id: LocationID,
 ) -> Callable[..., Awaitable[FileMetaDataGet]]:
     async def _getter(file_id: SimcoreS3FileID) -> FileMetaDataGet:
@@ -310,7 +311,7 @@ async def get_file_meta_data(
             "get_file_metadata",
             location_id=f"{location_id}",
             file_id=file_id,
-        ).with_query(user_id=user_id)
+        ).with_query(user_id=user_id, product_name=product_name)
 
         response = await client.get(f"{url}")
         received_fmd, error = assert_status(

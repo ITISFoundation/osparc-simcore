@@ -36,6 +36,7 @@ from models_library.api_schemas_storage.storage_schemas import (
     PresignedLink,
     SoftCopyBody,
 )
+from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import LocationID, NodeID, SimcoreS3FileID
 from models_library.users import UserID
@@ -200,6 +201,7 @@ async def create_upload_file_link_v1(
     initialized_app: FastAPI,
     client: httpx.AsyncClient,
     user_id: UserID,
+    product_name: ProductName,
     location_id: LocationID,
 ) -> AsyncIterator[Callable[..., Awaitable[PresignedLink]]]:
     file_params: list[tuple[UserID, int, SimcoreS3FileID]] = []
@@ -211,7 +213,7 @@ async def create_upload_file_link_v1(
             "upload_file",
             location_id=f"{location_id}",
             file_id=file_id,
-        ).with_query(**query_kwargs, user_id=user_id)
+        ).with_query(**query_kwargs, user_id=user_id, product_name=product_name)
         assert (
             "file_size" not in url.query
         ), "v1 call to upload_file MUST NOT contain file_size field, this is reserved for v2 call"
@@ -881,6 +883,7 @@ async def test_download_file_no_file_was_uploaded(
     project_id: ProjectID,
     node_id: NodeID,
     user_id: UserID,
+    product_name: ProductName,
     storage_s3_client: SimcoreS3API,
     storage_s3_bucket: S3BucketName,
     fake_datcore_tokens: tuple[str, str],
@@ -900,7 +903,7 @@ async def test_download_file_no_file_was_uploaded(
         "download_file",
         location_id=f"{location_id}",
         file_id=missing_file,
-    ).with_query(user_id=user_id)
+    ).with_query(user_id=user_id, product_name=product_name)
 
     response = await client.get(f"{download_url}")
     data, error = assert_status(response, status.HTTP_404_NOT_FOUND, None)
@@ -922,6 +925,7 @@ async def test_download_file_1_to_1_with_file_meta_data(
     upload_file: Callable[[ByteSize, str], Awaitable[tuple[Path, SimcoreS3FileID]]],
     location_id: LocationID,
     user_id: UserID,
+    product_name: ProductName,
     storage_s3_client: SimcoreS3API,
     storage_s3_bucket: S3BucketName,
     tmp_path: Path,
@@ -945,7 +949,7 @@ async def test_download_file_1_to_1_with_file_meta_data(
         "download_file",
         location_id=f"{location_id}",
         file_id=uploaded_file_uuid,
-    ).with_query(user_id=user_id)
+    ).with_query(user_id=user_id, product_name=product_name)
     response = await client.get(f"{download_url}")
     data, error = assert_status(response, status.HTTP_200_OK, FileDownloadResponse)
     assert not error
@@ -967,6 +971,7 @@ async def test_download_file_from_inside_a_directory(
     file_size: ByteSize,
     location_id: LocationID,
     user_id: UserID,
+    product_name: ProductName,
     project_id: ProjectID,
     node_id: NodeID,
     create_empty_directory: Callable[
@@ -1010,7 +1015,7 @@ async def test_download_file_from_inside_a_directory(
         "download_file",
         location_id=f"{location_id}",
         file_id=s3_file_id,
-    ).with_query(user_id=user_id)
+    ).with_query(user_id=user_id, product_name=product_name)
     response = await client.get(f"{download_url}")
     file_download, error = assert_status(
         response, status.HTTP_200_OK, FileDownloadResponse
@@ -1034,6 +1039,7 @@ async def test_download_file_the_file_is_missing_from_the_directory(
     client: httpx.AsyncClient,
     location_id: LocationID,
     user_id: UserID,
+    product_name: ProductName,
     project_id: ProjectID,
     node_id: NodeID,
     create_empty_directory: Callable[
@@ -1054,7 +1060,7 @@ async def test_download_file_the_file_is_missing_from_the_directory(
         "download_file",
         location_id=f"{location_id}",
         file_id=missing_s3_file_id,
-    ).with_query(user_id=user_id)
+    ).with_query(user_id=user_id, product_name=product_name)
 
     response = await client.get(f"{download_url}")
     data, error = assert_status(response, status.HTTP_404_NOT_FOUND, None)
@@ -1073,6 +1079,7 @@ async def test_download_file_access_rights(
     client: httpx.AsyncClient,
     location_id: LocationID,
     user_id: UserID,
+    product_name: ProductName,
     storage_s3_client: SimcoreS3API,
     storage_s3_bucket: S3BucketName,
     faker: Faker,
@@ -1093,7 +1100,7 @@ async def test_download_file_access_rights(
         "download_file",
         location_id=f"{location_id}",
         file_id=missing_file,
-    ).with_query(user_id=user_id)
+    ).with_query(user_id=user_id, product_name=product_name)
 
     response = await client.get(f"{download_url}")
     data, error = assert_status(response, status.HTTP_403_FORBIDDEN, None)
@@ -1124,6 +1131,7 @@ async def test_delete_file(
     upload_file: Callable[[ByteSize, str], Awaitable[tuple[Path, SimcoreS3FileID]]],
     location_id: LocationID,
     user_id: UserID,
+    product_name: ProductName,
     faker: Faker,
 ):
     _, uploaded_file_uuid = await upload_file(file_size, faker.file_name())
@@ -1134,7 +1142,7 @@ async def test_delete_file(
         "delete_file",
         location_id=f"{location_id}",
         file_id=uploaded_file_uuid,
-    ).with_query(user_id=user_id)
+    ).with_query(user_id=user_id, product_name=product_name)
     response = await client.delete(f"{delete_url}")
     assert_status(response, status.HTTP_204_NO_CONTENT, None)
 
@@ -1165,6 +1173,7 @@ async def test_copy_as_soft_link(
     initialized_app: FastAPI,
     client: httpx.AsyncClient,
     user_id: UserID,
+    product_name: ProductName,
     project_id: ProjectID,
     node_id: NodeID,
     upload_file: Callable[[ByteSize, str], Awaitable[tuple[Path, SimcoreS3FileID]]],
@@ -1179,14 +1188,14 @@ async def test_copy_as_soft_link(
         initialized_app,
         "copy_as_soft_link",
         file_id=missing_file_uuid,
-    ).with_query(user_id=user_id)
+    ).with_query(user_id=user_id, product_name=product_name)
     response = await client.post(
         f"{url}", json=jsonable_encoder(SoftCopyBody(link_id=invalid_link_id))
     )
     assert_status(response, status.HTTP_404_NOT_FOUND, None)
 
     # now let's try with whatever link id
-    file, original_file_uuid = await upload_file(
+    _, original_file_uuid = await upload_file(
         TypeAdapter(ByteSize).validate_python("10Mib"), faker.file_name()
     )
     url = url_from_operation_id(
@@ -1194,7 +1203,7 @@ async def test_copy_as_soft_link(
         initialized_app,
         "copy_as_soft_link",
         file_id=original_file_uuid,
-    ).with_query(user_id=user_id)
+    ).with_query(user_id=user_id, product_name=product_name)
 
     link_id = TypeAdapter(SimcoreS3FileID).validate_python(
         f"api/{node_id}/{faker.file_name()}"
@@ -1212,6 +1221,7 @@ async def _list_files(
     initialized_app: FastAPI,
     client: httpx.AsyncClient,
     user_id: UserID,
+    product_name: ProductName,
     location_id: LocationID,
     *,
     expand_dirs: bool,
@@ -1221,7 +1231,9 @@ async def _list_files(
         initialized_app,
         "list_files_metadata",
         location_id=f"{location_id}",
-    ).with_query(user_id=user_id, expand_dirs=f"{expand_dirs}".lower())
+    ).with_query(
+        user_id=user_id, product_name=product_name, expand_dirs=f"{expand_dirs}".lower()
+    )
     response = await client.get(f"{get_url}")
     fmds, error = assert_status(response, status.HTTP_200_OK, list[FileMetaDataGet])
     assert not error
@@ -1233,12 +1245,14 @@ async def _list_files_legacy(
     initialized_app: FastAPI,
     client: httpx.AsyncClient,
     user_id: UserID,
+    product_name: ProductName,
     location_id: LocationID,
 ) -> list[FileMetaDataGet]:
     return await _list_files(
         initialized_app,
         client,
         user_id,
+        product_name,
         location_id,
         expand_dirs=True,
     )
@@ -1248,12 +1262,14 @@ async def _list_files_and_directories(
     initialized_app: FastAPI,
     client: httpx.AsyncClient,
     user_id: UserID,
+    product_name: ProductName,
     location_id: LocationID,
 ) -> list[FileMetaDataGet]:
     return await _list_files(
         initialized_app,
         client,
         user_id,
+        product_name,
         location_id,
         expand_dirs=False,
     )
@@ -1283,6 +1299,7 @@ async def test_is_directory_link_forces_link_type_and_size(
     client: httpx.AsyncClient,
     location_id: LocationID,
     user_id: UserID,
+    product_name: ProductName,
     link_type: LinkType,
     file_size: ByteSize,
 ):
@@ -1298,7 +1315,7 @@ async def test_is_directory_link_forces_link_type_and_size(
     assert len(directory_file_upload.urls) == 1
 
     files_and_directories: list[FileMetaDataGet] = await _list_files_and_directories(
-        initialized_app, client, user_id, location_id
+        initialized_app, client, user_id, product_name, location_id
     )
     assert len(files_and_directories) == 1
     assert files_and_directories[0].is_directory is True
@@ -1357,6 +1374,7 @@ async def test_upload_file_is_directory_and_remove_content(
     client: httpx.AsyncClient,
     location_id: LocationID,
     user_id: UserID,
+    product_name: ProductName,
     project_id: ProjectID,
     node_id: NodeID,
 ):
@@ -1375,7 +1393,7 @@ async def test_upload_file_is_directory_and_remove_content(
     assert len(files_and_directories) == 1
 
     list_of_files: list[FileMetaDataGet] = await _list_files_legacy(
-        initialized_app, client, user_id, location_id
+        initialized_app, client, user_id, product_name, location_id
     )
     assert len(list_of_files) == 0
 
@@ -1396,7 +1414,7 @@ async def test_upload_file_is_directory_and_remove_content(
     assert len(files_and_directories) == 1
 
     list_of_files: list[FileMetaDataGet] = await _list_files_legacy(
-        initialized_app, client, user_id, location_id
+        initialized_app, client, user_id, product_name, location_id
     )
     assert len(list_of_files) == FILE_COUNT
 
@@ -1414,7 +1432,7 @@ async def test_upload_file_is_directory_and_remove_content(
     assert error is None
 
     list_of_files: list[FileMetaDataGet] = await _list_files_legacy(
-        initialized_app, client, user_id, location_id
+        initialized_app, client, user_id, product_name, location_id
     )
 
     assert len(list_of_files) == FILE_COUNT
@@ -1433,7 +1451,7 @@ async def test_upload_file_is_directory_and_remove_content(
     assert error is None
 
     list_of_files = await _list_files_legacy(
-        initialized_app, client, user_id, location_id
+        initialized_app, client, user_id, product_name, location_id
     )
 
     assert len(list_of_files) == FILE_COUNT - 1
@@ -1443,7 +1461,7 @@ async def test_upload_file_is_directory_and_remove_content(
     await delete_directory(directory_in_s3)
 
     list_of_files = await _list_files_legacy(
-        initialized_app, client, user_id, location_id
+        initialized_app, client, user_id, product_name, location_id
     )
     assert len(list_of_files) == 0
 
@@ -1471,6 +1489,7 @@ async def test_listing_more_than_1000_objects_in_bucket(
     client: httpx.AsyncClient,
     location_id: LocationID,
     user_id: UserID,
+    product_name: ProductName,
     project_id: ProjectID,
     node_id: NodeID,
     files_count: int,
@@ -1485,7 +1504,7 @@ async def test_listing_more_than_1000_objects_in_bucket(
         node_id,
     )
     list_of_files = await _list_files_legacy(
-        initialized_app, client, user_id, location_id
+        initialized_app, client, user_id, product_name, location_id
     )
     # for now no more than 1000 objects will be returned
     assert len(list_of_files) == 1000
@@ -1514,6 +1533,7 @@ async def test_listing_with_project_id_filter(
     client: httpx.AsyncClient,
     location_id: LocationID,
     user_id: UserID,
+    product_name: ProductName,
     faker: Faker,
     random_project_with_files: Callable[
         [ProjectWithFilesParams],
@@ -1535,6 +1555,7 @@ async def test_listing_with_project_id_filter(
 
     query = {
         "user_id": user_id,
+        "product_name": product_name,
         "project_id": f"{project_id}",
         "uuid_filter": project_file_name if uuid_filter else None,
     }
