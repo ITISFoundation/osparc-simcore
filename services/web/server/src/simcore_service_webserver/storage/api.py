@@ -198,7 +198,10 @@ async def get_app_status(app: web.Application) -> dict[str, Any]:
 
 
 async def get_download_link(
-    app: web.Application, user_id: UserID, filelink: SimCoreFileLink
+    app: web.Application,
+    user_id: UserID,
+    product_name: ProductName,
+    filelink: SimCoreFileLink,
 ) -> HttpUrl:
     """
     Raises:
@@ -213,7 +216,7 @@ async def get_download_link(
         api_endpoint
         / f"locations/{filelink.store}/files"
         / urllib.parse.quote(filelink.path, safe="")
-    ).with_query(user_id=user_id)
+    ).with_query(user_id=user_id, product_name=product_name)
 
     async with session.get(f"{url}") as response:
         response.raise_for_status()

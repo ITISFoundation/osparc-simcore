@@ -150,6 +150,7 @@ async def test_get_file_metadata_is_legacy_services_compatible(
     initialized_app: FastAPI,
     client: httpx.AsyncClient,
     user_id: UserID,
+    product_name: ProductName,
     location_id: LocationID,
     simcore_file_id: SimcoreS3FileID,
 ):
@@ -162,7 +163,7 @@ async def test_get_file_metadata_is_legacy_services_compatible(
                 file_id=simcore_file_id,
             )
         )
-        .with_query(user_id=f"{user_id}")
+        .with_query(user_id=user_id, product_name=product_name)
     )
 
     # this should return an empty list

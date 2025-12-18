@@ -367,7 +367,7 @@ async def create_upload_file_link_v2(
             "delete_file",
             location_id=f"{loc_id}",
             file_id=file_id,
-        ).with_query(user_id=u_id)
+        ).with_query(user_id=u_id, product_name=product_name)
         clean_tasks.append(client.delete(f"{url}"))
     await asyncio.gather(*clean_tasks)
 

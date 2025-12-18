@@ -231,14 +231,14 @@ async def create_upload_file_link_v1(
     # cleanup
 
     clean_tasks = []
-    for u_id, loc_id, file_id in file_params:
+    for u_id, _, file_id in file_params:
         url = url_from_operation_id(
             client,
             initialized_app,
             "upload_file",
             location_id=f"{location_id}",
             file_id=file_id,
-        ).with_query(user_id=u_id)
+        ).with_query(user_id=u_id, product_name=product_name)
         clean_tasks.append(client.delete(f"{url}"))
     await asyncio.gather(*clean_tasks)
 
@@ -1334,6 +1334,7 @@ async def test_ensure_expand_dirs_defaults_true(
     mocker: MockerFixture,
     client: httpx.AsyncClient,
     user_id: UserID,
+    product_name: ProductName,
     location_id: LocationID,
 ):
     mocked_object = mocker.patch(
@@ -1346,7 +1347,7 @@ async def test_ensure_expand_dirs_defaults_true(
         initialized_app,
         "list_files_metadata",
         location_id=f"{location_id}",
-    ).with_query(user_id=user_id)
+    ).with_query(user_id=user_id, product_name=product_name)
     await client.get(f"{get_url}")
 
     assert len(mocked_object.call_args_list) == 1
@@ -1426,7 +1427,7 @@ async def test_upload_file_is_directory_and_remove_content(
         "delete_file",
         location_id=f"{location_id}",
         file_id="/".join(list_of_files[0].file_id.split("/")[:2]) + "/does_not_exist",
-    ).with_query(user_id=user_id)
+    ).with_query(user_id=user_id, product_name=product_name)
     response = await client.delete(f"{delete_url}")
     _, error = assert_status(response, status.HTTP_204_NO_CONTENT, None)
     assert error is None
@@ -1445,7 +1446,7 @@ async def test_upload_file_is_directory_and_remove_content(
         "delete_file",
         location_id=f"{location_id}",
         file_id=list_of_files[0].file_id,
-    ).with_query(user_id=user_id)
+    ).with_query(user_id=user_id, product_name=product_name)
     response = await client.delete(f"{delete_url}")
     _, error = assert_status(response, status.HTTP_204_NO_CONTENT, None)
     assert error is None

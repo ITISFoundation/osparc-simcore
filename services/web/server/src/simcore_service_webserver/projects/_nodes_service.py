@@ -8,7 +8,7 @@ from typing import Final, NamedTuple
 from aiohttp import web
 from aiohttp.client import ClientError
 from models_library.api_schemas_storage.storage_schemas import FileMetaDataGet
-from models_library.basic_types import KeyIDStr
+from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes import Node
 from models_library.projects_nodes_io import NodeID, SimCoreFileLink
@@ -184,11 +184,15 @@ def _get_files_with_thumbnails(
 
 
 async def __get_link(
-    app: web.Application, user_id: UserID, file_meta_data: FileMetaDataGet
+    app: web.Application,
+    user_id: UserID,
+    product_name: ProductName,
+    file_meta_data: FileMetaDataGet,
 ) -> tuple[str, HttpUrl]:
     return __get_search_key(file_meta_data), await get_download_link(
         app,
         user_id,
+        product_name,
         SimCoreFileLink.model_validate({"store": "0", "path": file_meta_data.file_id}),
     )
 
@@ -196,6 +200,7 @@ async def __get_link(
 async def _get_node_screenshots(
     app: web.Application,
     user_id: UserID,
+    product_name: ProductName,
     files_with_thumbnails: list[_FileWithThumbnail],
 ) -> list[NodeScreenshot]:
     """resolves links concurrently before returning all the NodeScreenshots"""
@@ -207,7 +212,7 @@ async def _get_node_screenshots(
         search_map[__get_search_key(entry.thumbnail)] = entry.thumbnail
 
     resolved_links: list[tuple[str, HttpUrl]] = await logged_gather(
-        *[__get_link(app, user_id, x) for x in search_map.values()],
+        *[__get_link(app, user_id, product_name, x) for x in search_map.values()],
         max_concurrency=10,
     )
 
@@ -226,6 +231,7 @@ async def _get_node_screenshots(
 async def get_node_screenshots(
     app: web.Application,
     user_id: UserID,
+    product_name: ProductName,
     project_id: ProjectID,
     node_id: NodeID,
     node: Node,
@@ -244,9 +250,9 @@ async def get_node_screenshots(
 
             assert node.outputs is not None  # nosec
 
-            filelink = SimCoreFileLink.model_validate(node.outputs[KeyIDStr("outFile")])
+            filelink = SimCoreFileLink.model_validate(node.outputs["outFile"])
 
-            file_url = await get_download_link(app, user_id, filelink)
+            file_url = await get_download_link(app, user_id, product_name, filelink)
             screenshots.append(
                 NodeScreenshot(
                     thumbnail_url=f"https://placehold.co/170x120?text={text}",  # type: ignore[arg-type]
@@ -273,8 +279,9 @@ async def get_node_screenshots(
         )
 
         resolved_screenshots: list[NodeScreenshot] = await _get_node_screenshots(
-            app=app,
-            user_id=user_id,
+            app,
+            user_id,
+            product_name,
             files_with_thumbnails=_get_files_with_thumbnails(assets_files),
         )
         screenshots.extend(resolved_screenshots)

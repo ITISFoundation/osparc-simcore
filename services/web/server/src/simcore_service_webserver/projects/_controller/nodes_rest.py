@@ -34,7 +34,7 @@ from models_library.services import ServiceKeyVersion
 from models_library.services_resources import ServiceResourcesDict
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, TypeAdapter
 from servicelib.aiohttp import status
 from servicelib.aiohttp.long_running_tasks.server import start_long_running_task
 from servicelib.aiohttp.requests_validation import (
@@ -346,7 +346,7 @@ async def _stop_dynamic_service_task(
                 },
             )
         )
-        # ANE: in case there is an error reply as not found
+        # ANE: in case there is an error reply as not found  # spellchecker:disable-line
         return create_error_response(
             error=ErrorGet(
                 message=user_error_msg,
@@ -718,6 +718,7 @@ async def list_project_nodes_previews(request: web.Request) -> web.Response:
         screenshots = await get_node_screenshots(
             app=request.app,
             user_id=req_ctx.user_id,
+            product_name=req_ctx.product_name,
             project_id=path_params.project_id,
             node_id=NodeID(node_id),
             node=node,
@@ -754,7 +755,9 @@ async def get_project_node_preview(request: web.Request) -> web.Response:
 
     project = Project.model_validate(project_data)
 
-    node = project.workbench.get(NodeIDStr(path_params.node_id))
+    node = project.workbench.get(
+        TypeAdapter(NodeIDStr).validate_python(path_params.node_id)
+    )
     if node is None:
         raise NodeNotFoundError(
             project_uuid=f"{path_params.project_id}",
@@ -767,6 +770,7 @@ async def get_project_node_preview(request: web.Request) -> web.Response:
         screenshots=await get_node_screenshots(
             app=request.app,
             user_id=req_ctx.user_id,
+            product_name=req_ctx.product_name,
             project_id=path_params.project_id,
             node_id=path_params.node_id,
             node=node,

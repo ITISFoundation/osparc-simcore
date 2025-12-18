@@ -38,6 +38,7 @@ async def test_list_dataset_files_metadata_with_no_files_returns_empty_array(
     initialized_app: FastAPI,
     client: AsyncClient,
     user_id: UserID,
+    product_name: ProductName,
     project_id: ProjectID,
     location_id: LocationID,
     fake_datcore_tokens: tuple[str, str],
@@ -48,7 +49,7 @@ async def test_list_dataset_files_metadata_with_no_files_returns_empty_array(
         "list_dataset_files_metadata",
         location_id=location_id,
         dataset_id=project_id,
-    ).with_query(user_id=user_id)
+    ).with_query(user_id=user_id, product_name=product_name)
 
     response = await client.get(f"{url}")
     data, error = assert_status(response, status.HTTP_200_OK, list[FileMetaDataGet])
@@ -113,6 +114,7 @@ async def test_list_datasets_metadata(
     initialized_app: FastAPI,
     client: AsyncClient,
     user_id: UserID,
+    product_name: ProductName,
     location_id: LocationID,
     project_id: ProjectID,
 ):
@@ -121,7 +123,7 @@ async def test_list_datasets_metadata(
         initialized_app,
         "list_datasets_metadata",
         location_id=location_id,
-    ).with_query(user_id=user_id)
+    ).with_query(user_id=user_id, product_name=product_name)
 
     response = await client.get(f"{url}")
     list_datasets, _ = assert_status(
