@@ -230,6 +230,7 @@ async def compute_path_size(request: web.Request) -> web.Response:
             ).model_dump()
         ),
         user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
     )
 
     return _create_data_response_from_async_job(request, async_job)
@@ -258,6 +259,7 @@ async def batch_delete_paths(request: web.Request):
             ).model_dump()
         ),
         user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
     )
     return _create_data_response_from_async_job(request, async_job)
 
