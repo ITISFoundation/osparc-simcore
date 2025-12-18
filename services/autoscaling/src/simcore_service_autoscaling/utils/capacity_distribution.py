@@ -4,9 +4,9 @@ from aws_library.ec2._errors import EC2TooManyInstancesError
 from aws_library.ec2._models import EC2InstanceType, EC2Tags
 from fastapi import FastAPI
 
+from ..core.settings import get_application_settings
 from ..models import InstanceToLaunch
 from ..modules.ec2 import get_ec2_client
-from ..modules.ssm import get_application_settings
 
 
 def _cap_instances_minimal(
