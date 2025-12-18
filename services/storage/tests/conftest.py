@@ -572,7 +572,7 @@ async def _upload_file_to_s3(
         bucket=s3_bucket,
         file=local_file,
         object_key=file_id,
-        bytes_transfered_cb=None,
+        bytes_transferred_cb=None,
     )
     return {file_id: FileIDDict(path=local_file, sha256_checksum=f"{faker.sha256()}")}
 
@@ -604,7 +604,7 @@ async def populate_directory(
         s3_base_path = Path(f"{project_id}") / f"{node_id}" / dir_name
         # NOTE: add a space in the sub directory
         s3_subdirs = [
-            s3_base_path / f"sub-dir_ect ory-{i}" for i in range(subdir_count)
+            s3_base_path / f"sub-dir_etc ory-{i}" for i in range(subdir_count)
         ]
         # Randomly distribute files across subdirectories
         selected_subdirs = random.choices(s3_subdirs, k=file_count)  # noqa: S311
@@ -1028,7 +1028,7 @@ async def with_storage_celery_worker(
     monkeypatch: pytest.MonkeyPatch,
     register_celery_tasks: Callable[[Celery], None],
 ) -> AsyncIterator[TestWorkController]:
-    # Signals must be explicitily connected
+    # Signals must be explicitly connected
     tracing_config = TracingConfig.create(
         tracing_settings=None,  # disable tracing in tests
         service_name="storage-api",

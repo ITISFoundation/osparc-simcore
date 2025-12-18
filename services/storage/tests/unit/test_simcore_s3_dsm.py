@@ -103,7 +103,7 @@ async def test__copy_path_s3_s3(
             user_id=user_id,
             src_fmd=existing_fmd,
             dst_file_id=_get_dest_file_id(s3_file_id_to_copy),
-            bytes_transfered_cb=mock_copy_transfer_cb,
+            bytes_transferred_cb=mock_copy_transfer_cb,
         )
 
     async def _count_files(s3_file_id: SimcoreS3FileID, expected_count: int) -> None:
@@ -483,7 +483,7 @@ async def test_create_s3_export(
             user_id, selection_to_export, progress_bar=root_progress_bar
         )
     cleanup_files_closure(file_id)
-    # count=2 -> the direcotory and the .zip export
+    # count=2 -> the directory and the .zip export
     await _assert_meta_data_entries_count(
         sqlalchemy_async_engine, count=initial_fmd_count + 1
     )
