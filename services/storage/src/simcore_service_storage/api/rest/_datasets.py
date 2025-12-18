@@ -31,7 +31,7 @@ async def list_datasets_metadata(
     request: Request,
 ) -> Envelope[list[DatasetMetaDataGet]]:
     dsm = get_dsm_provider(request.app).get(location_id)
-    data = await dsm.list_datasets(query_params.user_id)
+    data = await dsm.list_datasets(query_params.user_id, query_params.product_name)
     return Envelope[list[DatasetMetaDataGet]](
         data=[DatasetMetaDataGet(**d.model_dump()) for d in data]
     )
@@ -50,6 +50,7 @@ async def list_dataset_files_metadata(
     dsm = get_dsm_provider(request.app).get(location_id)
     data = await dsm.list_files_in_dataset(
         user_id=query_params.user_id,
+        product_name=query_params.product_name,
         dataset_id=dataset_id,
         expand_dirs=query_params.expand_dirs,
     )
