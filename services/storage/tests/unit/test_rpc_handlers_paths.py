@@ -22,7 +22,6 @@ from models_library.api_schemas_rpc_async_jobs.async_jobs import (
 from models_library.api_schemas_storage import STORAGE_RPC_NAMESPACE
 from models_library.products import ProductName
 from models_library.projects_nodes_io import LocationID, NodeID, SimcoreS3FileID
-from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.users import UserID
 from pydantic import ByteSize, TypeAdapter
 from pytest_simcore.helpers.storage_utils import FileIDDict, ProjectWithFilesParams
@@ -74,7 +73,7 @@ async def _assert_compute_path_size(
     path: Path,
     expected_total_size: int,
 ) -> ByteSize:
-    async_job, async_job_name = await compute_path_size(
+    async_job, _ = await compute_path_size(
         storage_rpc_client,
         location_id=location_id,
         path=path,
@@ -82,11 +81,12 @@ async def _assert_compute_path_size(
             user_id=user_id, product_name=product_name, owner="pytest_client_name"
         ),
         user_id=user_id,
+        product_name=product_name,
     )
     async for job_composed_result in wait_and_get_result(
         storage_rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
-        method_name=RPCMethodName(compute_path_size.__name__),
+        method_name=compute_path_size.__name__,
         job_id=async_job.job_id,
         owner_metadata=TestOwnerMetadata(
             user_id=user_id, product_name=product_name, owner="pytest_client_name"
@@ -112,7 +112,7 @@ async def _assert_delete_paths(
     *,
     paths: set[Path],
 ) -> None:
-    async_job, async_job_name = await delete_paths(
+    async_job, _ = await delete_paths(
         storage_rpc_client,
         location_id=location_id,
         paths=paths,
@@ -120,11 +120,12 @@ async def _assert_delete_paths(
             user_id=user_id, product_name=product_name, owner="pytest_client_name"
         ),
         user_id=user_id,
+        product_name=product_name,
     )
     async for job_composed_result in wait_and_get_result(
         storage_rpc_client,
         rpc_namespace=STORAGE_RPC_NAMESPACE,
-        method_name=RPCMethodName(compute_path_size.__name__),
+        method_name=delete_paths.__name__,
         job_id=async_job.job_id,
         owner_metadata=TestOwnerMetadata(
             user_id=user_id, product_name=product_name, owner="pytest_client_name"
@@ -289,9 +290,9 @@ async def test_path_compute_size_inexistent_path(
         storage_rabbitmq_rpc_client,
         location_id,
         user_id,
+        product_name,
         path=Path(faker.file_path(absolute=False)),
         expected_total_size=0,
-        product_name=product_name,
     )
 
 
