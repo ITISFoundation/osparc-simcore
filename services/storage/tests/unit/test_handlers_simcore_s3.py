@@ -43,7 +43,7 @@ async def test_simcore_s3_access_returns_default(
 ):
     url = url_from_operation_id(
         client, initialized_app, "get_or_create_temporary_s3_access"
-    ).with_query(user_id=1)
+    ).with_query(user_id=1, product_name="test-product")
 
     response = await client.post(f"{url}")
     received_settings, error = assert_status(response, status.HTTP_200_OK, S3Settings)
@@ -56,6 +56,7 @@ async def test_connect_to_external(
     initialized_app: FastAPI,
     client: httpx.AsyncClient,
     user_id: UserID,
+    product_name: ProductName,
     project_id: ProjectID,
 ):
     url = url_from_operation_id(
@@ -63,9 +64,13 @@ async def test_connect_to_external(
         initialized_app,
         "list_files_metadata",
         location_id=f"{SimcoreS3DataManager.get_location_id()}",
-    ).with_query(user_id=f"{user_id}", uuid_filter=f"{project_id}")
+    ).with_query(
+        user_id=f"{user_id}",
+        product_name=f"{product_name}",
+        uuid_filter=f"{project_id}",
+    )
     resp = await client.get(f"{url}")
-    data, error = assert_status(resp, status.HTTP_200_OK, list[FileMetaDataGet])
+    data, _ = assert_status(resp, status.HTTP_200_OK, list[FileMetaDataGet])
     print(data)
 
 
