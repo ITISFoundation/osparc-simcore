@@ -551,6 +551,7 @@ async def _request_start_export_data(
                 owner="PYTEST_CLIENT_NAME",
             ),
             user_id=user_id,
+            product_name=product_name,
         )
 
         async for async_job_result in wait_and_get_result(
