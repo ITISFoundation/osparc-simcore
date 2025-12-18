@@ -78,7 +78,7 @@ async def test_cap_needed_instances_minimal_cap(
 ):
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
     max_instances = app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES
-    desired_creatable = 3
+    desired_creatable = 2
     assert (
         max_instances >= desired_creatable
     ), "test cannot be run with this limit, please adjust your configuration"  # Ensure we have enough for the test
@@ -104,10 +104,9 @@ async def test_cap_needed_instances_minimal_cap(
     assert sum(result.values()) == desired_creatable
     # Minimal cap keeps first batches, one each
     keys = list(result.keys())
-    assert keys[0].instance_type.name == "t3.medium"
-    assert keys[1].instance_type.name == "m5.large"
-    assert keys[2].instance_type.name == "t2.micro"
-    assert list(result.values()) == [1, 1, 1]
+    assert keys[0].instance_type.name == "t2.micro"
+    assert keys[1].instance_type.name == "t2.micro"
+    assert list(result.values()) == [1, 1]
 
 
 async def test_cap_needed_instances_proportional_cap(
@@ -121,7 +120,7 @@ async def test_cap_needed_instances_proportional_cap(
 ):
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
     max_instances = app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES
-    desired_creatable = 4
+    desired_creatable = 5
     assert (
         max_instances >= desired_creatable
     ), "test cannot be run with this limit, please adjust your configuration"
@@ -131,7 +130,9 @@ async def test_cap_needed_instances_proportional_cap(
         "get_instances",
         return_value=[{}] * (max_instances - desired_creatable),
     )
-    needed_instances = _build_needed_instances([("t2.micro", 3), ("t3.medium", 3)])
+    needed_instances = _build_needed_instances(
+        [("t2.micro", 3), ("t3.medium", 3), ("t3.medium", 2)]
+    )
 
     result = await cap_needed_instances(
         initialized_app,
