@@ -16,6 +16,7 @@ from models_library.api_schemas_storage.storage_schemas import (
     FileMetaDataGet,
     SimcoreS3FileID,
 )
+from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import LocationID
 from models_library.users import UserID
@@ -26,7 +27,7 @@ from servicelib.aiohttp import status
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 from yarl import URL
 
-pytest_simcore_core_services_selection = ["postgres"]
+pytest_simcore_core_services_selection = ["postgres", "rabbit"]
 pytest_simcore_ops_services_selection = ["adminer"]
 
 
@@ -54,6 +55,7 @@ async def test_list_files_metadata(
     client: httpx.AsyncClient,
     user_id: UserID,
     other_user_id: UserID,
+    product_name: ProductName,
     location_id: LocationID,
     project_id: ProjectID,
     faker: Faker,
@@ -63,7 +65,7 @@ async def test_list_files_metadata(
         .with_path(
             initialized_app.url_path_for("list_files_metadata", location_id=location_id)
         )
-        .with_query(user_id=f"{user_id}")
+        .with_query(user_id=user_id, product_name=product_name)
     )
 
     # this should return an empty list
@@ -179,6 +181,7 @@ async def test_get_file_metadata(
     initialized_app: FastAPI,
     client: httpx.AsyncClient,
     user_id: UserID,
+    product_name: ProductName,
     location_id: LocationID,
     project_id: ProjectID,
     simcore_file_id: SimcoreS3FileID,
@@ -190,7 +193,7 @@ async def test_get_file_metadata(
         "get_file_metadata",
         location_id=f"{location_id}",
         file_id=simcore_file_id,
-    ).with_query(user_id=user_id)
+    ).with_query(user_id=user_id, product_name=product_name)
 
     # this should return an empty list
     response = await client.get(f"{url}")
@@ -214,7 +217,7 @@ async def test_get_file_metadata(
         "get_file_metadata",
         location_id=f"{location_id}",
         file_id=selected_file_uuid,
-    ).with_query(user_id=user_id)
+    ).with_query(user_id=user_id, product_name=product_name)
 
     response = await client.get(f"{url}")
     fmd, error = assert_status(response, status.HTTP_200_OK, FileMetaDataGet)

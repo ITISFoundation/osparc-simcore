@@ -9,16 +9,17 @@ from typing import Any
 import pytest
 import sqlalchemy as sa
 from faker import Faker
+from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from pydantic import TypeAdapter
 from simcore_postgres_database.models.project_to_groups import project_to_groups
-from simcore_postgres_database.storage_models import projects, users
+from simcore_postgres_database.storage_models import products, projects, users
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
-from .helpers.faker_factories import DEFAULT_FAKER, random_project
+from .helpers.faker_factories import DEFAULT_FAKER, random_product, random_project
 from .helpers.postgres_users import insert_and_get_user_and_secrets_lifespan
 
 
@@ -52,13 +53,48 @@ async def other_user_id(sqlalchemy_async_engine: AsyncEngine) -> AsyncIterator[U
 
 
 @pytest.fixture
+async def create_product(
+    sqlalchemy_async_engine: AsyncEngine,
+) -> AsyncIterator[Callable[..., Awaitable[dict[str, Any]]]]:
+    created_product_names = []
+
+    async def _creator(**kwargs) -> dict[str, Any]:
+        product_config = {}
+        product_config.update(kwargs)
+        async with sqlalchemy_async_engine.begin() as conn:
+            result = await conn.execute(
+                products.insert()
+                .values(**random_product(**product_config))
+                .returning(sa.literal_column("*"))
+            )
+            row = result.one()
+            created_product_names.append(row.name)
+            return dict(row._asdict())
+
+    yield _creator
+
+    async with sqlalchemy_async_engine.begin() as conn:
+        await conn.execute(
+            products.delete().where(products.c.name.in_(created_product_names))
+        )
+
+
+@pytest.fixture
+async def product_name(
+    create_product: Callable[..., Awaitable[dict[str, Any]]],
+) -> ProductName:
+    product = await create_product()
+    return ProductName(product["name"])
+
+
+@pytest.fixture
 async def create_project(
-    user_id: UserID, sqlalchemy_async_engine: AsyncEngine
+    user_id: UserID, product_name: ProductName, sqlalchemy_async_engine: AsyncEngine
 ) -> AsyncIterator[Callable[..., Awaitable[dict[str, Any]]]]:
     created_project_uuids = []
 
     async def _creator(**kwargs) -> dict[str, Any]:
-        prj_config = {"prj_owner": user_id}
+        prj_config = {"prj_owner": user_id, "product_name": product_name}
         prj_config.update(kwargs)
         async with sqlalchemy_async_engine.begin() as conn:
             result = await conn.execute(
