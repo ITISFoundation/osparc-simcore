@@ -28,13 +28,13 @@ from models_library.api_schemas_webserver.projects_nodes import (
 from models_library.basic_types import IDStr
 from models_library.groups import EVERYONE_GROUP_ID, Group, GroupID, GroupType
 from models_library.projects import Project, ProjectID
-from models_library.projects_nodes_io import NodeID, NodeIDStr
+from models_library.projects_nodes_io import NodeID
 from models_library.rest_error import ErrorGet
 from models_library.services import ServiceKeyVersion
 from models_library.services_resources import ServiceResourcesDict
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.utils.fastapi_encoders import jsonable_encoder
-from pydantic import BaseModel, Field, TypeAdapter
+from pydantic import BaseModel, Field
 from servicelib.aiohttp import status
 from servicelib.aiohttp.long_running_tasks.server import start_long_running_task
 from servicelib.aiohttp.requests_validation import (
@@ -755,9 +755,7 @@ async def get_project_node_preview(request: web.Request) -> web.Response:
 
     project = Project.model_validate(project_data)
 
-    node = project.workbench.get(
-        TypeAdapter(NodeIDStr).validate_python(path_params.node_id)
-    )
+    node = project.workbench.get(f"{path_params.node_id}")
     if node is None:
         raise NodeNotFoundError(
             project_uuid=f"{path_params.project_id}",
