@@ -19,6 +19,7 @@ from models_library.api_schemas_storage.storage_schemas import (
 )
 from models_library.basic_types import SHA256Str
 from models_library.generics import Envelope
+from models_library.products import ProductName
 from models_library.projects_nodes_io import LocationID, StorageFileID
 from models_library.users import UserID
 from pydantic import ByteSize
@@ -136,14 +137,14 @@ async def retry_request(
 
 @handle_client_exception
 async def list_storage_locations(
-    *, session: ClientSession, user_id: UserID
+    *, session: ClientSession, user_id: UserID, product_name: ProductName
 ) -> FileLocationArray:
     async with retry_request(
         session,
         "GET",
         f"{get_base_url()}/locations",
         expected_status=status.HTTP_200_OK,
-        params={"user_id": f"{user_id}"},
+        params={"user_id": f"{user_id}", "product_name": f"{product_name}"},
     ) as response:
         locations_enveloped = Envelope[FileLocationArray].model_validate(
             await response.json()
@@ -161,6 +162,7 @@ async def get_download_file_link(
     file_id: StorageFileID,
     location_id: LocationID,
     user_id: UserID,
+    product_name: ProductName,
     link_type: LinkType,
 ) -> AnyUrl:
     """
@@ -172,7 +174,11 @@ async def get_download_file_link(
         "GET",
         f"{get_base_url()}/locations/{location_id}/files/{quote(file_id, safe='')}",
         expected_status=status.HTTP_200_OK,
-        params={"user_id": f"{user_id}", "link_type": link_type.value},
+        params={
+            "user_id": f"{user_id}",
+            "product_name": f"{product_name}",
+            "link_type": link_type.value,
+        },
     ) as response:
         presigned_link_enveloped = Envelope[PresignedLink].model_validate(
             await response.json()
@@ -232,13 +238,14 @@ async def get_file_metadata(
     file_id: StorageFileID,
     location_id: LocationID,
     user_id: UserID,
+    product_name: ProductName,
 ) -> FileMetaDataGet:
     async with retry_request(
         session,
         "GET",
         f"{get_base_url()}/locations/{location_id}/files/{quote(file_id, safe='')}/metadata",
         expected_status=status.HTTP_200_OK,
-        params={"user_id": f"{user_id}"},
+        params={"user_id": f"{user_id}", "product_name": f"{product_name}"},
     ) as response:
         payload = await response.json()
         if not payload.get("data"):
@@ -255,6 +262,7 @@ async def list_file_metadata(
     *,
     session: ClientSession,
     user_id: UserID,
+    product_name: ProductName,
     location_id: LocationID,
     uuid_filter: str,
 ) -> list[FileMetaDataGet]:
@@ -263,7 +271,11 @@ async def list_file_metadata(
         "GET",
         f"{get_base_url()}/locations/{location_id}/files/metadata",
         expected_status=status.HTTP_200_OK,
-        params={"user_id": f"{user_id}", "uuid_filter": uuid_filter},
+        params={
+            "user_id": f"{user_id}",
+            "product_name": f"{product_name}",
+            "uuid_filter": uuid_filter,
+        },
     ) as resp:
         envelope = Envelope[list[FileMetaDataGet]].model_validate(await resp.json())
         assert envelope.data is not None  # nosec
@@ -278,12 +290,13 @@ async def delete_file(
     file_id: StorageFileID,
     location_id: LocationID,
     user_id: UserID,
+    product_name: ProductName,
 ) -> None:
     async with retry_request(
         session,
         "DELETE",
         f"{get_base_url()}/locations/{location_id}/files/{quote(file_id, safe='')}",
         expected_status=status.HTTP_204_NO_CONTENT,
-        params={"user_id": f"{user_id}"},
+        params={"user_id": f"{user_id}", "product_name": f"{product_name}"},
     ):
         ...

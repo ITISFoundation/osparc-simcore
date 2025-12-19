@@ -18,6 +18,11 @@ def user_id() -> int:
 
 
 @pytest.fixture(scope="module")
+def product_name() -> str:
+    return f"product-{uuid4()}"
+
+
+@pytest.fixture(scope="module")
 def project_id() -> str:
     return f"{uuid4()}"
 

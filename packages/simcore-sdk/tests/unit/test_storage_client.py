@@ -18,6 +18,7 @@ from models_library.api_schemas_storage.storage_schemas import (
     FileUploadSchema,
     LocationID,
 )
+from models_library.products import ProductName
 from models_library.projects_nodes_io import SimcoreS3FileID
 from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize, TypeAdapter
@@ -80,7 +81,9 @@ def mock_environment(
 
 @pytest.fixture()
 def file_id() -> SimcoreS3FileID:
-    return SimcoreS3FileID(f"{uuid4()}/{uuid4()}/some_fake_file_id")
+    return TypeAdapter(SimcoreS3FileID).validate_python(
+        f"{uuid4()}/{uuid4()}/some_fake_file_id"
+    )
 
 
 @pytest.fixture()
@@ -100,8 +103,11 @@ async def test_list_storage_locations(
     mock_postgres: EnvVarsDict,
     session: aiohttp.ClientSession,
     user_id: UserID,
+    product_name: ProductName,
 ):
-    result = await list_storage_locations(session=session, user_id=user_id)
+    result = await list_storage_locations(
+        session=session, user_id=user_id, product_name=product_name
+    )
     assert isinstance(result, FileLocationArray)  # type: ignore
 
     assert len(result) == 1
@@ -119,6 +125,7 @@ async def test_get_download_file_link(
     storage_v0_service_mock: AioResponsesMock,
     session: aiohttp.ClientSession,
     user_id: UserID,
+    product_name: ProductName,
     file_id: SimcoreS3FileID,
     location_id: LocationID,
     link_type: LinkType,
@@ -129,6 +136,7 @@ async def test_get_download_file_link(
         file_id=file_id,
         location_id=location_id,
         user_id=user_id,
+        product_name=product_name,
         link_type=link_type,
     )
     assert isinstance(link, AnyUrl)
@@ -165,17 +173,22 @@ async def test_get_upload_file_links(
     assert file_upload_links.urls[0].scheme in expected_scheme
 
 
-async def test_get_file_metada(
+async def test_get_file_metadata(
     clear_caches: None,
     mock_environment: EnvVarsDict,
     storage_v0_service_mock: AioResponsesMock,
     session: aiohttp.ClientSession,
     user_id: UserID,
+    product_name: ProductName,
     file_id: SimcoreS3FileID,
     location_id: LocationID,
 ):
     file_metadata = await get_file_metadata(
-        session=session, file_id=file_id, location_id=location_id, user_id=user_id
+        session=session,
+        file_id=file_id,
+        location_id=location_id,
+        user_id=user_id,
+        product_name=product_name,
     )
     assert file_metadata
     assert file_metadata == FileMetaDataGet.model_validate(
@@ -211,12 +224,13 @@ def storage_v0_service_mock_get_file_meta_data_not_found(
     return aioresponses_mocker
 
 
-async def test_get_file_metada_invalid_s3_path(
+async def test_get_file_metadata_invalid_s3_path(
     clear_caches: None,
     mock_environment: EnvVarsDict,
     storage_v0_service_mock_get_file_meta_data_not_found: AioResponsesMock,
     session: aiohttp.ClientSession,
     user_id: UserID,
+    product_name: ProductName,
     file_id: SimcoreS3FileID,
     location_id: LocationID,
 ):
@@ -226,6 +240,7 @@ async def test_get_file_metada_invalid_s3_path(
             file_id=file_id,
             location_id=location_id,
             user_id=user_id,
+            product_name=product_name,
         )
 
 
@@ -235,11 +250,16 @@ async def test_list_file_metadata(
     storage_v0_service_mock: AioResponsesMock,
     session: aiohttp.ClientSession,
     user_id: UserID,
+    product_name: ProductName,
     file_id: SimcoreS3FileID,
     location_id: LocationID,
 ):
     list_of_file_metadata = await list_file_metadata(
-        session=session, user_id=user_id, location_id=location_id, uuid_filter=""
+        session=session,
+        user_id=user_id,
+        product_name=product_name,
+        location_id=location_id,
+        uuid_filter="",
     )
     assert list_of_file_metadata == []
 
@@ -250,11 +270,16 @@ async def test_delete_file(
     storage_v0_service_mock: AioResponsesMock,
     session: aiohttp.ClientSession,
     user_id: UserID,
+    product_name: ProductName,
     file_id: SimcoreS3FileID,
     location_id: LocationID,
 ):
     await delete_file(
-        session=session, file_id=file_id, location_id=location_id, user_id=user_id
+        session=session,
+        file_id=file_id,
+        location_id=location_id,
+        user_id=user_id,
+        product_name=product_name,
     )
 
 
