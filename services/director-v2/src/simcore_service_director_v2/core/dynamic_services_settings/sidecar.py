@@ -1,6 +1,5 @@
 import logging
 import warnings
-from enum import Enum
 from pathlib import Path
 from typing import Annotated
 
@@ -10,49 +9,16 @@ from models_library.utils.common_validators import (
     ensure_unique_dict_values_validator,
     ensure_unique_list_values_validator,
 )
-from pydantic import AliasChoices, Field, PositiveInt, ValidationInfo, field_validator
+from pydantic import AliasChoices, Field, ValidationInfo, field_validator
 from settings_library.base import BaseCustomSettings
 from settings_library.efs import AwsEfsSettings
-from settings_library.r_clone import RCloneSettings as SettingsLibraryRCloneSettings
+from settings_library.r_clone import RCloneSettings
 from settings_library.utils_logging import MixinLoggingSettings
 from settings_library.utils_service import DEFAULT_FASTAPI_PORT
 
 from ...constants import DYNAMIC_SIDECAR_DOCKER_IMAGE_RE
 
 _logger = logging.getLogger(__name__)
-
-
-class VFSCacheMode(str, Enum):
-    __slots__ = ()
-
-    OFF = "off"
-    MINIMAL = "minimal"
-    WRITES = "writes"
-    FULL = "full"
-
-
-class RCloneSettings(SettingsLibraryRCloneSettings):
-    R_CLONE_DIR_CACHE_TIME_SECONDS: PositiveInt = Field(
-        10,
-        description="time to cache directory entries for",
-    )
-    R_CLONE_POLL_INTERVAL_SECONDS: PositiveInt = Field(
-        9,
-        description="time to wait between polling for changes",
-    )
-    R_CLONE_VFS_CACHE_MODE: VFSCacheMode = Field(
-        VFSCacheMode.MINIMAL,  # SEE https://rclone.org/commands/rclone_mount/#vfs-file-caching
-        description="VFS operation mode, defines how and when the disk cache is synced",
-    )
-
-    @field_validator("R_CLONE_POLL_INTERVAL_SECONDS")
-    @classmethod
-    def enforce_r_clone_requirement(cls, v: int, info: ValidationInfo) -> PositiveInt:
-        dir_cache_time = info.data["R_CLONE_DIR_CACHE_TIME_SECONDS"]
-        if v >= dir_cache_time:
-            msg = f"R_CLONE_POLL_INTERVAL_SECONDS={v} must be lower than R_CLONE_DIR_CACHE_TIME_SECONDS={dir_cache_time}"
-            raise ValueError(msg)
-        return v
 
 
 class PlacementSettings(BaseCustomSettings):
@@ -173,7 +139,7 @@ class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
 
     DYNAMIC_SIDECAR_EXPOSE_PORT: bool = Field(
         default=False,
-        description="Publishes the service on localhost for debuging and testing [DEVELOPMENT ONLY]"
+        description="Publishes the service on localhost for debugging and testing [DEVELOPMENT ONLY]"
         "Can be used to access swagger doc from the host as http://127.0.0.1:30023/dev/doc "
         "where 30023 is the host published port",
         validate_default=True,
