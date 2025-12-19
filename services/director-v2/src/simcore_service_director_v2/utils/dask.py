@@ -22,6 +22,7 @@ from models_library.api_schemas_directorv2.computations import TaskLogFileGet
 from models_library.api_schemas_directorv2.services import NodeRequirements
 from models_library.docker import DockerLabelKey
 from models_library.errors import ErrorDict
+from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.services import ServiceKey, ServiceVersion
@@ -46,7 +47,7 @@ from ..constants import LOGS_FILE_NAME, UNDEFINED_API_BASE_URL, UNDEFINED_DOCKER
 from ..core.errors import (
     ComputationalBackendNotConnectedError,
     ComputationalSchedulerChangedError,
-    InsuficientComputationalResourcesError,
+    InsufficientComputationalResourcesError,
     MissingComputationalResourcesError,
     PortsValidationError,
 )
@@ -219,6 +220,7 @@ async def compute_input_data(
 async def compute_output_data_schema(
     *,
     user_id: UserID,
+    product_name: ProductName,
     project_id: ProjectID,
     node_id: NodeID,
     file_link_type: FileLinkType,
@@ -236,6 +238,7 @@ async def compute_output_data_schema(
         if port_utils.is_file_type(port.property_type):
             value_links = await port_utils.get_upload_links_from_storage(
                 user_id=user_id,
+                product_name=product_name,
                 project_id=f"{project_id}",
                 node_id=f"{node_id}",
                 file_name=(
@@ -265,12 +268,14 @@ async def compute_output_data_schema(
 
 async def compute_service_log_file_upload_link(
     user_id: UserID,
+    product_name: ProductName,
     project_id: ProjectID,
     node_id: NodeID,
     file_link_type: FileLinkType,
 ) -> AnyUrl:
     value_links = await port_utils.get_upload_links_from_storage(
         user_id=user_id,
+        product_name=product_name,
         project_id=f"{project_id}",
         node_id=f"{node_id}",
         file_name=LOGS_FILE_NAME,
@@ -360,6 +365,7 @@ async def compute_task_envs(
 
 async def _get_service_log_file_download_link(
     user_id: UserID,
+    product_name: ProductName,
     project_id: ProjectID,
     node_id: NodeID,
     file_link_type: FileLinkType,
@@ -372,6 +378,7 @@ async def _get_service_log_file_download_link(
     try:
         value_link: AnyUrl = await port_utils.get_download_link_from_storage_overload(
             user_id=user_id,
+            product_name=product_name,
             project_id=f"{project_id}",
             node_id=f"{node_id}",
             file_name=LOGS_FILE_NAME,
@@ -384,16 +391,20 @@ async def _get_service_log_file_download_link(
 
 
 async def get_task_log_file(
-    user_id: UserID, project_id: ProjectID, node_id: NodeID
+    user_id: UserID, product_name: ProductName, project_id: ProjectID, node_id: NodeID
 ) -> TaskLogFileGet:
     try:
         log_file_url = await _get_service_log_file_download_link(
-            user_id, project_id, node_id, file_link_type=FileLinkType.PRESIGNED
+            user_id,
+            product_name=product_name,
+            project_id=project_id,
+            node_id=node_id,
+            file_link_type=FileLinkType.PRESIGNED,
         )
 
     except NodeportsException as err:
         # Unexpected error: Cannot determine the cause of failure
-        # to get donwload link and cannot handle it automatically.
+        # to get download link and cannot handle it automatically.
         # Will treat it as "not available" and log a warning
         log_file_url = None
         _logger.warning(
@@ -411,6 +422,7 @@ async def get_task_log_file(
 async def clean_task_output_and_log_files_if_invalid(
     db_engine: AsyncEngine,
     user_id: UserID,
+    product_name: ProductName,
     project_id: ProjectID,
     node_id: NodeID,
     ports: node_ports_v2.Nodeports | None = None,
@@ -431,22 +443,23 @@ async def clean_task_output_and_log_files_if_invalid(
             next(iter(port.file_to_key_map)) if port.file_to_key_map else port.key
         )
         if await port_utils.target_link_exists(
-            user_id, f"{project_id}", f"{node_id}", file_name
+            user_id, product_name, f"{project_id}", f"{node_id}", file_name
         ):
             continue
         _logger.debug("entry %s is invalid, cleaning...", port.key)
         await port_utils.delete_target_link(
-            user_id, f"{project_id}", f"{node_id}", file_name
+            user_id, product_name, f"{project_id}", f"{node_id}", file_name
         )
     # check log file
     if not await port_utils.target_link_exists(
         user_id=user_id,
+        product_name=product_name,
         project_id=f"{project_id}",
         node_id=f"{node_id}",
         file_name=LOGS_FILE_NAME,
     ):
         await port_utils.delete_target_link(
-            user_id, f"{project_id}", f"{node_id}", LOGS_FILE_NAME
+            user_id, product_name, f"{project_id}", f"{node_id}", LOGS_FILE_NAME
         )
 
 
@@ -591,7 +604,7 @@ def check_if_cluster_is_able_to_run_pipeline(
         )
 
     # well then our workers are not powerful enough
-    raise InsuficientComputationalResourcesError(
+    raise InsufficientComputationalResourcesError(
         project_id=project_id,
         node_id=node_id,
         service_name=node_image.name,
