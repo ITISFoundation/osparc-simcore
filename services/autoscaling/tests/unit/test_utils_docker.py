@@ -19,6 +19,7 @@ from aws_library.ec2 import EC2InstanceData, Resources
 from deepdiff import DeepDiff
 from faker import Faker
 from models_library.docker import (
+    OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS,
     DockerGenericTag,
     DockerLabelKey,
 )
@@ -1251,6 +1252,42 @@ async def test_set_node_osparc_ready(
     assert not is_node_osparc_ready(updated_node)
     assert is_node_ready_and_available(updated_node, availability=Availability.drain)
     assert get_node_last_readiness_update(updated_node) > updated_last_readiness
+
+    # check now passing additional labels
+    osparc_custom_labels = {
+        key: f"value_for_{key}"
+        for key in OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS
+    }
+    non_specific_labels = {"key1": "value1", "key2": "value2"}
+    additional_labels = non_specific_labels | osparc_custom_labels
+    updated_node = await set_node_osparc_ready(
+        app_settings,
+        autoscaling_docker,
+        host_node,
+        ready=True,
+        additional_labels=additional_labels,
+    )
+    assert is_node_osparc_ready(updated_node)
+    assert is_node_ready_and_available(updated_node, availability=Availability.active)
+    assert updated_node.spec
+    for key, value in additional_labels.items():
+        assert key in updated_node.spec.labels
+        assert updated_node.spec.labels[key] == value
+
+    # check that making the node not ready removes osparc custom labels
+    updated_node = await set_node_osparc_ready(
+        app_settings,
+        autoscaling_docker,
+        updated_node,
+        ready=False,
+    )
+    assert not is_node_osparc_ready(updated_node)
+    assert is_node_ready_and_available(updated_node, availability=Availability.drain)
+    assert updated_node.spec
+    for key in non_specific_labels:
+        assert key in updated_node.spec.labels
+    for key in OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS:
+        assert key not in updated_node.spec.labels
 
 
 async def test_set_node_found_empty(
