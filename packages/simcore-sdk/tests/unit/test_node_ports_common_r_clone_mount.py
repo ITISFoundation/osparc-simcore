@@ -1,7 +1,6 @@
 # pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
-
 import contextlib
 import re
 from collections.abc import AsyncIterator, Iterator
@@ -130,7 +129,6 @@ def node_id(faker: Faker) -> NodeID:
 
 @pytest.fixture
 def moto_server() -> Iterator[None]:
-    """Start moto S3 server on port 5000"""
     server = ThreadedMotoServer(port="5000")
     server.start()
     yield None
@@ -159,7 +157,6 @@ async def mocked_self_container(mocker: MockerFixture) -> AsyncIterator[None]:
 
 @pytest.fixture
 async def mocked_r_clone_container_config(mocker: MockerFixture) -> None:
-
     async def _patched_get_config(
         command: str,
         r_clone_version: str,
@@ -193,18 +190,13 @@ async def mocked_r_clone_container_config(mocker: MockerFixture) -> None:
     )
 
     # Patch the rc_host to use localhost instead of container name
-
     original_init = RemoteControlHttpClient.__init__
 
     def _patched_init(self, rc_host: str, rc_port: PortInt, *args, **kwargs) -> None:
         # Replace container hostname with localhost for host access
         original_init(self, "localhost", rc_port, *args, **kwargs)
 
-    mocker.patch.object(
-        RemoteControlHttpClient,
-        "__init__",
-        _patched_init,
-    )
+    mocker.patch.object(RemoteControlHttpClient, "__init__", _patched_init)
 
 
 async def _handle_mount_activity(state_path: Path, activity: MountActivity) -> None:
@@ -224,7 +216,6 @@ async def test_manager(
 ) -> None:
 
     async def _get_bind_paths_protocol(state_path: Path) -> list[Path]:
-        # no need to add bind mount vfs cache for testing
         return [
             {"Type": "bind", "Source": f"{state_path}", "Target": f"{state_path}"},
             {
@@ -248,3 +239,8 @@ async def test_manager(
     await r_clone_mount_manager.ensure_unmounted(
         local_mount_path=local_mount_path, index=index
     )
+
+
+# TODO: test to check that the  container is up
+# TODO: test to check that when container stopped event to kill app is called
+# TODO: CHECK that content form folder is uploaded to S3 in the expected paths
