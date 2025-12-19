@@ -29,7 +29,7 @@ from ...models.basic_types import VersionStr
 from ...models.pagination import Page, PaginationParams
 from ...models.schemas.jobs import Job, JobInputs
 from ...models.schemas.programs import Program, ProgramKeyId
-from ..dependencies.authentication import get_current_user_id
+from ..dependencies.authentication import get_current_user_id, get_product_name
 from ..dependencies.services import get_job_service, get_program_service
 
 _logger = logging.getLogger(__name__)
@@ -152,6 +152,7 @@ async def create_program_job(
     program_key: ProgramKeyId,
     version: VersionStr,
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
+    product_name: Annotated[str, Depends(get_product_name)],
     program_service: Annotated[ProgramService, Depends(get_program_service)],
     job_service: Annotated[JobService, Depends(get_job_service)],
     x_simcore_parent_project_uuid: Annotated[ProjectID | None, Header()] = None,
@@ -194,6 +195,7 @@ async def create_program_job(
 
     _, file_upload_schema = await get_upload_links_from_s3(
         user_id=user_id,
+        product_name=product_name,
         store_name=None,
         store_id=SIMCORE_LOCATION,
         s3_object=f"{project.uuid}/{node_id}/workspace",

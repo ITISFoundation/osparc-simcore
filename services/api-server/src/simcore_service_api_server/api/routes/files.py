@@ -47,7 +47,7 @@ from ...models.schemas.files import (
 from ...models.schemas.jobs import UserFileToProgramJob
 from ...services_http.storage import StorageApi, StorageFileMetaData, to_file_api_model
 from ...services_http.webserver import AuthSession
-from ..dependencies.authentication import get_current_user_id
+from ..dependencies.authentication import get_current_user_id, get_product_name
 from ..dependencies.services import get_api_client
 from ._common import API_SERVER_DEV_FEATURES_ENABLED
 from ._constants import (
@@ -220,6 +220,7 @@ async def upload_file(
     request: Request,
     file: Annotated[UploadFile, FileParam(...)],
     user_id: Annotated[int, Depends(get_current_user_id)],
+    product_name: Annotated[str, Depends(get_product_name)],
     content_length: str | None = Header(None),
 ):
     """Uploads a single file to the system"""
@@ -253,6 +254,7 @@ async def upload_file(
     # upload to S3 using pre-signed link
     upload_result: UploadedFolder | UploadedFile = await storage_upload_path(
         user_id=user_id,
+        product_name=product_name,
         store_id=SIMCORE_LOCATION,
         store_name=None,
         s3_object=file_meta.storage_file_id,
