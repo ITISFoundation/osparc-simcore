@@ -62,10 +62,11 @@ from simcore_service_autoscaling.utils.utils_docker import (
     get_monitored_nodes,
     get_new_node_docker_tags,
     get_node_empty_since,
-    get_node_last_readyness_update,
+    get_node_last_readiness_update,
     get_node_termination_started_since,
     get_node_total_resources,
     get_task_instance_restriction,
+    get_task_osparc_custom_docker_placement_constraints,
     get_worker_nodes,
     is_node_osparc_ready,
     is_node_ready_and_available,
@@ -586,6 +587,63 @@ async def test_get_resources_from_docker_task_with_reservations_and_limits_retur
     assert get_max_resources_from_docker_task(service_tasks[0]) == Resources(
         cpus=host_cpu_count, ram=TypeAdapter(ByteSize).validate_python("100Mib")
     )
+
+
+@pytest.mark.parametrize(
+    "placement_constraints, expected_placement_constraints",
+    [
+        (None, {}),
+        (["blahblah==true", "notsoblahblah!=true"], {}),
+        (["blahblah==true", "notsoblahblah!=true", "node.labels.blahblah==true"], {}),
+        (
+            [
+                "blahblah==true",
+                "notsoblahblah!=true",
+                "node.labels.user-id==5",
+            ],
+            {"user-id": "5"},
+        ),
+        (
+            [
+                "blahblah==true",
+                "notsoblahblah!=true",
+                "node.labels.user-id==5",
+                "node.labels.product-name==myproduct",
+            ],
+            {"user-id": "5", "product-name": "myproduct"},
+        ),
+    ],
+    ids=str,
+)
+async def test_get_task_osparc_custom_docker_placement_constraints(
+    autoscaling_docker: AutoscalingDocker,
+    host_node: Node,
+    create_service: Callable[
+        [dict[str, Any], dict[DockerLabelKey, str] | None, str, list[str] | None],
+        Awaitable[Service],
+    ],
+    task_template: dict[str, Any],
+    create_task_reservations: Callable[[int, int], dict[str, Any]],
+    placement_constraints: list[str] | None,
+    expected_placement_constraints: dict[DockerLabelKey, str],
+):
+    # this one has no instance restriction
+    service = await create_service(
+        task_template,
+        None,
+        "pending" if placement_constraints else "running",
+        placement_constraints,
+    )
+    assert service.spec
+    service_tasks = TypeAdapter(list[Task]).validate_python(
+        await autoscaling_docker.tasks.list(filters={"service": service.spec.name})
+    )
+    task_placement_constraints = (
+        await get_task_osparc_custom_docker_placement_constraints(
+            autoscaling_docker, service_tasks[0]
+        )
+    )
+    assert task_placement_constraints == expected_placement_constraints
 
 
 @pytest.mark.parametrize(
@@ -1165,8 +1223,8 @@ async def test_set_node_osparc_ready(
 ):
     # initial state
     assert is_node_ready_and_available(host_node, availability=Availability.active)
-    host_node_last_readyness_update = get_node_last_readyness_update(host_node)
-    assert host_node_last_readyness_update
+    host_node_last_readiness_update = get_node_last_readiness_update(host_node)
+    assert host_node_last_readiness_update
     # set the node to drain
     updated_node = await set_node_availability(
         autoscaling_docker, host_node, available=False
@@ -1174,25 +1232,25 @@ async def test_set_node_osparc_ready(
     assert is_node_ready_and_available(updated_node, availability=Availability.drain)
     # the node is also not osparc ready
     assert not is_node_osparc_ready(updated_node)
-    # the node readyness label was not updated here
-    updated_last_readyness = get_node_last_readyness_update(updated_node)
-    assert updated_last_readyness == host_node_last_readyness_update
+    # the node readiness label was not updated here
+    updated_last_readiness = get_node_last_readiness_update(updated_node)
+    assert updated_last_readiness == host_node_last_readiness_update
 
-    # this implicitely make the node active as well
+    # this implicitly make the node active as well
     updated_node = await set_node_osparc_ready(
         app_settings, autoscaling_docker, host_node, ready=True
     )
     assert is_node_ready_and_available(updated_node, availability=Availability.active)
     assert is_node_osparc_ready(updated_node)
-    updated_last_readyness = get_node_last_readyness_update(updated_node)
-    assert updated_last_readyness > host_node_last_readyness_update
+    updated_last_readiness = get_node_last_readiness_update(updated_node)
+    assert updated_last_readiness > host_node_last_readiness_update
     # make it not osparc ready
     updated_node = await set_node_osparc_ready(
         app_settings, autoscaling_docker, host_node, ready=False
     )
     assert not is_node_osparc_ready(updated_node)
     assert is_node_ready_and_available(updated_node, availability=Availability.drain)
-    assert get_node_last_readyness_update(updated_node) > updated_last_readyness
+    assert get_node_last_readiness_update(updated_node) > updated_last_readiness
 
 
 async def test_set_node_found_empty(

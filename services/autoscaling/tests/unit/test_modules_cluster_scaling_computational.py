@@ -487,7 +487,7 @@ async def test_cluster_scaling_with_task_with_too_much_resources_starts_nothing(
                 expected_instance_type="g4dn.2xlarge",
                 expected_num_instances=1,
             ),
-            id="Explicitely ask for g4dn.2xlarge and use all the resources",
+            id="Explicitly ask for g4dn.2xlarge and use all the resources",
         ),
         pytest.param(
             _ScaleUpParams(
@@ -499,7 +499,7 @@ async def test_cluster_scaling_with_task_with_too_much_resources_starts_nothing(
                 expected_instance_type="r5n.8xlarge",
                 expected_num_instances=1,
             ),
-            id="Explicitely ask for r5n.8xlarge and set the resources",
+            id="Explicitly ask for r5n.8xlarge and set the resources",
         ),
         pytest.param(
             _ScaleUpParams(
@@ -509,7 +509,7 @@ async def test_cluster_scaling_with_task_with_too_much_resources_starts_nothing(
                 expected_instance_type="r5n.8xlarge",
                 expected_num_instances=1,
             ),
-            id="Explicitely ask for r5n.8xlarge and use all the resources",
+            id="Explicitly ask for r5n.8xlarge and use all the resources",
         ),
     ],
 )
@@ -808,7 +808,7 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
         expected_additional_tag_keys=list(ec2_instance_custom_tags),
     )
 
-    # we artifically set the node to drain
+    # we artificially set the node to drain
     fake_attached_node.spec.availability = Availability.drain
     fake_attached_node.spec.labels[_OSPARC_SERVICE_READY_LABEL_KEY] = "false"
     fake_attached_node.spec.labels[_OSPARC_SERVICES_READY_DATETIME_LABEL_KEY] = (
@@ -1678,7 +1678,7 @@ async def test_cluster_adapts_machines_on_the_fly(
 
     # this will initiate termination now
     with mock.patch(
-        "simcore_service_autoscaling.modules.cluster_scaling._auto_scaling_core.utils_docker.get_node_last_readyness_update",
+        "simcore_service_autoscaling.modules.cluster_scaling._auto_scaling_core.utils_docker.get_node_last_readiness_update",
         autospec=True,
         return_value=arrow.utcnow().datetime
         - 1.5

@@ -867,7 +867,7 @@ async def mocked_redis_server(mocker: MockerFixture) -> None:
 
 @pytest.fixture
 def cluster() -> Callable[..., Cluster]:
-    def _creator(**cluter_overrides) -> Cluster:
+    def _creator(**cluster_overrides) -> Cluster:
         return dataclasses.replace(
             Cluster(
                 active_nodes=[],
@@ -882,7 +882,7 @@ def cluster() -> Callable[..., Cluster]:
                 retired_nodes=[],
                 terminated_instances=[],
             ),
-            **cluter_overrides,
+            **cluster_overrides,
         )
 
     return _creator

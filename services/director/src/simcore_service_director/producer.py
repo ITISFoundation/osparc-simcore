@@ -293,6 +293,30 @@ async def _create_docker_service_params(
             "Constraints"
         ] += app_settings.DIRECTOR_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS
 
+    # add dynamic placement constraints based on custom templates from configuration
+    if app_settings.DIRECTOR_OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS:
+        label_values = {
+            "product_name": "osparc",
+            "user_id": user_id,
+            "project_id": project_id,
+            "node_id": node_uuid,
+        }
+        for (
+            label_key,
+            label_template,
+        ) in app_settings.DIRECTOR_OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS.items():
+            # resolve template if it contains placeholders
+            resolved_value = label_template.format(**label_values)
+            if resolved_value:
+                constraint = f"node.labels.{label_key}=={resolved_value}"
+                docker_params["task_template"]["Placement"]["Constraints"].append(
+                    constraint
+                )
+                _logger.debug(
+                    "adding dynamic placement label constraint: %s",
+                    constraint,
+                )
+
     # some services define strip_path:true if they need the path to be stripped away
     if (
         isinstance(reverse_proxy_settings, dict)
@@ -425,6 +449,16 @@ async def _create_docker_service_params(
     for generic_resource_kind in placement_constraints_to_substitute:
         docker_params["task_template"]["Placement"]["Constraints"] += [
             placement_substitutions[generic_resource_kind]
+        ]
+
+    # Sanitize and clean repeated constraints.
+    constraints = docker_params["task_template"]["Placement"]["Constraints"]
+    if constraints:
+        assert isinstance(constraints, list)  # nosec
+        constraints = list(set(constraints))
+        # a docker placement constraint does not contain spaces
+        docker_params["task_template"]["Placement"]["Constraints"] = [
+            c.replace(" ", "") for c in constraints
         ]
 
     # attach the service to the swarm network dedicated to services

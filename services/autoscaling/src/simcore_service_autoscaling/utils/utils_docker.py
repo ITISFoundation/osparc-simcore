@@ -15,6 +15,7 @@ import yaml
 from aws_library.ec2 import EC2InstanceData, Resources
 from aws_library.ec2._models import EC2InstanceBootSpecific
 from models_library.docker import (
+    OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS,
     DockerGenericTag,
     DockerLabelKey,
 )
@@ -172,7 +173,7 @@ def _is_task_waiting_for_resources(task: Task) -> bool:
         )
 
 
-async def _associated_service_has_no_node_placement_contraints(
+async def _associated_service_has_no_node_placement_constraints(
     docker_client: AutoscalingDocker, task: Task
 ) -> bool:
     assert task.service_id  # nosec
@@ -187,7 +188,7 @@ async def _associated_service_has_no_node_placement_contraints(
         or not service_inspect.spec.task_template.placement.constraints
     ):
         return True
-    # parse the placement contraints
+    # parse the placement constraints
     service_placement_constraints = (
         service_inspect.spec.task_template.placement.constraints
     )
@@ -242,7 +243,7 @@ async def pending_service_tasks_with_insufficient_resources(
         for task in sorted_tasks
         if (
             _is_task_waiting_for_resources(task)
-            and await _associated_service_has_no_node_placement_contraints(
+            and await _associated_service_has_no_node_placement_constraints(
                 docker_client, task
             )
         )
@@ -335,6 +336,43 @@ def get_max_resources_from_docker_task(task: Task) -> Resources:
     )
 
 
+async def get_task_osparc_custom_docker_placement_constraints(
+    docker_client: AutoscalingDocker, task: Task
+) -> dict[DockerLabelKey, str]:
+    """Extract custom placement labels from task placement constraints.
+
+    Returns a dict mapping label keys (from CUSTOM_PLACEMENT_LABEL_KEYS) to their values.
+    """
+    custom_labels: dict[DockerLabelKey, str] = {}
+
+    with contextlib.suppress(ValidationError):
+        assert task.service_id  # nosec
+        service_inspect = TypeAdapter(Service).validate_python(
+            await docker_client.services.inspect(task.service_id)
+        )
+        assert service_inspect.spec  # nosec
+        assert service_inspect.spec.task_template  # nosec
+
+        if (
+            not service_inspect.spec.task_template.placement
+            or not service_inspect.spec.task_template.placement.constraints
+        ):
+            return custom_labels
+
+        # Parse placement constraints to extract custom labels
+        service_placement_constraints = (
+            service_inspect.spec.task_template.placement.constraints
+        )
+        for label_key in OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS:
+            label_prefix = f"node.labels.{label_key}=="
+            for constraint in service_placement_constraints:
+                if constraint.startswith(label_prefix):
+                    custom_labels[label_key] = constraint.removeprefix(label_prefix)
+                    break
+
+    return custom_labels
+
+
 async def get_task_instance_restriction(
     docker_client: AutoscalingDocker, task: Task
 ) -> InstanceTypeType | None:
@@ -351,7 +389,7 @@ async def get_task_instance_restriction(
             or not service_inspect.spec.task_template.placement.constraints
         ):
             return None
-        # parse the placement contraints
+        # parse the placement constraints
         service_placement_constraints = (
             service_inspect.spec.task_template.placement.constraints
         )
@@ -631,7 +669,7 @@ async def set_node_osparc_ready(
     new_tags = deepcopy(cast(dict[DockerLabelKey, str], node.spec.labels))
     new_tags[_OSPARC_SERVICE_READY_LABEL_KEY] = "true" if ready else "false"
     new_tags[_OSPARC_SERVICES_READY_DATETIME_LABEL_KEY] = arrow.utcnow().isoformat()
-    # NOTE: docker drain sometimes impeed on performance when undraining see https://github.com/ITISFoundation/osparc-simcore/issues/5339
+    # NOTE: docker drain sometimes impede on performance when undraining see https://github.com/ITISFoundation/osparc-simcore/issues/5339
     available = app_settings.AUTOSCALING_DRAIN_NODES_WITH_LABELS or ready
     return await tag_node(
         docker_client,
@@ -641,7 +679,7 @@ async def set_node_osparc_ready(
     )
 
 
-def get_node_last_readyness_update(node: Node) -> datetime.datetime:
+def get_node_last_readiness_update(node: Node) -> datetime.datetime:
     assert node.spec  # nosec
     assert node.spec.labels  # nosec
     return arrow.get(
@@ -659,6 +697,9 @@ async def set_node_found_empty(
     new_tags = deepcopy(cast(dict[DockerLabelKey, str], node.spec.labels))
     if empty:
         new_tags[_OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY] = arrow.utcnow().isoformat()
+        # Remove custom placement labels when node becomes empty
+        for label_key in OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS:
+            new_tags.pop(label_key, None)
     else:
         new_tags.pop(_OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY, None)
     return await tag_node(

@@ -5,6 +5,7 @@ from typing import Any, TypeAlias
 
 from aws_library.ec2 import EC2InstanceData, EC2InstanceType, Resources
 from dask_task_models_library.resource_constraints import DaskTaskResources
+from models_library.docker import DockerLabelKey
 from models_library.generated_models.docker_rest_api import Node
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
@@ -27,6 +28,21 @@ class _TaskAssignmentMixin:
 @dataclass(frozen=True, kw_only=True, slots=True)
 class AssignedTasksToInstanceType(_TaskAssignmentMixin):
     instance_type: EC2InstanceType
+    osparc_custom_node_labels: dict[DockerLabelKey, str]
+
+    def has_compatible_labels(self, task_labels: dict) -> bool:
+        """Check if task labels are compatible with instance's current labels.
+
+        Labels are compatible if they don't conflict - i.e., for any key that exists
+        in both dicts, the values must be the same.
+        """
+        for key, value in task_labels.items():
+            if (
+                key in self.osparc_custom_node_labels
+                and self.osparc_custom_node_labels[key] != value
+            ):
+                return False
+        return True
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
@@ -117,7 +133,7 @@ class Cluster:  # pylint: disable=too-many-instance-attributes
         )
 
     def total_number_of_machines(self) -> int:
-        """return the number of machines that are swtiched on"""
+        """return the number of machines that are switched on"""
         return (
             len(self.active_nodes)
             + len(self.pending_nodes)
@@ -180,7 +196,7 @@ class WarmBufferPool:
             f"broken-count={len(self.broken_instances)})"
         )
 
-    def _sort_by_readyness(
+    def _sort_by_readiness(
         self, *, invert: bool = False
     ) -> Generator[set[EC2InstanceData], Any, None]:
         order = (
@@ -203,11 +219,11 @@ class WarmBufferPool:
 
     def all_instances(self) -> set[EC2InstanceData]:
         """sorted by importance: READY (stopped) > STOPPING >"""
-        gen = self._sort_by_readyness()
+        gen = self._sort_by_readiness()
         return next(gen).union(*(_ for _ in gen))
 
     def remove_instance(self, instance: EC2InstanceData) -> None:
-        for instances in self._sort_by_readyness(invert=True):
+        for instances in self._sort_by_readiness(invert=True):
             if instance in instances:
                 instances.remove(instance)
                 break
@@ -231,3 +247,17 @@ class WarmBufferPoolManager:
                 getattr(flat_pool, f.name).update(getattr(buffer_pool, f.name))
 
         return flat_pool
+
+
+@dataclass(frozen=True, kw_only=True)
+class InstanceToLaunch:
+    """Represents a single EC2 instance to launch with its specific labels.
+
+    Each instance gets ONLY the labels from its assigned tasks (exclusive labels).
+    """
+
+    instance_type: EC2InstanceType
+    node_labels: dict[DockerLabelKey, str]
+
+    def __hash__(self) -> int:
+        return hash((self.instance_type, frozenset(self.node_labels.items())))

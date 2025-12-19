@@ -34,7 +34,7 @@ settings:
   - name: constraints
     type: string
     value:
-      - node.platform.os == linux
+      - node.platform.os==linux
 """
 
 
@@ -59,7 +59,6 @@ def service_config_path(tmp_path: Path, compose_spec_path):
 
 
 def test_include_file_in_yaml(compose_spec_path: Path, service_config_path: Path):
-
     expected = yaml.safe_load(compose_spec_path.read_text())
 
     with open(service_config_path) as fh:

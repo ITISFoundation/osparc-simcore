@@ -4310,7 +4310,7 @@
           "Command"
         ],
         "title": "ContainerSpec",
-        "description": "Implements entries that can be overriden for https://docs.docker.com/engine/api/v1.41/#operation/ServiceCreate\nrequest body: TaskTemplate -> ContainerSpec"
+        "description": "Implements entries that can be overridden for https://docs.docker.com/engine/api/v1.41/#operation/ServiceCreate\nrequest body: TaskTemplate -> ContainerSpec"
       }
     }
   }

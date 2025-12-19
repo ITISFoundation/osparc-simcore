@@ -14,6 +14,7 @@ from servicelib.fastapi.tracing import (
     initialize_fastapi_app_tracing,
     setup_tracing,
 )
+from servicelib.logging_utils import log_context
 from servicelib.tracing import TracingConfig
 from simcore_sdk.node_ports_common.exceptions import NodeNotFound
 
@@ -114,18 +115,20 @@ class AppState:
 
 
 def create_base_app() -> FastAPI:
-    # settings
-    app_settings = ApplicationSettings.create_from_envs()
-    tracing_config = TracingConfig.create(
-        service_name=APP_NAME, tracing_settings=app_settings.DYNAMIC_SIDECAR_TRACING
-    )
-    logging_shutdown_event = create_logging_shutdown_event(
-        log_format_local_dev_enabled=app_settings.DY_SIDECAR_LOG_FORMAT_LOCAL_DEV_ENABLED,
-        logger_filter_mapping=app_settings.DY_SIDECAR_LOG_FILTER_MAPPING,
-        tracing_config=tracing_config,
-        log_base_level=app_settings.log_level,
-        noisy_loggers=_NOISY_LOGGERS,
-    )
+    with log_context(_logger, logging.DEBUG, "Parsing dynamic sidecar settings"):
+        app_settings = ApplicationSettings.create_from_envs()
+    with log_context(_logger, logging.DEBUG, "creating tracing config"):
+        tracing_config = TracingConfig.create(
+            service_name=APP_NAME, tracing_settings=app_settings.DYNAMIC_SIDECAR_TRACING
+        )
+    with log_context(_logger, logging.DEBUG, "creating logging shutdown event"):
+        logging_shutdown_event = create_logging_shutdown_event(
+            log_format_local_dev_enabled=app_settings.DY_SIDECAR_LOG_FORMAT_LOCAL_DEV_ENABLED,
+            logger_filter_mapping=app_settings.DY_SIDECAR_LOG_FILTER_MAPPING,
+            tracing_config=tracing_config,
+            log_base_level=app_settings.log_level,
+            noisy_loggers=_NOISY_LOGGERS,
+        )
 
     _logger.info(
         "Application settings: %s",
@@ -163,7 +166,8 @@ def create_app() -> FastAPI:
     needed in other requests and used to share data.
     """
 
-    app = create_base_app()
+    with log_context(_logger, logging.DEBUG, "Creating base app"):
+        app = create_base_app()
 
     # MODULES SETUP --------------
 
