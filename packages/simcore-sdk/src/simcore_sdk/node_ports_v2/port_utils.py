@@ -9,6 +9,7 @@ from models_library.api_schemas_storage.storage_schemas import (
     LinkType,
 )
 from models_library.basic_types import SHA256Str
+from models_library.products import ProductName
 from models_library.services_types import FileName, ServicePortKey
 from models_library.users import UserID
 from pydantic import AnyUrl, ByteSize, TypeAdapter
@@ -83,7 +84,7 @@ async def get_value_from_link(
 
 
 async def get_download_link_from_storage(
-    user_id: UserID, value: FileLink, link_type: LinkType
+    user_id: UserID, product_name: ProductName, value: FileLink, link_type: LinkType
 ) -> AnyUrl:
     """
     :raises exceptions.NodeportsException
@@ -95,6 +96,7 @@ async def get_download_link_from_storage(
 
     link = await filemanager.get_download_link_from_s3(
         user_id=user_id,
+        product_name=product_name,
         store_id=value.store,
         store_name=None,
         s3_object=value.path,
@@ -108,7 +110,12 @@ async def get_download_link_from_storage(
 
 
 async def get_download_link_from_storage_overload(
-    user_id: UserID, project_id: str, node_id: str, file_name: str, link_type: LinkType
+    user_id: UserID,
+    product_name: ProductName,
+    project_id: str,
+    node_id: str,
+    file_name: str,
+    link_type: LinkType,
 ) -> AnyUrl:
     """Overloads get_download_link_from_storage with arguments that match those in
     get_upload_link_from_storage
@@ -120,6 +127,7 @@ async def get_download_link_from_storage_overload(
     )
     link = await filemanager.get_download_link_from_s3(
         user_id=user_id,
+        product_name=product_name,
         store_name=None,
         store_id=SIMCORE_LOCATION,
         s3_object=s3_object,
@@ -131,6 +139,7 @@ async def get_download_link_from_storage_overload(
 
 async def get_upload_links_from_storage(
     user_id: UserID,
+    product_name: ProductName,
     project_id: str,
     node_id: str,
     file_name: str,
@@ -144,6 +153,7 @@ async def get_upload_links_from_storage(
     )
     _, links = await filemanager.get_upload_links_from_s3(
         user_id=user_id,
+        product_name=product_name,
         store_id=SIMCORE_LOCATION,
         store_name=None,
         s3_object=s3_object,
@@ -156,7 +166,11 @@ async def get_upload_links_from_storage(
 
 
 async def target_link_exists(
-    user_id: UserID, project_id: str, node_id: str, file_name: str
+    user_id: UserID,
+    product_name: ProductName,
+    project_id: str,
+    node_id: str,
+    file_name: str,
 ) -> bool:
     log.debug(
         "checking if target of link to file from storage for %s exists", file_name
@@ -166,6 +180,7 @@ async def target_link_exists(
     )
     return await filemanager.entry_exists(
         user_id=user_id,
+        product_name=product_name,
         store_id=SIMCORE_LOCATION,
         s3_object=s3_object,
         is_directory=False,
@@ -173,19 +188,27 @@ async def target_link_exists(
 
 
 async def delete_target_link(
-    user_id: UserID, project_id: str, node_id: str, file_name: str
+    user_id: UserID,
+    product_name: ProductName,
+    project_id: str,
+    node_id: str,
+    file_name: str,
 ) -> None:
     log.debug("deleting target of link to file from storage for %s", file_name)
     s3_object = data_items_utils.create_simcore_file_id(
         Path(file_name), project_id, node_id
     )
     return await filemanager.delete_file(
-        user_id=user_id, store_id=SIMCORE_LOCATION, s3_object=s3_object
+        user_id=user_id,
+        product_name=product_name,
+        store_id=SIMCORE_LOCATION,
+        s3_object=s3_object,
     )
 
 
 async def pull_file_from_store(
     user_id: UserID,
+    product_name: ProductName,
     key: str,
     file_to_key_map: dict[FileName, ServicePortKey] | None,
     value: FileLink,
@@ -198,6 +221,7 @@ async def pull_file_from_store(
     local_path = data_items_utils.get_folder_path(key)
     downloaded_file = await filemanager.download_path_from_s3(
         user_id=user_id,
+        product_name=product_name,
         store_id=value.store,
         store_name=None,
         s3_object=value.path,
@@ -223,6 +247,7 @@ async def push_file_to_store(
     *,
     file: Path,
     user_id: UserID,
+    product_name: ProductName,
     project_id: str,
     node_id: str,
     io_log_redirect_cb: LogRedirectCB | None,
@@ -244,6 +269,7 @@ async def push_file_to_store(
 
     upload_result: UploadedFolder | UploadedFile = await filemanager.upload_path(
         user_id=user_id,
+        product_name=product_name,
         store_id=SIMCORE_LOCATION,
         store_name=None,
         s3_object=s3_object,
@@ -301,6 +327,7 @@ def is_file_type(port_type: str) -> bool:
 async def get_file_link_from_url(
     new_value: AnyUrl,
     user_id: UserID,
+    product_name: ProductName,
     project_id: str,
     node_id: str,
 ) -> FileLink:
@@ -311,6 +338,7 @@ async def get_file_link_from_url(
     )
     file_metadata = await filemanager.get_file_metadata(
         user_id=user_id,
+        product_name=product_name,
         store_id=SIMCORE_LOCATION,
         s3_object=s3_object,
     )

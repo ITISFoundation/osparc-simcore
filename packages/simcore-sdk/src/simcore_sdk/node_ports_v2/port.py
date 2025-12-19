@@ -7,6 +7,7 @@ from pprint import pformat
 from typing import Any
 
 from models_library.api_schemas_storage.storage_schemas import LinkType
+from models_library.products import ProductName
 from models_library.services_io import BaseServiceIOModel
 from models_library.services_types import ServicePortKey
 from pydantic import (
@@ -24,6 +25,7 @@ from servicelib.progress_bar import ProgressBarData
 from ..node_ports_common.exceptions import (
     AbsoluteSymlinkIsNotUploadableException,
     InvalidItemTypeError,
+    ProductNotSpecified,
     SymlinkToSymlinkIsNotUploadableException,
 )
 from . import port_utils
@@ -174,7 +176,10 @@ class Port(BaseServiceIOModel):
         assert self._py_value_converter  # nosec
 
     async def get_value(
-        self, *, file_link_type: LinkType | None = None
+        self,
+        *,
+        file_link_type: LinkType | None = None,
+        product_name: ProductName | None = None,
     ) -> ItemValue | None:
         """Resolves data links and returns resulted value
 
@@ -209,11 +214,15 @@ class Port(BaseServiceIOModel):
                 return other_port_itemvalue
 
             if isinstance(self.value, FileLink):
+                if product_name is None:
+                    raise ProductNotSpecified
+
                 # let's get the download/upload link from storage
                 url_itemvalue: AnyUrl | None = (
                     await port_utils.get_download_link_from_storage(
                         # pylint: disable=protected-access
                         user_id=self._node_ports.user_id,
+                        product_name=product_name,
                         value=self.value,
                         link_type=file_link_type,
                     )
@@ -237,7 +246,9 @@ class Port(BaseServiceIOModel):
         return v
 
     async def get(
-        self, progress_bar: ProgressBarData | None = None
+        self,
+        progress_bar: ProgressBarData | None = None,
+        product_name: ProductName | None = None,
     ) -> ItemConcreteValue | None:
         """
         Transforms DataItemValue value -> ItemConcreteValue
@@ -271,8 +282,13 @@ class Port(BaseServiceIOModel):
 
             elif isinstance(self.value, FileLink):
                 # this is a link from storage
+
+                if product_name is None:
+                    raise ProductNotSpecified
+
                 value = await port_utils.pull_file_from_store(
                     user_id=self._node_ports.user_id,
+                    product_name=product_name,
                     key=self.key,
                     file_to_key_map=self.file_to_key_map,
                     value=self.value,
@@ -295,7 +311,7 @@ class Port(BaseServiceIOModel):
                 # otherwise, this is a BasicValueTypes
                 value = self.value
 
-            # don't atempt conversion of None it fails
+            # don't attempt conversion of None it fails
             if value is None:
                 return None
 
@@ -314,6 +330,7 @@ class Port(BaseServiceIOModel):
         *,
         set_kwargs: SetKWargs | None = None,
         progress_bar: ProgressBarData,
+        product_name: ProductName | None = None,
     ) -> None:
         """
         :raises InvalidItemTypeError
@@ -345,9 +362,13 @@ class Port(BaseServiceIOModel):
                 if set_kwargs and set_kwargs.file_base_path:
                     base_path = set_kwargs.file_base_path / self.key
 
+                if product_name is None:
+                    raise ProductNotSpecified
+
                 new_value = await port_utils.push_file_to_store(
                     file=converted_value,
                     user_id=self._node_ports.user_id,
+                    product_name=product_name,
                     project_id=self._node_ports.project_id,
                     node_id=self._node_ports.node_uuid,
                     r_clone_settings=self._node_ports.r_clone_settings,
@@ -371,6 +392,7 @@ class Port(BaseServiceIOModel):
         new_value: ItemConcreteValue,
         *,
         progress_bar: ProgressBarData | None = None,
+        product_name: ProductName | None = None,
         **set_kwargs,
     ) -> None:
         """sets a value to the port, by default it is also stored in the database
@@ -383,10 +405,13 @@ class Port(BaseServiceIOModel):
             **set_kwargs,
             progress_bar=progress_bar
             or ProgressBarData(num_steps=1, description="set"),
+            product_name=product_name,
         )
         await self._node_ports.save_to_db_cb(self._node_ports)
 
-    async def set_value(self, new_item_value: ItemValue | None) -> None:
+    async def set_value(
+        self, new_item_value: ItemValue | None, product_name: ProductName | None = None
+    ) -> None:
         """set the value on the port using an item-value
 
         :raises InvalidItemTypeError
@@ -399,9 +424,13 @@ class Port(BaseServiceIOModel):
             if not isinstance(new_item_value, AnyUrl):
                 raise InvalidItemTypeError(self.property_type, f"{new_item_value}")
 
+            if product_name is None:
+                raise ProductNotSpecified
+
             new_filelink: FileLink = await port_utils.get_file_link_from_url(
                 new_item_value,
                 self._node_ports.user_id,
+                product_name,
                 self._node_ports.project_id,
                 self._node_ports.node_uuid,
             )

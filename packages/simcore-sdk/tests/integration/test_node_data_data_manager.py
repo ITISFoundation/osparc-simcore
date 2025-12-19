@@ -14,6 +14,7 @@ from uuid import uuid4
 
 import pytest
 from faker import Faker
+from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
 from models_library.users import UserID
@@ -151,6 +152,7 @@ async def test_valid_upload_download(
     node_ports_config: None,
     content_path: Path,
     user_id: UserID,
+    product_name: ProductName,
     project_id: ProjectID,
     node_uuid: NodeID,
     r_clone_settings: RCloneSettings,
@@ -160,6 +162,7 @@ async def test_valid_upload_download(
     async with ProgressBarData(num_steps=2, description=faker.pystr()) as progress_bar:
         await data_manager._push_directory(  # noqa: SLF001
             user_id=user_id,
+            product_name=product_name,
             project_id=project_id,
             node_uuid=node_uuid,
             source_path=content_path,
@@ -175,6 +178,7 @@ async def test_valid_upload_download(
 
         await data_manager._pull_directory(  # noqa: SLF001
             user_id=user_id,
+            product_name=product_name,
             project_id=project_id,
             node_uuid=node_uuid,
             destination_path=content_path,
@@ -193,6 +197,7 @@ async def test_valid_upload_download_saved_to(
     node_ports_config,
     content_path: Path,
     user_id: UserID,
+    product_name: ProductName,
     project_id: ProjectID,
     node_uuid: NodeID,
     random_tmp_dir_generator: Callable,
@@ -203,6 +208,7 @@ async def test_valid_upload_download_saved_to(
     async with ProgressBarData(num_steps=2, description=faker.pystr()) as progress_bar:
         await data_manager._push_directory(  # noqa: SLF001
             user_id=user_id,
+            product_name=product_name,
             project_id=project_id,
             node_uuid=node_uuid,
             source_path=content_path,
@@ -221,6 +227,7 @@ async def test_valid_upload_download_saved_to(
 
         await data_manager._pull_directory(  # noqa: SLF001
             user_id=user_id,
+            product_name=product_name,
             project_id=project_id,
             node_uuid=node_uuid,
             destination_path=content_path,
@@ -240,6 +247,7 @@ async def test_delete_legacy_archive(
     node_ports_config,
     content_path: Path,
     user_id: UserID,
+    product_name: ProductName,
     project_id: ProjectID,
     node_uuid: NodeID,
     r_clone_settings: RCloneSettings,
@@ -256,6 +264,7 @@ async def test_delete_legacy_archive(
 
         await filemanager.upload_path(
             user_id=user_id,
+            product_name=product_name,
             store_id=SIMCORE_LOCATION,
             store_name=None,
             s3_object=TypeAdapter(SimcoreS3FileID).validate_python(
@@ -273,6 +282,7 @@ async def test_delete_legacy_archive(
         assert (
             await data_manager._state_metadata_entry_exists(  # noqa: SLF001
                 user_id=user_id,
+                product_name=product_name,
                 project_id=project_id,
                 node_uuid=node_uuid,
                 path=content_path,
@@ -291,6 +301,7 @@ async def test_delete_legacy_archive(
         assert (
             await data_manager._state_metadata_entry_exists(  # noqa: SLF001
                 user_id=user_id,
+                product_name=product_name,
                 project_id=project_id,
                 node_uuid=node_uuid,
                 path=content_path,

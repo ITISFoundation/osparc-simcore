@@ -1,7 +1,7 @@
 # Errors raised by node_ports module as NodeportsException
 #
 #
-#  NOTE: Error message SHALL explain the reason for the error and it is prefered in one line, i.e. avoid '\n' in message
+#  NOTE: Error message SHALL explain the reason for the error and it is preferred in one line, i.e. avoid '\n' in message
 #
 #
 
@@ -10,7 +10,7 @@ class NodeportsException(Exception):
     """Basic exception for errors raised in nodeports"""
 
     def __init__(self, msg: str | None = None):
-        super().__init__(msg or "An error occured in simcore")
+        super().__init__(msg or "An error occurred in simcore")
 
 
 class ReadOnlyError(NodeportsException):
@@ -169,3 +169,7 @@ class AbsoluteSymlinkIsNotUploadableException(NodeportsException):
         super().__init__(message)
         self.symlink = symlink
         self.symlink_target_path = symlink_target_path
+
+
+class ProductNotSpecified(NodeportsException):
+    """A product name must be provided"""

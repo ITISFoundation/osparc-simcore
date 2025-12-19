@@ -11,6 +11,7 @@ from models_library.api_schemas_storage.storage_schemas import (
     UploadedPart,
 )
 from models_library.generics import Envelope
+from models_library.products import ProductName
 from models_library.projects_nodes_io import LocationID, LocationName
 from models_library.users import UserID
 from models_library.utils.fastapi_encoders import jsonable_encoder
@@ -31,10 +32,13 @@ _logger = logging.getLogger(__name__)
 
 async def _get_location_id_from_location_name(
     user_id: UserID,
+    product_name: ProductName,
     store: LocationName,
     session: ClientSession,
 ) -> LocationID:
-    resp = await storage_client.list_storage_locations(session=session, user_id=user_id)
+    resp = await storage_client.list_storage_locations(
+        session=session, user_id=user_id, product_name=product_name
+    )
     for location in resp:
         if location.name == store:
             return cast(LocationID, location.id)  # mypy wants it
@@ -123,6 +127,7 @@ async def complete_upload(
 async def resolve_location_id(
     client_session: ClientSession,
     user_id: UserID,
+    product_name: ProductName,
     store_name: LocationName | None,
     store_id: LocationID | None,
 ) -> LocationID:
@@ -132,7 +137,7 @@ async def resolve_location_id(
 
     if store_name is not None:
         store_id = await _get_location_id_from_location_name(
-            user_id, store_name, client_session
+            user_id, product_name, store_name, client_session
         )
     assert store_id is not None  # nosec
     return store_id

@@ -10,8 +10,10 @@ from shutil import copy, make_archive
 
 import pytest
 from faker import Faker
+from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
+from models_library.users import UserID
 from pytest_mock import MockerFixture
 from servicelib.progress_bar import ProgressBarData
 from settings_library.r_clone import RCloneSettings, S3Provider
@@ -65,7 +67,8 @@ def node_uuid(node_uuid: str) -> NodeID:
 
 
 async def test_push_folder(
-    user_id: int,
+    user_id: UserID,
+    product_name: ProductName,
     project_id: ProjectID,
     node_uuid: NodeID,
     mocker: MockerFixture,
@@ -97,6 +100,7 @@ async def test_push_folder(
     async with ProgressBarData(num_steps=1, description=faker.pystr()) as progress_bar:
         await data_manager._push_directory(  # noqa: SLF001
             user_id,
+            product_name,
             project_id,
             node_uuid,
             test_folder,
@@ -120,7 +124,8 @@ async def test_push_folder(
 
 
 async def test_push_file(
-    user_id: int,
+    user_id: UserID,
+    product_name: ProductName,
     project_id: ProjectID,
     node_uuid: NodeID,
     mocker,
@@ -145,6 +150,7 @@ async def test_push_file(
     async with ProgressBarData(num_steps=1, description=faker.pystr()) as progress_bar:
         await data_manager._push_directory(  # noqa: SLF001
             user_id,
+            product_name,
             project_id,
             node_uuid,
             file_path,
@@ -170,7 +176,8 @@ async def test_push_file(
 
 @pytest.mark.parametrize("create_legacy_archive", [False, True])
 async def test_pull_legacy_archive(
-    user_id: int,
+    user_id: UserID,
+    product_name: ProductName,
     project_id: ProjectID,
     node_uuid: NodeID,
     mocker,
@@ -228,6 +235,7 @@ async def test_pull_legacy_archive(
     async with ProgressBarData(num_steps=1, description=faker.pystr()) as progress_bar:
         await data_manager._pull_legacy_archive(  # noqa: SLF001
             user_id,
+            product_name,
             project_id,
             node_uuid,
             test_folder,
@@ -250,18 +258,19 @@ async def test_pull_legacy_archive(
         progress_bar=progress_bar._children[0],  # noqa: SLF001
     )
 
-    matchs, mismatchs, errors = cmpfiles(
+    matches, mismatches, errors = cmpfiles(
         test_folder,
         test_control_folder,
         [x.name for x in test_control_folder.glob("**/*")],
     )
-    assert len(matchs) == files_number
-    assert not mismatchs
+    assert len(matches) == files_number
+    assert not mismatches
     assert not errors
 
 
 async def test_pull_directory(
-    user_id: int,
+    user_id: UserID,
+    product_name: ProductName,
     project_id: ProjectID,
     node_uuid: NodeID,
     mocker,
@@ -286,6 +295,7 @@ async def test_pull_directory(
     async with ProgressBarData(num_steps=1, description=faker.pystr()) as progress_bar:
         await data_manager._pull_directory(  # noqa: SLF001
             user_id,
+            product_name,
             project_id,
             node_uuid,
             fake_download_folder,

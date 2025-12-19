@@ -13,6 +13,7 @@ from uuid import uuid4
 import pytest
 from aiohttp import ClientError
 from faker import Faker
+from models_library.products import ProductName
 from models_library.projects_nodes_io import (
     LocationID,
     SimcoreS3DirectoryID,
@@ -84,7 +85,8 @@ def _file_size(size_str: str, **pytest_params):
 async def test_valid_upload_download(
     node_ports_config: None,
     tmpdir: Path,
-    user_id: int,
+    user_id: UserID,
+    product_name: ProductName,
     create_valid_file_uuid: Callable[[str, Path], SimcoreS3FileID],
     s3_simcore_location: LocationID,
     file_size: ByteSize,
@@ -100,6 +102,7 @@ async def test_valid_upload_download(
     async with ProgressBarData(num_steps=2, description=faker.pystr()) as progress_bar:
         upload_result: UploadedFolder | UploadedFile = await filemanager.upload_path(
             user_id=user_id,
+            product_name=product_name,
             store_id=s3_simcore_location,
             store_name=None,
             s3_object=file_id,
@@ -115,7 +118,10 @@ async def test_valid_upload_download(
         assert store_id == s3_simcore_location
         assert e_tag
         file_metadata = await filemanager.get_file_metadata(
-            user_id=user_id, store_id=store_id, s3_object=file_id
+            user_id=user_id,
+            product_name=product_name,
+            store_id=store_id,
+            s3_object=file_id,
         )
         assert file_metadata.location == store_id
         assert file_metadata.etag == e_tag
@@ -123,6 +129,7 @@ async def test_valid_upload_download(
         download_folder = Path(tmpdir) / "downloads"
         download_file_path = await filemanager.download_path_from_s3(
             user_id=user_id,
+            product_name=product_name,
             store_id=s3_simcore_location,
             store_name=None,
             s3_object=file_id,
@@ -148,7 +155,8 @@ async def test_valid_upload_download(
 async def test_valid_upload_download_using_file_object(
     node_ports_config: None,
     tmpdir: Path,
-    user_id: int,
+    user_id: UserID,
+    product_name: ProductName,
     create_valid_file_uuid: Callable[[str, Path], SimcoreS3FileID],
     s3_simcore_location: LocationID,
     file_size: ByteSize,
@@ -162,6 +170,7 @@ async def test_valid_upload_download_using_file_object(
     with file_path.open("rb") as file_object:
         upload_result: UploadedFolder | UploadedFile = await filemanager.upload_path(
             user_id=user_id,
+            product_name=product_name,
             store_id=s3_simcore_location,
             store_name=None,
             s3_object=file_id,
@@ -176,7 +185,7 @@ async def test_valid_upload_download_using_file_object(
     assert store_id == s3_simcore_location
     assert e_tag
     file_metadata = await filemanager.get_file_metadata(
-        user_id=user_id, store_id=store_id, s3_object=file_id
+        user_id=user_id, product_name=product_name, store_id=store_id, s3_object=file_id
     )
     assert file_metadata.location == store_id
     assert file_metadata.etag == e_tag
@@ -185,6 +194,7 @@ async def test_valid_upload_download_using_file_object(
     async with ProgressBarData(num_steps=1, description=faker.pystr()) as progress_bar:
         download_file_path = await filemanager.download_path_from_s3(
             user_id=user_id,
+            product_name=product_name,
             store_id=s3_simcore_location,
             store_name=None,
             s3_object=file_id,
@@ -228,6 +238,7 @@ async def test_failed_upload_is_properly_removed_from_storage(
     optional_sync_settings: _SyncSettings,
     file_size: ByteSize,
     user_id: UserID,
+    product_name: ProductName,
     mocked_upload_file_raising_exceptions: None,
 ):
     file_path = create_file_of_size(file_size)
@@ -235,6 +246,7 @@ async def test_failed_upload_is_properly_removed_from_storage(
     with pytest.raises(exceptions.S3TransferError):
         await filemanager.upload_path(
             user_id=user_id,
+            product_name=product_name,
             store_id=s3_simcore_location,
             store_name=None,
             s3_object=file_id,
@@ -244,7 +256,10 @@ async def test_failed_upload_is_properly_removed_from_storage(
         )
     with pytest.raises(exceptions.S3InvalidPathError):
         await filemanager.get_file_metadata(
-            user_id=user_id, store_id=s3_simcore_location, s3_object=file_id
+            user_id=user_id,
+            product_name=product_name,
+            store_id=s3_simcore_location,
+            s3_object=file_id,
         )
 
 
@@ -263,6 +278,7 @@ async def test_failed_upload_after_valid_upload_keeps_last_valid_state(
     optional_sync_settings: _SyncSettings,
     file_size: ByteSize,
     user_id: UserID,
+    product_name: ProductName,
     mocker: MockerFixture,
 ):
     # upload a valid file
@@ -270,6 +286,7 @@ async def test_failed_upload_after_valid_upload_keeps_last_valid_state(
     file_id = create_valid_file_uuid("", file_path)
     upload_result: UploadedFolder | UploadedFile = await filemanager.upload_path(
         user_id=user_id,
+        product_name=product_name,
         store_id=s3_simcore_location,
         store_name=None,
         s3_object=file_id,
@@ -283,7 +300,7 @@ async def test_failed_upload_after_valid_upload_keeps_last_valid_state(
     assert e_tag
     # check the file is correctly uploaded
     file_metadata = await filemanager.get_file_metadata(
-        user_id=user_id, store_id=store_id, s3_object=file_id
+        user_id=user_id, product_name=product_name, store_id=store_id, s3_object=file_id
     )
     assert file_metadata.location == store_id
     assert file_metadata.etag == e_tag
@@ -301,6 +318,7 @@ async def test_failed_upload_after_valid_upload_keeps_last_valid_state(
     with pytest.raises(exceptions.S3TransferError):
         await filemanager.upload_path(
             user_id=user_id,
+            product_name=product_name,
             store_id=s3_simcore_location,
             store_name=None,
             s3_object=file_id,
@@ -310,7 +328,10 @@ async def test_failed_upload_after_valid_upload_keeps_last_valid_state(
         )
     # the file shall be back to its original state
     file_metadata = await filemanager.get_file_metadata(
-        user_id=user_id, store_id=s3_simcore_location, s3_object=file_id
+        user_id=user_id,
+        product_name=product_name,
+        store_id=s3_simcore_location,
+        s3_object=file_id,
     )
     assert file_metadata.location == store_id
     assert file_metadata.etag == e_tag
@@ -319,7 +340,8 @@ async def test_failed_upload_after_valid_upload_keeps_last_valid_state(
 async def test_invalid_file_path(
     node_ports_config: None,
     tmpdir: Path,
-    user_id: int,
+    user_id: UserID,
+    product_name: ProductName,
     create_valid_file_uuid: Callable[[str, Path], SimcoreS3FileID],
     s3_simcore_location: LocationID,
     optional_sync_settings: _SyncSettings,
@@ -334,6 +356,7 @@ async def test_invalid_file_path(
     with pytest.raises(FileNotFoundError):
         await filemanager.upload_path(
             user_id=user_id,
+            product_name=product_name,
             store_id=store,
             store_name=None,
             s3_object=file_id,
@@ -348,6 +371,7 @@ async def test_invalid_file_path(
         ) as progress_bar:
             await filemanager.download_path_from_s3(
                 user_id=user_id,
+                product_name=product_name,
                 store_id=store,
                 store_name=None,
                 s3_object=file_id,
@@ -362,6 +386,7 @@ async def test_errors_upon_invalid_file_identifiers(
     node_ports_config: None,
     tmpdir: Path,
     user_id: UserID,
+    product_name: ProductName,
     project_id: str,
     s3_simcore_location: LocationID,
     optional_sync_settings: _SyncSettings,
@@ -376,6 +401,7 @@ async def test_errors_upon_invalid_file_identifiers(
         invalid_s3_path = ""
         await filemanager.upload_path(
             user_id=user_id,
+            product_name=product_name,
             store_id=store,
             store_name=None,
             s3_object=invalid_s3_path,
@@ -387,6 +413,7 @@ async def test_errors_upon_invalid_file_identifiers(
         invalid_file_id = "file_id"
         await filemanager.upload_path(
             user_id=user_id,
+            product_name=product_name,
             store_id=store,
             store_name=None,
             s3_object=invalid_file_id,
@@ -402,6 +429,7 @@ async def test_errors_upon_invalid_file_identifiers(
             invalid_s3_path = ""
             await filemanager.download_path_from_s3(
                 user_id=user_id,
+                product_name=product_name,
                 store_id=store,
                 store_name=None,
                 s3_object=invalid_s3_path,
@@ -417,6 +445,7 @@ async def test_errors_upon_invalid_file_identifiers(
         ) as progress_bar:
             await filemanager.download_path_from_s3(
                 user_id=user_id,
+                product_name=product_name,
                 store_id=store,
                 store_name=None,
                 s3_object=TypeAdapter(SimcoreS3FileID).validate_python(
@@ -432,7 +461,8 @@ async def test_errors_upon_invalid_file_identifiers(
 async def test_invalid_store(
     node_ports_config: None,
     tmpdir: Path,
-    user_id: int,
+    user_id: UserID,
+    product_name: ProductName,
     create_valid_file_uuid: Callable[[str, Path], SimcoreS3FileID],
     optional_sync_settings: _SyncSettings,
     faker: Faker,
@@ -446,6 +476,7 @@ async def test_invalid_store(
     with pytest.raises(exceptions.S3InvalidStore):
         await filemanager.upload_path(
             user_id=user_id,
+            product_name=product_name,
             store_id=None,
             store_name=store,  # type: ignore
             s3_object=file_id,
@@ -460,6 +491,7 @@ async def test_invalid_store(
         ) as progress_bar:
             await filemanager.download_path_from_s3(
                 user_id=user_id,
+                product_name=product_name,
                 store_id=None,
                 store_name=store,  # type: ignore
                 s3_object=file_id,
@@ -474,7 +506,8 @@ async def test_invalid_store(
 async def test_valid_metadata(
     node_ports_config: None,
     tmpdir: Path,
-    user_id: int,
+    user_id: UserID,
+    product_name: ProductName,
     create_valid_file_uuid: Callable[[str, Path], SimcoreS3FileID],
     s3_simcore_location: LocationID,
     is_directory: bool,
@@ -491,6 +524,7 @@ async def test_valid_metadata(
 
     is_metadata_present = await filemanager.entry_exists(
         user_id=user_id,
+        product_name=product_name,
         store_id=s3_simcore_location,
         s3_object=file_id,
         is_directory=is_directory,
@@ -504,6 +538,7 @@ async def test_valid_metadata(
     file_id = create_valid_file_uuid("", path_to_upload)
     upload_result: UploadedFolder | UploadedFile = await filemanager.upload_path(
         user_id=user_id,
+        product_name=product_name,
         store_id=s3_simcore_location,
         store_name=None,
         s3_object=file_id,
@@ -520,6 +555,7 @@ async def test_valid_metadata(
 
     is_metadata_present = await filemanager.entry_exists(
         user_id=user_id,
+        product_name=product_name,
         store_id=s3_simcore_location,
         s3_object=file_id,
         is_directory=is_directory,
@@ -540,6 +576,7 @@ async def test_invalid_call_raises_exception(
     node_ports_config: None,
     tmpdir: Path,
     user_id: int,
+    product_name: ProductName,
     create_valid_file_uuid: Callable[[str, Path], SimcoreS3FileID],
     s3_simcore_location: LocationID,
     fct: Callable[[int, str, str, Any | None], Awaitable],
@@ -552,6 +589,7 @@ async def test_invalid_call_raises_exception(
     with pytest.raises(exceptions.StorageInvalidCall):
         await fct(
             user_id=None,
+            product_name=product_name,
             store_id=s3_simcore_location,
             s3_object=file_id,
             **extra_kwargs,  # type: ignore
@@ -561,6 +599,7 @@ async def test_invalid_call_raises_exception(
     with pytest.raises(exceptions.StorageInvalidCall):
         await fct(
             user_id=user_id,
+            product_name=product_name,
             store_id=s3_simcore_location,
             s3_object="bing",
             **extra_kwargs,  # type: ignore
@@ -570,7 +609,8 @@ async def test_invalid_call_raises_exception(
 async def test_delete_file(
     node_ports_config: None,
     tmpdir: Path,
-    user_id: int,
+    user_id: UserID,
+    product_name: ProductName,
     create_valid_file_uuid: Callable[[str, Path], SimcoreS3FileID],
     s3_simcore_location: LocationID,
     storage_service: URL,
@@ -582,6 +622,7 @@ async def test_delete_file(
     file_id = create_valid_file_uuid("", file_path)
     upload_result: UploadedFolder | UploadedFile = await filemanager.upload_path(
         user_id=user_id,
+        product_name=product_name,
         store_id=s3_simcore_location,
         store_name=None,
         s3_object=file_id,
@@ -594,18 +635,29 @@ async def test_delete_file(
     assert e_tag
 
     is_metadata_present = await filemanager.entry_exists(
-        user_id=user_id, store_id=store_id, s3_object=file_id, is_directory=False
+        user_id=user_id,
+        product_name=product_name,
+        store_id=store_id,
+        s3_object=file_id,
+        is_directory=False,
     )
     assert is_metadata_present is True
 
     await filemanager.delete_file(
-        user_id=user_id, store_id=s3_simcore_location, s3_object=file_id
+        user_id=user_id,
+        product_name=product_name,
+        store_id=s3_simcore_location,
+        s3_object=file_id,
     )
 
     # check that it disappeared
     assert (
         await filemanager.entry_exists(
-            user_id=user_id, store_id=store_id, s3_object=file_id, is_directory=False
+            user_id=user_id,
+            product_name=product_name,
+            store_id=store_id,
+            s3_object=file_id,
+            is_directory=False,
         )
         is False
     )
@@ -617,7 +669,8 @@ async def test_upload_path_source_is_a_folder(
     project_id: str,
     tmp_path: Path,
     faker: Faker,
-    user_id: int,
+    user_id: UserID,
+    product_name: ProductName,
     s3_simcore_location: LocationID,
     files_in_folder: int,
     r_clone_settings: RCloneSettings,
@@ -638,6 +691,7 @@ async def test_upload_path_source_is_a_folder(
 
     upload_result: UploadedFolder | UploadedFile = await filemanager.upload_path(
         user_id=user_id,
+        product_name=product_name,
         store_id=s3_simcore_location,
         store_name=None,
         s3_object=s3_object,
@@ -651,6 +705,7 @@ async def test_upload_path_source_is_a_folder(
     async with ProgressBarData(num_steps=1, description=faker.pystr()) as progress_bar:
         await filemanager.download_path_from_s3(
             user_id=user_id,
+            product_name=product_name,
             store_name=None,
             store_id=s3_simcore_location,
             s3_object=s3_object,

@@ -2,6 +2,7 @@ import logging
 
 import sqlalchemy as sa
 from common_library.json_serialization import json_dumps, json_loads
+from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.users import UserID
 from pydantic import TypeAdapter
@@ -177,18 +178,22 @@ class DBManager:
         _logger.debug("Found and converted to json")
         return node_json_config
 
-    async def get_project_owner_user_id(self, project_id: ProjectID) -> UserID:
+    async def get_project_owner_and_product_name(
+        self, project_id: ProjectID
+    ) -> tuple[UserID, ProductName]:
         async with (
             DBContextManager(
                 self._db_engine, application_name=self._application_name
             ) as engine,
             engine.connect() as connection,
         ):
-            prj_owner = await connection.scalar(
-                sa.select(projects.c.prj_owner).where(
+            row = await connection.scalar(
+                sa.select(projects.c.prj_owner, projects.c.product_name).where(
                     projects.c.uuid == f"{project_id}"
                 )
             )
-            if prj_owner is None:
+            if row is None:
                 raise ProjectNotFoundError(project_id)
-        return TypeAdapter(UserID).validate_python(prj_owner)
+        return TypeAdapter(UserID).validate_python(row[0]), TypeAdapter(
+            ProductName
+        ).validate_python(row[1])

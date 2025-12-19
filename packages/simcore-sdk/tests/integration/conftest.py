@@ -15,15 +15,21 @@ import sqlalchemy as sa
 from aiohttp import ClientSession
 from models_library.api_schemas_storage.storage_schemas import FileUploadSchema
 from models_library.generics import Envelope
+from models_library.products import ProductName
 from models_library.projects_nodes_io import LocationID, NodeIDStr, SimcoreS3FileID
 from models_library.users import UserID
 from pydantic import TypeAdapter
-from pytest_simcore.helpers.faker_factories import random_project, random_user
+from pytest_simcore.helpers.faker_factories import (
+    random_product,
+    random_project,
+    random_user,
+)
 from pytest_simcore.helpers.postgres_tools import sync_insert_and_get_row_lifespan
 from settings_library.r_clone import RCloneSettings, S3Provider
 from settings_library.s3 import S3Settings
 from simcore_postgres_database.models.comp_tasks import comp_tasks
 from simcore_postgres_database.models.file_meta_data import file_meta_data
+from simcore_postgres_database.models.products import products
 from simcore_postgres_database.models.projects import projects
 from simcore_postgres_database.models.users import users
 from simcore_sdk.node_ports_common.r_clone import is_r_clone_available
@@ -52,13 +58,26 @@ def user_id(postgres_db: sa.engine.Engine) -> Iterable[UserID]:
 
 
 @pytest.fixture
-def project_id(user_id: int, postgres_db: sa.engine.Engine) -> Iterable[str]:
+def product_name(postgres_db: sa.engine.Engine) -> Iterable[ProductName]:
+    with sync_insert_and_get_row_lifespan(  # pylint:disable=contextmanager-generator-missing-cleanup
+        postgres_db,
+        table=products,
+        values=random_product(),
+        pk_col=products.c.name,
+    ) as row:
+        yield row["name"]
+
+
+@pytest.fixture
+def project_id(
+    user_id: int, product_name: ProductName, postgres_db: sa.engine.Engine
+) -> Iterable[str]:
     # inject project for user in db. This will give user_id, the full project's ownership
 
     # pylint: disable=no-value-for-parameter
     stmt = (
         projects.insert()
-        .values(**random_project(prj_owner=user_id))
+        .values(**random_project(prj_owner=user_id, product_name=product_name))
         .returning(projects.c.uuid)
     )
     print(f"{stmt}")

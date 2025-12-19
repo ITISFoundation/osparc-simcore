@@ -2,6 +2,7 @@ import logging
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
+from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, StorageFileID
 from models_library.service_settings_labels import LegacyState
@@ -35,6 +36,7 @@ def __get_s3_name(path: Path, *, is_archive: bool) -> str:
 
 async def _push_directory(
     user_id: UserID,
+    product_name: ProductName,
     project_id: ProjectID,
     node_uuid: NodeID,
     source_path: Path,
@@ -50,6 +52,7 @@ async def _push_directory(
     ):
         await filemanager.upload_path(
             user_id=user_id,
+            product_name=product_name,
             store_id=SIMCORE_LOCATION,
             store_name=None,
             s3_object=s3_object,
@@ -63,6 +66,7 @@ async def _push_directory(
 
 async def _pull_directory(
     user_id: UserID,
+    product_name: ProductName,
     project_id: ProjectID,
     node_uuid: NodeID,
     destination_path: Path,
@@ -79,6 +83,7 @@ async def _pull_directory(
     ):
         await filemanager.download_path_from_s3(
             user_id=user_id,
+            product_name=product_name,
             store_id=SIMCORE_LOCATION,
             store_name=None,
             s3_object=s3_object,
@@ -91,6 +96,7 @@ async def _pull_directory(
 
 async def _pull_legacy_archive(
     user_id: UserID,
+    product_name: ProductName,
     project_id: ProjectID,
     node_uuid: NodeID,
     destination_path: Path,
@@ -113,6 +119,7 @@ async def _pull_legacy_archive(
             _logger.info("pulling data from %s to %s...", s3_object, archive_file)
             downloaded_file = await filemanager.download_path_from_s3(
                 user_id=user_id,
+                product_name=product_name,
                 store_id=SIMCORE_LOCATION,
                 store_name=None,
                 s3_object=s3_object,
@@ -141,6 +148,7 @@ async def _pull_legacy_archive(
 
 async def _state_metadata_entry_exists(
     user_id: UserID,
+    product_name: ProductName,
     project_id: ProjectID,
     node_uuid: NodeID,
     path: Path,
@@ -156,6 +164,7 @@ async def _state_metadata_entry_exists(
     _logger.debug("Checking if s3_object='%s' is present", s3_object)
     return await filemanager.entry_exists(
         user_id=user_id,
+        product_name=product_name,
         store_id=SIMCORE_LOCATION,
         s3_object=s3_object,
         is_directory=not is_archive,
@@ -174,16 +183,20 @@ async def _delete_legacy_archive(
     # NOTE: if service is opened by a person which the users shared it with,
     # they will not have the permission to delete the node
     # Removing it via it's owner allows to always have access to the delete operation.
-    owner_id = await DBManager(
+    owner, product_name = await DBManager(
         application_name=application_name
-    ).get_project_owner_user_id(project_id)
+    ).get_project_owner_and_product_name(project_id)
     await filemanager.delete_file(
-        user_id=owner_id, store_id=SIMCORE_LOCATION, s3_object=s3_object
+        user_id=owner,
+        product_name=product_name,
+        store_id=SIMCORE_LOCATION,
+        s3_object=s3_object,
     )
 
 
 async def push(  # pylint: disable=too-many-arguments
     user_id: UserID,
+    product_name: ProductName,
     project_id: ProjectID,
     node_uuid: NodeID,
     source_path: Path,
@@ -199,6 +212,7 @@ async def push(  # pylint: disable=too-many-arguments
 
     await _push_directory(
         user_id=user_id,
+        product_name=product_name,
         project_id=project_id,
         node_uuid=node_uuid,
         source_path=source_path,
@@ -210,6 +224,7 @@ async def push(  # pylint: disable=too-many-arguments
 
     archive_exists = await _state_metadata_entry_exists(
         user_id=user_id,
+        product_name=product_name,
         project_id=project_id,
         node_uuid=node_uuid,
         path=source_path,
@@ -227,6 +242,7 @@ async def push(  # pylint: disable=too-many-arguments
     if legacy_state:
         legacy_archive_exists = await _state_metadata_entry_exists(
             user_id=user_id,
+            product_name=product_name,
             project_id=project_id,
             node_uuid=node_uuid,
             path=legacy_state.old_state_path,
@@ -246,6 +262,7 @@ async def push(  # pylint: disable=too-many-arguments
 
 async def pull(
     user_id: UserID,
+    product_name: ProductName,
     project_id: ProjectID,
     node_uuid: NodeID,
     destination_path: Path,
@@ -265,6 +282,7 @@ async def pull(
         )
         legacy_state_exists = await _state_metadata_entry_exists(
             user_id=user_id,
+            product_name=product_name,
             project_id=project_id,
             node_uuid=node_uuid,
             path=legacy_state.old_state_path,
@@ -279,6 +297,7 @@ async def pull(
             ):
                 await _pull_legacy_archive(
                     user_id=user_id,
+                    product_name=product_name,
                     project_id=project_id,
                     node_uuid=node_uuid,
                     destination_path=legacy_state.new_state_path,
@@ -290,6 +309,7 @@ async def pull(
 
     state_archive_exists = await _state_metadata_entry_exists(
         user_id=user_id,
+        product_name=product_name,
         project_id=project_id,
         node_uuid=node_uuid,
         path=destination_path,
@@ -299,6 +319,7 @@ async def pull(
         with log_context(_logger, logging.INFO, "restoring data from legacy archive"):
             await _pull_legacy_archive(
                 user_id=user_id,
+                product_name=product_name,
                 project_id=project_id,
                 node_uuid=node_uuid,
                 destination_path=destination_path,
@@ -309,6 +330,7 @@ async def pull(
 
     state_directory_exists = await _state_metadata_entry_exists(
         user_id=user_id,
+        product_name=product_name,
         project_id=project_id,
         node_uuid=node_uuid,
         path=destination_path,
@@ -317,6 +339,7 @@ async def pull(
     if state_directory_exists:
         await _pull_directory(
             user_id=user_id,
+            product_name=product_name,
             project_id=project_id,
             node_uuid=node_uuid,
             destination_path=destination_path,
