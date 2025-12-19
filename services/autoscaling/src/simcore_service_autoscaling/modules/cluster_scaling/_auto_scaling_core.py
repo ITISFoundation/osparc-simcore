@@ -689,12 +689,18 @@ def _try_assign_task_to_ec2_instance(
             continue
 
         # Check custom placement labels
-        if (
-            isinstance(instance, AssociatedInstance)
-            and task_required_docker_node_labels
-        ):
-            assert instance.node.spec  # nosec
-            node_labels = instance.node.spec.labels if instance.node.spec.labels else {}
+        if task_required_docker_node_labels:
+            if isinstance(instance, AssociatedInstance):
+                assert instance.node.spec  # nosec
+                node_labels = cast(
+                    dict[DockerLabelKey, str],
+                    (instance.node.spec.labels if instance.node.spec.labels else {}),
+                )
+
+            else:
+                node_labels = utils_ec2.load_custom_placement_labels_from_tags(
+                    instance.ec2_instance.tags
+                )
             # Verify that all required labels match
             if any(
                 node_labels.get(label_key) != label_value
