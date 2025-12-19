@@ -356,25 +356,8 @@ async def _try_attach_pending_ec2s(
                     app, instance_data.ec2_instance
                 )
 
-                # Load custom placement labels from EC2 tags if any
-                try:
-                    osparc_custom_node_labels = (
-                        utils_ec2.load_task_required_docker_node_labels_from_tags(
-                            instance_data.ec2_instance.tags
-                        )
-                    )
-                except Ec2TagDeserializationError as err:
-                    _logger.exception(
-                        **create_troubleshooting_log_kwargs(
-                            f"could not deserialize custom placement labels from EC2 tags for {instance_data.ec2_instance.id}",
-                            error=err,
-                            tip="Check the invalid syntax of the custom placement labels EC2 tag",
-                        )
-                    )
-                    osparc_custom_node_labels = {}
-
                 # Merge base tags with custom labels
-                merged_tags = base_tags | osparc_custom_node_labels
+                merged_tags = base_tags | instance_data.osparc_custom_node_labels
 
                 # Attach node with merged tags
                 new_node = await utils_docker.attach_node(
@@ -385,7 +368,7 @@ async def _try_attach_pending_ec2s(
                 )
 
                 # Mark instance for EC2 tag cleanup if custom labels were applied
-                if osparc_custom_node_labels:
+                if instance_data.osparc_custom_node_labels:
                     ec2_instances_to_remove_custom_label_tags.append(
                         instance_data.ec2_instance
                     )
@@ -394,13 +377,13 @@ async def _try_attach_pending_ec2s(
                     AssociatedInstance(
                         node=new_node,
                         ec2_instance=instance_data.ec2_instance,
-                        osparc_custom_node_labels=osparc_custom_node_labels,
+                        osparc_custom_node_labels=instance_data.osparc_custom_node_labels,
                     )
                 )
                 _logger.info(
                     "Attached new EC2 instance %s with custom placement labels: %s",
                     instance_data.ec2_instance.id,
-                    osparc_custom_node_labels,
+                    instance_data.osparc_custom_node_labels,
                 )
             else:
                 still_pending_ec2s.append(instance_data)
@@ -728,33 +711,9 @@ def _try_assign_task_to_ec2_instance(
 
         # Check custom placement labels
         if task_required_docker_node_labels:
-            if isinstance(instance, AssociatedInstance):
-                assert instance.node.spec  # nosec
-                node_labels = cast(
-                    dict[DockerLabelKey, str],
-                    (instance.node.spec.labels if instance.node.spec.labels else {}),
-                )
-
-            else:
-                try:
-                    node_labels = (
-                        utils_ec2.load_task_required_docker_node_labels_from_tags(
-                            instance.ec2_instance.tags
-                        )
-                    )
-                except Ec2TagDeserializationError as err:
-                    _logger.exception(
-                        **create_troubleshooting_log_kwargs(
-                            f"could not deserialize custom placement labels from EC2 tags for {instance.ec2_instance.id}, instance will not be used for task {task}",
-                            error=err,
-                            tip="Check the invalid syntax of the custom placement labels EC2 tag",
-                        )
-                    )
-                    continue
-
-            # Verify that all required labels match
+            osparc_custom_labels = instance.osparc_custom_node_labels
             if any(
-                node_labels.get(label_key) != label_value
+                osparc_custom_labels.get(label_key) != label_value
                 for label_key, label_value in task_required_docker_node_labels.items()
             ):
                 continue
