@@ -400,12 +400,10 @@ async def _handler_get_bind_path(
 
 
 async def _handler_mount_activity(state_path: Path, activity: MountActivity) -> None:
-    waiting_in_queue = len(activity.transferring) - len(activity.queued)
-
     # TODO: this object should be pushed to the FE in the future
     activity_summary = {
         "path": state_path,
-        "waiting_in_queue": waiting_in_queue,
+        "queued": len(activity.queued),
         "transferring": activity.transferring,
     }
     _logger.info("activity_summary=%s", activity_summary)
