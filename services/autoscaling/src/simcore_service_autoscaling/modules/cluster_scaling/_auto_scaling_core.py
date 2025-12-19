@@ -182,14 +182,42 @@ async def _analyze_current_cluster(
         pending_nodes=pending_nodes,
         drained_nodes=drained_nodes,
         hot_buffer_drained_nodes=hot_buffer_drained_nodes,
-        pending_ec2s=[NonAssociatedInstance(ec2_instance=i) for i in pending_ec2s],
-        broken_ec2s=[NonAssociatedInstance(ec2_instance=i) for i in broken_ec2s],
+        pending_ec2s=[
+            NonAssociatedInstance(
+                ec2_instance=i,
+                osparc_custom_node_labels=utils_ec2.load_task_required_docker_node_labels_from_tags(
+                    i.tags
+                ),
+            )
+            for i in pending_ec2s
+        ],
+        broken_ec2s=[
+            NonAssociatedInstance(
+                ec2_instance=i,
+                osparc_custom_node_labels=utils_ec2.load_task_required_docker_node_labels_from_tags(
+                    i.tags
+                ),
+            )
+            for i in broken_ec2s
+        ],
         warm_buffer_ec2s=[
-            NonAssociatedInstance(ec2_instance=i) for i in warm_buffer_ec2_instances
+            NonAssociatedInstance(
+                ec2_instance=i,
+                osparc_custom_node_labels=utils_ec2.load_task_required_docker_node_labels_from_tags(
+                    i.tags
+                ),
+            )
+            for i in warm_buffer_ec2_instances
         ],
         terminating_nodes=terminating_nodes,
         terminated_instances=[
-            NonAssociatedInstance(ec2_instance=i) for i in terminated_ec2_instances
+            NonAssociatedInstance(
+                ec2_instance=i,
+                osparc_custom_node_labels=utils_ec2.load_task_required_docker_node_labels_from_tags(
+                    i.tags
+                ),
+            )
+            for i in terminated_ec2_instances
         ],
         disconnected_nodes=[
             n for n in docker_nodes if not utils_docker.is_node_ready(n)
@@ -330,7 +358,7 @@ async def _try_attach_pending_ec2s(
 
                 # Load custom placement labels from EC2 tags if any
                 try:
-                    custom_labels_dict = (
+                    osparc_custom_node_labels = (
                         utils_ec2.load_task_required_docker_node_labels_from_tags(
                             instance_data.ec2_instance.tags
                         )
@@ -343,10 +371,10 @@ async def _try_attach_pending_ec2s(
                             tip="Check the invalid syntax of the custom placement labels EC2 tag",
                         )
                     )
-                    custom_labels_dict = {}
+                    osparc_custom_node_labels = {}
 
                 # Merge base tags with custom labels
-                merged_tags = base_tags | custom_labels_dict
+                merged_tags = base_tags | osparc_custom_node_labels
 
                 # Attach node with merged tags
                 new_node = await utils_docker.attach_node(
@@ -357,20 +385,22 @@ async def _try_attach_pending_ec2s(
                 )
 
                 # Mark instance for EC2 tag cleanup if custom labels were applied
-                if custom_labels_dict:
+                if osparc_custom_node_labels:
                     ec2_instances_to_remove_custom_label_tags.append(
                         instance_data.ec2_instance
                     )
 
                 new_found_instances.append(
                     AssociatedInstance(
-                        node=new_node, ec2_instance=instance_data.ec2_instance
+                        node=new_node,
+                        ec2_instance=instance_data.ec2_instance,
+                        osparc_custom_node_labels=osparc_custom_node_labels,
                     )
                 )
                 _logger.info(
                     "Attached new EC2 instance %s with custom placement labels: %s",
                     instance_data.ec2_instance.id,
-                    custom_labels_dict,
+                    osparc_custom_node_labels,
                 )
             else:
                 still_pending_ec2s.append(instance_data)
@@ -667,7 +697,15 @@ async def _try_start_warm_buffer_instances(
                 if i.ec2_instance.id not in started_instance_ids
             ],
             pending_ec2s=cluster.pending_ec2s
-            + [NonAssociatedInstance(ec2_instance=i) for i in started_instances],
+            + [
+                NonAssociatedInstance(
+                    ec2_instance=i,
+                    osparc_custom_node_labels=utils_ec2.load_task_required_docker_node_labels_from_tags(
+                        i.tags
+                    ),
+                )
+                for i in started_instances
+            ],
         ),
         [],
     )
@@ -1126,7 +1164,7 @@ async def _deactivate_empty_nodes(app: FastAPI, cluster: Cluster) -> Cluster:
         return cluster
 
     with log_context(
-        _logger, logging.INFO, f"drain {len(active_empty_instances)} empty nodes"
+        _logger, logging.INFO, f"deactivate {len(active_empty_instances)} empty nodes"
     ):
         updated_nodes = await asyncio.gather(
             *(
@@ -1141,11 +1179,17 @@ async def _deactivate_empty_nodes(app: FastAPI, cluster: Cluster) -> Cluster:
         )
         if updated_nodes:
             _logger.info(
-                "following nodes were set to drain: '%s'",
+                "following nodes were deactivated: '%s'",
                 f"{[node.description.hostname for node in updated_nodes if node.description]}",
             )
     newly_drained_instances = [
-        AssociatedInstance(node=node, ec2_instance=instance.ec2_instance)
+        AssociatedInstance(
+            node=node,
+            ec2_instance=instance.ec2_instance,
+            osparc_custom_node_labels=utils_docker.get_node_osparc_custom_labels(
+                instance.node
+            ),
+        )
         for instance, node in zip(active_empty_instances, updated_nodes, strict=True)
     ]
     return dataclasses.replace(
@@ -1264,7 +1308,10 @@ async def _try_scale_down_cluster(app: FastAPI, cluster: Cluster) -> Cluster:
         terminating_nodes=still_terminating_nodes + new_terminating_instances,
         terminated_instances=cluster.terminated_instances
         + [
-            NonAssociatedInstance(ec2_instance=i.ec2_instance)
+            NonAssociatedInstance(
+                ec2_instance=i.ec2_instance,
+                osparc_custom_node_labels=i.osparc_custom_node_labels,
+            )
             for i in instances_to_terminate
         ],
     )
@@ -1343,7 +1390,13 @@ async def _drain_retired_nodes(
             f"{[node.description.hostname for node in updated_nodes if node.description]}",
         )
     newly_drained_instances = [
-        AssociatedInstance(node=node, ec2_instance=instance.ec2_instance)
+        AssociatedInstance(
+            node=node,
+            ec2_instance=instance.ec2_instance,
+            osparc_custom_node_labels=utils_docker.get_node_osparc_custom_labels(
+                instance.node
+            ),
+        )
         for instance, node in zip(cluster.retired_nodes, updated_nodes, strict=True)
     ]
     return dataclasses.replace(
@@ -1417,7 +1470,15 @@ async def _scale_up_cluster(
             auto_scaling_mode,
         )
         cluster.pending_ec2s.extend(
-            [NonAssociatedInstance(ec2_instance=i) for i in new_pending_instances]
+            [
+                NonAssociatedInstance(
+                    ec2_instance=i,
+                    osparc_custom_node_labels=utils_ec2.load_task_required_docker_node_labels_from_tags(
+                        i.tags
+                    ),
+                )
+                for i in new_pending_instances
+            ]
         )
         # NOTE: to check the logs of UserData in EC2 instance
         # run: tail -f -n 1000 /var/log/cloud-init-output.log in the instance

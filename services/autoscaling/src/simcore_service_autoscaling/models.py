@@ -48,6 +48,7 @@ class AssignedTasksToInstanceType(_TaskAssignmentMixin):
 @dataclass(frozen=True, kw_only=True, slots=True)
 class _BaseInstance(_TaskAssignmentMixin):
     ec2_instance: EC2InstanceData
+    osparc_custom_node_labels: dict[DockerLabelKey, str]
 
     def __post_init__(self) -> None:
         if self.available_resources == Resources.create_as_empty():

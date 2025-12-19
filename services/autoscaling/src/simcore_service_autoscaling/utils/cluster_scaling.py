@@ -47,7 +47,13 @@ def associate_ec2_instances_with_nodes(
 
         if node := next(iter(filter(_find_node_with_name, nodes)), None):
             associated_instances.append(
-                AssociatedInstance(node=node, ec2_instance=instance_data)
+                AssociatedInstance(
+                    node=node,
+                    ec2_instance=instance_data,
+                    osparc_custom_node_labels=utils_docker.get_node_osparc_custom_labels(
+                        node
+                    ),
+                )
             )
         else:
             non_associated_instances.append(instance_data)
