@@ -611,6 +611,7 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
     )
     assert fake_attached_node.spec.labels
     assert app_settings.AUTOSCALING_NODES_MONITORING
+    assert app_settings.AUTOSCALING_EC2_INSTANCES
     expected_docker_node_tags = (
         dict.fromkeys(
             app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS
@@ -1946,7 +1947,9 @@ async def test__activate_drained_nodes_with_drained_node(
         ]
     )
     cluster_with_drained_nodes.drained_nodes[0].assign_task(
-        service_tasks[0], Resources(cpus=int(host_cpu_count / 2 + 1), ram=ByteSize(0))
+        service_tasks[0],
+        Resources(cpus=int(host_cpu_count / 2 + 1), ram=ByteSize(0)),
+        {},
     )
 
     updated_cluster = await _activate_drained_nodes(
