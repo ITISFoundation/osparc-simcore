@@ -353,6 +353,7 @@ async def _restore_state_folder(
 ) -> None:
     await data_manager.pull(
         user_id=settings.DY_SIDECAR_USER_ID,
+        product_name=settings.DY_SIDECAR_PRODUCT_NAME,
         project_id=settings.DY_SIDECAR_PROJECT_ID,
         node_uuid=settings.DY_SIDECAR_NODE_ID,
         destination_path=Path(state_path),
@@ -426,6 +427,7 @@ async def _save_state_folder(
 ) -> None:
     await data_manager.push(
         user_id=settings.DY_SIDECAR_USER_ID,
+        product_name=settings.DY_SIDECAR_PRODUCT_NAME,
         project_id=settings.DY_SIDECAR_PROJECT_ID,
         node_uuid=settings.DY_SIDECAR_NODE_ID,
         source_path=state_path,
