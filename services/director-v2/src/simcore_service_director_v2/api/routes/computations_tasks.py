@@ -1,6 +1,6 @@
 """CRUD operations on a computation's tasks sub-resource
 
-A task is computation sub-resource that respresents a running computational service in the pipeline described above
+A task is computation sub-resource that represents a running computational service in the pipeline described above
 Therefore,
  - the task ID is the same as the associated node uuid
 
@@ -15,6 +15,7 @@ from models_library.api_schemas_directorv2.computations import (
     TasksOutputs,
     TasksSelection,
 )
+from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
@@ -46,6 +47,7 @@ router = APIRouter()
 )
 async def get_all_tasks_log_files(
     user_id: UserID,
+    product_name: ProductName,
     project_id: ProjectID,
     comp_pipelines_repo: Annotated[
         CompPipelinesRepository, Depends(get_repository(CompPipelinesRepository))
@@ -69,7 +71,7 @@ async def get_all_tasks_log_files(
 
     tasks_logs_files: list[TaskLogFileGet] = await logged_gather(
         *[
-            dask_utils.get_task_log_file(user_id, project_id, node_id)
+            dask_utils.get_task_log_file(user_id, product_name, project_id, node_id)
             for node_id in iter_task_ids
         ],
         reraise=True,
@@ -85,6 +87,7 @@ async def get_all_tasks_log_files(
 )
 async def get_task_log_file(
     user_id: UserID,
+    product_name: ProductName,
     project_id: ProjectID,
     node_uuid: NodeID,
     comp_tasks_repo: Annotated[
@@ -101,7 +104,9 @@ async def get_task_log_file(
             detail=[f"No task_id={node_uuid} found under computation {project_id}"],
         )
 
-    return await dask_utils.get_task_log_file(user_id, project_id, node_uuid)
+    return await dask_utils.get_task_log_file(
+        user_id, product_name, project_id, node_uuid
+    )
 
 
 @router.post(

@@ -132,11 +132,14 @@ async def list_computation_collection_runs_page(
 
 
 async def _fetch_task_log(
-    user_id: UserID, task: CompRunSnapshotTaskDBGet | ComputationTaskForRpcDBGet
+    user_id: UserID,
+    product_name: ProductName,
+    task: CompRunSnapshotTaskDBGet | ComputationTaskForRpcDBGet,
 ) -> TaskLogFileGet | None:
     if not task.state.is_running():
         return await dask_utils.get_task_log_file(
             user_id=user_id,
+            product_name=product_name,
             project_id=task.project_uuid,
             node_id=task.node_id,
         )
@@ -200,7 +203,7 @@ async def list_computations_latest_iteration_tasks_page(
 
     # Run all log fetches concurrently
     log_files = await limited_gather(
-        *[_fetch_task_log(user_id, task) for task in comp_tasks],
+        *[_fetch_task_log(user_id, product_name, task) for task in comp_tasks],
         limit=20,
     )
 
@@ -260,7 +263,7 @@ async def list_computation_collection_run_tasks_page(
 
     # Run all log fetches concurrently
     log_files = await limited_gather(
-        *[_fetch_task_log(user_id, task) for task in comp_tasks],
+        *[_fetch_task_log(user_id, product_name, task) for task in comp_tasks],
         limit=20,
     )
 

@@ -2,7 +2,7 @@
 
 
 TODO: Exceptions should provide all info to create Error instances of the API model
-For instance, assume there is a ficticious exception class FieldValidationError, then it would
+For instance, assume there is a fictitious exception class FieldValidationError, then it would
 translate into something like
 
 // response - 422
@@ -115,7 +115,7 @@ class MissingComputationalResourcesError(
     )
 
 
-class InsuficientComputationalResourcesError(
+class InsufficientComputationalResourcesError(
     TaskSchedulingError
 ):  # pylint: disable=too-many-ancestors
     msg_template: str = (
