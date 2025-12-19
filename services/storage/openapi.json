@@ -119,6 +119,15 @@
               "title": "User Id",
               "minimum": 0
             }
+          },
+          {
+            "name": "product_name",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Product Name"
+            }
           }
         ],
         "responses": {
@@ -183,6 +192,15 @@
             }
           },
           {
+            "name": "product_name",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Product Name"
+            }
+          },
+          {
             "name": "expand_dirs",
             "in": "query",
             "required": false,
@@ -243,6 +261,15 @@
               "exclusiveMinimum": true,
               "title": "User Id",
               "minimum": 0
+            }
+          },
+          {
+            "name": "product_name",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Product Name"
             }
           },
           {
@@ -1009,6 +1036,15 @@
             }
           },
           {
+            "name": "product_name",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Product Name"
+            }
+          },
+          {
             "name": "file_filter",
             "in": "query",
             "required": false,
@@ -1114,6 +1150,15 @@
               "exclusiveMinimum": true,
               "title": "User Id",
               "minimum": 0
+            }
+          },
+          {
+            "name": "product_name",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Product Name"
             }
           }
         ],
