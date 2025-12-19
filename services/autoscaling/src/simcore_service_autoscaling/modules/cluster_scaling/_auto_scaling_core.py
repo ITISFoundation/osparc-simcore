@@ -452,9 +452,14 @@ async def _activate_and_notify(
 ) -> AssociatedInstance:
     app_settings = get_application_settings(app)
     docker_client = get_docker_client(app)
+    pending_labels = drained_node.tasks_required_pending_labels()
     updated_node, *_ = await asyncio.gather(
         utils_docker.set_node_osparc_ready(
-            app_settings, docker_client, drained_node.node, ready=True
+            app_settings,
+            docker_client,
+            drained_node.node,
+            ready=True,
+            additional_labels=pending_labels if pending_labels else None,
         ),
         post_tasks_log_message(
             app,
@@ -717,18 +722,25 @@ def _try_assign_task_to_ec2_instance(
         ):
             continue
 
-        # Check custom placement labels
-        if task_required_docker_node_labels:
-            osparc_custom_labels = instance.osparc_custom_node_labels
-            if any(
-                osparc_custom_labels.get(label_key) != label_value
+        # Combine current node labels + pending labels from assigned tasks to check for compatibility
+        current_labels = instance.osparc_custom_node_labels
+        pending_labels = instance.tasks_required_pending_labels()
+        effective_labels = current_labels | pending_labels
+        if (
+            task_required_docker_node_labels
+            and effective_labels
+            and any(
+                effective_labels.get(label_key) != label_value
                 for label_key, label_value in task_required_docker_node_labels.items()
-            ):
-                continue
+            )
+        ):
+            continue
 
         # Check resources
         if instance.has_resources_for_task(task_required_resources):
-            instance.assign_task(task, task_required_resources)
+            instance.assign_task(
+                task, task_required_resources, task_required_docker_node_labels
+            )
             _logger.debug(
                 "%s",
                 f"assigned task with {task_required_resources=}, {task_required_ec2_instance=}, "
@@ -768,7 +780,7 @@ def _try_assign_task_to_ec2_instance_type(
             continue
 
         # Compatible! Assign task and merge labels
-        instance.assign_task(task, task_required_resources)
+        instance.assign_task(task, task_required_resources, task_required_labels)
         _logger.debug(
             "%s",
             f"assigned task with {task_required_resources=}, {task_required_ec2_instance=}, labels={task_required_labels} to "

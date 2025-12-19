@@ -674,11 +674,15 @@ async def set_node_osparc_ready(
     node: Node,
     *,
     ready: bool,
+    additional_labels: dict[DockerLabelKey, str] | None = None,
 ) -> Node:
     assert node.spec  # nosec
     new_tags = deepcopy(cast(dict[DockerLabelKey, str], node.spec.labels))
     new_tags[_OSPARC_SERVICE_READY_LABEL_KEY] = "true" if ready else "false"
     new_tags[_OSPARC_SERVICES_READY_DATETIME_LABEL_KEY] = arrow.utcnow().isoformat()
+
+    if additional_labels:
+        new_tags.update(additional_labels)
 
     # Remove custom placement labels when draining (not ready)
     if not ready:

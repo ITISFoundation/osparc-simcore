@@ -17,15 +17,31 @@ from types_aiobotocore_ec2.literals import InstanceTypeType
 class _TaskAssignmentMixin:
     assigned_tasks: list = field(default_factory=list)
     available_resources: Resources = field(default_factory=Resources.create_as_empty)
+    # Track labels required by assigned tasks (will be applied during activation)
+    _pending_label_requirements: dict[DockerLabelKey, str] = field(default_factory=dict)
 
-    def assign_task(self, task, task_resources: Resources) -> None:
+    def assign_task(
+        self,
+        task,
+        task_resources: Resources,
+        task_required_node_labels: dict[DockerLabelKey, str],
+    ) -> None:
         self.assigned_tasks.append(task)
         object.__setattr__(
             self, "available_resources", self.available_resources - task_resources
         )
+        if task_required_node_labels:
+            object.__setattr__(
+                self,
+                "_pending_label_requirements",
+                self._pending_label_requirements | task_required_node_labels,
+            )
 
     def has_resources_for_task(self, task_resources: Resources) -> bool:
         return bool(self.available_resources >= task_resources)
+
+    def tasks_required_pending_labels(self) -> dict[DockerLabelKey, str]:
+        return self._pending_label_requirements
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
