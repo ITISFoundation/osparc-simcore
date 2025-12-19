@@ -54,7 +54,9 @@
   ],
   "[python]": {
     "editor.detectIndentation": false,
-    "editor.tabSize": 4
+    "editor.tabSize": 4,
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "charliermarsh.ruff"
   },
   "[makefile]": {
     "editor.insertSpaces": false
