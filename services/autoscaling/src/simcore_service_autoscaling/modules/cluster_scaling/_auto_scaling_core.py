@@ -662,12 +662,21 @@ async def _try_start_warm_buffer_instances(
             return _de_assign_tasks_from_warm_buffer_ec2s(cluster, instances_to_start)
 
         # NOTE: first start the instance and then set the tags in case the instance cannot start (e.g. InsufficientInstanceCapacity)
-        await get_ec2_client(app).set_instances_tags(
-            started_instances,
-            tags=get_activated_warm_buffer_ec2_tags(
-                auto_scaling_mode.get_ec2_tags(app)
-            ),
-        )
+        non_associated_instance_by_id = {
+            i.ec2_instance.id: i for i in cluster.warm_buffer_ec2s
+        }
+        for instance in started_instances:
+            non_associated_instance = non_associated_instance_by_id[instance.id]
+            # update the instance tags to activate warm buffer
+            await get_ec2_client(app).set_instances_tags(
+                [instance],
+                tags=get_activated_warm_buffer_ec2_tags(
+                    auto_scaling_mode.get_ec2_tags(app)
+                )
+                | utils_ec2.dump_task_required_node_labels_as_tags(
+                    non_associated_instance.osparc_custom_node_labels
+                ),
+            )
     started_instance_ids = [i.id for i in started_instances]
 
     return (
