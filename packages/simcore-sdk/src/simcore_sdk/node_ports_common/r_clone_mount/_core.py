@@ -17,11 +17,7 @@ from pydantic import NonNegativeInt
 from servicelib.background_task import create_periodic_task
 from servicelib.logging_utils import log_catch, log_context
 from servicelib.utils import unused_port
-from settings_library.r_clone import (
-    RCloneMountSettings,
-    RCloneSettings,
-    get_rclone_common_optimizations,
-)
+from settings_library.r_clone import RCloneMountSettings, RCloneSettings
 from tenacity import (
     before_sleep_log,
     retry,
@@ -87,7 +83,7 @@ cleanup
 
 
 def _get_rclone_mount_command(
-    r_clone_settings: RCloneSettings,
+    mount_settings: RCloneMountSettings,
     r_clone_config_content: str,
     remote_path: StorageFileID,
     local_mount_path: Path,
@@ -95,15 +91,14 @@ def _get_rclone_mount_command(
     rc_user: str,
     rc_password: str,
 ) -> str:
-    mount_settings = r_clone_settings.R_CLONE_MOUNT_SETTINGS
     escaped_remote_path = f"{remote_path}".lstrip("/")
 
     r_clone_command = " ".join(
         [
             "rclone",
             "--config",
-            f"{mount_settings.R_CLONE_CONTAINER_CONFIG_FILE_PATH}",
-            ("-vv" if mount_settings.R_CLONE_CONTAINER_MOUNT_SHOW_DEBUG_LOGS else ""),
+            f"{mount_settings.R_CLONE_MOUNT_CONTAINER_CONFIG_FILE_PATH}",
+            ("-vv" if mount_settings.R_CLONE_MOUNT_CONTAINER_SHOW_DEBUG_LOGS else ""),
             "mount",
             f"{CONFIG_KEY}:{escaped_remote_path}",
             f"{local_mount_path}",
@@ -111,29 +106,46 @@ def _get_rclone_mount_command(
             "--vfs-cache-mode",
             "full",
             "--vfs-read-ahead",
-            mount_settings.R_CLONE_VFS_READ_AHEAD,
+            mount_settings.R_CLONE_MOUNT_VFS_READ_AHEAD,
             "--vfs-cache-max-size",
             mount_settings.R_CLONE_MOUNT_VFS_CACHE_MAX_SIZE,
             "--vfs-cache-min-free-space",
             mount_settings.R_CLONE_MOUNT_VFS_CACHE_MIN_FREE_SPACE,
             "--vfs-cache-poll-interval",
-            mount_settings.R_CLONE_CACHE_POLL_INTERVAL,
+            mount_settings.R_CLONE_MOUNT_CACHE_POLL_INTERVAL,
             "--write-back-cache",
             "--vfs-write-back",
             mount_settings.R_CLONE_MOUNT_VFS_WRITE_BACK,
             "--cache-dir",
             f"{mount_settings.R_CLONE_MOUNT_VFS_CACHE_PATH}",
             "--dir-cache-time",
-            mount_settings.R_CLONE_DIR_CACHE_TIME,
+            mount_settings.R_CLONE_MOUNT_DIR_CACHE_TIME,
             "--attr-timeout",
-            mount_settings.R_CLONE_ATTR_TIMEOUT,
+            mount_settings.R_CLONE_MOUNT_ATTR_TIMEOUT,
             "--tpslimit",
-            f"{mount_settings.R_CLONE_TPSLIMIT}",
+            f"{mount_settings.R_CLONE_MOUNT_TPSLIMIT}",
             "--tpslimit-burst",
-            f"{mount_settings.R_CLONE_TPSLIMIT_BURST}",
+            f"{mount_settings.R_CLONE_MOUNT_TPSLIMIT_BURST}",
             "--no-modtime",
             "--max-buffer-memory",
-            mount_settings.R_CLONE_MAX_BUFFER_MEMORY,
+            mount_settings.R_CLONE_MOUNT_MAX_BUFFER_MEMORY,
+            # TRANSFERS
+            "--retries",
+            f"{mount_settings.R_CLONE_MOUNT_RETRIES}",
+            "--retries-sleep",
+            mount_settings.R_CLONE_MOUNT_RETRIES_SLEEP,
+            "--transfers",
+            f"{mount_settings.R_CLONE_MOUNT_TRANSFERS}",
+            "--buffer-size",
+            mount_settings.R_CLONE_MOUNT_BUFFER_SIZE,
+            "--checkers",
+            f"{mount_settings.R_CLONE_MOUNT_CHECKERS}",
+            "--s3-upload-concurrency",
+            f"{mount_settings.R_CLONE_MOUNT_S3_UPLOAD_CONCURRENCY}",
+            "--s3-chunk-size",
+            mount_settings.R_CLONE_MOUNT_S3_CHUNK_SIZE,
+            "--order-by",
+            mount_settings.R_CLONE_MOUNT_ORDER_BY,
             # REMOTE CONTROL
             "--rc",
             f"--rc-addr=0.0.0.0:{remote_control_port}",
@@ -142,11 +154,10 @@ def _get_rclone_mount_command(
             f"--rc-pass='{rc_password}'",
             "--allow-non-empty",
             "--allow-other",
-            *get_rclone_common_optimizations(r_clone_settings),
         ]
     )
     return _R_CLONE_MOUNT_TEMPLATE.format(
-        r_clone_config_path=mount_settings.R_CLONE_CONTAINER_CONFIG_FILE_PATH,
+        r_clone_config_path=mount_settings.R_CLONE_MOUNT_CONTAINER_CONFIG_FILE_PATH,
         r_clone_config_content=r_clone_config_content,
         r_clone_command=r_clone_command,
         local_mount_path=local_mount_path,
@@ -210,13 +221,13 @@ class ContainerManager:  # pylint:disable=too-many-instance-attributes
                 client, self._r_clone_network_name
             )
 
+            assert self.r_clone_settings.R_CLONE_VERSION is not None  # nosec
             mount_settings = self.r_clone_settings.R_CLONE_MOUNT_SETTINGS
-            assert mount_settings.R_CLONE_CONTAINER_VERSION is not None  # nosec
             await _docker_utils.create_r_clone_container(
                 client,
                 self.r_clone_container_name,
                 command=_get_rclone_mount_command(
-                    r_clone_settings=self.r_clone_settings,
+                    mount_settings=mount_settings,
                     r_clone_config_content=self.r_clone_config_content,
                     remote_path=self.remote_path,
                     local_mount_path=self.local_mount_path,
@@ -224,12 +235,12 @@ class ContainerManager:  # pylint:disable=too-many-instance-attributes
                     rc_user=self.rc_user,
                     rc_password=self.rc_password,
                 ),
-                r_clone_version=mount_settings.R_CLONE_CONTAINER_VERSION,
+                r_clone_version=self.r_clone_settings.R_CLONE_VERSION,
                 remote_control_port=self.remote_control_port,
                 r_clone_network_name=self._r_clone_network_name,
                 local_mount_path=self.local_mount_path,
-                memory_limit=mount_settings.R_CLONE_CONTAINER_MEMORY_LIMIT,
-                nano_cpus=mount_settings.R_CLONE_CONTAINER_NANO_CPUS,
+                memory_limit=mount_settings.R_CLONE_MOUNT_CONTAINER_MEMORY_LIMIT,
+                nano_cpus=mount_settings.R_CLONE_MOUNT_CONTAINER_NANO_CPUS,
                 handler_get_bind_paths=self.handler_get_bind_paths,
             )
 
@@ -247,7 +258,7 @@ class RemoteControlHttpClient:
     def __init__(
         self,
         remote_control_port: PortInt,
-        r_clone_mount_settings: RCloneMountSettings,
+        mount_settings: RCloneMountSettings,
         remote_control_host: str,
         rc_user: str,
         rc_password: str,
@@ -256,7 +267,7 @@ class RemoteControlHttpClient:
         update_interval: timedelta = _DEFAULT_UPDATE_INTERVAL,
         r_clone_client_timeout: timedelta = _DEFAULT_R_CLONE_CLIENT_REQUEST_TIMEOUT,
     ) -> None:
-        self._r_clone_mount_settings = r_clone_mount_settings
+        self.mount_settings = mount_settings
         self._update_interval_seconds = update_interval.total_seconds()
         self._r_clone_client_timeout = r_clone_client_timeout
         self._rc_user = rc_user
@@ -339,7 +350,7 @@ class RemoteControlHttpClient:
         @retry(
             wait=wait_fixed(1),
             stop=stop_after_delay(
-                self._r_clone_mount_settings.R_CLONE_MOUNT_TRANSFERS_COMPLETED_TIMEOUT.total_seconds()
+                self.mount_settings.R_CLONE_MOUNT_TRANSFERS_COMPLETED_TIMEOUT.total_seconds()
             ),
             reraise=True,
             retry=retry_if_exception_type(
@@ -415,7 +426,7 @@ class TrackedMount:  # pylint:disable=too-many-instance-attributes
 
         self._rc_http_client = RemoteControlHttpClient(
             remote_control_port=self.rc_port,
-            r_clone_mount_settings=self.r_clone_settings.R_CLONE_MOUNT_SETTINGS,
+            mount_settings=self.r_clone_settings.R_CLONE_MOUNT_SETTINGS,
             remote_control_host=self._container_manager.r_clone_container_name,
             rc_user=self.rc_user,
             rc_password=self.rc_password,
@@ -476,10 +487,7 @@ class RCloneMountManager:
     ) -> None:
         self.r_clone_settings = r_clone_settings
         self.handler_request_shutdown = handler_request_shutdown
-        if (
-            self.r_clone_settings.R_CLONE_MOUNT_SETTINGS.R_CLONE_CONTAINER_VERSION
-            is None
-        ):
+        if r_clone_settings.R_CLONE_VERSION is None:
             msg = "R_CLONE_VERSION setting is not set"
             raise RuntimeError(msg)
 
@@ -578,11 +586,11 @@ class RCloneMountManager:
         )
 
     async def teardown(self) -> None:
+        if self._task_ensure_mounts_working is not None:
+            await cancel_wait_task(self._task_ensure_mounts_working)
+
         # shutdown still ongoing mounts
         await asyncio.gather(
             *[mount.stop_mount() for mount in self._tracked_mounts.values()]
         )
         self._tracked_mounts.clear()
-
-        if self._task_ensure_mounts_working is not None:
-            await cancel_wait_task(self._task_ensure_mounts_working)
