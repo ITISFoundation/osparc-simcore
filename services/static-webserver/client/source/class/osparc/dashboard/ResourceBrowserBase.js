@@ -52,8 +52,8 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
     this.__centerLayout = new qx.ui.container.Composite(new qx.ui.layout.VBox(15));
     mainLayoutWithSideSpacers.add(this.__centerLayout);
 
-    const rightColum = new qx.ui.container.Composite(new qx.ui.layout.VBox());
-    mainLayoutWithSideSpacers.add(rightColum, {
+    const rightColumn = new qx.ui.container.Composite(new qx.ui.layout.VBox());
+    mainLayoutWithSideSpacers.add(rightColumn, {
       flex: 1
     });
 
@@ -70,7 +70,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       }
 
       const compactVersion = w < this.__centerLayout.getMinWidth() + leftColumnWidth + emptyColumnMinWidth;
-      rightColum.setVisibility(compactVersion ? "excluded" : "visible");
+      rightColumn.setVisibility(compactVersion ? "excluded" : "visible");
     };
     fitResourceCards();
     window.addEventListener("resize", () => fitResourceCards());
@@ -329,7 +329,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       resourcesContainer.addListener("updateHypertool", e => this._updateHypertoolData(e.getData()));
       resourcesContainer.addListener("publishTemplate", e => this.fireDataEvent("publishTemplate", e.getData()));
       resourcesContainer.addListener("tagClicked", e => this._searchBarFilter.addTagActiveFilter(e.getData()));
-      resourcesContainer.addListener("emptyStudyClicked", e => this._deleteResourceRequested(e.getData()));
+      resourcesContainer.addListener("emptyProjectIconClicked", e => this._emptyProjectIconClicked(e.getData()));
       resourcesContainer.addListener("folderUpdated", e => this._folderUpdated(e.getData()));
       resourcesContainer.addListener("moveFolderToRequested", e => this._moveFolderToRequested(e.getData()));
       resourcesContainer.addListener("trashFolderRequested", e => this._trashFolderRequested(e.getData()));
@@ -889,7 +889,7 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
       return;
     },
 
-    _deleteResourceRequested: function(resourceId) {
+    _emptyProjectIconClicked: function(resourceId) {
       throw new Error("Abstract method called!");
     },
 

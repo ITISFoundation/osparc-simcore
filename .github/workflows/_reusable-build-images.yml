@@ -25,7 +25,7 @@ jobs:
     timeout-minutes: 30
     runs-on: ${{ inputs.os }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Setup SimCore environment
         uses: ./.github/actions/setup-simcore-env
         with:
@@ -45,13 +45,13 @@ jobs:
           make build local-dest=/${{ runner.temp }}/build target=static-webserver
       - name: upload backend artifacts
         if: ${{ inputs.build-backend }}
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}-backend
           path: /${{ runner.temp }}/build
       - name: upload frontend artifacts
         if: ${{ inputs.build-frontend }}
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: docker-buildx-images-${{ runner.os }}-${{ github.sha }}-frontend
           path: /${{ runner.temp }}/build
