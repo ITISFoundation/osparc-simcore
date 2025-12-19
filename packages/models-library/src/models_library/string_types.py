@@ -203,7 +203,7 @@ GlobPatternSafeStr: TypeAlias = Annotated[
         max_length=200,
         strip_whitespace=True,
         pattern=r"^[A-Za-z0-9 ._\*@-]*$",  # Allow alphanumeric, spaces, dots, underscores, hyphens, asterisks and at signs
-        to_lower=True # make case-insensitive
+        to_lower=True,  # make case-insensitive
     ),
     AfterValidator(validate_input_xss_safety),
 ]
@@ -216,7 +216,7 @@ SearchPatternSafeStr: TypeAlias = Annotated[
         min_length=1,
         max_length=200,
         pattern=r"^[A-Za-z0-9 ._@-]*$",  # Allow alphanumeric, spaces, dots, underscores, hyphens, and at signs
-        to_lower=True # make case-insensitive
+        to_lower=True,  # make case-insensitive
     ),
     AfterValidator(validate_input_xss_safety),
     annotated_types.doc(

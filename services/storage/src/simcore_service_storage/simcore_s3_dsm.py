@@ -115,7 +115,7 @@ async def _add_frontend_needed_data(
     project_ids: list[ProjectID],
     data: list[FileMetaData],
 ) -> list[FileMetaData]:
-    # artifically fills ['project_name', 'node_name', 'file_id', 'raw_file_path', 'display_file_path']
+    # artificially fills ['project_name', 'node_name', 'file_id', 'raw_file_path', 'display_file_path']
     #   with information from the projects table!
     # NOTE: This part with the projects, should be done in the client code not here!
 
@@ -375,7 +375,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
 
         # add all the entries from file_meta_data without
         for metadata in file_and_directory_meta_data:
-            # below checks ensures that directoris either appear as
+            # below checks ensures that directories either appear as
             if metadata.is_directory and expand_dirs:
                 # avoids directory files and does not add any directory entry to the result
                 continue
@@ -853,7 +853,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
             task_progress,
             src_project_total_data_size,
             task_progress_message_prefix=f"Copying {total_num_of_files} files to '{dst_project['name']}'",
-        ) as s3_transfered_data_cb:
+        ) as s3_transferred_data_cb:
             with log_context(
                 _logger,
                 logging.INFO,
@@ -879,7 +879,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
                                 ).validate_python(
                                     f"{dst_project_uuid}/{new_node_id}/{src_fmd.object_name.split('/', maxsplit=2)[-1]}"
                                 ),
-                                bytes_transfered_cb=s3_transfered_data_cb.copy_transfer_cb,
+                                bytes_transferred_cb=s3_transferred_data_cb.copy_transfer_cb,
                             )
                         )
             with log_context(
@@ -897,7 +897,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
                                 dest_project_id=dst_project_uuid,
                                 dest_node_id=NodeID(node_id),
                                 file_storage_link=output,
-                                bytes_transfered_cb=s3_transfered_data_cb.upload_transfer_cb,
+                                bytes_transferred_cb=s3_transferred_data_cb.upload_transfer_cb,
                             )
                             for output in node.get("outputs", {}).values()
                             if isinstance(output, dict)
@@ -1394,7 +1394,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
         dest_project_id: ProjectID,
         dest_node_id: NodeID,
         file_storage_link: dict[str, Any],
-        bytes_transfered_cb: UploadedBytesTransferredCallback,
+        bytes_transferred_cb: UploadedBytesTransferredCallback,
     ) -> FileMetaData:
         session = get_client_session(self.app)
         # 2 steps: Get download link for local copy, then upload to S3
@@ -1431,7 +1431,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
                 bucket=self.simcore_bucket_name,
                 file=local_file_path,
                 object_key=dst_file_id,
-                bytes_transfered_cb=bytes_transfered_cb,
+                bytes_transferred_cb=bytes_transferred_cb,
             )
             updated_fmd = await self._update_database_from_storage(fmd=new_fmd)
             file_storage_link["store"] = self.location_id
@@ -1447,7 +1447,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
         *,
         src_fmd: FileMetaDataAtDB,
         dst_file_id: SimcoreS3FileID,
-        bytes_transfered_cb: CopiedBytesTransferredCallback,
+        bytes_transferred_cb: CopiedBytesTransferredCallback,
     ) -> FileMetaData:
         with log_context(
             _logger,
@@ -1471,14 +1471,14 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
                     bucket=self.simcore_bucket_name,
                     src_prefix=src_fmd.object_name,
                     dst_prefix=new_fmd.object_name,
-                    bytes_transfered_cb=bytes_transfered_cb,
+                    bytes_transferred_cb=bytes_transferred_cb,
                 )
             else:
                 await s3_client.copy_object(
                     bucket=self.simcore_bucket_name,
                     src_object_key=src_fmd.object_name,
                     dst_object_key=new_fmd.object_name,
-                    bytes_transfered_cb=bytes_transfered_cb,
+                    bytes_transferred_cb=bytes_transferred_cb,
                 )
             # we are done, let's update the copy with the src
             updated_fmd = await self._update_fmd_from_other(
