@@ -8,6 +8,7 @@
 import httpx
 from fastapi import FastAPI, status
 from models_library.api_schemas_storage.storage_schemas import FileLocation
+from models_library.products import ProductName
 from models_library.users import UserID
 from pytest_simcore.helpers.fastapi import url_from_operation_id
 from pytest_simcore.helpers.httpx_assert_checks import assert_status
@@ -22,11 +23,12 @@ async def test_locations(
     initialized_app: FastAPI,
     client: httpx.AsyncClient,
     user_id: UserID,
+    product_name: ProductName,
     fake_datcore_tokens: tuple[str, str],
 ):
     url = url_from_operation_id(
         client, initialized_app, "list_storage_locations"
-    ).with_query(user_id=user_id)
+    ).with_query(user_id=user_id, product_name=product_name)
     response = await client.get(f"{url}")
     data, _ = assert_status(response, status.HTTP_200_OK, list[FileLocation])
     assert data
@@ -45,10 +47,11 @@ async def test_locations_without_tokens(
     initialized_app: FastAPI,
     client: httpx.AsyncClient,
     user_id: UserID,
+    product_name: ProductName,
 ):
     url = url_from_operation_id(
         client, initialized_app, "list_storage_locations"
-    ).with_query(user_id=user_id)
+    ).with_query(user_id=user_id, product_name=product_name)
     response = await client.get(f"{url}")
     data, _ = assert_status(response, status.HTTP_200_OK, list[FileLocation])
     assert data
