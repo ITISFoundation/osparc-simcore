@@ -100,7 +100,7 @@ class EC2InstancesSettings(BaseCustomSettings):
         datetime.timedelta,
         Field(
             description="Usual time taken an EC2 instance with the given AMI takes to join the cluster "
-            "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)."
+            "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formatting)."
             "NOTE: be careful that this time should always be a factor larger than the real time, as EC2 instances"
             "that take longer than this time will be terminated as sometimes it happens that EC2 machine fail on start.",
         ),
@@ -137,15 +137,15 @@ class EC2InstancesSettings(BaseCustomSettings):
         datetime.timedelta,
         Field(
             description="Time after which an EC2 instance may be drained (10s<=T<=1 minutes, is automatically capped)"
-            "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
+            "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formatting)",
         ),
-    ] = datetime.timedelta(seconds=20)
+    ] = datetime.timedelta(seconds=10)
 
     EC2_INSTANCES_TIME_BEFORE_TERMINATION: Annotated[
         datetime.timedelta,
         Field(
             description="Time after which an EC2 instance may begin the termination process (0<=T<=59 minutes, is automatically capped)"
-            "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
+            "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formatting)",
         ),
     ] = datetime.timedelta(minutes=1)
 
@@ -153,7 +153,7 @@ class EC2InstancesSettings(BaseCustomSettings):
         datetime.timedelta,
         Field(
             description="Time after which an EC2 instance is terminated after draining"
-            "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
+            "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formatting)",
         ),
     ] = datetime.timedelta(seconds=30)
 
@@ -203,8 +203,8 @@ class EC2InstancesSettings(BaseCustomSettings):
         TypeAdapter(list[InstanceTypeType]).validate_python(list(value))
 
         if not value:
-            # NOTE: Field( ... , min_items=...) cannot be used to contraint number of iterms in a dict
-            msg = "At least one item expecte EC2_INSTANCES_ALLOWED_TYPES, got none"
+            # NOTE: Field( ... , min_items=...) cannot be used to constraint number of items in a dict
+            msg = "At least one item expected EC2_INSTANCES_ALLOWED_TYPES, got none"
             raise ValueError(msg)
 
         return value
@@ -329,7 +329,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         datetime.timedelta,
         Field(
             description="interval between each resource check "
-            "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
+            "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formatting)",
         ),
     ] = datetime.timedelta(seconds=10)
 
@@ -379,7 +379,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     AUTOSCALING_WAIT_FOR_CLOUD_INIT_BEFORE_WARM_BUFFER_ACTIVATION: Annotated[
         bool,
         Field(
-            description="If True, then explicitely wait for cloud-init process to be completed before issuing commands. "
+            description="If True, then explicitly wait for cloud-init process to be completed before issuing commands. "
             "TIP: might be useful when cheap machines are used",
         ),
     ] = False

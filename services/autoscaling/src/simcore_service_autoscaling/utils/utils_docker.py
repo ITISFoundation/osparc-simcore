@@ -679,6 +679,12 @@ async def set_node_osparc_ready(
     new_tags = deepcopy(cast(dict[DockerLabelKey, str], node.spec.labels))
     new_tags[_OSPARC_SERVICE_READY_LABEL_KEY] = "true" if ready else "false"
     new_tags[_OSPARC_SERVICES_READY_DATETIME_LABEL_KEY] = arrow.utcnow().isoformat()
+
+    # Remove custom placement labels when draining (not ready)
+    if not ready:
+        for label_key in OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS:
+            new_tags.pop(label_key, None)
+
     # NOTE: docker drain sometimes impede on performance when undraining see https://github.com/ITISFoundation/osparc-simcore/issues/5339
     available = app_settings.AUTOSCALING_DRAIN_NODES_WITH_LABELS or ready
     return await tag_node(
@@ -707,9 +713,6 @@ async def set_node_found_empty(
     new_tags = deepcopy(cast(dict[DockerLabelKey, str], node.spec.labels))
     if empty:
         new_tags[_OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY] = arrow.utcnow().isoformat()
-        # Remove custom placement labels when node becomes empty
-        for label_key in OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS:
-            new_tags.pop(label_key, None)
     else:
         new_tags.pop(_OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY, None)
     return await tag_node(
