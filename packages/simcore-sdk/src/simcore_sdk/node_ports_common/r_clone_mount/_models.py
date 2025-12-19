@@ -4,6 +4,8 @@ from typing import Protocol
 from models_library.progress_bar import ProgressReport
 from pydantic import BaseModel
 
+type MountId = str
+
 
 class MountActivity(BaseModel):
     transferring: dict[str, ProgressReport]
