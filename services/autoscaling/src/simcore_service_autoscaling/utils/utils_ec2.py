@@ -213,7 +213,7 @@ def list_tag_keys(tags: EC2Tags, *, base_tag_key: AWSTagKey) -> list[AWSTagKey]:
     ]
 
 
-def dump_custom_placement_labels_as_tags(
+def dump_task_required_node_labels_as_tags(
     labels: dict[DockerLabelKey, str],
 ) -> EC2Tags:
     """Serialize custom placement labels to EC2 tags with chunking support.
@@ -239,7 +239,7 @@ def dump_custom_placement_labels_as_tags(
     )
 
 
-def load_custom_placement_labels_from_tags(
+def load_task_required_docker_node_labels_from_tags(
     tags: EC2Tags,
 ) -> dict[DockerLabelKey, str]:
     """Deserialize custom placement labels from EC2 tags.
@@ -264,7 +264,7 @@ def load_custom_placement_labels_from_tags(
     return result if result is not None else {}
 
 
-def list_custom_placement_label_tag_keys(tags: EC2Tags) -> list[AWSTagKey]:
+def list_task_required_node_labels_tag_keys(tags: EC2Tags) -> list[AWSTagKey]:
     """List all custom placement label tag keys from EC2 tags.
 
     Identifies both single and chunked tag formats for custom placement labels.
