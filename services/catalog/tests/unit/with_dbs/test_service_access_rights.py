@@ -99,7 +99,7 @@ def create_latest_release(
         latest_release_service, *latest_release_service_access_rights = (
             create_fake_service_data(
                 new_service_metadata_published.key,
-                f"{new_version.major}.{new_version.minor}.{new_version.micro-1}",
+                f"{new_version.major}.{new_version.minor}.{new_version.micro - 1}",
                 team_access="x",
                 everyone_access=None,
                 product=product,
@@ -298,10 +298,11 @@ async def test_service_upgrade_metadata_inheritance_old_service(
     )
 
     # DEFAULT policies for old service
-    owner_gid, service_access_rights = (
-        await evaluate_default_service_ownership_and_rights(
-            app, service=new_service_metadata_published, product_name=target_product
-        )
+    (
+        owner_gid,
+        service_access_rights,
+    ) = await evaluate_default_service_ownership_and_rights(
+        app, service=new_service_metadata_published, product_name=target_product
     )
 
     # For old services, everyone should have access
@@ -394,10 +395,11 @@ async def test_service_upgrade_metadata_inheritance_new_service_multi_product(
     )
 
     # DEFAULT policies
-    owner_gid, service_access_rights = (
-        await evaluate_default_service_ownership_and_rights(
-            app, service=new_service_metadata_published, product_name=target_product
-        )
+    (
+        owner_gid,
+        service_access_rights,
+    ) = await evaluate_default_service_ownership_and_rights(
+        app, service=new_service_metadata_published, product_name=target_product
     )
     assert owner_gid == user_gid
     assert len(service_access_rights) == 1  # Only owner for new service

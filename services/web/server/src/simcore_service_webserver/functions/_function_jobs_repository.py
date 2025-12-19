@@ -63,7 +63,7 @@ from ._functions_table_cols import (
 _logger = logging.getLogger(__name__)
 
 
-async def create_function_jobs(  # noqa: PLR0913
+async def create_function_jobs(
     app: web.Application,
     connection: AsyncConnection | None = None,
     *,
@@ -138,7 +138,6 @@ async def patch_function_jobs(
     product_name: ProductName,
     function_job_patch_requests: list[FunctionJobPatchRequest],
 ) -> BatchUpdateRegisteredFunctionJobsDB:
-
     async with transaction_context(get_asyncpg_engine(app), connection) as transaction:
         await check_user_api_access_rights(
             app,
@@ -151,7 +150,6 @@ async def patch_function_jobs(
         )
         updated_jobs = []
         for patch_request in function_job_patch_requests:
-
             job = await get_function_job(
                 app,
                 connection=transaction,
@@ -377,7 +375,7 @@ async def find_cached_function_jobs(
             for row in results
         }
 
-        return [jobs_by_input.get(input_, None) for input_ in json_inputs]
+        return [jobs_by_input.get(input_) for input_ in json_inputs]
 
 
 async def get_function_job_status(

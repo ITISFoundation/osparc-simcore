@@ -134,9 +134,9 @@ def update_service_params_from_settings(
         elif (
             param.name == "constraints" or param.setting_type == "Constraints"
         ):  # python-API compatible
-            create_service_params["task_template"]["Placement"][
-                "Constraints"
-            ] += param.value
+            create_service_params["task_template"]["Placement"]["Constraints"] += (
+                param.value
+            )
 
         elif param.name == "env":
             log.debug("Found env parameter %s", param.value)
@@ -336,12 +336,12 @@ def _merge_resources_in_settings(
                     float(resource_value.reservation) * GIGA
                 )
             elif resource_name == "RAM":
-                empty_resource_entry.value["Limits"][
-                    "MemoryBytes"
-                ] += resource_value.limit
-                empty_resource_entry.value["Reservations"][
-                    "MemoryBytes"
-                ] += resource_value.reservation
+                empty_resource_entry.value["Limits"]["MemoryBytes"] += (
+                    resource_value.limit
+                )
+                empty_resource_entry.value["Reservations"]["MemoryBytes"] += (
+                    resource_value.reservation
+                )
             else:  # generic resources
                 if resource_name in placement_substitutions:
                     # NOTE: placement constraint will be used in favour of this generic resource
@@ -452,13 +452,13 @@ async def get_labels_for_involved_services(
     # paths_mapping express how to map dynamic-sidecar paths to the compose-spec volumes
     # where the service expects to find its certain folders
 
-    labels_for_involved_services: dict[str, SimcoreServiceLabels] = (
-        await _extract_osparc_involved_service_labels(
-            catalog_client=catalog_client,
-            service_key=service_key,
-            service_tag=service_tag,
-            service_labels=simcore_service_labels,
-        )
+    labels_for_involved_services: dict[
+        str, SimcoreServiceLabels
+    ] = await _extract_osparc_involved_service_labels(
+        catalog_client=catalog_client,
+        service_key=service_key,
+        service_tag=service_tag,
+        service_labels=simcore_service_labels,
     )
     logging.info("labels_for_involved_services=%s", labels_for_involved_services)
     return labels_for_involved_services

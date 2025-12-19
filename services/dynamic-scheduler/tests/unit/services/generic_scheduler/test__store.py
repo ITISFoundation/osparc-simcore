@@ -306,7 +306,8 @@ async def test_step_group_proxy(
 
     async def _get_steps_count() -> int | None:
         (response,) = await store.get_keys_from_hash(
-            step_group_proxy._get_hash_key(), "done_steps"  # noqa: SLF001
+            step_group_proxy._get_hash_key(),
+            "done_steps",
         )
         return response
 

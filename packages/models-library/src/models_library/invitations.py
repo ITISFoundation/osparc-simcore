@@ -76,7 +76,6 @@ class InvitationContent(InvitationInputs):
     def create_from_inputs(
         cls, invitation_inputs: InvitationInputs, default_product: ProductName
     ) -> "InvitationContent":
-
         kwargs = invitation_inputs.model_dump(exclude_none=True)
         kwargs.setdefault("product", default_product)
         return cls(

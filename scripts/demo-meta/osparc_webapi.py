@@ -159,7 +159,6 @@ def iter_items(
     last_url = None
 
     while next_url and next_url != last_url:
-
         r = client.get(next_url)
         r.raise_for_status()
 
@@ -194,7 +193,6 @@ def iter_project_iteration(
 
 # SETUP ------------------------------------------
 class ClientSettings(BaseSettings):
-
     OSPARC_API_URL: AnyUrl = Field(
         default="http://127.0.0.1.nip.io:9081/v0"
     )  #  NOSONAR

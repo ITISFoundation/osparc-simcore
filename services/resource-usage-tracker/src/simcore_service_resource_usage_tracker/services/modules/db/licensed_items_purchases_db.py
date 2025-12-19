@@ -44,9 +44,7 @@ _SELECTION_ARGS = (
     resource_tracker_licensed_items_purchases.c.modified,
 )
 
-assert set(LicensedItemsPurchasesDB.model_fields) == {
-    c.name for c in _SELECTION_ARGS
-}  # nosec
+assert set(LicensedItemsPurchasesDB.model_fields) == {c.name for c in _SELECTION_ARGS}  # nosec
 
 
 async def create(

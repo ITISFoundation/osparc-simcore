@@ -145,7 +145,6 @@ def test_ordering_query_model_class_factory():
 
 
 def test_ordering_query_model_class__fails_with_invalid_fields():
-
     OrderQueryParamsModel = create_ordering_query_model_class(
         ordering_fields={"modified", "name", "description"},
         default=OrderBy(field=IDStr("modified"), direction=OrderDirection.DESC),
@@ -180,7 +179,6 @@ def test_ordering_query_model_class__fails_with_invalid_direction():
 
 
 def test_ordering_query_model_class__defaults():
-
     OrderQueryParamsModel = create_ordering_query_model_class(
         ordering_fields={"modified", "name", "description"},
         default=OrderBy(field=IDStr("modified"), direction=OrderDirection.DESC),
@@ -223,7 +221,6 @@ def test_ordering_query_model_with_map():
 
 
 def test_ordering_query_parse_json_pre_validator():
-
     OrderQueryParamsModel = create_ordering_query_model_class(
         ordering_fields={"modified", "name"},
         default=OrderBy(field=IDStr("modified"), direction=OrderDirection.DESC),

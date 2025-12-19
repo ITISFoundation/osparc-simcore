@@ -140,9 +140,7 @@ async def get_service_state(
         DynamicSidecarsScheduler, Depends(get_dynamic_sidecar_scheduler)
     ],
 ):
-    return dynamic_sidecars_scheduler.scheduler.get_scheduler_data(  # noqa: SLF001
-        node_uuid
-    )
+    return dynamic_sidecars_scheduler.scheduler.get_scheduler_data(node_uuid)
 
 
 @router.post(

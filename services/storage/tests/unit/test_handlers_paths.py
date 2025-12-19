@@ -521,9 +521,9 @@ async def test_list_paths_with_display_name_containing_slashes(
     )
     assert page_of_paths.items[0].display_path == Path(
         quote(project_name_with_slashes, safe="")
-    ) / quote(
-        node_name_with_non_ascii, safe=""
-    ), "display path parts should be url encoded"
+    ) / quote(node_name_with_non_ascii, safe=""), (
+        "display path parts should be url encoded"
+    )
 
     # ls in the node workspace
     selected_node_id = NodeID(random.choice(list(project["workbench"])))  # noqa: S311
@@ -567,9 +567,9 @@ async def test_list_paths_with_display_name_containing_slashes(
                 *(expected_paths[0][0].parts[2:]),
             ],
         )
-        assert page_of_paths.items[0].display_path == Path(
-            expected_display_path
-        ), "display path parts should be url encoded"
+        assert page_of_paths.items[0].display_path == Path(expected_display_path), (
+            "display path parts should be url encoded"
+        )
 
 
 async def _assert_compute_path_size(
@@ -629,9 +629,9 @@ async def test_path_compute_size(
     ],
     project_params: ProjectWithFilesParams,
 ):
-    assert (
-        len(project_params.allowed_file_sizes) == 1
-    ), "test preconditions are not filled! allowed file sizes should have only 1 option for this test"
+    assert len(project_params.allowed_file_sizes) == 1, (
+        "test preconditions are not filled! allowed file sizes should have only 1 option for this test"
+    )
     project, list_of_files = with_random_project_with_files
 
     total_num_files = sum(

@@ -191,6 +191,6 @@ async def test_auto_create_products_groups(app: web.Application):
     groups = await _service.auto_create_products_groups(app)
     assert isinstance(groups, dict)
 
-    assert all(
-        group_id is not None for group_id in groups.values()
-    ), f"Invalid {groups}"
+    assert all(group_id is not None for group_id in groups.values()), (
+        f"Invalid {groups}"
+    )

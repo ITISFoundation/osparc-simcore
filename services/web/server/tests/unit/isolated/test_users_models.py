@@ -54,15 +54,14 @@ def test_profile_get_expiration_date(fake_profile_get: MyProfileRestGet):
 
 
 def test_auto_compute_gravatar__deprecated(fake_profile_get: MyProfileRestGet):
-
     profile = fake_profile_get.model_copy()
 
     envelope = Envelope[Any](data=profile)
     data = envelope.model_dump(**RESPONSE_MODEL_POLICY)["data"]
 
-    assert (
-        "gravatar_id" not in data
-    ), f"{dict(MyProfileRestGet.model_fields)['gravatar_id'].deprecated=}"
+    assert "gravatar_id" not in data, (
+        f"{dict(MyProfileRestGet.model_fields)['gravatar_id'].deprecated=}"
+    )
     assert data["id"] == profile.id
     assert data["first_name"] == profile.first_name
     assert data["last_name"] == profile.last_name
@@ -121,7 +120,6 @@ def test_parsing_output_of_get_user_profile():
 
 
 def test_mapping_update_models_from_rest_to_db():
-
     profile_update = MyProfileRestPatch.model_validate(
         # request payload
         {

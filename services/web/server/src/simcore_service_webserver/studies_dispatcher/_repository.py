@@ -36,7 +36,6 @@ def create_viewer_info_from_db(row: Row) -> ViewerInfo:
 
 
 class StudiesDispatcherRepository(BaseRepository):
-
     async def list_viewers_info(
         self,
         connection: AsyncConnection | None = None,

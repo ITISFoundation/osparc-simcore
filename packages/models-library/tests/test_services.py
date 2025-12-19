@@ -213,6 +213,6 @@ def test_service_docker_data_labels_convesion():
         # check dashes and uppercase
         if alias.lower() != alias or "-" in alias:
             convension_breaking_fields.add((name, alias))
-    assert (
-        len(convension_breaking_fields) == 0
-    ), "You are no longer allowed to add labels with dashes in them. All lables should be snake cased!"
+    assert len(convension_breaking_fields) == 0, (
+        "You are no longer allowed to add labels with dashes in them. All lables should be snake cased!"
+    )

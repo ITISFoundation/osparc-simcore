@@ -77,7 +77,6 @@ async def list_(
     # ordering
     order_by: OrderBy,
 ) -> tuple[PageTotalCount, list[ConversationMessageGetDB]]:
-
     base_query = (
         select(*_SELECTION_ARGS)
         .select_from(conversation_messages)

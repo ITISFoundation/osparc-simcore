@@ -9,12 +9,8 @@ from pathlib import Path
 import numpy
 import numpy as np
 import s4l_v1 as s4l
-import s4l_v1.analysis as analysis
-import s4l_v1.document as document
-import s4l_v1.model as model
-import s4l_v1.units as units
 import XCoreModeling as xcm
-from s4l_v1 import Vec3
+from s4l_v1 import Vec3, analysis, document, model, units
 from s4l_v1._api.application import get_app_safe, run_application
 from s4l_v1.model import Unit
 from s4l_v1.simulation import emlf, neuron
@@ -53,7 +49,7 @@ filename_model = os.path.join(input_folder, "Nerve_Model.sab")
 
 
 def Creates_EM_Simulation():
-    import s4l_v1.materials.database as database
+    from s4l_v1.materials import database
 
     # Creating the simulation
     simulation = emlf.ElectroQsOhmicSimulation()
@@ -134,9 +130,10 @@ def Creates_EM_Simulation():
     ]
     material_settings.Name = "Fascicles"
     material_settings.ElectricProps.ConductivityAnisotropic = True
-    material_settings.ElectricProps.ConductivityDiagonalElements = numpy.array(
-        [0.16, 0.16, 0.57]
-    ), Unit("S/m")
+    material_settings.ElectricProps.ConductivityDiagonalElements = (
+        numpy.array([0.16, 0.16, 0.57]),
+        Unit("S/m"),
+    )
     simulation.Add(material_settings, components)
 
     # Adding a new MaterialSettings
@@ -333,7 +330,6 @@ def Creates_EM_Simulation():
 
 
 def Creates_Electrode(length, gap, angle, radius, silicone_length):
-
     center = Vec3(0, 0, 1)
 
     angle = (360 - angle) * 2 * np.pi / 360
@@ -421,7 +417,6 @@ def ExtractThresholdsInfo(sim):
 
 
 def ExtractsResults(simulation):
-
     ## Normalize the field
     assert simulation.HasResults(), "EM Simulation Should Have Results"
     print("Scaling E_Potential")
@@ -522,7 +517,6 @@ def CreatesNeuroCache(axonlist):
 
 
 def Create_Axon_Distribution():
-
     axon_ent = s4l.model.CreateGroup("Axons_Folder")
     point_ent = s4l.model.CreateGroup("Points_Folder")
 
@@ -675,7 +669,7 @@ print(output_values)
 
 ## convert to the format that the (de)jsonifier understand
 output_values = {
-    f"number_{i+1}": value for i, value in enumerate(output_values.values())
+    f"number_{i + 1}": value for i, value in enumerate(output_values.values())
 }
 output_values_path = pl.Path(output_folder / "values.json")
 output_values_path.write_text(json.dumps(output_values))

@@ -666,9 +666,9 @@ async def test_attach_detach_container_to_network(
                             "network_aliases": network_aliases,
                         },
                     )
-                    assert (
-                        response.status_code == status.HTTP_204_NO_CONTENT
-                    ), response.text
+                    assert response.status_code == status.HTTP_204_NO_CONTENT, (
+                        response.text
+                    )
 
                 container = await docker.containers.get(container_name)
                 container_inspect = await container.show()
@@ -684,9 +684,9 @@ async def test_attach_detach_container_to_network(
                         f"/{API_VTAG}/containers/{container_name}/networks:detach",
                         json={"network_id": network_id},
                     )
-                    assert (
-                        response.status_code == status.HTTP_204_NO_CONTENT
-                    ), response.text
+                    assert response.status_code == status.HTTP_204_NO_CONTENT, (
+                        response.text
+                    )
 
                 container = await docker.containers.get(container_name)
                 container_inspect = await container.show()

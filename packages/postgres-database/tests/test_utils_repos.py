@@ -42,8 +42,10 @@ async def test_sa_transactions(asyncpg_engine: AsyncEngine):
         tags.insert().values(id=7, name="query2", color="blue").returning(tags.c.id)
     )
 
-    async with asyncpg_engine.connect() as conn, conn.begin():  # starts transaction (savepoint)
-
+    async with (
+        asyncpg_engine.connect() as conn,
+        conn.begin(),
+    ):  # starts transaction (savepoint)
         result = await conn.execute(query1)
         assert result.scalar() == 2
 
@@ -154,7 +156,6 @@ class OneResourceRepoDemo:
 
 
 async def test_oneresourcerepodemo_prototype(asyncpg_engine: AsyncEngine):
-
     tags_repo = OneResourceRepoDemo(engine=asyncpg_engine, table=tags)
 
     # create

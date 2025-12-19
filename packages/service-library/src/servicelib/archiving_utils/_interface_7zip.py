@@ -110,7 +110,6 @@ class _7ZipProgressParser:  # noqa: N801
 
         # if finished emit the remaining diff
         if self.total_bytes and self.finished and not self.finished_emitted:
-
             await self.progress_handler(self.total_bytes - self.emitted_total)
             self.finished_emitted = True
 

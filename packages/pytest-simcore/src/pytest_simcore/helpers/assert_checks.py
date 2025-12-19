@@ -108,6 +108,6 @@ def assert_equal_ignoring_none(expected: dict, actual: dict):
         if isinstance(exp_value, dict) and isinstance(act_value, dict):
             assert_equal_ignoring_none(exp_value, act_value)
         else:
-            assert (
-                act_value == exp_value
-            ), f"Mismatch in {key}: {act_value} != {exp_value}"
+            assert act_value == exp_value, (
+                f"Mismatch in {key}: {act_value} != {exp_value}"
+            )

@@ -3,9 +3,10 @@ from enum import auto
 from typing import Annotated, Any, TypeAlias
 from uuid import UUID
 
+from pydantic import BaseModel, ConfigDict, StringConstraints
+
 from models_library.groups import GroupID
 from models_library.projects import ProjectID
-from pydantic import BaseModel, ConfigDict, StringConstraints
 
 from .products import ProductName
 from .utils.enums import StrAutoEnum

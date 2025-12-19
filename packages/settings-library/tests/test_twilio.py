@@ -27,7 +27,6 @@ def test_twilio_settings_within_envdevel(
 def test_twilio_settings_with_country_codes(
     mock_env_devel_environment: dict[str, str], monkeypatch: pytest.MonkeyPatch
 ):
-
     # defaults
     with monkeypatch.context() as patch:
         setenvs_from_dict(

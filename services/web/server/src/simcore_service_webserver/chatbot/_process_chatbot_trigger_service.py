@@ -39,9 +39,7 @@ class _Role(NamedTuple):
 
 _SUPPORT_ROLE_NAME: Final[str] = "support-team-member"
 
-_CHATBOT_INSTRUCTION_MESSAGE: Final[
-    str
-] = """
+_CHATBOT_INSTRUCTION_MESSAGE: Final[str] = """
     This conversation takes place in the context of the {product} product. Only answer questions related to this product.
     The user '{support_role_name}' is a support team member and is assisting users of the {product} product
     with their inquiries. Help the user by providing answers to their questions. Make your answers concise and to the point.
@@ -99,16 +97,15 @@ async def _process_chatbot_trigger_message(app: web.Application, data: bytes) ->
             logging.DEBUG,
             msg=f"Listed messages for conversation ID {rabbit_message.conversation.conversation_id}",
         ):
-            _, messages_in_db = (
-                await conversations_service.list_messages_for_conversation(
-                    app=app,
-                    conversation_id=rabbit_message.conversation.conversation_id,
-                    offset=0,
-                    limit=20,
-                    order_by=OrderBy(
-                        field=IDStr("created"), direction=OrderDirection.DESC
-                    ),
-                )
+            (
+                _,
+                messages_in_db,
+            ) = await conversations_service.list_messages_for_conversation(
+                app=app,
+                conversation_id=rabbit_message.conversation.conversation_id,
+                offset=0,
+                limit=20,
+                order_by=OrderBy(field=IDStr("created"), direction=OrderDirection.DESC),
             )
 
         messages = []

@@ -64,9 +64,7 @@ async def mock_wb_api_server_rcp(app: FastAPI, mocker: MockerFixture) -> None:
         from simcore_service_api_server.services_rpc import wb_api_server
 
         # pylint: disable=protected-access
-        return wb_api_server._create_obj(
-            app, mocker.MagicMock(spec=RabbitMQRPCClient)
-        )  # noqa: SLF001
+        return wb_api_server._create_obj(app, mocker.MagicMock(spec=RabbitMQRPCClient))
 
     app.dependency_overrides[get_wb_api_rpc_client] = _new
 
@@ -192,7 +190,6 @@ async def test_get_licensed_items_for_wallet(
         offset: int,
         limit: int,
     ) -> LicensedItemRpcGetPage:
-
         if exception_to_raise is not None:
             raise exception_to_raise
 

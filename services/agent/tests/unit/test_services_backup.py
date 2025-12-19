@@ -98,7 +98,8 @@ async def test_backup_volume(
 ):
     node_id = uuid4()
     volumes: set[str] = await create_dynamic_sidecar_volumes(
-        node_id, True  # noqa: FBT003
+        node_id,
+        True,  # noqa: FBT003
     )
 
     for volume in volumes:
@@ -120,7 +121,9 @@ async def test_backup_volume(
 
     expected_files = _FILES_TO_CREATE_IN_VOLUME * len(VOLUMES_TO_CREATE)
 
-    async with session.client("s3", endpoint_url=f"{settings.AGENT_VOLUMES_CLEANUP_S3_ENDPOINT}") as s3_client:  # type: ignore
+    async with session.client(
+        "s3", endpoint_url=f"{settings.AGENT_VOLUMES_CLEANUP_S3_ENDPOINT}"
+    ) as s3_client:  # type: ignore
         list_response = await s3_client.list_objects_v2(
             Bucket=settings.AGENT_VOLUMES_CLEANUP_S3_BUCKET,
             Prefix=f"{swarm_stack_name}/{project_id}/{node_id}/{service_run_id}",

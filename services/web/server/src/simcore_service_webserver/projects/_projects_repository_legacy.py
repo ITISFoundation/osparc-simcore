@@ -65,7 +65,6 @@ from simcore_postgres_database.webserver_models import (
     projects,
     users,
 )
-from simcore_service_webserver.constants import APP_AIOPG_ENGINE_KEY
 from sqlalchemy import func, literal_column, sql
 from sqlalchemy.dialects.postgresql import BOOLEAN, INTEGER
 from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -73,6 +72,8 @@ from sqlalchemy.sql import ColumnElement, CompoundSelect, Select, and_
 from tenacity import TryAgain
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
+
+from simcore_service_webserver.constants import APP_AIOPG_ENGINE_KEY
 
 from ..application_settings import get_application_settings
 from ..models import ClientSessionID

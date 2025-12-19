@@ -182,7 +182,6 @@ async def _sync_sources(
     exclude_patterns: set[str] | None,
     debug_logs: bool,
 ) -> None:
-
     folder_size = await _get_folder_size(
         r_clone_settings,
         local_dir=local_dir,

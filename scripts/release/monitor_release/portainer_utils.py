@@ -2,6 +2,7 @@ import json
 
 import arrow
 import requests
+
 from monitor_release.models import RunningSidecar
 from monitor_release.settings import LegacySettings
 

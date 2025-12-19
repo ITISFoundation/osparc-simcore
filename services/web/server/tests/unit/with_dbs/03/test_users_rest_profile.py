@@ -410,10 +410,10 @@ async def test_get_profile_with_failing_db_connection(
     url = client.app.router["get_my_profile"].url_for()
     assert str(url) == "/v0/me"
 
-    with patch.object(SAConnection, "execute") as mock_sa_execute, patch.object(
-        AsyncConnection, "execute"
-    ) as mock_async_execute:
-
+    with (
+        patch.object(SAConnection, "execute") as mock_sa_execute,
+        patch.object(AsyncConnection, "execute") as mock_async_execute,
+    ):
         # Emulates a database connection failure
         mock_sa_execute.side_effect = OperationalError(
             "MOCK: server closed the connection unexpectedly"

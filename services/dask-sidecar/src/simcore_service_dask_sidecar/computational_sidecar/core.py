@@ -151,7 +151,9 @@ class ComputationalSidecar:
                 if isinstance(output_params, FileUrl):
                     assert (  # nosec
                         output_params.file_mapping
-                    ), f"{output_params.model_dump_json(indent=1)} expected resolved in TaskOutputData.from_task_output"
+                    ), (
+                        f"{output_params.model_dump_json(indent=1)} expected resolved in TaskOutputData.from_task_output"
+                    )
 
                     src_path = task_volumes.outputs_folder / output_params.file_mapping
                     upload_tasks.append(

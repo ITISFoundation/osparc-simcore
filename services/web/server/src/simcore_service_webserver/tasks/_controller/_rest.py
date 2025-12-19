@@ -155,7 +155,6 @@ async def cancel_async_job(request: web.Request) -> web.Response:
 @login_required
 @handle_rest_requests_exceptions
 async def get_async_job_result(request: web.Request) -> web.Response:
-
     _req_ctx = AuthenticatedRequestContext.model_validate(request)
     _path_params = parse_request_path_parameters_as(TaskPathParams, request)
 
@@ -183,7 +182,6 @@ async def get_async_job_result(request: web.Request) -> web.Response:
 @login_required
 @handle_rest_requests_exceptions
 async def get_async_job_stream(request: web.Request) -> web.Response:
-
     _req_ctx = AuthenticatedRequestContext.model_validate(request)
     _path_params = parse_request_path_parameters_as(TaskPathParams, request)
     _query_params: TaskStreamQueryParams = parse_request_query_parameters_as(

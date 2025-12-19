@@ -716,9 +716,9 @@ async def test_list_objects_pagination(
     first_level_directories, first_level_files = _get_paths_with_prefix(
         with_uploaded_folder_on_s3, prefix_level=1, path_prefix=first_level_prefix
     )
-    assert (
-        not first_level_directories
-    ), "test pre-condition not fulfilled, there should be only files for this test"
+    assert not first_level_directories, (
+        "test pre-condition not fulfilled, there should be only files for this test"
+    )
     assert len(first_level_files) == total_num_files
 
     # now we will fetch the file objects according to the given limit
@@ -776,9 +776,9 @@ async def test_list_objects_partial_prefix(
     first_level_directories, first_level_files = _get_paths_with_prefix(
         with_uploaded_folder_on_s3, prefix_level=1, path_prefix=first_level_prefix
     )
-    assert (
-        not first_level_directories
-    ), "test pre-condition not fulfilled, there should be only files for this test"
+    assert not first_level_directories, (
+        "test pre-condition not fulfilled, there should be only files for this test"
+    )
     assert len(first_level_files) == total_num_files
 
     a_random_file = random.choice(list(first_level_files))  # noqa: S311
@@ -833,9 +833,9 @@ async def test_list_entries_paginated_basic_functionality(
         entry for entry in all_entries if isinstance(entry, S3DirectoryMetaData)
     ]
 
-    assert len(files) == len(
-        with_uploaded_folder_on_s3
-    ), "Should find all uploaded files"
+    assert len(files) == len(with_uploaded_folder_on_s3), (
+        "Should find all uploaded files"
+    )
     assert len(directories) > 0, "Should find at least one directory"
 
     # Verify all uploaded files are found
@@ -881,13 +881,13 @@ async def test_list_entries_paginated_with_prefix(
     # Verify that all entries start with the prefix
     for entry in all_entries:
         if isinstance(entry, S3MetaData):
-            assert entry.object_key.startswith(
-                prefix
-            ), f"File {entry.object_key} should start with prefix {prefix}"
+            assert entry.object_key.startswith(prefix), (
+                f"File {entry.object_key} should start with prefix {prefix}"
+            )
         elif isinstance(entry, S3DirectoryMetaData):
-            assert str(entry.prefix).startswith(
-                prefix
-            ), f"Directory {entry.prefix} should start with prefix {prefix}"
+            assert str(entry.prefix).startswith(prefix), (
+                f"Directory {entry.prefix} should start with prefix {prefix}"
+            )
 
 
 async def test_list_entries_paginated_items_per_page_validation(
@@ -938,18 +938,18 @@ async def test_list_entries_paginated_pagination(
         all_entries.extend(page_entries)
         page_count += 1
         # Each page should not exceed the specified limit
-        assert (
-            len(page_entries) <= items_per_page
-        ), f"Page size should not exceed {items_per_page}"
+        assert len(page_entries) <= items_per_page, (
+            f"Page size should not exceed {items_per_page}"
+        )
 
     # Should have at least one page
     assert page_count >= 1, "Should have at least one page of results"
 
     # Verify total number of files matches uploaded files
     files = [entry for entry in all_entries if isinstance(entry, S3MetaData)]
-    assert len(files) == len(
-        with_uploaded_folder_on_s3
-    ), "Should find all uploaded files across all pages"
+    assert len(files) == len(with_uploaded_folder_on_s3), (
+        "Should find all uploaded files across all pages"
+    )
 
 
 @pytest.mark.parametrize(

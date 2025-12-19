@@ -3,6 +3,7 @@
 import logging
 
 from fastapi import FastAPI
+
 from simcore_service_dynamic_sidecar.core.application import create_app
 
 _logger = logging.getLogger(__name__)

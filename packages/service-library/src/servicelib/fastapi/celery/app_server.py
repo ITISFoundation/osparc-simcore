@@ -33,5 +33,7 @@ class FastAPIAppServer(BaseAppServer[FastAPI]):
         ):
             _logger.info("FastAPI initialized: %s", self.app)
             startup_completed_event.set()
-            await self.shutdown_event.wait()  # NOTE: wait here until shutdown is requested
+            await (
+                self.shutdown_event.wait()
+            )  # NOTE: wait here until shutdown is requested
             _logger.info("FastAPI shutdown completed: %s", self.app)

@@ -24,7 +24,6 @@ def test_migration_has_no_branches():
 
 
 def test_migration_upgrade_downgrade(sync_engine: sqlalchemy.engine.Engine):
-
     assert sync_engine
     assert simcore_postgres_database.cli.discover.callback
     assert simcore_postgres_database.cli.upgrade.callback
@@ -45,6 +44,6 @@ def test_migration_upgrade_downgrade(sync_engine: sqlalchemy.engine.Engine):
     simcore_postgres_database.cli.clean.callback()  # just cleans discover cache
     inspector = inspect(sync_engine)
 
-    assert inspector.get_table_names() == [
-        "alembic_version"
-    ], "Only the alembic table should remain, please check!!!"
+    assert inspector.get_table_names() == ["alembic_version"], (
+        "Only the alembic table should remain, please check!!!"
+    )

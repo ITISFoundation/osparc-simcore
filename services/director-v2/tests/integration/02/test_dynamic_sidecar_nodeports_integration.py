@@ -138,9 +138,7 @@ DY_VOLUMES: str = "/dy-volumes/"
 DY_SERVICES_STATE_PATH: Path = Path(DY_VOLUMES) / "workdir/generated-data"
 DY_SERVICES_R_CLONE_DIR_NAME: str = (
     # pylint: disable=bad-str-strip-call
-    str(DY_SERVICES_STATE_PATH)
-    .strip(DY_VOLUMES)
-    .replace("/", "_")
+    str(DY_SERVICES_STATE_PATH).strip(DY_VOLUMES).replace("/", "_")
 )
 TIMEOUT_DETECT_DYNAMIC_SERVICES_STOPPED = 60
 TIMEOUT_OUTPUTS_UPLOAD_FINISH_DETECTED = 60
@@ -644,9 +642,9 @@ async def _container_id_via_services(service_uuid: str) -> str:
             if service["Spec"]["Name"] == service_name:
                 service_id = service["ID"]
                 break
-        assert (
-            service_id is not None
-        ), f"No service found for service name: {service_name}"
+        assert service_id is not None, (
+            f"No service found for service name: {service_name}"
+        )
 
         for task in await docker_client.tasks.list():
             if task["ServiceID"] == service_id:
@@ -654,9 +652,9 @@ async def _container_id_via_services(service_uuid: str) -> str:
                 container_id = task["Status"]["ContainerStatus"]["ContainerID"]
                 break
 
-    assert (
-        container_id is not None
-    ), f"No container found for service name {service_name}"
+    assert container_id is not None, (
+        f"No container found for service name {service_name}"
+    )
 
     return container_id
 
@@ -916,9 +914,9 @@ async def _assert_retrieve_completed(
                         container.log(stdout=True, stderr=True),
                     )
                 )
-                assert (
-                    _CONTROL_TESTMARK_DY_SIDECAR_NODEPORT_UPLOADED_MESSAGE in logs
-                ), "TIP: Message missing suggests that the data was never uploaded: look in services/dynamic-sidecar/src/simcore_service_dynamic_sidecar/modules/nodeports.py"
+                assert _CONTROL_TESTMARK_DY_SIDECAR_NODEPORT_UPLOADED_MESSAGE in logs, (
+                    "TIP: Message missing suggests that the data was never uploaded: look in services/dynamic-sidecar/src/simcore_service_dynamic_sidecar/modules/nodeports.py"
+                )
 
 
 def product_name(osparc_product_name: ProductName) -> ProductName:
@@ -980,16 +978,16 @@ async def test_nodeports_integration(
     `aioboto` instead of `docker` or `storage-data_manager API`.
     """
     # STEP 1
-    dynamic_services_urls: dict[str, str] = (
-        await _start_and_wait_for_dynamic_services_ready(
-            director_v2_client=async_client,
-            product_name=osparc_product_name,
-            product_api_base_url=osparc_product_api_base_url,
-            user_id=current_user["id"],
-            workbench_dynamic_services=workbench_dynamic_services,
-            current_study=current_study,
-            catalog_url=services_endpoint["catalog"],
-        )
+    dynamic_services_urls: dict[
+        str, str
+    ] = await _start_and_wait_for_dynamic_services_ready(
+        director_v2_client=async_client,
+        product_name=osparc_product_name,
+        product_api_base_url=osparc_product_api_base_url,
+        user_id=current_user["id"],
+        workbench_dynamic_services=workbench_dynamic_services,
+        current_study=current_study,
+        catalog_url=services_endpoint["catalog"],
     )
 
     # STEP 2

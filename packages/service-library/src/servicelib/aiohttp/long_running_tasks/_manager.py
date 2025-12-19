@@ -8,7 +8,6 @@ from ._request import get_task_context
 
 
 class AiohttpLongRunningManager(LongRunningManager):
-
     @staticmethod
     def get_task_context(request: web.Request) -> TaskContext:
         return get_task_context(request)

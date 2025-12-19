@@ -292,9 +292,7 @@ async def _parse_container_docker_logs(
                 / f"{service_key.split(sep='/')[-1]}_{service_version}.logs"
             )
             try:
-                assert isinstance(
-                    container.docker.connector, aiohttp.UnixConnector
-                )  # nosec
+                assert isinstance(container.docker.connector, aiohttp.UnixConnector)  # nosec
                 async with Docker(
                     session=aiohttp.ClientSession(
                         connector=aiohttp.UnixConnector(

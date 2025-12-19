@@ -58,7 +58,6 @@ def test_normalize_rrid_tags(rrid_tag):
 
 @pytest.mark.parametrize("name, rrid_tag", RRID_CITATIONS)
 def test_research_resource_model(name, rrid_tag):
-
     resource = ResearchResource(
         rrid=rrid_tag, name=name, description="Something about {name}"
     )

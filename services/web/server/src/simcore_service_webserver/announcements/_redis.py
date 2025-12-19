@@ -45,7 +45,7 @@ async def list_announcements(
                 continue
             # OK
             announcements.append(model)
-        except ValidationError:  # noqa: PERF203
+        except ValidationError:
             _logger.exception(
                 "%s. Check item[%d]=%s",
                 _MSG_REDIS_ERROR,

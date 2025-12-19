@@ -17,4 +17,4 @@ def mock_otel_collector(mocker: MockerFixture) -> Iterator[InMemorySpanExporter]
     mocker.patch(
         "servicelib.aiohttp.tracing._create_span_processor", return_value=span_processor
     )
-    yield memory_exporter
+    return memory_exporter

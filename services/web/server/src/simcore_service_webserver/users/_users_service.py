@@ -161,7 +161,6 @@ get_user_role = _users_repository.get_user_role
 async def get_user_credentials(
     app: web.Application, *, user_id: UserID
 ) -> UserCredentialsTuple:
-
     repo = UsersRepo(get_asyncpg_engine(app))
 
     user_row = await repo.get_user_by_id_or_none(user_id=user_id)
@@ -290,7 +289,6 @@ async def update_my_profile(
     user_id: UserID,
     update: MyProfileRestPatch,
 ) -> None:
-
     await _users_repository.update_user_profile(
         app,
         user_id=user_id,

@@ -27,9 +27,7 @@ APP_STARTED_BANNER_MSG = r"""
  /_/    \_\__,_|\__\___/|___/\___\__,_|_|_|_| |_|\__, |
                                                   __/ |
                                                  |___/       {}
-""".format(
-    f"v{__version__}"
-)
+""".format(f"v{__version__}")
 
 APP_STARTED_COMPUTATIONAL_BANNER_MSG = r"""
                                        _          _    _                       _

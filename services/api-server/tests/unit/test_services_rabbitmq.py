@@ -137,7 +137,6 @@ async def _rabbit_consuming_context(
     app: FastAPI,
     project_id: ProjectID,
 ) -> AsyncIterable[AsyncMock]:
-
     queue = asyncio.Queue()
     queue.put = AsyncMock()
     log_distributor: LogDistributor = get_log_distributor(app)
@@ -319,11 +318,9 @@ async def create_log_streamer_with_distributor(
     mocked_directorv2_rest_api_base: respx.MockRouter,
     log_distributor: LogDistributor,
 ) -> Callable[[Callable[..., httpx.Response]], LogStreamer]:
-
     def _create_log_streamer_with_distributor(
         get_computation: Callable[..., httpx.Response],
     ) -> LogStreamer:
-
         mocked_directorv2_rest_api_base.get(f"/v2/computations/{project_id}").mock(
             side_effect=get_computation
         )
@@ -460,7 +457,13 @@ async def test_log_generator(mocker: MockFixture, faker: Faker):
         "simcore_service_api_server.services_http.log_streaming.LogStreamer._project_done",
         return_value=True,
     )
-    log_streamer = LogStreamer(user_id=3, director2_api=None, job_id=None, log_distributor=_MockLogDistributor(), log_check_timeout=1)  # type: ignore
+    log_streamer = LogStreamer(
+        user_id=3,
+        director2_api=None,
+        job_id=None,
+        log_distributor=_MockLogDistributor(),
+        log_check_timeout=1,
+    )  # type: ignore
 
     published_logs: list[str] = []
     for _ in range(10):

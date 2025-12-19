@@ -17,7 +17,6 @@ async def aggregate_data_to_projects_from_request(
     headers: dict[str, str],
     projects: list[ProjectDict],
 ) -> list[ProjectDict]:
-
     update_permalink_per_project = [
         # permalink
         _permalink_service.aggregate_permalink_in_project(

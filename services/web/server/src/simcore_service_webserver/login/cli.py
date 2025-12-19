@@ -19,7 +19,9 @@ def invitations(
 ) -> None:
     """Generates a list of invitation links for registration"""
 
-    invitation = ConfirmedInvitationData(issuer=issuer_email, trial_account_days=trial_days)  # type: ignore[call-arg] # guest field is deprecated
+    invitation = ConfirmedInvitationData(
+        issuer=issuer_email, trial_account_days=trial_days
+    )  # type: ignore[call-arg] # guest field is deprecated
 
     codes: list[str] = [generate_password(code_length) for _ in range(num_codes)]
 

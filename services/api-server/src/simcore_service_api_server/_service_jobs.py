@@ -436,7 +436,6 @@ class JobService:
         x_simcore_parent_project_uuid: ProjectID | None,
         x_simcore_parent_node_id: NodeID | None,
     ) -> Job:
-
         solver = await self._solver_service.get_solver(
             solver_key=solver_key,
             solver_version=version,
@@ -510,7 +509,6 @@ class JobService:
         job_links: JobLinks,
         hidden: bool,
     ) -> Job:
-
         project = await self._web_rest_client.clone_project(
             project_id=study_id,
             hidden=hidden,

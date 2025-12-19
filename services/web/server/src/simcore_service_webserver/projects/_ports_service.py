@@ -221,7 +221,6 @@ async def _get_computation_tasks_outputs(
 async def get_project_outputs(
     app: web.Application, *, project_id: ProjectID, workbench: dict[NodeID, Node]
 ) -> dict[NodeID, Any]:
-
     # WARNING: these NodeIDs are the port nodes!!
     outputs_map_in_workbench: dict[NodeID, Any] = _get_outputs_in_workbench(workbench)
 

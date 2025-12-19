@@ -125,7 +125,6 @@ async def with_celery_worker(
     celery_settings: CelerySettings,
     register_celery_tasks: Callable[[Celery], None],
 ) -> AsyncIterator[TestWorkController]:
-
     def _app_server_factory() -> BaseAppServer:
         return FakeAppServer(app=celery_app, settings=celery_settings)
 

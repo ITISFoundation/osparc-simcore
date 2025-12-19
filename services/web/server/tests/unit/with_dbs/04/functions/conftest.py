@@ -184,13 +184,14 @@ async def clean_function_job_collections(
 ) -> None:
     assert client.app
 
-    job_collections, _ = (
-        await webserver_rpc_client.functions.list_function_job_collections(
-            pagination_limit=100,
-            pagination_offset=0,
-            user_id=logged_user["id"],
-            product_name=osparc_product_name,
-        )
+    (
+        job_collections,
+        _,
+    ) = await webserver_rpc_client.functions.list_function_job_collections(
+        pagination_limit=100,
+        pagination_offset=0,
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
     )
     for function_job_collection in job_collections:
         assert function_job_collection.uid is not None

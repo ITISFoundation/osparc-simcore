@@ -125,9 +125,9 @@ def test_substitutions_in_compose_spec(
 
     new_service_spec_text = yaml.safe_dump(new_service_spec)
 
-    assert (
-        "$" not in new_service_spec_text
-    ), f"All should be replaced in '{service_name}': {substitutions.used}"
+    assert "$" not in new_service_spec_text, (
+        f"All should be replaced in '{service_name}': {substitutions.used}"
+    )
 
     assert new_service_spec == expected_service_spec
 
@@ -171,7 +171,7 @@ def test_specs_substitutions_resolver_various_cases(var_template: str, value: st
     replace_with: dict[str, Any] = (
         {}
         if env_includes_default_value
-        else {i: value for i in text_template.get_identifiers()}
+        else dict.fromkeys(text_template.get_identifiers(), value)
     )
 
     text_template.set_substitutions(replace_with)

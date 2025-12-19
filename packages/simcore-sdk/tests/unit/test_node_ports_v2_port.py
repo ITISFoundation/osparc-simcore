@@ -597,11 +597,11 @@ async def test_valid_port(
     port_cfg: dict[str, Any],
     exp_value_type: type[int | float | bool | str | Path],
     exp_value_converter: type[int | float | bool | str | Path],
-    exp_value: int | float | bool | str | Path | FileLink | DownloadLink | PortLink,
-    exp_get_value: int | float | bool | str | Path,
-    new_value: int | float | bool | str | Path,
-    exp_new_value: int | float | bool | str | Path | FileLink,
-    exp_new_get_value: int | float | bool | str | Path,
+    exp_value: float | bool | str | Path | FileLink | DownloadLink | PortLink,
+    exp_get_value: float | bool | str | Path,
+    new_value: float | bool | str | Path,
+    exp_new_value: float | bool | str | Path | FileLink,
+    exp_new_get_value: float | bool | str | Path,
     another_node_file: Path,
 ):
     async def _io_log_redirect_cb(logs: str) -> None:

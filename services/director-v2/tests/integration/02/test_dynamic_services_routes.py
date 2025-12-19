@@ -220,13 +220,11 @@ async def ensure_services_stopped(
                     delete_result = await docker_client.services.delete(service_name)
                     assert delete_result is True
                 except aiodocker.exceptions.DockerError as e:
-                    assert (
-                        e.status == 404
-                    ), f"Unexpected error when deleting service: {e}"
+                    assert e.status == 404, (
+                        f"Unexpected error when deleting service: {e}"
+                    )
 
-        scheduler_interval = (
-            director_v2_client.application.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER.DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL
-        )
+        scheduler_interval = director_v2_client.application.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER.DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL
         # sleep enough to ensure the observation cycle properly stopped the service
         await asyncio.sleep(2 * scheduler_interval.total_seconds())
 

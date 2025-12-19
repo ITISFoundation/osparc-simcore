@@ -143,10 +143,9 @@ def jsonable_encoder(
     if custom_encoder:
         if type(obj) in custom_encoder:
             return custom_encoder[type(obj)](obj)
-        else:
-            for encoder_type, encoder_instance in custom_encoder.items():
-                if isinstance(obj, encoder_type):
-                    return encoder_instance(obj)
+        for encoder_type, encoder_instance in custom_encoder.items():
+            if isinstance(obj, encoder_type):
+                return encoder_instance(obj)
     if include is not None and not isinstance(include, (set, dict)):
         include = set(include)
     if exclude is not None and not isinstance(exclude, (set, dict)):

@@ -39,7 +39,6 @@ def assemble_config_file(
     destination_endpoint: str = "https://s3.amazonaws.com",
     destination_provider: S3Provider = S3Provider.AWS,
 ) -> Path:
-
     config_content = CONFIG.format(
         source_access_key=source_access_key,
         source_secret_key=source_secret_key,
@@ -92,6 +91,6 @@ def sync_file(
     ]
     print(r_clone_command)
 
-    result: CompletedProcess = run(r_clone_command, capture_output=True)
+    result: CompletedProcess = run(r_clone_command, check=False, capture_output=True)
     print(result.stdout.decode())
     result.check_returncode()

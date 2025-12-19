@@ -288,7 +288,7 @@ async def test_conversations_pagination(
 
     # Create multiple conversations
     for i in range(5):
-        body = {"name": f"Support Request {i+1}", "type": "SUPPORT"}
+        body = {"name": f"Support Request {i + 1}", "type": "SUPPORT"}
         resp = await client.post(f"{base_url}", json=body)
         await assert_status(resp, status.HTTP_201_CREATED)
 

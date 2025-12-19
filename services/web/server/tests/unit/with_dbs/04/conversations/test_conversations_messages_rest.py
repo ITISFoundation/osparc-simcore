@@ -278,7 +278,7 @@ async def test_conversation_messages_pagination(
             message_id=uuid4(),
             conversation_id=uuid4(),  # Convert string to UUID
             user_group_id=1,  # Default primary group ID
-            content=f"Message {i+1}",
+            content=f"Message {i + 1}",
             type=ConversationMessageType.MESSAGE,
             created=datetime.now(tz=UTC),
             modified=datetime.now(tz=UTC),

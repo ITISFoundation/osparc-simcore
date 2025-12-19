@@ -175,7 +175,6 @@ async def pay_with_payment_method(  # noqa: PLR0913 # pylint: disable=too-many-a
     comment: str | None = None,
 ):
     try:
-
         with log_context(
             _logger,
             logging.INFO,

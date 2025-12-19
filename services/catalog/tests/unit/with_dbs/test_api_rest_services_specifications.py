@@ -22,13 +22,11 @@ from models_library.generated_models.docker_rest_api import (
     Limit,
     NamedResourceSpec,
     ResourceObject,
+    ServiceSpec,
+    TaskSpec,
 )
 from models_library.generated_models.docker_rest_api import (
     Resources1 as ServiceTaskResources,
-)
-from models_library.generated_models.docker_rest_api import (
-    ServiceSpec,
-    TaskSpec,
 )
 from models_library.products import ProductName
 from models_library.users import UserID
@@ -138,9 +136,7 @@ async def test_get_service_specifications_returns_403_if_user_does_not_exist(
     service_key = (
         f"simcore/services/{faker.random_element(['comp', 'dynamic'])}/jupyter-math"
     )
-    service_version = (
-        f"{faker.random_int(0,100)}.{faker.random_int(0,100)}.{faker.random_int(0,100)}"
-    )
+    service_version = f"{faker.random_int(0, 100)}.{faker.random_int(0, 100)}.{faker.random_int(0, 100)}"
     url = URL(
         f"/v0/services/{service_key}/{service_version}/specifications"
     ).with_query(user_id=user_id)
@@ -158,9 +154,7 @@ async def test_get_service_specifications_of_unknown_service_returns_default_spe
     faker: Faker,
 ):
     service_key = f"simcore/services/{faker.random_element(['comp', 'dynamic'])}/{faker.pystr().lower()}"
-    service_version = (
-        f"{faker.random_int(0,100)}.{faker.random_int(0,100)}.{faker.random_int(0,100)}"
-    )
+    service_version = f"{faker.random_int(0, 100)}.{faker.random_int(0, 100)}.{faker.random_int(0, 100)}"
     url = URL(
         f"/v0/services/{service_key}/{service_version}/specifications"
     ).with_query(user_id=user_id)
@@ -358,7 +352,9 @@ async def test_get_service_specifications_are_passed_to_newer_versions_of_servic
         assert service_specs
         assert service_specs == ServiceSpecifications.model_validate(
             version_speced[0].model_dump()
-        ), f"specifications for {version=} are not passed down from {sorted_versions[INDEX_FIRST_SERVICE_VERSION_WITH_SPEC]}"
+        ), (
+            f"specifications for {version=} are not passed down from {sorted_versions[INDEX_FIRST_SERVICE_VERSION_WITH_SPEC]}"
+        )
 
     # check version from second to last use the second version
     for version in sorted_versions[INDEX_SECOND_SERVICE_VERSION_WITH_SPEC:]:
@@ -371,7 +367,9 @@ async def test_get_service_specifications_are_passed_to_newer_versions_of_servic
         assert service_specs
         assert service_specs == ServiceSpecifications.model_validate(
             version_speced[1].model_dump()
-        ), f"specifications for {version=} are not passed down from {sorted_versions[INDEX_SECOND_SERVICE_VERSION_WITH_SPEC]}"
+        ), (
+            f"specifications for {version=} are not passed down from {sorted_versions[INDEX_SECOND_SERVICE_VERSION_WITH_SPEC]}"
+        )
 
     # if we call with the strict parameter set to true, then we should only get the specs for the one that were specified
     for version in sorted_versions:

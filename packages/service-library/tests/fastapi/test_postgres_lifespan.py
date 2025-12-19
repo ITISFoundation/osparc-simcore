@@ -97,8 +97,7 @@ async def test_lifespan_postgres_database_in_an_app(
 
         # Verify that the async engine is in the lifespan manager state
         assert (
-            PostgresLifespanState.POSTGRES_ASYNC_ENGINE
-            in asgi_manager._state  # noqa: SLF001
+            PostgresLifespanState.POSTGRES_ASYNC_ENGINE in asgi_manager._state  # noqa: SLF001
         )
         assert app.state.my_db_engine
         assert (

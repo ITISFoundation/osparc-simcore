@@ -64,7 +64,7 @@ class DiskUsage(BaseModel):
         free = values["free"]
         used = values["used"]
         if total != free + used:
-            msg = f"{total=} is different than the sum of {free=}+{used=} => sum={free+used}"
+            msg = f"{total=} is different than the sum of {free=}+{used=} => sum={free + used}"
             raise ValueError(msg)
         return values
 

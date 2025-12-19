@@ -23,9 +23,7 @@ _TIMEOUT_PERMISSION_CHANGES: Final[timedelta] = timedelta(minutes=5)
 _logger = logging.getLogger(__name__)
 
 
-_R_CLONE_CONFIG: Final[
-    str
-] = """
+_R_CLONE_CONFIG: Final[str] = """
 [dst]
 type = s3
 provider = {destination_provider}

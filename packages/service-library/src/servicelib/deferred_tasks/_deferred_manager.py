@@ -137,7 +137,6 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
         max_workers: NonNegativeInt = _DEFAULT_DEFERRED_MANAGER_WORKER_SLOTS,
         delay_when_requeuing_message: timedelta = _DEFAULT_DELAY_BEFORE_NACK,
     ) -> None:
-
         self._task_tracker: BaseTaskTracker = RedisTaskTracker(scheduler_redis_sdk)
 
         self._worker_tracker = WorkerTracker(max_workers)
@@ -373,7 +372,6 @@ class DeferredManager:  # pylint:disable=too-many-instance-attributes
     async def _fs_handle_scheduled(  # pylint:disable=method-hidden
         self, task_uid: TaskUID
     ) -> None:
-
         _log_state(TaskState.SCHEDULED, task_uid)
 
         task_schedule = await self.__get_task_schedule(

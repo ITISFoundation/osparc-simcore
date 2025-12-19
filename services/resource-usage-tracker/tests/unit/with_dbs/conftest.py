@@ -4,7 +4,7 @@
 # pylint: disable=unused-variable
 
 from collections.abc import AsyncIterable, Awaitable, Callable
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from random import choice
 from typing import Any
 
@@ -115,11 +115,11 @@ def random_resource_tracker_service_run(faker: Faker) -> Callable[..., dict[str,
             "service_type": "DYNAMIC_SERVICE",
             "service_resources": {},
             "service_additional_metadata": {},
-            "started_at": datetime.now(tz=timezone.utc),
+            "started_at": datetime.now(tz=UTC),
             "stopped_at": None,
             "service_run_status": "RUNNING",
-            "modified": datetime.now(tz=timezone.utc),
-            "last_heartbeat_at": datetime.now(tz=timezone.utc),
+            "modified": datetime.now(tz=UTC),
+            "last_heartbeat_at": datetime.now(tz=UTC),
             "pricing_unit_cost": abs(faker.pyfloat()),
         }
         data.update(overrides)
@@ -149,9 +149,9 @@ def random_resource_tracker_credit_transactions(
             "transaction_classification": CreditTransactionClassification.DEDUCT_SERVICE_RUN.value,
             "service_run_id": faker.uuid4(),
             "payment_transaction_id": faker.uuid4(),
-            "created": datetime.now(tz=timezone.utc),
-            "last_heartbeat_at": datetime.now(tz=timezone.utc),
-            "modified": datetime.now(tz=timezone.utc),
+            "created": datetime.now(tz=UTC),
+            "last_heartbeat_at": datetime.now(tz=UTC),
+            "modified": datetime.now(tz=UTC),
         }
         data.update(overrides)
         return data
@@ -239,7 +239,7 @@ def random_rabbit_message_start(
         msg_config = {
             "channel_name": "io.simcore.service.tracking",
             "service_run_id": faker.uuid4(),
-            "created_at": datetime.now(timezone.utc),
+            "created_at": datetime.now(UTC),
             "message_type": RabbitResourceTrackingMessageType.TRACKING_STARTED,
             "wallet_id": faker.pyint(),
             "wallet_name": faker.pystr(),

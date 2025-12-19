@@ -36,15 +36,11 @@ class DBProjectInvalidAncestorsError(BaseProjectsMetadataError):
 
 
 class DBProjectInvalidParentProjectError(BaseProjectsMetadataError):
-    msg_template: str = (
-        "Project project_uuid={project_uuid!r} has invalid parent project uuid={parent_project_uuid!r}"
-    )
+    msg_template: str = "Project project_uuid={project_uuid!r} has invalid parent project uuid={parent_project_uuid!r}"
 
 
 class DBProjectInvalidParentNodeError(BaseProjectsMetadataError):
-    msg_template: str = (
-        "Project project_uuid={project_uuid!r} has invalid parent project uuid={parent_node_id!r}"
-    )
+    msg_template: str = "Project project_uuid={project_uuid!r} has invalid parent project uuid={parent_node_id!r}"
 
 
 #

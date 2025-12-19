@@ -69,9 +69,7 @@ class ClustersKeeperSSMSettings(SSMSettings):
                 }
                 for example in SSMSettings.model_config[  # type:ignore[union-attr,index]
                     "json_schema_extra"
-                ][
-                    "examples"
-                ]
+                ]["examples"]
             ],
         },
     )

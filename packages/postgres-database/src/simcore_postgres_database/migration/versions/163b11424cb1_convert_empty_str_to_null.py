@@ -17,7 +17,6 @@ depends_on = None
 
 
 def upgrade():
-
     # SEE https://github.com/ITISFoundation/osparc-simcore/pull/7268
 
     op.execute(

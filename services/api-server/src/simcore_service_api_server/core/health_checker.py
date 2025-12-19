@@ -102,7 +102,7 @@ class ApiServerHealthChecker:
 def get_health_checker(
     app: Annotated[FastAPI, Depends(get_app)],
 ) -> ApiServerHealthChecker:
-    assert (
-        app.state.health_checker
-    ), "Api-server healthchecker is not setup. Please check the configuration"  # nosec
+    assert app.state.health_checker, (
+        "Api-server healthchecker is not setup. Please check the configuration"
+    )  # nosec
     return cast(ApiServerHealthChecker, app.state.health_checker)

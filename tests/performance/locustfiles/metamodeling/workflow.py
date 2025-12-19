@@ -133,7 +133,7 @@ class MetaModelingUser(HttpUser):
                 )
                 response.raise_for_status()
                 state = response.json().get("state")
-                if not state in {"SUCCESS", "FAILED"}:
+                if state not in {"SUCCESS", "FAILED"}:
                     raise RuntimeError(
                         f"Computation not finished after attempt {attempt.retry_state.attempt_number}"
                     )

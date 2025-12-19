@@ -130,7 +130,6 @@ def test_update_dict():
 
 
 def test_get_from_dict(data: dict[str, Any]):
-
     assert get_from_dict(data, "Spec.ContainerSpec.Labels") == {
         "com.docker.stack.namespace": "master-simcore"
     }
@@ -139,7 +138,6 @@ def test_get_from_dict(data: dict[str, Any]):
 
 
 def test_copy_from_dict(data: dict[str, Any]):
-
     selected_data = copy_from_dict(
         data,
         include={

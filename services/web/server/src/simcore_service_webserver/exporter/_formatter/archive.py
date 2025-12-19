@@ -15,8 +15,7 @@ async def _compress_dir(
     archive_name: Path = destination_folder / f"sds_{project_id}.zip"
     if archive_name.is_file():
         msg = (
-            f"Cannot archive '{folder_to_zip}' because "
-            f"'{archive_name}' already exists"
+            f"Cannot archive '{folder_to_zip}' because '{archive_name}' already exists"
         )
         raise SDSException(msg)
 

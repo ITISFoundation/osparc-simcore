@@ -38,7 +38,8 @@ class CompPipelineAtDB(BaseModel):
         return cast(
             nx.DiGraph,
             nx.convert.from_dict_of_lists(
-                self.dag_adjacency_list, create_using=nx.DiGraph  # type: ignore[arg-type] # list is an Iterable but dict is Invariant
+                self.dag_adjacency_list,
+                create_using=nx.DiGraph,  # type: ignore[arg-type] # list is an Iterable but dict is Invariant
             ),
         )
 

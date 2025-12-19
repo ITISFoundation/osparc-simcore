@@ -16,9 +16,7 @@ _DEFAULT_CHECK_INTERVAL: Final[timedelta] = timedelta(seconds=1)
 
 
 class CouldNotReachServiceError(OsparcErrorMixin, Exception):
-    msg_template: str = (
-        "Could not contact service '{service_name}' at '{endpoint}'. Look above for details."
-    )
+    msg_template: str = "Could not contact service '{service_name}' at '{endpoint}'. Look above for details."
 
 
 def _before_sleep_log(

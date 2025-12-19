@@ -462,9 +462,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
                 self.app
             ).dynamic_sidecar_metrics.input_ports_pull_rate.labels(
                 **get_metrics_labels(scheduler_data)
-            ).observe(
-                get_rate(transferred_bytes, duration)
-            )
+            ).observe(get_rate(transferred_bytes, duration))
 
         if scheduler_data.restart_policy == RestartPolicy.ON_INPUTS_DOWNLOADED:
             logger.info("Will restart containers")

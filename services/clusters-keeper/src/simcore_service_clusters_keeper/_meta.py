@@ -29,7 +29,7 @@ def get_summary() -> str:
 
 
 SUMMARY: Final[str] = get_summary()
-PACKAGE_DATA_FOLDER: Final[Path] = Path(f'{files(APP_NAME.replace("-", "_")) / "data"}')
+PACKAGE_DATA_FOLDER: Final[Path] = Path(f"{files(APP_NAME.replace('-', '_')) / 'data'}")
 
 # https://patorjk.com/software/taag/#p=testall&f=Avatar&t=clusters_keeper
 APP_STARTED_BANNER_MSG = r"""
@@ -43,9 +43,7 @@ APP_STARTED_BANNER_MSG = r"""
 | (____/\| (____/\| (___) |/\____) |   | |   | (____/\| ) \ \__/\____) |       |  /  \ \| (____/\| (____/\| )      | (____/\| ) \ \__
 (_______/(_______/(_______)\_______)   )_(   (_______/|/   \__/\_______)       |_/    \/(_______/(_______/|/       (_______/|/   \__/
                                                                                                                                     {}
-""".format(
-    f"v{__version__}"
-)
+""".format(f"v{__version__}")
 
 APP_STARTED_DISABLED_BANNER_MSG = r"""
       _  _              _      _            _

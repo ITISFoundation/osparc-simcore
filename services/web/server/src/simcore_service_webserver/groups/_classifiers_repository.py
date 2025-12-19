@@ -13,7 +13,6 @@ _logger = logging.getLogger(__name__)
 
 
 class GroupClassifierRepository(BaseRepository):
-
     async def _get_bundle(
         self, gid: int, connection: AsyncConnection | None = None
     ) -> Row | None:

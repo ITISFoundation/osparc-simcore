@@ -140,7 +140,6 @@ async def test_scicrunch_get_fields_from_invalid_rrid(
 
 
 async def test_scicrunch_service_autocomplete_by_name(settings: SciCrunchSettings):
-
     expected: list[dict[str, Any]] = ListOfResourceHits.model_validate(
         [
             {
@@ -158,9 +157,7 @@ async def test_scicrunch_service_autocomplete_by_name(settings: SciCrunchSetting
     ).model_dump()["root"]
 
     async with ClientSession() as client:
-
         for guess_name in ("octave", "Octave", "octave  "):
-
             resource_hits = await autocomplete_by_name("octave", client, settings)
 
             hits = resource_hits.model_dump()["root"]

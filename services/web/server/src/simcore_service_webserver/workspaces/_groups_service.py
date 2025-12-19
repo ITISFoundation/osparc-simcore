@@ -80,10 +80,10 @@ async def list_workspace_groups_by_user_and_workspace(
         permission="read",
     )
 
-    workspace_groups_db: list[WorkspaceGroupGetDB] = (
-        await workspaces_groups_db.list_workspace_groups(
-            app=app, workspace_id=workspace_id
-        )
+    workspace_groups_db: list[
+        WorkspaceGroupGetDB
+    ] = await workspaces_groups_db.list_workspace_groups(
+        app=app, workspace_id=workspace_id
     )
 
     workspace_groups_api: list[WorkspaceGroupGet] = [
@@ -98,10 +98,10 @@ async def list_workspace_groups_with_read_access_by_workspace(
     *,
     workspace_id: WorkspaceID,
 ) -> list[WorkspaceGroupGet]:
-    workspace_groups_db: list[WorkspaceGroupGetDB] = (
-        await workspaces_groups_db.list_workspace_groups(
-            app=app, workspace_id=workspace_id
-        )
+    workspace_groups_db: list[
+        WorkspaceGroupGetDB
+    ] = await workspaces_groups_db.list_workspace_groups(
+        app=app, workspace_id=workspace_id
     )
 
     workspace_groups_api: list[WorkspaceGroupGet] = [

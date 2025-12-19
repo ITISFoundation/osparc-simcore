@@ -88,10 +88,10 @@ async def list_connected_services_to_pricing_plan_by_pricing_plan(
     pricing_plan_id: PricingPlanId,
     db_engine: Annotated[AsyncEngine, Depends(get_resource_tracker_db_engine)],
 ):
-    output_list: list[PricingPlanToServiceDB] = (
-        await pricing_plans_db.list_connected_services_to_pricing_plan_by_pricing_plan(
-            db_engine, product_name=product_name, pricing_plan_id=pricing_plan_id
-        )
+    output_list: list[
+        PricingPlanToServiceDB
+    ] = await pricing_plans_db.list_connected_services_to_pricing_plan_by_pricing_plan(
+        db_engine, product_name=product_name, pricing_plan_id=pricing_plan_id
     )
     return [
         TypeAdapter(PricingPlanToServiceGet).validate_python(item.model_dump())

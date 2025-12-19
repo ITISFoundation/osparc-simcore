@@ -2,9 +2,10 @@ from datetime import datetime
 from typing import Annotated, Any, TypeAlias
 
 from common_library.basic_types import DEFAULT_FACTORY
-from models_library.rpc_pagination import PageRpc
 from pydantic import ConfigDict, Field, HttpUrl, NonNegativeInt
 from pydantic.config import JsonDict
+
+from models_library.rpc_pagination import PageRpc
 
 from ..batch_operations import BatchGetEnvelope
 from ..boot_options import BootOptions

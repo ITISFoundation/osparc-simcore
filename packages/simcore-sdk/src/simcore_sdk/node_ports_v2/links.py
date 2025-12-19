@@ -68,6 +68,6 @@ __all__: tuple[str, ...] = (
     "DownloadLink",
     "FileLink",
     "ItemConcreteValue",
-    "SchemaValidatedTypes",
     "PortLink",
+    "SchemaValidatedTypes",
 )

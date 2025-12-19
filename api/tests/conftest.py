@@ -50,7 +50,7 @@ def api_specs_info(api_specs_dir):
     ]
 
     info_cls = namedtuple(
-        "ApiSpecsInfo", "service version openapi_path url_path".split()
+        "ApiSpecsInfo", ["service", "version", "openapi_path", "url_path"]
     )
     info = []
     for srv_dir in service_dirs:

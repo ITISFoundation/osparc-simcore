@@ -45,7 +45,8 @@ _logger = logging.getLogger(__name__)
 
 _RABBITMQ_CONSUMERS_APPKEY: Final = web.AppKey("RABBITMQ_CONSUMERS", MutableMapping)
 WALLET_SUBSCRIPTIONS_COUNT_APPKEY: Final = web.AppKey(
-    "WALLET_SUBSCRIPTIONS_COUNT", defaultdict  # wallet_id -> subscriber count
+    "WALLET_SUBSCRIPTIONS_COUNT",
+    defaultdict,  # wallet_id -> subscriber count
 )
 WALLET_SUBSCRIPTION_LOCK_APPKEY: Final = web.AppKey(
     "WALLET_SUBSCRIPTION_LOCK", asyncio.Lock

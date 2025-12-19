@@ -18,9 +18,7 @@ class FunctionIDNotFoundError(FunctionBaseError):
 
 
 class FunctionHasJobsCannotDeleteError(FunctionBaseError):
-    msg_template: str = (
-        "Cannot delete function {function_id} because it has {jobs_count} associated job(s)."
-    )
+    msg_template: str = "Cannot delete function {function_id} because it has {jobs_count} associated job(s)."
     status_code: int = 409  # Conflict
 
 
@@ -55,16 +53,12 @@ class UnsupportedFunctionJobClassError(FunctionBaseError):
 
 
 class UnsupportedFunctionFunctionJobClassCombinationError(FunctionBaseError):
-    msg_template: str = (
-        "Function class {function_class} and function job class {function_job_class} combination is not supported"
-    )
+    msg_template: str = "Function class {function_class} and function job class {function_job_class} combination is not supported"
     status_code: int = 400  # Bad Request
 
 
 class FunctionJobCollectionReadAccessDeniedError(FunctionBaseError):
-    msg_template: str = (
-        "Function job collection {function_job_collection_id} read access denied for user {user_id}"
-    )
+    msg_template: str = "Function job collection {function_job_collection_id} read access denied for user {user_id}"
     status_code: int = 403  # Forbidden
 
 
@@ -81,9 +75,7 @@ class FunctionJobWriteAccessDeniedError(FunctionBaseError):
 
 
 class FunctionJobCollectionWriteAccessDeniedError(FunctionBaseError):
-    msg_template: str = (
-        "Function job collection {function_job_collection_id} write access denied for user {user_id}"
-    )
+    msg_template: str = "Function job collection {function_job_collection_id} write access denied for user {user_id}"
     status_code: int = 403  # Forbidden
 
 
@@ -102,9 +94,7 @@ class FunctionJobExecuteAccessDeniedError(FunctionBaseError):
 
 
 class FunctionJobCollectionExecuteAccessDeniedError(FunctionBaseError):
-    msg_template: str = (
-        "Function job collection {function_job_collection_id} execute access denied for user {user_id}"
-    )
+    msg_template: str = "Function job collection {function_job_collection_id} execute access denied for user {user_id}"
     status_code: int = 403  # Forbidden
 
 
@@ -161,9 +151,7 @@ class FunctionJobCollectionsWriteApiAccessDeniedError(FunctionBaseError):
 
 
 class FunctionJobCollectionsExecuteApiAccessDeniedError(FunctionBaseError):
-    msg_template: str = (
-        "User {user_id} does not have the permission to execute function job collections"
-    )
+    msg_template: str = "User {user_id} does not have the permission to execute function job collections"
     status_code: int = 403  # Forbidden
 
 

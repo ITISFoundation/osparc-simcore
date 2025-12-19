@@ -53,7 +53,6 @@ async def share_project(request: web.Request):
         path_params.project_id,
         body_params.sharee_email,
     ):
-
         confirmation_code: IDStr = (
             await _groups_service.create_confirmation_action_to_share_project(
                 app=request.app,
@@ -82,7 +81,9 @@ async def share_project(request: web.Request):
             ),
         )
 
-        data = ProjectShareAccepted(sharee_email=body_params.sharee_email, confirmation_link=confirmation_link)  # type: ignore
+        data = ProjectShareAccepted(
+            sharee_email=body_params.sharee_email, confirmation_link=confirmation_link
+        )  # type: ignore
 
         return web.json_response(
             Envelope[ProjectShareAccepted].from_data(data).model_dump(),
@@ -124,13 +125,13 @@ async def list_project_groups(request: web.Request):
     req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
 
-    project_groups: list[ProjectGroupGet] = (
-        await _groups_service.list_project_groups_by_user_and_project(
-            request.app,
-            user_id=req_ctx.user_id,
-            project_id=path_params.project_id,
-            product_name=req_ctx.product_name,
-        )
+    project_groups: list[
+        ProjectGroupGet
+    ] = await _groups_service.list_project_groups_by_user_and_project(
+        request.app,
+        user_id=req_ctx.user_id,
+        project_id=path_params.project_id,
+        product_name=req_ctx.product_name,
     )
 
     return envelope_json_response(project_groups, web.HTTPOk)

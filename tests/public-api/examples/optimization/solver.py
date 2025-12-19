@@ -120,8 +120,7 @@ class OsparcSolver:
                 log += self._generate_isolve_log()
                 raise OSparcServerException("\n".join(log))
             return True
-        else:
-            return False
+        return False
 
     @handle_api_exceptions(OSparcServerException)
     def fetch_results(self, output_file: Path, log_path: Path) -> None:

@@ -146,7 +146,6 @@ async def test_tracing_setup_package_detection(
 ):
     package_name = manage_package
     importlib.import_module(package_name)
-    #
     app = web.Application()
     service_name = "simcore_service_webserver"
     tracing_settings = TracingSettings()

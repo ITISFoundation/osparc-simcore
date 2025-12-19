@@ -175,9 +175,7 @@ async def login(request: web.Request):
         )
 
     # otherwise create email f2a
-    assert (
-        user_2fa_authentification_method == TwoFactorAuthentificationMethod.EMAIL
-    )  # nosec
+    assert user_2fa_authentification_method == TwoFactorAuthentificationMethod.EMAIL  # nosec
     await _twofa_service.send_email_code(
         request,
         user_email=user["email"],

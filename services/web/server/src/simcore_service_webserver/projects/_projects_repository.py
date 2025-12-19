@@ -64,7 +64,6 @@ async def list_projects_db_get_as_admin(
     # order
     order_by: OrderBy,
 ) -> tuple[int, list[ProjectDBGet]]:
-
     base_query = sql.select(*PROJECT_DB_COLS).where(projects.c.trashed.is_not(None))
 
     if is_set(trashed_explicitly):

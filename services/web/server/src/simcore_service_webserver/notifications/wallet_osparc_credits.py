@@ -16,7 +16,6 @@ _logger = logging.getLogger(__name__)
 
 
 async def subscribe(app: web.Application, wallet_id: WalletID) -> None:
-
     async with app[WALLET_SUBSCRIPTION_LOCK_APPKEY]:
         counter = app[WALLET_SUBSCRIPTIONS_COUNT_APPKEY][wallet_id]
         app[WALLET_SUBSCRIPTIONS_COUNT_APPKEY][wallet_id] += 1
@@ -29,7 +28,6 @@ async def subscribe(app: web.Application, wallet_id: WalletID) -> None:
 
 
 async def unsubscribe(app: web.Application, wallet_id: WalletID) -> None:
-
     async with app[WALLET_SUBSCRIPTION_LOCK_APPKEY]:
         counter = app[WALLET_SUBSCRIPTIONS_COUNT_APPKEY].get(wallet_id, 0)
         if counter > 0:

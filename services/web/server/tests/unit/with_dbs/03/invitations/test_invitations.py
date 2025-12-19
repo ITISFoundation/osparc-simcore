@@ -106,7 +106,6 @@ async def test_invalid_invitation_if_guest_is_already_registered_in_product(
         },
         app=client.app,
     ) as user:
-
         # valid because user is not assigned to product
         assert await validate_invitation_url(**kwargs) == fake_osparc_invitation
 

@@ -259,7 +259,6 @@ async def test_workflow(
     action: _Action,
     expected_steps_count: NonNegativeInt,
 ) -> None:
-
     # setup
     schedule_data_proxy = ScheduleDataStoreProxy(store=store, schedule_id=schedule_id)
     await schedule_data_proxy.create_or_update_multiple(

@@ -25,7 +25,6 @@ _logger = logging.getLogger(__name__)
     __name__, ModuleCategory.ADDON, settings_name="WEBSERVER_STATICWEB", logger=_logger
 )
 def setup_statics(app: web.Application) -> None:
-
     settings: StaticWebserverModuleSettings = get_plugin_settings(app)
     assert settings  # nosec
 

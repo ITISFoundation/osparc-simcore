@@ -32,7 +32,6 @@ class AsyncJobSideEffects:
     ) -> None:
         if self.exception is not None:
             raise self.exception
-        return None
 
     @validate_call(config={"arbitrary_types_allowed": True})
     async def status(

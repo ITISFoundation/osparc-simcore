@@ -26,7 +26,6 @@ def test_login_with_invitation(monkeypatch: pytest.MonkeyPatch):
 
 @pytest.fixture
 def twilio_config(monkeypatch: pytest.MonkeyPatch) -> dict[str, str]:
-
     TWILO_CONFIG = {
         "TWILIO_ACCOUNT_SID": "fake-account",
         "TWILIO_AUTH_TOKEN": "fake-token",
@@ -118,7 +117,6 @@ def test_login_settings_fails_with_2fa_but_wo_confirmed_email_using_merge(
 
 
 def test_smtp_settings(mock_env_devel_environment: dict[str, Any]):
-
     settings = SMTPSettings.create_from_envs()
 
     cfg = settings.model_dump(exclude_unset=True)

@@ -27,9 +27,9 @@ def test_models_are_in_sync(
     assert is_dataclass(class_name)
     assert is_dataclass(metrics_class_name)
     for field in class_name.__dataclass_fields__:
-        assert (
-            field in metrics_definitions
-        ), f"{metrics_definitions.__qualname__} is missing {field}"
-        assert hasattr(
-            metrics_class_name, field
-        ), f"{metrics_class_name.__qualname__} is missing {field}"
+        assert field in metrics_definitions, (
+            f"{metrics_definitions.__qualname__} is missing {field}"
+        )
+        assert hasattr(metrics_class_name, field), (
+            f"{metrics_class_name.__qualname__} is missing {field}"
+        )

@@ -6,6 +6,7 @@ from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from packaging.specifiers import SpecifierSet
 from packaging.version import Version
+
 from simcore_service_catalog.utils.versioning import as_version
 
 from ..models.services_db import ReleaseDBGet

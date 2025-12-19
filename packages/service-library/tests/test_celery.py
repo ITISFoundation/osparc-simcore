@@ -47,7 +47,6 @@ async def test_task_filter_serialization(
 
 
 async def test_task_filter_sorting_key_not_serialized():
-
     class _OwnerMetadata(OwnerMetadata):
         a: int | Wildcard
         b: str | Wildcard
@@ -75,7 +74,6 @@ async def test_task_filter_task_uuid(
 
 
 async def test_owner_metadata_task_key_dump_and_validate():
-
     class MyModel(OwnerMetadata):
         int_: int
         bool_: bool

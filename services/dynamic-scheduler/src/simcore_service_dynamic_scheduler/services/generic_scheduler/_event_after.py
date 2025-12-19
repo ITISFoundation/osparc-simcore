@@ -38,7 +38,6 @@ class AfterEventManager(SingletonInAppStateMixin):
         *,
         to_start: OperationToStart | None,
     ) -> None:
-
         events_proxy = OperationEventsProxy(self._store, schedule_id, event_type)
         if to_start is None:
             # unregister any previously registered operation
@@ -84,7 +83,6 @@ class AfterEventManager(SingletonInAppStateMixin):
             f"processing {event_type=} for {schedule_id=} {operation_name=} {initial_context=}",
             log_duration=True,
         ):
-
             new_schedule_id = await start_operation(
                 self.app, operation_name, initial_context
             )

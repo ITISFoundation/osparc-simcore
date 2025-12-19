@@ -90,7 +90,6 @@ def rabbitmq_lifespan() -> LifespanManager:
     @lifespan_manager.add
     async def _setup_rabbitmq(app: FastAPI) -> AsyncIterator[State]:
         with log_context(logging.INFO, "rabbitmq"):
-
             with pytest.raises(AttributeError, match="rabbitmq_rpc_server"):
                 _ = app.state.rabbitmq_rpc_server
 
@@ -108,7 +107,6 @@ async def test_app_lifespan_composition(
 
     @postgres_lifespan.add
     async def database_lifespan(app: FastAPI, state: State) -> AsyncIterator[State]:
-
         with log_context(logging.INFO, "app database"):
             assert state["postgres"] == {
                 "engine": "Some Engine",
@@ -141,7 +139,6 @@ async def test_app_lifespan_composition(
 
     app = FastAPI(lifespan=app_lifespan)
     async with ASGILifespanManager(app) as asgi_manager:
-
         # asgi_manage state
         assert asgi_manager._state == {  # noqa: SLF001
             "postgres": {

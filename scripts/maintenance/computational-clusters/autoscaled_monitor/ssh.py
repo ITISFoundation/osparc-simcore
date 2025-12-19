@@ -35,7 +35,7 @@ def ssh_tunnel(
     private_key_path: Path,
     remote_bind_host: str,
     remote_bind_port: int,
-) -> Generator[SSHTunnelForwarder | None, Any, None]:
+) -> Generator[SSHTunnelForwarder | None, Any]:
     try:
         with SSHTunnelForwarder(
             (ssh_host, _DEFAULT_SSH_PORT),
@@ -56,7 +56,7 @@ def ssh_tunnel(
 @contextlib.contextmanager
 def _ssh_client(
     hostname: str, port: int, *, username: str, private_key_path: Path
-) -> Generator[paramiko.SSHClient, Any, None]:
+) -> Generator[paramiko.SSHClient, Any]:
     try:
         with paramiko.SSHClient() as client:
             client.set_missing_host_key_policy(paramiko.AutoAddPolicy())

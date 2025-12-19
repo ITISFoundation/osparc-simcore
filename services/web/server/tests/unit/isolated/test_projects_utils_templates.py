@@ -26,7 +26,6 @@ def mock_parametrized_project(fake_data_dir):
 
 
 def test_substitutions(mock_parametrized_project):
-
     template_id = mock_parametrized_project["uuid"]
     url = URL(f"https://myplatform/study/{template_id}").with_query(
         my_Na="33", my_BCL="54.0"

@@ -127,22 +127,18 @@ class DaskClientsPool:
                             self.settings.COMPUTATIONAL_BACKEND_DEFAULT_FILE_LINK_TYPE
                         )
                         if cluster == self.settings.default_cluster:
-                            tasks_file_link_type = (
-                                self.settings.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_FILE_LINK_TYPE
-                            )
+                            tasks_file_link_type = self.settings.COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_FILE_LINK_TYPE
                         if cluster.type == ClusterTypeInModel.ON_DEMAND.value:
-                            tasks_file_link_type = (
-                                self.settings.COMPUTATIONAL_BACKEND_ON_DEMAND_CLUSTERS_FILE_LINK_TYPE
-                            )
-                        self._cluster_to_client_map[cluster.endpoint] = dask_client = (
-                            await DaskClient.create(
-                                app=self.app,
-                                settings=self.settings,
-                                endpoint=cluster.endpoint,
-                                authentication=cluster.authentication,
-                                tasks_file_link_type=tasks_file_link_type,
-                                cluster_type=cluster.type,
-                            )
+                            tasks_file_link_type = self.settings.COMPUTATIONAL_BACKEND_ON_DEMAND_CLUSTERS_FILE_LINK_TYPE
+                        self._cluster_to_client_map[cluster.endpoint] = (
+                            dask_client
+                        ) = await DaskClient.create(
+                            app=self.app,
+                            settings=self.settings,
+                            endpoint=cluster.endpoint,
+                            authentication=cluster.authentication,
+                            tasks_file_link_type=tasks_file_link_type,
+                            cluster_type=cluster.type,
                         )
                         if self._task_handlers:
                             dask_client.register_handlers(self._task_handlers)

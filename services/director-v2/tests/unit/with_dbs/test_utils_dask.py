@@ -400,9 +400,9 @@ async def test_clean_task_output_and_log_files_if_invalid(
     # BEFORE the task is actually run. In case there is a failure at running
     # the task, these entries shall be cleaned up. The way to check this is
     # by asking storage if these file really exist. If not they get deleted.
-    mocked_node_ports_filemanager_fcts["entry_exists"].return_value = (
-        entry_exists_returns
-    )
+    mocked_node_ports_filemanager_fcts[
+        "entry_exists"
+    ].return_value = entry_exists_returns
 
     sleeper_task = published_project.tasks[1]
 

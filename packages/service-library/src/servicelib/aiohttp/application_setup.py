@@ -205,10 +205,8 @@ def ensure_single_setup(
         return False
 
     def decorator(setup_func: _SetupFunc) -> _SetupFunc:
-
         @functools.wraps(setup_func)
         def _wrapper(app: web.Application, *args: Any, **kwargs: Any) -> bool:
-
             # pre-setup init
             if APP_SETUP_COMPLETED_KEY not in app:
                 app[APP_SETUP_COMPLETED_KEY] = []
@@ -305,7 +303,6 @@ def app_module_setup(
         )
 
     def decorator(setup_func: _SetupFunc) -> _SetupFunc:
-
         assert (  # nosec
             "setup_" in setup_func.__name__
         ), f"Rename '{setup_func.__name__}' like 'setup_$(plugin-name)'"
@@ -368,9 +365,9 @@ def app_module_setup(
 
             return completed
 
-        assert (
-            _wrapper.__wrapped__ == setup_func
-        ), "this is added by functools.wraps decorator"  # nosec
+        assert _wrapper.__wrapped__ == setup_func, (
+            "this is added by functools.wraps decorator"
+        )  # nosec
 
         setattr(_wrapper, "metadata", _setup_metadata)  # noqa: B010
         setattr(_wrapper, "mark_as_simcore_servicelib_setup_func", True)  # noqa: B010

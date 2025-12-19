@@ -5,7 +5,6 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
-
 from enum import Enum
 from typing import Annotated
 

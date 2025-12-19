@@ -33,7 +33,6 @@ async def rabbitmq_connectivity_lifespan(
     _lifespan_name = f"{__name__}.{rabbitmq_connectivity_lifespan.__name__}"
 
     with lifespan_context(_logger, logging.INFO, _lifespan_name, state) as called_state:
-
         # Validate input state
         try:
             rabbit_state = RabbitMQLifespanState.model_validate(state)

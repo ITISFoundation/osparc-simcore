@@ -257,7 +257,6 @@ def test_model_config_validate_by_alias_and_name(
     assert TestModel.model_config.get("extra") == extra
 
     if validate_by_alias is False:
-
         if extra == "forbid":
             with pytest.raises(ValidationError):
                 TestModel.model_validate({"snakeCase": "foo"})

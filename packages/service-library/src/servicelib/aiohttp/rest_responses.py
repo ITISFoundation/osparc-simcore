@@ -75,9 +75,7 @@ T_HTTPError = TypeVar("T_HTTPError", bound=HTTPError)
 def create_http_error(
     errors: list[Exception] | Exception,
     error_message: str | None = None,
-    http_error_cls: type[
-        T_HTTPError
-    ] = web.HTTPInternalServerError,  # type: ignore[assignment]
+    http_error_cls: type[T_HTTPError] = web.HTTPInternalServerError,  # type: ignore[assignment]
     *,
     status_reason: str | None = None,
     error_code: ErrorCodeStr | None = None,

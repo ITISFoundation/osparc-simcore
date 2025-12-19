@@ -5,6 +5,7 @@ from common_library.json_serialization import json_dumps
 from fastapi import FastAPI
 from servicelib.fastapi.logging_lifespan import create_logging_shutdown_event
 from servicelib.tracing import TracingConfig
+
 from simcore_service_agent._meta import APP_NAME
 from simcore_service_agent.core.application import create_app
 from simcore_service_agent.core.settings import ApplicationSettings

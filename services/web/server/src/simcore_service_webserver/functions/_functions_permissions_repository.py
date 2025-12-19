@@ -127,7 +127,6 @@ async def check_user_permissions(
     object_type: Literal["function", "function_job", "function_job_collection"],
     permissions: list[Literal["read", "write", "execute"]],
 ) -> bool:
-
     api_access_rights = [
         getattr(
             FunctionsApiAccessRights, f"{permission.upper()}_{object_type.upper()}S"

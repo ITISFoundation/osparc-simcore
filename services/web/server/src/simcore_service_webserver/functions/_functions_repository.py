@@ -184,7 +184,6 @@ async def list_functions(
     search_by_multi_columns: str | None = None,
     search_by_function_title: str | None = None,
 ) -> tuple[list[RegisteredFunctionDB], PageMetaInfoLimitOffset]:
-
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         await check_user_api_access_rights(
             app,

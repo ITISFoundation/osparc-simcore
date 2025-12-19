@@ -92,9 +92,9 @@ async def client(
     setup_users(app)
     setup_socketio(app)
 
-    assert (
-        settings.WEBSERVER_PROJECTS is not None
-    ), "WEBSERVER_PROJECTS must be enabled for close_project fixture"
+    assert settings.WEBSERVER_PROJECTS is not None, (
+        "WEBSERVER_PROJECTS must be enabled for close_project fixture"
+    )
     assert setup_projects(app)
 
     setup_director_v2(app)

@@ -81,9 +81,9 @@ async def slow_storage_subsystem_mock(
     return storage_subsystem_mock
 
 
-def _standard_user_role_response() -> (
-    tuple[str, list[tuple[UserRole, ExpectedResponse]]]
-):
+def _standard_user_role_response() -> tuple[
+    str, list[tuple[UserRole, ExpectedResponse]]
+]:
     all_roles = standard_role_response()
     return (
         all_roles[0],

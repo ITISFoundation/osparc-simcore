@@ -471,9 +471,9 @@ async def test_pay_with_payment_method_handles_payment_unverified_error(
     data, error = await assert_status(response, status.HTTP_502_BAD_GATEWAY)
     assert not data
 
-    assert (
-        error["supportId"] == "TEST12345"
-    ), f"{error=} should provide support ID from exception"
+    assert error["supportId"] == "TEST12345", (
+        f"{error=} should provide support ID from exception"
+    )
 
     # Verify the mocked function was called
     assert mock_pay_with_payment_method.called

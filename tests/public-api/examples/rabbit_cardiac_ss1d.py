@@ -118,7 +118,6 @@ with osparc.ApiClient(cfg) as api_client:
                 last_status.progress == 100 or not last_status.stopped_at,
             )
         else:
-
             # Print out the id of our simulation results file (?).
 
             print("---------------------------------------")

@@ -104,6 +104,6 @@ class ImageLabels(BaseModel):
         return re.compile(self.progress_regexp)
 
 
-assert set(ImageLabels.model_fields).issubset(
-    ServiceMetaDataPublished.model_fields
-), "ImageLabels must be compatible with ServiceDockerData"
+assert set(ImageLabels.model_fields).issubset(ServiceMetaDataPublished.model_fields), (
+    "ImageLabels must be compatible with ServiceDockerData"
+)

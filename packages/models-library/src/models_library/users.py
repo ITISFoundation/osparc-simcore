@@ -6,7 +6,6 @@ from typing import (  # https://docs.pydantic.dev/latest/api/standard_library_ty
 )
 
 from common_library.users_enums import UserRole
-from models_library.string_types import validate_input_xss_safety
 from pydantic import (
     AfterValidator,
     BaseModel,
@@ -16,6 +15,8 @@ from pydantic import (
     StringConstraints,
 )
 from pydantic.config import JsonDict
+
+from models_library.string_types import validate_input_xss_safety
 
 from .emails import LowerCaseEmailStr
 

@@ -1,10 +1,11 @@
 import sqlalchemy as sa
+from sqlalchemy.dialects.postgresql import insert as pg_insert
+
 from simcore_postgres_database.models.payments_autorecharge import payments_autorecharge
 from simcore_postgres_database.models.payments_methods import (
     InitPromptAckFlowState,
     payments_methods,
 )
-from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 
 class AutoRechargeStatements:

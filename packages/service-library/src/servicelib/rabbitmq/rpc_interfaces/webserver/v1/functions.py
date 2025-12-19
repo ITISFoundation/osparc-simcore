@@ -38,6 +38,7 @@ from models_library.rest_ordering import OrderBy
 from models_library.rest_pagination import PageMetaInfoLimitOffset
 from models_library.users import UserID
 from pydantic import PositiveInt, TypeAdapter
+
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 
 from ._base import BaseRpcApi

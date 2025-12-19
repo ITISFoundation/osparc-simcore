@@ -106,7 +106,8 @@ async def _send_network_configuration_to_dynamic_sidecar(
     # if alias is different remove the network
     for new_network_name, node_ids_and_aliases in new_networks_with_aliases.items():
         existing_node_ids_and_aliases = existing_networks_with_aliases.get(
-            new_network_name, {}  # type: ignore[arg-type] # -> should refactor code to not use DictModel it is useless
+            new_network_name,
+            {},  # type: ignore[arg-type] # -> should refactor code to not use DictModel it is useless
         )
         for node_id, alias in node_ids_and_aliases.items():
             # node does not exist
@@ -147,7 +148,8 @@ async def _send_network_configuration_to_dynamic_sidecar(
     # all aliases which are different or missing should be added
     for new_network_name, node_ids_and_aliases in new_networks_with_aliases.items():
         existing_node_ids_and_aliases = existing_networks_with_aliases.get(
-            new_network_name, {}  # type: ignore[arg-type] # -> should refactor code to not use DictModel it is useless
+            new_network_name,
+            {},  # type: ignore[arg-type] # -> should refactor code to not use DictModel it is useless
         )
         for node_id, alias in node_ids_and_aliases.items():
             existing_alias = existing_node_ids_and_aliases.get(node_id)
@@ -227,9 +229,9 @@ async def _get_networks_with_aliases_for_default_network(
             await rabbitmq_client.publish(message.channel_name, message)
             continue
 
-        new_networks_with_aliases[default_network][
-            NodeIDStr(f"{node_uuid}")
-        ] = network_alias
+        new_networks_with_aliases[default_network][NodeIDStr(f"{node_uuid}")] = (
+            network_alias
+        )
 
     return new_networks_with_aliases
 

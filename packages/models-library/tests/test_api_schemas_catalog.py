@@ -8,7 +8,6 @@ from models_library.services import ServiceInput
 
 
 def test_service_port_with_file():
-
     io = ServiceInput.model_validate(
         {
             "displayOrder": 1,
@@ -38,7 +37,6 @@ def test_service_port_with_file():
 
 
 def test_service_port_with_boolean():
-
     io = ServiceInput.model_validate(
         {
             "displayOrder": 3,
@@ -53,13 +51,16 @@ def test_service_port_with_boolean():
         exclude_unset=True
     )
 
-    assert port == {
-        "key": "input_1",
-        "kind": "input",
-        # "content_media_type": None,  # <-- no content media
-        "content_schema": {
-            "type": "boolean",
-            "title": "Same title and description is more usual than you might think",  # <-- no description
-            "default": False,  # <--
-        },
-    }
+    assert (
+        port
+        == {
+            "key": "input_1",
+            "kind": "input",
+            # "content_media_type": None,  # <-- no content media
+            "content_schema": {
+                "type": "boolean",
+                "title": "Same title and description is more usual than you might think",  # <-- no description
+                "default": False,  # <--
+            },
+        }
+    )

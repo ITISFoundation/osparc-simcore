@@ -144,9 +144,7 @@ class _EventHandlerProcess:
             self.stop_process()
 
             # signal queue observers to finish
-            self.outputs_context.port_key_events_queue.put(
-                None
-            )  # pylint:disable=no-member
+            self.outputs_context.port_key_events_queue.put(None)  # pylint:disable=no-member
             self.health_check_queue.put(None)  # pylint:disable=no-member
 
     def _thread_worker_update_outputs_port_keys(self) -> None:

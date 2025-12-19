@@ -597,9 +597,9 @@ def test_run_computational_sidecar_real_fct(
             rf"\[{sleeper_task.service_key}:{sleeper_task.service_version} - .+\/.+\]: ({log})"
         )
         search_results = list(filter(r.search, caplog_info_level.messages))
-        assert (
-            len(search_results) > 0
-        ), f"Could not find '{log}' in worker_logs:\n {pformat(caplog_info_level.messages, width=240)}"
+        assert len(search_results) > 0, (
+            f"Could not find '{log}' in worker_logs:\n {pformat(caplog_info_level.messages, width=240)}"
+        )
     for log in sleeper_task.expected_logs:
         assert re.search(
             rf"\[{sleeper_task.service_key}:{sleeper_task.service_version} - .+\/.+\]: ({log})",
@@ -678,9 +678,9 @@ def _assert_parse_progresses_from_progress_event_handler(
         TaskProgressEvent.model_validate_json(msg.args[0][1]).progress
         for msg in progress_event_handler.call_args_list
     ]
-    assert worker_progresses == sorted(
-        set(worker_progresses)
-    ), "ordering of progress values incorrectly sorted!"
+    assert worker_progresses == sorted(set(worker_progresses)), (
+        "ordering of progress values incorrectly sorted!"
+    )
     assert worker_progresses[0] == 0, "missing/incorrect initial progress value"
     assert worker_progresses[-1] == 1, "missing/incorrect final progress value"
     return worker_progresses
@@ -734,9 +734,9 @@ async def test_run_computational_sidecar_dask(
             for log in sleeper_task.expected_logs:
                 r = re.compile(rf"^({log}).*")
                 search_results = list(filter(r.search, worker_logs))
-                assert (
-                    len(search_results) > 0
-                ), f"Could not find {log} in worker_logs:\n {pformat(worker_logs, width=240)}"
+                assert len(search_results) > 0, (
+                    f"Could not find {log} in worker_logs:\n {pformat(worker_logs, width=240)}"
+                )
 
     # check that the task produce the expected data, not less not more
     assert isinstance(output_data, TaskOutputData)

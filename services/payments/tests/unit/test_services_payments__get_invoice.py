@@ -6,7 +6,7 @@
 
 
 from collections.abc import Iterator
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from typing import cast
 
@@ -79,8 +79,8 @@ def populate_payment_transaction_db(
                     wallet_id=wallet_id,
                     user_id=user_id,
                     state=PaymentTransactionState.SUCCESS,
-                    completed_at=datetime.now(tz=timezone.utc),
-                    initiated_at=datetime.now(tz=timezone.utc) - timedelta(seconds=10),
+                    completed_at=datetime.now(tz=UTC),
+                    initiated_at=datetime.now(tz=UTC) - timedelta(seconds=10),
                     invoice_url=invoice_url,
                     stripe_invoice_id=stripe_invoice_id,
                 )
@@ -112,7 +112,6 @@ async def test_get_payment_invoice_url(
     invoice_url = await payments.get_payment_invoice_url(
         repo=PaymentsTransactionsRepo(db_engine=app.state.engine),
         stripe_api=StripeApi.get_from_app_state(app),
-        #
         user_id=user_id,
         wallet_id=wallet_id,
         payment_id=populate_payment_transaction_db,

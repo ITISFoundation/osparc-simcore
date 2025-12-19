@@ -21,7 +21,6 @@ async def test_rest_dependency_authentication(
     api_key_repo: ApiKeysRepository,
     users_repo: UsersRepository,
 ):
-
     # Generate a fake API key
     # Act
     result = await get_current_identity(
@@ -135,9 +134,9 @@ async def test_cache_effectiveness_in_rest_authentication_dependencies(
     assert result1.email == result2.email == result3.email == result4.email
 
     # With cache: second call should be significantly faster
-    assert (
-        second_call_time < first_call_time * 0.5
-    ), "Cache should make subsequent calls faster"
+    assert second_call_time < first_call_time * 0.5, (
+        "Cache should make subsequent calls faster"
+    )
 
     # Without cache: both calls should take similar time
     time_ratio = abs(no_cache_second_time - no_cache_first_time) / max(

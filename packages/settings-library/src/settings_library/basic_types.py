@@ -9,9 +9,9 @@ assert issubclass(BootModeEnum, Enum)  # nosec
 assert issubclass(BuildTargetEnum, Enum)  # nosec
 
 __all__: tuple[str, ...] = (
-    "LogLevel",
     "BootModeEnum",
     "BuildTargetEnum",
+    "LogLevel",
 )
 
 

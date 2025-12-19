@@ -92,7 +92,6 @@ class UserAccountRestPreRegister(InputSchema):
         # multiple aliases for "institution"
         alias_by_priority = ("companyName", "company", "university", "universityName")
         if "institution" not in values:
-
             for alias in alias_by_priority:
                 if alias in values:
                     values["institution"] = values.pop(alias)

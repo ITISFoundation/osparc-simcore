@@ -232,12 +232,12 @@ async def get_service(
     )
     if service_in_db:
         # we have full access, let's add the access to the output
-        service_access_rights: list[ServiceAccessRightsDB] = (
-            await services_repo.get_service_access_rights(
-                service_in_manifest.key,
-                service_in_manifest.version,
-                product_name=x_simcore_products_name,
-            )
+        service_access_rights: list[
+            ServiceAccessRightsDB
+        ] = await services_repo.get_service_access_rights(
+            service_in_manifest.key,
+            service_in_manifest.version,
+            product_name=x_simcore_products_name,
         )
         service_data["access_rights"] = {
             rights.gid: rights for rights in service_access_rights

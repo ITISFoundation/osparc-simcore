@@ -10,7 +10,6 @@ might affect the others. E.g. files uploaded in one test can be listed in rext
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-
 import logging
 import time
 from operator import attrgetter
@@ -311,6 +310,7 @@ def test_sugar_syntax_on_solver_setup(
     )
     assert isinstance(job, osparc.Job)
 
-    assert job.runner_name == "solvers/{}/releases/{}".format(
-        quote_plus(str(solver.id)), solver.version
+    assert (
+        job.runner_name
+        == f"solvers/{quote_plus(str(solver.id))}/releases/{solver.version}"
     )

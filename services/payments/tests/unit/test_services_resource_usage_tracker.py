@@ -5,7 +5,7 @@
 # pylint: disable=unused-variable
 
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 from asgi_lifespan import LifespanManager
@@ -73,7 +73,7 @@ async def test_add_credits_to_wallet(
             user_email=faker.email(),
             osparc_credits=100,
             payment_transaction_id=faker.pystr(),
-            created_at=datetime.now(tz=timezone.utc),
+            created_at=datetime.now(tz=UTC),
         )
         > 0
     )

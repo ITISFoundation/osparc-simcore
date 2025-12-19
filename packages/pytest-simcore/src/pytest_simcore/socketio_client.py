@@ -9,9 +9,10 @@ from uuid import uuid4
 import pytest
 import socketio
 from aiohttp.test_utils import TestClient
-from pytest_simcore.helpers.logging_tools import log_context
 from servicelib.aiohttp import status
 from yarl import URL
+
+from pytest_simcore.helpers.logging_tools import log_context
 
 from .helpers.assert_checks import assert_status
 

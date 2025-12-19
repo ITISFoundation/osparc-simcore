@@ -227,9 +227,7 @@ def create_app(  # noqa: C901, PLR0912
         notifier.setup(app)
         long_running_tasks.setup(app)
 
-    if (
-        settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND.COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED
-    ):
+    if settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND.COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED:
         dask_clients_pool.setup(app, settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND)
 
     if computational_backend_enabled:

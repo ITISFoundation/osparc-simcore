@@ -68,7 +68,6 @@ async def test_handling_exceptions_decorating_a_route(
     exception_handlers_map: ExceptionHandlersMap,
     build_method: str,
 ):
-
     # 1. create decorator
     exc_handling = exception_handling_decorator(exception_handlers_map)
 

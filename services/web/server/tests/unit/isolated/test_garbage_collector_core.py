@@ -43,9 +43,9 @@ def client_session_id(faker: Faker) -> str:
 def mock_registry(
     user_id: UserID, project_id: ProjectID, client_session_id: str
 ) -> mock.AsyncMock:
-    async def _fake_get_all_resource_keys() -> (
-        tuple[list[UserSession], list[UserSession]]
-    ):
+    async def _fake_get_all_resource_keys() -> tuple[
+        list[UserSession], list[UserSession]
+    ]:
         return ([UserSession(user_id=user_id, client_session_id=client_session_id)], [])
 
     registry = mock.AsyncMock()

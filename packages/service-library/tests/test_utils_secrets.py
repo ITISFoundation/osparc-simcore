@@ -87,7 +87,6 @@ async def test_secure_randint_called_with_wrong_tupes():
 
 
 def test_mask_sensitive_data():
-
     # NOTE: any hasahble object can be a dict key
     uuid_obj = uuid4()
     other_obj = object()

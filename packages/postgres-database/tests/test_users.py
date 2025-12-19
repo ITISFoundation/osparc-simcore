@@ -132,7 +132,6 @@ async def test_unique_username(
         await connection.scalar(users.insert().values(data).returning(users.c.id))
 
     async with transaction_context(asyncpg_engine) as connection:
-
         # and another one
         data["name"] = generate_alternative_username(data["name"])
         data["email"] = faker.email()
@@ -201,9 +200,9 @@ async def test_trial_accounts(asyncpg_engine: AsyncEngine, clean_users_db_table:
         )
         row = result.one_or_none()
         assert row
-        assert row.created_at - client_now < timedelta(
-            minutes=1
-        ), "Difference between server and client now should not differ much"
+        assert row.created_at - client_now < timedelta(minutes=1), (
+            "Difference between server and client now should not differ much"
+        )
         assert row.expires_at - row.created_at == EXPIRATION_INTERVAL
         assert row.status == UserStatus.ACTIVE
 
@@ -284,7 +283,7 @@ def test_users_secrets_migration_upgrade_downgrade(
                     role=UserRole.USER.value,
                     status=UserStatus.ACTIVE,
                 ),
-                "password_hash": "hashed_password_1",  # noqa: S106
+                "password_hash": "hashed_password_1",
             },
             {
                 **random_user(
@@ -294,7 +293,7 @@ def test_users_secrets_migration_upgrade_downgrade(
                     role=UserRole.USER.value,
                     status=UserStatus.ACTIVE,
                 ),
-                "password_hash": "hashed_password_2",  # noqa: S106
+                "password_hash": "hashed_password_2",
             },
         ]
 

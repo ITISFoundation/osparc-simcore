@@ -80,7 +80,6 @@ def test_create_batch_ids_validator(
 
 
 def test_composing_schemas_for_batch_operations(faker: Faker):
-
     # inner schema model
     class WebServerProjectBatchGetSchema(
         WebServerOutputSchema, BatchGetEnvelope[ProjectGet, ProjectID]

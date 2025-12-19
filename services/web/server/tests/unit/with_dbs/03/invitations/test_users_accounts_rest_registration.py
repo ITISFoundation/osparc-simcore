@@ -291,14 +291,12 @@ async def test_search_and_pre_registration(
     }
 
     # Emulating registration of pre-register user
-    new_user = (
-        await simcore_service_webserver.login._auth_service.create_user(  # noqa: SLF001
-            client.app,
-            email=account_request_form["email"],
-            password=DEFAULT_TEST_PASSWORD,
-            status_upon_creation=UserStatus.ACTIVE,
-            expires_at=None,
-        )
+    new_user = await simcore_service_webserver.login._auth_service.create_user(  # noqa: SLF001
+        client.app,
+        email=account_request_form["email"],
+        password=DEFAULT_TEST_PASSWORD,
+        status_upon_creation=UserStatus.ACTIVE,
+        expires_at=None,
     )
 
     resp = await client.get(

@@ -52,7 +52,9 @@ _CustomizedPageParams: TypeAlias = _CustomPage.__params_type__  # type: ignore
 @cancel_on_disconnect
 @cached(
     ttl=_PENNSIEVE_CACHING_TTL_S,
-    key_builder=lambda f, *args, **kwargs: f"{f.__name__}_{kwargs['x_datcore_api_key']}_{kwargs['x_datcore_api_secret']}_{kwargs['page_params']}",
+    key_builder=lambda f,
+    *args,
+    **kwargs: f"{f.__name__}_{kwargs['x_datcore_api_key']}_{kwargs['x_datcore_api_secret']}_{kwargs['page_params']}",
 )
 async def list_datasets(
     request: Request,
@@ -107,7 +109,9 @@ async def get_dataset(
 @cancel_on_disconnect
 @cached(
     ttl=_PENNSIEVE_CACHING_TTL_S,
-    key_builder=lambda f, *args, **kwargs: f"{f.__name__}_{kwargs['x_datcore_api_key']}_{kwargs['x_datcore_api_secret']}_{kwargs['dataset_id']}_{kwargs['page_params']}",
+    key_builder=lambda f,
+    *args,
+    **kwargs: f"{f.__name__}_{kwargs['x_datcore_api_key']}_{kwargs['x_datcore_api_secret']}_{kwargs['dataset_id']}_{kwargs['page_params']}",
 )
 async def list_dataset_top_level_files(
     request: Request,
@@ -140,7 +144,9 @@ async def list_dataset_top_level_files(
 @cancel_on_disconnect
 @cached(
     ttl=_PENNSIEVE_CACHING_TTL_S,
-    key_builder=lambda f, *args, **kwargs: f"{f.__name__}_{kwargs['x_datcore_api_key']}_{kwargs['x_datcore_api_secret']}_{kwargs['dataset_id']}_{kwargs['collection_id']}_{kwargs['page_params']}",
+    key_builder=lambda f,
+    *args,
+    **kwargs: f"{f.__name__}_{kwargs['x_datcore_api_key']}_{kwargs['x_datcore_api_secret']}_{kwargs['dataset_id']}_{kwargs['collection_id']}_{kwargs['page_params']}",
 )
 async def list_dataset_collection_files(
     request: Request,
@@ -174,7 +180,9 @@ async def list_dataset_collection_files(
 @cancel_on_disconnect
 @cached(
     ttl=_PENNSIEVE_CACHING_TTL_S,
-    key_builder=lambda f, *args, **kwargs: f"{f.__name__}_{kwargs['x_datcore_api_key']}_{kwargs['x_datcore_api_secret']}_{kwargs['dataset_id']}",
+    key_builder=lambda f,
+    *args,
+    **kwargs: f"{f.__name__}_{kwargs['x_datcore_api_key']}_{kwargs['x_datcore_api_secret']}_{kwargs['dataset_id']}",
 )
 async def list_dataset_files_legacy(
     request: Request,

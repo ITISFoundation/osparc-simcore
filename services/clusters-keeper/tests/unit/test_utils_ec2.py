@@ -83,10 +83,14 @@ def test_creation_ec2_tags(
     ]
     assert all(
         tag_key_name in received_tags for tag_key_name in EXPECTED_TAG_KEY_NAMES
-    ), f"missing tag key names in {received_tags.keys()}, expected {EXPECTED_TAG_KEY_NAMES}"
+    ), (
+        f"missing tag key names in {received_tags.keys()}, expected {EXPECTED_TAG_KEY_NAMES}"
+    )
     assert all(
         tag_key_name in EXPECTED_TAG_KEY_NAMES for tag_key_name in received_tags
-    ), f"non expected tag key names in {received_tags.keys()}, expected {EXPECTED_TAG_KEY_NAMES}"
+    ), (
+        f"non expected tag key names in {received_tags.keys()}, expected {EXPECTED_TAG_KEY_NAMES}"
+    )
 
 
 def test_all_created_ec2_instances_filter(
@@ -103,10 +107,14 @@ def test_all_created_ec2_instances_filter(
     ]
     assert all(
         tag_key_name in received_tags for tag_key_name in EXPECTED_TAG_KEY_NAMES
-    ), f"missing tag key names in {received_tags.keys()}, expected {EXPECTED_TAG_KEY_NAMES}"
+    ), (
+        f"missing tag key names in {received_tags.keys()}, expected {EXPECTED_TAG_KEY_NAMES}"
+    )
     assert all(
         tag_key_name in EXPECTED_TAG_KEY_NAMES for tag_key_name in received_tags
-    ), f"non expected tag key names in {received_tags.keys()}, expected {EXPECTED_TAG_KEY_NAMES}"
+    ), (
+        f"non expected tag key names in {received_tags.keys()}, expected {EXPECTED_TAG_KEY_NAMES}"
+    )
 
 
 @pytest.fixture

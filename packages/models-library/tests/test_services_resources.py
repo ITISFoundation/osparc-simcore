@@ -2,9 +2,8 @@ import pytest
 from models_library.services_resources import ResourceValue
 
 
-@pytest.mark.xfail()
+@pytest.mark.xfail
 def test_reservation_is_cap_by_limit_on_assigment_pydantic_2_bug():
-
     res = ResourceValue(limit=10, reservation=30)
     assert res.limit == 10
     assert res.reservation == 10

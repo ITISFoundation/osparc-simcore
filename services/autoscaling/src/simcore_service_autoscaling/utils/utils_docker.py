@@ -780,7 +780,5 @@ def compute_full_list_of_pre_pulled_images(
     ec2_boot_specific: EC2InstanceBootSpecific, app_settings: ApplicationSettings
 ) -> list[DockerGenericTag]:
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
-    common_images = (
-        app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_COLD_START_DOCKER_IMAGES_PRE_PULLING
-    )
+    common_images = app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_COLD_START_DOCKER_IMAGES_PRE_PULLING
     return sorted(set(common_images) | set(ec2_boot_specific.pre_pull_images))

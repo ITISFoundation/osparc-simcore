@@ -119,7 +119,7 @@ async def async_project_save_state(project_id: ProjectID, save_attempts: int) ->
     if nodes_failed_to_save:
         typer.echo(
             "The following nodes failed to save:"
-            + "\n- "
+            "\n- "
             + "\n- ".join(nodes_failed_to_save)
             + "\nPlease try to save them individually!"
         )

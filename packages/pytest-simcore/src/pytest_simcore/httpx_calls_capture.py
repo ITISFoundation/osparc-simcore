@@ -40,6 +40,7 @@ import respx
 import yaml
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture, MockType
+
 from pytest_simcore.helpers.docker import get_service_published_port
 from pytest_simcore.helpers.host import get_localhost_ip
 from pytest_simcore.helpers.httpx_client_base_dev import AsyncClientCaptureWrapper
@@ -107,16 +108,14 @@ def create_httpx_async_client_spy_if_enabled(
     spy_httpx_calls_enabled: bool,
     spy_httpx_calls_capture_path: Path,
 ) -> Callable[[str], MockType | None]:
-
     assert spy_httpx_calls_capture_path
 
     def _(spy_target: str) -> MockType | None:
-
         assert spy_target
         assert isinstance(spy_target, str)
-        assert spy_target.endswith(
-            "AsyncClient"
-        ), "Expects AsyncClient instance as spy target"
+        assert spy_target.endswith("AsyncClient"), (
+            "Expects AsyncClient instance as spy target"
+        )
 
         if spy_httpx_calls_enabled:
             print(
@@ -208,7 +207,6 @@ def create_respx_mock_from_capture(
         capture_path: Path,
         side_effects_callbacks: list[SideEffectCallback],
     ) -> list[respx.MockRouter]:
-
         assert capture_path.is_file()
         assert capture_path.suffix == ".json"
 
@@ -222,9 +220,9 @@ def create_respx_mock_from_capture(
 
             assert isinstance(respx_mocks, list)
             for respx_router_mock in respx_mocks:
-                assert (
-                    respx_router_mock._bases
-                ), "the base_url must be set before the fixture is extended"
+                assert respx_router_mock._bases, (
+                    "the base_url must be set before the fixture is extended"
+                )
                 respx_router_mock._assert_all_mocked = services_mocks_enabled
 
             def _get_correct_mock_router_for_capture(

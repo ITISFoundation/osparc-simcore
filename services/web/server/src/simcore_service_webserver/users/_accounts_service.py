@@ -38,7 +38,6 @@ async def pre_register_user(
     ],
     product_name: ProductName,
 ) -> UserAccountGet:
-
     found = await search_users_accounts(
         app,
         filter_by_email_glob=profile.email,
@@ -115,14 +114,15 @@ async def list_user_accounts(
     engine = get_asyncpg_engine(app)
 
     # Get user data with pagination
-    users_data, total_count = (
-        await _accounts_repository.list_merged_pre_and_registered_users(
-            engine,
-            product_name=product_name,
-            filter_any_account_request_status=filter_any_account_request_status,
-            pagination_limit=pagination_limit,
-            pagination_offset=pagination_offset,
-        )
+    (
+        users_data,
+        total_count,
+    ) = await _accounts_repository.list_merged_pre_and_registered_users(
+        engine,
+        product_name=product_name,
+        filter_any_account_request_status=filter_any_account_request_status,
+        pagination_limit=pagination_limit,
+        pagination_offset=pagination_offset,
     )
 
     # For each user, append additional information if needed

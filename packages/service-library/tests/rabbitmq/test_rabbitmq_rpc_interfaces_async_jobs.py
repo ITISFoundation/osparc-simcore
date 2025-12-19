@@ -221,7 +221,7 @@ async def test_submit_and_wait_properly_timesout(
     method_name: RPCMethodName,
     owner_metadata: OwnerMetadata,
 ):
-    with pytest.raises(TimeoutError):  # noqa: PT012
+    with pytest.raises(TimeoutError):
         async for _job_composed_result in submit_and_wait(
             rpc_client,
             rpc_namespace=namespace,

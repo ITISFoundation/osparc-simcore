@@ -450,9 +450,9 @@ async def get_dynamic_sidecar_spec(  # pylint:disable=too-many-arguments# noqa: 
         dynamic_sidecar_settings=dynamic_sidecar_settings, app_settings=app_settings
     )
 
-    assert (
-        scheduler_data.product_name is not None
-    ), "ONLY for legacy. This function should not be called with product_name==None"  # nosec
+    assert scheduler_data.product_name is not None, (
+        "ONLY for legacy. This function should not be called with product_name==None"
+    )  # nosec
 
     standard_simcore_docker_labels: dict[DockerLabelKey, str] = SimcoreContainerLabels(
         user_id=scheduler_data.user_id,
@@ -496,18 +496,14 @@ async def get_dynamic_sidecar_spec(  # pylint:disable=too-many-arguments# noqa: 
             )
         )
 
-    placement_substitutions = (
-        placement_settings.DIRECTOR_V2_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS
-    )
+    placement_substitutions = placement_settings.DIRECTOR_V2_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS
     for image_resources in scheduler_data.service_resources.values():
         for resource_name in image_resources.resources:
             if resource_name in placement_substitutions:
                 placement_constraints.append(placement_substitutions[resource_name])
 
     # Add dynamic sidecar custom placement labels as constraints
-    osparc_custom_placement_constraints = (
-        placement_settings.DIRECTOR_V2_DYNAMIC_SIDECAR_OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS
-    )
+    osparc_custom_placement_constraints = placement_settings.DIRECTOR_V2_DYNAMIC_SIDECAR_OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS
     label_values = {
         "user_id": scheduler_data.user_id,
         "project_id": scheduler_data.project_id,

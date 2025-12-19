@@ -47,7 +47,6 @@ def app_environment(
 
 @pytest.fixture
 def mocked_catalog_rpc_api(mocker: MockerFixture) -> dict[str, MockType]:
-
     side_effects = CatalogRpcSideEffects()
 
     return {

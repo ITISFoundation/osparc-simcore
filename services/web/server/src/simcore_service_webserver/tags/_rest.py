@@ -104,7 +104,6 @@ async def create_tag(request: web.Request):
 @permission_required("tag.crud.*")
 @_handle_tags_exceptions
 async def list_tags(request: web.Request):
-
     req_ctx = TagRequestContext.model_validate(request)
     got = await _service.list_tags(request.app, user_id=req_ctx.user_id)
     return envelope_json_response(got)

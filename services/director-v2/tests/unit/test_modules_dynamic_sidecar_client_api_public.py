@@ -23,12 +23,10 @@ from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.modules.dynamic_sidecar.api_client._public import (
     SidecarsClient,
     get_sidecars_client,
+    shutdown,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.api_client._public import (
     setup as api_client_setup,
-)
-from simcore_service_director_v2.modules.dynamic_sidecar.api_client._public import (
-    shutdown,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.errors import (
     EntrypointContainerNotFoundError,
@@ -282,15 +280,18 @@ async def test_get_entrypoint_container_name_api_not_found(
     dynamic_sidecar_endpoint: AnyHttpUrl,
     dynamic_sidecar_network_name: str,
 ) -> None:
-    with get_patched_client(
-        "get_containers_name",
-        side_effect=UnexpectedStatusError(
-            response=Response(
-                status_code=status.HTTP_404_NOT_FOUND, request=AsyncMock()
+    with (
+        get_patched_client(
+            "get_containers_name",
+            side_effect=UnexpectedStatusError(
+                response=Response(
+                    status_code=status.HTTP_404_NOT_FOUND, request=AsyncMock()
+                ),
+                expecting=status.HTTP_204_NO_CONTENT,
             ),
-            expecting=status.HTTP_204_NO_CONTENT,
-        ),
-    ) as client, pytest.raises(EntrypointContainerNotFoundError):
+        ) as client,
+        pytest.raises(EntrypointContainerNotFoundError),
+    ):
         await client.get_entrypoint_container_name(
             dynamic_sidecar_endpoint, dynamic_sidecar_network_name
         )

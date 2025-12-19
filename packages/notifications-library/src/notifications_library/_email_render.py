@@ -40,7 +40,6 @@ def render_email_parts(
     product: ProductData,
     **other_data,
 ) -> EmailPartsTuple:
-
     data = other_data | {"user": user, "product": product}
 
     # NOTE: assumes template convention!

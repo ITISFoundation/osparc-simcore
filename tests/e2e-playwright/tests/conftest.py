@@ -626,9 +626,9 @@ def create_new_project_and_delete(  # noqa: C901, PLR0915
             response = api_request_context.delete(
                 f"{product_url}v0/projects/{project_uuid}"
             )
-            assert (
-                response.status == 204
-            ), f"Unexpected error while deleting project: '{response.json()}'"
+            assert response.status == 204, (
+                f"Unexpected error while deleting project: '{response.json()}'"
+            )
 
 
 # SEE https://github.com/ITISFoundation/osparc-simcore/pull/5618#discussion_r1553943415

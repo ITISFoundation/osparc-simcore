@@ -66,7 +66,6 @@ class ServiceExtras(BaseModel):
 
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:
-
         node_requirements_examples = NodeRequirements.model_json_schema()["examples"]
 
         examples: list[JsonValue] = [

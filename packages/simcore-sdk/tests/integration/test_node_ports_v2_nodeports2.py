@@ -408,9 +408,7 @@ async def test_adding_new_ports(
         }
     )
     config_dict["inputs"].update({"in_15": 15})
-    np_helpers.update_configuration(
-        postgres_db, project_id, node_uuid, config_dict
-    )  # pylint: disable=E1101
+    np_helpers.update_configuration(postgres_db, project_id, node_uuid, config_dict)  # pylint: disable=E1101
     await check_config_valid(PORTS, config_dict)
 
     # # replace the configuration now, add an output
@@ -424,9 +422,7 @@ async def test_adding_new_ports(
             }
         }
     )
-    np_helpers.update_configuration(
-        postgres_db, project_id, node_uuid, config_dict
-    )  # pylint: disable=E1101
+    np_helpers.update_configuration(postgres_db, project_id, node_uuid, config_dict)  # pylint: disable=E1101
     await check_config_valid(PORTS, config_dict)
 
 
@@ -454,16 +450,12 @@ async def test_removing_ports(
     # let's remove the first input
     del config_dict["schema"]["inputs"]["in_14"]
     del config_dict["inputs"]["in_14"]
-    np_helpers.update_configuration(
-        postgres_db, project_id, node_uuid, config_dict
-    )  # pylint: disable=E1101
+    np_helpers.update_configuration(postgres_db, project_id, node_uuid, config_dict)  # pylint: disable=E1101
     await check_config_valid(PORTS, config_dict)
     # let's do the same for the second output
     del config_dict["schema"]["outputs"]["out_2"]
     del config_dict["outputs"]["out_2"]
-    np_helpers.update_configuration(
-        postgres_db, project_id, node_uuid, config_dict
-    )  # pylint: disable=E1101
+    np_helpers.update_configuration(postgres_db, project_id, node_uuid, config_dict)  # pylint: disable=E1101
     await check_config_valid(PORTS, config_dict)
 
 
@@ -692,9 +684,7 @@ async def test_file_mapping(
     # add a filetokeymap
     config_dict["schema"]["inputs"]["in_1"]["fileToKeyMap"] = {item_alias: "in_1"}
     config_dict["schema"]["outputs"]["out_1"]["fileToKeyMap"] = {item_alias: "out_1"}
-    np_helpers.update_configuration(
-        postgres_db, project_id, node_uuid, config_dict
-    )  # pylint: disable=E1101
+    np_helpers.update_configuration(postgres_db, project_id, node_uuid, config_dict)  # pylint: disable=E1101
     await check_config_valid(PORTS, config_dict)
     file_path = await (await PORTS.inputs)[
         TypeAdapter(ServicePortKey).validate_python("in_1")

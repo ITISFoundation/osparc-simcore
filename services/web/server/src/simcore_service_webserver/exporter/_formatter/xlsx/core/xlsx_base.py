@@ -189,7 +189,7 @@ def _update_entry_in_cell(
     There may be multiple entires for the same cell, coming from different sources.
     It is useful for applying styling to existing cells and storing values
     """
-    exiting_entry = target.get(address, None)
+    exiting_entry = target.get(address)
     target[address] = (
         new_entry if exiting_entry is None else (exiting_entry | new_entry)
     )

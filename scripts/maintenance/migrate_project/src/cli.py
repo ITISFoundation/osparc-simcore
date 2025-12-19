@@ -30,9 +30,10 @@ def main(config: Path = typer.Option(..., exists=True)):
     )
     typer.echo(f"Rclone config:\n{r_clone_config_path.read_text()}\n")
 
-    with db_connection(settings.source.db) as src_db_conn, db_connection(
-        settings.destination.db
-    ) as dst_db_conn:
+    with (
+        db_connection(settings.source.db) as src_db_conn,
+        db_connection(settings.destination.db) as dst_db_conn,
+    ):
         (
             projects_to_migrate,
             files_meta_data_to_migrate,

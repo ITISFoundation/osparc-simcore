@@ -116,15 +116,13 @@ async def _assert_get_dynamic_services_mocked(
             scheduler_data.node_uuid, can_save=True, skip_observation_recreation=False
         )
         assert (
-            scheduler_data.service_name
-            in scheduler.scheduler._to_observe  # noqa: SLF001
+            scheduler_data.service_name in scheduler.scheduler._to_observe  # noqa: SLF001
         )
         await scheduler.scheduler.remove_service_from_observation(
             scheduler_data.node_uuid
         )
         assert (
-            scheduler_data.service_name
-            not in scheduler.scheduler._to_observe  # noqa: SLF001
+            scheduler_data.service_name not in scheduler.scheduler._to_observe  # noqa: SLF001
         )
 
 
@@ -273,8 +271,7 @@ async def test_scheduler_add_remove(
     if with_observation_cycle:
         await manually_trigger_scheduler()
     assert (
-        scheduler_data.service_name
-        not in scheduler.scheduler._to_observe  # noqa: SLF001
+        scheduler_data.service_name not in scheduler.scheduler._to_observe  # noqa: SLF001
     )
 
 

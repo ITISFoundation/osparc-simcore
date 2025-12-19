@@ -175,7 +175,6 @@ def docker_container(
                 )
             )
         else:
-
             yield container
 
     except docker.errors.ContainerError as exc:
@@ -230,9 +229,9 @@ def assert_container_runs(
             if ".gitkeep" not in x.name
         ]
         for file_name in list_of_files:
-            assert Path(
-                host_folders[folder] / file_name
-            ).exists(), f"{file_name} is missing from {host_folders[folder]}"
+            assert Path(host_folders[folder] / file_name).exists(), (
+                f"{file_name} is missing from {host_folders[folder]}"
+            )
 
         # we look for missing files only. contents is the responsibility of the service creator
         _, _, errors = filecmp.cmpfiles(
@@ -250,9 +249,9 @@ def assert_container_runs(
             x.name for x in host_folders[folder].iterdir() if ".gitkeep" not in x.name
         ]
         for file_name in list_of_files:
-            assert Path(
-                validation_folders[folder] / file_name
-            ).exists(), f"{file_name} is not present in {validation_folders[folder]}"
+            assert Path(validation_folders[folder] / file_name).exists(), (
+                f"{file_name} is not present in {validation_folders[folder]}"
+            )
         _, _, errors = filecmp.cmpfiles(
             host_folders[folder],
             validation_folders[folder],

@@ -323,20 +323,20 @@ async def _assert_and_wait_for_comp_task_states_to_be_transmitted_in_projects(
             print(
                 f"--> waiting for pipeline results to move to projects table, attempt {attempt.retry_state.attempt_number}..."
             )
-            comp_tasks_in_db: dict[NodeIdStr, Any] = (
-                await _get_computational_tasks_from_db(
-                    project_id, sqlalchemy_async_engine
-                )
+            comp_tasks_in_db: dict[
+                NodeIdStr, Any
+            ] = await _get_computational_tasks_from_db(
+                project_id, sqlalchemy_async_engine
             )
-            workbench_in_db: dict[NodeIdStr, Any] = (
-                await _get_project_workbench_from_db(
-                    project_id, sqlalchemy_async_engine
-                )
+            workbench_in_db: dict[
+                NodeIdStr, Any
+            ] = await _get_project_workbench_from_db(
+                project_id, sqlalchemy_async_engine
             )
             for node_id, node_values in comp_tasks_in_db.items():
-                assert (
-                    node_id in workbench_in_db
-                ), f"node {node_id=} is missing from workbench {json_dumps(workbench_in_db, indent=2)}"
+                assert node_id in workbench_in_db, (
+                    f"node {node_id=} is missing from workbench {json_dumps(workbench_in_db, indent=2)}"
+                )
 
                 node_in_project_table = workbench_in_db[node_id]
 
@@ -487,9 +487,9 @@ async def test_run_pipeline_and_check_state(
     }
 
     members = [k in running_state_order_lookup for k in RunningState.__members__]
-    assert all(
-        members
-    ), "there are missing members in the order lookup, please complete!"
+    assert all(members), (
+        "there are missing members in the order lookup, please complete!"
+    )
 
     pipeline_state = RunningState.UNKNOWN
 

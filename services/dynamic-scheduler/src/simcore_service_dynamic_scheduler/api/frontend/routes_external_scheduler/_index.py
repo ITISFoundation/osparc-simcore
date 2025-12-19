@@ -62,7 +62,6 @@ def _render_service_details(node_id: NodeID, service: TrackedServiceModel) -> No
 
 
 def _render_buttons(node_id: NodeID, service: TrackedServiceModel) -> None:
-
     with ui.dialog() as confirm_dialog, ui.card():
         ui.markdown(f"Stop service **{node_id}**?")
         ui.label("The service will be stopped and its data will be saved.")

@@ -81,7 +81,6 @@ def run_program_in_repo(tmp_path: Path, jupytermath_repo: Path) -> Iterable[Call
                 f"at {workdir=}",
             )
             print("ENV:", runner.make_env())
-            #
             result = runner.invoke(cli.app, list(cmd))
             return Path(workdir), result
 
@@ -188,15 +187,14 @@ def test_ooil_compose_wo_arguments(
     # when it fails and a failure is not always indicative of a real error e.g. orjson serializes differently
     # to json.
     for k in label_keys:
-
         got_label_value = compose_spec["services"]["jupyter-math"]["build"]["labels"][k]
         expected_label_value = compose_spec_reference["services"]["jupyter-math"][
             "build"
         ]["labels"][k]
         if k.startswith("io.simcore"):
             assert json_loads(got_label_value) == json_loads(expected_label_value)
-        assert (
-            got_label_value == expected_label_value
-        ), f"label {k} got a different dump"
+        assert got_label_value == expected_label_value, (
+            f"label {k} got a different dump"
+        )
 
     assert compose_spec == compose_spec_reference

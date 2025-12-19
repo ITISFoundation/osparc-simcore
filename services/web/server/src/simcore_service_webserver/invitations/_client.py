@@ -37,11 +37,9 @@ def _handle_exceptions_as_invitations_errors(member_func: Callable):
             InvitationsServiceUnavailableError:
         """
         try:
-
             return await member_func(*args, **kwargs)
 
         except ClientResponseError as err:
-
             if err.status == status.HTTP_422_UNPROCESSABLE_ENTITY:
                 raise InvalidInvitationError(
                     api_funcname=member_func.__name__,

@@ -33,10 +33,11 @@ from servicelib.logging_utils import log_context
 from simcore_postgres_database.models.payments_transactions import (
     PaymentTransactionState,
 )
-from simcore_service_payments.db.payments_methods_repo import PaymentsMethodsRepo
 from tenacity import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt
+
+from simcore_service_payments.db.payments_methods_repo import PaymentsMethodsRepo
 
 from .._constants import RUT
 from ..db.payments_transactions_repo import PaymentsTransactionsRepo

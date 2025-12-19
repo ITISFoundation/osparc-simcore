@@ -37,7 +37,9 @@ class OrderClause(BaseModel, Generic[TField]):
     direction: OrderDirection = OrderDirection.ASC
 
 
-def check_ordering_list(order_by: list[tuple[TField, OrderDirection]]) -> Annotated[
+def check_ordering_list(
+    order_by: list[tuple[TField, OrderDirection]],
+) -> Annotated[
     list[tuple[TField, OrderDirection]],
     doc("Validated list with duplicates removed and preserving first occurrence order"),
 ]:

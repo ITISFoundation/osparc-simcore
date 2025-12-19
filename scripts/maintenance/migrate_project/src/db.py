@@ -1,7 +1,7 @@
 from collections import deque
 from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Any, Deque
+from typing import Any
 from uuid import UUID
 
 import typer
@@ -94,7 +94,7 @@ def get_project_and_files_to_migrate(
     hidden_projects_for_user: int | None,
     src_conn: Connection,
     dst_conn: Connection,
-) -> tuple[Deque, Deque]:
+) -> tuple[deque, deque]:
     skipped_projects = deque()
     skipped_files_meta_data = deque()
 

@@ -4,6 +4,7 @@ from contextlib import AsyncExitStack
 
 from common_library.logging.logging_utils_filtering import LoggerName, MessageSubstring
 from fastapi import FastAPI
+
 from servicelib.tracing import TracingConfig
 
 from ..logging_utils import (

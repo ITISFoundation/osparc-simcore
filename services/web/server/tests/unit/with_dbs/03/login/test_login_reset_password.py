@@ -120,9 +120,9 @@ async def test_two_steps_action_confirmation_workflow(
         assert response.url.path == login_url.path
 
         # Ensure there are no warnings
-        assert not any(
-            record.levelname == "WARNING" for record in caplog.records
-        ), "Unexpected warnings found"
+        assert not any(record.levelname == "WARNING" for record in caplog.records), (
+            "Unexpected warnings found"
+        )
 
 
 async def test_unknown_email(

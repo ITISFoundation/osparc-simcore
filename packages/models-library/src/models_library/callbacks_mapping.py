@@ -61,21 +61,39 @@ class CallbacksMapping(BaseModel):
                     "metrics": None,
                     "before_shutdown": [],
                 },
-                {"metrics": UserServiceCommand.model_config["json_schema_extra"]["examples"][0]},  # type: ignore [index]
                 {
-                    "metrics": UserServiceCommand.model_config["json_schema_extra"]["examples"][0],  # type: ignore [index]
+                    "metrics": UserServiceCommand.model_config["json_schema_extra"][
+                        "examples"
+                    ][0]
+                },  # type: ignore [index]
+                {
+                    "metrics": UserServiceCommand.model_config["json_schema_extra"][
+                        "examples"
+                    ][0],  # type: ignore [index]
                     "before_shutdown": [
-                        UserServiceCommand.model_config["json_schema_extra"]["examples"][0],  # type: ignore [index]
-                        UserServiceCommand.model_config["json_schema_extra"]["examples"][1],  # type: ignore [index]
+                        UserServiceCommand.model_config["json_schema_extra"][
+                            "examples"
+                        ][0],  # type: ignore [index]
+                        UserServiceCommand.model_config["json_schema_extra"][
+                            "examples"
+                        ][1],  # type: ignore [index]
                     ],
                 },
                 {
-                    "metrics": UserServiceCommand.model_config["json_schema_extra"]["examples"][0],  # type: ignore [index]
+                    "metrics": UserServiceCommand.model_config["json_schema_extra"][
+                        "examples"
+                    ][0],  # type: ignore [index]
                     "before_shutdown": [
-                        UserServiceCommand.model_config["json_schema_extra"]["examples"][0],  # type: ignore [index]
-                        UserServiceCommand.model_config["json_schema_extra"]["examples"][1],  # type: ignore [index]
+                        UserServiceCommand.model_config["json_schema_extra"][
+                            "examples"
+                        ][0],  # type: ignore [index]
+                        UserServiceCommand.model_config["json_schema_extra"][
+                            "examples"
+                        ][1],  # type: ignore [index]
                     ],
-                    "inactivity": UserServiceCommand.model_config["json_schema_extra"]["examples"][0],  # type: ignore [index]
+                    "inactivity": UserServiceCommand.model_config["json_schema_extra"][
+                        "examples"
+                    ][0],  # type: ignore [index]
                 },
             ]
         },

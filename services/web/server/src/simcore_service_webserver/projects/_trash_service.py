@@ -16,9 +16,8 @@ from servicelib.utils import fire_and_forget_task
 from ..constants import APP_FIRE_AND_FORGET_TASKS_KEY
 from ..director_v2 import director_v2_service
 from ..dynamic_scheduler import api as dynamic_scheduler_service
-from . import _crud_api_read
+from . import _crud_api_read, _projects_service, _projects_service_delete
 from . import _projects_repository as _projects_repository
-from . import _projects_service, _projects_service_delete
 from ._access_rights_service import check_user_project_permission
 from .exceptions import (
     ProjectNotFoundError,
@@ -72,7 +71,6 @@ async def trash_project(
     )
 
     if force_stop_first:
-
         fire_and_forget_task(
             _projects_service_delete.batch_stop_services_in_project(
                 app, user_id=user_id, project_uuid=project_id
@@ -240,7 +238,6 @@ async def batch_delete_trashed_projects_as_admin(
     trashed_before: datetime,
     fail_fast: bool,
 ) -> list[ProjectID]:
-
     deleted_project_ids: list[ProjectID] = []
     errors: list[tuple[ProjectID, Exception]] = []
 
@@ -260,7 +257,6 @@ async def batch_delete_trashed_projects_as_admin(
         )
         # BATCH delete
         for project in expired_trashed_projects:
-
             assert project.trashed  # nosec
 
             try:

@@ -77,7 +77,6 @@ async def test_export_and_import_table(
     asyncpg_engine: AsyncEngine,
     product_templates_in_db: None,
 ):
-
     async with asyncpg_engine.connect() as connection:
         exported_values = []
         excluded_names = {"created", "modified", "group_id"}

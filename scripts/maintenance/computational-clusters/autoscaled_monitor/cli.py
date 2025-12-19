@@ -1,7 +1,7 @@
 import asyncio
 import os
 from pathlib import Path
-from typing import Annotated, Optional
+from typing import Annotated
 
 import parse
 import rich
@@ -81,9 +81,9 @@ def main(
     """Manages external clusters"""
 
     state.deploy_config = deploy_config.expanduser()
-    assert (
-        deploy_config.is_dir()
-    ), "deploy-config argument is not pointing to a directory!"
+    assert deploy_config.is_dir(), (
+        "deploy-config argument is not pointing to a directory!"
+    )
     state.environment = _parse_repo_config(deploy_config)
     state.main_bastion_host = _parse_inventory(deploy_config)
 
@@ -159,7 +159,7 @@ def summary(
 def cancel_jobs(
     user_id: Annotated[int, typer.Option(help="the user ID")],
     wallet_id: Annotated[
-        Optional[int | None],  # noqa: UP007 # typer does not understand | syntax
+        int | None,  # typer does not understand | syntax
         typer.Option(help="the wallet ID"),
     ] = None,
     *,
@@ -186,7 +186,7 @@ def cancel_jobs(
 def trigger_cluster_termination(
     user_id: Annotated[int, typer.Option(help="the user ID")],
     wallet_id: Annotated[
-        Optional[int | None],  # noqa: UP007 # typer does not understand | syntax
+        int | None,  # typer does not understand | syntax
         typer.Option(help="the wallet ID"),
     ] = None,
     *,

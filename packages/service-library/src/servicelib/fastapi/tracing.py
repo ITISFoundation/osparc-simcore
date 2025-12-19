@@ -92,9 +92,7 @@ def _startup(
         f"{tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT}"
     )
 
-    tracing_destination: str = (
-        f"{URL(opentelemetry_collector_endpoint).with_port(tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_PORT).with_path('/v1/traces')}"
-    )
+    tracing_destination: str = f"{URL(opentelemetry_collector_endpoint).with_port(tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_PORT).with_path('/v1/traces')}"
 
     _logger.info(
         "Trying to connect service %s to opentelemetry tracing collector at %s.",
@@ -250,7 +248,6 @@ def get_tracing_instrumentation_lifespan(tracing_config: TracingConfig):
 
 
 class ResponseTraceIdHeaderMiddleware(BaseHTTPMiddleware):
-
     async def dispatch(self, request: Request, call_next):
         response = await call_next(request)
         trace_id_header = get_trace_id_header()
@@ -260,8 +257,6 @@ class ResponseTraceIdHeaderMiddleware(BaseHTTPMiddleware):
 
 
 def get_tracing_config(app: FastAPI) -> TracingConfig:
-    assert hasattr(
-        app.state, "tracing_config"
-    ), "Tracing not setup for this app"  # nosec
+    assert hasattr(app.state, "tracing_config"), "Tracing not setup for this app"  # nosec
     assert isinstance(app.state.tracing_config, TracingConfig)
     return app.state.tracing_config

@@ -33,9 +33,9 @@ def test_template(
     project_data = create_project_from_template_dashboard(template_id)
 
     assert "workbench" in project_data, "Expected workbench to be in project data!"
-    assert isinstance(
-        project_data["workbench"], dict
-    ), "Expected workbench to be a dict!"
+    assert isinstance(project_data["workbench"], dict), (
+        "Expected workbench to be a dict!"
+    )
     node_ids: list[str] = list(project_data["workbench"])
     assert len(node_ids) == 1, "Expected 1 node in the workbench!"
 

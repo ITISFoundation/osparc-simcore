@@ -161,7 +161,6 @@ class AuthSession:
         user_id: UserID,
         product_name: ProductName,
     ) -> Self:
-
         # WARNING: this client lifespan is tied to the app
         app_http_webserver_client = WebserverApi.get_instance(app)
         assert app_http_webserver_client  # nosec
@@ -170,9 +169,7 @@ class AuthSession:
         # WARNING: this client lifespan is tied to the app
         app_http_lrt_webserver_client = LongRunningTasksClient.get_instance(app=app)
         assert app_http_lrt_webserver_client  # nosec
-        assert isinstance(
-            app_http_lrt_webserver_client, LongRunningTasksClient
-        )  # nosec
+        assert isinstance(app_http_lrt_webserver_client, LongRunningTasksClient)  # nosec
 
         return cls(
             _product_name=product_name,
@@ -311,7 +308,6 @@ class AuthSession:
 
     @_exception_mapper(http_status_map=_PROFILE_STATUS_MAP)
     async def update_me(self, *, profile_update: ProfileUpdate) -> Profile:
-
         update = WebProfileUpdate.model_construct(
             _fields_set=profile_update.model_fields_set,
             first_name=profile_update.first_name,
@@ -722,7 +718,6 @@ def setup(
     webserver_settings: WebServerSettings,
     tracing_settings: TracingSettings | None,
 ) -> None:
-
     setup_client_instance(
         app,
         WebserverApi,

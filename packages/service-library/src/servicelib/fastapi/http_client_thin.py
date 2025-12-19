@@ -8,13 +8,14 @@ from typing import Any
 from common_library.errors_classes import OsparcErrorMixin
 from httpx import AsyncClient, HTTPError, PoolTimeout, Response, TransportError
 from httpx._types import TimeoutTypes, URLTypes
-from servicelib.tracing import TracingConfig
 from tenacity import RetryCallState
 from tenacity.asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_exponential
+
+from servicelib.tracing import TracingConfig
 
 from .http_client import BaseHTTPApi
 from .tracing import setup_httpx_client_tracing

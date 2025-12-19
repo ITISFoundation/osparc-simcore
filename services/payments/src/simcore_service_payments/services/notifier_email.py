@@ -32,9 +32,7 @@ from .notifier_abc import NotificationProvider
 _logger = logging.getLogger(__name__)
 
 
-_BASE_HTML: Final[
-    str
-] = """
+_BASE_HTML: Final[str] = """
 <!DOCTYPE html>
 <html lang="en">
 <head>

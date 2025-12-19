@@ -84,9 +84,9 @@ def webserver_environ(
         port_key = f"{name.upper().replace('-', '_')}_PORT"
 
         # published port is sometimes dynamically defined by the swarm
-        assert (
-            host_key in environ
-        ), "Variables names expected to be prefix with service names in docker-compose"
+        assert host_key in environ, (
+            "Variables names expected to be prefix with service names in docker-compose"
+        )
         assert port_key in environ
 
         # to swarm boundary since webserver is installed in the host and therefore outside the swarm's network

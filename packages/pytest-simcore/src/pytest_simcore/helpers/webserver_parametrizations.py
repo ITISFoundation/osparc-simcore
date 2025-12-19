@@ -101,9 +101,9 @@ def standard_role_response() -> tuple[str, list[tuple[UserRole, ExpectedResponse
     )
 
 
-def standard_user_role_response() -> (
-    tuple[str, list[tuple[UserRole, ExpectedResponse]]]
-):
+def standard_user_role_response() -> tuple[
+    str, list[tuple[UserRole, ExpectedResponse]]
+]:
     all_roles = standard_role_response()
     return (
         all_roles[0],

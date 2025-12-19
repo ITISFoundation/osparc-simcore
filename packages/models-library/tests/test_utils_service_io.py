@@ -58,7 +58,7 @@ CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve(
 TEST_DATA_FOLDER = CURRENT_DIR / "data"
 
 
-@pytest.mark.diagnostics()
+@pytest.mark.diagnostics
 @pytest.mark.parametrize(
     "metadata_path",
     TEST_DATA_FOLDER.rglob("metadata*.json"),
@@ -109,7 +109,7 @@ def _iter_main_services() -> Iterable[Path]:
                 yield p
 
 
-@pytest.mark.diagnostics()
+@pytest.mark.diagnostics
 @pytest.mark.parametrize(
     "metadata_path",
     (p for p in _iter_main_services() if "latest" not in p.name),

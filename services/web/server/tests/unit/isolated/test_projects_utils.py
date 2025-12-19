@@ -95,12 +95,12 @@ def test_any_node_inputs_changed(fake_project: ProjectDict):
 
     assert not any_node_inputs_changed(updated_project, current_project)
 
-    assert (
-        fake_project == current_project
-    ), "any_node_inputs_changed MUST NOT modify data "
-    assert (
-        fake_project == updated_project
-    ), "any_node_inputs_changed MUST NOT modify data"
+    assert fake_project == current_project, (
+        "any_node_inputs_changed MUST NOT modify data "
+    )
+    assert fake_project == updated_project, (
+        "any_node_inputs_changed MUST NOT modify data"
+    )
 
     # add new node w/ a link
     fake_node = deepcopy(

@@ -85,13 +85,19 @@ def test_parse_generic_resources(
         ),
         pytest.param(
             ResourcesDict(),
-            ServiceSpec(TaskTemplate=TaskSpec(Resources=Resources1(Reservations=ResourceObject()))),  # type: ignore
+            ServiceSpec(
+                TaskTemplate=TaskSpec(
+                    Resources=Resources1(Reservations=ResourceObject())
+                )
+            ),  # type: ignore
             ResourcesDict(),
             id="empty task resource spec",
         ),
         pytest.param(
             ResourcesDict(),
-            ServiceSpec(TaskTemplate=TaskSpec(Resources=Resources1(Limits=Limit(NanoCPUs=350)))),  # type: ignore
+            ServiceSpec(
+                TaskTemplate=TaskSpec(Resources=Resources1(Limits=Limit(NanoCPUs=350)))
+            ),  # type: ignore
             ResourcesDict(
                 {"CPU": ResourceValue(limit=350 / 10**9, reservation=350 / 10**9)}
             ),
@@ -99,7 +105,11 @@ def test_parse_generic_resources(
         ),
         pytest.param(
             ResourcesDict(),
-            ServiceSpec(TaskTemplate=TaskSpec(Resources=Resources1(Limits=Limit(NanoCPUs=350, MemoryBytes=123)))),  # type: ignore
+            ServiceSpec(
+                TaskTemplate=TaskSpec(
+                    Resources=Resources1(Limits=Limit(NanoCPUs=350, MemoryBytes=123))
+                )
+            ),  # type: ignore
             ResourcesDict(
                 {
                     "CPU": ResourceValue(limit=350 / 10**9, reservation=350 / 10**9),
@@ -110,7 +120,13 @@ def test_parse_generic_resources(
         ),
         pytest.param(
             ResourcesDict(),
-            ServiceSpec(TaskTemplate=TaskSpec(Resources=Resources1(Limits=Limit(NanoCPUs=350, MemoryBytes=123, Pids=43)))),  # type: ignore
+            ServiceSpec(
+                TaskTemplate=TaskSpec(
+                    Resources=Resources1(
+                        Limits=Limit(NanoCPUs=350, MemoryBytes=123, Pids=43)
+                    )
+                )
+            ),  # type: ignore
             ResourcesDict(
                 {
                     "CPU": ResourceValue(limit=350 / 10**9, reservation=350 / 10**9),
@@ -121,7 +137,11 @@ def test_parse_generic_resources(
         ),
         pytest.param(
             ResourcesDict(),
-            ServiceSpec(TaskTemplate=TaskSpec(Resources=Resources1(Reservations=ResourceObject(NanoCPUs=350)))),  # type: ignore
+            ServiceSpec(
+                TaskTemplate=TaskSpec(
+                    Resources=Resources1(Reservations=ResourceObject(NanoCPUs=350))
+                )
+            ),  # type: ignore
             ResourcesDict(
                 {"CPU": ResourceValue(limit=350 / 10**9, reservation=350 / 10**9)}
             ),
@@ -129,7 +149,13 @@ def test_parse_generic_resources(
         ),
         pytest.param(
             ResourcesDict(),
-            ServiceSpec(TaskTemplate=TaskSpec(Resources=Resources1(Reservations=ResourceObject(NanoCPUs=350, MemoryBytes=123)))),  # type: ignore
+            ServiceSpec(
+                TaskTemplate=TaskSpec(
+                    Resources=Resources1(
+                        Reservations=ResourceObject(NanoCPUs=350, MemoryBytes=123)
+                    )
+                )
+            ),  # type: ignore
             ResourcesDict(
                 {
                     "CPU": ResourceValue(limit=350 / 10**9, reservation=350 / 10**9),
@@ -140,7 +166,14 @@ def test_parse_generic_resources(
         ),
         pytest.param(
             ResourcesDict(),
-            ServiceSpec(TaskTemplate=TaskSpec(Resources=Resources1(Limits=Limit(NanoCPUs=150, MemoryBytes=23), Reservations=ResourceObject(NanoCPUs=350, MemoryBytes=123)))),  # type: ignore
+            ServiceSpec(
+                TaskTemplate=TaskSpec(
+                    Resources=Resources1(
+                        Limits=Limit(NanoCPUs=150, MemoryBytes=23),
+                        Reservations=ResourceObject(NanoCPUs=350, MemoryBytes=123),
+                    )
+                )
+            ),  # type: ignore
             ResourcesDict(
                 {
                     "CPU": ResourceValue(limit=150 / 10**9, reservation=150 / 10**9),
@@ -151,7 +184,14 @@ def test_parse_generic_resources(
         ),
         pytest.param(
             ResourcesDict(),
-            ServiceSpec(TaskTemplate=TaskSpec(Resources=Resources1(Limits=Limit(NanoCPUs=650, MemoryBytes=623), Reservations=ResourceObject(NanoCPUs=350, MemoryBytes=123)))),  # type: ignore
+            ServiceSpec(
+                TaskTemplate=TaskSpec(
+                    Resources=Resources1(
+                        Limits=Limit(NanoCPUs=650, MemoryBytes=623),
+                        Reservations=ResourceObject(NanoCPUs=350, MemoryBytes=123),
+                    )
+                )
+            ),  # type: ignore
             ResourcesDict(
                 {
                     "CPU": ResourceValue(limit=650 / 10**9, reservation=350 / 10**9),
@@ -162,25 +202,71 @@ def test_parse_generic_resources(
         ),
         pytest.param(
             ResourcesDict(),
-            ServiceSpec(TaskTemplate=TaskSpec(Resources=Resources1(Reservations=ResourceObject(GenericResources=[])))),  # type: ignore
+            ServiceSpec(
+                TaskTemplate=TaskSpec(
+                    Resources=Resources1(
+                        Reservations=ResourceObject(GenericResources=[])
+                    )
+                )
+            ),  # type: ignore
             ResourcesDict(),
             id="task with empty generic reservations",
         ),
         pytest.param(
             ResourcesDict(),
-            ServiceSpec(TaskTemplate=TaskSpec(Resources=Resources1(Reservations=ResourceObject(GenericResources=[GenericResource()])))),  # type: ignore
+            ServiceSpec(
+                TaskTemplate=TaskSpec(
+                    Resources=Resources1(
+                        Reservations=ResourceObject(
+                            GenericResources=[GenericResource()]
+                        )
+                    )
+                )
+            ),  # type: ignore
             ResourcesDict(),
             id="task with empty generic reservations",
         ),
         pytest.param(
             ResourcesDict(),
-            ServiceSpec(TaskTemplate=TaskSpec(Resources=Resources1(Reservations=ResourceObject(GenericResources=[GenericResource(DiscreteResourceSpec=DiscreteResourceSpec()), GenericResource(NamedResourceSpec=NamedResourceSpec())])))),  # type: ignore
+            ServiceSpec(
+                TaskTemplate=TaskSpec(
+                    Resources=Resources1(
+                        Reservations=ResourceObject(
+                            GenericResources=[
+                                GenericResource(
+                                    DiscreteResourceSpec=DiscreteResourceSpec()
+                                ),
+                                GenericResource(NamedResourceSpec=NamedResourceSpec()),
+                            ]
+                        )
+                    )
+                )
+            ),  # type: ignore
             ResourcesDict(),
             id="task with empty generic reservations",
         ),
         pytest.param(
             ResourcesDict(),
-            ServiceSpec(TaskTemplate=TaskSpec(Resources=Resources1(Reservations=ResourceObject(GenericResources=[GenericResource(DiscreteResourceSpec=DiscreteResourceSpec(Kind="Fake", Value=432)), GenericResource(NamedResourceSpec=NamedResourceSpec(Kind="NamedFake", Value="myfake"))])))),  # type: ignore
+            ServiceSpec(
+                TaskTemplate=TaskSpec(
+                    Resources=Resources1(
+                        Reservations=ResourceObject(
+                            GenericResources=[
+                                GenericResource(
+                                    DiscreteResourceSpec=DiscreteResourceSpec(
+                                        Kind="Fake", Value=432
+                                    )
+                                ),
+                                GenericResource(
+                                    NamedResourceSpec=NamedResourceSpec(
+                                        Kind="NamedFake", Value="myfake"
+                                    )
+                                ),
+                            ]
+                        )
+                    )
+                )
+            ),  # type: ignore
             ResourcesDict(
                 {
                     "Fake": ResourceValue(limit=432, reservation=432),
@@ -198,7 +284,26 @@ def test_parse_generic_resources(
                     "NamedFake": ResourceValue(limit=27, reservation=12),
                 }
             ),
-            ServiceSpec(TaskTemplate=TaskSpec(Resources=Resources1(Reservations=ResourceObject(GenericResources=[GenericResource(DiscreteResourceSpec=DiscreteResourceSpec(Kind="Fake", Value=432)), GenericResource(NamedResourceSpec=NamedResourceSpec(Kind="NamedFake", Value="myfake"))])))),  # type: ignore
+            ServiceSpec(
+                TaskTemplate=TaskSpec(
+                    Resources=Resources1(
+                        Reservations=ResourceObject(
+                            GenericResources=[
+                                GenericResource(
+                                    DiscreteResourceSpec=DiscreteResourceSpec(
+                                        Kind="Fake", Value=432
+                                    )
+                                ),
+                                GenericResource(
+                                    NamedResourceSpec=NamedResourceSpec(
+                                        Kind="NamedFake", Value="myfake"
+                                    )
+                                ),
+                            ]
+                        )
+                    )
+                )
+            ),  # type: ignore
             ResourcesDict(
                 {
                     "CPU": ResourceValue(limit=10, reservation=2),

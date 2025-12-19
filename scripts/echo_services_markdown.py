@@ -100,7 +100,6 @@ def generate_markdown_table(
 
 
 if __name__ == "__main__":
-
     repo_base_path = CURRENT_DIR.parent.resolve()
     services_path = repo_base_path / "services"
 

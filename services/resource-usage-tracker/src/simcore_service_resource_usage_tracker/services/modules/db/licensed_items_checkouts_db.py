@@ -48,9 +48,7 @@ _SELECTION_ARGS = (
     resource_tracker_licensed_items_checkouts.c.modified,
 )
 
-assert set(LicensedItemCheckoutDB.model_fields) == {
-    c.name for c in _SELECTION_ARGS
-}  # nosec
+assert set(LicensedItemCheckoutDB.model_fields) == {c.name for c in _SELECTION_ARGS}  # nosec
 
 
 async def create(
@@ -214,7 +212,6 @@ async def get_currently_used_seats_for_key_version_wallet(
     wallet_id: WalletID,
     product_name: ProductName,
 ) -> int:
-
     sum_stmt = sa.select(
         sa.func.sum(resource_tracker_licensed_items_checkouts.c.num_of_seats)
     ).where(

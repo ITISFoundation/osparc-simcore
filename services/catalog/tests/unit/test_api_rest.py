@@ -15,7 +15,6 @@ def test_sync_client(
     director_lifespan_disabled: None,
     client: TestClient,
 ):
-
     response = client.get("/v0/")
     assert response.status_code == status.HTTP_200_OK
 

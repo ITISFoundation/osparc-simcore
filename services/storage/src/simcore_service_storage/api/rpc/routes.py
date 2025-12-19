@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from models_library.api_schemas_storage import STORAGE_RPC_NAMESPACE
 from servicelib.logging_utils import log_context
 from servicelib.rabbitmq import RPCRouter
+
 from simcore_service_storage.modules.celery import get_task_manager_from_app
 
 from ...modules.rabbitmq import get_rabbitmq_rpc_server

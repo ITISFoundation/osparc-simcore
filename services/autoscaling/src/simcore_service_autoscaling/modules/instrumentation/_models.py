@@ -189,13 +189,9 @@ class AutoscalingInstrumentation(MetricsBase):
         self.cluster_metrics = ClusterMetrics(  # pylint: disable=unexpected-keyword-arg
             subsystem=self.subsystem, registry=self.registry
         )
-        self.ec2_client_metrics = (
-            EC2ClientMetrics(  # pylint: disable=unexpected-keyword-arg
-                subsystem=self.subsystem, registry=self.registry
-            )
+        self.ec2_client_metrics = EC2ClientMetrics(  # pylint: disable=unexpected-keyword-arg
+            subsystem=self.subsystem, registry=self.registry
         )
-        self.buffer_machines_pools_metrics = (
-            WarmBufferPoolsMetrics(  # pylint: disable=unexpected-keyword-arg
-                subsystem=self.subsystem, registry=self.registry
-            )
+        self.buffer_machines_pools_metrics = WarmBufferPoolsMetrics(  # pylint: disable=unexpected-keyword-arg
+            subsystem=self.subsystem, registry=self.registry
         )

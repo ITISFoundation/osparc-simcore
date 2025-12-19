@@ -150,9 +150,9 @@ async def wait_for_catalog_service(
                 services_endpoint.items(),
             )
         )
-        assert (
-            len(catalog_endpoint) == 1
-        ), f"no catalog service found! {services_endpoint=}"
+        assert len(catalog_endpoint) == 1, (
+            f"no catalog service found! {services_endpoint=}"
+        )
         catalog_endpoint = catalog_endpoint[0][1]
         print(f"--> found catalog endpoint at {catalog_endpoint=}")
         client = httpx.AsyncClient()
@@ -171,9 +171,9 @@ async def wait_for_catalog_service(
                 headers={"x-simcore-products-name": product_name},
                 timeout=1,
             )
-            assert (
-                response.status_code == status.HTTP_200_OK
-            ), f"catalog is not ready {response.status_code}:{response.text}, TIP: migration not completed or catalog broken?"
+            assert response.status_code == status.HTTP_200_OK, (
+                f"catalog is not ready {response.status_code}:{response.text}, TIP: migration not completed or catalog broken?"
+            )
             services = response.json()
             assert services != [], "catalog is not ready: no services available"
             print(

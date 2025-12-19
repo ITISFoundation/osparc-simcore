@@ -60,6 +60,7 @@ from servicelib.fastapi.app_state import SingletonInAppStateMixin
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
     CanNotCheckoutNotEnoughAvailableSeatsError,
+    NotEnoughAvailableSeatsError,
 )
 from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
     CanNotCheckoutServiceIsNotRunningError as _CanNotCheckoutServiceIsNotRunningError,
@@ -67,14 +68,12 @@ from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
 from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
     LicensedItemCheckoutNotFoundError as _LicensedItemCheckoutNotFoundError,
 )
-from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
-    NotEnoughAvailableSeatsError,
-)
 from servicelib.rabbitmq.rpc_interfaces.webserver.errors import (
     ProjectForbiddenRpcError,
     ProjectNotFoundRpcError,
 )
 from servicelib.rabbitmq.rpc_interfaces.webserver.v1 import WebServerRpcClient
+
 from simcore_service_api_server.models.basic_types import NameValueTuple
 
 from ..core.settings import WebServerSettings
@@ -344,7 +343,6 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         pagination_offset: PageOffsetInt = 0,
         pagination_limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
     ) -> tuple[list[RegisteredFunction], PageMetaInfoLimitOffset]:
-
         return await self._rpc_client.functions.list_functions(
             user_id=user_id,
             product_name=product_name,

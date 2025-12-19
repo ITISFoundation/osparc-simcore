@@ -168,10 +168,10 @@ async def get_node(request: web.Request) -> web.Response:
             text=f"Service {project_node['key']}:{project_node['version']} is deprecated!"
         )
 
-    service_data: NodeGetIdle | NodeGetUnknown | DynamicServiceGet | NodeGet = (
-        await dynamic_scheduler_service.get_dynamic_service(
-            app=request.app, node_id=path_params.node_id
-        )
+    service_data: (
+        NodeGetIdle | NodeGetUnknown | DynamicServiceGet | NodeGet
+    ) = await dynamic_scheduler_service.get_dynamic_service(
+        app=request.app, node_id=path_params.node_id
     )
 
     return envelope_json_response(get_status_as_dict(service_data))
@@ -540,10 +540,10 @@ async def get_project_services(request: web.Request) -> web.Response:
         permission="read",
     )
 
-    services_in_project: list[tuple[ServiceKey, ServiceVersion]] = (
-        await _nodes_service.get_project_nodes_services(
-            request.app, project_uuid=path_params.project_id
-        )
+    services_in_project: list[
+        tuple[ServiceKey, ServiceVersion]
+    ] = await _nodes_service.get_project_nodes_services(
+        request.app, project_uuid=path_params.project_id
     )
 
     services = []

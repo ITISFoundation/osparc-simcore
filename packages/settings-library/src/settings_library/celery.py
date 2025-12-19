@@ -4,6 +4,7 @@ from typing import Annotated
 
 from pydantic import Field
 from pydantic_settings import SettingsConfigDict
+
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 

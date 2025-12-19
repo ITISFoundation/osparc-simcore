@@ -57,9 +57,9 @@ async def create_project_document_and_increment_version(
         blocking=True,
         blocking_timeout=None,  # NOTE: this is a blocking call, a timeout has undefined effects
     )
-    async def _create_project_document_and_increment_version() -> (
-        tuple[ProjectDocument, int]
-    ):
+    async def _create_project_document_and_increment_version() -> tuple[
+        ProjectDocument, int
+    ]:
         """This function is protected because
         - the project document and its version must be kept in sync
         """

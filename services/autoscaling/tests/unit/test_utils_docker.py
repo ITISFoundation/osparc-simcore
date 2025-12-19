@@ -218,9 +218,9 @@ async def test_remove_monitored_down_nodes_of_non_down_node_does_nothing(
 def fake_docker_node(host_node: Node, faker: Faker) -> Node:
     fake_node = host_node.model_copy(deep=True)
     fake_node.id = faker.uuid4(cast_to=str)
-    assert (
-        host_node.id != fake_node.id
-    ), "this should never happen, or you are really unlucky"
+    assert host_node.id != fake_node.id, (
+        "this should never happen, or you are really unlucky"
+    )
     return fake_node
 
 
@@ -1410,9 +1410,9 @@ def test_compute_full_list_of_pre_pulled_images(
     app_settings: ApplicationSettings,
 ):
     assert app_settings.AUTOSCALING_EC2_INSTANCES
-    assert (
-        app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_COLD_START_DOCKER_IMAGES_PRE_PULLING
-    ), "this test requires some common docker images"
+    assert app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_COLD_START_DOCKER_IMAGES_PRE_PULLING, (
+        "this test requires some common docker images"
+    )
 
     for (
         instance_type,
@@ -1421,12 +1421,12 @@ def test_compute_full_list_of_pre_pulled_images(
         returned_list = compute_full_list_of_pre_pulled_images(
             instance_boot_specific, app_settings
         )
-        assert (
-            sorted(returned_list) == returned_list
-        ), f"the list for {instance_type} should be sorted"
-        assert len(returned_list) == len(
-            set(returned_list)
-        ), f"the list for {instance_type} should not have duplicates"
+        assert sorted(returned_list) == returned_list, (
+            f"the list for {instance_type} should be sorted"
+        )
+        assert len(returned_list) == len(set(returned_list)), (
+            f"the list for {instance_type} should not have duplicates"
+        )
         assert all(
             i in returned_list
             for i in app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_COLD_START_DOCKER_IMAGES_PRE_PULLING

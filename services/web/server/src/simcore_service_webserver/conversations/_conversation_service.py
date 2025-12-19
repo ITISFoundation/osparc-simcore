@@ -283,7 +283,6 @@ async def list_support_conversations_for_user(
     offset: int = 0,
     limit: int = 20,
 ) -> tuple[PageTotalCount, list[ConversationGetDB]]:
-
     # Check if user is part of support group (in that case list all support conversations)
     product = products_service.get_product(app, product_name=product_name)
     _support_standard_group_id = product.support_standard_group_id

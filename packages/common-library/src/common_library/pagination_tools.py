@@ -63,7 +63,6 @@ def iter_pagination_params(
     page_index = 0
 
     while page_params.has_items_left():
-
         yield page_params
 
         if page_params.total_number_of_items is None:

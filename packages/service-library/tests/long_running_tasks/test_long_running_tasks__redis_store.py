@@ -98,7 +98,6 @@ async def redis_stores(
 async def test_workflow_multiple_redis_stores_with_different_namespaces(
     redis_stores: list[RedisStore], task_data: TaskData
 ):
-
     for store in redis_stores:
         assert await store.list_tasks_data() == []
 

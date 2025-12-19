@@ -28,7 +28,7 @@ def webserver_endpoint(
 async def webserver_service(webserver_endpoint: URL, docker_stack: dict) -> URL:
     await wait_till_webserver_responsive(webserver_endpoint)
 
-    yield webserver_endpoint
+    return webserver_endpoint
 
 
 # TODO: this can be used by ANY of the simcore services!

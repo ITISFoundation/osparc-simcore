@@ -198,7 +198,6 @@ async def test_set_project_ancestors_with_invalid_parents(
             parent_node_id=project_node.node_id,
         )
 
-    #
     another_project = await create_fake_project(connection, user, product, hidden=False)
     another_project_node = await create_fake_projects_node(another_project["uuid"])
     with pytest.raises(DBProjectInvalidParentNodeError):

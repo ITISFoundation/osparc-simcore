@@ -66,7 +66,6 @@ async def create_user(
     status_upon_creation: UserStatus,
     expires_at: datetime | None,
 ) -> UserInfoDict:
-
     asyncpg_engine = get_asyncpg_engine(app)
     repo = UsersRepo(asyncpg_engine)
     async with transaction_context(asyncpg_engine) as conn:

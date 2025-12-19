@@ -23,7 +23,6 @@ _GC_TASK_NAME = f"{__name__}._collect_garbage_periodically"
 
 
 def create_background_task_for_garbage_collection() -> CleanupContextFunc:
-
     async def _cleanup_ctx_fun(app: web.Application) -> AsyncIterator[None]:
         settings: GarbageCollectorSettings = get_plugin_settings(app)
         interval = timedelta(seconds=settings.GARBAGE_COLLECTOR_INTERVAL_S)

@@ -18,7 +18,6 @@ depends_on = None
 
 
 def upgrade():
-
     op.create_table(
         "services_vendor_secrets",
         sa.Column("service_key", sa.String(), nullable=False),
@@ -54,5 +53,4 @@ def upgrade():
 
 
 def downgrade():
-
     op.drop_table("services_vendor_secrets")

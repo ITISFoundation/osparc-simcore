@@ -38,8 +38,7 @@ _AUTHZ_BURST_CACHE_TTL: Final = (
     # Rationale:
     #   a user's access to a product does not change that frequently
     #   Keeps a cache during bursts to avoid stress on the database
-    30
-    * _MINUTE
+    30 * _MINUTE
 )
 
 
@@ -85,7 +84,9 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
     @cached(
         ttl=_AUTHZ_BURST_CACHE_TTL,
         namespace=__name__,
-        key_builder=lambda f, *ag, **kw: f"{f.__name__}/{kw['user_id']}/{kw['product_name']}",
+        key_builder=lambda f,
+        *ag,
+        **kw: f"{f.__name__}/{kw['user_id']}/{kw['product_name']}",
     )
     async def _has_access_to_product(
         self, *, user_id: UserID, product_name: ProductName
@@ -102,7 +103,9 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
     @cached(
         ttl=_AUTHZ_BURST_CACHE_TTL,
         namespace=__name__,
-        key_builder=lambda f, *ag, **kw: f"{f.__name__}/{kw['user_id']}/{kw['group_id']}",
+        key_builder=lambda f,
+        *ag,
+        **kw: f"{f.__name__}/{kw['user_id']}/{kw['group_id']}",
     )
     async def _is_user_in_group(self, *, user_id: UserID, group_id: int) -> bool:
         """

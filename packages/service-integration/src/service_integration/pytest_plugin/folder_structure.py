@@ -47,15 +47,14 @@ def metadata_file(project_slug_dir: Path, request: pytest.FixtureRequest) -> Pat
 
 
 def assert_path_in_repo(expected_path: str, project_slug_dir: Path):
-
     if ":" in expected_path:
         folder, glob_pattern = expected_path.split(":")
         folder_path = project_slug_dir / folder
         assert folder_path.exists(), f"folder '{folder_path}' is missing!"
-        assert any(
-            folder_path.glob(glob_pattern)
-        ), f"no {glob_pattern=} in '{folder_path}'"
+        assert any(folder_path.glob(glob_pattern)), (
+            f"no {glob_pattern=} in '{folder_path}'"
+        )
     else:
-        assert (
-            project_slug_dir / expected_path
-        ).exists(), f"'{expected_path}' is missing from '{project_slug_dir}'"
+        assert (project_slug_dir / expected_path).exists(), (
+            f"'{expected_path}' is missing from '{project_slug_dir}'"
+        )

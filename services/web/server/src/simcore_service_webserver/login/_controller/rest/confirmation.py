@@ -141,10 +141,10 @@ async def validate_confirmation_and_redirect(request: web.Request):
 
     path_params = parse_request_path_parameters_as(CodePathParam, request)
 
-    confirmation: Confirmation | None = (
-        await confirmation_service.validate_confirmation_code(
-            path_params.code.get_secret_value()
-        )
+    confirmation: (
+        Confirmation | None
+    ) = await confirmation_service.validate_confirmation_code(
+        path_params.code.get_secret_value()
     )
 
     redirect_to_login_url = URL(cfg.LOGIN_REDIRECT)

@@ -19,7 +19,6 @@ from pytest_mock import MockerFixture
 
 @pytest.fixture
 def app() -> FastAPI:
-
     api_router = APIRouter()
 
     @api_router.get("/")

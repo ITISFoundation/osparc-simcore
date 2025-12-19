@@ -16,6 +16,7 @@ from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.rabbitmq_messages import WalletCreditsMessage
 from models_library.wallets import WalletID
 from pydantic import TypeAdapter
+
 from simcore_service_payments.db.auto_recharge_repo import AutoRechargeRepo
 from simcore_service_payments.db.payments_methods_repo import PaymentsMethodsRepo
 from simcore_service_payments.db.payments_transactions_repo import (
@@ -209,7 +210,6 @@ async def _perform_auto_recharge(
         repo_transactions=PaymentsTransactionsRepo(db_engine=app.state.engine),
         repo_methods=PaymentsMethodsRepo(db_engine=app.state.engine),
         notifier=NotifierService.get_from_app_state(app),
-        #
         payment_method_id=cast(PaymentMethodID, wallet_auto_recharge.payment_method_id),
         amount_dollars=wallet_auto_recharge.top_up_amount_in_usd,
         target_credits=invoice_data_get.credit_amount,

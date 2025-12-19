@@ -74,9 +74,7 @@ def _create_chunked_tag_pattern(base_key: AWSTagKey) -> re.Pattern:
     return re.compile(rf"^{re.escape(base_key)}(_\d+)?$")
 
 
-def dump_as_ec2_tags[T](
-    data: T, *, base_tag_key: AWSTagKey
-) -> EC2Tags:  # pyright: ignore[reportInvalidTypeVarUse]
+def dump_as_ec2_tags[T](data: T, *, base_tag_key: AWSTagKey) -> EC2Tags:  # pyright: ignore[reportInvalidTypeVarUse]
     """Serialize data to EC2 tags, chunking only if necessary to fit AWS tag size limits.
 
     AWS Tag Values are limited to 256 characters. This function serializes the data
@@ -114,9 +112,9 @@ def dump_as_ec2_tags[T](
     ]
 
     return {
-        TypeAdapter(AWSTagKey)
-        .validate_python(f"{base_tag_key}_{i}"): TypeAdapter(AWSTagValue)
-        .validate_python(chunk)
+        TypeAdapter(AWSTagKey).validate_python(f"{base_tag_key}_{i}"): TypeAdapter(
+            AWSTagValue
+        ).validate_python(chunk)
         for i, chunk in enumerate(chunks)
     }
 

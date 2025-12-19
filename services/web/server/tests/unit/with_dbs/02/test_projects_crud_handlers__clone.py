@@ -112,9 +112,9 @@ async def test_clone_project(
     ).validate_python(cloned_project.creation_date)
 
     assert len(project["workbench"]) == len(cloned_project.workbench)
-    assert set(project["workbench"].keys()) != set(
-        cloned_project.workbench.keys()
-    ), "clone does NOT preserve node ids"
+    assert set(project["workbench"].keys()) != set(cloned_project.workbench.keys()), (
+        "clone does NOT preserve node ids"
+    )
 
 
 @pytest.mark.parametrize(

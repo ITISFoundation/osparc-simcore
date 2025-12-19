@@ -3,7 +3,6 @@ from typing import Annotated, Self, TypeVar
 
 from common_library.basic_types import DEFAULT_FACTORY
 from common_library.dict_tools import remap_keys
-from models_library.string_types import DescriptionSafeStr, NameSafeStr
 from pydantic import (
     AnyHttpUrl,
     AnyUrl,
@@ -16,6 +15,8 @@ from pydantic import (
     model_validator,
 )
 from pydantic.config import JsonDict
+
+from models_library.string_types import DescriptionSafeStr, NameSafeStr
 
 from ..emails import LowerCaseEmailStr
 from ..groups import (
@@ -302,7 +303,6 @@ class MyGroupsGet(OutputSchema):
 
 
 class GroupUserGet(OutputSchemaWithoutCamelCase):
-
     id: Annotated[UserID | None, Field(description="the user's id")] = None
     user_name: Annotated[
         UserNameID | None, Field(alias="userName", description="None if private")

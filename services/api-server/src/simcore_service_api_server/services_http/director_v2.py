@@ -71,7 +71,6 @@ _client_status_code_to_exception = partial(
 
 
 class DirectorV2Api(BaseServiceClientApi):
-
     @_client_status_code_to_exception(
         http_status_map={status.HTTP_404_NOT_FOUND: JobNotFoundError}
     )

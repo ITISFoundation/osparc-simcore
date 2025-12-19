@@ -15,6 +15,7 @@ from models_library.basic_types import KeyIDStr, VersionStr
 from models_library.projects import Project
 from models_library.projects_nodes import InputID
 from pydantic import TypeAdapter
+
 from simcore_service_api_server.models.api_resources import JobLinks
 
 from ..models.domain.projects import InputTypes, Node, SimCoreFileLink

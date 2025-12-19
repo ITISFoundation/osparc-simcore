@@ -20,7 +20,7 @@ async def compute_path_size(
     location_id: LocationID,
     path: Path,
     owner_metadata: OwnerMetadata,
-    user_id: UserID
+    user_id: UserID,
 ) -> tuple[AsyncJobGet, OwnerMetadata]:
     async_job_rpc_get = await submit(
         rabbitmq_rpc_client=client,
@@ -40,7 +40,7 @@ async def delete_paths(
     location_id: LocationID,
     paths: set[Path],
     owner_metadata: OwnerMetadata,
-    user_id: UserID
+    user_id: UserID,
 ) -> tuple[AsyncJobGet, OwnerMetadata]:
     async_job_rpc_get = await submit(
         rabbitmq_rpc_client=client,

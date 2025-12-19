@@ -166,9 +166,7 @@ class CreateSidecars(DynamicSchedulerEvent):
         dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings = (
             app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
         )
-        dynamic_services_placement_settings = (
-            app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_PLACEMENT_SETTINGS
-        )
+        dynamic_services_placement_settings = app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_PLACEMENT_SETTINGS
 
         # the dynamic-sidecar should merge all the settings, especially:
         # resources and placement derived from all the images in
@@ -204,9 +202,9 @@ class CreateSidecars(DynamicSchedulerEvent):
 
         groups_extra_properties = get_repository(app, GroupsExtraPropertiesRepository)
 
-        assert (
-            scheduler_data.product_name is not None
-        ), "ONLY for legacy. This function should not be called with product_name==None"  # nosec
+        assert scheduler_data.product_name is not None, (
+            "ONLY for legacy. This function should not be called with product_name==None"
+        )  # nosec
 
         user_extra_properties = await groups_extra_properties.get_user_extra_properties(
             user_id=scheduler_data.user_id, product_name=scheduler_data.product_name
@@ -248,20 +246,18 @@ class CreateSidecars(DynamicSchedulerEvent):
 
         # WARNING: do NOT log, this structure has secrets in the open
         # If you want to log, please use an obfuscator
-        dynamic_sidecar_service_spec_base: AioDockerServiceSpec = (
-            await get_dynamic_sidecar_spec(
-                scheduler_data=scheduler_data,
-                dynamic_sidecar_settings=dynamic_sidecar_settings,
-                dynamic_services_scheduler_settings=dynamic_services_scheduler_settings,
-                swarm_network_id=swarm_network_id,
-                settings=settings,
-                app_settings=app.state.settings,
-                hardware_info=scheduler_data.hardware_info,
-                has_quota_support=dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_ENABLE_VOLUME_LIMITS,
-                metrics_collection_allowed=metrics_collection_allowed,
-                user_extra_properties=user_extra_properties,
-                rpc_client=rpc_client,
-            )
+        dynamic_sidecar_service_spec_base: AioDockerServiceSpec = await get_dynamic_sidecar_spec(
+            scheduler_data=scheduler_data,
+            dynamic_sidecar_settings=dynamic_sidecar_settings,
+            dynamic_services_scheduler_settings=dynamic_services_scheduler_settings,
+            swarm_network_id=swarm_network_id,
+            settings=settings,
+            app_settings=app.state.settings,
+            hardware_info=scheduler_data.hardware_info,
+            has_quota_support=dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_ENABLE_VOLUME_LIMITS,
+            metrics_collection_allowed=metrics_collection_allowed,
+            user_extra_properties=user_extra_properties,
+            rpc_client=rpc_client,
         )
 
         user_specific_service_spec = (

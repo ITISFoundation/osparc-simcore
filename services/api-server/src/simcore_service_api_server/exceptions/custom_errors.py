@@ -29,9 +29,7 @@ class ServiceConfigurationError(CustomBaseError, ValueError):
     msg_template = "{service_cls_name} invalid configuration: {detail_msg}."
 
 
-class SolverServiceListJobsFiltersError(
-    ServiceConfigurationError
-):  # pylint: disable=too-many-ancestors
+class SolverServiceListJobsFiltersError(ServiceConfigurationError):  # pylint: disable=too-many-ancestors
     service_cls_name = "SolverService"
     detail_msg = user_message(
         "The solver_version parameter is set but solver_id is not. Please provide both parameters or neither.",

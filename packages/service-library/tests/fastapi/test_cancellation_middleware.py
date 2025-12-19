@@ -89,7 +89,6 @@ def fastapi_app(fastapi_router: APIRouter) -> FastAPI:
 
 @pytest.fixture
 def uvicorn_server(fastapi_app: FastAPI) -> Iterator[URL]:
-
     server_host = "127.0.0.1"
     server_port = unused_port()
     server_url = f"http://{server_host}:{server_port}"
@@ -98,7 +97,6 @@ def uvicorn_server(fastapi_app: FastAPI) -> Iterator[URL]:
         logging.INFO,
         msg=f"with uvicorn server on {server_url}",
     ) as ctx:
-
         config = uvicorn.Config(
             fastapi_app,
             host=server_host,
@@ -115,9 +113,9 @@ def uvicorn_server(fastapi_app: FastAPI) -> Iterator[URL]:
         @retry(wait=wait_fixed(0.1), stop=stop_after_delay(10), reraise=True)
         def wait_for_server_ready() -> None:
             response = httpx.get(f"{server_url}/")
-            assert (
-                response.is_success
-            ), f"Server did not start successfully: {response.status_code} {response.text}"
+            assert response.is_success, (
+                f"Server did not start successfully: {response.status_code} {response.text}"
+            )
 
         wait_for_server_ready()
 

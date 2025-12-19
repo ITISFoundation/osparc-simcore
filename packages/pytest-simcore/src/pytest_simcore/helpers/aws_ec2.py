@@ -115,9 +115,9 @@ async def _assert_reservation(
 ) -> list[InstanceTypeDef]:
     list_instances: list[InstanceTypeDef] = []
     assert "Instances" in reservation
-    assert (
-        len(reservation["Instances"]) == expected_num_instances
-    ), f"expected {expected_num_instances}, found {len(reservation['Instances'])}"
+    assert len(reservation["Instances"]) == expected_num_instances, (
+        f"expected {expected_num_instances}, found {len(reservation['Instances'])}"
+    )
     for instance in reservation["Instances"]:
         assert "InstanceType" in instance
         assert instance["InstanceType"] == expected_instance_type

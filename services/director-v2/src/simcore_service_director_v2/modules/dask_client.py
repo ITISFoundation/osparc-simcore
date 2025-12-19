@@ -413,10 +413,10 @@ class DaskClient:
         dask_utils.check_scheduler_status(self.backend.client)
 
         async def _get_task_progress(job_id: str) -> TaskProgressEvent | None:
-            dask_events: tuple[tuple[UnixTimestamp, str], ...] = (
-                await self.backend.client.get_events(
-                    TASK_RUNNING_PROGRESS_EVENT.format(key=job_id)
-                )
+            dask_events: tuple[
+                tuple[UnixTimestamp, str], ...
+            ] = await self.backend.client.get_events(
+                TASK_RUNNING_PROGRESS_EVENT.format(key=job_id)
             )
             if not dask_events:
                 return None
@@ -437,10 +437,10 @@ class DaskClient:
         dask_utils.check_scheduler_status(self.backend.client)
 
         async def _get_task_state(job_id: str) -> RunningState:
-            dask_events: tuple[tuple[UnixTimestamp, str], ...] = (
-                await self.backend.client.get_events(
-                    TASK_LIFE_CYCLE_EVENT.format(key=job_id)
-                )
+            dask_events: tuple[
+                tuple[UnixTimestamp, str], ...
+            ] = await self.backend.client.get_events(
+                TASK_LIFE_CYCLE_EVENT.format(key=job_id)
             )
             if not dask_events:
                 return RunningState.UNKNOWN

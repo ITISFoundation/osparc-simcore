@@ -1,3 +1,6 @@
+from pydantic import BaseModel, ConfigDict
+from pydantic.config import JsonDict
+
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceCreate
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -5,8 +8,6 @@ from models_library.resource_tracker import HardwareInfo, PricingInfo
 from models_library.services_resources import ServiceResourcesDictHelpers
 from models_library.users import UserID
 from models_library.wallets import WalletInfo
-from pydantic import BaseModel, ConfigDict
-from pydantic.config import JsonDict
 
 
 class DynamicServiceStart(DynamicServiceCreate):
@@ -30,10 +31,18 @@ class DynamicServiceStart(DynamicServiceCreate):
                     "request_dns": "some.local",
                     "request_scheme": "http",
                     "simcore_user_agent": "",
-                    "service_resources": ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"][0],  # type: ignore [index]
-                    "wallet_info": WalletInfo.model_config["json_schema_extra"]["examples"][0],  # type: ignore [index]
-                    "pricing_info": PricingInfo.model_config["json_schema_extra"]["examples"][0],  # type: ignore [index]
-                    "hardware_info": HardwareInfo.model_config["json_schema_extra"]["examples"][0],  # type: ignore [index]
+                    "service_resources": ServiceResourcesDictHelpers.model_config[
+                        "json_schema_extra"
+                    ]["examples"][0],  # type: ignore [index]
+                    "wallet_info": WalletInfo.model_config["json_schema_extra"][
+                        "examples"
+                    ][0],  # type: ignore [index]
+                    "pricing_info": PricingInfo.model_config["json_schema_extra"][
+                        "examples"
+                    ][0],  # type: ignore [index]
+                    "hardware_info": HardwareInfo.model_config["json_schema_extra"][
+                        "examples"
+                    ][0],  # type: ignore [index]
                 }
             }
         )

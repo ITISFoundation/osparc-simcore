@@ -75,7 +75,6 @@ def app_environment(
 def get_mock_safe_on_schedule_event(
     mocker: MockerFixture,
 ) -> Callable[[Callable[[ScheduleId], Awaitable[None]]], Mock]:
-
     def _(side_effect: Callable[[ScheduleId], Awaitable[None]]) -> Mock:
         another_mock = Mock()
 
@@ -100,7 +99,6 @@ async def test_enqueue_schedule_event(
     ],
     app: FastAPI,
 ) -> None:
-
     async def _side_effect_nothing(schedule_id: ScheduleId) -> None:
         pass
 
@@ -158,7 +156,6 @@ def get_mock_safe_on_event_type(
     ],
     Mock,
 ]:
-
     def _(
         side_effect: Callable[
             [EventType, ScheduleId, OperationName, OperationContext], Awaitable[None]
@@ -200,7 +197,6 @@ async def test_enqueue_event_type(
     app: FastAPI,
     expected_event_type: EventType,
 ):
-
     async def _side_effect_nothing(
         event_type: EventType,
         schedule_id: ScheduleId,

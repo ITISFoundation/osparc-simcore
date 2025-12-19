@@ -207,9 +207,9 @@ async def update_function_title(
     returned_function = await wb_api_rpc.update_function_title(
         function_id=function_id, title=title, user_id=user_id, product_name=product_name
     )
-    assert (
-        returned_function.title == title
-    ), f"Function title was not updated. Expected {title} but got {returned_function.title}"  # nosec
+    assert returned_function.title == title, (
+        f"Function title was not updated. Expected {title} but got {returned_function.title}"
+    )  # nosec
     return returned_function
 
 
@@ -235,9 +235,9 @@ async def update_function_description(
         user_id=user_id,
         product_name=product_name,
     )
-    assert (
-        returned_function.description == description
-    ), f"Function description was not updated. Expected {description} but got {returned_function.description}"  # nosec
+    assert returned_function.description == description, (
+        f"Function description was not updated. Expected {description} but got {returned_function.description}"
+    )  # nosec
     return returned_function
 
 

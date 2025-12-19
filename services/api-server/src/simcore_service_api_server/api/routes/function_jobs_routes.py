@@ -128,14 +128,15 @@ async def list_function_jobs(
     ] = False,
 ):
     if include_status:
-        function_jobs_list_ws, meta = (
-            await function_job_task_client_service.list_function_jobs_with_status(
-                pagination_offset=page_params.offset,
-                pagination_limit=page_params.limit,
-                filter_by_function_job_ids=filters.function_job_ids,
-                filter_by_function_job_collection_id=filters.function_job_collection_id,
-                filter_by_function_id=filters.function_id,
-            )
+        (
+            function_jobs_list_ws,
+            meta,
+        ) = await function_job_task_client_service.list_function_jobs_with_status(
+            pagination_offset=page_params.offset,
+            pagination_limit=page_params.limit,
+            filter_by_function_job_ids=filters.function_job_ids,
+            filter_by_function_job_collection_id=filters.function_job_collection_id,
+            filter_by_function_id=filters.function_id,
         )
         return create_page(
             function_jobs_list_ws,

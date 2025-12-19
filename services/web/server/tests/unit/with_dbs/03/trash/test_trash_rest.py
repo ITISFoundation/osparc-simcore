@@ -254,7 +254,6 @@ async def test_trash_projects_shared_among_users(
     "For https://github.com/ITISFoundation/osparc-simcore/pull/6642"
 )
 async def test_trash_single_folder(client: TestClient, logged_user: UserInfoDict):
-
     assert client.app
 
     # CREATE a folder
@@ -481,7 +480,6 @@ async def test_trash_folder_with_content(
 async def workspace(
     client: TestClient, logged_user: UserInfoDict
 ) -> AsyncIterable[WorkspaceGet]:
-
     # CREATE a workspace
     resp = await client.post("/v0/workspaces", json={"name": "My first workspace"})
     data, _ = await assert_status(resp, status.HTTP_201_CREATED)

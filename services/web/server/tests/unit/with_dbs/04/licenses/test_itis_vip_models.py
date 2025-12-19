@@ -55,7 +55,6 @@ def test_pre_validator_feature_descriptor_to_dict():
 def test_validation_of_itis_vip_response_model(
     faker: Faker, features_str: str, expected: dict[str, Any]
 ):
-
     available_download = random_itis_vip_available_download_item(
         identifier=0,
         fake=faker,

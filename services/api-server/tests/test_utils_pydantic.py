@@ -107,7 +107,6 @@ def fastapi_schema() -> dict[str, Any]:
 
 
 def test_fastapi_openapi_component_schemas(fastapi_schema: dict[str, Any]):
-
     assert fastapi_schema["properties"] == {
         "int0": {"title": "Int0", "type": "integer"},
         "url0": {"title": "Url0", "type": "string"},
@@ -146,7 +145,6 @@ def test_fastapi_openapi_component_schemas(fastapi_schema: dict[str, Any]):
 def test_compare_pydantic_vs_fastapi_schemas(
     fastapi_schema: dict[str, Any], pydantic_schema: dict[str, Any]
 ):
-
     # NOTE @all: I cannot understand this?!
     assert fastapi_schema["properties"] == pydantic_schema["properties"]
 

@@ -90,7 +90,6 @@ def _build_project_function_extras_dict(
 def _build_solver_function_extras_dict(
     service_metadata: ServiceMetadata,
 ) -> dict[str, Any]:
-
     extras: dict[str, Any] = {}
     if thumbnail := service_metadata.thumbnail:
         extras["thumbnail"] = thumbnail

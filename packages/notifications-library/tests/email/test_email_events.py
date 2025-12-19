@@ -18,7 +18,6 @@ pytest \
 # pylint: disable=too-many-arguments
 # pylint: disable=too-many-return-statements
 
-
 import functools
 import json
 from dataclasses import asdict
@@ -83,7 +82,6 @@ def event_extra_data(  # noqa: PLR0911
     request_form: dict[str, Any],
     ipinfo: dict[str, Any],
 ) -> dict[str, Any]:
-
     code = faker.pystr_format(string_format="######", letters="")
     host_url = f"https://{product_name}.io"
 

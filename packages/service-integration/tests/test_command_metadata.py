@@ -15,7 +15,6 @@ from service_integration.cli._metadata import TargetVersionChoices
 def current_metadata(
     metadata_file_path: Path, target_version: str, current_version: str
 ) -> dict:
-
     metadata = yaml.safe_load(metadata_file_path.read_text())
     metadata[target_version] = current_version
 
@@ -110,7 +109,6 @@ def test_get_version_from_metadata(
 def test_changes_in_metadata_keeps_keys_order(
     metadata_file_path, run_program_with_args
 ):
-
     before = yaml.safe_load(metadata_file_path.read_text())
     print(before)
 

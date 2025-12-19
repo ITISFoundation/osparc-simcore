@@ -37,7 +37,7 @@ def large_file_size(
     assert file_size is not None
     assert isinstance(file_size, str)
     validated_file_size = TypeAdapter(ByteSize).validate_python(file_size)
-    assert (
-        validated_file_size >= large_file_block_size
-    ), f"{validated_file_size.human_readable()} must be larger than {large_file_block_size.human_readable()}!"
+    assert validated_file_size >= large_file_block_size, (
+        f"{validated_file_size.human_readable()} must be larger than {large_file_block_size.human_readable()}!"
+    )
     return validated_file_size

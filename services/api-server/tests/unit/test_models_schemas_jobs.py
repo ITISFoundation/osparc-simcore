@@ -53,9 +53,9 @@ def test_job_io_checksums(repeat: int):
     print(inputs2)
 
     assert inputs1 == inputs2
-    assert (
-        inputs1.compute_checksum() == inputs2.compute_checksum()
-    ), f"{inputs1}!={inputs2}"
+    assert inputs1.compute_checksum() == inputs2.compute_checksum(), (
+        f"{inputs1}!={inputs2}"
+    )
 
 
 def test_job_resource_names_has_associated_url(app: FastAPI):

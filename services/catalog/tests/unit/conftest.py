@@ -149,7 +149,8 @@ async def app(
     # create instance
     assert app_environment
     tracing_config = TracingConfig.create(
-        service_name=APP_NAME, tracing_settings=None  # disable tracing in tests
+        service_name=APP_NAME,
+        tracing_settings=None,  # disable tracing in tests
     )
     app_under_test = create_app(tracing_config=tracing_config)
 
@@ -179,13 +180,14 @@ def client(
     # create instance
     assert app_environment
     tracing_config = TracingConfig.create(
-        service_name=APP_NAME, tracing_settings=None  # disable tracing in tests
+        service_name=APP_NAME,
+        tracing_settings=None,  # disable tracing in tests
     )
     app_under_test = create_app(tracing_config=tracing_config)
 
-    assert (
-        spy_app.on_startup.call_count == 0
-    ), "TIP: Remove dependencies from `app` fixture and get it via `client.app`"
+    assert spy_app.on_startup.call_count == 0, (
+        "TIP: Remove dependencies from `app` fixture and get it via `client.app`"
+    )
     assert spy_app.on_shutdown.call_count == 0
 
     with TestClient(app_under_test) as cli:
@@ -388,9 +390,9 @@ def mocked_director_rest_api_base(
     Use `mocked_director_service_api_base` to customize the mocks
 
     """
-    assert (
-        app_settings.CATALOG_DIRECTOR
-    ), "Check dependency on fixture `director_setup_disabled`"
+    assert app_settings.CATALOG_DIRECTOR, (
+        "Check dependency on fixture `director_setup_disabled`"
+    )
 
     # NOTE: this MUST be in sync with services/director/src/simcore_service_director/api/v0/openapi.yaml
     openapi = director_rest_openapi_specs

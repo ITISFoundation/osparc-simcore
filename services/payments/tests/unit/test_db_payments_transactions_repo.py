@@ -47,7 +47,6 @@ def app_environment(
 
 
 async def test_one_time_payment_annotations_workflow(app: FastAPI):
-
     fake = PaymentsTransactionsDB(
         **PaymentsTransactionsDB.model_config["json_schema_extra"]["examples"][1]
     )

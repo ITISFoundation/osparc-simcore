@@ -48,9 +48,9 @@ _DUMMY_API_SERVER_OPENAPI = CURRENT_DIR / "dummy_api_server_openapi.json"
 
 def _check_regex_pattern(pattern: str, match: str, non_match: str):
     assert re.match(pattern=pattern, string=match), f"{match=} did not match {pattern=}"
-    assert not re.match(
-        pattern=pattern, string=non_match
-    ), f"{non_match=} matched {pattern=}"
+    assert not re.match(pattern=pattern, string=non_match), (
+        f"{non_match=} matched {pattern=}"
+    )
 
 
 @pytest.fixture
@@ -220,13 +220,13 @@ def test_param_regex_pattern(params: tuple[str, str, str, str]):
     pattern = param.schema_.regex_pattern
     pattern = "^" + pattern + "$"
     if match is not None:
-        assert re.match(
-            pattern=pattern, string=match
-        ), f"{match=} did not match {pattern=}"
+        assert re.match(pattern=pattern, string=match), (
+            f"{match=} did not match {pattern=}"
+        )
     if non_match is not None:
-        assert not re.match(
-            pattern=pattern, string=non_match
-        ), f"{non_match=} matched {pattern=}"
+        assert not re.match(pattern=pattern, string=non_match), (
+            f"{non_match=} matched {pattern=}"
+        )
 
 
 _API_SERVER_PATHS: list[tuple[str, Path, str]] = [

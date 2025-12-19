@@ -59,7 +59,6 @@ async def test_socketio_session_client_to_server(
     user_role: UserRole,
     mocker: MockerFixture,
 ):
-
     assert client.app
     assert client.server
     assert isinstance(client.server, TestServer)

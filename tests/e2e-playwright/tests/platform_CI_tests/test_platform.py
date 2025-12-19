@@ -49,7 +49,6 @@ def logged_in_context(
 
 @pytest.fixture(scope="module")
 def test_module_teardown() -> Iterable[None]:
-
     yield  # Run the tests
 
     file_path = Path("state.json")

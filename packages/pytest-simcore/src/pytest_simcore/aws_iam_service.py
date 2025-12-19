@@ -42,7 +42,6 @@ async def iam_client(
 async def aws_instance_profile(
     iam_client: IAMClient, faker: Faker
 ) -> AsyncIterator[str]:
-
     profile = await iam_client.create_instance_profile(
         InstanceProfileName=faker.pystr(),
     )

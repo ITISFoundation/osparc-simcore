@@ -37,25 +37,25 @@ def test_generated_schema_same_as_original(
     # run one direction original schema encompass generated one
     process_completion = diff_json_schemas(original_schema, generated_schema)
 
-    assert (
-        process_completion.returncode == 0
-    ), f"Exit code {process_completion.returncode}\n{process_completion.stdout.decode('utf-8')}"
+    assert process_completion.returncode == 0, (
+        f"Exit code {process_completion.returncode}\n{process_completion.stdout.decode('utf-8')}"
+    )
 
     # https://www.npmjs.com/package/json-schema-diff returns true (at least in WSL whatever the result)
     # ```false``` is returned at the end of the stdout
-    assert "No differences found" in process_completion.stdout.decode(
-        "utf-8"
-    ), process_completion.stdout.decode("utf-8")
+    assert "No differences found" in process_completion.stdout.decode("utf-8"), (
+        process_completion.stdout.decode("utf-8")
+    )
 
     # run other way direction:  generated one encompass original schema
     process_completion = diff_json_schemas(original_schema, generated_schema)
 
-    assert (
-        process_completion.returncode == 0
-    ), f"Exit code {process_completion.returncode}\n{process_completion.stdout.decode('utf-8')}"
+    assert process_completion.returncode == 0, (
+        f"Exit code {process_completion.returncode}\n{process_completion.stdout.decode('utf-8')}"
+    )
 
     # https://www.npmjs.com/package/json-schema-diff returns true (at least in WSL whatever the result)
     # ```false``` is returned at the end of the stdout
-    assert "No differences found" in process_completion.stdout.decode(
-        "utf-8"
-    ), process_completion.stdout.decode("utf-8")
+    assert "No differences found" in process_completion.stdout.decode("utf-8"), (
+        process_completion.stdout.decode("utf-8")
+    )

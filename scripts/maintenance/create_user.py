@@ -37,9 +37,9 @@ async def create_user_with_password(
                 fg=typer.colors.YELLOW,
             )
             await register_user(client, username, password)
-            typer.secho(f"user registered", fg=typer.colors.YELLOW)
+            typer.secho("user registered", fg=typer.colors.YELLOW)
             await logout_current_user(client)
-            typer.secho(f"registration done", fg=typer.colors.YELLOW)
+            typer.secho("registration done", fg=typer.colors.YELLOW)
     except Exception as exc:  # pylint: disable=broad-except
         typer.secho(f"Unexpected issue: {exc}", fg=typer.colors.RED, err=True)
         return 1

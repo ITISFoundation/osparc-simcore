@@ -46,9 +46,9 @@ class DeferredGetStatus(BaseDeferredHandler[NodeGet | DynamicServiceGet | NodeGe
         app: FastAPI = context["app"]
         node_id: NodeID = context["node_id"]
 
-        service_status: NodeGet | RunningDynamicServiceDetails | NodeGetIdle = (
-            await common_interface.get_service_status(app, node_id=node_id)
-        )
+        service_status: (
+            NodeGet | RunningDynamicServiceDetails | NodeGetIdle
+        ) = await common_interface.get_service_status(app, node_id=node_id)
         _logger.debug(
             "Service status type=%s, %s", type(service_status), service_status
         )
@@ -69,9 +69,9 @@ class DeferredGetStatus(BaseDeferredHandler[NodeGet | DynamicServiceGet | NodeGe
         if await service_tracker.should_notify_frontend_for_service(
             app, node_id, status_changed=status_changed
         ):
-            project_id: ProjectID | None = (
-                await service_tracker.get_project_id_for_service(app, node_id)
-            )
+            project_id: (
+                ProjectID | None
+            ) = await service_tracker.get_project_id_for_service(app, node_id)
             if project_id:
                 await notify_service_status_change(app, project_id, result)
                 await service_tracker.set_frontend_notified_for_service(app, node_id)

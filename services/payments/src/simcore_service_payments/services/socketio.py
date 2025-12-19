@@ -23,7 +23,6 @@ def setup_socketio(app: FastAPI):
         )
 
     async def _on_shutdown() -> None:
-
         if app.state.external_socketio:
             await cleanup_socketio_async_pubsub_manager(
                 server_manager=app.state.external_socketio

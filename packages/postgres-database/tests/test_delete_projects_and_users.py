@@ -132,7 +132,6 @@ async def test_view(engine):
         async for row in conn.execute(projects.select()):
             print(row)
 
-        #
         await conn.execute(users.delete().where(users.c.name == "A"))
 
         res: ResultProxy = None

@@ -106,7 +106,7 @@ def mock_upload_outputs_raises_error(
         side_effect=_mock_upload_outputs,
     )
 
-    yield error_toggle
+    return error_toggle
 
 
 @pytest.fixture(params=[1, 4, 10])

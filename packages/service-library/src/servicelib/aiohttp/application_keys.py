@@ -24,7 +24,7 @@ from aiohttp import ClientSession, web
 #
 APP_CONFIG_KEY: Final = web.AppKey("APP_CONFIG_KEY", dict[str, object])
 
-APP_AIOPG_ENGINE_KEY: Final[str] = f"{__name__ }.aiopg_engine"
+APP_AIOPG_ENGINE_KEY: Final[str] = f"{__name__}.aiopg_engine"
 
 APP_CLIENT_SESSION_KEY: Final = web.AppKey("APP_CLIENT_SESSION_KEY", ClientSession)
 

@@ -98,7 +98,6 @@ def _raise_as_payments_gateway_error(operation_id: str):
     Maps httpx exceptions into PaymentsGatewayError exceptions
     """
     try:
-
         yield
 
     except HTTPStatusError as err:

@@ -182,9 +182,9 @@ async def assert_redirected_to_study(
 
     # Expects redirection to osparc web
     assert resp.url.path == "/"
-    assert (
-        "OSPARC-SIMCORE" in content
-    ), f"Expected front-end rendering workbench's study, got {content!s}"
+    assert "OSPARC-SIMCORE" in content, (
+        f"Expected front-end rendering workbench's study, got {content!s}"
+    )
 
     # Expects auth cookie for current user
     assert DEFAULT_SESSION_COOKIE_NAME in [c.key for c in session.cookie_jar]
@@ -192,9 +192,9 @@ async def assert_redirected_to_study(
     # Expects fragment to indicate client where to find newly created project
     unquoted_fragment = urllib.parse.unquote_plus(resp.real_url.fragment)
     match = re.match(r"/view\?(.+)", unquoted_fragment)
-    assert (
-        match
-    ), f"Expected fragment as /#/view?param1=value&param2=value, got {unquoted_fragment}"
+    assert match, (
+        f"Expected fragment as /#/view?param1=value&param2=value, got {unquoted_fragment}"
+    )
 
     query_s = match.group(1)
     query_params = urllib.parse.parse_qs(
@@ -278,9 +278,9 @@ async def test_dispatch_study_anonymously(
 
     if redirect_type == "file_only":
         message, status_code = assert_error_in_fragment(response)
-        assert (
-            status_code == status.HTTP_401_UNAUTHORIZED
-        ), f"Got instead {status_code=}, {message=}"
+        assert status_code == status.HTTP_401_UNAUTHORIZED, (
+            f"Got instead {status_code=}, {message=}"
+        )
 
     else:
         expected_project_id = await assert_redirected_to_study(response, client.session)
@@ -381,9 +381,9 @@ def assert_error_in_fragment(resp: ClientResponse) -> tuple[str, int]:
     # Expects fragment to indicate client where to find newly created project
     unquoted_fragment = urllib.parse.unquote_plus(resp.real_url.fragment)
     match = re.match(r"/error\?(.+)", unquoted_fragment, re.DOTALL)
-    assert (
-        match
-    ), f"Expected error fragment as /#/error?message=..., got {unquoted_fragment}"
+    assert match, (
+        f"Expected error fragment as /#/error?message=..., got {unquoted_fragment}"
+    )
 
     query_s = match.group(1)
     # returns {'param1': ['value'], 'param2': ['value']}

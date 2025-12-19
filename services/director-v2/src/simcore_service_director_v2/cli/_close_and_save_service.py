@@ -88,7 +88,10 @@ async def async_close_and_save_service(
     update_interval: int,
 ) -> None:
     task_id: TaskId
-    async with _minimal_app() as app, ThinDV2LocalhostClient() as thin_dv2_localhost_client:
+    async with (
+        _minimal_app() as app,
+        ThinDV2LocalhostClient() as thin_dv2_localhost_client,
+    ):
         rich.print(
             f"[yellow]Starting[/yellow] cleanup for service [green]{node_id}[/green]"
         )

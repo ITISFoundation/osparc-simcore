@@ -63,7 +63,6 @@ async def mock_wb_api_server_rpc(
     mocked_app_rpc_dependencies: None,
     mock_handler_in_licenses_rpc_interface: HandlerMockFactory,
 ) -> None:
-
     mock_handler_in_licenses_rpc_interface(
         "checkout_licensed_item_for_wallet", return_value=EXPECTED_CHECKOUT
     )

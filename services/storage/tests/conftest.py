@@ -341,9 +341,9 @@ async def create_upload_file_link_v2(
             location_id=f"{location_id}",
             file_id=file_id,
         ).with_query(**query_kwargs, user_id=user_id)
-        assert (
-            "file_size" in url.query
-        ), "V2 call to upload file must contain file_size field!"
+        assert "file_size" in url.query, (
+            "V2 call to upload file must contain file_size field!"
+        )
         response = await client.put(f"{url}")
         received_file_upload, error = assert_status(
             response, status.HTTP_200_OK, FileUploadSchema

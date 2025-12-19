@@ -228,7 +228,6 @@ async def batch_get_my_services(
     assert app.state.engine  # nosec
 
     try:
-
         batch_got = await catalog_services.batch_get_user_services(
             repo=ServicesRepository(app.state.engine),
             groups_repo=GroupsRepository(app.state.engine),
@@ -239,12 +238,10 @@ async def batch_get_my_services(
 
     except BatchNotFoundError as e:
         ctx = e.error_context()
-        ctx["name"] = f"{ctx.get('missing_services',[])}"
+        ctx["name"] = f"{ctx.get('missing_services', [])}"
         raise CatalogBatchNotFoundRpcError(**ctx) from e
 
-    assert [
-        (sv.key, sv.release.version) for sv in batch_got.found_items
-    ] == ids  # nosec
+    assert [(sv.key, sv.release.version) for sv in batch_got.found_items] == ids  # nosec
 
     return MyServicesRpcBatchGet(
         found_items=batch_got.found_items,

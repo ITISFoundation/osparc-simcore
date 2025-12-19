@@ -136,14 +136,14 @@ def submit_simulation(
         log_file = outputs.results["output_2"]
 
         # move the output.h5 to the correct place with the correct filename
-        if not output_file is None and isinstance(output_file, osparc.File):
+        if output_file is not None and isinstance(output_file, osparc.File):
             download_file_name: str = files_api.download_file(file_id=output_file.id)
             destination = sim.OutputFileName(0)
             shutil.move(download_file_name, destination)
 
         # move the log to the correct place with the correct filename
         # TODO: the axware logs will be extracted but not renamed. But then again, who needs them?
-        if not log_file is None and isinstance(log_file, osparc.File):
+        if log_file is not None and isinstance(log_file, osparc.File):
             download_file_name: str = files_api.download_file(file_id=log_file.id)
             destination_path = Path(sim.OutputFileName(0)).parent
             with tarfile.open(download_file_name, "r") as tar:
@@ -171,14 +171,12 @@ def run_simulation(
     api_key: str | None = KEY,
     api_secret: str | None = SECRET,
 ):  # TODO: version should default to latest
-
     configuration = osparc.Configuration()
     configuration.host = host
     configuration.username = api_key
     configuration.password = api_secret
 
     with osparc.ApiClient(configuration) as api_client:
-
         solvers_api = osparc.SolversApi(api_client)
         files_api = osparc.FilesApi(api_client)
 

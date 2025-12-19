@@ -64,14 +64,13 @@ def parse_changes(filename: Path):
         for line in fh:
             if match := DIFF_PATTERN.match(line):
                 file_a, file_b = match.groups()
-                assert (
-                    file_a == file_b
-                ), f"Should compare same files but {file_a}!={file_b}"
+                assert file_a == file_b, (
+                    f"Should compare same files but {file_a}!={file_b}"
+                )
             elif match := BEFORE_PATTERN.match(line):
                 name, version = match.groups()
                 before[name].append(Version(version))
                 changes.append(name)
-                #
                 if file_a:
                     lib2reqs[name].append(file_a)
             elif match := AFTER_PATTERN.match(line):
@@ -87,7 +86,6 @@ class ReqsClassification(NamedTuple):
 
 
 def classify_reqs_path(reqs_path: str) -> ReqsClassification:
-
     if (
         any(k in reqs_path for k in ("_test.txt", "requirements.txt"))
         or "test" in reqs_path
@@ -124,7 +122,6 @@ def format_reqs_paths(req_paths):
 
 
 def main_changes_stats() -> None:
-
     filepath = Path("changes.ignore.log")
     if not filepath.exists():
         dump_changes(filepath)
@@ -161,9 +158,9 @@ def main_changes_stats() -> None:
                 "|",
                 f"{name:25s}",
                 "|",
-                f'{", ".join(from_versions):15s}',
+                f"{', '.join(from_versions):15s}",
                 "|",
-                f'{",".join(to_versions) if to_versions else "🗑️ removed":10s}',
+                f"{','.join(to_versions) if to_versions else '🗑️ removed':10s}",
                 "|",
                 # how big the version change is
                 (
@@ -264,11 +261,11 @@ def repo_wide_changes(exclude: set | None = None) -> None:
                 "|",
                 f"{name:25s}",
                 "|",
-                f'{", ".join(bases):25s}',
+                f"{', '.join(bases):25s}",
                 "|",
-                f'{", ".join(tests):25s}',
+                f"{', '.join(tests):25s}",
                 "|",
-                f'{", ".join(tools):25s}',
+                f"{', '.join(tools):25s}",
                 "|",
             )
 

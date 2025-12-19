@@ -28,8 +28,7 @@ OptionalContext: TypeAlias = AuthContextDict | dict | None
 
 CheckFunction: TypeAlias = (
     # Type for check functions that can be either sync or async
-    Callable[[OptionalContext], bool]
-    | Callable[[OptionalContext], Awaitable[bool]]
+    Callable[[OptionalContext], bool] | Callable[[OptionalContext], Awaitable[bool]]
 )
 
 

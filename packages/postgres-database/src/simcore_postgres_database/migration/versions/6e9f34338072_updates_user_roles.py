@@ -26,7 +26,6 @@ def downgrade():
         "CREATE TYPE userrole AS ENUM('ANONYMOUS', 'GUEST', 'USER', 'TESTER', 'ADMIN')"
     )
     op.execute(
-        "ALTER TABLE users ALTER COLUMN role TYPE userrole USING "
-        "role::text::userrole"
+        "ALTER TABLE users ALTER COLUMN role TYPE userrole USING role::text::userrole"
     )
     op.execute("DROP TYPE userrole_old")

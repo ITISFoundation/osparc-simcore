@@ -1,8 +1,7 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, FastAPI
+from fastapi import APIRouter, Depends, FastAPI, Response, status
 from fastapi import Path as PathParam
-from fastapi import Response, status
 from models_library.services import ServiceOutput
 from pydantic.main import BaseModel
 

@@ -36,7 +36,6 @@ def fake_data_dict(faker: Faker) -> dict[str, Any]:
 
 
 def test_json_dump_variants():
-
     uuid_obj = uuid4()
 
     with pytest.raises(TypeError) as exc_info:

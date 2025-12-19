@@ -28,9 +28,9 @@ def assert_status(
     # raises ValueError if cannot be converted
     expected_status_code = HTTPStatus(expected_status_code)
 
-    assert (
-        response.status_code == expected_status_code
-    ), f"received {response.status_code}: {response.text}, expected {get_code_display_name(expected_status_code)}"
+    assert response.status_code == expected_status_code, (
+        f"received {response.status_code}: {response.text}, expected {get_code_display_name(expected_status_code)}"
+    )
 
     # response
     if expected_status_code == status.HTTP_204_NO_CONTENT:
@@ -84,6 +84,6 @@ def _do_assert_error(
             list_expected_msg = [expected_msg]
 
         for msg in list_expected_msg:
-            assert any(
-                msg == e or re.search(msg, e) for e in details
-            ), f"could not find {msg=} in {details=}"
+            assert any(msg == e or re.search(msg, e) for e in details), (
+                f"could not find {msg=} in {details=}"
+            )

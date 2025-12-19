@@ -85,10 +85,18 @@ class DynamicServiceCreate(ServiceDetails):
                     "product_name": "osparc",
                     "product_api_base_url": "https://api.local/",
                     "can_save": True,
-                    "service_resources": ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"][0],  # type: ignore [index]
-                    "wallet_info": WalletInfo.model_config["json_schema_extra"]["examples"][0],  # type: ignore [index]
-                    "pricing_info": PricingInfo.model_config["json_schema_extra"]["examples"][0],  # type: ignore [index]
-                    "hardware_info": HardwareInfo.model_config["json_schema_extra"]["examples"][0],  # type: ignore [index]
+                    "service_resources": ServiceResourcesDictHelpers.model_config[
+                        "json_schema_extra"
+                    ]["examples"][0],  # type: ignore [index]
+                    "wallet_info": WalletInfo.model_config["json_schema_extra"][
+                        "examples"
+                    ][0],  # type: ignore [index]
+                    "pricing_info": PricingInfo.model_config["json_schema_extra"][
+                        "examples"
+                    ][0],  # type: ignore [index]
+                    "hardware_info": HardwareInfo.model_config["json_schema_extra"][
+                        "examples"
+                    ][0],  # type: ignore [index]
                 }
             }
         )

@@ -57,9 +57,9 @@ async def create(
     user_id: UserID | None,
     workspace_id: WorkspaceID | None,
 ) -> FolderDB:
-    assert not (
-        user_id is not None and workspace_id is not None
-    ), "Both user_id and workspace_id cannot be provided at the same time. Please provide only one."
+    assert not (user_id is not None and workspace_id is not None), (
+        "Both user_id and workspace_id cannot be provided at the same time. Please provide only one."
+    )
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         result = await conn.stream(
@@ -352,9 +352,9 @@ async def get_for_user_or_workspace(
     user_id: UserID | None,  # owned
     workspace_id: WorkspaceID | None,
 ) -> FolderDB:
-    assert not (
-        user_id is not None and workspace_id is not None
-    ), "Both user_id and workspace_id cannot be provided at the same time. Please provide only one."
+    assert not (user_id is not None and workspace_id is not None), (
+        "Both user_id and workspace_id cannot be provided at the same time. Please provide only one."
+    )
 
     query = _create_base_select_query(folder_id=folder_id, product_name=product_name)
 
@@ -490,7 +490,6 @@ async def get_projects_recursively_only_if_user_is_owner(
     """
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-
         # Step 1: Define the base case for the recursive CTE
         base_query = sql.select(
             folders_v2.c.folder_id, folders_v2.c.parent_folder_id
@@ -548,7 +547,6 @@ async def get_all_folders_and_projects_ids_recursively(
     """
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-
         # Step 1: Define the base case for the recursive CTE
         base_query = sql.select(
             folders_v2.c.folder_id, folders_v2.c.parent_folder_id
@@ -597,7 +595,6 @@ async def get_folders_recursively(
     product_name: ProductName,
 ) -> list[FolderID]:
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-
         # Step 1: Define the base case for the recursive CTE
         base_query = sql.select(
             folders_v2.c.folder_id, folders_v2.c.parent_folder_id

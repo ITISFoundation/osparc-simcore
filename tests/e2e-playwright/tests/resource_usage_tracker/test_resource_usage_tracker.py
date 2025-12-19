@@ -8,7 +8,7 @@
 
 import os
 from collections.abc import Iterator
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from http import HTTPStatus
 
 import pytest
@@ -67,7 +67,7 @@ def test_resource_usage_tracker(
     ):
         with attempt:
             test_logger.info(
-                f"====================={datetime.now(tz=timezone.utc)}============================="
+                f"====================={datetime.now(tz=UTC)}============================="
             )
             output = api_request_context.get(f"{product_url}v0/projects/{STUDY_ID}")
             assert output.status == HTTPStatus.OK

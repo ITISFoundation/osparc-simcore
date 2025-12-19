@@ -167,9 +167,7 @@ class DatCoreDataManager(BaseDataManager):
                 cursor=cursor,
                 limit=limit,
             )
-        assert TypeAdapter(DatCorePackageName).validate_python(
-            file_filter.parts[1]
-        )  # nosec
+        assert TypeAdapter(DatCorePackageName).validate_python(file_filter.parts[1])  # nosec
 
         # only other option is a file or maybe a partial?? that would be bad
         return (
@@ -223,12 +221,8 @@ class DatCoreDataManager(BaseDataManager):
                     for p in paths:
                         if p.file_meta_data is not None:
                             # this is a file
-                            assert (
-                                p.file_meta_data.file_size is not UNDEFINED_SIZE_TYPE
-                            )  # nosec
-                            assert isinstance(
-                                p.file_meta_data.file_size, ByteSize
-                            )  # nosec
+                            assert p.file_meta_data.file_size is not UNDEFINED_SIZE_TYPE  # nosec
+                            assert isinstance(p.file_meta_data.file_size, ByteSize)  # nosec
                             accumulated_size = ByteSize(
                                 accumulated_size + p.file_meta_data.file_size
                             )

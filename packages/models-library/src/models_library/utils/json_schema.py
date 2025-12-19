@@ -8,7 +8,6 @@ See how is used to validate input/output content-schemas of service models
 
 # SEE possible enhancements in https://github.com/ITISFoundation/osparc-simcore/issues/3008
 
-
 from collections.abc import Sequence
 from contextlib import suppress
 from copy import deepcopy
@@ -110,9 +109,9 @@ class GenerateResolvedJsonSchema(GenerateJsonSchema):
 
 
 __all__: tuple[str, ...] = (
-    "any_ref_key",
     "InvalidJsonSchema",
+    "JsonSchemaValidationError",
+    "any_ref_key",
     "jsonschema_validate_data",
     "jsonschema_validate_schema",
-    "JsonSchemaValidationError",
 )

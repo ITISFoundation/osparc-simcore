@@ -354,7 +354,6 @@ async def test_workflow_with_third_party_services_outages(
     deferred_tasks_to_start: int,
     service: str,
 ):
-
     async with _RemoteProcessLifecycleManager(
         await get_remote_process(),
         rabbit_service,

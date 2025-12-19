@@ -405,9 +405,9 @@ def pipeline_test_params(
     # add node attributes
     for non_resolved_key, values in node_keys.items():
         for attr, attr_value in values.items():
-            complete_dag.nodes[node_name_to_uuid_map[non_resolved_key]][
-                attr
-            ] = attr_value
+            complete_dag.nodes[node_name_to_uuid_map[non_resolved_key]][attr] = (
+                attr_value
+            )
 
     pipeline_dag = nx.from_dict_of_lists(
         resolved_dag_adjacency, create_using=nx.DiGraph

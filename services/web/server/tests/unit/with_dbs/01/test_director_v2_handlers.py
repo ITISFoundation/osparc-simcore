@@ -66,9 +66,9 @@ async def test_start_computation(
         assert not error, f"error received: {error}"
     if data:
         assert "pipeline_id" in data
-        assert (
-            data["pipeline_id"] == f"{project_id}"
-        ), f"received pipeline id: {data['pipeline_id']}, expected {project_id}"
+        assert data["pipeline_id"] == f"{project_id}", (
+            f"received pipeline id: {data['pipeline_id']}, expected {project_id}"
+        )
 
 
 @pytest.mark.parametrize(*standard_role_response(), ids=str)
@@ -96,9 +96,9 @@ async def test_start_partial_computation(
         assert not error, f"error received: {error}"
     if data:
         assert "pipeline_id" in data
-        assert (
-            data["pipeline_id"] == f"{project_id}"
-        ), f"received pipeline id: {data['pipeline_id']}, expected {project_id}"
+        assert data["pipeline_id"] == f"{project_id}", (
+            f"received pipeline id: {data['pipeline_id']}, expected {project_id}"
+        )
 
 
 @pytest.mark.parametrize(*standard_role_response(), ids=str)
@@ -447,10 +447,7 @@ async def populated_project_metadata(
     with postgres_db.connect() as con:
         con.execute(
             projects_metadata.insert().values(
-                **{
-                    "project_uuid": project_uuid,
-                    "custom": {"job_name": "My Job Name"},
-                }
+                project_uuid=project_uuid, custom={"job_name": "My Job Name"}
             )
         )
         yield

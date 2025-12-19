@@ -249,7 +249,6 @@ async def services_db_tables_injector(
         async with sqlalchemy_async_engine.begin() as conn:
             # NOTE: The 'default' dialect with current database version settings does not support in-place multirow inserts
             for service in iter_services:
-
                 insert_stmt = pg_insert(services_meta_data).values(**service)
 
                 update_stmt = insert_stmt.on_conflict_do_update(
@@ -367,9 +366,9 @@ async def service_metadata_faker(faker: Faker) -> Callable:
         data = deepcopy(template)
         data.update(**overrides)
 
-        assert ServiceMetaDataPublished.model_validate(
-            data
-        ), "Invalid fake data. Out of sync!"
+        assert ServiceMetaDataPublished.model_validate(data), (
+            "Invalid fake data. Out of sync!"
+        )
         return data
 
     return _fake_factory
@@ -469,9 +468,9 @@ async def create_fake_service_data(
 
 
 @pytest.fixture
-def create_director_list_services_from() -> (
-    Callable[[list[dict[str, Any]], list], list[dict[str, Any]]]
-):
+def create_director_list_services_from() -> Callable[
+    [list[dict[str, Any]], list], list[dict[str, Any]]
+]:
     """Convenience function to merge outputs of
     - `create_fake_service_data` callable with those of
     - `expected_director_rest_api_list_services` fixture

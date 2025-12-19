@@ -66,7 +66,7 @@ async def test_long_running_task_request_raises_400(
     client: TestClient, long_running_task_url: URL
 ):
     # missing parameters raises
-    with pytest.raises(ClientResponseError):  # noqa: PT012
+    with pytest.raises(ClientResponseError):
         async for _ in long_running_task_request(
             client.session, long_running_task_url, None
         ):

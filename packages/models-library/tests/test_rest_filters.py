@@ -16,7 +16,6 @@ class CustomFilterStrict(CustomFilter):
 
 
 def test_custom_filter_query_parameters():
-
     # 2. use generic as query parameters
     logging.info(
         "json schema is for the query \n %s",

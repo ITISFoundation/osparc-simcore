@@ -52,8 +52,8 @@ def create_erd(image_path: Path, include_table_names: list[str] | None = None):
     graph = create_schema_graph(**kwargs)
 
     # pylint: disable=no-member
-    graph.write_svg(f'{image_path.with_suffix(".svg")}')
-    graph.write_png(f'{image_path.with_suffix(".png")}')
+    graph.write_svg(f"{image_path.with_suffix('.svg')}")
+    graph.write_png(f"{image_path.with_suffix('.png')}")
     return image_path
 
 

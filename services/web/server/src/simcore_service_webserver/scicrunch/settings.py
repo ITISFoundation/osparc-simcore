@@ -11,7 +11,6 @@ SCICRUNCH_DEFAULT_URL = "https://scicrunch.org"
 
 
 class SciCrunchSettings(BaseCustomSettings):
-
     SCICRUNCH_API_BASE_URL: Annotated[
         HttpUrl, Field(description="Base url to scicrunch API's entrypoint")
     ] = TypeAdapter(HttpUrl).validate_python(f"{SCICRUNCH_DEFAULT_URL}/api/1")

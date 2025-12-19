@@ -34,13 +34,13 @@ def node_meta_schema(node_meta_schema_file: Path) -> dict:
 def json_schema_dict(common_schemas_specs_dir: Path) -> Iterable[Callable]:
     def schema_getter(schema_name: str) -> dict:
         json_file = common_schemas_specs_dir / schema_name
-        assert (
-            json_file.exists()
-        ), f"Missing {schema_name} in {common_schemas_specs_dir}, please correct path"
+        assert json_file.exists(), (
+            f"Missing {schema_name} in {common_schemas_specs_dir}, please correct path"
+        )
         with json_file.open() as fp:
             return json.load(fp)
 
-    yield schema_getter
+    return schema_getter
 
 
 @pytest.fixture(scope="session")
@@ -78,14 +78,14 @@ def random_json_from_schema(
             cwd=tmp_path,
         )
 
-        assert (
-            result.returncode == 0
-        ), f"Issue running {result.args}, gives following errors:\n{result.stdout.decode('utf-8')}"
+        assert result.returncode == 0, (
+            f"Issue running {result.args}, gives following errors:\n{result.stdout.decode('utf-8')}"
+        )
 
         assert generated_json_path.exists()
         return json.loads(generated_json_path.read_text())
 
-    yield _generator
+    return _generator
 
 
 @pytest.fixture(scope="session")

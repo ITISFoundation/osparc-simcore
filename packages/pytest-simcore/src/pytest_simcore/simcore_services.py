@@ -100,9 +100,9 @@ async def wait_till_service_healthy(service_name: str, endpoint: URL):
                 # NOTE: Health-check endpoint require only a status code 200
                 # (see e.g. services/web/server/docker/healthcheck.py)
                 # regardless of the payload content
-                assert (
-                    response.status == 200
-                ), f"Connection to {service_name=} at {endpoint=} failed with {response=}"
+                assert response.status == 200, (
+                    f"Connection to {service_name=} at {endpoint=} failed with {response=}"
+                )
 
             log.info(
                 "Connection to %s succeeded [%s]",

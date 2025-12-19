@@ -54,7 +54,6 @@ class ComputationsRequestContext(RequestParameters):
 @permission_required("services.pipeline.*")
 @permission_required("project.read")
 async def list_computations_latest_iteration(request: web.Request) -> web.Response:
-
     req_ctx = ComputationsRequestContext.model_validate(request)
     query_params: ComputationRunIterationsLatestListQueryParams = (
         parse_request_query_parameters_as(
@@ -102,7 +101,6 @@ async def list_computations_latest_iteration(request: web.Request) -> web.Respon
 @permission_required("services.pipeline.*")
 @permission_required("project.read")
 async def list_computation_iterations(request: web.Request) -> web.Response:
-
     req_ctx = ComputationsRequestContext.model_validate(request)
     query_params: ComputationRunIterationsListQueryParams = (
         parse_request_query_parameters_as(
@@ -153,27 +151,27 @@ async def list_computation_iterations(request: web.Request) -> web.Response:
 async def list_computations_latest_iteration_tasks(
     request: web.Request,
 ) -> web.Response:
-
     req_ctx = ComputationsRequestContext.model_validate(request)
     query_params: ComputationTaskListQueryParams = parse_request_query_parameters_as(
         ComputationTaskListQueryParams, request
     )
     path_params = parse_request_path_parameters_as(ComputationTaskPathParams, request)
 
-    _total, _items = (
-        await _computations_service.list_computations_latest_iteration_tasks(
-            request.app,
-            product_name=req_ctx.product_name,
-            user_id=req_ctx.user_id,
-            project_id=path_params.project_id,
-            # filters
-            include_children=query_params.include_children,
-            # pagination
-            offset=query_params.offset,
-            limit=query_params.limit,
-            # ordering
-            order_by=OrderBy.model_construct(**query_params.order_by.model_dump()),
-        )
+    (
+        _total,
+        _items,
+    ) = await _computations_service.list_computations_latest_iteration_tasks(
+        request.app,
+        product_name=req_ctx.product_name,
+        user_id=req_ctx.user_id,
+        project_id=path_params.project_id,
+        # filters
+        include_children=query_params.include_children,
+        # pagination
+        offset=query_params.offset,
+        limit=query_params.limit,
+        # ordering
+        order_by=OrderBy.model_construct(**query_params.order_by.model_dump()),
     )
 
     page = Page[ComputationTaskRestGet].model_validate(

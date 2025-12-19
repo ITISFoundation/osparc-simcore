@@ -29,7 +29,7 @@ class StorageSideEffects:
         paths_to_export: list[PathToExport],
         export_as: Literal["path", "download_link"],
         owner_metadata: OwnerMetadata,
-        user_id: UserID
+        user_id: UserID,
     ) -> tuple[AsyncJobGet, OwnerMetadata]:
         assert rabbitmq_rpc_client
         assert owner_metadata

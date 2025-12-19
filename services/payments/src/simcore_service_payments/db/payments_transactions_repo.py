@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from decimal import Decimal
 
 import sqlalchemy as sa
@@ -193,7 +193,7 @@ class PaymentsTransactionsRepo(BaseRepository):
             return PaymentsTransactionsDB.model_validate(row) if row else None
 
     async def sum_current_month_dollars(self, *, wallet_id: WalletID) -> Decimal:
-        _current_timestamp = datetime.now(tz=timezone.utc)
+        _current_timestamp = datetime.now(tz=UTC)
         _current_month_start_timestamp = _current_timestamp.replace(
             day=1, hour=0, minute=0, second=0, microsecond=0
         )

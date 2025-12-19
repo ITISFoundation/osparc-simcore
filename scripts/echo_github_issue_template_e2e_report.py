@@ -74,7 +74,6 @@ def main(config: Config):
     print(end="\n" * 2)
 
     print("<!--Keep references at the bottom -->")
-    #
     for r, v in refs.items():
         print(f"{r}:{v}")
 

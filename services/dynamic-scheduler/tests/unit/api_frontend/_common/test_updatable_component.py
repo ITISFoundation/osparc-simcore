@@ -103,7 +103,9 @@ def not_initialized_app(
     nicegui.app.include_router(router)
 
     nicegui.ui.run_with(
-        minimal_app, mount_path=mount_path, storage_secret="test-secret"  # noqa: S106
+        minimal_app,
+        mount_path=mount_path,
+        storage_secret="test-secret",  # noqa: S106
     )
     set_parent_app(minimal_app)
     return minimal_app

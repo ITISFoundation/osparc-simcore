@@ -10,7 +10,6 @@ from pathlib import Path
 from typing import Annotated, TypeAlias
 from uuid import UUID
 
-from models_library.basic_types import ConstrainedStr, KeyIDStr
 from pydantic import (
     AnyUrl,
     BaseModel,
@@ -22,6 +21,8 @@ from pydantic import (
     ValidationInfo,
     field_validator,
 )
+
+from models_library.basic_types import ConstrainedStr, KeyIDStr
 
 from .basic_regex import (
     DATCORE_FILE_ID_RE,

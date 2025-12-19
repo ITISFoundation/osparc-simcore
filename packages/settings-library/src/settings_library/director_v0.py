@@ -2,6 +2,7 @@ from functools import cached_property
 from typing import Annotated
 
 from pydantic import AnyHttpUrl, Field, TypeAdapter
+
 from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import PortInt, VersionTag
 

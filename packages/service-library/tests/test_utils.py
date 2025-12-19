@@ -59,9 +59,9 @@ def mock_logger(mocker: MockerFixture) -> Iterator[mock.Mock]:
 
     assert mock_logger.mock_calls
     mock_logger.warning.assert_called()
-    assert (
-        len(mock_logger.warning.mock_calls) == 3
-    ), "Expected all 3 errors ALWAYS logged as warnings"
+    assert len(mock_logger.warning.mock_calls) == 3, (
+        "Expected all 3 errors ALWAYS logged as warnings"
+    )
 
 
 async def test_logged_gather(

@@ -14,7 +14,7 @@ async def publish_disk_usage(
     *,
     user_id: UserID,
     node_id: NodeID,
-    usage: dict[MountPathCategory, DiskUsage]
+    usage: dict[MountPathCategory, DiskUsage],
 ) -> None:
     notifier: Notifier = Notifier.get_from_app_state(app)
     await notifier.notify_service_disk_usage(

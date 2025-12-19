@@ -128,11 +128,11 @@ async def run_services(
                     for service in docker_client.services.list():
                         tasks = service.tasks()
                         print(
-                            f"service details {service.id}:{service.name}: {json.dumps( tasks, indent=2)}"
+                            f"service details {service.id}:{service.name}: {json.dumps(tasks, indent=2)}"
                         )
-                    assert (
-                        node_details["service_state"] == "running"
-                    ), f"current state is {node_details['service_state']}"
+                    assert node_details["service_state"] == "running", (
+                        f"current state is {node_details['service_state']}"
+                    )
 
             started_service["service_state"] = node_details["service_state"]
             started_service["service_message"] = node_details["service_message"]

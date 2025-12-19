@@ -98,7 +98,7 @@ async def test_create_pg_engine(postgres_service_with_fake_data: DataSourceName)
         async with create_pg_engine(dsn) as engine4:
             assert engine4.dsn == engine3.dsn
             assert not engine4.closed
-            raise ValueError()
+            raise ValueError
     except ValueError:
         assert engine4.closed
 

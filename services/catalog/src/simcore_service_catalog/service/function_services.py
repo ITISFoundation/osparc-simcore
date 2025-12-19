@@ -46,7 +46,7 @@ async def function_services_lifespan(app: FastAPI) -> AsyncIterator[State]:
 
 
 __all__: tuple[str, ...] = (
+    "function_services_lifespan",
     "get_function_service",
     "is_function_service",
-    "function_services_lifespan",
 )

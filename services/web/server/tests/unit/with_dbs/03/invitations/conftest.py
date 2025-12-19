@@ -118,7 +118,7 @@ def mock_invitations_service_http_api(
     assert "/v1/invitations:extract" in oas["paths"]
 
     def _extract_cbk(url, **kwargs):
-        fake_code = URL(URL(f'{kwargs["json"]["invitation_url"]}').fragment).query[
+        fake_code = URL(URL(f"{kwargs['json']['invitation_url']}").fragment).query[
             "invitation"
         ]
         # if nothing is encoded in fake_code, just return fake_osparc_invitation

@@ -2,13 +2,14 @@ import datetime
 from pathlib import Path
 from typing import Annotated, Self
 
+from pydantic import BaseModel, Field, model_validator
+
 from models_library.projects import ProjectID
 from models_library.utils.common_validators import (
     MIN_NON_WILDCARD_CHARS,
     WILDCARD_CHARS,
     ensure_pattern_has_enough_characters_before,
 )
-from pydantic import BaseModel, Field, model_validator
 
 from ..api_schemas_storage.storage_schemas import (
     DEFAULT_NUMBER_OF_PATHS_PER_PAGE,

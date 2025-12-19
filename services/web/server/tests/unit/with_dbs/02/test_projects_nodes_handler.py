@@ -230,9 +230,7 @@ async def test_replace_node_resources_is_ok_if_explicitly_authorized(
                 k: v.model_dump() for k, v in node_resources.items()
             } == ServiceResourcesDictHelpers.model_config["json_schema_extra"][
                 "examples"
-            ][
-                0
-            ]
+            ][0]
 
 
 @pytest.mark.parametrize(

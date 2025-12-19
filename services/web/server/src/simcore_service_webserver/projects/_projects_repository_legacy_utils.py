@@ -111,7 +111,7 @@ def assemble_array_groups(user_groups: list[RowProxy]) -> str:
     return (
         "array[]::text[]"
         if len(user_groups) == 0
-        else f"""array[{', '.join(f"'{group.gid}'" for group in user_groups)}]"""
+        else f"""array[{", ".join(f"'{group.gid}'" for group in user_groups)}]"""
     )
 
 

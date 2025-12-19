@@ -36,7 +36,6 @@ def test_description():
 
 
 def test_status_codes_checks():
-
     assert is_1xx_informational(status.HTTP_102_PROCESSING)
     assert is_2xx_success(status.HTTP_202_ACCEPTED)
     assert is_3xx_redirect(status.HTTP_301_MOVED_PERMANENTLY)
@@ -49,7 +48,6 @@ def test_status_codes_checks():
 
 
 def test_predicates_with_status():
-
     # in formational
     assert get_http_status_codes(status, is_1xx_informational) == [
         status.HTTP_100_CONTINUE,

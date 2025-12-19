@@ -21,7 +21,6 @@ def load_config():
 def rsinc(x: list[float], a: float = 3.14) -> float:
     cfg = load_config()
     with osparc.ApiClient(cfg) as api_client:
-
         solvers_api = SolversApi(api_client)
         solver: Solver = solvers_api.get_solver_release(
             "simcore/services/comp/cctest-sinc", "0.1.0"
@@ -56,5 +55,4 @@ def rsinc(x: list[float], a: float = 3.14) -> float:
 
 
 if __name__ == "__main__":
-
     rsinc([1.0, 2.0, 3.0], a=3.14)

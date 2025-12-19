@@ -37,7 +37,6 @@ def clone_project_document(
     forced_copy_project_id: UUID | None = None,
     clean_output_data: bool = False,
 ) -> tuple[ProjectDict, NodesMap]:
-
     project_copy = deepcopy(project)
 
     # Update project id

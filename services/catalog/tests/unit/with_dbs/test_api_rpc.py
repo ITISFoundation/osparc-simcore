@@ -370,7 +370,6 @@ async def test_rpc_get_service_not_found_error(
     product_name: ProductName,
     user_id: UserID,
 ):
-
     with pytest.raises(CatalogItemNotFoundRpcError, match="unknown"):
         await catalog_rpc.get_service(
             rpc_client,
@@ -389,7 +388,6 @@ async def test_rpc_get_service_validation_error(
     product_name: ProductName,
     user_id: UserID,
 ):
-
     with pytest.raises(ValidationError, match="service_key"):
         await catalog_rpc.get_service(
             rpc_client,

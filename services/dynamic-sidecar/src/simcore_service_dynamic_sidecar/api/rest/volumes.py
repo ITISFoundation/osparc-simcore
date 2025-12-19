@@ -1,8 +1,7 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, FastAPI
+from fastapi import APIRouter, Depends, FastAPI, status
 from fastapi import Path as PathParam
-from fastapi import status
 from models_library.sidecar_volumes import VolumeCategory, VolumeStatus
 from pydantic import BaseModel
 

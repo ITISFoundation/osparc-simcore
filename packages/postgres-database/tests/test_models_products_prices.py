@@ -95,7 +95,6 @@ async def test_creating_product_prices(
 async def test_non_negative_price_not_allowed(
     connection: AsyncConnection, fake_product: Row, faker: Faker
 ):
-
     assert not connection.in_transaction()
 
     # WRITE: negative price not allowed

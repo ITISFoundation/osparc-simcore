@@ -10,11 +10,12 @@ import pytest
 import respx
 from faker import Faker
 from fastapi_pagination import Page, Params
-from pytest_simcore.helpers.host import get_localhost_ip
 from servicelib.aiohttp import status
 from simcore_service_storage.modules.datcore_adapter.datcore_adapter_settings import (
     DatcoreAdapterSettings,
 )
+
+from pytest_simcore.helpers.host import get_localhost_ip
 
 
 @pytest.fixture

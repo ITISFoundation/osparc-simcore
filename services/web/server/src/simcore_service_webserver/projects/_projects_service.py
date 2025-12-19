@@ -631,11 +631,11 @@ async def update_project_node_resources_from_hardware_info(
         return
     try:
         rabbitmq_rpc_client = get_rabbitmq_rpc_client(app)
-        unordered_list_ec2_instance_types: list[EC2InstanceTypeGet] = (
-            await get_instance_type_details(
-                rabbitmq_rpc_client,
-                instance_type_names=set(hardware_info.aws_ec2_instances),
-            )
+        unordered_list_ec2_instance_types: list[
+            EC2InstanceTypeGet
+        ] = await get_instance_type_details(
+            rabbitmq_rpc_client,
+            instance_type_names=set(hardware_info.aws_ec2_instances),
         )
 
         assert unordered_list_ec2_instance_types  # nosec

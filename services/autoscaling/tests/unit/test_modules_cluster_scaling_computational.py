@@ -30,12 +30,10 @@ from faker import Faker
 from fastapi import FastAPI
 from models_library.generated_models.docker_rest_api import (
     Availability,
-)
-from models_library.generated_models.docker_rest_api import Node as DockerNode
-from models_library.generated_models.docker_rest_api import (
     NodeState,
     NodeStatus,
 )
+from models_library.generated_models.docker_rest_api import Node as DockerNode
 from models_library.rabbitmq_messages import RabbitAutoscalingStatusMessage
 from models_library.services_metadata_runtime import (
     DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY,
@@ -200,9 +198,9 @@ def ec2_instance_custom_tags(
 
 
 @pytest.fixture
-def create_dask_task_resources() -> (
-    Callable[[InstanceTypeType | None, Resources], DaskTaskResources]
-):
+def create_dask_task_resources() -> Callable[
+    [InstanceTypeType | None, Resources], DaskTaskResources
+]:
     def _do(
         ec2_instance_type: InstanceTypeType | None, task_resource: Resources
     ) -> DaskTaskResources:
@@ -1529,7 +1527,9 @@ async def test_cluster_adapts_machines_on_the_fly(
     assert (
         scale_up_params1.num_tasks
         >= app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES
-    ), "this test requires to run a first batch of more services than the maximum number of instances allowed"
+    ), (
+        "this test requires to run a first batch of more services than the maximum number of instances allowed"
+    )
     # we have nothing running now
     all_instances = await ec2_client.describe_instances()
     assert not all_instances["Reservations"]
@@ -1741,7 +1741,9 @@ async def test_cluster_adapts_machines_on_the_fly(
     assert "Instances" in reservation1
     assert len(reservation1["Instances"]) == (
         app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES
-    ), f"expected {app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES} EC2 instances, found {len(reservation1['Instances'])}"
+    ), (
+        f"expected {app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES} EC2 instances, found {len(reservation1['Instances'])}"
+    )
     for instance in reservation1["Instances"]:
         assert "InstanceType" in instance
         assert instance["InstanceType"] == scale_up_params1.expected_instance_type
@@ -1755,9 +1757,9 @@ async def test_cluster_adapts_machines_on_the_fly(
 
     reservation2 = all_instances["Reservations"][1]
     assert "Instances" in reservation2
-    assert (
-        len(reservation2["Instances"]) == 1
-    ), f"expected 1 EC2 instances, found {len(reservation2['Instances'])}"
+    assert len(reservation2["Instances"]) == 1, (
+        f"expected 1 EC2 instances, found {len(reservation2['Instances'])}"
+    )
     for instance in reservation2["Instances"]:
         assert "InstanceType" in instance
         assert instance["InstanceType"] == scale_up_params2.expected_instance_type

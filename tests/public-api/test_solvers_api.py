@@ -53,7 +53,6 @@ def test_get_latest_solver(solvers_api: osparc.SolversApi):
 
 
 def test_get_all_releases(solvers_api: osparc.SolversApi):
-
     all_releases: list[osparc.Solver] = (
         solvers_api.list_solvers_releases()
     )  # all release of all solvers
@@ -103,7 +102,6 @@ def test_get_solver_release(
 
 
 def test_solvers_not_found(solvers_api: osparc.SolversApi):
-
     with pytest.raises(osparc.ApiException) as excinfo:
         solvers_api.get_solver_release(
             "simcore/services/comp/something-not-in-this-registry",

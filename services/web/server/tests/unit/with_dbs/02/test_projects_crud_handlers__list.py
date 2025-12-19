@@ -175,7 +175,6 @@ async def test_list_projects_with_pagination(
         ]
     )
     if expected.created == status.HTTP_201_CREATED:
-
         assert len(created_projects) == NUM_PROJECTS
         NUMBER_OF_CALLS = ceil(NUM_PROJECTS / limit)
         next_link = None

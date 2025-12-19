@@ -62,7 +62,7 @@ def session_context(faker: Faker) -> ContextDict:
     )
 
 
-@pytest.mark.acceptance_test()
+@pytest.mark.acceptance_test
 async def test_resolve_session_environs(faker: Faker, session_context: ContextDict):
     async def _request_user_role(app: FastAPI, user_id: UserID) -> SubstitutionValue:
         print(app, user_id)

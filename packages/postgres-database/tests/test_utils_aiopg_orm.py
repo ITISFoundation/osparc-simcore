@@ -52,7 +52,6 @@ async def scicrunch_orm(aiopg_engine: Engine) -> Iterator[BaseOrm[str]]:
 
 
 async def test_orm_fetch(scicrunch_orm: BaseOrm[str], fake_scicrunch_ids: list[str]):
-
     # insert 1 and 2
     scicrunch_id1, scicrunch_id2 = fake_scicrunch_ids
     assert scicrunch_id1 is not None
@@ -98,7 +97,6 @@ async def test_orm_fetch(scicrunch_orm: BaseOrm[str], fake_scicrunch_ids: list[s
 async def test_orm_fetch_defaults(
     scicrunch_orm: BaseOrm[str], fake_scicrunch_ids: list[str]
 ):
-
     # insert 1 and 2
     scicrunch_id1, scicrunch_id2 = fake_scicrunch_ids
     assert scicrunch_id1 is not None
@@ -133,7 +131,6 @@ async def test_orm_fetch_defaults(
 async def test_orm_fetchall_page(
     scicrunch_orm: BaseOrm[str], fake_scicrunch_ids: list[str]
 ):
-
     # insert 1 and 2
     scicrunch_id1, scicrunch_id2 = fake_scicrunch_ids
     assert scicrunch_id1 is not None
@@ -173,7 +170,6 @@ async def test_orm_fetchall_page(
 
 
 async def test_orm_insert(scicrunch_orm: BaseOrm[str]):
-
     # insert 1 and 2
     scicrunch_id1 = await scicrunch_orm.insert(
         rrid="RRID:foo", name="foo", description="fooing"
@@ -187,7 +183,6 @@ async def test_orm_insert(scicrunch_orm: BaseOrm[str]):
 
 
 async def test_orm_insert_with_different_returns(scicrunch_orm: BaseOrm[str]):
-
     # insert 1 and 2
     scicrunch1 = await scicrunch_orm.insert(
         returning_cols=ALL_COLUMNS, rrid="RRID:foo", name="foo", description="fooing"
@@ -212,7 +207,6 @@ async def test_orm_insert_with_different_returns(scicrunch_orm: BaseOrm[str]):
 
 
 async def test_orm_update(scicrunch_orm: BaseOrm[str], fake_scicrunch_ids: list[str]):
-
     scicrunch_id1, scicrunch_id2 = fake_scicrunch_ids
 
     # FIXME: since no row is pinned, update applies to all rows
@@ -234,7 +228,6 @@ async def test_orm_update(scicrunch_orm: BaseOrm[str], fake_scicrunch_ids: list[
 async def test_orm_update_with_different_returns(
     scicrunch_orm: BaseOrm[str], fake_scicrunch_ids: list[str]
 ):
-
     scicrunch_id1, _ = fake_scicrunch_ids
 
     scicrunch_orm.set_filter(rowid=scicrunch_id1)
@@ -262,7 +255,6 @@ async def test_orm_update_with_different_returns(
 async def test_orm_fail_to_update(
     scicrunch_orm: BaseOrm[str], fake_scicrunch_ids: list[str]
 ):
-
     scicrunch_id1, scicrunch_id2 = fake_scicrunch_ids
 
     # read only

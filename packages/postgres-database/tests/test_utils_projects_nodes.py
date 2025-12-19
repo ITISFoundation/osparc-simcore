@@ -169,7 +169,8 @@ async def test_list_project_nodes(
     created_nodes = await projects_nodes_repo.add(
         connection_factory,
         nodes=[
-            create_fake_projects_node() for _ in range(randint(3, 12))  # noqa: S311
+            create_fake_projects_node()
+            for _ in range(randint(3, 12))  # noqa: S311
         ],
     )
 

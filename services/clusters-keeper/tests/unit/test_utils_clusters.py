@@ -113,9 +113,9 @@ def test_create_deploy_cluster_stack_script(
     clusters_keeper_docker_compose: dict[str, Any],
 ):
     additional_custom_tags = {
-        TypeAdapter(AWSTagKey)
-        .validate_python("pytest-tag-key"): TypeAdapter(AWSTagValue)
-        .validate_python("pytest-tag-value")
+        TypeAdapter(AWSTagKey).validate_python("pytest-tag-key"): TypeAdapter(
+            AWSTagValue
+        ).validate_python("pytest-tag-value")
     }
     deploy_script = create_deploy_cluster_stack_script(
         app_settings,
@@ -159,9 +159,9 @@ def test_create_deploy_cluster_stack_script(
         if isinstance(v, str) and v.startswith("${")
     ] + ["DOCKER_IMAGE_TAG"]
     for env_key in expected_env_keys:
-        assert (
-            env_key in startup_script_env_keys_names
-        ), f"{env_key} is missing from startup script! please adjust"
+        assert env_key in startup_script_env_keys_names, (
+            f"{env_key} is missing from startup script! please adjust"
+        )
 
     # check we do not define "too much"
     for env_key in startup_script_env_keys_names:
@@ -236,9 +236,9 @@ def test_rabbitmq_settings_are_passed_with_pasword_clear(
     )
 
     additional_custom_tags = {
-        TypeAdapter(AWSTagKey)
-        .validate_python("pytest-tag-key"): TypeAdapter(AWSTagValue)
-        .validate_python("pytest-tag-value")
+        TypeAdapter(AWSTagKey).validate_python("pytest-tag-key"): TypeAdapter(
+            AWSTagValue
+        ).validate_python("pytest-tag-value")
     }
     deploy_script = create_deploy_cluster_stack_script(
         app_settings,
@@ -264,9 +264,9 @@ def test_create_deploy_cluster_stack_script_below_64kb(
     clusters_keeper_docker_compose: dict[str, Any],
 ):
     additional_custom_tags = {
-        TypeAdapter(AWSTagKey)
-        .validate_python("pytest-tag-key"): TypeAdapter(AWSTagValue)
-        .validate_python("pytest-tag-value")
+        TypeAdapter(AWSTagKey).validate_python("pytest-tag-key"): TypeAdapter(
+            AWSTagValue
+        ).validate_python("pytest-tag-value")
     }
     deploy_script = create_deploy_cluster_stack_script(
         app_settings,
@@ -313,9 +313,9 @@ def test__prepare_environment_variables_defines_all_envs_for_docker_compose(
     clusters_keeper_docker_compose_file: Path,
 ):
     additional_custom_tags = {
-        TypeAdapter(AWSTagKey)
-        .validate_python("pytest-tag-key"): TypeAdapter(AWSTagValue)
-        .validate_python("pytest-tag-value")
+        TypeAdapter(AWSTagKey).validate_python("pytest-tag-key"): TypeAdapter(
+            AWSTagValue
+        ).validate_python("pytest-tag-value")
     }
     environment_variables = _prepare_environment_variables(
         app_settings,

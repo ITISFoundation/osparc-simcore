@@ -65,7 +65,6 @@ async def _create_services_in_database(
     sorted_services = sorted(service_keys, key=_by_version)
 
     for service_key, service_version in sorted_services:
-
         service_metadata: ServiceMetaDataPublished = services_in_registry[
             (service_key, service_version)
         ]
@@ -123,9 +122,9 @@ async def _ensure_registry_and_database_are_synced(app: FastAPI) -> None:
     director_api = get_director_client(app)
     services_in_manifest_map = await manifest.get_services_map(director_api)
 
-    services_in_db: set[tuple[ServiceKey, ServiceVersion]] = (
-        await _list_services_in_database(app.state.engine)
-    )
+    services_in_db: set[
+        tuple[ServiceKey, ServiceVersion]
+    ] = await _list_services_in_database(app.state.engine)
 
     # check that the db has all the services at least once
     missing_services_in_db = set(services_in_manifest_map.keys()) - services_in_db

@@ -12,8 +12,9 @@ from models_library.api_schemas_directorv2.services import (
 )
 from servicelib.docker_constants import PREFIX_DYNAMIC_SIDECAR_VOLUMES
 from servicelib.logging_utils import log_catch, log_context
-from simcore_service_agent.core.settings import ApplicationSettings
 from starlette import status
+
+from simcore_service_agent.core.settings import ApplicationSettings
 
 from ..models.volumes import VolumeDetails, VolumeDetailsAdapter
 from .backup import backup_volume
@@ -94,9 +95,13 @@ async def remove_volume(
     app: FastAPI, docker: Docker, *, volume_name: str, requires_backup: bool
 ) -> None:
     """Removes a volume and backs data up if required"""
-    with log_context(
-        _logger, logging.DEBUG, f"removing '{volume_name}'", log_duration=True
-    ), log_catch(_logger, reraise=False), _log_volume_not_found(volume_name):
+    with (
+        log_context(
+            _logger, logging.DEBUG, f"removing '{volume_name}'", log_duration=True
+        ),
+        log_catch(_logger, reraise=False),
+        _log_volume_not_found(volume_name),
+    ):
         if requires_backup:
             await _backup_volume(app, docker, volume_name=volume_name)
 

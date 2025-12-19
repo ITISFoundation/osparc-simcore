@@ -38,7 +38,6 @@ def get_routes_view(routes: RouteTableDef) -> str:
 def create_url_for_function(
     app: web.Application, request_url: URL, request_headers: dict[str, str]
 ) -> Callable:
-
     def _url_for(route_name: str, **params: dict[str, Any]) -> str:
         """Reverse URL constructing using named resources"""
         try:

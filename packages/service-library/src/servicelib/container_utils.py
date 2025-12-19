@@ -52,7 +52,7 @@ async def _execute_command(container_name: str, command: str | Sequence[str]) ->
                 command_result += stream_message.data.decode()
 
         inspect_result: dict[str, Any] = await exec_instance.inspect()
-        exit_code: int | None = inspect_result.get("ExitCode", None)
+        exit_code: int | None = inspect_result.get("ExitCode")
         if exit_code != 0:
             raise ContainerExecCommandFailedError(
                 command=command, exit_code=exit_code, command_result=command_result

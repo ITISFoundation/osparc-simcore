@@ -35,9 +35,9 @@ async def db_notification_queue(
     assert notifications_queue.empty()
     yield notifications_queue
 
-    assert (
-        notifications_queue.empty()
-    ), f"the notification queue was not emptied: {notifications_queue.qsize()} remaining notifications"
+    assert notifications_queue.empty(), (
+        f"the notification queue was not emptied: {notifications_queue.qsize()} remaining notifications"
+    )
 
 
 @pytest.fixture()
@@ -55,9 +55,9 @@ async def task(
     assert row
     task = dict(row)
 
-    assert (
-        db_notification_queue.empty()
-    ), "database triggered change although it should only trigger on updates!"
+    assert db_notification_queue.empty(), (
+        "database triggered change although it should only trigger on updates!"
+    )
 
     return task
 
@@ -86,9 +86,9 @@ async def _assert_notification_queue_status(
             assert k in task_data, f"invalid structure, expected [{k}] in {task_data}"
 
         tasks.append(task_data)
-    assert (
-        notification_queue.empty()
-    ), f"there are {notification_queue.qsize()} remaining messages in the queue"
+    assert notification_queue.empty(), (
+        f"there are {notification_queue.qsize()} remaining messages in the queue"
+    )
 
     return tasks
 
@@ -124,9 +124,9 @@ async def test_listen_query(
     assert tasks[0]["project_id"] == task["project_id"]
     assert tasks[0]["node_id"] == task["node_id"]
 
-    assert (
-        "data" not in tasks[0]
-    ), "data is not expected in the notification payload anymore"
+    assert "data" not in tasks[0], (
+        "data is not expected in the notification payload anymore"
+    )
 
     # setting the exact same data twice triggers only ONCE
     updated_output = {"some new stuff": "it is newer"}

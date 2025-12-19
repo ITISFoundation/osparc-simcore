@@ -16,6 +16,7 @@ from simcore_sdk.node_ports_common.filemanager import (
     complete_file_upload,
     get_upload_links_from_s3,
 )
+
 from simcore_service_api_server.models.api_resources import JobLinks
 
 from ..._service_jobs import JobService

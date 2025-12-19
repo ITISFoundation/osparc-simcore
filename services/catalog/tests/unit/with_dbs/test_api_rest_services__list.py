@@ -95,7 +95,6 @@ async def test_list_services_without_details(
     client: TestClient,
     benchmark,
 ):
-
     # injects fake data in db
     NUM_SERVICES = 1000
     SERVICE_KEY = "simcore/services/dynamic/jupyterlab"
@@ -138,7 +137,6 @@ async def test_list_services_without_details_with_wrong_user_id_returns_403(
     services_db_tables_injector: Callable,
     client: TestClient,
 ):
-
     # injects fake data in db
     NUM_SERVICES = 1
     await services_db_tables_injector(
@@ -203,7 +201,6 @@ async def test_list_services_without_details_with_wrong_product_returns_0_servic
     services_db_tables_injector: Callable,
     client: TestClient,
 ):
-
     # injects fake data in db
     NUM_SERVICES = 1
     await services_db_tables_injector(
@@ -239,7 +236,6 @@ async def test_list_services_that_are_deprecated(
     services_db_tables_injector: Callable,
     client: TestClient,
 ):
-
     # injects fake data in db
     deprecation_date = datetime.utcnow() + timedelta(  # NOTE: old offset-naive column
         days=1

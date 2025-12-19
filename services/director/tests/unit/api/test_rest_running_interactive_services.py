@@ -248,9 +248,9 @@ async def test_running_interactive_services_list_get(
             response = await client.get(
                 "/v0/running_interactive_services", params=params
             )
-            assert (
-                response.status_code == status.HTTP_200_OK
-            ), f"Response body is : {response.text}"
+            assert response.status_code == status.HTTP_200_OK, (
+                f"Response body is : {response.text}"
+            )
             data, error = _assert_response_and_unwrap_envelope(response)
             assert data
             assert not error
@@ -261,9 +261,9 @@ async def test_running_interactive_services_list_get(
             response = await client.get(
                 "/v0/running_interactive_services", params=params
             )
-            assert (
-                response.status_code == status.HTTP_200_OK
-            ), f"Response body is : {response.text}"
+            assert response.status_code == status.HTTP_200_OK, (
+                f"Response body is : {response.text}"
+            )
             data, error = _assert_response_and_unwrap_envelope(response)
             assert data
             assert not error
@@ -275,9 +275,9 @@ async def test_running_interactive_services_list_get(
             response = await client.get(
                 "/v0/running_interactive_services", params=params
             )
-            assert (
-                response.status_code == status.HTTP_200_OK
-            ), f"Response body is : {response.text}"
+            assert response.status_code == status.HTTP_200_OK, (
+                f"Response body is : {response.text}"
+            )
             data, error = _assert_response_and_unwrap_envelope(response)
             assert data
             assert not error
@@ -285,9 +285,9 @@ async def test_running_interactive_services_list_get(
             assert len(services_list) == len(user_ids) * NUM_SERVICES
     # get all the running services
     response = await client.get("/v0/running_interactive_services")
-    assert (
-        response.status_code == status.HTTP_200_OK
-    ), f"Response body is : {response.text}"
+    assert response.status_code == status.HTTP_200_OK, (
+        f"Response body is : {response.text}"
+    )
     data, error = _assert_response_and_unwrap_envelope(response)
     assert data
     assert not error

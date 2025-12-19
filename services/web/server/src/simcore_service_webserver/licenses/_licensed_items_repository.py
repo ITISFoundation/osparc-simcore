@@ -74,7 +74,6 @@ async def create(
     product_name: ProductName,
     pricing_plan_id: PricingPlanId,
 ) -> LicensedItemDB:
-
     query = _create_insert_query(
         display_name,
         key,
@@ -101,7 +100,6 @@ async def list_(
     filter_by_licensed_resource_type: LicensedResourceType | None = None,
     include_hidden_items_on_market: bool = False,
 ) -> tuple[int, list[LicensedItemDB]]:
-
     base_query = (
         select(*_SELECTION_ARGS)
         .select_from(licensed_items)
@@ -255,7 +253,6 @@ async def get_licensed_item_by_key_version(
     version: LicensedItemVersion,
     product_name: ProductName,
 ) -> LicensedItem:
-
     _licensed_resource_subquery = _create_licensed_resource_subquery(
         product_name=product_name
     )
@@ -307,7 +304,6 @@ async def list_licensed_items(
     filter_by_licensed_resource_type: LicensedResourceType | None = None,
     include_hidden_items_on_market: bool = False,
 ) -> tuple[int, list[LicensedItem]]:
-
     _licensed_resource_subquery = _create_licensed_resource_subquery(
         product_name=product_name
     )

@@ -47,7 +47,7 @@ async def _fetch_new_project_owner_from_groups(
                     app=app, user_id=possible_user_id
                 )
                 return int(possible_user["primary_gid"])
-            except UserNotFoundError:  # noqa: PERF203
+            except UserNotFoundError:
                 _logger.warning(
                     "Could not find new owner '%s' will try a new one",
                     possible_user_id,
@@ -158,9 +158,9 @@ async def replace_current_owner(
     project["prj_owner"] = int(new_project_owner_id)
     # removing access rights entry
     del project["accessRights"][f"{user_primary_gid}"]
-    project["accessRights"][
-        f"{new_project_owner_gid}"
-    ] = ProjectAccessRights.OWNER.value
+    project["accessRights"][f"{new_project_owner_gid}"] = (
+        ProjectAccessRights.OWNER.value
+    )
     _logger.info("Syncing back project %s", project)
 
     # syncing back project data

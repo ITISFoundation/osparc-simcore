@@ -134,7 +134,6 @@ async def list_solvers_releases(
     solver_service: Annotated[SolverService, Depends(get_solver_service)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
 ):
-
     latest_solvers: list[Solver] = []
     for page_params in iter_pagination_params(
         offset=0, limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE

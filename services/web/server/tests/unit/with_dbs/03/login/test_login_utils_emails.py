@@ -32,7 +32,6 @@ def app(
     docker_compose_service_environment_dict: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
 ) -> web.Application:
-
     setenvs_from_dict(monkeypatch, {**docker_compose_service_environment_dict})
 
     # app_environment: EnvVarsDict) -> web.Application:

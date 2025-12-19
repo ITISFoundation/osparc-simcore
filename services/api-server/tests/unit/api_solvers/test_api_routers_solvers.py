@@ -196,9 +196,9 @@ async def test_solvers_page_pagination_links(
     assert "self" in links, "Pagination should include 'self' link"
 
     # Verify the self link contains the correct limit parameter
-    assert (
-        f"limit={limit}" in links["self"]
-    ), "Self link should reflect the requested limit"
+    assert f"limit={limit}" in links["self"], (
+        "Self link should reflect the requested limit"
+    )
 
 
 async def test_solvers_page_pagination_last_page(
@@ -211,9 +211,9 @@ async def test_solvers_page_pagination_last_page(
     assert response.status_code == status.HTTP_200_OK
     total_items = response.json()["total"]
 
-    assert (
-        total_items > 1
-    ), "Total items in MOCK examples should be greater than 1 for pagination test since we need 'prev', 'self' and 'prev' links"
+    assert total_items > 1, (
+        "Total items in MOCK examples should be greater than 1 for pagination test since we need 'prev', 'self' and 'prev' links"
+    )
     last_item = total_items - 1
     page_size = 1
 
@@ -228,9 +228,9 @@ async def test_solvers_page_pagination_last_page(
 
     links = response_data["links"]
     assert links["next"] is None, "Next link should be None for the last page (size=1)"
-    assert (
-        links["prev"] is not None
-    ), "Prev link should be present for the last page (size=1)"
-    assert (
-        links["last"] == links["self"]
-    ), "Last link should be the same as self link for the last page"
+    assert links["prev"] is not None, (
+        "Prev link should be present for the last page (size=1)"
+    )
+    assert links["last"] == links["self"], (
+        "Last link should be the same as self link for the last page"
+    )

@@ -90,7 +90,6 @@ async def test_delete_function_job_collection(
     fake_registered_function_job_collection: RegisteredFunctionJobCollection,
     auth: httpx.BasicAuth,
 ) -> None:
-
     mock_handler_in_functions_rpc_interface("delete_function_job_collection", None)
 
     # Now, delete the function job collection
@@ -146,7 +145,6 @@ async def test_list_function_job_collections_with_function_filter(
     fake_registered_project_function: RegisteredProjectFunction,
     auth: httpx.BasicAuth,
 ) -> None:
-
     mock_handler_in_functions_rpc_interface(
         "list_function_job_collections",
         (

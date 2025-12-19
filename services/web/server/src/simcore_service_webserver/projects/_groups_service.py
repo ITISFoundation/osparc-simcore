@@ -80,9 +80,9 @@ async def list_project_groups_by_user_and_project(
         permission="read",
     )
 
-    project_groups_db: list[ProjectGroupGetDB] = (
-        await _groups_repository.list_project_groups(app=app, project_id=project_id)
-    )
+    project_groups_db: list[
+        ProjectGroupGetDB
+    ] = await _groups_repository.list_project_groups(app=app, project_id=project_id)
 
     project_groups_api: list[ProjectGroupGet] = [
         ProjectGroupGet.model_validate(group.model_dump())
@@ -259,9 +259,9 @@ async def list_project_groups_by_project_without_checking_permissions(
     *,
     project_id: ProjectID,
 ) -> list[ProjectGroupGet]:
-    project_groups_db: list[ProjectGroupGetDB] = (
-        await _groups_repository.list_project_groups(app=app, project_id=project_id)
-    )
+    project_groups_db: list[
+        ProjectGroupGetDB
+    ] = await _groups_repository.list_project_groups(app=app, project_id=project_id)
 
     project_groups_api: list[ProjectGroupGet] = [
         ProjectGroupGet.model_validate(group.model_dump())

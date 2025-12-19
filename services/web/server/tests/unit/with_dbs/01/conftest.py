@@ -37,7 +37,6 @@ def _create_handler_mock_factory(
         exception: Exception | None = None,
         side_effect: Any | None = None,
     ) -> MockType:
-
         assert exception is None or side_effect is None
 
         return mocker.patch.object(

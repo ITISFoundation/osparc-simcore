@@ -139,13 +139,16 @@ async def test_handler_exception_logging(
     confirmation = await create_valid_confirmation_token(user_id, "REGISTRATION", None)
     code = confirmation.code
 
-    with patch(
-        "simcore_service_webserver.login._controller.rest.confirmation._handle_confirm_registration",
-        new_callable=AsyncMock,
-        side_effect=Exception("Test exception"),
-    ) as mock_handler, patch(
-        "simcore_service_webserver.login._controller.rest.confirmation._logger.exception"
-    ) as mock_logger:
+    with (
+        patch(
+            "simcore_service_webserver.login._controller.rest.confirmation._handle_confirm_registration",
+            new_callable=AsyncMock,
+            side_effect=Exception("Test exception"),
+        ) as mock_handler,
+        patch(
+            "simcore_service_webserver.login._controller.rest.confirmation._logger.exception"
+        ) as mock_logger,
+    ):
         response = await client.get(f"/v0/auth/confirmation/{code}")
         assert response.status == status.HTTP_200_OK
 

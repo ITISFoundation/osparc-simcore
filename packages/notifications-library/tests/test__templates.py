@@ -23,7 +23,6 @@ from notifications_library._templates import (
     ],
 )
 def test_email_templates_are_complete(event_name: str):
-
     event_templates = set(get_default_named_templates(event=event_name, media="email"))
 
     assert event_templates
@@ -43,7 +42,6 @@ def test_email_templates_are_complete(event_name: str):
     "template_name,template_path", get_default_named_templates().items()
 )
 def test_named_templates(template_name: str, template_path: Path):
-
     parts = split_template_name(template_name)
     assert get_default_named_templates(*parts) == {template_name: template_path}
 

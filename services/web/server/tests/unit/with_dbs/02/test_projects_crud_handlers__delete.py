@@ -81,9 +81,9 @@ async def test_delete_project(
 
     if expected.no_content == status.HTTP_204_NO_CONTENT:
         # Waits until deletion tasks are done
-        assert (
-            len(tasks) == 1
-        ), f"Only one delete fire&forget task expected, got {tasks=}"
+        assert len(tasks) == 1, (
+            f"Only one delete fire&forget task expected, got {tasks=}"
+        )
         # might have finished, and therefore there is no need to waith
         await tasks[0]
 
@@ -114,9 +114,9 @@ async def test_delete_project(
         )
 
     else:
-        assert (
-            len(tasks) == 0
-        ), f"NO delete fire&forget tasks expected when response is {expected.no_content}, got {tasks=}"
+        assert len(tasks) == 0, (
+            f"NO delete fire&forget tasks expected when response is {expected.no_content}, got {tasks=}"
+        )
 
 
 @pytest.mark.parametrize(

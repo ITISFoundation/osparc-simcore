@@ -76,13 +76,13 @@ class SolverService:
         pagination_offset: PageOffsetInt | None = None,
         pagination_limit: PageLimitInt | None = None,
     ) -> tuple[list[Solver], PageMetaInfoLimitOffset]:
-
-        releases, page_meta = (
-            await self.catalog_service.list_release_history_latest_first(
-                filter_by_service_key=solver_key,
-                pagination_offset=pagination_offset,
-                pagination_limit=pagination_limit,
-            )
+        (
+            releases,
+            page_meta,
+        ) = await self.catalog_service.list_release_history_latest_first(
+            filter_by_service_key=solver_key,
+            pagination_offset=pagination_offset,
+            pagination_limit=pagination_limit,
         )
 
         service_instance = await self.catalog_service.get(

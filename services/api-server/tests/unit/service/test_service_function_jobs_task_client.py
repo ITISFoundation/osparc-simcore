@@ -26,7 +26,6 @@ _faker = Faker()
 async def create_mock_task_manager(
     mocker: MockerFixture,
 ) -> Callable[[TaskStatus | Exception], MockType]:
-
     def _(status_or_exception: TaskStatus | Exception) -> MockType:
         mock_task_manager = mocker.Mock(spec=TaskManager)
         if isinstance(status_or_exception, Exception):
@@ -66,7 +65,6 @@ async def test_celery_status_conversion(
     user_id: UserID,
     product_name: ProductName,
 ):
-
     mock_task_manager = create_mock_task_manager(status_or_exception)
 
     status = await _celery_task_status(

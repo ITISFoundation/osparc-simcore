@@ -56,9 +56,9 @@ async def _get_locator(
                 if instances is None:
                     assert count > 0, f"cold not find text='{text}'"
                 else:
-                    assert (
-                        count == instances
-                    ), f"found {count} instances of text='{text}'. Expected {instances}"
+                    assert count == instances, (
+                        f"found {count} instances of text='{text}'. Expected {instances}"
+                    )
     return locator
 
 

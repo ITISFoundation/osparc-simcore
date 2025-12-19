@@ -54,13 +54,13 @@ def test_expected_frontend_apps_produced_by_webclient(client_compile_cfg: dict):
     assert product_names
 
     # test FRONTEND_APPS_AVAILABLE
-    assert (
-        frontend_apps_in_repo == FRONTEND_APPS_AVAILABLE
-    ), "Sync with values in FRONTEND_APPS_AVAILABLE with {compile_filepath}"
+    assert frontend_apps_in_repo == FRONTEND_APPS_AVAILABLE, (
+        "Sync with values in FRONTEND_APPS_AVAILABLE with {compile_filepath}"
+    )
 
-    assert (
-        frontend_apps_in_repo == FRONTEND_APPS_AVAILABLE
-    ), "Sync with values in FRONTEND_APPS_AVAILABLE with {compile_filepath}"
+    assert frontend_apps_in_repo == FRONTEND_APPS_AVAILABLE, (
+        "Sync with values in FRONTEND_APPS_AVAILABLE with {compile_filepath}"
+    )
 
     # test FRONTEND_APP_DEFAULT
     default_frontend_app = next(
@@ -68,9 +68,9 @@ def test_expected_frontend_apps_produced_by_webclient(client_compile_cfg: dict):
         for feapp in client_compile_cfg["applications"]
         if feapp["default"]
     )
-    assert (
-        default_frontend_app == FRONTEND_APP_DEFAULT
-    ), "Sync with values in FRONTEND_APPS_AVAILABLE with {compile_filepath}"
+    assert default_frontend_app == FRONTEND_APP_DEFAULT, (
+        "Sync with values in FRONTEND_APPS_AVAILABLE with {compile_filepath}"
+    )
 
     assert FRONTEND_APP_DEFAULT in FRONTEND_APPS_AVAILABLE
 
@@ -88,6 +88,6 @@ def test_expected_frontend_apps_metadata(client_compile_cfg: dict, metadata_file
         feapp["application"] for feapp in metadata_file["applications"]
     }
 
-    assert (
-        frontend_apps_in_repo == frontend_apps_in_metadata
-    ), "Sync with values in FRONTEND_APPS_AVAILABLE with {metadata_filepath}"
+    assert frontend_apps_in_repo == frontend_apps_in_metadata, (
+        "Sync with values in FRONTEND_APPS_AVAILABLE with {metadata_filepath}"
+    )

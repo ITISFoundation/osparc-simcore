@@ -79,7 +79,6 @@ async def list_project_conversations(
     # ordering
     order_by: OrderBy,
 ) -> tuple[PageTotalCount, list[ConversationGetDB]]:
-
     base_query = (
         select(*_SELECTION_ARGS)
         .select_from(conversations)
@@ -136,7 +135,6 @@ async def list_support_conversations_for_user(
     # ordering
     order_by: OrderBy,
 ) -> tuple[PageTotalCount, list[ConversationGetDB]]:
-
     base_query = (
         select(*_SELECTION_ARGS)
         .select_from(conversations)
@@ -190,7 +188,6 @@ async def list_all_support_conversations_for_support_user(
     # ordering
     order_by: OrderBy,
 ) -> tuple[PageTotalCount, list[ConversationGetDB]]:
-
     base_query = (
         select(*_SELECTION_ARGS)
         .select_from(conversations)

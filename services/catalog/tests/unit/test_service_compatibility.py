@@ -144,15 +144,15 @@ def test_get_latest_compatible_version(versions_history: list[Version]):
     assert _get_latest_compatible_version(latest, latest_first_releases) is None
 
     # bump MAJOR
-    not_released = Version(f"{latest.major+1}")
+    not_released = Version(f"{latest.major + 1}")
     assert _get_latest_compatible_version(not_released, latest_first_releases) is None
 
     # decrease patch
-    target = Version(f"{latest.major}.{latest.minor}.{latest.micro-1}")
+    target = Version(f"{latest.major}.{latest.minor}.{latest.micro - 1}")
     assert _get_latest_compatible_version(target, latest_first_releases) == latest
 
     # decrease minor (with default compatibility specs)
-    target = Version(f"{latest.major}.{latest.minor-2}.0")
+    target = Version(f"{latest.major}.{latest.minor - 2}.0")
     latest_compatible = _get_latest_compatible_version(target, latest_first_releases)
     assert latest_compatible
     assert latest_compatible < latest

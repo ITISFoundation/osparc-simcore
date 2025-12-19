@@ -98,9 +98,9 @@ def test_all_images_have_the_same_python_version(
             current_version, expected_version = make_versions_comparable(
                 python_version, expected_python_version
             )
-            assert (
-                current_version == expected_version
-            ), f"Expected python {expected_python_version} in {dockerfile}, got {python_version}"
+            assert current_version == expected_version, (
+                f"Expected python {expected_python_version} in {dockerfile}, got {python_version}"
+            )
         else:
             print(
                 f"Skipping check on {dockerfile} since this service/package development was froozen "
@@ -111,9 +111,9 @@ def test_running_python_version(expected_python_version: tuple[int, ...]):
     current_version, expected_version = make_versions_comparable(
         sys.version_info, expected_python_version
     )
-    assert (
-        current_version == expected_version
-    ), f"Expected python {to_str(tuple(sys.version_info))} installed, got {to_str(expected_python_version)}"
+    assert current_version == expected_version, (
+        f"Expected python {to_str(tuple(sys.version_info))} installed, got {to_str(expected_python_version)}"
+    )
 
 
 def test_tooling_pre_commit_config(

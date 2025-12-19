@@ -198,15 +198,17 @@ async def test_request_an_account(
     assert mimetext["To"] == product.product_owners_email or product.support_email
 
     # check it appears in PO center
-    async with NewUser(
-        user_data={
-            "email": "po-user@email.com",
-            "name": "po-user-fixture",
-            "role": UserRole.PRODUCT_OWNER,
-        },
-        app=client.app,
-    ) as product_owner_user, switch_client_session_to(client, product_owner_user):
-
+    async with (
+        NewUser(
+            user_data={
+                "email": "po-user@email.com",
+                "name": "po-user-fixture",
+                "role": UserRole.PRODUCT_OWNER,
+            },
+            app=client.app,
+        ) as product_owner_user,
+        switch_client_session_to(client, product_owner_user),
+    ):
         response = await client.get(
             "v0/admin/user-accounts?limit=20&offset=0&review_status=PENDING"
         )

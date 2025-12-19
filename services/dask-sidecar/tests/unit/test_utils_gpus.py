@@ -70,9 +70,7 @@ def test_num_available_gpus_returns_0_when_container_wait_timesout(
     app_environment: EnvVarsDict,
     mock_aiodocker: mock.MagicMock,
 ):
-    mock_aiodocker.return_value.__aenter__.return_value.containers.run.return_value.wait.side_effect = (
-        TimeoutError()
-    )
+    mock_aiodocker.return_value.__aenter__.return_value.containers.run.return_value.wait.side_effect = TimeoutError()
     assert num_available_gpus() == 0
 
 
@@ -93,9 +91,7 @@ def test_num_available_gpus(
     assert num_available_gpus() == 0
 
     # add the correct log
-    mock_aiodocker.return_value.__aenter__.return_value.containers.run.return_value.log.return_value = (
-        container_logs
-    )
+    mock_aiodocker.return_value.__aenter__.return_value.containers.run.return_value.log.return_value = container_logs
     # set the correct status code
     mock_aiodocker.return_value.__aenter__.return_value.containers.run.return_value.wait.return_value = {
         "StatusCode": 0

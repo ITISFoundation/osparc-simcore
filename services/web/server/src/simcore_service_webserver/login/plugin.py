@@ -78,7 +78,7 @@ async def _resolve_login_settings_per_product(app: web.Application):
                         product_login_settings=product.login_settings,
                     )
                 )
-            except ValidationError as err:  # noqa: PERF203
+            except ValidationError as err:
                 errors[product.name] = err
 
         if errors:

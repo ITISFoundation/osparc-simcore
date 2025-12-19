@@ -32,7 +32,6 @@ def _to_domain(confirmation_row: Row) -> Confirmation:
 
 
 class ConfirmationRepository(BaseRepository):
-
     async def create_confirmation(
         self,
         connection: AsyncConnection | None = None,
@@ -46,7 +45,6 @@ class ConfirmationRepository(BaseRepository):
         async with transaction_context(self.engine, connection) as conn:
             # We want the same connection checking uniqueness and inserting
             while True:  # Generate unique code
-
                 # NOTE: use only numbers since front-end does not handle well url encoding
                 numeric_code: str = generate_passcode(20)
 

@@ -337,9 +337,9 @@ def test_create_dynamic_services(
         json=json.loads(post_data.model_dump_json()),
         follow_redirects=False,
     )
-    assert (
-        response.status_code == exp_status_code
-    ), f"expected status code {exp_status_code}, received {response.status_code}: {response.text}"
+    assert response.status_code == exp_status_code, (
+        f"expected status code {exp_status_code}, received {response.status_code}: {response.text}"
+    )
 
     if exp_status_code == status.HTTP_307_TEMPORARY_REDIRECT:
         # check redirection header goes to director-v0
@@ -403,9 +403,9 @@ def test_get_service_status(
     url = URL(f"/v2/dynamic_services/{service['node_uuid']}")
 
     response = client.get(str(url), follow_redirects=False)
-    assert (
-        response.status_code == exp_status_code
-    ), f"expected status code {exp_status_code}, received {response.status_code}: {response.text}"
+    assert response.status_code == exp_status_code, (
+        f"expected status code {exp_status_code}, received {response.status_code}: {response.text}"
+    )
     if exp_status_code == status.HTTP_307_TEMPORARY_REDIRECT:
         # check redirection header goes to director-v0
         assert "location" in response.headers
@@ -471,9 +471,9 @@ def test_delete_service(  # pylint:disable=too-many-arguments
         url = url.copy_with(params={"can_save": can_save})
 
     response = client.delete(str(url), follow_redirects=False)
-    assert (
-        response.status_code == exp_status_code
-    ), f"expected status code {exp_status_code}, received {response.status_code}: {response.text}"
+    assert response.status_code == exp_status_code, (
+        f"expected status code {exp_status_code}, received {response.status_code}: {response.text}"
+    )
     if exp_status_code == status.HTTP_307_TEMPORARY_REDIRECT:
         # check redirection header goes to director-v0
         assert "location" in response.headers
@@ -523,9 +523,9 @@ def test_delete_service_waiting_for_manual_intervention(
         headers=dynamic_sidecar_headers,
         json=json.loads(post_data.model_dump_json()),
     )
-    assert (
-        response.status_code == exp_status_code
-    ), f"expected status code {exp_status_code}, received {response.status_code}: {response.text}"
+    assert response.status_code == exp_status_code, (
+        f"expected status code {exp_status_code}, received {response.status_code}: {response.text}"
+    )
 
     # mark service as failed and waiting for human intervention
     node_uuid = UUID(service["node_uuid"])
@@ -584,9 +584,9 @@ def test_retrieve(
 ) -> None:
     url = URL(f"/v2/dynamic_services/{service['node_uuid']}:retrieve")
     response = client.post(str(url), json={"port_keys": []}, follow_redirects=False)
-    assert (
-        response.status_code == exp_status_code
-    ), f"expected status code {exp_status_code}, received {response.status_code}: {response.text}"
+    assert response.status_code == exp_status_code, (
+        f"expected status code {exp_status_code}, received {response.status_code}: {response.text}"
+    )
     assert (
         response.json() == RetrieveDataOutEnveloped.model_json_schema()["examples"][0]
     )

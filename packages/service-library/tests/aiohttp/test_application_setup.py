@@ -51,7 +51,6 @@ def app(app_config: dict) -> web.Application:
 def test_setup_config_enabled(
     app_config: dict, app: web.Application, app_settings_key: web.AppKey
 ):
-
     @app_module_setup(
         "package.zee",
         ModuleCategory.ADDON,
@@ -72,7 +71,6 @@ def test_setup_config_enabled(
 
 
 def test_setup_dependencies(app: web.Application, app_settings_key: web.AppKey):
-
     @app_module_setup(
         "package.foo", ModuleCategory.ADDON, app_settings_key=app_settings_key
     )

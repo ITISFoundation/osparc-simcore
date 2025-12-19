@@ -34,15 +34,11 @@ class ProjectNodesNodeNotFoundError(BaseProjectNodesError):
 
 
 class ProjectNodesNonUniqueNodeFoundError(BaseProjectNodesError):
-    msg_template: str = (
-        "Multiple project found containing node {node_id}. TIP: misuse, the same node ID was found in several projects."
-    )
+    msg_template: str = "Multiple project found containing node {node_id}. TIP: misuse, the same node ID was found in several projects."
 
 
 class ProjectNodesDuplicateNodeError(BaseProjectNodesError):
-    msg_template: str = (
-        "Project node already exists, you cannot have 2x the same node in the same project."
-    )
+    msg_template: str = "Project node already exists, you cannot have 2x the same node in the same project."
 
 
 class ProjectNodeCreate(BaseModel):

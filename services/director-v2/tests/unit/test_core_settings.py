@@ -154,9 +154,7 @@ def test_services_custom_constraints(
         "DIRECTOR_V2_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS", custom_constraints
     )
     settings = AppSettings.create_from_envs()
-    custom_constraints = (
-        settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR_PLACEMENT_SETTINGS.DIRECTOR_V2_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS
-    )
+    custom_constraints = settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR_PLACEMENT_SETTINGS.DIRECTOR_V2_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS
     assert isinstance(custom_constraints, list)
     assert expected == custom_constraints
 
@@ -199,8 +197,8 @@ def test_services_custom_constraints_default_empty_list(
 ) -> None:
     settings = AppSettings.create_from_envs()
     assert (
-        []
-        == settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR_PLACEMENT_SETTINGS.DIRECTOR_V2_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS
+        settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR_PLACEMENT_SETTINGS.DIRECTOR_V2_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS
+        == []
     )
 
 

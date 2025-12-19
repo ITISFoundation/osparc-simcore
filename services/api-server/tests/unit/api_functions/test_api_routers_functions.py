@@ -425,7 +425,6 @@ async def test_run_project_function(
     project_tests_dir: Path,
     capture: str,
 ) -> None:
-
     def _get_app_server(celery_app: Any) -> FastAPI:
         app_server = mocker.Mock(spec=BaseAppServer)
         app_server.app = app

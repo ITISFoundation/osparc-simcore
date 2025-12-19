@@ -59,7 +59,6 @@ def _apply_custom_metadata_filter(
 
 
 class ProjectJobsRepository(BaseRepository):
-
     async def set_project_as_job(
         self,
         connection: AsyncConnection | None = None,

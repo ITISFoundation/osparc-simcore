@@ -23,7 +23,7 @@ class T(BaseXLSXCellData):
 
     alignment = Alignment(wrap_text=True)
 
-    def __init__(self, text: str | int | float | None):
+    def __init__(self, text: str | float | None):
         # when text is none write emptystring
         super().__init__(value="" if text is None else text)
 
@@ -71,7 +71,7 @@ class BorderWithStyle(BaseXLSXCellData):
 
     def __init__(self, *borders_sides: Any, border_style: str, color: str):
         side = Side(border_style=border_style, color=color)
-        super().__init__(border=Border(**{x: side for x in borders_sides}))  # type: ignore[arg-type]
+        super().__init__(border=Border(**dict.fromkeys(borders_sides, side)))  # type: ignore[arg-type]
 
 
 def _all_borders() -> list[str]:

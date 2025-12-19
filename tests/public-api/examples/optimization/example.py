@@ -9,14 +9,12 @@ from time import sleep
 
 import numpy as np
 import osparc
-import s4l_v1.analysis.extractors as extractors
-import s4l_v1.document as document
-import s4l_v1.model as model
 import s4l_v1.simulation.emfdtd as fdtd
-import s4l_v1.units as units
 import XCore
 from matplotlib import pyplot as plt
+from s4l_v1 import document, model, units
 from s4l_v1._api.application import run_application
+from s4l_v1.analysis import extractors
 from s4l_v1.model import Rotation, Translation, Vec3
 from skopt import Optimizer
 from skopt.plots import plot_gaussian_process
@@ -227,9 +225,9 @@ if __name__ == "__main__":
         username=args.username, password=args.password
     )
     reference_file: Path = Path(__file__).parent / "reference"
-    assert (
-        reference_file.is_file()
-    ), f"Could not find {reference_file}. It must be located in the same directory as this script."
+    assert reference_file.is_file(), (
+        f"Could not find {reference_file}. It must be located in the same directory as this script."
+    )
     reference = np.absolute(np.loadtxt(reference_file, dtype=np.complex128))
 
     # run optimization

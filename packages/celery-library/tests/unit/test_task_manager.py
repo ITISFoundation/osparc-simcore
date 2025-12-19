@@ -145,7 +145,6 @@ async def test_submitting_task_calling_async_function_results_with_success_state
     task_manager: TaskManager,
     with_celery_worker: WorkController,
 ):
-
     owner_metadata = MyOwnerMetadata(user_id=42, owner="test-owner")
 
     task_uuid = await task_manager.submit_task(
@@ -173,7 +172,6 @@ async def test_submitting_task_with_failure_results_with_error(
     task_manager: TaskManager,
     with_celery_worker: WorkController,
 ):
-
     owner_metadata = MyOwnerMetadata(user_id=42, owner="test-owner")
 
     task_uuid = await task_manager.submit_task(
@@ -196,7 +194,6 @@ async def test_cancelling_a_running_task_aborts_and_deletes(
     task_manager: TaskManager,
     with_celery_worker: WorkController,
 ):
-
     owner_metadata = MyOwnerMetadata(user_id=42, owner="test-owner")
 
     task_uuid = await task_manager.submit_task(
@@ -222,7 +219,6 @@ async def test_listing_task_uuids_contains_submitted_task(
     task_manager: CeleryTaskManager,
     with_celery_worker: WorkController,
 ):
-
     owner_metadata = MyOwnerMetadata(user_id=42, owner="test-owner")
 
     task_uuid = await task_manager.submit_task(
@@ -366,10 +362,14 @@ async def test_pull_task_stream_items_with_limit(
             assert status.task_state == TaskState.SUCCESS
 
     # Pull all results in one go to avoid consumption issues
-    all_results, is_done_final, _last_update_final = (
-        await task_manager.pull_task_stream_items(
-            owner_metadata, task_uuid, limit=20  # High limit to get all items
-        )
+    (
+        all_results,
+        is_done_final,
+        _last_update_final,
+    ) = await task_manager.pull_task_stream_items(
+        owner_metadata,
+        task_uuid,
+        limit=20,  # High limit to get all items
     )
 
     assert all_results is not None

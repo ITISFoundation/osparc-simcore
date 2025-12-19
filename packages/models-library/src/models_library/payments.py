@@ -56,7 +56,9 @@ class InvoiceDataGet(BaseModel):
                     "credit_amount": Decimal(15.5),  # type: ignore[dict-item]
                     "stripe_price_id": "stripe-price-id",
                     "stripe_tax_rate_id": "stripe-tax-rate-id",
-                    "user_invoice_address": UserInvoiceAddress.model_config["json_schema_extra"]["examples"][0],  # type: ignore [index]
+                    "user_invoice_address": UserInvoiceAddress.model_config[
+                        "json_schema_extra"
+                    ]["examples"][0],  # type: ignore [index]
                     "user_display_name": "My Name",
                     "user_email": "email@example.itis",
                 },

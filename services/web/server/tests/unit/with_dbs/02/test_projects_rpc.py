@@ -142,7 +142,6 @@ async def other_user(
     client: TestClient,
     logged_user: UserInfoDict,
 ) -> AsyncIterator[UserInfoDict]:
-
     async with NewUser(
         user_data={
             "name": "other-user",
@@ -150,7 +149,6 @@ async def other_user(
         },
         app=client.app,
     ) as other_user_info:
-
         assert other_user_info["name"] != logged_user["name"]
         yield other_user_info
 
@@ -349,7 +347,6 @@ async def test_rpc_client_get_project_marked_as_job_not_found(
     logged_user: UserInfoDict,
     user_project: ProjectDict,
 ):
-
     project_uuid = ProjectID(user_project["uuid"])
     user_id = logged_user["id"]
     job_parent_resource_name = "solvers/solver123/version/1.2.3"

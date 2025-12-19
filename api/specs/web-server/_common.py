@@ -58,7 +58,6 @@ def _replace_basemodel_in_annotation(annotation, new_type):
 def as_query(model_class: type[BaseModel]) -> type[BaseModel]:
     fields = {}
     for field_name, field_info in model_class.model_fields.items():
-
         field_default = field_info.default
         assert not field_info.default_factory, f"got {field_info=}"  # nosec
         query_kwargs = {

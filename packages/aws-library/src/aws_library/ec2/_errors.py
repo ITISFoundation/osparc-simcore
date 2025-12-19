@@ -15,9 +15,7 @@ class EC2NotConnectedError(EC2RuntimeError):
 
 
 class EC2AccessError(EC2RuntimeError):
-    msg_template: str = (
-        "Unexpected error while accessing EC2 backend responded with {status_code}: {operation_name}:{code}:{error}"
-    )
+    msg_template: str = "Unexpected error while accessing EC2 backend responded with {status_code}: {operation_name}:{code}:{error}"
 
 
 class EC2TimeoutError(EC2AccessError):

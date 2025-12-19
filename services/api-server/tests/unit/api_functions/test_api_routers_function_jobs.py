@@ -54,7 +54,6 @@ async def test_delete_function_job(
     fake_registered_project_function_job: RegisteredProjectFunctionJob,
     auth: httpx.BasicAuth,
 ) -> None:
-
     mock_handler_in_functions_rpc_interface("delete_function_job", None)
 
     response = await client.delete(
@@ -103,7 +102,6 @@ async def test_get_function_job(
     fake_registered_project_function_job: RegisteredProjectFunctionJob,
     auth: httpx.BasicAuth,
 ) -> None:
-
     mock_handler_in_functions_rpc_interface(
         "get_function_job", fake_registered_project_function_job
     )
@@ -129,7 +127,6 @@ async def test_list_function_jobs(
     fake_registered_project_function_job: RegisteredProjectFunctionJob,
     auth: httpx.BasicAuth,
 ) -> None:
-
     mock_handler_in_functions_rpc_interface(
         "list_function_jobs",
         (
@@ -213,7 +210,6 @@ async def test_list_function_jobs_with_job_id_filter(
     product_name: ProductName,
     auth: httpx.BasicAuth,
 ) -> None:
-
     PAGE_SIZE = 3
     TOTAL_SIZE = 10
 
@@ -297,7 +293,6 @@ async def test_get_function_job_status(
     job_creation_task_id: TaskID | None,
     celery_task_state: TaskState,
 ) -> None:
-
     _expected_return_status = status.HTTP_200_OK
 
     def _mock_task_manager(*args, **kwargs) -> CeleryTaskManager:
@@ -419,7 +414,6 @@ async def test_get_function_job_outputs(
     expected_output: dict[str, Any] | None,
     use_db_cache: bool,
 ) -> None:
-
     mock_handler_in_functions_rpc_interface(
         "get_function_job",
         fake_registered_project_function_job.model_copy(

@@ -2,15 +2,13 @@ import os
 from pathlib import Path
 
 import s4l_v1
-import s4l_v1.analysis.viewers as viewers
-import s4l_v1.document as document
-import s4l_v1.model as model
 import s4l_v1.simulation.emfdtd as fdtd
-import s4l_v1.units as units
 from dotenv import load_dotenv
 from osparc_isolve_api import run_simulation
+from s4l_v1 import document, model, units
 from s4l_v1._api.application import get_app_safe, run_application
 from s4l_v1._api.simwrappers import ApiSimulation
+from s4l_v1.analysis import viewers
 from s4l_v1.model import Vec3
 
 load_dotenv()

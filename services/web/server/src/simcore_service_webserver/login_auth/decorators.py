@@ -40,7 +40,9 @@ def login_required(handler: HandlerAnyReturn) -> HandlerAnyReturn:
             kind=inspect.Parameter.POSITIONAL_OR_KEYWORD,
             annotation=web.Request,
         )
-    }, f"Expected {handler.__name__} with request as signature, got {handler.__annotations__}"
+    }, (
+        f"Expected {handler.__name__} with request as signature, got {handler.__annotations__}"
+    )
 
     @functools.wraps(handler)
     async def _wrapper(request: web.Request):

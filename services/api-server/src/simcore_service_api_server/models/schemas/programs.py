@@ -98,7 +98,7 @@ class Program(BaseService, ApiServerOutputSchema):
         service_key: ServiceKey,
         description: str,
         name: str,
-        service: ServiceRelease
+        service: ServiceRelease,
     ) -> "Program":
         return cls(
             id=service_key,

@@ -7,9 +7,6 @@ import annotated_types
 from common_library.basic_types import DEFAULT_FACTORY
 from common_library.dict_tools import remap_keys
 from common_library.users_enums import AccountRequestStatus, UserStatus
-from models_library.groups import AccessRightsDict
-from models_library.rest_filters import Filters
-from models_library.rest_pagination import PageQueryParameters
 from pydantic import (
     AfterValidator,
     BaseModel,
@@ -21,6 +18,10 @@ from pydantic import (
     model_validator,
 )
 from pydantic.config import JsonDict
+
+from models_library.groups import AccessRightsDict
+from models_library.rest_filters import Filters
+from models_library.rest_pagination import PageQueryParameters
 
 from ..basic_types import IDStr
 from ..emails import LowerCaseEmailStr

@@ -145,7 +145,6 @@ async def test_fails_to_pay_with_payment_method_without_funds(
         repo_transactions=PaymentsTransactionsRepo(db_engine=app.state.engine),
         repo_methods=PaymentsMethodsRepo(db_engine=app.state.engine),
         notifier=notifier_service,
-        #
         payment_method_id=no_funds_payment_method_id,
         amount_dollars=100,
         target_credits=100,
@@ -220,7 +219,6 @@ async def test_gateway_server_timesout_during_payment(
             repo_transactions=PaymentsTransactionsRepo(db_engine=app.state.engine),
             repo_methods=PaymentsMethodsRepo(db_engine=app.state.engine),
             notifier=notifier_service,
-            #
             payment_method_id=no_funds_payment_method_id,
             amount_dollars=100,
             target_credits=100,

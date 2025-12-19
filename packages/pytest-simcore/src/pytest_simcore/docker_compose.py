@@ -109,9 +109,8 @@ def env_vars_for_docker_compose(env_devel_file: Path) -> EnvVarsDict:
     env_devel["S3_BUCKET_NAME"] = "pytestbucket"
 
     # ensure OpenTelemetry is not enabled
-    env_devel |= {
-        tracing_setting: "null"
-        for tracing_setting in (
+    env_devel |= dict.fromkeys(
+        (
             "AGENT_TRACING",
             "API_SERVER_TRACING",
             "AUTOSCALING_TRACING",
@@ -129,8 +128,9 @@ def env_vars_for_docker_compose(env_devel_file: Path) -> EnvVarsDict:
             "WB_DB_EL_TRACING",
             "WB_GC_TRACING",
             "WEBSERVER_TRACING",
-        )
-    }
+        ),
+        "null",
+    )
 
     return {key: value for key, value in env_devel.items() if value is not None}
 
@@ -248,9 +248,9 @@ def core_services_selection(request) -> list[str]:
     """Selection of services from the simcore stack"""
     core_services = getattr(request.module, FIXTURE_CONFIG_CORE_SERVICES_SELECTION, [])
 
-    assert (
-        core_services
-    ), f"Expected at least one service in '{FIXTURE_CONFIG_CORE_SERVICES_SELECTION}' within '{request.module.__name__}'"
+    assert core_services, (
+        f"Expected at least one service in '{FIXTURE_CONFIG_CORE_SERVICES_SELECTION}' within '{request.module.__name__}'"
+    )
     return core_services
 
 

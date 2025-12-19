@@ -69,7 +69,6 @@ async def _setup_product_templates(app: web.Application):
 
 
 def setup_web_events(app: web.Application):
-
     app.on_startup.append(
         # NOTE: must go BEFORE _load_products_on_startup
         _auto_create_products_groups

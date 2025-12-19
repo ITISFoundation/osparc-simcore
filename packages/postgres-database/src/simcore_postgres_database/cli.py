@@ -15,6 +15,10 @@ from pathlib import Path
 import alembic.command
 import click
 from alembic import __version__ as __alembic_version__
+from tenacity import Retrying
+from tenacity.after import after_log
+from tenacity.wait import wait_fixed
+
 from simcore_postgres_database.models import *
 from simcore_postgres_database.utils import (
     build_url,
@@ -30,9 +34,6 @@ from simcore_postgres_database.utils_cli import (
     reset_cache,
 )
 from simcore_postgres_database.utils_migration import DEFAULT_INI
-from tenacity import Retrying
-from tenacity.after import after_log
-from tenacity.wait import wait_fixed
 
 ALEMBIC_VERSION = tuple(int(v) for v in __alembic_version__.split(".")[0:3])
 DEFAULT_HOST = "postgres"
@@ -125,7 +126,7 @@ def discover(**cli_inputs) -> dict | None:
 
             return cfg
 
-        except Exception as err:  # pylint: disable=broad-except  # noqa: PERF203
+        except Exception as err:  # pylint: disable=broad-except
             inline_msg = str(err).replace("\n", ". ")
             click.echo(f"<- {test.__name__} failed : {inline_msg}")
 

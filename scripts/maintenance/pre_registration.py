@@ -202,7 +202,7 @@ async def _pre_register_users_from_list(
             )
 
         except Exception as e:
-            _print_error(f"Failed to pre-register user {user_data.email}: {str(e)}")
+            _print_error(f"Failed to pre-register user {user_data.email}: {e!s}")
 
     return results
 
@@ -233,7 +233,7 @@ async def _create_invitations_from_list(
             results.append({"email": email, "error": str(e)})
 
         except Exception as e:
-            _print_error(f"Failed to generate invitation for {email}: {str(e)}")
+            _print_error(f"Failed to generate invitation for {email}: {e!s}")
             results.append({"email": email, "error": str(e)})
 
     return results
@@ -259,7 +259,7 @@ async def run_pre_registration(
         _print_error(f"Invalid user data format: {e}")
         sys.exit(os.EX_DATAERR)
     except Exception as e:
-        _print_error(f"Reading or parsing {users_file_path}: {str(e)}")
+        _print_error(f"Reading or parsing {users_file_path}: {e!s}")
         sys.exit(os.EX_IOERR)
 
     # Create an HTTP client and process
@@ -292,7 +292,7 @@ async def run_pre_registration(
             await _logout_current_user(client)
 
         except Exception as e:
-            _print_error(f"{str(e)}")
+            _print_error(f"{e!s}")
             sys.exit(os.EX_SOFTWARE)
 
 
@@ -342,7 +342,7 @@ async def run_create_invitation(
             )
             sys.exit(os.EX_SOFTWARE)
         except Exception as e:
-            _print_error(f"{str(e)}")
+            _print_error(f"{e!s}")
             sys.exit(os.EX_SOFTWARE)
 
 
@@ -388,7 +388,7 @@ async def run_bulk_create_invitation(
         _print_error(f"Invalid email format: {e}")
         sys.exit(os.EX_DATAERR)
     except Exception as e:
-        _print_error(f"Reading or parsing {emails_file_path}: {str(e)}")
+        _print_error(f"Reading or parsing {emails_file_path}: {e!s}")
         sys.exit(os.EX_IOERR)
 
     # Create an HTTP client and process
@@ -427,7 +427,7 @@ async def run_bulk_create_invitation(
             await _logout_current_user(client)
 
         except Exception as e:
-            _print_error(f"{str(e)}")
+            _print_error(f"{e!s}")
             sys.exit(os.EX_SOFTWARE)
 
 

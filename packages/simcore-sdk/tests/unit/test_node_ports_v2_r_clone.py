@@ -33,9 +33,9 @@ def r_clone_settings(
 
 
 @pytest.fixture
-def skip_if_r_clone_is_missing() -> None:  # noqa: PT004
+def skip_if_r_clone_is_missing() -> None:
     try:
-        subprocess.check_output(["rclone", "--version"])  # noqa: S603, S607
+        subprocess.check_output(["rclone", "--version"])  # noqa: S607
     except Exception:  # pylint: disable=broad-except
         pytest.skip("rclone is not installed")
 

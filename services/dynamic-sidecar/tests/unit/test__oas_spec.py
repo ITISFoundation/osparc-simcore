@@ -22,6 +22,6 @@ def test_openapi_spec(
     spec_from_app = app.openapi()
     open_api_json_file = project_slug_dir / "openapi.json"
     stored_openapi_json_file = json.loads(open_api_json_file.read_text())
-    assert (
-        spec_from_app == stored_openapi_json_file
-    ), "make sure to run `make openapi.json`"
+    assert spec_from_app == stored_openapi_json_file, (
+        "make sure to run `make openapi.json`"
+    )

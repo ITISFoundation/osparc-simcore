@@ -1,6 +1,5 @@
 from typing import Annotated, Any, TypeAlias
 
-from models_library.computations import CollectionRunID
 from pydantic import (
     AnyHttpUrl,
     AnyUrl,
@@ -10,6 +9,8 @@ from pydantic import (
     ValidationInfo,
     field_validator,
 )
+
+from models_library.computations import CollectionRunID
 
 from ..basic_types import IDStr
 from ..projects import ProjectID

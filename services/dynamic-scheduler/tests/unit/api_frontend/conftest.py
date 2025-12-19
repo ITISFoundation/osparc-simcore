@@ -110,7 +110,6 @@ def remove_old_screenshots() -> None:
 async def app_runner(
     remove_old_screenshots: None, not_initialized_app: FastAPI, server_host_port: str
 ) -> AsyncIterable[None]:
-
     shutdown_event = asyncio.Event()
 
     async def _wait_for_shutdown_event():
@@ -148,8 +147,9 @@ async def app_runner(
 
 @pytest.fixture
 def download_playwright_browser() -> None:
-    subprocess.run(  # noqa: S603
-        ["playwright", "install", "chromium"], check=True  # noqa: S607
+    subprocess.run(
+        ["playwright", "install", "chromium"],
+        check=True,
     )
 
 

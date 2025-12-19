@@ -168,11 +168,11 @@ def test_base_updatable_display_model(
     assert person.model_dump() == expected_dict
 
     for attribute, mock in subscribed_on_type_changed.items():
-        assert (
-            mock.call_count == on_type_change[attribute]
-        ), f"wrong on_type_change count for '{attribute}'"
+        assert mock.call_count == on_type_change[attribute], (
+            f"wrong on_type_change count for '{attribute}'"
+        )
 
     for attribute, mock in subscribed_on_value_change.items():
-        assert (
-            mock.call_count == on_value_change[attribute]
-        ), f"wrong on_value_change count for '{attribute}'"
+        assert mock.call_count == on_value_change[attribute], (
+            f"wrong on_value_change count for '{attribute}'"
+        )

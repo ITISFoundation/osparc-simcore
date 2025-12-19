@@ -31,29 +31,41 @@ class RutPricingUnitGet(BaseModel):
                 {
                     "pricing_unit_id": 1,
                     "unit_name": "SMALL",
-                    "unit_extra_info": UnitExtraInfoTier.model_config["json_schema_extra"]["examples"][0],  # type: ignore [index]
+                    "unit_extra_info": UnitExtraInfoTier.model_config[
+                        "json_schema_extra"
+                    ]["examples"][0],  # type: ignore [index]
                     "current_cost_per_unit": 5.7,
                     "current_cost_per_unit_id": 1,
                     "default": True,
-                    "specific_info": HardwareInfo.model_config["json_schema_extra"]["examples"][0],  # type: ignore [index]
+                    "specific_info": HardwareInfo.model_config["json_schema_extra"][
+                        "examples"
+                    ][0],  # type: ignore [index]
                 },
                 {
                     "pricing_unit_id": 1,
                     "unit_name": "SMALL",
-                    "unit_extra_info": UnitExtraInfoTier.model_config["json_schema_extra"]["examples"][0],  # type: ignore [index]
+                    "unit_extra_info": UnitExtraInfoTier.model_config[
+                        "json_schema_extra"
+                    ]["examples"][0],  # type: ignore [index]
                     "current_cost_per_unit": 5.7,
                     "current_cost_per_unit_id": 1,
                     "default": True,
-                    "specific_info": HardwareInfo.model_config["json_schema_extra"]["examples"][1],  # type: ignore [index]
+                    "specific_info": HardwareInfo.model_config["json_schema_extra"][
+                        "examples"
+                    ][1],  # type: ignore [index]
                 },
                 {
                     "pricing_unit_id": 2,
                     "unit_name": "5 seats",
-                    "unit_extra_info": UnitExtraInfoLicense.model_config["json_schema_extra"]["examples"][0],  # type: ignore [index]
+                    "unit_extra_info": UnitExtraInfoLicense.model_config[
+                        "json_schema_extra"
+                    ]["examples"][0],  # type: ignore [index]
                     "current_cost_per_unit": 10.5,
                     "current_cost_per_unit_id": 2,
                     "default": False,
-                    "specific_info": HardwareInfo.model_config["json_schema_extra"]["examples"][1],  # type: ignore [index]
+                    "specific_info": HardwareInfo.model_config["json_schema_extra"][
+                        "examples"
+                    ][1],  # type: ignore [index]
                 },
             ]
         }
@@ -77,9 +89,8 @@ class RutPricingPlanGet(BaseModel):
             return self  # No units to check
 
         for unit in self.pricing_units:
-            if (
-                self.classification == PricingPlanClassification.TIER
-                and not isinstance(unit.unit_extra_info, UnitExtraInfoTier)
+            if self.classification == PricingPlanClassification.TIER and not isinstance(
+                unit.unit_extra_info, UnitExtraInfoTier
             ):
                 error_message = (
                     "For TIER classification, unit_extra_info must be UnitExtraInfoTier"

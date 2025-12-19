@@ -74,7 +74,7 @@ def validate_csv_exported_pg_project(
 
     if failed:
         typer.secho(
-            f"Found {len(failed)}/{index+1} invalid projects",
+            f"Found {len(failed)}/{index + 1} invalid projects",
             fg=typer.colors.RED,
             err=True,
         )

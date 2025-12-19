@@ -213,7 +213,9 @@ async def test_db_listener_triggers_on_event_with_multiple_tasks(
         assert any(
             call.args[1] == updated_task_id
             for call in spied_get_changed_comp_task_row.call_args_list
-        ), f"_get_changed_comp_task_row was not called with task_id={updated_task_id}. Calls: {spied_get_changed_comp_task_row.call_args_list}"
+        ), (
+            f"_get_changed_comp_task_row was not called with task_id={updated_task_id}. Calls: {spied_get_changed_comp_task_row.call_args_list}"
+        )
     else:
         spied_get_changed_comp_task_row.assert_not_called()
 
@@ -299,9 +301,9 @@ async def test_db_listener_upgrades_projects_row_correctly(
     assert len(tasks) == 2, "Expected two tasks for the two JupyterLab nodes"
     first_jupyter_task = tasks[0]
     second_jupyter_task = tasks[1]
-    assert (
-        len(second_jupyter_task["inputs"]) > 0
-    ), "Expected inputs for the second JupyterLab task"
+    assert len(second_jupyter_task["inputs"]) > 0, (
+        "Expected inputs for the second JupyterLab task"
+    )
     number_of_inputs_linked = len(second_jupyter_task["inputs"])
 
     # simulate a concurrent change in all the outputs of first jupyterlab
@@ -362,9 +364,9 @@ async def test_db_listener_upgrades_projects_row_correctly(
                             mock_dynamic_service_rpc.call_args_list,
                         )
                     # Assert that the dynamic service RPC was called
-                    assert (
-                        mock_dynamic_service_rpc.call_count > 0
-                    ), "Dynamic service retrieve RPC was not called"
+                    assert mock_dynamic_service_rpc.call_count > 0, (
+                        "Dynamic service retrieve RPC was not called"
+                    )
                     # now get we check which ports were retrieved, we expect all of them
                     all_ports = set()
                     for call in mock_dynamic_service_rpc.call_args_list:

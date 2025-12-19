@@ -110,7 +110,6 @@ async def test_get_service_access_rights(
 
 
 async def test_catalog_exceptions():
-
     error = DefaultPricingUnitForServiceNotFoundError(
         service_key="key", service_version="version"
     )

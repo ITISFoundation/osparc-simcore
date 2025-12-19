@@ -60,5 +60,4 @@ def test_catalog_service_model_examples(
 def test_adapter_to_domain_model(
     filters: ServiceListFilters | None,
 ):
-
     TypeAdapter(ServiceDBFilters | None).validate_python(filters, from_attributes=True)

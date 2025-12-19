@@ -270,9 +270,9 @@ async def _assert_redirected_to_study(
 
     # Expects redirection to osparc web
     assert response.url.path == "/"
-    assert (
-        "OSPARC-SIMCORE" in content
-    ), f"Expected front-end rendering workbench's study, got {content!s}"
+    assert "OSPARC-SIMCORE" in content, (
+        f"Expected front-end rendering workbench's study, got {content!s}"
+    )
 
     # First check if the fragment indicates an error
     fragment = response.real_url.fragment

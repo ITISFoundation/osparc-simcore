@@ -184,9 +184,9 @@ async def test_clone_study(
             assert _parent_node_id == f"{parent_node_id}"
         return callback(request)
 
-    mocked_webserver_rest_api_base["create_projects"].side_effect = (
-        clone_project_side_effect
-    )
+    mocked_webserver_rest_api_base[
+        "create_projects"
+    ].side_effect = clone_project_side_effect
 
     _headers = {}
     if parent_project_id is not None:
@@ -278,12 +278,12 @@ async def test_clone_study_with_title(
         result.data.uuid = UUID(_project_id)
         return httpx.Response(status.HTTP_200_OK, content=result.model_dump_json())
 
-    mocked_webserver_rest_api_base["create_projects"].side_effect = (
-        clone_project_side_effect
-    )
-    mocked_webserver_rest_api_base["project_patch"].side_effect = (
-        patch_project_side_effect
-    )
+    mocked_webserver_rest_api_base[
+        "create_projects"
+    ].side_effect = clone_project_side_effect
+    mocked_webserver_rest_api_base[
+        "project_patch"
+    ].side_effect = patch_project_side_effect
     mocked_webserver_rest_api_base["project_get"].side_effect = get_project_side_effect
 
     query = dict()

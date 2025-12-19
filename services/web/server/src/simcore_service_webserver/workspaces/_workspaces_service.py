@@ -61,7 +61,6 @@ async def update_workspace(
     workspace_id: WorkspaceID,
     **updates,
 ) -> UserWorkspaceWithAccessRights:
-
     await check_user_workspace_access(
         app=app,
         user_id=user_id,

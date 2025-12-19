@@ -49,15 +49,16 @@ async def list_computations_latest_iteration_page(
     order_by: OrderBy | None = None,
 ) -> ComputationRunRpcGetPage:
     comp_runs_repo = CompRunsRepository.instance(db_engine=app.state.engine)
-    total, comp_runs_output = (
-        await comp_runs_repo.list_for_user__only_latest_iterations(
-            product_name=product_name,
-            user_id=user_id,
-            filter_only_running=filter_only_running,
-            offset=offset,
-            limit=limit,
-            order_by=order_by,
-        )
+    (
+        total,
+        comp_runs_output,
+    ) = await comp_runs_repo.list_for_user__only_latest_iterations(
+        product_name=product_name,
+        user_id=user_id,
+        filter_only_running=filter_only_running,
+        offset=offset,
+        limit=limit,
+        order_by=order_by,
     )
     return ComputationRunRpcGetPage(
         items=comp_runs_output,
@@ -79,15 +80,16 @@ async def list_computations_iterations_page(
     order_by: OrderBy | None = None,
 ) -> ComputationRunRpcGetPage:
     comp_runs_repo = CompRunsRepository.instance(db_engine=app.state.engine)
-    total, comp_runs_output = (
-        await comp_runs_repo.list_for_user_and_project_all_iterations(
-            product_name=product_name,
-            user_id=user_id,
-            project_ids=project_ids,
-            offset=offset,
-            limit=limit,
-            order_by=order_by,
-        )
+    (
+        total,
+        comp_runs_output,
+    ) = await comp_runs_repo.list_for_user_and_project_all_iterations(
+        product_name=product_name,
+        user_id=user_id,
+        project_ids=project_ids,
+        offset=offset,
+        limit=limit,
+        order_by=order_by,
     )
     return ComputationRunRpcGetPage(
         items=comp_runs_output,
@@ -247,15 +249,16 @@ async def list_computation_collection_run_tasks_page(
         db_engine=app.state.engine
     )
 
-    total, comp_tasks = (
-        await comp_runs_snapshot_tasks_repo.list_computation_collection_run_tasks(
-            product_name=product_name,
-            user_id=user_id,
-            collection_run_id=collection_run_id,
-            offset=offset,
-            limit=limit,
-            order_by=order_by,
-        )
+    (
+        total,
+        comp_tasks,
+    ) = await comp_runs_snapshot_tasks_repo.list_computation_collection_run_tasks(
+        product_name=product_name,
+        user_id=user_id,
+        collection_run_id=collection_run_id,
+        offset=offset,
+        limit=limit,
+        order_by=order_by,
     )
 
     # Run all log fetches concurrently

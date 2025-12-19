@@ -80,9 +80,9 @@ async def assert_comp_runs(
         ]
     assert len(list_of_comp_runs) == expected_total
     if list_of_comp_runs and expected_state:
-        assert all(
-            r.result is expected_state for r in list_of_comp_runs
-        ), f"expected state '{expected_state}', got {[r.result for r in list_of_comp_runs]}"
+        assert all(r.result is expected_state for r in list_of_comp_runs), (
+            f"expected state '{expected_state}', got {[r.result for r in list_of_comp_runs]}"
+        )
     return list_of_comp_runs
 
 
@@ -112,12 +112,12 @@ async def assert_comp_tasks_and_comp_run_snapshot_tasks(
         original_tasks = TypeAdapter(list[CompTaskAtDB]).validate_python(
             result.fetchall()
         )
-    assert all(
-        t.state == expected_state for t in original_tasks
-    ), f"expected state: {expected_state}, found: {[t.state for t in original_tasks]}"
-    assert all(
-        t.progress == expected_progress for t in original_tasks
-    ), f"{expected_progress=}, found: {[t.progress for t in original_tasks]}"
+    assert all(t.state == expected_state for t in original_tasks), (
+        f"expected state: {expected_state}, found: {[t.state for t in original_tasks]}"
+    )
+    assert all(t.progress == expected_progress for t in original_tasks), (
+        f"{expected_progress=}, found: {[t.progress for t in original_tasks]}"
+    )
 
     if run_id:
         # check the comp_runs_snapshot_tasks table is correctly updated
@@ -137,12 +137,12 @@ async def assert_comp_tasks_and_comp_run_snapshot_tasks(
             snapshot_tasks = TypeAdapter(
                 list[CompRunSnapshotTaskAtDBGet]
             ).validate_python(x)
-        assert all(
-            t.state.value == expected_state for t in snapshot_tasks
-        ), f"expected state: {expected_state}, found: {[t.state for t in snapshot_tasks]}"
-        assert all(
-            t.progress == expected_progress for t in snapshot_tasks
-        ), f"{expected_progress=}, found: {[t.progress for t in snapshot_tasks]}"
+        assert all(t.state.value == expected_state for t in snapshot_tasks), (
+            f"expected state: {expected_state}, found: {[t.state for t in snapshot_tasks]}"
+        )
+        assert all(t.progress == expected_progress for t in snapshot_tasks), (
+            f"{expected_progress=}, found: {[t.progress for t in snapshot_tasks]}"
+        )
 
     # return the original CompTaskAtDB tasks
     return original_tasks, snapshot_tasks

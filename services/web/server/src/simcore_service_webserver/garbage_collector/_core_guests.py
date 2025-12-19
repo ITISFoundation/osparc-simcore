@@ -197,9 +197,9 @@ async def remove_users_manually_marked_as_guests(
     }
 
     # Prevent creating this list if a guest user
-    guest_users: list[tuple[UserID, UserNameID]] = (
-        await users_service.get_guest_user_ids_and_names(app)
-    )
+    guest_users: list[
+        tuple[UserID, UserNameID]
+    ] = await users_service.get_guest_user_ids_and_names(app)
 
     for guest_user_id, guest_user_name in guest_users:
         # Prevents removing GUEST users that were automatically (NOT manually) created

@@ -277,7 +277,6 @@ def mocked_rabbit_rpc_client(
         method_name: RPCMethodName,
         **kwargs,
     ) -> Any:
-
         kwargs.pop("timeout_s", None)  # remove timeout from kwargs
 
         # NOTE: we could switch to different namespaces
@@ -1047,7 +1046,6 @@ def mock_method_in_jobs_service(
         return_value: Any = None,
         exception: Exception | None = None,
     ) -> MockType:
-
         return mocker.patch.object(
             JobService,
             method_name,

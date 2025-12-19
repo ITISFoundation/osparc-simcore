@@ -14,21 +14,15 @@ class OperationAlreadyRegisteredError(BaseGenericSchedulerError):
 
 
 class OperationNotFoundError(BaseGenericSchedulerError):
-    msg_template: str = (
-        "Operation '{operation_name}' was not found, registered_operations='{registered_operations}'"
-    )
+    msg_template: str = "Operation '{operation_name}' was not found, registered_operations='{registered_operations}'"
 
 
 class OperationInitialContextKeyNotFoundError(BaseGenericSchedulerError):
-    msg_template: str = (
-        "Operation '{operation_name}' required_key='{required_key}' not in initial_operation_context"
-    )
+    msg_template: str = "Operation '{operation_name}' required_key='{required_key}' not in initial_operation_context"
 
 
 class StepNotFoundInOperationError(BaseGenericSchedulerError):
-    msg_template: str = (
-        "Step '{step_name}' not found steps_names='{steps_names}' for operation '{operation_name}'"
-    )
+    msg_template: str = "Step '{step_name}' not found steps_names='{steps_names}' for operation '{operation_name}'"
 
 
 class UnexpectedStepHandlingError(BaseGenericSchedulerError):
@@ -43,9 +37,7 @@ class OperationContextValueIsNoneError(BaseGenericSchedulerError):
 
 
 class ProvidedOperationContextKeysAreMissingError(BaseGenericSchedulerError):
-    msg_template: str = (
-        "Provided context {provided_context} is missing keys {missing_keys}, was expecting {expected_keys}"
-    )
+    msg_template: str = "Provided context {provided_context} is missing keys {missing_keys}, was expecting {expected_keys}"
 
 
 class InitialOperationContextKeyNotAllowedError(BaseGenericSchedulerError):
@@ -60,15 +52,11 @@ class OperationNotCancellableError(BaseGenericSchedulerError):
 
 
 class CannotCancelWhileWaitingForManualInterventionError(BaseGenericSchedulerError):
-    msg_template: str = (
-        "Cannot cancel schedule_id='{schedule_id}' while one or more steps are waiting for manual intervention."
-    )
+    msg_template: str = "Cannot cancel schedule_id='{schedule_id}' while one or more steps are waiting for manual intervention."
 
 
 class StepNameNotInCurrentGroupError(BaseGenericSchedulerError):
-    msg_template: str = (
-        "step_name='{step_name}' not in current step_group_name='{step_group_name}' of operation_name='{operation_name}'"
-    )
+    msg_template: str = "step_name='{step_name}' not in current step_group_name='{step_group_name}' of operation_name='{operation_name}'"
 
 
 class StepNotInErrorStateError(BaseGenericSchedulerError):

@@ -130,7 +130,6 @@ async def pull_images(
         progress_unit="Byte",
         description=f"pulling {len(images)} images",
     ) as pbar:
-
         await asyncio.gather(
             *[
                 pull_image(

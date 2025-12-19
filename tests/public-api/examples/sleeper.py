@@ -38,7 +38,6 @@ print(cfg.host)
 print("-" * 100)
 
 with osparc.ApiClient(cfg) as api_client:
-
     profile = UsersApi(api_client).get_my_profile()
     print(profile)
     #

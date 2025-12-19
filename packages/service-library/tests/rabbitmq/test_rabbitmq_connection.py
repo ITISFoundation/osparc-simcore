@@ -67,7 +67,7 @@ def random_rabbit_message(
     return _creator
 
 
-@pytest.mark.no_cleanup_check_rabbitmq_server_has_no_errors()
+@pytest.mark.no_cleanup_check_rabbitmq_server_has_no_errors
 async def test_rabbit_client_with_paused_container(
     paused_container: Callable[[str], AbstractAsyncContextManager[None]],
     random_exchange_name: Callable[[], str],
@@ -158,7 +158,7 @@ async def _assert_rabbit_client_state(
     assert rabbit_client.healthy == healthy
 
 
-@pytest.mark.no_cleanup_check_rabbitmq_server_has_no_errors()
+@pytest.mark.no_cleanup_check_rabbitmq_server_has_no_errors
 async def test_rabbit_server_closes_connection(
     rabbit_service: RabbitSettings,
     create_rabbitmq_client: Callable[[str, int], RabbitMQClient],

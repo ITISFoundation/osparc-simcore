@@ -98,11 +98,11 @@ async def switch_client_session_to(
 ) -> AsyncIterator[TestClient]:
     assert client.app
 
-    await client.post(f'{client.app.router["auth_logout"].url_for()}')
+    await client.post(f"{client.app.router['auth_logout'].url_for()}")
     # sometimes 4xx if user already logged out. Ignore
 
     resp = await client.post(
-        f'{client.app.router["auth_login"].url_for()}',
+        f"{client.app.router['auth_login'].url_for()}",
         json={
             "email": user["email"],
             "password": user["raw_password"],
@@ -112,7 +112,7 @@ async def switch_client_session_to(
 
     yield client
 
-    resp = await client.post(f'{client.app.router["auth_logout"].url_for()}')
+    resp = await client.post(f"{client.app.router['auth_logout'].url_for()}")
     await assert_status(resp, status.HTTP_200_OK)
 
 

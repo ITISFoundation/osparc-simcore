@@ -163,7 +163,6 @@ async def test_update_transaction_failures_and_exceptions(
     init_transaction: Callable,
     payment_id: str,
 ):
-
     async with asyncpg_engine.connect() as connection:
         kwargs = {
             "connection": connection,
@@ -200,7 +199,6 @@ def user_id() -> int:
 def create_fake_user_transactions(
     asyncpg_engine: AsyncEngine, user_id: int
 ) -> Callable:
-
     assert asyncpg_engine
 
     async def _go(expected_total=5):

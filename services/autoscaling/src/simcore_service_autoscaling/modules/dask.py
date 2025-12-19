@@ -120,9 +120,9 @@ def _dask_worker_from_ec2_instance(
         raise DaskWorkerNotFoundError(
             worker_host=ec2_instance.aws_private_dns, url=client.scheduler.address
         )
-    assert (
-        len(filtered_workers) == 1
-    ), f"returned workers {filtered_workers}, {node_hostname=}"  # nosec
+    assert len(filtered_workers) == 1, (
+        f"returned workers {filtered_workers}, {node_hostname=}"
+    )  # nosec
     return next(iter(filtered_workers.items()))
 
 

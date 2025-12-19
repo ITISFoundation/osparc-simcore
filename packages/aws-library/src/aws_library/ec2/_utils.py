@@ -79,9 +79,7 @@ async def get_subnet_capacity(
     # preserve the order of instance_config.subnet_ids
 
     subnet_id_to_available_ips: dict[str, int] = {
-        subnet_id: subnet_id_to_subnet_map[subnet_id][
-            "AvailableIpAddressCount"
-        ]  # pyright: ignore[reportTypedDictNotRequiredAccess]
+        subnet_id: subnet_id_to_subnet_map[subnet_id]["AvailableIpAddressCount"]  # pyright: ignore[reportTypedDictNotRequiredAccess]
         for subnet_id in subnet_ids
     }
     return subnet_id_to_available_ips
@@ -99,9 +97,7 @@ async def get_subnet_azs(
     # preserve the order of instance_config.subnet_ids
 
     subnet_azs: list[str] = [
-        subnet_id_to_subnet_map[subnet_id][
-            "AvailabilityZone"
-        ]  # pyright: ignore[reportTypedDictNotRequiredAccess]
+        subnet_id_to_subnet_map[subnet_id]["AvailabilityZone"]  # pyright: ignore[reportTypedDictNotRequiredAccess]
         for subnet_id in subnet_ids
     ]
     return subnet_azs

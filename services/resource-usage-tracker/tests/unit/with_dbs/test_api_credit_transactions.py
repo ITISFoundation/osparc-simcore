@@ -53,7 +53,6 @@ def resource_tracker_credit_transactions_db(
     postgres_db: sa.engine.Engine,
 ) -> Iterator[None]:
     with postgres_db.connect() as con:
-
         yield
 
         con.execute(resource_tracker_credit_transactions.delete())
@@ -126,7 +125,7 @@ async def test_credit_transactions_workflow(
 
     url = URL("/v1/credit-transactions/credits:sum")
     response = await async_client.post(
-        f'{url.with_query({"product_name": "osparc", "wallet_id": 1})}'
+        f"{url.with_query({'product_name': 'osparc', 'wallet_id': 1})}"
     )
     assert response.status_code == status.HTTP_200_OK
     data = response.json()

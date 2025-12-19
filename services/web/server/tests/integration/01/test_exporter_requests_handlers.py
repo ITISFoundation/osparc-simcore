@@ -183,9 +183,9 @@ async def client(
     assert app_settings.WEBSERVER_SCICRUNCH is not None
     assert app_settings.WEBSERVER_RABBITMQ is not None
     assert app_settings.WEBSERVER_EXPORTER is not None
-    assert (
-        exporter_settings.get_plugin_settings(app) is not None
-    ), "Should capture defaults"
+    assert exporter_settings.get_plugin_settings(app) is not None, (
+        "Should capture defaults"
+    )
 
     setup_db(app)
     setup_session(app)

@@ -253,9 +253,7 @@ async def get_service_ports(
         service_key=service_key,
         service_version=service_version,
     )
-    assert (
-        TypeAdapter(list[ServicePortGet]).validate_python(result) is not None
-    )  # nosec
+    assert TypeAdapter(list[ServicePortGet]).validate_python(result) is not None  # nosec
     return cast(list[ServicePortGet], result)
 
 
@@ -301,7 +299,5 @@ async def list_all_services_summaries_paginated(  # pylint: disable=too-many-arg
         timeout_s=40 * RPC_REQUEST_DEFAULT_TIMEOUT_S,
     )
 
-    assert (
-        TypeAdapter(PageRpc[ServiceSummary]).validate_python(result) is not None
-    )  # nosec
+    assert TypeAdapter(PageRpc[ServiceSummary]).validate_python(result) is not None  # nosec
     return cast(PageRpc[ServiceSummary], result)

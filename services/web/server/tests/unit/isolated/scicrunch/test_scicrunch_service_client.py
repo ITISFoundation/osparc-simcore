@@ -15,7 +15,7 @@ from pathlib import Path
 import pytest
 from aiohttp import web
 from aioresponses import aioresponses as AioResponsesMock
-from pytest_mock import MockerFixture  # noqa: N812
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.aiohttp.application import create_safe_application
 from servicelib.aiohttp.client_session import get_client_session

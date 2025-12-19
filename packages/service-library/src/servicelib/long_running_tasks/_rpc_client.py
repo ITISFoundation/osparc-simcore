@@ -119,7 +119,6 @@ async def remove_task(
     task_context: TaskContext,
     task_id: TaskId,
 ) -> None:
-
     result = await rabbitmq_rpc_client.request(
         get_rabbit_namespace(namespace),
         TypeAdapter(RPCMethodName).validate_python("remove_task"),

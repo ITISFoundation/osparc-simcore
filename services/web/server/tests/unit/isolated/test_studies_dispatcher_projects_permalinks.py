@@ -125,7 +125,7 @@ def test_permalink_only_for_template_projects(
             fake_get_project_request.app,
             request_url=fake_get_project_request.url,
             request_headers=dict(fake_get_project_request.headers),
-            **{**valid_project_kwargs, "project_type": ProjectType.STANDARD}
+            **{**valid_project_kwargs, "project_type": ProjectType.STANDARD},
         )
 
 
@@ -142,7 +142,7 @@ def test_permalink_only_when_read_access_to_everyone(
                 "project_access_rights": {
                     "1": {"read": False, "write": False, "delete": False}
                 },
-            }
+            },
         )
 
     with pytest.raises(PermalinkNotAllowedError):
@@ -155,5 +155,5 @@ def test_permalink_only_when_read_access_to_everyone(
                 "project_access_rights": {
                     "2000": {"read": False, "write": False, "delete": False}
                 },
-            }
+            },
         )

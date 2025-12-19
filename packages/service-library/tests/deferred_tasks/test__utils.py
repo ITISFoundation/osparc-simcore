@@ -64,7 +64,7 @@ async def _assert_call_count(
     handler: HandlerCallWrapper,
     *,
     expected_count: NonNegativeInt,
-    operation: Callable = operator.eq
+    operation: Callable = operator.eq,
 ) -> None:
     async for attempt in AsyncRetrying(
         wait=wait_fixed(0.01),
@@ -252,7 +252,6 @@ async def test_fan_out_exchange_message_delivery(
     rabbit_broker: RabbitBroker,
     get_test_broker: Callable[[], AbstractAsyncContextManager[RabbitBroker]],
 ):
-
     handler_1_call_count = Mock()
     handler_2_call_count = Mock()
 

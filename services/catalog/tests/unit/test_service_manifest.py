@@ -75,7 +75,6 @@ async def test_get_service(
     director_client: DirectorClient,
     all_services_map: manifest.ServiceMetaDataPublishedDict,
 ):
-
     for expected_service in all_services_map.values():
         service = await manifest.get_service(
             key=expected_service.key,
@@ -92,7 +91,6 @@ async def test_get_service_ports(
     director_client: DirectorClient,
     all_services_map: manifest.ServiceMetaDataPublishedDict,
 ):
-
     for expected_service in all_services_map.values():
         ports = await manifest.get_service_ports(
             key=expected_service.key,
@@ -128,7 +126,6 @@ async def test_get_batch_services(
     director_client: DirectorClient,
     all_services_map: manifest.ServiceMetaDataPublishedDict,
 ):
-
     for expected_services in toolz.partition(2, all_services_map.values()):
         selection = [(s.key, s.version) for s in expected_services]
         got_services = await manifest.get_batch_services(selection, director_client)

@@ -60,7 +60,7 @@ def test_paginating_data(base_url):
         prev=None,
         next=str(
             URL(base_url).with_query(
-                f"some=1&random=4&query=true&offset={offset+limit}&limit={limit}"
+                f"some=1&random=4&query=true&offset={offset + limit}&limit={limit}"
             )
         ),
         last=str(
@@ -104,12 +104,12 @@ def test_paginating_data(base_url):
             ),
             prev=str(
                 URL(base_url).with_query(
-                    f"some=1&random=4&query=true&offset={offset-limit}&limit={limit}"
+                    f"some=1&random=4&query=true&offset={offset - limit}&limit={limit}"
                 )
             ),
             next=str(
                 URL(base_url).with_query(
-                    f"some=1&random=4&query=true&offset={offset+limit}&limit={limit}"
+                    f"some=1&random=4&query=true&offset={offset + limit}&limit={limit}"
                 )
             ),
             last=str(

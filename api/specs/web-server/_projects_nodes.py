@@ -51,8 +51,7 @@ router = APIRouter(
     response_model=Envelope[NodeCreated],
     status_code=status.HTTP_201_CREATED,
 )
-def create_node(project_id: str, body: NodeCreate):  # noqa: ARG001
-    ...
+def create_node(project_id: str, body: NodeCreate): ...
 
 
 @router.get(
@@ -60,8 +59,7 @@ def create_node(project_id: str, body: NodeCreate):  # noqa: ARG001
     "/projects/{project_id}/nodes/{node_id}",
     response_model=Envelope[NodeGetIdle | NodeGetUnknown | DynamicServiceGet | NodeGet],
 )
-def get_node(project_id: str, node_id: str):  # noqa: ARG001
-    ...
+def get_node(project_id: str, node_id: str): ...
 
 
 @router.delete(
@@ -69,17 +67,14 @@ def get_node(project_id: str, node_id: str):  # noqa: ARG001
     response_model=None,
     status_code=status.HTTP_204_NO_CONTENT,
 )
-def delete_node(project_id: str, node_id: str):  # noqa: ARG001
-    ...
+def delete_node(project_id: str, node_id: str): ...
 
 
 @router.post(
     "/projects/{project_id}/nodes/{node_id}:retrieve",
     response_model=Envelope[NodeRetrieved],
 )
-def retrieve_node(
-    project_id: str, node_id: str, _retrieve: NodeRetrieve  # noqa: ARG001
-): ...
+def retrieve_node(project_id: str, node_id: str, _retrieve: NodeRetrieve): ...
 
 
 @router.post(
@@ -87,16 +82,14 @@ def retrieve_node(
     status_code=status.HTTP_204_NO_CONTENT,
     response_model=None,
 )
-def start_node(project_id: str, node_id: str):  # noqa: ARG001
-    ...
+def start_node(project_id: str, node_id: str): ...
 
 
 @router.post(
     "/projects/{project_id}/nodes/{node_id}:stop",
     response_model=Envelope[TaskGet],
 )
-def stop_node(project_id: str, node_id: str):  # noqa: ARG001
-    ...
+def stop_node(project_id: str, node_id: str): ...
 
 
 @router.post(
@@ -104,7 +97,7 @@ def stop_node(project_id: str, node_id: str):  # noqa: ARG001
     response_model=None,
     status_code=status.HTTP_204_NO_CONTENT,
 )
-def restart_node(project_id: str, node_id: str):  # noqa: ARG001
+def restart_node(project_id: str, node_id: str):
     """Note that it has only effect on nodes associated to dynamic services"""
 
 
@@ -113,10 +106,7 @@ def restart_node(project_id: str, node_id: str):  # noqa: ARG001
     response_model=None,
     status_code=status.HTTP_204_NO_CONTENT,
 )
-def update_node_outputs(
-    project_id: str, node_id: str, _new: NodeOutputs
-):  # noqa: ARG001
-    ...
+def update_node_outputs(project_id: str, node_id: str, _new: NodeOutputs): ...
 
 
 @router.patch(
@@ -124,10 +114,7 @@ def update_node_outputs(
     response_model=None,
     status_code=status.HTTP_204_NO_CONTENT,
 )
-def patch_project_node(
-    project_id: ProjectID, node_id: str, _new: NodePatch
-):  # noqa: ARG001
-    ...
+def patch_project_node(project_id: ProjectID, node_id: str, _new: NodePatch): ...
 
 
 #
@@ -139,8 +126,7 @@ def patch_project_node(
     "/projects/{project_id}/nodes/{node_id}/resources",
     response_model=Envelope[ServiceResourcesDict],
 )
-def get_node_resources(project_id: str, node_id: str):  # noqa: ARG001
-    ...
+def get_node_resources(project_id: str, node_id: str): ...
 
 
 @router.put(
@@ -148,7 +134,7 @@ def get_node_resources(project_id: str, node_id: str):  # noqa: ARG001
     response_model=Envelope[ServiceResourcesDict],
 )
 def replace_node_resources(
-    project_id: str, node_id: str, _new: ServiceResourcesDict  # noqa: ARG001
+    project_id: str, node_id: str, _new: ServiceResourcesDict
 ): ...
 
 
@@ -170,7 +156,7 @@ async def get_project_services(project_id: ProjectID): ...
     description="Check whether provided group has access to the project services",
 )
 async def get_project_services_access_for_gid(
-    project_id: ProjectID, for_gid: GroupID  # noqa: ARG001
+    project_id: ProjectID, for_gid: GroupID
 ): ...
 
 
@@ -189,8 +175,7 @@ assert_handler_signature_against_model(
     response_model=Envelope[list[_ProjectNodePreview]],
     description="Lists all previews in the node's project",
 )
-async def list_project_nodes_previews(project_id: ProjectID):  # noqa: ARG001
-    ...
+async def list_project_nodes_previews(project_id: ProjectID): ...
 
 
 assert_handler_signature_against_model(list_project_nodes_previews, ProjectPathParams)
@@ -202,9 +187,7 @@ assert_handler_signature_against_model(list_project_nodes_previews, ProjectPathP
     description="Gets a give node's preview",
     responses={status.HTTP_404_NOT_FOUND: {"description": "Node has no preview"}},
 )
-async def get_project_node_preview(
-    project_id: ProjectID, node_id: NodeID  # noqa: ARG001
-): ...
+async def get_project_node_preview(project_id: ProjectID, node_id: NodeID): ...
 
 
 assert_handler_signature_against_model(get_project_node_preview, NodePathParams)

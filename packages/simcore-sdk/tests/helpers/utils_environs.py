@@ -5,7 +5,7 @@ from pathlib import Path
 
 import yaml
 
-VARIABLE_SUBSTITUTION = re.compile(r"\$\{(\w+)+")  #
+VARIABLE_SUBSTITUTION = re.compile(r"\$\{(\w+)+")
 
 
 def load_env(file_handler) -> dict:

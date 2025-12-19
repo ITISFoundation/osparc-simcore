@@ -84,7 +84,6 @@ def test_populate_projects_to_jobs_during_migration(
     simcore_postgres_database.cli.upgrade.callback("8403acca8759")
 
     with sync_engine.connect() as conn:
-
         # Ensure the projects_to_jobs table does NOT exist yet
         with pytest.raises(sqlalchemy.exc.ProgrammingError) as exc_info:
             conn.execute(

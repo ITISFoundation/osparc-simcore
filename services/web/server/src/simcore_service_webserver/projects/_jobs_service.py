@@ -34,7 +34,6 @@ async def set_project_as_job(
     ],
     storage_assets_deleted: bool,
 ) -> None:
-
     await check_user_project_permission(
         app,
         project_id=project_uuid,

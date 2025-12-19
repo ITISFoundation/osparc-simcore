@@ -40,7 +40,9 @@ def is_lifespan_called(state: State, lifespan_name: str) -> bool:
     # It's easy to accidentally swap or misplace these arguments.
     assert not isinstance(  # nosec
         state, FastAPI
-    ), "Did you swap arguments? `lifespan(app, state)` expects (app: FastAPI, state: State)"
+    ), (
+        "Did you swap arguments? `lifespan(app, state)` expects (app: FastAPI, state: State)"
+    )
 
     called_lifespans = state.get(_CALLED_LIFESPANS_KEY, set())
     return lifespan_name in called_lifespans

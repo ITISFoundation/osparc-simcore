@@ -119,7 +119,6 @@ async def test_list_latest_catalog_services(
     director_client: DirectorClient,
     num_services: int,
 ):
-
     offset = 1
     limit = 2
     assert limit < num_services
@@ -477,27 +476,29 @@ async def test_list_all_vs_latest_services(
     offset = 0
 
     # Get latest services first
-    latest_total_count, latest_found_items = (
-        await catalog_services.list_latest_catalog_services(
-            services_repo,
-            director_client,
-            product_name=target_product,
-            user_id=user_id,
-            limit=limit,
-            offset=offset,
-        )
+    (
+        latest_total_count,
+        latest_found_items,
+    ) = await catalog_services.list_latest_catalog_services(
+        services_repo,
+        director_client,
+        product_name=target_product,
+        user_id=user_id,
+        limit=limit,
+        offset=offset,
     )
 
     # Get all services as summaries
-    all_total_count, all_found_items = (
-        await catalog_services.list_all_service_summaries(
-            services_repo,
-            director_client,
-            product_name=target_product,
-            user_id=user_id,
-            limit=limit,
-            offset=offset,
-        )
+    (
+        all_total_count,
+        all_found_items,
+    ) = await catalog_services.list_all_service_summaries(
+        services_repo,
+        director_client,
+        product_name=target_product,
+        user_id=user_id,
+        limit=limit,
+        offset=offset,
     )
 
     # Verify counts

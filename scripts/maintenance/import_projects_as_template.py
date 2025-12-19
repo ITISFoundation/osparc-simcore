@@ -148,7 +148,6 @@ def main(
         ..., prompt=True, confirmation_prompt=True, hide_input=True
     ),
 ) -> int:
-
     if project_name is None:
         project_name = project_file.name
 

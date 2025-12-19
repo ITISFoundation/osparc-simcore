@@ -30,7 +30,6 @@ async def get_page(all_items: list[int]) -> Callable:
 async def test_iter_pages_args(
     limit: int, offset: int, get_page: Callable, all_items: list[int]
 ):
-
     last_page = [None] * limit
 
     num_items = len(all_items) - offset
@@ -41,7 +40,6 @@ async def test_iter_pages_args(
     for page_index, page_args in enumerate(
         iter_pagination_params(offset=offset, limit=limit)
     ):
-
         page_items, page_args.total_number_of_items = await get_page(
             page_args.offset_current, page_args.limit
         )
@@ -65,14 +63,13 @@ async def test_iter_pages_args(
 @pytest.mark.parametrize("limit", [-1, 0])
 @pytest.mark.parametrize("offset", [-1])
 def test_iter_pages_args_invalid(limit: int, offset: int):
-
-    with pytest.raises(ValidationError):  # noqa: PT012
+    with pytest.raises(ValidationError):
         for _ in iter_pagination_params(offset=offset, limit=limit):
             pass
 
 
 def test_fails_if_total_number_of_items_not_set():
-    with pytest.raises(  # noqa: PT012
+    with pytest.raises(
         RuntimeError,
         match="page_args.total_number_of_items = total_count",
     ):

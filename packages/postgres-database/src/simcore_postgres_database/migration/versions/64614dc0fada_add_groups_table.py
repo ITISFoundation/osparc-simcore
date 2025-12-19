@@ -17,7 +17,6 @@ depends_on = None
 
 
 def upgrade():
-
     set_check_uniqueness_procedure = sa.DDL(
         """
 CREATE OR REPLACE FUNCTION check_group_uniqueness(name text, type text) RETURNS INT AS $$
@@ -98,7 +97,7 @@ END; $$ LANGUAGE 'plpgsql';
 
     # manually added migration (adds the procedure and triggers for user/groups)
     new_user_trigger = sa.DDL(
-        f"""
+        """
 DROP TRIGGER IF EXISTS user_modification on users;
 CREATE TRIGGER user_modification
 AFTER INSERT OR UPDATE OR DELETE ON users
@@ -108,7 +107,7 @@ AFTER INSERT OR UPDATE OR DELETE ON users
     )
 
     group_delete_trigger = sa.DDL(
-        f"""
+        """
 DROP TRIGGER IF EXISTS group_delete_trigger on groups;
 CREATE TRIGGER group_delete_trigger
 BEFORE DELETE ON groups
@@ -118,7 +117,7 @@ BEFORE DELETE ON groups
     )
 
     set_user_groups_procedure = sa.DDL(
-        f"""
+        """
 CREATE OR REPLACE FUNCTION set_user_groups() RETURNS TRIGGER AS $$
 DECLARE
     group_id BIGINT;

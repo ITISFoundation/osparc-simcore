@@ -82,7 +82,6 @@ async def _test_helpers_handler(request: web.Request):
 
 
 async def test_request_helpers(client: TestClient, default_product_name: ProductName):
-
     resp = await client.get(
         f"/{API_VTAG}/test-helpers",
         headers={X_PRODUCT_NAME_HEADER: default_product_name},
@@ -136,7 +135,6 @@ async def _test_product_template_handler(request: web.Request):
 async def test_product_template_helpers(
     client: TestClient, default_product_name: ProductName
 ):
-
     resp = await client.get(
         f"/{API_VTAG}/test-product-template-helpers",
         headers={X_PRODUCT_NAME_HEADER: default_product_name},

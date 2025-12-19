@@ -113,7 +113,9 @@ class HealthCheck:
 
         assert all(  # nosec
             inspect.iscoroutinefunction(fun) for fun in self._on_healthcheck
-        ), "All Slot functions that append to on_healthcheck must be coroutines. SEE _HealthCheckSlot"
+        ), (
+            "All Slot functions that append to on_healthcheck must be coroutines. SEE _HealthCheckSlot"
+        )
 
         try:
             await asyncio.wait_for(

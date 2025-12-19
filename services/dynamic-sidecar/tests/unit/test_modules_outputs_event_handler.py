@@ -232,7 +232,6 @@ class _MockAioQueue:
 def test_port_keys_event_handler_triggers_for_events(
     mock_state_path: Path, event: FileSystemEvent, expected_port_key: str | None
 ) -> None:
-
     queue = _MockAioQueue()
 
     event_handler = _PortKeysEventHandler(mock_state_path, queue)

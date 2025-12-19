@@ -17,7 +17,6 @@ async def get_service_extras(
     service_version: ServiceVersion,
     director_client: Annotated[DirectorClient, Depends(get_director_client)],
 ) -> ServiceExtras:
-
     return await catalog_services.get_catalog_service_extras(
         director_client, service_key, service_version
     )

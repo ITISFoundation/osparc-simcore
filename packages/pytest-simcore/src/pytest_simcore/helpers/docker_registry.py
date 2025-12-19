@@ -32,7 +32,7 @@ class Registry:
     # SEE  https://github.com/moby/moby/issues/9015
 
     def __init__(self, **data):
-        data.setdefault("url", f'https://{os.environ.get("REGISTRY_URL")}')
+        data.setdefault("url", f"https://{os.environ.get('REGISTRY_URL')}")
         data.setdefault(
             "auth", (os.environ.get("REGISTRY_USER"), os.environ.get("REGISTRY_PW"))
         )
@@ -157,7 +157,6 @@ def download_all_registry_metadata(dest_dir: Path, **kwargs):
 
     count = 0
     for repo in registry.iter_repositories(limit=500):
-
         # list tags
         try:
             tags = registry.list_tags(repo_name=repo)
@@ -195,6 +194,5 @@ def download_all_registry_metadata(dest_dir: Path, **kwargs):
 
 
 if __name__ == "__main__":
-
     dest = Path(sys.argv[1] if len(sys.argv) > 1 else ".")
     download_all_registry_metadata(dest_dir=dest)

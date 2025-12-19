@@ -44,9 +44,7 @@ pytest_simcore_core_services_selection = [
 
 
 class AccessRightError(OsparcErrorMixin, RuntimeError):
-    msg_template: str = (
-        "User {user_id} does not have access to file {file_id} with location {location_id}"
-    )
+    msg_template: str = "User {user_id} does not have access to file {file_id} with location {location_id}"
 
 
 @pytest.fixture
@@ -197,7 +195,6 @@ async def _wait_for_job(
     owner_metadata: OwnerMetadata,
     stop_after: timedelta = timedelta(seconds=5),
 ) -> None:
-
     async for attempt in AsyncRetrying(
         stop=stop_after_delay(stop_after.total_seconds()),
         wait=wait_fixed(0.1),
@@ -211,9 +208,9 @@ async def _wait_for_job(
                 job_id=async_job_get.job_id,
                 owner_metadata=owner_metadata,
             )
-            assert (
-                result.done is True
-            ), "Please check logs above, something whent wrong with task execution"
+            assert result.done is True, (
+                "Please check logs above, something whent wrong with task execution"
+            )
 
 
 @pytest.mark.parametrize(

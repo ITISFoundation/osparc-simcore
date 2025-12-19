@@ -114,9 +114,9 @@ async def assert_same_directory_content(
     if inject_relative_path is not None:
         input_set = {_relative_path(x) for x in input_set}
 
-    assert (
-        input_set == output_set
-    ), f"There following files are missing {input_set - output_set}"
+    assert input_set == output_set, (
+        f"There following files are missing {input_set - output_set}"
+    )
 
     # computing the hashes for dir_to_compress and map in a dict
     # with the name starting from the root of the directory and md5sum
@@ -151,7 +151,7 @@ def assert_unarchived_paths(
     dst_dir: Path,
 ):
     def is_file_or_emptydir(path: Path) -> bool:
-        return path.is_file() or path.is_dir() and not any(path.glob("*"))
+        return path.is_file() or (path.is_dir() and not any(path.glob("*")))
 
     # all unarchivedare under dst_dir
     assert all(dst_dir in f.parents for f in unarchived_paths)

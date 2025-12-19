@@ -169,9 +169,9 @@ async def _assert_call_to(
     ):
         with attempt:
             call_count = deferred_status_spies[method].call_count
-            assert (
-                call_count == count
-            ), f"Received calls {call_count} != {count} (expected) to '{method}'"
+            assert call_count == count, (
+                f"Received calls {call_count} != {count} (expected) to '{method}'"
+            )
 
 
 async def _assert_result(

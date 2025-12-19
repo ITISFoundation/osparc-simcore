@@ -20,18 +20,14 @@ import pytest
 from playwright._impl._sync_base import EventContextManager
 from playwright.sync_api import (
     APIRequestContext,
-)
-from playwright.sync_api import Error as PlaywrightError
-from playwright.sync_api import (
     FrameLocator,
     Locator,
     Page,
     Request,
-)
-from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
-from playwright.sync_api import (
     WebSocket,
 )
+from playwright.sync_api import Error as PlaywrightError
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 from pydantic import AnyUrl, TypeAdapter
 from tenacity import (
     before_sleep_log,

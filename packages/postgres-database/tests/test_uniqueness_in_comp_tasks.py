@@ -25,7 +25,6 @@ async def engine(
     sync_engine: sqlalchemy.engine.Engine,
     aiopg_engine: aiopg.sa.engine.Engine,
 ) -> AsyncIterator[aiopg.sa.engine.Engine]:
-
     metadata.drop_all(sync_engine)
     metadata.create_all(sync_engine)
 

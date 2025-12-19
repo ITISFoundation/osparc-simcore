@@ -183,7 +183,6 @@ async def test_create_job(
     parent_project_id: UUID | None,
     parent_node_id: UUID | None,
 ):
-
     mock_webserver_router = (
         mocked_backend_services_apis_for_create_and_delete_solver_job["webserver"]
     )
@@ -240,7 +239,6 @@ def mocked_backend_services_apis_for_delete_job_assets(
     mocked_directorv2_rest_api_base: MockRouter,
     mocked_storage_rest_api_base: MockRouter,
 ) -> dict[str, MockRouter | dict[str, MockType]]:
-
     computation_state: RunningState = request.param
 
     # Patch PATCH /projects/{project_id}

@@ -1,8 +1,9 @@
 from datetime import datetime
 from typing import Annotated, Self
 
-from models_library.string_types import DisplaySafeStr
 from pydantic import ConfigDict, Field, field_validator
+
+from models_library.string_types import DisplaySafeStr
 
 from ..access_rights import AccessRights
 from ..folders import FolderDB, FolderID

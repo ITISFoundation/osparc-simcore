@@ -81,7 +81,6 @@ _EXAMPLES: list[dict[str, Any]] = [
 
 
 class AckPayment(_BaseAckPayment):
-
     saved: Annotated[
         SavedPaymentMethod | None,
         Field(

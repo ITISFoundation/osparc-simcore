@@ -52,9 +52,9 @@ def package_dir() -> Path:
 def osparc_simcore_root_dir(package_tests_dir: Path) -> Path:
     root_dir = package_tests_dir.parent.parent.parent.resolve()
     assert root_dir.exists(), "Is this service within osparc-simcore repo?"
-    assert any(
-        root_dir.glob("packages/service-library")
-    ), f"{root_dir} not look like rootdir"
+    assert any(root_dir.glob("packages/service-library")), (
+        f"{root_dir} not look like rootdir"
+    )
     return root_dir
 
 

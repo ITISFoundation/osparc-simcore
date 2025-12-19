@@ -40,7 +40,7 @@ def setup(app: FastAPI):
 
 
 __all__: tuple[str, ...] = (
-    "setup",
     "run_new_pipeline",
+    "setup",
     "stop_pipeline",
 )

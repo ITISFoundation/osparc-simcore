@@ -87,7 +87,7 @@ JOBS_STATUS_CODES: dict[int | str, dict[str, Any]] = {
         ],
     ),
 )
-async def create_solver_job(  # noqa: PLR0913
+async def create_solver_job(
     solver_key: SolverKeyId,
     version: VersionStr,
     inputs: JobInputs,

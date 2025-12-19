@@ -107,7 +107,6 @@ def products_raw_data() -> dict[ProductName, dict[str, Any]]:
 
 @pytest.fixture(scope="module")
 def products_prices_raw_data() -> dict[ProductName, dict[str, Any]]:
-
     return {
         "osparc": random_product_price(
             product_name="osparc",

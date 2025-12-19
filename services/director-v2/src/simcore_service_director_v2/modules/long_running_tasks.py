@@ -22,7 +22,5 @@ def setup(app: FastAPI):
 
 
 def get_long_running_client_helper(app: FastAPI) -> LongRunningClientHelper:
-    assert isinstance(
-        app.state.long_running_client_helper, LongRunningClientHelper
-    )  # nosec
+    assert isinstance(app.state.long_running_client_helper, LongRunningClientHelper)  # nosec
     return app.state.long_running_client_helper

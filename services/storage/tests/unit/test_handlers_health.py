@@ -42,8 +42,7 @@ async def test_health_status(initialized_app: FastAPI, client: httpx.AsyncClient
     assert not error
 
     assert (
-        app_status_check.app_name
-        == simcore_service_storage._meta.PROJECT_NAME  # noqa: SLF001
+        app_status_check.app_name == simcore_service_storage._meta.PROJECT_NAME  # noqa: SLF001
     )
     assert app_status_check.version == str(
         simcore_service_storage._meta.VERSION  # noqa: SLF001

@@ -13,7 +13,7 @@ MAX_UPLOAD_SIZE = 1 * GB  # TODO: settings?
 
 
 async def valid_content_length(
-    content_length: PositiveInt = Header(..., lt=MAX_UPLOAD_SIZE)
+    content_length: PositiveInt = Header(..., lt=MAX_UPLOAD_SIZE),
 ):
     # TODO: use this to replace   content_length: Optional[str] = Header(None),
     return content_length

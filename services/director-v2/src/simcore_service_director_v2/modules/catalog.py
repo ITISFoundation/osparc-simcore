@@ -25,7 +25,6 @@ def setup(
     catalog_settings: CatalogSettings | None,
     tracing_settings: TracingSettings | None,
 ) -> None:
-
     if not catalog_settings:
         catalog_settings = CatalogSettings()
 

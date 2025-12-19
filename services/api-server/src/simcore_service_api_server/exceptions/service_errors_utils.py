@@ -117,7 +117,6 @@ def service_exception_handler(
     headers: dict[str, str] = {}
 
     try:
-
         yield
 
     except ValidationError as exc:
@@ -130,7 +129,6 @@ def service_exception_handler(
         ) from exc
 
     except httpx.HTTPStatusError as exc:
-
         status_code, detail, headers = _get_http_exception_kwargs(
             service_name, exc, http_status_map=http_status_map, **context
         )
@@ -146,11 +144,14 @@ def service_exception_handler(
                 status_code=status.HTTP_504_GATEWAY_TIMEOUT,
                 detail=user_message("Request to backend timed out"),
             ) from exc
-        if type(exc) in {
-            asyncio.exceptions.CancelledError,
-            RuntimeError,
-            RemoteMethodNotRegisteredError,
-        }:  # https://github.com/ITISFoundation/osparc-simcore/blob/master/packages/service-library/src/servicelib/rabbitmq/_client_rpc.py#L76
+        if (
+            type(exc)
+            in {
+                asyncio.exceptions.CancelledError,
+                RuntimeError,
+                RemoteMethodNotRegisteredError,
+            }
+        ):  # https://github.com/ITISFoundation/osparc-simcore/blob/master/packages/service-library/src/servicelib/rabbitmq/_client_rpc.py#L76
             raise HTTPException(
                 status_code=status.HTTP_502_BAD_GATEWAY,
                 detail=user_message("Request to backend failed"),
@@ -198,6 +199,6 @@ def _assert_correct_kwargs(func: Callable, exception_types: set[BackEndErrorType
     for exc_type in exception_types:
         assert isinstance(exc_type, type)  # nosec
         _exception_inputs = exc_type.named_fields()
-        assert _exception_inputs.issubset(
-            _required_kwargs
-        ), f"{_exception_inputs - _required_kwargs} are inputs to `{exc_type.__name__}.msg_template` but not a kwarg in the decorated coroutine `{func.__module__}.{func.__name__}`"  # nosec
+        assert _exception_inputs.issubset(_required_kwargs), (
+            f"{_exception_inputs - _required_kwargs} are inputs to `{exc_type.__name__}.msg_template` but not a kwarg in the decorated coroutine `{func.__module__}.{func.__name__}`"
+        )  # nosec

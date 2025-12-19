@@ -26,7 +26,6 @@ from yarl import URL
 def mock_product_db_get_data(
     faker: Faker, product_db_server_defaults: dict[str, Any]
 ) -> list[dict[str, Any]]:
-
     _SUBDOMAIN_PREFIX = r"[\w-]+\."
 
     return [

@@ -57,15 +57,15 @@ _DOWNLOAD_LINK3 = (
     "url_in,expected_download_link",
     [
         (
-            f'{URL("http://localhost:9081").with_path("/view").with_query(file_type="CSV", viewer_key="simcore/services/comp/foo", viewer_version="1.0.0", file_size="300", file_name="orchestra.csv", download_link=_DOWNLOAD_LINK3)}',
+            f"{URL('http://localhost:9081').with_path('/view').with_query(file_type='CSV', viewer_key='simcore/services/comp/foo', viewer_version='1.0.0', file_size='300', file_name='orchestra.csv', download_link=_DOWNLOAD_LINK3)}",
             _DOWNLOAD_LINK3,
         ),
         (
-            f'{URL("http://127.0.0.1:9081").with_path("/view").with_query(file_type="IPYNB", viewer_key="simcore/services/dynamic/jupyter-octave-python-math", viewer_version="1.0.0", file_size="300", file_name="sample.ipynb", download_link=_DOWNLOAD_LINK2)}',
+            f"{URL('http://127.0.0.1:9081').with_path('/view').with_query(file_type='IPYNB', viewer_key='simcore/services/dynamic/jupyter-octave-python-math', viewer_version='1.0.0', file_size='300', file_name='sample.ipynb', download_link=_DOWNLOAD_LINK2)}",
             _DOWNLOAD_LINK2,
         ),
         (
-            f'{URL("https://123.123.0.1:9000").with_path("/view").with_query(file_type="VTK", file_size="300", download_link=_DOWNLOAD_LINK1)}',
+            f"{URL('https://123.123.0.1:9000').with_path('/view').with_query(file_type='VTK', file_size='300', download_link=_DOWNLOAD_LINK1)}",
             _DOWNLOAD_LINK1,
         ),
     ],

@@ -197,26 +197,26 @@ class Port(BaseServiceIOModel):
             # NOTE: review types returned by this function !!!
             if isinstance(self.value, PortLink):
                 # this is a link to another node's port
-                other_port_itemvalue: ItemValue | None = (
-                    await port_utils.get_value_link_from_port_link(
-                        self.value,
-                        # pylint: disable=protected-access
-                        self._node_ports._node_ports_creator_cb,
-                        file_link_type=file_link_type,
-                    )
+                other_port_itemvalue: (
+                    ItemValue | None
+                ) = await port_utils.get_value_link_from_port_link(
+                    self.value,
+                    # pylint: disable=protected-access
+                    self._node_ports._node_ports_creator_cb,
+                    file_link_type=file_link_type,
                 )
 
                 return other_port_itemvalue
 
             if isinstance(self.value, FileLink):
                 # let's get the download/upload link from storage
-                url_itemvalue: AnyUrl | None = (
-                    await port_utils.get_download_link_from_storage(
-                        # pylint: disable=protected-access
-                        user_id=self._node_ports.user_id,
-                        value=self.value,
-                        link_type=file_link_type,
-                    )
+                url_itemvalue: (
+                    AnyUrl | None
+                ) = await port_utils.get_download_link_from_storage(
+                    # pylint: disable=protected-access
+                    user_id=self._node_ports.user_id,
+                    value=self.value,
+                    link_type=file_link_type,
                 )
                 return url_itemvalue
 
@@ -257,15 +257,15 @@ class Port(BaseServiceIOModel):
 
             if isinstance(self.value, PortLink):
                 # this is a link to another node
-                other_port_concretevalue: None | ItemConcreteValue = (
-                    await port_utils.get_value_from_link(
-                        # pylint: disable=protected-access
-                        key=self.key,
-                        value=self.value,
-                        file_to_key_map=self.file_to_key_map,
-                        node_port_creator=self._node_ports._node_ports_creator_cb,  # noqa: SLF001
-                        progress_bar=progress_bar,
-                    )
+                other_port_concretevalue: (
+                    None | ItemConcreteValue
+                ) = await port_utils.get_value_from_link(
+                    # pylint: disable=protected-access
+                    key=self.key,
+                    value=self.value,
+                    file_to_key_map=self.file_to_key_map,
+                    node_port_creator=self._node_ports._node_ports_creator_cb,  # noqa: SLF001
+                    progress_bar=progress_bar,
                 )
                 value = other_port_concretevalue
 

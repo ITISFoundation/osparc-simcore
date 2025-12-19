@@ -1,4 +1,4 @@
-# ruff: noqa: SLF001, EM101, TRY003, PT011, PLR0917
+# ruff: noqa: EM101
 # pylint: disable=no-value-for-parameter
 # pylint: disable=protected-access
 # pylint: disable=redefined-outer-name

@@ -23,7 +23,6 @@ def unit_registry(request: pytest.FixtureRequest) -> UnitRegistry | None:
 def test_from_catalog_to_webapi_service(
     unit_registry: UnitRegistry | None, benchmark: BenchmarkFixture
 ):
-
     # Taken from services/catalog/src/simcore_service_catalog/models/schemas/services.py on Feb.2021
     catalog_service = {
         "name": "File Picker",

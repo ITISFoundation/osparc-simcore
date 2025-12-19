@@ -402,9 +402,7 @@ class DaskScheduler(BaseCompScheduler):
                     # already had a timeout error, let's keep it
                     task_errors.append(error)
                     assert "ctx" in error  # nosec
-                    assert (
-                        _TASK_RETRIEVAL_ERROR_CONTEXT_TIME_KEY in error["ctx"]
-                    )  # nosec
+                    assert _TASK_RETRIEVAL_ERROR_CONTEXT_TIME_KEY in error["ctx"]  # nosec
                     check_time = arrow.get(
                         error["ctx"][_TASK_RETRIEVAL_ERROR_CONTEXT_TIME_KEY]
                     )

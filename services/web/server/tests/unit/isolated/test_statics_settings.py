@@ -30,7 +30,6 @@ def test_valid_osparc_dependencies():
 
 
 def test_frontend_app_settings(mock_env_devel_environment: dict[str, str]):
-
     settings = FrontEndAppSettings.create_from_envs()
     assert settings
 

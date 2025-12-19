@@ -114,7 +114,6 @@ async def trash_folder(
     force_stop_first: bool,
     explicit: bool,
 ):
-
     workspace_is_private = await _check_exists_and_access(
         app, product_name=product_name, user_id=user_id, folder_id=folder_id
     )
@@ -123,7 +122,6 @@ async def trash_folder(
     trashed_at = arrow.utcnow().datetime
 
     async with transaction_context(get_asyncpg_engine(app)) as connection:
-
         # 1. Trash folder and children
         await _folders_db_trashed_state_update(
             app,
@@ -136,17 +134,17 @@ async def trash_folder(
         )
 
         # 2. Trash all child projects that I am an owner
-        child_projects: list[ProjectID] = (
-            await _folders_repository.get_projects_recursively_only_if_user_is_owner(
-                app,
-                connection,
-                folder_id=folder_id,
-                private_workspace_user_id_or_none=(
-                    user_id if workspace_is_private else None
-                ),
-                user_id=user_id,
-                product_name=product_name,
-            )
+        child_projects: list[
+            ProjectID
+        ] = await _folders_repository.get_projects_recursively_only_if_user_is_owner(
+            app,
+            connection,
+            folder_id=folder_id,
+            private_workspace_user_id_or_none=(
+                user_id if workspace_is_private else None
+            ),
+            user_id=user_id,
+            product_name=product_name,
         )
 
         for project_id in child_projects:
@@ -185,14 +183,14 @@ async def untrash_folder(
     )
 
     # 3.2 UNtrash all child projects that I am an owner
-    child_projects: list[ProjectID] = (
-        await _folders_repository.get_projects_recursively_only_if_user_is_owner(
-            app,
-            folder_id=folder_id,
-            private_workspace_user_id_or_none=user_id if workspace_is_private else None,
-            user_id=user_id,
-            product_name=product_name,
-        )
+    child_projects: list[
+        ProjectID
+    ] = await _folders_repository.get_projects_recursively_only_if_user_is_owner(
+        app,
+        folder_id=folder_id,
+        private_workspace_user_id_or_none=user_id if workspace_is_private else None,
+        user_id=user_id,
+        product_name=product_name,
     )
 
     for project_id in child_projects:
@@ -266,7 +264,6 @@ async def delete_trashed_folder(
     folder_id: FolderID,
     until_equal_datetime: datetime | None = None,
 ) -> None:
-
     folder = await _folders_service.get_folder(
         app, user_id=user_id, folder_id=folder_id, product_name=product_name
     )

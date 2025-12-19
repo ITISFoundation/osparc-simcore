@@ -200,9 +200,9 @@ async def asyncpg_engine(  # <-- WE SHOULD USE THIS ONE
     pg_sa_engine: sqlalchemy.engine.Engine,
     _make_asyncpg_engine: Callable[[bool], AsyncEngine],
 ) -> AsyncIterator[AsyncEngine]:
-    assert (
-        pg_sa_engine
-    ), "Ensures pg db up, responsive, init (w/ tables) and/or migrated"
+    assert pg_sa_engine, (
+        "Ensures pg db up, responsive, init (w/ tables) and/or migrated"
+    )
 
     _apg_engine = _make_asyncpg_engine(is_pdb_enabled)
 
@@ -267,7 +267,6 @@ def create_fake_user(sync_engine: sqlalchemy.engine.Engine) -> Iterator[Callable
     async def _creator(
         conn: SAConnection, group: RowProxy | None = None, **overrides
     ) -> RowProxy:
-
         user_id = await postgres_users.insert_user_and_secrets(
             conn,
             **overrides,

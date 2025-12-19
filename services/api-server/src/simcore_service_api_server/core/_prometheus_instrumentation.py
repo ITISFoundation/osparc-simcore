@@ -92,7 +92,7 @@ def setup_prometheus_instrumentation(app: FastAPI):
 
 
 def get_instrumentation(app: FastAPI) -> ApiServerPrometheusInstrumentation:
-    assert (
-        app.state.instrumentation
-    ), "Instrumentation not setup. Please check the configuration"  # nosec
+    assert app.state.instrumentation, (
+        "Instrumentation not setup. Please check the configuration"
+    )  # nosec
     return cast(ApiServerPrometheusInstrumentation, app.state.instrumentation)

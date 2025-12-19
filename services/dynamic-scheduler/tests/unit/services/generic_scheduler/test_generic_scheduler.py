@@ -264,7 +264,7 @@ class _BS(BaseStep):
 
         return {
             **required_context,
-            **{k: _CTX_VALUE for k in cls.get_execute_provides_context_keys()},
+            **dict.fromkeys(cls.get_execute_provides_context_keys(), _CTX_VALUE),
         }
 
     @classmethod
@@ -280,7 +280,7 @@ class _BS(BaseStep):
 
         return {
             **required_context,
-            **{k: _CTX_VALUE for k in cls.get_revert_provides_context_keys()},
+            **dict.fromkeys(cls.get_revert_provides_context_keys(), _CTX_VALUE),
         }
 
 
@@ -455,7 +455,6 @@ async def test_run_operation_after(
     expected_order: list[BaseExpectedStepOrder],
     to_start: OperationToStart | None,
 ):
-
     register_operation(_INITIAL_OP_NAME, initial_op)
     if after_op is not None:
         register_operation(_AFTER_OP_NAME, after_op)

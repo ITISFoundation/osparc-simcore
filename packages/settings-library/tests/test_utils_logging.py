@@ -8,7 +8,6 @@ from settings_library.utils_logging import MixinLoggingSettings
 
 
 def test_mixin_logging(monkeypatch):
-
     monkeypatch.setenv("LOG_LEVEL", "debug")
 
     # -----------------------------------------------------------

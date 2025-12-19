@@ -459,9 +459,7 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
             TypeAdapter(SimcoreS3FileID).validate_python(file_id)
         )
 
-        if (
-            not is_directory
-        ):  # NOTE: Delete is not needed for directories that are synced via an external tool (rclone).
+        if not is_directory:  # NOTE: Delete is not needed for directories that are synced via an external tool (rclone).
             # ensure file is deleted first in case it already exists
             # https://github.com/ITISFoundation/osparc-simcore/pull/5108
             await self.delete_file(
@@ -735,7 +733,8 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
 
                 # NOTE: if the file was at root level, we do not have to update the parent (not tracked in the DB)
                 if is_nested_level_file_id(file_id) and (
-                    parent_dir_fmds := await file_meta_data_repo.list_filter_with_partial_file_id(
+                    parent_dir_fmds
+                    := await file_meta_data_repo.list_filter_with_partial_file_id(
                         connection=connection,
                         user_or_project_filter=UserOrProjectFilter(
                             user_id=user_id, project_ids=[]
@@ -1223,22 +1222,24 @@ class SimcoreS3DataManager(BaseDataManager):  # pylint:disable=too-many-public-m
         return convert_db_to_model(await file_meta_data_repo.insert(fmd=target))
 
     async def _clean_pending_upload(self, file_id: SimcoreS3FileID) -> None:
-        with log_context(
-            logger=_logger,
-            level=logging.DEBUG,
-            msg=f"Cleaning pending uploads for {file_id=}",
+        with (
+            log_context(
+                logger=_logger,
+                level=logging.DEBUG,
+                msg=f"Cleaning pending uploads for {file_id=}",
+            ),
+            suppress(FileMetaDataNotFoundError),
         ):
-            with suppress(FileMetaDataNotFoundError):
-                fmd = await FileMetaDataRepository.instance(
-                    get_db_engine(self.app)
-                ).get(file_id=file_id)
-                if is_valid_managed_multipart_upload(fmd.upload_id):
-                    assert fmd.upload_id  # nosec
-                    await get_s3_client(self.app).abort_multipart_upload(
-                        bucket=self.simcore_bucket_name,
-                        object_key=file_id,
-                        upload_id=fmd.upload_id,
-                    )
+            fmd = await FileMetaDataRepository.instance(get_db_engine(self.app)).get(
+                file_id=file_id
+            )
+            if is_valid_managed_multipart_upload(fmd.upload_id):
+                assert fmd.upload_id  # nosec
+                await get_s3_client(self.app).abort_multipart_upload(
+                    bucket=self.simcore_bucket_name,
+                    object_key=file_id,
+                    upload_id=fmd.upload_id,
+                )
 
     async def _clean_expired_uploads(self) -> None:
         """this method will check for all incomplete updates by checking

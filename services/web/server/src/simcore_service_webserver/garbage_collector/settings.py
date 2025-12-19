@@ -21,18 +21,14 @@ class GarbageCollectorSettings(BaseCustomSettings):
         Field(
             description="Waiting time between consecutive runs of the garbage-colector"
         ),
-    ] = (
-        30 * _SEC
-    )
+    ] = 30 * _SEC
 
     GARBAGE_COLLECTOR_EXPIRED_USERS_CHECK_INTERVAL_S: Annotated[
         PositiveInt,
         Field(
             description="Time period between checks of expiration dates for trial users"
         ),
-    ] = (
-        1 * _HOUR
-    )
+    ] = 1 * _HOUR
 
     GARBAGE_COLLECTOR_PRUNE_APIKEYS_INTERVAL_S: Annotated[
         PositiveInt,
@@ -42,9 +38,7 @@ class GarbageCollectorSettings(BaseCustomSettings):
     GARBAGE_COLLECTOR_PRUNE_DOCUMENTS_INTERVAL_S: Annotated[
         PositiveInt,
         Field(description="Wait time between periodic pruning of documents"),
-    ] = (
-        30 * _MINUTE
-    )
+    ] = 30 * _MINUTE
 
 
 def get_plugin_settings(app: web.Application) -> GarbageCollectorSettings:

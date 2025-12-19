@@ -352,9 +352,9 @@ async def test_schedule_all_pipelines_logs_error_if_it_find_old_pipelines(
             for msg in caplog.messages
             if "lost pipelines" in msg and "re-scheduled" in msg
         ]
-        assert (
-            len(lost_pipeline_messages) > 0
-        ), f"Expected lost pipeline message, got: {caplog.messages}"
+        assert len(lost_pipeline_messages) > 0, (
+            f"Expected lost pipeline message, got: {caplog.messages}"
+        )
     _assert_scheduler_client_called_once_with(
         scheduler_rabbit_client_parser,
         SchedulePipelineRabbitMessage(

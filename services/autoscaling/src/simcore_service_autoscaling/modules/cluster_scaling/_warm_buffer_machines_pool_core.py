@@ -68,9 +68,7 @@ def _record_instance_ready_metrics(app: FastAPI, *, instance: EC2InstanceData) -
             app
         ).buffer_machines_pools_metrics.instances_ready_to_pull_seconds.labels(
             instance_type=instance.type
-        ).observe(
-            (arrow.utcnow().datetime - instance.launch_time).total_seconds()
-        )
+        ).observe((arrow.utcnow().datetime - instance.launch_time).total_seconds())
 
 
 def _handle_completed_cloud_init_instance(

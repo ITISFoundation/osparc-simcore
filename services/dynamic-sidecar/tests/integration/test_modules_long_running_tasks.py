@@ -342,9 +342,9 @@ async def _assert_keys_in_s3(
     )
     results: dict[str, bool] = dict(zip(keys, keys_exist_in_s3, strict=True))
     for key, key_exists in results.items():
-        assert (
-            key_exists is each_key_is_in_s3
-        ), f"Unexpected result: {key_exists=} != {each_key_is_in_s3=} for '{key}'\nAll results: {results}"
+        assert key_exists is each_key_is_in_s3, (
+            f"Unexpected result: {key_exists=} != {each_key_is_in_s3=} for '{key}'\nAll results: {results}"
+        )
 
 
 def _get_expected_s3_objects(

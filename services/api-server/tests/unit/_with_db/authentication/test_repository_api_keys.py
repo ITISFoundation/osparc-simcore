@@ -27,7 +27,6 @@ async def test_get_user_with_invalid_credentials(
     api_key_in_db: ApiKeyInDB,
     api_key_repo: ApiKeysRepository,
 ):
-
     # Generate a fake API key
 
     # Act - use wrong secret

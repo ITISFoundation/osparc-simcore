@@ -32,7 +32,9 @@ _FUNCTION_JOB_COLLECTIONS_PREFIX: Final[str] = "/function_job_collections"
 def create_router(settings: ApplicationSettings):
     assert (  # nosec
         settings
-    ), "Might be used e.g. to enable/disable entrypoints settings.API_SERVER_DEV_FEATURES_ENABLED"
+    ), (
+        "Might be used e.g. to enable/disable entrypoints settings.API_SERVER_DEV_FEATURES_ENABLED"
+    )
     router = APIRouter()
     router.include_router(health.router)
 

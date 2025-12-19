@@ -113,7 +113,6 @@ async def create_licensed_item_purchase(
     *,
     data: LicensedItemsPurchasesCreate,
 ) -> LicensedItemPurchaseGet:
-
     async with transaction_context(db_engine) as conn:
         item_purchase_create = CreateLicensedItemsPurchasesDB(
             product_name=data.product_name,

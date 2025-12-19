@@ -53,9 +53,9 @@ async def get_wallet_auto_recharge(
     *,
     wallet_id: WalletID,
 ) -> GetWalletAutoRecharge | None:
-    payments_autorecharge_db: PaymentsAutorechargeDB | None = (
-        await auto_recharge_repo.get_wallet_autorecharge(wallet_id=wallet_id)
-    )
+    payments_autorecharge_db: (
+        PaymentsAutorechargeDB | None
+    ) = await auto_recharge_repo.get_wallet_autorecharge(wallet_id=wallet_id)
     if payments_autorecharge_db:
         return GetWalletAutoRecharge(
             enabled=payments_autorecharge_db.enabled,

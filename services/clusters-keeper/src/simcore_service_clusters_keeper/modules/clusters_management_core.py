@@ -94,9 +94,7 @@ async def _find_terminateable_instances(
         app_settings.CLUSTERS_KEEPER_MAX_MISSED_HEARTBEATS_BEFORE_CLUSTER_TERMINATION
         * app_settings.SERVICE_TRACKING_HEARTBEAT
     )
-    startup_delay = (
-        app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_MAX_START_TIME
-    )
+    startup_delay = app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_MAX_START_TIME
     for instance in instances:
         if last_heartbeat := _get_instance_last_heartbeat(instance):
             elapsed_time_since_heartbeat = arrow.utcnow().datetime - last_heartbeat

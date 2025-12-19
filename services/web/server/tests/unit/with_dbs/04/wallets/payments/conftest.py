@@ -232,7 +232,6 @@ def mock_rpc_payments_service_api(
         stripe_tax_rate_id: StripeTaxRateID,
         comment: str | None = None,
     ) -> PaymentTransaction:
-
         assert await _get(
             app,
             payment_method_id=payment_method_id,

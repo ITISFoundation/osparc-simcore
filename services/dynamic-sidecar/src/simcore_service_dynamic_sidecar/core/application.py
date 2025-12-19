@@ -60,9 +60,7 @@ S     P    S         b S S     P S       S       S    O S   S
 S    S     S         P S S    S  S        S      S    O S    S
 P ss"      P    ` ss'  P P ss"   P sSSss   "sss' P    P P    P   {} 🚀
 
-""".format(
-    f"v{__version__}"
-)
+""".format(f"v{__version__}")
 
 APP_FINISHED_BANNER_MSG = "{:=^100}".format("🎉 App shutdown completed 🎉")
 

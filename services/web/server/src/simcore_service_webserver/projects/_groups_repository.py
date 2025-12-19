@@ -116,7 +116,6 @@ async def replace_project_group(
     write: bool,
     delete: bool,
 ) -> ProjectGroupGetDB:
-
     query = (
         project_to_groups.update()
         .values(

@@ -162,9 +162,7 @@ def _startup(
         )
         raise RuntimeError(msg)
 
-    tracing_destination: str = (
-        f"{URL(opentelemetry_collector_endpoint).with_port(opentelemetry_collector_port).with_path('/v1/traces')}"
-    )
+    tracing_destination: str = f"{URL(opentelemetry_collector_endpoint).with_port(opentelemetry_collector_port).with_path('/v1/traces')}"
 
     _logger.info(
         "Trying to connect service %s to tracing collector at %s.",
@@ -287,7 +285,6 @@ def setup_tracing(
     tracing_config: TracingConfig,
     add_response_trace_id_header: bool = False,
 ) -> Callable[[web.Application], AsyncIterator]:
-
     if tracing_config.tracing_enabled is False:
         msg = "Tracing is not enabled"
         raise ValueError(msg)

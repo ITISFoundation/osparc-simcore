@@ -289,9 +289,9 @@ async def _create_docker_service_params(
             "adding custom constraints %s ",
             app_settings.DIRECTOR_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS,
         )
-        docker_params["task_template"]["Placement"][
-            "Constraints"
-        ] += app_settings.DIRECTOR_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS
+        docker_params["task_template"]["Placement"]["Constraints"] += (
+            app_settings.DIRECTOR_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS
+        )
 
     # add dynamic placement constraints based on custom templates from configuration
     if app_settings.DIRECTOR_OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS:
@@ -326,9 +326,9 @@ async def _create_docker_service_params(
         docker_params["labels"][
             f"traefik.http.middlewares.{service_name}_stripprefixregex.stripprefixregex.regex"
         ] = f"^/x/{node_uuid}"
-        docker_params["labels"][
-            f"traefik.http.routers.{service_name}.middlewares"
-        ] += f", {service_name}_stripprefixregex"
+        docker_params["labels"][f"traefik.http.routers.{service_name}.middlewares"] += (
+            f", {service_name}_stripprefixregex"
+        )
 
     placement_constraints_to_substitute: list[str] = []
     placement_substitutions: dict[str, str] = (
@@ -404,13 +404,11 @@ async def _create_docker_service_params(
 
         # publishing port on the ingress network.
         elif param["name"] == "ports" and param["type"] == "int":  # backward comp
-            docker_params["labels"][_to_simcore_runtime_docker_label_key("port")] = (
-                docker_params["labels"][
-                    f"traefik.http.services.{service_name}.loadbalancer.server.port"
-                ]
-            ) = str(
-                param["value"]
-            )
+            docker_params["labels"][
+                _to_simcore_runtime_docker_label_key("port")
+            ] = docker_params["labels"][
+                f"traefik.http.services.{service_name}.loadbalancer.server.port"
+            ] = str(param["value"])
         # REST-API compatible
         elif param["type"] == "EndpointSpec":
             if "Ports" in param["value"] and (
@@ -421,9 +419,7 @@ async def _create_docker_service_params(
                     _to_simcore_runtime_docker_label_key("port")
                 ] = docker_params["labels"][
                     f"traefik.http.services.{service_name}.loadbalancer.server.port"
-                ] = str(
-                    param["value"]["Ports"][0]["TargetPort"]
-                )
+                ] = str(param["value"]["Ports"][0]["TargetPort"])
 
         # placement constraints
         elif (
@@ -478,12 +474,14 @@ async def _create_docker_service_params(
     )
     docker_params["labels"][
         _to_simcore_runtime_docker_label_key("cpu_limit")
+    ] = container_spec["Labels"][_to_simcore_runtime_docker_label_key("cpu_limit")] = (
+        f"{float(nano_cpus_limit) / 1e9}"
+    )
+    docker_params["labels"][
+        _to_simcore_runtime_docker_label_key("memory_limit")
     ] = container_spec["Labels"][
-        _to_simcore_runtime_docker_label_key("cpu_limit")
-    ] = f"{float(nano_cpus_limit) / 1e9}"
-    docker_params["labels"][_to_simcore_runtime_docker_label_key("memory_limit")] = (
-        container_spec["Labels"][_to_simcore_runtime_docker_label_key("memory_limit")]
-    ) = mem_limit
+        _to_simcore_runtime_docker_label_key("memory_limit")
+    ] = mem_limit
 
     # and make the container aware of them via env variables
     resource_limits = {

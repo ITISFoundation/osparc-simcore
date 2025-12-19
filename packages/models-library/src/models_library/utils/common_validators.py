@@ -128,7 +128,9 @@ def create__check_only_one_is_set__root_validator(
         }
 
         if not functools.reduce(operator.xor, (v is not None for v in got.values())):
-            msg = f"Either { ' or '.join(got.keys()) } must be set, but not both. Got {got}"
+            msg = (
+                f"Either {' or '.join(got.keys())} must be set, but not both. Got {got}"
+            )
             raise ValueError(msg)
         return values
 

@@ -23,7 +23,7 @@ FILENAME_RE = r".+"
 # e.g. simcore/services/comp/opencor
 SERVICE_KEY_RE: Final[re.Pattern[str]] = re.compile(
     r"^simcore/services/"
-    rf"(?P<type>({ '|'.join(SERVICE_TYPE_TO_NAME_MAP.values()) }))/"
+    rf"(?P<type>({'|'.join(SERVICE_TYPE_TO_NAME_MAP.values())}))/"
     r"(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*"
     r"(?P<name>[a-z0-9-_]+[a-z0-9])$"
 )

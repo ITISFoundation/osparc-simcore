@@ -72,7 +72,6 @@ async def test_create_program_job(
     job_name: str | None,
     job_description: str | None,
 ):
-
     mocker.patch(
         "simcore_service_api_server.api.routes.programs.get_upload_links_from_s3",
         return_value=(
@@ -90,7 +89,6 @@ async def test_create_program_job(
         kwargs: dict[str, Any],
         capture: HttpApiCallCaptureModel,
     ) -> dict[str, Any]:
-
         response_body = capture.response_body
 
         # first call creates project

@@ -45,7 +45,7 @@ def setup_client_instance(
     api_baseurl: str,
     service_name: str,
     api_general_timeout: float = 5.0,
-    **extra_fields
+    **extra_fields,
 ) -> None:
     """Helper to add init/cleanup of ServiceClientApi instances in the app lifespam"""
 
@@ -59,7 +59,7 @@ def setup_client_instance(
                 http2=False, base_url=api_baseurl, timeout=api_general_timeout
             ),
             service_name=service_name,
-            **extra_fields
+            **extra_fields,
         )
 
     async def _cleanup_instance() -> None:

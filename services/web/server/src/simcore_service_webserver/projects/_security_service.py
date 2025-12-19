@@ -54,6 +54,6 @@ def setup_projects_access(app: web.Application):
     """
     hrba = security_service.get_access_model(app)
 
-    hrba.roles[UserRole.GUEST].check[
-        "project.workbench.node.inputs.update"
-    ] = _can_update_node_inputs
+    hrba.roles[UserRole.GUEST].check["project.workbench.node.inputs.update"] = (
+        _can_update_node_inputs
+    )

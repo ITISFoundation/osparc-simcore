@@ -98,7 +98,7 @@ async def _assert_task_status(
     long_running_manager: LongRunningManager,
     task_id: TaskId,
     *,
-    is_done: bool
+    is_done: bool,
 ) -> None:
     result = await lrt_api.get_task_status(
         rabbitmq_rpc_client, long_running_manager.lrt_namespace, {}, task_id
@@ -111,7 +111,7 @@ async def _assert_task_status_on_random_manager(
     long_running_managers: list[LongRunningManager],
     task_ids: list[TaskId],
     *,
-    is_done: bool = True
+    is_done: bool = True,
 ) -> None:
     for task_id in task_ids:
         result = await lrt_api.get_task_status(
@@ -128,7 +128,7 @@ async def _assert_task_status_done_on_all_managers(
     long_running_managers: list[LongRunningManager],
     task_id: TaskId,
     *,
-    is_done: bool = True
+    is_done: bool = True,
 ) -> None:
     async for attempt in AsyncRetrying(**_RETRY_PARAMS):
         with attempt:

@@ -1,3 +1,6 @@
+from rich.console import Console
+from rich.table import Table
+
 from monitor_release.models import RunningSidecar
 from monitor_release.portainer_utils import (
     check_simcore_deployed_services,
@@ -7,8 +10,6 @@ from monitor_release.portainer_utils import (
     get_services,
     get_tasks,
 )
-from rich.console import Console
-from rich.table import Table
 
 console = Console()
 

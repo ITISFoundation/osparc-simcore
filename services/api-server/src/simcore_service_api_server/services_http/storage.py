@@ -13,11 +13,6 @@ from httpx import QueryParams
 from models_library.api_schemas_storage.storage_schemas import (
     ETag,
     FileMetaDataArray,
-)
-from models_library.api_schemas_storage.storage_schemas import (
-    FileMetaDataGet as StorageFileMetaData,
-)
-from models_library.api_schemas_storage.storage_schemas import (
     FileUploadCompleteFutureResponse,
     FileUploadCompleteResponse,
     FileUploadCompleteState,
@@ -27,6 +22,9 @@ from models_library.api_schemas_storage.storage_schemas import (
     PresignedLink,
     UploadedPart,
 )
+from models_library.api_schemas_storage.storage_schemas import (
+    FileMetaDataGet as StorageFileMetaData,
+)
 from models_library.basic_types import SHA256Str
 from models_library.generics import Envelope
 from models_library.projects import ProjectID
@@ -34,9 +32,6 @@ from models_library.rest_pagination import PageLimitInt, PageOffsetInt
 from models_library.users import UserID
 from pydantic import AnyUrl
 from settings_library.tracing import TracingSettings
-from simcore_service_api_server.exceptions.backend_errors import BackendTimeoutError
-from simcore_service_api_server.models.schemas.files import UserFile
-from simcore_service_api_server.models.schemas.jobs import UserFileToProgramJob
 from tenacity import (
     AsyncRetrying,
     TryAgain,
@@ -45,6 +40,10 @@ from tenacity import (
     stop_after_delay,
     wait_fixed,
 )
+
+from simcore_service_api_server.exceptions.backend_errors import BackendTimeoutError
+from simcore_service_api_server.models.schemas.files import UserFile
+from simcore_service_api_server.models.schemas.jobs import UserFileToProgramJob
 
 from ..core.settings import StorageSettings
 from ..exceptions.service_errors_utils import service_exception_mapper
@@ -184,7 +183,6 @@ class StorageApi(BaseServiceClientApi):
     async def get_file_upload_links(
         self, *, user_id: int, file: File, client_file: UserFileToProgramJob | UserFile
     ) -> FileUploadSchema:
-
         query_params = QueryParams(
             user_id=f"{user_id}",
             link_type=LinkType.PRESIGNED.value,
@@ -208,7 +206,6 @@ class StorageApi(BaseServiceClientApi):
     async def complete_file_upload(
         self, *, user_id: int, file: File, uploaded_parts: list[UploadedPart]
     ) -> ETag:
-
         response = await self.client.post(
             f"/locations/{self.SIMCORE_S3_ID}/files/{file.storage_file_id}:complete",
             params={"user_id": f"{user_id}"},

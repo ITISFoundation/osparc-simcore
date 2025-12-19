@@ -81,9 +81,9 @@ async def _get_containers_inspect_from_names(
     if len(container_names) == 0:
         return {}
 
-    containers_inspect: dict[str, DockerContainer | None] = {
-        x: None for x in container_names
-    }
+    containers_inspect: dict[str, DockerContainer | None] = dict.fromkeys(
+        container_names
+    )
 
     async with docker_client() as docker:
         docker_containers: list[DockerContainer | None] = await logged_gather(

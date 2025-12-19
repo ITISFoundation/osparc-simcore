@@ -32,25 +32,25 @@ async def assert_file_meta_data_in_db(
         upload_id = None
         if expected_entry_exists:
             row = db_data[0]
-            assert (
-                row.file_size == expected_file_size
-            ), f"entry in file_meta_data was not initialized correctly, size should be set to {expected_file_size}"
+            assert row.file_size == expected_file_size, (
+                f"entry in file_meta_data was not initialized correctly, size should be set to {expected_file_size}"
+            )
             if expected_upload_id:
-                assert (
-                    row.upload_id is not None
-                ), "multipart upload shall have an upload_id, it is missing!"
+                assert row.upload_id is not None, (
+                    "multipart upload shall have an upload_id, it is missing!"
+                )
             else:
-                assert (
-                    row.upload_id is None
-                ), "single file upload should not have an upload_id"
+                assert row.upload_id is None, (
+                    "single file upload should not have an upload_id"
+                )
             if expected_upload_expiration_date:
                 assert row.upload_expires_at, "no upload expiration date!"
             else:
                 assert row.upload_expires_at is None, "expiration date should be NULL"
             if expected_sha256_checksum:
-                assert (
-                    SHA256Str(row.sha256_checksum) == expected_sha256_checksum
-                ), "invalid sha256_checksum"
+                assert SHA256Str(row.sha256_checksum) == expected_sha256_checksum, (
+                    "invalid sha256_checksum"
+                )
             else:
                 assert row.sha256_checksum is None, "expected sha256_checksum was None"
             upload_id = row.upload_id

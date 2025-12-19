@@ -164,7 +164,6 @@ def record_response_metrics(
 
 
 async def record_asyncio_event_looop_metrics(metrics: PrometheusMetrics) -> None:
-
     metrics.event_loop_tasks.set(len(asyncio.all_tasks()))
 
     start_time = time.perf_counter()

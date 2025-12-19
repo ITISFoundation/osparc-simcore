@@ -56,7 +56,6 @@ def test_enveloped_successful_response(data: dict):
 
 
 def test_enveloped_failing_response():
-
     resp = envelope_json_response(
         {"message": "could not find it", "reason": "invalid id"}, web.HTTPNotFound
     )

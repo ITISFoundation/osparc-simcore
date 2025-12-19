@@ -17,7 +17,6 @@ class ApiInvitationInputs(InvitationInputs):
 
 
 class ApiInvitationContent(InvitationContent):
-
     product: ProductName = Field(
         ..., description="This invitations can only be used for this product."
     )

@@ -1,4 +1,4 @@
-# ruff: noqa: SLF001, EM101, TRY003, PT011, PLR0917
+# ruff: noqa: EM101, TRY003
 # pylint: disable=no-value-for-parameter
 # pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
@@ -323,9 +323,9 @@ async def test_user_exceptions_properly_reraised(
     assert work_started.is_set()
 
     # Verify auto-renewal was working (at least one renewal should have happened)
-    assert (
-        spied_renew_fct.call_count >= 1
-    ), "Auto-renewal should have been called at least once"
+    assert spied_renew_fct.call_count >= 1, (
+        "Auto-renewal should have been called at least once"
+    )
 
     # Verify semaphore was properly released by trying to acquire it again
     test_semaphore = DistributedSemaphore(
@@ -334,9 +334,9 @@ async def test_user_exceptions_properly_reraised(
         capacity=semaphore_capacity,
         ttl=short_ttl,
     )
-    assert (
-        await test_semaphore.current_count() == 0
-    ), "Semaphore should be released after exception"
+    assert await test_semaphore.current_count() == 0, (
+        "Semaphore should be released after exception"
+    )
 
 
 async def test_cancelled_error_preserved(
@@ -450,9 +450,9 @@ async def test_semaphore_fair_queuing(
     # All should complete successfully and in order
     assert results == list(range(num_tasks))
     # The order in which they entered the critical section should match the order of submission
-    assert entered_order == list(
-        range(num_tasks)
-    ), f"Expected fair queuing, got {entered_order}"
+    assert entered_order == list(range(num_tasks)), (
+        f"Expected fair queuing, got {entered_order}"
+    )
 
 
 async def test_context_manager_basic_functionality(

@@ -7,6 +7,7 @@ from models_library.functions import RegisteredFunction, RegisteredFunctionJob
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from servicelib.celery.models import TaskKey
+
 from simcore_service_api_server._service_function_jobs import FunctionJobService
 
 from ....api.dependencies.authentication import Identity

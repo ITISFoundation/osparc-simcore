@@ -21,7 +21,7 @@ class TaskManager(Protocol):
         execution_metadata: ExecutionMetadata,
         *,
         owner_metadata: OwnerMetadata,
-        **task_param
+        **task_param,
     ) -> TaskUUID: ...
 
     async def cancel_task(

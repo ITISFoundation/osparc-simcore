@@ -509,18 +509,18 @@ async def test_patch_user_project_workbench_concurrently(
     for n in range(_NUMBER_OF_NODES):
         expected_project["workbench"][node_uuids[n]].update(randomly_created_outputs[n])
 
-    patched_projects: list[tuple[dict[str, Any], dict[str, Any]]] = (
-        await asyncio.gather(
-            *[
-                db_api._update_project_workbench(  # noqa: SLF001
-                    {NodeIDStr(node_uuids[n]): randomly_created_outputs[n]},
-                    user_id=logged_user["id"],
-                    project_uuid=new_project["uuid"],
-                    allow_workbench_changes=False,
-                )
-                for n in range(_NUMBER_OF_NODES)
-            ]
-        )
+    patched_projects: list[
+        tuple[dict[str, Any], dict[str, Any]]
+    ] = await asyncio.gather(
+        *[
+            db_api._update_project_workbench(  # noqa: SLF001
+                {NodeIDStr(node_uuids[n]): randomly_created_outputs[n]},
+                user_id=logged_user["id"],
+                project_uuid=new_project["uuid"],
+                allow_workbench_changes=False,
+            )
+            for n in range(_NUMBER_OF_NODES)
+        ]
     )
     # NOTE: each returned project contains the project with some updated workbenches
     # the ordering is uncontrolled.
@@ -757,7 +757,9 @@ async def test_has_permission(
                 permission=permission,
             )
             is access_rights[permission]
-        ), f"Found unexpected {permission=} for {access_rights=} of {user_role=} and {project_id=}"
+        ), (
+            f"Found unexpected {permission=} for {access_rights=} of {user_role=} and {project_id=}"
+        )
 
 
 def _fake_output_data() -> dict:
@@ -838,7 +840,6 @@ async def test_check_project_node_has_all_required_inputs_raises(
     inserted_project: dict,
     expected_error: str,
 ):
-
     with pytest.raises(ProjectNodeRequiredInputsNotSetError) as exc:
         await _check_project_node_has_all_required_inputs(
             client.app,

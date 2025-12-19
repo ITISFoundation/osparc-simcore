@@ -136,7 +136,6 @@ async def patch_registered_function_job(
     product_name: ProductName,
     function_job_patch_request: FunctionJobPatchRequest,
 ) -> RegisteredFunctionJob:
-
     return await _functions_service.patch_registered_function_job(
         app=app,
         user_id=user_id,
@@ -159,7 +158,6 @@ async def batch_patch_registered_function_jobs(
     product_name: ProductName,
     function_job_patch_requests: FunctionJobPatchRequestList,
 ) -> BatchUpdateRegisteredFunctionJobs:
-
     return await _functions_service.batch_patch_registered_function_jobs(
         app=app,
         user_id=user_id,

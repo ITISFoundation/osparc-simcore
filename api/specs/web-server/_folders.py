@@ -5,7 +5,6 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
-
 from typing import Annotated
 
 from _common import as_query

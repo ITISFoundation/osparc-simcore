@@ -41,7 +41,6 @@ def test_serialization_of_uuids(fake_data_dict: dict[str, Any]):
 
 
 def test_serialization_of_nested_dicts(fake_data_dict: dict[str, Any]):
-
     obj = {"data": fake_data_dict, "ids": [uuid4() for _ in range(3)]}
 
     dump = json_dumps(obj)

@@ -62,7 +62,6 @@ async def test_volumes_state_saved_error(
     rpc_client: RabbitMQRPCClient,
     invalid_volume_category: VolumeCategory,
 ):
-
     settings: ApplicationSettings = app.state.settings
 
     with pytest.raises(RPCServerError, match="ValidationError"):

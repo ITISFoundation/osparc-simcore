@@ -145,7 +145,6 @@ async def test_add_remove_users_from_group(
     created_users_list = []
     async with AsyncExitStack() as users_stack:
         for i in range(num_new_users):
-
             is_private = i % 2 == 0
             created_users_list.append(
                 await users_stack.enter_async_context(
@@ -423,7 +422,6 @@ async def test_add_user_gets_added_to_group(
     user_role: UserRole,
     expected: ExpectedResponse,
 ):
-
     assert client.app
     async with AsyncExitStack() as users_stack:
         for email in (
@@ -604,9 +602,9 @@ async def test_create_organization_and_add_users(
 
     group_members = TypeAdapter(list[GroupUserGet]).validate_python(data)
     if is_2xx_success(expected_status):
-        assert user_id in [
-            u.id for u in group_members
-        ], "failed to add other-user to the group!"
+        assert user_id in [u.id for u in group_members], (
+            "failed to add other-user to the group!"
+        )
 
     # DELETE GROUP
     url = client.app.router["delete_group"].url_for(gid=f"{group.gid}")

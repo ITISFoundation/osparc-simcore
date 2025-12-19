@@ -8,7 +8,6 @@ Fixtures for groups
 NOTE: These fixtures are used in integration and unit tests
 """
 
-
 from collections.abc import AsyncIterator
 from typing import Any
 
@@ -18,13 +17,14 @@ from aiohttp.test_utils import TestClient
 from models_library.api_schemas_webserver.groups import GroupGet
 from models_library.groups import GroupsByTypeTuple, StandardGroupCreate
 from models_library.users import UserID
-from pytest_simcore.helpers.webserver_users import NewUser, UserInfoDict
 from simcore_service_webserver.groups._groups_service import (
     add_user_in_group,
     create_standard_group,
     delete_standard_group,
     list_user_groups_with_read_access,
 )
+
+from pytest_simcore.helpers.webserver_users import NewUser, UserInfoDict
 
 
 def _groupget_model_dump(group, access_rights) -> dict[str, Any]:
@@ -69,7 +69,6 @@ async def standard_groups_owner(
         },
         client.app,
     ) as owner_user:
-
         # creates two groups
         sparc_group = await _create_organization(
             app=client.app,

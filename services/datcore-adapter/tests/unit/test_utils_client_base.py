@@ -35,7 +35,6 @@ async def test_setup_client_instance():
 
     # test startup/shutdown
     async with LifespanManager(app):
-
         # check startup
         assert TheClientApi.get_instance(app)
         api_obj = TheClientApi.get_instance(app)

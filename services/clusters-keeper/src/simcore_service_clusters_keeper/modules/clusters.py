@@ -47,10 +47,10 @@ async def _get_primary_ec2_params(
             app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_ALLOWED_TYPES.items()
         )
     )
-    ec2_instance_types: list[EC2InstanceType] = (
-        await ec2_client.get_ec2_instance_capabilities(
-            instance_type_names={ec2_type_name}
-        )
+    ec2_instance_types: list[
+        EC2InstanceType
+    ] = await ec2_client.get_ec2_instance_capabilities(
+        instance_type_names={ec2_type_name}
     )
     assert ec2_instance_types  # nosec
     assert len(ec2_instance_types) == 1  # nosec
@@ -128,7 +128,9 @@ async def get_cluster_workers(
 ) -> list[EC2InstanceData]:
     app_settings = get_application_settings(app)
     assert app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES  # nosec
-    return await get_ec2_client(app).get_instances(
+    return await get_ec2_client(
+        app
+    ).get_instances(
         key_names=[
             app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.WORKERS_EC2_INSTANCES_KEY_NAME
         ],

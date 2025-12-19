@@ -104,7 +104,7 @@ class Solver(BaseService):
         description: str,
         contact: LowerCaseEmailStr | None,
         name: str,
-        service: ServiceRelease
+        service: ServiceRelease,
     ) -> "Solver":
         return cls(
             id=service_key,

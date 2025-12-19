@@ -217,6 +217,6 @@ def test_create_task_output_from_task_ignores_additional_entries(
         output_file_ext=output_file,
     )
     # Only keys defined in the schema should be present
-    assert set(task_output_data.keys()) == set(
-        task_output_schema.keys()
-    ), "Should only contain the expected keys"
+    assert set(task_output_data.keys()) == set(task_output_schema.keys()), (
+        "Should only contain the expected keys"
+    )

@@ -13,9 +13,8 @@ from models_library.api_schemas_long_running_tasks.tasks import TaskGet, TaskSta
 from models_library.progress_bar import ProgressReport, ProgressStructuredMessage
 from models_library.utils.json_schema import GenerateResolvedJsonSchema
 from pytest_mock import MockerFixture, MockType
-from servicelib.celery.models import TaskState
+from servicelib.celery.models import TaskState, TaskUUID
 from servicelib.celery.models import TaskStatus as CeleryTaskStatus
-from servicelib.celery.models import TaskUUID
 from simcore_service_api_server.api.routes import tasks as task_routes
 from simcore_service_api_server.models.schemas.base import ApiServerEnvelope
 
@@ -31,7 +30,6 @@ _faker = Faker()
 def mock_task_manager(
     mocker: MockerFixture, mock_task_manager_object: MockType
 ) -> MockType:
-
     def _get_task_manager(app):
         return mock_task_manager_object
 
@@ -44,7 +42,6 @@ async def test_list_celery_tasks(
     client: AsyncClient,
     auth: BasicAuth,
 ):
-
     response = await client.get("/v0/tasks", auth=auth)
     assert mock_task_manager.list_tasks.called
     assert response.status_code == status.HTTP_200_OK

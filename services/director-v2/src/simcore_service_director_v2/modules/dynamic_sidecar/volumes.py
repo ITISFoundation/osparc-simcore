@@ -53,9 +53,9 @@ def _get_s3_volume_driver_config(
         },
     }
     if r_clone_settings.R_CLONE_S3.S3_ENDPOINT:
-        driver_config["Options"][
-            "s3-endpoint"
-        ] = r_clone_settings.R_CLONE_S3.S3_ENDPOINT
+        driver_config["Options"]["s3-endpoint"] = (
+            r_clone_settings.R_CLONE_S3.S3_ENDPOINT
+        )
 
     extra_options: dict[str, str] | None = None
 

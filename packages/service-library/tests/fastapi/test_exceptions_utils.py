@@ -43,7 +43,6 @@ http_exceptions = {
 
 @pytest.fixture
 def app() -> FastAPI:
-
     app = FastAPI()
     app.add_exception_handler(Exception, handle_errors_as_500)
     app.add_exception_handler(HTTPException, http_exception_as_json_response)

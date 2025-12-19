@@ -47,7 +47,6 @@ def _(parser: LocustArgumentParser) -> None:
 class WebApiUser(OsparcWebUserBase):
     @task
     def run_function(self) -> None:
-
         function_uuid = self.environment.parsed_options.function_uuid
         if function_uuid is None:
             raise ValueError("function-uuid argument is required")

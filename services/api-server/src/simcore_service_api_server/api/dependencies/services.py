@@ -187,7 +187,6 @@ def get_function_job_task_client_service(
     storage_service: Annotated[StorageService, Depends(get_storage_service)],
     async_pg_engine: Annotated[AsyncEngine, Depends(get_db_asyncpg_engine)],
 ) -> FunctionJobTaskClientService:
-
     task_manager = get_task_manager(app)
     return FunctionJobTaskClientService(
         _web_rpc_client=web_rpc_api,

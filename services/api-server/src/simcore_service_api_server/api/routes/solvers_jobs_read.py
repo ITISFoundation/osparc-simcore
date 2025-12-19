@@ -130,7 +130,6 @@ async def list_all_solvers_jobs(
     job_service: Annotated[JobService, Depends(get_job_service)],
     url_for: Annotated[Callable, Depends(get_reverse_url_mapper)],
 ):
-
     jobs, meta = await job_service.list_solver_jobs(
         filter_any_custom_metadata=(
             [

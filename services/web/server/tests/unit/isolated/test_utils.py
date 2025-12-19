@@ -63,7 +63,6 @@ def test_time_utils():
 
 
 def test_compose_support_error_msg():
-
     msg = compose_support_error_msg(
         "first sentence for Mr.X   \n  Second sentence.",
         error_code="OEC:139641204989600",

@@ -166,7 +166,8 @@ async def app(
     app_settings: ApplicationSettings, is_pdb_enabled: bool
 ) -> AsyncIterator[FastAPI]:
     tracing_config = TracingConfig.create(
-        service_name=APP_NAME, tracing_settings=None  # disable tracing in tests
+        service_name=APP_NAME,
+        tracing_settings=None,  # disable tracing in tests
     )
     the_test_app = create_app(settings=app_settings, tracing_config=tracing_config)
     async with LifespanManager(

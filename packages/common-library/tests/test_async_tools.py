@@ -151,9 +151,9 @@ async def test_cancel_and_wait_propagates_external_cancel():
         try:
             await cancel_wait_task(inner_task)
         except asyncio.CancelledError:
-            assert (
-                not inner_task.cancelled()
-            ), "Internal Task DOES NOT RAISE CancelledError"
+            assert not inner_task.cancelled(), (
+                "Internal Task DOES NOT RAISE CancelledError"
+            )
             raise
 
     # Cancel the wrapper after a short delay

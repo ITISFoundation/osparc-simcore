@@ -104,7 +104,7 @@ def simcore_stack_deployed_services(
         for stack_namespace in (core_stack_namespace, ops_stack_namespace):
             subprocess.run(
                 f"docker stack ps {stack_namespace}",
-                shell=True,  # noqa: S602
+                shell=True,
                 check=False,
             )
 
@@ -122,9 +122,9 @@ def simcore_stack_deployed_services(
         )
     )
 
-    assert (
-        core_stack_services
-    ), f"Expected some services in core stack '{core_stack_namespace}'"
+    assert core_stack_services, (
+        f"Expected some services in core stack '{core_stack_namespace}'"
+    )
 
     assert len(core_stack_compose_specs["services"].keys()) == len(core_stack_services)
 

@@ -132,7 +132,6 @@ async def create_project(
 
 
 async def delete_all_projects(app: web.Application):
-
     engine = get_asyncpg_engine(app)
     assert engine  # nosec
 

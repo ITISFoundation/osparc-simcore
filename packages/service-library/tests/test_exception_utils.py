@@ -23,7 +23,7 @@ def workflow(*, stop_raising_after: PositiveInt) -> int:
         counter += 1
 
         if counter < stop_raising_after:
-            raise TargetException()
+            raise TargetException
 
     delayed_handler_external_service = DelayedExceptionHandler(delay_for=TOLERANCE)
 

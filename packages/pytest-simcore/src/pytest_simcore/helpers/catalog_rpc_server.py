@@ -67,7 +67,6 @@ class CatalogRpcSideEffects:
             LatestServiceGet.model_json_schema()["examples"],
         )
         if filters:
-
             filtered_services = []
             for src in services_list:
                 # Match service type if specified
@@ -166,7 +165,6 @@ class CatalogRpcSideEffects:
         offset: PageOffsetInt = 0,
         filters: ServiceListFilters | None = None,
     ) -> PageRpc[ServiceRelease]:
-
         assert rpc_client
         assert product_name
         assert user_id

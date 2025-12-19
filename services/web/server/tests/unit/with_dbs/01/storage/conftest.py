@@ -48,7 +48,6 @@ def storage_vtag() -> str:
 
 @pytest.fixture(scope="module")
 def fake_storage_app(storage_vtag: str) -> FastAPI:  # noqa: C901
-
     @contextlib.asynccontextmanager
     async def _app_lifespan(app: FastAPI):
         logging.info("Starting fake storage app ...")
@@ -92,14 +91,13 @@ def fake_storage_app(storage_vtag: str) -> FastAPI:  # noqa: C901
         assert "json_schema_extra" in PathMetaDataGet.model_config
 
         example_index = len(file_filter.parts) if file_filter else 0
-        assert example_index < len(
-            PathMetaDataGet.model_json_schema()["examples"]
-        ), "fake server unable to server this example"
+        assert example_index < len(PathMetaDataGet.model_json_schema()["examples"]), (
+            "fake server unable to server this example"
+        )
         chosen_example = PathMetaDataGet.model_json_schema()["examples"][example_index]
 
         return create_page(
-            random.randint(3, 15)
-            * [PathMetaDataGet.model_validate(chosen_example)],  # noqa: S311
+            random.randint(3, 15) * [PathMetaDataGet.model_validate(chosen_example)],
             params=page_params,
             next_=None,
         )

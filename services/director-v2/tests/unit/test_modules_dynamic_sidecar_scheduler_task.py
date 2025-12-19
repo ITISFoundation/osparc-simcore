@@ -209,9 +209,7 @@ def mocked_dynamic_scheduler_events(
                 scheduler_data.dynamic_sidecar.service_removal_state.can_save = (
                     use_case.can_save
                 )
-                scheduler_data.dynamic_sidecar.wait_for_manual_intervention_after_error = (
-                    use_case.wait_for_manual_intervention_after_error
-                )
+                scheduler_data.dynamic_sidecar.wait_for_manual_intervention_after_error = use_case.wait_for_manual_intervention_after_error
             msg = "Failed as planned"
             raise RuntimeError(msg)
 
@@ -262,7 +260,6 @@ async def test_skip_observation_cycle_after_error(
     use_case: UseCase,
     mock_rpc_calls: None,
 ):
-
     # add a task, emulate an error make sure no observation cycle is
     # being triggered again
     assert mocked_dynamic_scheduler_events.count == 0

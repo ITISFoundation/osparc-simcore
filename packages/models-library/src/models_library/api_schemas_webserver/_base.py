@@ -57,7 +57,7 @@ class OutputSchema(BaseModel):
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
-        **kwargs
+        **kwargs,
     ) -> dict[str, Any]:
         """Helper function to get envelope's data as a dict"""
         return self.model_dump(
@@ -74,7 +74,7 @@ class OutputSchema(BaseModel):
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
-        **kwargs
+        **kwargs,
     ) -> str:
         """Helper function to get envelope's data as a json str"""
         return self.model_dump_json(

@@ -28,7 +28,6 @@ def setup(
     storage_settings: StorageSettings | None,
     tracing_settings: TracingSettings | None,
 ):
-
     if not storage_settings:
         storage_settings = StorageSettings()
 

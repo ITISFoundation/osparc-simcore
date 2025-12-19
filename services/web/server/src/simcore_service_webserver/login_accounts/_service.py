@@ -76,7 +76,7 @@ async def send_account_request_email_to_support(
     )
     try:
         user_email = TypeAdapter(LowerCaseEmailStr).validate_python(
-            request_form.get("email", None)
+            request_form.get("email")
         )
     except ValidationError:
         user_email = None
@@ -138,7 +138,6 @@ async def create_pre_registration(
     profile: UserAccountRestPreRegister,
     product_name: ProductName,
 ):
-
     await _accounts_service.pre_register_user(
         app, profile=profile, creator_user_id=None, product_name=product_name
     )

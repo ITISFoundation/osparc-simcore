@@ -224,7 +224,6 @@ async def get_group_member(
     group_id: GroupID,
     the_user_id_in_group: UserID,
 ) -> GroupMember:
-
     return await _groups_repository.get_user_in_group(
         app,
         caller_id=user_id,
@@ -266,7 +265,6 @@ async def delete_group_member(
 async def is_user_by_email_in_group(
     app: web.Application, user_email: LowerCaseEmailStr, group_id: GroupID
 ) -> bool:
-
     return await _groups_repository.is_user_by_email_in_group(
         app,
         email=user_email,

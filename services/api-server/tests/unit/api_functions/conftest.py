@@ -244,7 +244,6 @@ def mock_handler_in_functions_rpc_interface(
         exception: Exception | None = None,
         side_effect: Callable | None = None,
     ) -> MockType:
-
         assert exception is None or side_effect is None
 
         return mocker.patch.object(
@@ -270,7 +269,6 @@ def mock_handler_in_projects_rpc_interface(
         exception: Exception | None = None,
         side_effect: Callable | None = None,
     ) -> MockType:
-
         assert exception is None or side_effect is None
 
         return mocker.patch.object(

@@ -146,7 +146,7 @@ async def test_disk_usage_monitor(
     for i in range(1, 3):
         mock_disk_usage(
             {
-                f"{p}": _get_byte_size(f"{i*2}kb")
+                f"{p}": _get_byte_size(f"{i * 2}kb")
                 for p in disk_usage_monitor._monitored_paths_set  # noqa: SLF001
             },
         )
@@ -156,7 +156,7 @@ async def test_disk_usage_monitor(
         )
 
         assert _get_entry(publish_disk_usage_spy, index=0) == {
-            MountPathCategory.HOST: _get_mocked_disk_usage(f"{i*2}kb"),
+            MountPathCategory.HOST: _get_mocked_disk_usage(f"{i * 2}kb"),
         }
 
         # reset mock to test again

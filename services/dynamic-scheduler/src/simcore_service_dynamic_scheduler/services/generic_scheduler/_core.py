@@ -540,7 +540,6 @@ class Core(SingletonInAppStateMixin):
 
         # 1) if all steps in group in SUUCESS
         if all(status == StepStatus.SUCCESS for status in steps_statuses.values()):
-
             # 1a) -> move to next group
             try:
                 next_group_index = group_index + 1
@@ -551,7 +550,6 @@ class Core(SingletonInAppStateMixin):
                 )
                 await enqueue_schedule_event(self.app, schedule_id)
             except IndexError:
-
                 # 1b) if reached the end of the EXECUTE operation -> remove all created data [EMIT execute complete event]
                 on_executed_proxy = OperationEventsProxy(
                     self._store, schedule_id, EventType.ON_EXECUTEDD_COMPLETED
@@ -652,7 +650,6 @@ class Core(SingletonInAppStateMixin):
         if all(s == StepStatus.SUCCESS for s in steps_statuses.values()):
             previous_group_index = group_index - 1
             if previous_group_index < 0:
-
                 # 1a) if reached the end of the REVERT operation -> remove all created data [EMIT revert complete event]
                 on_reverted_proxy = OperationEventsProxy(
                     self._store, schedule_id, EventType.ON_REVERT_COMPLETED

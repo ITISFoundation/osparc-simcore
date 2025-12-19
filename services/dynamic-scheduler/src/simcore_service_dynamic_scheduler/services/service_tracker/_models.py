@@ -59,7 +59,6 @@ class SchedulerServiceState(StrAutoEnum):
 
 
 class TrackedServiceModel(BaseModel):  # pylint:disable=too-many-instance-attributes
-
     dynamic_service_start: DynamicServiceStart | None = Field(
         description=(
             "used to create the service in any given moment if the requested_state is RUNNING"

@@ -7,7 +7,6 @@ T = TypeVar("T")
 
 
 class BaseObjectSerializer(ABC, Generic[T]):
-
     @classmethod
     @abstractmethod
     def get_init_kwargs_from_object(cls, obj: T) -> dict:

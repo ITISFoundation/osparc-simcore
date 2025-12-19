@@ -48,9 +48,7 @@ from .settings import ApplicationSettings
 _logger = logging.getLogger(__name__)
 
 
-def create_app(
-    settings: ApplicationSettings, tracing_config: TracingConfig
-) -> FastAPI:  # noqa: C901
+def create_app(settings: ApplicationSettings, tracing_config: TracingConfig) -> FastAPI:
     app = FastAPI(
         debug=settings.SC_BOOT_MODE
         in [BootModeEnum.DEBUG, BootModeEnum.DEVELOPMENT, BootModeEnum.LOCAL],

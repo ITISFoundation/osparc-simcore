@@ -142,7 +142,7 @@ def _connect_user_services(
     The network name must only be unique inside the user defined spec.
     `docker compose` will add some prefix to it.
     """
-    networks = parsed_compose_spec.get("networks", None)
+    networks = parsed_compose_spec.get("networks")
     if networks is None:
         parsed_compose_spec["networks"] = {}
     networks = parsed_compose_spec["networks"]
@@ -266,7 +266,8 @@ async def get_and_validate_compose_spec(  # pylint: disable=too-many-statements
             service_volumes.append(state_paths_docker_volume)
 
         if settings.DY_SIDECAR_USER_PREFERENCES_PATH is not None and (
-            user_preferences_volume := await mounted_volumes.get_user_preferences_path_volume(
+            user_preferences_volume
+            := await mounted_volumes.get_user_preferences_path_volume(
                 settings.DY_SIDECAR_RUN_ID
             )
         ):

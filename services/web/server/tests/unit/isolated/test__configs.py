@@ -85,9 +85,9 @@ def app_modules_metadata(
         setup_members: list[NameFuncPair] = inspect.getmembers(
             module, is_setup_function
         )
-        assert (
-            setup_members
-        ), f"None of {[s[0] for s in setup_members]} found in {module.__name__} are valid setup functions for"
+        assert setup_members, (
+            f"None of {[s[0] for s in setup_members]} found in {module.__name__} are valid setup functions for"
+        )
 
         assert len(setup_members), "One setup per module"
 
@@ -101,9 +101,9 @@ def app_modules_metadata(
                 setup_funcs_metadata.append(metadata)
             register.add(setup_fun_name)
 
-    assert len(app_submodules_with_setup_funs) == len(
-        setup_funcs_metadata
-    ), "One setup func per module setup"
+    assert len(app_submodules_with_setup_funs) == len(setup_funcs_metadata), (
+        "One setup func per module setup"
+    )
 
     return list(setup_funcs_metadata)
 
@@ -111,9 +111,9 @@ def app_modules_metadata(
 def test_setup_per_app_subsystem(app_submodules_with_setup_funs):
     for module in app_submodules_with_setup_funs:
         setup_members = inspect.getmembers(module, is_setup_function)
-        assert (
-            setup_members
-        ), f"None of {setup_members} are setup funs for {module.__name__}"
+        assert setup_members, (
+            f"None of {setup_members} are setup funs for {module.__name__}"
+        )
 
 
 @pytest.mark.skip(reason="DEPRECATED")

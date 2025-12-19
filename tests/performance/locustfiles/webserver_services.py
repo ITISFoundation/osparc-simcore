@@ -31,9 +31,9 @@ def _(environment: Environment, **_kwargs: Any) -> None:
     )
 
     # Only log the parsed options, as the full environment is not JSON serializable
-    assert (
-        environment.parsed_options is not None
-    ), "Environment parsed options must not be None"
+    assert environment.parsed_options is not None, (
+        "Environment parsed options must not be None"
+    )
     options_dict: dict[str, Any] = vars(environment.parsed_options)
     _logger.info("Testing environment options: %s", json.dumps(options_dict, indent=2))
 

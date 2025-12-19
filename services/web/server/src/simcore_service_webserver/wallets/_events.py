@@ -53,9 +53,7 @@ async def _auto_add_default_wallet(
                 created_at=wallet.created,
             )
 
-        preference_id = (
-            user_preferences_service.PreferredWalletIdFrontendUserPreference().preference_identifier
-        )
+        preference_id = user_preferences_service.PreferredWalletIdFrontendUserPreference().preference_identifier
         await user_preferences_service.set_frontend_user_preference(
             app,
             user_id=user_id,

@@ -231,7 +231,7 @@ class WarmBufferPool:
 
     def _sort_by_readiness(
         self, *, invert: bool = False
-    ) -> Generator[set[EC2InstanceData], Any, None]:
+    ) -> Generator[set[EC2InstanceData], Any]:
         order = (
             self.ready_instances,
             self.stopping_instances,

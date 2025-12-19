@@ -6,9 +6,10 @@ from pathlib import Path
 from typing import NamedTuple
 
 import aiofiles
-import notifications_library
 from aiofiles.os import wrap as sync_to_async
 from models_library.products import ProductName
+
+import notifications_library
 
 from ._repository import TemplatesRepo
 
@@ -115,5 +116,5 @@ async def consolidate_templates(
             assert custom_template.product_name == product_name  # nosec
 
             template_path = product_folder / custom_template.name
-            async with aiofiles.open(template_path, "wt") as fh:
+            async with aiofiles.open(template_path, "w") as fh:
                 await fh.write(custom_template.content)

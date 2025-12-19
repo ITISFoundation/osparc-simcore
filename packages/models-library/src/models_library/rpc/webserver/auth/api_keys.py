@@ -5,8 +5,9 @@ import secrets
 import string
 from typing import Annotated, Final
 
-from models_library.basic_types import IDStr
 from pydantic import BaseModel, ConfigDict, Field
+
+from models_library.basic_types import IDStr
 
 _PUNCTUATION_REGEX = re.compile(
     pattern="[" + re.escape(string.punctuation.replace("_", "")) + "]"

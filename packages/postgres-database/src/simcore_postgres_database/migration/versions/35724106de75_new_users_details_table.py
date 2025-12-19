@@ -87,7 +87,6 @@ def upgrade():
 
 
 def downgrade():
-
     # custom
     op.execute(f"DROP TRIGGER IF EXISTS {_TRIGGER_NAME} on {_TABLE_NAME};")
     op.execute(f"DROP FUNCTION {_PROCEDURE_NAME};")

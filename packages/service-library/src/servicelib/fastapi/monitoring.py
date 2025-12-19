@@ -139,7 +139,6 @@ async def prometheus_instrumentation_lifespan(
 
     instrumentaiton_enabled = state.get(_PROMETHEUS_INSTRUMENTATION_ENABLED, False)
     if instrumentaiton_enabled:
-
         _startup(app)
     yield {}
     if instrumentaiton_enabled:

@@ -78,7 +78,6 @@ class StripeApi(
         self,
         stripe_invoice_id: StripeInvoiceID,
     ) -> InvoiceData:
-
         response = await self.client.get(f"/v1/invoices/{stripe_invoice_id}")
         response.raise_for_status()
 

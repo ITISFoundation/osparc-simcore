@@ -27,7 +27,6 @@ def upgrade():
 
 
 def downgrade():
-
     op.create_table(
         "projects_vc_snapshots",
         sa.Column("checksum", sa.VARCHAR(), autoincrement=False, nullable=False),

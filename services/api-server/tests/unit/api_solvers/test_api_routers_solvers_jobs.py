@@ -211,7 +211,6 @@ async def test_solver_job_outputs(
     solver_key: str,
     solver_version: str,
 ) -> None:
-
     job_status = JobStatus(
         state=job_state,
         job_id=project_id,

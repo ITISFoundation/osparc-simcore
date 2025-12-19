@@ -18,7 +18,6 @@ depends_on = None
 
 
 def upgrade():
-
     with op.batch_alter_table("licensed_items") as batch_op:
         batch_op.alter_column(
             "name",
@@ -78,7 +77,6 @@ def downgrade():
     )
 
     with op.batch_alter_table("licensed_items") as batch_op:
-
         batch_op.alter_column(
             "product_name",
             existing_type=sa.String(),

@@ -136,7 +136,6 @@ async def test_pull_image(
         progress_unit="Byte",
         description=faker.pystr(),
     ) as main_progress_bar:
-
         await pull_image(
             image,
             registry_settings,

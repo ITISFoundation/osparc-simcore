@@ -240,13 +240,14 @@ async def test_list_function_job_collections(
     osparc_product_name: ProductName,
 ):
     # List function job collections when none are registered
-    collections, page_meta = (
-        await webserver_rpc_client.functions.list_function_job_collections(
-            pagination_limit=10,
-            pagination_offset=0,
-            user_id=logged_user["id"],
-            product_name=osparc_product_name,
-        )
+    (
+        collections,
+        page_meta,
+    ) = await webserver_rpc_client.functions.list_function_job_collections(
+        pagination_limit=10,
+        pagination_offset=0,
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
     )
 
     # Assert the list is empty
@@ -309,13 +310,14 @@ async def test_list_function_job_collections(
     )
 
     # List function job collections
-    collections, page_params = (
-        await webserver_rpc_client.functions.list_function_job_collections(
-            pagination_limit=2,
-            pagination_offset=1,
-            user_id=logged_user["id"],
-            product_name=osparc_product_name,
-        )
+    (
+        collections,
+        page_params,
+    ) = await webserver_rpc_client.functions.list_function_job_collections(
+        pagination_limit=2,
+        pagination_offset=1,
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
     )
 
     # Assert the list contains the registered collection
@@ -408,16 +410,17 @@ async def test_list_function_job_collections_filtered_function_id(
         registered_collections.append(registered_collection)
 
     # List function job collections with a specific function ID
-    collections, page_meta = (
-        await webserver_rpc_client.functions.list_function_job_collections(
-            pagination_limit=10,
-            pagination_offset=1,
-            filters=FunctionJobCollectionsListFilters(
-                has_function_id=FunctionIDString(registered_function.uid)
-            ),
-            user_id=logged_user["id"],
-            product_name=osparc_product_name,
-        )
+    (
+        collections,
+        page_meta,
+    ) = await webserver_rpc_client.functions.list_function_job_collections(
+        pagination_limit=10,
+        pagination_offset=1,
+        filters=FunctionJobCollectionsListFilters(
+            has_function_id=FunctionIDString(registered_function.uid)
+        ),
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
     )
 
     # Assert the list contains the registered collection

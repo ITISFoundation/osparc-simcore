@@ -27,7 +27,6 @@ def _get_sql_stmt_string(func_smt, **kwargs):
 
 
 def test_building_sql_statements(faker: Faker):
-
     _get_sql_stmt_string(
         _list_filter_with_partial_file_id_stmt,
         user_or_project_filter=UserOrProjectFilter(

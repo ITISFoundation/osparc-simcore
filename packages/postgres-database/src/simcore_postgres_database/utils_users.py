@@ -298,9 +298,7 @@ class UsersRepo:
     async def is_email_used(
         self, connection: AsyncConnection | None = None, *, email: str
     ) -> bool:
-
         async with pass_or_acquire_connection(self._engine, connection) as conn:
-
             email = email.lower()
 
             registered = await conn.scalar(

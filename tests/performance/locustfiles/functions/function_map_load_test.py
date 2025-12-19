@@ -62,7 +62,6 @@ class WebApiUser(OsparcWebUserBase):
 
     @task
     def map_function(self) -> None:
-
         function_uuid = self.environment.parsed_options.function_uuid
         if function_uuid is None:
             raise ValueError("function-uuid argument is required")
@@ -119,15 +118,15 @@ class WebApiUser(OsparcWebUserBase):
                     all_job_statuses.extend(
                         [status.get("status", None) for status in statuses if status]
                     )
-                    assert not any(
-                        status is None for status in all_job_statuses
-                    ), f"Test misconfiguration: Function job collection ({job_collection_uuid=}) listed {statuses=} with missing status"
+                    assert not any(status is None for status in all_job_statuses), (
+                        f"Test misconfiguration: Function job collection ({job_collection_uuid=}) listed {statuses=} with missing status"
+                    )
                     links = response.json().get("links", {})
                     assert isinstance(links, dict)
                     next_page_url = links.get("next", None)
-                assert (
-                    len(all_job_statuses) == n_jobs
-                ), f"Expected {n_jobs} jobs, got {len(all_job_statuses)} for {job_collection_uuid=}"
+                assert len(all_job_statuses) == n_jobs, (
+                    f"Expected {n_jobs} jobs, got {len(all_job_statuses)} for {job_collection_uuid=}"
+                )
 
                 if any(status != "SUCCESS" for status in all_job_statuses):
                     raise ValueError(

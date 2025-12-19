@@ -29,23 +29,28 @@ async def sync_licensed_resources(
             assert f"{category_url}".endswith(category_id)  # nosec
 
             # FETCH & VALIDATION
-            with log_context(
-                _logger, logging.INFO, "Fetching %s and validating", category_url
-            ), log_catch(_logger, reraise=True):
-                vip_data_items: list[ItisVipData] = (
-                    await _itis_vip_service.get_category_items(
-                        http_client, category_url
-                    )
+            with (
+                log_context(
+                    _logger, logging.INFO, "Fetching %s and validating", category_url
+                ),
+                log_catch(_logger, reraise=True),
+            ):
+                vip_data_items: list[
+                    ItisVipData
+                ] = await _itis_vip_service.get_category_items(
+                    http_client, category_url
                 )
 
             # REGISTRATION
             for vip_data in vip_data_items:
-
                 licensed_resource_name = f"{category_id}/{vip_data.id}"
 
-                with log_context(
-                    _logger, logging.INFO, "Registering %s", licensed_resource_name
-                ), log_catch(_logger, reraise=False):
+                with (
+                    log_context(
+                        _logger, logging.INFO, "Registering %s", licensed_resource_name
+                    ),
+                    log_catch(_logger, reraise=False),
+                ):
                     result = await _licensed_resources_service.register_licensed_resource(
                         app,
                         licensed_item_display_name=f"{vip_data.features.get('name', 'UNNAMED!!')} "
@@ -70,9 +75,7 @@ async def sync_licensed_resources(
                         _logger.warning(result.message)
 
                     else:
-                        assert (
-                            result.state == RegistrationState.NEWLY_REGISTERED
-                        )  # nosec
+                        assert result.state == RegistrationState.NEWLY_REGISTERED  # nosec
                         # NOTE: inform since needs curation
                         _logger.info(
                             "%s . New licensed_resource_id=%s pending for activation.",

@@ -185,9 +185,9 @@ def test_invalid_computation(
         COMPUTATION_URL,
         json=body,
     )
-    assert (
-        response.status_code == exp_response
-    ), f"response code is {response.status_code}, error: {response.text}"
+    assert response.status_code == exp_response, (
+        f"response code is {response.status_code}, error: {response.text}"
+    )
 
 
 async def test_start_empty_computation_is_refused(
@@ -718,9 +718,9 @@ async def test_abort_computation(
         sleepers_project.uuid,
         wait_for_states=[RunningState.STARTED],
     )
-    assert (
-        task_out.state == RunningState.STARTED
-    ), f"pipeline is not in the expected starting state but in {task_out.state}"
+    assert task_out.state == RunningState.STARTED, (
+        f"pipeline is not in the expected starting state but in {task_out.state}"
+    )
     assert task_out.url.path == f"/v2/computations/{sleepers_project.uuid}"
     assert task_out.stop_url
     assert task_out.stop_url.path == f"/v2/computations/{sleepers_project.uuid}:stop"
@@ -732,9 +732,9 @@ async def test_abort_computation(
     response = await async_client.post(
         f"{task_out.stop_url}", json={"user_id": user["id"]}
     )
-    assert (
-        response.status_code == status.HTTP_202_ACCEPTED
-    ), f"response code is {response.status_code}, error: {response.text}"
+    assert response.status_code == status.HTTP_202_ACCEPTED, (
+        f"response code is {response.status_code}, error: {response.text}"
+    )
     task_out = ComputationGet.model_validate(response.json())
     assert task_out.url.path == f"/v2/computations/{sleepers_project.uuid}:stop"
     assert task_out.stop_url is None
@@ -851,9 +851,9 @@ async def test_update_and_delete_computation(
         sleepers_project.uuid,
         wait_for_states=[RunningState.STARTED],
     )
-    assert (
-        task_out.state == RunningState.STARTED
-    ), f"pipeline is not in the expected starting state but in {task_out.state}"
+    assert task_out.state == RunningState.STARTED, (
+        f"pipeline is not in the expected starting state but in {task_out.state}"
+    )
 
     # now try to update the pipeline, is expected to be forbidden
     with pytest.raises(httpx.HTTPStatusError, match=f"{status.HTTP_409_CONFLICT}"):
@@ -870,17 +870,17 @@ async def test_update_and_delete_computation(
     response = await async_client.request(
         "DELETE", f"{task_out.url}", json={"user_id": user["id"]}
     )
-    assert (
-        response.status_code == status.HTTP_403_FORBIDDEN
-    ), f"response code is {response.status_code}, error: {response.text}"
+    assert response.status_code == status.HTTP_403_FORBIDDEN, (
+        f"response code is {response.status_code}, error: {response.text}"
+    )
 
     # try again with force=True this should abort and delete the pipeline
     response = await async_client.request(
         "DELETE", f"{task_out.url}", json={"user_id": user["id"], "force": True}
     )
-    assert (
-        response.status_code == status.HTTP_204_NO_CONTENT
-    ), f"response code is {response.status_code}, error: {response.text}"
+    assert response.status_code == status.HTTP_204_NO_CONTENT, (
+        f"response code is {response.status_code}, error: {response.text}"
+    )
 
 
 async def test_pipeline_with_no_computational_services_still_create_correct_comp_tasks_in_db(
@@ -983,9 +983,9 @@ async def test_pipeline_with_control_loop_made_of_dynamic_services_is_allowed(
             "collection_run_id": str(uuid.uuid4()),
         },
     )
-    assert (
-        response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
-    ), f"response code is {response.status_code}, error: {response.text}"
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, (
+        f"response code is {response.status_code}, error: {response.text}"
+    )
 
     # still this pipeline shall be createable if we do not want to start it
     response = client.post(
@@ -998,9 +998,9 @@ async def test_pipeline_with_control_loop_made_of_dynamic_services_is_allowed(
             "product_api_base_url": osparc_product_api_base_url,
         },
     )
-    assert (
-        response.status_code == status.HTTP_201_CREATED
-    ), f"response code is {response.status_code}, error: {response.text}"
+    assert response.status_code == status.HTTP_201_CREATED, (
+        f"response code is {response.status_code}, error: {response.text}"
+    )
 
 
 async def test_pipeline_with_cycle_containing_a_computational_service_is_forbidden(
@@ -1069,9 +1069,9 @@ async def test_pipeline_with_cycle_containing_a_computational_service_is_forbidd
             "collection_run_id": str(uuid.uuid4()),
         },
     )
-    assert (
-        response.status_code == status.HTTP_409_CONFLICT
-    ), f"response code is {response.status_code}, error: {response.text}"
+    assert response.status_code == status.HTTP_409_CONFLICT, (
+        f"response code is {response.status_code}, error: {response.text}"
+    )
 
     # still this pipeline shall be createable if we do not want to start it
     response = client.post(
@@ -1084,9 +1084,9 @@ async def test_pipeline_with_cycle_containing_a_computational_service_is_forbidd
             "product_api_base_url": osparc_product_api_base_url,
         },
     )
-    assert (
-        response.status_code == status.HTTP_201_CREATED
-    ), f"response code is {response.status_code}, error: {response.text}"
+    assert response.status_code == status.HTTP_201_CREATED, (
+        f"response code is {response.status_code}, error: {response.text}"
+    )
 
 
 async def test_burst_create_computations(

@@ -57,7 +57,6 @@ async def create_if_not_exists(
     licensed_resource_type: LicensedResourceType,
     licensed_resource_data: dict[str, Any] | None = None,
 ) -> LicensedResourceDB:
-
     insert_or_none_query = _create_insert_query(
         display_name,
         licensed_resource_name,

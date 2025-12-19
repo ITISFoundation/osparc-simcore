@@ -44,7 +44,6 @@ class _ConversationMessagePathParams(ConversationPathParams):
 
 
 class _ListConversationMessageQueryParams(PageQueryParameters):
-
     model_config = ConfigDict(extra="forbid")
 
 
@@ -75,13 +74,14 @@ async def create_conversation_message(request: web.Request):
         raise_unsupported_type(_conversation.type)
 
     # This function takes care of granting support user access to the message
-    _, conversation_user_type = (
-        await _conversation_service.get_support_conversation_for_user(
-            app=request.app,
-            user_id=req_ctx.user_id,
-            product_name=req_ctx.product_name,
-            conversation_id=path_params.conversation_id,
-        )
+    (
+        _,
+        conversation_user_type,
+    ) = await _conversation_service.get_support_conversation_for_user(
+        app=request.app,
+        user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
+        conversation_id=path_params.conversation_id,
     )
 
     message = await _conversation_message_service.create_support_message(
@@ -126,13 +126,14 @@ async def list_conversation_messages(request: web.Request):
         conversation_id=path_params.conversation_id,
     )
 
-    total, messages = (
-        await _conversation_message_service.list_messages_for_conversation(
-            app=request.app,
-            conversation_id=path_params.conversation_id,
-            offset=query_params.offset,
-            limit=query_params.limit,
-        )
+    (
+        total,
+        messages,
+    ) = await _conversation_message_service.list_messages_for_conversation(
+        app=request.app,
+        conversation_id=path_params.conversation_id,
+        offset=query_params.offset,
+        limit=query_params.limit,
     )
 
     page = Page[ConversationMessageRestGet].model_validate(
@@ -289,13 +290,14 @@ async def trigger_chatbot_processing(request: web.Request):
         raise_unsupported_type(_conversation.type)
 
     # This function takes care of granting support user access to the message
-    conversation_db, conversation_user_type = (
-        await _conversation_service.get_support_conversation_for_user(
-            app=request.app,
-            user_id=req_ctx.user_id,
-            product_name=req_ctx.product_name,
-            conversation_id=path_params.conversation_id,
-        )
+    (
+        conversation_db,
+        conversation_user_type,
+    ) = await _conversation_service.get_support_conversation_for_user(
+        app=request.app,
+        user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
+        conversation_id=path_params.conversation_id,
     )
 
     await _conversation_message_service.trigger_chatbot_processing(

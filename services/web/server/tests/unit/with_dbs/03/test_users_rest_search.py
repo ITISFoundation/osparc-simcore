@@ -213,7 +213,6 @@ async def test_search_users_by_partial_email(
     semi_private_user: UserInfoDict,
     private_user: UserInfoDict,
 ):
-
     # SEARCH by partial email
     assert partial_email in private_user["email"]
     assert partial_email not in semi_private_user["email"]
@@ -292,7 +291,6 @@ async def test_search_myself(
     assert client.app
     for user in [public_user, semi_private_user, private_user]:
         async with switch_client_session_to(client, user):
-
             # search me
             url = client.app.router["search_users"].url_for()
             resp = await client.post(f"{url}", json={"match": user["name"]})

@@ -54,7 +54,6 @@ class PageRefsParams(PageRefs[PageQueryParameters]):
 
 
 class PageRpc(Page[ItemT], Generic[ItemT]):
-
     links: PageRefsParams = Field(alias="_links")  # type: ignore
 
     @classmethod

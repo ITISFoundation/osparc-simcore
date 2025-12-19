@@ -168,7 +168,7 @@ class _BS(BaseStep):
 
         return {
             **required_context,
-            **{k: _CTX_VALUE for k in cls.get_execute_provides_context_keys()},
+            **dict.fromkeys(cls.get_execute_provides_context_keys(), _CTX_VALUE),
         }
 
     @classmethod
@@ -181,7 +181,7 @@ class _BS(BaseStep):
 
         return {
             **required_context,
-            **{k: _CTX_VALUE for k in cls.get_revert_provides_context_keys()},
+            **dict.fromkeys(cls.get_revert_provides_context_keys(), _CTX_VALUE),
         }
 
 

@@ -130,11 +130,11 @@ async def _wait_for_service(service_name: str) -> None:
                 services = await docker_client.services.list(
                     filters={"name": service_name}
                 )
-                assert (
-                    len(services) == 1
-                ), f"Docker service {service_name=} is missing, {services=}"
+                assert len(services) == 1, (
+                    f"Docker service {service_name=} is missing, {services=}"
+                )
                 print(
-                    f"<-- {service_name=} was started ({json.dumps( attempt.retry_state.retry_object.statistics, indent=2)})"
+                    f"<-- {service_name=} was started ({json.dumps(attempt.retry_state.retry_object.statistics, indent=2)})"
                 )
 
 
@@ -144,9 +144,9 @@ async def _get_service_published_port(service_name: str, target_port: int) -> Po
     async with aiodocker.Docker() as docker_client:
         print(f"--> getting {service_name=} published port for {target_port=}...")
         services = await docker_client.services.list(filters={"name": service_name})
-        assert (
-            len(services) == 1
-        ), f"Docker service '{service_name=}' was not found!, did you wait for the service to be up?"
+        assert len(services) == 1, (
+            f"Docker service '{service_name=}' was not found!, did you wait for the service to be up?"
+        )
         service = services[0]
         # SEE https://docs.docker.com/engine/api/v1.41/#tag/Service
         # Example:
@@ -197,9 +197,9 @@ async def _get_service_published_port(service_name: str, target_port: int) -> Po
             assert len(ports) == 1, f"number of ports in {service_name=} is not 1!"
             published_port = ports[0]["PublishedPort"]
 
-        assert (
-            published_port is not None
-        ), f"published port of {service_name=} is not set!"
+        assert published_port is not None, (
+            f"published port of {service_name=} is not set!"
+        )
 
         print(f"--> found {service_name=} {published_port=}")
         return published_port
@@ -263,9 +263,9 @@ async def patch_dynamic_service_url(app: FastAPI, node_uuid: str) -> str:
             proxy_service_name,
             target_port=dynamic_sidecar_proxy_settings.DYNAMIC_SIDECAR_CADDY_ADMIN_API_PORT,
         )
-        assert (
-            proxy_published_port is not None
-        ), f"{sidecar_settings.model_dump_json(warnings='none')=}"
+        assert proxy_published_port is not None, (
+            f"{sidecar_settings.model_dump_json(warnings='none')=}"
+        )
 
         async with scheduler.scheduler._lock:  # noqa: SLF001
             localhost_ip = get_localhost_ip()
@@ -314,9 +314,9 @@ async def _handle_redirection(
     """since we are in a test environment with a test server, a real client must be used in order to get to an external server
     i.e. the async_client used with the director test server is unable to follow redirects
     """
-    assert (
-        redirection_response.next_request
-    ), f"no redirection set in {redirection_response}"
+    assert redirection_response.next_request, (
+        f"no redirection set in {redirection_response}"
+    )
     async with httpx.AsyncClient() as real_client:
         response = await real_client.request(
             method, f"{redirection_response.next_request.url}", **kwargs

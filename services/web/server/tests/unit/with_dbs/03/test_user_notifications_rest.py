@@ -103,7 +103,6 @@ async def _create_notifications(
     product_name: ProductName,
     count: int,
 ) -> AsyncIterator[list[UserNotification]]:
-
     user_notifications: list[UserNotification] = [
         _create_notification(logged_user=logged_user, product_name=product_name)
         for _ in range(count)
@@ -460,9 +459,9 @@ async def test_list_permissions(
     if data:
         assert not error
         list_of_permissions = TypeAdapter(list[MyPermissionGet]).validate_python(data)
-        assert (
-            len(list_of_permissions) == 1
-        ), "for now there is only 1 permission, but when we sync frontend/backend permissions there will be more"
+        assert len(list_of_permissions) == 1, (
+            "for now there is only 1 permission, but when we sync frontend/backend permissions there will be more"
+        )
         assert list_of_permissions[0].name == "override_services_specifications"
         assert list_of_permissions[0].allowed is False, "defaults should be False!"
     else:

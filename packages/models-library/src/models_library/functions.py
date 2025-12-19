@@ -4,6 +4,8 @@ from enum import Enum
 from typing import Annotated, Any, Final, Literal, TypeAlias
 from uuid import UUID
 
+from pydantic import BaseModel, ConfigDict, Field
+
 from models_library import projects
 from models_library.basic_regex import UUID_RE_BASE
 from models_library.basic_types import ConstrainedStr
@@ -13,7 +15,6 @@ from models_library.products import ProductName
 from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from models_library.utils.enums import StrAutoEnum
-from pydantic import BaseModel, ConfigDict, Field
 
 from .batch_operations import BatchGetEnvelope, BatchUpdateEnvelope
 from .projects import ProjectID

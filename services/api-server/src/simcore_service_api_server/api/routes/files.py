@@ -5,9 +5,8 @@ import logging
 from typing import IO, Annotated, Any
 from uuid import UUID
 
-from fastapi import APIRouter, Body, Depends
+from fastapi import APIRouter, Body, Depends, Header, Request, UploadFile, status
 from fastapi import File as FileParam
-from fastapi import Header, Request, UploadFile, status
 from fastapi.exceptions import HTTPException
 from fastapi_pagination.api import create_page
 from models_library.api_schemas_storage.storage_schemas import (
@@ -37,13 +36,11 @@ from ...models.pagination import Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
 from ...models.schemas.files import (
     ClientFileUploadData,
-)
-from ...models.schemas.files import File as OutputFile
-from ...models.schemas.files import (
     FileUploadData,
     UploadLinks,
     UserFile,
 )
+from ...models.schemas.files import File as OutputFile
 from ...models.schemas.jobs import UserFileToProgramJob
 from ...services_http.storage import StorageApi, StorageFileMetaData, to_file_api_model
 from ...services_http.webserver import AuthSession
@@ -84,10 +81,10 @@ async def _get_file(
     """Gets metadata for a given file resource"""
 
     try:
-        stored_files: list[StorageFileMetaData] = (
-            await storage_client.search_owned_files(
-                user_id=user_id, file_id=file_id, limit=1
-            )
+        stored_files: list[
+            StorageFileMetaData
+        ] = await storage_client.search_owned_files(
+            user_id=user_id, file_id=file_id, limit=1
         )
         if not stored_files:
             msg = "Not found in storage"

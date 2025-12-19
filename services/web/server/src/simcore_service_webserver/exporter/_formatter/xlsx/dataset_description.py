@@ -280,47 +280,47 @@ class SheetFirstDatasetDescriptionV2(BaseXLSXSheet):
         )
         empty_background_cells: list[tuple[str, BaseXLSXCellData]] = [
             (
-                f"E2:{get_column_letter(4+_NUMBER_OF_COLUMNS_TO_PREFILL)}3",
+                f"E2:{get_column_letter(4 + _NUMBER_OF_COLUMNS_TO_PREFILL)}3",
                 Backgrounds.gray_background,
             ),
             (
-                f"E4:{get_column_letter(4+_NUMBER_OF_COLUMNS_TO_PREFILL)}4",
+                f"E4:{get_column_letter(4 + _NUMBER_OF_COLUMNS_TO_PREFILL)}4",
                 Backgrounds.gray_dark,
             ),
             (
-                f"E5:{get_column_letter(4+_NUMBER_OF_COLUMNS_TO_PREFILL)}6",
+                f"E5:{get_column_letter(4 + _NUMBER_OF_COLUMNS_TO_PREFILL)}6",
                 Backgrounds.gray_background,
             ),
             (
-                f"E9:{get_column_letter(4+_NUMBER_OF_COLUMNS_TO_PREFILL)}9",
+                f"E9:{get_column_letter(4 + _NUMBER_OF_COLUMNS_TO_PREFILL)}9",
                 Backgrounds.gray_background,
             ),
             (
-                f"E10:{get_column_letter(4+_NUMBER_OF_COLUMNS_TO_PREFILL)}10",
+                f"E10:{get_column_letter(4 + _NUMBER_OF_COLUMNS_TO_PREFILL)}10",
                 Backgrounds.gray_dark,
             ),
             (
-                f"E11:{get_column_letter(4+_NUMBER_OF_COLUMNS_TO_PREFILL)}13",
+                f"E11:{get_column_letter(4 + _NUMBER_OF_COLUMNS_TO_PREFILL)}13",
                 Backgrounds.gray_background,
             ),
             (
-                f"E17:{get_column_letter(4+_NUMBER_OF_COLUMNS_TO_PREFILL)}17",
+                f"E17:{get_column_letter(4 + _NUMBER_OF_COLUMNS_TO_PREFILL)}17",
                 Backgrounds.gray_background,
             ),
             (
-                f"E18:{get_column_letter(4+_NUMBER_OF_COLUMNS_TO_PREFILL)}18",
+                f"E18:{get_column_letter(4 + _NUMBER_OF_COLUMNS_TO_PREFILL)}18",
                 Backgrounds.gray_dark,
             ),
             (
-                f"E23:{get_column_letter(4+_NUMBER_OF_COLUMNS_TO_PREFILL)}23",
+                f"E23:{get_column_letter(4 + _NUMBER_OF_COLUMNS_TO_PREFILL)}23",
                 Backgrounds.gray_dark,
             ),
             (
-                f"E28:{get_column_letter(4+_NUMBER_OF_COLUMNS_TO_PREFILL)}28",
+                f"E28:{get_column_letter(4 + _NUMBER_OF_COLUMNS_TO_PREFILL)}28",
                 Backgrounds.gray_dark,
             ),
             (
-                f"E29:{get_column_letter(4+_NUMBER_OF_COLUMNS_TO_PREFILL)}30",
+                f"E29:{get_column_letter(4 + _NUMBER_OF_COLUMNS_TO_PREFILL)}30",
                 Backgrounds.gray_background,
             ),
         ]

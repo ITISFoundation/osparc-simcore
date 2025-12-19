@@ -53,9 +53,9 @@ async def get_service_status(
         raise NotImplementedError
 
     director_v2_client = DirectorV2Client.get_from_app_state(app)
-    response: NodeGet | DynamicServiceGet | NodeGetIdle = (
-        await director_v2_client.get_status(node_id)
-    )
+    response: (
+        NodeGet | DynamicServiceGet | NodeGetIdle
+    ) = await director_v2_client.get_status(node_id)
     return response
 
 
@@ -69,9 +69,9 @@ async def run_dynamic_service(
         raise NotImplementedError
 
     director_v2_client = DirectorV2Client.get_from_app_state(app)
-    response: NodeGet | DynamicServiceGet = (
-        await director_v2_client.run_dynamic_service(dynamic_service_start)
-    )
+    response: (
+        NodeGet | DynamicServiceGet
+    ) = await director_v2_client.run_dynamic_service(dynamic_service_start)
 
     return response
 

@@ -697,9 +697,9 @@ def test_grok_pattern_parsing(caplog: pytest.LogCaptureFixture) -> None:
     regex_pattern = _create_grok_regex_pattern()
     match = re.match(regex_pattern, formatted_log)
 
-    assert (
-        match is not None
-    ), f"Grok pattern did not match formatted log. Log: {formatted_log!r}"
+    assert match is not None, (
+        f"Grok pattern did not match formatted log. Log: {formatted_log!r}"
+    )
 
     # Verify extracted fields match expected values
     groups = match.groupdict()
@@ -751,9 +751,9 @@ def test_grok_pattern_parsing_with_none_values(
     regex_pattern = _create_grok_regex_pattern()
     match = re.match(regex_pattern, formatted_log)
 
-    assert (
-        match is not None
-    ), f"Grok pattern did not match log with None values. Log: {formatted_log!r}"
+    assert match is not None, (
+        f"Grok pattern did not match log with None values. Log: {formatted_log!r}"
+    )
 
     groups = match.groupdict()
     assert groups["log_level"] == "ERROR"

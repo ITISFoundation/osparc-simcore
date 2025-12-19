@@ -136,7 +136,6 @@ async def test_upsert_projects_networks(
     project_id: ProjectID,
     networks_with_aliases: NetworksWithAliases,
 ):
-
     # allows ot test the upsert capabilities
     for _ in range(2):
         await project_networks_repo.upsert_projects_networks(

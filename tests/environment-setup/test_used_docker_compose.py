@@ -42,14 +42,14 @@ def test_no_docker_compose_v1_in_ci_scripts(
                 r"docker_compose: \[([\d\.]+)\]", workflow_file.read_text()
             )
         }
-        assert (
-            len(versions_in_file) == 0
-        ), f"found docker_compose versions in {workflow_file}, versions found {versions_in_file}, please check!"
+        assert len(versions_in_file) == 0, (
+            f"found docker_compose versions in {workflow_file}, versions found {versions_in_file}, please check!"
+        )
 
         versions_in_workflow_files.update(versions_in_file)
-    assert (
-        len(versions_in_workflow_files) == 0
-    ), f"found different docker_compose versions in workflow files: {versions_in_workflow_files}, please check {list(ci_workflows_path.rglob('ci-*.yml'))}!"
+    assert len(versions_in_workflow_files) == 0, (
+        f"found different docker_compose versions in workflow files: {versions_in_workflow_files}, please check {list(ci_workflows_path.rglob('ci-*.yml'))}!"
+    )
 
 
 def test_there_are_no_docker_compose_v1_anywhere(
@@ -160,6 +160,6 @@ def test_network_names_contain_only_letters_and_underscores(
     networks = compose.get("networks", {})
 
     for network_name in networks:
-        assert re.match(
-            r"^[a-zA-Z_]+$", network_name
-        ), f"Network name '{network_name}' in {compose_path.relative_to(repo_dir)} contains invalid characters. Only letters and underscores are allowed."
+        assert re.match(r"^[a-zA-Z_]+$", network_name), (
+            f"Network name '{network_name}' in {compose_path.relative_to(repo_dir)} contains invalid characters. Only letters and underscores are allowed."
+        )

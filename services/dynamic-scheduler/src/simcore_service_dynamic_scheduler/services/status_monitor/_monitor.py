@@ -79,9 +79,9 @@ class Monitor:
 
         # NOTE: this worker runs on only once across all instances of the scheduler
 
-        models: dict[NodeID, TrackedServiceModel] = (
-            await service_tracker.get_all_tracked_services(self.app)
-        )
+        models: dict[
+            NodeID, TrackedServiceModel
+        ] = await service_tracker.get_all_tracked_services(self.app)
 
         to_remove: list[NodeID] = []
         to_start: list[NodeID] = []

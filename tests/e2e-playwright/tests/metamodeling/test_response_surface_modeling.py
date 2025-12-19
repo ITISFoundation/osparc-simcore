@@ -63,9 +63,9 @@ def create_function_from_project(
                 and response.request.method == "POST"
             ) as create_function_response:
                 page.get_by_test_id("create_function_page_btn").click()
-            assert (
-                create_function_response.value.ok
-            ), f"Failed to create function: {create_function_response.value.status}"
+            assert create_function_response.value.ok, (
+                f"Failed to create function: {create_function_response.value.status}"
+            )
             function_data = create_function_response.value.json()
 
             ctx.logger.info(
@@ -87,9 +87,9 @@ def create_function_from_project(
             response = api_request_context.delete(
                 f"{product_url}v0/functions/{function_uuid}"
             )
-            assert (
-                response.status == 204
-            ), f"Unexpected error while deleting project: '{response.json()}'"
+            assert response.status == 204, (
+                f"Unexpected error while deleting project: '{response.json()}'"
+            )
 
 
 def test_response_surface_modeling(
@@ -109,12 +109,12 @@ def test_response_surface_modeling(
         jsonifier_project_data = create_project_from_service_dashboard(
             ServiceType.COMPUTATIONAL, "jsonifier", None, service_version
         )
-        assert (
-            "workbench" in jsonifier_project_data
-        ), "Expected workbench to be in project data!"
-        assert isinstance(
-            jsonifier_project_data["workbench"], dict
-        ), "Expected workbench to be a dict!"
+        assert "workbench" in jsonifier_project_data, (
+            "Expected workbench to be in project data!"
+        )
+        assert isinstance(jsonifier_project_data["workbench"], dict), (
+            "Expected workbench to be a dict!"
+        )
         node_ids: list[str] = list(jsonifier_project_data["workbench"])
         assert len(node_ids) == 1, "Expected 1 node in the workbench!"
 
@@ -141,13 +141,13 @@ def test_response_surface_modeling(
                 page.get_by_test_id("connect_probe_btn_number_3").click()
 
             patch_prj_probe_resp = patch_prj_probe_ctx.value
-            assert (
-                patch_prj_probe_resp.status == 204
-            ), f"Expected 204 from PATCH, got {patch_prj_probe_resp.status}"
+            assert patch_prj_probe_resp.status == 204, (
+                f"Expected 204 from PATCH, got {patch_prj_probe_resp.status}"
+            )
             create_probe_resp = create_probe_ctx.value
-            assert (
-                create_probe_resp.status == 201
-            ), f"Expected 201 from POST, got {create_probe_resp.status}"
+            assert create_probe_resp.status == 201, (
+                f"Expected 201 from POST, got {create_probe_resp.status}"
+            )
 
         with log_context(logging.INFO, "Create parameter"):
             page.get_by_test_id("connect_input_btn_number_1").click()
@@ -167,13 +167,13 @@ def test_response_surface_modeling(
                 page.get_by_text("new parameter").click()
 
             patch_prj_param_resp = patch_prj_param_ctx.value
-            assert (
-                patch_prj_param_resp.status == 204
-            ), f"Expected 204 from PATCH, got {patch_prj_param_resp.status}"
+            assert patch_prj_param_resp.status == 204, (
+                f"Expected 204 from PATCH, got {patch_prj_param_resp.status}"
+            )
             create_param_resp = create_param_ctx.value
-            assert (
-                create_param_resp.status == 201
-            ), f"Expected 201 from POST, got {create_param_resp.status}"
+            assert create_param_resp.status == 201, (
+                f"Expected 201 from POST, got {create_param_resp.status}"
+            )
 
         with log_context(logging.INFO, "Rename project"):
             page.get_by_test_id("studyTitleRenamer").click()
@@ -186,9 +186,9 @@ def test_response_surface_modeling(
                 renamer.press("Enter")
 
             patch_prj_rename_resp = patch_prj_rename_ctx.value
-            assert (
-                patch_prj_rename_resp.status == 204
-            ), f"Expected 204 from PATCH, got {patch_prj_rename_resp.status}"
+            assert patch_prj_rename_resp.status == 204, (
+                f"Expected 204 from PATCH, got {patch_prj_rename_resp.status}"
+            )
 
         # if the project is being saved, wait until it's finished
         with log_context(logging.INFO, "Wait until project is saved"):
@@ -204,17 +204,17 @@ def test_response_surface_modeling(
     ):
         page.get_by_test_id("dashboardBtn").click()
         page.get_by_test_id("confirmDashboardBtn").click()
-    assert (
-        list_projects_response.value.ok
-    ), f"Failed to list projects: {list_projects_response.value.status}"
+    assert list_projects_response.value.ok, (
+        f"Failed to list projects: {list_projects_response.value.status}"
+    )
     project_listing = list_projects_response.value.json()
     assert "data" in project_listing
     assert len(project_listing["data"]) > 0
     # find the project we just created, it's the first one
     our_project = project_listing["data"][0]
-    assert (
-        our_project["name"] == _STUDY_FUNCTION_NAME
-    ), f"Expected to find our project named {_STUDY_FUNCTION_NAME} in {project_listing}"
+    assert our_project["name"] == _STUDY_FUNCTION_NAME, (
+        f"Expected to find our project named {_STUDY_FUNCTION_NAME} in {project_listing}"
+    )
 
     # 3. convert it to a function
     create_function_from_project(page, our_project["uuid"])
@@ -229,9 +229,9 @@ def test_response_surface_modeling(
             ServiceType.DYNAMIC, service_key, None, service_version
         )
         assert "workbench" in project_data, "Expected workbench to be in project data!"
-        assert isinstance(
-            project_data["workbench"], dict
-        ), "Expected workbench to be a dict!"
+        assert isinstance(project_data["workbench"], dict), (
+            "Expected workbench to be a dict!"
+        )
         node_ids: list[str] = list(project_data["workbench"])
         assert len(node_ids) == 1, "Expected 1 node in the workbench!"
 

@@ -128,7 +128,7 @@ def wait_for_services() -> int:
                     key=by_service_creation,
                 )
 
-                assert len(started_services), "no services started!"
+                assert started_services, "no services started!"
                 assert len(expected_services) == len(started_services), (
                     "Some services are missing or unexpected:\n"
                     f"expected: {len(expected_services)} {expected_services}\n"

@@ -39,7 +39,6 @@ async def _create_user_in_db(
     exit_stack: contextlib.AsyncExitStack,
     data: dict | None = None,
 ) -> UserInfoDict:
-
     # create fake
     data = data or {}
     data.setdefault("status", UserStatus.ACTIVE.name)

@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from decimal import Decimal
 from enum import IntEnum, auto
 from typing import NamedTuple, TypeAlias
@@ -153,7 +153,7 @@ class StartedAt(BaseModel):
             if isinstance(v, datetime):
                 return v
             try:
-                from_ = datetime.strptime(v, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+                from_ = datetime.strptime(v, "%Y-%m-%d").replace(tzinfo=UTC)
             except Exception as exc:
                 msg = "'from' value must be provided in proper format <yyyy-mm-dd>."
                 raise ValueError(msg) from exc
@@ -168,7 +168,7 @@ class StartedAt(BaseModel):
             if isinstance(v, datetime):
                 return v
             try:
-                until = datetime.strptime(v, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+                until = datetime.strptime(v, "%Y-%m-%d").replace(tzinfo=UTC)
             except Exception as exc:
                 msg = "'until' value must be provided in proper format <yyyy-mm-dd>."
                 raise ValueError(msg) from exc
@@ -290,7 +290,9 @@ class PricingUnitWithCostCreate(BaseModel):
                 {
                     "pricing_plan_id": 1,
                     "unit_name": "My pricing plan",
-                    "unit_extra_info": UnitExtraInfoTier.model_config["json_schema_extra"]["examples"][0],  # type: ignore [index]
+                    "unit_extra_info": UnitExtraInfoTier.model_config[
+                        "json_schema_extra"
+                    ]["examples"][0],  # type: ignore [index]
                     "default": True,
                     "specific_info": {"aws_ec2_instances": ["t3.medium"]},
                     "cost_per_unit": 10,
@@ -322,7 +324,9 @@ class PricingUnitWithCostUpdate(BaseModel):
                     "pricing_plan_id": 1,
                     "pricing_unit_id": 1,
                     "unit_name": "My pricing plan",
-                    "unit_extra_info": UnitExtraInfoTier.model_config["json_schema_extra"]["examples"][0],  # type: ignore [index]
+                    "unit_extra_info": UnitExtraInfoTier.model_config[
+                        "json_schema_extra"
+                    ]["examples"][0],  # type: ignore [index]
                     "default": True,
                     "specific_info": {"aws_ec2_instances": ["t3.medium"]},
                     "pricing_unit_cost_update": {
@@ -334,7 +338,9 @@ class PricingUnitWithCostUpdate(BaseModel):
                     "pricing_plan_id": 1,
                     "pricing_unit_id": 1,
                     "unit_name": "My pricing plan",
-                    "unit_extra_info": UnitExtraInfoTier.model_config["json_schema_extra"]["examples"][0],  # type: ignore [index]
+                    "unit_extra_info": UnitExtraInfoTier.model_config[
+                        "json_schema_extra"
+                    ]["examples"][0],  # type: ignore [index]
                     "default": True,
                     "specific_info": {"aws_ec2_instances": ["t3.medium"]},
                     "pricing_unit_cost_update": None,

@@ -53,15 +53,15 @@ def assert_permissions(
     is_writable = bool(file_permissions & stat.S_IWUSR)
     is_executable = bool(file_permissions & stat.S_IXUSR)
 
-    assert (
-        is_readable == expected_readable
-    ), f"Expected readable={expected_readable}, but got readable={is_readable} for {file_path}"
-    assert (
-        is_writable == expected_writable
-    ), f"Expected writable={expected_writable}, but got writable={is_writable} for {file_path}"
-    assert (
-        is_executable == expected_executable
-    ), f"Expected executable={expected_executable}, but got executable={is_executable} for {file_path}"
+    assert is_readable == expected_readable, (
+        f"Expected readable={expected_readable}, but got readable={is_readable} for {file_path}"
+    )
+    assert is_writable == expected_writable, (
+        f"Expected writable={expected_writable}, but got writable={is_writable} for {file_path}"
+    )
+    assert is_executable == expected_executable, (
+        f"Expected executable={expected_executable}, but got executable={is_executable} for {file_path}"
+    )
 
 
 async def test_remove_write_access_rights(

@@ -76,9 +76,9 @@ async def test_create_filemetadata_from_starlette_uploadfile(
         assert upload_in_memory.file.tell() == 0
 
         file_meta = await File.create_from_uploaded(upload_in_memory)
-        assert (
-            upload_in_memory.file.tell() > 0
-        ), "modifies current position is at the end"
+        assert upload_in_memory.file.tell() > 0, (
+            "modifies current position is at the end"
+        )
 
 
 def test_convert_between_file_models():

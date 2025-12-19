@@ -18,7 +18,6 @@ Q&A:
         - SEE https://blog.sixeyed.com/docker-healthchecks-why-not-to-use-curl-or-iwr/
 """
 
-
 import os
 import sys
 from urllib.request import urlopen

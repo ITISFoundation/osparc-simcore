@@ -33,7 +33,6 @@ async def _get_auto_recharge(connection: AsyncConnection, wallet_id) -> Row | No
 async def _is_valid_payment_method(
     connection: AsyncConnection, user_id, wallet_id, payment_method_id
 ) -> bool:
-
     stmt = AutoRechargeStatements.is_valid_payment_method(
         user_id, wallet_id, payment_method_id
     )

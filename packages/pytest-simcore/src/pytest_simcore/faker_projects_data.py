@@ -8,7 +8,6 @@ Fixtures to produce fake data for a project:
     - granular customization by overriding fixtures
 """
 
-
 from typing import Any
 
 import pytest
@@ -17,6 +16,7 @@ from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from pydantic import TypeAdapter
+
 from pytest_simcore.helpers.faker_factories import random_project
 
 _MESSAGE = (

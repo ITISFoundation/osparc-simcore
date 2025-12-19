@@ -26,9 +26,7 @@ from simcore_service_webserver.user_preferences._models import (
 
 
 def test_get_preference_name_and_get_preference_identifier():
-    preference_name: PreferenceName = (
-        TelemetryLowDiskSpaceWarningThresholdFrontendUserPreference.get_preference_name()
-    )
+    preference_name: PreferenceName = TelemetryLowDiskSpaceWarningThresholdFrontendUserPreference.get_preference_name()
     assert (
         preference_name == "TelemetryLowDiskSpaceWarningThresholdFrontendUserPreference"
     )

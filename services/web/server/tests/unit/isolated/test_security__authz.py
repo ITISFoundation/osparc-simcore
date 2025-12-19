@@ -127,9 +127,9 @@ def test_unique_permissions():
     for role in ROLES_PERMISSIONS:
         can = ROLES_PERMISSIONS[role].get("can", [])
         for permission in can:
-            assert (
-                permission not in used
-            ), f"'{permission}' in {role} is repeated in security_roles.ROLES_PERMISSIONS"
+            assert permission not in used, (
+                f"'{permission}' in {role} is repeated in security_roles.ROLES_PERMISSIONS"
+            )
             used.append(permission)
 
 
@@ -143,7 +143,6 @@ def test_access_model_loads():
 
 
 async def test_named_permissions(access_model: RoleBasedAccessModel):
-
     R = UserRole  # alias
 
     # direct permission
@@ -193,18 +192,18 @@ async def test_checked_permissions(
     current: ProjectDict = json.loads(
         (tests_data_dir / "fake-template-projects.isan.ucdavis.json").read_text()
     )
-    assert (
-        current["uuid"] == "de2578c5-431e-1234-a1a7-f7d4f3a8f26b"
-    ), "Did uuids of the fake changed"
+    assert current["uuid"] == "de2578c5-431e-1234-a1a7-f7d4f3a8f26b", (
+        "Did uuids of the fake changed"
+    )
 
     # updates both allowed and not allowed fields
     candidate = copy.deepcopy(current)
-    candidate["workbench"]["de2578c5-431e-409d-998c-c1f04de67f8b"]["inputs"][
-        "Kr"
-    ] = 66  # ReadOnly!
-    candidate["workbench"]["de2578c5-431e-409d-998c-c1f04de67f8b"]["inputs"][
-        "Na"
-    ] = 66  # ReadWrite
+    candidate["workbench"]["de2578c5-431e-409d-998c-c1f04de67f8b"]["inputs"]["Kr"] = (
+        66  # ReadOnly!
+    )
+    candidate["workbench"]["de2578c5-431e-409d-998c-c1f04de67f8b"]["inputs"]["Na"] = (
+        66  # ReadWrite
+    )
 
     assert not await access_model.can(
         R.ANONYMOUS,
@@ -214,9 +213,9 @@ async def test_checked_permissions(
 
     # updates allowed fields
     candidate = copy.deepcopy(current)
-    candidate["workbench"]["de2578c5-431e-409d-998c-c1f04de67f8b"]["inputs"][
-        "Na"
-    ] = 66  # ReadWrite
+    candidate["workbench"]["de2578c5-431e-409d-998c-c1f04de67f8b"]["inputs"]["Na"] = (
+        66  # ReadWrite
+    )
 
     assert await access_model.can(
         R.ANONYMOUS,
@@ -261,7 +260,6 @@ async def test_check_access_expressions(access_model: RoleBasedAccessModel):
 
 @pytest.fixture
 def mock_db(mocker: MockerFixture) -> MagicMock:
-
     mocker.patch(
         "simcore_service_webserver.security._authz_policy.get_async_engine",
         autospec=True,
@@ -295,7 +293,6 @@ def mock_db(mocker: MockerFixture) -> MagicMock:
 
 
 async def test_authorization_policy_cache(mocker: MockerFixture, mock_db: MagicMock):
-
     app = web.Application()
     authz_policy = AuthorizationPolicy(app, RoleBasedAccessModel([]))
 

@@ -31,7 +31,6 @@ def create_postgres_database_input_state(settings: PostgresSettings) -> State:
 async def postgres_database_lifespan(
     app: FastAPI, state: State
 ) -> AsyncIterator[State]:
-
     _lifespan_name = f"{__name__}.{postgres_database_lifespan.__name__}"
 
     with lifespan_context(_logger, logging.INFO, _lifespan_name, state) as called_state:
@@ -49,7 +48,6 @@ async def postgres_database_lifespan(
         )
 
         try:
-
             yield {
                 PostgresLifespanState.POSTGRES_ASYNC_ENGINE: async_engine,
                 **called_state,

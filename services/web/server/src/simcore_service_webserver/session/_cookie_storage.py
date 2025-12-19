@@ -52,7 +52,6 @@ class SharedCookieEncryptedCookieStorage(EncryptedCookieStorage):
         *,
         max_age: int | None = None,
     ) -> None:
-
         params = self._cookie_params.copy()
         request = response._req  # pylint:disable=protected-access  # noqa: SLF001
         if not request:

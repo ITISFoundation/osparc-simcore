@@ -22,7 +22,6 @@ def check_user_product_consistency(
     user_id: UserID,
     product_name: ProductName,
 ) -> None:
-
     if user_id != service_provider.user_id:
         msg = f"User ID {user_id} does not match {service_provider.__class__.__name__} user ID {service_provider.user_id}"
         raise ServiceConfigurationError(

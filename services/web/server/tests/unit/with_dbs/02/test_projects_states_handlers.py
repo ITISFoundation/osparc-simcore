@@ -223,9 +223,9 @@ async def _assert_project_state_updated(
             before_sleep=before_sleep_log(ctx.logger, logging.INFO),
         )
         async def _received_project_update_event() -> None:
-            assert handler.call_count == len(
-                expected_project_state_updates
-            ), f"received {handler.call_count}:{handler.call_args_list} of {len(expected_project_state_updates)} expected calls"
+            assert handler.call_count == len(expected_project_state_updates), (
+                f"received {handler.call_count}:{handler.call_args_list} of {len(expected_project_state_updates)} expected calls"
+            )
             if expected_project_state_updates:
                 calls = [
                     call(

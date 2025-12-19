@@ -5,6 +5,7 @@ from typing import Any
 from models_library.products import ProductName
 from models_library.rabbitmq_basic_types import RPCMethodName, RPCNamespace
 from models_library.users import UserID
+
 from servicelib.rabbitmq import RabbitMQRPCClient
 
 
@@ -31,7 +32,6 @@ class BaseRpcApi:
         user_id: UserID,
         **optional_kwargs: Any,
     ) -> Any:
-
         return await self._request_without_authentication(
             method_name,
             product_name=product_name,
@@ -42,7 +42,6 @@ class BaseRpcApi:
     async def _request_without_authentication(
         self, method_name: RPCMethodName, *, product_name: ProductName, **kwargs: Any
     ) -> Any:
-
         assert self._rpc_request_kwargs.keys().isdisjoint(kwargs.keys()), (
             "Conflict between request extras and kwargs"
             "Please rename the conflicting keys."

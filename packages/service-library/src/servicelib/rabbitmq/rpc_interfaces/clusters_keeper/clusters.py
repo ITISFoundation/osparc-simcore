@@ -22,7 +22,9 @@ _GET_OR_CREATE_CLUSTER_METHOD_NAME: Final[RPCMethodName] = TypeAdapter(
 @run_sequentially_in_context(target_args=["user_id", "wallet_id"])
 @cached(
     ttl=_TTL_CACHE_ON_CLUSTERS_S,
-    key_builder=lambda f, *_args, **kwargs: f"{f.__name__}_{kwargs['user_id']}_{kwargs['wallet_id']}",
+    key_builder=lambda f,
+    *_args,
+    **kwargs: f"{f.__name__}_{kwargs['user_id']}_{kwargs['wallet_id']}",
 )
 async def get_or_create_cluster(
     client: RabbitMQRPCClient, *, user_id: UserID, wallet_id: WalletID | None

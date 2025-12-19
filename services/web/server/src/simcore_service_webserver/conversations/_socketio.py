@@ -199,7 +199,6 @@ async def notify_via_socket_conversation_message_updated(
     project_id: ProjectID | None,
     conversation_message: ConversationMessageGetDB,
 ) -> None:
-
     notification_message = SocketMessageDict(
         event_type=SOCKET_IO_CONVERSATION_MESSAGE_UPDATED_EVENT,
         data={
@@ -222,7 +221,6 @@ async def notify_via_socket_conversation_message_deleted(
     conversation_id: ConversationID,
     message_id: ConversationMessageID,
 ) -> None:
-
     notification_message = SocketMessageDict(
         event_type=SOCKET_IO_CONVERSATION_MESSAGE_DELETED_EVENT,
         data={

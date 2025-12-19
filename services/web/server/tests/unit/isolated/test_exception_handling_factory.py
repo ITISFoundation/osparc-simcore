@@ -127,7 +127,6 @@ async def test_handling_different_exceptions_with_decorator(
         return web.json_response(reason="all good")
 
     with caplog.at_level(logging.ERROR):
-
         # emulates successful call
         resp = await _rest_handler(make_mocked_request("GET", "/foo"))
         assert resp.status == status.HTTP_200_OK

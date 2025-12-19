@@ -83,9 +83,9 @@ async def test_operations_on_group_classifiers(
             sa.select(func.count()).select_from(group_classifiers)
         )
 
-        assert (
-            groups_count == 1
-        ), "There should be only the Everyone group in the database!"
+        assert groups_count == 1, (
+            "There should be only the Everyone group in the database!"
+        )
         assert isinstance(classifiers_count, int)
         assert isinstance(groups_count, int)
         assert classifiers_count <= groups_count

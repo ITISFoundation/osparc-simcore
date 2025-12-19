@@ -122,30 +122,30 @@ def test_classic_ti_plan(  # noqa: PLR0915
             assert page.get_by_test_id("tipTeaserWindow").is_visible()
             page.get_by_test_id("tipTeaserWindowCloseBtn").click()
         else:
-            assert (
-                page.get_by_test_id("userMenuAccessTIPBtn").count() == 0
-            ), "full version should NOT have a teaser"
+            assert page.get_by_test_id("userMenuAccessTIPBtn").count() == 0, (
+                "full version should NOT have a teaser"
+            )
             # click to close
             page.get_by_test_id("userMenuBtn").click()
 
     # press + button
     project_data = create_tip_plan_from_dashboard("newTIPlanButton")
     assert "workbench" in project_data, "Expected workbench to be in project data!"
-    assert isinstance(
-        project_data["workbench"], dict
-    ), "Expected workbench to be a dict!"
+    assert isinstance(project_data["workbench"], dict), (
+        "Expected workbench to be a dict!"
+    )
     node_ids: list[str] = list(project_data["workbench"])
 
     if is_product_lite:
         expected_number_of_steps = 2
-        assert (
-            len(node_ids) == expected_number_of_steps
-        ), f"Expected {expected_number_of_steps=} in the app-mode"
+        assert len(node_ids) == expected_number_of_steps, (
+            f"Expected {expected_number_of_steps=} in the app-mode"
+        )
     else:
         expected_number_of_steps = 3
-        assert (
-            len(node_ids) >= expected_number_of_steps
-        ), f"Expected at least {expected_number_of_steps} nodes in the workbench"
+        assert len(node_ids) >= expected_number_of_steps, (
+            f"Expected at least {expected_number_of_steps} nodes in the workbench"
+        )
 
     with log_context(
         logging.INFO, "Electrode Selector step (1/%s)", expected_number_of_steps
@@ -168,9 +168,9 @@ def test_classic_ti_plan(  # noqa: PLR0915
         page.wait_for_timeout(_ELECTRODE_SELECTOR_FLICKERING_WAIT_TIME)
 
         with log_context(logging.INFO, "Configure selector", logger=ctx.logger):
-            assert (
-                page.get_by_test_id("settingsForm_" + node_ids[0]).count() == 0
-            ), "service settings should not be visible"
+            assert page.get_by_test_id("settingsForm_" + node_ids[0]).count() == 0, (
+                "service settings should not be visible"
+            )
 
             electrode_selector_iframe.get_by_test_id("TargetStructure_Selector").click()
             electrode_selector_iframe.get_by_test_id(

@@ -99,7 +99,7 @@ async def test_create_container_config(
                 "LOG_FOLDER=/logs",
                 f"SC_COMP_SERVICES_SCHEDULED_AS={boot_mode.value}",
                 f"SIMCORE_NANO_CPUS_LIMIT={task_max_resources.get('CPU', 1) * 1e9:.0f}",
-                f"SIMCORE_MEMORY_BYTES_LIMIT={task_max_resources.get('RAM', 1024 ** 3)}",
+                f"SIMCORE_MEMORY_BYTES_LIMIT={task_max_resources.get('RAM', 1024**3)}",
                 *[f"{env_var}={env_value}" for env_var, env_value in task_envs.items()],
             ],
             "Cmd": command,

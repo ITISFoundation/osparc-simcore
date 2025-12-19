@@ -1,10 +1,11 @@
 from datetime import date, datetime
 from typing import Literal, NamedTuple, NotRequired, Self, TypedDict, cast
 
-from models_library.basic_types import IDStr
-from models_library.resource_tracker import PricingPlanId
 from pydantic import BaseModel, ConfigDict, HttpUrl, NonNegativeInt, PositiveInt
 from pydantic.config import JsonDict
+
+from models_library.basic_types import IDStr
+from models_library.resource_tracker import PricingPlanId
 
 from ..licenses import (
     VIP_DETAILS_EXAMPLE,

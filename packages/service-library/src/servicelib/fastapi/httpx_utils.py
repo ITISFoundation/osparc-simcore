@@ -22,11 +22,11 @@ def to_httpx_command(
     ]
 
     #  -m, --method METHOD
-    cmd.append(f'{"-m" if use_short_options else "--method"} {request.method}')
+    cmd.append(f"{'-m' if use_short_options else '--method'} {request.method}")
 
     # -c, --content TEXT  Byte content to include in the request body.
     if content := request.read().decode():
-        cmd.append(f'{"-c" if use_short_options else "--content"} \'{content}\'')
+        cmd.append(f"{'-c' if use_short_options else '--content'} '{content}'")
 
     # -h, --headers <NAME VALUE> ...  Include additional HTTP headers in the request.
     if headers := _get_headers_safely(request):
@@ -58,7 +58,7 @@ def to_curl_command(
 
     # https://curl.se/docs/manpage.html#-X
     # -X, --request {method}
-    cmd.append(f'{"-X" if use_short_options else "--request"} {request.method}')
+    cmd.append(f"{'-X' if use_short_options else '--request'} {request.method}")
 
     # https://curl.se/docs/manpage.html#-H
     # H, --header <header/@file> Pass custom header(s) to server

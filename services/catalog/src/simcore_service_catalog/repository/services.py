@@ -89,7 +89,6 @@ class ServicesRepository(BaseRepository):
         combine_access_with_and: bool | None = True,
         product_name: str | None = None,
     ) -> list[ServiceMetaDataDBGet]:
-
         async with self.db_engine.connect() as conn:
             return [
                 ServiceMetaDataDBGet.model_validate(row)
@@ -185,7 +184,6 @@ class ServicesRepository(BaseRepository):
         write_access: bool | None = None,
         product_name: str | None = None,
     ) -> ServiceMetaDataDBGet | None:
-
         query = sa.select(*SERVICES_META_DATA_COLS)
 
         if gids or execute_access or write_access:
@@ -258,7 +256,6 @@ class ServicesRepository(BaseRepository):
         service_version: ServiceVersion,
         patched_service: ServiceMetaDataDBPatch,
     ) -> None:
-
         stmt_update = (
             services_meta_data.update()
             .where(
@@ -328,7 +325,6 @@ class ServicesRepository(BaseRepository):
         key: ServiceKey,
         version: ServiceVersion,
     ) -> ServiceWithHistoryDBGet | None:
-
         stmt_get = _services_sql.get_service_stmt(
             product_name=product_name,
             user_id=user_id,
@@ -464,7 +460,6 @@ class ServicesRepository(BaseRepository):
         pagination_offset: int | None = None,
         filters: ServiceDBFilters | None = None,
     ) -> tuple[PositiveInt, list[ServiceWithHistoryDBGet]]:
-
         # get page
         stmt_total = _services_sql.latest_services_total_count_stmt(
             product_name=product_name,
@@ -556,7 +551,6 @@ class ServicesRepository(BaseRepository):
         pagination_offset: int | None = None,
         filters: ServiceDBFilters | None = None,
     ) -> tuple[PositiveInt, list[ReleaseDBGet]]:
-
         base_stmt = (
             # Search on service (key, *) for (product_name, user_id w/ access)
             sql.select(

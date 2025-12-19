@@ -47,7 +47,6 @@ def test_all_products_models_examples(
 
 
 def test_product_to_static():
-
     product = Product.model_validate(Product.model_json_schema()["examples"][0])
     product_data = _get_product_data(product)
     assert product_data == {
@@ -132,9 +131,9 @@ def test_safe_load_empty_blanks_on_string_cols_from_db(
 
     product = Product.model_validate(fake_product_from_db)
 
-    assert product.model_dump(include=set(nullable_strings_column_names)) == {
-        name: None for name in nullable_strings_column_names
-    }
+    assert product.model_dump(
+        include=set(nullable_strings_column_names)
+    ) == dict.fromkeys(nullable_strings_column_names)
 
 
 @pytest.mark.parametrize(

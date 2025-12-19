@@ -37,7 +37,7 @@ def sleep_duration() -> float:
 
 
 class LockedStore:
-    __slots__ = ("_queue", "_lock")
+    __slots__ = ("_lock", "_queue")
 
     def __init__(self):
         self._queue = deque()
@@ -113,7 +113,6 @@ async def test_context_aware_dispatch(
 async def test_context_aware_function_sometimes_fails(
     ensure_run_in_sequence_context_is_empty: None,
 ) -> None:
-
     class DidFailException(Exception):
         pass
 
@@ -148,8 +147,7 @@ async def test_context_aware_wrong_target_args_name(
         await target_function("something")
 
     message = (
-        f"Expected '{expected_param_name}' in "
-        f"'{target_function.__name__}' arguments."
+        f"Expected '{expected_param_name}' in '{target_function.__name__}' arguments."
     )
     assert str(excinfo.value).startswith(message) is True
 
@@ -159,7 +157,6 @@ async def test_context_aware_measure_parallelism(
     sleep_duration: float,
     ensure_run_in_sequence_context_is_empty: None,
 ) -> None:
-
     @run_sequentially_in_context(target_args=["control"])
     async def sleep_for(sleep_interval: float, control: Any) -> Any:
         await asyncio.sleep(sleep_interval)
@@ -181,7 +178,6 @@ async def test_context_aware_measure_serialization(
     sleep_duration: float,
     ensure_run_in_sequence_context_is_empty: None,
 ) -> None:
-
     # expected duration 1 second
     @run_sequentially_in_context(target_args=["control"])
     async def sleep_for(sleep_interval: float, control: Any) -> Any:
@@ -205,7 +201,6 @@ async def test_nested_object_attribute(
     payload: str,
     ensure_run_in_sequence_context_is_empty: None,
 ) -> None:
-
     @dataclass
     class ObjectWithPropos:
         attr1: str = payload
@@ -225,7 +220,6 @@ async def test_different_contexts(
     payload: str,
     ensure_run_in_sequence_context_is_empty: None,
 ) -> None:
-
     @run_sequentially_in_context(target_args=["context_param"])
     async def test_multiple_context_calls(context_param: int) -> int:
         return context_param

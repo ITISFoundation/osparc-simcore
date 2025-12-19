@@ -105,9 +105,7 @@ class TaskSchedulingError(ComputationalSchedulerError):
         ]
 
 
-class MissingComputationalResourcesError(
-    TaskSchedulingError
-):  # pylint: disable=too-many-ancestors
+class MissingComputationalResourcesError(TaskSchedulingError):  # pylint: disable=too-many-ancestors
     msg_template = (
         "Service {service_name}:{service_version} cannot be scheduled "
         "on cluster: task needs '{task_resources}', "
@@ -115,9 +113,7 @@ class MissingComputationalResourcesError(
     )
 
 
-class InsuficientComputationalResourcesError(
-    TaskSchedulingError
-):  # pylint: disable=too-many-ancestors
+class InsuficientComputationalResourcesError(TaskSchedulingError):  # pylint: disable=too-many-ancestors
     msg_template: str = (
         "Insufficient computational resources to run {service_name}:{service_version} with {service_requested_resources} on cluster."
         "Cluster available workers: {cluster_available_resources}"

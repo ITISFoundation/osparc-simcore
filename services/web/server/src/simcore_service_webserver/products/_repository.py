@@ -99,7 +99,6 @@ async def _get_product_payment_fields(
 
 
 class ProductRepository(BaseRepository):
-
     async def list_products(
         self,
         connection: AsyncConnection | None = None,

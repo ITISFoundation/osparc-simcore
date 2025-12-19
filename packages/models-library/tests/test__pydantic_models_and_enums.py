@@ -64,7 +64,6 @@ def test_enums_vs_strenums():
 
 
 def test_enums_and_strenums_are_equivalent():
-
     assert are_equivalent_enums(Color1, ColorStrAndEnum1)
     assert are_equivalent_enums(Color2, ColorStrAndEnum2)
     assert are_equivalent_enums(Color1, ColorStrAndEnum2)
@@ -75,7 +74,6 @@ class Model(BaseModel):
 
 
 def test_parsing_enums_in_pydantic():
-
     model = TypeAdapter(Model).validate_python({"color": Color1.RED})
     assert model.color == Color1.RED
 
@@ -110,7 +108,6 @@ def test_parsing_strenum_in_pydantic():
 
 
 def test_parsing_str_and_enum_in_pydantic():
-
     # Can still NOT parse equivalent enum(-only)
     # with pytest.raises(ValidationError):
     #    TypeAdapter(ModelStrAndEnum).validate_python({"color": Color1.RED})

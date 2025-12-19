@@ -77,13 +77,9 @@ class CustomFormatter(logging.Formatter):
 
     def format(self, record) -> str:
         if hasattr(record, "func_name_override"):
-            record.funcName = (
-                record.func_name_override
-            )  # pyright: ignore[reportAttributeAccessIssue]
+            record.funcName = record.func_name_override  # pyright: ignore[reportAttributeAccessIssue]
         if hasattr(record, "file_name_override"):
-            record.filename = (
-                record.file_name_override
-            )  # pyright: ignore[reportAttributeAccessIssue]
+            record.filename = record.file_name_override  # pyright: ignore[reportAttributeAccessIssue]
 
         # pylint: disable=no-member
         optional_keys = LogExtra.__optional_keys__ | frozenset(

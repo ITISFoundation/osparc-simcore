@@ -61,7 +61,6 @@ async def _list_root_child_folders(
     user_id: UserID,
     workspace_id: WorkspaceID,
 ) -> list[FolderID]:
-
     child_folders: list[FolderID] = []
     for page_params in iter_pagination_params(
         offset=0, limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
@@ -93,7 +92,6 @@ async def _list_root_child_projects(
     user_id: UserID,
     workspace_id: WorkspaceID,
 ) -> list[ProjectID]:
-
     child_projects: list[ProjectID] = []
     for page_params in iter_pagination_params(
         offset=0, limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
@@ -253,7 +251,6 @@ async def delete_trashed_workspace(
     workspace_id: WorkspaceID,
     until_equal_datetime: datetime | None = None,
 ) -> None:
-
     workspace = await _workspaces_service_crud_read.get_workspace(
         app,
         user_id=user_id,
@@ -328,7 +325,6 @@ async def batch_delete_trashed_workspaces_as_admin(
     trashed_before: datetime,
     fail_fast: bool,
 ) -> list[WorkspaceID]:
-
     deleted_workspace_ids: list[WorkspaceID] = []
     errors: list[tuple[WorkspaceID, Exception]] = []
 

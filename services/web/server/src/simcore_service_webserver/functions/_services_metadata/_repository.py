@@ -6,11 +6,12 @@ from simcore_postgres_database.models.services import (
     services_meta_data,
 )
 from simcore_postgres_database.utils_repos import pass_or_acquire_connection
+from sqlalchemy import select, tuple_
+from sqlalchemy.ext.asyncio import AsyncConnection
+
 from simcore_service_webserver.functions._services_metadata._errors import (
     ServiceMetadataNotFoundError,
 )
-from sqlalchemy import select, tuple_
-from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ...db.plugin import get_asyncpg_engine
 from ._models import ServiceMetadata

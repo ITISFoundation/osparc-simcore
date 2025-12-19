@@ -60,9 +60,10 @@ _EXCHANGE_TO_PARSER_CONFIG: Final[
 
 
 async def _unsubscribe_from_rabbitmq(app) -> None:
-    with log_context(
-        _logger, logging.INFO, msg="Unsubscribing from rabbitmq channels"
-    ), log_catch(_logger, reraise=False):
+    with (
+        log_context(_logger, logging.INFO, msg="Unsubscribing from rabbitmq channels"),
+        log_catch(_logger, reraise=False),
+    ):
         rabbit_client: RabbitMQClient = get_rabbitmq_client(app)
         await logged_gather(
             *(

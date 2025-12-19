@@ -91,16 +91,14 @@ async def list_licensed_item_checkouts_for_wallet(request: web.Request):
         )
     )
 
-    result: LicensedItemCheckoutGetPage = (
-        await _licensed_items_checkouts_service.list_licensed_items_checkouts_for_wallet(
-            app=request.app,
-            product_name=req_ctx.product_name,
-            user_id=req_ctx.user_id,
-            wallet_id=path_params.wallet_id,
-            offset=query_params.offset,
-            limit=query_params.limit,
-            order_by=OrderBy.model_construct(**query_params.order_by.model_dump()),
-        )
+    result: LicensedItemCheckoutGetPage = await _licensed_items_checkouts_service.list_licensed_items_checkouts_for_wallet(
+        app=request.app,
+        product_name=req_ctx.product_name,
+        user_id=req_ctx.user_id,
+        wallet_id=path_params.wallet_id,
+        offset=query_params.offset,
+        limit=query_params.limit,
+        order_by=OrderBy.model_construct(**query_params.order_by.model_dump()),
     )
 
     get_page = LicensedItemCheckoutRestGetPage(

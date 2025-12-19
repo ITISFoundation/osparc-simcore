@@ -13,7 +13,6 @@
 - Also used as a fake payment-gateway for manual exploratory testing
 """
 
-
 import argparse
 import datetime
 import json

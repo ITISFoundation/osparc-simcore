@@ -666,17 +666,17 @@ async def cancel_jobs(  # noqa: C901, PLR0912
     )
 
     if computational_clusters:
-        assert (
-            len(computational_clusters) == 1
-        ), "too many clusters found! TIP: fix this code or something weird is playing out"
+        assert len(computational_clusters) == 1, (
+            "too many clusters found! TIP: fix this code or something weird is playing out"
+        )
 
         the_cluster = computational_clusters[0]
         rich.print(f"{the_cluster.task_states_to_tasks=}")
 
     job_id_to_dask_state = await _get_job_id_to_dask_state_from_cluster(the_cluster)
-    task_to_dask_job: list[tuple[ComputationalTask | None, DaskTask | None]] = (
-        await _get_db_task_to_dask_job(computational_tasks, job_id_to_dask_state)
-    )
+    task_to_dask_job: list[
+        tuple[ComputationalTask | None, DaskTask | None]
+    ] = await _get_db_task_to_dask_job(computational_tasks, job_id_to_dask_state)
 
     if not task_to_dask_job:
         rich.print("[red]nothing found![/red]")
@@ -749,9 +749,9 @@ async def trigger_cluster_termination(
         state, computational_instances, state.ssh_key_path, user_id, wallet_id
     )
     assert computational_clusters
-    assert (
-        len(computational_clusters) == 1
-    ), "too many clusters found! TIP: fix this code"
+    assert len(computational_clusters) == 1, (
+        "too many clusters found! TIP: fix this code"
+    )
 
     _print_computational_clusters(
         computational_clusters,
@@ -766,9 +766,9 @@ async def trigger_cluster_termination(
 
         computational_tasks = await db.list_computational_tasks_from_db(state, user_id)
         job_id_to_dask_state = await _get_job_id_to_dask_state_from_cluster(the_cluster)
-        task_to_dask_job: list[tuple[ComputationalTask | None, DaskTask | None]] = (
-            await _get_db_task_to_dask_job(computational_tasks, job_id_to_dask_state)
-        )
+        task_to_dask_job: list[
+            tuple[ComputationalTask | None, DaskTask | None]
+        ] = await _get_db_task_to_dask_job(computational_tasks, job_id_to_dask_state)
         await _cancel_all_jobs(
             state, the_cluster, task_to_dask_job=task_to_dask_job, abort_in_db=force
         )

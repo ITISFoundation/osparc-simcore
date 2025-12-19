@@ -2,6 +2,7 @@ from typing import NamedTuple
 
 import networkx as nx
 from models_library.projects import ProjectID
+
 from simcore_service_director_v2.core.errors import PipelineTaskMissingError
 
 from ..models.comp_pipelines import CompPipelineAtDB
@@ -22,7 +23,6 @@ async def _get_pipeline_info(
     comp_pipelines_repo: CompPipelinesRepository,
     comp_tasks_repo: CompTasksRepository,
 ) -> PipelineInfo:
-
     # NOTE: Here it is assumed the project exists in comp_tasks/comp_pipeline
     # get the project pipeline
     pipeline_at_db: CompPipelineAtDB = await comp_pipelines_repo.get_pipeline(

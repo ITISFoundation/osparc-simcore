@@ -44,7 +44,6 @@ def test_sort_concrete_first():
 
 
 def test_sort_exceptions_by_specificity():
-
     got_exceptions_cls = _sort_exceptions_by_specificity(
         [
             Exception,
@@ -63,7 +62,6 @@ def test_sort_exceptions_by_specificity():
 
 
 async def test__handled_exception_context_manager():
-
     expected_request = make_mocked_request("GET", "/foo")
     expected_response = web.json_response({"error": {"msg": "Foo"}})
 

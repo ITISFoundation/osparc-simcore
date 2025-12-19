@@ -54,7 +54,6 @@ LICENSE: MIT
 # deprecated feature that this library still uses
 #
 
-
 import sys
 
 if sys.version_info[:2] < (2, 7):
@@ -148,8 +147,7 @@ class Json2Html:
         if type(json_input) in text_types:
             if self.escape:
                 return html_escape(text(json_input))
-            else:
-                return text(json_input)
+            return text(json_input)
         if hasattr(json_input, "items"):
             return self.convert_object(json_input)
         if hasattr(json_input, "__iter__") and hasattr(json_input, "__getitem__"):

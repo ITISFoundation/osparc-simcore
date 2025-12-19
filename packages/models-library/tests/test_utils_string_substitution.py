@@ -157,7 +157,7 @@ KNOWN_IDENTIFIERS = {
 }
 
 
-@pytest.mark.diagnostics()
+@pytest.mark.diagnostics
 @pytest.mark.parametrize(
     "metadata_path",
     TEST_DATA_FOLDER.rglob("metadata*.json"),
@@ -172,9 +172,9 @@ def test_substitution_against_service_metadata_configs(metadata_path: Path):
 
     found = template.get_identifiers()
     if found:
-        assert all(
-            identifier in KNOWN_IDENTIFIERS for identifier in found
-        ), f"some identifiers in {found} are new and therefore potentially unsupported"
+        assert all(identifier in KNOWN_IDENTIFIERS for identifier in found), (
+            f"some identifiers in {found} are new and therefore potentially unsupported"
+        )
 
 
 def test_template_substitution_on_envfiles():

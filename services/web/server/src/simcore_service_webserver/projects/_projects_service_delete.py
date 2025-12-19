@@ -61,7 +61,6 @@ async def delete_project_as_admin(
     *,
     project_uuid: ProjectID,
 ):
-
     state: dict[str, Any] = {}
 
     try:

@@ -104,14 +104,15 @@ async def list_conversations(request: web.Request):
     if query_params.type.is_support_type() is False:
         raise_unsupported_type(query_params.type)
 
-    total, conversations = (
-        await _conversation_service.list_support_conversations_for_user(
-            app=request.app,
-            user_id=req_ctx.user_id,
-            product_name=req_ctx.product_name,
-            offset=query_params.offset,
-            limit=query_params.limit,
-        )
+    (
+        total,
+        conversations,
+    ) = await _conversation_service.list_support_conversations_for_user(
+        app=request.app,
+        user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
+        offset=query_params.offset,
+        limit=query_params.limit,
     )
 
     page = Page[ConversationRestGet].model_validate(

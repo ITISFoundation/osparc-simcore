@@ -82,9 +82,9 @@ def _return_data_or_raise_error(
         """
         body = resp.json()
 
-        assert (
-            "data" in body or "error" in body
-        ), f"here is the failing {body=}, {resp.request=}"  # nosec
+        assert "data" in body or "error" in body, (
+            f"here is the failing {body=}, {resp.request=}"
+        )  # nosec
         data = body.get("data")
         error = body.get("error")
 

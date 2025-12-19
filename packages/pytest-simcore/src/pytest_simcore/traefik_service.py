@@ -52,7 +52,8 @@ async def wait_till_traefik_responsive(api_endpoint: URL):
             data = await resp.json()
             for proxied_service in data:
                 assert "service" in proxied_service
-                if "webserver" in proxied_service["service"]:
-                    assert proxied_service["status"] == "enabled"
-                elif "api-server" in proxied_service["service"]:
+                if (
+                    "webserver" in proxied_service["service"]
+                    or "api-server" in proxied_service["service"]
+                ):
                     assert proxied_service["status"] == "enabled"

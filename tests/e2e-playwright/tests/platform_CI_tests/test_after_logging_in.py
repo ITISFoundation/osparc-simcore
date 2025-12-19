@@ -46,9 +46,9 @@ def test_all_endpoints_after_login(
 
     assert "data" in response_dict, "Expected 'data' in profile response"
     assert "login" in response_dict["data"], "Expected 'login' in profile data"
-    assert (
-        response_dict["data"]["login"] == user_name
-    ), "Logged in username does not match"
+    assert response_dict["data"]["login"] == user_name, (
+        "Logged in username does not match"
+    )
 
     # Tags
     response = next((r for r in response_collector if "/tags" in r["url"]), None)

@@ -99,7 +99,6 @@ async def _wait_for_task_result(
     task_id: str,
     timeout: float = 30.0,  # noqa: ASYNC109
 ) -> TaskResult:
-
     async for attempt in AsyncRetrying(
         stop=stop_after_delay(timeout),
         wait=wait_fixed(wait=datetime.timedelta(seconds=1.0)),
@@ -107,7 +106,6 @@ async def _wait_for_task_result(
         retry=retry_if_exception_type(AssertionError),
     ):
         with attempt:
-
             response = await client.get(f"/{API_VTAG}/tasks/{task_id}", auth=auth)
             response.raise_for_status()
             status = TaskStatus.model_validate(response.json())
@@ -120,7 +118,6 @@ async def _wait_for_task_result(
 
 
 def _register_fake_run_function_task() -> Callable[[Celery], None]:
-
     async def run_function(
         task: Task,
         task_key: TaskKey,
@@ -148,9 +145,9 @@ def _register_fake_run_function_task() -> Callable[[Celery], None]:
 
     # check our mock task is correct
     assert run_function_task.__name__ == run_function.__name__
-    assert inspect.signature(run_function_task) == inspect.signature(
-        run_function
-    ), f"Signature mismatch: {inspect.signature(run_function_task)} != {inspect.signature(run_function)}"
+    assert inspect.signature(run_function_task) == inspect.signature(run_function), (
+        f"Signature mismatch: {inspect.signature(run_function_task)} != {inspect.signature(run_function)}"
+    )
 
     def _(celery_app: Celery) -> None:
         register_pydantic_types(RegisteredProjectFunctionJob)
@@ -323,7 +320,6 @@ async def test_with_fake_run_function(
 
 
 def _register_exception_task(exception: Exception) -> Callable[[Celery], None]:
-
     async def exception_task(
         task: Task,
         task_id: TaskKey,
@@ -352,7 +348,6 @@ async def test_celery_error_propagation(
     user_identity: Identity,
     with_api_server_celery_worker: TestWorkController,
 ):
-
     owner_metadata = ApiServerOwnerMetadata(
         user_id=user_identity.user_id,
         product_name=user_identity.product_name,
@@ -407,7 +402,6 @@ async def test_run_project_function_parent_info(
     expected_status_code: int,
     capture: str,
 ) -> None:
-
     # ARRANGE
 
     # Mock the HTTP calls
@@ -666,7 +660,6 @@ async def test_map_function(
     create_respx_mock_from_capture,
     project_tests_dir: Path,
 ) -> None:
-
     # ARRANGE
     _capture = "run_study_function_parent_info.json"
 
@@ -780,9 +773,9 @@ async def test_map_function(
     # ASSERT
     assert response.status_code == status.HTTP_200_OK
     job_collection = FunctionJobCollection.model_validate(response.json())
-    assert (
-        job_collection.job_ids == _generated_function_job_ids
-    ), "Job ID did not preserve order or were incorrectly propagated"
+    assert job_collection.job_ids == _generated_function_job_ids, (
+        "Job ID did not preserve order or were incorrectly propagated"
+    )
 
     celery_task_ids = set()
     for args in patch_mock.call_args_list:

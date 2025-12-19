@@ -164,7 +164,9 @@ async def test_get_solver_job_pricing_unit(
             assert data.get("name")
             if capture_file != "get_job_pricing_unit_invalid_solver.json":
                 data["name"] = Job.compose_resource_name(
-                    parent_name=Solver.compose_resource_name(solver_key, solver_version),  # type: ignore
+                    parent_name=Solver.compose_resource_name(
+                        solver_key, solver_version
+                    ),  # type: ignore
                     job_id=job_id,
                 )
             response["data"] = data
@@ -415,7 +417,6 @@ async def test_stop_job(
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
 ):
-
     _solver_key: Final[str] = "simcore/services/comp/isolve"
     _version: Final[str] = "2.1.24"
     _job_id: Final[str] = "1eefc09b-5d08-4022-bc18-33dedbbd7d0f"

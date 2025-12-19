@@ -137,7 +137,6 @@ async def patch_registered_function_job(
     product_name: ProductName,
     function_job_patch_request: FunctionJobPatchRequest,
 ) -> RegisteredFunctionJob:
-
     result = await _function_jobs_repository.patch_function_jobs(
         app=app,
         user_id=user_id,
@@ -177,15 +176,16 @@ async def register_function_job_collection(
     product_name: ProductName,
     function_job_collection: FunctionJobCollection,
 ) -> RegisteredFunctionJobCollection:
-    registered_function_job_collection, registered_job_ids = (
-        await _function_job_collections_repository.create_function_job_collection(
-            app=app,
-            user_id=user_id,
-            product_name=product_name,
-            title=function_job_collection.title,
-            description=function_job_collection.description,
-            job_ids=function_job_collection.job_ids,
-        )
+    (
+        registered_function_job_collection,
+        registered_job_ids,
+    ) = await _function_job_collections_repository.create_function_job_collection(
+        app=app,
+        user_id=user_id,
+        product_name=product_name,
+        title=function_job_collection.title,
+        description=function_job_collection.description,
+        job_ids=function_job_collection.job_ids,
     )
     return RegisteredFunctionJobCollection(
         uid=registered_function_job_collection.uuid,
@@ -239,13 +239,14 @@ async def get_function_job_collection(
     product_name: ProductName,
     function_job_collection_id: FunctionJobID,
 ) -> RegisteredFunctionJobCollection:
-    returned_function_job_collection, returned_job_ids = (
-        await _function_job_collections_repository.get_function_job_collection(
-            app=app,
-            user_id=user_id,
-            product_name=product_name,
-            function_job_collection_id=function_job_collection_id,
-        )
+    (
+        returned_function_job_collection,
+        returned_job_ids,
+    ) = await _function_job_collections_repository.get_function_job_collection(
+        app=app,
+        user_id=user_id,
+        product_name=product_name,
+        function_job_collection_id=function_job_collection_id,
     )
     return RegisteredFunctionJobCollection(
         uid=returned_function_job_collection.uuid,
@@ -302,17 +303,18 @@ async def list_function_jobs(
     filter_by_function_job_ids: list[FunctionJobID] | None = None,
     filter_by_function_job_collection_id: FunctionJobCollectionID | None = None,
 ) -> tuple[list[RegisteredFunctionJob], PageMetaInfoLimitOffset]:
-    returned_function_jobs, page = (
-        await _function_jobs_repository.list_function_jobs_with_status(
-            app=app,
-            user_id=user_id,
-            product_name=product_name,
-            pagination_limit=pagination_limit,
-            pagination_offset=pagination_offset,
-            filter_by_function_id=filter_by_function_id,
-            filter_by_function_job_ids=filter_by_function_job_ids,
-            filter_by_function_job_collection_id=filter_by_function_job_collection_id,
-        )
+    (
+        returned_function_jobs,
+        page,
+    ) = await _function_jobs_repository.list_function_jobs_with_status(
+        app=app,
+        user_id=user_id,
+        product_name=product_name,
+        pagination_limit=pagination_limit,
+        pagination_offset=pagination_offset,
+        filter_by_function_id=filter_by_function_id,
+        filter_by_function_job_ids=filter_by_function_job_ids,
+        filter_by_function_job_collection_id=filter_by_function_job_collection_id,
     )
     return [
         _decode_functionjob(returned_function_job)
@@ -334,17 +336,18 @@ async def list_function_jobs_with_status(
     list[RegisteredFunctionJobWithStatus],
     PageMetaInfoLimitOffset,
 ]:
-    returned_function_jobs_wso, page = (
-        await _function_jobs_repository.list_function_jobs_with_status(
-            app=app,
-            user_id=user_id,
-            product_name=product_name,
-            pagination_limit=pagination_limit,
-            pagination_offset=pagination_offset,
-            filter_by_function_id=filter_by_function_id,
-            filter_by_function_job_ids=filter_by_function_job_ids,
-            filter_by_function_job_collection_id=filter_by_function_job_collection_id,
-        )
+    (
+        returned_function_jobs_wso,
+        page,
+    ) = await _function_jobs_repository.list_function_jobs_with_status(
+        app=app,
+        user_id=user_id,
+        product_name=product_name,
+        pagination_limit=pagination_limit,
+        pagination_offset=pagination_offset,
+        filter_by_function_id=filter_by_function_id,
+        filter_by_function_job_ids=filter_by_function_job_ids,
+        filter_by_function_job_collection_id=filter_by_function_job_collection_id,
     )
     return [
         _decode_functionjob_wso(returned_function_job_wso)
@@ -361,15 +364,16 @@ async def list_function_job_collections(
     pagination_offset: int,
     filters: FunctionJobCollectionsListFilters | None = None,
 ) -> tuple[list[RegisteredFunctionJobCollection], PageMetaInfoLimitOffset]:
-    returned_function_job_collections, page = (
-        await _function_job_collections_repository.list_function_job_collections(
-            app=app,
-            user_id=user_id,
-            product_name=product_name,
-            pagination_limit=pagination_limit,
-            pagination_offset=pagination_offset,
-            filters=filters,
-        )
+    (
+        returned_function_job_collections,
+        page,
+    ) = await _function_job_collections_repository.list_function_job_collections(
+        app=app,
+        user_id=user_id,
+        product_name=product_name,
+        pagination_limit=pagination_limit,
+        pagination_offset=pagination_offset,
+        filters=filters,
     )
     return [
         RegisteredFunctionJobCollection(
@@ -832,7 +836,6 @@ def _encode_function(
 def _encode_functionjob(
     functionjob: FunctionJob,
 ) -> FunctionJobDB:
-
     if functionjob.function_class == FunctionClass.PROJECT:
         class_specific_data = FunctionJobClassSpecificData(
             {

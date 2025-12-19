@@ -104,7 +104,8 @@ async def _fake_init_payment(
             initiated_at=arrow.utcnow().datetime,
         )
     return WalletPaymentInitiated(
-        payment_id=IDStr(payment_id), payment_form_url=f"{external_form_link}"  # type: ignore[arg-type]
+        payment_id=IDStr(payment_id),
+        payment_form_url=f"{external_form_link}",  # type: ignore[arg-type]
     )
 
 
@@ -186,7 +187,6 @@ async def _fake_pay_with_payment_method(  # noqa: PLR0913 pylint: disable=too-ma
     payment_method_id: PaymentMethodID,
     comment,
 ) -> PaymentTransaction:
-
     assert user_name  # nosec
     assert wallet_name  # nosec
 
@@ -217,7 +217,6 @@ async def _fake_get_payments_page(
     limit: int,
     offset: int,
 ):
-
     (
         total_number_of_items,
         transactions,

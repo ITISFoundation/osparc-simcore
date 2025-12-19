@@ -363,9 +363,9 @@ def test_ec2_instance_data_hashable(faker: Faker):
                 ram=ByteSize(faker.pyint(min_value=123)),
             ),
             {
-                TypeAdapter(AWSTagKey)
-                .validate_python("mytagkey"): TypeAdapter(AWSTagValue)
-                .validate_python("mytagvalue")
+                TypeAdapter(AWSTagKey).validate_python("mytagkey"): TypeAdapter(
+                    AWSTagValue
+                ).validate_python("mytagvalue")
             },
         )
     }
@@ -382,9 +382,9 @@ def test_ec2_instance_data_hashable(faker: Faker):
                 ram=ByteSize(faker.pyint(min_value=123)),
             ),
             {
-                TypeAdapter(AWSTagKey)
-                .validate_python("mytagkey"): TypeAdapter(AWSTagValue)
-                .validate_python("mytagvalue")
+                TypeAdapter(AWSTagKey).validate_python("mytagkey"): TypeAdapter(
+                    AWSTagValue
+                ).validate_python("mytagvalue")
             },
         )
     }

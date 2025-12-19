@@ -34,7 +34,6 @@ async def list_licensed_items_purchases(
     limit: int,
     order_by: OrderBy,
 ) -> webserver_licensed_items_purchases.LicensedItemPurchaseGetPage:
-
     # Check whether user has access to the wallet
     await get_wallet_by_user(
         app, user_id=user_id, wallet_id=wallet_id, product_name=product_name

@@ -311,7 +311,6 @@ async def test_get_study_job_outputs(
     mocked_webserver_rpc_api: dict[str, MockType],
     mock_method_in_jobs_service: Callable[[str, Any], MockType],
 ):
-
     job_status = JobStatus(
         state=job_state,
         job_id=project_id,
@@ -413,7 +412,6 @@ async def test_get_study_outputs(
     project_tests_dir: Path,
     mock_method_in_jobs_service: Callable[[str, Any], MockType],
 ):
-
     _study_id = "e9f34992-436c-11ef-a15d-0242ac14000c"
 
     job_status = JobStatus(

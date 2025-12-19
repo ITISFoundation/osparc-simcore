@@ -85,7 +85,6 @@ async def test_check_registration_invitation_and_get_email(
     mock_invitations_service_http_api: AioResponsesMock,
     fake_osparc_invitation: ApiInvitationContent,
 ):
-
     mocker.patch(
         "simcore_service_webserver.login._controller.rest.registration.get_plugin_settings",
         autospec=True,

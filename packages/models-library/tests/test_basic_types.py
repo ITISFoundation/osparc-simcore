@@ -62,7 +62,6 @@ def test_constrained_str_fails(constraint_str_type: type[str], sample: str):
 
 
 def test_string_identifier_constraint_type():
-
     # strip spaces
     assert (
         TypeAdapter(IDStr).validate_python("   123 trim spaces   ") == "123 trim spaces"

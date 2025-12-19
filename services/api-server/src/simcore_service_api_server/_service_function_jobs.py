@@ -30,6 +30,7 @@ from models_library.rest_pagination import PageMetaInfoLimitOffset, PageOffsetIn
 from models_library.rpc_pagination import PageLimitInt
 from models_library.users import UserID
 from pydantic import TypeAdapter, ValidationError
+
 from simcore_service_api_server._service_functions import FunctionService
 from simcore_service_api_server.services_rpc.storage import StorageService
 
@@ -95,7 +96,6 @@ class FunctionJobService:
     async def validate_function_inputs(  # pylint: disable=no-self-use
         self, *, function: RegisteredFunction, job_inputs: list[JobInputs]
     ) -> tuple[bool, str]:
-
         if (
             function.input_schema is None
             or function.input_schema.schema_content is None
@@ -138,7 +138,6 @@ class FunctionJobService:
         function: RegisteredFunction,
         job_input_list: list[JobInputs],
     ) -> list[PreRegisteredFunctionJobData]:
-
         if function.input_schema is not None:
             is_valid, validation_str = await self.validate_function_inputs(
                 function=function,

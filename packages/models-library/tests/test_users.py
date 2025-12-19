@@ -27,8 +27,9 @@ def test_adapter_from_model_to_schema(
         standard=[(groups[2], ar)] if with_standard_groups else [],
         everyone=(groups[0], ar),
     )
-    my_product_group = groups[3], AccessRightsDict(
-        read=False, write=False, delete=False
+    my_product_group = (
+        groups[3],
+        AccessRightsDict(read=False, write=False, delete=False),
     )
 
     my_support_group = groups[4]

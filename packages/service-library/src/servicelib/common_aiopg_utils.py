@@ -58,8 +58,11 @@ def create_pg_engine(
 
 async def is_postgres_responsive_async(dsn: DataSourceName) -> bool:
     is_responsive: bool = False
-    with log_catch(_logger, reraise=False), log_context(
-        _logger, logging.DEBUG, msg=f"checking Postgres connection at {dsn=}"
+    with (
+        log_catch(_logger, reraise=False),
+        log_context(
+            _logger, logging.DEBUG, msg=f"checking Postgres connection at {dsn=}"
+        ),
     ):
         async with create_engine(dsn):
             _logger.debug("postgres connection established")

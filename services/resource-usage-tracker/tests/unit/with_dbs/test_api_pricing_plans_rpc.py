@@ -63,7 +63,6 @@ def resource_tracker_setup_db(
     postgres_db: sa.engine.Engine,
 ) -> Iterator[None]:
     with postgres_db.connect() as con:
-
         con.execute(
             services_meta_data.insert().values(
                 key=_SERVICE_KEY,

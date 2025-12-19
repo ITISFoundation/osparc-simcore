@@ -245,7 +245,8 @@ class ProjectSearchExtraQueryParams(
 
 
 class ProjectsSearchQueryParams(
-    ProjectSearchExtraQueryParams, ProjectsListOrderParams  # type: ignore[misc, valid-type]
+    ProjectSearchExtraQueryParams,
+    ProjectsListOrderParams,  # type: ignore[misc, valid-type]
 ):
     def tag_ids_list(self) -> list[int]:
         try:

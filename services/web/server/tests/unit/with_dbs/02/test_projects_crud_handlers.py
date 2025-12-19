@@ -226,9 +226,9 @@ async def test_list_projects(
             exclude_paths="root['lastChangeDate']",
         )
 
-        assert not ProjectStateOutputSchema(
-            **project_state
-        ).share_state.locked, "Templates are not locked"
+        assert not ProjectStateOutputSchema(**project_state).share_state.locked, (
+            "Templates are not locked"
+        )
         assert ProjectPermalink.model_validate(project_permalink)
 
         # standard project
@@ -264,9 +264,9 @@ async def test_list_projects(
             exclude_paths="root['lastChangeDate']",
         )
 
-        assert not ProjectStateOutputSchema(
-            **project_state
-        ).share_state.locked, "Single user does not lock"
+        assert not ProjectStateOutputSchema(**project_state).share_state.locked, (
+            "Single user does not lock"
+        )
         assert project_permalink is None
 
     # GET /v0/projects?type=template
@@ -286,9 +286,9 @@ async def test_list_projects(
             {k: template_project[k] for k in got},
             exclude_paths="root['lastChangeDate']",
         )
-        assert not ProjectStateOutputSchema(
-            **project_state
-        ).share_state.locked, "Templates are not locked"
+        assert not ProjectStateOutputSchema(**project_state).share_state.locked, (
+            "Templates are not locked"
+        )
         assert ProjectPermalink.model_validate(project_permalink)
 
 

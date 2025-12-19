@@ -29,7 +29,6 @@ async def redis_client_sdk_lifespan(_: FastAPI, state: State) -> AsyncIterator[S
     _lifespan_name = f"{__name__}.{redis_client_sdk_lifespan.__name__}"
 
     with lifespan_context(_logger, logging.INFO, _lifespan_name, state) as called_state:
-
         # Validate input state
         try:
             redis_state = RedisLifespanState.model_validate(state)

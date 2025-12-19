@@ -52,7 +52,6 @@ async def get_licensed_item(
     version: LicensedItemVersion,
     product_name: ProductName,
 ) -> LicensedItem:
-
     return await _licensed_items_repository.get_licensed_item_by_key_version(
         app, key=key, version=version, product_name=product_name
     )

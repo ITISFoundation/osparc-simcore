@@ -53,7 +53,6 @@ _error_already_logged: set[tuple[str | None, str | None]] = set()
 async def get_services_map(
     director_client: DirectorClient,
 ) -> ServiceMetaDataPublishedDict:
-
     # NOTE: using Low-level API to avoid validation
     services_in_registry = cast(
         list[dict[str, Any]], await director_client.get("/services")
@@ -68,7 +67,7 @@ async def get_services_map(
             service_data = ServiceMetaDataPublished.model_validate(service)
             services[(service_data.key, service_data.version)] = service_data
 
-        except ValidationError:  # noqa: PERF203
+        except ValidationError:
             # NOTE: this is necessary since registry DOES NOT provides any guarantee of the meta-data
             # in the labels, i.e. it is not validated
             errored_service = (service.get("key"), service.get("version"))
@@ -113,7 +112,6 @@ async def get_batch_services(
     selection: list[tuple[ServiceKey, ServiceVersion]],
     director_client: DirectorClient,
 ) -> list[ServiceMetaDataPublished | BaseException]:
-
     batch: list[ServiceMetaDataPublished | BaseException] = await limited_gather(
         *(
             get_service(key=k, version=v, director_client=director_client)

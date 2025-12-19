@@ -20,7 +20,6 @@ from osparc_webapi import (
 
 
 def print_checkpoints(client: httpx.Client):
-
     repos: list[ProjectRepo] = list(iter_repos(client))
     project_id = repos[0].project_uuid
 

@@ -65,13 +65,13 @@ async def list_workspace_groups(request: web.Request):
     req_ctx = WorkspacesRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(WorkspacesPathParams, request)
 
-    workspaces_groups: list[WorkspaceGroupGet] = (
-        await _groups_service.list_workspace_groups_by_user_and_workspace(
-            request.app,
-            user_id=req_ctx.user_id,
-            workspace_id=path_params.workspace_id,
-            product_name=req_ctx.product_name,
-        )
+    workspaces_groups: list[
+        WorkspaceGroupGet
+    ] = await _groups_service.list_workspace_groups_by_user_and_workspace(
+        request.app,
+        user_id=req_ctx.user_id,
+        workspace_id=path_params.workspace_id,
+        product_name=req_ctx.product_name,
     )
 
     return envelope_json_response(workspaces_groups)
