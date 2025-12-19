@@ -1,6 +1,5 @@
 import asyncio
 import logging
-from collections.abc import Awaitable, Callable
 from datetime import timedelta
 from functools import cached_property
 from pathlib import Path
@@ -249,7 +248,6 @@ class RemoteControlHttpClient:
         rc_user: str,
         rc_password: str,
         *,
-        update_handler: Callable[[MountActivity], Awaitable[None]],
         update_interval: timedelta = _DEFAULT_UPDATE_INTERVAL,
         r_clone_client_timeout: timedelta = _DEFAULT_R_CLONE_CLIENT_REQUEST_TIMEOUT,
     ) -> None:
@@ -258,7 +256,6 @@ class RemoteControlHttpClient:
         self._r_clone_client_timeout = r_clone_client_timeout
         self._rc_user = rc_user
         self._rc_password = rc_password
-        self._update_handler = update_handler
 
         self._rc_host = remote_control_host
         self._rc_port = remote_control_port

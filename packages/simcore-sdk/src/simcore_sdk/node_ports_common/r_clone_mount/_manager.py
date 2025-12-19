@@ -34,12 +34,12 @@ _logger = logging.getLogger(__name__)
 _DEFAULT_MOUNT_ACTIVITY_UPDATE_INTERVAL: Final[timedelta] = timedelta(seconds=5)
 
 
-class TrackedMount:  # pylint:disable=too-many-instance-attributes
-    def __init__(  # pylint:disable=too-many-arguments
+class _TrackedMount:
+    def __init__(
         self,
         node_id: NodeID,
         r_clone_settings: RCloneSettings,
-        remote_type: MountRemoteType,
+        mount_remote_type: MountRemoteType,
         *,
         rc_port: PortInt,
         remote_path: StorageFileID,
@@ -49,49 +49,47 @@ class TrackedMount:  # pylint:disable=too-many-instance-attributes
         handler_mount_activity: MountActivityProtocol,
         mount_activity_update_interval: timedelta = _DEFAULT_MOUNT_ACTIVITY_UPDATE_INTERVAL,
     ) -> None:
-        self.node_id = node_id
-        self.r_clone_settings = r_clone_settings
-        self.mount_type = remote_type
-        self.rc_port = rc_port
         self.remote_path = remote_path
         self.local_mount_path = local_mount_path
         self.index = index
-        self.rc_user = f"{uuid4()}"
-        self.rc_password = f"{uuid4()}"
-        self.handler_get_bind_paths = handler_get_bind_paths
-        self.handler_mount_activity = handler_mount_activity
+
+        self._handler_mount_activity = handler_mount_activity
+        self._mount_activity_update_interval = mount_activity_update_interval
 
         self._last_mount_activity: MountActivity | None = None
         self._last_mount_activity_update: datetime = datetime.fromtimestamp(0, UTC)
-        self._mount_activity_update_interval = mount_activity_update_interval
         self._task_mount_activity: asyncio.Task[None] | None = None
+
+        rc_user = f"{uuid4()}"
+        rc_password = f"{uuid4()}"
 
         # used internally to handle the mount command
         self._container_manager = ContainerManager(
-            r_clone_settings=self.r_clone_settings,
-            node_id=self.node_id,
-            remote_control_port=self.rc_port,
+            r_clone_settings=r_clone_settings,
+            node_id=node_id,
+            remote_control_port=rc_port,
             local_mount_path=self.local_mount_path,
             index=self.index,
             r_clone_config_content=get_config_content(
-                self.r_clone_settings, self.mount_type
+                r_clone_settings, mount_remote_type
             ),
-            remote_path=f"{self.r_clone_settings.R_CLONE_S3.S3_BUCKET_NAME}/{self.remote_path}",
-            rc_user=self.rc_user,
-            rc_password=self.rc_password,
-            handler_get_bind_paths=self.handler_get_bind_paths,
+            remote_path=f"{r_clone_settings.R_CLONE_S3.S3_BUCKET_NAME}/{self.remote_path}",
+            rc_user=rc_user,
+            rc_password=rc_password,
+            handler_get_bind_paths=handler_get_bind_paths,
         )
 
         self._rc_http_client = RemoteControlHttpClient(
-            remote_control_port=self.rc_port,
-            mount_settings=self.r_clone_settings.R_CLONE_MOUNT_SETTINGS,
+            remote_control_port=rc_port,
+            mount_settings=r_clone_settings.R_CLONE_MOUNT_SETTINGS,
             remote_control_host=self._container_manager.r_clone_container_name,
-            rc_user=self.rc_user,
-            rc_password=self.rc_password,
-            update_handler=self._handler_mount_activity,
+            rc_user=rc_user,
+            rc_password=rc_password,
         )
 
-    async def _handler_mount_activity(self, mount_activity: MountActivity) -> None:
+    async def _update_and_notify_mount_activity(
+        self, mount_activity: MountActivity
+    ) -> None:
         now = datetime.now(UTC)
 
         enough_time_passed = (
@@ -103,12 +101,12 @@ class TrackedMount:  # pylint:disable=too-many-instance-attributes
             self._last_mount_activity = mount_activity
             self._last_mount_activity_update = now
 
-            await self.handler_mount_activity(self.local_mount_path, mount_activity)
+            await self._handler_mount_activity(self.local_mount_path, mount_activity)
 
     async def _worker_mount_activity(self) -> None:
         mount_activity = await self._rc_http_client.get_mount_activity()
         with log_catch(logger=_logger, reraise=False):
-            await self._handler_mount_activity(mount_activity)
+            await self._update_and_notify_mount_activity(mount_activity)
 
     async def start_mount(self) -> None:
         await self._container_manager.create()
@@ -149,7 +147,7 @@ class RCloneMountManager:
             msg = "R_CLONE_VERSION setting is not set"
             raise RuntimeError(msg)
 
-        self._tracked_mounts: dict[MountId, TrackedMount] = {}
+        self._tracked_mounts: dict[MountId, _TrackedMount] = {}
         self._task_ensure_mounts_working: asyncio.Task[None] | None = None
 
     async def ensure_mounted(
@@ -178,7 +176,7 @@ class RCloneMountManager:
                 None, unused_port
             )
 
-            tracked_mount = TrackedMount(
+            tracked_mount = _TrackedMount(
                 node_id,
                 self.r_clone_settings,
                 remote_type,
@@ -194,7 +192,6 @@ class RCloneMountManager:
             self._tracked_mounts[mount_id] = tracked_mount
 
     def is_mount_tracked(self, local_mount_path: Path, index: NonNegativeInt) -> bool:
-        """True if if a mount is being tracked"""
         mount_id = get_mount_id(local_mount_path, index)
         return mount_id in self._tracked_mounts
 
