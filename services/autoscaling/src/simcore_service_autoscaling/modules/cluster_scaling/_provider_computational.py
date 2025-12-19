@@ -105,6 +105,15 @@ class ComputationalAutoscalingProvider:
         assert app  # nosec
         return cast(InstanceTypeType | None, utils.get_task_instance_restriction(task))
 
+    async def get_task_instance_required_docker_tags(
+        self, app: FastAPI, task
+    ) -> dict[DockerLabelKey, str]:
+        assert self  # nosec
+        assert app  # nosec
+        assert task  # nosec
+        # NOTE: currently no such constraints are defined for dask tasks
+        return {}
+
     async def compute_node_used_resources(
         self, app: FastAPI, instance: AssociatedInstance
     ) -> Resources:

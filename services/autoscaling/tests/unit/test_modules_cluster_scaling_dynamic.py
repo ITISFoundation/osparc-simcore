@@ -869,7 +869,7 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
     )
     assert created_instances == instances
 
-    # we artifically set the node to drain
+    # we artificially set the node to drain
     if not with_drain_nodes_labelled:
         fake_attached_node.spec.availability = Availability.drain
     fake_attached_node.spec.labels[_OSPARC_SERVICE_READY_LABEL_KEY] = "false"
@@ -1019,7 +1019,7 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
                 expected_instance_type="t2.xlarge",
                 expected_num_instances=1,
             ),
-            id="Explicitely ask for t2.xlarge",
+            id="Explicitly ask for t2.xlarge",
         ),
         pytest.param(
             _ScaleUpParams(
@@ -1031,7 +1031,7 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
                 expected_instance_type="r5n.8xlarge",
                 expected_num_instances=1,
             ),
-            id="Explicitely ask for r5n.8xlarge",
+            id="Explicitly ask for r5n.8xlarge",
         ),
     ],
 )
@@ -1475,7 +1475,7 @@ async def test_cluster_adapts_machines_on_the_fly(  # noqa: PLR0915
 
     # this will initiate termination now
     with mock.patch(
-        "simcore_service_autoscaling.modules.cluster_scaling._auto_scaling_core.utils_docker.get_node_last_readyness_update",
+        "simcore_service_autoscaling.modules.cluster_scaling._auto_scaling_core.utils_docker.get_node_last_readiness_update",
         autospec=True,
         return_value=arrow.utcnow().datetime
         - 1.5

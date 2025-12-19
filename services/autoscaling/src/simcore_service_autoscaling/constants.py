@@ -1,4 +1,3 @@
-import re
 from pathlib import Path
 from typing import Final
 
@@ -40,6 +39,3 @@ DEACTIVATED_BUFFER_MACHINE_EC2_TAGS: Final[EC2Tags] = {
 ACTIVATED_BUFFER_MACHINE_EC2_TAGS: Final[EC2Tags] = {
     BUFFER_MACHINE_TAG_KEY: TypeAdapter(AWSTagValue).validate_python("false")
 }
-PRE_PULLED_IMAGES_RE: Final[re.Pattern] = re.compile(
-    rf"{PRE_PULLED_IMAGES_EC2_TAG_KEY}_(\((\d+)\)|\d+)"
-)

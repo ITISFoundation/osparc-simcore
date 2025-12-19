@@ -4,14 +4,26 @@ from enum import Enum
 from pathlib import Path
 from typing import Annotated
 
-from models_library.basic_types import BootModeEnum, PortInt
-from models_library.docker import DockerLabelKey, DockerPlacementConstraint
+from common_library.basic_types import DEFAULT_FACTORY, BootModeEnum
+from models_library.docker import (
+    OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS,
+    DockerLabelKey,
+    DockerPlacementConstraint,
+)
 from models_library.utils.common_validators import (
     ensure_unique_dict_values_validator,
     ensure_unique_list_values_validator,
 )
-from pydantic import AliasChoices, Field, PositiveInt, ValidationInfo, field_validator
+from pydantic import (
+    AliasChoices,
+    Field,
+    Json,
+    PositiveInt,
+    ValidationInfo,
+    field_validator,
+)
 from settings_library.base import BaseCustomSettings
+from settings_library.basic_types import PortInt
 from settings_library.efs import AwsEfsSettings
 from settings_library.r_clone import RCloneSettings as SettingsLibraryRCloneSettings
 from settings_library.utils_logging import MixinLoggingSettings
@@ -32,18 +44,18 @@ class VFSCacheMode(str, Enum):
 
 
 class RCloneSettings(SettingsLibraryRCloneSettings):
-    R_CLONE_DIR_CACHE_TIME_SECONDS: PositiveInt = Field(
-        10,
-        description="time to cache directory entries for",
-    )
-    R_CLONE_POLL_INTERVAL_SECONDS: PositiveInt = Field(
-        9,
-        description="time to wait between polling for changes",
-    )
-    R_CLONE_VFS_CACHE_MODE: VFSCacheMode = Field(
-        VFSCacheMode.MINIMAL,  # SEE https://rclone.org/commands/rclone_mount/#vfs-file-caching
-        description="VFS operation mode, defines how and when the disk cache is synced",
-    )
+    R_CLONE_DIR_CACHE_TIME_SECONDS: Annotated[
+        PositiveInt, Field(description="time to cache directory entries for")
+    ] = 10
+    R_CLONE_POLL_INTERVAL_SECONDS: Annotated[
+        PositiveInt, Field(description="time to wait between polling for changes")
+    ] = 9
+    R_CLONE_VFS_CACHE_MODE: Annotated[
+        VFSCacheMode,
+        Field(
+            description="VFS operation mode, defines how and when the disk cache is synced"
+        ),
+    ] = VFSCacheMode.MINIMAL
 
     @field_validator("R_CLONE_POLL_INTERVAL_SECONDS")
     @classmethod
@@ -56,26 +68,32 @@ class RCloneSettings(SettingsLibraryRCloneSettings):
 
 
 class PlacementSettings(BaseCustomSettings):
-    # This is just a service placement constraint, see
-    # https://docs.docker.com/engine/swarm/services/#control-service-placement.
-    DIRECTOR_V2_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS: list[
-        DockerPlacementConstraint
-    ] = Field(
-        default_factory=list,
-        examples=['["node.labels.region==east", "one!=yes"]'],
-    )
-
-    DIRECTOR_V2_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS: dict[
-        str, DockerPlacementConstraint
-    ] = Field(
-        default_factory=dict,
-        description=(
-            "Use placement constraints in place of generic resources, for details "
-            "see https://github.com/ITISFoundation/osparc-simcore/issues/5250 "
-            "When `None` (default), uses generic resources"
+    DIRECTOR_V2_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS: Annotated[
+        list[DockerPlacementConstraint],
+        Field(
+            default_factory=list, examples=['["node.labels.region==east", "one!=yes"]']
         ),
-        examples=['{"AIRAM": "node.labels.custom==true"}'],
-    )
+    ] = DEFAULT_FACTORY
+
+    DIRECTOR_V2_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS: Annotated[
+        dict[str, DockerPlacementConstraint],
+        Field(
+            default_factory=dict,
+            description="Use placement constraints in place of generic resources, for details see https://github.com/ITISFoundation/osparc-simcore/issues/5250 When `None` (default), uses generic resources",
+            examples=['{"AIRAM": "node.labels.custom==true"}'],
+        ),
+    ] = DEFAULT_FACTORY
+
+    DIRECTOR_V2_DYNAMIC_SIDECAR_OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS: Annotated[
+        Json[dict[DockerPlacementConstraint, str]],
+        Field(
+            default_factory=lambda: "{}",
+            description="Dynamic sidecar custom placement labels for flexible node targeting. Keys must be from: "
+            + ", ".join(OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS)
+            + ". Values are template strings supporting: {user_id}, {project_id}, {product_name}, {node_id}, {group_id}, {wallet_id}. Missing template values cause the label to be skipped.",
+            examples=['{{"product-name": "platform", "user-id": "user_{user_id}"}}'],
+        ),
+    ] = DEFAULT_FACTORY
 
     _unique_custom_constraints = field_validator(
         "DIRECTOR_V2_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS",
@@ -84,6 +102,25 @@ class PlacementSettings(BaseCustomSettings):
     _unique_resource_placement_constraints_substitutions = field_validator(
         "DIRECTOR_V2_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS",
     )(ensure_unique_dict_values_validator)
+
+    @field_validator(
+        "DIRECTOR_V2_DYNAMIC_SIDECAR_OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS"
+    )
+    @classmethod
+    def validate_osparc_custom_docker_placement_constraints_keys(
+        cls, value: dict[str, str]
+    ) -> dict[str, str]:
+        """Validate that all keys are in the allowed set."""
+        invalid_keys = set(value.keys()) - set(
+            OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS
+        )
+        if invalid_keys:
+            msg = (
+                f"Invalid custom placement label keys: {invalid_keys}. "
+                f"Allowed keys: {set(OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS)}"
+            )
+            raise ValueError(msg)
+        return value
 
     @field_validator("DIRECTOR_V2_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS")
     @classmethod
@@ -99,53 +136,54 @@ class PlacementSettings(BaseCustomSettings):
 
 
 class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
-    DYNAMIC_SIDECAR_ENDPOINT_SPECS_MODE_DNSRR_ENABLED: bool = (
-        Field(  # doc: https://docs.docker.com/engine/swarm/networking/#configure-service-discovery
-            default=False,
+    DYNAMIC_SIDECAR_ENDPOINT_SPECS_MODE_DNSRR_ENABLED: Annotated[
+        bool,
+        Field(
             validation_alias=AliasChoices(
                 "DYNAMIC_SIDECAR_ENDPOINT_SPECS_MODE_DNSRR_ENABLED"
             ),
             description="dynamic-sidecar's service 'endpoint_spec' with {'Mode': 'dnsrr'}",
-        )
-    )
+        ),
+    ] = False
     DYNAMIC_SIDECAR_SC_BOOT_MODE: Annotated[
         BootModeEnum,
         Field(
-            ...,
-            description="Boot mode used for the dynamic-sidecar services"
-            "By defaults, it uses the same boot mode set for the director-v2",
+            description="Boot mode used for the dynamic-sidecar services By defaults, it uses the same boot mode set for the director-v2",
             validation_alias=AliasChoices(
                 "DYNAMIC_SIDECAR_SC_BOOT_MODE", "SC_BOOT_MODE"
             ),
         ),
     ]
 
-    DYNAMIC_SIDECAR_LOG_LEVEL: str = Field(
-        "WARNING",
-        description="log level of the dynamic sidecar"
-        "If defined, it captures global env vars LOG_LEVEL and LOGLEVEL from the director-v2 service",
-        validation_alias=AliasChoices(
-            "DYNAMIC_SIDECAR_LOG_LEVEL", "LOG_LEVEL", "LOGLEVEL"
+    DYNAMIC_SIDECAR_LOG_LEVEL: Annotated[
+        str,
+        Field(
+            description="log level of the dynamic sidecar If defined, it captures global env vars LOG_LEVEL and LOGLEVEL from the director-v2 service",
+            validation_alias=AliasChoices(
+                "DYNAMIC_SIDECAR_LOG_LEVEL", "LOG_LEVEL", "LOGLEVEL"
+            ),
         ),
-    )
+    ] = "WARNING"
 
-    DYNAMIC_SIDECAR_IMAGE: str = Field(
-        ...,
-        pattern=DYNAMIC_SIDECAR_DOCKER_IMAGE_RE,
-        description="used by the director to start a specific version of the dynamic-sidecar",
-    )
+    DYNAMIC_SIDECAR_IMAGE: Annotated[
+        str,
+        Field(
+            pattern=DYNAMIC_SIDECAR_DOCKER_IMAGE_RE,
+            description="used by the director to start a specific version of the dynamic-sidecar",
+        ),
+    ]
 
-    DYNAMIC_SIDECAR_R_CLONE_SETTINGS: RCloneSettings = Field(
-        json_schema_extra={"auto_default_from_env": True}
-    )
+    DYNAMIC_SIDECAR_R_CLONE_SETTINGS: Annotated[
+        RCloneSettings, Field(json_schema_extra={"auto_default_from_env": True})
+    ]
 
-    DYNAMIC_SIDECAR_EFS_SETTINGS: AwsEfsSettings | None = Field(
-        json_schema_extra={"auto_default_from_env": True}
-    )
+    DYNAMIC_SIDECAR_EFS_SETTINGS: Annotated[
+        AwsEfsSettings | None, Field(json_schema_extra={"auto_default_from_env": True})
+    ] = None
 
-    DYNAMIC_SIDECAR_PLACEMENT_SETTINGS: PlacementSettings = Field(
-        json_schema_extra={"auto_default_from_env": True}
-    )
+    DYNAMIC_SIDECAR_PLACEMENT_SETTINGS: Annotated[
+        PlacementSettings, Field(json_schema_extra={"auto_default_from_env": True})
+    ]
 
     DYNAMIC_SIDECAR_CUSTOM_LABELS: Annotated[
         dict[DockerLabelKey, str],
@@ -154,30 +192,30 @@ class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
             description="Custom labels to add to the dynamic-sidecar service",
             examples=[{"label_key": "label_value"}],
         ),
-    ]
+    ] = DEFAULT_FACTORY
 
-    #
-    # DEVELOPMENT ONLY config
-    #
+    DYNAMIC_SIDECAR_MOUNT_PATH_DEV: Annotated[
+        Path | None,
+        Field(
+            description="Host path to the dynamic-sidecar project. Used as source path to mount to the dynamic-sidecar [DEVELOPMENT ONLY]",
+            examples=["osparc-simcore/services/dynamic-sidecar"],
+        ),
+    ] = None
 
-    DYNAMIC_SIDECAR_MOUNT_PATH_DEV: Path | None = Field(
-        None,
-        description="Host path to the dynamic-sidecar project. Used as source path to mount to the dynamic-sidecar [DEVELOPMENT ONLY]",
-        examples=["osparc-simcore/services/dynamic-sidecar"],
-    )
+    DYNAMIC_SIDECAR_PORT: Annotated[
+        PortInt,
+        Field(
+            description="port on which the webserver for the dynamic-sidecar is exposed [DEVELOPMENT ONLY]"
+        ),
+    ] = DEFAULT_FASTAPI_PORT
 
-    DYNAMIC_SIDECAR_PORT: PortInt = Field(
-        DEFAULT_FASTAPI_PORT,
-        description="port on which the webserver for the dynamic-sidecar is exposed [DEVELOPMENT ONLY]",
-    )
-
-    DYNAMIC_SIDECAR_EXPOSE_PORT: bool = Field(
-        default=False,
-        description="Publishes the service on localhost for debuging and testing [DEVELOPMENT ONLY]"
-        "Can be used to access swagger doc from the host as http://127.0.0.1:30023/dev/doc "
-        "where 30023 is the host published port",
-        validate_default=True,
-    )
+    DYNAMIC_SIDECAR_EXPOSE_PORT: Annotated[
+        bool,
+        Field(
+            description="Publishes the service on localhost for debugging and testing [DEVELOPMENT ONLY] Can be used to access swagger doc from the host as http://127.0.0.1:30023/dev/doc where 30023 is the host published port",
+            validate_default=True,
+        ),
+    ] = False
 
     @field_validator("DYNAMIC_SIDECAR_MOUNT_PATH_DEV", mode="before")
     @classmethod
