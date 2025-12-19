@@ -373,16 +373,6 @@ async def get_task_osparc_custom_docker_placement_constraints(
     return custom_labels
 
 
-def get_node_osparc_custom_labels(node: Node) -> dict[DockerLabelKey, str]:
-    """Extracts the osparc custom labels from a docker node"""
-    assert node.spec  # nosec
-    custom_labels: dict[DockerLabelKey, str] = {}
-    for label_key in OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS:
-        if node.spec.labels and label_key in node.spec.labels:
-            custom_labels[label_key] = node.spec.labels[label_key]
-    return custom_labels
-
-
 async def get_task_instance_restriction(
     docker_client: AutoscalingDocker, task: Task
 ) -> InstanceTypeType | None:
