@@ -578,6 +578,7 @@ class BaseCompScheduler(ABC):
         self,
         *,
         user_id: UserID,
+        product_name: ProductName,
         project_id: ProjectID,
         scheduled_tasks: dict[NodeID, CompTaskAtDB],
         comp_run: CompRunsAtDB,
