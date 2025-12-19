@@ -191,33 +191,13 @@ async def _analyze_current_cluster(
             )
             for i in pending_ec2s
         ],
-        broken_ec2s=[
-            NonAssociatedInstance(
-                ec2_instance=i,
-                _osparc_custom_node_labels=utils_ec2.load_task_required_docker_node_labels_from_tags(
-                    i.tags
-                ),
-            )
-            for i in broken_ec2s
-        ],
+        broken_ec2s=[NonAssociatedInstance(ec2_instance=i) for i in broken_ec2s],
         warm_buffer_ec2s=[
-            NonAssociatedInstance(
-                ec2_instance=i,
-                _osparc_custom_node_labels=utils_ec2.load_task_required_docker_node_labels_from_tags(
-                    i.tags
-                ),
-            )
-            for i in warm_buffer_ec2_instances
+            NonAssociatedInstance(ec2_instance=i) for i in warm_buffer_ec2_instances
         ],
         terminating_nodes=terminating_nodes,
         terminated_instances=[
-            NonAssociatedInstance(
-                ec2_instance=i,
-                _osparc_custom_node_labels=utils_ec2.load_task_required_docker_node_labels_from_tags(
-                    i.tags
-                ),
-            )
-            for i in terminated_ec2_instances
+            NonAssociatedInstance(ec2_instance=i) for i in terminated_ec2_instances
         ],
         disconnected_nodes=[
             n for n in docker_nodes if not utils_docker.is_node_ready(n)
