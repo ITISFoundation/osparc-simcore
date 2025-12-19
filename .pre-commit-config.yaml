@@ -4,6 +4,14 @@ fail_fast: false
 default_language_version:
   python: python3.13
 repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.13.0
+    hooks:
+      - id: ruff-check
+        args:
+          - --fix
+      - id: ruff-format
+        files: ^((homeassistant|pylint|script|tests)/.+)?[^/]+\.(py|pyi)$
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
