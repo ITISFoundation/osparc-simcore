@@ -8,6 +8,7 @@ from typing import Final
 from aiodocker import Docker
 from aiodocker.exceptions import DockerError
 from aiodocker.networks import DockerNetwork
+from aiodocker.types import JSONObject
 from models_library.basic_types import PortInt
 from pydantic import ByteSize, NonNegativeInt
 
@@ -34,6 +35,40 @@ async def get_or_crate_docker_session(docker: Docker | None) -> AsyncIterator[Do
         yield client
 
 
+async def _get_config(
+    command: str,
+    r_clone_version: str,
+    rc_port: PortInt,
+    r_clone_network_name: str,
+    local_mount_path: Path,
+    memory_limit: ByteSize,
+    nano_cpus: NonNegativeInt,
+    handler_get_bind_paths: GetBindPathsProtocol,
+) -> JSONObject:
+    return {
+        "Image": f"rclone/rclone:{r_clone_version}",
+        "Entrypoint": ["/bin/sh", "-c", f"{command}"],
+        "ExposedPorts": {f"{rc_port}/tcp": {}},
+        "HostConfig": {
+            "NetworkMode": r_clone_network_name,
+            "Binds": [],
+            "Mounts": await handler_get_bind_paths(local_mount_path),
+            "Devices": [
+                {
+                    "PathOnHost": "/dev/fuse",
+                    "PathInContainer": "/dev/fuse",
+                    "CgroupPermissions": "rwm",
+                }
+            ],
+            "CapAdd": ["SYS_ADMIN"],
+            "SecurityOpt": ["apparmor:unconfined", "seccomp:unconfined"],
+            "Memory": memory_limit,
+            "MemorySwap": memory_limit,
+            "NanoCpus": nano_cpus,
+        },
+    }
+
+
 async def create_r_clone_container(
     docker: Docker | None,
     container_name: str,
@@ -50,28 +85,16 @@ async def create_r_clone_container(
     async with get_or_crate_docker_session(docker) as client:
         # create rclone container attached to the network
         r_clone_container = await client.containers.run(
-            config={
-                "Image": f"rclone/rclone:{r_clone_version}",
-                "Entrypoint": ["/bin/sh", "-c", f"{command}"],
-                "ExposedPorts": {f"{rc_port}/tcp": {}},
-                "HostConfig": {
-                    "NetworkMode": r_clone_network_name,
-                    "Binds": [],
-                    "Mounts": await handler_get_bind_paths(local_mount_path),
-                    "Devices": [
-                        {
-                            "PathOnHost": "/dev/fuse",
-                            "PathInContainer": "/dev/fuse",
-                            "CgroupPermissions": "rwm",
-                        }
-                    ],
-                    "CapAdd": ["SYS_ADMIN"],
-                    "SecurityOpt": ["apparmor:unconfined", "seccomp:unconfined"],
-                    "Memory": memory_limit,
-                    "MemorySwap": memory_limit,
-                    "NanoCpus": nano_cpus,
-                },
-            },
+            config=await _get_config(
+                command,
+                r_clone_version,
+                rc_port,
+                r_clone_network_name,
+                local_mount_path,
+                memory_limit,
+                nano_cpus,
+                handler_get_bind_paths,
+            ),
             name=container_name,
         )
         container_inspect = await r_clone_container.show()

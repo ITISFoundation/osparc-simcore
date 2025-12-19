@@ -255,8 +255,13 @@ class RemoteControlHttpClient:
         self._update_interval_seconds = update_interval.total_seconds()
         self._r_clone_client_timeout = r_clone_client_timeout
 
-        self._base_url = f"http://{rc_host}:{rc_port}"
+        self.rc_host = rc_host
+        self.rc_port = rc_port
         self._auth = (rc_user, rc_password)
+
+    @property
+    def _base_url(self) -> float:
+        return f"http://{self.rc_host}:{self.rc_port}"
 
     async def _request(self, method: str, path: str) -> Any:
         request_url = f"{self._base_url}/{path}"
@@ -307,7 +312,7 @@ class RemoteControlHttpClient:
         before_sleep=before_sleep_log(_logger, logging.WARNING),
     )
     async def wait_for_interface_to_be_ready(self) -> None:
-        await self._rc_noop()
+        await self._post_vfs_queue()
 
     async def is_responsive(self) -> bool:
         try:

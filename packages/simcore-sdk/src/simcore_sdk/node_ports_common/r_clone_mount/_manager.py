@@ -187,9 +187,8 @@ class RCloneMountManager:
                 handler_get_bind_paths=handler_get_bind_paths,
                 handler_mount_activity=handler_mount_activity,
             )
-            await tracked_mount.start_mount()
-
             self._tracked_mounts[mount_id] = tracked_mount
+            await tracked_mount.start_mount()
 
     def is_mount_tracked(self, local_mount_path: Path, index: NonNegativeInt) -> bool:
         mount_id = get_mount_id(local_mount_path, index)
@@ -202,7 +201,7 @@ class RCloneMountManager:
             _logger, logging.INFO, f"unmounting {local_mount_path=}", log_duration=True
         ):
             mount_id = get_mount_id(local_mount_path, index)
-            tracked_mount = self._tracked_mounts[mount_id]
+            tracked_mount = self._tracked_mounts.pop(mount_id)
 
             await tracked_mount.wait_for_all_transfers_to_complete()
 
