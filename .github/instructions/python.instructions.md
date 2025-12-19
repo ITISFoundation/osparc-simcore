@@ -56,7 +56,7 @@ async def process_users(
 ### Code Style & Formatting
 
 * Follow [Python Coding Conventions](../../docs/coding-conventions.md) **strictly**.
-* Format code with `black` and `ruff`.
+* Format code with `ruff`.
 * Lint code with `ruff` and `pylint`.
 
 ### Library Compatibility

@@ -72,7 +72,7 @@ def test_it(something: Something, create_something: Callable[..., Something]):
 In short we use the following naming convention ( roughly  [PEP8](https://peps.python.org/pep-0008/) ):
 
 |          | example                                       |
-| -------- | --------------------------------------------- |
+|----------|-----------------------------------------------|
 | Function | `function`, `my_fun­ction`                    |
 | Variable | `x`, `var`, `my_variable`                     |
 | Class    | `Model`, `MyClass`                            |
@@ -94,7 +94,7 @@ In short we use the following naming convention ( roughly  [PEP8](https://peps.p
 
 ### For the rest ... (tools)
 
-- [black] will enforce the style: Just use it.
+- [ruff] will enforce the style: Just use it.
 - [pylint] will check the some extra conventions: see [.pylintrc](../.pylintrc).
   - ``make pylint`` recipe available on ``packages`` or ``services``
 - [mypy] is a type-checker that will check syntax : see [mypy.ini](../mypy.ini)
@@ -131,7 +131,6 @@ Have a look at `ESLint`'s configuration files [.eslintrc.json](.eslintrc.json) a
 
 <!-- Keep the space below here for a SORTED list of references -->
 
-[black]:https://black.readthedocs.io/en/stable/index.html
 [mypy-doc]:https://mypy.readthedocs.io/en/latest/
 [mypy]:https://www.mypy-lang.org/
 [pep257]:https://peps.python.org/pep-0257/
