@@ -6,9 +6,11 @@ from pydantic import BaseModel
 
 type MountId = str
 
+type Transferring = dict[str, ProgressReport]
+
 
 class MountActivity(BaseModel):
-    transferring: dict[str, ProgressReport]
+    transferring: Transferring
     queued: list[str]
 
 

@@ -2,6 +2,7 @@ import functools
 import logging
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Final
 
@@ -19,7 +20,7 @@ from servicelib.long_running_tasks.task import TaskProtocol, TaskRegistry
 from servicelib.progress_bar import ProgressBarData
 from servicelib.utils import logged_gather
 from simcore_sdk.node_data import data_manager
-from simcore_sdk.node_ports_common.r_clone_mount import MountActivity
+from simcore_sdk.node_ports_common.r_clone_mount import MountActivity, Transferring
 from tenacity import retry
 from tenacity.before_sleep import before_sleep_log
 from tenacity.retry import retry_if_result
@@ -399,14 +400,19 @@ async def _handler_get_bind_path(
     return bind_paths
 
 
+@dataclass
+class MountActivitySummary:
+    path: Path
+    queued: int
+    transferring: Transferring
+
+
 async def _handler_mount_activity(state_path: Path, activity: MountActivity) -> None:
     # TODO: this object should be pushed to the FE in the future
-    activity_summary = {
-        "path": state_path,
-        "queued": len(activity.queued),
-        "transferring": activity.transferring,
-    }
-    _logger.info("activity_summary=%s", activity_summary)
+    summary = MountActivitySummary(
+        path=state_path, queued=len(activity.queued), transferring=activity.transferring
+    )
+    _logger.info("Mount activity %s", summary)
 
 
 async def _restore_state_folder(

@@ -6,6 +6,7 @@ from ._models import (
     MountActivity,
     MountActivityProtocol,
     RequestShutdownProtocol,
+    Transferring,
 )
 
 __all__: tuple[str, ...] = (
@@ -16,4 +17,5 @@ __all__: tuple[str, ...] = (
     "MountRemoteType",
     "RCloneMountManager",
     "RequestShutdownProtocol",
+    "Transferring",
 )
