@@ -50,9 +50,6 @@ def associate_ec2_instances_with_nodes(
                 AssociatedInstance(
                     node=node,
                     ec2_instance=instance_data,
-                    osparc_custom_node_labels=utils_docker.get_node_osparc_custom_labels(
-                        node
-                    ),
                 )
             )
         else:

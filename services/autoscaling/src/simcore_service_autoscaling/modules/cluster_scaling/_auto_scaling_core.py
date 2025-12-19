@@ -185,7 +185,7 @@ async def _analyze_current_cluster(
         pending_ec2s=[
             NonAssociatedInstance(
                 ec2_instance=i,
-                osparc_custom_node_labels=utils_ec2.load_task_required_docker_node_labels_from_tags(
+                _osparc_custom_node_labels=utils_ec2.load_task_required_docker_node_labels_from_tags(
                     i.tags
                 ),
             )
@@ -194,7 +194,7 @@ async def _analyze_current_cluster(
         broken_ec2s=[
             NonAssociatedInstance(
                 ec2_instance=i,
-                osparc_custom_node_labels=utils_ec2.load_task_required_docker_node_labels_from_tags(
+                _osparc_custom_node_labels=utils_ec2.load_task_required_docker_node_labels_from_tags(
                     i.tags
                 ),
             )
@@ -203,7 +203,7 @@ async def _analyze_current_cluster(
         warm_buffer_ec2s=[
             NonAssociatedInstance(
                 ec2_instance=i,
-                osparc_custom_node_labels=utils_ec2.load_task_required_docker_node_labels_from_tags(
+                _osparc_custom_node_labels=utils_ec2.load_task_required_docker_node_labels_from_tags(
                     i.tags
                 ),
             )
@@ -213,7 +213,7 @@ async def _analyze_current_cluster(
         terminated_instances=[
             NonAssociatedInstance(
                 ec2_instance=i,
-                osparc_custom_node_labels=utils_ec2.load_task_required_docker_node_labels_from_tags(
+                _osparc_custom_node_labels=utils_ec2.load_task_required_docker_node_labels_from_tags(
                     i.tags
                 ),
             )
@@ -377,7 +377,6 @@ async def _try_attach_pending_ec2s(
                     AssociatedInstance(
                         node=new_node,
                         ec2_instance=instance_data.ec2_instance,
-                        osparc_custom_node_labels=instance_data.osparc_custom_node_labels,
                     )
                 )
                 _logger.info(
@@ -683,7 +682,7 @@ async def _try_start_warm_buffer_instances(
             + [
                 NonAssociatedInstance(
                     ec2_instance=i,
-                    osparc_custom_node_labels=utils_ec2.load_task_required_docker_node_labels_from_tags(
+                    _osparc_custom_node_labels=utils_ec2.load_task_required_docker_node_labels_from_tags(
                         i.tags
                     ),
                 )
@@ -1145,9 +1144,6 @@ async def _deactivate_empty_nodes(app: FastAPI, cluster: Cluster) -> Cluster:
         AssociatedInstance(
             node=node,
             ec2_instance=instance.ec2_instance,
-            osparc_custom_node_labels=utils_docker.get_node_osparc_custom_labels(
-                instance.node
-            ),
         )
         for instance, node in zip(active_empty_instances, updated_nodes, strict=True)
     ]
@@ -1267,10 +1263,7 @@ async def _try_scale_down_cluster(app: FastAPI, cluster: Cluster) -> Cluster:
         terminating_nodes=still_terminating_nodes + new_terminating_instances,
         terminated_instances=cluster.terminated_instances
         + [
-            NonAssociatedInstance(
-                ec2_instance=i.ec2_instance,
-                osparc_custom_node_labels=i.osparc_custom_node_labels,
-            )
+            NonAssociatedInstance(ec2_instance=i.ec2_instance)
             for i in instances_to_terminate
         ],
     )
@@ -1352,9 +1345,6 @@ async def _drain_retired_nodes(
         AssociatedInstance(
             node=node,
             ec2_instance=instance.ec2_instance,
-            osparc_custom_node_labels=utils_docker.get_node_osparc_custom_labels(
-                instance.node
-            ),
         )
         for instance, node in zip(cluster.retired_nodes, updated_nodes, strict=True)
     ]
@@ -1432,7 +1422,7 @@ async def _scale_up_cluster(
             [
                 NonAssociatedInstance(
                     ec2_instance=i,
-                    osparc_custom_node_labels=utils_ec2.load_task_required_docker_node_labels_from_tags(
+                    _osparc_custom_node_labels=utils_ec2.load_task_required_docker_node_labels_from_tags(
                         i.tags
                     ),
                 )
