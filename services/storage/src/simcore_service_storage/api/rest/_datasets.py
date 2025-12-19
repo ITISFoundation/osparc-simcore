@@ -10,7 +10,7 @@ from models_library.generics import Envelope
 from models_library.projects_nodes_io import LocationID
 
 from ...dsm import get_dsm_provider
-from ...models import FilesMetadataDatasetQueryParams, StorageQueryParamsBase
+from ...models import DatasetsMetadataQueryParams, FilesMetadataDatasetQueryParams
 
 _logger = logging.getLogger(__name__)
 
@@ -26,12 +26,12 @@ router = APIRouter(
     response_model=Envelope[list[DatasetMetaDataGet]],
 )
 async def list_datasets_metadata(
-    query_params: Annotated[StorageQueryParamsBase, Depends()],
+    query_params: Annotated[DatasetsMetadataQueryParams, Depends()],
     location_id: LocationID,
     request: Request,
 ) -> Envelope[list[DatasetMetaDataGet]]:
     dsm = get_dsm_provider(request.app).get(location_id)
-    data = await dsm.list_datasets(query_params.user_id)
+    data = await dsm.list_datasets(query_params.user_id, query_params.product_name)
     return Envelope[list[DatasetMetaDataGet]](
         data=[DatasetMetaDataGet(**d.model_dump()) for d in data]
     )
@@ -50,6 +50,7 @@ async def list_dataset_files_metadata(
     dsm = get_dsm_provider(request.app).get(location_id)
     data = await dsm.list_files_in_dataset(
         user_id=query_params.user_id,
+        product_name=query_params.product_name,
         dataset_id=dataset_id,
         expand_dirs=query_params.expand_dirs,
     )

@@ -9,6 +9,7 @@ from models_library.api_schemas_storage.storage_schemas import (
     PathTotalSizeCreate,
 )
 from models_library.generics import Envelope
+from models_library.products import ProductName
 from models_library.users import UserID
 from servicelib.fastapi.rest_pagination import (
     CustomizedPathsCursorPage,
@@ -16,7 +17,7 @@ from servicelib.fastapi.rest_pagination import (
 )
 
 from ...dsm_factory import BaseDataManager
-from .dependencies.dsm_prodiver import get_data_manager
+from .dependencies.dsm_provider import get_data_manager
 
 _logger = logging.getLogger(__name__)
 
@@ -35,11 +36,13 @@ async def list_paths(
     page_params: Annotated[CustomizedPathsCursorPageParams, Depends()],
     dsm: Annotated[BaseDataManager, Depends(get_data_manager)],
     user_id: UserID,
+    product_name: ProductName,
     file_filter: Path | None = None,
 ):
     """Returns one level of files (paginated)"""
     items, next_cursor, total_number = await dsm.list_paths(
-        user_id=user_id,
+        user_id,
+        product_name=product_name,
         file_filter=file_filter,
         limit=page_params.size,
         cursor=page_params.to_raw_params().cursor,
@@ -59,10 +62,12 @@ async def list_paths(
 async def compute_path_size(
     dsm: Annotated[BaseDataManager, Depends(get_data_manager)],
     user_id: UserID,
+    product_name: ProductName,
     path: Path,
 ):
     return Envelope[PathTotalSizeCreate](
         data=PathTotalSizeCreate(
-            path=path, size=await dsm.compute_path_size(user_id, path=path)
+            path=path,
+            size=await dsm.compute_path_size(user_id, product_name, path=path),
         )
     )

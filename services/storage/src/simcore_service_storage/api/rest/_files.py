@@ -71,7 +71,8 @@ async def list_files_metadata(
 ):
     dsm = get_dsm_provider(request.app).get(location_id)
     data: list[FileMetaData] = await dsm.list_files(
-        user_id=query_params.user_id,
+        query_params.user_id,
+        query_params.product_name,
         expand_dirs=query_params.expand_dirs,
         uuid_filter=query_params.uuid_filter
         or f"{query_params.project_id or ''}",  # NOTE: https://github.com/ITISFoundation/osparc-issues/issues/1593
@@ -114,7 +115,7 @@ async def get_file_metadata(
         )
 
     if user_agent == "OpenAPI-Generator/0.1.0/python":
-        # NOTE: LEGACY compatiblity with API v0.1.0
+        # NOTE: LEGACY compatibility with API v0.1.0
         # SEE models used in sdk in:
         # https://github.com/ITISFoundation/osparc-simcore/blob/cfdf4f86d844ebb362f4f39e9c6571d561b72897/services/storage/client-sdk/python/simcore_service_storage_sdk/models/file_meta_data_enveloped.py#L34
         # https://github.com/ITISFoundation/osparc-simcore/blob/cfdf4f86d844ebb362f4f39e9c6571d561b72897/services/storage/client-sdk/python/simcore_service_storage_sdk/models/file_meta_data_type.py#L34
