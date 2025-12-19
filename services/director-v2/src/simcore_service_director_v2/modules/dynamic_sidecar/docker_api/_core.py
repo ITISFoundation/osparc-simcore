@@ -1,5 +1,6 @@
 import logging
 import re
+import time
 from collections.abc import Awaitable, Callable, Mapping
 from typing import Any, Final
 
@@ -24,7 +25,7 @@ from tenacity import TryAgain, retry
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
-from tenacity.wait import wait_exponential, wait_random_exponential
+from tenacity.wait import wait_exponential, wait_fixed
 
 from ....constants import DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL
 from ....core.dynamic_services_settings.scheduler import (
@@ -189,6 +190,9 @@ _TASK_STATE_TO_PROGRESS_MAPPING: Final[dict[str, float]] = (
     | dict.fromkeys(TASK_STATES_FAILED, 1.0)
 )
 
+_MAX_TIME_FOR_STARTING_STATE_S: Final[float] = 15.0
+_MAX_PROGRESS_IN_STARTING_STATE: Final[float] = 0.19
+
 
 async def get_dynamic_sidecar_placement(
     service_id: str,
@@ -203,15 +207,14 @@ async def get_dynamic_sidecar_placement(
     is in `running` state.
     """
 
-    # NOTE: `wait_random_exponential` is key for reducing pressure on docker swarm
-    # The idea behind it is to avoid having concurrent retrying calls
-    # when the system is having issues to respond. If the system
-    # is failing clients are retrying at the same time,
-    # it makes harder to recover.
-    # Ideally you'd like to distribute the retries uniformly in time.
-    # For more details see `wait_random_exponential` documentation.
+    # Track when "starting" state begins for progress interpolation
+    # Using a dict to avoid nonlocal and make state sharing explicit
+    state: dict[str, float | None] = {"starting_state_start_time": None}
+
+    # NOTE: Fixed 1-second retry interval provides smooth progress updates
+    # during the "starting" phase while maintaining reasonable API call frequency
     @retry(
-        wait=wait_random_exponential(multiplier=2, min=1, max=20),
+        wait=wait_fixed(1),
         stop=stop_after_delay(
             dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_STARTUP_TIMEOUT_S
         ),
@@ -223,12 +226,25 @@ async def get_dynamic_sidecar_placement(
         """
         task = await _get_service_latest_task(service_id)
         service_state = task["Status"]["State"]
-        if progress_update:
-            # estimate progress based on task state
 
-            await progress_update(
-                _TASK_STATE_TO_PROGRESS_MAPPING.get(service_state, 0.0)
-            )
+        if progress_update:
+            # Get base progress from task state mapping
+            base_progress = _TASK_STATE_TO_PROGRESS_MAPPING.get(service_state, 0.0)
+
+            # Interpolate progress during "starting" state (0.8 -> 0.99 over 15 seconds)
+            if service_state == "starting":
+                if state["starting_state_start_time"] is None:
+                    state["starting_state_start_time"] = time.time()
+
+                elapsed_seconds = time.time() - state["starting_state_start_time"]
+                # Interpolate from 0.8 to 0.99 over 15 seconds, cap at 0.99
+                interpolated_progress = base_progress + (
+                    _MAX_PROGRESS_IN_STARTING_STATE
+                    * min(elapsed_seconds / _MAX_TIME_FOR_STARTING_STATE_S, 1.0)
+                )
+                await progress_update(interpolated_progress)
+            else:
+                await progress_update(base_progress)
 
         if service_state not in TASK_STATES_RUNNING:
             raise TryAgain
