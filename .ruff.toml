@@ -1,5 +1,5 @@
 
-line-length = 150
+line-length = 120
 lint.select = [
   "A",     # [https://pypi.org/project/flake8-builtins/]
   "ARG",   # [https://pypi.org/project/flake8-unused-arguments/]
