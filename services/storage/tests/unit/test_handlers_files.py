@@ -64,7 +64,7 @@ from tenacity.wait import wait_fixed
 from types_aiobotocore_s3 import S3Client
 from yarl import URL
 
-pytest_simcore_core_services_selection = ["postgres"]
+pytest_simcore_core_services_selection = ["postgres", "rabbit"]
 pytest_simcore_ops_services_selection = ["adminer"]
 
 
@@ -1332,6 +1332,7 @@ async def test_ensure_expand_dirs_defaults_true(
     mocker: MockerFixture,
     client: httpx.AsyncClient,
     user_id: UserID,
+    product_name: ProductName,
     location_id: LocationID,
 ):
     mocked_object = mocker.patch(
@@ -1344,7 +1345,7 @@ async def test_ensure_expand_dirs_defaults_true(
         initialized_app,
         "list_files_metadata",
         location_id=f"{location_id}",
-    ).with_query(user_id=user_id)
+    ).with_query(user_id=user_id, product_name=product_name)
     await client.get(f"{get_url}")
 
     assert len(mocked_object.call_args_list) == 1
@@ -1567,6 +1568,7 @@ async def test_listing_with_project_id_filter(
     client: httpx.AsyncClient,
     location_id: LocationID,
     user_id: UserID,
+    product_name: ProductName,
     faker: Faker,
     random_project_with_files: Callable[
         [ProjectWithFilesParams],
@@ -1588,6 +1590,7 @@ async def test_listing_with_project_id_filter(
 
     query = {
         "user_id": user_id,
+        "product_name": f"{product_name}",
         "project_id": f"{project_id}",
         "uuid_filter": project_file_name if uuid_filter else None,
     }
