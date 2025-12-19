@@ -401,7 +401,12 @@ async def _handler_get_bind_path(
 
 async def _handler_mount_activity(state_path: Path, activity: MountActivity) -> None:
     # in the future this should go to the fornted
-    _logger.info("Mount activity for '%s': %s", state_path, activity)
+    _logger.info(
+        "Mount activity for '%s': [queued=%s] %s",
+        state_path,
+        len(activity.queued),
+        activity.transferring,
+    )
 
 
 async def _restore_state_folder(
