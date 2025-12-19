@@ -698,9 +698,22 @@ def _try_assign_task_to_ec2_instance(
                 )
 
             else:
-                node_labels = utils_ec2.load_task_required_docker_node_labels_from_tags(
-                    instance.ec2_instance.tags
-                )
+                try:
+                    node_labels = (
+                        utils_ec2.load_task_required_docker_node_labels_from_tags(
+                            instance.ec2_instance.tags
+                        )
+                    )
+                except Ec2TagDeserializationError as err:
+                    _logger.exception(
+                        **create_troubleshooting_log_kwargs(
+                            f"could not deserialize custom placement labels from EC2 tags for {instance.ec2_instance.id}, instance will not be used for task {task}",
+                            error=err,
+                            tip="Check the invalid syntax of the custom placement labels EC2 tag",
+                        )
+                    )
+                    continue
+
             # Verify that all required labels match
             if any(
                 node_labels.get(label_key) != label_value
