@@ -236,6 +236,7 @@ async def get_dynamic_sidecar_placement(
                 if state["starting_state_start_time"] is None:
                     state["starting_state_start_time"] = time.time()
 
+                assert state["starting_state_start_time"] is not None  # nosec
                 elapsed_seconds = time.time() - state["starting_state_start_time"]
                 # Interpolate from 0.8 to 0.99 over 15 seconds, cap at 0.99
                 interpolated_progress = base_progress + (
