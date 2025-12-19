@@ -40,7 +40,7 @@ async def create_r_clone_container(
     *,
     command: str,
     r_clone_version: str,
-    remote_control_port: PortInt,
+    rc_port: PortInt,
     r_clone_network_name: str,
     local_mount_path: Path,
     memory_limit: ByteSize,
@@ -53,7 +53,7 @@ async def create_r_clone_container(
             config={
                 "Image": f"rclone/rclone:{r_clone_version}",
                 "Entrypoint": ["/bin/sh", "-c", f"{command}"],
-                "ExposedPorts": {f"{remote_control_port}/tcp": {}},
+                "ExposedPorts": {f"{rc_port}/tcp": {}},
                 "HostConfig": {
                     "NetworkMode": r_clone_network_name,
                     "Binds": [],

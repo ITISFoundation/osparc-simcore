@@ -77,7 +77,7 @@ def _get_rclone_mount_command(
     r_clone_config_content: str,
     remote_path: StorageFileID,
     local_mount_path: Path,
-    remote_control_port: PortInt,
+    rc_port: PortInt,
     rc_user: str,
     rc_password: str,
 ) -> str:
@@ -138,7 +138,7 @@ def _get_rclone_mount_command(
             mount_settings.R_CLONE_MOUNT_ORDER_BY,
             # REMOTE CONTROL
             "--rc",
-            f"--rc-addr=0.0.0.0:{remote_control_port}",
+            f"--rc-addr=0.0.0.0:{rc_port}",
             "--rc-enable-metrics",
             f"--rc-user='{rc_user}'",
             f"--rc-pass='{rc_password}'",
@@ -159,7 +159,7 @@ class ContainerManager:  # pylint:disable=too-many-instance-attributes
         self,
         r_clone_settings: RCloneSettings,
         node_id: NodeID,
-        remote_control_port: PortInt,
+        rc_port: PortInt,
         local_mount_path: Path,
         index: NonNegativeInt,
         r_clone_config_content: str,
@@ -171,7 +171,7 @@ class ContainerManager:  # pylint:disable=too-many-instance-attributes
     ) -> None:
         self.r_clone_settings = r_clone_settings
         self.node_id = node_id
-        self.remote_control_port = remote_control_port
+        self.rc_port = rc_port
         self.local_mount_path = local_mount_path
         self.index = index
         self.r_clone_config_content = r_clone_config_content
@@ -216,12 +216,12 @@ class ContainerManager:  # pylint:disable=too-many-instance-attributes
                     r_clone_config_content=self.r_clone_config_content,
                     remote_path=self.remote_path,
                     local_mount_path=self.local_mount_path,
-                    remote_control_port=self.remote_control_port,
+                    rc_port=self.rc_port,
                     rc_user=self.rc_user,
                     rc_password=self.rc_password,
                 ),
                 r_clone_version=self.r_clone_settings.R_CLONE_VERSION,
-                remote_control_port=self.remote_control_port,
+                rc_port=self.rc_port,
                 r_clone_network_name=self._r_clone_network_name,
                 local_mount_path=self.local_mount_path,
                 memory_limit=mount_settings.R_CLONE_MOUNT_CONTAINER_MEMORY_LIMIT,
@@ -242,27 +242,21 @@ class ContainerManager:  # pylint:disable=too-many-instance-attributes
 class RemoteControlHttpClient:
     def __init__(
         self,
-        remote_control_port: PortInt,
-        mount_settings: RCloneMountSettings,
-        remote_control_host: str,
+        rc_host: str,
+        rc_port: PortInt,
         rc_user: str,
         rc_password: str,
         *,
+        transfers_completed_timeout: timedelta,
         update_interval: timedelta = _DEFAULT_UPDATE_INTERVAL,
         r_clone_client_timeout: timedelta = _DEFAULT_R_CLONE_CLIENT_REQUEST_TIMEOUT,
     ) -> None:
-        self.mount_settings = mount_settings
+        self.transfers_completed_timeout = transfers_completed_timeout
         self._update_interval_seconds = update_interval.total_seconds()
         self._r_clone_client_timeout = r_clone_client_timeout
-        self._rc_user = rc_user
-        self._rc_password = rc_password
 
-        self._rc_host = remote_control_host
-        self._rc_port = remote_control_port
-
-    @property
-    def _base_url(self) -> str:
-        return f"http://{self._rc_host}:{self._rc_port}"
+        self._base_url = f"http://{rc_host}:{rc_port}"
+        self._auth = (rc_user, rc_password)
 
     async def _request(self, method: str, path: str) -> Any:
         request_url = f"{self._base_url}/{path}"
@@ -271,9 +265,7 @@ class RemoteControlHttpClient:
         async with AsyncClient(
             timeout=self._r_clone_client_timeout.total_seconds()
         ) as client:
-            response = await client.request(
-                method, request_url, auth=(self._rc_user, self._rc_password)
-            )
+            response = await client.request(method, request_url, auth=self._auth)
             response.raise_for_status()
             return response.json()
 
@@ -332,9 +324,7 @@ class RemoteControlHttpClient:
 
         @retry(
             wait=wait_fixed(1),
-            stop=stop_after_delay(
-                self.mount_settings.R_CLONE_MOUNT_TRANSFERS_COMPLETED_TIMEOUT.total_seconds()
-            ),
+            stop=stop_after_delay(self.transfers_completed_timeout.total_seconds()),
             reraise=True,
             retry=retry_if_exception_type(
                 (WaitingForQueueToBeEmptyError, WaitingForTransfersToCompleteError)

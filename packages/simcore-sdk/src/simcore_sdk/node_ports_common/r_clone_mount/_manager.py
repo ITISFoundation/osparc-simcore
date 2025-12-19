@@ -34,8 +34,8 @@ _logger = logging.getLogger(__name__)
 _DEFAULT_MOUNT_ACTIVITY_UPDATE_INTERVAL: Final[timedelta] = timedelta(seconds=5)
 
 
-class _TrackedMount:
-    def __init__(
+class _TrackedMount:  # pylint:disable=too-many-instance-attributes
+    def __init__(  # pylint:disable=too-many-arguments
         self,
         node_id: NodeID,
         r_clone_settings: RCloneSettings,
@@ -67,7 +67,7 @@ class _TrackedMount:
         self._container_manager = ContainerManager(
             r_clone_settings=r_clone_settings,
             node_id=node_id,
-            remote_control_port=rc_port,
+            rc_port=rc_port,
             local_mount_path=self.local_mount_path,
             index=self.index,
             r_clone_config_content=get_config_content(
@@ -80,11 +80,11 @@ class _TrackedMount:
         )
 
         self._rc_http_client = RemoteControlHttpClient(
-            remote_control_port=rc_port,
-            mount_settings=r_clone_settings.R_CLONE_MOUNT_SETTINGS,
-            remote_control_host=self._container_manager.r_clone_container_name,
+            rc_port=rc_port,
+            rc_host=self._container_manager.r_clone_container_name,
             rc_user=rc_user,
             rc_password=rc_password,
+            transfers_completed_timeout=r_clone_settings.R_CLONE_MOUNT_SETTINGS.R_CLONE_MOUNT_TRANSFERS_COMPLETED_TIMEOUT,
         )
 
     async def _update_and_notify_mount_activity(
