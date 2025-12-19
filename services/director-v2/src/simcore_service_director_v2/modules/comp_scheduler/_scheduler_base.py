@@ -23,6 +23,7 @@ import arrow
 import networkx as nx
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from common_library.user_messages import user_message
+from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, NodeIDStr
 from models_library.projects_state import RunningState
@@ -516,6 +517,7 @@ class BaseCompScheduler(ABC):
     async def _update_states_from_comp_backend(
         self,
         user_id: UserID,
+        product_name: ProductName,
         project_id: ProjectID,
         iteration: Iteration,
         pipeline_dag: nx.DiGraph,
@@ -559,6 +561,7 @@ class BaseCompScheduler(ABC):
         if sorted_tasks.completed or sorted_tasks.potentially_lost:
             await self._process_completed_tasks(
                 user_id,
+                product_name,
                 sorted_tasks.completed + sorted_tasks.potentially_lost,
                 iteration,
                 comp_run=comp_run,
@@ -598,6 +601,7 @@ class BaseCompScheduler(ABC):
     async def _process_completed_tasks(
         self,
         user_id: UserID,
+        product_name: ProductName,
         tasks: list[TaskStateTracker],
         iteration: Iteration,
         comp_run: CompRunsAtDB,
@@ -621,6 +625,7 @@ class BaseCompScheduler(ABC):
         self,
         *,
         user_id: UserID,
+        product_name: ProductName,
         project_id: ProjectID,
         iteration: Iteration,
     ) -> None:
@@ -640,7 +645,7 @@ class BaseCompScheduler(ABC):
 
                 # 1. Update our list of tasks with data from backend (state, results)
                 await self._update_states_from_comp_backend(
-                    user_id, project_id, iteration, dag, comp_run
+                    user_id, product_name, project_id, iteration, dag, comp_run
                 )
                 # 1.1. get the updated tasks NOTE: we need to get them again as some states might have changed
                 comp_tasks = await self._get_pipeline_tasks(project_id, dag)

@@ -14,6 +14,7 @@ from dask_task_models_library.container_tasks.events import (
 from dask_task_models_library.container_tasks.io import TaskOutputData
 from models_library.clusters import BaseCluster
 from models_library.errors import ErrorDict
+from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
@@ -125,6 +126,7 @@ class DaskScheduler(BaseCompScheduler):
         self,
         *,
         user_id: UserID,
+        product_name: ProductName,
         project_id: ProjectID,
         scheduled_tasks: dict[NodeID, CompTaskAtDB],
         comp_run: CompRunsAtDB,
@@ -152,6 +154,7 @@ class DaskScheduler(BaseCompScheduler):
             for node_id, task in scheduled_tasks.items():
                 published_tasks = await client.send_computation_tasks(
                     user_id=user_id,
+                    product_name=product_name,
                     project_id=project_id,
                     tasks={node_id: task.image},
                     hardware_info=task.hardware_info,
@@ -295,6 +298,7 @@ class DaskScheduler(BaseCompScheduler):
     async def _process_completed_tasks(
         self,
         user_id: UserID,
+        product_name: ProductName,
         tasks: list[TaskStateTracker],
         iteration: Iteration,
         comp_run: CompRunsAtDB,
@@ -323,6 +327,7 @@ class DaskScheduler(BaseCompScheduler):
                         result,
                         iteration,
                         comp_run,
+                        product_name,
                     )
                     for task, result in zip(tasks, tasks_results, strict=True)
                 ),
@@ -503,6 +508,7 @@ class DaskScheduler(BaseCompScheduler):
         result: BaseException | TaskOutputData,
         iteration: Iteration,
         comp_run: CompRunsAtDB,
+        product_name: ProductName,
     ) -> tuple[bool, str | None]:
         """Returns True and the job ID if the task was successfully processed and can be released from the Dask cluster."""
         with log_context(
@@ -557,6 +563,7 @@ class DaskScheduler(BaseCompScheduler):
                 await clean_task_output_and_log_files_if_invalid(
                     self.db_engine,
                     comp_run.user_id,
+                    product_name,
                     comp_run.project_uuid,
                     task.current.node_id,
                 )
