@@ -34,7 +34,7 @@ To enable GitHub Actions on your forked repository:
 
 ### Code styles and conventions
 
-Current setup: [ESLint](https://eslint.org) for `JavaScript` and [Black](https://black.readthedocs.io/en/stable/) + [Pylint](https://www.pylint.org) for `Python`. Have a look in the project root for individual configuration files.
+Current setup: [ESLint](https://eslint.org) for `JavaScript` and [Ruff](https://docs.astral.sh/ruff/) + [Pylint](https://www.pylint.org) for `Python`. Have a look in the project root for individual configuration files.
 
 Read more at [Coding Conventions and Linters](docs/coding-conventions.md).
 
