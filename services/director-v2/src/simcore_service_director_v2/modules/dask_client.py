@@ -49,6 +49,7 @@ from dask_task_models_library.resource_constraints import (
 )
 from fastapi import FastAPI
 from models_library.clusters import ClusterAuthentication, ClusterTypeInModel
+from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
@@ -263,6 +264,7 @@ class DaskClient:
         self,
         *,
         user_id: UserID,
+        product_name: ProductName,
         project_id: ProjectID,
         tasks: dict[NodeID, Image],
         callback: _UserCallbackInSepThread,
@@ -279,7 +281,7 @@ class DaskClient:
           - ComputationalSchedulerChangedError when expected scheduler changed
           - ComputationalBackendNotConnectedError when scheduler is not connected/running
           - MissingComputationalResourcesError (only for internal cluster)
-          - InsuficientComputationalResourcesError (only for internal cluster)
+          - InsufficientComputationalResourcesError (only for internal cluster)
           - TaskSchedulingError when any other error happens
         """
 
@@ -348,6 +350,7 @@ class DaskClient:
                 )
                 output_data_keys = await dask_utils.compute_output_data_schema(
                     user_id=user_id,
+                    product_name=product_name,
                     project_id=project_id,
                     node_id=node_id,
                     node_ports=node_ports,
@@ -355,6 +358,7 @@ class DaskClient:
                 )
                 log_file_url = await dask_utils.compute_service_log_file_upload_link(
                     user_id,
+                    product_name,
                     project_id,
                     node_id,
                     file_link_type=self.tasks_file_link_type,
