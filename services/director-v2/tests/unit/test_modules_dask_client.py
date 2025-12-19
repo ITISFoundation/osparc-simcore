@@ -41,6 +41,7 @@ from faker import Faker
 from fastapi.applications import FastAPI
 from models_library.api_schemas_directorv2.services import NodeRequirements
 from models_library.clusters import ClusterTypeInModel, NoAuthentication
+from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
@@ -58,7 +59,7 @@ from simcore_service_director_v2.core.errors import (
     ComputationalBackendNotConnectedError,
     ComputationalBackendTaskNotFoundError,
     ComputationalSchedulerChangedError,
-    InsuficientComputationalResourcesError,
+    InsufficientComputationalResourcesError,
     MissingComputationalResourcesError,
 )
 from simcore_service_director_v2.models.comp_runs import RunMetadataDict
@@ -214,7 +215,7 @@ async def dask_client(
         result = await future
         assert result == -285
     except AttributeError:
-        # enforces existance of 'app.state.engine' and sets to None
+        # enforces existence of 'app.state.engine' and sets to None
         client.app.state.engine = None
 
     return client
@@ -480,7 +481,7 @@ async def test_send_computation_task(
 
         return TaskOutputData.model_validate({"some_output_key": 123})
 
-    # NOTE: We pass another fct so it can run in our localy created dask cluster
+    # NOTE: We pass another fct so it can run in our locally created dask cluster
     # NOTE2: since there is only 1 task here, it's ok to pass the nodeID
     node_params = image_params.fake_tasks[node_id]
     assert node_params.node_requirements is not None
@@ -564,6 +565,7 @@ async def test_send_computation_task(
 async def test_computation_task_is_persisted_on_dask_scheduler(
     dask_client: DaskClient,
     user_id: UserID,
+    product_name: ProductName,
     project_id: ProjectID,
     image_params: ImageParams,
     _mocked_node_ports: None,
@@ -578,7 +580,7 @@ async def test_computation_task_is_persisted_on_dask_scheduler(
     If the dask future goes out of scope, then the task is forgotten by the dask backend. So if
     for some reason the client gets deleted, or the director-v2, then all the futures would
     be deleted, thus stopping all the computations.
-    To aleviate this, it is possible to persist the futures directly in the dask-scheduler.
+    To alleviate this, it is possible to persist the futures directly in the dask-scheduler.
 
     When submitting a computation task, the future corresponding to that task is "published" on the scheduler.
     """
@@ -598,9 +600,10 @@ async def test_computation_task_is_persisted_on_dask_scheduler(
 
         return TaskOutputData.model_validate({"some_output_key": 123})
 
-    # NOTE: We pass another fct so it can run in our localy created dask cluster
+    # NOTE: We pass another fct so it can run in our locally created dask cluster
     published_computation_task = await dask_client.send_computation_tasks(
         user_id=user_id,
+        product_name=product_name,
         project_id=project_id,
         tasks=image_params.fake_tasks,
         callback=mocked_user_completed_cb,
@@ -657,6 +660,7 @@ async def test_computation_task_is_persisted_on_dask_scheduler(
 async def test_abort_computation_tasks(
     dask_client: DaskClient,
     user_id: UserID,
+    product_name: ProductName,
     project_id: ProjectID,
     image_params: ImageParams,
     _mocked_node_ports: None,
@@ -698,6 +702,7 @@ async def test_abort_computation_tasks(
 
     published_computation_task = await dask_client.send_computation_tasks(
         user_id=user_id,
+        product_name=product_name,
         project_id=project_id,
         tasks=image_params.fake_tasks,
         callback=mocked_user_completed_cb,
@@ -754,6 +759,7 @@ async def test_abort_computation_tasks(
 async def test_failed_task_returns_exceptions(
     dask_client: DaskClient,
     user_id: UserID,
+    product_name: ProductName,
     project_id: ProjectID,
     gpu_image: ImageParams,
     _mocked_node_ports: None,
@@ -776,6 +782,7 @@ async def test_failed_task_returns_exceptions(
 
     published_computation_task = await dask_client.send_computation_tasks(
         user_id=user_id,
+        product_name=product_name,
         project_id=project_id,
         tasks=gpu_image.fake_tasks,
         callback=mocked_user_completed_cb,
@@ -818,6 +825,7 @@ async def test_send_computation_task_with_missing_resources_raises(
     dask_spec_local_cluster: SpecCluster,
     dask_client: DaskClient,
     user_id: UserID,
+    product_name: ProductName,
     project_id: ProjectID,
     image_params: ImageParams,
     _mocked_node_ports: None,
@@ -846,6 +854,7 @@ async def test_send_computation_task_with_missing_resources_raises(
     with pytest.raises(MissingComputationalResourcesError):
         await dask_client.send_computation_tasks(
             user_id=user_id,
+            product_name=product_name,
             project_id=project_id,
             tasks=image_params.fake_tasks,
             callback=mocked_user_completed_cb,
@@ -864,6 +873,7 @@ async def test_send_computation_task_with_hardware_info_raises(
     dask_spec_local_cluster: SpecCluster,
     dask_client: DaskClient,
     user_id: UserID,
+    product_name: ProductName,
     project_id: ProjectID,
     image_params: ImageParams,
     _mocked_node_ports: None,
@@ -877,6 +887,7 @@ async def test_send_computation_task_with_hardware_info_raises(
     with pytest.raises(MissingComputationalResourcesError):
         await dask_client.send_computation_tasks(
             user_id=user_id,
+            product_name=product_name,
             project_id=project_id,
             tasks=image_params.fake_tasks,
             callback=mocked_user_completed_cb,
@@ -894,6 +905,7 @@ async def test_send_computation_task_with_hardware_info_raises(
 async def test_too_many_resources_send_computation_task(
     dask_client: DaskClient,
     user_id: UserID,
+    product_name: ProductName,
     project_id: ProjectID,
     node_id: NodeID,
     _mocked_node_ports: None,
@@ -916,9 +928,10 @@ async def test_too_many_resources_send_computation_task(
     fake_task = {node_id: image}
 
     # let's have a big number of CPUs
-    with pytest.raises(InsuficientComputationalResourcesError):
+    with pytest.raises(InsufficientComputationalResourcesError):
         await dask_client.send_computation_tasks(
             user_id=user_id,
+            product_name=product_name,
             project_id=project_id,
             tasks=fake_task,
             callback=mocked_user_completed_cb,
@@ -935,6 +948,7 @@ async def test_disconnected_backend_raises_exception(
     dask_spec_local_cluster: SpecCluster,
     dask_client: DaskClient,
     user_id: UserID,
+    product_name: ProductName,
     project_id: ProjectID,
     cpu_image: ImageParams,
     _mocked_node_ports: None,
@@ -949,6 +963,7 @@ async def test_disconnected_backend_raises_exception(
     with pytest.raises(ComputationalBackendNotConnectedError):
         await dask_client.send_computation_tasks(
             user_id=user_id,
+            product_name=product_name,
             project_id=project_id,
             tasks=cpu_image.fake_tasks,
             callback=mocked_user_completed_cb,
@@ -967,6 +982,7 @@ async def test_changed_scheduler_raises_exception(
     dask_spec_local_cluster: SpecCluster,
     dask_client: DaskClient,
     user_id: UserID,
+    product_name: ProductName,
     project_id: ProjectID,
     cpu_image: ImageParams,
     _mocked_node_ports: None,
@@ -999,6 +1015,7 @@ async def test_changed_scheduler_raises_exception(
         with pytest.raises(ComputationalSchedulerChangedError):
             await dask_client.send_computation_tasks(
                 user_id=user_id,
+                product_name=product_name,
                 project_id=project_id,
                 tasks=cpu_image.fake_tasks,
                 callback=mocked_user_completed_cb,
@@ -1014,6 +1031,7 @@ async def test_changed_scheduler_raises_exception(
 async def test_get_tasks_status(
     dask_client: DaskClient,
     user_id: UserID,
+    product_name: ProductName,
     project_id: ProjectID,
     cpu_image: ImageParams,
     _mocked_node_ports: None,
@@ -1045,6 +1063,7 @@ async def test_get_tasks_status(
 
     published_computation_task = await dask_client.send_computation_tasks(
         user_id=user_id,
+        product_name=product_name,
         project_id=project_id,
         tasks=cpu_image.fake_tasks,
         callback=mocked_user_completed_cb,
@@ -1067,7 +1086,7 @@ async def test_get_tasks_status(
     # let the remote fct run through now
     start_event = Event(_DASK_EVENT_NAME, dask_client.backend.client)
     await start_event.set()  # type: ignore
-    # it will become successful hopefuly
+    # it will become successful hopefully
     await _assert_wait_for_task_status(
         published_computation_task[0].job_id,
         dask_client,
@@ -1096,6 +1115,7 @@ async def fake_task_handlers(mocker: MockerFixture) -> TaskHandlers:
 async def test_dask_sub_handlers(
     dask_client: DaskClient,
     user_id: UserID,
+    product_name: ProductName,
     project_id: ProjectID,
     cpu_image: ImageParams,
     _mocked_node_ports: None,
@@ -1125,6 +1145,7 @@ async def test_dask_sub_handlers(
     # run the computation
     published_computation_task = await dask_client.send_computation_tasks(
         user_id=user_id,
+        product_name=product_name,
         project_id=project_id,
         tasks=cpu_image.fake_tasks,
         callback=mocked_user_completed_cb,
