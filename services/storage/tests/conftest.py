@@ -1068,11 +1068,6 @@ async def storage_rabbitmq_rpc_client(
 
 
 @pytest.fixture
-def product_name(faker: Faker) -> str:
-    return faker.name()
-
-
-@pytest.fixture
 def set_log_levels_for_noisy_libraries() -> None:
     # Reduce the log level for 'werkzeug'
     logging.getLogger("werkzeug").setLevel(logging.WARNING)
