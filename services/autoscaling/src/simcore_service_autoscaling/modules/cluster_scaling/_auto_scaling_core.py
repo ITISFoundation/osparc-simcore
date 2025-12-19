@@ -331,7 +331,7 @@ async def _try_attach_pending_ec2s(
                 # Load custom placement labels from EC2 tags if any
                 try:
                     custom_labels_dict = (
-                        utils_ec2.load_custom_placement_labels_from_tags(
+                        utils_ec2.load_task_required_docker_node_labels_from_tags(
                             instance_data.ec2_instance.tags
                         )
                     )
@@ -379,7 +379,7 @@ async def _try_attach_pending_ec2s(
 
     # Remove custom label EC2 tags after successful attachment
     if ec2_instances_to_remove_custom_label_tags and (
-        tag_keys := utils_ec2.list_custom_placement_label_tag_keys(
+        tag_keys := utils_ec2.list_task_required_node_labels_tag_keys(
             ec2_instances_to_remove_custom_label_tags[0].tags
         )
     ):
@@ -698,7 +698,7 @@ def _try_assign_task_to_ec2_instance(
                 )
 
             else:
-                node_labels = utils_ec2.load_custom_placement_labels_from_tags(
+                node_labels = utils_ec2.load_task_required_docker_node_labels_from_tags(
                     instance.ec2_instance.tags
                 )
             # Verify that all required labels match
@@ -991,7 +991,7 @@ async def _launch_instances(
                     tags=(
                         base_tags
                         | (
-                            utils_ec2.dump_custom_placement_labels_as_tags(
+                            utils_ec2.dump_task_required_node_labels_as_tags(
                                 instance_batch.node_labels
                             )
                             if instance_batch.node_labels
