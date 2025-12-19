@@ -7,7 +7,6 @@
 </p>
 
 <!-- BADGES: LINKS ON CLICK --------------------------------------------------------------->
-[![black_badge]](https://github.com/psf/black)
 [![ci_badge]](https://github.com/ITISFoundation/osparc-simcore/actions/workflows/ci-testing-deploy.yml)
 [![codecov_badge]](https://codecov.io/gh/ITISFoundation/osparc-simcore)
 [![doc_badge]](https://itisfoundation.github.io/)
@@ -18,7 +17,6 @@
 [![s4l_status]](https://s4llite.statuspage.io)
 
 <!-- BADGES: LINKS TO IMAGES. Default to https://shields.io/ ------------------------------>
-[black_badge]:https://img.shields.io/badge/code%20style-black-000000.svg
 [ci_badge]:https://github.com/ITISFoundation/osparc-simcore/actions/workflows/ci-testing-deploy.yml/badge.svg
 [codecov_badge]:https://codecov.io/gh/ITISFoundation/osparc-simcore/branch/master/graph/badge.svg?token=h1rOE8q7ic
 [doc_badge]:https://img.shields.io/website-up-down-green-red/https/itisfoundation.github.io.svg?label=documentation

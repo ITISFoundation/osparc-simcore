@@ -6,7 +6,6 @@
     "eamodio.gitlens",
     "exiasr.hadolint",
     "ms-azuretools.vscode-containers",
-    "ms-python.black-formatter",
     "ms-python.pylint",
     "ms-python.python",
     "njpwerner.autodocstring",
