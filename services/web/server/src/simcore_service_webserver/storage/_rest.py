@@ -62,6 +62,7 @@ from yarl import URL
 
 from .._meta import API_VTAG
 from ..celery import get_task_manager
+from ..constants import RQ_PRODUCT_KEY
 from ..login.decorators import login_required
 from ..models import AuthenticatedRequestContext, WebServerOwnerMetadata
 from ..rabbitmq import get_rabbitmq_rpc_client
@@ -84,7 +85,7 @@ def _get_storage_vtag(app: web.Application) -> str:
     return storage_prefix
 
 
-def _to_storage_url(request: web.Request) -> URL:
+def _to_storage_url(request: web.Request, **extra_query) -> URL:
     """Converts web-api url to storage-api url"""
     userid = request[RQT_USERID_KEY]
 
@@ -107,6 +108,7 @@ def _to_storage_url(request: web.Request) -> URL:
         url.joinpath(fastapi_encoded_suffix, encoded=True)
         .with_query({camel_to_snake(k): v for k, v in request.query.items()})
         .update_query(user_id=userid)
+        .update_query(extra_query)
     )
 
 
@@ -140,9 +142,10 @@ async def _forward_request_to_storage(
     request: web.Request,
     method: str,
     body: dict[str, Any] | None = None,
+    extra_query: dict[str, Any] | None = None,
     **kwargs,
 ) -> _ResponseTuple:
-    url = _to_storage_url(request)
+    url = _to_storage_url(request, **(extra_query or {}))
     session = get_client_session(request.app)
 
     async with session.request(
@@ -184,7 +187,9 @@ async def list_storage_locations(request: web.Request) -> web.Response:
 @login_required
 @permission_required("storage.files.*")
 async def list_paths(request: web.Request) -> web.Response:
-    payload, resp_status = await _forward_request_to_storage(request, "GET", body=None)
+    payload, resp_status = await _forward_request_to_storage(
+        request, "GET", body=None, extra_query={"product_name": request[RQ_PRODUCT_KEY]}
+    )
     return create_data_response(payload, status=resp_status)
 
 
