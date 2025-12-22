@@ -201,7 +201,7 @@ class StorageQueryParamsBase(BaseModel):
 
 
 class DatasetsMetadataQueryParams(StorageQueryParamsBase):
-    product_name: ProductName
+    product_name: ProductName = "osparc"  # NOTE: for backward compatibility
 
 
 class ListPathsQueryParams(StorageQueryParamsBase):
@@ -209,7 +209,7 @@ class ListPathsQueryParams(StorageQueryParamsBase):
 
 
 class FilesMetadataDatasetQueryParams(StorageQueryParamsBase):
-    product_name: ProductName
+    product_name: ProductName = "osparc"  # NOTE: for backward compatibility
     expand_dirs: bool = True
 
 
