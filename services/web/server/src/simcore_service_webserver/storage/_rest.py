@@ -62,6 +62,7 @@ from yarl import URL
 
 from .._meta import API_VTAG
 from ..celery import get_task_manager
+from ..constants import RQ_PRODUCT_KEY
 from ..login.decorators import login_required
 from ..models import AuthenticatedRequestContext, WebServerOwnerMetadata
 from ..rabbitmq import get_rabbitmq_rpc_client
@@ -84,7 +85,7 @@ def _get_storage_vtag(app: web.Application) -> str:
     return storage_prefix
 
 
-def _to_storage_url(request: web.Request) -> URL:
+def _to_storage_url(request: web.Request, **extra_query) -> URL:
     """Converts web-api url to storage-api url"""
     userid = request[RQT_USERID_KEY]
 
@@ -107,6 +108,7 @@ def _to_storage_url(request: web.Request) -> URL:
         url.joinpath(fastapi_encoded_suffix, encoded=True)
         .with_query({camel_to_snake(k): v for k, v in request.query.items()})
         .update_query(user_id=userid)
+        .update_query(extra_query)
     )
 
 
@@ -140,9 +142,10 @@ async def _forward_request_to_storage(
     request: web.Request,
     method: str,
     body: dict[str, Any] | None = None,
+    extra_query: dict[str, Any] | None = None,
     **kwargs,
 ) -> _ResponseTuple:
-    url = _to_storage_url(request)
+    url = _to_storage_url(request, **(extra_query or {}))
     session = get_client_session(request.app)
 
     async with session.request(
@@ -184,7 +187,9 @@ async def list_storage_locations(request: web.Request) -> web.Response:
 @login_required
 @permission_required("storage.files.*")
 async def list_paths(request: web.Request) -> web.Response:
-    payload, resp_status = await _forward_request_to_storage(request, "GET", body=None)
+    payload, resp_status = await _forward_request_to_storage(
+        request, "GET", body=None, extra_query={"product_name": request[RQ_PRODUCT_KEY]}
+    )
     return create_data_response(payload, status=resp_status)
 
 
@@ -228,6 +233,7 @@ async def compute_path_size(request: web.Request) -> web.Response:
             ).model_dump()
         ),
         user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
     )
 
     return _create_data_response_from_async_job(request, async_job)
@@ -271,7 +277,9 @@ async def list_datasets_metadata(request: web.Request) -> web.Response:
 
     parse_request_path_parameters_as(_PathParams, request)
 
-    payload, resp_status = await _forward_request_to_storage(request, "GET", body=None)
+    payload, resp_status = await _forward_request_to_storage(
+        request, "GET", body=None, extra_query={"product_name": request[RQ_PRODUCT_KEY]}
+    )
     return create_data_response(payload, status=resp_status)
 
 
@@ -293,7 +301,9 @@ async def get_files_metadata(request: web.Request) -> web.Response:
 
     parse_request_query_parameters_as(_QueryParams, request)
 
-    payload, resp_status = await _forward_request_to_storage(request, "GET", body=None)
+    payload, resp_status = await _forward_request_to_storage(
+        request, "GET", body=None, extra_query={"product_name": request[RQ_PRODUCT_KEY]}
+    )
     return create_data_response(payload, status=resp_status)
 
 
@@ -527,6 +537,7 @@ async def export_data(request: web.Request) -> web.Response:
             ).model_dump()
         ),
         user_id=_req_ctx.user_id,
+        product_name=_req_ctx.product_name,
     )
     _job_id = f"{async_job_rpc_get.job_id}"
     return create_data_response(
@@ -549,7 +560,7 @@ async def search(request: web.Request) -> web.Response:
     class _PathParams(BaseModel):
         location_id: Annotated[LocationID, AfterValidator(_allow_only_simcore)]
 
-    _req_ctx = AuthenticatedRequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     parse_request_path_parameters_as(_PathParams, request)
     search_body = await parse_request_body_as(
         model_schema_cls=SearchBodyParams, request=request
@@ -561,11 +572,12 @@ async def search(request: web.Request) -> web.Response:
         ),
         owner_metadata=OwnerMetadata.model_validate(
             WebServerOwnerMetadata(
-                user_id=_req_ctx.user_id,
-                product_name=_req_ctx.product_name,
+                user_id=req_ctx.user_id,
+                product_name=req_ctx.product_name,
             ).model_dump()
         ),
-        user_id=_req_ctx.user_id,
+        user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
         name_pattern=search_body.filters.name_pattern,
         modified_at=(
             (
@@ -578,14 +590,14 @@ async def search(request: web.Request) -> web.Response:
         project_id=search_body.filters.project_id,
     )
 
-    _task_id = f"{task_uuid}"
+    task_id = f"{task_uuid}"
     return create_data_response(
         TaskGet(
-            task_id=_task_id,
+            task_id=task_id,
             task_name=SEARCH_TASK_NAME,
-            status_href=f"{request.url.with_path(str(request.app.router['get_async_job_status'].url_for(task_id=_task_id)))}",
-            abort_href=f"{request.url.with_path(str(request.app.router['cancel_async_job'].url_for(task_id=_task_id)))}",
-            stream_href=f"{request.url.with_path(str(request.app.router['get_async_job_stream'].url_for(task_id=_task_id)))}",
+            status_href=f"{request.url.with_path(str(request.app.router['get_async_job_status'].url_for(task_id=task_id)))}",
+            abort_href=f"{request.url.with_path(str(request.app.router['cancel_async_job'].url_for(task_id=task_id)))}",
+            stream_href=f"{request.url.with_path(str(request.app.router['get_async_job_stream'].url_for(task_id=task_id)))}",
         ),
         status=status.HTTP_202_ACCEPTED,
     )

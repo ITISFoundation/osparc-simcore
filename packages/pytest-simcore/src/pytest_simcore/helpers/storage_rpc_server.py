@@ -12,6 +12,7 @@ from models_library.api_schemas_rpc_async_jobs.async_jobs import (
     AsyncJobGet,
 )
 from models_library.api_schemas_webserver.storage import PathToExport
+from models_library.products import ProductName
 from models_library.users import UserID
 from pydantic import TypeAdapter, validate_call
 from pytest_mock import MockType
@@ -29,7 +30,8 @@ class StorageSideEffects:
         paths_to_export: list[PathToExport],
         export_as: Literal["path", "download_link"],
         owner_metadata: OwnerMetadata,
-        user_id: UserID
+        user_id: UserID,
+        product_name: ProductName,
     ) -> tuple[AsyncJobGet, OwnerMetadata]:
         assert rabbitmq_rpc_client
         assert owner_metadata

@@ -3,22 +3,24 @@
 # pylint: disable=unused-variable
 
 from collections.abc import AsyncIterator, Awaitable, Callable
-from contextlib import asynccontextmanager
+from contextlib import AsyncExitStack, asynccontextmanager
 from typing import Any
 
 import pytest
 import sqlalchemy as sa
 from faker import Faker
+from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from pydantic import TypeAdapter
 from simcore_postgres_database.models.project_to_groups import project_to_groups
-from simcore_postgres_database.storage_models import projects, users
+from simcore_postgres_database.storage_models import products, projects, users
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
-from .helpers.faker_factories import DEFAULT_FAKER, random_project
+from .helpers.faker_factories import DEFAULT_FAKER, random_product, random_project
+from .helpers.postgres_tools import insert_and_get_row_lifespan
 from .helpers.postgres_users import insert_and_get_user_and_secrets_lifespan
 
 
@@ -52,30 +54,49 @@ async def other_user_id(sqlalchemy_async_engine: AsyncEngine) -> AsyncIterator[U
 
 
 @pytest.fixture
-async def create_project(
-    user_id: UserID, sqlalchemy_async_engine: AsyncEngine
-) -> AsyncIterator[Callable[..., Awaitable[dict[str, Any]]]]:
-    created_project_uuids = []
+async def create_product(
+    sqlalchemy_async_engine: AsyncEngine,
+) -> AsyncIterator[Callable[..., Awaitable[ProductName]]]:
+    async with AsyncExitStack() as stack:
 
-    async def _creator(**kwargs) -> dict[str, Any]:
-        prj_config = {"prj_owner": user_id}
-        prj_config.update(kwargs)
-        async with sqlalchemy_async_engine.begin() as conn:
-            result = await conn.execute(
-                projects.insert()
-                .values(**random_project(DEFAULT_FAKER, **prj_config))
-                .returning(sa.literal_column("*"))
+        async def _creator(**overrides) -> ProductName:
+            ctx = insert_and_get_row_lifespan(
+                sqlalchemy_async_engine,
+                table=products,
+                values=random_product(**overrides),
+                pk_col=products.c.name,
             )
-            row = result.one()
-            created_project_uuids.append(row.uuid)
-            return dict(row._asdict())
+            row = await stack.enter_async_context(ctx)
+            return ProductName(row["name"])
 
-    yield _creator
-    # cleanup
-    async with sqlalchemy_async_engine.begin() as conn:
-        await conn.execute(
-            projects.delete().where(projects.c.uuid.in_(created_project_uuids))
-        )
+        yield _creator
+
+
+@pytest.fixture
+async def product_name(
+    create_product: Callable[..., Awaitable[ProductName]],
+) -> ProductName:
+    return await create_product()
+
+
+@pytest.fixture
+async def create_project(
+    user_id: UserID, product_name: ProductName, sqlalchemy_async_engine: AsyncEngine
+) -> AsyncIterator[Callable[..., Awaitable[dict[str, Any]]]]:
+    async with AsyncExitStack() as stack:
+
+        async def _creator(**kwargs) -> dict[str, Any]:
+            prj_config = {"prj_owner": user_id, "product_name": product_name}
+            prj_config.update(kwargs)
+            ctx = insert_and_get_row_lifespan(
+                sqlalchemy_async_engine,
+                table=projects,
+                values=random_project(DEFAULT_FAKER, **prj_config),
+                pk_col=projects.c.uuid,
+            )
+            return await stack.enter_async_context(ctx)
+
+        yield _creator
 
 
 @pytest.fixture

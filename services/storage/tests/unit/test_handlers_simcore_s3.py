@@ -18,6 +18,7 @@ from models_library.api_schemas_storage.storage_schemas import (
     FileMetaDataGet,
 )
 from models_library.basic_types import SHA256Str
+from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import SimcoreS3FileID
 from models_library.users import UserID
@@ -55,6 +56,7 @@ async def test_connect_to_external(
     initialized_app: FastAPI,
     client: httpx.AsyncClient,
     user_id: UserID,
+    product_name: ProductName,
     project_id: ProjectID,
 ):
     url = url_from_operation_id(
@@ -62,9 +64,11 @@ async def test_connect_to_external(
         initialized_app,
         "list_files_metadata",
         location_id=f"{SimcoreS3DataManager.get_location_id()}",
-    ).with_query(user_id=f"{user_id}", uuid_filter=f"{project_id}")
+    ).with_query(
+        user_id=f"{user_id}", product_name=product_name, uuid_filter=f"{project_id}"
+    )
     resp = await client.get(f"{url}")
-    data, error = assert_status(resp, status.HTTP_200_OK, list[FileMetaDataGet])
+    data, _ = assert_status(resp, status.HTTP_200_OK, list[FileMetaDataGet])
     print(data)
 
 

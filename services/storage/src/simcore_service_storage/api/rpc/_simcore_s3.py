@@ -5,6 +5,7 @@ from models_library.api_schemas_rpc_async_jobs.async_jobs import (
 )
 from models_library.api_schemas_storage.storage_schemas import FoldersBody
 from models_library.api_schemas_webserver.storage import PathToExport
+from models_library.products import ProductName
 from models_library.users import UserID
 from servicelib.celery.models import (
     ExecutionMetadata,
@@ -48,6 +49,7 @@ async def start_export_data(
     task_manager: TaskManager,
     owner_metadata: OwnerMetadata,
     user_id: UserID,
+    product_name: ProductName,
     paths_to_export: list[PathToExport],
     export_as: Literal["path", "download_link"],
 ) -> AsyncJobGet:
@@ -65,6 +67,7 @@ async def start_export_data(
         ),
         owner_metadata=owner_metadata,
         user_id=user_id,
+        product_name=product_name,
         paths_to_export=paths_to_export,
     )
     return AsyncJobGet(job_id=task_uuid, job_name=task_name)

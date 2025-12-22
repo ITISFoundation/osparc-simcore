@@ -6,6 +6,7 @@ from models_library.api_schemas_rpc_async_jobs.async_jobs import (
 from models_library.api_schemas_storage import STORAGE_RPC_NAMESPACE
 from models_library.api_schemas_storage.storage_schemas import FoldersBody
 from models_library.api_schemas_webserver.storage import PathToExport
+from models_library.products import ProductName
 from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.users import UserID
 from pydantic import TypeAdapter
@@ -42,6 +43,7 @@ async def start_export_data(
     export_as: Literal["path", "download_link"],
     owner_metadata: OwnerMetadata,
     user_id: UserID,
+    product_name: ProductName,
 ) -> tuple[AsyncJobGet, OwnerMetadata]:
     async_job_rpc_get = await submit(
         rabbitmq_rpc_client,
@@ -51,5 +53,6 @@ async def start_export_data(
         paths_to_export=paths_to_export,
         export_as=export_as,
         user_id=user_id,
+        product_name=product_name,
     )
     return async_job_rpc_get, owner_metadata

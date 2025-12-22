@@ -23,6 +23,7 @@ from models_library.api_schemas_storage.storage_schemas import (
     PathTotalSizeCreate,
 )
 from models_library.api_schemas_webserver.storage import MAX_NUMBER_OF_PATHS_PER_PAGE
+from models_library.products import ProductName
 from models_library.projects_nodes_io import LocationID, NodeID, SimcoreS3FileID
 from models_library.users import UserID
 from pydantic import ByteSize, TypeAdapter
@@ -62,6 +63,7 @@ async def _assert_list_paths(
     client: httpx.AsyncClient,
     location_id: LocationID,
     user_id: UserID,
+    product_name: ProductName,
     *,
     file_filter: Path | None,
     limit: int = 25,
@@ -78,6 +80,7 @@ async def _assert_list_paths(
             client, initialized_app, "list_paths", location_id=f"{location_id}"
         ).with_query(
             user_id=user_id,
+            product_name=product_name,
             size=limit,
         )
         if next_cursor:
@@ -123,6 +126,7 @@ async def test_list_paths_root_folder_of_empty_returns_nothing(
     client: httpx.AsyncClient,
     location_id: LocationID,
     user_id: UserID,
+    product_name: ProductName,
     fake_datcore_tokens: tuple[str, str],
 ):
     await _assert_list_paths(
@@ -130,6 +134,7 @@ async def test_list_paths_root_folder_of_empty_returns_nothing(
         client,
         location_id,
         user_id,
+        product_name=product_name,
         file_filter=None,
         expected_paths=[],
     )
@@ -157,6 +162,7 @@ async def test_list_paths_pagination(
     client: httpx.AsyncClient,
     location_id: LocationID,
     user_id: UserID,
+    product_name: ProductName,
     with_random_project_with_files: tuple[
         dict[str, Any],
         dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
@@ -176,6 +182,7 @@ async def test_list_paths_pagination(
         client,
         location_id,
         user_id,
+        product_name=product_name,
         file_filter=file_filter,
         expected_paths=expected_paths,
         limit=int(num_nodes / 2 + 0.5),
@@ -196,6 +203,7 @@ async def test_list_paths_pagination(
         client,
         location_id,
         user_id,
+        product_name=product_name,
         file_filter=workspace_file_filter,
         expected_paths=expected_paths,
         limit=1,
@@ -212,6 +220,7 @@ async def test_list_paths_pagination(
             client,
             location_id,
             user_id,
+            product_name=product_name,
             file_filter=selected_path_filter[0],
             expected_paths=expected_paths,
             check_total=False,
@@ -240,6 +249,7 @@ async def test_list_paths_pagination_large_page(
     client: httpx.AsyncClient,
     location_id: LocationID,
     user_id: UserID,
+    product_name: ProductName,
     with_random_project_with_files: tuple[
         dict[str, Any],
         dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
@@ -259,6 +269,7 @@ async def test_list_paths_pagination_large_page(
         client,
         location_id,
         user_id,
+        product_name=product_name,
         file_filter=workspace_file_filter,
         expected_paths=expected_paths,
         check_total=False,
@@ -291,6 +302,7 @@ async def test_list_paths(
     client: httpx.AsyncClient,
     location_id: LocationID,
     user_id: UserID,
+    product_name: ProductName,
     random_project_with_files: Callable[
         [ProjectWithFilesParams],
         Awaitable[
@@ -315,6 +327,7 @@ async def test_list_paths(
         client,
         location_id,
         user_id,
+        product_name=product_name,
         file_filter=None,
         expected_paths=expected_paths,
     )
@@ -335,6 +348,7 @@ async def test_list_paths(
         client,
         location_id,
         user_id,
+        product_name=product_name,
         file_filter=partial_file_filter,
         expected_paths=partial_expected_paths,
     )
@@ -350,6 +364,7 @@ async def test_list_paths(
         client,
         location_id,
         user_id,
+        product_name=product_name,
         file_filter=file_filter,
         expected_paths=expected_paths,
     )
@@ -371,6 +386,7 @@ async def test_list_paths(
         client,
         location_id,
         user_id,
+        product_name=product_name,
         file_filter=file_filter,
         expected_paths=expected_node_files,
     )
@@ -385,6 +401,7 @@ async def test_list_paths(
         client,
         location_id,
         user_id,
+        product_name=product_name,
         file_filter=node_outputs_file_filter,
         expected_paths=expected_paths,
     )
@@ -399,6 +416,7 @@ async def test_list_paths(
         client,
         location_id,
         user_id,
+        product_name=product_name,
         file_filter=node_outputs_file_filter,
         expected_paths=expected_paths,
     )
@@ -413,6 +431,7 @@ async def test_list_paths(
         client,
         location_id,
         user_id,
+        product_name=product_name,
         file_filter=workspace_file_filter,
         expected_paths=expected_paths,
         check_total=False,
@@ -428,6 +447,7 @@ async def test_list_paths(
             client,
             location_id,
             user_id,
+            product_name=product_name,
             file_filter=selected_path_filter[0],
             expected_paths=expected_paths,
             check_total=False,
@@ -456,6 +476,7 @@ async def test_list_paths_with_display_name_containing_slashes(
     client: httpx.AsyncClient,
     location_id: LocationID,
     user_id: UserID,
+    product_name: ProductName,
     with_random_project_with_files: tuple[
         dict[str, Any],
         dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
@@ -496,6 +517,7 @@ async def test_list_paths_with_display_name_containing_slashes(
         client,
         location_id,
         user_id,
+        product_name=product_name,
         file_filter=file_filter,
         expected_paths=expected_paths,
     )
@@ -516,6 +538,7 @@ async def test_list_paths_with_display_name_containing_slashes(
         client,
         location_id,
         user_id,
+        product_name=product_name,
         file_filter=file_filter,
         expected_paths=expected_paths,
     )
@@ -539,6 +562,7 @@ async def test_list_paths_with_display_name_containing_slashes(
         client,
         location_id,
         user_id,
+        product_name=product_name,
         file_filter=workspace_file_filter,
         expected_paths=expected_paths,
         check_total=False,
@@ -555,6 +579,7 @@ async def test_list_paths_with_display_name_containing_slashes(
             client,
             location_id,
             user_id,
+            product_name=product_name,
             file_filter=selected_path_filter[0],
             expected_paths=expected_paths,
             check_total=False,
@@ -577,6 +602,7 @@ async def _assert_compute_path_size(
     client: httpx.AsyncClient,
     location_id: LocationID,
     user_id: UserID,
+    product_name: ProductName,
     *,
     path: Path,
     expected_total_size: int,
@@ -587,7 +613,7 @@ async def _assert_compute_path_size(
         "compute_path_size",
         location_id=f"{location_id}",
         path=f"{path}",
-    ).with_query(user_id=user_id)
+    ).with_query(user_id=user_id, product_name=product_name)
     response = await client.post(f"{url}")
 
     received, _ = assert_status(
@@ -623,6 +649,7 @@ async def test_path_compute_size(
     client: httpx.AsyncClient,
     location_id: LocationID,
     user_id: UserID,
+    product_name: ProductName,
     with_random_project_with_files: tuple[
         dict[str, Any],
         dict[NodeID, dict[SimcoreS3FileID, FileIDDict]],
@@ -646,6 +673,7 @@ async def test_path_compute_size(
         client,
         location_id,
         user_id,
+        product_name,
         path=path,
         expected_total_size=expected_total_size,
     )
@@ -664,6 +692,7 @@ async def test_path_compute_size(
         client,
         location_id,
         user_id,
+        product_name,
         path=path,
         expected_total_size=expected_total_size,
     )
@@ -683,6 +712,7 @@ async def test_path_compute_size(
         client,
         location_id,
         user_id,
+        product_name,
         path=path,
         expected_total_size=expected_total_size,
     )
@@ -702,6 +732,7 @@ async def test_path_compute_size(
         client,
         location_id,
         user_id,
+        product_name,
         path=path,
         expected_total_size=expected_total_size,
     )
@@ -727,6 +758,7 @@ async def test_path_compute_size(
             client,
             location_id,
             user_id,
+            product_name,
             path=workspace_subfolder,
             expected_total_size=expected_total_size,
         )
@@ -739,6 +771,7 @@ async def test_path_compute_size_inexistent_path(
     client: httpx.AsyncClient,
     location_id: LocationID,
     user_id: UserID,
+    product_name: ProductName,
     faker: Faker,
     fake_datcore_tokens: tuple[str, str],
 ):
@@ -747,6 +780,107 @@ async def test_path_compute_size_inexistent_path(
         client,
         location_id,
         user_id,
+        product_name=product_name,
         path=Path(faker.file_path(absolute=False)),
         expected_total_size=0,
     )
+
+
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+@pytest.mark.parametrize(
+    "project_params",
+    [
+        ProjectWithFilesParams(
+            num_nodes=2,
+            allowed_file_sizes=(TypeAdapter(ByteSize).validate_python("1b"),),
+            workspace_files_count=5,
+        )
+    ],
+    ids=str,
+)
+async def test_list_paths_filters_by_product(
+    initialized_app: FastAPI,
+    client: httpx.AsyncClient,
+    location_id: LocationID,
+    user_id: UserID,
+    create_product: Callable[..., Awaitable[ProductName]],
+    random_project_with_files: Callable[
+        [ProjectWithFilesParams, ProductName],
+        Awaitable[
+            tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]
+        ],
+    ],
+    project_params: ProjectWithFilesParams,
+    faker: Faker,
+):
+    """Test that file listings are scoped to the correct product.
+
+    Creates 2 projects connected to 2 different products, uploads files to both,
+    and verifies that listing paths for one product only returns files from that product.
+    """
+    # Create two different product names
+    product_name_1 = await create_product(name=faker.word())
+    product_name_2 = await create_product(name=faker.word())
+
+    # Create project 1 with product 1
+    project_1, files_1 = await random_project_with_files(project_params, product_name_1)
+
+    # Create project 2 with product 2
+    project_2, files_2 = await random_project_with_files(project_params, product_name_2)
+
+    # List paths for product 1 - should only see project 1
+    expected_paths_product_1 = [(Path(project_1["uuid"]), False)]
+    await _assert_list_paths(
+        initialized_app,
+        client,
+        location_id,
+        user_id,
+        product_name=product_name_1,
+        file_filter=None,
+        expected_paths=expected_paths_product_1,
+    )
+
+    # List paths for product 2 - should only see project 2
+    expected_paths_product_2 = [(Path(project_2["uuid"]), False)]
+    await _assert_list_paths(
+        initialized_app,
+        client,
+        location_id,
+        user_id,
+        product_name=product_name_2,
+        file_filter=None,
+        expected_paths=expected_paths_product_2,
+    )
+
+    # Verify that listing for product 1 does NOT include project 2
+    page = await _assert_list_paths(
+        initialized_app,
+        client,
+        location_id,
+        user_id,
+        product_name=product_name_1,
+        file_filter=None,
+        expected_paths=expected_paths_product_1,
+    )
+    assert all(
+        item.path != Path(project_2["uuid"]) for item in page.items
+    ), "Product 1 listing should not contain project 2"
+
+    # Verify that listing for product 2 does NOT include project 1
+    page = await _assert_list_paths(
+        initialized_app,
+        client,
+        location_id,
+        user_id,
+        product_name=product_name_2,
+        file_filter=None,
+        expected_paths=expected_paths_product_2,
+    )
+    assert all(
+        item.path != Path(project_1["uuid"]) for item in page.items
+    ), "Product 2 listing should not contain project 1"

@@ -4,6 +4,7 @@ from pathlib import Path
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
     AsyncJobGet,
 )
+from models_library.products import ProductName
 from models_library.projects_nodes_io import LocationID
 from models_library.users import UserID
 from servicelib.celery.models import ExecutionMetadata, OwnerMetadata
@@ -24,6 +25,7 @@ async def compute_path_size(
     location_id: LocationID,
     path: Path,
     user_id: UserID,
+    product_name: ProductName,
 ) -> AsyncJobGet:
     task_name = remote_compute_path_size.__name__
     task_uuid = await task_manager.submit_task(
@@ -32,6 +34,7 @@ async def compute_path_size(
         ),
         owner_metadata=owner_metadata,
         user_id=user_id,
+        product_name=product_name,
         location_id=location_id,
         path=path,
     )

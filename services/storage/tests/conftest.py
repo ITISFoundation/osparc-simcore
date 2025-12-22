@@ -39,6 +39,7 @@ from models_library.api_schemas_storage.storage_schemas import (
     UploadedPart,
 )
 from models_library.basic_types import SHA256Str
+from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.projects_nodes_io import LocationID, SimcoreS3FileID, StorageFileID
@@ -572,7 +573,7 @@ async def _upload_file_to_s3(
         bucket=s3_bucket,
         file=local_file,
         object_key=file_id,
-        bytes_transfered_cb=None,
+        bytes_transferred_cb=None,
     )
     return {file_id: FileIDDict(path=local_file, sha256_checksum=f"{faker.sha256()}")}
 
@@ -604,7 +605,7 @@ async def populate_directory(
         s3_base_path = Path(f"{project_id}") / f"{node_id}" / dir_name
         # NOTE: add a space in the sub directory
         s3_subdirs = [
-            s3_base_path / f"sub-dir_ect ory-{i}" for i in range(subdir_count)
+            s3_base_path / f"sub-dir_etc ory-{i}" for i in range(subdir_count)
         ]
         # Randomly distribute files across subdirectories
         selected_subdirs = random.choices(s3_subdirs, k=file_count)  # noqa: S311
@@ -655,6 +656,7 @@ async def delete_directory(
     initialized_app: FastAPI,
     client: httpx.AsyncClient,
     user_id: UserID,
+    product_name: ProductName,
     location_id: LocationID,
 ) -> Callable[[StorageFileID], Awaitable[None]]:
     async def _dir_remover(directory_s3: StorageFileID) -> None:
@@ -673,7 +675,9 @@ async def delete_directory(
         # even if one file is left this will detect it
         list_files_metadata_url = url_from_operation_id(
             client, initialized_app, "list_files_metadata", location_id=f"{location_id}"
-        ).with_query(user_id=user_id, uuid_filter=directory_s3)
+        ).with_query(
+            user_id=user_id, product_name=product_name, uuid_filter=directory_s3
+        )
         response = await client.get(f"{list_files_metadata_url}")
         data, error = assert_status(response, status.HTTP_200_OK, list[FileMetaDataGet])
         assert error is None
@@ -805,11 +809,15 @@ async def random_project_with_files(
 ]:
     async def _creator(
         project_params: ProjectWithFilesParams,
+        product_name: ProductName | None = None,
     ) -> tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]:
         assert len(project_params.allowed_file_sizes) == len(
             project_params.allowed_file_checksums
         )
-        project = await create_project(name="random-project")
+        project_kwargs = {"name": "random-project"}
+        if product_name is not None:
+            project_kwargs["product_name"] = product_name
+        project = await create_project(**project_kwargs)
         node_to_files_mapping: dict[NodeID, dict[SimcoreS3FileID, FileIDDict]] = {}
         upload_tasks = []
         for _ in range(project_params.num_nodes):
@@ -1028,7 +1036,7 @@ async def with_storage_celery_worker(
     monkeypatch: pytest.MonkeyPatch,
     register_celery_tasks: Callable[[Celery], None],
 ) -> AsyncIterator[TestWorkController]:
-    # Signals must be explicitily connected
+    # Signals must be explicitly connected
     tracing_config = TracingConfig.create(
         tracing_settings=None,  # disable tracing in tests
         service_name="storage-api",
@@ -1065,11 +1073,6 @@ async def storage_rabbitmq_rpc_client(
     rpc_client = await rabbitmq_rpc_client("pytest_storage_rpc_client")
     assert rpc_client
     return rpc_client
-
-
-@pytest.fixture
-def product_name(faker: Faker) -> str:
-    return faker.name()
 
 
 @pytest.fixture

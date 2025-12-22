@@ -40,5 +40,6 @@ class StorageService:
                 ).model_dump()
             ),
             user_id=self._user_id,
+            product_name=self._product_name,
         )
         return async_job_get
