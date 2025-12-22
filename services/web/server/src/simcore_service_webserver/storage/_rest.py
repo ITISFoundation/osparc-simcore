@@ -277,7 +277,9 @@ async def list_datasets_metadata(request: web.Request) -> web.Response:
 
     parse_request_path_parameters_as(_PathParams, request)
 
-    payload, resp_status = await _forward_request_to_storage(request, "GET", body=None)
+    payload, resp_status = await _forward_request_to_storage(
+        request, "GET", body=None, extra_query={"product_name": request[RQ_PRODUCT_KEY]}
+    )
     return create_data_response(payload, status=resp_status)
 
 
@@ -299,7 +301,9 @@ async def get_files_metadata(request: web.Request) -> web.Response:
 
     parse_request_query_parameters_as(_QueryParams, request)
 
-    payload, resp_status = await _forward_request_to_storage(request, "GET", body=None)
+    payload, resp_status = await _forward_request_to_storage(
+        request, "GET", body=None, extra_query={"product_name": request[RQ_PRODUCT_KEY]}
+    )
     return create_data_response(payload, status=resp_status)
 
 
