@@ -3,7 +3,7 @@
 # pylint: disable=unused-variable
 
 from collections.abc import AsyncIterator, Awaitable, Callable
-from contextlib import asynccontextmanager
+from contextlib import AsyncExitStack, asynccontextmanager
 from typing import Any
 
 import pytest
@@ -20,6 +20,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
 from .helpers.faker_factories import DEFAULT_FAKER, random_product, random_project
+from .helpers.postgres_tools import insert_and_get_row_lifespan
 from .helpers.postgres_users import insert_and_get_user_and_secrets_lifespan
 
 
@@ -89,27 +90,20 @@ async def product_name(
 async def create_project(
     user_id: UserID, product_name: ProductName, sqlalchemy_async_engine: AsyncEngine
 ) -> AsyncIterator[Callable[..., Awaitable[dict[str, Any]]]]:
-    created_project_uuids = []
+    async with AsyncExitStack() as stack:
 
-    async def _creator(**kwargs) -> dict[str, Any]:
-        prj_config = {"prj_owner": user_id, "product_name": product_name}
-        prj_config.update(kwargs)
-        async with sqlalchemy_async_engine.begin() as conn:
-            result = await conn.execute(
-                projects.insert()
-                .values(**random_project(DEFAULT_FAKER, **prj_config))
-                .returning(sa.literal_column("*"))
+        async def _creator(**kwargs) -> dict[str, Any]:
+            prj_config = {"prj_owner": user_id, "product_name": product_name}
+            prj_config.update(kwargs)
+            ctx = insert_and_get_row_lifespan(
+                sqlalchemy_async_engine,
+                table=projects,
+                values=random_project(DEFAULT_FAKER, **prj_config),
+                pk_col=projects.c.uuid,
             )
-            row = result.one()
-            created_project_uuids.append(row.uuid)
-            return dict(row._asdict())
+            return await stack.enter_async_context(ctx)
 
-    yield _creator
-
-    async with sqlalchemy_async_engine.begin() as conn:
-        await conn.execute(
-            projects.delete().where(projects.c.uuid.in_(created_project_uuids))
-        )
+        yield _creator
 
 
 @pytest.fixture
