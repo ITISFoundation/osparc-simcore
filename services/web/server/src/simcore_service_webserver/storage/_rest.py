@@ -556,7 +556,7 @@ async def search(request: web.Request) -> web.Response:
     class _PathParams(BaseModel):
         location_id: Annotated[LocationID, AfterValidator(_allow_only_simcore)]
 
-    _req_ctx = AuthenticatedRequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     parse_request_path_parameters_as(_PathParams, request)
     search_body = await parse_request_body_as(
         model_schema_cls=SearchBodyParams, request=request
@@ -568,11 +568,12 @@ async def search(request: web.Request) -> web.Response:
         ),
         owner_metadata=OwnerMetadata.model_validate(
             WebServerOwnerMetadata(
-                user_id=_req_ctx.user_id,
-                product_name=_req_ctx.product_name,
+                user_id=req_ctx.user_id,
+                product_name=req_ctx.product_name,
             ).model_dump()
         ),
-        user_id=_req_ctx.user_id,
+        user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
         name_pattern=search_body.filters.name_pattern,
         modified_at=(
             (
@@ -585,14 +586,14 @@ async def search(request: web.Request) -> web.Response:
         project_id=search_body.filters.project_id,
     )
 
-    _task_id = f"{task_uuid}"
+    task_id = f"{task_uuid}"
     return create_data_response(
         TaskGet(
-            task_id=_task_id,
+            task_id=task_id,
             task_name=SEARCH_TASK_NAME,
-            status_href=f"{request.url.with_path(str(request.app.router['get_async_job_status'].url_for(task_id=_task_id)))}",
-            abort_href=f"{request.url.with_path(str(request.app.router['cancel_async_job'].url_for(task_id=_task_id)))}",
-            stream_href=f"{request.url.with_path(str(request.app.router['get_async_job_stream'].url_for(task_id=_task_id)))}",
+            status_href=f"{request.url.with_path(str(request.app.router['get_async_job_status'].url_for(task_id=task_id)))}",
+            abort_href=f"{request.url.with_path(str(request.app.router['cancel_async_job'].url_for(task_id=task_id)))}",
+            stream_href=f"{request.url.with_path(str(request.app.router['get_async_job_stream'].url_for(task_id=task_id)))}",
         ),
         status=status.HTTP_202_ACCEPTED,
     )
