@@ -10,7 +10,7 @@ from .helpers.faker_factories import (
     random_payment_method,
     random_payment_transaction,
 )
-from .postgres_tools import (
+from .helpers.postgres_tools import (
     insert_and_get_row_lifespan,
 )
 
