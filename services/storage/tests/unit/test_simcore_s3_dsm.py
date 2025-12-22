@@ -653,3 +653,65 @@ async def test_search_directories(
         simcore_s3_dsm, user_id, product_name, "*subdir_*", project_id
     )
     assert len(subdir_results) == 1  # Only subdir_a
+
+
+@pytest.mark.parametrize(
+    "project_params",
+    [
+        ProjectWithFilesParams(
+            num_nodes=2,
+            allowed_file_sizes=(TypeAdapter(ByteSize).validate_python("1b"),),
+            workspace_files_count=5,
+        )
+    ],
+    ids=str,
+)
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+async def test_search_files_scoped_by_product(
+    simcore_s3_dsm: SimcoreS3DataManager,
+    user_id: UserID,
+    faker: Faker,
+    create_product: Callable[..., Awaitable[ProductName]],
+    random_project_with_files: Callable[
+        [ProjectWithFilesParams, ProductName],
+        Awaitable[
+            tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]
+        ],
+    ],
+    project_params: ProjectWithFilesParams,
+):
+    # Create two different products
+    product_name_1 = await create_product(name=faker.word())
+    product_name_2 = await create_product(name=faker.word())
+
+    # Create project 1 with files in product 1
+    await random_project_with_files(project_params, product_name_1)
+
+    # Create project 2 with files in product 2
+    await random_project_with_files(project_params, product_name_2)
+
+    # Search for all files in product 1
+    results_product_1 = await _search_files_by_pattern(
+        simcore_s3_dsm, user_id, product_name_1, "*"
+    )
+    file_ids_product_1 = {f.file_id for f in results_product_1}
+
+    # Search for all files in product 2
+    results_product_2 = await _search_files_by_pattern(
+        simcore_s3_dsm, user_id, product_name_2, "*"
+    )
+    file_ids_product_2 = {f.file_id for f in results_product_2}
+
+    # Verify that both products have files
+    assert len(file_ids_product_1) > 0, "Product 1 should have files"
+    assert len(file_ids_product_2) > 0, "Product 2 should have files"
+
+    # Verify product isolation: no file from product 2 should appear in product 1 results
+    assert file_ids_product_1.isdisjoint(
+        file_ids_product_2
+    ), "Files from different products should not overlap"
