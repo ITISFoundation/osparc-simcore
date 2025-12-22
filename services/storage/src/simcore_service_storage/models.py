@@ -214,7 +214,7 @@ class FilesMetadataDatasetQueryParams(StorageQueryParamsBase):
 
 
 class FileMetadataListQueryParams(StorageQueryParamsBase):
-    product_name: ProductName
+    product_name: ProductName = "osparc"  # NOTE: for backward compatibility
     project_id: ProjectID | None = None
     uuid_filter: str = ""
     expand_dirs: bool = True
