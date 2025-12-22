@@ -127,6 +127,6 @@ def test_list_filter_with_partial_file_id_stmt(user_id, project_ids, faker: Fake
     if user_id and len(project_ids) > 0:
         project_ids_as_strings = [f"'{pid}'" for pid in project_ids]
         assert (
-            f"file_meta_data.user_id = '{user_id}' OR file_meta_data.project_id IN ({', '.join(project_ids_as_strings)})"
+            f"file_meta_data.user_id = {user_id} OR file_meta_data.project_id IN ({', '.join(project_ids_as_strings)})"
             in sql_stmt_string
         )
