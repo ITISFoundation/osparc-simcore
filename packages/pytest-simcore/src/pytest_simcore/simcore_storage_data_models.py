@@ -57,26 +57,19 @@ async def other_user_id(sqlalchemy_async_engine: AsyncEngine) -> AsyncIterator[U
 async def create_product(
     sqlalchemy_async_engine: AsyncEngine,
 ) -> AsyncIterator[Callable[..., Awaitable[ProductName]]]:
-    created_product_names = []
+    async with AsyncExitStack() as stack:
 
-    async def _creator(**kwargs) -> ProductName:
-        product_config = kwargs
-        async with sqlalchemy_async_engine.begin() as conn:
-            result = await conn.execute(
-                products.insert()
-                .values(**random_product(**product_config))
-                .returning(products.c.name)
+        async def _creator(**overrides) -> ProductName:
+            ctx = insert_and_get_row_lifespan(
+                sqlalchemy_async_engine,
+                table=products,
+                values=random_product(**overrides),
+                pk_col=products.c.name,
             )
-            row = result.one()
-            created_product_names.append(row.name)
-            return ProductName(row.name)
+            row = await stack.enter_async_context(ctx)
+            return ProductName(row["name"])
 
-    yield _creator
-
-    async with sqlalchemy_async_engine.begin() as conn:
-        await conn.execute(
-            products.delete().where(products.c.name.in_(created_product_names))
-        )
+        yield _creator
 
 
 @pytest.fixture
