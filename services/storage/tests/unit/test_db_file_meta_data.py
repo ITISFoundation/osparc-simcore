@@ -117,7 +117,7 @@ def test_list_filter_with_partial_file_id_stmt(user_id, project_ids, faker: Fake
         offset=0,
     )
     if user_id:
-        assert f"file_meta_data.user_id = '{user_id}'" in sql_stmt_string
+        assert f"file_meta_data.user_id = {user_id}" in sql_stmt_string
     else:
         assert "file_meta_data.user_id = " not in sql_stmt_string
     if len(project_ids) > 0:
