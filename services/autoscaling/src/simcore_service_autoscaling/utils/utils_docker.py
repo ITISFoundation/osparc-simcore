@@ -15,6 +15,7 @@ import yaml
 from aws_library.ec2 import EC2InstanceData, Resources
 from aws_library.ec2._models import EC2InstanceBootSpecific
 from models_library.docker import (
+    OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS,
     DockerGenericTag,
     DockerLabelKey,
 )
@@ -172,7 +173,7 @@ def _is_task_waiting_for_resources(task: Task) -> bool:
         )
 
 
-async def _associated_service_has_no_node_placement_contraints(
+async def _associated_service_has_no_node_placement_constraints(
     docker_client: AutoscalingDocker, task: Task
 ) -> bool:
     assert task.service_id  # nosec
@@ -187,7 +188,7 @@ async def _associated_service_has_no_node_placement_contraints(
         or not service_inspect.spec.task_template.placement.constraints
     ):
         return True
-    # parse the placement contraints
+    # parse the placement constraints
     service_placement_constraints = (
         service_inspect.spec.task_template.placement.constraints
     )
@@ -242,7 +243,7 @@ async def pending_service_tasks_with_insufficient_resources(
         for task in sorted_tasks
         if (
             _is_task_waiting_for_resources(task)
-            and await _associated_service_has_no_node_placement_contraints(
+            and await _associated_service_has_no_node_placement_constraints(
                 docker_client, task
             )
         )
@@ -282,41 +283,94 @@ async def compute_cluster_total_resources(nodes: list[Node]) -> Resources:
 def get_max_resources_from_docker_task(task: Task) -> Resources:
     """returns the highest values for resources based on both docker reservations and limits"""
     assert task.spec  # nosec
-    if task.spec.resources:
-        return Resources(
-            cpus=max(
-                (
-                    (
-                        task.spec.resources.reservations
-                        and task.spec.resources.reservations.nano_cp_us
-                    )
-                    or 0
-                ),
-                (
-                    (
-                        task.spec.resources.limits
-                        and task.spec.resources.limits.nano_cp_us
-                    )
-                    or 0
-                ),
-            )
-            / _NANO_CPU,
-            ram=TypeAdapter(ByteSize).validate_python(
-                max(
-                    (
-                        task.spec.resources.reservations
-                        and task.spec.resources.reservations.memory_bytes
-                    )
-                    or 0,
-                    (
-                        task.spec.resources.limits
-                        and task.spec.resources.limits.memory_bytes
-                    )
-                    or 0,
+
+    if not task.spec.resources:
+        return Resources(cpus=0, ram=ByteSize(0))
+
+    generic_resources: dict[str, int | float | str] = {}
+    if (
+        task.spec.resources.reservations
+        and task.spec.resources.reservations.generic_resources
+    ):
+        for res in task.spec.resources.reservations.generic_resources.root:
+            if res.named_resource_spec:
+                assert res.named_resource_spec.kind is not None  # nosec
+                assert res.named_resource_spec.value is not None  # nosec
+                generic_resources[res.named_resource_spec.kind] = (
+                    res.named_resource_spec.value
                 )
+            if res.discrete_resource_spec:
+                assert res.discrete_resource_spec.kind is not None  # nosec
+                assert res.discrete_resource_spec.value is not None  # nosec
+                generic_resources[res.discrete_resource_spec.kind] = (
+                    res.discrete_resource_spec.value
+                )
+
+    return Resources(
+        cpus=max(
+            (
+                (
+                    task.spec.resources.reservations
+                    and task.spec.resources.reservations.nano_cp_us
+                )
+                or 0
+            ),
+            (
+                (task.spec.resources.limits and task.spec.resources.limits.nano_cp_us)
+                or 0
             ),
         )
-    return Resources(cpus=0, ram=ByteSize(0))
+        / _NANO_CPU,
+        ram=TypeAdapter(ByteSize).validate_python(
+            max(
+                (
+                    task.spec.resources.reservations
+                    and task.spec.resources.reservations.memory_bytes
+                )
+                or 0,
+                (task.spec.resources.limits and task.spec.resources.limits.memory_bytes)
+                or 0,
+            )
+        ),
+        generic_resources=generic_resources,
+    )
+
+
+async def get_task_osparc_custom_docker_placement_constraints(
+    docker_client: AutoscalingDocker, task: Task
+) -> dict[DockerLabelKey, str]:
+    """Extract custom placement labels from task placement constraints.
+
+    Returns a dict mapping label keys (from CUSTOM_PLACEMENT_LABEL_KEYS) to their values.
+    """
+    custom_labels: dict[DockerLabelKey, str] = {}
+
+    with contextlib.suppress(ValidationError):
+        assert task.service_id  # nosec
+        service_inspect = TypeAdapter(Service).validate_python(
+            await docker_client.services.inspect(task.service_id)
+        )
+        assert service_inspect.spec  # nosec
+        assert service_inspect.spec.task_template  # nosec
+
+        if (
+            not service_inspect.spec.task_template.placement
+            or not service_inspect.spec.task_template.placement.constraints
+        ):
+            return custom_labels
+
+        # Parse placement constraints to extract custom labels
+        service_placement_constraints = (
+            service_inspect.spec.task_template.placement.constraints
+        )
+        for label_key in OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS:
+            label_prefix = f"node.labels.{label_key}=="
+            for constraint in service_placement_constraints:
+                if constraint.startswith(label_prefix):
+                    custom_labels[label_key] = constraint.removeprefix(label_prefix)
+                    break
+
+    return custom_labels
 
 
 async def get_task_instance_restriction(
@@ -335,7 +389,7 @@ async def get_task_instance_restriction(
             or not service_inspect.spec.task_template.placement.constraints
         ):
             return None
-        # parse the placement contraints
+        # parse the placement constraints
         service_placement_constraints = (
             service_inspect.spec.task_template.placement.constraints
         )
@@ -521,7 +575,7 @@ async def tag_node(
         # nothing to do
         return node
     with log_context(
-        logger, logging.DEBUG, msg=f"tag {node.id=} with {tags=} and {available=}"
+        logger, logging.INFO, msg=f"tag {node.id=} with {tags=} and {available=}"
     ):
         assert node.id  # nosec
 
@@ -564,6 +618,7 @@ def get_new_node_docker_tags(
     app_settings: ApplicationSettings, ec2_instance: EC2InstanceData
 ) -> dict[DockerLabelKey, str]:
     assert app_settings.AUTOSCALING_NODES_MONITORING  # nosec
+    assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
     return (
         dict.fromkeys(
             app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS,
@@ -574,6 +629,9 @@ def get_new_node_docker_tags(
             "true",
         )
         | {DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY: ec2_instance.type}
+        | app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
+            ec2_instance.type
+        ].custom_node_labels
     )
 
 
@@ -606,12 +664,22 @@ async def set_node_osparc_ready(
     node: Node,
     *,
     ready: bool,
+    additional_labels: dict[DockerLabelKey, str] | None = None,
 ) -> Node:
     assert node.spec  # nosec
     new_tags = deepcopy(cast(dict[DockerLabelKey, str], node.spec.labels))
     new_tags[_OSPARC_SERVICE_READY_LABEL_KEY] = "true" if ready else "false"
     new_tags[_OSPARC_SERVICES_READY_DATETIME_LABEL_KEY] = arrow.utcnow().isoformat()
-    # NOTE: docker drain sometimes impeed on performance when undraining see https://github.com/ITISFoundation/osparc-simcore/issues/5339
+
+    if additional_labels:
+        new_tags.update(additional_labels)
+
+    # Remove custom placement labels when draining (not ready)
+    if not ready:
+        for label_key in OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS:
+            new_tags.pop(label_key, None)
+
+    # NOTE: docker drain sometimes impede on performance when undraining see https://github.com/ITISFoundation/osparc-simcore/issues/5339
     available = app_settings.AUTOSCALING_DRAIN_NODES_WITH_LABELS or ready
     return await tag_node(
         docker_client,
@@ -621,7 +689,7 @@ async def set_node_osparc_ready(
     )
 
 
-def get_node_last_readyness_update(node: Node) -> datetime.datetime:
+def get_node_last_readiness_update(node: Node) -> datetime.datetime:
     assert node.spec  # nosec
     assert node.spec.labels  # nosec
     return arrow.get(

@@ -166,7 +166,7 @@ _check_venv_active:
 
 ## DOCKER BUILD -------------------------------
 #
-# - all builds are immediatly tagged as 'local/{service}:${BUILD_TARGET}' where BUILD_TARGET='development', 'production', 'cache'
+# - all builds are immediately tagged as 'local/{service}:${BUILD_TARGET}' where BUILD_TARGET='development', 'production', 'cache'
 # - only production and cache images are released (i.e. tagged pushed into registry)
 #
 SWARM_HOSTS = $(shell docker node ls --format="{{.Hostname}}" 2>$(if $(IS_WIN),NUL,/dev/null))
@@ -195,6 +195,7 @@ docker buildx bake --allow=fs.read=.. \
 	$(if $(findstring $(comma),$(DOCKER_TARGET_PLATFORMS)),,\
 		$(if $(local-dest),\
 			$(foreach service, $(SERVICES_NAMES_TO_BUILD),\
+      --allow=fs.write=$(local-dest) \
 			--set $(service).output="type=docker$(comma)dest=$(local-dest)/$(service).tar") \
 			,--load\
 		)\
@@ -423,6 +424,48 @@ else
 	# deploys ONLY $(target) service
 	@docker compose --file $< up --detach $(target)
 endif
+	@$(_show_endpoints)
+
+# Infrastructure services for phased deployment
+INFRA_SERVICES := postgres redis rabbit migration
+MAX_WAIT_ITERATIONS := 150
+WAIT_INTERVAL_SECS := 2
+YQ_IMAGE := mikefarah/yq:4
+
+# Generate yq filter for keeping only infra services
+# e.g., ".key == "postgres" or .key == "redis" or .key == "rabbit" or .key == "migration""
+_YQ_INFRA_FILTER := $(shell echo $(INFRA_SERVICES) | awk '{for(i=1;i<=NF;i++) printf "%s.key == \"%s\"%s", (i>1?" or ":""), $$i, (i<NF?"":" ")}')
+
+define _wait_for_running
+	@count=0; \
+	while [ $$count -lt $(MAX_WAIT_ITERATIONS) ]; do \
+		running=$$(docker service ps $(SWARM_STACK_NAME)_$(1) --filter "desired-state=running" --format "{{.CurrentState}}" 2>/dev/null | grep -c "^Running" || true); \
+		[ "$$running" -gt 0 ] && break; \
+		echo -n "."; sleep $(WAIT_INTERVAL_SECS); count=$$((count + 1)); \
+	done; \
+	if [ $$count -ge $(MAX_WAIT_ITERATIONS) ]; then \
+		echo " TIMEOUT"; echo "ERROR: Service $(1) failed to start"; exit 1; \
+	fi; \
+		echo " OK"
+endef
+
+up-prod-phased: .stack-simcore-production.yml .init-swarm ## Deploys production stack in two phases: infrastructure first, then application services
+	# Deploy ops and vendors stacks
+	@$(MAKE) .deploy-ops
+	@$(MAKE) .deploy-vendors
+	@$(MAKE_C) services/dask-sidecar certificates
+	# Phase 1: Deploy infrastructure services only
+	@echo "Phase 1: Deploying infrastructure services ($(INFRA_SERVICES))..."
+	@docker run --rm -i $(YQ_IMAGE) \
+		'.services |= with_entries(select($(_YQ_INFRA_FILTER)))' \
+		< $< > .stack-infra-tmp.yml
+	@docker stack deploy --detach=true --with-registry-auth -c .stack-infra-tmp.yml $(SWARM_STACK_NAME)
+	@echo "Waiting for infrastructure services to be ready..."
+	@$(foreach service,$(INFRA_SERVICES),$(call _wait_for_running,$(service)))
+	# Phase 2: Deploy all services
+	@echo "Phase 2: Deploying all application services..."
+	@docker stack deploy --detach=true --with-registry-auth -c $< $(SWARM_STACK_NAME)
+	@rm -f .stack-infra-tmp.yml
 	@$(_show_endpoints)
 
 up-version: .stack-simcore-version.yml .init-swarm ## Deploys versioned stack '$(DOCKER_REGISTRY)/{service}:$(DOCKER_IMAGE_TAG)' and ops stack (pass 'make ops_disabled=1 up-...' to disable)
@@ -671,7 +714,7 @@ SERVICES.md: ## Auto generates service.md
 
 
 .PHONY: postgres-upgrade
-postgres-upgrade: ## initalize or upgrade postgres db to latest state
+postgres-upgrade: ## initialize or upgrade postgres db to latest state
 	@$(MAKE_C) packages/postgres-database/docker build
 	@$(MAKE_C) packages/postgres-database/docker upgrade
 

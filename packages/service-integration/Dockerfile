@@ -100,5 +100,5 @@ USER scu
 
 COPY --from=build --chown=scu:scu ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 
-# NOTE: do not activate ENV PYTHONOPTIMIZE=TRUE since excutable contains pytest code
+# NOTE: do not activate ENV PYTHONOPTIMIZE=TRUE since executable contains pytest code
 ENTRYPOINT [ "ooil" ]

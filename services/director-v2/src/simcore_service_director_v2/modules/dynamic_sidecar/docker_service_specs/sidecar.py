@@ -1,6 +1,6 @@
 import logging
 from copy import deepcopy
-from typing import Any, NamedTuple
+from typing import Any, Final, NamedTuple
 
 from common_library.json_serialization import json_dumps
 from common_library.serialization import model_dump_with_secrets
@@ -407,6 +407,11 @@ def _get_ports(
     return ports
 
 
+_NO_DEFINED_WALLET_ID_LABEL_VALUE: Final[str] = TypeAdapter(str).validate_python(
+    f"{None}"
+)
+
+
 async def get_dynamic_sidecar_spec(  # pylint:disable=too-many-arguments# noqa: PLR0913
     scheduler_data: SchedulerData,
     dynamic_sidecar_settings: DynamicSidecarSettings,
@@ -491,7 +496,7 @@ async def get_dynamic_sidecar_spec(  # pylint:disable=too-many-arguments# noqa: 
             )
         )
 
-    placement_substitutions: dict[str, DockerPlacementConstraint] = (
+    placement_substitutions = (
         placement_settings.DIRECTOR_V2_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS
     )
     for image_resources in scheduler_data.service_resources.values():
@@ -499,12 +504,36 @@ async def get_dynamic_sidecar_spec(  # pylint:disable=too-many-arguments# noqa: 
             if resource_name in placement_substitutions:
                 placement_constraints.append(placement_substitutions[resource_name])
 
+    # Add dynamic sidecar custom placement labels as constraints
+    osparc_custom_placement_constraints = (
+        placement_settings.DIRECTOR_V2_DYNAMIC_SIDECAR_OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS
+    )
+    label_values = {
+        "user_id": scheduler_data.user_id,
+        "project_id": scheduler_data.project_id,
+        "node_id": scheduler_data.node_uuid,
+        "product_name": scheduler_data.product_name,
+        "wallet_id": (
+            scheduler_data.wallet_info.wallet_id
+            if scheduler_data.wallet_info
+            else _NO_DEFINED_WALLET_ID_LABEL_VALUE
+        ),
+    }
+    for label_key, label_template in osparc_custom_placement_constraints.items():
+        resolved_value = label_template.format(**label_values)
+        if resolved_value:  # skip if template resolved to empty string
+            placement_constraints.append(
+                TypeAdapter(DockerPlacementConstraint).validate_python(
+                    f"node.labels.{label_key}=={resolved_value}",
+                )
+            )
+
     #  -----------
     create_service_params = {
         "endpoint_spec": {"Ports": ports} if ports else {},
         "labels": service_labels,
         "name": scheduler_data.service_name,
-        "networks": [
+        "networks": [  # NOTE: this is deprecated in docker v1.44 and is replaced by task_template/Networks
             {"Target": swarm_network_id},
             *get_prometheus_monitoring_networks(
                 dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_PROMETHEUS_MONITORING_NETWORKS,
@@ -549,6 +578,13 @@ async def get_dynamic_sidecar_spec(  # pylint:disable=too-many-arguments# noqa: 
                     else None
                 ),
             },
+            "Networks": [
+                {"Target": swarm_network_id},
+                *get_prometheus_monitoring_networks(
+                    dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_PROMETHEUS_MONITORING_NETWORKS,
+                    scheduler_data.callbacks_mapping,
+                ),
+            ],
             "Placement": {"Constraints": placement_constraints},
             "RestartPolicy": DOCKER_CONTAINER_SPEC_RESTART_POLICY_DEFAULTS,
             # this will get overwritten

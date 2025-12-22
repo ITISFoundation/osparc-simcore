@@ -3,7 +3,6 @@ from collections.abc import Iterable
 
 import arrow
 from aws_library.ec2 import (
-    AWSTagKey,
     AWSTagValue,
     EC2InstanceBootSpecific,
     EC2InstanceConfig,
@@ -15,11 +14,13 @@ from aws_library.ec2._errors import EC2InstanceNotFoundError
 from fastapi import FastAPI
 from models_library.users import UserID
 from models_library.wallets import WalletID
+from pydantic import TypeAdapter
 from servicelib.logging_utils import log_context
 
 from ..core.settings import ApplicationSettings, get_application_settings
 from ..utils.clusters import create_startup_script
 from ..utils.ec2 import (
+    EC2_NAME_TAG_KEY,
     HEARTBEAT_TAG_KEY,
     all_created_ec2_instances_filter,
     creation_ec2_tags,
@@ -127,17 +128,17 @@ async def get_cluster_workers(
 ) -> list[EC2InstanceData]:
     app_settings = get_application_settings(app)
     assert app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES  # nosec
-    ec2_instance_data: list[EC2InstanceData] = await get_ec2_client(app).get_instances(
+    return await get_ec2_client(app).get_instances(
         key_names=[
             app_settings.CLUSTERS_KEEPER_WORKERS_EC2_INSTANCES.WORKERS_EC2_INSTANCES_KEY_NAME
         ],
         tags={
-            AWSTagKey("Name"): AWSTagValue(
-                f"{get_cluster_name(app_settings, user_id=user_id, wallet_id=wallet_id, is_manager=False)}*"
+            EC2_NAME_TAG_KEY: TypeAdapter(AWSTagValue).validate_python(
+                f"{get_cluster_name(app_settings, user_id=user_id, wallet_id=wallet_id, is_manager=False)}"
             )
+            + "*"  # NOTE: this is done this way as * is a special char in AWS tag filtering
         },
     )
-    return ec2_instance_data
 
 
 async def cluster_heartbeat(
@@ -156,7 +157,11 @@ async def set_instance_heartbeat(app: FastAPI, *, instance: EC2InstanceData) -> 
         ec2_client = get_ec2_client(app)
         await ec2_client.set_instances_tags(
             [instance],
-            tags={HEARTBEAT_TAG_KEY: AWSTagValue(arrow.utcnow().datetime.isoformat())},
+            tags={
+                HEARTBEAT_TAG_KEY: TypeAdapter(AWSTagValue).validate_python(
+                    arrow.utcnow().datetime.isoformat()
+                )
+            },
         )
 
 

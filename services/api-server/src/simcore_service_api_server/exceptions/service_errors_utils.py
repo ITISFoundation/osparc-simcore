@@ -8,6 +8,7 @@ from inspect import signature
 from typing import Any, Concatenate, NamedTuple, ParamSpec, TypeAlias, TypeVar
 
 import httpx
+from common_library.user_messages import user_message
 from fastapi import HTTPException, status
 from pydantic import ValidationError
 from servicelib.rabbitmq._errors import RemoteMethodNotRegisteredError
@@ -17,7 +18,10 @@ from ..models.schemas.errors import ErrorGet
 
 _logger = logging.getLogger(__name__)
 
-MSG_INTERNAL_ERROR_USER_FRIENDLY_TEMPLATE = "Oops! Something went wrong, but we've noted it down and we'll sort it out ASAP. Thanks for your patience! [{}]"
+MSG_INTERNAL_ERROR_USER_FRIENDLY_TEMPLATE = user_message(
+    "Something went wrong on our end. We've been notified and will resolve this issue as soon as possible. Thank you for your patience. [{}]",
+    _version=1,
+)
 
 DEFAULT_BACKEND_SERVICE_STATUS_CODES: dict[int | str, dict[str, Any]] = {
     status.HTTP_429_TOO_MANY_REQUESTS: {
@@ -79,12 +83,12 @@ def _get_http_exception_kwargs(
         status.HTTP_504_GATEWAY_TIMEOUT,
     }:
         status_code = service_error.response.status_code
-        detail = f"The {service_name} service was unavailable."
+        detail = user_message(f"The {service_name} service was unavailable.")
         if retry_after := service_error.response.headers.get("Retry-After"):
             headers["Retry-After"] = retry_after
     else:
         status_code = status.HTTP_502_BAD_GATEWAY
-        detail = f"Received unexpected response from {service_name}"
+        detail = user_message(f"Received unexpected response from {service_name}")
 
     if status_code >= status.HTTP_500_INTERNAL_SERVER_ERROR:
         _logger.exception(
@@ -117,7 +121,7 @@ def service_exception_handler(
         yield
 
     except ValidationError as exc:
-        detail = f"{service_name} service returned invalid response"
+        detail = user_message(f"{service_name} service returned invalid response")
         _logger.exception(
             "Invalid data exchanged with %s service. %s", service_name, detail
         )
@@ -140,7 +144,7 @@ def service_exception_handler(
         ):  # https://github.com/ITISFoundation/osparc-simcore/blob/master/packages/service-library/src/servicelib/rabbitmq/_client_rpc.py#L76
             raise HTTPException(
                 status_code=status.HTTP_504_GATEWAY_TIMEOUT,
-                detail="Request to backend timed out",
+                detail=user_message("Request to backend timed out"),
             ) from exc
         if type(exc) in {
             asyncio.exceptions.CancelledError,
@@ -149,7 +153,7 @@ def service_exception_handler(
         }:  # https://github.com/ITISFoundation/osparc-simcore/blob/master/packages/service-library/src/servicelib/rabbitmq/_client_rpc.py#L76
             raise HTTPException(
                 status_code=status.HTTP_502_BAD_GATEWAY,
-                detail="Request to backend failed",
+                detail=user_message("Request to backend failed"),
             ) from exc
         if backend_error_type := rpc_exception_map.get(type(exc)):
             raise backend_error_type(**context) from exc

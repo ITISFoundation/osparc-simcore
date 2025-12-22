@@ -39,6 +39,7 @@ _SERVICES_TO_SKIP: Final[set[str]] = {
     "static-webserver",
     "traefik",
     "whoami",
+    "notifications-worker",
     "sto-worker",
     "sto-worker-cpu-bound",
     "traefik-config-placeholder",

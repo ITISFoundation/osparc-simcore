@@ -184,6 +184,7 @@ def random_project(fake: Faker = DEFAULT_FAKER, **overrides) -> dict[str, Any]:
         "access_rights": {},
         "workbench": {},
         "published": False,
+        "product_name": "osparc",
     }
 
     icon = fake.random_element([random_icon_url(fake), None])  # nullable

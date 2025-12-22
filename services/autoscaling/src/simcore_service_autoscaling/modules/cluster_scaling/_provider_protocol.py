@@ -27,6 +27,10 @@ class AutoscalingProvider(Protocol):
         self, app: FastAPI, task
     ) -> InstanceTypeType | None: ...
 
+    async def get_task_instance_required_docker_tags(
+        self, app: FastAPI, task
+    ) -> dict[DockerLabelKey, str]: ...
+
     async def compute_node_used_resources(
         self, app: FastAPI, instance: AssociatedInstance
     ) -> Resources: ...

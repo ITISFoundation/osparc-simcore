@@ -2,6 +2,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
+from datetime import datetime
 from pathlib import Path
 from typing import TypedDict
 from uuid import UUID
@@ -11,6 +12,7 @@ import jinja2
 import pytest
 from faker import Faker
 from models_library.basic_regex import UUID_RE_BASE
+from models_library.projects_state import RunningState
 from pydantic import TypeAdapter
 from pytest_mock import MockType
 from pytest_simcore.helpers.httpx_calls_capture_models import HttpApiCallCaptureModel
@@ -21,6 +23,7 @@ from servicelib.common_headers import (
 )
 from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server.models.schemas.jobs import Job, JobInputs
+from simcore_service_api_server.services_http.director_v2 import ComputationTaskGet
 from starlette import status
 
 _faker = Faker()
@@ -231,10 +234,14 @@ async def test_create_job(
 
 @pytest.fixture
 def mocked_backend_services_apis_for_delete_job_assets(
+    request: pytest.FixtureRequest,
     mocked_webserver_rest_api: MockRouter,
     mocked_webserver_rpc_api: dict[str, MockType],
+    mocked_directorv2_rest_api_base: MockRouter,
     mocked_storage_rest_api_base: MockRouter,
 ) -> dict[str, MockRouter | dict[str, MockType]]:
+
+    computation_state: RunningState = request.param
 
     # Patch PATCH /projects/{project_id}
     def _patch_project(request: httpx.Request, **kwargs):
@@ -245,6 +252,24 @@ def mocked_backend_services_apis_for_delete_job_assets(
         path__regex=r"/projects/(?P<project_id>[\w-]+)$",
         name="patch_project",
     ).mock(side_effect=_patch_project)
+
+    # mock computation state
+    def _get_computation(request: httpx.Request, **kwargs) -> httpx.Response:
+        task = ComputationTaskGet.model_validate(
+            ComputationTaskGet.model_json_schema()["examples"][0]
+        )
+        task.state = computation_state
+        task.stopped = None
+        if not computation_state.is_running():
+            task.stopped = datetime.now()
+
+        return httpx.Response(
+            status_code=status.HTTP_200_OK, json=task.model_dump(mode="json")
+        )
+
+    mocked_directorv2_rest_api_base.get(
+        path__regex=r"/v2/computations/(?P<project_id>[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})"
+    ).mock(side_effect=_get_computation)
 
     # Mock storage REST delete_project_s3_assets
     def _delete_project_s3_assets(request: httpx.Request, **kwargs):
@@ -263,6 +288,11 @@ def mocked_backend_services_apis_for_delete_job_assets(
 
 
 @pytest.mark.acceptance_test("Test delete_job_assets endpoint")
+@pytest.mark.parametrize(
+    "mocked_backend_services_apis_for_delete_job_assets",
+    [RunningState.SUCCESS],
+    indirect=True,
+)
 async def test_delete_job_assets_endpoint(
     auth: httpx.BasicAuth,
     client: httpx.AsyncClient,
@@ -292,3 +322,24 @@ async def test_delete_job_assets_endpoint(
         "wb-api-server",
         "mark_project_as_job",
     )
+
+
+@pytest.mark.parametrize(
+    "mocked_backend_services_apis_for_delete_job_assets",
+    [RunningState.STARTED],
+    indirect=True,
+)
+async def test_delete_job_assets_endpoint_computation_running(
+    auth: httpx.BasicAuth,
+    client: httpx.AsyncClient,
+    solver_key: str,
+    solver_version: str,
+    mocked_backend_services_apis_for_delete_job_assets: dict[
+        str, MockRouter | dict[str, MockType]
+    ],
+):
+    job_id = "123e4567-e89b-12d3-a456-426614174000"
+    url = f"/{API_VTAG}/solvers/{solver_key}/releases/{solver_version}/jobs/{job_id}/assets"
+
+    resp = await client.delete(url, auth=auth)
+    assert resp.status_code == status.HTTP_409_CONFLICT

@@ -9,6 +9,7 @@ cfgv==3.4.0
 click==8.2.1
     # via
     #   -c requirements/_base.txt
+    #   -c requirements/_test.txt
     #   black
 dill==0.4.0
     # via pylint
@@ -67,3 +68,5 @@ typing-extensions==4.14.1
     #   mypy
 virtualenv==20.34.0
     # via pre-commit
+watchdog==6.0.0
+    # via -r requirements/_tools.in

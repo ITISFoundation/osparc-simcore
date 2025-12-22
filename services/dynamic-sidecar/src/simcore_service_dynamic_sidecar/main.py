@@ -1,7 +1,11 @@
 """Main application to be deployed in for example uvicorn."""
 
+import logging
+
 from fastapi import FastAPI
 from simcore_service_dynamic_sidecar.core.application import create_app
+
+_logger = logging.getLogger(__name__)
 
 
 def app_factory() -> FastAPI:
@@ -9,4 +13,5 @@ def app_factory() -> FastAPI:
 
     This is used by uvicorn or other ASGI servers to run the application.
     """
+    _logger.info("Starting Dynamic Sidecar application...")
     return create_app()

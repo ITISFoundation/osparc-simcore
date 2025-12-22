@@ -4559,7 +4559,7 @@ paths:
       tags:
       - nih-sparc
       summary: List Viewers
-      description: 'Lists all publically available viewers
+      description: 'Lists all publicly available viewers
 
 
         Notice that this might contain multiple services for the same filetype
@@ -4595,7 +4595,7 @@ paths:
         use-case
 
 
-        Only publicaly available viewers
+        Only publicly available viewers
 
 
         If file_type is provided, then it filters viewer for that filetype'
@@ -4690,7 +4690,7 @@ paths:
           title: Id
       responses:
         '302':
-          description: Opens osparc and opens a copy of publised study
+          description: Opens osparc and opens a copy of published study
   /v0/projects:
     post:
       tags:
@@ -5469,7 +5469,7 @@ paths:
       responses:
         '202':
           description: The request to share the project has been accepted, but the
-            actual sharing process has to be confirmd.
+            actual sharing process has to be confirmed.
           content:
             application/json:
               schema:
@@ -12811,7 +12811,7 @@ components:
         topUpAmountInUsd:
           type: string
           title: Topupamountinusd
-          description: Amount in USD payed when auto-recharge condition is satisfied
+          description: Amount in USD paid when auto-recharge condition is satisfied
         monthlyLimitInUsd:
           anyOf:
           - type: string
@@ -13686,7 +13686,7 @@ components:
             write: false
           description: Some foundation
           gid: '16'
-          label: Blue Fundation
+          label: Blue Foundation
         support:
           description: The support team of the application
           gid: '2'
@@ -15979,7 +15979,7 @@ components:
           type: string
           format: uuid
           title: Key
-          description: Project port's unique identifer. Same as the UUID of the associated
+          description: Project port's unique identifier. Same as the UUID of the associated
             port node
         value:
           title: Value
@@ -15999,7 +15999,7 @@ components:
           type: string
           format: uuid
           title: Key
-          description: Project port's unique identifer. Same as the UUID of the associated
+          description: Project port's unique identifier. Same as the UUID of the associated
             port node
         value:
           title: Value
@@ -16168,7 +16168,7 @@ components:
           type: string
           format: uuid
           title: Key
-          description: Project port's unique identifer. Same as the UUID of the associated
+          description: Project port's unique identifier. Same as the UUID of the associated
             port node
         kind:
           type: string
@@ -16234,7 +16234,7 @@ components:
           type: string
           format: uuid
           title: Key
-          description: Project port's unique identifer. Same as the UUID of the associated
+          description: Project port's unique identifier. Same as the UUID of the associated
             port node
         value:
           title: Value

@@ -5,7 +5,6 @@ from typing import Any, TypedDict
 import simcore_postgres_database.cli
 import sqlalchemy as sa
 from psycopg2 import OperationalError
-from simcore_postgres_database.models.base import metadata
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
 
@@ -24,7 +23,7 @@ def force_drop_all_tables(sa_sync_engine: sa.engine.Engine):
     with sa_sync_engine.begin() as conn:
         conn.execute(sa.DDL("DROP TABLE IF EXISTS alembic_version"))
         conn.execute(
-            # NOTE: terminates all open transactions before droping all tables
+            # NOTE: terminates all open transactions before dropping all tables
             # This solves https://github.com/ITISFoundation/osparc-simcore/issues/7008
             sa.DDL(
                 "SELECT pg_terminate_backend(pid) "
@@ -36,7 +35,8 @@ def force_drop_all_tables(sa_sync_engine: sa.engine.Engine):
         #     conn.execute(sa.text(f'DROP TABLE IF EXISTS "{table}" CASCADE'))
 
         # SEE https://github.com/ITISFoundation/osparc-simcore/issues/1776
-        metadata.drop_all(bind=conn)
+        # Drop all tables including those not in metadata, with CASCADE to handle dependencies
+        conn.execute(sa.DDL("DROP SCHEMA public CASCADE; CREATE SCHEMA public;"))
 
 
 @contextmanager

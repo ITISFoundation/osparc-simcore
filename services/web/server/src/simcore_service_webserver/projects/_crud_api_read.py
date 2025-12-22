@@ -38,7 +38,7 @@ def _batch_update(
     return objects
 
 
-async def _paralell_update(*update_per_object: Coroutine) -> list[Any]:
+async def _parallel_update(*update_per_object: Coroutine) -> list[Any]:
     return await logged_gather(
         *update_per_object,
         reraise=True,
@@ -70,7 +70,7 @@ async def _aggregate_data_to_projects_from_other_sources(
         ],
     )
 
-    # udpating `project.state`
+    # updating `project.state`
     update_state_per_project = [
         _projects_service.add_project_states_for_user(
             user_id=user_id, project=prj, app=app
@@ -78,7 +78,7 @@ async def _aggregate_data_to_projects_from_other_sources(
         for prj in db_projects
     ]
 
-    updated_projects: list[ProjectDict] = await _paralell_update(
+    updated_projects: list[ProjectDict] = await _parallel_update(
         *update_state_per_project,
     )
 
@@ -99,7 +99,6 @@ async def _legacy_convert_db_projects_to_api_projects(
     api_projects: list[dict] = []
     for db_prj in db_projects:
         db_prj_dict = db_prj
-        db_prj_dict.pop("product_name", None)
         db_prj_dict["tags"] = await db.get_tags_by_project(project_id=f"{db_prj['id']}")
         user_email = await users_service.get_user_email_legacy(app, db_prj["prj_owner"])
         api_projects.append(convert_to_schema_names(db_prj_dict, user_email))
@@ -111,7 +110,7 @@ async def list_projects(  # pylint: disable=too-many-arguments
     user_id: UserID,
     product_name: str,
     *,
-    # hierachy filter
+    # hierarchy filter
     workspace_id: WorkspaceID | None,
     folder_id: FolderID | None,
     # attrs filter

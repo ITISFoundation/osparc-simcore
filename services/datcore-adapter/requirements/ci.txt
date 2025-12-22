@@ -1,4 +1,4 @@
-# Shortcut to install all packages for the contigous integration (CI) of 'services/datcore-adapter'
+# Shortcut to install all packages for the contiguous integration (CI) of 'services/datcore-adapter'
 #
 # - As ci.txt but w/ tests
 #

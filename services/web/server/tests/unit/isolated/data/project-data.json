@@ -62,5 +62,6 @@
   "quality": {},
   "dev": {},
   "type": "STANDARD",
-  "templateType": null
+  "templateType": null,
+  "productName": "osparc"
 }

@@ -83,6 +83,7 @@ from simcore_service_autoscaling.utils.utils_docker import (
     _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY,
 )
 from simcore_service_autoscaling.utils.utils_ec2 import (
+    _SIMCORE_AUTOSCALING_CUSTOM_PLACEMENT_LABELS_TAG_KEY,
     node_host_name_from_ec2_private_dns,
 )
 from types_aiobotocore_ec2.client import EC2Client
@@ -267,10 +268,11 @@ def stopped_instance_type_filters(
     return copied_filters
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True, slots=True)
 class _ScaleUpParams:
     imposed_instance_type: InstanceTypeType | None
     service_resources: Resources
+    service_custom_placement_constraints: dict[DockerLabelKey, str] | None = None
     num_services: int
     expected_instance_type: InstanceTypeType
     expected_num_instances: int
@@ -282,7 +284,7 @@ async def create_services_batch(
         [dict[str, Any], dict[DockerLabelKey, str], str, list[str]], Awaitable[Service]
     ],
     task_template: dict[str, Any],
-    create_task_reservations: Callable[[int, int], dict[str, Any]],
+    create_task_reservations: Callable[[int, int, dict], dict[str, Any]],
     service_monitored_labels: dict[DockerLabelKey, str],
     osparc_docker_label_keys: SimcoreContainerLabels,
 ) -> Callable[[_ScaleUpParams], Awaitable[list[Service]]]:
@@ -294,6 +296,7 @@ async def create_services_batch(
                     | create_task_reservations(
                         int(scale_up_params.service_resources.cpus),
                         scale_up_params.service_resources.ram,
+                        scale_up_params.service_resources.generic_resources,
                     ),
                     service_monitored_labels
                     | osparc_docker_label_keys.to_simcore_runtime_docker_labels(),
@@ -303,7 +306,17 @@ async def create_services_batch(
                             f"node.labels.{DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY}=={scale_up_params.imposed_instance_type}"
                         ]
                         if scale_up_params.imposed_instance_type
-                        else []
+                        else (
+                            []
+                            + [
+                                f"node.labels.{key}=={value}"
+                                for key, value in (
+                                    scale_up_params.service_custom_placement_constraints
+                                ).items()
+                            ]
+                            if scale_up_params.service_custom_placement_constraints
+                            else []
+                        )
                     ),
                 )
                 for _ in range(scale_up_params.num_services)
@@ -572,7 +585,14 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
                 expected_num_instances=scale_up_params.expected_num_instances,
                 expected_instance_type=scale_up_params.expected_instance_type,
                 expected_instance_state="running",
-                expected_additional_tag_keys=list(ec2_instance_custom_tags),
+                expected_additional_tag_keys=(
+                    [
+                        *list(ec2_instance_custom_tags),
+                        _SIMCORE_AUTOSCALING_CUSTOM_PLACEMENT_LABELS_TAG_KEY,
+                    ]
+                    if scale_up_params.service_custom_placement_constraints
+                    else list(ec2_instance_custom_tags)
+                ),
                 instance_filters=instance_type_filters,
             )
 
@@ -610,13 +630,20 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
     )
     assert fake_attached_node.spec.labels
     assert app_settings.AUTOSCALING_NODES_MONITORING
-    expected_docker_node_tags = dict.fromkeys(
-        app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS
-        + app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NEW_NODES_LABELS,
-        "true",
-    ) | {
-        DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY: scale_up_params.expected_instance_type
-    }
+    assert app_settings.AUTOSCALING_EC2_INSTANCES
+    expected_docker_node_tags = (
+        dict.fromkeys(
+            app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS
+            + app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NEW_NODES_LABELS,
+            "true",
+        )
+        | {
+            DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY: scale_up_params.expected_instance_type
+        }
+        | app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
+            scale_up_params.expected_instance_type
+        ].custom_node_labels
+    )
     fake_attached_node.spec.labels |= expected_docker_node_tags | {
         _OSPARC_SERVICE_READY_LABEL_KEY: "false"
     }
@@ -634,6 +661,11 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
         fake_node,
         tags=fake_node.spec.labels
         | expected_docker_node_tags
+        | (
+            scale_up_params.service_custom_placement_constraints
+            if scale_up_params.service_custom_placement_constraints
+            else {}
+        )
         | {
             _OSPARC_SERVICE_READY_LABEL_KEY: "false",
             _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY: mock.ANY,
@@ -647,6 +679,10 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
             _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY
         ]
     )
+    if scale_up_params.service_custom_placement_constraints:
+        fake_attached_node.spec.labels |= (
+            scale_up_params.service_custom_placement_constraints
+        )
     # check the activate time is later than attach time
     assert arrow.get(
         mock_docker_tag_node.call_args_list[1][1]["tags"][
@@ -670,6 +706,11 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
         fake_attached_node,
         tags=fake_node.spec.labels
         | expected_docker_node_tags
+        | (
+            scale_up_params.service_custom_placement_constraints
+            if scale_up_params.service_custom_placement_constraints
+            else {}
+        )
         | {
             _OSPARC_SERVICE_READY_LABEL_KEY: "true",
             _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY: mock.ANY,
@@ -695,7 +736,16 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
         expected_additional_tag_keys=list(ec2_instance_custom_tags),
         instance_filters=instance_type_filters,
     )
-    assert created_instances == instances
+    # the custom ec2 tags were removed after instance creation so don't expect them here
+    expected_created_instances = deepcopy(created_instances)
+    for instance in expected_created_instances:
+        for tag_dict in instance["Tags"]:
+            if tag_dict["Key"] == _SIMCORE_AUTOSCALING_CUSTOM_PLACEMENT_LABELS_TAG_KEY:
+                # remove it
+                instance["Tags"].remove(tag_dict)
+                break
+
+    assert expected_created_instances == instances
     assert len(instances) == scale_up_params.expected_num_instances
     assert "PrivateDnsName" in instances[0]
     internal_dns_name = instances[0]["PrivateDnsName"].removesuffix(".ec2.internal")
@@ -759,7 +809,7 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
         expected_additional_tag_keys=list(ec2_instance_custom_tags),
         instance_filters=instance_type_filters,
     )
-    assert created_instances == instances
+    assert expected_created_instances == instances
 
     # check rabbit messages were sent
     mock_rabbitmq_post_message.assert_called()
@@ -788,7 +838,7 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
         expected_additional_tag_keys=list(ec2_instance_custom_tags),
         instance_filters=instance_type_filters,
     )
-    assert created_instances == instances
+    assert expected_created_instances == instances
     # the node shall be waiting before draining
     mock_docker_set_node_availability.assert_not_called()
     mock_docker_tag_node.assert_called_once_with(
@@ -816,6 +866,10 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
     # now it will drain
     await auto_scale_cluster(app=initialized_app, auto_scaling_mode=auto_scaling_mode)
     mock_docker_set_node_availability.assert_not_called()
+    # the osparc custom label are removed
+    if scale_up_params.service_custom_placement_constraints:
+        for key in scale_up_params.service_custom_placement_constraints:
+            fake_attached_node.spec.labels.pop(key, None)
     mock_docker_tag_node.assert_called_once_with(
         get_docker_client(initialized_app),
         fake_attached_node,
@@ -860,9 +914,9 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
         expected_additional_tag_keys=list(ec2_instance_custom_tags),
         instance_filters=instance_type_filters,
     )
-    assert created_instances == instances
+    assert expected_created_instances == instances
 
-    # we artifically set the node to drain
+    # we artificially set the node to drain
     if not with_drain_nodes_labelled:
         fake_attached_node.spec.availability = Availability.drain
     fake_attached_node.spec.labels[_OSPARC_SERVICE_READY_LABEL_KEY] = "false"
@@ -892,7 +946,7 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
         expected_additional_tag_keys=list(ec2_instance_custom_tags),
         instance_filters=instance_type_filters,
     )
-    assert created_instances == instances
+    assert expected_created_instances == instances
 
     # now changing the last update timepoint will trigger the node removal process
     fake_attached_node.spec.labels[_OSPARC_SERVICES_READY_DATETIME_LABEL_KEY] = (
@@ -912,7 +966,7 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
         expected_additional_tag_keys=list(ec2_instance_custom_tags),
         instance_filters=instance_type_filters,
     )
-    assert created_instances == instances
+    assert expected_created_instances == instances
     mock_docker_tag_node.assert_called_once_with(
         get_docker_client(initialized_app),
         fake_attached_node,
@@ -988,6 +1042,35 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
         ),
         pytest.param(
             _ScaleUpParams(
+                imposed_instance_type=None,
+                service_resources=Resources(
+                    cpus=4, ram=TypeAdapter(ByteSize).validate_python("114Gib")
+                ),
+                service_custom_placement_constraints={"product-name": "osparc"},
+                num_services=1,
+                expected_instance_type="r5n.4xlarge",
+                expected_num_instances=1,
+            ),
+            id="No explicit instance defined with service custom placement constraints",
+        ),
+        pytest.param(
+            _ScaleUpParams(
+                imposed_instance_type=None,
+                service_resources=Resources(
+                    cpus=4,
+                    ram=TypeAdapter(ByteSize).validate_python("114Gib"),
+                    generic_resources={
+                        "VRAM": TypeAdapter(ByteSize).validate_python("8Gib")
+                    },
+                ),
+                num_services=1,
+                expected_instance_type="g4dn.8xlarge",
+                expected_num_instances=1,
+            ),
+            id="No explicit instance defined but requires GPU/VRAM",
+        ),
+        pytest.param(
+            _ScaleUpParams(
                 imposed_instance_type="t2.xlarge",
                 service_resources=Resources(
                     cpus=2.6, ram=TypeAdapter(ByteSize).validate_python("4Gib")
@@ -996,7 +1079,7 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
                 expected_instance_type="t2.xlarge",
                 expected_num_instances=1,
             ),
-            id="Explicitely ask for t2.xlarge",
+            id="Explicitly ask for t2.xlarge",
         ),
         pytest.param(
             _ScaleUpParams(
@@ -1008,7 +1091,7 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915
                 expected_instance_type="r5n.8xlarge",
                 expected_num_instances=1,
             ),
-            id="Explicitely ask for r5n.8xlarge",
+            id="Explicitly ask for r5n.8xlarge",
         ),
     ],
 )
@@ -1452,7 +1535,7 @@ async def test_cluster_adapts_machines_on_the_fly(  # noqa: PLR0915
 
     # this will initiate termination now
     with mock.patch(
-        "simcore_service_autoscaling.modules.cluster_scaling._auto_scaling_core.utils_docker.get_node_last_readyness_update",
+        "simcore_service_autoscaling.modules.cluster_scaling._auto_scaling_core.utils_docker.get_node_last_readiness_update",
         autospec=True,
         return_value=arrow.utcnow().datetime
         - 1.5
@@ -1923,7 +2006,9 @@ async def test__activate_drained_nodes_with_drained_node(
         ]
     )
     cluster_with_drained_nodes.drained_nodes[0].assign_task(
-        service_tasks[0], Resources(cpus=int(host_cpu_count / 2 + 1), ram=ByteSize(0))
+        service_tasks[0],
+        Resources(cpus=int(host_cpu_count / 2 + 1), ram=ByteSize(0)),
+        {},
     )
 
     updated_cluster = await _activate_drained_nodes(
@@ -2167,13 +2252,19 @@ async def test_warm_buffers_only_replace_hot_buffer_if_service_is_started_issue7
     )
     assert fake_attached_node_base.spec.labels
     assert app_settings.AUTOSCALING_NODES_MONITORING
-    expected_docker_node_tags = dict.fromkeys(
-        app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS
-        + app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NEW_NODES_LABELS,
-        "true",
-    ) | {
-        DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY: f"{hot_buffer_instance_type}"
-    }
+    expected_docker_node_tags = (
+        dict.fromkeys(
+            app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS
+            + app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NEW_NODES_LABELS,
+            "true",
+        )
+        | {
+            DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY: f"{hot_buffer_instance_type}"
+        }
+        | app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
+            hot_buffer_instance_type
+        ].custom_node_labels
+    )
     fake_attached_node_base.spec.labels |= expected_docker_node_tags | {
         _OSPARC_SERVICE_READY_LABEL_KEY: "false"
     }

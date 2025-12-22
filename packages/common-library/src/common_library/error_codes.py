@@ -2,7 +2,7 @@
   Unique identifier of an exception instance
   Intended to report a user about unexpected errors.
     Unexpected exceptions can be traced by matching the
-    logged error code with that appeneded to the user-friendly message
+    logged error code with that appended to the user-friendly message
 
 SEE test_error_codes for some use cases
 """
@@ -46,7 +46,7 @@ _SECS_TO_MILISECS: Final[int] = 1000  # ms
 
 def _create_timestamp() -> int:
     """Timestamp as milliseconds since epoch
-    NOTE: this reduces the precission to milliseconds but it is good enough for our purpose
+    NOTE: this reduces the precision to milliseconds but it is good enough for our purpose
     """
     ts = datetime.now(UTC).timestamp() * _SECS_TO_MILISECS
     return int(ts)

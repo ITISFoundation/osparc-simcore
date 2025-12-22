@@ -3,7 +3,6 @@
 
 import multiprocessing
 from collections.abc import AsyncIterable
-from datetime import timedelta
 from typing import Annotated, Final
 from unittest.mock import Mock
 
@@ -13,7 +12,6 @@ import uvicorn
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from pydantic import TypeAdapter
-from pytest_mock import MockerFixture
 from settings_library.node_ports import StorageAuthSettings
 from simcore_service_dynamic_sidecar.core.storage import (
     _get_url,
@@ -106,16 +104,8 @@ async def mock_storage_server(
 
 
 @pytest.fixture
-def mock_liveness_timeout(mocker: MockerFixture) -> None:
-    mocker.patch(
-        "simcore_service_dynamic_sidecar.modules.service_liveness._DEFAULT_TIMEOUT_INTERVAL",
-        new=timedelta(seconds=2),
-    )
-
-
-@pytest.fixture
 def mock_dynamic_sidecar_app(
-    mock_liveness_timeout: None, storage_auth_settings: StorageAuthSettings
+    storage_auth_settings: StorageAuthSettings,
 ) -> Mock:
     mock = Mock()
     mock.state.settings.NODE_PORTS_STORAGE_AUTH = storage_auth_settings

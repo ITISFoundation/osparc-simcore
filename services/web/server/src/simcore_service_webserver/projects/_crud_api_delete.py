@@ -66,10 +66,8 @@ async def mark_project_as_deleted(
         permission="delete",
     )
 
-    await db.check_project_has_only_one_product(project_uuid)
-
     # NOTE: if any of the steps below fail, it might results in a
-    # services/projects/data that might be incosistent. The GC should
+    # services/projects/data that might be inconsistent. The GC should
     # be able to detect that and resolve it.
     await _projects_repository.patch_project(
         app,

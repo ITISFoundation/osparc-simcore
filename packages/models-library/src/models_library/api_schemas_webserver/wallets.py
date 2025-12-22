@@ -225,7 +225,7 @@ class GetWalletAutoRecharge(OutputSchema):
     )
     top_up_amount_in_usd: NonNegativeDecimal = Field(
         ...,
-        description="Amount in USD payed when auto-recharge condition is satisfied",
+        description="Amount in USD paid when auto-recharge condition is satisfied",
     )
     monthly_limit_in_usd: NonNegativeDecimal | None = Field(
         ...,

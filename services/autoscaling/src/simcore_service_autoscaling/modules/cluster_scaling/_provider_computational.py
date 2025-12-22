@@ -60,10 +60,13 @@ class ComputationalAutoscalingProvider:
         self, app: FastAPI, ec2_instance_data: EC2InstanceData
     ) -> dict[DockerLabelKey, str]:
         assert self  # nosec
-        assert app  # nosec
+        app_settings = get_application_settings(app)
+        assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
         return {
             DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY: ec2_instance_data.type
-        }
+        } | app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
+            ec2_instance_data.type
+        ].custom_node_labels
 
     async def list_unrunnable_tasks(self, app: FastAPI) -> list[DaskTask]:
         assert self  # nosec
@@ -101,6 +104,15 @@ class ComputationalAutoscalingProvider:
         assert self  # nosec
         assert app  # nosec
         return cast(InstanceTypeType | None, utils.get_task_instance_restriction(task))
+
+    async def get_task_instance_required_docker_tags(
+        self, app: FastAPI, task
+    ) -> dict[DockerLabelKey, str]:
+        assert self  # nosec
+        assert app  # nosec
+        assert task  # nosec
+        # NOTE: currently no such constraints are defined for dask tasks
+        return {}
 
     async def compute_node_used_resources(
         self, app: FastAPI, instance: AssociatedInstance

@@ -229,7 +229,8 @@ async def test_solver_job_outputs(
     assert response.status_code == expected_status_code
     data = response.json()
     if expected_error_message:
-        assert "not succeeded, when output is requested" in data["errors"][0]
+        assert "it has not completed successfully" in data["errors"][0]
+        assert "Cannot retrieve output for solver job" in data["errors"][0]
     if expected_output:
         assert data == expected_output
 

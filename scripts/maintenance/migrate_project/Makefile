@@ -21,7 +21,7 @@ build: ## Builds docker container for the migration. Run this first.
 	docker buildx build --load --tag ${IMAGE_NAME} --file $(PWD)/Dockerfile $(REPO_DIR)
 
 .PHONY: debug-shell
-debug-shell: ## Runs a bash inside the container that performs the migrate. For manual interventions and debuging.
+debug-shell: ## Runs a bash inside the container that performs the migrate. For manual interventions and debugging.
 	docker run --interactive --tty --rm ${IMAGE_NAME}:${TAG} bash
 
 .PHONY: cfg.json
