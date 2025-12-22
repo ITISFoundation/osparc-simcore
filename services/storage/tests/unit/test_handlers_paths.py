@@ -784,3 +784,103 @@ async def test_path_compute_size_inexistent_path(
         path=Path(faker.file_path(absolute=False)),
         expected_total_size=0,
     )
+
+
+@pytest.mark.parametrize(
+    "location_id",
+    [SimcoreS3DataManager.get_location_id()],
+    ids=[SimcoreS3DataManager.get_location_name()],
+    indirect=True,
+)
+@pytest.mark.parametrize(
+    "project_params",
+    [
+        ProjectWithFilesParams(
+            num_nodes=2,
+            allowed_file_sizes=(TypeAdapter(ByteSize).validate_python("1b"),),
+            workspace_files_count=5,
+        )
+    ],
+    ids=str,
+)
+async def test_list_paths_filters_by_product(
+    initialized_app: FastAPI,
+    client: httpx.AsyncClient,
+    location_id: LocationID,
+    user_id: UserID,
+    create_product: Callable[..., Awaitable[ProductName]],
+    random_project_with_files: Callable[
+        [ProjectWithFilesParams, ProductName],
+        Awaitable[
+            tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]
+        ],
+    ],
+    project_params: ProjectWithFilesParams,
+    faker: Faker,
+):
+    """Test that file listings are scoped to the correct product.
+
+    Creates 2 projects connected to 2 different products, uploads files to both,
+    and verifies that listing paths for one product only returns files from that product.
+    """
+    # Create two different product names
+    product_name_1 = await create_product(name=faker.word())
+    product_name_2 = await create_product(name=faker.word())
+
+    # Create project 1 with product 1
+    project_1, files_1 = await random_project_with_files(project_params, product_name_1)
+
+    # Create project 2 with product 2
+    project_2, files_2 = await random_project_with_files(project_params, product_name_2)
+
+    # List paths for product 1 - should only see project 1
+    expected_paths_product_1 = [(Path(project_1["uuid"]), False)]
+    await _assert_list_paths(
+        initialized_app,
+        client,
+        location_id,
+        user_id,
+        product_name=product_name_1,
+        file_filter=None,
+        expected_paths=expected_paths_product_1,
+    )
+
+    # List paths for product 2 - should only see project 2
+    expected_paths_product_2 = [(Path(project_2["uuid"]), False)]
+    await _assert_list_paths(
+        initialized_app,
+        client,
+        location_id,
+        user_id,
+        product_name=product_name_2,
+        file_filter=None,
+        expected_paths=expected_paths_product_2,
+    )
+
+    # Verify that listing for product 1 does NOT include project 2
+    page = await _assert_list_paths(
+        initialized_app,
+        client,
+        location_id,
+        user_id,
+        product_name=product_name_1,
+        file_filter=None,
+        expected_paths=expected_paths_product_1,
+    )
+    assert all(
+        item.path != Path(project_2["uuid"]) for item in page.items
+    ), "Product 1 listing should not contain project 2"
+
+    # Verify that listing for product 2 does NOT include project 1
+    page = await _assert_list_paths(
+        initialized_app,
+        client,
+        location_id,
+        user_id,
+        product_name=product_name_2,
+        file_filter=None,
+        expected_paths=expected_paths_product_2,
+    )
+    assert all(
+        item.path != Path(project_1["uuid"]) for item in page.items
+    ), "Product 2 listing should not contain project 1"

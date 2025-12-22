@@ -809,11 +809,15 @@ async def random_project_with_files(
 ]:
     async def _creator(
         project_params: ProjectWithFilesParams,
+        product_name: ProductName | None = None,
     ) -> tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]:
         assert len(project_params.allowed_file_sizes) == len(
             project_params.allowed_file_checksums
         )
-        project = await create_project(name="random-project")
+        project_kwargs = {"name": "random-project"}
+        if product_name is not None:
+            project_kwargs["product_name"] = product_name
+        project = await create_project(**project_kwargs)
         node_to_files_mapping: dict[NodeID, dict[SimcoreS3FileID, FileIDDict]] = {}
         upload_tasks = []
         for _ in range(project_params.num_nodes):
