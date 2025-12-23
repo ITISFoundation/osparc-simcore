@@ -1,12 +1,15 @@
 # pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
+import asyncio
 import contextlib
+import functools
 import os
 import re
 from collections.abc import AsyncIterable, AsyncIterator, Iterator
 from pathlib import Path
 from typing import cast
+from unittest.mock import AsyncMock
 
 import aioboto3
 import aiodocker
@@ -38,6 +41,13 @@ from simcore_sdk.node_ports_common.r_clone_mount._container import (
 )
 from simcore_sdk.node_ports_common.r_clone_mount._docker_utils import (
     _get_config as original_get_config,
+)
+from simcore_sdk.node_ports_common.r_clone_mount._utils import get_mount_id
+from tenacity import (
+    AsyncRetrying,
+    retry_if_exception_type,
+    stop_after_delay,
+    wait_fixed,
 )
 from types_aiobotocore_s3 import S3Client
 
@@ -112,15 +122,22 @@ async def s3_client(
 
 
 @pytest.fixture
+async def mocked_shutdown() -> AsyncMock:
+    return AsyncMock()
+
+
+@pytest.fixture
 async def r_clone_mount_manager(
-    r_clone_settings: RCloneSettings,
+    r_clone_settings: RCloneSettings, mocked_shutdown: AsyncMock
 ) -> AsyncIterator[RCloneMountManager]:
 
-    # TODO: maybe put this into a fixture
-    async def do_nothing() -> None:
-        pass
+    # add tis to a fixture in order to see if it was called
+    async def _mock_shutdown_request_handler() -> None:
+        await mocked_shutdown()
 
-    manager = RCloneMountManager(r_clone_settings, handler_request_shutdown=do_nothing)
+    manager = RCloneMountManager(
+        r_clone_settings, handler_request_shutdown=_mock_shutdown_request_handler
+    )
     await manager.setup()
 
     yield manager
@@ -161,7 +178,7 @@ def node_id(faker: Faker) -> NodeID:
 
 @pytest.fixture
 def moto_server() -> Iterator[None]:
-    server = ThreadedMotoServer(port="5000")
+    server = ThreadedMotoServer()
     server.start()
     yield None
     server.stop()
@@ -313,7 +330,26 @@ async def _get_file_checksums_from_s3(
     return checksums
 
 
-async def test_manager(
+async def _get_bind_paths_protocol(
+    vfs_cache_path: Path, state_path: Path
+) -> list[dict]:
+    return [
+        {
+            "Type": "bind",
+            "Source": f"{state_path}",
+            "Target": f"{state_path}",
+            "BindOptions": {"Propagation": "rshared"},
+        },
+        {
+            "Type": "bind",
+            "Source": f"{vfs_cache_path}",
+            "Target": f"{DEFAULT_VFS_CACHE_PATH}",
+            "BindOptions": {"Propagation": "rshared"},
+        },
+    ]
+
+
+async def test_workflow(
     moto_server: None,
     mocked_r_clone_container_config: None,
     mocked_self_container: None,
@@ -326,23 +362,8 @@ async def test_manager(
     vfs_cache_path: Path,
     index: int,
     s3_client: S3Client,
+    mocked_shutdown: AsyncMock,
 ) -> None:
-
-    async def _get_bind_paths_protocol(state_path: Path) -> list[Path]:
-        return [
-            {
-                "Type": "bind",
-                "Source": f"{state_path}",
-                "Target": f"{state_path}",
-                "BindOptions": {"Propagation": "rshared"},
-            },
-            {
-                "Type": "bind",
-                "Source": f"{vfs_cache_path}",
-                "Target": f"{DEFAULT_VFS_CACHE_PATH}",
-                "BindOptions": {"Propagation": "rshared"},
-            },
-        ]
 
     await r_clone_mount_manager.ensure_mounted(
         local_mount_path=local_mount_path,
@@ -350,7 +371,9 @@ async def test_manager(
         remote_path=remote_path,
         node_id=node_id,
         index=index,
-        handler_get_bind_paths=_get_bind_paths_protocol,
+        handler_get_bind_paths=functools.partial(
+            _get_bind_paths_protocol, vfs_cache_path
+        ),
         handler_mount_activity=_handle_mount_activity,
     )
 
@@ -387,5 +410,53 @@ async def test_manager(
         local_mount_path=local_mount_path, index=index
     )
 
-    # bind to a different directory and ensure the same content is presnet there as well
-    # refactor a bit how the files are generated, some more randomnes in sizes, i want to be ranom in range of files and of sizes
+    mocked_shutdown.assert_not_called()
+
+
+async def test_container_recovers_and_shutdown_is_emitted(
+    moto_server: None,
+    mocked_r_clone_container_config: None,
+    mocked_self_container: None,
+    r_clone_mount_manager: RCloneMountManager,
+    node_id: NodeID,
+    remote_path: StorageFileID,
+    local_mount_path: Path,
+    vfs_cache_path: Path,
+    index: int,
+    mocked_shutdown: AsyncMock,
+) -> None:
+
+    await r_clone_mount_manager.ensure_mounted(
+        local_mount_path=local_mount_path,
+        remote_type=MountRemoteType.S3,
+        remote_path=remote_path,
+        node_id=node_id,
+        index=index,
+        handler_get_bind_paths=functools.partial(
+            _get_bind_paths_protocol, vfs_cache_path
+        ),
+        handler_mount_activity=_handle_mount_activity,
+    )
+
+    # Get the tracked mount and its container
+    mount_id = get_mount_id(local_mount_path, index)
+    tracked_mount = r_clone_mount_manager._tracked_mounts[mount_id]  # noqa: SLF001
+    container_name = (
+        tracked_mount._container_manager.r_clone_container_name  # noqa: SLF001
+    )
+
+    # Shutdown the container to trigger the shutdown handler
+    async with aiodocker.Docker() as client:
+        container = await client.containers.get(container_name)
+        await container.stop()
+
+    # wait for the container to reocover
+    async for attempt in AsyncRetrying(
+        stop=stop_after_delay(30),
+        wait=wait_fixed(0.1),
+        retry=retry_if_exception_type(AssertionError),
+        reraise=True,
+    ):
+        with attempt:
+            await asyncio.sleep(0)
+            mocked_shutdown.assert_called()
