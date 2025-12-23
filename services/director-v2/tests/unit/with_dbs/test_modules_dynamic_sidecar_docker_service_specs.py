@@ -275,6 +275,17 @@ def expected_dynamic_sidecar_spec(
                     "RABBIT_USER": "admin",
                     "RABBIT_SECURE": "False",
                     "REDIS_SETTINGS": '{"REDIS_SECURE":false,"REDIS_HOST":"redis","REDIS_PORT":6789,"REDIS_USER":null,"REDIS_PASSWORD":null}',
+                    "R_CLONE_MOUNT_SETTINGS": (
+                        '{"R_CLONE_MOUNT_TRANSFERS_COMPLETED_TIMEOUT":"PT1H","R_CLONE_MOUNT_CONTAINER_CONFIG_FILE_PATH":"/tmp/rclone.conf"'
+                        ',"R_CLONE_MOUNT_CONTAINER_SHOW_DEBUG_LOGS":false,"R_CLONE_MOUNT_CONTAINER_MEMORY_LIMIT":2147483648,'
+                        '"R_CLONE_MOUNT_CONTAINER_NANO_CPUS":1000000000,"R_CLONE_MOUNT_VFS_CACHE_PATH":"/vfs-cache",'
+                        '"R_CLONE_MOUNT_VFS_READ_AHEAD":"16M","R_CLONE_MOUNT_VFS_CACHE_MAX_SIZE":"500G","R_CLONE_MOUNT_VFS_CACHE_MIN_FREE_SPACE"'
+                        ':"5G","R_CLONE_MOUNT_CACHE_POLL_INTERVAL":"1m","R_CLONE_MOUNT_VFS_WRITE_BACK":"10s","R_CLONE_MOUNT_DIR_CACHE_TIME":"10m",'
+                        '"R_CLONE_MOUNT_ATTR_TIMEOUT":"1m","R_CLONE_MOUNT_TPSLIMIT":2000,"R_CLONE_MOUNT_TPSLIMIT_BURST":4000,'
+                        '"R_CLONE_MOUNT_MAX_BUFFER_MEMORY":"16M","R_CLONE_MOUNT_RETRIES":3,"R_CLONE_MOUNT_RETRIES_SLEEP":"30s",'
+                        '"R_CLONE_MOUNT_TRANSFERS":15,"R_CLONE_MOUNT_BUFFER_SIZE":"16M","R_CLONE_MOUNT_CHECKERS":8,'
+                        '"R_CLONE_MOUNT_S3_UPLOAD_CONCURRENCY":5,"R_CLONE_MOUNT_S3_CHUNK_SIZE":"16M","R_CLONE_MOUNT_ORDER_BY":"size,mixed"}'
+                    ),
                     "R_CLONE_OPTION_BUFFER_SIZE": "16M",
                     "R_CLONE_OPTION_RETRIES": "3",
                     "R_CLONE_OPTION_TRANSFERS": "5",
@@ -380,6 +391,21 @@ def expected_dynamic_sidecar_spec(
                                 "study_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
                                 "run_id": service_run_id,
                                 "source": f"dyv_{service_run_id}_75c7f3f4-18f9-4678-8610-54a2ade78eaa_2_evas_pmt_",
+                                "swarm_stack_name": "test_swarm_name",
+                                "user_id": "234",
+                            },
+                        },
+                    },
+                    {
+                        "Target": "/dy-volumes/vfs-cache",
+                        "Source": f"dyv_{service_run_id}_75c7f3f4-18f9-4678-8610-54a2ade78eaa_ehcac-sfv_",
+                        "Type": "volume",
+                        "VolumeOptions": {
+                            "Labels": {
+                                "node_uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                                "study_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
+                                "run_id": service_run_id,
+                                "source": f"dyv_{service_run_id}_75c7f3f4-18f9-4678-8610-54a2ade78eaa_ehcac-sfv_",
                                 "swarm_stack_name": "test_swarm_name",
                                 "user_id": "234",
                             },
