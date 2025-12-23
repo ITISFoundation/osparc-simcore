@@ -205,7 +205,6 @@ async def _sync_sources(
             # handles the order of file upload
             "--order-by",
             r_clone_settings.R_CLONE_ORDER_BY,
-            "--fast-list",
             "--use-json-log",
             # frequent polling for faster progress updates
             "--stats",
