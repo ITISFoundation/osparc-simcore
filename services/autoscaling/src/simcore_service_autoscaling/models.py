@@ -5,7 +5,10 @@ from typing import Any, TypeAlias
 
 from aws_library.ec2 import EC2InstanceData, EC2InstanceType, Resources
 from dask_task_models_library.resource_constraints import DaskTaskResources
-from models_library.docker import DockerLabelKey
+from models_library.docker import (
+    OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS,
+    DockerLabelKey,
+)
 from models_library.generated_models.docker_rest_api import Node
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
@@ -14,15 +17,31 @@ from types_aiobotocore_ec2.literals import InstanceTypeType
 class _TaskAssignmentMixin:
     assigned_tasks: list = field(default_factory=list)
     available_resources: Resources = field(default_factory=Resources.create_as_empty)
+    # Track labels required by assigned tasks (will be applied during activation)
+    _pending_label_requirements: dict[DockerLabelKey, str] = field(default_factory=dict)
 
-    def assign_task(self, task, task_resources: Resources) -> None:
+    def assign_task(
+        self,
+        task,
+        task_resources: Resources,
+        task_required_node_labels: dict[DockerLabelKey, str],
+    ) -> None:
         self.assigned_tasks.append(task)
         object.__setattr__(
             self, "available_resources", self.available_resources - task_resources
         )
+        if task_required_node_labels:
+            object.__setattr__(
+                self,
+                "_pending_label_requirements",
+                self._pending_label_requirements | task_required_node_labels,
+            )
 
     def has_resources_for_task(self, task_resources: Resources) -> bool:
         return bool(self.available_resources >= task_resources)
+
+    def tasks_required_pending_labels(self) -> dict[DockerLabelKey, str]:
+        return self._pending_label_requirements
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
@@ -48,6 +67,7 @@ class AssignedTasksToInstanceType(_TaskAssignmentMixin):
 @dataclass(frozen=True, kw_only=True, slots=True)
 class _BaseInstance(_TaskAssignmentMixin):
     ec2_instance: EC2InstanceData
+    _osparc_custom_node_labels: dict[DockerLabelKey, str] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         if self.available_resources == Resources.create_as_empty():
@@ -58,10 +78,23 @@ class _BaseInstance(_TaskAssignmentMixin):
         # see https://github.com/ITISFoundation/osparc-simcore/issues/8559
         return bool(self.available_resources < self.ec2_instance.resources)
 
+    @property
+    def osparc_custom_node_labels(self) -> dict[DockerLabelKey, str]:
+        return self._osparc_custom_node_labels
+
 
 @dataclass(frozen=True, kw_only=True, slots=True)
 class AssociatedInstance(_BaseInstance):
     node: Node
+
+    @property
+    def osparc_custom_node_labels(self) -> dict[DockerLabelKey, str]:
+        assert self.node.spec  # nosec
+        custom_labels: dict[DockerLabelKey, str] = {}
+        for label_key in OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS:
+            if self.node.spec.labels and label_key in self.node.spec.labels:
+                custom_labels[label_key] = self.node.spec.labels[label_key]
+        return custom_labels
 
 
 @dataclass(frozen=True, kw_only=True, slots=True)
