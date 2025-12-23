@@ -4,7 +4,7 @@ from datetime import timedelta
 from functools import cached_property
 from pathlib import Path
 from textwrap import dedent
-from typing import Any, Final
+from typing import Final
 
 from httpx import AsyncClient, HTTPError
 from models_library.basic_types import PortInt
@@ -260,10 +260,10 @@ class RemoteControlHttpClient:
         self._auth = (rc_user, rc_password)
 
     @property
-    def _base_url(self) -> float:
+    def _base_url(self) -> str:
         return f"http://{self.rc_host}:{self.rc_port}"
 
-    async def _request(self, method: str, path: str) -> Any:
+    async def _request(self, method: str, path: str) -> dict:
         request_url = f"{self._base_url}/{path}"
         _logger.debug("Sending '%s %s' request", method, request_url)
 
@@ -272,7 +272,8 @@ class RemoteControlHttpClient:
         ) as client:
             response = await client.request(method, request_url, auth=self._auth)
             response.raise_for_status()
-            return response.json()
+            dict_response: dict = response.json()
+            return dict_response
 
     async def _post_core_stats(self) -> dict:
         return await self._request("POST", "core/stats")
