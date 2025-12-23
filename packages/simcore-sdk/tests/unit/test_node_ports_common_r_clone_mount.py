@@ -62,12 +62,8 @@ def bucket_name() -> S3BucketName:
 
 
 @pytest.fixture
-def r_clone_version(package_dir: Path) -> str:
-    install_rclone_bash = (
-        (package_dir / ".." / ".." / ".." / "..").resolve()
-        / "scripts"
-        / "install_rclone.bash"
-    )
+def r_clone_version(osparc_simcore_root_dir: Path) -> str:
+    install_rclone_bash = osparc_simcore_root_dir / "scripts" / "install_rclone.bash"
     assert install_rclone_bash.exists()
 
     match = re.search(r'R_CLONE_VERSION="([\d.]+)"', install_rclone_bash.read_text())
