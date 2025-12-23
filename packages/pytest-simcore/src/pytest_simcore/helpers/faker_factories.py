@@ -285,8 +285,9 @@ def fake_task_factory(
 
 def random_product(
     *,
-    group_id: int | None = None,
+    group_id: int | None = None,  # group id of the product
     support_standard_group_id: int | None = None,
+    support_chatbot_user_id: int | None = None,
     registration_email_template: str | None = None,
     fake: Faker = DEFAULT_FAKER,
     **overrides,
@@ -335,6 +336,7 @@ def random_product(
         "max_open_studies_per_user": fake.pyint(1, 10),
         "group_id": group_id,
         "support_standard_group_id": support_standard_group_id,
+        "support_chatbot_user_id": support_chatbot_user_id,
     }
 
     if ui := fake.random_element(
@@ -441,6 +443,33 @@ def random_payment_transaction(
     }
     # state is not added on purpose
     assert set(data.keys()).issubset({c.name for c in payments_transactions.columns})
+
+    data.update(overrides)
+    return data
+
+
+def random_wallet(
+    product_name: str,
+    user_group_id: int,
+    fake: Faker = DEFAULT_FAKER,
+    **overrides,
+) -> dict[str, Any]:
+    from simcore_postgres_database.models.wallets import (
+        wallets,
+    )
+
+    data = {
+        "wallet_id": fake.pyint(),
+        "name": fake.word(),
+        "description": fake.word(),
+        "owner": user_group_id,
+        "thumbnail": fake.url(),
+        "status": "ACTIVE",
+        "created": utcnow(),
+        "modified": utcnow(),
+        "product_name": product_name,
+    }
+    assert set(data.keys()).issubset({c.name for c in wallets.columns})
 
     data.update(overrides)
     return data

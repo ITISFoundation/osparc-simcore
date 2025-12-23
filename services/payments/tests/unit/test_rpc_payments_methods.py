@@ -24,6 +24,11 @@ from models_library.users import UserID
 from models_library.wallets import WalletID
 from pydantic import EmailStr, TypeAdapter
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
+from pytest_simcore.helpers.postgres_products import insert_and_get_product_lifespan
+from pytest_simcore.helpers.postgres_users import (
+    insert_and_get_user_and_secrets_lifespan,
+)
+from pytest_simcore.helpers.postgres_wallets import insert_and_get_wallet_lifespan
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from respx import MockRouter
 from servicelib.rabbitmq import RabbitMQRPCClient
@@ -40,6 +45,7 @@ from simcore_service_payments.models.db import (
 )
 from simcore_service_payments.models.schemas.acknowledgements import AckPaymentMethod
 from simcore_service_payments.services.payments_methods import insert_payment_method
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 pytest_simcore_core_services_selection = [
     "postgres",
@@ -85,42 +91,61 @@ async def test_webserver_init_and_cancel_payment_method_workflow(
     user_email: EmailStr,
     wallet_name: IDStr,
     wallet_id: WalletID,
+    product_name: ProductName,
+    sqlalchemy_async_engine: AsyncEngine,
     payments_clean_db: None,
 ):
     assert app
 
-    initiated = await rpc_client.request(
-        PAYMENTS_RPC_NAMESPACE,
-        TypeAdapter(RPCMethodName).validate_python("init_creation_of_payment_method"),
-        wallet_id=wallet_id,
-        wallet_name=wallet_name,
-        user_id=user_id,
-        user_name=user_name,
-        user_email=user_email,
-    )
+    async with insert_and_get_user_and_secrets_lifespan(
+        sqlalchemy_async_engine, id=user_id
+    ) as user_row:
+        async with insert_and_get_product_lifespan(
+            sqlalchemy_async_engine, name=product_name
+        ):
+            async with insert_and_get_wallet_lifespan(
+                sqlalchemy_async_engine,
+                product_name=product_name,
+                user_group_id=user_row["primary_gid"],
+                wallet_id=wallet_id,
+            ):
 
-    assert isinstance(initiated, PaymentMethodInitiated)
+                initiated = await rpc_client.request(
+                    PAYMENTS_RPC_NAMESPACE,
+                    TypeAdapter(RPCMethodName).validate_python(
+                        "init_creation_of_payment_method"
+                    ),
+                    wallet_id=wallet_id,
+                    wallet_name=wallet_name,
+                    user_id=user_id,
+                    user_name=user_name,
+                    user_email=user_email,
+                )
 
-    if mock_payments_gateway_service_or_none:
-        assert mock_payments_gateway_service_or_none.routes[
-            "init_payment_method"
-        ].called
+                assert isinstance(initiated, PaymentMethodInitiated)
 
-    cancelled = await rpc_client.request(
-        PAYMENTS_RPC_NAMESPACE,
-        TypeAdapter(RPCMethodName).validate_python("cancel_creation_of_payment_method"),
-        payment_method_id=initiated.payment_method_id,
-        user_id=user_id,
-        wallet_id=wallet_id,
-        timeout_s=None if is_pdb_enabled else RPC_REQUEST_DEFAULT_TIMEOUT_S,
-    )
+                if mock_payments_gateway_service_or_none:
+                    assert mock_payments_gateway_service_or_none.routes[
+                        "init_payment_method"
+                    ].called
 
-    assert cancelled is None
+                cancelled = await rpc_client.request(
+                    PAYMENTS_RPC_NAMESPACE,
+                    TypeAdapter(RPCMethodName).validate_python(
+                        "cancel_creation_of_payment_method"
+                    ),
+                    payment_method_id=initiated.payment_method_id,
+                    user_id=user_id,
+                    wallet_id=wallet_id,
+                    timeout_s=None if is_pdb_enabled else RPC_REQUEST_DEFAULT_TIMEOUT_S,
+                )
 
-    if mock_payments_gateway_service_or_none:
-        assert mock_payments_gateway_service_or_none.routes[
-            "delete_payment_method"
-        ].called
+                assert cancelled is None
+
+                if mock_payments_gateway_service_or_none:
+                    assert mock_payments_gateway_service_or_none.routes[
+                        "delete_payment_method"
+                    ].called
 
 
 async def test_webserver_crud_payment_method_workflow(
@@ -131,77 +156,96 @@ async def test_webserver_crud_payment_method_workflow(
     user_id: UserID,
     user_name: IDStr,
     user_email: EmailStr,
+    product_name: ProductName,
     wallet_name: IDStr,
     wallet_id: WalletID,
+    sqlalchemy_async_engine: AsyncEngine,
     payments_clean_db: None,
 ):
     assert app
 
-    inited = await rpc_client.request(
-        PAYMENTS_RPC_NAMESPACE,
-        TypeAdapter(RPCMethodName).validate_python("init_creation_of_payment_method"),
-        wallet_id=wallet_id,
-        wallet_name=wallet_name,
-        user_id=user_id,
-        user_name=user_name,
-        user_email=user_email,
-    )
+    async with insert_and_get_user_and_secrets_lifespan(
+        sqlalchemy_async_engine, id=user_id
+    ) as user_row:
+        async with insert_and_get_product_lifespan(
+            sqlalchemy_async_engine, name=product_name
+        ):
+            async with insert_and_get_wallet_lifespan(
+                sqlalchemy_async_engine,
+                product_name=product_name,
+                user_group_id=user_row["primary_gid"],
+                wallet_id=wallet_id,
+            ):
 
-    assert isinstance(inited, PaymentMethodInitiated)
+                inited = await rpc_client.request(
+                    PAYMENTS_RPC_NAMESPACE,
+                    TypeAdapter(RPCMethodName).validate_python(
+                        "init_creation_of_payment_method"
+                    ),
+                    wallet_id=wallet_id,
+                    wallet_name=wallet_name,
+                    user_id=user_id,
+                    user_name=user_name,
+                    user_email=user_email,
+                )
 
-    if mock_payments_gateway_service_or_none:
-        assert mock_payments_gateway_service_or_none.routes[
-            "init_payment_method"
-        ].called
+                assert isinstance(inited, PaymentMethodInitiated)
 
-    # Faking ACK----
-    repo = PaymentsMethodsRepo(app.state.engine)
-    await repo.update_ack_payment_method(
-        inited.payment_method_id,
-        completion_state=InitPromptAckFlowState.SUCCESS,
-        state_message="FAKED ACK",
-    )
-    # -----
+                if mock_payments_gateway_service_or_none:
+                    assert mock_payments_gateway_service_or_none.routes[
+                        "init_payment_method"
+                    ].called
 
-    listed = await rpc_client.request(
-        PAYMENTS_RPC_NAMESPACE,
-        TypeAdapter(RPCMethodName).validate_python("list_payment_methods"),
-        user_id=user_id,
-        wallet_id=wallet_id,
-        timeout_s=None if is_pdb_enabled else RPC_REQUEST_DEFAULT_TIMEOUT_S,
-    )
-    assert len(listed) == 1
+                # Faking ACK----
+                repo = PaymentsMethodsRepo(app.state.engine)
+                await repo.update_ack_payment_method(
+                    inited.payment_method_id,
+                    completion_state=InitPromptAckFlowState.SUCCESS,
+                    state_message="FAKED ACK",
+                )
+                # -----
 
-    if mock_payments_gateway_service_or_none:
-        assert mock_payments_gateway_service_or_none.routes[
-            "batch_get_payment_methods"
-        ].called
+                listed = await rpc_client.request(
+                    PAYMENTS_RPC_NAMESPACE,
+                    TypeAdapter(RPCMethodName).validate_python("list_payment_methods"),
+                    user_id=user_id,
+                    wallet_id=wallet_id,
+                    timeout_s=None if is_pdb_enabled else RPC_REQUEST_DEFAULT_TIMEOUT_S,
+                )
+                assert len(listed) == 1
 
-    got = await rpc_client.request(
-        PAYMENTS_RPC_NAMESPACE,
-        TypeAdapter(RPCMethodName).validate_python("get_payment_method"),
-        payment_method_id=inited.payment_method_id,
-        user_id=user_id,
-        wallet_id=wallet_id,
-        timeout_s=None if is_pdb_enabled else RPC_REQUEST_DEFAULT_TIMEOUT_S,
-    )
-    assert got == listed[0]
-    if mock_payments_gateway_service_or_none:
-        assert mock_payments_gateway_service_or_none.routes["get_payment_method"].called
+                if mock_payments_gateway_service_or_none:
+                    assert mock_payments_gateway_service_or_none.routes[
+                        "batch_get_payment_methods"
+                    ].called
 
-    await rpc_client.request(
-        PAYMENTS_RPC_NAMESPACE,
-        TypeAdapter(RPCMethodName).validate_python("delete_payment_method"),
-        payment_method_id=inited.payment_method_id,
-        user_id=user_id,
-        wallet_id=wallet_id,
-        timeout_s=None if is_pdb_enabled else RPC_REQUEST_DEFAULT_TIMEOUT_S,
-    )
+                got = await rpc_client.request(
+                    PAYMENTS_RPC_NAMESPACE,
+                    TypeAdapter(RPCMethodName).validate_python("get_payment_method"),
+                    payment_method_id=inited.payment_method_id,
+                    user_id=user_id,
+                    wallet_id=wallet_id,
+                    timeout_s=None if is_pdb_enabled else RPC_REQUEST_DEFAULT_TIMEOUT_S,
+                )
+                assert got == listed[0]
+                if mock_payments_gateway_service_or_none:
+                    assert mock_payments_gateway_service_or_none.routes[
+                        "get_payment_method"
+                    ].called
 
-    if mock_payments_gateway_service_or_none:
-        assert mock_payments_gateway_service_or_none.routes[
-            "delete_payment_method"
-        ].called
+                await rpc_client.request(
+                    PAYMENTS_RPC_NAMESPACE,
+                    TypeAdapter(RPCMethodName).validate_python("delete_payment_method"),
+                    payment_method_id=inited.payment_method_id,
+                    user_id=user_id,
+                    wallet_id=wallet_id,
+                    timeout_s=None if is_pdb_enabled else RPC_REQUEST_DEFAULT_TIMEOUT_S,
+                )
+
+                if mock_payments_gateway_service_or_none:
+                    assert mock_payments_gateway_service_or_none.routes[
+                        "delete_payment_method"
+                    ].called
 
 
 async def test_webserver_pay_with_payment_method_workflow(
@@ -219,48 +263,66 @@ async def test_webserver_pay_with_payment_method_workflow(
     user_email: EmailStr,
     wallet_name: IDStr,
     wallet_id: WalletID,
+    sqlalchemy_async_engine: AsyncEngine,
     payments_clean_db: None,
 ):
     assert app
 
-    # faking Payment method
-    created = await insert_payment_method(
-        repo=PaymentsMethodsRepo(app.state.engine),
-        payment_method_id=faker.uuid4(),
-        user_id=user_id,
-        wallet_id=wallet_id,
-        ack=AckPaymentMethod(success=True, message="Faked ACK"),
-    )
+    async with insert_and_get_user_and_secrets_lifespan(
+        sqlalchemy_async_engine, id=user_id
+    ) as user_row:
+        async with insert_and_get_product_lifespan(
+            sqlalchemy_async_engine, name=product_name
+        ):
+            async with insert_and_get_wallet_lifespan(
+                sqlalchemy_async_engine,
+                product_name=product_name,
+                user_group_id=user_row["primary_gid"],
+                wallet_id=wallet_id,
+            ):
 
-    transaction = await rpc_client.request(
-        PAYMENTS_RPC_NAMESPACE,
-        TypeAdapter(RPCMethodName).validate_python("pay_with_payment_method"),
-        payment_method_id=created.payment_method_id,
-        amount_dollars=faker.pyint(),
-        target_credits=faker.pyint(),
-        product_name=product_name,
-        wallet_id=wallet_id,
-        wallet_name=wallet_name,
-        user_id=user_id,
-        user_name=user_name,
-        user_email=user_email,
-        user_address=UserInvoiceAddress(country="CH"),
-        stripe_price_id=product_price_stripe_price_id,
-        stripe_tax_rate_id=product_price_stripe_tax_rate_id,
-        comment="Payment with stored credit-card",
-    )
+                # faking Payment method
+                created = await insert_payment_method(
+                    repo=PaymentsMethodsRepo(app.state.engine),
+                    payment_method_id=faker.uuid4(),
+                    user_id=user_id,
+                    wallet_id=wallet_id,
+                    ack=AckPaymentMethod(success=True, message="Faked ACK"),
+                )
 
-    assert isinstance(transaction, PaymentTransaction)
-    assert transaction.payment_id
-    assert transaction.state == "SUCCESS"
+                transaction = await rpc_client.request(
+                    PAYMENTS_RPC_NAMESPACE,
+                    TypeAdapter(RPCMethodName).validate_python(
+                        "pay_with_payment_method"
+                    ),
+                    payment_method_id=created.payment_method_id,
+                    amount_dollars=faker.pyint(),
+                    target_credits=faker.pyint(),
+                    product_name=product_name,
+                    wallet_id=wallet_id,
+                    wallet_name=wallet_name,
+                    user_id=user_id,
+                    user_name=user_name,
+                    user_email=user_email,
+                    user_address=UserInvoiceAddress(country="CH"),
+                    stripe_price_id=product_price_stripe_price_id,
+                    stripe_tax_rate_id=product_price_stripe_tax_rate_id,
+                    comment="Payment with stored credit-card",
+                )
 
-    payment = await PaymentsTransactionsRepo(app.state.engine).get_payment_transaction(
-        transaction.payment_id, user_id=user_id, wallet_id=wallet_id
-    )
-    assert payment is not None
-    assert payment.payment_id == transaction.payment_id
-    assert payment.state == PaymentTransactionState.SUCCESS
-    assert payment.comment == "Payment with stored credit-card"
+                assert isinstance(transaction, PaymentTransaction)
+                assert transaction.payment_id
+                assert transaction.state == "SUCCESS"
+
+                payment = await PaymentsTransactionsRepo(
+                    app.state.engine
+                ).get_payment_transaction(
+                    transaction.payment_id, user_id=user_id, wallet_id=wallet_id
+                )
+                assert payment is not None
+                assert payment.payment_id == transaction.payment_id
+                assert payment.state == PaymentTransactionState.SUCCESS
+                assert payment.comment == "Payment with stored credit-card"
 
 
 async def test_webserver_pay_with_payment_method_timeout_workflow(
@@ -278,61 +340,79 @@ async def test_webserver_pay_with_payment_method_timeout_workflow(
     user_email: EmailStr,
     wallet_name: IDStr,
     wallet_id: WalletID,
+    sqlalchemy_async_engine: AsyncEngine,
     payments_clean_db: None,
 ):
     """Test that UnverifiedPaymentError is properly handled when payment gateway times out"""
 
     assert app
 
-    # faking Payment method
-    created = await insert_payment_method(
-        repo=PaymentsMethodsRepo(app.state.engine),
-        payment_method_id=IDStr("a0b31d6f-8a64-42f7-842c-a65377790d44"),
-        user_id=user_id,
-        wallet_id=wallet_id,
-        ack=AckPaymentMethod(success=True, message="Faked ACK"),
-    )
+    async with insert_and_get_user_and_secrets_lifespan(
+        sqlalchemy_async_engine, id=user_id
+    ) as user_row:
+        async with insert_and_get_product_lifespan(
+            sqlalchemy_async_engine, name=product_name
+        ):
+            async with insert_and_get_wallet_lifespan(
+                sqlalchemy_async_engine,
+                product_name=product_name,
+                user_group_id=user_row["primary_gid"],
+                wallet_id=wallet_id,
+            ):
 
-    # Mock the payment endpoint to raise a timeout
-    def _timeout_payment(request: httpx.Request, pm_id: PaymentMethodID):
-        # Simulate timeout by raising TimeoutException
-        msg = f"Request timed out for {pm_id}"
-        raise TimeoutException(msg, request=request)
+                # faking Payment method
+                created = await insert_payment_method(
+                    repo=PaymentsMethodsRepo(app.state.engine),
+                    payment_method_id=IDStr("a0b31d6f-8a64-42f7-842c-a65377790d44"),
+                    user_id=user_id,
+                    wallet_id=wallet_id,
+                    ack=AckPaymentMethod(success=True, message="Faked ACK"),
+                )
 
-    mock_payments_gateway_service_api_base.post(
-        path__regex=r"/payment-methods/(?P<pm_id>[\w-]+):pay$",
-        name="pay_with_payment_method_timeout",
-    ).mock(side_effect=_timeout_payment)
+                # Mock the payment endpoint to raise a timeout
+                def _timeout_payment(request: httpx.Request, pm_id: PaymentMethodID):
+                    # Simulate timeout by raising TimeoutException
+                    msg = f"Request timed out for {pm_id}"
+                    raise TimeoutException(msg, request=request)
 
-    # Verify that PaymentUnverifiedError is raised from the RPC call
-    with pytest.raises(PaymentUnverifiedError) as exc_info:
-        await rpc_client.request(
-            PAYMENTS_RPC_NAMESPACE,
-            TypeAdapter(RPCMethodName).validate_python("pay_with_payment_method"),
-            payment_method_id=created.payment_method_id,
-            amount_dollars=faker.pyint(),
-            target_credits=faker.pyint(),
-            product_name=product_name,
-            wallet_id=wallet_id,
-            wallet_name=wallet_name,
-            user_id=user_id,
-            user_name=user_name,
-            user_email=user_email,
-            user_address=UserInvoiceAddress(country="CH"),
-            stripe_price_id=product_price_stripe_price_id,
-            stripe_tax_rate_id=product_price_stripe_tax_rate_id,
-            comment="Payment with stored credit-card that will timeout",
-            timeout_s=None if is_pdb_enabled else RPC_REQUEST_DEFAULT_TIMEOUT_S,
-        )
+                mock_payments_gateway_service_api_base.post(
+                    path__regex=r"/payment-methods/(?P<pm_id>[\w-]+):pay$",
+                    name="pay_with_payment_method_timeout",
+                ).mock(side_effect=_timeout_payment)
 
-    # Verify error details
-    error = exc_info.value
-    assert error.payment_method_id == created.payment_method_id
-    assert error.wallet_id == wallet_id
-    assert error.user_id == user_id
-    assert "timeout" in error.internal_details.lower()
+                # Verify that PaymentUnverifiedError is raised from the RPC call
+                with pytest.raises(PaymentUnverifiedError) as exc_info:
+                    await rpc_client.request(
+                        PAYMENTS_RPC_NAMESPACE,
+                        TypeAdapter(RPCMethodName).validate_python(
+                            "pay_with_payment_method"
+                        ),
+                        payment_method_id=created.payment_method_id,
+                        amount_dollars=faker.pyint(),
+                        target_credits=faker.pyint(),
+                        product_name=product_name,
+                        wallet_id=wallet_id,
+                        wallet_name=wallet_name,
+                        user_id=user_id,
+                        user_name=user_name,
+                        user_email=user_email,
+                        user_address=UserInvoiceAddress(country="CH"),
+                        stripe_price_id=product_price_stripe_price_id,
+                        stripe_tax_rate_id=product_price_stripe_tax_rate_id,
+                        comment="Payment with stored credit-card that will timeout",
+                        timeout_s=(
+                            None if is_pdb_enabled else RPC_REQUEST_DEFAULT_TIMEOUT_S
+                        ),
+                    )
 
-    # Verify the mock was called
-    assert mock_payments_gateway_service_api_base.routes[
-        "pay_with_payment_method_timeout"
-    ].called
+                # Verify error details
+                error = exc_info.value
+                assert error.payment_method_id == created.payment_method_id
+                assert error.wallet_id == wallet_id
+                assert error.user_id == user_id
+                assert "timeout" in error.internal_details.lower()
+
+                # Verify the mock was called
+                assert mock_payments_gateway_service_api_base.routes[
+                    "pay_with_payment_method_timeout"
+                ].called
