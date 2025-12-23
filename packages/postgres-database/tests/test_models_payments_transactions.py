@@ -6,7 +6,7 @@
 # pylint: disable=protected-access
 
 import decimal
-from collections.abc import Callable
+from collections.abc import AsyncIterable, Callable
 from typing import Any
 
 import pytest
@@ -34,36 +34,40 @@ from simcore_postgres_database.utils_repos import transaction_context
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 
-async def test_numerics_precission_and_scale(asyncpg_engine: AsyncEngine):
+async def test_numerics_precision_and_scale(asyncpg_engine: AsyncEngine):
     # https://docs.sqlalchemy.org/en/20/core/type_basics.html#sqlalchemy.types.Numeric
     # precision: This parameter specifies the total number of digits that can be stored, both before and after the decimal point.
     # scale: This parameter specifies the number of digits that can be stored to the right of the decimal point.
 
-    async with insert_and_get_user_and_secrets_lifespan(asyncpg_engine) as user_row:
-        async with insert_and_get_product_lifespan(asyncpg_engine) as product_row:
-            product_name = product_row["name"]
-            async with insert_and_get_wallet_lifespan(
+    async with (
+        insert_and_get_user_and_secrets_lifespan(asyncpg_engine) as user_row,
+        insert_and_get_product_lifespan(asyncpg_engine) as product_row,
+    ):
+        product_name = product_row["name"]
+        async with (
+            insert_and_get_wallet_lifespan(
                 asyncpg_engine,
                 product_name=product_name,
                 user_group_id=user_row["primary_gid"],
-            ) as wallet_row:
-                async with asyncpg_engine.begin() as connection:
-                    for order_of_magnitude in range(8):
-                        expected = 10**order_of_magnitude + 0.123
-                        got = await connection.scalar(
-                            payments_transactions.insert()
-                            .values(
-                                **random_payment_transaction(
-                                    price_dollars=expected,
-                                    user_id=user_row["id"],
-                                    product_name=product_name,
-                                    wallet_id=wallet_row["wallet_id"],
-                                )
-                            )
-                            .returning(payments_transactions.c.price_dollars)
+            ) as wallet_row,
+            asyncpg_engine.begin() as connection,
+        ):
+            for order_of_magnitude in range(8):
+                expected = 10**order_of_magnitude + 0.123
+                got = await connection.scalar(
+                    payments_transactions.insert()
+                    .values(
+                        **random_payment_transaction(
+                            price_dollars=expected,
+                            user_id=user_row["id"],
+                            product_name=product_name,
+                            wallet_id=wallet_row["wallet_id"],
                         )
-                        assert isinstance(got, decimal.Decimal)
-                        assert float(got) == expected
+                    )
+                    .returning(payments_transactions.c.price_dollars)
+                )
+                assert isinstance(got, decimal.Decimal)
+                assert float(got) == expected
 
 
 def _remove_not_required(data: dict[str, Any]) -> dict[str, Any]:
@@ -80,37 +84,40 @@ def _remove_not_required(data: dict[str, Any]) -> dict[str, Any]:
 
 
 @pytest.fixture
-def init_transaction(asyncpg_engine: AsyncEngine):
-    async def _init(payment_id: str):
-        async with insert_and_get_user_and_secrets_lifespan(asyncpg_engine) as user_row:
-            async with insert_and_get_product_lifespan(asyncpg_engine) as product_row:
-                product_name = product_row["name"]
-                async with insert_and_get_wallet_lifespan(
-                    asyncpg_engine,
-                    product_name=product_name,
-                    user_group_id=user_row["primary_gid"],
-                ) as wallet_row:
-                    # get payment_id from payment-gateway
-                    values = _remove_not_required(
-                        random_payment_transaction(
-                            payment_id=payment_id,
-                            user_id=user_row["id"],
-                            product_name=product_name,
-                            wallet_id=wallet_row["wallet_id"],
-                        )
+async def init_transaction(asyncpg_engine: AsyncEngine) -> AsyncIterable[Callable]:  # type: ignore
+    async with (
+        insert_and_get_user_and_secrets_lifespan(asyncpg_engine) as user_row,
+        insert_and_get_product_lifespan(asyncpg_engine) as product_row,
+    ):
+        product_name = product_row["name"]
+        async with insert_and_get_wallet_lifespan(
+            asyncpg_engine,
+            product_name=product_name,
+            user_group_id=user_row["primary_gid"],
+        ) as wallet_row:
+
+            async def _init(payment_id: str) -> dict[str, Any]:
+                # get payment_id from payment-gateway
+                values = _remove_not_required(
+                    random_payment_transaction(
+                        payment_id=payment_id,
+                        user_id=user_row["id"],
+                        product_name=product_name,
+                        wallet_id=wallet_row["wallet_id"],
                     )
+                )
 
-                    # init successful: set timestamp
-                    values["initiated_at"] = utcnow()
+                # init successful: set timestamp
+                values["initiated_at"] = utcnow()
 
-                    # insert
-                    async with asyncpg_engine.begin() as connection:
-                        ok = await insert_init_payment_transaction(connection, **values)
-                    assert ok
+                # insert
+                async with asyncpg_engine.begin() as connection:
+                    ok = await insert_init_payment_transaction(connection, **values)
+                assert ok
 
-                    return values
+                return values
 
-    return _init
+            yield _init
 
 
 @pytest.fixture
