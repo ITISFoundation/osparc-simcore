@@ -2,11 +2,12 @@ import logging
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
+from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, StorageFileID
 from models_library.service_settings_labels import LegacyState
 from models_library.users import UserID
-from pydantic import TypeAdapter
+from pydantic import NonNegativeInt, TypeAdapter
 from servicelib.archiving_utils import unarchive_dir
 from servicelib.logging_utils import log_context
 from servicelib.progress_bar import ProgressBarData
@@ -16,16 +17,22 @@ from ..node_ports_common import filemanager
 from ..node_ports_common.constants import SIMCORE_LOCATION
 from ..node_ports_common.dbmanager import DBManager
 from ..node_ports_common.file_io_utils import LogRedirectCB
+from ..node_ports_common.r_clone_mount import (
+    GetBindPathsProtocol,
+    MountActivityProtocol,
+    MountRemoteType,
+    RCloneMountManager,
+)
 
 _logger = logging.getLogger(__name__)
 
 
 def __create_s3_object_key(
-    project_id: ProjectID, node_uuid: NodeID, file_path: Path | str
+    project_id: ProjectID, node_id: NodeID, file_path: Path | str
 ) -> StorageFileID:
     file_name = file_path.name if isinstance(file_path, Path) else file_path
     return TypeAdapter(StorageFileID).validate_python(
-        f"{project_id}/{node_uuid}/{file_name}"
+        f"{project_id}/{node_id}/{file_name}"
     )
 
 
@@ -182,11 +189,18 @@ async def _delete_legacy_archive(
     )
 
 
-async def push(  # pylint: disable=too-many-arguments
+async def _stop_mount(
+    mount_manager: RCloneMountManager, destination_path: Path, index: NonNegativeInt
+) -> None:
+    await mount_manager.ensure_unmounted(destination_path, index)
+
+
+async def push(  # pylint: disable=too-many-arguments  # noqa: PLR0913
     user_id: UserID,
     project_id: ProjectID,
     node_uuid: NodeID,
     source_path: Path,
+    index: NonNegativeInt,
     *,
     io_log_redirect_cb: LogRedirectCB,
     r_clone_settings: RCloneSettings,
@@ -194,19 +208,23 @@ async def push(  # pylint: disable=too-many-arguments
     progress_bar: ProgressBarData,
     legacy_state: LegacyState | None,
     application_name: str,
+    mount_manager: RCloneMountManager,
 ) -> None:
     """pushes and removes the legacy archive if present"""
 
-    await _push_directory(
-        user_id=user_id,
-        project_id=project_id,
-        node_uuid=node_uuid,
-        source_path=source_path,
-        r_clone_settings=r_clone_settings,
-        exclude_patterns=exclude_patterns,
-        io_log_redirect_cb=io_log_redirect_cb,
-        progress_bar=progress_bar,
-    )
+    if mount_manager.is_mount_tracked(source_path, index):
+        await _stop_mount(mount_manager, source_path, index)
+    else:
+        await _push_directory(
+            user_id=user_id,
+            project_id=project_id,
+            node_uuid=node_uuid,
+            source_path=source_path,
+            r_clone_settings=r_clone_settings,
+            exclude_patterns=exclude_patterns,
+            io_log_redirect_cb=io_log_redirect_cb,
+            progress_bar=progress_bar,
+        )
 
     archive_exists = await _state_metadata_entry_exists(
         user_id=user_id,
@@ -244,18 +262,69 @@ async def push(  # pylint: disable=too-many-arguments
                 )
 
 
-async def pull(
+async def _requires_r_clone_mounting(
+    application_name: str, user_id: UserID, product_name: ProductName
+) -> bool:
+    group_extra_properties = await DBManager(
+        application_name=application_name
+    ).get_group_extra_properties(user_id=user_id, product_name=product_name)
+    return group_extra_properties.use_r_clone_mounting is True
+
+
+async def _start_mount_if_required(
+    mount_manager: RCloneMountManager,
+    user_id: UserID,
+    project_id: ProjectID,
+    node_id: NodeID,
+    destination_path: Path,
+    index: NonNegativeInt,
+    handler_get_bind_paths: GetBindPathsProtocol,
+    handler_mount_activity: MountActivityProtocol,
+    *,
+    use_r_clone_mount: bool,
+) -> None:
+    if not use_r_clone_mount:
+        return
+
+    s3_object = __create_s3_object_key(project_id, node_id, destination_path)
+
+    await filemanager.create_r_clone_mounted_directory_entry(
+        user_id=user_id, s3_object=s3_object, store_id=SIMCORE_LOCATION
+    )
+
+    await mount_manager.ensure_mounted(
+        destination_path,
+        index,
+        node_id=node_id,
+        remote_type=MountRemoteType.S3,
+        remote_path=s3_object,
+        handler_get_bind_paths=handler_get_bind_paths,
+        handler_mount_activity=handler_mount_activity,
+    )
+
+
+async def pull(  # pylint: disable=too-many-arguments  # noqa: PLR0913
+    product_name: ProductName,
     user_id: UserID,
     project_id: ProjectID,
     node_uuid: NodeID,
     destination_path: Path,
+    index: NonNegativeInt,
     *,
     io_log_redirect_cb: LogRedirectCB,
     r_clone_settings: RCloneSettings,
     progress_bar: ProgressBarData,
     legacy_state: LegacyState | None,
+    application_name: str,
+    mount_manager: RCloneMountManager,
+    handler_get_bind_paths: GetBindPathsProtocol,
+    handler_mount_activity: MountActivityProtocol,
 ) -> None:
     """restores the state folder"""
+
+    use_r_clone_mount = await _requires_r_clone_mounting(
+        application_name, user_id, product_name
+    )
 
     if legacy_state and legacy_state.new_state_path == destination_path:
         _logger.info(
@@ -286,6 +355,17 @@ async def pull(
                     progress_bar=progress_bar,
                     legacy_destination_path=legacy_state.old_state_path,
                 )
+                await _start_mount_if_required(
+                    mount_manager,
+                    user_id,
+                    project_id,
+                    node_uuid,
+                    destination_path,
+                    index,
+                    handler_get_bind_paths,
+                    handler_mount_activity,
+                    use_r_clone_mount=use_r_clone_mount,
+                )
             return
 
     state_archive_exists = await _state_metadata_entry_exists(
@@ -305,6 +385,17 @@ async def pull(
                 io_log_redirect_cb=io_log_redirect_cb,
                 progress_bar=progress_bar,
             )
+            await _start_mount_if_required(
+                mount_manager,
+                user_id,
+                project_id,
+                node_uuid,
+                destination_path,
+                index,
+                handler_get_bind_paths,
+                handler_mount_activity,
+                use_r_clone_mount=use_r_clone_mount,
+            )
         return
 
     state_directory_exists = await _state_metadata_entry_exists(
@@ -315,15 +406,40 @@ async def pull(
         is_archive=False,
     )
     if state_directory_exists:
-        await _pull_directory(
-            user_id=user_id,
-            project_id=project_id,
-            node_uuid=node_uuid,
-            destination_path=destination_path,
-            io_log_redirect_cb=io_log_redirect_cb,
-            r_clone_settings=r_clone_settings,
-            progress_bar=progress_bar,
-        )
+        if use_r_clone_mount:
+            await _start_mount_if_required(
+                mount_manager,
+                user_id,
+                project_id,
+                node_uuid,
+                destination_path,
+                index,
+                handler_get_bind_paths,
+                handler_mount_activity,
+                use_r_clone_mount=use_r_clone_mount,
+            )
+        else:
+            await _pull_directory(
+                user_id=user_id,
+                project_id=project_id,
+                node_uuid=node_uuid,
+                destination_path=destination_path,
+                io_log_redirect_cb=io_log_redirect_cb,
+                r_clone_settings=r_clone_settings,
+                progress_bar=progress_bar,
+            )
+
         return
 
+    await _start_mount_if_required(
+        mount_manager,
+        user_id,
+        project_id,
+        node_uuid,
+        destination_path,
+        index,
+        handler_get_bind_paths,
+        handler_mount_activity,
+        use_r_clone_mount=use_r_clone_mount,
+    )
     _logger.debug("No content previously saved for '%s'", destination_path)
