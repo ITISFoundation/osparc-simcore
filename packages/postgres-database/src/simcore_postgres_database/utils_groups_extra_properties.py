@@ -30,7 +30,9 @@ class GroupExtraPropertiesNotFoundError(GroupExtraPropertiesError): ...
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
-class GroupExtraProperties(FromRowMixin):
+class GroupExtraProperties(  # pylint: disable=too-many-instance-attributes
+    FromRowMixin
+):
     group_id: int
     product_name: str
     internet_access: bool
