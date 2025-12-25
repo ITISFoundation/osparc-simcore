@@ -250,7 +250,6 @@ def get_tracing_instrumentation_lifespan(tracing_config: TracingConfig):
 
 
 class ResponseTraceIdHeaderMiddleware(BaseHTTPMiddleware):
-
     async def dispatch(self, request: Request, call_next):
         response = await call_next(request)
         trace_id_header = get_trace_id_header()
