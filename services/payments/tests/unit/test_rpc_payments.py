@@ -15,11 +15,16 @@ from models_library.payments import UserInvoiceAddress
 from models_library.rabbitmq_basic_types import RPCMethodName
 from pydantic import TypeAdapter
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
+from pytest_simcore.helpers.postgres_users import (
+    insert_and_get_user_and_secrets_lifespan,
+)
+from pytest_simcore.helpers.postgres_wallets import insert_and_get_wallet_lifespan
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from respx import MockRouter
 from servicelib.rabbitmq import RabbitMQRPCClient, RPCServerError
 from servicelib.rabbitmq._constants import RPC_REQUEST_DEFAULT_TIMEOUT_S
 from simcore_service_payments.api.rpc.routes import PAYMENTS_RPC_NAMESPACE
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 pytest_simcore_core_services_selection = [
     "postgres",
@@ -101,34 +106,49 @@ async def test_webserver_one_time_payment_workflow(
     rpc_client: RabbitMQRPCClient,
     mock_payments_gateway_service_or_none: MockRouter | None,
     init_payment_kwargs: dict[str, Any],
+    sqlalchemy_async_engine: AsyncEngine,
     payments_clean_db: None,
 ):
     assert app
 
-    result = await rpc_client.request(
-        PAYMENTS_RPC_NAMESPACE,
-        TypeAdapter(RPCMethodName).validate_python("init_payment"),
-        **init_payment_kwargs,
-    )
+    async with insert_and_get_user_and_secrets_lifespan(
+        sqlalchemy_async_engine, id=init_payment_kwargs["user_id"]
+    ) as user_row:
+        async with insert_and_get_wallet_lifespan(
+            sqlalchemy_async_engine,
+            product_name="osparc",
+            user_group_id=user_row["primary_gid"],
+            wallet_id=init_payment_kwargs["wallet_id"],
+        ):
 
-    assert isinstance(result, WalletPaymentInitiated)
+            result = await rpc_client.request(
+                PAYMENTS_RPC_NAMESPACE,
+                TypeAdapter(RPCMethodName).validate_python("init_payment"),
+                **init_payment_kwargs,
+            )
 
-    if mock_payments_gateway_service_or_none:
-        assert mock_payments_gateway_service_or_none.routes["init_payment"].called
+            assert isinstance(result, WalletPaymentInitiated)
 
-    result = await rpc_client.request(
-        PAYMENTS_RPC_NAMESPACE,
-        TypeAdapter(RPCMethodName).validate_python("cancel_payment"),
-        payment_id=result.payment_id,
-        user_id=init_payment_kwargs["user_id"],
-        wallet_id=init_payment_kwargs["wallet_id"],
-        timeout_s=None if is_pdb_enabled else RPC_REQUEST_DEFAULT_TIMEOUT_S,
-    )
+            if mock_payments_gateway_service_or_none:
+                assert mock_payments_gateway_service_or_none.routes[
+                    "init_payment"
+                ].called
 
-    assert result is None
+            result = await rpc_client.request(
+                PAYMENTS_RPC_NAMESPACE,
+                TypeAdapter(RPCMethodName).validate_python("cancel_payment"),
+                payment_id=result.payment_id,
+                user_id=init_payment_kwargs["user_id"],
+                wallet_id=init_payment_kwargs["wallet_id"],
+                timeout_s=None if is_pdb_enabled else RPC_REQUEST_DEFAULT_TIMEOUT_S,
+            )
 
-    if mock_payments_gateway_service_or_none:
-        assert mock_payments_gateway_service_or_none.routes["cancel_payment"].called
+            assert result is None
+
+            if mock_payments_gateway_service_or_none:
+                assert mock_payments_gateway_service_or_none.routes[
+                    "cancel_payment"
+                ].called
 
 
 async def test_cancel_invalid_payment_id(

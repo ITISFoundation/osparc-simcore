@@ -84,7 +84,7 @@ DECLARE
     group_id BIGINT;
 BEGIN
     IF TG_OP = 'INSERT' THEN
-        INSERT INTO "wallet_to_groups" ("gid", "wallet_id", "read", "write", "delete") VALUES (NEW.owner, NEW.id, TRUE, TRUE, TRUE);
+        INSERT INTO "wallet_to_groups" ("gid", "wallet_id", "read", "write", "delete") VALUES (NEW.owner, NEW.wallet_id, TRUE, TRUE, TRUE);
     END IF;
     RETURN NULL;
 END; $$ LANGUAGE 'plpgsql';

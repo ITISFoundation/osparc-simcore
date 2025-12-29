@@ -6,13 +6,18 @@
 # pylint: disable=protected-access
 
 import decimal
-from collections.abc import Callable
+from collections.abc import AsyncIterable, Callable
 from typing import Any
 
 import pytest
 import sqlalchemy as sa
 from faker import Faker
 from pytest_simcore.helpers.faker_factories import random_payment_transaction, utcnow
+from pytest_simcore.helpers.postgres_products import insert_and_get_product_lifespan
+from pytest_simcore.helpers.postgres_users import (
+    insert_and_get_user_and_secrets_lifespan,
+)
+from pytest_simcore.helpers.postgres_wallets import insert_and_get_wallet_lifespan
 from simcore_postgres_database.models.payments_transactions import (
     PaymentTransactionState,
     payments_transactions,
@@ -29,21 +34,40 @@ from simcore_postgres_database.utils_repos import transaction_context
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 
-async def test_numerics_precission_and_scale(asyncpg_engine: AsyncEngine):
+async def test_numerics_precision_and_scale(asyncpg_engine: AsyncEngine):
     # https://docs.sqlalchemy.org/en/20/core/type_basics.html#sqlalchemy.types.Numeric
     # precision: This parameter specifies the total number of digits that can be stored, both before and after the decimal point.
     # scale: This parameter specifies the number of digits that can be stored to the right of the decimal point.
 
-    async with asyncpg_engine.begin() as connection:
-        for order_of_magnitude in range(8):
-            expected = 10**order_of_magnitude + 0.123
-            got = await connection.scalar(
-                payments_transactions.insert()
-                .values(**random_payment_transaction(price_dollars=expected))
-                .returning(payments_transactions.c.price_dollars)
-            )
-            assert isinstance(got, decimal.Decimal)
-            assert float(got) == expected
+    async with (
+        insert_and_get_user_and_secrets_lifespan(asyncpg_engine) as user_row,
+        insert_and_get_product_lifespan(asyncpg_engine) as product_row,
+    ):
+        product_name = product_row["name"]
+        async with (
+            insert_and_get_wallet_lifespan(
+                asyncpg_engine,
+                product_name=product_name,
+                user_group_id=user_row["primary_gid"],
+            ) as wallet_row,
+            asyncpg_engine.begin() as connection,
+        ):
+            for order_of_magnitude in range(8):
+                expected = 10**order_of_magnitude + 0.123
+                got = await connection.scalar(
+                    payments_transactions.insert()
+                    .values(
+                        **random_payment_transaction(
+                            price_dollars=expected,
+                            user_id=user_row["id"],
+                            product_name=product_name,
+                            wallet_id=wallet_row["wallet_id"],
+                        )
+                    )
+                    .returning(payments_transactions.c.price_dollars)
+                )
+                assert isinstance(got, decimal.Decimal)
+                assert float(got) == expected
 
 
 def _remove_not_required(data: dict[str, Any]) -> dict[str, Any]:
@@ -60,22 +84,40 @@ def _remove_not_required(data: dict[str, Any]) -> dict[str, Any]:
 
 
 @pytest.fixture
-def init_transaction(asyncpg_engine: AsyncEngine):
-    async def _init(payment_id: str):
-        # get payment_id from payment-gateway
-        values = _remove_not_required(random_payment_transaction(payment_id=payment_id))
+async def init_transaction(asyncpg_engine: AsyncEngine) -> AsyncIterable[Callable]:  # type: ignore
+    async with (
+        insert_and_get_user_and_secrets_lifespan(asyncpg_engine) as user_row,
+        insert_and_get_product_lifespan(asyncpg_engine) as product_row,
+    ):
+        product_name = product_row["name"]
+        async with insert_and_get_wallet_lifespan(
+            asyncpg_engine,
+            product_name=product_name,
+            user_group_id=user_row["primary_gid"],
+        ) as wallet_row:
 
-        # init successful: set timestamp
-        values["initiated_at"] = utcnow()
+            async def _init(payment_id: str) -> dict[str, Any]:
+                # get payment_id from payment-gateway
+                values = _remove_not_required(
+                    random_payment_transaction(
+                        payment_id=payment_id,
+                        user_id=user_row["id"],
+                        product_name=product_name,
+                        wallet_id=wallet_row["wallet_id"],
+                    )
+                )
 
-        # insert
-        async with asyncpg_engine.begin() as connection:
-            ok = await insert_init_payment_transaction(connection, **values)
-        assert ok
+                # init successful: set timestamp
+                values["initiated_at"] = utcnow()
 
-        return values
+                # insert
+                async with asyncpg_engine.begin() as connection:
+                    ok = await insert_init_payment_transaction(connection, **values)
+                assert ok
 
-    return _init
+                return values
+
+            yield _init
 
 
 @pytest.fixture
@@ -192,36 +234,48 @@ async def test_update_transaction_failures_and_exceptions(
 
 
 @pytest.fixture
-def user_id() -> int:
-    return 1
+async def create_fake_user_transactions(
+    asyncpg_engine: AsyncEngine,
+) -> AsyncIterable[Callable]:  # type: ignore
+    async with (
+        insert_and_get_user_and_secrets_lifespan(asyncpg_engine) as user_row,
+        insert_and_get_product_lifespan(asyncpg_engine) as product_row,
+    ):
+        product_name = product_row["name"]
+        async with insert_and_get_wallet_lifespan(
+            asyncpg_engine,
+            product_name=product_name,
+            user_group_id=user_row["primary_gid"],
+        ) as wallet_row:
 
+            async def _go(expected_total=5):
+                payment_ids = []
+                for _ in range(expected_total):
+                    values = _remove_not_required(
+                        random_payment_transaction(
+                            user_id=user_row["id"],
+                            product_name=product_name,
+                            wallet_id=wallet_row["wallet_id"],
+                        )
+                    )
 
-@pytest.fixture
-def create_fake_user_transactions(
-    asyncpg_engine: AsyncEngine, user_id: int
-) -> Callable:
+                    async with transaction_context(asyncpg_engine) as connection:
+                        payment_id = await insert_init_payment_transaction(
+                            connection, **values
+                        )
+                    assert payment_id
+                    payment_ids.append(payment_id)
 
-    assert asyncpg_engine
+                return payment_ids, user_row["id"]
 
-    async def _go(expected_total=5):
-        payment_ids = []
-        for _ in range(expected_total):
-            values = _remove_not_required(random_payment_transaction(user_id=user_id))
-
-            async with transaction_context(asyncpg_engine) as connection:
-                payment_id = await insert_init_payment_transaction(connection, **values)
-            assert payment_id
-            payment_ids.append(payment_id)
-
-        return payment_ids
-
-    return _go
+            yield _go
 
 
 async def test_get_user_payments_transactions(
-    asyncpg_engine: AsyncEngine, create_fake_user_transactions: Callable, user_id: int
+    asyncpg_engine: AsyncEngine,
+    create_fake_user_transactions: Callable,
 ):
-    expected_payments_ids = await create_fake_user_transactions()
+    expected_payments_ids, user_id = await create_fake_user_transactions()
     expected_total = len(expected_payments_ids)
 
     # test offset and limit defaults
@@ -233,9 +287,10 @@ async def test_get_user_payments_transactions(
 
 
 async def test_get_user_payments_transactions_with_pagination_options(
-    asyncpg_engine: AsyncEngine, create_fake_user_transactions: Callable, user_id: int
+    asyncpg_engine: AsyncEngine,
+    create_fake_user_transactions: Callable,
 ):
-    expected_payments_ids = await create_fake_user_transactions()
+    expected_payments_ids, user_id = await create_fake_user_transactions()
     expected_total = len(expected_payments_ids)
 
     # test  offset, limit
