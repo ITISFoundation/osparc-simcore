@@ -84,7 +84,7 @@ def _list_filter_with_partial_file_id_stmt(
         project_ids = user_or_project_filter.project_ids
         conditions.append(
             sa.or_(
-                file_meta_data.c.user_id == f"{user_id}",
+                file_meta_data.c.user_id == user_id,
                 (
                     file_meta_data.c.project_id.in_(f"{_}" for _ in project_ids)
                     if project_ids

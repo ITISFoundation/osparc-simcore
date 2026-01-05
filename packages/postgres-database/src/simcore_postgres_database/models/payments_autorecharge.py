@@ -9,6 +9,7 @@ from ._common import (
 )
 from .base import metadata
 from .payments_methods import payments_methods
+from .wallets import wallets
 
 #
 # NOTE:
@@ -29,7 +30,12 @@ payments_autorecharge = sa.Table(
     sa.Column(
         "wallet_id",
         sa.BigInteger,
-        # NOTE: cannot use foreign-key because it would require a link to wallets table
+        sa.ForeignKey(
+            wallets.c.wallet_id,
+            name="fk_payments_autorecharge_id_wallets",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.CASCADE,
+        ),
         nullable=False,
         doc="Wallet associated to the auto-recharge",
         unique=True,

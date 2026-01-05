@@ -1,4 +1,4 @@
-from collections.abc import Callable, Iterator
+from collections.abc import AsyncIterator, Callable, Iterator
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 
@@ -18,6 +18,7 @@ from models_library.resource_tracker import (
     CreditTransactionStatus,
     ServiceRunStatus,
 )
+from pytest_simcore.helpers.postgres_products import insert_and_get_product_lifespan
 from servicelib.rabbitmq import RabbitMQClient, RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker import (
     credit_transactions,
@@ -36,6 +37,7 @@ from simcore_service_resource_usage_tracker.services.modules.db import (
     credit_transactions_db,
 )
 from simcore_service_resource_usage_tracker.services.service_runs import ServiceRunPage
+from sqlalchemy.ext.asyncio import AsyncEngine
 from starlette import status
 from yarl import URL
 
@@ -153,143 +155,143 @@ _WALLET_ID_FOR_PAYING_DEBT__ENOUGH_CREDITS = 3
 
 
 @pytest.fixture()
-def resource_tracker_setup_db(
-    postgres_db: sa.engine.Engine,
+async def resource_tracker_setup_db(
+    sqlalchemy_async_engine: AsyncEngine,
     random_resource_tracker_service_run,
     random_resource_tracker_credit_transactions,
     project_id: ProjectID,
     product_name: ProductName,
     faker: Faker,
-) -> Iterator[None]:
-    with postgres_db.connect() as con:
-        # Service run table
-        result = con.execute(
-            resource_tracker_service_runs.insert()
-            .values(
-                [
-                    random_resource_tracker_service_run(
-                        user_id=_USER_ID_1,
-                        service_run_id=_SERVICE_RUN_ID_1,
-                        product_name=product_name,
-                        started_at=datetime.now(tz=UTC) - timedelta(hours=1),
-                        stopped_at=datetime.now(tz=UTC),
-                        project_id=project_id,
-                        service_run_status=ServiceRunStatus.SUCCESS,
-                        wallet_id=_WALLET_ID,
-                    ),
-                    random_resource_tracker_service_run(
-                        user_id=_USER_ID_2,  # <-- different user
-                        service_run_id=_SERVICE_RUN_ID_2,
-                        product_name=product_name,
-                        started_at=datetime.now(tz=UTC) - timedelta(hours=1),
-                        stopped_at=None,
-                        project_id=project_id,
-                        service_run_status=ServiceRunStatus.RUNNING,  # <-- Runnin status
-                        wallet_id=_WALLET_ID,
-                    ),
-                    random_resource_tracker_service_run(
-                        user_id=_USER_ID_1,
-                        service_run_id=_SERVICE_RUN_ID_3,
-                        product_name=product_name,
-                        started_at=datetime.now(tz=UTC) - timedelta(hours=1),
-                        stopped_at=datetime.now(tz=UTC),
-                        project_id=project_id,
-                        service_run_status=ServiceRunStatus.SUCCESS,
-                        wallet_id=_WALLET_ID,
-                    ),
-                    random_resource_tracker_service_run(
-                        user_id=_USER_ID_1,
-                        service_run_id=_SERVICE_RUN_ID_4,
-                        product_name=product_name,
-                        started_at=datetime.now(tz=UTC) - timedelta(hours=1),
-                        stopped_at=datetime.now(tz=UTC),
-                        project_id=faker.uuid4(),  # <-- different project
-                        service_run_status=ServiceRunStatus.SUCCESS,
-                        wallet_id=_WALLET_ID,
-                    ),
-                ]
-            )
-            .returning(resource_tracker_service_runs)
-        )
-        row = result.first()
-        assert row
+) -> AsyncIterator[None]:
+    async with insert_and_get_product_lifespan(
+        sqlalchemy_async_engine, name=product_name
+    ) as product_row:
+        product_name = product_row["name"]
 
-        # Transaction table
-        result = con.execute(
-            resource_tracker_credit_transactions.insert()
-            .values(
-                [
-                    random_resource_tracker_credit_transactions(
-                        user_id=_USER_ID_1,
-                        service_run_id=_SERVICE_RUN_ID_1,
-                        product_name=product_name,
-                        payment_transaction_id=None,
-                        osparc_credits=-50,
-                        transaction_status=CreditTransactionStatus.BILLED,
-                        transaction_classification=CreditClassification.DEDUCT_SERVICE_RUN,
-                        wallet_id=_WALLET_ID,
-                    ),
-                    random_resource_tracker_credit_transactions(
-                        user_id=_USER_ID_2,  # <-- different user
-                        service_run_id=_SERVICE_RUN_ID_2,
-                        product_name=product_name,
-                        payment_transaction_id=None,
-                        osparc_credits=-70,
-                        transaction_status=CreditTransactionStatus.PENDING,  # <-- Pending status
-                        transaction_classification=CreditClassification.DEDUCT_SERVICE_RUN,
-                        wallet_id=_WALLET_ID,
-                    ),
-                    random_resource_tracker_credit_transactions(
-                        user_id=_USER_ID_1,
-                        osparc_credits=-100,
-                        service_run_id=_SERVICE_RUN_ID_3,
-                        product_name=product_name,
-                        payment_transaction_id=None,
-                        transaction_status=CreditTransactionStatus.IN_DEBT,  # <-- IN DEBT
-                        transaction_classification=CreditClassification.DEDUCT_SERVICE_RUN,
-                        wallet_id=_WALLET_ID,
-                    ),
-                    random_resource_tracker_credit_transactions(
-                        user_id=_USER_ID_1,
-                        osparc_credits=-90,
-                        service_run_id=_SERVICE_RUN_ID_4,
-                        product_name=product_name,
-                        payment_transaction_id=None,
-                        transaction_status=CreditTransactionStatus.BILLED,
-                        transaction_classification=CreditClassification.DEDUCT_SERVICE_RUN,
-                        wallet_id=_WALLET_ID,
-                    ),
-                    # We will add 2 more wallets for paying a debt test
-                    random_resource_tracker_credit_transactions(
-                        user_id=_USER_ID_1,
-                        osparc_credits=50,  # <-- Not enough credits to pay the DEBT of -100
-                        service_run_id=None,
-                        product_name=product_name,
-                        payment_transaction_id="INVITATION",
-                        transaction_status=CreditTransactionStatus.BILLED,
-                        transaction_classification=CreditClassification.ADD_WALLET_TOP_UP,
-                        wallet_id=_WALLET_ID_FOR_PAYING_DEBT__NOT_ENOUGH_CREDITS,
-                    ),
-                    random_resource_tracker_credit_transactions(
-                        user_id=_USER_ID_1,
-                        osparc_credits=500,  # <-- Enough credits to pay the DEBT of -100
-                        service_run_id=None,
-                        product_name=product_name,
-                        transaction_status=CreditTransactionStatus.BILLED,
-                        transaction_classification=CreditClassification.ADD_WALLET_TOP_UP,
-                        wallet_id=_WALLET_ID_FOR_PAYING_DEBT__ENOUGH_CREDITS,
-                    ),
-                ]
+        async with sqlalchemy_async_engine.begin() as conn:
+            # Service run table
+            await conn.execute(
+                resource_tracker_service_runs.insert().values(
+                    [
+                        random_resource_tracker_service_run(
+                            user_id=_USER_ID_1,
+                            service_run_id=_SERVICE_RUN_ID_1,
+                            product_name=product_name,
+                            started_at=datetime.now(tz=UTC) - timedelta(hours=1),
+                            stopped_at=datetime.now(tz=UTC),
+                            project_id=f"{project_id}",  # NOTE: this UUID is stored as str
+                            service_run_status=ServiceRunStatus.SUCCESS,
+                            wallet_id=_WALLET_ID,
+                        ),
+                        random_resource_tracker_service_run(
+                            user_id=_USER_ID_2,  # <-- different user
+                            service_run_id=_SERVICE_RUN_ID_2,
+                            product_name=product_name,
+                            started_at=datetime.now(tz=UTC) - timedelta(hours=1),
+                            stopped_at=None,
+                            project_id=f"{project_id}",  # NOTE: this UUID is stored as str
+                            service_run_status=ServiceRunStatus.RUNNING,  # <-- Running status
+                            wallet_id=_WALLET_ID,
+                        ),
+                        random_resource_tracker_service_run(
+                            user_id=_USER_ID_1,
+                            service_run_id=_SERVICE_RUN_ID_3,
+                            product_name=product_name,
+                            started_at=datetime.now(tz=UTC) - timedelta(hours=1),
+                            stopped_at=datetime.now(tz=UTC),
+                            project_id=f"{project_id}",  # NOTE: this UUID is stored as str
+                            service_run_status=ServiceRunStatus.SUCCESS,
+                            wallet_id=_WALLET_ID,
+                        ),
+                        random_resource_tracker_service_run(
+                            user_id=_USER_ID_1,
+                            service_run_id=_SERVICE_RUN_ID_4,
+                            product_name=product_name,
+                            started_at=datetime.now(tz=UTC) - timedelta(hours=1),
+                            stopped_at=datetime.now(tz=UTC),
+                            project_id=f"{faker.uuid4()}",  # <-- different project # NOTE: this UUID is stored as str
+                            service_run_status=ServiceRunStatus.SUCCESS,
+                            wallet_id=_WALLET_ID,
+                        ),
+                    ]
+                )
             )
-            .returning(resource_tracker_credit_transactions)
-        )
-        row = result.first()
-        assert row
+
+            # Transaction table
+            await conn.execute(
+                resource_tracker_credit_transactions.insert()
+                .values(
+                    [
+                        random_resource_tracker_credit_transactions(
+                            user_id=_USER_ID_1,
+                            service_run_id=_SERVICE_RUN_ID_1,
+                            product_name=product_name,
+                            payment_transaction_id=None,
+                            osparc_credits=-50,
+                            transaction_status=CreditTransactionStatus.BILLED,
+                            transaction_classification=CreditClassification.DEDUCT_SERVICE_RUN,
+                            wallet_id=_WALLET_ID,
+                        ),
+                        random_resource_tracker_credit_transactions(
+                            user_id=_USER_ID_2,  # <-- different user
+                            service_run_id=_SERVICE_RUN_ID_2,
+                            product_name=product_name,
+                            payment_transaction_id=None,
+                            osparc_credits=-70,
+                            transaction_status=CreditTransactionStatus.PENDING,  # <-- Pending status
+                            transaction_classification=CreditClassification.DEDUCT_SERVICE_RUN,
+                            wallet_id=_WALLET_ID,
+                        ),
+                        random_resource_tracker_credit_transactions(
+                            user_id=_USER_ID_1,
+                            osparc_credits=-100,
+                            service_run_id=_SERVICE_RUN_ID_3,
+                            product_name=product_name,
+                            payment_transaction_id=None,
+                            transaction_status=CreditTransactionStatus.IN_DEBT,  # <-- IN DEBT
+                            transaction_classification=CreditClassification.DEDUCT_SERVICE_RUN,
+                            wallet_id=_WALLET_ID,
+                        ),
+                        random_resource_tracker_credit_transactions(
+                            user_id=_USER_ID_1,
+                            osparc_credits=-90,
+                            service_run_id=_SERVICE_RUN_ID_4,
+                            product_name=product_name,
+                            payment_transaction_id=None,
+                            transaction_status=CreditTransactionStatus.BILLED,
+                            transaction_classification=CreditClassification.DEDUCT_SERVICE_RUN,
+                            wallet_id=_WALLET_ID,
+                        ),
+                        # We will add 2 more wallets for paying a debt test
+                        random_resource_tracker_credit_transactions(
+                            user_id=_USER_ID_1,
+                            osparc_credits=50,  # <-- Not enough credits to pay the DEBT of -100
+                            service_run_id=None,
+                            product_name=product_name,
+                            payment_transaction_id="INVITATION",
+                            transaction_status=CreditTransactionStatus.BILLED,
+                            transaction_classification=CreditClassification.ADD_WALLET_TOP_UP,
+                            wallet_id=_WALLET_ID_FOR_PAYING_DEBT__NOT_ENOUGH_CREDITS,
+                        ),
+                        random_resource_tracker_credit_transactions(
+                            user_id=_USER_ID_1,
+                            osparc_credits=500,  # <-- Enough credits to pay the DEBT of -100
+                            service_run_id=None,
+                            product_name=product_name,
+                            transaction_status=CreditTransactionStatus.BILLED,
+                            transaction_classification=CreditClassification.ADD_WALLET_TOP_UP,
+                            wallet_id=_WALLET_ID_FOR_PAYING_DEBT__ENOUGH_CREDITS,
+                        ),
+                    ]
+                )
+                .returning(resource_tracker_credit_transactions)
+            )
 
         yield
 
-        con.execute(resource_tracker_credit_transactions.delete())
-        con.execute(resource_tracker_service_runs.delete())
+        async with sqlalchemy_async_engine.begin() as conn:
+            await conn.execute(resource_tracker_credit_transactions.delete())
+            await conn.execute(resource_tracker_service_runs.delete())
 
 
 async def test_get_project_wallet_total_credits(
@@ -435,7 +437,7 @@ async def test_pay_project_debt(
         new_wallet_transaction=new_wallet_transaction,
     )
 
-    # We additionaly check that the project is not in the DEBT anymore
+    # We additionally check that the project is not in the DEBT anymore
     output = await credit_transactions.get_project_wallet_total_credits(
         rpc_client,
         product_name=product_name,
