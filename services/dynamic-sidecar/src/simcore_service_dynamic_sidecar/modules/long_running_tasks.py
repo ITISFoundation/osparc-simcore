@@ -408,7 +408,8 @@ class MountActivitySummary:
 
 
 async def _handler_mount_activity(state_path: Path, activity: MountActivity) -> None:
-    # TODO: this object should be pushed to the FE in the future
+    # Frontend should receive and use this message to provide feedback to the user
+    # regarding the mount activity
     summary = MountActivitySummary(
         path=state_path, queued=len(activity.queued), transferring=activity.transferring
     )
