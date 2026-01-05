@@ -102,7 +102,6 @@ async def s3_client(
     async with session_client as client:
         client = cast(S3Client, client)
 
-        # Create the bucket
         await client.create_bucket(Bucket=bucket_name)
 
         yield client
@@ -118,7 +117,6 @@ async def r_clone_mount_manager(
     r_clone_settings: RCloneSettings, mocked_shutdown: AsyncMock
 ) -> AsyncIterator[RCloneMountManager]:
 
-    # add tis to a fixture in order to see if it was called
     async def _mock_shutdown_request_handler() -> None:
         await mocked_shutdown()
 
@@ -186,7 +184,6 @@ async def mocked_self_container(mocker: MockerFixture) -> AsyncIterator[None]:
 
         yield None
 
-        # remove started container
         with contextlib.suppress(aiodocker.exceptions.DockerError):
             await container.delete(force=True)
 
@@ -244,7 +241,6 @@ async def _create_random_binary_file(
     file_size: ByteSize,
     chunk_size: int = TypeAdapter(ByteSize).validate_python("1mib"),
 ) -> None:
-    """Create a random binary file of specified size."""
     async with aiofiles.open(file_path, mode="wb") as file:
         bytes_written = 0
         while bytes_written < file_size:
@@ -258,7 +254,6 @@ async def _create_random_binary_file(
 async def _create_file_of_size(
     target_dir: Path, *, name: str, file_size: ByteSize
 ) -> Path:
-    """Create a single file with random content of specified size."""
     file_path = target_dir / name
     if not file_path.parent.exists():
         file_path.parent.mkdir(parents=True, exist_ok=True)
@@ -272,7 +267,6 @@ async def _create_file_of_size(
 async def _create_files_in_dir(
     target_dir: Path, file_count: int, file_size: ByteSize
 ) -> set[str]:
-    """Create multiple random files in a directory."""
     files = []
     for i in range(file_count):
         file_path = await _create_file_of_size(
@@ -282,10 +276,9 @@ async def _create_files_in_dir(
     return {x.name for x in files}
 
 
-async def _get_file_checksums_from_local(
+async def _get_file_checksums_from_path(
     local_path: Path,
 ) -> dict[Path, str]:
-    """Get SHA256 checksums of all files in a directory."""
     checksums = {}
     for dirpath, _, filenames in os.walk(local_path):
         for filename in filenames:
@@ -371,7 +364,7 @@ async def test_workflow(
     assert len(created_files) == file_count
 
     # get checksums of local files before unmounting
-    local_checksums = await _get_file_checksums_from_local(local_mount_path)
+    local_checksums = await _get_file_checksums_from_path(local_mount_path)
     assert len(local_checksums) == file_count
 
     # wait for rclone to complete all transfers
