@@ -1,4 +1,3 @@
-// This is a template. Clone and replace extension ".template.json" by ".json"
 {
   "autoDocstring.docstringFormat": "pep257",
   "editor.tabSize": 2,
