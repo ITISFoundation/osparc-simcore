@@ -7,6 +7,7 @@
 </p>
 
 <!-- BADGES: LINKS ON CLICK --------------------------------------------------------------->
+[![ruff_badge]](https://github.com/astral-sh/ruff)
 [![ci_badge]](https://github.com/ITISFoundation/osparc-simcore/actions/workflows/ci-testing-deploy.yml)
 [![codecov_badge]](https://codecov.io/gh/ITISFoundation/osparc-simcore)
 [![doc_badge]](https://itisfoundation.github.io/)
@@ -17,6 +18,7 @@
 [![s4l_status]](https://s4llite.statuspage.io)
 
 <!-- BADGES: LINKS TO IMAGES. Default to https://shields.io/ ------------------------------>
+[ruff_badge]:https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json
 [ci_badge]:https://github.com/ITISFoundation/osparc-simcore/actions/workflows/ci-testing-deploy.yml/badge.svg
 [codecov_badge]:https://codecov.io/gh/ITISFoundation/osparc-simcore/branch/master/graph/badge.svg?token=h1rOE8q7ic
 [doc_badge]:https://img.shields.io/website-up-down-green-red/https/itisfoundation.github.io.svg?label=documentation
