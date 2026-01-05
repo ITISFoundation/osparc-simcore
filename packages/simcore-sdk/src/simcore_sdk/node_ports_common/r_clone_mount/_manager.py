@@ -207,9 +207,9 @@ class RCloneMountManager:
 
             await tracked_mount.stop_mount()
 
-    async def _worker_ensure_mounts_working(self) -> None:
+    async def _worker_ensure_mount_is_responsive(self) -> None:
         mount_restored = False
-        with log_context(_logger, logging.DEBUG, "Ensuring rclone mounts are working"):
+        with log_context(_logger, logging.DEBUG, "ensuring rclone mount is responsive"):
             for mount in self._tracked_mounts.values():
                 if not await mount.is_responsive():
                     with log_context(
@@ -234,9 +234,9 @@ class RCloneMountManager:
 
     async def setup(self) -> None:
         self._task_ensure_mounts_working = create_periodic_task(
-            self._worker_ensure_mounts_working,
+            self._worker_ensure_mount_is_responsive,
             interval=timedelta(seconds=10),
-            task_name="rclone-mount-ensure-mounts-working",
+            task_name="rclone-mount-ensure-mount-is-responsive",
         )
 
     async def teardown(self) -> None:
