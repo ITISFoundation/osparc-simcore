@@ -59,11 +59,6 @@ def service_version() -> ServiceVersion:
 
 
 @pytest.fixture
-def product_name() -> ProductName:
-    return TypeAdapter(ProductName).validate_python("osparc")
-
-
-@pytest.fixture
 def mock_environment(  # pylint:disable=too-many-arguments,too-many-positional-arguments
     mock_rabbit_check: None,
     mock_storage_check: None,
