@@ -5,6 +5,8 @@
 # pylint: disable=too-many-statements
 
 
+import json
+
 import respx
 from aiohttp.test_utils import TestClient
 from faker import Faker
@@ -37,3 +39,7 @@ async def test_chatbot_client(
     output = await chatbot_client.send(messages=[user_msg, developer_msg])
     assert isinstance(output, ResponseMessage)
     assert output.content == "42"
+    request_json = json.loads(mocked_chatbot_api.calls[0].request.content.decode())
+    metadata = request_json.get("metadata")
+    assert metadata
+    assert metadata.get("collection_name") == "sim4life_webplatform"

@@ -48,7 +48,6 @@ def mocked_chatbot_api(faker: Faker) -> Iterator[respx.MockRouter]:
             choices=[ResponseItem(index=0, message=ResponseMessage(content="42"))],
         )
     ]
-
     with respx.mock(base_url=_BASE_URL) as mock:
         # Create a side_effect that returns responses in sequence
         mock.post(path="/v1/chat/completions").mock(
