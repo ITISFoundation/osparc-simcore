@@ -7,7 +7,6 @@ import asyncio
 import contextlib
 import functools
 import os
-import re
 from collections.abc import AsyncIterable, AsyncIterator, Iterator
 from pathlib import Path
 from typing import cast
@@ -59,16 +58,6 @@ _dampen_noisy_loggers(("botocore", "aiobotocore", "aioboto3", "moto.server"))
 @pytest.fixture
 def bucket_name() -> S3BucketName:
     return TypeAdapter(S3BucketName).validate_python("osparc-data")
-
-
-@pytest.fixture
-def r_clone_version(osparc_simcore_root_dir: Path) -> str:
-    install_rclone_bash = osparc_simcore_root_dir / "scripts" / "install_rclone.bash"
-    assert install_rclone_bash.exists()
-
-    match = re.search(r'R_CLONE_VERSION="([\d.]+)"', install_rclone_bash.read_text())
-    assert match
-    return match.group(1)
 
 
 @pytest.fixture

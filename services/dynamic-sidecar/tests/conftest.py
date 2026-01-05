@@ -46,6 +46,7 @@ pytest_plugins = [
     "pytest_simcore.minio_service",
     "pytest_simcore.postgres_service",
     "pytest_simcore.pytest_global_environs",
+    "pytest_simcore.r_clone",
     "pytest_simcore.rabbit_service",
     "pytest_simcore.redis_service",
     "pytest_simcore.repository_paths",
@@ -182,6 +183,7 @@ def base_mock_envs(
     node_id: NodeID,
     service_run_id: ServiceRunID,
     ensure_shared_store_dir: None,
+    r_clone_version: str,
 ) -> EnvVarsDict:
     return {
         # envs in Dockerfile
@@ -208,6 +210,7 @@ def base_mock_envs(
             }
         ),
         "DYNAMIC_SIDECAR_TRACING": "null",
+        "R_CLONE_VERSION": r_clone_version,
     }
 
 
@@ -232,6 +235,7 @@ def mock_environment(
     dy_volumes: Path,
     shared_store_dir: Path,
     faker: Faker,
+    r_clone_version: str,
 ) -> EnvVarsDict:
     """Main test environment used to build the application
 
@@ -280,6 +284,7 @@ def mock_environment(
                     "REGISTRY_URL": "registry.pytest.com",
                 }
             ),
+            "R_CLONE_VERSION": r_clone_version,
         },
     )
 
@@ -288,7 +293,7 @@ def mock_environment(
 def mock_environment_with_envdevel(
     monkeypatch: pytest.MonkeyPatch, project_slug_dir: Path
 ) -> EnvVarsDict:
-    """Alternative environment loaded fron .env-devel.
+    """Alternative environment loaded from .env-devel.
 
     .env-devel is used mainly to run CLI
     """
