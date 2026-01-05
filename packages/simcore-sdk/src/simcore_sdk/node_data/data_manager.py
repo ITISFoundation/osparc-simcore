@@ -12,6 +12,9 @@ from servicelib.archiving_utils import unarchive_dir
 from servicelib.logging_utils import log_context
 from servicelib.progress_bar import ProgressBarData
 from settings_library.r_clone import RCloneSettings
+from simcore_postgres_database.utils_groups_extra_properties import (
+    GroupExtraPropertiesNotFoundError,
+)
 
 from ..node_ports_common import filemanager
 from ..node_ports_common.constants import SIMCORE_LOCATION
@@ -265,9 +268,12 @@ async def push(  # pylint: disable=too-many-arguments  # noqa: PLR0913
 async def _requires_r_clone_mounting(
     application_name: str, user_id: UserID, product_name: ProductName
 ) -> bool:
-    group_extra_properties = await DBManager(
-        application_name=application_name
-    ).get_group_extra_properties(user_id=user_id, product_name=product_name)
+    try:
+        group_extra_properties = await DBManager(
+            application_name=application_name
+        ).get_group_extra_properties(user_id=user_id, product_name=product_name)
+    except GroupExtraPropertiesNotFoundError:
+        return False
     return group_extra_properties.use_r_clone_mounting is True
 
 

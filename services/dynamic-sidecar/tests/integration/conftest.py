@@ -2,9 +2,7 @@ from collections.abc import Iterable
 
 import pytest
 import sqlalchemy as sa
-from models_library.products import ProductName
 from models_library.users import UserID
-from pydantic import TypeAdapter
 from pytest_simcore.helpers.faker_factories import random_user
 from pytest_simcore.helpers.postgres_tools import sync_insert_and_get_row_lifespan
 from simcore_postgres_database.models.users import users
@@ -16,11 +14,6 @@ pytest_plugins = [
     "pytest_simcore.simcore_storage_service",
     "pytest_simcore.rabbit_service",
 ]
-
-
-@pytest.fixture
-def product_name() -> ProductName:
-    return TypeAdapter(ProductName).validate_python("osparc")
 
 
 @pytest.fixture

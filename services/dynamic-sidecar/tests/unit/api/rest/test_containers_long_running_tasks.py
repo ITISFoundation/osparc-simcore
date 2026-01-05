@@ -62,6 +62,8 @@ from tenacity import (
 )
 
 pytest_simcore_core_services_selection = [
+    "migration",
+    "postgres",
     "rabbit",
 ]
 
@@ -117,7 +119,7 @@ def mock_tasks(mocker: MockerFixture) -> Iterator[None]:
 async def auto_remove_task(
     http_client: HttpClient, task_id: TaskId
 ) -> AsyncIterator[None]:
-    """clenup pending tasks"""
+    """cleanup pending tasks"""
     try:
         yield
     finally:
@@ -185,24 +187,25 @@ def compose_spec(request: pytest.FixtureRequest) -> DockerComposeYamlStr:
 
 @pytest.fixture
 def backend_url() -> AnyHttpUrl:
-    return TypeAdapter(AnyHttpUrl).validate_python("http://backgroud.testserver.io")
+    return TypeAdapter(AnyHttpUrl).validate_python("http://background.testserver.io")
 
 
 @pytest.fixture
 def mock_environment(
     monkeypatch: pytest.MonkeyPatch,
+    postgres_env_vars_dict: EnvVarsDict,
     rabbit_service: RabbitSettings,
     mock_environment: EnvVarsDict,
 ) -> EnvVarsDict:
-    return setenvs_from_dict(
-        monkeypatch,
-        {
-            **mock_environment,
-            "RABBIT_SETTINGS": json.dumps(
-                model_dump_with_secrets(rabbit_service, show_secrets=True)
-            ),
-        },
-    )
+    envs = {
+        **mock_environment,
+        "RABBIT_SETTINGS": json.dumps(
+            model_dump_with_secrets(rabbit_service, show_secrets=True)
+        ),
+        **postgres_env_vars_dict,
+    }
+    setenvs_from_dict(monkeypatch, envs)
+    return envs
 
 
 @pytest.fixture

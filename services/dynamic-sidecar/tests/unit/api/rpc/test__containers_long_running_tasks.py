@@ -64,6 +64,8 @@ from tenacity import (
 from utils import get_lrt_result
 
 pytest_simcore_core_services_selection = [
+    "migration",
+    "postgres",
     "rabbit",
 ]
 
@@ -161,18 +163,19 @@ def compose_spec(request: pytest.FixtureRequest) -> DockerComposeYamlStr:
 @pytest.fixture
 def mock_environment(
     monkeypatch: pytest.MonkeyPatch,
+    postgres_env_vars_dict: EnvVarsDict,
     rabbit_service: RabbitSettings,
     mock_environment: EnvVarsDict,
 ) -> EnvVarsDict:
-    return setenvs_from_dict(
-        monkeypatch,
-        {
-            **mock_environment,
-            "RABBIT_SETTINGS": json.dumps(
-                model_dump_with_secrets(rabbit_service, show_secrets=True)
-            ),
-        },
-    )
+    envs = {
+        **mock_environment,
+        "RABBIT_SETTINGS": json.dumps(
+            model_dump_with_secrets(rabbit_service, show_secrets=True)
+        ),
+        **postgres_env_vars_dict,
+    }
+    setenvs_from_dict(monkeypatch, envs)
+    return envs
 
 
 @pytest.fixture

@@ -20,7 +20,6 @@ from botocore.client import Config
 from botocore.exceptions import ClientError
 from fastapi import FastAPI
 from models_library.api_schemas_storage.storage_schemas import S3BucketName
-from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, SimcoreS3FileID
 from models_library.users import UserID
@@ -101,12 +100,10 @@ def mock_environment(
     base_mock_envs: EnvVarsDict,
     user_id: UserID,
     project_id: ProjectID,
-    product_name: ProductName,
 ) -> EnvVarsDict:
     assert storage_endpoint.host
 
     envs: EnvVarsDict = {
-        "DY_SIDECAR_PRODUCT_NAME": product_name,
         "STORAGE_HOST": storage_endpoint.host,
         "STORAGE_PORT": f"{storage_endpoint.port}",
         "DY_SIDECAR_USER_ID": f"{user_id}",

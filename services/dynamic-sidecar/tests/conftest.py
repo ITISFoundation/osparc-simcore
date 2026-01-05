@@ -16,6 +16,7 @@ import pytest
 import simcore_service_dynamic_sidecar
 from common_library.json_serialization import json_dumps
 from faker import Faker
+from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes import NodeID
 from models_library.services import ServiceRunID
@@ -135,6 +136,11 @@ def service_run_id() -> ServiceRunID:
 
 
 @pytest.fixture
+def product_name() -> ProductName:
+    return TypeAdapter(ProductName).validate_python("osparc")
+
+
+@pytest.fixture
 def ensure_shared_store_dir(shared_store_dir: Path) -> Iterator[Path]:
     shared_store_dir.mkdir(parents=True, exist_ok=True)
     assert shared_store_dir.exists() is True
@@ -184,6 +190,7 @@ def base_mock_envs(
     service_run_id: ServiceRunID,
     ensure_shared_store_dir: None,
     r_clone_version: str,
+    product_name: ProductName,
 ) -> EnvVarsDict:
     return {
         # envs in Dockerfile
@@ -211,6 +218,7 @@ def base_mock_envs(
         ),
         "DYNAMIC_SIDECAR_TRACING": "null",
         "R_CLONE_VERSION": r_clone_version,
+        "DY_SIDECAR_PRODUCT_NAME": product_name,
     }
 
 
@@ -236,6 +244,7 @@ def mock_environment(
     shared_store_dir: Path,
     faker: Faker,
     r_clone_version: str,
+    product_name: ProductName,
 ) -> EnvVarsDict:
     """Main test environment used to build the application
 
@@ -285,6 +294,7 @@ def mock_environment(
                 }
             ),
             "R_CLONE_VERSION": r_clone_version,
+            "DY_SIDECAR_PRODUCT_NAME": product_name,
         },
     )
 
