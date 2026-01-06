@@ -4,7 +4,7 @@ from collections import namedtuple
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
-from typing import Any, TypeAlias
+from typing import Any
 
 import parse
 from mypy_boto3_ec2 import EC2ServiceResource
@@ -39,6 +39,7 @@ class AutoscaledInstance:
     name: str
     ec2_instance: Instance
     disk_space: ByteSize
+    is_warm_buffer: bool
 
 
 class InstanceRole(str, Enum):
@@ -72,8 +73,8 @@ class DynamicInstance(AutoscaledInstance):
     running_services: list[DynamicService]
 
 
-TaskId: TypeAlias = str
-TaskState: TypeAlias = str
+type TaskId = str
+type TaskState = str
 
 
 @dataclass(slots=True, kw_only=True, frozen=True)
