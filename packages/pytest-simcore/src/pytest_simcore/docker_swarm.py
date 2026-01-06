@@ -66,9 +66,7 @@ def assert_service_is_running(service) -> None:
         return value.get(keys[-1], default)
 
     service_name = service.name
-    num_replicas_specified = _get(
-        service.attrs, "Spec.Mode.Replicated.Replicas", default=1
-    )
+    num_replicas_specified = _get(service.attrs, "Spec.Mode.Replicated.Replicas", default=1)
 
     log.info(
         "Waiting for service_name='%s' to have num_replicas_specified=%s ...",
@@ -81,7 +79,7 @@ def assert_service_is_running(service) -> None:
 
     #
     # NOTE: We have noticed using the 'last updated' task is not necessarily
-    # the most actual of the tasks. It dependends e.g. on the restart policy.
+    # the most actual of the tasks. It depends e.g. on the restart policy.
     # We explored the possibility of determining success by using the condition
     # "DesiredState" == "Status.State" but realized that "DesiredState" is not
     # part of the specs but can be updated by the swarm at runtime.
@@ -101,9 +99,7 @@ def assert_service_is_running(service) -> None:
     print(f"--> {service_name} is up and running!!")
 
 
-def _fetch_and_print_services(
-    docker_client: docker.client.DockerClient, extra_title: str
-) -> None:
+def _fetch_and_print_services(docker_client: docker.client.DockerClient, extra_title: str) -> None:
     print(HEADER_STR.format(f"docker services running {extra_title}"))
 
     for service_obj in docker_client.services.list():
@@ -140,8 +136,11 @@ def _fetch_and_print_services(
                 for task in service_obj.tasks()  # type: ignore
             ]
 
-        print(HEADER_STR.format(service_obj.name))  # type: ignore
+        print(HEADER_STR.format(f"TOP {service_obj.name}"))  # type: ignore
         print(json.dumps({"service": service, "tasks": tasks}, indent=1))
+        logs = [x.decode() for x in service_obj.logs(stdout=True, stderr=True, timestamps=True)]
+        print("".join(logs))
+        print(HEADER_STR.format(f"BOTTOM {service_obj.name}"))  # type: ignore
 
 
 @pytest.fixture(scope="session")
@@ -152,14 +151,10 @@ def docker_client() -> Iterator[docker.client.DockerClient]:
 
 
 @pytest.fixture(scope="module")
-def docker_swarm(
-    docker_client: docker.client.DockerClient, keep_docker_up: bool
-) -> Iterator[None]:
+def docker_swarm(docker_client: docker.client.DockerClient, keep_docker_up: bool) -> Iterator[None]:
     """inits docker swarm"""
 
-    for attempt in Retrying(
-        wait=wait_fixed(2), stop=stop_after_delay(15), reraise=True
-    ):
+    for attempt in Retrying(wait=wait_fixed(2), stop=stop_after_delay(15), reraise=True):
         with attempt:
             if not _is_docker_swarm_init(docker_client):
                 print("--> initializing docker swarm...")
@@ -199,7 +194,8 @@ def _force_remove_migration_service(docker_client: docker.client.DockerClient) -
         if "migration" in service.name  # type: ignore
     ):
         print(
-            "WARNING: migration service detected before updating stack, it will be force-removed now and re-deployed to ensure DB update"
+            "WARNING: migration service detected before updating stack, it will be force-removed now and re-deployed "
+            "to ensure DB update"
         )
         migration_service.remove()  # type: ignore
         _wait_for_migration_service_to_be_removed(docker_client)
@@ -224,7 +220,7 @@ def _deploy_stack(compose_file: Path, stack_name: str) -> None:
                     f"{compose_file.name}",
                     f"{stack_name}",
                 ]
-                subprocess.run(
+                subprocess.run(  # noqa: S603
                     cmd,
                     check=True,
                     cwd=compose_file.parent,
@@ -234,7 +230,10 @@ def _deploy_stack(compose_file: Path, stack_name: str) -> None:
                 if b"update out of sequence" in err.stderr:
                     raise TryAgain from err
                 pytest.fail(
-                    reason=f"deploying docker_stack failed: {err.cmd=}, {err.returncode=}, {err.stdout=}, {err.stderr=}\nTIP: frequent failure is due to a corrupt .env file: Delete .env and .env.bak"
+                    reason=(
+                        f"deploying docker_stack failed: {err.cmd=}, {err.returncode=}, {err.stdout=}, {err.stderr=}"
+                        "\nTIP: frequent failure is due to a corrupt .env file: Delete .env and .env.bak"
+                    )
                 )
 
 
@@ -287,9 +286,7 @@ def interactive_services_subnet_docker_network(
     keep_docker_up: bool,
 ) -> Iterator[docker.models.networks.Network]:
     # get network name from docker-compose
-    network_name = simcore_docker_compose["networks"]["interactive_services_subnet"][
-        "name"
-    ]
+    network_name = simcore_docker_compose["networks"]["interactive_services_subnet"]["name"]
     created_new = False
     try:
         network = docker_client.networks.get(network_name)
@@ -312,7 +309,7 @@ def interactive_services_subnet_docker_network(
 
 
 @pytest_asyncio.fixture(scope="module", loop_scope="module")
-async def docker_stack(
+async def docker_stack(  # noqa: C901
     osparc_simcore_services_dir: Path,
     simcore_docker_network: docker.models.networks.Network,
     interactive_services_subnet_docker_network: docker.models.networks.Network,
@@ -365,9 +362,7 @@ async def docker_stack(
         async def _check_all_services_are_running():
             done, pending = await asyncio.wait(
                 [
-                    asyncio.get_event_loop().run_in_executor(
-                        None, assert_service_is_running, service
-                    )
+                    asyncio.get_event_loop().run_in_executor(None, assert_service_is_running, service)
                     for service in docker_client.services.list()
                 ],
                 return_when=asyncio.FIRST_EXCEPTION,
@@ -402,13 +397,13 @@ async def docker_stack(
     #
     # WORKAROUND https://github.com/moby/moby/issues/30942#issue-207070098
     #
-    #   docker stack rm services
-    #   until [ -z "$(docker service ls --filter label=com.docker.stack.namespace=services -q)" ] || [ "$limit" -lt 0 ]; do
-    #   sleep 1;
-    #   done
-    #   until [ -z "$(docker network ls --filter label=com.docker.stack.namespace=services -q)" ] || [ "$limit" -lt 0 ]; do
-    #   sleep 1;
-    #   done
+    # docker stack rm services
+    # until [ -z "$(docker service ls --filter label=com.docker.stack.namespace=services -q)" ] || [ "$limit" -lt 0 ];do
+    # sleep 1;
+    # done
+    # until [ -z "$(docker network ls --filter label=com.docker.stack.namespace=services -q)" ] || [ "$limit" -lt 0 ];do
+    # sleep 1;
+    # done
 
     # make down
     # NOTE: remove them in reverse order since stacks share common networks
@@ -416,7 +411,7 @@ async def docker_stack(
     stacks.reverse()
     for _, stack, _ in stacks:
         try:
-            subprocess.run(
+            subprocess.run(  # noqa: ASYNC221, S603
                 f"docker stack remove {stack}".split(" "),
                 check=True,
                 capture_output=True,
@@ -445,12 +440,10 @@ async def docker_stack(
                 reraise=True,
             ):
                 with attempt:
-                    pending = resource_client.list(
-                        filters={"label": f"com.docker.stack.namespace={stack}"}
-                    )
+                    pending = resource_client.list(filters={"label": f"com.docker.stack.namespace={stack}"})
                     if pending:
                         if resource_name in ("volumes",):
-                            # WARNING: rm volumes on this stack migh be a problem when shared between different stacks
+                            # WARNING: rm volumes on this stack might be a problem when shared between different stacks
                             # NOTE: volumes are removed to avoid mixing configs (e.g. postgres db credentials)
                             for resource in pending:
                                 resource.remove(force=True)
@@ -484,14 +477,10 @@ async def docker_network(
     async def _wait_for_network_deletion(network: aiodocker.docker.DockerNetwork):
         network_name = (await network.show())["Name"]
         await network.delete()
-        async for attempt in AsyncRetrying(
-            reraise=True, wait=wait_fixed(1), stop=stop_after_delay(60)
-        ):
+        async for attempt in AsyncRetrying(reraise=True, wait=wait_fixed(1), stop=stop_after_delay(60)):
             with attempt:
                 print(f"<-- waiting for network '{network_name}' deletion...")
-                list_of_network_names = [
-                    n["Name"] for n in await async_docker_client.networks.list()
-                ]
+                list_of_network_names = [n["Name"] for n in await async_docker_client.networks.list()]
                 assert network_name not in list_of_network_names
             print(f"<-- network '{network_name}' deleted")
 
