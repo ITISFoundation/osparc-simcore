@@ -47,6 +47,7 @@ APP_LOG_LEVEL=${DYNAMIC_SIDECAR_LOG_LEVEL:-${LOG_LEVEL:-${LOGLEVEL:-INFO}}}
 DYNAMIC_SIDECAR_REMOTE_DEBUGGING_PORT=${DYNAMIC_SIDECAR_REMOTE_DEBUGGING_PORT:-3000}
 SERVER_LOG_LEVEL=$(echo "${APP_LOG_LEVEL}" | tr '[:upper:]' '[:lower:]')
 echo "$INFO" "Log-level app/server: $APP_LOG_LEVEL/$SERVER_LOG_LEVEL"
+echo "$INFO" "Starting service..."
 
 R_CLONE_VERSION=$(rclone version | head -n1 | awk '{print $2}' | sed 's/^v//') && \
   echo "$INFO" "R_CLONE_VERSION=${R_CLONE_VERSION}" && \

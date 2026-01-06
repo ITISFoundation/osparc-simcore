@@ -38,6 +38,7 @@ fi
 APP_LOG_LEVEL=${API_SERVER_LOGLEVEL:-${LOG_LEVEL:-${LOGLEVEL:-INFO}}}
 SERVER_LOG_LEVEL=$(echo "${APP_LOG_LEVEL}" | tr '[:upper:]' '[:lower:]')
 echo "$INFO" "Log-level app/server: $APP_LOG_LEVEL/$SERVER_LOG_LEVEL"
+echo "$INFO" "Starting service..."
 
 if [ "${API_SERVER_WORKER_MODE}" = "true" ]; then
   if [ "${SC_BOOT_MODE}" = "debug" ]; then
