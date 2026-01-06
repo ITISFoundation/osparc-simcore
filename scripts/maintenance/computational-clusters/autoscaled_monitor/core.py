@@ -34,14 +34,9 @@ from .models import (
 
 
 @utils.to_async
-def _parse_computational(
-    state: AppState, instance: Instance
-) -> ComputationalInstance | None:
+def _parse_computational(state: AppState, instance: Instance) -> ComputationalInstance | None:
     name = utils.get_instance_name(instance)
-    if result := (
-        state.computational_parser_workers.parse(name)
-        or state.computational_parser_primary.parse(name)
-    ):
+    if result := (state.computational_parser_workers.parse(name) or state.computational_parser_primary.parse(name)):
         assert isinstance(result, parse.Result)
 
         last_heartbeat = utils.get_last_heartbeat(instance)
@@ -54,21 +49,16 @@ def _parse_computational(
             ec2_instance=instance,
             disk_space=UNDEFINED_BYTESIZE,
             dask_ip="unknown",
+            is_warm_buffer=utils.get_warm_buffer_tag(instance),
         )
 
     return None
 
 
-def _create_graylog_permalinks(
-    environment: dict[str, str | None], instance: Instance
-) -> str:
+def _create_graylog_permalinks(environment: dict[str, str | None], instance: Instance) -> str:
     # https://monitoring.sim4life.io/graylog/search/6552235211aee4262e7f9f21?q=source%3A%22ip-10-0-1-67%22&rangetype=relative&from=28800
     source_name = instance.private_ip_address.replace(".", "-")
-    time_span = int(
-        (
-            arrow.utcnow().datetime - instance.launch_time + datetime.timedelta(hours=1)
-        ).total_seconds()
-    )
+    time_span = int((arrow.utcnow().datetime - instance.launch_time + datetime.timedelta(hours=1)).total_seconds())
     return f"https://monitoring.{environment['MACHINE_FQDN']}/graylog/search?q=source%3A%22ip-{source_name}%22&rangetype=relative&from={time_span}"
 
 
@@ -82,6 +72,7 @@ def _parse_dynamic(state: AppState, instance: Instance) -> DynamicInstance | Non
             ec2_instance=instance,
             running_services=[],
             disk_space=UNDEFINED_BYTESIZE,
+            is_warm_buffer=utils.get_warm_buffer_tag(instance),
         )
     return None
 
@@ -97,16 +88,15 @@ def _print_dynamic_instances(
         Column("Instance"),
         Column(
             "Running services",
-            footer="[red]Intervention detection might show false positive if in transient state, be careful and always double-check!![/red]",
+            footer="[red]Intervention detection might show false positive"
+            " if in transient state, be careful and always double-check!![/red]",
         ),
         title=f"dynamic autoscaled instances: {aws_region}",
         show_footer=True,
         padding=(0, 0),
         title_style=Style(color="red", encircle=True),
     )
-    for instance in track(
-        instances, description="Preparing dynamic autoscaled instances details..."
-    ):
+    for instance in track(instances, description="Preparing dynamic autoscaled instances details..."):
         service_table = "[i]n/a[/i]"
         if instance.running_services:
             service_table = Table(
@@ -115,37 +105,50 @@ def _print_dynamic_instances(
                 "NodeID",
                 "ServiceName",
                 "ServiceVersion",
+                "ProductName",
                 "Created Since",
                 "Need intervention",
                 expand=True,
                 padding=(0, 0),
             )
             for service in instance.running_services:
+                # Add robot emoji if simcore_user_agent is present (automated testing)
+                user_id_display = f"{service.user_id}"
+                if service.simcore_user_agent and service.simcore_user_agent.lower() != "undefined":
+                    user_id_display = f"🤖 {service.user_id}"
                 service_table.add_row(
-                    f"{service.user_id}",
+                    user_id_display,
                     service.project_id,
                     service.node_id,
                     service.service_name,
                     service.service_version,
-                    utils.timedelta_formatting(
-                        time_now - service.created_at, color_code=True
-                    ),
-                    f"{'[red]' if service.needs_manual_intervention else ''}{service.needs_manual_intervention}{'[/red]' if service.needs_manual_intervention else ''}",
+                    service.product_name,
+                    utils.timedelta_formatting(time_now - service.created_at, color_code=True),
+                    f"{'[red]' if service.needs_manual_intervention else ''}"
+                    f"{service.needs_manual_intervention}{'[/red]' if service.needs_manual_intervention else ''}",
                 )
+        elif instance.is_warm_buffer:
+            service_table = "[dim]warm buffer - no services running[/dim]"
 
+        color_encoded_free_space = utils.color_encode_with_threshold(
+            instance.disk_space.human_readable(), instance.disk_space, TypeAdapter(ByteSize).validate_python("15Gib")
+        )
+        instance_info = "\n".join(
+            [
+                f"{utils.color_encode_with_state(instance.name, instance.ec2_instance)}",
+                f"ID: {instance.ec2_instance.instance_id}",
+                f"AMI: {instance.ec2_instance.image_id}",
+                f"Type: {instance.ec2_instance.instance_type}",
+                f"Up: {utils.timedelta_formatting(time_now - instance.ec2_instance.launch_time, color_code=True)}",
+                f"ExtIP: {instance.ec2_instance.public_ip_address}",
+                f"IntIP: {instance.ec2_instance.private_ip_address}",
+                f"/mnt/docker(free): {color_encoded_free_space}",
+            ]
+        )
+        if instance.is_warm_buffer:
+            instance_info = f"[dim]{instance_info}[/dim]"
         table.add_row(
-            "\n".join(
-                [
-                    f"{utils.color_encode_with_state(instance.name, instance.ec2_instance)}",
-                    f"ID: {instance.ec2_instance.instance_id}",
-                    f"AMI: {instance.ec2_instance.image_id}",
-                    f"Type: {instance.ec2_instance.instance_type}",
-                    f"Up: {utils.timedelta_formatting(time_now - instance.ec2_instance.launch_time, color_code=True)}",
-                    f"ExtIP: {instance.ec2_instance.public_ip_address}",
-                    f"IntIP: {instance.ec2_instance.private_ip_address}",
-                    f"/mnt/docker(free): {utils.color_encode_with_threshold(instance.disk_space.human_readable(), instance.disk_space, TypeAdapter(ByteSize).validate_python('15Gib'))}",
-                ]
-            ),
+            instance_info,
             service_table,
         )
         table.add_row(
@@ -176,29 +179,43 @@ def _print_computational_clusters(
         expand=True,
     )
 
-    for cluster in track(
-        clusters, "Collecting information about computational clusters..."
-    ):
+    for cluster in track(clusters, "Collecting information about computational clusters..."):
         cluster_worker_metrics = dask.get_worker_metrics(cluster.scheduler_info)
         # first print primary machine info
+        color_encoded_up_time = utils.timedelta_formatting(
+            time_now - cluster.primary.ec2_instance.launch_time, color_code=True
+        )
+        color_encoded_heartbeat = (
+            utils.timedelta_formatting(time_now - cluster.primary.last_heartbeat)
+            if cluster.primary.last_heartbeat
+            else "n/a"
+        )
+        color_encoded_free_docker_space = utils.color_encode_with_threshold(
+            cluster.primary.disk_space.human_readable(),
+            cluster.primary.disk_space,
+            TypeAdapter(ByteSize).validate_python("15Gib"),
+        )
+        primary_info = "\n".join(
+            [
+                f"[bold]{utils.color_encode_with_state('Primary', cluster.primary.ec2_instance)}",
+                f"Name: {cluster.primary.name}",
+                f"ID: {cluster.primary.ec2_instance.id}",
+                f"AMI: {cluster.primary.ec2_instance.image_id}",
+                f"Type: {cluster.primary.ec2_instance.instance_type}",
+                f"Up: {color_encoded_up_time}",
+                f"ExtIP: {cluster.primary.ec2_instance.public_ip_address}",
+                f"IntIP: {cluster.primary.ec2_instance.private_ip_address}",
+                f"DaskSchedulerIP: {cluster.primary.dask_ip}",
+                f"UserID: {cluster.primary.user_id}",
+                f"WalletID: {cluster.primary.wallet_id}",
+                f"Heartbeat: {color_encoded_heartbeat}",
+                f"/mnt/docker(free): {color_encoded_free_docker_space}",
+            ]
+        )
+        if cluster.primary.is_warm_buffer:
+            primary_info = f"[dim]{primary_info}[/dim]"
         table.add_row(
-            "\n".join(
-                [
-                    f"[bold]{utils.color_encode_with_state('Primary', cluster.primary.ec2_instance)}",
-                    f"Name: {cluster.primary.name}",
-                    f"ID: {cluster.primary.ec2_instance.id}",
-                    f"AMI: {cluster.primary.ec2_instance.image_id}",
-                    f"Type: {cluster.primary.ec2_instance.instance_type}",
-                    f"Up: {utils.timedelta_formatting(time_now - cluster.primary.ec2_instance.launch_time, color_code=True)}",
-                    f"ExtIP: {cluster.primary.ec2_instance.public_ip_address}",
-                    f"IntIP: {cluster.primary.ec2_instance.private_ip_address}",
-                    f"DaskSchedulerIP: {cluster.primary.dask_ip}",
-                    f"UserID: {cluster.primary.user_id}",
-                    f"WalletID: {cluster.primary.wallet_id}",
-                    f"Heartbeat: {utils.timedelta_formatting(time_now - cluster.primary.last_heartbeat) if cluster.primary.last_heartbeat else 'n/a'}",
-                    f"/mnt/docker(free): {utils.color_encode_with_threshold(cluster.primary.disk_space.human_readable(), cluster.primary.disk_space, TypeAdapter(ByteSize).validate_python('15Gib'))}",
-                ]
-            ),
+            primary_info,
             "\n".join(
                 [
                     f"Dask Scheduler UI: http://{cluster.primary.ec2_instance.public_ip_address}:8787",
@@ -221,27 +238,31 @@ def _print_computational_clusters(
                 "no metrics???",
             )
             worker_processing_jobs = [
-                job_id
-                for worker_name, job_id in cluster.processing_jobs.items()
-                if worker.dask_ip in worker_name
+                job_id for worker_name, job_id in cluster.processing_jobs.items() if worker.dask_ip in worker_name
             ]
             table.add_row()
+            color_encoded_free_docker_space = utils.color_encode_with_threshold(
+                worker.disk_space.human_readable(), worker.disk_space, TypeAdapter(ByteSize).validate_python("15Gib")
+            )
+            worker_info = "\n".join(
+                [
+                    f"[italic]{utils.color_encode_with_state(f'Worker {index + 1}', worker.ec2_instance)}[/italic]",
+                    f"Name: {worker.name}",
+                    f"ID: {worker.ec2_instance.id}",
+                    f"AMI: {worker.ec2_instance.image_id}",
+                    f"Type: {worker.ec2_instance.instance_type}",
+                    f"Up: {utils.timedelta_formatting(time_now - worker.ec2_instance.launch_time, color_code=True)}",
+                    f"ExtIP: {worker.ec2_instance.public_ip_address}",
+                    f"IntIP: {worker.ec2_instance.private_ip_address}",
+                    f"DaskWorkerIP: {worker.dask_ip}",
+                    f"/mnt/docker(free): {color_encoded_free_docker_space}",
+                    "",
+                ]
+            )
+            if worker.is_warm_buffer:
+                worker_info = f"[dim]{worker_info}[/dim]"
             table.add_row(
-                "\n".join(
-                    [
-                        f"[italic]{utils.color_encode_with_state(f'Worker {index + 1}', worker.ec2_instance)}[/italic]",
-                        f"Name: {worker.name}",
-                        f"ID: {worker.ec2_instance.id}",
-                        f"AMI: {worker.ec2_instance.image_id}",
-                        f"Type: {worker.ec2_instance.instance_type}",
-                        f"Up: {utils.timedelta_formatting(time_now - worker.ec2_instance.launch_time, color_code=True)}",
-                        f"ExtIP: {worker.ec2_instance.public_ip_address}",
-                        f"IntIP: {worker.ec2_instance.private_ip_address}",
-                        f"DaskWorkerIP: {worker.dask_ip}",
-                        f"/mnt/docker(free): {utils.color_encode_with_threshold(worker.disk_space.human_readable(), worker.disk_space, TypeAdapter(ByteSize).validate_python('15Gib'))}",
-                        "",
-                    ]
-                ),
+                worker_info,
                 "\n".join(
                     [
                         f"Graylog: {_create_graylog_permalinks(environment, worker.ec2_instance)}",
@@ -269,9 +290,7 @@ async def _fetch_instance_details(
             SSH_USER_NAME,
             ssh_key_path,
         ),
-        ssh.get_available_disk_space(
-            state, instance.ec2_instance, SSH_USER_NAME, ssh_key_path
-        ),
+        ssh.get_available_disk_space(state, instance.ec2_instance, SSH_USER_NAME, ssh_key_path),
         return_exceptions=True,
     )
     return running_services, disk_space
@@ -284,10 +303,7 @@ async def _analyze_dynamic_instances_running_services_concurrently(
     user_id: int | None,
 ) -> list[DynamicInstance]:
     details = await asyncio.gather(
-        *(
-            _fetch_instance_details(state, instance, ssh_key_path)
-            for instance in dynamic_instances
-        ),
+        *(_fetch_instance_details(state, instance, ssh_key_path) for instance in dynamic_instances),
         return_exceptions=True,
     )
 
@@ -315,9 +331,7 @@ async def _analyze_computational_instances(
     if ssh_key_path is not None:
         all_disk_spaces = await asyncio.gather(
             *(
-                ssh.get_available_disk_space(
-                    state, instance.ec2_instance, SSH_USER_NAME, ssh_key_path
-                )
+                ssh.get_available_disk_space(state, instance.ec2_instance, SSH_USER_NAME, ssh_key_path)
                 for instance in computational_instances
             ),
             return_exceptions=True,
@@ -325,9 +339,7 @@ async def _analyze_computational_instances(
 
         all_dask_ips = await asyncio.gather(
             *(
-                ssh.get_dask_ip(
-                    state, instance.ec2_instance, SSH_USER_NAME, ssh_key_path
-                )
+                ssh.get_dask_ip(state, instance.ec2_instance, SSH_USER_NAME, ssh_key_path)
                 for instance in computational_instances
             ),
             return_exceptions=True,
@@ -371,10 +383,7 @@ async def _analyze_computational_instances(
         if instance.role is InstanceRole.worker:
             # assign the worker to correct cluster
             for cluster in computational_clusters:
-                if (
-                    cluster.primary.user_id == instance.user_id
-                    and cluster.primary.wallet_id == instance.wallet_id
-                ):
+                if cluster.primary.user_id == instance.user_id and cluster.primary.wallet_id == instance.wallet_id:
                     cluster.workers.append(instance)
 
     return computational_clusters
@@ -389,16 +398,12 @@ async def _parse_computational_clusters(
 ) -> list[ComputationalCluster]:
     computational_instances = [
         comp_instance
-        for instance in track(
-            instances, description="Parsing computational instances..."
-        )
+        for instance in track(instances, description="Parsing computational instances...")
         if (comp_instance := await _parse_computational(state, instance))
         and (user_id is None or comp_instance.user_id == user_id)
         and (wallet_id is None or comp_instance.wallet_id == wallet_id)
     ]
-    return await _analyze_computational_instances(
-        state, computational_instances, ssh_key_path
-    )
+    return await _analyze_computational_instances(state, computational_instances, ssh_key_path)
 
 
 async def _parse_dynamic_instances(
@@ -415,10 +420,8 @@ async def _parse_dynamic_instances(
     ]
 
     if dynamic_instances and ssh_key_path:
-        dynamic_instances = (
-            await _analyze_dynamic_instances_running_services_concurrently(
-                state, dynamic_instances, ssh_key_path, user_id
-            )
+        dynamic_instances = await _analyze_dynamic_instances_running_services_concurrently(
+            state, dynamic_instances, ssh_key_path, user_id
         )
     return dynamic_instances
 
@@ -433,6 +436,7 @@ def _print_summary_as_json(
             {
                 "name": instance.name,
                 "ec2_instance_id": instance.ec2_instance.instance_id,
+                "is_warm_buffer": instance.is_warm_buffer,
                 "running_services": [
                     {
                         "user_id": service.user_id,
@@ -440,6 +444,8 @@ def _print_summary_as_json(
                         "node_id": service.node_id,
                         "service_name": service.service_name,
                         "service_version": service.service_version,
+                        "product_name": service.product_name,
+                        "simcore_user_agent": service.simcore_user_agent,
                         "created_at": service.created_at.isoformat(),
                         "needs_manual_intervention": service.needs_manual_intervention,
                     }
@@ -454,19 +460,19 @@ def _print_summary_as_json(
                 "primary": {
                     "name": cluster.primary.name,
                     "ec2_instance_id": cluster.primary.ec2_instance.instance_id,
+                    "is_warm_buffer": cluster.primary.is_warm_buffer,
                     "user_id": cluster.primary.user_id,
                     "wallet_id": cluster.primary.wallet_id,
                     "disk_space": cluster.primary.disk_space.human_readable(),
                     "last_heartbeat": (
-                        cluster.primary.last_heartbeat.isoformat()
-                        if cluster.primary.last_heartbeat
-                        else "n/a"
+                        cluster.primary.last_heartbeat.isoformat() if cluster.primary.last_heartbeat else "n/a"
                     ),
                 },
                 "workers": [
                     {
                         "name": worker.name,
                         "ec2_instance_id": worker.ec2_instance.instance_id,
+                        "is_warm_buffer": worker.is_warm_buffer,
                         "disk_space": worker.disk_space.human_readable(),
                     }
                     for worker in cluster.workers
@@ -505,17 +511,13 @@ async def summary(
     )
 
     assert state.ec2_resource_clusters_keeper
-    computational_instances = await ec2.list_computational_instances_from_ec2(
-        state, user_id, wallet_id
-    )
+    computational_instances = await ec2.list_computational_instances_from_ec2(state, user_id, wallet_id)
     computational_clusters = await _parse_computational_clusters(
         state, computational_instances, state.ssh_key_path, user_id, wallet_id
     )
 
     if output_json:
-        _print_summary_as_json(
-            dynamic_autoscaled_instances, computational_clusters, output=output
-        )
+        _print_summary_as_json(dynamic_autoscaled_instances, computational_clusters, output=output)
 
     if not output_json:
         _print_dynamic_instances(
@@ -562,20 +564,12 @@ def _print_computational_tasks(
     for index, (db_task, dask_task) in enumerate(tasks):
         table.add_row(
             f"{index}",
-            (
-                f"{db_task.project_id}"
-                if db_task
-                else "[red][bold]intervention needed[/bold][/red]"
-            ),
+            (f"{db_task.project_id}" if db_task else "[red][bold]intervention needed[/bold][/red]"),
             f"{db_task.node_id}" if db_task else "",
             f"{db_task.service_name}" if db_task else "",
             f"{db_task.service_version}" if db_task else "",
             f"{db_task.state}" if db_task else "",
-            (
-                dask_task.state
-                if dask_task
-                else "[orange]task not yet in cluster[/orange]"
-            ),
+            (dask_task.state if dask_task else "[orange]task not yet in cluster[/orange]"),
         )
 
     rich.print(table)
@@ -585,12 +579,8 @@ async def _list_computational_clusters(
     state: AppState, user_id: int, wallet_id: int | None
 ) -> list[ComputationalCluster]:
     assert state.ec2_resource_clusters_keeper
-    computational_instances = await ec2.list_computational_instances_from_ec2(
-        state, user_id, wallet_id
-    )
-    return await _parse_computational_clusters(
-        state, computational_instances, state.ssh_key_path, user_id, wallet_id
-    )
+    computational_instances = await ec2.list_computational_instances_from_ec2(state, user_id, wallet_id)
+    return await _parse_computational_clusters(state, computational_instances, state.ssh_key_path, user_id, wallet_id)
 
 
 async def _cancel_all_jobs(
@@ -615,11 +605,7 @@ async def _cancel_all_jobs(
                     the_cluster,
                     dask_task.job_id,
                 )
-        if (
-            comp_task is not None
-            and comp_task.state not in ["FAILED", "SUCCESS", "ABORTED"]
-            and abort_in_db
-        ):
+        if comp_task is not None and comp_task.state not in ["FAILED", "SUCCESS", "ABORTED"] and abort_in_db:
             await db.abort_job_in_db(state, comp_task.project_id, comp_task.node_id)
 
         rich.print("cancelled all tasks")
@@ -661,21 +647,19 @@ async def cancel_jobs(  # noqa: C901, PLR0912
     computational_tasks = await db.list_computational_tasks_from_db(state, user_id)
 
     # get the reality
-    computational_clusters = await _list_computational_clusters(
-        state, user_id, wallet_id
-    )
+    computational_clusters = await _list_computational_clusters(state, user_id, wallet_id)
 
     if computational_clusters:
-        assert (
-            len(computational_clusters) == 1
-        ), "too many clusters found! TIP: fix this code or something weird is playing out"
+        assert len(computational_clusters) == 1, (
+            "too many clusters found! TIP: fix this code or something weird is playing out"
+        )
 
         the_cluster = computational_clusters[0]
         rich.print(f"{the_cluster.task_states_to_tasks=}")
 
     job_id_to_dask_state = await _get_job_id_to_dask_state_from_cluster(the_cluster)
-    task_to_dask_job: list[tuple[ComputationalTask | None, DaskTask | None]] = (
-        await _get_db_task_to_dask_job(computational_tasks, job_id_to_dask_state)
+    task_to_dask_job: list[tuple[ComputationalTask | None, DaskTask | None]] = await _get_db_task_to_dask_job(
+        computational_tasks, job_id_to_dask_state
     )
 
     if not task_to_dask_job:
@@ -686,7 +670,8 @@ async def cancel_jobs(  # noqa: C901, PLR0912
     rich.print(the_cluster.datasets)
     try:
         if response := typer.prompt(
-            "Which dataset to cancel? (all: will cancel everything, 1-5: will cancel jobs 1-5, or 4: will cancel job #4)",
+            "Which dataset to cancel? (all: will cancel everything, 1-5: "
+            "will cancel jobs 1-5, or 4: will cancel job #4)",
             default="none",
         ):
             if response == "none":
@@ -702,7 +687,7 @@ async def cancel_jobs(  # noqa: C901, PLR0912
                 try:
                     # Split the response and handle ranges
                     indices = response.split("-")
-                    if len(indices) == 2:
+                    if len(indices) == 2:  # noqa: PLR2004
                         start_index, end_index = map(int, indices)
                         selected_indices = range(start_index, end_index + 1)
                     else:
@@ -711,47 +696,31 @@ async def cancel_jobs(  # noqa: C901, PLR0912
                     for selected_index in selected_indices:
                         comp_task, dask_task = task_to_dask_job[selected_index]
                         if dask_task is not None and dask_task.state != "unknown":
-                            await dask.trigger_job_cancellation_in_scheduler(
-                                state, the_cluster, dask_task.job_id
-                            )
+                            await dask.trigger_job_cancellation_in_scheduler(state, the_cluster, dask_task.job_id)
                             if comp_task is None:
                                 # we need to clear it of the cluster
-                                await dask.remove_job_from_scheduler(
-                                    state, the_cluster, dask_task.job_id
-                                )
+                                await dask.remove_job_from_scheduler(state, the_cluster, dask_task.job_id)
 
                         if comp_task is not None and abort_in_db:
-                            await db.abort_job_in_db(
-                                state, comp_task.project_id, comp_task.node_id
-                            )
+                            await db.abort_job_in_db(state, comp_task.project_id, comp_task.node_id)
                     rich.print(f"Cancelled selected tasks: {response}")
 
                 except ValidationError:
-                    rich.print(
-                        "[yellow]wrong index format, not cancelling anything[/yellow]"
-                    )
+                    rich.print("[yellow]wrong index format, not cancelling anything[/yellow]")
                 except IndexError:
-                    rich.print(
-                        "[yellow]index out of range, not cancelling anything[/yellow]"
-                    )
+                    rich.print("[yellow]index out of range, not cancelling anything[/yellow]")
     except ValidationError:
         rich.print("[yellow]wrong input, not cancelling anything[/yellow]")
 
 
-async def trigger_cluster_termination(
-    state: AppState, user_id: int, wallet_id: int | None, *, force: bool
-) -> None:
+async def trigger_cluster_termination(state: AppState, user_id: int, wallet_id: int | None, *, force: bool) -> None:
     assert state.ec2_resource_clusters_keeper
-    computational_instances = await ec2.list_computational_instances_from_ec2(
-        state, user_id, wallet_id
-    )
+    computational_instances = await ec2.list_computational_instances_from_ec2(state, user_id, wallet_id)
     computational_clusters = await _parse_computational_clusters(
         state, computational_instances, state.ssh_key_path, user_id, wallet_id
     )
     assert computational_clusters
-    assert (
-        len(computational_clusters) == 1
-    ), "too many clusters found! TIP: fix this code"
+    assert len(computational_clusters) == 1, "too many clusters found! TIP: fix this code"
 
     _print_computational_clusters(
         computational_clusters,
@@ -759,19 +728,15 @@ async def trigger_cluster_termination(
         state.ec2_resource_clusters_keeper.meta.client.meta.region_name,
         output=None,
     )
-    if (force is True) or typer.confirm(
-        "Are you sure you want to trigger termination of that cluster?"
-    ):
+    if (force is True) or typer.confirm("Are you sure you want to trigger termination of that cluster?"):
         the_cluster = computational_clusters[0]
 
         computational_tasks = await db.list_computational_tasks_from_db(state, user_id)
         job_id_to_dask_state = await _get_job_id_to_dask_state_from_cluster(the_cluster)
-        task_to_dask_job: list[tuple[ComputationalTask | None, DaskTask | None]] = (
-            await _get_db_task_to_dask_job(computational_tasks, job_id_to_dask_state)
+        task_to_dask_job: list[tuple[ComputationalTask | None, DaskTask | None]] = await _get_db_task_to_dask_job(
+            computational_tasks, job_id_to_dask_state
         )
-        await _cancel_all_jobs(
-            state, the_cluster, task_to_dask_job=task_to_dask_job, abort_in_db=force
-        )
+        await _cancel_all_jobs(state, the_cluster, task_to_dask_job=task_to_dask_job, abort_in_db=force)
 
         new_heartbeat_tag: TagTypeDef = {
             "Key": "last_heartbeat",
@@ -779,7 +744,8 @@ async def trigger_cluster_termination(
         }
         the_cluster.primary.ec2_instance.create_tags(Tags=[new_heartbeat_tag])
         rich.print(
-            f"heartbeat tag on cluster of {user_id=}/{wallet_id=} changed, clusters-keeper will terminate that cluster soon."
+            f"heartbeat tag on cluster of {user_id=}/{wallet_id=} changed,"
+            " clusters-keeper will terminate that cluster soon."
         )
     else:
         rich.print("not deleting anything")
@@ -824,7 +790,8 @@ async def terminate_dynamic_instances(
 
     for instance in dynamic_autoscaled_instances:
         rich.print(
-            f"terminating instance {instance.ec2_instance.instance_id} with name {utils.get_instance_name(instance.ec2_instance)}"
+            f"terminating instance {instance.ec2_instance.instance_id} "
+            f"with name {utils.get_instance_name(instance.ec2_instance)}"
         )
         if force is True or typer.confirm(
             f"Are you sure you want to terminate instance {instance.ec2_instance.instance_id}?"
