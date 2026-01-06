@@ -26,7 +26,7 @@ def _get_self_container_id() -> str:
 
 
 @asynccontextmanager
-async def get_or_crate_docker_session(docker: Docker | None) -> AsyncIterator[Docker]:
+async def get_or_create_docker_session(docker: Docker | None) -> AsyncIterator[Docker]:
     if docker is not None:
         yield docker
         return
@@ -82,7 +82,7 @@ async def create_r_clone_container(
     nano_cpus: NonNegativeInt,
     handler_get_bind_paths: GetBindPathsProtocol,
 ) -> None:
-    async with get_or_crate_docker_session(docker) as client:
+    async with get_or_create_docker_session(docker) as client:
         # create rclone container attached to the network
         r_clone_container = await client.containers.run(
             config=await _get_config(
@@ -106,20 +106,14 @@ async def create_r_clone_container(
         )
 
 
-async def create_network_and_connect_sidecar_container(
-    docker: Docker | None, network_name: str
-) -> None:
-    async with get_or_crate_docker_session(docker) as client:
-        r_clone_network = await client.networks.create(
-            {"Name": network_name, "Attachable": True}
-        )
+async def create_network_and_connect_sidecar_container(docker: Docker | None, network_name: str) -> None:
+    async with get_or_create_docker_session(docker) as client:
+        r_clone_network = await client.networks.create({"Name": network_name, "Attachable": True})
         await r_clone_network.connect({"Container": _get_self_container_id()})
 
 
-async def remove_container_if_exists(
-    docker: Docker | None, container_name: str
-) -> None:
-    async with get_or_crate_docker_session(docker) as client:
+async def remove_container_if_exists(docker: Docker | None, container_name: str) -> None:
+    async with get_or_create_docker_session(docker) as client:
         try:
             existing_container = await client.containers.get(container_name)
             await existing_container.delete(force=True)
@@ -129,17 +123,14 @@ async def remove_container_if_exists(
 
 
 async def remove_network_if_exists(docker: Docker | None, network_name: str) -> None:
-    async with get_or_crate_docker_session(docker) as client:
+    async with get_or_create_docker_session(docker) as client:
         existing_network = DockerNetwork(client, network_name)
 
         try:
             await existing_network.disconnect({"Container": _get_self_container_id()})
         except DockerError as e:
             if (
-                not (
-                    e.status == _INTERNAL_SERVER_ERROR
-                    and "is not connected to network" in e.message
-                )
+                not (e.status == _INTERNAL_SERVER_ERROR and "is not connected to network" in e.message)
                 and e.status != _NOT_FOUND
             ):
                 raise

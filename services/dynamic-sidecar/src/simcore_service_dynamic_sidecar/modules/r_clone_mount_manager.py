@@ -14,16 +14,14 @@ from simcore_sdk.node_ports_common.r_clone_mount import RCloneMountManager
 from ..core.rabbitmq import get_rabbitmq_rpc_client, post_sidecar_log_message
 from ..core.settings import ApplicationSettings
 
-_logger = logging.getLogger(__file__)
+_logger = logging.getLogger(__name__)
 
 
 async def _handle_shutdown_request(app: FastAPI) -> None:
     settings: ApplicationSettings = app.state.settings
     client = get_rabbitmq_rpc_client(app)
 
-    with log_context(
-        _logger, logging.INFO, "requesting service shutdown via dynamic-scheduler"
-    ):
+    with log_context(_logger, logging.INFO, "requesting service shutdown via dynamic-scheduler"):
         await stop_dynamic_service(
             client,
             dynamic_service_stop=DynamicServiceStop(
@@ -48,7 +46,6 @@ def setup_r_clone_mount_manager(app: FastAPI):
     settings: ApplicationSettings = app.state.settings
 
     async def _on_startup() -> None:
-
         app.state.r_clone_mount_manager = r_clone_mount_manager = RCloneMountManager(
             settings.DY_SIDECAR_R_CLONE_SETTINGS,
             handler_request_shutdown=partial(_handle_shutdown_request, app),

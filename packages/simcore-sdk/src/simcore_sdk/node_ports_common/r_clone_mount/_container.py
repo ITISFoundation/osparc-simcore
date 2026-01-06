@@ -192,19 +192,13 @@ class ContainerManager:  # pylint:disable=too-many-instance-attributes
         return f"{_DOCKER_PREFIX_MOUNT}-c-{self.node_id}{mount_id}"[:63]
 
     async def create(self):
-        async with _docker_utils.get_or_crate_docker_session(None) as client:
+        async with _docker_utils.get_or_create_docker_session(None) as client:
             # ensure nothing was left from previous runs
-            await _docker_utils.remove_container_if_exists(
-                client, self.r_clone_container_name
-            )
-            await _docker_utils.remove_network_if_exists(
-                client, self.r_clone_container_name
-            )
+            await _docker_utils.remove_container_if_exists(client, self.r_clone_container_name)
+            await _docker_utils.remove_network_if_exists(client, self.r_clone_container_name)
 
             # create network + container and connect to sidecar
-            await _docker_utils.create_network_and_connect_sidecar_container(
-                client, self._r_clone_network_name
-            )
+            await _docker_utils.create_network_and_connect_sidecar_container(client, self._r_clone_network_name)
 
             assert self.r_clone_settings.R_CLONE_VERSION is not None  # nosec
             mount_settings = self.r_clone_settings.R_CLONE_MOUNT_SETTINGS
@@ -230,13 +224,9 @@ class ContainerManager:  # pylint:disable=too-many-instance-attributes
             )
 
     async def remove(self):
-        async with _docker_utils.get_or_crate_docker_session(None) as client:
-            await _docker_utils.remove_container_if_exists(
-                client, self.r_clone_container_name
-            )
-            await _docker_utils.remove_network_if_exists(
-                client, self.r_clone_container_name
-            )
+        async with _docker_utils.get_or_create_docker_session(None) as client:
+            await _docker_utils.remove_container_if_exists(client, self.r_clone_container_name)
+            await _docker_utils.remove_network_if_exists(client, self.r_clone_container_name)
 
 
 class RemoteControlHttpClient:
@@ -267,9 +257,7 @@ class RemoteControlHttpClient:
         request_url = f"{self._base_url}/{path}"
         _logger.debug("Sending '%s %s' request", method, request_url)
 
-        async with AsyncClient(
-            timeout=self._r_clone_client_timeout.total_seconds()
-        ) as client:
+        async with AsyncClient(timeout=self._r_clone_client_timeout.total_seconds()) as client:
             response = await client.request(method, request_url, auth=self._auth)
             response.raise_for_status()
             dict_response: dict = response.json()
@@ -285,18 +273,12 @@ class RemoteControlHttpClient:
         return await self._request("POST", "rc/noop")
 
     async def get_mount_activity(self) -> MountActivity:
-        core_stats, vfs_queue = await asyncio.gather(
-            self._post_core_stats(), self._post_vfs_queue()
-        )
+        core_stats, vfs_queue = await asyncio.gather(self._post_core_stats(), self._post_vfs_queue())
 
         return MountActivity(
             transferring=(
                 {
-                    x["name"]: ProgressReport(
-                        actual_value=(
-                            x["percentage"] / 100 if "percentage" in x else 0.0
-                        )
-                    )
+                    x["name"]: ProgressReport(actual_value=(x["percentage"] / 100 if "percentage" in x else 0.0))
                     for x in core_stats["transferring"]
                 }
                 if "transferring" in core_stats
@@ -332,20 +314,13 @@ class RemoteControlHttpClient:
             wait=wait_fixed(1),
             stop=stop_after_delay(self.transfers_completed_timeout.total_seconds()),
             reraise=True,
-            retry=retry_if_exception_type(
-                (WaitingForQueueToBeEmptyError, WaitingForTransfersToCompleteError)
-            ),
+            retry=retry_if_exception_type((WaitingForQueueToBeEmptyError, WaitingForTransfersToCompleteError)),
             before_sleep=before_sleep_log(_logger, logging.WARNING),
         )
         async def _() -> None:
-            core_stats, vfs_queue = await asyncio.gather(
-                self._post_core_stats(), self._post_vfs_queue()
-            )
+            core_stats, vfs_queue = await asyncio.gather(self._post_core_stats(), self._post_vfs_queue())
 
-            if (
-                core_stats["transfers"] != core_stats["totalTransfers"]
-                or "transferring" in core_stats
-            ):
+            if core_stats["transfers"] != core_stats["totalTransfers"] or "transferring" in core_stats:
                 raise WaitingForTransfersToCompleteError
 
             queue = vfs_queue["queue"]
