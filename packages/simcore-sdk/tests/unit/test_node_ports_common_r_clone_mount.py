@@ -61,9 +61,7 @@ def bucket_name() -> S3BucketName:
 
 
 @pytest.fixture
-def mock_environment(
-    monkeypatch: pytest.MonkeyPatch, bucket_name: S3BucketName, r_clone_version: str
-) -> EnvVarsDict:
+def mock_environment(monkeypatch: pytest.MonkeyPatch, bucket_name: S3BucketName, r_clone_version: str) -> EnvVarsDict:
     return setenvs_from_dict(
         monkeypatch,
         {
@@ -85,9 +83,7 @@ def r_clone_settings(mock_environment: EnvVarsDict) -> RCloneSettings:
 
 
 @pytest.fixture
-async def s3_client(
-    r_clone_settings: RCloneSettings, bucket_name: S3BucketName
-) -> AsyncIterable[S3Client]:
+async def s3_client(r_clone_settings: RCloneSettings, bucket_name: S3BucketName) -> AsyncIterable[S3Client]:
     s3_settings = r_clone_settings.R_CLONE_S3
     session = aioboto3.Session()
     session_client = session.client(
@@ -116,13 +112,10 @@ async def mocked_shutdown() -> AsyncMock:
 async def r_clone_mount_manager(
     r_clone_settings: RCloneSettings, mocked_shutdown: AsyncMock
 ) -> AsyncIterator[RCloneMountManager]:
-
     async def _mock_shutdown_request_handler() -> None:
         await mocked_shutdown()
 
-    manager = RCloneMountManager(
-        r_clone_settings, handler_request_shutdown=_mock_shutdown_request_handler
-    )
+    manager = RCloneMountManager(r_clone_settings, handler_request_shutdown=_mock_shutdown_request_handler)
     await manager.setup()
 
     yield manager
@@ -151,9 +144,7 @@ def index() -> int:
 
 @pytest.fixture
 def remote_path(faker: Faker) -> StorageFileID:
-    return TypeAdapter(StorageFileID).validate_python(
-        f"{faker.uuid4()}/{faker.uuid4()}/mounted-path"
-    )
+    return TypeAdapter(StorageFileID).validate_python(f"{faker.uuid4()}/{faker.uuid4()}/mounted-path")
 
 
 @pytest.fixture
@@ -173,9 +164,7 @@ def moto_server() -> Iterator[None]:
 async def mocked_self_container(mocker: MockerFixture) -> AsyncIterator[None]:
     # start the simplest lightweight container that sleeps forever
     async with aiodocker.Docker() as client:
-        container = await client.containers.run(
-            config={"Image": "alpine:latest", "Cmd": ["sleep", "infinity"]}
-        )
+        container = await client.containers.run(config={"Image": "alpine:latest", "Cmd": ["sleep", "infinity"]})
 
         mocker.patch(
             "simcore_sdk.node_ports_common.r_clone_mount._docker_utils._get_self_container_id",
@@ -211,9 +200,7 @@ async def mocked_r_clone_container_config(mocker: MockerFixture) -> None:
             handler_get_bind_paths,
         )
         # Add port forwarding to access from host
-        config["HostConfig"]["PortBindings"] = {
-            f"{rc_port}/tcp": [{"HostPort": str(rc_port)}]
-        }
+        config["HostConfig"]["PortBindings"] = {f"{rc_port}/tcp": [{"HostPort": str(rc_port)}]}
         config["HostConfig"]["NetworkMode"] = "host"
         return config
 
@@ -251,9 +238,7 @@ async def _create_random_binary_file(
         assert bytes_written == file_size
 
 
-async def _create_file_of_size(
-    target_dir: Path, *, name: str, file_size: ByteSize
-) -> Path:
+async def _create_file_of_size(target_dir: Path, *, name: str, file_size: ByteSize) -> Path:
     file_path = target_dir / name
     if not file_path.parent.exists():
         file_path.parent.mkdir(parents=True, exist_ok=True)
@@ -264,14 +249,10 @@ async def _create_file_of_size(
     return file_path
 
 
-async def _create_files_in_dir(
-    target_dir: Path, file_count: int, file_size: ByteSize
-) -> set[str]:
+async def _create_files_in_dir(target_dir: Path, file_count: int, file_size: ByteSize) -> set[str]:
     files = []
     for i in range(file_count):
-        file_path = await _create_file_of_size(
-            target_dir, name=f"file_{i}.bin", file_size=file_size
-        )
+        file_path = await _create_file_of_size(target_dir, name=f"file_{i}.bin", file_size=file_size)
         files.append(file_path)
     return {x.name for x in files}
 
@@ -295,9 +276,7 @@ async def _get_file_checksums_from_path(
 async def _get_file_checksums_from_s3(
     s3_client: S3Client, bucket_name: S3BucketName, remote_path: StorageFileID
 ) -> dict[Path, str]:
-    response = await s3_client.list_objects_v2(
-        Bucket=bucket_name, Prefix=f"{remote_path}"
-    )
+    response = await s3_client.list_objects_v2(Bucket=bucket_name, Prefix=f"{remote_path}")
 
     checksums = {}
     for obj in response.get("Contents", []):
@@ -310,9 +289,7 @@ async def _get_file_checksums_from_s3(
     return checksums
 
 
-async def _get_bind_paths_protocol(
-    vfs_cache_path: Path, state_path: Path
-) -> list[dict]:
+async def _get_bind_paths_protocol(vfs_cache_path: Path, state_path: Path) -> list[dict]:
     return [
         {
             "Type": "bind",
@@ -344,16 +321,13 @@ async def test_workflow(
     s3_client: S3Client,
     mocked_shutdown: AsyncMock,
 ) -> None:
-
     await r_clone_mount_manager.ensure_mounted(
         local_mount_path=local_mount_path,
         remote_type=MountRemoteType.S3,
         remote_path=remote_path,
         node_id=node_id,
         index=index,
-        handler_get_bind_paths=functools.partial(
-            _get_bind_paths_protocol, vfs_cache_path
-        ),
+        handler_get_bind_paths=functools.partial(_get_bind_paths_protocol, vfs_cache_path),
         handler_mount_activity=_handle_mount_activity,
     )
 
@@ -372,9 +346,7 @@ async def test_workflow(
         await mount.wait_for_all_transfers_to_complete()
 
     # verify data is in S3 with matching checksums and filenames
-    s3_checksums = await _get_file_checksums_from_s3(
-        s3_client, bucket_name, remote_path
-    )
+    s3_checksums = await _get_file_checksums_from_s3(s3_client, bucket_name, remote_path)
 
     # compare checksums and filenames
     assert len(s3_checksums) == len(local_checksums), "File count mismatch"
@@ -382,13 +354,11 @@ async def test_workflow(
 
     for file_path, local_checksum in local_checksums.items():
         s3_checksum = s3_checksums[file_path]
-        assert (
-            local_checksum == s3_checksum
-        ), f"Checksum mismatch for {file_path}: local={local_checksum}, s3={s3_checksum}"
+        assert local_checksum == s3_checksum, (
+            f"Checksum mismatch for {file_path}: local={local_checksum}, s3={s3_checksum}"
+        )
 
-    await r_clone_mount_manager.ensure_unmounted(
-        local_mount_path=local_mount_path, index=index
-    )
+    await r_clone_mount_manager.ensure_unmounted(local_mount_path=local_mount_path, index=index)
 
     mocked_shutdown.assert_not_called()
 
@@ -405,16 +375,13 @@ async def test_container_recovers_and_shutdown_is_emitted(
     index: int,
     mocked_shutdown: AsyncMock,
 ) -> None:
-
     await r_clone_mount_manager.ensure_mounted(
         local_mount_path=local_mount_path,
         remote_type=MountRemoteType.S3,
         remote_path=remote_path,
         node_id=node_id,
         index=index,
-        handler_get_bind_paths=functools.partial(
-            _get_bind_paths_protocol, vfs_cache_path
-        ),
+        handler_get_bind_paths=functools.partial(_get_bind_paths_protocol, vfs_cache_path),
         handler_mount_activity=_handle_mount_activity,
     )
 
@@ -430,7 +397,7 @@ async def test_container_recovers_and_shutdown_is_emitted(
         container = await client.containers.get(container_name)
         await container.stop()
 
-    # wait for the container to reocover
+    # wait for the container to recover
     async for attempt in AsyncRetrying(
         stop=stop_after_delay(30),
         wait=wait_fixed(0.1),
