@@ -52,6 +52,7 @@ pytest_plugins = [
     "pytest_simcore.redis_service",
     "pytest_simcore.repository_paths",
     "pytest_simcore.simcore_service_library_fixtures",
+    "pytest_simcore.simcore_services",
     "pytest_simcore.socketio",
 ]
 
@@ -300,9 +301,7 @@ def mock_environment(
 
 
 @pytest.fixture
-def mock_environment_with_envdevel(
-    monkeypatch: pytest.MonkeyPatch, project_slug_dir: Path
-) -> EnvVarsDict:
+def mock_environment_with_envdevel(monkeypatch: pytest.MonkeyPatch, project_slug_dir: Path) -> EnvVarsDict:
     """Alternative environment loaded from .env-devel.
 
     .env-devel is used mainly to run CLI
