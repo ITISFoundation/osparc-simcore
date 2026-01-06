@@ -32,7 +32,7 @@ jobs:
           python-version: ${{ inputs.python-version }}
           expose-github-runtime: 'true'
 
-      - name: create new dir
+      - name: Create docker build mount directory
         run: sudo mkdir -p /mnt/docker
       - name: Maximize build space
         uses: easimon/maximize-build-space@master
