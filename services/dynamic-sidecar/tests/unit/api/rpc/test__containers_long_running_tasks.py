@@ -14,6 +14,7 @@ from unittest.mock import AsyncMock
 import aiodocker
 import faker
 import pytest
+import sqlalchemy as sa
 from aiodocker.containers import DockerContainer
 from aiodocker.volumes import DockerVolume
 from common_library.serialization import model_dump_with_secrets
@@ -162,6 +163,7 @@ def compose_spec(request: pytest.FixtureRequest) -> DockerComposeYamlStr:
 @pytest.fixture
 def mock_environment(
     monkeypatch: pytest.MonkeyPatch,
+    postgres_db: sa.engine.Engine,
     postgres_env_vars_dict: EnvVarsDict,
     rabbit_service: RabbitSettings,
     mock_environment: EnvVarsDict,

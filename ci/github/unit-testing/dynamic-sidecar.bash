@@ -21,7 +21,7 @@ test() {
   # shellcheck source=/dev/null
   source .venv/bin/activate
   pushd services/dynamic-sidecar
-  make test-ci-unit pytest-parameters="--ignore=tests/unit/api --ignore=tests/unit/modules tests/unit/api/rpc/test__containers_long_running_tasks.py::test_create_containers_task"
+  make test-ci-unit
   popd
 }
 
