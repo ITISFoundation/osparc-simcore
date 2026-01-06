@@ -127,6 +127,8 @@ def _print_dynamic_instances(
                     f"{'[red]' if service.needs_manual_intervention else ''}"
                     f"{service.needs_manual_intervention}{'[/red]' if service.needs_manual_intervention else ''}",
                 )
+        elif instance.is_warm_buffer:
+            service_table = "[dim]warm buffer - no services running[/dim]"
 
         color_encoded_free_space = utils.color_encode_with_threshold(
             instance.disk_space.human_readable(), instance.disk_space, TypeAdapter(ByteSize).validate_python("15Gib")
