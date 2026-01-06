@@ -14,7 +14,6 @@ install() {
   make install-ci
   popd
   uv pip list
-  make info-images
 }
 
 test() {
