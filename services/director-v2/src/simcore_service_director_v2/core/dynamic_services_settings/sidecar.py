@@ -85,7 +85,7 @@ class PlacementSettings(BaseCustomSettings):
     ] = DEFAULT_FACTORY
 
     DIRECTOR_V2_DYNAMIC_SIDECAR_OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS: Annotated[
-        Json[dict[DockerPlacementConstraint, str]],
+        Json[dict[DockerLabelKey, str]],
         Field(
             default_factory=lambda: "{}",
             description="Dynamic sidecar custom placement labels for flexible node targeting. Keys must be from: "
