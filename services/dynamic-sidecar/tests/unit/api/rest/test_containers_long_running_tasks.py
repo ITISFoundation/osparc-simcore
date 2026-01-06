@@ -62,7 +62,6 @@ from tenacity import (
 )
 
 pytest_simcore_core_services_selection = [
-    "migration",
     "postgres",
     "rabbit",
 ]
@@ -192,7 +191,6 @@ def mock_environment(
     postgres_env_vars_dict: EnvVarsDict,
     rabbit_service: RabbitSettings,
     mock_environment: EnvVarsDict,
-    simcore_services_ready: None,
 ) -> EnvVarsDict:
     envs = {
         **mock_environment,

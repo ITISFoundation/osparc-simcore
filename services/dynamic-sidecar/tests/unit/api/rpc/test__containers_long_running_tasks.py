@@ -64,7 +64,6 @@ from tenacity import (
 from utils import get_lrt_result
 
 pytest_simcore_core_services_selection = [
-    "migration",
     "postgres",
     "rabbit",
 ]

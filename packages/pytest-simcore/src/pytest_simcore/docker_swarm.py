@@ -118,7 +118,23 @@ def _fetch_and_print_services(docker_client: docker.client.DockerClient, extra_t
                 },
             )
 
-            tasks = list(service_obj.tasks())
+            tasks = [
+                copy_from_dict(
+                    task,
+                    include={
+                        "ID": ...,
+                        "CreatedAt": ...,
+                        "UpdatedAt": ...,
+                        "Spec": {"ContainerSpec": {"Image", "Labels", "Env"}},
+                        "Status": ...,
+                        "DesiredState": ...,
+                        "ServiceID": ...,
+                        "NodeID": ...,
+                        "Slot": ...,
+                    },
+                )
+                for task in service_obj.tasks()  # type: ignore
+            ]
 
         print(HEADER_STR.format(f"TOP {service_obj.name}"))  # type: ignore
         print(json.dumps({"service": service, "tasks": tasks}, indent=1))
