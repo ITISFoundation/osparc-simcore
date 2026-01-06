@@ -165,8 +165,7 @@ def create_app() -> FastAPI:
     needed in other requests and used to share data.
     """
 
-    with log_context(_logger, logging.DEBUG, "Creating base app"):
-        app = create_base_app()
+    app = create_base_app()
 
     # MODULES SETUP --------------
 
