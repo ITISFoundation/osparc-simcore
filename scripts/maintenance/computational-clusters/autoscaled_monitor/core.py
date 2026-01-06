@@ -105,18 +105,24 @@ def _print_dynamic_instances(
                 "NodeID",
                 "ServiceName",
                 "ServiceVersion",
+                "ProductName",
                 "Created Since",
                 "Need intervention",
                 expand=True,
                 padding=(0, 0),
             )
             for service in instance.running_services:
+                # Add robot emoji if simcore_user_agent is present (automated testing)
+                user_id_display = f"{service.user_id}"
+                if service.simcore_user_agent and service.simcore_user_agent.lower() != "undefined":
+                    user_id_display = f"🤖 {service.user_id}"
                 service_table.add_row(
-                    f"{service.user_id}",
+                    user_id_display,
                     service.project_id,
                     service.node_id,
                     service.service_name,
                     service.service_version,
+                    service.product_name,
                     utils.timedelta_formatting(time_now - service.created_at, color_code=True),
                     f"{'[red]' if service.needs_manual_intervention else ''}"
                     f"{service.needs_manual_intervention}{'[/red]' if service.needs_manual_intervention else ''}",
@@ -436,6 +442,8 @@ def _print_summary_as_json(
                         "node_id": service.node_id,
                         "service_name": service.service_name,
                         "service_version": service.service_version,
+                        "product_name": service.product_name,
+                        "simcore_user_agent": service.simcore_user_agent,
                         "created_at": service.created_at.isoformat(),
                         "needs_manual_intervention": service.needs_manual_intervention,
                     }

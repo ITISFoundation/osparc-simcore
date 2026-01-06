@@ -66,6 +66,8 @@ class DynamicService:
     created_at: datetime.datetime
     needs_manual_intervention: bool
     containers: list[str]
+    product_name: str
+    simcore_user_agent: str
 
 
 @dataclass(slots=True, kw_only=True)
@@ -114,6 +116,8 @@ DockerContainer = namedtuple(  # noqa: PYI024
         "name",
         "service_name",
         "service_version",
+        "product_name",
+        "simcore_user_agent",
     ],
 )
 
