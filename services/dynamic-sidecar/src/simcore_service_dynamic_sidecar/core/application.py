@@ -133,6 +133,7 @@ def create_base_app() -> FastAPI:
     return app
 
 
+# pylint: disable=too-many-statements
 def create_app() -> FastAPI:  # noqa: PLR0915
     """
     Creates the application from using the env vars as a context
