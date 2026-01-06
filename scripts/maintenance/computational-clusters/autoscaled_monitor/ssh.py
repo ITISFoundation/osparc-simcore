@@ -35,7 +35,7 @@ def ssh_tunnel(
     private_key_path: Path,
     remote_bind_host: str,
     remote_bind_port: int,
-) -> Generator[SSHTunnelForwarder | None, Any, None]:
+) -> Generator[SSHTunnelForwarder | None, Any]:
     try:
         with SSHTunnelForwarder(
             (ssh_host, _DEFAULT_SSH_PORT),
@@ -56,7 +56,7 @@ def ssh_tunnel(
 @contextlib.contextmanager
 def _ssh_client(
     hostname: str, port: int, *, username: str, private_key_path: Path
-) -> Generator[paramiko.SSHClient, Any, None]:
+) -> Generator[paramiko.SSHClient, Any]:
     try:
         with paramiko.SSHClient() as client:
             client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -88,9 +88,7 @@ async def ssh_instance(
                 port = _DEFAULT_SSH_PORT
             else:
                 assert state.environment
-                bastion_instance = await get_bastion_instance_from_remote_instance(
-                    state, instance
-                )
+                bastion_instance = await get_bastion_instance_from_remote_instance(state, instance)
                 tunnel = stack.enter_context(
                     ssh_tunnel(
                         ssh_host=bastion_instance.public_dns_name,
@@ -148,9 +146,7 @@ async def get_available_disk_space(
         return ByteSize(0)
 
 
-async def get_dask_ip(
-    state: AppState, instance: Instance, username: str, private_key_path: Path
-) -> str:
+async def get_dask_ip(state: AppState, instance: Instance, username: str, private_key_path: Path) -> str:
     try:
         async with ssh_instance(
             instance, state=state, username=username, private_key_path=private_key_path
@@ -172,8 +168,7 @@ async def get_dask_ip(
 
             # If containers are found, inspect their IP addresses
             dask_ip_command = (
-                "docker inspect -f '{{.NetworkSettings.Networks.dask_stack_cluster.IPAddress}}' "
-                f"{container_ids}"
+                f"docker inspect -f '{{{{.NetworkSettings.Networks.dask_stack_cluster.IPAddress}}}}' {container_ids}"
             )
             _, stdout, stderr = ssh_client.exec_command(dask_ip_command)
             exit_status = stdout.channel.recv_exit_status()
@@ -210,7 +205,7 @@ async def list_running_dyn_services(
         ) as ssh_client:
             # Run the Docker command to list containers
             _stdin, stdout, stderr = ssh_client.exec_command(
-                'docker ps --format=\'{{.Names}}\t{{.CreatedAt}}\t{{.Label "io.simcore.runtime.user-id"}}\t{{.Label "io.simcore.runtime.project-id"}}\t{{.Label "io.simcore.name"}}\t{{.Label "io.simcore.version"}}\' --filter=name=dy-',
+                'docker ps --format=\'{{.Names}}\t{{.CreatedAt}}\t{{.Label "io.simcore.runtime.user-id"}}\t{{.Label "io.simcore.runtime.project-id"}}\t{{.Label "io.simcore.name"}}\t{{.Label "io.simcore.version"}}\t{{.Label "io.simcore.runtime.product-name"}}\t{{.Label "io.simcore.runtime.simcore-user-agent"}}\' --filter=name=dy-',  # noqa: E501
             )
             exit_status = stdout.channel.recv_exit_status()
             error = stderr.read().decode()
@@ -233,16 +228,10 @@ async def list_running_dyn_services(
                             tzinfo=datetime.UTC,
                         ).datetime,
                         container,
-                        (
-                            json.loads(match["service_name"])["name"]
-                            if match["service_name"]
-                            else ""
-                        ),
-                        (
-                            json.loads(match["service_version"])["version"]
-                            if match["service_version"]
-                            else ""
-                        ),
+                        (json.loads(match["service_name"])["name"] if match["service_name"] else ""),
+                        (json.loads(match["service_version"])["version"] if match["service_version"] else ""),
+                        match["product_name"],
+                        match["simcore_user_agent"],
                     )
                     running_service[match["node_id"]].append(named_container)
 
@@ -251,10 +240,7 @@ async def list_running_dyn_services(
             ) -> bool:
                 valid_prefixes = ["dy-sidecar_", "dy-proxy_", "dy-sidecar-"]
                 for prefix in valid_prefixes:
-                    found = any(
-                        container.name.startswith(prefix)
-                        for container in running_containers
-                    )
+                    found = any(container.name.startswith(prefix) for container in running_containers)
                     if not found:
                         return True
                 return False
@@ -266,13 +252,12 @@ async def list_running_dyn_services(
                     project_id=containers[0].project_id,
                     created_at=containers[0].created_at,
                     needs_manual_intervention=_needs_manual_intervention(containers)
-                    and (
-                        (arrow.utcnow().datetime - containers[0].created_at)
-                        > datetime.timedelta(minutes=2)
-                    ),
+                    and ((arrow.utcnow().datetime - containers[0].created_at) > datetime.timedelta(minutes=2)),
                     containers=[c.name for c in containers],
                     service_name=containers[0].service_name,
                     service_version=containers[0].service_version,
+                    product_name=containers[0].product_name,
+                    simcore_user_agent=containers[0].simcore_user_agent,
                 )
                 for node_id, containers in running_service.items()
             ]
