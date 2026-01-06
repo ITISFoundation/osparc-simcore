@@ -136,11 +136,8 @@ def _fetch_and_print_services(docker_client: docker.client.DockerClient, extra_t
                 for task in service_obj.tasks()  # type: ignore
             ]
 
-        print(HEADER_STR.format(f"TOP {service_obj.name}"))  # type: ignore
+        print(HEADER_STR.format(service_obj.name))  # type: ignore
         print(json.dumps({"service": service, "tasks": tasks}, indent=1))
-        logs = [x.decode() for x in service_obj.logs(stdout=True, stderr=True, timestamps=True)]
-        print("".join(logs))
-        print(HEADER_STR.format(f"BOTTOM {service_obj.name}"))  # type: ignore
 
 
 @pytest.fixture(scope="session")
