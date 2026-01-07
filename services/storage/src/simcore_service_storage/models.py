@@ -201,7 +201,7 @@ class StorageQueryParamsBase(BaseModel):
 
 
 class DatasetsMetadataQueryParams(StorageQueryParamsBase):
-    product_name: ProductName = "osparc"  # NOTE: for backward compatibility
+    product_name: ProductName = "osparc"  # NOTE: backward compatibility with legacy services that are only available in osparc product
 
 
 class ListPathsQueryParams(StorageQueryParamsBase):
@@ -209,12 +209,12 @@ class ListPathsQueryParams(StorageQueryParamsBase):
 
 
 class FilesMetadataDatasetQueryParams(StorageQueryParamsBase):
-    product_name: ProductName = "osparc"  # NOTE: for backward compatibility
+    product_name: ProductName = "osparc"  # NOTE: backward compatibility with legacy services that are only available in osparc product
     expand_dirs: bool = True
 
 
 class FileMetadataListQueryParams(StorageQueryParamsBase):
-    product_name: ProductName = "osparc"  # NOTE: for backward compatibility
+    product_name: ProductName = "osparc"  # NOTE: backward compatibility with legacy services that are only available in osparc product
     project_id: ProjectID | None = None
     uuid_filter: str = ""
     expand_dirs: bool = True
