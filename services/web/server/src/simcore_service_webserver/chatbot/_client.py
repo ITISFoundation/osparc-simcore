@@ -77,6 +77,9 @@ class ChatbotRestClient:
                         for msg in messages
                     ],
                     "model": self._chatbot_settings.CHATBOT_MODEL,
+                    "metadata": {
+                        "collection_name": self._chatbot_settings.CHATBOT_COLLECTION_NAME
+                    },
                 },
                 headers={
                     "Content-Type": MIMETYPE_APPLICATION_JSON,

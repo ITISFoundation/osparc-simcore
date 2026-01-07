@@ -45,6 +45,7 @@ fi
 APP_LOG_LEVEL=${DIRECTOR_LOGLEVEL:-${LOG_LEVEL:-${LOGLEVEL:-INFO}}}
 SERVER_LOG_LEVEL=$(echo "${APP_LOG_LEVEL}" | tr '[:upper:]' '[:lower:]')
 echo "$INFO" "Log-level app/server: $APP_LOG_LEVEL/$SERVER_LOG_LEVEL"
+echo "$INFO" "Starting service..."
 
 if [ "${SC_BOOT_MODE}" = "debug" ]; then
   reload_dir_packages=$(fdfind src /devel/packages --exec echo '--reload-dir {} ' | tr '\n' ' ')

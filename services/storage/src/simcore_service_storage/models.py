@@ -79,7 +79,7 @@ class FileMetaDataAtDB(BaseModel):
             lambda x: f"{x}" if x is not None else None, return_type=str | None
         ),
     ] = None
-    user_id: Annotated[UserID, PlainSerializer(lambda x: f"{x}", return_type=str)]
+    user_id: UserID
     created_at: Annotated[datetime.datetime, PlainSerializer(lambda x: x.isoformat())]
     file_id: SimcoreS3FileID
     file_size: UNDEFINED_SIZE_TYPE | ByteSize
