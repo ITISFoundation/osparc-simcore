@@ -1041,10 +1041,9 @@
           {
             "name": "product_name",
             "in": "query",
-            "required": false,
+            "required": true,
             "schema": {
               "type": "string",
-              "default": "osparc",
               "title": "Product Name"
             }
           },
@@ -1159,10 +1158,9 @@
           {
             "name": "product_name",
             "in": "query",
-            "required": false,
+            "required": true,
             "schema": {
               "type": "string",
-              "default": "osparc",
               "title": "Product Name"
             }
           }
