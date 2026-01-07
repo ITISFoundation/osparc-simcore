@@ -36,7 +36,7 @@ async def list_paths(
     page_params: Annotated[CustomizedPathsCursorPageParams, Depends()],
     dsm: Annotated[BaseDataManager, Depends(get_data_manager)],
     user_id: UserID,
-    product_name: ProductName = "osparc",  # NOTE: for backward compatibility
+    product_name: ProductName,
     file_filter: Path | None = None,
 ):
     """Returns one level of files (paginated)"""
@@ -63,7 +63,7 @@ async def compute_path_size(
     dsm: Annotated[BaseDataManager, Depends(get_data_manager)],
     user_id: UserID,
     path: Path,
-    product_name: ProductName = "osparc",  # NOTE: for backward compatibility
+    product_name: ProductName,
 ) -> Envelope[PathTotalSizeCreate]:
     return Envelope[PathTotalSizeCreate](
         data=PathTotalSizeCreate(
