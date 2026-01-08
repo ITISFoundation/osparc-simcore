@@ -63,7 +63,7 @@ def ssh_tunnel(
 
     # Request handler that proxies data between local socket and remote channel
     class _Handler(socketserver.BaseRequestHandler):
-        def handle(self) -> None:  # type: ignore[override]
+        def handle(self) -> None:
             try:
                 # Open a direct-tcpip channel through the bastion to the target host
                 chan = transport.open_channel(  # type: ignore[attr-defined]
