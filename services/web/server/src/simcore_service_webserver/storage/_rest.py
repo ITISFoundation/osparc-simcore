@@ -256,7 +256,7 @@ async def batch_delete_paths(request: web.Request):
         ),
         user_id=req_ctx.user_id,
         location_id=path_params.location_id,
-        path=body.path,
+        path=body.paths,
     )
 
     return _create_data_response_from_async_job(
