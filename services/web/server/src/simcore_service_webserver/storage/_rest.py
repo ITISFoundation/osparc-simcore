@@ -15,7 +15,10 @@ from models_library.api_schemas_long_running_tasks.tasks import (
 from models_library.api_schemas_rpc_async_jobs.async_jobs import (
     AsyncJobGet,
 )
-from models_library.api_schemas_storage.paths_async_jobs import COMPUTE_PATH_SIZE_TASK_NAME
+from models_library.api_schemas_storage.paths_async_jobs import (
+    BATCH_DELETE_PATHS_TASK_NAME,
+    COMPUTE_PATH_SIZE_TASK_NAME,
+)
 from models_library.api_schemas_storage.search_async_jobs import SEARCH_TASK_NAME
 from models_library.api_schemas_storage.storage_schemas import (
     FileUploadCompleteResponse,
@@ -241,11 +244,10 @@ async def batch_delete_paths(request: web.Request):
     path_params = parse_request_path_parameters_as(StorageLocationPathParams, request)
     body = await parse_request_body_as(BatchDeletePathsBodyParams, request)
 
-    rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)
-    async_job, _ = await remote_delete_paths(
-        rabbitmq_rpc_client,
-        location_id=path_params.location_id,
-        paths=body.paths,
+    task_uuid = await get_task_manager(request.app).submit_task(
+        ExecutionMetadata(
+            name=BATCH_DELETE_PATHS_TASK_NAME,
+        ),
         owner_metadata=OwnerMetadata.model_validate(
             WebServerOwnerMetadata(
                 user_id=req_ctx.user_id,
@@ -253,8 +255,13 @@ async def batch_delete_paths(request: web.Request):
             ).model_dump()
         ),
         user_id=req_ctx.user_id,
+        location_id=path_params.location_id,
+        path=body.path,
     )
-    return _create_data_response_from_async_job(request, async_job)
+
+    return _create_data_response_from_async_job(
+        request, AsyncJobGet(job_id=task_uuid, job_name=BATCH_DELETE_PATHS_TASK_NAME)
+    )
 
 
 @routes.get(_storage_locations_prefix + "/{location_id}/datasets", name="list_datasets_metadata")
