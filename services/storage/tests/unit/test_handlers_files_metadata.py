@@ -16,6 +16,7 @@ from models_library.api_schemas_storage.storage_schemas import (
     FileMetaDataGet,
     SimcoreS3FileID,
 )
+from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import LocationID
 from models_library.users import UserID
@@ -53,6 +54,7 @@ async def test_list_files_metadata(
     initialized_app: FastAPI,
     client: httpx.AsyncClient,
     user_id: UserID,
+    product_name: ProductName,
     other_user_id: UserID,
     location_id: LocationID,
     project_id: ProjectID,
@@ -63,7 +65,7 @@ async def test_list_files_metadata(
         .with_path(
             initialized_app.url_path_for("list_files_metadata", location_id=location_id)
         )
-        .with_query(user_id=f"{user_id}")
+        .with_query(user_id=user_id, product_name=product_name)
     )
 
     # this should return an empty list

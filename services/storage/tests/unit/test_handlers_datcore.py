@@ -1,6 +1,7 @@
 import httpx
 import pytest
 from fastapi import FastAPI, status
+from models_library.products import ProductName
 from models_library.projects_nodes_io import LocationID
 from models_library.users import UserID
 from pytest_simcore.helpers.fastapi import url_from_operation_id
@@ -34,11 +35,13 @@ async def test_entrypoint_without_api_tokens_return_401(
     location_id: LocationID,
     entrypoint: str,
     user_id: UserID,
+    product_name: ProductName,
 ):
     url = url_from_operation_id(
         client, initialized_app, entrypoint, location_id=f"{location_id}"
     ).with_query(
         user_id=user_id,
+        product_name=product_name,
     )
     response = await client.get(f"{url}")
     assert_status(

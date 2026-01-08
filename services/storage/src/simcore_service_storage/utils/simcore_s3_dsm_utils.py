@@ -9,6 +9,7 @@ from aws_library.s3._constants import S3_OBJECT_DELIMITER, STREAM_READER_CHUNK_S
 from aws_library.s3._models import S3ObjectKey
 from common_library.json_serialization import json_dumps, json_loads
 from models_library.api_schemas_storage.storage_schemas import S3BucketName
+from models_library.products import ProductName
 from models_library.projects import ProjectID, ProjectIDStr
 from models_library.projects_nodes_io import (
     NodeIDStr,
@@ -181,9 +182,9 @@ def _base_path_parent(base_path: UserSelectionStr, s3_object: S3ObjectKey) -> st
     return f"{result}"
 
 
-def _get_project_ids(user_selecton: set[UserSelectionStr]) -> list[ProjectID]:
+def _get_project_ids(user_selection: set[UserSelectionStr]) -> list[ProjectID]:
     results = []
-    for selected in user_selecton:
+    for selected in user_selection:
         project_id = ProjectID(Path(selected).parts[0])
         results.append(project_id)
     return results
@@ -221,7 +222,9 @@ async def create_and_upload_export(
     progress_bar: ProgressBarData,
 ) -> None:
     ids_names_map = await project_repository.get_project_id_and_node_id_to_names_map(
-        project_uuids=_get_project_ids(user_selecton={x[0] for x in source_object_keys})
+        project_uuids=_get_project_ids(
+            user_selection={x[0] for x in source_object_keys}
+        )
     )
 
     archive_entries: ArchiveEntries = [
@@ -340,7 +343,11 @@ async def list_child_paths_from_repository(
 
 
 async def get_accessible_project_ids(
-    db_engine: AsyncEngine, *, user_id: UserID, project_id: ProjectID | None
+    db_engine: AsyncEngine,
+    *,
+    user_id: UserID,
+    product_name: ProductName,
+    project_id: ProjectID | None,
 ) -> list[ProjectID]:
     access_layer_repo = AccessLayerRepository.instance(db_engine)
     if project_id:
@@ -350,4 +357,6 @@ async def get_accessible_project_ids(
         if not project_access_rights.read:
             raise ProjectAccessRightError(access_right="read", project_id=project_id)
         return [project_id]
-    return await access_layer_repo.get_readable_project_ids(user_id=user_id)
+    return await access_layer_repo.get_readable_project_ids(
+        user_id=user_id, product_name=product_name
+    )

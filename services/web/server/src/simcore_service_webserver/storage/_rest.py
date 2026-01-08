@@ -29,6 +29,7 @@ from models_library.api_schemas_webserver.storage import (
     StorageLocationPathParams,
     StoragePathComputeSizeParams,
 )
+from models_library.products import ProductName
 from models_library.projects_nodes_io import LocationID
 from models_library.utils.change_case import camel_to_snake
 from models_library.utils.fastapi_encoders import jsonable_encoder
@@ -62,6 +63,7 @@ from yarl import URL
 
 from .._meta import API_VTAG
 from ..celery import get_task_manager
+from ..constants import RQ_PRODUCT_KEY
 from ..login.decorators import login_required
 from ..models import AuthenticatedRequestContext, WebServerOwnerMetadata
 from ..rabbitmq import get_rabbitmq_rpc_client
@@ -84,7 +86,7 @@ def _get_storage_vtag(app: web.Application) -> str:
     return storage_prefix
 
 
-def _to_storage_url(request: web.Request) -> URL:
+def _to_storage_url(request: web.Request, product_name: ProductName | None = None) -> URL:
     """Converts web-api url to storage-api url"""
     userid = request[RQT_USERID_KEY]
 
@@ -97,35 +99,32 @@ def _to_storage_url(request: web.Request) -> URL:
     suffix = "/".join(request.url.parts[basepath_index:])
     # we need to quote anything before the column, but not the column
     if (column_index := suffix.find(":")) > 0:
-        fastapi_encoded_suffix = (
-            urllib.parse.quote(suffix[:column_index], safe="/") + suffix[column_index:]
-        )
+        fastapi_encoded_suffix = urllib.parse.quote(suffix[:column_index], safe="/") + suffix[column_index:]
     else:
         fastapi_encoded_suffix = urllib.parse.quote(suffix, safe="/")
 
-    return (
+    url = (
         url.joinpath(fastapi_encoded_suffix, encoded=True)
         .with_query({camel_to_snake(k): v for k, v in request.query.items()})
         .update_query(user_id=userid)
     )
+    if product_name:
+        url = url.update_query(product_name=product_name)
+    return url
 
 
-def _from_storage_url(
-    request: web.Request, storage_url: AnyUrl, url_encode: str | None
-) -> AnyUrl:
+def _from_storage_url(request: web.Request, storage_url: AnyUrl, url_encode: str | None) -> AnyUrl:
     """Converts storage-api url to web-api url"""
     assert storage_url.path  # nosec
 
     prefix = f"/{_get_storage_vtag(request.app)}"
     converted_url = str(
-        request.url.with_path(
-            f"/v0/storage{storage_url.path.removeprefix(prefix)}", encoded=True
-        ).with_scheme(request.headers.get(X_FORWARDED_PROTO, request.url.scheme))
+        request.url.with_path(f"/v0/storage{storage_url.path.removeprefix(prefix)}", encoded=True).with_scheme(
+            request.headers.get(X_FORWARDED_PROTO, request.url.scheme)
+        )
     )
     if url_encode:
-        converted_url = converted_url.replace(
-            url_encode, quote(unquote(url_encode), safe="")
-        )
+        converted_url = converted_url.replace(url_encode, quote(unquote(url_encode), safe=""))
 
     webserver_url: AnyUrl = TypeAdapter(AnyUrl).validate_python(f"{converted_url}")
     return webserver_url
@@ -140,20 +139,18 @@ async def _forward_request_to_storage(
     request: web.Request,
     method: str,
     body: dict[str, Any] | None = None,
+    # query params
+    product_name: ProductName | None = None,
     **kwargs,
 ) -> _ResponseTuple:
-    url = _to_storage_url(request)
+    url = _to_storage_url(request, product_name=product_name)
     session = get_client_session(request.app)
 
-    async with session.request(
-        method.upper(), url, ssl=False, json=body, **kwargs
-    ) as resp:
+    async with session.request(method.upper(), url, ssl=False, json=body, **kwargs) as resp:
         _logger.debug("Forwarded request to storage %s %s: %s", method, url, resp)
         match resp.status:
             case status.HTTP_422_UNPROCESSABLE_ENTITY:
-                raise web.HTTPUnprocessableEntity(
-                    text=await resp.text(), content_type=resp.content_type
-                )
+                raise web.HTTPUnprocessableEntity(text=await resp.text(), content_type=resp.content_type)
             case status.HTTP_404_NOT_FOUND:
                 raise web.HTTPNotFound(text=await resp.text())
             case _ if resp.status >= status.HTTP_400_BAD_REQUEST:
@@ -178,13 +175,13 @@ async def list_storage_locations(request: web.Request) -> web.Response:
     return create_data_response(payload, status=resp_status)
 
 
-@routes.get(
-    f"{_storage_locations_prefix}/{{location_id}}/paths", name="list_storage_paths"
-)
+@routes.get(f"{_storage_locations_prefix}/{{location_id}}/paths", name="list_storage_paths")
 @login_required
 @permission_required("storage.files.*")
 async def list_paths(request: web.Request) -> web.Response:
-    payload, resp_status = await _forward_request_to_storage(request, "GET", body=None)
+    payload, resp_status = await _forward_request_to_storage(
+        request, "GET", body=None, product_name=request[RQ_PRODUCT_KEY]
+    )
     return create_data_response(payload, status=resp_status)
 
 
@@ -212,9 +209,7 @@ def _create_data_response_from_async_job(
 @permission_required("storage.files.*")
 async def compute_path_size(request: web.Request) -> web.Response:
     req_ctx = AuthenticatedRequestContext.model_validate(request)
-    path_params = parse_request_path_parameters_as(
-        StoragePathComputeSizeParams, request
-    )
+    path_params = parse_request_path_parameters_as(StoragePathComputeSizeParams, request)
 
     rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)
     async_job, _ = await remote_compute_path_size(
@@ -228,6 +223,7 @@ async def compute_path_size(request: web.Request) -> web.Response:
             ).model_dump()
         ),
         user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
     )
 
     return _create_data_response_from_async_job(request, async_job)
@@ -260,9 +256,7 @@ async def batch_delete_paths(request: web.Request):
     return _create_data_response_from_async_job(request, async_job)
 
 
-@routes.get(
-    _storage_locations_prefix + "/{location_id}/datasets", name="list_datasets_metadata"
-)
+@routes.get(_storage_locations_prefix + "/{location_id}/datasets", name="list_datasets_metadata")
 @login_required
 @permission_required("storage.files.*")
 async def list_datasets_metadata(request: web.Request) -> web.Response:
@@ -271,7 +265,9 @@ async def list_datasets_metadata(request: web.Request) -> web.Response:
 
     parse_request_path_parameters_as(_PathParams, request)
 
-    payload, resp_status = await _forward_request_to_storage(request, "GET", body=None)
+    payload, resp_status = await _forward_request_to_storage(
+        request, "GET", body=None, product_name=request[RQ_PRODUCT_KEY]
+    )
     return create_data_response(payload, status=resp_status)
 
 
@@ -293,7 +289,9 @@ async def get_files_metadata(request: web.Request) -> web.Response:
 
     parse_request_query_parameters_as(_QueryParams, request)
 
-    payload, resp_status = await _forward_request_to_storage(request, "GET", body=None)
+    payload, resp_status = await _forward_request_to_storage(
+        request, "GET", body=None, product_name=request[RQ_PRODUCT_KEY]
+    )
     return create_data_response(payload, status=resp_status)
 
 
@@ -391,7 +389,8 @@ async def upload_file(request: web.Request) -> web.Response:
     data, _ = unwrap_envelope(payload)
     file_upload_schema = FileUploadSchema.model_validate(data)
     # NOTE: since storage is fastapi-based it returns file_id not url encoded and aiohttp does not like it
-    # /v0/locations/{location_id}/files/{file_id:non-encoded-containing-slashes}:complete --> /v0/storage/locations/{location_id}/files/{file_id:non-encode}:complete
+    # /v0/locations/{location_id}/files/{file_id:non-encoded-containing-slashes}:complete -->
+    # /v0/storage/locations/{location_id}/files/{file_id:non-encode}:complete
     storage_encoded_file_id = quote(path_params.file_id, safe="/")
     file_upload_schema.links.complete_upload = _from_storage_url(
         request,
@@ -403,9 +402,7 @@ async def upload_file(request: web.Request) -> web.Response:
         file_upload_schema.links.abort_upload,
         url_encode=storage_encoded_file_id,
     )
-    return create_data_response(
-        jsonable_encoder(file_upload_schema), status=resp_status
-    )
+    return create_data_response(jsonable_encoder(file_upload_schema), status=resp_status)
 
 
 @routes.post(
@@ -422,18 +419,14 @@ async def complete_upload_file(request: web.Request) -> web.Response:
     path_params = parse_request_path_parameters_as(_PathParams, request)
     body_item = await parse_request_body_as(FileUploadCompletionBody, request)
 
-    payload, resp_status = await _forward_request_to_storage(
-        request, "POST", body=body_item.model_dump()
-    )
+    payload, resp_status = await _forward_request_to_storage(request, "POST", body=body_item.model_dump())
     data, _ = unwrap_envelope(payload)
     storage_encoded_file_id = quote(path_params.file_id, safe="/")
     file_upload_complete = FileUploadCompleteResponse.model_validate(data)
     file_upload_complete.links.state = _from_storage_url(
         request, file_upload_complete.links.state, url_encode=storage_encoded_file_id
     )
-    return create_data_response(
-        jsonable_encoder(file_upload_complete), status=resp_status
-    )
+    return create_data_response(jsonable_encoder(file_upload_complete), status=resp_status)
 
 
 @routes.post(
@@ -454,8 +447,7 @@ async def abort_upload_file(request: web.Request) -> web.Response:
 
 
 @routes.post(
-    _storage_locations_prefix
-    + "/{location_id}/files/{file_id}:complete/futures/{future_id}",
+    _storage_locations_prefix + "/{location_id}/files/{file_id}:complete/futures/{future_id}",
     name="is_completed_upload_file",
 )
 @login_required
@@ -485,24 +477,18 @@ async def delete_file(request: web.Request) -> web.Response:
 
     parse_request_path_parameters_as(_PathParams, request)
 
-    payload, resp_status = await _forward_request_to_storage(
-        request, "DELETE", body=None
-    )
+    payload, resp_status = await _forward_request_to_storage(request, "DELETE", body=None)
     return create_data_response(payload, status=resp_status)
 
 
 def _allow_only_simcore(v: int) -> int:
     if v != 0:
-        msg = (
-            f"Only simcore (location_id='0'), provided location_id='{v}' is not allowed"
-        )
+        msg = f"Only simcore (location_id='0'), provided location_id='{v}' is not allowed"
         raise ValueError(msg)
     return v
 
 
-@routes.post(
-    _storage_locations_prefix + "/{location_id}:export-data", name="export_data"
-)
+@routes.post(_storage_locations_prefix + "/{location_id}:export-data", name="export_data")
 @login_required
 @permission_required("storage.files.*")
 @handle_rest_requests_exceptions
@@ -513,9 +499,7 @@ async def export_data(request: web.Request) -> web.Response:
     rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)
     _req_ctx = AuthenticatedRequestContext.model_validate(request)
     _ = parse_request_path_parameters_as(_PathParams, request)
-    export_data_post = await parse_request_body_as(
-        model_schema_cls=DataExportPost, request=request
-    )
+    export_data_post = await parse_request_body_as(model_schema_cls=DataExportPost, request=request)
     async_job_rpc_get, _ = await start_export_data(
         rabbitmq_rpc_client=rabbitmq_rpc_client,
         paths_to_export=export_data_post.paths,
@@ -527,6 +511,7 @@ async def export_data(request: web.Request) -> web.Response:
             ).model_dump()
         ),
         user_id=_req_ctx.user_id,
+        product_name=_req_ctx.product_name,
     )
     _job_id = f"{async_job_rpc_get.job_id}"
     return create_data_response(
@@ -549,11 +534,9 @@ async def search(request: web.Request) -> web.Response:
     class _PathParams(BaseModel):
         location_id: Annotated[LocationID, AfterValidator(_allow_only_simcore)]
 
-    _req_ctx = AuthenticatedRequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     parse_request_path_parameters_as(_PathParams, request)
-    search_body = await parse_request_body_as(
-        model_schema_cls=SearchBodyParams, request=request
-    )
+    search_body = await parse_request_body_as(model_schema_cls=SearchBodyParams, request=request)
 
     task_uuid = await get_task_manager(request.app).submit_task(
         ExecutionMetadata(
@@ -561,11 +544,12 @@ async def search(request: web.Request) -> web.Response:
         ),
         owner_metadata=OwnerMetadata.model_validate(
             WebServerOwnerMetadata(
-                user_id=_req_ctx.user_id,
-                product_name=_req_ctx.product_name,
+                user_id=req_ctx.user_id,
+                product_name=req_ctx.product_name,
             ).model_dump()
         ),
-        user_id=_req_ctx.user_id,
+        user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
         name_pattern=search_body.filters.name_pattern,
         modified_at=(
             (
@@ -578,14 +562,14 @@ async def search(request: web.Request) -> web.Response:
         project_id=search_body.filters.project_id,
     )
 
-    _task_id = f"{task_uuid}"
+    task_id = f"{task_uuid}"
     return create_data_response(
         TaskGet(
-            task_id=_task_id,
+            task_id=task_id,
             task_name=SEARCH_TASK_NAME,
-            status_href=f"{request.url.with_path(str(request.app.router['get_async_job_status'].url_for(task_id=_task_id)))}",
-            abort_href=f"{request.url.with_path(str(request.app.router['cancel_async_job'].url_for(task_id=_task_id)))}",
-            stream_href=f"{request.url.with_path(str(request.app.router['get_async_job_stream'].url_for(task_id=_task_id)))}",
+            status_href=f"{request.url.with_path(str(request.app.router['get_async_job_status'].url_for(task_id=task_id)))}",
+            abort_href=f"{request.url.with_path(str(request.app.router['cancel_async_job'].url_for(task_id=task_id)))}",
+            stream_href=f"{request.url.with_path(str(request.app.router['get_async_job_stream'].url_for(task_id=task_id)))}",
         ),
         status=status.HTTP_202_ACCEPTED,
     )
