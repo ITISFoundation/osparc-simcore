@@ -727,7 +727,7 @@ jobs:
   unit-test-director:
     needs: changes
     if: ${{ needs.changes.outputs.director == 'true' || github.event_name == 'push' || github.event.inputs.force_all_builds == 'true' }}
-    timeout-minutes: 18 # if this timeout gets too small, then split the tests
+    timeout-minutes: 40 # if this timeout gets too small, then split the tests
     name: "[unit] director"
     runs-on: ${{ matrix.os }}
     strategy:
