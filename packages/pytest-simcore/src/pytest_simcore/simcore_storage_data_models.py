@@ -9,33 +9,28 @@ from typing import Any
 import pytest
 import sqlalchemy as sa
 from faker import Faker
-from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
 from pydantic import TypeAdapter
 from simcore_postgres_database.models.project_to_groups import project_to_groups
-from simcore_postgres_database.storage_models import products, projects, users
+from simcore_postgres_database.storage_models import projects, users
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
-from .helpers.faker_factories import DEFAULT_FAKER, random_product, random_project
+from .helpers.faker_factories import DEFAULT_FAKER, random_project
 from .helpers.postgres_tools import insert_and_get_row_lifespan
 from .helpers.postgres_users import insert_and_get_user_and_secrets_lifespan
 
 
 @asynccontextmanager
-async def _user_context(
-    sqlalchemy_async_engine: AsyncEngine, *, name: str
-) -> AsyncIterator[UserID]:
+async def _user_context(sqlalchemy_async_engine: AsyncEngine, *, name: str) -> AsyncIterator[UserID]:
     # inject a random user in db
 
     # NOTE: Ideally this (and next fixture) should be done via webserver API but at this point
     # in time, the webserver service would bring more dependencies to other services
     # which would turn this test too complex.
-    async with insert_and_get_user_and_secrets_lifespan(
-        sqlalchemy_async_engine, name=name
-    ) as user:
+    async with insert_and_get_user_and_secrets_lifespan(sqlalchemy_async_engine, name=name) as user:
         yield TypeAdapter(UserID).validate_python(user["id"])
 
 
@@ -47,46 +42,18 @@ async def user_id(sqlalchemy_async_engine: AsyncEngine) -> AsyncIterator[UserID]
 
 @pytest.fixture
 async def other_user_id(sqlalchemy_async_engine: AsyncEngine) -> AsyncIterator[UserID]:
-    async with _user_context(
-        sqlalchemy_async_engine, name="test-other-user"
-    ) as new_user_id:
+    async with _user_context(sqlalchemy_async_engine, name="test-other-user") as new_user_id:
         yield new_user_id
 
 
 @pytest.fixture
-async def create_product(
-    sqlalchemy_async_engine: AsyncEngine,
-) -> AsyncIterator[Callable[..., Awaitable[ProductName]]]:
-    async with AsyncExitStack() as stack:
-
-        async def _creator(**overrides) -> ProductName:
-            ctx = insert_and_get_row_lifespan(
-                sqlalchemy_async_engine,
-                table=products,
-                values=random_product(**overrides),
-                pk_col=products.c.name,
-            )
-            row = await stack.enter_async_context(ctx)
-            return ProductName(row["name"])
-
-        yield _creator
-
-
-@pytest.fixture
-async def product_name(
-    create_product: Callable[..., Awaitable[ProductName]],
-) -> ProductName:
-    return await create_product()
-
-
-@pytest.fixture
 async def create_project(
-    user_id: UserID, product_name: ProductName, sqlalchemy_async_engine: AsyncEngine
+    user_id: UserID, with_product: dict[str, Any], sqlalchemy_async_engine: AsyncEngine
 ) -> AsyncIterator[Callable[..., Awaitable[dict[str, Any]]]]:
     async with AsyncExitStack() as stack:
 
         async def _creator(**kwargs) -> dict[str, Any]:
-            prj_config = {"prj_owner": user_id, "product_name": product_name}
+            prj_config = {"prj_owner": user_id, "product_name": with_product["name"]}
             prj_config.update(kwargs)
             ctx = insert_and_get_row_lifespan(
                 sqlalchemy_async_engine,
@@ -105,17 +72,13 @@ async def create_project_access_rights(
 ) -> AsyncIterator[Callable[[ProjectID, UserID, bool, bool, bool], Awaitable[None]]]:
     _created = []
 
-    async def _creator(
-        project_id: ProjectID, user_id: UserID, read: bool, write: bool, delete: bool
-    ) -> None:
+    async def _creator(project_id: ProjectID, user_id: UserID, read: bool, write: bool, delete: bool) -> None:
         async with sqlalchemy_async_engine.begin() as conn:
             result = await conn.execute(
                 project_to_groups.insert()
                 .values(
                     project_uuid=f"{project_id}",
-                    gid=sa.select(users.c.primary_gid)
-                    .where(users.c.id == user_id)
-                    .scalar_subquery(),
+                    gid=sa.select(users.c.primary_gid).where(users.c.id == user_id).scalar_subquery(),
                     read=read,
                     write=write,
                     delete=delete,
@@ -133,8 +96,7 @@ async def create_project_access_rights(
             project_to_groups.delete().where(
                 sa.or_(
                     *(
-                        (project_to_groups.c.project_uuid == pid)
-                        & (project_to_groups.c.gid == gid)
+                        (project_to_groups.c.project_uuid == pid) & (project_to_groups.c.gid == gid)
                         for pid, gid in _created
                     )
                 )
@@ -154,9 +116,7 @@ async def project_id(
 async def collaborator_id(
     sqlalchemy_async_engine: AsyncEngine,
 ) -> AsyncIterator[UserID]:
-    async with _user_context(
-        sqlalchemy_async_engine, name="collaborator"
-    ) as new_user_id:
+    async with _user_context(sqlalchemy_async_engine, name="collaborator") as new_user_id:
         yield TypeAdapter(UserID).validate_python(new_user_id)
 
 
@@ -168,9 +128,7 @@ def share_with_collaborator(
     project_id: ProjectID,
 ) -> Callable[[], Awaitable[None]]:
     async def _get_user_group(conn: AsyncConnection, query_user: int) -> int:
-        result = await conn.execute(
-            sa.select(users.c.primary_gid).where(users.c.id == query_user)
-        )
+        result = await conn.execute(sa.select(users.c.primary_gid).where(users.c.id == query_user))
         row = result.fetchone()
         assert row
         primary_gid: int = row.primary_gid
@@ -178,11 +136,7 @@ def share_with_collaborator(
 
     async def _() -> None:
         async with sqlalchemy_async_engine.begin() as conn:
-            result = await conn.execute(
-                sa.select(projects.c.access_rights).where(
-                    projects.c.uuid == f"{project_id}"
-                )
-            )
+            result = await conn.execute(sa.select(projects.c.access_rights).where(projects.c.uuid == f"{project_id}"))
             row = result.fetchone()
             assert row
             access_rights: dict[str | int, Any] = row.access_rights
@@ -199,9 +153,7 @@ def share_with_collaborator(
             }
 
             await conn.execute(
-                projects.update()
-                .where(projects.c.uuid == f"{project_id}")
-                .values(access_rights=access_rights)
+                projects.update().where(projects.c.uuid == f"{project_id}").values(access_rights=access_rights)
             )
 
             # project_to_groups needs to be updated
@@ -236,15 +188,9 @@ def share_with_collaborator(
 async def create_project_node(
     user_id: UserID, sqlalchemy_async_engine: AsyncEngine, faker: Faker
 ) -> Callable[..., Awaitable[NodeID]]:
-    async def _creator(
-        project_id: ProjectID, node_id: NodeID | None = None, **kwargs
-    ) -> NodeID:
+    async def _creator(project_id: ProjectID, node_id: NodeID | None = None, **kwargs) -> NodeID:
         async with sqlalchemy_async_engine.begin() as conn:
-            result = await conn.execute(
-                sa.select(projects.c.workbench).where(
-                    projects.c.uuid == f"{project_id}"
-                )
-            )
+            result = await conn.execute(sa.select(projects.c.workbench).where(projects.c.uuid == f"{project_id}"))
             row = result.fetchone()
             assert row
             project_workbench: dict[str, Any] = row.workbench
@@ -257,9 +203,7 @@ async def create_project_node(
             node_data.update(**kwargs)
             project_workbench.update({f"{new_node_id}": node_data})
             await conn.execute(
-                projects.update()
-                .where(projects.c.uuid == f"{project_id}")
-                .values(workbench=project_workbench)
+                projects.update().where(projects.c.uuid == f"{project_id}").values(workbench=project_workbench)
             )
         return new_node_id
 
