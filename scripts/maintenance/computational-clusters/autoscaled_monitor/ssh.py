@@ -3,6 +3,9 @@ import datetime
 import json
 import logging
 import re
+import select
+import socketserver
+import threading
 from collections import defaultdict
 from collections.abc import AsyncGenerator, Generator
 from pathlib import Path
@@ -13,9 +16,7 @@ import paramiko
 import rich
 import typer
 from mypy_boto3_ec2.service_resource import Instance
-from paramiko import Ed25519Key
 from pydantic import ByteSize
-from sshtunnel import SSHTunnelForwarder
 
 from .constants import DYN_SERVICES_NAMING_CONVENTION
 from .ec2 import get_bastion_instance_from_remote_instance
@@ -35,22 +36,103 @@ def ssh_tunnel(
     private_key_path: Path,
     remote_bind_host: str,
     remote_bind_port: int,
-) -> Generator[SSHTunnelForwarder | None, Any]:
+) -> Generator[tuple[str, int], Any]:
+    """
+    Create a local port forwarding tunnel through a bastion/jump host using paramiko.
+
+    This context manager:
+    1. Establishes SSH connection to the bastion host
+    2. Binds a local port (127.0.0.1:0) that forwards to the remote host/port
+    3. Yields the (host, port) tuple for the local endpoint
+    4. Cleans up the tunnel when the context exits
+
+    Args:
+        ssh_host: Bastion host to connect through
+        username: SSH username for bastion authentication
+        private_key_path: Path to SSH private key
+        remote_bind_host: Target host behind the bastion (e.g., private IP)
+        remote_bind_port: Target port on the remote host
+
+    Yields:
+        Tuple of (local_host, local_port) that forwards to the remote endpoint
+    """
+
+    # Multi-threaded TCP server that can handle concurrent connections
+    class _ForwardServer(socketserver.ThreadingTCPServer):
+        allow_reuse_address = True
+
+    # Request handler that proxies data between local socket and remote channel
+    class _Handler(socketserver.BaseRequestHandler):
+        def handle(self) -> None:  # type: ignore[override]
+            try:
+                # Open a direct-tcpip channel through the bastion to the target host
+                chan = transport.open_channel(  # type: ignore[attr-defined]
+                    "direct-tcpip",
+                    (remote_bind_host, remote_bind_port),
+                    self.request.getsockname(),
+                )
+            except Exception:  # pragma: no cover - network dependent
+                _logger.exception("Failed to open channel through bastion host")
+                return
+
+            # Bidirectional proxy: forward data between local socket and SSH channel
+            try:
+                while True:
+                    # Wait for data from either the local socket or remote channel
+                    readable, _, _ = select.select([self.request, chan], [], [])
+
+                    # Forward data from local client to remote host
+                    if self.request in readable:
+                        data = self.request.recv(1024)
+                        if not data:
+                            break
+                        chan.sendall(data)
+
+                    # Forward data from remote host to local client
+                    if chan in readable:
+                        data = chan.recv(1024)
+                        if not data:
+                            break
+                        self.request.sendall(data)
+            finally:
+                chan.close()
+                self.request.close()
+
     try:
-        with SSHTunnelForwarder(
-            (ssh_host, _DEFAULT_SSH_PORT),
-            ssh_username=username,
-            ssh_pkey=Ed25519Key(filename=private_key_path),
-            remote_bind_address=(remote_bind_host, remote_bind_port),
-            local_bind_address=(_LOCAL_BIND_ADDRESS, 0),
-            set_keepalive=10,
-        ) as tunnel:
-            yield tunnel
+        # Establish SSH connection to the bastion host
+        with paramiko.SSHClient() as client:
+            client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            client.connect(
+                ssh_host,
+                _DEFAULT_SSH_PORT,
+                username=username,
+                key_filename=f"{private_key_path}",
+                timeout=5,
+            )
+
+            # Get the transport layer and enable keepalive to maintain connection
+            transport = client.get_transport()
+            assert transport  # nosec
+            transport.set_keepalive(10)
+
+            # Create local server bound to 127.0.0.1:0 (OS assigns free port)
+            server = _ForwardServer((_LOCAL_BIND_ADDRESS, 0), _Handler)
+
+            # Run the server in a background thread
+            server_thread = threading.Thread(target=server.serve_forever, daemon=True)
+            server_thread.start()
+
+            try:
+                # Yield the local (host, port) that clients should connect to
+                yield server.server_address
+            finally:
+                # Clean up: stop server and wait for thread to finish
+                server.shutdown()
+                server.server_close()
+                server_thread.join()
     except Exception:
         _logger.exception("Unexpected issue with ssh tunnel")
         raise
-    finally:
-        pass
 
 
 @contextlib.contextmanager
@@ -98,8 +180,7 @@ async def ssh_instance(
                         remote_bind_port=_DEFAULT_SSH_PORT,
                     )
                 )
-                assert tunnel  # nosec
-                hostname, port = tunnel.local_bind_address
+                hostname, port = tunnel
             ssh_client = stack.enter_context(
                 _ssh_client(
                     hostname,
