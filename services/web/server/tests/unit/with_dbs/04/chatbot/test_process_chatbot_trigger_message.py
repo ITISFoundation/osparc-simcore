@@ -78,16 +78,21 @@ def mocked_conversations_service(
 
     mock_messages = [mock_message_1, mock_message_2, mock_message_3, mock_message_4]
 
-    # Mock list_messages_for_conversation
+    # Mock list_messages_for_conversation with correct async signature
+    async def _mock_list_messages(app, *, conversation_id, offset=0, limit=20, order_by=None):
+        # Sort messages based on order_by parameter
+        sorted_messages = mock_messages
+        if order_by is not None:
+            reverse = order_by.direction.value == "desc"
+            sorted_messages = sorted(mock_messages, key=lambda msg: getattr(msg, order_by.field), reverse=reverse)
+        return (len(sorted_messages), sorted_messages)
+
     list_messages_mock = mocker.patch.object(
-        conversations_service, "list_messages_for_conversation"
+        conversations_service, "list_messages_for_conversation", side_effect=_mock_list_messages
     )
-    list_messages_mock.return_value = (len(mock_messages), mock_messages)
 
     # Mock create_support_message
-    create_message_mock = mocker.patch.object(
-        conversations_service, "create_support_message"
-    )
+    create_message_mock = mocker.patch.object(conversations_service, "create_support_message")
 
     return {
         "list_messages": list_messages_mock,
@@ -97,12 +102,8 @@ def mocked_conversations_service(
 
 
 @pytest.fixture
-async def mocked_list_groups_members(
-    mocker: MockerFixture, support_team_user: UserInfoDict
-) -> MockType:
-    mocked_list_group_members = mocker.patch.object(
-        _process_chatbot_trigger_service, "list_group_members"
-    )
+async def mocked_list_groups_members(mocker: MockerFixture, support_team_user: UserInfoDict) -> MockType:
+    mocked_list_group_members = mocker.patch.object(_process_chatbot_trigger_service, "list_group_members")
     mocked_list_group_members.return_value = [
         GroupMember(
             id=support_team_user["id"],
@@ -144,10 +145,15 @@ async def test_process_chatbot_trigger_message(
     # Assert that the necessary service calls were made
     mocked_conversations_service["list_messages"].assert_called_once()
 
+    # Verify messages were passed in ascending order by creation timestamp
+    call_args = mocked_conversations_service["list_messages"].call_args
+    assert call_args is not None
+    assert call_args.kwargs["order_by"] is not None
+    assert call_args.kwargs["order_by"].field == "created"
+    assert call_args.kwargs["order_by"].direction.value == "asc"
+
     assert mocked_chatbot_api.calls.call_count == 1
-    _last_request_content = mocked_chatbot_api.calls.last.request.content.decode(
-        "utf-8"
-    )
+    _last_request_content = mocked_chatbot_api.calls.last.request.content.decode("utf-8")
     assert "Hello, I need help with my simulation" in _last_request_content
     assert "Great, I will let the bot help you." in _last_request_content
     assert "Sure, I'd be happy to help you with that." in _last_request_content
