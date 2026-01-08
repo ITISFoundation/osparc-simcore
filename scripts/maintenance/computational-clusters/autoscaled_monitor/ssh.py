@@ -36,7 +36,7 @@ def ssh_tunnel(
     private_key_path: Path,
     remote_bind_host: str,
     remote_bind_port: int,
-) -> Generator[tuple[str, int], Any]:
+) -> Generator[tuple[str, int]]:
     """
     Create a local port forwarding tunnel through a bastion/jump host using paramiko.
 
@@ -124,7 +124,13 @@ def ssh_tunnel(
 
             try:
                 # Yield the local (host, port) that clients should connect to
-                yield server.server_address
+                # server_address returns tuple[str, int] for IPv4
+                local_address = server.server_address
+                if len(local_address) == 2:  # IPv4: (host, port)  # noqa: PLR2004
+                    host, port = local_address
+                    yield (str(host), int(port))
+                else:  # IPv6: (host, port, flowinfo, scopeid) - use first 2 elements
+                    yield (str(local_address[0]), int(local_address[1]))
             finally:
                 # Clean up: stop server and wait for thread to finish
                 server.shutdown()
