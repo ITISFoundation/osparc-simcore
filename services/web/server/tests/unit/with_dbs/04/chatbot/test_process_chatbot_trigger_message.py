@@ -5,6 +5,8 @@
 # pylint: disable=too-many-statements
 
 
+import json
+
 import pytest
 import respx
 from aiohttp.test_utils import TestClient
@@ -16,10 +18,12 @@ from models_library.conversations import (
 )
 from models_library.groups import GroupMember
 from models_library.rabbitmq_messages import WebserverChatbotRabbitMessage
+from pydantic import TypeAdapter
 from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from simcore_service_webserver.chatbot import _process_chatbot_trigger_service
+from simcore_service_webserver.chatbot._client import Message
 from simcore_service_webserver.chatbot._process_chatbot_trigger_service import (
     _process_chatbot_trigger_message,
 )
@@ -80,13 +84,16 @@ def mocked_conversations_service(
 
     # Mock list_messages_for_conversation with correct async signature
     async def _mock_list_messages(app, *, conversation_id, offset=0, limit=20, order_by=None):
-        # Ensure all queries are done in ascending order by created timestamp
+        # Ensure all queries are done in descending order by created timestamp
         assert order_by is not None, "order_by parameter must be provided"
         assert order_by.field == "created", f"Expected order_by.field='created', got '{order_by.field}'"
-        assert order_by.direction.value == "asc", f"Expected order_by.direction='asc', got '{order_by.direction.value}'"
+        assert order_by.direction.value == "desc", (
+            f"Expected order_by.direction='desc', got '{order_by.direction.value}'"
+        )
 
-        # Always return messages sorted by created timestamp in ascending order
-        sorted_messages = sorted(mock_messages, key=lambda msg: msg.created, reverse=False)
+        # Return messages sorted by created timestamp in descending order (newest first)
+        # The implementation will reverse this list to get ascending order
+        sorted_messages = sorted(mock_messages, key=lambda msg: msg.created, reverse=True)
         return (len(sorted_messages), sorted_messages)
 
     list_messages_mock = mocker.patch.object(
@@ -146,20 +153,28 @@ async def test_process_chatbot_trigger_message(
 
     # Assert that the necessary service calls were made
     # NOTE: list_messages is called twice - once with limit=1 and once with limit=20
-    assert mocked_conversations_service["list_messages"].call_count == 2
+    assert mocked_conversations_service["list_messages"].call_count == 1
 
-    # Verify ALL messages queries were made in ascending order by creation timestamp
+    # Verify ALL messages queries were made in descending order by creation timestamp
     for call_args in mocked_conversations_service["list_messages"].call_args_list:
         assert call_args.kwargs["order_by"] is not None
         assert call_args.kwargs["order_by"].field == "created"
-        assert call_args.kwargs["order_by"].direction.value == "asc"
+        assert call_args.kwargs["order_by"].direction.value == "desc"
 
     assert mocked_chatbot_api.calls.call_count == 1
     _last_request_content = mocked_chatbot_api.calls.last.request.content.decode("utf-8")
-    assert "Hello, I need help with my simulation" in _last_request_content
-    assert "Great, I will let the bot help you." in _last_request_content
-    assert "Sure, I'd be happy to help you with that." in _last_request_content
-    assert "It's not working properly" in _last_request_content
+    messages_received_by_chatbot = TypeAdapter(list[Message]).validate_python(
+        json.loads(_last_request_content).get("messages")
+    )
+    messages_received_by_chatbot = [msg for msg in messages_received_by_chatbot if msg.role != "developer"]
+
+    # Verify that messages are passed to chatbot in ascending order (chronologically oldest first)
+    # Get the mock messages sorted by creation time (ascending order)
+    sorted_mock_messages = sorted(mocked_conversations_service["mock_messages"], key=lambda msg: msg.created)
+
+    # Verify messages are present ascending order (latest last)
+    for conversation_msg, chatbot_msg in zip(sorted_mock_messages, messages_received_by_chatbot, strict=True):
+        assert conversation_msg.content == chatbot_msg.content
 
     mocked_conversations_service["create_message"].assert_called_once()
     mocked_list_groups_members.assert_called_once()

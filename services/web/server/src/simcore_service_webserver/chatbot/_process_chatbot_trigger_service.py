@@ -95,20 +95,14 @@ async def _process_chatbot_trigger_message(app: web.Application, data: bytes) ->
             logging.DEBUG,
             msg=f"Listed messages for conversation ID {rabbit_message.conversation.conversation_id}",
         ):
-            total_count, _ = await conversations_service.list_messages_for_conversation(
-                app=app,
-                conversation_id=rabbit_message.conversation.conversation_id,
-                offset=0,
-                limit=1,
-                order_by=OrderBy(field=IDStr("created"), direction=OrderDirection.ASC),
-            )
             _, messages_in_db = await conversations_service.list_messages_for_conversation(
                 app=app,
                 conversation_id=rabbit_message.conversation.conversation_id,
-                offset=max(0, total_count - 20),
+                offset=20,
                 limit=20,
-                order_by=OrderBy(field=IDStr("created"), direction=OrderDirection.ASC),
+                order_by=OrderBy(field=IDStr("created"), direction=OrderDirection.DESC),
             )
+            messages_in_db.reverse()  # to have them in ascending order
 
         messages = [
             Message(
