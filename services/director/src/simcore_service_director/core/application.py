@@ -2,6 +2,7 @@ import logging
 
 from fastapi import FastAPI
 from servicelib.fastapi.client_session import setup_client_session
+from servicelib.fastapi.docker import setup_remote_docker_client
 from servicelib.fastapi.http_error import set_app_default_http_error_handlers
 from servicelib.fastapi.tracing import (
     initialize_fastapi_app_tracing,
@@ -46,6 +47,8 @@ def create_app(settings: ApplicationSettings, tracing_config: TracingConfig) -> 
     setup_api_routes(app)
 
     setup_instrumentation(app)
+
+    setup_remote_docker_client(app, settings.DIRECTOR_DOCKER_API_PROXY)
 
     setup_client_session(
         app,

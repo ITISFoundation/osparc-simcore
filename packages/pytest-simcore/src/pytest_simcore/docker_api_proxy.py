@@ -2,9 +2,10 @@ import logging
 
 import pytest
 from aiohttp import BasicAuth, ClientSession, ClientTimeout
-from pydantic import TypeAdapter
 from settings_library.docker_api_proxy import DockerApiProxysettings
 from tenacity import before_sleep_log, retry, stop_after_delay, wait_fixed
+
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 
 from .helpers.docker import get_service_published_port
 from .helpers.host import get_localhost_ip
@@ -35,7 +36,7 @@ async def _wait_till_docker_api_proxy_is_responsive(
 
 @pytest.fixture
 async def docker_api_proxy_settings(
-    docker_stack: dict, env_vars_for_docker_compose: EnvVarsDict
+    docker_stack: dict, env_vars_for_docker_compose: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
 ) -> DockerApiProxysettings:
     """Returns the settings of a redis service that is up and responsive"""
 
@@ -46,19 +47,15 @@ async def docker_api_proxy_settings(
         "docker-api-proxy", int(env_vars_for_docker_compose["DOCKER_API_PROXY_PORT"])
     )
 
-    settings = TypeAdapter(DockerApiProxysettings).validate_python(
-        {
-            "DOCKER_API_PROXY_HOST": get_localhost_ip(),
-            "DOCKER_API_PROXY_PORT": published_port,
-            "DOCKER_API_PROXY_USER": env_vars_for_docker_compose[
-                "DOCKER_API_PROXY_USER"
-            ],
-            "DOCKER_API_PROXY_PASSWORD": env_vars_for_docker_compose[
-                "DOCKER_API_PROXY_PASSWORD"
-            ],
-        }
-    )
+    envs = {
+        "DOCKER_API_PROXY_HOST": get_localhost_ip(),
+        "DOCKER_API_PROXY_PORT": published_port,
+        "DOCKER_API_PROXY_USER": env_vars_for_docker_compose["DOCKER_API_PROXY_USER"],
+        "DOCKER_API_PROXY_PASSWORD": env_vars_for_docker_compose["DOCKER_API_PROXY_PASSWORD"],
+    }
+    setenvs_from_dict(monkeypatch, envs=envs)
 
+    settings = DockerApiProxysettings.create_from_envs()
     await _wait_till_docker_api_proxy_is_responsive(settings)
 
     return settings

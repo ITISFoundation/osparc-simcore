@@ -10,10 +10,13 @@ from typing import Any
 import pytest
 import simcore_service_director
 from asgi_lifespan import LifespanManager
+from common_library.json_serialization import json_dumps
+from common_library.serialization import model_dump_with_secrets
 from fastapi import FastAPI
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.tracing import TracingConfig
+from settings_library.docker_api_proxy import DockerApiProxysettings
 from settings_library.docker_registry import RegistrySettings
 from simcore_service_director._meta import APP_NAME
 from simcore_service_director.core.application import create_app
@@ -23,10 +26,11 @@ pytest_plugins = [
     "fixtures.fake_services",
     "pytest_simcore.asyncio_event_loops",
     "pytest_simcore.cli_runner",
-    "pytest_simcore.docker",
+    "pytest_simcore.docker_api_proxy",
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_registry",
     "pytest_simcore.docker_swarm",
+    "pytest_simcore.docker",
     "pytest_simcore.environment_configs",
     "pytest_simcore.faker_projects_data",
     "pytest_simcore.faker_users_data",
@@ -60,9 +64,7 @@ def common_schemas_specs_dir(osparc_simcore_root_dir: Path) -> Path:
 
 
 @pytest.fixture
-def configure_swarm_stack_name(
-    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
-) -> EnvVarsDict:
+def configure_swarm_stack_name(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
     return app_environment | setenvs_from_dict(
         monkeypatch,
         envs={
@@ -152,6 +154,21 @@ def app_environment(
     )
 
 
+@pytest.fixture
+def setup_docker_api_proxy(
+    docker_api_proxy_settings: DockerApiProxysettings, app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    setenvs_from_dict(
+        monkeypatch,
+        {
+            **app_environment,
+            "DIRECTOR_DOCKER_API_PROXY": json_dumps(
+                model_dump_with_secrets(docker_api_proxy_settings, show_secrets=True)
+            ),
+        },
+    )
+
+
 MAX_TIME_FOR_APP_TO_STARTUP = 10
 MAX_TIME_FOR_APP_TO_SHUTDOWN = 10
 
@@ -162,11 +179,10 @@ def app_settings(app_environment: EnvVarsDict) -> ApplicationSettings:
 
 
 @pytest.fixture
-async def app(
-    app_settings: ApplicationSettings, is_pdb_enabled: bool
-) -> AsyncIterator[FastAPI]:
+async def app(app_settings: ApplicationSettings, is_pdb_enabled: bool) -> AsyncIterator[FastAPI]:
     tracing_config = TracingConfig.create(
-        service_name=APP_NAME, tracing_settings=None  # disable tracing in tests
+        service_name=APP_NAME,
+        tracing_settings=None,  # disable tracing in tests
     )
     the_test_app = create_app(settings=app_settings, tracing_config=tracing_config)
     async with LifespanManager(
