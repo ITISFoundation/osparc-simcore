@@ -25,9 +25,7 @@ from .chatbot_service import get_chatbot_rest_client
 _logger = logging.getLogger(__name__)
 
 
-_RABBITMQ_WEBSERVER_CHATBOT_CONSUMER_APPKEY: Final = web.AppKey(
-    "RABBITMQ_WEBSERVER_CHATBOT_CONSUMER", str
-)
+_RABBITMQ_WEBSERVER_CHATBOT_CONSUMER_APPKEY: Final = web.AppKey("RABBITMQ_WEBSERVER_CHATBOT_CONSUMER", str)
 
 _CHATBOT_PROCESS_MESSAGE_TTL_IN_MS = 2 * 60 * 60 * 1000  # 2 hours
 
@@ -39,12 +37,12 @@ class _Role(NamedTuple):
 
 _SUPPORT_ROLE_NAME: Final[str] = "support-team-member"
 
-_CHATBOT_INSTRUCTION_MESSAGE: Final[
-    str
-] = """
-    This conversation takes place in the context of the {product} product. Only answer questions related to this product.
-    The user '{support_role_name}' is a support team member and is assisting users of the {product} product
-    with their inquiries. Help the user by providing answers to their questions. Make your answers concise and to the point.
+_CHATBOT_INSTRUCTION_MESSAGE: Final[str] = """
+    This conversation takes place in the context of the {product} product.
+    Only answer questions related to this product.
+    The user '{support_role_name}' is a support team member and is
+    assisting users of the {product} product with their inquiries. Help the user by
+    providing answers to their questions. Make your answers concise and to the point.
     Address users by their name. Be friendly and accommodating.
     """
 
@@ -75,18 +73,16 @@ async def _process_chatbot_trigger_message(app: web.Application, data: bytes) ->
         product = products_service.get_product(app, product_name=product_name)
 
         if product.support_chatbot_user_id is None:
-            _logger.error(
-                "Product %s does not have support_chatbot_user_id configured, cannot process chatbot message. (This should not happen)",
-                product_name,
+            error_msg = (
+                f"Product {product_name} does not have support_chatbot_user_id configured, "
+                "cannot process chatbot message. (This should not happen)"
             )
+            _logger.error(error_msg)
             return True  # return true to avoid re-processing
         support_group_primary_gids = set()
         if product.support_standard_group_id is not None:
             support_group_primary_gids = {
-                elm.primary_gid
-                for elm in await list_group_members(
-                    app, product.support_standard_group_id
-                )
+                elm.primary_gid for elm in await list_group_members(app, product.support_standard_group_id)
             }
 
         chatbot_primary_gid = await users_service.get_user_primary_group_id(
@@ -99,19 +95,24 @@ async def _process_chatbot_trigger_message(app: web.Application, data: bytes) ->
             logging.DEBUG,
             msg=f"Listed messages for conversation ID {rabbit_message.conversation.conversation_id}",
         ):
-            _, messages_in_db = (
-                await conversations_service.list_messages_for_conversation(
-                    app=app,
-                    conversation_id=rabbit_message.conversation.conversation_id,
-                    offset=0,
-                    limit=20,
-                    order_by=OrderBy(
-                        field=IDStr("created"), direction=OrderDirection.DESC
-                    ),
-                )
+            _, messages_in_db = await conversations_service.list_messages_for_conversation(
+                app=app,
+                conversation_id=rabbit_message.conversation.conversation_id,
+                offset=20,
+                limit=20,
+                order_by=OrderBy(field=IDStr("created"), direction=OrderDirection.DESC),
             )
+            messages_in_db.reverse()  # to have them in ascending order
 
-        messages = []
+        messages = [
+            Message(
+                role="developer",
+                content=_CHATBOT_INSTRUCTION_MESSAGE.format(
+                    product=product_name,
+                    support_role_name=_SUPPORT_ROLE_NAME,
+                ),
+            )
+        ]
         for msg in messages_in_db:
             role = await _get_role(
                 app=app,
@@ -119,17 +120,7 @@ async def _process_chatbot_trigger_message(app: web.Application, data: bytes) ->
                 chatbot_primary_gid=chatbot_primary_gid,
                 support_group_primary_gids=support_group_primary_gids,
             )
-            messages.append(
-                Message(role=role.role, name=role.name, content=msg.content)
-            )
-        context_message = Message(
-            role="developer",
-            content=_CHATBOT_INSTRUCTION_MESSAGE.format(
-                product=product_name,
-                support_role_name=_SUPPORT_ROLE_NAME,
-            ),
-        )
-        messages.append(context_message)
+            messages.append(Message(role=role.role, name=role.name, content=msg.content))
 
         # Talk to the chatbot service
         with log_context(
