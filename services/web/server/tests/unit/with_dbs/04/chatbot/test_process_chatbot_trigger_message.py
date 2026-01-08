@@ -80,11 +80,13 @@ def mocked_conversations_service(
 
     # Mock list_messages_for_conversation with correct async signature
     async def _mock_list_messages(app, *, conversation_id, offset=0, limit=20, order_by=None):
-        # Sort messages based on order_by parameter
-        sorted_messages = mock_messages
-        if order_by is not None:
-            reverse = order_by.direction.value == "desc"
-            sorted_messages = sorted(mock_messages, key=lambda msg: getattr(msg, order_by.field), reverse=reverse)
+        # Ensure all queries are done in ascending order by created timestamp
+        assert order_by is not None, "order_by parameter must be provided"
+        assert order_by.field == "created", f"Expected order_by.field='created', got '{order_by.field}'"
+        assert order_by.direction.value == "asc", f"Expected order_by.direction='asc', got '{order_by.direction.value}'"
+
+        # Always return messages sorted by created timestamp in ascending order
+        sorted_messages = sorted(mock_messages, key=lambda msg: msg.created, reverse=False)
         return (len(sorted_messages), sorted_messages)
 
     list_messages_mock = mocker.patch.object(
@@ -143,14 +145,14 @@ async def test_process_chatbot_trigger_message(
     await _process_chatbot_trigger_message(app=client.app, data=message_bytes)
 
     # Assert that the necessary service calls were made
-    mocked_conversations_service["list_messages"].assert_called_once()
+    # NOTE: list_messages is called twice - once with limit=1 and once with limit=20
+    assert mocked_conversations_service["list_messages"].call_count == 2
 
-    # Verify messages were passed in ascending order by creation timestamp
-    call_args = mocked_conversations_service["list_messages"].call_args
-    assert call_args is not None
-    assert call_args.kwargs["order_by"] is not None
-    assert call_args.kwargs["order_by"].field == "created"
-    assert call_args.kwargs["order_by"].direction.value == "asc"
+    # Verify ALL messages queries were made in ascending order by creation timestamp
+    for call_args in mocked_conversations_service["list_messages"].call_args_list:
+        assert call_args.kwargs["order_by"] is not None
+        assert call_args.kwargs["order_by"].field == "created"
+        assert call_args.kwargs["order_by"].direction.value == "asc"
 
     assert mocked_chatbot_api.calls.call_count == 1
     _last_request_content = mocked_chatbot_api.calls.last.request.content.decode("utf-8")
