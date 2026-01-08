@@ -73,11 +73,11 @@ async def _process_chatbot_trigger_message(app: web.Application, data: bytes) ->
         product = products_service.get_product(app, product_name=product_name)
 
         if product.support_chatbot_user_id is None:
-            msg = (
+            error_msg = (
                 f"Product {product_name} does not have support_chatbot_user_id configured, "
                 "cannot process chatbot message. (This should not happen)"
             )
-            _logger.error(msg)
+            _logger.error(error_msg)
             return True  # return true to avoid re-processing
         support_group_primary_gids = set()
         if product.support_standard_group_id is not None:
