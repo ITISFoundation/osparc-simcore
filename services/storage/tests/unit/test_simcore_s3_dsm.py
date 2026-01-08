@@ -75,9 +75,7 @@ async def test__copy_path_s3_s3(
     simcore_s3_dsm: SimcoreS3DataManager,
     create_directory_with_files: Callable[
         [str, ByteSize, int, int, ProjectID, NodeID],
-        Awaitable[
-            tuple[SimcoreS3FileID, tuple[NodeID, dict[SimcoreS3FileID, FileIDDict]]]
-        ],
+        Awaitable[tuple[SimcoreS3FileID, tuple[NodeID, dict[SimcoreS3FileID, FileIDDict]]]],
     ],
     upload_file: Callable[[ByteSize, str], Awaitable[tuple[Path, SimcoreS3FileID]]],
     file_size: ByteSize,
@@ -89,16 +87,12 @@ async def test__copy_path_s3_s3(
     cleanup_files_closure: Callable[[SimcoreS3FileID], None],
 ):
     def _get_dest_file_id(src: SimcoreS3FileID) -> SimcoreS3FileID:
-        copy_file_id = TypeAdapter(SimcoreS3FileID).validate_python(
-            f"{Path(src).parent}/the-copy"
-        )
+        copy_file_id = TypeAdapter(SimcoreS3FileID).validate_python(f"{Path(src).parent}/the-copy")
         cleanup_files_closure(copy_file_id)
         return copy_file_id
 
     async def _copy_s3_path(s3_file_id_to_copy: SimcoreS3FileID) -> None:
-        existing_fmd = await FileMetaDataRepository.instance(
-            sqlalchemy_async_engine
-        ).get(file_id=s3_file_id_to_copy)
+        existing_fmd = await FileMetaDataRepository.instance(sqlalchemy_async_engine).get(file_id=s3_file_id_to_copy)
 
         await simcore_s3_dsm._copy_path_s3_s3(  # noqa: SLF001
             user_id=user_id,
@@ -228,12 +222,8 @@ async def test_search_files(
         uploaded_files.append((file_name, file_id, checksum))
 
     # Test 1: Search for all .txt files
-    txt_results = await _search_files_by_pattern(
-        simcore_s3_dsm, user_id, product_name, "*.txt", project_id
-    )
-    assert (
-        len(txt_results) == 4
-    )  # test_file1.txt, test_file2.txt, report1.txt, report2.txt
+    txt_results = await _search_files_by_pattern(simcore_s3_dsm, user_id, product_name, "*.txt", project_id)
+    assert len(txt_results) == 4  # test_file1.txt, test_file2.txt, report1.txt, report2.txt
     txt_names = {file.file_name for file in txt_results}
     assert txt_names == {
         "test_file1.txt",
@@ -243,16 +233,12 @@ async def test_search_files(
     }
 
     # Test 2: Search with specific prefix pattern
-    data_results = await _search_files_by_pattern(
-        simcore_s3_dsm, user_id, product_name, "data_*", project_id
-    )
+    data_results = await _search_files_by_pattern(simcore_s3_dsm, user_id, product_name, "data_*", project_id)
     assert len(data_results) == 1
     assert data_results[0].file_name == "data_file.csv"
 
     # Test 3: Search with pattern that matches multiple extensions
-    temp_results = await _search_files_by_pattern(
-        simcore_s3_dsm, user_id, product_name, "temp_*", project_id
-    )
+    temp_results = await _search_files_by_pattern(simcore_s3_dsm, user_id, product_name, "temp_*", project_id)
     assert len(temp_results) == 1
     assert temp_results[0].file_name == "temp_data.tmp"
 
@@ -263,9 +249,7 @@ async def test_search_files(
     assert len(no_match_results) == 0
 
     # Test 5: Search without project_id restriction (all accessible projects)
-    all_results = await _search_files_by_pattern(
-        simcore_s3_dsm, user_id, product_name, "*"
-    )
+    all_results = await _search_files_by_pattern(simcore_s3_dsm, user_id, product_name, "*")
     assert len(all_results) >= len(test_files)
 
     # Verify that each result has expected FileMetaData structure
@@ -294,9 +278,7 @@ async def test_search_files(
     assert double_char_results[0].file_name == "file_10.log"
 
     # Test 8: Test ? wildcard with specific prefix and suffix
-    report_results = await _search_files_by_pattern(
-        simcore_s3_dsm, user_id, product_name, "report?.txt", project_id
-    )
+    report_results = await _search_files_by_pattern(simcore_s3_dsm, user_id, product_name, "report?.txt", project_id)
     # Should find 2 files: report1.txt and report2.txt
     assert len(report_results) == 2
     report_names = {file.file_name for file in report_results}
@@ -353,17 +335,13 @@ async def test_search_files_case_insensitive(
         await upload_file(file_size, file_name, sha256_checksum=checksum)
 
     # Test case-insensitive extension matching
-    case_insensitive_txt = await _search_files_by_pattern(
-        simcore_s3_dsm, user_id, product_name, "*.txt", project_id
-    )
+    case_insensitive_txt = await _search_files_by_pattern(simcore_s3_dsm, user_id, product_name, "*.txt", project_id)
     txt_file_names = {file.file_name for file in case_insensitive_txt}
     assert "TestFile.TXT" in txt_file_names
     assert "CamelCaseFile.txt" in txt_file_names
 
     # Test case-insensitive prefix matching
-    case_insensitive_data = await _search_files_by_pattern(
-        simcore_s3_dsm, user_id, product_name, "data*", project_id
-    )
+    case_insensitive_data = await _search_files_by_pattern(simcore_s3_dsm, user_id, product_name, "data*", project_id)
     data_file_names = {file.file_name for file in case_insensitive_data}
     assert "DataFile.CSV" in data_file_names
 
@@ -375,21 +353,15 @@ async def test_search_files_case_insensitive(
     assert "ConfigFile.JSON" in config_file_names
     assert "config.json" in config_file_names
 
-    case_insensitive_xml = await _search_files_by_pattern(
-        simcore_s3_dsm, user_id, product_name, "*.XML", project_id
-    )
+    case_insensitive_xml = await _search_files_by_pattern(simcore_s3_dsm, user_id, product_name, "*.XML", project_id)
     xml_file_names = {file.file_name for file in case_insensitive_xml}
     assert "XMLDataFile.xml" in xml_file_names
 
-    camelcase_results = await _search_files_by_pattern(
-        simcore_s3_dsm, user_id, product_name, "camelcase*", project_id
-    )
+    camelcase_results = await _search_files_by_pattern(simcore_s3_dsm, user_id, product_name, "camelcase*", project_id)
     assert len(camelcase_results) == 1
     assert camelcase_results[0].file_name == "CamelCaseFile.txt"
 
-    pdf_results = await _search_files_by_pattern(
-        simcore_s3_dsm, user_id, product_name, "*.PDF", project_id
-    )
+    pdf_results = await _search_files_by_pattern(simcore_s3_dsm, user_id, product_name, "*.PDF", project_id)
     pdf_file_names = {file.file_name for file in pdf_results}
     assert "MyDocument.PDF" in pdf_file_names
 
@@ -398,9 +370,7 @@ async def test_search_files_case_insensitive(
 async def paths_for_export(
     random_project_with_files: Callable[
         [ProjectWithFilesParams],
-        Awaitable[
-            tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]
-        ],
+        Awaitable[tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]],
     ],
 ) -> set[SimcoreS3FileID]:
     _, file_mapping = await random_project_with_files(
@@ -430,8 +400,7 @@ def _get_folder_and_files_selection(
     ]
 
     all_containing_folders: set[SimcoreS3FileID] = {
-        TypeAdapter(S3ObjectKey).validate_python(f"{Path(f).parent}")
-        for f in random_files
+        TypeAdapter(S3ObjectKey).validate_python(f"{Path(f).parent}") for f in random_files
     }
 
     element_selection = random_files + list(all_containing_folders)
@@ -449,9 +418,7 @@ async def _get_fmds_count(
     return len(result)
 
 
-async def _assert_meta_data_entries_count(
-    connection: AsyncEngine, *, count: int
-) -> None:
+async def _assert_meta_data_entries_count(connection: AsyncEngine, *, count: int) -> None:
     assert (await _get_fmds_count(connection)) == count
 
 
@@ -471,19 +438,14 @@ async def test_create_s3_export(
 ):
     initial_fmd_count = await _get_fmds_count(sqlalchemy_async_engine)
     all_files_to_export = _get_folder_and_files_selection(paths_for_export)
-    selection_to_export = {
-        S3ObjectKey(project_id)
-        for project_id in {Path(p).parents[-2] for p in all_files_to_export}
-    }
+    selection_to_export = {S3ObjectKey(project_id) for project_id in {Path(p).parents[-2] for p in all_files_to_export}}
 
     reports: list[ProgressReport] = []
 
     async def _progress_cb(report: ProgressReport) -> None:
         reports.append(report)
 
-    await _assert_meta_data_entries_count(
-        sqlalchemy_async_engine, count=initial_fmd_count
-    )
+    await _assert_meta_data_entries_count(sqlalchemy_async_engine, count=initial_fmd_count)
 
     async with ProgressBarData(
         num_steps=1, description="data export", progress_report_cb=_progress_cb
@@ -496,13 +458,9 @@ async def test_create_s3_export(
         )
     cleanup_files_closure(file_id)
     # count=2 -> the directory and the .zip export
-    await _assert_meta_data_entries_count(
-        sqlalchemy_async_engine, count=initial_fmd_count + 1
-    )
+    await _assert_meta_data_entries_count(sqlalchemy_async_engine, count=initial_fmd_count + 1)
 
-    download_link = await simcore_s3_dsm.create_file_download_link(
-        user_id, file_id, LinkType.PRESIGNED
-    )
+    download_link = await simcore_s3_dsm.create_file_download_link(user_id, file_id, LinkType.PRESIGNED)
 
     assert file_id in f"{download_link}"
 
@@ -530,9 +488,7 @@ async def test_create_s3_export_abort_upload_upon_error(
 ):
     await _assert_meta_data_entries_count(sqlalchemy_async_engine, count=0)
     with pytest.raises(RuntimeError, match="failing as expected"):
-        async with ProgressBarData(
-            num_steps=1, description="data export"
-        ) as progress_bar:
+        async with ProgressBarData(num_steps=1, description="data export") as progress_bar:
             await simcore_s3_dsm.create_s3_export(
                 user_id,
                 product_name,
@@ -552,9 +508,7 @@ async def test_search_directories(
     simcore_s3_dsm: SimcoreS3DataManager,
     create_directory_with_files: Callable[
         [str, ByteSize, int, int, ProjectID, NodeID],
-        Awaitable[
-            tuple[SimcoreS3FileID, tuple[NodeID, dict[SimcoreS3FileID, FileIDDict]]]
-        ],
+        Awaitable[tuple[SimcoreS3FileID, tuple[NodeID, dict[SimcoreS3FileID, FileIDDict]]]],
     ],
     upload_file: Callable[..., Awaitable[tuple[Path, SimcoreS3FileID]]],
     file_size: ByteSize,
@@ -601,34 +555,26 @@ async def test_search_directories(
         await upload_file(file_size, file_name, sha256_checksum=checksum)
 
     # Test 1: Search for directories with "test_dir" pattern
-    dir_results = await _search_files_by_pattern(
-        simcore_s3_dsm, user_id, product_name, "test_dir*", project_id
-    )
+    dir_results = await _search_files_by_pattern(simcore_s3_dsm, user_id, product_name, "test_dir*", project_id)
     # Should find 2 directories: test_dir_1 and test_dir_2
     assert len(dir_results) == 2
     dir_names = {d.file_name for d in dir_results if d.is_directory}
     assert dir_names == {"test_dir_1", "test_dir_2"}
 
     # Test 2: Search for directories with "_dir" suffix
-    dir_results = await _search_files_by_pattern(
-        simcore_s3_dsm, user_id, product_name, "*_dir", project_id
-    )
+    dir_results = await _search_files_by_pattern(simcore_s3_dsm, user_id, product_name, "*_dir", project_id)
     assert len(dir_results) == 1  # test_dir_1, test_dir_2, config_dir
     dir_names = {f.file_name for f in dir_results if f.is_directory}
     assert dir_names == {"config_dir"}
 
     # Test 3: Search for directories with "folder" in name
-    folder_results = await _search_files_by_pattern(
-        simcore_s3_dsm, user_id, product_name, "*folder*", project_id
-    )
+    folder_results = await _search_files_by_pattern(simcore_s3_dsm, user_id, product_name, "*folder*", project_id)
     assert len(folder_results) == 2  # data_folder, temp_folder
     dir_names = {f.file_name for f in folder_results}
     assert dir_names == {"data_folder", "temp_folder"}
 
     # Test 4: Search with pattern that matches both files and directories
-    data_results = await _search_files_by_pattern(
-        simcore_s3_dsm, user_id, product_name, "data_*", project_id
-    )
+    data_results = await _search_files_by_pattern(simcore_s3_dsm, user_id, product_name, "data_*", project_id)
     # Should find both data_folder (directory) and data_document.pdf (file)
     assert len(data_results) >= 2
     # Check that we have both directory and file
@@ -638,9 +584,7 @@ async def test_search_directories(
     assert has_file
 
     # Test 5: Search for backup pattern (should find both directory and file)
-    backup_results = await _search_files_by_pattern(
-        simcore_s3_dsm, user_id, product_name, "backup_*", project_id
-    )
+    backup_results = await _search_files_by_pattern(simcore_s3_dsm, user_id, product_name, "backup_*", project_id)
     assert len(backup_results) >= 2
     # Should find backup_directory/ and backup_config.json
     directory_names = {f.file_name for f in backup_results if f.is_directory}
@@ -649,9 +593,7 @@ async def test_search_directories(
     assert "backup_config.json" in file_names_only
 
     # Test 6: Search for subdirectories
-    subdir_results = await _search_files_by_pattern(
-        simcore_s3_dsm, user_id, product_name, "*subdir_*", project_id
-    )
+    subdir_results = await _search_files_by_pattern(simcore_s3_dsm, user_id, product_name, "*subdir_*", project_id)
     assert len(subdir_results) == 1  # Only subdir_a
 
 
@@ -676,35 +618,29 @@ async def test_search_files_scoped_by_product(
     simcore_s3_dsm: SimcoreS3DataManager,
     user_id: UserID,
     faker: Faker,
-    create_product: Callable[..., Awaitable[ProductName]],
+    create_product: Callable[..., Awaitable[dict[str, Any]]],
     random_project_with_files: Callable[
-        [ProjectWithFilesParams, ProductName],
-        Awaitable[
-            tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]
-        ],
+        [ProjectWithFilesParams, dict[str, Any]],
+        Awaitable[tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]],
     ],
     project_params: ProjectWithFilesParams,
 ):
     # Create two different products
-    product_name_1 = await create_product(name=faker.word())
-    product_name_2 = await create_product(name=faker.word())
+    product_1 = await create_product(name=faker.word())
+    product_2 = await create_product(name=faker.word())
 
     # Create project 1 with files in product 1
-    await random_project_with_files(project_params, product_name_1)
+    await random_project_with_files(project_params, product_1["name"])
 
     # Create project 2 with files in product 2
-    await random_project_with_files(project_params, product_name_2)
+    await random_project_with_files(project_params, product_2["name"])
 
     # Search for all files in product 1
-    results_product_1 = await _search_files_by_pattern(
-        simcore_s3_dsm, user_id, product_name_1, "*"
-    )
+    results_product_1 = await _search_files_by_pattern(simcore_s3_dsm, user_id, product_1["name"], "*")
     file_ids_product_1 = {f.file_id for f in results_product_1}
 
     # Search for all files in product 2
-    results_product_2 = await _search_files_by_pattern(
-        simcore_s3_dsm, user_id, product_name_2, "*"
-    )
+    results_product_2 = await _search_files_by_pattern(simcore_s3_dsm, user_id, product_2["name"], "*")
     file_ids_product_2 = {f.file_id for f in results_product_2}
 
     # Verify that both products have files
@@ -712,6 +648,4 @@ async def test_search_files_scoped_by_product(
     assert len(file_ids_product_2) > 0, "Product 2 should have files"
 
     # Verify product isolation: no file from product 2 should appear in product 1 results
-    assert file_ids_product_1.isdisjoint(
-        file_ids_product_2
-    ), "Files from different products should not overlap"
+    assert file_ids_product_1.isdisjoint(file_ids_product_2), "Files from different products should not overlap"
