@@ -129,15 +129,11 @@ async def async_job(task: Task, task_key: TaskKey, action: Action, payload: Any)
 
 
 @pytest.fixture
-async def register_rpc_routes(
-    async_jobs_rabbitmq_rpc_client: RabbitMQRPCClient, celery_task_manager: TaskManager
-) -> None:
+async def register_rpc_routes(async_jobs_rabbitmq_rpc_client: RabbitMQRPCClient, task_manager: TaskManager) -> None:
     await async_jobs_rabbitmq_rpc_client.register_router(
-        _async_jobs.router, ASYNC_JOBS_RPC_NAMESPACE, task_manager=celery_task_manager
+        _async_jobs.router, ASYNC_JOBS_RPC_NAMESPACE, task_manager=task_manager
     )
-    await async_jobs_rabbitmq_rpc_client.register_router(
-        router, ASYNC_JOBS_RPC_NAMESPACE, task_manager=celery_task_manager
-    )
+    await async_jobs_rabbitmq_rpc_client.register_router(router, ASYNC_JOBS_RPC_NAMESPACE, task_manager=task_manager)
 
 
 async def _start_task_via_rpc(
