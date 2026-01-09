@@ -1592,7 +1592,7 @@ networks:
     name: ${SWARM_STACK_NAME}_docker_api_subnet
     driver: overlay
     attachable: true
-    internal: true
+    # internal: true
     # driver_opts:
     #   encrypted: "true"
     labels:
