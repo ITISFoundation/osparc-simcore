@@ -35,14 +35,14 @@ async def test_docker_client(setup_docker_api_proxy: None, app: FastAPI):
                 await container.delete(force=True)
 
 
-async def test_swarm_get_number_nodes(setup_docker_api_proxy: None, app: FastAPI):
+async def test_swarm_get_number_nodes(docker_swar: None, setup_docker_api_proxy: None, app: FastAPI):
     num_nodes = await docker_utils.swarm_get_number_nodes(app)
     assert num_nodes == 1
 
 
-async def test_swarm_has_manager_nodes(setup_docker_api_proxy: None, app: FastAPI):
+async def test_swarm_has_manager_nodes(docker_swar: None, setup_docker_api_proxy: None, app: FastAPI):
     assert (await docker_utils.swarm_has_manager_nodes(app)) is True
 
 
-async def test_swarm_has_worker_nodes(setup_docker_api_proxy: None, app: FastAPI):
+async def test_swarm_has_worker_nodes(docker_swar: None, setup_docker_api_proxy: None, app: FastAPI):
     assert (await docker_utils.swarm_has_worker_nodes(app)) is False
