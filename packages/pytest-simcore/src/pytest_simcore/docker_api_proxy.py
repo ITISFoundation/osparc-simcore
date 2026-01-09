@@ -8,6 +8,7 @@ from tenacity import before_sleep_log, retry, stop_after_delay, wait_fixed
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 
 from .helpers.docker import get_service_published_port
+from .helpers.host import get_localhost_ip
 from .helpers.typing_env import EnvVarsDict
 
 _logger = logging.getLogger(__name__)
@@ -47,7 +48,7 @@ async def docker_api_proxy_settings(
     )
 
     envs = {
-        "DOCKER_API_PROXY_HOST": "localhost",
+        "DOCKER_API_PROXY_HOST": get_localhost_ip(),
         "DOCKER_API_PROXY_PORT": published_port,
         "DOCKER_API_PROXY_USER": env_vars_for_docker_compose["DOCKER_API_PROXY_USER"],
         "DOCKER_API_PROXY_PASSWORD": env_vars_for_docker_compose["DOCKER_API_PROXY_PASSWORD"],
