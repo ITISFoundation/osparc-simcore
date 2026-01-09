@@ -1,13 +1,7 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=unused-argument
 
-import pytest
-from common_library.json_serialization import json_dumps
-from common_library.serialization import model_dump_with_secrets
 from fastapi import FastAPI
-from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
-from pytest_simcore.helpers.typing_env import EnvVarsDict
-from settings_library.docker_api_proxy import DockerApiProxysettings
 from simcore_service_director import docker_utils
 from tenacity import (
     AsyncRetrying,
@@ -19,21 +13,6 @@ from tenacity import (
 pytest_simcore_core_services_selection = [
     "docker-api-proxy",
 ]
-
-
-@pytest.fixture
-def setup_docker_api_proxy(
-    docker_api_proxy_settings: DockerApiProxysettings, app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    setenvs_from_dict(
-        monkeypatch,
-        {
-            **app_environment,
-            "DIRECTOR_DOCKER_API_PROXY": json_dumps(
-                model_dump_with_secrets(docker_api_proxy_settings, show_secrets=True)
-            ),
-        },
-    )
 
 
 async def test_docker_client(setup_docker_api_proxy: None, app: FastAPI):

@@ -156,7 +156,10 @@ def app_environment(
 
 @pytest.fixture
 def setup_docker_api_proxy(
-    docker_api_proxy_settings: DockerApiProxysettings, app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
+    docker_swarm: None,
+    docker_api_proxy_settings: DockerApiProxysettings,
+    app_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     setenvs_from_dict(
         monkeypatch,
