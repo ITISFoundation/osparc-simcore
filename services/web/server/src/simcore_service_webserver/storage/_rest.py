@@ -50,11 +50,8 @@ from servicelib.aiohttp.requests_validation import (
 )
 from servicelib.aiohttp.rest_responses import create_data_response
 from servicelib.celery.models import ExecutionMetadata, OwnerMetadata
-from servicelib.celery.tasks.storage.paths import submit_compute_path_size_task
+from servicelib.celery.tasks.storage.paths import submit_compute_path_size_task, submit_delete_paths_task
 from servicelib.common_headers import X_FORWARDED_PROTO
-from servicelib.rabbitmq.rpc_interfaces.storage.paths import (
-    delete_paths as remote_delete_paths,
-)
 from servicelib.rabbitmq.rpc_interfaces.storage.simcore_s3 import start_export_data
 from servicelib.rest_responses import unwrap_envelope
 from yarl import URL
@@ -237,11 +234,8 @@ async def batch_delete_paths(request: web.Request):
     path_params = parse_request_path_parameters_as(StorageLocationPathParams, request)
     body = await parse_request_body_as(BatchDeletePathsBodyParams, request)
 
-    rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)
-    async_job, _ = await remote_delete_paths(
-        rabbitmq_rpc_client,
-        location_id=path_params.location_id,
-        paths=body.paths,
+    task_uuid, task_name = await submit_delete_paths_task(
+        task_manager=get_task_manager(request.app),
         owner_metadata=OwnerMetadata.model_validate(
             WebServerOwnerMetadata(
                 user_id=req_ctx.user_id,
@@ -249,8 +243,11 @@ async def batch_delete_paths(request: web.Request):
             ).model_dump()
         ),
         user_id=req_ctx.user_id,
+        location_id=path_params.location_id,
+        paths=body.paths,
     )
-    return _create_data_response_from_async_job(request, async_job)
+
+    return _create_data_response_from_async_job(request, AsyncJobGet(job_id=task_uuid, job_name=task_name))
 
 
 @routes.get(_storage_locations_prefix + "/{location_id}/datasets", name="list_datasets_metadata")
