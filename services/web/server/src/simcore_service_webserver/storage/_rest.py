@@ -51,8 +51,8 @@ from servicelib.aiohttp.requests_validation import (
 from servicelib.aiohttp.rest_responses import create_data_response
 from servicelib.celery.models import ExecutionMetadata, OwnerMetadata
 from servicelib.celery.tasks.storage.paths import submit_compute_path_size_task, submit_delete_paths_task
+from servicelib.celery.tasks.storage.simcore_s3 import submit_export_data_task
 from servicelib.common_headers import X_FORWARDED_PROTO
-from servicelib.rabbitmq.rpc_interfaces.storage.simcore_s3 import start_export_data
 from servicelib.rest_responses import unwrap_envelope
 from yarl import URL
 
@@ -61,7 +61,6 @@ from ..celery import get_task_manager
 from ..constants import RQ_PRODUCT_KEY
 from ..login.decorators import login_required
 from ..models import AuthenticatedRequestContext, WebServerOwnerMetadata
-from ..rabbitmq import get_rabbitmq_rpc_client
 from ..security.decorators import permission_required
 from ..tasks._controller._rest_exceptions import handle_rest_requests_exceptions
 from .schemas import StorageFileIDStr
@@ -490,31 +489,33 @@ async def export_data(request: web.Request) -> web.Response:
     class _PathParams(BaseModel):
         location_id: Annotated[LocationID, AfterValidator(_allow_only_simcore)]
 
-    rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)
-    _req_ctx = AuthenticatedRequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     _ = parse_request_path_parameters_as(_PathParams, request)
-    export_data_post = await parse_request_body_as(model_schema_cls=DataExportPost, request=request)
-    async_job_rpc_get, _ = await start_export_data(
-        rabbitmq_rpc_client=rabbitmq_rpc_client,
-        paths_to_export=export_data_post.paths,
-        export_as="path",
+
+    body = await parse_request_body_as(model_schema_cls=DataExportPost, request=request)
+
+    task_uuid, task_name = await submit_export_data_task(
+        task_manager=get_task_manager(request.app),
         owner_metadata=OwnerMetadata.model_validate(
             WebServerOwnerMetadata(
-                user_id=_req_ctx.user_id,
-                product_name=_req_ctx.product_name,
+                user_id=req_ctx.user_id,
+                product_name=req_ctx.product_name,
             ).model_dump()
         ),
-        user_id=_req_ctx.user_id,
-        product_name=_req_ctx.product_name,
+        user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
+        paths_to_export=body.paths,
+        export_as="path",
     )
-    _job_id = f"{async_job_rpc_get.job_id}"
+
+    job_id = f"{task_uuid}"
     return create_data_response(
         TaskGet(
-            task_id=_job_id,
-            task_name=async_job_rpc_get.job_name,
-            status_href=f"{request.url.with_path(str(request.app.router['get_async_job_status'].url_for(task_id=_job_id)))}",
-            abort_href=f"{request.url.with_path(str(request.app.router['cancel_async_job'].url_for(task_id=_job_id)))}",
-            result_href=f"{request.url.with_path(str(request.app.router['get_async_job_result'].url_for(task_id=_job_id)))}",
+            task_id=job_id,
+            task_name=task_name,
+            status_href=f"{request.url.with_path(str(request.app.router['get_async_job_status'].url_for(task_id=job_id)))}",
+            abort_href=f"{request.url.with_path(str(request.app.router['cancel_async_job'].url_for(task_id=job_id)))}",
+            result_href=f"{request.url.with_path(str(request.app.router['get_async_job_result'].url_for(task_id=job_id)))}",
         ),
         status=status.HTTP_202_ACCEPTED,
     )
