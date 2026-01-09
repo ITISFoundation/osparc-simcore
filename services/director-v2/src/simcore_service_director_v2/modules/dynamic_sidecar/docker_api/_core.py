@@ -180,21 +180,26 @@ _TASK_STATE_TO_PROGRESS_MAPPING: Final[dict[str, float]] = (
 )
 
 _MAX_TIME_FOR_STARTING_STATE_S: Final[float] = 20.0
-_MAX_PROGRESS_IN_STARTING_STATE: Final[float] = 0.19
+_MAX_FAKE_PROGRESS_IN_STARTING_STATE: Final[float] = (
+    _TASK_STATE_TO_PROGRESS_MAPPING["running"] - _TASK_STATE_TO_PROGRESS_MAPPING["starting"] - 0.01
+)
 _MAX_TIME_FOR_PREPARING_STATE_S: Final[float] = 30.0
-_MAX_PROGRESS_IN_PREPARING_STATE: Final[float] = 0.19
+_MAX_FAKE_PROGRESS_IN_PREPARING_STATE: Final[float] = (
+    _TASK_STATE_TO_PROGRESS_MAPPING["starting"] - _TASK_STATE_TO_PROGRESS_MAPPING["preparing"] - 0.01
+)
 _STATE_PROGRESS_CONFIG: Final[dict[str, tuple[str, float, float]]] = {
     "preparing": (
         "preparing_state_start_time",
-        _MAX_PROGRESS_IN_PREPARING_STATE,
+        _MAX_FAKE_PROGRESS_IN_PREPARING_STATE,
         _MAX_TIME_FOR_PREPARING_STATE_S,
     ),
     "starting": (
         "starting_state_start_time",
-        _MAX_PROGRESS_IN_STARTING_STATE,
+        _MAX_FAKE_PROGRESS_IN_STARTING_STATE,
         _MAX_TIME_FOR_STARTING_STATE_S,
     ),
 }
+_UNINITIALIZED_STATE_START_TIME: Final[float] = -1.0
 
 
 async def get_dynamic_sidecar_placement(
@@ -210,12 +215,13 @@ async def get_dynamic_sidecar_placement(
     is in `running` state.
     """
 
-    # Track when "starting" state begins for progress interpolation
+    # Track when state begins for progress interpolation
     # Using a dict to avoid nonlocal and make state sharing explicit
-    state: dict[str, float | None] = {config[0]: None for config in _STATE_PROGRESS_CONFIG.values()}
+    state: dict[str, float] = {config[0]: _UNINITIALIZED_STATE_START_TIME for config in _STATE_PROGRESS_CONFIG.values()}
 
     # NOTE: Fixed 1-second retry interval provides smooth progress updates
-    # during the "starting" phase while maintaining reasonable API call frequency
+    # during the state phase while maintaining reasonable API call frequency
+    # (using exponential backoff would introduce delays)
     @retry(
         wait=wait_fixed(1),
         stop=stop_after_delay(dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_STARTUP_TIMEOUT_S),
@@ -235,11 +241,12 @@ async def get_dynamic_sidecar_placement(
             # Interpolate progress during slow states (preparing/starting)
             if service_state in _STATE_PROGRESS_CONFIG:
                 start_key, max_progress, max_time = _STATE_PROGRESS_CONFIG[service_state]
-                if state[start_key] is None:
+                if state[start_key] == _UNINITIALIZED_STATE_START_TIME:
                     state[start_key] = time.time()
-
-                assert state[start_key] is not None  # nosec
-                elapsed_seconds = time.time() - state[start_key]  # type: ignore
+                    elapsed_seconds = 0.0
+                else:
+                    elapsed_seconds = time.time() - state[start_key]  # type: ignore
+                assert max_time > 0.0  # nosec
                 interpolated_progress = base_progress + (max_progress * min(elapsed_seconds / max_time, 1.0))
                 await progress_update(interpolated_progress)
             else:
