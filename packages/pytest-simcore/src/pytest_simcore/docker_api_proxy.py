@@ -47,7 +47,7 @@ async def docker_api_proxy_settings(
     )
 
     envs = {
-        "DOCKER_API_PROXY_HOST": "127.0.0.1",
+        "DOCKER_API_PROXY_HOST": "localhost",
         "DOCKER_API_PROXY_PORT": published_port,
         "DOCKER_API_PROXY_USER": env_vars_for_docker_compose["DOCKER_API_PROXY_USER"],
         "DOCKER_API_PROXY_PASSWORD": env_vars_for_docker_compose["DOCKER_API_PROXY_PASSWORD"],
