@@ -371,6 +371,7 @@ services:
           - node.role == manager
     networks:
       - default
+      - docker_api_subnet
       - interactive_services_subnet
 
   director-v2:
