@@ -50,10 +50,8 @@ from servicelib.aiohttp.requests_validation import (
 )
 from servicelib.aiohttp.rest_responses import create_data_response
 from servicelib.celery.models import ExecutionMetadata, OwnerMetadata
+from servicelib.celery.tasks.storage.paths import submit_compute_path_size_task
 from servicelib.common_headers import X_FORWARDED_PROTO
-from servicelib.rabbitmq.rpc_interfaces.storage.paths import (
-    compute_path_size as remote_compute_path_size,
-)
 from servicelib.rabbitmq.rpc_interfaces.storage.paths import (
     delete_paths as remote_delete_paths,
 )
@@ -211,11 +209,8 @@ async def compute_path_size(request: web.Request) -> web.Response:
     req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(StoragePathComputeSizeParams, request)
 
-    rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)
-    async_job, _ = await remote_compute_path_size(
-        rabbitmq_rpc_client,
-        location_id=path_params.location_id,
-        path=path_params.path,
+    task_uuid, task_name = await submit_compute_path_size_task(
+        task_manager=get_task_manager(request.app),
         owner_metadata=OwnerMetadata.model_validate(
             WebServerOwnerMetadata(
                 user_id=req_ctx.user_id,
@@ -224,9 +219,11 @@ async def compute_path_size(request: web.Request) -> web.Response:
         ),
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
+        location_id=path_params.location_id,
+        path=path_params.path,
     )
 
-    return _create_data_response_from_async_job(request, async_job)
+    return _create_data_response_from_async_job(request, AsyncJobGet(job_id=task_uuid, job_name=task_name))
 
 
 @routes.post(
