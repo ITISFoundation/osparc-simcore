@@ -55,9 +55,6 @@ from servicelib.aiohttp.requests_validation import (
 from servicelib.aiohttp.rest_responses import create_data_response
 from servicelib.celery.models import ExecutionMetadata, OwnerMetadata
 from servicelib.common_headers import X_FORWARDED_PROTO
-from servicelib.rabbitmq.rpc_interfaces.storage.paths import (
-    delete_paths as remote_delete_paths,
-)
 from servicelib.rabbitmq.rpc_interfaces.storage.simcore_s3 import start_export_data
 from servicelib.rest_responses import unwrap_envelope
 from yarl import URL

@@ -4,6 +4,10 @@ from celery import Celery  # type: ignore[import-untyped]
 from celery_library.task import register_task
 from celery_library.types import register_celery_types, register_pydantic_types
 from models_library.api_schemas_storage.export_data_async_jobs import AccessRightError
+from models_library.api_schemas_storage.paths_async_jobs import (
+    BATCH_DELETE_PATHS_TASK_NAME,
+    COMPUTE_PATH_SIZE_TASK_NAME,
+)
 from models_library.api_schemas_storage.search_async_jobs import SEARCH_TASK_NAME
 from models_library.api_schemas_storage.storage_schemas import (
     FileUploadCompletionBody,
@@ -35,11 +39,9 @@ def register_worker_tasks(app: Celery) -> None:
     )
     with log_context(_logger, logging.INFO, msg="worker tasks registration"):
         register_task(app, export_data, dont_autoretry_for=(AccessRightError,))
-        register_task(
-            app, export_data_as_download_link, dont_autoretry_for=(AccessRightError,)
-        )
-        register_task(app, compute_path_size)
+        register_task(app, export_data_as_download_link, dont_autoretry_for=(AccessRightError,))
+        register_task(app, compute_path_size, task_name=COMPUTE_PATH_SIZE_TASK_NAME)
         register_task(app, complete_upload_file)
-        register_task(app, delete_paths)
+        register_task(app, delete_paths, task_name=BATCH_DELETE_PATHS_TASK_NAME)
         register_task(app, deep_copy_files_from_project)
         register_task(app, search, task_name=SEARCH_TASK_NAME)
