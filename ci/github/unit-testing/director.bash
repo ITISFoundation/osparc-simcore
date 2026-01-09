@@ -6,9 +6,15 @@ set -o pipefail # don't hide errors within pipes
 IFS=$'\n\t'
 
 install() {
-  make devenv
+make devenv
   # shellcheck source=/dev/null
   source .venv/bin/activate
+
+  # Build docker-api-proxy image needed for unit tests
+  pushd services/docker-api-proxy
+  make build
+  popd
+
   pushd services/director
   make install-ci
   popd

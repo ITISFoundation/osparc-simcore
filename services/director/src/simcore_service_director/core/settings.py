@@ -22,6 +22,7 @@ from pydantic import (
 )
 from servicelib.logging_utils import LogLevelInt
 from settings_library.application import BaseApplicationSettings
+from settings_library.docker_api_proxy import DockerApiProxysettings
 from settings_library.docker_registry import RegistrySettings
 from settings_library.postgres import PostgresSettings
 from settings_library.tracing import TracingSettings
@@ -46,27 +47,27 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
 
     DIRECTOR_LOG_LEVEL: Annotated[
         LogLevel,
-        Field(
-            validation_alias=AliasChoices("DIRECTOR_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL")
-        ),
+        Field(validation_alias=AliasChoices("DIRECTOR_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL")),
     ]
     DIRECTOR_LOG_FORMAT_LOCAL_DEV_ENABLED: Annotated[
         bool,
         Field(
-            validation_alias=AliasChoices(
-                "DIRECTOR_LOG_FORMAT_LOCAL_DEV_ENABLED", "LOG_FORMAT_LOCAL_DEV_ENABLED"
+            validation_alias=AliasChoices("DIRECTOR_LOG_FORMAT_LOCAL_DEV_ENABLED", "LOG_FORMAT_LOCAL_DEV_ENABLED"),
+            description=(
+                "Enables local development log format. WARNING: make sure it is disabled "
+                "if you want to have structured logs!"
             ),
-            description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
         ),
     ]
     DIRECTOR_LOG_FILTER_MAPPING: Annotated[
         dict[LoggerName, list[MessageSubstring]],
         Field(
             default_factory=dict,
-            validation_alias=AliasChoices(
-                "DIRECTOR_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"
+            validation_alias=AliasChoices("DIRECTOR_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"),
+            description=(
+                "is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') "
+                "to a list of log message patterns that should be filtered out."
             ),
-            description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
         ),
     ] = DEFAULT_FACTORY
     DIRECTOR_TRACING: Annotated[
@@ -77,11 +78,14 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         ),
     ]
 
+    DIRECTOR_DOCKER_API_PROXY: Annotated[
+        DockerApiProxysettings,
+        Field(json_schema_extra={"auto_default_from_env": True}),
+    ]
+
     DIRECTOR_DEFAULT_MAX_NANO_CPUS: NonNegativeInt = 0
     DIRECTOR_DEFAULT_MAX_MEMORY: NonNegativeInt = 0
-    DIRECTOR_REGISTRY_CACHING: Annotated[
-        bool, Field(description="cache the docker registry internally")
-    ]
+    DIRECTOR_REGISTRY_CACHING: Annotated[bool, Field(description="cache the docker registry internally")]
     DIRECTOR_REGISTRY_CACHING_TTL: Annotated[
         datetime.timedelta,
         Field(description="cache time to live value (defaults to 15 minutes)"),
@@ -89,9 +93,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
 
     DIRECTOR_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS: Annotated[
         list[DockerPlacementConstraint],
-        Field(
-            default_factory=list, examples=['["node.labels.region==east", "one!=yes"]']
-        ),
+        Field(default_factory=list, examples=['["node.labels.region==east", "one!=yes"]']),
     ] = DEFAULT_FACTORY
     DIRECTOR_SERVICES_CUSTOM_LABELS: Annotated[
         dict[DockerLabelKey, str],
@@ -105,7 +107,9 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         Json[dict[DockerLabelKey, str]],
         Field(
             default_factory=lambda: "{}",
-            description="Dynamic placement labels for service node placement. Keys must be in CUSTOM_PLACEMENT_LABEL_KEYS.",
+            description=(
+                "Dynamic placement labels for service node placement. Keys must be in CUSTOM_PLACEMENT_LABEL_KEYS."
+            ),
             examples=['{"product-name": "osparc", "user-id": "{user_id}"}'],
         ),
     ] = DEFAULT_FACTORY
@@ -118,11 +122,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
 
     DIRECTOR_TRAEFIK_SIMCORE_ZONE: Annotated[
         str,
-        Field(
-            validation_alias=AliasChoices(
-                "DIRECTOR_TRAEFIK_SIMCORE_ZONE", "TRAEFIK_SIMCORE_ZONE"
-            )
-        ),
+        Field(validation_alias=AliasChoices("DIRECTOR_TRAEFIK_SIMCORE_ZONE", "TRAEFIK_SIMCORE_ZONE")),
     ]
 
     DIRECTOR_REGISTRY: Annotated[
@@ -133,29 +133,17 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         ),
     ]
 
-    DIRECTOR_POSTGRES: Annotated[
-        PostgresSettings, Field(json_schema_extra={"auto_default_from_env": True})
-    ]
-    STORAGE_ENDPOINT: Annotated[
-        str, Field(description="storage endpoint without scheme")
-    ]
+    DIRECTOR_POSTGRES: Annotated[PostgresSettings, Field(json_schema_extra={"auto_default_from_env": True})]
+    STORAGE_ENDPOINT: Annotated[str, Field(description="storage endpoint without scheme")]
 
     DIRECTOR_PUBLISHED_HOST_NAME: Annotated[
         str,
-        Field(
-            validation_alias=AliasChoices(
-                "DIRECTOR_PUBLISHED_HOST_NAME", "PUBLISHED_HOST_NAME"
-            )
-        ),
+        Field(validation_alias=AliasChoices("DIRECTOR_PUBLISHED_HOST_NAME", "PUBLISHED_HOST_NAME")),
     ]
 
     DIRECTOR_SWARM_STACK_NAME: Annotated[
         str,
-        Field(
-            validation_alias=AliasChoices(
-                "DIRECTOR_SWARM_STACK_NAME", "SWARM_STACK_NAME"
-            )
-        ),
+        Field(validation_alias=AliasChoices("DIRECTOR_SWARM_STACK_NAME", "SWARM_STACK_NAME")),
     ]
 
     DIRECTOR_SIMCORE_SERVICES_NETWORK_NAME: Annotated[
@@ -170,30 +158,23 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
 
     DIRECTOR_MONITORING_ENABLED: Annotated[
         bool,
-        Field(
-            validation_alias=AliasChoices(
-                "DIRECTOR_MONITORING_ENABLED", "MONITORING_ENABLED"
-            )
-        ),
+        Field(validation_alias=AliasChoices("DIRECTOR_MONITORING_ENABLED", "MONITORING_ENABLED")),
     ]
 
     DIRECTOR_REGISTRY_CLIENT_MAX_KEEPALIVE_CONNECTIONS: NonNegativeInt = 5
-    DIRECTOR_REGISTRY_CLIENT_TIMEOUT: datetime.timedelta = datetime.timedelta(
-        seconds=20
-    )
+    DIRECTOR_REGISTRY_CLIENT_TIMEOUT: datetime.timedelta = datetime.timedelta(seconds=20)
     DIRECTOR_REGISTRY_CLIENT_MAX_CONCURRENT_CALLS: PositiveInt = 20
     DIRECTOR_REGISTRY_CLIENT_MAX_NUMBER_OF_RETRIEVED_OBJECTS: PositiveInt = 30
 
     @field_validator("DIRECTOR_OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS")
     @classmethod
-    def _validate_osparc_custom_placement_constraints_keys(
-        cls, v: dict[str, str]
-    ) -> dict[str, str]:
-        invalid_keys = set(v.keys()) - set(
-            OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS
-        )
+    def _validate_osparc_custom_placement_constraints_keys(cls, v: dict[str, str]) -> dict[str, str]:
+        invalid_keys = set(v.keys()) - set(OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS)
         if invalid_keys:
-            msg = f"Invalid placement label keys {invalid_keys}. Must be one of {OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS}"
+            msg = (
+                f"Invalid placement label keys {invalid_keys}. Must be one of "
+                f"{OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS}"
+            )
             raise ValueError(msg)
         return v
 
