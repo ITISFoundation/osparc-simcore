@@ -197,7 +197,7 @@ async def create_user_services(
 
         await progress.update(message="creating and starting containers", percent=0.90)
         await post_sidecar_log_message(
-            app, "starting service containers", log_level=logging.INFO
+            app, "starting user service containers", log_level=logging.INFO
         )
         await _retry_docker_compose_create(shared_store.compose_spec, settings)
         await progress_bar.update()
@@ -215,7 +215,7 @@ async def create_user_services(
 
     if compose_start_result.success:
         await post_sidecar_log_message(
-            app, "user services started", log_level=logging.INFO
+            app, "user service containers started", log_level=logging.INFO
         )
         _logger.debug(message)
         for container_name in shared_store.container_names:

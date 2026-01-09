@@ -28,7 +28,7 @@ services:
         "-c",
         "tcp_keepalives_interval=600",
         "-c",
-        "tcp_keepalives_count=5"
+        "tcp_keepalives_count=5",
       ]
     # NOTES: this is not yet compatible with portainer deployment but could work also for other containers
     # works with Docker 19.03 and not yet with Portainer 1.23.0 (see https://github.com/portainer/portainer/issues/3551)
@@ -41,7 +41,7 @@ services:
     #   - net.ipv4.tcp_keepalive_probes=9
     #   - net.ipv4.tcp_keepalive_time=600
   adminer:
-    image: adminer:4.8.1
+    image: adminer:5.4.1
     init: true
     environment:
       - ADMINER_DEFAULT_SERVER=postgres

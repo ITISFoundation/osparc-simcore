@@ -4559,7 +4559,7 @@ paths:
       tags:
       - nih-sparc
       summary: List Viewers
-      description: 'Lists all publically available viewers
+      description: 'Lists all publicly available viewers
 
 
         Notice that this might contain multiple services for the same filetype
@@ -4595,7 +4595,7 @@ paths:
         use-case
 
 
-        Only publicaly available viewers
+        Only publicly available viewers
 
 
         If file_type is provided, then it filters viewer for that filetype'
@@ -4690,7 +4690,7 @@ paths:
           title: Id
       responses:
         '302':
-          description: Opens osparc and opens a copy of publised study
+          description: Opens osparc and opens a copy of published study
   /v0/projects:
     post:
       tags:
@@ -5469,7 +5469,7 @@ paths:
       responses:
         '202':
           description: The request to share the project has been accepted, but the
-            actual sharing process has to be confirmd.
+            actual sharing process has to be confirmed.
           content:
             application/json:
               schema:
@@ -5592,172 +5592,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_list_ProjectGroupGet__'
-  /v0/projects/{project_uuid}/comments:
-    post:
-      tags:
-      - projects
-      - comments
-      summary: Create Project Comment
-      description: Create a new comment for a specific project. The request body should
-        contain the comment contents and user information.
-      operationId: create_project_comment
-      deprecated: true
-      parameters:
-      - name: project_uuid
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-          title: Project Uuid
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/_ProjectCommentsBodyParams'
-      responses:
-        '201':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_dict_Literal__comment_id____Annotated_int__Gt___'
-    get:
-      tags:
-      - projects
-      - comments
-      summary: List Project Comments
-      description: Retrieve all comments for a specific project.
-      operationId: list_project_comments
-      deprecated: true
-      parameters:
-      - name: project_uuid
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-          title: Project Uuid
-      - name: limit
-        in: query
-        required: false
-        schema:
-          type: integer
-          default: 20
-          title: Limit
-      - name: offset
-        in: query
-        required: false
-        schema:
-          type: integer
-          minimum: 0
-          default: 0
-          title: Offset
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_list_ProjectsCommentsAPI__'
-  /v0/projects/{project_uuid}/comments/{comment_id}:
-    put:
-      tags:
-      - projects
-      - comments
-      summary: Update Project Comment
-      description: Update the contents of a specific comment for a project. The request
-        body should contain the updated comment contents.
-      operationId: update_project_comment
-      deprecated: true
-      parameters:
-      - name: project_uuid
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-          title: Project Uuid
-      - name: comment_id
-        in: path
-        required: true
-        schema:
-          type: integer
-          exclusiveMinimum: true
-          title: Comment Id
-          minimum: 0
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/_ProjectCommentsBodyParams'
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_ProjectsCommentsAPI_'
-    delete:
-      tags:
-      - projects
-      - comments
-      summary: Delete Project Comment
-      description: Delete a specific comment associated with a project.
-      operationId: delete_project_comment
-      deprecated: true
-      parameters:
-      - name: project_uuid
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-          title: Project Uuid
-      - name: comment_id
-        in: path
-        required: true
-        schema:
-          type: integer
-          exclusiveMinimum: true
-          title: Comment Id
-          minimum: 0
-      responses:
-        '204':
-          description: Successful Response
-    get:
-      tags:
-      - projects
-      - comments
-      summary: Get Project Comment
-      description: Retrieve a specific comment by its ID within a project.
-      operationId: get_project_comment
-      deprecated: true
-      parameters:
-      - name: project_uuid
-        in: path
-        required: true
-        schema:
-          type: string
-          format: uuid
-          title: Project Uuid
-      - name: comment_id
-        in: path
-        required: true
-        schema:
-          type: integer
-          exclusiveMinimum: true
-          title: Comment Id
-          minimum: 0
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_ProjectsCommentsAPI_'
   /v0/projects/{project_id}/conversations:
     post:
       tags:
@@ -11514,19 +11348,6 @@ components:
           title: Error
       type: object
       title: Envelope[ProjectStateOutputSchema]
-    Envelope_ProjectsCommentsAPI_:
-      properties:
-        data:
-          anyOf:
-          - $ref: '#/components/schemas/ProjectsCommentsAPI'
-          - type: 'null'
-        error:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Error
-      type: object
-      title: Envelope[ProjectsCommentsAPI]
     Envelope_RegisterPhoneNextPage_:
       properties:
         data:
@@ -11850,26 +11671,6 @@ components:
           title: Error
       type: object
       title: Envelope[dict[Annotated[str, StringConstraints], ImageResources]]
-    Envelope_dict_Literal__comment_id____Annotated_int__Gt___:
-      properties:
-        data:
-          anyOf:
-          - additionalProperties:
-              type: integer
-              exclusiveMinimum: true
-              minimum: 0
-            propertyNames:
-              const: comment_id
-            type: object
-          - type: 'null'
-          title: Data
-        error:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Error
-      type: object
-      title: Envelope[dict[Literal['comment_id'], Annotated[int, Gt]]]
     Envelope_dict_UUID__Activity__:
       properties:
         data:
@@ -12172,22 +11973,6 @@ components:
           title: Error
       type: object
       title: Envelope[list[ProjectMetadataPortGet]]
-    Envelope_list_ProjectsCommentsAPI__:
-      properties:
-        data:
-          anyOf:
-          - items:
-              $ref: '#/components/schemas/ProjectsCommentsAPI'
-            type: array
-          - type: 'null'
-          title: Data
-        error:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Error
-      type: object
-      title: Envelope[list[ProjectsCommentsAPI]]
     Envelope_list_ResourceHit__:
       properties:
         data:
@@ -13026,7 +12811,7 @@ components:
         topUpAmountInUsd:
           type: string
           title: Topupamountinusd
-          description: Amount in USD payed when auto-recharge condition is satisfied
+          description: Amount in USD paid when auto-recharge condition is satisfied
         monthlyLimitInUsd:
           anyOf:
           - type: string
@@ -13901,7 +13686,7 @@ components:
             write: false
           description: Some foundation
           gid: '16'
-          label: Blue Fundation
+          label: Blue Foundation
         support:
           description: The support team of the application
           gid: '2'
@@ -16194,7 +15979,7 @@ components:
           type: string
           format: uuid
           title: Key
-          description: Project port's unique identifer. Same as the UUID of the associated
+          description: Project port's unique identifier. Same as the UUID of the associated
             port node
         value:
           title: Value
@@ -16214,7 +15999,7 @@ components:
           type: string
           format: uuid
           title: Key
-          description: Project port's unique identifer. Same as the UUID of the associated
+          description: Project port's unique identifier. Same as the UUID of the associated
             port node
         value:
           title: Value
@@ -16383,7 +16168,7 @@ components:
           type: string
           format: uuid
           title: Key
-          description: Project port's unique identifer. Same as the UUID of the associated
+          description: Project port's unique identifier. Same as the UUID of the associated
             port node
         kind:
           type: string
@@ -16449,7 +16234,7 @@ components:
           type: string
           format: uuid
           title: Key
-          description: Project port's unique identifer. Same as the UUID of the associated
+          description: Project port's unique identifier. Same as the UUID of the associated
             port node
         value:
           title: Value
@@ -16665,49 +16450,6 @@ components:
       - template
       - user
       title: ProjectTypeAPI
-    ProjectsCommentsAPI:
-      properties:
-        comment_id:
-          type: integer
-          exclusiveMinimum: true
-          title: Comment Id
-          description: Primary key, identifies the comment
-          minimum: 0
-        project_uuid:
-          type: string
-          format: uuid
-          title: Project Uuid
-          description: project reference for this table
-        user_id:
-          type: integer
-          exclusiveMinimum: true
-          title: User Id
-          description: user reference for this table
-          minimum: 0
-        contents:
-          type: string
-          title: Contents
-          description: Contents of the comment
-        created:
-          type: string
-          format: date-time
-          title: Created
-          description: Timestamp on creation
-        modified:
-          type: string
-          format: date-time
-          title: Modified
-          description: Timestamp with last update
-      additionalProperties: false
-      type: object
-      required:
-      - comment_id
-      - project_uuid
-      - user_id
-      - contents
-      - created
-      - modified
-      title: ProjectsCommentsAPI
     ProjectsGroupsBodyParams:
       properties:
         read:
@@ -19493,16 +19235,6 @@ components:
           title: Expiration 2Fa
       type: object
       title: _PageParams
-    _ProjectCommentsBodyParams:
-      properties:
-        contents:
-          type: string
-          title: Contents
-      additionalProperties: false
-      type: object
-      required:
-      - contents
-      title: _ProjectCommentsBodyParams
     _ProjectConversationMessagesCreateBodyParams:
       properties:
         content:

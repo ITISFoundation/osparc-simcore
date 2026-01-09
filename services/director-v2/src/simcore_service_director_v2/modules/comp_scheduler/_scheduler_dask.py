@@ -27,6 +27,7 @@ from servicelib.redis._semaphore_decorator import (
     with_limited_concurrency_cm,
 )
 from servicelib.utils import limited_as_completed, limited_gather
+from simcore_sdk.node_ports_common.exceptions import S3InvalidPathError
 
 from ..._meta import APP_NAME
 from ...core.errors import (
@@ -356,6 +357,28 @@ class DaskScheduler(BaseCompScheduler):
             )
             # NOTE: simcore platform state is still OK as the task ran fine, the issue is likely due to the service labels
             return RunningState.FAILED, SimcorePlatformStatus.OK, err.get_errors(), True
+        except S3InvalidPathError as err:
+            msg = "Unexpected error while retrieving output data, the data was not found in storage"
+            _logger.exception(
+                **create_troubleshooting_log_kwargs(
+                    msg,
+                    error=err,
+                    error_context=log_error_context,
+                )
+            )
+            # NOTE: The platform state is BAD as the output data in a successful task must be available
+            return (
+                RunningState.FAILED,
+                SimcorePlatformStatus.BAD,
+                [
+                    ErrorDict(
+                        loc=(f"{task.project_id}", f"{task.node_id}"),
+                        msg=f"{msg}: {err}",
+                        type="storage.s3.invalid-path",
+                    )
+                ],
+                True,
+            )
 
     async def _handle_computational_retrieval_error(
         self,

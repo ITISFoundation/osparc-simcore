@@ -76,4 +76,4 @@ class LongTruncatedStr(ConstrainedStr):
     # NOTE: Use to input e.g. descriptions or summaries
     # Analogous to ShortTruncatedStr
     strip_whitespace = True
-    curtail_length = 65536  # same as github descripton
+    curtail_length = 65536  # same as github description

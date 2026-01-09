@@ -13,6 +13,7 @@ from pydantic import (
     AliasChoices,
     AnyUrl,
     Field,
+    Json,
     NonNegativeInt,
     PositiveInt,
     TypeAdapter,
@@ -58,7 +59,7 @@ class AutoscalingEC2Settings(EC2Settings):
 
 class EC2InstancesSettings(BaseCustomSettings):
     EC2_INSTANCES_ALLOWED_TYPES: Annotated[
-        dict[str, EC2InstanceBootSpecific],
+        Json[dict[str, EC2InstanceBootSpecific]],
         Field(
             description="Defines which EC2 instances are considered as candidates for new EC2 instance and their respective boot specific parameters"
             "NOTE: minimum length >0",
@@ -66,10 +67,10 @@ class EC2InstancesSettings(BaseCustomSettings):
     ]
 
     EC2_INSTANCES_COLD_START_DOCKER_IMAGES_PRE_PULLING: Annotated[
-        list[DockerGenericTag],
+        Json[list[DockerGenericTag]],
         Field(
             description="List of docker images to pre-pull on cold started new EC2 instances",
-            default_factory=list,
+            default_factory=lambda: "[]",
         ),
     ] = DEFAULT_FACTORY
 
@@ -99,7 +100,7 @@ class EC2InstancesSettings(BaseCustomSettings):
         datetime.timedelta,
         Field(
             description="Usual time taken an EC2 instance with the given AMI takes to join the cluster "
-            "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)."
+            "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formatting)."
             "NOTE: be careful that this time should always be a factor larger than the real time, as EC2 instances"
             "that take longer than this time will be terminated as sometimes it happens that EC2 machine fail on start.",
         ),
@@ -114,7 +115,7 @@ class EC2InstancesSettings(BaseCustomSettings):
     ] = "autoscaling"
 
     EC2_INSTANCES_SECURITY_GROUP_IDS: Annotated[
-        list[str],
+        Json[list[str]],
         Field(
             min_length=1,
             description="A security group acts as a virtual firewall for your EC2 instances to control incoming and outgoing traffic"
@@ -123,7 +124,7 @@ class EC2InstancesSettings(BaseCustomSettings):
         ),
     ]
     EC2_INSTANCES_SUBNET_IDS: Annotated[
-        list[str],
+        Json[list[str]],
         Field(
             min_length=1,
             description="A subnet is a range of IP addresses in your VPC "
@@ -136,15 +137,15 @@ class EC2InstancesSettings(BaseCustomSettings):
         datetime.timedelta,
         Field(
             description="Time after which an EC2 instance may be drained (10s<=T<=1 minutes, is automatically capped)"
-            "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
+            "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formatting)",
         ),
-    ] = datetime.timedelta(seconds=20)
+    ] = datetime.timedelta(seconds=10)
 
     EC2_INSTANCES_TIME_BEFORE_TERMINATION: Annotated[
         datetime.timedelta,
         Field(
             description="Time after which an EC2 instance may begin the termination process (0<=T<=59 minutes, is automatically capped)"
-            "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
+            "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formatting)",
         ),
     ] = datetime.timedelta(minutes=1)
 
@@ -152,12 +153,12 @@ class EC2InstancesSettings(BaseCustomSettings):
         datetime.timedelta,
         Field(
             description="Time after which an EC2 instance is terminated after draining"
-            "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
+            "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formatting)",
         ),
     ] = datetime.timedelta(seconds=30)
 
     EC2_INSTANCES_CUSTOM_TAGS: Annotated[
-        EC2Tags,
+        Json[EC2Tags],
         Field(
             description="Allows to define tags that should be added to the created EC2 instance default tags. "
             "a tag must have a key and an optional value. see [https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html]",
@@ -202,8 +203,8 @@ class EC2InstancesSettings(BaseCustomSettings):
         TypeAdapter(list[InstanceTypeType]).validate_python(list(value))
 
         if not value:
-            # NOTE: Field( ... , min_items=...) cannot be used to contraint number of iterms in a dict
-            msg = "At least one item expecte EC2_INSTANCES_ALLOWED_TYPES, got none"
+            # NOTE: Field( ... , min_items=...) cannot be used to constraint number of items in a dict
+            msg = "At least one item expected EC2_INSTANCES_ALLOWED_TYPES, got none"
             raise ValueError(msg)
 
         return value
@@ -328,7 +329,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         datetime.timedelta,
         Field(
             description="interval between each resource check "
-            "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
+            "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formatting)",
         ),
     ] = datetime.timedelta(seconds=10)
 
@@ -378,7 +379,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     AUTOSCALING_WAIT_FOR_CLOUD_INIT_BEFORE_WARM_BUFFER_ACTIVATION: Annotated[
         bool,
         Field(
-            description="If True, then explicitely wait for cloud-init process to be completed before issuing commands. "
+            description="If True, then explicitly wait for cloud-init process to be completed before issuing commands. "
             "TIP: might be useful when cheap machines are used",
         ),
     ] = False

@@ -1,18 +1,44 @@
 import logging
-from typing import Annotated, Any, Final
+from typing import Annotated, Any, Final, Literal
 
 import httpx
 from aiohttp import web
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
 
+from .exceptions import NoResponseFromChatbotError
 from .settings import ChatbotSettings, get_plugin_settings
 
 _logger = logging.getLogger(__name__)
 
 
+class ResponseMessage(BaseModel):
+    content: str
+
+
+class ResponseItem(BaseModel):
+    index: int  # 0-based index of the response
+    message: ResponseMessage
+
+
 class ChatResponse(BaseModel):
-    answer: Annotated[str, Field(description="Answer from the chatbot")]
+    id: str  # unique identifier for the chat response
+    choices: Annotated[list[ResponseItem], Field(description="Answer from the chatbot")]
+
+
+class Message(BaseModel):
+    role: Literal["user", "assistant", "developer"]
+    content: Annotated[str, Field(description="Content of the message")]
+    name: Annotated[
+        str | None, Field(description="Optional name of the message sender")
+    ] = None
+
+    @model_validator(mode="after")
+    def check_name_requires_user_role(self) -> "Message":
+        if self.name is not None and self.role != "user":
+            msg = "Currently the chatbot only supports name for the user role"
+            raise ValueError(msg)
+        return self
 
 
 class ChatbotRestClient:
@@ -38,28 +64,38 @@ class ChatbotRestClient:
             )
             raise
 
-    async def ask_question(self, question: str) -> ChatResponse:
-        """Asks a question to the chatbot"""
-        url = httpx.URL(self._chatbot_settings.base_url).join("/v1/chat")
+    async def send(self, messages: list[Message]) -> ResponseMessage:
+        """Send a list of messages to the chatbot and returns the chatbot's response message."""
+        url = httpx.URL(self._chatbot_settings.base_url).join("/v1/chat/completions")
 
         async def _request() -> httpx.Response:
             return await self._client.post(
                 url,
                 json={
-                    "question": question,
-                    "llm": self._chatbot_settings.CHATBOT_LLM_MODEL,
-                    "embedding_model": self._chatbot_settings.CHATBOT_EMBEDDING_MODEL,
+                    "messages": [
+                        msg.model_dump(mode="json", exclude_none=True)
+                        for msg in messages
+                    ],
+                    "model": self._chatbot_settings.CHATBOT_MODEL,
+                    "metadata": {
+                        "collection_name": self._chatbot_settings.CHATBOT_COLLECTION_NAME
+                    },
                 },
                 headers={
                     "Content-Type": MIMETYPE_APPLICATION_JSON,
                     "Accept": MIMETYPE_APPLICATION_JSON,
                 },
+                timeout=httpx.Timeout(60.0),
             )
 
         try:
             response = await _request()
             response.raise_for_status()
-            return ChatResponse.model_validate(response.json())
+            chat_response = ChatResponse.model_validate(response.json())
+            if len(chat_response.choices) == 0:
+                raise NoResponseFromChatbotError(chat_completion_id=chat_response.id)
+            return chat_response.choices[0].message
+
         except Exception:
             _logger.error(  # noqa: TRY400
                 "Failed to ask question to chatbot at %s", url

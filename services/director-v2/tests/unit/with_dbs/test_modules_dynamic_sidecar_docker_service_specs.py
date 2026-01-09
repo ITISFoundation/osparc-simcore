@@ -393,10 +393,11 @@ def expected_dynamic_sidecar_spec(
                     },
                 ],
             },
+            "Networks": [{"Target": "mocked_swarm_network_id"}],
             "Placement": {
                 "Constraints": [
                     f"node.labels.{DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY}=={hardware_info.aws_ec2_instances[0]}",
-                    "node.platform.os == linux",
+                    "node.platform.os==linux",
                 ]
             },
             "Resources": {
@@ -568,7 +569,7 @@ async def test_merge_dynamic_sidecar_specs_with_user_specific_specs(
     expected_dynamic_sidecar_spec_dict = AioDockerServiceSpec.model_validate(
         expected_dynamic_sidecar_spec
     ).model_dump()
-    # ensure some entries are sorted the same to prevent flakyness
+    # ensure some entries are sorted the same to prevent flakiness
     for sorted_dict in [dynamic_sidecar_spec_dict, expected_dynamic_sidecar_spec_dict]:
         for key in ["DY_SIDECAR_STATE_EXCLUDE", "DY_SIDECAR_STATE_PATHS"]:
             # this is a json of a list

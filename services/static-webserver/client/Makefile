@@ -4,7 +4,7 @@
 export QOOXDOO_KIT_TAG=latest
 
 
-# version controled
+# version controlled
 export VCS_URL:=$(shell git config --get remote.origin.url)
 export VCS_REF:=$(shell git rev-parse --short HEAD)
 export VCS_REF_CLIENT:=$(shell git log --pretty=tformat:"%h" -n1 .)

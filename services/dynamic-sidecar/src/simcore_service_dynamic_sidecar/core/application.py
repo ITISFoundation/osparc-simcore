@@ -9,36 +9,16 @@ from servicelib.fastapi.openapi import (
     get_common_oas_options,
     override_fastapi_openapi_method,
 )
-from servicelib.fastapi.tracing import (
-    get_tracing_config,
-    initialize_fastapi_app_tracing,
-    setup_tracing,
-)
 from servicelib.tracing import TracingConfig
 from simcore_sdk.node_ports_common.exceptions import NodeNotFound
 
 from .._meta import API_VERSION, API_VTAG, APP_NAME, SUMMARY, __version__
-from ..api.rest import get_main_router
-from ..api.rpc.routes import setup_rpc_api_routes
 from ..models.schemas.application_health import ApplicationHealth
-from ..models.shared_store import SharedStore, setup_shared_store
-from ..modules.attribute_monitor import setup_attribute_monitor
-from ..modules.inputs import setup_inputs
-from ..modules.long_running_tasks import setup_long_running_tasks
-from ..modules.mounted_fs import MountedVolumes, setup_mounted_fs
-from ..modules.notifications import setup_notifications
-from ..modules.outputs import setup_outputs
-from ..modules.prometheus_metrics import setup_prometheus_metrics
-from ..modules.resource_tracking import setup_resource_tracking
-from ..modules.system_monitor import setup_system_monitor
-from ..modules.user_services_preferences import setup_user_services_preferences
+from ..models.shared_store import SharedStore
+from ..modules.mounted_fs import MountedVolumes
 from .docker_compose_utils import docker_compose_down
-from .docker_logs import setup_background_log_fetcher
 from .error_handlers import http_error_handler, node_not_found_error_handler
 from .errors import BaseDynamicSidecarError
-from .external_dependencies import setup_check_dependencies
-from .rabbitmq import setup_rabbitmq
-from .reserved_space import setup as setup_reserved_space
 from .settings import ApplicationSettings
 from .utils import volumes_fix_permissions
 
@@ -59,9 +39,7 @@ S     P    S         b S S     P S       S       S    O S   S
 S    S     S         P S S    S  S        S      S    O S    S
 P ss"      P    ` ss'  P P ss"   P sSSss   "sss' P    P P    P   {} 🚀
 
-""".format(
-    f"v{__version__}"
-)
+""".format(f"v{__version__}")
 
 APP_FINISHED_BANNER_MSG = "{:=^100}".format("🎉 App shutdown completed 🎉")
 
@@ -113,11 +91,8 @@ class AppState:
 
 
 def create_base_app() -> FastAPI:
-    # settings
     app_settings = ApplicationSettings.create_from_envs()
-    tracing_config = TracingConfig.create(
-        service_name=APP_NAME, tracing_settings=app_settings.DYNAMIC_SIDECAR_TRACING
-    )
+    tracing_config = TracingConfig.create(service_name=APP_NAME, tracing_settings=app_settings.DYNAMIC_SIDECAR_TRACING)
     logging_shutdown_event = create_logging_shutdown_event(
         log_format_local_dev_enabled=app_settings.DY_SIDECAR_LOG_FORMAT_LOCAL_DEV_ENABLED,
         logger_filter_mapping=app_settings.DY_SIDECAR_LOG_FILTER_MAPPING,
@@ -139,13 +114,16 @@ def create_base_app() -> FastAPI:
         description=SUMMARY,
         version=API_VERSION,
         openapi_url=f"/api/{API_VTAG}/openapi.json",
-        **get_common_oas_options(
-            is_devel_mode=app_settings.SC_BOOT_MODE.is_devel_mode()
-        ),
+        **get_common_oas_options(is_devel_mode=app_settings.SC_BOOT_MODE.is_devel_mode()),
     )
     override_fastapi_openapi_method(app)
     app.state.settings = app_settings
     app.state.tracing_config = tracing_config
+
+    # NOTE: lazy import for faster startup
+    # ruff: noqa: PLC0415
+    from ..api.rest import get_main_router
+    from .reserved_space import setup as setup_reserved_space
 
     app.include_router(get_main_router(app))
 
@@ -155,7 +133,8 @@ def create_base_app() -> FastAPI:
     return app
 
 
-def create_app() -> FastAPI:
+# pylint: disable=too-many-statements
+def create_app() -> FastAPI:  # noqa: PLR0915
     """
     Creates the application from using the env vars as a context
     Also stores inside the state all instances of classes
@@ -166,17 +145,43 @@ def create_app() -> FastAPI:
 
     # MODULES SETUP --------------
 
+    # NOTE: lazy import for faster startup
+    # ruff: noqa: PLC0415
+    from servicelib.fastapi.tracing import (
+        get_tracing_config,
+        initialize_fastapi_app_tracing,
+        setup_tracing,
+    )
+
+    from ..api.rpc.routes import setup_rpc_api_routes
+    from ..models.shared_store import setup_shared_store
+    from ..modules.attribute_monitor import setup_attribute_monitor
+    from ..modules.inputs import setup_inputs
+    from ..modules.long_running_tasks import setup_long_running_tasks
+    from ..modules.mounted_fs import setup_mounted_fs
+    from ..modules.notifications import setup_notifications
+    from ..modules.outputs import setup_outputs
+    from ..modules.prometheus_metrics import setup_prometheus_metrics
+    from ..modules.resource_tracking import setup_resource_tracking
+    from ..modules.system_monitor import setup_system_monitor
+    from ..modules.user_services_preferences import setup_user_services_preferences
+    from .docker_logs import setup_background_log_fetcher
+    from .external_dependencies import setup_check_dependencies
+    from .rabbitmq import setup_rabbitmq
+
     setup_check_dependencies(app)
 
     setup_shared_store(app)
     app.state.application_health = ApplicationHealth()
     application_settings: ApplicationSettings = app.state.settings
+
     tracing_config = get_tracing_config(app)
 
     if tracing_config.tracing_enabled:
         setup_tracing(app, tracing_config)
 
     setup_rabbitmq(app)
+
     setup_rpc_api_routes(app)
     setup_background_log_fetcher(app)
     setup_resource_tracking(app)

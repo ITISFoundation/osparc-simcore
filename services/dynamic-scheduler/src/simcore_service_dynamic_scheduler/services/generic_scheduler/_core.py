@@ -207,7 +207,7 @@ class Core(SingletonInAppStateMixin):
         expected_steps_count = len(step_group)
 
         async def _cancel_step(step_name: StepName, step_proxy: StepStoreProxy) -> None:
-            with log_context(  # noqa: SIM117
+            with log_context(
                 _logger,
                 logging.DEBUG,
                 f"Cancelling step {step_name=} of {operation_name=} for {schedule_id=}",
@@ -306,11 +306,9 @@ class Core(SingletonInAppStateMixin):
             "deferred_task_uid",
         ]
         if in_manual_intervention:
-            requires_manual_intervention: bool = False
-            with suppress(NoDataFoundError):
-                requires_manual_intervention = await step_proxy.read(
-                    "requires_manual_intervention"
-                )
+            requires_manual_intervention = await get_requires_manual_intervention(
+                step_proxy
+            )
 
             if requires_manual_intervention is False:
                 raise StepNotWaitingForManualInterventionError(step_name=step_name)

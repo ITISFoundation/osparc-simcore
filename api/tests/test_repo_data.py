@@ -60,7 +60,7 @@ def test_project_against_schema(data_path, project_schema, this_repo_root_dir):
     """
     data = _load_data(this_repo_root_dir / data_path)
 
-    # Adapts workbench-only data: embedds data within a fake project skeleton
+    # Adapts workbench-only data: embeds data within a fake project skeleton
     if "workbench" in data_path:
         # TODO: Ideally project is faked to a schema.
         # NOTE: tried already `faker-schema` but it does not do the job right

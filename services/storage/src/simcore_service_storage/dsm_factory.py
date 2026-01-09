@@ -6,6 +6,7 @@ from pathlib import Path
 from fastapi import FastAPI
 from models_library.api_schemas_storage.storage_schemas import LinkType, UploadedPart
 from models_library.basic_types import SHA256Str
+from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import LocationID, LocationName, StorageFileID
 from models_library.users import UserID
@@ -47,12 +48,19 @@ class BaseDataManager(ABC):
         """returns True if user with user_id is authorized to access the storage"""
 
     @abstractmethod
-    async def list_datasets(self, user_id: UserID) -> list[DatasetMetaData]:
+    async def list_datasets(
+        self, user_id: UserID, product_name: ProductName
+    ) -> list[DatasetMetaData]:
         """returns all the top level datasets a user has access to"""
 
     @abstractmethod
     async def list_files_in_dataset(
-        self, user_id: UserID, dataset_id: str, *, expand_dirs: bool
+        self,
+        user_id: UserID,
+        product_name: ProductName,
+        dataset_id: str,
+        *,
+        expand_dirs: bool,
     ) -> list[FileMetaData]:
         """returns all the file meta data inside dataset with dataset_id"""
         # NOTE: expand_dirs will be replaced by pagination in the future
@@ -61,6 +69,7 @@ class BaseDataManager(ABC):
     async def list_files(
         self,
         user_id: UserID,
+        product_name: ProductName,
         *,
         expand_dirs: bool,
         uuid_filter: str,
@@ -73,6 +82,7 @@ class BaseDataManager(ABC):
     async def list_paths(
         self,
         user_id: UserID,
+        product_name: ProductName,
         *,
         file_filter: Path | None,
         cursor: GenericCursor | None,
@@ -81,7 +91,9 @@ class BaseDataManager(ABC):
         """returns a page of the file meta data a user has access to"""
 
     @abstractmethod
-    async def compute_path_size(self, user_id: UserID, *, path: Path) -> ByteSize:
+    async def compute_path_size(
+        self, user_id: UserID, product_name: ProductName, *, path: Path
+    ) -> ByteSize:
         """returns the total size of an arbitrary path"""
 
     @abstractmethod

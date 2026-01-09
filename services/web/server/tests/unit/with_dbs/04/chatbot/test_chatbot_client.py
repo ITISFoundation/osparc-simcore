@@ -5,11 +5,15 @@
 # pylint: disable=too-many-statements
 
 
+import json
+
 import respx
 from aiohttp.test_utils import TestClient
+from faker import Faker
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_webserver.chatbot._client import (
-    ChatResponse,
+    Message,
+    ResponseMessage,
     get_chatbot_rest_client,
 )
 from simcore_service_webserver.chatbot.settings import ChatbotSettings
@@ -19,6 +23,7 @@ async def test_chatbot_client(
     app_environment: EnvVarsDict,
     client: TestClient,
     mocked_chatbot_api: respx.MockRouter,
+    faker: Faker,
 ):
     assert client.app
 
@@ -29,6 +34,12 @@ async def test_chatbot_client(
     chatbot_client = get_chatbot_rest_client(client.app)
     assert chatbot_client
 
-    output = await chatbot_client.ask_question("What is the meaning of life?")
-    assert isinstance(output, ChatResponse)
-    assert output.answer == "42"
+    user_msg = Message(role="user", content=faker.sentence())
+    developer_msg = Message(role="developer", content=faker.sentence())
+    output = await chatbot_client.send(messages=[user_msg, developer_msg])
+    assert isinstance(output, ResponseMessage)
+    assert output.content == "42"
+    request_json = json.loads(mocked_chatbot_api.calls[0].request.content.decode())
+    metadata = request_json.get("metadata")
+    assert metadata
+    assert metadata.get("collection_name") == "sim4life_webplatform"

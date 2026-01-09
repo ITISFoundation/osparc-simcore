@@ -1,7 +1,7 @@
 import warnings
 
 warnings.warn(
-    f"{__name__} is deprecated for cookiecutter-osparc-service>0.4.Use directoy test CLI instead."
+    f"{__name__} is deprecated for cookiecutter-osparc-service>0.4.Use directory test CLI instead."
     "See https://github.com/ITISFoundation/cookiecutter-osparc-service/releases/tag/v0.4.0",
     DeprecationWarning,
 )

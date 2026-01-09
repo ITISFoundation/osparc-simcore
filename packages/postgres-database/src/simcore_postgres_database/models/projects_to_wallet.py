@@ -13,7 +13,7 @@ projects_to_wallet = sa.Table(
         sa.String,
         sa.ForeignKey(
             projects.c.uuid,
-            name="fk_projects_comments_project_uuid",
+            name="fk_projects_wallet_project_uuid",
             ondelete=RefActions.CASCADE,
             onupdate=RefActions.CASCADE,
         ),

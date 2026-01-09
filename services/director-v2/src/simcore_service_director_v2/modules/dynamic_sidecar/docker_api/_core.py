@@ -1,6 +1,7 @@
 import logging
 import re
-from collections.abc import Mapping
+import time
+from collections.abc import Awaitable, Callable, Mapping
 from typing import Any, Final
 
 import aiodocker
@@ -24,7 +25,7 @@ from tenacity import TryAgain, retry
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
-from tenacity.wait import wait_exponential, wait_random_exponential
+from tenacity.wait import wait_exponential, wait_fixed
 
 from ....constants import DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL
 from ....core.dynamic_services_settings.scheduler import (
@@ -32,7 +33,12 @@ from ....core.dynamic_services_settings.scheduler import (
 )
 from ....models.dynamic_services_scheduler import NetworkId, SchedulerData, ServiceId
 from ....utils.dict_utils import get_leaf_key_paths, nested_update
-from ..docker_states import TASK_STATES_RUNNING, extract_task_state
+from ..docker_states import (
+    TASK_STATES_COMPLETE,
+    TASK_STATES_FAILED,
+    TASK_STATES_RUNNING,
+    extract_task_state,
+)
 from ..errors import DockerServiceNotFoundError, DynamicSidecarError, GenericDockerError
 from ._utils import docker_client
 
@@ -42,7 +48,7 @@ NO_PENDING_OVERWRITE = {
     ServiceState.RUNNING,
 }
 
-log = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 async def get_swarm_network(simcore_services_network_name: DockerNetworkName) -> dict:
@@ -117,14 +123,10 @@ async def create_service_and_get_id(
             }
             kwargs["registry"] = registry_settings.resolved_registry_url
 
-        logging.debug("Creating service with\n%s", json_dumps(kwargs, indent=1))
+        # convert to a list if networks instead of target: id/name
+        _logger.debug("Creating service with\n%s", json_dumps(kwargs, indent=1))
         service_start_result = await client.services.create(**kwargs)
-
-        log.debug(
-            "Started service %s with\n%s",
-            service_start_result,
-            json_dumps(kwargs, indent=1),
-        )
+        _logger.debug("Started service %s", service_start_result)
 
     if "ID" not in service_start_result:
         msg = f"Error while starting service: {service_start_result!s}"
@@ -176,9 +178,27 @@ async def _get_service_latest_task(service_id: str) -> Mapping[str, Any]:
         raise
 
 
+_TASK_STATE_TO_PROGRESS_MAPPING: Final[dict[str, float]] = (
+    {
+        "pending": 0.2,
+        "assigned": 0.4,
+        "preparing": 0.6,
+        "starting": 0.8,
+        "running": 1.0,
+    }
+    | dict.fromkeys(TASK_STATES_COMPLETE, 1.0)
+    | dict.fromkeys(TASK_STATES_FAILED, 1.0)
+)
+
+_MAX_TIME_FOR_STARTING_STATE_S: Final[float] = 15.0
+_MAX_PROGRESS_IN_STARTING_STATE: Final[float] = 0.19
+
+
 async def get_dynamic_sidecar_placement(
     service_id: str,
     dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings,
+    *,
+    progress_update: Callable[[float], Awaitable[None]] | None = None,
 ) -> DockerNodeID:
     """
     Waits until the service has a task in `running` state and
@@ -187,15 +207,14 @@ async def get_dynamic_sidecar_placement(
     is in `running` state.
     """
 
-    # NOTE: `wait_random_exponential` is key for reducing pressure on docker swarm
-    # The idea behind it is to avoid having concurrent retrying calls
-    # when the system is having issues to respond. If the system
-    # is failing clients are retrying at the same time,
-    # it makes harder to recover.
-    # Ideally you'd like to distribute the retries uniformly in time.
-    # For more details see `wait_random_exponential` documentation.
+    # Track when "starting" state begins for progress interpolation
+    # Using a dict to avoid nonlocal and make state sharing explicit
+    state: dict[str, float | None] = {"starting_state_start_time": None}
+
+    # NOTE: Fixed 1-second retry interval provides smooth progress updates
+    # during the "starting" phase while maintaining reasonable API call frequency
     @retry(
-        wait=wait_random_exponential(multiplier=2, min=1, max=20),
+        wait=wait_fixed(1),
         stop=stop_after_delay(
             dynamic_services_scheduler_settings.DYNAMIC_SIDECAR_STARTUP_TIMEOUT_S
         ),
@@ -207,6 +226,26 @@ async def get_dynamic_sidecar_placement(
         """
         task = await _get_service_latest_task(service_id)
         service_state = task["Status"]["State"]
+
+        if progress_update:
+            # Get base progress from task state mapping
+            base_progress = _TASK_STATE_TO_PROGRESS_MAPPING.get(service_state, 0.0)
+
+            # Interpolate progress during "starting" state (0.8 -> 0.99 over 15 seconds)
+            if service_state == "starting":
+                if state["starting_state_start_time"] is None:
+                    state["starting_state_start_time"] = time.time()
+
+                assert state["starting_state_start_time"] is not None  # nosec
+                elapsed_seconds = time.time() - state["starting_state_start_time"]
+                # Interpolate from 0.8 to 0.99 over 15 seconds, cap at 0.99
+                interpolated_progress = base_progress + (
+                    _MAX_PROGRESS_IN_STARTING_STATE
+                    * min(elapsed_seconds / _MAX_TIME_FOR_STARTING_STATE_S, 1.0)
+                )
+                await progress_update(interpolated_progress)
+            else:
+                await progress_update(base_progress)
 
         if service_state not in TASK_STATES_RUNNING:
             raise TryAgain
@@ -258,10 +297,7 @@ async def are_sidecar_and_proxy_services_present(
             swarm_stack_name=swarm_stack_name,
             return_only_sidecars=False,
         )
-    if len(stack_services) != _NUM_SIDECAR_STACK_SERVICES:
-        return False
-
-    return True
+    return len(stack_services) == _NUM_SIDECAR_STACK_SERVICES
 
 
 async def _list_docker_services(
@@ -326,7 +362,7 @@ async def remove_dynamic_sidecar_network(network_name: str) -> bool:
             "Docker takes some time to establish that the network has no more "
             "containers attached to it."
         )
-        log.warning(message)
+        _logger.warning(message)
         return False
 
 
@@ -360,7 +396,7 @@ async def get_or_create_networks_ids(
 
     async with docker_client() as client:
         existing_networks_names = {x["Name"] for x in await client.networks.list()}
-        log.debug("existing_networks_names=%s", existing_networks_names)
+        _logger.debug("existing_networks_names=%s", existing_networks_names)
 
         # create networks if missing
         for network in networks:
@@ -383,7 +419,7 @@ async def get_or_create_networks_ids(
                     # multiple calls to this function can be processed in parallel
                     # this will cause creation to fail, it is OK to assume it already
                     # exist an raise an error (see below)
-                    log.info(
+                    _logger.info(
                         "Network %s might already exist, skipping creation", network
                     )
 
@@ -430,7 +466,7 @@ async def try_to_remove_network(network_name: str) -> None:
         try:
             await network.delete()
         except aiodocker.exceptions.DockerError:
-            log.warning("Could not remove network %s", network_name)
+            _logger.warning("Could not remove network %s", network_name)
 
 
 async def _update_service_spec(
@@ -497,7 +533,7 @@ async def update_scheduler_data_label(scheduler_data: SchedulerData) -> None:
         )
     except GenericDockerError as e:
         if e.original_exception.status == status.HTTP_404_NOT_FOUND:
-            log.info(
+            _logger.info(
                 "Skipped labels update for service '%s' which could not be found.",
                 scheduler_data.service_name,
             )
@@ -514,4 +550,4 @@ async def constrain_service_to_node(
             }
         },
     )
-    log.info("Constraining service %s to node %s", service_name, docker_node_id)
+    _logger.info("Constraining service %s to node %s", service_name, docker_node_id)

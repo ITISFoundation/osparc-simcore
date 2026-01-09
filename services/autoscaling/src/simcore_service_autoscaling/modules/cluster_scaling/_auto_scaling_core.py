@@ -12,7 +12,6 @@ from aws_library.ec2 import (
     EC2InstanceConfig,
     EC2InstanceData,
     EC2InstanceType,
-    EC2Tags,
     Resources,
 )
 from aws_library.ec2._errors import (
@@ -24,6 +23,7 @@ from aws_library.ec2._models import AWSTagKey
 from aws_library.ssm._errors import SSMAccessError
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from fastapi import FastAPI
+from models_library.docker import DockerLabelKey
 from models_library.generated_models.docker_rest_api import Node
 from models_library.rabbitmq_messages import ProgressType
 from servicelib.logging_utils import log_catch, log_context
@@ -41,6 +41,7 @@ from ...constants import (
 )
 from ...core.errors import (
     Ec2InvalidDnsNameError,
+    Ec2TagDeserializationError,
     TaskBestFittingInstanceNotFoundError,
     TaskRequirementsAboveRequiredEC2InstanceTypeError,
     TaskRequiresUnauthorizedEC2InstanceTypeError,
@@ -50,9 +51,16 @@ from ...models import (
     AssignedTasksToInstanceType,
     AssociatedInstance,
     Cluster,
+    InstanceToLaunch,
     NonAssociatedInstance,
 )
 from ...utils import utils_docker, utils_ec2
+from ...utils.buffer_machines import (
+    dump_pre_pulled_images_as_tags,
+    list_pre_pulled_images_tag_keys,
+    load_pre_pulled_images_from_tags,
+)
+from ...utils.capacity_distribution import cap_needed_instances
 from ...utils.cluster_scaling import (
     associate_ec2_instances_with_nodes,
     ec2_startup_script,
@@ -66,12 +74,9 @@ from ...utils.rabbitmq import (
     post_tasks_progress_message,
 )
 from ...utils.warm_buffer_machines import (
-    dump_pre_pulled_images_as_tags,
     get_activated_warm_buffer_ec2_tags,
     get_deactivated_warm_buffer_ec2_tags,
     is_warm_buffer_machine,
-    list_pre_pulled_images_tag_keys,
-    load_pre_pulled_images_from_tags,
 )
 from ..docker import get_docker_client
 from ..ec2 import get_ec2_client
@@ -177,7 +182,15 @@ async def _analyze_current_cluster(
         pending_nodes=pending_nodes,
         drained_nodes=drained_nodes,
         hot_buffer_drained_nodes=hot_buffer_drained_nodes,
-        pending_ec2s=[NonAssociatedInstance(ec2_instance=i) for i in pending_ec2s],
+        pending_ec2s=[
+            NonAssociatedInstance(
+                ec2_instance=i,
+                _osparc_custom_node_labels=utils_ec2.load_task_required_docker_node_labels_from_tags(
+                    i.tags
+                ),
+            )
+            for i in pending_ec2s
+        ],
         broken_ec2s=[NonAssociatedInstance(ec2_instance=i) for i in broken_ec2s],
         warm_buffer_ec2s=[
             NonAssociatedInstance(ec2_instance=i) for i in warm_buffer_ec2_instances
@@ -200,7 +213,7 @@ _DELAY_FOR_REMOVING_DISCONNECTED_NODES_S: Final[int] = 30
 
 async def _cleanup_disconnected_nodes(app: FastAPI, cluster: Cluster) -> Cluster:
     utc_now = arrow.utcnow().datetime
-    removeable_nodes = [
+    removable_nodes = [
         node
         for node in cluster.disconnected_nodes
         if node.updated_at
@@ -209,8 +222,8 @@ async def _cleanup_disconnected_nodes(app: FastAPI, cluster: Cluster) -> Cluster
             > _DELAY_FOR_REMOVING_DISCONNECTED_NODES_S
         )
     ]
-    if removeable_nodes:
-        await utils_docker.remove_nodes(get_docker_client(app), nodes=removeable_nodes)
+    if removable_nodes:
+        await utils_docker.remove_nodes(get_docker_client(app), nodes=removable_nodes)
     return dataclasses.replace(cluster, disconnected_nodes=[])
 
 
@@ -308,6 +321,8 @@ async def _try_attach_pending_ec2s(
     still_pending_ec2s: list[NonAssociatedInstance] = []
     app_settings = get_application_settings(app)
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
+    ec2_instances_to_remove_custom_label_tags: list[EC2InstanceData] = []
+
     for instance_data in cluster.pending_ec2s:
         try:
             node_host_name = utils_ec2.node_host_name_from_ec2_private_dns(
@@ -316,27 +331,55 @@ async def _try_attach_pending_ec2s(
             if new_node := await utils_docker.find_node_with_name(
                 get_docker_client(app), node_host_name
             ):
-                # it is attached, let's label it
+                # Get base tags from provider
+                base_tags = auto_scaling_mode.get_new_node_docker_tags(
+                    app, instance_data.ec2_instance
+                )
+
+                # Merge base tags with custom labels
+                merged_tags = base_tags | instance_data.osparc_custom_node_labels
+
+                # Attach node with merged tags
                 new_node = await utils_docker.attach_node(
                     app_settings,
                     get_docker_client(app),
                     new_node,
-                    tags=auto_scaling_mode.get_new_node_docker_tags(
-                        app, instance_data.ec2_instance
-                    ),
+                    tags=merged_tags,
                 )
+
+                # Mark instance for EC2 tag cleanup if custom labels were applied
+                if instance_data.osparc_custom_node_labels:
+                    ec2_instances_to_remove_custom_label_tags.append(
+                        instance_data.ec2_instance
+                    )
+
                 new_found_instances.append(
                     AssociatedInstance(
-                        node=new_node, ec2_instance=instance_data.ec2_instance
+                        node=new_node,
+                        ec2_instance=instance_data.ec2_instance,
                     )
                 )
                 _logger.info(
-                    "Attached new EC2 instance %s", instance_data.ec2_instance.id
+                    "Attached new EC2 instance %s with custom placement labels: %s",
+                    instance_data.ec2_instance.id,
+                    instance_data.osparc_custom_node_labels,
                 )
             else:
                 still_pending_ec2s.append(instance_data)
         except Ec2InvalidDnsNameError:
             _logger.exception("Unexpected EC2 private dns")
+
+    # Remove custom label EC2 tags after successful attachment
+    if ec2_instances_to_remove_custom_label_tags and (
+        tag_keys := utils_ec2.list_task_required_node_labels_tag_keys(
+            ec2_instances_to_remove_custom_label_tags[0].tags
+        )
+    ):
+        await get_ec2_client(app).remove_instances_tags(
+            ec2_instances_to_remove_custom_label_tags,
+            tag_keys=tag_keys,
+        )
+
     # NOTE: first provision the reserve drained nodes if possible
     all_drained_nodes = (
         cluster.drained_nodes + cluster.hot_buffer_drained_nodes + new_found_instances
@@ -355,7 +398,7 @@ async def _try_attach_pending_ec2s(
 async def _sorted_allowed_instance_types(
     app: FastAPI, auto_scaling_mode: AutoscalingProvider
 ) -> list[EC2InstanceType]:
-    app_settings: ApplicationSettings = app.state.settings
+    app_settings = get_application_settings(app)
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
     ec2_client = get_ec2_client(app)
 
@@ -389,9 +432,14 @@ async def _activate_and_notify(
 ) -> AssociatedInstance:
     app_settings = get_application_settings(app)
     docker_client = get_docker_client(app)
+    pending_labels = drained_node.tasks_required_pending_labels()
     updated_node, *_ = await asyncio.gather(
         utils_docker.set_node_osparc_ready(
-            app_settings, docker_client, drained_node.node, ready=True
+            app_settings,
+            docker_client,
+            drained_node.node,
+            ready=True,
+            additional_labels=pending_labels if pending_labels else None,
         ),
         post_tasks_log_message(
             app,
@@ -599,12 +647,26 @@ async def _try_start_warm_buffer_instances(
             return _de_assign_tasks_from_warm_buffer_ec2s(cluster, instances_to_start)
 
         # NOTE: first start the instance and then set the tags in case the instance cannot start (e.g. InsufficientInstanceCapacity)
-        await get_ec2_client(app).set_instances_tags(
-            started_instances,
-            tags=get_activated_warm_buffer_ec2_tags(
+        non_associated_instance_by_id = {
+            i.ec2_instance.id: i for i in cluster.warm_buffer_ec2s
+        }
+        for instance in started_instances:
+            non_associated_instance = non_associated_instance_by_id[instance.id]
+
+            activation_tags = get_activated_warm_buffer_ec2_tags(
                 auto_scaling_mode.get_ec2_tags(app)
-            ),
-        )
+            )
+            if (
+                required_labels := non_associated_instance.tasks_required_pending_labels()
+            ):
+                activation_tags |= utils_ec2.dump_task_required_node_labels_as_tags(
+                    required_labels
+                )
+            # update the instance tags to activate warm buffer
+            await get_ec2_client(app).set_instances_tags(
+                [instance],
+                tags=activation_tags,
+            )
     started_instance_ids = [i.id for i in started_instances]
 
     return (
@@ -616,7 +678,15 @@ async def _try_start_warm_buffer_instances(
                 if i.ec2_instance.id not in started_instance_ids
             ],
             pending_ec2s=cluster.pending_ec2s
-            + [NonAssociatedInstance(ec2_instance=i) for i in started_instances],
+            + [
+                NonAssociatedInstance(
+                    ec2_instance=i,
+                    _osparc_custom_node_labels=utils_ec2.load_task_required_docker_node_labels_from_tags(
+                        i.tags
+                    ),
+                )
+                for i in started_instances
+            ],
         ),
         [],
     )
@@ -628,18 +698,38 @@ def _try_assign_task_to_ec2_instance(
     instances: list[AssociatedInstance] | list[NonAssociatedInstance],
     task_required_ec2_instance: InstanceTypeType | None,
     task_required_resources: Resources,
+    task_required_docker_node_labels: dict[DockerLabelKey, str],
 ) -> bool:
     for instance in instances:
+        # Check EC2 instance type
         if task_required_ec2_instance and (
             task_required_ec2_instance != instance.ec2_instance.type
         ):
             continue
+
+        # Combine current node labels + pending labels from assigned tasks to check for compatibility
+        current_labels = instance.osparc_custom_node_labels
+        pending_labels = instance.tasks_required_pending_labels()
+        effective_labels = current_labels | pending_labels
+        if (
+            task_required_docker_node_labels
+            and effective_labels
+            and any(
+                effective_labels.get(label_key) != label_value
+                for label_key, label_value in task_required_docker_node_labels.items()
+            )
+        ):
+            continue
+
+        # Check resources
         if instance.has_resources_for_task(task_required_resources):
-            instance.assign_task(task, task_required_resources)
+            instance.assign_task(
+                task, task_required_resources, task_required_docker_node_labels
+            )
             _logger.debug(
                 "%s",
-                f"assigned task with {task_required_resources=}, {task_required_ec2_instance=} to "
-                f"{instance.ec2_instance.id=}:{instance.ec2_instance.type=}, "
+                f"assigned task with {task_required_resources=}, {task_required_ec2_instance=}, "
+                f"{task_required_docker_node_labels=} to {instance.ec2_instance.id=}:{instance.ec2_instance.type=}, "
                 f"{instance.available_resources=}, {instance.ec2_instance.resources=}",
             )
             return True
@@ -652,21 +742,37 @@ def _try_assign_task_to_ec2_instance_type(
     instances: list[AssignedTasksToInstanceType],
     task_required_ec2_instance: InstanceTypeType | None,
     task_required_resources: Resources,
+    task_required_labels: dict[DockerLabelKey, str],
 ) -> bool:
+    """Try to assign task to an existing instance being created.
+
+    Returns True if task was assigned, False otherwise.
+    Task can only be assigned if:
+    - Instance type matches (if specified)
+    - Resources are available
+    - Labels are compatible (no conflicting label values)
+    """
     for instance in instances:
         if task_required_ec2_instance and (
             task_required_ec2_instance != instance.instance_type.name
         ):
             continue
-        if instance.has_resources_for_task(task_required_resources):
-            instance.assign_task(task, task_required_resources)
-            _logger.debug(
-                "%s",
-                f"assigned task with {task_required_resources=}, {task_required_ec2_instance=} to "
-                f"{instance.instance_type=}, "
-                f"{instance.available_resources=}, {instance.instance_type.resources=}",
-            )
-            return True
+        if not instance.has_resources_for_task(task_required_resources):
+            continue
+
+        # Check label compatibility
+        if not instance.has_compatible_labels(task_required_labels):
+            continue
+
+        # Compatible! Assign task and merge labels
+        instance.assign_task(task, task_required_resources, task_required_labels)
+        _logger.debug(
+            "%s",
+            f"assigned task with {task_required_resources=}, {task_required_ec2_instance=}, labels={task_required_labels} to "
+            f"{instance.instance_type=}, "
+            f"{instance.available_resources=}, instance_labels={instance.osparc_custom_node_labels}",
+        )
+        return True
     return False
 
 
@@ -702,12 +808,16 @@ async def _assign_tasks_to_current_cluster(
         task_required_ec2_instance = await auto_scaling_mode.get_task_defined_instance(
             app, task
         )
+        task_required_labels = (
+            await auto_scaling_mode.get_task_instance_required_docker_tags(app, task)
+        )
 
         if any(
             is_assigned(
                 task,
                 task_required_ec2_instance=task_required_ec2_instance,
                 task_required_resources=task_required_resources,
+                task_required_docker_node_labels=task_required_labels,
             )
             for is_assigned in assignment_predicates
         ):
@@ -733,9 +843,11 @@ async def _find_needed_instances(
     available_ec2_types: list[EC2InstanceType],
     cluster: Cluster,
     auto_scaling_mode: AutoscalingProvider,
-) -> dict[EC2InstanceType, int]:
+) -> dict[InstanceToLaunch, int]:
     # 1. check first the pending task needs
+    # Track which tasks get assigned to which new instances
     needed_new_instance_types_for_tasks: list[AssignedTasksToInstanceType] = []
+
     with log_context(_logger, logging.DEBUG, msg="finding needed instances"):
         for task in unassigned_tasks:
             task_required_resources = auto_scaling_mode.get_task_required_resources(
@@ -744,6 +856,11 @@ async def _find_needed_instances(
             task_required_ec2 = await auto_scaling_mode.get_task_defined_instance(
                 app, task
             )
+            task_required_labels = (
+                await auto_scaling_mode.get_task_instance_required_docker_tags(
+                    app, task
+                )
+            )
 
             # first check if we can assign the task to one of the newly tobe created instances
             if _try_assign_task_to_ec2_instance_type(
@@ -751,6 +868,7 @@ async def _find_needed_instances(
                 instances=needed_new_instance_types_for_tasks,
                 task_required_ec2_instance=task_required_ec2,
                 task_required_resources=task_required_resources,
+                task_required_labels=task_required_labels,
             ):
                 continue
 
@@ -770,6 +888,7 @@ async def _find_needed_instances(
                             assigned_tasks=[task],
                             available_resources=defined_ec2.resources
                             - task_required_resources,
+                            osparc_custom_node_labels=task_required_labels,
                         )
                     )
                 else:
@@ -785,6 +904,7 @@ async def _find_needed_instances(
                             assigned_tasks=[task],
                             available_resources=best_ec2_instance.resources
                             - task_required_resources,
+                            osparc_custom_node_labels=task_required_labels,
                         )
                     )
             except TaskBestFittingInstanceNotFoundError:
@@ -804,11 +924,13 @@ async def _find_needed_instances(
         ),
     )
 
-    num_instances_per_type = collections.defaultdict(
-        int,
-        collections.Counter(
-            t.instance_type for t in needed_new_instance_types_for_tasks
-        ),
+    # Build counts of identical instance batches using Counter
+    instances_with_counts = collections.Counter(
+        InstanceToLaunch(
+            instance_type=assigned_instance.instance_type,
+            node_labels=assigned_instance.osparc_custom_node_labels.copy(),
+        )
+        for assigned_instance in needed_new_instance_types_for_tasks
     )
 
     # 2. check the hot buffer needs
@@ -829,92 +951,41 @@ async def _find_needed_instances(
             - len(cluster.hot_buffer_drained_nodes)
         ):
             default_instance_type = get_hot_buffer_type(available_ec2_types)
-            num_instances_per_type[default_instance_type] += num_missing_nodes
+            instances_with_counts[
+                InstanceToLaunch(instance_type=default_instance_type, node_labels={})
+            ] += num_missing_nodes
 
-    return num_instances_per_type
-
-
-async def _cap_needed_instances(
-    app: FastAPI, needed_instances: dict[EC2InstanceType, int], ec2_tags: EC2Tags
-) -> dict[EC2InstanceType, int]:
-    """caps the needed instances dict[EC2InstanceType, int] to the maximal allowed number of instances by
-    1. limiting to 1 per asked type
-    2. increasing each by 1 until the maximum allowed number of instances is reached
-    NOTE: the maximum allowed number of instances contains the current number of running/pending machines
-
-    Raises:
-        Ec2TooManyInstancesError: raised when the maximum of machines is already running/pending
-    """
-    ec2_client = get_ec2_client(app)
-    app_settings = get_application_settings(app)
-    assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
-    current_instances = await ec2_client.get_instances(
-        key_names=[app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME],
-        tags=ec2_tags,
-    )
-    current_number_of_instances = len(current_instances)
-    if (
-        current_number_of_instances
-        >= app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES
-    ):
-        # ok that is already too much
-        raise EC2TooManyInstancesError(
-            num_instances=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES
-        )
-
-    total_number_of_needed_instances = sum(needed_instances.values())
-    if (
-        current_number_of_instances + total_number_of_needed_instances
-        <= app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES
-    ):
-        # ok that fits no need to do anything here
-        return needed_instances
-
-    # this is asking for too many, so let's cap them
-    max_number_of_creatable_instances = (
-        app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES
-        - current_number_of_instances
+    _logger.info(
+        "prepared %d batches of instances to launch: %s",
+        len(instances_with_counts),
+        ", ".join(
+            f"{count}x {instance.instance_type.name} with labels {instance.node_labels}"
+            for instance, count in instances_with_counts.items()
+        ),
     )
 
-    # we start with 1 machine of each type until the max
-    capped_needed_instances = {
-        k: 1
-        for count, k in enumerate(needed_instances)
-        if (count + 1) <= max_number_of_creatable_instances
-    }
-
-    if len(capped_needed_instances) < len(needed_instances):
-        # there were too many types for the number of possible instances
-        return capped_needed_instances
-
-    # all instance types were added, now create more of them if possible
-    while sum(capped_needed_instances.values()) < max_number_of_creatable_instances:
-        for instance_type, num_to_create in needed_instances.items():
-            if (
-                sum(capped_needed_instances.values())
-                == max_number_of_creatable_instances
-            ):
-                break
-            if num_to_create > capped_needed_instances[instance_type]:
-                capped_needed_instances[instance_type] += 1
-
-    return capped_needed_instances
+    return dict(instances_with_counts)
 
 
 async def _launch_instances(
     app: FastAPI,
-    needed_instances: dict[EC2InstanceType, int],
+    instances_to_launch: dict[InstanceToLaunch, int],
     tasks: list,
     auto_scaling_mode: AutoscalingProvider,
 ) -> list[EC2InstanceData]:
+    """Launch EC2 instances, each with its specific node labels.
+
+    Each instance gets only the labels required by its assigned tasks (exclusive labels).
+    """
     ec2_client = get_ec2_client(app)
     app_settings = get_application_settings(app)
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
-    new_instance_tags = auto_scaling_mode.get_ec2_tags(app)
-    capped_needed_machines = {}
+    base_tags = auto_scaling_mode.get_ec2_tags(app)
+
+    # Cap instances based on cluster capacity
     try:
-        capped_needed_machines = await _cap_needed_instances(
-            app, needed_instances, new_instance_tags
+        capped_instances = await cap_needed_instances(
+            app, instances_to_launch, base_tags
         )
     except EC2TooManyInstancesError:
         await post_tasks_log_message(
@@ -926,20 +997,30 @@ async def _launch_instances(
         )
         return []
 
+    # Launch batched instances with their specific labels
     results = await asyncio.gather(
         *[
             ec2_client.launch_instances(
                 EC2InstanceConfig(
-                    type=instance_type,
-                    tags=new_instance_tags,
+                    type=instance_batch.instance_type,
+                    tags=(
+                        base_tags
+                        | (
+                            utils_ec2.dump_task_required_node_labels_as_tags(
+                                instance_batch.node_labels
+                            )
+                            if instance_batch.node_labels
+                            else {}
+                        )
+                    ),
                     startup_script=await ec2_startup_script(
                         app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
-                            instance_type.name
+                            instance_batch.instance_type.name
                         ],
                         app_settings,
                     ),
                     ami_id=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
-                        instance_type.name
+                        instance_batch.instance_type.name
                     ].ami_id,
                     key_name=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME,
                     security_group_ids=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_SECURITY_GROUP_IDS,
@@ -947,10 +1028,10 @@ async def _launch_instances(
                     iam_instance_profile=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ATTACHED_IAM_PROFILE,
                 ),
                 min_number_of_instances=1,  # NOTE: we want at least 1 if possible
-                number_of_instances=instance_num,
+                number_of_instances=capped_count,  # Launch batch of instances with same type and labels
                 max_total_number_of_instances=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES,
             )
-            for instance_type, instance_num in capped_needed_machines.items()
+            for instance_batch, capped_count in capped_instances.items()
         ],
         return_exceptions=True,
     )
@@ -974,7 +1055,7 @@ async def _launch_instances(
             new_pending_instances.append(r)
 
     log_message = (
-        f"{sum(capped_needed_machines.values())} new machines launched"
+        f"{sum(capped_instances.values())} new machines launched"
         f", it might take up to {timedelta_as_minute_second(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_START_TIME)} minutes to start, Please wait..."
     )
     await post_tasks_log_message(
@@ -1047,7 +1128,7 @@ async def _deactivate_empty_nodes(app: FastAPI, cluster: Cluster) -> Cluster:
         return cluster
 
     with log_context(
-        _logger, logging.INFO, f"drain {len(active_empty_instances)} empty nodes"
+        _logger, logging.INFO, f"deactivate {len(active_empty_instances)} empty nodes"
     ):
         updated_nodes = await asyncio.gather(
             *(
@@ -1062,11 +1143,14 @@ async def _deactivate_empty_nodes(app: FastAPI, cluster: Cluster) -> Cluster:
         )
         if updated_nodes:
             _logger.info(
-                "following nodes were set to drain: '%s'",
+                "following nodes were deactivated: '%s'",
                 f"{[node.description.hostname for node in updated_nodes if node.description]}",
             )
     newly_drained_instances = [
-        AssociatedInstance(node=node, ec2_instance=instance.ec2_instance)
+        AssociatedInstance(
+            node=node,
+            ec2_instance=instance.ec2_instance,
+        )
         for instance, node in zip(active_empty_instances, updated_nodes, strict=True)
     ]
     return dataclasses.replace(
@@ -1092,7 +1176,7 @@ def _find_terminateable_instances(
     terminateable_nodes: list[AssociatedInstance] = []
 
     for instance in cluster.drained_nodes:
-        node_last_updated = utils_docker.get_node_last_readyness_update(instance.node)
+        node_last_updated = utils_docker.get_node_last_readiness_update(instance.node)
         elapsed_time_since_drained = (
             datetime.datetime.now(datetime.UTC) - node_last_updated
         )
@@ -1264,7 +1348,10 @@ async def _drain_retired_nodes(
             f"{[node.description.hostname for node in updated_nodes if node.description]}",
         )
     newly_drained_instances = [
-        AssociatedInstance(node=node, ec2_instance=instance.ec2_instance)
+        AssociatedInstance(
+            node=node,
+            ec2_instance=instance.ec2_instance,
+        )
         for instance, node in zip(cluster.retired_nodes, updated_nodes, strict=True)
     ]
     return dataclasses.replace(
@@ -1321,9 +1408,10 @@ async def _scale_up_cluster(
     assert app_settings.AUTOSCALING_EC2_ACCESS  # nosec
 
     # let's start these
-    if needed_ec2_instances := await _find_needed_instances(
+    instances_to_launch = await _find_needed_instances(
         app, unassigned_tasks, allowed_instance_types, cluster, auto_scaling_mode
-    ):
+    )
+    if instances_to_launch:
         await post_tasks_log_message(
             app,
             tasks=unassigned_tasks,
@@ -1331,10 +1419,21 @@ async def _scale_up_cluster(
             level=logging.INFO,
         )
         new_pending_instances = await _launch_instances(
-            app, needed_ec2_instances, unassigned_tasks, auto_scaling_mode
+            app,
+            instances_to_launch,
+            unassigned_tasks,
+            auto_scaling_mode,
         )
         cluster.pending_ec2s.extend(
-            [NonAssociatedInstance(ec2_instance=i) for i in new_pending_instances]
+            [
+                NonAssociatedInstance(
+                    ec2_instance=i,
+                    _osparc_custom_node_labels=utils_ec2.load_task_required_docker_node_labels_from_tags(
+                        i.tags
+                    ),
+                )
+                for i in new_pending_instances
+            ]
         )
         # NOTE: to check the logs of UserData in EC2 instance
         # run: tail -f -n 1000 /var/log/cloud-init-output.log in the instance
@@ -1496,9 +1595,8 @@ async def _handle_pre_pull_status(
             )
         case _:
             _logger.info(
-                "%s is pre-pulling %s, status is %s",
+                "%s is pre-pulling images, status is %s",
                 node.ec2_instance.id,
-                load_pre_pulled_images_from_tags(node.ec2_instance.tags),
                 ssm_command.status,
             )
             # skip the instance this time as this is still ongoing
@@ -1522,9 +1620,20 @@ async def _pre_pull_docker_images_on_idle_hot_buffers(
             continue  # skip this one as it is still pre-pulling
 
         # check what they have
-        pre_pulled_images = load_pre_pulled_images_from_tags(
-            updated_node.ec2_instance.tags
-        )
+        try:
+            pre_pulled_images = load_pre_pulled_images_from_tags(
+                updated_node.ec2_instance.tags
+            )
+        except Ec2TagDeserializationError as exc:
+            _logger.warning(
+                **create_troubleshooting_log_kwargs(
+                    f"Failed to load pre-pulled images from tags for {updated_node.ec2_instance.id}, defaulting to empty list",
+                    error=exc,
+                    tip=f"Check the instance {node.ec2_instance.id} tags for syntax correctness. The images will be likely replaced.",
+                )
+            )
+            pre_pulled_images = []
+
         ec2_boot_specific = (
             app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
                 updated_node.ec2_instance.type

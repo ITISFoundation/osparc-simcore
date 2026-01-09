@@ -211,7 +211,8 @@ async def _create_docker_service_params(
             ): "osparc",  # fixed no legacy available in other products
             _to_simcore_runtime_docker_label_key("cpu_limit"): "0",
             _to_simcore_runtime_docker_label_key("memory_limit"): "0",
-        },
+        }
+        | app_settings.DIRECTOR_SERVICES_CUSTOM_LABELS,
         "Mounts": [],
     }
 
@@ -230,13 +231,10 @@ async def _create_docker_service_params(
         "name": service_name,
         "task_template": {
             "ContainerSpec": container_spec,
-            "Placement": {
-                "Constraints": (
-                    ["node.role==worker"]
-                    if await docker_utils.swarm_has_worker_nodes()
-                    else []
-                )
-            },
+            "Networks": (
+                [{"Target": internal_network_id}] if internal_network_id else []
+            ),
+            "Placement": {"Constraints": ([])},
             "RestartPolicy": {
                 "Condition": "on-failure",
                 "Delay": app_settings.DIRECTOR_SERVICES_RESTART_POLICY_DELAY_S
@@ -280,17 +278,44 @@ async def _create_docker_service_params(
             f"traefik.http.routers.{service_name}.entrypoints": "http",
             f"traefik.http.routers.{service_name}.priority": "10",
             f"traefik.http.routers.{service_name}.middlewares": f"{app_settings.DIRECTOR_SWARM_STACK_NAME}_gzip@swarm",
-        },
-        "networks": [internal_network_id] if internal_network_id else [],
+        }
+        | app_settings.DIRECTOR_SERVICES_CUSTOM_LABELS,
+        "networks": (
+            [internal_network_id] if internal_network_id else []
+        ),  # NOTE: this is deprecated in docker v1.44 and is replaced by task_template/Networks
     }
-    if app_settings.DIRECTOR_SERVICES_CUSTOM_CONSTRAINTS:
+    if app_settings.DIRECTOR_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS:
         _logger.debug(
             "adding custom constraints %s ",
-            app_settings.DIRECTOR_SERVICES_CUSTOM_CONSTRAINTS,
+            app_settings.DIRECTOR_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS,
         )
-        docker_params["task_template"]["Placement"]["Constraints"] += [
-            app_settings.DIRECTOR_SERVICES_CUSTOM_CONSTRAINTS
-        ]
+        docker_params["task_template"]["Placement"][
+            "Constraints"
+        ] += app_settings.DIRECTOR_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS
+
+    # add dynamic placement constraints based on custom templates from configuration
+    if app_settings.DIRECTOR_OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS:
+        label_values = {
+            "product_name": "osparc",
+            "user_id": user_id,
+            "project_id": project_id,
+            "node_id": node_uuid,
+        }
+        for (
+            label_key,
+            label_template,
+        ) in app_settings.DIRECTOR_OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS.items():
+            # resolve template if it contains placeholders
+            resolved_value = label_template.format(**label_values)
+            if resolved_value:
+                constraint = f"node.labels.{label_key}=={resolved_value}"
+                docker_params["task_template"]["Placement"]["Constraints"].append(
+                    constraint
+                )
+                _logger.debug(
+                    "adding dynamic placement label constraint: %s",
+                    constraint,
+                )
 
     # some services define strip_path:true if they need the path to be stripped away
     if (
@@ -426,11 +451,22 @@ async def _create_docker_service_params(
             placement_substitutions[generic_resource_kind]
         ]
 
+    # Sanitize and clean repeated constraints.
+    constraints = docker_params["task_template"]["Placement"]["Constraints"]
+    if constraints:
+        assert isinstance(constraints, list)  # nosec
+        constraints = list(set(constraints))
+        # a docker placement constraint does not contain spaces
+        docker_params["task_template"]["Placement"]["Constraints"] = [
+            c.replace(" ", "") for c in constraints
+        ]
+
     # attach the service to the swarm network dedicated to services
     swarm_network = await _get_swarm_network(client, app_settings=app_settings)
     swarm_network_id = swarm_network["Id"]
     swarm_network_name = swarm_network["Name"]
     docker_params["networks"].append(swarm_network_id)
+    docker_params["task_template"]["Networks"].append({"Target": swarm_network_id})
     docker_params["labels"]["traefik.swarm.network"] = swarm_network_name
 
     # set labels for CPU and Memory limits

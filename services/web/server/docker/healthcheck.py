@@ -21,7 +21,7 @@ import sys
 from urllib.request import urlopen
 
 SUCCESS, UNHEALTHY = 0, 1
-
+HTTP_OK = 200
 # Disabled if boots with debugger
 ok = os.environ.get("SC_BOOT_MODE", "").lower() == "debug"
 
@@ -29,12 +29,12 @@ ok = os.environ.get("SC_BOOT_MODE", "").lower() == "debug"
 # pylint: disable=consider-using-with
 ok = (
     ok
-    or urlopen(
+    or urlopen(  # noqa: S310
         "{host}{baseurl}".format(
             host=sys.argv[1], baseurl=os.environ.get("SIMCORE_NODE_BASEPATH", "")
         )  # adds a base-path if defined in environ
     ).getcode()
-    == 200
+    == HTTP_OK
 )
 
 sys.exit(SUCCESS if ok else UNHEALTHY)

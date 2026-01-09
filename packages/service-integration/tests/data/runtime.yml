@@ -10,7 +10,7 @@ settings:
   - name: constraints
     type: string
     value:
-      - node.platform.os == linux
+      - node.platform.os==linux
 paths-mapping:
   inputs_path: "/config/workspace/inputs"
   outputs_path: "/config/workspace/outputs"

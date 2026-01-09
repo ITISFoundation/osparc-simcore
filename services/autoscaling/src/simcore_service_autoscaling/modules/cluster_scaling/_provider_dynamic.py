@@ -58,6 +58,14 @@ class DynamicAutoscalingProvider:
             get_docker_client(app), task
         )
 
+    async def get_task_instance_required_docker_tags(
+        self, app: FastAPI, task
+    ) -> dict[DockerLabelKey, str]:
+        assert self  # nosec
+        return await utils_docker.get_task_osparc_custom_docker_placement_constraints(
+            get_docker_client(app), task
+        )
+
     async def compute_node_used_resources(
         self, app: FastAPI, instance: AssociatedInstance
     ) -> Resources:

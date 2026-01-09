@@ -289,7 +289,7 @@ async def test_create_study_job(
             uuid.uuid4(),
             RunningState.STARTED,
             status.HTTP_409_CONFLICT,
-            "not succeeded, when output is requested",
+            "because it has not completed successfully",
         ),
         (
             uuid.uuid4(),

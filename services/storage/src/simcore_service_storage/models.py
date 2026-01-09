@@ -19,6 +19,7 @@ from models_library.api_schemas_storage.storage_schemas import (
     S3BucketName,
 )
 from models_library.basic_types import SHA256Str
+from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import (
     LocationID,
@@ -78,7 +79,7 @@ class FileMetaDataAtDB(BaseModel):
             lambda x: f"{x}" if x is not None else None, return_type=str | None
         ),
     ] = None
-    user_id: Annotated[UserID, PlainSerializer(lambda x: f"{x}", return_type=str)]
+    user_id: UserID
     created_at: Annotated[datetime.datetime, PlainSerializer(lambda x: x.isoformat())]
     file_id: SimcoreS3FileID
     file_size: UNDEFINED_SIZE_TYPE | ByteSize
@@ -199,15 +200,21 @@ class StorageQueryParamsBase(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
 
+class DatasetsMetadataQueryParams(StorageQueryParamsBase):
+    product_name: ProductName = "osparc"  # NOTE: backward compatibility with legacy services that are only available in osparc product
+
+
 class ListPathsQueryParams(StorageQueryParamsBase):
     file_filter: Path | None = None
 
 
 class FilesMetadataDatasetQueryParams(StorageQueryParamsBase):
+    product_name: ProductName = "osparc"  # NOTE: backward compatibility with legacy services that are only available in osparc product
     expand_dirs: bool = True
 
 
 class FileMetadataListQueryParams(StorageQueryParamsBase):
+    product_name: ProductName = "osparc"  # NOTE: backward compatibility with legacy services that are only available in osparc product
     project_id: ProjectID | None = None
     uuid_filter: str = ""
     expand_dirs: bool = True

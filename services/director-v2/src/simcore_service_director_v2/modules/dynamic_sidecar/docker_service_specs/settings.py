@@ -183,12 +183,17 @@ def update_service_params_from_settings(
         create_service_params["task_template"]["Resources"]["Limits"]["MemoryBytes"]
     )
 
-    # Cleanup repeated constraints.
-    # Observed in deploy how constraint 'node.platform.os == linux' was appended many many times
+    # Sanitize and clean repeated constraints.
+    # Observed in deploy how constraint 'node.platform.os==linux' was appended many many times
     constraints = create_service_params["task_template"]["Placement"]["Constraints"]
     if constraints:
         assert isinstance(constraints, list)  # nosec
         constraints = list(set(constraints))
+        constraints.sort()
+        # a docker placement constraint does not contain spaces
+        create_service_params["task_template"]["Placement"]["Constraints"] = [
+            c.replace(" ", "") for c in constraints
+        ]
 
 
 def _assemble_key(service_key: str, service_tag: str) -> str:

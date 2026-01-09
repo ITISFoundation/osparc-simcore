@@ -108,7 +108,7 @@ settings-schema.json: ## [container] dumps json-shcema of this service settings
 	# Dumped '$(CURDIR)/$@'
 
 # NOTE: settings CLI prints some logs in the header from the boot and entrypoint scripts. We
-# use strema editor expression (sed --expression) to trim them:
+# use stream editor expression (sed --expression) to trim them:
 # - 1,/{/: This specifies the range of lines to operate on, in this case, from the first line to (but not including) the line that contains the string "{".
 # - {/{/!d}: This specifies that all lines between the first line and the line that contains "{" should be printed ({) except for the line that contains "{" (/{/!d).
 #
@@ -160,7 +160,7 @@ _run-test-dev: _check_venv_active
 
 
 _run-test-ci: _check_venv_active
-	# runs tests for CI (e.g. w/o pdb but w/ converage)
+	# runs tests for CI (e.g. w/o pdb but w/ coverage)
 	pytest \
 		--asyncio-mode=auto \
 		--color=yes \

@@ -5,6 +5,8 @@
 
 import json
 from collections.abc import Iterator
+from copy import deepcopy
+from typing import Any
 
 import pytest
 import simcore_postgres_database.cli
@@ -14,7 +16,11 @@ import sqlalchemy.exc
 from common_library.users_enums import UserRole
 from faker import Faker
 from pytest_simcore.helpers import postgres_tools
-from pytest_simcore.helpers.faker_factories import random_project, random_user
+from pytest_simcore.helpers.faker_factories import (
+    random_product,
+    random_project,
+    random_user,
+)
 from simcore_postgres_database.models.projects import ProjectType, projects
 from simcore_postgres_database.models.projects_to_jobs import projects_to_jobs
 
@@ -45,6 +51,27 @@ def sync_engine(
 
     # cleanup tables
     postgres_tools.force_drop_all_tables(sync_engine)
+
+
+def _prepare_data(
+    params: dict[str, Any],
+    excluded_columns: list[str] | None = None,
+    default_values: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    prepared_params = deepcopy(params)
+    for col, value in params.items():
+        if excluded_columns and col in excluded_columns:
+            prepared_params.pop(col, None)
+            continue
+
+        if isinstance(value, dict):
+            prepared_params[col] = json.dumps(value)
+
+    if default_values:
+        for col, value in default_values.items():
+            prepared_params.setdefault(col, value)
+
+    return prepared_params
 
 
 def test_populate_projects_to_jobs_during_migration(
@@ -87,6 +114,32 @@ def test_populate_projects_to_jobs_during_migration(
         ).bindparams(**user_data)
         result = conn.execute(stmt)
         user_id = result.scalar()
+
+        # product
+        product_name = faker.word()
+        product_data = _prepare_data(
+            random_product(
+                name=product_name,
+            ),
+            excluded_columns=[
+                "base_url",
+                "support_standard_group_id",
+                "support_chatbot_user_id",
+            ],  # NOTE: columns not present at that migration time
+        )
+
+        columns = list(product_data.keys())
+        values_clause = ", ".join(f":{col}" for col in columns)
+        columns_clause = ", ".join(columns)
+        stmt = sa.text(
+            f"""
+            INSERT INTO products ({columns_clause})
+            VALUES ({values_clause})
+            RETURNING name
+            """  # noqa: S608
+        ).bindparams(**product_data)
+        result = conn.execute(stmt)
+        product_name = result.scalar()
 
         SPACES = " " * 3
         projects_data = [
@@ -132,17 +185,18 @@ def test_populate_projects_to_jobs_during_migration(
             "workspace_id": None,
         }
 
+        excluded_columns = [
+            "product_name"
+        ]  # NOTE: columns not present at that migration time
+
         # NOTE: cannot use `projects` table directly here because it changes
         # throughout time
         for prj in projects_data:
-            for key, value in client_default_column_values.items():
-                prj.setdefault(key, value)
+            prj_prepared = _prepare_data(
+                prj, excluded_columns, client_default_column_values
+            )
 
-            for key, value in prj.items():
-                if isinstance(value, dict):
-                    prj[key] = json.dumps(value)
-
-            columns = list(prj.keys())
+            columns = list(prj_prepared.keys())
             values_clause = ", ".join(f":{col}" for col in columns)
             columns_clause = ", ".join(columns)
             stmt = sa.text(
@@ -150,7 +204,16 @@ def test_populate_projects_to_jobs_during_migration(
                 INSERT INTO projects ({columns_clause})
                 VALUES ({values_clause})
                 """  # noqa: S608
-            ).bindparams(**prj)
+            ).bindparams(**prj_prepared)
+            conn.execute(stmt)
+
+            # projects_to_products
+            stmt = sa.text(
+                """
+            INSERT INTO projects_to_products (project_uuid, product_name)
+            VALUES (:project_uuid, :product_name)
+                """
+            ).bindparams(project_uuid=prj_prepared["uuid"], product_name=product_name)
             conn.execute(stmt)
 
     # MIGRATE UPGRADE: this should populate

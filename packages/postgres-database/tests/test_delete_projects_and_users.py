@@ -9,8 +9,12 @@ import sqlalchemy as sa
 from aiopg.sa.engine import Engine
 from aiopg.sa.result import ResultProxy, RowProxy
 from psycopg2.errors import ForeignKeyViolation
-from pytest_simcore.helpers.faker_factories import random_project, random_user
-from simcore_postgres_database.webserver_models import projects, users
+from pytest_simcore.helpers.faker_factories import (
+    random_product,
+    random_project,
+    random_user,
+)
+from simcore_postgres_database.webserver_models import products, projects, users
 from sqlalchemy import func
 
 
@@ -21,11 +25,34 @@ async def engine(aiopg_engine: Engine):
         await conn.execute(users.insert().values(**random_user()))
         await conn.execute(users.insert().values(**random_user()))
 
-        await conn.execute(projects.insert().values(**random_project(prj_owner=1)))
-        await conn.execute(projects.insert().values(**random_project(prj_owner=2)))
-        await conn.execute(projects.insert().values(**random_project(prj_owner=3)))
+        await conn.execute(
+            products.insert().values(**random_product(name="test-product"))
+        )
+
+        await conn.execute(
+            projects.insert().values(
+                **random_project(prj_owner=1, product_name="test-product")
+            )
+        )
+        await conn.execute(
+            projects.insert().values(
+                **random_project(prj_owner=2, product_name="test-product")
+            )
+        )
+        await conn.execute(
+            projects.insert().values(
+                **random_project(prj_owner=3, product_name="test-product")
+            )
+        )
         with pytest.raises(ForeignKeyViolation):
             await conn.execute(projects.insert().values(**random_project(prj_owner=4)))
+
+        with pytest.raises(ForeignKeyViolation):
+            await conn.execute(
+                projects.insert().values(
+                    **random_project(prj_owner=1, product_name="unknown-product")
+                )
+            )
 
     return aiopg_engine
 
@@ -60,7 +87,7 @@ async def test_insert_user(engine):
         assert res.rowcount == 1
         assert len(res.keys()) > 1
 
-        # DIFFERENT betwen .first() and fetchone()
+        # DIFFERENT between .first() and fetchone()
 
         user2: RowProxy = await res.first()
         # Fetch the first row and then close the result set unconditionally.

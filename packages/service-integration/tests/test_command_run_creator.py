@@ -18,7 +18,7 @@ def test_version(run_program_with_args):
 
 def test_make_service_cli_run(run_program_with_args, metadata_file_path: Path):
     """
-    service.cli/run: $(metatada)
+    service.cli/run: $(metadata)
         # Updates adapter script from metadata in $<
         simcore-service-integrator run-creator --metadata $< --runscript $@
     """

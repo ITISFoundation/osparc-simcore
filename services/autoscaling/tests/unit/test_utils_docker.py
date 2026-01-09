@@ -7,6 +7,7 @@ import asyncio
 import datetime
 import itertools
 import random
+import secrets
 from collections.abc import AsyncIterator, Awaitable, Callable
 from copy import deepcopy
 from typing import Any
@@ -18,6 +19,7 @@ from aws_library.ec2 import EC2InstanceData, Resources
 from deepdiff import DeepDiff
 from faker import Faker
 from models_library.docker import (
+    OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS,
     DockerGenericTag,
     DockerLabelKey,
 )
@@ -61,10 +63,11 @@ from simcore_service_autoscaling.utils.utils_docker import (
     get_monitored_nodes,
     get_new_node_docker_tags,
     get_node_empty_since,
-    get_node_last_readyness_update,
+    get_node_last_readiness_update,
     get_node_termination_started_since,
     get_node_total_resources,
     get_task_instance_restriction,
+    get_task_osparc_custom_docker_placement_constraints,
     get_worker_nodes,
     is_node_osparc_ready,
     is_node_ready_and_available,
@@ -588,6 +591,63 @@ async def test_get_resources_from_docker_task_with_reservations_and_limits_retur
 
 
 @pytest.mark.parametrize(
+    "placement_constraints, expected_placement_constraints",
+    [
+        (None, {}),
+        (["blahblah==true", "notsoblahblah!=true"], {}),
+        (["blahblah==true", "notsoblahblah!=true", "node.labels.blahblah==true"], {}),
+        (
+            [
+                "blahblah==true",
+                "notsoblahblah!=true",
+                "node.labels.user-id==5",
+            ],
+            {"user-id": "5"},
+        ),
+        (
+            [
+                "blahblah==true",
+                "notsoblahblah!=true",
+                "node.labels.user-id==5",
+                "node.labels.product-name==myproduct",
+            ],
+            {"user-id": "5", "product-name": "myproduct"},
+        ),
+    ],
+    ids=str,
+)
+async def test_get_task_osparc_custom_docker_placement_constraints(
+    autoscaling_docker: AutoscalingDocker,
+    host_node: Node,
+    create_service: Callable[
+        [dict[str, Any], dict[DockerLabelKey, str] | None, str, list[str] | None],
+        Awaitable[Service],
+    ],
+    task_template: dict[str, Any],
+    create_task_reservations: Callable[[int, int], dict[str, Any]],
+    placement_constraints: list[str] | None,
+    expected_placement_constraints: dict[DockerLabelKey, str],
+):
+    # this one has no instance restriction
+    service = await create_service(
+        task_template,
+        None,
+        "pending" if placement_constraints else "running",
+        placement_constraints,
+    )
+    assert service.spec
+    service_tasks = TypeAdapter(list[Task]).validate_python(
+        await autoscaling_docker.tasks.list(filters={"service": service.spec.name})
+    )
+    task_placement_constraints = (
+        await get_task_osparc_custom_docker_placement_constraints(
+            autoscaling_docker, service_tasks[0]
+        )
+    )
+    assert task_placement_constraints == expected_placement_constraints
+
+
+@pytest.mark.parametrize(
     "placement_constraints, expected_instance_type",
     [
         (None, None),
@@ -1028,10 +1088,23 @@ def test_get_new_node_docker_tags(
     app_settings: ApplicationSettings,
     fake_ec2_instance_data: Callable[..., EC2InstanceData],
 ):
-    ec2_instance_data = fake_ec2_instance_data()
+    random_ec2_type = secrets.choice(
+        list(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES)
+    )
+
+    ec2_instance_data = fake_ec2_instance_data(type=random_ec2_type)
     node_docker_tags = get_new_node_docker_tags(app_settings, ec2_instance_data)
     assert node_docker_tags
     assert DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY in node_docker_tags
+    for (
+        key,
+        value,
+    ) in app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
+        random_ec2_type
+    ].custom_node_labels.items():
+        assert key in node_docker_tags
+        assert node_docker_tags[key] == value
+
     assert app_settings.AUTOSCALING_NODES_MONITORING
     for (
         tag_key
@@ -1046,6 +1119,9 @@ def test_get_new_node_docker_tags(
         DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY,
         *app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS,
         *app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NEW_NODES_LABELS,
+        *app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
+            random_ec2_type
+        ].custom_node_labels.keys(),
     ]
     for tag_key in node_docker_tags:
         assert tag_key in all_keys
@@ -1148,8 +1224,8 @@ async def test_set_node_osparc_ready(
 ):
     # initial state
     assert is_node_ready_and_available(host_node, availability=Availability.active)
-    host_node_last_readyness_update = get_node_last_readyness_update(host_node)
-    assert host_node_last_readyness_update
+    host_node_last_readiness_update = get_node_last_readiness_update(host_node)
+    assert host_node_last_readiness_update
     # set the node to drain
     updated_node = await set_node_availability(
         autoscaling_docker, host_node, available=False
@@ -1157,25 +1233,61 @@ async def test_set_node_osparc_ready(
     assert is_node_ready_and_available(updated_node, availability=Availability.drain)
     # the node is also not osparc ready
     assert not is_node_osparc_ready(updated_node)
-    # the node readyness label was not updated here
-    updated_last_readyness = get_node_last_readyness_update(updated_node)
-    assert updated_last_readyness == host_node_last_readyness_update
+    # the node readiness label was not updated here
+    updated_last_readiness = get_node_last_readiness_update(updated_node)
+    assert updated_last_readiness == host_node_last_readiness_update
 
-    # this implicitely make the node active as well
+    # this implicitly make the node active as well
     updated_node = await set_node_osparc_ready(
         app_settings, autoscaling_docker, host_node, ready=True
     )
     assert is_node_ready_and_available(updated_node, availability=Availability.active)
     assert is_node_osparc_ready(updated_node)
-    updated_last_readyness = get_node_last_readyness_update(updated_node)
-    assert updated_last_readyness > host_node_last_readyness_update
+    updated_last_readiness = get_node_last_readiness_update(updated_node)
+    assert updated_last_readiness > host_node_last_readiness_update
     # make it not osparc ready
     updated_node = await set_node_osparc_ready(
         app_settings, autoscaling_docker, host_node, ready=False
     )
     assert not is_node_osparc_ready(updated_node)
     assert is_node_ready_and_available(updated_node, availability=Availability.drain)
-    assert get_node_last_readyness_update(updated_node) > updated_last_readyness
+    assert get_node_last_readiness_update(updated_node) > updated_last_readiness
+
+    # check now passing additional labels
+    osparc_custom_labels = {
+        key: f"value_for_{key}"
+        for key in OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS
+    }
+    non_specific_labels = {"key1": "value1", "key2": "value2"}
+    additional_labels = non_specific_labels | osparc_custom_labels
+    updated_node = await set_node_osparc_ready(
+        app_settings,
+        autoscaling_docker,
+        host_node,
+        ready=True,
+        additional_labels=additional_labels,
+    )
+    assert is_node_osparc_ready(updated_node)
+    assert is_node_ready_and_available(updated_node, availability=Availability.active)
+    assert updated_node.spec
+    for key, value in additional_labels.items():
+        assert key in updated_node.spec.labels
+        assert updated_node.spec.labels[key] == value
+
+    # check that making the node not ready removes osparc custom labels
+    updated_node = await set_node_osparc_ready(
+        app_settings,
+        autoscaling_docker,
+        updated_node,
+        ready=False,
+    )
+    assert not is_node_osparc_ready(updated_node)
+    assert is_node_ready_and_available(updated_node, availability=Availability.drain)
+    assert updated_node.spec
+    for key in non_specific_labels:
+        assert key in updated_node.spec.labels
+    for key in OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS:
+        assert key not in updated_node.spec.labels
 
 
 async def test_set_node_found_empty(

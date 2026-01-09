@@ -34,6 +34,7 @@ async def test_create_project_with_viewer(view: dict[str, Any]):
 
     project = _create_project_with_filepicker_and_service(
         project_id=ProjectID("e3ee7dfc-25c3-11eb-9fae-02420a01b846"),
+        product_name="osparc",
         file_picker_id=NodeID("4c69c0ce-00e4-4bd5-9cf0-59b67b3a9343"),
         viewer_id=NodeID("fc718e5a-bf07-4abe-b526-d9cafd34830c"),
         owner=user,

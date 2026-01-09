@@ -115,7 +115,7 @@ attrs==24.2.0
     #   jsonschema
 billiard==4.2.1
     # via celery
-celery==5.5.3
+celery==5.6.0
     # via -r requirements/../../../packages/celery-library/requirements/_base.in
 certifi==2024.8.30
     # via
@@ -231,8 +231,10 @@ email-validator==2.2.0
     # via
     #   fastapi
     #   pydantic
-exceptiongroup==1.2.2
-    # via aio-pika
+exceptiongroup==1.3.1
+    # via
+    #   aio-pika
+    #   celery
 fast-depends==2.4.12
     # via faststream
 fastapi==0.116.1
@@ -399,7 +401,7 @@ jsonschema==3.2.0
     #   -r requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/../../../packages/models-library/requirements/_base.in
-kombu==5.5.4
+kombu==5.6.1
     # via celery
 mako==1.3.10
     # via
@@ -1128,6 +1130,8 @@ typing-inspection==0.4.1
     # via pydantic
 tzdata==2025.2
     # via kombu
+tzlocal==5.3.1
+    # via celery
 urllib3==2.5.0
     # via
     #   -c requirements/../../../packages/celery-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt

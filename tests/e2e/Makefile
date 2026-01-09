@@ -58,7 +58,7 @@ $(foreach var,$(NUMBERS),\
 endef
 
 
-# Below feels a bit like magic I am not sure why the thing awaits for the scirpts to finish
+# Below feels a bit like magic I am not sure why the thing awaits for the scripts to finish
 DEV_MACHINE_IP = "10.43.103.168"
 define _test-jupyters
 echo $(shell python -c 'import os ;\
@@ -118,7 +118,7 @@ dev-prepare-jupyters: ## pull images and create users
 	@$(_register-20-users)
 	@echo "NOTE: Below should be automated in the future"
 	@echo "- remember to give permission to the service"
-	@echo "- remmeber to import the JupyterLabs template in the deployment"
+	@echo "- remember to import the JupyterLabs template in the deployment"
 
 
 .PHONY: dev-test-jupyters

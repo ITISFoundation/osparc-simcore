@@ -4,6 +4,15 @@ fail_fast: false
 default_language_version:
   python: python3.13
 repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    # Ruff version.
+    rev: v0.14.10
+    hooks:
+      # Run the linter.
+      - id: ruff-check
+        args: [ --fix ]
+      # Run the formatter.
+      - id: ruff-format
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
@@ -11,6 +20,8 @@ repos:
         args: ["--maxkb=1024"]
       - id: check-merge-conflict
       - id: check-yaml
+      - id: check-json
+      - id: check-toml
       - id: detect-private-key
       - id: end-of-file-fixer
       - id: trailing-whitespace
@@ -20,32 +31,6 @@ repos:
         args: [--allow-missing-credentials]
       - id: debug-statements
       - id: no-commit-to-branch
-  # NOTE: Keep order as pyupgrade (will update code) then pycln (remove unused imports), then isort (sort them) and black (final formatting)
-  - repo: https://github.com/asottile/pyupgrade
-    rev: v3.21.1
-    hooks:
-      - id: pyupgrade
-        args:
-          - "--py313-plus"
-        name: upgrade code
-        exclude: ^scripts/maintenance/computational-clusters/autoscaled_monitor/cli\.py$ # Optional get replaced and typer does not like it
-  - repo: https://github.com/hadialqattan/pycln
-    rev: v2.6.0
-    hooks:
-      - id: pycln
-        args: [--all, --expand-stars]
-        name: prune imports
-  - repo: https://github.com/PyCQA/isort
-    rev: 7.0.0
-    hooks:
-      - id: isort
-        args: ["--profile", "black"]
-        name: sort imports
-  - repo: https://github.com/psf/black
-    rev: 25.11.0
-    hooks:
-      - id: black
-        name: black format code
   - repo: local
     hooks:
     - id: pytest-testit
@@ -60,3 +45,8 @@ repos:
       language: script
       types: [file]
       entry: scripts/precommit/validate-docker-compose.bash
+  - repo: https://github.com/crate-ci/typos
+    rev: v1.40.0
+    hooks:
+      - id: typos
+        name: spellchecker

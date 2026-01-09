@@ -61,7 +61,7 @@ class PaymentMethodAlreadyAckedError(PaymentsMethodsError):
 
 
 class PaymentMethodUniqueViolationError(PaymentsMethodsError):
-    msg_template = "Payment method '{payment_method_id}' aready exists"
+    msg_template = "Payment method '{payment_method_id}' already exists"
 
 
 class InvalidPaymentMethodError(PaymentsMethodsError):

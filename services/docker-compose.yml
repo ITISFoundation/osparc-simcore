@@ -343,10 +343,12 @@ services:
       DIRECTOR_LOG_FORMAT_LOCAL_DEV_ENABLED: ${LOG_FORMAT_LOCAL_DEV_ENABLED}
       DIRECTOR_LOGLEVEL: ${DIRECTOR_LOGLEVEL}
       DIRECTOR_MONITORING_ENABLED: ${DIRECTOR_MONITORING_ENABLED}
+      DIRECTOR_OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS: ${DIRECTOR_OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS}
       DIRECTOR_PUBLISHED_HOST_NAME: ${DIRECTOR_PUBLISHED_HOST_NAME}
       DIRECTOR_REGISTRY_CACHING_TTL: ${DIRECTOR_REGISTRY_CACHING_TTL}
       DIRECTOR_REGISTRY_CACHING: ${DIRECTOR_REGISTRY_CACHING}
-      DIRECTOR_SERVICES_CUSTOM_CONSTRAINTS: ${DIRECTOR_SERVICES_CUSTOM_CONSTRAINTS}
+      DIRECTOR_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS: ${DIRECTOR_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS}
+      DIRECTOR_SERVICES_CUSTOM_LABELS: ${DIRECTOR_SERVICES_CUSTOM_LABELS}
       DIRECTOR_TRACING: ${DIRECTOR_TRACING}
 
       SIMCORE_SERVICES_NETWORK_NAME: interactive_services_subnet
@@ -394,12 +396,14 @@ services:
 
       DIRECTOR_V2_DEV_FEATURES_ENABLED: ${DIRECTOR_V2_DEV_FEATURES_ENABLED}
       DIRECTOR_V2_DYNAMIC_SCHEDULER_CLOSE_SERVICES_VIA_FRONTEND_WHEN_CREDITS_LIMIT_REACHED: ${DIRECTOR_V2_DYNAMIC_SCHEDULER_CLOSE_SERVICES_VIA_FRONTEND_WHEN_CREDITS_LIMIT_REACHED}
-      DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS: ${DIRECTOR_V2_SERVICES_CUSTOM_CONSTRAINTS}
+      DIRECTOR_V2_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS: ${DIRECTOR_V2_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS}
       DIRECTOR_V2_PROFILING: ${DIRECTOR_V2_PROFILING}
+      DIRECTOR_V2_DYNAMIC_SIDECAR_OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS: ${DIRECTOR_V2_DYNAMIC_SIDECAR_OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS}
       DIRECTOR_V2_DYNAMIC_SIDECAR_SLEEP_AFTER_CONTAINER_REMOVAL: ${DIRECTOR_V2_DYNAMIC_SIDECAR_SLEEP_AFTER_CONTAINER_REMOVAL}
 
       DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED: ${DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED}
 
+      DYNAMIC_SIDECAR_CUSTOM_LABELS: ${DYNAMIC_SIDECAR_CUSTOM_LABELS}
       DYNAMIC_SIDECAR_ENDPOINT_SPECS_MODE_DNSRR_ENABLED: ${DYNAMIC_SIDECAR_ENDPOINT_SPECS_MODE_DNSRR_ENABLED}
       DYNAMIC_SIDECAR_ENABLE_VOLUME_LIMITS: ${DYNAMIC_SIDECAR_ENABLE_VOLUME_LIMITS}
       DYNAMIC_SIDECAR_IMAGE: ${DYNAMIC_SIDECAR_IMAGE}
@@ -659,7 +663,7 @@ services:
   webserver:
     image: ${DOCKER_REGISTRY:-itisfoundation}/webserver:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: "wb-{{.Node.Hostname}}-{{.Task.Slot}}" # the hostname is used in conjonction with other services and must be unique see https://github.com/ITISFoundation/osparc-simcore/pull/5931
+    hostname: "wb-{{.Node.Hostname}}-{{.Task.Slot}}" # the hostname is used in conjunction with other services and must be unique see https://github.com/ITISFoundation/osparc-simcore/pull/5931
     environment: &webserver_environment
       <<:
         - *catalog_settings
@@ -804,7 +808,7 @@ services:
       WEBSERVER_DB_LISTENER: ${WEBSERVER_DB_LISTENER}
       WEBSERVER_ANNOUNCEMENTS: ${WEBSERVER_ANNOUNCEMENTS}
       WEBSERVER_NOTIFICATIONS: ${WEBSERVER_NOTIFICATIONS}
-      WEBSERVER_FUNCTIONS: ${WEBSERVER_FUNCTIONS} # neede for front-end
+      WEBSERVER_FUNCTIONS: ${WEBSERVER_FUNCTIONS} # needed for front-end
       WEBSERVER_GROUPS: ${WEBSERVER_GROUPS}
       WEBSERVER_PRODUCTS: ${WEBSERVER_PRODUCTS}
       WEBSERVER_PUBLICATIONS: ${WEBSERVER_PUBLICATIONS}
@@ -828,7 +832,7 @@ services:
         - traefik.http.services.${SWARM_STACK_NAME}_webserver.loadbalancer.healthcheck.path=/v0/
         - traefik.http.services.${SWARM_STACK_NAME}_webserver.loadbalancer.healthcheck.interval=2000ms
         - traefik.http.services.${SWARM_STACK_NAME}_webserver.loadbalancer.healthcheck.timeout=1000ms
-        # NOTE: stickyness must remain only for specific endpoints, see https://github.com/ITISFoundation/osparc-simcore/pull/4180
+        # NOTE: stickiness must remain only for specific endpoints, see https://github.com/ITISFoundation/osparc-simcore/pull/4180
         - traefik.http.middlewares.${SWARM_STACK_NAME}_webserver_retry.retry.attempts=2
         - traefik.http.routers.${SWARM_STACK_NAME}_webserver.service=${SWARM_STACK_NAME}_webserver
         # NOTE: keep in sync with fallback router (rule and entrypoint)
@@ -867,7 +871,7 @@ services:
   wb-api-server:
     image: ${DOCKER_REGISTRY:-itisfoundation}/webserver:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: "api-{{.Node.Hostname}}-{{.Task.Slot}}" # the hostname is used in conjonction with other services and must be unique see https://github.com/ITISFoundation/osparc-simcore/pull/5931
+    hostname: "api-{{.Node.Hostname}}-{{.Task.Slot}}" # the hostname is used in conjunction with other services and must be unique see https://github.com/ITISFoundation/osparc-simcore/pull/5931
     environment:
       <<: *webserver_environment
       WEBSERVER_FUNCTIONS: ${WEBSERVER_FUNCTIONS} # needed for api-server
@@ -887,7 +891,7 @@ services:
   wb-db-event-listener:
     image: ${DOCKER_REGISTRY:-itisfoundation}/webserver:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: "db-{{.Node.Hostname}}-{{.Task.Slot}}" # the hostname is used in conjonction with other services and must be unique see https://github.com/ITISFoundation/osparc-simcore/pull/5931
+    hostname: "db-{{.Node.Hostname}}-{{.Task.Slot}}" # the hostname is used in conjunction with other services and must be unique see https://github.com/ITISFoundation/osparc-simcore/pull/5931
     environment:
       <<:
         - *common_logging_environments
@@ -963,7 +967,7 @@ services:
   wb-garbage-collector:
     image: ${DOCKER_REGISTRY:-itisfoundation}/webserver:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: "gc-{{.Node.Hostname}}-{{.Task.Slot}}" # the hostname is used in conjonction with other services and must be unique see https://github.com/ITISFoundation/osparc-simcore/pull/5931
+    hostname: "gc-{{.Node.Hostname}}-{{.Task.Slot}}" # the hostname is used in conjunction with other services and must be unique see https://github.com/ITISFoundation/osparc-simcore/pull/5931
     environment:
       <<:
         - *common_logging_environments
@@ -1043,7 +1047,7 @@ services:
   wb-auth:
     image: ${DOCKER_REGISTRY:-itisfoundation}/webserver:${DOCKER_IMAGE_TAG:-latest}
     init: true
-    hostname: "auth-{{.Node.Hostname}}-{{.Task.Slot}}" # the hostname is used in conjonction with other services and must be unique see https://github.com/ITISFoundation/osparc-simcore/pull/5931
+    hostname: "auth-{{.Node.Hostname}}-{{.Task.Slot}}" # the hostname is used in conjunction with other services and must be unique see https://github.com/ITISFoundation/osparc-simcore/pull/5931
     environment:
       <<:
         - *postgres_settings
@@ -1150,16 +1154,35 @@ services:
     image: ${DOCKER_REGISTRY:-itisfoundation}/notifications:${DOCKER_IMAGE_TAG:-latest}
     init: true
     hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
-
-    environment:
+    environment: &notifications_environment
       <<:
         - *common_logging_environments
         - *postgres_settings
         - *rabbit_settings
+        - *redis_settings
         - *tracing_open_telemetry_environments
 
       NOTIFICATIONS_LOGLEVEL: ${NOTIFICATIONS_LOGLEVEL}
       NOTIFICATIONS_TRACING: ${NOTIFICATIONS_TRACING}
+      NOTIFICATIONS_WORKER_MODE: "false"
+    networks: &notifications_networks
+      - default
+
+  notifications-worker:
+    image: ${DOCKER_REGISTRY:-itisfoundation}/notifications:${DOCKER_IMAGE_TAG:-latest}
+    init: true
+    hostname: "notifications-worker-{{.Node.Hostname}}-{{.Task.Slot}}"
+    environment:
+      <<:
+        - *notifications_environment
+        - *smtp_settings
+      NOTIFICATIONS_TRACING: "null"
+      NOTIFICATIONS_WORKER_NAME: "notifications-worker-{{.Node.Hostname}}-{{.Task.Slot}}-{{.Task.ID}}"
+      NOTIFICATIONS_WORKER_MODE: "true"
+      CELERY_CONCURRENCY: 100
+      CELERY_POOL: threads
+      CELERY_QUEUES: notifications
+    networks: *notifications_networks
 
   dask-sidecar:
     image: ${DOCKER_REGISTRY:-itisfoundation}/dask-sidecar:${DOCKER_IMAGE_TAG:-latest}
@@ -1243,7 +1266,7 @@ services:
       - storage_subnet
 
   sto-worker:
-    image: ${DOCKER_REGISTRY:-itisfoundation}/storage:${DOCKER_IMAGE_TAG:-master-github-latest}
+    image: ${DOCKER_REGISTRY:-itisfoundation}/storage:${DOCKER_IMAGE_TAG:-latest}
     init: true
     hostname: "sto-worker-{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
@@ -1256,7 +1279,7 @@ services:
     networks: *storage_networks
 
   sto-worker-cpu-bound:
-    image: ${DOCKER_REGISTRY:-itisfoundation}/storage:${DOCKER_IMAGE_TAG:-master-github-latest}
+    image: ${DOCKER_REGISTRY:-itisfoundation}/storage:${DOCKER_IMAGE_TAG:-latest}
     init: true
     hostname: "sto-worker-cpu-bound-{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
@@ -1270,7 +1293,7 @@ services:
     networks: *storage_networks
 
   rabbit:
-    image: itisfoundation/rabbitmq:4.1.2-management
+    image: itisfoundation/rabbitmq:4.1.6-management
     init: true
     hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     environment:
