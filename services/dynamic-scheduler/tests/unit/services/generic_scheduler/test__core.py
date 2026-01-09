@@ -16,6 +16,17 @@ from asgi_lifespan import LifespanManager
 from asyncpg import NoDataFoundError
 from fastapi import FastAPI
 from pydantic import NonNegativeFloat, NonNegativeInt, TypeAdapter
+from pytest_simcore.helpers.dynamic_scheduler import (
+    EXECUTED,
+    REVERTED,
+    BaseExpectedStepOrder,
+    ExecuteRandom,
+    ExecuteSequence,
+    RevertRandom,
+    RevertSequence,
+    ensure_expected_order,
+    ensure_keys_in_store,
+)
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.utils import limited_gather
 from settings_library.rabbit import RabbitSettings
@@ -25,6 +36,7 @@ from simcore_service_dynamic_scheduler.services.generic_scheduler import (
     BaseStep,
     Operation,
     OperationName,
+    OperationToStart,
     ParallelStepGroup,
     ProvidedOperationContext,
     RequiredOperationContext,
@@ -47,7 +59,6 @@ from simcore_service_dynamic_scheduler.services.generic_scheduler._deferred_runn
 from simcore_service_dynamic_scheduler.services.generic_scheduler._errors import (
     CannotCancelWhileWaitingForManualInterventionError,
     InitialOperationContextKeyNotAllowedError,
-    OperationContextValueIsNoneError,
     OperationNotCancellableError,
     ProvidedOperationContextKeysAreMissingError,
     StepNameNotInCurrentGroupError,
@@ -62,17 +73,6 @@ from tenacity import (
     retry_if_exception_type,
     stop_after_delay,
     wait_fixed,
-)
-from utils import (
-    EXECUTED,
-    REVERTED,
-    BaseExpectedStepOrder,
-    ExecuteRandom,
-    ExecuteSequence,
-    RevertRandom,
-    RevertSequence,
-    ensure_expected_order,
-    ensure_keys_in_store,
 )
 
 pytest_simcore_core_services_selection = [
@@ -98,6 +98,7 @@ _DEFERRED_FINALIZATION_TIMEOUT: Final[NonNegativeFloat] = 1.0
 
 @pytest.fixture
 def app_environment(
+    disable_scheduler_lifespan: None,
     disable_postgres_lifespan: None,
     disable_service_tracker_lifespan: None,
     disable_notifier_lifespan: None,
@@ -739,7 +740,9 @@ async def test_execute_revert_order(
 ):
     register_operation(operation_name, operation)
 
-    schedule_id = await start_operation(selected_app, operation_name, {})
+    schedule_id = await start_operation(
+        selected_app, OperationToStart(operation_name, {})
+    )
     assert TypeAdapter(ScheduleId).validate_python(schedule_id)
 
     await ensure_expected_order(steps_call_order, expected_order)
@@ -858,7 +861,9 @@ async def test_fails_during_revert_is_in_error_state(
 ):
     register_operation(operation_name, operation)
 
-    schedule_id = await start_operation(selected_app, operation_name, {})
+    schedule_id = await start_operation(
+        selected_app, OperationToStart(operation_name, {})
+    )
     assert TypeAdapter(ScheduleId).validate_python(schedule_id)
 
     await ensure_expected_order(steps_call_order, expected_order)
@@ -925,7 +930,9 @@ async def test_cancelled_finishes_nicely(
 ):
     register_operation(operation_name, operation)
 
-    schedule_id = await start_operation(selected_app, operation_name, {})
+    schedule_id = await start_operation(
+        selected_app, OperationToStart(operation_name, {})
+    )
     assert TypeAdapter(ScheduleId).validate_python(schedule_id)
 
     await ensure_expected_order(steps_call_order, expected_before_cancel_order)
@@ -944,65 +951,83 @@ _FAST_REPEAT_INTERVAL: Final[timedelta] = timedelta(seconds=0.1)
 _REPAT_COUNT: Final[NonNegativeInt] = 10
 
 
+class _S1R(_S1):
+    @classmethod
+    def get_sleep_after_execute(cls) -> timedelta:
+        return _FAST_REPEAT_INTERVAL
+
+
+class _S2R(_S2):
+    @classmethod
+    def get_sleep_after_execute(cls) -> timedelta:
+        return _FAST_REPEAT_INTERVAL
+
+
+class _RS1R(_RS1):
+    @classmethod
+    def get_sleep_after_execute(cls) -> timedelta:
+        return _FAST_REPEAT_INTERVAL
+
+    @classmethod
+    def get_sleep_after_revert(cls) -> timedelta:
+        return _FAST_REPEAT_INTERVAL
+
+
+class _RS2R(_RS2):
+    @classmethod
+    def get_sleep_after_execute(cls) -> timedelta:
+        return _FAST_REPEAT_INTERVAL
+
+    @classmethod
+    def get_sleep_after_revert(cls) -> timedelta:
+        return _FAST_REPEAT_INTERVAL
+
+
 @pytest.mark.parametrize("app_count", [10])
 @pytest.mark.parametrize(
     "operation, expected_before_cancel_order, expected_order",
     [
         pytest.param(
             Operation(
-                SingleStepGroup(
-                    _S1, repeat_steps=True, wait_before_repeat=_FAST_REPEAT_INTERVAL
-                ),
+                SingleStepGroup(_S1R, repeat_steps=True),
             ),
-            [ExecuteSequence(_S1) for _ in range(_REPAT_COUNT)],
+            [ExecuteSequence(_S1R) for _ in range(_REPAT_COUNT)],
             [
-                *[ExecuteSequence(_S1) for _ in range(_REPAT_COUNT)],
-                RevertSequence(_S1),
+                *[ExecuteSequence(_S1R) for _ in range(_REPAT_COUNT)],
+                RevertSequence(_S1R),
             ],
             id="s1(r)",
         ),
         pytest.param(
             Operation(
-                ParallelStepGroup(
-                    _S1,
-                    _S2,
-                    repeat_steps=True,
-                    wait_before_repeat=_FAST_REPEAT_INTERVAL,
-                ),
+                ParallelStepGroup(_S1R, _S2R, repeat_steps=True),
             ),
-            [ExecuteRandom(_S1, _S2) for _ in range(_REPAT_COUNT)],
+            [ExecuteRandom(_S1R, _S2R) for _ in range(_REPAT_COUNT)],
             [
-                *[ExecuteRandom(_S1, _S2) for _ in range(_REPAT_COUNT)],
-                RevertRandom(_S1, _S2),
+                *[ExecuteRandom(_S1R, _S2R) for _ in range(_REPAT_COUNT)],
+                RevertRandom(_S1R, _S2R),
             ],
             id="p2(r)",
         ),
         pytest.param(
             Operation(
-                SingleStepGroup(
-                    _RS1, repeat_steps=True, wait_before_repeat=_FAST_REPEAT_INTERVAL
-                ),
+                SingleStepGroup(_RS1R, repeat_steps=True),
             ),
-            [ExecuteSequence(_RS1) for _ in range(_REPAT_COUNT)],
+            [ExecuteSequence(_RS1R) for _ in range(_REPAT_COUNT)],
             [
-                *[ExecuteSequence(_RS1) for _ in range(_REPAT_COUNT)],
-                RevertSequence(_RS1),
+                *[ExecuteSequence(_RS1R) for _ in range(_REPAT_COUNT)],
+                RevertSequence(_RS1R),
             ],
             id="s1(rf)",
         ),
         pytest.param(
             Operation(
-                ParallelStepGroup(
-                    _RS1,
-                    _RS2,
-                    repeat_steps=True,
-                    wait_before_repeat=_FAST_REPEAT_INTERVAL,
-                ),
+                ParallelStepGroup(_RS1R, _RS2R, repeat_steps=True),
             ),
-            [ExecuteRandom(_RS1, _RS2) for _ in range(_REPAT_COUNT)],
+            [ExecuteRandom(_RS1R, _RS2R) for _ in range(_REPAT_COUNT)],
             [
-                *[ExecuteRandom(_RS1, _RS2) for _ in range(_REPAT_COUNT)],
-                RevertRandom(_RS1, _RS2),
+                *[ExecuteRandom(_RS1R, _RS2R) for _ in range(_REPAT_COUNT)],
+                RevertRandom(_RS1R, _RS2R),
             ],
             id="p2(rf)",
         ),
@@ -1020,7 +1045,9 @@ async def test_repeating_step(
 ):
     register_operation(operation_name, operation)
 
-    schedule_id = await start_operation(selected_app, operation_name, {})
+    schedule_id = await start_operation(
+        selected_app, OperationToStart(operation_name, {})
+    )
     assert TypeAdapter(ScheduleId).validate_python(schedule_id)
 
     await ensure_expected_order(
@@ -1139,7 +1166,9 @@ async def test_wait_for_manual_intervention(
 ):
     register_operation(operation_name, operation)
 
-    schedule_id = await start_operation(selected_app, operation_name, {})
+    schedule_id = await start_operation(
+        selected_app, OperationToStart(operation_name, {})
+    )
     assert TypeAdapter(ScheduleId).validate_python(schedule_id)
 
     formatted_expected_keys = {k.format(schedule_id=schedule_id) for k in expected_keys}
@@ -1204,7 +1233,9 @@ async def test_operation_is_not_cancellable(
     operation = Operation(SingleStepGroup(_S1), is_cancellable=False)
     register_operation(operation_name, operation)
 
-    schedule_id = await start_operation(selected_app, operation_name, {})
+    schedule_id = await start_operation(
+        selected_app, OperationToStart(operation_name, {})
+    )
 
     # even if cancelled, state of waiting for manual intervention remains the same
     with pytest.raises(OperationNotCancellableError):
@@ -1321,7 +1352,9 @@ async def test_restart_revert_operation_step_in_error(
 ):
     register_operation(operation_name, operation)
 
-    schedule_id = await start_operation(selected_app, operation_name, {})
+    schedule_id = await start_operation(
+        selected_app, OperationToStart(operation_name, {})
+    )
     assert TypeAdapter(ScheduleId).validate_python(schedule_id)
 
     formatted_expected_keys = {k.format(schedule_id=schedule_id) for k in expected_keys}
@@ -1377,7 +1410,9 @@ async def test_errors_with_restart_operation_step_in_error(
     )
     register_operation(operation_name, operation)
 
-    schedule_id = await start_operation(selected_app, operation_name, {})
+    schedule_id = await start_operation(
+        selected_app, OperationToStart(operation_name, {})
+    )
     assert TypeAdapter(ScheduleId).validate_python(schedule_id)
 
     await ensure_expected_order(
@@ -1389,6 +1424,7 @@ async def test_errors_with_restart_operation_step_in_error(
         ],
     )
 
+    assert isinstance(operation.step_groups[-1], ParallelStepGroup)
     await _esnure_steps_have_status(
         selected_app,
         schedule_id,
@@ -1506,7 +1542,9 @@ async def test_operation_context_usage(
 
     register_operation(operation_name, operation)
 
-    schedule_id = await start_operation(selected_app, operation_name, initial_context)
+    schedule_id = await start_operation(
+        selected_app, OperationToStart(operation_name, initial_context)
+    )
     assert TypeAdapter(ScheduleId).validate_python(schedule_id)
 
     # NOTE: might fail because it raised ProvidedOperationContextKeysAreMissingError check logs
@@ -1514,7 +1552,6 @@ async def test_operation_context_usage(
 
     await ensure_keys_in_store(selected_app, expected_keys=set())
 
-    assert f"{OperationContextValueIsNoneError.__name__}" not in caplog.text
     assert f"{ProvidedOperationContextKeysAreMissingError.__name__}" not in caplog.text
 
 
@@ -1562,63 +1599,9 @@ async def test_operation_initial_context_using_key_provided_by_step(
     register_operation(operation_name, operation)
 
     with pytest.raises(InitialOperationContextKeyNotAllowedError):
-        await start_operation(selected_app, operation_name, initial_context)
-
-    await ensure_keys_in_store(selected_app, expected_keys=set())
-
-
-@pytest.mark.parametrize("app_count", [10])
-@pytest.mark.parametrize(
-    "operation, initial_context, expected_order",
-    [
-        pytest.param(
-            Operation(
-                SingleStepGroup(RPCtxS1),
-            ),
-            {
-                # `bs__c_req_1` is missing
-            },
-            [
-                RevertSequence(RPCtxS1),
-            ],
-            id="missing_context_key",
-        ),
-        pytest.param(
-            Operation(
-                SingleStepGroup(RPCtxS1),
-            ),
-            {
-                "bs__e_req_1": None,
-            },
-            [
-                RevertSequence(RPCtxS1),
-            ],
-            id="context_key_is_none",
-        ),
-    ],
-)
-async def test_step_does_not_receive_context_key_or_is_none(
-    preserve_caplog_for_async_logging: None,
-    caplog: pytest.LogCaptureFixture,
-    steps_call_order: list[tuple[str, str]],
-    selected_app: FastAPI,
-    register_operation: Callable[[OperationName, Operation], None],
-    operation: Operation,
-    operation_name: OperationName,
-    initial_context: OperationContext,
-    expected_order: list[BaseExpectedStepOrder],
-):
-    caplog.at_level(logging.DEBUG)
-    caplog.clear()
-
-    register_operation(operation_name, operation)
-
-    schedule_id = await start_operation(selected_app, operation_name, initial_context)
-    assert TypeAdapter(ScheduleId).validate_python(schedule_id)
-
-    await _ensure_log_mesage(caplog, message=OperationContextValueIsNoneError.__name__)
-
-    await ensure_expected_order(steps_call_order, expected_order)
+        await start_operation(
+            selected_app, OperationToStart(operation_name, initial_context)
+        )
 
     await ensure_keys_in_store(selected_app, expected_keys=set())
 
@@ -1692,32 +1675,6 @@ class _BadImplementedStep(BaseStep):
             {
                 "trigger_revert": False,
                 "to_return": {
-                    "add_to_return": True,
-                    "keys": {"a_key": None},
-                },
-            },
-            f"{OperationContextValueIsNoneError.__name__}: Values of context cannot be None: {{'a_key'",
-            [
-                ExecuteSequence(_BadImplementedStep),
-                RevertSequence(_BadImplementedStep),
-            ],
-            {
-                "SCH:{schedule_id}",
-                "SCH:{schedule_id}:GROUPS:test_op:0S:E",
-                "SCH:{schedule_id}:GROUPS:test_op:0S:R",
-                "SCH:{schedule_id}:OP_CTX:test_op",
-                "SCH:{schedule_id}:STEPS:test_op:0S:E:_BadImplementedStep",
-                "SCH:{schedule_id}:STEPS:test_op:0S:R:_BadImplementedStep",
-            },
-            id="execute-returns-key-set-to-None",
-        ),
-        pytest.param(
-            Operation(
-                SingleStepGroup(_BadImplementedStep),
-            ),
-            {
-                "trigger_revert": False,
-                "to_return": {
                     "add_to_return": False,
                 },
             },
@@ -1735,32 +1692,6 @@ class _BadImplementedStep(BaseStep):
                 "SCH:{schedule_id}:STEPS:test_op:0S:R:_BadImplementedStep",
             },
             id="execute-does-not-set-the-key-to-return",
-        ),
-        pytest.param(
-            Operation(
-                SingleStepGroup(_BadImplementedStep),
-            ),
-            {
-                "trigger_revert": True,
-                "to_return": {
-                    "add_to_return": True,
-                    "keys": {"a_key": None},
-                },
-            },
-            f"{OperationContextValueIsNoneError.__name__}: Values of context cannot be None: {{'a_key'",
-            [
-                ExecuteSequence(_BadImplementedStep),
-                RevertSequence(_BadImplementedStep),
-            ],
-            {
-                "SCH:{schedule_id}",
-                "SCH:{schedule_id}:GROUPS:test_op:0S:E",
-                "SCH:{schedule_id}:GROUPS:test_op:0S:R",
-                "SCH:{schedule_id}:OP_CTX:test_op",
-                "SCH:{schedule_id}:STEPS:test_op:0S:E:_BadImplementedStep",
-                "SCH:{schedule_id}:STEPS:test_op:0S:R:_BadImplementedStep",
-            },
-            id="revert-returns-key-set-to-None",
         ),
         pytest.param(
             Operation(
@@ -1807,7 +1738,9 @@ async def test_step_does_not_provide_declared_key_or_is_none(
 
     register_operation(operation_name, operation)
 
-    schedule_id = await start_operation(selected_app, operation_name, initial_context)
+    schedule_id = await start_operation(
+        selected_app, OperationToStart(operation_name, initial_context)
+    )
     assert TypeAdapter(ScheduleId).validate_python(schedule_id)
 
     await _ensure_log_mesage(caplog, message=expected_error_str)
@@ -1833,6 +1766,8 @@ async def test_get_operation_name_or_none(
     operation = Operation(SingleStepGroup(_S1))
     register_operation(operation_name, operation)
 
-    schedule_id = await start_operation(selected_app, operation_name, {})
+    schedule_id = await start_operation(
+        selected_app, OperationToStart(operation_name, {})
+    )
 
     assert await get_operation_name_or_none(selected_app, schedule_id) == operation_name
