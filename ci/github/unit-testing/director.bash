@@ -6,7 +6,7 @@ set -o pipefail # don't hide errors within pipes
 IFS=$'\n\t'
 
 install() {
-make devenv
+  make devenv
   # shellcheck source=/dev/null
   source .venv/bin/activate
 
