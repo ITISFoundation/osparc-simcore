@@ -71,13 +71,6 @@ async def test_is_r_clone_available_cached(
     assert await r_clone.is_r_clone_available(None) is False
 
 
-async def test__config_file(faker: Faker) -> None:
-    text_to_write = faker.text()
-    async with r_clone._config_file(text_to_write) as file_name:  # noqa: SLF001
-        assert text_to_write == Path(file_name).read_text()
-    assert Path(file_name).exists() is False
-
-
 async def test__async_command_ok() -> None:
     result = await r_clone._async_r_clone_command("ls", "-la")  # noqa: SLF001
     assert len(result) > 0

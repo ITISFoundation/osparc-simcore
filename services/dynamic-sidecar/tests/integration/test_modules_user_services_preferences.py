@@ -10,7 +10,6 @@ import pytest
 from asgi_lifespan import LifespanManager
 from faker import Faker
 from fastapi import FastAPI
-from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.users import UserID
@@ -59,11 +58,6 @@ def service_version() -> ServiceVersion:
 
 
 @pytest.fixture
-def product_name() -> ProductName:
-    return TypeAdapter(ProductName).validate_python("osparc")
-
-
-@pytest.fixture
 def mock_environment(  # pylint:disable=too-many-arguments,too-many-positional-arguments
     mock_rabbit_check: None,
     mock_storage_check: None,
@@ -76,7 +70,6 @@ def mock_environment(  # pylint:disable=too-many-arguments,too-many-positional-a
     dy_sidecar_user_preferences_path: Path,
     service_key: ServiceKey,
     service_version: ServiceVersion,
-    product_name: ProductName,
     faker: Faker,
 ) -> EnvVarsDict:
     envs: EnvVarsDict = {
@@ -96,7 +89,6 @@ def mock_environment(  # pylint:disable=too-many-arguments,too-many-positional-a
         "DY_SIDECAR_SERVICE_KEY": service_key,
         "DY_SIDECAR_SERVICE_VERSION": service_version,
         "DY_SIDECAR_USER_PREFERENCES_PATH": f"{dy_sidecar_user_preferences_path}",
-        "DY_SIDECAR_PRODUCT_NAME": product_name,
         **base_mock_envs,
     }
 

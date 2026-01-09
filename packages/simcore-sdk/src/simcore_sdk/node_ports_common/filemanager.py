@@ -88,6 +88,32 @@ async def get_download_link_from_s3(
         return URL(f"{file_link}")
 
 
+async def create_r_clone_mounted_directory_entry(
+    *,
+    user_id: UserID,
+    s3_object: StorageFileID,
+    store_id: LocationID | None,
+) -> None:
+    _, upload_links = await get_upload_links_from_s3(
+        user_id=user_id,
+        store_name=None,
+        store_id=store_id,
+        s3_object=s3_object,
+        client_session=None,
+        link_type=LinkType.S3,
+        file_size=ByteSize(0),
+        is_directory=True,
+        sha256_checksum=None,
+    )
+    async with ClientSessionContextManager(None) as session:
+        await _filemanager_utils.complete_upload(
+            session,
+            upload_links.links.complete_upload,
+            [],
+            is_directory=True,
+        )
+
+
 async def get_upload_links_from_s3(
     *,
     user_id: UserID,

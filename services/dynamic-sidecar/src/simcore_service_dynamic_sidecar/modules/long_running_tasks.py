@@ -2,6 +2,7 @@ import functools
 import logging
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Final
 
@@ -11,7 +12,7 @@ from models_library.api_schemas_long_running_tasks.base import TaskProgress
 from models_library.generated_models.docker_rest_api import ContainerState
 from models_library.rabbitmq_messages import ProgressType, SimcorePlatformStatus
 from models_library.service_settings_labels import LegacyState
-from pydantic import PositiveInt
+from pydantic import NonNegativeInt, PositiveInt
 from servicelib.fastapi import long_running_tasks
 from servicelib.file_utils import log_directory_changes
 from servicelib.logging_utils import log_context
@@ -19,6 +20,7 @@ from servicelib.long_running_tasks.task import TaskProtocol, TaskRegistry
 from servicelib.progress_bar import ProgressBarData
 from servicelib.utils import logged_gather
 from simcore_sdk.node_data import data_manager
+from simcore_sdk.node_ports_common.r_clone_mount import MountActivity, Transferring
 from tenacity import retry
 from tenacity.before_sleep import before_sleep_log
 from tenacity.retry import retry_if_result
@@ -55,6 +57,7 @@ from ..modules.inputs import InputsState
 from ..modules.mounted_fs import MountedVolumes
 from ..modules.notifications._notifications_ports import PortNotifier
 from ..modules.outputs import OutputsManager, event_propagation_disabled
+from ..modules.r_clone_mount_manager import get_r_clone_mount_manager
 from .long_running_tasks_utils import (
     ensure_read_permissions_on_user_service_data,
     run_before_shutdown_actions,
@@ -344,24 +347,105 @@ def _get_legacy_state_with_dy_volumes_path(
     )
 
 
+_EXPECTED_BIND_PATHS_COUNT: Final[NonNegativeInt] = 2
+
+
+async def _handler_get_bind_path(
+    settings: ApplicationSettings, mounted_volumes: MountedVolumes, state_path: Path
+) -> list:
+    vfs_cache_path = await mounted_volumes.get_vfs_cache_docker_volume(
+        settings.DY_SIDECAR_RUN_ID
+    )
+
+    vfs_source, vfs_target = (
+        f"{vfs_cache_path}".replace(
+            f"{settings.DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR}", ""
+        )
+    ).split(":")
+
+    bind_paths: list[dict] = [
+        {
+            "Type": "bind",
+            "Source": vfs_source,
+            "Target": vfs_target,
+            "BindOptions": {"Propagation": "rshared"},
+        }
+    ]
+
+    state_path_no_dy_volume = state_path.relative_to(
+        settings.DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR
+    )
+    matcher = f":/{state_path_no_dy_volume}"
+
+    async for entry in mounted_volumes.iter_state_paths_to_docker_volumes(
+        settings.DY_SIDECAR_RUN_ID
+    ):
+        if entry.endswith(matcher):
+            mount_str = entry.replace(f"/{state_path_no_dy_volume}", f"{state_path}")
+            source, target = mount_str.split(":")
+            bind_paths.append(
+                {
+                    "Type": "bind",
+                    "Source": source,
+                    "Target": target,
+                    "BindOptions": {"Propagation": "rshared"},
+                }
+            )
+            break
+
+    if len(bind_paths) != _EXPECTED_BIND_PATHS_COUNT:
+        msg = f"Could not resolve volume path for {state_path}"
+        raise RuntimeError(msg)
+
+    return bind_paths
+
+
+@dataclass
+class MountActivitySummary:
+    path: Path
+    queued: int
+    transferring: Transferring
+
+
+async def _handler_mount_activity(state_path: Path, activity: MountActivity) -> None:
+    # Frontend should receive and use this message to provide feedback to the user
+    # regarding the mount activity
+    summary = MountActivitySummary(
+        path=state_path, queued=len(activity.queued), transferring=activity.transferring
+    )
+    _logger.info("Mount activity %s", summary)
+
+
 async def _restore_state_folder(
     app: FastAPI,
     *,
     settings: ApplicationSettings,
     progress_bar: ProgressBarData,
     state_path: Path,
+    index: NonNegativeInt,
+    mounted_volumes: MountedVolumes,
 ) -> None:
+
+    assert settings.DY_SIDECAR_PRODUCT_NAME is not None  # nosec
     await data_manager.pull(
+        product_name=settings.DY_SIDECAR_PRODUCT_NAME,
         user_id=settings.DY_SIDECAR_USER_ID,
         project_id=settings.DY_SIDECAR_PROJECT_ID,
         node_uuid=settings.DY_SIDECAR_NODE_ID,
         destination_path=Path(state_path),
+        index=index,
         io_log_redirect_cb=functools.partial(
             post_sidecar_log_message, app, log_level=logging.INFO
         ),
         r_clone_settings=settings.DY_SIDECAR_R_CLONE_SETTINGS,
         progress_bar=progress_bar,
         legacy_state=_get_legacy_state_with_dy_volumes_path(settings),
+        application_name=f"{APP_NAME}-{settings.DY_SIDECAR_NODE_ID}",
+        mount_manager=get_r_clone_mount_manager(app),
+        handler_get_bind_paths=functools.partial(
+            _handler_get_bind_path, settings, mounted_volumes
+        ),
+        handler_mount_activity=_handler_mount_activity,
     )
 
 
@@ -400,9 +484,14 @@ async def restore_user_services_state_paths(
         await logged_gather(
             *(
                 _restore_state_folder(
-                    app, settings=settings, progress_bar=root_progress, state_path=path
+                    app,
+                    settings=settings,
+                    progress_bar=root_progress,
+                    state_path=path,
+                    index=k,
+                    mounted_volumes=mounted_volumes,
                 )
-                for path in mounted_volumes.disk_state_paths_iter()
+                for k, path in enumerate(mounted_volumes.disk_state_paths_iter())
             ),
             max_concurrency=CONCURRENCY_STATE_SAVE_RESTORE,
             reraise=True,  # this should raise if there is an issue
@@ -422,13 +511,16 @@ async def _save_state_folder(
     settings: ApplicationSettings,
     progress_bar: ProgressBarData,
     state_path: Path,
+    index: NonNegativeInt,
     mounted_volumes: MountedVolumes,
 ) -> None:
+    assert settings.DY_SIDECAR_PRODUCT_NAME is not None  # nosec
     await data_manager.push(
         user_id=settings.DY_SIDECAR_USER_ID,
         project_id=settings.DY_SIDECAR_PROJECT_ID,
         node_uuid=settings.DY_SIDECAR_NODE_ID,
         source_path=state_path,
+        index=index,
         r_clone_settings=settings.DY_SIDECAR_R_CLONE_SETTINGS,
         exclude_patterns=mounted_volumes.state_exclude,
         io_log_redirect_cb=functools.partial(
@@ -437,6 +529,7 @@ async def _save_state_folder(
         progress_bar=progress_bar,
         legacy_state=_get_legacy_state_with_dy_volumes_path(settings),
         application_name=f"{APP_NAME}-{settings.DY_SIDECAR_NODE_ID}",
+        mount_manager=get_r_clone_mount_manager(app),
     )
 
 
@@ -469,9 +562,10 @@ async def save_user_services_state_paths(
                     settings=settings,
                     progress_bar=root_progress,
                     state_path=state_path,
+                    index=k,
                     mounted_volumes=mounted_volumes,
                 )
-                for state_path in state_paths
+                for k, state_path in enumerate(state_paths)
             ],
             max_concurrency=CONCURRENCY_STATE_SAVE_RESTORE,
         )

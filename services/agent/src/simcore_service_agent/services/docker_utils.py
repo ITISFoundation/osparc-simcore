@@ -34,12 +34,12 @@ _VOLUMES_NOT_TO_BACKUP: Final[tuple[str, ...]] = (
 
 def _does_volume_require_backup(volume_name: str) -> bool:
     # from    `dyv_1726228407_891aa1a7-eb31-459f-8aed-8c902f5f5fb0_dd84f39e-7154-4a13-ba1d-50068d723104_stupni_www_`
-    # retruns `stupni_www_`
+    # returns `stupni_www_`
     inverse_name_part = volume_name[CHARS_IN_VOLUME_NAME_BEFORE_DIR_NAME:]
     return not inverse_name_part.startswith(_VOLUMES_NOT_TO_BACKUP)
 
 
-async def get_unused_dynamc_sidecar_volumes(docker: Docker) -> set[str]:
+async def get_unused_dynamic_sidecar_volumes(docker: Docker) -> set[str]:
     """Returns all volumes unused by sidecars"""
     volumes = await docker.volumes.list()
     all_volumes: set[str] = {volume["Name"] for volume in volumes["Volumes"]}

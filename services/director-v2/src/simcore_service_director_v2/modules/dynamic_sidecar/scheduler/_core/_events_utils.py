@@ -6,10 +6,9 @@ from typing import TYPE_CHECKING, Any, cast
 
 from common_library.json_serialization import json_loads
 from fastapi import FastAPI
-from models_library.api_schemas_long_running_tasks.base import ProgressPercent
 from models_library.products import ProductName
 from models_library.projects_networks import ProjectsNetworks
-from models_library.projects_nodes_io import NodeID, NodeIDStr
+from models_library.projects_nodes_io import NodeID
 from models_library.rabbitmq_messages import InstrumentationRabbitMessage
 from models_library.rpc.webserver.auth.api_keys import generate_unique_api_key
 from models_library.service_settings_labels import SimcoreServiceLabels
@@ -211,17 +210,11 @@ async def service_remove_sidecar_proxy_docker_networks_and_volumes(
     app: FastAPI,
     node_uuid: NodeID,
     swarm_stack_name: str,
-    set_were_state_and_outputs_saved: bool | None = None,
 ) -> None:
     scheduler_data: SchedulerData = _get_scheduler_data(app, node_uuid)
     rabbit_rpc_client: RabbitMQRPCClient = app.state.rabbitmq_rpc_client
 
-    if set_were_state_and_outputs_saved is not None:
-        scheduler_data.dynamic_sidecar.were_state_and_outputs_saved = True
-
-    await task_progress.update(
-        message="removing dynamic sidecar stack", percent=ProgressPercent(0.1)
-    )
+    await task_progress.update(message="removing dynamic sidecar stack", percent=0.1)
 
     await remove_dynamic_sidecar_stack(
         node_uuid=scheduler_data.node_uuid,
@@ -235,42 +228,32 @@ async def service_remove_sidecar_proxy_docker_networks_and_volumes(
             node_id=scheduler_data.node_uuid,
         )
 
-    await task_progress.update(message="removing network", percent=ProgressPercent(0.2))
+    await task_progress.update(message="removing network", percent=0.2)
     await remove_dynamic_sidecar_network(scheduler_data.dynamic_sidecar_network_name)
 
-    if scheduler_data.dynamic_sidecar.were_state_and_outputs_saved:
-        if scheduler_data.dynamic_sidecar.docker_node_id is None:
-            _logger.warning(
-                "Skipped volume removal for %s, since a docker_node_id was not found.",
-                scheduler_data.node_uuid,
-            )
-        else:
-            # Remove all dy-sidecar associated volumes from node
-            await task_progress.update(
-                message="removing volumes", percent=ProgressPercent(0.3)
-            )
-            with log_context(_logger, logging.DEBUG, f"removing volumes '{node_uuid}'"):
-                try:
-                    await remove_volumes_without_backup_for_service(
-                        rabbit_rpc_client,
-                        docker_node_id=scheduler_data.dynamic_sidecar.docker_node_id,
-                        swarm_stack_name=swarm_stack_name,
-                        node_id=scheduler_data.node_uuid,
-                    )
-                except (
-                    NoServiceVolumesFoundRPCError,
-                    RemoteMethodNotRegisteredError,  # happens when autoscaling node was removed
-                ) as e:
-                    _logger.info("Could not remove volumes, because: '%s'", e)
+    if scheduler_data.dynamic_sidecar.docker_node_id:
+        # Remove all dy-sidecar associated volumes from node
+        await task_progress.update(message="removing volumes", percent=0.3)
+        with log_context(_logger, logging.DEBUG, f"removing volumes '{node_uuid}'"):
+            try:
+                await remove_volumes_without_backup_for_service(
+                    rabbit_rpc_client,
+                    docker_node_id=scheduler_data.dynamic_sidecar.docker_node_id,
+                    swarm_stack_name=swarm_stack_name,
+                    node_id=scheduler_data.node_uuid,
+                )
+            except (
+                NoServiceVolumesFoundRPCError,
+                RemoteMethodNotRegisteredError,  # happens when autoscaling node was removed
+            ) as e:
+                _logger.info("Could not remove volumes, because: '%s'", e)
 
     _logger.debug(
         "Removed dynamic-sidecar services and crated container for '%s'",
         scheduler_data.service_name,
     )
 
-    await task_progress.update(
-        message="removing project networks", percent=ProgressPercent(0.8)
-    )
+    await task_progress.update(message="removing project networks", percent=0.8)
     used_projects_networks = await get_projects_networks_containers(
         project_id=scheduler_data.project_id
     )
@@ -290,9 +273,7 @@ async def service_remove_sidecar_proxy_docker_networks_and_volumes(
 
     await _cleanup_long_running_tasks(app, scheduler_data.run_id)
 
-    await task_progress.update(
-        message="finished removing resources", percent=ProgressPercent(1)
-    )
+    await task_progress.update(message="finished removing resources", percent=1)
 
 
 async def _cleanup_long_running_tasks(
@@ -371,15 +352,9 @@ async def attempt_pod_removal_and_data_saving(
 
         try:
             tasks = [
-                service_push_outputs(app, scheduler_data.node_uuid, sidecars_client)
+                service_push_outputs(app, scheduler_data.node_uuid, sidecars_client),
+                service_save_state(app, scheduler_data.node_uuid, sidecars_client),
             ]
-
-            # When enabled no longer uploads state via nodeports
-            # It uses rclone mounted volumes for this task.
-            if not app_settings.DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED:
-                tasks.append(
-                    service_save_state(app, scheduler_data.node_uuid, sidecars_client)
-                )
 
             await logged_gather(*tasks, max_concurrency=2)
             scheduler_data.dynamic_sidecar.were_state_and_outputs_saved = True
@@ -458,7 +433,7 @@ async def attach_project_networks(app: FastAPI, scheduler_data: SchedulerData) -
         network_name,
         container_aliases,
     ) in projects_networks.networks_with_aliases.items():
-        network_alias = container_aliases.get(NodeIDStr(scheduler_data.node_uuid))
+        network_alias = container_aliases.get(f"{scheduler_data.node_uuid}")
         if network_alias is not None:
             await sidecars_client.attach_service_containers_to_project_network(
                 dynamic_sidecar_endpoint=dynamic_sidecar_endpoint,
@@ -496,7 +471,6 @@ async def wait_for_sidecar_api(app: FastAPI, scheduler_data: SchedulerData) -> N
 async def prepare_services_environment(
     app: FastAPI, scheduler_data: SchedulerData
 ) -> None:
-    app_settings: AppSettings = app.state.settings
     sidecars_client = await get_sidecars_client(app, scheduler_data.node_uuid)
     dynamic_sidecar_endpoint = scheduler_data.endpoint
 
@@ -565,11 +539,8 @@ async def prepare_services_environment(
     tasks = [
         _pull_user_services_images_with_metrics(),
         _pull_output_ports_with_metrics(),
+        _restore_service_state_with_metrics(),
     ]
-    # When enabled no longer downloads state via nodeports
-    # S3 is used to store state paths
-    if not app_settings.DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED:
-        tasks.append(_restore_service_state_with_metrics())
 
     await limited_gather(*tasks, limit=3)
 

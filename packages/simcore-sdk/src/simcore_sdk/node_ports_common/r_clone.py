@@ -3,19 +3,17 @@ import logging
 import re
 import shlex
 from asyncio.streams import StreamReader
-from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Final
 
 from aiocache import cached  # type: ignore[import-untyped]
-from aiofiles import tempfile
 from common_library.errors_classes import OsparcErrorMixin
 from pydantic import AnyUrl, BaseModel, ByteSize
 from servicelib.progress_bar import ProgressBarData
+from servicelib.r_clone_utils import config_file
 from servicelib.utils import logged_gather
 from settings_library.r_clone import RCloneSettings
-from settings_library.utils_r_clone import get_r_clone_config
+from settings_library.utils_r_clone import get_s3_r_clone_config
 
 from ._utils import BaseLogParser
 from .r_clone_utils import (
@@ -43,15 +41,6 @@ class RCloneDirectoryNotFoundError(BaseRCloneError):
     msg_template: str = (
         "Provided path '{local_directory_path}' is a file. Expects a directory!"
     )
-
-
-@asynccontextmanager
-async def _config_file(config: str) -> AsyncIterator[str]:
-    async with tempfile.NamedTemporaryFile("w") as f:
-        await f.write(config)
-        await f.flush()
-        assert isinstance(f.name, str)  # nosec
-        yield f.name
 
 
 async def _read_stream(stream: StreamReader, r_clone_log_parsers: list[BaseLogParser]):
@@ -92,7 +81,6 @@ async def _async_r_clone_command(
         [asyncio.create_task(_read_stream(proc.stdout, [*r_clone_log_parsers]))]
     )
 
-    # NOTE: ANE not sure why you do this call here. The above one already reads out the stream.
     _stdout, _stderr = await proc.communicate()
 
     command_output = command_result_parser.get_output()
@@ -146,10 +134,10 @@ async def _get_folder_size(
     folder: Path,
     s3_config_key: str,
 ) -> ByteSize:
-    r_clone_config_file_content = get_r_clone_config(
+    r_clone_config_file_content = get_s3_r_clone_config(
         r_clone_settings, s3_config_key=s3_config_key
     )
-    async with _config_file(r_clone_config_file_content) as config_file_name:
+    async with config_file(r_clone_config_file_content) as config_file_name:
         r_clone_command = (
             "rclone",
             f"--config {config_file_name}",
@@ -190,22 +178,33 @@ async def _sync_sources(
         s3_config_key=s3_config_key,
     )
 
-    r_clone_config_file_content = get_r_clone_config(
+    r_clone_config_file_content = get_s3_r_clone_config(
         r_clone_settings, s3_config_key=s3_config_key
     )
-    async with _config_file(r_clone_config_file_content) as config_file_name:
+    async with config_file(r_clone_config_file_content) as config_file_name:
         r_clone_command = (
             "rclone",
             "--config",
             config_file_name,
             "--retries",
             f"{r_clone_settings.R_CLONE_OPTION_RETRIES}",
+            "--retries-sleep",
+            r_clone_settings.R_CLONE_RETRIES_SLEEP,
             "--transfers",
             f"{r_clone_settings.R_CLONE_OPTION_TRANSFERS}",
             # below two options reduce to a minimum the memory footprint
             # https://forum.rclone.org/t/how-to-set-a-memory-limit/10230/4
             "--buffer-size",  # docs https://rclone.org/docs/#buffer-size-size
             r_clone_settings.R_CLONE_OPTION_BUFFER_SIZE,
+            "--checkers",
+            f"{r_clone_settings.R_CLONE_CHECKERS}",
+            "--s3-upload-concurrency",
+            f"{r_clone_settings.R_CLONE_S3_UPLOAD_CONCURRENCY}",
+            "--s3-chunk-size",
+            r_clone_settings.R_CLONE_CHUNK_SIZE,
+            # handles the order of file upload
+            "--order-by",
+            r_clone_settings.R_CLONE_ORDER_BY,
             "--use-json-log",
             # frequent polling for faster progress updates
             "--stats",

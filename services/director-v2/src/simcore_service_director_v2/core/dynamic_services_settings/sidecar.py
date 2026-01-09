@@ -1,6 +1,5 @@
 import logging
 import warnings
-from enum import Enum
 from pathlib import Path
 from typing import Annotated
 
@@ -18,53 +17,19 @@ from pydantic import (
     AliasChoices,
     Field,
     Json,
-    PositiveInt,
     ValidationInfo,
     field_validator,
 )
 from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import PortInt
 from settings_library.efs import AwsEfsSettings
-from settings_library.r_clone import RCloneSettings as SettingsLibraryRCloneSettings
+from settings_library.r_clone import RCloneSettings
 from settings_library.utils_logging import MixinLoggingSettings
 from settings_library.utils_service import DEFAULT_FASTAPI_PORT
 
 from ...constants import DYNAMIC_SIDECAR_DOCKER_IMAGE_RE
 
 _logger = logging.getLogger(__name__)
-
-
-class VFSCacheMode(str, Enum):
-    __slots__ = ()
-
-    OFF = "off"
-    MINIMAL = "minimal"
-    WRITES = "writes"
-    FULL = "full"
-
-
-class RCloneSettings(SettingsLibraryRCloneSettings):
-    R_CLONE_DIR_CACHE_TIME_SECONDS: Annotated[
-        PositiveInt, Field(description="time to cache directory entries for")
-    ] = 10
-    R_CLONE_POLL_INTERVAL_SECONDS: Annotated[
-        PositiveInt, Field(description="time to wait between polling for changes")
-    ] = 9
-    R_CLONE_VFS_CACHE_MODE: Annotated[
-        VFSCacheMode,
-        Field(
-            description="VFS operation mode, defines how and when the disk cache is synced"
-        ),
-    ] = VFSCacheMode.MINIMAL
-
-    @field_validator("R_CLONE_POLL_INTERVAL_SECONDS")
-    @classmethod
-    def enforce_r_clone_requirement(cls, v: int, info: ValidationInfo) -> PositiveInt:
-        dir_cache_time = info.data["R_CLONE_DIR_CACHE_TIME_SECONDS"]
-        if v >= dir_cache_time:
-            msg = f"R_CLONE_POLL_INTERVAL_SECONDS={v} must be lower than R_CLONE_DIR_CACHE_TIME_SECONDS={dir_cache_time}"
-            raise ValueError(msg)
-        return v
 
 
 class PlacementSettings(BaseCustomSettings):

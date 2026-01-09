@@ -16,8 +16,8 @@ from simcore_service_dynamic_sidecar.cli import main
 from typer.testing import CliRunner
 
 pytest_simcore_core_services_selection = [
-    "redis",
     "rabbit",
+    "redis",
 ]
 
 
@@ -27,15 +27,26 @@ def cli_runner(
     redis_service: RedisSettings,
     mock_environment: EnvVarsDict,
 ) -> CliRunner:
-    mock_environment["REDIS_SETTINGS"] = json.dumps(
-        model_dump_with_secrets(redis_service, show_secrets=True)
-    )
-    mock_environment["RABBIT_SETTINGS"] = json.dumps(
-        model_dump_with_secrets(rabbit_service, show_secrets=True)
-    )
+    env = {
+        **mock_environment,
+        "REDIS_SETTINGS": json.dumps(
+            model_dump_with_secrets(redis_service, show_secrets=True)
+        ),
+        "RABBIT_SETTINGS": json.dumps(
+            model_dump_with_secrets(rabbit_service, show_secrets=True)
+        ),
+    }
 
-    pprint(mock_environment)
-    return CliRunner(env=mock_environment)
+    pprint(env)
+    return CliRunner(env=env)
+
+
+@pytest.fixture
+def mock_r_clone_mount_manager(mocker: MockerFixture) -> None:
+    mocker.patch(
+        "simcore_service_dynamic_sidecar.modules.long_running_tasks.get_r_clone_mount_manager",
+        spec=True,
+    )
 
 
 @pytest.fixture
@@ -68,7 +79,9 @@ def test_list_state_dirs(cli_runner: CliRunner, mock_data_manager: None):
     )
 
 
-def test_outputs_push_interface(cli_runner: CliRunner, mock_data_manager: None):
+def test_outputs_push_interface(
+    cli_runner: CliRunner, mock_data_manager: None, mock_r_clone_mount_manager: None
+):
     result = cli_runner.invoke(main, ["state-save"])
     assert result.exit_code == os.EX_OK, _format_cli_error(result)
     assert "state save finished successfully\n" in result.stdout

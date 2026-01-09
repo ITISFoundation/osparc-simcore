@@ -30,7 +30,9 @@ class GroupExtraPropertiesNotFoundError(GroupExtraPropertiesError): ...
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
-class GroupExtraProperties(FromRowMixin):
+class GroupExtraProperties(  # pylint: disable=too-many-instance-attributes
+    FromRowMixin
+):
     group_id: int
     product_name: str
     internet_access: bool
@@ -40,6 +42,7 @@ class GroupExtraProperties(FromRowMixin):
     created: datetime.datetime
     modified: datetime.datetime
     enable_efs: bool
+    use_r_clone_mounting: bool
 
 
 def _list_table_entries_ordered_by_group_type_stmt(user_id: int, product_name: str):
