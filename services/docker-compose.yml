@@ -1592,8 +1592,8 @@ networks:
     driver: overlay
     attachable: true
     internal: true
-    driver_opts:
-      encrypted: "true"
+    # driver_opts:
+    #   encrypted: "true"
     labels:
       com.simcore.description: "used for internal access to the docker swarm api"
 
