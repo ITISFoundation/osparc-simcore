@@ -23,8 +23,8 @@ from servicelib.rabbitmq import RPCRouter
 from ..errors import (
     TaskManagerError,
     TaskNotFoundError,
-    TransferrableCeleryError,
-    decode_celery_transferrable_error,
+    TransferableCeleryError,
+    decode_celery_transferable_error,
 )
 
 _logger = logging.getLogger(__name__)
@@ -32,9 +32,7 @@ router = RPCRouter()
 
 
 @router.expose(reraise_if_error_type=(JobSchedulerError, JobMissingError))
-async def cancel(
-    task_manager: TaskManager, job_id: AsyncJobId, owner_metadata: OwnerMetadata
-):
+async def cancel(task_manager: TaskManager, job_id: AsyncJobId, owner_metadata: OwnerMetadata):
     assert task_manager  # nosec
     assert owner_metadata  # nosec
     try:
@@ -49,9 +47,7 @@ async def cancel(
 
 
 @router.expose(reraise_if_error_type=(JobSchedulerError, JobMissingError))
-async def status(
-    task_manager: TaskManager, job_id: AsyncJobId, owner_metadata: OwnerMetadata
-) -> AsyncJobStatus:
+async def status(task_manager: TaskManager, job_id: AsyncJobId, owner_metadata: OwnerMetadata) -> AsyncJobStatus:
     assert task_manager  # nosec
     assert owner_metadata  # nosec
 
@@ -81,9 +77,7 @@ async def status(
         JobSchedulerError,
     )
 )
-async def result(
-    task_manager: TaskManager, job_id: AsyncJobId, owner_metadata: OwnerMetadata
-) -> AsyncJobResult:
+async def result(task_manager: TaskManager, job_id: AsyncJobId, owner_metadata: OwnerMetadata) -> AsyncJobResult:
     assert task_manager  # nosec
     assert job_id  # nosec
     assert owner_metadata  # nosec
@@ -112,8 +106,8 @@ async def result(
         # try to recover the original error
         exception = None
         with log_catch(_logger, reraise=False):
-            assert isinstance(_result, TransferrableCeleryError)  # nosec
-            exception = decode_celery_transferrable_error(_result)
+            assert isinstance(_result, TransferableCeleryError)  # nosec
+            exception = decode_celery_transferable_error(_result)
             exc_type = type(exception).__name__
             exc_msg = f"{exception}"
 
@@ -128,9 +122,7 @@ async def result(
 
 
 @router.expose(reraise_if_error_type=(JobSchedulerError,))
-async def list_jobs(
-    task_manager: TaskManager, owner_metadata: OwnerMetadata
-) -> list[AsyncJobGet]:
+async def list_jobs(task_manager: TaskManager, owner_metadata: OwnerMetadata) -> list[AsyncJobGet]:
     assert task_manager  # nosec
     try:
         tasks = await task_manager.list_tasks(
@@ -139,6 +131,4 @@ async def list_jobs(
     except TaskManagerError as exc:
         raise JobSchedulerError(exc=f"{exc}") from exc
 
-    return [
-        AsyncJobGet(job_id=task.uuid, job_name=task.metadata.name) for task in tasks
-    ]
+    return [AsyncJobGet(job_id=task.uuid, job_name=task.metadata.name) for task in tasks]
