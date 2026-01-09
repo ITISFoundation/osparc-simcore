@@ -608,7 +608,7 @@ services:
       placement:
         constraints:
           - node.role == manager
-#      mode: global
+      mode: global
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
