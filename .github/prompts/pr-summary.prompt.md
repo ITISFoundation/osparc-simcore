@@ -4,7 +4,6 @@ description: Generates a PR summary, suitable for a PR against the current `mast
 model: GPT-4.1
 ---
 
-
 Generate a concise pull request summary by analyzing the git diff between the current branch and `master`. Follow these guidelines:
 
 ## Analysis Requirements
