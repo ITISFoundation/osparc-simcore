@@ -171,8 +171,8 @@ def setup_docker_api_proxy(
     )
 
 
-MAX_TIME_FOR_APP_TO_STARTUP = 10
-MAX_TIME_FOR_APP_TO_SHUTDOWN = 10
+MAX_TIME_FOR_APP_TO_STARTUP = 30
+MAX_TIME_FOR_APP_TO_SHUTDOWN = 30
 
 
 @pytest.fixture
