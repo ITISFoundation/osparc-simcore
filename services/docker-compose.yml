@@ -608,7 +608,7 @@ services:
       placement:
         constraints:
           - node.role == manager
-      mode: global
+#      mode: global
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
@@ -1592,9 +1592,9 @@ networks:
     name: ${SWARM_STACK_NAME}_docker_api_subnet
     driver: overlay
     attachable: true
-    # internal: true
-    # driver_opts:
-    #   encrypted: "true"
+    internal: true
+    driver_opts:
+      encrypted: "true"
     labels:
       com.simcore.description: "used for internal access to the docker swarm api"
 
