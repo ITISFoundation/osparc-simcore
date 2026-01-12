@@ -134,9 +134,9 @@ def _error_handling(
 
 
 @overload
-def register_task[**P, R](
+def register_task[**P_Task, R_Task](
     app: Celery,
-    fn: Callable[Concatenate[Task, TaskKey, P], Coroutine[Any, Any, R]],
+    fn: Callable[Concatenate[Task, TaskKey, P_Task], Coroutine[Any, Any, R_Task]],
     task_name: str | None = None,
     timeout: timedelta | None = _DEFAULT_TASK_TIMEOUT,
     max_retries: NonNegativeInt = _DEFAULT_MAX_RETRIES,
@@ -146,9 +146,9 @@ def register_task[**P, R](
 
 
 @overload
-def register_task[**P, R](
+def register_task[**P_Task, R_Task](
     app: Celery,
-    fn: Callable[Concatenate[Task, P], R],
+    fn: Callable[Concatenate[Task, P_Task], R_Task],
     task_name: str | None = None,
     timeout: timedelta | None = _DEFAULT_TASK_TIMEOUT,
     max_retries: NonNegativeInt = _DEFAULT_MAX_RETRIES,
