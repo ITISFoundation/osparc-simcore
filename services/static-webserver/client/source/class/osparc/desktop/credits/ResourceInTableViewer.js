@@ -115,7 +115,6 @@ qx.Class.define("osparc.desktop.credits.ResourceInTableViewer", {
         if (selection.length) {
           const table = this.getChildControl("table");
           table.getTableModel().setWalletId(this._getSelectWalletId());
-          console.log("Reload Data: previous cache:", table.getTableModel().getCacheContent());
           table.getTableModel().reloadData();
         }
       });
