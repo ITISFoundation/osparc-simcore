@@ -1,7 +1,7 @@
 import logging
 from pathlib import Path
 
-from models_library.api_schemas_rpc_async_jobs.async_jobs import (
+from models_library.api_schemas_async_jobs.async_jobs import (
     AsyncJobGet,
 )
 from models_library.products import ProductName
@@ -19,7 +19,7 @@ router = RPCRouter()
 
 
 @router.expose(reraise_if_error_type=None)
-async def compute_path_size(
+async def compute_path_size(  # noqa: PLR0913
     task_manager: TaskManager,
     owner_metadata: OwnerMetadata,
     location_id: LocationID,

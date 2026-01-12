@@ -1,14 +1,15 @@
 # pylint: disable=unused-argument
 
 from dataclasses import dataclass
+from uuid import UUID
 
-from models_library.api_schemas_rpc_async_jobs.async_jobs import (
+from models_library.api_schemas_async_jobs.async_jobs import (
     AsyncJobGet,
     AsyncJobId,
     AsyncJobResult,
     AsyncJobStatus,
 )
-from models_library.api_schemas_rpc_async_jobs.exceptions import BaseAsyncjobRpcError
+from models_library.api_schemas_async_jobs.exceptions import BaseAsyncjobRpcError
 from models_library.progress_bar import ProgressReport
 from models_library.rabbitmq_basic_types import RPCNamespace
 from pydantic import validate_call
@@ -24,24 +25,23 @@ class AsyncJobSideEffects:
     @validate_call(config={"arbitrary_types_allowed": True})
     async def cancel(
         self,
-        rabbitmq_rpc_client: RabbitMQRPCClient | MockType,
+        _rabbitmq_rpc_client: RabbitMQRPCClient | MockType,
         *,
-        rpc_namespace: RPCNamespace,
-        job_id: AsyncJobId,
-        owner_metadata: OwnerMetadata,
+        _rpc_namespace: RPCNamespace,
+        _job_id: AsyncJobId,
+        _owner_metadata: OwnerMetadata,
     ) -> None:
         if self.exception is not None:
             raise self.exception
-        return None
 
     @validate_call(config={"arbitrary_types_allowed": True})
     async def status(
         self,
-        rabbitmq_rpc_client: RabbitMQRPCClient | MockType,
+        _rabbitmq_rpc_client: RabbitMQRPCClient | MockType,
         *,
-        rpc_namespace: RPCNamespace,
+        _rpc_namespace: RPCNamespace,
         job_id: AsyncJobId,
-        owner_metadata: OwnerMetadata,
+        _owner_metadata: OwnerMetadata,
     ) -> AsyncJobStatus:
         if self.exception is not None:
             raise self.exception
@@ -59,11 +59,11 @@ class AsyncJobSideEffects:
     @validate_call(config={"arbitrary_types_allowed": True})
     async def result(
         self,
-        rabbitmq_rpc_client: RabbitMQRPCClient | MockType,
+        _rabbitmq_rpc_client: RabbitMQRPCClient | MockType,
         *,
-        rpc_namespace: RPCNamespace,
-        job_id: AsyncJobId,
-        owner_metadata: OwnerMetadata,
+        _rpc_namespace: RPCNamespace,
+        _job_id: AsyncJobId,
+        _owner_metadata: OwnerMetadata,
     ) -> AsyncJobResult:
         if self.exception is not None:
             raise self.exception
@@ -72,17 +72,17 @@ class AsyncJobSideEffects:
     @validate_call(config={"arbitrary_types_allowed": True})
     async def list_jobs(
         self,
-        rabbitmq_rpc_client: RabbitMQRPCClient | MockType,
+        _rabbitmq_rpc_client: RabbitMQRPCClient | MockType,
         *,
-        rpc_namespace: RPCNamespace,
-        owner_metadata: OwnerMetadata,
-        filter_: str = "",
+        _rpc_namespace: RPCNamespace,
+        _owner_metadata: OwnerMetadata,
+        _filter_: str = "",  # noqa: ARG002
     ) -> list[AsyncJobGet]:
         if self.exception is not None:
             raise self.exception
         return [
             AsyncJobGet(
-                job_id=AsyncJobId("123e4567-e89b-12d3-a456-426614174000"),
+                job_id=UUID("123e4567-e89b-12d3-a456-426614174000"),
                 job_name="Example Job",
             )
         ]

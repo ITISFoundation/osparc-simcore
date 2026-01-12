@@ -9,11 +9,11 @@ from typing import Annotated, Any, Final, NamedTuple
 from urllib.parse import quote, unquote
 
 from aiohttp import ClientTimeout, web
+from models_library.api_schemas_async_jobs.async_jobs import (
+    AsyncJobGet,
+)
 from models_library.api_schemas_long_running_tasks.tasks import (
     TaskGet,
-)
-from models_library.api_schemas_rpc_async_jobs.async_jobs import (
-    AsyncJobGet,
 )
 from models_library.api_schemas_storage.search_async_jobs import SEARCH_TASK_NAME
 from models_library.api_schemas_storage.storage_schemas import (
@@ -494,7 +494,7 @@ async def export_data(request: web.Request) -> web.Response:
 
     body = await parse_request_body_as(model_schema_cls=DataExportPost, request=request)
 
-    task_uuid, task_name = await submit_export_data_task(
+    async_job_get = await submit_export_data_task(
         task_manager=get_task_manager(request.app),
         owner_metadata=OwnerMetadata.model_validate(
             WebServerOwnerMetadata(
@@ -508,14 +508,14 @@ async def export_data(request: web.Request) -> web.Response:
         export_as="path",
     )
 
-    job_id = f"{task_uuid}"
+    job_id_str = f"{async_job_get.job_id}"
     return create_data_response(
         TaskGet(
-            task_id=job_id,
-            task_name=task_name,
-            status_href=f"{request.url.with_path(str(request.app.router['get_async_job_status'].url_for(task_id=job_id)))}",
-            abort_href=f"{request.url.with_path(str(request.app.router['cancel_async_job'].url_for(task_id=job_id)))}",
-            result_href=f"{request.url.with_path(str(request.app.router['get_async_job_result'].url_for(task_id=job_id)))}",
+            task_id=job_id_str,
+            task_name=async_job_get.job_name,
+            status_href=f"{request.url.with_path(str(request.app.router['get_async_job_status'].url_for(task_id=job_id_str)))}",
+            abort_href=f"{request.url.with_path(str(request.app.router['cancel_async_job'].url_for(task_id=job_id_str)))}",
+            result_href=f"{request.url.with_path(str(request.app.router['get_async_job_result'].url_for(task_id=job_id_str)))}",
         ),
         status=status.HTTP_202_ACCEPTED,
     )

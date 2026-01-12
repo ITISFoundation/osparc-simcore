@@ -7,13 +7,13 @@ from typing import Final
 import pytest
 from common_library.async_tools import cancel_wait_task
 from faker import Faker
-from models_library.api_schemas_rpc_async_jobs.async_jobs import (
+from models_library.api_schemas_async_jobs.async_jobs import (
     AsyncJobGet,
     AsyncJobId,
     AsyncJobResult,
     AsyncJobStatus,
 )
-from models_library.api_schemas_rpc_async_jobs.exceptions import JobMissingError
+from models_library.api_schemas_async_jobs.exceptions import JobMissingError
 from models_library.products import ProductName
 from models_library.progress_bar import ProgressReport
 from models_library.rabbitmq_basic_types import RPCMethodName, RPCNamespace
@@ -79,9 +79,7 @@ async def async_job_rpc_server(  # noqa: C901
                     return task
             raise JobMissingError(job_id=f"{job_id}")
 
-        async def status(
-            self, job_id: AsyncJobId, owner_metadata: OwnerMetadata
-        ) -> AsyncJobStatus:
+        async def status(self, job_id: AsyncJobId, owner_metadata: OwnerMetadata) -> AsyncJobStatus:
             assert owner_metadata
             task = self._get_task(job_id)
             return AsyncJobStatus(
@@ -90,17 +88,13 @@ async def async_job_rpc_server(  # noqa: C901
                 done=task.done(),
             )
 
-        async def cancel(
-            self, job_id: AsyncJobId, owner_metadata: OwnerMetadata
-        ) -> None:
+        async def cancel(self, job_id: AsyncJobId, owner_metadata: OwnerMetadata) -> None:
             assert job_id
             assert owner_metadata
             task = self._get_task(job_id)
             task.cancel()
 
-        async def result(
-            self, job_id: AsyncJobId, owner_metadata: OwnerMetadata
-        ) -> AsyncJobResult:
+        async def result(self, job_id: AsyncJobId, owner_metadata: OwnerMetadata) -> AsyncJobResult:
             assert owner_metadata
             task = self._get_task(job_id)
             assert task.done()
@@ -131,12 +125,8 @@ async def async_job_rpc_server(  # noqa: C901
 
         async def setup(self) -> None:
             for m in (self.status, self.cancel, self.result):
-                await rpc_server.register_handler(
-                    namespace, RPCMethodName(m.__name__), m
-                )
-            await rpc_server.register_handler(
-                namespace, RPCMethodName(self.list_jobs.__name__), self.list_jobs
-            )
+                await rpc_server.register_handler(namespace, RPCMethodName(m.__name__), m)
+            await rpc_server.register_handler(namespace, RPCMethodName(self.list_jobs.__name__), self.list_jobs)
 
             await rpc_server.register_handler(namespace, method_name, self.submit)
 
@@ -158,7 +148,7 @@ async def test_async_jobs_methods(
     job_id: AsyncJobId,
     method: str,
 ):
-    from servicelib.rabbitmq.rpc_interfaces.async_jobs import async_jobs
+    from servicelib.rabbitmq.rpc_interfaces.async_jobs import async_jobs  # noqa: PLC0415
 
     async_jobs_method = getattr(async_jobs, method)
     with pytest.raises(JobMissingError):
@@ -221,7 +211,7 @@ async def test_submit_and_wait_properly_timesout(
     method_name: RPCMethodName,
     owner_metadata: OwnerMetadata,
 ):
-    with pytest.raises(TimeoutError):  # noqa: PT012
+    with pytest.raises(TimeoutError):
         async for _job_composed_result in submit_and_wait(
             rpc_client,
             rpc_namespace=namespace,

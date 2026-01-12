@@ -1,3 +1,5 @@
+# pylint: disable=too-many-arguments
+
 import datetime
 import logging
 from asyncio import CancelledError
@@ -5,13 +7,13 @@ from collections.abc import AsyncGenerator, Awaitable
 from typing import Any, Final
 
 from attr import dataclass
-from models_library.api_schemas_rpc_async_jobs.async_jobs import (
+from models_library.api_schemas_async_jobs.async_jobs import (
     AsyncJobGet,
     AsyncJobId,
     AsyncJobResult,
     AsyncJobStatus,
 )
-from models_library.api_schemas_rpc_async_jobs.exceptions import JobMissingError
+from models_library.api_schemas_async_jobs.exceptions import JobMissingError
 from models_library.rabbitmq_basic_types import RPCMethodName, RPCNamespace
 from pydantic import NonNegativeInt, TypeAdapter
 from tenacity import (
@@ -132,7 +134,7 @@ _DEFAULT_RPC_RETRY_POLICY: dict[str, Any] = {
 
 
 @retry(**_DEFAULT_RPC_RETRY_POLICY)
-async def _wait_for_completion(
+async def _wait_for_completion(  # noqa: PLR0913
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
     rpc_namespace: RPCNamespace,
@@ -183,7 +185,7 @@ class AsyncJobComposedResult:
         return await self._result
 
 
-async def wait_and_get_result(
+async def wait_and_get_result(  # noqa: PLR0913
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
     rpc_namespace: RPCNamespace,

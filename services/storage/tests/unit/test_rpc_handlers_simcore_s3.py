@@ -24,10 +24,10 @@ from celery_library.task_manager import CeleryTaskManager
 from faker import Faker
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
-from models_library.api_schemas_rpc_async_jobs.async_jobs import (
+from models_library.api_schemas_async_jobs.async_jobs import (
     AsyncJobResult,
 )
-from models_library.api_schemas_rpc_async_jobs.exceptions import JobError
+from models_library.api_schemas_async_jobs.exceptions import JobError
 from models_library.api_schemas_storage import STORAGE_RPC_NAMESPACE
 from models_library.api_schemas_storage.storage_schemas import (
     FileMetaDataGet,
@@ -93,9 +93,7 @@ async def _request_copy_folders(
     ) as ctx:
         async_job_get, owner_metadata = await copy_folders_from_project(
             rpc_client,
-            body=FoldersBody(
-                source=source_project, destination=dst_project, nodes_map=nodes_map
-            ),
+            body=FoldersBody(source=source_project, destination=dst_project, nodes_map=nodes_map),
             owner_metadata=_TestOwnerMetadata(
                 user_id=user_id,
                 product_name=product_name,
@@ -137,9 +135,7 @@ async def test_copy_folders_from_non_existing_project(
     incorrect_dst_project = deepcopy(dst_project)
     incorrect_dst_project["uuid"] = faker.uuid4()
 
-    with pytest.raises(
-        JobError, match=f"Project {incorrect_src_project['uuid']} was not found"
-    ):
+    with pytest.raises(JobError, match=f"Project {incorrect_src_project['uuid']} was not found"):
         await _request_copy_folders(
             storage_rabbitmq_rpc_client,
             user_id,
@@ -149,9 +145,7 @@ async def test_copy_folders_from_non_existing_project(
             nodes_map={},
         )
 
-    with pytest.raises(
-        JobError, match=f"Project {incorrect_dst_project['uuid']} was not found"
-    ):
+    with pytest.raises(JobError, match=f"Project {incorrect_dst_project['uuid']} was not found"):
         await _request_copy_folders(
             storage_rabbitmq_rpc_client,
             user_id,
@@ -232,9 +226,7 @@ async def test_copy_folders_from_valid_project_with_one_large_file(
     sqlalchemy_async_engine: AsyncEngine,
     random_project_with_files: Callable[
         [ProjectWithFilesParams],
-        Awaitable[
-            tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]
-        ],
+        Awaitable[tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]],
     ],
     project_params: ProjectWithFilesParams,
 ):
@@ -252,14 +244,10 @@ async def test_copy_folders_from_valid_project_with_one_large_file(
         dst_project,
         nodes_map={NodeID(i): NodeID(j) for i, j in nodes_map.items()},
     )
-    assert data == jsonable_encoder(
-        await get_updated_project(sqlalchemy_async_engine, dst_project["uuid"])
-    )
+    assert data == jsonable_encoder(await get_updated_project(sqlalchemy_async_engine, dst_project["uuid"]))
     # check that file meta data was effectively copied
     for src_node_id in src_projects_list:
-        dst_node_id = nodes_map.get(
-            TypeAdapter(NodeIDStr).validate_python(f"{src_node_id}")
-        )
+        dst_node_id = nodes_map.get(TypeAdapter(NodeIDStr).validate_python(f"{src_node_id}"))
         assert dst_node_id
         for src_file_id, src_file in src_projects_list[src_node_id].items():
             path: Any = src_file["path"]
@@ -269,17 +257,15 @@ async def test_copy_folders_from_valid_project_with_one_large_file(
             await assert_file_meta_data_in_db(
                 sqlalchemy_async_engine,
                 file_id=TypeAdapter(SimcoreS3FileID).validate_python(
-                    f"{src_file_id}".replace(
-                        f"{src_project['uuid']}", dst_project["uuid"]
-                    ).replace(f"{src_node_id}", f"{dst_node_id}")
+                    f"{src_file_id}".replace(f"{src_project['uuid']}", dst_project["uuid"]).replace(
+                        f"{src_node_id}", f"{dst_node_id}"
+                    )
                 ),
                 expected_entry_exists=True,
                 expected_file_size=path.stat().st_size,
                 expected_upload_id=None,
                 expected_upload_expiration_date=None,
-                expected_sha256_checksum=TypeAdapter(SHA256Str).validate_python(
-                    checksum
-                ),
+                expected_sha256_checksum=TypeAdapter(SHA256Str).validate_python(checksum),
             )
 
 
@@ -325,9 +311,7 @@ async def test_copy_folders_from_valid_project(
     sqlalchemy_async_engine: AsyncEngine,
     random_project_with_files: Callable[
         [ProjectWithFilesParams],
-        Awaitable[
-            tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]
-        ],
+        Awaitable[tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]],
     ],
     project_params: ProjectWithFilesParams,
 ):
@@ -345,15 +329,11 @@ async def test_copy_folders_from_valid_project(
         dst_project,
         nodes_map={NodeID(i): NodeID(j) for i, j in nodes_map.items()},
     )
-    assert data == jsonable_encoder(
-        await get_updated_project(sqlalchemy_async_engine, dst_project["uuid"])
-    )
+    assert data == jsonable_encoder(await get_updated_project(sqlalchemy_async_engine, dst_project["uuid"]))
 
     # check that file meta data was effectively copied
     for src_node_id in src_projects_list:
-        dst_node_id = nodes_map.get(
-            TypeAdapter(NodeIDStr).validate_python(f"{src_node_id}")
-        )
+        dst_node_id = nodes_map.get(TypeAdapter(NodeIDStr).validate_python(f"{src_node_id}"))
         assert dst_node_id
         for src_file_id, src_file in src_projects_list[src_node_id].items():
             path: Any = src_file["path"]
@@ -363,17 +343,15 @@ async def test_copy_folders_from_valid_project(
             await assert_file_meta_data_in_db(
                 sqlalchemy_async_engine,
                 file_id=TypeAdapter(SimcoreS3FileID).validate_python(
-                    f"{src_file_id}".replace(
-                        f"{src_project['uuid']}", dst_project["uuid"]
-                    ).replace(f"{src_node_id}", f"{dst_node_id}")
+                    f"{src_file_id}".replace(f"{src_project['uuid']}", dst_project["uuid"]).replace(
+                        f"{src_node_id}", f"{dst_node_id}"
+                    )
                 ),
                 expected_entry_exists=True,
                 expected_file_size=path.stat().st_size,
                 expected_upload_id=None,
                 expected_upload_expiration_date=None,
-                expected_sha256_checksum=TypeAdapter(SHA256Str).validate_python(
-                    checksum
-                ),
+                expected_sha256_checksum=TypeAdapter(SHA256Str).validate_python(checksum),
             )
 
 
@@ -451,9 +429,7 @@ def mock_datcore_download(mocker: MockerFixture, client: httpx.AsyncClient) -> N
     # Use to mock downloading from DATCore
     async def _fake_download_to_file_or_raise(session, url, dest_path):
         with log_context(logging.INFO, f"Faking download:  {url} -> {dest_path}"):
-            Path(dest_path).write_text(
-                "FAKE: test_create_and_delete_folders_from_project"
-            )
+            Path(dest_path).write_text("FAKE: test_create_and_delete_folders_from_project")
 
     mocker.patch(
         "simcore_service_storage.simcore_s3_dsm.download_to_file_or_raise",
@@ -609,9 +585,7 @@ async def test_start_export_data(
     sqlalchemy_async_engine: AsyncEngine,
     random_project_with_files: Callable[
         [ProjectWithFilesParams],
-        Awaitable[
-            tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]
-        ],
+        Awaitable[tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]],
     ],
     project_params: ProjectWithFilesParams,
     task_progress_spy: Mock,
@@ -624,8 +598,7 @@ async def test_start_export_data(
         all_available_files |= x.keys()
 
     nodes_in_project_to_export = {
-        TypeAdapter(PathToExport).validate_python("/".join(Path(x).parts[0:2]))
-        for x in all_available_files
+        TypeAdapter(PathToExport).validate_python("/".join(Path(x).parts[0:2])) for x in all_available_files
     }
 
     result = await _request_start_export_data(
@@ -669,9 +642,7 @@ async def test_start_export_data_access_error(
     faker: Faker,
     export_as: Literal["path", "download_link"],
 ):
-    path_to_export = TypeAdapter(PathToExport).validate_python(
-        f"{faker.uuid4()}/{faker.uuid4()}/{faker.file_name()}"
-    )
+    path_to_export = TypeAdapter(PathToExport).validate_python(f"{faker.uuid4()}/{faker.uuid4()}/{faker.file_name()}")
     with pytest.raises(JobError) as exc:
         await _request_start_export_data(
             storage_rabbitmq_rpc_client,
@@ -697,9 +668,7 @@ async def test_start_export_invalid_export_format(
     product_name: ProductName,
     faker: Faker,
 ):
-    path_to_export = TypeAdapter(PathToExport).validate_python(
-        f"{faker.uuid4()}/{faker.uuid4()}/{faker.file_name()}"
-    )
+    path_to_export = TypeAdapter(PathToExport).validate_python(f"{faker.uuid4()}/{faker.uuid4()}/{faker.file_name()}")
     with pytest.raises(RPCServerError) as exc:
         await _request_start_export_data(
             storage_rabbitmq_rpc_client,

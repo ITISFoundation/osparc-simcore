@@ -1,6 +1,6 @@
 from typing import Literal
 
-from models_library.api_schemas_rpc_async_jobs.async_jobs import (
+from models_library.api_schemas_async_jobs.async_jobs import (
     AsyncJobGet,
 )
 from models_library.api_schemas_storage.storage_schemas import FoldersBody
@@ -45,7 +45,7 @@ async def copy_folders_from_project(
 
 
 @router.expose()
-async def start_export_data(
+async def start_export_data(  # noqa: PLR0913
     task_manager: TaskManager,
     owner_metadata: OwnerMetadata,
     user_id: UserID,
@@ -58,7 +58,8 @@ async def start_export_data(
     elif export_as == "download_link":
         task_name = export_data_as_download_link.__name__
     else:
-        raise ValueError(f"Invalid export_as value: {export_as}")
+        msg = f"Invalid export_as value: {export_as}"
+        raise ValueError(msg)
     task_uuid = await task_manager.submit_task(
         execution_metadata=ExecutionMetadata(
             name=task_name,

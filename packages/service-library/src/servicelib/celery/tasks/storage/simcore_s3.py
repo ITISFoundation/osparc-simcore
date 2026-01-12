@@ -1,5 +1,6 @@
 from typing import Final, Literal
 
+from models_library.api_schemas_async_jobs.async_jobs import AsyncJobGet
 from models_library.api_schemas_webserver.storage import PathToExport
 from models_library.products import ProductName
 from models_library.users import UserID
@@ -7,9 +8,7 @@ from models_library.users import UserID
 from ....celery.models import (
     ExecutionMetadata,
     OwnerMetadata,
-    TaskName,
     TasksQueue,
-    TaskUUID,
 )
 from ....celery.task_manager import TaskManager
 
@@ -24,7 +23,7 @@ async def submit_export_data_task(  # noqa: PLR0913
     product_name: ProductName,
     paths_to_export: list[PathToExport],
     export_as: Literal["path", "download_link"],
-) -> tuple[TaskUUID, TaskName]:
+) -> AsyncJobGet:
     if export_as == "path":
         task_name = EXPORT_DATA_TASK_NAME
     elif export_as == "download_link":
@@ -43,4 +42,4 @@ async def submit_export_data_task(  # noqa: PLR0913
         product_name=product_name,
         paths_to_export=paths_to_export,
     )
-    return task_uuid, task_name
+    return AsyncJobGet(job_id=task_uuid, job_name=task_name)

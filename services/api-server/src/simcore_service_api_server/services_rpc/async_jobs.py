@@ -1,13 +1,13 @@
 import functools
 from dataclasses import dataclass
 
-from models_library.api_schemas_rpc_async_jobs.async_jobs import (
+from models_library.api_schemas_async_jobs.async_jobs import (
     AsyncJobGet,
     AsyncJobId,
     AsyncJobResult,
     AsyncJobStatus,
 )
-from models_library.api_schemas_rpc_async_jobs.exceptions import (
+from models_library.api_schemas_async_jobs.exceptions import (
     JobAbortedError,
     JobError,
     JobNotDoneError,
@@ -26,9 +26,7 @@ from ..exceptions.task_errors import (
     TaskSchedulerError,
 )
 
-_exception_mapper = functools.partial(
-    service_exception_mapper, service_name="Async jobs"
-)
+_exception_mapper = functools.partial(service_exception_mapper, service_name="Async jobs")
 
 
 @dataclass
@@ -40,9 +38,7 @@ class AsyncJobClient:
             JobSchedulerError: TaskSchedulerError,
         }
     )
-    async def cancel(
-        self, *, job_id: AsyncJobId, owner_metadata: OwnerMetadata
-    ) -> None:
+    async def cancel(self, *, job_id: AsyncJobId, owner_metadata: OwnerMetadata) -> None:
         return await async_jobs.cancel(
             self._rabbitmq_rpc_client,
             rpc_namespace=STORAGE_RPC_NAMESPACE,
@@ -55,9 +51,7 @@ class AsyncJobClient:
             JobSchedulerError: TaskSchedulerError,
         }
     )
-    async def status(
-        self, *, job_id: AsyncJobId, owner_metadata: OwnerMetadata
-    ) -> AsyncJobStatus:
+    async def status(self, *, job_id: AsyncJobId, owner_metadata: OwnerMetadata) -> AsyncJobStatus:
         return await async_jobs.status(
             self._rabbitmq_rpc_client,
             rpc_namespace=STORAGE_RPC_NAMESPACE,
@@ -73,9 +67,7 @@ class AsyncJobClient:
             JobError: TaskError,
         }
     )
-    async def result(
-        self, *, job_id: AsyncJobId, owner_metadata: OwnerMetadata
-    ) -> AsyncJobResult:
+    async def result(self, *, job_id: AsyncJobId, owner_metadata: OwnerMetadata) -> AsyncJobResult:
         return await async_jobs.result(
             self._rabbitmq_rpc_client,
             rpc_namespace=STORAGE_RPC_NAMESPACE,

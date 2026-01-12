@@ -23,7 +23,7 @@ from common_library.json_serialization import json_dumps
 from common_library.serialization import model_dump_with_secrets
 from common_library.users_enums import UserRole
 from faker import Faker
-from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobStatus
+from models_library.api_schemas_async_jobs.async_jobs import AsyncJobStatus
 from models_library.progress_bar import ProgressReport
 from models_library.projects_state import (
     ProjectShareState,
@@ -109,11 +109,7 @@ def app_environment(
 ) -> EnvVarsDict:
     return setenvs_from_dict(
         monkeypatch,
-        {
-            "WEBSERVER_RABBITMQ": json_dumps(
-                model_dump_with_secrets(rabbit_service, show_secrets=True)
-            )
-        },
+        {"WEBSERVER_RABBITMQ": json_dumps(model_dump_with_secrets(rabbit_service, show_secrets=True))},
     )
 
 
@@ -175,14 +171,12 @@ def mocks_on_projects_api(mocker: MockerFixture) -> None:
     """
     All projects in this module are UNLOCKED
     """
-    import simcore_service_webserver.projects._projects_service
+    import simcore_service_webserver.projects._projects_service  # noqa: PLC0415
 
     mocker.patch.object(
-        simcore_service_webserver.projects._projects_service,
+        simcore_service_webserver.projects._projects_service,  # noqa: SLF001
         "_get_project_share_state",
-        return_value=ProjectShareState(
-            locked=False, status=ProjectStatus.CLOSED, current_user_groupids=[]
-        ),
+        return_value=ProjectShareState(locked=False, status=ProjectStatus.CLOSED, current_user_groupids=[]),
     )
 
 
@@ -241,9 +235,7 @@ async def storage_subsystem_mock_override(
     mock.side_effect = _mock_copy_data_from_project
 
 
-def _assert_redirected_to_error_page(
-    response: ClientResponse, expected_page: str, expected_status_code: int
-):
+def _assert_redirected_to_error_page(response: ClientResponse, expected_page: str, expected_status_code: int):
     # checks is a redirection
     assert len(response.history) == 1
     assert response.history[0].status == 302
@@ -259,9 +251,7 @@ def _assert_redirected_to_error_page(
 
 
 @retry(wait=wait_fixed(5), stop=stop_after_attempt(3))
-async def _assert_redirected_to_study(
-    response: ClientResponse, session: ClientSession
-) -> str:
+async def _assert_redirected_to_study(response: ClientResponse, session: ClientSession) -> str:
     # https://docs.aiohttp.org/en/stable/client_advanced.html#redirection-history
     assert len(response.history) == 1, "Is a re-direction"
 
@@ -270,24 +260,18 @@ async def _assert_redirected_to_study(
 
     # Expects redirection to osparc web
     assert response.url.path == "/"
-    assert (
-        "OSPARC-SIMCORE" in content
-    ), f"Expected front-end rendering workbench's study, got {content!s}"
+    assert "OSPARC-SIMCORE" in content, f"Expected front-end rendering workbench's study, got {content!s}"
 
     # First check if the fragment indicates an error
     fragment = response.real_url.fragment
     error_match = re.match(r"/error", fragment)
     if error_match:
         # Parse query parameters to extract error details
-        query_params = urllib.parse.parse_qs(
-            fragment.split("?", 1)[1] if "?" in fragment else ""
-        )
+        query_params = urllib.parse.parse_qs(fragment.split("?", 1)[1] if "?" in fragment else "")
         error_message = query_params.get("message", ["Unknown error"])[0]
         error_status = query_params.get("status_code", ["Unknown"])[0]
 
-        pytest.fail(
-            f"Redirected to error page: Status={error_status}, Message={error_message}"
-        )
+        pytest.fail(f"Redirected to error page: Status={error_status}, Message={error_message}")
 
     # Check for study path if not an error
     m = re.match(r"/study/([\d\w-]+)", fragment)
@@ -322,9 +306,7 @@ async def test_access_to_invalid_study(client: TestClient, faker: Faker):
     )
 
 
-async def test_access_to_forbidden_study(
-    client: TestClient, unpublished_project: ProjectDict
-):
+async def test_access_to_forbidden_study(client: TestClient, unpublished_project: ProjectDict):
     response = await client.get(f"/study/{unpublished_project['uuid']}")
 
     _assert_redirected_to_error_page(
@@ -347,9 +329,7 @@ async def test_access_study_anonymously(
 ):
     assert not _is_user_authenticated(client.session), "Is anonymous"
     assert client.app
-    study_url = client.app.router["get_redirection_to_study_page"].url_for(
-        id=published_project["uuid"]
-    )
+    study_url = client.app.router["get_redirection_to_study_page"].url_for(id=published_project["uuid"])
 
     resp = await client.get(f"{study_url}")
 
@@ -398,9 +378,7 @@ async def test_access_study_by_logged_user(
     assert client.app
     assert _is_user_authenticated(client.session), "Is already logged-in"
 
-    study_url = client.app.router["get_redirection_to_study_page"].url_for(
-        id=published_project["uuid"]
-    )
+    study_url = client.app.router["get_redirection_to_study_page"].url_for(id=published_project["uuid"])
     resp = await client.get(f"{study_url}")
     await _assert_redirected_to_study(resp, client.session)
 
@@ -431,9 +409,7 @@ async def test_access_cookie_of_expired_user(
     assert client.app  # nosec
     app: web.Application = client.app
 
-    study_url = app.router["get_redirection_to_study_page"].url_for(
-        id=published_project["uuid"]
-    )
+    study_url = app.router["get_redirection_to_study_page"].url_for(id=published_project["uuid"])
     resp = await client.get(f"{study_url}")
 
     await _assert_redirected_to_study(resp, client.session)
@@ -446,7 +422,7 @@ async def test_access_cookie_of_expired_user(
     assert await get_user_role(app, user_id=data["id"]) == UserRole.GUEST
 
     async def enforce_garbage_collect_guest(uid):
-        # TODO: can be replaced now by actual GC
+        # TODO: can be replaced now by actual GC  # noqa: FIX002
         # Emulates garbage collector:
         #   - GUEST user expired, cleaning it up
         #   - client still holds cookie with its identifier nonetheless
@@ -457,9 +433,7 @@ async def test_access_cookie_of_expired_user(
 
         prj_id = projects[0]["uuid"]
 
-        delete_task = await submit_delete_project_task(
-            app, prj_id, uid, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
-        )
+        delete_task = await submit_delete_project_task(app, prj_id, uid, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE)
         await delete_task
 
         await delete_user_without_projects(app, user_id=uid)
@@ -518,9 +492,7 @@ async def test_guest_user_is_not_garbage_collected(
         # every guest uses different client to preserve it's own authorization/authentication cookies
         client: TestClient = await aiohttp_client(web_server)
         assert client.app
-        study_url = client.app.router["get_redirection_to_study_page"].url_for(
-            id=published_project["uuid"]
-        )
+        study_url = client.app.router["get_redirection_to_study_page"].url_for(id=published_project["uuid"])
 
         # clicks link to study
         resp = await client.get(f"{study_url}")
@@ -547,10 +519,7 @@ async def test_guest_user_is_not_garbage_collected(
         print("request #", request_index, "DONE", "-" * 10)
 
     # N concurrent requests
-    request_tasks = [
-        asyncio.create_task(_test_guest_user_workflow(n))
-        for n in range(number_of_simultaneous_requests)
-    ]
+    request_tasks = [asyncio.create_task(_test_guest_user_workflow(n)) for n in range(number_of_simultaneous_requests)]
 
     await asyncio.gather(*request_tasks)
     # and now the garbage collector shall delete our users since we are done...

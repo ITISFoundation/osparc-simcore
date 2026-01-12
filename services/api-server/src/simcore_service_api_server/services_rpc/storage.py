@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from functools import partial
 
-from models_library.api_schemas_rpc_async_jobs.async_jobs import (
+from models_library.api_schemas_async_jobs.async_jobs import (
     AsyncJobGet,
 )
 from models_library.api_schemas_webserver.storage import PathToExport
@@ -35,9 +35,7 @@ class StorageService:
             paths_to_export=paths_to_export,
             export_as="download_link",
             owner_metadata=OwnerMetadata.model_validate(
-                ApiServerOwnerMetadata(
-                    user_id=self._user_id, product_name=self._product_name
-                ).model_dump()
+                ApiServerOwnerMetadata(user_id=self._user_id, product_name=self._product_name).model_dump()
             ),
             user_id=self._user_id,
             product_name=self._product_name,

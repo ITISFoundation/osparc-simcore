@@ -8,7 +8,7 @@
 
 from typing import Literal
 
-from models_library.api_schemas_rpc_async_jobs.async_jobs import (
+from models_library.api_schemas_async_jobs.async_jobs import (
     AsyncJobGet,
 )
 from models_library.api_schemas_webserver.storage import PathToExport
@@ -30,8 +30,8 @@ class StorageSideEffects:
         paths_to_export: list[PathToExport],
         export_as: Literal["path", "download_link"],
         owner_metadata: OwnerMetadata,
-        user_id: UserID,
-        product_name: ProductName,
+        user_id: UserID,  # noqa: ARG002
+        product_name: ProductName,  # noqa: ARG002
     ) -> tuple[AsyncJobGet, OwnerMetadata]:
         assert rabbitmq_rpc_client
         assert owner_metadata

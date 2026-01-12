@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from models_library.api_schemas_rpc_async_jobs.async_jobs import (
+from models_library.api_schemas_async_jobs.async_jobs import (
     AsyncJobGet,
 )
 from models_library.api_schemas_storage import STORAGE_RPC_NAMESPACE
@@ -15,7 +15,7 @@ from ..._client_rpc import RabbitMQRPCClient
 from ..async_jobs.async_jobs import submit
 
 
-async def compute_path_size(
+async def compute_path_size(  # noqa: PLR0913
     client: RabbitMQRPCClient,
     *,
     location_id: LocationID,

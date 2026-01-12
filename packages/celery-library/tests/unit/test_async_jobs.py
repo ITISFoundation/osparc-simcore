@@ -15,10 +15,10 @@ from celery_library.rpc import _async_jobs
 from celery_library.task import register_task
 from common_library.errors_classes import OsparcErrorMixin
 from faker import Faker
-from models_library.api_schemas_rpc_async_jobs.async_jobs import (
+from models_library.api_schemas_async_jobs.async_jobs import (
     AsyncJobGet,
 )
-from models_library.api_schemas_rpc_async_jobs.exceptions import (
+from models_library.api_schemas_async_jobs.exceptions import (
     JobError,
     JobMissingError,
 )
@@ -44,9 +44,7 @@ pytest_simcore_core_services_selection = [
 
 
 class AccessRightError(OsparcErrorMixin, RuntimeError):
-    msg_template: str = (
-        "User {user_id} does not have access to file {file_id} with location {location_id}"
-    )
+    msg_template: str = "User {user_id} does not have access to file {file_id} with location {location_id}"
 
 
 @pytest.fixture
@@ -71,15 +69,11 @@ def product_name(faker: Faker) -> ProductName:
 ###### RPC Interface ######
 router = RPCRouter()
 
-ASYNC_JOBS_RPC_NAMESPACE: Final[RPCNamespace] = TypeAdapter(
-    RPCNamespace
-).validate_python("async_jobs")
+ASYNC_JOBS_RPC_NAMESPACE: Final[RPCNamespace] = TypeAdapter(RPCNamespace).validate_python("async_jobs")
 
 
 @router.expose()
-async def rpc_sync_job(
-    task_manager: TaskManager, *, owner_metadata: OwnerMetadata, **kwargs: Any
-) -> AsyncJobGet:
+async def rpc_sync_job(task_manager: TaskManager, *, owner_metadata: OwnerMetadata, **kwargs: Any) -> AsyncJobGet:
     task_name = sync_job.__name__
     task_uuid = await task_manager.submit_task(
         ExecutionMetadata(name=task_name), owner_metadata=owner_metadata, **kwargs
@@ -89,9 +83,7 @@ async def rpc_sync_job(
 
 
 @router.expose()
-async def rpc_async_job(
-    task_manager: TaskManager, *, owner_metadata: OwnerMetadata, **kwargs: Any
-) -> AsyncJobGet:
+async def rpc_async_job(task_manager: TaskManager, *, owner_metadata: OwnerMetadata, **kwargs: Any) -> AsyncJobGet:
     task_name = async_job.__name__
     task_uuid = await task_manager.submit_task(
         ExecutionMetadata(name=task_name), owner_metadata=owner_metadata, **kwargs
@@ -137,15 +129,11 @@ async def async_job(task: Task, task_key: TaskKey, action: Action, payload: Any)
 
 
 @pytest.fixture
-async def register_rpc_routes(
-    async_jobs_rabbitmq_rpc_client: RabbitMQRPCClient, task_manager: TaskManager
-) -> None:
+async def register_rpc_routes(async_jobs_rabbitmq_rpc_client: RabbitMQRPCClient, task_manager: TaskManager) -> None:
     await async_jobs_rabbitmq_rpc_client.register_router(
         _async_jobs.router, ASYNC_JOBS_RPC_NAMESPACE, task_manager=task_manager
     )
-    await async_jobs_rabbitmq_rpc_client.register_router(
-        router, ASYNC_JOBS_RPC_NAMESPACE, task_manager=task_manager
-    )
+    await async_jobs_rabbitmq_rpc_client.register_router(router, ASYNC_JOBS_RPC_NAMESPACE, task_manager=task_manager)
 
 
 async def _start_task_via_rpc(
@@ -156,9 +144,7 @@ async def _start_task_via_rpc(
     product_name: ProductName,
     **kwargs: Any,
 ) -> tuple[AsyncJobGet, OwnerMetadata]:
-    owner_metadata = OwnerMetadata(
-        user_id=user_id, product_name=product_name, owner="pytest_client"
-    )
+    owner_metadata = OwnerMetadata(user_id=user_id, product_name=product_name, owner="pytest_client")
     async_job_get = await async_jobs.submit(
         rabbitmq_rpc_client=client,
         rpc_namespace=ASYNC_JOBS_RPC_NAMESPACE,
@@ -197,7 +183,6 @@ async def _wait_for_job(
     owner_metadata: OwnerMetadata,
     stop_after: timedelta = timedelta(seconds=5),
 ) -> None:
-
     async for attempt in AsyncRetrying(
         stop=stop_after_delay(stop_after.total_seconds()),
         wait=wait_fixed(0.1),
@@ -211,9 +196,7 @@ async def _wait_for_job(
                 job_id=async_job_get.job_id,
                 owner_metadata=owner_metadata,
             )
-            assert (
-                result.done is True
-            ), "Please check logs above, something whent wrong with task execution"
+            assert result.done is True, "Please check logs above, something went wrong with task execution"
 
 
 @pytest.mark.parametrize(
