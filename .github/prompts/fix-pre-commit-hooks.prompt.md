@@ -1,5 +1,5 @@
 ---
-agent: edit
+agent: agent
 description: Automatically fixes all issues reported by pre-commit hooks on the selected files.
 model: GPT-4.1
 ---
