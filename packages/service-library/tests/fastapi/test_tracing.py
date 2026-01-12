@@ -98,7 +98,7 @@ async def test_valid_tracing_settings(
         ("http://opentelemetry-collector", 80, 0.5),
         ("http://opentelemetry-collector", 1238712936, 0.5),
         ("opentelemetry-collector", 4318, 0.5),
-        ("httsdasp://to@##el-collector", 4318, 0.5),
+        ("httsdasp://ot@##el-collector", 4318, 0.5),  # spellchecker:disable-line
         (" !@#$%^&*()[]{};:,<>?\\|`~+=/'\"", 4318, 0.5),
         # The following exceeds max DNS name length
         (
@@ -292,7 +292,8 @@ async def test_with_profile_span(
     ],
     indirect=True,
 )
-async def test_tracing_opentelemetry_sampling_probability_effective(
+# ruff: noqa N802
+async def test_TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY_effective(
     mock_otel_collector: InMemorySpanExporter,
     mocked_app: FastAPI,
     set_and_clean_settings_env_vars: Callable[[], None],
