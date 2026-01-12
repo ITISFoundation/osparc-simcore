@@ -89,10 +89,7 @@ qx.Class.define("osparc.desktop.credits.ResourceInTableViewer", {
             allowStretchY: false,
             alignY: "bottom"
           });
-          control.addListener("execute", () => {
-            const table = this.getChildControl("table");
-            table.getTableModel().reloadData();
-          });
+          control.addListener("execute", () => this.reloadData());
           layout = this.getChildControl("filter-layout");
           layout.add(control);
           break;
@@ -118,6 +115,7 @@ qx.Class.define("osparc.desktop.credits.ResourceInTableViewer", {
         if (selection.length) {
           const table = this.getChildControl("table");
           table.getTableModel().setWalletId(this._getSelectWalletId());
+          console.log("Reload Data: previous cache:", table.getTableModel().getCacheContent());
           table.getTableModel().reloadData();
         }
       });
@@ -151,6 +149,11 @@ qx.Class.define("osparc.desktop.credits.ResourceInTableViewer", {
         return selectedWallet.getWalletId();
       }
       return null;
+    },
+
+    reloadData: function() {
+      const table = this.getChildControl("table");
+      table.getTableModel().reloadData();
     },
 
     _handleExport: function() {
