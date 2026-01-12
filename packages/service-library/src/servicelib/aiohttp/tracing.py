@@ -30,7 +30,7 @@ from settings_library.tracing import TracingSettings
 from yarl import URL
 
 from ..logging_utils import log_context
-from ..tracing import TracingConfig, get_trace_id_header
+from ..tracing import TracingConfig, get_trace_info_headers
 
 _logger = logging.getLogger(__name__)
 
@@ -71,16 +71,25 @@ try:
 except ImportError:
     HAS_AIO_PIKA = False
 
-APP_OPENTELEMETRY_INSTRUMENTOR_KEY: Final = web.AppKey(
-    "APP_OPENTELEMETRY_INSTRUMENTOR_KEY", dict[str, object]
-)
+APP_OPENTELEMETRY_INSTRUMENTOR_KEY: Final = web.AppKey("APP_OPENTELEMETRY_INSTRUMENTOR_KEY", dict[str, object])
 
 
 @web.middleware
 async def aiohttp_server_opentelemetry_middleware(request: web.Request, handler):
-    """This middleware is extracted from https://github.com/open-telemetry/opentelemetry-python-contrib/blob/main/instrumentation/opentelemetry-instrumentation-aiohttp-server/src/opentelemetry/instrumentation/aiohttp_server/__init__.py
-    and adapted to allow passing the tracer provider via the app instead of using the global object. The original code for the function is licensed under https://github.com/open-telemetry/opentelemetry-python-contrib/blob/main/LICENSE.
-    FIXME: I have recorded this limitation in the official source here: https://github.com/open-telemetry/opentelemetry-python-contrib/issues/3801 and plan on providing a fix soon.
+    """Middleware extracted from opentelemetry-python-contrib aiohttp-server instrumentation.
+
+    Adapted to allow passing the tracer provider via the app instead of using the global object.
+
+    Original source:
+    https://github.com/open-telemetry/opentelemetry-python-contrib/blob/main/
+    instrumentation/opentelemetry-instrumentation-aiohttp-server/
+    src/opentelemetry/instrumentation/aiohttp_server/__init__.py
+
+    Licensed under:
+    https://github.com/open-telemetry/opentelemetry-python-contrib/blob/main/LICENSE
+
+    NOTE: A fix was merged (https://github.com/open-telemetry/opentelemetry-python-contrib/pull/3819)
+    and should be used once released.
     """
 
     span_name, additional_attributes = get_default_span_details(request)
@@ -145,9 +154,7 @@ def _startup(
     """
     Sets up this service for a distributed tracing system (opentelemetry)
     """
-    opentelemetry_collector_endpoint = (
-        f"{tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT}"
-    )
+    opentelemetry_collector_endpoint = f"{tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT}"
     opentelemetry_collector_port = tracing_settings.TRACING_OPENTELEMETRY_COLLECTOR_PORT
     if not opentelemetry_collector_endpoint and not opentelemetry_collector_port:
         _logger.warning("Skipping opentelemetry tracing setup")
@@ -176,18 +183,21 @@ def _startup(
     tracer_provider.add_span_processor(_create_span_processor(tracing_destination))
     # Instrument aiohttp server
     # Explanation for custom middleware call DK 10/2024:
-    # OpenTelemetry Aiohttp autoinstrumentation is meant to be used by only calling `AioHttpServerInstrumentor().instrument()`
-    # The call `AioHttpServerInstrumentor().instrument()` monkeypatches the __init__() of aiohttp's web.application() to inject the tracing middleware, in it's `__init__()`.
-    # In simcore, we want to switch tracing on or off using the simcore-settings-library.
-    # The simcore-settings library in turn depends on the instance of web.application(), i.e. the aiohttp webserver, to exist. So here we face a hen-and-egg problem.
-    # At the time when the instrumentation should be configured, the instance of web.application already exists and the overwrite to the __init__() is never called
+    # OpenTelemetry Aiohttp autoinstrumentation is meant to be used by only calling
+    # `AioHttpServerInstrumentor().instrument()`. This call monkeypatches __init__()
+    # of aiohttp's web.application() to inject the tracing middleware.
     #
-    # Since the code that is provided (monkeypatched) in the __init__ that the opentelemetry-autoinstrumentation-library provides is only 4 lines,
-    # just adding a middleware, we are free to simply execute this "missed call" [since we can't call the monkeypatch'ed __init__()] in this following line:
+    # In simcore, we want to switch tracing on or off using the simcore-settings-library.
+    # The simcore-settings library depends on web.application() to exist (hen-and-egg problem).
+    # At instrumentation config time, web.application already exists and __init__() won't run.
+    #
+    # Since the monkeypatched __init__ from opentelemetry-autoinstrumentation-library only adds
+    # a middleware (4 lines), we execute this "missed call" directly in the following line:
     if add_response_trace_id_header:
         app.middlewares.insert(0, response_trace_id_header_middleware)
     app.middlewares.insert(0, aiohttp_server_opentelemetry_middleware)
-    # Code of the aiohttp server instrumentation: github.com/open-telemetry/opentelemetry-python-contrib/blob/eccb05c808a7d797ef5b6ecefed3590664426fbf/instrumentation/opentelemetry-instrumentation-aiohttp-server/src/opentelemetry/instrumentation/aiohttp_server/__init__.py#L246
+    # Reference: github.com/open-telemetry/opentelemetry-python-contrib/blob/eccb05c808a7d797ef/
+    # instrumentation/opentelemetry-instrumentation-aiohttp-server/__init__.py#L246
     # For reference, the above statement was written for:
     # - osparc-simcore 1.77.x
     # - opentelemetry-api==1.27.0
@@ -235,50 +245,38 @@ def _startup(
 
 @web.middleware
 async def response_trace_id_header_middleware(request: web.Request, handler):
-    headers = get_trace_id_header()
+    headers = get_trace_info_headers()
 
     try:
         response = await handler(request)
     except web.HTTPException as exc:
-        if headers:
-            exc.headers.update(headers)
+        exc.headers.update(headers)
         raise
-    if headers:
-        response.headers.update(headers)
+    response.headers.update(headers)
     return response
+
+
+def _uninstrument_safely(instrumentor_class: type, name: str) -> None:
+    """Safely uninstrument an OpenTelemetry instrumentor, logging any errors."""
+    try:
+        instrumentor_class().uninstrument()
+    except Exception:  # pylint:disable=broad-exception-caught
+        _logger.exception("Failed to uninstrument %s", name)
 
 
 def _shutdown() -> None:
     """Uninstruments all opentelemetry instrumentors that were instrumented."""
-    try:
-        AioHttpClientInstrumentor().uninstrument()
-    except Exception:  # pylint:disable=broad-exception-caught
-        _logger.exception("Failed to uninstrument AioHttpClientInstrumentor")
+    _uninstrument_safely(AioHttpClientInstrumentor, "AioHttpClientInstrumentor")
     if HAS_AIOPG:
-        try:
-            AiopgInstrumentor().uninstrument()
-        except Exception:  # pylint:disable=broad-exception-caught
-            _logger.exception("Failed to uninstrument AiopgInstrumentor")
+        _uninstrument_safely(AiopgInstrumentor, "AiopgInstrumentor")
     if HAS_ASYNCPG:
-        try:
-            AsyncPGInstrumentor().uninstrument()
-        except Exception:  # pylint:disable=broad-exception-caught
-            _logger.exception("Failed to uninstrument AsyncPGInstrumentor")
+        _uninstrument_safely(AsyncPGInstrumentor, "AsyncPGInstrumentor")
     if HAS_BOTOCORE:
-        try:
-            BotocoreInstrumentor().uninstrument()
-        except Exception:  # pylint:disable=broad-exception-caught
-            _logger.exception("Failed to uninstrument BotocoreInstrumentor")
+        _uninstrument_safely(BotocoreInstrumentor, "BotocoreInstrumentor")
     if HAS_REQUESTS:
-        try:
-            RequestsInstrumentor().uninstrument()
-        except Exception:  # pylint:disable=broad-exception-caught
-            _logger.exception("Failed to uninstrument RequestsInstrumentor")
+        _uninstrument_safely(RequestsInstrumentor, "RequestsInstrumentor")
     if HAS_AIO_PIKA:
-        try:
-            AioPikaInstrumentor().uninstrument()
-        except Exception:  # pylint:disable=broad-exception-caught
-            _logger.exception("Failed to uninstrument AioPikaInstrumentor")
+        _uninstrument_safely(AioPikaInstrumentor, "AioPikaInstrumentor")
 
 
 def setup_tracing(
@@ -287,7 +285,6 @@ def setup_tracing(
     tracing_config: TracingConfig,
     add_response_trace_id_header: bool = False,
 ) -> Callable[[web.Application], AsyncIterator]:
-
     if tracing_config.tracing_enabled is False:
         msg = "Tracing is not enabled"
         raise ValueError(msg)

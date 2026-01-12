@@ -17,7 +17,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from inspect import getframeinfo, stack
 from pathlib import Path
-from typing import Any, Final, TypeAlias, TypedDict, TypeVar
+from typing import Any, Final, TypedDict, TypeVar
 
 from common_library.json_serialization import json_dumps
 from common_library.logging.logging_base import LogExtra
@@ -33,8 +33,8 @@ from .utils_secrets import mask_sensitive_data
 
 _logger = logging.getLogger(__name__)
 
-LogLevelInt: TypeAlias = int
-LogMessageStr: TypeAlias = str
+type LogLevelInt = int
+type LogMessageStr = str
 
 BLACK = "\033[0;30m"
 BLUE = "\033[0;34m"
@@ -77,18 +77,12 @@ class CustomFormatter(logging.Formatter):
 
     def format(self, record) -> str:
         if hasattr(record, "func_name_override"):
-            record.funcName = (
-                record.func_name_override
-            )  # pyright: ignore[reportAttributeAccessIssue]
+            record.funcName = record.func_name_override  # pyright: ignore[reportAttributeAccessIssue]
         if hasattr(record, "file_name_override"):
-            record.filename = (
-                record.file_name_override
-            )  # pyright: ignore[reportAttributeAccessIssue]
+            record.filename = record.file_name_override  # pyright: ignore[reportAttributeAccessIssue]
 
         # pylint: disable=no-member
-        optional_keys = LogExtra.__optional_keys__ | frozenset(
-            ["otelTraceID", "otelSpanID"]
-        )
+        optional_keys = LogExtra.__optional_keys__ | frozenset(["otelTraceID", "otelSpanID"])
         for name in optional_keys:
             if not hasattr(record, name):
                 setattr(record, name, None)
@@ -113,18 +107,22 @@ _DEFAULT_FORMATTING: Final[str] = " | ".join(
         "log_oec=%(log_oec)s",
         "log_trace_id=%(otelTraceID)s",
         "log_span_id=%(otelSpanID)s",
+        "log_trace_sampled=%(otelTraceSampled)s",
         "log_msg=%(message)s",
     ]
 )
 
 _LOCAL_FORMATTING: Final[str] = (
     "%(levelname)s: [%(asctime)s/%(processName)s] "
-    "[log_trace_id=%(otelTraceID)s|log_span_id=%(otelSpanID)s] "
+    "[log_trace_id=%(otelTraceID)s|log_span_id=%(otelSpanID)s|log_trace_sampled=%(otelTraceSampled)s] "
     "[%(name)s:%(funcName)s(%(lineno)d)] -  %(message)s"
 )
 
 # Graylog Grok pattern extractor:
-# log_level=%{WORD:log_level} \| log_timestamp=%{TIMESTAMP_ISO8601:log_timestamp} \| log_source=%{NOTSPACE:log_source} \| log_uid=%{NOTSPACE:log_uid} \| log_oec=%{NOTSPACE:log_oec} \| log_trace_id=%{NOTSPACE:log_trace_id} \| log_span_id=%{NOTSPACE:log_span_id} \| log_msg=%{GREEDYDATA:log_msg}
+# log_level=%{WORD:log_level} \| log_timestamp=%{TIMESTAMP_ISO8601:log_timestamp}
+# \| log_source=%{NOTSPACE:log_source} \| log_uid=%{NOTSPACE:log_uid}
+# \| log_oec=%{NOTSPACE:log_oec} \| log_trace_id=%{NOTSPACE:log_trace_id}
+# \| log_span_id=%{NOTSPACE:log_span_id} \| log_msg=%{GREEDYDATA:log_msg}
 
 
 def _setup_logging_formatter(
@@ -133,9 +131,7 @@ def _setup_logging_formatter(
 ) -> logging.Formatter:
     fmt = _LOCAL_FORMATTING if log_format_local_dev_enabled else _DEFAULT_FORMATTING
 
-    return CustomFormatter(
-        fmt, log_format_local_dev_enabled=log_format_local_dev_enabled
-    )
+    return CustomFormatter(fmt, log_format_local_dev_enabled=log_format_local_dev_enabled)
 
 
 def _get_all_loggers() -> list[logging.Logger]:
@@ -282,9 +278,7 @@ def _queued_logging_handler(
     handler.setFormatter(log_formatter)
 
     # Create and start the queue listener
-    listener = logging.handlers.QueueListener(
-        log_queue, handler, respect_handler_level=True
-    )
+    listener = logging.handlers.QueueListener(log_queue, handler, respect_handler_level=True)
     listener.start()
 
     queue_handler = logging.handlers.QueueHandler(log_queue)
@@ -438,9 +432,7 @@ def log_exceptions(
         raise
 
 
-def _log_before_call(
-    logger_obj: logging.Logger, level: LogLevelInt, func: Callable, *args, **kwargs
-) -> dict[str, str]:
+def _log_before_call(logger_obj: logging.Logger, level: LogLevelInt, func: Callable, *args, **kwargs) -> dict[str, str]:
     # NOTE: We should avoid logging arguments but in the meantime, we are trying to
     # avoid exposing sensitive data in the logs. For `args` is more difficult. We could eventually
     # deduced sensitivity based on the entropy of values but it is very costly
@@ -499,7 +491,7 @@ def log_decorator(
     logger: logging.Logger | None,
     level: LogLevelInt = logging.DEBUG,
     *,
-    # NOTE: default defined by legacy: ANE defined full stack tracebacks
+    # NOTE: default defined by legacy: @GitHK defined full stack tracebacks
     # on exceptions
     exc_info: bool = True,
     exc_stack_info: bool = True,
@@ -526,9 +518,7 @@ def log_decorator(
 
             @functools.wraps(func_or_coro)
             async def _async_wrapper(*args: Any, **kwargs: Any) -> Any:
-                extra_args = _log_before_call(
-                    logger_obj, level, func_or_coro, *args, **kwargs
-                )
+                extra_args = _log_before_call(logger_obj, level, func_or_coro, *args, **kwargs)
                 with log_exceptions(**_log_exc_kwargs):
                     result = await func_or_coro(*args, **kwargs)
                 _log_after_call(logger_obj, level, func_or_coro, result, extra_args)
@@ -538,9 +528,7 @@ def log_decorator(
 
         @functools.wraps(func_or_coro)
         def _sync_wrapper(*args: Any, **kwargs: Any) -> Any:
-            extra_args = _log_before_call(
-                logger_obj, level, func_or_coro, *args, **kwargs
-            )
+            extra_args = _log_before_call(logger_obj, level, func_or_coro, *args, **kwargs)
             with log_exceptions(**_log_exc_kwargs):
                 result = func_or_coro(*args, **kwargs)
             _log_after_call(logger_obj, level, func_or_coro, result, extra_args)
@@ -631,9 +619,7 @@ def guess_message_log_level(message: str) -> LogLevelInt:
     return logging.INFO
 
 
-def set_parent_module_log_level(
-    current_module: str, desired_log_level: LogLevelInt
-) -> None:
+def set_parent_module_log_level(current_module: str, desired_log_level: LogLevelInt) -> None:
     parent_module = ".".join(current_module.split(".")[:-1])
     logging.getLogger(parent_module).setLevel(desired_log_level)
 
