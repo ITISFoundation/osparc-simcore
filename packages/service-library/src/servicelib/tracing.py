@@ -83,7 +83,7 @@ def setup_log_tracing(tracing_config: TracingConfig):
 
 
 def get_trace_info_headers() -> dict[str, str]:
-    """Generates a dictionary containing the trace ID header if tracing is active."""
+    """Generates a dictionary containing the trace ID header and trace sampled header."""
     span = trace.get_current_span()
     trace_id = span.get_span_context().trace_id
     trace_id_hex = format(trace_id, "032x")  # Convert trace_id to 32-character hex string
