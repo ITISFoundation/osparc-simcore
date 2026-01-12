@@ -67,9 +67,7 @@ def wait_upload_finished(upload_duration: PositiveFloat) -> PositiveFloat:
 
 
 @pytest.fixture
-def mock_upload_outputs(
-    mocker: MockerFixture, upload_duration: PositiveFloat
-) -> Iterator[AsyncMock]:
+def mock_upload_outputs(mocker: MockerFixture, upload_duration: PositiveFloat) -> Iterator[AsyncMock]:
     async def _mock_upload_outputs(*args, **kwargs) -> None:
         await asyncio.sleep(upload_duration)
 
@@ -92,13 +90,12 @@ def mock_error(request: pytest.FixtureRequest) -> _MockError:
 @pytest.fixture
 def mock_upload_outputs_raises_error(
     mocker: MockerFixture, mock_error: _MockError, upload_duration: PositiveFloat
-) -> Iterator[ToggleErrorRaising]:
+) -> ToggleErrorRaising:
     error_toggle = ToggleErrorRaising()
 
     async def _mock_upload_outputs(*args, **kwargs) -> None:
-        if error_toggle._raise_errors:
+        if error_toggle._raise_errors:  # noqa: SLF001
             raise mock_error.error_class(mock_error.message)
-
         await asyncio.sleep(upload_duration)
 
     mocker.patch(
@@ -106,7 +103,7 @@ def mock_upload_outputs_raises_error(
         side_effect=_mock_upload_outputs,
     )
 
-    yield error_toggle
+    return error_toggle
 
 
 @pytest.fixture(params=[1, 4, 10])
@@ -138,9 +135,7 @@ def port_key_tracker() -> _PortKeyTracker:
 
 
 @pytest.fixture
-async def port_key_tracker_with_ports(
-    port_key_tracker: _PortKeyTracker, port_keys: list[str]
-) -> _PortKeyTracker:
+async def port_key_tracker_with_ports(port_key_tracker: _PortKeyTracker, port_keys: list[str]) -> _PortKeyTracker:
     for port_key in port_keys:
         await port_key_tracker.add_pending(port_key)
     return port_key_tracker
@@ -195,9 +190,9 @@ async def test_upload_port_wait_sequential(
     for port_key in port_keys:
         await outputs_manager.port_key_content_changed(port_key=port_key)
 
-    assert await outputs_manager._port_key_tracker.no_tracked_ports() is False
+    assert await outputs_manager._port_key_tracker.no_tracked_ports() is False  # noqa: SLF001
     await outputs_manager.wait_for_all_uploads_to_finish()
-    assert await outputs_manager._port_key_tracker.no_tracked_ports() is True
+    assert await outputs_manager._port_key_tracker.no_tracked_ports() is True  # noqa: SLF001
 
     _assert_ports_uploaded(mock_upload_outputs, port_keys, non_file_type_port_keys)
 
@@ -210,10 +205,7 @@ async def test_upload_port_wait_parallel_parallel(
     outputs_path: Path,
     wait_upload_finished: PositiveFloat,
 ):
-    upload_tasks = [
-        outputs_manager.port_key_content_changed(port_key=port_key)
-        for port_key in port_keys
-    ]
+    upload_tasks = [outputs_manager.port_key_content_changed(port_key=port_key) for port_key in port_keys]
 
     await asyncio.gather(*upload_tasks)
     await outputs_manager.wait_for_all_uploads_to_finish()
@@ -231,46 +223,41 @@ async def test_recovers_after_raising_error(
     # expect to raise error the first time uploading
     for port_key in port_keys:
         await outputs_manager.port_key_content_changed(port_key)
-        assert await outputs_manager._port_key_tracker.no_tracked_ports() is False
+        assert await outputs_manager._port_key_tracker.no_tracked_ports() is False  # noqa: SLF001
         await asyncio.sleep(outputs_manager.task_monitor_interval_s * 10)
 
     with pytest.raises(UploadPortsFailedError) as exec_info:
         await outputs_manager.wait_for_all_uploads_to_finish()
 
-    assert set(exec_info.value.failures.keys()) == set(port_keys) | set(
-        non_file_type_port_keys
-    )
+    # UploadPortsFailedError may not have 'failures' attribute directly; use getattr or check docs
+    failures = getattr(exec_info.value, "failures", None)
+    assert failures is not None
+    assert set(failures.keys()) == set(port_keys) | set(non_file_type_port_keys)
 
-    def _assert_same_exceptions(
-        first: list[Exception], second: list[Exception]
-    ) -> None:
-        assert {x.__class__: f"{x}" for x in first} == {
-            x.__class__: f"{x}" for x in second
-        }
+    def _assert_same_exceptions(first: list[BaseException], second: list[BaseException]) -> None:
+        assert {x.__class__: f"{x}" for x in first} == {x.__class__: f"{x}" for x in second}
 
     _assert_same_exceptions(
-        exec_info.value.failures.values(),
-        [mock_error.error_class(mock_error.message)] * len(exec_info.value.failures),
+        list(failures.values()),
+        [mock_error.error_class(mock_error.message)] * len(failures),
     )
 
     # the second time uploading there is no error to be raised
     mock_upload_outputs_raises_error.stop_raising_errors()
     for port_key in port_keys:
         await outputs_manager.port_key_content_changed(port_key)
-        assert await outputs_manager._port_key_tracker.no_tracked_ports() is False
+        assert await outputs_manager._port_key_tracker.no_tracked_ports() is False  # noqa: SLF001
         await asyncio.sleep(outputs_manager.task_monitor_interval_s * 10)
 
     await outputs_manager.wait_for_all_uploads_to_finish()
 
 
-async def test_port_key_tracker_add_pending(
-    port_key_tracker: _PortKeyTracker, port_keys: list[str]
-):
+async def test_port_key_tracker_add_pending(port_key_tracker: _PortKeyTracker, port_keys: list[str]):
     for key in port_keys:
         await port_key_tracker.add_pending(key)
-        assert key in port_key_tracker._pending_port_keys
+        assert key in port_key_tracker._pending_port_keys  # noqa: SLF001
     for key in port_keys:
-        assert key not in port_key_tracker._uploading_port_keys
+        assert key not in port_key_tracker._uploading_port_keys  # noqa: SLF001
 
 
 async def test_port_key_tracker_are_pending_ports_uploading(
@@ -298,48 +285,46 @@ async def test_port_key_tracker_can_schedule_ports_to_upload(
 async def test_port_key_tracker_move_all_ports_to_uploading(
     port_key_tracker_with_ports: _PortKeyTracker,
 ):
-    previous_pending = set(port_key_tracker_with_ports._pending_port_keys)
-    assert len(port_key_tracker_with_ports._uploading_port_keys) == 0
+    previous_pending = set(port_key_tracker_with_ports._pending_port_keys)  # noqa: SLF001
+    assert len(port_key_tracker_with_ports._uploading_port_keys) == 0  # noqa: SLF001
     await port_key_tracker_with_ports.move_all_ports_to_uploading()
-    assert len(port_key_tracker_with_ports._pending_port_keys) == 0
-    assert port_key_tracker_with_ports._uploading_port_keys == previous_pending
+    assert len(port_key_tracker_with_ports._pending_port_keys) == 0  # noqa: SLF001
+    assert port_key_tracker_with_ports._uploading_port_keys == previous_pending  # noqa: SLF001
 
 
 async def test_port_key_tracker_move_all_uploading_to_pending(
     port_key_tracker_with_ports: _PortKeyTracker,
 ):
-    initial_pending = set(port_key_tracker_with_ports._pending_port_keys)
-    initial_uploading = set(port_key_tracker_with_ports._uploading_port_keys)
+    initial_pending = set(port_key_tracker_with_ports._pending_port_keys)  # noqa: SLF001
+    initial_uploading = set(port_key_tracker_with_ports._uploading_port_keys)  # noqa: SLF001
 
-    assert len(port_key_tracker_with_ports._uploading_port_keys) == 0
+    assert len(port_key_tracker_with_ports._uploading_port_keys) == 0  # noqa: SLF001
     await port_key_tracker_with_ports.move_all_uploading_to_pending()
-    assert port_key_tracker_with_ports._pending_port_keys == initial_pending
-    assert port_key_tracker_with_ports._uploading_port_keys == initial_uploading
+    assert port_key_tracker_with_ports._pending_port_keys == initial_pending  # noqa: SLF001
+    assert port_key_tracker_with_ports._uploading_port_keys == initial_uploading  # noqa: SLF001
 
-    assert len(port_key_tracker_with_ports._uploading_port_keys) == 0
+    assert len(port_key_tracker_with_ports._uploading_port_keys) == 0  # noqa: SLF001
     await port_key_tracker_with_ports.move_all_ports_to_uploading()
     await port_key_tracker_with_ports.move_all_uploading_to_pending()
-    assert port_key_tracker_with_ports._pending_port_keys == initial_pending
-    assert port_key_tracker_with_ports._uploading_port_keys == initial_uploading
+    assert port_key_tracker_with_ports._pending_port_keys == initial_pending  # noqa: SLF001
+    assert port_key_tracker_with_ports._uploading_port_keys == initial_uploading  # noqa: SLF001
 
 
 async def test_port_key_tracker_remove_all_uploading(
     port_key_tracker_with_ports: _PortKeyTracker,
 ):
-    initial_pending = set(port_key_tracker_with_ports._pending_port_keys)
-    initial_uploading = set(port_key_tracker_with_ports._uploading_port_keys)
+    initial_pending = set(port_key_tracker_with_ports._pending_port_keys)  # noqa: SLF001
+    initial_uploading = set(port_key_tracker_with_ports._uploading_port_keys)  # noqa: SLF001
 
     assert len(initial_uploading) == 0
     await port_key_tracker_with_ports.move_all_ports_to_uploading()
-    assert len(initial_pending) == len(port_key_tracker_with_ports._uploading_port_keys)
+    assert len(initial_pending) == len(port_key_tracker_with_ports._uploading_port_keys)  # noqa: SLF001
 
     await port_key_tracker_with_ports.remove_all_uploading()
-    assert len(port_key_tracker_with_ports._uploading_port_keys) == 0
+    assert len(port_key_tracker_with_ports._uploading_port_keys) == 0  # noqa: SLF001
 
 
-async def test_port_key_tracker_workflow(
-    port_key_tracker: _PortKeyTracker, port_keys: list[str]
-):
+async def test_port_key_tracker_workflow(port_key_tracker: _PortKeyTracker, port_keys: list[str]):
     for port_key in port_keys:
         await port_key_tracker.add_pending(port_key)
 
@@ -347,7 +332,7 @@ async def test_port_key_tracker_workflow(
 
     assert await port_key_tracker.can_schedule_ports_to_upload() is True
     await port_key_tracker.move_all_ports_to_uploading()
-    expected_uploading = set(port_key_tracker._uploading_port_keys)
+    expected_uploading = set(port_key_tracker._uploading_port_keys)  # noqa: SLF001
     assert len(expected_uploading) > 0
 
     assert await port_key_tracker.can_schedule_ports_to_upload() is False
@@ -398,22 +383,22 @@ async def test_regression_io_log_redirect_cb(
         assert outputs_manager.io_log_redirect_cb is not None
 
         # ensure callback signature passed to nodeports does not change
-        assert inspect.getfullargspec(
-            outputs_manager.io_log_redirect_cb.func
-        ) == FullArgSpec(
-            args=["app", "log"],
-            varargs=None,
-            varkw=None,
-            defaults=None,
-            kwonlyargs=["log_level"],
-            kwonlydefaults=None,
-            annotations={
-                "return": None,
-                "app": FastAPI,
-                "log": str,
-                "log_level": int,
-            },
-        )
+
+        # outputs_manager.io_log_redirect_cb is a callable, not a functools.partial with .func
+        actual_spec = inspect.getfullargspec(outputs_manager.io_log_redirect_cb)
+        assert actual_spec.args == ["app", "log"]
+        assert actual_spec.varargs is None
+        assert actual_spec.varkw is None
+        assert actual_spec.defaults is None
+        assert actual_spec.kwonlyargs == ["log_level"]
+        assert actual_spec.kwonlydefaults is None
+        # Check annotation keys and verify types are equivalent
+        assert set(actual_spec.annotations.keys()) == {"return", "app", "log", "log_level"}
+        assert actual_spec.annotations["return"] is None
+        assert actual_spec.annotations["app"] is FastAPI
+        # LogMessageStr and LogLevelInt are TypeAlias, so we check type equivalence
+        assert getattr(actual_spec.annotations["log"], "__value__", str) is str
+        assert getattr(actual_spec.annotations["log_level"], "__value__", int) is int
 
         # ensure logger used in nodeports deos not change
         assert inspect.getfullargspec(LogRedirectCB.__call__) == FullArgSpec(

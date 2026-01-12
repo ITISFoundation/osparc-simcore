@@ -4,4 +4,4 @@ description: Automatically fixes all issues reported by pre-commit hooks on the 
 model: GPT-4.1
 ---
 
-Run all pre-commit hooks (from the .venv virtual environment) on the selected files. Fix every issue reported by the hooks. Repeat until no issues remain.
+Run all pre-commit hooks (from the .venv virtual environment) **only on the files that are added as context**. Fix every issue reported by the hooks in those files only. Repeat until no issues remain.
