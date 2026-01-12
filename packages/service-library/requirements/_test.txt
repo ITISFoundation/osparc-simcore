@@ -287,8 +287,10 @@ typing-extensions==4.15.0
     #   -c requirements/_fastapi.txt
     #   mypy
     #   sqlalchemy2-stubs
-tzdata==2025.2
-    # via faker
+tzdata==2025.3
+    # via
+    #   -c requirements/_base.txt
+    #   faker
 urllib3==2.5.0
     # via
     #   -c requirements/../../../requirements/constraints.txt

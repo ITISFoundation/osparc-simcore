@@ -2,7 +2,6 @@ import logging
 from contextlib import contextmanager
 from typing import Annotated, Any
 
-from celery_library.errors import TaskNotFoundError
 from common_library.error_codes import create_error_code
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, status
@@ -17,6 +16,7 @@ from models_library.api_schemas_long_running_tasks.tasks import (
 )
 from models_library.products import ProductName
 from models_library.users import UserID
+from servicelib.celery.errors import TaskNotFoundError
 from servicelib.celery.models import TaskState, TaskUUID
 from servicelib.fastapi.dependencies import get_app
 

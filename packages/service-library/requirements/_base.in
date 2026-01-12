@@ -15,6 +15,7 @@ aiodebug
 aiodocker
 aiofiles
 arrow # date/time
+celery
 faststream
 opentelemetry-api
 opentelemetry-exporter-otlp

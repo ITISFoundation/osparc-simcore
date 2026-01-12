@@ -1,9 +1,9 @@
 import pytest
-from celery_library.errors import (
+from models_library.api_schemas_storage.export_data_async_jobs import AccessRightError
+from servicelib.celery.errors import (
     decode_celery_transferable_error,
     encode_celery_transferable_error,
 )
-from models_library.api_schemas_storage.export_data_async_jobs import AccessRightError
 
 
 @pytest.mark.parametrize(

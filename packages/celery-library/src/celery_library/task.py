@@ -10,9 +10,9 @@ from celery import Celery, Task  # type: ignore[import-untyped]
 from celery.exceptions import Ignore  # type: ignore[import-untyped]
 from common_library.async_tools import cancel_wait_task
 from pydantic import NonNegativeInt
+from servicelib.celery.errors import encode_celery_transferable_error
 from servicelib.celery.models import TaskKey
 
-from .errors import encode_celery_transferable_error
 from .worker.app_server import get_app_server
 
 _logger = logging.getLogger(__name__)
