@@ -467,6 +467,7 @@ services:
       - default
       - interactive_services_subnet
       - computational_services_subnet
+      - docker_api_subnet
     secrets: *dask_tls_secrets
 
   efs-guardian:
