@@ -171,6 +171,7 @@ services:
     init: true
     hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     networks:
+      - docker_api_subnet
       - autoscaling_subnet
     environment:
       <<:
