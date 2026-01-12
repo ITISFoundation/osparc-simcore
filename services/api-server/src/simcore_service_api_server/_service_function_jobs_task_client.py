@@ -2,6 +2,7 @@
 import logging
 from dataclasses import dataclass
 
+from celery_library.errors import TaskNotFoundError
 from common_library.exclude import as_dict_exclude_none
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from models_library.functions import (
@@ -30,7 +31,6 @@ from models_library.rest_pagination import PageMetaInfoLimitOffset, PageOffsetIn
 from models_library.rpc_pagination import PageLimitInt
 from models_library.users import UserID
 from pydantic import TypeAdapter
-from servicelib.celery.errors import TaskNotFoundError
 from servicelib.celery.models import ExecutionMetadata, TasksQueue, TaskUUID
 from servicelib.celery.task_manager import TaskManager
 from sqlalchemy.ext.asyncio import AsyncEngine

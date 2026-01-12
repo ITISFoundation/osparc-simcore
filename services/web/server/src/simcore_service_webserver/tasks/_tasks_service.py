@@ -2,6 +2,12 @@ import logging
 from datetime import UTC, datetime, timedelta
 from typing import Final
 
+from celery_library.errors import (
+    TaskManagerError,
+    TaskNotFoundError,
+    TransferableCeleryError,
+    decode_celery_transferable_error,
+)
 from models_library.api_schemas_async_jobs.async_jobs import (
     AsyncJobGet,
     AsyncJobResult,
@@ -14,12 +20,6 @@ from models_library.api_schemas_async_jobs.exceptions import (
     JobSchedulerError,
 )
 from pydantic import NonNegativeFloat
-from servicelib.celery.errors import (
-    TaskManagerError,
-    TaskNotFoundError,
-    TransferableCeleryError,
-    decode_celery_transferable_error,
-)
 from servicelib.celery.models import (
     OwnerMetadata,
     TaskState,

@@ -14,16 +14,16 @@ from models_library.api_schemas_async_jobs.exceptions import (
     JobNotDoneError,
     JobSchedulerError,
 )
+from servicelib.celery.models import OwnerMetadata, TaskState
+from servicelib.celery.task_manager import TaskManager
+from servicelib.logging_utils import log_catch
 
-from ...logging_utils import log_catch
-from ..errors import (
+from .errors import (
     TaskManagerError,
     TaskNotFoundError,
     TransferableCeleryError,
     decode_celery_transferable_error,
 )
-from ..models import OwnerMetadata, TaskState
-from ..task_manager import TaskManager
 
 _logger = logging.getLogger(__name__)
 

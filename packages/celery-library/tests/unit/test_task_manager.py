@@ -13,13 +13,13 @@ from random import randint
 import pytest
 from celery import Celery, Task  # pylint: disable=no-name-in-module
 from celery.worker.worker import WorkController  # pylint: disable=no-name-in-module
+from celery_library.errors import TaskNotFoundError, TransferableCeleryError
 from celery_library.task import register_task
 from celery_library.task_manager import CeleryTaskManager
 from celery_library.worker.app_server import get_app_server
 from common_library.errors_classes import OsparcErrorMixin
 from faker import Faker
 from models_library.progress_bar import ProgressReport
-from servicelib.celery.errors import TaskNotFoundError, TransferableCeleryError
 from servicelib.celery.models import (
     ExecutionMetadata,
     OwnerMetadata,

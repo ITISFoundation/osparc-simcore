@@ -4,12 +4,12 @@ import json
 from collections.abc import Callable
 
 import pytest
+from celery_library.errors import TaskNotFoundError
 from faker import Faker
 from models_library.products import ProductName
 from models_library.progress_bar import ProgressReport
 from models_library.users import UserID
 from pytest_mock import MockerFixture, MockType
-from servicelib.celery.errors import TaskNotFoundError
 from servicelib.celery.models import TaskState, TaskStatus, TaskUUID
 from servicelib.celery.task_manager import TaskManager
 from simcore_service_api_server._service_function_jobs_task_client import (

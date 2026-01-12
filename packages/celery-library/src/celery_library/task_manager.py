@@ -8,7 +8,6 @@ from celery import Celery  # type: ignore[import-untyped]
 from celery.exceptions import CeleryError  # type: ignore[import-untyped]
 from common_library.async_tools import make_async
 from models_library.progress_bar import ProgressReport
-from servicelib.celery.errors import TaskNotFoundError, TaskSubmissionError, handle_celery_errors
 from servicelib.celery.models import (
     TASK_DONE_STATES,
     ExecutionMetadata,
@@ -24,6 +23,8 @@ from servicelib.celery.models import (
 from servicelib.celery.task_manager import TaskManager
 from servicelib.logging_utils import log_context
 from settings_library.celery import CelerySettings
+
+from .errors import TaskNotFoundError, TaskSubmissionError, handle_celery_errors
 
 _logger = logging.getLogger(__name__)
 
