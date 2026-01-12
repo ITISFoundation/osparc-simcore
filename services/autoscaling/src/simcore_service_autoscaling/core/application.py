@@ -2,6 +2,7 @@ import logging
 
 from common_library.json_serialization import json_dumps
 from fastapi import FastAPI
+from servicelib.fastapi.docker import setup_remote_docker_client
 from servicelib.fastapi.tracing import (
     initialize_fastapi_app_tracing,
     setup_tracing,
@@ -61,6 +62,7 @@ def create_app(settings: ApplicationSettings, tracing_config: TracingConfig) -> 
 
     setup_instrumentation(app)
     setup_api_routes(app)
+    setup_remote_docker_client(app, settings.AUTOSCALING_DOCKER_API_PROXY)
     setup_docker(app)
     setup_rabbitmq(app)
     setup_ec2(app)

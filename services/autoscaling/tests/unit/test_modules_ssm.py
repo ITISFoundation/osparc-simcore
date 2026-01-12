@@ -11,6 +11,7 @@ from simcore_service_autoscaling.modules.ssm import get_ssm_client
 
 
 async def test_ssm_does_not_initialize_if_deactivated(
+    disable_docker_api_proxy: None,
     disabled_rabbitmq: None,
     disabled_ec2: None,
     disabled_ssm: None,

@@ -21,6 +21,7 @@ _FAST_POLL_INTERVAL: Final[int] = 1
 
 @pytest.fixture
 def app_environment(
+    disable_docker_api_proxy: None,
     app_environment: EnvVarsDict,
     disabled_rabbitmq: None,
     mocked_ec2_server_envs: EnvVarsDict,

@@ -10,6 +10,7 @@ from simcore_service_autoscaling.api.health import _StatusGet
 from starlette import status
 
 pytest_simcore_core_services_selection = [
+    "docker-api-proxy",
     "rabbit",
 ]
 
@@ -18,6 +19,7 @@ pytest_simcore_ops_services_selection = []
 
 @pytest.fixture
 def app_environment(
+    setup_docker_api_proxy: None,
     app_environment: EnvVarsDict,
     enabled_rabbitmq: None,
     mocked_ec2_server_envs: EnvVarsDict,

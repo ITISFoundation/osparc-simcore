@@ -22,6 +22,7 @@ from types_aiobotocore_ec2.literals import InstanceTypeType
 
 
 async def test_ec2_does_not_initialize_if_deactivated(
+    disable_docker_api_proxy: None,
     disabled_rabbitmq: None,
     disabled_ec2: None,
     disabled_ssm: None,
@@ -43,9 +44,7 @@ def create_ec2_instance_config(
 ) -> Callable[[InstanceTypeType], EC2InstanceConfig]:
     def _(instance_type: InstanceTypeType) -> EC2InstanceConfig:
         return EC2InstanceConfig(
-            type=EC2InstanceType(
-                name=instance_type, resources=Resources.create_as_empty()
-            ),
+            type=EC2InstanceType(name=instance_type, resources=Resources.create_as_empty()),
             tags=faker.pydict(allowed_types=(str,)),
             startup_script=faker.pystr(),
             ami_id=aws_ami_id,
@@ -86,6 +85,7 @@ def _assert_metrics(
 
 
 async def test_ec2_with_instrumentation_enabled(
+    disable_docker_api_proxy: None,
     disabled_rabbitmq: None,
     disabled_ssm: None,
     mocked_ec2_server_envs: EnvVarsDict,

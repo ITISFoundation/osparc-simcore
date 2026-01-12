@@ -58,6 +58,7 @@ def with_ec2_instance_allowed_types_env(
 
 @pytest.fixture
 def minimal_configuration(
+    disable_docker_api_proxy: None,
     disabled_rabbitmq: None,
     disable_autoscaling_background_task: None,
     disable_buffers_pool_background_task: None,
@@ -94,16 +95,12 @@ async def test_if_send_command_is_mocked_by_moto(
     assert not all_instances["Reservations"]
 
     # 1. run, this will create as many buffer machines as needed
-    await monitor_buffer_machines(
-        initialized_app, auto_scaling_mode=DynamicAutoscalingProvider()
-    )
+    await monitor_buffer_machines(initialized_app, auto_scaling_mode=DynamicAutoscalingProvider())
     await assert_autoscaled_dynamic_warm_pools_ec2_instances(
         ec2_client,
         expected_num_reservations=1,
         expected_num_instances=buffer_count,
-        expected_instance_type=next(
-            iter(ec2_instances_allowed_types_with_only_1_buffered)
-        ),
+        expected_instance_type=next(iter(ec2_instances_allowed_types_with_only_1_buffered)),
         expected_instance_state="running",
         expected_additional_tag_keys=[],
         expected_pre_pulled_images=[],
@@ -111,9 +108,7 @@ async def test_if_send_command_is_mocked_by_moto(
     )
 
     # 2. this should generate a failure as current version of moto does not handle this
-    await monitor_buffer_machines(
-        initialized_app, auto_scaling_mode=DynamicAutoscalingProvider()
-    )
+    await monitor_buffer_machines(initialized_app, auto_scaling_mode=DynamicAutoscalingProvider())
 
 
 @pytest.fixture
@@ -161,18 +156,23 @@ async def _test_monitor_buffer_machines(
 ):
     # 0. we have no instances now
     all_instances = await ec2_client.describe_instances(Filters=instance_type_filters)
-    assert not all_instances[
-        "Reservations"
-    ], f"There should be no instances at the start of the test. Found following instance ids: {[i['InstanceId'] for r in all_instances['Reservations'] if 'Instances' in r for i in r['Instances'] if 'InstanceId' in i]}"
+    assert not all_instances["Reservations"], (
+        f"There should be no instances at the start of the test. Found following instance ids: "
+        f"{
+            [
+                i['InstanceId']
+                for r in all_instances['Reservations']
+                if 'Instances' in r
+                for i in r['Instances']
+                if 'InstanceId' in i
+            ]
+        }"
+    )
 
     # 1. run, this will create as many buffer machines as needed
     with log_context(logging.INFO, "create buffer machines"):
-        await monitor_buffer_machines(
-            initialized_app, auto_scaling_mode=DynamicAutoscalingProvider()
-        )
-        with log_context(
-            logging.INFO, f"waiting for {buffer_count} buffer instances to be running"
-        ) as ctx:
+        await monitor_buffer_machines(initialized_app, auto_scaling_mode=DynamicAutoscalingProvider())
+        with log_context(logging.INFO, f"waiting for {buffer_count} buffer instances to be running") as ctx:
 
             @tenacity.retry(
                 wait=tenacity.wait_fixed(5),
@@ -210,9 +210,7 @@ async def _test_monitor_buffer_machines(
             after=tenacity.after_log(ctx.logger, logging.INFO),
         )
         async def _assert_run_ssm_command_for_pulling() -> None:
-            await monitor_buffer_machines(
-                initialized_app, auto_scaling_mode=DynamicAutoscalingProvider()
-            )
+            await monitor_buffer_machines(initialized_app, auto_scaling_mode=DynamicAutoscalingProvider())
             await assert_autoscaled_dynamic_warm_pools_ec2_instances(
                 ec2_client,
                 expected_num_reservations=1,
@@ -232,24 +230,18 @@ async def _test_monitor_buffer_machines(
             await _assert_run_ssm_command_for_pulling()
 
     # 3. is the command finished?
-    with log_context(
-        logging.INFO, "wait for SSM commands and the machine to be stopped to finish"
-    ) as ctx:
+    with log_context(logging.INFO, "wait for SSM commands and the machine to be stopped to finish") as ctx:
 
         @tenacity.retry(
             wait=tenacity.wait_fixed(5),
-            stop=tenacity.stop_after_delay(
-                5 if run_against_moto else datetime.timedelta(minutes=10)
-            ),
+            stop=tenacity.stop_after_delay(5 if run_against_moto else datetime.timedelta(minutes=10)),
             retry=tenacity.retry_if_exception_type(AssertionError),
             reraise=True,
             before_sleep=tenacity.before_sleep_log(ctx.logger, logging.INFO),
             after=tenacity.after_log(ctx.logger, logging.INFO),
         )
         async def _assert_wait_for_ssm_command_to_finish() -> None:
-            await monitor_buffer_machines(
-                initialized_app, auto_scaling_mode=DynamicAutoscalingProvider()
-            )
+            await monitor_buffer_machines(initialized_app, auto_scaling_mode=DynamicAutoscalingProvider())
             await assert_autoscaled_dynamic_warm_pools_ec2_instances(
                 ec2_client,
                 expected_num_reservations=1,
@@ -305,11 +297,7 @@ class _BufferMachineParams:
         _BufferMachineParams(
             "stopped",
             [],
-            [
-                TypeAdapter(AWSTagKey).validate_python(
-                    "io.simcore.autoscaling.pre_pulled_images"
-                )
-            ],
+            [TypeAdapter(AWSTagKey).validate_python("io.simcore.autoscaling.pre_pulled_images")],
         ),
     ],
 )
@@ -343,9 +331,7 @@ async def test_monitor_buffer_machines_terminates_supernumerary_instances(
         ec2_client,
         expected_num_reservations=1,
         expected_num_instances=len(buffer_machines),
-        expected_instance_type=next(
-            iter(ec2_instances_allowed_types_with_only_1_buffered)
-        ),
+        expected_instance_type=next(iter(ec2_instances_allowed_types_with_only_1_buffered)),
         expected_instance_state=expected_buffer_params.instance_state_name,
         expected_additional_tag_keys=[
             *list(ec2_instance_custom_tags),
@@ -355,16 +341,12 @@ async def test_monitor_buffer_machines_terminates_supernumerary_instances(
         instance_filters=instance_type_filters,
     )
     # this will terminate the supernumerary instances and start new ones
-    await monitor_buffer_machines(
-        initialized_app, auto_scaling_mode=DynamicAutoscalingProvider()
-    )
+    await monitor_buffer_machines(initialized_app, auto_scaling_mode=DynamicAutoscalingProvider())
     await assert_autoscaled_dynamic_warm_pools_ec2_instances(
         ec2_client,
         expected_num_reservations=1,
         expected_num_instances=buffer_count,
-        expected_instance_type=next(
-            iter(ec2_instances_allowed_types_with_only_1_buffered)
-        ),
+        expected_instance_type=next(iter(ec2_instances_allowed_types_with_only_1_buffered)),
         expected_instance_state=expected_buffer_params.instance_state_name,
         expected_additional_tag_keys=[
             *list(ec2_instance_custom_tags),
@@ -391,9 +373,7 @@ async def test_monitor_buffer_machines_terminates_instances_with_incorrect_pre_p
     ],
 ):
     # have machines of correct type with missing pre-pulled images
-    assert (
-        len(pre_pull_images) > 1
-    ), "this test relies on pre-pulled images being filled with more than 1 image"
+    assert len(pre_pull_images) > 1, "this test relies on pre-pulled images being filled with more than 1 image"
     buffer_machines = await create_buffer_machines(
         buffer_count + 5,
         next(iter(list(ec2_instances_allowed_types_with_only_1_buffered))),
@@ -404,9 +384,7 @@ async def test_monitor_buffer_machines_terminates_instances_with_incorrect_pre_p
         ec2_client,
         expected_num_reservations=1,
         expected_num_instances=len(buffer_machines),
-        expected_instance_type=next(
-            iter(ec2_instances_allowed_types_with_only_1_buffered)
-        ),
+        expected_instance_type=next(iter(ec2_instances_allowed_types_with_only_1_buffered)),
         expected_instance_state="stopped",
         expected_additional_tag_keys=[
             *list(ec2_instance_custom_tags),
@@ -416,16 +394,12 @@ async def test_monitor_buffer_machines_terminates_instances_with_incorrect_pre_p
         instance_filters=instance_type_filters,
     )
     # this will terminate the wrong instances and start new ones and pre-pull the new set of images
-    await monitor_buffer_machines(
-        initialized_app, auto_scaling_mode=DynamicAutoscalingProvider()
-    )
+    await monitor_buffer_machines(initialized_app, auto_scaling_mode=DynamicAutoscalingProvider())
     await assert_autoscaled_dynamic_warm_pools_ec2_instances(
         ec2_client,
         expected_num_reservations=1,
         expected_num_instances=buffer_count,
-        expected_instance_type=next(
-            iter(ec2_instances_allowed_types_with_only_1_buffered)
-        ),
+        expected_instance_type=next(iter(ec2_instances_allowed_types_with_only_1_buffered)),
         expected_instance_state="running",
         expected_additional_tag_keys=list(ec2_instance_custom_tags),
         expected_pre_pulled_images=None,  # NOTE: these are not pre-pulled yet, just started
@@ -451,11 +425,7 @@ def unneeded_instance_type(
         _BufferMachineParams(
             "stopped",
             [],
-            [
-                TypeAdapter(AWSTagKey).validate_python(
-                    "io.simcore.autoscaling.pre_pulled_images"
-                )
-            ],
+            [TypeAdapter(AWSTagKey).validate_python("io.simcore.autoscaling.pre_pulled_images")],
         ),
     ],
 )
@@ -494,16 +464,12 @@ async def test_monitor_buffer_machines_terminates_unneeded_pool(
     )
 
     # this will terminate the unwanted buffer pool and replace with the expected ones
-    await monitor_buffer_machines(
-        initialized_app, auto_scaling_mode=DynamicAutoscalingProvider()
-    )
+    await monitor_buffer_machines(initialized_app, auto_scaling_mode=DynamicAutoscalingProvider())
     await assert_autoscaled_dynamic_warm_pools_ec2_instances(
         ec2_client,
         expected_num_reservations=1,
         expected_num_instances=buffer_count,
-        expected_instance_type=next(
-            iter(ec2_instances_allowed_types_with_only_1_buffered)
-        ),
+        expected_instance_type=next(iter(ec2_instances_allowed_types_with_only_1_buffered)),
         expected_instance_state="running",
         expected_additional_tag_keys=list(ec2_instance_custom_tags),
         expected_pre_pulled_images=None,
@@ -518,20 +484,16 @@ def pre_pull_images(
     allowed_ec2_types = ec2_instances_allowed_types_with_only_1_buffered
     allowed_ec2_types_with_pre_pull_images_defined = dict(
         filter(
-            lambda instance_type_and_settings: instance_type_and_settings[
-                1
-            ].pre_pull_images,
+            lambda instance_type_and_settings: instance_type_and_settings[1].pre_pull_images,
             allowed_ec2_types.items(),
         )
     )
-    assert (
-        len(allowed_ec2_types_with_pre_pull_images_defined) <= 1
-    ), "more than one type with pre-pulled-images is disallowed in this test!"
+    assert len(allowed_ec2_types_with_pre_pull_images_defined) <= 1, (
+        "more than one type with pre-pulled-images is disallowed in this test!"
+    )
 
     if allowed_ec2_types_with_pre_pull_images_defined:
-        return next(
-            iter(allowed_ec2_types_with_pre_pull_images_defined.values())
-        ).pre_pull_images
+        return next(iter(allowed_ec2_types_with_pre_pull_images_defined.values())).pre_pull_images
     return []
 
 

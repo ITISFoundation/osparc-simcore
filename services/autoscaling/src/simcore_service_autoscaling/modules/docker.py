@@ -3,6 +3,7 @@ from typing import cast
 
 import aiodocker
 from fastapi import FastAPI
+from servicelib.fastapi.docker import get_remote_docker_client
 from tenacity.asyncio import AsyncRetrying
 from tenacity.before_sleep import before_sleep_log
 from tenacity.stop import stop_after_delay
@@ -22,7 +23,16 @@ class AutoscalingDocker(aiodocker.Docker):
 
 def setup(app: FastAPI) -> None:
     async def on_startup() -> None:
-        app.state.docker_client = client = AutoscalingDocker()
+        # Get the remote docker client configured by servicelib
+        remote_client = get_remote_docker_client(app)
+
+        # Wrap it with AutoscalingDocker to add the ping method
+        client = AutoscalingDocker(
+            url=remote_client.docker_host,
+            connector=remote_client.connector,
+            session=remote_client.session,
+        )
+        app.state.docker_client = client
 
         async for attempt in AsyncRetrying(
             reraise=True,

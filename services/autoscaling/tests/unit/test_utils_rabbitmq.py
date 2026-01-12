@@ -97,9 +97,7 @@ async def progress_rabbitmq_consumer(
 
 @pytest.fixture
 async def running_service_tasks(
-    create_service: Callable[
-        [dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]
-    ],
+    create_service: Callable[[dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]],
     task_template: dict[str, Any],
     async_docker_client: aiodocker.Docker,
 ) -> Callable[[dict[DockerLabelKey, str]], Awaitable[list[Task]]]:
@@ -130,9 +128,7 @@ def dask_task(
     project_id: ProjectID,
     node_id: NodeID,
 ) -> DaskTask:
-    dask_key = generate_dask_job_id(
-        service_key, service_version, user_id, project_id, node_id
-    )
+    dask_key = generate_dask_job_id(service_key, service_version, user_id, project_id, node_id)
     return DaskTask(task_id=dask_key, required_resources={})
 
 
@@ -145,8 +141,9 @@ def dask_task_with_invalid_key(
 
 
 async def test_post_task_empty_tasks(
-    disable_autoscaling_background_task,
-    disable_buffers_pool_background_task,
+    disable_docker_api_proxy: None,
+    disable_autoscaling_background_task: None,
+    disable_buffers_pool_background_task: None,
     enabled_rabbitmq: RabbitSettings,
     disabled_ec2: None,
     disabled_ssm: None,
@@ -167,7 +164,8 @@ async def test_post_task_empty_tasks(
         async for attempt in AsyncRetrying(**_TENACITY_STABLE_RETRY_PARAMS):
             with attempt:
                 print(
-                    f"--> checking for message in rabbit exchange {LoggerRabbitMessage.get_channel_name()}, {attempt.retry_state.retry_object.statistics}"
+                    f"--> checking for message in rabbit exchange {LoggerRabbitMessage.get_channel_name()}, "
+                    f"{attempt.retry_state.retry_object.statistics}"
                 )
 
                 logs_rabbitmq_consumer.assert_not_called()
@@ -176,8 +174,9 @@ async def test_post_task_empty_tasks(
 
 
 async def test_post_task_log_message_docker(
-    disable_autoscaling_background_task,
-    disable_buffers_pool_background_task,
+    disable_docker_api_proxy: None,
+    disable_autoscaling_background_task: None,
+    disable_buffers_pool_background_task: None,
     enabled_rabbitmq: RabbitSettings,
     disabled_ec2: None,
     disabled_ssm: None,
@@ -188,19 +187,16 @@ async def test_post_task_log_message_docker(
     faker: Faker,
     logs_rabbitmq_consumer: AsyncMock,
 ):
-    docker_tasks = await running_service_tasks(
-        osparc_docker_label_keys.to_simcore_runtime_docker_labels()
-    )
+    docker_tasks = await running_service_tasks(osparc_docker_label_keys.to_simcore_runtime_docker_labels())
     assert len(docker_tasks) == 1
     log_message = faker.pystr()
-    await post_tasks_log_message(
-        initialized_app, tasks=docker_tasks, message=log_message, level=0
-    )
+    await post_tasks_log_message(initialized_app, tasks=docker_tasks, message=log_message, level=0)
 
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
             print(
-                f"--> checking for message in rabbit exchange {LoggerRabbitMessage.get_channel_name()}, {attempt.retry_state.retry_object.statistics}"
+                f"--> checking for message in rabbit exchange {LoggerRabbitMessage.get_channel_name()}, "
+                f"{attempt.retry_state.retry_object.statistics}"
             )
             logs_rabbitmq_consumer.assert_called_once_with(
                 LoggerRabbitMessage(
@@ -217,8 +213,9 @@ async def test_post_task_log_message_docker(
 
 
 async def test_post_task_log_message_dask(
-    disable_autoscaling_background_task,
-    disable_buffers_pool_background_task,
+    disable_docker_api_proxy: None,
+    disable_autoscaling_background_task: None,
+    disable_buffers_pool_background_task: None,
     enabled_rabbitmq: RabbitSettings,
     disabled_ec2: None,
     disabled_ssm: None,
@@ -232,14 +229,13 @@ async def test_post_task_log_message_dask(
     logs_rabbitmq_consumer: AsyncMock,
 ):
     log_message = faker.pystr()
-    await post_tasks_log_message(
-        initialized_app, tasks=[dask_task], message=log_message, level=0
-    )
+    await post_tasks_log_message(initialized_app, tasks=[dask_task], message=log_message, level=0)
 
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
             print(
-                f"--> checking for message in rabbit exchange {LoggerRabbitMessage.get_channel_name()}, {attempt.retry_state.retry_object.statistics}"
+                f"--> checking for message in rabbit exchange {LoggerRabbitMessage.get_channel_name()}, "
+                "{attempt.retry_state.retry_object.statistics}"
             )
             logs_rabbitmq_consumer.assert_called_once_with(
                 LoggerRabbitMessage(
@@ -256,8 +252,9 @@ async def test_post_task_log_message_dask(
 
 
 async def test_post_task_progress_message_docker(
-    disable_autoscaling_background_task,
-    disable_buffers_pool_background_task,
+    disable_docker_api_proxy: None,
+    disable_autoscaling_background_task: None,
+    disable_buffers_pool_background_task: None,
     enabled_rabbitmq: RabbitSettings,
     disabled_ec2: None,
     disabled_ssm: None,
@@ -284,7 +281,8 @@ async def test_post_task_progress_message_docker(
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
             print(
-                f"--> checking for message in rabbit exchange {ProgressRabbitMessageNode.get_channel_name()}, {attempt.retry_state.retry_object.statistics}"
+                f"--> checking for message in rabbit exchange {ProgressRabbitMessageNode.get_channel_name()}, "
+                f"{attempt.retry_state.retry_object.statistics}"
             )
             progress_rabbitmq_consumer.assert_called_once_with(
                 ProgressRabbitMessageNode(
@@ -301,8 +299,9 @@ async def test_post_task_progress_message_docker(
 
 
 async def test_post_task_progress_message_dask(
-    disable_autoscaling_background_task,
-    disable_buffers_pool_background_task,
+    disable_docker_api_proxy: None,
+    disable_autoscaling_background_task: None,
+    disable_buffers_pool_background_task: None,
     enabled_rabbitmq: RabbitSettings,
     disabled_ec2: None,
     disabled_ssm: None,
@@ -326,7 +325,8 @@ async def test_post_task_progress_message_dask(
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
             print(
-                f"--> checking for message in rabbit exchange {ProgressRabbitMessageNode.get_channel_name()}, {attempt.retry_state.retry_object.statistics}"
+                f"--> checking for message in rabbit exchange {ProgressRabbitMessageNode.get_channel_name()}, "
+                f"{attempt.retry_state.retry_object.statistics}"
             )
             progress_rabbitmq_consumer.assert_called_once_with(
                 ProgressRabbitMessageNode(
@@ -343,8 +343,9 @@ async def test_post_task_progress_message_dask(
 
 
 async def test_post_task_messages_does_not_raise_if_service_has_no_labels(
-    disable_autoscaling_background_task,
-    disable_buffers_pool_background_task,
+    disable_docker_api_proxy: None,
+    disable_autoscaling_background_task: None,
+    disable_buffers_pool_background_task: None,
     enabled_rabbitmq: RabbitSettings,
     disabled_ec2: None,
     disabled_ssm: None,
@@ -358,9 +359,7 @@ async def test_post_task_messages_does_not_raise_if_service_has_no_labels(
 
     # this shall not raise any exception even if the task does not contain
     # the necessary labels
-    await post_tasks_log_message(
-        initialized_app, tasks=docker_tasks, message=faker.pystr(), level=0
-    )
+    await post_tasks_log_message(initialized_app, tasks=docker_tasks, message=faker.pystr(), level=0)
     await post_tasks_progress_message(
         initialized_app,
         tasks=docker_tasks,
@@ -370,8 +369,9 @@ async def test_post_task_messages_does_not_raise_if_service_has_no_labels(
 
 
 async def test_post_task_messages_does_not_raise_if_dask_task_key_is_invalid(
-    disable_autoscaling_background_task,
-    disable_buffers_pool_background_task,
+    disable_docker_api_proxy: None,
+    disable_autoscaling_background_task: None,
+    disable_buffers_pool_background_task: None,
     enabled_rabbitmq: RabbitSettings,
     disabled_ec2: None,
     disabled_ssm: None,

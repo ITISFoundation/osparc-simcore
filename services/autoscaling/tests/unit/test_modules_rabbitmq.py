@@ -81,6 +81,7 @@ def rabbit_message(
 
 
 def test_rabbitmq_does_not_initialize_if_deactivated(
+    disable_docker_api_proxy: None,
     disabled_rabbitmq: None,
     disabled_ec2: None,
     disabled_ssm: None,
@@ -94,6 +95,7 @@ def test_rabbitmq_does_not_initialize_if_deactivated(
 
 
 def test_rabbitmq_initializes(
+    disable_docker_api_proxy: None,
     enabled_rabbitmq: RabbitSettings,
     disabled_ec2: None,
     disabled_ssm: None,
@@ -106,6 +108,7 @@ def test_rabbitmq_initializes(
 
 
 async def test_post_message(
+    disable_docker_api_proxy: None,
     disable_autoscaling_background_task,
     enabled_rabbitmq: RabbitSettings,
     disabled_ec2: None,
@@ -128,15 +131,15 @@ async def test_post_message(
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
             print(
-                f"--> checking for message in rabbit exchange {rabbit_message.channel_name}, {attempt.retry_state.retry_object.statistics}"
+                f"--> checking for message in rabbit exchange {rabbit_message.channel_name}, "
+                f"{attempt.retry_state.retry_object.statistics}"
             )
-            mocked_message_handler.assert_called_once_with(
-                rabbit_message.model_dump_json().encode()
-            )
+            mocked_message_handler.assert_called_once_with(rabbit_message.model_dump_json().encode())
             print("... message received")
 
 
 async def test_post_message_with_disabled_rabbit_does_not_raise(
+    disable_docker_api_proxy: None,
     disabled_rabbitmq: None,
     disabled_ec2: None,
     disabled_ssm: None,
@@ -149,20 +152,12 @@ async def test_post_message_with_disabled_rabbit_does_not_raise(
 
 async def _switch_off_rabbit_mq_instance(async_docker_client: aiodocker.Docker) -> None:
     # remove the rabbit MQ instance
-    rabbit_services = [
-        s
-        for s in await async_docker_client.services.list()
-        if "rabbit" in s["Spec"]["Name"]
-    ]
-    await asyncio.gather(
-        *(async_docker_client.services.delete(s["ID"]) for s in rabbit_services)
-    )
+    rabbit_services = [s for s in await async_docker_client.services.list() if "rabbit" in s["Spec"]["Name"]]
+    await asyncio.gather(*(async_docker_client.services.delete(s["ID"]) for s in rabbit_services))
 
     @retry(**_TENACITY_RETRY_PARAMS)
     async def _check_service_task_gone(service: Mapping[str, Any]) -> None:
-        print(
-            f"--> checking if service {service['ID']}:{service['Spec']['Name']} is really gone..."
-        )
+        print(f"--> checking if service {service['ID']}:{service['Spec']['Name']} is really gone...")
         list_of_tasks = await async_docker_client.containers.list(
             all=True,
             filters={
@@ -176,6 +171,7 @@ async def _switch_off_rabbit_mq_instance(async_docker_client: aiodocker.Docker) 
 
 
 async def test_post_message_when_rabbit_disconnected(
+    disable_docker_api_proxy: None,
     enabled_rabbitmq: RabbitSettings,
     disabled_ec2: None,
     disabled_ssm: None,

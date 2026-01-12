@@ -17,14 +17,13 @@ from simcore_service_autoscaling.modules.instrumentation._core import (
 
 
 @pytest.fixture
-def disabled_instrumentation(
-    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def disabled_instrumentation(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> None:
     assert app_environment
     monkeypatch.setenv("AUTOSCALING_PROMETHEUS_INSTRUMENTATION_ENABLED", "false")
 
 
 async def test_disabled_instrumentation(
+    disable_docker_api_proxy: None,
     disabled_rabbitmq: None,
     disabled_ec2: None,
     disabled_ssm: None,
