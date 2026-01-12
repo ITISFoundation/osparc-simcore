@@ -247,7 +247,7 @@ async def get_dynamic_sidecar_placement(
                     state[start_key] = time.time()
                     elapsed_seconds = 0.0
                 else:
-                    elapsed_seconds = time.time() - state[start_key]  # type: ignore
+                    elapsed_seconds = time.time() - state[start_key]
                 assert max_time > 0.0  # nosec
                 interpolated_progress = base_progress + (max_progress * min(elapsed_seconds / max_time, 1.0))
                 await progress_update(interpolated_progress)
