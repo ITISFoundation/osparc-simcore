@@ -182,7 +182,7 @@ def cancel_jobs(
 def trigger_cluster_termination(
     user_id: Annotated[int, typer.Option(help="the user ID")],
     wallet_id: Annotated[
-        int | None,  # typer does not understand | syntax
+        int | None,
         typer.Option(help="the wallet ID"),
     ] = None,
     *,
