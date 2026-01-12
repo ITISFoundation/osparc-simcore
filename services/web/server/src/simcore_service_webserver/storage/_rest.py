@@ -49,9 +49,9 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_query_parameters_as,
 )
 from servicelib.aiohttp.rest_responses import create_data_response
+from servicelib.celery.async_jobs.storage.paths import submit_compute_path_size_task, submit_delete_paths_task
+from servicelib.celery.async_jobs.storage.simcore_s3 import submit_export_data
 from servicelib.celery.models import ExecutionMetadata, OwnerMetadata
-from servicelib.celery.tasks.storage.paths import submit_compute_path_size_task, submit_delete_paths_task
-from servicelib.celery.tasks.storage.simcore_s3 import submit_export_data_task
 from servicelib.common_headers import X_FORWARDED_PROTO
 from servicelib.rest_responses import unwrap_envelope
 from yarl import URL
@@ -494,7 +494,7 @@ async def export_data(request: web.Request) -> web.Response:
 
     body = await parse_request_body_as(model_schema_cls=DataExportPost, request=request)
 
-    async_job_get = await submit_export_data_task(
+    async_job_get = await submit_export_data(
         task_manager=get_task_manager(request.app),
         owner_metadata=OwnerMetadata.model_validate(
             WebServerOwnerMetadata(

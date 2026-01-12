@@ -52,7 +52,7 @@ from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.typing_mock import HandlerMockFactory
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
-from servicelib.celery.tasks.storage.simcore_s3 import submit_export_data_task
+from servicelib.celery.async_jobs.storage.simcore_s3 import submit_export_data
 from servicelib.fastapi.rest_pagination import CustomizedPathsCursorPage
 from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import (
     submit,
@@ -446,7 +446,7 @@ async def test_export_data(
     expected_status: int,
 ):
     mock_handler_in_storage_rest(
-        submit_export_data_task.__name__,
+        submit_export_data.__name__,
         side_effect=backend_result_or_exception,
     )
 
@@ -575,7 +575,7 @@ async def test_get_async_job_links(
     return_schema: OutputSchema | None,
 ):
     mock_handler_in_storage_rest(
-        submit_export_data_task.__name__,
+        submit_export_data.__name__,
         return_value=AsyncJobGet(
             job_id=_faker.uuid4(),
             job_name="export_data",
