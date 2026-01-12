@@ -1,7 +1,7 @@
 import asyncio
 import os
 from pathlib import Path
-from typing import Annotated, Optional
+from typing import Annotated
 
 import parse
 import rich
@@ -24,15 +24,13 @@ from .models import AppState, BastionHost
 
 state: AppState = AppState(
     dynamic_parser=parse.compile(DEFAULT_DYNAMIC_EC2_FORMAT),
-    computational_parser_primary=parse.compile(
-        DEFAULT_COMPUTATIONAL_EC2_FORMAT, {"wallet_id_spec": wallet_id_spec}
-    ),
+    computational_parser_primary=parse.compile(DEFAULT_COMPUTATIONAL_EC2_FORMAT, {"wallet_id_spec": wallet_id_spec}),
     computational_parser_workers=parse.compile(
         DEFAULT_COMPUTATIONAL_EC2_FORMAT_WORKERS, {"wallet_id_spec": wallet_id_spec}
     ),
 )
 
-app = typer.Typer()
+app = typer.Typer(pretty_exceptions_enable=False)
 
 
 def _parse_repo_config(deploy_config: Path) -> dict[str, str | None]:
@@ -67,23 +65,20 @@ def _parse_inventory(deploy_config: Path) -> BastionHost:
         )
     except KeyError as err:
         rich.print(
-            f"[red]{inventory_path} invalid! Unable to find bastion_ip in the inventory file. TIP: Please run `make inventory` in {deploy_config} to generate it[/red]"
+            f"[red]{inventory_path} invalid! Unable to find bastion_ip in the inventory file. "
+            f"TIP: Please run `make inventory` in {deploy_config} to generate it[/red]"
         )
         raise typer.Exit(os.EX_DATAERR) from err
 
 
 @app.callback()
 def main(
-    deploy_config: Annotated[
-        Path, typer.Option(help="path to the deploy configuration")
-    ],
+    deploy_config: Annotated[Path, typer.Option(help="path to the deploy configuration")],
 ):
     """Manages external clusters"""
 
     state.deploy_config = deploy_config.expanduser()
-    assert (
-        deploy_config.is_dir()
-    ), "deploy-config argument is not pointing to a directory!"
+    assert deploy_config.is_dir(), "deploy-config argument is not pointing to a directory!"
     state.environment = _parse_repo_config(deploy_config)
     state.main_bastion_host = _parse_inventory(deploy_config)
 
@@ -109,9 +104,9 @@ def main(
         if any(_ in file_path.name for _ in ["license", "pkcs8", "dask"]):
             continue
 
-        if DEPLOY_SSH_KEY_PARSER.parse(
+        if DEPLOY_SSH_KEY_PARSER.parse(f"{file_path.name}") is not None or UNIFIED_SSH_KEY_PARSE.parse(
             f"{file_path.name}"
-        ) is not None or UNIFIED_SSH_KEY_PARSE.parse(f"{file_path.name}"):
+        ):
             rich.print(
                 f"will be using following ssh_key_path: {file_path}. "
                 "TIP: if wrong adapt the code or manually remove some of them."
@@ -119,9 +114,7 @@ def main(
             state.ssh_key_path = file_path
             break
     if not state.ssh_key_path:
-        rich.print(
-            f"[red]could not find ssh key in {deploy_config}! Please run OPS code to generate it[/red]"
-        )
+        rich.print(f"[red]could not find ssh key in {deploy_config}! Please run OPS code to generate it[/red]")
         raise typer.Exit(1)
 
 
@@ -139,7 +132,8 @@ def summary(
     Gives alist of all the instances used for computational services (e.g. primary + worker(s) instances)
 
     Arguments:
-        repo_config -- path that shall point to a repo.config type of file (see osparc-ops-deployment-configuration repository)
+        repo_config -- path that shall point to a repo.config type
+                        of file (see osparc-ops-deployment-configuration repository)
 
     """
 
@@ -159,14 +153,15 @@ def summary(
 def cancel_jobs(
     user_id: Annotated[int, typer.Option(help="the user ID")],
     wallet_id: Annotated[
-        Optional[int | None],  # noqa: UP007 # typer does not understand | syntax
+        int | None,  # typer does not understand | syntax
         typer.Option(help="the wallet ID"),
     ] = None,
     *,
     abort_in_db: Annotated[
         bool,
         typer.Option(
-            help="will also force the job to abort in the database (use only if job is in WAITING FOR CLUSTER/WAITING FOR RESOURCE)"
+            help="will also force the job to abort in the database "
+            "(use only if job is in WAITING FOR CLUSTER/WAITING FOR RESOURCE)"
         ),
     ] = False,
 ) -> None:
@@ -177,7 +172,8 @@ def cancel_jobs(
     Keyword Arguments:
         user_id -- the user ID
         wallet_id -- the wallet ID
-        abort_in_db -- will also force the job to abort in the database (use only if job is in WAITING FOR CLUSTER/WAITING FOR RESOURCE)
+        abort_in_db -- will also force the job to abort in the database
+                        (use only if job is in WAITING FOR CLUSTER/WAITING FOR RESOURCE)
     """
     asyncio.run(api.cancel_jobs(state, user_id, wallet_id, abort_in_db=abort_in_db))
 
@@ -186,7 +182,7 @@ def cancel_jobs(
 def trigger_cluster_termination(
     user_id: Annotated[int, typer.Option(help="the user ID")],
     wallet_id: Annotated[
-        Optional[int | None],  # noqa: UP007 # typer does not understand | syntax
+        int | None,  # typer does not understand | syntax
         typer.Option(help="the wallet ID"),
     ] = None,
     *,
@@ -217,9 +213,7 @@ def terminate_dynamic_instances(
     force: Annotated[bool, typer.Option(help="will not ask for confirmation")] = False,
 ) -> None:
     """this will terminate the instance(s) used for the given user or instance ID."""
-    asyncio.run(
-        api.terminate_dynamic_instances(state, user_id, instance_id, force=force)
-    )
+    asyncio.run(api.terminate_dynamic_instances(state, user_id, instance_id, force=force))
 
 
 if __name__ == "__main__":
