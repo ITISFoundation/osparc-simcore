@@ -29,7 +29,7 @@ from opentelemetry.semconv.metrics import MetricInstruments
 from settings_library.tracing import TracingSettings
 from yarl import URL
 
-from ..logging_utils import log_context
+from ..logging_utils import log_catch, log_context
 from ..tracing import TracingConfig, get_trace_info_headers
 
 _logger = logging.getLogger(__name__)
@@ -256,27 +256,25 @@ async def response_trace_id_header_middleware(request: web.Request, handler):
     return response
 
 
-def _uninstrument_safely(instrumentor_class: type, name: str) -> None:
-    """Safely uninstrument an OpenTelemetry instrumentor, logging any errors."""
-    try:
-        instrumentor_class().uninstrument()
-    except Exception:  # pylint:disable=broad-exception-caught
-        _logger.exception("Failed to uninstrument %s", name)
-
-
 def _shutdown() -> None:
     """Uninstruments all opentelemetry instrumentors that were instrumented."""
-    _uninstrument_safely(AioHttpClientInstrumentor, "AioHttpClientInstrumentor")
+    with log_catch(_logger, reraise=False):
+        AioHttpClientInstrumentor().uninstrument()
     if HAS_AIOPG:
-        _uninstrument_safely(AiopgInstrumentor, "AiopgInstrumentor")
+        with log_catch(_logger, reraise=False):
+            AiopgInstrumentor().uninstrument()
     if HAS_ASYNCPG:
-        _uninstrument_safely(AsyncPGInstrumentor, "AsyncPGInstrumentor")
+        with log_catch(_logger, reraise=False):
+            AsyncPGInstrumentor().uninstrument()
     if HAS_BOTOCORE:
-        _uninstrument_safely(BotocoreInstrumentor, "BotocoreInstrumentor")
+        with log_catch(_logger, reraise=False):
+            BotocoreInstrumentor().uninstrument()
     if HAS_REQUESTS:
-        _uninstrument_safely(RequestsInstrumentor, "RequestsInstrumentor")
+        with log_catch(_logger, reraise=False):
+            RequestsInstrumentor().uninstrument()
     if HAS_AIO_PIKA:
-        _uninstrument_safely(AioPikaInstrumentor, "AioPikaInstrumentor")
+        with log_catch(_logger, reraise=False):
+            AioPikaInstrumentor().uninstrument()
 
 
 def setup_tracing(
