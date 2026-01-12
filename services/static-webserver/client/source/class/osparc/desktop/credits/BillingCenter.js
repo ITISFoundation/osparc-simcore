@@ -108,7 +108,12 @@ qx.Class.define("osparc.desktop.credits.BillingCenter", {
       const iconSrc = "@FontAwesome5Solid/list/22";
       const usage = new osparc.desktop.credits.Usage();
       const page = this.addTab(title, iconSrc, usage);
-      this.__reloadDataOnAppear(page);
+      this.getChildControl("tabs-view").addListener("changeSelection", e => {
+        const selectedPage = e.getData()[0];
+        if (selectedPage === page) {
+          usage.reloadData();
+        }
+      });
       return page;
     },
 
@@ -117,7 +122,12 @@ qx.Class.define("osparc.desktop.credits.BillingCenter", {
       const iconSrc = "@FontAwesome5Solid/shopping-bag/22";
       const purchases = new osparc.desktop.credits.Purchases();
       const page = this.addTab(title, iconSrc, purchases);
-      this.__reloadDataOnAppear(page);
+      this.getChildControl("tabs-view").addListener("changeSelection", e => {
+        const selectedPage = e.getData()[0];
+        if (selectedPage === page) {
+          purchases.reloadData();
+        }
+      });
       return page;
     },
 
@@ -127,19 +137,6 @@ qx.Class.define("osparc.desktop.credits.BillingCenter", {
       const purchases = new osparc.desktop.credits.Checkouts();
       const page = this.addTab(title, iconSrc, purchases);
       return page;
-    },
-
-    __reloadDataOnAppear(page) {
-      this.getChildControl("tabs-view").addListener("changeSelection", e => {
-        const selection = e.getData();
-        const selectedPage = selection[0];
-        if (
-          selectedPage === page &&
-          page.tabContent &&
-          page.tabContent.reloadData) {
-           page.tabContent.reloadData();
-        }
-      });
     },
 
     openWallets: function() {

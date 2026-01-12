@@ -85,7 +85,6 @@ qx.Class.define("osparc.ui.window.TabbedView", {
 
     addTab: function(title, iconSrc, widget) {
       const page = this.__widgetToPage(title, iconSrc, widget);
-      page.tabContent = widget;
       this.getChildControl("tabs-view").add(page);
       return page;
     },
