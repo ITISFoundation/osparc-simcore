@@ -9,6 +9,11 @@ install() {
   make devenv
   # shellcheck source=/dev/null
   source .venv/bin/activate
+
+  pushd services/docker-api-proxy
+  make build
+  popd
+
   pushd services/director-v2
   make install-ci
   popd
