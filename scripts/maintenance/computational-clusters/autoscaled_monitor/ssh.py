@@ -14,6 +14,7 @@ import rich
 import typer
 from mypy_boto3_ec2.service_resource import Instance
 from paramiko import Ed25519Key
+from paramiko.ssh_exception import NoValidConnectionsError
 from pydantic import ByteSize
 from sshtunnel import SSHTunnelForwarder
 
@@ -46,6 +47,8 @@ def ssh_tunnel(
             set_keepalive=10,
         ) as tunnel:
             yield tunnel
+    except TimeoutError:
+        _logger.warning("Timeout while establishing ssh tunnel")
     except Exception:
         _logger.exception("Unexpected issue with ssh tunnel")
         raise
@@ -68,6 +71,8 @@ def _ssh_client(
                 timeout=5,
             )
             yield client
+    except (NoValidConnectionsError, TimeoutError):
+        _logger.warning("Could not connect to ssh client")
     except Exception:
         _logger.exception("Unexpected issue with ssh client")
         raise

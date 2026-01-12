@@ -153,7 +153,7 @@ def summary(
 def cancel_jobs(
     user_id: Annotated[int, typer.Option(help="the user ID")],
     wallet_id: Annotated[
-        int | None,  # typer does not understand | syntax
+        int | None,
         typer.Option(help="the wallet ID"),
     ] = None,
     *,
