@@ -145,4 +145,4 @@ async def submit_job(
         owner_metadata=owner_metadata,
         **kwargs,
     )
-    return AsyncJobGet(job_id=task_id, job_name=execution_metadata.metadata.name)
+    return AsyncJobGet(job_id=task_id, job_name=execution_metadata.name)
