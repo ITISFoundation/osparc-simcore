@@ -82,7 +82,7 @@ class CustomFormatter(logging.Formatter):
             record.filename = record.file_name_override  # pyright: ignore[reportAttributeAccessIssue]
 
         # pylint: disable=no-member
-        optional_keys = LogExtra.__optional_keys__ | frozenset(["otelTraceID", "otelSpanID"])
+        optional_keys = LogExtra.__optional_keys__ | frozenset(["otelTraceID", "otelSpanID", "otelTraceSampled"])
         for name in optional_keys:
             if not hasattr(record, name):
                 setattr(record, name, None)
