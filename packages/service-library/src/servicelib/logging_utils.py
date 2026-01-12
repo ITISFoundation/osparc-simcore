@@ -491,8 +491,6 @@ def log_decorator(
     logger: logging.Logger | None,
     level: LogLevelInt = logging.DEBUG,
     *,
-    # NOTE: default defined by legacy: @GitHK defined full stack tracebacks
-    # on exceptions
     exc_info: bool = True,
     exc_stack_info: bool = True,
 ) -> Callable[[F], F]:
