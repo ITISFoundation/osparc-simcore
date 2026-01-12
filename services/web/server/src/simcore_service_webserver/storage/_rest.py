@@ -9,6 +9,7 @@ from typing import Annotated, Any, Final, NamedTuple
 from urllib.parse import quote, unquote
 
 from aiohttp import ClientTimeout, web
+from celery_library import async_jobs
 from models_library.api_schemas_async_jobs.async_jobs import (
     AsyncJobGet,
 )
@@ -49,8 +50,7 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_query_parameters_as,
 )
 from servicelib.aiohttp.rest_responses import create_data_response
-from servicelib.celery.async_jobs.storage.paths import submit_compute_path_size_task, submit_delete_paths_task
-from servicelib.celery.async_jobs.storage.simcore_s3 import submit_export_data
+from servicelib.celery.async_jobs.storage.paths import COMPUTE_PATH_SIZE_TASK_NAME, DELETE_PATHS_TASK_NAME
 from servicelib.celery.models import ExecutionMetadata, OwnerMetadata
 from servicelib.common_headers import X_FORWARDED_PROTO
 from servicelib.rest_responses import unwrap_envelope
@@ -205,8 +205,11 @@ async def compute_path_size(request: web.Request) -> web.Response:
     req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(StoragePathComputeSizeParams, request)
 
-    task_uuid, task_name = await submit_compute_path_size_task(
-        task_manager=get_task_manager(request.app),
+    async_job_get = await async_jobs.submit_job(
+        get_task_manager(request.app),
+        execution_metadata=ExecutionMetadata(
+            name=COMPUTE_PATH_SIZE_TASK_NAME,
+        ),
         owner_metadata=OwnerMetadata.model_validate(
             WebServerOwnerMetadata(
                 user_id=req_ctx.user_id,
@@ -219,7 +222,7 @@ async def compute_path_size(request: web.Request) -> web.Response:
         path=path_params.path,
     )
 
-    return _create_data_response_from_async_job(request, AsyncJobGet(job_id=task_uuid, job_name=task_name))
+    return _create_data_response_from_async_job(request, async_job_get)
 
 
 @routes.post(
@@ -233,8 +236,11 @@ async def batch_delete_paths(request: web.Request):
     path_params = parse_request_path_parameters_as(StorageLocationPathParams, request)
     body = await parse_request_body_as(BatchDeletePathsBodyParams, request)
 
-    task_uuid, task_name = await submit_delete_paths_task(
-        task_manager=get_task_manager(request.app),
+    async_job_get = await async_jobs.submit_job(
+        get_task_manager(request.app),
+        execution_metadata=ExecutionMetadata(
+            name=DELETE_PATHS_TASK_NAME,
+        ),
         owner_metadata=OwnerMetadata.model_validate(
             WebServerOwnerMetadata(
                 user_id=req_ctx.user_id,
@@ -246,7 +252,7 @@ async def batch_delete_paths(request: web.Request):
         paths=body.paths,
     )
 
-    return _create_data_response_from_async_job(request, AsyncJobGet(job_id=task_uuid, job_name=task_name))
+    return _create_data_response_from_async_job(request, async_job_get)
 
 
 @routes.get(_storage_locations_prefix + "/{location_id}/datasets", name="list_datasets_metadata")
@@ -494,8 +500,11 @@ async def export_data(request: web.Request) -> web.Response:
 
     body = await parse_request_body_as(model_schema_cls=DataExportPost, request=request)
 
-    async_job_get = await submit_export_data(
-        task_manager=get_task_manager(request.app),
+    async_job_get = await async_jobs.submit_job(
+        get_task_manager(request.app),
+        execution_metadata=ExecutionMetadata(
+            name="export_data",
+        ),
         owner_metadata=OwnerMetadata.model_validate(
             WebServerOwnerMetadata(
                 user_id=req_ctx.user_id,
@@ -505,7 +514,6 @@ async def export_data(request: web.Request) -> web.Response:
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
         paths_to_export=body.paths,
-        export_as="path",
     )
 
     job_id_str = f"{async_job_get.job_id}"
@@ -533,8 +541,9 @@ async def search(request: web.Request) -> web.Response:
     parse_request_path_parameters_as(_PathParams, request)
     search_body = await parse_request_body_as(model_schema_cls=SearchBodyParams, request=request)
 
-    task_uuid = await get_task_manager(request.app).submit_task(
-        ExecutionMetadata(
+    async_job_get = await async_jobs.submit_job(
+        get_task_manager(request.app),
+        execution_metadata=ExecutionMetadata(
             name=SEARCH_TASK_NAME,
         ),
         owner_metadata=OwnerMetadata.model_validate(
@@ -557,7 +566,7 @@ async def search(request: web.Request) -> web.Response:
         project_id=search_body.filters.project_id,
     )
 
-    task_id = f"{task_uuid}"
+    task_id = f"{async_job_get.job_id}"
     return create_data_response(
         TaskGet(
             task_id=task_id,

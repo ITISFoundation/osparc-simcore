@@ -14,7 +14,7 @@ from models_library.api_schemas_async_jobs.exceptions import (
     JobNotDoneError,
     JobSchedulerError,
 )
-from servicelib.celery.models import OwnerMetadata, TaskState
+from servicelib.celery.models import ExecutionMetadata, OwnerMetadata, TaskState
 from servicelib.celery.task_manager import TaskManager
 from servicelib.logging_utils import log_catch
 
@@ -30,6 +30,7 @@ _logger = logging.getLogger(__name__)
 
 async def cancel_job(
     task_manager: TaskManager,
+    *,
     owner_metadata: OwnerMetadata,
     job_id: AsyncJobId,
 ):
@@ -46,6 +47,7 @@ async def cancel_job(
 
 async def get_job_result(
     task_manager: TaskManager,
+    *,
     owner_metadata: OwnerMetadata,
     job_id: AsyncJobId,
 ) -> AsyncJobResult:
@@ -94,6 +96,7 @@ async def get_job_result(
 
 async def get_job_status(
     task_manager: TaskManager,
+    *,
     owner_metadata: OwnerMetadata,
     job_id: AsyncJobId,
 ) -> AsyncJobStatus:
@@ -114,7 +117,11 @@ async def get_job_status(
     )
 
 
-async def list_jobs(task_manager: TaskManager, owner_metadata: OwnerMetadata) -> list[AsyncJobGet]:
+async def list_jobs(
+    task_manager: TaskManager,
+    *,
+    owner_metadata: OwnerMetadata,
+) -> list[AsyncJobGet]:
     assert task_manager  # nosec
     try:
         tasks = await task_manager.list_tasks(
@@ -124,3 +131,18 @@ async def list_jobs(task_manager: TaskManager, owner_metadata: OwnerMetadata) ->
         raise JobSchedulerError(exc=f"{exc}") from exc
 
     return [AsyncJobGet(job_id=task.uuid, job_name=task.metadata.name) for task in tasks]
+
+
+async def submit_job(
+    task_manager: TaskManager,
+    *,
+    execution_metadata: ExecutionMetadata,
+    owner_metadata: OwnerMetadata,
+    **kwargs,
+) -> AsyncJobGet:
+    task_id = await task_manager.submit_task(
+        execution_metadata=execution_metadata,
+        owner_metadata=owner_metadata,
+        **kwargs,
+    )
+    return AsyncJobGet(job_id=task_id, job_name=execution_metadata.metadata.name)
