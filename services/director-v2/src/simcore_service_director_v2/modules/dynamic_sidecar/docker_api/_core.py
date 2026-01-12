@@ -57,7 +57,9 @@ async def get_swarm_network(simcore_services_network_name: DockerNetworkName) ->
 
     # try to find the network name (usually named STACKNAME_default)
     networks: list[dict] = [
-        x for x in all_networks if "swarm" in x["Scope"] and simcore_services_network_name in x["Name"]
+        network
+        for network in all_networks
+        if "swarm" in network["Scope"] and simcore_services_network_name in network["Name"]
     ]
     if not networks or len(networks) > 1:
         msg = (
