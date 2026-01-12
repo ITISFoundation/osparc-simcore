@@ -124,9 +124,18 @@ qx.Class.define("osparc.desktop.credits.ResourceInTableViewer", {
 
       if (osparc.store.StaticInfo.isBillableProduct()) {
         const store = osparc.store.Store.getInstance();
+        const contextWallet = store.getContextWallet();
+        let preselectItem = null;
         store.getWallets().forEach(wallet => {
-          walletSelectBox.add(new qx.ui.form.ListItem(wallet.getName(), null, wallet));
+          const listItem = new qx.ui.form.ListItem(wallet.getName(), null, wallet);
+          walletSelectBox.add(listItem);
+          if (contextWallet && wallet.getWalletId() === contextWallet.getWalletId()) {
+            preselectItem = listItem;
+          }
         });
+        if (preselectItem) {
+          walletSelectBox.setSelection([preselectItem]);
+        }
       } else {
         introText.setVisibility("excluded");
         walletSelectBox.setVisibility("excluded");
