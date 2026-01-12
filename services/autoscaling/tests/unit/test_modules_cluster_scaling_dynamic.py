@@ -90,6 +90,10 @@ from types_aiobotocore_ec2.client import EC2Client
 from types_aiobotocore_ec2.literals import InstanceStateNameType, InstanceTypeType
 from types_aiobotocore_ec2.type_defs import FilterTypeDef, InstanceTypeDef
 
+pytest_simcore_core_services_selection = [
+    "docker-api-proxy",
+]
+
 
 @pytest.fixture
 def mock_terminate_instances(mocker: MockerFixture) -> Iterator[mock.Mock]:
