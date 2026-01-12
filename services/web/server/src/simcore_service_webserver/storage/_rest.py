@@ -9,7 +9,7 @@ from typing import Annotated, Any, Final, NamedTuple
 from urllib.parse import quote, unquote
 
 from aiohttp import ClientTimeout, web
-from celery_library import async_jobs
+from celery_library.async_jobs import submit_job
 from models_library.api_schemas_async_jobs.async_jobs import (
     AsyncJobGet,
 )
@@ -205,7 +205,7 @@ async def compute_path_size(request: web.Request) -> web.Response:
     req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(StoragePathComputeSizeParams, request)
 
-    async_job_get = await async_jobs.submit_job(
+    async_job_get = await submit_job(
         get_task_manager(request.app),
         execution_metadata=ExecutionMetadata(
             name=COMPUTE_PATH_SIZE_TASK_NAME,
@@ -236,7 +236,7 @@ async def batch_delete_paths(request: web.Request):
     path_params = parse_request_path_parameters_as(StorageLocationPathParams, request)
     body = await parse_request_body_as(BatchDeletePathsBodyParams, request)
 
-    async_job_get = await async_jobs.submit_job(
+    async_job_get = await submit_job(
         get_task_manager(request.app),
         execution_metadata=ExecutionMetadata(
             name=DELETE_PATHS_TASK_NAME,
@@ -500,7 +500,7 @@ async def export_data(request: web.Request) -> web.Response:
 
     body = await parse_request_body_as(model_schema_cls=DataExportPost, request=request)
 
-    async_job_get = await async_jobs.submit_job(
+    async_job_get = await submit_job(
         get_task_manager(request.app),
         execution_metadata=ExecutionMetadata(
             name="export_data",
@@ -541,7 +541,7 @@ async def search(request: web.Request) -> web.Response:
     parse_request_path_parameters_as(_PathParams, request)
     search_body = await parse_request_body_as(model_schema_cls=SearchBodyParams, request=request)
 
-    async_job_get = await async_jobs.submit_job(
+    async_job_get = await submit_job(
         get_task_manager(request.app),
         execution_metadata=ExecutionMetadata(
             name=SEARCH_TASK_NAME,
