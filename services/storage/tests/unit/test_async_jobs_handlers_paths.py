@@ -14,7 +14,10 @@ from typing import Any
 
 import pytest
 from celery.worker.worker import WorkController
-from celery_library.async_jobs import submit_job
+from celery_library.async_jobs import (
+    submit_job,
+    wait_and_get_job_result,
+)
 from faker import Faker
 from fastapi import FastAPI
 from models_library.api_schemas_async_jobs.async_jobs import (
@@ -27,9 +30,6 @@ from pydantic import ByteSize, TypeAdapter
 from pytest_simcore.helpers.storage_utils import FileIDDict, ProjectWithFilesParams
 from servicelib.celery.models import ExecutionMetadata, OwnerMetadata, Wildcard
 from servicelib.celery.task_manager import TaskManager
-from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import (
-    wait_and_get_result,
-)
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 
 pytest_simcore_core_services_selection = ["postgres", "rabbit", "redis"]
@@ -76,7 +76,7 @@ async def _assert_compute_path_size(
         user_id=user_id,
         product_name=product_name,
     )
-    async for job_composed_result in wait_and_get_result(
+    async for job_composed_result in wait_and_get_job_result(
         task_manager,
         owner_metadata=TestOwnerMetadata(user_id=user_id, product_name=product_name, owner="pytest_client_name"),
         job_id=async_job.job_id,
@@ -109,7 +109,7 @@ async def _assert_delete_paths(
         user_id=user_id,
         paths=paths,
     )
-    async for job_composed_result in wait_and_get_result(
+    async for job_composed_result in wait_and_get_job_result(
         task_manager,
         owner_metadata=TestOwnerMetadata(user_id=user_id, product_name=product_name, owner="pytest_client_name"),
         job_id=async_job.job_id,
