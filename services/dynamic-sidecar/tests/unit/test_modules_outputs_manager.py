@@ -18,6 +18,7 @@ from models_library.services import ServiceRunID
 from pydantic import PositiveFloat
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
+from servicelib.logging_utils import LogLevelInt, LogMessageStr
 from simcore_sdk.node_ports_common.exceptions import S3TransferError
 from simcore_sdk.node_ports_common.file_io_utils import LogRedirectCB
 from simcore_service_dynamic_sidecar.core.settings import ApplicationSettings
@@ -90,12 +91,13 @@ def mock_error(request: pytest.FixtureRequest) -> _MockError:
 @pytest.fixture
 def mock_upload_outputs_raises_error(
     mocker: MockerFixture, mock_error: _MockError, upload_duration: PositiveFloat
-) -> ToggleErrorRaising:
+) -> Iterator[ToggleErrorRaising]:
     error_toggle = ToggleErrorRaising()
 
     async def _mock_upload_outputs(*args, **kwargs) -> None:
         if error_toggle._raise_errors:  # noqa: SLF001
             raise mock_error.error_class(mock_error.message)
+
         await asyncio.sleep(upload_duration)
 
     mocker.patch(
@@ -229,17 +231,14 @@ async def test_recovers_after_raising_error(
     with pytest.raises(UploadPortsFailedError) as exec_info:
         await outputs_manager.wait_for_all_uploads_to_finish()
 
-    # UploadPortsFailedError may not have 'failures' attribute directly; use getattr or check docs
-    failures = getattr(exec_info.value, "failures", None)
-    assert failures is not None
-    assert set(failures.keys()) == set(port_keys) | set(non_file_type_port_keys)
+    assert set(exec_info.value.failures.keys()) == set(port_keys) | set(non_file_type_port_keys)
 
-    def _assert_same_exceptions(first: list[BaseException], second: list[BaseException]) -> None:
+    def _assert_same_exceptions(first: list[Exception], second: list[Exception]) -> None:
         assert {x.__class__: f"{x}" for x in first} == {x.__class__: f"{x}" for x in second}
 
     _assert_same_exceptions(
-        list(failures.values()),
-        [mock_error.error_class(mock_error.message)] * len(failures),
+        exec_info.value.failures.values(),
+        [mock_error.error_class(mock_error.message)] * len(exec_info.value.failures),
     )
 
     # the second time uploading there is no error to be raised
@@ -383,22 +382,19 @@ async def test_regression_io_log_redirect_cb(
         assert outputs_manager.io_log_redirect_cb is not None
 
         # ensure callback signature passed to nodeports does not change
-
-        # outputs_manager.io_log_redirect_cb is a callable, not a functools.partial with .func
-        actual_spec = inspect.getfullargspec(outputs_manager.io_log_redirect_cb)
-        assert actual_spec.args == ["app", "log"]
-        assert actual_spec.varargs is None
-        assert actual_spec.varkw is None
-        assert actual_spec.defaults is None
-        assert actual_spec.kwonlyargs == ["log_level"]
-        assert actual_spec.kwonlydefaults is None
-        # Check annotation keys and verify types are equivalent
-        assert set(actual_spec.annotations.keys()) == {"return", "app", "log", "log_level"}
-        assert actual_spec.annotations["return"] is None
-        assert actual_spec.annotations["app"] is FastAPI
-        # LogMessageStr and LogLevelInt are TypeAlias, so we check type equivalence
-        assert getattr(actual_spec.annotations["log"], "__value__", str) is str
-        assert getattr(actual_spec.annotations["log_level"], "__value__", int) is int
+        argspec = inspect.getfullargspec(outputs_manager.io_log_redirect_cb.func)
+        assert argspec.args == ["app", "log"]
+        assert argspec.varargs is None
+        assert argspec.varkw is None
+        assert argspec.defaults is None
+        assert argspec.kwonlyargs == ["log_level"]
+        assert argspec.kwonlydefaults is None
+        assert argspec.annotations == {
+            "return": None,
+            "app": FastAPI,
+            "log": LogMessageStr,
+            "log_level": LogLevelInt,
+        }
 
         # ensure logger used in nodeports deos not change
         assert inspect.getfullargspec(LogRedirectCB.__call__) == FullArgSpec(
