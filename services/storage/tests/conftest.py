@@ -985,14 +985,10 @@ def worker_app_settings(
     return worker_test_app_settings
 
 
-_logger = logging.getLogger(__name__)
-
-
 @pytest.fixture
 async def with_storage_celery_worker(
     celery_app: Celery,
     worker_app_settings: ApplicationSettings,
-    monkeypatch: pytest.MonkeyPatch,
     register_celery_tasks: Callable[[Celery], None],
 ) -> AsyncIterator[TestWorkController]:
     # Signals must be explicitly connected
