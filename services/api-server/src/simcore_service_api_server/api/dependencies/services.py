@@ -3,11 +3,10 @@
 from collections.abc import Callable
 from typing import Annotated
 
-from fastapi import Depends, FastAPI, HTTPException, Request, status
+from fastapi import Depends, HTTPException, Request, status
 from models_library.products import ProductName
 from models_library.users import UserID
 from servicelib.celery.task_manager import TaskManager
-from servicelib.fastapi.dependencies import get_app
 from servicelib.rabbitmq import RabbitMQRPCClient
 from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -173,7 +172,6 @@ def get_function_job_service(  # noqa: PLR0913
 
 
 def get_function_job_task_client_service(  # noqa: PLR0913
-    app: Annotated[FastAPI, Depends(get_app)],
     web_rpc_api: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     job_service: Annotated[JobService, Depends(get_job_service)],
     function_service: Annotated[FunctionService, Depends(get_function_service)],
@@ -183,8 +181,8 @@ def get_function_job_task_client_service(  # noqa: PLR0913
     webserver_api: Annotated[AuthSession, Depends(get_webserver_session)],
     storage_service: Annotated[StorageService, Depends(get_storage_service)],
     async_pg_engine: Annotated[AsyncEngine, Depends(get_db_asyncpg_engine)],
+    task_manager: Annotated[TaskManager, Depends(get_task_manager)],
 ) -> FunctionJobTaskClientService:
-    task_manager = get_task_manager(app)
     return FunctionJobTaskClientService(
         _web_rpc_client=web_rpc_api,
         _job_service=job_service,
