@@ -54,9 +54,6 @@ from pytest_simcore.helpers.typing_mock import HandlerMockFactory
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from servicelib.fastapi.rest_pagination import CustomizedPathsCursorPage
-from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import (
-    submit,
-)
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.tasks._tasks_service import (
     cancel_task,
@@ -146,7 +143,7 @@ _faker = Faker()
 
 
 @pytest.fixture
-def create_storage_paths_rpc_client_mock(
+def create_async_jobs_mock(
     mocker: MockerFixture,
 ) -> Callable[[str, Any], None]:
     def _(method: str, result_or_exception: Any):
@@ -156,7 +153,7 @@ def create_storage_paths_rpc_client_mock(
 
             return result_or_exception
 
-        for fct in (f"servicelib.rabbitmq.rpc_interfaces.storage.paths.{method}",):
+        for fct in (f"celery_library.async_jobs.{method}",):
             mocker.patch(fct, side_effect=side_effect)
 
     return _
@@ -184,11 +181,11 @@ async def test_compute_path_size(
     expected: int,
     location_id: LocationID,
     faker: Faker,
-    create_storage_paths_rpc_client_mock: Callable[[str, Any], None],
+    create_async_jobs_mock: Callable[[str, Any], None],
     backend_result_or_exception: Any,
 ):
-    create_storage_paths_rpc_client_mock(
-        submit.__name__,
+    create_async_jobs_mock(
+        submit_job.__name__,
         backend_result_or_exception,
     )
 
@@ -226,11 +223,11 @@ async def test_batch_delete_paths(
     expected: int,
     location_id: LocationID,
     faker: Faker,
-    create_storage_paths_rpc_client_mock: Callable[[str, Any], None],
+    create_async_jobs_mock: Callable[[str, Any], None],
     backend_result_or_exception: Any,
 ):
-    create_storage_paths_rpc_client_mock(
-        submit.__name__,
+    create_async_jobs_mock(
+        submit_job.__name__,
         backend_result_or_exception,
     )
 
