@@ -121,13 +121,13 @@ qx.Class.define("osparc.desktop.organizations.OrganizationDetails", {
 
     __openEditOrganization: function() {
       const org = this.__orgModel;
-      const title = this.tr("Organization Details Editor");
-      const orgEditor = new osparc.editor.OrganizationEditor(org);
-      const win = osparc.ui.window.Window.popUpInWindow(orgEditor, title, 400, 200);
-      orgEditor.addListener("updateOrg", () => {
+      const win = new osparc.editor.OrganizationEditor(org);
+      win.addListener("updateOrg", () => {
         this.__updateOrganization(win, orgEditor.getChildControl("save"), orgEditor);
+        win.close();
       });
-      orgEditor.addListener("cancel", () => win.close());
+      win.addListener("cancel", () => win.close());
+      win.open();
     },
 
     __updateOrganization: function(win, button, orgEditor) {
