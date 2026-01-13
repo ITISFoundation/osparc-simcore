@@ -240,6 +240,8 @@ class FunctionJobTaskClientService:
         function_job: RegisteredFunctionJob,
         stored_job_outputs: FunctionOutputs | None,
     ) -> FunctionOutputs:
+        # pylint: disable=too-many-return-statements
+
         if stored_job_outputs is not None:
             return stored_job_outputs
 
