@@ -513,16 +513,18 @@ async def _request_start_export_data(
         logging.INFO,
         f"Data export form {paths_to_export=}",
     ) as ctx:
-        async_job_get, owner_metadata = await submit_job(
+        owner_metadata = _TestOwnerMetadata(
+            user_id=user_id,
+            product_name=product_name,
+            owner="PYTEST_CLIENT_NAME",
+        )
+
+        async_job = await submit_job(
             task_manager,
             execution_metadata=ExecutionMetadata(name="export_data"),
             paths_to_export=paths_to_export,
             export_as=export_as,
-            owner_metadata=_TestOwnerMetadata(
-                user_id=user_id,
-                product_name=product_name,
-                owner="PYTEST_CLIENT_NAME",
-            ),
+            owner_metadata=owner_metadata,
             user_id=user_id,
             product_name=product_name,
         )
@@ -530,7 +532,7 @@ async def _request_start_export_data(
         async for async_job_result in wait_and_get_result(
             task_manager,
             owner_metadata=owner_metadata,
-            job_id=async_job_get.job_id,
+            job_id=async_job.job_id,
             stop_after=stop_after,
         ):
             ctx.logger.info("%s", f"<-- current state is {async_job_result=}")
