@@ -360,6 +360,14 @@ qx.Class.define("osparc.study.StudyOptions", {
       const tagManager = new osparc.form.tag.TagManager(this.__studyData);
       const win = osparc.form.tag.TagManager.popUpInWindow(tagManager);
       tagManager.addListener("updateTags", e => {
+        // this is used when the project was already created and we want to update the tags
+        win.close();
+        const updatedData = e.getData();
+        this.__studyData["tags"] = updatedData["tags"];
+        this.__repopulateTags();
+      }, this);
+      tagManager.addListener("selectedTags", e => {
+        // this is used when creating a new project and we want to get the selected tags
         win.close();
         const updatedData = e.getData();
         this.__studyData["tags"] = updatedData["tags"];
