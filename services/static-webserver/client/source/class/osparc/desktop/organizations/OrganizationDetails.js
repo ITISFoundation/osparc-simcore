@@ -121,16 +121,16 @@ qx.Class.define("osparc.desktop.organizations.OrganizationDetails", {
 
     __openEditOrganization: function() {
       const org = this.__orgModel;
-      const win = new osparc.editor.OrganizationEditor(org);
-      win.addListener("updateOrg", () => {
-        this.__updateOrganization(win, orgEditor.getChildControl("save"), orgEditor);
-        win.close();
+      const orgEditor = new osparc.editor.OrganizationEditor(org);
+      orgEditor.addListener("updateOrg", () => {
+        this.__updateOrganization(orgEditor, orgEditor.getChildControl("save-button"));
+        orgEditor.close();
       });
-      win.addListener("cancel", () => win.close());
-      win.open();
+      orgEditor.addListener("cancel", () => orgEditor.close());
+      orgEditor.open();
     },
 
-    __updateOrganization: function(win, button, orgEditor) {
+    __updateOrganization: function(orgEditor, button) {
       const groupId = orgEditor.getGid();
       const name = orgEditor.getLabel();
       const description = orgEditor.getDescription();
@@ -138,13 +138,14 @@ qx.Class.define("osparc.desktop.organizations.OrganizationDetails", {
       osparc.store.Groups.getInstance().patchOrganization(groupId, name, description, thumbnail)
         .then(() => {
           osparc.FlashMessenger.logAs(name + this.tr(" successfully edited"));
-          button.setFetching(false);
-          win.close();
         })
         .catch(err => {
           const msg = this.tr("Something went wrong while editing ") + name;
           osparc.FlashMessenger.logError(err, msg);
+        })
+        .finally(() => {
           button.setFetching(false);
+          orgEditor.close();
         });
     },
 

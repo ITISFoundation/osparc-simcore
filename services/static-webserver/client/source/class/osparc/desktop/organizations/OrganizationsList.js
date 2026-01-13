@@ -104,13 +104,13 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
         icon: "@FontAwesome5Solid/plus/14",
         allowGrowX: false
       });
-      createOrgBtn.addListener("execute", function() {
-        const win = new osparc.editor.OrganizationEditor();
-        win.addListener("createOrg", () => {
-          this.__createOrganization(win, win.getChildControl("create-button"));
+      createOrgBtn.addListener("execute", () => {
+        const orgEditor = new osparc.editor.OrganizationEditor();
+        orgEditor.addListener("createOrg", () => {
+          this.__createOrganization(orgEditor, orgEditor.getChildControl("create-button"));
         });
-        win.addListener("cancel", () => win.close());
-        win.open();
+        orgEditor.addListener("cancel", () => orgEditor.close());
+        orgEditor.open();
       }, this);
       return createOrgBtn;
     },
@@ -231,12 +231,12 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
         return;
       }
 
-      const win = new osparc.editor.OrganizationEditor(org);
-      win.addListener("updateOrg", () => {
-        this.__updateOrganization(win, win.getChildControl("save-button"));
+      const orgEditor = new osparc.editor.OrganizationEditor(org);
+      orgEditor.addListener("updateOrg", () => {
+        this.__updateOrganization(orgEditor, orgEditor.getChildControl("save-button"));
       });
-      win.addListener("cancel", () => win.close());
-      win.open();
+      orgEditor.addListener("cancel", () => orgEditor.close());
+      orgEditor.open();
     },
 
     __deleteOrganization: function(orgKey) {
