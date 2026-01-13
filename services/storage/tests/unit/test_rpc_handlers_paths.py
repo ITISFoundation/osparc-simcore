@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from celery.contrib.testing.worker import TestWorkController
+from celery.worker.worker import WorkController
 from celery_library.async_jobs import submit_job
 from faker import Faker
 from fastapi import FastAPI
@@ -27,7 +27,6 @@ from pydantic import ByteSize, TypeAdapter
 from pytest_simcore.helpers.storage_utils import FileIDDict, ProjectWithFilesParams
 from servicelib.celery.models import ExecutionMetadata, OwnerMetadata, Wildcard
 from servicelib.celery.task_manager import TaskManager
-from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import (
     wait_and_get_result,
 )
@@ -145,7 +144,6 @@ async def _assert_delete_paths(
 async def test_path_compute_size(
     initialized_app: FastAPI,
     task_manager: TaskManager,
-    storage_rabbitmq_rpc_client: RabbitMQRPCClient,
     user_id: UserID,
     location_id: LocationID,
     with_random_project_with_files: tuple[
@@ -245,8 +243,7 @@ async def test_path_compute_size(
 async def test_path_compute_size_inexistent_path(
     initialized_app: FastAPI,
     task_manager: TaskManager,
-    storage_rabbitmq_rpc_client: RabbitMQRPCClient,
-    with_storage_celery_worker: TestWorkController,
+    with_storage_celery_worker: WorkController,
     location_id: LocationID,
     user_id: UserID,
     faker: Faker,
@@ -271,14 +268,14 @@ async def test_path_compute_size_inexistent_path(
 )
 async def test_delete_paths_empty_set(
     initialized_app: FastAPI,
-    storage_rabbitmq_rpc_client: RabbitMQRPCClient,
+    task_manager: TaskManager,
+    with_storage_celery_worker: WorkController,
     user_id: UserID,
     location_id: LocationID,
     product_name: ProductName,
-    with_storage_celery_worker: TestWorkController,
 ):
     await _assert_delete_paths(
-        storage_rabbitmq_rpc_client,
+        task_manager,
         location_id,
         user_id,
         product_name,
@@ -305,7 +302,8 @@ async def test_delete_paths_empty_set(
 )
 async def test_delete_paths(
     initialized_app: FastAPI,
-    storage_rabbitmq_rpc_client: RabbitMQRPCClient,
+    task_manager: TaskManager,
+    with_storage_celery_worker: WorkController,
     user_id: UserID,
     location_id: LocationID,
     with_random_project_with_files: tuple[
@@ -314,7 +312,6 @@ async def test_delete_paths(
     ],
     project_params: ProjectWithFilesParams,
     product_name: ProductName,
-    with_storage_celery_worker: TestWorkController,
 ):
     assert len(project_params.allowed_file_sizes) == 1, (
         "test preconditions are not filled! allowed file sizes should have only 1 option for this test"
@@ -327,7 +324,7 @@ async def test_delete_paths(
     expected_total_size = project_params.allowed_file_sizes[0] * total_num_files
     path = Path(project["uuid"])
     await _assert_compute_path_size(
-        storage_rabbitmq_rpc_client,
+        task_manager,
         location_id,
         user_id,
         path=path,
@@ -346,7 +343,7 @@ async def test_delete_paths(
     )
 
     await _assert_delete_paths(
-        storage_rabbitmq_rpc_client,
+        task_manager,
         location_id,
         user_id,
         product_name,
@@ -355,7 +352,7 @@ async def test_delete_paths(
 
     # the size is reduced by the amount of deleted files
     await _assert_compute_path_size(
-        storage_rabbitmq_rpc_client,
+        task_manager,
         location_id,
         user_id,
         path=path,
