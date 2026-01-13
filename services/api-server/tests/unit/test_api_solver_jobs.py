@@ -219,6 +219,7 @@ async def test_start_solver_job_pricing_unit_with_payment(
     faker: Faker,
     capture_name: str,
     expected_status_code: int,
+    mock_dependency_get_celery_task_manager: MockType,
 ):
     _solver_key: str = "simcore/services/comp/isolve"
     _version: str = "2.1.24"
@@ -293,6 +294,7 @@ async def test_get_solver_job_pricing_unit_no_payment(
     create_respx_mock_from_capture: CreateRespxMockCallback,
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
+    mock_dependency_get_celery_task_manager: MockType,
 ):
     _solver_key: str = "simcore/services/comp/isolve"
     _version: str = "2.1.24"
@@ -328,6 +330,7 @@ async def test_start_solver_job_conflict(
     create_respx_mock_from_capture: CreateRespxMockCallback,
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
+    mock_dependency_get_celery_task_manager: MockType,
 ):
     _solver_key: str = "simcore/services/comp/itis/sleeper"
     _version: str = "2.0.2"
@@ -381,6 +384,7 @@ async def test_start_solver_job_storage_data_missing(
     create_respx_mock_from_capture: CreateRespxMockCallback,
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
+    mock_dependency_get_celery_task_manager: MockType,
 ):
     _solver_key: str = "simcore/services/comp/itis/sleeper"
     _version: str = "2.0.2"
