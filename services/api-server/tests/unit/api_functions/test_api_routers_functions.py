@@ -500,9 +500,9 @@ async def test_export_logs_project_function_job(
     fake_registered_project_function: RegisteredFunction,
     fake_registered_project_function_job: RegisteredFunctionJob,
     mocked_directorv2_rpc_api: dict[str, MockType],
-    mocked_storage_rpc_api: dict[str, MockType],
     auth: httpx.BasicAuth,
     user_id: UserID,
+    mock_dependency_get_celery_task_manager: MockType,
 ):
     mock_handler_in_functions_rpc_interface("get_function", fake_registered_project_function)
     mock_handler_in_functions_rpc_interface("get_function_job", fake_registered_project_function_job)
@@ -522,9 +522,9 @@ async def test_export_logs_solver_function_job(
     fake_registered_solver_function: RegisteredFunction,
     fake_registered_solver_function_job: RegisteredFunctionJob,
     mocked_directorv2_rpc_api: dict[str, MockType],
-    mocked_storage_rpc_api: dict[str, MockType],
     auth: httpx.BasicAuth,
     user_id: UserID,
+    mock_dependency_get_celery_task_manager: MockType,
 ):
     mock_handler_in_functions_rpc_interface("get_function", fake_registered_solver_function)
     mock_handler_in_functions_rpc_interface("get_function_job", fake_registered_solver_function_job)
