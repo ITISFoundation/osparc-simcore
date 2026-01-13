@@ -56,7 +56,6 @@ from pytest_simcore.helpers.storage_utils_project import clone_project_data
 from servicelib.aiohttp import status
 from servicelib.celery.models import ExecutionMetadata, OwnerMetadata
 from servicelib.celery.task_manager import TaskManager
-from servicelib.rabbitmq._errors import RPCServerError
 from simcore_postgres_database.storage_models import file_meta_data
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 from sqlalchemy.ext.asyncio import AsyncEngine
@@ -667,7 +666,7 @@ async def test_start_export_invalid_export_format(
     faker: Faker,
 ):
     path_to_export = TypeAdapter(PathToExport).validate_python(f"{faker.uuid4()}/{faker.uuid4()}/{faker.file_name()}")
-    with pytest.raises(RPCServerError) as exc:
+    with pytest.raises(JobError) as exc:
         await _request_start_export_data(
             task_manager,
             "invalid_format",  # type: ignore
@@ -677,4 +676,4 @@ async def test_start_export_invalid_export_format(
             stop_after=datetime.timedelta(seconds=60),
         )
 
-    assert exc.value.exc_type == "builtins.ValueError"
+    assert exc.value.exc_type == "NotRegistered"
