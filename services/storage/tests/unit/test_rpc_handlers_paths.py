@@ -101,7 +101,7 @@ async def _assert_delete_paths(
     *,
     paths: set[Path],
 ) -> None:
-    async_job, _ = await submit_job(
+    async_job = await submit_job(
         task_manager,
         execution_metadata=ExecutionMetadata(name="delete_paths"),
         owner_metadata=TestOwnerMetadata(user_id=user_id, product_name=product_name, owner="pytest_client_name"),
