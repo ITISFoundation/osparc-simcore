@@ -85,7 +85,7 @@ qx.Class.define("osparc.form.tag.TagManager", {
           this.getChildControl("buttons-container").add(control);
           break;
         case "ok-button":
-          control = new osparc.ui.form.FetchButton(this.tr("Ok")).set({
+          control = new osparc.ui.form.FetchButton(this.tr("Save")).set({
             appearance: "strong-button"
           });
           control.addListener("execute", () => this.__okClicked(control), this);

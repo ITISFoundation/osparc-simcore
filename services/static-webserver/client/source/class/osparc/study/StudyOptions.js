@@ -46,6 +46,8 @@ qx.Class.define("osparc.study.StudyOptions", {
       apply: "__applyWallet",
     },
 
+    // indicates whether the study options will patch the study or
+    // just gather the information and patch later
     patchStudy: {
       check: "Boolean",
       init: true,
@@ -359,20 +361,25 @@ qx.Class.define("osparc.study.StudyOptions", {
     __openTagsEditor: function() {
       const tagManager = new osparc.form.tag.TagManager(this.__studyData);
       const win = osparc.form.tag.TagManager.popUpInWindow(tagManager);
-      tagManager.addListener("updateTags", e => {
+      if (this.isPatchStudy()) {
         // this is used when the project was already created and we want to update the tags
-        win.close();
-        const updatedData = e.getData();
-        this.__studyData["tags"] = updatedData["tags"];
-        this.__repopulateTags();
-      }, this);
-      tagManager.addListener("selectedTags", e => {
+        tagManager.addListener("updateTags", e => {
+          win.close();
+          const updatedData = e.getData();
+          this.__studyData["tags"] = updatedData["tags"];
+          this.__repopulateTags();
+        }, this);
+      } else {
         // this is used when creating a new project and we want to get the selected tags
-        win.close();
-        const updatedData = e.getData();
-        this.__studyData["tags"] = updatedData["tags"];
-        this.__repopulateTags();
-      }, this);
+        tagManager.getChildControl("save-button").exclude();
+        tagManager.getChildControl("ok-button");
+        tagManager.addListener("selectedTags", e => {
+          win.close();
+          const updatedData = e.getData();
+          this.__studyData["tags"] = updatedData["tags"];
+          this.__repopulateTags();
+        }, this);
+      }
     },
 
     __addWalletSelector: function() {
