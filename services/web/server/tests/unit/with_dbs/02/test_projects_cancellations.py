@@ -11,6 +11,9 @@ from urllib.parse import urlparse
 
 import pytest
 from aiohttp.test_utils import TestClient
+from celery_library.async_jobs import (
+    AsyncJobComposedResult,
+)
 from faker import Faker
 from models_library.api_schemas_async_jobs.async_jobs import AsyncJobStatus
 from models_library.progress_bar import ProgressReport
@@ -24,9 +27,6 @@ from pytest_simcore.helpers.webserver_parametrizations import (
     standard_role_response,
 )
 from servicelib.long_running_tasks.models import TaskGet
-from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import (
-    AsyncJobComposedResult,
-)
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from simcore_postgres_database.models.users import UserRole

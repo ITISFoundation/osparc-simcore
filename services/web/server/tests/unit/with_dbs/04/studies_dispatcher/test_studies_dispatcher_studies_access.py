@@ -19,6 +19,9 @@ import pytest
 import redis.asyncio as aioredis
 from aiohttp import ClientResponse, ClientSession, web
 from aiohttp.test_utils import TestClient, TestServer
+from celery_library.async_jobs import (
+    AsyncJobComposedResult,
+)
 from common_library.json_serialization import json_dumps
 from common_library.serialization import model_dump_with_secrets
 from common_library.users_enums import UserRole
@@ -40,9 +43,6 @@ from pytest_simcore.helpers.webserver_projects import NewProject, delete_all_pro
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
-from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import (
-    AsyncJobComposedResult,
-)
 from servicelib.rest_responses import unwrap_envelope
 from settings_library.rabbit import RabbitSettings
 from settings_library.utils_session import DEFAULT_SESSION_COOKIE_NAME

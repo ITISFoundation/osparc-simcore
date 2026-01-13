@@ -7,6 +7,10 @@ from collections.abc import AsyncGenerator
 from typing import Any, Final
 
 from aiohttp import ClientError, ClientSession, ClientTimeout, web
+from celery_library.async_jobs import (
+    AsyncJobComposedResult,
+    submit_job_and_wait,
+)
 from common_library.logging.logging_base import get_log_record_extra
 from models_library.api_schemas_storage.storage_schemas import (
     FileLocation,
@@ -24,10 +28,6 @@ from pydantic import ByteSize, HttpUrl, TypeAdapter
 from servicelib.aiohttp.client_session import get_client_session
 from servicelib.celery.models import ExecutionMetadata, OwnerMetadata
 from servicelib.logging_utils import log_context
-from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import (
-    AsyncJobComposedResult,
-    submit_and_wait,
-)
 from yarl import URL
 
 from simcore_service_webserver.celery import get_task_manager
@@ -105,7 +105,7 @@ async def copy_data_folders_from_project(  # noqa: PLR0913
 ) -> AsyncGenerator[AsyncJobComposedResult]:
     with log_context(_logger, logging.DEBUG, msg=f"copy {nodes_map=}"):
         task_manager = get_task_manager(app)
-        async for job_composed_result in submit_and_wait(
+        async for job_composed_result in submit_job_and_wait(
             task_manager,
             execution_metadata=ExecutionMetadata(name="copy_folders_from_project"),
             owner_metadata=OwnerMetadata.model_validate(

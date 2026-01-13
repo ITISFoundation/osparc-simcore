@@ -36,6 +36,9 @@ import sqlalchemy as sa
 from aiohttp import web
 from aiohttp.test_utils import TestClient, TestServer
 from aiopg.sa import create_engine
+from celery_library.async_jobs import (
+    AsyncJobComposedResult,
+)
 from faker import Faker
 from models_library.api_schemas_async_jobs.async_jobs import AsyncJobStatus
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
@@ -57,9 +60,6 @@ from redis import Redis
 from servicelib import tracing
 from servicelib.common_aiopg_utils import DSN
 from servicelib.rabbitmq import RabbitMQRPCClient
-from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import (
-    AsyncJobComposedResult,
-)
 from servicelib.rabbitmq.rpc_interfaces.webserver.v1 import WebServerRpcClient
 from settings_library.email import SMTPSettings
 from settings_library.redis import RedisDatabase, RedisSettings
