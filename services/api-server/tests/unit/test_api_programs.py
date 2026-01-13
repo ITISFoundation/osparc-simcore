@@ -56,7 +56,7 @@ async def test_get_program_release(
     ],
 )
 @pytest.mark.parametrize("capture_name", ["create_program_job_success.json"])
-async def test_create_program_job(
+async def test_create_program_job(  # pylint: disable=too-many-positional-arguments
     auth: httpx.BasicAuth,
     client: AsyncClient,
     mocked_webserver_rest_api_base,
