@@ -123,6 +123,12 @@ qx.Class.define("osparc.desktop.account.MyAccount", {
       const iconSrc = "@FontAwesome5Solid/list/22";
       const usageOverview = new osparc.desktop.credits.Usage();
       const page = this.addTab(title, iconSrc, usageOverview);
+      this.getChildControl("tabs-view").addListener("changeSelection", e => {
+        const selectedPage = e.getData()[0];
+        if (selectedPage === page) {
+          usageOverview.reloadData();
+        }
+      });
       return page;
     },
     __addGeneralSettings: function() {
