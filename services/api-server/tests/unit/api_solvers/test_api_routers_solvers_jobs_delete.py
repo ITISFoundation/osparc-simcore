@@ -2,7 +2,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import TypedDict
 from uuid import UUID
@@ -63,6 +63,7 @@ async def test_delete_non_existing_solver_job(
     solver_version: str,
     faker: Faker,
     mocked_backend_services_apis_for_delete_non_existing_project: MockedBackendApiDict,
+    mock_dependency_get_celery_task_manager: MockType,
 ):
     # Cannot delete if it does not exists
     resp = await client.delete(
@@ -118,6 +119,7 @@ async def test_create_and_delete_solver_job(
     solver_version: str,
     mocked_catalog_rpc_api: dict[str, MockType],
     mocked_backend_services_apis_for_create_and_delete_solver_job: MockedBackendApiDict,
+    mock_dependency_get_celery_task_manager: MockType,
 ):
     # create Job
     resp = await client.post(
@@ -238,7 +240,7 @@ def mocked_backend_services_apis_for_delete_job_assets(
         task.state = computation_state
         task.stopped = None
         if not computation_state.is_running():
-            task.stopped = datetime.now(tz=datetime.UTC)
+            task.stopped = datetime.now(tz=UTC)
 
         return httpx.Response(status_code=status.HTTP_200_OK, json=task.model_dump(mode="json"))
 
@@ -274,6 +276,7 @@ async def test_delete_job_assets_endpoint(
     solver_key: str,
     solver_version: str,
     mocked_backend_services_apis_for_delete_job_assets: dict[str, MockRouter | dict[str, MockType]],
+    mock_dependency_get_celery_task_manager: MockType,
 ):
     job_id = "123e4567-e89b-12d3-a456-426614174000"
     url = f"/{API_VTAG}/solvers/{solver_key}/releases/{solver_version}/jobs/{job_id}/assets"
@@ -306,6 +309,7 @@ async def test_delete_job_assets_endpoint_computation_running(
     solver_key: str,
     solver_version: str,
     mocked_backend_services_apis_for_delete_job_assets: dict[str, MockRouter | dict[str, MockType]],
+    mock_dependency_get_celery_task_manager: MockType,
 ):
     job_id = "123e4567-e89b-12d3-a456-426614174000"
     url = f"/{API_VTAG}/solvers/{solver_key}/releases/{solver_version}/jobs/{job_id}/assets"
