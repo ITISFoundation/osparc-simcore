@@ -46,7 +46,7 @@ from ..constants import LOGS_FILE_NAME, UNDEFINED_API_BASE_URL, UNDEFINED_DOCKER
 from ..core.errors import (
     ComputationalBackendNotConnectedError,
     ComputationalSchedulerChangedError,
-    InsuficientComputationalResourcesError,
+    InsufficientComputationalResourcesError,
     MissingComputationalResourcesError,
     PortsValidationError,
 )
@@ -98,9 +98,7 @@ async def create_node_ports(
             db_manager=db_manager,
         )
     except ValidationError as err:
-        raise PortsValidationError(
-            project_id=project_id, node_id=node_id, errors_list=list(err.errors())
-        ) from err
+        raise PortsValidationError(project_id=project_id, node_id=node_id, errors_list=list(err.errors())) from err
 
 
 async def parse_output_data(
@@ -141,10 +139,7 @@ async def parse_output_data(
     ports_errors = []
     for port_key, port_value in data.items():
         value_to_transfer: links.ItemValue | None = None
-        if isinstance(port_value, FileUrl):
-            value_to_transfer = port_value.url
-        else:
-            value_to_transfer = port_value
+        value_to_transfer = port_value.url if isinstance(port_value, FileUrl) else port_value
 
         try:
             await (await ports.outputs)[port_key].set_value(value_to_transfer)
@@ -166,9 +161,7 @@ async def parse_output_data(
             )
 
     if ports_errors:
-        raise PortsValidationError(
-            project_id=project_id, node_id=node_id, errors_list=ports_errors
-        )
+        raise PortsValidationError(project_id=project_id, node_id=node_id, errors_list=ports_errors)
 
 
 async def compute_input_data(
@@ -195,11 +188,7 @@ async def compute_input_data(
                 _logger.debug("Creating file url for %s", f"{port=}")
                 input_data[port.key] = FileUrl(
                     url=value,
-                    file_mapping=(
-                        next(iter(port.file_to_key_map))
-                        if port.file_to_key_map
-                        else None
-                    ),
+                    file_mapping=(next(iter(port.file_to_key_map)) if port.file_to_key_map else None),
                     file_mime_type=port.property_type.removeprefix("data:"),
                 )
             else:
@@ -209,9 +198,7 @@ async def compute_input_data(
             ports_errors.extend(_get_port_validation_errors(port.key, err))
 
     if ports_errors:
-        raise PortsValidationError(
-            project_id=project_id, node_id=node_id, errors_list=ports_errors
-        )
+        raise PortsValidationError(project_id=project_id, node_id=node_id, errors_list=ports_errors)
 
     return TaskInputData.model_validate(input_data)
 
@@ -238,11 +225,7 @@ async def compute_output_data_schema(
                 user_id=user_id,
                 project_id=f"{project_id}",
                 node_id=f"{node_id}",
-                file_name=(
-                    next(iter(port.file_to_key_map))
-                    if port.file_to_key_map
-                    else port.key
-                ),
+                file_name=(next(iter(port.file_to_key_map)) if port.file_to_key_map else port.key),
                 link_type=file_link_type,
                 file_size=ByteSize(0),  # will create a single presigned link
                 sha256_checksum=None,
@@ -251,11 +234,7 @@ async def compute_output_data_schema(
             assert len(value_links.urls) == 1  # nosec
             output_data_schema[port.key].update(
                 {
-                    "mapping": (
-                        next(iter(port.file_to_key_map))
-                        if port.file_to_key_map
-                        else None
-                    ),
+                    "mapping": (next(iter(port.file_to_key_map)) if port.file_to_key_map else None),
                     "url": f"{value_links.urls[0]}",
                 }
             )
@@ -301,10 +280,9 @@ def compute_task_labels(
             "project_id": project_id,
             "node_id": node_id,
             "product_name": product_name,
-            "simcore_user_agent": run_metadata.get(
-                "simcore_user_agent", UNDEFINED_DOCKER_LABEL
-            ),
-            "swarm_stack_name": UNDEFINED_DOCKER_LABEL,  # NOTE: there is currently no need for this label in the comp backend
+            "simcore_user_agent": run_metadata.get("simcore_user_agent", UNDEFINED_DOCKER_LABEL),
+            # NOTE: there is currently no need for this label in the comp backend
+            "swarm_stack_name": UNDEFINED_DOCKER_LABEL,
             "memory_limit": node_requirements.ram,
             "cpu_limit": node_requirements.cpu,
         }
@@ -318,7 +296,7 @@ def compute_task_labels(
     )
 
 
-async def compute_task_envs(
+async def compute_task_envs(  # noqa: PLR0913
     app: FastAPI,
     *,
     user_id: UserID,
@@ -383,9 +361,7 @@ async def _get_service_log_file_download_link(
         return None
 
 
-async def get_task_log_file(
-    user_id: UserID, project_id: ProjectID, node_id: NodeID
-) -> TaskLogFileGet:
+async def get_task_log_file(user_id: UserID, project_id: ProjectID, node_id: NodeID) -> TaskLogFileGet:
     try:
         log_file_url = await _get_service_log_file_download_link(
             user_id, project_id, node_id, file_link_type=FileLinkType.PRESIGNED
@@ -393,7 +369,7 @@ async def get_task_log_file(
 
     except NodeportsException as err:
         # Unexpected error: Cannot determine the cause of failure
-        # to get donwload link and cannot handle it automatically.
+        # to get download link and cannot handle it automatically.
         # Will treat it as "not available" and log a warning
         log_file_url = None
         _logger.warning(
@@ -427,17 +403,11 @@ async def clean_task_output_and_log_files_if_invalid(
     for port in (await ports.outputs).values():
         if not port_utils.is_file_type(port.property_type):
             continue
-        file_name = (
-            next(iter(port.file_to_key_map)) if port.file_to_key_map else port.key
-        )
-        if await port_utils.target_link_exists(
-            user_id, f"{project_id}", f"{node_id}", file_name
-        ):
+        file_name = next(iter(port.file_to_key_map)) if port.file_to_key_map else port.key
+        if await port_utils.target_link_exists(user_id, f"{project_id}", f"{node_id}", file_name):
             continue
         _logger.debug("entry %s is invalid, cleaning...", port.key)
-        await port_utils.delete_target_link(
-            user_id, f"{project_id}", f"{node_id}", file_name
-        )
+        await port_utils.delete_target_link(user_id, f"{project_id}", f"{node_id}", file_name)
     # check log file
     if not await port_utils.target_link_exists(
         user_id=user_id,
@@ -445,9 +415,7 @@ async def clean_task_output_and_log_files_if_invalid(
         node_id=f"{node_id}",
         file_name=LOGS_FILE_NAME,
     ):
-        await port_utils.delete_target_link(
-            user_id, f"{project_id}", f"{node_id}", LOGS_FILE_NAME
-        )
+        await port_utils.delete_target_link(user_id, f"{project_id}", f"{node_id}", LOGS_FILE_NAME)
 
 
 def from_node_reqs_to_dask_resources(
@@ -463,9 +431,7 @@ def from_node_reqs_to_dask_resources(
     return dask_resources
 
 
-def check_scheduler_is_still_the_same(
-    original_scheduler_id: str, client: distributed.Client
-):
+def check_scheduler_is_still_the_same(original_scheduler_id: str, client: distributed.Client):
     _logger.debug("current %s", f"{client.scheduler_info()=}")
     if "id" not in client.scheduler_info():
         raise ComputationalSchedulerChangedError(
@@ -482,11 +448,7 @@ def check_scheduler_is_still_the_same(
 
 
 def check_communication_with_scheduler_is_open(client: distributed.Client) -> None:
-    if (
-        client.scheduler_comm
-        and client.scheduler_comm.comm is not None
-        and client.scheduler_comm.comm.closed()
-    ):
+    if client.scheduler_comm and client.scheduler_comm.comm is not None and client.scheduler_comm.comm.closed():
         raise ComputationalBackendNotConnectedError
 
 
@@ -496,12 +458,8 @@ def check_scheduler_status(client: distributed.Client) -> None:
         raise ComputationalBackendNotConnectedError
 
 
-def _can_task_run_on_worker(
-    task_resources: dict[str, Any], worker_resources: dict[str, Any]
-) -> bool:
-    def gen_check(
-        task_resources: dict[str, Any], worker_resources: dict[str, Any]
-    ) -> Generator[bool]:
+def _can_task_run_on_worker(task_resources: dict[str, Any], worker_resources: dict[str, Any]) -> bool:
+    def gen_check(task_resources: dict[str, Any], worker_resources: dict[str, Any]) -> Generator[bool]:
         for name, required_value in task_resources.items():
             if required_value is None:
                 yield True
@@ -513,9 +471,7 @@ def _can_task_run_on_worker(
     return all(gen_check(task_resources, worker_resources))
 
 
-def _cluster_missing_resources(
-    task_resources: dict[str, Any], cluster_resources: dict[str, Any]
-) -> list[str]:
+def _cluster_missing_resources(task_resources: dict[str, Any], cluster_resources: dict[str, Any]) -> list[str]:
     return [r for r in task_resources if r not in cluster_resources]
 
 
@@ -525,9 +481,7 @@ def _to_human_readable_resource_values(resources: dict[str, Any]) -> dict[str, A
     for res_name, res_value in resources.items():
         if "RAM" in res_name:
             try:
-                human_readable_resources[res_name] = (
-                    TypeAdapter(ByteSize).validate_python(res_value).human_readable()
-                )
+                human_readable_resources[res_name] = TypeAdapter(ByteSize).validate_python(res_value).human_readable()
             except ValidationError:
                 _logger.warning(
                     "could not parse %s:%s, please check what changed in how Dask prepares resources!",
@@ -572,9 +526,7 @@ def check_if_cluster_is_able_to_run_pipeline(
         return
 
     # check if we have missing resources
-    if missing_resources := _cluster_missing_resources(
-        task_resources, all_available_resources_in_cluster
-    ):
+    if missing_resources := _cluster_missing_resources(task_resources, all_available_resources_in_cluster):
         cluster_resources = (
             f"'{all_available_resources_in_cluster}', missing: '{missing_resources}'"
             if all_available_resources_in_cluster
@@ -591,15 +543,14 @@ def check_if_cluster_is_able_to_run_pipeline(
         )
 
     # well then our workers are not powerful enough
-    raise InsuficientComputationalResourcesError(
+    raise InsufficientComputationalResourcesError(
         project_id=project_id,
         node_id=node_id,
         service_name=node_image.name,
         service_version=node_image.tag,
         service_requested_resources=_to_human_readable_resource_values(task_resources),
         cluster_available_resources=[
-            _to_human_readable_resource_values(worker.get("resources", None))
-            for worker in workers.values()
+            _to_human_readable_resource_values(worker.get("resources", None)) for worker in workers.values()
         ],
     )
 
