@@ -33,7 +33,7 @@ async def cancel_job(
     *,
     owner_metadata: OwnerMetadata,
     job_id: AsyncJobId,
-):
+) -> None:
     try:
         await task_manager.cancel_task(
             owner_metadata=owner_metadata,
