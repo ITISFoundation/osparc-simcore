@@ -48,9 +48,7 @@ _logger = logging.getLogger(__name__)
 _STATUS_POLL_INTERVAL: Final[PositiveFloat] = 1
 
 
-async def _debug_progress_callback(
-    message: ProgressMessage, percent: ProgressPercent | None, task_id: TaskId
-) -> None:
+async def _debug_progress_callback(message: ProgressMessage, percent: ProgressPercent | None, task_id: TaskId) -> None:
     _logger.debug("%s: %.2f %s", task_id, percent, message)
 
 
@@ -77,49 +75,35 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
 
     @cached_property
     def _dynamic_services_scheduler_settings(self) -> DynamicServicesSchedulerSettings:
-        settings: DynamicServicesSchedulerSettings = (
-            self._app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
-        )
+        settings: DynamicServicesSchedulerSettings = self._app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
         return settings
 
-    async def is_healthy(
-        self, dynamic_sidecar_endpoint: AnyHttpUrl, *, with_retry: bool = True
-    ) -> bool:
+    async def is_healthy(self, dynamic_sidecar_endpoint: AnyHttpUrl, *, with_retry: bool = True) -> bool:
         """returns True if service is UP and running else False"""
         try:
             # this request uses a very short timeout
             if with_retry:
                 response = await self._thin_client.get_health(dynamic_sidecar_endpoint)
             else:
-                response = await self._thin_client.get_health_no_retry(
-                    dynamic_sidecar_endpoint
-                )
+                response = await self._thin_client.get_health_no_retry(dynamic_sidecar_endpoint)
             result: bool = response.json()["is_healthy"]
             return result
         except BaseHttpClientError:
             return False
 
-    async def containers_inspect(
-        self, dynamic_sidecar_endpoint: AnyHttpUrl
-    ) -> dict[str, Any]:
+    async def containers_inspect(self, dynamic_sidecar_endpoint: AnyHttpUrl) -> dict[str, Any]:
         """
         returns dict containing docker inspect result form
         all dynamic-sidecar started containers
         """
-        response = await self._thin_client.get_containers(
-            dynamic_sidecar_endpoint, only_status=False
-        )
+        response = await self._thin_client.get_containers(dynamic_sidecar_endpoint, only_status=False)
         result: dict[str, Any] = response.json()
         return result
 
     @log_decorator(logger=_logger)
-    async def containers_docker_status(
-        self, dynamic_sidecar_endpoint: AnyHttpUrl
-    ) -> dict[str, dict[str, str]]:
+    async def containers_docker_status(self, dynamic_sidecar_endpoint: AnyHttpUrl) -> dict[str, dict[str, str]]:
         try:
-            response = await self._thin_client.get_containers(
-                dynamic_sidecar_endpoint, only_status=True
-            )
+            response = await self._thin_client.get_containers(dynamic_sidecar_endpoint, only_status=True)
             result: dict[str, dict[str, str]] = response.json()
             return result
         except UnexpectedStatusError:
@@ -204,9 +188,7 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
     ) -> None:
         """All containers spawned by the dynamic-sidecar need to be attached to the project network"""
         try:
-            containers_status = await self.containers_docker_status(
-                dynamic_sidecar_endpoint=dynamic_sidecar_endpoint
-            )
+            containers_status = await self.containers_docker_status(dynamic_sidecar_endpoint=dynamic_sidecar_endpoint)
         except BaseHttpClientError:
             # if no containers are found it is ok to skip the operations,
             # there are no containers to attach the network to
@@ -225,7 +207,7 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
             return
 
         network_names_to_ids: dict[str, str] = await get_or_create_networks_ids(
-            [project_network], project_id
+            self._app, [project_network], project_id
         )
         network_id = network_names_to_ids[project_network]
 
@@ -258,16 +240,14 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
     ) -> None:
         # the network needs to be detached from all started containers
         try:
-            containers_status = await self.containers_docker_status(
-                dynamic_sidecar_endpoint=dynamic_sidecar_endpoint
-            )
+            containers_status = await self.containers_docker_status(dynamic_sidecar_endpoint=dynamic_sidecar_endpoint)
         except BaseHttpClientError:
             # if no containers are found it is ok to skip the operations,
             # there are no containers to detach the network from
             return
 
         network_names_to_ids: dict[str, str] = await get_or_create_networks_ids(
-            [project_network], project_id
+            self._app, [project_network], project_id
         )
         network_id = network_names_to_ids[project_network]
 
@@ -287,9 +267,7 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
         dynamic_sidecar_endpoint: AnyHttpUrl,
         compose_spec: str,
     ) -> None:
-        await self._thin_client.post_containers_compose_spec(
-            dynamic_sidecar_endpoint, compose_spec=compose_spec
-        )
+        await self._thin_client.post_containers_compose_spec(dynamic_sidecar_endpoint, compose_spec=compose_spec)
 
     def _get_client(self, dynamic_sidecar_endpoint: AnyHttpUrl) -> HttpClient:
         return HttpClient(
@@ -339,9 +317,7 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
         dynamic_sidecar_endpoint: AnyHttpUrl,
         progress_callback: ProgressCallback | None = None,
     ) -> None:
-        response = await self._thin_client.post_containers_tasks_down(
-            dynamic_sidecar_endpoint
-        )
+        response = await self._thin_client.post_containers_tasks_down(dynamic_sidecar_endpoint)
         task_id: TaskId = response.json()
 
         await self._await_for_result(
@@ -352,9 +328,7 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
         )
 
     async def restore_service_state(self, dynamic_sidecar_endpoint: AnyHttpUrl) -> int:
-        response = await self._thin_client.post_containers_tasks_state_restore(
-            dynamic_sidecar_endpoint
-        )
+        response = await self._thin_client.post_containers_tasks_state_restore(dynamic_sidecar_endpoint)
         task_id: TaskId = response.json()
 
         result: Any | None = await self._await_for_result(
@@ -366,12 +340,8 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
         assert isinstance(result, int)  # nosec
         return result
 
-    async def pull_user_services_images(
-        self, dynamic_sidecar_endpoint: AnyHttpUrl
-    ) -> None:
-        response = await self._thin_client.post_containers_images_pull(
-            dynamic_sidecar_endpoint
-        )
+    async def pull_user_services_images(self, dynamic_sidecar_endpoint: AnyHttpUrl) -> None:
+        response = await self._thin_client.post_containers_images_pull(dynamic_sidecar_endpoint)
         task_id: TaskId = response.json()
 
         await self._await_for_result(
@@ -386,9 +356,7 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
         dynamic_sidecar_endpoint: AnyHttpUrl,
         progress_callback: ProgressCallback | None = None,
     ) -> int:
-        response = await self._thin_client.post_containers_tasks_state_save(
-            dynamic_sidecar_endpoint
-        )
+        response = await self._thin_client.post_containers_tasks_state_save(dynamic_sidecar_endpoint)
         task_id: TaskId = response.json()
 
         result: Any | None = await self._await_for_result(
@@ -405,9 +373,7 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
         dynamic_sidecar_endpoint: AnyHttpUrl,
         port_keys: list[ServicePortKey] | None = None,
     ) -> int:
-        response = await self._thin_client.post_containers_tasks_ports_inputs_pull(
-            dynamic_sidecar_endpoint, port_keys
-        )
+        response = await self._thin_client.post_containers_tasks_ports_inputs_pull(dynamic_sidecar_endpoint, port_keys)
         task_id: TaskId = response.json()
 
         transferred_bytes = await self._await_for_result(
@@ -423,9 +389,7 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
         dynamic_sidecar_endpoint: AnyHttpUrl,
         port_keys: list[str] | None = None,
     ) -> int:
-        response = await self._thin_client.post_containers_tasks_ports_outputs_pull(
-            dynamic_sidecar_endpoint, port_keys
-        )
+        response = await self._thin_client.post_containers_tasks_ports_outputs_pull(dynamic_sidecar_endpoint, port_keys)
         task_id: TaskId = response.json()
 
         result: Any | None = await self._await_for_result(
@@ -442,9 +406,7 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
         dynamic_sidecar_endpoint: AnyHttpUrl,
         progress_callback: ProgressCallback | None = None,
     ) -> None:
-        response = await self._thin_client.post_containers_tasks_ports_outputs_push(
-            dynamic_sidecar_endpoint
-        )
+        response = await self._thin_client.post_containers_tasks_ports_outputs_push(dynamic_sidecar_endpoint)
         task_id: TaskId = response.json()
 
         await self._await_for_result(
@@ -455,9 +417,7 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
         )
 
     async def restart_containers(self, dynamic_sidecar_endpoint: AnyHttpUrl) -> None:
-        response = await self._thin_client.post_containers_tasks_restart(
-            dynamic_sidecar_endpoint
-        )
+        response = await self._thin_client.post_containers_tasks_restart(dynamic_sidecar_endpoint)
         task_id: TaskId = response.json()
 
         await self._await_for_result(
@@ -485,31 +445,19 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
         entrypoint_container_name: str,
         service_port: PortInt,
     ) -> None:
-        proxy_configuration = _get_proxy_configuration(
-            entrypoint_container_name, service_port
-        )
+        proxy_configuration = _get_proxy_configuration(entrypoint_container_name, service_port)
         await self._thin_client.proxy_config_load(proxy_endpoint, proxy_configuration)
 
-    async def get_service_activity(
-        self, dynamic_sidecar_endpoint: AnyHttpUrl
-    ) -> ActivityInfoOrNone:
-        response = await self._thin_client.get_containers_activity(
-            dynamic_sidecar_endpoint
-        )
+    async def get_service_activity(self, dynamic_sidecar_endpoint: AnyHttpUrl) -> ActivityInfoOrNone:
+        response = await self._thin_client.get_containers_activity(dynamic_sidecar_endpoint)
         decoded_response = response.json()
-        return (
-            ActivityInfo.model_validate(decoded_response) if decoded_response else None
-        )
+        return ActivityInfo.model_validate(decoded_response) if decoded_response else None
 
-    async def free_reserved_disk_space(
-        self, dynamic_sidecar_endpoint: AnyHttpUrl
-    ) -> None:
+    async def free_reserved_disk_space(self, dynamic_sidecar_endpoint: AnyHttpUrl) -> None:
         await self._thin_client.post_disk_reserved_free(dynamic_sidecar_endpoint)
 
 
-def _get_proxy_configuration(
-    entrypoint_container_name: str, service_port: PortInt
-) -> dict[str, Any]:
+def _get_proxy_configuration(entrypoint_container_name: str, service_port: PortInt) -> dict[str, Any]:
     return {
         # NOTE: the admin endpoint is not present any more.
         # This avoids user services from being able to access it.
@@ -523,11 +471,7 @@ def _get_proxy_configuration(
                                 "handle": [
                                     {
                                         "handler": "reverse_proxy",
-                                        "upstreams": [
-                                            {
-                                                "dial": f"{entrypoint_container_name}:{service_port}"
-                                            }
-                                        ],
+                                        "upstreams": [{"dial": f"{entrypoint_container_name}:{service_port}"}],
                                     }
                                 ]
                             }
