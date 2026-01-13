@@ -109,7 +109,6 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
         orgEditor.addListener("createOrg", () => {
           this.__createOrganization(orgEditor, orgEditor.getChildControl("create-button"));
         });
-        orgEditor.addListener("cancel", () => orgEditor.close());
         orgEditor.open();
       }, this);
       return createOrgBtn;
@@ -235,7 +234,6 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
       orgEditor.addListener("updateOrg", () => {
         this.__updateOrganization(orgEditor, orgEditor.getChildControl("save-button"));
       });
-      orgEditor.addListener("cancel", () => orgEditor.close());
       orgEditor.open();
     },
 

@@ -126,7 +126,6 @@ qx.Class.define("osparc.desktop.organizations.OrganizationDetails", {
         this.__updateOrganization(orgEditor, orgEditor.getChildControl("save-button"));
         orgEditor.close();
       });
-      orgEditor.addListener("cancel", () => orgEditor.close());
       orgEditor.open();
     },
 

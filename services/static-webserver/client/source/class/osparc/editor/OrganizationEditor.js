@@ -101,7 +101,6 @@ qx.Class.define("osparc.editor.OrganizationEditor", {
   events: {
     "createOrg": "qx.event.type.Event",
     "updateOrg": "qx.event.type.Event",
-    "cancel": "qx.event.type.Event",
   },
 
   members: {
@@ -175,7 +174,7 @@ qx.Class.define("osparc.editor.OrganizationEditor", {
           const cancelButton = new qx.ui.form.Button(this.tr("Cancel")).set({
             appearance: "form-button-text"
           });
-          cancelButton.addListener("execute", () => this.fireEvent("cancel"), this);
+          cancelButton.addListener("execute", () => this.close());
           control.addAt(cancelButton, 0);
           this.add(control);
           break;
