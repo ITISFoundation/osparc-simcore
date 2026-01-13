@@ -7,9 +7,11 @@ from models_library.functions import RegisteredFunction, RegisteredFunctionJob
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from servicelib.celery.models import TaskKey
+
 from simcore_service_api_server._service_function_jobs import FunctionJobService
 
 from ....api.dependencies.authentication import Identity
+from ....api.dependencies.celery import get_task_manager
 from ....api.dependencies.rabbitmq import get_rabbitmq_rpc_client
 from ....api.dependencies.services import (
     get_catalog_service,
@@ -43,14 +45,10 @@ async def _assemble_function_job_service(
     # See also https://github.com/fastapi/fastapi/issues/1105#issuecomment-609919850.
     settings = app.state.settings
     assert settings.API_SERVER_WEBSERVER  # nosec
-    session_cookie = get_session_cookie(
-        identity=user_identity.email, settings=settings.API_SERVER_WEBSERVER, app=app
-    )
+    session_cookie = get_session_cookie(identity=user_identity.email, settings=settings.API_SERVER_WEBSERVER, app=app)
 
     rpc_client = get_rabbitmq_rpc_client(app=app)
-    web_server_rest_client = get_webserver_session(
-        app=app, session_cookies=session_cookie, identity=user_identity
-    )
+    web_server_rest_client = get_webserver_session(app=app, session_cookies=session_cookie, identity=user_identity)
     web_api_rpc_client = await get_wb_api_rpc_client(app=app)
     director2_api = DirectorV2Api.get_instance(app=app)
     assert isinstance(director2_api, DirectorV2Api)  # nosec
@@ -62,8 +60,9 @@ async def _assemble_function_job_service(
         product_name=user_identity.product_name,
     )
 
+    task_manager = get_task_manager(app=app)
     storage_service = get_storage_service(
-        rpc_client=rpc_client,
+        task_manager=task_manager,
         user_id=user_identity.user_id,
         product_name=user_identity.product_name,
     )
@@ -104,7 +103,7 @@ async def _assemble_function_job_service(
     )
 
 
-async def run_function(
+async def run_function(  # noqa: PLR0913
     task: Task,
     task_key: TaskKey,
     *,
@@ -118,9 +117,7 @@ async def run_function(
 ) -> RegisteredFunctionJob:
     assert task_key  # nosec
     app = get_app_server(task.app).app
-    function_job_service = await _assemble_function_job_service(
-        app=app, user_identity=user_identity
-    )
+    function_job_service = await _assemble_function_job_service(app=app, user_identity=user_identity)
 
     return await function_job_service.run_function(
         function=function,
