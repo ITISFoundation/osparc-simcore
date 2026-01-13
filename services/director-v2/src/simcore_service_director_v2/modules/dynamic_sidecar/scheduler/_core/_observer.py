@@ -78,7 +78,7 @@ def _trigger_every_30_seconds(observation_counter: int, wait_interval: float) ->
 
 
 async def observing_single_service(
-    scheduler: "DynamicSidecarsScheduler",  # pyright: ignore[reportUndefinedVariable] # noqa: F821
+    scheduler: "DynamicSidecarsScheduler",  # type: ignore[name-defined] # pyright: ignore[reportUndefinedVariable] # noqa: F821
     service_name: ServiceName,
     scheduler_data: SchedulerData,
     dynamic_scheduler: DynamicServicesSchedulerSettings,

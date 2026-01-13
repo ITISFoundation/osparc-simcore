@@ -199,7 +199,7 @@ class DaskClient:
             """This function is serialized by the Dask client and sent over to the Dask sidecar(s)
             Therefore, (screaming here) DO NOT MOVE THAT IMPORT ANYWHERE ELSE EVER!!"""
             # bewlo runs inside the dask-sidecar
-            from simcore_service_dask_sidecar.worker import run_computational_sidecar  # pyright: ignore[reportMissingImports]  # noqa: I001, PLC0415
+            from simcore_service_dask_sidecar.worker import run_computational_sidecar  # type: ignore[import-not-found] # pyright: ignore[reportMissingImports]  # noqa: I001, PLC0415
 
             return run_computational_sidecar(  # type: ignore[no-any-return] # this runs inside the dask-sidecar
                 task_parameters=task_parameters,
