@@ -500,10 +500,10 @@ async def test_create_and_delete_folders_from_project(
 
 async def _request_start_export_data(
     task_manager: TaskManager,
+    task_name: Literal["export_data", "export_data_as_download_link"],
     user_id: UserID,
     product_name: ProductName,
     paths_to_export: list[PathToExport],
-    export_as: Literal["path", "download_link"],
     *,
     stop_after: datetime.timedelta = datetime.timedelta(seconds=60),
 ) -> str:
@@ -519,12 +519,11 @@ async def _request_start_export_data(
 
         async_job = await submit_job(
             task_manager,
-            execution_metadata=ExecutionMetadata(name="export_data"),
-            paths_to_export=paths_to_export,
-            export_as=export_as,
+            execution_metadata=ExecutionMetadata(name=task_name),
             owner_metadata=owner_metadata,
             user_id=user_id,
             product_name=product_name,
+            paths_to_export=paths_to_export,
         )
 
         async for async_job_result in wait_and_get_result(
@@ -571,8 +570,8 @@ def task_progress_spy(mocker: MockerFixture) -> Mock:
     ids=str,
 )
 @pytest.mark.parametrize(
-    "export_as",
-    ["path", "download_link"],
+    "task_name",
+    ["export_data", "export_data_as_download_link"],
 )
 async def test_start_export_data(
     initialized_app: FastAPI,
@@ -589,7 +588,7 @@ async def test_start_export_data(
     ],
     project_params: ProjectWithFilesParams,
     task_progress_spy: Mock,
-    export_as: Literal["path", "download_link"],
+    task_name: Literal["export_data", "export_data_as_download_link"],
 ):
     _, src_projects_list = await random_project_with_files(project_params)
 
@@ -603,25 +602,25 @@ async def test_start_export_data(
 
     result = await _request_start_export_data(
         task_manager,
+        task_name,
         user_id,
         product_name,
         paths_to_export=list(nodes_in_project_to_export),
-        export_as=export_as,
     )
 
-    if export_as == "path":
+    if task_name == "export_data":
         assert re.fullmatch(
             rf"^exports/{user_id}/[0-9a-fA-F]{{8}}-[0-9a-fA-F]{{4}}-[0-9a-fA-F]{{4}}-[0-9a-fA-F]{{4}}-[0-9a-fA-F]{{12}}\.zip$",
             result,
         )
-    elif export_as == "download_link":
+    elif task_name == "export_data_as_download_link":
         link = PresignedLink.model_validate(result).link
         assert re.search(
             rf"exports/{user_id}/[0-9a-fA-F]{{8}}-[0-9a-fA-F]{{4}}-[0-9a-fA-F]{{4}}-[0-9a-fA-F]{{4}}-[0-9a-fA-F]{{12}}\.zip",
             f"{link}",
         )
     else:
-        pytest.fail(f"Unexpected export_as value: {export_as}")
+        pytest.fail(f"Unexpected export_as value: {task_name}")
 
     progress_updates = [x[0][2].actual_value for x in task_progress_spy.call_args_list]
     assert progress_updates[0] == 0
@@ -629,8 +628,8 @@ async def test_start_export_data(
 
 
 @pytest.mark.parametrize(
-    "export_as",
-    ["path", "download_link"],
+    "task_name",
+    ["export_data", "export_data_as_download_link"],
 )
 async def test_start_export_data_access_error(
     initialized_app: FastAPI,
@@ -640,17 +639,17 @@ async def test_start_export_data_access_error(
     user_id: UserID,
     product_name: ProductName,
     faker: Faker,
-    export_as: Literal["path", "download_link"],
+    task_name: Literal["export_data", "export_data_as_download_link"],
 ):
     path_to_export = TypeAdapter(PathToExport).validate_python(f"{faker.uuid4()}/{faker.uuid4()}/{faker.file_name()}")
     with pytest.raises(JobError) as exc:
         await _request_start_export_data(
             task_manager,
+            task_name,
             user_id,
             product_name,
             paths_to_export=[path_to_export],
             stop_after=datetime.timedelta(seconds=60),
-            export_as=export_as,
         )
 
     assert isinstance(exc.value, JobError)
