@@ -671,11 +671,11 @@ async def test_start_export_invalid_export_format(
     with pytest.raises(RPCServerError) as exc:
         await _request_start_export_data(
             task_manager,
+            "invalid_format",  # type: ignore
             user_id,
             product_name,
             paths_to_export=[path_to_export],
             stop_after=datetime.timedelta(seconds=60),
-            export_as="invalid_format",  # type: ignore
         )
 
     assert exc.value.exc_type == "builtins.ValueError"
