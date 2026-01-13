@@ -24,6 +24,9 @@ from aws_library.s3 import SimcoreS3API
 from celery import Celery
 from celery.contrib.testing.worker import TestWorkController, start_worker
 from celery.signals import worker_init, worker_shutdown
+from celery_library.backends.redis import RedisTaskStore
+from celery_library.task_manager import CeleryTaskManager
+from celery_library.types import register_celery_types
 from celery_library.worker.signals import _worker_init_wrapper, _worker_shutdown_wrapper
 from faker import Faker
 from fakeredis.aioredis import FakeRedis
@@ -63,11 +66,15 @@ from pytest_simcore.helpers.storage_utils_file_meta_data import (
 )
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.aiohttp import status
+from servicelib.celery.task_manager import TaskManager
 from servicelib.fastapi.celery.app_server import FastAPIAppServer
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
+from servicelib.redis._client import RedisClientSDK
 from servicelib.tracing import TracingConfig
 from servicelib.utils import limited_gather
+from settings_library.celery import CelerySettings
 from settings_library.rabbit import RabbitSettings
+from settings_library.redis import RedisDatabase, RedisSettings
 from simcore_postgres_database.models.tokens import tokens
 from simcore_postgres_database.storage_models import file_meta_data, projects, users
 from simcore_service_storage.api._worker_tasks.tasks import register_worker_tasks
@@ -105,6 +112,7 @@ pytest_plugins = [
     "pytest_simcore.postgres_service",
     "pytest_simcore.pytest_global_environs",
     "pytest_simcore.rabbit_service",
+    "pytest_simcore.redis_service",
     "pytest_simcore.repository_paths",
     "pytest_simcore.simcore_storage_data_models",
     "pytest_simcore.simcore_storage_datcore_adapter",
@@ -943,6 +951,13 @@ def celery_config() -> dict[str, Any]:
 
 
 @pytest.fixture
+def celery_settings(
+    app_environment: EnvVarsDict,
+) -> CelerySettings:
+    return CelerySettings.create_from_envs()
+
+
+@pytest.fixture
 def mock_celery_app(mocker: MockerFixture, celery_config: dict[str, Any]) -> Celery:
     celery_app = Celery(**celery_config)
 
@@ -1008,6 +1023,30 @@ async def with_storage_celery_worker(
 
     worker_init.disconnect(init_wrapper)
     worker_shutdown.disconnect(shutdown_wrapper)
+
+
+@pytest.fixture
+async def task_manager(
+    mock_celery_app: Celery,
+    celery_settings: CelerySettings,
+    redis_service: RedisSettings,
+) -> AsyncIterator[TaskManager]:
+    register_celery_types()
+
+    try:
+        redis_client_sdk = RedisClientSDK(
+            redis_service.build_redis_dsn(RedisDatabase.CELERY_TASKS),
+            client_name="pytest_celery_tasks",
+        )
+        await redis_client_sdk.setup()
+
+        yield CeleryTaskManager(
+            mock_celery_app,
+            celery_settings,
+            RedisTaskStore(redis_client_sdk),
+        )
+    finally:
+        await redis_client_sdk.shutdown()
 
 
 @pytest.fixture

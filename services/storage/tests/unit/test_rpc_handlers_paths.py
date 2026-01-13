@@ -14,6 +14,7 @@ from typing import Any
 
 import pytest
 from celery.contrib.testing.worker import TestWorkController
+from celery_library.async_jobs import submit_job
 from faker import Faker
 from fastapi import FastAPI
 from models_library.api_schemas_async_jobs.async_jobs import (
@@ -25,7 +26,8 @@ from models_library.projects_nodes_io import LocationID, NodeID, SimcoreS3FileID
 from models_library.users import UserID
 from pydantic import ByteSize, TypeAdapter
 from pytest_simcore.helpers.storage_utils import FileIDDict, ProjectWithFilesParams
-from servicelib.celery.models import OwnerMetadata, Wildcard
+from servicelib.celery.models import ExecutionMetadata, OwnerMetadata, Wildcard
+from servicelib.celery.task_manager import TaskManager
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import (
     wait_and_get_result,
@@ -36,7 +38,7 @@ from servicelib.rabbitmq.rpc_interfaces.storage.paths import (
 )
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 
-pytest_simcore_core_services_selection = ["postgres", "rabbit"]
+pytest_simcore_core_services_selection = ["postgres", "rabbit", "redis"]
 pytest_simcore_ops_services_selection = ["adminer"]
 
 type _IsFile = bool
@@ -63,7 +65,7 @@ def _filter_and_group_paths_one_level_deeper(paths: list[Path], prefix: Path) ->
 
 
 async def _assert_compute_path_size(
-    storage_rpc_client: RabbitMQRPCClient,
+    task_manager: TaskManager,
     location_id: LocationID,
     user_id: UserID,
     product_name: ProductName,
@@ -71,21 +73,20 @@ async def _assert_compute_path_size(
     path: Path,
     expected_total_size: int,
 ) -> ByteSize:
-    async_job, _ = await compute_path_size(
-        storage_rpc_client,
+    async_job = await submit_job(
+        task_manager,
+        execution_metadata=ExecutionMetadata(name="compute_path_size"),
+        owner_metadata=TestOwnerMetadata(user_id=user_id, product_name=product_name, owner="pytest_client_name"),
         location_id=location_id,
         path=path,
-        owner_metadata=TestOwnerMetadata(user_id=user_id, product_name=product_name, owner="pytest_client_name"),
         user_id=user_id,
         product_name=product_name,
     )
     async for job_composed_result in wait_and_get_result(
-        storage_rpc_client,
-        rpc_namespace=STORAGE_RPC_NAMESPACE,
-        method_name=compute_path_size.__name__,
-        job_id=async_job.job_id,
+        task_manager,
         owner_metadata=TestOwnerMetadata(user_id=user_id, product_name=product_name, owner="pytest_client_name"),
-        client_timeout=datetime.timedelta(seconds=120),
+        job_id=async_job.job_id,
+        max_wait=datetime.timedelta(seconds=120),
     ):
         if job_composed_result.done:
             response = await job_composed_result.result()
@@ -149,6 +150,7 @@ async def _assert_delete_paths(
 )
 async def test_path_compute_size(
     initialized_app: FastAPI,
+    task_manager: TaskManager,
     storage_rabbitmq_rpc_client: RabbitMQRPCClient,
     user_id: UserID,
     location_id: LocationID,
@@ -170,7 +172,7 @@ async def test_path_compute_size(
     expected_total_size = project_params.allowed_file_sizes[0] * total_num_files
     path = Path(project["uuid"])
     await _assert_compute_path_size(
-        storage_rabbitmq_rpc_client,
+        task_manager,
         location_id,
         user_id,
         path=path,
@@ -184,7 +186,7 @@ async def test_path_compute_size(
     selected_node_s3_keys = [Path(s3_object_id) for s3_object_id in list_of_files[selected_node_id]]
     expected_total_size = project_params.allowed_file_sizes[0] * len(selected_node_s3_keys)
     await _assert_compute_path_size(
-        storage_rabbitmq_rpc_client,
+        task_manager,
         location_id,
         user_id,
         path=path,
@@ -199,7 +201,7 @@ async def test_path_compute_size(
     ]
     expected_total_size = project_params.allowed_file_sizes[0] * len(selected_node_s3_keys)
     await _assert_compute_path_size(
-        storage_rabbitmq_rpc_client,
+        task_manager,
         location_id,
         user_id,
         path=path,
@@ -214,7 +216,7 @@ async def test_path_compute_size(
     ]
     expected_total_size = project_params.allowed_file_sizes[0] * len(selected_node_s3_keys)
     workspace_total_size = await _assert_compute_path_size(
-        storage_rabbitmq_rpc_client,
+        task_manager,
         location_id,
         user_id,
         path=path,
@@ -235,7 +237,7 @@ async def test_path_compute_size(
         ]
         expected_total_size = project_params.allowed_file_sizes[0] * len(selected_node_s3_keys)
         accumulated_subfolder_size += await _assert_compute_path_size(
-            storage_rabbitmq_rpc_client,
+            task_manager,
             location_id,
             user_id,
             path=workspace_subfolder,
