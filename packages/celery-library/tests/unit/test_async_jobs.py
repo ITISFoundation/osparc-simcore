@@ -22,8 +22,6 @@ from models_library.api_schemas_async_jobs.exceptions import (
     JobError,
     JobMissingError,
 )
-from models_library.products import ProductName
-from models_library.users import UserID
 from servicelib.celery.models import ExecutionMetadata, OwnerMetadata, TaskKey
 from servicelib.celery.task_manager import TaskManager
 from tenacity import (
@@ -33,30 +31,16 @@ from tenacity import (
     wait_fixed,
 )
 
-pytest_simcore_core_services_selection = [
-    "redis",
-]
-
 
 class AccessRightError(OsparcErrorMixin, RuntimeError):
     msg_template: str = "User {user_id} does not have access to file {file_id} with location {location_id}"
 
 
 @pytest.fixture
-def user_id(faker: Faker) -> UserID:
-    return faker.pyint(min_value=1)
-
-
-@pytest.fixture
-def product_name(faker: Faker) -> ProductName:
-    return faker.word()
-
-
-@pytest.fixture
-def owner_metadata(user_id: UserID, product_name: ProductName) -> OwnerMetadata:
+def owner_metadata(faker: Faker) -> OwnerMetadata:
     return OwnerMetadata(
-        user_id=user_id,
-        product_name=product_name,
+        user_id=faker.pyint(min_value=1),
+        product_name=faker.word(),
         owner="pytest_client",
     )
 
@@ -159,8 +143,6 @@ async def test_async_jobs_workflow(
     with_celery_worker: WorkController,
     execution_metadata: ExecutionMetadata,
     owner_metadata: OwnerMetadata,
-    user_id: UserID,
-    product_name: ProductName,
     payload: Any,
 ):
     async_job = await submit_job(
