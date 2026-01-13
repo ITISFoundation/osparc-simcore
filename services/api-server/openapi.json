@@ -9137,12 +9137,11 @@
             "title": "Node Id"
           },
           "log_level": {
-            "type": "integer",
-            "title": "Log Level"
+            "$ref": "#/components/schemas/LogLevelInt"
           },
           "messages": {
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/LogMessageStr"
             },
             "type": "array",
             "title": "Messages"
@@ -9800,6 +9799,9 @@
         ],
         "title": "Links"
       },
+      "LogLevelInt": {
+        "type": "integer"
+      },
       "LogLink": {
         "properties": {
           "node_name": {
@@ -9819,6 +9821,9 @@
           "download_link"
         ],
         "title": "LogLink"
+      },
+      "LogMessageStr": {
+        "type": "string"
       },
       "Meta": {
         "properties": {
