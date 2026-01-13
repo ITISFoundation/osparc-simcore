@@ -11,7 +11,6 @@ from celery_library.async_jobs import cancel_job, get_job_result, get_job_status
 from models_library.api_schemas_async_jobs.async_jobs import (
     AsyncJobGet,
     AsyncJobId,
-    AsyncJobResult,
     AsyncJobStatus,
 )
 from models_library.api_schemas_async_jobs.exceptions import JobMissingError
@@ -39,73 +38,6 @@ _DEFAULT_TIMEOUT_S: Final[NonNegativeInt] = 30
 _DEFAULT_POLL_INTERVAL_S: Final[float] = 0.1
 
 _logger = logging.getLogger(__name__)
-
-
-async def cancel(
-    rabbitmq_rpc_client: RabbitMQRPCClient,
-    *,
-    rpc_namespace: RPCNamespace,
-    job_id: AsyncJobId,
-    owner_metadata: OwnerMetadata,
-) -> None:
-    await rabbitmq_rpc_client.request(
-        rpc_namespace,
-        TypeAdapter(RPCMethodName).validate_python("cancel"),
-        job_id=job_id,
-        owner_metadata=owner_metadata,
-        timeout_s=_DEFAULT_TIMEOUT_S,
-    )
-
-
-async def status(
-    rabbitmq_rpc_client: RabbitMQRPCClient,
-    *,
-    rpc_namespace: RPCNamespace,
-    job_id: AsyncJobId,
-    owner_metadata: OwnerMetadata,
-) -> AsyncJobStatus:
-    _result = await rabbitmq_rpc_client.request(
-        rpc_namespace,
-        TypeAdapter(RPCMethodName).validate_python("status"),
-        job_id=job_id,
-        owner_metadata=owner_metadata,
-        timeout_s=_DEFAULT_TIMEOUT_S,
-    )
-    assert isinstance(_result, AsyncJobStatus)
-    return _result
-
-
-async def result(
-    rabbitmq_rpc_client: RabbitMQRPCClient,
-    *,
-    rpc_namespace: RPCNamespace,
-    job_id: AsyncJobId,
-    owner_metadata: OwnerMetadata,
-) -> AsyncJobResult:
-    _result = await rabbitmq_rpc_client.request(
-        rpc_namespace,
-        TypeAdapter(RPCMethodName).validate_python("result"),
-        job_id=job_id,
-        owner_metadata=owner_metadata,
-        timeout_s=_DEFAULT_TIMEOUT_S,
-    )
-    assert isinstance(_result, AsyncJobResult)
-    return _result
-
-
-async def list_jobs(
-    rabbitmq_rpc_client: RabbitMQRPCClient,
-    *,
-    rpc_namespace: RPCNamespace,
-    owner_metadata: OwnerMetadata,
-) -> list[AsyncJobGet]:
-    _result: list[AsyncJobGet] = await rabbitmq_rpc_client.request(
-        rpc_namespace,
-        TypeAdapter(RPCMethodName).validate_python("list_jobs"),
-        owner_metadata=owner_metadata,
-        timeout_s=_DEFAULT_TIMEOUT_S,
-    )
-    return _result
 
 
 async def submit(
