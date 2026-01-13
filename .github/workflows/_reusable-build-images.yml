@@ -31,31 +31,6 @@ jobs:
         with:
           python-version: ${{ inputs.python-version }}
           expose-github-runtime: 'true'
-
-      - name: Create docker build mount directory
-        run: sudo mkdir -p /mnt/docker
-      - name: Maximize build space
-        uses: easimon/maximize-build-space@master
-        with:
-          root-reserve-mb: 4096
-          remove-dotnet: "true"
-          remove-android: "true"
-          remove-haskell: "true"
-          build-mount-path: "/mnt/docker"
-
-      - name: change docker default root path
-        run: |
-          docker info
-          docker info | grep "Docker Root"
-          sudo service docker stop
-          sudo sh -c 'echo "{ \"data-root\": \"/mnt/docker\" }" > /etc/docker/daemon.json'
-          sudo chmod 644 /etc/docker/daemon.json
-          sudo cat /etc/docker/daemon.json
-          sudo service docker start
-          docker info | grep "Docker Root"
-      - name: check disk space before image build
-        run: df -h
-
       - name: build backend images
         if: ${{ inputs.build-backend }}
         run: |
