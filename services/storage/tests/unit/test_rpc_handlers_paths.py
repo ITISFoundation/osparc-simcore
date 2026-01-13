@@ -20,7 +20,6 @@ from fastapi import FastAPI
 from models_library.api_schemas_async_jobs.async_jobs import (
     AsyncJobResult,
 )
-from models_library.api_schemas_storage import STORAGE_RPC_NAMESPACE
 from models_library.products import ProductName
 from models_library.projects_nodes_io import LocationID, NodeID, SimcoreS3FileID
 from models_library.users import UserID
@@ -31,10 +30,6 @@ from servicelib.celery.task_manager import TaskManager
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import (
     wait_and_get_result,
-)
-from servicelib.rabbitmq.rpc_interfaces.storage.paths import (
-    compute_path_size,
-    delete_paths,
 )
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 
@@ -86,7 +81,7 @@ async def _assert_compute_path_size(
         task_manager,
         owner_metadata=TestOwnerMetadata(user_id=user_id, product_name=product_name, owner="pytest_client_name"),
         job_id=async_job.job_id,
-        max_wait=datetime.timedelta(seconds=120),
+        stop_after=datetime.timedelta(seconds=120),
     ):
         if job_composed_result.done:
             response = await job_composed_result.result()
@@ -100,27 +95,26 @@ async def _assert_compute_path_size(
 
 
 async def _assert_delete_paths(
-    storage_rpc_client: RabbitMQRPCClient,
+    task_manager: TaskManager,
     location_id: LocationID,
     user_id: UserID,
     product_name: ProductName,
     *,
     paths: set[Path],
 ) -> None:
-    async_job, _ = await delete_paths(
-        storage_rpc_client,
-        location_id=location_id,
-        paths=paths,
+    async_job, _ = await submit_job(
+        task_manager,
+        execution_metadata=ExecutionMetadata(name="delete_paths"),
         owner_metadata=TestOwnerMetadata(user_id=user_id, product_name=product_name, owner="pytest_client_name"),
+        location_id=location_id,
         user_id=user_id,
+        paths=paths,
     )
     async for job_composed_result in wait_and_get_result(
-        storage_rpc_client,
-        rpc_namespace=STORAGE_RPC_NAMESPACE,
-        method_name=compute_path_size.__name__,
-        job_id=async_job.job_id,
+        task_manager,
         owner_metadata=TestOwnerMetadata(user_id=user_id, product_name=product_name, owner="pytest_client_name"),
-        client_timeout=datetime.timedelta(seconds=120),
+        job_id=async_job.job_id,
+        stop_after=datetime.timedelta(seconds=120),
     ):
         if job_composed_result.done:
             response = await job_composed_result.result()
@@ -249,8 +243,8 @@ async def test_path_compute_size(
 
 
 async def test_path_compute_size_inexistent_path(
-    mock_celery_app: None,
     initialized_app: FastAPI,
+    task_manager: TaskManager,
     storage_rabbitmq_rpc_client: RabbitMQRPCClient,
     with_storage_celery_worker: TestWorkController,
     location_id: LocationID,
@@ -260,7 +254,7 @@ async def test_path_compute_size_inexistent_path(
     product_name: ProductName,
 ):
     await _assert_compute_path_size(
-        storage_rabbitmq_rpc_client,
+        task_manager,
         location_id,
         user_id,
         path=Path(faker.file_path(absolute=False)),
