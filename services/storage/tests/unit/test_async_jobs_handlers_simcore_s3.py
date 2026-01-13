@@ -20,7 +20,7 @@ import httpx
 import pytest
 import sqlalchemy as sa
 from celery.worker.worker import WorkController
-from celery_library.async_jobs import submit_job
+from celery_library.async_jobs import submit_job, wait_and_get_job_result
 from celery_library.task_manager import CeleryTaskManager
 from faker import Faker
 from fastapi import FastAPI
@@ -57,7 +57,6 @@ from servicelib.aiohttp import status
 from servicelib.celery.models import ExecutionMetadata, OwnerMetadata
 from servicelib.celery.task_manager import TaskManager
 from servicelib.rabbitmq._errors import RPCServerError
-from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import wait_and_get_result
 from simcore_postgres_database.storage_models import file_meta_data
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 from sqlalchemy.ext.asyncio import AsyncEngine
@@ -101,7 +100,7 @@ async def _request_copy_folders(
             body=FoldersBody(source=source_project, destination=dst_project, nodes_map=nodes_map),
         )
 
-        async for async_job_result in wait_and_get_result(
+        async for async_job_result in wait_and_get_job_result(
             task_manager,
             owner_metadata=owner_metadata,
             job_id=async_job.job_id,
@@ -526,7 +525,7 @@ async def _request_start_export_data(
             paths_to_export=paths_to_export,
         )
 
-        async for async_job_result in wait_and_get_result(
+        async for async_job_result in wait_and_get_job_result(
             task_manager,
             owner_metadata=owner_metadata,
             job_id=async_job.job_id,
