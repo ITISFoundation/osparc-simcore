@@ -13,10 +13,9 @@ DEFAULT_VFS_CACHE_PATH: Final[Path] = Path("/vfs-cache")
 DEFAULT_VFS_CACHE_MAX_SIZE: Final[str] = "500G"
 
 
-_TRANSFER_COUNT: Final[NonNegativeInt] = 15
 _TPSLIMIT: Final[NonNegativeInt] = 2000
 
-_ONE_NANO_CPU: Final[NonNegativeInt] = int(1e9)
+_ONE_CPU: Final[NonNegativeInt] = int(1e9)
 
 
 class S3Provider(StrEnum):
@@ -34,10 +33,8 @@ class RCloneMountSettings(BaseCustomSettings):
         ),
     ] = timedelta(minutes=60)
 
-    _validate_r_clone_mount_transfers_completed_timeout = (
-        validate_numeric_string_as_timedelta(
-            "R_CLONE_MOUNT_TRANSFERS_COMPLETED_TIMEOUT"
-        )
+    _validate_r_clone_mount_transfers_completed_timeout = validate_numeric_string_as_timedelta(
+        "R_CLONE_MOUNT_TRANSFERS_COMPLETED_TIMEOUT"
     )
 
     # CONTAINER
@@ -63,7 +60,7 @@ class RCloneMountSettings(BaseCustomSettings):
 
     R_CLONE_MOUNT_CONTAINER_NANO_CPUS: Annotated[
         NonNegativeInt, Field(description="CPU limit for the rclone mount container")
-    ] = (1 * _ONE_NANO_CPU)
+    ] = 1 * _ONE_CPU
 
     # CLI command `rclone mount`
 
@@ -134,9 +131,7 @@ class RCloneMountSettings(BaseCustomSettings):
         Field(
             description="`--tpslimit-burst X`: sets the burst limit for transactions per second",
         ),
-    ] = (
-        _TPSLIMIT * 2
-    )
+    ] = _TPSLIMIT * 2
 
     R_CLONE_MOUNT_MAX_BUFFER_MEMORY: Annotated[
         str,
@@ -197,9 +192,7 @@ class RCloneMountSettings(BaseCustomSettings):
 
 
 class RCloneSettings(BaseCustomSettings):
-    R_CLONE_S3: Annotated[
-        S3Settings, Field(json_schema_extra={"auto_default_from_env": True})
-    ]
+    R_CLONE_S3: Annotated[S3Settings, Field(json_schema_extra={"auto_default_from_env": True})]
     R_CLONE_PROVIDER: S3Provider
 
     R_CLONE_VERSION: Annotated[
@@ -210,9 +203,7 @@ class RCloneSettings(BaseCustomSettings):
         ),
     ] = None
 
-    R_CLONE_MOUNT_SETTINGS: RCloneMountSettings = Field(
-        json_schema_extra={"auto_default_from_env": True}
-    )
+    R_CLONE_MOUNT_SETTINGS: RCloneMountSettings = Field(json_schema_extra={"auto_default_from_env": True})
 
     R_CLONE_OPTION_TRANSFERS: Annotated[
         # SEE https://rclone.org/docs/#transfers-n
@@ -228,9 +219,7 @@ class RCloneSettings(BaseCustomSettings):
 
     R_CLONE_RETRIES_SLEEP: Annotated[
         str,
-        Field(
-            description="`--retries-sleep X`: max time to sleep between retries (caps exponential backoff)"
-        ),
+        Field(description="`--retries-sleep X`: max time to sleep between retries (caps exponential backoff)"),
     ] = "30s"
 
     R_CLONE_OPTION_BUFFER_SIZE: Annotated[
