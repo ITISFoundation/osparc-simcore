@@ -40,18 +40,12 @@ def mocked_backend_services_apis_for_delete_non_existing_project(
     project_tests_dir: Path,
 ) -> MockedBackendApiDict:
     mock_name = "delete_project_not_found.json"
-    environment = jinja2.Environment(
-        loader=jinja2.FileSystemLoader(project_tests_dir / "mocks"), autoescape=True
-    )
+    environment = jinja2.Environment(loader=jinja2.FileSystemLoader(project_tests_dir / "mocks"), autoescape=True)
     template = environment.get_template(mock_name)
 
     def _response(request: httpx.Request, project_id: str):
-        capture = HttpApiCallCaptureModel.model_validate_json(
-            template.render(project_id=project_id)
-        )
-        return httpx.Response(
-            status_code=capture.status_code, json=capture.response_body
-        )
+        capture = HttpApiCallCaptureModel.model_validate_json(template.render(project_id=project_id))
+        return httpx.Response(status_code=capture.status_code, json=capture.response_body)
 
     mocked_webserver_rest_api.delete(
         path__regex=rf"/projects/(?P<project_id>{UUID_RE_BASE})$",
@@ -61,9 +55,7 @@ def mocked_backend_services_apis_for_delete_non_existing_project(
     return MockedBackendApiDict(webserver=mocked_webserver_rest_api)
 
 
-@pytest.mark.acceptance_test(
-    "For https://github.com/ITISFoundation/osparc-simcore/issues/4111"
-)
+@pytest.mark.acceptance_test("For https://github.com/ITISFoundation/osparc-simcore/issues/4111")
 async def test_delete_non_existing_solver_job(
     auth: httpx.BasicAuth,
     client: httpx.AsyncClient,
@@ -79,9 +71,7 @@ async def test_delete_non_existing_solver_job(
     )
     assert resp.status_code == status.HTTP_404_NOT_FOUND
 
-    mock_webserver_router = (
-        mocked_backend_services_apis_for_delete_non_existing_project["webserver"]
-    )
+    mock_webserver_router = mocked_backend_services_apis_for_delete_non_existing_project["webserver"]
     assert mock_webserver_router
     assert mock_webserver_router["delete_project"].called
 
@@ -120,9 +110,7 @@ def mocked_backend_services_apis_for_create_and_delete_solver_job(
     )
 
 
-@pytest.mark.acceptance_test(
-    "For https://github.com/ITISFoundation/osparc-simcore/issues/4111"
-)
+@pytest.mark.acceptance_test("For https://github.com/ITISFoundation/osparc-simcore/issues/4111")
 async def test_create_and_delete_solver_job(
     auth: httpx.BasicAuth,
     client: httpx.AsyncClient,
@@ -152,9 +140,7 @@ async def test_create_and_delete_solver_job(
     )
     assert resp.status_code == status.HTTP_204_NO_CONTENT
 
-    mock_webserver_router = (
-        mocked_backend_services_apis_for_create_and_delete_solver_job["webserver"]
-    )
+    mock_webserver_router = mocked_backend_services_apis_for_create_and_delete_solver_job["webserver"]
     assert mock_webserver_router
     assert mock_webserver_router["delete_project"].called
 
@@ -182,11 +168,9 @@ async def test_create_job(
     hidden: bool,
     parent_project_id: UUID | None,
     parent_node_id: UUID | None,
+    mock_dependency_get_celery_task_manager: MockType,
 ):
-
-    mock_webserver_router = (
-        mocked_backend_services_apis_for_create_and_delete_solver_job["webserver"]
-    )
+    mock_webserver_router = mocked_backend_services_apis_for_create_and_delete_solver_job["webserver"]
     assert mock_webserver_router is not None
     callback = mock_webserver_router["create_projects"].side_effect
     assert callback is not None
@@ -199,13 +183,9 @@ async def test_create_job(
 
         # check parent project and node id
         if parent_project_id is not None:
-            assert f"{parent_project_id}" == dict(request.headers).get(
-                X_SIMCORE_PARENT_PROJECT_UUID.lower()
-            )
+            assert f"{parent_project_id}" == dict(request.headers).get(X_SIMCORE_PARENT_PROJECT_UUID.lower())
         if parent_node_id is not None:
-            assert f"{parent_node_id}" == dict(request.headers).get(
-                X_SIMCORE_PARENT_NODE_ID.lower()
-            )
+            assert f"{parent_node_id}" == dict(request.headers).get(X_SIMCORE_PARENT_NODE_ID.lower())
         return callback(request)
 
     mock_webserver_router["create_projects"].side_effect = create_project_side_effect
@@ -229,7 +209,7 @@ async def test_create_job(
         ).model_dump(),
     )
     assert resp.status_code == status.HTTP_201_CREATED
-    job = Job.model_validate(resp.json())
+    Job.model_validate(resp.json())
 
 
 @pytest.fixture
@@ -240,7 +220,6 @@ def mocked_backend_services_apis_for_delete_job_assets(
     mocked_directorv2_rest_api_base: MockRouter,
     mocked_storage_rest_api_base: MockRouter,
 ) -> dict[str, MockRouter | dict[str, MockType]]:
-
     computation_state: RunningState = request.param
 
     # Patch PATCH /projects/{project_id}
@@ -255,17 +234,13 @@ def mocked_backend_services_apis_for_delete_job_assets(
 
     # mock computation state
     def _get_computation(request: httpx.Request, **kwargs) -> httpx.Response:
-        task = ComputationTaskGet.model_validate(
-            ComputationTaskGet.model_json_schema()["examples"][0]
-        )
+        task = ComputationTaskGet.model_validate(ComputationTaskGet.model_json_schema()["examples"][0])
         task.state = computation_state
         task.stopped = None
         if not computation_state.is_running():
-            task.stopped = datetime.now()
+            task.stopped = datetime.now(tz=datetime.UTC)
 
-        return httpx.Response(
-            status_code=status.HTTP_200_OK, json=task.model_dump(mode="json")
-        )
+        return httpx.Response(status_code=status.HTTP_200_OK, json=task.model_dump(mode="json"))
 
     mocked_directorv2_rest_api_base.get(
         path__regex=r"/v2/computations/(?P<project_id>[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})"
@@ -298,9 +273,7 @@ async def test_delete_job_assets_endpoint(
     client: httpx.AsyncClient,
     solver_key: str,
     solver_version: str,
-    mocked_backend_services_apis_for_delete_job_assets: dict[
-        str, MockRouter | dict[str, MockType]
-    ],
+    mocked_backend_services_apis_for_delete_job_assets: dict[str, MockRouter | dict[str, MockType]],
 ):
     job_id = "123e4567-e89b-12d3-a456-426614174000"
     url = f"/{API_VTAG}/solvers/{solver_key}/releases/{solver_version}/jobs/{job_id}/assets"
@@ -308,9 +281,7 @@ async def test_delete_job_assets_endpoint(
     resp = await client.delete(url, auth=auth)
     assert resp.status_code == status.HTTP_204_NO_CONTENT
 
-    webserver_rest = mocked_backend_services_apis_for_delete_job_assets[
-        "webserver_rest"
-    ]
+    webserver_rest = mocked_backend_services_apis_for_delete_job_assets["webserver_rest"]
     assert webserver_rest["patch_project"].called
 
     storage_rest = mocked_backend_services_apis_for_delete_job_assets["storage_rest"]
@@ -334,9 +305,7 @@ async def test_delete_job_assets_endpoint_computation_running(
     client: httpx.AsyncClient,
     solver_key: str,
     solver_version: str,
-    mocked_backend_services_apis_for_delete_job_assets: dict[
-        str, MockRouter | dict[str, MockType]
-    ],
+    mocked_backend_services_apis_for_delete_job_assets: dict[str, MockRouter | dict[str, MockType]],
 ):
     job_id = "123e4567-e89b-12d3-a456-426614174000"
     url = f"/{API_VTAG}/solvers/{solver_key}/releases/{solver_version}/jobs/{job_id}/assets"
