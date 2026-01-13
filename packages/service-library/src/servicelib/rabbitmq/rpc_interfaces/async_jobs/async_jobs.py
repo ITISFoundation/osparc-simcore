@@ -9,13 +9,11 @@ from typing import Any, Final
 from attr import dataclass
 from celery_library.async_jobs import cancel_job, get_job_result, get_job_status, submit_job
 from models_library.api_schemas_async_jobs.async_jobs import (
-    AsyncJobGet,
     AsyncJobId,
     AsyncJobStatus,
 )
 from models_library.api_schemas_async_jobs.exceptions import JobMissingError
-from models_library.rabbitmq_basic_types import RPCMethodName, RPCNamespace
-from pydantic import NonNegativeInt, TypeAdapter
+from pydantic import NonNegativeInt
 from tenacity import (
     AsyncRetrying,
     TryAgain,
@@ -32,31 +30,11 @@ from servicelib.celery.task_manager import TaskManager
 
 from ....celery.models import ExecutionMetadata, OwnerMetadata
 from ....rabbitmq import RemoteMethodNotRegisteredError
-from ... import RabbitMQRPCClient
 
 _DEFAULT_TIMEOUT_S: Final[NonNegativeInt] = 30
 _DEFAULT_POLL_INTERVAL_S: Final[float] = 0.1
 
 _logger = logging.getLogger(__name__)
-
-
-async def submit(
-    rabbitmq_rpc_client: RabbitMQRPCClient,
-    *,
-    rpc_namespace: RPCNamespace,
-    method_name: str,
-    owner_metadata: OwnerMetadata,
-    **kwargs,
-) -> AsyncJobGet:
-    _result = await rabbitmq_rpc_client.request(
-        rpc_namespace,
-        TypeAdapter(RPCMethodName).validate_python(method_name),
-        owner_metadata=owner_metadata,
-        **kwargs,
-        timeout_s=_DEFAULT_TIMEOUT_S,
-    )
-    assert isinstance(_result, AsyncJobGet)  # nosec
-    return _result
 
 
 _DEFAULT_RPC_RETRY_POLICY: dict[str, Any] = {
