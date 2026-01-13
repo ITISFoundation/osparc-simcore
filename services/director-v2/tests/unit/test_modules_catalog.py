@@ -16,6 +16,7 @@ from simcore_service_director_v2.modules.catalog import CatalogClient
 
 @pytest.fixture
 def minimal_catalog_config(
+    disable_docker_api_proxy: None,
     disable_postgres: None,
     project_env_devel_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
@@ -48,10 +49,8 @@ async def test_get_service_specifications(
 ):
     catalog_client: CatalogClient = minimal_app.state.catalog_client
     assert catalog_client
-    service_specifications: dict[str, Any] = (
-        await catalog_client.get_service_specifications(
-            user_id, mock_service_key_version.key, mock_service_key_version.version
-        )
+    service_specifications: dict[str, Any] = await catalog_client.get_service_specifications(
+        user_id, mock_service_key_version.key, mock_service_key_version.version
     )
     assert service_specifications
     assert "sidecar" in service_specifications

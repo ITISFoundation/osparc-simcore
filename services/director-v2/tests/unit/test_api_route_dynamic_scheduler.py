@@ -29,12 +29,14 @@ from simcore_service_director_v2.modules.dynamic_sidecar.scheduler import (
 from starlette.testclient import TestClient
 
 pytest_simcore_core_services_selection = [
+    "docker-api-proxy",
     "rabbit",
 ]
 
 
 @pytest.fixture
 def mock_env(
+    setup_docker_api_proxy: None,
     use_in_memory_redis: RedisSettings,
     mock_exclusive: None,
     rabbit_service: RabbitSettings,
@@ -70,9 +72,7 @@ def dynamic_sidecar_scheduler(client: TestClient) -> DynamicSidecarsScheduler:
 
 @pytest.fixture
 def mock_apply_observation_cycle(mocker: MockerFixture) -> None:
-    module_base = (
-        "simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core._observer"
-    )
+    module_base = "simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core._observer"
     mocker.patch(f"{module_base}._apply_observation_cycle", autospec=True)
 
 
@@ -90,9 +90,7 @@ async def mock_sidecar_api(
     scheduler_data: SchedulerData,
 ) -> AsyncIterator[None]:
     with respx.mock(assert_all_called=False, assert_all_mocked=True) as respx_mock:
-        respx_mock.get(f"{scheduler_data.endpoint}/health", name="is_healthy").respond(
-            json={"is_healthy": True}
-        )
+        respx_mock.get(f"{scheduler_data.endpoint}/health", name="is_healthy").respond(json={"is_healthy": True})
 
         yield
 
@@ -116,9 +114,7 @@ async def observed_service(
         request_simcore_user_agent="",
         can_save=can_save,
     )
-    return dynamic_sidecar_scheduler.scheduler.get_scheduler_data(
-        dynamic_service_create.node_uuid
-    )
+    return dynamic_sidecar_scheduler.scheduler.get_scheduler_data(dynamic_service_create.node_uuid)
 
 
 @pytest.fixture
@@ -133,9 +129,7 @@ def mock_scheduler_service_shutdown_tasks(mocker: MockerFixture) -> None:
     mocker.patch(f"{module_base}.service_save_state", autospec=True)
 
 
-async def test_update_service_observation_node_not_found(
-    scheduler_data: SchedulerData, client: TestClient
-):
+async def test_update_service_observation_node_not_found(scheduler_data: SchedulerData, client: TestClient):
     with pytest.raises(DynamicSidecarNotFoundError):
         client.patch(
             f"/v2/dynamic_scheduler/services/{scheduler_data.node_uuid}/observation",

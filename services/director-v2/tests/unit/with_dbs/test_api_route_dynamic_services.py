@@ -33,6 +33,7 @@ from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.service_settings_labels import SimcoreServiceLabels
 from pytest_mock.plugin import MockerFixture
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from respx import MockRouter
 from servicelib.common_headers import (
@@ -53,6 +54,7 @@ from starlette import status
 from starlette.testclient import TestClient
 
 pytest_simcore_core_services_selection = [
+    "docker-api-proxy",
     "postgres",
     "rabbit",
     "redis",
@@ -72,8 +74,61 @@ class ServiceParams(NamedTuple):
 logger = logging.getLogger(__name__)
 
 
+@pytest.fixture()
+def mock_env(
+    mock_env: EnvVarsDict,
+    mock_exclusive: None,
+    disable_postgres: None,
+    redis_service: RedisSettings,
+    rabbit_service: RabbitSettings,
+    monkeypatch: pytest.MonkeyPatch,
+    faker: Faker,
+) -> EnvVarsDict:
+    # Works as below line in docker.compose.yml
+    # ${DOCKER_REGISTRY:-itisfoundation}/dynamic-sidecar:${DOCKER_IMAGE_TAG:-latest}
+
+    registry = os.environ.get("DOCKER_REGISTRY", "local")
+    image_tag = os.environ.get("DOCKER_IMAGE_TAG", "production")
+
+    image_name = f"{registry}/dynamic-sidecar:{image_tag}"
+
+    logger.warning("Patching to: DYNAMIC_SIDECAR_IMAGE=%s", image_name)
+
+    return setenvs_from_dict(
+        monkeypatch,
+        {
+            "DYNAMIC_SIDECAR_IMAGE": image_name,
+            "DYNAMIC_SIDECAR_PROMETHEUS_SERVICE_LABELS": "{}",
+            "SIMCORE_SERVICES_NETWORK_NAME": "test_network_name",
+            "TRAEFIK_SIMCORE_ZONE": "test_traefik_zone",
+            "SWARM_STACK_NAME": "test_swarm_name",
+            "COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED": "false",
+            "COMPUTATIONAL_BACKEND_ENABLED": "false",
+            "COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL": f"{faker.url()}",
+            "COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH": "{}",
+            "DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED": "true",
+            "REGISTRY_AUTH": "false",
+            "REGISTRY_USER": "test",
+            "REGISTRY_PW": "test",
+            "REGISTRY_SSL": "false",
+            "POSTGRES_HOST": "mocked_host",
+            "POSTGRES_USER": "mocked_user",
+            "POSTGRES_PASSWORD": "mocked_password",
+            "POSTGRES_DB": "mocked_db",
+            "SC_BOOT_MODE": "production",
+            "R_CLONE_PROVIDER": "MINIO",
+            "S3_ENDPOINT": faker.url(),
+            "S3_ACCESS_KEY": faker.pystr(),
+            "S3_REGION": faker.pystr(),
+            "S3_SECRET_KEY": faker.pystr(),
+            "S3_BUCKET_NAME": faker.pystr(),
+        },
+    )
+
+
 @pytest.fixture
 def minimal_config(
+    setup_docker_api_proxy: None,
     mock_env: EnvVarsDict,
     postgres_host_config: dict[str, str],
     monkeypatch: pytest.MonkeyPatch,
@@ -96,57 +151,6 @@ def dynamic_sidecar_headers() -> dict[str, str]:
     }
 
 
-@pytest.fixture()
-def mock_env(
-    mock_env: EnvVarsDict,
-    mock_exclusive: None,
-    disable_postgres: None,
-    redis_service: RedisSettings,
-    rabbit_service: RabbitSettings,
-    monkeypatch: pytest.MonkeyPatch,
-    faker: Faker,
-) -> None:
-    # Works as below line in docker.compose.yml
-    # ${DOCKER_REGISTRY:-itisfoundation}/dynamic-sidecar:${DOCKER_IMAGE_TAG:-latest}
-
-    registry = os.environ.get("DOCKER_REGISTRY", "local")
-    image_tag = os.environ.get("DOCKER_IMAGE_TAG", "production")
-
-    image_name = f"{registry}/dynamic-sidecar:{image_tag}"
-
-    logger.warning("Patching to: DYNAMIC_SIDECAR_IMAGE=%s", image_name)
-    monkeypatch.setenv("DYNAMIC_SIDECAR_IMAGE", image_name)
-    monkeypatch.setenv("DYNAMIC_SIDECAR_PROMETHEUS_SERVICE_LABELS", "{}")
-
-    monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", "test_network_name")
-    monkeypatch.setenv("TRAEFIK_SIMCORE_ZONE", "test_traefik_zone")
-    monkeypatch.setenv("SWARM_STACK_NAME", "test_swarm_name")
-    monkeypatch.setenv("COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED", "false")
-    monkeypatch.setenv("COMPUTATIONAL_BACKEND_ENABLED", "false")
-    monkeypatch.setenv("COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL", f"{faker.url()}")
-    monkeypatch.setenv("COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH", "{}")
-    monkeypatch.setenv("DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED", "true")
-
-    monkeypatch.setenv("REGISTRY_AUTH", "false")
-    monkeypatch.setenv("REGISTRY_USER", "test")
-    monkeypatch.setenv("REGISTRY_PW", "test")
-    monkeypatch.setenv("REGISTRY_SSL", "false")
-
-    monkeypatch.setenv("POSTGRES_HOST", "mocked_host")
-    monkeypatch.setenv("POSTGRES_USER", "mocked_user")
-    monkeypatch.setenv("POSTGRES_PASSWORD", "mocked_password")
-    monkeypatch.setenv("POSTGRES_DB", "mocked_db")
-
-    monkeypatch.setenv("SC_BOOT_MODE", "production")
-
-    monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
-    monkeypatch.setenv("S3_ENDPOINT", faker.url())
-    monkeypatch.setenv("S3_ACCESS_KEY", faker.pystr())
-    monkeypatch.setenv("S3_REGION", faker.pystr())
-    monkeypatch.setenv("S3_SECRET_KEY", faker.pystr())
-    monkeypatch.setenv("S3_BUCKET_NAME", faker.pystr())
-
-
 @pytest.fixture
 async def mock_retrieve_features(
     minimal_app: FastAPI,
@@ -164,9 +168,9 @@ async def mock_retrieve_features(
             service_details = RunningDynamicServiceDetails.model_validate(
                 RunningDynamicServiceDetails.model_json_schema()["examples"][0]
             )
-            respx_mock.post(
-                f"{service_details.legacy_service_url}/retrieve", name="retrieve"
-            ).respond(json=RetrieveDataOutEnveloped.model_json_schema()["examples"][0])
+            respx_mock.post(f"{service_details.legacy_service_url}/retrieve", name="retrieve").respond(
+                json=RetrieveDataOutEnveloped.model_json_schema()["examples"][0]
+            )
 
             yield respx_mock
             # no cleanup required
@@ -240,11 +244,7 @@ def mocked_director_v0_service_api(
         respx_mock.get(
             f"/running_interactive_services/{service['node_uuid']}",
             name="running interactive service",
-        ).respond(
-            json={
-                "data": RunningDynamicServiceDetails.model_json_schema()["examples"][0]
-            }
-        )
+        ).respond(json={"data": RunningDynamicServiceDetails.model_json_schema()["examples"][0]})
 
         yield respx_mock
 
@@ -337,9 +337,9 @@ def test_create_dynamic_services(
         json=json.loads(post_data.model_dump_json()),
         follow_redirects=False,
     )
-    assert (
-        response.status_code == exp_status_code
-    ), f"expected status code {exp_status_code}, received {response.status_code}: {response.text}"
+    assert response.status_code == exp_status_code, (
+        f"expected status code {exp_status_code}, received {response.status_code}: {response.text}"
+    )
 
     if exp_status_code == status.HTTP_307_TEMPORARY_REDIRECT:
         # check redirection header goes to director-v0
@@ -392,6 +392,7 @@ def test_create_dynamic_services(
     ],
 )
 def test_get_service_status(
+    setup_docker_api_proxy: None,
     mocked_director_v0_service_api: MockRouter,
     mocked_catalog_service_api: MockRouter,
     mocked_director_v2_scheduler: None,
@@ -403,18 +404,15 @@ def test_get_service_status(
     url = URL(f"/v2/dynamic_services/{service['node_uuid']}")
 
     response = client.get(str(url), follow_redirects=False)
-    assert (
-        response.status_code == exp_status_code
-    ), f"expected status code {exp_status_code}, received {response.status_code}: {response.text}"
+    assert response.status_code == exp_status_code, (
+        f"expected status code {exp_status_code}, received {response.status_code}: {response.text}"
+    )
     if exp_status_code == status.HTTP_307_TEMPORARY_REDIRECT:
         # check redirection header goes to director-v0
         assert "location" in response.headers
         redirect_url = URL(response.headers["location"])
         assert redirect_url.host == "director"
-        assert (
-            redirect_url.path
-            == f"/v0/running_interactive_services/{service['node_uuid']}"
-        )
+        assert redirect_url.path == f"/v0/running_interactive_services/{service['node_uuid']}"
         assert redirect_url.params == QueryParams("")  # empty query
 
 
@@ -450,10 +448,9 @@ def test_get_service_status(
         ),
     ],
 )
-@pytest.mark.parametrize(
-    "can_save, exp_save_state", [(None, True), (True, True), (False, False)]
-)
+@pytest.mark.parametrize("can_save, exp_save_state", [(None, True), (True, True), (False, False)])
 def test_delete_service(  # pylint:disable=too-many-arguments
+    setup_docker_api_proxy: None,
     docker_swarm: None,
     mocked_director_v0_service_api: MockRouter,
     mocked_catalog_service_api: MockRouter,
@@ -471,18 +468,15 @@ def test_delete_service(  # pylint:disable=too-many-arguments
         url = url.copy_with(params={"can_save": can_save})
 
     response = client.delete(str(url), follow_redirects=False)
-    assert (
-        response.status_code == exp_status_code
-    ), f"expected status code {exp_status_code}, received {response.status_code}: {response.text}"
+    assert response.status_code == exp_status_code, (
+        f"expected status code {exp_status_code}, received {response.status_code}: {response.text}"
+    )
     if exp_status_code == status.HTTP_307_TEMPORARY_REDIRECT:
         # check redirection header goes to director-v0
         assert "location" in response.headers
         redirect_url = URL(response.headers["location"])
         assert redirect_url.host == "director"
-        assert (
-            redirect_url.path
-            == f"/v0/running_interactive_services/{service['node_uuid']}"
-        )
+        assert redirect_url.path == f"/v0/running_interactive_services/{service['node_uuid']}"
         assert redirect_url.params == QueryParams(can_save=exp_save_state)
 
 
@@ -523,9 +517,9 @@ def test_delete_service_waiting_for_manual_intervention(
         headers=dynamic_sidecar_headers,
         json=json.loads(post_data.model_dump_json()),
     )
-    assert (
-        response.status_code == exp_status_code
-    ), f"expected status code {exp_status_code}, received {response.status_code}: {response.text}"
+    assert response.status_code == exp_status_code, (
+        f"expected status code {exp_status_code}, received {response.status_code}: {response.text}"
+    )
 
     # mark service as failed and waiting for human intervention
     node_uuid = UUID(service["node_uuid"])
@@ -584,12 +578,10 @@ def test_retrieve(
 ) -> None:
     url = URL(f"/v2/dynamic_services/{service['node_uuid']}:retrieve")
     response = client.post(str(url), json={"port_keys": []}, follow_redirects=False)
-    assert (
-        response.status_code == exp_status_code
-    ), f"expected status code {exp_status_code}, received {response.status_code}: {response.text}"
-    assert (
-        response.json() == RetrieveDataOutEnveloped.model_json_schema()["examples"][0]
+    assert response.status_code == exp_status_code, (
+        f"expected status code {exp_status_code}, received {response.status_code}: {response.text}"
     )
+    assert response.json() == RetrieveDataOutEnveloped.model_json_schema()["examples"][0]
 
 
 @pytest.fixture
@@ -604,9 +596,7 @@ def mock_internals_inactivity(
         return_value=[],
     )
 
-    service_inactivity_map: dict[str, ActivityInfoOrNone] = {
-        faker.uuid4(): s for s in services_activity
-    }
+    service_inactivity_map: dict[str, ActivityInfoOrNone] = {faker.uuid4(): s for s in services_activity}
 
     mock_project = Mock()
     mock_project.workbench = list(service_inactivity_map.keys())
@@ -628,9 +618,7 @@ def mock_internals_inactivity(
         f"{module_base}.DynamicSidecarsScheduler.get_service_activity",
         side_effect=get_service_activity,
     )
-    mocker.patch(
-        f"{module_base}.DynamicSidecarsScheduler.is_service_tracked", return_value=True
-    )
+    mocker.patch(f"{module_base}.DynamicSidecarsScheduler.is_service_tracked", return_value=True)
 
 
 @pytest.mark.parametrize(
@@ -718,6 +706,7 @@ def mock_internals_inactivity(
     ],
 )
 def test_get_project_inactivity(
+    disable_docker_api_proxy: None,
     mock_internals_inactivity: None,
     mocker: MockerFixture,
     client: TestClient,

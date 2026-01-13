@@ -71,6 +71,7 @@ EXPECTED_DYNAMIC_SIDECAR_ENV_VAR_NAMES: Final[set[str]] = {
 
 
 def test_dynamic_sidecar_env_vars(
+    disable_docker_api_proxy: None,
     scheduler_data_from_http_request: SchedulerData,
     project_env_devel_environment: dict[str, Any],
 ):
@@ -140,9 +141,7 @@ def test_dynamic_sidecar_env_vars(
                     "}"
                 ),
             },
-            _StorageConfig(
-                "overwrite-host", "44", "overwrite-user", "overwrite-passwd", "1"
-            ),
+            _StorageConfig("overwrite-host", "44", "overwrite-user", "overwrite-passwd", "1"),
             id="host-port-and-node-ports-config",
         ),
         pytest.param(
@@ -156,14 +155,13 @@ def test_dynamic_sidecar_env_vars(
                     "}"
                 ),
             },
-            _StorageConfig(
-                "overwrite-host", "44", "overwrite-user", "overwrite-passwd", "0"
-            ),
+            _StorageConfig("overwrite-host", "44", "overwrite-user", "overwrite-passwd", "0"),
             id="only-node-ports-config",
         ),
     ],
 )
 def test__get_storage_config(
+    disable_docker_api_proxy: None,
     project_env_devel_environment: dict[str, Any],
     monkeypatch: pytest.MonkeyPatch,
     env_vars: dict[str, str],

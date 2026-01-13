@@ -29,6 +29,7 @@ from settings_library.application import BaseApplicationSettings
 from settings_library.base import BaseCustomSettings
 from settings_library.catalog import CatalogSettings
 from settings_library.director_v0 import DirectorV0Settings
+from settings_library.docker_api_proxy import DockerApiProxysettings
 from settings_library.docker_registry import RegistrySettings
 from settings_library.http_client_request import ClientRequestSettings
 from settings_library.node_ports import (
@@ -54,15 +55,16 @@ class ComputationalBackendSettings(BaseCustomSettings):
     COMPUTATIONAL_BACKEND_ENABLED: bool = True
     COMPUTATIONAL_BACKEND_SCHEDULING_CONCURRENCY: Annotated[
         PositiveInt,
-        Field(
-            description="defines how many pipelines the application can schedule concurrently"
-        ),
+        Field(description="defines how many pipelines the application can schedule concurrently"),
     ] = 50
     COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED: bool = True
     COMPUTATIONAL_BACKEND_PER_CLUSTER_MAX_DISTRIBUTED_CONCURRENT_CONNECTIONS: Annotated[
         PositiveInt,
         Field(
-            description="defines how many concurrent connections to each dask scheduler are allowed accross all director-v2 replicas"
+            description=(
+                "defines how many concurrent connections to each dask scheduler "
+                "are allowed across all director-v2 replicas"
+            )
         ),
     ] = 20
     COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL: Annotated[
@@ -75,41 +77,43 @@ class ComputationalBackendSettings(BaseCustomSettings):
     ]
     COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH: Annotated[
         ClusterAuthentication,
-        Field(
-            description="this is the cluster authentication that will be used by default"
-        ),
+        Field(description="this is the cluster authentication that will be used by default"),
     ]
     COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_FILE_LINK_TYPE: Annotated[
         FileLinkType,
-        Field(
-            description=f"Default file link type to use with the internal cluster '{list(FileLinkType)}'"
-        ),
+        Field(description=f"Default file link type to use with the internal cluster '{list(FileLinkType)}'"),
     ] = FileLinkType.S3
     COMPUTATIONAL_BACKEND_DEFAULT_FILE_LINK_TYPE: Annotated[
         FileLinkType,
-        Field(
-            description=f"Default file link type to use with computational backend '{list(FileLinkType)}'"
-        ),
+        Field(description=f"Default file link type to use with computational backend '{list(FileLinkType)}'"),
     ] = FileLinkType.PRESIGNED
     COMPUTATIONAL_BACKEND_ON_DEMAND_CLUSTERS_FILE_LINK_TYPE: Annotated[
         FileLinkType,
         Field(
-            description=f"Default file link type to use with computational backend on-demand clusters '{list(FileLinkType)}'"
+            description=(
+                f"Default file link type to use with computational backend on-demand clusters '{list(FileLinkType)}'"
+            )
         ),
     ] = FileLinkType.PRESIGNED
     COMPUTATIONAL_BACKEND_MAX_WAITING_FOR_CLUSTER_TIMEOUT: Annotated[
         datetime.timedelta,
         Field(
-            description="maximum time a pipeline can wait for a cluster to start"
-            "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formatting)."
+            description=(
+                "maximum time a pipeline can wait for a cluster to start"
+                "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types "
+                "for string formatting)."
+            )
         ),
     ] = datetime.timedelta(minutes=10)
 
     COMPUTATIONAL_BACKEND_MAX_WAITING_FOR_RETRIEVING_RESULTS: Annotated[
         datetime.timedelta,
         Field(
-            description="maximum time the computational scheduler waits until retrieving results from the computational backend is failed"
-            "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formatting)."
+            description=(
+                "maximum time the computational scheduler waits until retrieving results from the "
+                "computational backend is failed (default to seconds, or see "
+                "https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formatting)."
+            )
         ),
     ] = datetime.timedelta(minutes=10)
 
@@ -135,9 +139,7 @@ class AppSettings(BaseApplicationSettings, MixinLoggingSettings):
     LOG_LEVEL: Annotated[
         LogLevel,
         Field(
-            validation_alias=AliasChoices(
-                "DIRECTOR_V2_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"
-            ),
+            validation_alias=AliasChoices("DIRECTOR_V2_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"),
         ),
     ] = LogLevel.INFO
 
@@ -148,48 +150,45 @@ class AppSettings(BaseApplicationSettings, MixinLoggingSettings):
                 "DIRECTOR_V2_LOG_FORMAT_LOCAL_DEV_ENABLED",
                 "LOG_FORMAT_LOCAL_DEV_ENABLED",
             ),
-            description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
+            description=(
+                "Enables local development log format. "
+                "WARNING: make sure it is disabled if you want to have structured logs!"
+            ),
         ),
     ] = False
     DIRECTOR_V2_LOG_FILTER_MAPPING: Annotated[
         dict[LoggerName, list[MessageSubstring]],
         Field(
             default_factory=dict,
-            validation_alias=AliasChoices(
-                "DIRECTOR_V2_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"
+            validation_alias=AliasChoices("DIRECTOR_V2_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"),
+            description=(
+                "is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') "
+                "to a list of log message patterns that should be filtered out."
             ),
-            description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
         ),
     ] = DEFAULT_FACTORY
     DIRECTOR_V2_DEV_FEATURES_ENABLED: bool = False
 
     DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED: Annotated[
         bool,
-        Field(
-            description=(
-                "Under development feature. If enabled state "
-                "is saved using rclone docker volumes."
-            )
-        ),
+        Field(description=("Under development feature. If enabled state is saved using rclone docker volumes.")),
     ] = False
 
     # for passing self-signed certificate to spawned services
     DIRECTOR_V2_SELF_SIGNED_SSL_SECRET_ID: Annotated[
         str,
-        Field(
-            description="ID of the docker secret containing the self-signed certificate"
-        ),
+        Field(description="ID of the docker secret containing the self-signed certificate"),
     ] = ""
     DIRECTOR_V2_SELF_SIGNED_SSL_SECRET_NAME: Annotated[
         str,
-        Field(
-            description="Name of the docker secret containing the self-signed certificate"
-        ),
+        Field(description="Name of the docker secret containing the self-signed certificate"),
     ] = ""
     DIRECTOR_V2_SELF_SIGNED_SSL_FILENAME: Annotated[
         str,
         Field(
-            description="Filepath to self-signed osparc.crt file *as mounted inside the container*, empty strings disables it"
+            description=(
+                "Filepath to self-signed osparc.crt file *as mounted inside the container*, empty strings disables it"
+            )
         ),
     ] = ""
     DIRECTOR_V2_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True
@@ -202,19 +201,20 @@ class AppSettings(BaseApplicationSettings, MixinLoggingSettings):
     SERVICE_TRACKING_HEARTBEAT: Annotated[
         datetime.timedelta,
         Field(
-            description="Service scheduler heartbeat (everytime a heartbeat is sent into RabbitMQ)"
-            " (default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)"
+            description=(
+                "Service scheduler heartbeat (everytime a heartbeat is sent into RabbitMQ)"
+                " (default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types "
+                "for string formatting)"
+            )
         ),
     ] = DEFAULT_RESOURCE_USAGE_HEARTBEAT_INTERVAL
 
-    SIMCORE_SERVICES_NETWORK_NAME: Annotated[
-        str | None, Field(description="used to find the right network name")
-    ] = None
+    SIMCORE_SERVICES_NETWORK_NAME: Annotated[str | None, Field(description="used to find the right network name")] = (
+        None
+    )
     SIMCORE_SERVICES_PREFIX: Annotated[
         str | None,
-        Field(
-            description="useful when developing with an alternative registry namespace"
-        ),
+        Field(description="useful when developing with an alternative registry namespace"),
     ] = "simcore/services"
 
     DIRECTOR_V2_NODE_PORTS_400_REQUEST_TIMEOUT_ATTEMPTS: Annotated[
@@ -222,43 +222,40 @@ class AppSettings(BaseApplicationSettings, MixinLoggingSettings):
     ] = NODE_PORTS_400_REQUEST_TIMEOUT_ATTEMPTS_DEFAULT_VALUE
 
     # debug settings
-    CLIENT_REQUEST: Annotated[
-        ClientRequestSettings, Field(json_schema_extra={"auto_default_from_env": True})
-    ] = DEFAULT_FACTORY
+    CLIENT_REQUEST: Annotated[ClientRequestSettings, Field(json_schema_extra={"auto_default_from_env": True})] = (
+        DEFAULT_FACTORY
+    )
 
     # App modules settings ---------------------
-    DIRECTOR_V2_STORAGE: Annotated[
-        StorageSettings, Field(json_schema_extra={"auto_default_from_env": True})
-    ]
+    DIRECTOR_V2_STORAGE: Annotated[StorageSettings, Field(json_schema_extra={"auto_default_from_env": True})]
     DIRECTOR_V2_NODE_PORTS_STORAGE_AUTH: Annotated[
         StorageAuthSettings | None,
         Field(json_schema_extra={"auto_default_from_env": True}),
     ] = None
 
-    DIRECTOR_V2_CATALOG: Annotated[
-        CatalogSettings | None, Field(json_schema_extra={"auto_default_from_env": True})
-    ]
+    DIRECTOR_V2_CATALOG: Annotated[CatalogSettings | None, Field(json_schema_extra={"auto_default_from_env": True})]
 
-    DIRECTOR_V0: Annotated[
-        DirectorV0Settings, Field(json_schema_extra={"auto_default_from_env": True})
-    ] = DEFAULT_FACTORY
+    DIRECTOR_V0: Annotated[DirectorV0Settings, Field(json_schema_extra={"auto_default_from_env": True})] = (
+        DEFAULT_FACTORY
+    )
 
     DYNAMIC_SERVICES: Annotated[
         DynamicServicesSettings,
         Field(json_schema_extra={"auto_default_from_env": True}),
     ]
 
-    POSTGRES: Annotated[
-        PostgresSettings, Field(json_schema_extra={"auto_default_from_env": True})
+    POSTGRES: Annotated[PostgresSettings, Field(json_schema_extra={"auto_default_from_env": True})]
+
+    REDIS: Annotated[RedisSettings, Field(json_schema_extra={"auto_default_from_env": True})] = DEFAULT_FACTORY
+
+    DIRECTOR_V2_RABBITMQ: Annotated[RabbitSettings, Field(json_schema_extra={"auto_default_from_env": True})] = (
+        DEFAULT_FACTORY
+    )
+
+    DIRECTOR_V2_DOCKER_API_PROXY: Annotated[
+        DockerApiProxysettings,
+        Field(json_schema_extra={"auto_default_from_env": True}),
     ]
-
-    REDIS: Annotated[
-        RedisSettings, Field(json_schema_extra={"auto_default_from_env": True})
-    ] = DEFAULT_FACTORY
-
-    DIRECTOR_V2_RABBITMQ: Annotated[
-        RabbitSettings, Field(json_schema_extra={"auto_default_from_env": True})
-    ] = DEFAULT_FACTORY
 
     TRAEFIK_SIMCORE_ZONE: str = "internal_simcore_stack"
 
@@ -300,9 +297,7 @@ class AppSettings(BaseApplicationSettings, MixinLoggingSettings):
         log_level: str = cls.validate_log_level(value)
         return log_level
 
-    _validate_service_tracking_heartbeat = validate_numeric_string_as_timedelta(
-        "SERVICE_TRACKING_HEARTBEAT"
-    )
+    _validate_service_tracking_heartbeat = validate_numeric_string_as_timedelta("SERVICE_TRACKING_HEARTBEAT")
 
 
 def get_application_settings(app: FastAPI) -> AppSettings:

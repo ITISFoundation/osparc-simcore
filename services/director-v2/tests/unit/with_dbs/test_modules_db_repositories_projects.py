@@ -28,6 +28,7 @@ pytest_simcore_ops_services_selection = [
 
 @pytest.fixture
 def mock_env(
+    disable_docker_api_proxy: None,
     monkeypatch: pytest.MonkeyPatch,
     postgres_host_config: dict[str, str],
     mock_env: EnvVarsDict,
@@ -79,9 +80,7 @@ async def with_project(
     return await create_project(create_registered_user(), workbench=workbench)
 
 
-async def test_is_node_present_in_workbench(
-    initialized_app: FastAPI, with_project: ProjectAtDB, faker: Faker
-):
+async def test_is_node_present_in_workbench(initialized_app: FastAPI, with_project: ProjectAtDB, faker: Faker):
     project_repository = get_repository(initialized_app, ProjectsRepository)
 
     for node_uuid in with_project.workbench:
@@ -95,9 +94,7 @@ async def test_is_node_present_in_workbench(
     not_existing_node = faker.uuid4(cast_to=None)
     assert not_existing_node not in with_project.workbench
     assert (
-        await project_repository.is_node_present_in_workbench(
-            project_id=with_project.uuid, node_uuid=not_existing_node
-        )
+        await project_repository.is_node_present_in_workbench(project_id=with_project.uuid, node_uuid=not_existing_node)
         is False
     )
 
@@ -111,15 +108,10 @@ async def test_is_node_present_in_workbench(
     )
 
 
-async def test_get_project_id_from_node(
-    initialized_app: FastAPI, with_project: ProjectAtDB, faker: Faker
-):
+async def test_get_project_id_from_node(initialized_app: FastAPI, with_project: ProjectAtDB, faker: Faker):
     project_repository = get_repository(initialized_app, ProjectsRepository)
     for node_uuid in with_project.workbench:
-        assert (
-            await project_repository.get_project_id_from_node(NodeID(node_uuid))
-            == with_project.uuid
-        )
+        assert await project_repository.get_project_id_from_node(NodeID(node_uuid)) == with_project.uuid
 
     not_existing_node_id = faker.uuid4(cast_to=None)
     with pytest.raises(ProjectNodesNodeNotFoundError):

@@ -31,6 +31,7 @@ REPEAT_COUNT: Final[PositiveInt] = STEPS + 1
 
 @pytest.fixture
 def mock_env(
+    disable_docker_api_proxy: None,
     disable_postgres: None,
     mock_env: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
@@ -83,15 +84,11 @@ def mock_sidecars_client_stops_failing(mocker: MockerFixture) -> None:
 
 @pytest.fixture
 def docker_container_inspect() -> DockerContainerInspect:
-    return DockerContainerInspect(
-        status=DockerStatus.dead, container_state=ContainerState(), name="", id=""
-    )
+    return DockerContainerInspect(status=DockerStatus.dead, container_state=ContainerState(), name="", id="")
 
 
 @pytest.fixture
-def scheduler_data(
-    scheduler_data: SchedulerData, docker_container_inspect: DockerContainerInspect
-) -> SchedulerData:
+def scheduler_data(scheduler_data: SchedulerData, docker_container_inspect: DockerContainerInspect) -> SchedulerData:
     scheduler_data.dynamic_sidecar.containers_inspect = [docker_container_inspect]
     return scheduler_data
 

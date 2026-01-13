@@ -55,6 +55,7 @@ pytest_simcore_core_services_selection = [
     "agent",
     "catalog",
     "director",
+    "docker-api-proxy",
     "migration",
     "postgres",
     "rabbit",
@@ -86,13 +87,12 @@ def mock_env(mock_env: EnvVarsDict, minimal_configuration) -> None: ...
 
 @pytest.fixture
 def user_db(create_registered_user: Callable[..., dict[str, Any]]) -> dict[str, Any]:
-    user = create_registered_user()
-    return user
+    return create_registered_user()
 
 
 @pytest.fixture
 def user_id(user_db: dict[str, Any]) -> UserID:
-    return UserID(user_db["id"])
+    return int(user_db["id"])
 
 
 @pytest.fixture
@@ -128,9 +128,7 @@ def start_request_data(
         "product_api_base_url": osparc_product_api_base_url,
         "service_uuid": node_uuid,
         "service_key": dy_static_file_server_dynamic_sidecar_service["image"]["name"],
-        "service_version": dy_static_file_server_dynamic_sidecar_service["image"][
-            "tag"
-        ],
+        "service_version": dy_static_file_server_dynamic_sidecar_service["image"]["tag"],
         "request_scheme": "http",
         "request_dns": "localhost:50000",
         "can_save": True,
@@ -151,9 +149,7 @@ def start_request_data(
             "outputs_path": "/tmp/outputs",  # noqa: S108
             "inputs_path": "/tmp/inputs",  # noqa: S108
         },
-        "service_resources": ServiceResourcesDictHelpers.create_jsonable(
-            service_resources
-        ),
+        "service_resources": ServiceResourcesDictHelpers.create_jsonable(service_resources),
     }
 
 
@@ -220,13 +216,9 @@ async def ensure_services_stopped(
                     delete_result = await docker_client.services.delete(service_name)
                     assert delete_result is True
                 except aiodocker.exceptions.DockerError as e:
-                    assert (
-                        e.status == 404
-                    ), f"Unexpected error when deleting service: {e}"
+                    assert e.status == 404, f"Unexpected error when deleting service: {e}"  # noqa: PT017
 
-        scheduler_interval = (
-            director_v2_client.application.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER.DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL
-        )
+        scheduler_interval = director_v2_client.application.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER.DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL  # noqa: E501
         # sleep enough to ensure the observation cycle properly stopped the service
         await asyncio.sleep(2 * scheduler_interval.total_seconds())
 
@@ -246,7 +238,7 @@ def mock_project_repository(mocker: MockerFixture) -> None:
 
     mocker.patch(
         f"{DIRECTOR_V2_MODULES}.db.repositories.projects.ProjectsRepository.get_project",
-        side_effect=lambda *args, **kwargs: ExtendedMagicMock(),
+        side_effect=lambda *args, **kwargs: ExtendedMagicMock(),  # noqa: ARG005
     )
 
 
@@ -262,7 +254,7 @@ def mock_dynamic_sidecar_api_calls(mocker: MockerFixture) -> None:
         mocker.patch(
             f"{class_path}.{function_name}",
             # pylint: disable=cell-var-from-loop
-            side_effect=lambda *args, **kwargs: return_value,
+            side_effect=lambda *args, **kwargs: return_value,  # noqa: ARG005, B023
         )
 
     # also patch the long_running_tasks client context mangers handling the above
@@ -281,15 +273,11 @@ def mock_dynamic_sidecar_api_calls(mocker: MockerFixture) -> None:
 async def key_version_expected(
     dy_static_file_server_dynamic_sidecar_service: dict,
     dy_static_file_server_service: dict,
-    docker_registry_image_injector: Callable[
-        [str, str, str | None], Awaitable[dict[str, Any]]
-    ],
+    docker_registry_image_injector: Callable[[str, str, str | None], Awaitable[dict[str, Any]]],
 ) -> list[tuple[ServiceKeyVersion, bool]]:
     results: list[tuple[ServiceKeyVersion, bool]] = []
 
-    sleeper_service = await docker_registry_image_injector(
-        "itisfoundation/sleeper", "2.1.1", "user@e.mail"
-    )
+    sleeper_service = await docker_registry_image_injector("itisfoundation/sleeper", "2.1.1", "user@e.mail")
 
     for image, expected in [
         (dy_static_file_server_dynamic_sidecar_service, True),
@@ -297,9 +285,7 @@ async def key_version_expected(
         (sleeper_service, False),
     ]:
         schema = image["schema"]
-        results.append(
-            (ServiceKeyVersion(key=schema["key"], version=schema["version"]), expected)
-        )
+        results.append((ServiceKeyVersion(key=schema["key"], version=schema["version"]), expected))
 
     return results
 
@@ -332,9 +318,7 @@ async def test_start_status_stop(
     )
     assert response.status_code == 201, response.text
     assert isinstance(director_v2_client.application, FastAPI)
-    await patch_dynamic_service_url(
-        app=director_v2_client.application, node_uuid=node_uuid
-    )
+    await patch_dynamic_service_url(app=director_v2_client.application, node_uuid=node_uuid)
 
     # awaiting for service to be running
     data = {}
@@ -345,9 +329,7 @@ async def test_start_status_stop(
         wait=wait_fixed(5),
     ):
         with attempt:
-            print(
-                f"--> getting service {node_uuid=} status... attempt {attempt.retry_state.attempt_number}"
-            )
+            print(f"--> getting service {node_uuid=} status... attempt {attempt.retry_state.attempt_number}")
             response: Response = await director_v2_client.get(
                 f"/v2/dynamic_services/{node_uuid}", json=start_request_data
             )
@@ -365,8 +347,6 @@ async def test_start_status_stop(
     assert data["service_state"] == "running"
 
     # finally stopping the service
-    response: Response = await director_v2_client.delete(
-        f"/v2/dynamic_services/{node_uuid}", json=start_request_data
-    )
+    response: Response = await director_v2_client.delete(f"/v2/dynamic_services/{node_uuid}", json=start_request_data)
     assert response.status_code == 204, response.text
     assert response.text == ""

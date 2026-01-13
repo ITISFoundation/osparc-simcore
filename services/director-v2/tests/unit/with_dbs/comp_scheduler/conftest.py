@@ -22,6 +22,7 @@ from settings_library.redis import RedisSettings
 
 @pytest.fixture
 def mock_env(
+    disable_docker_api_proxy: None,
     mock_env: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
     fake_s3_envs: EnvVarsDict,
@@ -73,9 +74,7 @@ def with_disabled_scheduler_publisher(mocker: MockerFixture) -> mock.Mock:
 
 
 @pytest.fixture
-def with_short_max_wait_for_cluster(
-    monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture
-) -> datetime.timedelta:
+def with_short_max_wait_for_cluster(monkeypatch: pytest.MonkeyPatch, mocker: MockerFixture) -> datetime.timedelta:
     short_time = datetime.timedelta(seconds=2)
     setenvs_from_dict(
         monkeypatch,

@@ -18,6 +18,8 @@ import httpx
 import pytest
 import simcore_service_director_v2
 from asgi_lifespan import LifespanManager
+from common_library.json_serialization import json_dumps
+from common_library.serialization import model_dump_with_secrets
 from faker import Faker
 from fastapi import FastAPI
 from models_library.products import ProductName
@@ -31,6 +33,7 @@ from pytest_simcore.helpers.monkeypatch_envs import (
 )
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.rabbitmq import RabbitMQRPCClient
+from settings_library.docker_api_proxy import DockerApiProxysettings
 from settings_library.rabbit import RabbitSettings
 from simcore_service_director_v2.core.application import create_app
 from simcore_service_director_v2.core.settings import AppSettings
@@ -40,6 +43,7 @@ pytest_plugins = [
     "pytest_simcore.asyncio_event_loops",
     "pytest_simcore.dask_scheduler",
     "pytest_simcore.db_entries_mocks",
+    "pytest_simcore.docker_api_proxy",
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_registry",
     "pytest_simcore.docker_swarm",
@@ -85,14 +89,10 @@ def package_dir() -> Path:
 
 
 @pytest.fixture()
-def project_env_devel_environment(
-    monkeypatch: pytest.MonkeyPatch, project_slug_dir: Path
-) -> EnvVarsDict:
+def project_env_devel_environment(monkeypatch: pytest.MonkeyPatch, project_slug_dir: Path) -> EnvVarsDict:
     env_devel_file = project_slug_dir / ".env-devel"
     assert env_devel_file.exists()
-    return setenvs_from_envfile(
-        monkeypatch, env_devel_file.read_text(), verbose=True, interpolate=True
-    )
+    return setenvs_from_envfile(monkeypatch, env_devel_file.read_text(), verbose=True, interpolate=True)
 
 
 @pytest.fixture(scope="session")
@@ -195,6 +195,34 @@ def mock_env(
             "SWARM_STACK_NAME": "pytest-simcore",
             "TRAEFIK_SIMCORE_ZONE": "test_traefik_zone",
             "DIRECTOR_V2_TRACING": "null",
+        },
+    )
+
+
+@pytest.fixture
+def setup_docker_api_proxy(
+    docker_api_proxy_settings: DockerApiProxysettings, mock_env: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    setenvs_from_dict(
+        monkeypatch,
+        {
+            **mock_env,
+            "DIRECTOR_V2_DOCKER_API_PROXY": json_dumps(
+                model_dump_with_secrets(docker_api_proxy_settings, show_secrets=True)
+            ),
+        },
+    )
+
+
+@pytest.fixture
+def disable_docker_api_proxy(mocker: MockerFixture, monkeypatch: pytest.MonkeyPatch) -> None:
+    mocker.patch("simcore_service_director_v2.core.application.setup_remote_docker_client", autospec=True)
+    setenvs_from_dict(
+        monkeypatch,
+        {
+            "DOCKER_API_PROXY_HOST": "disabled",
+            "DOCKER_API_PROXY_USER": "disabled",
+            "DOCKER_API_PROXY_PASSWORD": "disabled",
         },
     )
 
@@ -331,16 +359,12 @@ def mock_redis(mocker: MockerFixture) -> None:
 
         app.add_event_handler("startup", on_startup)
 
-    mocker.patch(
-        "simcore_service_director_v2.modules.redis.setup", side_effect=_mock_setup
-    )
+    mocker.patch("simcore_service_director_v2.modules.redis.setup", side_effect=_mock_setup)
 
 
 @pytest.fixture
 def mock_exclusive(mock_redis: None, mocker: MockerFixture) -> None:
-    def _mock_exclusive(
-        _: Any, *, lock_key: str, lock_value: bytes | str | None = None
-    ):
+    def _mock_exclusive(_: Any, *, lock_key: str, lock_value: bytes | str | None = None):
         def decorator(func):
             @functools.wraps(func)
             async def wrapper(*args, **kwargs):
@@ -350,9 +374,7 @@ def mock_exclusive(mock_redis: None, mocker: MockerFixture) -> None:
 
         return decorator
 
-    module_base = (
-        "simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core._scheduler"
-    )
+    module_base = "simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core._scheduler"
     mocker.patch(f"{module_base}.exclusive", side_effect=_mock_exclusive)
 
 

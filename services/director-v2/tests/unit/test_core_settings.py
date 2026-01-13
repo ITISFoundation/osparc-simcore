@@ -37,11 +37,11 @@ def test_supported_backends_did_not_change() -> None:
 def test_enforce_r_clone_requirement(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
     monkeypatch.setenv("R_CLONE_POLL_INTERVAL_SECONDS", "11")
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError):  # noqa: PT011
         RCloneSettings.create_from_envs()
 
 
-def test_settings_with_project_env_devel(project_env_devel_environment: dict[str, Any]):
+def test_settings_with_project_env_devel(disable_docker_api_proxy: None, project_env_devel_environment: dict[str, Any]):
     # loads from environ
     settings = AppSettings.create_from_envs()
     print("captured settings: \n", settings.model_dump_json(indent=2))
@@ -56,9 +56,7 @@ def test_settings_with_repository_env_devel(
     mock_env_devel_environment: dict[str, str], monkeypatch: pytest.MonkeyPatch
 ):
     monkeypatch.setenv("SC_BOOT_MODE", "production")  # defined in Dockerfile
-    monkeypatch.setenv(
-        "COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH", "{}"
-    )  # defined in docker-compose
+    monkeypatch.setenv("COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH", "{}")  # defined in docker-compose
 
     settings = AppSettings.create_from_envs()
     print("captured settings: \n", settings.model_dump_json(indent=2))
@@ -101,9 +99,7 @@ def testing_environ_expected_success(
 
 def test_dynamic_sidecar_settings(testing_environ_expected_success: str) -> None:
     settings = DynamicSidecarSettings.create_from_envs()
-    assert (
-        testing_environ_expected_success.lstrip("/") == settings.DYNAMIC_SIDECAR_IMAGE
-    )
+    assert testing_environ_expected_success.lstrip("/") == settings.DYNAMIC_SIDECAR_IMAGE
 
 
 @pytest.fixture(
@@ -145,14 +141,13 @@ def test_expected_failure_dynamic_sidecar_settings(
     ],
 )
 def test_services_custom_constraints(
+    disable_docker_api_proxy: None,
     custom_constraints: str,
     expected: list[str],
     project_env_devel_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setenv(
-        "DIRECTOR_V2_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS", custom_constraints
-    )
+    monkeypatch.setenv("DIRECTOR_V2_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS", custom_constraints)
     settings = AppSettings.create_from_envs()
     custom_constraints = (
         settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR_PLACEMENT_SETTINGS.DIRECTOR_V2_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS
@@ -187,20 +182,19 @@ def test_services_custom_constraint_failures(
     project_env_devel_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.setenv(
-        "DIRECTOR_V2_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS", custom_constraints
-    )
+    monkeypatch.setenv("DIRECTOR_V2_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS", custom_constraints)
     with pytest.raises(DefaultFromEnvFactoryError):
         AppSettings.create_from_envs()
 
 
 def test_services_custom_constraints_default_empty_list(
+    disable_docker_api_proxy: None,
     project_env_devel_environment: EnvVarsDict,
 ) -> None:
     settings = AppSettings.create_from_envs()
     assert (
-        []
-        == settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR_PLACEMENT_SETTINGS.DIRECTOR_V2_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS
+        settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR_PLACEMENT_SETTINGS.DIRECTOR_V2_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS
+        == []
     )
 
 
@@ -252,11 +246,6 @@ def test_envoy_log_level():
 def test_placement_settings(monkeypatch: pytest.MonkeyPatch):
     assert PlacementSettings()
 
-    monkeypatch.setenv(
-        "DIRECTOR_V2_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS", "{}"
-    )
+    monkeypatch.setenv("DIRECTOR_V2_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS", "{}")
     placement_settings = PlacementSettings()
-    assert (
-        placement_settings.DIRECTOR_V2_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS
-        == {}
-    )
+    assert placement_settings.DIRECTOR_V2_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS == {}

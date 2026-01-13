@@ -6,10 +6,12 @@ from collections.abc import AsyncIterator
 from unittest.mock import AsyncMock
 
 import pytest
+from asgi_lifespan import LifespanManager
 from faker import Faker
 from fastapi import FastAPI
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
+from servicelib.fastapi.docker import setup_remote_docker_client
 from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.models.dynamic_services_scheduler import SchedulerData
 from simcore_service_director_v2.modules.dynamic_sidecar.api_client import (
@@ -24,6 +26,10 @@ from simcore_service_director_v2.modules.dynamic_sidecar.scheduler import (
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core._observer import (
     _apply_observation_cycle,
 )
+
+pytest_simcore_core_services_selection = [
+    "docker-api-proxy",
+]
 
 
 @pytest.fixture
@@ -65,14 +71,24 @@ def mock_events(mocker: MockerFixture) -> None:
 
 
 @pytest.fixture
+def mock_docker_api(mocker: MockerFixture) -> None:
+    mocker.patch(
+        "simcore_service_director_v2.modules.dynamic_sidecar.docker_api._core._update_service_spec",
+        autospec=True,
+    )
+
+
+@pytest.fixture
 def mock_env(
+    setup_docker_api_proxy: None,
+    mock_docker_api: None,
     disable_postgres: None,
     docker_swarm: None,
     mock_env: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
     faker: Faker,
-) -> None:
-    setenvs_from_dict(
+) -> EnvVarsDict:
+    return setenvs_from_dict(
         monkeypatch,
         {
             "SIMCORE_SERVICES_NETWORK_NAME": "test_network",
@@ -88,10 +104,11 @@ def mock_env(
 
 
 @pytest.fixture
-def mocked_app(mock_env: None) -> FastAPI:
+def mocked_app(mock_env: EnvVarsDict) -> FastAPI:
     app = FastAPI()
-    app.state.settings = AppSettings.create_from_envs()
+    app.state.settings = settings = AppSettings.create_from_envs()
     app.state.rabbitmq_client = AsyncMock()
+    setup_remote_docker_client(app, settings.DIRECTOR_V2_DOCKER_API_PROXY)
     return app
 
 
@@ -102,7 +119,8 @@ async def dynamic_sidecar_scheduler(
     await setup_scheduler(mocked_app)
     await setup(mocked_app)
 
-    yield mocked_app.state.dynamic_sidecar_scheduler
+    async with LifespanManager(app=mocked_app):
+        yield mocked_app.state.dynamic_sidecar_scheduler
 
     await shutdown_scheduler(mocked_app)
     await shutdown(mocked_app)
@@ -113,8 +131,7 @@ def _is_observation_task_present(
     scheduler_data_from_http_request,
 ) -> bool:
     return (
-        scheduler_data_from_http_request.service_name
-        in dynamic_sidecar_scheduler.scheduler._service_observation_task  # noqa: SLF001
+        scheduler_data_from_http_request.service_name in dynamic_sidecar_scheduler.scheduler._service_observation_task  # noqa: SLF001
     )
 
 
@@ -128,19 +145,12 @@ async def test_regression_break_endless_loop_cancellation_edge_case(
     can_save: bool | None,
 ):
     # in this situation the scheduler would never end loops forever
-    await dynamic_sidecar_scheduler.scheduler.add_service_from_scheduler_data(
-        scheduler_data_from_http_request
-    )
+    await dynamic_sidecar_scheduler.scheduler.add_service_from_scheduler_data(scheduler_data_from_http_request)
 
     # simulate edge case
     scheduler_data_from_http_request.dynamic_sidecar.were_containers_created = True
 
-    assert (
-        _is_observation_task_present(
-            dynamic_sidecar_scheduler, scheduler_data_from_http_request
-        )
-        is False
-    )
+    assert _is_observation_task_present(dynamic_sidecar_scheduler, scheduler_data_from_http_request) is False
 
     # NOTE: this will create the observation task as well!
     # Simulates user action like going back to the dashboard.
@@ -150,22 +160,10 @@ async def test_regression_break_endless_loop_cancellation_edge_case(
         skip_observation_recreation=False,
     )
 
-    assert (
-        _is_observation_task_present(
-            dynamic_sidecar_scheduler, scheduler_data_from_http_request
-        )
-        is True
-    )
+    assert _is_observation_task_present(dynamic_sidecar_scheduler, scheduler_data_from_http_request) is True
 
     # requires an extra pass to remove the service
     for _ in range(3):
-        await _apply_observation_cycle(
-            dynamic_sidecar_scheduler, scheduler_data_from_http_request
-        )
+        await _apply_observation_cycle(dynamic_sidecar_scheduler, scheduler_data_from_http_request)
 
-    assert (
-        _is_observation_task_present(
-            dynamic_sidecar_scheduler, scheduler_data_from_http_request
-        )
-        is False
-    )
+    assert _is_observation_task_present(dynamic_sidecar_scheduler, scheduler_data_from_http_request) is False

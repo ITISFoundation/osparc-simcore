@@ -38,7 +38,7 @@ def assert_responses(mocked: Response, result: Response | None) -> None:
 
 @pytest.fixture
 def mocked_app(
-    monkeypatch: pytest.MonkeyPatch, mock_env: EnvVarsDict, faker: Faker
+    disable_docker_api_proxy: None, monkeypatch: pytest.MonkeyPatch, mock_env: EnvVarsDict, faker: Faker
 ) -> FastAPI:
     monkeypatch.setenv("S3_ENDPOINT", faker.url())
     monkeypatch.setenv("S3_ACCESS_KEY", faker.pystr())
@@ -82,9 +82,7 @@ def mock_request(respx_mock: MockRouter) -> MockRequestType:
         side_effect: SideEffectTypes | None = None,
     ) -> Route:
         print(f"Mocking {path=}")
-        return respx_mock.request(method=method, url=f"{path}").mock(
-            return_value=return_value, side_effect=side_effect
-        )
+        return respx_mock.request(method=method, url=f"{path}").mock(return_value=return_value, side_effect=side_effect)
 
     return request_mock
 
@@ -128,9 +126,7 @@ async def test_get_containers(
         None,
     )
 
-    response = await thin_client.get_containers(
-        dynamic_sidecar_endpoint, only_status=only_status
-    )
+    response = await thin_client.get_containers(dynamic_sidecar_endpoint, only_status=only_status)
     assert_responses(mock_response, response)
 
 
@@ -197,10 +193,7 @@ async def test_get_containers_name(
     )
     mock_request(
         "GET",
-        (
-            f"{dynamic_sidecar_endpoint}{thin_client.API_VERSION}"
-            f"/containers/name?filters={encoded_filters}"
-        ),
+        (f"{dynamic_sidecar_endpoint}{thin_client.API_VERSION}/containers/name?filters={encoded_filters}"),
         mock_response,
         None,
     )
@@ -212,7 +205,7 @@ async def test_get_containers_name(
     assert_responses(mock_response, response)
 
 
-@pytest.mark.parametrize("network_aliases", [[], ["an_alias"], ["multuple_aliases"]])
+@pytest.mark.parametrize("network_aliases", [[], ["an_alias"], ["multiple_aliases"]])
 async def test_post_containers_networks_attach(
     thin_client: ThinSidecarsClient,
     dynamic_sidecar_endpoint: AnyHttpUrl,
@@ -289,12 +282,8 @@ async def test_put_volumes(
             "post_containers_tasks",
             "/containers",
             {
-                "metrics_params": TypeAdapter(
-                    CreateServiceMetricsAdditionalParams
-                ).validate_python(
-                    CreateServiceMetricsAdditionalParams.model_config[
-                        "json_schema_extra"
-                    ]["example"],
+                "metrics_params": TypeAdapter(CreateServiceMetricsAdditionalParams).validate_python(
+                    CreateServiceMetricsAdditionalParams.model_config["json_schema_extra"]["example"],
                 )
             },
             id="post_containers_tasks",
@@ -309,7 +298,7 @@ async def test_put_volumes(
             "post_containers_images_pull",
             "/containers/images:pull",
             {},
-            id="user_servces_images_pull",
+            id="user_services_images_pull",
         ),
         pytest.param(
             "post_containers_tasks_state_restore",

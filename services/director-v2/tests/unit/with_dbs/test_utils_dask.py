@@ -91,7 +91,7 @@ async def mocked_node_ports_filemanager_fcts(
         "get_upload_links_from_s3": mocker.patch(
             "simcore_service_director_v2.utils.dask.port_utils.filemanager.get_upload_links_from_s3",
             autospec=True,
-            side_effect=lambda **kwargs: (
+            side_effect=lambda **kwargs: (  # noqa: ARG005
                 0,
                 FileUploadSchema(
                     urls=[
@@ -101,12 +101,8 @@ async def mocked_node_ports_filemanager_fcts(
                     ],
                     chunk_size=TypeAdapter(ByteSize).validate_python("5GiB"),
                     links=FileUploadLinks(
-                        abort_upload=TypeAdapter(AnyUrl).validate_python(
-                            "https://www.fakeabort.com"
-                        ),
-                        complete_upload=TypeAdapter(AnyUrl).validate_python(
-                            "https://www.fakecomplete.com"
-                        ),
+                        abort_upload=TypeAdapter(AnyUrl).validate_python("https://www.fakeabort.com"),
+                        complete_upload=TypeAdapter(AnyUrl).validate_python("https://www.fakecomplete.com"),
                     ),
                 ),
             ),
@@ -135,9 +131,7 @@ def fake_io_config(faker: Faker) -> dict[str, str]:
 
 
 @pytest.fixture(params=[True, False])
-def fake_io_schema(
-    fake_io_config: dict[str, str], faker: Faker, request
-) -> dict[str, dict[str, str]]:
+def fake_io_schema(fake_io_config: dict[str, str], faker: Faker, request) -> dict[str, dict[str, str]]:
     fake_io_schema = {}
     for key, value_type in fake_io_config.items():
         fake_io_schema[key] = {
@@ -160,9 +154,7 @@ def fake_io_data(
     def generate_simcore_file_link() -> dict[str, Any]:
         return SimCoreFileLink(
             store=0,
-            path=create_simcore_file_id(
-                faker.uuid4(), faker.uuid4(), faker.file_name()
-            ),
+            path=create_simcore_file_id(faker.uuid4(), faker.uuid4(), faker.file_name()),
         ).model_dump(by_alias=True, exclude_unset=True)
 
     TYPE_TO_FAKE_CALLABLE_MAP = {
@@ -172,10 +164,7 @@ def fake_io_data(
         "boolean": faker.pybool,
         "data:*/*": generate_simcore_file_link,
     }
-    return {
-        key: TYPE_TO_FAKE_CALLABLE_MAP[value_type]()
-        for key, value_type in fake_io_config.items()
-    }
+    return {key: TYPE_TO_FAKE_CALLABLE_MAP[value_type]() for key, value_type in fake_io_config.items()}
 
 
 @pytest.fixture()
@@ -189,9 +178,7 @@ def fake_task_output_data(
             {
                 "url": faker.url(),
                 "file_mapping": (
-                    next(iter(fake_io_schema[key]["fileToKeyMap"]))
-                    if "fileToKeyMap" in fake_io_schema[key]
-                    else None
+                    next(iter(fake_io_schema[key]["fileToKeyMap"])) if "fileToKeyMap" in fake_io_schema[key] else None
                 ),
             }
             if fake_io_schema[key]["type"] == "data:*/*"
@@ -215,13 +202,9 @@ async def test_parse_output_data(
     # need some fakes set in the DB
     sleeper_task: CompTaskAtDB = published_project.tasks[1]
     no_outputs = {}
-    await set_comp_task_outputs(
-        sqlalchemy_async_engine, sleeper_task.node_id, fake_io_schema, no_outputs
-    )
+    await set_comp_task_outputs(sqlalchemy_async_engine, sleeper_task.node_id, fake_io_schema, no_outputs)
     # mock the set_value function so we can test it is called correctly
-    mocked_node_ports_set_value_fct = mocker.patch(
-        "simcore_sdk.node_ports_v2.port.Port.set_value"
-    )
+    mocked_node_ports_set_value_fct = mocker.patch("simcore_sdk.node_ports_v2.port.Port.set_value")
 
     # test
     dask_job_id = generate_dask_job_id(
@@ -234,17 +217,13 @@ async def test_parse_output_data(
     await parse_output_data(sqlalchemy_async_engine, dask_job_id, fake_task_output_data)
 
     # the FileUrl types are converted to a pure url
-    expected_values = {
-        k: v.url if isinstance(v, FileUrl) else v
-        for k, v in fake_task_output_data.items()
-    }
-    mocked_node_ports_set_value_fct.assert_has_calls(
-        [mock.call(value) for value in expected_values.values()]
-    )
+    expected_values = {k: v.url if isinstance(v, FileUrl) else v for k, v in fake_task_output_data.items()}
+    mocked_node_ports_set_value_fct.assert_has_calls([mock.call(value) for value in expected_values.values()])
 
 
 @pytest.fixture
 def _app_config_with_db(
+    disable_docker_api_proxy: None,
     mock_env: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
     postgres_host_config: dict[str, str],
@@ -289,15 +268,11 @@ async def test_compute_input_data(
         )
         for key, value_type in fake_io_schema.items()
     }
-    await set_comp_task_inputs(
-        sqlalchemy_async_engine, sleeper_task.node_id, fake_io_schema, fake_inputs
-    )
+    await set_comp_task_inputs(sqlalchemy_async_engine, sleeper_task.node_id, fake_io_schema, fake_inputs)
 
     # mock the get_value function so we can test it is called correctly
     def return_fake_input_value(*args, **kwargs):
-        for value, value_type in zip(
-            fake_inputs.values(), fake_io_schema.values(), strict=True
-        ):
+        for value, value_type in zip(fake_inputs.values(), fake_io_schema.values(), strict=True):
             if value_type["type"] == "data:*/*":
                 yield TypeAdapter(AnyUrl).validate_python(faker.url())
             else:
@@ -350,9 +325,7 @@ async def test_compute_output_data_schema(
     sleeper_task: CompTaskAtDB = published_project.tasks[1]
     # simulate pre-created file links
     no_outputs = {}
-    await set_comp_task_outputs(
-        sqlalchemy_async_engine, sleeper_task.node_id, fake_io_schema, no_outputs
-    )
+    await set_comp_task_outputs(sqlalchemy_async_engine, sleeper_task.node_id, fake_io_schema, no_outputs)
 
     node_ports = await create_node_ports(
         db_engine=sqlalchemy_async_engine,
@@ -372,9 +345,7 @@ async def test_compute_output_data_schema(
         assert port_key in output_schema
         assert output_schema[port_key]
         assert output_schema[port_key].required is True  # currently always true
-        assert isinstance(output_schema[port_key], FilePortSchema) == port_schema[
-            "type"
-        ].startswith("data:")
+        assert isinstance(output_schema[port_key], FilePortSchema) == port_schema["type"].startswith("data:")
         if isinstance(output_schema[port_key], FilePortSchema):
             file_port_schema = output_schema[port_key]
             assert isinstance(file_port_schema, FilePortSchema)
@@ -400,9 +371,7 @@ async def test_clean_task_output_and_log_files_if_invalid(
     # BEFORE the task is actually run. In case there is a failure at running
     # the task, these entries shall be cleaned up. The way to check this is
     # by asking storage if these file really exist. If not they get deleted.
-    mocked_node_ports_filemanager_fcts["entry_exists"].return_value = (
-        entry_exists_returns
-    )
+    mocked_node_ports_filemanager_fcts["entry_exists"].return_value = entry_exists_returns
 
     sleeper_task = published_project.tasks[1]
 
@@ -410,16 +379,12 @@ async def test_clean_task_output_and_log_files_if_invalid(
     fake_outputs = {
         key: SimCoreFileLink(
             store=0,
-            path=create_simcore_file_id(
-                published_project.project.uuid, sleeper_task.node_id, faker.file_name()
-            ),
+            path=create_simcore_file_id(published_project.project.uuid, sleeper_task.node_id, faker.file_name()),
         ).model_dump(by_alias=True, exclude_unset=True)
         for key, value_type in fake_io_schema.items()
         if value_type["type"] == "data:*/*"
     }
-    await set_comp_task_outputs(
-        sqlalchemy_async_engine, sleeper_task.node_id, fake_io_schema, fake_outputs
-    )
+    await set_comp_task_outputs(sqlalchemy_async_engine, sleeper_task.node_id, fake_io_schema, fake_outputs)
     # this should ask for the 2 files + the log file
     await clean_task_output_and_log_files_if_invalid(
         sqlalchemy_async_engine,
@@ -431,7 +396,10 @@ async def test_clean_task_output_and_log_files_if_invalid(
         mock.call(
             user_id=user_id,
             store_id=0,
-            s3_object=f"{published_project.project.uuid}/{sleeper_task.node_id}/{next(iter(fake_io_schema[key].get('fileToKeyMap', {key: key})))}",
+            s3_object=(
+                f"{published_project.project.uuid}/{sleeper_task.node_id}/"
+                f"{next(iter(fake_io_schema[key].get('fileToKeyMap', {key: key})))}"
+            ),
         )
         for key in fake_outputs
     ] + [
@@ -447,20 +415,14 @@ async def test_clean_task_output_and_log_files_if_invalid(
         new_kwargs["is_directory"] = False
         return mock.call(**new_kwargs)
 
-    mocked_node_ports_filemanager_fcts["entry_exists"].assert_has_calls(
-        [_add_is_directory(x) for x in expected_calls]
-    )
+    mocked_node_ports_filemanager_fcts["entry_exists"].assert_has_calls([_add_is_directory(x) for x in expected_calls])
     if entry_exists_returns:
         mocked_node_ports_filemanager_fcts["delete_file"].assert_not_called()
     else:
-        mocked_node_ports_filemanager_fcts["delete_file"].assert_has_calls(
-            expected_calls
-        )
+        mocked_node_ports_filemanager_fcts["delete_file"].assert_has_calls(expected_calls)
 
 
-@pytest.mark.parametrize(
-    "req_example", NodeRequirements.model_config["json_schema_extra"]["examples"]
-)
+@pytest.mark.parametrize("req_example", NodeRequirements.model_config["json_schema_extra"]["examples"])
 def test_node_requirements_correctly_convert_to_dask_resources(
     req_example: dict[str, Any],
 ):
@@ -488,10 +450,7 @@ def test_node_requirements_correctly_convert_to_dask_resources(
 def test__to_human_readable_resource_values(
     input_resources: dict[str, Any], expected_human_readable_resources: dict[str, Any]
 ):
-    assert (
-        _to_human_readable_resource_values(input_resources)
-        == expected_human_readable_resources
-    )
+    assert _to_human_readable_resource_values(input_resources) == expected_human_readable_resources
 
 
 @pytest.fixture
@@ -515,14 +474,10 @@ async def test_check_if_cluster_is_able_to_run_pipeline(
     initialized_app: FastAPI,
 ):
     sleeper_task: CompTaskAtDB = published_project.tasks[1]
-    dask_scheduler_settings = (
-        initialized_app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND
-    )
+    dask_scheduler_settings = initialized_app.state.settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND
     default_cluster = dask_scheduler_settings.default_cluster
     dask_clients_pool = DaskClientsPool.instance(initialized_app)
-    async with dask_clients_pool.acquire(
-        default_cluster, ref="test-utils-dask-ref"
-    ) as dask_client:
+    async with dask_clients_pool.acquire(default_cluster, ref="test-utils-dask-ref") as dask_client:
         check_if_cluster_is_able_to_run_pipeline(
             project_id=project_id,
             node_id=node_id,
@@ -604,7 +559,7 @@ async def test_compute_task_labels(
         pytest.param(
             {"SOME_FAKE_ENV": "this is my $OSPARC_VARIABLE_PRODUCT_NAME value"},
             {"SOME_FAKE_ENV": "this is my some amazing product name value"},
-            id="substituable env",
+            id="substitutable env",
         ),
     ],
 )

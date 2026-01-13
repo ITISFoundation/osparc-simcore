@@ -23,12 +23,10 @@ from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.modules.dynamic_sidecar.api_client._public import (
     SidecarsClient,
     get_sidecars_client,
+    shutdown,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.api_client._public import (
     setup as api_client_setup,
-)
-from simcore_service_director_v2.modules.dynamic_sidecar.api_client._public import (
-    shutdown,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.errors import (
     EntrypointContainerNotFoundError,
@@ -41,9 +39,7 @@ def dynamic_sidecar_endpoint() -> AnyHttpUrl:
 
 
 @pytest.fixture
-def mock_env(
-    monkeypatch: pytest.MonkeyPatch, mock_env: EnvVarsDict, faker: Faker
-) -> None:
+def mock_env(monkeypatch: pytest.MonkeyPatch, mock_env: EnvVarsDict, faker: Faker) -> None:
     monkeypatch.setenv("S3_ACCESS_KEY", faker.pystr())
     monkeypatch.setenv("S3_SECRET_KEY", faker.pystr())
     monkeypatch.setenv("S3_REGION", faker.pystr())
@@ -62,7 +58,7 @@ def mock_env(
 
 @pytest.fixture
 async def sidecars_client(
-    mock_env: EnvVarsDict, faker: Faker
+    disable_docker_api_proxy: None, mock_env: EnvVarsDict, faker: Faker
 ) -> AsyncIterable[SidecarsClient]:
     app = FastAPI()
     app.state.settings = AppSettings.create_from_envs()
@@ -84,16 +80,12 @@ def request_timeout() -> int:
 
 
 @pytest.fixture
-def raise_request_timeout(
-    monkeypatch: pytest.MonkeyPatch, request_timeout: int, mock_env: EnvVarsDict
-) -> None:
+def raise_request_timeout(monkeypatch: pytest.MonkeyPatch, request_timeout: int, mock_env: EnvVarsDict) -> None:
     monkeypatch.setenv("DYNAMIC_SIDECAR_CLIENT_REQUEST_TIMEOUT_S", f"{request_timeout}")
 
 
 @pytest.fixture
-def get_patched_client(
-    sidecars_client: SidecarsClient, mocker: MockerFixture
-) -> Callable:
+def get_patched_client(sidecars_client: SidecarsClient, mocker: MockerFixture) -> Callable:
     @contextmanager
     def wrapper(
         method: str,
@@ -123,10 +115,7 @@ async def test_is_healthy(
         "get_health" if with_retry else "get_health_no_retry",
         return_value=Response(status_code=status.HTTP_200_OK, json=mock_json),
     ) as client:
-        assert (
-            await client.is_healthy(dynamic_sidecar_endpoint, with_retry=with_retry)
-            == is_healthy
-        )
+        assert await client.is_healthy(dynamic_sidecar_endpoint, with_retry=with_retry) == is_healthy
 
 
 async def test_is_healthy_times_out(
@@ -160,9 +149,7 @@ async def test_is_healthy_times_out(
             ),
             id="UnexpectedStatusError",
         ),
-        pytest.param(
-            ClientHttpError(error=HTTPError("another mocked error")), id="HTTPError"
-        ),
+        pytest.param(ClientHttpError(error=HTTPError("another mocked error")), id="HTTPError"),
     ],
 )
 async def test_is_healthy_api_error(
@@ -177,9 +164,7 @@ async def test_is_healthy_api_error(
         assert await client.is_healthy(dynamic_sidecar_endpoint) is False
 
 
-async def test_containers_inspect(
-    get_patched_client: Callable, dynamic_sidecar_endpoint: AnyHttpUrl
-) -> None:
+async def test_containers_inspect(get_patched_client: Callable, dynamic_sidecar_endpoint: AnyHttpUrl) -> None:
     mock_json = {"ok": "data"}
     with get_patched_client(
         "get_containers",
@@ -196,9 +181,7 @@ async def test_containers_docker_status_api_ok(
         "get_containers",
         return_value=Response(status_code=status.HTTP_200_OK, json=mock_json),
     ) as client:
-        assert (
-            await client.containers_docker_status(dynamic_sidecar_endpoint) == mock_json
-        )
+        assert await client.containers_docker_status(dynamic_sidecar_endpoint) == mock_json
 
 
 async def test_containers_docker_status_api_error(
@@ -250,12 +233,7 @@ async def test_service_outputs_create_dirs(
         "post_containers_ports_outputs_dirs",
         return_value=Response(status_code=status.HTTP_204_NO_CONTENT),
     ) as client:
-        assert (
-            await client.service_outputs_create_dirs(
-                dynamic_sidecar_endpoint, outputs_labels
-            )
-            is None
-        )
+        assert await client.service_outputs_create_dirs(dynamic_sidecar_endpoint, outputs_labels) is None
 
 
 @pytest.mark.parametrize("dynamic_sidecar_network_name", ["a_test_network"])
@@ -269,9 +247,7 @@ async def test_get_entrypoint_container_name_ok(
         return_value=Response(status_code=status.HTTP_200_OK, json="a_test_container"),
     ) as client:
         assert (
-            await client.get_entrypoint_container_name(
-                dynamic_sidecar_endpoint, dynamic_sidecar_network_name
-            )
+            await client.get_entrypoint_container_name(dynamic_sidecar_endpoint, dynamic_sidecar_network_name)
             == "a_test_container"
         )
 
@@ -282,18 +258,17 @@ async def test_get_entrypoint_container_name_api_not_found(
     dynamic_sidecar_endpoint: AnyHttpUrl,
     dynamic_sidecar_network_name: str,
 ) -> None:
-    with get_patched_client(
-        "get_containers_name",
-        side_effect=UnexpectedStatusError(
-            response=Response(
-                status_code=status.HTTP_404_NOT_FOUND, request=AsyncMock()
+    with (
+        get_patched_client(
+            "get_containers_name",
+            side_effect=UnexpectedStatusError(
+                response=Response(status_code=status.HTTP_404_NOT_FOUND, request=AsyncMock()),
+                expecting=status.HTTP_204_NO_CONTENT,
             ),
-            expecting=status.HTTP_204_NO_CONTENT,
-        ),
-    ) as client, pytest.raises(EntrypointContainerNotFoundError):
-        await client.get_entrypoint_container_name(
-            dynamic_sidecar_endpoint, dynamic_sidecar_network_name
-        )
+        ) as client,
+        pytest.raises(EntrypointContainerNotFoundError),
+    ):
+        await client.get_entrypoint_container_name(dynamic_sidecar_endpoint, dynamic_sidecar_network_name)
 
 
 @pytest.mark.parametrize("network_aliases", [[], ["an-alias"], ["alias-1", "alias-2"]])
@@ -370,13 +345,11 @@ async def test_get_service_activity(
 ) -> None:
     with get_patched_client(
         "get_containers_activity",
-        return_value=Response(
-            status_code=status.HTTP_200_OK, text=json_dumps(mock_dict)
-        ),
+        return_value=Response(status_code=status.HTTP_200_OK, text=json_dumps(mock_dict)),
     ) as client:
-        assert await client.get_service_activity(
-            dynamic_sidecar_endpoint
-        ) == TypeAdapter(ActivityInfoOrNone).validate_python(mock_dict)
+        assert await client.get_service_activity(dynamic_sidecar_endpoint) == TypeAdapter(
+            ActivityInfoOrNone
+        ).validate_python(mock_dict)
 
 
 async def test_free_reserved_disk_space(
