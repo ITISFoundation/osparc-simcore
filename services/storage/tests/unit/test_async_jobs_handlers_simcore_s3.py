@@ -56,7 +56,6 @@ from pytest_simcore.helpers.storage_utils_project import clone_project_data
 from servicelib.aiohttp import status
 from servicelib.celery.models import ExecutionMetadata, OwnerMetadata
 from servicelib.celery.task_manager import TaskManager
-from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 from servicelib.rabbitmq._errors import RPCServerError
 from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import wait_and_get_result
 from simcore_postgres_database.storage_models import file_meta_data
@@ -121,12 +120,11 @@ async def _request_copy_folders(
 async def test_copy_folders_from_non_existing_project(
     initialized_app: FastAPI,
     task_manager: TaskManager,
-    storage_rabbitmq_rpc_client: RabbitMQRPCClient,
+    with_storage_celery_worker: WorkController,
     user_id: UserID,
     product_name: ProductName,
     create_project: Callable[..., Awaitable[dict[str, Any]]],
     faker: Faker,
-    with_storage_celery_worker: WorkController,
 ):
     src_project = await create_project()
     incorrect_src_project = deepcopy(src_project)

@@ -68,7 +68,6 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.aiohttp import status
 from servicelib.celery.task_manager import TaskManager
 from servicelib.fastapi.celery.app_server import FastAPIAppServer
-from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 from servicelib.redis._client import RedisClientSDK
 from servicelib.tracing import TracingConfig
 from servicelib.utils import limited_gather
@@ -1043,15 +1042,6 @@ async def task_manager(
         )
     finally:
         await redis_client_sdk.shutdown()
-
-
-@pytest.fixture
-async def storage_rabbitmq_rpc_client(
-    rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
-) -> RabbitMQRPCClient:
-    rpc_client = await rabbitmq_rpc_client("pytest_storage_rpc_client")
-    assert rpc_client
-    return rpc_client
 
 
 @pytest.fixture
