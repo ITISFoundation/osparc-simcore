@@ -11,7 +11,6 @@ from unittest.mock import ANY
 
 import httpx
 import pytest
-from celery_library.task_manager import CeleryTaskManager
 from faker import Faker
 from fastapi import FastAPI, status
 from httpx import AsyncClient
@@ -39,7 +38,6 @@ from simcore_service_api_server._meta import API_VTAG
 from simcore_service_api_server._service_function_jobs_task_client import (
     FunctionJobTaskClientService,
 )
-from simcore_service_api_server.api.dependencies import services as service_dependencies
 from simcore_service_api_server.models.schemas.functions import (
     FunctionJobCreationTaskStatus,
 )
@@ -265,30 +263,25 @@ async def test_get_function_job_status(
 ) -> None:
     _expected_return_status = status.HTTP_200_OK
 
-    def _mock_task_manager(*args, **kwargs) -> CeleryTaskManager:
-        async def _get_task_status(task_uuid: TaskUUID, owner_metadata: OwnerMetadata) -> TaskStatus:
-            assert f"{task_uuid}" == job_creation_task_id
-            return TaskStatus(
-                task_uuid=task_uuid,
-                task_state=celery_task_state,
-                progress_report=ProgressReport(
-                    actual_value=0.5,
-                    total=1.0,
-                    attempt=1,
-                    unit=None,
-                    message=ProgressStructuredMessage.model_validate(
-                        ProgressStructuredMessage.model_json_schema(schema_generator=GenerateResolvedJsonSchema)[
-                            "examples"
-                        ][0]
-                    ),
+    async def _get_task_status(task_uuid: TaskUUID, owner_metadata: OwnerMetadata) -> TaskStatus:
+        assert f"{task_uuid}" == job_creation_task_id
+        return TaskStatus(
+            task_uuid=task_uuid,
+            task_state=celery_task_state,
+            progress_report=ProgressReport(
+                actual_value=0.5,
+                total=1.0,
+                attempt=1,
+                unit=None,
+                message=ProgressStructuredMessage.model_validate(
+                    ProgressStructuredMessage.model_json_schema(schema_generator=GenerateResolvedJsonSchema)[
+                        "examples"
+                    ][0]
                 ),
-            )
+            ),
+        )
 
-        obj = mocker.Mock(spec=CeleryTaskManager)
-        obj.get_task_status = _get_task_status
-        return obj
-
-    mocker.patch.object(service_dependencies, "get_task_manager", _mock_task_manager)
+    mock_dependency_get_celery_task_manager.get_task_status = _get_task_status
 
     mock_handler_in_functions_rpc_interface(
         "get_function_job",
