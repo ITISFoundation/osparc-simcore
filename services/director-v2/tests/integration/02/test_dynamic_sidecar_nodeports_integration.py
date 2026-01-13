@@ -354,6 +354,7 @@ async def patch_storage_setup(
 
 @pytest.fixture
 def mock_env(
+    setup_docker_api_proxy: None,
     mock_env: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
     network_name: str,

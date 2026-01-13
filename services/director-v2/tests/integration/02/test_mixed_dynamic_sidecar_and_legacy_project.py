@@ -57,6 +57,7 @@ pytest_simcore_ops_services_selection = ["adminer", "minio", "portainer"]
 
 @pytest.fixture()
 def mock_env(
+    setup_docker_api_proxy: None,
     mock_env: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
     redis_service: RedisSettings,

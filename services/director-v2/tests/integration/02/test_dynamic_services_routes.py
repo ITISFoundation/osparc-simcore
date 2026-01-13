@@ -82,7 +82,7 @@ def minimal_configuration(
 
 
 @pytest.fixture
-def mock_env(mock_env: EnvVarsDict, minimal_configuration) -> None: ...
+def mock_env(setup_docker_api_proxy: None, mock_env: EnvVarsDict, minimal_configuration) -> None: ...
 
 
 @pytest.fixture
