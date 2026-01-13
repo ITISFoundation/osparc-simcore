@@ -25,6 +25,9 @@ qx.Class.define("osparc.desktop.credits.Purchases", {
       switch (id) {
         case "table": {
           const dateFilters = this.getChildControl("date-filters");
+          // date filters are not passed to the backend
+          // exclude them for now
+          dateFilters.exclude();
           control = new osparc.desktop.credits.PurchasesTable(this._getSelectWalletId(), dateFilters.getValue()).set({
             marginTop: 10
           });

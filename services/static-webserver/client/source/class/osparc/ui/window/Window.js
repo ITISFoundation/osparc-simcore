@@ -251,7 +251,10 @@ qx.Class.define("osparc.ui.window.Window", {
           width,
           height
         });
-        this.moveTo(left, top);
+        // check left and top are numbers, they could be NaN
+        if (!isNaN(left) && !isNaN(top)) {
+          this.moveTo(left, top);
+        }
       }
     },
   },

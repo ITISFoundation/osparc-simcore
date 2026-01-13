@@ -1,7 +1,6 @@
-import logging
 from contextlib import contextmanager
 from contextvars import Token
-from typing import Final, Self, TypeAlias
+from typing import Final, Self
 
 import pyinstrument
 import pyinstrument.renderers
@@ -14,11 +13,12 @@ from opentelemetry.sdk.trace.sampling import ParentBased, TraceIdRatioBased
 from pydantic import BaseModel, ConfigDict, model_validator
 from settings_library.tracing import TracingSettings
 
-TracingContext: TypeAlias = otcontext.Context | None
+type TracingContext = otcontext.Context | None
 
 _TRACER_NAME: Final[str] = "servicelib.tracing"
 _PROFILE_ATTRIBUTE_NAME: Final[str] = "pyinstrument.profile"
 _OSPARC_TRACE_ID_HEADER: Final[str] = "x-osparc-trace-id"
+_OSPARC_TRACE_SAMPLED_HEADER: Final[str] = "x-osparc-trace-sampled"
 
 
 def _is_tracing() -> bool:
@@ -61,17 +61,11 @@ class TracingConfig(BaseModel):
         return self.tracer_provider is not None and self.tracing_settings is not None
 
     @classmethod
-    def create(
-        cls, tracing_settings: TracingSettings | None, service_name: str
-    ) -> Self:
+    def create(cls, tracing_settings: TracingSettings | None, service_name: str) -> Self:
         tracer_provider: TracerProvider | None = None
         if tracing_settings:
             resource = Resource(attributes={"service.name": service_name})
-            sampler = ParentBased(
-                root=TraceIdRatioBased(
-                    tracing_settings.TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY
-                )
-            )
+            sampler = ParentBased(root=TraceIdRatioBased(tracing_settings.TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY))
             tracer_provider = TracerProvider(resource=resource, sampler=sampler)
         return cls(
             service_name=service_name,
@@ -81,39 +75,27 @@ class TracingConfig(BaseModel):
 
 
 def setup_log_tracing(tracing_config: TracingConfig):
-    def log_hook(span: trace.Span, record: logging.LogRecord):
-        # ensure trace_ids are not logged when span is not recorded/sampled
-        if span and not span.is_recording():
-            record.otelSpanID = "not_recorded"
-            record.otelTraceID = "not_recorded"
-
     if tracing_config.tracing_enabled:
         LoggingInstrumentor().instrument(
             set_logging_format=False,
             tracer_provider=tracing_config.tracer_provider,
-            log_hook=log_hook,
         )
 
 
-def get_trace_id_header() -> dict[str, str] | None:
-    """Generates a dictionary containing the trace ID header if tracing is active."""
+def get_trace_info_headers() -> dict[str, str]:
+    """Generates a dictionary containing the trace ID header and trace sampled header."""
     span = trace.get_current_span()
-    if span.is_recording():
-        trace_id = span.get_span_context().trace_id
-        trace_id_hex = format(
-            trace_id, "032x"
-        )  # Convert trace_id to 32-character hex string
-        return {_OSPARC_TRACE_ID_HEADER: trace_id_hex}
-    return None
+    trace_id = span.get_span_context().trace_id
+    trace_id_hex = format(trace_id, "032x")  # Convert trace_id to 32-character hex string
+    trace_sampled = span.is_recording()
+    return {_OSPARC_TRACE_ID_HEADER: trace_id_hex, _OSPARC_TRACE_SAMPLED_HEADER: f"{trace_sampled}".lower()}
 
 
 @contextmanager
 def profiled_span(*, tracing_config: TracingConfig, span_name: str):
     if not _is_tracing():
         return
-    tracer = trace.get_tracer(
-        _TRACER_NAME, tracer_provider=tracing_config.tracer_provider
-    )
+    tracer = trace.get_tracer(_TRACER_NAME, tracer_provider=tracing_config.tracer_provider)
     with tracer.start_as_current_span(span_name) as span:
         profiler = pyinstrument.Profiler(async_mode="enabled")
         profiler.start()
@@ -128,9 +110,7 @@ def profiled_span(*, tracing_config: TracingConfig, span_name: str):
 
         finally:
             profiler.stop()
-            renderer = pyinstrument.renderers.ConsoleRenderer(
-                unicode=True, color=False, show_all=True
-            )
+            renderer = pyinstrument.renderers.ConsoleRenderer(unicode=True, color=False, show_all=True)
             span.set_attribute(
                 _PROFILE_ATTRIBUTE_NAME,
                 profiler.output(renderer=renderer),
