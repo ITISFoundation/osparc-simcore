@@ -124,7 +124,6 @@ qx.Class.define("osparc.desktop.organizations.OrganizationDetails", {
       const orgEditor = new osparc.editor.OrganizationEditor(org);
       orgEditor.addListener("updateOrg", () => {
         this.__updateOrganization(orgEditor, orgEditor.getChildControl("save-button"));
-        orgEditor.close();
       });
       orgEditor.open();
     },

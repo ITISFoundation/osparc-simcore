@@ -230,7 +230,9 @@ qx.Class.define("osparc.form.tag.TagManager", {
     },
 
     __okClicked: function() {
-      this.fireDataEvent("selectedTags", this.__selectedTags.toArray());
+      this.fireDataEvent("selectedTags", {
+        tags: this.__selectedTags.toArray(),
+      });
     },
 
     __attachEventHandlers: function() {
