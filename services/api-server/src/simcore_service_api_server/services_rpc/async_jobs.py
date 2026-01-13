@@ -1,6 +1,7 @@
 import functools
 from dataclasses import dataclass
 
+from celery_library.async_jobs import cancel_job, get_job_result, get_job_status, list_jobs
 from models_library.api_schemas_async_jobs.async_jobs import (
     AsyncJobGet,
     AsyncJobId,
@@ -13,10 +14,8 @@ from models_library.api_schemas_async_jobs.exceptions import (
     JobNotDoneError,
     JobSchedulerError,
 )
-from models_library.api_schemas_storage import STORAGE_RPC_NAMESPACE
 from servicelib.celery.models import OwnerMetadata
-from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
-from servicelib.rabbitmq.rpc_interfaces.async_jobs import async_jobs
+from servicelib.celery.task_manager import TaskManager
 
 from ..exceptions.service_errors_utils import service_exception_mapper
 from ..exceptions.task_errors import (
@@ -31,7 +30,7 @@ _exception_mapper = functools.partial(service_exception_mapper, service_name="As
 
 @dataclass
 class AsyncJobClient:
-    _rabbitmq_rpc_client: RabbitMQRPCClient
+    _task_manager: TaskManager
 
     @_exception_mapper(
         rpc_exception_map={
@@ -39,11 +38,10 @@ class AsyncJobClient:
         }
     )
     async def cancel(self, *, job_id: AsyncJobId, owner_metadata: OwnerMetadata) -> None:
-        return await async_jobs.cancel(
-            self._rabbitmq_rpc_client,
-            rpc_namespace=STORAGE_RPC_NAMESPACE,
-            job_id=job_id,
+        return await cancel_job(
+            self._task_manager,
             owner_metadata=owner_metadata,
+            job_id=job_id,
         )
 
     @_exception_mapper(
@@ -52,11 +50,10 @@ class AsyncJobClient:
         }
     )
     async def status(self, *, job_id: AsyncJobId, owner_metadata: OwnerMetadata) -> AsyncJobStatus:
-        return await async_jobs.status(
-            self._rabbitmq_rpc_client,
-            rpc_namespace=STORAGE_RPC_NAMESPACE,
-            job_id=job_id,
+        return await get_job_status(
+            self._task_manager,
             owner_metadata=owner_metadata,
+            job_id=job_id,
         )
 
     @_exception_mapper(
@@ -68,11 +65,10 @@ class AsyncJobClient:
         }
     )
     async def result(self, *, job_id: AsyncJobId, owner_metadata: OwnerMetadata) -> AsyncJobResult:
-        return await async_jobs.result(
-            self._rabbitmq_rpc_client,
-            rpc_namespace=STORAGE_RPC_NAMESPACE,
-            job_id=job_id,
+        return await get_job_result(
+            self._task_manager,
             owner_metadata=owner_metadata,
+            job_id=job_id,
         )
 
     @_exception_mapper(
@@ -81,8 +77,7 @@ class AsyncJobClient:
         }
     )
     async def list_jobs(self, *, owner_metadata: OwnerMetadata) -> list[AsyncJobGet]:
-        return await async_jobs.list_jobs(
-            self._rabbitmq_rpc_client,
-            rpc_namespace=STORAGE_RPC_NAMESPACE,
+        return await list_jobs(
+            self._task_manager,
             owner_metadata=owner_metadata,
         )
