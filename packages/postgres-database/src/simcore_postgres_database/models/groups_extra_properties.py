@@ -75,7 +75,7 @@ groups_extra_properties = sa.Table(
         server_default=sa.sql.expression.false(),
         doc="If true, will use r_clone mounting for state persistence when dynamic services start",
     ),
-    sa.UniqueConstraint("group_id", "product_name", name="group_id_product_name_uniqueness"),
+    sa.PrimaryKeyConstraint("group_id", "product_name", name="group_id_product_name_pk"),
     # TIME STAMPS ----
     column_created_datetime(timezone=False),
     column_modified_datetime(timezone=False),
