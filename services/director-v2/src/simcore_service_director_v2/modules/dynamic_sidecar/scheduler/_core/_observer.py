@@ -73,7 +73,7 @@ async def _apply_observation_cycle(
 
 def _trigger_every_30_seconds(observation_counter: int, wait_interval: float) -> bool:
     # divisor to figure out if 30 seconds have passed based on the cycle count
-    modulo_divisor = max(1, floor(30 / wait_interval))
+    modulo_divisor = int(max(1, floor(30 / wait_interval)))
     return observation_counter % modulo_divisor == 0
 
 

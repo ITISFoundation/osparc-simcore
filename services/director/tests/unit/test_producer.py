@@ -117,7 +117,7 @@ async def run_services(  # noqa: PLR0915
             for attempt in Retrying(wait=wait_fixed(1), stop=stop_after_delay(max_time), reraise=True):
                 with attempt:
                     print(
-                        f"--> waiting for {started_service['service_key']}:"
+                        f"--> waiting for {started_service['service_key']}: "
                         f"{started_service['service_version']} to run..."
                     )
                     node_details = await producer.get_service_details(app, service_uuid)
