@@ -2,7 +2,6 @@ import functools
 import logging
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Final
 
@@ -20,7 +19,6 @@ from servicelib.long_running_tasks.task import TaskProtocol, TaskRegistry
 from servicelib.progress_bar import ProgressBarData
 from servicelib.utils import logged_gather
 from simcore_sdk.node_data import data_manager
-from simcore_sdk.node_ports_common.r_clone_mount import MountActivity, Transferring
 from tenacity import retry
 from tenacity.before_sleep import before_sleep_log
 from tenacity.retry import retry_if_result
@@ -74,9 +72,7 @@ CONCURRENCY_STATE_SAVE_RESTORE: Final[int] = 2
 _MINUTE: Final[int] = 60
 
 
-def _raise_for_errors(
-    command_result: CommandResult, docker_compose_command: str
-) -> None:
+def _raise_for_errors(command_result: CommandResult, docker_compose_command: str) -> None:
     if not command_result.success:
         _logger.warning(
             "docker compose %s command finished with errors\n%s",
@@ -93,9 +89,7 @@ def _raise_for_errors(
     reraise=False,
     before_sleep=before_sleep_log(_logger, logging.WARNING, exc_info=True),
 )
-async def _retry_docker_compose_start(
-    compose_spec: str, settings: ApplicationSettings
-) -> CommandResult:
+async def _retry_docker_compose_start(compose_spec: str, settings: ApplicationSettings) -> CommandResult:
     # NOTE: sometimes the system is not capable of starting
     # the containers as soon as they are created. This might
     # happen due to the docker engine's load.
@@ -109,9 +103,7 @@ async def _retry_docker_compose_start(
     reraise=False,
     before_sleep=before_sleep_log(_logger, logging.WARNING, exc_info=True),
 )
-async def _retry_docker_compose_down(
-    compose_spec: str, settings: ApplicationSettings
-) -> CommandResult:
+async def _retry_docker_compose_down(compose_spec: str, settings: ApplicationSettings) -> CommandResult:
     return await docker_compose_down(compose_spec, settings)
 
 
@@ -122,9 +114,7 @@ async def _retry_docker_compose_down(
     reraise=True,
     before_sleep=before_sleep_log(_logger, logging.WARNING, exc_info=True),
 )
-async def _retry_docker_compose_create(
-    compose_spec: str, settings: ApplicationSettings
-) -> bool:
+async def _retry_docker_compose_create(compose_spec: str, settings: ApplicationSettings) -> bool:
     result = await docker_compose_create(compose_spec, settings)
     _raise_for_errors(result, "up")
 
@@ -150,9 +140,7 @@ async def _reset_on_error(
         raise
 
 
-async def pull_user_services_images(
-    progress: TaskProgress, app: FastAPI, shared_store: SharedStore
-) -> None:
+async def pull_user_services_images(progress: TaskProgress, app: FastAPI, shared_store: SharedStore) -> None:
     assert shared_store.compose_spec  # nosec
 
     await progress.update(message="started pulling user services", percent=0)
@@ -199,39 +187,27 @@ async def create_user_services(
         await progress_bar.update()
 
         await progress.update(message="creating and starting containers", percent=0.90)
-        await post_sidecar_log_message(
-            app, "starting user service containers", log_level=logging.INFO
-        )
+        await post_sidecar_log_message(app, "starting user service containers", log_level=logging.INFO)
         await _retry_docker_compose_create(shared_store.compose_spec, settings)
         await progress_bar.update()
 
         await progress.update(message="ensure containers are started", percent=0.95)
-        compose_start_result = await _retry_docker_compose_start(
-            shared_store.compose_spec, settings
-        )
+        compose_start_result = await _retry_docker_compose_start(shared_store.compose_spec, settings)
 
     await send_service_started(app, metrics_params=containers_create.metrics_params)
 
-    message = (
-        f"Finished docker-compose start with output\n{compose_start_result.message}"
-    )
+    message = f"Finished docker-compose start with output\n{compose_start_result.message}"
 
     if compose_start_result.success:
-        await post_sidecar_log_message(
-            app, "user service containers started", log_level=logging.INFO
-        )
+        await post_sidecar_log_message(app, "user service containers started", log_level=logging.INFO)
         _logger.debug(message)
         for container_name in shared_store.container_names:
             await start_log_fetching(app, container_name)
     else:
         application_health.is_healthy = False
         application_health.error_message = message
-        _logger.error(
-            "Marked sidecar as unhealthy, see below for details\n:%s", message
-        )
-        await post_sidecar_log_message(
-            app, "could not start user services", log_level=logging.ERROR
-        )
+        _logger.error("Marked sidecar as unhealthy, see below for details\n:%s", message)
+        await post_sidecar_log_message(app, "could not start user services", log_level=logging.ERROR)
 
     return shared_store.container_names
 
@@ -247,16 +223,10 @@ async def remove_user_services(
         _logger.warning("No compose-spec was found")
         return
 
-    container_states: dict[str, ContainerState | None] = await get_container_states(
-        shared_store.container_names
-    )
-    containers_were_ok = are_all_containers_in_expected_states(
-        container_states.values()
-    )
+    container_states: dict[str, ContainerState | None] = await get_container_states(shared_store.container_names)
+    containers_were_ok = are_all_containers_in_expected_states(container_states.values())
 
-    container_count_before_down: PositiveInt = await get_containers_count_from_names(
-        shared_store.container_names
-    )
+    container_count_before_down: PositiveInt = await get_containers_count_from_names(shared_store.container_names)
 
     async def _send_resource_tracking_stop(platform_status: SimcorePlatformStatus):
         # NOTE: avoids sending a stop message without a start or any heartbeats,
@@ -266,17 +236,11 @@ async def remove_user_services(
             # only if oom killed we report as BAD
             simcore_platform_status = platform_status
             if not containers_were_ok:
-                any_container_oom_killed = any(
-                    c.oom_killed is True
-                    for c in container_states.values()
-                    if c is not None
-                )
+                any_container_oom_killed = any(c.oom_killed is True for c in container_states.values() if c is not None)
                 # if it's not an OOM killer (the user killed it) we set it as bad
                 # since the platform failed the container
                 if any_container_oom_killed:
-                    _logger.warning(
-                        "Containers killed to to OOMKiller: %s", container_states
-                    )
+                    _logger.warning("Containers killed to to OOMKiller: %s", container_states)
                 else:
                     # NOTE: MD/ANE discussed: Initial thought was to use SimcorePlatformStatus to
                     # inform RUT that there was some problem on Simcore side and therefore we will
@@ -290,9 +254,7 @@ async def remove_user_services(
     try:
         await progress.update(message="running docker-compose-down", percent=0.1)
 
-        await run_before_shutdown_actions(
-            shared_store, settings.DY_SIDECAR_CALLBACKS_MAPPING.before_shutdown
-        )
+        await run_before_shutdown_actions(shared_store, settings.DY_SIDECAR_CALLBACKS_MAPPING.before_shutdown)
 
         with log_context(_logger, logging.INFO, "save user services preferences"):
             if user_services_preferences.is_feature_enabled(app):
@@ -347,75 +309,6 @@ def _get_legacy_state_with_dy_volumes_path(
     )
 
 
-_EXPECTED_BIND_PATHS_COUNT: Final[NonNegativeInt] = 2
-
-
-async def _handler_get_bind_path(
-    settings: ApplicationSettings, mounted_volumes: MountedVolumes, state_path: Path
-) -> list:
-    vfs_cache_path = await mounted_volumes.get_vfs_cache_docker_volume(
-        settings.DY_SIDECAR_RUN_ID
-    )
-
-    vfs_source, vfs_target = (
-        f"{vfs_cache_path}".replace(
-            f"{settings.DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR}", ""
-        )
-    ).split(":")
-
-    bind_paths: list[dict] = [
-        {
-            "Type": "bind",
-            "Source": vfs_source,
-            "Target": vfs_target,
-            "BindOptions": {"Propagation": "rshared"},
-        }
-    ]
-
-    state_path_no_dy_volume = state_path.relative_to(
-        settings.DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR
-    )
-    matcher = f":/{state_path_no_dy_volume}"
-
-    async for entry in mounted_volumes.iter_state_paths_to_docker_volumes(
-        settings.DY_SIDECAR_RUN_ID
-    ):
-        if entry.endswith(matcher):
-            mount_str = entry.replace(f"/{state_path_no_dy_volume}", f"{state_path}")
-            source, target = mount_str.split(":")
-            bind_paths.append(
-                {
-                    "Type": "bind",
-                    "Source": source,
-                    "Target": target,
-                    "BindOptions": {"Propagation": "rshared"},
-                }
-            )
-            break
-
-    if len(bind_paths) != _EXPECTED_BIND_PATHS_COUNT:
-        msg = f"Could not resolve volume path for {state_path}"
-        raise RuntimeError(msg)
-
-    return bind_paths
-
-
-@dataclass
-class MountActivitySummary:
-    path: Path
-    queued: int
-    transferring: Transferring
-
-
-async def _handler_mount_activity(state_path: Path, activity: MountActivity) -> None:
-    # Frontend should receive and use this message to provide feedback to the user
-    # regarding the mount activity
-    summary = MountActivitySummary(
-        path=state_path, queued=len(activity.queued), transferring=activity.transferring
-    )
-    _logger.info("Mount activity %s", summary)
-
-
 async def _restore_state_folder(
     app: FastAPI,
     *,
@@ -423,9 +316,7 @@ async def _restore_state_folder(
     progress_bar: ProgressBarData,
     state_path: Path,
     index: NonNegativeInt,
-    mounted_volumes: MountedVolumes,
 ) -> None:
-
     assert settings.DY_SIDECAR_PRODUCT_NAME is not None  # nosec
     await data_manager.pull(
         product_name=settings.DY_SIDECAR_PRODUCT_NAME,
@@ -434,18 +325,12 @@ async def _restore_state_folder(
         node_uuid=settings.DY_SIDECAR_NODE_ID,
         destination_path=Path(state_path),
         index=index,
-        io_log_redirect_cb=functools.partial(
-            post_sidecar_log_message, app, log_level=logging.INFO
-        ),
+        io_log_redirect_cb=functools.partial(post_sidecar_log_message, app, log_level=logging.INFO),
         r_clone_settings=settings.DY_SIDECAR_R_CLONE_SETTINGS,
         progress_bar=progress_bar,
         legacy_state=_get_legacy_state_with_dy_volumes_path(settings),
         application_name=f"{APP_NAME}-{settings.DY_SIDECAR_NODE_ID}",
         mount_manager=get_r_clone_mount_manager(app),
-        handler_get_bind_paths=functools.partial(
-            _handler_get_bind_path, settings, mounted_volumes
-        ),
-        handler_mount_activity=_handler_mount_activity,
     )
 
 
@@ -489,7 +374,6 @@ async def restore_user_services_state_paths(
                     progress_bar=root_progress,
                     state_path=path,
                     index=k,
-                    mounted_volumes=mounted_volumes,
                 )
                 for k, path in enumerate(mounted_volumes.disk_state_paths_iter())
             ),
@@ -497,9 +381,7 @@ async def restore_user_services_state_paths(
             reraise=True,  # this should raise if there is an issue
         )
 
-    await post_sidecar_log_message(
-        app, "Finished state downloading", log_level=logging.INFO
-    )
+    await post_sidecar_log_message(app, "Finished state downloading", log_level=logging.INFO)
     await progress.update(message="state restored", percent=0.99)
 
     return _get_satate_folders_size(state_paths)
@@ -523,9 +405,7 @@ async def _save_state_folder(
         index=index,
         r_clone_settings=settings.DY_SIDECAR_R_CLONE_SETTINGS,
         exclude_patterns=mounted_volumes.state_exclude,
-        io_log_redirect_cb=functools.partial(
-            post_sidecar_log_message, app, log_level=logging.INFO
-        ),
+        io_log_redirect_cb=functools.partial(post_sidecar_log_message, app, log_level=logging.INFO),
         progress_bar=progress_bar,
         legacy_state=_get_legacy_state_with_dy_volumes_path(settings),
         application_name=f"{APP_NAME}-{settings.DY_SIDECAR_NODE_ID}",
@@ -590,9 +470,7 @@ async def pull_user_services_input_ports(
 
     await progress.update(message="starting inputs pulling", percent=0.0)
     port_keys = [] if port_keys is None else port_keys
-    await post_sidecar_log_message(
-        app, f"Pulling inputs for {port_keys}", log_level=logging.INFO
-    )
+    await post_sidecar_log_message(app, f"Pulling inputs for {port_keys}", log_level=logging.INFO)
     await progress.update(message="pulling inputs", percent=0.1)
     async with ProgressBarData(
         num_steps=1,
@@ -603,16 +481,12 @@ async def pull_user_services_input_ports(
         ),
         description="pulling inputs",
     ) as root_progress:
-        with log_directory_changes(
-            mounted_volumes.disk_inputs_path, _logger, logging.INFO
-        ):
+        with log_directory_changes(mounted_volumes.disk_inputs_path, _logger, logging.INFO):
             transferred_bytes = await nodeports.download_target_ports(
                 nodeports.PortTypeName.INPUTS,
                 mounted_volumes.disk_inputs_path,
                 port_keys=port_keys,
-                io_log_redirect_cb=functools.partial(
-                    post_sidecar_log_message, app, log_level=logging.INFO
-                ),
+                io_log_redirect_cb=functools.partial(post_sidecar_log_message, app, log_level=logging.INFO),
                 progress_bar=root_progress,
                 port_notifier=PortNotifier(
                     app,
@@ -621,9 +495,7 @@ async def pull_user_services_input_ports(
                     settings.DY_SIDECAR_NODE_ID,
                 ),
             )
-    await post_sidecar_log_message(
-        app, "Finished pulling inputs", log_level=logging.INFO
-    )
+    await post_sidecar_log_message(app, "Finished pulling inputs", log_level=logging.INFO)
     await progress.update(message="finished inputs pulling", percent=0.99)
     return int(transferred_bytes)
 
@@ -636,9 +508,7 @@ async def pull_user_services_output_ports(
 ) -> int:
     await progress.update(message="starting outputs pulling", percent=0.0)
     port_keys = [] if port_keys is None else port_keys
-    await post_sidecar_log_message(
-        app, f"Pulling output for {port_keys}", log_level=logging.INFO
-    )
+    await post_sidecar_log_message(app, f"Pulling output for {port_keys}", log_level=logging.INFO)
     async with ProgressBarData(
         num_steps=1,
         progress_report_cb=functools.partial(
@@ -652,15 +522,11 @@ async def pull_user_services_output_ports(
             nodeports.PortTypeName.OUTPUTS,
             mounted_volumes.disk_outputs_path,
             port_keys=port_keys,
-            io_log_redirect_cb=functools.partial(
-                post_sidecar_log_message, app, log_level=logging.INFO
-            ),
+            io_log_redirect_cb=functools.partial(post_sidecar_log_message, app, log_level=logging.INFO),
             progress_bar=root_progress,
             port_notifier=None,
         )
-    await post_sidecar_log_message(
-        app, "Finished pulling outputs", log_level=logging.INFO
-    )
+    await post_sidecar_log_message(app, "Finished pulling outputs", log_level=logging.INFO)
     await progress.update(message="finished outputs pulling", percent=0.99)
     return int(transferred_bytes)
 
@@ -677,9 +543,7 @@ async def push_user_services_output_ports(
 
     await outputs_manager.wait_for_all_uploads_to_finish()
 
-    await post_sidecar_log_message(
-        app, "finished outputs pushing", log_level=logging.INFO
-    )
+    await post_sidecar_log_message(app, "finished outputs pushing", log_level=logging.INFO)
     await progress.update(message="finished outputs pushing", percent=0.99)
 
 
@@ -715,9 +579,7 @@ async def restart_user_services(
 
         await progress.update(message="started log fetching", percent=0.9)
 
-        await post_sidecar_log_message(
-            app, "Service was restarted please reload the UI", log_level=logging.INFO
-        )
+        await post_sidecar_log_message(app, "Service was restarted please reload the UI", log_level=logging.INFO)
         await post_event_reload_iframe(app)
         await progress.update(message="started log fetching", percent=0.99)
 
