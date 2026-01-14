@@ -16,7 +16,6 @@ from models_library.api_schemas_storage.storage_schemas import (
     FileLocation,
     FileLocationArray,
     FileMetaDataGet,
-    FoldersBody,
     PresignedLink,
 )
 from models_library.generics import Envelope
@@ -107,20 +106,18 @@ async def copy_data_folders_from_project(  # noqa: PLR0913
         task_manager = get_task_manager(app)
         async for job_composed_result in submit_job_and_wait(
             task_manager,
-            execution_metadata=ExecutionMetadata(name="copy_folders_from_project"),
+            execution_metadata=ExecutionMetadata(name="deep_copy_files_from_project"),
             owner_metadata=OwnerMetadata.model_validate(
                 WebServerOwnerMetadata(
                     user_id=user_id,
                     product_name=product_name,
                 ).model_dump()
             ),
-            body=TypeAdapter(FoldersBody).validate_python(
-                {
-                    "source": source_project,
-                    "destination": destination_project,
-                    "nodes_map": nodes_map,
-                },
-            ),
+            body={
+                "source": source_project,
+                "destination": destination_project,
+                "nodes_map": nodes_map,
+            },
             stop_after=datetime.timedelta(seconds=_TOTAL_TIMEOUT_TO_COPY_DATA_SECS),
             user_id=user_id,
         ):
