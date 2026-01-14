@@ -11,13 +11,7 @@ from models_library.basic_types import PortInt
 from models_library.progress_bar import ProgressReport
 from models_library.projects_nodes_io import NodeID, StorageFileID
 from pydantic import NonNegativeInt
-from settings_library.r_clone import (
-    DEFAULT_VFS_CACHE_MAX_SIZE,
-    DEFAULT_VFS_CACHE_PATH,
-    TPSLIMIT,
-    RCloneSettings,
-    SimcoreSDKMountSettings,
-)
+from settings_library.r_clone import DEFAULT_VFS_CACHE_PATH, TPSLIMIT, RCloneSettings, SimcoreSDKMountSettings
 from tenacity import (
     before_sleep_log,
     retry,
@@ -101,7 +95,7 @@ def _get_rclone_mount_command(
         "--vfs-read-ahead",
         "16M",
         "--vfs-cache-max-size",
-        DEFAULT_VFS_CACHE_MAX_SIZE,
+        mount_settings.R_CLONE_SIMCORE_SDK_MOUNT_VFS_CACHE_SIZE,
         "--vfs-cache-min-free-space",
         "5G",
         "--vfs-cache-poll-interval",

@@ -20,7 +20,7 @@ from settings_library.efs import (
     WRITE_SIZE,
     AwsEfsSettings,
 )
-from settings_library.r_clone import DEFAULT_VFS_CACHE_MAX_SIZE, DEFAULT_VFS_CACHE_PATH
+from settings_library.r_clone import DEFAULT_VFS_CACHE_PATH
 
 _BASE_PATH: Path = Path("/dy-volumes")
 # below are subfolders in `_BASE_PATH`
@@ -30,7 +30,6 @@ _DY_SIDECAR_SUBFOLDER_VFS_CACHE: Final[Path] = DEFAULT_VFS_CACHE_PATH
 
 # DEFAULT LIMITS
 _LIMIT_SHARED_STORE: Final[str] = "1M"
-_LIMIT_VFS_CACHE: Final[str] = DEFAULT_VFS_CACHE_MAX_SIZE
 _LIMIT_USER_PREFERENCES: Final[str] = "10M"
 
 
@@ -44,8 +43,13 @@ def _get_efs_volume_driver_config(
     driver_config: dict[str, Any] = {
         "Options": {
             "type": "nfs",
-            "o": f"addr={efs_settings.EFS_DNS_NAME},rw,nfsvers={NFS_PROTOCOL},rsize={READ_SIZE},wsize={WRITE_SIZE},{RECOVERY_MODE},timeo={NFS_REQUEST_TIMEOUT},retrans={NUMBER_OF_RETRANSMISSIONS},{PORT_MODE}",
-            "device": f":/{efs_settings.EFS_PROJECT_SPECIFIC_DATA_DIRECTORY}/{project_id}/{node_uuid}/{storage_directory_name}",
+            "o": (
+                f"addr={efs_settings.EFS_DNS_NAME},rw,nfsvers={NFS_PROTOCOL},rsize={READ_SIZE},wsize={WRITE_SIZE},"
+                f"{RECOVERY_MODE},timeo={NFS_REQUEST_TIMEOUT},retrans={NUMBER_OF_RETRANSMISSIONS},{PORT_MODE}"
+            ),
+            "device": (
+                f":/{efs_settings.EFS_PROJECT_SPECIFIC_DATA_DIRECTORY}/{project_id}/{node_uuid}/{storage_directory_name}"
+            ),
         },
     }
     return driver_config
@@ -60,7 +64,10 @@ class DynamicSidecarVolumesPathsResolver:
 
     @classmethod
     def volume_name(cls, path: Path) -> str:
-        """Returns a volume name created from path. There is not possibility to go back to the original path from the volume name"""
+        """
+        Returns a volume name created from path. There is not possibility to go back to
+        the original path from the volume name
+        """
         return f"{path}".replace(os.sep, "_")
 
     @classmethod
@@ -115,11 +122,7 @@ class DynamicSidecarVolumesPathsResolver:
                     "user_id": f"{user_id}",
                     "swarm_stack_name": swarm_stack_name,
                 },
-                "DriverConfig": (
-                    {"Options": {"size": volume_size_limit}}
-                    if volume_size_limit is not None
-                    else None
-                ),
+                "DriverConfig": ({"Options": {"size": volume_size_limit}} if volume_size_limit is not None else None),
             },
         }
 
@@ -154,6 +157,7 @@ class DynamicSidecarVolumesPathsResolver:
         swarm_stack_name: str,
         *,
         has_quota_support: bool,
+        vfs_cache_limit: str,
     ) -> dict[str, Any]:
         return cls.mount_entry(
             swarm_stack_name=swarm_stack_name,
@@ -162,7 +166,7 @@ class DynamicSidecarVolumesPathsResolver:
             service_run_id=service_run_id,
             project_id=project_id,
             user_id=user_id,
-            volume_size_limit=_LIMIT_VFS_CACHE if has_quota_support else None,
+            volume_size_limit=vfs_cache_limit if has_quota_support else None,
         )
 
     @classmethod

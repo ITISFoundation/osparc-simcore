@@ -11,7 +11,6 @@ from .base import BaseCustomSettings
 from .s3 import S3Settings
 
 DEFAULT_VFS_CACHE_PATH: Final[Path] = Path("/vfs-cache")
-DEFAULT_VFS_CACHE_MAX_SIZE: Final[str] = "500G"
 
 
 TPSLIMIT: Final[NonNegativeInt] = 2000
@@ -46,6 +45,19 @@ class SimcoreSDKMountSettings(BaseCustomSettings):
     _validate_r_clone_mount_transfers_completed_timeout = validate_numeric_string_as_timedelta(
         "R_CLONE_SIMCORE_SDK_MOUNT_TRANSFERS_COMPLETED_TIMEOUT"
     )
+
+    R_CLONE_SIMCORE_SDK_MOUNT_VFS_CACHE_SIZE: Annotated[
+        str,
+        Field(
+            description=(
+                "maximum size of the VFS cache on the disk to be enforced by rclone"
+                "NOTE 1: the vfs-cache is the folder where the real data form the user's files is stored"
+                "NOTE 2: if a user has a file that goes over this limit the cache will not behave as expected"
+                "NOTE 3: keep this value as high as possible. Currently this limits the size of files which "
+                "can be safely uploaded via rclone mount to a bit under this number"
+            ),
+        ),
+    ] = "500G"
 
     # CONTAINER
     R_CLONE_SIMCORE_SDK_MOUNT_CONTAINER_CONFIG_FILE_PATH: Annotated[
