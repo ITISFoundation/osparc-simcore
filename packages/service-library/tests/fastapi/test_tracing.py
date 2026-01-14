@@ -3,7 +3,7 @@
 
 import importlib
 import logging
-import random
+import secrets
 import string
 from collections.abc import Callable
 from functools import partial
@@ -49,21 +49,15 @@ def set_and_clean_settings_env_vars(
     endpoint_mocked = False
     if tracing_settings_in[0]:
         endpoint_mocked = True
-        monkeypatch.setenv(
-            "TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT", f"{tracing_settings_in[0]}"
-        )
+        monkeypatch.setenv("TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT", f"{tracing_settings_in[0]}")
     port_mocked = False
     if tracing_settings_in[1]:
         port_mocked = True
-        monkeypatch.setenv(
-            "TRACING_OPENTELEMETRY_COLLECTOR_PORT", f"{tracing_settings_in[1]}"
-        )
+        monkeypatch.setenv("TRACING_OPENTELEMETRY_COLLECTOR_PORT", f"{tracing_settings_in[1]}")
     sampling_probability_mocked = False
     if tracing_settings_in[2]:
         sampling_probability_mocked = True
-        monkeypatch.setenv(
-            "TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY", f"{tracing_settings_in[2]}"
-        )
+        monkeypatch.setenv("TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY", f"{tracing_settings_in[2]}")
     yield
     if endpoint_mocked:
         monkeypatch.delenv("TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT")
@@ -88,9 +82,7 @@ async def test_valid_tracing_settings(
     tracing_settings_in: Callable[[], dict[str, Any]],
 ):
     tracing_settings = TracingSettings()
-    tracing_config = TracingConfig.create(
-        tracing_settings=tracing_settings, service_name="Mock-Openetlemetry-Pytest"
-    )
+    tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name="Mock-Openetlemetry-Pytest")
     async for _ in get_tracing_instrumentation_lifespan(
         tracing_config=tracing_config,
     )(app=mocked_app):
@@ -106,14 +98,14 @@ async def test_valid_tracing_settings(
         ("http://opentelemetry-collector", 80, 0.5),
         ("http://opentelemetry-collector", 1238712936, 0.5),
         ("opentelemetry-collector", 4318, 0.5),
-        ("httsdasp://ot@##el-collector", 4318, 0.5),
+        ("httsdasp://ot@##el-collector", 4318, 0.5),  # spellchecker:disable-line
         (" !@#$%^&*()[]{};:,<>?\\|`~+=/'\"", 4318, 0.5),
         # The following exceeds max DNS name length
         (
-            "".join(random.choice(string.ascii_letters) for _ in range(300)),
+            "".join(secrets.choice(string.ascii_letters) for _ in range(300)),
             "1238712936",
             0.5,
-        ),  # noqa: S311
+        ),
     ],
     indirect=True,
 )
@@ -143,7 +135,7 @@ def uninstall_package(package):
     pip.main(["uninstall", "-y", package])
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture()
 def manage_package(request):
     package, importname = request.param
     install_package(package)
@@ -151,9 +143,7 @@ def manage_package(request):
     uninstall_package(package)
 
 
-@pytest.mark.skip(
-    reason="this test installs always the latest version of the package which creates conflicts."
-)
+@pytest.mark.skip(reason="this test installs always the latest version of the package which creates conflicts.")
 @pytest.mark.parametrize(
     "tracing_settings_in, manage_package",
     [
@@ -184,9 +174,7 @@ async def test_tracing_setup_package_detection(
     package_name = manage_package
     importlib.import_module(package_name)
     tracing_settings = TracingSettings()
-    tracing_config = TracingConfig.create(
-        tracing_settings=tracing_settings, service_name="Mock-Openetlemetry-Pytest"
-    )
+    tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name="Mock-Openetlemetry-Pytest")
     async for _ in get_tracing_instrumentation_lifespan(
         tracing_config=tracing_config,
     )(app=mocked_app):
@@ -219,17 +207,13 @@ async def test_trace_id_in_response_header(
     server_response: PlainTextResponse | HTTPException,
 ) -> None:
     tracing_settings = TracingSettings()
-    tracing_config = TracingConfig.create(
-        tracing_settings=tracing_settings, service_name="Mock-Openetlemetry-Pytest"
-    )
+    tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name="Mock-Openetlemetry-Pytest")
 
-    handler_data = dict()
+    handler_data = {}
 
     async def handler(handler_data: dict):
         current_span = trace.get_current_span()
-        handler_data[_OSPARC_TRACE_ID_HEADER] = format(
-            current_span.get_span_context().trace_id, "032x"
-        )
+        handler_data[_OSPARC_TRACE_ID_HEADER] = format(current_span.get_span_context().trace_id, "032x")
         if isinstance(server_response, HTTPException):
             raise server_response
         return server_response
@@ -239,9 +223,7 @@ async def test_trace_id_in_response_header(
     async for _ in get_tracing_instrumentation_lifespan(
         tracing_config=tracing_config,
     )(app=mocked_app):
-        initialize_fastapi_app_tracing(
-            mocked_app, tracing_config=tracing_config, add_response_trace_id_header=True
-        )
+        initialize_fastapi_app_tracing(mocked_app, tracing_config=tracing_config, add_response_trace_id_header=True)
         client = TestClient(mocked_app)
         response = client.get("/")
         assert _OSPARC_TRACE_ID_HEADER in response.headers
@@ -272,18 +254,14 @@ async def test_with_profile_span(
     server_response: PlainTextResponse | HTTPException,
 ):
     tracing_settings = TracingSettings()
-    tracing_config = TracingConfig.create(
-        tracing_settings=tracing_settings, service_name="Mock-Openetlemetry-Pytest"
-    )
+    tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name="Mock-Openetlemetry-Pytest")
 
-    handler_data = dict()
+    handler_data = {}
 
     async def handler(handler_data: dict):
         with profiled_span(tracing_config=tracing_config, span_name="my favorite span"):
             current_span = trace.get_current_span()
-            handler_data[_OSPARC_TRACE_ID_HEADER] = format(
-                current_span.get_span_context().trace_id, "032x"
-            )
+            handler_data[_OSPARC_TRACE_ID_HEADER] = format(current_span.get_span_context().trace_id, "032x")
             if isinstance(server_response, HTTPException):
                 raise server_response
             return server_response
@@ -293,9 +271,7 @@ async def test_with_profile_span(
     async for _ in get_tracing_instrumentation_lifespan(
         tracing_config=tracing_config,
     )(app=mocked_app):
-        initialize_fastapi_app_tracing(
-            mocked_app, tracing_config=tracing_config, add_response_trace_id_header=True
-        )
+        initialize_fastapi_app_tracing(mocked_app, tracing_config=tracing_config, add_response_trace_id_header=True)
         client = TestClient(mocked_app)
         _ = client.get("/")
         trace_id = handler_data.get(_OSPARC_TRACE_ID_HEADER)
@@ -303,8 +279,7 @@ async def test_with_profile_span(
 
         spans = mock_otel_collector.get_finished_spans()
         assert any(
-            span.context.trace_id == int(trace_id, 16)
-            and _PROFILE_ATTRIBUTE_NAME in span.attributes.keys()
+            span.context.trace_id == int(trace_id, 16) and _PROFILE_ATTRIBUTE_NAME in span.attributes
             for span in spans
             if span.context is not None and span.attributes is not None
         )
@@ -317,6 +292,7 @@ async def test_with_profile_span(
     ],
     indirect=True,
 )
+# ruff: noqa N802
 async def test_TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY_effective(
     mock_otel_collector: InMemorySpanExporter,
     mocked_app: FastAPI,
@@ -332,9 +308,7 @@ async def test_TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY_effective(
     tolerance_probability = 0.5
 
     tracing_settings = TracingSettings()
-    tracing_config = TracingConfig.create(
-        tracing_settings=tracing_settings, service_name="Mock-OpenTelemetry-Pytest"
-    )
+    tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name="Mock-OpenTelemetry-Pytest")
 
     async def handler():
         return PlainTextResponse("ok")
@@ -344,28 +318,20 @@ async def test_TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY_effective(
     async for _ in get_tracing_instrumentation_lifespan(
         tracing_config=tracing_config,
     )(app=mocked_app):
-        initialize_fastapi_app_tracing(
-            mocked_app, tracing_config=tracing_config, add_response_trace_id_header=True
-        )
+        initialize_fastapi_app_tracing(mocked_app, tracing_config=tracing_config, add_response_trace_id_header=True)
         client = TestClient(mocked_app)
         for _ in range(n_requests):
             client.get("/")
         trace_ids = {
-            span.context.trace_id
-            for span in mock_otel_collector.get_finished_spans()
-            if span.context is not None
+            span.context.trace_id for span in mock_otel_collector.get_finished_spans() if span.context is not None
         }
         n_traces = len(trace_ids)
-        expected_num_traces = int(
-            tracing_settings.TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY * n_requests
-        )
+        expected_num_traces = int(tracing_settings.TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY * n_requests)
         # Allow a 50% tolerance due to randomness
         tolerance = int(tolerance_probability * expected_num_traces)
-        assert (
-            expected_num_traces - tolerance
-            <= n_traces
-            <= expected_num_traces + tolerance
-        ), f"Expected roughly {expected_num_traces} distinct trace ids, got {n_traces}"
+        assert expected_num_traces - tolerance <= n_traces <= expected_num_traces + tolerance, (
+            f"Expected roughly {expected_num_traces} distinct trace ids, got {n_traces}"
+        )
 
 
 @pytest.fixture
@@ -374,9 +340,7 @@ def setup_logging_for_test(
 ) -> TracingConfig:
     """Setup logging with tracing instrumentation before caplog captures logs."""
     tracing_settings = TracingSettings()
-    tracing_config = TracingConfig.create(
-        tracing_settings=tracing_settings, service_name="Mock-OpenTelemetry-Pytest"
-    )
+    tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name="Mock-OpenTelemetry-Pytest")
 
     # Setup logging with tracing instrumentation
     # This configures logging before caplog adds its handler
@@ -406,7 +370,7 @@ async def test_trace_id_in_logs_only_when_sampled(
     caplog: pytest.LogCaptureFixture,
 ):
     """
-    This test verifies that trace IDs appear in logs only when the corresponding trace is sampled.
+    This test verifies that trace IDs appear in logs regardless of whether the corresponding trace is sampled.
     With a low sampling probability (0.05), most requests won't be sampled, so their logs
     should not contain trace IDs.
     """
@@ -417,29 +381,23 @@ async def test_trace_id_in_logs_only_when_sampled(
     test_logger = logging.getLogger("test_handler")
     caplog.set_level(logging.INFO, logger="test_handler")
 
-    async def handler():
+    async def handler(all_trace_ids: set[str]):
         test_logger.info("Handler executed")
+        trace_id = trace.get_current_span().get_span_context().trace_id
+        all_trace_ids.add(format(trace_id, "032x"))
         return PlainTextResponse("ok")
 
-    mocked_app.get("/")(handler)
+    all_trace_ids: set[str] = set()
+    mocked_app.get("/")(partial(handler, all_trace_ids))
 
     async for _ in get_tracing_instrumentation_lifespan(
         tracing_config=tracing_config,
     )(app=mocked_app):
-        initialize_fastapi_app_tracing(
-            mocked_app, tracing_config=tracing_config, add_response_trace_id_header=True
-        )
+        initialize_fastapi_app_tracing(mocked_app, tracing_config=tracing_config, add_response_trace_id_header=True)
         client = TestClient(mocked_app)
 
         for _ in range(n_requests):
             client.get("/")
-
-        # Get all sampled trace IDs from the span exporter
-        sampled_trace_ids = {
-            format(span.context.trace_id, "032x")
-            for span in mock_otel_collector.get_finished_spans()
-            if span.context is not None
-        }
 
         # Check log records
         trace_ids_in_logs = set()
@@ -447,16 +405,11 @@ async def test_trace_id_in_logs_only_when_sampled(
         for record in caplog.records:
             if record.name == "test_handler":
                 otel_trace_id = getattr(record, "otelTraceID", None)
-                if (
-                    otel_trace_id is not None
-                    and otel_trace_id != "not_recorded"
-                    and otel_trace_id != "0"
-                ):
+                if otel_trace_id is not None and otel_trace_id not in {"not_recorded", "0"}:
                     trace_ids_in_logs.add(otel_trace_id)
 
         tracing_settings = tracing_config.tracing_settings
         assert tracing_settings is not None
-        assert len(trace_ids_in_logs) > 0 and len(sampled_trace_ids) > 0
-        assert (
-            trace_ids_in_logs == sampled_trace_ids
-        ), f"{tracing_settings.TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY=} | {n_requests=} | {len(sampled_trace_ids)=} | {len(trace_ids_in_logs)=}"
+        assert len(trace_ids_in_logs) > 0
+        assert len(trace_ids_in_logs) == len(all_trace_ids) == n_requests
+        assert trace_ids_in_logs == all_trace_ids, f"{n_requests=} | {len(all_trace_ids)=} | {len(trace_ids_in_logs)=}"

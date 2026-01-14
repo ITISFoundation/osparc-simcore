@@ -1,5 +1,5 @@
 ---
-mode: agent
+agent: agent
 description: Generates a PR summary, suitable for a PR against the current `master` branch.
 model: GPT-4.1
 ---
