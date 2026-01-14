@@ -32,15 +32,11 @@ class BaseRCloneError(OsparcErrorMixin, RuntimeError): ...
 
 
 class RCloneFailedError(BaseRCloneError):
-    msg_template: str = (
-        "Command {command} finished with exit code={returncode}:\n{command_output}"
-    )
+    msg_template: str = "Command {command} finished with exit code={returncode}:\n{command_output}"
 
 
 class RCloneDirectoryNotFoundError(BaseRCloneError):
-    msg_template: str = (
-        "Provided path '{local_directory_path}' is a file. Expects a directory!"
-    )
+    msg_template: str = "Provided path '{local_directory_path}' is a file. Expects a directory!"
 
 
 async def _read_stream(stream: StreamReader, r_clone_log_parsers: list[BaseLogParser]):
@@ -48,9 +44,7 @@ async def _read_stream(stream: StreamReader, r_clone_log_parsers: list[BaseLogPa
         line: bytes = await stream.readline()
         if line:
             decoded_line = line.decode()
-            await logged_gather(
-                *[parser(decoded_line) for parser in r_clone_log_parsers]
-            )
+            await logged_gather(*[parser(decoded_line) for parser in r_clone_log_parsers])
         else:
             break
 
@@ -71,15 +65,11 @@ async def _async_r_clone_command(
 
     command_result_parser = CommandResultCaptureParser()
     r_clone_log_parsers = (
-        [*r_clone_log_parsers, command_result_parser]
-        if r_clone_log_parsers
-        else [command_result_parser]
+        [*r_clone_log_parsers, command_result_parser] if r_clone_log_parsers else [command_result_parser]
     )
 
     assert proc.stdout  # nosec
-    await asyncio.wait(
-        [asyncio.create_task(_read_stream(proc.stdout, [*r_clone_log_parsers]))]
-    )
+    await asyncio.wait([asyncio.create_task(_read_stream(proc.stdout, [*r_clone_log_parsers]))])
 
     _stdout, _stderr = await proc.communicate()
 
@@ -134,9 +124,7 @@ async def _get_folder_size(
     folder: Path,
     s3_config_key: str,
 ) -> ByteSize:
-    r_clone_config_file_content = get_s3_r_clone_config(
-        r_clone_settings, s3_config_key=s3_config_key
-    )
+    r_clone_config_file_content = get_s3_r_clone_config(r_clone_settings, s3_config_key=s3_config_key)
     async with config_file(r_clone_config_file_content) as config_file_name:
         r_clone_command = (
             "rclone",
@@ -153,9 +141,7 @@ async def _get_folder_size(
         )
 
     rclone_folder_size_result = _RCloneSize.model_validate_json(result)
-    _logger.debug(
-        "RClone size call for %s: %s", f"{folder}", f"{rclone_folder_size_result}"
-    )
+    _logger.debug("RClone size call for %s: %s", f"{folder}", f"{rclone_folder_size_result}")
     return rclone_folder_size_result.bytes
 
 
@@ -170,7 +156,6 @@ async def _sync_sources(
     exclude_patterns: set[str] | None,
     debug_logs: bool,
 ) -> None:
-
     folder_size = await _get_folder_size(
         r_clone_settings,
         local_dir=local_dir,
@@ -178,9 +163,7 @@ async def _sync_sources(
         s3_config_key=s3_config_key,
     )
 
-    r_clone_config_file_content = get_s3_r_clone_config(
-        r_clone_settings, s3_config_key=s3_config_key
-    )
+    r_clone_config_file_content = get_s3_r_clone_config(r_clone_settings, s3_config_key=s3_config_key)
     async with config_file(r_clone_config_file_content) as config_file_name:
         r_clone_command = (
             "rclone",
@@ -189,7 +172,7 @@ async def _sync_sources(
             "--retries",
             f"{r_clone_settings.R_CLONE_OPTION_RETRIES}",
             "--retries-sleep",
-            r_clone_settings.R_CLONE_RETRIES_SLEEP,
+            "30s",
             "--transfers",
             f"{r_clone_settings.R_CLONE_OPTION_TRANSFERS}",
             # below two options reduce to a minimum the memory footprint
@@ -197,14 +180,14 @@ async def _sync_sources(
             "--buffer-size",  # docs https://rclone.org/docs/#buffer-size-size
             r_clone_settings.R_CLONE_OPTION_BUFFER_SIZE,
             "--checkers",
-            f"{r_clone_settings.R_CLONE_CHECKERS}",
+            "8",
             "--s3-upload-concurrency",
-            f"{r_clone_settings.R_CLONE_S3_UPLOAD_CONCURRENCY}",
+            "5",
             "--s3-chunk-size",
-            r_clone_settings.R_CLONE_CHUNK_SIZE,
+            "16M",
             # handles the order of file upload
             "--order-by",
-            r_clone_settings.R_CLONE_ORDER_BY,
+            "size,mixed",
             "--use-json-log",
             # frequent polling for faster progress updates
             "--stats",
@@ -223,9 +206,7 @@ async def _sync_sources(
             progress_unit="Byte",
             description=f"transferring {local_dir.name}",
         ) as sub_progress:
-            r_clone_log_parsers: list[BaseLogParser] = (
-                [DebugLogParser()] if debug_logs else []
-            )
+            r_clone_log_parsers: list[BaseLogParser] = [DebugLogParser()] if debug_logs else []
             r_clone_log_parsers.append(SyncProgressLogParser(sub_progress))
 
             await _async_r_clone_command(

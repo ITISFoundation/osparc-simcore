@@ -13,7 +13,7 @@ DEFAULT_VFS_CACHE_PATH: Final[Path] = Path("/vfs-cache")
 DEFAULT_VFS_CACHE_MAX_SIZE: Final[str] = "500G"
 
 
-_TPSLIMIT: Final[NonNegativeInt] = 2000
+TPSLIMIT: Final[NonNegativeInt] = 2000
 
 _ONE_CPU: Final[NonNegativeInt] = int(1e9)
 
@@ -62,134 +62,6 @@ class RCloneMountSettings(BaseCustomSettings):
         NonNegativeInt, Field(description="CPU limit for the rclone mount container")
     ] = 1 * _ONE_CPU
 
-    # CLI command `rclone mount`
-
-    R_CLONE_MOUNT_VFS_CACHE_PATH: Annotated[
-        Path,
-        Field(
-            description="`--cache-dir X`: sets the path to use for vfs cache",
-        ),
-    ] = DEFAULT_VFS_CACHE_PATH
-
-    R_CLONE_MOUNT_VFS_READ_AHEAD: Annotated[
-        str,
-        Field(
-            description="`--vfs-read-ahead X`: sets the read ahead buffer size",
-        ),
-    ] = "16M"
-
-    R_CLONE_MOUNT_VFS_CACHE_MAX_SIZE: Annotated[
-        str,
-        Field(
-            description="`--vfs-cache-max-size X`: sets the maximum size of the vfs cache",
-        ),
-    ] = DEFAULT_VFS_CACHE_MAX_SIZE
-
-    R_CLONE_MOUNT_VFS_CACHE_MIN_FREE_SPACE: Annotated[
-        str,
-        Field(
-            description="`--vfs-cache-min-free-space X`: sets the minimum free space to keep on disk",
-        ),
-    ] = "5G"
-
-    R_CLONE_MOUNT_CACHE_POLL_INTERVAL: Annotated[
-        str,
-        Field(
-            description="`--vfs-cache-poll-interval X`: sets the interval to poll the vfs cache",
-        ),
-    ] = "1m"
-
-    R_CLONE_MOUNT_VFS_WRITE_BACK: Annotated[
-        str,
-        Field(
-            description="`--vfs-write-back X`: sets the time to wait before writing back data to the remote",
-        ),
-    ] = "10s"
-
-    R_CLONE_MOUNT_DIR_CACHE_TIME: Annotated[
-        str,
-        Field(
-            description="`--dir-cache-time X`: time before directory is uploaded from remote if changed",
-        ),
-    ] = "10m"
-
-    R_CLONE_MOUNT_ATTR_TIMEOUT: Annotated[
-        str,
-        Field(
-            description="`--attr-timeout X`: sets the time to cache file attributes",
-        ),
-    ] = "1m"
-
-    R_CLONE_MOUNT_TPSLIMIT: Annotated[
-        NonNegativeInt,
-        Field(
-            description="`--tpslimit X`: sets the transactions per second limit",
-        ),
-    ] = _TPSLIMIT
-    R_CLONE_MOUNT_TPSLIMIT_BURST: Annotated[
-        NonNegativeInt,
-        Field(
-            description="`--tpslimit-burst X`: sets the burst limit for transactions per second",
-        ),
-    ] = _TPSLIMIT * 2
-
-    R_CLONE_MOUNT_MAX_BUFFER_MEMORY: Annotated[
-        str,
-        Field(
-            description="`--max-buffer-memory X`: sets the maximum buffer memory for rclone",
-        ),
-    ] = "16M"
-
-    R_CLONE_MOUNT_RETRIES: Annotated[
-        NonNegativeInt,
-        Field(
-            description="`--retries X`: sets the number of retries for rclone mount command",
-        ),
-    ] = 3
-
-    R_CLONE_MOUNT_RETRIES_SLEEP: Annotated[
-        str,
-        Field(
-            description="`--retries-sleep X`: sets the maximum sleep time between retries",
-        ),
-    ] = "30s"
-    R_CLONE_MOUNT_TRANSFERS: Annotated[
-        NonNegativeInt,
-        Field(
-            description="`--transfers X`: sets the number of parallel transfers for rclone mount command",
-        ),
-    ] = 15
-    R_CLONE_MOUNT_BUFFER_SIZE: Annotated[
-        str,
-        Field(
-            description="`--buffer-size X`: sets the buffer size for rclone mount command",
-        ),
-    ] = "16M"
-    R_CLONE_MOUNT_CHECKERS: Annotated[
-        NonNegativeInt,
-        Field(
-            description="`--checkers X`: sets the number of checkers for rclone mount command",
-        ),
-    ] = 8
-    R_CLONE_MOUNT_S3_UPLOAD_CONCURRENCY: Annotated[
-        NonNegativeInt,
-        Field(
-            description="`--s3-upload-concurrency X`: sets the number of concurrent uploads to S3",
-        ),
-    ] = 5
-    R_CLONE_MOUNT_S3_CHUNK_SIZE: Annotated[
-        str,
-        Field(
-            description="`--s3-chunk-size X`: sets the chunk size for S3",
-        ),
-    ] = "16M"
-    R_CLONE_MOUNT_ORDER_BY: Annotated[
-        str,
-        Field(
-            description="`--order-by X`: sets the order of file upload, e.g., 'size,mixed'",
-        ),
-    ] = "size,mixed"
-
 
 class RCloneSettings(BaseCustomSettings):
     R_CLONE_S3: Annotated[S3Settings, Field(json_schema_extra={"auto_default_from_env": True})]
@@ -217,11 +89,6 @@ class RCloneSettings(BaseCustomSettings):
         Field(description="`--retries X`: times to retry each individual transfer"),
     ] = 3
 
-    R_CLONE_RETRIES_SLEEP: Annotated[
-        str,
-        Field(description="`--retries-sleep X`: max time to sleep between retries (caps exponential backoff)"),
-    ] = "30s"
-
     R_CLONE_OPTION_BUFFER_SIZE: Annotated[
         # SEE https://rclone.org/docs/#buffer-size-size
         str,
@@ -229,29 +96,3 @@ class RCloneSettings(BaseCustomSettings):
             description="`--buffer-size X`: sets the amount of RAM to use for each individual transfer",
         ),
     ] = "16M"
-
-    R_CLONE_CHECKERS: Annotated[
-        NonNegativeInt,
-        Field(
-            description="`--checkers X`: sets the number checkers",
-        ),
-    ] = 8
-
-    R_CLONE_S3_UPLOAD_CONCURRENCY: Annotated[
-        NonNegativeInt,
-        Field(
-            description="`--s3-upload-concurrency X`: sets the number of concurrent uploads to S3",
-        ),
-    ] = 5
-
-    R_CLONE_CHUNK_SIZE: Annotated[
-        str,
-        Field(description="`--s3-chunk-size X`: sets the chunk size for S3"),
-    ] = "16M"
-
-    R_CLONE_ORDER_BY: Annotated[
-        str,
-        Field(
-            description="`--order-by X`: sets the order of file upload, e.g., 'size,mixed'",
-        ),
-    ] = "size,mixed"
