@@ -26,10 +26,7 @@ from ._errors import (
     WaitingForQueueToBeEmptyError,
     WaitingForTransfersToCompleteError,
 )
-from ._models import (
-    GetBindPathsProtocol,
-    MountActivity,
-)
+from ._models import DelegateInterface, MountActivity
 from ._utils import get_mount_id
 
 _logger = logging.getLogger(__name__)
@@ -167,7 +164,7 @@ class ContainerManager:  # pylint:disable=too-many-instance-attributes
         rc_user: str,
         rc_password: str,
         *,
-        handler_get_bind_paths: GetBindPathsProtocol,
+        delegate: DelegateInterface,
     ) -> None:
         self.r_clone_settings = r_clone_settings
         self.node_id = node_id
@@ -179,7 +176,7 @@ class ContainerManager:  # pylint:disable=too-many-instance-attributes
         self.rc_user = rc_user
         self.rc_password = rc_password
 
-        self.handler_get_bind_paths = handler_get_bind_paths
+        self.delegate = delegate
 
     @cached_property
     def r_clone_container_name(self) -> str:
@@ -192,41 +189,38 @@ class ContainerManager:  # pylint:disable=too-many-instance-attributes
         return f"{_DOCKER_PREFIX_MOUNT}-c-{self.node_id}{mount_id}"[:63]
 
     async def create(self):
-        async with _docker_utils.get_or_create_docker_session(None) as client:
-            # ensure nothing was left from previous runs
-            await _docker_utils.remove_container_if_exists(client, self.r_clone_container_name)
-            await _docker_utils.remove_network_if_exists(client, self.r_clone_container_name)
+        # ensure nothing was left from previous runs
+        await _docker_utils.remove_container_if_exists(self.delegate, self.r_clone_container_name)
+        await _docker_utils.remove_network_if_exists(self.delegate, self.r_clone_container_name)
 
-            # create network + container and connect to sidecar
-            await _docker_utils.create_network_and_connect_sidecar_container(client, self._r_clone_network_name)
+        # create network + container and connect to current container
+        await _docker_utils.create_network_and_connect_current_container(self.delegate, self._r_clone_network_name)
 
-            assert self.r_clone_settings.R_CLONE_VERSION is not None  # nosec
-            mount_settings = self.r_clone_settings.R_CLONE_MOUNT_SETTINGS
-            await _docker_utils.create_r_clone_container(
-                client,
-                self.r_clone_container_name,
-                command=_get_rclone_mount_command(
-                    mount_settings=mount_settings,
-                    r_clone_config_content=self.r_clone_config_content,
-                    remote_path=self.remote_path,
-                    local_mount_path=self.local_mount_path,
-                    rc_port=self.rc_port,
-                    rc_user=self.rc_user,
-                    rc_password=self.rc_password,
-                ),
-                r_clone_version=self.r_clone_settings.R_CLONE_VERSION,
-                rc_port=self.rc_port,
-                r_clone_network_name=self._r_clone_network_name,
+        assert self.r_clone_settings.R_CLONE_VERSION is not None  # nosec
+        mount_settings = self.r_clone_settings.R_CLONE_MOUNT_SETTINGS
+        await _docker_utils.create_r_clone_container(
+            self.delegate,
+            self.r_clone_container_name,
+            command=_get_rclone_mount_command(
+                mount_settings=mount_settings,
+                r_clone_config_content=self.r_clone_config_content,
+                remote_path=self.remote_path,
                 local_mount_path=self.local_mount_path,
-                memory_limit=mount_settings.R_CLONE_MOUNT_CONTAINER_MEMORY_LIMIT,
-                nano_cpus=mount_settings.R_CLONE_MOUNT_CONTAINER_NANO_CPUS,
-                handler_get_bind_paths=self.handler_get_bind_paths,
-            )
+                rc_port=self.rc_port,
+                rc_user=self.rc_user,
+                rc_password=self.rc_password,
+            ),
+            r_clone_version=self.r_clone_settings.R_CLONE_VERSION,
+            rc_port=self.rc_port,
+            r_clone_network_name=self._r_clone_network_name,
+            local_mount_path=self.local_mount_path,
+            memory_limit=mount_settings.R_CLONE_MOUNT_CONTAINER_MEMORY_LIMIT,
+            nano_cpus=mount_settings.R_CLONE_MOUNT_CONTAINER_NANO_CPUS,
+        )
 
     async def remove(self):
-        async with _docker_utils.get_or_create_docker_session(None) as client:
-            await _docker_utils.remove_container_if_exists(client, self.r_clone_container_name)
-            await _docker_utils.remove_network_if_exists(client, self.r_clone_container_name)
+        await _docker_utils.remove_container_if_exists(self.delegate, self.r_clone_container_name)
+        await _docker_utils.remove_network_if_exists(self.delegate, self.r_clone_container_name)
 
 
 class RemoteControlHttpClient:

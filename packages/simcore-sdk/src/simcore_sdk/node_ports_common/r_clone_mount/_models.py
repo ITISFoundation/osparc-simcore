@@ -1,8 +1,12 @@
+from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Protocol
+from typing import TYPE_CHECKING, Any
 
 from models_library.progress_bar import ProgressReport
 from pydantic import BaseModel
+
+if TYPE_CHECKING:
+    from aiodocker.types import JSONObject
 
 type MountId = str
 
@@ -14,13 +18,47 @@ class MountActivity(BaseModel):
     queued: list[str]
 
 
-class GetBindPathsProtocol(Protocol):
-    async def __call__(self, state_path: Path) -> list: ...
+class DelegateInterface(ABC):
+    @abstractmethod
+    async def get_bind_paths(self, state_path: Path) -> list:
+        """
+        Provides bind paths for rclone mount given the state path
+        returns: a vfs_cache mount and the state_path mount
+        """
 
+    @abstractmethod
+    async def mount_activity(self, state_path: Path, activity: MountActivity) -> None:
+        """
+        Callback notifying the caller about the mount activity
+        """
 
-class MountActivityProtocol(Protocol):
-    async def __call__(self, state_path: Path, activity: MountActivity) -> None: ...
+    @abstractmethod
+    async def request_shutdown(self) -> None:
+        """
+        If the rclone mount container restarts the fuse mount ids will change,
+        which are not propagated to other containers mounting the volume.
+        A shutdown is necessary to save current state and ensure data is not lost.
+        """
 
+    # basic docker REST interface
 
-class RequestShutdownProtocol(Protocol):
-    async def __call__(self) -> None: ...
+    @abstractmethod
+    async def create_container(self, config: "JSONObject", name: str) -> None: ...
+
+    @abstractmethod
+    async def container_inspect(self, container_name: str) -> dict[str, Any]: ...
+
+    @abstractmethod
+    async def remove_container(self, container_name: str) -> None: ...
+
+    @abstractmethod
+    async def create_network(self, config: dict[str, Any]) -> None: ...
+
+    @abstractmethod
+    async def connect_container_to_network(self, container_id: str, network_name: str) -> None: ...
+
+    @abstractmethod
+    async def disconnect_container_from_network(self, container_id: str, network_name: str) -> None: ...
+
+    @abstractmethod
+    async def remove_network(self, network_name: str) -> None: ...

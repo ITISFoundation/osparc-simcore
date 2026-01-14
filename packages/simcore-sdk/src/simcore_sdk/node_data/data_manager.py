@@ -20,23 +20,14 @@ from ..node_ports_common import filemanager
 from ..node_ports_common.constants import SIMCORE_LOCATION
 from ..node_ports_common.dbmanager import DBManager
 from ..node_ports_common.file_io_utils import LogRedirectCB
-from ..node_ports_common.r_clone_mount import (
-    GetBindPathsProtocol,
-    MountActivityProtocol,
-    MountRemoteType,
-    RCloneMountManager,
-)
+from ..node_ports_common.r_clone_mount import MountRemoteType, RCloneMountManager
 
 _logger = logging.getLogger(__name__)
 
 
-def __create_s3_object_key(
-    project_id: ProjectID, node_id: NodeID, file_path: Path | str
-) -> StorageFileID:
+def __create_s3_object_key(project_id: ProjectID, node_id: NodeID, file_path: Path | str) -> StorageFileID:
     file_name = file_path.name if isinstance(file_path, Path) else file_path
-    return TypeAdapter(StorageFileID).validate_python(
-        f"{project_id}/{node_id}/{file_name}"
-    )
+    return TypeAdapter(StorageFileID).validate_python(f"{project_id}/{node_id}/{file_name}")
 
 
 def __get_s3_name(path: Path, *, is_archive: bool) -> str:
@@ -55,9 +46,7 @@ async def _push_directory(
     progress_bar: ProgressBarData,
 ) -> None:
     s3_object = __create_s3_object_key(project_id, node_uuid, source_path)
-    with log_context(
-        _logger, logging.INFO, f"uploading {source_path.name} to S3 to {s3_object}"
-    ):
+    with log_context(_logger, logging.INFO, f"uploading {source_path.name} to S3 to {s3_object}"):
         await filemanager.upload_path(
             user_id=user_id,
             store_id=SIMCORE_LOCATION,
@@ -84,9 +73,7 @@ async def _pull_directory(
 ) -> None:
     save_to_path = destination_path if save_to is None else save_to
     s3_object = __create_s3_object_key(project_id, node_uuid, destination_path)
-    with log_context(
-        _logger, logging.INFO, f"pulling data from {s3_object} to {save_to_path}"
-    ):
+    with log_context(_logger, logging.INFO, f"pulling data from {s3_object} to {save_to_path}"):
         await filemanager.download_path_from_s3(
             user_id=user_id,
             store_id=SIMCORE_LOCATION,
@@ -111,13 +98,9 @@ async def _pull_legacy_archive(
 ) -> None:
     # NOTE: the legacy way of storing states was as zip archives
     archive_path = legacy_destination_path or destination_path
-    async with progress_bar.sub_progress(
-        steps=2, description=f"pulling {archive_path.name}"
-    ) as sub_prog:
+    async with progress_bar.sub_progress(steps=2, description=f"pulling {archive_path.name}") as sub_prog:
         with TemporaryDirectory() as tmp_dir_name:
-            archive_file = Path(tmp_dir_name) / __get_s3_name(
-                archive_path, is_archive=True
-            )
+            archive_file = Path(tmp_dir_name) / __get_s3_name(archive_path, is_archive=True)
 
             s3_object = __create_s3_object_key(project_id, node_uuid, archive_file)
             _logger.info("pulling data from %s to %s...", s3_object, archive_file)
@@ -134,9 +117,7 @@ async def _pull_legacy_archive(
             _logger.info("completed pull of %s.", archive_path)
 
             if io_log_redirect_cb:
-                await io_log_redirect_cb(
-                    f"unarchiving {downloaded_file} into {destination_path}, please wait..."
-                )
+                await io_log_redirect_cb(f"unarchiving {downloaded_file} into {destination_path}, please wait...")
             await unarchive_dir(
                 archive_to_extract=downloaded_file,
                 destination_folder=destination_path,
@@ -144,9 +125,7 @@ async def _pull_legacy_archive(
                 log_cb=io_log_redirect_cb,
             )
             if io_log_redirect_cb:
-                await io_log_redirect_cb(
-                    f"unarchiving {downloaded_file} into {destination_path} completed."
-                )
+                await io_log_redirect_cb(f"unarchiving {downloaded_file} into {destination_path} completed.")
 
 
 async def _state_metadata_entry_exists(
@@ -160,9 +139,7 @@ async def _state_metadata_entry_exists(
     """
     :returns True if an entry is present inside the files_metadata else False
     """
-    s3_object = __create_s3_object_key(
-        project_id, node_uuid, __get_s3_name(path, is_archive=is_archive)
-    )
+    s3_object = __create_s3_object_key(project_id, node_uuid, __get_s3_name(path, is_archive=is_archive))
     _logger.debug("Checking if s3_object='%s' is present", s3_object)
     return await filemanager.entry_exists(
         user_id=user_id,
@@ -176,25 +153,17 @@ async def _delete_legacy_archive(
     project_id: ProjectID, node_uuid: NodeID, path: Path, *, application_name: str
 ) -> None:
     """removes the .zip state archive from storage"""
-    s3_object = __create_s3_object_key(
-        project_id, node_uuid, __get_s3_name(path, is_archive=True)
-    )
+    s3_object = __create_s3_object_key(project_id, node_uuid, __get_s3_name(path, is_archive=True))
     _logger.debug("Deleting s3_object='%s' is archive", s3_object)
 
     # NOTE: if service is opened by a person which the users shared it with,
     # they will not have the permission to delete the node
     # Removing it via it's owner allows to always have access to the delete operation.
-    owner_id = await DBManager(
-        application_name=application_name
-    ).get_project_owner_user_id(project_id)
-    await filemanager.delete_file(
-        user_id=owner_id, store_id=SIMCORE_LOCATION, s3_object=s3_object
-    )
+    owner_id = await DBManager(application_name=application_name).get_project_owner_user_id(project_id)
+    await filemanager.delete_file(user_id=owner_id, store_id=SIMCORE_LOCATION, s3_object=s3_object)
 
 
-async def _stop_mount(
-    mount_manager: RCloneMountManager, destination_path: Path, index: NonNegativeInt
-) -> None:
+async def _stop_mount(mount_manager: RCloneMountManager, destination_path: Path, index: NonNegativeInt) -> None:
     await mount_manager.ensure_unmounted(destination_path, index)
 
 
@@ -254,9 +223,7 @@ async def push(  # pylint: disable=too-many-arguments  # noqa: PLR0913
             is_archive=True,
         )
         if legacy_archive_exists:
-            with log_context(
-                _logger, logging.INFO, f"removing legacy archive in {legacy_state}"
-            ):
+            with log_context(_logger, logging.INFO, f"removing legacy archive in {legacy_state}"):
                 await _delete_legacy_archive(
                     project_id=project_id,
                     node_uuid=node_uuid,
@@ -265,13 +232,11 @@ async def push(  # pylint: disable=too-many-arguments  # noqa: PLR0913
                 )
 
 
-async def _requires_r_clone_mounting(
-    application_name: str, user_id: UserID, product_name: ProductName
-) -> bool:
+async def _requires_r_clone_mounting(application_name: str, user_id: UserID, product_name: ProductName) -> bool:
     try:
-        group_extra_properties = await DBManager(
-            application_name=application_name
-        ).get_group_extra_properties(user_id=user_id, product_name=product_name)
+        group_extra_properties = await DBManager(application_name=application_name).get_group_extra_properties(
+            user_id=user_id, product_name=product_name
+        )
     except GroupExtraPropertiesNotFoundError:
         return False
     return group_extra_properties.use_r_clone_mounting is True
@@ -284,8 +249,6 @@ async def _start_mount_if_required(
     node_id: NodeID,
     destination_path: Path,
     index: NonNegativeInt,
-    handler_get_bind_paths: GetBindPathsProtocol,
-    handler_mount_activity: MountActivityProtocol,
     *,
     use_r_clone_mount: bool,
 ) -> None:
@@ -304,8 +267,6 @@ async def _start_mount_if_required(
         node_id=node_id,
         remote_type=MountRemoteType.S3,
         remote_path=s3_object,
-        handler_get_bind_paths=handler_get_bind_paths,
-        handler_mount_activity=handler_mount_activity,
     )
 
 
@@ -323,14 +284,10 @@ async def pull(  # pylint: disable=too-many-arguments  # noqa: PLR0913
     legacy_state: LegacyState | None,
     application_name: str,
     mount_manager: RCloneMountManager,
-    handler_get_bind_paths: GetBindPathsProtocol,
-    handler_mount_activity: MountActivityProtocol,
 ) -> None:
     """restores the state folder"""
 
-    use_r_clone_mount = await _requires_r_clone_mounting(
-        application_name, user_id, product_name
-    )
+    use_r_clone_mount = await _requires_r_clone_mounting(application_name, user_id, product_name)
 
     if legacy_state and legacy_state.new_state_path == destination_path:
         _logger.info(
@@ -368,8 +325,6 @@ async def pull(  # pylint: disable=too-many-arguments  # noqa: PLR0913
                     node_uuid,
                     destination_path,
                     index,
-                    handler_get_bind_paths,
-                    handler_mount_activity,
                     use_r_clone_mount=use_r_clone_mount,
                 )
             return
@@ -398,8 +353,6 @@ async def pull(  # pylint: disable=too-many-arguments  # noqa: PLR0913
                 node_uuid,
                 destination_path,
                 index,
-                handler_get_bind_paths,
-                handler_mount_activity,
                 use_r_clone_mount=use_r_clone_mount,
             )
         return
@@ -420,8 +373,6 @@ async def pull(  # pylint: disable=too-many-arguments  # noqa: PLR0913
                 node_uuid,
                 destination_path,
                 index,
-                handler_get_bind_paths,
-                handler_mount_activity,
                 use_r_clone_mount=use_r_clone_mount,
             )
         else:
@@ -444,8 +395,6 @@ async def pull(  # pylint: disable=too-many-arguments  # noqa: PLR0913
         node_uuid,
         destination_path,
         index,
-        handler_get_bind_paths,
-        handler_mount_activity,
         use_r_clone_mount=use_r_clone_mount,
     )
     _logger.debug("No content previously saved for '%s'", destination_path)

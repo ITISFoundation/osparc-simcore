@@ -5,11 +5,10 @@
 # pylint: disable=unused-argument
 import asyncio
 import contextlib
-import functools
 import os
 from collections.abc import AsyncIterable, AsyncIterator, Iterator
 from pathlib import Path
-from typing import cast
+from typing import Any, cast
 from unittest.mock import AsyncMock
 
 import aioboto3
@@ -18,6 +17,8 @@ import aiofiles
 import pytest
 from _pytest._py.path import LocalPath
 from aiobotocore.session import ClientCreatorContext
+from aiodocker import Docker
+from aiodocker.networks import DockerNetwork
 from aiodocker.types import JSONObject
 from botocore.client import Config
 from faker import Faker
@@ -32,7 +33,7 @@ from servicelib.file_utils import create_sha256_checksum
 from servicelib.logging_utils import _dampen_noisy_loggers
 from settings_library.r_clone import DEFAULT_VFS_CACHE_PATH, RCloneSettings
 from simcore_sdk.node_ports_common.r_clone_mount import (
-    GetBindPathsProtocol,
+    DelegateInterface,
     MountActivity,
     MountRemoteType,
     RCloneMountManager,
@@ -108,14 +109,73 @@ async def mocked_shutdown() -> AsyncMock:
     return AsyncMock()
 
 
+class _TestingDelegate(DelegateInterface):
+    def __init__(self, vfs_cache_path: Path, mocked_shutdown: AsyncMock) -> None:
+        self.vfs_cache_path = vfs_cache_path
+        self.mocked_shutdown = mocked_shutdown
+
+    async def get_bind_paths(self, state_path: Path) -> list:
+        return [
+            {
+                "Type": "bind",
+                "Source": f"{state_path}",
+                "Target": f"{state_path}",
+                "BindOptions": {"Propagation": "rshared"},
+            },
+            {
+                "Type": "bind",
+                "Source": f"{self.vfs_cache_path}",
+                "Target": f"{DEFAULT_VFS_CACHE_PATH}",
+                "BindOptions": {"Propagation": "rshared"},
+            },
+        ]
+
+    async def mount_activity(self, state_path: Path, activity: MountActivity) -> None:
+        print(f"⏳ {state_path=} {activity=}")
+
+    async def request_shutdown(self) -> None:
+        await self.mocked_shutdown()
+
+    async def create_container(self, config: JSONObject, name: str) -> None:
+        async with Docker() as client:
+            await client.containers.run(config=config, name=name)
+
+    async def container_inspect(self, container_name: str) -> dict[str, Any]:
+        async with Docker() as client:
+            existing_container = await client.containers.get(container_name)
+            return await existing_container.show()
+
+    async def remove_container(self, container_name: str) -> None:
+        async with Docker() as client:
+            existing_container = await client.containers.get(container_name)
+            await existing_container.delete(force=True)
+
+    async def create_network(self, config: dict[str, Any]) -> None:
+        async with Docker() as client:
+            await client.networks.create(config)
+
+    async def connect_container_to_network(self, container_id: str, network_name: str) -> None:
+        async with Docker() as client:
+            existing_network = DockerNetwork(client, network_name)
+            await existing_network.connect({"Container": container_id})
+
+    async def disconnect_container_from_network(self, container_id: str, network_name: str) -> None:
+        async with Docker() as client:
+            existing_network = DockerNetwork(client, network_name)
+            await existing_network.disconnect({"Container": container_id})
+
+    async def remove_network(self, network_name: str) -> None:
+        async with Docker() as client:
+            existing_network = DockerNetwork(client, network_name)
+            await existing_network.show()
+            await existing_network.delete()
+
+
 @pytest.fixture
 async def r_clone_mount_manager(
-    r_clone_settings: RCloneSettings, mocked_shutdown: AsyncMock
+    r_clone_settings: RCloneSettings, mocked_shutdown: AsyncMock, vfs_cache_path: Path
 ) -> AsyncIterator[RCloneMountManager]:
-    async def _mock_shutdown_request_handler() -> None:
-        await mocked_shutdown()
-
-    manager = RCloneMountManager(r_clone_settings, handler_request_shutdown=_mock_shutdown_request_handler)
+    manager = RCloneMountManager(r_clone_settings, delegate=_TestingDelegate(vfs_cache_path, mocked_shutdown))
     await manager.setup()
 
     yield manager
@@ -180,6 +240,7 @@ async def mocked_self_container(mocker: MockerFixture) -> AsyncIterator[None]:
 @pytest.fixture
 async def mocked_r_clone_container_config(mocker: MockerFixture) -> None:
     async def _patched_get_config(
+        delegate: DelegateInterface,
         command: str,
         r_clone_version: str,
         rc_port: PortInt,
@@ -187,9 +248,9 @@ async def mocked_r_clone_container_config(mocker: MockerFixture) -> None:
         local_mount_path: Path,
         memory_limit: ByteSize,
         nano_cpus: NonNegativeInt,
-        handler_get_bind_paths: GetBindPathsProtocol,
     ) -> JSONObject:
         config = await original_get_config(
+            delegate,
             command,
             r_clone_version,
             rc_port,
@@ -197,7 +258,6 @@ async def mocked_r_clone_container_config(mocker: MockerFixture) -> None:
             local_mount_path,
             memory_limit,
             nano_cpus,
-            handler_get_bind_paths,
         )
         # Add port forwarding to access from host
         config["HostConfig"]["PortBindings"] = {f"{rc_port}/tcp": [{"HostPort": str(rc_port)}]}
@@ -217,10 +277,6 @@ async def mocked_r_clone_container_config(mocker: MockerFixture) -> None:
         original_init(self, "localhost", rc_port, *args, **kwargs)
 
     mocker.patch.object(RemoteControlHttpClient, "__init__", _patched_init)
-
-
-async def _handle_mount_activity(state_path: Path, activity: MountActivity) -> None:
-    print(f"⏳ {state_path=} {activity=}")
 
 
 async def _create_random_binary_file(
@@ -289,23 +345,6 @@ async def _get_file_checksums_from_s3(
     return checksums
 
 
-async def _get_bind_paths_protocol(vfs_cache_path: Path, state_path: Path) -> list[dict]:
-    return [
-        {
-            "Type": "bind",
-            "Source": f"{state_path}",
-            "Target": f"{state_path}",
-            "BindOptions": {"Propagation": "rshared"},
-        },
-        {
-            "Type": "bind",
-            "Source": f"{vfs_cache_path}",
-            "Target": f"{DEFAULT_VFS_CACHE_PATH}",
-            "BindOptions": {"Propagation": "rshared"},
-        },
-    ]
-
-
 async def test_workflow(
     moto_server: None,
     mocked_r_clone_container_config: None,
@@ -316,7 +355,6 @@ async def test_workflow(
     node_id: NodeID,
     remote_path: StorageFileID,
     local_mount_path: Path,
-    vfs_cache_path: Path,
     index: int,
     s3_client: S3Client,
     mocked_shutdown: AsyncMock,
@@ -327,8 +365,6 @@ async def test_workflow(
         remote_path=remote_path,
         node_id=node_id,
         index=index,
-        handler_get_bind_paths=functools.partial(_get_bind_paths_protocol, vfs_cache_path),
-        handler_mount_activity=_handle_mount_activity,
     )
 
     # create random test files
@@ -371,7 +407,6 @@ async def test_container_recovers_and_shutdown_is_emitted(
     node_id: NodeID,
     remote_path: StorageFileID,
     local_mount_path: Path,
-    vfs_cache_path: Path,
     index: int,
     mocked_shutdown: AsyncMock,
 ) -> None:
@@ -381,8 +416,6 @@ async def test_container_recovers_and_shutdown_is_emitted(
         remote_path=remote_path,
         node_id=node_id,
         index=index,
-        handler_get_bind_paths=functools.partial(_get_bind_paths_protocol, vfs_cache_path),
-        handler_mount_activity=_handle_mount_activity,
     )
 
     # Get the tracked mount and its container
