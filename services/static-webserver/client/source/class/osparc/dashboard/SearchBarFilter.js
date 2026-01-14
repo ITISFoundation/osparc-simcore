@@ -445,6 +445,11 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
 
     __filter: function() {
       const filterData = this.getFilterData();
+      // if text is shorter than 3 chars, ignore
+      if (filterData["text"].length > 0 && filterData["text"].length < 3) {
+        osparc.FlashMessenger.logAs(this.tr("Please enter at least 3 characters to search."), "INFO");
+        return;
+      }
       if (JSON.stringify(this.__currentFilter) !== JSON.stringify(filterData)) {
         this.__currentFilter = filterData;
         this.fireDataEvent("filterChanged", filterData);

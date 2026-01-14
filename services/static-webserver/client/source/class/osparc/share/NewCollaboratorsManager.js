@@ -372,16 +372,21 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
 
       const existingCollaborators = existingCollabs.map(c => parseInt(c));
       potentialCollaborators.forEach(potentialCollaborator => {
+        const groupId = potentialCollaborator.getGroupId();
         // do not list the potentialCollaborators that are already collaborators
-        if (existingCollaborators.includes(potentialCollaborator.getGroupId())) {
+        if (existingCollaborators.includes(groupId)) {
           return;
         }
         // do not list the potentialCollaborators that were selected
-        if (potentialCollaborator.getGroupId() in this.__selectedCollaborators) {
+        if (groupId in this.__selectedCollaborators) {
           return;
         }
         // do not list the potentialCollaborators that were already listed
-        if (potentialCollaboratorList.getChildren().find(c => "groupId" in c && c["groupId"] === potentialCollaborator.getGroupId())) {
+        if (potentialCollaboratorList.getChildren().find(c => "groupId" in c && c["groupId"] === groupId)) {
+          return;
+        }
+        // do not list the chatbot group if enabled
+        if (osparc.store.Groups.getInstance().isChatbotEnabled() && osparc.store.Groups.getInstance().getChatbot().getGroupId() === groupId) {
           return;
         }
         // maybe, do not list the organizations

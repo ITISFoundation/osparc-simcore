@@ -104,14 +104,12 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
         icon: "@FontAwesome5Solid/plus/14",
         allowGrowX: false
       });
-      createOrgBtn.addListener("execute", function() {
-        const title = this.tr("New Organization");
+      createOrgBtn.addListener("execute", () => {
         const orgEditor = new osparc.editor.OrganizationEditor();
-        const win = osparc.ui.window.Window.popUpInWindow(orgEditor, title, 400, 200);
         orgEditor.addListener("createOrg", () => {
-          this.__createOrganization(win, orgEditor.getChildControl("create"), orgEditor);
+          this.__createOrganization(orgEditor, orgEditor.getChildControl("create-button"));
         });
-        orgEditor.addListener("cancel", () => win.close());
+        orgEditor.open();
       }, this);
       return createOrgBtn;
     },
@@ -232,13 +230,11 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
         return;
       }
 
-      const title = this.tr("Organization Details Editor");
       const orgEditor = new osparc.editor.OrganizationEditor(org);
-      const win = osparc.ui.window.Window.popUpInWindow(orgEditor, title, 400, 200);
       orgEditor.addListener("updateOrg", () => {
-        this.__updateOrganization(win, orgEditor.getChildControl("save"), orgEditor);
+        this.__updateOrganization(orgEditor, orgEditor.getChildControl("save-button"));
       });
-      orgEditor.addListener("cancel", () => win.close());
+      orgEditor.open();
     },
 
     __deleteOrganization: function(orgKey) {
@@ -279,7 +275,7 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
       }, this);
     },
 
-    __createOrganization: function(win, button, orgEditor) {
+    __createOrganization: function(orgEditor, button) {
       const name = orgEditor.getLabel();
       const description = orgEditor.getDescription();
       const thumbnail = orgEditor.getThumbnail();
@@ -296,11 +292,11 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
         })
         .finally(() => {
           button.setFetching(false);
-          win.close();
+          orgEditor.close();
         });
     },
 
-    __updateOrganization: function(win, button, orgEditor) {
+    __updateOrganization: function(orgEditor, button) {
       const groupId = orgEditor.getGid();
       const name = orgEditor.getLabel();
       const description = orgEditor.getDescription();
@@ -308,13 +304,14 @@ qx.Class.define("osparc.desktop.organizations.OrganizationsList", {
       osparc.store.Groups.getInstance().patchOrganization(groupId, name, description, thumbnail)
         .then(() => {
           osparc.FlashMessenger.logAs(name + this.tr(" successfully edited"));
-          button.setFetching(false);
-          win.close();
         })
         .catch(err => {
           const msg = this.tr("Something went wrong while editing ") + name;
           osparc.FlashMessenger.logError(err, msg);
+        })
+        .finally(() => {
           button.setFetching(false);
+          orgEditor.close();
         });
     }
   }
