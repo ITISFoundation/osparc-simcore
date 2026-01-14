@@ -44,10 +44,8 @@ EXPECTED_DYNAMIC_SIDECAR_ENV_VAR_NAMES: Final[set[str]] = {
     "POSTGRES_PASSWORD",
     "POSTGRES_PORT",
     "POSTGRES_USER",
-    "R_CLONE_MOUNT_SETTINGS",
-    "R_CLONE_OPTION_BUFFER_SIZE",
-    "R_CLONE_OPTION_RETRIES",
-    "R_CLONE_OPTION_TRANSFERS",
+    "R_CLONE_SIMCORE_SDK_MOUNT_SETTINGS",
+    "R_CLONE_SIMCORE_SDK_SYNC_SETTINGS",
     "R_CLONE_PROVIDER",
     "RABBIT_HOST",
     "RABBIT_PASSWORD",
@@ -141,9 +139,7 @@ def test_dynamic_sidecar_env_vars(
                     "}"
                 ),
             },
-            _StorageConfig(
-                "overwrite-host", "44", "overwrite-user", "overwrite-passwd", "1"
-            ),
+            _StorageConfig("overwrite-host", "44", "overwrite-user", "overwrite-passwd", "1"),
             id="host-port-and-node-ports-config",
         ),
         pytest.param(
@@ -157,9 +153,7 @@ def test_dynamic_sidecar_env_vars(
                     "}"
                 ),
             },
-            _StorageConfig(
-                "overwrite-host", "44", "overwrite-user", "overwrite-passwd", "0"
-            ),
+            _StorageConfig("overwrite-host", "44", "overwrite-user", "overwrite-passwd", "0"),
             id="only-node-ports-config",
         ),
     ],

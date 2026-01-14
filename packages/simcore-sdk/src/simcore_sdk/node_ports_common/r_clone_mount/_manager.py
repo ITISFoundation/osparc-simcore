@@ -76,7 +76,7 @@ class _TrackedMount:  # pylint:disable=too-many-instance-attributes
             rc_host=self._container_manager.r_clone_container_name,
             rc_user=rc_user,
             rc_password=rc_password,
-            transfers_completed_timeout=r_clone_settings.R_CLONE_MOUNT_SETTINGS.R_CLONE_MOUNT_TRANSFERS_COMPLETED_TIMEOUT,
+            transfers_completed_timeout=r_clone_settings.R_CLONE_SIMCORE_SDK_MOUNT_SETTINGS.R_CLONE_SIMCORE_SDK_MOUNT_TRANSFERS_COMPLETED_TIMEOUT,
         )
 
     async def _update_and_notify_mount_activity(self, mount_activity: MountActivity) -> None:

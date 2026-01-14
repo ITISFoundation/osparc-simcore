@@ -15,8 +15,8 @@ from settings_library.r_clone import (
     DEFAULT_VFS_CACHE_MAX_SIZE,
     DEFAULT_VFS_CACHE_PATH,
     TPSLIMIT,
-    RCloneMountSettings,
     RCloneSettings,
+    SimcoreSDKMountSettings,
 )
 from tenacity import (
     before_sleep_log,
@@ -26,6 +26,7 @@ from tenacity import (
     wait_fixed,
 )
 
+from ..r_clone_utils import overwrite_command
 from . import _docker_utils
 from ._config_provider import CONFIG_KEY
 from ._errors import (
@@ -76,7 +77,7 @@ cleanup
 
 
 def _get_rclone_mount_command(
-    mount_settings: RCloneMountSettings,
+    mount_settings: SimcoreSDKMountSettings,
     r_clone_config_content: str,
     remote_path: StorageFileID,
     local_mount_path: Path,
@@ -86,71 +87,76 @@ def _get_rclone_mount_command(
 ) -> str:
     escaped_remote_path = f"{remote_path}".lstrip("/")
 
+    command_parts = [
+        "rclone",
+        "--config",
+        f"{mount_settings.R_CLONE_SIMCORE_SDK_MOUNT_CONTAINER_CONFIG_FILE_PATH}",
+        ("-vv" if mount_settings.R_CLONE_SIMCORE_SDK_MOUNT_CONTAINER_SHOW_DEBUG_LOGS else ""),
+        "mount",
+        f"{CONFIG_KEY}:{escaped_remote_path}",
+        f"{local_mount_path}",
+        # VFS
+        "--vfs-cache-mode",
+        "full",
+        "--vfs-read-ahead",
+        "16M",
+        "--vfs-cache-max-size",
+        DEFAULT_VFS_CACHE_MAX_SIZE,
+        "--vfs-cache-min-free-space",
+        "5G",
+        "--vfs-cache-poll-interval",
+        "1m",
+        "--write-back-cache",
+        "--vfs-write-back",
+        "10s",
+        "--cache-dir",
+        f"{DEFAULT_VFS_CACHE_PATH}",
+        "--dir-cache-time",
+        "10m",
+        "--attr-timeout",
+        "1m",
+        "--tpslimit",
+        f"{TPSLIMIT}",
+        "--tpslimit-burst",
+        f"{TPSLIMIT * 2}",
+        "--no-modtime",
+        "--max-buffer-memory",
+        "16M",
+        # TRANSFERS
+        "--retries",
+        "3",
+        "--retries-sleep",
+        "30s",
+        "--transfers",
+        "15",
+        "--buffer-size",
+        "16M",
+        "--checkers",
+        "8",
+        "--s3-upload-concurrency",
+        "5",
+        "--s3-chunk-size",
+        "16M",
+        "--order-by",
+        "size,mixed",
+        # REMOTE CONTROL
+        "--rc",
+        f"--rc-addr=0.0.0.0:{rc_port}",
+        "--rc-enable-metrics",
+        f"--rc-user='{rc_user}'",
+        f"--rc-pass='{rc_password}'",
+        "--allow-non-empty",
+        "--allow-other",
+    ]
     r_clone_command = " ".join(
-        [
-            "rclone",
-            "--config",
-            f"{mount_settings.R_CLONE_MOUNT_CONTAINER_CONFIG_FILE_PATH}",
-            ("-vv" if mount_settings.R_CLONE_MOUNT_CONTAINER_SHOW_DEBUG_LOGS else ""),
-            "mount",
-            f"{CONFIG_KEY}:{escaped_remote_path}",
-            f"{local_mount_path}",
-            # VFS
-            "--vfs-cache-mode",
-            "full",
-            "--vfs-read-ahead",
-            "16M",
-            "--vfs-cache-max-size",
-            DEFAULT_VFS_CACHE_MAX_SIZE,
-            "--vfs-cache-min-free-space",
-            "5G",
-            "--vfs-cache-poll-interval",
-            "1m",
-            "--write-back-cache",
-            "--vfs-write-back",
-            "10s",
-            "--cache-dir",
-            f"{DEFAULT_VFS_CACHE_PATH}",
-            "--dir-cache-time",
-            "10m",
-            "--attr-timeout",
-            "1m",
-            "--tpslimit",
-            f"{TPSLIMIT}",
-            "--tpslimit-burst",
-            f"{TPSLIMIT * 2}",
-            "--no-modtime",
-            "--max-buffer-memory",
-            "16M",
-            # TRANSFERS
-            "--retries",
-            "3",
-            "--retries-sleep",
-            "30s",
-            "--transfers",
-            "15",
-            "--buffer-size",
-            "16M",
-            "--checkers",
-            "8",
-            "--s3-upload-concurrency",
-            "5",
-            "--s3-chunk-size",
-            "16M",
-            "--order-by",
-            "size,mixed",
-            # REMOTE CONTROL
-            "--rc",
-            f"--rc-addr=0.0.0.0:{rc_port}",
-            "--rc-enable-metrics",
-            f"--rc-user='{rc_user}'",
-            f"--rc-pass='{rc_password}'",
-            "--allow-non-empty",
-            "--allow-other",
-        ]
+        overwrite_command(
+            command_parts,
+            edit=mount_settings.R_CLONE_SIMCORE_SDK_MOUNT_COMMAND_EDIT_ENTRIES,
+            remove=mount_settings.R_CLONE_SIMCORE_SDK_MOUNT_COMMAND_REMOVE_ENTRIES,
+        )
     )
     return _R_CLONE_MOUNT_TEMPLATE.format(
-        r_clone_config_path=mount_settings.R_CLONE_MOUNT_CONTAINER_CONFIG_FILE_PATH,
+        r_clone_config_path=mount_settings.R_CLONE_SIMCORE_SDK_MOUNT_CONTAINER_CONFIG_FILE_PATH,
         r_clone_config_content=r_clone_config_content,
         r_clone_command=r_clone_command,
         local_mount_path=local_mount_path,
@@ -203,7 +209,7 @@ class ContainerManager:  # pylint:disable=too-many-instance-attributes
         await _docker_utils.create_network_and_connect_current_container(self.delegate, self._r_clone_network_name)
 
         assert self.r_clone_settings.R_CLONE_VERSION is not None  # nosec
-        mount_settings = self.r_clone_settings.R_CLONE_MOUNT_SETTINGS
+        mount_settings = self.r_clone_settings.R_CLONE_SIMCORE_SDK_MOUNT_SETTINGS
         await _docker_utils.create_r_clone_container(
             self.delegate,
             self.r_clone_container_name,
@@ -220,8 +226,8 @@ class ContainerManager:  # pylint:disable=too-many-instance-attributes
             rc_port=self.rc_port,
             r_clone_network_name=self._r_clone_network_name,
             local_mount_path=self.local_mount_path,
-            memory_limit=mount_settings.R_CLONE_MOUNT_CONTAINER_MEMORY_LIMIT,
-            nano_cpus=mount_settings.R_CLONE_MOUNT_CONTAINER_NANO_CPUS,
+            memory_limit=mount_settings.R_CLONE_SIMCORE_SDK_MOUNT_CONTAINER_MEMORY_LIMIT,
+            nano_cpus=mount_settings.R_CLONE_SIMCORE_SDK_MOUNT_CONTAINER_NANO_CPUS,
         )
 
     async def remove(self):

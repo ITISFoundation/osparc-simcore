@@ -80,7 +80,9 @@ def mock_env(
             "RABBIT_PORT": "5672",
             "RABBIT_USER": "admin",
             "RABBIT_SECURE": "false",
-            "REDIS_SETTINGS": '{"REDIS_SECURE":false,"REDIS_HOST":"redis","REDIS_PORT":6789,"REDIS_USER":null,"REDIS_PASSWORD":null}',
+            "REDIS_SETTINGS": (
+                '{"REDIS_SECURE":false,"REDIS_HOST":"redis","REDIS_PORT":6789,"REDIS_USER":null,"REDIS_PASSWORD":null}'
+            ),
             "REGISTRY_AUTH": "false",
             "REGISTRY_PW": "test",
             "REGISTRY_SSL": "false",
@@ -117,9 +119,7 @@ def swarm_network_id() -> str:
 @pytest.fixture
 def simcore_service_labels() -> SimcoreServiceLabels:
     # overwrites global fixture
-    return SimcoreServiceLabels.model_validate(
-        SimcoreServiceLabels.model_json_schema()["examples"][2]
-    )
+    return SimcoreServiceLabels.model_validate(SimcoreServiceLabels.model_json_schema()["examples"][2])
 
 
 @pytest.fixture
@@ -182,9 +182,7 @@ def expected_dynamic_sidecar_spec(
                         "state_exclude": ["/tmp/strip_me/*"],  # noqa: S108
                         "state_paths": ["/tmp/save_1", "/tmp_save_2"],  # noqa: S108
                     },
-                    "callbacks_mapping": CallbacksMapping.model_json_schema()[
-                        "examples"
-                    ][3],
+                    "callbacks_mapping": CallbacksMapping.model_json_schema()["examples"][3],
                     "product_name": osparc_product_name,
                     "product_api_base_url": "https://api.local/",
                     "project_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
@@ -274,11 +272,13 @@ def expected_dynamic_sidecar_spec(
                     "RABBIT_PORT": "5672",
                     "RABBIT_USER": "admin",
                     "RABBIT_SECURE": "False",
-                    "REDIS_SETTINGS": '{"REDIS_SECURE":false,"REDIS_HOST":"redis","REDIS_PORT":6789,"REDIS_USER":null,"REDIS_PASSWORD":null}',
-                    "R_CLONE_MOUNT_SETTINGS": (
-                        '{"R_CLONE_MOUNT_TRANSFERS_COMPLETED_TIMEOUT":"PT1H","R_CLONE_MOUNT_CONTAINER_CONFIG_FILE_PATH":"/tmp/rclone.conf"'
-                        ',"R_CLONE_MOUNT_CONTAINER_SHOW_DEBUG_LOGS":false,"R_CLONE_MOUNT_CONTAINER_MEMORY_LIMIT":2147483648,'
-                        '"R_CLONE_MOUNT_CONTAINER_NANO_CPUS":1000000000,"R_CLONE_MOUNT_VFS_CACHE_PATH":"/vfs-cache",'
+                    "REDIS_SETTINGS": (
+                        '{"REDIS_SECURE":false,"REDIS_HOST":"redis","REDIS_PORT":6789,"REDIS_USER":null,"REDIS_PASSWORD":null}'
+                    ),
+                    "R_CLONE_SIMCORE_SDK_MOUNT_SETTINGS": (
+                        '{"R_CLONE_SIMCORE_SDK_MOUNT_TRANSFERS_COMPLETED_TIMEOUT":"PT1H","R_CLONE_SIMCORE_SDK_MOUNT_CONTAINER_CONFIG_FILE_PATH":"/tmp/rclone.conf"'
+                        ',"R_CLONE_SIMCORE_SDK_MOUNT_CONTAINER_SHOW_DEBUG_LOGS":false,"R_CLONE_SIMCORE_SDK_MOUNT_CONTAINER_MEMORY_LIMIT":2147483648,'
+                        '"R_CLONE_SIMCORE_SDK_MOUNT_CONTAINER_NANO_CPUS":1000000000,"R_CLONE_MOUNT_VFS_CACHE_PATH":"/vfs-cache",'
                         '"R_CLONE_MOUNT_VFS_READ_AHEAD":"16M","R_CLONE_MOUNT_VFS_CACHE_MAX_SIZE":"500G","R_CLONE_MOUNT_VFS_CACHE_MIN_FREE_SPACE"'
                         ':"5G","R_CLONE_MOUNT_CACHE_POLL_INTERVAL":"1m","R_CLONE_MOUNT_VFS_WRITE_BACK":"10s","R_CLONE_MOUNT_DIR_CACHE_TIME":"10m",'
                         '"R_CLONE_MOUNT_ATTR_TIMEOUT":"1m","R_CLONE_MOUNT_TPSLIMIT":2000,"R_CLONE_MOUNT_TPSLIMIT_BURST":4000,'
@@ -286,9 +286,7 @@ def expected_dynamic_sidecar_spec(
                         '"R_CLONE_MOUNT_TRANSFERS":15,"R_CLONE_MOUNT_BUFFER_SIZE":"16M","R_CLONE_MOUNT_CHECKERS":8,'
                         '"R_CLONE_MOUNT_S3_UPLOAD_CONCURRENCY":5,"R_CLONE_MOUNT_S3_CHUNK_SIZE":"16M","R_CLONE_MOUNT_ORDER_BY":"size,mixed"}'
                     ),
-                    "R_CLONE_OPTION_BUFFER_SIZE": "16M",
-                    "R_CLONE_OPTION_RETRIES": "3",
-                    "R_CLONE_OPTION_TRANSFERS": "5",
+                    "R_CLONE_SIMCORE_SDK_SYNC_SETTINGS": "{}",
                     "R_CLONE_PROVIDER": "MINIO",
                     "SC_BOOT_MODE": "production",
                     "SIMCORE_HOST_NAME": "dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
@@ -429,9 +427,7 @@ def expected_dynamic_sidecar_spec(
             "Resources": {
                 "Limits": {"MemoryBytes": 8589934592, "NanoCPUs": 4000000000},
                 "Reservations": {
-                    "GenericResources": [
-                        {"DiscreteResourceSpec": {"Kind": "VRAM", "Value": 1}}
-                    ],
+                    "GenericResources": [{"DiscreteResourceSpec": {"Kind": "VRAM", "Value": 1}}],
                     "MemoryBytes": 536870912,
                     "NanoCPUs": 100000000,
                 },
@@ -458,14 +454,9 @@ async def test_get_dynamic_proxy_spec(
 ) -> None:
     dynamic_sidecar_spec_accumulated = None
 
-    assert (
-        dynamic_sidecar_settings
-        == minimal_app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
-    )
+    assert dynamic_sidecar_settings == minimal_app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR
 
-    expected_dynamic_sidecar_spec_model = AioDockerServiceSpec.model_validate(
-        expected_dynamic_sidecar_spec
-    )
+    expected_dynamic_sidecar_spec_model = AioDockerServiceSpec.model_validate(expected_dynamic_sidecar_spec)
     assert expected_dynamic_sidecar_spec_model.task_template
     assert expected_dynamic_sidecar_spec_model.task_template.container_spec
     assert expected_dynamic_sidecar_spec_model.task_template.container_spec.env
@@ -502,32 +493,16 @@ async def test_get_dynamic_proxy_spec(
         assert dynamic_sidecar_spec.task_template
         assert dynamic_sidecar_spec.task_template.container_spec
         assert dynamic_sidecar_spec.task_template.container_spec.env
-        assert dynamic_sidecar_spec.task_template.container_spec.env[
-            "DY_SIDECAR_STATE_EXCLUDE"
-        ]
+        assert dynamic_sidecar_spec.task_template.container_spec.env["DY_SIDECAR_STATE_EXCLUDE"]
 
-        dynamic_sidecar_spec.task_template.container_spec.env[
-            "DY_SIDECAR_STATE_EXCLUDE"
-        ] = json.dumps(
-            sorted(
-                json.loads(
-                    dynamic_sidecar_spec.task_template.container_spec.env[
-                        "DY_SIDECAR_STATE_EXCLUDE"
-                    ]
-                )
-            )
+        dynamic_sidecar_spec.task_template.container_spec.env["DY_SIDECAR_STATE_EXCLUDE"] = json.dumps(
+            sorted(json.loads(dynamic_sidecar_spec.task_template.container_spec.env["DY_SIDECAR_STATE_EXCLUDE"]))
         )
-        assert expected_dynamic_sidecar_spec_model.task_template.container_spec.env[
-            "DY_SIDECAR_STATE_EXCLUDE"
-        ]
-        expected_dynamic_sidecar_spec_model.task_template.container_spec.env[
-            "DY_SIDECAR_STATE_EXCLUDE"
-        ] = json.dumps(
+        assert expected_dynamic_sidecar_spec_model.task_template.container_spec.env["DY_SIDECAR_STATE_EXCLUDE"]
+        expected_dynamic_sidecar_spec_model.task_template.container_spec.env["DY_SIDECAR_STATE_EXCLUDE"] = json.dumps(
             sorted(
                 json.loads(
-                    expected_dynamic_sidecar_spec_model.task_template.container_spec.env[
-                        "DY_SIDECAR_STATE_EXCLUDE"
-                    ]
+                    expected_dynamic_sidecar_spec_model.task_template.container_spec.env["DY_SIDECAR_STATE_EXCLUDE"]
                 )
             )
         )
@@ -539,9 +514,7 @@ async def test_get_dynamic_proxy_spec(
         )
         assert dynamic_sidecar_spec.labels
         assert expected_dynamic_sidecar_spec_model.labels
-        assert sorted(dynamic_sidecar_spec.labels.keys()) == sorted(
-            expected_dynamic_sidecar_spec_model.labels.keys()
-        )
+        assert sorted(dynamic_sidecar_spec.labels.keys()) == sorted(expected_dynamic_sidecar_spec_model.labels.keys())
 
         assert (
             dynamic_sidecar_spec.labels["io.simcore.scheduler-data"]
@@ -554,10 +527,7 @@ async def test_get_dynamic_proxy_spec(
 
     # check reference after multiple runs
     assert dynamic_sidecar_spec_accumulated is not None
-    assert (
-        dynamic_sidecar_spec_accumulated.model_dump()
-        == expected_dynamic_sidecar_spec_model.model_dump()
-    )
+    assert dynamic_sidecar_spec_accumulated.model_dump() == expected_dynamic_sidecar_spec_model.model_dump()
 
 
 async def test_merge_dynamic_sidecar_specs_with_user_specific_specs(
@@ -592,44 +562,30 @@ async def test_merge_dynamic_sidecar_specs_with_user_specific_specs(
     )
     assert dynamic_sidecar_spec
     dynamic_sidecar_spec_dict = dynamic_sidecar_spec.model_dump()
-    expected_dynamic_sidecar_spec_dict = AioDockerServiceSpec.model_validate(
-        expected_dynamic_sidecar_spec
-    ).model_dump()
+    expected_dynamic_sidecar_spec_dict = AioDockerServiceSpec.model_validate(expected_dynamic_sidecar_spec).model_dump()
     # ensure some entries are sorted the same to prevent flakiness
     for sorted_dict in [dynamic_sidecar_spec_dict, expected_dynamic_sidecar_spec_dict]:
         for key in ["DY_SIDECAR_STATE_EXCLUDE", "DY_SIDECAR_STATE_PATHS"]:
             # this is a json of a list
-            assert isinstance(
-                sorted_dict["task_template"]["container_spec"]["env"][key], str
-            )
-            unsorted_list = json.loads(
-                sorted_dict["task_template"]["container_spec"]["env"][key]
-            )
+            assert isinstance(sorted_dict["task_template"]["container_spec"]["env"][key], str)
+            unsorted_list = json.loads(sorted_dict["task_template"]["container_spec"]["env"][key])
             assert isinstance(unsorted_list, list)
-            sorted_dict["task_template"]["container_spec"]["env"][key] = json.dumps(
-                unsorted_list.sort()
-            )
+            sorted_dict["task_template"]["container_spec"]["env"][key] = json.dumps(unsorted_list.sort())
     assert dynamic_sidecar_spec_dict == expected_dynamic_sidecar_spec_dict
 
     catalog_client = CatalogClient.instance(minimal_app)
-    user_service_specs: dict[str, Any] = (
-        await catalog_client.get_service_specifications(
-            scheduler_data.user_id,
-            mock_service_key_version.key,
-            mock_service_key_version.version,
-        )
+    user_service_specs: dict[str, Any] = await catalog_client.get_service_specifications(
+        scheduler_data.user_id,
+        mock_service_key_version.key,
+        mock_service_key_version.version,
     )
     assert user_service_specs
     assert "sidecar" in user_service_specs
-    user_aiodocker_service_spec = AioDockerServiceSpec.model_validate(
-        user_service_specs["sidecar"]
-    )
+    user_aiodocker_service_spec = AioDockerServiceSpec.model_validate(user_service_specs["sidecar"])
     assert user_aiodocker_service_spec
 
     orig_dict = dynamic_sidecar_spec.model_dump(by_alias=True, exclude_unset=True)
-    user_dict = user_aiodocker_service_spec.model_dump(
-        by_alias=True, exclude_unset=True
-    )
+    user_dict = user_aiodocker_service_spec.model_dump(by_alias=True, exclude_unset=True)
 
     another_merged_dict = nested_update(
         orig_dict,
@@ -640,9 +596,7 @@ async def test_merge_dynamic_sidecar_specs_with_user_specific_specs(
 
 
 def test_regression__merge_service_base_and_user_specs():
-    mock_service_spec = AioDockerServiceSpec.model_validate(
-        {"Labels": {"l1": "false", "l0": "a"}}
-    )
+    mock_service_spec = AioDockerServiceSpec.model_validate({"Labels": {"l1": "false", "l0": "a"}})
     mock_catalog_constraints = AioDockerServiceSpec.model_validate(
         {
             "Labels": {"l1": "true", "l2": "a"},
@@ -656,9 +610,7 @@ def test_regression__merge_service_base_and_user_specs():
                 "Resources": {
                     "Limits": {"MemoryBytes": 1, "NanoCPUs": 1},
                     "Reservations": {
-                        "GenericResources": [
-                            {"DiscreteResourceSpec": {"Kind": "VRAM", "Value": 1}}
-                        ],
+                        "GenericResources": [{"DiscreteResourceSpec": {"Kind": "VRAM", "Value": 1}}],
                         "MemoryBytes": 2,
                         "NanoCPUs": 2,
                     },
@@ -672,9 +624,7 @@ def test_regression__merge_service_base_and_user_specs():
             },
         }
     )
-    result = _merge_service_base_and_user_specs(
-        mock_service_spec, mock_catalog_constraints
-    )
+    result = _merge_service_base_and_user_specs(mock_service_spec, mock_catalog_constraints)
     assert result.model_dump(by_alias=True, exclude_unset=True) == {
         "Labels": {"l1": "true", "l2": "a", "l0": "a"},
         "TaskTemplate": {
@@ -687,9 +637,7 @@ def test_regression__merge_service_base_and_user_specs():
             "Resources": {
                 "Limits": {"MemoryBytes": 1, "NanoCPUs": 1},
                 "Reservations": {
-                    "GenericResources": [
-                        {"DiscreteResourceSpec": {"Kind": "VRAM", "Value": 1}}
-                    ],
+                    "GenericResources": [{"DiscreteResourceSpec": {"Kind": "VRAM", "Value": 1}}],
                     "MemoryBytes": 2,
                     "NanoCPUs": 2,
                 },

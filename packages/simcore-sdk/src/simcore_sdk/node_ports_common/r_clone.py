@@ -20,6 +20,7 @@ from .r_clone_utils import (
     CommandResultCaptureParser,
     DebugLogParser,
     SyncProgressLogParser,
+    overwrite_command,
 )
 
 _S3_CONFIG_KEY_DESTINATION: Final[str] = "s3-destination"
@@ -165,20 +166,20 @@ async def _sync_sources(
 
     r_clone_config_file_content = get_s3_r_clone_config(r_clone_settings, s3_config_key=s3_config_key)
     async with config_file(r_clone_config_file_content) as config_file_name:
-        r_clone_command = (
+        command_parts = [
             "rclone",
             "--config",
             config_file_name,
             "--retries",
-            f"{r_clone_settings.R_CLONE_OPTION_RETRIES}",
+            "3",
             "--retries-sleep",
             "30s",
             "--transfers",
-            f"{r_clone_settings.R_CLONE_OPTION_TRANSFERS}",
+            "16",  # TODO: remember to overwrite these settings in the ops configs with 32  # noqa: FIX002
             # below two options reduce to a minimum the memory footprint
             # https://forum.rclone.org/t/how-to-set-a-memory-limit/10230/4
             "--buffer-size",  # docs https://rclone.org/docs/#buffer-size-size
-            r_clone_settings.R_CLONE_OPTION_BUFFER_SIZE,
+            "16M",
             "--checkers",
             "8",
             "--s3-upload-concurrency",
@@ -199,6 +200,12 @@ async def _sync_sources(
             # filter options
             *_get_exclude_filters(exclude_patterns),
             "--links",
+        ]
+        sync_settings = r_clone_settings.R_CLONE_SIMCORE_SDK_SYNC_SETTINGS
+        r_clone_command = overwrite_command(
+            command_parts,
+            edit=sync_settings.R_CLONE_SIMCORE_SDK_SYNC_COMMAND_EDIT_ENTRIES,
+            remove=sync_settings.R_CLONE_SIMCORE_SDK_SYNC_COMMAND_REMOVE_ENTRIES,
         )
 
         async with progress_bar.sub_progress(

@@ -1,11 +1,13 @@
 import datetime
 import logging
+from copy import deepcopy
 from typing import Union
 
 from models_library.utils.change_case import snake_to_camel
-from pydantic import BaseModel, ByteSize, ConfigDict, Field, TypeAdapter
+from pydantic import BaseModel, ByteSize, ConfigDict, Field, TypeAdapter, validate_call
 from servicelib.logging_utils import log_catch
 from servicelib.progress_bar import ProgressBarData
+from settings_library.r_clone import EditEntries, RemoveEntries
 
 from ._utils import BaseLogParser
 
@@ -68,7 +70,7 @@ class SyncProgressLogParser(BaseLogParser):
     {"level":"info","msg":"\nTransferred:   \t    1.498 GiB / 4.666 GiB, 32%, 0 B/s, ETA -\nTransferred:            3 / 4, 75%\nElapsed time:         1.0s\nTransferring:\n *                                       5GBfile: 31% /4.657Gi, 0/s, -\n\n","source":"accounting/stats.go:526","stats":{"bytes":1608690526,"checks":0,"deletedDirs":0,"deletes":0,"elapsedTime":1.012386594,"errors":0,"eta":null,"fatalError":false,"renames":0,"retryError":false,"serverSideCopies":0,"serverSideCopyBytes":0,"serverSideMoveBytes":0,"serverSideMoves":0,"speed":0,"totalBytes":5010005342,"totalChecks":0,"totalTransfers":4,"transferTime":0.997407347,"transferring":[{"bytes":1598816256,"dstFs":"/devel/tests3","eta":null,"group":"global_stats","name":"5GBfile","percentage":31,"size":5000000000,"speed":1612559346.2428129,"speedAvg":0,"srcFs":"mys3:simcore/5cfdef88-013b-11ef-910e-0242ac14003e/2d544003-9eb8-47e4-bcf7-95a8c31845f7/workspace"}],"transfers":3},"time":"2024-04-23T14:05:11.40166+00:00"}
     But this prints each file, do we really want to keep bookkeeping of all this??? that can potentially be a lot of files
 
-    """
+    """  # noqa: E501
 
     def __init__(self, progress_bar: ProgressBarData) -> None:
         self.progress_bar = progress_bar
@@ -76,9 +78,7 @@ class SyncProgressLogParser(BaseLogParser):
     async def __call__(self, logs: str) -> None:
         _logger.debug("received logs: %s", logs)
         with log_catch(_logger, reraise=False):
-            rclone_message: _RCloneSyncMessages = TypeAdapter(
-                _RCloneSyncMessages
-            ).validate_json(logs)
+            rclone_message: _RCloneSyncMessages = TypeAdapter(_RCloneSyncMessages).validate_json(logs)
 
             if isinstance(rclone_message, _RCloneSyncTransferringMessage):
                 await self.progress_bar.set_(rclone_message.stats.bytes)
@@ -99,3 +99,49 @@ class CommandResultCaptureParser(BaseLogParser):
 
     def get_output(self) -> str:
         return "".join(self._logs)
+
+
+@validate_call(validate_return=True)
+def overwrite_command(source_command: list[str], *, edit: EditEntries, remove: RemoveEntries) -> list[str]:
+    """Given a `source_command` it produces a new command by applying `edit` and `remove` operations in this order.
+
+    Arguments:
+        source_command -- original rclone command
+        edit -- for each entry, if entry exists attempts to modify it otherwise extends it
+        remove -- for each entry, removes the command form the list
+    """
+    new_command = deepcopy(source_command)
+
+    index_search: dict[str, int] = {cmd: idx for idx, cmd in enumerate(source_command)}
+
+    for search_entry, option_entry in edit.items():
+        if search_entry in index_search:
+            # edit existing option
+            if isinstance(option_entry, tuple):
+                edit_option, edit_option_value = option_entry
+                new_command[index_search[search_entry]] = edit_option
+                new_command[index_search[search_entry] + 1] = edit_option_value
+            else:
+                new_command[index_search[search_entry]] = option_entry
+        else:  # noqa: PLR5501
+            # append option at the end
+            if isinstance(option_entry, tuple):
+                new_option, new_option_value = option_entry
+                new_command.extend([new_option, new_option_value])
+            else:
+                new_command.append(option_entry)
+
+    for search_entry, elements_to_remove in remove:
+        if search_entry in index_search:
+            # removes the option and its value if any
+            idx = index_search[search_entry]
+
+            del new_command[idx : idx + elements_to_remove]
+        else:
+            _logger.warning(
+                "cannot remove entry='%s' as it does not exist in command='%s'",
+                search_entry,
+                source_command,
+            )
+
+    return new_command

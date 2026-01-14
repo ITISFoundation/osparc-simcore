@@ -73,7 +73,7 @@ def mock_environment(monkeypatch: pytest.MonkeyPatch, bucket_name: S3BucketName,
             "S3_SECRET_KEY": "test",
             "S3_REGION": "us-east-1",
             "R_CLONE_VERSION": r_clone_version,
-            "R_CLONE_MOUNT_CONTAINER_SHOW_DEBUG_LOGS": "1",
+            "R_CLONE_SIMCORE_SDK_MOUNT_CONTAINER_SHOW_DEBUG_LOGS": "1",
         },
     )
 
