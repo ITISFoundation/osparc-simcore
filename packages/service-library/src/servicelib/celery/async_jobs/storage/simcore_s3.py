@@ -24,13 +24,14 @@ async def submit_export_data(  # noqa: PLR0913
     paths_to_export: list[PathToExport],
     export_as: Literal["path", "download_link"],
 ) -> AsyncJobGet:
-    if export_as == "path":
-        task_name = EXPORT_DATA_TASK_NAME
-    elif export_as == "download_link":
-        task_name = EXPORT_DATA_AS_DOWNLOAD_LINK_TASK_NAME
-    else:
-        msg = f"Invalid export_as value: {export_as}"
-        raise ValueError(msg)
+    match export_as:
+        case "path":
+            task_name = EXPORT_DATA_TASK_NAME
+        case "download_link":
+            task_name = EXPORT_DATA_AS_DOWNLOAD_LINK_TASK_NAME
+        case _:
+            msg = f"Invalid export_as value: {export_as}"
+            raise ValueError(msg)
     task_uuid = await task_manager.submit_task(
         execution_metadata=ExecutionMetadata(
             name=task_name,

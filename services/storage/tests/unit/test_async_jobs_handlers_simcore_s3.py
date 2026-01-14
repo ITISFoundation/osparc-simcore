@@ -112,7 +112,7 @@ async def _request_copy_folders(
                 return result.result
 
     pytest.fail(reason="Copy folders failed!")
-    return {}  # for mypy
+    return {}
 
 
 async def test_copy_folders_from_non_existing_project(
@@ -537,7 +537,7 @@ async def _request_start_export_data(
                 return result.result
 
     pytest.fail(reason="data export failed!")
-    return ""  # for mypy
+    return ""
 
 
 @pytest.fixture
