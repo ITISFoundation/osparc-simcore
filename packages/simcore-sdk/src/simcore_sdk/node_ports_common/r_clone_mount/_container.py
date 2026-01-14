@@ -276,7 +276,7 @@ class RemoteControlHttpClient:
         core_stats, vfs_queue = await asyncio.gather(self._post_core_stats(), self._post_vfs_queue())
 
         return MountActivity(
-            transferring=(
+            in_transfer=(
                 {
                     x["name"]: ProgressReport(actual_value=(x["percentage"] / 100 if "percentage" in x else 0.0))
                     for x in core_stats["transferring"]

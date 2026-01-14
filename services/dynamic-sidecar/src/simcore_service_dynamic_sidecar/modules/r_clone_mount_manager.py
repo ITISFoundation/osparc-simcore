@@ -19,9 +19,9 @@ from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.services import (
 )
 from simcore_sdk.node_ports_common.r_clone_mount import (
     DelegateInterface,
+    FilesInTransfer,
     MountActivity,
     RCloneMountManager,
-    Transferring,
 )
 
 from ..core.rabbitmq import get_rabbitmq_rpc_client, post_sidecar_log_message
@@ -37,8 +37,8 @@ _EXPECTED_BIND_PATHS_COUNT: Final[NonNegativeInt] = 2
 @dataclass
 class _MountActivitySummary:
     path: Path
-    queued: int
-    transferring: Transferring
+    files_queued: int
+    files_in_transfer: FilesInTransfer
 
 
 @asynccontextmanager
@@ -96,7 +96,7 @@ class DynamicSidecarRCloneMountDelegate(DelegateInterface):
         # Frontend should receive and use this message to provide feedback to the user
         # regarding the mount activity
         summary = _MountActivitySummary(
-            path=state_path, queued=len(activity.queued), transferring=activity.transferring
+            path=state_path, files_queued=len(activity.queued), files_in_transfer=activity.in_transfer
         )
         _logger.info("Mount activity %s", summary)
 

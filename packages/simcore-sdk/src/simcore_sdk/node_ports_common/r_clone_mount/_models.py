@@ -9,13 +9,13 @@ if TYPE_CHECKING:
     from aiodocker.types import JSONObject
 
 type MountId = str
-
-type Transferring = dict[str, ProgressReport]
+type FileName = str
+type FilesInTransfer = dict[FileName, ProgressReport]
 
 
 class MountActivity(BaseModel):
-    transferring: Transferring
-    queued: list[str]
+    in_transfer: FilesInTransfer
+    queued: list[FileName]
 
 
 class DelegateInterface(ABC):
