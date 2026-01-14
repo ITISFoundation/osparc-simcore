@@ -9,8 +9,8 @@ from typing import Final
 from aiocache import cached  # type: ignore[import-untyped]
 from common_library.errors_classes import OsparcErrorMixin
 from pydantic import AnyUrl, BaseModel, ByteSize
+from servicelib.file_utils import temporary_text_file
 from servicelib.progress_bar import ProgressBarData
-from servicelib.r_clone_utils import config_file
 from servicelib.utils import logged_gather
 from settings_library.r_clone import RCloneSettings
 from settings_library.utils_r_clone import get_s3_r_clone_config
@@ -126,7 +126,7 @@ async def _get_folder_size(
     s3_config_key: str,
 ) -> ByteSize:
     r_clone_config_file_content = get_s3_r_clone_config(r_clone_settings, s3_config_key=s3_config_key)
-    async with config_file(r_clone_config_file_content) as config_file_name:
+    async with temporary_text_file(r_clone_config_file_content) as config_file_name:
         r_clone_command = (
             "rclone",
             f"--config {config_file_name}",
@@ -165,7 +165,7 @@ async def _sync_sources(
     )
 
     r_clone_config_file_content = get_s3_r_clone_config(r_clone_settings, s3_config_key=s3_config_key)
-    async with config_file(r_clone_config_file_content) as config_file_name:
+    async with temporary_text_file(r_clone_config_file_content) as config_file_name:
         command_parts = [
             "rclone",
             "--config",
