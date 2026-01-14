@@ -11,8 +11,12 @@
 
 import asyncio
 import logging
+import time
+from collections import defaultdict
 from collections.abc import AsyncIterator
 from contextlib import suppress
+from dataclasses import dataclass, field
+from enum import Enum
 from pprint import pformat
 from typing import Final
 
@@ -22,7 +26,12 @@ from models_library.services import ServiceMetaDataPublished
 from models_library.services_types import ServiceKey, ServiceVersion
 from packaging.version import Version
 from pydantic import ValidationError
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import (
+    DBAPIError,
+    IntegrityError,
+    OperationalError,
+    SQLAlchemyError,
+)
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from ..api._dependencies.director import get_director_client
@@ -35,40 +44,115 @@ from ..service import access_rights, manifest
 _logger = logging.getLogger(__name__)
 
 
+class ErrorCategory(str, Enum):
+    """Categories of errors that can occur during service sync"""
+
+    TRANSIENT = "transient"  # Network, DB connection - should retry
+    PERMANENT = "permanent"  # Validation, invalid data - skip service
+    CRITICAL = "critical"  # Schema issues, config errors - stop task
+
+
+@dataclass
+class ServiceSyncError:
+    """Details of a service sync failure"""
+
+    service_key: ServiceKey
+    service_version: ServiceVersion
+    error: Exception
+    category: ErrorCategory
+    stage: str  # e.g., "access_rights_evaluation", "database_insert"
+
+
+@dataclass
+class SyncReport:
+    """Aggregated report of a sync run"""
+
+    services_processed: int = 0
+    services_synced: int = 0
+    errors_by_category: dict[ErrorCategory, list[ServiceSyncError]] = field(default_factory=lambda: defaultdict(list))
+    duration_seconds: float = 0.0
+
+    @property
+    def total_errors(self) -> int:
+        return sum(len(errors) for errors in self.errors_by_category.values())
+
+    def add_error(self, error: ServiceSyncError) -> None:
+        self.errors_by_category[error.category].append(error)
+
+    def get_summary(self) -> dict:
+        """Returns structured summary for logging"""
+        return {
+            "services_processed": self.services_processed,
+            "services_synced": self.services_synced,
+            "total_errors": self.total_errors,
+            "transient_errors": len(self.errors_by_category[ErrorCategory.TRANSIENT]),
+            "permanent_errors": len(self.errors_by_category[ErrorCategory.PERMANENT]),
+            "critical_errors": len(self.errors_by_category[ErrorCategory.CRITICAL]),
+            "duration_seconds": round(self.duration_seconds, 2),
+        }
+
+
+def _categorize_error(error: Exception, stage: str) -> ErrorCategory:
+    """Categorizes an error as transient, permanent, or critical"""
+
+    # Transient errors: network, connection, timeout
+    if isinstance(error, HTTPException):
+        # Director service unavailable or network errors
+        if error.status_code >= 500:
+            return ErrorCategory.TRANSIENT
+        # Client errors are permanent
+        return ErrorCategory.PERMANENT
+
+    if isinstance(error, (OperationalError, DBAPIError)):
+        # Database connection/operational errors are transient
+        return ErrorCategory.TRANSIENT
+
+    if isinstance(error, IntegrityError):
+        # Integrity errors during DB insert could be race conditions
+        # These are transient if we're using proper upsert logic
+        return ErrorCategory.TRANSIENT
+
+    if isinstance(error, ValidationError):
+        # Validation errors in metadata are permanent
+        return ErrorCategory.PERMANENT
+
+    if isinstance(error, SQLAlchemyError):
+        # Other SQLAlchemy errors might be critical (schema issues)
+        return ErrorCategory.CRITICAL
+
+    # Unknown errors are critical
+    return ErrorCategory.CRITICAL
+
+
 async def _list_services_in_database(
     db_engine: AsyncEngine,
 ):
     services_repo = ServicesRepository(db_engine=db_engine)
-    return {
-        (service.key, service.version)
-        for service in await services_repo.list_services()
-    }
+    return {(service.key, service.version) for service in await services_repo.list_services()}
 
 
 async def _create_services_in_database(
     app: FastAPI,
     service_keys: set[tuple[ServiceKey, ServiceVersion]],
-    services_in_registry: dict[
-        tuple[ServiceKey, ServiceVersion], ServiceMetaDataPublished
-    ],
-) -> None:
-    """Adds a new service in the database
+    services_in_registry: dict[tuple[ServiceKey, ServiceVersion], ServiceMetaDataPublished],
+) -> SyncReport:
+    """Adds new services to the database with error classification and reporting.
 
-    Determines the access rights of each service and adds it to the database
+    Determines the access rights of each service and adds it to the database.
+    Returns a report with details about successes and failures categorized by error type.
     """
-
+    start_time = time.time()
+    report = SyncReport()
     services_repo = ServicesRepository(app.state.engine)
 
     def _by_version(t: tuple[ServiceKey, ServiceVersion]) -> Version:
         return Version(t[1])
 
     sorted_services = sorted(service_keys, key=_by_version)
+    report.services_processed = len(sorted_services)
 
     for service_key, service_version in sorted_services:
-
-        service_metadata: ServiceMetaDataPublished = services_in_registry[
-            (service_key, service_version)
-        ]
+        service_metadata: ServiceMetaDataPublished = services_in_registry[(service_key, service_version)]
         try:
             # 1. Evaluate DEFAULT ownership and access rights
             (
@@ -88,9 +172,7 @@ async def _create_services_in_database(
 
             # 3. Aggregates access rights and metadata updates
             service_access_rights += inherited_data["access_rights"]
-            service_access_rights = access_rights.reduce_access_rights(
-                service_access_rights
-            )
+            service_access_rights = access_rights.reduce_access_rights(service_access_rights)
 
             metadata_updates = {
                 **service_metadata.model_dump(exclude_unset=True),
@@ -102,17 +184,60 @@ async def _create_services_in_database(
                 ServiceMetaDataDBCreate(**metadata_updates, owner=owner_gid),
                 service_access_rights,
             )
+            report.services_synced += 1
 
-        except (HTTPException, ValidationError, SQLAlchemyError) as err:
-            # Resilient to single failures: errors in individual (service,key) should not prevent the evaluation of the rest
-            # and stop the background task from running.
+        except (
+            HTTPException,
+            ValidationError,
+            OperationalError,
+            DBAPIError,
+            IntegrityError,
+            SQLAlchemyError,
+        ) as err:
+            # Resilient to single failures: errors in individual (service,key)
+            # should not prevent the evaluation of the rest
             # SEE https://github.com/ITISFoundation/osparc-simcore/issues/6318
-            _logger.warning(
-                "Skipping '%s:%s' due to %s",
-                service_key,
-                service_version,
-                err,
+            stage = "database_upsert"
+            if isinstance(err, (HTTPException, ValidationError)):
+                stage = "access_rights_evaluation"
+
+            category = _categorize_error(err, stage)
+            sync_error = ServiceSyncError(
+                service_key=service_key,
+                service_version=service_version,
+                error=err,
+                category=category,
+                stage=stage,
             )
+            report.add_error(sync_error)
+
+            # Log based on error category
+            if category == ErrorCategory.PERMANENT:
+                _logger.warning(
+                    "Skipping service '%s:%s' due to permanent error at %s: %s",
+                    service_key,
+                    service_version,
+                    stage,
+                    err,
+                )
+            elif category == ErrorCategory.TRANSIENT:
+                _logger.info(
+                    "Transient error for service '%s:%s' at %s (will retry next cycle): %s",
+                    service_key,
+                    service_version,
+                    stage,
+                    err,
+                )
+            else:  # CRITICAL
+                _logger.exception(
+                    "Critical error for service '%s:%s' at %s",
+                    service_key,
+                    service_version,
+                    stage,
+                )
+
+    report.duration_seconds = time.time() - start_time
+    return report
 
 
 async def _ensure_registry_and_database_are_synced(app: FastAPI) -> None:
@@ -123,9 +248,7 @@ async def _ensure_registry_and_database_are_synced(app: FastAPI) -> None:
     director_api = get_director_client(app)
     services_in_manifest_map = await manifest.get_services_map(director_api)
 
-    services_in_db: set[tuple[ServiceKey, ServiceVersion]] = (
-        await _list_services_in_database(app.state.engine)
-    )
+    services_in_db: set[tuple[ServiceKey, ServiceVersion]] = await _list_services_in_database(app.state.engine)
 
     # check that the db has all the services at least once
     missing_services_in_db = set(services_in_manifest_map.keys()) - services_in_db
@@ -135,21 +258,39 @@ async def _ensure_registry_and_database_are_synced(app: FastAPI) -> None:
             pformat(missing_services_in_db),
         )
 
-        # update db
-        await _create_services_in_database(
-            app, missing_services_in_db, services_in_manifest_map
-        )
+        # update db and collect report
+        report = await _create_services_in_database(app, missing_services_in_db, services_in_manifest_map)
+
+        # Log aggregate summary
+        if report.total_errors > 0:
+            _logger.warning(
+                "Service sync completed with errors: %s",
+                pformat(report.get_summary()),
+            )
+            # Log details of permanent and critical errors
+            for error_cat in [ErrorCategory.PERMANENT, ErrorCategory.CRITICAL]:
+                for error in report.errors_by_category.get(error_cat, []):
+                    _logger.info(
+                        "  - %s error for %s:%s at %s: %s",
+                        error.category.value,
+                        error.service_key,
+                        error.service_version,
+                        error.stage,
+                        type(error.error).__name__,
+                    )
+        else:
+            _logger.info(
+                "Service sync completed successfully: %s",
+                pformat(report.get_summary()),
+            )
 
 
-async def _ensure_published_templates_accessible(
-    db_engine: AsyncEngine, default_product_name: str
-) -> None:
+async def _ensure_published_templates_accessible(db_engine: AsyncEngine, default_product_name: str) -> None:
     # Rationale: if a project template was published, its services must be available to everyone.
     # a published template has a column Published that is set to True
     projects_repo = ProjectsRepository(db_engine)
     published_services: set[tuple[str, str]] = {
-        (service.key, service.version)
-        for service in await projects_repo.list_services_from_published_templates()
+        (service.key, service.version) for service in await projects_repo.list_services_from_published_templates()
     }
 
     groups_repo = GroupsRepository(db_engine)
@@ -158,9 +299,7 @@ async def _ensure_published_templates_accessible(
     services_repo = ServicesRepository(db_engine)
     available_services: set[tuple[str, str]] = {
         (service.key, service.version)
-        for service in await services_repo.list_services(
-            gids=[everyone_gid], execute_access=True
-        )
+        for service in await services_repo.list_services(gids=[everyone_gid], execute_access=True)
     }
 
     missing_services = published_services - available_services
@@ -212,13 +351,9 @@ async def _sync_services_task(app: FastAPI) -> None:
             if not app.state.registry_syncer_running:
                 _logger.warning("registry syncing task forced to stop")
                 break
-            _logger.exception(
-                "Unexpected error while syncing registry entries, restarting now..."
-            )
+            _logger.exception("Unexpected error while syncing registry entries, restarting now...")
             # wait a bit before retrying, so it does not block everything until the director is up
-            await asyncio.sleep(
-                app.state.settings.CATALOG_BACKGROUND_TASK_WAIT_AFTER_FAILURE
-            )
+            await asyncio.sleep(app.state.settings.CATALOG_BACKGROUND_TASK_WAIT_AFTER_FAILURE)
 
 
 async def start_registry_sync_task(app: FastAPI) -> None:
