@@ -287,14 +287,15 @@ async def _parse_container_docker_logs(
 
                     log_file_path.parent.mkdir(parents=True, exist_ok=True)
                     async with aiofiles.open(log_file_path, mode="wb+") as log_fp:
-                        raw_log_generator = container_for_long_running_logs.log(
+                        raw_log_iterator = container_for_long_running_logs.log(
                             stdout=True,
                             stderr=True,
                             follow=True,
                             timestamps=True,
                         )
+
                         async for log_line in iter_with_timeout(
-                            raw_log_generator,
+                            raw_log_iterator,
                             per_iteration_timeout=app_settings.DASK_SIDECAR_MAX_LOG_SILENCE_TIMEOUT,
                         ):
                             log_msg_without_timestamp = log_line.split(" ", maxsplit=1)[1]
