@@ -22,7 +22,7 @@ import arrow
 from aiodocker import Docker, DockerError
 from aiodocker.containers import DockerContainer
 from aiodocker.volumes import DockerVolume
-from common_library.async_tools import cancel_wait_task
+from common_library.async_tools import cancel_wait_task, iter_with_timeout
 from dask_task_models_library.container_tasks.docker import DockerBasicAuth
 from dask_task_models_library.container_tasks.errors import ServiceTimeoutLoggingError
 from dask_task_models_library.container_tasks.protocol import (
@@ -242,25 +242,6 @@ async def _parse_container_log_file(  # noqa: PLR0913 # pylint: disable=too-many
                 await push_file_to_remote(log_file, log_file_url, log_publishing_cb, s3_settings)
 
 
-async def _iter_with_timeout[T](
-    it: AsyncIterator[T],
-    *,
-    per_iteration_timeout: datetime.timedelta,
-) -> AsyncIterator[T]:
-    try:
-        while True:
-            try:
-                item = await asyncio.wait_for(anext(it), per_iteration_timeout.total_seconds())
-            except StopAsyncIteration:
-                break
-            else:
-                yield item
-    finally:
-        aclose = getattr(it, "aclose", None)  # NOTE: with async iterators, aclose might not be present
-        if aclose is not None:
-            await aclose()
-
-
 async def _parse_container_docker_logs(
     *,
     container: DockerContainer,
@@ -312,7 +293,7 @@ async def _parse_container_docker_logs(
                             follow=True,
                             timestamps=True,
                         )
-                        async for log_line in _iter_with_timeout(
+                        async for log_line in iter_with_timeout(
                             raw_log_generator,
                             per_iteration_timeout=app_settings.DASK_SIDECAR_MAX_LOG_SILENCE_TIMEOUT,
                         ):
