@@ -16,6 +16,10 @@ depends_on = None
 
 
 def upgrade():
+    op.execute(
+        "DELETE FROM file_meta_data WHERE project_id IS NOT NULL "
+        "AND NOT EXISTS (SELECT 1 FROM projects WHERE projects.uuid = file_meta_data.project_id)"
+    )
     op.create_foreign_key(
         "fk_file_meta_data_project_id_projects",
         "file_meta_data",
