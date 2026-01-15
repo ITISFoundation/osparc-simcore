@@ -13,7 +13,7 @@ from collections.abc import (
 )
 from pathlib import Path
 from pprint import pformat
-from typing import Any, Final, ParamSpec, TypeVar, cast
+from typing import Any, Final, cast
 
 import aiofiles
 import aiofiles.tempfile
@@ -242,9 +242,6 @@ async def _parse_container_log_file(  # noqa: PLR0913 # pylint: disable=too-many
                 await push_file_to_remote(log_file, log_file_url, log_publishing_cb, s3_settings)
 
 
-T = TypeVar("T")
-
-
 async def _iter_with_timeout[T](
     it: AsyncIterator[T],
     *,
@@ -410,10 +407,6 @@ async def _monitor_container_logs(  # noqa: PLR0913 # pylint: disable=too-many-a
                 s3_settings=s3_settings,
                 progress_bar=progress_bar,
             )
-
-
-P = ParamSpec("P")
-T = TypeVar("T")
 
 
 def cancel_parent_on_child_exception[**P, T](func: Callable[P, T]) -> Callable[P, T]:
