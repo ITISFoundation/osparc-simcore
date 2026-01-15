@@ -312,3 +312,92 @@ async def test_iter_with_timeout_calls_aclose_on_exception():
             pass
 
     assert cleanup_called
+
+
+async def test_iter_with_timeout_with_large_timeout():
+    """Test that iter_with_timeout works with very large timeouts"""
+
+    async def generator():
+        for i in range(10):
+            yield i
+            await asyncio.sleep(0.01)
+
+    items = [item async for item in iter_with_timeout(generator(), per_iteration_timeout=timedelta(seconds=60))]
+
+    assert items == list(range(10))
+
+
+async def test_iter_with_timeout_cancellation():
+    """Test that iter_with_timeout handles cancellation properly"""
+
+    async def generator():
+        for i in range(100):
+            yield i
+            await asyncio.sleep(0.01)
+
+    items = []
+
+    async def consume_with_cancel():
+        nonlocal items
+        try:
+            async for item in iter_with_timeout(generator(), per_iteration_timeout=timedelta(seconds=1)):
+                items.append(item)
+                if len(items) == 5:
+                    raise asyncio.CancelledError  # noqa: TRY301
+        except asyncio.CancelledError:
+            pass
+
+    await consume_with_cancel()
+    assert len(items) == 5
+
+
+async def test_iter_with_timeout_with_custom_async_iterator():
+    """Test iter_with_timeout with a custom async iterator class"""
+
+    class CustomAsyncIterator:
+        def __init__(self, max_items: int):
+            self.max_items = max_items
+            self.current = 0
+            self.closed = False
+
+        def __aiter__(self):
+            return self
+
+        async def __anext__(self):
+            if self.current >= self.max_items:
+                raise StopAsyncIteration
+            self.current += 1
+            await asyncio.sleep(0.01)
+            return self.current - 1
+
+        async def aclose(self):
+            self.closed = True
+
+    iterator = CustomAsyncIterator(5)
+    items = [item async for item in iter_with_timeout(iterator, per_iteration_timeout=timedelta(seconds=1))]
+
+    assert items == [0, 1, 2, 3, 4]
+    assert iterator.closed
+
+
+async def test_iter_with_timeout_without_aclose_method():
+    """Test iter_with_timeout with iterators that don't have aclose method"""
+
+    class SimpleAsyncIterator:
+        def __init__(self, max_items: int):
+            self.max_items = max_items
+            self.current = 0
+
+        def __aiter__(self):
+            return self
+
+        async def __anext__(self):
+            if self.current >= self.max_items:
+                raise StopAsyncIteration
+            self.current += 1
+            return self.current - 1
+
+    iterator = SimpleAsyncIterator(3)
+    items = [item async for item in iter_with_timeout(iterator, per_iteration_timeout=timedelta(seconds=1))]
+
+    assert items == [0, 1, 2]
