@@ -52,7 +52,7 @@ file_meta_data = sa.Table(
         sa.Boolean(),
         nullable=False,
         server_default=sa.text("false"),
-        doc="If true, this file is a soft link.i.e. is another entry with the same object_name",
+        doc="If true, this file is a soft link. i.e. is another entry with the same object_name",
     ),
     sa.Column(
         "upload_id",
