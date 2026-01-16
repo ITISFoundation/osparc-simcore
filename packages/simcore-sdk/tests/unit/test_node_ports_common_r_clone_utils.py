@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock
 import pytest
 from pydantic import TypeAdapter
 from simcore_sdk.node_ports_common.r_clone_utils import (
-    EditArgument,
+    EditArguments,
     RemoveArguments,
     SyncProgressLogParser,
     _RCloneSyncMessageBase,
@@ -97,13 +97,13 @@ _SOURCE_COMMAND: Final[list[str]] = [
     "edit,remove,expected_command",
     [
         pytest.param(
-            TypeAdapter(EditArgument).validate_python({}),
+            TypeAdapter(EditArguments).validate_python({}),
             TypeAdapter(RemoveArguments).validate_python([]),
             _SOURCE_COMMAND,
             id="no-changes",
         ),
         pytest.param(
-            TypeAdapter(EditArgument).validate_python(
+            TypeAdapter(EditArguments).validate_python(
                 {
                     "--transfers": ["--transfers", "32"],
                     "--buffer-size": ("--buffer-size-X", "16M"),
@@ -130,5 +130,5 @@ _SOURCE_COMMAND: Final[list[str]] = [
         ),
     ],
 )
-def test_overwrite_command(edit: EditArgument, remove: RemoveArguments, expected_command: list[str]) -> None:
+def test_overwrite_command(edit: EditArguments, remove: RemoveArguments, expected_command: list[str]) -> None:
     assert overwrite_command(_SOURCE_COMMAND, edit=edit, remove=remove) == expected_command
