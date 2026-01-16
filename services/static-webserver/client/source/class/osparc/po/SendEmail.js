@@ -22,12 +22,15 @@ qx.Class.define("osparc.po.SendEmail", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
-        case "email-editor":
+        case "email-editor": {
           control = new osparc.editor.EmailEditor();
+          const container = new qx.ui.container.Scroll();
+          container.add(control);
           this._add(control, {
             flex: 1
           });
           break;
+        }
       }
       return control || this.base(arguments, id);
     },
