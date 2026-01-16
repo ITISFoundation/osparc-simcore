@@ -140,11 +140,9 @@ qx.Class.define("osparc.editor.EmailEditor", {
       const parser = new DOMParser();
       const doc = parser.parseFromString(templateHtml, "text/html");
 
-      // Prefer a stable marker if you can add it later:
-      // const mount = doc.querySelector("[data-email-content]") || doc.querySelector(".content");
-      const mount = doc.querySelector(".content");
-      if (mount) {
-        mount.innerHTML = contentHtml;
+      const contentContainer = doc.querySelector(".content");
+      if (contentContainer) {
+        contentContainer.innerHTML = contentHtml;
       }
 
       return "<!DOCTYPE html>\n" + doc.documentElement.outerHTML;
