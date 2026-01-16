@@ -107,10 +107,12 @@ qx.Class.define("osparc.editor.EmailEditor", {
       const previewEmail = this.getChildControl("preview-email");
 
       const textEditor = this.getChildControl("text-editor");
-      const emailContent = textEditor.getValue();
+      const emailContentText = textEditor.getValue();
       const templateEmail = this.getTemplateEmail();
 
-      const previewHtml = this.__buildPreviewHtml(templateEmail, emailContent);
+      // Convert plain text to HTML with line breaks
+      const emailContentHtml = this.__draftTextToHtml(emailContentText);
+      const previewHtml = this.__buildPreviewHtml(templateEmail, emailContentHtml);
 
       // Use data URL to set HTML content in iframe
       const dataUrl = "data:text/html;charset=utf-8," + encodeURIComponent(previewHtml);
