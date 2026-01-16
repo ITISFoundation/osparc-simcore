@@ -57,12 +57,16 @@ qx.Class.define("osparc.editor.EmailEditor", {
       let control;
       switch (id) {
         case "editor-page":
-          control = new qx.ui.tabview.Page(this.tr("Editor"));
+          control = new qx.ui.tabview.Page(this.tr("Editor")).set({
+            layout: new qx.ui.layout.VBox()
+          });
           control.setUserData("id", "text-editor");
           this.add(control);
           break;
         case "preview-page":
-          control = new qx.ui.tabview.Page(this.tr("Preview"));
+          control = new qx.ui.tabview.Page(this.tr("Preview")).set({
+            layout: new qx.ui.layout.VBox()
+          });
           control.setUserData("id", "preview-email");
           this.add(control);
           break;
@@ -71,6 +75,8 @@ qx.Class.define("osparc.editor.EmailEditor", {
             placeholder: "Write your email...",
             allowGrowY: true,
             allowGrowX: true,
+            minWidth: 500,
+            minHeight: 500,
           });
           this.getChildControl("editor-page").add(control, {
             flex: 1
@@ -85,6 +91,8 @@ qx.Class.define("osparc.editor.EmailEditor", {
           control = new qx.ui.embed.Iframe().set({
             allowGrowY: true,
             allowGrowX: true,
+            minWidth: 500,
+            minHeight: 500,
           });
           this.getChildControl("preview-page").add(control, {
             flex: 1
