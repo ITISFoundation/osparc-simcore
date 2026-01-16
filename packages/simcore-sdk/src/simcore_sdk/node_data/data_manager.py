@@ -37,7 +37,7 @@ def __get_s3_name(path: Path, *, is_archive: bool) -> str:
 async def _push_directory(
     user_id: UserID,
     project_id: ProjectID,
-    node_uuid: NodeID,
+    node_id: NodeID,
     source_path: Path,
     *,
     io_log_redirect_cb: LogRedirectCB,
@@ -45,7 +45,7 @@ async def _push_directory(
     exclude_patterns: set[str] | None = None,
     progress_bar: ProgressBarData,
 ) -> None:
-    s3_object = __create_s3_object_key(project_id, node_uuid, source_path)
+    s3_object = __create_s3_object_key(project_id, node_id, source_path)
     with log_context(_logger, logging.INFO, f"uploading {source_path.name} to S3 to {s3_object}"):
         await filemanager.upload_path(
             user_id=user_id,
@@ -63,7 +63,7 @@ async def _push_directory(
 async def _pull_directory(
     user_id: UserID,
     project_id: ProjectID,
-    node_uuid: NodeID,
+    node_id: NodeID,
     destination_path: Path,
     *,
     io_log_redirect_cb: LogRedirectCB,
@@ -72,7 +72,7 @@ async def _pull_directory(
     save_to: Path | None = None,
 ) -> None:
     save_to_path = destination_path if save_to is None else save_to
-    s3_object = __create_s3_object_key(project_id, node_uuid, destination_path)
+    s3_object = __create_s3_object_key(project_id, node_id, destination_path)
     with log_context(_logger, logging.INFO, f"pulling data from {s3_object} to {save_to_path}"):
         await filemanager.download_path_from_s3(
             user_id=user_id,
@@ -89,7 +89,7 @@ async def _pull_directory(
 async def _pull_legacy_archive(
     user_id: UserID,
     project_id: ProjectID,
-    node_uuid: NodeID,
+    node_id: NodeID,
     destination_path: Path,
     *,
     io_log_redirect_cb: LogRedirectCB,
@@ -102,7 +102,7 @@ async def _pull_legacy_archive(
         with TemporaryDirectory() as tmp_dir_name:
             archive_file = Path(tmp_dir_name) / __get_s3_name(archive_path, is_archive=True)
 
-            s3_object = __create_s3_object_key(project_id, node_uuid, archive_file)
+            s3_object = __create_s3_object_key(project_id, node_id, archive_file)
             _logger.info("pulling data from %s to %s...", s3_object, archive_file)
             downloaded_file = await filemanager.download_path_from_s3(
                 user_id=user_id,
@@ -131,7 +131,7 @@ async def _pull_legacy_archive(
 async def _state_metadata_entry_exists(
     user_id: UserID,
     project_id: ProjectID,
-    node_uuid: NodeID,
+    node_id: NodeID,
     path: Path,
     *,
     is_archive: bool,
@@ -139,7 +139,7 @@ async def _state_metadata_entry_exists(
     """
     :returns True if an entry is present inside the files_metadata else False
     """
-    s3_object = __create_s3_object_key(project_id, node_uuid, __get_s3_name(path, is_archive=is_archive))
+    s3_object = __create_s3_object_key(project_id, node_id, __get_s3_name(path, is_archive=is_archive))
     _logger.debug("Checking if s3_object='%s' is present", s3_object)
     return await filemanager.entry_exists(
         user_id=user_id,
@@ -149,11 +149,9 @@ async def _state_metadata_entry_exists(
     )
 
 
-async def _delete_legacy_archive(
-    project_id: ProjectID, node_uuid: NodeID, path: Path, *, application_name: str
-) -> None:
+async def _delete_legacy_archive(project_id: ProjectID, node_id: NodeID, path: Path, *, application_name: str) -> None:
     """removes the .zip state archive from storage"""
-    s3_object = __create_s3_object_key(project_id, node_uuid, __get_s3_name(path, is_archive=True))
+    s3_object = __create_s3_object_key(project_id, node_id, __get_s3_name(path, is_archive=True))
     _logger.debug("Deleting s3_object='%s' is archive", s3_object)
 
     # NOTE: if service is opened by a person which the users shared it with,
@@ -170,7 +168,7 @@ async def _stop_mount(mount_manager: RCloneMountManager, destination_path: Path,
 async def push(  # pylint: disable=too-many-arguments  # noqa: PLR0913
     user_id: UserID,
     project_id: ProjectID,
-    node_uuid: NodeID,
+    node_id: NodeID,
     source_path: Path,
     index: NonNegativeInt,
     *,
@@ -190,7 +188,7 @@ async def push(  # pylint: disable=too-many-arguments  # noqa: PLR0913
         await _push_directory(
             user_id=user_id,
             project_id=project_id,
-            node_uuid=node_uuid,
+            node_id=node_id,
             source_path=source_path,
             r_clone_settings=r_clone_settings,
             exclude_patterns=exclude_patterns,
@@ -201,7 +199,7 @@ async def push(  # pylint: disable=too-many-arguments  # noqa: PLR0913
     archive_exists = await _state_metadata_entry_exists(
         user_id=user_id,
         project_id=project_id,
-        node_uuid=node_uuid,
+        node_id=node_id,
         path=source_path,
         is_archive=True,
     )
@@ -209,7 +207,7 @@ async def push(  # pylint: disable=too-many-arguments  # noqa: PLR0913
         with log_context(_logger, logging.INFO, "removing legacy archive"):
             await _delete_legacy_archive(
                 project_id=project_id,
-                node_uuid=node_uuid,
+                node_id=node_id,
                 path=source_path,
                 application_name=application_name,
             )
@@ -218,7 +216,7 @@ async def push(  # pylint: disable=too-many-arguments  # noqa: PLR0913
         legacy_archive_exists = await _state_metadata_entry_exists(
             user_id=user_id,
             project_id=project_id,
-            node_uuid=node_uuid,
+            node_id=node_id,
             path=legacy_state.old_state_path,
             is_archive=True,
         )
@@ -226,7 +224,7 @@ async def push(  # pylint: disable=too-many-arguments  # noqa: PLR0913
             with log_context(_logger, logging.INFO, f"removing legacy archive in {legacy_state}"):
                 await _delete_legacy_archive(
                     project_id=project_id,
-                    node_uuid=node_uuid,
+                    node_id=node_id,
                     path=legacy_state.old_state_path,
                     application_name=application_name,
                 )
@@ -274,7 +272,7 @@ async def pull(  # pylint: disable=too-many-arguments  # noqa: PLR0913
     product_name: ProductName,
     user_id: UserID,
     project_id: ProjectID,
-    node_uuid: NodeID,
+    node_id: NodeID,
     destination_path: Path,
     index: NonNegativeInt,
     *,
@@ -298,7 +296,7 @@ async def pull(  # pylint: disable=too-many-arguments  # noqa: PLR0913
         legacy_state_exists = await _state_metadata_entry_exists(
             user_id=user_id,
             project_id=project_id,
-            node_uuid=node_uuid,
+            node_id=node_id,
             path=legacy_state.old_state_path,
             is_archive=True,
         )
@@ -312,7 +310,7 @@ async def pull(  # pylint: disable=too-many-arguments  # noqa: PLR0913
                 await _pull_legacy_archive(
                     user_id=user_id,
                     project_id=project_id,
-                    node_uuid=node_uuid,
+                    node_id=node_id,
                     destination_path=legacy_state.new_state_path,
                     io_log_redirect_cb=io_log_redirect_cb,
                     progress_bar=progress_bar,
@@ -322,7 +320,7 @@ async def pull(  # pylint: disable=too-many-arguments  # noqa: PLR0913
                     mount_manager,
                     user_id,
                     project_id,
-                    node_uuid,
+                    node_id,
                     destination_path,
                     index,
                     requires_data_mounting=requires_data_mounting,
@@ -332,7 +330,7 @@ async def pull(  # pylint: disable=too-many-arguments  # noqa: PLR0913
     state_archive_exists = await _state_metadata_entry_exists(
         user_id=user_id,
         project_id=project_id,
-        node_uuid=node_uuid,
+        node_id=node_id,
         path=destination_path,
         is_archive=True,
     )
@@ -341,7 +339,7 @@ async def pull(  # pylint: disable=too-many-arguments  # noqa: PLR0913
             await _pull_legacy_archive(
                 user_id=user_id,
                 project_id=project_id,
-                node_uuid=node_uuid,
+                node_id=node_id,
                 destination_path=destination_path,
                 io_log_redirect_cb=io_log_redirect_cb,
                 progress_bar=progress_bar,
@@ -350,7 +348,7 @@ async def pull(  # pylint: disable=too-many-arguments  # noqa: PLR0913
                 mount_manager,
                 user_id,
                 project_id,
-                node_uuid,
+                node_id,
                 destination_path,
                 index,
                 requires_data_mounting=requires_data_mounting,
@@ -360,7 +358,7 @@ async def pull(  # pylint: disable=too-many-arguments  # noqa: PLR0913
     state_directory_exists = await _state_metadata_entry_exists(
         user_id=user_id,
         project_id=project_id,
-        node_uuid=node_uuid,
+        node_id=node_id,
         path=destination_path,
         is_archive=False,
     )
@@ -370,7 +368,7 @@ async def pull(  # pylint: disable=too-many-arguments  # noqa: PLR0913
                 mount_manager,
                 user_id,
                 project_id,
-                node_uuid,
+                node_id,
                 destination_path,
                 index,
                 requires_data_mounting=requires_data_mounting,
@@ -379,7 +377,7 @@ async def pull(  # pylint: disable=too-many-arguments  # noqa: PLR0913
             await _pull_directory(
                 user_id=user_id,
                 project_id=project_id,
-                node_uuid=node_uuid,
+                node_id=node_id,
                 destination_path=destination_path,
                 io_log_redirect_cb=io_log_redirect_cb,
                 r_clone_settings=r_clone_settings,
@@ -392,7 +390,7 @@ async def pull(  # pylint: disable=too-many-arguments  # noqa: PLR0913
         mount_manager,
         user_id,
         project_id,
-        node_uuid,
+        node_id,
         destination_path,
         index,
         requires_data_mounting=requires_data_mounting,

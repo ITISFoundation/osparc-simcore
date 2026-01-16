@@ -322,7 +322,7 @@ async def _restore_state_folder(
         product_name=settings.DY_SIDECAR_PRODUCT_NAME,
         user_id=settings.DY_SIDECAR_USER_ID,
         project_id=settings.DY_SIDECAR_PROJECT_ID,
-        node_uuid=settings.DY_SIDECAR_NODE_ID,
+        node_id=settings.DY_SIDECAR_NODE_ID,
         destination_path=Path(state_path),
         index=index,
         io_log_redirect_cb=functools.partial(post_sidecar_log_message, app, log_level=logging.INFO),
@@ -400,7 +400,7 @@ async def _save_state_folder(
     await data_manager.push(
         user_id=settings.DY_SIDECAR_USER_ID,
         project_id=settings.DY_SIDECAR_PROJECT_ID,
-        node_uuid=settings.DY_SIDECAR_NODE_ID,
+        node_id=settings.DY_SIDECAR_NODE_ID,
         source_path=state_path,
         index=index,
         r_clone_settings=settings.DY_SIDECAR_R_CLONE_SETTINGS,

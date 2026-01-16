@@ -36,7 +36,10 @@ class SimcoreSDKMountSettings(BaseCustomSettings):
     R_CLONE_SIMCORE_SDK_MOUNT_TRANSFERS_COMPLETED_TIMEOUT: Annotated[
         timedelta,
         Field(
-            description="max amount of time to wait for rclone mount command to finish",
+            description=(
+                "max amount of time to wait for rclone mount command to finish it's transfer queue "
+                "before shutting down the mount"
+            ),
         ),
     ] = timedelta(minutes=60)
 
