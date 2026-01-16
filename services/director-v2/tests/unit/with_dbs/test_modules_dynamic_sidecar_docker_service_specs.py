@@ -481,6 +481,7 @@ async def test_get_dynamic_proxy_spec(
                 is_internet_enabled=False,
                 is_telemetry_enabled=True,
                 is_efs_enabled=False,
+                mount_data=False,
             ),
             rpc_client=Mock(),
         )
@@ -560,6 +561,7 @@ async def test_merge_dynamic_sidecar_specs_with_user_specific_specs(
             is_internet_enabled=False,
             is_telemetry_enabled=True,
             is_efs_enabled=False,
+            mount_data=False,
         ),
         rpc_client=Mock(),
     )
