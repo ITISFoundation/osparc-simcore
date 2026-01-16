@@ -26,7 +26,7 @@ qx.Class.define("osparc.store.Faker", {
       "I don't know",
       "Eu não sei",
       "I weiss nöd",
-      "Je ne sais pas",
+      "Je ne says pas",
       "Non lo so",
       "Ich weiß nicht",
       "Jeg ved det ikke",
@@ -72,6 +72,129 @@ qx.Class.define("osparc.store.Faker", {
       }, delay);
 
       return new Promise((resolve) => resolve());
+    },
+
+    fetchEmailTemplate: function(templateName) {
+      const templates = {
+        "free-email": {
+          subject: "",
+          body: `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title></title>
+<style>
+  body {
+      font-family: Manrope, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f4;
+  }
+  .email-container {
+      max-width: 600px;
+      margin: 20px auto;
+      background-color: #ffffff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  }
+  .header {
+      display: flex;
+      align-items: center;
+      border-bottom: 2px solid #ddd;
+      padding-bottom: 10px;
+      margin-bottom: 20px;
+  }
+  .logo {
+      height: 40px;
+  }
+  .content {
+      color: #333;
+      font-size: 16px;
+      line-height: 1.5;
+  }
+  a {
+      color: #007bff;
+      text-decoration: none;
+  }
+  .strong-button {
+      cursor: pointer;
+      background-color: rgb(0, 144, 208);
+      color: white;
+      padding: 10px;
+      border: none;
+      border-radius: 4px;
+      overflow: hidden;
+      white-space: nowrap;
+      user-select: none;
+      touch-action: none;
+      outline: none;
+  }
+  .strong-button a {
+      font-size: 16px;
+      color: white;
+      text-decoration: none;
+      display: block;
+      width: 100%;
+      height: 100%;
+      text-align: center;
+  }
+  .footer {
+      margin-top: 20px;
+      padding-top: 15px;
+      border-top: 2px solid #ddd;
+      font-size: 14px;
+      text-align: center;
+      color: #666;
+  }
+  .footer a {
+      color: #007bff;
+      text-decoration: none;
+  }
+  .github-logo {
+    height: 20px;
+    vertical-align: bottom;
+  }
+</style>
+</head>
+<body>
+  <div class="email-container">
+    <div class="header">
+      <a href="https://sim4life.io/" target="_blank" rel="noopener noreferrer">
+        <img src="https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/refs/heads/master/services/static-webserver/client/source/resource/osparc/Sim4Life_full_logo_black.svg" alt="Logo" class="logo">
+      </a>
+    </div>
+
+    <div class="content">
+    </div>
+
+    <div class="footer">
+      <p>
+        Visit the <a href="https://sim4life.io/" target="_blank" rel="noopener noreferrer">Platform</a> |
+        Need help? <a href="mailto:support@sim4life.io">Support</a> |
+        Powered by oSPARC
+        <a href="https://github.com/ITISFoundation/osparc-simcore" target="_blank" rel="noopener noreferrer">
+          <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" alt="GitHub" class="github-logo">
+        </a>
+      </p>
+    </div>
+  </div>
+</body>
+</html>
+`
+        },
+      };
+
+      return new Promise((resolve, reject) => {
+        const template = templates[templateName];
+        if (template) {
+          resolve(template);
+        } else {
+          reject(new Error("Template not found"));
+        }
+      });
     },
   }
 });
