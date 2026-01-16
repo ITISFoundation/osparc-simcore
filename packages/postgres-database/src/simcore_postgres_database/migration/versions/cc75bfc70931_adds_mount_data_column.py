@@ -1,8 +1,8 @@
 """adds mount data column
 
-Revision ID: fb88e5109cdb
+Revision ID: cc75bfc70931
 Revises: d3e466e349d7
-Create Date: 2026-01-16 11:16:27.915603+00:00
+Create Date: 2026-01-16 11:32:36.601686+00:00
 
 """
 
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = "fb88e5109cdb"
+revision = "cc75bfc70931"
 down_revision = "d3e466e349d7"
 branch_labels = None
 depends_on = None
