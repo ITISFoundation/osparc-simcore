@@ -306,7 +306,6 @@ async def _get_mounts(
             )
 
     if scheduler_data.paths_mapping.state_paths:
-        r_clone_settings = dynamic_sidecar_settings.DYNAMIC_SIDECAR_R_CLONE_SETTINGS
         mounts.append(
             DynamicSidecarVolumesPathsResolver.mount_vfs_cache(
                 swarm_stack_name=dynamic_services_scheduler_settings.SWARM_STACK_NAME,
@@ -314,8 +313,6 @@ async def _get_mounts(
                 service_run_id=scheduler_data.run_id,
                 project_id=scheduler_data.project_id,
                 user_id=scheduler_data.user_id,
-                has_quota_support=has_quota_support,
-                vfs_cache_limit=r_clone_settings.R_CLONE_SIMCORE_SDK_MOUNT_SETTINGS.R_CLONE_SIMCORE_SDK_MOUNT_VFS_CACHE_SIZE,
             )
         )
 

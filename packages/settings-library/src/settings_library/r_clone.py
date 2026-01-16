@@ -5,7 +5,7 @@ from typing import Annotated, Final, Literal
 
 from common_library.basic_types import DEFAULT_FACTORY
 from common_library.pydantic_validators import validate_numeric_string_as_timedelta
-from pydantic import ByteSize, Field, NonNegativeInt, TypeAdapter
+from pydantic import ByteSize, Field, NonNegativeFloat, NonNegativeInt, TypeAdapter
 
 from .base import BaseCustomSettings
 from .s3 import S3Settings
@@ -44,9 +44,11 @@ class SimcoreSDKMountSettings(BaseCustomSettings):
         "R_CLONE_SIMCORE_SDK_MOUNT_TRANSFERS_COMPLETED_TIMEOUT"
     )
 
-    R_CLONE_SIMCORE_SDK_MOUNT_VFS_CACHE_SIZE: Annotated[
-        str,
+    R_CLONE_SIMCORE_SDK_MOUNT_VFS_CACHE_PERCENT_DISK_SPACE: Annotated[
+        NonNegativeFloat,
         Field(
+            gt=0.0,
+            le=1.0,
             description=(
                 "maximum size of the VFS cache on the disk to be enforced by rclone"
                 "NOTE 1: the vfs-cache is the folder where the real data form the user's files is stored"
@@ -55,7 +57,7 @@ class SimcoreSDKMountSettings(BaseCustomSettings):
                 "can be safely uploaded via rclone mount to a bit under this number"
             ),
         ),
-    ] = "500G"
+    ] = 0.9
 
     # CONTAINER
     R_CLONE_SIMCORE_SDK_MOUNT_CONTAINER_CONFIG_FILE_PATH: Annotated[

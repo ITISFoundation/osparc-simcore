@@ -170,6 +170,12 @@ class _TestingDelegate(DelegateInterface):
             await existing_network.show()
             await existing_network.delete()
 
+    async def get_docker_root_path(self) -> Path:
+        async with Docker() as client:
+            info = await client.system.info()
+            docker_root_dir = info["DockerRootDir"]
+            return Path(docker_root_dir)
+
 
 @pytest.fixture
 async def r_clone_mount_manager(

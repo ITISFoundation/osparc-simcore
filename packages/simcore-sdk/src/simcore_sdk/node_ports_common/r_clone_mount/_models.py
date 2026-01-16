@@ -62,3 +62,6 @@ class DelegateInterface(ABC):
 
     @abstractmethod
     async def remove_network(self, network_name: str) -> None: ...
+
+    @abstractmethod
+    async def get_docker_root_path(self) -> Path: ...

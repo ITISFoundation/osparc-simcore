@@ -11,6 +11,7 @@ from models_library.basic_types import PortInt
 from models_library.progress_bar import ProgressReport
 from models_library.projects_nodes_io import NodeID, StorageFileID
 from pydantic import NonNegativeInt
+from servicelib.file_utils import disk_usage
 from settings_library.r_clone import DEFAULT_VFS_CACHE_PATH, RCloneSettings, SimcoreSDKMountSettings
 from tenacity import (
     before_sleep_log,
@@ -71,7 +72,15 @@ cleanup
 )
 
 
-def _get_rclone_mount_command(
+async def _get_max_vfs_cache_size(delegate: DelegateInterface, mount_settings: SimcoreSDKMountSettings) -> str:
+    root_path = await delegate.get_docker_root_path()
+    total_disk_space = (await disk_usage(root_path)).total
+    max_vfs_cache_size = int(total_disk_space * mount_settings.R_CLONE_SIMCORE_SDK_MOUNT_VFS_CACHE_PERCENT_DISK_SPACE)
+    return f"{max_vfs_cache_size}"
+
+
+async def _get_rclone_mount_command(
+    delegate: DelegateInterface,
     mount_settings: SimcoreSDKMountSettings,
     r_clone_config_content: str,
     remote_path: StorageFileID,
@@ -96,7 +105,7 @@ def _get_rclone_mount_command(
         "--vfs-read-ahead",
         "16M",
         "--vfs-cache-max-size",
-        mount_settings.R_CLONE_SIMCORE_SDK_MOUNT_VFS_CACHE_SIZE,
+        await _get_max_vfs_cache_size(delegate, mount_settings),
         "--vfs-cache-min-free-space",
         "5G",
         "--vfs-cache-poll-interval",
@@ -208,7 +217,8 @@ class ContainerManager:  # pylint:disable=too-many-instance-attributes
         await _docker_utils.create_r_clone_container(
             self.delegate,
             self.r_clone_container_name,
-            command=_get_rclone_mount_command(
+            command=await _get_rclone_mount_command(
+                self.delegate,
                 mount_settings=mount_settings,
                 r_clone_config_content=self.r_clone_config_content,
                 remote_path=self.remote_path,

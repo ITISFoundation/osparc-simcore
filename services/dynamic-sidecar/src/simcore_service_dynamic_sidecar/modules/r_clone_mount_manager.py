@@ -159,6 +159,12 @@ class DynamicSidecarRCloneMountDelegate(DelegateInterface):
             await existing_network.show()
             await existing_network.delete()
 
+    async def get_docker_root_path(self) -> Path:
+        async with _get_docker_client() as client:
+            info = await client.system.info()
+            docker_root_dir = info["DockerRootDir"]
+            return Path(docker_root_dir)
+
 
 def setup_r_clone_mount_manager(app: FastAPI):
     async def _on_startup() -> None:
