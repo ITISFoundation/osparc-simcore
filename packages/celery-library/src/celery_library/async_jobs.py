@@ -38,7 +38,9 @@ from .errors import (
     decode_celery_transferable_error,
 )
 
-_logger = logging.getLogger(__name__)
+_logger: Final[logging.Logger] = logging.getLogger(__name__)
+
+_DEFAULT_POLL_INTERVAL_S: Final[float] = 0.1
 
 
 async def cancel_job(
@@ -159,11 +161,6 @@ async def submit_job(
         **kwargs,
     )
     return AsyncJobGet(job_id=task_id, job_name=execution_metadata.name)
-
-
-_DEFAULT_POLL_INTERVAL_S: Final[float] = 0.1
-
-_logger = logging.getLogger(__name__)
 
 
 async def _wait_for_completion(
