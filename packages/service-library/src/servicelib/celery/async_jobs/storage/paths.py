@@ -13,7 +13,7 @@ COMPUTE_PATH_SIZE_TASK_NAME: Final[str] = "compute_path_size"
 DELETE_PATHS_TASK_NAME: Final[str] = "delete_paths"
 
 
-async def submit_compute_path_size_task(  # noqa: PLR0913
+async def submit_compute_path_size_task(
     task_manager: TaskManager,
     owner_metadata: OwnerMetadata,
     user_id: UserID,
