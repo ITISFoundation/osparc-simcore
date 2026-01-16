@@ -232,14 +232,14 @@ async def push(  # pylint: disable=too-many-arguments  # noqa: PLR0913
                 )
 
 
-async def _requires_r_clone_mounting(application_name: str, user_id: UserID, product_name: ProductName) -> bool:
+async def _requires_data_mounting(application_name: str, user_id: UserID, product_name: ProductName) -> bool:
     try:
         group_extra_properties = await DBManager(application_name=application_name).get_group_extra_properties(
             user_id=user_id, product_name=product_name
         )
     except GroupExtraPropertiesNotFoundError:
         return False
-    return group_extra_properties.use_r_clone_mounting is True
+    return group_extra_properties.mount_data is True
 
 
 async def _start_mount_if_required(
@@ -250,9 +250,9 @@ async def _start_mount_if_required(
     destination_path: Path,
     index: NonNegativeInt,
     *,
-    use_r_clone_mount: bool,
+    requires_data_mounting: bool,
 ) -> None:
-    if not use_r_clone_mount:
+    if not requires_data_mounting:
         return
 
     s3_object = __create_s3_object_key(project_id, node_id, destination_path)
@@ -287,7 +287,7 @@ async def pull(  # pylint: disable=too-many-arguments  # noqa: PLR0913
 ) -> None:
     """restores the state folder"""
 
-    use_r_clone_mount = await _requires_r_clone_mounting(application_name, user_id, product_name)
+    requires_data_mounting = await _requires_data_mounting(application_name, user_id, product_name)
 
     if legacy_state and legacy_state.new_state_path == destination_path:
         _logger.info(
@@ -325,7 +325,7 @@ async def pull(  # pylint: disable=too-many-arguments  # noqa: PLR0913
                     node_uuid,
                     destination_path,
                     index,
-                    use_r_clone_mount=use_r_clone_mount,
+                    requires_data_mounting=requires_data_mounting,
                 )
             return
 
@@ -353,7 +353,7 @@ async def pull(  # pylint: disable=too-many-arguments  # noqa: PLR0913
                 node_uuid,
                 destination_path,
                 index,
-                use_r_clone_mount=use_r_clone_mount,
+                requires_data_mounting=requires_data_mounting,
             )
         return
 
@@ -365,7 +365,7 @@ async def pull(  # pylint: disable=too-many-arguments  # noqa: PLR0913
         is_archive=False,
     )
     if state_directory_exists:
-        if use_r_clone_mount:
+        if requires_data_mounting:
             await _start_mount_if_required(
                 mount_manager,
                 user_id,
@@ -373,7 +373,7 @@ async def pull(  # pylint: disable=too-many-arguments  # noqa: PLR0913
                 node_uuid,
                 destination_path,
                 index,
-                use_r_clone_mount=use_r_clone_mount,
+                requires_data_mounting=requires_data_mounting,
             )
         else:
             await _pull_directory(
@@ -395,6 +395,6 @@ async def pull(  # pylint: disable=too-many-arguments  # noqa: PLR0913
         node_uuid,
         destination_path,
         index,
-        use_r_clone_mount=use_r_clone_mount,
+        requires_data_mounting=requires_data_mounting,
     )
     _logger.debug("No content previously saved for '%s'", destination_path)
