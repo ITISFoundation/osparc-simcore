@@ -87,6 +87,16 @@ from ._provider_protocol import AutoscalingProvider
 _logger = logging.getLogger(__name__)
 
 
+def _adjust_instances_resources(
+    non_adjusted_instances: list[EC2InstanceData], adjusted_resources_by_type: dict[InstanceTypeType, Resources]
+) -> list[EC2InstanceData]:
+    """Adjusts the resources of the given EC2 instances based on their type."""
+    return [
+        dataclasses.replace(i, resources=adjusted_resources_by_type.get(i.type, i.resources))
+        for i in non_adjusted_instances
+    ]
+
+
 async def _analyze_current_cluster(
     app: FastAPI,
     auto_scaling_mode: AutoscalingProvider,
@@ -98,32 +108,38 @@ async def _analyze_current_cluster(
     # get current docker nodes (these are associated (active or drained) or disconnected)
     docker_nodes: list[Node] = await auto_scaling_mode.get_monitored_nodes(app)
 
+    # Build adjusted resource map from the already-adjusted allowed_instance_types
+    # this accounts for OPS services, sidecar overhead, etc
+    adjusted_resources_by_type = {t.name: t.resources for t in allowed_instance_types}
+
     # get the EC2 instances we have
-    existing_ec2_instances: list[EC2InstanceData] = await get_ec2_client(app).get_instances(
-        key_names=[app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME],
-        tags=auto_scaling_mode.get_ec2_tags(app),
-        state_names=["pending", "running"],
+    existing_ec2_instances = _adjust_instances_resources(
+        await get_ec2_client(app).get_instances(
+            key_names=[app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME],
+            tags=auto_scaling_mode.get_ec2_tags(app),
+            state_names=["pending", "running"],
+        ),
+        adjusted_resources_by_type,
     )
 
-    terminated_ec2_instances: list[EC2InstanceData] = await get_ec2_client(app).get_instances(
+    terminated_ec2_instances = await get_ec2_client(app).get_instances(
         key_names=[app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME],
         tags=auto_scaling_mode.get_ec2_tags(app),
         state_names=["terminated"],
     )
 
-    warm_buffer_ec2_instances: list[EC2InstanceData] = await get_ec2_client(app).get_instances(
-        key_names=[app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME],
-        tags=get_deactivated_warm_buffer_ec2_tags(auto_scaling_mode.get_ec2_tags(app)),
-        state_names=["stopped"],
+    warm_buffer_ec2_instances = _adjust_instances_resources(
+        await get_ec2_client(app).get_instances(
+            key_names=[app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME],
+            tags=get_deactivated_warm_buffer_ec2_tags(auto_scaling_mode.get_ec2_tags(app)),
+            state_names=["stopped"],
+        ),
+        adjusted_resources_by_type,
     )
-    # Build adjusted resource map from the already-adjusted allowed_instance_types
-    adjusted_resources_by_type = {t.name: t.resources for t in allowed_instance_types}
 
-    # Adjust resources for all existing EC2 instances + add the generic resources
+    # Add the generic resources for each instance based on the provider specifics
+    # (e.g., Dask threads, EC2 instance type name)
     for i in itertools.chain(existing_ec2_instances, warm_buffer_ec2_instances):
-        # the resources were already adjusted by type w.r.t. usage of sidecar, OPS tools
-        adjusted_resources = adjusted_resources_by_type.get(i.type, i.resources)
-        object.__setattr__(i, "resources", adjusted_resources)
         auto_scaling_mode.add_instance_generic_resources(app, i)
 
     attached_ec2s, pending_ec2s = associate_ec2_instances_with_nodes(docker_nodes, existing_ec2_instances)
@@ -355,6 +371,8 @@ async def _try_attach_pending_ec2s(
 
 
 async def _sorted_allowed_instance_types(app: FastAPI, auto_scaling_mode: AutoscalingProvider) -> list[EC2InstanceType]:
+    """Returns the allowed instance types sorted as per configuration and adjusted to the autoscaling mode."""
+
     app_settings = get_application_settings(app)
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
     ec2_client = get_ec2_client(app)
@@ -373,6 +391,7 @@ async def _sorted_allowed_instance_types(app: FastAPI, auto_scaling_mode: Autosc
         # NOTE: will raise ValueError if allowed_instance_types not in allowed_instance_type_names
         return allowed_instance_type_names.index(f"{instance_type.name}")
 
+    # NOTE: adjust the instance type resources based on provider specifics (e.g. Dask overhead or OPS overhead)
     return [
         auto_scaling_mode.adjust_instance_type_resources(app, instance_type)
         for instance_type in sorted(allowed_instance_types, key=_as_selection)
