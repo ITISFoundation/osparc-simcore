@@ -130,6 +130,8 @@ qx.Class.define("osparc.editor.EmailEditor", {
         mount.innerHTML = contentHtml;
       }
 
+      console.log("Preview HTML:", doc.documentElement.outerHTML);
+
       return "<!DOCTYPE html>\n" + doc.documentElement.outerHTML;
     },
   }

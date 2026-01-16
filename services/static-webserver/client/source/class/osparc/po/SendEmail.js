@@ -24,7 +24,7 @@ qx.Class.define("osparc.po.SendEmail", {
       switch (id) {
         case "email-editor":
           control = new osparc.editor.EmailEditor();
-          this.add(control, {
+          this._add(control, {
             flex: 1
           });
           break;
