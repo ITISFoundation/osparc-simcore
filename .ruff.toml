@@ -106,6 +106,8 @@ dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 fixture-parentheses = false
 parametrize-names-type = "csv"
 
+[lint.pylint]
+max-args = 10
 
 [format]
 # Like Black, use double quotes for strings.
