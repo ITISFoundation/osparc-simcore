@@ -114,6 +114,11 @@ class _TestingDelegate(DelegateInterface):
         self.vfs_cache_path = vfs_cache_path
         self.mocked_shutdown = mocked_shutdown
 
+    async def get_local_vfs_cache_path(self) -> Path:
+        # should normally be /DY_VOLUMES/vfs-cache in the sidecar
+        # but for testing it's ok to reuse the local folder since it's not mounted
+        return self.vfs_cache_path
+
     async def get_bind_paths(self, state_path: Path) -> list:
         return [
             {
@@ -169,12 +174,6 @@ class _TestingDelegate(DelegateInterface):
             existing_network = DockerNetwork(client, network_name)
             await existing_network.show()
             await existing_network.delete()
-
-    async def get_docker_root_path(self) -> Path:
-        async with Docker() as client:
-            info = await client.system.info()
-            docker_root_dir = info["DockerRootDir"]
-            return Path(docker_root_dir)
 
 
 @pytest.fixture

@@ -55,18 +55,27 @@ class DynamicSidecarRCloneMountDelegate(DelegateInterface):
         self.settings = settings
         self.mounted_volumes = mounted_volumes
 
-    async def get_bind_paths(self, state_path: Path) -> list:
+    async def _get_vfs_paths(self) -> tuple[Path, Path]:
         vfs_cache_path = await self.mounted_volumes.get_vfs_cache_docker_volume(self.settings.DY_SIDECAR_RUN_ID)
 
         vfs_source, vfs_target = (
             f"{vfs_cache_path}".replace(f"{self.settings.DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR}", "")
         ).split(":")
 
+        return Path(vfs_source), Path(vfs_target)
+
+    async def get_local_vfs_cache_path(self) -> Path:
+        _, vfs_target = await self._get_vfs_paths()
+        return self.settings.DYNAMIC_SIDECAR_DY_VOLUMES_MOUNT_DIR / vfs_target.relative_to("/")
+
+    async def get_bind_paths(self, state_path: Path) -> list:
+        vfs_source, vfs_target = await self._get_vfs_paths()
+
         bind_paths: list[dict] = [
             {
                 "Type": "bind",
-                "Source": vfs_source,
-                "Target": vfs_target,
+                "Source": f"{vfs_source}",
+                "Target": f"{vfs_target}",
                 "BindOptions": {"Propagation": "rshared"},
             }
         ]
@@ -158,12 +167,6 @@ class DynamicSidecarRCloneMountDelegate(DelegateInterface):
             existing_network = DockerNetwork(client, network_name)
             await existing_network.show()
             await existing_network.delete()
-
-    async def get_docker_root_path(self) -> Path:
-        async with _get_docker_client() as client:
-            info = await client.system.info()
-            docker_root_dir = info["DockerRootDir"]
-            return Path(docker_root_dir)
 
 
 def setup_r_clone_mount_manager(app: FastAPI):

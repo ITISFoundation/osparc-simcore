@@ -20,6 +20,12 @@ class MountActivity(BaseModel):
 
 class DelegateInterface(ABC):
     @abstractmethod
+    async def get_local_vfs_cache_path(self) -> Path:
+        """
+        Provides the folder to which the vfs-cache volume is mounted locally
+        """
+
+    @abstractmethod
     async def get_bind_paths(self, state_path: Path) -> list:
         """
         Provides bind paths for rclone mount given the state path
@@ -62,6 +68,3 @@ class DelegateInterface(ABC):
 
     @abstractmethod
     async def remove_network(self, network_name: str) -> None: ...
-
-    @abstractmethod
-    async def get_docker_root_path(self) -> Path: ...
