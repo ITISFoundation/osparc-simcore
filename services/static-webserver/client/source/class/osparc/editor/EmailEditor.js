@@ -37,14 +37,9 @@ qx.Class.define("osparc.editor.EmailEditor", {
     }, this);
 
     osparc.store.Faker.getInstance().fetchEmailTemplate("free-email")
-      .then((templateEmail) => {
-        this.setTemplateEmail(templateEmail);
+      .then(templateEmail => {
+        this.setTemplateEmail(templateEmail.body);
       });
-  },
-
-  events: {
-    "textChanged": "qx.event.type.Data",
-    "cancel": "qx.event.type.Event"
   },
 
   properties: {
@@ -76,7 +71,7 @@ qx.Class.define("osparc.editor.EmailEditor", {
           this.add(control);
           break;
         case "text-editor":
-          control = new osparc.editor.TextEditor().set({
+          control = new qx.ui.form.TextArea().set({
             placeholder: "Write your email..."
           });
           this.getChildControl("editor-page").add(control);
@@ -99,9 +94,8 @@ qx.Class.define("osparc.editor.EmailEditor", {
       const previewEmail = this.getChildControl("preview-email");
       previewEmail.setHtml("<b>Rendering preview...</b>");
 
-
       const textEditor = this.getChildControl("text-editor");
-      const emailContent = textEditor.getText();
+      const emailContent = textEditor.getValue();
       const templateEmail = this.getTemplateEmail();
 
       const previewHtml = this.__buildPreviewHtml(templateEmail, emailContent);
