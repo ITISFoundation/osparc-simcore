@@ -36,4 +36,4 @@ def downgrade():
     op.drop_column("groups_extra_properties", "mount_data")
     # ### end Alembic commands ###
 
-    op.drop_constraint("group_id_product_name_pk", "groups_extra_properties", type_="primarykey")
+    op.drop_constraint("group_id_product_name_pk", "groups_extra_properties", type_="primary")
