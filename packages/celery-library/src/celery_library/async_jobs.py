@@ -269,16 +269,13 @@ async def submit_job_and_wait(
             owner_metadata=owner_metadata,
             **kwargs,
         )
-    except (TimeoutError, CancelledError) as error:
+    except (TimeoutError, CancelledError):
         if async_job is not None:
-            try:
-                await cancel_job(
-                    task_manager,
-                    owner_metadata=owner_metadata,
-                    job_id=async_job.job_id,
-                )
-            except Exception as exc:
-                raise exc from error
+            await cancel_job(
+                task_manager,
+                owner_metadata=owner_metadata,
+                job_id=async_job.job_id,
+            )
         raise
 
     async for wait_and_ in wait_and_get_job_result(
