@@ -49,13 +49,7 @@ class SimcoreSDKMountSettings(BaseCustomSettings):
         Field(
             gt=0.0,
             le=1.0,
-            description=(
-                "maximum size of the VFS cache on the disk to be enforced by rclone"
-                "NOTE 1: the vfs-cache is the folder where the real data form the user's files is stored"
-                "NOTE 2: if a user has a file that goes over this limit the cache will not behave as expected"
-                "NOTE 3: keep this value as high as possible. Currently this limits the size of files which "
-                "can be safely uploaded via rclone mount to a bit under this number"
-            ),
+            description="allows to selec how much of the disk where docker is running is dedicated to vfs cache",
         ),
     ] = 0.9
 

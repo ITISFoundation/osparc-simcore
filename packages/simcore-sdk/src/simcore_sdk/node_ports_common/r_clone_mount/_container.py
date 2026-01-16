@@ -73,6 +73,11 @@ cleanup
 
 
 async def _get_max_vfs_cache_size(delegate: DelegateInterface, mount_settings: SimcoreSDKMountSettings) -> str:
+    # maximum size of the VFS cache on the disk to be enforced by rclone
+    # NOTE 1: the vfs-cache is the folder where the real data form the user's files is stored
+    # NOTE 2: if a user has a file that goes over this limit the cache will not behave as expected
+    # NOTE 3: keep this value as high as possible. Currently this limits the size of files which
+    # can be safely uploaded via rclone mount to a bit under this number
     root_path = await delegate.get_docker_root_path()
     total_disk_space = (await disk_usage(root_path)).total
     max_vfs_cache_size = int(total_disk_space * mount_settings.R_CLONE_SIMCORE_SDK_MOUNT_VFS_CACHE_PERCENT_DISK_SPACE)
