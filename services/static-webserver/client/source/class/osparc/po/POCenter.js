@@ -31,6 +31,7 @@ qx.Class.define("osparc.po.POCenter", {
     this.__addPreRegistrationPage();
     this.__addInvitationsPage();
     this.__addProductPage();
+    this.__addSendEmailPage();
 
     if (openPage) {
       this.__openPage(openPage);
@@ -72,6 +73,13 @@ qx.Class.define("osparc.po.POCenter", {
       const iconSrc = "@FontAwesome5Solid/info/22";
       const productInfo = new osparc.po.ProductInfo();
       this.addTab(title, iconSrc, productInfo);
+    },
+
+    __addSendEmailPage: function() {
+      const title = this.tr("Send Email");
+      const iconSrc = "@FontAwesome5Solid/paper-plane/22";
+      const sendEmail = new osparc.po.SendEmail();
+      this.addTab(title, iconSrc, sendEmail);
     },
 
     __openPage: function(openPage) {
