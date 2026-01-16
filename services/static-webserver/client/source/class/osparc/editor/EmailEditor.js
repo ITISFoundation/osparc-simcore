@@ -68,9 +68,13 @@ qx.Class.define("osparc.editor.EmailEditor", {
           break;
         case "text-editor":
           control = new qx.ui.form.TextArea().set({
-            placeholder: "Write your email..."
+            placeholder: "Write your email...",
+            allowGrowY: true,
+            allowGrowX: true,
           });
-          this.getChildControl("editor-page").add(control);
+          this.getChildControl("editor-page").add(control, {
+            flex: 1
+          });
           break;
         case "preview-email":
           // using qx.ui.embed.Iframe instead of qx.ui.embed.Html because:
@@ -78,8 +82,13 @@ qx.Class.define("osparc.editor.EmailEditor", {
           // - The template is a full HTML document
           // - Security: avoids script execution
           // - Much closer to real email rendering
-          control = new qx.ui.embed.Iframe();
-          this.getChildControl("preview-page").add(control);
+          control = new qx.ui.embed.Iframe().set({
+            allowGrowY: true,
+            allowGrowX: true,
+          });
+          this.getChildControl("preview-page").add(control, {
+            flex: 1
+          });
           break;
       }
 
@@ -127,8 +136,6 @@ qx.Class.define("osparc.editor.EmailEditor", {
       if (mount) {
         mount.innerHTML = contentHtml;
       }
-
-      console.log("Preview HTML:", doc.documentElement.outerHTML);
 
       return "<!DOCTYPE html>\n" + doc.documentElement.outerHTML;
     },
