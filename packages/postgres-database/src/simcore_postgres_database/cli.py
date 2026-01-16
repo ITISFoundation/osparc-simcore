@@ -70,7 +70,6 @@ def main():
 def discover(**cli_inputs) -> dict | None:
     """Discovers databases and caches configs in ~/.simcore_postgres_database.json (except if --no-cache)"""
     # NOTE: Do not add defaults to user, password so we get a chance to ping urls
-    # TODO: if multiple candidates online, then query user to select  # noqa: FIX002
 
     click.echo("Discovering database ...")
     cli_cfg = {key: value for key, value in cli_inputs.items() if value is not None}
