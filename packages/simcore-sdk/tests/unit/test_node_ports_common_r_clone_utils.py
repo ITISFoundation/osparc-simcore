@@ -5,8 +5,8 @@ from unittest.mock import AsyncMock
 import pytest
 from pydantic import TypeAdapter
 from simcore_sdk.node_ports_common.r_clone_utils import (
-    EditEntries,
-    RemoveEntries,
+    EditArgument,
+    RemoveArguments,
     SyncProgressLogParser,
     _RCloneSyncMessageBase,
     _RCloneSyncMessages,
@@ -97,13 +97,13 @@ _SOURCE_COMMAND: Final[list[str]] = [
     "edit,remove,expected_command",
     [
         pytest.param(
-            TypeAdapter(EditEntries).validate_python({}),
-            TypeAdapter(RemoveEntries).validate_python([]),
+            TypeAdapter(EditArgument).validate_python({}),
+            TypeAdapter(RemoveArguments).validate_python([]),
             _SOURCE_COMMAND,
             id="no-changes",
         ),
         pytest.param(
-            TypeAdapter(EditEntries).validate_python(
+            TypeAdapter(EditArgument).validate_python(
                 {
                     "--transfers": ["--transfers", "32"],
                     "--buffer-size": ("--buffer-size-X", "16M"),
@@ -112,7 +112,7 @@ _SOURCE_COMMAND: Final[list[str]] = [
                     "-add": ("-add", "3"),
                 }
             ),
-            TypeAdapter(RemoveEntries).validate_python([("--config", 2)]),
+            TypeAdapter(RemoveArguments).validate_python([("--config", 2)]),
             [
                 "rclone",
                 "--transfers",
@@ -130,5 +130,5 @@ _SOURCE_COMMAND: Final[list[str]] = [
         ),
     ],
 )
-def test_overwrite_command(edit: EditEntries, remove: RemoveEntries, expected_command: list[str]) -> None:
+def test_overwrite_command(edit: EditArgument, remove: RemoveArguments, expected_command: list[str]) -> None:
     assert overwrite_command(_SOURCE_COMMAND, edit=edit, remove=remove) == expected_command

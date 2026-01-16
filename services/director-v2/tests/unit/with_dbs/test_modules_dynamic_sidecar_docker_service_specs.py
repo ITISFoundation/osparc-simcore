@@ -288,7 +288,7 @@ def expected_dynamic_sidecar_spec(
                         'ENTRIES":[]}'
                     ),
                     "R_CLONE_SIMCORE_SDK_SYNC_SETTINGS": (
-                        '{"R_CLONE_SIMCORE_SDK_SYNC_COMMAND_EDIT_ENTRIES":{},"R_CLONE_SIMCORE_SDK_SYNC_COMMAND_REMOVE_ENTRIES":[]}'
+                        '{"R_CLONE_SIMCORE_SDK_SYNC_COMMAND_EDIT_ARGUMENTS":{},"R_CLONE_SIMCORE_SDK_SYNC_COMMAND_REMOVE_ARGUMENTS":[]}'
                     ),
                     "R_CLONE_PROVIDER": "MINIO",
                     "SC_BOOT_MODE": "production",

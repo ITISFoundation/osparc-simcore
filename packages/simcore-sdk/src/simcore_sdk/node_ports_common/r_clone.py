@@ -175,7 +175,7 @@ async def _sync_sources(
             "--retries-sleep",
             "30s",
             "--transfers",
-            "16",  # TODO: remember to overwrite these settings in the ops configs with 32  # noqa: FIX002
+            "16",
             # below two options reduce to a minimum the memory footprint
             # https://forum.rclone.org/t/how-to-set-a-memory-limit/10230/4
             "--buffer-size",  # docs https://rclone.org/docs/#buffer-size-size
@@ -204,8 +204,8 @@ async def _sync_sources(
         sync_settings = r_clone_settings.R_CLONE_SIMCORE_SDK_SYNC_SETTINGS
         r_clone_command = overwrite_command(
             command_parts,
-            edit=sync_settings.R_CLONE_SIMCORE_SDK_SYNC_COMMAND_EDIT_ENTRIES,
-            remove=sync_settings.R_CLONE_SIMCORE_SDK_SYNC_COMMAND_REMOVE_ENTRIES,
+            edit=sync_settings.R_CLONE_SIMCORE_SDK_SYNC_COMMAND_EDIT_ARGUMENTS,
+            remove=sync_settings.R_CLONE_SIMCORE_SDK_SYNC_COMMAND_REMOVE_ARGUMENTS,
         )
 
         async with progress_bar.sub_progress(

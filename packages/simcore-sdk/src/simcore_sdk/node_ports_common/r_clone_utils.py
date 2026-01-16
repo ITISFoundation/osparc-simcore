@@ -7,7 +7,7 @@ from models_library.utils.change_case import snake_to_camel
 from pydantic import BaseModel, ByteSize, ConfigDict, Field, TypeAdapter, validate_call
 from servicelib.logging_utils import log_catch
 from servicelib.progress_bar import ProgressBarData
-from settings_library.r_clone import EditEntries, RemoveEntries
+from settings_library.r_clone import EditArguments, RemoveArguments
 
 from ._utils import BaseLogParser
 
@@ -102,7 +102,7 @@ class CommandResultCaptureParser(BaseLogParser):
 
 
 @validate_call(validate_return=True)
-def overwrite_command(source_command: list[str], *, edit: EditEntries, remove: RemoveEntries) -> list[str]:
+def overwrite_command(source_command: list[str], *, edit: EditArguments, remove: RemoveArguments) -> list[str]:
     """Given a `source_command` it produces a new command by applying `edit` and `remove` operations in this order.
 
     Arguments:

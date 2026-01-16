@@ -13,8 +13,6 @@ from .s3 import S3Settings
 DEFAULT_VFS_CACHE_PATH: Final[Path] = Path("/vfs-cache")
 
 
-TPSLIMIT: Final[NonNegativeInt] = 2000
-
 _ONE_CPU: Final[NonNegativeInt] = int(1e9)
 
 
@@ -25,13 +23,13 @@ class S3Provider(StrEnum):
     MINIO = "MINIO"
 
 
-type ElemertsToRemove = Annotated[Literal[1, 2], int]
-type SearchOption = str
-type EditOption = str
-type OptionValue = str
-type ReplaceOption = EditOption | tuple[EditOption, OptionValue]
-type EditEntries = dict[SearchOption, ReplaceOption]
-type RemoveEntries = list[tuple[SearchOption, ElemertsToRemove]]
+type SearchArgument = str
+type EditArgument = str
+type ArgumentValue = str
+type ReplaceArgument = EditArgument | tuple[EditArgument, ArgumentValue]
+type ElementsToRemove = Annotated[Literal[1, 2], int]
+type EditArguments = dict[SearchArgument, ReplaceArgument]
+type RemoveArguments = list[tuple[SearchArgument, ElementsToRemove]]
 
 
 class SimcoreSDKMountSettings(BaseCustomSettings):
@@ -84,21 +82,27 @@ class SimcoreSDKMountSettings(BaseCustomSettings):
         NonNegativeInt, Field(description="CPU limit for the rclone mount container")
     ] = 1 * _ONE_CPU
 
-    R_CLONE_SIMCORE_SDK_MOUNT_COMMAND_EDIT_ENTRIES: Annotated[EditEntries, Field(default_factory=dict)] = (
-        DEFAULT_FACTORY
-    )
+    R_CLONE_SIMCORE_SDK_MOUNT_COMMAND_EDIT_ARGUMENTS: Annotated[
+        EditArguments,
+        Field(default_factory=dict, description="arguments to be changed or added to the rclone mount command"),
+    ] = DEFAULT_FACTORY
 
-    R_CLONE_SIMCORE_SDK_MOUNT_COMMAND_REMOVE_ENTRIES: Annotated[RemoveEntries, Field(default_factory=list)] = (
-        DEFAULT_FACTORY
-    )
+    R_CLONE_SIMCORE_SDK_MOUNT_COMMAND_REMOVE_ARGUMENTS: Annotated[
+        RemoveArguments,
+        Field(default_factory=list, description="arguments to be removed from the rclone mount command"),
+    ] = DEFAULT_FACTORY
 
 
 class SimcoreSDKSyncSettings(BaseCustomSettings):
-    R_CLONE_SIMCORE_SDK_SYNC_COMMAND_EDIT_ENTRIES: Annotated[EditEntries, Field(default_factory=dict)] = DEFAULT_FACTORY
+    R_CLONE_SIMCORE_SDK_SYNC_COMMAND_EDIT_ARGUMENTS: Annotated[
+        EditArguments,
+        Field(default_factory=dict, description="arguments to be changed or added to the rclone sync command"),
+    ] = DEFAULT_FACTORY
 
-    R_CLONE_SIMCORE_SDK_SYNC_COMMAND_REMOVE_ENTRIES: Annotated[RemoveEntries, Field(default_factory=list)] = (
-        DEFAULT_FACTORY
-    )
+    R_CLONE_SIMCORE_SDK_SYNC_COMMAND_REMOVE_ARGUMENTS: Annotated[
+        RemoveArguments,
+        Field(default_factory=list, description="arguments to be removed from the rclone sync command"),
+    ] = DEFAULT_FACTORY
 
 
 class RCloneSettings(BaseCustomSettings):

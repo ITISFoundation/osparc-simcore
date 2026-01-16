@@ -11,7 +11,7 @@ from models_library.basic_types import PortInt
 from models_library.progress_bar import ProgressReport
 from models_library.projects_nodes_io import NodeID, StorageFileID
 from pydantic import NonNegativeInt
-from settings_library.r_clone import DEFAULT_VFS_CACHE_PATH, TPSLIMIT, RCloneSettings, SimcoreSDKMountSettings
+from settings_library.r_clone import DEFAULT_VFS_CACHE_PATH, RCloneSettings, SimcoreSDKMountSettings
 from tenacity import (
     before_sleep_log,
     retry,
@@ -37,6 +37,7 @@ _MAX_WAIT_RC_HTTP_INTERFACE_READY: Final[timedelta] = timedelta(seconds=10)
 _DEFAULT_UPDATE_INTERVAL: Final[timedelta] = timedelta(seconds=1)
 _DEFAULT_R_CLONE_CLIENT_REQUEST_TIMEOUT: Final[timedelta] = timedelta(seconds=20)
 
+_TPSLIMIT: Final[NonNegativeInt] = 2000
 
 _DOCKER_PREFIX_MOUNT: Final[str] = "rcm"
 
@@ -110,9 +111,9 @@ def _get_rclone_mount_command(
         "--attr-timeout",
         "1m",
         "--tpslimit",
-        f"{TPSLIMIT}",
+        f"{_TPSLIMIT}",
         "--tpslimit-burst",
-        f"{TPSLIMIT * 2}",
+        f"{_TPSLIMIT * 2}",
         "--no-modtime",
         "--max-buffer-memory",
         "16M",
@@ -145,8 +146,8 @@ def _get_rclone_mount_command(
     r_clone_command = " ".join(
         overwrite_command(
             command_parts,
-            edit=mount_settings.R_CLONE_SIMCORE_SDK_MOUNT_COMMAND_EDIT_ENTRIES,
-            remove=mount_settings.R_CLONE_SIMCORE_SDK_MOUNT_COMMAND_REMOVE_ENTRIES,
+            edit=mount_settings.R_CLONE_SIMCORE_SDK_MOUNT_COMMAND_EDIT_ARGUMENTS,
+            remove=mount_settings.R_CLONE_SIMCORE_SDK_MOUNT_COMMAND_REMOVE_ARGUMENTS,
         )
     )
     return _R_CLONE_MOUNT_TEMPLATE.format(
