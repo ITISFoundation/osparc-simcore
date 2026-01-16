@@ -90,7 +90,15 @@ _logger = logging.getLogger(__name__)
 def _adjust_instances_resources(
     non_adjusted_instances: list[EC2InstanceData], adjusted_resources_by_type: dict[InstanceTypeType, Resources]
 ) -> list[EC2InstanceData]:
-    """Adjusts the resources of the given EC2 instances based on their type."""
+    """Applies precomputed resource profiles to EC2 instances.
+
+    The ``adjusted_resources_by_type`` mapping typically already accounts for
+    OPS services, dynamic-sidecar overhead, and similar system-level
+    reservations. Each instance in ``non_adjusted_instances`` is returned
+    with its ``resources`` field replaced by the matching adjusted resources
+    for its ``type`` when available; otherwise its original ``resources``
+    are preserved.
+    """
     return [
         dataclasses.replace(i, resources=adjusted_resources_by_type.get(i.type, i.resources))
         for i in non_adjusted_instances
