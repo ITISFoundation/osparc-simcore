@@ -232,7 +232,7 @@ async def push(  # pylint: disable=too-many-arguments  # noqa: PLR0913
 
 async def _requires_data_mounting(application_name: str, user_id: UserID, product_name: ProductName) -> bool:
     try:
-        group_extra_properties = await DBManager(application_name=application_name).get_group_extra_properties(
+        group_extra_properties = await DBManager(application_name=application_name).get_aggregated_properties_for_user(
             user_id=user_id, product_name=product_name
         )
     except GroupExtraPropertiesNotFoundError:

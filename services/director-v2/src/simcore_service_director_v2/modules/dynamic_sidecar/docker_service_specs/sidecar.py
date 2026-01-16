@@ -221,7 +221,7 @@ async def _get_mounts(
     dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings,
     has_quota_support: bool,
     rpc_client: RabbitMQRPCClient,
-    is_efs_enabled: bool,
+    user_extra_properties: UserExtraProperties,
 ) -> list[dict[str, Any]]:
     mounts: list[dict[str, Any]] = [
         # docker socket needed to use the docker api
@@ -270,7 +270,7 @@ async def _get_mounts(
 
     # state paths now get mounted via different driver and are synced to s3 automatically
     for path_to_mount in scheduler_data.paths_mapping.state_paths:
-        if is_efs_enabled:
+        if user_extra_properties.is_efs_enabled:
             assert dynamic_sidecar_settings.DYNAMIC_SIDECAR_EFS_SETTINGS  # nosec
 
             _storage_directory_name = DynamicSidecarVolumesPathsResolver.volume_name(path_to_mount).strip("_")
@@ -305,7 +305,7 @@ async def _get_mounts(
                 )
             )
 
-    if scheduler_data.paths_mapping.state_paths:
+    if scheduler_data.paths_mapping.state_paths and user_extra_properties.mount_data:
         mounts.append(
             DynamicSidecarVolumesPathsResolver.mount_vfs_cache(
                 swarm_stack_name=dynamic_services_scheduler_settings.SWARM_STACK_NAME,
@@ -410,7 +410,7 @@ async def get_dynamic_sidecar_spec(  # pylint:disable=too-many-arguments# noqa: 
         dynamic_sidecar_settings=dynamic_sidecar_settings,
         has_quota_support=has_quota_support,
         rpc_client=rpc_client,
-        is_efs_enabled=user_extra_properties.is_efs_enabled,
+        user_extra_properties=user_extra_properties,
     )
 
     ports = _get_ports(dynamic_sidecar_settings=dynamic_sidecar_settings, app_settings=app_settings)

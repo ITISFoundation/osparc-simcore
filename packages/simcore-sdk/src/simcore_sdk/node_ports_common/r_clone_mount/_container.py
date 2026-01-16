@@ -60,6 +60,9 @@ cat <<EOF > {r_clone_config_path}
 {r_clone_config_content}
 EOF
 
+echo "Ensure vfs-cache folder exists at: {target_cache_path}"
+mkdir -p "{target_cache_path}"
+
 echo "Start command: {r_clone_command}"
 
 {r_clone_command} 2>&1 &
@@ -84,17 +87,24 @@ async def _get_max_vfs_cache_size(delegate: DelegateInterface, mount_settings: S
     return f"{max_vfs_cache_size}"
 
 
+def get_vfs_cache_path(index: NonNegativeInt) -> Path:
+    """There is only 1 volume mounting the VFS cache, create different subfolder per mount"""
+    return DEFAULT_VFS_CACHE_PATH / f"{index}"
+
+
 async def _get_rclone_mount_command(
     delegate: DelegateInterface,
     mount_settings: SimcoreSDKMountSettings,
     r_clone_config_content: str,
     remote_path: StorageFileID,
     local_mount_path: Path,
+    index: NonNegativeInt,
     rc_port: PortInt,
     rc_user: str,
     rc_password: str,
 ) -> str:
     escaped_remote_path = f"{remote_path}".lstrip("/")
+    target_cache_path = get_vfs_cache_path(index)
 
     command_parts = [
         "rclone",
@@ -119,7 +129,7 @@ async def _get_rclone_mount_command(
         "--vfs-write-back",
         "10s",
         "--cache-dir",
-        f"{DEFAULT_VFS_CACHE_PATH}",
+        f"{target_cache_path}",
         "--dir-cache-time",
         "10m",
         "--attr-timeout",
@@ -169,6 +179,7 @@ async def _get_rclone_mount_command(
         r_clone_config_content=r_clone_config_content,
         r_clone_command=r_clone_command,
         local_mount_path=local_mount_path,
+        target_cache_path=target_cache_path,
     )
 
 
@@ -228,6 +239,7 @@ class ContainerManager:  # pylint:disable=too-many-instance-attributes
                 r_clone_config_content=self.r_clone_config_content,
                 remote_path=self.remote_path,
                 local_mount_path=self.local_mount_path,
+                index=self.index,
                 rc_port=self.rc_port,
                 rc_user=self.rc_user,
                 rc_password=self.rc_password,

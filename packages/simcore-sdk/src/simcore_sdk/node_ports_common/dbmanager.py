@@ -25,9 +25,7 @@ from .exceptions import NodeNotFound, ProjectNotFoundError
 _logger = logging.getLogger(__name__)
 
 
-async def _get_node_from_db(
-    project_id: str, node_uuid: str, connection: AsyncConnection
-) -> sa.engine.Row:
+async def _get_node_from_db(project_id: str, node_uuid: str, connection: AsyncConnection) -> sa.engine.Row:
     _logger.debug(
         "Reading from comp_tasks table for node uuid %s, project %s",
         node_uuid,
@@ -37,17 +35,13 @@ async def _get_node_from_db(
         sa.select(sa.func.count())
         .select_from(comp_tasks)
         .where(
-            (comp_tasks.c.node_id == node_uuid)
-            & (comp_tasks.c.project_id == project_id),
+            (comp_tasks.c.node_id == node_uuid) & (comp_tasks.c.project_id == project_id),
         )
     )
     if rows_count > 1:
         _logger.error("the node id %s is not unique", node_uuid)
     result = await connection.execute(
-        sa.select(comp_tasks).where(
-            (comp_tasks.c.node_id == node_uuid)
-            & (comp_tasks.c.project_id == project_id)
-        )
+        sa.select(comp_tasks).where((comp_tasks.c.node_id == node_uuid) & (comp_tasks.c.project_id == project_id))
     )
     node = result.one_or_none()
     if not node:
@@ -68,9 +62,7 @@ async def _update_comp_run_snapshot_tasks_if_computational(
     """
     node = await _get_node_from_db(project_id, node_uuid, connection)
     if node.node_class == NodeClass.COMPUTATIONAL.value:
-        _latest_run_id = await get_latest_run_id_for_project(
-            engine, connection, project_id=project_id
-        )
+        _latest_run_id = await get_latest_run_id_for_project(engine, connection, project_id=project_id)
         if _latest_run_id is not None:
             await update_for_run_id_and_node_id(
                 engine,
@@ -87,9 +79,7 @@ async def _update_comp_run_snapshot_tasks_if_computational(
 
 
 class DBContextManager:
-    def __init__(
-        self, db_engine: AsyncEngine | None = None, *, application_name: str
-    ) -> None:
+    def __init__(self, db_engine: AsyncEngine | None = None, *, application_name: str) -> None:
         self._db_engine: AsyncEngine | None = db_engine
         self._db_engine_created: bool = False
         self._application_name: str = application_name
@@ -126,24 +116,20 @@ class DBManager:
         node_uuid: str,
     ):
         message = (
-            f"Writing port configuration to database for "
-            f"project={project_id} node={node_uuid}: {json_configuration}"
+            f"Writing port configuration to database for project={project_id} node={node_uuid}: {json_configuration}"
         )
         _logger.debug(message)
 
         node_configuration = json_loads(json_configuration)
         async with (
-            DBContextManager(
-                self._db_engine, application_name=self._application_name
-            ) as engine,
+            DBContextManager(self._db_engine, application_name=self._application_name) as engine,
             engine.begin() as connection,
         ):
             # 1. Update comp_tasks table
             await connection.execute(
                 comp_tasks.update()
                 .where(
-                    (comp_tasks.c.node_id == node_uuid)
-                    & (comp_tasks.c.project_id == project_id),
+                    (comp_tasks.c.node_id == node_uuid) & (comp_tasks.c.project_id == project_id),
                 )
                 .values(
                     schema=node_configuration["schema"],
@@ -158,16 +144,10 @@ class DBManager:
                 engine, connection, project_id, node_uuid, node_configuration
             )
 
-    async def get_ports_configuration_from_node_uuid(
-        self, project_id: str, node_uuid: str
-    ) -> str:
-        _logger.debug(
-            "Getting ports configuration of node %s from comp_tasks table", node_uuid
-        )
+    async def get_ports_configuration_from_node_uuid(self, project_id: str, node_uuid: str) -> str:
+        _logger.debug("Getting ports configuration of node %s from comp_tasks table", node_uuid)
         async with (
-            DBContextManager(
-                self._db_engine, application_name=self._application_name
-            ) as engine,
+            DBContextManager(self._db_engine, application_name=self._application_name) as engine,
             engine.connect() as connection,
         ):
             node = await _get_node_from_db(project_id, node_uuid, connection)
@@ -184,27 +164,21 @@ class DBManager:
 
     async def get_project_owner_user_id(self, project_id: ProjectID) -> UserID:
         async with (
-            DBContextManager(
-                self._db_engine, application_name=self._application_name
-            ) as engine,
+            DBContextManager(self._db_engine, application_name=self._application_name) as engine,
             engine.connect() as connection,
         ):
             prj_owner = await connection.scalar(
-                sa.select(projects.c.prj_owner).where(
-                    projects.c.uuid == f"{project_id}"
-                )
+                sa.select(projects.c.prj_owner).where(projects.c.uuid == f"{project_id}")
             )
             if prj_owner is None:
                 raise ProjectNotFoundError(project_id)
         return TypeAdapter(UserID).validate_python(prj_owner)
 
-    async def get_group_extra_properties(
+    async def get_aggregated_properties_for_user(
         self, user_id: UserID, product_name: ProductName
     ) -> GroupExtraProperties:
         async with (
-            DBContextManager(
-                self._db_engine, application_name=self._application_name
-            ) as engine,
+            DBContextManager(self._db_engine, application_name=self._application_name) as engine,
             engine.connect() as connection,
         ):
             return await GroupExtraPropertiesRepo.get_aggregated_properties_for_user(
