@@ -103,7 +103,7 @@ async def _assemble_function_job_service(
     )
 
 
-async def run_function(  # noqa: PLR0913
+async def run_function(
     task: Task,
     task_key: TaskKey,
     *,

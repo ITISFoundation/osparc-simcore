@@ -111,7 +111,7 @@ def get_program_service(
     )
 
 
-def get_job_service(  # noqa: PLR0913
+def get_job_service(
     web_rest_api: Annotated[AuthSession, Depends(get_webserver_session)],
     director2_api: Annotated[DirectorV2Api, Depends(get_api_client(DirectorV2Api))],
     storage_api: Annotated[StorageApi, Depends(get_api_client(StorageApi))],
@@ -151,7 +151,7 @@ def get_function_service(
     )
 
 
-def get_function_job_service(  # noqa: PLR0913
+def get_function_job_service(
     web_rpc_api: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     job_service: Annotated[JobService, Depends(get_job_service)],
     function_service: Annotated[FunctionService, Depends(get_function_service)],
@@ -171,7 +171,7 @@ def get_function_job_service(  # noqa: PLR0913
     )
 
 
-def get_function_job_task_client_service(  # noqa: PLR0913
+def get_function_job_task_client_service(
     web_rpc_api: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     job_service: Annotated[JobService, Depends(get_job_service)],
     function_service: Annotated[FunctionService, Depends(get_function_service)],
