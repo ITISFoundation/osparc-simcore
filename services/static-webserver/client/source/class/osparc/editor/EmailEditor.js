@@ -69,6 +69,13 @@ qx.Class.define("osparc.editor.EmailEditor", {
           control.getButton().set({
             padding: [4, 8],
           });
+          // Remove rounded bottom edges
+          control.getButton().addListenerOnce("appear", () => {
+            control.getButton().getContentElement().setStyles({
+              "border-bottom-left-radius": "0px",
+              "border-bottom-right-radius": "0px"
+            });
+          });
           this.add(control);
           break;
         case "preview-page":
@@ -79,6 +86,13 @@ qx.Class.define("osparc.editor.EmailEditor", {
           // Style the tab button for better active state visibility
           control.getButton().set({
             padding: [4, 8],
+          });
+          // Remove rounded bottom edges
+          control.getButton().addListenerOnce("appear", () => {
+            control.getButton().getContentElement().setStyles({
+              "border-bottom-left-radius": "0px",
+              "border-bottom-right-radius": "0px"
+            });
           });
           this.add(control);
           break;
@@ -151,7 +165,7 @@ qx.Class.define("osparc.editor.EmailEditor", {
       [this.getChildControl("editor-page"), this.getChildControl("preview-page")].forEach(page => {
         const isActive = page === selectedPage;
         page.getButton().set({
-          backgroundColor: isActive ? "background-main-3" : "background-main-1",
+          backgroundColor: isActive ? "background-main-3" : "background-main-2",
         });
       });
     },
