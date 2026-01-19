@@ -22,7 +22,7 @@ qx.Class.define("osparc.editor.MarkdownEditorInline", {
   construct: function() {
     this.base(arguments);
 
-    this.setLayout(new qx.ui.layout.VBox(8));
+    this.setLayout(new qx.ui.layout.VBox());
 
     this.getChildControl("toolbar");
     this.getChildControl("text-area");
@@ -30,8 +30,9 @@ qx.Class.define("osparc.editor.MarkdownEditorInline", {
 
   statics: {
     __createToolbarBtn(label, tooltip, fn) {
-      const b = new qx.ui.toolbar.Button(label);
-      b.setToolTipText(tooltip);
+      const b = new qx.ui.toolbar.Button(label).set({
+        toolTipText: tooltip,
+      });
       b.addListener("execute", fn);
       return b;
     }
@@ -47,6 +48,7 @@ qx.Class.define("osparc.editor.MarkdownEditorInline", {
           break;
         case "text-area":
           control = new qx.ui.form.TextArea().set({
+            padding: 10,
             wrap: true,
           });
           this.add(control, {
@@ -71,11 +73,12 @@ qx.Class.define("osparc.editor.MarkdownEditorInline", {
     },
 
     __createToolbar: function() {
-      const tb = new qx.ui.toolbar.ToolBar();
+      const tb = new qx.ui.toolbar.ToolBar().set({
+        spacing: 0,
+      });
       tb.add(this.self().__createToolbarBtn("B", "Bold", () => this.__wrapSelection("**", "**", "bold text")));
       tb.add(this.self().__createToolbarBtn("I", "Italic", () => this.__wrapSelection("*", "*", "italic text")));
       tb.add(this.self().__createToolbarBtn("Link", "Insert link", () => this.__insertLink()));
-      tb.add(new qx.ui.toolbar.Separator());
       tb.add(this.self().__createToolbarBtn("• List", "Bulleted list", () => this.__prefixLines("- ")));
       tb.add(this.self().__createToolbarBtn("1. List", "Numbered list", () => this.__numberLines()));
       return tb;
