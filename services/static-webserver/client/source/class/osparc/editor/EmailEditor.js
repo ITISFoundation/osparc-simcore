@@ -36,7 +36,11 @@ qx.Class.define("osparc.editor.EmailEditor", {
       if (selectedPage.getUserData("id") === "preview-email") {
         this.__renderPreview();
       }
+      this.__updateTabColors();
     }, this);
+
+    // Set initial tab colors
+    this.__updateTabColors();
 
     osparc.store.Faker.getInstance().fetchEmailTemplate("free-email")
       .then(templateEmail => {
@@ -61,6 +65,10 @@ qx.Class.define("osparc.editor.EmailEditor", {
             layout: new qx.ui.layout.VBox()
           });
           control.setUserData("id", "text-editor");
+          // Style the tab button for better active state visibility
+          control.getButton().set({
+            padding: [4, 8],
+          });
           this.add(control);
           break;
         case "preview-page":
@@ -68,6 +76,10 @@ qx.Class.define("osparc.editor.EmailEditor", {
             layout: new qx.ui.layout.VBox()
           });
           control.setUserData("id", "preview-email");
+          // Style the tab button for better active state visibility
+          control.getButton().set({
+            padding: [4, 8],
+          });
           this.add(control);
           break;
         case "text-editor":
@@ -132,6 +144,16 @@ qx.Class.define("osparc.editor.EmailEditor", {
       }
 
       return "<!DOCTYPE html>\n" + doc.documentElement.outerHTML;
+    },
+
+    __updateTabColors: function() {
+      const selectedPage = this.getSelection()[0];
+      [this.getChildControl("editor-page"), this.getChildControl("preview-page")].forEach(page => {
+        const isActive = page === selectedPage;
+        page.getButton().set({
+          backgroundColor: isActive ? "background-main-3" : "background-main-1",
+        });
+      });
     },
   }
 });
