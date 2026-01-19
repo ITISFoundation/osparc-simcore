@@ -50,6 +50,7 @@ conversations = sa.Table(
         sa.ForeignKey(
             groups.c.gid,
             name="fk_conversations_user_primary_gid",
+            onupdate=RefActions.CASCADE,
             ondelete=RefActions.SET_NULL,
         ),
         doc="user primary group ID who created the message",

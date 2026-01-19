@@ -276,9 +276,15 @@ def expected_dynamic_sidecar_spec(
                     "REDIS_SETTINGS": (
                         '{"REDIS_SECURE":false,"REDIS_HOST":"redis","REDIS_PORT":6789,"REDIS_USER":null,"REDIS_PASSWORD":null}'
                     ),
-                    "R_CLONE_OPTION_BUFFER_SIZE": "16M",
-                    "R_CLONE_OPTION_RETRIES": "3",
-                    "R_CLONE_OPTION_TRANSFERS": "5",
+                    "R_CLONE_SIMCORE_SDK_MOUNT_SETTINGS": (
+                        '{"R_CLONE_SIMCORE_SDK_MOUNT_TRANSFERS_COMPLETED_TIMEOUT":"PT1H","R_CLONE_SIMCORE_SDK_MOUNT_VFS_CACHE_PE'
+                        'RCENT_DISK_SPACE":0.9,"R_CLONE_SIMCORE_SDK_MOUNT_CONTAINER_CONFIG_FILE_PATH":"/tmp/rclone.conf","R_CLONE_SIMCORE_SDK_MOUNT_CONTAINER_SHOW_DEBUG_LOGS":'
+                        'false,"R_CLONE_SIMCORE_SDK_MOUNT_CONTAINER_MEMORY_LIMIT":2147483648,"R_CLONE_SIMCORE_SDK_MOUNT_CONTAINER_NANO_CPUS":1000000000,"R_CLONE_SIMCORE_SDK_MO'
+                        'UNT_COMMAND_EDIT_ARGUMENTS":{},"R_CLONE_SIMCORE_SDK_MOUNT_COMMAND_REMOVE_ARGUMENTS":[]}'
+                    ),
+                    "R_CLONE_SIMCORE_SDK_SYNC_SETTINGS": (
+                        '{"R_CLONE_SIMCORE_SDK_SYNC_COMMAND_EDIT_ARGUMENTS":{},"R_CLONE_SIMCORE_SDK_SYNC_COMMAND_REMOVE_ARGUMENTS":[]}'
+                    ),
                     "R_CLONE_PROVIDER": "MINIO",
                     "SC_BOOT_MODE": "production",
                     "SIMCORE_HOST_NAME": "dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
@@ -387,6 +393,21 @@ def expected_dynamic_sidecar_spec(
                         },
                     },
                     {
+                        "Target": "/dy-volumes/vfs-cache",
+                        "Source": f"dyv_{service_run_id}_75c7f3f4-18f9-4678-8610-54a2ade78eaa_ehcac-sfv_",
+                        "Type": "volume",
+                        "VolumeOptions": {
+                            "Labels": {
+                                "node_uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                                "study_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
+                                "run_id": service_run_id,
+                                "source": f"dyv_{service_run_id}_75c7f3f4-18f9-4678-8610-54a2ade78eaa_ehcac-sfv_",
+                                "swarm_stack_name": "test_swarm_name",
+                                "user_id": "234",
+                            },
+                        },
+                    },
+                    {
                         "ReadOnly": True,
                         "Source": "/tmp/.X11-unix",  # noqa: S108
                         "Target": "/tmp/.X11-unix",  # noqa: S108
@@ -455,6 +476,7 @@ async def test_get_dynamic_proxy_spec(
                 is_internet_enabled=False,
                 is_telemetry_enabled=True,
                 is_efs_enabled=False,
+                mount_data=True,
             ),
             rpc_client=Mock(),
         )
@@ -534,6 +556,7 @@ async def test_merge_dynamic_sidecar_specs_with_user_specific_specs(
             is_internet_enabled=False,
             is_telemetry_enabled=True,
             is_efs_enabled=False,
+            mount_data=True,
         ),
         rpc_client=Mock(),
     )

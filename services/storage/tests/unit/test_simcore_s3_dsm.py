@@ -72,6 +72,9 @@ async def cleanup_files_closure(
     indirect=True,
 )
 async def test__copy_path_s3_s3(
+    user_id: UserID,
+    project_id: ProjectID,
+    node_id: NodeID,
     simcore_s3_dsm: SimcoreS3DataManager,
     create_directory_with_files: Callable[
         [str, ByteSize, int, int, ProjectID, NodeID],
@@ -79,9 +82,6 @@ async def test__copy_path_s3_s3(
     ],
     upload_file: Callable[[ByteSize, str], Awaitable[tuple[Path, SimcoreS3FileID]]],
     file_size: ByteSize,
-    user_id: UserID,
-    project_id: ProjectID,
-    node_id: NodeID,
     mock_copy_transfer_cb: Callable[..., None],
     sqlalchemy_async_engine: AsyncEngine,
     cleanup_files_closure: Callable[[SimcoreS3FileID], None],
@@ -505,6 +505,10 @@ async def test_create_s3_export_abort_upload_upon_error(
     indirect=True,
 )
 async def test_search_directories(
+    user_id: UserID,
+    product_name: ProductName,
+    project_id: ProjectID,
+    node_id: NodeID,
     simcore_s3_dsm: SimcoreS3DataManager,
     create_directory_with_files: Callable[
         [str, ByteSize, int, int, ProjectID, NodeID],
@@ -512,10 +516,6 @@ async def test_search_directories(
     ],
     upload_file: Callable[..., Awaitable[tuple[Path, SimcoreS3FileID]]],
     file_size: ByteSize,
-    user_id: UserID,
-    product_name: ProductName,
-    project_id: ProjectID,
-    node_id: NodeID,
     faker: Faker,
 ):
     """Test that search functionality can find directories."""

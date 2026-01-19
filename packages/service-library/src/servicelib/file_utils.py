@@ -1,11 +1,13 @@
 import asyncio
 import hashlib
 import shutil
-from collections.abc import Iterator
-from contextlib import contextmanager
+from collections.abc import AsyncIterator, Iterator
+from contextlib import asynccontextmanager, contextmanager
 from logging import Logger
 from pathlib import Path
 from typing import Final, Protocol
+
+from aiofiles import tempfile
 
 # https://docs.python.org/3/library/shutil.html#shutil.rmtree
 # https://docs.python.org/3/library/os.html#os.remove
@@ -14,9 +16,7 @@ from aiofiles.os import wrap as sync_to_async
 from pydantic import ByteSize, TypeAdapter
 
 CHUNK_4KB: Final[ByteSize] = TypeAdapter(ByteSize).validate_python("4kb")  # 4K blocks
-CHUNK_8MB: Final[ByteSize] = TypeAdapter(ByteSize).validate_python(
-    "8MiB"
-)  # 8mIB blocks
+CHUNK_8MB: Final[ByteSize] = TypeAdapter(ByteSize).validate_python("8MiB")  # 8mIB blocks
 
 
 class AsyncStream(Protocol):
@@ -25,6 +25,7 @@ class AsyncStream(Protocol):
 
 _shutil_rmtree = sync_to_async(shutil.rmtree)
 shutil_move = sync_to_async(shutil.move)
+disk_usage = sync_to_async(shutil.disk_usage)
 
 
 async def _rm(path: Path, *, ignore_errors: bool):
@@ -35,21 +36,15 @@ async def _rm(path: Path, *, ignore_errors: bool):
         await _shutil_rmtree(path, ignore_errors=ignore_errors)
 
 
-async def remove_directory(
-    path: Path, *, only_children: bool = False, ignore_errors: bool = False
-) -> None:
+async def remove_directory(path: Path, *, only_children: bool = False, ignore_errors: bool = False) -> None:
     """Optional parameter allows to remove all children and keep directory"""
     if only_children:
-        await asyncio.gather(
-            *[_rm(child, ignore_errors=ignore_errors) for child in path.glob("*")]
-        )
+        await asyncio.gather(*[_rm(child, ignore_errors=ignore_errors) for child in path.glob("*")])
     else:
         await _shutil_rmtree(path, ignore_errors=ignore_errors)
 
 
-async def create_sha256_checksum(
-    async_stream: AsyncStream, *, chunk_size: ByteSize = CHUNK_8MB
-) -> str:
+async def create_sha256_checksum(async_stream: AsyncStream, *, chunk_size: ByteSize = CHUNK_8MB) -> str:
     """
     Usage:
     import aiofiles
@@ -81,11 +76,7 @@ def _get_file_properties(path: Path) -> tuple[float, int]:
 
 
 def _get_directory_snapshot(path: Path) -> dict[str, tuple[float, int]]:
-    return {
-        f"{p.relative_to(path)}": _get_file_properties(p)
-        for p in path.rglob("*")
-        if p.is_file()
-    }
+    return {f"{p.relative_to(path)}": _get_file_properties(p) for p in path.rglob("*") if p.is_file()}
 
 
 @contextmanager
@@ -122,3 +113,12 @@ def log_directory_changes(path: Path, logger: Logger, log_level: int) -> Iterato
             "File content changed:\n%s",
             "\n".join([f"* {x}" for x in sorted(content_changed_elements)]),
         )
+
+
+@asynccontextmanager
+async def temporary_text_file(content: str) -> AsyncIterator[str]:
+    async with tempfile.NamedTemporaryFile("w") as f:
+        await f.write(content)
+        await f.flush()
+        assert isinstance(f.name, str)  # nosec
+        yield f.name

@@ -216,28 +216,22 @@ async def service_remove_sidecar_proxy_docker_networks_and_volumes(
     await task_progress.update(message="removing network", percent=0.2)
     await remove_dynamic_sidecar_network(app, scheduler_data.dynamic_sidecar_network_name)
 
-    if scheduler_data.dynamic_sidecar.were_state_and_outputs_saved:
-        if scheduler_data.dynamic_sidecar.docker_node_id is None:
-            _logger.warning(
-                "Skipped volume removal for %s, since a docker_node_id was not found.",
-                scheduler_data.node_uuid,
-            )
-        else:
-            # Remove all dy-sidecar associated volumes from node
-            await task_progress.update(message="removing volumes", percent=0.3)
-            with log_context(_logger, logging.DEBUG, f"removing volumes '{node_uuid}'"):
-                try:
-                    await remove_volumes_without_backup_for_service(
-                        rabbit_rpc_client,
-                        docker_node_id=scheduler_data.dynamic_sidecar.docker_node_id,
-                        swarm_stack_name=swarm_stack_name,
-                        node_id=scheduler_data.node_uuid,
-                    )
-                except (
-                    NoServiceVolumesFoundRPCError,
-                    RemoteMethodNotRegisteredError,  # happens when autoscaling node was removed
-                ) as e:
-                    _logger.info("Could not remove volumes, because: '%s'", e)
+    if scheduler_data.dynamic_sidecar.docker_node_id:
+        # Remove all dy-sidecar associated volumes from node
+        await task_progress.update(message="removing volumes", percent=0.3)
+        with log_context(_logger, logging.DEBUG, f"removing volumes '{node_uuid}'"):
+            try:
+                await remove_volumes_without_backup_for_service(
+                    rabbit_rpc_client,
+                    docker_node_id=scheduler_data.dynamic_sidecar.docker_node_id,
+                    swarm_stack_name=swarm_stack_name,
+                    node_id=scheduler_data.node_uuid,
+                )
+            except (
+                NoServiceVolumesFoundRPCError,
+                RemoteMethodNotRegisteredError,  # happens when autoscaling node was removed
+            ) as e:
+                _logger.info("Could not remove volumes, because: '%s'", e)
 
     _logger.debug(
         "Removed dynamic-sidecar services and crated container for '%s'",
@@ -324,12 +318,10 @@ async def attempt_pod_removal_and_data_saving(app: FastAPI, scheduler_data: Sche
         await service_free_reserved_disk_space(app, scheduler_data.node_uuid, sidecars_client)
 
         try:
-            tasks = [service_push_outputs(app, scheduler_data.node_uuid, sidecars_client)]
-
-            # When enabled no longer uploads state via nodeports
-            # It uses rclone mounted volumes for this task.
-            if not app_settings.DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED:
-                tasks.append(service_save_state(app, scheduler_data.node_uuid, sidecars_client))
+            tasks = [
+                service_push_outputs(app, scheduler_data.node_uuid, sidecars_client),
+                service_save_state(app, scheduler_data.node_uuid, sidecars_client),
+            ]
 
             await logged_gather(*tasks, max_concurrency=2)
             scheduler_data.dynamic_sidecar.were_state_and_outputs_saved = True
@@ -429,7 +421,6 @@ async def wait_for_sidecar_api(app: FastAPI, scheduler_data: SchedulerData) -> N
 
 
 async def prepare_services_environment(app: FastAPI, scheduler_data: SchedulerData) -> None:
-    app_settings: AppSettings = app.state.settings
     sidecars_client = await get_sidecars_client(app, scheduler_data.node_uuid)
     dynamic_sidecar_endpoint = scheduler_data.endpoint
 
@@ -484,11 +475,8 @@ async def prepare_services_environment(app: FastAPI, scheduler_data: SchedulerDa
     tasks = [
         _pull_user_services_images_with_metrics(),
         _pull_output_ports_with_metrics(),
+        _restore_service_state_with_metrics(),
     ]
-    # When enabled no longer downloads state via nodeports
-    # S3 is used to store state paths
-    if not app_settings.DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED:
-        tasks.append(_restore_service_state_with_metrics())
 
     await limited_gather(*tasks, limit=3)
 

@@ -106,6 +106,8 @@ dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 fixture-parentheses = false
 parametrize-names-type = "csv"
 
+[lint.pylint]
+max-args = 10
 
 [format]
 # Like Black, use double quotes for strings.
@@ -119,3 +121,25 @@ skip-magic-trailing-comma = false
 
 # Like Black, automatically detect the appropriate line ending.
 line-ending = "auto"
+
+[pylint]
+# Maximum number of arguments for function / method.
+max-args=10
+
+# Maximum number of boolean expressions in an if statement (see R0916).
+max-bool-expr=5
+
+# Maximum number of branch for function / method body.
+max-branches=13
+
+# Maximum number of locals for function / method body.
+max-locals=15
+
+# Maximum number of public methods for a class (see R0904).
+max-public-methods=20
+
+# Maximum number of return / yield for function / method body.
+max-returns=6
+
+# Maximum number of statements in function / method body.
+max-statements=50
