@@ -71,12 +71,14 @@ qx.Class.define("osparc.editor.EmailEditor", {
           this.add(control);
           break;
         case "text-editor":
-          control = new qx.ui.form.TextArea().set({
-            placeholder: "Write your email...",
+          control = new osparc.editor.MarkdownEditorInline().set({
             allowGrowY: true,
             allowGrowX: true,
             minWidth: 500,
             minHeight: 500,
+          });
+          control.getChildControl("text-area").set({
+            placeholder: "Write your email..."
           });
           this.getChildControl("editor-page").add(control, {
             flex: 1

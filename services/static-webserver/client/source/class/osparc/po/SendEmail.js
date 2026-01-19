@@ -26,7 +26,7 @@ qx.Class.define("osparc.po.SendEmail", {
           control = new osparc.editor.EmailEditor();
           const container = new qx.ui.container.Scroll();
           container.add(control);
-          this._add(control, {
+          this._add(container, {
             flex: 1
           });
           break;
