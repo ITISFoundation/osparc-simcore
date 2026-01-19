@@ -22,31 +22,24 @@ async def test_get_function_job_collection(
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
     auth: httpx.BasicAuth,
 ) -> None:
-    mock_registered_function_job_collection = (
-        RegisteredFunctionJobCollection.model_validate(
-            {
-                "uid": str(uuid4()),
-                "title": "Test Collection",
-                "description": "A test function job collection",
-                "job_ids": [str(uuid4()), str(uuid4())],
-                "created_at": datetime.datetime.now(datetime.UTC),
-            }
-        )
+    mock_registered_function_job_collection = RegisteredFunctionJobCollection.model_validate(
+        {
+            "uid": str(uuid4()),
+            "title": "Test Collection",
+            "description": "A test function job collection",
+            "job_ids": [str(uuid4()), str(uuid4())],
+            "created_at": datetime.datetime.now(datetime.UTC),
+        }
     )
 
-    mock_handler_in_functions_rpc_interface(
-        "get_function_job_collection", mock_registered_function_job_collection
-    )
+    mock_handler_in_functions_rpc_interface("get_function_job_collection", mock_registered_function_job_collection)
 
     response = await client.get(
         f"{API_VTAG}/function_job_collections/{mock_registered_function_job_collection.uid}",
         auth=auth,
     )
     assert response.status_code == status.HTTP_200_OK
-    assert (
-        RegisteredFunctionJobCollection.model_validate(response.json())
-        == mock_registered_function_job_collection
-    )
+    assert RegisteredFunctionJobCollection.model_validate(response.json()) == mock_registered_function_job_collection
 
 
 async def test_list_function_job_collections(
@@ -54,16 +47,14 @@ async def test_list_function_job_collections(
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
     auth: httpx.BasicAuth,
 ) -> None:
-    mock_registered_function_job_collection = (
-        RegisteredFunctionJobCollection.model_validate(
-            {
-                "uid": str(uuid4()),
-                "title": "Test Collection",
-                "description": "A test function job collection",
-                "job_ids": [str(uuid4()), str(uuid4())],
-                "created_at": datetime.datetime.now(datetime.UTC),
-            }
-        )
+    mock_registered_function_job_collection = RegisteredFunctionJobCollection.model_validate(
+        {
+            "uid": str(uuid4()),
+            "title": "Test Collection",
+            "description": "A test function job collection",
+            "job_ids": [str(uuid4()), str(uuid4())],
+            "created_at": datetime.datetime.now(datetime.UTC),
+        }
     )
 
     mock_handler_in_functions_rpc_interface(
@@ -78,10 +69,7 @@ async def test_list_function_job_collections(
     assert response.status_code == status.HTTP_200_OK
     data = response.json()["items"]
     assert len(data) == 5
-    assert (
-        RegisteredFunctionJobCollection.model_validate(data[0])
-        == mock_registered_function_job_collection
-    )
+    assert RegisteredFunctionJobCollection.model_validate(data[0]) == mock_registered_function_job_collection
 
 
 async def test_delete_function_job_collection(
@@ -90,7 +78,6 @@ async def test_delete_function_job_collection(
     fake_registered_function_job_collection: RegisteredFunctionJobCollection,
     auth: httpx.BasicAuth,
 ) -> None:
-
     mock_handler_in_functions_rpc_interface("delete_function_job_collection", None)
 
     # Now, delete the function job collection
@@ -107,6 +94,7 @@ async def test_delete_function_job_collection(
 async def test_get_function_job_collection_jobs(
     client: AsyncClient,
     mocked_app_rpc_dependencies: None,
+    mock_dependency_get_celery_task_manager: None,
     mock_handler_in_functions_rpc_interface: Callable[[str, Any], None],
     fake_registered_function_job_collection: RegisteredFunctionJobCollection,
     fake_registered_project_function_job: RegisteredProjectFunctionJob,
@@ -122,7 +110,8 @@ async def test_get_function_job_collection_jobs(
     )
     query = {"limit": 10, "offset": 0} if response_type == "page" else None
     response = await client.get(
-        f"{API_VTAG}/function_job_collections/{fake_registered_function_job_collection.uid}/function_jobs{'/page' if response_type == 'page' else ''}",
+        f"{API_VTAG}/function_job_collections/{fake_registered_function_job_collection.uid}/"
+        f"function_jobs{'/page' if response_type == 'page' else ''}",
         params=query,
         auth=auth,
     )
@@ -146,7 +135,6 @@ async def test_list_function_job_collections_with_function_filter(
     fake_registered_project_function: RegisteredProjectFunction,
     auth: httpx.BasicAuth,
 ) -> None:
-
     mock_handler_in_functions_rpc_interface(
         "list_function_job_collections",
         (
@@ -166,7 +154,4 @@ async def test_list_function_job_collections_with_function_filter(
     assert data["limit"] == 2
     assert data["offset"] == 1
     assert len(data["items"]) == 2
-    assert (
-        RegisteredFunctionJobCollection.model_validate(data["items"][0])
-        == fake_registered_function_job_collection
-    )
+    assert RegisteredFunctionJobCollection.model_validate(data["items"][0]) == fake_registered_function_job_collection

@@ -14,7 +14,6 @@ from pathlib import Path
 from typing import Any, NamedTuple, cast
 from uuid import uuid4
 
-import aioboto3
 import aiodocker
 import httpx
 import pytest
@@ -97,7 +96,6 @@ from utils import (
     is_legacy,
     patch_dynamic_service_url,
     run_command,
-    sleep_for,
 )
 from yarl import URL
 
@@ -138,9 +136,7 @@ DY_VOLUMES: str = "/dy-volumes/"
 DY_SERVICES_STATE_PATH: Path = Path(DY_VOLUMES) / "workdir/generated-data"
 DY_SERVICES_R_CLONE_DIR_NAME: str = (
     # pylint: disable=bad-str-strip-call
-    str(DY_SERVICES_STATE_PATH)
-    .strip(DY_VOLUMES)
-    .replace("/", "_")
+    str(DY_SERVICES_STATE_PATH).strip(DY_VOLUMES).replace("/", "_")
 )
 TIMEOUT_DETECT_DYNAMIC_SERVICES_STOPPED = 60
 TIMEOUT_OUTPUTS_UPLOAD_FINISH_DETECTED = 60
@@ -197,19 +193,14 @@ def fake_dy_workbench(
         version = registry_service_data["schema"]["version"]
         found = False
         for workbench_service_data in file_as_dict.values():
-            if (
-                workbench_service_data["key"] == key
-                and workbench_service_data["version"] == version
-            ):
+            if workbench_service_data["key"] == key and workbench_service_data["version"] == version:
                 found = True
                 break
 
         # when updating the services, this check will fail
         # bump versions in the mocks if no breaking changes
         # have been made
-        error_message = (
-            f"Did not find service: key={key}, version={version}! in {file_as_dict}"
-        )
+        error_message = f"Did not find service: key={key}, version={version}! in {file_as_dict}"
         assert found is True, error_message
 
     _assert_version(sleeper_service)
@@ -239,10 +230,7 @@ def services_node_uuids(
 
         found_node_uuid: str | None = None
         for node_uuid, workbench_service_data in fake_dy_workbench.items():
-            if (
-                workbench_service_data["key"] == key
-                and workbench_service_data["version"] == version
-            ):
+            if workbench_service_data["key"] == key and workbench_service_data["version"] == version:
                 found_node_uuid = node_uuid
                 break
         assert found_node_uuid is not None, f"No node_uuid found for {key}:{version}"
@@ -251,9 +239,7 @@ def services_node_uuids(
     return ServicesNodeUUIDs(
         sleeper=_get_node_uuid(sleeper_service),
         dy=_get_node_uuid(dy_static_file_server_dynamic_sidecar_service),
-        dy_compose_spec=_get_node_uuid(
-            dy_static_file_server_dynamic_sidecar_compose_spec_service
-        ),
+        dy_compose_spec=_get_node_uuid(dy_static_file_server_dynamic_sidecar_compose_spec_service),
     )
 
 
@@ -286,19 +272,13 @@ async def current_study(
     grant_service_access_rights(
         group_id=current_user["primary_gid"],
         service_key=dy_static_file_server_dynamic_sidecar_service["schema"]["key"],
-        service_version=dy_static_file_server_dynamic_sidecar_service["schema"][
-            "version"
-        ],
+        service_version=dy_static_file_server_dynamic_sidecar_service["schema"]["version"],
         product_name=osparc_product_name,
     )
     grant_service_access_rights(
         group_id=current_user["primary_gid"],
-        service_key=dy_static_file_server_dynamic_sidecar_compose_spec_service[
-            "schema"
-        ]["key"],
-        service_version=dy_static_file_server_dynamic_sidecar_compose_spec_service[
-            "schema"
-        ]["version"],
+        service_key=dy_static_file_server_dynamic_sidecar_compose_spec_service["schema"]["key"],
+        service_version=dy_static_file_server_dynamic_sidecar_compose_spec_service["schema"]["version"],
         product_name=osparc_product_name,
     )
 
@@ -319,9 +299,7 @@ async def current_study(
 
 
 @pytest.fixture
-def workbench_dynamic_services(
-    current_study: ProjectAtDB, sleeper_service: dict
-) -> dict[NodeIDStr, Node]:
+def workbench_dynamic_services(current_study: ProjectAtDB, sleeper_service: dict) -> dict[NodeIDStr, Node]:
     sleeper_key = sleeper_service["schema"]["key"]
     result = {k: v for k, v in current_study.workbench.items() if v.key != sleeper_key}
     assert len(result) == 2
@@ -331,26 +309,6 @@ def workbench_dynamic_services(
 @pytest.fixture
 async def db_manager(sqlalchemy_async_engine: AsyncEngine) -> DBManager:
     return DBManager(sqlalchemy_async_engine, application_name=APP_NAME)
-
-
-def _is_docker_r_clone_plugin_installed() -> bool:
-    return "rclone:" in run_command("docker plugin ls")
-
-
-@pytest.fixture(
-    scope="session",
-    params={
-        # NOTE: There is an issue with the docker rclone volume plugin:
-        # SEE https://github.com/rclone/rclone/issues/6059
-        # Disabling rclone test until this is fixed.
-        # "true",
-        "false",
-    },
-)
-def dev_feature_r_clone_enabled(request) -> str:
-    if request.param == "true" and not _is_docker_r_clone_plugin_installed():
-        pytest.skip("Required docker plugin `rclone` not installed.")
-    return request.param
 
 
 @pytest.fixture
@@ -366,9 +324,7 @@ async def patch_storage_setup(
         storage_settings: StorageSettings,
         tracing_settings: TracingSettings | None,
     ) -> None:
-        original_setup(
-            app, storage_settings=local_settings, tracing_settings=tracing_settings
-        )
+        original_setup(app, storage_settings=local_settings, tracing_settings=tracing_settings)
 
     mocker.patch("simcore_service_director_v2.modules.storage.setup", side_effect=setup)
 
@@ -378,7 +334,6 @@ def mock_env(
     mock_env: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
     network_name: str,
-    dev_feature_r_clone_enabled: str,
     dask_scheduler_service: str,
     dask_scheduler_auth: ClusterAuthentication,
     minimal_configuration: None,
@@ -425,7 +380,6 @@ def mock_env(
             "RABBIT_HOST": f"{get_localhost_ip()}",
             "POSTGRES_HOST": f"{get_localhost_ip()}",
             "R_CLONE_PROVIDER": "MINIO",
-            "DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED": dev_feature_r_clone_enabled,
             "COMPUTATIONAL_BACKEND_ENABLED": "true",
             "COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED": "true",
             "COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL": dask_scheduler_service,
@@ -466,9 +420,7 @@ async def cleanup_services_and_networks(
 
 
 @pytest.fixture
-async def projects_networks_db(
-    initialized_app: FastAPI, current_study: ProjectAtDB
-) -> None:
+async def projects_networks_db(initialized_app: FastAPI, current_study: ProjectAtDB) -> None:
     # NOTE: director-v2 does not have access to the webserver which creates this
     # injecting all dynamic-sidecar started services on a default networks
 
@@ -491,9 +443,7 @@ async def projects_networks_db(
     async with engine.begin() as conn:
         row_data = projects_networks_to_insert.model_dump(mode="json")
         insert_stmt = pg_insert(projects_networks).values(**row_data)
-        upsert_snapshot = insert_stmt.on_conflict_do_update(
-            constraint=projects_networks.primary_key, set_=row_data
-        )
+        upsert_snapshot = insert_stmt.on_conflict_do_update(constraint=projects_networks.primary_key, set_=row_data)
         await conn.execute(upsert_snapshot)
 
 
@@ -518,14 +468,8 @@ async def _get_mapped_nodeports_values(
             db_manager=db_manager,
         )
         result[str(node_uuid)] = InputsOutputs(
-            inputs={
-                node_input.key: node_input
-                for node_input in (await PORTS.inputs).values()
-            },
-            outputs={
-                node_output.key: node_output
-                for node_output in (await PORTS.outputs).values()
-            },
+            inputs={node_input.key: node_input for node_input in (await PORTS.inputs).values()},
+            outputs={node_output.key: node_output for node_output in (await PORTS.outputs).values()},
         )
 
     return result
@@ -544,9 +488,7 @@ async def _assert_port_values(
     only_files: bool,
     include_dy_compose_spec: bool,
 ):
-    mapped = await _get_mapped_nodeports_values(
-        user_id, f"{current_study.uuid}", current_study.workbench, db_manager
-    )
+    mapped = await _get_mapped_nodeports_values(user_id, f"{current_study.uuid}", current_study.workbench, db_manager)
 
     print("Nodeport mapped values")
     for node_uuid, inputs_outputs in mapped.items():
@@ -566,20 +508,12 @@ async def _assert_port_values(
             return None
         return int(file_path.read_text())
 
-    sleeper_out_1 = await _int_value_port(
-        mapped[services_node_uuids.sleeper].outputs["out_1"]
-    )
+    sleeper_out_1 = await _int_value_port(mapped[services_node_uuids.sleeper].outputs["out_1"])
 
-    dy_file_input = await _int_value_port(
-        mapped[services_node_uuids.dy].inputs["file_input"]
-    )
-    dy_file_output = await _int_value_port(
-        mapped[services_node_uuids.dy].outputs["file_output"]
-    )
+    dy_file_input = await _int_value_port(mapped[services_node_uuids.dy].inputs["file_input"])
+    dy_file_output = await _int_value_port(mapped[services_node_uuids.dy].outputs["file_output"])
 
-    dy_compose_spec_file_input = await _int_value_port(
-        mapped[services_node_uuids.dy_compose_spec].inputs["file_input"]
-    )
+    dy_compose_spec_file_input = await _int_value_port(mapped[services_node_uuids.dy_compose_spec].inputs["file_input"])
     dy_compose_spec_file_output = await _int_value_port(
         mapped[services_node_uuids.dy_compose_spec].outputs["file_output"]
     )
@@ -603,21 +537,11 @@ async def _assert_port_values(
 
     # integer values
     sleeper_out_2 = await mapped[services_node_uuids.sleeper].outputs["out_2"].get()
-    dy_integer_input = (
-        await mapped[services_node_uuids.dy].inputs["integer_input"].get()
-    )
-    dy_integer_output = (
-        await mapped[services_node_uuids.dy].outputs["integer_output"].get()
-    )
+    dy_integer_input = await mapped[services_node_uuids.dy].inputs["integer_input"].get()
+    dy_integer_output = await mapped[services_node_uuids.dy].outputs["integer_output"].get()
 
-    dy_compose_spec_integer_input = (
-        await mapped[services_node_uuids.dy_compose_spec].inputs["integer_input"].get()
-    )
-    dy_compose_spec_integer_output = (
-        await mapped[services_node_uuids.dy_compose_spec]
-        .outputs["integer_output"]
-        .get()
-    )
+    dy_compose_spec_integer_input = await mapped[services_node_uuids.dy_compose_spec].inputs["integer_input"].get()
+    dy_compose_spec_integer_output = await mapped[services_node_uuids.dy_compose_spec].outputs["integer_output"].get()
 
     _print_values_to_assert(
         sleeper_out_2=sleeper_out_2,
@@ -644,9 +568,7 @@ async def _container_id_via_services(service_uuid: str) -> str:
             if service["Spec"]["Name"] == service_name:
                 service_id = service["ID"]
                 break
-        assert (
-            service_id is not None
-        ), f"No service found for service name: {service_name}"
+        assert service_id is not None, f"No service found for service name: {service_name}"
 
         for task in await docker_client.tasks.list():
             if task["ServiceID"] == service_id:
@@ -654,16 +576,12 @@ async def _container_id_via_services(service_uuid: str) -> str:
                 container_id = task["Status"]["ContainerStatus"]["ContainerID"]
                 break
 
-    assert (
-        container_id is not None
-    ), f"No container found for service name {service_name}"
+    assert container_id is not None, f"No container found for service name {service_name}"
 
     return container_id
 
 
-async def _fetch_data_from_container(
-    dir_tag: str, service_uuid: str, temp_dir: Path
-) -> Path:
+async def _fetch_data_from_container(dir_tag: str, service_uuid: str, temp_dir: Path) -> Path:
     container_id = await _container_id_via_services(service_uuid)
 
     target_path = temp_dir / f"container_{dir_tag}_{uuid4()}"
@@ -679,7 +597,7 @@ async def _fetch_data_via_data_manager(
     dir_tag: str,
     user_id: UserID,
     project_id: ProjectID,
-    service_uuid: NodeID,
+    node_id: NodeID,
     temp_dir: Path,
     io_log_redirect_cb: LogRedirectCB,
     faker: Faker,
@@ -691,7 +609,7 @@ async def _fetch_data_via_data_manager(
         await data_manager._state_metadata_entry_exists(  # noqa: SLF001
             user_id=user_id,
             project_id=project_id,
-            node_uuid=service_uuid,
+            node_id=node_id,
             path=DY_SERVICES_STATE_PATH,
             is_archive=False,
         )
@@ -702,43 +620,13 @@ async def _fetch_data_via_data_manager(
         await data_manager._pull_directory(  # noqa: SLF001
             user_id=user_id,
             project_id=project_id,
-            node_uuid=service_uuid,
+            node_id=node_id,
             destination_path=DY_SERVICES_STATE_PATH,
             save_to=save_to,
             io_log_redirect_cb=io_log_redirect_cb,
             r_clone_settings=r_clone_settings,
             progress_bar=progress_bar,
         )
-
-    return save_to
-
-
-async def _fetch_data_via_aioboto(
-    r_clone_settings: RCloneSettings,
-    dir_tag: str,
-    temp_dir: Path,
-    node_id: NodeIDStr,
-    project_id: ProjectID,
-) -> Path:
-    save_to = temp_dir / f"aioboto_{dir_tag}_{uuid4()}"
-    save_to.mkdir(parents=True, exist_ok=True)
-
-    session = aioboto3.Session(
-        aws_access_key_id=r_clone_settings.R_CLONE_S3.S3_ACCESS_KEY,
-        aws_secret_access_key=r_clone_settings.R_CLONE_S3.S3_SECRET_KEY,
-    )
-    async with session.resource(
-        "s3", endpoint_url=r_clone_settings.R_CLONE_S3.S3_ENDPOINT
-    ) as s3:
-        bucket = await s3.Bucket(r_clone_settings.R_CLONE_S3.S3_BUCKET_NAME)
-        async for s3_object in bucket.objects.all():
-            key_path = f"{project_id}/{node_id}/{DY_SERVICES_R_CLONE_DIR_NAME}/"
-            if s3_object.key.startswith(key_path):
-                file_object = await s3_object.get()
-                file_path = save_to / s3_object.key.replace(key_path, "")
-                print(f"Saving file to {file_path}")
-                file_content = await file_object["Body"].read()
-                file_path.write_bytes(file_content)
 
     return save_to
 
@@ -781,9 +669,7 @@ async def _start_and_wait_for_dynamic_services_ready(
         )
         dynamic_services_urls[service_uuid] = dynamic_service_url
 
-    await assert_all_services_running(
-        director_v2_client, workbench=workbench_dynamic_services
-    )
+    await assert_all_services_running(director_v2_client, workbench=workbench_dynamic_services)
 
     await assert_services_reply_200(
         director_v2_client=director_v2_client,
@@ -837,23 +723,16 @@ def _get_file_hashes_in_path(path_to_hash: Path) -> set[tuple[Path, str]]:
     if path_to_hash.is_file():
         return {(_relative_path(path_to_hash, path_to_hash), _hash_path(path_to_hash))}
 
-    return {
-        (_relative_path(path_to_hash, path), _hash_path(path))
-        for path in path_to_hash.rglob("*")
-    }
+    return {(_relative_path(path_to_hash, path), _hash_path(path)) for path in path_to_hash.rglob("*")}
 
 
-_CONTROL_TESTMARK_DY_SIDECAR_NODEPORT_UPLOADED_MESSAGE = (
-    "TEST: test_nodeports_integration DO NOT REMOVE"
-)
+_CONTROL_TESTMARK_DY_SIDECAR_NODEPORT_UPLOADED_MESSAGE = "TEST: test_nodeports_integration DO NOT REMOVE"
 
 
 async def _assert_push_non_file_outputs(
     initialized_app: FastAPI, director_v2_client: httpx.AsyncClient, service_uuid: str
 ) -> None:
-    result = await director_v2_client.post(
-        f"/v2/dynamic_scheduler/services/{service_uuid}/outputs:push"
-    )
+    result = await director_v2_client.post(f"/v2/dynamic_scheduler/services/{service_uuid}/outputs:push")
     assert result.status_code == httpx.codes.ACCEPTED
     task_id: TaskId = result.json()
 
@@ -868,9 +747,7 @@ async def _assert_push_non_file_outputs(
         HttpClient(
             app=initialized_app,
             async_client=director_v2_client,
-            base_url=TypeAdapter(AnyHttpUrl).validate_python(
-                f"{director_v2_client.base_url}"
-            ),
+            base_url=TypeAdapter(AnyHttpUrl).validate_python(f"{director_v2_client.base_url}"),
         ),
         task_id,
         task_timeout=60,
@@ -906,9 +783,7 @@ async def _assert_retrieve_completed(
                 print(
                     f"--> checking container logs of {service_uuid=}, [attempt {attempt.retry_state.attempt_number}]..."
                 )
-                container: DockerContainer = await docker_client.containers.get(
-                    container_id
-                )
+                container: DockerContainer = await docker_client.containers.get(container_id)
 
                 logs = " ".join(
                     await cast(
@@ -916,9 +791,10 @@ async def _assert_retrieve_completed(
                         container.log(stdout=True, stderr=True),
                     )
                 )
-                assert (
-                    _CONTROL_TESTMARK_DY_SIDECAR_NODEPORT_UPLOADED_MESSAGE in logs
-                ), "TIP: Message missing suggests that the data was never uploaded: look in services/dynamic-sidecar/src/simcore_service_dynamic_sidecar/modules/nodeports.py"
+                assert _CONTROL_TESTMARK_DY_SIDECAR_NODEPORT_UPLOADED_MESSAGE in logs, (
+                    "TIP: Message missing suggests that the data was never uploaded: look in "
+                    "services/dynamic-sidecar/src/simcore_service_dynamic_sidecar/modules/nodeports.py"
+                )
 
 
 def product_name(osparc_product_name: ProductName) -> ProductName:
@@ -980,16 +856,14 @@ async def test_nodeports_integration(
     `aioboto` instead of `docker` or `storage-data_manager API`.
     """
     # STEP 1
-    dynamic_services_urls: dict[str, str] = (
-        await _start_and_wait_for_dynamic_services_ready(
-            director_v2_client=async_client,
-            product_name=osparc_product_name,
-            product_api_base_url=osparc_product_api_base_url,
-            user_id=current_user["id"],
-            workbench_dynamic_services=workbench_dynamic_services,
-            current_study=current_study,
-            catalog_url=services_endpoint["catalog"],
-        )
+    dynamic_services_urls: dict[str, str] = await _start_and_wait_for_dynamic_services_ready(
+        director_v2_client=async_client,
+        product_name=osparc_product_name,
+        product_api_base_url=osparc_product_api_base_url,
+        user_id=current_user["id"],
+        workbench_dynamic_services=workbench_dynamic_services,
+        current_study=current_study,
+        catalog_url=services_endpoint["catalog"],
     )
 
     # STEP 2
@@ -1034,9 +908,7 @@ async def test_nodeports_integration(
         )
 
         # Wait for file ports to propagate
-        async for attempt in AsyncRetrying(
-            stop=stop_after_attempt(5), wait=wait_fixed(1)
-        ):
+        async for attempt in AsyncRetrying(stop=stop_after_attempt(5), wait=wait_fixed(1)):
             with attempt:
                 await _assert_port_values(
                     current_user["id"],
@@ -1044,8 +916,7 @@ async def test_nodeports_integration(
                     db_manager,
                     services_node_uuids,
                     only_files=True,
-                    include_dy_compose_spec=service_uuid
-                    == services_node_uuids.dy_compose_spec,
+                    include_dy_compose_spec=service_uuid == services_node_uuids.dy_compose_spec,
                 )
 
         # this will cause non files to upload
@@ -1056,9 +927,7 @@ async def test_nodeports_integration(
         )
 
         # Waiting for NON file ports to propagate
-        async for attempt in AsyncRetrying(
-            stop=stop_after_attempt(5), wait=wait_fixed(1)
-        ):
+        async for attempt in AsyncRetrying(stop=stop_after_attempt(5), wait=wait_fixed(1)):
             with attempt:
                 await _assert_port_values(
                     current_user["id"],
@@ -1066,50 +935,21 @@ async def test_nodeports_integration(
                     db_manager,
                     services_node_uuids,
                     only_files=False,
-                    include_dy_compose_spec=service_uuid
-                    == services_node_uuids.dy_compose_spec,
+                    include_dy_compose_spec=service_uuid == services_node_uuids.dy_compose_spec,
                 )
 
     # STEP 4
 
-    app_settings: AppSettings = async_client._transport.app.state.settings  # type: ignore
-    r_clone_settings: RCloneSettings = (
-        app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_R_CLONE_SETTINGS
-    )
+    app_settings: AppSettings = async_client._transport.app.state.settings  # type: ignore # noqa: SLF001
+    r_clone_settings: RCloneSettings = app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_R_CLONE_SETTINGS
 
-    if app_settings.DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED:
-        await sleep_for(
-            WAIT_FOR_R_CLONE_VOLUME_TO_SYNC_DATA,
-            "Waiting for rclone to sync data from the docker volume",
-        )
-
-    dy_path_volume_before = (
-        await _fetch_data_via_aioboto(
-            r_clone_settings=r_clone_settings,
-            dir_tag="dy",
-            temp_dir=tmp_path,
-            node_id=services_node_uuids.dy,
-            project_id=current_study.uuid,
-        )
-        if app_settings.DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED
-        else await _fetch_data_from_container(
-            dir_tag="dy", service_uuid=services_node_uuids.dy, temp_dir=tmp_path
-        )
+    dy_path_volume_before = await _fetch_data_from_container(
+        dir_tag="dy", service_uuid=services_node_uuids.dy, temp_dir=tmp_path
     )
-    dy_compose_spec_path_volume_before = (
-        await _fetch_data_via_aioboto(
-            r_clone_settings=r_clone_settings,
-            dir_tag="dy_compose_spec",
-            temp_dir=tmp_path,
-            node_id=services_node_uuids.dy_compose_spec,
-            project_id=current_study.uuid,
-        )
-        if app_settings.DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED
-        else await _fetch_data_from_container(
-            dir_tag="dy_compose_spec",
-            service_uuid=services_node_uuids.dy_compose_spec,
-            temp_dir=tmp_path,
-        )
+    dy_compose_spec_path_volume_before = await _fetch_data_from_container(
+        dir_tag="dy_compose_spec",
+        service_uuid=services_node_uuids.dy_compose_spec,
+        temp_dir=tmp_path,
     )
 
     # STEP 5
@@ -1127,52 +967,26 @@ async def test_nodeports_integration(
 
     await _wait_for_dy_services_to_fully_stop(async_client)
 
-    if app_settings.DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED:
-        await sleep_for(
-            WAIT_FOR_R_CLONE_VOLUME_TO_SYNC_DATA,
-            "Waiting for rclone to sync data from the docker volume",
-        )
-
-    dy_path_data_manager_before = (
-        await _fetch_data_via_aioboto(
-            r_clone_settings=r_clone_settings,
-            dir_tag="dy",
-            temp_dir=tmp_path,
-            node_id=services_node_uuids.dy,
-            project_id=current_study.uuid,
-        )
-        if app_settings.DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED
-        else await _fetch_data_via_data_manager(
-            r_clone_settings=r_clone_settings,
-            dir_tag="dy",
-            user_id=current_user["id"],
-            project_id=current_study.uuid,
-            service_uuid=NodeID(services_node_uuids.dy),
-            temp_dir=tmp_path,
-            io_log_redirect_cb=mock_io_log_redirect_cb,
-            faker=faker,
-        )
+    dy_path_data_manager_before = await _fetch_data_via_data_manager(
+        r_clone_settings=r_clone_settings,
+        dir_tag="dy",
+        user_id=current_user["id"],
+        project_id=current_study.uuid,
+        node_id=NodeID(services_node_uuids.dy),
+        temp_dir=tmp_path,
+        io_log_redirect_cb=mock_io_log_redirect_cb,
+        faker=faker,
     )
 
-    dy_compose_spec_path_data_manager_before = (
-        await _fetch_data_via_aioboto(
-            r_clone_settings=r_clone_settings,
-            dir_tag="dy_compose_spec",
-            temp_dir=tmp_path,
-            node_id=services_node_uuids.dy_compose_spec,
-            project_id=current_study.uuid,
-        )
-        if app_settings.DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED
-        else await _fetch_data_via_data_manager(
-            r_clone_settings=r_clone_settings,
-            dir_tag="dy_compose_spec",
-            user_id=current_user["id"],
-            project_id=current_study.uuid,
-            service_uuid=NodeID(services_node_uuids.dy_compose_spec),
-            temp_dir=tmp_path,
-            io_log_redirect_cb=mock_io_log_redirect_cb,
-            faker=faker,
-        )
+    dy_compose_spec_path_data_manager_before = await _fetch_data_via_data_manager(
+        r_clone_settings=r_clone_settings,
+        dir_tag="dy_compose_spec",
+        user_id=current_user["id"],
+        project_id=current_study.uuid,
+        node_id=NodeID(services_node_uuids.dy_compose_spec),
+        temp_dir=tmp_path,
+        io_log_redirect_cb=mock_io_log_redirect_cb,
+        faker=faker,
     )
 
     # STEP 6
@@ -1187,33 +1001,13 @@ async def test_nodeports_integration(
         catalog_url=services_endpoint["catalog"],
     )
 
-    dy_path_volume_after = (
-        await _fetch_data_via_aioboto(
-            r_clone_settings=r_clone_settings,
-            dir_tag="dy",
-            temp_dir=tmp_path,
-            node_id=services_node_uuids.dy,
-            project_id=current_study.uuid,
-        )
-        if app_settings.DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED
-        else await _fetch_data_from_container(
-            dir_tag="dy", service_uuid=services_node_uuids.dy, temp_dir=tmp_path
-        )
+    dy_path_volume_after = await _fetch_data_from_container(
+        dir_tag="dy", service_uuid=services_node_uuids.dy, temp_dir=tmp_path
     )
-    dy_compose_spec_path_volume_after = (
-        await _fetch_data_via_aioboto(
-            r_clone_settings=r_clone_settings,
-            dir_tag="dy_compose_spec",
-            temp_dir=tmp_path,
-            node_id=services_node_uuids.dy_compose_spec,
-            project_id=current_study.uuid,
-        )
-        if app_settings.DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED
-        else await _fetch_data_from_container(
-            dir_tag="dy_compose_spec",
-            service_uuid=services_node_uuids.dy_compose_spec,
-            temp_dir=tmp_path,
-        )
+    dy_compose_spec_path_volume_after = await _fetch_data_from_container(
+        dir_tag="dy_compose_spec",
+        service_uuid=services_node_uuids.dy_compose_spec,
+        temp_dir=tmp_path,
     )
 
     # STEP 7

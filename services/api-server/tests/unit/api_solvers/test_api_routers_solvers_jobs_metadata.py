@@ -29,10 +29,7 @@ class MockedBackendApiDict(TypedDict):
 
 
 def _as_path_regex(initial_path: str):
-    return (
-        re.sub(rf"({UUID_RE_BASE})", f"(?P<project_id>{UUID_RE_BASE})", initial_path)
-        + "$"
-    )
+    return re.sub(rf"({UUID_RE_BASE})", f"(?P<project_id>{UUID_RE_BASE})", initial_path) + "$"
 
 
 @pytest.fixture
@@ -81,9 +78,7 @@ def mocked_backend(
     return MockedBackendApiDict(webserver=mocked_webserver_rest_api)
 
 
-@pytest.mark.acceptance_test(
-    "For https://github.com/ITISFoundation/osparc-simcore/issues/4110"
-)
+@pytest.mark.acceptance_test("For https://github.com/ITISFoundation/osparc-simcore/issues/4110")
 async def test_get_and_update_job_metadata(
     auth: httpx.BasicAuth,
     client: httpx.AsyncClient,
@@ -91,6 +86,7 @@ async def test_get_and_update_job_metadata(
     solver_version: str,
     faker: Faker,
     mocked_backend: MockedBackendApiDict,
+    mock_dependency_get_celery_task_manager: MockType,
 ):
     # create Job
     resp = await client.post(

@@ -8,7 +8,7 @@ from uuid import UUID
 from common_library.exclude import as_dict_exclude_none
 from fastapi import status
 from fastapi.exceptions import HTTPException
-from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobGet
+from models_library.api_schemas_async_jobs.async_jobs import AsyncJobGet
 from models_library.api_schemas_webserver.projects import (
     ProjectCreateNew,
     ProjectGet,
@@ -118,9 +118,7 @@ class JobService:
     ) -> tuple[list[Job], PageMetaInfoLimitOffset]:
         """Lists all jobs for a user with pagination based on resource name prefix"""
 
-        pagination_kwargs = as_dict_exclude_none(
-            pagination_offset=pagination_offset, pagination_limit=pagination_limit
-        )
+        pagination_kwargs = as_dict_exclude_none(pagination_offset=pagination_offset, pagination_limit=pagination_limit)
 
         # 1. List projects marked as jobs
         projects_page = await self._web_rpc_client.list_projects_marked_as_jobs(
@@ -139,17 +137,13 @@ class JobService:
             ), "Expected only one solver node in workbench"
 
             solver_node = next(iter(project_job.workbench.values()))
-            job_inputs: JobInputs = create_job_inputs_from_node_inputs(
-                inputs=solver_node.inputs or {}
-            )
+            job_inputs: JobInputs = create_job_inputs_from_node_inputs(inputs=solver_node.inputs or {})
             assert project_job.job_parent_resource_name  # nosec
 
             jobs.append(
                 Job(
                     id=project_job.uuid,
-                    name=Job.compose_resource_name(
-                        project_job.job_parent_resource_name, project_job.uuid
-                    ),
+                    name=Job.compose_resource_name(project_job.job_parent_resource_name, project_job.uuid),
                     inputs_checksum=job_inputs.compute_checksum(),
                     created_at=project_job.created_at,
                     runner_name=project_job.job_parent_resource_name,
@@ -219,7 +213,7 @@ class JobService:
             pagination_limit=pagination_limit,
         )
 
-    async def create_project_marked_as_job(
+    async def create_project_marked_as_job(  # noqa: PLR0913
         self,
         *,
         solver_or_program: Solver | Program,
@@ -235,12 +229,8 @@ class JobService:
 
         # creates NEW job as prototype
 
-        pre_job = Job.create_job_from_solver_or_program(
-            solver_or_program_name=solver_or_program.name, inputs=inputs
-        )
-        with log_context(
-            logger=_logger, level=logging.DEBUG, msg=f"Creating job {pre_job.name}"
-        ):
+        pre_job = Job.create_job_from_solver_or_program(solver_or_program_name=solver_or_program.name, inputs=inputs)
+        with log_context(logger=_logger, level=logging.DEBUG, msg=f"Creating job {pre_job.name}"):
             project_in: ProjectCreateNew = create_new_project_for_job(
                 solver_or_program=solver_or_program,
                 job=pre_job,
@@ -283,18 +273,12 @@ class JobService:
         self,
         job_id: JobID,
     ) -> AsyncJobGet:
-        file_ids = await self._directorv2_rpc_client.get_computation_task_log_file_ids(
-            project_id=job_id
-        )
+        file_ids = await self._directorv2_rpc_client.get_computation_task_log_file_ids(project_id=job_id)
         return await self._storage_rpc_client.start_data_export(
-            paths_to_export=[
-                Path(elm.file_id) for elm in file_ids if elm.file_id is not None
-            ],
+            paths_to_export=[Path(elm.file_id) for elm in file_ids if elm.file_id is not None],
         )
 
-    async def get_job(
-        self, job_parent_resource_name: RelativeResourceName, job_id: JobID
-    ) -> ProjectJobRpcGet:
+    async def get_job(self, job_parent_resource_name: RelativeResourceName, job_id: JobID) -> ProjectJobRpcGet:
         """This method can be used to check that the project exists and has the correct parent resource."""
         return await self._web_rpc_client.get_project_marked_as_job(
             product_name=self.product_name,
@@ -313,40 +297,28 @@ class JobService:
         job_name = compose_solver_job_resource_name(solver_key, version, job_id)
         _logger.debug("Get Job '%s' outputs", job_name)
 
-        job_status = await self.inspect_solver_job(
-            solver_key=solver_key, version=version, job_id=job_id
-        )
+        job_status = await self.inspect_solver_job(solver_key=solver_key, version=version, job_id=job_id)
 
         if job_status.state != RunningState.SUCCESS:
-            raise SolverJobOutputRequestButNotSucceededError(
-                job_id=job_id, state=job_status.state
-            )
+            raise SolverJobOutputRequestButNotSucceededError(job_id=job_id, state=job_status.state)
 
         project_marked_as_job = await self.get_job(
             job_id=job_id,
-            job_parent_resource_name=Solver.compose_resource_name(
-                key=solver_key, version=version
-            ),
+            job_parent_resource_name=Solver.compose_resource_name(key=solver_key, version=version),
         )
         node_ids = list(project_marked_as_job.workbench.keys())
         assert len(node_ids) == 1  # nosec
 
         if project_marked_as_job.storage_assets_deleted:
             _logger.warning("Storage data for job '%s' has been deleted", job_name)
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT, detail="Assets have been deleted"
-            )
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Assets have been deleted")
 
         product_price = await self._web_rest_client.get_product_price()
         if product_price.usd_per_credit is not None:
-            wallet = await self._web_rest_client.get_project_wallet(
-                project_id=project_marked_as_job.uuid
-            )
+            wallet = await self._web_rest_client.get_project_wallet(project_id=project_marked_as_job.uuid)
             if wallet is None:
                 raise MissingWalletError(job_id=project_marked_as_job.uuid)
-            wallet_with_credits = await self._web_rest_client.get_wallet(
-                wallet_id=wallet.wallet_id
-            )
+            wallet_with_credits = await self._web_rest_client.get_wallet(wallet_id=wallet.wallet_id)
             if wallet_with_credits.available_credits <= ZERO_CREDITS:
                 raise InsufficientCreditsError(
                     wallet_name=wallet_with_credits.name,
@@ -370,9 +342,7 @@ class JobService:
                 )
                 if found:
                     assert len(found) == 1  # nosec
-                    results[name] = SchemaFile.from_domain_model(
-                        to_file_api_model(found[0])
-                    )
+                    results[name] = SchemaFile.from_domain_model(to_file_api_model(found[0]))
                 else:
                     api_file = await self._storage_rest_client.create_soft_link(
                         user_id=self.user_id,
@@ -396,27 +366,17 @@ class JobService:
         job_status = await self.inspect_study_job(job_id=job_id)
 
         if job_status.state != RunningState.SUCCESS:
-            raise StudyJobOutputRequestButNotSucceededError(
-                job_id=job_id, state=job_status.state
-            )
-        project_outputs = await self._web_rest_client.get_project_outputs(
-            project_id=job_id
-        )
+            raise StudyJobOutputRequestButNotSucceededError(job_id=job_id, state=job_status.state)
+        project_outputs = await self._web_rest_client.get_project_outputs(project_id=job_id)
 
         return await create_job_outputs_from_project_outputs(
             job_id, project_outputs, self.user_id, self._storage_rest_client
         )
 
-    async def delete_job_assets(
-        self, job_parent_resource_name: RelativeResourceName, job_id: JobID
-    ) -> None:
+    async def delete_job_assets(self, job_parent_resource_name: RelativeResourceName, job_id: JobID) -> None:
         """Marks job project as hidden and deletes S3 assets associated it"""
-        await self._web_rest_client.patch_project(
-            project_id=job_id, patch_params=ProjectPatch(hidden=True)
-        )
-        await self._storage_rest_client.delete_project_s3_assets(
-            user_id=self.user_id, project_id=job_id
-        )
+        await self._web_rest_client.patch_project(project_id=job_id, patch_params=ProjectPatch(hidden=True))
+        await self._storage_rest_client.delete_project_s3_assets(user_id=self.user_id, project_id=job_id)
         await self._web_rpc_client.mark_project_as_job(
             product_name=self.product_name,
             user_id=self.user_id,
@@ -425,7 +385,7 @@ class JobService:
             storage_assets_deleted=True,
         )
 
-    async def create_solver_job(
+    async def create_solver_job(  # noqa: PLR0913
         self,
         *,
         solver_key: SolverKeyId,
@@ -436,7 +396,6 @@ class JobService:
         x_simcore_parent_project_uuid: ProjectID | None,
         x_simcore_parent_node_id: NodeID | None,
     ) -> Job:
-
         solver = await self._solver_service.get_solver(
             solver_key=solver_key,
             solver_version=version,
@@ -463,9 +422,7 @@ class JobService:
     ) -> JobStatus:
         assert solver_key  # nosec
         assert version  # nosec
-        task = await self._director2_api.get_computation(
-            project_id=job_id, user_id=self.user_id
-        )
+        task = await self._director2_api.get_computation(project_id=job_id, user_id=self.user_id)
         job_status: JobStatus = create_jobstatus_from_task(task)
         return job_status
 
@@ -483,9 +440,7 @@ class JobService:
         job_name = compose_solver_job_resource_name(solver_key, version, job_id)
         _logger.debug("Start Job '%s'", job_name)
         job_parent_resource_name = Solver.compose_resource_name(solver_key, version)
-        job = await self.get_job(
-            job_id=job_id, job_parent_resource_name=job_parent_resource_name
-        )
+        job = await self.get_job(job_id=job_id, job_parent_resource_name=job_parent_resource_name)
         if job.storage_assets_deleted:
             raise JobAssetsMissingError(job_id=job_id)
         await start_project(
@@ -500,7 +455,7 @@ class JobService:
             job_id=job_id,
         )
 
-    async def create_studies_job(
+    async def create_studies_job(  # noqa: PLR0913
         self,
         *,
         study_id: StudyID,
@@ -510,7 +465,6 @@ class JobService:
         job_links: JobLinks,
         hidden: bool,
     ) -> Job:
-
         project = await self._web_rest_client.clone_project(
             project_id=study_id,
             hidden=hidden,
@@ -537,17 +491,11 @@ class JobService:
             storage_assets_deleted=False,
         )
 
-        project_inputs = await self._web_rest_client.get_project_inputs(
-            project_id=project.uuid
-        )
+        project_inputs = await self._web_rest_client.get_project_inputs(project_id=project.uuid)
 
         file_param_nodes = {}
         for node_id, node in project.workbench.items():
-            if (
-                node.key == file_picker.META.key
-                and node.outputs is not None
-                and len(node.outputs) == 0
-            ):
+            if node.key == file_picker.META.key and node.outputs is not None and len(node.outputs) == 0:
                 file_param_nodes[node.label] = node_id
 
         file_inputs: dict[InputID, InputTypes] = {}
@@ -555,9 +503,7 @@ class JobService:
         (
             new_project_inputs,
             new_project_file_inputs,
-        ) = get_project_and_file_inputs_from_job_inputs(
-            project_inputs, file_inputs, job_inputs
-        )
+        ) = get_project_and_file_inputs_from_job_inputs(project_inputs, file_inputs, job_inputs)
 
         for node_label, file_link in new_project_file_inputs.items():
             await self._web_rest_client.update_node_outputs(
@@ -567,15 +513,11 @@ class JobService:
             )
 
         if len(new_project_inputs) > 0:
-            await self._web_rest_client.update_project_inputs(
-                project_id=project.uuid, new_inputs=new_project_inputs
-            )
+            await self._web_rest_client.update_project_inputs(project_id=project.uuid, new_inputs=new_project_inputs)
         return job
 
     async def inspect_study_job(self, *, job_id: JobID) -> JobStatus:
-        task = await self._director2_api.get_computation(
-            project_id=job_id, user_id=self.user_id
-        )
+        task = await self._director2_api.get_computation(project_id=job_id, user_id=self.user_id)
         job_status: JobStatus = create_jobstatus_from_task(task)
         return job_status
 

@@ -17,7 +17,7 @@ from simcore_service_agent.services.docker_utils import (
     _VOLUMES_NOT_TO_BACKUP,
     _does_volume_require_backup,
     _reverse_string,
-    get_unused_dynamc_sidecar_volumes,
+    get_unused_dynamic_sidecar_volumes,
     get_volume_details,
     remove_volume,
 )
@@ -78,7 +78,7 @@ async def test_doclker_utils_workflow(
         )
         created_volumes.update(created_volume)
 
-    volumes = await get_unused_dynamc_sidecar_volumes(volumes_manager_docker_client)
+    volumes = await get_unused_dynamic_sidecar_volumes(volumes_manager_docker_client)
     assert volumes == created_volumes, (
         "Most likely you have a dirty working state, please check "
         "that there are no previous docker volumes named `dyv_...` "
@@ -114,12 +114,12 @@ async def test_doclker_utils_workflow(
         count_vloumes_to_backup if requires_backup else 0
     )
 
-    volumes = await get_unused_dynamc_sidecar_volumes(volumes_manager_docker_client)
+    volumes = await get_unused_dynamic_sidecar_volumes(volumes_manager_docker_client)
     assert len(volumes) == 0
 
 
 @pytest.mark.parametrize("requires_backup", [True, False])
-async def test_remove_misisng_volume_does_not_raise_error(
+async def test_remove_missing_volume_does_not_raise_error(
     requires_backup: bool,
     initialized_app: FastAPI,
     volumes_manager_docker_client: Docker,

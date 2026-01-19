@@ -32,12 +32,10 @@ async def catalog_rpc_side_effect():
 def wb_api_rpc_client(
     mocked_rabbit_rpc_client: MockType,
 ) -> WbApiRpcClient:
-    from servicelib.rabbitmq.rpc_interfaces.webserver.v1 import WebServerRpcClient
+    from servicelib.rabbitmq.rpc_interfaces.webserver.v1 import WebServerRpcClient  # noqa: PLC0415
 
     return WbApiRpcClient(
-        _rpc_client=WebServerRpcClient(
-            mocked_rabbit_rpc_client, DEFAULT_WEBSERVER_RPC_NAMESPACE
-        ),
+        _rpc_client=WebServerRpcClient(mocked_rabbit_rpc_client, DEFAULT_WEBSERVER_RPC_NAMESPACE),
     )
 
 
@@ -55,7 +53,7 @@ def storage_rpc_client(
     product_name: ProductName,
 ) -> StorageService:
     return StorageService(
-        _rpc_client=mocked_rabbit_rpc_client,
+        _task_manager=mocked_rabbit_rpc_client,
         _user_id=user_id,
         _product_name=product_name,
     )
@@ -96,9 +94,7 @@ def catalog_service(
     product_name: ProductName,
     user_id: UserID,
 ) -> CatalogService:
-    return CatalogService(
-        _rpc_client=mocked_rabbit_rpc_client, user_id=user_id, product_name=product_name
-    )
+    return CatalogService(_rpc_client=mocked_rabbit_rpc_client, user_id=user_id, product_name=product_name)
 
 
 @pytest.fixture

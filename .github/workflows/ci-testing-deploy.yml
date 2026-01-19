@@ -1551,8 +1551,6 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache-dependency-glob: "**/director-v2/requirements/ci.txt"
-      - name: setup rclone docker volume plugin
-        run: sudo ./ci/github/helpers/install_rclone_docker_volume_plugin.bash
       - name: Download and load Docker images
         uses: ./.github/actions/download-load-docker-images
         with:

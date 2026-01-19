@@ -35,9 +35,7 @@ _faker = Faker()
 
 
 @pytest.mark.xfail(reason="Still not implemented")
-@pytest.mark.acceptance_test(
-    "Implements https://github.com/ITISFoundation/osparc-simcore/issues/4177"
-)
+@pytest.mark.acceptance_test("Implements https://github.com/ITISFoundation/osparc-simcore/issues/4177")
 async def test_studies_jobs_workflow(
     client: httpx.AsyncClient,
     auth: httpx.BasicAuth,
@@ -80,9 +78,7 @@ async def test_studies_jobs_workflow(
     assert resp.status_code == status.HTTP_200_OK
 
     # Get Study Job Outputs Logfile
-    resp = await client.get(
-        f"/v0/studies/{study_id}/jobs/{job_id}/outputs/logfile", auth=auth
-    )
+    resp = await client.get(f"/v0/studies/{study_id}/jobs/{job_id}/outputs/logfile", auth=auth)
     assert resp.status_code == status.HTTP_200_OK
 
     # Verify that the Study Job already finished and therefore is stopped
@@ -134,6 +130,7 @@ async def test_start_stop_delete_study_job(
     project_tests_dir: Path,
     fake_study_id: UUID,
     faker: Faker,
+    mock_dependency_get_celery_task_manager: MockType,
 ):
     capture_file = project_tests_dir / "mocks" / "study_job_start_stop_delete.json"
     job_id = faker.uuid4()
@@ -216,6 +213,7 @@ async def test_create_study_job(
     hidden: bool,
     parent_project_id: UUID | None,
     parent_node_id: UUID | None,
+    mock_dependency_get_celery_task_manager: MockType,
 ):
     _capture_file: Final[Path] = project_tests_dir / "mocks" / "create_study_job.json"
 
@@ -236,21 +234,15 @@ async def test_create_study_job(
         if capture.method == "POST":
             # test hidden boolean
             _default_side_effect.post_called = True
-            query_dict = dict(
-                elm.split("=") for elm in request.url.query.decode().split("&")
-            )
+            query_dict = dict(elm.split("=") for elm in request.url.query.decode().split("&"))
             _hidden = query_dict.get("hidden")
             assert _hidden == ("true" if hidden else "false")
 
             # test parent project and node ids
             if parent_project_id is not None:
-                assert f"{parent_project_id}" == dict(request.headers).get(
-                    X_SIMCORE_PARENT_PROJECT_UUID.lower()
-                )
+                assert f"{parent_project_id}" == dict(request.headers).get(X_SIMCORE_PARENT_PROJECT_UUID.lower())
             if parent_node_id is not None:
-                assert f"{parent_node_id}" == dict(request.headers).get(
-                    X_SIMCORE_PARENT_NODE_ID.lower()
-                )
+                assert f"{parent_node_id}" == dict(request.headers).get(X_SIMCORE_PARENT_NODE_ID.lower())
         return capture.response_body
 
     _default_side_effect.patch_called = False
@@ -310,8 +302,8 @@ async def test_get_study_job_outputs(
     mocked_webserver_rest_api_base: respx.MockRouter,
     mocked_webserver_rpc_api: dict[str, MockType],
     mock_method_in_jobs_service: Callable[[str, Any], MockType],
+    mock_dependency_get_celery_task_manager: MockType,
 ):
-
     job_status = JobStatus(
         state=job_state,
         job_id=project_id,
@@ -355,9 +347,7 @@ async def test_get_study_job_outputs(
         "status_code": 200,
     }
 
-    mocked_webserver_rest_api_base.get(
-        path=capture["path"]["path"].format(project_id=project_id)
-    ).respond(
+    mocked_webserver_rest_api_base.get(path=capture["path"]["path"].format(project_id=project_id)).respond(
         status_code=capture["status_code"],
         json=capture["response_body"],
     )
@@ -396,9 +386,7 @@ async def test_get_job_logs(
         side_effects_callbacks=[],
     )
 
-    response = await client.get(
-        f"{API_VTAG}/studies/{_study_id}/jobs/{_job_id}/outputs/log-links", auth=auth
-    )
+    response = await client.get(f"{API_VTAG}/studies/{_study_id}/jobs/{_job_id}/outputs/log-links", auth=auth)
     assert response.status_code == status.HTTP_200_OK
     _ = JobLogsMap.model_validate(response.json())
 
@@ -412,8 +400,8 @@ async def test_get_study_outputs(
     auth: httpx.BasicAuth,
     project_tests_dir: Path,
     mock_method_in_jobs_service: Callable[[str, Any], MockType],
+    mock_dependency_get_celery_task_manager: MockType,
 ):
-
     _study_id = "e9f34992-436c-11ef-a15d-0242ac14000c"
 
     job_status = JobStatus(
@@ -451,14 +439,10 @@ async def test_get_study_outputs(
     _job = Job.model_validate(response.json())
     _job_id = _job.id
 
-    response = await client.post(
-        f"/{API_VTAG}/studies/{_study_id}/jobs/{_job_id}:start", auth=auth
-    )
+    response = await client.post(f"/{API_VTAG}/studies/{_study_id}/jobs/{_job_id}:start", auth=auth)
     assert response.status_code == status.HTTP_202_ACCEPTED
     _ = JobStatus.model_validate(response.json())
 
-    response = await client.post(
-        f"/{API_VTAG}/studies/{_study_id}/jobs/{_job_id}/outputs", auth=auth
-    )
+    response = await client.post(f"/{API_VTAG}/studies/{_study_id}/jobs/{_job_id}/outputs", auth=auth)
     assert response.status_code == status.HTTP_200_OK
     _ = JobOutputs.model_validate(response.json())

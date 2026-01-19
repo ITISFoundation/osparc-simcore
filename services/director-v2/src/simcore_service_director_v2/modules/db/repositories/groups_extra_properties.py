@@ -11,6 +11,7 @@ class UserExtraProperties(BaseModel):
     is_internet_enabled: bool
     is_telemetry_enabled: bool
     is_efs_enabled: bool
+    mount_data: bool
 
 
 class GroupsExtraPropertiesRepository(BaseRepository):
@@ -39,9 +40,7 @@ class GroupsExtraPropertiesRepository(BaseRepository):
         telemetry_enabled: bool = group_extra_properties.enable_telemetry
         return telemetry_enabled
 
-    async def get_user_extra_properties(
-        self, *, user_id: int, product_name: str
-    ) -> UserExtraProperties:
+    async def get_user_extra_properties(self, *, user_id: int, product_name: str) -> UserExtraProperties:
         group_extra_properties = await self._get_aggregated_properties_for_user(
             user_id=user_id, product_name=product_name
         )
@@ -49,4 +48,5 @@ class GroupsExtraPropertiesRepository(BaseRepository):
             is_internet_enabled=group_extra_properties.internet_access,
             is_telemetry_enabled=group_extra_properties.enable_telemetry,
             is_efs_enabled=group_extra_properties.enable_efs,
+            mount_data=group_extra_properties.mount_data,
         )

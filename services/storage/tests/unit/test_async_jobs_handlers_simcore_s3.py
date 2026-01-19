@@ -19,16 +19,16 @@ from unittest.mock import Mock
 import httpx
 import pytest
 import sqlalchemy as sa
-from celery.contrib.testing.worker import TestWorkController
+from celery.worker.worker import WorkController
+from celery_library.async_jobs import submit_job, wait_and_get_job_result
 from celery_library.task_manager import CeleryTaskManager
 from faker import Faker
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
-from models_library.api_schemas_rpc_async_jobs.async_jobs import (
+from models_library.api_schemas_async_jobs.async_jobs import (
     AsyncJobResult,
 )
-from models_library.api_schemas_rpc_async_jobs.exceptions import JobError
-from models_library.api_schemas_storage import STORAGE_RPC_NAMESPACE
+from models_library.api_schemas_async_jobs.exceptions import JobError
 from models_library.api_schemas_storage.storage_schemas import (
     FileMetaDataGet,
     FoldersBody,
@@ -54,20 +54,14 @@ from pytest_simcore.helpers.storage_utils_file_meta_data import (
 )
 from pytest_simcore.helpers.storage_utils_project import clone_project_data
 from servicelib.aiohttp import status
-from servicelib.celery.models import OwnerMetadata
-from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
-from servicelib.rabbitmq._errors import RPCServerError
-from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import wait_and_get_result
-from servicelib.rabbitmq.rpc_interfaces.storage.simcore_s3 import (
-    copy_folders_from_project,
-    start_export_data,
-)
+from servicelib.celery.models import ExecutionMetadata, OwnerMetadata
+from servicelib.celery.task_manager import TaskManager
 from simcore_postgres_database.storage_models import file_meta_data
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 from sqlalchemy.ext.asyncio import AsyncEngine
 from yarl import URL
 
-pytest_simcore_core_services_selection = ["postgres", "rabbit"]
+pytest_simcore_core_services_selection = ["postgres", "rabbit", "redis"]
 pytest_simcore_ops_services_selection = ["adminer"]
 
 
@@ -78,39 +72,38 @@ class _TestOwnerMetadata(OwnerMetadata):
 
 
 async def _request_copy_folders(
-    rpc_client: RabbitMQRPCClient,
+    task_manager: TaskManager,
     user_id: UserID,
     product_name: ProductName,
     source_project: dict[str, Any],
     dst_project: dict[str, Any],
     nodes_map: dict[NodeID, NodeID],
     *,
-    client_timeout: datetime.timedelta = datetime.timedelta(seconds=60),
+    stop_after: datetime.timedelta = datetime.timedelta(seconds=60),
 ) -> dict[str, Any]:
     with log_context(
         logging.INFO,
         f"Copying folders from {source_project['uuid']} to {dst_project['uuid']}",
     ) as ctx:
-        async_job_get, owner_metadata = await copy_folders_from_project(
-            rpc_client,
-            body=FoldersBody(
-                source=source_project, destination=dst_project, nodes_map=nodes_map
-            ),
-            owner_metadata=_TestOwnerMetadata(
-                user_id=user_id,
-                product_name=product_name,
-                owner="PYTEST_CLIENT_NAME",
-            ),
+        owner_metadata = _TestOwnerMetadata(
             user_id=user_id,
+            product_name=product_name,
+            owner="PYTEST_CLIENT_NAME",
         )
 
-        async for async_job_result in wait_and_get_result(
-            rpc_client,
-            rpc_namespace=STORAGE_RPC_NAMESPACE,
-            method_name=copy_folders_from_project.__name__,
-            job_id=async_job_get.job_id,
+        async_job = await submit_job(
+            task_manager,
+            execution_metadata=ExecutionMetadata(name="deep_copy_files_from_project"),
             owner_metadata=owner_metadata,
-            client_timeout=client_timeout,
+            user_id=user_id,
+            body=FoldersBody(source=source_project, destination=dst_project, nodes_map=nodes_map),
+        )
+
+        async for async_job_result in wait_and_get_job_result(
+            task_manager,
+            owner_metadata=owner_metadata,
+            job_id=async_job.job_id,
+            stop_after=stop_after,
         ):
             ctx.logger.info("%s", f"<-- current state is {async_job_result=}")
             if async_job_result.done:
@@ -119,16 +112,17 @@ async def _request_copy_folders(
                 return result.result
 
     pytest.fail(reason="Copy folders failed!")
+    return {}
 
 
 async def test_copy_folders_from_non_existing_project(
     initialized_app: FastAPI,
-    storage_rabbitmq_rpc_client: RabbitMQRPCClient,
+    task_manager: TaskManager,
+    with_storage_celery_worker: WorkController,
     user_id: UserID,
     product_name: ProductName,
     create_project: Callable[..., Awaitable[dict[str, Any]]],
     faker: Faker,
-    with_storage_celery_worker: TestWorkController,
 ):
     src_project = await create_project()
     incorrect_src_project = deepcopy(src_project)
@@ -137,11 +131,9 @@ async def test_copy_folders_from_non_existing_project(
     incorrect_dst_project = deepcopy(dst_project)
     incorrect_dst_project["uuid"] = faker.uuid4()
 
-    with pytest.raises(
-        JobError, match=f"Project {incorrect_src_project['uuid']} was not found"
-    ):
+    with pytest.raises(JobError, match=f"Project {incorrect_src_project['uuid']} was not found"):
         await _request_copy_folders(
-            storage_rabbitmq_rpc_client,
+            task_manager,
             user_id,
             product_name,
             incorrect_src_project,
@@ -149,11 +141,9 @@ async def test_copy_folders_from_non_existing_project(
             nodes_map={},
         )
 
-    with pytest.raises(
-        JobError, match=f"Project {incorrect_dst_project['uuid']} was not found"
-    ):
+    with pytest.raises(JobError, match=f"Project {incorrect_dst_project['uuid']} was not found"):
         await _request_copy_folders(
-            storage_rabbitmq_rpc_client,
+            task_manager,
             user_id,
             product_name,
             src_project,
@@ -164,19 +154,19 @@ async def test_copy_folders_from_non_existing_project(
 
 async def test_copy_folders_from_empty_project(
     initialized_app: FastAPI,
-    storage_rabbitmq_rpc_client: RabbitMQRPCClient,
+    task_manager: TaskManager,
     user_id: UserID,
     product_name: ProductName,
     create_project: Callable[[], Awaitable[dict[str, Any]]],
     sqlalchemy_async_engine: AsyncEngine,
-    with_storage_celery_worker: TestWorkController,
+    with_storage_celery_worker: WorkController,
 ):
     # we will copy from src to dst
     src_project = await create_project()
     dst_project = await create_project()
 
     data = await _request_copy_folders(
-        storage_rabbitmq_rpc_client,
+        task_manager,
         user_id,
         product_name,
         src_project,
@@ -225,16 +215,14 @@ def short_dsm_cleaner_interval(monkeypatch: pytest.MonkeyPatch) -> int:
 async def test_copy_folders_from_valid_project_with_one_large_file(
     initialized_app: FastAPI,
     short_dsm_cleaner_interval: int,
-    storage_rabbitmq_rpc_client: RabbitMQRPCClient,
+    task_manager: TaskManager,
     user_id: UserID,
     product_name: ProductName,
     create_project: Callable[[], Awaitable[dict[str, Any]]],
     sqlalchemy_async_engine: AsyncEngine,
     random_project_with_files: Callable[
         [ProjectWithFilesParams],
-        Awaitable[
-            tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]
-        ],
+        Awaitable[tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]],
     ],
     project_params: ProjectWithFilesParams,
 ):
@@ -245,21 +233,17 @@ async def test_copy_folders_from_valid_project_with_one_large_file(
     dst_project = await create_project(**dst_project)
     # copy the project files
     data = await _request_copy_folders(
-        storage_rabbitmq_rpc_client,
+        task_manager,
         user_id,
         product_name,
         src_project,
         dst_project,
         nodes_map={NodeID(i): NodeID(j) for i, j in nodes_map.items()},
     )
-    assert data == jsonable_encoder(
-        await get_updated_project(sqlalchemy_async_engine, dst_project["uuid"])
-    )
+    assert data == jsonable_encoder(await get_updated_project(sqlalchemy_async_engine, dst_project["uuid"]))
     # check that file meta data was effectively copied
     for src_node_id in src_projects_list:
-        dst_node_id = nodes_map.get(
-            TypeAdapter(NodeIDStr).validate_python(f"{src_node_id}")
-        )
+        dst_node_id = nodes_map.get(TypeAdapter(NodeIDStr).validate_python(f"{src_node_id}"))
         assert dst_node_id
         for src_file_id, src_file in src_projects_list[src_node_id].items():
             path: Any = src_file["path"]
@@ -269,17 +253,15 @@ async def test_copy_folders_from_valid_project_with_one_large_file(
             await assert_file_meta_data_in_db(
                 sqlalchemy_async_engine,
                 file_id=TypeAdapter(SimcoreS3FileID).validate_python(
-                    f"{src_file_id}".replace(
-                        f"{src_project['uuid']}", dst_project["uuid"]
-                    ).replace(f"{src_node_id}", f"{dst_node_id}")
+                    f"{src_file_id}".replace(f"{src_project['uuid']}", dst_project["uuid"]).replace(
+                        f"{src_node_id}", f"{dst_node_id}"
+                    )
                 ),
                 expected_entry_exists=True,
                 expected_file_size=path.stat().st_size,
                 expected_upload_id=None,
                 expected_upload_expiration_date=None,
-                expected_sha256_checksum=TypeAdapter(SHA256Str).validate_python(
-                    checksum
-                ),
+                expected_sha256_checksum=TypeAdapter(SHA256Str).validate_python(checksum),
             )
 
 
@@ -318,16 +300,14 @@ async def test_copy_folders_from_valid_project_with_one_large_file(
 async def test_copy_folders_from_valid_project(
     short_dsm_cleaner_interval: int,
     initialized_app: FastAPI,
-    storage_rabbitmq_rpc_client: RabbitMQRPCClient,
+    task_manager: TaskManager,
     user_id: UserID,
     product_name: ProductName,
     create_project: Callable[[], Awaitable[dict[str, Any]]],
     sqlalchemy_async_engine: AsyncEngine,
     random_project_with_files: Callable[
         [ProjectWithFilesParams],
-        Awaitable[
-            tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]
-        ],
+        Awaitable[tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]],
     ],
     project_params: ProjectWithFilesParams,
 ):
@@ -338,22 +318,18 @@ async def test_copy_folders_from_valid_project(
     dst_project = await create_project(**dst_project)
     # copy the project files
     data = await _request_copy_folders(
-        storage_rabbitmq_rpc_client,
+        task_manager,
         user_id,
         product_name,
         src_project,
         dst_project,
         nodes_map={NodeID(i): NodeID(j) for i, j in nodes_map.items()},
     )
-    assert data == jsonable_encoder(
-        await get_updated_project(sqlalchemy_async_engine, dst_project["uuid"])
-    )
+    assert data == jsonable_encoder(await get_updated_project(sqlalchemy_async_engine, dst_project["uuid"]))
 
     # check that file meta data was effectively copied
     for src_node_id in src_projects_list:
-        dst_node_id = nodes_map.get(
-            TypeAdapter(NodeIDStr).validate_python(f"{src_node_id}")
-        )
+        dst_node_id = nodes_map.get(TypeAdapter(NodeIDStr).validate_python(f"{src_node_id}"))
         assert dst_node_id
         for src_file_id, src_file in src_projects_list[src_node_id].items():
             path: Any = src_file["path"]
@@ -363,22 +339,20 @@ async def test_copy_folders_from_valid_project(
             await assert_file_meta_data_in_db(
                 sqlalchemy_async_engine,
                 file_id=TypeAdapter(SimcoreS3FileID).validate_python(
-                    f"{src_file_id}".replace(
-                        f"{src_project['uuid']}", dst_project["uuid"]
-                    ).replace(f"{src_node_id}", f"{dst_node_id}")
+                    f"{src_file_id}".replace(f"{src_project['uuid']}", dst_project["uuid"]).replace(
+                        f"{src_node_id}", f"{dst_node_id}"
+                    )
                 ),
                 expected_entry_exists=True,
                 expected_file_size=path.stat().st_size,
                 expected_upload_id=None,
                 expected_upload_expiration_date=None,
-                expected_sha256_checksum=TypeAdapter(SHA256Str).validate_python(
-                    checksum
-                ),
+                expected_sha256_checksum=TypeAdapter(SHA256Str).validate_python(checksum),
             )
 
 
 async def _create_and_delete_folders_from_project(
-    rpc_client: RabbitMQRPCClient,
+    task_manager: TaskManager,
     client: httpx.AsyncClient,
     user_id: UserID,
     product_name: ProductName,
@@ -387,20 +361,20 @@ async def _create_and_delete_folders_from_project(
     project_db_creator: Callable,
     check_list_files: bool,
     *,
-    client_timeout: datetime.timedelta = datetime.timedelta(seconds=60),
+    stop_after: datetime.timedelta = datetime.timedelta(seconds=60),
 ) -> None:
     destination_project, nodes_map = clone_project_data(project)
     await project_db_creator(**destination_project)
 
     # creating a copy
     data = await _request_copy_folders(
-        rpc_client,
+        task_manager,
         user_id,
         product_name,
         project,
         destination_project,
         nodes_map={NodeID(i): NodeID(j) for i, j in nodes_map.items()},
-        client_timeout=client_timeout,
+        stop_after=stop_after,
     )
 
     # data should be equal to the destination project, and all store entries should point to simcore.s3
@@ -451,9 +425,7 @@ def mock_datcore_download(mocker: MockerFixture, client: httpx.AsyncClient) -> N
     # Use to mock downloading from DATCore
     async def _fake_download_to_file_or_raise(session, url, dest_path):
         with log_context(logging.INFO, f"Faking download:  {url} -> {dest_path}"):
-            Path(dest_path).write_text(
-                "FAKE: test_create_and_delete_folders_from_project"
-            )
+            Path(dest_path).write_text("FAKE: test_create_and_delete_folders_from_project")
 
     mocker.patch(
         "simcore_service_storage.simcore_s3_dsm.download_to_file_or_raise",
@@ -492,7 +464,7 @@ def mock_datcore_download(mocker: MockerFixture, client: httpx.AsyncClient) -> N
 async def test_create_and_delete_folders_from_project(
     set_log_levels_for_noisy_libraries: None,
     initialized_app: FastAPI,
-    storage_rabbitmq_rpc_client: RabbitMQRPCClient,
+    task_manager: TaskManager,
     client: httpx.AsyncClient,
     user_id: UserID,
     product_name: ProductName,
@@ -509,7 +481,7 @@ async def test_create_and_delete_folders_from_project(
     await asyncio.gather(
         *[
             _create_and_delete_folders_from_project(
-                storage_rabbitmq_rpc_client,
+                task_manager,
                 client,
                 user_id,
                 product_name,
@@ -517,7 +489,7 @@ async def test_create_and_delete_folders_from_project(
                 initialized_app,
                 create_project,
                 check_list_files=False,
-                client_timeout=datetime.timedelta(seconds=300),
+                stop_after=datetime.timedelta(seconds=300),
             )
             for _ in range(num_concurrent_calls)
         ]
@@ -525,38 +497,38 @@ async def test_create_and_delete_folders_from_project(
 
 
 async def _request_start_export_data(
-    rpc_client: RabbitMQRPCClient,
+    task_manager: TaskManager,
+    task_name: Literal["export_data", "export_data_as_download_link"],
     user_id: UserID,
     product_name: ProductName,
     paths_to_export: list[PathToExport],
-    export_as: Literal["path", "download_link"],
     *,
-    client_timeout: datetime.timedelta = datetime.timedelta(seconds=60),
+    stop_after: datetime.timedelta = datetime.timedelta(seconds=60),
 ) -> str:
     with log_context(
         logging.INFO,
         f"Data export form {paths_to_export=}",
     ) as ctx:
-        async_job_get, owner_metadata = await start_export_data(
-            rpc_client,
-            paths_to_export=paths_to_export,
-            export_as=export_as,
-            owner_metadata=_TestOwnerMetadata(
-                user_id=user_id,
-                product_name=product_name,
-                owner="PYTEST_CLIENT_NAME",
-            ),
+        owner_metadata = _TestOwnerMetadata(
             user_id=user_id,
             product_name=product_name,
+            owner="PYTEST_CLIENT_NAME",
         )
 
-        async for async_job_result in wait_and_get_result(
-            rpc_client,
-            rpc_namespace=STORAGE_RPC_NAMESPACE,
-            method_name=start_export_data.__name__,
-            job_id=async_job_get.job_id,
+        async_job = await submit_job(
+            task_manager,
+            execution_metadata=ExecutionMetadata(name=task_name),
             owner_metadata=owner_metadata,
-            client_timeout=client_timeout,
+            user_id=user_id,
+            product_name=product_name,
+            paths_to_export=paths_to_export,
+        )
+
+        async for async_job_result in wait_and_get_job_result(
+            task_manager,
+            owner_metadata=owner_metadata,
+            job_id=async_job.job_id,
+            stop_after=stop_after,
         ):
             ctx.logger.info("%s", f"<-- current state is {async_job_result=}")
             if async_job_result.done:
@@ -565,6 +537,7 @@ async def _request_start_export_data(
                 return result.result
 
     pytest.fail(reason="data export failed!")
+    return ""
 
 
 @pytest.fixture
@@ -595,27 +568,25 @@ def task_progress_spy(mocker: MockerFixture) -> Mock:
     ids=str,
 )
 @pytest.mark.parametrize(
-    "export_as",
-    ["path", "download_link"],
+    "task_name",
+    ["export_data", "export_data_as_download_link"],
 )
 async def test_start_export_data(
     initialized_app: FastAPI,
     short_dsm_cleaner_interval: int,
-    with_storage_celery_worker: TestWorkController,
-    storage_rabbitmq_rpc_client: RabbitMQRPCClient,
+    task_manager: TaskManager,
+    with_storage_celery_worker: WorkController,
     user_id: UserID,
     product_name: ProductName,
     create_project: Callable[[], Awaitable[dict[str, Any]]],
     sqlalchemy_async_engine: AsyncEngine,
     random_project_with_files: Callable[
         [ProjectWithFilesParams],
-        Awaitable[
-            tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]
-        ],
+        Awaitable[tuple[dict[str, Any], dict[NodeID, dict[SimcoreS3FileID, FileIDDict]]]],
     ],
     project_params: ProjectWithFilesParams,
     task_progress_spy: Mock,
-    export_as: Literal["path", "download_link"],
+    task_name: Literal["export_data", "export_data_as_download_link"],
 ):
     _, src_projects_list = await random_project_with_files(project_params)
 
@@ -624,31 +595,30 @@ async def test_start_export_data(
         all_available_files |= x.keys()
 
     nodes_in_project_to_export = {
-        TypeAdapter(PathToExport).validate_python("/".join(Path(x).parts[0:2]))
-        for x in all_available_files
+        TypeAdapter(PathToExport).validate_python("/".join(Path(x).parts[0:2])) for x in all_available_files
     }
 
     result = await _request_start_export_data(
-        storage_rabbitmq_rpc_client,
+        task_manager,
+        task_name,
         user_id,
         product_name,
         paths_to_export=list(nodes_in_project_to_export),
-        export_as=export_as,
     )
 
-    if export_as == "path":
+    if task_name == "export_data":
         assert re.fullmatch(
             rf"^exports/{user_id}/[0-9a-fA-F]{{8}}-[0-9a-fA-F]{{4}}-[0-9a-fA-F]{{4}}-[0-9a-fA-F]{{4}}-[0-9a-fA-F]{{12}}\.zip$",
             result,
         )
-    elif export_as == "download_link":
+    elif task_name == "export_data_as_download_link":
         link = PresignedLink.model_validate(result).link
         assert re.search(
             rf"exports/{user_id}/[0-9a-fA-F]{{8}}-[0-9a-fA-F]{{4}}-[0-9a-fA-F]{{4}}-[0-9a-fA-F]{{4}}-[0-9a-fA-F]{{12}}\.zip",
             f"{link}",
         )
     else:
-        pytest.fail(f"Unexpected export_as value: {export_as}")
+        pytest.fail(f"Unexpected export_as value: {task_name}")
 
     progress_updates = [x[0][2].actual_value for x in task_progress_spy.call_args_list]
     assert progress_updates[0] == 0
@@ -656,30 +626,28 @@ async def test_start_export_data(
 
 
 @pytest.mark.parametrize(
-    "export_as",
-    ["path", "download_link"],
+    "task_name",
+    ["export_data", "export_data_as_download_link"],
 )
 async def test_start_export_data_access_error(
     initialized_app: FastAPI,
     short_dsm_cleaner_interval: int,
-    with_storage_celery_worker: TestWorkController,
-    storage_rabbitmq_rpc_client: RabbitMQRPCClient,
+    task_manager: TaskManager,
+    with_storage_celery_worker: WorkController,
     user_id: UserID,
     product_name: ProductName,
     faker: Faker,
-    export_as: Literal["path", "download_link"],
+    task_name: Literal["export_data", "export_data_as_download_link"],
 ):
-    path_to_export = TypeAdapter(PathToExport).validate_python(
-        f"{faker.uuid4()}/{faker.uuid4()}/{faker.file_name()}"
-    )
+    path_to_export = TypeAdapter(PathToExport).validate_python(f"{faker.uuid4()}/{faker.uuid4()}/{faker.file_name()}")
     with pytest.raises(JobError) as exc:
         await _request_start_export_data(
-            storage_rabbitmq_rpc_client,
+            task_manager,
+            task_name,
             user_id,
             product_name,
             paths_to_export=[path_to_export],
-            client_timeout=datetime.timedelta(seconds=60),
-            export_as=export_as,
+            stop_after=datetime.timedelta(seconds=60),
         )
 
     assert isinstance(exc.value, JobError)
@@ -691,23 +659,21 @@ async def test_start_export_data_access_error(
 async def test_start_export_invalid_export_format(
     initialized_app: FastAPI,
     short_dsm_cleaner_interval: int,
-    with_storage_celery_worker: TestWorkController,
-    storage_rabbitmq_rpc_client: RabbitMQRPCClient,
+    task_manager: TaskManager,
+    with_storage_celery_worker: WorkController,
     user_id: UserID,
     product_name: ProductName,
     faker: Faker,
 ):
-    path_to_export = TypeAdapter(PathToExport).validate_python(
-        f"{faker.uuid4()}/{faker.uuid4()}/{faker.file_name()}"
-    )
-    with pytest.raises(RPCServerError) as exc:
+    path_to_export = TypeAdapter(PathToExport).validate_python(f"{faker.uuid4()}/{faker.uuid4()}/{faker.file_name()}")
+    with pytest.raises(JobError) as exc:
         await _request_start_export_data(
-            storage_rabbitmq_rpc_client,
+            task_manager,
+            "invalid_format",  # type: ignore
             user_id,
             product_name,
             paths_to_export=[path_to_export],
-            client_timeout=datetime.timedelta(seconds=60),
-            export_as="invalid_format",  # type: ignore
+            stop_after=datetime.timedelta(seconds=60),
         )
 
-    assert exc.value.exc_type == "builtins.ValueError"
+    assert exc.value.exc_type == "NotRegistered"

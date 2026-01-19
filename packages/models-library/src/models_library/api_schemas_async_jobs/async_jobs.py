@@ -1,14 +1,12 @@
-from typing import Annotated, Any, TypeAlias
+from typing import Annotated, Any
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, StringConstraints
 
 from ..progress_bar import ProgressReport
 
-AsyncJobId: TypeAlias = UUID
-AsyncJobName: TypeAlias = Annotated[
-    str, StringConstraints(strip_whitespace=True, min_length=1)
-]
+type AsyncJobId = UUID
+type AsyncJobName = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
 
 
 class AsyncJobStatus(BaseModel):

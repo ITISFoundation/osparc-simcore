@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 from faker import Faker
-from servicelib.file_utils import log_directory_changes, remove_directory
+from servicelib.file_utils import log_directory_changes, remove_directory, temporary_text_file
 
 _logger = logging.getLogger(__name__)
 
@@ -45,15 +45,11 @@ def a_file(tmp_path, faker: Faker) -> Path:
 
 async def test_remove_directory(some_dir: Path, only_children: bool) -> None:
     assert some_dir.exists() is True
-    await remove_directory(
-        path=some_dir, only_children=only_children, ignore_errors=True
-    )
+    await remove_directory(path=some_dir, only_children=only_children, ignore_errors=True)
     assert some_dir.exists() is only_children
 
 
-@pytest.mark.skip(
-    "Not worth fixing until pytest fixes this issue https://github.com/pytest-dev/pytest/issues/6809"
-)
+@pytest.mark.skip("Not worth fixing until pytest fixes this issue https://github.com/pytest-dev/pytest/issues/6809")
 async def test_remove_fail_fails(a_file: Path, only_children: bool) -> None:
     assert a_file.exists() is True
 
@@ -66,23 +62,15 @@ async def test_remove_fail_fails(a_file: Path, only_children: bool) -> None:
 async def test_remove_not_existing_directory(faker: Faker, only_children: bool) -> None:
     missing_path = Path(faker.file_path())
     assert missing_path.exists() is False
-    await remove_directory(
-        path=missing_path, only_children=only_children, ignore_errors=True
-    )
+    await remove_directory(path=missing_path, only_children=only_children, ignore_errors=True)
 
 
-@pytest.mark.skip(
-    "Not worth fixing until pytest fixes this issue https://github.com/pytest-dev/pytest/issues/6809"
-)
-async def test_remove_not_existing_directory_rasing_error(
-    faker: Faker, only_children: bool
-) -> None:
+@pytest.mark.skip("Not worth fixing until pytest fixes this issue https://github.com/pytest-dev/pytest/issues/6809")
+async def test_remove_not_existing_directory_raising_error(faker: Faker, only_children: bool) -> None:
     missing_path = Path(faker.file_path())
     assert missing_path.exists() is False
     with pytest.raises(FileNotFoundError):
-        await remove_directory(
-            path=missing_path, only_children=only_children, ignore_errors=False
-        )
+        await remove_directory(path=missing_path, only_children=only_children, ignore_errors=False)
 
 
 async def test_log_directory_changes(caplog: pytest.LogCaptureFixture, some_dir: Path):
@@ -122,10 +110,10 @@ async def test_log_directory_changes(caplog: pytest.LogCaptureFixture, some_dir:
     # files added and removed
     caplog.clear()
     some_dir.mkdir(parents=True, exist_ok=True)
-    (some_dir / "som_other_file").touch()
+    (some_dir / "some_other_file").touch()
     with log_directory_changes(some_dir, _logger, logging.ERROR):
-        (some_dir / "som_other_file").unlink()
-        (some_dir / "som_other_file_2").touch()
+        (some_dir / "some_other_file").unlink()
+        (some_dir / "some_other_file_2").touch()
     assert "File changes in path" in caplog.text
     assert "Files added:" in caplog.text
     assert "Files removed:" in caplog.text
@@ -140,3 +128,10 @@ async def test_log_directory_changes(caplog: pytest.LogCaptureFixture, some_dir:
     assert "Files added:" not in caplog.text
     assert "Files removed:" not in caplog.text
     assert "File content changed" in caplog.text
+
+
+async def test_config_file(faker: Faker) -> None:
+    text_to_write = faker.text()
+    async with temporary_text_file(text_to_write) as file_name:
+        assert text_to_write == Path(file_name).read_text()
+    assert Path(file_name).exists() is False

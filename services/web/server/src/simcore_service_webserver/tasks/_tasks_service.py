@@ -5,15 +5,15 @@ from typing import Final
 from celery_library.errors import (
     TaskManagerError,
     TaskNotFoundError,
-    TransferrableCeleryError,
-    decode_celery_transferrable_error,
+    TransferableCeleryError,
+    decode_celery_transferable_error,
 )
-from models_library.api_schemas_rpc_async_jobs.async_jobs import (
+from models_library.api_schemas_async_jobs.async_jobs import (
     AsyncJobGet,
     AsyncJobResult,
     AsyncJobStatus,
 )
-from models_library.api_schemas_rpc_async_jobs.exceptions import (
+from models_library.api_schemas_async_jobs.exceptions import (
     JobError,
     JobMissingError,
     JobNotDoneError,
@@ -82,8 +82,8 @@ async def get_task_result(
         # try to recover the original error
         exception = None
         with log_catch(_logger, reraise=False):
-            assert isinstance(_result, TransferrableCeleryError)  # nosec
-            exception = decode_celery_transferrable_error(_result)
+            assert isinstance(_result, TransferableCeleryError)  # nosec
+            exception = decode_celery_transferable_error(_result)
             exc_type = type(exception).__name__
             exc_msg = f"{exception}"
 
@@ -139,9 +139,7 @@ async def pull_task_stream_items(
     if not end and last_update:
         delta = datetime.now(UTC) - last_update
         if delta.total_seconds() > _STREAM_STALL_THRESHOLD:
-            raise JobSchedulerError(
-                exc=f"Task seems stalled since {delta.total_seconds()} seconds"
-            )
+            raise JobSchedulerError(exc=f"Task seems stalled since {delta.total_seconds()} seconds")
 
     return results, end
 
@@ -158,6 +156,4 @@ async def list_tasks(
     except TaskManagerError as exc:
         raise JobSchedulerError(exc=f"{exc}") from exc
 
-    return [
-        AsyncJobGet(job_id=task.uuid, job_name=task.metadata.name) for task in tasks
-    ]
+    return [AsyncJobGet(job_id=task.uuid, job_name=task.metadata.name) for task in tasks]
