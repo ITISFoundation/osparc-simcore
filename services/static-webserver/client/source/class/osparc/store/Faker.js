@@ -20,13 +20,14 @@ qx.Class.define("osparc.store.Faker", {
   type: "singleton",
 
   statics: {
+    // spellchecker:off
     IDK: [
       "Ez dakit",
       "No lo sé",
       "I don't know",
       "Eu não sei",
       "I weiss nöd",
-      "Je ne says pas",
+      "Je ne sais pas",
       "Non lo so",
       "Ich weiß nicht",
       "Jeg ved det ikke",
@@ -34,6 +35,7 @@ qx.Class.define("osparc.store.Faker", {
       "Ik weet ni",
       "Neviem",
     ],
+    // spellchecker:on
   },
 
   members: {
