@@ -1,3 +1,4 @@
+import asyncio
 import functools
 import logging
 from collections.abc import AsyncGenerator
@@ -296,6 +297,10 @@ def _get_satate_folders_size(paths: list[Path]) -> int:
     return total_size
 
 
+async def _get_satate_folders_size_async(paths: list[Path]) -> int:
+    return await asyncio.to_thread(_get_satate_folders_size, paths)
+
+
 def _get_legacy_state_with_dy_volumes_path(
     settings: ApplicationSettings,
 ) -> LegacyState | None:
@@ -382,9 +387,10 @@ async def restore_user_services_state_paths(
         )
 
     await post_sidecar_log_message(app, "Finished state downloading", log_level=logging.INFO)
-    await progress.update(message="state restored", percent=0.99)
 
-    return _get_satate_folders_size(state_paths)
+    size = await _get_satate_folders_size_async(state_paths)
+    await progress.update(message="state restored", percent=0.99)
+    return size
 
 
 async def _save_state_folder(
