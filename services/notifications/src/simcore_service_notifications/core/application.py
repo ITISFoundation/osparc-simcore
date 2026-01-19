@@ -16,7 +16,7 @@ from servicelib.fastapi.tracing import (
 from servicelib.tracing import TracingConfig
 
 from .._meta import API_VTAG, APP_NAME, SUMMARY, VERSION
-from ..api.rest.routing import initialize_rest_api
+from ..api.rest.routes import initialize_rest_api
 from . import events
 from .settings import ApplicationSettings
 
@@ -40,9 +40,7 @@ def create_app(
         description=SUMMARY,
         version=f"{VERSION}",
         openapi_url=f"/api/{API_VTAG}/openapi.json",
-        lifespan=events.create_app_lifespan(
-            settings=settings, logging_lifespan=logging_lifespan
-        ),
+        lifespan=events.create_app_lifespan(settings=settings, logging_lifespan=logging_lifespan),
         **get_common_oas_options(is_devel_mode=settings.SC_BOOT_MODE.is_devel_mode()),
     )
     override_fastapi_openapi_method(app)
