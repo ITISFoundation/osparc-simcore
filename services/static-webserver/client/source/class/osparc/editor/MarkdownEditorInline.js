@@ -83,16 +83,38 @@ qx.Class.define("osparc.editor.MarkdownEditorInline", {
       return el;
     },
 
-    __wrapSelection(prefix, suffix, placeholder) {
+    __getSelection() {
       const dom = this.__getDomTextArea();
-      if (!dom) return;
+      if (!dom) return null;
 
       const textArea = this.getChildControl("text-area");
-
       const value = textArea.getValue() || "";
       const start = dom.selectionStart != null ? dom.selectionStart : value.length;
       const end = dom.selectionEnd != null ? dom.selectionEnd : value.length;
 
+      return { textArea, value, start, end };
+    },
+
+    __applyEdit(newValue, newStart, newEnd) {
+      const textArea = this.getChildControl("text-area");
+      textArea.setValue(newValue);
+      textArea.focus();
+
+      if (newStart != null && newEnd != null) {
+        qx.event.Timer.once(() => {
+          const dom = this.__getDomTextArea();
+          if (!dom) return;
+          dom.selectionStart = newStart;
+          dom.selectionEnd = newEnd;
+        }, this, 0);
+      }
+    },
+
+    __wrapSelection(prefix, suffix, placeholder) {
+      const sel = this.__getSelection();
+      if (!sel) return;
+
+      const { value, start, end } = sel;
       const selected = value.substring(start, end) || placeholder;
 
       const nextValue =
@@ -100,32 +122,17 @@ qx.Class.define("osparc.editor.MarkdownEditorInline", {
         prefix + selected + suffix +
         value.substring(end);
 
-      textArea.setValue(nextValue);
-      textArea.focus();
-
-      // Restore selection around inserted text
       const newStart = start + prefix.length;
       const newEnd = newStart + selected.length;
 
-      // Must run after DOM updates
-      qx.event.Timer.once(() => {
-        const dom2 = this.__getDomTextArea();
-        if (!dom2) return;
-        dom2.selectionStart = newStart;
-        dom2.selectionEnd = newEnd;
-      }, this, 0);
+      this.__applyEdit(nextValue, newStart, newEnd);
     },
 
     __insertLink() {
-      const dom = this.__getDomTextArea();
-      if (!dom) return;
+      const sel = this.__getSelection();
+      if (!sel) return;
 
-      const textArea = this.getChildControl("text-area");
-
-      const value = textArea.getValue() || "";
-      const start = dom.selectionStart != null ? dom.selectionStart : value.length;
-      const end = dom.selectionEnd != null ? dom.selectionEnd : value.length;
-
+      const { value, start, end } = sel;
       const selected = value.substring(start, end) || "link text";
       const snippet = `[${selected}](https://example.com)`;
 
@@ -134,30 +141,17 @@ qx.Class.define("osparc.editor.MarkdownEditorInline", {
         snippet +
         value.substring(end);
 
-      textArea.setValue(nextValue);
-      textArea.focus();
-
-      // Select the URL part for quick replace
       const urlStart = start + snippet.indexOf("(") + 1;
       const urlEnd = start + snippet.indexOf(")");
 
-      qx.event.Timer.once(() => {
-        const dom2 = this.__getDomTextArea();
-        if (!dom2) return;
-        dom2.selectionStart = urlStart;
-        dom2.selectionEnd = urlEnd;
-      }, this, 0);
+      this.__applyEdit(nextValue, urlStart, urlEnd);
     },
 
     __prefixLines(prefix) {
-      const dom = this.__getDomTextArea();
-      if (!dom) return;
+      const sel = this.__getSelection();
+      if (!sel) return;
 
-      const textArea = this.getChildControl("text-area");
-
-      const value = textArea.getValue() || "";
-      const start = dom.selectionStart != null ? dom.selectionStart : value.length;
-      const end = dom.selectionEnd != null ? dom.selectionEnd : value.length;
+      const { value, start, end } = sel;
 
       // Expand selection to full lines
       const lineStart = value.lastIndexOf("\n", start - 1) + 1;
@@ -175,19 +169,14 @@ qx.Class.define("osparc.editor.MarkdownEditorInline", {
         updated +
         value.substring(lineEnd);
 
-      textArea.setValue(nextValue);
-      textArea.focus();
+      this.__applyEdit(nextValue);
     },
 
     __numberLines() {
-      const dom = this.__getDomTextArea();
-      if (!dom) return;
+      const sel = this.__getSelection();
+      if (!sel) return;
 
-      const textArea = this.getChildControl("text-area");
-
-      const value = textArea.getValue() || "";
-      const start = dom.selectionStart != null ? dom.selectionStart : value.length;
-      const end = dom.selectionEnd != null ? dom.selectionEnd : value.length;
+      const { value, start, end } = sel;
 
       const lineStart = value.lastIndexOf("\n", start - 1) + 1;
       const lineEndIdx = value.indexOf("\n", end);
@@ -206,8 +195,7 @@ qx.Class.define("osparc.editor.MarkdownEditorInline", {
         updated +
         value.substring(lineEnd);
 
-      textArea.setValue(nextValue);
-      textArea.focus();
+      this.__applyEdit(nextValue);
     }
   }
 });
