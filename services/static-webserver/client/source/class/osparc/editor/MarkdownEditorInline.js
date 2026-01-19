@@ -51,6 +51,7 @@ qx.Class.define("osparc.editor.MarkdownEditorInline", {
             padding: 10,
             wrap: true,
           });
+          osparc.utils.Utils.enableTextAreaLineBreaks(control);
           this.add(control, {
             flex: 1
           });
