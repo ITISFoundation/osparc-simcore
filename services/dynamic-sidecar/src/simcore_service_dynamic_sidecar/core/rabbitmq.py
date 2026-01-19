@@ -28,7 +28,7 @@ from tenacity.wait import wait_exponential
 from ..core.settings import ApplicationSettings
 from ..modules.service_liveness import wait_for_service_liveness
 
-_MAX_DELAY_TO_ATTEMPT_MESSAGE_REDELIVERY: Final[NonNegativeFloat] = timedelta(seconds=30).total_seconds()
+_MAX_DELAY_TO_RETRY_MESSAGE_DELIVERY: Final[NonNegativeFloat] = timedelta(seconds=30).total_seconds()
 
 _logger = logging.getLogger(__file__)
 
@@ -37,7 +37,7 @@ async def _post_rabbit_message(app: FastAPI, message: RabbitMessageBase) -> None
     with log_catch(_logger, reraise=False):
         # retries to see if network disruptions are transient
         async for attempt in AsyncRetrying(
-            stop=stop_after_delay(_MAX_DELAY_TO_ATTEMPT_MESSAGE_REDELIVERY),
+            stop=stop_after_delay(_MAX_DELAY_TO_RETRY_MESSAGE_DELIVERY),
             wait=wait_exponential(max=1),
             before_sleep=before_sleep_log(_logger, logging.WARNING),
         ):
