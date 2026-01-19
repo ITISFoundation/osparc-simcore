@@ -109,7 +109,7 @@ qx.Class.define("osparc.editor.EmailEditor", {
       const previewEmail = this.getChildControl("preview-email");
 
       const textEditor = this.getChildControl("text-editor");
-      const emailContentText = textEditor.getValue();
+      const emailContentText = textEditor.getValueAsHtml();
       const templateEmail = this.getTemplateEmail();
 
       // Convert plain text to HTML with line breaks
