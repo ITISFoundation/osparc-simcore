@@ -7,22 +7,21 @@ import pytest
 from aiohttp.test_utils import TestClient
 from common_library.users_enums import UserRole
 from faker import Faker
-from models_library.api_schemas_long_running_tasks.tasks import (
-    TaskGet,
-    TaskStatus,
-)
-from models_library.api_schemas_rpc_async_jobs.async_jobs import (
+from models_library.api_schemas_async_jobs.async_jobs import (
     AsyncJobGet,
-    AsyncJobId,
     AsyncJobResult,
     AsyncJobStatus,
 )
-from models_library.api_schemas_rpc_async_jobs.exceptions import (
+from models_library.api_schemas_async_jobs.exceptions import (
     JobAbortedError,
     JobError,
     JobMissingError,
     JobNotDoneError,
     JobSchedulerError,
+)
+from models_library.api_schemas_long_running_tasks.tasks import (
+    TaskGet,
+    TaskStatus,
 )
 from models_library.generics import Envelope
 from models_library.progress_bar import ProgressReport
@@ -70,9 +69,8 @@ def create_consume_events_mock_fixture(
 
 
 class MockEvent:
-    def __init__(self, event_type: str, event_data: dict[str, Any]):
-        self.type = event_type
-        self.data = event_data
+    type: str
+    data: dict[str, Any]
 
 
 @pytest.mark.parametrize("user_role", _user_roles)
@@ -82,7 +80,7 @@ class MockEvent:
         (
             [
                 AsyncJobGet(
-                    job_id=AsyncJobId(_faker.uuid4()),
+                    job_id=_faker.uuid4(),
                     job_name="task_name",
                 )
             ],
@@ -116,7 +114,7 @@ async def test_get_user_async_jobs(
     [
         (
             AsyncJobStatus(
-                job_id=AsyncJobId(f"{_faker.uuid4()}"),
+                job_id=_faker.uuid4(),
                 progress=ProgressReport(actual_value=0.5, total=1.0),
                 done=False,
             ),
@@ -134,18 +132,15 @@ async def test_get_async_jobs_status(
     backend_result_or_exception: Any,
     expected_status: int,
 ):
-    _job_id = AsyncJobId(_faker.uuid4())
     mock_handler_in_task_service(
         _tasks_service.get_task_status.__name__,
         side_effect=backend_result_or_exception,
     )
 
-    response = await client.get(f"/{API_VERSION}/tasks/{_job_id}")
+    response = await client.get(f"/{API_VERSION}/tasks/{_faker.uuid4()}")
     assert response.status == expected_status
     if response.status == status.HTTP_200_OK:
-        response_body_data = (
-            Envelope[TaskStatus].model_validate(await response.json()).data
-        )
+        response_body_data = Envelope[TaskStatus].model_validate(await response.json()).data
         assert response_body_data is not None
 
 
@@ -170,11 +165,10 @@ async def test_get_async_job_result(
     backend_result_or_exception: Any,
     expected_status: int,
 ):
-    _job_id = AsyncJobId(faker.uuid4())
     mock_handler_in_task_service(
         _tasks_service.get_task_result.__name__,
         side_effect=backend_result_or_exception,
     )
 
-    response = await client.get(f"/{API_VERSION}/tasks/{_job_id}/result")
+    response = await client.get(f"/{API_VERSION}/tasks/{faker.uuid4()}/result")
     assert response.status == expected_status

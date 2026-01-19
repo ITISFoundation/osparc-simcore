@@ -10,22 +10,22 @@ from urllib.parse import quote
 
 import pytest
 from aiohttp.test_utils import TestClient
+from celery_library.async_jobs import submit_job
 from faker import Faker
+from models_library.api_schemas_async_jobs.async_jobs import (
+    AsyncJobAbort,
+    AsyncJobGet,
+    AsyncJobResult,
+    AsyncJobStatus,
+)
+from models_library.api_schemas_async_jobs.exceptions import (
+    JobMissingError,
+    JobSchedulerError,
+)
 from models_library.api_schemas_long_running_tasks.tasks import (
     TaskGet,
     TaskResult,
     TaskStatus,
-)
-from models_library.api_schemas_rpc_async_jobs.async_jobs import (
-    AsyncJobAbort,
-    AsyncJobGet,
-    AsyncJobId,
-    AsyncJobResult,
-    AsyncJobStatus,
-)
-from models_library.api_schemas_rpc_async_jobs.exceptions import (
-    JobMissingError,
-    JobSchedulerError,
 )
 from models_library.api_schemas_storage.export_data_async_jobs import (
     AccessRightError,
@@ -54,10 +54,6 @@ from pytest_simcore.helpers.typing_mock import HandlerMockFactory
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from servicelib.fastapi.rest_pagination import CustomizedPathsCursorPage
-from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import (
-    submit,
-)
-from servicelib.rabbitmq.rpc_interfaces.storage.simcore_s3 import start_export_data
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.tasks._tasks_service import (
     cancel_task,
@@ -82,7 +78,7 @@ _user_roles: Final[list[UserRole]] = [
 
 
 @pytest.mark.xfail(
-    reason="This is really weird: A first test that fails is necessary to make this test module work with pytest-asyncio>=0.24.0. "
+    reason="A first test that fails is necessary to make this test module work with pytest-asyncio>=0.24.0. "
     "Maybe because of module/session event loops?"
 )
 async def test_pytest_asyncio_failure(
@@ -147,7 +143,7 @@ _faker = Faker()
 
 
 @pytest.fixture
-def create_storage_paths_rpc_client_mock(
+def create_async_jobs_mock(
     mocker: MockerFixture,
 ) -> Callable[[str, Any], None]:
     def _(method: str, result_or_exception: Any):
@@ -157,7 +153,7 @@ def create_storage_paths_rpc_client_mock(
 
             return result_or_exception
 
-        for fct in (f"servicelib.rabbitmq.rpc_interfaces.storage.paths.{method}",):
+        for fct in (f"celery_library.async_jobs.{method}",):
             mocker.patch(fct, side_effect=side_effect)
 
     return _
@@ -175,9 +171,7 @@ def create_storage_paths_rpc_client_mock(
 @pytest.mark.parametrize(
     "backend_result_or_exception",
     [
-        AsyncJobGet(
-            job_id=AsyncJobId(f"{_faker.uuid4()}"), job_name="compute_path_size"
-        ),
+        AsyncJobGet(job_id=_faker.uuid4(), job_name="compute_path_size"),
     ],
     ids=lambda x: type(x).__name__,
 )
@@ -187,11 +181,11 @@ async def test_compute_path_size(
     expected: int,
     location_id: LocationID,
     faker: Faker,
-    create_storage_paths_rpc_client_mock: Callable[[str, Any], None],
+    create_async_jobs_mock: Callable[[str, Any], None],
     backend_result_or_exception: Any,
 ):
-    create_storage_paths_rpc_client_mock(
-        submit.__name__,
+    create_async_jobs_mock(
+        submit_job.__name__,
         backend_result_or_exception,
     )
 
@@ -219,9 +213,7 @@ async def test_compute_path_size(
 @pytest.mark.parametrize(
     "backend_result_or_exception",
     [
-        AsyncJobGet(
-            job_id=AsyncJobId(f"{_faker.uuid4()}"), job_name="batch_delete_paths"
-        ),
+        AsyncJobGet(job_id=_faker.uuid4(), job_name="batch_delete_paths"),
     ],
     ids=lambda x: type(x).__name__,
 )
@@ -231,17 +223,15 @@ async def test_batch_delete_paths(
     expected: int,
     location_id: LocationID,
     faker: Faker,
-    create_storage_paths_rpc_client_mock: Callable[[str, Any], None],
+    create_async_jobs_mock: Callable[[str, Any], None],
     backend_result_or_exception: Any,
 ):
-    create_storage_paths_rpc_client_mock(
-        submit.__name__,
+    create_async_jobs_mock(
+        submit_job.__name__,
         backend_result_or_exception,
     )
 
-    body = BatchDeletePathsBodyParams(
-        paths={Path(f"{faker.file_path(absolute=False)}")}
-    )
+    body = BatchDeletePathsBodyParams(paths={Path(f"{faker.file_path(absolute=False)}")})
 
     assert client.app
     url = client.app.router["batch_delete_paths"].url_for(
@@ -302,9 +292,7 @@ async def test_list_dataset_files_metadata(
     url = "/v0/storage/locations/0/datasets/N:asdfsdf/metadata"
     assert url.startswith(PREFIX)
     assert client.app
-    _url = client.app.router["list_dataset_files_metadata"].url_for(
-        location_id="0", dataset_id="N:asdfsdf"
-    )
+    _url = client.app.router["list_dataset_files_metadata"].url_for(location_id="0", dataset_id="N:asdfsdf")
 
     assert url == str(_url)
 
@@ -368,9 +356,7 @@ async def test_storage_list_filter(
 ):
     # tests composition of 2 queries
     file_id = "a/b/c/d/e/dat"
-    url = "/v0/storage/locations/0/files/metadata?uuid_filter={}".format(
-        quote(file_id, safe="")
-    )
+    url = "/v0/storage/locations/0/files/metadata?uuid_filter={}".format(quote(file_id, safe=""))
 
     assert url.startswith(PREFIX)
 
@@ -429,12 +415,7 @@ async def test_upload_file(
     "backend_result_or_exception, expected_status",
     [
         (
-            (
-                AsyncJobGet(
-                    job_id=AsyncJobId(f"{_faker.uuid4()}"), job_name="export_data"
-                ),
-                None,
-            ),
+            AsyncJobGet(job_id=_faker.uuid4(), job_name="export_data"),
             status.HTTP_202_ACCEPTED,
         ),
         (
@@ -442,9 +423,7 @@ async def test_upload_file(
             status.HTTP_404_NOT_FOUND,
         ),
         (
-            AccessRightError(
-                user_id=_faker.pyint(min_value=0), file_id=Path("/my/file")
-            ),
+            AccessRightError(user_id=_faker.pyint(min_value=0), file_id=Path("/my/file")),
             status.HTTP_403_FORBIDDEN,
         ),
         (
@@ -464,16 +443,12 @@ async def test_export_data(
     expected_status: int,
 ):
     mock_handler_in_storage_rest(
-        start_export_data.__name__,
+        submit_job.__name__,
         side_effect=backend_result_or_exception,
     )
 
-    _body = DataExportPost(
-        paths=[Path(f"{faker.uuid4()}/{faker.uuid4()}/{faker.file_name()}")]
-    )
-    response = await client.post(
-        f"/{API_VERSION}/storage/locations/0:export-data", data=_body.model_dump_json()
-    )
+    _body = DataExportPost(paths=[Path(f"{faker.uuid4()}/{faker.uuid4()}/{faker.file_name()}")])
+    response = await client.post(f"/{API_VERSION}/storage/locations/0:export-data", data=_body.model_dump_json())
     assert response.status == expected_status
     if response.status == status.HTTP_202_ACCEPTED:
         Envelope[TaskGet].model_validate(await response.json())
@@ -485,7 +460,7 @@ async def test_export_data(
     [
         (
             AsyncJobStatus(
-                job_id=AsyncJobId(f"{_faker.uuid4()}"),
+                job_id=_faker.uuid4(),
                 progress=ProgressReport(actual_value=0.5, total=1.0),
                 done=False,
             ),
@@ -504,18 +479,16 @@ async def test_get_async_jobs_status(
     backend_result_or_exception: Any,
     expected_status: int,
 ):
-    _job_id = AsyncJobId(_faker.uuid4())
+    job_id = _faker.uuid4()
     mock_handler_in_task_service(
         get_task_status.__name__,
         side_effect=backend_result_or_exception,
     )
 
-    response = await client.get(f"/{API_VERSION}/tasks/{_job_id}")
+    response = await client.get(f"/{API_VERSION}/tasks/{job_id}")
     assert response.status == expected_status
     if response.status == status.HTTP_200_OK:
-        response_body_data = (
-            Envelope[TaskStatus].model_validate(await response.json()).data
-        )
+        response_body_data = Envelope[TaskStatus].model_validate(await response.json()).data
         assert response_body_data is not None
 
 
@@ -524,7 +497,7 @@ async def test_get_async_jobs_status(
     "backend_result_or_exception, expected_status",
     [
         (
-            AsyncJobAbort(result=True, job_id=AsyncJobId(_faker.uuid4())),
+            AsyncJobAbort(result=True, job_id=_faker.uuid4()),
             status.HTTP_204_NO_CONTENT,
         ),
         (JobSchedulerError(exc=_faker.text()), status.HTTP_500_INTERNAL_SERVER_ERROR),
@@ -541,13 +514,12 @@ async def test_cancel_async_jobs(
     backend_result_or_exception: Any,
     expected_status: int,
 ):
-    _job_id = AsyncJobId(faker.uuid4())
     mock_handler_in_task_service(
         cancel_task.__name__,
         side_effect=backend_result_or_exception,
     )
 
-    response = await client.delete(f"/{API_VERSION}/tasks/{_job_id}")
+    response = await client.delete(f"/{API_VERSION}/tasks/{faker.uuid4()}")
     assert response.status == expected_status
 
 
@@ -560,7 +532,7 @@ async def test_cancel_async_jobs(
             "status_href",
             get_task_status.__name__,
             AsyncJobStatus(
-                job_id=AsyncJobId(_faker.uuid4()),
+                job_id=_faker.uuid4(),
                 progress=ProgressReport(actual_value=0.5, total=1.0),
                 done=False,
             ),
@@ -571,7 +543,7 @@ async def test_cancel_async_jobs(
             "DELETE",
             "abort_href",
             cancel_task.__name__,
-            AsyncJobAbort(result=True, job_id=AsyncJobId(_faker.uuid4())),
+            AsyncJobAbort(result=True, job_id=_faker.uuid4()),
             status.HTTP_204_NO_CONTENT,
             None,
         ),
@@ -600,22 +572,15 @@ async def test_get_async_job_links(
     return_schema: OutputSchema | None,
 ):
     mock_handler_in_storage_rest(
-        start_export_data.__name__,
-        return_value=(
-            AsyncJobGet(
-                job_id=AsyncJobId(f"{_faker.uuid4()}"),
-                job_name="export_data",
-            ),
-            None,
+        submit_job.__name__,
+        return_value=AsyncJobGet(
+            job_id=_faker.uuid4(),
+            job_name="export_data",
         ),
     )
 
-    _body = DataExportPost(
-        paths=[PathToExport(f"{faker.uuid4()}/{faker.uuid4()}/{faker.file_name()}")]
-    )
-    response = await client.post(
-        f"/{API_VERSION}/storage/locations/0:export-data", data=_body.model_dump_json()
-    )
+    body = DataExportPost(paths=[PathToExport(f"{faker.uuid4()}/{faker.uuid4()}/{faker.file_name()}")])
+    response = await client.post(f"/{API_VERSION}/storage/locations/0:export-data", data=body.model_dump_json())
     assert response.status == status.HTTP_202_ACCEPTED
     response_body_data = Envelope[TaskGet].model_validate(await response.json()).data
     assert response_body_data is not None
@@ -625,9 +590,7 @@ async def test_get_async_job_links(
         backend_method,
         return_value=backend_object,
     )
-    response = await client.request(
-        http_method, URL(getattr(response_body_data, href)).path
-    )
+    response = await client.request(http_method, URL(getattr(response_body_data, href)).path)
     assert response.status == return_status
     if return_schema:
         Envelope[return_schema].model_validate(await response.json())

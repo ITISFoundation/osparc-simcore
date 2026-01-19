@@ -9,11 +9,12 @@ from typing import Annotated, Any, Final, NamedTuple
 from urllib.parse import quote, unquote
 
 from aiohttp import ClientTimeout, web
+from celery_library.async_jobs import submit_job
+from models_library.api_schemas_async_jobs.async_jobs import (
+    AsyncJobGet,
+)
 from models_library.api_schemas_long_running_tasks.tasks import (
     TaskGet,
-)
-from models_library.api_schemas_rpc_async_jobs.async_jobs import (
-    AsyncJobGet,
 )
 from models_library.api_schemas_storage.search_async_jobs import SEARCH_TASK_NAME
 from models_library.api_schemas_storage.storage_schemas import (
@@ -49,15 +50,9 @@ from servicelib.aiohttp.requests_validation import (
     parse_request_query_parameters_as,
 )
 from servicelib.aiohttp.rest_responses import create_data_response
+from servicelib.celery.async_jobs.storage.paths import COMPUTE_PATH_SIZE_TASK_NAME, DELETE_PATHS_TASK_NAME
 from servicelib.celery.models import ExecutionMetadata, OwnerMetadata
 from servicelib.common_headers import X_FORWARDED_PROTO
-from servicelib.rabbitmq.rpc_interfaces.storage.paths import (
-    compute_path_size as remote_compute_path_size,
-)
-from servicelib.rabbitmq.rpc_interfaces.storage.paths import (
-    delete_paths as remote_delete_paths,
-)
-from servicelib.rabbitmq.rpc_interfaces.storage.simcore_s3 import start_export_data
 from servicelib.rest_responses import unwrap_envelope
 from yarl import URL
 
@@ -66,7 +61,6 @@ from ..celery import get_task_manager
 from ..constants import RQ_PRODUCT_KEY
 from ..login.decorators import login_required
 from ..models import AuthenticatedRequestContext, WebServerOwnerMetadata
-from ..rabbitmq import get_rabbitmq_rpc_client
 from ..security.decorators import permission_required
 from ..tasks._controller._rest_exceptions import handle_rest_requests_exceptions
 from .schemas import StorageFileIDStr
@@ -211,11 +205,11 @@ async def compute_path_size(request: web.Request) -> web.Response:
     req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(StoragePathComputeSizeParams, request)
 
-    rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)
-    async_job, _ = await remote_compute_path_size(
-        rabbitmq_rpc_client,
-        location_id=path_params.location_id,
-        path=path_params.path,
+    async_job_get = await submit_job(
+        get_task_manager(request.app),
+        execution_metadata=ExecutionMetadata(
+            name=COMPUTE_PATH_SIZE_TASK_NAME,
+        ),
         owner_metadata=OwnerMetadata.model_validate(
             WebServerOwnerMetadata(
                 user_id=req_ctx.user_id,
@@ -224,9 +218,11 @@ async def compute_path_size(request: web.Request) -> web.Response:
         ),
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
+        location_id=path_params.location_id,
+        path=path_params.path,
     )
 
-    return _create_data_response_from_async_job(request, async_job)
+    return _create_data_response_from_async_job(request, async_job_get)
 
 
 @routes.post(
@@ -240,11 +236,11 @@ async def batch_delete_paths(request: web.Request):
     path_params = parse_request_path_parameters_as(StorageLocationPathParams, request)
     body = await parse_request_body_as(BatchDeletePathsBodyParams, request)
 
-    rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)
-    async_job, _ = await remote_delete_paths(
-        rabbitmq_rpc_client,
-        location_id=path_params.location_id,
-        paths=body.paths,
+    async_job_get = await submit_job(
+        get_task_manager(request.app),
+        execution_metadata=ExecutionMetadata(
+            name=DELETE_PATHS_TASK_NAME,
+        ),
         owner_metadata=OwnerMetadata.model_validate(
             WebServerOwnerMetadata(
                 user_id=req_ctx.user_id,
@@ -252,8 +248,11 @@ async def batch_delete_paths(request: web.Request):
             ).model_dump()
         ),
         user_id=req_ctx.user_id,
+        location_id=path_params.location_id,
+        paths=body.paths,
     )
-    return _create_data_response_from_async_job(request, async_job)
+
+    return _create_data_response_from_async_job(request, async_job_get)
 
 
 @routes.get(_storage_locations_prefix + "/{location_id}/datasets", name="list_datasets_metadata")
@@ -496,31 +495,35 @@ async def export_data(request: web.Request) -> web.Response:
     class _PathParams(BaseModel):
         location_id: Annotated[LocationID, AfterValidator(_allow_only_simcore)]
 
-    rabbitmq_rpc_client = get_rabbitmq_rpc_client(request.app)
-    _req_ctx = AuthenticatedRequestContext.model_validate(request)
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
     _ = parse_request_path_parameters_as(_PathParams, request)
-    export_data_post = await parse_request_body_as(model_schema_cls=DataExportPost, request=request)
-    async_job_rpc_get, _ = await start_export_data(
-        rabbitmq_rpc_client=rabbitmq_rpc_client,
-        paths_to_export=export_data_post.paths,
-        export_as="path",
+
+    body = await parse_request_body_as(model_schema_cls=DataExportPost, request=request)
+
+    async_job_get = await submit_job(
+        get_task_manager(request.app),
+        execution_metadata=ExecutionMetadata(
+            name="export_data",
+        ),
         owner_metadata=OwnerMetadata.model_validate(
             WebServerOwnerMetadata(
-                user_id=_req_ctx.user_id,
-                product_name=_req_ctx.product_name,
+                user_id=req_ctx.user_id,
+                product_name=req_ctx.product_name,
             ).model_dump()
         ),
-        user_id=_req_ctx.user_id,
-        product_name=_req_ctx.product_name,
+        user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
+        paths_to_export=body.paths,
     )
-    _job_id = f"{async_job_rpc_get.job_id}"
+
+    job_id_str = f"{async_job_get.job_id}"
     return create_data_response(
         TaskGet(
-            task_id=_job_id,
-            task_name=async_job_rpc_get.job_name,
-            status_href=f"{request.url.with_path(str(request.app.router['get_async_job_status'].url_for(task_id=_job_id)))}",
-            abort_href=f"{request.url.with_path(str(request.app.router['cancel_async_job'].url_for(task_id=_job_id)))}",
-            result_href=f"{request.url.with_path(str(request.app.router['get_async_job_result'].url_for(task_id=_job_id)))}",
+            task_id=job_id_str,
+            task_name=async_job_get.job_name,
+            status_href=f"{request.url.with_path(str(request.app.router['get_async_job_status'].url_for(task_id=job_id_str)))}",
+            abort_href=f"{request.url.with_path(str(request.app.router['cancel_async_job'].url_for(task_id=job_id_str)))}",
+            result_href=f"{request.url.with_path(str(request.app.router['get_async_job_result'].url_for(task_id=job_id_str)))}",
         ),
         status=status.HTTP_202_ACCEPTED,
     )
@@ -538,8 +541,9 @@ async def search(request: web.Request) -> web.Response:
     parse_request_path_parameters_as(_PathParams, request)
     search_body = await parse_request_body_as(model_schema_cls=SearchBodyParams, request=request)
 
-    task_uuid = await get_task_manager(request.app).submit_task(
-        ExecutionMetadata(
+    async_job_get = await submit_job(
+        get_task_manager(request.app),
+        execution_metadata=ExecutionMetadata(
             name=SEARCH_TASK_NAME,
         ),
         owner_metadata=OwnerMetadata.model_validate(
@@ -562,7 +566,7 @@ async def search(request: web.Request) -> web.Response:
         project_id=search_body.filters.project_id,
     )
 
-    task_id = f"{task_uuid}"
+    task_id = f"{async_job_get.job_id}"
     return create_data_response(
         TaskGet(
             task_id=task_id,

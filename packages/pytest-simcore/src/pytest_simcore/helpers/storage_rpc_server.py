@@ -8,7 +8,7 @@
 
 from typing import Literal
 
-from models_library.api_schemas_rpc_async_jobs.async_jobs import (
+from models_library.api_schemas_async_jobs.async_jobs import (
     AsyncJobGet,
 )
 from models_library.api_schemas_webserver.storage import PathToExport
@@ -37,6 +37,8 @@ class StorageSideEffects:
         assert owner_metadata
         assert paths_to_export
         assert export_as
+        assert user_id
+        assert product_name
 
         async_job_get = TypeAdapter(AsyncJobGet).validate_python(
             AsyncJobGet.model_json_schema()["examples"][0],

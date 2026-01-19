@@ -8339,9 +8339,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Task Uuid"
+              "$ref": "#/components/schemas/AsyncJobId"
             }
           }
         ],
@@ -8398,9 +8396,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Task Uuid"
+              "$ref": "#/components/schemas/AsyncJobId"
             }
           }
         ],
@@ -8450,9 +8446,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Task Uuid"
+              "$ref": "#/components/schemas/AsyncJobId"
             }
           }
         ],
@@ -8518,6 +8512,10 @@
           "data"
         ],
         "title": "ApiServerEnvelope[list[TaskGet]]"
+      },
+      "AsyncJobId": {
+        "type": "string",
+        "format": "uuid"
       },
       "Body_abort_multipart_upload_v0_files__file_id__abort_post": {
         "properties": {

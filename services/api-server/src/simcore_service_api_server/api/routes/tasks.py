@@ -6,14 +6,14 @@ from celery_library.errors import TaskNotFoundError
 from common_library.error_codes import create_error_code
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, status
+from models_library.api_schemas_async_jobs.async_jobs import (
+    AsyncJobId,
+)
 from models_library.api_schemas_long_running_tasks.base import TaskProgress
 from models_library.api_schemas_long_running_tasks.tasks import (
     TaskGet,
     TaskResult,
     TaskStatus,
-)
-from models_library.api_schemas_rpc_async_jobs.async_jobs import (
-    AsyncJobId,
 )
 from models_library.products import ProductName
 from models_library.users import UserID
@@ -84,13 +84,9 @@ async def list_tasks(
         TaskGet(
             task_id=f"{task.uuid}",
             task_name=task.metadata.name,
-            status_href=app_router.url_path_for(
-                "get_task_status", task_uuid=f"{task.uuid}"
-            ),
+            status_href=app_router.url_path_for("get_task_status", task_uuid=f"{task.uuid}"),
             abort_href=app_router.url_path_for("cancel_task", task_uuid=f"{task.uuid}"),
-            result_href=app_router.url_path_for(
-                "get_task_result", task_uuid=f"{task.uuid}"
-            ),
+            result_href=app_router.url_path_for("get_task_result", task_uuid=f"{task.uuid}"),
         )
         for task in tasks
     ]
