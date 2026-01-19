@@ -165,7 +165,7 @@ qx.Class.define("osparc.editor.EmailEditor", {
       [this.getChildControl("editor-page"), this.getChildControl("preview-page")].forEach(page => {
         const isActive = page === selectedPage;
         page.getButton().set({
-          backgroundColor: isActive ? "background-main-3" : "background-main-2",
+          backgroundColor: isActive ? "fab-background" : "background-main-2",
         });
       });
     },
