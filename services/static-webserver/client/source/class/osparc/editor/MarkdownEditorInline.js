@@ -58,11 +58,11 @@ qx.Class.define("osparc.editor.MarkdownEditorInline", {
     },
 
     getValue: function() {
-      return this.__area.getValue() || "";
+      return this.getChildControl("text-area").getValue() || "";
     },
 
     setValue: function(v) {
-      this.__area.setValue(v || "");
+      this.getChildControl("text-area").setValue(v || "");
     },
 
     __createToolbar: function() {
@@ -78,7 +78,7 @@ qx.Class.define("osparc.editor.MarkdownEditorInline", {
 
     __getDomTextArea() {
       // Access underlying DOM textarea for selectionStart/End
-      const el = this.__area.getContentElement().getDomElement();
+      const el = this.getChildControl("text-area").getContentElement().getDomElement();
       // In qooxdoo TextArea, dom element is <textarea>
       return el;
     },
