@@ -37,7 +37,7 @@ from aiohttp import web
 from aiohttp.test_utils import TestClient, TestServer
 from aiopg.sa import create_engine
 from celery_library.async_jobs import (
-    AsyncJobComposedResult,
+    AsyncJobResultUpdate,
 )
 from faker import Faker
 from models_library.api_schemas_async_jobs.async_jobs import AsyncJobStatus
@@ -404,13 +404,13 @@ async def storage_subsystem_mock(mocker: MockerFixture, faker: Faker) -> MockedS
         nodes_map: NodesMap,
         user_id: UserID,
         product_name: str,
-    ) -> AsyncGenerator[AsyncJobComposedResult]:
+    ) -> AsyncGenerator[AsyncJobResultUpdate]:
         print(
             f"MOCK copying data project {source_project['uuid']} -> {destination_project['uuid']} "
             f"with {len(nodes_map)} s3 objects by user={user_id}"
         )
 
-        yield AsyncJobComposedResult(
+        yield AsyncJobResultUpdate(
             AsyncJobStatus(
                 job_id=faker.uuid4(cast_to=None),
                 progress=ProgressReport(actual_value=0),
@@ -421,7 +421,7 @@ async def storage_subsystem_mock(mocker: MockerFixture, faker: Faker) -> MockedS
         async def _mock_result() -> None:
             return None
 
-        yield AsyncJobComposedResult(
+        yield AsyncJobResultUpdate(
             AsyncJobStatus(
                 job_id=faker.uuid4(cast_to=None),
                 progress=ProgressReport(actual_value=1),

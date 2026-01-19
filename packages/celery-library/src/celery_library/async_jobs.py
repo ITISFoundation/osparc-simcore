@@ -196,7 +196,7 @@ async def _wait_for_completion(
 
 
 @dataclass(frozen=True)
-class AsyncJobComposedResult:
+class AsyncJobResultUpdate:
     status: AsyncJobStatus
     _result: Awaitable[Any] | None = None
 
@@ -217,7 +217,7 @@ async def wait_and_get_job_result(
     owner_metadata: OwnerMetadata,
     job_id: AsyncJobId,
     stop_after: datetime.timedelta,
-) -> AsyncGenerator[AsyncJobComposedResult]:
+) -> AsyncGenerator[AsyncJobResultUpdate]:
     """when a job is already submitted this will wait for its completion
     and return the composed result"""
     try:
@@ -229,11 +229,11 @@ async def wait_and_get_job_result(
             stop_after=stop_after,
         ):
             assert job_status is not None  # nosec
-            yield AsyncJobComposedResult(job_status)
+            yield AsyncJobResultUpdate(job_status)
 
         # return the result
         if job_status:
-            yield AsyncJobComposedResult(
+            yield AsyncJobResultUpdate(
                 job_status,
                 get_job_result(
                     task_manager,
@@ -260,7 +260,7 @@ async def submit_job_and_wait(
     owner_metadata: OwnerMetadata,
     stop_after: datetime.timedelta,
     **kwargs,
-) -> AsyncGenerator[AsyncJobComposedResult]:
+) -> AsyncGenerator[AsyncJobResultUpdate]:
     async_job = None
     try:
         async_job = await submit_job(

@@ -20,7 +20,7 @@ import redis.asyncio as aioredis
 from aiohttp import ClientResponse, ClientSession, web
 from aiohttp.test_utils import TestClient, TestServer
 from celery_library.async_jobs import (
-    AsyncJobComposedResult,
+    AsyncJobResultUpdate,
 )
 from common_library.json_serialization import json_dumps
 from common_library.serialization import model_dump_with_secrets
@@ -206,13 +206,13 @@ async def storage_subsystem_mock_override(
         nodes_map: NodesMap,
         user_id: UserID,
         product_name: str,
-    ) -> AsyncGenerator[AsyncJobComposedResult]:
+    ) -> AsyncGenerator[AsyncJobResultUpdate]:
         print(
             f"MOCK copying data project {source_project['uuid']} -> {destination_project['uuid']} "
             f"with {len(nodes_map)} s3 objects by user={user_id}"
         )
 
-        yield AsyncJobComposedResult(
+        yield AsyncJobResultUpdate(
             AsyncJobStatus(
                 job_id=faker.uuid4(cast_to=None),
                 progress=ProgressReport(actual_value=0),
@@ -223,7 +223,7 @@ async def storage_subsystem_mock_override(
         async def _mock_result():
             return None
 
-        yield AsyncJobComposedResult(
+        yield AsyncJobResultUpdate(
             AsyncJobStatus(
                 job_id=faker.uuid4(cast_to=None),
                 progress=ProgressReport(actual_value=1),

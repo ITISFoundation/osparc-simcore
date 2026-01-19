@@ -8,7 +8,7 @@ from typing import Any, Final
 
 from aiohttp import ClientError, ClientSession, ClientTimeout, web
 from celery_library.async_jobs import (
-    AsyncJobComposedResult,
+    AsyncJobResultUpdate,
     submit_job_and_wait,
 )
 from common_library.logging.logging_base import get_log_record_extra
@@ -93,7 +93,7 @@ async def get_project_total_size_simcore_s3(app: web.Application, user_id: UserI
         return TypeAdapter(ByteSize).validate_python(project_size_bytes)
 
 
-async def copy_data_folders_from_project(  # noqa: PLR0913
+async def copy_data_folders_from_project(
     app: web.Application,
     *,
     source_project: ProjectDict,
@@ -101,7 +101,7 @@ async def copy_data_folders_from_project(  # noqa: PLR0913
     nodes_map: NodesMap,
     user_id: UserID,
     product_name: ProductName,
-) -> AsyncGenerator[AsyncJobComposedResult]:
+) -> AsyncGenerator[AsyncJobResultUpdate]:
     with log_context(_logger, logging.DEBUG, msg=f"copy {nodes_map=}"):
         task_manager = get_task_manager(app)
         async for job_composed_result in submit_job_and_wait(

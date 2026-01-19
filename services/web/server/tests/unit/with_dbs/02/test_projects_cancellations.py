@@ -12,7 +12,7 @@ from urllib.parse import urlparse
 import pytest
 from aiohttp.test_utils import TestClient
 from celery_library.async_jobs import (
-    AsyncJobComposedResult,
+    AsyncJobResultUpdate,
 )
 from faker import Faker
 from models_library.api_schemas_async_jobs.async_jobs import AsyncJobStatus
@@ -65,7 +65,7 @@ async def slow_storage_subsystem_mock(
 
         async def _mock_result(): ...
 
-        yield AsyncJobComposedResult(
+        yield AsyncJobResultUpdate(
             AsyncJobStatus(
                 job_id=faker.uuid4(cast_to=None),
                 progress=ProgressReport(actual_value=1),
