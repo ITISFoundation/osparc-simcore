@@ -7,6 +7,10 @@ from typing import Any, Final
 
 from common_library.logging.logging_errors import create_troubleshooting_log_message
 from pydantic import PositiveFloat
+from tenacity import retry
+from tenacity.before_sleep import before_sleep_log
+from tenacity.stop import stop_after_attempt
+from tenacity.wait import wait_exponential
 
 from ...long_running_tasks.errors import TaskClientTimeoutError, TaskExceptionError
 from ...long_running_tasks.models import (
@@ -92,7 +96,7 @@ async def periodic_task_result(
     - `status_poll_interval` optional: when waiting for a task to finish,
         how frequent should the server be queried
 
-    raises: the original expcetion the task raised, if any
+    raises: the original exception the task raised, if any
     raises: `asyncio.TimeoutError` NOTE: the remote task will also be removed
     """
 
@@ -105,6 +109,12 @@ async def periodic_task_result(
 
     progress_manager = _ProgressManager(progress_callback)
 
+    @retry(
+        wait=wait_exponential(max=1),
+        stop=stop_after_attempt(3),
+        reraise=True,
+        before_sleep=before_sleep_log(_logger, logging.WARNING, exc_info=True),
+    )
     async def _status_update() -> TaskStatus:
         task_status: TaskStatus = await client.get_task_status(task_id)
         _logger.debug("Task status %s", task_status.model_dump_json())

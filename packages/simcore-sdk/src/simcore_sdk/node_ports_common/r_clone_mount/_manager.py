@@ -91,8 +91,8 @@ class _TrackedMount:  # pylint:disable=too-many-instance-attributes
             await self.delegate.mount_activity(self.local_mount_path, mount_activity)
 
     async def _worker_mount_activity(self) -> None:
-        mount_activity = await self._rc_http_client.get_mount_activity()
         with log_catch(logger=_logger, reraise=False):
+            mount_activity = await self._rc_http_client.get_mount_activity()
             await self._update_and_notify_mount_activity(mount_activity)
 
     async def start_mount(self) -> None:
