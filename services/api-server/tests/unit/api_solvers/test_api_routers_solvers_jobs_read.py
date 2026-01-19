@@ -55,9 +55,7 @@ def mocked_backend(
     )
 
 
-@pytest.mark.acceptance_test(
-    "https://github.com/ITISFoundation/osparc-simcore/issues/4110"
-)
+@pytest.mark.acceptance_test("https://github.com/ITISFoundation/osparc-simcore/issues/4110")
 async def test_list_solver_jobs(
     auth: httpx.BasicAuth,
     client: httpx.AsyncClient,
@@ -66,9 +64,7 @@ async def test_list_solver_jobs(
     mocked_backend: MockBackendRouters,
 ):
     # list jobs (w/o pagination)
-    resp = await client.get(
-        f"/{API_VTAG}/solvers/{solver_key}/releases/{solver_version}/jobs", auth=auth
-    )
+    resp = await client.get(f"/{API_VTAG}/solvers/{solver_key}/releases/{solver_version}/jobs", auth=auth)
     assert resp.status_code == status.HTTP_200_OK
     jobs = TypeAdapter(list[Job]).validate_python(resp.json())
 
@@ -93,6 +89,7 @@ async def test_list_all_solvers_jobs(
     auth: httpx.BasicAuth,
     client: httpx.AsyncClient,
     mocked_backend: MockBackendRouters,
+    mock_dependency_get_celery_task_manager: MockType,
 ):
     """Tests the endpoint that lists all jobs across all solvers."""
 
@@ -124,9 +121,7 @@ async def test_list_all_solvers_jobs(
         assert job.runner_url is not None
         assert job.outputs_url is not None
 
-    assert mocked_backend.webserver_rpc[
-        "mocked_rabbit_rpc_client"
-    ].request.call_args.args == (
+    assert mocked_backend.webserver_rpc["mocked_rabbit_rpc_client"].request.call_args.args == (
         "wb-api-server",
         "list_projects_marked_as_jobs",
     )
@@ -137,6 +132,7 @@ async def test_list_all_solvers_jobs_with_metadata_filter(
     client: httpx.AsyncClient,
     mocked_backend: MockBackendRouters,
     user_id: UserID,
+    mock_dependency_get_celery_task_manager: MockType,
 ):
     """Tests the endpoint that lists all jobs across all solvers with metadata filtering."""
 
@@ -169,9 +165,7 @@ async def test_list_all_solvers_jobs_with_metadata_filter(
     assert jobs_page.offset == 0
 
     # Check that the backend was called with the correct filter parameters
-    call_args = mocked_backend.webserver_rpc[
-        "mocked_rabbit_rpc_client"
-    ].request.call_args
+    call_args = mocked_backend.webserver_rpc["mocked_rabbit_rpc_client"].request.call_args
     assert call_args.args == (
         "wb-api-server",
         "list_projects_marked_as_jobs",

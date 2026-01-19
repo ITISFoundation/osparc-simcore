@@ -11,8 +11,11 @@ from urllib.parse import urlparse
 
 import pytest
 from aiohttp.test_utils import TestClient
+from celery_library.async_jobs import (
+    AsyncJobResultUpdate,
+)
 from faker import Faker
-from models_library.api_schemas_rpc_async_jobs.async_jobs import AsyncJobStatus
+from models_library.api_schemas_async_jobs.async_jobs import AsyncJobStatus
 from models_library.progress_bar import ProgressReport
 from pydantic import ByteSize, TypeAdapter
 from pytest_simcore.helpers.assert_checks import assert_status
@@ -24,9 +27,6 @@ from pytest_simcore.helpers.webserver_parametrizations import (
     standard_role_response,
 )
 from servicelib.long_running_tasks.models import TaskGet
-from servicelib.rabbitmq.rpc_interfaces.async_jobs.async_jobs import (
-    AsyncJobComposedResult,
-)
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from simcore_postgres_database.models.users import UserRole
@@ -65,7 +65,7 @@ async def slow_storage_subsystem_mock(
 
         async def _mock_result(): ...
 
-        yield AsyncJobComposedResult(
+        yield AsyncJobResultUpdate(
             AsyncJobStatus(
                 job_id=faker.uuid4(cast_to=None),
                 progress=ProgressReport(actual_value=1),
@@ -74,16 +74,12 @@ async def slow_storage_subsystem_mock(
             _mock_result(),
         )
 
-    storage_subsystem_mock.copy_data_folders_from_project.side_effect = (
-        _very_slow_copy_of_data
-    )
+    storage_subsystem_mock.copy_data_folders_from_project.side_effect = _very_slow_copy_of_data
 
     return storage_subsystem_mock
 
 
-def _standard_user_role_response() -> (
-    tuple[str, list[tuple[UserRole, ExpectedResponse]]]
-):
+def _standard_user_role_response() -> tuple[str, list[tuple[UserRole, ExpectedResponse]]]:
     all_roles = standard_role_response()
     return (
         all_roles[0],
@@ -140,9 +136,7 @@ async def test_copying_large_project_and_aborting_correctly_removes_new_project(
     resp = await client.delete(urlparse(abort_url).path)
     await assert_status(resp, expected.no_content)
     # wait to check that the call to storage is "done"
-    async for attempt in AsyncRetrying(
-        reraise=True, stop=stop_after_delay(60), wait=wait_fixed(1)
-    ):
+    async for attempt in AsyncRetrying(reraise=True, stop=stop_after_delay(60), wait=wait_fixed(1)):
         with attempt:
             slow_storage_subsystem_mock.delete_project.assert_called_once()
 
@@ -186,9 +180,7 @@ async def test_copying_large_project_and_retrieving_copy_task(
     resp = await client.delete(urlparse(created_copy_task.abort_href).path)
     await assert_status(resp, expected.no_content)
     # wait to check that the call to storage is "done"
-    async for attempt in AsyncRetrying(
-        reraise=True, stop=stop_after_delay(10), wait=wait_fixed(1)
-    ):
+    async for attempt in AsyncRetrying(reraise=True, stop=stop_after_delay(10), wait=wait_fixed(1)):
         with attempt:
             slow_storage_subsystem_mock.delete_project.assert_called_once()
 
@@ -307,12 +299,10 @@ async def test_copying_too_large_project_returns_422(
     assert client.app
     app_settings = get_application_settings(client.app)
     assert app_settings.WEBSERVER_PROJECTS
-    large_project_total_size = (
-        app_settings.WEBSERVER_PROJECTS.PROJECTS_MAX_COPY_SIZE_BYTES + 1
+    large_project_total_size = app_settings.WEBSERVER_PROJECTS.PROJECTS_MAX_COPY_SIZE_BYTES + 1
+    storage_subsystem_mock.get_project_total_size_simcore_s3.return_value = TypeAdapter(ByteSize).validate_python(
+        large_project_total_size
     )
-    storage_subsystem_mock.get_project_total_size_simcore_s3.return_value = TypeAdapter(
-        ByteSize
-    ).validate_python(large_project_total_size)
 
     # POST /v0/projects
     await request_create_project(

@@ -26,7 +26,6 @@ _faker = Faker()
 async def create_mock_task_manager(
     mocker: MockerFixture,
 ) -> Callable[[TaskStatus | Exception], MockType]:
-
     def _(status_or_exception: TaskStatus | Exception) -> MockType:
         mock_task_manager = mocker.Mock(spec=TaskManager)
         if isinstance(status_or_exception, Exception):
@@ -52,11 +51,7 @@ async def create_mock_task_manager(
         )
         for state in list(TaskState)
     ]
-    + [
-        TaskNotFoundError(
-            task_uuid=_faker.uuid4(), owner_metadata=json.dumps({"owner": "test-owner"})
-        )
-    ],
+    + [TaskNotFoundError(task_uuid=_faker.uuid4(), owner_metadata=json.dumps({"owner": "test-owner"}))],
 )
 @pytest.mark.parametrize("job_creation_task_id", [_faker.uuid4(), None])
 async def test_celery_status_conversion(
@@ -66,7 +61,6 @@ async def test_celery_status_conversion(
     user_id: UserID,
     product_name: ProductName,
 ):
-
     mock_task_manager = create_mock_task_manager(status_or_exception)
 
     status = await _celery_task_status(
@@ -81,8 +75,6 @@ async def test_celery_status_conversion(
     elif isinstance(status_or_exception, TaskNotFoundError):
         assert status == FunctionJobCreationTaskStatus.ERROR
     elif isinstance(status_or_exception, TaskStatus):
-        assert (
-            status == FunctionJobCreationTaskStatus[status_or_exception.task_state.name]
-        )
+        assert status == FunctionJobCreationTaskStatus[status_or_exception.task_state.name]
     else:
         pytest.fail("Unexpected test input")

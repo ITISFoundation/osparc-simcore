@@ -1,5 +1,5 @@
 from common_library.user_messages import user_message
-from models_library.api_schemas_rpc_async_jobs.exceptions import (
+from models_library.api_schemas_async_jobs.exceptions import (
     JobAbortedError,
     JobError,
     JobMissingError,
@@ -23,14 +23,13 @@ from ...exception_handling import (
 _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     InvalidFileIdentifierError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
-        user_message(
-            "The file with identifier {file_id} could not be found", _version=2
-        ),
+        user_message("The file with identifier {file_id} could not be found", _version=2),
     ),
     AccessRightError: HttpErrorInfo(
         status.HTTP_403_FORBIDDEN,
         user_message(
-            "Permission denied: You (user {user_id}) don't have the necessary rights to access file {file_id} in location {location_id}",
+            "Permission denied: You (user {user_id}) don't have the necessary rights to access file {file_id} "
+            "in location {location_id}",
             _version=2,
         ),
     ),
@@ -47,9 +46,7 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     ),
     JobNotDoneError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
-        user_message(
-            "Task {job_id} is still running and has not completed yet", _version=2
-        ),
+        user_message("Task {job_id} is still running and has not completed yet", _version=2),
     ),
     JobMissingError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
@@ -69,6 +66,4 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
 }
 
 
-handle_rest_requests_exceptions = exception_handling_decorator(
-    to_exceptions_handlers_map(_TO_HTTP_ERROR_MAP)
-)
+handle_rest_requests_exceptions = exception_handling_decorator(to_exceptions_handlers_map(_TO_HTTP_ERROR_MAP))

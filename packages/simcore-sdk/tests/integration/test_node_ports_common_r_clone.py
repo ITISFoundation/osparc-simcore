@@ -52,21 +52,16 @@ async def cleanup_bucket_after_test(
 
     yield
 
-    async with session.client(
-        "s3", endpoint_url=f"{r_clone_settings.R_CLONE_S3.S3_ENDPOINT}"
-    ) as s3_client:
+    async with session.client("s3", endpoint_url=f"{r_clone_settings.R_CLONE_S3.S3_ENDPOINT}") as s3_client:
         # List all object versions
         paginator = s3_client.get_paginator("list_object_versions")
-        async for page in paginator.paginate(
-            Bucket=r_clone_settings.R_CLONE_S3.S3_BUCKET_NAME
-        ):
+        async for page in paginator.paginate(Bucket=r_clone_settings.R_CLONE_S3.S3_BUCKET_NAME):
             # Prepare delete markers and versions for deletion
             delete_markers = page.get("DeleteMarkers", [])
             versions = page.get("Versions", [])
 
             objects_to_delete = [
-                {"Key": obj["Key"], "VersionId": obj["VersionId"]}
-                for obj in delete_markers + versions
+                {"Key": obj["Key"], "VersionId": obj["VersionId"]} for obj in delete_markers + versions
             ]
 
             # Perform deletion
@@ -88,7 +83,10 @@ def test_s3_url_quote_and_unquote():
     against unquotation operation in
 
     """
-    src = "53a35372-d44d-4d2e-8319-b40db5f31ce0/2f67d5cb-ea9c-4f8c-96ef-eae8445a0fe7/6fa73b0f-4006-46c6-9847-967b45ff3ae7.bin"
+    src = (
+        "53a35372-d44d-4d2e-8319-b40db5f31ce0/2f67d5cb-ea9c-4f8c-96ef-eae8445a0fe7/"
+        "6fa73b0f-4006-46c6-9847-967b45ff3ae7.bin"
+    )
     # as in _fake_s3_link
     url = f"s3://simcore/{urllib.parse.quote(src)}"
 
@@ -114,9 +112,7 @@ async def _create_random_binary_file(
         assert bytes_written == file_size
 
 
-async def _create_file_of_size(
-    tmp_path: Path, *, name: str, file_size: ByteSize
-) -> Path:
+async def _create_file_of_size(tmp_path: Path, *, name: str, file_size: ByteSize) -> Path:
     file: Path = tmp_path / name
     if not file.parent.exists():
         file.parent.mkdir(parents=True, exist_ok=True)
@@ -127,14 +123,9 @@ async def _create_file_of_size(
     return file
 
 
-async def _create_files_in_dir(
-    target_dir: Path, file_count: int, file_size: ByteSize
-) -> set[str]:
+async def _create_files_in_dir(target_dir: Path, file_count: int, file_size: ByteSize) -> set[str]:
     results: list[Path] = await logged_gather(
-        *[
-            _create_file_of_size(target_dir, name=f"{i}-file.bin", file_size=file_size)
-            for i in range(file_count)
-        ],
+        *[_create_file_of_size(target_dir, name=f"{i}-file.bin", file_size=file_size) for i in range(file_count)],
         max_concurrency=10,
     )
     return {x.name for x in results}
@@ -216,9 +207,7 @@ def _directories_have_the_same_content(dir_1: Path, dir_2: Path) -> bool:
         f2 = dir_2 / file_name
 
         # when there is a broken symlink, which we want to sync, filecmp does not work
-        is_broken_symlink = (
-            not f1.exists() and f1.is_symlink() and not f2.exists() and f2.is_symlink()
-        )
+        is_broken_symlink = not f1.exists() and f1.is_symlink() and not f2.exists() and f2.is_symlink()
 
         if is_broken_symlink:
             compare_results.append(True)
@@ -236,9 +225,7 @@ def _ensure_dir(tmp_path: Path, faker: Faker, *, dir_prefix: str) -> Path:
 
 
 @pytest.fixture
-async def dir_locally_created_files(
-    tmp_path: Path, faker: Faker
-) -> AsyncIterator[Path]:
+async def dir_locally_created_files(tmp_path: Path, faker: Faker) -> AsyncIterator[Path]:
     path = _ensure_dir(tmp_path, faker, dir_prefix="source")
     yield path
     await remove_directory(path)
@@ -304,68 +291,48 @@ async def test_local_to_remote_to_local(
         check_progress=check_progress,
         faker=faker,
     )
-    await _download_from_s3_to_local_dir(
-        r_clone_settings, s3_directory_link, dir_downloaded_files_1, faker=faker
-    )
-    assert _directories_have_the_same_content(
-        dir_locally_created_files, dir_downloaded_files_1
-    )
+    await _download_from_s3_to_local_dir(r_clone_settings, s3_directory_link, dir_downloaded_files_1, faker=faker)
+    assert _directories_have_the_same_content(dir_locally_created_files, dir_downloaded_files_1)
 
 
-def _change_content_of_one_file(
-    dir_locally_created_files: Path, generated_file_names: set[str]
-) -> None:
+def _change_content_of_one_file(dir_locally_created_files: Path, generated_file_names: set[str]) -> None:
     a_generated_file = next(iter(generated_file_names))
     (dir_locally_created_files / a_generated_file).write_bytes(os.urandom(10))
 
 
-def _change_content_of_all_file(
-    dir_locally_created_files: Path, generated_file_names: set[str]
-) -> None:
+def _change_content_of_all_file(dir_locally_created_files: Path, generated_file_names: set[str]) -> None:
     for file_name in generated_file_names:
         (dir_locally_created_files / file_name).unlink()
         (dir_locally_created_files / file_name).write_bytes(os.urandom(10))
 
 
-def _remove_one_file(
-    dir_locally_created_files: Path, generated_file_names: set[str]
-) -> None:
+def _remove_one_file(dir_locally_created_files: Path, generated_file_names: set[str]) -> None:
     a_generated_file = next(iter(generated_file_names))
     (dir_locally_created_files / a_generated_file).unlink()
 
 
-def _rename_one_file(
-    dir_locally_created_files: Path, generated_file_names: set[str]
-) -> None:
+def _rename_one_file(dir_locally_created_files: Path, generated_file_names: set[str]) -> None:
     a_generated_file = next(iter(generated_file_names))
-    (dir_locally_created_files / a_generated_file).rename(
-        dir_locally_created_files / f"renamed-{a_generated_file}"
-    )
+    (dir_locally_created_files / a_generated_file).rename(dir_locally_created_files / f"renamed-{a_generated_file}")
 
 
-def _add_a_new_file(
-    dir_locally_created_files: Path, generated_file_names: set[str]
-) -> None:
+def _add_a_new_file(dir_locally_created_files: Path, generated_file_names: set[str]) -> None:
     (dir_locally_created_files / "new_file.bin").write_bytes(os.urandom(10))
 
 
-def _remove_all_files(
-    dir_locally_created_files: Path, generated_file_names: set[str]
-) -> None:
+def _remove_all_files(dir_locally_created_files: Path, generated_file_names: set[str]) -> None:
     for file_name in generated_file_names:
         (dir_locally_created_files / file_name).unlink()
 
 
-def _regression_add_broken_symlink(
-    dir_locally_created_files: Path, generated_file_names: set[str]
-) -> None:
+def _regression_add_broken_symlink(dir_locally_created_files: Path, generated_file_names: set[str]) -> None:
     # NOTE: if rclone tries to copy a link that does not exist an error is raised
     path_does_not_exist_on_fs = Path(f"/tmp/missing-{uuid4()}")  # noqa: S108
     assert not path_does_not_exist_on_fs.exists()
 
     broken_symlink = dir_locally_created_files / "missing.link"
     assert not broken_symlink.exists()
-    os.symlink(f"{path_does_not_exist_on_fs}", f"{broken_symlink}")
+    os.symlink(f"{path_does_not_exist_on_fs}", f"{broken_symlink}")  # noqa: PTH211
 
 
 @pytest.mark.parametrize(
@@ -392,7 +359,7 @@ async def test_overwrite_an_existing_file_and_sync_again(
 ) -> None:
     generated_file_names: set[str] = await _create_files_in_dir(
         dir_locally_created_files,
-        r_clone_settings.R_CLONE_OPTION_TRANSFERS * 3,
+        32 * 3,
         TypeAdapter(ByteSize).validate_python("1kib"),
     )
     assert len(generated_file_names) > 0
@@ -402,46 +369,28 @@ async def test_overwrite_an_existing_file_and_sync_again(
     s3_directory_link = _fake_s3_link(r_clone_settings, directory_uuid)
 
     # sync local to remote and check
-    await _upload_local_dir_to_s3(
-        r_clone_settings, s3_directory_link, dir_locally_created_files, faker=faker
-    )
-    await _download_from_s3_to_local_dir(
-        r_clone_settings, s3_directory_link, dir_downloaded_files_1, faker=faker
-    )
-    assert _directories_have_the_same_content(
-        dir_locally_created_files, dir_downloaded_files_1
-    )
+    await _upload_local_dir_to_s3(r_clone_settings, s3_directory_link, dir_locally_created_files, faker=faker)
+    await _download_from_s3_to_local_dir(r_clone_settings, s3_directory_link, dir_downloaded_files_1, faker=faker)
+    assert _directories_have_the_same_content(dir_locally_created_files, dir_downloaded_files_1)
 
     # make some changes to local content
     changes_callable(dir_locally_created_files, generated_file_names)
 
     # ensure local content changed form remote content
-    assert not _directories_have_the_same_content(
-        dir_locally_created_files, dir_downloaded_files_1
-    )
+    assert not _directories_have_the_same_content(dir_locally_created_files, dir_downloaded_files_1)
 
     # upload and check new local and new remote are in sync
-    await _upload_local_dir_to_s3(
-        r_clone_settings, s3_directory_link, dir_locally_created_files, faker=faker
-    )
-    await _download_from_s3_to_local_dir(
-        r_clone_settings, s3_directory_link, dir_downloaded_files_2, faker=faker
-    )
-    assert _directories_have_the_same_content(
-        dir_locally_created_files, dir_downloaded_files_2
-    )
-    # check that old remote and new remote are nto the same
-    assert not _directories_have_the_same_content(
-        dir_downloaded_files_1, dir_downloaded_files_2
-    )
+    await _upload_local_dir_to_s3(r_clone_settings, s3_directory_link, dir_locally_created_files, faker=faker)
+    await _download_from_s3_to_local_dir(r_clone_settings, s3_directory_link, dir_downloaded_files_2, faker=faker)
+    assert _directories_have_the_same_content(dir_locally_created_files, dir_downloaded_files_2)
+    # check that old remote and new remote are not the same
+    assert not _directories_have_the_same_content(dir_downloaded_files_1, dir_downloaded_files_2)
 
 
 async def test_raises_error_if_local_directory_path_is_a_file(
     tmp_path: Path, faker: Faker, cleanup_bucket_after_test: None
 ):
-    file_path = await _create_file_of_size(
-        tmp_path, name=f"test{faker.uuid4()}.bin", file_size=ByteSize(1)
-    )
+    file_path = await _create_file_of_size(tmp_path, name=f"test{faker.uuid4()}.bin", file_size=ByteSize(1))
     with pytest.raises(r_clone.RCloneDirectoryNotFoundError):
         await r_clone.sync_local_to_s3(
             r_clone_settings=AsyncMock(),

@@ -36,9 +36,7 @@ async def test_get_program_release(
     program_key = "simcore/services/dynamic/my_program"
     version = "1.0.0"
 
-    response = await client.get(
-        f"/{API_VTAG}/programs/{program_key}/releases/{version}", auth=auth
-    )
+    response = await client.get(f"/{API_VTAG}/programs/{program_key}/releases/{version}", auth=auth)
 
     # Assert
     assert response.status_code == status.HTTP_200_OK
@@ -58,7 +56,7 @@ async def test_get_program_release(
     ],
 )
 @pytest.mark.parametrize("capture_name", ["create_program_job_success.json"])
-async def test_create_program_job(
+async def test_create_program_job(  # pylint: disable=too-many-positional-arguments
     auth: httpx.BasicAuth,
     client: AsyncClient,
     mocked_webserver_rest_api_base,
@@ -71,15 +69,13 @@ async def test_create_program_job(
     project_tests_dir: Path,
     job_name: str | None,
     job_description: str | None,
+    mock_dependency_get_celery_task_manager: MockType,
 ):
-
     mocker.patch(
         "simcore_service_api_server.api.routes.programs.get_upload_links_from_s3",
         return_value=(
             None,
-            FileUploadSchema.model_validate(
-                next(iter(FileUploadSchema.model_json_schema()["examples"]))
-            ),
+            FileUploadSchema.model_validate(next(iter(FileUploadSchema.model_json_schema()["examples"]))),
         ),
     )
     mocker.patch("simcore_service_api_server.api.routes.programs.complete_file_upload")
@@ -90,14 +86,13 @@ async def test_create_program_job(
         kwargs: dict[str, Any],
         capture: HttpApiCallCaptureModel,
     ) -> dict[str, Any]:
-
         response_body = capture.response_body
 
         # first call creates project
         if server_state.get("project_uuid") is None:
-            get_body_field = lambda field: json_loads(
-                request.content.decode("utf-8")
-            ).get(field)
+
+            def get_body_field(field):
+                return json_loads(request.content.decode("utf-8")).get(field)
 
             _project_uuid = get_body_field("uuid")
             assert _project_uuid
@@ -124,7 +119,7 @@ async def test_create_program_job(
         return response_body
 
     # simulate server state
-    _server_state = dict()
+    _server_state = {}
 
     create_respx_mock_from_capture(
         respx_mocks=[mocked_webserver_rest_api_base],
@@ -145,7 +140,7 @@ async def test_create_program_job(
 
     # Assert
     assert response.status_code == status.HTTP_201_CREATED
-    job = Job.model_validate(response.json())
+    Job.model_validate(response.json())
 
 
 async def test_list_latest_programs(
@@ -165,15 +160,11 @@ async def test_list_program_history(
 ):
     program_key = "simcore/services/dynamic/my_program"
     # Arrange
-    response = await client.get(
-        f"/{API_VTAG}/programs/{program_key}/releases", auth=auth
-    )
+    response = await client.get(f"/{API_VTAG}/programs/{program_key}/releases", auth=auth)
     assert response.status_code == status.HTTP_200_OK
 
 
-@pytest.mark.parametrize(
-    "catalog_rpc_side_effects", [ZeroListingCatalogRpcSideEffects()], indirect=True
-)
+@pytest.mark.parametrize("catalog_rpc_side_effects", [ZeroListingCatalogRpcSideEffects()], indirect=True)
 async def test_list_program_history_no_program(
     auth: httpx.BasicAuth,
     client: AsyncClient,
@@ -181,7 +172,5 @@ async def test_list_program_history_no_program(
 ):
     program_key = "simcore/services/dynamic/my_program"
     # Arrange
-    response = await client.get(
-        f"/{API_VTAG}/programs/{program_key}/releases", auth=auth
-    )
+    response = await client.get(f"/{API_VTAG}/programs/{program_key}/releases", auth=auth)
     assert response.status_code == status.HTTP_200_OK

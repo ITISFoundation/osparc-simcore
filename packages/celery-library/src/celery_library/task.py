@@ -12,7 +12,7 @@ from common_library.async_tools import cancel_wait_task
 from pydantic import NonNegativeInt
 from servicelib.celery.models import TaskKey
 
-from .errors import encode_celery_transferrable_error
+from .errors import encode_celery_transferable_error
 from .worker.app_server import get_app_server
 
 _logger = logging.getLogger(__name__)
@@ -56,17 +56,13 @@ def _async_task_wrapper(
 
                         async def _abort_monitor():
                             while not async_io_task.done():
-                                if not await app_server.task_manager.task_exists(
-                                    task_key
-                                ):
+                                if not await app_server.task_manager.task_exists(task_key):
                                     await cancel_wait_task(
                                         async_io_task,
                                         max_delay=_DEFAULT_CANCEL_TASK_TIMEOUT.total_seconds(),
                                     )
                                     raise TaskAbortedError
-                                await asyncio.sleep(
-                                    _DEFAULT_ABORT_TASK_TIMEOUT.total_seconds()
-                                )
+                                await asyncio.sleep(_DEFAULT_ABORT_TASK_TIMEOUT.total_seconds())
 
                         tg.create_task(_abort_monitor())
 
@@ -115,7 +111,7 @@ def _error_handling(
                 if isinstance(exc, dont_autoretry_for):
                     _logger.debug("Not retrying for exception %s", type(exc).__name__)
                     # propagate without retry
-                    raise encode_celery_transferrable_error(exc) from exc
+                    raise encode_celery_transferable_error(exc) from exc
 
                 exc_type = type(exc).__name__
                 exc_message = f"{exc}"
@@ -129,7 +125,7 @@ def _error_handling(
                 raise task.retry(
                     max_retries=max_retries,
                     countdown=delay_between_retries.total_seconds(),
-                    exc=encode_celery_transferrable_error(exc),
+                    exc=encode_celery_transferable_error(exc),
                 ) from exc
 
         return wrapper
@@ -138,9 +134,9 @@ def _error_handling(
 
 
 @overload
-def register_task(
+def register_task[**P_Task, R_Task](
     app: Celery,
-    fn: Callable[Concatenate[Task, TaskKey, P], Coroutine[Any, Any, R]],
+    fn: Callable[Concatenate[Task, TaskKey, P_Task], Coroutine[Any, Any, R_Task]],
     task_name: str | None = None,
     timeout: timedelta | None = _DEFAULT_TASK_TIMEOUT,
     max_retries: NonNegativeInt = _DEFAULT_MAX_RETRIES,
@@ -150,9 +146,9 @@ def register_task(
 
 
 @overload
-def register_task(
+def register_task[**P_Task, R_Task](
     app: Celery,
-    fn: Callable[Concatenate[Task, P], R],
+    fn: Callable[Concatenate[Task, P_Task], R_Task],
     task_name: str | None = None,
     timeout: timedelta | None = _DEFAULT_TASK_TIMEOUT,
     max_retries: NonNegativeInt = _DEFAULT_MAX_RETRIES,
@@ -161,12 +157,9 @@ def register_task(
 ) -> None: ...
 
 
-def register_task(  # type: ignore[misc]
+def register_task(  # type: ignore[misc]  # noqa: PLR0913
     app: Celery,
-    fn: (
-        Callable[Concatenate[Task, TaskKey, P], Coroutine[Any, Any, R]]
-        | Callable[Concatenate[Task, P], R]
-    ),
+    fn: (Callable[Concatenate[Task, TaskKey, P], Coroutine[Any, Any, R]] | Callable[Concatenate[Task, P], R]),
     task_name: str | None = None,
     timeout: timedelta | None = _DEFAULT_TASK_TIMEOUT,
     max_retries: NonNegativeInt = _DEFAULT_MAX_RETRIES,

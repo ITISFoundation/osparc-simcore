@@ -106,13 +106,8 @@ def mocked_directorv2_rest_api(
     response = oas["paths"][path]["get"]["responses"]["200"]
 
     assert response["content"]["application/json"]["schema"]["type"] == "array"
-    assert (
-        response["content"]["application/json"]["schema"]["items"]["$ref"]
-        == "#/components/schemas/TaskLogFileGet"
-    )
-    assert {"task_id", "download_link"} == set(
-        oas["components"]["schemas"]["TaskLogFileGet"]["properties"].keys()
-    )
+    assert response["content"]["application/json"]["schema"]["items"]["$ref"] == "#/components/schemas/TaskLogFileGet"
+    assert {"task_id", "download_link"} == set(oas["components"]["schemas"]["TaskLogFileGet"]["properties"].keys())
 
     respx_mock.get(
         path__regex=r"/computations/(?P<project_id>[\w-]+)/tasks/-/logfile",
@@ -130,9 +125,7 @@ def mocked_directorv2_rest_api(
     return respx_mock
 
 
-def test_download_presigned_link(
-    presigned_download_link: AnyUrl, tmp_path: Path, project_id: str, node_id: str
-):
+def test_download_presigned_link(presigned_download_link: AnyUrl, tmp_path: Path, project_id: str, node_id: str):
     """Checks that the generation of presigned_download_link works as expected"""
     r = httpx.get(f"{presigned_download_link}")
     assert r.status_code == status.HTTP_200_OK
@@ -210,8 +203,8 @@ async def test_solver_job_outputs(
     expected_error_message: str | None,
     solver_key: str,
     solver_version: str,
+    mock_dependency_get_celery_task_manager: MockType,
 ) -> None:
-
     job_status = JobStatus(
         state=job_state,
         job_id=project_id,
@@ -235,9 +228,7 @@ async def test_solver_job_outputs(
         assert data == expected_output
 
 
-@pytest.mark.acceptance_test(
-    "New feature https://github.com/ITISFoundation/osparc-simcore/issues/3940"
-)
+@pytest.mark.acceptance_test("New feature https://github.com/ITISFoundation/osparc-simcore/issues/3940")
 async def test_run_solver_job(
     client: httpx.AsyncClient,
     directorv2_service_openapi_specs: dict[str, Any],
@@ -250,6 +241,7 @@ async def test_run_solver_job(
     project_id: str,
     solver_key: str,
     solver_version: str,
+    mock_dependency_get_celery_task_manager: MockType,
 ):
     oas = directorv2_service_openapi_specs
 
@@ -260,10 +252,7 @@ async def test_run_solver_job(
 
     response = oas["paths"][path]["post"]["responses"]["201"]
 
-    assert (
-        response["content"]["application/json"]["schema"]["$ref"]
-        == "#/components/schemas/ComputationGet"
-    )
+    assert response["content"]["application/json"]["schema"]["$ref"] == "#/components/schemas/ComputationGet"
     assert {
         "id",
         "state",
@@ -291,16 +280,12 @@ async def test_run_solver_job(
                     "result": "string",
                     "pipeline_details": {
                         "adjacency_list": {
-                            "3fa85f64-5717-4562-b3fc-2c963f66afa6": [
-                                "3fa85f64-5717-4562-b3fc-2c963f66afa6"
-                            ],
+                            "3fa85f64-5717-4562-b3fc-2c963f66afa6": ["3fa85f64-5717-4562-b3fc-2c963f66afa6"],
                         },
                         "node_states": {
                             "3fa85f64-5717-4562-b3fc-2c963f66afa6": {
                                 "modified": True,
-                                "dependencies": [
-                                    "3fa85f64-5717-4562-b3fc-2c963f66afa6"
-                                ],
+                                "dependencies": ["3fa85f64-5717-4562-b3fc-2c963f66afa6"],
                                 "currentStatus": "NOT_STARTED",
                             },
                         },
@@ -327,14 +312,9 @@ async def test_run_solver_job(
 
     # catalog_client.get_solver
     oas = catalog_service_openapi_specs
-    response = oas["paths"]["/v0/services/{service_key}/{service_version}"]["get"][
-        "responses"
-    ]["200"]
+    response = oas["paths"]["/v0/services/{service_key}/{service_version}"]["get"]["responses"]["200"]
 
-    assert (
-        response["content"]["application/json"]["schema"]["$ref"]
-        == "#/components/schemas/ServiceGet"
-    )
+    assert response["content"]["application/json"]["schema"]["$ref"] == "#/components/schemas/ServiceGet"
 
     assert {
         "name",

@@ -16,7 +16,7 @@ import httpx
 import pytest
 import respx
 from fastapi.encoders import jsonable_encoder
-from pytest_mock import MockerFixture
+from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.httpx_calls_capture_models import CreateRespxMockCallback
 from simcore_sdk.node_ports_common.filemanager import UploadedFile
 from simcore_service_api_server._meta import API_VTAG
@@ -42,17 +42,13 @@ def _handle_http_status_error(func):
                     print("\t", e, file=sio)
                 msg = sio.getvalue()
 
-            raise httpx.HTTPStatusError(
-                message=msg, request=exc.request, response=exc.response
-            ) from exc
+            raise httpx.HTTPStatusError(message=msg, request=exc.request, response=exc.response) from exc
 
     return _handler
 
 
 class _BaseTestApi:
-    def __init__(
-        self, client: httpx.AsyncClient, tmp_path: Path | None = None, **request_kwargs
-    ):
+    def __init__(self, client: httpx.AsyncClient, tmp_path: Path | None = None, **request_kwargs):
         self._client = client
         self._request_kwargs = request_kwargs
         self._tmp_path = tmp_path
@@ -212,9 +208,7 @@ def mocked_backend(
     mocker: MockerFixture,
 ) -> MockedBackendApiDict:
     # S3 and storage are accessed via simcore-sdk
-    mock = mocker.patch(
-        "simcore_service_api_server.api.routes.files.storage_upload_path", autospec=True
-    )
+    mock = mocker.patch("simcore_service_api_server.api.routes.files.storage_upload_path", autospec=True)
     mock.return_value = UploadedFile(store_id=0, etag="123")
 
     create_respx_mock_from_capture(
@@ -244,6 +238,7 @@ async def test_run_study_workflow(
     input_json_path: Path,
     input_data_path: Path,
     test_py_path: Path,
+    mock_dependency_get_celery_task_manager: MockType,
 ):
     template_id = "aeab71fe-f71b-11ee-8fca-0242ac140008"
     assert client.headers["Content-Type"] == "application/json"
@@ -284,14 +279,10 @@ async def test_run_study_workflow(
     # start & inspect job until done
     await studies_api.start_study_job(study_id=template_id, job_id=new_job.id)
 
-    job_status: JobStatus = await studies_api.inspect_study_job(
-        study_id=template_id, job_id=new_job.id
-    )
+    job_status: JobStatus = await studies_api.inspect_study_job(study_id=template_id, job_id=new_job.id)
 
     while job_status.state not in {"SUCCESS", "FAILED"}:
-        job_status = await studies_api.inspect_study_job(
-            study_id=template_id, job_id=new_job.id
-        )
+        job_status = await studies_api.inspect_study_job(study_id=template_id, job_id=new_job.id)
         print(f"Status: [{job_status.state}]")
 
         await asyncio.sleep(1)
@@ -299,9 +290,7 @@ async def test_run_study_workflow(
     print(await studies_api.inspect_study_job(study_id=template_id, job_id=new_job.id))
 
     # get outputs
-    job_outputs = await studies_api.get_study_job_outputs(
-        study_id=template_id, job_id=new_job.id
-    )
+    job_outputs = await studies_api.get_study_job_outputs(study_id=template_id, job_id=new_job.id)
 
     assert job_outputs.results["OutputInt"] == input_values["InputInt"]
     assert job_outputs.results["OutputString"] == input_values["InputString"]

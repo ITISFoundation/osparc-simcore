@@ -1,7 +1,6 @@
 from celery.exceptions import (  # type: ignore[import-untyped] #pylint: disable=no-name-in-module
     CeleryError,
 )
-from celery_library.errors import TaskNotFoundError
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from httpx import HTTPError as HttpxException
@@ -10,7 +9,6 @@ from starlette import status
 from starlette.exceptions import HTTPException
 
 from ..._constants import (
-    MSG_CLIENT_ERROR_USER_FRIENDLY_TEMPLATE,
     MSG_INTERNAL_ERROR_USER_FRIENDLY_TEMPLATE,
 )
 from ...exceptions.backend_errors import BaseBackEndError
