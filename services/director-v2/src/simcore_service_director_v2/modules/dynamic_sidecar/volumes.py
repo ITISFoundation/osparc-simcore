@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Any
+from typing import Any, Final
 
 from models_library.api_schemas_directorv2.services import (
     CHARS_IN_VOLUME_NAME_BEFORE_DIR_NAME,
@@ -20,72 +20,17 @@ from settings_library.efs import (
     WRITE_SIZE,
     AwsEfsSettings,
 )
-from settings_library.r_clone import S3Provider
+from settings_library.r_clone import DEFAULT_VFS_CACHE_PATH
 
-from ...core.dynamic_services_settings.sidecar import RCloneSettings
-from .errors import DynamicSidecarError
+_BASE_PATH: Path = Path("/dy-volumes")
+# below are subfolders in `_BASE_PATH`
+_DY_SIDECAR_SUBFOLDER_SHARED_STORE: Final[Path] = Path("/shared-store")
+_DY_SIDECAR_SUBFOLDER_VFS_CACHE: Final[Path] = DEFAULT_VFS_CACHE_PATH
 
-DY_SIDECAR_SHARED_STORE_PATH = Path("/shared-store")
 
-
-def _get_s3_volume_driver_config(
-    r_clone_settings: RCloneSettings,
-    project_id: ProjectID,
-    node_uuid: NodeID,
-    storage_directory_name: str,
-) -> dict[str, Any]:
-    assert "/" not in storage_directory_name  # nosec
-    driver_config: dict[str, Any] = {
-        "Name": "rclone",
-        "Options": {
-            "type": "s3",
-            "s3-access_key_id": r_clone_settings.R_CLONE_S3.S3_ACCESS_KEY,
-            "s3-secret_access_key": r_clone_settings.R_CLONE_S3.S3_SECRET_KEY,
-            "path": f"{r_clone_settings.R_CLONE_S3.S3_BUCKET_NAME}/{project_id}/{node_uuid}/{storage_directory_name}",
-            "allow-other": "true",
-            "vfs-cache-mode": r_clone_settings.R_CLONE_VFS_CACHE_MODE.value,
-            # Directly connected to how much time it takes for
-            # files to appear on remote s3, please se discussion
-            # SEE https://forum.rclone.org/t/file-added-to-s3-on-one-machine-not-visible-on-2nd-machine-unless-mount-is-restarted/20645
-            # SEE https://rclone.org/commands/rclone_mount/#vfs-directory-cache
-            "dir-cache-time": f"{r_clone_settings.R_CLONE_DIR_CACHE_TIME_SECONDS}s",
-            "poll-interval": f"{r_clone_settings.R_CLONE_POLL_INTERVAL_SECONDS}s",
-        },
-    }
-    if r_clone_settings.R_CLONE_S3.S3_ENDPOINT:
-        driver_config["Options"][
-            "s3-endpoint"
-        ] = r_clone_settings.R_CLONE_S3.S3_ENDPOINT
-
-    extra_options: dict[str, str] | None = None
-
-    if r_clone_settings.R_CLONE_PROVIDER == S3Provider.MINIO:
-        extra_options = {
-            "s3-provider": "Minio",
-            "s3-region": "us-east-1",
-            "s3-location_constraint": "",
-            "s3-server_side_encryption": "",
-        }
-    elif r_clone_settings.R_CLONE_PROVIDER == S3Provider.CEPH:
-        extra_options = {
-            "s3-provider": "Ceph",
-            "s3-acl": "private",
-        }
-    elif r_clone_settings.R_CLONE_PROVIDER == S3Provider.AWS:
-        extra_options = {
-            "s3-provider": "AWS",
-            "s3-region": r_clone_settings.R_CLONE_S3.S3_REGION,
-            "s3-acl": "private",
-        }
-    else:
-        msg = f"Unexpected, all {S3Provider.__name__} should be covered"
-        raise DynamicSidecarError(msg=msg)
-
-    assert extra_options is not None  # nosec
-    options: dict[str, Any] = driver_config["Options"]
-    options.update(extra_options)
-
-    return driver_config
+# DEFAULT LIMITS
+_LIMIT_SHARED_STORE: Final[str] = "1M"
+_LIMIT_USER_PREFERENCES: Final[str] = "10M"
 
 
 def _get_efs_volume_driver_config(
@@ -98,25 +43,31 @@ def _get_efs_volume_driver_config(
     driver_config: dict[str, Any] = {
         "Options": {
             "type": "nfs",
-            "o": f"addr={efs_settings.EFS_DNS_NAME},rw,nfsvers={NFS_PROTOCOL},rsize={READ_SIZE},wsize={WRITE_SIZE},{RECOVERY_MODE},timeo={NFS_REQUEST_TIMEOUT},retrans={NUMBER_OF_RETRANSMISSIONS},{PORT_MODE}",
-            "device": f":/{efs_settings.EFS_PROJECT_SPECIFIC_DATA_DIRECTORY}/{project_id}/{node_uuid}/{storage_directory_name}",
+            "o": (
+                f"addr={efs_settings.EFS_DNS_NAME},rw,nfsvers={NFS_PROTOCOL},rsize={READ_SIZE},wsize={WRITE_SIZE},"
+                f"{RECOVERY_MODE},timeo={NFS_REQUEST_TIMEOUT},retrans={NUMBER_OF_RETRANSMISSIONS},{PORT_MODE}"
+            ),
+            "device": (
+                f":/{efs_settings.EFS_PROJECT_SPECIFIC_DATA_DIRECTORY}/{project_id}/{node_uuid}/{storage_directory_name}"
+            ),
         },
     }
     return driver_config
 
 
 class DynamicSidecarVolumesPathsResolver:
-    BASE_PATH: Path = Path("/dy-volumes")
-
     @classmethod
     def target(cls, path: Path) -> str:
         """Returns a folder path within `/dy-volumes` folder"""
-        target_path = cls.BASE_PATH / path.relative_to("/")
+        target_path = _BASE_PATH / path.relative_to("/")
         return f"{target_path}"
 
     @classmethod
     def volume_name(cls, path: Path) -> str:
-        """Returns a volume name created from path. There is not possibility to go back to the original path from the volume name"""
+        """
+        Returns a volume name created from path. There is not possibility to go back to
+        the original path from the volume name
+        """
         return f"{path}".replace(os.sep, "_")
 
     @classmethod
@@ -171,11 +122,7 @@ class DynamicSidecarVolumesPathsResolver:
                     "user_id": f"{user_id}",
                     "swarm_stack_name": swarm_stack_name,
                 },
-                "DriverConfig": (
-                    {"Options": {"size": volume_size_limit}}
-                    if volume_size_limit is not None
-                    else None
-                ),
+                "DriverConfig": ({"Options": {"size": volume_size_limit}} if volume_size_limit is not None else None),
             },
         }
 
@@ -192,12 +139,31 @@ class DynamicSidecarVolumesPathsResolver:
     ) -> dict[str, Any]:
         return cls.mount_entry(
             swarm_stack_name=swarm_stack_name,
-            path=DY_SIDECAR_SHARED_STORE_PATH,
+            path=_DY_SIDECAR_SUBFOLDER_SHARED_STORE,
             node_uuid=node_uuid,
             service_run_id=service_run_id,
             project_id=project_id,
             user_id=user_id,
-            volume_size_limit="1M" if has_quota_support else None,
+            volume_size_limit=_LIMIT_SHARED_STORE if has_quota_support else None,
+        )
+
+    @classmethod
+    def mount_vfs_cache(
+        cls,
+        service_run_id: ServiceRunID,
+        node_uuid: NodeID,
+        project_id: ProjectID,
+        user_id: UserID,
+        swarm_stack_name: str,
+    ) -> dict[str, Any]:
+        return cls.mount_entry(
+            swarm_stack_name=swarm_stack_name,
+            path=_DY_SIDECAR_SUBFOLDER_VFS_CACHE,
+            node_uuid=node_uuid,
+            service_run_id=service_run_id,
+            project_id=project_id,
+            user_id=user_id,
+            volume_size_limit=None,
         )
 
     @classmethod
@@ -222,41 +188,8 @@ class DynamicSidecarVolumesPathsResolver:
             # NOTE: the contents of this volume will be zipped and much
             # be at most `_MAX_PREFERENCES_TOTAL_SIZE`, this 10M accounts
             # for files and data that can be compressed a lot
-            volume_size_limit="10M" if has_quota_support else None,
+            volume_size_limit=_LIMIT_USER_PREFERENCES if has_quota_support else None,
         )
-
-    @classmethod
-    def mount_r_clone(
-        cls,
-        swarm_stack_name: str,
-        path: Path,
-        node_uuid: NodeID,
-        service_run_id: ServiceRunID,
-        project_id: ProjectID,
-        user_id: UserID,
-        r_clone_settings: RCloneSettings,
-    ) -> dict[str, Any]:
-        return {
-            "Source": cls.source(path, node_uuid, service_run_id),
-            "Target": cls.target(path),
-            "Type": "volume",
-            "VolumeOptions": {
-                "Labels": {
-                    "source": cls.source(path, node_uuid, service_run_id),
-                    "run_id": f"{service_run_id}",
-                    "node_uuid": f"{node_uuid}",
-                    "study_id": f"{project_id}",
-                    "user_id": f"{user_id}",
-                    "swarm_stack_name": swarm_stack_name,
-                },
-                "DriverConfig": _get_s3_volume_driver_config(
-                    r_clone_settings=r_clone_settings,
-                    project_id=project_id,
-                    node_uuid=node_uuid,
-                    storage_directory_name=cls.volume_name(path).strip("_"),
-                ),
-            },
-        }
 
     @classmethod
     def mount_efs(
