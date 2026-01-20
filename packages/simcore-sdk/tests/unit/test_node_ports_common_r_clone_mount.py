@@ -148,7 +148,8 @@ class _TestingDelegate(DelegateInterface):
     async def get_node_address(self) -> str:
         async with Docker() as client:
             system_info = await client.system.info()
-            return system_info["Swarm"]["NodeAddr"]
+            node_address: str = system_info["Swarm"]["NodeAddr"]
+            return node_address
 
 
 @pytest.fixture
