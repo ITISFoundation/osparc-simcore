@@ -213,7 +213,7 @@ class ContainerManager:  # pylint:disable=too-many-instance-attributes
     @cached_property
     def _r_clone_container_name(self) -> str:
         mount_id = get_mount_id(self.local_mount_path, self.index)
-        return f"{_DOCKER_PREFIX_MOUNT}-c-{self.node_id}{mount_id}"[:63]
+        return f"{_DOCKER_PREFIX_MOUNT}-c-{self.node_id}-{mount_id}"[:63]
 
     async def create(self):
         # ensure nothing was left from previous runs
