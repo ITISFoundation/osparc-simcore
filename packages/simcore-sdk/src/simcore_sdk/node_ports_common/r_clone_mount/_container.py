@@ -259,7 +259,7 @@ class RemoteControlHttpClient:
         self.transfers_completed_timeout = transfers_completed_timeout
         self._update_interval_seconds = update_interval.total_seconds()
         self._r_clone_client_timeout = r_clone_client_timeout
-        self.rc_host = "localhost"
+        self.rc_host = "172.17.0.1"  # docker default bridge gateway
         self.rc_port = rc_port
         self._auth = (rc_user, rc_password)
 
