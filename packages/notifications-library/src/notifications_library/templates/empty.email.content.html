@@ -1,0 +1,5 @@
+{% extends 'base.html' %}
+{% block title %} {% include 'empty.email.subject.txt' %} {% endblock %}
+{% block content %}
+{{ body if body }}
+{% endblock %}

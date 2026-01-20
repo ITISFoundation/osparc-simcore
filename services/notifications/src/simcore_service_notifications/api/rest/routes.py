@@ -12,7 +12,7 @@ def initialize_rest_api(app: FastAPI) -> None:
     app.include_router(_health.router)
 
     api_router = APIRouter(prefix=f"/{API_VTAG}")
-    api_router.include_router(_notifications_templates.router, tags=["notifications"])
+    api_router.include_router(_notifications_templates.router, tags=["templates"])
     app.include_router(api_router)
 
     app.add_exception_handler(Exception, handle_errors_as_500)
