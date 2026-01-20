@@ -73,7 +73,6 @@ class _TrackedMount:  # pylint:disable=too-many-instance-attributes
 
         self._rc_http_client = RemoteControlHttpClient(
             rc_port=rc_port,
-            rc_host=self._container_manager.r_clone_container_name,
             rc_user=rc_user,
             rc_password=rc_password,
             transfers_completed_timeout=r_clone_settings.R_CLONE_SIMCORE_SDK_MOUNT_SETTINGS.R_CLONE_SIMCORE_SDK_MOUNT_TRANSFERS_COMPLETED_TIMEOUT,
