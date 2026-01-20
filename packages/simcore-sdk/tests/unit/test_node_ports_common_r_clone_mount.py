@@ -145,6 +145,11 @@ class _TestingDelegate(DelegateInterface):
             existing_container = await client.containers.get(container_name)
             await existing_container.delete(force=True)
 
+    async def get_node_address(self) -> str:
+        async with Docker() as client:
+            system_info = await client.system.info()
+            return system_info["Swarm"]["NodeAddr"]
+
 
 @pytest.fixture
 async def r_clone_mount_manager(
