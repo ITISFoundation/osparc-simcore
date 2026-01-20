@@ -161,9 +161,7 @@ class DynamicSidecarRCloneMountDelegate(DelegateInterface):
             with suppress(DockerError):
                 await container.stop()  # sends SIGTERM then SIGKILL after timeout.[web:12]
 
-            # Delete container; force=True ensures removal even if still running.
-            # v=True removes anonymous volumes attached to this container.[web:3][web:6]
-            await container.delete(force=True, v=True)
+            await container.delete(force=True)
 
     async def get_node_address(self) -> str:
         async with _get_docker_client() as client:
