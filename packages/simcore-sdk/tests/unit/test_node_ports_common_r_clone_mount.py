@@ -114,6 +114,9 @@ class _TestingDelegate(DelegateInterface):
         self.vfs_cache_path = vfs_cache_path
         self.mocked_shutdown = mocked_shutdown
 
+    async def requires_data_mounting(self) -> bool:
+        return True
+
     async def get_local_vfs_cache_path(self) -> Path:
         # should normally be /DY_VOLUMES/vfs-cache in the sidecar
         # but for testing it's ok to reuse the local folder since it's not mounted

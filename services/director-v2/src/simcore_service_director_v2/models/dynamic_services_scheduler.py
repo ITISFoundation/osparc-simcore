@@ -4,7 +4,7 @@ from datetime import datetime
 from enum import Enum
 from functools import cached_property
 from pathlib import Path
-from typing import Annotated, Any, TypeAlias
+from typing import Annotated, Any
 from uuid import UUID
 
 import arrow
@@ -55,20 +55,16 @@ TEMPORARY_PORT_NUMBER = 65_534
 MAX_ALLOWED_SERVICE_NAME_LENGTH: int = 63
 
 
-DockerStatus: TypeAlias = Status1
+type DockerStatus = Status1
 
 
-DockerId: TypeAlias = Annotated[
-    str, StringConstraints(max_length=25, pattern=r"[A-Za-z0-9]{25}")
-]
+type DockerId = Annotated[str, StringConstraints(max_length=25, pattern=r"[A-Za-z0-9]{25}")]
 
-ServiceId: TypeAlias = DockerId
-NetworkId: TypeAlias = DockerId
+type ServiceId = DockerId
+type NetworkId = DockerId
 
 
-ServiceName: TypeAlias = Annotated[
-    str, StringConstraints(min_length=2, strip_whitespace=True)
-]
+type ServiceName = Annotated[str, StringConstraints(min_length=2, strip_whitespace=True)]
 
 
 logger = logging.getLogger()
@@ -88,7 +84,7 @@ class DynamicSidecarStatus(str, Enum):
     FAILING = "failing"  # requests to the sidecar API are failing service should be cosnidered as unavailable
 
 
-class Status(BaseModel):
+class Status(BaseModel):  # noqa: PLW1641
     """Generated from data from docker container inspect API"""
 
     current: DynamicSidecarStatus = Field(..., description="status of the service")
@@ -101,9 +97,7 @@ class Status(BaseModel):
     def update_ok_status(self, info: str) -> None:
         self._update(DynamicSidecarStatus.OK, info)
 
-    def update_failing_status(
-        self, user_msg: str, error_code: ErrorCodeStr | None = None
-    ) -> None:
+    def update_failing_status(self, user_msg: str, error_code: ErrorCodeStr | None = None) -> None:
         next_info = f"{user_msg}"
         if error_code:
             next_info = f"{user_msg} [{error_code}]"
@@ -123,9 +117,7 @@ class Status(BaseModel):
 
 
 class DockerContainerInspect(BaseModel):
-    container_state: Annotated[
-        ContainerState, Field(..., description="current state of container")
-    ]
+    container_state: Annotated[ContainerState, Field(..., description="current state of container")]
     name: str = Field(..., description="docker name of the container")
     id: str = Field(..., description="docker id of the container")
 
@@ -158,8 +150,7 @@ class ServiceRemovalState(BaseModel):
     was_removed: bool = Field(
         default=False,
         description=(
-            "Will be True when the removal finished. Used primarily "
-            "to cancel retrying long running operations."
+            "Will be True when the removal finished. Used primarily to cancel retrying long running operations."
         ),
     )
 
@@ -231,10 +222,7 @@ class DynamicSidecar(BaseModel):
     is_healthy: bool = False
     were_containers_created: bool = Field(
         default=False,
-        description=(
-            "when True no longer will the Docker api "
-            "be used to check if the services were started"
-        ),
+        description=("when True no longer will the Docker api be used to check if the services were started"),
     )
     is_project_network_attached: bool = Field(
         default=False,
@@ -257,10 +245,7 @@ class DynamicSidecar(BaseModel):
 
     service_removal_state: ServiceRemovalState = Field(
         default_factory=ServiceRemovalState,
-        description=(
-            "stores information used during service removal "
-            "from the dynamic-sidecar scheduler"
-        ),
+        description=("stores information used during service removal from the dynamic-sidecar scheduler"),
     )
 
     wait_for_manual_intervention_after_error: bool = Field(
@@ -297,16 +282,11 @@ class DynamicSidecar(BaseModel):
         default=None,
         description="returned by the docker engine; used for starting the proxy",
     )
-    swarm_network_name: str | None = Field(
-        default=None, description="used for starting the proxy"
-    )
+    swarm_network_name: str | None = Field(default=None, description="used for starting the proxy")
 
     docker_node_id: DockerNodeID | None = Field(
         default=None,
-        description=(
-            "contains node id of the docker node where all services "
-            "and created containers are started"
-        ),
+        description=("contains node id of the docker node where all services and created containers are started"),
     )
 
     inspect_error_handler: DelayedExceptionHandler = Field(
@@ -360,19 +340,15 @@ class DynamicSidecarNamesHelper(BaseModel):
     @classmethod
     def make(cls, node_uuid: UUID) -> "DynamicSidecarNamesHelper":
         return cls(
-            service_name_dynamic_sidecar=assemble_service_name(
-                DYNAMIC_SIDECAR_SERVICE_PREFIX, node_uuid
-            ),
-            proxy_service_name=assemble_service_name(
-                DYNAMIC_PROXY_SERVICE_PREFIX, node_uuid
-            ),
+            service_name_dynamic_sidecar=assemble_service_name(DYNAMIC_SIDECAR_SERVICE_PREFIX, node_uuid),
+            proxy_service_name=assemble_service_name(DYNAMIC_PROXY_SERVICE_PREFIX, node_uuid),
             simcore_traefik_zone=f"{DYNAMIC_SIDECAR_SERVICE_PREFIX}_{node_uuid}",
             dynamic_sidecar_network_name=f"{DYNAMIC_SIDECAR_SERVICE_PREFIX}_{node_uuid}",
         )
 
 
 class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
-    # TODO: ANE this object is just the context of the dy-sidecar. Should
+    # this object is just the context of the dy-sidecar. Should
     # be called like so and subcontexts for different handlers should
     # also be added. It will make keeping track of env vars more easily
 
@@ -387,9 +363,7 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
             "subsequent exact same services will have a different run_id)"
         ),
     )
-    hostname: str = Field(
-        ..., description="dy-sidecar's service hostname (provided by docker-swarm)"
-    )
+    hostname: str = Field(..., description="dy-sidecar's service hostname (provided by docker-swarm)")
     port: PortInt = Field(default=8000, description="dynamic-sidecar port")
 
     @property
@@ -430,24 +404,16 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         ),
     )
 
-    service_resources: ServiceResourcesDict = Field(
-        ..., description="service resources used to enforce limits"
-    )
+    service_resources: ServiceResourcesDict = Field(..., description="service resources used to enforce limits")
 
-    request_dns: str = Field(
-        ..., description="used when configuring the CORS options on the proxy"
-    )
-    request_scheme: str = Field(
-        ..., description="used when configuring the CORS options on the proxy"
-    )
+    request_dns: str = Field(..., description="used when configuring the CORS options on the proxy")
+    request_scheme: str = Field(..., description="used when configuring the CORS options on the proxy")
     request_simcore_user_agent: str = Field(
         ...,
         description="used as label to filter out the metrics from the cAdvisor prometheus metrics",
     )
     proxy_service_name: str = Field(description="service name given to the proxy")
-    proxy_admin_api_port: PortInt | None = Field(
-        default=None, description="used as the admin endpoint API port"
-    )
+    proxy_admin_api_port: PortInt | None = Field(default=None, description="used as the admin endpoint API port")
     wallet_info: WalletInfo | None = Field(
         default=None,
         description="contains information about the wallet used to bill the running service",
@@ -458,7 +424,12 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
     )
     hardware_info: HardwareInfo | None = Field(
         default=None,
-        description="contains harware information so we know on which hardware to run the service",
+        description="contains hardware information so we know on which hardware to run the service",
+    )
+
+    requires_data_mounting: bool = Field(
+        default=False,
+        description="indicates whether data mounting is required for this service",
     )
 
     @property
@@ -496,7 +467,9 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         request_dns: str,
         request_scheme: str,
         request_simcore_user_agent: str,
+        *,
         can_save: bool,
+        requires_data_mounting: bool,
         run_id: ServiceRunID | None = None,
     ) -> "SchedulerData":
         # This constructor method sets current product
@@ -531,6 +504,7 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
             "wallet_info": service.wallet_info,
             "pricing_info": service.pricing_info,
             "hardware_info": service.hardware_info,
+            "requires_data_mounting": requires_data_mounting,
         }
         if run_id:
             obj_dict["run_id"] = run_id
@@ -544,9 +518,7 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         return v
 
     @classmethod
-    def from_service_inspect(
-        cls, service_inspect: Mapping[str, Any]
-    ) -> "SchedulerData":
+    def from_service_inspect(cls, service_inspect: Mapping[str, Any]) -> "SchedulerData":
         labels = service_inspect["Spec"]["Labels"]
         return cls.model_validate_json(labels[DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL])
 

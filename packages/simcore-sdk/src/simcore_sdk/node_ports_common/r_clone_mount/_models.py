@@ -20,6 +20,12 @@ class MountActivity(BaseModel):
 
 class DelegateInterface(ABC):
     @abstractmethod
+    async def requires_data_mounting(self) -> bool:
+        """
+        Indicates whether the mount should be used
+        """
+
+    @abstractmethod
     async def get_local_vfs_cache_path(self) -> Path:
         """
         Provides the folder to which the vfs-cache volume is mounted locally

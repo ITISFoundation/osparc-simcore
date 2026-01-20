@@ -2,7 +2,6 @@ import logging
 
 import sqlalchemy as sa
 from common_library.json_serialization import json_dumps, json_loads
-from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.users import UserID
 from pydantic import TypeAdapter
@@ -14,10 +13,6 @@ from simcore_postgres_database.utils_comp_run_snapshot_tasks import (
     update_for_run_id_and_node_id,
 )
 from simcore_postgres_database.utils_comp_runs import get_latest_run_id_for_project
-from simcore_postgres_database.utils_groups_extra_properties import (
-    GroupExtraProperties,
-    GroupExtraPropertiesRepo,
-)
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
 from .exceptions import NodeNotFound, ProjectNotFoundError
@@ -173,14 +168,3 @@ class DBManager:
             if prj_owner is None:
                 raise ProjectNotFoundError(project_id)
         return TypeAdapter(UserID).validate_python(prj_owner)
-
-    async def get_aggregated_properties_for_user(
-        self, user_id: UserID, product_name: ProductName
-    ) -> GroupExtraProperties:
-        async with (
-            DBContextManager(self._db_engine, application_name=self._application_name) as engine,
-            engine.connect() as connection,
-        ):
-            return await GroupExtraPropertiesRepo.get_aggregated_properties_for_user(
-                connection, user_id=user_id, product_name=product_name
-            )

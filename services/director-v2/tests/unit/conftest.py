@@ -75,9 +75,7 @@ def simcore_service_labels() -> SimcoreServiceLabels:
 
 @pytest.fixture
 def dynamic_service_create() -> DynamicServiceCreate:
-    return DynamicServiceCreate.model_validate(
-        DynamicServiceCreate.model_json_schema()["example"]
-    )
+    return DynamicServiceCreate.model_validate(DynamicServiceCreate.model_json_schema()["example"])
 
 
 @pytest.fixture
@@ -91,12 +89,8 @@ def service_run_id() -> ServiceRunID:
 
 
 @pytest.fixture
-def resource_tracking_run_id(
-    user_id: UserID, project_id: ProjectID, node_id: NodeID
-) -> ServiceRunID:
-    return ServiceRunID.get_resource_tracking_run_id_for_computational(
-        user_id, project_id, node_id, iteration=42
-    )
+def resource_tracking_run_id(user_id: UserID, project_id: ProjectID, node_id: NodeID) -> ServiceRunID:
+    return ServiceRunID.get_resource_tracking_run_id_for_computational(user_id, project_id, node_id, iteration=42)
 
 
 @pytest.fixture
@@ -139,6 +133,7 @@ def scheduler_data_from_http_request(
         request_simcore_user_agent=request_simcore_user_agent,
         can_save=can_save,
         run_id=service_run_id,
+        requires_data_mounting=False,
     )
 
 
@@ -148,13 +143,7 @@ def mock_service_inspect(
 ) -> Mapping[str, Any]:
     service_details = json.loads(scheduler_data_from_http_request.model_dump_json())
     service_details["compose_spec"] = json.dumps(service_details["compose_spec"])
-    return {
-        "Spec": {
-            "Labels": {
-                DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL: json.dumps(service_details)
-            }
-        }
-    }
+    return {"Spec": {"Labels": {DYNAMIC_SIDECAR_SCHEDULER_DATA_LABEL: json.dumps(service_details)}}}
 
 
 @pytest.fixture
@@ -234,9 +223,7 @@ def mocked_storage_service_api(
 @pytest.fixture
 def mock_service_key_version() -> ServiceKeyVersion:
     return ServiceKeyVersion(
-        key=TypeAdapter(ServiceKey).validate_python(
-            "simcore/services/dynamic/myservice"
-        ),
+        key=TypeAdapter(ServiceKey).validate_python("simcore/services/dynamic/myservice"),
         version=TypeAdapter(ServiceVersion).validate_python("1.4.5"),
     )
 

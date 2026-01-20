@@ -2,7 +2,6 @@ import logging
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID, StorageFileID
 from models_library.service_settings_labels import LegacyState
@@ -12,9 +11,6 @@ from servicelib.archiving_utils import unarchive_dir
 from servicelib.logging_utils import log_context
 from servicelib.progress_bar import ProgressBarData
 from settings_library.r_clone import RCloneSettings
-from simcore_postgres_database.utils_groups_extra_properties import (
-    GroupExtraPropertiesNotFoundError,
-)
 
 from ..node_ports_common import filemanager
 from ..node_ports_common.constants import SIMCORE_LOCATION
@@ -230,16 +226,6 @@ async def push(  # pylint: disable=too-many-arguments  # noqa: PLR0913
                 )
 
 
-async def _requires_data_mounting(application_name: str, user_id: UserID, product_name: ProductName) -> bool:
-    try:
-        group_extra_properties = await DBManager(application_name=application_name).get_aggregated_properties_for_user(
-            user_id=user_id, product_name=product_name
-        )
-    except GroupExtraPropertiesNotFoundError:
-        return False
-    return group_extra_properties.mount_data is True
-
-
 async def _start_mount_if_required(
     mount_manager: RCloneMountManager,
     user_id: UserID,
@@ -268,8 +254,7 @@ async def _start_mount_if_required(
     )
 
 
-async def pull(  # pylint: disable=too-many-arguments  # noqa: PLR0913
-    product_name: ProductName,
+async def pull(  # pylint: disable=too-many-arguments
     user_id: UserID,
     project_id: ProjectID,
     node_id: NodeID,
@@ -280,12 +265,11 @@ async def pull(  # pylint: disable=too-many-arguments  # noqa: PLR0913
     r_clone_settings: RCloneSettings,
     progress_bar: ProgressBarData,
     legacy_state: LegacyState | None,
-    application_name: str,
     mount_manager: RCloneMountManager,
 ) -> None:
     """restores the state folder"""
 
-    requires_data_mounting = await _requires_data_mounting(application_name, user_id, product_name)
+    requires_data_mounting = await mount_manager.delegate.requires_data_mounting()
 
     if legacy_state and legacy_state.new_state_path == destination_path:
         _logger.info(
