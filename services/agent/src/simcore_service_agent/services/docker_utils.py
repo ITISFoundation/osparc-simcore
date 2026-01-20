@@ -1,6 +1,6 @@
 import logging
 from collections.abc import Iterator
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from typing import Final
 
 from aiodocker import DockerError
@@ -12,8 +12,9 @@ from models_library.api_schemas_directorv2.services import (
 )
 from servicelib.docker_constants import PREFIX_DYNAMIC_SIDECAR_VOLUMES
 from servicelib.logging_utils import log_catch, log_context
-from simcore_service_agent.core.settings import ApplicationSettings
 from starlette import status
+
+from simcore_service_agent.core.settings import ApplicationSettings
 
 from ..models.volumes import VolumeDetails, VolumeDetailsAdapter
 from .backup import backup_volume
@@ -77,35 +78,29 @@ def _log_volume_not_found(volume_name: str) -> Iterator[None]:
 async def _backup_volume(app: FastAPI, docker: Docker, *, volume_name: str) -> None:
     """Backs up only volumes which require a backup"""
     if _does_volume_require_backup(volume_name):
-        with log_context(
-            _logger, logging.INFO, f"backup '{volume_name}'", log_duration=True
-        ):
+        with log_context(_logger, logging.INFO, f"backup '{volume_name}'", log_duration=True):
             volume_details = await get_volume_details(docker, volume_name=volume_name)
             settings: ApplicationSettings = app.state.settings
-            get_instrumentation(app).agent_metrics.backedup_volumes(
-                settings.AGENT_DOCKER_NODE_ID
-            )
+            get_instrumentation(app).agent_metrics.backedup_volumes(settings.AGENT_DOCKER_NODE_ID)
             await backup_volume(app, volume_details, volume_name)
     else:
         _logger.debug("No backup is required for '%s'", volume_name)
 
 
-async def remove_volume(
-    app: FastAPI, docker: Docker, *, volume_name: str, requires_backup: bool
-) -> None:
+async def remove_volume(app: FastAPI, docker: Docker, *, volume_name: str, requires_backup: bool) -> None:
     """Removes a volume and backs data up if required"""
-    with log_context(
-        _logger, logging.DEBUG, f"removing '{volume_name}'", log_duration=True
-    ), log_catch(_logger, reraise=False), _log_volume_not_found(volume_name):
+    with (
+        log_context(_logger, logging.DEBUG, f"removing '{volume_name}'", log_duration=True),
+        log_catch(_logger, reraise=False),
+        _log_volume_not_found(volume_name),
+    ):
         if requires_backup:
             await _backup_volume(app, docker, volume_name=volume_name)
 
         await DockerVolume(docker, volume_name).delete()
 
         settings: ApplicationSettings = app.state.settings
-        get_instrumentation(app).agent_metrics.remove_volumes(
-            settings.AGENT_DOCKER_NODE_ID
-        )
+        get_instrumentation(app).agent_metrics.remove_volumes(settings.AGENT_DOCKER_NODE_ID)
 
 
 async def get_containers_with_prefixes(docker: Docker, prefixes: set[str]) -> set[str]:
@@ -122,10 +117,14 @@ async def get_containers_with_prefixes(docker: Docker, prefixes: set[str]) -> se
     return result
 
 
-async def remove_container_forcefully(docker: Docker, container_id: str) -> None:
+async def remove_container_forcefully(docker: Docker, container_id: str, *stop_beofer_removal: bool) -> None:
     """Removes a container regardless of it's state"""
     try:
         container = await docker.containers.get(container_id)
+        if stop_beofer_removal:
+            with suppress(DockerError):
+                await container.stop()
+
         await container.delete(force=True)
     except DockerError as e:
         if e.status != status.HTTP_404_NOT_FOUND:

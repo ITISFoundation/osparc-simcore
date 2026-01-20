@@ -66,13 +66,9 @@ class ServiceExtras(BaseModel):
 
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:
-
         node_requirements_examples = NodeRequirements.model_json_schema()["examples"]
 
-        examples: list[JsonValue] = [
-            {"node_requirements": node_example}
-            for node_example in node_requirements_examples
-        ]
+        examples: list[JsonValue] = [{"node_requirements": node_example} for node_example in node_requirements_examples]
         examples += [
             {
                 "node_requirements": node_example,
@@ -109,3 +105,4 @@ CHARS_IN_VOLUME_NAME_BEFORE_DIR_NAME: Final[NonNegativeInt] = 89
 
 DYNAMIC_SIDECAR_SERVICE_PREFIX: Final[str] = "dy-sidecar"
 DYNAMIC_PROXY_SERVICE_PREFIX: Final[str] = "dy-proxy"
+DYNAMIC_SIDECAR_RCLONE_CONTAINER_PREFIX: Final[str] = "rcm"

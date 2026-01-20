@@ -5,6 +5,7 @@ from aiodocker import Docker
 from fastapi import FastAPI
 from models_library.api_schemas_directorv2.services import (
     DYNAMIC_PROXY_SERVICE_PREFIX,
+    DYNAMIC_SIDECAR_RCLONE_CONTAINER_PREFIX,
     DYNAMIC_SIDECAR_SERVICE_PREFIX,
 )
 from models_library.projects_nodes_io import NodeID
@@ -26,9 +27,10 @@ class ContainersManager(SingletonInAppStateMixin):
         proxy_prefix = f"{DYNAMIC_PROXY_SERVICE_PREFIX}_{node_id}"
         dy_sidecar_prefix = f"{DYNAMIC_SIDECAR_SERVICE_PREFIX}_{node_id}"
         user_service_prefix = f"{DYNAMIC_SIDECAR_SERVICE_PREFIX}-{node_id}"
+        r_clone_prefix = f"{DYNAMIC_SIDECAR_RCLONE_CONTAINER_PREFIX}-{node_id}"
 
         orphan_containers = await get_containers_with_prefixes(
-            self.docker, {proxy_prefix, dy_sidecar_prefix, user_service_prefix}
+            self.docker, {proxy_prefix, dy_sidecar_prefix, user_service_prefix, r_clone_prefix}
         )
         _logger.debug(
             "Detected orphan containers for node_id='%s': %s",
@@ -36,11 +38,7 @@ class ContainersManager(SingletonInAppStateMixin):
             orphan_containers,
         )
 
-        unexpected_orphans = {
-            orphan
-            for orphan in orphan_containers
-            if orphan.startswith(user_service_prefix)
-        }
+        unexpected_orphans = {orphan for orphan in orphan_containers if orphan.startswith(user_service_prefix)}
         if unexpected_orphans:
             _logger.warning(
                 "Unexpected orphans detected for node_id='%s': %s",
@@ -50,7 +48,9 @@ class ContainersManager(SingletonInAppStateMixin):
 
         # avoids parallel requests to docker engine
         for container in orphan_containers:
-            await remove_container_forcefully(self.docker, container)
+            await remove_container_forcefully(
+                self.docker, container, stop_beofer_removal=container.startswith(r_clone_prefix)
+            )
 
     async def shutdown(self) -> None:
         await self.docker.close()
