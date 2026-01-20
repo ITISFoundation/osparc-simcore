@@ -1,7 +1,6 @@
 import logging
-from datetime import timedelta
 from functools import lru_cache
-from typing import Final, cast
+from typing import cast
 
 from fastapi import FastAPI
 from models_library.progress_bar import ProgressReport
@@ -15,7 +14,6 @@ from models_library.rabbitmq_messages import (
     RabbitMessageBase,
     RabbitResourceTrackingMessages,
 )
-from pydantic import NonNegativeFloat
 from servicelib.logging_utils import LogLevelInt, LogMessageStr, log_catch, log_context
 from servicelib.rabbitmq import RabbitMQClient, is_rabbitmq_responsive
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
@@ -23,8 +21,6 @@ from settings_library.rabbit import RabbitSettings
 
 from ..core.settings import ApplicationSettings
 from ..modules.service_liveness import wait_for_service_liveness
-
-_MAX_DELAY_TO_RETRY_MESSAGE_DELIVERY: Final[NonNegativeFloat] = timedelta(seconds=30).total_seconds()
 
 _logger = logging.getLogger(__file__)
 
