@@ -75,7 +75,7 @@ qx.Class.define("osparc.editor.MarkdownEditorInline", {
 
     __createToolbar: function() {
       const tb = new qx.ui.toolbar.ToolBar().set({
-        spacing: 0,
+        paddingTop: 4,
         backgroundColor: "input-background",
       });
       tb.add(this.self().__createToolbarBtn("B", "Bold", () => this.__wrapSelection("**", "**", "bold text")));
