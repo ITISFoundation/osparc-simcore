@@ -8,7 +8,6 @@ from pathlib import Path
 from typing import Any, Final
 
 from aiodocker import Docker
-from aiodocker.networks import DockerNetwork
 from aiodocker.types import JSONObject
 from fastapi import FastAPI
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
@@ -150,26 +149,6 @@ class DynamicSidecarRCloneMountDelegate(DelegateInterface):
         async with _get_docker_client() as client:
             existing_container = await client.containers.get(container_name)
             await existing_container.delete(force=True)
-
-    async def create_network(self, config: dict[str, Any]) -> None:
-        async with _get_docker_client() as client:
-            await client.networks.create(config)
-
-    async def connect_container_to_network(self, container_id: str, network_name: str) -> None:
-        async with _get_docker_client() as client:
-            existing_network = DockerNetwork(client, network_name)
-            await existing_network.connect({"Container": container_id})
-
-    async def disconnect_container_from_network(self, container_id: str, network_name: str) -> None:
-        async with _get_docker_client() as client:
-            existing_network = DockerNetwork(client, network_name)
-            await existing_network.disconnect({"Container": container_id})
-
-    async def remove_network(self, network_name: str) -> None:
-        async with _get_docker_client() as client:
-            existing_network = DockerNetwork(client, network_name)
-            await existing_network.show()
-            await existing_network.delete()
 
 
 def setup_r_clone_mount_manager(app: FastAPI):
