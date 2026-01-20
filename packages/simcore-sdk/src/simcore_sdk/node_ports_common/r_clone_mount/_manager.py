@@ -221,5 +221,10 @@ class RCloneMountManager:
         if self._task_ensure_mounts_working is not None:
             await cancel_wait_task(self._task_ensure_mounts_working)
 
-        await asyncio.gather(*[mount.stop_mount() for mount in self._tracked_mounts.values()])
+        await asyncio.gather(
+            *[
+                self.ensure_unmounted(local_mount_path=tracked_mount.local_mount_path, index=tracked_mount.index)
+                for tracked_mount in self._tracked_mounts.values()
+            ]
+        )
         self._tracked_mounts.clear()
