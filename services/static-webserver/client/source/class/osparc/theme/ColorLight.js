@@ -32,15 +32,15 @@ qx.Theme.define("osparc.theme.ColorLight", {
     "background-card-overlay": "rgba(229, 229, 229, 0.8)",
     "background-workspace-card-overlay": "rgb(165, 223, 252)",
 
-    "navigation_bar_background_color": "rgba(229, 229, 229, 0.8)",
-    "fab_text": "contrasted-text-dark",
+    "navbar-background": "rgba(229, 229, 229, 0.8)",
+    "fab-text": "contrasted-text-dark",
     "fab-background": "rgba(0, 0, 0, 0.2)",
-    "input_background": "rgba(209, 214, 218, 1)",
-    "input_background_disable": "rgba(113, 157, 181, 0.04)",
+    "input-background": "rgba(209, 214, 218, 1)",
+    "input-background-disable": "rgba(113, 157, 181, 0.04)",
     "hint-background": "rgba(201, 201, 201, 1)",
-    "transparent_overlay": "rgba(1, 18, 26, 0.1)",
+    "transparent-overlay": "rgba(1, 18, 26, 0.1)",
 
-    "flash_message_bg": "input_background",
+    "flash-message-background": "input-background",
 
     // text
     "text": "rgba(40, 40, 40, 1)",
@@ -77,7 +77,7 @@ qx.Theme.define("osparc.theme.ColorLight", {
     "material-button-text": "default-button-text-outline",
 
     // material-textfield
-    "material-textfield": "input_background",
+    "material-textfield": "input-background",
     "material-textfield-focused": "product-color",
     "material-textfield-disabled": "default-button-disabled",
     "material-textfield-invalid": "error",
@@ -121,7 +121,7 @@ qx.Theme.define("osparc.theme.ColorLight", {
     "border-disabled": "background-main",
 
     // tooltip
-    "tooltip": "flash_message_bg",
+    "tooltip": "flash-message-background",
     "tooltip-text": "text",
 
 
