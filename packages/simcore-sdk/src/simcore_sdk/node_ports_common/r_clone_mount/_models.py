@@ -62,3 +62,6 @@ class DelegateInterface(ABC):
 
     @abstractmethod
     async def remove_container(self, container_name: str) -> None: ...
+
+    @abstractmethod
+    async def get_node_address(self) -> str: ...

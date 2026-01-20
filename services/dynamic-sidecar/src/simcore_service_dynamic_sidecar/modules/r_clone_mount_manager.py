@@ -150,6 +150,12 @@ class DynamicSidecarRCloneMountDelegate(DelegateInterface):
             existing_container = await client.containers.get(container_name)
             await existing_container.delete(force=True)
 
+    async def get_node_address(self) -> str:
+        async with _get_docker_client() as client:
+            system_info = await client.system.info()
+            node_address: str = system_info["Swarm"]["NodeAddr"]
+            return node_address
+
 
 def setup_r_clone_mount_manager(app: FastAPI):
     async def _on_startup() -> None:

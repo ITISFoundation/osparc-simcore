@@ -148,6 +148,12 @@ class _TestingDelegate(DelegateInterface):
             existing_container = await client.containers.get(container_name)
             await existing_container.delete(force=True)
 
+    async def get_node_address(self) -> str:
+        async with Docker() as client:
+            system_info = await client.system.info()
+            node_address: str = system_info["Swarm"]["NodeAddr"]
+            return node_address
+
 
 @pytest.fixture
 async def r_clone_mount_manager(
@@ -265,6 +271,7 @@ async def _get_file_checksums_from_s3(
 
 
 async def test_workflow(
+    docker_swarm: None,
     moto_server: None,
     r_clone_mount_manager: RCloneMountManager,
     r_clone_settings: RCloneSettings,
@@ -317,6 +324,7 @@ async def test_workflow(
 
 
 async def test_container_recovers_and_shutdown_is_emitted(
+    docker_swarm: None,
     moto_server: None,
     r_clone_mount_manager: RCloneMountManager,
     node_id: NodeID,
