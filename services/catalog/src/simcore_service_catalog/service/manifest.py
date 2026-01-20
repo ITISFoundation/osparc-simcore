@@ -33,6 +33,13 @@ from models_library.services_metadata_published import ServiceMetaDataPublished
 from models_library.services_types import ServiceKey, ServiceVersion
 from pydantic import ValidationError
 from servicelib.utils import limited_gather
+from tenacity import (
+    before_sleep_log,
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
 
 from .._constants import DIRECTOR_CACHING_TTL
 from ..clients.director import DirectorClient
@@ -42,33 +49,33 @@ from .function_services import get_function_service, is_function_service
 _logger = logging.getLogger(__name__)
 
 
-ServiceMetaDataPublishedDict: TypeAlias = dict[
-    tuple[ServiceKey, ServiceVersion], ServiceMetaDataPublished
-]
+ServiceMetaDataPublishedDict: TypeAlias = dict[tuple[ServiceKey, ServiceVersion], ServiceMetaDataPublished]
 
 
 _error_already_logged: set[tuple[str | None, str | None]] = set()
 
 
+@retry(
+    retry=retry_if_exception_type(Exception),
+    wait=wait_exponential(multiplier=1, min=1, max=10),
+    stop=stop_after_attempt(3),
+    before_sleep=before_sleep_log(_logger, logging.WARNING),
+    reraise=True,
+)
 async def get_services_map(
     director_client: DirectorClient,
 ) -> ServiceMetaDataPublishedDict:
-
     # NOTE: using Low-level API to avoid validation
-    services_in_registry = cast(
-        list[dict[str, Any]], await director_client.get("/services")
-    )
+    services_in_registry = cast(list[dict[str, Any]], await director_client.get("/services"))
 
     # NOTE: functional-services are services w/o associated image
-    services: ServiceMetaDataPublishedDict = {
-        (sc.key, sc.version): sc for sc in iter_service_docker_data()
-    }
+    services: ServiceMetaDataPublishedDict = {(sc.key, sc.version): sc for sc in iter_service_docker_data()}
     for service in services_in_registry:
         try:
             service_data = ServiceMetaDataPublished.model_validate(service)
             services[(service_data.key, service_data.version)] = service_data
 
-        except ValidationError:  # noqa: PERF203
+        except ValidationError:
             # NOTE: this is necessary since registry DOES NOT provides any guarantee of the meta-data
             # in the labels, i.e. it is not validated
             errored_service = (service.get("key"), service.get("version"))
@@ -103,9 +110,7 @@ async def get_service(
     if is_function_service(key):
         service = get_function_service(key=key, version=version)
     else:
-        service = await director_client.get_service(
-            service_key=key, service_version=version
-        )
+        service = await director_client.get_service(service_key=key, service_version=version)
     return service
 
 
@@ -113,12 +118,8 @@ async def get_batch_services(
     selection: list[tuple[ServiceKey, ServiceVersion]],
     director_client: DirectorClient,
 ) -> list[ServiceMetaDataPublished | BaseException]:
-
     batch: list[ServiceMetaDataPublished | BaseException] = await limited_gather(
-        *(
-            get_service(key=k, version=v, director_client=director_client)
-            for k, v in selection
-        ),
+        *(get_service(key=k, version=v, director_client=director_client) for k, v in selection),
         reraise=False,
         log=_logger,
         tasks_group_prefix="manifest.get_batch_services",
