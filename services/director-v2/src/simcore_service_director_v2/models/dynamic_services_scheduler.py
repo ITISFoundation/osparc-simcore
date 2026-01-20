@@ -55,7 +55,7 @@ TEMPORARY_PORT_NUMBER = 65_534
 MAX_ALLOWED_SERVICE_NAME_LENGTH: int = 63
 
 
-type DockerStatus = Status1
+DockerStatus = Status1
 
 
 type DockerId = Annotated[str, StringConstraints(max_length=25, pattern=r"[A-Za-z0-9]{25}")]
