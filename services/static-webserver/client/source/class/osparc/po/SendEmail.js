@@ -31,12 +31,42 @@ qx.Class.define("osparc.po.SendEmail", {
           });
           break;
         }
+        case "button-bar": {
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
+            alignX: "right",
+            padding: 10
+          }));
+          this._add(control);
+          break;
+        }
+        case "send-email-button":
+          control = new qx.ui.form.Button(this.tr("Send")).set({
+            appearance: "strong-button",
+            allowGrowX: false
+          });
+          control.addListener("execute", () => this.__sendEmailClicked(), this);
+          this.getChildControl("button-bar").add(control);
+          break;
       }
       return control || this.base(arguments, id);
     },
 
     _buildLayout: function() {
       this.getChildControl("email-editor");
+      this.getChildControl("send-email-button");
+    },
+
+    __sendEmailClicked: function() {
+      const emailEditor = this.getChildControl("email-editor");
+      const emailContent = emailEditor.getTemplateEmail();
+      osparc.store.Faker.getInstance().sendTestEmail(emailContent)
+        .then(() => {
+          osparc.ui.message.FlashMessenger.getInstance().logAsSuccess(this.tr("Test email sent successfully"));
+        })
+        .catch(err => {
+          const errorMsg = err.message || this.tr("An error occurred while sending the test email");
+          osparc.ui.message.FlashMessenger.getInstance().logAsError(errorMsg);
+        });
     },
   }
 });
