@@ -117,7 +117,7 @@ async def get_containers_with_prefixes(docker: Docker, prefixes: set[str]) -> se
     return result
 
 
-async def remove_container_forcefully(docker: Docker, container_id: str, *stop_beofer_removal: bool) -> None:
+async def remove_container_forcefully(docker: Docker, container_id: str, *, stop_beofer_removal: bool) -> None:
     """Removes a container regardless of it's state"""
     try:
         container = await docker.containers.get(container_id)
