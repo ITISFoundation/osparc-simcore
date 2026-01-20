@@ -100,7 +100,6 @@ async def _get_rclone_mount_command(
     remote_path: StorageFileID,
     local_mount_path: Path,
     index: NonNegativeInt,
-    rc_port: PortInt,
     rc_user: str,
     rc_password: str,
 ) -> str:
@@ -161,7 +160,7 @@ async def _get_rclone_mount_command(
         "size,mixed",
         # REMOTE CONTROL
         "--rc",
-        f"--rc-addr=0.0.0.0:{rc_port}",
+        "--rc-addr=0.0.0.0:8000",
         "--rc-enable-metrics",
         f"--rc-user='{rc_user}'",
         f"--rc-pass='{rc_password}'",
@@ -212,28 +211,19 @@ class ContainerManager:  # pylint:disable=too-many-instance-attributes
         self.delegate = delegate
 
     @cached_property
-    def r_clone_container_name(self) -> str:
+    def _r_clone_container_name(self) -> str:
         mount_id = get_mount_id(self.local_mount_path, self.index)
-        return f"{_DOCKER_PREFIX_MOUNT}-c-{self.node_id}{mount_id}"[:63]
-
-    @cached_property
-    def _r_clone_network_name(self) -> str:
-        mount_id = get_mount_id(self.local_mount_path, self.index)
-        return f"{_DOCKER_PREFIX_MOUNT}-c-{self.node_id}{mount_id}"[:63]
+        return f"{_DOCKER_PREFIX_MOUNT}-c-{self.node_id}-{mount_id}"[:63]
 
     async def create(self):
         # ensure nothing was left from previous runs
-        await _docker_utils.remove_container_if_exists(self.delegate, self.r_clone_container_name)
-        await _docker_utils.remove_network_if_exists(self.delegate, self.r_clone_container_name)
-
-        # create network + container and connect to current container
-        await _docker_utils.create_network_and_connect_current_container(self.delegate, self._r_clone_network_name)
+        await _docker_utils.remove_container_if_exists(self.delegate, self._r_clone_container_name)
 
         assert self.r_clone_settings.R_CLONE_VERSION is not None  # nosec
         mount_settings = self.r_clone_settings.R_CLONE_SIMCORE_SDK_MOUNT_SETTINGS
         await _docker_utils.create_r_clone_container(
             self.delegate,
-            self.r_clone_container_name,
+            self._r_clone_container_name,
             command=await _get_rclone_mount_command(
                 self.delegate,
                 mount_settings=mount_settings,
@@ -241,27 +231,23 @@ class ContainerManager:  # pylint:disable=too-many-instance-attributes
                 remote_path=self.remote_path,
                 local_mount_path=self.local_mount_path,
                 index=self.index,
-                rc_port=self.rc_port,
                 rc_user=self.rc_user,
                 rc_password=self.rc_password,
             ),
             r_clone_version=self.r_clone_settings.R_CLONE_VERSION,
             rc_port=self.rc_port,
-            r_clone_network_name=self._r_clone_network_name,
             local_mount_path=self.local_mount_path,
             memory_limit=mount_settings.R_CLONE_SIMCORE_SDK_MOUNT_CONTAINER_MEMORY_LIMIT,
             nano_cpus=mount_settings.R_CLONE_SIMCORE_SDK_MOUNT_CONTAINER_NANO_CPUS,
         )
 
     async def remove(self):
-        await _docker_utils.remove_container_if_exists(self.delegate, self.r_clone_container_name)
-        await _docker_utils.remove_network_if_exists(self.delegate, self.r_clone_container_name)
+        await _docker_utils.remove_container_if_exists(self.delegate, self._r_clone_container_name)
 
 
 class RemoteControlHttpClient:
     def __init__(
         self,
-        rc_host: str,
         rc_port: PortInt,
         rc_user: str,
         rc_password: str,
@@ -273,8 +259,7 @@ class RemoteControlHttpClient:
         self.transfers_completed_timeout = transfers_completed_timeout
         self._update_interval_seconds = update_interval.total_seconds()
         self._r_clone_client_timeout = r_clone_client_timeout
-
-        self.rc_host = rc_host
+        self.rc_host = "172.17.0.1"  # docker default bridge gateway
         self.rc_port = rc_port
         self._auth = (rc_user, rc_password)
 
