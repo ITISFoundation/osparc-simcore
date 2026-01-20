@@ -145,8 +145,12 @@ class _TestingDelegate(DelegateInterface):
 
     async def remove_container(self, container_name: str) -> None:
         async with Docker() as client:
-            existing_container = await client.containers.get(container_name)
-            await existing_container.delete(force=True)
+            try:
+                existing_container = await client.containers.get(container_name)
+                await existing_container.delete(force=True)
+            except aiodocker.exceptions.DockerError as e:
+                if e.status != 404:
+                    raise
 
     async def get_node_address(self) -> str:
         async with Docker() as client:

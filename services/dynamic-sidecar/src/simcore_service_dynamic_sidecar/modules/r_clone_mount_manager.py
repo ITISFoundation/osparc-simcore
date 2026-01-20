@@ -2,14 +2,14 @@
 
 import logging
 from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Final
 
-from aiodocker import Docker
+from aiodocker import Docker, DockerError
 from aiodocker.types import JSONObject
-from fastapi import FastAPI
+from fastapi import FastAPI, status
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStop,
 )
@@ -149,6 +149,21 @@ class DynamicSidecarRCloneMountDelegate(DelegateInterface):
         async with _get_docker_client() as client:
             existing_container = await client.containers.get(container_name)
             await existing_container.delete(force=True)
+
+            try:
+                container = await client.containers.get(container_name)
+            except DockerError as e:
+                if e.status == status.HTTP_404_NOT_FOUND:
+                    return
+                raise
+
+            # If it exists, try to stop it cleanly.
+            with suppress(DockerError):
+                await container.stop()  # sends SIGTERM then SIGKILL after timeout.[web:12]
+
+            # Delete container; force=True ensures removal even if still running.
+            # v=True removes anonymous volumes attached to this container.[web:3][web:6]
+            await container.delete(force=True, v=True)
 
     async def get_node_address(self) -> str:
         async with _get_docker_client() as client:
