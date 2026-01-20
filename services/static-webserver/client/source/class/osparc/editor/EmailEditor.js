@@ -101,7 +101,7 @@ qx.Class.define("osparc.editor.EmailEditor", {
             allowGrowY: true,
             allowGrowX: true,
             minWidth: 500,
-            minHeight: 500,
+            minHeight: 300,
           });
           control.getChildControl("text-area").set({
             placeholder: "Write your email..."
@@ -120,7 +120,7 @@ qx.Class.define("osparc.editor.EmailEditor", {
             allowGrowY: true,
             allowGrowX: true,
             minWidth: 500,
-            minHeight: 500,
+            minHeight: 300,
           });
           this.getChildControl("preview-page").add(control, {
             flex: 1
