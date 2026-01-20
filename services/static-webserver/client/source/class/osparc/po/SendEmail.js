@@ -18,7 +18,13 @@
 qx.Class.define("osparc.po.SendEmail", {
   extend: osparc.po.BaseView,
 
+  construct: function() {
+    this.base(arguments);
+    this.__selectedRecipients = [];
+  },
+
   members: {
+    __selectedRecipients: null,
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -28,8 +34,10 @@ qx.Class.define("osparc.po.SendEmail", {
           this._add(control);
           break;
         }
-        case "recipient-field": {
-          control = new qx.ui.form.TextField().set({
+        case "recipients-container": {
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
+            alignY: "middle"
+          })).set({
             marginBottom: 5
           });
           const formContainer = this.getChildControl("form-container");
@@ -42,6 +50,22 @@ qx.Class.define("osparc.po.SendEmail", {
           formContainer.add(control, {
             row: 0,
             column: 1
+          });
+          break;
+        }
+        case "add-recipient-button": {
+          control = new qx.ui.form.Button(null, "@FontAwesome5Solid/plus/12").set({
+            allowGrowX: false,
+            allowGrowY: false
+          });
+          control.addListener("execute", () => this.__openCollaboratorsManager(), this);
+          this.getChildControl("recipients-container").add(control);
+          break;
+        }
+        case "recipients-chips": {
+          control = new qx.ui.container.Composite(new qx.ui.layout.Flow(5, 5));
+          this.getChildControl("recipients-container").add(control, {
+            flex: 1
           });
           break;
         }
@@ -93,18 +117,80 @@ qx.Class.define("osparc.po.SendEmail", {
     },
 
     _buildLayout: function() {
-      this.getChildControl("recipient-field");
+      this.getChildControl("add-recipient-button");
+      this.getChildControl("recipients-chips");
       this.getChildControl("subject-field");
       this.getChildControl("email-editor");
       this.getChildControl("send-email-button");
     },
 
+    __openCollaboratorsManager: function() {
+      const collaboratorsManager = new osparc.share.NewCollaboratorsManager(null, false, false);
+      collaboratorsManager.setAcceptOnlyOne(false);
+      collaboratorsManager.getActionButton().setLabel(this.tr("Add"));
+      collaboratorsManager.addListener("addCollaborators", e => {
+        const data = e.getData();
+        const selectedGids = data.selectedGids;
+        selectedGids.forEach(gid => {
+          const collaborator = osparc.store.Groups.getInstance().getOrganizationOrMember(parseInt(gid));
+          if (collaborator && !this.__selectedRecipients.find(r => r.gid === gid)) {
+            this.__selectedRecipients.push({
+              gid,
+              label: collaborator.getLabel(),
+              email: collaborator.getEmail ? collaborator.getEmail() : null
+            });
+          }
+        });
+        this.__updateRecipientsChips();
+        collaboratorsManager.close();
+      }, this);
+      collaboratorsManager.addListener("shareWithEmails", e => {
+        const data = e.getData();
+        const selectedEmails = data.selectedEmails;
+        selectedEmails.forEach(email => {
+          if (!this.__selectedRecipients.find(r => r.email === email)) {
+            this.__selectedRecipients.push({
+              gid: null,
+              label: email,
+              email
+            });
+          }
+        });
+        this.__updateRecipientsChips();
+        collaboratorsManager.close();
+      }, this);
+    },
+
+    __updateRecipientsChips: function() {
+      const chipsContainer = this.getChildControl("recipients-chips");
+      chipsContainer.removeAll();
+      this.__selectedRecipients.forEach((recipient, index) => {
+        const chip = new qx.ui.basic.Atom(recipient.label, "@FontAwesome5Solid/times/10").set({
+          padding: [2, 8],
+          decorator: "chip",
+          cursor: "pointer",
+          iconPosition: "right",
+          gap: 8
+        });
+        chip.addListener("tap", () => {
+          this.__selectedRecipients.splice(index, 1);
+          this.__updateRecipientsChips();
+        }, this);
+        chipsContainer.add(chip);
+      });
+    },
+
     __sendEmailClicked: function() {
-      const recipientField = this.getChildControl("recipient-field");
+      if (!this.__selectedRecipients.length) {
+        osparc.ui.message.FlashMessenger.getInstance().logAsWarning(this.tr("Please select at least one recipient"));
+        return;
+      }
+
       const subjectField = this.getChildControl("subject-field");
       const emailEditor = this.getChildControl("email-editor");
+      const recipients = this.__selectedRecipients.map(r => r.email || r.label).join(", ");
       const data = {
-        to: recipientField.getValue(),
+        to: recipients,
         subject: subjectField.getValue(),
         content: emailEditor.getTemplateEmail(),
       };
