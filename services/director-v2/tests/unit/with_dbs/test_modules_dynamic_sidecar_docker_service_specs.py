@@ -232,6 +232,7 @@ def expected_dynamic_sidecar_spec(
                     "DY_SIDECAR_PATH_INPUTS": "/tmp/inputs",  # noqa: S108
                     "DY_SIDECAR_PATH_OUTPUTS": "/tmp/outputs",  # noqa: S108
                     "DY_SIDECAR_PROJECT_ID": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
+                    "DY_SIDECAR_REQUIRES_DATA_MOUNTING": "False",
                     "DY_SIDECAR_STATE_EXCLUDE": json_dumps(
                         ["/tmp/strip_me/*"]  # noqa: S108
                     ),
@@ -386,21 +387,6 @@ def expected_dynamic_sidecar_spec(
                                 "study_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
                                 "run_id": service_run_id,
                                 "source": f"dyv_{service_run_id}_75c7f3f4-18f9-4678-8610-54a2ade78eaa_2_evas_pmt_",
-                                "swarm_stack_name": "test_swarm_name",
-                                "user_id": "234",
-                            },
-                        },
-                    },
-                    {
-                        "Target": "/dy-volumes/vfs-cache",
-                        "Source": f"dyv_{service_run_id}_75c7f3f4-18f9-4678-8610-54a2ade78eaa_ehcac-sfv_",
-                        "Type": "volume",
-                        "VolumeOptions": {
-                            "Labels": {
-                                "node_uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
-                                "study_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
-                                "run_id": service_run_id,
-                                "source": f"dyv_{service_run_id}_75c7f3f4-18f9-4678-8610-54a2ade78eaa_ehcac-sfv_",
                                 "swarm_stack_name": "test_swarm_name",
                                 "user_id": "234",
                             },
