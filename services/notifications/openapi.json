@@ -30,6 +30,51 @@
         }
       }
     },
+    "/v0/notifications/{channel}/templates": {
+      "get": {
+        "tags": [
+          "notifications"
+        ],
+        "summary": "List Templates",
+        "operationId": "list_templates_v0_notifications__channel__templates_get",
+        "parameters": [
+          {
+            "name": "channel",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/ChannelType"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NotificationTemplateGet"
+                  },
+                  "title": "Response List Templates V0 Notifications  Channel  Templates Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v0/notifications/{channel}/templates/{template_name}:preview": {
       "post": {
         "tags": [
@@ -43,8 +88,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
-              "title": "Channel"
+              "$ref": "#/components/schemas/ChannelType"
             }
           },
           {
@@ -96,6 +140,14 @@
   },
   "components": {
     "schemas": {
+      "ChannelType": {
+        "type": "string",
+        "enum": [
+          "email",
+          "sms"
+        ],
+        "title": "ChannelType"
+      },
       "EmailNotificationContentGet": {
         "properties": {
           "subject": {
@@ -128,12 +180,12 @@
       },
       "HTTPValidationError": {
         "properties": {
-          "detail": {
+          "errors": {
             "items": {
               "$ref": "#/components/schemas/ValidationError"
             },
             "type": "array",
-            "title": "Detail"
+            "title": "Validation errors"
           }
         },
         "type": "object",
@@ -177,6 +229,24 @@
         ],
         "title": "NotificationPreviewGet"
       },
+      "NotificationTemplateGet": {
+        "properties": {
+          "ref": {
+            "$ref": "#/components/schemas/TemplateRefGet"
+          },
+          "variablesSchema": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Variablesschema"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ref",
+          "variablesSchema"
+        ],
+        "title": "NotificationTemplateGet"
+      },
       "SMSNotificationContentGet": {
         "properties": {
           "text": {
@@ -189,6 +259,24 @@
           "text"
         ],
         "title": "SMSNotificationContentGet"
+      },
+      "TemplateRefGet": {
+        "properties": {
+          "channel": {
+            "type": "string",
+            "title": "Channel"
+          },
+          "templateName": {
+            "type": "string",
+            "title": "Templatename"
+          }
+        },
+        "type": "object",
+        "required": [
+          "channel",
+          "templateName"
+        ],
+        "title": "TemplateRefGet"
       },
       "ValidationError": {
         "properties": {
