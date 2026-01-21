@@ -1,4 +1,4 @@
-"""Free functions to inject dependencies in routes handlers"""
+# pylint:disable=unused-import
 
 from typing import Annotated, cast
 
@@ -14,7 +14,7 @@ from ...renderers.jinja_renderer import JinjaNotificationsRenderer
 from ...renderers.renderer import NotificationsRenderer
 from ...repository.templates_repository import NotificationsTemplatesRepository
 from ...services.templates_service import NotificationsTemplatesService
-from ...variables import models  # noqa: F401
+from ...variables import models  # noqa: F401 # NOTE: registers variables models
 
 
 def get_application(request: Request) -> FastAPI:
