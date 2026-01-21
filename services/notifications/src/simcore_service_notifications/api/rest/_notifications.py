@@ -3,6 +3,7 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends
 from models_library.api_schemas_notifications.preview import NotificationPreviewGet
+from models_library.api_schemas_notifications.template import NotificationTemplateGet
 
 from ...models.template import TemplateRef
 from ...services.templates_service import NotificationsTemplatesService
@@ -23,3 +24,10 @@ def preview_notification(
     variables |= {"product": {"ui": {"strong_color": None}}}  # GCR: move to client side
 
     return NotificationPreviewGet(**asdict(service.render_preview(template_ref, variables)))
+
+
+@router.get("/{channel}/templates")
+def list_templates(
+    channel: str,
+    service: Annotated[NotificationsTemplatesService, Depends(get_notifications_templates_service)],
+) -> list[NotificationTemplateGet]: ...
