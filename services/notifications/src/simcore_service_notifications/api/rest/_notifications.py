@@ -12,6 +12,13 @@ from .dependencies import get_notifications_templates_service
 router = APIRouter(prefix="/notifications")
 
 
+@router.get("/{channel}/templates")
+def list_templates(
+    channel: str,
+    service: Annotated[NotificationsTemplatesService, Depends(get_notifications_templates_service)],
+) -> list[NotificationTemplateGet]: ...
+
+
 @router.post("/{channel}/templates/{template_name}:preview")
 def preview_notification(
     channel: str,
@@ -24,10 +31,3 @@ def preview_notification(
     variables |= {"product": {"ui": {"strong_color": None}}}  # GCR: move to client side
 
     return NotificationPreviewGet(**asdict(service.render_preview(template_ref, variables)))
-
-
-@router.get("/{channel}/templates")
-def list_templates(
-    channel: str,
-    service: Annotated[NotificationsTemplatesService, Depends(get_notifications_templates_service)],
-) -> list[NotificationTemplateGet]: ...
