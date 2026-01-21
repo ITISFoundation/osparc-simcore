@@ -86,8 +86,19 @@ async def create_container(
                 raise
 
 
+async def _is_container_present(docker: Docker, *, container_name: str) -> bool:
+    try:
+        await docker.containers.get(container_name)
+        return True
+    except DockerError as exc:
+        if exc.status == status.HTTP_404_NOT_FOUND:
+            return False
+        raise
+
+
 async def test_force_container_cleanup(
     app: FastAPI,
+    docker: Docker,
     node_id: NodeID,
     create_container: Callable[[str, _ContainerMode], Awaitable[str]],
     faker: Faker,
@@ -106,11 +117,13 @@ async def test_force_container_cleanup(
     await create_container(user_service_name, _ContainerMode.STOPPED)
     await create_container(r_clone_container_name, _ContainerMode.RUNNING)
 
-    # add a check that above containers are running
+    for container_name in (proxy_name, dynamic_sidecar_name, user_service_name, r_clone_container_name):
+        assert await _is_container_present(docker, container_name=container_name)
 
     await get_containers_manager(app).force_container_cleanup(node_id)
 
-    # add a check that above containers are not running
+    for container_name in (proxy_name, dynamic_sidecar_name, user_service_name, r_clone_container_name):
+        assert not await _is_container_present(docker, container_name=container_name)
 
     assert proxy_name in caplog.text
     assert dynamic_sidecar_name in caplog.text
