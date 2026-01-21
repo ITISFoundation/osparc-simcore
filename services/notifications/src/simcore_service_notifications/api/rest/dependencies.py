@@ -3,15 +3,18 @@
 from typing import Annotated, cast
 
 from fastapi import Depends, FastAPI, Request
+from jinja2 import Environment
+from notifications_library._render import create_render_environment_from_notifications_library
 from servicelib.rabbitmq import RabbitMQRPCClient
 
 from ...clients.postgres import PostgresLiveness
 from ...clients.postgres import get_postgres_liveness as _get_db_liveness
-from ...renderers.jinja_notifications_renderer import JinjaNotificationsRenderer
-from ...renderers.notifications_renderer import NotificationsRenderer
-from ...repository.filesystem_notifications_templates_repository import FilesystemNotificationsTemplatesRepository
-from ...repository.notifications_templates_repository import NotificationsTemplatesRepository
-from ...services.notifications_templates_service import NotificationsTemplatesService
+from ...models.content import EmailNotificationContent, NotificationContent, SMSNotificationContent
+from ...renderers.jinja_renderer import JinjaNotificationsRenderer
+from ...renderers.renderer import NotificationsRenderer
+from ...repository.templates_repository import NotificationsTemplatesRepository
+from ...services.templates_service import NotificationsTemplatesService
+from ...variables import models  # noqa: F401
 
 
 def get_application(request: Request) -> FastAPI:
@@ -31,12 +34,30 @@ def get_postgres_liveness(
     return _get_db_liveness(app)
 
 
-def get_notifications_templates_renderer() -> NotificationsRenderer:
-    return JinjaNotificationsRenderer()
+def get_jinja_env() -> Environment:
+    return create_render_environment_from_notifications_library()
 
 
-def get_notifications_templates_repository() -> NotificationsTemplatesRepository:
-    return FilesystemNotificationsTemplatesRepository()
+def get_notifications_content_cls_registry() -> dict[str, type[NotificationContent]]:
+    return {
+        "email": EmailNotificationContent,
+        "sms": SMSNotificationContent,
+    }
+
+
+def get_notifications_templates_repository(
+    env: Annotated[Environment, Depends(get_jinja_env)],
+) -> NotificationsTemplatesRepository:
+    return NotificationsTemplatesRepository(env)
+
+
+def get_notifications_templates_renderer(
+    repository: Annotated[NotificationsTemplatesRepository, Depends(get_notifications_templates_repository)],
+    content_cls_registry: Annotated[
+        dict[str, type[NotificationContent]], Depends(get_notifications_content_cls_registry)
+    ],
+) -> NotificationsRenderer:
+    return JinjaNotificationsRenderer(content_cls_registry, repository)
 
 
 def get_notifications_templates_service(
