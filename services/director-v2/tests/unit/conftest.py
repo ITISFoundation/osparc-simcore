@@ -133,7 +133,7 @@ def scheduler_data_from_http_request(
         request_simcore_user_agent=request_simcore_user_agent,
         can_save=can_save,
         run_id=service_run_id,
-        requires_data_mounting=False,
+        requires_data_mounting=True,
     )
 
 

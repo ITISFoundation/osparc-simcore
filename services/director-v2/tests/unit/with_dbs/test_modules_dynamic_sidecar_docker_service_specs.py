@@ -85,6 +85,7 @@ def mock_env(
             ),
             "REGISTRY_AUTH": "false",
             "REGISTRY_PW": "test",
+            "DY_SIDECAR_REQUIRES_DATA_MOUNTING": "True",
             "REGISTRY_SSL": "false",
             "REGISTRY_URL": "foo.bar.com",
             "REGISTRY_USER": "test",
@@ -189,6 +190,7 @@ def expected_dynamic_sidecar_spec(
                     "proxy_service_name": "dy-proxy_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
                     "request_dns": "test-endpoint",
                     "request_scheme": "http",
+                    "requires_data_mounting": True,
                     "request_simcore_user_agent": request_simcore_user_agent,
                     "restart_policy": "on-inputs-downloaded",
                     "wallet_info": WalletInfo.model_json_schema()["examples"][0],
@@ -232,7 +234,7 @@ def expected_dynamic_sidecar_spec(
                     "DY_SIDECAR_PATH_INPUTS": "/tmp/inputs",  # noqa: S108
                     "DY_SIDECAR_PATH_OUTPUTS": "/tmp/outputs",  # noqa: S108
                     "DY_SIDECAR_PROJECT_ID": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
-                    "DY_SIDECAR_REQUIRES_DATA_MOUNTING": "False",
+                    "DY_SIDECAR_REQUIRES_DATA_MOUNTING": "True",
                     "DY_SIDECAR_STATE_EXCLUDE": json_dumps(
                         ["/tmp/strip_me/*"]  # noqa: S108
                     ),
@@ -387,6 +389,21 @@ def expected_dynamic_sidecar_spec(
                                 "study_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
                                 "run_id": service_run_id,
                                 "source": f"dyv_{service_run_id}_75c7f3f4-18f9-4678-8610-54a2ade78eaa_2_evas_pmt_",
+                                "swarm_stack_name": "test_swarm_name",
+                                "user_id": "234",
+                            },
+                        },
+                    },
+                    {
+                        "Target": "/dy-volumes/vfs-cache",
+                        "Source": f"dyv_{service_run_id}_75c7f3f4-18f9-4678-8610-54a2ade78eaa_ehcac-sfv_",
+                        "Type": "volume",
+                        "VolumeOptions": {
+                            "Labels": {
+                                "node_uuid": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
+                                "study_id": "dd1d04d9-d704-4f7e-8f0f-1ca60cc771fe",
+                                "run_id": service_run_id,
+                                "source": f"dyv_{service_run_id}_75c7f3f4-18f9-4678-8610-54a2ade78eaa_ehcac-sfv_",
                                 "swarm_stack_name": "test_swarm_name",
                                 "user_id": "234",
                             },
