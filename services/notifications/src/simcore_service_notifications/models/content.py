@@ -3,7 +3,7 @@ from dataclasses import dataclass
 
 
 class NotificationContent(ABC):  # noqa: B024
-    """Marker base class"""
+    """Base class for notification content models"""
 
 
 @dataclass(frozen=True)

@@ -9,6 +9,7 @@ from servicelib.rabbitmq import RabbitMQRPCClient
 
 from ...clients.postgres import PostgresLiveness
 from ...clients.postgres import get_postgres_liveness as _get_db_liveness
+from ...models.channel import ChannelType
 from ...models.content import EmailNotificationContent, NotificationContent, SMSNotificationContent
 from ...renderers.jinja_renderer import JinjaNotificationsRenderer
 from ...renderers.renderer import NotificationsRenderer
@@ -40,8 +41,8 @@ def get_jinja_env() -> Environment:
 
 def get_notifications_content_cls_registry() -> dict[str, type[NotificationContent]]:
     return {
-        "email": EmailNotificationContent,
-        "sms": SMSNotificationContent,
+        ChannelType.email: EmailNotificationContent,
+        ChannelType.sms: SMSNotificationContent,
     }
 
 

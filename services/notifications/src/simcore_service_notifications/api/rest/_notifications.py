@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends
 from models_library.api_schemas_notifications.preview import NotificationPreviewGet
 from models_library.api_schemas_notifications.template import NotificationTemplateGet
 
+from ...models.channel import ChannelType
 from ...models.template import TemplateRef
 from ...services.templates_service import NotificationsTemplatesService
 from .dependencies import get_notifications_templates_service
@@ -14,7 +15,7 @@ router = APIRouter(prefix="/notifications")
 
 @router.get("/{channel}/templates")
 def list_templates(
-    channel: str,
+    channel: ChannelType,
     service: Annotated[NotificationsTemplatesService, Depends(get_notifications_templates_service)],
 ) -> list[NotificationTemplateGet]:
     templates = service.list_templates(channel)
@@ -30,7 +31,7 @@ def list_templates(
 
 @router.post("/{channel}/templates/{template_name}:preview")
 def preview_notification(
-    channel: str,
+    channel: ChannelType,
     template_name: str,
     variables: dict[str, Any],  # NOTE: validated against the template's variables model
     service: Annotated[NotificationsTemplatesService, Depends(get_notifications_templates_service)],
