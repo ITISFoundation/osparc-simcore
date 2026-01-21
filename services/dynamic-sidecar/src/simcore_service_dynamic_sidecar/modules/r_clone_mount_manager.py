@@ -157,9 +157,10 @@ class DynamicSidecarRCloneMountDelegate(DelegateInterface):
                     return
                 raise
 
-            # If it exists, try to stop it cleanly.
             with suppress(DockerError):
-                await container.stop()  # sends SIGTERM then SIGKILL after timeout.[web:12]
+                # if it exists, try to stop it cleanly.
+                # sends SIGTERM then SIGKILL after timeout
+                await container.stop()
 
             await container.delete(force=True)
 
