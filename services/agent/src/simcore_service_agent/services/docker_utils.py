@@ -122,7 +122,10 @@ async def remove_container_forcefully(docker: Docker, container_id: str, *, stop
     try:
         container = await docker.containers.get(container_id)
         if stop_beofer_removal:
-            with suppress(DockerError):
+            with (
+                suppress(DockerError),
+                log_context(_logger, logging.DEBUG, f"stopping container '{container_id}'", log_duration=True),
+            ):
                 await container.stop()
 
         await container.delete(force=True)
