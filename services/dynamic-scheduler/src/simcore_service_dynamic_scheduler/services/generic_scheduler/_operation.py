@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from datetime import timedelta
-from typing import Annotated, ClassVar, Final, TypeAlias, TypedDict
+from typing import Annotated, ClassVar, Final, TypedDict
 
 from fastapi import FastAPI
 from pydantic import Field, NonNegativeInt, TypeAdapter, validate_call
@@ -23,6 +23,7 @@ from ._models import (
 _DEFAULT_STEP_RETRIES: Final[NonNegativeInt] = 0
 _DEFAULT_STEP_TIMEOUT: Final[timedelta] = timedelta(seconds=5)
 _DEFAULT_WAIT_FOR_MANUAL_INTERVENTION: Final[bool] = False
+_DEFAULT_SLEEP_EXECUTE_REVERST: Final[timedelta] = timedelta(seconds=0)
 
 
 class BaseStep(ABC):
@@ -31,6 +32,13 @@ class BaseStep(ABC):
         return cls.__name__
 
     ### EXECUTE
+
+    @classmethod
+    def get_sleep_before_execute(cls) -> timedelta:
+        """
+        [optional] wait time before executing the step
+        """
+        return _DEFAULT_SLEEP_EXECUTE_REVERST
 
     @classmethod
     @abstractmethod
@@ -42,6 +50,13 @@ class BaseStep(ABC):
         NOTE: Ensure this is successful if:
             - `execute` is called multiple times and does not cause duplicate resources
         """
+
+    @classmethod
+    def get_sleep_after_execute(cls) -> timedelta:
+        """
+        [optional] wait time after executing the step
+        """
+        return _DEFAULT_SLEEP_EXECUTE_REVERST
 
     @classmethod
     def get_execute_requires_context_keys(cls) -> set[str]:
@@ -89,6 +104,13 @@ class BaseStep(ABC):
     ### REVERT
 
     @classmethod
+    def get_sleep_before_revert(cls) -> timedelta:
+        """
+        [optional] wait time before reverting the step
+        """
+        return _DEFAULT_SLEEP_EXECUTE_REVERST
+
+    @classmethod
     async def revert(
         cls, app: FastAPI, required_context: RequiredOperationContext
     ) -> ProvidedOperationContext | None:
@@ -102,6 +124,13 @@ class BaseStep(ABC):
         _ = required_context
         _ = app
         return {}
+
+    @classmethod
+    def get_sleep_after_revert(cls) -> timedelta:
+        """
+        [optional] wait time after reverting the step
+        """
+        return _DEFAULT_SLEEP_EXECUTE_REVERST
 
     @classmethod
     def get_revert_requires_context_keys(cls) -> set[str]:
@@ -140,16 +169,15 @@ class BaseStep(ABC):
         return _DEFAULT_STEP_TIMEOUT
 
 
-StepsSubGroup: TypeAlias = Annotated[tuple[type[BaseStep], ...], Field(min_length=1)]
+type StepsSubGroup = Annotated[tuple[type[BaseStep], ...], Field(min_length=1)]
 
 
 class BaseStepGroup(ABC):
-    def __init__(self, *, repeat_steps: bool, wait_before_repeat: timedelta) -> None:
+    def __init__(self, *, repeat_steps: bool) -> None:
         """
         if repeat_steps is True, the steps in this group will be repeated forever
         """
         self.repeat_steps = repeat_steps
-        self.wait_before_repeat = wait_before_repeat
 
     @abstractmethod
     def __len__(self) -> int:
@@ -169,21 +197,14 @@ class BaseStepGroup(ABC):
 
 
 _DEFAULT_REPEAT_STEPS: Final[bool] = False
-_DEFAULT_WAIT_BEFORE_REPEAT: Final[timedelta] = timedelta(seconds=5)
 
 
 class SingleStepGroup(BaseStepGroup):
     def __init__(
-        self,
-        step: type[BaseStep],
-        *,
-        repeat_steps: bool = _DEFAULT_REPEAT_STEPS,
-        wait_before_repeat: timedelta = _DEFAULT_WAIT_BEFORE_REPEAT,
+        self, step: type[BaseStep], *, repeat_steps: bool = _DEFAULT_REPEAT_STEPS
     ) -> None:
         self._step: type[BaseStep] = step
-        super().__init__(
-            repeat_steps=repeat_steps, wait_before_repeat=wait_before_repeat
-        )
+        super().__init__(repeat_steps=repeat_steps)
 
     def __len__(self) -> int:
         return 1
@@ -203,15 +224,10 @@ _MIN_PARALLEL_STEPS: Final[int] = 2
 
 class ParallelStepGroup(BaseStepGroup):
     def __init__(
-        self,
-        *steps: type[BaseStep],
-        repeat_steps: bool = _DEFAULT_REPEAT_STEPS,
-        wait_before_repeat: timedelta = _DEFAULT_WAIT_BEFORE_REPEAT,
+        self, *steps: type[BaseStep], repeat_steps: bool = _DEFAULT_REPEAT_STEPS
     ) -> None:
         self._steps: list[type[BaseStep]] = list(steps)
-        super().__init__(
-            repeat_steps=repeat_steps, wait_before_repeat=wait_before_repeat
-        )
+        super().__init__(repeat_steps=repeat_steps)
 
     def __len__(self) -> int:
         return len(self._steps)

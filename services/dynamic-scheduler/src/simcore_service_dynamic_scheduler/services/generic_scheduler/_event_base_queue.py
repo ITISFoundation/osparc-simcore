@@ -9,7 +9,7 @@ from faststream.exceptions import FastStreamException, RejectMessage
 from faststream.rabbit import RabbitExchange, RabbitQueue, RabbitRouter
 from faststream.rabbit.schemas.queue import QueueType, QuorumQueueArgs
 
-from ._models import OperationContext, OperationName, ScheduleId
+from ._models import OperationToStart, ScheduleId
 
 _logger = logging.getLogger(__name__)
 
@@ -61,8 +61,9 @@ def _stop_retry_for_unintended_errors(func):
 @dataclass
 class OperationToStartEvent:
     schedule_id: ScheduleId
-    operation_name: OperationName
-    initial_context: OperationContext
+    to_start: OperationToStart
+    on_execute_completed: OperationToStart | None = None
+    on_revert_completed: OperationToStart | None = None
 
 
 @dataclass

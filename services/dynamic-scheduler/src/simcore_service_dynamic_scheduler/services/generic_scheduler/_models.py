@@ -43,7 +43,7 @@ class OperationErrorType(StrAutoEnum):
 
 
 class EventType(StrAutoEnum):
-    ON_EXECUTEDD_COMPLETED = auto()
+    ON_EXECUTED_COMPLETED = auto()
     ON_REVERT_COMPLETED = auto()
 
 
