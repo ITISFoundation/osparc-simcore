@@ -30,14 +30,23 @@
         }
       }
     },
-    "/v0/templates/{template_name}:preview": {
+    "/v0/notifications/{channel}/templates/{template_name}:preview": {
       "post": {
         "tags": [
-          "templates"
+          "notifications"
         ],
-        "summary": "Preview Template",
-        "operationId": "preview_template_v0_templates__template_name__preview_post",
+        "summary": "Preview Notification",
+        "operationId": "preview_notification_v0_notifications__channel__templates__template_name__preview_post",
         "parameters": [
+          {
+            "name": "channel",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Channel"
+            }
+          },
           {
             "name": "template_name",
             "in": "path",
@@ -45,15 +54,6 @@
             "schema": {
               "type": "string",
               "title": "Template Name"
-            }
-          },
-          {
-            "name": "channel_name",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Channel Name"
             }
           }
         ],
@@ -74,7 +74,9 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationPreviewGet"
+                }
               }
             }
           },
@@ -94,6 +96,36 @@
   },
   "components": {
     "schemas": {
+      "EmailNotificationContentGet": {
+        "properties": {
+          "subject": {
+            "type": "string",
+            "title": "Subject"
+          },
+          "bodyHtml": {
+            "type": "string",
+            "title": "Bodyhtml"
+          },
+          "bodyText": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bodytext"
+          }
+        },
+        "type": "object",
+        "required": [
+          "subject",
+          "bodyHtml",
+          "bodyText"
+        ],
+        "title": "EmailNotificationContentGet"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -122,6 +154,41 @@
         "example": {
           "timestamp": "simcore_service_directorv2.api.routes.health@2023-07-03T12:59:12.024551+00:00"
         }
+      },
+      "NotificationContentGet": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/EmailNotificationContentGet"
+          },
+          {
+            "$ref": "#/components/schemas/SMSNotificationContentGet"
+          }
+        ]
+      },
+      "NotificationPreviewGet": {
+        "properties": {
+          "content": {
+            "$ref": "#/components/schemas/NotificationContentGet"
+          }
+        },
+        "type": "object",
+        "required": [
+          "content"
+        ],
+        "title": "NotificationPreviewGet"
+      },
+      "SMSNotificationContentGet": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "title": "Text"
+          }
+        },
+        "type": "object",
+        "required": [
+          "text"
+        ],
+        "title": "SMSNotificationContentGet"
       },
       "ValidationError": {
         "properties": {
