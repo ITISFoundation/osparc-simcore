@@ -4,7 +4,7 @@ from datetime import datetime
 from enum import Enum
 from functools import cached_property
 from pathlib import Path
-from typing import Annotated, Any
+from typing import Annotated, Any, TypeAlias
 from uuid import UUID
 
 import arrow
@@ -55,16 +55,16 @@ TEMPORARY_PORT_NUMBER = 65_534
 MAX_ALLOWED_SERVICE_NAME_LENGTH: int = 63
 
 
-DockerStatus = Status1
+DockerStatus: TypeAlias = Status1  # noqa: UP040
 
 
-type DockerId = Annotated[str, StringConstraints(max_length=25, pattern=r"[A-Za-z0-9]{25}")]
+DockerId: TypeAlias = Annotated[str, StringConstraints(max_length=25, pattern=r"[A-Za-z0-9]{25}")]  # noqa: UP040
 
-type ServiceId = DockerId
-type NetworkId = DockerId
+ServiceId: TypeAlias = DockerId  # noqa: UP040
+NetworkId: TypeAlias = DockerId  # noqa: UP040
 
 
-type ServiceName = Annotated[str, StringConstraints(min_length=2, strip_whitespace=True)]
+ServiceName: TypeAlias = Annotated[str, StringConstraints(min_length=2, strip_whitespace=True)]  # noqa: UP040
 
 
 logger = logging.getLogger()
