@@ -6,6 +6,8 @@ from simcore_service_notifications.variables.registry import get_variables_model
 
 from ..models.template import EmailNotificationTemplate, NotificationTemplate, TemplateRef
 
+_TEMPLATE_EXTENSION = ".j2"
+
 
 def template_path_prefix(template_ref: TemplateRef) -> str:
     return f"{template_ref.channel}.{template_ref.template_name}"
@@ -16,10 +18,10 @@ class NotificationsTemplatesRepository:
     env: Environment
 
     def _parse_template_path(self, template_path: str) -> tuple[str, str, str]:
-        if not template_path.endswith(".j2"):
+        if not template_path.endswith(_TEMPLATE_EXTENSION):
             raise ValueError(template_path)
 
-        base = template_path.removesuffix(".j2")
+        base = template_path.removesuffix(_TEMPLATE_EXTENSION)
         channel, template, part = base.split(".", maxsplit=2)
         return channel, template, part
 
@@ -29,7 +31,7 @@ class NotificationsTemplatesRepository:
         part: str,
     ) -> Template:
         # NOTE: centralized template naming convention
-        return self.env.get_template(f"{template_path_prefix(template.ref)}.{part}.j2")
+        return self.env.get_template(f"{template_path_prefix(template.ref)}.{part}{_TEMPLATE_EXTENSION}")
 
     def get_template(self, ref: TemplateRef) -> NotificationTemplate:
         return EmailNotificationTemplate(
@@ -37,15 +39,15 @@ class NotificationsTemplatesRepository:
             variables_model=get_variables_model(ref),
         )
 
-    def get_templates(self, channel: str) -> set[NotificationTemplate]:
+    def list_templates(self, channel: str) -> list[NotificationTemplate]:
         templates = set()
         prefix = f"{channel}."
         for template_name in self.env.list_templates():
-            if not template_name.startswith(prefix) or not template_name.endswith(".j2"):
+            if not template_name.startswith(prefix) or not template_name.endswith(_TEMPLATE_EXTENSION):
                 continue
 
             _, template, _ = self._parse_template_path(template_name)
             template_ref = TemplateRef(channel=channel, template_name=template)
             templates.add(self.get_template(template_ref))
 
-        return templates
+        return list(templates)

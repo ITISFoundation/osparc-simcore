@@ -17,10 +17,13 @@ def list_templates(
     channel: str,
     service: Annotated[NotificationsTemplatesService, Depends(get_notifications_templates_service)],
 ) -> list[NotificationTemplateGet]:
-    templates = service.get_templates(channel)
+    templates = service.list_templates(channel)
 
     return [
-        NotificationTemplateGet(**asdict(template), variables_schema=template.variables_model.model_json_schema())
+        NotificationTemplateGet(
+            **asdict(template),
+            variables_schema=template.variables_model.model_json_schema(),
+        )
         for template in templates
     ]
 

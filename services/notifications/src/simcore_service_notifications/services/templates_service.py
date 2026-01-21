@@ -12,8 +12,8 @@ class NotificationsTemplatesService:
     repository: NotificationsTemplatesRepository
     renderer: NotificationsRenderer
 
-    def get_templates(self, channel: str) -> set[NotificationTemplate]:
-        return self.repository.get_templates(channel)
+    def list_templates(self, channel: str) -> list[NotificationTemplate]:
+        return self.repository.list_templates(channel)
 
     def render_preview(self, template_ref: TemplateRef, variables: dict[str, Any]) -> NotificationPreview:
         template = self.repository.get_template(template_ref)
