@@ -1,4 +1,4 @@
-from models_library.api_schemas_webserver._base import OutputSchema
+from ..api_schemas_webserver._base import OutputSchema
 
 
 class EmailNotificationContentGet(OutputSchema):
