@@ -1,12 +1,13 @@
 from pydantic import BaseModel
 
 from ...exceptions.errors import VariablesModelNotFoundError
+from ...models.channel import ChannelType
 from ...models.template import TemplateRef
 
 VARIABLES_MODELS: dict[TemplateRef, type[BaseModel]] = {}
 
 
-def register_variables_model(channel: str, template_name: str):
+def register_variables_model(channel: ChannelType, template_name: str):
     def _(cls: type[BaseModel]):
         VARIABLES_MODELS[TemplateRef(channel, template_name)] = cls
         return cls
