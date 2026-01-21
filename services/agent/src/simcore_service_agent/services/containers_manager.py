@@ -49,7 +49,7 @@ class ContainersManager(SingletonInAppStateMixin):
         # avoids parallel requests to docker engine
         for container in orphan_containers:
             await remove_container_forcefully(
-                self.docker, container, stop_beofer_removal=container.startswith(r_clone_prefix)
+                self.docker, container, stop_before_removal=container.startswith(r_clone_prefix)
             )
 
     async def shutdown(self) -> None:
