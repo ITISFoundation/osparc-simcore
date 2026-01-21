@@ -3,6 +3,8 @@ from dataclasses import dataclass
 
 from pydantic import BaseModel
 
+from ..models.channel import ChannelType
+
 
 @dataclass(frozen=True)
 class TemplateRef:
@@ -10,7 +12,7 @@ class TemplateRef:
     Identifies a template uniquely in the system.
     """
 
-    channel: str
+    channel: ChannelType
     template_name: str
 
 

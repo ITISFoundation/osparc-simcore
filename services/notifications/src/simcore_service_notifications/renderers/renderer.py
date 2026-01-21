@@ -2,9 +2,9 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any
 
-from ..models.content import NotificationContent
 from ..models.preview import NotificationPreview
 from ..models.template import NotificationTemplate
+from ..template.content.models import NotificationContent
 
 
 @dataclass(frozen=True)

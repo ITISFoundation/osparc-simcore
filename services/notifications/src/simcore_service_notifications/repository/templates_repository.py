@@ -1,12 +1,15 @@
+import logging
 from dataclasses import dataclass
 
 from jinja2 import Environment, Template
 
-from simcore_service_notifications.variables.registry import get_variables_model
-
+from ..models.channel import ChannelType
 from ..models.template import EmailNotificationTemplate, NotificationTemplate, TemplateRef
+from ..template.variables.registry import get_variables_model
 
 _TEMPLATE_EXTENSION = ".j2"
+
+_logger = logging.getLogger(__name__)
 
 
 def template_path_prefix(template_ref: TemplateRef) -> str:
@@ -39,9 +42,10 @@ class NotificationsTemplatesRepository:
             variables_model=get_variables_model(ref),
         )
 
-    def list_templates(self, channel: str) -> list[NotificationTemplate]:
+    def list_templates(self, channel: ChannelType) -> list[NotificationTemplate]:
         templates = set()
         prefix = f"{channel}."
+        _logger.error(prefix)
         for template_name in self.env.list_templates():
             if not template_name.startswith(prefix) or not template_name.endswith(_TEMPLATE_EXTENSION):
                 continue

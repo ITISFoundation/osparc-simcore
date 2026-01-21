@@ -4,6 +4,7 @@ from typing import Any
 from ..models.preview import NotificationPreview
 from ..models.template import NotificationTemplate
 from ..repository.templates_repository import NotificationsTemplatesRepository
+from ..template.content.registry import get_content_cls
 from .renderer import NotificationsRenderer
 
 
@@ -23,5 +24,6 @@ class JinjaNotificationsRenderer(NotificationsRenderer):
             content[render_part] = jinja_template.render(variables)
 
         return NotificationPreview(
-            template_ref=template.ref, content=self.content_cls_registry[template.ref.channel](**content)
+            template_ref=template.ref,
+            content=get_content_cls(template.ref.channel)(**content),
         )
