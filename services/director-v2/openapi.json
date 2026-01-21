@@ -3155,7 +3155,13 @@
                 "type": "null"
               }
             ],
-            "description": "contains harware information so we know on which hardware to run the service"
+            "description": "contains hardware information so we know on which hardware to run the service"
+          },
+          "requires_data_mounting": {
+            "type": "boolean",
+            "title": "Requires Data Mounting",
+            "description": "indicates whether data mounting is required for this service",
+            "default": false
           },
           "product_name": {
             "anyOf": [
