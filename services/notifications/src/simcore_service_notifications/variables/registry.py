@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-from ..models.exceptions import VariablesModelNotFoundError
+from ..exceptions.errors import VariablesModelNotFoundError
 from ..models.template import TemplateRef
 
 VARIABLES_MODELS: dict[TemplateRef, type[BaseModel]] = {}
