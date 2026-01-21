@@ -7,6 +7,7 @@ from math import floor
 from common_library.error_codes import create_error_code
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from fastapi import FastAPI
+from opentelemetry.trace import Tracer
 
 from .....core.dynamic_services_settings.scheduler import (
     DynamicServicesSchedulerSettings,
@@ -31,6 +32,7 @@ logger = logging.getLogger(__name__)
 async def _apply_observation_cycle(
     scheduler: "DynamicSidecarsScheduler",  # type: ignore  # noqa: F821
     scheduler_data: SchedulerData,
+    tracer: Tracer | None = None,
 ) -> None:
     """
     fetches status for service and then processes all the registered events
@@ -64,8 +66,11 @@ async def _apply_observation_cycle(
         if await dynamic_scheduler_event.will_trigger(
             app=app, scheduler_data=scheduler_data
         ):
-            # event.action will apply changes to the output_scheduler_data
-            await dynamic_scheduler_event.action(app, scheduler_data)
+            with tracer.start_as_current_span(
+                f"dy-scheduler.{scheduler_data.service_name}.action.{dynamic_scheduler_event.__name__}",
+            ):
+                # event.action will apply changes to the output_scheduler_data
+                await dynamic_scheduler_event.action(app, scheduler_data)
 
     # check if the status of the services has changed from OK
     if initial_status != scheduler_data.dynamic_sidecar.status:
@@ -87,6 +92,7 @@ async def observing_single_service(
     service_name: ServiceName,
     scheduler_data: SchedulerData,
     dynamic_scheduler: DynamicServicesSchedulerSettings,
+    tracer: Tracer | None = None,
 ) -> None:
     app: FastAPI = scheduler.app
 
@@ -135,7 +141,7 @@ async def observing_single_service(
 
     scheduler_data_copy: SchedulerData = deepcopy(scheduler_data)
     try:
-        await _apply_observation_cycle(scheduler, scheduler_data)
+        await _apply_observation_cycle(scheduler, scheduler_data, tracer)
         logger.debug("completed observation cycle of %s", f"{service_name=}")
     except Exception as exc:  # pylint: disable=broad-except
         service_name = scheduler_data.service_name
