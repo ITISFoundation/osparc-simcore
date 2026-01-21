@@ -32,7 +32,7 @@ def list_templates(
 def preview_notification(
     channel: str,
     template_name: str,
-    variables: dict[str, Any],
+    variables: dict[str, Any],  # NOTE: validated against the template's variables model
     service: Annotated[NotificationsTemplatesService, Depends(get_notifications_templates_service)],
 ) -> NotificationPreviewGet:
     template_ref = TemplateRef(channel=channel, template_name=template_name)
