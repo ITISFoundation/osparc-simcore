@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from ..models.preview import NotificationPreview
-from ..models.template import TemplateRef
+from ..models.template import NotificationTemplate, TemplateRef
 from ..renderers.renderer import NotificationsRenderer
 from ..repository import NotificationsTemplatesRepository
 
@@ -11,6 +11,9 @@ from ..repository import NotificationsTemplatesRepository
 class NotificationsTemplatesService:
     repository: NotificationsTemplatesRepository
     renderer: NotificationsRenderer
+
+    def get_templates(self, channel: str) -> set[NotificationTemplate]:
+        return self.repository.get_templates(channel)
 
     def render_preview(self, template_ref: TemplateRef, variables: dict[str, Any]) -> NotificationPreview:
         template = self.repository.get_template(template_ref)

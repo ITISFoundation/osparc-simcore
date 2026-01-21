@@ -36,3 +36,16 @@ class NotificationsTemplatesRepository:
             ref=ref,
             variables_model=get_variables_model(ref),
         )
+
+    def get_templates(self, channel: str) -> set[NotificationTemplate]:
+        templates = set()
+        prefix = f"{channel}."
+        for template_name in self.env.list_templates():
+            if not template_name.startswith(prefix) or not template_name.endswith(".j2"):
+                continue
+
+            _, template, _ = self._parse_template_path(template_name)
+            template_ref = TemplateRef(channel=channel, template_name=template)
+            templates.add(self.get_template(template_ref))
+
+        return templates
