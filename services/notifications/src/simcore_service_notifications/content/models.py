@@ -7,7 +7,7 @@ from .registry import register_content
 
 @dataclass(frozen=True)
 @register_content(ChannelType.email)
-class EmailContent(NotificationContent):
+class EmailNotificationContent(NotificationContent):
     subject: str
     body_html: str
     body_text: str | None = None
@@ -15,5 +15,5 @@ class EmailContent(NotificationContent):
 
 @dataclass(frozen=True)
 # NOTE: SMS content model is kept for future use
-class SMSContent(NotificationContent):
+class SMSNotificationContent(NotificationContent):
     text: str
