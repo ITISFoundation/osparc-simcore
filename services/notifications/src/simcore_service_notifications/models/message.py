@@ -1,12 +1,10 @@
-from collections.abc import Sequence
 from dataclasses import dataclass
+from typing import ClassVar
 
-from .content import NotificationContent
-from .template import TemplateRef
+from .channel import ChannelType
 
 
 @dataclass(frozen=True)
-class NotificationMessage[C: NotificationContent]:
-    template: TemplateRef
-    recipients: Sequence[str]  # GCR: define recipient model
+class NotificationMessage[C]:
+    channel: ClassVar[ChannelType]
     content: C

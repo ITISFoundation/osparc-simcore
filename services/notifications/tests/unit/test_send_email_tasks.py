@@ -17,7 +17,7 @@ from pydantic import HttpUrl
 from servicelib.celery.models import ExecutionMetadata, OwnerMetadata, TaskState
 from servicelib.celery.task_manager import TaskManager
 from simcore_service_notifications.api._worker_tasks.tasks import (
-    send_email_notification,
+    send_email,
 )
 from tenacity import (
     AsyncRetrying,
@@ -56,7 +56,7 @@ async def test_account_requested(
     user_email = faker.email()
     task_uuid = await task_manager.submit_task(
         ExecutionMetadata(
-            name=send_email_notification.__name__,
+            name=send_email.__name__,
         ),
         owner_metadata=owner_metadata,
         notification=NotificationRequest(
@@ -116,7 +116,7 @@ async def test_account_approved(
     user_email = faker.email()
     task_uuid = await task_manager.submit_task(
         ExecutionMetadata(
-            name=send_email_notification.__name__,
+            name=send_email.__name__,
         ),
         owner_metadata=owner_metadata,
         notification=NotificationRequest(
@@ -175,7 +175,7 @@ async def test_account_rejected(
     user_email = faker.email()
     task_uuid = await task_manager.submit_task(
         ExecutionMetadata(
-            name=send_email_notification.__name__,
+            name=send_email.__name__,
         ),
         owner_metadata=owner_metadata,
         notification=NotificationRequest(

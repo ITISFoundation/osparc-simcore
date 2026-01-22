@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Any
 
-from ..content.registry import get_content_cls
+from ..channels.content_registry import get_content_cls
 from ..models.preview import NotificationPreview
 from ..models.template import NotificationTemplate
 from ..repository.templates_repository import NotificationsTemplatesRepository

@@ -1,10 +1,9 @@
 from dataclasses import dataclass
 
-from .content import NotificationContent
 from .template import TemplateRef
 
 
 @dataclass(frozen=True)
-class NotificationPreview[C: NotificationContent]:
+class NotificationPreview[C]:
     template_ref: TemplateRef
     content: C

@@ -4,10 +4,10 @@ from dataclasses import dataclass, fields
 
 from jinja2 import Environment, Template
 
-from ..content.registry import get_content_cls
+from ..channels.content_registry import get_content_cls
 from ..models.channel import ChannelType
 from ..models.template import NotificationTemplate, TemplateRef
-from ..variables.registry import get_variables_model
+from ..templates.registry import get_variables_model
 
 _TEMPLATE_EXTENSION = ".j2"
 
