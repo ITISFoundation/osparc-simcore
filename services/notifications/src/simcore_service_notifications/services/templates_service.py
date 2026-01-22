@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 from typing import Any
 
-from simcore_service_notifications.models.channel import ChannelType
-
+from ..exceptions.errors import TemplateNotFoundError
+from ..models.channel import ChannelType
 from ..models.preview import NotificationPreview
 from ..models.template import NotificationTemplate, TemplateRef
 from ..renderers.renderer import NotificationsRenderer
@@ -15,10 +15,18 @@ class NotificationsTemplatesService:
     renderer: NotificationsRenderer
 
     def list_templates(self, channel: ChannelType) -> list[NotificationTemplate]:
-        return self.repository.list_templates(channel)
+        return self.repository.search_templates(channel=channel)
 
     def render_preview(self, template_ref: TemplateRef, variables: dict[str, Any]) -> NotificationPreview:
-        template = self.repository.get_template(template_ref)
+        templates = self.repository.search_templates(
+            channel=template_ref.channel,
+            template_name=template_ref.template_name,
+        )
+
+        if not templates:
+            raise TemplateNotFoundError(template_ref=template_ref)
+
+        template = templates[0]
 
         # validates incoming variables against the template's variables model
         validated_variables = template.variables_model.model_validate(variables)

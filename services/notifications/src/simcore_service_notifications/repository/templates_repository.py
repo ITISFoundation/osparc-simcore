@@ -1,3 +1,4 @@
+import fnmatch
 import logging
 from dataclasses import dataclass, fields
 
@@ -11,6 +12,33 @@ from ..variables.registry import get_variables_model
 _TEMPLATE_EXTENSION = ".j2"
 
 _logger = logging.getLogger(__name__)
+
+
+def _build_template(ref: TemplateRef) -> NotificationTemplate:
+    return NotificationTemplate(
+        ref=ref,
+        variables_model=get_variables_model(ref),
+        parts=tuple(f.name for f in fields(get_content_cls(ref.channel))),  # type: ignore[arg-type]
+    )
+
+
+def _matches_pattern(value: str, pattern: str) -> bool:
+    """Check if value matches pattern with wildcard support."""
+    if pattern == "*":
+        return True
+    if "*" not in pattern:
+        return value == pattern
+
+    # Optimize common wildcard patterns
+    if pattern.startswith("*") and pattern.endswith("*"):
+        return pattern[1:-1] in value
+    if pattern.startswith("*"):
+        return value.endswith(pattern[1:])
+    if pattern.endswith("*"):
+        return value.startswith(pattern[:-1])
+
+    # Use fnmatch for complex patterns
+    return fnmatch.fnmatch(value, pattern)
 
 
 def template_path_prefix(template_ref: TemplateRef) -> str:
@@ -38,23 +66,55 @@ class NotificationsTemplatesRepository:
         # NOTE: centralized template naming convention
         return self.env.get_template(f"{template_path_prefix(template.ref)}.{part}{_TEMPLATE_EXTENSION}")
 
-    @staticmethod
-    def get_template(ref: TemplateRef) -> NotificationTemplate:
-        return NotificationTemplate(
-            ref=ref,
-            variables_model=get_variables_model(ref),
-            parts=tuple(f.name for f in fields(get_content_cls(ref.channel))),  # type: ignore[arg-type]
-        )
+    def search_templates(
+        self,
+        *,
+        channel: str = "*",
+        template_name: str = "*",
+        part: str = "*",
+    ) -> list[NotificationTemplate]:
+        """Search for notification templates with wildcard support.
 
-    def list_templates(self, channel: ChannelType) -> list[NotificationTemplate]:
-        templates = set()
-        prefix = f"{channel}."
-        for template_name in self.env.list_templates():
-            if not template_name.startswith(prefix) or not template_name.endswith(_TEMPLATE_EXTENSION):
-                continue
+        Template path format: {channel}.{template_name}.{part}.j2
 
-            _, template, _ = self._parse_template_path(template_name)
-            template_ref = TemplateRef(channel=channel, template_name=template)
-            templates.add(self.get_template(template_ref))
+        Args:
+            channel: Channel filter. Use "*" (default) to match any channel.
+            template_name: Template name filter. Use "*" (default) to match any template name.
+            part: Part filter. Use "*" (default) to match any part.
 
-        return list(templates)
+        Returns:
+            List of matching NotificationTemplate objects.
+
+        Examples:
+            search_templates("email", "*", "*")  # All email templates
+            search_templates("*", "welcome", "*")  # All welcome templates across channels
+            search_templates("email", "user_*", "subject")  # Email templates starting with user_, subject part only
+        """
+
+        def filter_func(template_path: str) -> bool:
+            if not template_path.endswith(_TEMPLATE_EXTENSION):
+                return False
+
+            try:
+                channel_str, template_name_str, part_str = self._parse_template_path(template_path)
+            except ValueError:
+                return False
+
+            return (
+                _matches_pattern(channel_str, channel)
+                and _matches_pattern(template_name_str, template_name)
+                and _matches_pattern(part_str, part)
+            )
+
+        # Use dict to deduplicate by (channel, template_name), keeping arbitrary part
+        templates_dict: dict[tuple[str, str], NotificationTemplate] = {}
+
+        for template_path in self.env.list_templates(filter_func=filter_func):
+            channel_str, template_name_str, _ = self._parse_template_path(template_path)
+            key = (channel_str, template_name_str)
+
+            if key not in templates_dict:
+                template_ref = TemplateRef(channel=ChannelType(channel_str), template_name=template_name_str)
+                templates_dict[key] = _build_template(template_ref)
+
+        return list(templates_dict.values())
