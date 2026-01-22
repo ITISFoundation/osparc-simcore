@@ -2,7 +2,6 @@ from dataclasses import dataclass
 from typing import Any
 
 from ..exceptions.errors import TemplateNotFoundError
-from ..models.channel import ChannelType
 from ..models.preview import NotificationPreview
 from ..models.template import NotificationTemplate, TemplateRef
 from ..renderers.renderer import NotificationsRenderer
@@ -14,8 +13,8 @@ class NotificationsTemplatesService:
     repository: NotificationsTemplatesRepository
     renderer: NotificationsRenderer
 
-    def list_templates(self, channel: ChannelType) -> list[NotificationTemplate]:
-        return self.repository.search_templates(channel=channel)
+    def search_templates(self, channel: str | None, template_name: str | None) -> list[NotificationTemplate]:
+        return self.repository.search_templates(channel=channel, template_name=template_name)
 
     def render_preview(self, template_ref: TemplateRef, variables: dict[str, Any]) -> NotificationPreview:
         templates = self.repository.search_templates(

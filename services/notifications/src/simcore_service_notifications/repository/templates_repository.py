@@ -69,9 +69,9 @@ class NotificationsTemplatesRepository:
     def search_templates(
         self,
         *,
-        channel: str = "*",
-        template_name: str = "*",
-        part: str = "*",
+        channel: str | None = None,
+        template_name: str | None = None,
+        part: str | None = None,
     ) -> list[NotificationTemplate]:
         """Search for notification templates with wildcard support.
 
@@ -101,9 +101,9 @@ class NotificationsTemplatesRepository:
                 return False
 
             return (
-                _matches_pattern(channel_str, channel)
-                and _matches_pattern(template_name_str, template_name)
-                and _matches_pattern(part_str, part)
+                _matches_pattern(channel_str, channel or "*")
+                and _matches_pattern(template_name_str, template_name or "*")
+                and _matches_pattern(part_str, part or "*")
             )
 
         # Use dict to deduplicate by (channel, template_name), keeping arbitrary part
