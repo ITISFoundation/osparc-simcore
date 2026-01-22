@@ -27,13 +27,10 @@ from models_library.docker import DockerLabelKey
 from models_library.generated_models.docker_rest_api import Node
 from models_library.rabbitmq_messages import ProgressType
 from servicelib.logging_utils import log_catch, log_context
-from servicelib.utils import limited_gather
 from servicelib.utils_formatting import timedelta_as_minute_second
 from types_aiobotocore_ec2.literals import InstanceTypeType
 
 from ...constants import (
-    DOCKER_JOIN_COMMAND_EC2_TAG_KEY,
-    DOCKER_JOIN_COMMAND_NAME,
     DOCKER_PULL_COMMAND,
     MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY,
     MACHINE_PULLING_EC2_TAG_KEY,
@@ -76,7 +73,6 @@ from ...utils.rabbitmq import (
 from ...utils.warm_buffer_machines import (
     get_activated_warm_buffer_ec2_tags,
     get_deactivated_warm_buffer_ec2_tags,
-    is_warm_buffer_machine,
 )
 from ..docker import get_docker_client
 from ..ec2 import get_ec2_client
@@ -243,66 +239,6 @@ async def _terminate_broken_ec2s(app: FastAPI, cluster: Cluster) -> Cluster:
         broken_ec2s=[],
         terminated_instances=cluster.terminated_instances + cluster.broken_ec2s,
     )
-
-
-async def _make_pending_warm_buffer_ec2s_join_cluster(
-    app: FastAPI,
-    cluster: Cluster,
-) -> Cluster:
-    ec2_client = get_ec2_client(app)
-    if buffer_ec2s_pending := [
-        i.ec2_instance
-        for i in cluster.pending_ec2s
-        if is_warm_buffer_machine(i.ec2_instance.tags) and (DOCKER_JOIN_COMMAND_EC2_TAG_KEY not in i.ec2_instance.tags)
-    ]:
-        # started buffer instance shall be asked to join the cluster once they are running
-        app_settings = get_application_settings(app)
-        ssm_client = get_ssm_client(app)
-
-        buffer_ec2_connection_state = await limited_gather(
-            *[ssm_client.is_instance_connected_to_ssm_server(i.id) for i in buffer_ec2s_pending],
-            reraise=False,
-            log=_logger,
-            limit=20,
-        )
-        buffer_ec2_connected_to_ssm_server = [
-            i for i, c in zip(buffer_ec2s_pending, buffer_ec2_connection_state, strict=True) if c is True
-        ]
-        buffer_ec2_ready_for_command = buffer_ec2_connected_to_ssm_server
-        if app_settings.AUTOSCALING_WAIT_FOR_CLOUD_INIT_BEFORE_WARM_BUFFER_ACTIVATION:
-            buffer_ec2_initialized = await limited_gather(
-                *[
-                    ssm_client.wait_for_has_instance_completed_cloud_init(i.id)
-                    for i in buffer_ec2_connected_to_ssm_server
-                ],
-                reraise=False,
-                log=_logger,
-                limit=20,
-            )
-            buffer_ec2_ready_for_command = [
-                i
-                for i, r in zip(
-                    buffer_ec2_connected_to_ssm_server,
-                    buffer_ec2_initialized,
-                    strict=True,
-                )
-                if r is True
-            ]
-        if buffer_ec2_ready_for_command:
-            ssm_command = await ssm_client.send_command(
-                [i.id for i in buffer_ec2_ready_for_command],
-                command=await utils_docker.get_docker_swarm_join_bash_command(
-                    join_as_drained=app_settings.AUTOSCALING_DOCKER_JOIN_DRAINED
-                ),
-                command_name=DOCKER_JOIN_COMMAND_NAME,
-            )
-            await ec2_client.set_instances_tags(
-                buffer_ec2_ready_for_command,
-                tags={
-                    DOCKER_JOIN_COMMAND_EC2_TAG_KEY: ssm_command.command_id,
-                },
-            )
-    return cluster
 
 
 async def _try_attach_pending_ec2s(
@@ -567,13 +503,20 @@ async def _try_start_warm_buffer_instances(
     if not instances_to_start:
         return cluster, []
 
+    # generate docker swarm join script for warm buffer activation
+    swarm_join_command = await utils_docker.get_docker_swarm_join_bash_command(
+        join_as_drained=app_settings.AUTOSCALING_DOCKER_JOIN_DRAINED
+    )
+
     with log_context(
         _logger,
         logging.INFO,
         f"start {len(instances_to_start)} warm buffer machines '{[i.id for i in instances_to_start]}'",
     ):
         try:
-            started_instances = await get_ec2_client(app).start_instances(instances_to_start)
+            started_instances = await get_ec2_client(app).start_instances(
+                instances_to_start, user_data=swarm_join_command
+            )
         except EC2InsufficientCapacityError:
             # NOTE: this warning is only raised if none of the instances could be started due to InsufficientCapacity
             _logger.warning(
@@ -1540,7 +1483,6 @@ async def auto_scale_cluster(*, app: FastAPI, auto_scaling_mode: AutoscalingProv
     # cleanup
     cluster = await _cleanup_disconnected_nodes(app, cluster)
     cluster = await _terminate_broken_ec2s(app, cluster)
-    cluster = await _make_pending_warm_buffer_ec2s_join_cluster(app, cluster)
     cluster = await _try_attach_pending_ec2s(app, cluster, auto_scaling_mode, allowed_instance_types)
     cluster = await _drain_retired_nodes(app, cluster)
 

@@ -14,11 +14,11 @@ if TYPE_CHECKING:
     from ._client import SimcoreEC2API
 
 
-def compose_user_data(docker_join_bash_command: str) -> str:
+def compose_user_data(startup_script: str) -> str:
     return dedent(
         f"""\
 #!/bin/bash
-{docker_join_bash_command}
+{startup_script}
 """
     )
 
@@ -33,9 +33,7 @@ async def ec2_instance_data_from_aws_instance(
     assert "InstanceType" in instance  # nosec
     assert "State" in instance  # nosec
     assert "Name" in instance["State"]  # nosec
-    ec2_instance_types = await ec2_client.get_ec2_instance_capabilities(
-        {instance["InstanceType"]}
-    )
+    ec2_instance_types = await ec2_client.get_ec2_instance_capabilities({instance["InstanceType"]})
     assert len(ec2_instance_types) == 1  # nosec
     assert "Tags" in instance  # nosec
     return EC2InstanceData(
@@ -57,19 +55,12 @@ async def check_max_number_of_instances_not_exceeded(
     required_number_instances: int,
     max_total_number_of_instances: int,
 ) -> None:
-    current_instances = await ec2_client.get_instances(
-        key_names=[instance_config.key_name], tags=instance_config.tags
-    )
-    if (
-        len(current_instances) + required_number_instances
-        > max_total_number_of_instances
-    ):
+    current_instances = await ec2_client.get_instances(key_names=[instance_config.key_name], tags=instance_config.tags)
+    if len(current_instances) + required_number_instances > max_total_number_of_instances:
         raise EC2TooManyInstancesError(num_instances=max_total_number_of_instances)
 
 
-async def get_subnet_capacity(
-    aioboto_ec2_client: EC2Client, *, subnet_ids: list[str]
-) -> dict[str, int]:
+async def get_subnet_capacity(aioboto_ec2_client: EC2Client, *, subnet_ids: list[str]) -> dict[str, int]:
     subnets = await aioboto_ec2_client.describe_subnets(SubnetIds=subnet_ids)
     assert "Subnets" in subnets  # nosec
     subnet_id_to_subnet_map: dict[str, SubnetTypeDef] = {
@@ -79,17 +70,13 @@ async def get_subnet_capacity(
     # preserve the order of instance_config.subnet_ids
 
     subnet_id_to_available_ips: dict[str, int] = {
-        subnet_id: subnet_id_to_subnet_map[subnet_id][
-            "AvailableIpAddressCount"
-        ]  # pyright: ignore[reportTypedDictNotRequiredAccess]
+        subnet_id: subnet_id_to_subnet_map[subnet_id]["AvailableIpAddressCount"]  # pyright: ignore[reportTypedDictNotRequiredAccess]
         for subnet_id in subnet_ids
     }
     return subnet_id_to_available_ips
 
 
-async def get_subnet_azs(
-    aioboto_ec2_client: EC2Client, *, subnet_ids: list[str]
-) -> list[str]:
+async def get_subnet_azs(aioboto_ec2_client: EC2Client, *, subnet_ids: list[str]) -> list[str]:
     subnets = await aioboto_ec2_client.describe_subnets(SubnetIds=subnet_ids)
     assert "Subnets" in subnets  # nosec
     subnet_id_to_subnet_map: dict[str, SubnetTypeDef] = {
@@ -99,9 +86,7 @@ async def get_subnet_azs(
     # preserve the order of instance_config.subnet_ids
 
     subnet_azs: list[str] = [
-        subnet_id_to_subnet_map[subnet_id][
-            "AvailabilityZone"
-        ]  # pyright: ignore[reportTypedDictNotRequiredAccess]
+        subnet_id_to_subnet_map[subnet_id]["AvailabilityZone"]  # pyright: ignore[reportTypedDictNotRequiredAccess]
         for subnet_id in subnet_ids
     ]
     return subnet_azs
