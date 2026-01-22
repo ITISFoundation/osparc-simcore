@@ -1,7 +1,7 @@
 from collections.abc import Sequence
 from dataclasses import dataclass
 
-from ..template.content.base import NotificationContent
+from .content import NotificationContent
 from .template import TemplateRef
 
 

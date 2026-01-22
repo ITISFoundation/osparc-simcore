@@ -10,8 +10,6 @@ from servicelib.rabbitmq import RabbitMQRPCClient
 from ...clients.postgres import PostgresLiveness
 from ...clients.postgres import get_postgres_liveness as _get_db_liveness
 from ...content import models as content_models  # noqa: F401 # NOTE: registers contents
-from ...content.models import EmailContent, NotificationContent
-from ...models.channel import ChannelType
 from ...renderers.jinja_renderer import JinjaNotificationsRenderer
 from ...renderers.renderer import NotificationsRenderer
 from ...repository.templates_repository import NotificationsTemplatesRepository
@@ -40,12 +38,6 @@ def get_jinja_env() -> Environment:
     return create_render_environment_from_notifications_library()
 
 
-def get_notifications_content_cls_registry() -> dict[str, type[NotificationContent]]:
-    return {
-        ChannelType.email: EmailContent,
-    }
-
-
 def get_notifications_templates_repository(
     env: Annotated[Environment, Depends(get_jinja_env)],
 ) -> NotificationsTemplatesRepository:
@@ -54,11 +46,8 @@ def get_notifications_templates_repository(
 
 def get_notifications_templates_renderer(
     repository: Annotated[NotificationsTemplatesRepository, Depends(get_notifications_templates_repository)],
-    content_cls_registry: Annotated[
-        dict[str, type[NotificationContent]], Depends(get_notifications_content_cls_registry)
-    ],
 ) -> NotificationsRenderer:
-    return JinjaNotificationsRenderer(content_cls_registry, repository)
+    return JinjaNotificationsRenderer(repository)
 
 
 def get_notifications_templates_service(
