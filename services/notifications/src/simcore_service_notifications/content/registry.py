@@ -1,6 +1,6 @@
-from ...exceptions.errors import ContentModelNotFoundError
-from ...models.channel import ChannelType
-from .base import NotificationContent
+from ..exceptions.errors import ContentModelNotFoundError
+from ..models.channel import ChannelType
+from ..models.content import NotificationContent
 
 _CONTENTS: dict[ChannelType, type[NotificationContent]] = {}
 

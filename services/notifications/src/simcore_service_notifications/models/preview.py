@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from ..template.content.models import NotificationContent
+from .content import NotificationContent
 from .template import TemplateRef
 
 

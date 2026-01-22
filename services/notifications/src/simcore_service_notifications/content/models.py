@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
-from ...models.channel import ChannelType
-from .base import NotificationContent
+from ..models.channel import ChannelType
+from ..models.content import NotificationContent
 from .registry import register_content
 
 
@@ -14,5 +14,6 @@ class EmailContent(NotificationContent):
 
 
 @dataclass(frozen=True)
+# NOTE: SMS content model is kept for future use
 class SMSContent(NotificationContent):
     text: str

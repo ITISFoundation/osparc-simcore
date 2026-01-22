@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from typing import Any
 
+from simcore_service_notifications.models.channel import ChannelType
+
 from ..models.preview import NotificationPreview
 from ..models.template import NotificationTemplate, TemplateRef
 from ..renderers.renderer import NotificationsRenderer
@@ -12,7 +14,7 @@ class NotificationsTemplatesService:
     repository: NotificationsTemplatesRepository
     renderer: NotificationsRenderer
 
-    def list_templates(self, channel: str) -> list[NotificationTemplate]:
+    def list_templates(self, channel: ChannelType) -> list[NotificationTemplate]:
         return self.repository.list_templates(channel)
 
     def render_preview(self, template_ref: TemplateRef, variables: dict[str, Any]) -> NotificationPreview:
