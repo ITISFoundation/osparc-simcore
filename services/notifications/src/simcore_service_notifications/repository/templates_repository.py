@@ -1,10 +1,11 @@
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 
 from jinja2 import Environment, Template
 
+from ..content.registry import get_content_cls
 from ..models.channel import ChannelType
-from ..models.template import EmailNotificationTemplate, NotificationTemplate, TemplateRef
+from ..models.template import NotificationTemplate, TemplateRef
 from ..variables.registry import get_variables_model
 
 _TEMPLATE_EXTENSION = ".j2"
@@ -20,7 +21,8 @@ def template_path_prefix(template_ref: TemplateRef) -> str:
 class NotificationsTemplatesRepository:
     env: Environment
 
-    def _parse_template_path(self, template_path: str) -> tuple[str, str, str]:
+    @staticmethod
+    def _parse_template_path(template_path: str) -> tuple[str, str, str]:
         if not template_path.endswith(_TEMPLATE_EXTENSION):
             raise ValueError(template_path)
 
@@ -36,10 +38,12 @@ class NotificationsTemplatesRepository:
         # NOTE: centralized template naming convention
         return self.env.get_template(f"{template_path_prefix(template.ref)}.{part}{_TEMPLATE_EXTENSION}")
 
-    def get_template(self, ref: TemplateRef) -> NotificationTemplate:
-        return EmailNotificationTemplate(
+    @staticmethod
+    def get_template(ref: TemplateRef) -> NotificationTemplate:
+        return NotificationTemplate(
             ref=ref,
             variables_model=get_variables_model(ref),
+            parts=tuple(f.name for f in fields(get_content_cls(ref.channel))),  # type: ignore[arg-type]
         )
 
     def list_templates(self, channel: ChannelType) -> list[NotificationTemplate]:

@@ -22,13 +22,3 @@ class NotificationTemplate(ABC):
     variables_model: type[BaseModel]
 
     parts: tuple[str, ...]
-
-
-@dataclass(frozen=True)
-class EmailNotificationTemplate(NotificationTemplate):
-    parts: tuple[str, ...] = ("subject", "body_html", "body_text")
-
-
-@dataclass(frozen=True)
-class SMSNotificationTemplate(NotificationTemplate):
-    parts: tuple[str, ...] = ("text",)
