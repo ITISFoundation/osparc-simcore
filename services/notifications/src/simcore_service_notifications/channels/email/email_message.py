@@ -11,6 +11,7 @@ from .email_models import EmailAddress, EmailAttachment
 class EmailNotificationMessage(NotificationMessage[EmailNotificationContent]):
     channel: ClassVar[ChannelType] = ChannelType.email
 
-    from_address: EmailAddress
-    to_addresses: list[EmailAddress]
+    from_: EmailAddress
+    to: EmailAddress
+    reply_to: EmailAddress | None = None
     attachments: list[EmailAttachment] | None = None

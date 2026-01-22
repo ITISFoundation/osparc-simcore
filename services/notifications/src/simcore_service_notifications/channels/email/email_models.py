@@ -7,6 +7,7 @@ class EmailAddress:
     email: str
 
 
+@dataclass(frozen=True)
 class EmailAttachment:
     content: bytes
     filename: str

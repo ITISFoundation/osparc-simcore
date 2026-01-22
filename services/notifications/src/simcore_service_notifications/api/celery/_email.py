@@ -1,6 +1,7 @@
 # pylint: disable=unused-argument
 
 import logging
+from dataclasses import asdict
 from email.headerregistry import Address
 from email.message import EmailMessage
 
@@ -22,12 +23,12 @@ _logger = logging.getLogger(__name__)
 
 def _create_email_message(message: EmailNotificationMessage) -> EmailMessage:
     return compose_email(
-        Address(),
-        Address(),
+        from_=Address(**asdict(message.from_)),
+        to=Address(**asdict(message.to)),
         subject=message.content.subject,
         content_text=message.content.body_text,
         content_html=message.content.body_html,
-        reply_to=None,
+        reply_to=Address(**asdict(message.reply_to)) if message.reply_to else None,
     )
 
 
