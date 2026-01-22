@@ -16,7 +16,7 @@ from models_library.api_schemas_notifications.events import (
 from pydantic import HttpUrl
 from servicelib.celery.models import ExecutionMetadata, OwnerMetadata, TaskState
 from servicelib.celery.task_manager import TaskManager
-from simcore_service_notifications.api._worker_tasks.tasks import (
+from simcore_service_notifications.api.celery.tasks import (
     send_email,
 )
 from tenacity import (
