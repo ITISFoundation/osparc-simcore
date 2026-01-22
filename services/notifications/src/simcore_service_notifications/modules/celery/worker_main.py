@@ -3,9 +3,9 @@ from servicelib.fastapi.celery.app_server import FastAPIAppServer
 from servicelib.logging_utils import setup_loggers
 from servicelib.tracing import TracingConfig
 
-from ....core.application import create_app
-from ....core.settings import ApplicationSettings
-from .tasks import register_worker_tasks
+from ...api._worker_tasks.tasks import register_worker_tasks
+from ...core.application import create_app
+from ...core.settings import ApplicationSettings
 
 
 def get_app():

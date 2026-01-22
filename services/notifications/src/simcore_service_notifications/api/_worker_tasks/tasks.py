@@ -5,7 +5,7 @@ from celery_library.task import register_task
 from celery_library.types import register_celery_types
 from servicelib.logging_utils import log_context
 
-from ._email_tasks import send_email_notification
+from ._email import send_email_notification
 
 _logger = logging.getLogger(__name__)
 
