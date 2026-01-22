@@ -28,7 +28,7 @@ from servicelib.fastapi.celery.app_server import FastAPIAppServer
 from servicelib.redis import RedisClientSDK
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisDatabase, RedisSettings
-from simcore_service_notifications.api._worker_tasks.tasks import (
+from simcore_service_notifications.api.celery.tasks import (
     register_worker_tasks,
 )
 from simcore_service_notifications.core.application import create_app

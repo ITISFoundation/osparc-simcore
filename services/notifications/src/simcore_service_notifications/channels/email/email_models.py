@@ -5,3 +5,8 @@ from dataclasses import dataclass
 class EmailAddress:
     display_name: str
     email: str
+
+
+class EmailAttachment:
+    content: bytes
+    filename: str

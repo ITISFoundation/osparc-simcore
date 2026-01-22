@@ -3,7 +3,7 @@ from servicelib.fastapi.celery.app_server import FastAPIAppServer
 from servicelib.logging_utils import setup_loggers
 from servicelib.tracing import TracingConfig
 
-from ...api._worker_tasks.tasks import register_worker_tasks
+from ...api.celery.tasks import register_worker_tasks
 from ...core.application import create_app
 from ...core.settings import ApplicationSettings
 
