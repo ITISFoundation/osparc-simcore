@@ -13,7 +13,7 @@ from .dependencies import get_notifications_templates_service
 router = APIRouter(prefix="/notifications")
 
 
-@router.get("/templates")
+@router.get("/templates:search")
 def search_templates(
     service: Annotated[NotificationsTemplatesService, Depends(get_notifications_templates_service)],
     channel: str | None = None,
