@@ -509,7 +509,7 @@ async def _try_start_warm_buffer_instances(
         f"start {len(instances_to_start)} warm buffer machines '{[i.id for i in instances_to_start]}'",
     ):
         swarm_join_command = await utils_docker.get_docker_swarm_join_bash_command(
-            join_as_drained=app_settings.AUTOSCALING_DOCKER_JOIN_DRAINED
+            join_as_drained=app_settings.AUTOSCALING_DOCKER_JOIN_DRAINED, idempotent=True
         )
         try:
             started_instances = await get_ec2_client(app).start_instances(
