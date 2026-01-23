@@ -92,7 +92,7 @@ async def periodic_task_result(
     - `status_poll_interval` optional: when waiting for a task to finish,
         how frequent should the server be queried
 
-    raises: the original expcetion the task raised, if any
+    raises: the original exception the task raised, if any
     raises: `asyncio.TimeoutError` NOTE: the remote task will also be removed
     """
 

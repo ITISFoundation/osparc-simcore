@@ -35,6 +35,7 @@ class _TrackedMount:  # pylint:disable=too-many-instance-attributes
         r_clone_settings: RCloneSettings,
         mount_remote_type: MountRemoteType,
         *,
+        rc_host: str,
         rc_port: PortInt,
         remote_path: StorageFileID,
         local_mount_path: Path,
@@ -72,8 +73,8 @@ class _TrackedMount:  # pylint:disable=too-many-instance-attributes
         )
 
         self._rc_http_client = RemoteControlHttpClient(
+            rc_host=rc_host,
             rc_port=rc_port,
-            rc_host=self._container_manager.r_clone_container_name,
             rc_user=rc_user,
             rc_password=rc_password,
             transfers_completed_timeout=r_clone_settings.R_CLONE_SIMCORE_SDK_MOUNT_SETTINGS.R_CLONE_SIMCORE_SDK_MOUNT_TRANSFERS_COMPLETED_TIMEOUT,
@@ -91,8 +92,8 @@ class _TrackedMount:  # pylint:disable=too-many-instance-attributes
             await self.delegate.mount_activity(self.local_mount_path, mount_activity)
 
     async def _worker_mount_activity(self) -> None:
-        mount_activity = await self._rc_http_client.get_mount_activity()
         with log_catch(logger=_logger, reraise=False):
+            mount_activity = await self._rc_http_client.get_mount_activity()
             await self._update_and_notify_mount_activity(mount_activity)
 
     async def start_mount(self) -> None:
@@ -159,10 +160,13 @@ class RCloneMountManager:
 
             free_port = await asyncio.get_running_loop().run_in_executor(None, unused_port)
 
+            node_address = await self.delegate.get_node_address()
+
             tracked_mount = _TrackedMount(
                 node_id,
                 self.r_clone_settings,
                 remote_type,
+                rc_host=node_address,
                 rc_port=free_port,
                 remote_path=remote_path,
                 local_mount_path=local_mount_path,
