@@ -130,8 +130,8 @@ async def remove_volume(app: FastAPI, docker: Docker, *, volume_name: str, requi
                 volume_info = await volume.show()
                 mountpoint_str = volume_info.get("Mountpoint")
                 mountpoint = Path(mountpoint_str) if mountpoint_str else None
-            except DockerError:
-                if err.status == status.HTTP_404_NOT_FOUND:
+            except DockerError as show_err:
+                if show_err.status == status.HTTP_404_NOT_FOUND:
                     raise
 
             if mountpoint is not None:
@@ -174,7 +174,6 @@ async def _try_lazy_unmount(docker: Docker, mountpoint: Path, r_clone_version: s
                 ],
                 "SecurityOpt": ["apparmor:unconfined"],
                 "Binds": [
-                    "/path/to/rclone/config:/config/rclone",
                     f"{volumes_root}:{volumes_root}:rshared",
                 ],
             },
