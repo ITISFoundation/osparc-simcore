@@ -2,6 +2,7 @@
 
 from typing import Annotated, cast
 
+from celery_library.task_manager import CeleryTaskManager
 from fastapi import Depends, FastAPI, Request
 from jinja2 import Environment
 from notifications_library._render import create_render_environment_from_notifications_library
@@ -32,6 +33,11 @@ def get_postgres_liveness(
     app: Annotated[FastAPI, Depends(get_application)],
 ) -> PostgresLiveness:
     return _get_db_liveness(app)
+
+
+def get_task_manager(app: Annotated[FastAPI, Depends(get_application)]) -> CeleryTaskManager:
+    assert isinstance(app.state.task_manager, CeleryTaskManager)  # nosec
+    return app.state.task_manager
 
 
 def get_jinja_env() -> Environment:
