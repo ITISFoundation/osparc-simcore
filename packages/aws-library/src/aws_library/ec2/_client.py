@@ -327,13 +327,18 @@ class SimcoreEC2API:
 
     @ec2_exception_handler(_logger)
     async def start_instances(
-        self, instance_datas: Iterable[EC2InstanceData], *, user_data: str | None = None
+        self,
+        instance_datas: Iterable[EC2InstanceData],
+        *,
+        user_data: str | None = None,
     ) -> list[EC2InstanceData]:
         """starts stopped instances. Will return once the started instances are pending so that their IPs are available.
 
         Arguments:
             instance_datas -- the instances to start
             user_data -- optional user data script to set on instances before starting
+                        Note: this will overwrite any existing user data on the instance
+                        Note2: EC2 instances cloud-init do not read user data on start by default
 
         Raises:
             EC2InstanceNotFoundError: if some of the instance_datas are not found
