@@ -330,13 +330,13 @@ class SimcoreEC2API:
         self,
         instance_datas: Iterable[EC2InstanceData],
         *,
-        user_data: str | None = None,
+        change_startup_script: str | None = None,
     ) -> list[EC2InstanceData]:
         """starts stopped instances. Will return once the started instances are pending so that their IPs are available.
 
         Arguments:
             instance_datas -- the instances to start
-            user_data -- optional user data script to set on instances before starting
+            change_startup_script -- optional user data script to set on instances before starting
                         Note: this will overwrite any existing user data on the instance
                         Note2: EC2 instances cloud-init do not read user data on start by default
 
@@ -352,12 +352,12 @@ class SimcoreEC2API:
             logging.INFO,
             msg=f"start instances {instance_ids}",
         ):
-            if user_data is not None:
+            if change_startup_script is not None:
                 # modify user data on stopped instances before starting
                 for instance_id in instance_ids:
                     await self.client.modify_instance_attribute(
                         InstanceId=instance_id,
-                        UserData={"Value": compose_user_data(user_data)},
+                        UserData={"Value": compose_user_data(change_startup_script)},
                     )
             await self.client.start_instances(InstanceIds=instance_ids)
             # wait for the instance to be in a pending state

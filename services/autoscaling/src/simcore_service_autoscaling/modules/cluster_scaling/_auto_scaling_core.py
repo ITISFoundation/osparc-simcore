@@ -503,19 +503,17 @@ async def _try_start_warm_buffer_instances(
     if not instances_to_start:
         return cluster, []
 
-    # generate docker swarm join script for warm buffer activation
-    swarm_join_command = await utils_docker.get_docker_swarm_join_bash_command(
-        join_as_drained=app_settings.AUTOSCALING_DOCKER_JOIN_DRAINED
-    )
-
     with log_context(
         _logger,
         logging.INFO,
         f"start {len(instances_to_start)} warm buffer machines '{[i.id for i in instances_to_start]}'",
     ):
+        swarm_join_command = await utils_docker.get_docker_swarm_join_bash_command(
+            join_as_drained=app_settings.AUTOSCALING_DOCKER_JOIN_DRAINED
+        )
         try:
             started_instances = await get_ec2_client(app).start_instances(
-                instances_to_start, user_data=swarm_join_command
+                instances_to_start, change_startup_script=swarm_join_command
             )
         except EC2InsufficientCapacityError:
             # NOTE: this warning is only raised if none of the instances could be started due to InsufficientCapacity

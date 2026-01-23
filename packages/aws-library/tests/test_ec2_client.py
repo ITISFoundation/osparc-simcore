@@ -446,8 +446,10 @@ async def test_start_instances_with_user_data(
     )
 
     # start the instances with new user data
-    new_user_data = faker.pystr()
-    started_instances = await simcore_ec2_api.start_instances(created_instances, user_data=new_user_data)
+    new_startup_script = faker.pystr()
+    started_instances = await simcore_ec2_api.start_instances(
+        created_instances, change_startup_script=new_startup_script
+    )
     await _assert_instances_in_ec2(
         ec2_client,
         expected_num_reservations=1,
@@ -465,7 +467,7 @@ async def test_start_instances_with_user_data(
         # Note: EC2 returns base64-encoded user data, need to decode it
 
         decoded_user_data = base64.b64decode(instance_attributes["UserData"]["Value"]).decode("utf-8")
-        assert new_user_data in decoded_user_data
+        assert new_startup_script in decoded_user_data
 
 
 async def test_start_instances_with_insufficient_instance_capacity(
