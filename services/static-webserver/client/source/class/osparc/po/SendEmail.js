@@ -58,7 +58,8 @@ qx.Class.define("osparc.po.SendEmail", {
         case "add-recipient-button": {
           control = new qx.ui.form.Button(null, "@FontAwesome5Solid/plus/12").set({
             allowGrowX: false,
-            allowGrowY: false
+            allowGrowY: true,
+            toolTipText: this.tr("Add Recipient"),
           });
           control.addListener("execute", () => this.__openCollaboratorsManager(), this);
           this.getChildControl("recipients-container").add(control);
@@ -127,35 +128,18 @@ qx.Class.define("osparc.po.SendEmail", {
     },
 
     __openCollaboratorsManager: function() {
-      const collaboratorsManager = new osparc.share.NewCollaboratorsManager(null, true, false);
-      collaboratorsManager.setAcceptOnlyOne(false);
+      const data = {
+        resourceType: "emailRecipients",
+      };
+      const collaboratorsManager = new osparc.share.NewCollaboratorsManager(data, true, false);
       collaboratorsManager.getActionButton().setLabel(this.tr("Add"));
       collaboratorsManager.addListener("addCollaborators", e => {
         const data = e.getData();
         const selectedGids = data.selectedGids;
+        console.log(selectedGids);
         selectedGids.forEach(gid => {
-          const collaborator = osparc.store.Groups.getInstance().getOrganizationOrMember(parseInt(gid));
-          if (collaborator && !this.__selectedRecipients.find(r => r.gid === gid)) {
-            this.__selectedRecipients.push({
-              gid,
-              label: collaborator.getLabel(),
-              email: collaborator.getEmail ? collaborator.getEmail() : null
-            });
-          }
-        });
-        this.__updateRecipientsChips();
-        collaboratorsManager.close();
-      }, this);
-      collaboratorsManager.addListener("shareWithEmails", e => {
-        const data = e.getData();
-        const selectedEmails = data.selectedEmails;
-        selectedEmails.forEach(email => {
-          if (!this.__selectedRecipients.find(r => r.email === email)) {
-            this.__selectedRecipients.push({
-              gid: null,
-              label: email,
-              email
-            });
+          if (!this.__selectedRecipients.includes(gid)) {
+            this.__selectedRecipients.push(gid);
           }
         });
         this.__updateRecipientsChips();
@@ -166,13 +150,15 @@ qx.Class.define("osparc.po.SendEmail", {
     __updateRecipientsChips: function() {
       const chipsContainer = this.getChildControl("recipients-chips");
       chipsContainer.removeAll();
-      this.__selectedRecipients.forEach((recipient, index) => {
-        const chip = new qx.ui.basic.Atom(recipient.label, "@FontAwesome5Solid/times/10").set({
+      this.__selectedRecipients.forEach((gid, index) => {
+        const chip = new qx.ui.basic.Atom(gid, "@FontAwesome5Solid/times/10").set({
           padding: [2, 8],
           decorator: "chip",
           cursor: "pointer",
           iconPosition: "right",
-          gap: 8
+          gap: 8,
+          allowGrowY: true,
+          backgroundColor: "background-main-3",
         });
         chip.addListener("tap", () => {
           this.__selectedRecipients.splice(index, 1);
