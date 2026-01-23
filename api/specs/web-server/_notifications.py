@@ -8,8 +8,7 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends
-from models_library.api_schemas_notifications.template import NotificationsTemplateGet
-from models_library.api_schemas_webserver.notifications import SearchTemplatesQueryParams
+from models_library.api_schemas_webserver.notifications import NotificationsTemplateGet, SearchTemplatesQueryParams
 from models_library.generics import Envelope
 from simcore_service_webserver._meta import API_VTAG
 

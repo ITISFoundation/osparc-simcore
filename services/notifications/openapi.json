@@ -79,7 +79,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/NotificationTemplateGet"
+                    "$ref": "#/components/schemas/NotificationsTemplateGet"
                   },
                   "title": "Response Search Templates V0 Notifications Templates Search Get"
                 }
@@ -112,7 +112,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/ChannelType"
+              "$ref": "#/components/schemas/ChannelType-Input"
             }
           },
           {
@@ -205,10 +205,18 @@
   },
   "components": {
     "schemas": {
-      "ChannelType": {
+      "ChannelType-Input": {
         "type": "string",
         "enum": [
           "email"
+        ],
+        "title": "ChannelType"
+      },
+      "ChannelType-Output": {
+        "type": "string",
+        "enum": [
+          "email",
+          "sms"
         ],
         "title": "ChannelType"
       },
@@ -293,7 +301,7 @@
         ],
         "title": "NotificationPreviewGet"
       },
-      "NotificationTemplateGet": {
+      "NotificationsTemplateGet": {
         "properties": {
           "ref": {
             "$ref": "#/components/schemas/TemplateRefGet"
@@ -309,7 +317,7 @@
           "ref",
           "variablesSchema"
         ],
-        "title": "NotificationTemplateGet"
+        "title": "NotificationsTemplateGet"
       },
       "SMSNotificationContentGet": {
         "properties": {
@@ -324,15 +332,17 @@
         ],
         "title": "SMSNotificationContentGet"
       },
+      "TemplateName": {
+        "type": "string",
+        "minLength": 1
+      },
       "TemplateRefGet": {
         "properties": {
           "channel": {
-            "type": "string",
-            "title": "Channel"
+            "$ref": "#/components/schemas/ChannelType-Output"
           },
           "templateName": {
-            "type": "string",
-            "title": "Templatename"
+            "$ref": "#/components/schemas/TemplateName"
           }
         },
         "type": "object",

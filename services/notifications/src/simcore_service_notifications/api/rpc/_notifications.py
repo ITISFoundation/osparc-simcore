@@ -26,7 +26,7 @@ async def search_templates(
                 channel=template.ref.channel,
                 template_name=template.ref.template_name,
             ),
-            variables_schema=template.variables_model.model_json_schema(),
+            context_schema=template.context_model.model_json_schema(),
         )
         for template in templates
     ]

@@ -4720,7 +4720,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_NotificationTemplateGet__'
+                $ref: '#/components/schemas/Envelope_list_NotificationsTemplateGet__'
   /v0/projects:
     post:
       tags:
@@ -9865,6 +9865,12 @@ components:
       - new
       - confirm
       title: ChangePasswordBody
+    ChannelType:
+      type: string
+      enum:
+      - email
+      - sms
+      title: ChannelType
     CodePageParams:
       properties:
         message:
@@ -11939,12 +11945,12 @@ components:
           title: Error
       type: object
       title: Envelope[list[MyTokenGet]]
-    Envelope_list_NotificationTemplateGet__:
+    Envelope_list_NotificationsTemplateGet__:
       properties:
         data:
           anyOf:
           - items:
-              $ref: '#/components/schemas/NotificationTemplateGet'
+              $ref: '#/components/schemas/NotificationsTemplateGet'
             type: array
           - type: 'null'
           title: Data
@@ -11954,7 +11960,7 @@ components:
           - type: 'null'
           title: Error
       type: object
-      title: Envelope[list[NotificationTemplateGet]]
+      title: Envelope[list[NotificationsTemplateGet]]
     Envelope_list_PaymentMethodGet__:
       properties:
         data:
@@ -14695,19 +14701,30 @@ components:
       - ANNOTATION_NOTE
       - WALLET_SHARED
       title: NotificationCategory
-    NotificationTemplateGet:
+    NotificationsTemplateGet:
       properties:
         ref:
-          $ref: '#/components/schemas/TemplateRefGet'
-        variablesSchema:
+          $ref: '#/components/schemas/NotificationsTemplateRefGet'
+        contextSchema:
           additionalProperties: true
           type: object
-          title: Variablesschema
+          title: Contextschema
       type: object
       required:
       - ref
-      - variablesSchema
-      title: NotificationTemplateGet
+      - contextSchema
+      title: NotificationsTemplateGet
+    NotificationsTemplateRefGet:
+      properties:
+        channel:
+          $ref: '#/components/schemas/ChannelType'
+        templateName:
+          $ref: '#/components/schemas/TemplateName'
+      type: object
+      required:
+      - channel
+      - templateName
+      title: NotificationsTemplateRefGet
     OsparcCreditsAggregatedByServiceGet:
       properties:
         osparc_credits:
@@ -18188,19 +18205,9 @@ components:
       - items
       - end
       title: TaskStreamResponse
-    TemplateRefGet:
-      properties:
-        channel:
-          type: string
-          title: Channel
-        templateName:
-          type: string
-          title: Templatename
-      type: object
-      required:
-      - channel
-      - templateName
-      title: TemplateRefGet
+    TemplateName:
+      type: string
+      minLength: 1
     TestEmail:
       properties:
         from_:

@@ -1,5 +1,5 @@
 from aiohttp import web
-from models_library.api_schemas_webserver.notifications import SearchTemplatesQueryParams
+from models_library.api_schemas_webserver.notifications import NotificationsTemplateGet, SearchTemplatesQueryParams
 from servicelib.aiohttp.requests_validation import parse_request_query_parameters_as
 from servicelib.aiohttp.rest_responses import create_data_response
 from servicelib.rabbitmq.rpc_interfaces.notifications.notifications_templates import (
@@ -14,6 +14,12 @@ routes = web.RouteTableDef()
 _notifications_prefix = f"/{API_VTAG}/notifications"
 
 
+@routes.post(f"{_notifications_prefix}/templates:render", name="render_template")
+@login_required
+async def render_template(request: web.Request) -> web.Response:
+    raise NotImplementedError
+
+
 @routes.get(f"{_notifications_prefix}/templates:search", name="search_templates")
 @login_required
 async def search_templates(request: web.Request) -> web.Response:
@@ -25,4 +31,4 @@ async def search_templates(request: web.Request) -> web.Response:
         template_name=query_params.template_name,
     )
 
-    return create_data_response(templates)
+    return create_data_response([NotificationsTemplateGet(**template.model_dump()).data() for template in templates])

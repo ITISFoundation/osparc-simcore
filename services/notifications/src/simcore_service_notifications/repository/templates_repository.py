@@ -3,9 +3,10 @@ import logging
 from dataclasses import dataclass, fields
 
 from jinja2 import Environment, Template
+from models_library.notifications import ChannelType, TemplateName
+from pydantic import TypeAdapter
 
 from ..channels.content_registry import get_content_cls
-from ..models.channel import ChannelType
 from ..models.template import NotificationTemplate, TemplateRef
 from ..templates.registry import get_variables_model
 
@@ -17,7 +18,7 @@ _logger = logging.getLogger(__name__)
 def _build_template(ref: TemplateRef) -> NotificationTemplate:
     return NotificationTemplate(
         ref=ref,
-        variables_model=get_variables_model(ref),
+        context_model=get_variables_model(ref),
         parts=tuple(f.name for f in fields(get_content_cls(ref.channel))),  # type: ignore[arg-type]
     )
 
@@ -114,7 +115,10 @@ class NotificationsTemplatesRepository:
             key = (channel_str, template_name_str)
 
             if key not in templates_dict:
-                template_ref = TemplateRef(channel=ChannelType(channel_str), template_name=template_name_str)
+                template_ref = TemplateRef(
+                    channel=ChannelType(channel_str),
+                    template_name=TypeAdapter(TemplateName).validate_python(template_name_str),
+                )
                 templates_dict[key] = _build_template(template_ref)
 
         return list(templates_dict.values())

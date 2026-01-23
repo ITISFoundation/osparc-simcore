@@ -1,6 +1,9 @@
+from typing import Any
+
 from pydantic import BaseModel
 
-from models_library.api_schemas_webserver._base import OutputSchema
+from ..api_schemas_webserver._base import OutputSchema
+from ..notifications import ChannelType, TemplateName
 
 
 class SearchTemplatesQueryParams(BaseModel):
@@ -10,11 +13,10 @@ class SearchTemplatesQueryParams(BaseModel):
 
 
 class NotificationsTemplateRefGet(OutputSchema):
-    channel: str
-    template_name: str
+    channel: ChannelType
+    template_name: TemplateName
 
 
 class NotificationsTemplateGet(OutputSchema):
-    channel: str
-    template_name: str
-    variables_schema: dict[str, object]
+    ref: NotificationsTemplateRefGet
+    context_schema: dict[str, Any]
