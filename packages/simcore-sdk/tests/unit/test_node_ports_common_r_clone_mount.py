@@ -4,7 +4,6 @@
 # pylint: disable=too-many-positional-arguments
 # pylint: disable=unused-argument
 import asyncio
-import contextlib
 import os
 from collections.abc import AsyncIterable, AsyncIterator, Iterator
 from pathlib import Path
@@ -18,16 +17,13 @@ import pytest
 from _pytest._py.path import LocalPath
 from aiobotocore.session import ClientCreatorContext
 from aiodocker import Docker
-from aiodocker.networks import DockerNetwork
 from aiodocker.types import JSONObject
 from botocore.client import Config
 from faker import Faker
 from models_library.api_schemas_storage.storage_schemas import S3BucketName
-from models_library.basic_types import PortInt
 from models_library.projects_nodes_io import NodeID, StorageFileID
 from moto.server import ThreadedMotoServer
-from pydantic import ByteSize, NonNegativeInt, TypeAdapter
-from pytest_mock import MockerFixture
+from pydantic import ByteSize, TypeAdapter
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.file_utils import create_sha256_checksum
 from servicelib.logging_utils import _dampen_noisy_loggers
@@ -37,12 +33,6 @@ from simcore_sdk.node_ports_common.r_clone_mount import (
     MountActivity,
     MountRemoteType,
     RCloneMountManager,
-)
-from simcore_sdk.node_ports_common.r_clone_mount._container import (
-    RemoteControlHttpClient,
-)
-from simcore_sdk.node_ports_common.r_clone_mount._docker_utils import (
-    _get_config as original_get_config,
 )
 from simcore_sdk.node_ports_common.r_clone_mount._utils import get_mount_id
 from tenacity import (
@@ -67,7 +57,7 @@ def mock_environment(monkeypatch: pytest.MonkeyPatch, bucket_name: S3BucketName,
         monkeypatch,
         {
             "R_CLONE_PROVIDER": "AWS_MOTO",
-            "S3_ENDPOINT": "http://127.0.0.1:5000",
+            "S3_ENDPOINT": "http://172.17.0.1:5000",
             "S3_ACCESS_KEY": "test",
             "S3_BUCKET_NAME": bucket_name,
             "S3_SECRET_KEY": "test",
@@ -155,25 +145,11 @@ class _TestingDelegate(DelegateInterface):
             existing_container = await client.containers.get(container_name)
             await existing_container.delete(force=True)
 
-    async def create_network(self, config: dict[str, Any]) -> None:
+    async def get_node_address(self) -> str:
         async with Docker() as client:
-            await client.networks.create(config)
-
-    async def connect_container_to_network(self, container_id: str, network_name: str) -> None:
-        async with Docker() as client:
-            existing_network = DockerNetwork(client, network_name)
-            await existing_network.connect({"Container": container_id})
-
-    async def disconnect_container_from_network(self, container_id: str, network_name: str) -> None:
-        async with Docker() as client:
-            existing_network = DockerNetwork(client, network_name)
-            await existing_network.disconnect({"Container": container_id})
-
-    async def remove_network(self, network_name: str) -> None:
-        async with Docker() as client:
-            existing_network = DockerNetwork(client, network_name)
-            await existing_network.show()
-            await existing_network.delete()
+            system_info = await client.system.info()
+            node_address: str = system_info["Swarm"]["NodeAddr"]
+            return node_address
 
 
 @pytest.fixture
@@ -223,65 +199,6 @@ def moto_server() -> Iterator[None]:
     server.start()
     yield None
     server.stop()
-
-
-@pytest.fixture
-async def mocked_self_container(mocker: MockerFixture) -> AsyncIterator[None]:
-    # start the simplest lightweight container that sleeps forever
-    async with aiodocker.Docker() as client:
-        container = await client.containers.run(config={"Image": "alpine:latest", "Cmd": ["sleep", "infinity"]})
-
-        mocker.patch(
-            "simcore_sdk.node_ports_common.r_clone_mount._docker_utils._get_self_container_id",
-            return_value=container.id,
-        )
-
-        yield None
-
-        with contextlib.suppress(aiodocker.exceptions.DockerError):
-            await container.delete(force=True)
-
-
-@pytest.fixture
-async def mocked_r_clone_container_config(mocker: MockerFixture) -> None:
-    async def _patched_get_config(
-        delegate: DelegateInterface,
-        command: str,
-        r_clone_version: str,
-        rc_port: PortInt,
-        r_clone_network_name: str,
-        local_mount_path: Path,
-        memory_limit: ByteSize,
-        nano_cpus: NonNegativeInt,
-    ) -> JSONObject:
-        config = await original_get_config(
-            delegate,
-            command,
-            r_clone_version,
-            rc_port,
-            r_clone_network_name,
-            local_mount_path,
-            memory_limit,
-            nano_cpus,
-        )
-        # Add port forwarding to access from host
-        config["HostConfig"]["PortBindings"] = {f"{rc_port}/tcp": [{"HostPort": str(rc_port)}]}
-        config["HostConfig"]["NetworkMode"] = "host"
-        return config
-
-    mocker.patch(
-        "simcore_sdk.node_ports_common.r_clone_mount._docker_utils._get_config",
-        side_effect=_patched_get_config,
-    )
-
-    # Patch the rc_host to use localhost instead of container name
-    original_init = RemoteControlHttpClient.__init__
-
-    def _patched_init(self, rc_host: str, rc_port: PortInt, *args, **kwargs) -> None:
-        # Replace container hostname with localhost for host access
-        original_init(self, "localhost", rc_port, *args, **kwargs)
-
-    mocker.patch.object(RemoteControlHttpClient, "__init__", _patched_init)
 
 
 async def _create_random_binary_file(
@@ -351,9 +268,8 @@ async def _get_file_checksums_from_s3(
 
 
 async def test_workflow(
+    docker_swarm: None,
     moto_server: None,
-    mocked_r_clone_container_config: None,
-    mocked_self_container: None,
     r_clone_mount_manager: RCloneMountManager,
     r_clone_settings: RCloneSettings,
     bucket_name: S3BucketName,
@@ -405,9 +321,8 @@ async def test_workflow(
 
 
 async def test_container_recovers_and_shutdown_is_emitted(
+    docker_swarm: None,
     moto_server: None,
-    mocked_r_clone_container_config: None,
-    mocked_self_container: None,
     r_clone_mount_manager: RCloneMountManager,
     node_id: NodeID,
     remote_path: StorageFileID,
@@ -427,7 +342,7 @@ async def test_container_recovers_and_shutdown_is_emitted(
     mount_id = get_mount_id(local_mount_path, index)
     tracked_mount = r_clone_mount_manager._tracked_mounts[mount_id]  # noqa: SLF001
     container_name = (
-        tracked_mount._container_manager.r_clone_container_name  # noqa: SLF001
+        tracked_mount._container_manager._r_clone_container_name  # noqa: SLF001
     )
 
     # Shutdown the container to trigger the shutdown handler
