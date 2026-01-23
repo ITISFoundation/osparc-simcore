@@ -35,7 +35,7 @@ qx.Class.define("osparc.po.SendEmail", {
           break;
         }
         case "recipients-container": {
-          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(6).set({
             alignY: "middle",
           })).set({
             backgroundColor: "input-background",
@@ -66,7 +66,9 @@ qx.Class.define("osparc.po.SendEmail", {
           break;
         }
         case "recipients-chips": {
-          control = new qx.ui.container.Composite(new qx.ui.layout.Flow(5, 5));
+          control = new qx.ui.container.Composite(new qx.ui.layout.Flow(4, 4).set({
+            alignY: "middle",
+          }));
           this.getChildControl("recipients-container").add(control, {
             flex: 1
           });
@@ -150,8 +152,11 @@ qx.Class.define("osparc.po.SendEmail", {
     __updateRecipientsChips: function() {
       const chipsContainer = this.getChildControl("recipients-chips");
       chipsContainer.removeAll();
+      const groupsStore = osparc.store.Groups.getInstance();
       this.__selectedRecipients.forEach((gid, index) => {
-        const chip = new qx.ui.basic.Atom(gid, "@FontAwesome5Solid/times/10").set({
+        const group = groupsStore.getGroup(gid);
+        const chip = new qx.ui.basic.Atom(group.getLabel(), "@FontAwesome5Solid/times/10").set({
+          toolTipText: group.getDescription(),
           padding: [2, 8],
           decorator: "chip",
           cursor: "pointer",
