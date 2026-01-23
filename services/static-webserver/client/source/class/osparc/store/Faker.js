@@ -198,5 +198,10 @@ qx.Class.define("osparc.store.Faker", {
         }
       });
     },
+
+    sendEmail: function(data) {
+      console.log("Faker sending email with data:", data);
+      return new Promise((resolve) => resolve());
+    },
   }
 });

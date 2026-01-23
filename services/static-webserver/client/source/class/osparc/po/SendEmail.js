@@ -181,15 +181,14 @@ qx.Class.define("osparc.po.SendEmail", {
 
       const subjectField = this.getChildControl("subject-field");
       const emailEditor = this.getChildControl("email-editor");
-      const recipients = this.__selectedRecipients.map(r => r.email || r.label).join(", ");
       const data = {
-        to: recipients,
+        to: this.__selectedRecipients,
         subject: subjectField.getValue(),
         content: emailEditor.getTemplateEmail(),
       };
-      osparc.store.Faker.getInstance().sendTestEmail(data)
+      osparc.store.Faker.getInstance().sendEmail(data)
         .then(() => {
-          osparc.ui.message.FlashMessenger.getInstance().logAsSuccess(this.tr("Test email sent successfully"));
+          osparc.ui.message.FlashMessenger.getInstance().logAsSuccess(this.tr("Email sent successfully"));
         })
         .catch(err => {
           const errorMsg = err.message || this.tr("An error occurred while sending the test email");
