@@ -26,4 +26,10 @@ router = APIRouter(
 )
 async def search_templates(
     _query: Annotated[SearchTemplatesQueryParams, Depends()],
-): ...
+):
+    """
+    Search for available notification templates by channel and/or template name.
+    Both channel and template_name support wildcard patterns for flexible matching.
+
+    Returns templates with their context schema defining required variables for rendering.
+    """
