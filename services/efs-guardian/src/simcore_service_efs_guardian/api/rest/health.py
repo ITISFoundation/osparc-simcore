@@ -29,7 +29,7 @@ async def health_check(
         not client.healthy
         for client in (get_rabbitmq_client(app), get_rabbitmq_rpc_client(app), get_rabbitmq_rpc_server(app))
     ):
-        raise RuntimeError(RABBITMQ_CLIENT_UNHEALTHY_MSG)
+        raise HealthCheckError(RABBITMQ_CLIENT_UNHEALTHY_MSG)
 
     # NOTE: sync url in docker/healthcheck.py with this entrypoint!
     return f"{__name__}.health_check@{datetime.datetime.now(datetime.UTC).isoformat()}"
