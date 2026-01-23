@@ -7,7 +7,9 @@ from unittest.mock import AsyncMock
 from uuid import uuid4
 
 import pytest
+from aiodocker.containers import DockerContainer, DockerContainers
 from aiodocker.docker import Docker
+from aiodocker.exceptions import DockerError
 from fastapi import FastAPI
 from models_library.projects_nodes_io import NodeID
 from models_library.services_types import ServiceRunID
@@ -17,6 +19,7 @@ from simcore_service_agent.services.docker_utils import (
     _VOLUMES_NOT_TO_BACKUP,
     _does_volume_require_backup,
     _reverse_string,
+    get_containers_with_prefixes,
     get_unused_dynamic_sidecar_volumes,
     get_volume_details,
     remove_volume,
@@ -42,9 +45,7 @@ def test__reverse_string():
         ("workdir", True),
     ],
 )
-def test__does_volume_require_backup(
-    service_run_id: ServiceRunID, volume_path_part: str, expected: bool
-) -> None:
+def test__does_volume_require_backup(service_run_id: ServiceRunID, volume_path_part: str, expected: bool) -> None:
     volume_name = get_source(service_run_id, uuid4(), Path("/apath") / volume_path_part)
     print(volume_name)
     assert _does_volume_require_backup(volume_name) is expected
@@ -74,7 +75,8 @@ async def test_doclker_utils_workflow(
     created_volumes: set[str] = set()
     for _ in range(volume_count):
         created_volume = await create_dynamic_sidecar_volumes(
-            uuid4(), False  # noqa: FBT003
+            uuid4(),
+            False,  # noqa: FBT003
         )
         created_volumes.update(created_volume)
 
@@ -104,15 +106,10 @@ async def test_doclker_utils_workflow(
             requires_backup=requires_backup,
         )
 
-    assert (
-        count_vloumes_to_backup
-        == (len(VOLUMES_TO_CREATE) - len(_VOLUMES_NOT_TO_BACKUP)) * volume_count
-    )
+    assert count_vloumes_to_backup == (len(VOLUMES_TO_CREATE) - len(_VOLUMES_NOT_TO_BACKUP)) * volume_count
     assert count_volumes_to_skip == len(_VOLUMES_NOT_TO_BACKUP) * volume_count
 
-    assert mock_backup_volume.call_count == (
-        count_vloumes_to_backup if requires_backup else 0
-    )
+    assert mock_backup_volume.call_count == (count_vloumes_to_backup if requires_backup else 0)
 
     volumes = await get_unused_dynamic_sidecar_volumes(volumes_manager_docker_client)
     assert len(volumes) == 0
@@ -137,12 +134,25 @@ async def test_get_volume_details(
     volumes_manager_docker_client: Docker,
     create_dynamic_sidecar_volumes: Callable[[NodeID, bool], Awaitable[set[str]]],
 ):
-
     volume_names = await create_dynamic_sidecar_volumes(uuid4(), False)  # noqa: FBT003
     for volume_name in volume_names:
-        volume_details = await get_volume_details(
-            volumes_manager_docker_client, volume_name=volume_name
-        )
+        volume_details = await get_volume_details(volumes_manager_docker_client, volume_name=volume_name)
         print(volume_details)
         volume_prefix = f"{volumes_path}".replace("/", "_").strip("_")
         assert volume_details.labels.directory_name.startswith(volume_prefix)
+
+
+@pytest.fixture
+def mocked_docker() -> AsyncMock:
+    docker = AsyncMock(spec=Docker)
+    docker.containers = AsyncMock(spec=DockerContainers)
+
+    container = AsyncMock(spec=DockerContainer)
+    container.show.side_effect = DockerError(404, {"message": "No such container"})
+    docker.containers.list.return_value = [container]
+
+    return docker
+
+
+async def test_get_containers_with_prefixes_does_not_fail_if_container_is_missing(mocked_docker: AsyncMock):
+    await get_containers_with_prefixes(mocked_docker, prefixes={"dyc_", "simcore_dynamic_sidecar_"})
