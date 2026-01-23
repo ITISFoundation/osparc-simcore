@@ -66,27 +66,25 @@ _DISALLOWED_DOCKER_PLACEMENT_CONSTRAINTS: Final[list[str]] = [
 _PENDING_DOCKER_TASK_MESSAGE: Final[str] = "pending task scheduling"
 _INSUFFICIENT_RESOURCES_DOCKER_TASK_ERR: Final[str] = "insufficient resources on"
 _NOT_SATISFIED_SCHEDULING_CONSTRAINTS_TASK_ERR: Final[str] = "no suitable node"
-_OSPARC_SERVICE_READY_LABEL_KEY: Final[DockerLabelKey] = TypeAdapter(
-    DockerLabelKey
-).validate_python(
+_OSPARC_SERVICE_READY_LABEL_KEY: Final[DockerLabelKey] = TypeAdapter(DockerLabelKey).validate_python(
     "io.simcore.osparc-services-ready",
 )
-_OSPARC_SERVICES_READY_DATETIME_LABEL_KEY: Final[DockerLabelKey] = TypeAdapter(
-    DockerLabelKey
-).validate_python(f"{_OSPARC_SERVICE_READY_LABEL_KEY}-last-changed")
+_OSPARC_SERVICES_READY_DATETIME_LABEL_KEY: Final[DockerLabelKey] = TypeAdapter(DockerLabelKey).validate_python(
+    f"{_OSPARC_SERVICE_READY_LABEL_KEY}-last-changed"
+)
 _OSPARC_SERVICE_READY_LABEL_KEYS: Final[list[DockerLabelKey]] = [
     _OSPARC_SERVICE_READY_LABEL_KEY,
     _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY,
 ]
 
 
-_OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY: Final[DockerLabelKey] = TypeAdapter(
-    DockerLabelKey
-).validate_python("io.simcore.osparc-node-found-empty")
+_OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY: Final[DockerLabelKey] = TypeAdapter(DockerLabelKey).validate_python(
+    "io.simcore.osparc-node-found-empty"
+)
 
-_OSPARC_NODE_TERMINATION_PROCESS_LABEL_KEY: Final[DockerLabelKey] = TypeAdapter(
-    DockerLabelKey
-).validate_python("io.simcore.osparc-node-termination-started")
+_OSPARC_NODE_TERMINATION_PROCESS_LABEL_KEY: Final[DockerLabelKey] = TypeAdapter(DockerLabelKey).validate_python(
+    "io.simcore.osparc-node-termination-started"
+)
 
 
 def _get_node_creation_date(node: Node) -> datetime.datetime:
@@ -94,9 +92,7 @@ def _get_node_creation_date(node: Node) -> datetime.datetime:
     return arrow.get(node.created_at).datetime
 
 
-async def get_monitored_nodes(
-    docker_client: AutoscalingDocker, node_labels: list[DockerLabelKey]
-) -> list[Node]:
+async def get_monitored_nodes(docker_client: AutoscalingDocker, node_labels: list[DockerLabelKey]) -> list[Node]:
     node_label_filters = [f"{label}=true" for label in node_labels] + [
         f"{label}" for label in _OSPARC_SERVICE_READY_LABEL_KEYS
     ]
@@ -112,9 +108,7 @@ async def get_worker_nodes(docker_client: AutoscalingDocker) -> list[Node]:
         await docker_client.nodes.list(
             filters={
                 "role": ["worker"],
-                "node.label": [
-                    f"{label}" for label in _OSPARC_SERVICE_READY_LABEL_KEYS
-                ],
+                "node.label": [f"{label}" for label in _OSPARC_SERVICE_READY_LABEL_KEYS],
             }
         )
     )
@@ -122,9 +116,7 @@ async def get_worker_nodes(docker_client: AutoscalingDocker) -> list[Node]:
     return list_of_nodes
 
 
-async def remove_nodes(
-    docker_client: AutoscalingDocker, *, nodes: list[Node], force: bool = False
-) -> list[Node]:
+async def remove_nodes(docker_client: AutoscalingDocker, *, nodes: list[Node], force: bool = False) -> list[Node]:
     """removes docker nodes that are in the down state (unless force is used and they will be forcibly removed)"""
 
     def _check_if_node_is_removable(node: Node) -> bool:
@@ -141,9 +133,7 @@ async def remove_nodes(
         # we do not remove a node that has a weird state, let it be done by someone smarter.
         return False
 
-    nodes_that_need_removal = [
-        n for n in nodes if (force is True) or _check_if_node_is_removable(n)
-    ]
+    nodes_that_need_removal = [n for n in nodes if (force is True) or _check_if_node_is_removable(n)]
     for node in nodes_that_need_removal:
         assert node.id  # nosec
         with log_context(logger, logging.INFO, msg=f"remove {node.id=}"):
@@ -153,15 +143,8 @@ async def remove_nodes(
 
 def _is_task_waiting_for_resources(task: Task) -> bool:
     # NOTE: https://docs.docker.com/engine/swarm/how-swarm-mode-works/swarm-task-states/
-    with log_context(
-        logger, level=logging.DEBUG, msg=f"_is_task_waiting_for_resources: {task.id}"
-    ):
-        if (
-            not task.status
-            or not task.status.state
-            or not task.status.message
-            or not task.status.err
-        ):
+    with log_context(logger, level=logging.DEBUG, msg=f"_is_task_waiting_for_resources: {task.id}"):
+        if not task.status or not task.status.state or not task.status.message or not task.status.err:
             return False
         return (
             task.status.state == TaskState.pending
@@ -173,30 +156,20 @@ def _is_task_waiting_for_resources(task: Task) -> bool:
         )
 
 
-async def _associated_service_has_no_node_placement_constraints(
-    docker_client: AutoscalingDocker, task: Task
-) -> bool:
+async def _associated_service_has_no_node_placement_constraints(docker_client: AutoscalingDocker, task: Task) -> bool:
     assert task.service_id  # nosec
-    service_inspect = TypeAdapter(Service).validate_python(
-        await docker_client.services.inspect(task.service_id)
-    )
+    service_inspect = TypeAdapter(Service).validate_python(await docker_client.services.inspect(task.service_id))
     assert service_inspect.spec  # nosec
     assert service_inspect.spec.task_template  # nosec
 
-    if (
-        not service_inspect.spec.task_template.placement
-        or not service_inspect.spec.task_template.placement.constraints
-    ):
+    if not service_inspect.spec.task_template.placement or not service_inspect.spec.task_template.placement.constraints:
         return True
     # parse the placement constraints
-    service_placement_constraints = (
-        service_inspect.spec.task_template.placement.constraints
-    )
+    service_placement_constraints = service_inspect.spec.task_template.placement.constraints
     for constraint in service_placement_constraints:
-        # is of type node.id==alskjladskjs or node.hostname==thiscomputerhostname or node.role==manager, sometimes with spaces...
-        if any(
-            constraint.startswith(c) for c in _DISALLOWED_DOCKER_PLACEMENT_CONSTRAINTS
-        ):
+        # is of type node.id==alskjladskjs or node.hostname==thiscomputerhostname or
+        # node.role==manager, sometimes with spaces...
+        if any(constraint.startswith(c) for c in _DISALLOWED_DOCKER_PLACEMENT_CONSTRAINTS):
             return False
     return True
 
@@ -243,9 +216,7 @@ async def pending_service_tasks_with_insufficient_resources(
         for task in sorted_tasks
         if (
             _is_task_waiting_for_resources(task)
-            and await _associated_service_has_no_node_placement_constraints(
-                docker_client, task
-            )
+            and await _associated_service_has_no_node_placement_constraints(docker_client, task)
         )
     ]
 
@@ -288,48 +259,27 @@ def get_max_resources_from_docker_task(task: Task) -> Resources:
         return Resources(cpus=0, ram=ByteSize(0))
 
     generic_resources: dict[str, int | float | str] = {}
-    if (
-        task.spec.resources.reservations
-        and task.spec.resources.reservations.generic_resources
-    ):
+    if task.spec.resources.reservations and task.spec.resources.reservations.generic_resources:
         for res in task.spec.resources.reservations.generic_resources.root:
             if res.named_resource_spec:
                 assert res.named_resource_spec.kind is not None  # nosec
                 assert res.named_resource_spec.value is not None  # nosec
-                generic_resources[res.named_resource_spec.kind] = (
-                    res.named_resource_spec.value
-                )
+                generic_resources[res.named_resource_spec.kind] = res.named_resource_spec.value
             if res.discrete_resource_spec:
                 assert res.discrete_resource_spec.kind is not None  # nosec
                 assert res.discrete_resource_spec.value is not None  # nosec
-                generic_resources[res.discrete_resource_spec.kind] = (
-                    res.discrete_resource_spec.value
-                )
+                generic_resources[res.discrete_resource_spec.kind] = res.discrete_resource_spec.value
 
     return Resources(
         cpus=max(
-            (
-                (
-                    task.spec.resources.reservations
-                    and task.spec.resources.reservations.nano_cp_us
-                )
-                or 0
-            ),
-            (
-                (task.spec.resources.limits and task.spec.resources.limits.nano_cp_us)
-                or 0
-            ),
+            ((task.spec.resources.reservations and task.spec.resources.reservations.nano_cp_us) or 0),
+            ((task.spec.resources.limits and task.spec.resources.limits.nano_cp_us) or 0),
         )
         / _NANO_CPU,
         ram=TypeAdapter(ByteSize).validate_python(
             max(
-                (
-                    task.spec.resources.reservations
-                    and task.spec.resources.reservations.memory_bytes
-                )
-                or 0,
-                (task.spec.resources.limits and task.spec.resources.limits.memory_bytes)
-                or 0,
+                (task.spec.resources.reservations and task.spec.resources.reservations.memory_bytes) or 0,
+                (task.spec.resources.limits and task.spec.resources.limits.memory_bytes) or 0,
             )
         ),
         generic_resources=generic_resources,
@@ -347,9 +297,7 @@ async def get_task_osparc_custom_docker_placement_constraints(
 
     with contextlib.suppress(ValidationError):
         assert task.service_id  # nosec
-        service_inspect = TypeAdapter(Service).validate_python(
-            await docker_client.services.inspect(task.service_id)
-        )
+        service_inspect = TypeAdapter(Service).validate_python(await docker_client.services.inspect(task.service_id))
         assert service_inspect.spec  # nosec
         assert service_inspect.spec.task_template  # nosec
 
@@ -360,9 +308,7 @@ async def get_task_osparc_custom_docker_placement_constraints(
             return custom_labels
 
         # Parse placement constraints to extract custom labels
-        service_placement_constraints = (
-            service_inspect.spec.task_template.placement.constraints
-        )
+        service_placement_constraints = service_inspect.spec.task_template.placement.constraints
         for label_key in OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS:
             label_prefix = f"node.labels.{label_key}=="
             for constraint in service_placement_constraints:
@@ -373,14 +319,10 @@ async def get_task_osparc_custom_docker_placement_constraints(
     return custom_labels
 
 
-async def get_task_instance_restriction(
-    docker_client: AutoscalingDocker, task: Task
-) -> InstanceTypeType | None:
+async def get_task_instance_restriction(docker_client: AutoscalingDocker, task: Task) -> InstanceTypeType | None:
     with contextlib.suppress(ValidationError):
         assert task.service_id  # nosec
-        service_inspect = TypeAdapter(Service).validate_python(
-            await docker_client.services.inspect(task.service_id)
-        )
+        service_inspect = TypeAdapter(Service).validate_python(await docker_client.services.inspect(task.service_id))
         assert service_inspect.spec  # nosec
         assert service_inspect.spec.task_template  # nosec
 
@@ -390,18 +332,12 @@ async def get_task_instance_restriction(
         ):
             return None
         # parse the placement constraints
-        service_placement_constraints = (
-            service_inspect.spec.task_template.placement.constraints
-        )
+        service_placement_constraints = service_inspect.spec.task_template.placement.constraints
         # should be node.labels.{}
-        node_label_to_find = (
-            f"node.labels.{DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY}=="
-        )
+        node_label_to_find = f"node.labels.{DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY}=="
         for constraint in service_placement_constraints:
             if constraint.startswith(node_label_to_find):
-                return TypeAdapter(InstanceTypeType).validate_python(
-                    constraint.removeprefix(node_label_to_find)
-                )
+                return TypeAdapter(InstanceTypeType).validate_python(constraint.removeprefix(node_label_to_find))
 
         return None
     return None
@@ -424,9 +360,7 @@ async def compute_node_used_resources(
     task_filters: dict[str, str | list[DockerLabelKey]] = {"node": node.id}
     if service_labels is not None:
         task_filters |= {"label": service_labels}
-    all_tasks_on_node = TypeAdapter(list[Task]).validate_python(
-        await docker_client.tasks.list(filters=task_filters)
-    )
+    all_tasks_on_node = TypeAdapter(list[Task]).validate_python(await docker_client.tasks.list(filters=task_filters))
     for task in all_tasks_on_node:
         assert task.status  # nosec
         if (
@@ -438,16 +372,13 @@ async def compute_node_used_resources(
             cluster_resources_counter.update(
                 {
                     "ram": task.spec.resources.reservations.memory_bytes or 0,
-                    "cpus": (task.spec.resources.reservations.nano_cp_us or 0)
-                    / _NANO_CPU,
+                    "cpus": (task.spec.resources.reservations.nano_cp_us or 0) / _NANO_CPU,
                 }
             )
     return Resources.model_validate(dict(cluster_resources_counter))
 
 
-async def compute_cluster_used_resources(
-    docker_client: AutoscalingDocker, nodes: list[Node]
-) -> Resources:
+async def compute_cluster_used_resources(docker_client: AutoscalingDocker, nodes: list[Node]) -> Resources:
     """Returns the total amount of resources (reservations) used on each of the given nodes"""
     list_of_used_resources: list[Resources] = await logged_gather(
         *(compute_node_used_resources(docker_client, node) for node in nodes)
@@ -466,8 +397,10 @@ _DOCKER_SWARM_JOIN_RE = r"(?P<command>docker swarm join)\s+(?P<token>--token\s+[
 _DOCKER_SWARM_JOIN_PATTERN = re.compile(_DOCKER_SWARM_JOIN_RE)
 
 
-async def get_docker_swarm_join_bash_command(*, join_as_drained: bool) -> str:
-    """this assumes we are on a manager node"""
+async def get_docker_swarm_join_bash_command(*, join_as_drained: bool, idempotent: bool) -> str:
+    """Returns the docker swarm join command to be used when starting a new node
+    If idempotent is True, the command will first check if the node is already part of a swarm.
+    """
     command = ["docker", "swarm", "join-token", "worker"]
     process = await asyncio.create_subprocess_exec(
         *command,
@@ -483,7 +416,16 @@ async def get_docker_swarm_join_bash_command(*, join_as_drained: bool) -> str:
     decoded_stdout = stdout.decode()
     if match := re.search(_DOCKER_SWARM_JOIN_PATTERN, decoded_stdout):
         capture = match.groupdict()
-        return f"{capture['command']} --availability={'drain' if join_as_drained else 'active'} {capture['token']} {capture['address']}"
+        command: list[str] = []
+        if idempotent:
+            command.append("docker info --format '{{.Swarm.LocalNodeState}}' 2>/dev/null | grep -q '^inactive$'")
+        command.append(
+            f"{capture['command']} "
+            f"--availability={'drain' if join_as_drained else 'active'} "
+            f"{capture['token']} {capture['address']}"
+        )
+
+        return " && ".join(command)
     msg = f"expected docker '{_DOCKER_SWARM_JOIN_RE}' command not found: received {decoded_stdout}!"
     raise RuntimeError(msg)
 
@@ -526,14 +468,14 @@ def get_docker_pull_images_on_start_bash_command(
     write_docker_compose_pull_script_cmd = " ".join(
         [
             "echo",
-            f'"#!/bin/sh\necho Pulling started at \\$(date)\n{DOCKER_COMPOSE_CMD} --project-name=autoscaleprepull --file={PRE_PULL_COMPOSE_PATH} pull --ignore-pull-failures"',
+            f'"#!/bin/sh\necho Pulling started at \\$(date)\n{DOCKER_COMPOSE_CMD} '
+            f"--project-name=autoscaleprepull --file={PRE_PULL_COMPOSE_PATH} pull "
+            '--ignore-pull-failures"',
             ">",
             f"{DOCKER_COMPOSE_PULL_SCRIPT_PATH}",
         ]
     )
-    make_docker_compose_script_executable = " ".join(
-        ["chmod", "+x", f"{DOCKER_COMPOSE_PULL_SCRIPT_PATH}"]
-    )
+    make_docker_compose_script_executable = " ".join(["chmod", "+x", f"{DOCKER_COMPOSE_PULL_SCRIPT_PATH}"])
     docker_compose_pull_cmd = " ".join([f".{DOCKER_COMPOSE_PULL_SCRIPT_PATH}"])
     return " && ".join(
         [
@@ -545,9 +487,7 @@ def get_docker_pull_images_on_start_bash_command(
     )
 
 
-async def find_node_with_name(
-    docker_client: AutoscalingDocker, name: str
-) -> Node | None:
+async def find_node_with_name(docker_client: AutoscalingDocker, name: str) -> Node | None:
     list_of_nodes = await docker_client.nodes.list(filters={"name": name})
     if not list_of_nodes:
         return None
@@ -569,19 +509,13 @@ async def tag_node(
     available: bool,
 ) -> Node:
     assert node.spec  # nosec
-    if (node.spec.labels == tags) and (
-        (node.spec.availability is Availability.active) == available
-    ):
+    if (node.spec.labels == tags) and ((node.spec.availability is Availability.active) == available):
         # nothing to do
         return node
-    with log_context(
-        logger, logging.INFO, msg=f"tag {node.id=} with {tags=} and {available=}"
-    ):
+    with log_context(logger, logging.INFO, msg=f"tag {node.id=} with {tags=} and {available=}"):
         assert node.id  # nosec
 
-        latest_version_node = TypeAdapter(Node).validate_python(
-            await docker_client.nodes.inspect(node_id=node.id)
-        )
+        latest_version_node = TypeAdapter(Node).validate_python(await docker_client.nodes.inspect(node_id=node.id))
         assert latest_version_node.version  # nosec
         assert latest_version_node.version.index  # nosec
         assert latest_version_node.spec  # nosec
@@ -597,14 +531,10 @@ async def tag_node(
                 "Role": latest_version_node.spec.role.value,
             },
         )
-        return TypeAdapter(Node).validate_python(
-            await docker_client.nodes.inspect(node_id=node.id)
-        )
+        return TypeAdapter(Node).validate_python(await docker_client.nodes.inspect(node_id=node.id))
 
 
-async def set_node_availability(
-    docker_client: AutoscalingDocker, node: Node, *, available: bool
-) -> Node:
+async def set_node_availability(docker_client: AutoscalingDocker, node: Node, *, available: bool) -> Node:
     assert node.spec  # nosec
     return await tag_node(
         docker_client,
@@ -629,18 +559,14 @@ def get_new_node_docker_tags(
             "true",
         )
         | {DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY: ec2_instance.type}
-        | app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
-            ec2_instance.type
-        ].custom_node_labels
+        | app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[ec2_instance.type].custom_node_labels
     )
 
 
 def is_node_ready_and_available(node: Node, *, availability: Availability) -> bool:
     assert node.status  # nosec
     assert node.spec  # nosec
-    return bool(
-        node.status.state == NodeState.ready and node.spec.availability == availability
-    )
+    return bool(node.status.state == NodeState.ready and node.spec.availability == availability)
 
 
 def is_node_osparc_ready(node: Node) -> bool:
@@ -692,9 +618,7 @@ async def set_node_osparc_ready(
 def get_node_last_readiness_update(node: Node) -> datetime.datetime:
     assert node.spec  # nosec
     assert node.spec.labels  # nosec
-    return arrow.get(
-        node.spec.labels[_OSPARC_SERVICES_READY_DATETIME_LABEL_KEY]
-    ).datetime
+    return arrow.get(node.spec.labels[_OSPARC_SERVICES_READY_DATETIME_LABEL_KEY]).datetime
 
 
 async def set_node_found_empty(
@@ -726,9 +650,7 @@ async def get_node_empty_since(node: Node) -> datetime.datetime | None:
     return arrow.get(node.spec.labels[_OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY]).datetime
 
 
-async def set_node_begin_termination_process(
-    docker_client: AutoscalingDocker, node: Node
-) -> Node:
+async def set_node_begin_termination_process(docker_client: AutoscalingDocker, node: Node) -> Node:
     """sets the node to drain and adds a docker label with the time"""
     assert node.spec  # nosec
     new_tags = deepcopy(cast(dict[DockerLabelKey, str], node.spec.labels))
@@ -747,9 +669,7 @@ def get_node_termination_started_since(node: Node) -> datetime.datetime | None:
     assert node.spec.labels  # nosec
     if _OSPARC_NODE_TERMINATION_PROCESS_LABEL_KEY not in node.spec.labels:
         return None
-    return arrow.get(
-        node.spec.labels[_OSPARC_NODE_TERMINATION_PROCESS_LABEL_KEY]
-    ).datetime
+    return arrow.get(node.spec.labels[_OSPARC_NODE_TERMINATION_PROCESS_LABEL_KEY]).datetime
 
 
 async def attach_node(
@@ -780,7 +700,5 @@ def compute_full_list_of_pre_pulled_images(
     ec2_boot_specific: EC2InstanceBootSpecific, app_settings: ApplicationSettings
 ) -> list[DockerGenericTag]:
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
-    common_images = (
-        app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_COLD_START_DOCKER_IMAGES_PRE_PULLING
-    )
+    common_images = app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_COLD_START_DOCKER_IMAGES_PRE_PULLING
     return sorted(set(common_images) | set(ec2_boot_specific.pre_pull_images))
