@@ -188,11 +188,11 @@ qx.Class.define("osparc.po.SendEmail", {
       };
       osparc.store.Faker.getInstance().sendEmail(data)
         .then(() => {
-          osparc.ui.message.FlashMessenger.getInstance().logAsSuccess(this.tr("Email sent successfully"));
+          osparc.FlashMessenger.logAs(this.tr("Email sent successfully"), "INFO");
         })
         .catch(err => {
           const errorMsg = err.message || this.tr("An error occurred while sending the test email");
-          osparc.ui.message.FlashMessenger.getInstance().logAsError(errorMsg);
+          osparc.FlashMessenger.logError(errorMsg);
         });
     },
   }
