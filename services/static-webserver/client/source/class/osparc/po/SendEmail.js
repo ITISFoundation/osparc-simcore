@@ -36,9 +36,11 @@ qx.Class.define("osparc.po.SendEmail", {
         }
         case "recipients-container": {
           control = new qx.ui.container.Composite(new qx.ui.layout.HBox(5).set({
-            alignY: "middle"
+            alignY: "middle",
           })).set({
-            marginBottom: 5
+            backgroundColor: "input-background",
+            height: 26,
+            marginBottom: 5,
           });
           const formContainer = this.getChildControl("form-container");
           formContainer.add(new qx.ui.basic.Label(this.tr("To")).set({
@@ -125,7 +127,7 @@ qx.Class.define("osparc.po.SendEmail", {
     },
 
     __openCollaboratorsManager: function() {
-      const collaboratorsManager = new osparc.share.NewCollaboratorsManager(null, false, false);
+      const collaboratorsManager = new osparc.share.NewCollaboratorsManager(null, true, false);
       collaboratorsManager.setAcceptOnlyOne(false);
       collaboratorsManager.getActionButton().setLabel(this.tr("Add"));
       collaboratorsManager.addListener("addCollaborators", e => {
