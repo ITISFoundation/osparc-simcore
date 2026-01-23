@@ -338,7 +338,7 @@ class SimcoreEC2API:
             instance_datas -- the instances to start
             change_startup_script -- optional user data script to set on instances before starting
                         Note: this will overwrite any existing user data on the instance
-                        Note2: EC2 instances cloud-init do not read user data on start by default
+                        Note2: By default, EC2 instances execute user data only on first launch; per-boot execution is enabled via MIME multi-part format (run_on_every_boot=True).
 
         Raises:
             EC2InstanceNotFoundError: if some of the instance_datas are not found
