@@ -30,20 +30,44 @@
         }
       }
     },
-    "/v0/notifications/{channel}/templates": {
+    "/v0/notifications/templates:search": {
       "get": {
         "tags": [
           "notifications"
         ],
-        "summary": "List Templates",
-        "operationId": "list_templates_v0_notifications__channel__templates_get",
+        "summary": "Search Templates",
+        "operationId": "search_templates_v0_notifications_templates_search_get",
         "parameters": [
           {
             "name": "channel",
-            "in": "path",
-            "required": true,
+            "in": "query",
+            "required": false,
             "schema": {
-              "$ref": "#/components/schemas/ChannelType"
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Channel"
+            }
+          },
+          {
+            "name": "template_name",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Template Name"
             }
           }
         ],
@@ -57,7 +81,7 @@
                   "items": {
                     "$ref": "#/components/schemas/NotificationTemplateGet"
                   },
-                  "title": "Response List Templates V0 Notifications  Channel  Templates Get"
+                  "title": "Response Search Templates V0 Notifications Templates Search Get"
                 }
               }
             }
@@ -121,6 +145,47 @@
                 "schema": {
                   "$ref": "#/components/schemas/NotificationPreviewGet"
                 }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v0/notifications/send": {
+      "post": {
+        "tags": [
+          "notifications"
+        ],
+        "summary": "Send Notification",
+        "operationId": "send_notification_v0_notifications_send_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": true,
+                "type": "object",
+                "title": "Message"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
               }
             }
           },

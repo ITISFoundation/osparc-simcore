@@ -3,7 +3,7 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends
 from models_library.api_schemas_notifications.preview import NotificationPreviewGet
-from models_library.api_schemas_notifications.template import NotificationTemplateGet
+from models_library.api_schemas_notifications.template import NotificationsTemplateGet
 from servicelib.celery.models import ExecutionMetadata, OwnerMetadata, TasksQueue
 from servicelib.celery.task_manager import TaskManager
 
@@ -20,11 +20,11 @@ async def search_templates(
     service: Annotated[NotificationsTemplatesService, Depends(get_notifications_templates_service)],
     channel: str | None = None,
     template_name: str | None = None,
-) -> list[NotificationTemplateGet]:
+) -> list[NotificationsTemplateGet]:
     templates = service.search_templates(channel=channel, template_name=template_name)
 
     return [
-        NotificationTemplateGet(
+        NotificationsTemplateGet(
             **asdict(template),
             variables_schema=template.variables_model.model_json_schema(),
         )

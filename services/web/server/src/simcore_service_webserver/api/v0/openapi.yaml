@@ -4691,6 +4691,36 @@ paths:
       responses:
         '302':
           description: Opens osparc and opens a copy of published study
+  /v0/notifications/templates:search:
+    get:
+      tags:
+      - notifications
+      summary: Search Templates
+      operationId: search_templates
+      parameters:
+      - name: channel
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Channel
+      - name: template_name
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Template Name
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_NotificationTemplateGet__'
   /v0/projects:
     post:
       tags:
@@ -11909,6 +11939,22 @@ components:
           title: Error
       type: object
       title: Envelope[list[MyTokenGet]]
+    Envelope_list_NotificationTemplateGet__:
+      properties:
+        data:
+          anyOf:
+          - items:
+              $ref: '#/components/schemas/NotificationTemplateGet'
+            type: array
+          - type: 'null'
+          title: Data
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[list[NotificationTemplateGet]]
     Envelope_list_PaymentMethodGet__:
       properties:
         data:
@@ -14649,6 +14695,19 @@ components:
       - ANNOTATION_NOTE
       - WALLET_SHARED
       title: NotificationCategory
+    NotificationTemplateGet:
+      properties:
+        ref:
+          $ref: '#/components/schemas/TemplateRefGet'
+        variablesSchema:
+          additionalProperties: true
+          type: object
+          title: Variablesschema
+      type: object
+      required:
+      - ref
+      - variablesSchema
+      title: NotificationTemplateGet
     OsparcCreditsAggregatedByServiceGet:
       properties:
         osparc_credits:
@@ -18129,6 +18188,19 @@ components:
       - items
       - end
       title: TaskStreamResponse
+    TemplateRefGet:
+      properties:
+        channel:
+          type: string
+          title: Channel
+        templateName:
+          type: string
+          title: Templatename
+      type: object
+      required:
+      - channel
+      - templateName
+      title: TemplateRefGet
     TestEmail:
       properties:
         from_:
