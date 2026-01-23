@@ -40,8 +40,8 @@ def _instrumented_ec2_client_method(
     return decorator
 
 
-def _instance_type_from_instance_data(instance_datas: Iterable[EC2InstanceData], *args, **kwargs) -> list[str]:  # noqa: ARG001 # pylint: disable=unused-argument
-    return [i.type for i in instance_datas]
+def _instance_type_from_instance_data(instance_data_list: Iterable[EC2InstanceData], *args, **kwargs) -> list[str]:  # noqa: ARG001 # pylint: disable=unused-argument
+    return [i.type for i in instance_data_list]
 
 
 def instrument_ec2_client_methods(app: FastAPI, ec2_client: SimcoreEC2API) -> SimcoreEC2API:
