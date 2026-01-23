@@ -14,11 +14,41 @@ if TYPE_CHECKING:
     from ._client import SimcoreEC2API
 
 
-def compose_user_data(startup_script: str) -> str:
-    return dedent(
-        f"""\
+def compose_user_data(startup_script: str, *, run_on_every_boot: bool) -> str:
+    """Compose EC2 user data script.
+
+    Arguments:
+        startup_script -- the bash script to run
+        run_on_every_boot -- if True, uses MIME multi-part format with text/x-shellscript-per-boot
+                            so script runs on every boot (e.g., warm buffer restarts).
+                            If False, uses plain bash script that runs once (default for cold-start).
+
+    Returns:
+        Base64-compatible user data string
+    """
+    if not run_on_every_boot:
+        # Default behavior: plain bash script runs once on first boot
+        return dedent(
+            f"""\
 #!/bin/bash
 {startup_script}
+"""
+        )
+
+    # MIME multi-part format for per-boot execution (e.g., warm buffer restarts)
+    # text/x-shellscript-per-boot runs on every boot, not just first launch
+    boundary = "===============SIMCORE_BOUNDARY=="
+    return dedent(
+        f"""\
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="{boundary}"
+
+--{boundary}
+Content-Type: text/x-shellscript-per-boot; charset="us-ascii"
+
+#!/bin/bash
+{startup_script}
+--{boundary}--
 """
     )
 

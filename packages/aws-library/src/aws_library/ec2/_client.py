@@ -230,7 +230,7 @@ class SimcoreEC2API:
                                 "Tags": resource_tags,
                             },
                         ],
-                        UserData=compose_user_data(instance_config.startup_script),
+                        UserData=compose_user_data(instance_config.startup_script, run_on_every_boot=False),
                         NetworkInterfaces=[
                             {
                                 "AssociatePublicIpAddress": True,
@@ -354,10 +354,11 @@ class SimcoreEC2API:
         ):
             if change_startup_script is not None:
                 # modify user data on stopped instances before starting
+                # use run_on_every_boot=True so the script executes on every restart (e.g., warm buffer activation)
                 for instance_id in instance_ids:
                     await self.client.modify_instance_attribute(
                         InstanceId=instance_id,
-                        UserData={"Value": compose_user_data(change_startup_script)},
+                        UserData={"Value": compose_user_data(change_startup_script, run_on_every_boot=True)},
                     )
             await self.client.start_instances(InstanceIds=instance_ids)
             # wait for the instance to be in a pending state
