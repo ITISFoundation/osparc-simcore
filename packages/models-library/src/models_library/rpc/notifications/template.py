@@ -1,13 +1,13 @@
 from typing import Any
 
-from ...notifications import ChannelType, TemplateName
+from pydantic import BaseModel
 
 
-class NotificationsTemplateRefRpcGet:
-    channel: ChannelType
-    template_name: TemplateName
+class NotificationsTemplateRefRpcGet(BaseModel):
+    channel: str
+    template_name: str
 
 
-class NotificationsTemplateRpcGet:
+class NotificationsTemplateRpcGet(BaseModel):
     ref: NotificationsTemplateRefRpcGet
     variables_schema: dict[str, Any]

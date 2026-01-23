@@ -1,7 +1,5 @@
 from aiohttp import web
-from models_library.api_schemas_notifications.template import NotificationsTemplateGet
 from models_library.api_schemas_webserver.notifications import SearchTemplatesQueryParams
-from pydantic import TypeAdapter
 from servicelib.aiohttp.requests_validation import parse_request_query_parameters_as
 from servicelib.aiohttp.rest_responses import create_data_response
 from servicelib.rabbitmq.rpc_interfaces.notifications.notifications_templates import (
@@ -27,4 +25,4 @@ async def search_templates(request: web.Request) -> web.Response:
         template_name=query_params.template_name,
     )
 
-    return create_data_response(TypeAdapter(list[NotificationsTemplateGet]).validate_python(templates))
+    return create_data_response(templates)
