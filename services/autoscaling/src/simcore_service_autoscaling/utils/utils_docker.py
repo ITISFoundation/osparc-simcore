@@ -416,16 +416,18 @@ async def get_docker_swarm_join_bash_command(*, join_as_drained: bool, idempoten
     decoded_stdout = stdout.decode()
     if match := re.search(_DOCKER_SWARM_JOIN_PATTERN, decoded_stdout):
         capture = match.groupdict()
-        command: list[str] = []
+        docker_join_command: list[str] = []
         if idempotent:
-            command.append("docker info --format '{{.Swarm.LocalNodeState}}' 2>/dev/null | grep -q '^inactive$'")
-        command.append(
+            docker_join_command.append(
+                "docker info --format '{{.Swarm.LocalNodeState}}' 2>/dev/null | grep -q '^inactive$'"
+            )
+        docker_join_command.append(
             f"{capture['command']} "
             f"--availability={'drain' if join_as_drained else 'active'} "
             f"{capture['token']} {capture['address']}"
         )
 
-        return " && ".join(command)
+        return " && ".join(docker_join_command)
     msg = f"expected docker '{_DOCKER_SWARM_JOIN_RE}' command not found: received {decoded_stdout}!"
     raise RuntimeError(msg)
 
