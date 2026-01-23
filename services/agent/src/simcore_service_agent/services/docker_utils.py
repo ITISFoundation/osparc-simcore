@@ -121,7 +121,7 @@ async def remove_volume(app: FastAPI, docker: Docker, *, volume_name: str, requi
             # docker volumes directory (e.g. after abrupt shutdowns). Docker may
             # fail volume deletion while trying to `lstat` the mountpoint.
             _logger.info(
-                "Volume '%s' failed to delete due to stale mountpoint; attempting lazy unmount and retry",
+                "Failed to remove volume '%s' due to stale mountpoint; attempting lazy unmount and retry",
                 volume_name,
             )
 
@@ -135,7 +135,13 @@ async def remove_volume(app: FastAPI, docker: Docker, *, volume_name: str, requi
                     raise
 
             if mountpoint is not None:
-                await _try_lazy_unmount(docker, mountpoint, settings.AGENT_VOLUMES_CLEANUP_R_CLONE_VERSION)
+                with log_context(
+                    _logger,
+                    logging.INFO,
+                    f"lazy unmount of stale mountpoint '{mountpoint}' for volume '{volume_name}'",
+                    log_duration=True,
+                ):
+                    await _try_lazy_unmount(docker, mountpoint, settings.AGENT_VOLUMES_CLEANUP_R_CLONE_VERSION)
 
             await volume.delete(force=True)
 
