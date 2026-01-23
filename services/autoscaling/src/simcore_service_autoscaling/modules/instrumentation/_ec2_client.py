@@ -28,9 +28,7 @@ def _instrumented_ec2_client_method(
         async def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
             result = await func(*args, **kwargs)
             if instance_type_from_method_arguments:
-                for instance_type in instance_type_from_method_arguments(
-                    *args, **kwargs
-                ):
+                for instance_type in instance_type_from_method_arguments(*args, **kwargs):
                     metrics_handler(instance_type)
             elif instance_type_from_method_return:
                 for instance_type in instance_type_from_method_return(result):
@@ -42,39 +40,35 @@ def _instrumented_ec2_client_method(
     return decorator
 
 
-def _instance_type_from_instance_datas(
-    instance_datas: Iterable[EC2InstanceData],
-) -> list[str]:
+def _instance_type_from_instance_data(instance_datas: Iterable[EC2InstanceData], *args, **kwargs) -> list[str]:  # noqa: ARG001
     return [i.type for i in instance_datas]
 
 
-def instrument_ec2_client_methods(
-    app: FastAPI, ec2_client: SimcoreEC2API
-) -> SimcoreEC2API:
+def instrument_ec2_client_methods(app: FastAPI, ec2_client: SimcoreEC2API) -> SimcoreEC2API:
     autoscaling_instrumentation = get_instrumentation(app)
     methods_to_instrument = [
         (
             "launch_instances",
             autoscaling_instrumentation.ec2_client_metrics.instance_launched,
             None,
-            _instance_type_from_instance_datas,
+            _instance_type_from_instance_data,
         ),
         (
             "start_instances",
             autoscaling_instrumentation.ec2_client_metrics.instance_started,
-            _instance_type_from_instance_datas,
+            _instance_type_from_instance_data,
             None,
         ),
         (
             "stop_instances",
             autoscaling_instrumentation.ec2_client_metrics.instance_stopped,
-            _instance_type_from_instance_datas,
+            _instance_type_from_instance_data,
             None,
         ),
         (
             "terminate_instances",
             autoscaling_instrumentation.ec2_client_metrics.instance_terminated,
-            _instance_type_from_instance_datas,
+            _instance_type_from_instance_data,
             None,
         ),
     ]
