@@ -155,4 +155,4 @@ def mocked_docker() -> AsyncMock:
 
 
 async def test_get_containers_with_prefixes_does_not_fail_if_container_is_missing(mocked_docker: AsyncMock):
-    await get_containers_with_prefixes(mocked_docker, prefixes={"dyc_", "simcore_dynamic_sidecar_"})
+    assert await get_containers_with_prefixes(mocked_docker, prefixes={"dyc_", "simcore_dynamic_sidecar_"}) == set()
