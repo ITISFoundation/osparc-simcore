@@ -86,6 +86,8 @@ ignore = [
 fixable = ["ALL"]
 unfixable = []
 
+task-tags = ["TODO", "FIXME", "XXX", "BUG", "HACK", "NOTE"]
+
 # Allow unused variables when underscore-prefixed.
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
@@ -118,6 +120,9 @@ skip-magic-trailing-comma = false
 
 # Like Black, automatically detect the appropriate line ending.
 line-ending = "auto"
+
+[lint.pycodestyle]
+ignore-overlong-task-comments = true
 
 [lint.pylint]
 # Maximum number of arguments for function / method.
