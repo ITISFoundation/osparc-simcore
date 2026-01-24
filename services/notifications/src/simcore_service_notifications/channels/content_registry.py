@@ -1,7 +1,8 @@
 from typing import Any
 
+from models_library.notifications import ChannelType
+
 from ..exceptions.errors import ContentModelNotFoundError
-from ..models.channel import ChannelType
 
 _CONTENTS: dict[ChannelType, type[Any]] = {}
 

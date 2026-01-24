@@ -15,13 +15,13 @@ class JinjaNotificationsRenderer(NotificationsRenderer):
     def preview_template(
         self,
         template: NotificationTemplate,
-        variables: dict[str, Any],
+        context: dict[str, Any],
     ) -> NotificationTemplatePreview:
         content = {}
         for render_part in template.parts:
             jinja_template = self.repository.get_jinja_template(template, render_part)
 
-            content[render_part] = jinja_template.render(variables)
+            content[render_part] = jinja_template.render(context)
 
         return NotificationTemplatePreview(
             template_ref=template.ref,
