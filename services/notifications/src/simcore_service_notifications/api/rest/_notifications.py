@@ -43,7 +43,7 @@ async def preview_notification(
 
     variables |= {"product": {"ui": {"strong_color": None}}}  # GCR: move to client side
 
-    return NotificationPreviewGet(**asdict(service.render_preview(template_ref, variables)))
+    return NotificationPreviewGet(**asdict(service.preview_template(template_ref, variables)))
 
 
 @router.post("/send")

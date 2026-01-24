@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from ..channels.content_registry import get_content_cls
-from ..models.preview import NotificationPreview
+from ..models.preview import NotificationTemplatePreview
 from ..models.template import NotificationTemplate
 from ..repository.templates_repository import NotificationsTemplatesRepository
 from .renderer import NotificationsRenderer
@@ -12,18 +12,18 @@ from .renderer import NotificationsRenderer
 class JinjaNotificationsRenderer(NotificationsRenderer):
     repository: NotificationsTemplatesRepository
 
-    def render_preview(
+    def preview_template(
         self,
         template: NotificationTemplate,
         variables: dict[str, Any],
-    ) -> NotificationPreview:
+    ) -> NotificationTemplatePreview:
         content = {}
         for render_part in template.parts:
             jinja_template = self.repository.get_jinja_template(template, render_part)
 
             content[render_part] = jinja_template.render(variables)
 
-        return NotificationPreview(
+        return NotificationTemplatePreview(
             template_ref=template.ref,
             content=get_content_cls(template.ref.channel)(**content),
         )

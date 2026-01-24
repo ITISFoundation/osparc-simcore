@@ -2,16 +2,16 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any
 
-from ..models.preview import NotificationPreview
+from ..models.preview import NotificationTemplatePreview
 from ..models.template import NotificationTemplate
 
 
 @dataclass(frozen=True)
 class NotificationsRenderer(ABC):
     @abstractmethod
-    def render_preview(
+    def preview_template(
         self,
         template: NotificationTemplate,
-        variables: dict[str, Any],
-    ) -> NotificationPreview:
+        context: dict[str, Any],
+    ) -> NotificationTemplatePreview:
         raise NotImplementedError

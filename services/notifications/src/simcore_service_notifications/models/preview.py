@@ -4,6 +4,6 @@ from .template import TemplateRef
 
 
 @dataclass(frozen=True)
-class NotificationPreview[C]:
+class NotificationTemplatePreview[C]:
     template_ref: TemplateRef
     content: C

@@ -1,11 +1,15 @@
+import logging
 from dataclasses import dataclass
 from typing import Any
 
-from ..exceptions.errors import TemplateNotFoundError
-from ..models.preview import NotificationPreview
+from models_library.notifications_errors import NotificationsTemplateNotFoundError
+
+from ..models.preview import NotificationTemplatePreview
 from ..models.template import NotificationTemplate, TemplateRef
 from ..renderers.renderer import NotificationsRenderer
 from ..repository import NotificationsTemplatesRepository
+
+_logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -13,24 +17,28 @@ class NotificationsTemplatesService:
     repository: NotificationsTemplatesRepository
     renderer: NotificationsRenderer
 
-    def search_templates(self, channel: str | None, template_name: str | None) -> list[NotificationTemplate]:
-        return self.repository.search_templates(channel=channel, template_name=template_name)
+    def preview_template(self, template_ref: TemplateRef, context: dict[str, Any]) -> NotificationTemplatePreview:
+        _logger.error("Previewing template %s with context %s", template_ref, context)
 
-    def render_preview(self, template_ref: TemplateRef, variables: dict[str, Any]) -> NotificationPreview:
         templates = self.repository.search_templates(
             channel=template_ref.channel,
             template_name=template_ref.template_name,
         )
 
         if not templates:
-            raise TemplateNotFoundError(template_ref=template_ref)
+            raise NotificationsTemplateNotFoundError(
+                channel=template_ref.channel, template_name=template_ref.template_name
+            )
 
         template = templates[0]
 
         # validates incoming variables against the template's variables model
-        validated_variables = template.variables_model.model_validate(variables)
+        validated_context = template.context_model.model_validate(context)
 
-        return self.renderer.render_preview(
+        return self.renderer.preview_template(
             template=template,
-            variables=validated_variables.model_dump(),
+            context=validated_context.model_dump(),
         )
+
+    def search_templates(self, channel: str | None, template_name: str | None) -> list[NotificationTemplate]:
+        return self.repository.search_templates(channel=channel, template_name=template_name)

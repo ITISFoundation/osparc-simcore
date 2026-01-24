@@ -4691,6 +4691,25 @@ paths:
       responses:
         '302':
           description: Opens osparc and opens a copy of published study
+  /v0/notifications/templates:preview:
+    post:
+      tags:
+      - notifications
+      summary: Preview Template
+      operationId: preview_template
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationsTemplatePreviewBody'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_NotificationsTemplatePreviewGet_'
   /v0/notifications/templates:search:
     get:
       tags:
@@ -11184,6 +11203,19 @@ components:
           title: Error
       type: object
       title: Envelope[NodeRetrieved]
+    Envelope_NotificationsTemplatePreviewGet_:
+      properties:
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/NotificationsTemplatePreviewGet'
+          - type: 'null'
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[NotificationsTemplatePreviewGet]
     Envelope_PaymentMethodGet_:
       properties:
         data:
@@ -14722,6 +14754,32 @@ components:
       - ref
       - contextSchema
       title: NotificationsTemplateGet
+    NotificationsTemplatePreviewBody:
+      properties:
+        ref:
+          $ref: '#/components/schemas/NotificationsTemplateRefGet'
+        context:
+          additionalProperties: true
+          type: object
+          title: Context
+      type: object
+      required:
+      - ref
+      - context
+      title: NotificationsTemplatePreviewBody
+    NotificationsTemplatePreviewGet:
+      properties:
+        ref:
+          $ref: '#/components/schemas/NotificationsTemplateRefGet'
+        content:
+          additionalProperties: true
+          type: object
+          title: Content
+      type: object
+      required:
+      - ref
+      - content
+      title: NotificationsTemplatePreviewGet
     NotificationsTemplateRefGet:
       properties:
         channel:

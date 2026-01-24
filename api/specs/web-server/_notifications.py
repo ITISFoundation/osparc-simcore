@@ -8,7 +8,12 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends
-from models_library.api_schemas_webserver.notifications import NotificationsTemplateGet, SearchTemplatesQueryParams
+from models_library.api_schemas_webserver.notifications import (
+    NotificationsTemplateGet,
+    NotificationsTemplatePreviewBody,
+    NotificationsTemplatePreviewGet,
+    SearchTemplatesQueryParams,
+)
 from models_library.generics import Envelope
 from simcore_service_webserver._meta import API_VTAG
 
@@ -18,6 +23,15 @@ router = APIRouter(
         "notifications",
     ],
 )
+
+
+@router.post(
+    "/notifications/templates:preview",
+    response_model=Envelope[NotificationsTemplatePreviewGet],
+)
+async def preview_template(
+    _body: NotificationsTemplatePreviewBody,
+): ...
 
 
 @router.get(
