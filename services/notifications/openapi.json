@@ -112,7 +112,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "$ref": "#/components/schemas/ChannelType-Input"
+              "$ref": "#/components/schemas/ChannelType"
             }
           },
           {
@@ -205,18 +205,10 @@
   },
   "components": {
     "schemas": {
-      "ChannelType-Input": {
+      "ChannelType": {
         "type": "string",
         "enum": [
           "email"
-        ],
-        "title": "ChannelType"
-      },
-      "ChannelType-Output": {
-        "type": "string",
-        "enum": [
-          "email",
-          "sms"
         ],
         "title": "ChannelType"
       },
@@ -339,7 +331,7 @@
       "TemplateRefGet": {
         "properties": {
           "channel": {
-            "$ref": "#/components/schemas/ChannelType-Output"
+            "$ref": "#/components/schemas/ChannelType"
           },
           "templateName": {
             "$ref": "#/components/schemas/TemplateName"

@@ -34,7 +34,6 @@ class NotificationsTemplatePreviewGet(OutputSchema):
     content: dict[str, Any]
 
 
-# POST /notifications/templates:send
 class NotificationsTemplateMessageBody(InputSchema):
     ref: NotificationsTemplateRefGet
     recipients: list[GroupID]

@@ -4691,6 +4691,25 @@ paths:
       responses:
         '302':
           description: Opens osparc and opens a copy of published study
+  /v0/notifications/messages:send:
+    post:
+      tags:
+      - notifications
+      summary: Send Message
+      operationId: send_message
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationsMessageBody'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_TaskGet_'
   /v0/notifications/templates:preview:
     post:
       tags:
@@ -4748,6 +4767,25 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_list_NotificationsTemplateGet__'
+  /v0/notifications/templates:send:
+    post:
+      tags:
+      - notifications
+      summary: Send Message From Template
+      operationId: send_message_from_template
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationsTemplateMessageBody'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_TaskGet_'
   /v0/projects:
     post:
       tags:
@@ -9896,7 +9934,6 @@ components:
       type: string
       enum:
       - email
-      - sms
       title: ChannelType
     CodePageParams:
       properties:
@@ -14741,6 +14778,27 @@ components:
       - ANNOTATION_NOTE
       - WALLET_SHARED
       title: NotificationCategory
+    NotificationsMessageBody:
+      properties:
+        channel:
+          $ref: '#/components/schemas/ChannelType'
+        recipients:
+          items:
+            type: integer
+            exclusiveMinimum: true
+            minimum: 0
+          type: array
+          title: Recipients
+        content:
+          additionalProperties: true
+          type: object
+          title: Content
+      type: object
+      required:
+      - channel
+      - recipients
+      - content
+      title: NotificationsMessageBody
     NotificationsTemplateGet:
       properties:
         ref:
@@ -14754,6 +14812,27 @@ components:
       - ref
       - contextSchema
       title: NotificationsTemplateGet
+    NotificationsTemplateMessageBody:
+      properties:
+        ref:
+          $ref: '#/components/schemas/NotificationsTemplateRefGet'
+        recipients:
+          items:
+            type: integer
+            exclusiveMinimum: true
+            minimum: 0
+          type: array
+          title: Recipients
+        context:
+          additionalProperties: true
+          type: object
+          title: Context
+      type: object
+      required:
+      - ref
+      - recipients
+      - context
+      title: NotificationsTemplateMessageBody
     NotificationsTemplatePreviewBody:
       properties:
         ref:
