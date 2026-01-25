@@ -1,14 +1,11 @@
 from fastapi import FastAPI, status
 from models_library.notifications_errors import (
+    NotificationsTemplateContextValidationError,
     NotificationsTemplateNotFoundError,
 )
 from servicelib.fastapi.http_error import (
     make_http_error_handler_for_exception,
     set_app_default_http_error_handlers,
-)
-
-from services.notifications.src.simcore_service_notifications.services.templates_service import (
-    NotificationsTemplateContextValidationError,
 )
 
 
