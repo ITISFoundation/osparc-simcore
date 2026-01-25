@@ -10,12 +10,11 @@ from servicelib.rabbitmq import RabbitMQRPCClient
 
 from ...clients.postgres import PostgresLiveness
 from ...clients.postgres import get_postgres_liveness as _get_db_liveness
-from ...models import email_content  # noqa: F401 # NOTE: registers contents
 from ...renderers.jinja_renderer import JinjaNotificationsRenderer
 from ...renderers.renderer import NotificationsRenderer
 from ...repository.templates_repository import NotificationsTemplatesRepository
 from ...services.templates_service import NotificationsTemplatesService
-from ...templates import models as variables_models  # noqa: F401 # NOTE: registers variables models
+from ...templates import models as context_models  # noqa: F401 # NOTE: registers context models
 
 
 def get_application(request: Request) -> FastAPI:
