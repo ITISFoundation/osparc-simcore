@@ -28,13 +28,13 @@ from servicelib.fastapi.celery.app_server import FastAPIAppServer
 from servicelib.redis import RedisClientSDK
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisDatabase, RedisSettings
+from simcore_service_notifications.api.celery import _email
 from simcore_service_notifications.api.celery.tasks import (
     register_worker_tasks,
 )
 from simcore_service_notifications.core.application import create_app
 from simcore_service_notifications.core.settings import ApplicationSettings
 from simcore_service_notifications.main import app_factory
-from simcore_service_notifications.modules.celery.worker import _email_tasks
 
 pytest_plugins = [
     "pytest_simcore.environment_configs",
@@ -161,6 +161,8 @@ async def task_manager(
         )
         await redis_client_sdk.setup()
 
+        assert app_settings.NOTIFICATIONS_CELERY is not None
+
         yield CeleryTaskManager(
             mock_celery_app,
             app_settings.NOTIFICATIONS_CELERY,
@@ -185,7 +187,7 @@ def smtp_mock_or_none(
 ) -> MagicMock | None:
     if not is_external_user_email:
         mock_smtp = AsyncMock()
-        mock_create_email_session = mocker.patch.object(_email_tasks, "create_email_session")
+        mock_create_email_session = mocker.patch.object(_email, "create_email_session")
         mock_create_email_session.return_value.__aenter__.return_value = mock_smtp
         return mock_smtp
     print("🚨 Emails might be sent to", f"{user_email=}")
