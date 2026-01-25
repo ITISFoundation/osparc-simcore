@@ -26,10 +26,14 @@ routes = web.RouteTableDef()
 _notifications_prefix = f"/{API_VTAG}/notifications"
 
 
-# TODO: POST /notifications/templates:send  # noqa: FIX002
-# TODO: POST /notifications/messages:send  # noqa: FIX002
-
 _logger = logging.getLogger(__name__)
+
+
+@routes.post(f"{_notifications_prefix}/messages:send", name="send_message")
+@login_required
+@handle_notifications_exceptions
+async def send_message(request: web.Request) -> web.Response:
+    raise NotImplementedError
 
 
 @routes.post(f"{_notifications_prefix}/templates:preview", name="preview_template")
@@ -61,3 +65,10 @@ async def search_templates(request: web.Request) -> web.Response:
     )
 
     return create_data_response([NotificationsTemplateGet(**template.model_dump()).data() for template in templates])
+
+
+@routes.post(f"{_notifications_prefix}/templates:send", name="send_message_from_template")
+@login_required
+@handle_notifications_exceptions
+async def send_message_from_template(request: web.Request) -> web.Response:
+    raise NotImplementedError
