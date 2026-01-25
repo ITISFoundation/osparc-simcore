@@ -76,12 +76,10 @@ async def test_register_get_delete_function_job(
     )
 
     # Register the function job
-    registered_jobs_batch_create = (
-        await webserver_rpc_client.functions.batch_register_function_jobs(
-            function_jobs=[function_job],
-            user_id=logged_user["id"],
-            product_name=osparc_product_name,
-        )
+    registered_jobs_batch_create = await webserver_rpc_client.functions.batch_register_function_jobs(
+        function_jobs=[function_job],
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
     )
     registered_jobs = registered_jobs_batch_create.created_items
     assert len(registered_jobs) == 1
@@ -91,9 +89,7 @@ async def test_register_get_delete_function_job(
     assert registered_job.function_uid == function_job.function_uid
     assert registered_job.inputs == function_job.inputs
     assert registered_job.outputs == function_job.outputs
-    assert registered_job.created_at - datetime.datetime.now(
-        datetime.UTC
-    ) < datetime.timedelta(seconds=60)
+    assert registered_job.created_at - datetime.datetime.now(datetime.UTC) < datetime.timedelta(seconds=60)
 
     # Retrieve the function job using its ID
     retrieved_job = await webserver_rpc_client.functions.get_function_job(
@@ -199,12 +195,10 @@ async def test_list_function_jobs(
     )
 
     # Register the function job
-    registered_jobs_batch_create = (
-        await webserver_rpc_client.functions.batch_register_function_jobs(
-            function_jobs=[function_job],
-            user_id=logged_user["id"],
-            product_name=osparc_product_name,
-        )
+    registered_jobs_batch_create = await webserver_rpc_client.functions.batch_register_function_jobs(
+        function_jobs=[function_job],
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
     )
     registered_jobs = registered_jobs_batch_create.created_items
     assert len(registered_jobs) == 1
@@ -338,17 +332,11 @@ async def test_list_function_jobs_filtering(
                 )
             )
 
-    job_ids = [
-        job.uid
-        for job in first_registered_function_jobs[1:2]
-        + second_registered_function_jobs[0:1]
-    ]
-    function_job_collection = (
-        await webserver_rpc_client.functions.register_function_job_collection(
-            function_job_collection=FunctionJobCollection(job_ids=job_ids),
-            user_id=logged_user["id"],
-            product_name=osparc_product_name,
-        )
+    job_ids = [job.uid for job in first_registered_function_jobs[1:2] + second_registered_function_jobs[0:1]]
+    function_job_collection = await webserver_rpc_client.functions.register_function_job_collection(
+        function_job_collection=FunctionJobCollection(job_ids=job_ids),
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
     )
 
     # List function jobs for a specific function ID
@@ -369,9 +357,7 @@ async def test_list_function_jobs_filtering(
         pagination_limit=10,
         pagination_offset=0,
         filter_by_function_job_ids=[
-            job.uid
-            for job in first_registered_function_jobs[0:1]
-            + second_registered_function_jobs[1:2]
+            job.uid for job in first_registered_function_jobs[0:1] + second_registered_function_jobs[1:2]
         ],
         user_id=logged_user["id"],
         product_name=osparc_product_name,
@@ -571,7 +557,7 @@ async def test_find_cached_function_jobs_with_status(
                 title=_faker.word(),
                 description=_faker.sentence(),
                 project_job_id=ProjectID(_faker.uuid4()),
-                job_creation_task_id=TaskKey(_faker.uuid4()),
+                job_creation_task_id=TypeAdapter(TaskKey).validate_python(_faker.uuid4()),
                 inputs={"input1": _faker.pyint(min_value=0, max_value=1000)},
                 outputs={"output1": _faker.word()},
             ),
@@ -628,9 +614,7 @@ async def test_patch_registered_function_jobs(
     registered_job = await webserver_rpc_client.functions.patch_registered_function_job(
         user_id=logged_user["id"],
         product_name=osparc_product_name,
-        function_job_patch_request=FunctionJobPatchRequest(
-            uid=registered_job.uid, patch=patch
-        ),
+        function_job_patch_request=FunctionJobPatchRequest(uid=registered_job.uid, patch=patch),
     )
     assert registered_job.title == patch.title
     assert registered_job.description == patch.description
@@ -700,14 +684,10 @@ async def test_incompatible_patch_model_error(
         product_name=osparc_product_name,
     )
     with pytest.raises(FunctionJobPatchModelIncompatibleError):
-        registered_job = (
-            await webserver_rpc_client.functions.patch_registered_function_job(
-                user_id=logged_user["id"],
-                product_name=osparc_product_name,
-                function_job_patch_request=FunctionJobPatchRequest(
-                    uid=registered_job.uid, patch=patch
-                ),
-            )
+        registered_job = await webserver_rpc_client.functions.patch_registered_function_job(
+            user_id=logged_user["id"],
+            product_name=osparc_product_name,
+            function_job_patch_request=FunctionJobPatchRequest(uid=registered_job.uid, patch=patch),
         )
 
 
@@ -779,20 +759,14 @@ async def test_update_function_job_status_output(
         if status_or_output == "status":
             return await webserver_rpc_client.functions.update_function_job_status(
                 function_job_id=registered_job.uid,
-                user_id=(
-                    other_logged_user["id"]
-                    if access_by_other_user
-                    else logged_user["id"]
-                ),
+                user_id=(other_logged_user["id"] if access_by_other_user else logged_user["id"]),
                 product_name=osparc_product_name,
                 job_status=new_status,
                 check_write_permissions=check_write_permissions,
             )
         return await webserver_rpc_client.functions.update_function_job_outputs(
             function_job_id=registered_job.uid,
-            user_id=(
-                other_logged_user["id"] if access_by_other_user else logged_user["id"]
-            ),
+            user_id=(other_logged_user["id"] if access_by_other_user else logged_user["id"]),
             product_name=osparc_product_name,
             outputs=new_outputs,
             check_write_permissions=check_write_permissions,
