@@ -1,7 +1,8 @@
 from dataclasses import dataclass
 from typing import ClassVar
 
-from ...models.channel import ChannelType
+from models_library.notifications import ChannelType
+
 from ...models.content import EmailNotificationContent
 from ...models.message import NotificationMessage
 from .email_models import EmailAddress, EmailAttachment

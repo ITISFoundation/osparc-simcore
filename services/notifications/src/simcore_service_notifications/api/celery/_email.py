@@ -6,6 +6,7 @@ from email.message import EmailMessage as _EmailMessage
 
 from celery import Task  # type: ignore[import-untyped]
 from models_library.api_schemas_notifications.message import EmailNotificationMessage
+from models_library.notifications import ChannelType
 from notifications_library._email import (
     add_attachments,
     compose_email,
@@ -13,8 +14,6 @@ from notifications_library._email import (
 )
 from servicelib.celery.models import TaskKey
 from settings_library.email import SMTPSettings
-
-from ...models.channel import ChannelType
 
 _logger = logging.getLogger(__name__)
 

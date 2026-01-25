@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import ClassVar
 
-from .channel import ChannelType
+from models_library.notifications import ChannelType
 
 
 @dataclass(frozen=True)

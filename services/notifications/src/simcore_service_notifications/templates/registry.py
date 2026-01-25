@@ -7,7 +7,7 @@ from ..models.template import TemplateRef
 _VARIABLES_MODELS: dict[TemplateRef, type[BaseModel]] = {}
 
 
-def register_variables_model(channel: ChannelType, template_name: str):
+def register_context_model(channel: ChannelType, template_name: str):
     def _(cls: type[BaseModel]):
         _VARIABLES_MODELS[TemplateRef(channel, template_name)] = cls
         return cls
