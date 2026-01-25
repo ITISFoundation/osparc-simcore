@@ -1,7 +1,7 @@
+from models_library.notifications import ChannelType
 from pydantic import BaseModel
 
 from ..exceptions.errors import VariablesModelNotFoundError
-from ..models.channel import ChannelType
 from ..models.template import TemplateRef
 
 _VARIABLES_MODELS: dict[TemplateRef, type[BaseModel]] = {}
