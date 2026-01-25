@@ -4,5 +4,5 @@ from pydantic import BaseModel
 from pydantic.json_schema import SkipJsonSchema
 
 
-class BaseVariablesModel(BaseModel):
+class BaseContextModel(BaseModel):
     product: SkipJsonSchema[dict[str, Any]]

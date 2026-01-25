@@ -8,7 +8,7 @@ from pydantic import TypeAdapter
 
 from ..models.content import for_channel
 from ..models.template import NotificationTemplate, TemplateRef
-from ..templates.registry import get_variables_model
+from ..templates.registry import get_context_model
 
 _TEMPLATE_EXTENSION = ".j2"
 
@@ -18,7 +18,7 @@ _logger = logging.getLogger(__name__)
 def _build_template(ref: TemplateRef) -> NotificationTemplate:
     return NotificationTemplate(
         ref=ref,
-        context_model=get_variables_model(ref),
+        context_model=get_context_model(ref),
         parts=for_channel(ref.channel).get_field_names(),
     )
 
