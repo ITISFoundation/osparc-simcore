@@ -248,6 +248,7 @@ class ContainerManager:  # pylint:disable=too-many-instance-attributes
 class RemoteControlHttpClient:
     def __init__(
         self,
+        rc_host: str,
         rc_port: PortInt,
         rc_user: str,
         rc_password: str,
@@ -259,7 +260,7 @@ class RemoteControlHttpClient:
         self.transfers_completed_timeout = transfers_completed_timeout
         self._update_interval_seconds = update_interval.total_seconds()
         self._r_clone_client_timeout = r_clone_client_timeout
-        self.rc_host = "172.17.0.1"  # docker default bridge gateway
+        self.rc_host = rc_host
         self.rc_port = rc_port
         self._auth = (rc_user, rc_password)
 

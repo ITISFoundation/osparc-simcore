@@ -35,6 +35,7 @@ class _TrackedMount:  # pylint:disable=too-many-instance-attributes
         r_clone_settings: RCloneSettings,
         mount_remote_type: MountRemoteType,
         *,
+        rc_host: str,
         rc_port: PortInt,
         remote_path: StorageFileID,
         local_mount_path: Path,
@@ -72,6 +73,7 @@ class _TrackedMount:  # pylint:disable=too-many-instance-attributes
         )
 
         self._rc_http_client = RemoteControlHttpClient(
+            rc_host=rc_host,
             rc_port=rc_port,
             rc_user=rc_user,
             rc_password=rc_password,
@@ -158,10 +160,13 @@ class RCloneMountManager:
 
             free_port = await asyncio.get_running_loop().run_in_executor(None, unused_port)
 
+            node_address = await self.delegate.get_node_address()
+
             tracked_mount = _TrackedMount(
                 node_id,
                 self.r_clone_settings,
                 remote_type,
+                rc_host=node_address,
                 rc_port=free_port,
                 remote_path=remote_path,
                 local_mount_path=local_mount_path,
