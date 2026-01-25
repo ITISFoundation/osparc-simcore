@@ -8,9 +8,9 @@ from jinja2 import Environment
 from notifications_library._render import create_render_environment_from_notifications_library
 from servicelib.rabbitmq import RabbitMQRPCClient
 
-from ...channels.email import email_content  # noqa: F401 # NOTE: registers contents
 from ...clients.postgres import PostgresLiveness
 from ...clients.postgres import get_postgres_liveness as _get_db_liveness
+from ...models import email_content  # noqa: F401 # NOTE: registers contents
 from ...renderers.jinja_renderer import JinjaNotificationsRenderer
 from ...renderers.renderer import NotificationsRenderer
 from ...repository.templates_repository import NotificationsTemplatesRepository

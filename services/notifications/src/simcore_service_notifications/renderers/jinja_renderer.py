@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Any
 
-from ..channels.content_registry import get_content_cls
+from ..models.content import for_channel
 from ..models.preview import NotificationTemplatePreview
 from ..models.template import NotificationTemplate
 from ..repository.templates_repository import NotificationsTemplatesRepository
@@ -25,5 +25,5 @@ class JinjaNotificationsRenderer(NotificationsRenderer):
 
         return NotificationTemplatePreview(
             template_ref=template.ref,
-            content=get_content_cls(template.ref.channel)(**content),
+            content=for_channel(template.ref.channel)(**content),
         )

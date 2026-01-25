@@ -1,12 +1,12 @@
 import fnmatch
 import logging
-from dataclasses import dataclass, fields
+from dataclasses import dataclass
 
 from jinja2 import Environment, Template
 from models_library.notifications import ChannelType, TemplateName
 from pydantic import TypeAdapter
 
-from ..channels.content_registry import get_content_cls
+from ..models.content import for_channel
 from ..models.template import NotificationTemplate, TemplateRef
 from ..templates.registry import get_variables_model
 
@@ -19,7 +19,7 @@ def _build_template(ref: TemplateRef) -> NotificationTemplate:
     return NotificationTemplate(
         ref=ref,
         context_model=get_variables_model(ref),
-        parts=tuple(f.name for f in fields(get_content_cls(ref.channel))),  # type: ignore[arg-type]
+        parts=for_channel(ref.channel).get_field_names(),
     )
 
 
