@@ -9,6 +9,7 @@ from models_library.rpc.notifications.template import (
     NotificationsTemplateRpcResponse,
 )
 from pydantic import TypeAdapter, validate_call
+
 from servicelib.logging_utils import log_decorator
 from servicelib.rabbitmq import RabbitMQRPCClient
 
