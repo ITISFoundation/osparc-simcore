@@ -2,7 +2,11 @@ import logging
 from dataclasses import dataclass
 from typing import Any
 
-from models_library.notifications_errors import NotificationsTemplateNotFoundError
+from models_library.notifications_errors import (
+    NotificationsTemplateContextValidationError,
+    NotificationsTemplateNotFoundError,
+)
+from pydantic import ValidationError
 
 from ..models.preview import NotificationTemplatePreview
 from ..models.template import NotificationTemplate, TemplateRef
@@ -32,8 +36,14 @@ class NotificationsTemplatesService:
 
         template = templates[0]
 
-        # validates incoming variables against the template's variables model
-        validated_context = template.context_model.model_validate(context)
+        try:
+            # validates incoming variables against the template's variables model
+            validated_context = template.context_model.model_validate(context)
+        except ValidationError as e:
+            raise NotificationsTemplateContextValidationError(
+                template_name=template_ref.template_name,
+                channel=template_ref.channel,
+            ) from e
 
         return self.renderer.preview_template(
             template=template,
