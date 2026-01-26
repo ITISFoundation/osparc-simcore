@@ -27,8 +27,7 @@ type NotificationsContentGet = NotificationsEmailContentGet
 
 
 class SearchTemplatesQueryParams(BaseModel):
-    # NOTE: str because we support wildcards
-    channel: str | None = None
+    channel: ChannelType | None = None
     template_name: str | None = None
 
 
