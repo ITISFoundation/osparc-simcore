@@ -182,7 +182,7 @@ def compute_pipeline_started_timestamp(
             node_id_to_comp_task[node_id].start or tomorrow for node_id in pipeline_dag.nodes
         )
     except KeyError as exc:
-        _logger.warning(
+        _logger.exception(
             **create_troubleshooting_log_kwargs(
                 "Node missing in comp_tasks",
                 error=exc,
@@ -209,7 +209,7 @@ def compute_pipeline_stopped_timestamp(
             node_id_to_comp_task[node_id].end or tomorrow for node_id in pipeline_dag.nodes
         )
     except KeyError as exc:
-        _logger.warning(
+        _logger.exception(
             **create_troubleshooting_log_kwargs(
                 "Node missing in comp_tasks",
                 error=exc,
