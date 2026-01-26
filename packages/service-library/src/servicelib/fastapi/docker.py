@@ -25,9 +25,7 @@ def create_remote_docker_client_input_state(settings: DockerApiProxysettings) ->
     return {_DOCKER_API_PROXY_SETTINGS: settings}
 
 
-async def remote_docker_client_lifespan(
-    app: FastAPI, state: State
-) -> AsyncIterator[State]:
+async def remote_docker_client_lifespan(app: FastAPI, state: State) -> AsyncIterator[State]:
     settings: DockerApiProxysettings = state[_DOCKER_API_PROXY_SETTINGS]
 
     async with AsyncExitStack() as exit_stack:
@@ -50,6 +48,31 @@ async def remote_docker_client_lifespan(
         yield {}
 
 
+def setup_remote_docker_client(app: FastAPI, settings: DockerApiProxysettings) -> None:
+    exit_stack = AsyncExitStack()
+
+    async def on_startup() -> None:
+        session = await exit_stack.enter_async_context(
+            ClientSession(
+                auth=aiohttp.BasicAuth(
+                    login=settings.DOCKER_API_PROXY_USER,
+                    password=settings.DOCKER_API_PROXY_PASSWORD.get_secret_value(),
+                )
+            )
+        )
+
+        app.state.remote_docker_client = await exit_stack.enter_async_context(
+            aiodocker.Docker(url=settings.base_url, session=session)
+        )
+        await wait_till_docker_api_proxy_is_responsive(app)
+
+    async def on_shutdown() -> None:
+        await exit_stack.aclose()
+
+    app.add_event_handler("startup", on_startup)
+    app.add_event_handler("shutdown", on_shutdown)
+
+
 @tenacity.retry(
     wait=tenacity.wait_fixed(5),
     stop=tenacity.stop_after_delay(60),
@@ -61,7 +84,9 @@ async def wait_till_docker_api_proxy_is_responsive(app: FastAPI) -> None:
 
 
 async def is_docker_api_proxy_ready(
-    app: FastAPI, *, timeout=_DEFAULT_DOCKER_API_PROXY_HEALTH_TIMEOUT  # noqa: ASYNC109
+    app: FastAPI,
+    *,
+    timeout=_DEFAULT_DOCKER_API_PROXY_HEALTH_TIMEOUT,  # noqa: ASYNC109
 ) -> bool:
     try:
         await asyncio.wait_for(get_remote_docker_client(app).version(), timeout=timeout)
