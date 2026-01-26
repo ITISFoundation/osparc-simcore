@@ -104,6 +104,7 @@ async def remove_volume(app: FastAPI, docker: Docker, *, volume_name: str, requi
             await _backup_volume(app, docker, volume_name=volume_name)
 
         settings: ApplicationSettings = app.state.settings
+        get_instrumentation(app).agent_metrics.remove_volumes(settings.AGENT_DOCKER_NODE_ID)
 
         volume = DockerVolume(docker, volume_name)
 
@@ -191,14 +192,15 @@ async def _try_lazy_unmount(docker: Docker, mountpoint: Path, r_clone_version: s
 
 async def get_containers_with_prefixes(docker: Docker, prefixes: set[str]) -> set[str]:
     """Returns a set of container names matching any of the given prefixes"""
-    all_containers = await docker.containers.list(all=True)
+    filtered_containers = await docker.containers.list(all=True, filters={"name": list(prefixes)})
 
     result: set[str] = set()
-    for container in all_containers:
-        container_info = await container.show()
-        container_name = container_info.get("Name", "").lstrip("/")
-        if any(container_name.startswith(prefix) for prefix in prefixes):
-            result.add(container_name)
+
+    for container in filtered_containers:
+        for name in container["Names"]:
+            container_name = name.lstrip("/")
+            if any(container_name.startswith(prefix) for prefix in prefixes):
+                result.add(container_name)
 
     return result
 
