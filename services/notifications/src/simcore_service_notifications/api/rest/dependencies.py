@@ -2,18 +2,11 @@
 
 from typing import Annotated, cast
 
-from celery_library.task_manager import CeleryTaskManager
 from fastapi import Depends, FastAPI, Request
-from jinja2 import Environment
-from notifications_library._render import create_render_environment_from_notifications_library
 from servicelib.rabbitmq import RabbitMQRPCClient
 
 from ...clients.postgres import PostgresLiveness
 from ...clients.postgres import get_postgres_liveness as _get_db_liveness
-from ...renderers.jinja_renderer import JinjaNotificationsRenderer
-from ...renderers.renderer import NotificationsRenderer
-from ...repository.templates_repository import NotificationsTemplatesRepository
-from ...services.templates_service import NotificationsTemplatesService
 from ...templates import models as context_models  # noqa: F401 # NOTE: registers context models
 
 
@@ -32,31 +25,3 @@ def get_postgres_liveness(
     app: Annotated[FastAPI, Depends(get_application)],
 ) -> PostgresLiveness:
     return _get_db_liveness(app)
-
-
-def get_task_manager(app: Annotated[FastAPI, Depends(get_application)]) -> CeleryTaskManager:
-    assert isinstance(app.state.task_manager, CeleryTaskManager)  # nosec
-    return app.state.task_manager
-
-
-def get_jinja_env() -> Environment:
-    return create_render_environment_from_notifications_library()
-
-
-def get_notifications_templates_repository(
-    env: Annotated[Environment, Depends(get_jinja_env)],
-) -> NotificationsTemplatesRepository:
-    return NotificationsTemplatesRepository(env)
-
-
-def get_notifications_templates_renderer(
-    repository: Annotated[NotificationsTemplatesRepository, Depends(get_notifications_templates_repository)],
-) -> NotificationsRenderer:
-    return JinjaNotificationsRenderer(repository)
-
-
-def get_notifications_templates_service(
-    repository: Annotated[NotificationsTemplatesRepository, Depends(get_notifications_templates_repository)],
-    renderer: Annotated[NotificationsRenderer, Depends(get_notifications_templates_renderer)],
-) -> NotificationsTemplatesService:
-    return NotificationsTemplatesService(repository, renderer)
