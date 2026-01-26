@@ -110,7 +110,8 @@ class Status(BaseModel):
             return NotImplemented
         return self.current == other.current and self.info == other.info
 
-    __hash__ = None
+    def __hash__(self) -> int:
+        return hash((self.current, self.info))
 
     @classmethod
     def create_as_initially_ok(cls) -> "Status":
