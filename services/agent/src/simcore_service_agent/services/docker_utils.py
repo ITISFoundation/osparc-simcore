@@ -14,8 +14,7 @@ from servicelib.docker_constants import PREFIX_DYNAMIC_SIDECAR_VOLUMES
 from servicelib.logging_utils import log_catch, log_context
 from starlette import status
 
-from simcore_service_agent.core.settings import ApplicationSettings
-
+from ..core.settings import ApplicationSettings
 from ..models.volumes import VolumeDetails, VolumeDetailsAdapter
 from .backup import backup_volume
 from .instrumentation import get_instrumentation
