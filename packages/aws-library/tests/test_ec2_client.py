@@ -2,7 +2,7 @@
 # pylint:disable=unused-argument
 # pylint:disable=redefined-outer-name
 
-
+import base64
 import random
 from collections.abc import AsyncIterator, Awaitable, Callable
 from dataclasses import fields
@@ -110,12 +110,10 @@ async def test_get_ec2_instance_capabilities(
     simcore_ec2_api: SimcoreEC2API,
     ec2_allowed_instances: list[InstanceTypeType],
 ):
-    instance_types: list[EC2InstanceType] = (
-        await simcore_ec2_api.get_ec2_instance_capabilities(
-            cast(
-                set[InstanceTypeType],
-                set(ec2_allowed_instances),
-            )
+    instance_types: list[EC2InstanceType] = await simcore_ec2_api.get_ec2_instance_capabilities(
+        cast(
+            set[InstanceTypeType],
+            set(ec2_allowed_instances),
         )
     )
     assert instance_types
@@ -128,9 +126,7 @@ async def test_get_ec2_instance_capabilities_returns_all_options(
     instance_types = await simcore_ec2_api.get_ec2_instance_capabilities("ALL")
     assert instance_types
     # NOTE: this might need adaptation when moto is updated
-    assert (
-        850 < len(instance_types) < 1003
-    ), f"received {len(instance_types)}, the test might need adaptation"
+    assert 850 < len(instance_types) < 1003, f"received {len(instance_types)}, the test might need adaptation"
 
 
 async def test_get_ec2_instance_capabilities_raise_with_empty_set(
@@ -145,9 +141,7 @@ async def test_get_ec2_instance_capabilities_with_invalid_type_raises(
     faker: Faker,
 ):
     with pytest.raises(EC2InstanceTypeInvalidError):
-        await simcore_ec2_api.get_ec2_instance_capabilities(
-            faker.pyset(allowed_types=(str,))
-        )
+        await simcore_ec2_api.get_ec2_instance_capabilities(faker.pyset(allowed_types=(str,)))
 
 
 @pytest.fixture(params=_ec2_allowed_types())
@@ -156,9 +150,7 @@ async def fake_ec2_instance_type(
     request: pytest.FixtureRequest,
 ) -> EC2InstanceType:
     instance_type_name: InstanceTypeType = request.param
-    instance_types: list[EC2InstanceType] = (
-        await simcore_ec2_api.get_ec2_instance_capabilities({instance_type_name})
-    )
+    instance_types: list[EC2InstanceType] = await simcore_ec2_api.get_ec2_instance_capabilities({instance_type_name})
 
     assert len(instance_types) == 1
     return instance_types[0]
@@ -187,9 +179,7 @@ async def _assert_instances_in_ec2(
             assert "InstanceType" in instance
             assert instance["InstanceType"] == expected_instance_type.name
             assert "Tags" in instance
-            assert instance["Tags"] == [
-                {"Key": key, "Value": value} for key, value in expected_tags.items()
-            ]
+            assert instance["Tags"] == [{"Key": key, "Value": value} for key, value in expected_tags.items()]
             assert "State" in instance
             assert "Name" in instance["State"]
             assert instance["State"]["Name"] == expected_state
@@ -297,12 +287,7 @@ async def test_get_instances(
 ):
     # we have nothing running now in ec2
     await _assert_no_instances_in_ec2(ec2_client)
-    assert (
-        await simcore_ec2_api.get_instances(
-            key_names=[ec2_instance_config.key_name], tags={}
-        )
-        == []
-    )
+    assert await simcore_ec2_api.get_instances(key_names=[ec2_instance_config.key_name], tags={}) == []
 
     # create some instance
     _MAX_NUM_INSTANCES = 10
@@ -320,10 +305,8 @@ async def test_get_instances(
         expected_tags=ec2_instance_config.tags,
         expected_state="running",
     )
-    # this returns all the entries using thes key names
-    instance_received = await simcore_ec2_api.get_instances(
-        key_names=[ec2_instance_config.key_name], tags={}
-    )
+    # this returns all the entries using these key names
+    instance_received = await simcore_ec2_api.get_instances(key_names=[ec2_instance_config.key_name], tags={})
     assert created_instances == instance_received
 
     # passing the tags will return the same
@@ -419,6 +402,74 @@ async def test_stop_start_instances(
                 assert getattr(s, f.name) == getattr(c, f.name)
 
 
+async def test_start_instances_with_user_data(
+    simcore_ec2_api: SimcoreEC2API,
+    ec2_client: EC2Client,
+    faker: Faker,
+    ec2_instance_config: EC2InstanceConfig,
+):
+    # we have nothing running now in ec2
+    await _assert_no_instances_in_ec2(ec2_client)
+    # create some instance
+    num_instances = 1
+    created_instances = await simcore_ec2_api.launch_instances(
+        ec2_instance_config,
+        min_number_of_instances=num_instances,
+        number_of_instances=num_instances,
+    )
+    await _assert_instances_in_ec2(
+        ec2_client,
+        expected_num_reservations=1,
+        expected_num_instances=num_instances,
+        expected_instance_type=ec2_instance_config.type,
+        expected_tags=ec2_instance_config.tags,
+        expected_state="running",
+    )
+    # check the initial user_data
+    for instance in created_instances:
+        instance_attributes = await ec2_client.describe_instance_attribute(InstanceId=instance.id, Attribute="userData")
+        assert "UserData" in instance_attributes
+        assert "Value" in instance_attributes["UserData"]
+        # Note: EC2 returns base64-encoded user data, need to decode it
+
+        decoded_user_data = base64.b64decode(instance_attributes["UserData"]["Value"]).decode("utf-8")
+        assert ec2_instance_config.startup_script in decoded_user_data
+    # stop the instances
+    await simcore_ec2_api.stop_instances(created_instances)
+    await _assert_instances_in_ec2(
+        ec2_client,
+        expected_num_reservations=1,
+        expected_num_instances=num_instances,
+        expected_instance_type=ec2_instance_config.type,
+        expected_tags=ec2_instance_config.tags,
+        expected_state="stopped",
+    )
+
+    # start the instances with new user data
+    new_startup_script = faker.pystr()
+    started_instances = await simcore_ec2_api.start_instances(
+        created_instances, change_startup_script=new_startup_script
+    )
+    await _assert_instances_in_ec2(
+        ec2_client,
+        expected_num_reservations=1,
+        expected_num_instances=num_instances,
+        expected_instance_type=ec2_instance_config.type,
+        expected_tags=ec2_instance_config.tags,
+        expected_state="running",
+    )
+
+    # verify the user data was set on the instance
+    for instance in started_instances:
+        instance_attributes = await ec2_client.describe_instance_attribute(InstanceId=instance.id, Attribute="userData")
+        assert "UserData" in instance_attributes
+        assert "Value" in instance_attributes["UserData"]
+        # Note: EC2 returns base64-encoded user data, need to decode it
+
+        decoded_user_data = base64.b64decode(instance_attributes["UserData"]["Value"]).decode("utf-8")
+        assert new_startup_script in decoded_user_data
+
+
 async def test_start_instances_with_insufficient_instance_capacity(
     simcore_ec2_api: SimcoreEC2API,
     ec2_client: EC2Client,
@@ -461,15 +512,15 @@ async def test_start_instances_with_insufficient_instance_capacity(
         error_response: dict[str, Any] = {
             "Error": {
                 "Code": "InsufficientInstanceCapacity",
-                "Message": "An error occurred (InsufficientInstanceCapacity) when calling the StartInstances operation (reached max retries: 4): Insufficient capacity.",
+                "Message": "An error occurred (InsufficientInstanceCapacity) "
+                "when calling the StartInstances operation "
+                "(reached max retries: 4): Insufficient capacity.",
             },
         }
         raise botocore.exceptions.ClientError(error_response, "StartInstances")  # type: ignore
 
     # Apply the mock
-    mocker.patch.object(
-        simcore_ec2_api.client, "start_instances", side_effect=mock_start_instances
-    )
+    mocker.patch.object(simcore_ec2_api.client, "start_instances", side_effect=mock_start_instances)
 
     # start the instances now
     with pytest.raises(EC2InsufficientCapacityError):
@@ -638,9 +689,7 @@ async def test_remove_instance_tags_not_existing_raises(
 ):
     await _assert_no_instances_in_ec2(ec2_client)
     with pytest.raises(EC2InstanceNotFoundError):
-        await simcore_ec2_api.remove_instances_tags(
-            [fake_ec2_instance_data()], tag_keys=[]
-        )
+        await simcore_ec2_api.remove_instances_tags([fake_ec2_instance_data()], tag_keys=[])
 
 
 async def test_launch_instances_insufficient_capacity_fallback(
@@ -685,7 +734,14 @@ async def test_launch_instances_insufficient_capacity_fallback(
             error_response: dict[str, Any] = {
                 "Error": {
                     "Code": "InsufficientInstanceCapacity",
-                    "Message": "An error occurred (InsufficientInstanceCapacity) when calling the RunInstances operation (reached max retries: 4): We currently do not have sufficient g4dn.4xlarge capacity in the Availability Zone you requested (us-east-1a). Our system will be working on provisioning additional capacity. You can currently get g4dn.4xlarge capacity by not specifying an Availability Zone in your request or choosing us-east-1b, us-east-1c, us-east-1d, us-east-1f",
+                    "Message": "An error occurred (InsufficientInstanceCapacity) "
+                    "when calling the RunInstances operation (reached max retries: "
+                    "4): We currently do not have sufficient g4dn.4xlarge capacity "
+                    "in the Availability Zone you requested (us-east-1a). "
+                    "Our system will be working on provisioning additional capacity."
+                    " You can currently get g4dn.4xlarge capacity by not specifying "
+                    "an Availability Zone in your request or choosing us-east-1b, "
+                    "us-east-1c, us-east-1d, us-east-1f",
                 },
             }
             raise botocore.exceptions.ClientError(error_response, "RunInstances")  # type: ignore
@@ -694,9 +750,7 @@ async def test_launch_instances_insufficient_capacity_fallback(
         return await original_run_instances(*args, **kwargs)
 
     # Apply the mock
-    mocker.patch.object(
-        simcore_ec2_api.client, "run_instances", side_effect=mock_run_instances
-    )
+    mocker.patch.object(simcore_ec2_api.client, "run_instances", side_effect=mock_run_instances)
     instances = await simcore_ec2_api.launch_instances(
         ec2_instance_config,
         min_number_of_instances=1,
@@ -717,9 +771,7 @@ async def test_launch_instances_insufficient_capacity_fallback(
     )
 
     # Verify the instance was created in the second subnet (since first failed)
-    instance_details = await ec2_client.describe_instances(
-        InstanceIds=[instances[0].id]
-    )
+    instance_details = await ec2_client.describe_instances(InstanceIds=[instances[0].id])
     assert "Reservations" in instance_details
     assert len(instance_details["Reservations"]) >= 1
     assert "Instances" in instance_details["Reservations"][0]
@@ -769,18 +821,21 @@ async def test_launch_instances_all_subnets_insufficient_capacity_raises_error(
         error_response = {
             "Error": {
                 "Code": "InsufficientInstanceCapacity",
-                "Message": "An error occurred (InsufficientInstanceCapacity) when calling the RunInstances operation (reached max retries: 4): We currently do not have sufficient g4dn.4xlarge capacity in the Availability Zone you requested (us-east-1a). Our system will be working on provisioning additional capacity. You can currently get g4dn.4xlarge capacity by not specifying an Availability Zone in your request or choosing us-east-1b, us-east-1c, us-east-1d, us-east-1f",
+                "Message": "An error occurred (InsufficientInstanceCapacity) "
+                "when calling the RunInstances operation "
+                "(reached max retries: 4): We currently do not have sufficient "
+                "g4dn.4xlarge capacity in the Availability Zone you requested"
+                " (us-east-1a). Our system will be working on provisioning "
+                "additional capacity. You can currently get g4dn.4xlarge capacity"
+                " by not specifying an Availability Zone in your request or"
+                " choosing us-east-1b, us-east-1c, us-east-1d, us-east-1f",
             },
         }
         raise botocore.exceptions.ClientError(error_response, "RunInstances")  # type: ignore
 
     # Apply the mock and expect EC2InsufficientCapacityError
-    mocker.patch.object(
-        simcore_ec2_api.client, "run_instances", side_effect=mock_run_instances
-    )
-    with pytest.raises(
-        EC2InsufficientCapacityError, match=fake_ec2_instance_type.name
-    ) as exc_info:
+    mocker.patch.object(simcore_ec2_api.client, "run_instances", side_effect=mock_run_instances)
+    with pytest.raises(EC2InsufficientCapacityError, match=fake_ec2_instance_type.name) as exc_info:
         await simcore_ec2_api.launch_instances(
             ec2_instance_config,
             min_number_of_instances=1,
@@ -848,15 +903,20 @@ async def test_launch_instances_partial_capacity_then_insufficient_capacity(
         error_response = {
             "Error": {
                 "Code": "InsufficientInstanceCapacity",
-                "Message": "An error occurred (InsufficientInstanceCapacity) when calling the RunInstances operation (reached max retries: 4): We currently do not have sufficient g4dn.4xlarge capacity in the Availability Zone you requested (us-east-1a). Our system will be working on provisioning additional capacity. You can currently get g4dn.4xlarge capacity by not specifying an Availability Zone in your request or choosing us-east-1b, us-east-1c, us-east-1d, us-east-1f",
+                "Message": "An error occurred (InsufficientInstanceCapacity) "
+                "when calling the RunInstances operation (reached max retries:"
+                " 4): We currently do not have sufficient g4dn.4xlarge capacity"
+                " in the Availability Zone you requested (us-east-1a). "
+                "Our system will be working on provisioning additional capacity. "
+                "You can currently get g4dn.4xlarge capacity by not specifying "
+                "an Availability Zone in your request or choosing "
+                "us-east-1b, us-east-1c, us-east-1d, us-east-1f",
             },
         }
         raise botocore.exceptions.ClientError(error_response, "RunInstances")  # type: ignore
 
     # Apply the mock for the first call
-    mocker.patch.object(
-        simcore_ec2_api.client, "run_instances", side_effect=mock_run_instances
-    )
+    mocker.patch.object(simcore_ec2_api.client, "run_instances", side_effect=mock_run_instances)
     # First call: ask for 3 instances (min 1) -> should get 2, no error
     instances = await simcore_ec2_api.launch_instances(
         ec2_instance_config,
@@ -916,9 +976,7 @@ async def with_small_subnet(
     create_aws_subnet_id: Callable[..., Awaitable[str]],
 ) -> tuple[str, int]:
     """Creates a subnet with a single IP address to simulate InsufficientInstanceCapacity"""
-    single_ip_cidr = (
-        "10.0.11.0/29"  # /29 is the minimum allowed by AWS, gives 8 addresses
-    )
+    single_ip_cidr = "10.0.11.0/29"  # /29 is the minimum allowed by AWS, gives 8 addresses
     return (
         await create_aws_subnet_id(single_ip_cidr),
         8 - _RESERVED_IPS,
