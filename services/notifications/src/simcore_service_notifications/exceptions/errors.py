@@ -8,5 +8,5 @@ class ContentModelNotFoundError(NotificationsRuntimeError):
     msg_template = "Content model for channel '{channel}' not found"
 
 
-class VariablesModelNotFoundError(NotificationsRuntimeError):
-    msg_template = "Variables model for template '{template_ref.template_name}' not found"
+class ContextModelNotFoundError(NotificationsRuntimeError):
+    msg_template = "Context model for template '{template_name}' for channel '{channel}' not found"

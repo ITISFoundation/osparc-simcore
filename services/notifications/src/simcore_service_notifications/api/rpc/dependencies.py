@@ -4,6 +4,7 @@ from notifications_library._render import create_render_environment_from_notific
 from ...renderers.jinja_renderer import JinjaNotificationsRenderer
 from ...repository.templates_repository import NotificationsTemplatesRepository
 from ...services.templates_service import NotificationsTemplatesService
+from ...templates import models as context_models  # noqa: F401 # NOTE: registers context models
 
 
 def get_jinja_env() -> Environment:

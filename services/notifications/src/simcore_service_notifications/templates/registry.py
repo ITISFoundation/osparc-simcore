@@ -1,7 +1,7 @@
 from models_library.notifications import ChannelType
 from pydantic import BaseModel
 
-from ..exceptions.errors import VariablesModelNotFoundError
+from ..exceptions.errors import ContextModelNotFoundError
 from ..models.template import TemplateRef
 
 _CONTEXT_MODELS: dict[TemplateRef, type[BaseModel]] = {}
@@ -18,5 +18,5 @@ def register_context_model(channel: ChannelType, template_name: str):
 def get_context_model(ref: TemplateRef) -> type[BaseModel]:
     context_model = _CONTEXT_MODELS.get(ref)
     if not context_model:
-        raise VariablesModelNotFoundError(template_ref=ref)
+        raise ContextModelNotFoundError(channel=ref.channel, template_name=ref.template_name)
     return context_model
