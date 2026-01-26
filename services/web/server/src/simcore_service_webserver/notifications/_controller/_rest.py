@@ -65,7 +65,7 @@ async def send_message(request: web.Request) -> web.Response:
             task_name=async_job_get.job_name,
             status_href=f"{request.url.with_path(str(request.app.router['get_async_job_status'].url_for(task_id=task_id)))}",
             abort_href=f"{request.url.with_path(str(request.app.router['cancel_async_job'].url_for(task_id=task_id)))}",
-            stream_href=f"{request.url.with_path(str(request.app.router['get_async_job_stream'].url_for(task_id=task_id)))}",
+            result_href=f"{request.url.with_path(str(request.app.router['get_async_job_result'].url_for(task_id=task_id)))}",
         ),
         status=status.HTTP_202_ACCEPTED,
     )
