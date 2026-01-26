@@ -94,7 +94,7 @@ def rabbitmq_lifespan() -> LifespanManager:
                 _ = app.state.rabbitmq_rpc_client
 
             # pass state to children
-            yield {"rabbitmq_rpc_client": "Some RabbitMQ RPC Server"}
+            yield {"rabbitmq_rpc_client": "Some RabbitMQ RPC Client"}
 
     return lifespan_manager
 
@@ -143,7 +143,7 @@ async def test_app_lifespan_composition(postgres_lifespan: LifespanManager, rabb
                 "engine": "Some Engine",
                 "aengine": "Some Async Engine",
             },
-            "rabbitmq_rpc_client": "Some RabbitMQ RPC Server",
+            "rabbitmq_rpc_client": "Some RabbitMQ RPC Client",
         }
 
         # app state

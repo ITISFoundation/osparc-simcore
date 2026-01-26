@@ -35,9 +35,7 @@ class WebServerSettings(WebServerBaseSettings, MixinSessionSettings):
             description="Secret key to encrypt cookies. "
             'TIP: python3 -c "from cryptography.fernet import *; print(Fernet.generate_key())"',
             min_length=44,
-            validation_alias=AliasChoices(
-                "WEBSERVER_SESSION_SECRET_KEY", "SESSION_SECRET_KEY"
-            ),
+            validation_alias=AliasChoices("WEBSERVER_SESSION_SECRET_KEY", "SESSION_SECRET_KEY"),
         ),
     ]
     WEBSERVER_SESSION_NAME: str = DEFAULT_SESSION_COOKIE_NAME
@@ -45,7 +43,7 @@ class WebServerSettings(WebServerBaseSettings, MixinSessionSettings):
     WEBSERVER_RPC_NAMESPACE: Annotated[
         RPCNamespace,
         Field(
-            description="Namespace for the RPC server."
+            description="Namespace for the RPC client."
             "IMPORTANT: this is typically `wb-api-server` service variant of the `webserver` image"
         ),
     ]
@@ -64,9 +62,7 @@ class BasicSettings(BaseCustomSettings, MixinLoggingSettings):
     API_SERVER_DEV_FEATURES_ENABLED: Annotated[
         bool,
         Field(
-            validation_alias=AliasChoices(
-                "API_SERVER_DEV_FEATURES_ENABLED", "FAKE_API_SERVER_ENABLED"
-            ),
+            validation_alias=AliasChoices("API_SERVER_DEV_FEATURES_ENABLED", "FAKE_API_SERVER_ENABLED"),
         ),
     ] = False
 
@@ -85,7 +81,10 @@ class BasicSettings(BaseCustomSettings, MixinLoggingSettings):
                 "API_SERVER_LOG_FORMAT_LOCAL_DEV_ENABLED",
                 "LOG_FORMAT_LOCAL_DEV_ENABLED",
             ),
-            description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
+            description=(
+                "Enables local development log format. WARNING: make sure it "
+                "is disabled if you want to have structured logs!"
+            ),
         ),
     ] = False
 
@@ -93,10 +92,11 @@ class BasicSettings(BaseCustomSettings, MixinLoggingSettings):
         dict[LoggerName, list[MessageSubstring]],
         Field(
             default_factory=dict,
-            validation_alias=AliasChoices(
-                "API_SERVER_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"
+            validation_alias=AliasChoices("API_SERVER_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"),
+            description=(
+                "is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') "
+                "to a list of log message patterns that should be filtered out."
             ),
-            description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
         ),
     ] = DEFAULT_FACTORY
 
@@ -111,9 +111,7 @@ class ApplicationSettings(BasicSettings):
     # DOCKER BOOT
     SC_BOOT_MODE: BootModeEnum | None = None
 
-    API_SERVER_CELERY: Annotated[
-        CelerySettings | None, Field(json_schema_extra={"auto_default_from_env": True})
-    ] = None
+    API_SERVER_CELERY: Annotated[CelerySettings | None, Field(json_schema_extra={"auto_default_from_env": True})] = None
 
     API_SERVER_POSTGRES: Annotated[
         PostgresSettings | None,
@@ -133,9 +131,7 @@ class ApplicationSettings(BasicSettings):
         WebServerSettings | None,
         Field(json_schema_extra={"auto_default_from_env": True}),
     ]
-    API_SERVER_STORAGE: Annotated[
-        StorageSettings | None, Field(json_schema_extra={"auto_default_from_env": True})
-    ]
+    API_SERVER_STORAGE: Annotated[StorageSettings | None, Field(json_schema_extra={"auto_default_from_env": True})]
     API_SERVER_DIRECTOR_V2: Annotated[
         DirectorV2Settings | None,
         Field(json_schema_extra={"auto_default_from_env": True}),
@@ -155,9 +151,7 @@ class ApplicationSettings(BasicSettings):
         ),
     ]
 
-    API_SERVER_WORKER_MODE: Annotated[
-        bool, Field(description="If True, the API server runs in worker mode")
-    ] = False
+    API_SERVER_WORKER_MODE: Annotated[bool, Field(description="If True, the API server runs in worker mode")] = False
 
     @cached_property
     def debug(self) -> bool:
