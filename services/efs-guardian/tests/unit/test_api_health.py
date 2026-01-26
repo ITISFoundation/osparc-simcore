@@ -36,12 +36,7 @@ def app_environment(
     with_disabled_rabbitmq_and_rpc: None,
     with_disabled_postgres: None,
 ):
-    return setenvs_from_dict(
-        monkeypatch,
-        {
-            **app_environment,
-        },
-    )
+    return setenvs_from_dict(monkeypatch, {**app_environment})
 
 
 @pytest.mark.parametrize("is_healthy", [True, False])
