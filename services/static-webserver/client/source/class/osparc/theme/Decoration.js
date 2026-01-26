@@ -469,7 +469,7 @@ qx.Theme.define("osparc.theme.Decoration", {
     "form-button-outlined": {
       include: "form-button",
       style: {
-        color: "text-70",
+        color: "text-70-opa",
         backgroundColor: "default-button-background"
       }
     },

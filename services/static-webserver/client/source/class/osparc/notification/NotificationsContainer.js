@@ -30,10 +30,7 @@ qx.Class.define("osparc.notification.NotificationsContainer", {
       backgroundColor: "background-main",
       decorator: "rounded",
     });
-    let color = qx.theme.manager.Color.getInstance().resolve("text");
-    color = qx.util.ColorUtil.stringToRgb(color);
-    color.push(0.3); // add transparency
-    color = qx.util.ColorUtil.rgbToRgbString(color);
+    const color = qx.theme.manager.Color.getInstance().resolve("text-30-opa");
     osparc.utils.Utils.addBorder(this, 1, color);
     osparc.utils.Utils.setIdToWidget(this, "notificationsContainer");
 
