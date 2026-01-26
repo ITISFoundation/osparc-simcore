@@ -13,7 +13,7 @@ from random import randint
 import pytest
 from celery import Celery, Task  # pylint: disable=no-name-in-module
 from celery.worker.worker import WorkController  # pylint: disable=no-name-in-module
-from celery_library.errors import TaskNotFoundError, TransferrableCeleryError
+from celery_library.errors import TaskNotFoundError, TransferableCeleryError
 from celery_library.task import register_task
 from celery_library.task_manager import CeleryTaskManager
 from celery_library.worker.app_server import get_app_server
@@ -57,9 +57,7 @@ class MyOwnerMetadata(OwnerMetadata):
     user_id: int
 
 
-async def _fake_file_processor(
-    celery_app: Celery, task_name: str, task_key: str, files: list[str]
-) -> str:
+async def _fake_file_processor(celery_app: Celery, task_name: str, task_key: str, files: list[str]) -> str:
     def sleep_for(seconds: float) -> None:
         time.sleep(seconds)
 
@@ -123,9 +121,7 @@ def streaming_results_task(task: Task, task_key: TaskKey, num_results: int = 5) 
         await app_server.task_manager.set_task_stream_done(task_key)
 
     # Run the streaming in the event loop
-    asyncio.run_coroutine_threadsafe(
-        _stream_results(0.5), get_app_server(task.app).event_loop
-    ).result()
+    asyncio.run_coroutine_threadsafe(_stream_results(0.5), get_app_server(task.app).event_loop).result()
 
     return f"completed-{num_results}-results"
 
@@ -145,7 +141,6 @@ async def test_submitting_task_calling_async_function_results_with_success_state
     task_manager: TaskManager,
     with_celery_worker: WorkController,
 ):
-
     owner_metadata = MyOwnerMetadata(user_id=42, owner="test-owner")
 
     task_uuid = await task_manager.submit_task(
@@ -161,19 +156,14 @@ async def test_submitting_task_calling_async_function_results_with_success_state
             status = await task_manager.get_task_status(owner_metadata, task_uuid)
             assert status.task_state == TaskState.SUCCESS
 
-    assert (
-        await task_manager.get_task_status(owner_metadata, task_uuid)
-    ).task_state == TaskState.SUCCESS
-    assert (
-        await task_manager.get_task_result(owner_metadata, task_uuid)
-    ) == "archive.zip"
+    assert (await task_manager.get_task_status(owner_metadata, task_uuid)).task_state == TaskState.SUCCESS
+    assert (await task_manager.get_task_result(owner_metadata, task_uuid)) == "archive.zip"
 
 
 async def test_submitting_task_with_failure_results_with_error(
     task_manager: TaskManager,
     with_celery_worker: WorkController,
 ):
-
     owner_metadata = MyOwnerMetadata(user_id=42, owner="test-owner")
 
     task_uuid = await task_manager.submit_task(
@@ -186,7 +176,7 @@ async def test_submitting_task_with_failure_results_with_error(
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
             raw_result = await task_manager.get_task_result(owner_metadata, task_uuid)
-            assert isinstance(raw_result, TransferrableCeleryError)
+            assert isinstance(raw_result, TransferableCeleryError)
 
     raw_result = await task_manager.get_task_result(owner_metadata, task_uuid)
     assert f"{raw_result}" == "Something strange happened: BOOM!"
@@ -196,7 +186,6 @@ async def test_cancelling_a_running_task_aborts_and_deletes(
     task_manager: TaskManager,
     with_celery_worker: WorkController,
 ):
-
     owner_metadata = MyOwnerMetadata(user_id=42, owner="test-owner")
 
     task_uuid = await task_manager.submit_task(
@@ -222,7 +211,6 @@ async def test_listing_task_uuids_contains_submitted_task(
     task_manager: CeleryTaskManager,
     with_celery_worker: WorkController,
 ):
-
     owner_metadata = MyOwnerMetadata(user_id=42, owner="test-owner")
 
     task_uuid = await task_manager.submit_task(
@@ -256,9 +244,7 @@ async def test_filtering_listing_tasks(
 
     try:
         for _ in range(5):
-            owner_metadata = MyOwnerMetadata(
-                user_id=user_id, product_name=_faker.word(), owner=_owner
-            )
+            owner_metadata = MyOwnerMetadata(user_id=user_id, product_name=_faker.word(), owner=_owner)
             task_uuid = await task_manager.submit_task(
                 ExecutionMetadata(
                     name=dreamer_task.__name__,
@@ -316,9 +302,7 @@ async def test_push_task_result_streams_data_during_execution(
     results = []
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
-            result, is_done, _ = await task_manager.pull_task_stream_items(
-                owner_metadata, task_uuid, limit=10
-            )
+            result, is_done, _ = await task_manager.pull_task_stream_items(owner_metadata, task_uuid, limit=10)
             results.extend(result)
             assert is_done
 
@@ -336,9 +320,7 @@ async def test_push_task_result_streams_data_during_execution(
     assert final_result == f"completed-{num_results}-results"
 
     # After task completion, try to pull any remaining results
-    remaining_results, is_done, _ = await task_manager.pull_task_stream_items(
-        owner_metadata, task_uuid, limit=10
-    )
+    remaining_results, is_done, _ = await task_manager.pull_task_stream_items(owner_metadata, task_uuid, limit=10)
     assert remaining_results == []
     assert is_done
 
@@ -366,10 +348,10 @@ async def test_pull_task_stream_items_with_limit(
             assert status.task_state == TaskState.SUCCESS
 
     # Pull all results in one go to avoid consumption issues
-    all_results, is_done_final, _last_update_final = (
-        await task_manager.pull_task_stream_items(
-            owner_metadata, task_uuid, limit=20  # High limit to get all items
-        )
+    all_results, is_done_final, _last_update_final = await task_manager.pull_task_stream_items(
+        owner_metadata,
+        task_uuid,
+        limit=20,  # High limit to get all items
     )
 
     assert all_results is not None
@@ -398,6 +380,4 @@ async def test_push_task_stream_items_to_nonexistent_task_raises_error(
     not_existing_task_id = "not_existing"
 
     with pytest.raises(TaskNotFoundError):
-        await task_manager.push_task_stream_items(
-            not_existing_task_id, TaskStreamItem(data="some-result")
-        )
+        await task_manager.push_task_stream_items(not_existing_task_id, TaskStreamItem(data="some-result"))

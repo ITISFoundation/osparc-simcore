@@ -7,4 +7,5 @@ from ._models import MountId
 
 def get_mount_id(local_mount_path: Path, index: NonNegativeInt) -> MountId:
     # unique reproducible id for the mount
-    return f"{index}{local_mount_path}".replace("/", "_")[::-1]
+    reversed_path = f"{local_mount_path}".replace("/", "_")[::-1]
+    return f"{index}_{reversed_path}"

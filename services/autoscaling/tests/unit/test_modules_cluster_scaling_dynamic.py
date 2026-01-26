@@ -495,7 +495,7 @@ async def test_cluster_scaling_with_service_asking_for_too_much_resources_starts
     _assert_rabbit_autoscaling_message_sent(mock_rabbitmq_post_message, app_settings, initialized_app)
 
 
-async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915, C901
+async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915,C901
     *,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
@@ -2291,13 +2291,13 @@ def mock_start_instances_to_raise_insufficient_capacity_error(
             error_response={
                 "Error": {
                     "Code": "InsufficientInstanceCapacity",
-                    "Message": (
-                        "An error occurred (InsufficientInstanceCapacity) when calling the RunInstances operation "
-                        "(reached max retries: 4): We currently do not have sufficient g4dn.4xlarge capacity in the "
-                        "Availability Zone you requested (us-east-1a). Our system will be working on provisioning "
-                        "additional capacity. You can currently get g4dn.4xlarge capacity by not specifying an "
-                        "Availability Zone in your request or choosing us-east-1b, us-east-1c, us-east-1d, us-east-1f"
-                    ),
+                    "Message": "An error occurred (InsufficientInstanceCapacity) when calling "
+                    "the RunInstances operation (reached max retries: 4): We currently do not "
+                    "have sufficient g4dn.4xlarge capacity in the Availability Zone you "
+                    "requested (us-east-1a). Our system will be working on provisioning "
+                    "additional capacity. You can currently get g4dn.4xlarge capacity by "
+                    "not specifying an Availability Zone in your request or choosing "
+                    "us-east-1b, us-east-1c, us-east-1d, us-east-1f",
                 }
             },
             operation_name="StartInstances",

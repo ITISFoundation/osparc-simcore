@@ -753,11 +753,11 @@ async def test_compute_cluster_used_resources_with_services_running(
 
 
 async def test_get_docker_swarm_join_script(host_node: Node):
-    join_script = await get_docker_swarm_join_bash_command(join_as_drained=True)
+    join_script = await get_docker_swarm_join_bash_command(join_as_drained=True, idempotent=False)
     assert join_script.startswith("docker swarm join")
     assert "--availability=drain" in join_script
 
-    join_script = await get_docker_swarm_join_bash_command(join_as_drained=False)
+    join_script = await get_docker_swarm_join_bash_command(join_as_drained=False, idempotent=False)
     assert join_script.startswith("docker swarm join")
     assert "--availability=active" in join_script
 
@@ -776,7 +776,7 @@ async def test_get_docker_swarm_join_script_bad_return_code_raises(
     )
     mocked_asyncio_process.return_value.returncode = 137
     with pytest.raises(RuntimeError, match=r"unexpected error .+"):
-        await get_docker_swarm_join_bash_command(join_as_drained=True)
+        await get_docker_swarm_join_bash_command(join_as_drained=True, idempotent=False)
     # NOTE: the sleep here is to provide some time for asyncio to properly close its process communication
     # to silence the warnings
     await asyncio.sleep(2)
@@ -796,19 +796,33 @@ async def test_get_docker_swarm_join_script_returning_unexpected_command_raises(
     )
     mocked_asyncio_process.return_value.returncode = 0
     with pytest.raises(RuntimeError, match=r"expected docker .+"):
-        await get_docker_swarm_join_bash_command(join_as_drained=True)
+        await get_docker_swarm_join_bash_command(join_as_drained=True, idempotent=False)
     # NOTE: the sleep here is to provide some time for asyncio to properly close its process communication
     # to silence the warnings
     await asyncio.sleep(2)
+
+
+async def test_get_docker_swarm_join_script_idempotent(host_node: Node):
+    join_script = await get_docker_swarm_join_bash_command(join_as_drained=True, idempotent=True)
+    assert "docker info --format '{{.Swarm.LocalNodeState}}' 2>/dev/null | grep -q '^inactive$'" in join_script
+    assert join_script.count("docker swarm join") == 1
+
+    join_script_non_idempotent = await get_docker_swarm_join_bash_command(join_as_drained=True, idempotent=False)
+    assert (
+        "docker info --format '{{.Swarm.LocalNodeState}}' 2>/dev/null | grep -q '^inactive$'"
+        not in join_script_non_idempotent
+    )
+    assert join_script_non_idempotent.count("docker swarm join") == 1
 
 
 def test_get_docker_login_on_start_bash_command():
     registry_settings = RegistrySettings(**RegistrySettings.model_config["json_schema_extra"]["examples"][0])
     returned_command = get_docker_login_on_start_bash_command(registry_settings)
     assert (
-        f"""echo "{registry_settings.REGISTRY_PW.get_secret_value()}" | docker login --username """
-        f"""{registry_settings.REGISTRY_USER} --password-stdin {registry_settings.resolved_registry_url}"""
-    ) == returned_command
+        f'echo "{registry_settings.REGISTRY_PW.get_secret_value()}" | '
+        f"docker login --username {registry_settings.REGISTRY_USER} "
+        f"--password-stdin {registry_settings.resolved_registry_url}" == returned_command
+    )
 
 
 async def test_try_get_node_with_name(autoscaling_docker: AutoscalingDocker, host_node: Node):
@@ -956,8 +970,9 @@ def test_get_new_node_docker_tags(
             'image: itisfoundation/simcore/services/dynamic/service:23.5.5\n"'
             " > /docker-pull.compose.yml"
             " && "
-            'echo "#!/bin/sh\necho Pulling started at \\$(date)\ndocker compose --project-name=autoscaleprepull --file='
-            '/docker-pull.compose.yml pull --ignore-pull-failures" > /docker-pull-script.sh'
+            'echo "#!/bin/sh\necho Pulling started at \\$(date)\n'
+            "docker compose --project-name=autoscaleprepull --file=/docker-pull.compose.yml "
+            'pull --ignore-pull-failures" > /docker-pull-script.sh'
             " && "
             "chmod +x /docker-pull-script.sh"
             " && "

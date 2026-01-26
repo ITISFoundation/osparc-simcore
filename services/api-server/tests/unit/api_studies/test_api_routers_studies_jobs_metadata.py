@@ -41,11 +41,7 @@ def mocked_backend(
     captures = {
         c.name: c
         for c in TypeAdapter(list[HttpApiCallCaptureModel]).validate_json(
-            Path(
-                project_tests_dir
-                / "mocks"
-                / "test_get_and_update_study_job_metadata.json"
-            ).read_text(),
+            Path(project_tests_dir / "mocks" / "test_get_and_update_study_job_metadata.json").read_text(),
         )
     }
 
@@ -54,11 +50,7 @@ def mocked_backend(
     groups = {}
     used = set()
     for n, name in enumerate(names):
-        group = (
-            [other for other in names[n:] if re.match(rf"{name}_\d+$", other)]
-            if name not in used
-            else []
-        )
+        group = [other for other in names[n:] if re.match(rf"{name}_\d+$", other)] if name not in used else []
         if name not in used:
             groups[name] = group
         used.update(group)
@@ -119,6 +111,7 @@ async def test_get_and_update_study_job_metadata(
     client: httpx.AsyncClient,
     study_id: StudyID,
     mocked_backend: MockedBackendApiDict,
+    mock_dependency_get_celery_task_manager: MockType,
 ):
     """
     To generate mock capture you can run

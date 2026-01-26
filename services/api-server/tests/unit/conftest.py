@@ -123,7 +123,7 @@ def app_environment(
 def mock_missing_plugins(app_environment: EnvVarsDict, mocker: MockerFixture):
     settings = ApplicationSettings.create_from_envs()
     if settings.API_SERVER_RABBITMQ is None:
-        import simcore_service_api_server.core.application
+        import simcore_service_api_server.core.application  # noqa: PLC0415
 
         mocker.patch.object(
             simcore_service_api_server.core.application,
@@ -148,9 +148,7 @@ def app(
     """Inits app on a light environment"""
 
     if spy_httpx_calls_enabled:
-        create_httpx_async_client_spy_if_enabled(
-            "simcore_service_api_server.utils.client_base.AsyncClient"
-        )
+        create_httpx_async_client_spy_if_enabled("simcore_service_api_server.utils.client_base.AsyncClient")
 
         patch_lrt_response_urls()
 
@@ -162,9 +160,7 @@ MAX_TIME_FOR_APP_TO_SHUTDOWN = 10
 
 
 @pytest.fixture
-async def client(
-    app: FastAPI, is_pdb_enabled: bool
-) -> AsyncIterator[httpx.AsyncClient]:
+async def client(app: FastAPI, is_pdb_enabled: bool) -> AsyncIterator[httpx.AsyncClient]:
     #
     # Prefer this client instead of fastapi.testclient.TestClient
     #
@@ -238,14 +234,10 @@ def mocked_s3_server_url() -> Iterator[HttpUrl]:
     we need an http entrypoint
     """
     # http://docs.getmoto.org/en/latest/docs/server_mode.html#start-within-python
-    server = ThreadedMotoServer(
-        ip_address=get_localhost_ip(), port=aiohttp.test_utils.unused_port()
-    )
+    server = ThreadedMotoServer(ip_address=get_localhost_ip(), port=aiohttp.test_utils.unused_port())
 
     # pylint: disable=protected-access
-    endpoint_url = TypeAdapter(HttpUrl).validate_python(
-        f"http://{server._ip_address}:{server._port}"
-    )
+    endpoint_url = TypeAdapter(HttpUrl).validate_python(f"http://{server._ip_address}:{server._port}")  # noqa: SLF001
 
     print(f"--> started mock S3 server on {endpoint_url}")
     server.start()
@@ -256,43 +248,43 @@ def mocked_s3_server_url() -> Iterator[HttpUrl]:
     print(f"<-- stopped mock S3 server on {endpoint_url}")
 
 
+@pytest.fixture
+def mock_dependency_get_celery_task_manager(app: FastAPI, mock_task_manager_object: MockType) -> MockType:
+    from simcore_service_api_server.api.dependencies.celery import get_task_manager  # noqa: PLC0415
+
+    app.dependency_overrides[get_task_manager] = lambda: mock_task_manager_object
+    yield mock_task_manager_object
+    app.dependency_overrides.pop(get_task_manager, None)
+
+
 # MOCKED res/web APIs from simcore services ------------------------------------------
 
 
 @pytest.fixture
-def mocked_rabbit_rpc_client(
-    mocker: MockerFixture, fake_project_job_rpc_get: ProjectJobRpcGet
-) -> MockType:
+def mocked_rabbit_rpc_client(mocker: MockerFixture, fake_project_job_rpc_get: ProjectJobRpcGet) -> MockType:
     """This fixture mocks the RabbitMQRPCClient.request method which is used
-    in all RPC clients in the api-server, regardeless of the namespace.
+    in all RPC clients in the api-server, regardless of the namespace.
     """
     _catalog_rpc_side_effects = CatalogRpcSideEffects()
 
-    _webserver_rpc_side_effects = WebserverRpcSideEffects(
-        fake_project_job_rpc_get=fake_project_job_rpc_get
-    )
+    _webserver_rpc_side_effects = WebserverRpcSideEffects(fake_project_job_rpc_get=fake_project_job_rpc_get)
 
     async def _request(
         namespace: RPCNamespace,
         method_name: RPCMethodName,
         **kwargs,
     ) -> Any:
-
         kwargs.pop("timeout_s", None)  # remove timeout from kwargs
 
         # NOTE: we could switch to different namespaces
         if namespace == CATALOG_RPC_NAMESPACE:
-            return await getattr(_catalog_rpc_side_effects, method_name)(
-                mocker.MagicMock(), **kwargs
-            )
+            return await getattr(_catalog_rpc_side_effects, method_name)(mocker.MagicMock(), **kwargs)
 
-        assert namespace == DEFAULT_WEBSERVER_RPC_NAMESPACE or namespace.startswith(
-            "wb"
-        ), "expected a webserver namespace!"
-
-        return await getattr(_webserver_rpc_side_effects, method_name)(
-            mocker.MagicMock(), **kwargs
+        assert namespace == DEFAULT_WEBSERVER_RPC_NAMESPACE or namespace.startswith("wb"), (
+            "expected a webserver namespace!"
         )
+
+        return await getattr(_webserver_rpc_side_effects, method_name)(mocker.MagicMock(), **kwargs)
 
     # NOTE: mocks RabbitMQRPCClient.request(...)
     mock = mocker.MagicMock(spec=RabbitMQRPCClient)
@@ -302,9 +294,7 @@ def mocked_rabbit_rpc_client(
 
 
 @pytest.fixture
-def mocked_app_rpc_dependencies(
-    app: FastAPI, mocked_rabbit_rpc_client: MockType
-) -> Iterator[None]:
+def mocked_app_rpc_dependencies(app: FastAPI, mocked_rabbit_rpc_client: MockType) -> Iterator[None]:
     """
     Mocks rabbit clients overrides for the FastAPI app.
     """
@@ -350,10 +340,7 @@ def directorv2_service_openapi_specs(
 def webserver_service_openapi_specs(
     osparc_simcore_services_dir: Path,
 ) -> dict[str, Any]:
-    openapi_path = (
-        osparc_simcore_services_dir
-        / "web/server/src/simcore_service_webserver/api/v0/openapi.yaml"
-    )
+    openapi_path = osparc_simcore_services_dir / "web/server/src/simcore_service_webserver/api/v0/openapi.yaml"
     return yaml.safe_load(openapi_path.read_text())
 
 
@@ -390,9 +377,7 @@ def mocked_directorv2_rest_api_base(
         assert_all_mocked=True,
     ) as respx_mock:
         assert openapi
-        assert (
-            openapi["paths"]["/"]["get"]["operationId"] == "check_service_health__get"
-        )
+        assert openapi["paths"]["/"]["get"]["operationId"] == "check_service_health__get"
 
         respx_mock.get(path="/", name="check_service_health__get").respond(
             status.HTTP_200_OK,
@@ -434,9 +419,7 @@ def mocked_webserver_rest_api_base(
             "version": "1.0.0",
             "api_version": "1.0.0",
         }
-        respx_mock.get(path="/v0/", name="healthcheck_readiness_probe").respond(
-            status.HTTP_200_OK, json=response_body
-        )
+        respx_mock.get(path="/v0/", name="healthcheck_readiness_probe").respond(status.HTTP_200_OK, json=response_body)
         respx_mock.get(path="/v0/health", name="healthcheck_liveness_probe").respond(
             status.HTTP_200_OK, json=response_body
         )
@@ -456,7 +439,7 @@ def mocked_storage_rest_api_base(
     services_mocks_enabled: bool,
 ) -> Iterator[MockRouter]:
     """
-    Creates a respx.mock to capture calls to strage API
+    Creates a respx.mock to capture calls to storage API
     Includes only basic routes to check that the configuration is correct
     IMPORTANT: This fixture shall be extended on a test bases
     """
@@ -485,10 +468,7 @@ def mocked_storage_rest_api_base(
             ).model_dump(),
         )
 
-        assert (
-            openapi["paths"]["/v0/status"]["get"]["operationId"]
-            == "get_status_v0_status_get"
-        )
+        assert openapi["paths"]["/v0/status"]["get"]["operationId"] == "get_status_v0_status_get"
         respx_mock.get(path="/v0/status", name="get_status_v0_status_get").respond(
             status.HTTP_200_OK,
             json=Envelope[AppStatusCheck](
@@ -502,9 +482,7 @@ def mocked_storage_rest_api_base(
         )
 
         assert (
-            openapi["paths"]["/v0/locations/{location_id}/files/{file_id}"]["put"][
-                "operationId"
-            ]
+            openapi["paths"]["/v0/locations/{location_id}/files/{file_id}"]["put"]["operationId"]
             == "upload_file_v0_locations__location_id__files__file_id__put"
         )
         respx_mock.put(
@@ -512,45 +490,33 @@ def mocked_storage_rest_api_base(
             name="upload_file_v0_locations__location_id__files__file_id__put",
         ).respond(
             status.HTTP_200_OK,
-            json=Envelope[FileUploadSchema](
-                data=FileUploadSchema.model_json_schema()["examples"][0]
-            ).model_dump(mode="json"),
+            json=Envelope[FileUploadSchema](data=FileUploadSchema.model_json_schema()["examples"][0]).model_dump(
+                mode="json"
+            ),
         )
 
         # Add mocks for completion and abort endpoints
         def generate_future_link(request: Request, **kwargs):
             parsed_url = urlparse(f"{request.url}")
-            stripped_url = urlunparse(
-                (parsed_url.scheme, parsed_url.netloc, parsed_url.path, "", "", "")
-            )
+            stripped_url = urlunparse((parsed_url.scheme, parsed_url.netloc, parsed_url.path, "", "", ""))
 
             payload = FileUploadCompleteResponse.model_validate(
                 {
-                    "links": {
-                        "state": stripped_url
-                        + ":complete/futures/"
-                        + str(faker.uuid4())
-                    },
+                    "links": {"state": stripped_url + ":complete/futures/" + str(faker.uuid4())},
                 },
             )
             return Response(
                 status_code=status.HTTP_200_OK,
-                json=jsonable_encoder(
-                    Envelope[FileUploadCompleteResponse](data=payload)
-                ),
+                json=jsonable_encoder(Envelope[FileUploadCompleteResponse](data=payload)),
             )
 
         respx_mock.post(
-            re.compile(
-                r"^http://[a-z\-_]*storage:[0-9]+/v0/locations/[0-9]+/files/.+complete(?:\?.*)?$"
-            ),
+            re.compile(r"^http://[a-z\-_]*storage:[0-9]+/v0/locations/[0-9]+/files/.+complete(?:\?.*)?$"),
             name="complete_upload_file_v0_locations__location_id__files__file_id__complete_post",
         ).side_effect = generate_future_link
 
         respx_mock.post(
-            re.compile(
-                r"^http://[a-z\-_]*storage:[0-9]+/v0/locations/[0-9]+/files/.+complete/futures/.+"
-            )
+            re.compile(r"^http://[a-z\-_]*storage:[0-9]+/v0/locations/[0-9]+/files/.+complete/futures/.+")
         ).respond(
             status_code=status.HTTP_200_OK,
             json=jsonable_encoder(
@@ -564,9 +530,7 @@ def mocked_storage_rest_api_base(
         )
 
         respx_mock.post(
-            re.compile(
-                r"^http://[a-z\-_]*storage:[0-9]+/v0/locations/[0-9]+/files/.+:abort(?:\?.*)?$"
-            ),
+            re.compile(r"^http://[a-z\-_]*storage:[0-9]+/v0/locations/[0-9]+/files/.+:abort(?:\?.*)?$"),
             name="abort_upload_file_v0_locations__location_id__files__file_id__abort_post",
         ).respond(
             status.HTTP_204_NO_CONTENT,
@@ -601,9 +565,7 @@ def mocked_catalog_rest_api_base(
             status.HTTP_200_OK,
             text="simcore_service_catalog.api.routes.health@2023-07-03T12:59:12.024551+00:00",
         )
-        respx_mock.get("/v0/meta").respond(
-            status.HTTP_200_OK, json=schemas["BaseMeta"]["example"]
-        )
+        respx_mock.get("/v0/meta").respond(status.HTTP_200_OK, json=schemas["BaseMeta"]["example"])
 
         # SEE https://github.com/pcrespov/sandbox-python/blob/f650aad57aced304aac9d0ad56c00723d2274ad0/respx-lib/test_disable_mock.py
         if not services_mocks_enabled:
@@ -684,7 +646,7 @@ def mocked_catalog_rpc_api(
     """
     Mocks the catalog's simcore service RPC API for testing purposes.
     """
-    from servicelib.rabbitmq.rpc_interfaces.catalog import (  # noqa: PLC0415; keep import here
+    from servicelib.rabbitmq.rpc_interfaces.catalog import (  # noqa: PLC0415
         services as catalog_rpc,
     )
 
@@ -694,8 +656,7 @@ def mocked_catalog_rpc_api(
     side_effect_methods = [
         method_name
         for method_name in dir(catalog_rpc_side_effects)
-        if not method_name.startswith("_")
-        and callable(getattr(catalog_rpc_side_effects, method_name))
+        if not method_name.startswith("_") and callable(getattr(catalog_rpc_side_effects, method_name))
     ]
 
     # Create mocks for each method in catalog_rpc that has a corresponding side effect
@@ -727,7 +688,7 @@ def mocked_directorv2_rpc_api(
     """
     Mocks the director-v2's simcore service RPC API for testing purposes.
     """
-    from servicelib.rabbitmq.rpc_interfaces.director_v2 import (  # noqa: PLC0415; keep import here
+    from servicelib.rabbitmq.rpc_interfaces.director_v2 import (  # noqa: PLC0415
         computations_tasks as directorv2_rpc,
     )
 
@@ -737,8 +698,7 @@ def mocked_directorv2_rpc_api(
     side_effect_methods = [
         method_name
         for method_name in dir(directorv2_rpc_side_effects)
-        if not method_name.startswith("_")
-        and callable(getattr(directorv2_rpc_side_effects, method_name))
+        if not method_name.startswith("_") and callable(getattr(directorv2_rpc_side_effects, method_name))
     ]
 
     # Create mocks for each method in directorv2_rpc that has a corresponding side effect
@@ -761,42 +721,6 @@ def storage_rpc_side_effects(request) -> Any:
     return StorageSideEffects()
 
 
-@pytest.fixture
-def mocked_storage_rpc_api(
-    mocked_app_rpc_dependencies: None,
-    mocker: MockerFixture,
-    storage_rpc_side_effects: Any,
-) -> dict[str, MockType]:
-    """
-    Mocks the storage's simcore service RPC API for testing purposes.
-    """
-    from servicelib.rabbitmq.rpc_interfaces.storage import (
-        simcore_s3 as storage_rpc,  # keep import here
-    )
-
-    mocks = {}
-
-    # Get all callable methods from the side effects class that are not built-ins
-    side_effect_methods = [
-        method_name
-        for method_name in dir(storage_rpc_side_effects)
-        if not method_name.startswith("_")
-        and callable(getattr(storage_rpc_side_effects, method_name))
-    ]
-
-    # Create mocks for each method in storage_rpc that has a corresponding side effect
-    for method_name in side_effect_methods:
-        if hasattr(storage_rpc, method_name):
-            mocks[method_name] = mocker.patch.object(
-                storage_rpc,
-                method_name,
-                autospec=True,
-                side_effect=getattr(storage_rpc_side_effects, method_name),
-            )
-
-    return mocks
-
-
 #
 # Other Mocks
 #
@@ -808,9 +732,7 @@ def mocked_solver_job_outputs(mocker) -> None:
     result["output_1"] = 0.6
     result["output_2"] = BaseFileLink(
         store=0,
-        path=SimcoreS3FileID(
-            "api/7cf771db-3ee9-319e-849f-53db0076fc93/single_number.txt"
-        ),
+        path=SimcoreS3FileID("api/7cf771db-3ee9-319e-849f-53db0076fc93/single_number.txt"),
         label=None,
         eTag=None,
     )
@@ -835,9 +757,7 @@ def patch_lrt_response_urls(mocker: MockerFixture):
             assert data is not None  # nosec
 
             def _patch(href):
-                return lrt_response.request.url.copy_with(
-                    raw_path=httpx.URL(href).raw_path
-                )
+                return lrt_response.request.url.copy_with(raw_path=httpx.URL(href).raw_path)
 
             data.status_href = _patch(data.status_href)
             data.result_href = _patch(data.result_href)
@@ -867,7 +787,7 @@ def patch_webserver_long_running_project_tasks(
         def __init__(self):
             self._results: dict[str, Any] = {}
 
-        def _set_result_and_get_reponse(self, result: Any):
+        def _set_result_and_get_response(self, result: Any):
             task_id = faker.uuid4()
             self._results[task_id] = jsonable_encoder(result, by_alias=True)
 
@@ -888,9 +808,7 @@ def patch_webserver_long_running_project_tasks(
 
         def create_project_task(self, request: httpx.Request):
             # create result: use the request-body
-            query = dict(
-                elm.split("=") for elm in request.url.query.decode().split("&")
-            )
+            query = dict(elm.split("=") for elm in request.url.query.decode().split("&"))
             if from_study := query.get("from_study"):
                 return self.clone_project_task(request=request, project_id=from_study)
             project_create = json.loads(request.content)
@@ -908,9 +826,9 @@ def patch_webserver_long_running_project_tasks(
                 }
             )
 
-            return self._set_result_and_get_reponse(project_get)
+            return self._set_result_and_get_response(project_get)
 
-        def clone_project_task(self, request: httpx.Request, *, project_id: str):
+        def clone_project_task(self, request: httpx.Request, *, project_id: str):  # noqa: ARG002
             assert GET_PROJECT.response_body
 
             project_get = ProjectGet.model_validate(
@@ -923,13 +841,11 @@ def patch_webserver_long_running_project_tasks(
             )
             project_get.uuid = ProjectID(project_id)
 
-            return self._set_result_and_get_reponse(project_get)
+            return self._set_result_and_get_response(project_get)
 
         def get_result(self, request: httpx.Request, *, task_id: str):
             assert request
-            return httpx.Response(
-                status.HTTP_200_OK, json={"data": self._results[task_id]}
-            )
+            return httpx.Response(status.HTTP_200_OK, json={"data": self._results[task_id]})
 
         # NOTE: Due to lack of time, i will leave it here but I believe
         # it is possible to have a generic long-running task workflow
@@ -959,9 +875,7 @@ def patch_webserver_long_running_project_tasks(
                 json={
                     "data": jsonable_encoder(
                         TaskStatus(
-                            task_progress=TaskProgress(
-                                message="fake job done", percent=1
-                            ),
+                            task_progress=TaskProgress(message="fake job done", percent=1),
                             done=True,
                             started="2018-07-01T11:13:43Z",
                         ),
@@ -981,9 +895,7 @@ def patch_webserver_long_running_project_tasks(
 
 
 @pytest.fixture
-def mock_webserver_patch_project(
-    app: FastAPI, services_mocks_enabled: bool
-) -> Callable[[MockRouter], MockRouter]:
+def mock_webserver_patch_project(app: FastAPI, services_mocks_enabled: bool) -> Callable[[MockRouter], MockRouter]:
     settings: ApplicationSettings = app.state.settings
     assert settings.API_SERVER_WEBSERVER is not None
 
@@ -1002,17 +914,13 @@ def mock_webserver_patch_project(
 
 
 @pytest.fixture
-def mock_webserver_get_project(
-    app: FastAPI, services_mocks_enabled: bool
-) -> Callable[[MockRouter], MockRouter]:
+def mock_webserver_get_project(app: FastAPI, services_mocks_enabled: bool) -> Callable[[MockRouter], MockRouter]:
     settings: ApplicationSettings = app.state.settings
     assert settings.API_SERVER_WEBSERVER is not None
 
     def _mock(webserver_mock_router: MockRouter) -> MockRouter:
         def _get_project(request: httpx.Request, *args, **kwargs):
-            result = Envelope[ProjectGet].model_validate(
-                {"data": ProjectGet.model_json_schema()["examples"][0]}
-            )
+            result = Envelope[ProjectGet].model_validate({"data": ProjectGet.model_json_schema()["examples"][0]})
             return httpx.Response(status.HTTP_200_OK, json=result.model_dump())
 
         if services_mocks_enabled:
@@ -1030,9 +938,7 @@ def openapi_dev_specs(project_slug_dir: Path) -> dict[str, Any]:
     openapi_file = (project_slug_dir / "openapi-dev.json").resolve()
     if openapi_file.is_file():
         openapi_file.unlink()
-    subprocess.run(
-        "make openapi-dev.json", cwd=project_slug_dir, shell=True, check=True
-    )
+    subprocess.run("make openapi-dev.json", cwd=project_slug_dir, shell=True, check=True)  # noqa: S602, S607
     assert openapi_file.is_file()
     return json.loads(openapi_file.read_text())
 
@@ -1047,7 +953,6 @@ def mock_method_in_jobs_service(
         return_value: Any = None,
         exception: Exception | None = None,
     ) -> MockType:
-
         return mocker.patch.object(
             JobService,
             method_name,

@@ -132,9 +132,7 @@ class FunctionJobTaskClientService:
     ]:
         """Lists all function jobs for a user with pagination"""
 
-        pagination_kwargs = as_dict_exclude_none(
-            pagination_offset=pagination_offset, pagination_limit=pagination_limit
-        )
+        pagination_kwargs = as_dict_exclude_none(pagination_offset=pagination_offset, pagination_limit=pagination_limit)
 
         (
             function_jobs_list_ws,
@@ -189,10 +187,7 @@ class FunctionJobTaskClientService:
             return stored_job_status
 
         status: str
-        if (
-            function.function_class == FunctionClass.PROJECT
-            and function_job.function_class == FunctionClass.PROJECT
-        ):
+        if function.function_class == FunctionClass.PROJECT and function_job.function_class == FunctionClass.PROJECT:
             if function_job.project_job_id is None:
                 status = await _celery_task_status(
                     job_creation_task_id=function_job.job_creation_task_id,
@@ -238,27 +233,24 @@ class FunctionJobTaskClientService:
             check_write_permissions=False,
         )
 
-    async def function_job_outputs(  # pylint: disable=too-many-return-statements
+    async def function_job_outputs(  # noqa: PLR0911
         self,
         *,
         function: RegisteredFunction,
         function_job: RegisteredFunctionJob,
         stored_job_outputs: FunctionOutputs | None,
     ) -> FunctionOutputs:
+        # pylint: disable=too-many-return-statements
+
         if stored_job_outputs is not None:
             return stored_job_outputs
 
-        job_status = await self.inspect_function_job(
-            function=function, function_job=function_job
-        )
+        job_status = await self.inspect_function_job(function=function, function_job=function_job)
 
         if job_status.status != RunningState.SUCCESS:
             return None
 
-        if (
-            function.function_class == FunctionClass.PROJECT
-            and function_job.function_class == FunctionClass.PROJECT
-        ):
+        if function.function_class == FunctionClass.PROJECT and function_job.function_class == FunctionClass.PROJECT:
             if function_job.project_job_id is None:
                 return None
             try:
@@ -272,10 +264,7 @@ class FunctionJobTaskClientService:
                 )
             except StudyJobOutputRequestButNotSucceededError:
                 return None
-        elif (
-            function.function_class == FunctionClass.SOLVER
-            and function_job.function_class == FunctionClass.SOLVER
-        ):
+        elif function.function_class == FunctionClass.SOLVER and function_job.function_class == FunctionClass.SOLVER:
             if function_job.solver_job_id is None:
                 return None
             try:
@@ -302,7 +291,7 @@ class FunctionJobTaskClientService:
             check_write_permissions=False,
         )
 
-    async def create_function_job_creation_tasks(
+    async def create_function_job_creation_tasks(  # noqa: PLR0913
         self,
         *,
         function: RegisteredFunction,
@@ -313,9 +302,7 @@ class FunctionJobTaskClientService:
         parent_project_uuid: ProjectID | None = None,
         parent_node_id: NodeID | None = None,
     ) -> list[RegisteredFunctionJob]:
-        inputs = [
-            join_inputs(function.default_inputs, input_) for input_ in function_inputs
-        ]
+        inputs = [join_inputs(function.default_inputs, input_) for input_ in function_inputs]
 
         cached_jobs = await self._web_rpc_client.find_cached_function_jobs(
             user_id=user_identity.user_id,
@@ -325,15 +312,11 @@ class FunctionJobTaskClientService:
             status_filter=[FunctionJobStatus(status=RunningState.SUCCESS)],
         )
 
-        uncached_inputs = [
-            input_ for input_, job in zip(inputs, cached_jobs) if job is None
-        ]
+        uncached_inputs = [input_ for input_, job in zip(inputs, cached_jobs, strict=False) if job is None]
 
-        pre_registered_function_job_data_list = (
-            await self._function_job_service.batch_pre_register_function_jobs(
-                function=function,
-                job_input_list=[JobInputs(values=_ or {}) for _ in uncached_inputs],
-            )
+        pre_registered_function_job_data_list = await self._function_job_service.batch_pre_register_function_jobs(
+            function=function,
+            job_input_list=[JobInputs(values=_ or {}) for _ in uncached_inputs],
         )
 
         # run function in celery task
@@ -373,12 +356,13 @@ class FunctionJobTaskClientService:
                     solver_job_id=None,
                 )
                 for task_uuid, pre_registered_function_job_data in zip(
-                    task_uuids, pre_registered_function_job_data_list
+                    task_uuids, pre_registered_function_job_data_list, strict=False
                 )
             ],
         )
         patched_jobs_iter = iter(patched_jobs.updated_items)
-        resolve_cached_jobs = lambda job: (
-            job if job is not None else next(patched_jobs_iter)
-        )
+
+        def resolve_cached_jobs(job):
+            return job if job is not None else next(patched_jobs_iter)
+
         return [resolve_cached_jobs(job) for job in cached_jobs]
