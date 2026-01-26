@@ -957,7 +957,7 @@ qx.Class.define("osparc.data.Resources", {
         }
       },
       /*
-       * NOTIFICATIONS
+       * BELL NOTIFICATIONS
        */
       "bellNotifications": {
         useCache: false,
