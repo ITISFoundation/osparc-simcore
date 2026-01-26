@@ -188,7 +188,8 @@ def compute_pipeline_started_timestamp(
                 error=exc,
                 error_context={"pipeline_dag": pipeline_dag.nodes, "comp_tasks": comp_tasks},
                 tip="Ensure all nodes in the pipeline have corresponding computational tasks. "
-                "Computed started timestamp cannot be determined.",
+                "Computed started timestamp cannot be determined. Computational tasks should "
+                "not be modified while a pipeline is running.",
             )
         )
         return None
@@ -215,7 +216,8 @@ def compute_pipeline_stopped_timestamp(
                 error=exc,
                 error_context={"pipeline_dag": pipeline_dag.nodes, "comp_tasks": comp_tasks},
                 tip="Ensure all nodes in the pipeline have corresponding computational tasks. "
-                "Computed stopped timestamp cannot be determined.",
+                "Computed stopped timestamp cannot be determined. Computational tasks should "
+                "not be modified while a pipeline is running.",
             )
         )
         return None
