@@ -1,6 +1,7 @@
 import logging
 from collections.abc import Iterator
 from contextlib import contextmanager
+from pathlib import Path
 from typing import Final
 
 from aiodocker import DockerError
@@ -21,9 +22,15 @@ from .instrumentation import get_instrumentation
 
 _logger = logging.getLogger(__name__)
 
+_TRANSPORT_ENDPOINT_IS_NOT_CONNECTED_SUBSTR: Final[str] = "transport endpoint is not connected"
+
 
 def _reverse_string(to_reverse: str) -> str:
     return to_reverse[::-1]
+
+
+def _is_transport_endpoint_not_connected_error(exc: DockerError) -> bool:
+    return _TRANSPORT_ENDPOINT_IS_NOT_CONNECTED_SUBSTR in str(exc).lower()
 
 
 _VOLUMES_NOT_TO_BACKUP: Final[tuple[str, ...]] = (
@@ -96,10 +103,91 @@ async def remove_volume(app: FastAPI, docker: Docker, *, volume_name: str, requi
         if requires_backup:
             await _backup_volume(app, docker, volume_name=volume_name)
 
-        await DockerVolume(docker, volume_name).delete()
-
         settings: ApplicationSettings = app.state.settings
         get_instrumentation(app).agent_metrics.remove_volumes(settings.AGENT_DOCKER_NODE_ID)
+
+        volume = DockerVolume(docker, volume_name)
+
+        try:
+            await volume.delete()
+        except DockerError as err:
+            if err.status == status.HTTP_404_NOT_FOUND:
+                raise
+
+            if not _is_transport_endpoint_not_connected_error(err):
+                raise
+
+            # NOTE: This happens on hosts with stale FUSE mountpoints under the
+            # docker volumes directory (e.g. after abrupt shutdowns). Docker may
+            # fail volume deletion while trying to `lstat` the mountpoint.
+            _logger.info(
+                "Failed to remove volume '%s' due to stale mountpoint; attempting lazy unmount and retry",
+                volume_name,
+            )
+
+            mountpoint: Path | None = None
+            try:
+                volume_info = await volume.show()
+                mountpoint_str = volume_info.get("Mountpoint")
+                mountpoint = Path(mountpoint_str) if mountpoint_str else None
+            except DockerError as show_err:
+                if show_err.status == status.HTTP_404_NOT_FOUND:
+                    raise
+
+            if mountpoint is not None:
+                with log_context(
+                    _logger,
+                    logging.INFO,
+                    f"lazy unmount of stale mountpoint '{mountpoint}' for volume '{volume_name}'",
+                    log_duration=True,
+                ):
+                    await _try_lazy_unmount(docker, mountpoint, settings.AGENT_VOLUMES_CLEANUP_R_CLONE_VERSION)
+
+            await volume.delete(force=True)
+
+        get_instrumentation(app).agent_metrics.remove_volumes(settings.AGENT_DOCKER_NODE_ID)
+
+
+def _find_volumes_root(path: Path) -> Path:
+    # path =  /mnt/sdb1/volumes/volume_name...
+    parts = path.parts
+    first_occurrence = parts.index("volumes")
+    return Path(*parts[: first_occurrence + 1])
+
+
+async def _try_lazy_unmount(docker: Docker, mountpoint: Path, r_clone_version: str) -> None:
+    volumes_root = _find_volumes_root(mountpoint)
+
+    container = await docker.containers.run(
+        config={
+            "Image": f"rclone/rclone:{r_clone_version}",
+            "Entrypoint": ["sh", "-c", f"fusermount3 -uz {mountpoint}"],
+            "HostConfig": {
+                "AutoRemove": True,
+                "CapAdd": ["SYS_ADMIN"],
+                "Devices": [
+                    {
+                        "PathOnHost": "/dev/fuse",
+                        "PathInContainer": "/dev/fuse",
+                        "CgroupPermissions": "rwm",
+                    }
+                ],
+                "SecurityOpt": ["apparmor:unconfined"],
+                "Binds": [
+                    f"{volumes_root}:{volumes_root}:rshared",
+                ],
+            },
+        }
+    )
+
+    # Wait for container to stop and get its exit status
+    result = await container.wait()
+    status_code = result.get("StatusCode", 1)
+
+    if status_code != 0:
+        logs = await container.log(stdout=True, stderr=True)
+        msg = f"rclone helper failed (exit {status_code}):\n{''.join(logs)}"
+        raise RuntimeError(msg)
 
 
 async def get_containers_with_prefixes(docker: Docker, prefixes: set[str]) -> set[str]:
