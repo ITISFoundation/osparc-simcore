@@ -4,7 +4,7 @@ import logging
 from email.headerregistry import Address
 from email.message import EmailMessage as _EmailMessage
 
-from celery import Task  # type: ignore[import-untyped]
+from celery import Task
 from models_library.api_schemas_notifications.message import EmailNotificationMessage
 from models_library.notifications import ChannelType
 from notifications_library._email import (
@@ -21,7 +21,7 @@ _logger = logging.getLogger(__name__)
 def _create_email_message(message: EmailNotificationMessage) -> _EmailMessage:
     return compose_email(
         from_=Address(**message.from_.model_dump()),
-        to=Address(**message.to.model_dump()),
+        to=[Address(**addr.model_dump()) for addr in message.to],
         subject=message.content.subject,
         content_text=message.content.body_text,
         content_html=message.content.body_html,

@@ -8,6 +8,24 @@ from ..api_schemas_webserver._base import InputSchema, OutputSchema
 from ..notifications import ChannelType, TemplateName
 
 
+class NotificationsEmailContentBody(InputSchema):
+    subject: str
+    body_html: str
+    body_text: str
+
+
+type NotificationsContentBody = NotificationsEmailContentBody
+
+
+class NotificationsEmailContentGet(OutputSchema):
+    subject: str
+    body_html: str
+    body_text: str
+
+
+type NotificationsContentGet = NotificationsEmailContentGet
+
+
 class SearchTemplatesQueryParams(BaseModel):
     # NOTE: str because we support wildcards
     channel: str | None = None
@@ -31,7 +49,7 @@ class NotificationsTemplatePreviewBody(InputSchema):
 
 class NotificationsTemplatePreviewGet(OutputSchema):
     ref: NotificationsTemplateRefGet
-    content: dict[str, Any]
+    content: NotificationsContentGet
 
 
 class NotificationsTemplateMessageBody(InputSchema):
@@ -43,4 +61,4 @@ class NotificationsTemplateMessageBody(InputSchema):
 class NotificationsMessageBody(InputSchema):
     channel: ChannelType
     recipients: list[GroupID]
-    content: dict[str, Any]
+    content: NotificationsContentBody

@@ -38,7 +38,6 @@ async def pre_register_user(
     ],
     product_name: ProductName,
 ) -> UserAccountGet:
-
     found = await search_users_accounts(
         app,
         filter_by_email_glob=profile.email,
@@ -115,14 +114,12 @@ async def list_user_accounts(
     engine = get_asyncpg_engine(app)
 
     # Get user data with pagination
-    users_data, total_count = (
-        await _accounts_repository.list_merged_pre_and_registered_users(
-            engine,
-            product_name=product_name,
-            filter_any_account_request_status=filter_any_account_request_status,
-            pagination_limit=pagination_limit,
-            pagination_offset=pagination_offset,
-        )
+    users_data, total_count = await _accounts_repository.list_merged_pre_and_registered_users(
+        engine,
+        product_name=product_name,
+        filter_any_account_request_status=filter_any_account_request_status,
+        pagination_limit=pagination_limit,
+        pagination_offset=pagination_offset,
     )
 
     # For each user, append additional information if needed
@@ -134,16 +131,10 @@ async def list_user_accounts(
         # Add products information if needed
         user_id = user.get("user_id")
         if user_id:
-            products = await _users_repository.get_user_products(
-                engine, user_id=user_id
-            )
+            products = await _users_repository.get_user_products(engine, user_id=user_id)
             user_dict["products"] = [p.product_name for p in products]
 
-        user_dict["registered"] = (
-            user_id is not None
-            if user.get("pre_email")
-            else user.get("status") is not None
-        )
+        user_dict["registered"] = user_id is not None if user.get("pre_email") else user.get("status") is not None
 
         result.append(user_dict)
 
@@ -169,11 +160,7 @@ async def search_users_accounts(
     NOTE: list is limited to a maximum of 50 entries
     """
 
-    if (
-        filter_by_email_glob is None
-        and filter_by_user_name_glob is None
-        and filter_by_primary_group_id is None
-    ):
+    if filter_by_email_glob is None and filter_by_user_name_glob is None and filter_by_primary_group_id is None:
         msg = "At least one filter (email glob, user name like, or primary group ID) must be provided"
         raise ValueError(msg)
 
@@ -185,23 +172,15 @@ async def search_users_accounts(
 
     rows = await _accounts_repository.search_merged_pre_and_registered_users(
         get_asyncpg_engine(app),
-        filter_by_email_like=(
-            _glob_to_sql_like(filter_by_email_glob) if filter_by_email_glob else None
-        ),
+        filter_by_email_like=(_glob_to_sql_like(filter_by_email_glob) if filter_by_email_glob else None),
         filter_by_primary_group_id=filter_by_primary_group_id,
-        filter_by_user_name_like=(
-            _glob_to_sql_like(filter_by_user_name_glob)
-            if filter_by_user_name_glob
-            else None
-        ),
+        filter_by_user_name_like=(_glob_to_sql_like(filter_by_user_name_glob) if filter_by_user_name_glob else None),
         product_name=product_name,
     )
 
     async def _list_products_or_none(user_id):
         if user_id is not None and include_products:
-            products = await _users_repository.get_user_products(
-                get_asyncpg_engine(app), user_id=user_id
-            )
+            products = await _users_repository.get_user_products(get_asyncpg_engine(app), user_id=user_id)
             return [_.product_name for _ in products]
         return None
 
@@ -266,9 +245,7 @@ async def approve_user_account(
     )
 
     if not pre_registrations:
-        raise PendingPreRegistrationNotFoundError(
-            email=pre_registration_email, product_name=product_name
-        )
+        raise PendingPreRegistrationNotFoundError(email=pre_registration_email, product_name=product_name)
 
     # There should be only one registration matching these criteria
     pre_registration = pre_registrations[0]
@@ -310,9 +287,7 @@ async def reject_user_account(
     )
 
     if not pre_registrations:
-        raise PendingPreRegistrationNotFoundError(
-            email=pre_registration_email, product_name=product_name
-        )
+        raise PendingPreRegistrationNotFoundError(email=pre_registration_email, product_name=product_name)
 
     # There should be only one registration matching these criteria
     pre_registration = pre_registrations[0]
@@ -360,12 +335,8 @@ def _create_product_and_user_data(
 
     # Extract UI information from product.vendor.ui (optional)
     ui_data = ProductUIData(
-        logo_url=(
-            product.vendor.get("ui", {}).get("logo_url") if product.vendor else None
-        ),
-        strong_color=(
-            product.vendor.get("ui", {}).get("strong_color") if product.vendor else None
-        ),
+        logo_url=(product.vendor.get("ui", {}).get("logo_url") if product.vendor else None),
+        strong_color=(product.vendor.get("ui", {}).get("strong_color") if product.vendor else None),
     )
 
     # Extract homepage URL
@@ -437,7 +408,7 @@ async def send_approval_email_to_user(
     # Compose email
     msg = compose_email(
         from_=get_support_address(product_data),
-        to=get_user_address(user_data),
+        to=[get_user_address(user_data)],
         subject=parts.subject,
         content_text=parts.text_content,
         content_html=parts.html_content,
@@ -493,7 +464,7 @@ async def send_rejection_email_to_user(
     # Compose email
     msg = compose_email(
         from_=get_support_address(product_data),
-        to=get_user_address(user_data),
+        to=[get_user_address(user_data)],
         subject=parts.subject,
         content_text=parts.text_content,
         content_html=parts.html_content,

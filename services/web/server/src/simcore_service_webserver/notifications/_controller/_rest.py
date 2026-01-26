@@ -3,6 +3,7 @@ import logging
 from aiohttp import web
 from celery_library.async_jobs import submit_job
 from models_library.api_schemas_long_running_tasks.tasks import TaskGet
+from models_library.api_schemas_notifications.message import EmailAddress, EmailContent, EmailNotificationMessage
 from models_library.api_schemas_webserver.notifications import (
     NotificationsMessageBody,
     NotificationsTemplateGet,
@@ -21,6 +22,9 @@ from servicelib.rabbitmq.rpc_interfaces.notifications.notifications_templates im
 from servicelib.rabbitmq.rpc_interfaces.notifications.notifications_templates import (
     search_templates as remote_search_templates,
 )
+
+from simcore_service_webserver.products._service import get_product
+from simcore_service_webserver.users._users_service import get_user, get_users_in_group
 
 from ..._meta import API_VTAG
 from ...celery import get_task_manager
@@ -43,6 +47,34 @@ async def send_message(request: web.Request) -> web.Response:
     req_ctx = AuthenticatedRequestContext.model_validate(request)
     body = await parse_request_body_as(NotificationsMessageBody, request)
 
+    # move to service layer
+    product = get_product(request.app, req_ctx.product_name)
+    _logger.error("product=%s", product)
+
+    to: list[EmailAddress] = []
+
+    for recipient in body.recipients:
+        user_ids = await get_users_in_group(request.app, gid=recipient)
+        for user_id in user_ids:
+            user = await get_user(request.app, user_id=user_id)
+            _logger.error("user=%s", user)
+            to.append(
+                EmailAddress(
+                    display_name=user["first_name"] or user["email"],
+                    addr_spec=user["email"],
+                )
+            )
+
+    message = EmailNotificationMessage(
+        channel=body.channel,
+        from_=EmailAddress(
+            display_name=product.display_name,
+            addr_spec=product.support_email,
+        ),
+        to=to,
+        content=EmailContent(**body.content.model_dump()),
+    )
+
     async_job_get = await submit_job(
         get_task_manager(request.app),
         execution_metadata=ExecutionMetadata(
@@ -55,7 +87,7 @@ async def send_message(request: web.Request) -> web.Response:
                 product_name=req_ctx.product_name,
             ).model_dump()
         ),
-        message=body.model_dump(),
+        message=message.model_dump(),
     )
 
     task_id = f"{async_job_get.job_id}"
