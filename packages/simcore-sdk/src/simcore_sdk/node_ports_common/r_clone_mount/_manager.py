@@ -127,9 +127,11 @@ class RCloneMountManager:
         self,
         r_clone_settings: RCloneSettings,
         *,
+        requires_data_mounting: bool,
         delegate: DelegateInterface,
     ) -> None:
         self.r_clone_settings = r_clone_settings
+        self.requires_data_mounting = requires_data_mounting
         self.delegate = delegate
         if r_clone_settings.R_CLONE_VERSION is None:
             msg = "R_CLONE_VERSION setting is not set"

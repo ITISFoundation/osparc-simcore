@@ -104,9 +104,6 @@ class _TestingDelegate(DelegateInterface):
         self.vfs_cache_path = vfs_cache_path
         self.mocked_shutdown = mocked_shutdown
 
-    async def requires_data_mounting(self) -> bool:
-        return True
-
     async def get_local_vfs_cache_path(self) -> Path:
         # should normally be /DY_VOLUMES/vfs-cache in the sidecar
         # but for testing it's ok to reuse the local folder since it's not mounted
@@ -163,7 +160,9 @@ class _TestingDelegate(DelegateInterface):
 async def r_clone_mount_manager(
     r_clone_settings: RCloneSettings, mocked_shutdown: AsyncMock, vfs_cache_path: Path
 ) -> AsyncIterator[RCloneMountManager]:
-    manager = RCloneMountManager(r_clone_settings, delegate=_TestingDelegate(vfs_cache_path, mocked_shutdown))
+    manager = RCloneMountManager(
+        r_clone_settings, requires_data_mounting=True, delegate=_TestingDelegate(vfs_cache_path, mocked_shutdown)
+    )
     await manager.setup()
 
     yield manager

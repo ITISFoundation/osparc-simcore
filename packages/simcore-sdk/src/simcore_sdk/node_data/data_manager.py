@@ -269,8 +269,6 @@ async def pull(  # pylint: disable=too-many-arguments
 ) -> None:
     """restores the state folder"""
 
-    requires_data_mounting = await mount_manager.delegate.requires_data_mounting()
-
     if legacy_state and legacy_state.new_state_path == destination_path:
         _logger.info(
             "trying to restore from legacy_state=%s, destination_path=%s",
@@ -307,7 +305,7 @@ async def pull(  # pylint: disable=too-many-arguments
                     node_id,
                     destination_path,
                     index,
-                    requires_data_mounting=requires_data_mounting,
+                    requires_data_mounting=mount_manager.requires_data_mounting,
                 )
             return
 
@@ -335,7 +333,7 @@ async def pull(  # pylint: disable=too-many-arguments
                 node_id,
                 destination_path,
                 index,
-                requires_data_mounting=requires_data_mounting,
+                requires_data_mounting=mount_manager.requires_data_mounting,
             )
         return
 
@@ -347,7 +345,7 @@ async def pull(  # pylint: disable=too-many-arguments
         is_archive=False,
     )
     if state_directory_exists:
-        if requires_data_mounting:
+        if mount_manager.requires_data_mounting:
             await _start_mount_if_required(
                 mount_manager,
                 user_id,
@@ -355,7 +353,7 @@ async def pull(  # pylint: disable=too-many-arguments
                 node_id,
                 destination_path,
                 index,
-                requires_data_mounting=requires_data_mounting,
+                requires_data_mounting=mount_manager.requires_data_mounting,
             )
         else:
             await _pull_directory(
@@ -377,6 +375,6 @@ async def pull(  # pylint: disable=too-many-arguments
         node_id,
         destination_path,
         index,
-        requires_data_mounting=requires_data_mounting,
+        requires_data_mounting=mount_manager.requires_data_mounting,
     )
     _logger.debug("No content previously saved for '%s'", destination_path)

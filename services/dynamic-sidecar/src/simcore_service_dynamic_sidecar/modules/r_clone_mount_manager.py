@@ -54,9 +54,6 @@ class DynamicSidecarRCloneMountDelegate(DelegateInterface):
         self.settings = settings
         self.mounted_volumes = mounted_volumes
 
-    async def requires_data_mounting(self) -> bool:
-        return self.settings.DY_SIDECAR_REQUIRES_DATA_MOUNTING
-
     async def _get_vfs_paths(self) -> tuple[Path, Path]:
         vfs_cache_path = await self.mounted_volumes.get_vfs_cache_docker_volume(self.settings.DY_SIDECAR_RUN_ID)
 
@@ -179,6 +176,7 @@ def setup_r_clone_mount_manager(app: FastAPI):
 
         app.state.r_clone_mount_manager = r_clone_mount_manager = RCloneMountManager(
             settings.DY_SIDECAR_R_CLONE_SETTINGS,
+            requires_data_mounting=settings.DY_SIDECAR_REQUIRES_DATA_MOUNTING,
             delegate=DynamicSidecarRCloneMountDelegate(app, settings, mounted_volumes),
         )
         await r_clone_mount_manager.setup()
