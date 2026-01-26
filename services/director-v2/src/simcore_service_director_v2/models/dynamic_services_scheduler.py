@@ -85,7 +85,7 @@ class DynamicSidecarStatus(str, Enum):
     FAILING = "failing"  # requests to the sidecar API are failing service should be cosnidered as unavailable
 
 
-class Status(BaseModel):  # noqa: PLW1641
+class Status(BaseModel):
     """Generated from data from docker container inspect API"""
 
     current: DynamicSidecarStatus = Field(..., description="status of the service")
@@ -109,6 +109,8 @@ class Status(BaseModel):  # noqa: PLW1641
         if not isinstance(other, Status):
             return NotImplemented
         return self.current == other.current and self.info == other.info
+
+    __hash__ = None
 
     @classmethod
     def create_as_initially_ok(cls) -> "Status":
