@@ -12,7 +12,7 @@ import secrets
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, Final, TypeAlias, cast, get_args
+from typing import Any, Final, cast, get_args
 from unittest import mock
 
 import aiodocker
@@ -514,7 +514,11 @@ def create_fake_node(faker: Faker) -> Callable[..., DockerNode]:
             ),
             "Spec": NodeSpec(
                 name=None,
-                labels=faker.pydict(allowed_types=(str,)),
+                labels={
+                    _OSPARC_SERVICE_READY_LABEL_KEY: "false",
+                    _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY: datetime.datetime.now(tz=datetime.UTC).isoformat(),
+                    **faker.pydict(allowed_types=(str,)),
+                },
                 role=None,
                 availability=Availability.drain,
             ),
@@ -540,8 +544,8 @@ def task_template() -> dict[str, Any]:
     }
 
 
-_GIGA_NANO_CPU = 10**9
-NUM_CPUS: TypeAlias = PositiveInt
+_GIGA_NANO_CPU: Final[int] = 10**9
+type NUM_CPUS = PositiveInt
 
 
 @pytest.fixture
@@ -735,13 +739,15 @@ async def _assert_wait_for_service_state(
             )
             ctx.logger.info(
                 "%s",
-                f"service {found_service['Spec']['Name']} is now {service_task['Status']['State']} {'.' * number_of_success['count']}",
+                f"service {found_service['Spec']['Name']} is now "
+                f"{service_task['Status']['State']} {'.' * number_of_success['count']}",
             )
             number_of_success["count"] += 1
             assert (number_of_success["count"] * WAIT_TIME) >= SUCCESS_STABLE_TIME_S
             ctx.logger.info(
                 "%s",
-                f"service {found_service['Spec']['Name']} is now {service_task['Status']['State']} after {SUCCESS_STABLE_TIME_S} seconds",
+                f"service {found_service['Spec']['Name']} is now {service_task['Status']['State']} "
+                f"after {SUCCESS_STABLE_TIME_S} seconds",
             )
 
         await _()
@@ -1040,11 +1046,17 @@ def with_instances_machines_hot_buffer(
     num_hot_buffer: int,
     app_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
+    aws_allowed_ec2_instance_type_names: list[InstanceTypeType],
 ) -> EnvVarsDict:
+    allowed_types = json.loads(app_environment["EC2_INSTANCES_ALLOWED_TYPES"])
+    for index, instance_type_name in enumerate(allowed_types):
+        allowed_types[instance_type_name]["hot_buffer_count"] = num_hot_buffer if index == 0 else 0
+        allowed_types[instance_type_name].setdefault("hot_buffer_max_inactivity_time", None)
+
     return app_environment | setenvs_from_dict(
         monkeypatch,
         {
-            "EC2_INSTANCES_MACHINES_BUFFER": f"{num_hot_buffer}",
+            "EC2_INSTANCES_ALLOWED_TYPES": json_dumps(allowed_types),
         },
     )
 
@@ -1056,6 +1068,12 @@ def hot_buffer_instance_type(app_settings: ApplicationSettings) -> InstanceTypeT
         InstanceTypeType,
         next(iter(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES)),
     )
+
+
+@pytest.fixture
+def hot_buffer_count(app_settings: ApplicationSettings, hot_buffer_instance_type: InstanceTypeType) -> int:
+    assert app_settings.AUTOSCALING_EC2_INSTANCES
+    return app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[hot_buffer_instance_type].hot_buffer_count
 
 
 @pytest.fixture

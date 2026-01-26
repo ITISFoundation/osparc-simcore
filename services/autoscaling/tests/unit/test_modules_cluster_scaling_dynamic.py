@@ -367,13 +367,14 @@ async def test_cluster_scaling_with_no_services_and_machine_buffer_starts_expect
     hot_buffer_instance_type: InstanceTypeType,
     hot_buffer_has_pre_pull: bool,
     hot_buffer_expected_pre_pulled_images: list[DockerGenericTag],
+    hot_buffer_count: int,
 ):
     assert app_settings.AUTOSCALING_EC2_INSTANCES
     await auto_scale_cluster(app=initialized_app, auto_scaling_mode=DynamicAutoscalingProvider())
     await assert_autoscaled_dynamic_ec2_instances(
         ec2_client,
         expected_num_reservations=1,
-        expected_num_instances=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER,
+        expected_num_instances=hot_buffer_count,
         expected_instance_type=hot_buffer_instance_type,
         expected_instance_state="running",
         expected_additional_tag_keys=list(ec2_instance_custom_tags),
@@ -383,7 +384,7 @@ async def test_cluster_scaling_with_no_services_and_machine_buffer_starts_expect
         mock_rabbitmq_post_message,
         app_settings,
         initialized_app,
-        instances_pending=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER,
+        instances_pending=hot_buffer_count,
     )
     mock_rabbitmq_post_message.reset_mock()
     # calling again should attach the new nodes to the reserve, but nothing should start
@@ -401,7 +402,7 @@ async def test_cluster_scaling_with_no_services_and_machine_buffer_starts_expect
     await assert_autoscaled_dynamic_ec2_instances(
         ec2_client,
         expected_num_reservations=1,
-        expected_num_instances=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER,
+        expected_num_instances=hot_buffer_count,
         expected_instance_type=hot_buffer_instance_type,
         expected_instance_state="running",
         expected_additional_tag_keys=list(ec2_instance_custom_tags.keys() | expected_pre_pull_tag_keys),
@@ -416,15 +417,12 @@ async def test_cluster_scaling_with_no_services_and_machine_buffer_starts_expect
         mock_rabbitmq_post_message,
         app_settings,
         initialized_app,
-        nodes_total=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER,
-        nodes_drained=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER,
-        instances_running=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER,
+        nodes_total=hot_buffer_count,
+        nodes_drained=hot_buffer_count,
+        instances_running=hot_buffer_count,
         cluster_total_resources={
-            "cpus": app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
-            * fake_node.description.resources.nano_cp_us
-            / 1e9,
-            "ram": app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
-            * fake_node.description.resources.memory_bytes,
+            "cpus": hot_buffer_count * fake_node.description.resources.nano_cp_us / 1e9,
+            "ram": hot_buffer_count * fake_node.description.resources.memory_bytes,
             "generic_resources": {},
         },
     )
@@ -436,7 +434,7 @@ async def test_cluster_scaling_with_no_services_and_machine_buffer_starts_expect
     await assert_autoscaled_dynamic_ec2_instances(
         ec2_client,
         expected_num_reservations=1,
-        expected_num_instances=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER,
+        expected_num_instances=hot_buffer_count,
         expected_instance_type=hot_buffer_instance_type,
         expected_instance_state="running",
         expected_additional_tag_keys=list(ec2_instance_custom_tags.keys() | expected_pre_pull_tag_keys),
@@ -1854,10 +1852,11 @@ async def test_warm_buffers_are_started_to_replace_missing_hot_buffers(
     mock_find_node_with_name_returns_fake_node: mock.Mock,
     mock_compute_node_used_resources: mock.Mock,
     mock_docker_tag_node: mock.Mock,
+    hot_buffer_count: int,
 ):
     # pre-requisites
     assert app_settings.AUTOSCALING_EC2_INSTANCES
-    assert app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER > 0
+    assert hot_buffer_count > 0
 
     # we have nothing running now
     all_instances = await ec2_client.describe_instances()
@@ -1904,7 +1903,7 @@ async def test_warm_buffers_are_started_to_replace_missing_hot_buffers(
     await assert_autoscaled_dynamic_ec2_instances(
         ec2_client,
         expected_num_reservations=1,
-        expected_num_instances=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER,
+        expected_num_instances=hot_buffer_count,
         expected_instance_type=cast(
             InstanceTypeType,
             next(iter(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES)),
@@ -1921,23 +1920,23 @@ async def test_warm_buffers_are_started_to_replace_missing_hot_buffers(
     # let's autoscale again, to check the cluster analysis and tag the nodes
     await auto_scale_cluster(app=initialized_app, auto_scaling_mode=DynamicAutoscalingProvider())
     mock_docker_tag_node.assert_called()
-    assert mock_docker_tag_node.call_count == app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
+    assert mock_docker_tag_node.call_count == hot_buffer_count
     # at analysis time, we had no machines running
     analyzed_cluster = assert_cluster_state(
         spied_cluster_analysis,
         expected_calls=1,
-        expected_num_machines=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER,
+        expected_num_machines=hot_buffer_count,
     )
     assert not analyzed_cluster.active_nodes
     assert len(analyzed_cluster.warm_buffer_ec2s) == max(
         0,
-        buffer_count - app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER,
+        buffer_count - hot_buffer_count,
     ), (
         "the warm buffers were not used as expected there should be"
-        f" {buffer_count - app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER} remaining, "
+        f" {buffer_count - hot_buffer_count} remaining, "
         f"found {len(analyzed_cluster.warm_buffer_ec2s)}"
     )
-    assert len(analyzed_cluster.pending_ec2s) == app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
+    assert len(analyzed_cluster.pending_ec2s) == hot_buffer_count
 
 
 @pytest.mark.parametrize(
@@ -1978,6 +1977,7 @@ async def test_warm_buffers_only_replace_hot_buffer_if_service_is_started_issue7
     mock_docker_tag_node: mock.Mock,
     mocker: MockerFixture,
     fake_node: Node,
+    hot_buffer_count: int,
 ):
     # NOTE: https://github.com/ITISFoundation/osparc-simcore/issues/7071
 
@@ -1985,8 +1985,8 @@ async def test_warm_buffers_only_replace_hot_buffer_if_service_is_started_issue7
     # PRE-requisites
     #
     assert app_settings.AUTOSCALING_EC2_INSTANCES
-    assert app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER > 0
-    num_hot_buffer = app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
+    assert hot_buffer_count > 0
+    num_hot_buffer = hot_buffer_count
 
     # we have nothing running now
     all_instances = await ec2_client.describe_instances()
