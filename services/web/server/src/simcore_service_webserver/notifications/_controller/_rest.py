@@ -46,7 +46,7 @@ async def send_message(request: web.Request) -> web.Response:
     async_job_get = await submit_job(
         get_task_manager(request.app),
         execution_metadata=ExecutionMetadata(
-            name="send_message",
+            name=f"send_{body.channel}",
         ),
         owner_metadata=OwnerMetadata.model_validate(
             WebServerOwnerMetadata(
