@@ -62,7 +62,6 @@ from ...utils.cluster_scaling import (
     associate_ec2_instances_with_nodes,
     ec2_startup_script,
     find_selected_instance_type_for_task,
-    get_hot_buffer_type,
     sort_drained_nodes,
 )
 from ...utils.rabbitmq import (
@@ -99,6 +98,36 @@ def _adjust_instances_resources(
         dataclasses.replace(i, resources=adjusted_resources_by_type.get(i.type, i.resources))
         for i in non_adjusted_instances
     ]
+
+
+def _hot_buffer_targets(app_settings: ApplicationSettings) -> dict[InstanceTypeType, int]:
+    assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
+    return {
+        cast(InstanceTypeType, instance_type_name): config.hot_buffer_count
+        for instance_type_name, config in app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES.items()
+        if config.hot_buffer_count > 0
+    }
+
+
+def _compute_hot_buffer_missing(app_settings: ApplicationSettings, cluster: Cluster) -> dict[InstanceTypeType, int]:
+    targets = _hot_buffer_targets(app_settings)
+    if not targets:
+        return {}
+
+    pending_by_type = collections.Counter(
+        cast(InstanceTypeType, instance.ec2_instance.type)
+        for instance in itertools.chain(cluster.pending_ec2s, cluster.pending_nodes)
+        if not instance.assigned_tasks
+    )
+
+    missing: dict[InstanceTypeType, int] = {}
+    for instance_type, desired_count in targets.items():
+        current = sum(1 for node in cluster.hot_buffer_drained_nodes if node.ec2_instance.type == instance_type)
+        gap = desired_count - (current + pending_by_type[instance_type])
+        if gap > 0:
+            missing[instance_type] = gap
+
+    return missing
 
 
 async def _analyze_current_cluster(
@@ -478,27 +507,16 @@ async def _try_start_warm_buffer_instances(
 
     instances_to_start = [i.ec2_instance for i in cluster.warm_buffer_ec2s if i.assigned_tasks]
 
-    if len(cluster.hot_buffer_drained_nodes) < app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER:
-        # check if we can migrate warm buffers to hot buffers
-        hot_buffer_instance_type = cast(
-            InstanceTypeType,
-            next(iter(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES)),
-        )
-        free_startable_warm_buffers_to_replace_hot_buffers = [
-            warm_buffer.ec2_instance
-            for warm_buffer in cluster.warm_buffer_ec2s
-            if (warm_buffer.ec2_instance.type == hot_buffer_instance_type) and not warm_buffer.assigned_tasks
-        ]
-        # check there are no empty pending ec2s/nodes that are not assigned to any task
-        unnassigned_pending_ec2s = [i.ec2_instance for i in cluster.pending_ec2s if not i.assigned_tasks]
-        unnassigned_pending_nodes = [i.ec2_instance for i in cluster.pending_nodes if not i.assigned_tasks]
-
-        instances_to_start += free_startable_warm_buffers_to_replace_hot_buffers[
-            : app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
-            - len(cluster.hot_buffer_drained_nodes)
-            - len(unnassigned_pending_ec2s)
-            - len(unnassigned_pending_nodes)
-        ]
+    hot_buffer_missing = _compute_hot_buffer_missing(app_settings, cluster)
+    if hot_buffer_missing:
+        for instance_type_name, missing_count in hot_buffer_missing.items():
+            free_startable_warm_buffers = [
+                warm_buffer.ec2_instance
+                for warm_buffer in cluster.warm_buffer_ec2s
+                if (warm_buffer.ec2_instance.type == instance_type_name) and not warm_buffer.assigned_tasks
+            ]
+            if missing_count > 0 and free_startable_warm_buffers:
+                instances_to_start.extend(free_startable_warm_buffers[:missing_count])
 
     if not instances_to_start:
         return cluster, []
@@ -792,21 +810,18 @@ async def _find_needed_instances(
     # 2. check the hot buffer needs
     app_settings = get_application_settings(app)
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
-    if (
-        num_missing_nodes := (
-            app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER - len(cluster.hot_buffer_drained_nodes)
-        )
-    ) > 0:
-        # check if some are already pending
-        remaining_pending_instances = [i.ec2_instance for i in cluster.pending_ec2s if not i.assigned_tasks] + [
-            i.ec2_instance for i in cluster.pending_nodes if not i.assigned_tasks
-        ]
-        if len(remaining_pending_instances) < (
-            app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER - len(cluster.hot_buffer_drained_nodes)
-        ):
-            default_instance_type = get_hot_buffer_type(available_ec2_types)
-            instances_with_counts[InstanceToLaunch(instance_type=default_instance_type, node_labels={})] += (
-                num_missing_nodes
+    missing_hot_buffers = _compute_hot_buffer_missing(app_settings, cluster)
+    if missing_hot_buffers:
+        for instance_type_name, missing_count in missing_hot_buffers.items():
+            required_instance_type = next(
+                (instance for instance in available_ec2_types if instance.name == instance_type_name),
+                None,
+            )
+            if not required_instance_type:
+                _logger.warning("Instance type %s requested for hot buffer is not available", instance_type_name)
+                continue
+            instances_with_counts[InstanceToLaunch(instance_type=required_instance_type, node_labels={})] += (
+                missing_count
             )
 
     _logger.info(
@@ -1203,9 +1218,9 @@ async def _scale_up_cluster(
 ) -> Cluster:
     app_settings = get_application_settings(app)
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
-    if not unassigned_tasks and (
-        len(cluster.hot_buffer_drained_nodes) >= app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
-    ):
+    hot_buffer_missing = _compute_hot_buffer_missing(app_settings, cluster)
+
+    if not unassigned_tasks and not hot_buffer_missing:
         return cluster
 
     if cluster.total_number_of_machines() >= app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES:
