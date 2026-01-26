@@ -30,7 +30,7 @@ def setup(app: FastAPI) -> None:
         # create the clients
         app.state.rabbitmq_client = RabbitMQClient(client_name="clusters_keeper", settings=settings)
         app.state.rabbitmq_rpc_client = await RabbitMQRPCClient.create(
-            client_name="clusters_keeper_rpc_server", settings=settings
+            client_name="clusters_keeper_rpc_client", settings=settings
         )
 
     async def on_shutdown() -> None:
