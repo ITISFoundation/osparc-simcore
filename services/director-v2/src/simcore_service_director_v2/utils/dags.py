@@ -6,6 +6,7 @@ from typing import Any, cast
 
 import arrow
 import networkx as nx
+from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from models_library.projects import NodesDict
 from models_library.projects_nodes import NodeState
 from models_library.projects_nodes_io import NodeID, NodeIDStr, PortLink
@@ -20,8 +21,8 @@ from .computations import to_node_class
 _logger = logging.getLogger(__name__)
 
 
-kNODE_MODIFIED_STATE = "modified_state"
-kNODE_DEPENDENCIES_TO_COMPUTE = "dependencies_state"
+_NODE_MODIFIED_STATE = "modified_state"
+_NODE_DEPENDENCIES_TO_COMPUTE = "dependencies_state"
 
 
 def create_complete_dag(workbench: NodesDict) -> nx.DiGraph:
@@ -75,9 +76,7 @@ def create_complete_dag_from_tasks(tasks: list[CompTaskAtDB]) -> nx.DiGraph:
     return dag_graph
 
 
-async def _compute_node_modified_state(
-    graph_data: nx.classes.reportviews.NodeDataView, node_id: NodeID
-) -> bool:
+async def _compute_node_modified_state(graph_data: nx.classes.reportviews.NodeDataView, node_id: NodeID) -> bool:
     node = graph_data[f"{node_id}"]
     # if the node state is in the modified state already
     if node["state"] in [
@@ -107,31 +106,21 @@ async def _compute_node_dependencies_state(graph_data, node_id) -> set[NodeID]:
     # check if the previous node is outdated or waits for dependencies... in which case this one has to wait
     non_computed_dependencies: set[NodeID] = set()
     for input_port in node.get("inputs", {}).values():
-        if isinstance(input_port, PortLink) and _node_needs_computation(
-            graph_data, input_port.node_uuid
-        ):
+        if isinstance(input_port, PortLink) and _node_needs_computation(graph_data, input_port.node_uuid):
             non_computed_dependencies.add(input_port.node_uuid)
     # all good. ready
     return non_computed_dependencies
 
 
-async def _compute_node_states(
-    graph_data: nx.classes.reportviews.NodeDataView, node_id: NodeID
-) -> None:
+async def _compute_node_states(graph_data: nx.classes.reportviews.NodeDataView, node_id: NodeID) -> None:
     node = graph_data[f"{node_id}"]
-    node[kNODE_MODIFIED_STATE] = await _compute_node_modified_state(graph_data, node_id)
-    node[kNODE_DEPENDENCIES_TO_COMPUTE] = await _compute_node_dependencies_state(
-        graph_data, node_id
-    )
+    node[_NODE_MODIFIED_STATE] = await _compute_node_modified_state(graph_data, node_id)
+    node[_NODE_DEPENDENCIES_TO_COMPUTE] = await _compute_node_dependencies_state(graph_data, node_id)
 
 
-def _node_needs_computation(
-    graph_data: nx.classes.reportviews.NodeDataView, node_id: NodeID
-) -> bool:
+def _node_needs_computation(graph_data: nx.classes.reportviews.NodeDataView, node_id: NodeID) -> bool:
     node = graph_data[f"{node_id}"]
-    needs_computation: bool = node.get(kNODE_MODIFIED_STATE, False) or node.get(
-        kNODE_DEPENDENCIES_TO_COMPUTE, None
-    )
+    needs_computation: bool = node.get(_NODE_MODIFIED_STATE, False) or node.get(_NODE_DEPENDENCIES_TO_COMPUTE, None)
     return needs_computation
 
 
@@ -143,7 +132,7 @@ async def _set_computational_nodes_states(complete_dag: nx.DiGraph) -> None:
 
 
 async def create_minimal_computational_graph_based_on_selection(
-    complete_dag: nx.DiGraph, selected_nodes: list[NodeID], force_restart: bool
+    complete_dag: nx.DiGraph, selected_nodes: list[NodeID], *, force_restart: bool
 ) -> nx.DiGraph:
     graph_data: nx.classes.reportviews.NodeDataView = complete_dag.nodes.data()
     try:
@@ -172,14 +161,10 @@ async def create_minimal_computational_graph_based_on_selection(
                 {
                     n
                     for n in nx.bfs_tree(complete_dag, f"{node}", reverse=True)
-                    if graph_data[n]["node_class"] is NodeClass.COMPUTATIONAL
-                    and _node_needs_computation(graph_data, n)
+                    if graph_data[n]["node_class"] is NodeClass.COMPUTATIONAL and _node_needs_computation(graph_data, n)
                 }
             )
-            if (
-                force_restart
-                and graph_data[f"{node}"]["node_class"] is NodeClass.COMPUTATIONAL
-            ):
+            if force_restart and graph_data[f"{node}"]["node_class"] is NodeClass.COMPUTATIONAL:
                 minimal_nodes_selection.add(f"{node}")
 
     return cast(nx.DiGraph, complete_dag.subgraph(minimal_nodes_selection))
@@ -190,14 +175,23 @@ def compute_pipeline_started_timestamp(
 ) -> datetime.datetime | None:
     if not pipeline_dag.nodes:
         return None
-    node_id_to_comp_task: dict[NodeIDStr, CompTaskAtDB] = {
-        f"{task.node_id}": task for task in comp_tasks
-    }
+    node_id_to_comp_task: dict[NodeIDStr, CompTaskAtDB] = {f"{task.node_id}": task for task in comp_tasks}
     tomorrow = arrow.utcnow().shift(days=1).datetime
-    pipeline_started_at: datetime.datetime | None = min(
-        node_id_to_comp_task[node_id].start or tomorrow
-        for node_id in pipeline_dag.nodes
-    )
+    try:
+        pipeline_started_at: datetime.datetime | None = min(
+            node_id_to_comp_task[node_id].start or tomorrow for node_id in pipeline_dag.nodes
+        )
+    except KeyError as exc:
+        _logger.warning(
+            **create_troubleshooting_log_kwargs(
+                "Node missing in comp_tasks",
+                error=exc,
+                error_context={"pipeline_dag": pipeline_dag.nodes, "comp_tasks": comp_tasks},
+                tip="Ensure all nodes in the pipeline have corresponding computational tasks. "
+                "Computed started timestamp cannot be determined.",
+            )
+        )
+        return None
     if pipeline_started_at == tomorrow:
         pipeline_started_at = None
     return pipeline_started_at
@@ -208,13 +202,23 @@ def compute_pipeline_stopped_timestamp(
 ) -> datetime.datetime | None:
     if not pipeline_dag.nodes:
         return None
-    node_id_to_comp_task: dict[NodeIDStr, CompTaskAtDB] = {
-        f"{task.node_id}": task for task in comp_tasks
-    }
+    node_id_to_comp_task: dict[NodeIDStr, CompTaskAtDB] = {f"{task.node_id}": task for task in comp_tasks}
     tomorrow = arrow.utcnow().shift(days=1).datetime
-    pipeline_stopped_at: datetime.datetime | None = max(
-        node_id_to_comp_task[node_id].end or tomorrow for node_id in pipeline_dag.nodes
-    )
+    try:
+        pipeline_stopped_at: datetime.datetime | None = max(
+            node_id_to_comp_task[node_id].end or tomorrow for node_id in pipeline_dag.nodes
+        )
+    except KeyError as exc:
+        _logger.warning(
+            **create_troubleshooting_log_kwargs(
+                "Node missing in comp_tasks",
+                error=exc,
+                error_context={"pipeline_dag": pipeline_dag.nodes, "comp_tasks": comp_tasks},
+                tip="Ensure all nodes in the pipeline have corresponding computational tasks. "
+                "Computed stopped timestamp cannot be determined.",
+            )
+        )
+        return None
     if pipeline_stopped_at == tomorrow:
         pipeline_stopped_at = None
     return pipeline_stopped_at
@@ -229,16 +233,13 @@ async def compute_pipeline_details(
         await _set_computational_nodes_states(complete_dag)
 
     # NOTE: the latest progress is available in comp_tasks only
-    node_id_to_comp_task: dict[NodeIDStr, CompTaskAtDB] = {
-        f"{task.node_id}": task for task in comp_tasks
-    }
+    node_id_to_comp_task: dict[NodeIDStr, CompTaskAtDB] = {f"{task.node_id}": task for task in comp_tasks}
     pipeline_progress = None
     if len(pipeline_dag.nodes) > 0:
         pipeline_progress = sum(
             (node_id_to_comp_task[node_id].progress or 0) / len(pipeline_dag.nodes)
             for node_id in pipeline_dag.nodes
-            if node_id in node_id_to_comp_task
-            and node_id_to_comp_task[node_id].progress is not None
+            if node_id in node_id_to_comp_task and node_id_to_comp_task[node_id].progress is not None
         )
         pipeline_progress = max(0.0, min(pipeline_progress, 1.0))
 
@@ -247,17 +248,14 @@ async def compute_pipeline_details(
         progress=pipeline_progress,
         node_states={
             node_id: NodeState(
-                modified=node_data.get(kNODE_MODIFIED_STATE, False),
-                dependencies=node_data.get(kNODE_DEPENDENCIES_TO_COMPUTE, set()),
+                modified=node_data.get(_NODE_MODIFIED_STATE, False),
+                dependencies=node_data.get(_NODE_DEPENDENCIES_TO_COMPUTE, set()),
                 current_status=(
-                    node_id_to_comp_task[node_id].state
-                    if node_id in node_id_to_comp_task
-                    else RunningState.UNKNOWN
+                    node_id_to_comp_task[node_id].state if node_id in node_id_to_comp_task else RunningState.UNKNOWN
                 ),
                 progress=(
                     node_id_to_comp_task[node_id].progress
-                    if node_id in node_id_to_comp_task
-                    and node_id_to_comp_task[node_id].progress is not None
+                    if node_id in node_id_to_comp_task and node_id_to_comp_task[node_id].progress is not None
                     else None
                 ),
             )
@@ -274,8 +272,5 @@ def find_computational_node_cycles(dag: nx.DiGraph) -> list[list[str]]:
     return [
         deepcopy(cycle)
         for cycle in list_potential_cycles
-        if any(
-            dag.nodes[node_id]["node_class"] is NodeClass.COMPUTATIONAL
-            for node_id in cycle
-        )
+        if any(dag.nodes[node_id]["node_class"] is NodeClass.COMPUTATIONAL for node_id in cycle)
     ]
