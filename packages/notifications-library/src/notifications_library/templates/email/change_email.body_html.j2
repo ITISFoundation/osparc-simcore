@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'base.body_html.j2' %}
 {% block title %} {% include 'on_change_email.email.subject.txt' %} {% endblock %}
 {% block content %}
 <p>Dear {{ user.first_name or user.user_name }},</p>
