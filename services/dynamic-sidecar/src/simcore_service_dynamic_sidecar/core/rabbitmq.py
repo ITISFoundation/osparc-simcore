@@ -1,6 +1,7 @@
 import logging
+from datetime import timedelta
 from functools import lru_cache
-from typing import cast
+from typing import Final, cast
 
 from fastapi import FastAPI
 from models_library.progress_bar import ProgressReport
@@ -14,20 +15,34 @@ from models_library.rabbitmq_messages import (
     RabbitMessageBase,
     RabbitResourceTrackingMessages,
 )
+from pydantic import NonNegativeFloat
 from servicelib.logging_utils import LogLevelInt, LogMessageStr, log_catch, log_context
 from servicelib.rabbitmq import RabbitMQClient, is_rabbitmq_responsive
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 from settings_library.rabbit import RabbitSettings
+from tenacity.asyncio import AsyncRetrying
+from tenacity.before_sleep import before_sleep_log
+from tenacity.stop import stop_after_delay
+from tenacity.wait import wait_exponential
 
 from ..core.settings import ApplicationSettings
 from ..modules.service_liveness import wait_for_service_liveness
+
+_MAX_DELAY_TO_ATTEMPT_MESSAGE_REDELIVERY: Final[NonNegativeFloat] = timedelta(seconds=30).total_seconds()
 
 _logger = logging.getLogger(__file__)
 
 
 async def _post_rabbit_message(app: FastAPI, message: RabbitMessageBase) -> None:
     with log_catch(_logger, reraise=False):
-        await get_rabbitmq_client(app).publish(message.channel_name, message)
+        # retries to see if network disruptions are transient
+        async for attempt in AsyncRetrying(
+            stop=stop_after_delay(_MAX_DELAY_TO_ATTEMPT_MESSAGE_REDELIVERY),
+            wait=wait_exponential(max=1),
+            before_sleep=before_sleep_log(_logger, logging.WARNING),
+        ):
+            with attempt:
+                await get_rabbitmq_client(app).publish(message.channel_name, message)
 
 
 async def post_resource_tracking_message(app: FastAPI, message: RabbitResourceTrackingMessages):
