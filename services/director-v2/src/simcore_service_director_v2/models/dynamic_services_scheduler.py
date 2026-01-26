@@ -55,6 +55,7 @@ TEMPORARY_PORT_NUMBER = 65_534
 MAX_ALLOWED_SERVICE_NAME_LENGTH: int = 63
 
 
+# replace TypeAlias with type https://github.com/ITISFoundation/osparc-simcore/issues/8772
 DockerStatus: TypeAlias = Status1  # noqa: UP040
 
 
