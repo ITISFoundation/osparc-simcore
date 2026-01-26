@@ -157,9 +157,11 @@ class DynamicSidecarRCloneMountDelegate(DelegateInterface):
                     return
                 raise
 
+            # NOTE: to ensure graceful shutdown a SIGTERM signal is required
+            # if SIGKILL is sent directly FUSE mount will not unmount cleanly
+
             # sends SIGTERM
             await container.stop()
-
             # sends SIGKILL and removes
             await container.delete(force=True)
 
