@@ -6,7 +6,7 @@ from models_library.api_schemas__common.health import HealthCheckGet
 from models_library.errors import RABBITMQ_CLIENT_UNHEALTHY_MSG
 from servicelib.rabbitmq import RabbitMQClient
 
-from ._dependencies import get_rabbitmq_rpc_server
+from ._dependencies import get_rabbitmq_client
 
 router = APIRouter()
 
@@ -17,7 +17,7 @@ class HealthCheckError(RuntimeError):
 
 @router.get("/health", response_model=HealthCheckGet)
 async def check_service_health(
-    rabbitmq_rpc_server: Annotated[RabbitMQClient, Depends(get_rabbitmq_rpc_server)],
+    rabbitmq_rpc_server: Annotated[RabbitMQClient, Depends(get_rabbitmq_client)],
 ):
     if not rabbitmq_rpc_server.healthy:
         raise HealthCheckError(RABBITMQ_CLIENT_UNHEALTHY_MSG)
