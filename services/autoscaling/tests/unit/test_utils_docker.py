@@ -139,9 +139,7 @@ async def test_get_monitored_nodes_with_invalid_label(
     host_node: Node,
     faker: Faker,
 ):
-    monitored_nodes = await get_monitored_nodes(
-        autoscaling_docker, node_labels=faker.pylist(allowed_types=(str,))
-    )
+    monitored_nodes = await get_monitored_nodes(autoscaling_docker, node_labels=faker.pylist(allowed_types=(str,)))
     assert len(monitored_nodes) == 0
 
 
@@ -169,9 +167,7 @@ async def test_get_monitored_nodes_with_valid_label(
         "version": True,
         "spec": {"labels", "name"},
     }
-    assert host_node.model_dump(exclude=EXCLUDED_KEYS) == monitored_nodes[0].model_dump(
-        exclude=EXCLUDED_KEYS
-    )
+    assert host_node.model_dump(exclude=EXCLUDED_KEYS) == monitored_nodes[0].model_dump(exclude=EXCLUDED_KEYS)
 
 
 async def test_get_monitored_nodes_are_sorted_according_to_creation_date(
@@ -180,10 +176,7 @@ async def test_get_monitored_nodes_are_sorted_according_to_creation_date(
     create_fake_node: Callable[..., Node],
     faker: Faker,
 ):
-    fake_nodes = [
-        create_fake_node(CreatedAt=faker.date_time(tzinfo=datetime.UTC).isoformat())
-        for _ in range(10)
-    ]
+    fake_nodes = [create_fake_node(CreatedAt=faker.date_time(tzinfo=datetime.UTC).isoformat()) for _ in range(10)]
     mocked_aiodocker = mocker.patch.object(autoscaling_docker, "nodes", autospec=True)
     mocked_aiodocker.list.return_value = fake_nodes
     monitored_nodes = await get_monitored_nodes(autoscaling_docker, node_labels=[])
@@ -218,9 +211,7 @@ async def test_remove_monitored_down_nodes_of_non_down_node_does_nothing(
 def fake_docker_node(host_node: Node, faker: Faker) -> Node:
     fake_node = host_node.model_copy(deep=True)
     fake_node.id = faker.uuid4(cast_to=str)
-    assert (
-        host_node.id != fake_node.id
-    ), "this should never happen, or you are really unlucky"
+    assert host_node.id != fake_node.id, "this should never happen, or you are really unlucky"
     return fake_node
 
 
@@ -233,13 +224,9 @@ async def test_remove_monitored_down_nodes_of_down_node(
     assert fake_docker_node.status
     fake_docker_node.status.state = NodeState.down
     assert fake_docker_node.status.state == NodeState.down
-    assert await remove_nodes(autoscaling_docker, nodes=[fake_docker_node]) == [
-        fake_docker_node
-    ]
+    assert await remove_nodes(autoscaling_docker, nodes=[fake_docker_node]) == [fake_docker_node]
     # NOTE: this is the same as calling with aiodocker.Docker() as docker: docker.nodes.remove()
-    mocked_aiodocker.remove.assert_called_once_with(
-        node_id=fake_docker_node.id, force=False
-    )
+    mocked_aiodocker.remove.assert_called_once_with(node_id=fake_docker_node.id, force=False)
 
 
 async def test_remove_monitored_down_node_with_unexpected_state_does_nothing(
@@ -256,12 +243,7 @@ async def test_pending_service_task_with_insufficient_resources_with_no_service(
     autoscaling_docker: AutoscalingDocker,
     host_node: Node,
 ):
-    assert (
-        await pending_service_tasks_with_insufficient_resources(
-            autoscaling_docker, service_labels=[]
-        )
-        == []
-    )
+    assert await pending_service_tasks_with_insufficient_resources(autoscaling_docker, service_labels=[]) == []
 
 
 @pytest.mark.parametrize(
@@ -281,31 +263,21 @@ async def test_pending_service_task_with_insufficient_resources_with_no_service(
 async def test_pending_service_task_with_placement_constrain_is_skipped(
     host_node: Node,
     autoscaling_docker: AutoscalingDocker,
-    create_service: Callable[
-        [dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]
-    ],
+    create_service: Callable[[dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]],
     task_template: dict[str, Any],
     create_task_reservations: Callable[[int, int], dict[str, Any]],
     placement_constraint: list[str],
     expected_pending_tasks: bool,
     faker: Faker,
 ):
-    task_template_with_too_many_resource = task_template | create_task_reservations(
-        1000, 0
-    )
+    task_template_with_too_many_resource = task_template | create_task_reservations(1000, 0)
     if placement_constraint:
-        task_template_with_too_many_resource["Placement"] = {
-            "Constraints": placement_constraint
-        }
+        task_template_with_too_many_resource["Placement"] = {"Constraints": placement_constraint}
     # a service will complain only once its task reaches the pending state
-    service_with_too_many_resources = await create_service(
-        task_template_with_too_many_resource, {}, "pending"
-    )
+    service_with_too_many_resources = await create_service(task_template_with_too_many_resource, {}, "pending")
     assert service_with_too_many_resources.spec
 
-    pending_tasks = await pending_service_tasks_with_insufficient_resources(
-        autoscaling_docker, service_labels=[]
-    )
+    pending_tasks = await pending_service_tasks_with_insufficient_resources(autoscaling_docker, service_labels=[])
     if expected_pending_tasks:
         assert pending_tasks
     else:
@@ -315,42 +287,27 @@ async def test_pending_service_task_with_placement_constrain_is_skipped(
 async def test_pending_service_task_with_insufficient_resources_with_service_lacking_resource(
     host_node: Node,
     autoscaling_docker: AutoscalingDocker,
-    create_service: Callable[
-        [dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]
-    ],
+    create_service: Callable[[dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]],
     task_template: dict[str, Any],
     create_task_reservations: Callable[[int, int], dict[str, Any]],
 ):
     # a service with no reservation is not "using" resource for docker, therefore we should not find it
     await create_service(task_template, {}, "running")
-    assert (
-        await pending_service_tasks_with_insufficient_resources(
-            autoscaling_docker, service_labels=[]
-        )
-        == []
-    )
+    assert await pending_service_tasks_with_insufficient_resources(autoscaling_docker, service_labels=[]) == []
     # a service that requires a huge amount of resources will not run, and we should find it
-    task_template_with_too_many_resource = task_template | create_task_reservations(
-        1000, 0
-    )
+    task_template_with_too_many_resource = task_template | create_task_reservations(1000, 0)
     # a service will complain only once its task reaches the pending state
-    service_with_too_many_resources = await create_service(
-        task_template_with_too_many_resource, {}, "pending"
-    )
+    service_with_too_many_resources = await create_service(task_template_with_too_many_resource, {}, "pending")
     assert service_with_too_many_resources.spec
 
     service_tasks = TypeAdapter(list[Task]).validate_python(
-        await autoscaling_docker.tasks.list(
-            filters={"service": service_with_too_many_resources.spec.name}
-        )
+        await autoscaling_docker.tasks.list(filters={"service": service_with_too_many_resources.spec.name})
     )
     assert service_tasks
     assert len(service_tasks) == 1
 
     # now we should find that service
-    pending_tasks = await pending_service_tasks_with_insufficient_resources(
-        autoscaling_docker, service_labels=[]
-    )
+    pending_tasks = await pending_service_tasks_with_insufficient_resources(autoscaling_docker, service_labels=[])
     assert pending_tasks
     assert len(pending_tasks) == 1
     diff = DeepDiff(
@@ -369,52 +326,38 @@ async def test_pending_service_task_with_insufficient_resources_with_service_lac
 async def test_pending_service_task_with_insufficient_resources_with_labelled_services(
     host_node: Node,
     autoscaling_docker: AutoscalingDocker,
-    create_service: Callable[
-        [dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]
-    ],
+    create_service: Callable[[dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]],
     task_template: dict[str, Any],
     create_task_reservations: Callable[[int, int], dict[str, Any]],
     faker: Faker,
 ):
     service_labels: dict[DockerLabelKey, str] = faker.pydict(allowed_types=(str,))
-    task_template_with_too_many_resource = task_template | create_task_reservations(
-        1000, 0
-    )
+    task_template_with_too_many_resource = task_template | create_task_reservations(1000, 0)
 
     # start a service without labels, we should not find it
     await create_service(task_template_with_too_many_resource, {}, "pending")
     assert (
-        await pending_service_tasks_with_insufficient_resources(
-            autoscaling_docker, service_labels=list(service_labels)
-        )
+        await pending_service_tasks_with_insufficient_resources(autoscaling_docker, service_labels=list(service_labels))
         == []
     )
 
     # start a service with a part of the labels, we should not find it
     partial_service_labels = dict(itertools.islice(service_labels.items(), 2))
-    await create_service(
-        task_template_with_too_many_resource, partial_service_labels, "pending"
-    )
+    await create_service(task_template_with_too_many_resource, partial_service_labels, "pending")
 
     assert (
-        await pending_service_tasks_with_insufficient_resources(
-            autoscaling_docker, service_labels=list(service_labels)
-        )
+        await pending_service_tasks_with_insufficient_resources(autoscaling_docker, service_labels=list(service_labels))
         == []
     )
     # start a service with the correct labels
-    service_with_labels = await create_service(
-        task_template_with_too_many_resource, service_labels, "pending"
-    )
+    service_with_labels = await create_service(task_template_with_too_many_resource, service_labels, "pending")
     assert service_with_labels.spec
     pending_tasks = await pending_service_tasks_with_insufficient_resources(
         autoscaling_docker, service_labels=list(service_labels)
     )
 
     service_tasks = TypeAdapter(list[Task]).validate_python(
-        await autoscaling_docker.tasks.list(
-            filters={"service": service_with_labels.spec.name}
-        )
+        await autoscaling_docker.tasks.list(filters={"service": service_with_labels.spec.name})
     )
     assert service_tasks
     assert len(service_tasks) == 1
@@ -436,24 +379,15 @@ async def test_pending_service_task_with_insufficient_resources_with_labelled_se
 async def test_pending_service_task_with_insufficient_resources_properly_sorts_tasks(
     host_node: Node,
     autoscaling_docker: AutoscalingDocker,
-    create_service: Callable[
-        [dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]
-    ],
+    create_service: Callable[[dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]],
     task_template: dict[str, Any],
     create_task_reservations: Callable[[int, int], dict[str, Any]],
     faker: Faker,
 ):
     service_labels: dict[DockerLabelKey, str] = faker.pydict(allowed_types=(str,))
-    task_template_with_too_many_resource = task_template | create_task_reservations(
-        1000, 0
-    )
+    task_template_with_too_many_resource = task_template | create_task_reservations(1000, 0)
     services = await asyncio.gather(
-        *(
-            create_service(
-                task_template_with_too_many_resource, service_labels, "pending"
-            )
-            for _ in range(190)
-        )
+        *(create_service(task_template_with_too_many_resource, service_labels, "pending") for _ in range(190))
     )
     pending_tasks = await pending_service_tasks_with_insufficient_resources(
         autoscaling_docker, service_labels=list(service_labels)
@@ -514,39 +448,29 @@ async def test_compute_cluster_total_resources_returns_host_resources(
 
 async def test_get_resources_from_docker_task_with_no_reservation_returns_0(
     autoscaling_docker: AutoscalingDocker,
-    create_service: Callable[
-        [dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]
-    ],
+    create_service: Callable[[dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]],
     task_template: dict[str, Any],
 ):
     service_with_no_resources = await create_service(task_template, {}, "running")
     assert service_with_no_resources.spec
     service_tasks = TypeAdapter(list[Task]).validate_python(
-        await autoscaling_docker.tasks.list(
-            filters={"service": service_with_no_resources.spec.name}
-        )
+        await autoscaling_docker.tasks.list(filters={"service": service_with_no_resources.spec.name})
     )
     assert service_tasks
     assert len(service_tasks) == 1
 
-    assert get_max_resources_from_docker_task(service_tasks[0]) == Resources(
-        cpus=0, ram=ByteSize(0)
-    )
+    assert get_max_resources_from_docker_task(service_tasks[0]) == Resources(cpus=0, ram=ByteSize(0))
 
 
 async def test_get_resources_from_docker_task_with_reservations(
     async_docker_client: aiodocker.Docker,
-    create_service: Callable[
-        [dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]
-    ],
+    create_service: Callable[[dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]],
     task_template: dict[str, Any],
     create_task_reservations: Callable[[int, int], dict[str, Any]],
     host_cpu_count: int,
 ):
     NUM_CPUS = int(host_cpu_count / 2 + 1)
-    task_template_with_reservations = task_template | create_task_reservations(
-        NUM_CPUS, 0
-    )
+    task_template_with_reservations = task_template | create_task_reservations(NUM_CPUS, 0)
     service = await create_service(task_template_with_reservations, {}, "running")
     assert service.spec
     service_tasks = TypeAdapter(list[Task]).validate_python(
@@ -555,25 +479,19 @@ async def test_get_resources_from_docker_task_with_reservations(
     assert service_tasks
     assert len(service_tasks) == 1
 
-    assert get_max_resources_from_docker_task(service_tasks[0]) == Resources(
-        cpus=NUM_CPUS, ram=ByteSize(0)
-    )
+    assert get_max_resources_from_docker_task(service_tasks[0]) == Resources(cpus=NUM_CPUS, ram=ByteSize(0))
 
 
 async def test_get_resources_from_docker_task_with_reservations_and_limits_returns_the_biggest(
     async_docker_client: aiodocker.Docker,
-    create_service: Callable[
-        [dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]
-    ],
+    create_service: Callable[[dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]],
     task_template: dict[str, Any],
     create_task_reservations: Callable[[int, int], dict[str, Any]],
     create_task_limits: Callable[[int, int], dict[str, Any]],
     host_cpu_count: int,
 ):
     NUM_CPUS = int(host_cpu_count / 2 + 0.5)
-    task_template_with_reservations = task_template | create_task_reservations(
-        NUM_CPUS, 0
-    )
+    task_template_with_reservations = task_template | create_task_reservations(NUM_CPUS, 0)
     task_template_with_reservations["Resources"] |= create_task_limits(
         host_cpu_count, TypeAdapter(ByteSize).validate_python("100Mib")
     )["Resources"]
@@ -639,10 +557,8 @@ async def test_get_task_osparc_custom_docker_placement_constraints(
     service_tasks = TypeAdapter(list[Task]).validate_python(
         await autoscaling_docker.tasks.list(filters={"service": service.spec.name})
     )
-    task_placement_constraints = (
-        await get_task_osparc_custom_docker_placement_constraints(
-            autoscaling_docker, service_tasks[0]
-        )
+    task_placement_constraints = await get_task_osparc_custom_docker_placement_constraints(
+        autoscaling_docker, service_tasks[0]
     )
     assert task_placement_constraints == expected_placement_constraints
 
@@ -695,18 +611,14 @@ async def test_get_task_instance_restriction(
     service_tasks = TypeAdapter(list[Task]).validate_python(
         await autoscaling_docker.tasks.list(filters={"service": service.spec.name})
     )
-    instance_type_or_none = await get_task_instance_restriction(
-        autoscaling_docker, service_tasks[0]
-    )
+    instance_type_or_none = await get_task_instance_restriction(autoscaling_docker, service_tasks[0])
     assert instance_type_or_none == expected_instance_type
 
 
 async def test_compute_tasks_needed_resources(
     autoscaling_docker: AutoscalingDocker,
     host_node: Node,
-    create_service: Callable[
-        [dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]
-    ],
+    create_service: Callable[[dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]],
     task_template: dict[str, Any],
     create_task_reservations: Callable[[int, int], dict[str, Any]],
     host_cpu_count: int,
@@ -715,20 +627,13 @@ async def test_compute_tasks_needed_resources(
     service_with_no_resources = await create_service(task_template, {}, "running")
     assert service_with_no_resources.spec
     service_tasks = TypeAdapter(list[Task]).validate_python(
-        await autoscaling_docker.tasks.list(
-            filters={"service": service_with_no_resources.spec.name}
-        )
+        await autoscaling_docker.tasks.list(filters={"service": service_with_no_resources.spec.name})
     )
     assert compute_tasks_needed_resources(service_tasks) == Resources.create_as_empty()
 
-    task_template_with_manageable_resources = task_template | create_task_reservations(
-        1, 0
-    )
+    task_template_with_manageable_resources = task_template | create_task_reservations(1, 0)
     services = await asyncio.gather(
-        *(
-            create_service(task_template_with_manageable_resources, {}, "running")
-            for cpu in range(host_cpu_count)
-        )
+        *(create_service(task_template_with_manageable_resources, {}, "running") for cpu in range(host_cpu_count))
     )
     all_tasks = service_tasks
     for s in services:
@@ -736,18 +641,12 @@ async def test_compute_tasks_needed_resources(
         service_tasks = TypeAdapter(list[Task]).validate_python(
             await autoscaling_docker.tasks.list(filters={"service": s.spec.name})
         )
-        assert compute_tasks_needed_resources(service_tasks) == Resources(
-            cpus=1, ram=ByteSize(0)
-        )
+        assert compute_tasks_needed_resources(service_tasks) == Resources(cpus=1, ram=ByteSize(0))
         all_tasks.extend(service_tasks)
-    assert compute_tasks_needed_resources(all_tasks) == Resources(
-        cpus=host_cpu_count, ram=ByteSize(0)
-    )
+    assert compute_tasks_needed_resources(all_tasks) == Resources(cpus=host_cpu_count, ram=ByteSize(0))
 
 
-async def test_compute_node_used_resources_with_no_service(
-    autoscaling_docker: AutoscalingDocker, host_node: Node
-):
+async def test_compute_node_used_resources_with_no_service(autoscaling_docker: AutoscalingDocker, host_node: Node):
     cluster_resources = await compute_node_used_resources(autoscaling_docker, host_node)
     assert cluster_resources == Resources(cpus=0, ram=ByteSize(0))
 
@@ -755,9 +654,7 @@ async def test_compute_node_used_resources_with_no_service(
 async def test_compute_node_used_resources_with_service(
     autoscaling_docker: AutoscalingDocker,
     host_node: Node,
-    create_service: Callable[
-        [dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]
-    ],
+    create_service: Callable[[dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]],
     task_template: dict[str, Any],
     create_task_reservations: Callable[[int, int], dict[str, Any]],
     host_cpu_count: int,
@@ -765,27 +662,19 @@ async def test_compute_node_used_resources_with_service(
 ):
     # 1. if we have services with no defined reservations, then we cannot know what they use...
     await create_service(task_template, {}, "running")
-    node_used_resources = await compute_node_used_resources(
-        autoscaling_docker, host_node
-    )
+    node_used_resources = await compute_node_used_resources(autoscaling_docker, host_node)
     assert node_used_resources == Resources(cpus=0, ram=ByteSize(0))
 
     # 2. if we have some services with defined resources, they should be visible
-    task_template_with_manageable_resources = task_template | create_task_reservations(
-        1, 0
-    )
+    task_template_with_manageable_resources = task_template | create_task_reservations(1, 0)
     service_labels = faker.pydict(allowed_types=(str,))
     await asyncio.gather(
         *(
-            create_service(
-                task_template_with_manageable_resources, service_labels, "running"
-            )
+            create_service(task_template_with_manageable_resources, service_labels, "running")
             for cpu in range(host_cpu_count)
         )
     )
-    node_used_resources = await compute_node_used_resources(
-        autoscaling_docker, host_node, service_labels=None
-    )
+    node_used_resources = await compute_node_used_resources(autoscaling_docker, host_node, service_labels=None)
     assert node_used_resources == Resources(cpus=host_cpu_count, ram=ByteSize(0))
 
     # 3. if we look for services with some other label, they should then become invisible again
@@ -808,16 +697,10 @@ async def test_compute_node_used_resources_with_service(
 
     # 5. if we have services that need more resources than available,
     # they should not change what is currently used as they will not run
-    task_template_with_too_many_resource = task_template | create_task_reservations(
-        1000, 0
-    )
-    service_with_too_many_resources = await create_service(
-        task_template_with_too_many_resource, {}, "pending"
-    )
+    task_template_with_too_many_resource = task_template | create_task_reservations(1000, 0)
+    service_with_too_many_resources = await create_service(task_template_with_too_many_resource, {}, "pending")
     assert service_with_too_many_resources
-    node_used_resources = await compute_node_used_resources(
-        autoscaling_docker, host_node
-    )
+    node_used_resources = await compute_node_used_resources(autoscaling_docker, host_node)
     assert node_used_resources == Resources(cpus=host_cpu_count, ram=ByteSize(0))
 
 
@@ -825,9 +708,7 @@ async def test_compute_cluster_used_resources_with_no_nodes_returns_0(
     autoscaling_docker: AutoscalingDocker,
     docker_swarm: None,
 ):
-    cluster_used_resources = await compute_cluster_used_resources(
-        autoscaling_docker, []
-    )
+    cluster_used_resources = await compute_cluster_used_resources(autoscaling_docker, [])
     assert cluster_used_resources == Resources(cpus=0, ram=ByteSize(0))
 
 
@@ -835,18 +716,14 @@ async def test_compute_cluster_used_resources_with_no_services_running_returns_0
     autoscaling_docker: AutoscalingDocker,
     host_node: Node,
 ):
-    cluster_used_resources = await compute_cluster_used_resources(
-        autoscaling_docker, [host_node]
-    )
+    cluster_used_resources = await compute_cluster_used_resources(autoscaling_docker, [host_node])
     assert cluster_used_resources == Resources(cpus=0, ram=ByteSize(0))
 
 
 async def test_compute_cluster_used_resources_with_services_running(
     autoscaling_docker: AutoscalingDocker,
     host_node: Node,
-    create_service: Callable[
-        [dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]
-    ],
+    create_service: Callable[[dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]],
     task_template: dict[str, Any],
     create_task_reservations: Callable[[int, int], dict[str, Any]],
     host_cpu_count: int,
@@ -854,47 +731,32 @@ async def test_compute_cluster_used_resources_with_services_running(
     # 1. if we have services with no defined reservations, then we cannot know what they use...
     service_with_no_resources = await create_service(task_template, {}, "running")
     assert service_with_no_resources
-    cluster_used_resources = await compute_cluster_used_resources(
-        autoscaling_docker, [host_node]
-    )
+    cluster_used_resources = await compute_cluster_used_resources(autoscaling_docker, [host_node])
     assert cluster_used_resources == Resources(cpus=0, ram=ByteSize(0))
 
     # 2. if we have some services with defined resources, they should be visible
-    task_template_with_manageable_resources = task_template | create_task_reservations(
-        1, 0
-    )
+    task_template_with_manageable_resources = task_template | create_task_reservations(1, 0)
     await asyncio.gather(
-        *(
-            create_service(task_template_with_manageable_resources, {}, "running")
-            for cpu in range(host_cpu_count)
-        )
+        *(create_service(task_template_with_manageable_resources, {}, "running") for cpu in range(host_cpu_count))
     )
-    cluster_used_resources = await compute_cluster_used_resources(
-        autoscaling_docker, [host_node]
-    )
+    cluster_used_resources = await compute_cluster_used_resources(autoscaling_docker, [host_node])
     assert cluster_used_resources == Resources(cpus=host_cpu_count, ram=ByteSize(0))
 
     # 3. if we have services that need more resources than available,
     # they should not change what is currently used
-    task_template_with_too_many_resource = task_template | create_task_reservations(
-        1000, 0
-    )
-    service_with_too_many_resources = await create_service(
-        task_template_with_too_many_resource, {}, "pending"
-    )
+    task_template_with_too_many_resource = task_template | create_task_reservations(1000, 0)
+    service_with_too_many_resources = await create_service(task_template_with_too_many_resource, {}, "pending")
     assert service_with_too_many_resources
-    cluster_used_resources = await compute_cluster_used_resources(
-        autoscaling_docker, [host_node]
-    )
+    cluster_used_resources = await compute_cluster_used_resources(autoscaling_docker, [host_node])
     assert cluster_used_resources == Resources(cpus=host_cpu_count, ram=ByteSize(0))
 
 
 async def test_get_docker_swarm_join_script(host_node: Node):
-    join_script = await get_docker_swarm_join_bash_command(join_as_drained=True)
+    join_script = await get_docker_swarm_join_bash_command(join_as_drained=True, idempotent=False)
     assert join_script.startswith("docker swarm join")
     assert "--availability=drain" in join_script
 
-    join_script = await get_docker_swarm_join_bash_command(join_as_drained=False)
+    join_script = await get_docker_swarm_join_bash_command(join_as_drained=False, idempotent=False)
     assert join_script.startswith("docker swarm join")
     assert "--availability=active" in join_script
 
@@ -913,7 +775,7 @@ async def test_get_docker_swarm_join_script_bad_return_code_raises(
     )
     mocked_asyncio_process.return_value.returncode = 137
     with pytest.raises(RuntimeError, match=r"unexpected error .+"):
-        await get_docker_swarm_join_bash_command(join_as_drained=True)
+        await get_docker_swarm_join_bash_command(join_as_drained=True, idempotent=False)
     # NOTE: the sleep here is to provide some time for asyncio to properly close its process communication
     # to silence the warnings
     await asyncio.sleep(2)
@@ -933,44 +795,48 @@ async def test_get_docker_swarm_join_script_returning_unexpected_command_raises(
     )
     mocked_asyncio_process.return_value.returncode = 0
     with pytest.raises(RuntimeError, match=r"expected docker .+"):
-        await get_docker_swarm_join_bash_command(join_as_drained=True)
+        await get_docker_swarm_join_bash_command(join_as_drained=True, idempotent=False)
     # NOTE: the sleep here is to provide some time for asyncio to properly close its process communication
     # to silence the warnings
     await asyncio.sleep(2)
 
 
-def test_get_docker_login_on_start_bash_command():
-    registry_settings = RegistrySettings(
-        **RegistrySettings.model_config["json_schema_extra"]["examples"][0]
+async def test_get_docker_swarm_join_script_idempotent(host_node: Node):
+    join_script = await get_docker_swarm_join_bash_command(join_as_drained=True, idempotent=True)
+    assert "docker info --format '{{.Swarm.LocalNodeState}}' 2>/dev/null | grep -q '^inactive$'" in join_script
+    assert join_script.count("docker swarm join") == 1
+
+    join_script_non_idempotent = await get_docker_swarm_join_bash_command(join_as_drained=True, idempotent=False)
+    assert (
+        "docker info --format '{{.Swarm.LocalNodeState}}' 2>/dev/null | grep -q '^inactive$'"
+        not in join_script_non_idempotent
     )
+    assert join_script_non_idempotent.count("docker swarm join") == 1
+
+
+def test_get_docker_login_on_start_bash_command():
+    registry_settings = RegistrySettings(**RegistrySettings.model_config["json_schema_extra"]["examples"][0])
     returned_command = get_docker_login_on_start_bash_command(registry_settings)
     assert (
-        f'echo "{registry_settings.REGISTRY_PW.get_secret_value()}" | docker login --username {registry_settings.REGISTRY_USER} --password-stdin {registry_settings.resolved_registry_url}'
-        == returned_command
+        f'echo "{registry_settings.REGISTRY_PW.get_secret_value()}" | '
+        f"docker login --username {registry_settings.REGISTRY_USER} "
+        f"--password-stdin {registry_settings.resolved_registry_url}" == returned_command
     )
 
 
-async def test_try_get_node_with_name(
-    autoscaling_docker: AutoscalingDocker, host_node: Node
-):
+async def test_try_get_node_with_name(autoscaling_docker: AutoscalingDocker, host_node: Node):
     assert host_node.description
     assert host_node.description.hostname
 
-    received_node = await find_node_with_name(
-        autoscaling_docker, host_node.description.hostname
-    )
+    received_node = await find_node_with_name(autoscaling_docker, host_node.description.hostname)
     assert received_node == host_node
 
 
-async def test_try_get_node_with_name_fake(
-    autoscaling_docker: AutoscalingDocker, fake_node: Node
-):
+async def test_try_get_node_with_name_fake(autoscaling_docker: AutoscalingDocker, fake_node: Node):
     assert fake_node.description
     assert fake_node.description.hostname
 
-    received_node = await find_node_with_name(
-        autoscaling_docker, fake_node.description.hostname
-    )
+    received_node = await find_node_with_name(autoscaling_docker, fake_node.description.hostname)
     assert received_node is None
 
 
@@ -982,10 +848,7 @@ async def test_find_node_with_name_with_common_prefixed_nodes(
     common_prefix = "ip-10-0-1-"
     mocked_aiodocker = mocker.patch.object(autoscaling_docker, "nodes", autospec=True)
     mocked_aiodocker.list.return_value = [
-        create_fake_node(
-            Description=NodeDescription(Hostname=f"{common_prefix}{'1' * (i + 1)}")
-        )
-        for i in range(3)
+        create_fake_node(Description=NodeDescription(Hostname=f"{common_prefix}{'1' * (i + 1)}")) for i in range(3)
     ]
     needed_host_name = f"{common_prefix}11"
     found_node = await find_node_with_name(autoscaling_docker, needed_host_name)
@@ -1002,51 +865,38 @@ async def test_find_node_with_smaller_name_with_common_prefixed_nodes_returns_no
     common_prefix = "ip-10-0-1-"
     mocked_aiodocker = mocker.patch.object(autoscaling_docker, "nodes", autospec=True)
     mocked_aiodocker.list.return_value = [
-        create_fake_node(
-            Description=NodeDescription(Hostname=f"{common_prefix}{'1' * (i + 1)}")
-        )
-        for i in range(3)
+        create_fake_node(Description=NodeDescription(Hostname=f"{common_prefix}{'1' * (i + 1)}")) for i in range(3)
     ]
     needed_host_name = f"{common_prefix}"
     found_node = await find_node_with_name(autoscaling_docker, needed_host_name)
     assert found_node is None
 
 
-async def test_tag_node(
-    autoscaling_docker: AutoscalingDocker, host_node: Node, faker: Faker
-):
+async def test_tag_node(autoscaling_docker: AutoscalingDocker, host_node: Node, faker: Faker):
     assert host_node.description
     assert host_node.description.hostname
     tags = faker.pydict(allowed_types=(str,))
     await tag_node(autoscaling_docker, host_node, tags=tags, available=False)
-    updated_node = await find_node_with_name(
-        autoscaling_docker, host_node.description.hostname
-    )
+    updated_node = await find_node_with_name(autoscaling_docker, host_node.description.hostname)
     assert updated_node
     assert updated_node.spec
     assert updated_node.spec.availability == Availability.drain
     assert updated_node.spec.labels == tags
 
     await tag_node(autoscaling_docker, updated_node, tags={}, available=True)
-    updated_node = await find_node_with_name(
-        autoscaling_docker, host_node.description.hostname
-    )
+    updated_node = await find_node_with_name(autoscaling_docker, host_node.description.hostname)
     assert updated_node
     assert updated_node.spec
     assert updated_node.spec.availability == Availability.active
     assert updated_node.spec.labels == {}
 
 
-async def test_tag_node_out_of_sequence_error(
-    autoscaling_docker: AutoscalingDocker, host_node: Node, faker: Faker
-):
+async def test_tag_node_out_of_sequence_error(autoscaling_docker: AutoscalingDocker, host_node: Node, faker: Faker):
     assert host_node.description
     assert host_node.description.hostname
     tags = faker.pydict(allowed_types=(str,))
     # this works
-    updated_node = await tag_node(
-        autoscaling_docker, host_node, tags=tags, available=False
-    )
+    updated_node = await tag_node(autoscaling_docker, host_node, tags=tags, available=False)
     assert updated_node
     assert host_node.version
     assert host_node.version.index
@@ -1055,26 +905,18 @@ async def test_tag_node_out_of_sequence_error(
     assert host_node.version.index < updated_node.version.index
 
     # running the same call with the old node should not raise an out of sequence error
-    updated_node2 = await tag_node(
-        autoscaling_docker, host_node, tags=tags, available=True
-    )
+    updated_node2 = await tag_node(autoscaling_docker, host_node, tags=tags, available=True)
     assert updated_node2
     assert updated_node2.version
     assert updated_node2.version.index
     assert updated_node2.version.index > updated_node.version.index
 
 
-async def test_set_node_availability(
-    autoscaling_docker: AutoscalingDocker, host_node: Node, faker: Faker
-):
+async def test_set_node_availability(autoscaling_docker: AutoscalingDocker, host_node: Node, faker: Faker):
     assert is_node_ready_and_available(host_node, availability=Availability.active)
-    updated_node = await set_node_availability(
-        autoscaling_docker, host_node, available=False
-    )
+    updated_node = await set_node_availability(autoscaling_docker, host_node, available=False)
     assert is_node_ready_and_available(updated_node, availability=Availability.drain)
-    updated_node = await set_node_availability(
-        autoscaling_docker, host_node, available=True
-    )
+    updated_node = await set_node_availability(autoscaling_docker, host_node, available=True)
     assert is_node_ready_and_available(updated_node, availability=Availability.active)
 
 
@@ -1088,9 +930,7 @@ def test_get_new_node_docker_tags(
     app_settings: ApplicationSettings,
     fake_ec2_instance_data: Callable[..., EC2InstanceData],
 ):
-    random_ec2_type = secrets.choice(
-        list(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES)
-    )
+    random_ec2_type = secrets.choice(list(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES))
 
     ec2_instance_data = fake_ec2_instance_data(type=random_ec2_type)
     node_docker_tags = get_new_node_docker_tags(app_settings, ec2_instance_data)
@@ -1099,29 +939,21 @@ def test_get_new_node_docker_tags(
     for (
         key,
         value,
-    ) in app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
-        random_ec2_type
-    ].custom_node_labels.items():
+    ) in app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[random_ec2_type].custom_node_labels.items():
         assert key in node_docker_tags
         assert node_docker_tags[key] == value
 
     assert app_settings.AUTOSCALING_NODES_MONITORING
-    for (
-        tag_key
-    ) in app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS:
+    for tag_key in app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS:
         assert tag_key in node_docker_tags
-    for (
-        tag_key
-    ) in app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NEW_NODES_LABELS:
+    for tag_key in app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NEW_NODES_LABELS:
         assert tag_key in node_docker_tags
 
     all_keys = [
         DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY,
         *app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS,
         *app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NEW_NODES_LABELS,
-        *app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
-            random_ec2_type
-        ].custom_node_labels.keys(),
+        *app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[random_ec2_type].custom_node_labels.keys(),
     ]
     for tag_key in node_docker_tags:
         assert tag_key in all_keys
@@ -1136,7 +968,9 @@ def test_get_new_node_docker_tags(
             'image: itisfoundation/simcore/services/dynamic/service:23.5.5\n"'
             " > /docker-pull.compose.yml"
             " && "
-            'echo "#!/bin/sh\necho Pulling started at \\$(date)\ndocker compose --project-name=autoscaleprepull --file=/docker-pull.compose.yml pull --ignore-pull-failures" > /docker-pull-script.sh'
+            'echo "#!/bin/sh\necho Pulling started at \\$(date)\n'
+            "docker compose --project-name=autoscaleprepull --file=/docker-pull.compose.yml "
+            'pull --ignore-pull-failures" > /docker-pull-script.sh'
             " && "
             "chmod +x /docker-pull-script.sh"
             " && "
@@ -1148,23 +982,15 @@ def test_get_new_node_docker_tags(
         ),
     ],
 )
-def test_get_docker_pull_images_on_start_bash_command(
-    images: list[DockerGenericTag], expected_cmd: str
-):
+def test_get_docker_pull_images_on_start_bash_command(images: list[DockerGenericTag], expected_cmd: str):
     assert get_docker_pull_images_on_start_bash_command(images) == expected_cmd
 
 
 def test_is_node_ready_and_available(create_fake_node: Callable[..., Node]):
     # check not ready state return false
-    for node_status in [
-        NodeStatus(State=s, Message=None, Addr=None)
-        for s in NodeState
-        if s is not NodeState.ready
-    ]:
+    for node_status in [NodeStatus(State=s, Message=None, Addr=None) for s in NodeState if s is not NodeState.ready]:
         fake_node = create_fake_node(Status=node_status)
-        assert not is_node_ready_and_available(
-            fake_node, availability=Availability.drain
-        )
+        assert not is_node_ready_and_available(fake_node, availability=Availability.drain)
 
     node_ready_status = NodeStatus(State=NodeState.ready, Message=None, Addr=None)
     fake_drained_node = create_fake_node(
@@ -1176,15 +1002,9 @@ def test_is_node_ready_and_available(create_fake_node: Callable[..., Node]):
             Availability=Availability.drain,
         ),
     )
-    assert is_node_ready_and_available(
-        fake_drained_node, availability=Availability.drain
-    )
-    assert not is_node_ready_and_available(
-        fake_drained_node, availability=Availability.active
-    )
-    assert not is_node_ready_and_available(
-        fake_drained_node, availability=Availability.pause
-    )
+    assert is_node_ready_and_available(fake_drained_node, availability=Availability.drain)
+    assert not is_node_ready_and_available(fake_drained_node, availability=Availability.active)
+    assert not is_node_ready_and_available(fake_drained_node, availability=Availability.pause)
 
 
 def test_is_node_osparc_ready(create_fake_node: Callable[..., Node], faker: Faker):
@@ -1227,9 +1047,7 @@ async def test_set_node_osparc_ready(
     host_node_last_readiness_update = get_node_last_readiness_update(host_node)
     assert host_node_last_readiness_update
     # set the node to drain
-    updated_node = await set_node_availability(
-        autoscaling_docker, host_node, available=False
-    )
+    updated_node = await set_node_availability(autoscaling_docker, host_node, available=False)
     assert is_node_ready_and_available(updated_node, availability=Availability.drain)
     # the node is also not osparc ready
     assert not is_node_osparc_ready(updated_node)
@@ -1238,26 +1056,19 @@ async def test_set_node_osparc_ready(
     assert updated_last_readiness == host_node_last_readiness_update
 
     # this implicitly make the node active as well
-    updated_node = await set_node_osparc_ready(
-        app_settings, autoscaling_docker, host_node, ready=True
-    )
+    updated_node = await set_node_osparc_ready(app_settings, autoscaling_docker, host_node, ready=True)
     assert is_node_ready_and_available(updated_node, availability=Availability.active)
     assert is_node_osparc_ready(updated_node)
     updated_last_readiness = get_node_last_readiness_update(updated_node)
     assert updated_last_readiness > host_node_last_readiness_update
     # make it not osparc ready
-    updated_node = await set_node_osparc_ready(
-        app_settings, autoscaling_docker, host_node, ready=False
-    )
+    updated_node = await set_node_osparc_ready(app_settings, autoscaling_docker, host_node, ready=False)
     assert not is_node_osparc_ready(updated_node)
     assert is_node_ready_and_available(updated_node, availability=Availability.drain)
     assert get_node_last_readiness_update(updated_node) > updated_last_readiness
 
     # check now passing additional labels
-    osparc_custom_labels = {
-        key: f"value_for_{key}"
-        for key in OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS
-    }
+    osparc_custom_labels = {key: f"value_for_{key}" for key in OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS}
     non_specific_labels = {"key1": "value1", "key2": "value2"}
     additional_labels = non_specific_labels | osparc_custom_labels
     updated_node = await set_node_osparc_ready(
@@ -1322,9 +1133,7 @@ async def test_set_node_found_empty(
     assert node_empty_since < arrow.utcnow().datetime
 
     # now we remove the empty label
-    updated_node = await set_node_found_empty(
-        autoscaling_docker, host_node, empty=False
-    )
+    updated_node = await set_node_found_empty(autoscaling_docker, host_node, empty=False)
     assert updated_node.spec
     assert updated_node.spec.labels
     assert _OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY not in updated_node.spec.labels
@@ -1353,9 +1162,7 @@ async def test_set_node_begin_termination_process(
     # the termination was not started, therefore no date
     assert get_node_termination_started_since(host_node) is None
 
-    updated_node = await set_node_begin_termination_process(
-        autoscaling_docker, host_node
-    )
+    updated_node = await set_node_begin_termination_process(autoscaling_docker, host_node)
     assert updated_node.spec
     assert updated_node.spec.labels
     assert _OSPARC_NODE_TERMINATION_PROCESS_LABEL_KEY in updated_node.spec.labels
@@ -1382,9 +1189,7 @@ async def test_attach_node(
     # initial state
     assert is_node_ready_and_available(host_node, availability=Availability.active)
     # set the node to drain
-    updated_node = await set_node_availability(
-        autoscaling_docker, host_node, available=False
-    )
+    updated_node = await set_node_availability(autoscaling_docker, host_node, available=False)
     assert is_node_ready_and_available(updated_node, availability=Availability.drain)
     # now attach the node
     updated_node = await attach_node(
@@ -1410,23 +1215,17 @@ def test_compute_full_list_of_pre_pulled_images(
     app_settings: ApplicationSettings,
 ):
     assert app_settings.AUTOSCALING_EC2_INSTANCES
-    assert (
-        app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_COLD_START_DOCKER_IMAGES_PRE_PULLING
-    ), "this test requires some common docker images"
+    assert app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_COLD_START_DOCKER_IMAGES_PRE_PULLING, (
+        "this test requires some common docker images"
+    )
 
     for (
         instance_type,
         instance_boot_specific,
     ) in app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES.items():
-        returned_list = compute_full_list_of_pre_pulled_images(
-            instance_boot_specific, app_settings
-        )
-        assert (
-            sorted(returned_list) == returned_list
-        ), f"the list for {instance_type} should be sorted"
-        assert len(returned_list) == len(
-            set(returned_list)
-        ), f"the list for {instance_type} should not have duplicates"
+        returned_list = compute_full_list_of_pre_pulled_images(instance_boot_specific, app_settings)
+        assert sorted(returned_list) == returned_list, f"the list for {instance_type} should be sorted"
+        assert len(returned_list) == len(set(returned_list)), f"the list for {instance_type} should not have duplicates"
         assert all(
             i in returned_list
             for i in app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_COLD_START_DOCKER_IMAGES_PRE_PULLING
