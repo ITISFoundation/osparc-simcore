@@ -37,9 +37,7 @@ def associate_ec2_instances_with_nodes(
 
     for instance_data in ec2_instances:
         try:
-            docker_node_name = utils_ec2.node_host_name_from_ec2_private_dns(
-                instance_data
-            )
+            docker_node_name = utils_ec2.node_host_name_from_ec2_private_dns(instance_data)
         except Ec2InvalidDnsNameError:
             _logger.exception("Unexpected EC2 private dns name")
             non_associated_instances.append(instance_data)
@@ -57,22 +55,16 @@ def associate_ec2_instances_with_nodes(
     return associated_instances, non_associated_instances
 
 
-async def ec2_startup_script(
-    ec2_boot_specific: EC2InstanceBootSpecific, app_settings: ApplicationSettings
-) -> str:
+async def ec2_startup_script(ec2_boot_specific: EC2InstanceBootSpecific, app_settings: ApplicationSettings) -> str:
     startup_commands = ec2_boot_specific.custom_boot_scripts.copy()
     startup_commands.append(
         await utils_docker.get_docker_swarm_join_bash_command(
-            join_as_drained=app_settings.AUTOSCALING_DOCKER_JOIN_DRAINED
+            join_as_drained=app_settings.AUTOSCALING_DOCKER_JOIN_DRAINED, idempotent=False
         )
     )
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
     if app_settings.AUTOSCALING_REGISTRY:
-        startup_commands.append(
-            utils_docker.get_docker_login_on_start_bash_command(
-                app_settings.AUTOSCALING_REGISTRY
-            )
-        )
+        startup_commands.append(utils_docker.get_docker_login_on_start_bash_command(app_settings.AUTOSCALING_REGISTRY))
 
         if pull_image_cmd := utils_docker.get_docker_pull_images_on_start_bash_command(
             app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_COLD_START_DOCKER_IMAGES_PRE_PULLING
@@ -83,9 +75,7 @@ async def ec2_startup_script(
 
 
 @typing.no_type_check  # NOTE: This disable checking by mypy as it cannot handle checking this in reasonable time (>5 minutes) since 1.18.0 (due to large Literal Union it seems)
-def _instance_type_by_type_name(
-    ec2_type: EC2InstanceType, *, type_name: InstanceTypeType | None
-) -> bool:
+def _instance_type_by_type_name(ec2_type: EC2InstanceType, *, type_name: InstanceTypeType | None) -> bool:
     return type_name is None or ec2_type.name == type_name
 
 
@@ -97,16 +87,12 @@ def find_selected_instance_type_for_task(
 ) -> EC2InstanceType:
     filtered_instances = list(
         filter(
-            functools.partial(
-                _instance_type_by_type_name, type_name=instance_type_name
-            ),
+            functools.partial(_instance_type_by_type_name, type_name=instance_type_name),
             available_ec2_types,
         )
     )
     if not filtered_instances:
-        raise TaskRequiresUnauthorizedEC2InstanceTypeError(
-            task=task, instance_type=instance_type_name
-        )
+        raise TaskRequiresUnauthorizedEC2InstanceTypeError(task=task, instance_type=instance_type_name)
 
     assert len(filtered_instances) == 1  # nosec
     selected_instance = filtered_instances[0]
@@ -143,23 +129,15 @@ def sort_drained_nodes(
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
     # first sort out the drained nodes that started termination
     terminating_nodes = [
-        n
-        for n in all_drained_nodes
-        if utils_docker.get_node_termination_started_since(n.node) is not None
+        n for n in all_drained_nodes if utils_docker.get_node_termination_started_since(n.node) is not None
     ]
-    remaining_drained_nodes = [
-        n for n in all_drained_nodes if n not in terminating_nodes
-    ]
+    remaining_drained_nodes = [n for n in all_drained_nodes if n not in terminating_nodes]
     # we need to keep in reserve only the drained nodes of the right type
     hot_buffer_type = get_hot_buffer_type(available_ec2_types)
     # NOTE: we keep only in buffer the drained nodes with the right EC2 type, AND the right amount
     hot_buffer_drained_nodes = [
-        node
-        for node in remaining_drained_nodes
-        if node.ec2_instance.type == hot_buffer_type.name
+        node for node in remaining_drained_nodes if node.ec2_instance.type == hot_buffer_type.name
     ][: app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER]
     # all the others are "normal" drained nodes and may be terminated at some point
-    other_drained_nodes = [
-        node for node in remaining_drained_nodes if node not in hot_buffer_drained_nodes
-    ]
+    other_drained_nodes = [node for node in remaining_drained_nodes if node not in hot_buffer_drained_nodes]
     return (other_drained_nodes, hot_buffer_drained_nodes, terminating_nodes)
