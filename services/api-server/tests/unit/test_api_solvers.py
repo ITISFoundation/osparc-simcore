@@ -12,7 +12,7 @@ from fastapi import status
 from httpx import AsyncClient
 from models_library.api_schemas_api_server.pricing_plans import ServicePricingPlanGet
 from pytest_mock import MockType
-from pytest_simcore.helpers.catalog_rpc_server import ZeroListingCatalogRpcSideEffects
+from pytest_simcore.helpers.catalog_rpc import ZeroListingCatalogRpcSideEffects
 from pytest_simcore.helpers.httpx_calls_capture_models import CreateRespxMockCallback
 from simcore_service_api_server._meta import API_VTAG
 
@@ -36,7 +36,6 @@ async def test_get_solver_pricing_plan(
     capture: str,
     expected_status_code: int,
 ):
-
     respx_mock = create_respx_mock_from_capture(
         respx_mocks=[mocked_webserver_rest_api_base],
         capture_path=project_tests_dir / "mocks" / capture,
