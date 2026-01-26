@@ -2,7 +2,7 @@
 
 import logging
 from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager, suppress
+from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Final
@@ -157,11 +157,10 @@ class DynamicSidecarRCloneMountDelegate(DelegateInterface):
                     return
                 raise
 
-            with suppress(DockerError):
-                # if it exists, try to stop it cleanly.
-                # sends SIGTERM then SIGKILL after timeout
-                await container.stop()
+            # sends SIGTERM
+            await container.stop()
 
+            # sends SIGKILL and removes
             await container.delete(force=True)
 
     async def get_node_address(self) -> str:
