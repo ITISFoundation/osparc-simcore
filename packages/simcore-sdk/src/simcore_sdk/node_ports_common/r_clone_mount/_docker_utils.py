@@ -57,7 +57,3 @@ async def create_r_clone_container(
     _logger.debug(
         "Started rclone mount container '%s' with command='%s' (inspect=%s)", container_name, command, container_inspect
     )
-
-
-async def remove_container_if_exists(delegate: DelegateInterface, container_name: str) -> None:
-    await delegate.remove_container(container_name)

@@ -216,7 +216,7 @@ class ContainerManager:  # pylint:disable=too-many-instance-attributes
 
     async def create(self):
         # ensure nothing was left from previous runs
-        await _docker_utils.remove_container_if_exists(self.delegate, self._r_clone_container_name)
+        await self.delegate.remove_container(self._r_clone_container_name)
 
         assert self.r_clone_settings.R_CLONE_VERSION is not None  # nosec
         mount_settings = self.r_clone_settings.R_CLONE_SIMCORE_SDK_MOUNT_SETTINGS
@@ -241,7 +241,7 @@ class ContainerManager:  # pylint:disable=too-many-instance-attributes
         )
 
     async def remove(self):
-        await _docker_utils.remove_container_if_exists(self.delegate, self._r_clone_container_name)
+        await self.delegate.remove_container(self._r_clone_container_name)
 
 
 class RemoteControlHttpClient:
