@@ -1,15 +1,20 @@
 import logging
 
 from aiohttp import web
+from celery_library.async_jobs import submit_job
+from models_library.api_schemas_long_running_tasks.tasks import TaskGet
 from models_library.api_schemas_webserver.notifications import (
+    NotificationsMessageBody,
     NotificationsTemplateGet,
     NotificationsTemplatePreviewBody,
     NotificationsTemplatePreviewGet,
     SearchTemplatesQueryParams,
 )
 from models_library.rpc.notifications.template import NotificationsTemplatePreviewRpcRequest
+from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import parse_request_body_as, parse_request_query_parameters_as
 from servicelib.aiohttp.rest_responses import create_data_response
+from servicelib.celery.models import ExecutionMetadata, OwnerMetadata
 from servicelib.rabbitmq.rpc_interfaces.notifications.notifications_templates import (
     preview_template as remote_preview_template,
 )
@@ -18,7 +23,9 @@ from servicelib.rabbitmq.rpc_interfaces.notifications.notifications_templates im
 )
 
 from ..._meta import API_VTAG
+from ...celery import get_task_manager
 from ...login.decorators import login_required
+from ...models import AuthenticatedRequestContext, WebServerOwnerMetadata
 from ...rabbitmq import get_rabbitmq_rpc_client
 from ._rest_exceptions import handle_notifications_exceptions
 
@@ -33,7 +40,35 @@ _logger = logging.getLogger(__name__)
 @login_required
 @handle_notifications_exceptions
 async def send_message(request: web.Request) -> web.Response:
-    raise NotImplementedError
+    req_ctx = AuthenticatedRequestContext.model_validate(request)
+    body = await parse_request_body_as(NotificationsMessageBody, request)
+
+    async_job_get = await submit_job(
+        get_task_manager(request.app),
+        execution_metadata=ExecutionMetadata(
+            name="send_message",
+        ),
+        owner_metadata=OwnerMetadata.model_validate(
+            WebServerOwnerMetadata(
+                user_id=req_ctx.user_id,
+                product_name=req_ctx.product_name,
+            ).model_dump()
+        ),
+        message=body.model_dump(),
+    )
+
+    task_id = f"{async_job_get.job_id}"
+
+    return create_data_response(
+        TaskGet(
+            task_id=task_id,
+            task_name=async_job_get.job_name,
+            status_href=f"{request.url.with_path(str(request.app.router['get_async_job_status'].url_for(task_id=task_id)))}",
+            abort_href=f"{request.url.with_path(str(request.app.router['cancel_async_job'].url_for(task_id=task_id)))}",
+            stream_href=f"{request.url.with_path(str(request.app.router['get_async_job_stream'].url_for(task_id=task_id)))}",
+        ),
+        status=status.HTTP_202_ACCEPTED,
+    )
 
 
 @routes.post(f"{_notifications_prefix}/templates:preview", name="preview_template")
