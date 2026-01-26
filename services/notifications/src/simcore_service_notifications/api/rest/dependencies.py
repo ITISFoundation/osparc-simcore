@@ -7,7 +7,6 @@ from servicelib.rabbitmq import RabbitMQRPCClient
 
 from ...clients.postgres import PostgresLiveness
 from ...clients.postgres import get_postgres_liveness as _get_db_liveness
-from ...templates import models as context_models  # noqa: F401 # NOTE: registers context models
 
 
 def get_application(request: Request) -> FastAPI:
