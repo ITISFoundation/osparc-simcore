@@ -104,20 +104,15 @@ async def remove_volume(app: FastAPI, docker: Docker, *, volume_name: str, requi
 
 async def get_containers_with_prefixes(docker: Docker, prefixes: set[str]) -> set[str]:
     """Returns a set of container names matching any of the given prefixes"""
-    all_containers = await docker.containers.list(all=True)
+    filtered_containers = await docker.containers.list(all=True, filters={"name": list(prefixes)})
 
     result: set[str] = set()
-    for container in all_containers:
-        try:
-            container_info = await container.show()
-        except DockerError as e:
-            if e.status != status.HTTP_404_NOT_FOUND:
-                raise
-            continue
 
-        container_name = container_info.get("Name", "").lstrip("/")
-        if any(container_name.startswith(prefix) for prefix in prefixes):
-            result.add(container_name)
+    for container in filtered_containers:
+        for name in container["Names"]:
+            container_name = name.lstrip("/")
+            if any(container_name.startswith(prefix) for prefix in prefixes):
+                result.add(container_name)
 
     return result
 
