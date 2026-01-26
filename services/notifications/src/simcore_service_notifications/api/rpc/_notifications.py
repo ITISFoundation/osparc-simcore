@@ -1,5 +1,4 @@
 import logging
-from dataclasses import asdict
 
 from fastapi import FastAPI
 from models_library.notifications_errors import (
@@ -40,11 +39,9 @@ async def preview_template(
         context=request.context,
     )
 
-    _logger.info("Rendered preview for template %s: %s", request.ref, preview)
-
     return NotificationsTemplatePreviewRpcResponse(
         ref=request.ref,
-        content=asdict(preview),
+        content=preview.content.model_dump(),
     )
 
 

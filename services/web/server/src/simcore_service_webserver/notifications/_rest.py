@@ -42,11 +42,13 @@ async def send_message(request: web.Request) -> web.Response:
 async def preview_template(request: web.Request) -> web.Response:
     body = await parse_request_body_as(NotificationsTemplatePreviewBody, request)
 
-    _logger.error({"body": body})
+    enriched_body = body.model_copy(
+        update={"context": {**body.context, "product": {"ui": {"strong_color": None}}}}, deep=True
+    )
 
     preview = await remote_preview_template(
         get_rabbitmq_rpc_client(request.app),
-        request=NotificationsTemplatePreviewRpcRequest(**body.model_dump()),
+        request=NotificationsTemplatePreviewRpcRequest(**enriched_body.model_dump()),
     )
 
     return create_data_response(NotificationsTemplatePreviewGet(**preview.model_dump()).data())

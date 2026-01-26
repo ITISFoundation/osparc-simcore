@@ -22,8 +22,6 @@ class NotificationsTemplatesService:
     renderer: NotificationsRenderer
 
     def preview_template(self, ref: TemplateRef, context: dict[str, Any]) -> NotificationTemplatePreview:
-        _logger.error("Previewing template %s with context %s", ref, context)
-
         templates = self.repository.search_templates(
             channel=ref.channel,
             template_name=ref.template_name,
@@ -38,6 +36,12 @@ class NotificationsTemplatesService:
             # validates incoming variables against the template's variables model
             validated_context = template.context_model.model_validate(context)
         except ValidationError as e:
+            _logger.warning(
+                "Context validation error for template %s with context %s: %s",
+                ref,
+                context,
+                e,
+            )
             raise NotificationsTemplateContextValidationError(
                 template_name=ref.template_name,
                 channel=ref.channel,

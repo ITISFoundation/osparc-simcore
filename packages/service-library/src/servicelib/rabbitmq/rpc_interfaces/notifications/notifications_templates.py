@@ -23,8 +23,6 @@ async def preview_template(
     *,
     request: NotificationsTemplatePreviewRpcRequest,
 ) -> NotificationsTemplatePreviewRpcResponse:
-    _logger.error("Request: %s", request)
-
     result = await rabbitmq_rpc_client.request(
         NOTIFICATIONS_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("preview_template"),

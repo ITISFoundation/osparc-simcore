@@ -37,13 +37,11 @@ async def preview_notification(
     service: Annotated[NotificationsTemplatesService, Depends(get_notifications_templates_service)],
     channel: ChannelType,
     template_name: str,
-    variables: dict[str, Any],  # NOTE: validated against the template's variables model
+    context: dict[str, Any],  # NOTE: validated against the template's variables model
 ) -> NotificationPreviewGet:
     template_ref = TemplateRef(channel=channel, template_name=template_name)
 
-    variables |= {"product": {"ui": {"strong_color": None}}}  # GCR: move to client side
-
-    return NotificationPreviewGet(**asdict(service.preview_template(template_ref, variables)))
+    return NotificationPreviewGet(**asdict(service.preview_template(template_ref, context)))
 
 
 @router.post("/send")
