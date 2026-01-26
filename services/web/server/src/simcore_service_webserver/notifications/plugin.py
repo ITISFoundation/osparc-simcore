@@ -12,7 +12,8 @@ from ..diagnostics.plugin import setup_diagnostics
 from ..rabbitmq import setup_rabbitmq
 from ..socketio.plugin import setup_socketio
 from ..wallets.plugin import setup_wallets
-from . import _rabbitmq_exclusive_queue_consumers, _rabbitmq_nonexclusive_queue_consumers, _rest
+from . import _rabbitmq_exclusive_queue_consumers, _rabbitmq_nonexclusive_queue_consumers
+from ._controller import _rest
 
 _logger = logging.getLogger(__name__)
 

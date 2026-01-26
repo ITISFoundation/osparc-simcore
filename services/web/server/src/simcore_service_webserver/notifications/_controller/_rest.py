@@ -17,9 +17,9 @@ from servicelib.rabbitmq.rpc_interfaces.notifications.notifications_templates im
     search_templates as remote_search_templates,
 )
 
-from .._meta import API_VTAG
-from ..login.decorators import login_required
-from ..rabbitmq import get_rabbitmq_rpc_client
+from ..._meta import API_VTAG
+from ...login.decorators import login_required
+from ...rabbitmq import get_rabbitmq_rpc_client
 from ._rest_exceptions import handle_notifications_exceptions
 
 routes = web.RouteTableDef()
