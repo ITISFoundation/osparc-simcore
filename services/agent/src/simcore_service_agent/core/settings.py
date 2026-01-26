@@ -45,26 +45,30 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         dict[LoggerName, list[MessageSubstring]],
         Field(
             default_factory=dict,
-            validation_alias=AliasChoices(
-                "AGENT_VOLUMES_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"
+            validation_alias=AliasChoices("AGENT_VOLUMES_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"),
+            description=(
+                "is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') "
+                "to a list of log message patterns that should be filtered out."
             ),
-            description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
         ),
     ] = DEFAULT_FACTORY
 
     AGENT_VOLUMES_CLEANUP_TARGET_SWARM_STACK_NAME: str
+    AGENT_VOLUMES_CLEANUP_R_CLONE_VERSION: Annotated[
+        str,
+        Field(
+            pattern=r"^\d+\.\d+\.\d+$",
+            description="version of rclone for the container image",
+        ),
+    ]
     AGENT_VOLUMES_CLEANUP_S3_ENDPOINT: AnyHttpUrl
     AGENT_VOLUMES_CLEANUP_S3_ACCESS_KEY: str
     AGENT_VOLUMES_CLEANUP_S3_SECRET_KEY: str
     AGENT_VOLUMES_CLEANUP_S3_BUCKET: str
     AGENT_VOLUMES_CLEANUP_S3_PROVIDER: S3Provider
     AGENT_VOLUMES_CLEANUP_S3_REGION: str = "us-east-1"
-    AGENT_VOLUMES_CLEANUP_RETRIES: Annotated[
-        int, Field(description="upload retries in case of error")
-    ] = 3
-    AGENT_VOLUMES_CLEANUP_PARALLELISM: Annotated[
-        int, Field(description="parallel transfers to s3")
-    ] = 5
+    AGENT_VOLUMES_CLEANUP_RETRIES: Annotated[int, Field(description="upload retries in case of error")] = 3
+    AGENT_VOLUMES_CLEANUP_PARALLELISM: Annotated[int, Field(description="parallel transfers to s3")] = 5
     AGENT_VOLUMES_CLEANUP_EXCLUDE_FILES: Annotated[
         list[str],
         Field(
@@ -72,15 +76,14 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
             description="Files to ignore when syncing to s3",
         ),
     ]
-    AGENT_VOLUMES_CLEANUP_INTERVAL: Annotated[
-        timedelta, Field(description="interval for running volumes removal")
-    ] = timedelta(minutes=1)
+    AGENT_VOLUMES_CLEANUP_INTERVAL: Annotated[timedelta, Field(description="interval for running volumes removal")] = (
+        timedelta(minutes=1)
+    )
     AGENT_VOLUMES_CLEANUP_BOOK_KEEPING_INTERVAL: Annotated[
         timedelta,
         Field(
             description=(
-                "interval at which to scan for unsued volumes and keep track since "
-                "they were detected as being unused"
+                "interval at which to scan for unused volumes and keep track since they were detected as being unused"
             ),
         ),
     ] = timedelta(minutes=1)
@@ -96,9 +99,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     ] = timedelta(minutes=65)
 
     AGENT_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True
-    AGENT_DOCKER_NODE_ID: Annotated[
-        DockerNodeID, Field(description="used by the rabbitmq module")
-    ]
+    AGENT_DOCKER_NODE_ID: Annotated[DockerNodeID, Field(description="used by the rabbitmq module")]
 
     AGENT_RABBITMQ: Annotated[
         RabbitSettings,
