@@ -17,20 +17,19 @@ pytest_simcore_ops_services_selection = []
 
 
 @pytest.fixture
-def mocked_get_rabbitmq_rpc_server(mocker: MockerFixture, is_healthy: bool) -> None:
+def mocked_get_rabbitmq_rpc_client(mocker: MockerFixture, is_healthy: bool) -> None:
     mock = Mock()
     mock.healthy = is_healthy
     for client in [
         "get_rabbitmq_client",
         "get_rabbitmq_rpc_client",
-        "get_rabbitmq_rpc_server",
     ]:
         mocker.patch(f"simcore_service_efs_guardian.api.rest.health.{client}", return_value=mock)
 
 
 @pytest.fixture
 def app_environment(
-    mocked_get_rabbitmq_rpc_server: None,
+    mocked_get_rabbitmq_rpc_client: None,
     monkeypatch: pytest.MonkeyPatch,
     app_environment: EnvVarsDict,
     with_disabled_redis_and_background_tasks: None,

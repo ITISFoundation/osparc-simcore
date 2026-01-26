@@ -12,7 +12,7 @@ from fastapi.responses import PlainTextResponse
 from models_library.errors import RABBITMQ_CLIENT_UNHEALTHY_MSG
 from servicelib.fastapi.dependencies import get_app
 
-from ...services.modules.rabbitmq import get_rabbitmq_client, get_rabbitmq_rpc_client, get_rabbitmq_rpc_server
+from ...services.modules.rabbitmq import get_rabbitmq_client, get_rabbitmq_rpc_client
 
 router = APIRouter()
 
@@ -25,10 +25,7 @@ class HealthCheckError(RuntimeError):
 async def health_check(
     app: Annotated[FastAPI, Depends(get_app)],
 ):
-    if any(
-        not client.healthy
-        for client in (get_rabbitmq_client(app), get_rabbitmq_rpc_client(app), get_rabbitmq_rpc_server(app))
-    ):
+    if any(not client.healthy for client in (get_rabbitmq_client(app), get_rabbitmq_rpc_client(app))):
         raise HealthCheckError(RABBITMQ_CLIENT_UNHEALTHY_MSG)
 
     # NOTE: sync url in docker/healthcheck.py with this entrypoint!
