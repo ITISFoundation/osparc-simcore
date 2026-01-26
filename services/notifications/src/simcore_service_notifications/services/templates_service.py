@@ -21,18 +21,16 @@ class NotificationsTemplatesService:
     repository: NotificationsTemplatesRepository
     renderer: NotificationsRenderer
 
-    def preview_template(self, template_ref: TemplateRef, context: dict[str, Any]) -> NotificationTemplatePreview:
-        _logger.error("Previewing template %s with context %s", template_ref, context)
+    def preview_template(self, ref: TemplateRef, context: dict[str, Any]) -> NotificationTemplatePreview:
+        _logger.error("Previewing template %s with context %s", ref, context)
 
         templates = self.repository.search_templates(
-            channel=template_ref.channel,
-            template_name=template_ref.template_name,
+            channel=ref.channel,
+            template_name=ref.template_name,
         )
 
         if not templates:
-            raise NotificationsTemplateNotFoundError(
-                channel=template_ref.channel, template_name=template_ref.template_name
-            )
+            raise NotificationsTemplateNotFoundError(channel=ref.channel, template_name=ref.template_name)
 
         template = templates[0]
 
@@ -41,8 +39,8 @@ class NotificationsTemplatesService:
             validated_context = template.context_model.model_validate(context)
         except ValidationError as e:
             raise NotificationsTemplateContextValidationError(
-                template_name=template_ref.template_name,
-                channel=template_ref.channel,
+                template_name=ref.template_name,
+                channel=ref.channel,
             ) from e
 
         return self.renderer.preview_template(

@@ -1,7 +1,11 @@
 import logging
+from dataclasses import asdict
 
 from fastapi import FastAPI
-from models_library.notifications_errors import NotificationsTemplateNotFoundError
+from models_library.notifications_errors import (
+    NotificationsTemplateContextValidationError,
+    NotificationsTemplateNotFoundError,
+)
 from models_library.rpc.notifications.template import (
     NotificationsTemplatePreviewRpcRequest,
     NotificationsTemplatePreviewRpcResponse,
@@ -18,7 +22,12 @@ router = RPCRouter()
 _logger = logging.getLogger(__name__)
 
 
-@router.expose(reraise_if_error_type=(NotificationsTemplateNotFoundError,))
+@router.expose(
+    reraise_if_error_type=(
+        NotificationsTemplateContextValidationError,
+        NotificationsTemplateNotFoundError,
+    )
+)
 async def preview_template(
     _app: FastAPI,
     *,
@@ -26,17 +35,17 @@ async def preview_template(
 ) -> NotificationsTemplatePreviewRpcResponse:
     service = get_notifications_templates_service()
 
-    _logger.error({"request": request})
-
     preview = service.preview_template(
-        template_ref=TemplateRef(**request.ref.model_dump()),
+        ref=TemplateRef(**request.ref.model_dump()),
         context=request.context,
     )
 
     _logger.info("Rendered preview for template %s: %s", request.ref, preview)
 
-    template_ref = TemplateRef(**request.ref.model_dump())
-    raise NotificationsTemplateNotFoundError(template_ref=template_ref)
+    return NotificationsTemplatePreviewRpcResponse(
+        ref=request.ref,
+        content=asdict(preview),
+    )
 
 
 @router.expose()

@@ -1,5 +1,8 @@
 from common_library.user_messages import user_message
-from models_library.notifications_errors import NotificationsTemplateNotFoundError
+from models_library.notifications_errors import (
+    NotificationsTemplateContextValidationError,
+    NotificationsTemplateNotFoundError,
+)
 from servicelib.aiohttp import status
 
 from ..exception_handling import (
@@ -10,6 +13,13 @@ from ..exception_handling import (
 )
 
 _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
+    NotificationsTemplateContextValidationError: HttpErrorInfo(
+        status.HTTP_422_UNPROCESSABLE_ENTITY,
+        user_message(
+            "Validation of context failed for notifications template '{template_name}'.",
+            _version=1,
+        ),
+    ),
     NotificationsTemplateNotFoundError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
         user_message(
