@@ -44,8 +44,8 @@ qx.Theme.define("osparc.theme.ColorDark", {
 
     // text
     "text": "rgba(216, 216, 216, 1)",
-    "text-70-opa": "rgba(216, 216, 216, 0.7)",
-    "text-30-opa": "rgba(216, 216, 216, 0.3)",
+    "text-opa70": "rgba(216, 216, 216, 0.7)",
+    "text-opa30": "rgba(216, 216, 216, 0.3)",
     "text-disabled": "rgba(113, 157, 181, 1)",
     "text-selected": "rgba(255, 255, 255, 1)",
     "text-placeholder": "rgba(174, 191, 207, 1)",
