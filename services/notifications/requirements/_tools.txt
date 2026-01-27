@@ -58,6 +58,7 @@ pyyaml==6.0.3
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   pre-commit
+    #   watchdog
 ruff==0.13.3
     # via -r requirements/../../../requirements/devenv.txt
 tomlkit==0.13.3
