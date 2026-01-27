@@ -228,7 +228,6 @@ httpx==0.28.1
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_base.in
-    #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
     #   fastapi
     #   fastapi-cloud-cli
 hyperframe==6.1.0
