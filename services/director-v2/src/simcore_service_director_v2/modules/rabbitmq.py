@@ -1,6 +1,6 @@
 import logging
 from functools import partial
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 from fastapi import FastAPI
 from models_library.rabbitmq_messages import (
@@ -16,8 +16,11 @@ from settings_library.rabbit import RabbitSettings
 
 from ..core.errors import ConfigurationError
 from ..core.settings import AppSettings
-from .dynamic_sidecar.scheduler._task import DynamicSidecarsScheduler
 from .notifier import publish_shutdown_no_more_credits
+
+if TYPE_CHECKING:
+    # This is very dirty!
+    from .dynamic_sidecar.scheduler._task import DynamicSidecarsScheduler
 
 _logger = logging.getLogger(__name__)
 
@@ -25,7 +28,7 @@ _logger = logging.getLogger(__name__)
 async def handler_out_of_credits(app: FastAPI, data: bytes) -> bool:
     message = WalletCreditsLimitReachedMessage.model_validate_json(data)
 
-    scheduler: DynamicSidecarsScheduler = app.state.dynamic_sidecar_scheduler  # type: ignore[name-defined]
+    scheduler: DynamicSidecarsScheduler = app.state.dynamic_sidecar_scheduler
     settings: AppSettings = app.state.settings
 
     if settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER.DIRECTOR_V2_DYNAMIC_SCHEDULER_CLOSE_SERVICES_VIA_FRONTEND_WHEN_CREDITS_LIMIT_REACHED:  # noqa: E501
