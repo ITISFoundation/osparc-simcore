@@ -104,7 +104,7 @@ async def create_temporary_guest_user(request: web.Request):
     product_name = products_web.get_product_name(request)
 
     random_user_name = "".join(secrets.choice(string.ascii_lowercase) for _ in range(10))
-    email = TypeAdapter(LowerCaseEmailStr).validate_python(f"{random_user_name}@guest-at-osparc.io")
+    email: LowerCaseEmailStr = TypeAdapter(LowerCaseEmailStr).validate_python(f"{random_user_name}@guest-at-osparc.io")
     password = generate_password(length=12)
     expires_at = datetime.now(tz=UTC) + settings.STUDIES_GUEST_ACCOUNT_LIFETIME
 

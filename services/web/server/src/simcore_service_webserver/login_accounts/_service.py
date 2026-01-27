@@ -70,6 +70,7 @@ async def send_account_request_email_to_support(
     template_name = "request_account.jinja2"
     destination_email = product.product_owners_email or product.support_email
     email_template_path = await products_web.get_product_template_path(request, template_name)
+    user_email: LowerCaseEmailStr | None
     try:
         user_email = TypeAdapter(LowerCaseEmailStr).validate_python(request_form.get("email"))
     except ValidationError:
