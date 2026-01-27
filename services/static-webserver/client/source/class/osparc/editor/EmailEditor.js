@@ -109,7 +109,8 @@ qx.Class.define("osparc.editor.EmailEditor", {
         case "text-editor": {
           const editorId = "email-html-editor-" + Date.now();
           const htmlEditor = osparc.wrapper.HtmlEditor.getInstance();
-          const quillContainer = htmlEditor.createEditor(editorId, "", {
+          const initContent = "";
+          const quillContainer = htmlEditor.createEditor(editorId, initContent, {
             placeholder: 'Write your email...',
             modules: {
               toolbar: osparc.wrapper.HtmlEditor.getRichToolbarConfig()
