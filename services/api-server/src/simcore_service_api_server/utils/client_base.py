@@ -5,8 +5,8 @@ from typing import Final
 import httpx
 from fastapi import FastAPI
 from httpx import AsyncClient, Timeout
-from servicelib.fastapi.tracing import get_tracing_config, setup_httpx_client_tracing
-from settings_library.tracing import TracingSettings
+from servicelib.fastapi.tracing import get_tracing_config
+from settings_library.tracing import TracingSettings, setup_httpx_client_tracing
 
 from .app_data import AppDataMixin
 
