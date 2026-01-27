@@ -170,10 +170,17 @@ EXPOSE 8000
 ENTRYPOINT [ "/bin/sh", "services/agent/docker/entrypoint.sh" ]
 CMD ["/bin/sh", "services/agent/docker/boot.sh"]
 
+# NOTE: this value gets overwritten in the `boot.sh` script
+# Since there is not wayt to start the image in `settings` mode
+# to run the `simcore-service settings` command, the entrypoint has to
+# be overwritten, which does makes this mandatory env var disappear
+# and the settings vlidation fails.
+ENV AGENT_VOLUMES_CLEANUP_R_CLONE_VERSION=0.0.0
+
 
 # --------------------------Development stage -------------------
 # Source code accessible in host but runs in container
-# Runs as myu with same gid/uid as host
+# Runs as my with same gid/uid as host
 # Placed at the end to speed-up the build if images targeting production
 #
 #  + /devel         WORKDIR
