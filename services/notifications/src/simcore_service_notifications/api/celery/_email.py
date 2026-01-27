@@ -4,7 +4,7 @@ import logging
 from email.headerregistry import Address
 from email.message import EmailMessage as _EmailMessage
 
-from celery import Task
+from celery import Task  # type: ignore[import-untyped]
 from models_library.api_schemas_notifications.message import EmailNotificationMessage
 from models_library.notifications import ChannelType
 from notifications_library._email import (
