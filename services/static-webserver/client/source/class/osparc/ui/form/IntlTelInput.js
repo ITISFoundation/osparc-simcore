@@ -152,7 +152,7 @@ qx.Class.define("osparc.ui.form.IntlTelInput", {
 
     __updateStyle: function() {
       const textColor = qx.theme.manager.Color.getInstance().resolve("text");
-      const bgColor = qx.theme.manager.Color.getInstance().resolve("input_background");
+      const bgColor = qx.theme.manager.Color.getInstance().resolve("input-background");
       const productColor = qx.theme.manager.Color.getInstance().resolve("product-color");
       const defaultBottomBorder = qx.theme.manager.Color.getInstance().resolve("default-button-active");
       document.documentElement.style.setProperty('--country-list-dropdown-bg', bgColor);

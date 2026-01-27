@@ -144,9 +144,9 @@ qx.Class.define("osparc.dashboard.StudyBrowser", {
           }
 
           // since all the resources (templates, users, orgs...) were already loaded, notifications can be built
-          osparc.data.Resources.get("notifications")
-            .then(notifications => {
-              osparc.notification.Notifications.getInstance().addNotifications(notifications);
+          osparc.data.Resources.get("bellNotifications")
+            .then(bellNotifications => {
+              osparc.notification.Notifications.getInstance().addNotifications(bellNotifications);
             });
         })
         .catch(err => osparc.FlashMessenger.logError(err));
