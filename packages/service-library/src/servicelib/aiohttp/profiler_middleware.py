@@ -1,6 +1,6 @@
 from aiohttp.web import HTTPInternalServerError, Request, StreamResponse, middleware
 
-from ..mimetype_constants import MIMETYPE_APPLICATION_AND_JSON, MIMETYPE_APPLICATION_JSON
+from ..mimetype_constants import MIMETYPE_APPLICATION_JSON, MIMETYPE_APPLICATION_NDJSON
 from ..utils_profiling_middleware import _is_profiling, _profiler, append_profile
 
 
@@ -30,7 +30,7 @@ async def profiling_middleware(request: Request, handler):
                 reason=response.reason,
                 headers=response.headers,
             )
-            stream_response.content_type = MIMETYPE_APPLICATION_AND_JSON
+            stream_response.content_type = MIMETYPE_APPLICATION_NDJSON
             await stream_response.prepare(request)
             await stream_response.write(response.body)
             await stream_response.write(

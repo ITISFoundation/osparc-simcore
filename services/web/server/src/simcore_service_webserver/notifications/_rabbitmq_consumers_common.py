@@ -13,7 +13,7 @@ from ..rabbitmq import get_rabbitmq_client
 _logger = logging.getLogger(__name__)
 
 
-class SubcribeArgumentsTuple(NamedTuple):
+class SubscribeArgumentsTuple(NamedTuple):
     exchange_name: str
     parser_fct: Callable[[web.Application, bytes], Coroutine[Any, Any, bool]]
     queue_kwargs: dict[str, Any]
@@ -22,7 +22,7 @@ class SubcribeArgumentsTuple(NamedTuple):
 async def subscribe_to_rabbitmq(
     app,
     exchange_to_parser_config: tuple[
-        SubcribeArgumentsTuple,
+        SubscribeArgumentsTuple,
         ...,
     ],
 ) -> dict[ExchangeName, tuple[QueueName, ConsumerTag]]:
