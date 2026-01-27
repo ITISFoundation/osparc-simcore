@@ -96,8 +96,7 @@ qx.Class.define("osparc.store.Faker", {
         },
         "content": {
           "subject": "sdfasdf",
-          "content": {
-            "bodyHtml": `
+          "bodyHtml": `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -204,16 +203,17 @@ qx.Class.define("osparc.store.Faker", {
 </body>
 </html>
 `,
-            "bodyText": "Hello username,\n\nThis is a free-form email template. You can customize the content as needed.\n\nBest regards,\nThe oSPARC Team"
-          },
+          "bodyText": "Hello username,\n\nThis is a free-form email template. You can customize the content as needed.\n\nBest regards,\nThe oSPARC Team"
         },
       };
 
       return new Promise((resolve) => resolve(preview));
     },
 
-    sendEmail: function(data) {
-      console.log("Faker sending email with data:", data);
+    sendEmail: function(recipients, subject, bodyHtml, bodyText) {
+      console.log("Faker sending email: ", subject, " to ", recipients);
+      console.log("Body HTML: ", bodyHtml);
+      console.log("Body Text: ", bodyText);
       return new Promise((resolve) => resolve());
     },
   }

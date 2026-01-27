@@ -181,9 +181,9 @@ qx.Class.define("osparc.po.SendEmail", {
       osparc.message.Messages.fetchEmailPreview(templateId)
         .then(template => {
           const subjectField = this.getChildControl("subject-field");
-          subjectField.setValue(template["subject"]);
+          subjectField.setValue(template["content"]["subject"]);
           const emailEditor = this.getChildControl("email-editor");
-          emailEditor.setTemplateEmail(template["content"]["body"]);
+          emailEditor.setTemplateEmail(template["content"]["bodyHtml"]);
         });
     },
 
@@ -196,7 +196,6 @@ qx.Class.define("osparc.po.SendEmail", {
       collaboratorsManager.addListener("addCollaborators", e => {
         const data = e.getData();
         const selectedGids = data.selectedGids;
-        console.log(selectedGids);
         selectedGids.forEach(gid => {
           if (!this.__selectedRecipients.includes(gid)) {
             this.__selectedRecipients.push(gid);
@@ -233,18 +232,16 @@ qx.Class.define("osparc.po.SendEmail", {
 
     __sendEmailClicked: function() {
       if (!this.__selectedRecipients.length) {
-        osparc.ui.message.FlashMessenger.getInstance().logAsWarning(this.tr("Please select at least one recipient"));
+        osparc.FlashMessenger.logAs(this.tr("Please select at least one recipient"), "WARNING");
         return;
       }
 
       const subjectField = this.getChildControl("subject-field");
+      const subject = subjectField.getValue();
       const emailEditor = this.getChildControl("email-editor");
-      const data = {
-        to: this.__selectedRecipients,
-        subject: subjectField.getValue(),
-        content: emailEditor.getTemplateEmail(),
-      };
-      osparc.store.Faker.getInstance().sendEmail(data)
+      const bodyHtml = emailEditor.composeWholeHtml();
+      const bodyText = emailEditor.getBodyText();
+      osparc.message.Messages.sendMessage(this.__selectedRecipients, subject, bodyHtml, bodyText)
         .then(() => {
           osparc.FlashMessenger.logAs(this.tr("Email sent successfully"), "INFO");
         })

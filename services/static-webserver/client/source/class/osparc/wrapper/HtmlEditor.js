@@ -194,5 +194,9 @@ qx.Class.define("osparc.wrapper.HtmlEditor", {
       const delta = quill.clipboard.convert(html);
       quill.setContents(delta, 'silent');
     },
+
+    getText: function(quill) {
+      return quill.getText();
+    },
   }
 });

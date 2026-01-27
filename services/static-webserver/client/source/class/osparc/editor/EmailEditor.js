@@ -45,7 +45,7 @@ qx.Class.define("osparc.editor.EmailEditor", {
     this.addListener("changeSelection", () => {
       const selectedPage = this.getSelection()[0];
       if (selectedPage.getUserData("id") === "preview-email") {
-        this.__renderPreview();
+        this.__composePreview();
       }
       this.__updateTabColors();
     }, this);
@@ -173,7 +173,7 @@ qx.Class.define("osparc.editor.EmailEditor", {
       }
     },
 
-    __renderPreview: function() {
+    __composePreview: function() {
       const previewEmail = this.getChildControl("preview-email");
 
       if (!this.__quillInstance) {
@@ -181,19 +181,24 @@ qx.Class.define("osparc.editor.EmailEditor", {
         return;
       }
 
-      const wrapper = osparc.wrapper.HtmlEditor.getInstance();
-      const emailContent = wrapper.getHTML(this.__quillInstance);
-      const templateEmail = this.getTemplateEmail();
-      const previewHtml = this.__buildPreviewHtml(templateEmail, emailContent);
-
+      const previewHtml = this.composeWholeHtml();
       // Use data URL to set HTML content in iframe
       const dataUrl = "data:text/html;charset=utf-8," + encodeURIComponent(previewHtml);
       previewEmail.setSource(dataUrl);
     },
 
-    __buildPreviewHtml(templateHtml, contentHtml) {
+    /**
+     * For the current template, compose the whole HTML email by injecting
+     * the content from the editor into the template structure.
+     *
+     * @returns {String} The complete HTML email as a string.
+     */
+    composeWholeHtml: function() {
+      const templateHtml = this.getTemplateEmail();
       if (!templateHtml) return "";
 
+      const wrapper = osparc.wrapper.HtmlEditor.getInstance();
+      const contentHtml = wrapper.getHTML(this.__quillInstance);
       const parser = new DOMParser();
       const doc = parser.parseFromString(templateHtml, "text/html");
 
@@ -203,6 +208,15 @@ qx.Class.define("osparc.editor.EmailEditor", {
       }
 
       return "<!DOCTYPE html>\n" + doc.documentElement.outerHTML;
+    },
+
+    /**
+     * Get plain text version of the email body from the editor.
+     * @returns {String} The plain text content of the email body.
+     */
+    getBodyText: function() {
+      const wrapper = osparc.wrapper.HtmlEditor.getInstance();
+      return wrapper.getText(this.__quillInstance);
     },
 
     __updateTabColors: function() {

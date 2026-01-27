@@ -39,7 +39,7 @@ qx.Class.define("osparc.message.Messages", {
     },
 
     sendMessage: function(recipients, subject, bodyHtml, bodyText) {
-      return new Promise((resolve) => resolve());
+      return osparc.store.Faker.getInstance().sendEmail(recipients, subject, bodyHtml, bodyText);
       const params = {
         data: {
           "channel": "email",
