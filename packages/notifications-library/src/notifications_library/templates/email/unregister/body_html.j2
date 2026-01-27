@@ -1,5 +1,5 @@
-{% extends 'email/base.body_html.j2' %}
-{% block title %} {% include 'email/unregister.subject.j2' %} {% endblock %}
+{% extends 'email/_base/body_html.j2' %}
+{% block title %} {% include 'email/unregister/subject.j2' %} {% endblock %}
 {% block content %}
 <p>Dear {{ user.first_name or user.user_name }},</p>
 <p>

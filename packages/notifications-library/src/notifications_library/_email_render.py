@@ -43,14 +43,14 @@ def render_email_parts(
     data = other_data | {"user": user, "product": product}
 
     # NOTE: assumes template convention!
-    subject = env.get_template(f"email/{event_name}.subject.j2").render(data)
+    subject = env.get_template(f"email/{event_name}/subject.j2").render(data)
 
     # Body
-    text_template = env.get_template(f"email/{event_name}.body_text.j2")
+    text_template = env.get_template(f"email/{event_name}/body_text.j2")
     text_content = text_template.render(data)
 
     try:
-        html_template = env.get_template(f"email/{event_name}.body_html.j2")
+        html_template = env.get_template(f"email/{event_name}/body_html.j2")
         html_content = html_template.render(data)
     except TemplateNotFound as err:
         _logger.debug("Event %s has no html template: %s", event_name, err)

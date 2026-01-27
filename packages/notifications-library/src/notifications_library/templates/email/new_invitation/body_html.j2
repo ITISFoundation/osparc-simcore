@@ -1,5 +1,5 @@
-{% extends 'email/base.body_html.j2' %}
-{% block title %} {% include 'email/new_invitation.subject.j2' %} {% endblock %}
+{% extends 'email/_base/body_html.j2' %}
+{% block title %} {% include 'email/new_invitation/subject.j2' %} {% endblock %}
 {% block content %}
 <p>Dear {{ user.first_name or user.user_name }},</p>
 <p>Thank you for your interest in {{ product.display_name }}. We are pleased to provide you with a one-time invitation link to register on the platform.</p>

@@ -11,6 +11,7 @@ from ..models.template import NotificationTemplate, TemplateRef
 from ..templates.registry import get_context_model
 
 _TEMPLATE_EXTENSION = ".j2"
+_EXPECTED_PATH_PARTS = 3  # channel/template_name/part
 
 _logger = logging.getLogger(__name__)
 
@@ -52,12 +53,12 @@ class NotificationsTemplatesRepository:
 
     @staticmethod
     def _parse_template_path(template_path: str) -> tuple[str, str, str]:
-        """Parse template path in format: {channel}/{template_name}.{part}.j2
+        """Parse template path in format: {channel}/{template_name}/{part}.j2
 
         Examples:
-            email/account_approved.body_html.j2 -> ("email", "account_approved", "body_html")
-            email/account_approved.body_text.j2 -> ("email", "account_approved", "body_text")
-            email/account_approved.subject.j2 -> ("email", "account_approved", "subject")
+            email/account_approved/body_html.j2 -> ("email", "account_approved", "body_html")
+            email/account_approved/body_text.j2 -> ("email", "account_approved", "body_text")
+            email/account_approved/subject.j2 -> ("email", "account_approved", "subject")
         """
         if not template_path.endswith(_TEMPLATE_EXTENSION):
             raise ValueError(template_path)
@@ -65,20 +66,19 @@ class NotificationsTemplatesRepository:
         # Remove .j2 extension
         base = template_path.removesuffix(_TEMPLATE_EXTENSION)
 
-        # Split channel from rest: "email/account_approved.body_html" -> "email", "account_approved.body_html"
-        if "/" not in base:
-            msg = f"Template path must include channel folder: {template_path}"
+        # Split into parts: "email/account_approved/body_html" -> ["email", "account_approved", "body_html"]
+        parts = base.split("/")
+        if len(parts) != _EXPECTED_PATH_PARTS:
+            msg = f"Template path must be in format {{channel}}/{{template_name}}/{{part}}.j2: {template_path}"
             raise ValueError(msg)
 
-        channel, rest = base.split("/", maxsplit=1)
+        channel, template_name, part = parts
 
-        # Split template name from part: "account_approved.body_html" -> "account_approved", "body_html"
-        # Template name is the first segment, part is everything after the first dot
-        if "." not in rest:
-            msg = f"Template path must include part after template name: {template_path}"
+        # Skip internal templates (starting with _)
+        if template_name.startswith("_"):
+            msg = f"Internal template (starting with _) cannot be parsed: {template_path}"
             raise ValueError(msg)
 
-        template_name, part = rest.split(".", maxsplit=1)
         return channel, template_name, part
 
     def get_jinja_template(
@@ -87,7 +87,7 @@ class NotificationsTemplatesRepository:
         part: str,
     ) -> Template:
         # NOTE: centralized template naming convention
-        return self.env.get_template(f"{template_path_prefix(template.ref)}.{part}{_TEMPLATE_EXTENSION}")
+        return self.env.get_template(f"{template_path_prefix(template.ref)}/{part}{_TEMPLATE_EXTENSION}")
 
     def search_templates(
         self,
@@ -98,7 +98,8 @@ class NotificationsTemplatesRepository:
     ) -> list[NotificationTemplate]:
         """Search for notification templates with wildcard support for template_name and part.
 
-        Template path format: {channel}/{template_name}.{part}.j2
+        Template path format: {channel}/{template_name}/{part}.j2
+        Note: Templates in folders starting with _ (like _base) are excluded from search.
 
         Args:
             channel: Channel filter (exact match, no wildcards). If None, searches all channels.
