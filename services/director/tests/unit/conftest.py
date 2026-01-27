@@ -156,23 +156,22 @@ MAX_TIME_FOR_APP_TO_SHUTDOWN = 10
 
 
 @pytest.fixture
-def app_settings(
-    mock_setup_remote_docker_client: Callable[[str], None], app_environment: EnvVarsDict
-) -> ApplicationSettings:
-    mock_setup_remote_docker_client("simcore_service_director.core.application.setup_remote_docker_client")
+def app_settings(app_environment: EnvVarsDict) -> ApplicationSettings:
     return ApplicationSettings.create_from_envs()
 
 
 @pytest.fixture
 async def app(
+    mock_setup_remote_docker_client: Callable[[str], None],
+    mock_remote_docker_client: Callable[[FastAPI], None],
     app_settings: ApplicationSettings,
     is_pdb_enabled: bool,
-    mock_remote_docker_client: Callable[[FastAPI], None],
 ) -> AsyncIterator[FastAPI]:
     tracing_config = TracingConfig.create(
         service_name=APP_NAME,
         tracing_settings=None,  # disable tracing in tests
     )
+    mock_setup_remote_docker_client("simcore_service_director.core.application.setup_remote_docker_client")
     the_test_app = create_app(settings=app_settings, tracing_config=tracing_config)
     mock_remote_docker_client(the_test_app)
     async with LifespanManager(
