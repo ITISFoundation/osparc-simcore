@@ -109,17 +109,10 @@ qx.Class.define("osparc.editor.EmailEditor", {
         case "text-editor": {
           const editorId = "email-html-editor-" + Date.now();
           const htmlEditor = osparc.wrapper.HtmlEditor.getInstance();
-          const quillContainer = htmlEditor.createEditor(editorId, "<p>Write your email...</p>", {
-            theme: 'snow',
+          const quillContainer = htmlEditor.createEditor(editorId, "", {
             placeholder: 'Write your email...',
             modules: {
-              toolbar: [
-                [{ 'header': [1, 2, 3, false] }],
-                ['bold', 'italic', 'underline', 'strike'],
-                ['link', 'blockquote', 'code-block'],
-                [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                ['clean']
-              ]
+              toolbar: osparc.wrapper.HtmlEditor.getRichToolbarConfig()
             }
           });
 

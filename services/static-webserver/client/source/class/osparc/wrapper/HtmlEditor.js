@@ -42,6 +42,25 @@ qx.Class.define("osparc.wrapper.HtmlEditor", {
     NAME: "Quill",
     VERSION: "2.0.3",
     URL: "https://quilljs.com/",
+
+    getRichToolbarConfig: function() {
+      return [
+        [{ 'header': [1, 2, 3, false] }],
+        ['bold', 'italic', 'underline', 'strike'],
+        ['link', 'blockquote', 'code-block'],
+        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+        ['clean']
+      ];
+    },
+
+    getBasicToolbarConfig: function() {
+      return [
+        [{ 'header': [1, 2, false] }],
+        ['bold', 'italic', 'underline'],
+        ['link', 'blockquote', 'code-block'],
+        [{ 'list': 'ordered'}, { 'list': 'bullet' }]
+      ];
+    },
   },
 
   members: {
