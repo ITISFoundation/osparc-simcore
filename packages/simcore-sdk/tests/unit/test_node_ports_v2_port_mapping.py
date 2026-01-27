@@ -3,7 +3,6 @@
 # pylint: disable=unused-variable
 
 from collections import deque
-from pprint import pprint
 from typing import Annotated, Any
 
 import pytest
@@ -46,7 +45,7 @@ def test_filled_ports_mapping(port_class: type[InputsList | OutputsList]):
         assert port_key in port_cfgs
 
         # just to make use of the variable and check the pydantic overloads are working correctly
-        assert port_value == port_value
+        assert port_value
 
     for index, port_key in enumerate(port_cfgs):
         assert port_mapping[index] == port_mapping[port_key]
@@ -170,6 +169,5 @@ def test_validate_iolist_against_schema(fake_port_meta: dict[str, Any]):
 
         assert error["type"] == "value_error"
         port_with_errors.append(port_key)
-        pprint(error)
 
     assert port_with_errors == expected_port_with_errors

@@ -102,14 +102,14 @@ async def successful_transaction(
     """
     injects transaction in db
     """
-    async with (
+    async with (  # pylint:disable=contextmanager-generator-missing-cleanup
         insert_and_get_wallet_lifespan(
             get_engine(app),
             product_name=product["name"],
             user_group_id=user["primary_gid"],
             wallet_id=successful_transaction["wallet_id"],
         ),
-        insert_and_get_row_lifespan(  # pylint:disable=contextmanager-generator-missing-cleanup
+        insert_and_get_row_lifespan(
             get_engine(app),
             table=payments_transactions,
             values=successful_transaction,
