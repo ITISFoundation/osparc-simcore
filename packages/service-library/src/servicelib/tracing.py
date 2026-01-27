@@ -79,7 +79,7 @@ class TracingConfig(BaseModel):
         )
 
 
-def setup_httpx_client_tracing(client: AsyncClient | Client, tracing_config: TracingConfig) -> None:
+def setup_httpx_client_tracing(client: "AsyncClient | Client", tracing_config: TracingConfig) -> None:
     HTTPXClientInstrumentor.instrument_client(client, tracer_provider=tracing_config.tracer_provider)
 
 
