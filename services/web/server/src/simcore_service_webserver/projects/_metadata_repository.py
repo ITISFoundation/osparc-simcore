@@ -52,14 +52,14 @@ def _handle_projects_metadata_exceptions(fct: F) -> F:
             raise ProjectNotFoundError(project_uuid=err.project_uuid) from err  # type: ignore[attr-defined] # context defined in pydantic error # pylint: disable=no-member
         except ProjectNodesNodeNotFoundError as err:
             raise NodeNotFoundError(
-                project_uuid=err.project_uuid,
+                project_uuid=err.project_uuid,  # type: ignore[attr-defined] # context defined in pydantic error # pylint: disable=no-member
                 node_uuid=err.node_id,  # type: ignore[attr-defined] # context defined in pydantic error # pylint: disable=no-member
             ) from err
         except ProjectNodesNonUniqueNodeFoundError as err:
             raise ProjectInvalidUsageError from err
         except DBProjectInvalidParentNodeError as err:
             raise ParentNodeNotFoundError(
-                project_uuid=err.project_uuid,
+                project_uuid=err.project_uuid,  # type: ignore[attr-defined] # context defined in pydantic error # pylint: disable=no-member
                 node_uuid=err.parent_node_id,  # type: ignore[attr-defined] # context defined in pydantic error # pylint: disable=no-member
             ) from err
 

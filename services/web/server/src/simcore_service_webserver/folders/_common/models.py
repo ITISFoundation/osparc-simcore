@@ -53,8 +53,8 @@ _FolderOrderQueryParams: type[RequestParameters] = create_ordering_query_model_c
 
 class FoldersListQueryParams(
     PageQueryParameters,
-    _FolderOrderQueryParams,
-    FiltersQueryParameters[FolderFilters],  # type: ignore[misc, valid-type]
+    _FolderOrderQueryParams,  # type: ignore[misc, valid-type]
+    FiltersQueryParameters[FolderFilters],
 ):
     folder_id: Annotated[FolderID | None, BeforeValidator(null_or_none_str_to_none_validator)] = Field(
         default=None,
@@ -70,8 +70,8 @@ class FoldersListQueryParams(
 
 class FolderSearchQueryParams(
     PageQueryParameters,
-    _FolderOrderQueryParams,
-    FiltersQueryParameters[FolderFilters],  # type: ignore[misc, valid-type]
+    _FolderOrderQueryParams,  # type: ignore[misc, valid-type]
+    FiltersQueryParameters[FolderFilters],
 ):
     text: Annotated[str | None, BeforeValidator(empty_str_to_none_pre_validator)] = Field(
         default=None,
