@@ -48,15 +48,9 @@ ETag: TypeAlias = str
 
 S3BucketName: TypeAlias = Annotated[str, StringConstraints(pattern=S3_BUCKET_NAME_RE)]
 
-DatCoreDatasetName: TypeAlias = Annotated[
-    str, StringConstraints(pattern=DATCORE_DATASET_NAME_RE)
-]
-DatCoreCollectionName: TypeAlias = Annotated[
-    str, StringConstraints(pattern=DATCORE_COLLECTION_NAME_RE)
-]
-DatCorePackageName: TypeAlias = Annotated[
-    str, StringConstraints(pattern=DATCORE_FILE_ID_RE)
-]
+DatCoreDatasetName: TypeAlias = Annotated[str, StringConstraints(pattern=DATCORE_DATASET_NAME_RE)]
+DatCoreCollectionName: TypeAlias = Annotated[str, StringConstraints(pattern=DATCORE_COLLECTION_NAME_RE)]
+DatCorePackageName: TypeAlias = Annotated[str, StringConstraints(pattern=DATCORE_FILE_ID_RE)]
 
 
 # /
@@ -186,8 +180,7 @@ class FileMetaDataGet(BaseModel):
     )
     is_soft_link: bool = Field(
         default=False,
-        description="If true, this file is a soft link."
-        "i.e. is another entry with the same object_name",
+        description="If true, this file is a soft link.i.e. is another entry with the same object_name",
     )
     is_directory: bool = Field(default=False, description="if True this is a directory")
     sha256_checksum: SHA256Str | None = Field(
@@ -332,9 +325,7 @@ class FileUploadSchema(BaseModel):
             }
         )
 
-    model_config = ConfigDict(
-        extra="forbid", json_schema_extra=_update_json_schema_extra
-    )
+    model_config = ConfigDict(extra="forbid", json_schema_extra=_update_json_schema_extra)
 
 
 class TableSynchronisation(BaseModel):
@@ -391,9 +382,7 @@ class FoldersBody(BaseModel):
         if set(source_node_keys) != set(self.nodes_map.keys()):
             msg = "source project nodes do not fit with nodes_map entries"
             raise ValueError(msg)
-        destination_node_keys = (
-            NodeID(n) for n in self.destination.get("workbench", {})
-        )
+        destination_node_keys = (NodeID(n) for n in self.destination.get("workbench", {}))
         if set(destination_node_keys) != set(self.nodes_map.values()):
             msg = "destination project nodes do not fit with nodes_map values"
             raise ValueError(msg)
@@ -412,9 +401,7 @@ class PathMetaDataGet(BaseModel):
     path: Annotated[Path, Field(description="the path to the current path")]
     display_path: Annotated[
         Path,
-        Field(
-            description="the path to display with UUID replaced (URL Encoded by parts as names may contain '/')"
-        ),
+        Field(description="the path to display with UUID replaced (URL Encoded by parts as names may contain '/')"),
     ]
 
     file_meta_data: Annotated[
@@ -451,17 +438,13 @@ class PathMetaDataGet(BaseModel):
                     {
                         "path": f"f8da77a9-24b9-4eab-aee7-1f0608da1e3e/2f94f80f-633e-4dfa-a983-226b7babe3d7/outputs/output5/{FileMetaDataGet.model_json_schema()['examples'][0]['file_name']}",
                         "display_path": f"my amazing project/awesome node/outputs/output5/{FileMetaDataGet.model_json_schema()['examples'][0]['file_name']}",
-                        "file_meta_data": FileMetaDataGet.model_json_schema()[
-                            "examples"
-                        ][0],
+                        "file_meta_data": FileMetaDataGet.model_json_schema()["examples"][0],
                     },
                 ]
             }
         )
 
-    model_config = ConfigDict(
-        extra="forbid", json_schema_extra=_update_json_schema_extra
-    )
+    model_config = ConfigDict(extra="forbid", json_schema_extra=_update_json_schema_extra)
 
 
 class PathTotalSizeCreate(BaseModel):
@@ -487,6 +470,4 @@ class PathTotalSizeCreate(BaseModel):
             }
         )
 
-    model_config = ConfigDict(
-        extra="forbid", json_schema_extra=_update_json_schema_extra
-    )
+    model_config = ConfigDict(extra="forbid", json_schema_extra=_update_json_schema_extra)

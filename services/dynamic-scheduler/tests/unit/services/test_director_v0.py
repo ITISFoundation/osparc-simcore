@@ -41,17 +41,13 @@ def legacy_service_details() -> RunningDynamicServiceDetails:
 
 
 @pytest.fixture
-def mock_director_v0(
-    node_id: NodeID, legacy_service_details: RunningDynamicServiceDetails
-) -> Iterator[None]:
+def mock_director_v0(node_id: NodeID, legacy_service_details: RunningDynamicServiceDetails) -> Iterator[None]:
     with respx.mock(
         base_url="http://director:8000",
         assert_all_called=False,
         assert_all_mocked=True,  # IMPORTANT: KEEP always True!
     ) as respx_mock:
-        respx_mock.request(
-            method="GET", path=f"/v0/running_interactive_services/{node_id}"
-        ).respond(
+        respx_mock.request(method="GET", path=f"/v0/running_interactive_services/{node_id}").respond(
             status_code=200,
             json={
                 "data": legacy_service_details.model_dump(mode="json"),
@@ -59,9 +55,7 @@ def mock_director_v0(
             },
         )
 
-        respx_mock.request(
-            method="GET", path="/v0/running_interactive_services"
-        ).respond(
+        respx_mock.request(method="GET", path="/v0/running_interactive_services").respond(
             status_code=200,
             json={"data": [legacy_service_details.model_dump(mode="json")]},
         )

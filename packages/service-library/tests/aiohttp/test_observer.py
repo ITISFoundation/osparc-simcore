@@ -8,8 +8,8 @@ from aiohttp import web
 from pytest_mock import MockerFixture
 from servicelib.aiohttp.observer import (
     emit,
-    registed_observers_report,
     register_observer,
+    registered_observers_report,
     setup_observer_registry,
 )
 
@@ -22,12 +22,12 @@ def app() -> web.Application:
 
 
 async def test_observer(mocker: MockerFixture, app: web.Application):
-    # register a couroutine as callback function
+    # register a coroutine as callback function
     cb_function = mocker.AsyncMock(return_value=None)
 
     register_observer(app, cb_function, event="my_test_event")
 
-    registed_observers_report(app)
+    registered_observers_report(app)
 
     await emit(app, "my_invalid_test_event")
     cb_function.assert_not_called()

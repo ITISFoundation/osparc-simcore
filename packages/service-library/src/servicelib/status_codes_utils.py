@@ -61,9 +61,7 @@ def get_code_description(status_code: int) -> str:
         case _:
             url_suffix = f"/{status_code}"
 
-    return _CODE_DESCRIPTION_TEMPLATE.format(
-        description=description, url_suffix=url_suffix
-    )
+    return _CODE_DESCRIPTION_TEMPLATE.format(description=description, url_suffix=url_suffix)
 
 
 def is_1xx_informational(status_code: int) -> bool:
@@ -108,13 +106,9 @@ def is_error(status_code: int) -> bool:
     return 400 <= status_code <= 599  # noqa: PLR2004
 
 
-def get_http_status_codes(
-    status: types.ModuleType, predicate: Callable[[int], bool] | None = None
-) -> list[int]:
+def get_http_status_codes(status: types.ModuleType, predicate: Callable[[int], bool] | None = None) -> list[int]:
     # In the spirit of https://docs.python.org/3/library/inspect.html#inspect.getmembers
-    iter_all = (
-        getattr(status, code) for code in status.__all__ if code.startswith("HTTP_")
-    )
+    iter_all = (getattr(status, code) for code in status.__all__ if code.startswith("HTTP_"))
     if predicate is None:
         return list(iter_all)
     return [code for code in iter_all if predicate(code)]

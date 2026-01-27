@@ -34,7 +34,4 @@ def set_default_route_names(routes: RouteTableDef):
 
 
 def get_named_routes_as_message(app: web.Application) -> str:
-    return "\n".join(
-        f"\t{name}:{resource}"
-        for name, resource in app.router.named_resources().items()
-    )
+    return "\n".join(f"\t{name}:{resource}" for name, resource in app.router.named_resources().items())

@@ -79,9 +79,7 @@ class UserSessionResourcesRegistry:
             extra=get_log_record_extra(user_id=self.user_id),
         )
 
-        await self._registry.set_resource(
-            self.resource_key, (SOCKET_ID_FIELDNAME, socket_id)
-        )
+        await self._registry.set_resource(self.resource_key, (SOCKET_ID_FIELDNAME, socket_id))
         # NOTE: hearthbeat is not emulated in tests, make sure that with very small GC intervals
         # the resources do not expire; this value is usually in the order of minutes
         timeout = max(3, _get_service_deletion_timeout(self.app))
@@ -148,9 +146,7 @@ class UserSessionResourcesRegistry:
             extra=get_log_record_extra(user_id=self.user_id),
         ):
             return await self._registry.find_resources(
-                UserSession(
-                    user_id=self.user_id, client_session_id="*"
-                ),  #  <-- this one checks for all user tabs
+                UserSession(user_id=self.user_id, client_session_id="*"),  #  <-- this one checks for all user tabs
                 key,
             )
 
@@ -192,9 +188,7 @@ class UserSessionResourcesRegistry:
         await self._registry.remove_resource(self.resource_key, key)
 
     @staticmethod
-    async def find_users_of_resource(
-        app: web.Application, key: str, value: str
-    ) -> list[UserSession]:
+    async def find_users_of_resource(app: web.Application, key: str, value: str) -> list[UserSession]:
         registry = get_registry(app)
         return await registry.find_keys(resource=(key, value))
 
@@ -202,9 +196,7 @@ class UserSessionResourcesRegistry:
         if self.client_session_id is None:
             msg = f"Cannot build UserSessionID with missing {self.client_session_id=}"
             raise ValueError(msg)
-        return UserSession(
-            user_id=self.user_id, client_session_id=self.client_session_id
-        )
+        return UserSession(user_id=self.user_id, client_session_id=self.client_session_id)
 
 
 @contextmanager

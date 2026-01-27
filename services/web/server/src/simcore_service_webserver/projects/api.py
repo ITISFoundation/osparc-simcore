@@ -21,11 +21,11 @@ __all__: tuple[str, ...] = (
     "batch_get_project_name",
     "check_user_project_permission",
     "create_project_group_without_checking_permissions",
+    "delete_project_by_user",
     "delete_project_group_without_checking_permissions",
     "get_project_dict_legacy",
     "has_user_project_access_rights",
     "list_projects",
-    "delete_project_by_user",
     "patch_project_and_notify_users",
 )
 

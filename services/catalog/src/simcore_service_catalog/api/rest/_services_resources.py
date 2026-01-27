@@ -49,7 +49,7 @@ def _compute_service_available_boot_modes(
     service_version: ServiceVersion,
 ) -> list[BootMode]:
     """returns the service boot-modes.
-    currently this uses the simcore.service.settings labels if available for backwards compatiblity.
+    currently this uses the simcore.service.settings labels if available for backwards compatibility.
     if MPI is found, then boot mode is set to MPI, if GPU is found then boot mode is set to GPU, else to CPU.
     In the future a dedicated label might be used, to add openMP for example. and to not abuse the resources of a service.
     Also these will be used in a project to allow the user to choose among different boot modes
@@ -70,10 +70,7 @@ def _compute_service_available_boot_modes(
         )
     # currently these are unique boot modes
     for mode in BootMode:
-        if (
-            _BOOT_MODE_TO_RESOURCE_NAME_MAP.get(mode.value, mode.value)
-            in generic_resources
-        ):
+        if _BOOT_MODE_TO_RESOURCE_NAME_MAP.get(mode.value, mode.value) in generic_resources:
             return [mode]
 
     return [BootMode.CPU]
@@ -107,17 +104,13 @@ def _resources_from_settings(
             service_resources["CPU"].limit = nano_cpu_limit / 1.0e09
         if nano_cpu_reservation := entry.value.get("Reservations", {}).get("NanoCPUs"):
             # NOTE: if the limit was below, it needs to be increased as well
-            service_resources["CPU"].limit = max(
-                service_resources["CPU"].limit, nano_cpu_reservation / 1.0e09
-            )
+            service_resources["CPU"].limit = max(service_resources["CPU"].limit, nano_cpu_reservation / 1.0e09)
             service_resources["CPU"].reservation = nano_cpu_reservation / 1.0e09
         if ram_limit := entry.value.get("Limits", {}).get("MemoryBytes"):
             service_resources["RAM"].limit = ram_limit
         if ram_reservation := entry.value.get("Reservations", {}).get("MemoryBytes"):
             # NOTE: if the limit was below, it needs to be increased as well
-            service_resources["RAM"].limit = max(
-                service_resources["RAM"].limit, ram_reservation
-            )
+            service_resources["RAM"].limit = max(service_resources["RAM"].limit, ram_reservation)
             service_resources["RAM"].reservation = ram_reservation
 
         service_resources |= parse_generic_resource(
@@ -167,34 +160,22 @@ async def get_service_resources(
     service_key: ServiceKey,
     service_version: ServiceVersion,
     director_client: Annotated[DirectorClient, Depends(get_director_client)],
-    default_service_resources: Annotated[
-        ResourcesDict, Depends(get_default_service_resources)
-    ],
-    services_repo: Annotated[
-        ServicesRepository, Depends(get_repository(ServicesRepository))
-    ],
+    default_service_resources: Annotated[ResourcesDict, Depends(get_default_service_resources)],
+    services_repo: Annotated[ServicesRepository, Depends(get_repository(ServicesRepository))],
     user_groups: Annotated[list[GroupAtDB], Depends(list_user_groups)],
 ) -> ServiceResourcesDict:
-    image_version = TypeAdapter(DockerGenericTag).validate_python(
-        f"{service_key}:{service_version}"
-    )
+    image_version = TypeAdapter(DockerGenericTag).validate_python(f"{service_key}:{service_version}")
     if is_function_service(service_key):
-        return ServiceResourcesDictHelpers.create_from_single_service(
-            image_version, default_service_resources
-        )
+        return ServiceResourcesDictHelpers.create_from_single_service(image_version, default_service_resources)
 
-    service_labels: dict[str, Any] | None = await _get_service_labels(
-        director_client, service_key, service_version
-    )
+    service_labels: dict[str, Any] | None = await _get_service_labels(director_client, service_key, service_version)
 
     if not service_labels:
-        return ServiceResourcesDictHelpers.create_from_single_service(
-            image_version, default_service_resources
-        )
+        return ServiceResourcesDictHelpers.create_from_single_service(image_version, default_service_resources)
 
-    service_spec: ComposeSpecLabelDict | None = TypeAdapter(
-        ComposeSpecLabelDict | None
-    ).validate_json(service_labels.get(SIMCORE_SERVICE_COMPOSE_SPEC_LABEL, "null"))
+    service_spec: ComposeSpecLabelDict | None = TypeAdapter(ComposeSpecLabelDict | None).validate_json(
+        service_labels.get(SIMCORE_SERVICE_COMPOSE_SPEC_LABEL, "null")
+    )
     _logger.debug("received %s", f"{service_spec=}")
 
     if service_spec is None:
@@ -203,9 +184,7 @@ async def get_service_resources(
         service_resources = _resources_from_settings(
             service_settings, default_service_resources, service_key, service_version
         )
-        service_boot_modes = _compute_service_available_boot_modes(
-            service_settings, service_key, service_version
-        )
+        service_boot_modes = _compute_service_available_boot_modes(service_settings, service_key, service_version)
 
         user_specific_service_specs = await services_repo.get_service_specifications(
             service_key,
@@ -230,9 +209,7 @@ async def get_service_resources(
     )
     full_service_spec: ComposeSpecLabelDict = yaml.safe_load(stringified_service_spec)
 
-    service_to_resources: ServiceResourcesDict = TypeAdapter(
-        ServiceResourcesDict
-    ).validate_python({})
+    service_to_resources: ServiceResourcesDict = TypeAdapter(ServiceResourcesDict).validate_python({})
 
     for spec_key, spec_data in full_service_spec["services"].items():
         # image can be:
@@ -241,9 +218,7 @@ async def get_service_resources(
         # leading slashes must be stripped
         image = spec_data["image"].lstrip("/")
         key, version = image.split(":")
-        spec_service_labels: dict[str, Any] | None = await _get_service_labels(
-            director_client, key, version
-        )
+        spec_service_labels: dict[str, Any] | None = await _get_service_labels(director_client, key, version)
 
         spec_service_resources: ResourcesDict
 
@@ -261,13 +236,11 @@ async def get_service_resources(
             service_boot_modes = _compute_service_available_boot_modes(
                 spec_service_settings, service_key, service_version
             )
-            user_specific_service_specs = (
-                await services_repo.get_service_specifications(
-                    key,
-                    version,
-                    tuple(user_groups),
-                    allow_use_latest_service_version=True,
-                )
+            user_specific_service_specs = await services_repo.get_service_specifications(
+                key,
+                version,
+                tuple(user_groups),
+                allow_use_latest_service_version=True,
             )
             if user_specific_service_specs and user_specific_service_specs.service:
                 spec_service_resources = merge_service_resources_with_user_specs(

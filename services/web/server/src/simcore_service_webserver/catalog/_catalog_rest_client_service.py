@@ -81,9 +81,7 @@ def to_backend_service(rel_url: URL, origin: URL, version_prefix: str) -> URL:
     E.g. https://osparc.io/v0/catalog/dags -> http://catalog:8080/v0/dags
     """
     assert not rel_url.is_absolute()  # nosec
-    new_path = rel_url.path.replace(
-        f"/{api_version_prefix}/catalog", f"/{version_prefix}"
-    )
+    new_path = rel_url.path.replace(f"/{api_version_prefix}/catalog", f"/{version_prefix}")
     return origin.with_path(new_path).with_query(rel_url.query)
 
 
@@ -126,15 +124,14 @@ async def get_services_for_user_in_product(
             services: list[dict] = await response.json()
 
             # This reduces the size cached in the memory
-            return [
-                ServiceKeyVersionDict(key=service["key"], version=service["version"])
-                for service in services
-            ]
+            return [ServiceKeyVersionDict(key=service["key"], version=service["version"]) for service in services]
 
 
 @cached(
     ttl=_CACHE_TTL,
-    key_builder=lambda _f, *_args, **kw: f"get_service_{kw['user_id']}_{kw['service_key']}_{kw['service_version']}_{kw['product_name']}",
+    key_builder=lambda _f,
+    *_args,
+    **kw: f"get_service_{kw['user_id']}_{kw['service_key']}_{kw['service_version']}_{kw['product_name']}",
     cache=Cache.MEMORY,
     # SEE https://github.com/ITISFoundation/osparc-simcore/pull/7802
 )
@@ -157,9 +154,7 @@ async def get_service(
     ).with_query({"user_id": user_id})
 
     with _handle_client_exceptions(app) as session:
-        async with session.get(
-            url, headers={X_PRODUCT_NAME_HEADER: product_name}
-        ) as response:
+        async with session.get(url, headers={X_PRODUCT_NAME_HEADER: product_name}) as response:
             response.raise_for_status()
             service: dict[str, Any] = await response.json()
             return service
@@ -200,9 +195,7 @@ async def get_service_access_rights(
     ).with_query({"user_id": user_id})
 
     with _handle_client_exceptions(app) as session:
-        async with session.get(
-            url, headers={X_PRODUCT_NAME_HEADER: product_name}
-        ) as resp:
+        async with session.get(url, headers={X_PRODUCT_NAME_HEADER: product_name}) as resp:
             resp.raise_for_status()
             body = await resp.json()
             return ServiceAccessRightsGet.model_validate(body)

@@ -18,7 +18,6 @@ pytest \
 # pylint: disable=too-many-arguments
 # pylint: disable=too-many-return-statements
 
-
 import functools
 import json
 from dataclasses import asdict
@@ -68,9 +67,7 @@ def ipinfo(faker: Faker) -> dict[str, Any]:
 
 @pytest.fixture
 def request_form(faker: Faker) -> dict[str, Any]:
-    return AccountRequestInfo.model_validate(
-        AccountRequestInfo.model_json_schema()["example"]
-    ).model_dump()
+    return AccountRequestInfo.model_validate(AccountRequestInfo.model_json_schema()["example"]).model_dump()
 
 
 @pytest.fixture
@@ -83,7 +80,6 @@ def event_extra_data(  # noqa: PLR0911
     request_form: dict[str, Any],
     ipinfo: dict[str, Any],
 ) -> dict[str, Any]:
-
     code = faker.pystr_format(string_format="######", letters="")
     host_url = f"https://{product_name}.io"
 
@@ -129,7 +125,7 @@ def event_extra_data(  # noqa: PLR0911
             return {
                 "link": f"{host_url}?invitation={code}",
             }
-        case "on_payed":
+        case "on_paid":
             return {
                 "payment": payment_data,
             }
@@ -169,9 +165,9 @@ def event_extra_data(  # noqa: PLR0911
 def event_attachments(event_name: str, faker: Faker) -> list[tuple[bytes, str]]:
     attachments = []
     match event_name:
-        case "on_payed":
+        case "on_paid":
             # Create a fake PDF-like byte content and its filename
-            file_name = "test-payed-invoice.pdf"
+            file_name = "test-paid-invoice.pdf"
             # Simulate generating PDF data.
             fake_pdf_content = faker.text().encode("utf-8")
             attachments.append((fake_pdf_content, file_name))
@@ -188,7 +184,7 @@ def event_attachments(event_name: str, faker: Faker) -> list[tuple[bytes, str]]:
         "on_change_email",
         "on_new_code",
         "on_new_invitation",
-        "on_payed",
+        "on_paid",
         "on_registered",
         "on_reset_password",
         "on_share_project",
@@ -214,9 +210,7 @@ async def test_email_event(
     event_extra_data = event_extra_data | (asdict(sharer_data) if sharer_data else {})
 
     parts = render_email_parts(
-        env=create_render_environment_from_notifications_library(
-            undefined=StrictUndefined
-        ),
+        env=create_render_environment_from_notifications_library(undefined=StrictUndefined),
         event_name=event_name,
         user=user_data,
         product=product_data,
@@ -278,14 +272,11 @@ async def test_email_with_reply_to(
 ):
     if smtp_mock_or_none is None:
         pytest.skip(
-            reason="Skipping to avoid spamming issue-tracker system."
-            "Remove this only for manual exploratory testing."
+            reason="Skipping to avoid spamming issue-tracker system.Remove this only for manual exploratory testing."
         )
 
     parts = render_email_parts(
-        env=create_render_environment_from_notifications_library(
-            undefined=StrictUndefined
-        ),
+        env=create_render_environment_from_notifications_library(undefined=StrictUndefined),
         event_name=event_name,
         user=user_data,
         product=product_data,

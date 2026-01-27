@@ -15,8 +15,6 @@ routes = web.RouteTableDef()
 async def list_announcements(request: web.Request) -> web.Response:
     """Returns non-expired announcements for current product"""
     product_name = products_web.get_product_name(request)
-    announcements: list[Announcement] = await _api.list_announcements(
-        request.app, product_name=product_name
-    )
+    announcements: list[Announcement] = await _api.list_announcements(request.app, product_name=product_name)
 
     return envelope_json_response(announcements)

@@ -24,7 +24,6 @@ _logger = logging.getLogger(__name__)
     logger=_logger,
 )
 def setup_director_v2(app: web.Application):
-
     assert app[APP_SETTINGS_APPKEY].WEBSERVER_DIRECTOR_V2  # nosec
 
     # client to communicate with director-v2 service

@@ -34,10 +34,7 @@ class PackageInfo:
         self._distribution = distribution(package_name)
         # property checks
         if re.match(_APP_NAME_PATTERN, self.app_name) is None:
-            msg = (
-                f"Invalid package name {self.app_name}. "
-                "It must be all lowercase and words separated by dashes ('-')."
-            )
+            msg = f"Invalid package name {self.app_name}. It must be all lowercase and words separated by dashes ('-')."
             raise ValueError(msg)
 
     @property
@@ -75,6 +72,4 @@ class PackageInfo:
         return self._distribution.metadata.get_all("Summary", [""])[-1]
 
     def get_finished_banner(self) -> str:
-        return "{:=^100}".format(
-            f"🎉 App {self.project_name}=={self.__version__} shutdown completed 🎉"
-        )
+        return "{:=^100}".format(f"🎉 App {self.project_name}=={self.__version__} shutdown completed 🎉")

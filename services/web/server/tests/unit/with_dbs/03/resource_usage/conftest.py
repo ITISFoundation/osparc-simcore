@@ -40,9 +40,7 @@ def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatc
 
 
 @pytest.fixture
-def mock_rpc_resource_usage_tracker_service_api(
-    mocker: MockerFixture, faker: Faker
-) -> dict[str, MagicMock]:
+def mock_rpc_resource_usage_tracker_service_api(mocker: MockerFixture, faker: Faker) -> dict[str, MagicMock]:
     return {
         ## Pricing plans
         "list_pricing_plans_without_pricing_units": mocker.patch(
@@ -51,9 +49,7 @@ def mock_rpc_resource_usage_tracker_service_api(
             return_value=RutPricingPlanPage(
                 items=[
                     RutPricingPlanGet.model_validate(
-                        RutPricingPlanGet.model_config["json_schema_extra"]["examples"][
-                            0
-                        ],
+                        RutPricingPlanGet.model_config["json_schema_extra"]["examples"][0],
                     )
                 ],
                 total=1,
@@ -108,9 +104,7 @@ def mock_rpc_resource_usage_tracker_service_api(
             autospec=True,
             return_value=[
                 PricingPlanToServiceGet.model_validate(
-                    PricingPlanToServiceGet.model_config["json_schema_extra"][
-                        "examples"
-                    ][0],
+                    PricingPlanToServiceGet.model_config["json_schema_extra"]["examples"][0],
                 )
             ],
         ),
@@ -118,9 +112,7 @@ def mock_rpc_resource_usage_tracker_service_api(
             "simcore_service_webserver.resource_usage._pricing_plans_admin_service.pricing_plans.connect_service_to_pricing_plan",
             autospec=True,
             return_value=PricingPlanToServiceGet.model_validate(
-                PricingPlanToServiceGet.model_config["json_schema_extra"]["examples"][
-                    0
-                ],
+                PricingPlanToServiceGet.model_config["json_schema_extra"]["examples"][0],
             ),
         ),
     }

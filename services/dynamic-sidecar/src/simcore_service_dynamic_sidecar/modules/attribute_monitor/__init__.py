@@ -17,9 +17,7 @@ def setup_attribute_monitor(app: FastAPI) -> None:
         await attribute_monitor.start()
 
     async def on_shutdown() -> None:
-        attribute_monitor: None | (LoggingEventHandlerObserver) = (
-            app.state.attribute_monitor
-        )
+        attribute_monitor: None | (LoggingEventHandlerObserver) = app.state.attribute_monitor
         if attribute_monitor is not None:
             await attribute_monitor.stop()
 

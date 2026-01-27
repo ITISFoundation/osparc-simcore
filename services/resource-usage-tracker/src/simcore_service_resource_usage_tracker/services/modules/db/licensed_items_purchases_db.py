@@ -44,9 +44,7 @@ _SELECTION_ARGS = (
     resource_tracker_licensed_items_purchases.c.modified,
 )
 
-assert set(LicensedItemsPurchasesDB.model_fields) == {
-    c.name for c in _SELECTION_ARGS
-}  # nosec
+assert set(LicensedItemsPurchasesDB.model_fields) == {c.name for c in _SELECTION_ARGS}  # nosec
 
 
 async def create(
@@ -96,10 +94,7 @@ async def list_(
         .select_from(resource_tracker_licensed_items_purchases)
         .where(
             (resource_tracker_licensed_items_purchases.c.product_name == product_name)
-            & (
-                resource_tracker_licensed_items_purchases.c.wallet_id
-                == filter_wallet_id
-            )
+            & (resource_tracker_licensed_items_purchases.c.wallet_id == filter_wallet_id)
         )
     )
 
@@ -110,16 +105,12 @@ async def list_(
     # Ordering and pagination
     if order_by.direction == OrderDirection.ASC:
         list_query = base_query.order_by(
-            sa.asc(
-                getattr(resource_tracker_licensed_items_purchases.c, order_by.field)
-            ),
+            sa.asc(getattr(resource_tracker_licensed_items_purchases.c, order_by.field)),
             resource_tracker_licensed_items_purchases.c.licensed_item_purchase_id,
         )
     else:
         list_query = base_query.order_by(
-            sa.desc(
-                getattr(resource_tracker_licensed_items_purchases.c, order_by.field)
-            ),
+            sa.desc(getattr(resource_tracker_licensed_items_purchases.c, order_by.field)),
             resource_tracker_licensed_items_purchases.c.licensed_item_purchase_id,
         )
     list_query = list_query.offset(offset).limit(limit)
@@ -130,9 +121,7 @@ async def list_(
             total_count = 0
 
         result = await conn.stream(list_query)
-        items: list[LicensedItemsPurchasesDB] = [
-            LicensedItemsPurchasesDB.model_validate(row) async for row in result
-        ]
+        items: list[LicensedItemsPurchasesDB] = [LicensedItemsPurchasesDB.model_validate(row) async for row in result]
 
         return cast(int, total_count), items
 
@@ -148,10 +137,7 @@ async def get(
         sa.select(*_SELECTION_ARGS)
         .select_from(resource_tracker_licensed_items_purchases)
         .where(
-            (
-                resource_tracker_licensed_items_purchases.c.licensed_item_purchase_id
-                == licensed_item_purchase_id
-            )
+            (resource_tracker_licensed_items_purchases.c.licensed_item_purchase_id == licensed_item_purchase_id)
             & (resource_tracker_licensed_items_purchases.c.product_name == product_name)
         )
     )
@@ -160,9 +146,7 @@ async def get(
         result = await conn.stream(base_query)
         row = await result.first()
         if row is None:
-            raise LicensedItemPurchaseNotFoundError(
-                licensed_item_purchase_id=licensed_item_purchase_id
-            )
+            raise LicensedItemPurchaseNotFoundError(licensed_item_purchase_id=licensed_item_purchase_id)
         return LicensedItemsPurchasesDB.model_validate(row)
 
 
@@ -180,16 +164,11 @@ async def get_active_purchased_seats_for_key_version_wallet(
     """
     _current_time = datetime.now(tz=UTC)
 
-    sum_stmt = sa.select(
-        sa.func.sum(resource_tracker_licensed_items_purchases.c.num_of_seats)
-    ).where(
+    sum_stmt = sa.select(sa.func.sum(resource_tracker_licensed_items_purchases.c.num_of_seats)).where(
         (resource_tracker_licensed_items_purchases.c.wallet_id == wallet_id)
         & (resource_tracker_licensed_items_purchases.c.key == key)
         # If purchased version >= requested version, it covers that version
-        & (
-            db_utils.version(resource_tracker_licensed_items_purchases.c.version)
-            >= db_utils.version(version)
-        )
+        & (db_utils.version(resource_tracker_licensed_items_purchases.c.version) >= db_utils.version(version))
         & (resource_tracker_licensed_items_purchases.c.product_name == product_name)
         & (resource_tracker_licensed_items_purchases.c.start_at <= _current_time)
         & (resource_tracker_licensed_items_purchases.c.expire_at >= _current_time)

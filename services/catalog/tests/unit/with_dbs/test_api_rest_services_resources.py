@@ -125,9 +125,7 @@ class _ServiceResourceParams:
                     _DEFAULT_RESOURCES,
                     {
                         "CPU": ResourceValue(limit=4.0, reservation=0.1),
-                        "RAM": ResourceValue(
-                            limit=ByteSize(17179869184), reservation=ByteSize(536870912)
-                        ),
+                        "RAM": ResourceValue(limit=ByteSize(17179869184), reservation=ByteSize(536870912)),
                         "VRAM": ResourceValue(limit=1, reservation=1),
                         "AIRAM": ResourceValue(limit=0, reservation="some_string"),
                     },
@@ -201,9 +199,7 @@ async def test_get_service_resources(
     assert isinstance(received_resources, dict)
 
     expected_service_resources = ServiceResourcesDictHelpers.create_from_single_service(
-        TypeAdapter(DockerGenericTag).validate_python(
-            f"{service_key}:{service_version}"
-        ),
+        TypeAdapter(DockerGenericTag).validate_python(f"{service_key}:{service_version}"),
         params.expected_resources,
         boot_modes=params.expected_boot_modes,
     )
@@ -217,9 +213,7 @@ def create_mock_director_service_labels(
 ) -> Callable:
     def factory(services_labels: dict[str, dict[str, Any]]) -> None:
         for service_name, data in services_labels.items():
-            encoded_key = urllib.parse.quote_plus(
-                f"simcore/services/dynamic/{service_name}"
-            )
+            encoded_key = urllib.parse.quote_plus(f"simcore/services/dynamic/{service_name}")
             for k, mock_key in enumerate((encoded_key, service_name)):
                 mocked_director_rest_api_base.get(
                     url__regex=rf"v0/services/{mock_key}/[\w/.]+/labels",
@@ -244,9 +238,7 @@ def create_mock_director_service_labels(
                 "sym-server": {"simcore.service.settings": "[]"},
             },
             TypeAdapter(ServiceResourcesDict).validate_python(
-                ServiceResourcesDictHelpers.model_config["json_schema_extra"][
-                    "examples"
-                ][1]
+                ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"][1]
             ),
             "simcore/services/dynamic/sim4life-dy",
             "3.0.0",
@@ -268,9 +260,7 @@ def create_mock_director_service_labels(
                             "CPU": {"limit": 0.1, "reservation": 0.1},
                             "RAM": {
                                 "limit": TypeAdapter(ByteSize).validate_python("2Gib"),
-                                "reservation": TypeAdapter(ByteSize).validate_python(
-                                    "2Gib"
-                                ),
+                                "reservation": TypeAdapter(ByteSize).validate_python("2Gib"),
                             },
                         },
                     },
@@ -280,9 +270,7 @@ def create_mock_director_service_labels(
                             "CPU": {"limit": 0.1, "reservation": 0.1},
                             "RAM": {
                                 "limit": TypeAdapter(ByteSize).validate_python("2Gib"),
-                                "reservation": TypeAdapter(ByteSize).validate_python(
-                                    "2Gib"
-                                ),
+                                "reservation": TypeAdapter(ByteSize).validate_python("2Gib"),
                             },
                         },
                     },
@@ -329,8 +317,6 @@ async def test_get_service_resources_raises_errors(
     response = client.get(f"{url}")
     assert response.status_code == httpx.codes.SERVICE_UNAVAILABLE, f"{response.text}"
     # simulate a missing service
-    mocked_director_service_labels.respond(
-        httpx.codes.NOT_FOUND, json={"error": "service not found"}
-    )
+    mocked_director_service_labels.respond(httpx.codes.NOT_FOUND, json={"error": "service not found"})
     response = client.get(f"{url}")
     assert response.status_code == httpx.codes.NOT_FOUND, f"{response.text}"

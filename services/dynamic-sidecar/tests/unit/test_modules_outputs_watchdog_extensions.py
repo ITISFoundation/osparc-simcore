@@ -30,9 +30,7 @@ async def _generate_events(dir_path: Path, event_count: int = 10) -> None:
 
 
 @pytest.mark.parametrize("fail_once", [True, False])
-async def test_regression_watchdog_blocks_on_handler_error(
-    path_to_observe: Path, fail_once: bool
-):
+async def test_regression_watchdog_blocks_on_handler_error(path_to_observe: Path, fail_once: bool):
     raised_error = False
     event_handler = Mock()
 
@@ -70,9 +68,7 @@ async def test_regression_watchdog_blocks_on_handler_error(
 
 
 @pytest.mark.parametrize("user_code_raises_error", [True, False])
-async def test_safe_file_system_event_handler(
-    mocked_file_system_event: FileSystemEvent, user_code_raises_error: bool
-):
+async def test_safe_file_system_event_handler(mocked_file_system_event: FileSystemEvent, user_code_raises_error: bool):
     class MockedEventHandler(SafeFileSystemEventHandler):
         def event_handler(self, _: FileSystemEvent) -> None:
             if user_code_raises_error:

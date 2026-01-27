@@ -57,14 +57,8 @@ async def cleanup_check_rabbitmq_server_has_no_errors(
     RABBIT_SKIPPED_WARNINGS = [
         "rebuilding indices from scratch",
     ]
-    filtered_warning_logs = [
-        log
-        for log in warning_logs
-        if all(w not in log for w in RABBIT_SKIPPED_WARNINGS)
-    ]
-    assert (
-        not filtered_warning_logs
-    ), f"warning(s) found in rabbitmq logs for {request.function}"
+    filtered_warning_logs = [log for log in warning_logs if all(w not in log for w in RABBIT_SKIPPED_WARNINGS)]
+    assert not filtered_warning_logs, f"warning(s) found in rabbitmq logs for {request.function}"
     assert not error_logs, f"error(s) found in rabbitmq logs for {request.function}"
     print("<-- no error founds in rabbitmq server logs, that's great. good job!")
 
@@ -72,9 +66,7 @@ async def cleanup_check_rabbitmq_server_has_no_errors(
 @pytest.fixture
 def random_exchange_name() -> Callable[[], str]:
     def _creator() -> str:
-        faker = (
-            Faker()
-        )  # NOTE: this ensure the faker seed is new each time, since we do not clean the exchanges
+        faker = Faker()  # NOTE: this ensure the faker seed is new each time, since we do not clean the exchanges
         return f"pytest_fake_exchange_{faker.pystr()}"
 
     return _creator

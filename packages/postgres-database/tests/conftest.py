@@ -89,9 +89,7 @@ def _make_asyncpg_engine(postgres_service: str) -> Callable[[bool], AsyncEngine]
             dsn,
             pool_size=minsize,
             max_overflow=maxsize - minsize,
-            connect_args={
-                "server_settings": {"application_name": "postgres_database_tests"}
-            },
+            connect_args={"server_settings": {"application_name": "postgres_database_tests"}},
             pool_pre_ping=True,  # https://docs.sqlalchemy.org/en/14/core/pooling.html#dealing-with-disconnects
             future=True,  # this uses sqlalchemy 2.0 API, shall be removed when sqlalchemy 2.0 is released
             echo=echo,
@@ -200,9 +198,7 @@ async def asyncpg_engine(  # <-- WE SHOULD USE THIS ONE
     pg_sa_engine: sqlalchemy.engine.Engine,
     _make_asyncpg_engine: Callable[[bool], AsyncEngine],
 ) -> AsyncIterator[AsyncEngine]:
-    assert (
-        pg_sa_engine
-    ), "Ensures pg db up, responsive, init (w/ tables) and/or migrated"
+    assert pg_sa_engine, "Ensures pg db up, responsive, init (w/ tables) and/or migrated"
 
     _apg_engine = _make_asyncpg_engine(is_pdb_enabled)
 
@@ -242,9 +238,7 @@ def create_fake_group(sync_engine: sqlalchemy.engine.Engine) -> Iterator[Callabl
         if "type" not in overrides:
             overrides["type"] = GroupType.STANDARD
         result: ResultProxy = await conn.execute(
-            groups.insert()
-            .values(**random_group(**overrides))
-            .returning(sa.literal_column("*"))
+            groups.insert().values(**random_group(**overrides)).returning(sa.literal_column("*"))
         )
         group = await result.fetchone()
         assert group
@@ -264,10 +258,7 @@ def create_fake_user(sync_engine: sqlalchemy.engine.Engine) -> Iterator[Callable
 
     created_ids = []
 
-    async def _creator(
-        conn: SAConnection, group: RowProxy | None = None, **overrides
-    ) -> RowProxy:
-
+    async def _creator(conn: SAConnection, group: RowProxy | None = None, **overrides) -> RowProxy:
         user_id = await postgres_users.insert_user_and_secrets(
             conn,
             **overrides,
@@ -285,9 +276,7 @@ def create_fake_user(sync_engine: sqlalchemy.engine.Engine) -> Iterator[Callable
 
         if group:
             assert group.type == GroupType.STANDARD.name
-            result = await conn.execute(
-                user_to_groups.insert().values(uid=user.id, gid=group.gid)
-            )
+            result = await conn.execute(user_to_groups.insert().values(uid=user.id, gid=group.gid))
             assert result
         return user
 
@@ -304,15 +293,9 @@ async def create_fake_project(
 ) -> AsyncIterator[Callable[..., Awaitable[RowProxy]]]:
     created_project_uuids = []
 
-    async def _creator(
-        conn, user: RowProxy, product: RowProxy, **overrides
-    ) -> RowProxy:
-        prj_to_insert = random_project(
-            prj_owner=user.id, product_name=product.name, **overrides
-        )
-        result = await conn.execute(
-            projects.insert().values(**prj_to_insert).returning(projects)
-        )
+    async def _creator(conn, user: RowProxy, product: RowProxy, **overrides) -> RowProxy:
+        prj_to_insert = random_project(prj_owner=user.id, product_name=product.name, **overrides)
+        result = await conn.execute(projects.insert().values(**prj_to_insert).returning(projects))
         assert result
         new_project = await result.first()
         assert new_project
@@ -322,9 +305,7 @@ async def create_fake_project(
     yield _creator
 
     async with aiopg_engine.acquire() as conn:
-        await conn.execute(
-            projects.delete().where(projects.c.uuid.in_(created_project_uuids))
-        )
+        await conn.execute(projects.delete().where(projects.c.uuid.in_(created_project_uuids)))
 
 
 @pytest.fixture
@@ -358,9 +339,7 @@ async def create_fake_product(
         async with asyncpg_engine.begin() as connection:
             result = await connection.execute(
                 sa.insert(products)
-                .values(
-                    name=product_name, host_regex=".*", base_url="https://example.com"
-                )
+                .values(name=product_name, host_regex=".*", base_url="https://example.com")
                 .returning(sa.literal_column("*"))
             )
             assert result
@@ -371,6 +350,4 @@ async def create_fake_product(
     yield _creator
 
     async with asyncpg_engine.begin() as conn:
-        await conn.execute(
-            products.delete().where(products.c.name.in_(created_product_names))
-        )
+        await conn.execute(products.delete().where(products.c.name.in_(created_product_names)))

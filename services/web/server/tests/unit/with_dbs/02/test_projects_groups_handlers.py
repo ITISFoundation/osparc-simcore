@@ -20,9 +20,7 @@ from simcore_service_webserver.db.models import UserRole
 from simcore_service_webserver.projects.models import ProjectDict
 
 
-@pytest.mark.acceptance_test(
-    "Driving test for https://github.com/ITISFoundation/osparc-issues/issues/1547"
-)
+@pytest.mark.acceptance_test("Driving test for https://github.com/ITISFoundation/osparc-issues/issues/1547")
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_200_OK)])
 async def test_projects_groups_full_workflow(  # noqa: PLR0915
     mocked_dynamic_services_interface: dict[str, mock.MagicMock],
@@ -33,9 +31,7 @@ async def test_projects_groups_full_workflow(  # noqa: PLR0915
 ):
     assert client.app
     # check the default project permissions
-    url = client.app.router["list_project_groups"].url_for(
-        project_id=f"{user_project['uuid']}"
-    )
+    url = client.app.router["list_project_groups"].url_for(project_id=f"{user_project['uuid']}")
     resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(data) == 1
@@ -51,18 +47,14 @@ async def test_projects_groups_full_workflow(  # noqa: PLR0915
     resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(data["accessRights"]) == 1
-    assert data["accessRights"] == {
-        f"{logged_user['primary_gid']}": {"read": True, "write": True, "delete": True}
-    }
+    assert data["accessRights"] == {f"{logged_user['primary_gid']}": {"read": True, "write": True, "delete": True}}
 
     # List project endpoint and check permissions
     url = client.app.router["list_projects"].url_for()
     resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(data[0]["accessRights"]) == 1
-    assert data[0]["accessRights"] == {
-        f"{logged_user['primary_gid']}": {"read": True, "write": True, "delete": True}
-    }
+    assert data[0]["accessRights"] == {f"{logged_user['primary_gid']}": {"read": True, "write": True, "delete": True}}
 
     async with NewUser(
         app=client.app,
@@ -72,15 +64,11 @@ async def test_projects_groups_full_workflow(  # noqa: PLR0915
             project_id=f"{user_project['uuid']}",
             group_id=f"{new_user['primary_gid']}",
         )
-        resp = await client.post(
-            f"{url}", json={"read": True, "write": False, "delete": False}
-        )
+        resp = await client.post(f"{url}", json={"read": True, "write": False, "delete": False})
         data, _ = await assert_status(resp, status.HTTP_201_CREATED)
 
         # Check the project permissions of added user
-        url = client.app.router["list_project_groups"].url_for(
-            project_id=f"{user_project['uuid']}"
-        )
+        url = client.app.router["list_project_groups"].url_for(project_id=f"{user_project['uuid']}")
         resp = await client.get(f"{url}")
         data, _ = await assert_status(resp, status.HTTP_200_OK)
         assert len(data) == 2
@@ -132,9 +120,7 @@ async def test_projects_groups_full_workflow(  # noqa: PLR0915
             project_id=f"{user_project['uuid']}",
             group_id=f"{new_user['primary_gid']}",
         )
-        resp = await client.put(
-            f"{url}", json={"read": True, "write": True, "delete": False}
-        )
+        resp = await client.put(f"{url}", json={"read": True, "write": True, "delete": False})
         data, _ = await assert_status(resp, status.HTTP_200_OK)
         assert data["gid"] == new_user["primary_gid"]
         assert data["read"] is True
@@ -142,9 +128,7 @@ async def test_projects_groups_full_workflow(  # noqa: PLR0915
         assert data["delete"] is False
 
         # List the project groups
-        url = client.app.router["list_project_groups"].url_for(
-            project_id=f"{user_project['uuid']}"
-        )
+        url = client.app.router["list_project_groups"].url_for(project_id=f"{user_project['uuid']}")
         resp = await client.get(f"{url}")
         data, _ = await assert_status(resp, status.HTTP_200_OK)
         assert len(data) == 2
@@ -200,9 +184,7 @@ async def test_projects_groups_full_workflow(  # noqa: PLR0915
         await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
         # List the project groups
-        url = client.app.router["list_project_groups"].url_for(
-            project_id=f"{user_project['uuid']}"
-        )
+        url = client.app.router["list_project_groups"].url_for(project_id=f"{user_project['uuid']}")
         resp = await client.get(f"{url}")
         data, _ = await assert_status(resp, status.HTTP_200_OK)
         assert len(data) == 1
@@ -247,9 +229,7 @@ async def test_share_project(
     assert client.app
 
     # Share the project with a fake email
-    url = client.app.router["share_project"].url_for(
-        project_id=f"{user_project['uuid']}"
-    )
+    url = client.app.router["share_project"].url_for(project_id=f"{user_project['uuid']}")
     resp = await client.post(
         f"{url}",
         json={
@@ -267,9 +247,7 @@ async def test_share_project(
     assert not error
 
     # Verify that only logged_user["primary_gid"] has access to the project
-    url = client.app.router["list_project_groups"].url_for(
-        project_id=f"{user_project['uuid']}"
-    )
+    url = client.app.router["list_project_groups"].url_for(project_id=f"{user_project['uuid']}")
     resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(data) == 1
@@ -279,9 +257,7 @@ async def test_share_project(
     assert data[0]["delete"] is True
 
     # check an invalid
-    url = client.app.router["share_project"].url_for(
-        project_id=f"{user_project['uuid']}"
-    )
+    url = client.app.router["share_project"].url_for(project_id=f"{user_project['uuid']}")
     resp = await client.post(
         f"{url}",
         json={
@@ -318,9 +294,7 @@ async def test_share_project_with_roles(
     assert logged_user["role"] == user_role
 
     # Attempt to share the project
-    url = client.app.router["share_project"].url_for(
-        project_id=f"{user_project['uuid']}"
-    )
+    url = client.app.router["share_project"].url_for(project_id=f"{user_project['uuid']}")
     resp = await client.post(
         f"{url}",
         json={

@@ -52,9 +52,7 @@ def test_create_image_spec_impl(tests_data_dir: Path, settings: AppSettings):
         },
     )
 
-    compose_spec = create_image_spec(
-        settings, meta_cfg, docker_compose_overwrite_cfg, runtime_cfg
-    )
+    compose_spec = create_image_spec(settings, meta_cfg, docker_compose_overwrite_cfg, runtime_cfg)
     assert compose_spec.services is not None
     assert isinstance(compose_spec.services, dict)
 

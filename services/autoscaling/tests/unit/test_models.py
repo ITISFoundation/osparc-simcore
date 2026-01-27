@@ -22,9 +22,7 @@ async def test_get_simcore_service_docker_labels_from_task_with_missing_labels_r
     service_missing_osparc_labels = await create_service(task_template, {}, "running")
     assert service_missing_osparc_labels.spec
     service_tasks = TypeAdapter(list[Task]).validate_python(
-        await async_docker_client.tasks.list(
-            filters={"service": service_missing_osparc_labels.spec.name}
-        )
+        await async_docker_client.tasks.list(filters={"service": service_missing_osparc_labels.spec.name})
     )
     assert service_tasks
     assert len(service_tasks) == 1
@@ -34,9 +32,7 @@ async def test_get_simcore_service_docker_labels_from_task_with_missing_labels_r
 
 async def test_get_simcore_service_docker_labels(
     async_docker_client: aiodocker.Docker,
-    create_service: Callable[
-        [dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]
-    ],
+    create_service: Callable[[dict[str, Any], dict[DockerLabelKey, str], str], Awaitable[Service]],
     task_template: dict[str, Any],
     osparc_docker_label_keys: SimcoreContainerLabels,
 ):
@@ -47,9 +43,7 @@ async def test_get_simcore_service_docker_labels(
     )
     assert service_with_labels.spec
     service_tasks = TypeAdapter(list[Task]).validate_python(
-        await async_docker_client.tasks.list(
-            filters={"service": service_with_labels.spec.name}
-        )
+        await async_docker_client.tasks.list(filters={"service": service_with_labels.spec.name})
     )
     assert service_tasks
     assert len(service_tasks) == 1

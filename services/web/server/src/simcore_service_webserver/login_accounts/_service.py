@@ -30,9 +30,7 @@ async def send_close_account_email(
     retention_days: PositiveInt,
 ):
     template_name = "close_account.jinja2"
-    email_template_path = await products_web.get_product_template_path(
-        request, template_name
-    )
+    email_template_path = await products_web.get_product_template_path(request, template_name)
     product: Product = products_web.get_current_product(request)
 
     try:
@@ -71,13 +69,9 @@ async def send_account_request_email_to_support(
 ):
     template_name = "request_account.jinja2"
     destination_email = product.product_owners_email or product.support_email
-    email_template_path = await products_web.get_product_template_path(
-        request, template_name
-    )
+    email_template_path = await products_web.get_product_template_path(request, template_name)
     try:
-        user_email = TypeAdapter(LowerCaseEmailStr).validate_python(
-            request_form.get("email", None)
-        )
+        user_email = TypeAdapter(LowerCaseEmailStr).validate_python(request_form.get("email"))
     except ValidationError:
         user_email = None
 
@@ -118,9 +112,7 @@ async def create_captcha() -> tuple[str, bytes]:
         image = ImageCaptcha(width=140, height=45)
 
         # Generate image
-        data: Image = image.create_captcha_image(
-            chars=captcha_text, color=(221, 221, 221), background=(0, 20, 46)
-        )
+        data: Image = image.create_captcha_image(chars=captcha_text, color=(221, 221, 221), background=(0, 20, 46))
 
         img_byte_arr = BytesIO()
         data.save(img_byte_arr, format="PNG")
@@ -138,7 +130,4 @@ async def create_pre_registration(
     profile: UserAccountRestPreRegister,
     product_name: ProductName,
 ):
-
-    await _accounts_service.pre_register_user(
-        app, profile=profile, creator_user_id=None, product_name=product_name
-    )
+    await _accounts_service.pre_register_user(app, profile=profile, creator_user_id=None, product_name=product_name)

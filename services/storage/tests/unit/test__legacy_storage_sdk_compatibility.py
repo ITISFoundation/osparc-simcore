@@ -231,12 +231,11 @@ async def test_storage_client_used_in_simcore_sdk_0_3_2(
         print(f"{resp_model=}")
         assert resp_model.error is None
 
-        async with aiohttp.ClientSession() as session:
-            async with session.get(resp_model.data.link) as r:
-                print(r.status)
-                downloaded_content = await r.text()
-                assert r.status == 200, downloaded_content
-                assert uploaded_content == downloaded_content
+        async with aiohttp.ClientSession() as session, session.get(resp_model.data.link) as r:
+            print(r.status)
+            downloaded_content = await r.text()
+            assert r.status == 200, downloaded_content
+            assert uploaded_content == downloaded_content
 
     finally:
         del api_client

@@ -106,18 +106,14 @@ async def test_operation_is_missing(
         await after_event_manager.register_to_start_after(
             schedule_id,
             event_type,
-            to_start=OperationToStart(
-                operation_name="missing_operation", initial_context={}
-            ),
+            to_start=OperationToStart(operation_name="missing_operation", initial_context={}),
         )
     await ensure_keys_in_store(after_event_manager.app, expected_keys=set())
 
 
 class _BS(BaseStep):
     @classmethod
-    async def execute(
-        cls, app: FastAPI, required_context: RequiredOperationContext
-    ) -> ProvidedOperationContext | None:
+    async def execute(cls, app: FastAPI, required_context: RequiredOperationContext) -> ProvidedOperationContext | None:
         _ = app
         _ = required_context
 
@@ -170,10 +166,6 @@ async def test_workflow(
     await events_proxy.delete()
     await ensure_keys_in_store(after_event_manager.app, expected_keys=set())
 
-    await after_event_manager.safe_on_event_type(
-        event_type, schedule_id, operation_name, initial_context
-    )
+    await after_event_manager.safe_on_event_type(event_type, schedule_id, operation_name, initial_context)
 
-    assert mock_start_operation.call_args_list == [
-        call(after_event_manager.app, operation_name, initial_context)
-    ]
+    assert mock_start_operation.call_args_list == [call(after_event_manager.app, operation_name, initial_context)]

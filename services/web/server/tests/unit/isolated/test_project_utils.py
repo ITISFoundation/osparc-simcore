@@ -105,13 +105,8 @@ from simcore_service_webserver.projects.utils import (
         ),
     ],
 )
-def test_find_changed_node_keys(
-    dict_a: dict[str, Any], dict_b: dict[str, Any], expected_changes: dict[str, Any]
-):
-    assert (
-        find_changed_node_keys(dict_a, dict_b, look_for_removed_keys=False)
-        == expected_changes
-    )
+def test_find_changed_node_keys(dict_a: dict[str, Any], dict_b: dict[str, Any], expected_changes: dict[str, Any]):
+    assert find_changed_node_keys(dict_a, dict_b, look_for_removed_keys=False) == expected_changes
 
 
 @pytest.mark.parametrize(
@@ -154,10 +149,7 @@ def test_find_changed_node_keys(
 def test_find_changed_node_keys_file_picker_case(
     dict_a: dict[str, Any], dict_b: dict[str, Any], expected_changes: dict[str, Any]
 ):
-    assert (
-        find_changed_node_keys(dict_a, dict_b, look_for_removed_keys=False)
-        == expected_changes
-    )
+    assert find_changed_node_keys(dict_a, dict_b, look_for_removed_keys=False) == expected_changes
 
 
 @pytest.mark.parametrize(
@@ -369,18 +361,12 @@ def test_find_changed_node_keys_file_picker_case(
         ),
     ],
 )
-def test_did_node_outputs_change(
-    new_node: NodeDict, old_node: NodeDict, expected: set[str]
-) -> None:
-    assert (
-        get_frontend_node_outputs_changes(new_node=new_node, old_node=old_node)
-        == expected
-    )
+def test_did_node_outputs_change(new_node: NodeDict, old_node: NodeDict, expected: set[str]) -> None:
+    assert get_frontend_node_outputs_changes(new_node=new_node, old_node=old_node) == expected
 
 
 def test_project_type_in_models_package_same_as_in_postgres_database_package():
-
     # pylint: disable=no-member
-    assert (
-        ml_project_type.__members__.keys() == pg_project_type.__members__.keys()
-    ), f"The enum in models_library package and postgres package shall have the same values. models_pck: {ml_project_type.__members__}, postgres_pck: {pg_project_type.__members__}"
+    assert ml_project_type.__members__.keys() == pg_project_type.__members__.keys(), (
+        f"The enum in models_library package and postgres package shall have the same values. models_pck: {ml_project_type.__members__}, postgres_pck: {pg_project_type.__members__}"
+    )

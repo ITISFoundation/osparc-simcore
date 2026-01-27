@@ -25,9 +25,7 @@ IncEx = Union[set[int], set[str], dict[int, Any], dict[str, Any]]
 def generate_encoders_by_class_tuples(
     type_encoder_map: dict[Any, Callable[[Any], Any]],
 ) -> dict[Callable[[Any], Any], tuple[Any, ...]]:
-    encoders_by_class_tuples: dict[Callable[[Any], Any], tuple[Any, ...]] = defaultdict(
-        tuple
-    )
+    encoders_by_class_tuples: dict[Callable[[Any], Any], tuple[Any, ...]] = defaultdict(tuple)
     for type_, encoder in type_encoder_map.items():
         if get_origin(type_) is not Annotated:
             encoders_by_class_tuples[encoder] += (type_,)
@@ -143,10 +141,9 @@ def jsonable_encoder(
     if custom_encoder:
         if type(obj) in custom_encoder:
             return custom_encoder[type(obj)](obj)
-        else:
-            for encoder_type, encoder_instance in custom_encoder.items():
-                if isinstance(obj, encoder_type):
-                    return encoder_instance(obj)
+        for encoder_type, encoder_instance in custom_encoder.items():
+            if isinstance(obj, encoder_type):
+                return encoder_instance(obj)
     if include is not None and not isinstance(include, (set, dict)):
         include = set(include)
     if exclude is not None and not isinstance(exclude, (set, dict)):
@@ -200,11 +197,7 @@ def jsonable_encoder(
             allowed_keys -= set(exclude)
         for key, value in obj.items():
             if (
-                (
-                    not sqlalchemy_safe
-                    or (not isinstance(key, str))
-                    or (not key.startswith("_sa"))
-                )
+                (not sqlalchemy_safe or (not isinstance(key, str)) or (not key.startswith("_sa")))
                 and (value is not None or not exclude_none)
                 and key in allowed_keys
             ):

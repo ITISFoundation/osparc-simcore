@@ -80,9 +80,7 @@ def expected_director_rest_api_list_services(
 ) -> list[dict[str, Any]]:
     # OVERRIDES: Changes the values returned by the mocked_director_service_api
 
-    return create_director_list_services_from(
-        expected_director_rest_api_list_services, fake_services_data
-    )
+    return create_director_list_services_from(expected_director_rest_api_list_services, fake_services_data)
 
 
 @pytest.fixture
@@ -119,7 +117,6 @@ async def test_list_latest_catalog_services(
     director_client: DirectorClient,
     num_services: int,
 ):
-
     offset = 1
     limit = 2
     assert limit < num_services
@@ -154,9 +151,7 @@ async def test_list_latest_catalog_services(
             service_version=item.version,
         )
 
-        assert got.model_dump(exclude={"history"}) == item.model_dump(
-            exclude={"release"}
-        )
+        assert got.model_dump(exclude={"history"}) == item.model_dump(exclude={"release"})
         assert item.release in got.history
 
     # since it is cached, it should only call it `limit` times
@@ -184,9 +179,7 @@ async def test_batch_get_my_services(
     other_service_key = "simcore/services/comp/other-service"
     other_service_version = "2.1.2"
 
-    expected_retirement = datetime.utcnow() + timedelta(
-        days=1
-    )  # NOTE: old offset-naive column
+    expected_retirement = datetime.utcnow() + timedelta(days=1)  # NOTE: old offset-naive column
 
     # Owned by user
     fake_service_1 = create_fake_service_data(
@@ -255,9 +248,7 @@ async def test_batch_get_my_services(
                     "version_display": None,
                     "released": my_services[0].release.released,
                     "retired": expected_retirement,
-                    "compatibility": {
-                        "can_update_to": {"version": service_version_2}
-                    },  # can be updated
+                    "compatibility": {"can_update_to": {"version": service_version_2}},  # can be updated
                 },
                 "owner": user["primary_gid"],
                 "my_access_rights": {"execute": True, "write": True},  # full access
@@ -398,9 +389,7 @@ async def test_batch_get_my_services_empty_ids_raises_validation_error(
         )
 
     # Verify it's a validation error related to the min_length constraint
-    assert "at least 1 item" in str(exc_info.value) or "min_length" in str(
-        exc_info.value
-    )
+    assert "at least 1 item" in str(exc_info.value) or "min_length" in str(exc_info.value)
 
 
 async def test_batch_get_my_services_deduplication(
@@ -448,9 +437,7 @@ async def test_batch_get_my_services_deduplication(
     )
 
     # ASSERT
-    assert (
-        len(result.found_items) == 1
-    )  # Only one service should be returned despite duplicates
+    assert len(result.found_items) == 1  # Only one service should be returned despite duplicates
     assert len(result.missing_identifiers) == 0
 
     found_service = result.found_items[0]
@@ -477,27 +464,23 @@ async def test_list_all_vs_latest_services(
     offset = 0
 
     # Get latest services first
-    latest_total_count, latest_found_items = (
-        await catalog_services.list_latest_catalog_services(
-            services_repo,
-            director_client,
-            product_name=target_product,
-            user_id=user_id,
-            limit=limit,
-            offset=offset,
-        )
+    latest_total_count, latest_found_items = await catalog_services.list_latest_catalog_services(
+        services_repo,
+        director_client,
+        product_name=target_product,
+        user_id=user_id,
+        limit=limit,
+        offset=offset,
     )
 
     # Get all services as summaries
-    all_total_count, all_found_items = (
-        await catalog_services.list_all_service_summaries(
-            services_repo,
-            director_client,
-            product_name=target_product,
-            user_id=user_id,
-            limit=limit,
-            offset=offset,
-        )
+    all_total_count, all_found_items = await catalog_services.list_all_service_summaries(
+        services_repo,
+        director_client,
+        product_name=target_product,
+        user_id=user_id,
+        limit=limit,
+        offset=offset,
     )
 
     # Verify counts

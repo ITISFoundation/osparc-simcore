@@ -65,9 +65,7 @@ def app_environment(
     )
 
 
-@pytest.mark.acceptance_test(
-    "https://github.com/ITISFoundation/osparc-simcore/pull/4715"
-)
+@pytest.mark.acceptance_test("https://github.com/ITISFoundation/osparc-simcore/pull/4715")
 async def test_successful_one_time_payment_workflow(
     is_pdb_enabled: bool,
     app: FastAPI,
@@ -96,66 +94,60 @@ async def test_successful_one_time_payment_workflow(
         autospec=True,
     )
 
-    async with insert_and_get_user_and_secrets_lifespan(
-        sqlalchemy_async_engine, id=user_id
-    ) as user_row:
-        async with insert_and_get_product_lifespan(
-            sqlalchemy_async_engine, name=product["name"]
-        ) as product_row:
-            product_name = product_row["name"]
-            async with insert_and_get_wallet_lifespan(
-                sqlalchemy_async_engine,
-                product_name=product_name,
-                user_group_id=user_row["primary_gid"],
+    async with (
+        insert_and_get_user_and_secrets_lifespan(sqlalchemy_async_engine, id=user_id) as user_row,
+        insert_and_get_product_lifespan(sqlalchemy_async_engine, name=product["name"]) as product_row,
+    ):
+        product_name = product_row["name"]
+        async with insert_and_get_wallet_lifespan(
+            sqlalchemy_async_engine,
+            product_name=product_name,
+            user_group_id=user_row["primary_gid"],
+            wallet_id=wallet_id,
+        ):
+            # ACK via api/rest
+            inited = await rpc_client.request(
+                PAYMENTS_RPC_NAMESPACE,
+                TypeAdapter(RPCMethodName).validate_python("init_payment"),
+                amount_dollars=1000,
+                target_credits=10000,
+                product_name="osparc",
                 wallet_id=wallet_id,
-            ):
-                # ACK via api/rest
-                inited = await rpc_client.request(
-                    PAYMENTS_RPC_NAMESPACE,
-                    TypeAdapter(RPCMethodName).validate_python("init_payment"),
-                    amount_dollars=1000,
-                    target_credits=10000,
-                    product_name="osparc",
-                    wallet_id=wallet_id,
-                    wallet_name=wallet_name,
-                    user_id=user_id,
-                    user_name=user_name,
-                    user_email=user_email,
-                    user_address=UserInvoiceAddress(country="CH"),
-                    stripe_price_id=product_price_stripe_price_id,
-                    stripe_tax_rate_id=product_price_stripe_tax_rate_id,
-                    timeout_s=None if is_pdb_enabled else RPC_REQUEST_DEFAULT_TIMEOUT_S,
-                )
+                wallet_name=wallet_name,
+                user_id=user_id,
+                user_name=user_name,
+                user_email=user_email,
+                user_address=UserInvoiceAddress(country="CH"),
+                stripe_price_id=product_price_stripe_price_id,
+                stripe_tax_rate_id=product_price_stripe_tax_rate_id,
+                timeout_s=None if is_pdb_enabled else RPC_REQUEST_DEFAULT_TIMEOUT_S,
+            )
 
-                assert isinstance(inited, WalletPaymentInitiated)
-                assert mock_payments_gateway_service_or_none.routes[
-                    "init_payment"
-                ].called
+            assert isinstance(inited, WalletPaymentInitiated)
+            assert mock_payments_gateway_service_or_none.routes["init_payment"].called
 
-                # ACK
-                response = await client.post(
-                    f"/v1/payments/{inited.payment_id}:ack",
-                    json=jsonable_encoder(
-                        AckPayment(success=True, invoice_url=faker.url()).model_dump()
-                    ),
-                    headers=auth_headers,
-                )
+            # ACK
+            response = await client.post(
+                f"/v1/payments/{inited.payment_id}:ack",
+                json=jsonable_encoder(AckPayment(success=True, invoice_url=faker.url()).model_dump()),
+                headers=auth_headers,
+            )
 
-                assert response.status_code == status.HTTP_200_OK
-                assert mock_on_payment_completed.called
+            assert response.status_code == status.HTTP_200_OK
+            assert mock_on_payment_completed.called
 
-                # LIST payments via api/rest
-                got = await rpc_client.request(
-                    PAYMENTS_RPC_NAMESPACE,
-                    TypeAdapter(RPCMethodName).validate_python("get_payments_page"),
-                    user_id=user_id,
-                    product_name="osparc",
-                    timeout_s=None if is_pdb_enabled else RPC_REQUEST_DEFAULT_TIMEOUT_S,
-                )
+            # LIST payments via api/rest
+            got = await rpc_client.request(
+                PAYMENTS_RPC_NAMESPACE,
+                TypeAdapter(RPCMethodName).validate_python("get_payments_page"),
+                user_id=user_id,
+                product_name="osparc",
+                timeout_s=None if is_pdb_enabled else RPC_REQUEST_DEFAULT_TIMEOUT_S,
+            )
 
-                total_number_of_items, transactions = got
-                assert total_number_of_items == 1
-                assert len(transactions) == 1
+            total_number_of_items, transactions = got
+            assert total_number_of_items == 1
+            assert len(transactions) == 1
 
-                assert transactions[0].state == "SUCCESS"
-                assert transactions[0].payment_id == inited.payment_id
+            assert transactions[0].state == "SUCCESS"
+            assert transactions[0].payment_id == inited.payment_id

@@ -21,15 +21,12 @@ async def test_rest_dependency_authentication(
     api_key_repo: ApiKeysRepository,
     users_repo: UsersRepository,
 ):
-
     # Generate a fake API key
     # Act
     result = await get_current_identity(
         apikeys_repo=api_key_repo,
         users_repo=users_repo,
-        credentials=HTTPBasicCredentials(
-            username=api_key_in_db.api_key, password=api_key_in_db.api_secret
-        ),
+        credentials=HTTPBasicCredentials(username=api_key_in_db.api_key, password=api_key_in_db.api_secret),
     )
 
     # Assert
@@ -48,9 +45,7 @@ async def test_cache_effectiveness_in_rest_authentication_dependencies(
     """Test that caching reduces database calls and improves performance."""
 
     # Generate a fake API key
-    credentials = HTTPBasicCredentials(
-        username=api_key_in_db.api_key, password=api_key_in_db.api_secret
-    )
+    credentials = HTTPBasicCredentials(username=api_key_in_db.api_key, password=api_key_in_db.api_secret)
 
     # Get cache instances from repository methods
     # pylint: disable=no-member
@@ -126,23 +121,14 @@ async def test_cache_effectiveness_in_rest_authentication_dependencies(
     # ASSERTIONS
     # All results should be identical
     assert result1.user_id == result2.user_id == result3.user_id == result4.user_id
-    assert (
-        result1.product_name
-        == result2.product_name
-        == result3.product_name
-        == result4.product_name
-    )
+    assert result1.product_name == result2.product_name == result3.product_name == result4.product_name
     assert result1.email == result2.email == result3.email == result4.email
 
     # With cache: second call should be significantly faster
-    assert (
-        second_call_time < first_call_time * 0.5
-    ), "Cache should make subsequent calls faster"
+    assert second_call_time < first_call_time * 0.5, "Cache should make subsequent calls faster"
 
     # Without cache: both calls should take similar time
-    time_ratio = abs(no_cache_second_time - no_cache_first_time) / max(
-        no_cache_first_time, no_cache_second_time
-    )
+    time_ratio = abs(no_cache_second_time - no_cache_first_time) / max(no_cache_first_time, no_cache_second_time)
     assert time_ratio < 0.5, "Without cache, call times should be similar"
 
     # With cache: fewer total database calls (due to caching)

@@ -22,8 +22,6 @@ def setup_controller(app: web.Application, settings: StudiesDispatcherSettings):
             __name__,
         )
 
-    app.router.add_routes(
-        [web.get("/view", redirect_handler, name="get_redirection_to_viewer")]
-    )
+    app.router.add_routes([web.get("/view", redirect_handler, name="get_redirection_to_viewer")])
 
     app.router.add_routes(nih_routes)

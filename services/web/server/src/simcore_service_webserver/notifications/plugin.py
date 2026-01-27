@@ -37,9 +37,5 @@ def setup_notifications(app: web.Application):
     setup_socketio(app)
     # Subscribe to rabbit upon startup for logs, progress and other
     # metrics on the execution reported by sidecars
-    app.cleanup_ctx.append(
-        _rabbitmq_exclusive_queue_consumers.on_cleanup_ctx_rabbitmq_consumers
-    )
-    app.cleanup_ctx.append(
-        _rabbitmq_nonexclusive_queue_consumers.on_cleanup_ctx_rabbitmq_consumers
-    )
+    app.cleanup_ctx.append(_rabbitmq_exclusive_queue_consumers.on_cleanup_ctx_rabbitmq_consumers)
+    app.cleanup_ctx.append(_rabbitmq_nonexclusive_queue_consumers.on_cleanup_ctx_rabbitmq_consumers)

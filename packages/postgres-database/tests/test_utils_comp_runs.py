@@ -24,12 +24,8 @@ async def sample_comp_runs(asyncpg_engine: AsyncEngine, faker: Faker):
                     "user_id": 10,
                     "iteration": 1,
                     "result": "NOT_STARTED",
-                    "created": datetime.datetime(
-                        2024, 1, 1, 10, 0, 0, tzinfo=datetime.UTC
-                    ),
-                    "modified": datetime.datetime(
-                        2024, 1, 1, 10, 0, 0, tzinfo=datetime.UTC
-                    ),
+                    "created": datetime.datetime(2024, 1, 1, 10, 0, 0, tzinfo=datetime.UTC),
+                    "modified": datetime.datetime(2024, 1, 1, 10, 0, 0, tzinfo=datetime.UTC),
                     "started": None,
                     "ended": None,
                     "cancelled": None,
@@ -46,12 +42,8 @@ async def sample_comp_runs(asyncpg_engine: AsyncEngine, faker: Faker):
                     "user_id": 10,
                     "iteration": 2,
                     "result": "NOT_STARTED",
-                    "created": datetime.datetime(
-                        2024, 1, 1, 11, 0, 0, tzinfo=datetime.UTC
-                    ),
-                    "modified": datetime.datetime(
-                        2024, 1, 1, 11, 0, 0, tzinfo=datetime.UTC
-                    ),
+                    "created": datetime.datetime(2024, 1, 1, 11, 0, 0, tzinfo=datetime.UTC),
+                    "modified": datetime.datetime(2024, 1, 1, 11, 0, 0, tzinfo=datetime.UTC),
                     "started": None,
                     "ended": None,
                     "cancelled": None,
@@ -68,12 +60,8 @@ async def sample_comp_runs(asyncpg_engine: AsyncEngine, faker: Faker):
                     "user_id": 20,
                     "iteration": 1,
                     "result": "NOT_STARTED",
-                    "created": datetime.datetime(
-                        2024, 1, 1, 12, 0, 0, tzinfo=datetime.UTC
-                    ),
-                    "modified": datetime.datetime(
-                        2024, 1, 1, 12, 0, 0, tzinfo=datetime.UTC
-                    ),
+                    "created": datetime.datetime(2024, 1, 1, 12, 0, 0, tzinfo=datetime.UTC),
+                    "modified": datetime.datetime(2024, 1, 1, 12, 0, 0, tzinfo=datetime.UTC),
                     "started": None,
                     "ended": None,
                     "cancelled": None,
@@ -90,12 +78,8 @@ async def sample_comp_runs(asyncpg_engine: AsyncEngine, faker: Faker):
                     "user_id": 30,
                     "iteration": 1,
                     "result": "NOT_STARTED",
-                    "created": datetime.datetime(
-                        2024, 1, 1, 13, 0, 0, tzinfo=datetime.UTC
-                    ),
-                    "modified": datetime.datetime(
-                        2024, 1, 1, 13, 0, 0, tzinfo=datetime.UTC
-                    ),
+                    "created": datetime.datetime(2024, 1, 1, 13, 0, 0, tzinfo=datetime.UTC),
+                    "modified": datetime.datetime(2024, 1, 1, 13, 0, 0, tzinfo=datetime.UTC),
                     "started": None,
                     "ended": None,
                     "cancelled": None,
@@ -116,24 +100,16 @@ async def sample_comp_runs(asyncpg_engine: AsyncEngine, faker: Faker):
         await conn.execute(sa.text("SET session_replication_role = DEFAULT;"))
 
 
-async def test_get_latest_run_id_for_project(
-    asyncpg_engine: AsyncEngine, sample_comp_runs: None
-):
+async def test_get_latest_run_id_for_project(asyncpg_engine: AsyncEngine, sample_comp_runs: None):
     run_id = await get_latest_run_id_for_project(asyncpg_engine, project_id="project-1")
     assert run_id == 3
 
-    run_id2 = await get_latest_run_id_for_project(
-        asyncpg_engine, project_id="project-2"
-    )
+    run_id2 = await get_latest_run_id_for_project(asyncpg_engine, project_id="project-2")
     assert run_id2 == 4
 
 
-async def test_get_latest_run_id_for_project_no_runs(
-    asyncpg_engine: AsyncEngine, sample_comp_runs: None
-):
+async def test_get_latest_run_id_for_project_no_runs(asyncpg_engine: AsyncEngine, sample_comp_runs: None):
     import uuid
 
-    output = await get_latest_run_id_for_project(
-        asyncpg_engine, project_id=str(uuid.uuid4())
-    )
+    output = await get_latest_run_id_for_project(asyncpg_engine, project_id=str(uuid.uuid4()))
     assert output is None

@@ -44,11 +44,7 @@ def resource_tracker_service_run_id(
     with postgres_db.connect() as con:
         result = con.execute(
             resource_tracker_service_runs.insert()
-            .values(
-                **random_resource_tracker_service_run(
-                    user_id=_USER_ID_1, wallet_id=_WALLET_ID
-                )
-            )
+            .values(**random_resource_tracker_service_run(user_id=_USER_ID_1, wallet_id=_WALLET_ID))
             .returning(resource_tracker_service_runs.c.service_run_id)
         )
         row = result.first()
@@ -81,30 +77,20 @@ async def test_licensed_items_checkouts_db__force_release_license_seats_by_run_i
         started_at=datetime.now(tz=UTC),
         num_of_seats=1,
     )
-    await licensed_items_checkouts_db.create(
-        engine, data=_create_license_item_checkout_db_1
-    )
+    await licensed_items_checkouts_db.create(engine, data=_create_license_item_checkout_db_1)
 
     _create_license_item_checkout_db_2 = _create_license_item_checkout_db_1.model_dump()
-    _create_license_item_checkout_db_2["licensed_item_id"] = (
-        "b1b96583-333f-44d6-b1e0-5c0a8af555bf"
-    )
+    _create_license_item_checkout_db_2["licensed_item_id"] = "b1b96583-333f-44d6-b1e0-5c0a8af555bf"
     await licensed_items_checkouts_db.create(
         engine,
-        data=CreateLicensedItemCheckoutDB.model_construct(
-            **_create_license_item_checkout_db_2
-        ),
+        data=CreateLicensedItemCheckoutDB.model_construct(**_create_license_item_checkout_db_2),
     )
 
     _create_license_item_checkout_db_3 = _create_license_item_checkout_db_1.model_dump()
-    _create_license_item_checkout_db_3["licensed_item_id"] = (
-        "38a5ce59-876f-482a-ace1-d3b2636feac6"
-    )
+    _create_license_item_checkout_db_3["licensed_item_id"] = "38a5ce59-876f-482a-ace1-d3b2636feac6"
     checkout = await licensed_items_checkouts_db.create(
         engine,
-        data=CreateLicensedItemCheckoutDB.model_construct(
-            **_create_license_item_checkout_db_3
-        ),
+        data=CreateLicensedItemCheckoutDB.model_construct(**_create_license_item_checkout_db_3),
     )
 
     _helper_time = datetime.now(UTC)

@@ -39,14 +39,12 @@ async def list_pricing_plans_without_pricing_units(
     limit: int,
 ) -> RutPricingPlanPage:
     rpc_client = get_rabbitmq_rpc_client(app)
-    output: RutPricingPlanPage = (
-        await pricing_plans.list_pricing_plans_without_pricing_units(
-            rpc_client,
-            product_name=product_name,
-            exclude_inactive=exclude_inactive,
-            offset=offset,
-            limit=limit,
-        )
+    output: RutPricingPlanPage = await pricing_plans.list_pricing_plans_without_pricing_units(
+        rpc_client,
+        product_name=product_name,
+        exclude_inactive=exclude_inactive,
+        offset=offset,
+        limit=limit,
     )
     return output
 
@@ -76,9 +74,7 @@ async def update_pricing_plan(
     app: web.Application, product_name: ProductName, data: PricingPlanUpdate
 ) -> RutPricingPlanGet:
     rpc_client = get_rabbitmq_rpc_client(app)
-    return await pricing_plans.update_pricing_plan(
-        rpc_client, product_name=product_name, data=data
-    )
+    return await pricing_plans.update_pricing_plan(rpc_client, product_name=product_name, data=data)
 
 
 ## Pricing units
@@ -107,9 +103,7 @@ async def create_pricing_unit(
         rpc_client, product_name=product_name, pricing_plan_id=data.pricing_plan_id
     )
     _validate_pricing_unit(pricing_plan.classification, data.unit_extra_info)
-    return await pricing_units.create_pricing_unit(
-        rpc_client, product_name=product_name, data=data
-    )
+    return await pricing_units.create_pricing_unit(rpc_client, product_name=product_name, data=data)
 
 
 async def update_pricing_unit(
@@ -120,9 +114,7 @@ async def update_pricing_unit(
         rpc_client, product_name=product_name, pricing_plan_id=data.pricing_plan_id
     )
     _validate_pricing_unit(pricing_plan.classification, data.unit_extra_info)
-    return await pricing_units.update_pricing_unit(
-        rpc_client, product_name=product_name, data=data
-    )
+    return await pricing_units.update_pricing_unit(rpc_client, product_name=product_name, data=data)
 
 
 def _validate_pricing_unit(classification: PricingPlanClassification, unit_extra_info):
@@ -146,10 +138,8 @@ async def list_connected_services_to_pricing_plan(
     app: web.Application, product_name: ProductName, pricing_plan_id: PricingPlanId
 ) -> list[PricingPlanToServiceGet]:
     rpc_client = get_rabbitmq_rpc_client(app)
-    output: list[PricingPlanToServiceGet] = (
-        await pricing_plans.list_connected_services_to_pricing_plan_by_pricing_plan(
-            rpc_client, product_name=product_name, pricing_plan_id=pricing_plan_id
-        )
+    output: list[PricingPlanToServiceGet] = await pricing_plans.list_connected_services_to_pricing_plan_by_pricing_plan(
+        rpc_client, product_name=product_name, pricing_plan_id=pricing_plan_id
     )
     return output
 
@@ -172,13 +162,11 @@ async def connect_service_to_pricing_plan(
     )
 
     rpc_client = get_rabbitmq_rpc_client(app)
-    output: PricingPlanToServiceGet = (
-        await pricing_plans.connect_service_to_pricing_plan(
-            rpc_client,
-            product_name=product_name,
-            pricing_plan_id=pricing_plan_id,
-            service_key=service_key,
-            service_version=service_version,
-        )
+    output: PricingPlanToServiceGet = await pricing_plans.connect_service_to_pricing_plan(
+        rpc_client,
+        product_name=product_name,
+        pricing_plan_id=pricing_plan_id,
+        service_key=service_key,
+        service_version=service_version,
     )
     return output

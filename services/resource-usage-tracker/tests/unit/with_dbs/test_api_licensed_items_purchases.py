@@ -59,9 +59,7 @@ async def test_rpc_licensed_items_purchases_workflow(
         purchased_at=datetime.now(tz=UTC),
     )
 
-    created_item = await licensed_items_purchases.create_licensed_item_purchase(
-        rpc_client, data=_create_data
-    )
+    created_item = await licensed_items_purchases.create_licensed_item_purchase(rpc_client, data=_create_data)
     assert isinstance(created_item, LicensedItemPurchaseGet)  # nosec
 
     result = await licensed_items_purchases.get_licensed_item_purchase(

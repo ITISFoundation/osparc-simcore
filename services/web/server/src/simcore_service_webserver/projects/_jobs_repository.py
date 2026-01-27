@@ -30,15 +30,11 @@ _PROJECT_DB_COLS = get_columns_from_db_model(
 )
 
 
-def _apply_job_parent_resource_name_filter(
-    query: sa.sql.Select, prefix: str
-) -> sa.sql.Select:
+def _apply_job_parent_resource_name_filter(query: sa.sql.Select, prefix: str) -> sa.sql.Select:
     return query.where(projects_to_jobs.c.job_parent_resource_name.like(f"{prefix}%"))
 
 
-def _apply_custom_metadata_filter(
-    query: sa.sql.Select, any_metadata_fields: list[tuple[str, str]]
-) -> sa.sql.Select:
+def _apply_custom_metadata_filter(query: sa.sql.Select, any_metadata_fields: list[tuple[str, str]]) -> sa.sql.Select:
     """Apply metadata filters to query.
 
     For PostgreSQL JSONB fields, we need to extract the text value using ->> operator
@@ -51,15 +47,12 @@ def _apply_custom_metadata_filter(
         # Use ->> operator to extract the text value from JSONB
         # Then apply ILIKE for case-insensitive pattern matching
         sql_pattern = pattern.replace("*", "%")  # Convert glob-like pattern to SQL LIKE
-        metadata_fields_ilike.append(
-            projects_metadata.c.custom[key].astext.ilike(sql_pattern)
-        )
+        metadata_fields_ilike.append(projects_metadata.c.custom[key].astext.ilike(sql_pattern))
 
     return query.where(sa.or_(*metadata_fields_ilike))
 
 
 class ProjectJobsRepository(BaseRepository):
-
     async def set_project_as_job(
         self,
         connection: AsyncConnection | None = None,
@@ -116,11 +109,7 @@ class ProjectJobsRepository(BaseRepository):
         """
 
         # Step 1: Get group IDs associated with the user
-        user_groups_query = (
-            sa.select(user_to_groups.c.gid)
-            .where(user_to_groups.c.uid == user_id)
-            .subquery()
-        )
+        user_groups_query = sa.select(user_to_groups.c.gid).where(user_to_groups.c.uid == user_id).subquery()
 
         # Step 2: Create access_query to filter projects based on product_name and read access
         access_query = (
@@ -158,9 +147,7 @@ class ProjectJobsRepository(BaseRepository):
             )
 
         if filter_any_custom_metadata:
-            access_query = _apply_custom_metadata_filter(
-                access_query, filter_any_custom_metadata
-            )
+            access_query = _apply_custom_metadata_filter(access_query, filter_any_custom_metadata)
 
         # Step 4. Convert access_query to a subquery
         base_query = access_query.subquery()
@@ -196,9 +183,7 @@ class ProjectJobsRepository(BaseRepository):
             assert isinstance(total_count, int)  # nosec
 
             result = await conn.execute(list_query)
-            projects_list = TypeAdapter(list[ProjectJobDBGet]).validate_python(
-                result.fetchall()
-            )
+            projects_list = TypeAdapter(list[ProjectJobDBGet]).validate_python(result.fetchall())
 
             return total_count, projects_list
 

@@ -38,14 +38,10 @@ def _render_service_details(node_id: NodeID, service: TrackedServiceModel) -> No
             "label",
             service.dynamic_service_start.product_name,
         )
-        service_status = (
-            json_loads(service.service_status) if service.service_status else {}
-        )
+        service_status = json_loads(service.service_status) if service.service_status else {}
         dict_to_render["Service State"] = (
             "label",
-            service_status.get(
-                "state" if "boot_type" in service_status else "service_state", "N/A"
-            ),
+            service_status.get("state" if "boot_type" in service_status else "service_state", "N/A"),
         )
 
     with ui.column().classes("gap-0"):
@@ -62,7 +58,6 @@ def _render_service_details(node_id: NodeID, service: TrackedServiceModel) -> No
 
 
 def _render_buttons(node_id: NodeID, service: TrackedServiceModel) -> None:
-
     with ui.dialog() as confirm_dialog, ui.card():
         ui.markdown(f"Stop service **{node_id}**?")
         ui.label("The service will be stopped and its data will be saved.")
@@ -74,9 +69,7 @@ def _render_buttons(node_id: NodeID, service: TrackedServiceModel) -> None:
                 url = f"http://localhost:{DEFAULT_FASTAPI_PORT}{get_settings().DYNAMIC_SCHEDULER_UI_MOUNT_PATH}service/{node_id}:stop"
                 await httpx.AsyncClient(timeout=10).get(f"{url}")
 
-                ui.notify(
-                    f"Submitted stop request for {node_id}. Please give the service some time to stop!"
-                )
+                ui.notify(f"Submitted stop request for {node_id}. Please give the service some time to stop!")
 
             ui.button("Stop Now", color="red", on_click=_stop_service)
             ui.button("Cancel", on_click=confirm_dialog.close)
@@ -99,9 +92,7 @@ def _render_buttons(node_id: NodeID, service: TrackedServiceModel) -> None:
         ).tooltip("Stops the service and saves the data")
 
 
-def _render_card(
-    card_container: Element, node_id: NodeID, service: TrackedServiceModel
-) -> None:
+def _render_card(card_container: Element, node_id: NodeID, service: TrackedServiceModel) -> None:
     with card_container:  # noqa: SIM117
         with ui.column().classes("border p-1"):
             _render_service_details(node_id, service)
@@ -118,15 +109,11 @@ def _get_clean_hashable(model: TrackedServiceModel) -> dict:
 
 
 def _get_hash(items: list[tuple[NodeID, TrackedServiceModel]]) -> int:
-    return hash(
-        json_dumps([(f"{key}", _get_clean_hashable(model)) for key, model in items])
-    )
+    return hash(json_dumps([(f"{key}", _get_clean_hashable(model)) for key, model in items]))
 
 
 class CardUpdater:
-    def __init__(
-        self, parent_app: FastAPI, container: Element, services_count_label: Label
-    ) -> None:
+    def __init__(self, parent_app: FastAPI, container: Element, services_count_label: Label) -> None:
         self.parent_app = parent_app
         self.container = container
         self.services_count_label = services_count_label
@@ -134,9 +121,7 @@ class CardUpdater:
 
     async def update(self) -> None:
         tracked_services = await get_all_tracked_services(self.parent_app)
-        tracked_items: list[tuple[NodeID, TrackedServiceModel]] = sorted(
-            tracked_services.items(), reverse=True
-        )
+        tracked_items: list[tuple[NodeID, TrackedServiceModel]] = sorted(tracked_services.items(), reverse=True)
 
         current_hash = _get_hash(tracked_items)
 

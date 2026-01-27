@@ -28,18 +28,14 @@ _exceptions_handlers_map: ExceptionHandlersMap = {}
 _logger = logging.getLogger(__name__)
 
 
-async def _handler_director_service_error_as_503_or_4xx(
-    request: web.Request, exception: Exception
-) -> web.Response:
+async def _handler_director_service_error_as_503_or_4xx(request: web.Request, exception: Exception) -> web.Response:
     """
     Handles DirectorV2ServiceError exceptions by returning:
       - HTTP 503 Service Unavailable if the underlying director-v2 service returns a 5XX server error,
       - or the original 4XX client error status and message if it is a client error.
     """
     assert isinstance(exception, DirectorV2ServiceError)  # nosec
-    assert status_codes_utils.is_error(
-        exception.status
-    ), f"DirectorV2ServiceError must be an error, got {exception=}"  # nosec
+    assert status_codes_utils.is_error(exception.status), f"DirectorV2ServiceError must be an error, got {exception=}"  # nosec
 
     if status_codes_utils.is_5xx_server_error(exception.status):
         # NOTE: All directorv2 5XX are mapped to 503
@@ -64,24 +60,20 @@ async def _handler_director_service_error_as_503_or_4xx(
                 },
             )
         )
-        error = ErrorGet.model_construct(
-            message=user_msg, support_id=oec, status=status_code
-        )
+        error = ErrorGet.model_construct(message=user_msg, support_id=oec, status=status_code)
 
     else:
         # NOTE: All directorv2 4XX are mapped one-to-one
-        assert status_codes_utils.is_4xx_client_error(
-            exception.status
-        ), f"DirectorV2ServiceError must be a client error, got {exception=}"  # nosec
+        assert status_codes_utils.is_4xx_client_error(exception.status), (
+            f"DirectorV2ServiceError must be a client error, got {exception=}"
+        )  # nosec
 
         error = ErrorGet(status=exception.status, message=f"{exception}")
 
     return create_error_response(error, status_code=error.status)
 
 
-_exceptions_handlers_map[DirectorV2ServiceError] = (
-    _handler_director_service_error_as_503_or_4xx
-)
+_exceptions_handlers_map[DirectorV2ServiceError] = _handler_director_service_error_as_503_or_4xx
 
 
 _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {

@@ -37,9 +37,7 @@ class SchedulerPublicInterface(ABC):
         """
 
     @abstractmethod
-    async def push_service_outputs(
-        self, node_uuid: NodeID, progress_callback: ProgressCallback | None = None
-    ) -> None:
+    async def push_service_outputs(self, node_uuid: NodeID, progress_callback: ProgressCallback | None = None) -> None:
         """
         Push service outputs.
         NOTE: Used by director-v2 cli.
@@ -64,9 +62,7 @@ class SchedulerPublicInterface(ABC):
         """
 
     @abstractmethod
-    async def save_service_state(
-        self, node_uuid: NodeID, progress_callback: ProgressCallback | None = None
-    ) -> None:
+    async def save_service_state(self, node_uuid: NodeID, progress_callback: ProgressCallback | None = None) -> None:
         """
         Saves the state of the service.
         NOTE: Used by director-v2 cli.
@@ -112,9 +108,7 @@ class SchedulerPublicInterface(ABC):
         """The service will be removed as soon as possible"""
 
     @abstractmethod
-    async def mark_all_services_in_wallet_for_removal(
-        self, wallet_id: WalletID
-    ) -> None:
+    async def mark_all_services_in_wallet_for_removal(self, wallet_id: WalletID) -> None:
         """When a certain threshold is reached a message for removing all the
         services running under a certain wallet_id will be received.
         """
@@ -144,9 +138,7 @@ class SchedulerPublicInterface(ABC):
         """Attach project network to service"""
 
     @abstractmethod
-    async def detach_project_network(
-        self, node_id: NodeID, project_network: str
-    ) -> None:
+    async def detach_project_network(self, node_id: NodeID, project_network: str) -> None:
         """Detach project network from service"""
 
     @abstractmethod

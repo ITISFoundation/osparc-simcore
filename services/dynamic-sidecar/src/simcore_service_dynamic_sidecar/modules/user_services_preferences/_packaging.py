@@ -8,9 +8,7 @@ from servicelib.file_utils import remove_directory
 
 from ._errors import DestinationIsNotADirectoryError, PreferencesAreTooBigError
 
-_MAX_PREFERENCES_TOTAL_SIZE: Final[ByteSize] = TypeAdapter(ByteSize).validate_python(
-    "128kib"
-)
+_MAX_PREFERENCES_TOTAL_SIZE: Final[ByteSize] = TypeAdapter(ByteSize).validate_python("128kib")
 
 
 async def dir_to_bytes(source: Path) -> bytes:
@@ -24,9 +22,7 @@ async def dir_to_bytes(source: Path) -> bytes:
 
         archive_size = archive_path.stat().st_size
         if archive_size > _MAX_PREFERENCES_TOTAL_SIZE:
-            raise PreferencesAreTooBigError(
-                size=archive_size, limit=_MAX_PREFERENCES_TOTAL_SIZE
-            )
+            raise PreferencesAreTooBigError(size=archive_size, limit=_MAX_PREFERENCES_TOTAL_SIZE)
 
         return archive_path.read_bytes()
 

@@ -30,9 +30,7 @@ async def move_folder_into_workspace(
     client_session_id: ClientSessionID | None = None,
 ) -> None:
     # 1. User needs to have delete permission on source folder
-    folder_db = await _folders_repository.get(
-        app, folder_id=folder_id, product_name=product_name
-    )
+    folder_db = await _folders_repository.get(app, folder_id=folder_id, product_name=product_name)
     workspace_is_private = True
     if folder_db.workspace_id:
         await check_user_workspace_access(
@@ -127,9 +125,7 @@ async def move_folder_into_workspace(
 
         # 9. Remove all project permissions, leave only the user who moved the project
         for project_id in project_ids:
-            await projects_groups_repository.delete_all_project_groups(
-                app, connection=conn, project_id=project_id
-            )
+            await projects_groups_repository.delete_all_project_groups(app, connection=conn, project_id=project_id)
             await projects_groups_repository.update_or_insert_project_group(
                 app,
                 connection=conn,

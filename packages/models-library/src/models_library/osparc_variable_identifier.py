@@ -3,8 +3,9 @@ from copy import deepcopy
 from typing import Annotated, Any, Final, TypeVar
 
 from common_library.errors_classes import OsparcErrorMixin
-from models_library.basic_types import ConstrainedStr
 from pydantic import BaseModel, Discriminator, PositiveInt, Tag
+
+from models_library.basic_types import ConstrainedStr
 
 from .utils.string_substitution import OSPARC_IDENTIFIER_PREFIX
 from .utils.types import get_types_from_annotated_union
@@ -23,12 +24,7 @@ class _BaseOsparcVariableIdentifier(ConstrainedStr):
         # ${VAR:-}
         # ${VAR:-default}
         # ${VAR:-{}}
-        return (
-            self.removeprefix("$$")
-            .removeprefix("$")
-            .removeprefix("{")
-            .removesuffix("}")
-        )
+        return self.removeprefix("$$").removeprefix("$").removeprefix("{").removesuffix("}")
 
     @property
     def name(self) -> str:
@@ -102,7 +98,7 @@ def replace_osparc_variable_identifier(  # noqa: C901
     value provided inside `osparc_variables`.
 
     NOTE: when using make sure that `obj` is of type `BaseModel` or
-    `OsparcVariableIdentifier` otherwise it will nto work as intended.
+    `OsparcVariableIdentifier` otherwise it will not work as intended.
 
     NOTE: if the provided `obj` is instance of OsparcVariableIdentifier in place
     replacement cannot be done. You need to assign it to the previous handler.
@@ -127,21 +123,15 @@ def replace_osparc_variable_identifier(  # noqa: C901
             obj[key] = replace_osparc_variable_identifier(value, osparc_variables)
     elif isinstance(obj, BaseModel):
         for key, value in obj.__dict__.items():
-            obj.__dict__[key] = replace_osparc_variable_identifier(
-                value, osparc_variables
-            )
+            obj.__dict__[key] = replace_osparc_variable_identifier(value, osparc_variables)
     elif isinstance(obj, list):
         for i, item in enumerate(obj):
             obj[i] = replace_osparc_variable_identifier(item, osparc_variables)
     elif isinstance(obj, tuple):
-        new_tuple = tuple(
-            replace_osparc_variable_identifier(item, osparc_variables) for item in obj
-        )
+        new_tuple = tuple(replace_osparc_variable_identifier(item, osparc_variables) for item in obj)
         obj = new_tuple  # type: ignore
     elif isinstance(obj, set):
-        new_set = {
-            replace_osparc_variable_identifier(item, osparc_variables) for item in obj
-        }
+        new_set = {replace_osparc_variable_identifier(item, osparc_variables) for item in obj}
         obj = new_set  # type: ignore
     return obj
 
@@ -149,7 +139,7 @@ def replace_osparc_variable_identifier(  # noqa: C901
 def raise_if_unresolved_osparc_variable_identifier_found(obj: Any) -> None:
     """
     NOTE: when using make sure that `obj` is of type `BaseModel` or
-    `OsparcVariableIdentifier` otherwise it will nto work as intended.
+    `OsparcVariableIdentifier` otherwise it will not work as intended.
 
     Raises:
         UnresolvedOsparcVariableIdentifierError: if not all instances of

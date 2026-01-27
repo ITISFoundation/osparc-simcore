@@ -26,6 +26,4 @@ class TaskResultCancelledError(BaseModel):
     result_type: Literal["cancelled"] = "cancelled"
 
 
-TaskExecutionResult: TypeAlias = (
-    TaskResultSuccess | TaskResultError | TaskResultCancelledError
-)
+TaskExecutionResult: TypeAlias = TaskResultSuccess | TaskResultError | TaskResultCancelledError

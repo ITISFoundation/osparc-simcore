@@ -61,7 +61,6 @@ async def update_workspace(
     workspace_id: WorkspaceID,
     **updates,
 ) -> UserWorkspaceWithAccessRights:
-
     await check_user_workspace_access(
         app=app,
         user_id=user_id,
@@ -99,9 +98,7 @@ async def delete_workspace_with_all_content(
     )
 
     # Get all root projects
-    for page_params in iter_pagination_params(
-        offset=0, limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
-    ):
+    for page_params in iter_pagination_params(offset=0, limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE):
         (
             projects,
             page_params.total_number_of_items,
@@ -117,25 +114,17 @@ async def delete_workspace_with_all_content(
             trashed=None,
             offset=page_params.offset,
             limit=page_params.limit,
-            order_by=OrderBy(
-                field=IDStr("last_change_date"), direction=OrderDirection.DESC
-            ),
+            order_by=OrderBy(field=IDStr("last_change_date"), direction=OrderDirection.DESC),
         )
 
-        workspace_root_projects: list[ProjectID] = [
-            Project(**project).uuid for project in projects
-        ]
+        workspace_root_projects: list[ProjectID] = [Project(**project).uuid for project in projects]
 
         # Delete projects properly
         for project_uuid in workspace_root_projects:
-            await delete_project_by_user(
-                app, project_uuid=project_uuid, user_id=user_id
-            )
+            await delete_project_by_user(app, project_uuid=project_uuid, user_id=user_id)
 
     # Get all root folders
-    for page_params in iter_pagination_params(
-        offset=0, limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
-    ):
+    for page_params in iter_pagination_params(offset=0, limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE):
         (
             folders,
             page_params.total_number_of_items,
@@ -151,9 +140,7 @@ async def delete_workspace_with_all_content(
             order_by=OrderBy(field=IDStr("folder_id"), direction=OrderDirection.ASC),
         )
 
-        workspace_root_folders: list[FolderID] = [
-            folder.folder_db.folder_id for folder in folders
-        ]
+        workspace_root_folders: list[FolderID] = [folder.folder_db.folder_id for folder in folders]
 
         # Delete folders properly
         for folder_id in workspace_root_folders:

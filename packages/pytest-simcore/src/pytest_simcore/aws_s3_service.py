@@ -47,17 +47,13 @@ async def _empty_bucket(s3_client: S3Client, bucket_name: str) -> None:
     for version in response.get("Versions", []):
         assert "Key" in version
         assert "VersionId" in version
-        await s3_client.delete_object(
-            Bucket=bucket_name, Key=version["Key"], VersionId=version["VersionId"]
-        )
+        await s3_client.delete_object(Bucket=bucket_name, Key=version["Key"], VersionId=version["VersionId"])
 
     # Delete all delete markers
     for marker in response.get("DeleteMarkers", []):
         assert "Key" in marker
         assert "VersionId" in marker
-        await s3_client.delete_object(
-            Bucket=bucket_name, Key=marker["Key"], VersionId=marker["VersionId"]
-        )
+        await s3_client.delete_object(Bucket=bucket_name, Key=marker["Key"], VersionId=marker["VersionId"])
 
     # Delete remaining objects in the bucket
     response = await s3_client.list_objects(Bucket=bucket_name)
@@ -67,15 +63,11 @@ async def _empty_bucket(s3_client: S3Client, bucket_name: str) -> None:
 
 
 @pytest.fixture
-async def s3_bucket(
-    s3_settings: S3Settings, s3_client: S3Client
-) -> typing.AsyncIterator[str]:
+async def s3_bucket(s3_settings: S3Settings, s3_client: S3Client) -> typing.AsyncIterator[str]:
     bucket_name = s3_settings.S3_BUCKET_NAME
 
     response = await s3_client.list_buckets()
-    bucket_exists = bucket_name in [
-        bucket_struct.get("Name") for bucket_struct in response["Buckets"]
-    ]
+    bucket_exists = bucket_name in [bucket_struct.get("Name") for bucket_struct in response["Buckets"]]
     if bucket_exists:
         await _empty_bucket(s3_client, bucket_name)
 
@@ -83,9 +75,9 @@ async def s3_bucket(
         await s3_client.create_bucket(Bucket=bucket_name)
     response = await s3_client.list_buckets()
     assert response["Buckets"]
-    assert bucket_name in [
-        bucket_struct.get("Name") for bucket_struct in response["Buckets"]
-    ], f"failed creating {bucket_name}"
+    assert bucket_name in [bucket_struct.get("Name") for bucket_struct in response["Buckets"]], (
+        f"failed creating {bucket_name}"
+    )
 
     yield bucket_name
 

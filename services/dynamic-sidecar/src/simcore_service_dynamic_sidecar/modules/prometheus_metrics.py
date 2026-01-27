@@ -35,12 +35,8 @@ def _get_user_services_scrape_interval(
     if len(last_prometheus_query_times) < _MIN_ELEMENTS:
         return _MAX_DEFAULT_METRICS_SCRAPE_INTERVAL
 
-    time_pairs: list[tuple[datetime, datetime]] = list(
-        pairwise(last_prometheus_query_times)
-    )
-    scrape_intervals: list[NonNegativeFloat] = [
-        (t2 - t1).total_seconds() for t1, t2 in time_pairs
-    ]
+    time_pairs: list[tuple[datetime, datetime]] = list(pairwise(last_prometheus_query_times))
+    scrape_intervals: list[NonNegativeFloat] = [(t2 - t1).total_seconds() for t1, t2 in time_pairs]
     average_prometheus_scrape_interval = sum(scrape_intervals) / len(scrape_intervals)
     return min(average_prometheus_scrape_interval, _MAX_DEFAULT_METRICS_SCRAPE_INTERVAL)
 
@@ -72,15 +68,11 @@ class MetricsResponse(BaseModel):
 
 
 class UserServicesMetrics:
-    def __init__(
-        self, shared_store: SharedStore, metrics_command: UserServiceCommand
-    ) -> None:
+    def __init__(self, shared_store: SharedStore, metrics_command: UserServiceCommand) -> None:
         self.shared_store: SharedStore = shared_store
         self.metrics_command: UserServiceCommand = metrics_command
 
-        self._last_prometheus_query_times: deque[datetime] = deque(
-            maxlen=_MAX_PROMETHEUS_SAMPLES
-        )
+        self._last_prometheus_query_times: deque[datetime] = deque(maxlen=_MAX_PROMETHEUS_SAMPLES)
         self._metrics_recovery_task: asyncio.Task | None = None
 
         self._metrics_response: MetricsResponse = MetricsResponse.initial_response()
@@ -94,9 +86,7 @@ class UserServicesMetrics:
             self.metrics_command.service, None
         )
         if container_name is None:
-            self._metrics_response = MetricsResponse.from_error(
-                RuntimeError(_USER_SERVICES_NOT_STARTED)
-            )
+            self._metrics_response = MetricsResponse.from_error(RuntimeError(_USER_SERVICES_NOT_STARTED))
             return
 
         try:
@@ -125,39 +115,27 @@ class UserServicesMetrics:
                 # the metrics again.
                 # If Prometheus is actively scraping this container, it will match it's
                 # scraping rate to provide up to date metrics.
-                await asyncio.sleep(
-                    _get_user_services_scrape_interval(
-                        self._last_prometheus_query_times
-                    )
-                )
+                await asyncio.sleep(_get_user_services_scrape_interval(self._last_prometheus_query_times))
 
     async def start(self) -> None:
         with log_context(_logger, logging.INFO, "setup service metrics recovery"):
             if self._metrics_recovery_task is None:
-                self._metrics_recovery_task = asyncio.create_task(
-                    self._task_metrics_recovery()
-                )
+                self._metrics_recovery_task = asyncio.create_task(self._task_metrics_recovery())
             else:
                 _logger.info("metrics recovery was already started")
 
     async def stop(self) -> None:
         with log_context(_logger, logging.INFO, "shutdown service metrics recovery"):
             if self._metrics_recovery_task:
-                await cancel_wait_task(
-                    self._metrics_recovery_task, max_delay=_TASK_CANCELLATION_TIMEOUT_S
-                )
+                await cancel_wait_task(self._metrics_recovery_task, max_delay=_TASK_CANCELLATION_TIMEOUT_S)
 
 
 def setup_prometheus_metrics(app: FastAPI) -> None:
     async def on_startup() -> None:
-        callbacks_mapping: CallbacksMapping = (
-            app.state.settings.DY_SIDECAR_CALLBACKS_MAPPING
-        )
+        callbacks_mapping: CallbacksMapping = app.state.settings.DY_SIDECAR_CALLBACKS_MAPPING
         assert callbacks_mapping.metrics  # nosec
 
-        with log_context(
-            _logger, logging.INFO, "enabling user services metrics scraping"
-        ):
+        with log_context(_logger, logging.INFO, "enabling user services metrics scraping"):
             shared_store: SharedStore = app.state.shared_store
             app.state.user_service_metrics = user_service_metrics = UserServicesMetrics(
                 shared_store, callbacks_mapping.metrics

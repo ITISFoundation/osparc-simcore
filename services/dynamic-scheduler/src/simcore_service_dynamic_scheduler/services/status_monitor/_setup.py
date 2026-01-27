@@ -11,9 +11,7 @@ _STATUS_WORKER_DEFAULT_INTERVAL: Final[timedelta] = timedelta(seconds=1)
 
 
 async def status_monitor_lifespan(app: FastAPI) -> AsyncIterator[State]:
-    app.state.status_monitor = monitor = Monitor(
-        app, status_worker_interval=_STATUS_WORKER_DEFAULT_INTERVAL
-    )
+    app.state.status_monitor = monitor = Monitor(app, status_worker_interval=_STATUS_WORKER_DEFAULT_INTERVAL)
     await monitor.setup()
 
     yield {}

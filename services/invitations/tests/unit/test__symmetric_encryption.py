@@ -24,9 +24,7 @@ def produce(guest_email: str):
     encrypted = fernet.encrypt(message)
 
     # WARNING: how to encode the encrypted message
-    p = URL("/registration").include_query_params(
-        invitation=base64.urlsafe_b64encode(encrypted).decode()
-    )
+    p = URL("/registration").include_query_params(invitation=base64.urlsafe_b64encode(encrypted).decode())
     url = URL(scheme="http", hostname="127.0.0.1", port=8000, fragment=f"{p}")
     return url
 

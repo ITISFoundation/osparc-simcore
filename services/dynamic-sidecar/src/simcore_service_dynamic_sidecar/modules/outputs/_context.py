@@ -16,9 +16,7 @@ class OutputsContext:
     port_key_events_queue: AioQueue = field(default_factory=aioprocessing.AioQueue)
 
     # OutputsContext (generates) -> _EventHandlerProcess(receives)
-    file_system_event_handler_queue: AioQueue = field(
-        default_factory=aioprocessing.AioQueue
-    )
+    file_system_event_handler_queue: AioQueue = field(default_factory=aioprocessing.AioQueue)
 
     # contains port types such as int, str, bool
     non_file_type_port_keys: list[str] = field(default_factory=list)
@@ -53,8 +51,6 @@ def setup_outputs_context(app: FastAPI) -> None:
         assert isinstance(app.state.mounted_volumes, MountedVolumes)  # nosec
         mounted_volumes: MountedVolumes = app.state.mounted_volumes
 
-        app.state.outputs_context = OutputsContext(
-            outputs_path=mounted_volumes.disk_outputs_path
-        )
+        app.state.outputs_context = OutputsContext(outputs_path=mounted_volumes.disk_outputs_path)
 
     app.add_event_handler("startup", on_startup)

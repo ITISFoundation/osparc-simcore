@@ -49,9 +49,7 @@ log = logging.getLogger(__name__)
     stop=stop_after_attempt(10),
     after=after_log(log, logging.WARNING),
 )
-def get_service_published_port(
-    service_name: str, target_ports: list[int] | int | None = None
-) -> str:
+def get_service_published_port(service_name: str, target_ports: list[int] | int | None = None) -> str:
     # WARNING: ENSURE that service name exposes a port in
     # Dockerfile file or docker-compose config file
 
@@ -60,24 +58,18 @@ def get_service_published_port(
 
     services = [s for s in client.services.list() if str(s.name).endswith(service_name)]
     if not services:
-        msg = (
-            f"Cannot find published port for service '{service_name}'."
-            "Probably services still not started."
-        )
+        msg = f"Cannot find published port for service '{service_name}'.Probably services still not started."
         raise RuntimeError(msg)
 
     service_ports = services[0].attrs["Endpoint"].get("Ports")
     if not service_ports:
         msg = (
-            f"Cannot find published port for service '{service_name}' in endpoint."
-            "Probably services still not started."
+            f"Cannot find published port for service '{service_name}' in endpoint.Probably services still not started."
         )
         raise RuntimeError(msg)
 
     published_port = None
-    msg = ", ".join(
-        f"{p.get('TargetPort')} -> {p.get('PublishedPort')}" for p in service_ports
-    )
+    msg = ", ".join(f"{p.get('TargetPort')} -> {p.get('PublishedPort')}" for p in service_ports)
 
     if target_ports is None:
         if len(service_ports) > 1:
@@ -89,9 +81,7 @@ def get_service_published_port(
         published_port = service_ports[0]["PublishedPort"]
 
     else:
-        ports_to_look_for: list = (
-            [target_ports] if isinstance(target_ports, int | str) else target_ports
-        )
+        ports_to_look_for: list = [target_ports] if isinstance(target_ports, int | str) else target_ports
 
         for target_port in ports_to_look_for:
             target_port = int(target_port)  # noqa: PLW2901
@@ -240,32 +230,22 @@ def save_docker_infos(destination_dir: Path):  # noqa: C901
                 logs: str = container.logs(timestamps=True, tail=1000).decode()
 
                 try:
-                    (destination_dir / f"{container_name}.log").write_text(
-                        _COLOR_ENCODING_RE.sub("", logs)
-                    )
+                    (destination_dir / f"{container_name}.log").write_text(_COLOR_ENCODING_RE.sub("", logs))
 
                 except OSError as err:
                     if err.errno == _FILENAME_TOO_LONG:
-                        shorten_path(err.filename).write_text(
-                            _COLOR_ENCODING_RE.sub("", logs)
-                        )
+                        shorten_path(err.filename).write_text(_COLOR_ENCODING_RE.sub("", logs))
 
                 # inspect attrs
                 try:
-                    (destination_dir / f"{container_name}.json").write_text(
-                        json.dumps(container.attrs, indent=2)
-                    )
+                    (destination_dir / f"{container_name}.json").write_text(json.dumps(container.attrs, indent=2))
                 except OSError as err:
                     if err.errno == _FILENAME_TOO_LONG:
-                        shorten_path(err.filename).write_text(
-                            json.dumps(container.attrs, indent=2)
-                        )
+                        shorten_path(err.filename).write_text(json.dumps(container.attrs, indent=2))
 
             except Exception as err:  # pylint: disable=broad-except
                 if container.status != ContainerStatus.created:
-                    print(
-                        f"Error while dumping {container.name=}, {container.status=}.\n\t{err=}"
-                    )
+                    print(f"Error while dumping {container.name=}, {container.status=}.\n\t{err=}")
 
         print(
             "\n\t",

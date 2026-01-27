@@ -73,12 +73,8 @@ def _db_to_domain(products_row: Row, payments: PaymentFields) -> Product:
     )
 
 
-async def _get_product_payment_fields(
-    conn: AsyncConnection, product_name: ProductName
-) -> PaymentFields:
-    price_info = await get_product_latest_price_info_or_none(
-        conn, product_name=product_name
-    )
+async def _get_product_payment_fields(conn: AsyncConnection, product_name: ProductName) -> PaymentFields:
+    price_info = await get_product_latest_price_info_or_none(conn, product_name=product_name)
     if price_info is None or price_info.usd_per_credit == 0:
         return PaymentFields(
             enabled=False,
@@ -91,15 +87,12 @@ async def _get_product_payment_fields(
 
     return PaymentFields(
         enabled=True,
-        credits_per_usd=Decimal(1 / price_info.usd_per_credit).quantize(
-            QUANTIZE_EXP_ARG
-        ),
+        credits_per_usd=Decimal(1 / price_info.usd_per_credit).quantize(QUANTIZE_EXP_ARG),
         min_payment_amount_usd=price_info.min_payment_amount_usd,
     )
 
 
 class ProductRepository(BaseRepository):
-
     async def list_products(
         self,
         connection: AsyncConnection | None = None,
@@ -133,23 +126,17 @@ class ProductRepository(BaseRepository):
             rows = await conn.stream(query)
             return [ProductName(row.name) async for row in rows]
 
-    async def get_product(
-        self, product_name: str, connection: AsyncConnection | None = None
-    ) -> Product | None:
+    async def get_product(self, product_name: str, connection: AsyncConnection | None = None) -> Product | None:
         query = sa.select(*_PRODUCTS_COLUMNS).where(products.c.name == product_name)
 
         async with pass_or_acquire_connection(self.engine, connection) as conn:
             result = await conn.execute(query)
             if row := result.one_or_none():
-                payments = await _get_product_payment_fields(
-                    conn, product_name=row.name
-                )
+                payments = await _get_product_payment_fields(conn, product_name=row.name)
                 return _db_to_domain(row, payments)
             return None
 
-    async def get_default_product_name(
-        self, connection: AsyncConnection | None = None
-    ) -> ProductName:
+    async def get_default_product_name(self, connection: AsyncConnection | None = None) -> ProductName:
         async with pass_or_acquire_connection(self.engine, connection) as conn:
             return await get_default_product_name(conn)
 
@@ -157,31 +144,21 @@ class ProductRepository(BaseRepository):
         self, product_name: str, connection: AsyncConnection | None = None
     ) -> ProductPriceInfo | None:
         async with pass_or_acquire_connection(self.engine, connection) as conn:
-            return await get_product_latest_price_info_or_none(
-                conn, product_name=product_name
-            )
+            return await get_product_latest_price_info_or_none(conn, product_name=product_name)
 
     async def get_product_stripe_info_or_none(
         self, product_name: str, connection: AsyncConnection | None = None
     ) -> ProductStripeInfo | None:
         async with pass_or_acquire_connection(self.engine, connection) as conn:
-            latest_stripe_info = await get_product_latest_stripe_info_or_none(
-                conn, product_name=product_name
-            )
+            latest_stripe_info = await get_product_latest_stripe_info_or_none(conn, product_name=product_name)
             if latest_stripe_info is None:
                 return None
 
             stripe_price_id, stripe_tax_rate_id = latest_stripe_info
-            return ProductStripeInfo(
-                stripe_price_id=stripe_price_id, stripe_tax_rate_id=stripe_tax_rate_id
-            )
+            return ProductStripeInfo(stripe_price_id=stripe_price_id, stripe_tax_rate_id=stripe_tax_rate_id)
 
-    async def get_template_content(
-        self, template_name: str, connection: AsyncConnection | None = None
-    ) -> str | None:
-        query = sa.select(jinja2_templates.c.content).where(
-            jinja2_templates.c.name == template_name
-        )
+    async def get_template_content(self, template_name: str, connection: AsyncConnection | None = None) -> str | None:
+        query = sa.select(jinja2_templates.c.content).where(jinja2_templates.c.name == template_name)
 
         async with pass_or_acquire_connection(self.engine, connection) as conn:
             template_content: str | None = await conn.scalar(query)
@@ -230,16 +207,12 @@ class ProductRepository(BaseRepository):
         for product_name in product_names:
             # NOTE: transaction is per product. fail-fast!
             async with transaction_context(self.engine, connection) as conn:
-                product_group_id: GroupID = await get_or_create_product_group(
-                    conn, product_name
-                )
+                product_group_id: GroupID = await get_or_create_product_group(conn, product_name)
                 product_groups_map[product_name] = product_group_id
 
         return product_groups_map
 
-    async def is_product_billable(
-        self, product_name: str, connection: AsyncConnection | None = None
-    ) -> bool:
+    async def is_product_billable(self, product_name: str, connection: AsyncConnection | None = None) -> bool:
         """This function returns False even if the product price is defined, but is 0"""
         async with pass_or_acquire_connection(self.engine, connection) as conn:
             return await is_payment_enabled(conn, product_name=product_name)

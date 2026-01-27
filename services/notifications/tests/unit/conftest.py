@@ -68,9 +68,7 @@ def app_environment(
             "REDIS_HOST": redis_service.REDIS_HOST,
             "REDIS_PORT": f"{redis_service.REDIS_PORT}",
             "REDIS_PASSWORD": (
-                redis_service.REDIS_PASSWORD.get_secret_value()
-                if redis_service.REDIS_PASSWORD
-                else "null"
+                redis_service.REDIS_PASSWORD.get_secret_value() if redis_service.REDIS_PASSWORD else "null"
             ),
             **postgres_env_vars_dict,
             **external_envfile_dict,
@@ -187,9 +185,7 @@ def smtp_mock_or_none(
 ) -> MagicMock | None:
     if not is_external_user_email:
         mock_smtp = AsyncMock()
-        mock_create_email_session = mocker.patch.object(
-            _email_tasks, "create_email_session"
-        )
+        mock_create_email_session = mocker.patch.object(_email_tasks, "create_email_session")
         mock_create_email_session.return_value.__aenter__.return_value = mock_smtp
         return mock_smtp
     print("🚨 Emails might be sent to", f"{user_email=}")

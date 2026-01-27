@@ -38,10 +38,8 @@ from simcore_service_webserver.payments.settings import (
 )
 
 
-@pytest.mark.acceptance_test(
-    "Part of https://github.com/ITISFoundation/osparc-simcore/issues/4751"
-)
-async def test_payment_method_worfklow(
+@pytest.mark.acceptance_test("Part of https://github.com/ITISFoundation/osparc-simcore/issues/4751")
+async def test_payment_method_workflow(
     client: TestClient,
     logged_user_wallet: WalletGet,
     mocker: MockerFixture,
@@ -75,9 +73,7 @@ async def test_payment_method_worfklow(
     assert mock_rpc_payments_service_api["init_creation_of_payment_method"].called
 
     # Get: if I try to get the payment method here, it should fail since the flow is NOT acked!
-    response = await client.get(
-        f"/v0/wallets/{wallet.wallet_id}/payments-methods/{inited.payment_method_id}"
-    )
+    response = await client.get(f"/v0/wallets/{wallet.wallet_id}/payments-methods/{inited.payment_method_id}")
     await assert_status(response, status.HTTP_404_NOT_FOUND)
     assert mock_rpc_payments_service_api["get_payment_method"].called
 
@@ -86,16 +82,14 @@ async def test_payment_method_worfklow(
         client.app,
         payment_method_id=inited.payment_method_id,
         completion_state=InitPromptAckFlowState.SUCCESS,
-        message="ACKED by test_add_payment_method_worfklow",
+        message="ACKED by test_add_payment_method_workflow",
     )
 
     assert send_message.called
     send_message.assert_called_once()
 
     # Get
-    response = await client.get(
-        f"/v0/wallets/{wallet.wallet_id}/payments-methods/{inited.payment_method_id}"
-    )
+    response = await client.get(f"/v0/wallets/{wallet.wallet_id}/payments-methods/{inited.payment_method_id}")
     data, _ = await assert_status(response, status.HTTP_200_OK)
     payment_method = PaymentMethodGet(**data)
     assert payment_method.idr == inited.payment_method_id
@@ -109,16 +103,12 @@ async def test_payment_method_worfklow(
     assert wallet_payments_methods == [payment_method]
 
     # Delete
-    response = await client.delete(
-        f"/v0/wallets/{wallet.wallet_id}/payments-methods/{inited.payment_method_id}"
-    )
+    response = await client.delete(f"/v0/wallets/{wallet.wallet_id}/payments-methods/{inited.payment_method_id}")
     await assert_status(response, status.HTTP_204_NO_CONTENT)
     assert mock_rpc_payments_service_api["delete_payment_method"].called
 
     # Get -> NOT FOUND
-    response = await client.get(
-        f"/v0/wallets/{wallet.wallet_id}/payments-methods/{inited.payment_method_id}"
-    )
+    response = await client.get(f"/v0/wallets/{wallet.wallet_id}/payments-methods/{inited.payment_method_id}")
     data, _ = await assert_status(response, status.HTTP_404_NOT_FOUND)
     assert mock_rpc_payments_service_api["get_payment_method"].call_count == 3
 
@@ -152,15 +142,11 @@ async def test_init_and_cancel_payment_method(
     assert mock_rpc_payments_service_api["cancel_creation_of_payment_method"].called
 
     # Get -> not found
-    response = await client.get(
-        f"/v0/wallets/{wallet.wallet_id}/payments-methods/{inited.payment_method_id}"
-    )
+    response = await client.get(f"/v0/wallets/{wallet.wallet_id}/payments-methods/{inited.payment_method_id}")
     await assert_status(response, status.HTTP_404_NOT_FOUND)
 
 
-async def _add_payment_method(
-    client: TestClient, wallet_id: WalletID
-) -> PaymentMethodID:
+async def _add_payment_method(client: TestClient, wallet_id: WalletID) -> PaymentMethodID:
     assert client.app
     response = await client.post(
         f"/v0/wallets/{wallet_id}/payments-methods:init",
@@ -172,15 +158,13 @@ async def _add_payment_method(
         client.app,
         payment_method_id=inited.payment_method_id,
         completion_state=InitPromptAckFlowState.SUCCESS,
-        message="ACKED by test_add_payment_method_worfklow",
+        message="ACKED by test_add_payment_method_workflow",
     )
 
     return inited.payment_method_id
 
 
-@pytest.mark.acceptance_test(
-    "Part of https://github.com/ITISFoundation/osparc-simcore/issues/4751"
-)
+@pytest.mark.acceptance_test("Part of https://github.com/ITISFoundation/osparc-simcore/issues/4751")
 @pytest.mark.parametrize(
     "amount_usd,expected_status",
     [
@@ -209,23 +193,12 @@ async def test_wallet_autorecharge(
     default_auto_recharge = GetWalletAutoRecharge(**data)
     assert default_auto_recharge.enabled is False
     assert default_auto_recharge.payment_method_id is None
-    assert (
-        default_auto_recharge.min_balance_in_credits
-        == settings.PAYMENTS_AUTORECHARGE_MIN_BALANCE_IN_CREDITS
-    )
-    assert (
-        default_auto_recharge.top_up_amount_in_usd
-        == settings.PAYMENTS_AUTORECHARGE_DEFAULT_TOP_UP_AMOUNT
-    )
-    assert (
-        default_auto_recharge.monthly_limit_in_usd
-        == settings.PAYMENTS_AUTORECHARGE_DEFAULT_MONTHLY_LIMIT
-    )
+    assert default_auto_recharge.min_balance_in_credits == settings.PAYMENTS_AUTORECHARGE_MIN_BALANCE_IN_CREDITS
+    assert default_auto_recharge.top_up_amount_in_usd == settings.PAYMENTS_AUTORECHARGE_DEFAULT_TOP_UP_AMOUNT
+    assert default_auto_recharge.monthly_limit_in_usd == settings.PAYMENTS_AUTORECHARGE_DEFAULT_MONTHLY_LIMIT
 
     # A wallet with a payment method
-    older_payment_method_id = await _add_payment_method(
-        client, wallet_id=wallet.wallet_id
-    )
+    older_payment_method_id = await _add_payment_method(client, wallet_id=wallet.wallet_id)
     payment_method_id = await _add_payment_method(client, wallet_id=wallet.wallet_id)
 
     # get default again
@@ -233,10 +206,7 @@ async def test_wallet_autorecharge(
     data, _ = await assert_status(response, status.HTTP_200_OK)
     default_auto_recharge = GetWalletAutoRecharge(**data)
     assert default_auto_recharge.enabled is False
-    assert (
-        default_auto_recharge.monthly_limit_in_usd
-        == settings.PAYMENTS_AUTORECHARGE_DEFAULT_MONTHLY_LIMIT
-    )
+    assert default_auto_recharge.monthly_limit_in_usd == settings.PAYMENTS_AUTORECHARGE_DEFAULT_MONTHLY_LIMIT
     assert default_auto_recharge.payment_method_id == payment_method_id
 
     # Activate auto-rechange
@@ -270,14 +240,10 @@ async def test_wallet_autorecharge(
         # payment-methods.auto_recharge
         response = await client.get(f"/v0/wallets/{wallet.wallet_id}/payments-methods")
         data, _ = await assert_status(response, status.HTTP_200_OK)
-        wallet_payment_methods = TypeAdapter(list[PaymentMethodGet]).validate_python(
-            data
-        )
+        wallet_payment_methods = TypeAdapter(list[PaymentMethodGet]).validate_python(data)
 
         for payment_method in wallet_payment_methods:
-            assert payment_method.auto_recharge == (
-                payment_method.idr == payment_method_id
-            )
+            assert payment_method.auto_recharge == (payment_method.idr == payment_method_id)
 
         assert {pm.idr for pm in wallet_payment_methods} == {
             payment_method_id,
@@ -315,9 +281,7 @@ async def test_delete_primary_payment_method_in_autorecharge(
     assert auto_recharge.monthly_limit_in_usd == 123
 
     # delete payment-method
-    response = await client.delete(
-        f"/v0/wallets/{wallet.wallet_id}/payments-methods/{payment_method_id}"
-    )
+    response = await client.delete(f"/v0/wallets/{wallet.wallet_id}/payments-methods/{payment_method_id}")
     await assert_status(response, status.HTTP_204_NO_CONTENT)
 
     # get -> has no payment-method
@@ -331,9 +295,7 @@ async def test_delete_primary_payment_method_in_autorecharge(
     assert auto_recharge_after_delete.enabled is False
 
     # Having a new payment method
-    new_payment_method_id = await _add_payment_method(
-        client, wallet_id=wallet.wallet_id
-    )
+    new_payment_method_id = await _add_payment_method(client, wallet_id=wallet.wallet_id)
     response = await client.get(
         f"/v0/wallets/{wallet.wallet_id}/auto-recharge",
     )
@@ -471,9 +433,7 @@ async def test_pay_with_payment_method_handles_payment_unverified_error(
     data, error = await assert_status(response, status.HTTP_502_BAD_GATEWAY)
     assert not data
 
-    assert (
-        error["supportId"] == "TEST12345"
-    ), f"{error=} should provide support ID from exception"
+    assert error["supportId"] == "TEST12345", f"{error=} should provide support ID from exception"
 
     # Verify the mocked function was called
     assert mock_pay_with_payment_method.called

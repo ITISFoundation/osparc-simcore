@@ -16,12 +16,9 @@ class DiagnosticsSettings(BaseCustomSettings):
     DIAGNOSTICS_SLOW_DURATION_SECS: PositiveFloat = Field(
         default=1.0,
         description=(
-            "Any task blocked more than slow_duration_secs is logged as WARNING"
-            "Aims to identify possible blocking calls"
+            "Any task blocked more than slow_duration_secs is logged as WARNINGAims to identify possible blocking calls"
         ),
-        validation_alias=AliasChoices(
-            "DIAGNOSTICS_SLOW_DURATION_SECS", "AIODEBUG_SLOW_DURATION_SECS"
-        ),
+        validation_alias=AliasChoices("DIAGNOSTICS_SLOW_DURATION_SECS", "AIODEBUG_SLOW_DURATION_SECS"),
     )
 
     DIAGNOSTICS_HEALTHCHECK_ENABLED: bool = Field(

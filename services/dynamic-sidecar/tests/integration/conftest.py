@@ -33,5 +33,4 @@ def user_id(postgres_db: sa.engine.Engine) -> Iterable[UserID]:
         ),
         pk_col=users.c.id,
     ) as user_row:
-
         yield user_row["id"]

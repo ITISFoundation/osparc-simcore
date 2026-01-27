@@ -47,9 +47,7 @@ def raise_if_not_responsive(dsn: URL, *, verbose=False):
     """Checks whether database is responsive, otherwise it throws exception"""
     engine: Engine | None = None
     try:
-        engine = sa.create_engine(
-            str(dsn), echo=verbose, echo_pool=verbose, pool_timeout=5
-        )
+        engine = sa.create_engine(str(dsn), echo=verbose, echo_pool=verbose, pool_timeout=5)
         assert engine  # nosec
         conn = engine.connect()
         conn.close()

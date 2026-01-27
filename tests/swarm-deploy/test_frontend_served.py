@@ -41,14 +41,12 @@ def test_product_frontend_app_served(
     )
     def request_test_url() -> requests.Response:
         resp = requests.get(test_url, timeout=5)
-        assert (
-            resp.ok
-        ), f"Failed request {resp.url} with {resp.status_code}: {resp.reason}"
+        assert resp.ok, f"Failed request {resp.url} with {resp.status_code}: {resp.reason}"
         return resp
 
     resp = request_test_url()
 
-    # TODO: serch osparc-simcore commit id e.g. 'osparc-simcore v817d82e'
+    # TODO: search osparc-simcore commit id e.g. 'osparc-simcore v817d82e'
     assert resp.ok
     assert "text/html" in resp.headers["Content-Type"]
     assert expected_in_content in resp.text, "Expected boot not found in response"

@@ -36,21 +36,21 @@ from ..core.settings import ApplicationSettings
 _logger = logging.getLogger(__name__)
 
 _EC2_INTERNAL_DNS_RE: Final[re.Pattern] = re.compile(r"^(?P<host_name>ip-[^.]+)\..+$")
-_SIMCORE_AUTOSCALING_VERSION_TAG_KEY: Final[AWSTagKey] = TypeAdapter(
-    AWSTagKey
-).validate_python("io.simcore.autoscaling.version")
-_SIMCORE_AUTOSCALING_NODE_LABELS_TAG_KEY: Final[AWSTagKey] = TypeAdapter(
-    AWSTagKey
-).validate_python("io.simcore.autoscaling.monitored_nodes_labels")
-_SIMCORE_AUTOSCALING_SERVICE_LABELS_TAG_KEY: Final[AWSTagKey] = TypeAdapter(
-    AWSTagKey
-).validate_python("io.simcore.autoscaling.monitored_services_labels")
-_SIMCORE_AUTOSCALING_DASK_SCHEDULER_URL_TAG_KEY: Final[AWSTagKey] = TypeAdapter(
-    AWSTagKey
-).validate_python("io.simcore.autoscaling.dask-scheduler_url")
-_SIMCORE_AUTOSCALING_CUSTOM_PLACEMENT_LABELS_TAG_KEY: Final[AWSTagKey] = TypeAdapter(
-    AWSTagKey
-).validate_python("io.simcore.autoscaling.ec2_instance.docker_node_labels")
+_SIMCORE_AUTOSCALING_VERSION_TAG_KEY: Final[AWSTagKey] = TypeAdapter(AWSTagKey).validate_python(
+    "io.simcore.autoscaling.version"
+)
+_SIMCORE_AUTOSCALING_NODE_LABELS_TAG_KEY: Final[AWSTagKey] = TypeAdapter(AWSTagKey).validate_python(
+    "io.simcore.autoscaling.monitored_nodes_labels"
+)
+_SIMCORE_AUTOSCALING_SERVICE_LABELS_TAG_KEY: Final[AWSTagKey] = TypeAdapter(AWSTagKey).validate_python(
+    "io.simcore.autoscaling.monitored_services_labels"
+)
+_SIMCORE_AUTOSCALING_DASK_SCHEDULER_URL_TAG_KEY: Final[AWSTagKey] = TypeAdapter(AWSTagKey).validate_python(
+    "io.simcore.autoscaling.dask-scheduler_url"
+)
+_SIMCORE_AUTOSCALING_CUSTOM_PLACEMENT_LABELS_TAG_KEY: Final[AWSTagKey] = TypeAdapter(AWSTagKey).validate_python(
+    "io.simcore.autoscaling.ec2_instance.docker_node_labels"
+)
 _EC2_NAME_TAG_KEY: Final[AWSTagKey] = TypeAdapter(AWSTagKey).validate_python("Name")
 
 
@@ -74,9 +74,7 @@ def _create_chunked_tag_pattern(base_key: AWSTagKey) -> re.Pattern:
     return re.compile(rf"^{re.escape(base_key)}(_\d+)?$")
 
 
-def dump_as_ec2_tags[T](
-    data: T, *, base_tag_key: AWSTagKey
-) -> EC2Tags:  # pyright: ignore[reportInvalidTypeVarUse]
+def dump_as_ec2_tags[T](data: T, *, base_tag_key: AWSTagKey) -> EC2Tags:  # pyright: ignore[reportInvalidTypeVarUse]
     """Serialize data to EC2 tags, chunking only if necessary to fit AWS tag size limits.
 
     AWS Tag Values are limited to 256 characters. This function serializes the data
@@ -109,21 +107,16 @@ def dump_as_ec2_tags[T](
 
     # Data exceeds limit, chunk it
     chunks = [
-        jsonized_data[i : i + AWS_TAG_VALUE_MAX_LENGTH]
-        for i in range(0, len(jsonized_data), AWS_TAG_VALUE_MAX_LENGTH)
+        jsonized_data[i : i + AWS_TAG_VALUE_MAX_LENGTH] for i in range(0, len(jsonized_data), AWS_TAG_VALUE_MAX_LENGTH)
     ]
 
     return {
-        TypeAdapter(AWSTagKey)
-        .validate_python(f"{base_tag_key}_{i}"): TypeAdapter(AWSTagValue)
-        .validate_python(chunk)
+        TypeAdapter(AWSTagKey).validate_python(f"{base_tag_key}_{i}"): TypeAdapter(AWSTagValue).validate_python(chunk)
         for i, chunk in enumerate(chunks)
     }
 
 
-def load_from_ec2_tags[T](
-    tags: EC2Tags, *, base_tag_key: AWSTagKey, type_adapter: TypeAdapter[T]
-) -> T | None:
+def load_from_ec2_tags[T](tags: EC2Tags, *, base_tag_key: AWSTagKey, type_adapter: TypeAdapter[T]) -> T | None:
     """Load and deserialize data from EC2 tags, handling both single and chunked formats.
 
     When data is JSON-serialized:
@@ -174,9 +167,7 @@ def load_from_ec2_tags[T](
 
     # Assemble chunks in order
     try:
-        assembled_json = "".join(
-            map(itemgetter(1), sorted(matching_tags, key=itemgetter(0)))
-        )
+        assembled_json = "".join(map(itemgetter(1), sorted(matching_tags, key=itemgetter(0))))
         return type_adapter.validate_json(assembled_json)
     except ValueError as exc:
         raise Ec2TagDeserializationError(tag_key=base_tag_key) from exc
@@ -206,11 +197,7 @@ def list_tag_keys(tags: EC2Tags, *, base_tag_key: AWSTagKey) -> list[AWSTagKey]:
         ["images"]
     """
     pattern = _create_chunked_tag_pattern(base_tag_key)
-    return [
-        TypeAdapter(AWSTagKey).validate_python(key)
-        for key in tags
-        if pattern.match(key)
-    ]
+    return [TypeAdapter(AWSTagKey).validate_python(key) for key in tags if pattern.match(key)]
 
 
 def dump_task_required_node_labels_as_tags(
@@ -228,11 +215,7 @@ def dump_task_required_node_labels_as_tags(
         EC2Tags dict with either single or chunked tags
     """
     # Only include labels that are in the approved set
-    filtered_labels = {
-        k: v
-        for k, v in labels.items()
-        if k in OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS
-    }
+    filtered_labels = {k: v for k, v in labels.items() if k in OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS}
     return dump_as_ec2_tags(
         filtered_labels,
         base_tag_key=_SIMCORE_AUTOSCALING_CUSTOM_PLACEMENT_LABELS_TAG_KEY,
@@ -275,31 +258,19 @@ def list_task_required_node_labels_tag_keys(tags: EC2Tags) -> list[AWSTagKey]:
     Returns:
         List of matching tag keys (empty list if none found)
     """
-    return list_tag_keys(
-        tags, base_tag_key=_SIMCORE_AUTOSCALING_CUSTOM_PLACEMENT_LABELS_TAG_KEY
-    )
+    return list_tag_keys(tags, base_tag_key=_SIMCORE_AUTOSCALING_CUSTOM_PLACEMENT_LABELS_TAG_KEY)
 
 
 def get_ec2_tags_dynamic(app_settings: ApplicationSettings) -> EC2Tags:
     assert app_settings.AUTOSCALING_NODES_MONITORING  # nosec
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
     return {
-        _SIMCORE_AUTOSCALING_VERSION_TAG_KEY: TypeAdapter(AWSTagValue).validate_python(
-            f"{VERSION}"
+        _SIMCORE_AUTOSCALING_VERSION_TAG_KEY: TypeAdapter(AWSTagValue).validate_python(f"{VERSION}"),
+        _SIMCORE_AUTOSCALING_NODE_LABELS_TAG_KEY: TypeAdapter(AWSTagValue).validate_python(
+            json_dumps(app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS)
         ),
-        _SIMCORE_AUTOSCALING_NODE_LABELS_TAG_KEY: TypeAdapter(
-            AWSTagValue
-        ).validate_python(
-            json_dumps(
-                app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NODE_LABELS
-            )
-        ),
-        _SIMCORE_AUTOSCALING_SERVICE_LABELS_TAG_KEY: TypeAdapter(
-            AWSTagValue
-        ).validate_python(
-            json_dumps(
-                app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_SERVICE_LABELS
-            )
+        _SIMCORE_AUTOSCALING_SERVICE_LABELS_TAG_KEY: TypeAdapter(AWSTagValue).validate_python(
+            json_dumps(app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_SERVICE_LABELS)
         ),
         # NOTE: this one gets special treatment in AWS GUI and is applied to the name of the instance
         _EC2_NAME_TAG_KEY: TypeAdapter(AWSTagValue).validate_python(
@@ -312,12 +283,10 @@ def get_ec2_tags_computational(app_settings: ApplicationSettings) -> EC2Tags:
     assert app_settings.AUTOSCALING_DASK  # nosec
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
     return {
-        _SIMCORE_AUTOSCALING_VERSION_TAG_KEY: TypeAdapter(AWSTagValue).validate_python(
-            f"{VERSION}"
+        _SIMCORE_AUTOSCALING_VERSION_TAG_KEY: TypeAdapter(AWSTagValue).validate_python(f"{VERSION}"),
+        _SIMCORE_AUTOSCALING_DASK_SCHEDULER_URL_TAG_KEY: TypeAdapter(AWSTagValue).validate_python(
+            f"{app_settings.AUTOSCALING_DASK.DASK_MONITORING_URL}"
         ),
-        _SIMCORE_AUTOSCALING_DASK_SCHEDULER_URL_TAG_KEY: TypeAdapter(
-            AWSTagValue
-        ).validate_python(f"{app_settings.AUTOSCALING_DASK.DASK_MONITORING_URL}"),
         # NOTE: this one gets special treatment in AWS GUI and is applied to the name of the instance
         _EC2_NAME_TAG_KEY: TypeAdapter(AWSTagValue).validate_python(
             f"{app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_NAME_PREFIX}-{app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME}"
@@ -379,10 +348,7 @@ def find_best_fitting_ec2_instance(
         raise ConfigurationError(msg="allowed ec2 instances is missing!")
     score_to_ec2_candidate: dict[float, EC2InstanceType] = OrderedDict(
         sorted(
-            {
-                score_type(instance, resources): instance
-                for instance in allowed_ec2_instances
-            }.items(),
+            {score_type(instance, resources): instance for instance in allowed_ec2_instances}.items(),
             reverse=True,
         )
     )
@@ -414,8 +380,4 @@ def node_ip_from_ec2_private_dns(
     Raises:
         Ec2InvalidDnsNameError: if the dns name does not follow the expected pattern
     """
-    return (
-        node_host_name_from_ec2_private_dns(ec2_instance_data)
-        .removeprefix("ip-")
-        .replace("-", ".")
-    )
+    return node_host_name_from_ec2_private_dns(ec2_instance_data).removeprefix("ip-").replace("-", ".")

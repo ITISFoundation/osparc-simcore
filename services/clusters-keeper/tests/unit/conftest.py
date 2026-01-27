@@ -86,8 +86,7 @@ def mocked_ec2_server_envs(
 ) -> EnvVarsDict:
     # NOTE: overrides the EC2Settings with what clusters-keeper expects
     changed_envs: EnvVarsDict = {
-        f"{CLUSTERS_KEEPER_ENV_PREFIX}{k}": v
-        for k, v in mocked_ec2_server_settings.model_dump().items()
+        f"{CLUSTERS_KEEPER_ENV_PREFIX}{k}": v for k, v in mocked_ec2_server_settings.model_dump().items()
     }
     return setenvs_from_dict(monkeypatch, changed_envs)
 
@@ -99,9 +98,7 @@ def mocked_ssm_server_envs(
 ) -> EnvVarsDict:
     # NOTE: overrides the SSMSettings with what clusters-keeper expects
     changed_envs: EnvVarsDict = {
-        f"{CLUSTERS_KEEPER_ENV_PREFIX}{k}": (
-            v.get_secret_value() if isinstance(v, SecretStr) else v
-        )
+        f"{CLUSTERS_KEEPER_ENV_PREFIX}{k}": (v.get_secret_value() if isinstance(v, SecretStr) else v)
         for k, v in mocked_ssm_server_settings.model_dump().items()
     }
     return setenvs_from_dict(monkeypatch, changed_envs)
@@ -138,12 +135,8 @@ def app_environment(
             "CLUSTERS_KEEPER_DASK_WORKER_SATURATION": f"{faker.pyfloat(min_value=0.1)}",
             "CLUSTERS_KEEPER_COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_AUTH": "{}",
             "PRIMARY_EC2_INSTANCES_KEY_NAME": faker.pystr(),
-            "PRIMARY_EC2_INSTANCES_SECURITY_GROUP_IDS": json_dumps(
-                faker.pylist(allowed_types=(str,))
-            ),
-            "PRIMARY_EC2_INSTANCES_SUBNET_IDS": json_dumps(
-                faker.pylist(allowed_types=(str,))
-            ),
+            "PRIMARY_EC2_INSTANCES_SECURITY_GROUP_IDS": json_dumps(faker.pylist(allowed_types=(str,))),
+            "PRIMARY_EC2_INSTANCES_SUBNET_IDS": json_dumps(faker.pylist(allowed_types=(str,))),
             "PRIMARY_EC2_INSTANCES_ALLOWED_TYPES": json_dumps(
                 {
                     random.choice(  # noqa: S311
@@ -153,9 +146,7 @@ def app_environment(
                     ]  # NOTE: we use example with custom script
                 }
             ),
-            "PRIMARY_EC2_INSTANCES_CUSTOM_TAGS": json_dumps(
-                {"osparc-tag": "the pytest tag is here"}
-            ),
+            "PRIMARY_EC2_INSTANCES_CUSTOM_TAGS": json_dumps({"osparc-tag": "the pytest tag is here"}),
             "PRIMARY_EC2_INSTANCES_ATTACHED_IAM_PROFILE": "",  # must be empty since we would need to add it to moto as well
             "PRIMARY_EC2_INSTANCES_SSM_TLS_DASK_CA": faker.pystr(),
             "PRIMARY_EC2_INSTANCES_SSM_TLS_DASK_CERT": faker.pystr(),
@@ -171,16 +162,10 @@ def app_environment(
                     for ec2_type_name in ec2_instances
                 }
             ),
-            "WORKERS_EC2_INSTANCES_SECURITY_GROUP_IDS": json_dumps(
-                faker.pylist(allowed_types=(str,))
-            ),
-            "WORKERS_EC2_INSTANCES_SUBNET_IDS": json_dumps(
-                faker.pylist(allowed_types=(str,))
-            ),
+            "WORKERS_EC2_INSTANCES_SECURITY_GROUP_IDS": json_dumps(faker.pylist(allowed_types=(str,))),
+            "WORKERS_EC2_INSTANCES_SUBNET_IDS": json_dumps(faker.pylist(allowed_types=(str,))),
             "WORKERS_EC2_INSTANCES_KEY_NAME": faker.pystr(),
-            "WORKERS_EC2_INSTANCES_CUSTOM_TAGS": json_dumps(
-                {"osparc-tag": "the pytest worker tag value is here"}
-            ),
+            "WORKERS_EC2_INSTANCES_CUSTOM_TAGS": json_dumps({"osparc-tag": "the pytest worker tag value is here"}),
         },
     )
     return mock_env_devel_environment | envs
@@ -198,9 +183,7 @@ def mocked_primary_ec2_instances_envs(
         monkeypatch,
         {
             "PRIMARY_EC2_INSTANCES_KEY_NAME": "osparc-pytest",
-            "PRIMARY_EC2_INSTANCES_SECURITY_GROUP_IDS": json_dumps(
-                [aws_security_group_id]
-            ),
+            "PRIMARY_EC2_INSTANCES_SECURITY_GROUP_IDS": json_dumps([aws_security_group_id]),
             "PRIMARY_EC2_INSTANCES_SUBNET_IDS": json_dumps([aws_subnet_id]),
         },
     )
@@ -244,19 +227,16 @@ def disabled_ssm(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch):
 
 
 @pytest.fixture
-def enabled_rabbitmq(
-    app_environment: EnvVarsDict, rabbit_service: RabbitSettings
-) -> RabbitSettings:
+def enabled_rabbitmq(app_environment: EnvVarsDict, rabbit_service: RabbitSettings) -> RabbitSettings:
     return rabbit_service
 
 
 @pytest.fixture
-async def initialized_app(
-    app_environment: EnvVarsDict, is_pdb_enabled: bool
-) -> AsyncIterator[FastAPI]:
+async def initialized_app(app_environment: EnvVarsDict, is_pdb_enabled: bool) -> AsyncIterator[FastAPI]:
     settings = ApplicationSettings.create_from_envs()
     tracing_config = TracingConfig.create(
-        service_name=APP_NAME, tracing_settings=None  # disable tracing in tests
+        service_name=APP_NAME,
+        tracing_settings=None,  # disable tracing in tests
     )
     app = create_app(settings, tracing_config=tracing_config)
     async with LifespanManager(app, shutdown_timeout=None if is_pdb_enabled else 20):
@@ -300,11 +280,7 @@ def clusters_keeper_docker_compose_file(installed_package_dir: Path) -> Path:
 
 @pytest.fixture
 def clusters_keeper_docker_compose() -> dict[str, Any]:
-    data = (
-        importlib.resources.files(simcore_service_clusters_keeper.data)
-        .joinpath("docker-compose.yml")
-        .read_text()
-    )
+    data = importlib.resources.files(simcore_service_clusters_keeper.data).joinpath("docker-compose.yml").read_text()
     assert data
     return yaml.safe_load(data)
 
@@ -348,9 +324,7 @@ def create_ec2_workers(
             ],
         )
         print(f"--> created {num} new instances of {instance_type=}")
-        instance_ids = [
-            i["InstanceId"] for i in instances["Instances"] if "InstanceId" in i
-        ]
+        instance_ids = [i["InstanceId"] for i in instances["Instances"] if "InstanceId" in i]
         waiter = ec2_client.get_waiter("instance_exists")
         await waiter.wait(InstanceIds=instance_ids)
         instances = await ec2_client.describe_instances(InstanceIds=instance_ids)

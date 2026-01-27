@@ -3155,7 +3155,7 @@
                 "type": "null"
               }
             ],
-            "description": "contains harware information so we know on which hardware to run the service"
+            "description": "contains hardware information so we know on which hardware to run the service"
           },
           "product_name": {
             "anyOf": [

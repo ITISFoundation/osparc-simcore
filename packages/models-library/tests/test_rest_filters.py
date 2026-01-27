@@ -16,7 +16,6 @@ class CustomFilterStrict(CustomFilter):
 
 
 def test_custom_filter_query_parameters():
-
     # 2. use generic as query parameters
     logging.info(
         "json schema is for the query \n %s",
@@ -40,9 +39,7 @@ def test_custom_filter_query_parameters():
         (None, None),
     ],
 )
-def test_valid_filter_queries(
-    url_query_value: str | None, expects: CustomFilter | None
-):
+def test_valid_filter_queries(url_query_value: str | None, expects: CustomFilter | None):
     query_param = FiltersQueryParameters[CustomFilter](filters=url_query_value)
     assert query_param.filters == expects
 

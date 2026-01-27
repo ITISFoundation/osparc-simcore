@@ -57,19 +57,13 @@ async def client(
 @pytest.fixture
 def long_running_task_url(client: TestClient, long_running_task_entrypoint: str) -> URL:
     assert client.app
-    return client.make_url(
-        f"{client.app.router[long_running_task_entrypoint].url_for()}"
-    )
+    return client.make_url(f"{client.app.router[long_running_task_entrypoint].url_for()}")
 
 
-async def test_long_running_task_request_raises_400(
-    client: TestClient, long_running_task_url: URL
-):
+async def test_long_running_task_request_raises_400(client: TestClient, long_running_task_url: URL):
     # missing parameters raises
-    with pytest.raises(ClientResponseError):  # noqa: PT012
-        async for _ in long_running_task_request(
-            client.session, long_running_task_url, None
-        ):
+    with pytest.raises(ClientResponseError):
+        async for _ in long_running_task_request(client.session, long_running_task_url, None):
             ...
 
 
@@ -82,9 +76,7 @@ def short_poll_interval(monkeypatch: pytest.MonkeyPatch):
     )
 
 
-async def test_long_running_task_request(
-    short_poll_interval, client: TestClient, long_running_task_url: URL
-):
+async def test_long_running_task_request(short_poll_interval, client: TestClient, long_running_task_url: URL):
     task: LRTask | None = None
     async for task in long_running_task_request(
         client.session,
@@ -98,9 +90,7 @@ async def test_long_running_task_request(
     assert task is not None
 
 
-async def test_long_running_task_request_timeout(
-    client: TestClient, long_running_task_url: URL
-):
+async def test_long_running_task_request_timeout(client: TestClient, long_running_task_url: URL):
     assert client.app
     task: LRTask | None = None
     with pytest.raises(asyncio.TimeoutError):  # noqa: PT012
@@ -120,16 +110,12 @@ async def test_long_running_task_request_timeout(
     assert data == []
 
 
-async def test_long_running_task_request_error(
-    client: TestClient, long_running_task_url: URL
-):
+async def test_long_running_task_request_error(client: TestClient, long_running_task_url: URL):
     assert client.app
     task: LRTask | None = None
     async for task in long_running_task_request(
         client.session,
-        long_running_task_url.with_query(
-            num_strings=10, sleep_time=0.1, fail=f"{True}"
-        ),
+        long_running_task_url.with_query(num_strings=10, sleep_time=0.1, fail=f"{True}"),
         json=None,
     ):
         print(f"<-- received {task=}")

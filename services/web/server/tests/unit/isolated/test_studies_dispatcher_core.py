@@ -26,7 +26,6 @@ from yarl import URL
 
 @pytest.mark.parametrize("view", list_fake_file_consumers())
 async def test_create_project_with_viewer(view: dict[str, Any]):
-
     view["label"] = view.pop("display_name")
     viewer = ViewerInfo(**view)
 

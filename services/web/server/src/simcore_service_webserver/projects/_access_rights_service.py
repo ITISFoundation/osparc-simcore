@@ -12,19 +12,12 @@ from .exceptions import ProjectInvalidRightsError, ProjectNotFoundError
 from .models import UserProjectAccessRightsWithWorkspace
 
 
-async def validate_project_ownership(
-    app: web.Application, user_id: UserID, project_uuid: ProjectID
-):
+async def validate_project_ownership(app: web.Application, user_id: UserID, project_uuid: ProjectID):
     """
     Raises:
         ProjectInvalidRightsError: if 'user_id' does not own 'project_uuid'
     """
-    if (
-        await get_project_owner(
-            get_database_engine_legacy(app), project_uuid=project_uuid
-        )
-        != user_id
-    ):
+    if await get_project_owner(get_database_engine_legacy(app), project_uuid=project_uuid) != user_id:
         raise ProjectInvalidRightsError(user_id=user_id, project_uuid=project_uuid)
 
 
@@ -53,29 +46,21 @@ async def get_user_project_access_rights(
             workspace_id=project_db.workspace_id,
             product_name=product_name,
         )
-        _user_project_access_rights_with_workspace = (
-            UserProjectAccessRightsWithWorkspace(
-                uid=user_id,
-                workspace_id=project_db.workspace_id,
-                read=workspace.my_access_rights.read,
-                write=workspace.my_access_rights.write,
-                delete=workspace.my_access_rights.delete,
-            )
+        _user_project_access_rights_with_workspace = UserProjectAccessRightsWithWorkspace(
+            uid=user_id,
+            workspace_id=project_db.workspace_id,
+            read=workspace.my_access_rights.read,
+            write=workspace.my_access_rights.write,
+            delete=workspace.my_access_rights.delete,
         )
     else:
-        _user_project_access_rights = (
-            await db.get_pure_project_access_rights_without_workspace(
-                user_id, project_id
-            )
-        )
-        _user_project_access_rights_with_workspace = (
-            UserProjectAccessRightsWithWorkspace(
-                uid=user_id,
-                workspace_id=None,
-                read=_user_project_access_rights.read,
-                write=_user_project_access_rights.write,
-                delete=_user_project_access_rights.delete,
-            )
+        _user_project_access_rights = await db.get_pure_project_access_rights_without_workspace(user_id, project_id)
+        _user_project_access_rights_with_workspace = UserProjectAccessRightsWithWorkspace(
+            uid=user_id,
+            workspace_id=None,
+            read=_user_project_access_rights.read,
+            write=_user_project_access_rights.write,
+            delete=_user_project_access_rights.delete,
         )
     return _user_project_access_rights_with_workspace
 

@@ -38,9 +38,7 @@ class _ContentWithShortNames(InvitationContent):
     def deserialize(cls, raw_json: str) -> InvitationContent:
         """Parses a json string and returns InvitationContent model"""
         model_w_short_aliases = cls.model_validate_json(raw_json)
-        return InvitationContent.model_construct(
-            **model_w_short_aliases.model_dump(exclude_unset=True)
-        )
+        return InvitationContent.model_construct(**model_w_short_aliases.model_dump(exclude_unset=True))
 
     model_config = ConfigDict(
         # NOTE: Can export with alias: short aliases to minimize the size of serialization artifact
@@ -128,9 +126,7 @@ def extract_invitation_code_from_query(invitation_url: HttpUrl) -> str:
         raise InvalidInvitationCodeError(msg) from err
 
 
-def decrypt_invitation(
-    invitation_code: str, secret_key: bytes, default_product: ProductName
-) -> InvitationContent:
+def decrypt_invitation(invitation_code: str, secret_key: bytes, default_product: ProductName) -> InvitationContent:
     """
 
     WARNING: invitation_code should not be taken directly from the url fragment without 'parse_invitation_code'
@@ -166,7 +162,5 @@ def extract_invitation_content(
         return content
 
     except (InvalidToken, ValidationError, binascii.Error) as err:
-        msg = (
-            "Failed while decripting. TIP: secret key at encryption might be different"
-        )
+        msg = "Failed while decripting. TIP: secret key at encryption might be different"
         raise InvalidInvitationCodeError(msg) from err

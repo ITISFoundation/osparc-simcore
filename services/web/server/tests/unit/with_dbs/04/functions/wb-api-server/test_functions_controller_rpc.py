@@ -62,9 +62,7 @@ async def test_register_get_delete_function(
         product_name=osparc_product_name,
     )
     assert registered_function.uid is not None
-    assert registered_function.created_at - datetime.datetime.now(
-        datetime.UTC
-    ) < datetime.timedelta(seconds=60)
+    assert registered_function.created_at - datetime.datetime.now(datetime.UTC) < datetime.timedelta(seconds=60)
 
     # Retrieve the function from the repository to verify it was saved
     saved_function = await webserver_rpc_client.functions.get_function(
@@ -264,9 +262,7 @@ async def test_list_functions_mixed_user(
     )
     # Assert the list contains only the other user's functions
     assert len(other_functions) == len(other_registered_function)
-    assert all(
-        f.uid in [orf.uid for orf in other_registered_function] for f in other_functions
-    )
+    assert all(f.uid in [orf.uid for orf in other_registered_function] for f in other_functions)
 
     # Add other-user permissions to a logged user function
     await webserver_rpc_client.functions.set_group_permissions(
@@ -367,13 +363,9 @@ async def test_list_functions_with_pagination_ordering(
     )
 
     # Assert the list contains the correct number of functions
-    assert len(listed_functions) == min(
-        test_pagination_limit, max(0, total_number_functions - test_pagination_offset)
-    )
+    assert len(listed_functions) == min(test_pagination_limit, max(0, total_number_functions - test_pagination_offset))
 
-    assert all(
-        f.uid in [rf.uid for rf in registered_functions] for f in listed_functions
-    )
+    assert all(f.uid in [rf.uid for rf in registered_functions] for f in listed_functions)
     assert page_info.count == len(listed_functions)
     assert page_info.total == total_number_functions
 
@@ -437,10 +429,7 @@ async def test_list_functions_search(
         # Assert the function is found
         assert len(functions) == expected_number
         if search_term == "Dummy2":
-            assert functions[0].uid in [
-                function.uid
-                for function in registered_functions[mock_function_dummy2.title]
-            ]
+            assert functions[0].uid in [function.uid for function in registered_functions[mock_function_dummy2.title]]
 
     for search_term, expected_number in [
         ("Dummy", 10),
@@ -460,10 +449,7 @@ async def test_list_functions_search(
         # Assert the function is found
         assert len(functions) == expected_number
         if search_term == "Dummy2":
-            assert functions[0].uid in [
-                function.uid
-                for function in registered_functions[mock_function_dummy2.title]
-            ]
+            assert functions[0].uid in [function.uid for function in registered_functions[mock_function_dummy2.title]]
 
 
 @pytest.mark.parametrize(
@@ -523,14 +509,9 @@ async def test_list_functions_with_filters(
 
         # Assert the function is found
         assert len(functions) == (
-            N_OF_PROJECT_FUNCTIONS
-            if function_class == FunctionClass.PROJECT
-            else N_OF_SOLVER_FUNCTIONS
+            N_OF_PROJECT_FUNCTIONS if function_class == FunctionClass.PROJECT else N_OF_SOLVER_FUNCTIONS
         )
-        assert all(
-            function.uid in [f.uid for f in registered_functions]
-            for function in functions
-        )
+        assert all(function.uid in [f.uid for f in registered_functions] for function in functions)
 
 
 @pytest.mark.parametrize(
@@ -722,12 +703,10 @@ async def test_get_function_user_permissions(
     assert registered_function.uid is not None
 
     # Retrieve the user permissions for the function
-    user_permissions = (
-        await webserver_rpc_client.functions.get_function_user_permissions(
-            function_id=registered_function.uid,
-            user_id=logged_user["id"],
-            product_name=osparc_product_name,
-        )
+    user_permissions = await webserver_rpc_client.functions.get_function_user_permissions(
+        function_id=registered_function.uid,
+        user_id=logged_user["id"],
+        product_name=osparc_product_name,
     )
 
     # Assert the user permissions match the expected permissions

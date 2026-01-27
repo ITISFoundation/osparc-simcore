@@ -92,16 +92,12 @@ def _apply_templating_directives(
             continue  # also ignore if the container_name is not the directive to replace
 
         remapped_service_key = spec_services_to_container_name[services_key]
-        replace_with = services.get(remapped_service_key, {}).get(
-            "container_name", None
-        )
+        replace_with = services.get(remapped_service_key, {}).get("container_name", None)
         if replace_with is None:
             continue  # also skip here if nothing was found
 
         match_pattern = f"%%{match}%%"
-        stringified_compose_spec = stringified_compose_spec.replace(
-            match_pattern, replace_with
-        )
+        stringified_compose_spec = stringified_compose_spec.replace(match_pattern, replace_with)
 
     return stringified_compose_spec
 
@@ -134,15 +130,13 @@ def _merge_env_vars(
     return [f"{k}={v}" for k, v in dict_spec_env_vars.items()]
 
 
-def _connect_user_services(
-    parsed_compose_spec: dict[str, Any], *, allow_internet_access: bool
-) -> None:
+def _connect_user_services(parsed_compose_spec: dict[str, Any], *, allow_internet_access: bool) -> None:
     """
     Put all containers in the compose spec in the same network.
     The network name must only be unique inside the user defined spec.
     `docker compose` will add some prefix to it.
     """
-    networks = parsed_compose_spec.get("networks", None)
+    networks = parsed_compose_spec.get("networks")
     if networks is None:
         parsed_compose_spec["networks"] = {}
     networks = parsed_compose_spec["networks"]
@@ -227,9 +221,7 @@ async def get_and_validate_compose_spec(  # pylint: disable=too-many-statements
 
         # assemble and inject the container name
         user_given_container_name = service_content.get("container_name", "")
-        container_name = _assemble_container_name(
-            settings, service, user_given_container_name, index
-        )
+        container_name = _assemble_container_name(settings, service, user_given_container_name, index)
         service_content["container_name"] = container_name
         spec_services_to_container_name[service] = container_name
 
@@ -252,15 +244,9 @@ async def get_and_validate_compose_spec(  # pylint: disable=too-many-statements
         # inject paths to be mounted
         service_volumes = service_content.get("volumes", [])
 
-        service_volumes.append(
-            await mounted_volumes.get_inputs_docker_volume(settings.DY_SIDECAR_RUN_ID)
-        )
-        service_volumes.append(
-            await mounted_volumes.get_outputs_docker_volume(settings.DY_SIDECAR_RUN_ID)
-        )
-        async for (
-            state_paths_docker_volume
-        ) in mounted_volumes.iter_state_paths_to_docker_volumes(
+        service_volumes.append(await mounted_volumes.get_inputs_docker_volume(settings.DY_SIDECAR_RUN_ID))
+        service_volumes.append(await mounted_volumes.get_outputs_docker_volume(settings.DY_SIDECAR_RUN_ID))
+        async for state_paths_docker_volume in mounted_volumes.iter_state_paths_to_docker_volumes(
             settings.DY_SIDECAR_RUN_ID
         ):
             service_volumes.append(state_paths_docker_volume)

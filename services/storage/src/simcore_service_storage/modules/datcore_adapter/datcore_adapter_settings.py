@@ -9,9 +9,7 @@ class DatcoreAdapterSettings(BaseCustomSettings):
     DATCORE_ADAPTER_ENABLED: bool = True
     DATCORE_ADAPTER_HOST: str = "datcore-adapter"
     DATCORE_ADAPTER_PORT: PortInt = TypeAdapter(PortInt).validate_python(8000)
-    DATCORE_ADAPTER_VTAG: VersionTag = Field(
-        "v0", description="Datcore-adapter service API's version tag"
-    )
+    DATCORE_ADAPTER_VTAG: VersionTag = Field("v0", description="Datcore-adapter service API's version tag")
 
     @cached_property
     def endpoint(self) -> str:

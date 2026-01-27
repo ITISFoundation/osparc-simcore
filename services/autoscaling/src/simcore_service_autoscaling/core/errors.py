@@ -47,6 +47,4 @@ class DaskNoWorkersError(AutoscalingRuntimeError):
 
 
 class DaskWorkerNotFoundError(AutoscalingRuntimeError):
-    msg_template: str = (
-        "Dask worker running on {worker_host} is not registered to scheduler in {url}, it is not found!"
-    )
+    msg_template: str = "Dask worker running on {worker_host} is not registered to scheduler in {url}, it is not found!"

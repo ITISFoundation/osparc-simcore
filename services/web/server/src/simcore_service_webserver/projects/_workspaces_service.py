@@ -63,9 +63,7 @@ async def move_project_into_workspace(
         )
 
         # 5. Remove all project permissions, leave only the user who moved the project
-        await _groups_repository.delete_all_project_groups(
-            app, connection=conn, project_id=project_id
-        )
+        await _groups_repository.delete_all_project_groups(app, connection=conn, project_id=project_id)
         await _groups_repository.update_or_insert_project_group(
             app,
             connection=conn,

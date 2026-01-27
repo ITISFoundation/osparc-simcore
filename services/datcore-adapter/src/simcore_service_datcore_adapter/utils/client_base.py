@@ -26,9 +26,7 @@ class BaseServiceClientApi(AppDataMixin):
 
     async def is_responsive(self) -> bool:
         try:
-            resp = await self.client.get(
-                self.health_check_path, timeout=self.health_check_timeout
-            )
+            resp = await self.client.get(self.health_check_path, timeout=self.health_check_timeout)
             resp.raise_for_status()
             return True
         except (httpx.HTTPStatusError, httpx.RequestError) as err:
@@ -45,21 +43,19 @@ def setup_client_instance(
     api_baseurl: str,
     service_name: str,
     api_general_timeout: float = 5.0,
-    **extra_fields
+    **extra_fields,
 ) -> None:
     """Helper to add init/cleanup of ServiceClientApi instances in the app lifespam"""
 
     assert issubclass(api_cls, BaseServiceClientApi)
 
     def _create_instance() -> None:
-        # NOTE: http2 is explicitely disabled due to the issue https://github.com/encode/httpx/discussions/2112
+        # NOTE: http2 is explicitly disabled due to the issue https://github.com/encode/httpx/discussions/2112
         api_cls.create_once(
             app,
-            client=httpx.AsyncClient(
-                http2=False, base_url=api_baseurl, timeout=api_general_timeout
-            ),
+            client=httpx.AsyncClient(http2=False, base_url=api_baseurl, timeout=api_general_timeout),
             service_name=service_name,
-            **extra_fields
+            **extra_fields,
         )
 
     async def _cleanup_instance() -> None:

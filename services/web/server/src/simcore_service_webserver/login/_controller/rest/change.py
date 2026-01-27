@@ -43,9 +43,7 @@ routes = RouteTableDef()
 
 
 @routes.post(f"/{API_VTAG}/auth/reset-password", name="initiate_reset_password")
-@global_rate_limit_route(
-    number_of_requests=10, interval_seconds=HOUR, error_msg=MSG_OFTEN_RESET_PASSWORD
-)
+@global_rate_limit_route(number_of_requests=10, interval_seconds=HOUR, error_msg=MSG_OFTEN_RESET_PASSWORD)
 async def initiate_reset_password(request: web.Request):
     """First of the "Two-Step Action Confirmation pattern": initiate_reset_password + complete_reset_password(code)
 
@@ -157,9 +155,7 @@ async def initiate_reset_password(request: web.Request):
         assert isinstance(user["id"], int)  # nosec
 
         # CHECK access to product
-        if not await users_service.is_user_in_product(
-            request.app, user_id=user["id"], product_name=product.name
-        ):
+        if not await users_service.is_user_in_product(request.app, user_id=user["id"], product_name=product.name):
             _logger.warning(
                 **create_troubleshooting_log_kwargs(
                     f"{_error_msg_prefix} for a user with NO access to this product. {_error_msg_suffix}",
@@ -176,10 +172,8 @@ async def initiate_reset_password(request: web.Request):
             # Confirmation token that includes code to `complete_reset_password`.
             # Recreated if non-existent or expired  (Guideline #2)
             confirmation_service = get_confirmation_service(request.app)
-            confirmation = (
-                await confirmation_service.get_or_create_confirmation_without_data(
-                    user_id=user["id"], action="RESET_PASSWORD"
-                )
+            confirmation = await confirmation_service.get_or_create_confirmation_without_data(
+                user_id=user["id"], action="RESET_PASSWORD"
             )
 
             # Produce a link so that the front-end can hit `complete_reset_password`
@@ -190,9 +184,7 @@ async def initiate_reset_password(request: web.Request):
                 request,
                 from_=product.support_email,
                 to=request_body.email,
-                template=await get_template_path(
-                    request, "reset_password_email.jinja2"
-                ),
+                template=await get_template_path(request, "reset_password_email.jinja2"),
                 context={
                     "name": user.get("first_name") or user["name"],
                     "host": request.host,
@@ -216,15 +208,13 @@ async def initiate_reset_password(request: web.Request):
 
 
 async def initiate_change_email(request: web.Request):
-    # NOTE: This code have been intentially disabled in https://github.com/ITISFoundation/osparc-simcore/pull/5472
+    # NOTE: This code have been intentionally disabled in https://github.com/ITISFoundation/osparc-simcore/pull/5472
     product: Product = products_web.get_current_product(request)
     confirmation_service = get_confirmation_service(request.app)
 
     request_body = await parse_request_body_as(ChangeEmailBody, request)
 
-    user = await _auth_service.get_user_or_none(
-        request.app, user_id=request[RQT_USERID_KEY]
-    )
+    user = await _auth_service.get_user_or_none(request.app, user_id=request[RQT_USERID_KEY])
     assert user  # nosec
 
     if user["email"] == request_body.email:

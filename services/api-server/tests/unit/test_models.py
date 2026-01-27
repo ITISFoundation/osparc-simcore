@@ -20,12 +20,8 @@ from simcore_service_api_server.models.schemas.profiles import UserRoleEnum
     "model_cls, example_name, example_data",
     walk_model_examples_in_package(simcore_service_api_server.models),
 )
-def test_api_server_model_examples(
-    model_cls: type[BaseModel], example_name: int, example_data: Any
-):
-    assert_validation_model(
-        model_cls, example_name=example_name, example_data=example_data
-    )
+def test_api_server_model_examples(model_cls: type[BaseModel], example_name: int, example_data: Any):
+    assert_validation_model(model_cls, example_name=example_name, example_data=example_data)
 
 
 def test_enums_in_sync():

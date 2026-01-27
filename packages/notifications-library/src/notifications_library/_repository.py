@@ -47,9 +47,7 @@ class UsersRepo(_BaseRepo):
 
 
 class TemplatesRepo(_BaseRepo):
-    async def iter_email_templates(
-        self, product_name: ProductName
-    ) -> AsyncIterable[JinjaTemplateDbGet]:
+    async def iter_email_templates(self, product_name: ProductName) -> AsyncIterable[JinjaTemplateDbGet]:
         async with pass_or_acquire_connection(self.db_engine) as conn:
             async for row in await conn.stream(
                 sa.select(
@@ -62,13 +60,9 @@ class TemplatesRepo(_BaseRepo):
                     & (jinja2_templates.c.name.ilike("%.email.%"))
                 )
             ):
-                yield JinjaTemplateDbGet(
-                    product_name=product_name, name=row.name, content=row.content
-                )
+                yield JinjaTemplateDbGet(product_name=product_name, name=row.name, content=row.content)
 
-    async def iter_product_templates(
-        self, product_name: ProductName
-    ) -> AsyncIterable[JinjaTemplateDbGet]:
+    async def iter_product_templates(self, product_name: ProductName) -> AsyncIterable[JinjaTemplateDbGet]:
         async with pass_or_acquire_connection(self.db_engine) as conn:
             async for row in await conn.stream(
                 sa.select(
@@ -79,6 +73,4 @@ class TemplatesRepo(_BaseRepo):
                 .select_from(products_to_templates.join(jinja2_templates))
                 .where(products_to_templates.c.product_name == product_name)
             ):
-                yield JinjaTemplateDbGet(
-                    product_name=row.product_name, name=row.name, content=row.template
-                )
+                yield JinjaTemplateDbGet(product_name=row.product_name, name=row.name, content=row.template)

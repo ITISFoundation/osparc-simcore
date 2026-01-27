@@ -105,9 +105,7 @@ async def test_send_command(
     assert sent_command.instance_ids == [target_instance_id]
     assert sent_command.status == "Success"
 
-    got = await simcore_ssm_api.get_command(
-        target_instance_id, command_id=sent_command.command_id
-    )
+    got = await simcore_ssm_api.get_command(target_instance_id, command_id=sent_command.command_id)
     assert dataclasses.asdict(got) == {
         **dataclasses.asdict(sent_command),
         "message": "Success",
@@ -115,13 +113,9 @@ async def test_send_command(
         "finish_time": got.finish_time,
     }
     with pytest.raises(SSMInvalidCommandError):
-        await simcore_ssm_api.get_command(
-            faker.pystr(), command_id=sent_command.command_id
-        )
+        await simcore_ssm_api.get_command(faker.pystr(), command_id=sent_command.command_id)
     with pytest.raises(SSMInvalidCommandError):
-        await simcore_ssm_api.get_command(
-            target_instance_id, command_id=fake_command_id
-        )
+        await simcore_ssm_api.get_command(target_instance_id, command_id=fake_command_id)
 
 
 async def test_cancel_command(
@@ -143,9 +137,7 @@ async def test_cancel_command(
     assert sent_command.status == "Success"
 
     # cancelling a finished command is a no-op but is a bit of a joke as moto does not implement cancel command yet
-    await simcore_ssm_api.cancel_command(
-        instance_id=target_instance_id, command_id=sent_command.command_id
-    )
+    await simcore_ssm_api.cancel_command(instance_id=target_instance_id, command_id=sent_command.command_id)
 
 
 async def test_is_instance_connected_to_ssm_server(
@@ -160,14 +152,9 @@ async def test_is_instance_connected_to_ssm_server(
         autospec=True,
         return_value={"InstanceInformationList": [{"PingStatus": "Inactive"}]},
     )
-    assert (
-        await simcore_ssm_api.is_instance_connected_to_ssm_server(faker.pystr())
-        is False
-    )
+    assert await simcore_ssm_api.is_instance_connected_to_ssm_server(faker.pystr()) is False
     mock.return_value = {"InstanceInformationList": [{"PingStatus": "Online"}]}
-    assert (
-        await simcore_ssm_api.is_instance_connected_to_ssm_server(faker.pystr()) is True
-    )
+    assert await simcore_ssm_api.is_instance_connected_to_ssm_server(faker.pystr()) is True
 
 
 async def test_wait_for_has_instance_completed_cloud_init(
@@ -176,10 +163,7 @@ async def test_wait_for_has_instance_completed_cloud_init(
     faker: Faker,
     mocker: MockerFixture,
 ):
-    assert (
-        await simcore_ssm_api.wait_for_has_instance_completed_cloud_init(faker.pystr())
-        is False
-    )
+    assert await simcore_ssm_api.wait_for_has_instance_completed_cloud_init(faker.pystr()) is False
     original_get_command_invocation = (
         simcore_ssm_api._client.get_command_invocation  # noqa: SLF001
     )
@@ -218,10 +202,7 @@ async def test_wait_for_has_instance_completed_cloud_init(
     assert mocked_command_invocation.call_count == 2
 
     # NOTE: default will return False as we need to mock the return value of the cloud-init function
-    assert (
-        await simcore_ssm_api.wait_for_has_instance_completed_cloud_init(faker.pystr())
-        is False
-    )
+    assert await simcore_ssm_api.wait_for_has_instance_completed_cloud_init(faker.pystr()) is False
 
     mocked_command_invocation.reset_mock()
     call_count = 0
@@ -234,8 +215,5 @@ async def test_wait_for_has_instance_completed_cloud_init(
         return await original_get_command_invocation(*args, **kwargs)
 
     mocked_command_invocation.side_effect = mock_wait_command_successful
-    assert (
-        await simcore_ssm_api.wait_for_has_instance_completed_cloud_init(faker.pystr())
-        is True
-    )
+    assert await simcore_ssm_api.wait_for_has_instance_completed_cloud_init(faker.pystr()) is True
     assert mocked_command_invocation.call_count == 2

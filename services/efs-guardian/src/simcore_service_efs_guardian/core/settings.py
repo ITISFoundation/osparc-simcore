@@ -27,33 +27,25 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     APP_NAME: str = APP_NAME
     API_VTAG: VersionTag = API_VTAG
 
-    EFS_USER_ID: Annotated[
-        int, Field(description="Linux user ID that the Guardian service will run with")
-    ]
+    EFS_USER_ID: Annotated[int, Field(description="Linux user ID that the Guardian service will run with")]
     EFS_USER_NAME: Annotated[
         str,
         Field(description="Linux user name that the Guardian service will run with"),
     ]
     EFS_GROUP_ID: Annotated[
         int,
-        Field(
-            description="Linux group ID that the EFS and Simcore linux users are part of"
-        ),
+        Field(description="Linux group ID that the EFS and Simcore linux users are part of"),
     ]
     EFS_GROUP_NAME: Annotated[
         str,
-        Field(
-            description="Linux group name that the EFS and Simcore linux users are part of"
-        ),
+        Field(description="Linux group name that the EFS and Simcore linux users are part of"),
     ]
-    EFS_DEFAULT_USER_SERVICE_SIZE_BYTES: ByteSize = TypeAdapter(
-        ByteSize
-    ).validate_python("500GiB")
+    EFS_DEFAULT_USER_SERVICE_SIZE_BYTES: ByteSize = TypeAdapter(ByteSize).validate_python("500GiB")
 
     EFS_REMOVAL_POLICY_TASK_AGE_LIMIT_TIMEDELTA: Annotated[
         datetime.timedelta,
         Field(
-            description="For how long must a project remain unused before we remove its data from the EFS. (default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
+            description="For how long must a project remain unused before we remove its data from the EFS. (default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formatting)",
         ),
     ] = datetime.timedelta(days=10)
 
@@ -69,9 +61,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     EFS_GUARDIAN_LOGLEVEL: Annotated[
         LogLevel,
         Field(
-            validation_alias=AliasChoices(
-                "EFS_GUARDIAN_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"
-            ),
+            validation_alias=AliasChoices("EFS_GUARDIAN_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"),
         ),
     ] = LogLevel.INFO
 
@@ -89,25 +79,15 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         dict[LoggerName, list[MessageSubstring]],
         Field(
             default_factory=dict,
-            validation_alias=AliasChoices(
-                "EFS_GUARDIAN_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"
-            ),
+            validation_alias=AliasChoices("EFS_GUARDIAN_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"),
             description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
         ),
     ] = DEFAULT_FACTORY
 
-    EFS_GUARDIAN_AWS_EFS_SETTINGS: Annotated[
-        AwsEfsSettings, Field(json_schema_extra={"auto_default_from_env": True})
-    ]
-    EFS_GUARDIAN_POSTGRES: Annotated[
-        PostgresSettings, Field(json_schema_extra={"auto_default_from_env": True})
-    ]
-    EFS_GUARDIAN_RABBITMQ: Annotated[
-        RabbitSettings, Field(json_schema_extra={"auto_default_from_env": True})
-    ]
-    EFS_GUARDIAN_REDIS: Annotated[
-        RedisSettings, Field(json_schema_extra={"auto_default_from_env": True})
-    ]
+    EFS_GUARDIAN_AWS_EFS_SETTINGS: Annotated[AwsEfsSettings, Field(json_schema_extra={"auto_default_from_env": True})]
+    EFS_GUARDIAN_POSTGRES: Annotated[PostgresSettings, Field(json_schema_extra={"auto_default_from_env": True})]
+    EFS_GUARDIAN_RABBITMQ: Annotated[RabbitSettings, Field(json_schema_extra={"auto_default_from_env": True})]
+    EFS_GUARDIAN_REDIS: Annotated[RedisSettings, Field(json_schema_extra={"auto_default_from_env": True})]
     EFS_GUARDIAN_TRACING: Annotated[
         TracingSettings | None,
         Field(

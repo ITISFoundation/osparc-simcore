@@ -18,9 +18,7 @@ class ServiceNotAvailableError(DirectorRuntimeError):
 
 
 class DockerRegistryUnsupportedManifestSchemaVersionError(DirectorRuntimeError):
-    msg_template: str = (
-        "Docker registry schema version {version} issue with {service_name}:{service_tag}"
-    )
+    msg_template: str = "Docker registry schema version {version} issue with {service_name}:{service_tag}"
 
 
 class ServiceUUIDNotFoundError(DirectorRuntimeError):

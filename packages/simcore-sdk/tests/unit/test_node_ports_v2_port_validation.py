@@ -37,9 +37,7 @@ def _replace_value_in_dict(item: Any, original_schema: dict[str, Any]):
             for definition in definitions:
                 res = res[definition]
             return res
-        return {
-            key: _replace_value_in_dict(i, original_schema) for key, i in item.items()
-        }
+        return {key: _replace_value_in_dict(i, original_schema) for key, i in item.items()}
     return item
 
 
@@ -164,10 +162,7 @@ async def test_port_with_array_of_object(mocker):
 
     assert len(excinfo.value.errors()) == 1
 
-    assert (
-        "0 is less than or equal to the minimum of 3"
-        in excinfo.value.errors()[0]["msg"]
-    )
+    assert "0 is less than or equal to the minimum of 3" in excinfo.value.errors()[0]["msg"]
 
 
 async def test_port_with_object(mocker):

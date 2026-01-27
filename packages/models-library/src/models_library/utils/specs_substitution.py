@@ -16,10 +16,7 @@ SubstitutionValue: TypeAlias = StrictBool | StrictInt | StrictFloat | str
 
 
 class IdentifierSubstitutionError(OsparcErrorMixin, KeyError):
-    msg_template: str = (
-        "Was not able to substitute identifier "
-        "'{name}'. It was not found in: {substitutions}"
-    )
+    msg_template: str = "Was not able to substitute identifier '{name}'. It was not found in: {substitutions}"
 
 
 class _EnvVarData(NamedTuple):
@@ -41,9 +38,7 @@ class SpecsSubstitutionsResolver:
         self._substitutions: SubstitutionsDict = SubstitutionsDict()
 
     @classmethod
-    def _create_text_template(
-        cls, specs: dict[str, Any], *, upgrade: bool
-    ) -> TextTemplate:
+    def _create_text_template(cls, specs: dict[str, Any], *, upgrade: bool) -> TextTemplate:
         # convert to yaml (less symbols as in json)
         service_spec_str: str = json_dumps(specs)
 
@@ -57,7 +52,7 @@ class SpecsSubstitutionsResolver:
         return template
 
     def get_identifiers(self) -> list[str]:
-        """lists identifiers in specs in order of apperance. Can have repetitions"""
+        """lists identifiers in specs in order of appearance. Can have repetitions"""
         output: list[str] = self._template.get_identifiers()
         return output
 
@@ -68,9 +63,7 @@ class SpecsSubstitutionsResolver:
     def substitutions(self):
         return self._substitutions
 
-    def set_substitutions(
-        self, mappings: dict[str, SubstitutionValue]
-    ) -> SubstitutionsDict:
+    def set_substitutions(self, mappings: dict[str, SubstitutionValue]) -> SubstitutionsDict:
         """
         NOTE: ONLY targets identifiers declared in the specs
         NOTE:`${identifier:-a_default_value}` will replace the identifier with `a_default_value`
@@ -100,9 +93,7 @@ class SpecsSubstitutionsResolver:
                 )
             # NOTE: default is used only if not found in the provided substitutions
             elif env_var_data.default_value is not None:
-                resolved_identifiers[env_var_data.substitution_identifier] = (
-                    env_var_data.default_value
-                )
+                resolved_identifiers[env_var_data.substitution_identifier] = env_var_data.default_value
 
         # picks only needed for substitution
         self._substitutions = SubstitutionsDict(resolved_identifiers)
@@ -127,6 +118,4 @@ class SpecsSubstitutionsResolver:
             assert isinstance(new_specs, dict)  # nosec
             return new_specs
         except KeyError as e:
-            raise IdentifierSubstitutionError(
-                name=e.args[0], substitutions=self._substitutions
-            ) from e
+            raise IdentifierSubstitutionError(name=e.args[0], substitutions=self._substitutions) from e

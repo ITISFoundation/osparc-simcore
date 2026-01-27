@@ -19,9 +19,7 @@ from . import _handlers
 log = logging.getLogger(__name__)
 
 
-@app_setup_func(
-    __name__, ModuleCategory.ADDON, settings_name="WEBSERVER_EMAIL", logger=log
-)
+@app_setup_func(__name__, ModuleCategory.ADDON, settings_name="WEBSERVER_EMAIL", logger=log)
 def setup_email(app: web.Application):
     """
     Email template and helper functions to send emails
