@@ -1,8 +1,12 @@
 import logging
+from collections.abc import AsyncIterator, Callable
 
+import aiodocker
 import pytest
 from aiohttp import BasicAuth, ClientSession, ClientTimeout
+from fastapi import FastAPI
 from pydantic import TypeAdapter
+from pytest_mock.plugin import MockerFixture
 from settings_library.docker_api_proxy import DockerApiProxysettings
 from tenacity import before_sleep_log, retry, stop_after_delay, wait_fixed
 
@@ -50,15 +54,29 @@ async def docker_api_proxy_settings(
         {
             "DOCKER_API_PROXY_HOST": get_localhost_ip(),
             "DOCKER_API_PROXY_PORT": published_port,
-            "DOCKER_API_PROXY_USER": env_vars_for_docker_compose[
-                "DOCKER_API_PROXY_USER"
-            ],
-            "DOCKER_API_PROXY_PASSWORD": env_vars_for_docker_compose[
-                "DOCKER_API_PROXY_PASSWORD"
-            ],
+            "DOCKER_API_PROXY_USER": env_vars_for_docker_compose["DOCKER_API_PROXY_USER"],
+            "DOCKER_API_PROXY_PASSWORD": env_vars_for_docker_compose["DOCKER_API_PROXY_PASSWORD"],
         }
     )
 
     await _wait_till_docker_api_proxy_is_responsive(settings)
 
     return settings
+
+
+@pytest.fixture
+async def mock_setup_remote_docker_client(mocker: MockerFixture) -> Callable[[str], None]:
+    def _(to_mock: str) -> None:
+        mocker.patch(to_mock, autospec=True)
+
+    return _
+
+
+@pytest.fixture
+async def mock_remote_docker_client() -> AsyncIterator[Callable[[FastAPI], None]]:
+    async with aiodocker.Docker() as docker_client:
+
+        def _(app: FastAPI) -> None:
+            app.state.remote_docker_client = docker_client
+
+        yield _
