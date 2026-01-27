@@ -6,7 +6,6 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-
 from fastapi import APIRouter, status
 from fastapi.responses import RedirectResponse
 from models_library.projects import ProjectID

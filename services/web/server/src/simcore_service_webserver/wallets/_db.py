@@ -59,9 +59,9 @@ _SELECTION_ARGS = (
     func.max(wallet_to_groups.c.delete.cast(INTEGER)).cast(BOOLEAN).label("delete"),
 )
 
-_JOIN_TABLES = user_to_groups.join(
-    wallet_to_groups, user_to_groups.c.gid == wallet_to_groups.c.gid
-).join(wallets, wallet_to_groups.c.wallet_id == wallets.c.wallet_id)
+_JOIN_TABLES = user_to_groups.join(wallet_to_groups, user_to_groups.c.gid == wallet_to_groups.c.gid).join(
+    wallets, wallet_to_groups.c.wallet_id == wallets.c.wallet_id
+)
 
 
 async def list_wallets_for_user(
@@ -158,9 +158,7 @@ async def get_wallet_for_user(
         return UserWalletDB.model_validate(row)
 
 
-async def get_wallet(
-    app: web.Application, wallet_id: WalletID, product_name: ProductName
-) -> WalletDB:
+async def get_wallet(app: web.Application, wallet_id: WalletID, product_name: ProductName) -> WalletDB:
     stmt = (
         select(
             wallets.c.wallet_id,
@@ -173,10 +171,7 @@ async def get_wallet(
             wallets.c.modified,
         )
         .select_from(wallets)
-        .where(
-            (wallets.c.wallet_id == wallet_id)
-            & (wallets.c.product_name == product_name)
-        )
+        .where((wallets.c.wallet_id == wallet_id) & (wallets.c.product_name == product_name))
     )
     async with get_database_engine_legacy(app).acquire() as conn:
         result = await conn.execute(stmt)
@@ -205,10 +200,7 @@ async def update_wallet(
                 status=status,
                 modified=func.now(),
             )
-            .where(
-                (wallets.c.wallet_id == wallet_id)
-                & (wallets.c.product_name == product_name)
-            )
+            .where((wallets.c.wallet_id == wallet_id) & (wallets.c.product_name == product_name))
             .returning(literal_column("*"))
         )
         row = await result.first()
@@ -224,8 +216,5 @@ async def delete_wallet(
 ) -> None:
     async with get_database_engine_legacy(app).acquire() as conn:
         await conn.execute(
-            wallets.delete().where(
-                (wallets.c.wallet_id == wallet_id)
-                & (wallets.c.product_name == product_name)
-            )
+            wallets.delete().where((wallets.c.wallet_id == wallet_id) & (wallets.c.product_name == product_name))
         )

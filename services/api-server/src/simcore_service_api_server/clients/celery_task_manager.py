@@ -19,9 +19,7 @@ def setup_task_manager(app: FastAPI, settings: CelerySettings) -> None:
     async def on_startup() -> None:
         with log_context(_logger, logging.INFO, "Setting up Celery"):
             redis_client_sdk = RedisClientSDK(
-                settings.CELERY_REDIS_RESULT_BACKEND.build_redis_dsn(
-                    RedisDatabase.CELERY_TASKS
-                ),
+                settings.CELERY_REDIS_RESULT_BACKEND.build_redis_dsn(RedisDatabase.CELERY_TASKS),
                 client_name="api_server_celery_tasks",
             )
             app.state.celery_tasks_redis_client_sdk = redis_client_sdk
@@ -38,9 +36,7 @@ def setup_task_manager(app: FastAPI, settings: CelerySettings) -> None:
 
     async def on_shutdown() -> None:
         with log_context(_logger, logging.INFO, "Shutting down Celery"):
-            redis_client_sdk: RedisClientSDK | None = (
-                app.state.celery_tasks_redis_client_sdk
-            )
+            redis_client_sdk: RedisClientSDK | None = app.state.celery_tasks_redis_client_sdk
             if redis_client_sdk:
                 await redis_client_sdk.shutdown()
 

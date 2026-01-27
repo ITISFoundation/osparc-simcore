@@ -39,18 +39,13 @@ async def _list_services_in_database(
     db_engine: AsyncEngine,
 ):
     services_repo = ServicesRepository(db_engine=db_engine)
-    return {
-        (service.key, service.version)
-        for service in await services_repo.list_services()
-    }
+    return {(service.key, service.version) for service in await services_repo.list_services()}
 
 
 async def _create_services_in_database(
     app: FastAPI,
     service_keys: set[tuple[ServiceKey, ServiceVersion]],
-    services_in_registry: dict[
-        tuple[ServiceKey, ServiceVersion], ServiceMetaDataPublished
-    ],
+    services_in_registry: dict[tuple[ServiceKey, ServiceVersion], ServiceMetaDataPublished],
 ) -> None:
     """Adds a new service in the database
 
@@ -65,10 +60,7 @@ async def _create_services_in_database(
     sorted_services = sorted(service_keys, key=_by_version)
 
     for service_key, service_version in sorted_services:
-
-        service_metadata: ServiceMetaDataPublished = services_in_registry[
-            (service_key, service_version)
-        ]
+        service_metadata: ServiceMetaDataPublished = services_in_registry[(service_key, service_version)]
         try:
             # 1. Evaluate DEFAULT ownership and access rights
             (
@@ -88,9 +80,7 @@ async def _create_services_in_database(
 
             # 3. Aggregates access rights and metadata updates
             service_access_rights += inherited_data["access_rights"]
-            service_access_rights = access_rights.reduce_access_rights(
-                service_access_rights
-            )
+            service_access_rights = access_rights.reduce_access_rights(service_access_rights)
 
             metadata_updates = {
                 **service_metadata.model_dump(exclude_unset=True),
@@ -123,9 +113,7 @@ async def _ensure_registry_and_database_are_synced(app: FastAPI) -> None:
     director_api = get_director_client(app)
     services_in_manifest_map = await manifest.get_services_map(director_api)
 
-    services_in_db: set[tuple[ServiceKey, ServiceVersion]] = (
-        await _list_services_in_database(app.state.engine)
-    )
+    services_in_db: set[tuple[ServiceKey, ServiceVersion]] = await _list_services_in_database(app.state.engine)
 
     # check that the db has all the services at least once
     missing_services_in_db = set(services_in_manifest_map.keys()) - services_in_db
@@ -136,20 +124,15 @@ async def _ensure_registry_and_database_are_synced(app: FastAPI) -> None:
         )
 
         # update db
-        await _create_services_in_database(
-            app, missing_services_in_db, services_in_manifest_map
-        )
+        await _create_services_in_database(app, missing_services_in_db, services_in_manifest_map)
 
 
-async def _ensure_published_templates_accessible(
-    db_engine: AsyncEngine, default_product_name: str
-) -> None:
+async def _ensure_published_templates_accessible(db_engine: AsyncEngine, default_product_name: str) -> None:
     # Rationale: if a project template was published, its services must be available to everyone.
     # a published template has a column Published that is set to True
     projects_repo = ProjectsRepository(db_engine)
     published_services: set[tuple[str, str]] = {
-        (service.key, service.version)
-        for service in await projects_repo.list_services_from_published_templates()
+        (service.key, service.version) for service in await projects_repo.list_services_from_published_templates()
     }
 
     groups_repo = GroupsRepository(db_engine)
@@ -158,9 +141,7 @@ async def _ensure_published_templates_accessible(
     services_repo = ServicesRepository(db_engine)
     available_services: set[tuple[str, str]] = {
         (service.key, service.version)
-        for service in await services_repo.list_services(
-            gids=[everyone_gid], execute_access=True
-        )
+        for service in await services_repo.list_services(gids=[everyone_gid], execute_access=True)
     }
 
     missing_services = published_services - available_services
@@ -212,13 +193,9 @@ async def _sync_services_task(app: FastAPI) -> None:
             if not app.state.registry_syncer_running:
                 _logger.warning("registry syncing task forced to stop")
                 break
-            _logger.exception(
-                "Unexpected error while syncing registry entries, restarting now..."
-            )
+            _logger.exception("Unexpected error while syncing registry entries, restarting now...")
             # wait a bit before retrying, so it does not block everything until the director is up
-            await asyncio.sleep(
-                app.state.settings.CATALOG_BACKGROUND_TASK_WAIT_AFTER_FAILURE
-            )
+            await asyncio.sleep(app.state.settings.CATALOG_BACKGROUND_TASK_WAIT_AFTER_FAILURE)
 
 
 async def start_registry_sync_task(app: FastAPI) -> None:

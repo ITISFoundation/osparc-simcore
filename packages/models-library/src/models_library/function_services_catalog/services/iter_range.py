@@ -7,9 +7,7 @@ from .._key_labels import FUNCTION_SERVICE_KEY_PREFIX
 from .._utils import OM, FunctionServices, create_fake_thumbnail_url
 
 
-def create_metadata(
-    type_name: str, prefix: str | None = None
-) -> ServiceMetaDataPublished:
+def create_metadata(type_name: str, prefix: str | None = None) -> ServiceMetaDataPublished:
     prefix = prefix or type_name
     LABEL = f"{type_name.capitalize()} iterator"
     return ServiceMetaDataPublished.model_validate(
@@ -56,9 +54,7 @@ def create_metadata(
     )
 
 
-def _linspace_func(
-    linspace_start: int = 0, linspace_stop: int = 1, linspace_step: int = 1
-) -> Iterator[int]:
+def _linspace_func(linspace_start: int = 0, linspace_stop: int = 1, linspace_step: int = 1) -> Iterator[int]:
     yield from range(linspace_start, linspace_stop, linspace_step)
 
 

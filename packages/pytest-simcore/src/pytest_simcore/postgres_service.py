@@ -44,9 +44,7 @@ def _execute_queries(
                 print(f"SQL error which can be ignored {e}")
 
 
-def _create_template_db(
-    postgres_dsn: PostgresTestConfig, postgres_engine: sa.engine.Engine
-) -> None:
+def _create_template_db(postgres_dsn: PostgresTestConfig, postgres_engine: sa.engine.Engine) -> None:
     # create a template db, the removal is necessary to allow for the usage of --keep-docker-up
     queries = [
         # disconnect existing users
@@ -94,9 +92,7 @@ def postgres_with_template_db(
 def drop_db_engine(postgres_dsn: PostgresTestConfig) -> sa.engine.Engine:
     postgres_dsn_copy = postgres_dsn.copy()  # make a copy to change these parameters
     postgres_dsn_copy["database"] = "postgres"
-    dsn = "postgresql://{user}:{password}@{host}:{port}/{database}".format(
-        **postgres_dsn_copy
-    )
+    dsn = "postgresql://{user}:{password}@{host}:{port}/{database}".format(**postgres_dsn_copy)
     return sa.create_engine(dsn, isolation_level="AUTOCOMMIT")
 
 
@@ -110,8 +106,8 @@ def database_from_template_before_each_function(
     **Note: must be implemented in the module where the the
     `postgres_with_template_db` is used and mark autouse=True**
 
-    It is possible to drop the application database by ussing another one like
-    the posgtres database. The db will be recrated from the previously created template
+    It is possible to drop the application database by using another one like
+    the posgtres database. The db will be recreated from the previously created template
 
     The postgres_db fixture is required for the template database to be created.
     """
@@ -132,9 +128,7 @@ def database_from_template_before_each_function(
 
 
 @pytest.fixture(scope="module")
-def postgres_dsn(
-    docker_stack: dict, env_vars_for_docker_compose: EnvVarsDict
-) -> PostgresTestConfig:
+def postgres_dsn(docker_stack: dict, env_vars_for_docker_compose: EnvVarsDict) -> PostgresTestConfig:
     assert "pytest-simcore_postgres" in docker_stack["services"]
 
     pg_config: PostgresTestConfig = {
@@ -142,9 +136,7 @@ def postgres_dsn(
         "password": env_vars_for_docker_compose["POSTGRES_PASSWORD"],
         "database": env_vars_for_docker_compose["POSTGRES_DB"],
         "host": get_localhost_ip(),
-        "port": get_service_published_port(
-            "postgres", env_vars_for_docker_compose["POSTGRES_PORT"]
-        ),
+        "port": get_service_published_port("postgres", env_vars_for_docker_compose["POSTGRES_PORT"]),
     }
 
     return pg_config
@@ -155,9 +147,7 @@ _MINUTE: Final[int] = 60
 
 @pytest.fixture(scope="module")
 def postgres_engine(postgres_dsn: PostgresTestConfig) -> Iterator[sa.engine.Engine]:
-    dsn = "postgresql://{user}:{password}@{host}:{port}/{database}".format(
-        **postgres_dsn
-    )
+    dsn = "postgresql://{user}:{password}@{host}:{port}/{database}".format(**postgres_dsn)
 
     engine = sa.create_engine(dsn, isolation_level="AUTOCOMMIT")
     assert isinstance(engine, sa.engine.Engine)  # nosec
@@ -169,13 +159,9 @@ def postgres_engine(postgres_dsn: PostgresTestConfig) -> Iterator[sa.engine.Engi
         reraise=True,
     ):
         with attempt:
-            print(
-                f"--> Connecting to {dsn}, attempt {attempt.retry_state.attempt_number}..."
-            )
+            print(f"--> Connecting to {dsn}, attempt {attempt.retry_state.attempt_number}...")
             with engine.connect():
-                print(
-                    f"Connection to {dsn} succeeded [{json.dumps(attempt.retry_state.retry_object.statistics)}]"
-                )
+                print(f"Connection to {dsn} succeeded [{json.dumps(attempt.retry_state.retry_object.statistics)}]")
 
     yield engine
 
@@ -184,9 +170,7 @@ def postgres_engine(postgres_dsn: PostgresTestConfig) -> Iterator[sa.engine.Engi
 
 @pytest.fixture(scope="module")
 def postgres_dsn_url(postgres_dsn: PostgresTestConfig) -> str:
-    return "postgresql://{user}:{password}@{host}:{port}/{database}".format(
-        **postgres_dsn
-    )
+    return "postgresql://{user}:{password}@{host}:{port}/{database}".format(**postgres_dsn)
 
 
 @pytest.fixture(scope="module")
@@ -233,9 +217,7 @@ async def sqlalchemy_async_engine(
     # NOTE: prevent having to import this if latest sqlalchemy not installed
     from sqlalchemy.ext.asyncio import create_async_engine
 
-    engine = create_async_engine(
-        f"{postgres_db.url}".replace("postgresql", "postgresql+asyncpg")
-    )
+    engine = create_async_engine(f"{postgres_db.url}".replace("postgresql", "postgresql+asyncpg"))
     assert engine
     yield engine
 

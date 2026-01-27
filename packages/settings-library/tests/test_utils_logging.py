@@ -8,7 +8,6 @@ from settings_library.utils_logging import MixinLoggingSettings
 
 
 def test_mixin_logging(monkeypatch):
-
     monkeypatch.setenv("LOG_LEVEL", "debug")
 
     # -----------------------------------------------------------
@@ -28,9 +27,7 @@ def test_mixin_logging(monkeypatch):
             ),
         ] = "WARNING"
 
-        APPNAME_DEBUG: Annotated[
-            bool, Field(description="Starts app in debug mode")
-        ] = False
+        APPNAME_DEBUG: Annotated[bool, Field(description="Starts app in debug mode")] = False
 
         @field_validator("LOG_LEVEL", mode="before")
         @classmethod
@@ -44,10 +41,7 @@ def test_mixin_logging(monkeypatch):
     # test validator
     assert settings.LOG_LEVEL == "DEBUG"
 
-    assert (
-        settings.model_dump_json()
-        == '{"SC_BOOT_MODE":null,"LOG_LEVEL":"DEBUG","APPNAME_DEBUG":false}'
-    )
+    assert settings.model_dump_json() == '{"SC_BOOT_MODE":null,"LOG_LEVEL":"DEBUG","APPNAME_DEBUG":false}'
 
     # test cached-property
     assert settings.log_level == logging.DEBUG

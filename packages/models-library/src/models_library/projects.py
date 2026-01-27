@@ -115,9 +115,7 @@ class ProjectAtDB(BaseProjectModel):
 
     id: Annotated[int, Field(description="The table primary index")]
 
-    project_type: Annotated[
-        ProjectType, Field(alias="type", description="The project type")
-    ]
+    project_type: Annotated[ProjectType, Field(alias="type", description="The project type")]
     template_type: Annotated[
         ProjectTemplateType | None,
         Field(
@@ -139,9 +137,7 @@ class ProjectAtDB(BaseProjectModel):
             return v.value
         return v
 
-    model_config = ConfigDict(
-        from_attributes=True, use_enum_values=True, populate_by_name=True
-    )
+    model_config = ConfigDict(from_attributes=True, use_enum_values=True, populate_by_name=True)
 
 
 class ProjectListAtDB(BaseProjectModel):
@@ -168,9 +164,7 @@ class Project(BaseProjectModel):
     # NOT for usage with DB!!
 
     # Ownership and Access  (SEE projects_access.py)
-    prj_owner: Annotated[
-        LowerCaseEmailStr, Field(description="user email", alias="prjOwner")
-    ]
+    prj_owner: Annotated[LowerCaseEmailStr, Field(description="user email", alias="prjOwner")]
     access_rights: Annotated[
         dict[GroupIDStr, AccessRights],
         Field(
@@ -240,9 +234,7 @@ class Project(BaseProjectModel):
     # trash state
     trashed: datetime | None = None
     trashed_by: Annotated[UserID | None, Field(alias="trashedBy")] = None
-    trashed_by_primary_gid: Annotated[
-        GroupID | None, Field(alias="trashedByPrimaryGid")
-    ] = None
+    trashed_by_primary_gid: Annotated[GroupID | None, Field(alias="trashedByPrimaryGid")] = None
     trashed_explicitly: Annotated[bool, Field(alias="trashedExplicitly")] = False
 
     # Labeling

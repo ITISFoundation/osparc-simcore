@@ -75,9 +75,7 @@ async def get_download_link_from_s3(
     :raises exceptions.StorageServerIssue
     """
     async with ClientSessionContextManager(client_session) as session:
-        store_id = await _filemanager_utils.resolve_location_id(
-            session, user_id, store_name, store_id
-        )
+        store_id = await _filemanager_utils.resolve_location_id(session, user_id, store_name, store_id)
         file_link = await storage_client.get_download_file_link(
             session=session,
             file_id=s3_object,
@@ -127,9 +125,7 @@ async def get_upload_links_from_s3(
     sha256_checksum: SHA256Str | None,
 ) -> tuple[LocationID, FileUploadSchema]:
     async with ClientSessionContextManager(client_session) as session:
-        store_id = await _filemanager_utils.resolve_location_id(
-            session, user_id, store_name, store_id
-        )
+        store_id = await _filemanager_utils.resolve_location_id(session, user_id, store_name, store_id)
         file_links = await storage_client.get_upload_file_links(
             session=session,
             file_id=s3_object,
@@ -173,9 +169,7 @@ async def download_path_from_s3(
     )
 
     async with ClientSessionContextManager(client_session) as session:
-        store_id = await _filemanager_utils.resolve_location_id(
-            session, user_id, store_name, store_id
-        )
+        store_id = await _filemanager_utils.resolve_location_id(session, user_id, store_name, store_id)
         file_meta_data: FileMetaDataGet = await _get_file_meta_data(
             user_id=user_id,
             s3_object=s3_object,
@@ -183,9 +177,7 @@ async def download_path_from_s3(
             client_session=session,
         )
 
-        if file_meta_data.is_directory and not await r_clone.is_r_clone_available(
-            r_clone_settings
-        ):
+        if file_meta_data.is_directory and not await r_clone.is_r_clone_available(r_clone_settings):
             msg = f"Requested to download directory {s3_object}, but no rclone support was detected"
             raise exceptions.NodeportsException(msg)
 
@@ -196,9 +188,7 @@ async def download_path_from_s3(
             store_id=store_id,
             s3_object=s3_object,
             client_session=session,
-            link_type=(
-                LinkType.S3 if file_meta_data.is_directory else LinkType.PRESIGNED
-            ),
+            link_type=(LinkType.S3 if file_meta_data.is_directory else LinkType.PRESIGNED),
         )
 
         # the link contains the file name
@@ -211,9 +201,7 @@ async def download_path_from_s3(
                     r_clone_settings,
                     progress_bar,
                     local_directory_path=local_path,
-                    download_s3_link=str(
-                        TypeAdapter(AnyUrl).validate_python(f"{download_link}")
-                    ),
+                    download_s3_link=str(TypeAdapter(AnyUrl).validate_python(f"{download_link}")),
                 )
             else:
                 msg = "Unexpected configuration"
@@ -259,9 +247,7 @@ async def download_file_from_link(
     return local_file_path
 
 
-async def abort_upload(
-    abort_upload_link: AnyUrl, client_session: ClientSession | None = None
-) -> None:
+async def abort_upload(abort_upload_link: AnyUrl, client_session: ClientSession | None = None) -> None:
     """Abort a multipart upload
 
     Arguments:
@@ -286,9 +272,7 @@ class UploadedFile:
 class UploadedFolder: ...
 
 
-async def _generate_checksum(
-    path_to_upload: Path | UploadableFileObject, is_directory: bool
-) -> SHA256Str | None:
+async def _generate_checksum(path_to_upload: Path | UploadableFileObject, is_directory: bool) -> SHA256Str | None:
     checksum: SHA256Str | None = None
     if is_directory:
         return checksum
@@ -325,9 +309,7 @@ async def upload_path(  # pylint: disable=too-many-arguments
     async for attempt in AsyncRetrying(
         reraise=True,
         wait=wait_random_exponential(),
-        stop=stop_after_attempt(
-            NodePortsSettings.create_from_envs().NODE_PORTS_400_REQUEST_TIMEOUT_ATTEMPTS
-        ),
+        stop=stop_after_attempt(NodePortsSettings.create_from_envs().NODE_PORTS_400_REQUEST_TIMEOUT_ATTEMPTS),
         retry=retry_if_exception_type(exceptions.AwsS3BadRequestRequestTimeoutError),
         before_sleep=before_sleep_log(_logger, logging.WARNING, exc_info=True),
         after=after_log(_logger, log_level=logging.ERROR),
@@ -395,9 +377,7 @@ async def _upload_path(  # pylint: disable=too-many-arguments
                 client_session=session,
                 link_type=LinkType.S3 if is_directory else LinkType.PRESIGNED,
                 file_size=ByteSize(
-                    path_to_upload.stat().st_size
-                    if isinstance(path_to_upload, Path)
-                    else path_to_upload.file_size
+                    path_to_upload.stat().st_size if isinstance(path_to_upload, Path) else path_to_upload.file_size
                 ),
                 is_directory=is_directory,
                 sha256_checksum=checksum,
@@ -514,18 +494,11 @@ async def entry_exists(
     Before returning it also checks if the metadata entry is a directory or a file.
     """
     try:
-        file_metadata: FileMetaDataGet = await _get_file_meta_data(
-            user_id, store_id, s3_object, client_session
-        )
-        result: bool = (
-            file_metadata.file_id == s3_object
-            and file_metadata.is_directory == is_directory
-        )
+        file_metadata: FileMetaDataGet = await _get_file_meta_data(user_id, store_id, s3_object, client_session)
+        result: bool = file_metadata.file_id == s3_object and file_metadata.is_directory == is_directory
         return result
     except exceptions.S3InvalidPathError as err:
-        _logger.debug(
-            "Failed request metadata for s3_object=%s with %s", s3_object, err
-        )
+        _logger.debug("Failed request metadata for s3_object=%s with %s", s3_object, err)
         return False
 
 
@@ -566,6 +539,4 @@ async def delete_file(
 ) -> None:
     async with ClientSessionContextManager(client_session) as session:
         _logger.debug("Will delete file for s3_object=%s", s3_object)
-        await storage_client.delete_file(
-            session=session, file_id=s3_object, location_id=store_id, user_id=user_id
-        )
+        await storage_client.delete_file(session=session, file_id=s3_object, location_id=store_id, user_id=user_id)

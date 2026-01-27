@@ -48,18 +48,14 @@ class SciCrunch:
         )
 
         self.portal_site_url = str(self.base_url.with_path("/resources/"))
-        self.new_submission_site_url = str(
-            self.base_url.with_path("/resources/about/resource")
-        )
+        self.new_submission_site_url = str(self.base_url.with_path("/resources/about/resource"))
 
     # Application instance ---------
     #  - Ensures a single instance inside an application
     # TODO: this can be added using a policy class decorator
 
     @classmethod
-    def acquire_instance(
-        cls, app: web.Application, settings: SciCrunchSettings
-    ) -> "SciCrunch":
+    def acquire_instance(cls, app: web.Application, settings: SciCrunchSettings) -> "SciCrunch":
         """Returns single instance for the application and stores it"""
         obj: SciCrunch | None = app.get(SCICRUNCH_CLIENT_APPKEY)
         if obj is None:
@@ -71,9 +67,7 @@ class SciCrunch:
     def get_instance(cls, app: web.Application) -> "SciCrunch":
         obj: SciCrunch | None = app.get(SCICRUNCH_CLIENT_APPKEY)
         if obj is None:
-            raise ScicrunchConfigError(
-                details="Services on scicrunch.org are currently disabled"
-            )
+            raise ScicrunchConfigError(details="Services on scicrunch.org are currently disabled")
         return obj
 
     # MEMBERS --------
@@ -82,17 +76,11 @@ class SciCrunch:
         # NOTE: for some reason scicrunch query does not like prefix!
         prefixless_rrid = rrid.replace("RRID:", "").strip()
         # example https://scicrunch.org/resources/Any/search?q=AB_90755&l=AB_90755
-        return str(
-            self.base_url.with_path("/resources/Any/search").with_query(
-                q="undefined", l=prefixless_rrid
-            )
-        )
+        return str(self.base_url.with_path("/resources/Any/search").with_query(q="undefined", l=prefixless_rrid))
 
     def get_resolver_web_url(self, rrid: str) -> HttpUrl:
         # example https://scicrunch.org/resolver/RRID:AB_90755
-        output: HttpUrl = TypeAdapter(HttpUrl).validate_python(
-            f"{self.settings.SCICRUNCH_RESOLVER_BASE_URL}/{rrid}"
-        )
+        output: HttpUrl = TypeAdapter(HttpUrl).validate_python(f"{self.settings.SCICRUNCH_RESOLVER_BASE_URL}/{rrid}")
         return output
 
     @classmethod
@@ -105,9 +93,7 @@ class SciCrunch:
         if for_api and not rrid.startswith("SCR_"):
             # "SCR" for the SciCrunch registry of tools
             # scicrunch API does not support anything else but tools (see test_scicrunch_services.py)
-            raise InvalidRRIDError(
-                msg_template=": only 'SCR' from scicrunch registry of tools allowed"
-            )
+            raise InvalidRRIDError(msg_template=": only 'SCR' from scicrunch registry of tools allowed")
 
         return rrid
 
@@ -130,9 +116,7 @@ class SciCrunch:
             # NOTE: replaces former call to API.
             # Resolver entrypoint does NOT require authentication
             # and has an associated website
-            resolved_items: list[ResolvedItem] = await resolve_rrid(
-                rrid, self.client, self.settings
-            )
+            resolved_items: list[ResolvedItem] = await resolve_rrid(rrid, self.client, self.settings)
             if not resolved_items:
                 raise InvalidRRIDError(msg_template=f".Could not resolve {rrid}")
 
@@ -152,9 +136,7 @@ class SciCrunch:
             raise map_to_scicrunch_error(rrid, err.status, err.message) from err
 
         except (ValidationError, client_exceptions.InvalidURL) as err:
-            raise ScicrunchAPIError(
-                details="scicrunch API response unexpectedly changed"
-            ) from err
+            raise ScicrunchAPIError(details="scicrunch API response unexpectedly changed") from err
 
         except (
             client_exceptions.ClientConnectionError,
@@ -162,9 +144,7 @@ class SciCrunch:
             TimeoutError,
         ) as err:
             # https://docs.aiohttp.org/en/stable/client_reference.html#hierarchy-of-exceptions
-            raise ScicrunchServiceError(
-                details="Failed to connect scicrunch service"
-            ) from err
+            raise ScicrunchServiceError(details="Failed to connect scicrunch service") from err
 
     async def search_resource(self, name_as: str) -> list[ResourceHit]:
         # Safe: returns empty string if fails!

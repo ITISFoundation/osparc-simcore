@@ -70,10 +70,7 @@ async def fake_log_distributor(app: FastAPI, mocker: MockFixture):
 
 
 @pytest.fixture
-def fake_project_for_streaming(
-    app: FastAPI, mocker: MockFixture, faker: Faker
-) -> Iterable[ProjectGet]:
-
+def fake_project_for_streaming(app: FastAPI, mocker: MockFixture, faker: Faker) -> Iterable[ProjectGet]:
     assert isinstance(response_body := GET_PROJECT.response_body, dict)
     assert (data := response_body.get("data")) is not None
     fake_project = ProjectGet.model_validate(data)
@@ -83,9 +80,7 @@ def fake_project_for_streaming(
         return_value=fake_project,
     )
 
-    mocker.patch(
-        "simcore_service_api_server.api.routes.solvers_jobs_read.raise_if_job_not_associated_with_solver"
-    )
+    mocker.patch("simcore_service_api_server.api.routes.solvers_jobs_read.raise_if_job_not_associated_with_solver")
     return fake_project
 
 
@@ -101,7 +96,6 @@ async def test_log_streaming(
     mocked_directorv2_rest_api: MockRouter,
     disconnect: bool,
 ):
-
     job_id: JobID = fake_project_for_streaming.uuid
 
     collected_messages: list[str] = []
@@ -119,10 +113,7 @@ async def test_log_streaming(
 
     assert fake_log_distributor.deregister_is_called
 
-    assert (
-        collected_messages
-        == fake_log_distributor._produced_logs[: len(collected_messages)]
-    )
+    assert collected_messages == fake_log_distributor._produced_logs[: len(collected_messages)]
 
 
 @pytest.fixture
@@ -148,7 +139,6 @@ async def test_logstreaming_job_not_found_exception(
     fake_project_for_streaming: ProjectGet,
     mock_job_not_found: MockRouter,
 ):
-
     job_id: JobID = fake_project_for_streaming.uuid
     _received_error = False
 

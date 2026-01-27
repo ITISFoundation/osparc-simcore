@@ -77,13 +77,9 @@ class FileUrl(BaseModel):
     url: AnyUrl
     file_mapping: Annotated[
         str | None,
-        Field(
-            description="Local file relpath name (if given), otherwise it takes the url filename"
-        ),
+        Field(description="Local file relpath name (if given), otherwise it takes the url filename"),
     ] = None
-    file_mime_type: Annotated[
-        str | None, Field(description="the file MIME type", pattern=MIME_TYPE_RE)
-    ] = None
+    file_mime_type: Annotated[str | None, Field(description="the file MIME type", pattern=MIME_TYPE_RE)] = None
 
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:
@@ -110,14 +106,7 @@ class FileUrl(BaseModel):
 
 
 PortValue: TypeAlias = Annotated[
-    StrictBool
-    | StrictInt
-    | StrictFloat
-    | StrictStr
-    | FileUrl
-    | list[Any]
-    | dict[str, Any]
-    | None,
+    StrictBool | StrictInt | StrictFloat | StrictStr | FileUrl | list[Any] | dict[str, Any] | None,
     Field(union_mode="left_to_right"),
 ]
 
@@ -144,9 +133,7 @@ class TaskInputData(DictModel[ServicePortKey, PortValue]):
     )
 
 
-PortSchemaValue: TypeAlias = Annotated[
-    PortSchema | FilePortSchema, Field(union_mode="left_to_right")
-]
+PortSchemaValue: TypeAlias = Annotated[PortSchema | FilePortSchema, Field(union_mode="left_to_right")]
 
 
 class TaskOutputDataSchema(DictModel[ServicePortKey, PortSchemaValue]):

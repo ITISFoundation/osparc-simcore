@@ -36,11 +36,7 @@ class ContainersManager(SingletonInAppStateMixin):
             orphan_containers,
         )
 
-        unexpected_orphans = {
-            orphan
-            for orphan in orphan_containers
-            if orphan.startswith(user_service_prefix)
-        }
+        unexpected_orphans = {orphan for orphan in orphan_containers if orphan.startswith(user_service_prefix)}
         if unexpected_orphans:
             _logger.warning(
                 "Unexpected orphans detected for node_id='%s': %s",

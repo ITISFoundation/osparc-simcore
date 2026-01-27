@@ -32,8 +32,7 @@ MAX_TIME_TO_RESTART_SERVICE = 10
 
 # FIXME: https://github.com/ITISFoundation/osparc-simcore/issues/2407
 @pytest.mark.skip(
-    reason="UNDER INVESTIGATION: unclear why this test affects the state of others."
-    "It works locally but not online."
+    reason="UNDER INVESTIGATION: unclear why this test affects the state of others.It works locally but not online."
 )
 @pytest.mark.parametrize(
     "docker_compose_service_key,exit_code",
@@ -51,7 +50,7 @@ def test_graceful_restart_services(
 
         It force update the service even if no changes requires it (i.e "docker service update --force" ).
         which will recreate the task. It is expected that the app process inside
-        handles properly the signal and shutsdown gracefuly returning statuscode 0.
+        handles properly the signal and shutsdown gracefully returning statuscode 0.
 
 
     Did this case FAILED? These are the typical reasons:
@@ -74,16 +73,11 @@ def test_graceful_restart_services(
     """
     assert simcore_stack_deployed_services
 
-    assert any(
-        s.name.endswith(docker_compose_service_key)
-        for s in simcore_stack_deployed_services
-    )
+    assert any(s.name.endswith(docker_compose_service_key) for s in simcore_stack_deployed_services)
 
     # Service names:'pytest-simcore_static-webserver', 'pytest-simcore_webserver'
     service: Service = next(
-        s
-        for s in simcore_stack_deployed_services
-        if s.name.endswith(f"_{docker_compose_service_key}")
+        s for s in simcore_stack_deployed_services if s.name.endswith(f"_{docker_compose_service_key}")
     )
 
     # NOTE: This is how it looks status. Do not delete
@@ -110,8 +104,7 @@ def test_graceful_restart_services(
 
     task = shutdown_tasks[0]
     assert task["Status"]["ContainerStatus"]["ExitCode"] == exit_code, (
-        f"{docker_compose_service_key} expected exit_code=={exit_code}; "
-        f"got task_status={pformat(task['Status'])}"
+        f"{docker_compose_service_key} expected exit_code=={exit_code}; got task_status={pformat(task['Status'])}"
     )
 
     # TODO: check ps ax has TWO processes

@@ -60,9 +60,7 @@ class _OpenProjectQuery(BaseModel):
 async def open_project(request: web.Request) -> web.Response:
     req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
-    query_params: _OpenProjectQuery = parse_request_query_parameters_as(
-        _OpenProjectQuery, request
-    )
+    query_params: _OpenProjectQuery = parse_request_query_parameters_as(_OpenProjectQuery, request)
 
     try:
         client_session_id = await request.json()
@@ -71,12 +69,8 @@ async def open_project(request: web.Request) -> web.Response:
         raise web.HTTPBadRequest(text="Invalid request body") from exc
 
     try:
-        project_type: ProjectType = await _projects_service.get_project_type(
-            request.app, path_params.project_id
-        )
-        user_role: UserRole = await users_service.get_user_role(
-            request.app, user_id=req_ctx.user_id
-        )
+        project_type: ProjectType = await _projects_service.get_project_type(request.app, path_params.project_id)
+        user_role: UserRole = await users_service.get_user_role(request.app, user_id=req_ctx.user_id)
         if project_type is ProjectType.TEMPLATE and user_role < UserRole.USER:
             # only USERS/TESTERS can do that
             raise web.HTTPForbidden(text="Wrong user role to open/edit a template")
@@ -86,9 +80,7 @@ async def open_project(request: web.Request) -> web.Response:
             project_uuid=f"{path_params.project_id}",
             user_id=req_ctx.user_id,
             include_state=True,
-            check_permissions=(
-                "write" if project_type is ProjectType.TEMPLATE else "read"
-            ),
+            check_permissions=("write" if project_type is ProjectType.TEMPLATE else "read"),
         )
 
         await projects_wallets_service.check_project_financial_status_and_wallet_access(
@@ -107,8 +99,7 @@ async def open_project(request: web.Request) -> web.Response:
             client_session_id=client_session_id,
             app=request.app,
             max_number_of_opened_projects_per_user=product.max_open_studies_per_user,
-            allow_multiple_sessions=app_settings.WEBSERVER_REALTIME_COLLABORATION
-            is not None,
+            allow_multiple_sessions=app_settings.WEBSERVER_REALTIME_COLLABORATION is not None,
             max_number_of_user_sessions_per_project=(
                 app_settings.WEBSERVER_REALTIME_COLLABORATION.RTC_MAX_NUMBER_OF_USERS
                 if app_settings.WEBSERVER_REALTIME_COLLABORATION
@@ -118,9 +109,7 @@ async def open_project(request: web.Request) -> web.Response:
             raise HTTPLockedError(text="Project is locked, try later")
 
         # Connect the socket_id to a project room
-        with managed_resource(
-            req_ctx.user_id, client_session_id, request.app
-        ) as user_session:
+        with managed_resource(req_ctx.user_id, client_session_id, request.app) as user_session:
             _socket_id = await user_session.get_socket_id()
         if _socket_id is None:
             raise web.HTTPUnprocessableEntity(
@@ -130,9 +119,7 @@ async def open_project(request: web.Request) -> web.Response:
                 )
             )
         sio = get_socket_server(request.app)
-        await sio.enter_room(
-            _socket_id, SocketIORoomStr.from_project_id(path_params.project_id)
-        )
+        await sio.enter_room(_socket_id, SocketIORoomStr.from_project_id(path_params.project_id))
 
         # we now need to receive logs for that project
         await project_logs.subscribe(request.app, path_params.project_id)
@@ -152,9 +139,7 @@ async def open_project(request: web.Request) -> web.Response:
                 )
 
         # and let's update the project last change timestamp
-        await _projects_service.update_project_last_change_timestamp(
-            request.app, path_params.project_id
-        )
+        await _projects_service.update_project_last_change_timestamp(request.app, path_params.project_id)
 
         # notify users that project is now opened
         project = await _projects_service.add_project_states_for_user(
@@ -172,13 +157,9 @@ async def open_project(request: web.Request) -> web.Response:
             project_uuid=path_params.project_id,
             client_session_id=client_session_id,
             app=request.app,
-            simcore_user_agent=request.headers.get(
-                X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
-            ),
+            simcore_user_agent=request.headers.get(X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE),
         )
-        raise web.HTTPServiceUnavailable(
-            text="Unexpected error while starting services."
-        ) from exc
+        raise web.HTTPServiceUnavailable(text="Unexpected error while starting services.") from exc
 
 
 #
@@ -212,9 +193,7 @@ async def close_project(request: web.Request) -> web.Response:
         path_params.project_id,
         client_session_id,
         request.app,
-        simcore_user_agent=request.headers.get(
-            X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
-        ),
+        simcore_user_agent=request.headers.get(X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE),
     )
 
     return web.json_response(status=status.HTTP_204_NO_CONTENT)

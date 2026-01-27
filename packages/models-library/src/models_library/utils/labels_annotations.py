@@ -21,9 +21,7 @@ OSPARC_LABEL_PREFIXES = (
 )
 
 
-def to_labels(
-    config: dict[str, Any], *, prefix_key: str, trim_key_head: bool = True
-) -> LabelsAnnotationsDict:
+def to_labels(config: dict[str, Any], *, prefix_key: str, trim_key_head: bool = True) -> LabelsAnnotationsDict:
     """converts config into labels annotations"""
 
     # FIXME: null is loaded as 'null' string value? is that correct? json -> None upon deserialization?
@@ -48,9 +46,7 @@ def to_labels(
     return labels
 
 
-def from_labels(
-    labels: LabelsAnnotationsDict, *, prefix_key: str, trim_key_head: bool = True
-) -> dict[str, Any]:
+def from_labels(labels: LabelsAnnotationsDict, *, prefix_key: str, trim_key_head: bool = True) -> dict[str, Any]:
     """convert labels annotations into config"""
     config: dict[str, Any] = {}
     for key, label in labels.items():

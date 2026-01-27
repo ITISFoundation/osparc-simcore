@@ -228,7 +228,8 @@ httpx==0.28.1
     #   -c requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
-    #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
+    #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   fastapi
     #   fastapi-cloud-cli
 hyperframe==6.1.0
@@ -369,7 +370,9 @@ opentelemetry-instrumentation-botocore==0.59b0
 opentelemetry-instrumentation-fastapi==0.59b0
     # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
 opentelemetry-instrumentation-httpx==0.59b0
-    # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
+    # via
+    #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
 opentelemetry-instrumentation-logging==0.59b0
     # via
     #   -r requirements/../../../packages/aws-library/requirements/../../../packages/service-library/requirements/_base.in

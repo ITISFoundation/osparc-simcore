@@ -6,18 +6,17 @@ from pathlib import Path
 from typing import NamedTuple
 
 import aiofiles
-import notifications_library
 from aiofiles.os import wrap as sync_to_async
 from models_library.products import ProductName
+
+import notifications_library
 
 from ._repository import TemplatesRepo
 
 _logger = logging.getLogger(__name__)
 
 
-_templates = importlib.resources.files(notifications_library.__name__).joinpath(
-    "templates"
-)
+_templates = importlib.resources.files(notifications_library.__name__).joinpath("templates")
 _templates_dir = Path(os.fspath(_templates))  # type:ignore
 
 # Templates are organised as:
@@ -26,7 +25,7 @@ _templates_dir = Path(os.fspath(_templates))  # type:ignore
 #     part of the message (e.g. subject, content) and format (e.g. html or txt). (see test__templates.py)
 #  - generic: are used in other templates (can be seen as "templates of templates")
 #
-#    e.g. base.html is a generic template vs on_payed.email.content.html that is a named template
+#    e.g. base.html is a generic template vs on_paid.email.content.html that is a named template
 
 
 class NamedTemplateTuple(NamedTuple):
@@ -44,9 +43,7 @@ def split_template_name(template_name: str) -> NamedTemplateTuple:
     return NamedTemplateTuple(*template_name.split(_TEMPLATE_NAME_SEPARATOR))
 
 
-def get_default_named_templates(
-    event: str = "*", media: str = "*", part: str = "*", ext: str = "*"
-) -> dict[str, Path]:
+def get_default_named_templates(event: str = "*", media: str = "*", part: str = "*", ext: str = "*") -> dict[str, Path]:
     pattern = _TEMPLATE_NAME_SEPARATOR.join([event, media, part, ext])
     return {p.name: p for p in _templates_dir.glob(pattern)}
 
@@ -76,9 +73,7 @@ async def _copy_files(src: Path, dst: Path):
             await _aioshutil_copy(p, dst / p.name, follow_symlinks=False)
 
 
-async def consolidate_templates(
-    new_dir: Path, product_names: list[ProductName], repo: TemplatesRepo
-):
+async def consolidate_templates(new_dir: Path, product_names: list[ProductName], repo: TemplatesRepo):
     """Consolidates all templates in new_dir folder for each product
 
     Builds a structure under new_dir and dump all templates (T) for each product (P) with the following
@@ -115,5 +110,5 @@ async def consolidate_templates(
             assert custom_template.product_name == product_name  # nosec
 
             template_path = product_folder / custom_template.name
-            async with aiofiles.open(template_path, "wt") as fh:
+            async with aiofiles.open(template_path, "w") as fh:
                 await fh.write(custom_template.content)

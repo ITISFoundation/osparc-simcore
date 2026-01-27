@@ -35,11 +35,7 @@ def _build_needed_instances(
                     name=name,  # type: ignore
                     resources=Resources.create_as_empty(),
                 ),
-                node_labels={
-                    TypeAdapter(DockerLabelKey).validate_python(
-                        "batch"
-                    ): f"{name}-{idx}"
-                },
+                node_labels={TypeAdapter(DockerLabelKey).validate_python("batch"): f"{name}-{idx}"},
             )
         ] = count
     return instances
@@ -55,9 +51,9 @@ async def test_cap_needed_instances_no_capping(
 ):
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
     max_instances = app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES
-    assert (
-        max_instances >= 3
-    ), "test cannot be run with this limit, please adjust your configuration"  # Ensure we have enough for the test
+    assert max_instances >= 3, (
+        "test cannot be run with this limit, please adjust your configuration"
+    )  # Ensure we have enough for the test
     # Ensure the requested total fits in the max boundary
     needed_instances = _build_needed_instances([("t2.micro", 1), ("t3.medium", 1)])
 
@@ -84,9 +80,9 @@ async def test_cap_needed_instances_minimal_cap(
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
     max_instances = app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES
     desired_creatable = 2
-    assert (
-        max_instances >= desired_creatable
-    ), "test cannot be run with this limit, please adjust your configuration"  # Ensure we have enough for the test
+    assert max_instances >= desired_creatable, (
+        "test cannot be run with this limit, please adjust your configuration"
+    )  # Ensure we have enough for the test
 
     # Force creatable < number of types (3 types, creatable 2)
     simcore_ec2_api = get_ec2_client(initialized_app)
@@ -96,9 +92,7 @@ async def test_cap_needed_instances_minimal_cap(
         "get_instances",
         return_value=[{}] * current,
     )
-    needed_instances = _build_needed_instances(
-        [("t2.micro", 2), ("t2.micro", 2), ("t3.medium", 2), ("m5.large", 1)]
-    )
+    needed_instances = _build_needed_instances([("t2.micro", 2), ("t2.micro", 2), ("t3.medium", 2), ("m5.large", 1)])
 
     result = await cap_needed_instances(
         initialized_app,
@@ -126,18 +120,14 @@ async def test_cap_needed_instances_proportional_cap(
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
     max_instances = app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES
     desired_creatable = 5
-    assert (
-        max_instances >= desired_creatable
-    ), "test cannot be run with this limit, please adjust your configuration"
+    assert max_instances >= desired_creatable, "test cannot be run with this limit, please adjust your configuration"
     simcore_ec2_api = get_ec2_client(initialized_app)
     mocker.patch.object(
         simcore_ec2_api,
         "get_instances",
         return_value=[{}] * (max_instances - desired_creatable),
     )
-    needed_instances = _build_needed_instances(
-        [("t2.micro", 3), ("t3.medium", 3), ("t3.medium", 2)]
-    )
+    needed_instances = _build_needed_instances([("t2.micro", 3), ("t3.medium", 3), ("t3.medium", 2)])
 
     result = await cap_needed_instances(
         initialized_app,
@@ -194,9 +184,7 @@ async def test_cap_needed_instances_round_robin_multiple_cycles(
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
     max_instances = app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES
     desired_creatable = 8
-    assert (
-        max_instances >= desired_creatable
-    ), "test cannot be run with this limit, please adjust your configuration"
+    assert max_instances >= desired_creatable, "test cannot be run with this limit, please adjust your configuration"
 
     simcore_ec2_api = get_ec2_client(initialized_app)
     mocker.patch.object(
@@ -205,9 +193,7 @@ async def test_cap_needed_instances_round_robin_multiple_cycles(
         return_value=[{}] * (max_instances - desired_creatable),
     )
     # 3 types needing many instances forces multiple round-robin cycles
-    needed_instances = _build_needed_instances(
-        [("t2.micro", 5), ("t3.medium", 5), ("m5.large", 5)]
-    )
+    needed_instances = _build_needed_instances([("t2.micro", 5), ("t3.medium", 5), ("m5.large", 5)])
 
     result = await cap_needed_instances(
         initialized_app,
@@ -241,9 +227,7 @@ async def test_cap_needed_instances_proportional_with_remainder_distribution(
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
     max_instances = app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES
     desired_creatable = 7
-    assert (
-        max_instances >= desired_creatable
-    ), "test cannot be run with this limit, please adjust your configuration"
+    assert max_instances >= desired_creatable, "test cannot be run with this limit, please adjust your configuration"
 
     simcore_ec2_api = get_ec2_client(initialized_app)
     mocker.patch.object(
@@ -289,9 +273,7 @@ async def test_cap_needed_instances_single_type_all_capacity(
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
     max_instances = app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES
     desired_creatable = 6
-    assert (
-        max_instances >= desired_creatable
-    ), "test cannot be run with this limit, please adjust your configuration"
+    assert max_instances >= desired_creatable, "test cannot be run with this limit, please adjust your configuration"
 
     simcore_ec2_api = get_ec2_client(initialized_app)
     mocker.patch.object(

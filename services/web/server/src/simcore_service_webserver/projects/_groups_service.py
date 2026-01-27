@@ -58,9 +58,7 @@ async def create_project_group(
         write=write,
         delete=delete,
     )
-    project_group_api: ProjectGroupGet = ProjectGroupGet(
-        **project_group_db.model_dump()
-    )
+    project_group_api: ProjectGroupGet = ProjectGroupGet(**project_group_db.model_dump())
 
     return project_group_api
 
@@ -80,13 +78,12 @@ async def list_project_groups_by_user_and_project(
         permission="read",
     )
 
-    project_groups_db: list[ProjectGroupGetDB] = (
-        await _groups_repository.list_project_groups(app=app, project_id=project_id)
+    project_groups_db: list[ProjectGroupGetDB] = await _groups_repository.list_project_groups(
+        app=app, project_id=project_id
     )
 
     project_groups_api: list[ProjectGroupGet] = [
-        ProjectGroupGet.model_validate(group.model_dump())
-        for group in project_groups_db
+        ProjectGroupGet.model_validate(group.model_dump()) for group in project_groups_db
     ]
 
     return project_groups_api
@@ -124,15 +121,13 @@ async def replace_project_group(
                 details=f"User does not have access to modify owner project group in project {project_id}",
             )
 
-    project_group_db: ProjectGroupGetDB = (
-        await _groups_repository.replace_project_group(
-            app=app,
-            project_id=project_id,
-            group_id=group_id,
-            read=read,
-            write=write,
-            delete=delete,
-        )
+    project_group_db: ProjectGroupGetDB = await _groups_repository.replace_project_group(
+        app=app,
+        project_id=project_id,
+        group_id=group_id,
+        read=read,
+        write=write,
+        delete=delete,
     )
 
     project_api: ProjectGroupGet = ProjectGroupGet(**project_group_db.model_dump())
@@ -160,10 +155,7 @@ async def delete_project_group(
     project_db: ProjectDBAPI = app[PROJECT_DBAPI_APPKEY]
     project = await project_db.get_project_db(project_id)
     project_owner_user: dict = await users_service.get_user(app, project.prj_owner)
-    if (
-        project_owner_user["primary_gid"] == group_id
-        and user["primary_gid"] != project_owner_user["primary_gid"]
-    ):
+    if project_owner_user["primary_gid"] == group_id and user["primary_gid"] != project_owner_user["primary_gid"]:
         # Only the owner of the project can delete the owner group
         raise ProjectInvalidRightsError(
             user_id=user_id,
@@ -171,9 +163,7 @@ async def delete_project_group(
             details=f"User does not have access to modify owner project group in project {project_id}",
         )
 
-    await _groups_repository.delete_project_group(
-        app=app, project_id=project_id, group_id=group_id
-    )
+    await _groups_repository.delete_project_group(app=app, project_id=project_id, group_id=group_id)
 
 
 async def create_confirmation_action_to_share_project(
@@ -207,8 +197,7 @@ async def create_confirmation_action_to_share_project(
     # action needs to be statically registered
 
     _logger.debug(
-        "Creating confirmation token for action=SHARE with and producing a code:"
-        "\n %s," * 6,
+        "Creating confirmation token for action=SHARE with and producing a code:\n %s," * 6,
         sharer_user_id,
         shared_resource_type,
         shared_resource_id,
@@ -230,9 +219,7 @@ async def delete_project_group_without_checking_permissions(
     project_id: ProjectID,
     group_id: GroupID,
 ) -> None:
-    await _groups_repository.delete_project_group(
-        app=app, project_id=project_id, group_id=group_id
-    )
+    await _groups_repository.delete_project_group(app=app, project_id=project_id, group_id=group_id)
 
 
 async def create_project_group_without_checking_permissions(
@@ -259,13 +246,12 @@ async def list_project_groups_by_project_without_checking_permissions(
     *,
     project_id: ProjectID,
 ) -> list[ProjectGroupGet]:
-    project_groups_db: list[ProjectGroupGetDB] = (
-        await _groups_repository.list_project_groups(app=app, project_id=project_id)
+    project_groups_db: list[ProjectGroupGetDB] = await _groups_repository.list_project_groups(
+        app=app, project_id=project_id
     )
 
     project_groups_api: list[ProjectGroupGet] = [
-        ProjectGroupGet.model_validate(group.model_dump())
-        for group in project_groups_db
+        ProjectGroupGet.model_validate(group.model_dump()) for group in project_groups_db
     ]
 
     return project_groups_api

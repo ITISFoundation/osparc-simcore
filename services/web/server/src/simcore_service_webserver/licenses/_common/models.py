@@ -28,15 +28,13 @@ class LicensedItemsPathParams(StrictRequestParameters):
     licensed_item_id: LicensedItemID
 
 
-_LicensedItemsListOrderQueryParams: type[RequestParameters] = (
-    create_ordering_query_model_class(
-        ordering_fields={
-            "display_name",
-            "modified_at",
-        },
-        default=OrderBy(field=IDStr("display_name"), direction=OrderDirection.DESC),
-        ordering_fields_api_to_column_map={"modified_at": "modified"},
-    )
+_LicensedItemsListOrderQueryParams: type[RequestParameters] = create_ordering_query_model_class(
+    ordering_fields={
+        "display_name",
+        "modified_at",
+    },
+    default=OrderBy(field=IDStr("display_name"), direction=OrderDirection.DESC),
+    ordering_fields_api_to_column_map={"modified_at": "modified"},
 )
 
 
@@ -59,16 +57,14 @@ class LicensedItemsPurchasesPathParams(StrictRequestParameters):
     licensed_item_purchase_id: LicensedItemPurchaseID
 
 
-_LicensedItemsPurchasesListOrderQueryParams: type[RequestParameters] = (
-    create_ordering_query_model_class(
-        ordering_fields={
-            "purchased_at",
-            "modified_at",
-            "name",
-        },
-        default=OrderBy(field=IDStr("purchased_at"), direction=OrderDirection.DESC),
-        ordering_fields_api_to_column_map={"modified_at": "modified"},
-    )
+_LicensedItemsPurchasesListOrderQueryParams: type[RequestParameters] = create_ordering_query_model_class(
+    ordering_fields={
+        "purchased_at",
+        "modified_at",
+        "name",
+    },
+    default=OrderBy(field=IDStr("purchased_at"), direction=OrderDirection.DESC),
+    ordering_fields_api_to_column_map={"modified_at": "modified"},
 )
 
 

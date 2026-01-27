@@ -43,9 +43,7 @@ async def fake_project(
     return project
 
 
-@pytest.mark.acceptance_test(
-    "For https://github.com/ITISFoundation/osparc-simcore/issues/4313"
-)
+@pytest.mark.acceptance_test("For https://github.com/ITISFoundation/osparc-simcore/issues/4313")
 async def test_set_project_custom_metadata(
     connection: SAConnection,
     connection_factory: SAConnection | AsyncConnection,
@@ -56,18 +54,14 @@ async def test_set_project_custom_metadata(
 ):
     user: RowProxy = await create_fake_user(connection)
     product: RowProxy = await create_fake_product("test-product")
-    project: RowProxy = await create_fake_project(
-        connection, user, product, hidden=True
-    )
+    project: RowProxy = await create_fake_project(connection, user, product, hidden=True)
 
     # subresource is attached to parent
     user_metadata = {"float": 3.14, "int": 42, "string": "foo", "bool": True}
     random_project_uuid = faker.uuid4(cast_to=None)
     assert isinstance(random_project_uuid, UUID)
     with pytest.raises(DBProjectNotFoundError):
-        await utils_projects_metadata.get(
-            connection_factory, project_uuid=random_project_uuid
-        )
+        await utils_projects_metadata.get(connection_factory, project_uuid=random_project_uuid)
 
     with pytest.raises(DBProjectNotFoundError):
         await utils_projects_metadata.set_project_custom_metadata(
@@ -76,9 +70,7 @@ async def test_set_project_custom_metadata(
             custom_metadata=user_metadata,
         )
 
-    project_metadata = await utils_projects_metadata.get(
-        connection_factory, project_uuid=project["uuid"]
-    )
+    project_metadata = await utils_projects_metadata.get(connection_factory, project_uuid=project["uuid"])
     assert project_metadata is not None
     assert project_metadata.custom is None
     assert project_metadata.parent_project_uuid is None
@@ -98,9 +90,7 @@ async def test_set_project_custom_metadata(
     assert got.root_parent_node_id is None
     assert user_metadata == got.custom
 
-    project_metadata = await utils_projects_metadata.get(
-        connection_factory, project_uuid=project["uuid"]
-    )
+    project_metadata = await utils_projects_metadata.get(connection_factory, project_uuid=project["uuid"])
     assert project_metadata is not None
     assert project_metadata == got
 
@@ -126,15 +116,11 @@ async def test_set_project_ancestors_with_invalid_parents(
 ):
     user: RowProxy = await create_fake_user(connection)
     product: RowProxy = await create_fake_product("test-product")
-    project: RowProxy = await create_fake_project(
-        connection, user, product, hidden=True
-    )
+    project: RowProxy = await create_fake_project(connection, user, product, hidden=True)
     project_node = await create_fake_projects_node(project["uuid"])
 
     # this is empty
-    project_metadata = await utils_projects_metadata.get(
-        connection_factory, project_uuid=project["uuid"]
-    )
+    project_metadata = await utils_projects_metadata.get(connection_factory, project_uuid=project["uuid"])
     assert project_metadata is not None
     assert project_metadata.custom is None
     assert project_metadata.parent_project_uuid is None
@@ -198,7 +184,6 @@ async def test_set_project_ancestors_with_invalid_parents(
             parent_node_id=project_node.node_id,
         )
 
-    #
     another_project = await create_fake_project(connection, user, product, hidden=False)
     another_project_node = await create_fake_projects_node(another_project["uuid"])
     with pytest.raises(DBProjectInvalidParentNodeError):
@@ -218,9 +203,7 @@ async def test_set_project_ancestors_with_invalid_parents(
         )
 
     # mix a node from one project and a parent project
-    yet_another_project = await create_fake_project(
-        connection, user, product, hidden=False
-    )
+    yet_another_project = await create_fake_project(connection, user, product, hidden=False)
     with pytest.raises(DBProjectInvalidParentNodeError):
         await utils_projects_metadata.set_project_ancestors(
             connection_factory,
@@ -250,9 +233,7 @@ async def test_set_project_ancestors(
     product: RowProxy = await create_fake_product("test-product")
 
     # create grand-parent
-    grand_parent_project = await create_fake_project(
-        connection, user, product, hidden=False
-    )
+    grand_parent_project = await create_fake_project(connection, user, product, hidden=False)
     grand_parent_node = await create_fake_projects_node(grand_parent_project["uuid"])
 
     # create parent
@@ -260,9 +241,7 @@ async def test_set_project_ancestors(
     parent_node = await create_fake_projects_node(parent_project["uuid"])
 
     # create child
-    child_project: RowProxy = await create_fake_project(
-        connection, user, product, hidden=True
-    )
+    child_project: RowProxy = await create_fake_project(connection, user, product, hidden=True)
 
     # set ancestry, first the parents
     updated_parent_metadata = await utils_projects_metadata.set_project_ancestors(
@@ -271,13 +250,9 @@ async def test_set_project_ancestors(
         parent_project_uuid=grand_parent_project["uuid"],
         parent_node_id=grand_parent_node.node_id,
     )
-    assert updated_parent_metadata.parent_project_uuid == uuid.UUID(
-        grand_parent_project["uuid"]
-    )
+    assert updated_parent_metadata.parent_project_uuid == uuid.UUID(grand_parent_project["uuid"])
     assert updated_parent_metadata.parent_node_id == grand_parent_node.node_id
-    assert updated_parent_metadata.root_parent_project_uuid == uuid.UUID(
-        grand_parent_project["uuid"]
-    )
+    assert updated_parent_metadata.root_parent_project_uuid == uuid.UUID(grand_parent_project["uuid"])
     assert updated_parent_metadata.root_parent_node_id == grand_parent_node.node_id
 
     # then the child
@@ -287,13 +262,9 @@ async def test_set_project_ancestors(
         parent_project_uuid=parent_project["uuid"],
         parent_node_id=parent_node.node_id,
     )
-    assert updated_child_metadata.parent_project_uuid == uuid.UUID(
-        parent_project["uuid"]
-    )
+    assert updated_child_metadata.parent_project_uuid == uuid.UUID(parent_project["uuid"])
     assert updated_child_metadata.parent_node_id == parent_node.node_id
-    assert updated_child_metadata.root_parent_project_uuid == uuid.UUID(
-        grand_parent_project["uuid"]
-    )
+    assert updated_child_metadata.root_parent_project_uuid == uuid.UUID(grand_parent_project["uuid"])
     assert updated_child_metadata.root_parent_node_id == grand_parent_node.node_id
 
     # check properly updated
@@ -344,14 +315,10 @@ async def create_projects_genealogy(
     create_fake_project: Callable[..., Awaitable[RowProxy]],
     create_fake_projects_node: Callable[[uuid.UUID], Awaitable[ProjectNode]],
 ) -> Callable[[RowProxy], Awaitable[list[tuple[RowProxy, ProjectNode]]]]:
-    async def _(
-        user: RowProxy, product: RowProxy
-    ) -> list[tuple[RowProxy, ProjectNode]]:
+    async def _(user: RowProxy, product: RowProxy) -> list[tuple[RowProxy, ProjectNode]]:
         ancestors: list[tuple[RowProxy, ProjectNode]] = []
 
-        ancestor_project = await create_fake_project(
-            connection, user, product, hidden=False
-        )
+        ancestor_project = await create_fake_project(connection, user, product, hidden=False)
         ancestor_node = await create_fake_projects_node(ancestor_project["uuid"])
         ancestors.append((ancestor_project, ancestor_node))
 
@@ -382,9 +349,7 @@ async def test_not_implemented_use_cases(
     create_fake_product: Callable[..., Awaitable[RowProxy]],
     create_fake_project: Callable[..., Awaitable[RowProxy]],
     create_fake_projects_node: Callable[[uuid.UUID], Awaitable[ProjectNode]],
-    create_projects_genealogy: Callable[
-        [RowProxy, RowProxy], Awaitable[list[tuple[RowProxy, ProjectNode]]]
-    ],
+    create_projects_genealogy: Callable[[RowProxy, RowProxy], Awaitable[list[tuple[RowProxy, ProjectNode]]]],
 ):
     """This will tests use-cases that are currently not implemented and that are expected to fail with an exception
     Basically any project with children cannot have a change in its genealogy anymore. yes children are sacred.
@@ -395,9 +360,7 @@ async def test_not_implemented_use_cases(
     # add a missing parent to an already existing chain of parent-children
     ancestors = await create_projects_genealogy(user, product)
     missing_parent_project = await create_fake_project(connection, user, product)
-    missing_parent_node = await create_fake_projects_node(
-        missing_parent_project["uuid"]
-    )
+    missing_parent_node = await create_fake_projects_node(missing_parent_project["uuid"])
 
     with pytest.raises(NotImplementedError):
         await utils_projects_metadata.set_project_ancestors(

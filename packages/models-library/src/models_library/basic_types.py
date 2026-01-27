@@ -32,7 +32,7 @@ PositiveDecimal: TypeAlias = Annotated[Decimal, Field(gt=0)]
 
 # Used for amounts like credits or dollars
 # NOTE: upper limit to avoid https://github.com/ITISFoundation/appmotion-exchange/issues/2
-# NOTE: do not contraint in decimal places. Too strong validation error rather Decimal.quantize
+# NOTE: do not constraint in decimal places. Too strong validation error rather Decimal.quantize
 # before passing the value
 AmountDecimal: TypeAlias = Annotated[Decimal, Field(gt=0, lt=1e6)]
 
@@ -50,9 +50,7 @@ VersionTag: TypeAlias = Annotated[str, StringConstraints(pattern=r"^v\d$")]
 VersionStr: TypeAlias = Annotated[str, StringConstraints(pattern=SIMPLE_VERSION_RE)]
 
 # e.g. '1.23.11' or '2.1.0-rc2' or not 0.1.0-alpha  (see test_SEMANTIC_VERSION_RE_W_CAPTURE_GROUPS)
-SemanticVersionStr: TypeAlias = Annotated[
-    str, StringConstraints(pattern=SEMANTIC_VERSION_RE_W_CAPTURE_GROUPS)
-]
+SemanticVersionStr: TypeAlias = Annotated[str, StringConstraints(pattern=SEMANTIC_VERSION_RE_W_CAPTURE_GROUPS)]
 
 # checksums
 # sha1sum path/to/file
@@ -138,10 +136,7 @@ class IDStr(ConstrainedStr):
         assert IDStr.max_length  # nosec
         if len(result) > IDStr.max_length:
             if IDStr.max_length > len(_ELLIPSIS_CHAR):
-                result = (
-                    result[: IDStr.max_length - len(_ELLIPSIS_CHAR)].rstrip()
-                    + _ELLIPSIS_CHAR
-                )
+                result = result[: IDStr.max_length - len(_ELLIPSIS_CHAR)].rstrip() + _ELLIPSIS_CHAR
             else:
                 result = _ELLIPSIS_CHAR[0] * IDStr.max_length
         if len(result) < IDStr.min_length:

@@ -53,9 +53,7 @@ def _create_fake_outputs(
             a_file.write_text(faker.text(max_nb_chars=450))
             assert a_file.exists()
         else:
-            jsonable_data[key] = (
-                "some value just for testing, does not represent any kind of type"
-            )
+            jsonable_data[key] = "some value just for testing, does not represent any kind of type"
     if jsonable_data:
         output_file = output_folder / faker.file_name()
         with output_file.open("wt") as fp:
@@ -71,9 +69,7 @@ def test_create_task_output_from_task_with_optional_fields_as_required(
 ):
     for schema_example in TaskOutputDataSchema.model_json_schema()["examples"]:
         task_output_schema = TaskOutputDataSchema.model_validate(schema_example)
-        outputs_file_name = _create_fake_outputs(
-            task_output_schema, tmp_path, optional_fields_set, faker
-        )
+        outputs_file_name = _create_fake_outputs(task_output_schema, tmp_path, optional_fields_set, faker)
         task_output_data = TaskOutputData.from_task_output(
             schema=task_output_schema,
             output_folder=tmp_path,
@@ -88,9 +84,7 @@ def test_create_task_output_from_task_with_optional_fields_as_required(
                 assert task_output_data.get(key) is not None
 
 
-def test_create_task_output_from_task_throws_when_there_are_missing_files(
-    tmp_path: Path, faker: Faker
-):
+def test_create_task_output_from_task_throws_when_there_are_missing_files(tmp_path: Path, faker: Faker):
     task_output_schema = TaskOutputDataSchema.model_validate(
         {
             "required_file_output": {
@@ -130,9 +124,7 @@ def test_create_task_output_from_task_does_not_throw_when_there_are_optional_mis
     assert len(task_output_data) == 0
 
 
-def test_create_task_output_from_task_throws_when_there_are_entries(
-    tmp_path: Path, faker: Faker
-):
+def test_create_task_output_from_task_throws_when_there_are_entries(tmp_path: Path, faker: Faker):
     task_output_schema = TaskOutputDataSchema.model_validate(
         {
             "some_output": {
@@ -149,9 +141,7 @@ def test_create_task_output_from_task_throws_when_there_are_entries(
         )
 
 
-def test_create_task_output_from_task_does_not_throw_when_there_are_optional_entries(
-    tmp_path: Path, faker: Faker
-):
+def test_create_task_output_from_task_does_not_throw_when_there_are_optional_entries(tmp_path: Path, faker: Faker):
     task_output_schema = TaskOutputDataSchema.model_validate(
         {
             "some_output": {
@@ -186,9 +176,7 @@ def test_objects_are_compatible_with_dask_requirements(model_cls, model_cls_exam
         assert reloaded_instance == model_instance
 
 
-def test_create_task_output_from_task_ignores_additional_entries(
-    tmp_path: Path, faker: Faker
-):
+def test_create_task_output_from_task_ignores_additional_entries(tmp_path: Path, faker: Faker):
     task_output_schema = TaskOutputDataSchema.model_validate(
         {
             "some_output_1": {
@@ -217,6 +205,4 @@ def test_create_task_output_from_task_ignores_additional_entries(
         output_file_ext=output_file,
     )
     # Only keys defined in the schema should be present
-    assert set(task_output_data.keys()) == set(
-        task_output_schema.keys()
-    ), "Should only contain the expected keys"
+    assert set(task_output_data.keys()) == set(task_output_schema.keys()), "Should only contain the expected keys"

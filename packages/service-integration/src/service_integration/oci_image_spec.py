@@ -73,9 +73,7 @@ class OciImageSpecAnnotations(BaseModel):
 
     source: Annotated[
         AnyUrl | None,
-        Field(
-            None, description="URL to get source code for building the image (string)"
-        ),
+        Field(None, description="URL to get source code for building the image (string)"),
     ] = None
 
     version: Annotated[
@@ -94,9 +92,7 @@ class OciImageSpecAnnotations(BaseModel):
     ] = None
     vendor: Annotated[
         str | None,
-        Field(
-            description="Name of the distributing entity, organization or individual."
-        ),
+        Field(description="Name of the distributing entity, organization or individual."),
     ] = None
 
     # SEE https://spdx.dev/spdx-specification-21-web-version/#h.jxpfx0ykyb60
@@ -114,9 +110,7 @@ class OciImageSpecAnnotations(BaseModel):
         ),
     ] = None
 
-    title: Annotated[
-        str | None, Field(description="Human-readable title of the image (string)")
-    ] = None
+    title: Annotated[str | None, Field(description="Human-readable title of the image (string)")] = None
     description: Annotated[
         str | None,
         Field(
@@ -130,14 +124,10 @@ class OciImageSpecAnnotations(BaseModel):
         ),
     ] = None
 
-    model_config = ConfigDict(
-        alias_generator=_underscore_as_dot, populate_by_name=True, extra="forbid"
-    )
+    model_config = ConfigDict(alias_generator=_underscore_as_dot, populate_by_name=True, extra="forbid")
 
     @classmethod
-    def from_labels_annotations(
-        cls, labels: LabelsAnnotationsDict
-    ) -> "OciImageSpecAnnotations":
+    def from_labels_annotations(cls, labels: LabelsAnnotationsDict) -> "OciImageSpecAnnotations":
         data = from_labels(labels, prefix_key=OCI_LABEL_PREFIX, trim_key_head=False)
         return cls.model_validate(data)
 
@@ -177,9 +167,7 @@ class LabelSchemaAnnotations(BaseModel):
 
         WARNING: label-schema has be deprecated in favor of OCI image specs
         """
-        convertible_data = self.model_dump(
-            include=set(_TO_OCI.keys()), exclude_unset=True, exclude_none=True
-        )
+        convertible_data = self.model_dump(include=set(_TO_OCI.keys()), exclude_unset=True, exclude_none=True)
         assert set(convertible_data.keys()).issubset(  # nosec
             set(type(self).model_fields.keys())
         )  # nosec

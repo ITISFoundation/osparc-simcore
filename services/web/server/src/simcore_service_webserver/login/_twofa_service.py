@@ -51,9 +51,7 @@ async def _do_create_2fa_code(
     return code
 
 
-async def create_2fa_code(
-    app: web.Application, *, user_email: str, expiration_in_seconds: int
-) -> str:
+async def create_2fa_code(app: web.Application, *, user_email: str, expiration_in_seconds: int) -> str:
     """Saves 2FA code with an expiration time, i.e. a finite Time-To-Live (TTL)"""
     redis_client = get_redis_validation_code_client(app)
     code: str = await _do_create_2fa_code(
@@ -120,9 +118,7 @@ async def send_sms_code(
             # SEE https://www.twilio.com/docs/sms/quickstart/python
             #
             # NOTE: this is mocked
-            client = twilio.rest.Client(
-                twilio_auth.TWILIO_ACCOUNT_SID, twilio_auth.TWILIO_AUTH_TOKEN
-            )
+            client = twilio.rest.Client(twilio_auth.TWILIO_ACCOUNT_SID, twilio_auth.TWILIO_AUTH_TOKEN)
             message = client.messages.create(**create_kwargs)
 
             log.debug(

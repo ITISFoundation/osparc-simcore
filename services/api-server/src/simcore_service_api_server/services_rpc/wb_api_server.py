@@ -60,6 +60,7 @@ from servicelib.fastapi.app_state import SingletonInAppStateMixin
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
     CanNotCheckoutNotEnoughAvailableSeatsError,
+    NotEnoughAvailableSeatsError,
 )
 from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
     CanNotCheckoutServiceIsNotRunningError as _CanNotCheckoutServiceIsNotRunningError,
@@ -67,14 +68,12 @@ from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
 from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
     LicensedItemCheckoutNotFoundError as _LicensedItemCheckoutNotFoundError,
 )
-from servicelib.rabbitmq.rpc_interfaces.resource_usage_tracker.errors import (
-    NotEnoughAvailableSeatsError,
-)
 from servicelib.rabbitmq.rpc_interfaces.webserver.errors import (
     ProjectForbiddenRpcError,
     ProjectNotFoundRpcError,
 )
 from servicelib.rabbitmq.rpc_interfaces.webserver.v1 import WebServerRpcClient
+
 from simcore_service_api_server.models.basic_types import NameValueTuple
 
 from ..core.settings import WebServerSettings
@@ -110,8 +109,7 @@ def _create_licensed_items_get_page(
                 display_name=elm.display_name,
                 licensed_resource_type=elm.licensed_resource_type,
                 licensed_resources=[
-                    LicensedResource.model_validate(res.model_dump())
-                    for res in elm.licensed_resources
+                    LicensedResource.model_validate(res.model_dump()) for res in elm.licensed_resources
                 ],
                 pricing_plan_id=elm.pricing_plan_id,
                 is_hidden_on_market=elm.is_hidden_on_market,
@@ -140,9 +138,7 @@ class WbApiRpcClient(SingletonInAppStateMixin):
             offset=page_params.offset,
             limit=page_params.limit,
         )
-        return _create_licensed_items_get_page(
-            licensed_items_page=licensed_items_page, page_params=page_params
-        )
+        return _create_licensed_items_get_page(licensed_items_page=licensed_items_page, page_params=page_params)
 
     @_exception_mapper(rpc_exception_map={})
     async def get_available_licensed_items_for_wallet(
@@ -153,18 +149,14 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         user_id: UserID,
         page_params: PaginationParams,
     ) -> Page[LicensedItemGet]:
-        licensed_items_page = (
-            await self._rpc_client.licenses.get_available_licensed_items_for_wallet(
-                product_name=product_name,
-                wallet_id=wallet_id,
-                user_id=user_id,
-                offset=page_params.offset,
-                limit=page_params.limit,
-            )
+        licensed_items_page = await self._rpc_client.licenses.get_available_licensed_items_for_wallet(
+            product_name=product_name,
+            wallet_id=wallet_id,
+            user_id=user_id,
+            offset=page_params.offset,
+            limit=page_params.limit,
         )
-        return _create_licensed_items_get_page(
-            licensed_items_page=licensed_items_page, page_params=page_params
-        )
+        return _create_licensed_items_get_page(licensed_items_page=licensed_items_page, page_params=page_params)
 
     @_exception_mapper(
         rpc_exception_map={
@@ -184,15 +176,13 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         num_of_seats: int,
         service_run_id: ServiceRunID,
     ) -> LicensedItemCheckoutGet:
-        licensed_item_checkout_get = (
-            await self._rpc_client.licenses.checkout_licensed_item_for_wallet(
-                product_name=product_name,
-                user_id=user_id,
-                wallet_id=wallet_id,
-                licensed_item_id=licensed_item_id,
-                num_of_seats=num_of_seats,
-                service_run_id=service_run_id,
-            )
+        licensed_item_checkout_get = await self._rpc_client.licenses.checkout_licensed_item_for_wallet(
+            product_name=product_name,
+            user_id=user_id,
+            wallet_id=wallet_id,
+            licensed_item_id=licensed_item_id,
+            num_of_seats=num_of_seats,
+            service_run_id=service_run_id,
         )
         return LicensedItemCheckoutGet(
             licensed_item_checkout_id=licensed_item_checkout_get.licensed_item_checkout_id,
@@ -207,11 +197,7 @@ class WbApiRpcClient(SingletonInAppStateMixin):
             num_of_seats=licensed_item_checkout_get.num_of_seats,
         )
 
-    @_exception_mapper(
-        rpc_exception_map={
-            _LicensedItemCheckoutNotFoundError: LicensedItemCheckoutNotFoundError
-        }
-    )
+    @_exception_mapper(rpc_exception_map={_LicensedItemCheckoutNotFoundError: LicensedItemCheckoutNotFoundError})
     async def release_licensed_item_for_wallet(
         self,
         *,
@@ -219,12 +205,10 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         user_id: UserID,
         licensed_item_checkout_id: LicensedItemCheckoutID,
     ) -> LicensedItemCheckoutGet:
-        licensed_item_checkout_get = (
-            await self._rpc_client.licenses.release_licensed_item_for_wallet(
-                product_name=product_name,
-                user_id=user_id,
-                licensed_item_checkout_id=licensed_item_checkout_id,
-            )
+        licensed_item_checkout_get = await self._rpc_client.licenses.release_licensed_item_for_wallet(
+            product_name=product_name,
+            user_id=user_id,
+            licensed_item_checkout_id=licensed_item_checkout_id,
         )
         return LicensedItemCheckoutGet(
             licensed_item_checkout_id=licensed_item_checkout_get.licensed_item_checkout_id,
@@ -286,17 +270,12 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         filter_by_job_parent_resource_name_prefix: str | None,
         filter_any_custom_metadata: list[NameValueTuple] | None,
     ):
-        pagination_kwargs = as_dict_exclude_none(
-            offset=pagination_offset, limit=pagination_limit
-        )
+        pagination_kwargs = as_dict_exclude_none(offset=pagination_offset, limit=pagination_limit)
 
         filters = ListProjectsMarkedAsJobRpcFilters(
             job_parent_resource_name_prefix=filter_by_job_parent_resource_name_prefix,
             any_custom_metadata=(
-                [
-                    MetadataFilterItem(name=name, pattern=pattern)
-                    for name, pattern in filter_any_custom_metadata
-                ]
+                [MetadataFilterItem(name=name, pattern=pattern) for name, pattern in filter_any_custom_metadata]
                 if filter_any_custom_metadata
                 else None
             ),
@@ -327,9 +306,7 @@ class WbApiRpcClient(SingletonInAppStateMixin):
             function_id=function_id,
         )
 
-    async def delete_function(
-        self, *, user_id: UserID, product_name: ProductName, function_id: FunctionID
-    ) -> None:
+    async def delete_function(self, *, user_id: UserID, product_name: ProductName, function_id: FunctionID) -> None:
         return await self._rpc_client.functions.delete_function(
             user_id=user_id,
             product_name=product_name,
@@ -344,7 +321,6 @@ class WbApiRpcClient(SingletonInAppStateMixin):
         pagination_offset: PageOffsetInt = 0,
         pagination_limit: PageLimitInt = DEFAULT_NUMBER_OF_ITEMS_PER_PAGE,
     ) -> tuple[list[RegisteredFunction], PageMetaInfoLimitOffset]:
-
         return await self._rpc_client.functions.list_functions(
             user_id=user_id,
             product_name=product_name,
@@ -702,9 +678,7 @@ def _create_obj(app: FastAPI, rabbitmq_rpc_client: RabbitMQRPCClient):
         raise ConfigurationError(tip="Webserver settings are not configured")
 
     return WbApiRpcClient(
-        _rpc_client=WebServerRpcClient(
-            rabbitmq_rpc_client, webserver_settings.WEBSERVER_RPC_NAMESPACE
-        ),
+        _rpc_client=WebServerRpcClient(rabbitmq_rpc_client, webserver_settings.WEBSERVER_RPC_NAMESPACE),
     )
 
 

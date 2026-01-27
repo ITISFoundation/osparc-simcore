@@ -35,9 +35,7 @@ class MockedVolumesProxy:
 
     def add_unused_volumes_for_service(self, node_id: NodeID) -> None:
         for folder_name in VOLUMES_TO_CREATE:
-            volume_name = get_source(
-                self.service_run_id, node_id, Path("/apath") / folder_name
-            )
+            volume_name = get_source(self.service_run_id, node_id, Path("/apath") / folder_name)
             self.volumes.add(volume_name)
 
     def remove_volume(self, volume_name: str) -> None:
@@ -48,14 +46,10 @@ class MockedVolumesProxy:
 
 
 @pytest.fixture
-async def mock_docker_utils(
-    mocker: pytest_mock.MockerFixture, service_run_id: ServiceRunID
-) -> MockedVolumesProxy:
+async def mock_docker_utils(mocker: pytest_mock.MockerFixture, service_run_id: ServiceRunID) -> MockedVolumesProxy:
     proxy = MockedVolumesProxy(service_run_id)
 
-    async def _remove_volume(
-        app: FastAPI, docker: Docker, *, volume_name: str, requires_backup: bool
-    ) -> None:
+    async def _remove_volume(app: FastAPI, docker: Docker, *, volume_name: str, requires_backup: bool) -> None:
         proxy.remove_volume(volume_name)
 
     async def _get_unused_dynamic_sidecar_volumes(app: FastAPI) -> set[str]:
@@ -75,9 +69,7 @@ async def mock_docker_utils(
 
 
 @pytest.fixture
-def spy_remove_volume(
-    mocker: pytest_mock.MockerFixture, mock_docker_utils: MockedVolumesProxy
-) -> AsyncMock:
+def spy_remove_volume(mocker: pytest_mock.MockerFixture, mock_docker_utils: MockedVolumesProxy) -> AsyncMock:
     return mocker.spy(mock_docker_utils, "remove_volume")
 
 
@@ -104,10 +96,7 @@ async def test_volumes_manager_remove_all_volumes(
     for _ in range(service_count):
         mock_docker_utils.add_unused_volumes_for_service(uuid4())
     assert spy_remove_volume.call_count == 0
-    assert (
-        len(mock_docker_utils.get_unused_dynamic_sidecar_volumes())
-        == len(VOLUMES_TO_CREATE) * service_count
-    )
+    assert len(mock_docker_utils.get_unused_dynamic_sidecar_volumes()) == len(VOLUMES_TO_CREATE) * service_count
 
     await volumes_manager.remove_all_volumes()
     assert spy_remove_volume.call_count == len(VOLUMES_TO_CREATE) * service_count
@@ -125,10 +114,7 @@ async def test_volumes_manager_remove_service_volumes(
     mock_docker_utils.add_unused_volumes_for_service(node_id_to_remove)
 
     assert spy_remove_volume.call_count == 0
-    assert (
-        len(mock_docker_utils.get_unused_dynamic_sidecar_volumes())
-        == len(VOLUMES_TO_CREATE) * 2
-    )
+    assert len(mock_docker_utils.get_unused_dynamic_sidecar_volumes()) == len(VOLUMES_TO_CREATE) * 2
 
     await volumes_manager.remove_service_volumes(node_id_to_remove)
 

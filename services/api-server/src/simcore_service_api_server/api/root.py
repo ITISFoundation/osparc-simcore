@@ -43,9 +43,7 @@ def create_router(settings: ApplicationSettings):
     router.include_router(programs.router, tags=["programs"], prefix="/programs")
     router.include_router(solvers.router, tags=["solvers"], prefix=_SOLVERS_PREFIX)
     router.include_router(solvers_jobs.router, tags=["solvers"], prefix=_SOLVERS_PREFIX)
-    router.include_router(
-        solvers_jobs_read.router, tags=["solvers"], prefix=_SOLVERS_PREFIX
-    )
+    router.include_router(solvers_jobs_read.router, tags=["solvers"], prefix=_SOLVERS_PREFIX)
     router.include_router(studies.router, tags=["studies"], prefix="/studies")
     router.include_router(studies_jobs.router, tags=["studies"], prefix="/studies")
     router.include_router(
@@ -60,12 +58,8 @@ def create_router(settings: ApplicationSettings):
     )
     router.include_router(wallets.router, tags=["wallets"], prefix="/wallets")
     router.include_router(_credits.router, tags=["credits"], prefix="/credits")
-    router.include_router(
-        licensed_items.router, tags=["licensed-items"], prefix="/licensed-items"
-    )
-    router.include_router(
-        functions_routes.function_router, tags=["functions"], prefix=_FUNCTIONS_PREFIX
-    )
+    router.include_router(licensed_items.router, tags=["licensed-items"], prefix="/licensed-items")
+    router.include_router(functions_routes.function_router, tags=["functions"], prefix=_FUNCTIONS_PREFIX)
     router.include_router(tasks.router, tags=["tasks"], prefix="/tasks")
 
     # NOTE: multiple-files upload is currently disabled

@@ -61,18 +61,14 @@ from ._base import BaseRepository
 _logger = logging.getLogger(__name__)
 
 
-async def _get_user_groups_ids(
-    connection: AsyncConnection, user_id: UserID
-) -> list[GroupID]:
+async def _get_user_groups_ids(connection: AsyncConnection, user_id: UserID) -> list[GroupID]:
     stmt = sa.select(user_to_groups.c.gid).where(user_to_groups.c.uid == user_id)
     rows = (await connection.execute(stmt)).fetchall()
     assert rows is not None  # nosec
     return [g.gid for g in rows]
 
 
-def _aggregate_access_rights(
-    access_rights: dict[str, dict], group_ids: list[GroupID]
-) -> AccessRights:
+def _aggregate_access_rights(access_rights: dict[str, dict], group_ids: list[GroupID]) -> AccessRights:
     try:
         prj_access = {"read": False, "write": False, "delete": False}
         for gid, grp_access in access_rights.items():
@@ -108,9 +104,7 @@ def my_private_workspace_access_rights_subquery(user_group_ids: list[GroupID]):
         )
         .where(
             (project_to_groups.c.read)  # Filters out entries where "read" is False
-            & (
-                project_to_groups.c.gid.in_(user_group_ids)
-            )  # Filters gid to be in user_groups
+            & (project_to_groups.c.gid.in_(user_group_ids))  # Filters gid to be in user_groups
         )
         .group_by(project_to_groups.c.project_uuid)
     ).subquery("my_access_rights_subquery")
@@ -133,12 +127,8 @@ def my_shared_workspace_access_rights_subquery(user_group_ids: list[GroupID]):
             ).label("access_rights"),
         )
         .where(
-            (
-                workspaces_access_rights.c.read
-            )  # Filters out entries where "read" is False
-            & (
-                workspaces_access_rights.c.gid.in_(user_group_ids)
-            )  # Filters gid to be in user_groups
+            (workspaces_access_rights.c.read)  # Filters out entries where "read" is False
+            & (workspaces_access_rights.c.gid.in_(user_group_ids))  # Filters gid to be in user_groups
         )
         .group_by(workspaces_access_rights.c.workspace_id)
     ).subquery("my_workspace_access_rights_subquery")
@@ -152,38 +142,27 @@ async def _list_user_projects_access_rights_with_read_access(
     """
 
     user_group_ids: list[GroupID] = await _get_user_groups_ids(connection, user_id)
-    _my_access_rights_subquery = my_private_workspace_access_rights_subquery(
-        user_group_ids
-    )
+    _my_access_rights_subquery = my_private_workspace_access_rights_subquery(user_group_ids)
 
     private_workspace_query = (
         sa.select(
             projects.c.uuid,
         )
         .select_from(projects.join(_my_access_rights_subquery))
-        .where(
-            (projects.c.workspace_id.is_(None))
-            & (projects.c.product_name == product_name)
-        )
+        .where((projects.c.workspace_id.is_(None)) & (projects.c.product_name == product_name))
     )
 
-    _my_workspace_access_rights_subquery = my_shared_workspace_access_rights_subquery(
-        user_group_ids
-    )
+    _my_workspace_access_rights_subquery = my_shared_workspace_access_rights_subquery(user_group_ids)
 
     shared_workspace_query = (
         sa.select(projects.c.uuid)
         .select_from(
             projects.join(
                 _my_workspace_access_rights_subquery,
-                projects.c.workspace_id
-                == _my_workspace_access_rights_subquery.c.workspace_id,
+                projects.c.workspace_id == _my_workspace_access_rights_subquery.c.workspace_id,
             )
         )
-        .where(
-            (projects.c.workspace_id.is_not(None))
-            & (projects.c.product_name == product_name)
-        )
+        .where((projects.c.workspace_id.is_not(None)) & (projects.c.product_name == product_name))
     )
 
     combined_query = sa.union_all(private_workspace_query, shared_workspace_query)
@@ -212,9 +191,7 @@ class AccessLayerRepository(BaseRepository):
 
         async with pass_or_acquire_connection(self.db_engine, connection) as conn:
             user_group_ids = await _get_user_groups_ids(conn, user_id)
-            _my_access_rights_subquery = my_private_workspace_access_rights_subquery(
-                user_group_ids
-            )
+            _my_access_rights_subquery = my_private_workspace_access_rights_subquery(user_group_ids)
 
             private_workspace_query = (
                 sa.select(
@@ -222,15 +199,10 @@ class AccessLayerRepository(BaseRepository):
                     _my_access_rights_subquery.c.access_rights,
                 )
                 .select_from(projects.join(_my_access_rights_subquery))
-                .where(
-                    (projects.c.uuid == f"{project_id}")
-                    & (projects.c.workspace_id.is_(None))
-                )
+                .where((projects.c.uuid == f"{project_id}") & (projects.c.workspace_id.is_(None)))
             )
 
-            _my_workspace_access_rights_subquery = (
-                my_shared_workspace_access_rights_subquery(user_group_ids)
-            )
+            _my_workspace_access_rights_subquery = my_shared_workspace_access_rights_subquery(user_group_ids)
 
             shared_workspace_query = (
                 sa.select(
@@ -240,19 +212,13 @@ class AccessLayerRepository(BaseRepository):
                 .select_from(
                     projects.join(
                         _my_workspace_access_rights_subquery,
-                        projects.c.workspace_id
-                        == _my_workspace_access_rights_subquery.c.workspace_id,
+                        projects.c.workspace_id == _my_workspace_access_rights_subquery.c.workspace_id,
                     )
                 )
-                .where(
-                    (projects.c.uuid == f"{project_id}")
-                    & (projects.c.workspace_id.is_not(None))
-                )
+                .where((projects.c.uuid == f"{project_id}") & (projects.c.workspace_id.is_not(None)))
             )
 
-            combined_query = sa.union_all(
-                private_workspace_query, shared_workspace_query
-            )
+            combined_query = sa.union_all(private_workspace_query, shared_workspace_query)
             result = await conn.execute(combined_query)
             row = result.one_or_none()
 
@@ -298,9 +264,7 @@ class AccessLayerRepository(BaseRepository):
             return AccessRights.none()
 
         # has associated project
-        access_rights = await self.get_project_access_rights(
-            user_id=user_id, project_id=row.project_id
-        )
+        access_rights = await self.get_project_access_rights(user_id=user_id, project_id=row.project_id)
         if not access_rights:
             _logger.warning(
                 "File %s references a project %s that does not exists in db. "
@@ -340,9 +304,7 @@ class AccessLayerRepository(BaseRepository):
                 return AccessRights.all()
 
             # otherwise assert 'parent' string corresponds to a valid UUID
-            access_rights = await self.get_project_access_rights(
-                user_id=user_id, project_id=ProjectID(parent)
-            )
+            access_rights = await self.get_project_access_rights(user_id=user_id, project_id=ProjectID(parent))
             if not access_rights:
                 _logger.warning(
                     "File %s references a project that does not exists in db",
@@ -377,9 +339,7 @@ class AccessLayerRepository(BaseRepository):
         if access_rights is not None:
             return access_rights
 
-        return await self._get_access_without_metardata_entry(
-            user_id=user_id, file_id=file_id
-        )
+        return await self._get_access_without_metardata_entry(user_id=user_id, file_id=file_id)
 
     async def get_readable_project_ids(
         self,

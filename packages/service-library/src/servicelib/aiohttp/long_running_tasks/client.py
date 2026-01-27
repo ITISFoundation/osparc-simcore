@@ -68,11 +68,7 @@ async def _wait_for_completion(
                 task_status = TaskStatus.model_validate(data)
                 yield task_status.task_progress
                 if not task_status.done:
-                    await asyncio.sleep(
-                        float(
-                            response.headers.get("retry-after", DEFAULT_POLL_INTERVAL_S)
-                        )
-                    )
+                    await asyncio.sleep(float(response.headers.get("retry-after", DEFAULT_POLL_INTERVAL_S)))
                     msg = f"{task_id=}, {task_status.started=} has status: '{task_status.task_progress.message}' {task_status.task_progress.percent}%"
                     raise TryAgain(msg)  # noqa: TRY301
 

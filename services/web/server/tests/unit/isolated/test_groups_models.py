@@ -78,15 +78,13 @@ def test_output_schemas_from_models(faker: Faker):
 
 
 def test_input_schemas_to_models(faker: Faker):
-    # input : scheam -> model
-    input_schema = GroupCreate(
-        label=faker.word(), description=faker.sentence(), thumbnail=faker.url()
-    )
+    # input : schema -> model
+    input_schema = GroupCreate(label=faker.word(), description=faker.sentence(), thumbnail=faker.url())
     domain_model = input_schema.to_domain_model()
     assert isinstance(domain_model, StandardGroupCreate)
     assert domain_model.name == input_schema.label
 
-    # input : scheam -> model
+    # input : schema -> model
     input_schema = GroupUpdate(label=faker.word())
     domain_model = input_schema.to_domain_model()
     assert isinstance(domain_model, StandardGroupUpdate)

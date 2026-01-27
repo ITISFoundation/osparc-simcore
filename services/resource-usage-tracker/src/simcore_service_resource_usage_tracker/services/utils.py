@@ -89,14 +89,12 @@ async def publish_to_rabbitmq_wallet_credits_limit_reached(
     credits_limit: CreditsLimit,
 ):
     # Get all current running services for that wallet
-    total_count: PositiveInt = (
-        await service_runs_db.total_service_runs_by_product_and_user_and_wallet(
-            db_engine,
-            product_name=product_name,
-            user_id=None,
-            wallet_id=wallet_id,
-            service_run_status=ServiceRunStatus.RUNNING,
-        )
+    total_count: PositiveInt = await service_runs_db.total_service_runs_by_product_and_user_and_wallet(
+        db_engine,
+        product_name=product_name,
+        user_id=None,
+        wallet_id=wallet_id,
+        service_run_status=ServiceRunStatus.RUNNING,
     )
 
     for offset in range(0, total_count, _BATCH_SIZE):
@@ -130,9 +128,7 @@ async def publish_to_rabbitmq_wallet_credits_limit_reached(
         )
 
 
-async def compute_service_run_credit_costs(
-    start: datetime, stop: datetime, cost_per_unit: Decimal
-) -> Decimal:
+async def compute_service_run_credit_costs(start: datetime, stop: datetime, cost_per_unit: Decimal) -> Decimal:
     if start <= stop:
         time_delta = stop - start
         return round(Decimal(time_delta.total_seconds() / 3600) * cost_per_unit, 2)

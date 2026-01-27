@@ -12,9 +12,7 @@ class GroupNotFoundError(GroupsError):
 
 
 class UserInsufficientRightsError(GroupsError):
-    msg = (
-        "User {user_id} has insufficient rights for {permission} access to group {gid}"
-    )
+    msg = "User {user_id} has insufficient rights for {permission} access to group {gid}"
 
 
 class UserInGroupNotFoundError(GroupsError):

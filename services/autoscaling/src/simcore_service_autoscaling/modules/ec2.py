@@ -26,9 +26,7 @@ def setup(app: FastAPI) -> None:
             return
 
         if has_instrumentation(app):
-            client = instrument_ec2_client_methods(
-                app, await SimcoreEC2API.create(settings)
-            )
+            client = instrument_ec2_client_methods(app, await SimcoreEC2API.create(settings))
         else:
             client = await SimcoreEC2API.create(settings)
         app.state.ec2_client = client
@@ -54,7 +52,5 @@ def setup(app: FastAPI) -> None:
 
 def get_ec2_client(app: FastAPI) -> SimcoreEC2API:
     if not app.state.ec2_client:
-        raise ConfigurationError(
-            msg="EC2 client is not available. Please check the configuration."
-        )
+        raise ConfigurationError(msg="EC2 client is not available. Please check the configuration.")
     return cast(SimcoreEC2API, app.state.ec2_client)

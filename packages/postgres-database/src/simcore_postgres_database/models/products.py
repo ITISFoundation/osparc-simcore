@@ -49,9 +49,13 @@ class Vendor(TypedDict, total=False):
     license_url: str  # Which are the license terms? (if applies)
 
     invitation_url: str  # How to request a trial invitation? (if applies)
-    invitation_form: bool  # If True, it takes precendence over invitation_url and asks the FE to show the form (if defined)
+    invitation_form: (
+        bool  # If True, it takes precedence over invitation_url and asks the FE to show the form (if defined)
+    )
 
-    release_notes_url_template: str  # a template url where `{vtag}` will be replaced, eg: "https://example.com/{vtag}.md"
+    release_notes_url_template: (
+        str  # a template url where `{vtag}` will be replaced, eg: "https://example.com/{vtag}.md"
+    )
 
     ui: VendorUI
 
@@ -166,8 +170,7 @@ products = sa.Table(
         sa.String,
         nullable=False,
         server_default="@".join(["support", "osparc." + "io"]),
-        doc="Support email for this product"
-        'Therefore smtp_sender = f"{display_name} support <{support_email}>"',
+        doc='Support email for this productTherefore smtp_sender = f"{display_name} support <{support_email}>"',
     ),
     sa.Column(
         "product_owners_email",
@@ -212,8 +215,7 @@ products = sa.Table(
         JSONB,
         nullable=False,
         server_default=sa.text(f"'{_LOGIN_SETTINGS_SERVER_DEFAULT}'::jsonb"),
-        doc="Overrides simcore_service_webserver.login.settings.LoginSettings."
-        "SEE LoginSettingsForProduct",
+        doc="Overrides simcore_service_webserver.login.settings.LoginSettings.SEE LoginSettingsForProduct",
     ),
     sa.Column(
         "ui",
@@ -248,7 +250,7 @@ products = sa.Table(
         nullable=False,
         server_default=func.now(),
         onupdate=func.now(),
-        doc="Automaticaly updates on modification of the row",
+        doc="Automatically updates on modification of the row",
     ),
     sa.Column(
         "priority",
@@ -260,7 +262,7 @@ products = sa.Table(
         "max_open_studies_per_user",
         sa.Integer(),
         nullable=True,
-        doc="Limits the number of studies a user may have open concurently (disabled if NULL)",
+        doc="Limits the number of studies a user may have open concurrently (disabled if NULL)",
     ),
     sa.Column(
         "group_id",

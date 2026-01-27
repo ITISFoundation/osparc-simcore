@@ -73,19 +73,15 @@ async def list_tracked_dynamic_services(
     user_id: UserID | None = None,
     project_id: ProjectID | None = None,
 ) -> list[DynamicServiceGet]:
-    legacy_running_services = await director_v0_client.get_running_services(
-        user_id, project_id
-    )
+    legacy_running_services = await director_v0_client.get_running_services(user_id, project_id)
 
-    get_stack_statuse_tasks = [
+    get_stack_status_tasks = [
         scheduler.get_stack_status(service_uuid)
-        for service_uuid in scheduler.list_services(
-            user_id=user_id, project_id=project_id
-        )
+        for service_uuid in scheduler.list_services(user_id=user_id, project_id=project_id)
     ]
 
     # NOTE: Review error handling https://github.com/ITISFoundation/osparc-simcore/issues/3194
-    dynamic_sidecar_running_services = await asyncio.gather(*get_stack_statuse_tasks)
+    dynamic_sidecar_running_services = await asyncio.gather(*get_stack_status_tasks)
 
     return legacy_running_services + dynamic_sidecar_running_services
 
@@ -101,17 +97,13 @@ async def create_dynamic_service(
     service: DynamicServiceCreate,
     catalog_client: Annotated[CatalogClient, Depends(get_catalog_client)],
     director_v0_client: Annotated[DirectorV0Client, Depends(get_director_v0_client)],
-    dynamic_services_settings: Annotated[
-        DynamicServicesSettings, Depends(get_dynamic_services_settings)
-    ],
+    dynamic_services_settings: Annotated[DynamicServicesSettings, Depends(get_dynamic_services_settings)],
     scheduler: Annotated[DynamicSidecarsScheduler, Depends(get_scheduler)],
     x_dynamic_sidecar_request_dns: str = Header(...),
     x_dynamic_sidecar_request_scheme: str = Header(...),
     x_simcore_user_agent: str = Header(...),
 ) -> DynamicServiceGet | RedirectResponse:
-    simcore_service_labels: SimcoreServiceLabels = (
-        await catalog_client.get_service_labels(service.key, service.version)
-    )
+    simcore_service_labels: SimcoreServiceLabels = await catalog_client.get_service_labels(service.key, service.version)
 
     # LEGACY (backwards compatibility)
     if not simcore_service_labels.needs_dynamic_sidecar:
@@ -130,9 +122,7 @@ async def create_dynamic_service(
         logger.debug("Redirecting %s", redirect_url_with_query)
         return RedirectResponse(str(redirect_url_with_query))
 
-    if not await is_sidecar_running(
-        service.node_uuid, dynamic_services_settings.DYNAMIC_SCHEDULER.SWARM_STACK_NAME
-    ):
+    if not await is_sidecar_running(service.node_uuid, dynamic_services_settings.DYNAMIC_SCHEDULER.SWARM_STACK_NAME):
         await scheduler.add_service(
             service=service,
             simcore_service_labels=simcore_service_labels,
@@ -216,23 +206,17 @@ async def service_retrieve_data_on_ports(
     node_uuid: NodeID,
     retrieve_settings: RetrieveDataIn,
     scheduler: Annotated[DynamicSidecarsScheduler, Depends(get_scheduler)],
-    dynamic_services_settings: Annotated[
-        DynamicServicesSettings, Depends(get_dynamic_services_settings)
-    ],
+    dynamic_services_settings: Annotated[DynamicServicesSettings, Depends(get_dynamic_services_settings)],
     director_v0_client: Annotated[DirectorV0Client, Depends(get_director_v0_client)],
     services_client: Annotated[ServicesClient, Depends(get_services_client)],
 ) -> RetrieveDataOutEnveloped:
     try:
-        return await scheduler.retrieve_service_inputs(
-            node_uuid, retrieve_settings.port_keys
-        )
+        return await scheduler.retrieve_service_inputs(node_uuid, retrieve_settings.port_keys)
     except DynamicSidecarNotFoundError:
         # in case of legacy service, no redirect will be used
         # makes request to director-v0 and sends back reply
 
-        service_base_url: URL = await get_service_base_url(
-            node_uuid, director_v0_client
-        )
+        service_base_url: URL = await get_service_base_url(node_uuid, director_v0_client)
 
         dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings = (
             dynamic_services_settings.DYNAMIC_SCHEDULER
@@ -274,9 +258,7 @@ async def service_restart_containers(
 
 @router.patch(
     "/projects/{project_id}/-/networks",
-    summary=(
-        "Updates the project networks according to the current project's workbench"
-    ),
+    summary=("Updates the project networks according to the current project's workbench"),
     status_code=status.HTTP_204_NO_CONTENT,
 )
 @log_decorator(logger=logger)
@@ -285,14 +267,10 @@ async def update_projects_networks(
     projects_networks_repository: Annotated[
         ProjectsNetworksRepository, Depends(get_repository(ProjectsNetworksRepository))
     ],
-    projects_repository: Annotated[
-        ProjectsRepository, Depends(get_repository(ProjectsRepository))
-    ],
+    projects_repository: Annotated[ProjectsRepository, Depends(get_repository(ProjectsRepository))],
     scheduler: Annotated[DynamicSidecarsScheduler, Depends(get_scheduler)],
     catalog_client: Annotated[CatalogClient, Depends(get_catalog_client)],
-    rabbitmq_client: Annotated[
-        RabbitMQClient, Depends(get_rabbitmq_client_from_request)
-    ],
+    rabbitmq_client: Annotated[RabbitMQClient, Depends(get_rabbitmq_client_from_request)],
 ) -> None:
     # NOTE: This needs to be called to update networks only when adding, removing, or renaming a node.
     await projects_networks.update_from_workbench(
@@ -305,9 +283,7 @@ async def update_projects_networks(
     )
 
 
-def is_service_inactive_since(
-    activity_info: ActivityInfoOrNone, threshold: float
-) -> bool:
+def is_service_inactive_since(activity_info: ActivityInfoOrNone, threshold: float) -> bool:
     if activity_info is None:
         # services which do not support inactivity are treated as being inactive
         return True
@@ -316,17 +292,13 @@ def is_service_inactive_since(
     return is_inactive
 
 
-@router.get(
-    "/projects/{project_id}/inactivity", summary="returns if the project is inactive"
-)
+@router.get("/projects/{project_id}/inactivity", summary="returns if the project is inactive")
 @log_decorator(logger=logger)
 async def get_project_inactivity(
     project_id: ProjectID,
     max_inactivity_seconds: NonNegativeFloat,
     scheduler: Annotated[DynamicSidecarsScheduler, Depends(get_scheduler)],
-    projects_repository: Annotated[
-        ProjectsRepository, Depends(get_repository(ProjectsRepository))
-    ],
+    projects_repository: Annotated[ProjectsRepository, Depends(get_repository(ProjectsRepository))],
 ) -> GetProjectInactivityResponse:
     # A project is considered inactive when all it's services are inactive for
     # more than `max_inactivity_seconds`.
@@ -346,8 +318,5 @@ async def get_project_inactivity(
         max_concurrency=_MAX_PARALLELISM,
     )
 
-    all_services_inactive = all(
-        is_service_inactive_since(r, max_inactivity_seconds)
-        for r in inactivity_responses
-    )
+    all_services_inactive = all(is_service_inactive_since(r, max_inactivity_seconds) for r in inactivity_responses)
     return GetProjectInactivityResponse(is_inactive=all_services_inactive)

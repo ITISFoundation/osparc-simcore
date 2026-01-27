@@ -7,9 +7,6 @@ import annotated_types
 from common_library.basic_types import DEFAULT_FACTORY
 from common_library.dict_tools import remap_keys
 from common_library.users_enums import AccountRequestStatus, UserStatus
-from models_library.groups import AccessRightsDict
-from models_library.rest_filters import Filters
-from models_library.rest_pagination import PageQueryParameters
 from pydantic import (
     AfterValidator,
     BaseModel,
@@ -21,6 +18,10 @@ from pydantic import (
     model_validator,
 )
 from pydantic.config import JsonDict
+
+from models_library.groups import AccessRightsDict
+from models_library.rest_filters import Filters
+from models_library.rest_pagination import PageQueryParameters
 
 from ..basic_types import IDStr
 from ..emails import LowerCaseEmailStr
@@ -82,9 +83,7 @@ class MyProfileAddressGet(OutputSchema):
 
 class MyProfileRestGet(OutputSchemaWithoutCamelCase):
     id: UserID
-    user_name: Annotated[
-        IDStr, Field(description="Unique username identifier", alias="userName")
-    ]
+    user_name: Annotated[IDStr, Field(description="Unique username identifier", alias="userName")]
     first_name: FirstNameStr | None = None
     last_name: LastNameStr | None = None
     login: LowerCaseEmailStr
@@ -383,7 +382,7 @@ class UserAccountGet(OutputSchema):
         ),
     ] = DEFAULT_FACTORY
 
-    # pre-registration NOTE: that some users have no pre-registartion and therefore all options here can be none
+    # pre-registration NOTE: that some users have no pre-registration and therefore all options here can be none
     pre_registration_id: int | None
     pre_registration_created: datetime | None
     invited_by: UserNameID | None = None
@@ -458,9 +457,7 @@ class MyTokenCreate(InputSchemaWithoutCamelCase):
 class MyTokenGet(OutputSchemaWithoutCamelCase):
     service: IDStr
     token_key: IDStr
-    token_secret: Annotated[
-        IDStr | None, Field(deprecated=True, description="Will be removed")
-    ] = None
+    token_secret: Annotated[IDStr | None, Field(deprecated=True, description="Will be removed")] = None
 
     @classmethod
     def from_domain_model(cls, token: UserThirdPartyToken) -> Self:

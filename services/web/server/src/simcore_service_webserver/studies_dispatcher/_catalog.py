@@ -33,7 +33,7 @@ _logger = logging.getLogger(__name__)
 
 @dataclass
 class ServiceMetaData:
-    # acts as adapter bewteen RowProxy and ServiceGet BaseModel
+    # acts as adapter between RowProxy and ServiceGet BaseModel
     key: str
     version: str
     title: str  # alias for 'name'
@@ -48,9 +48,7 @@ async def _get_service_filetypes(
 ) -> dict[ServiceKey, list[str]]:
     query = sa.select(
         services_consume_filetypes.c.service_key,
-        sa.func.array_agg(
-            sa.func.distinct(services_consume_filetypes.c.filetype)
-        ).label("list_of_file_types"),
+        sa.func.array_agg(sa.func.distinct(services_consume_filetypes.c.filetype)).label("list_of_file_types"),
     ).group_by(services_consume_filetypes.c.service_key)
 
     async with pass_or_acquire_connection(engine, connection) as conn:
@@ -119,8 +117,7 @@ async def iter_latest_product_services(
                 version=row.version,
                 title=row.name,
                 description=row.description,
-                thumbnail=row.thumbnail
-                or f"{settings.STUDIES_DEFAULT_SERVICE_THUMBNAIL}",
+                thumbnail=row.thumbnail or f"{settings.STUDIES_DEFAULT_SERVICE_THUMBNAIL}",
                 file_extensions=service_filetypes.get(row.key, []),
             )
 
@@ -147,18 +144,13 @@ async def validate_requested_service(
             services_meta_data.c.name,
             services_meta_data.c.key,
             services_meta_data.c.thumbnail,
-        ).where(
-            (services_meta_data.c.key == service_key)
-            & (services_meta_data.c.version == service_version)
-        )
+        ).where((services_meta_data.c.key == service_key) & (services_meta_data.c.version == service_version))
 
         result = await conn.execute(query)
         row = result.one_or_none()
 
         if row is None:
-            raise ServiceNotFoundError(
-                service_key=service_key, service_version=service_version
-            )
+            raise ServiceNotFoundError(service_key=service_key, service_version=service_version)
 
         assert row.key == service_key  # nosec
 

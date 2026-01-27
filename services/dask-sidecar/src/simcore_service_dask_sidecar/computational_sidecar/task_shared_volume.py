@@ -16,9 +16,7 @@ class TaskSharedVolumes:
         for folder in ["inputs", "outputs", "logs"]:
             folder_path = self.base_path / folder
             if folder_path.exists():
-                logger.warning(
-                    "The path %s already exists. It will be wiped out now.", folder_path
-                )
+                logger.warning("The path %s already exists. It will be wiped out now.", folder_path)
                 self.cleanup()
 
             assert not folder_path.exists()  # nosec
@@ -46,8 +44,7 @@ class TaskSharedVolumes:
             shutil.rmtree(self.base_path)
         except OSError:
             logger.exception(
-                "Unexpected failure removing '%s'."
-                "TIP: Please check if there are permission issues.",
+                "Unexpected failure removing '%s'.TIP: Please check if there are permission issues.",
                 self.base_path,
             )
             raise

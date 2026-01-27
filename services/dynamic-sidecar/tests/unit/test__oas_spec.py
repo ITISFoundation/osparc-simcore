@@ -16,12 +16,8 @@ def mock_environment(mock_environment_with_envdevel: EnvVarsDict) -> None:
     assert mock_environment_with_envdevel
 
 
-def test_openapi_spec(
-    mock_environment: None, app: FastAPI, project_slug_dir: Path
-) -> None:
+def test_openapi_spec(mock_environment: None, app: FastAPI, project_slug_dir: Path) -> None:
     spec_from_app = app.openapi()
     open_api_json_file = project_slug_dir / "openapi.json"
     stored_openapi_json_file = json.loads(open_api_json_file.read_text())
-    assert (
-        spec_from_app == stored_openapi_json_file
-    ), "make sure to run `make openapi.json`"
+    assert spec_from_app == stored_openapi_json_file, "make sure to run `make openapi.json`"

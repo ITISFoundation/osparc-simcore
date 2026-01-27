@@ -30,9 +30,7 @@ def _create_smtp_client(settings: SMTPSettings) -> aiosmtplib.SMTP:
     )
 
 
-async def _do_send_mail(
-    *, message: MIMEText | MIMEMultipart, settings: SMTPSettings
-) -> None:
+async def _do_send_mail(*, message: MIMEText | MIMEMultipart, settings: SMTPSettings) -> None:
     """
     WARNING: _do_send_mail is mocked so be careful when changing the signature or name !!
     """
@@ -59,9 +57,7 @@ async def _do_send_mail(
 
             if settings.SMTP_USERNAME and settings.SMTP_PASSWORD:
                 _logger.info("Attempting a login into the email server ...")
-                await smtp_on_587_port.login(
-                    settings.SMTP_USERNAME, settings.SMTP_PASSWORD.get_secret_value()
-                )
+                await smtp_on_587_port.login(settings.SMTP_USERNAME, settings.SMTP_PASSWORD.get_secret_value())
 
             await smtp_on_587_port.send_message(message)
         finally:
@@ -71,9 +67,7 @@ async def _do_send_mail(
         async with smtp_client:
             if settings.SMTP_USERNAME and settings.SMTP_PASSWORD:
                 _logger.info("Login email server ...")
-                await smtp_client.login(
-                    settings.SMTP_USERNAME, settings.SMTP_PASSWORD.get_secret_value()
-                )
+                await smtp_client.login(settings.SMTP_USERNAME, settings.SMTP_PASSWORD.get_secret_value())
             await smtp_client.send_message(message)
 
 
@@ -186,9 +180,7 @@ async def _send_email_with_attachments(
 
         part = MIMEBase(main_type, subtype)
         part.set_payload(attachment.payload)
-        part.add_header(
-            "Content-Disposition", f'attachment; filename="{attachment.filename}"'
-        )
+        part.add_header("Content-Disposition", f'attachment; filename="{attachment.filename}"')
         encoders.encode_base64(part)
         message.attach(part)
 

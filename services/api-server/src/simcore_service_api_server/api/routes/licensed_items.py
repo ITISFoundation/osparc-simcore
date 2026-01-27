@@ -37,9 +37,7 @@ async def get_licensed_items(
     web_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
     product_name: Annotated[str, Depends(get_product_name)],
 ):
-    return await web_api_rpc.get_licensed_items(
-        product_name=product_name, page_params=page_params
-    )
+    return await web_api_rpc.get_licensed_items(product_name=product_name, page_params=page_params)
 
 
 @router.post(
@@ -51,9 +49,7 @@ async def get_licensed_items(
 )
 async def release_licensed_item(
     web_api_rpc: Annotated[WbApiRpcClient, Depends(get_wb_api_rpc_client)],
-    rut_rpc: Annotated[
-        ResourceUsageTrackerClient, Depends(get_resource_usage_tracker_client)
-    ],
+    rut_rpc: Annotated[ResourceUsageTrackerClient, Depends(get_resource_usage_tracker_client)],
     product_name: Annotated[str, Depends(get_product_name)],
     user_id: Annotated[PositiveInt, Depends(get_current_user_id)],
     licensed_item_id: LicensedItemID,

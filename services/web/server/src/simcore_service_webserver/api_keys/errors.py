@@ -5,9 +5,7 @@ class ApiKeysValueError(WebServerBaseError, ValueError): ...
 
 
 class ApiKeyDuplicatedDisplayNameError(ApiKeysValueError):
-    msg_template = (
-        "API Key with display name '{display_name}' already exists: {details}"
-    )
+    msg_template = "API Key with display name '{display_name}' already exists: {details}"
 
 
 class ApiKeyNotFoundError(ApiKeysValueError):

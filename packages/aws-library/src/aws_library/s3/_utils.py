@@ -7,7 +7,7 @@ from ._models import S3ObjectPrefix
 
 _MULTIPART_MAX_NUMBER_OF_PARTS: Final[int] = 10000
 
-# this is artifically defined, if possible we keep a maximum number of requests for parallel
+# this is artificially defined, if possible we keep a maximum number of requests for parallel
 # uploading. If that is not possible then we create as many upload part as the max part size allows
 _MULTIPART_UPLOADS_TARGET_MAX_PART_SIZE: Final[list[ByteSize]] = [
     TypeAdapter(ByteSize).validate_python(x)
@@ -39,13 +39,9 @@ def compute_num_file_chunks(file_size: ByteSize) -> tuple[int, ByteSize]:
     )
 
 
-def create_final_prefix(
-    prefix: S3ObjectPrefix | None, *, is_partial_prefix: bool
-) -> str:
+def create_final_prefix(prefix: S3ObjectPrefix | None, *, is_partial_prefix: bool) -> str:
     final_prefix = f"{prefix}" if prefix else ""
     if prefix and not is_partial_prefix:
-        final_prefix = (
-            f"{final_prefix.rstrip(S3_OBJECT_DELIMITER)}{S3_OBJECT_DELIMITER}"
-        )
+        final_prefix = f"{final_prefix.rstrip(S3_OBJECT_DELIMITER)}{S3_OBJECT_DELIMITER}"
 
     return final_prefix

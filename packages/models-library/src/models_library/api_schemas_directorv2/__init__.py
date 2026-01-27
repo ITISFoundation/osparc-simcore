@@ -9,9 +9,7 @@ assert clusters  # nosec
 assert dynamic_services  # nosec
 
 
-DIRECTOR_V2_RPC_NAMESPACE: Final[RPCNamespace] = TypeAdapter(
-    RPCNamespace
-).validate_python("director-v2")
+DIRECTOR_V2_RPC_NAMESPACE: Final[RPCNamespace] = TypeAdapter(RPCNamespace).validate_python("director-v2")
 
 
 __all__: tuple[str, ...] = (

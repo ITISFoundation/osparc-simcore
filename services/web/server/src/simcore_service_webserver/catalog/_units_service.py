@@ -89,14 +89,12 @@ def can_connect(
         from_type == to_type
         or (
             # data:  -> data:*/*
-            to_type == "data:*/*"
-            and from_type.startswith("data:")
+            to_type == "data:*/*" and from_type.startswith("data:")
         )
         or (
             # NOTE: by default, this is allowed in the UI but not in a more strict plausibility check
             # data:*/*  -> data:
-            from_type == "data:*/*"
-            and to_type.startswith("data:")
+            from_type == "data:*/*" and to_type.startswith("data:")
         )
     )
 

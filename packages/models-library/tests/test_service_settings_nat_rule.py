@@ -77,9 +77,7 @@ def _all_combinations_from_dict(data: dict[Any, Any]) -> list[dict[Any, Any]]:
         }
     ),
 )
-def test_nat_rule_with_osparc_variable_identifier(
-    nat_rule_dict: dict[str, Any], osparc_variables: dict[str, Any]
-):
+def test_nat_rule_with_osparc_variable_identifier(nat_rule_dict: dict[str, Any], osparc_variables: dict[str, Any]):
     nat_rule = TypeAdapter(NATRule).validate_python(nat_rule_dict)
 
     with pytest.raises(UnresolvedOsparcVariableIdentifierError):
@@ -109,14 +107,10 @@ def test_nat_rule_with_osparc_variable_identifier(
     ],
 )
 def test_______(replace_with_value: Any):
-    a_var = TypeAdapter(OsparcVariableIdentifier).validate_python(
-        "$OSPARC_VARIABLE_some_var"
-    )
+    a_var = TypeAdapter(OsparcVariableIdentifier).validate_python("$OSPARC_VARIABLE_some_var")
     assert isinstance(a_var, get_types_from_annotated_union(OsparcVariableIdentifier))
 
-    replaced_var = replace_osparc_variable_identifier(
-        a_var, {"OSPARC_VARIABLE_some_var": replace_with_value}
-    )
+    replaced_var = replace_osparc_variable_identifier(a_var, {"OSPARC_VARIABLE_some_var": replace_with_value})
     # NOTE: after replacement the original reference still points
     assert isinstance(a_var, get_types_from_annotated_union(OsparcVariableIdentifier))
     assert replaced_var == replace_with_value
@@ -126,9 +120,7 @@ def test_______(replace_with_value: Any):
     "var_template",
     ["$OSPARC_VARIABLE_a", "${OSPARC_VARIABLE_a}", "${OSPARC_VARIABLE_a:-%s}"],
 )
-@pytest.mark.parametrize(
-    "default_value", ["", "a", "1", "1.1", "aa", "$", "$$$$", "[]", "{}"]
-)
+@pytest.mark.parametrize("default_value", ["", "a", "1", "1.1", "aa", "$", "$$$$", "[]", "{}"])
 @pytest.mark.parametrize(
     "replace_with_value",
     [
@@ -158,9 +150,7 @@ def test_replace_an_instance_of_osparc_variable_identifier(
     assert isinstance(a_var, get_types_from_annotated_union(OsparcVariableIdentifier))
 
     replace_with_identifier_default = identifier_has_default and replace_with_default
-    replacement_content = (
-        {} if replace_with_identifier_default else {a_var.name: replace_with_value}
-    )
+    replacement_content = {} if replace_with_identifier_default else {a_var.name: replace_with_value}
     replaced_var = replace_osparc_variable_identifier(a_var, replacement_content)
     # NOTE: after replacement the original reference still points
     assert isinstance(a_var, get_types_from_annotated_union(OsparcVariableIdentifier))

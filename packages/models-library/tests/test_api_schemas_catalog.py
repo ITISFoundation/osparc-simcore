@@ -8,22 +8,17 @@ from models_library.services import ServiceInput
 
 
 def test_service_port_with_file():
-
     io = ServiceInput.model_validate(
         {
             "displayOrder": 1,
             "label": "Input files",
             "description": "Files downloaded from service connected at the input",
             "type": "data:*/*",  # < --- generic mimetype!
-            "fileToKeyMap": {
-                "single_number.txt": "input_1"
-            },  # <-- provides a file with an extension
+            "fileToKeyMap": {"single_number.txt": "input_1"},  # <-- provides a file with an extension
         }
     )
 
-    port = ServicePortGet.from_domain_model("input", "input_1", io).model_dump(
-        exclude_unset=True
-    )
+    port = ServicePortGet.from_domain_model("input", "input_1", io).model_dump(exclude_unset=True)
 
     assert port == {
         "key": "input_1",
@@ -38,7 +33,6 @@ def test_service_port_with_file():
 
 
 def test_service_port_with_boolean():
-
     io = ServiceInput.model_validate(
         {
             "displayOrder": 3,
@@ -49,9 +43,7 @@ def test_service_port_with_boolean():
         }
     )
 
-    port = ServicePortGet.from_domain_model("input", "input_1", io).model_dump(
-        exclude_unset=True
-    )
+    port = ServicePortGet.from_domain_model("input", "input_1", io).model_dump(exclude_unset=True)
 
     assert port == {
         "key": "input_1",

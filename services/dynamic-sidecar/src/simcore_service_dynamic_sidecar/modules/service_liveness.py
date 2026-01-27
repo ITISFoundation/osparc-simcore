@@ -16,14 +16,10 @@ _DEFAULT_CHECK_INTERVAL: Final[timedelta] = timedelta(seconds=1)
 
 
 class CouldNotReachServiceError(OsparcErrorMixin, Exception):
-    msg_template: str = (
-        "Could not contact service '{service_name}' at '{endpoint}'. Look above for details."
-    )
+    msg_template: str = "Could not contact service '{service_name}' at '{endpoint}'. Look above for details."
 
 
-def _before_sleep_log(
-    logger: logging.Logger, service_name: str, endpoint: str
-) -> Callable[[RetryCallState], None]:
+def _before_sleep_log(logger: logging.Logger, service_name: str, endpoint: str) -> Callable[[RetryCallState], None]:
     def log_it(retry_state: RetryCallState) -> None:
         assert retry_state  # nosec
         assert retry_state.next_action  # nosec
@@ -50,11 +46,7 @@ async def _attempt_to_wait_for_handler(
 ) -> None:
     async for attempt in AsyncRetrying(
         wait=wait_fixed(check_interval),
-        stop=(
-            stop_never
-            if max_delay is None
-            else stop_after_delay(max_delay.total_seconds())
-        ),
+        stop=(stop_never if max_delay is None else stop_after_delay(max_delay.total_seconds())),
         before_sleep=_before_sleep_log(_logger, service_name, endpoint),
         reraise=True,
     ):
@@ -111,6 +103,4 @@ async def wait_for_service_liveness(
             elapsed_ms,
         )
     except Exception as e:
-        raise CouldNotReachServiceError(
-            service_name=service_name, endpoint=endpoint
-        ) from e
+        raise CouldNotReachServiceError(service_name=service_name, endpoint=endpoint) from e

@@ -42,8 +42,8 @@ class ResourceTrackingSettings(BaseApplicationSettings):
         description="each time the status of the service is propagated",
     )
 
-    _validate_resource_tracking_heartbeat_interval = (
-        validate_numeric_string_as_timedelta("RESOURCE_TRACKING_HEARTBEAT_INTERVAL")
+    _validate_resource_tracking_heartbeat_interval = validate_numeric_string_as_timedelta(
+        "RESOURCE_TRACKING_HEARTBEAT_INTERVAL"
     )
 
 
@@ -72,15 +72,11 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     # LOGGING
     LOG_LEVEL: str = Field(
         default="WARNING",
-        validation_alias=AliasChoices(
-            "DYNAMIC_SIDECAR_LOG_LEVEL", "LOG_LEVEL", "LOGLEVEL"
-        ),
+        validation_alias=AliasChoices("DYNAMIC_SIDECAR_LOG_LEVEL", "LOG_LEVEL", "LOGLEVEL"),
     )
 
     # SERVICE SERVER (see : https://www.uvicorn.org/settings/)
-    DYNAMIC_SIDECAR_PORT: PortInt = Field(
-        default=8000, description="port where the server will be currently serving"
-    )
+    DYNAMIC_SIDECAR_PORT: PortInt = Field(default=8000, description="port where the server will be currently serving")
 
     DYNAMIC_SIDECAR_COMPOSE_NAMESPACE: str = Field(
         ...,
@@ -123,24 +119,14 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         ),
     )
 
-    DY_SIDECAR_CALLBACKS_MAPPING: CallbacksMapping = Field(
-        ..., description="callbacks to use for this service"
-    )
-    DY_SIDECAR_PATH_INPUTS: Path = Field(
-        ..., description="path where to expect the inputs folder"
-    )
-    DY_SIDECAR_PATH_OUTPUTS: Path = Field(
-        ..., description="path where to expect the outputs folder"
-    )
-    DY_SIDECAR_STATE_PATHS: list[Path] = Field(
-        ..., description="list of additional paths to be synced"
-    )
+    DY_SIDECAR_CALLBACKS_MAPPING: CallbacksMapping = Field(..., description="callbacks to use for this service")
+    DY_SIDECAR_PATH_INPUTS: Path = Field(..., description="path where to expect the inputs folder")
+    DY_SIDECAR_PATH_OUTPUTS: Path = Field(..., description="path where to expect the outputs folder")
+    DY_SIDECAR_STATE_PATHS: list[Path] = Field(..., description="list of additional paths to be synced")
     DY_SIDECAR_USER_PREFERENCES_PATH: Path | None = Field(
         None, description="path where the user preferences should be saved"
     )
-    DY_SIDECAR_STATE_EXCLUDE: set[str] = Field(
-        ..., description="list of patterns to exclude files when saving states"
-    )
+    DY_SIDECAR_STATE_EXCLUDE: set[str] = Field(..., description="list of patterns to exclude files when saving states")
     DY_SIDECAR_LEGACY_STATE: LegacyState | None = Field(
         default=None, description="used to recover state when upgrading service"
     )
@@ -155,9 +141,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     )
     DY_SIDECAR_LOG_FILTER_MAPPING: dict[LoggerName, list[MessageSubstring]] = Field(
         default_factory=dict,
-        validation_alias=AliasChoices(
-            "DY_SIDECAR_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"
-        ),
+        validation_alias=AliasChoices("DY_SIDECAR_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"),
         description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
     )
     DY_SIDECAR_USER_ID: UserID
@@ -170,32 +154,18 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     DY_SIDECAR_SERVICE_VERSION: ServiceVersion | None = None
     DY_SIDECAR_PRODUCT_NAME: ProductName | None = None
 
-    NODE_PORTS_STORAGE_AUTH: StorageAuthSettings | None = Field(
-        json_schema_extra={"auto_default_from_env": True}
-    )
-    DY_SIDECAR_R_CLONE_SETTINGS: RCloneSettings = Field(
-        json_schema_extra={"auto_default_from_env": True}
-    )
-    POSTGRES_SETTINGS: PostgresSettings = Field(
-        json_schema_extra={"auto_default_from_env": True}
-    )
-    RABBIT_SETTINGS: RabbitSettings = Field(
-        json_schema_extra={"auto_default_from_env": True}
-    )
-    REDIS_SETTINGS: RedisSettings = Field(
-        json_schema_extra={"auto_default_from_env": True}
-    )
+    NODE_PORTS_STORAGE_AUTH: StorageAuthSettings | None = Field(json_schema_extra={"auto_default_from_env": True})
+    DY_SIDECAR_R_CLONE_SETTINGS: RCloneSettings = Field(json_schema_extra={"auto_default_from_env": True})
+    POSTGRES_SETTINGS: PostgresSettings = Field(json_schema_extra={"auto_default_from_env": True})
+    RABBIT_SETTINGS: RabbitSettings = Field(json_schema_extra={"auto_default_from_env": True})
+    REDIS_SETTINGS: RedisSettings = Field(json_schema_extra={"auto_default_from_env": True})
 
     DY_DEPLOYMENT_REGISTRY_SETTINGS: RegistrySettings = Field()
     DY_DOCKER_HUB_REGISTRY_SETTINGS: RegistrySettings | None = Field(default=None)
 
-    RESOURCE_TRACKING: ResourceTrackingSettings = Field(
-        json_schema_extra={"auto_default_from_env": True}
-    )
+    RESOURCE_TRACKING: ResourceTrackingSettings = Field(json_schema_extra={"auto_default_from_env": True})
 
-    SYSTEM_MONITOR_SETTINGS: SystemMonitorSettings = Field(
-        json_schema_extra={"auto_default_from_env": True}
-    )
+    SYSTEM_MONITOR_SETTINGS: SystemMonitorSettings = Field(json_schema_extra={"auto_default_from_env": True})
 
     DYNAMIC_SIDECAR_TRACING: TracingSettings | None = Field(
         json_schema_extra={"auto_default_from_env": True},
@@ -213,10 +183,8 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     def _check_log_level(cls, value: str) -> str:
         return cls.validate_log_level(value)
 
-    _validate_dynamic_sidecar_telemetry_disk_usage_monitor_interval = (
-        validate_numeric_string_as_timedelta(
-            "DYNAMIC_SIDECAR_TELEMETRY_DISK_USAGE_MONITOR_INTERVAL"
-        )
+    _validate_dynamic_sidecar_telemetry_disk_usage_monitor_interval = validate_numeric_string_as_timedelta(
+        "DYNAMIC_SIDECAR_TELEMETRY_DISK_USAGE_MONITOR_INTERVAL"
     )
 
 

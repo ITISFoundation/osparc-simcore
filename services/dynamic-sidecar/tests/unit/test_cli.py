@@ -29,12 +29,8 @@ def cli_runner(
 ) -> CliRunner:
     env = {
         **mock_environment,
-        "REDIS_SETTINGS": json.dumps(
-            model_dump_with_secrets(redis_service, show_secrets=True)
-        ),
-        "RABBIT_SETTINGS": json.dumps(
-            model_dump_with_secrets(rabbit_service, show_secrets=True)
-        ),
+        "REDIS_SETTINGS": json.dumps(model_dump_with_secrets(redis_service, show_secrets=True)),
+        "RABBIT_SETTINGS": json.dumps(model_dump_with_secrets(rabbit_service, show_secrets=True)),
     }
 
     pprint(env)
@@ -74,14 +70,10 @@ def _format_cli_error(result: Result) -> str:
 def test_list_state_dirs(cli_runner: CliRunner, mock_data_manager: None):
     result = cli_runner.invoke(main, ["state-list-dirs"])
     assert result.exit_code == os.EX_OK, _format_cli_error(result)
-    assert result.stdout.strip() == "\n".join(
-        [f"Entries in /data/state_dir{i}: []" for i in range(4)]
-    )
+    assert result.stdout.strip() == "\n".join([f"Entries in /data/state_dir{i}: []" for i in range(4)])
 
 
-def test_outputs_push_interface(
-    cli_runner: CliRunner, mock_data_manager: None, mock_r_clone_mount_manager: None
-):
+def test_outputs_push_interface(cli_runner: CliRunner, mock_data_manager: None, mock_r_clone_mount_manager: None):
     result = cli_runner.invoke(main, ["state-save"])
     assert result.exit_code == os.EX_OK, _format_cli_error(result)
     assert "state save finished successfully\n" in result.stdout

@@ -53,9 +53,7 @@ async def create_pipeline(
 async def create_tasks_from_project(
     create_comp_task: Callable[..., Awaitable[dict[str, Any]]],
 ) -> Callable[..., Awaitable[list[CompTaskAtDB]]]:
-    async def _(
-        user: dict[str, Any], project: ProjectAtDB, **overrides_kwargs
-    ) -> list[CompTaskAtDB]:
+    async def _(user: dict[str, Any], project: ProjectAtDB, **overrides_kwargs) -> list[CompTaskAtDB]:
         created_tasks: list[CompTaskAtDB] = []
         for internal_id, (node_id, node_data) in enumerate(project.workbench.items()):
             task_config = {
@@ -65,9 +63,7 @@ async def create_tasks_from_project(
                 "inputs": (
                     {
                         key: (
-                            value.model_dump(
-                                mode="json", by_alias=True, exclude_unset=True
-                            )
+                            value.model_dump(mode="json", by_alias=True, exclude_unset=True)
                             if isinstance(value, BaseModel)
                             else value
                         )
@@ -79,9 +75,7 @@ async def create_tasks_from_project(
                 "outputs": (
                     {
                         key: (
-                            value.model_dump(
-                                mode="json", by_alias=True, exclude_unset=True
-                            )
+                            value.model_dump(mode="json", by_alias=True, exclude_unset=True)
                             if isinstance(value, BaseModel)
                             else value
                         )
@@ -90,9 +84,7 @@ async def create_tasks_from_project(
                     if node_data.outputs
                     else {}
                 ),
-                "image": Image(name=node_data.key, tag=node_data.version).model_dump(
-                    by_alias=True, exclude_unset=True
-                ),
+                "image": Image(name=node_data.key, tag=node_data.version).model_dump(by_alias=True, exclude_unset=True),
                 "node_class": to_node_class(node_data.key),
                 "internal_id": internal_id + 1,
                 "job_id": generate_dask_job_id(
@@ -158,9 +150,7 @@ async def create_comp_run(
 ) -> AsyncIterator[Callable[..., Awaitable[CompRunsAtDB]]]:
     created_run_ids: list[int] = []
 
-    async def _(
-        user: dict[str, Any], project: ProjectAtDB, **run_kwargs
-    ) -> CompRunsAtDB:
+    async def _(user: dict[str, Any], project: ProjectAtDB, **run_kwargs) -> CompRunsAtDB:
         run_config = {
             "project_uuid": f"{project.uuid}",
             "user_id": user["id"],
@@ -173,11 +163,7 @@ async def create_comp_run(
         }
         run_config.update(**run_kwargs)
         async with sqlalchemy_async_engine.begin() as conn:
-            result = await conn.execute(
-                comp_runs.insert()
-                .values(**run_config)
-                .returning(sa.literal_column("*"))
-            )
+            result = await conn.execute(comp_runs.insert().values(**run_config).returning(sa.literal_column("*")))
             new_run = CompRunsAtDB.model_validate(result.first())
             created_run_ids.append(new_run.run_id)
             return new_run
@@ -186,9 +172,7 @@ async def create_comp_run(
 
     # cleanup
     async with sqlalchemy_async_engine.begin() as conn:
-        await conn.execute(
-            comp_runs.delete().where(comp_runs.c.run_id.in_(created_run_ids))
-        )
+        await conn.execute(comp_runs.delete().where(comp_runs.c.run_id.in_(created_run_ids)))
 
 
 @pytest.fixture
@@ -216,9 +200,7 @@ async def create_comp_run_snapshot_tasks(
                 "inputs": (
                     {
                         key: (
-                            value.model_dump(
-                                mode="json", by_alias=True, exclude_unset=True
-                            )
+                            value.model_dump(mode="json", by_alias=True, exclude_unset=True)
                             if isinstance(value, BaseModel)
                             else value
                         )
@@ -230,9 +212,7 @@ async def create_comp_run_snapshot_tasks(
                 "outputs": (
                     {
                         key: (
-                            value.model_dump(
-                                mode="json", by_alias=True, exclude_unset=True
-                            )
+                            value.model_dump(mode="json", by_alias=True, exclude_unset=True)
                             if isinstance(value, BaseModel)
                             else value
                         )
@@ -241,9 +221,7 @@ async def create_comp_run_snapshot_tasks(
                     if node_data.outputs
                     else {}
                 ),
-                "image": Image(name=node_data.key, tag=node_data.version).model_dump(
-                    by_alias=True, exclude_unset=True
-                ),
+                "image": Image(name=node_data.key, tag=node_data.version).model_dump(by_alias=True, exclude_unset=True),
                 "node_class": to_node_class(node_data.key),
                 "internal_id": internal_id + 1,
                 "job_id": generate_dask_job_id(
@@ -258,17 +236,11 @@ async def create_comp_run_snapshot_tasks(
             task_config.update(**overrides_kwargs)
             async with sqlalchemy_async_engine.begin() as conn:
                 result = await conn.execute(
-                    comp_run_snapshot_tasks.insert()
-                    .values(**task_config)
-                    .returning(sa.literal_column("*"))
+                    comp_run_snapshot_tasks.insert().values(**task_config).returning(sa.literal_column("*"))
                 )
-                new_run_snapshot_task = CompRunSnapshotTaskAtDBGet.model_validate(
-                    result.first()
-                )
+                new_run_snapshot_task = CompRunSnapshotTaskAtDBGet.model_validate(result.first())
                 created_run_snapshot_tasks.append(new_run_snapshot_task)
-            created_task_ids.extend(
-                [t.snapshot_task_id for t in created_run_snapshot_tasks]
-            )
+            created_task_ids.extend([t.snapshot_task_id for t in created_run_snapshot_tasks])
         return created_run_snapshot_tasks
 
     yield _
@@ -276,9 +248,7 @@ async def create_comp_run_snapshot_tasks(
     # cleanup
     async with sqlalchemy_async_engine.begin() as conn:
         await conn.execute(
-            comp_run_snapshot_tasks.delete().where(
-                comp_run_snapshot_tasks.c.snapshot_task_id.in_(created_task_ids)
-            )
+            comp_run_snapshot_tasks.delete().where(comp_run_snapshot_tasks.c.snapshot_task_id.in_(created_task_ids))
         )
 
 
@@ -294,9 +264,7 @@ async def publish_project(
     user = create_registered_user()
 
     async def _() -> PublishedProject:
-        created_project = await create_project(
-            user, workbench=fake_workbench_without_outputs
-        )
+        created_project = await create_project(user, workbench=fake_workbench_without_outputs)
         return PublishedProject(
             user=user,
             project=created_project,
@@ -304,9 +272,7 @@ async def publish_project(
                 project_id=f"{created_project.uuid}",
                 dag_adjacency_list=fake_workbench_adjacency,
             ),
-            tasks=await create_tasks_from_project(
-                user=user, project=created_project, state=StateType.PUBLISHED
-            ),
+            tasks=await create_tasks_from_project(user=user, project=created_project, state=StateType.PUBLISHED),
         )
 
     return _
@@ -328,16 +294,12 @@ async def running_project(
     create_pipeline: Callable[..., Awaitable[CompPipelineAtDB]],
     create_tasks_from_project: Callable[..., Awaitable[list[CompTaskAtDB]]],
     create_comp_run: Callable[..., Awaitable[CompRunsAtDB]],
-    create_comp_run_snapshot_tasks: Callable[
-        ..., Awaitable[list[CompRunSnapshotTaskAtDBGet]]
-    ],
+    create_comp_run_snapshot_tasks: Callable[..., Awaitable[list[CompRunSnapshotTaskAtDBGet]]],
     fake_workbench_without_outputs: dict[str, Any],
     fake_workbench_adjacency: dict[str, Any],
 ) -> RunningProject:
     user = create_registered_user()
-    created_project = await create_project(
-        user, workbench=fake_workbench_without_outputs
-    )
+    created_project = await create_project(user, workbench=fake_workbench_without_outputs)
     now_time = arrow.utcnow().datetime
     _comp_run = await create_comp_run(
         user=user,
@@ -380,17 +342,13 @@ async def running_project_mark_for_cancellation(
     create_pipeline: Callable[..., Awaitable[CompPipelineAtDB]],
     create_tasks_from_project: Callable[..., Awaitable[list[CompTaskAtDB]]],
     create_comp_run: Callable[..., Awaitable[CompRunsAtDB]],
-    create_comp_run_snapshot_tasks: Callable[
-        ..., Awaitable[list[CompRunSnapshotTaskAtDBGet]]
-    ],
+    create_comp_run_snapshot_tasks: Callable[..., Awaitable[list[CompRunSnapshotTaskAtDBGet]]],
     fake_workbench_without_outputs: dict[str, Any],
     fake_workbench_adjacency: dict[str, Any],
     with_product: dict[str, Any],
 ) -> RunningProject:
     user = create_registered_user()
-    created_project = await create_project(
-        user, workbench=fake_workbench_without_outputs
-    )
+    created_project = await create_project(user, workbench=fake_workbench_without_outputs)
     now_time = arrow.utcnow().datetime
     _comp_run = await create_comp_run(
         user=user,

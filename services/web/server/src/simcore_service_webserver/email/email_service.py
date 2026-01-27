@@ -14,6 +14,6 @@ assert get_template_path  # nosec
 
 __all__: tuple[str, ...] = (
     "AttachmentTuple",
-    "send_email_from_template",
     "get_template_path",
+    "send_email_from_template",
 )

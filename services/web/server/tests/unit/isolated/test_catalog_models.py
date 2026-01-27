@@ -20,10 +20,7 @@ def unit_registry(request: pytest.FixtureRequest) -> UnitRegistry | None:
     return None if request.param is None else UnitRegistry()
 
 
-def test_from_catalog_to_webapi_service(
-    unit_registry: UnitRegistry | None, benchmark: BenchmarkFixture
-):
-
+def test_from_catalog_to_webapi_service(unit_registry: UnitRegistry | None, benchmark: BenchmarkFixture):
     # Taken from services/catalog/src/simcore_service_catalog/models/schemas/services.py on Feb.2021
     catalog_service = {
         "name": "File Picker",
@@ -75,9 +72,7 @@ def test_from_catalog_to_webapi_service(
     def _run_async_test():
         s = deepcopy(catalog_service)
         asyncio.get_event_loop().run_until_complete(
-            replace_service_input_outputs(
-                s, unit_registry=unit_registry, **RESPONSE_MODEL_POLICY
-            )
+            replace_service_input_outputs(s, unit_registry=unit_registry, **RESPONSE_MODEL_POLICY)
         )
         return s
 

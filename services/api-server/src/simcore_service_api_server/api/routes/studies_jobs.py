@@ -84,9 +84,7 @@ async def list_study_jobs(
     for job in jobs:
         study_id_str, job_id = parse_resources_ids(job.resource_name)
         assert study_id_str == f"{study_id}"
-        _update_study_job_urls(
-            job=job, study_id=study_id, job_id=job_id, url_for=url_for
-        )
+        _update_study_job_urls(job=job, study_id=study_id, job_id=job_id, url_for=url_for)
 
     return create_page(
         jobs,
@@ -210,9 +208,7 @@ async def start_study_job(
         Query(
             description=create_route_description(
                 changelog=[
-                    FMSG_CHANGELOG_CHANGED_IN_VERSION.format(
-                        "0.7", "query parameter `cluster_id` deprecated"
-                    ),
+                    FMSG_CHANGELOG_CHANGED_IN_VERSION.format("0.7", "query parameter `cluster_id` deprecated"),
                 ]
             ),
             deprecated=True,
@@ -233,9 +229,7 @@ async def start_study_job(
             job_status: JobStatus = await job_service.inspect_study_job(
                 job_id=job_id,
             )
-            return JSONResponse(
-                content=jsonable_encoder(job_status), status_code=status.HTTP_200_OK
-            )
+            return JSONResponse(content=jsonable_encoder(job_status), status_code=status.HTTP_200_OK)
 
 
 @router.post(
@@ -250,9 +244,7 @@ async def stop_study_job(
 ):
     job_name = compose_study_job_resource_name(study_id, job_id)
     with log_context(_logger, logging.DEBUG, f"Stopping Job '{job_name}'"):
-        return await stop_project(
-            job_id=job_id, user_id=user_id, director2_api=director2_api
-        )
+        return await stop_project(job_id=job_id, user_id=user_id, director2_api=director2_api)
 
 
 @router.post(
@@ -302,18 +294,13 @@ async def get_study_job_output_logfile(
         level=logging.DEBUG,
         msg=f"get study job output logfile study_id={study_id!r} job_id={job_id!r}.",
     ):
-        return await director2_api.get_computation_logs(
-            user_id=user_id, project_id=job_id
-        )
+        return await director2_api.get_computation_logs(user_id=user_id, project_id=job_id)
 
 
 @router.get(
     "/{study_id}/jobs/{job_id}/metadata",
     response_model=JobMetadata,
-    description=(
-        "Get custom metadata from a study's job\n\n"
-        + FMSG_CHANGELOG_NEW_IN_VERSION.format("0.7")
-    ),
+    description=("Get custom metadata from a study's job\n\n" + FMSG_CHANGELOG_NEW_IN_VERSION.format("0.7")),
 )
 async def get_study_job_custom_metadata(
     study_id: StudyID,
@@ -340,10 +327,7 @@ async def get_study_job_custom_metadata(
 @router.put(
     "/{study_id}/jobs/{job_id}/metadata",
     response_model=JobMetadata,
-    description=(
-        "Changes custom metadata of a study's job\n\n"
-        + FMSG_CHANGELOG_NEW_IN_VERSION.format("0.7")
-    ),
+    description=("Changes custom metadata of a study's job\n\n" + FMSG_CHANGELOG_NEW_IN_VERSION.format("0.7")),
 )
 async def replace_study_job_custom_metadata(
     study_id: StudyID,

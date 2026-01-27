@@ -21,24 +21,18 @@ class DockerLabelKey(ConstrainedStr):
 
 
 # NOTE: https://docs.docker.com/engine/reference/commandline/tag/#description
-DockerGenericTag: TypeAlias = Annotated[
-    str, StringConstraints(pattern=DOCKER_GENERIC_TAG_KEY_RE)
-]
+DockerGenericTag: TypeAlias = Annotated[str, StringConstraints(pattern=DOCKER_GENERIC_TAG_KEY_RE)]
 
 DockerPlacementConstraint: TypeAlias = Annotated[
     str,
     StringConstraints(
         strip_whitespace=True,
-        pattern=re.compile(
-            r"^(?!-)(?![.])(?!.*--)(?!.*[.][.])[a-zA-Z0-9.-]*(?<!-)(?<![.])(!=|==)[a-zA-Z0-9_. -]*$"
-        ),
+        pattern=re.compile(r"^(?!-)(?![.])(?!.*--)(?!.*[.][.])[a-zA-Z0-9.-]*(?<!-)(?<![.])(!=|==)[a-zA-Z0-9_. -]*$"),
     ),
 ]
 
 
-DockerNodeID: TypeAlias = Annotated[
-    str, StringConstraints(strip_whitespace=True, pattern=re.compile(r"[a-zA-Z0-9]"))
-]
+DockerNodeID: TypeAlias = Annotated[str, StringConstraints(strip_whitespace=True, pattern=re.compile(r"[a-zA-Z0-9]"))]
 
 
 # Docker placement labels for node-specific constraints

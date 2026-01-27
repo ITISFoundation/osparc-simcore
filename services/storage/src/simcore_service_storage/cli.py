@@ -20,9 +20,7 @@ _logger = logging.getLogger(__name__)
 # NOTE: 'main' variable is referred in the setup's entrypoint!
 main = typer.Typer(name=PROJECT_NAME)
 
-main.command()(
-    create_settings_command(settings_cls=ApplicationSettings, logger=_logger)
-)
+main.command()(create_settings_command(settings_cls=ApplicationSettings, logger=_logger))
 main.callback()(create_version_callback(__version__))
 
 
@@ -58,31 +56,19 @@ def echo_dotenv(ctx: typer.Context, *, minimal: bool = True) -> None:
         STORAGE_POSTGRES=os.environ.get(
             "STORAGE_POSTGRES",
             PostgresSettings.create_from_envs(
-                POSTGRES_HOST=os.environ.get(
-                    "POSTGRES_HOST", "replace-with-postgres-host"
-                ),
-                POSTGRES_USER=os.environ.get(
-                    "POSTGRES_USER", "replace-with-postgres-user"
-                ),
+                POSTGRES_HOST=os.environ.get("POSTGRES_HOST", "replace-with-postgres-host"),
+                POSTGRES_USER=os.environ.get("POSTGRES_USER", "replace-with-postgres-user"),
                 POSTGRES_DB=os.environ.get("POSTGRES_DB", "replace-with-postgres-db"),
-                POSTGRES_PASSWORD=os.environ.get(
-                    "POSTGRES_PASSWORD", "replace-with-postgres-password"
-                ),
+                POSTGRES_PASSWORD=os.environ.get("POSTGRES_PASSWORD", "replace-with-postgres-password"),
             ),
         ),
         STORAGE_S3=os.environ.get(  # nosec
             "STORAGE_S3",
             S3Settings.create_from_envs(
                 S3_BUCKET_NAME=os.environ.get("S3_BUCKET", "replace-with-s3-bucket"),
-                S3_ACCESS_KEY=os.environ.get(
-                    "S3_ACCESS_KEY", "replace-with-s3-access-key"
-                ),
-                S3_SECRET_KEY=os.environ.get(
-                    "S3_SECRET_KEY", "replace-with-s3-secret-key"
-                ),
-                S3_ENDPOINT=os.environ.get(
-                    "S3_ENDPOINT", "https://s3.replace-with-s3-endpoint"
-                ),
+                S3_ACCESS_KEY=os.environ.get("S3_ACCESS_KEY", "replace-with-s3-access-key"),
+                S3_SECRET_KEY=os.environ.get("S3_SECRET_KEY", "replace-with-s3-secret-key"),
+                S3_ENDPOINT=os.environ.get("S3_ENDPOINT", "https://s3.replace-with-s3-endpoint"),
                 S3_REGION=os.environ.get("S3_REGION", "replace-with-s3-region"),
             ),
         ),

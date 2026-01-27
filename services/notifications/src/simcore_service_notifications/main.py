@@ -5,6 +5,7 @@ from common_library.json_serialization import json_dumps
 from fastapi import FastAPI
 from servicelib.fastapi.logging_lifespan import create_logging_lifespan
 from servicelib.tracing import TracingConfig
+
 from simcore_service_notifications._meta import APP_NAME
 from simcore_service_notifications.core.application import create_app
 from simcore_service_notifications.core.settings import (
@@ -18,9 +19,7 @@ _NOISY_LOGGERS: Final[tuple[str, ...]] = ()
 
 def app_factory() -> FastAPI:
     app_settings = ApplicationSettings.create_from_envs()
-    tracing_config = TracingConfig.create(
-        service_name=APP_NAME, tracing_settings=app_settings.NOTIFICATIONS_TRACING
-    )
+    tracing_config = TracingConfig.create(service_name=APP_NAME, tracing_settings=app_settings.NOTIFICATIONS_TRACING)
     logging_lifespan = create_logging_lifespan(
         log_format_local_dev_enabled=app_settings.NOTIFICATIONS_LOG_FORMAT_LOCAL_DEV_ENABLED,
         logger_filter_mapping=app_settings.NOTIFICATIONS_LOG_FILTER_MAPPING,

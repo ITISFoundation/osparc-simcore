@@ -46,14 +46,10 @@ _RETRY_PARAMS: Final[dict[str, Any]] = {
 @pytest.fixture
 def disable_other_generic_scheduler_modules(mocker: MockerFixture) -> None:
     # these also use redis
-    generic_scheduler_module = (
-        "simcore_service_dynamic_scheduler.services.generic_scheduler"
-    )
+    generic_scheduler_module = "simcore_service_dynamic_scheduler.services.generic_scheduler"
     mocker.patch(f"{generic_scheduler_module}._lifespan.Core", autospec=True)
     mocker.patch(f"{generic_scheduler_module}._lifespan.Store", autospec=True)
-    mocker.patch(
-        f"{generic_scheduler_module}._lifespan.AfterEventManager", autospec=True
-    )
+    mocker.patch(f"{generic_scheduler_module}._lifespan.AfterEventManager", autospec=True)
 
 
 @pytest.fixture
@@ -75,7 +71,6 @@ def app_environment(
 def get_mock_safe_on_schedule_event(
     mocker: MockerFixture,
 ) -> Callable[[Callable[[ScheduleId], Awaitable[None]]], Mock]:
-
     def _(side_effect: Callable[[ScheduleId], Awaitable[None]]) -> Mock:
         another_mock = Mock()
 
@@ -95,12 +90,9 @@ def get_mock_safe_on_schedule_event(
 
 
 async def test_enqueue_schedule_event(
-    get_mock_safe_on_schedule_event: Callable[
-        [Callable[[ScheduleId], Awaitable[None]]], Mock
-    ],
+    get_mock_safe_on_schedule_event: Callable[[Callable[[ScheduleId], Awaitable[None]]], Mock],
     app: FastAPI,
 ) -> None:
-
     async def _side_effect_nothing(schedule_id: ScheduleId) -> None:
         pass
 
@@ -120,9 +112,7 @@ async def test_enqueue_schedule_event(
 
 
 async def test_enqueue_schedule_event_raises_error(
-    get_mock_safe_on_schedule_event: Callable[
-        [Callable[[ScheduleId], Awaitable[None]]], Mock
-    ],
+    get_mock_safe_on_schedule_event: Callable[[Callable[[ScheduleId], Awaitable[None]]], Mock],
     app: FastAPI,
     caplog: pytest.LogCaptureFixture,
 ) -> None:
@@ -151,18 +141,11 @@ async def test_enqueue_schedule_event_raises_error(
 def get_mock_safe_on_event_type(
     mocker: MockerFixture,
 ) -> Callable[
-    [
-        Callable[
-            [EventType, ScheduleId, OperationName, OperationContext], Awaitable[None]
-        ]
-    ],
+    [Callable[[EventType, ScheduleId, OperationName, OperationContext], Awaitable[None]]],
     Mock,
 ]:
-
     def _(
-        side_effect: Callable[
-            [EventType, ScheduleId, OperationName, OperationContext], Awaitable[None]
-        ],
+        side_effect: Callable[[EventType, ScheduleId, OperationName, OperationContext], Awaitable[None]],
     ) -> Mock:
         another_mock = Mock()
 
@@ -200,7 +183,6 @@ async def test_enqueue_event_type(
     app: FastAPI,
     expected_event_type: EventType,
 ):
-
     async def _side_effect_nothing(
         event_type: EventType,
         schedule_id: ScheduleId,
@@ -223,9 +205,7 @@ async def test_enqueue_event_type(
     async for attempt in AsyncRetrying(**_RETRY_PARAMS):
         with attempt:
             await asyncio.sleep(0)  # wait for event to trigger
-            assert mock.call_args_list == [
-                call(expected_event_type, schedule_id, "op1", {})
-            ]
+            assert mock.call_args_list == [call(expected_event_type, schedule_id, "op1", {})]
 
 
 @pytest.mark.parametrize("expected_event_type", EventType)

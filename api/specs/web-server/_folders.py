@@ -5,7 +5,6 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
-
 from typing import Annotated
 
 from _common import as_query
@@ -33,9 +32,7 @@ router = APIRouter(
     tags=[
         "folders",
     ],
-    responses={
-        i.status_code: {"model": EnvelopedError} for i in _TO_HTTP_ERROR_MAP.values()
-    },
+    responses={i.status_code: {"model": EnvelopedError} for i in _TO_HTTP_ERROR_MAP.values()},
 )
 
 

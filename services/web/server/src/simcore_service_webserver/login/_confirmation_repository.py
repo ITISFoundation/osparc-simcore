@@ -32,7 +32,6 @@ def _to_domain(confirmation_row: Row) -> Confirmation:
 
 
 class ConfirmationRepository(BaseRepository):
-
     async def create_confirmation(
         self,
         connection: AsyncConnection | None = None,
@@ -46,14 +45,11 @@ class ConfirmationRepository(BaseRepository):
         async with transaction_context(self.engine, connection) as conn:
             # We want the same connection checking uniqueness and inserting
             while True:  # Generate unique code
-
                 # NOTE: use only numbers since front-end does not handle well url encoding
                 numeric_code: str = generate_passcode(20)
 
                 # Check if code already exists
-                check_query = sa.select(confirmations.c.code).where(
-                    confirmations.c.code == numeric_code
-                )
+                check_query = sa.select(confirmations.c.code).where(confirmations.c.code == numeric_code)
                 result = await conn.execute(check_query)
                 if result.one_or_none() is None:
                     break
@@ -106,9 +102,7 @@ class ConfirmationRepository(BaseRepository):
         confirmation: Confirmation,
     ) -> None:
         """Delete a confirmation token."""
-        query = sa.delete(confirmations).where(
-            confirmations.c.code == confirmation.code
-        )
+        query = sa.delete(confirmations).where(confirmations.c.code == confirmation.code)
 
         async with transaction_context(self.engine, connection) as conn:
             await conn.execute(query)
@@ -123,11 +117,7 @@ class ConfirmationRepository(BaseRepository):
         """Atomically delete confirmation and user."""
         async with transaction_context(self.engine, connection) as conn:
             # Delete confirmation
-            await conn.execute(
-                sa.delete(confirmations).where(
-                    confirmations.c.code == confirmation.code
-                )
-            )
+            await conn.execute(sa.delete(confirmations).where(confirmations.c.code == confirmation.code))
 
             # Delete user
             await conn.execute(sa.delete(users).where(users.c.id == user_id))
@@ -143,13 +133,7 @@ class ConfirmationRepository(BaseRepository):
         """Atomically delete confirmation and update user."""
         async with transaction_context(self.engine, connection) as conn:
             # Delete confirmation
-            await conn.execute(
-                sa.delete(confirmations).where(
-                    confirmations.c.code == confirmation.code
-                )
-            )
+            await conn.execute(sa.delete(confirmations).where(confirmations.c.code == confirmation.code))
 
             # Update user
-            await conn.execute(
-                sa.update(users).where(users.c.id == user_id).values(**updates)
-            )
+            await conn.execute(sa.update(users).where(users.c.id == user_id).values(**updates))

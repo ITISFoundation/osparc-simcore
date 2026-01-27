@@ -7,9 +7,7 @@ from .httpx_calls_capture_errors import OpenApiSpecError
 
 class CapturedParameterSchema(BaseModel):
     title: str | None = None
-    type_: Literal["str", "int", "float", "bool", "null"] | None = Field(
-        None, alias="type"
-    )
+    type_: Literal["str", "int", "float", "bool", "null"] | None = Field(None, alias="type")
     pattern: str | None = None
     format_: Literal["uuid"] | None = Field(None, alias="format")
     exclusiveMinimum: bool | None = None
@@ -48,10 +46,7 @@ class CapturedParameterSchema(BaseModel):
             raise ValueError(msg)
 
         def _check_no_recursion(v: list["CapturedParameterSchema"]):
-            if v is not None and not all(
-                elm.anyOf is None and elm.oneOf is None and elm.allOf is None
-                for elm in v
-            ):
+            if v is not None and not all(elm.anyOf is None and elm.oneOf is None and elm.allOf is None for elm in v):
                 msg = "For simplicity we only allow top level schema have oneOf, anyOf or allOf"
                 raise ValueError(msg)
 
@@ -105,15 +100,11 @@ class CapturedParameter(BaseModel):
     name: str
     required: bool
     schema_: Annotated[CapturedParameterSchema, Field(..., alias="schema")]
-    response_value: str | None = (
-        None  # attribute for storing the params value in a concrete response
-    )
+    response_value: str | None = None  # attribute for storing the params value in a concrete response
     model_config = ConfigDict(validate_default=True, populate_by_name=True)
 
     def __hash__(self):
-        return hash(
-            self.name + self.in_
-        )  # it is assumed name is unique within a given path
+        return hash(self.name + self.in_)  # it is assumed name is unique within a given path
 
     def __eq__(self, other):
         return self.name == other.name and self.in_ == other.in_

@@ -37,23 +37,18 @@ class DirectorV0PublicClient(SingletonInAppStateMixin):
     def __init__(self, app: FastAPI) -> None:
         self.app = app
 
-    async def get_running_service_details(
-        self, node_id: NodeID
-    ) -> RunningDynamicServiceDetails:
-        response = await DirectorV0ThinClient.get_from_app_state(
-            self.app
-        ).get_running_interactive_service_details(node_id)
-        return TypeAdapter(RunningDynamicServiceDetails).validate_python(
-            _unenvelope_or_raise_error(response)
+    async def get_running_service_details(self, node_id: NodeID) -> RunningDynamicServiceDetails:
+        response = await DirectorV0ThinClient.get_from_app_state(self.app).get_running_interactive_service_details(
+            node_id
         )
+        return TypeAdapter(RunningDynamicServiceDetails).validate_python(_unenvelope_or_raise_error(response))
 
     async def get_running_services(
         self, user_id: UserID | None = None, project_id: ProjectID | None = None
     ) -> list[RunningDynamicServiceDetails]:
-        response = await DirectorV0ThinClient.get_from_app_state(
-            self.app
-        ).get_running_interactive_services(user_id=user_id, project_id=project_id)
+        response = await DirectorV0ThinClient.get_from_app_state(self.app).get_running_interactive_services(
+            user_id=user_id, project_id=project_id
+        )
         return [
-            RunningDynamicServiceDetails(**x)
-            for x in cast(list[dict[str, Any]], _unenvelope_or_raise_error(response))
+            RunningDynamicServiceDetails(**x) for x in cast(list[dict[str, Any]], _unenvelope_or_raise_error(response))
         ]

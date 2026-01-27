@@ -21,17 +21,16 @@ class PostgresLifespanState(str, Enum):
 
 
 class PostgresConfigurationError(LifespanOnStartupError):
-    msg_template = "Invalid postgres settings [={settings}] on startup. Note that postgres cannot be disabled using settings"
+    msg_template = (
+        "Invalid postgres settings [={settings}] on startup. Note that postgres cannot be disabled using settings"
+    )
 
 
 def create_postgres_database_input_state(settings: PostgresSettings) -> State:
     return {PostgresLifespanState.POSTGRES_SETTINGS: settings}
 
 
-async def postgres_database_lifespan(
-    app: FastAPI, state: State
-) -> AsyncIterator[State]:
-
+async def postgres_database_lifespan(app: FastAPI, state: State) -> AsyncIterator[State]:
     _lifespan_name = f"{__name__}.{postgres_database_lifespan.__name__}"
 
     with lifespan_context(_logger, logging.INFO, _lifespan_name, state) as called_state:
@@ -44,12 +43,9 @@ async def postgres_database_lifespan(
         assert isinstance(settings, PostgresSettings)  # nosec
 
         # connect to database
-        async_engine: AsyncEngine = await create_async_engine_and_database_ready(
-            settings, app.title
-        )
+        async_engine: AsyncEngine = await create_async_engine_and_database_ready(settings, app.title)
 
         try:
-
             yield {
                 PostgresLifespanState.POSTGRES_ASYNC_ENGINE: async_engine,
                 **called_state,

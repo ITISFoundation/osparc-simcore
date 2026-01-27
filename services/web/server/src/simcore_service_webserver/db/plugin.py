@@ -11,9 +11,7 @@ from . import _aiopg, _asyncpg
 
 _logger = logging.getLogger(__name__)
 
-DB_ENGINE_APPKEY: Final = web.AppKey(
-    "APP_DB_ENGINE_KEY", object
-)  # Can be aiopg.Engine or asyncpg engine
+DB_ENGINE_APPKEY: Final = web.AppKey("APP_DB_ENGINE_KEY", object)  # Can be aiopg.Engine or asyncpg engine
 
 
 # API
@@ -34,7 +32,6 @@ get_asyncpg_engine = _asyncpg.get_async_engine
     logger=_logger,
 )
 def setup_db(app: web.Application):
-
     # ensures keys exist DEPRECATED
     app[APP_AIOPG_ENGINE_KEY] = None
     assert get_database_engine_legacy(app) is None  # nosec

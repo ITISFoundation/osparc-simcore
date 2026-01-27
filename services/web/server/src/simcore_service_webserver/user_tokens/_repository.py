@@ -42,13 +42,8 @@ class UserTokensRepository(BaseRepository):
         user_id: UserID,
     ) -> list[UserThirdPartyToken]:
         async with pass_or_acquire_connection(self.engine, connection) as conn:
-            result = await conn.execute(
-                sa.select(tokens.c.token_data).where(tokens.c.user_id == user_id)
-            )
-            return [
-                UserThirdPartyToken.model_construct(**row["token_data"])
-                for row in result.fetchall()
-            ]
+            result = await conn.execute(sa.select(tokens.c.token_data).where(tokens.c.user_id == user_id))
+            return [UserThirdPartyToken.model_construct(**row["token_data"]) for row in result.fetchall()]
 
     async def get_token(
         self,
@@ -81,8 +76,7 @@ class UserTokensRepository(BaseRepository):
         async with transaction_context(self.engine, connection) as conn:
             result = await conn.execute(
                 sa.select(tokens.c.token_data, tokens.c.token_id).where(
-                    (tokens.c.user_id == user_id)
-                    & (tokens.c.token_service == service_id)
+                    (tokens.c.user_id == user_id) & (tokens.c.token_service == service_id)
                 )
             )
             row = result.one_or_none()
@@ -94,10 +88,7 @@ class UserTokensRepository(BaseRepository):
             data.update(token_data)
 
             result = await conn.execute(
-                tokens.update()
-                .where(tokens.c.token_id == tid)
-                .values(token_data=data)
-                .returning(literal_column("*"))
+                tokens.update().where(tokens.c.token_id == tid).values(token_data=data).returning(literal_column("*"))
             )
             updated_token = result.one()
             assert updated_token  # nosec

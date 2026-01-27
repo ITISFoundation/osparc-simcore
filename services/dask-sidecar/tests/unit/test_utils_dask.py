@@ -51,9 +51,7 @@ def dask_client_multi(
     return async_dask_client
 
 
-@pytest.mark.parametrize(
-    "handler", [mock.Mock(), mock.AsyncMock()], ids=["sync-handler", "async-handler"]
-)
+@pytest.mark.parametrize("handler", [mock.Mock(), mock.AsyncMock()], ids=["sync-handler", "async-handler"])
 async def test_publish_event(
     dask_client_multi: distributed.Client,
     job_id: str,
@@ -90,9 +88,7 @@ async def test_publish_event(
         retry=retry_if_exception_type(AssertionError),
     ):
         with attempt:
-            events = await maybe_await(
-                dask_client_multi.get_events(TaskProgressEvent.topic_name())
-            )
+            events = await maybe_await(dask_client_multi.get_events(TaskProgressEvent.topic_name()))
             assert events is not None, "No events received"
             assert isinstance(events, tuple)
 
@@ -167,9 +163,7 @@ def _some_long_running_task_with_monitoring(task_owner: TaskOwner) -> int:
         _notify_task_is_started_and_ready(worker.client)
         current_task = asyncio.current_task()
         assert current_task
-        async with monitor_task_abortion(
-            task_name=current_task.get_name(), task_publishers=task_publishers
-        ):
+        async with monitor_task_abortion(task_name=current_task.get_name(), task_publishers=task_publishers):
             for i in range(300):
                 print("running iteration", i)
                 await asyncio.sleep(0.5)
@@ -184,12 +178,8 @@ def _some_long_running_task_with_monitoring(task_owner: TaskOwner) -> int:
     return asyncio.get_event_loop().run_until_complete(_long_running_task_async())
 
 
-def test_monitor_task_abortion(
-    dask_client: distributed.Client, job_id: str, task_owner: TaskOwner
-):
-    future = dask_client.submit(
-        _some_long_running_task_with_monitoring, task_owner=task_owner, key=job_id
-    )
+def test_monitor_task_abortion(dask_client: distributed.Client, job_id: str, task_owner: TaskOwner):
+    future = dask_client.submit(_some_long_running_task_with_monitoring, task_owner=task_owner, key=job_id)
     _wait_for_task_to_start(dask_client)
     # trigger cancellation
     dask_event = distributed.Event(TaskCancelEventName.format(job_id))

@@ -40,7 +40,7 @@ payments_transactions = sa.Table(
         sa.String,
         nullable=False,
         primary_key=True,
-        doc="Identifer of the payment provided by payment gateway",
+        doc="Identifier of the payment provided by payment gateway",
     ),
     sa.Column(
         "price_dollars",
@@ -56,7 +56,7 @@ payments_transactions = sa.Table(
         sa.Numeric(**NUMERIC_KWARGS),  # type: ignore
         nullable=False,
         doc="Amount of credits that will be added to the wallet_id "
-        "once the transaction completes successfuly."
+        "once the transaction completes successfully."
         "E.g. 1234.12 credits",
     ),
     sa.Column(
@@ -134,7 +134,7 @@ payments_transactions = sa.Table(
         "initiated_at",
         sa.DateTime(timezone=True),
         nullable=False,
-        doc="Timestamps when transaction initated (successful respose to /init)",
+        doc="Timestamps when transaction initiated (successful response to /init)",
     ),
     sa.Column(
         "completed_at",

@@ -16,9 +16,7 @@ class RefActions:
     NO_ACTION: Final[str] = "NO ACTION"
 
 
-def column_created_datetime(
-    *, timezone: bool = True, doc="Timestamp auto-generated upon creation"
-) -> sa.Column:
+def column_created_datetime(*, timezone: bool = True, doc="Timestamp auto-generated upon creation") -> sa.Column:
     return sa.Column(
         "created",
         sa.DateTime(timezone=timezone),
@@ -28,9 +26,7 @@ def column_created_datetime(
     )
 
 
-def column_modified_datetime(
-    *, timezone: bool = True, doc="Timestamp with last row update"
-) -> sa.Column:
+def column_modified_datetime(*, timezone: bool = True, doc="Timestamp with last row update") -> sa.Column:
     return sa.Column(
         "modified",
         sa.DateTime(timezone=timezone),
@@ -41,9 +37,7 @@ def column_modified_datetime(
     )
 
 
-def column_created_by_user(
-    *, users_table: sa.Table, required: bool = False
-) -> sa.Column:
+def column_created_by_user(*, users_table: sa.Table, required: bool = False) -> sa.Column:
     return sa.Column(
         "created_by",
         sa.Integer,
@@ -57,9 +51,7 @@ def column_created_by_user(
     )
 
 
-def column_modified_by_user(
-    *, users_table: sa.Table, required: bool = False
-) -> sa.Column:
+def column_modified_by_user(*, users_table: sa.Table, required: bool = False) -> sa.Column:
     return sa.Column(
         "modified_by",
         sa.Integer,

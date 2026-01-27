@@ -116,9 +116,7 @@ async def director_v2_service_mock(
     Other than that it seems to behave nicely
     """
     PASSTHROUGH_REQUESTS_PREFIXES = ["http://127.0.0.1", "ws://"]
-    get_computation_pattern = re.compile(
-        r"^http://[a-z\-_]*director-v2:[0-9]+/v2/computations/.*$"
-    )
+    get_computation_pattern = re.compile(r"^http://[a-z\-_]*director-v2:[0-9]+/v2/computations/.*$")
     delete_computation_pattern = get_computation_pattern
 
     mocker.patch(
@@ -221,18 +219,12 @@ def disable_garbage_collector_task(mocker: MockerFixture) -> mock.MagicMock:
 
 async def login_user(client: TestClient, *, exit_stack: contextlib.AsyncExitStack):
     """returns a logged in regular user"""
-    return await log_client_in(
-        client=client, user_data={"role": UserRole.USER.name}, exit_stack=exit_stack
-    )
+    return await log_client_in(client=client, user_data={"role": UserRole.USER.name}, exit_stack=exit_stack)
 
 
-async def login_guest_user(
-    client: TestClient, *, exit_stack: contextlib.AsyncExitStack
-):
+async def login_guest_user(client: TestClient, *, exit_stack: contextlib.AsyncExitStack):
     """returns a logged in Guest user"""
-    return await log_client_in(
-        client=client, user_data={"role": UserRole.GUEST.name}, exit_stack=exit_stack
-    )
+    return await log_client_in(client=client, user_data={"role": UserRole.GUEST.name}, exit_stack=exit_stack)
 
 
 async def _setup_project_cleanup(
@@ -246,9 +238,7 @@ async def _setup_project_cleanup(
         assert client.app
         with contextlib.suppress(ProjectNotFoundError):
             # Sometimes the test deletes the project
-            await _projects_repository.delete_project(
-                client.app, project_uuid=project_uuid
-            )
+            await _projects_repository.delete_project(client.app, project_uuid=project_uuid)
 
     exit_stack.push_async_callback(_delete_project, ProjectID(project["uuid"]))
 
@@ -298,15 +288,13 @@ async def create_template_project(
     exit_stack: contextlib.AsyncExitStack,
     access_rights=None,
 ):
-    """returns a tempalte shared with all"""
+    """returns a template shared with all"""
     assert client.app
 
     # the information comes from a file, randomize it
     project_data["name"] = f"Fake template {uuid4()}"
     project_data["uuid"] = f"{uuid4()}"
-    project_data["accessRights"] = {
-        str(EVERYONE_GROUP_ID): {"read": True, "write": False, "delete": False}
-    }
+    project_data["accessRights"] = {str(EVERYONE_GROUP_ID): {"read": True, "write": False, "delete": False}}
     if access_rights is not None:
         project_data["accessRights"].update(access_rights)
 
@@ -352,13 +340,9 @@ async def invite_user_to_group(client: TestClient, owner, invitee, group):
     )
 
 
-async def change_user_role(
-    aiopg_engine: aiopg.sa.Engine, user: UserInfoDict, role: UserRole
-) -> None:
+async def change_user_role(aiopg_engine: aiopg.sa.Engine, user: UserInfoDict, role: UserRole) -> None:
     async with aiopg_engine.acquire() as conn:
-        await conn.execute(
-            users.update().where(users.c.id == int(user["id"])).values(role=role.value)
-        )
+        await conn.execute(users.update().where(users.c.id == int(user["id"])).values(role=role.value))
 
 
 class SioConnectionData(NamedTuple):
@@ -369,31 +353,23 @@ class SioConnectionData(NamedTuple):
 async def connect_to_socketio(
     client: TestClient,
     user: UserInfoDict,
-    socketio_client_factory: Callable[
-        [str | None, TestClient | None], Awaitable[tuple[socketio.AsyncClient, str]]
-    ],
+    socketio_client_factory: Callable[[str | None, TestClient | None], Awaitable[tuple[socketio.AsyncClient, str]]],
 ) -> SioConnectionData:
     """Connect a user to a socket.io"""
     assert client.app
     socket_registry = get_registry(client.app)
     cur_client_session_id = f"{uuid4()}"
     sio, *_ = await socketio_client_factory(cur_client_session_id, client)
-    resource_key = UserSession(
-        user_id=user["id"], client_session_id=cur_client_session_id
-    )
+    resource_key = UserSession(user_id=user["id"], client_session_id=cur_client_session_id)
     sid = sio.get_sid()
     assert sid
     assert await socket_registry.find_keys(("socket_id", sid)) == [resource_key]
-    assert sio.get_sid() in await socket_registry.find_resources(
-        resource_key, "socket_id"
-    )
+    assert sio.get_sid() in await socket_registry.find_resources(resource_key, "socket_id")
     assert len(await socket_registry.find_resources(resource_key, "socket_id")) == 1
     return SioConnectionData(sio, resource_key)
 
 
-async def disconnect_user_from_socketio(
-    client: TestClient, sio_connection_data: SioConnectionData
-) -> None:
+async def disconnect_user_from_socketio(client: TestClient, sio_connection_data: SioConnectionData) -> None:
     """disconnect a previously connected socket.io connection"""
     sio, resource_key = sio_connection_data
     sid = sio.get_sid()
@@ -410,23 +386,17 @@ async def disconnect_user_from_socketio(
     ):
         with attempt:
             assert not await socket_registry.find_keys(("socket_id", sio.get_sid()))
-            assert sid not in await socket_registry.find_resources(
-                resource_key, "socket_id"
-            )
+            assert sid not in await socket_registry.find_resources(resource_key, "socket_id")
             assert not await socket_registry.find_resources(resource_key, "socket_id")
 
 
-async def assert_users_count(
-    aiopg_engine: aiopg.sa.Engine, expected_users: int
-) -> None:
+async def assert_users_count(aiopg_engine: aiopg.sa.Engine, expected_users: int) -> None:
     async with aiopg_engine.acquire() as conn:
         users_count = await conn.scalar(select(func.count()).select_from(users))
         assert users_count == expected_users
 
 
-async def assert_projects_count(
-    aiopg_engine: aiopg.sa.Engine, expected_projects: int
-) -> None:
+async def assert_projects_count(aiopg_engine: aiopg.sa.Engine, expected_projects: int) -> None:
     async with aiopg_engine.acquire() as conn:
         projects_count = await conn.scalar(select(func.count()).select_from(projects))
         assert projects_count == expected_projects
@@ -438,9 +408,7 @@ def assert_dicts_match_by_common_keys(first_dict, second_dict) -> None:
         assert first_dict[key] == second_dict[key], key
 
 
-async def fetch_user_from_db(
-    aiopg_engine: aiopg.sa.Engine, user: UserInfoDict
-) -> UserInfoDict | None:
+async def fetch_user_from_db(aiopg_engine: aiopg.sa.Engine, user: UserInfoDict) -> UserInfoDict | None:
     """returns a user from the db"""
     async with aiopg_engine.acquire() as conn:
         user_result = await conn.execute(users.select().where(users.c.id == user["id"]))
@@ -450,21 +418,15 @@ async def fetch_user_from_db(
         return UserInfoDict(**dict(result))
 
 
-async def fetch_project_from_db(
-    aiopg_engine: aiopg.sa.Engine, user_project: dict
-) -> dict[str, Any]:
+async def fetch_project_from_db(aiopg_engine: aiopg.sa.Engine, user_project: dict) -> dict[str, Any]:
     async with aiopg_engine.acquire() as conn:
-        project_result = await conn.execute(
-            projects.select().where(projects.c.uuid == user_project["uuid"])
-        )
+        project_result = await conn.execute(projects.select().where(projects.c.uuid == user_project["uuid"]))
         result = await project_result.first()
         assert result
         return dict(result)
 
 
-async def assert_user_in_db(
-    aiopg_engine: aiopg.sa.Engine, logged_user: UserInfoDict
-) -> None:
+async def assert_user_in_db(aiopg_engine: aiopg.sa.Engine, logged_user: UserInfoDict) -> None:
     user = await fetch_user_from_db(aiopg_engine, logged_user)
     assert user
     user_as_dict = dict(user)
@@ -476,9 +438,7 @@ async def assert_user_in_db(
     assert_dicts_match_by_common_keys(user_as_dict, logged_user)
 
 
-async def assert_user_not_in_db(
-    aiopg_engine: aiopg.sa.Engine, user: UserInfoDict
-) -> None:
+async def assert_user_not_in_db(aiopg_engine: aiopg.sa.Engine, user: UserInfoDict) -> None:
     user_db = await fetch_user_from_db(aiopg_engine, user)
     assert user_db is None
 
@@ -487,9 +447,7 @@ def _enum_to_value(d):
     return {k: (v.value if isinstance(v, Enum) else v) for k, v in d.items()}
 
 
-async def assert_project_in_db(
-    aiopg_engine: aiopg.sa.Engine, user_project: dict
-) -> None:
+async def assert_project_in_db(aiopg_engine: aiopg.sa.Engine, user_project: dict) -> None:
     project = await fetch_project_from_db(aiopg_engine, user_project)
     assert project
     project_as_dict = _enum_to_value(dict(project))
@@ -512,9 +470,7 @@ async def assert_user_is_owner_of_project(
 async def assert_one_owner_for_project(
     aiopg_engine: aiopg.sa.Engine, project: dict, possible_owners: list[UserInfoDict]
 ) -> None:
-    q_owners = [
-        await fetch_user_from_db(aiopg_engine, owner) for owner in possible_owners
-    ]
+    q_owners = [await fetch_user_from_db(aiopg_engine, owner) for owner in possible_owners]
     assert all(q_owners)
 
     q_project = await fetch_project_from_db(aiopg_engine, project)
@@ -526,9 +482,7 @@ async def assert_one_owner_for_project(
 async def test_t1_while_guest_is_connected_no_resources_are_removed(
     disable_garbage_collector_task: None,
     client: TestClient,
-    create_socketio_connection: Callable[
-        [str | None, TestClient | None], Awaitable[tuple[socketio.AsyncClient, str]]
-    ],
+    create_socketio_connection: Callable[[str | None, TestClient | None], Awaitable[tuple[socketio.AsyncClient, str]]],
     aiopg_engine: aiopg.sa.engine.Engine,
     tests_data_dir: Path,
     osparc_product_name: str,
@@ -559,9 +513,7 @@ async def test_t1_while_guest_is_connected_no_resources_are_removed(
 async def test_t2_cleanup_resources_after_browser_is_closed(
     disable_garbage_collector_task: None,
     client: TestClient,
-    create_socketio_connection: Callable[
-        [str | None, TestClient | None], Awaitable[tuple[socketio.AsyncClient, str]]
-    ],
+    create_socketio_connection: Callable[[str | None, TestClient | None], Awaitable[tuple[socketio.AsyncClient, str]]],
     aiopg_engine: aiopg.sa.engine.Engine,
     tests_data_dir: Path,
     osparc_product_name: str,
@@ -580,9 +532,7 @@ async def test_t2_cleanup_resources_after_browser_is_closed(
     await assert_users_count(aiopg_engine, 1)
     await assert_projects_count(aiopg_engine, 1)
 
-    sio_connection_data = await connect_to_socketio(
-        client, logged_guest_user, create_socketio_connection
-    )
+    sio_connection_data = await connect_to_socketio(client, logged_guest_user, create_socketio_connection)
     await asyncio.sleep(SERVICE_DELETION_DELAY + 1)
     await gc_core.collect_garbage(app=client.app)
 
@@ -614,9 +564,7 @@ async def test_t2_cleanup_resources_after_browser_is_closed(
 
 async def test_t3_gc_will_not_intervene_for_regular_users_and_their_resources(
     client: TestClient,
-    create_socketio_connection: Callable[
-        [str | None, TestClient | None], Awaitable[tuple[socketio.AsyncClient, str]]
-    ],
+    create_socketio_connection: Callable[[str | None, TestClient | None], Awaitable[tuple[socketio.AsyncClient, str]]],
     aiopg_engine: aiopg.sa.engine.Engine,
     fake_project: dict,
     tests_data_dir: Path,
@@ -628,9 +576,7 @@ async def test_t3_gc_will_not_intervene_for_regular_users_and_their_resources(
     number_of_templates = 5
     logged_user = await login_user(client, exit_stack=exit_stack)
     user_projects = [
-        await create_standard_project(
-            client, logged_user, osparc_product_name, tests_data_dir, exit_stack
-        )
+        await create_standard_project(client, logged_user, osparc_product_name, tests_data_dir, exit_stack)
         for _ in range(number_of_projects)
     ]
     user_template_projects = [
@@ -657,9 +603,7 @@ async def test_t3_gc_will_not_intervene_for_regular_users_and_their_resources(
     await assert_projects_count(aiopg_engine, expected_count)
 
     # connect the user and wait for gc
-    sio_connection_data = await connect_to_socketio(
-        client, logged_user, create_socketio_connection
-    )
+    sio_connection_data = await connect_to_socketio(client, logged_user, create_socketio_connection)
     await asyncio.sleep(WAIT_FOR_COMPLETE_GC_CYCLE)
 
     await assert_projects_and_users_are_present()
@@ -831,7 +775,7 @@ async def test_t6_project_shared_with_group_transferred_to_last_user_in_group_on
 
     await asyncio.sleep(WAIT_FOR_COMPLETE_GC_CYCLE)
 
-    # expected outcome: the new_owner will be deleted and one of the remainint_others wil be the new owner
+    # expected outcome: the new_owner will be deleted and one of the remaining_others will be the new owner
     await assert_user_not_in_db(aiopg_engine, new_owner)
     await assert_one_owner_for_project(aiopg_engine, project, remaining_others)
 
@@ -910,7 +854,7 @@ async def test_t7_project_shared_with_group_transferred_from_one_member_to_the_l
     # await asyncio.sleep(WAIT_FOR_COMPLETE_GC_CYCLE)
     await gc_core.collect_garbage(app=client.app)
 
-    # expected outcome: the new_owner will be deleted and one of the remainint_others wil be the new owner
+    # expected outcome: the new_owner will be deleted and one of the remaining_others will be the new owner
     await assert_one_owner_for_project(aiopg_engine, project, remaining_users)
     await assert_user_not_in_db(aiopg_engine, new_owner)
 
@@ -996,7 +940,7 @@ async def test_t8_project_shared_with_other_users_transferred_to_one_of_them_unt
 
     await asyncio.sleep(WAIT_FOR_COMPLETE_GC_CYCLE)
 
-    # expected outcome: the new_owner will be deleted and one of the remainint_others wil be the new owner
+    # expected outcome: the new_owner will be deleted and one of the remainint_others will be the new owner
     await assert_user_not_in_db(aiopg_engine, new_owner)
     await assert_one_owner_for_project(aiopg_engine, project, remaining_others)
     await assert_users_count(aiopg_engine, 1)
@@ -1074,7 +1018,7 @@ async def test_t9_project_shared_with_other_users_transferred_between_them_and_t
 
     await asyncio.sleep(WAIT_FOR_COMPLETE_GC_CYCLE)
 
-    # expected outcome: the new_owner will be deleted and one of the remainint_others wil be the new owner
+    # expected outcome: the new_owner will be deleted and one of the remaining_others will be the new owner
     await assert_user_not_in_db(aiopg_engine, new_owner)
     await assert_one_owner_for_project(aiopg_engine, project, remaining_others)
     await assert_users_count(aiopg_engine, 1)
@@ -1105,9 +1049,7 @@ async def test_t10_owner_and_all_shared_users_marked_as_guests(
     EXPECTED: the project and all the users are removed
     """
 
-    gc_task: asyncio.Task = next(
-        task for task in asyncio.all_tasks() if task.get_name() == _GC_TASK_NAME
-    )
+    gc_task: asyncio.Task = next(task for task in asyncio.all_tasks() if task.get_name() == _GC_TASK_NAME)
     assert not gc_task.done()
 
     u1 = await login_user(client, exit_stack=exit_stack)

@@ -38,9 +38,7 @@ def sleeper_key_and_version(
 
 
 def test_get_latest_solver(solvers_api: osparc.SolversApi):
-    solvers: list[osparc.Solver] = (
-        solvers_api.list_solvers()
-    )  # latest versions of all solvers
+    solvers: list[osparc.Solver] = solvers_api.list_solvers()  # latest versions of all solvers
 
     solver_names = []
     for latest in solvers:
@@ -53,17 +51,12 @@ def test_get_latest_solver(solvers_api: osparc.SolversApi):
 
 
 def test_get_all_releases(solvers_api: osparc.SolversApi):
-
-    all_releases: list[osparc.Solver] = (
-        solvers_api.list_solvers_releases()
-    )  # all release of all solvers
+    all_releases: list[osparc.Solver] = solvers_api.list_solvers_releases()  # all release of all solvers
 
     assert all_releases
 
     one_solver = random.choice(all_releases)
-    all_releases_of_given_solver: list[osparc.Solver] = (
-        solvers_api.list_solver_releases(one_solver.id)
-    )
+    all_releases_of_given_solver: list[osparc.Solver] = solvers_api.list_solver_releases(one_solver.id)
 
     latest: osparc.Solver | None = None
     for solver in all_releases_of_given_solver:
@@ -81,14 +74,10 @@ def test_get_all_releases(solvers_api: osparc.SolversApi):
     assert latest == all_releases_of_given_solver[-1]
 
 
-def test_get_solver_release(
-    solvers_api: osparc.SolversApi, sleeper_key_and_version: NameTagTuple
-):
+def test_get_solver_release(solvers_api: osparc.SolversApi, sleeper_key_and_version: NameTagTuple):
     expected_solver_key, expected_version = sleeper_key_and_version
 
-    solver = solvers_api.get_solver_release(
-        solver_key=expected_solver_key, version=expected_version
-    )
+    solver = solvers_api.get_solver_release(solver_key=expected_solver_key, version=expected_version)
 
     assert solver.id == expected_solver_key
     assert solver.version == expected_version
@@ -103,7 +92,6 @@ def test_get_solver_release(
 
 
 def test_solvers_not_found(solvers_api: osparc.SolversApi):
-
     with pytest.raises(osparc.ApiException) as excinfo:
         solvers_api.get_solver_release(
             "simcore/services/comp/something-not-in-this-registry",

@@ -34,9 +34,7 @@ async def test_rabbit_client_lose_connection(
     assert await rabbit_client.ping() is True
     async with paused_container("rabbit"):
         # check that connection was lost
-        async for attempt in AsyncRetrying(
-            stop=stop_after_delay(15), wait=wait_fixed(0.5), reraise=True
-        ):
+        async for attempt in AsyncRetrying(stop=stop_after_delay(15), wait=wait_fixed(0.5), reraise=True):
             with attempt:
                 assert await rabbit_client.ping() is False
     # now the connection is back
@@ -67,7 +65,7 @@ def random_rabbit_message(
     return _creator
 
 
-@pytest.mark.no_cleanup_check_rabbitmq_server_has_no_errors()
+@pytest.mark.no_cleanup_check_rabbitmq_server_has_no_errors
 async def test_rabbit_client_with_paused_container(
     paused_container: Callable[[str], AbstractAsyncContextManager[None]],
     random_exchange_name: Callable[[], str],
@@ -102,9 +100,7 @@ def _get_rabbitmq_api_params(rabbit_service: RabbitSettings) -> dict[str, Any]:
     wait=wait_fixed(1),
     stop=stop_after_delay(10),
 )
-def _assert_rabbitmq_has_connections(
-    rabbit_service: RabbitSettings, num_connections: int
-) -> list[str]:
+def _assert_rabbitmq_has_connections(rabbit_service: RabbitSettings, num_connections: int) -> list[str]:
     rabbit_list_connections_url = HttpUrl.build(
         **_get_rabbitmq_api_params(rabbit_service),
         path="/api/connections/",
@@ -122,9 +118,7 @@ def _assert_rabbitmq_has_connections(
     wait=wait_fixed(1),
     stop=stop_after_delay(10),
 )
-def _assert_connection_state(
-    rabbit_service: RabbitSettings, connection_name: str, *, state: str
-) -> None:
+def _assert_connection_state(rabbit_service: RabbitSettings, connection_name: str, *, state: str) -> None:
     rabbit_specific_connection_url = HttpUrl.build(
         **_get_rabbitmq_api_params(rabbit_service),
         path=f"/api/connections/{connection_name}",
@@ -135,9 +129,7 @@ def _assert_connection_state(
     assert connection["state"] == state
 
 
-def _close_rabbitmq_connection(
-    rabbit_service: RabbitSettings, connection_name: str
-) -> None:
+def _close_rabbitmq_connection(rabbit_service: RabbitSettings, connection_name: str) -> None:
     rabbit_specific_connection_url = HttpUrl.build(
         **_get_rabbitmq_api_params(rabbit_service),
         path=f"/api/connections/{connection_name}",
@@ -152,13 +144,11 @@ def _close_rabbitmq_connection(
     wait=wait_fixed(1),
     stop=stop_after_delay(20),
 )
-async def _assert_rabbit_client_state(
-    rabbit_client: RabbitMQClient, *, healthy: bool
-) -> None:
+async def _assert_rabbit_client_state(rabbit_client: RabbitMQClient, *, healthy: bool) -> None:
     assert rabbit_client.healthy == healthy
 
 
-@pytest.mark.no_cleanup_check_rabbitmq_server_has_no_errors()
+@pytest.mark.no_cleanup_check_rabbitmq_server_has_no_errors
 async def test_rabbit_server_closes_connection(
     rabbit_service: RabbitSettings,
     create_rabbitmq_client: Callable[[str, int], RabbitMQClient],

@@ -52,9 +52,7 @@ class ProjectAccessRights(Enum):
     VIEWER = {"read": True, "write": False, "delete": False}
 
 
-def create_project_access_rights(
-    gid: int, access: ProjectAccessRights
-) -> dict[str, dict[str, bool]]:
+def create_project_access_rights(gid: int, access: ProjectAccessRights) -> dict[str, dict[str, bool]]:
     return {f"{gid}": access.value}
 
 
@@ -80,9 +78,7 @@ def convert_to_db_names(project_document_data: dict) -> dict:
     return converted_args
 
 
-def convert_to_schema_names(
-    project_database_data: Mapping, user_email: str, **kwargs
-) -> dict:
+def convert_to_schema_names(project_database_data: Mapping, user_email: str, **kwargs) -> dict:
     # SEE https://github.com/ITISFoundation/osparc-simcore/issues/3516
     converted_args = {}
     for col_name, col_value in project_database_data.items():
@@ -111,24 +107,20 @@ def assemble_array_groups(user_groups: list[RowProxy]) -> str:
     return (
         "array[]::text[]"
         if len(user_groups) == 0
-        else f"""array[{', '.join(f"'{group.gid}'" for group in user_groups)}]"""
+        else f"""array[{", ".join(f"'{group.gid}'" for group in user_groups)}]"""
     )
 
 
 class BaseProjectDB:
     @classmethod
     async def _get_everyone_group(cls, conn: SAConnection) -> RowProxy:
-        result = await conn.execute(
-            sa.select(groups).where(groups.c.type == GroupType.EVERYONE)
-        )
+        result = await conn.execute(sa.select(groups).where(groups.c.type == GroupType.EVERYONE))
         row = await result.first()
         assert row is not None  # nosec
         return cast(RowProxy, row)  # mypy: not sure why this cast is necessary
 
     @classmethod
-    async def _list_user_groups(
-        cls, conn: SAConnection, user_id: int
-    ) -> list[RowProxy]:
+    async def _list_user_groups(cls, conn: SAConnection, user_id: int) -> list[RowProxy]:
         user_groups = []
 
         if user_id == ANY_USER_ID_SENTINEL:
@@ -137,9 +129,7 @@ class BaseProjectDB:
             user_groups.append(everyone_group)
         else:
             result = await conn.execute(
-                sa.select(groups)
-                .select_from(groups.join(user_to_groups))
-                .where(user_to_groups.c.uid == user_id)
+                sa.select(groups).select_from(groups.join(user_to_groups)).where(user_to_groups.c.uid == user_id)
             )
             user_groups = await result.fetchall() or []
         return user_groups
@@ -154,9 +144,7 @@ class BaseProjectDB:
 
     @staticmethod
     async def _get_user_primary_group_gid(conn: SAConnection, user_id: int) -> int:
-        primary_gid = await conn.scalar(
-            sa.select(users.c.primary_gid).where(users.c.id == str(user_id))
-        )
+        primary_gid = await conn.scalar(sa.select(users.c.primary_gid).where(users.c.id == str(user_id)))
         if not primary_gid:
             raise UserNotFoundError(user_id=user_id)
         assert isinstance(primary_gid, int)
@@ -164,9 +152,7 @@ class BaseProjectDB:
 
     @staticmethod
     async def _get_tags_by_project(conn: SAConnection, project_id: str) -> list:
-        query = sa.select(projects_tags.c.tag_id).where(
-            projects_tags.c.project_id == project_id
-        )
+        query = sa.select(projects_tags.c.tag_id).where(projects_tags.c.project_id == project_id)
         return [row.tag_id async for row in conn.execute(query)]
 
     @staticmethod
@@ -235,11 +221,7 @@ class BaseProjectDB:
             )
             .where(
                 (projects.c.uuid == f"{project_uuid}")
-                & (
-                    projects.c.type == f"{ProjectType.TEMPLATE.value}"
-                    if only_templates
-                    else True
-                )
+                & (projects.c.type == f"{ProjectType.TEMPLATE.value}" if only_templates else True)
             )
         )
 
@@ -249,9 +231,7 @@ class BaseProjectDB:
         if for_update:
             # NOTE: It seems that blocking this row in the database is necessary; otherwise, there are some concurrency issues.
             # As the WITH FOR UPDATE clause cannot be used with the GROUP BY clause, I have added a separate query for that.
-            blocking_query = (
-                sa.select(projects).where(projects.c.uuid == f"{project_uuid}")
-            ).with_for_update()
+            blocking_query = (sa.select(projects).where(projects.c.uuid == f"{project_uuid}")).with_for_update()
             await connection.execute(blocking_query)
 
         result = await connection.execute(query)
@@ -266,9 +246,7 @@ class BaseProjectDB:
         project: dict[str, Any] = dict(project_row.items())
 
         if "tags" not in exclude_foreign:
-            tags = await self._get_tags_by_project(
-                connection, project_id=project_row.id
-            )
+            tags = await self._get_tags_by_project(connection, project_id=project_row.id)
             project["tags"] = tags
 
         return project
@@ -281,7 +259,7 @@ def update_workbench(old_project: ProjectDict, new_project: ProjectDict) -> Proj
         ProjectInvalidUsageError: it is not allowed to add/remove nodes
 
     Returns:
-        udpated project
+        updated project
     """
 
     old_workbench: dict[NodeIDStr, Any] = old_project["workbench"]
@@ -329,9 +307,7 @@ def patch_workbench(
         node_key,
         new_node_data,
     ) in new_partial_workbench_data.items():
-        current_node_data: dict[str, Any] | None = patched_project.get(
-            "workbench", {}
-        ).get(node_key)
+        current_node_data: dict[str, Any] | None = patched_project.get("workbench", {}).get(node_key)
 
         if current_node_data is None:
             if not allow_workbench_changes:
@@ -342,9 +318,7 @@ def patch_workbench(
                 patched_project["workbench"][node_key] = new_node_data
                 changed_entries.update({node_key: new_node_data})
             except ValidationError as err:
-                raise NodeNotFoundError(
-                    project_uuid=patched_project["uuid"], node_uuid=node_key
-                ) from err
+                raise NodeNotFoundError(project_uuid=patched_project["uuid"], node_uuid=node_key) from err
         elif new_node_data is None:
             if not allow_workbench_changes:
                 raise ProjectInvalidUsageError

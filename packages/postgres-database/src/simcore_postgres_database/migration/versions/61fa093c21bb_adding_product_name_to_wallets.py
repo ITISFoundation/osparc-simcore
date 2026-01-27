@@ -18,9 +18,7 @@ depends_on = None
 
 def upgrade():
     op.add_column("wallets", sa.Column("product_name", sa.String(), nullable=True))
-    op.execute(
-        sa.DDL("UPDATE wallets SET product_name = 'osparc' WHERE product_name IS NULL")
-    )
+    op.execute(sa.DDL("UPDATE wallets SET product_name = 'osparc' WHERE product_name IS NULL"))
     op.alter_column(
         "wallets",
         "product_name",

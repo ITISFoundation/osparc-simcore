@@ -20,9 +20,7 @@ def s3_provider(request) -> S3Provider:
 
 
 @pytest.fixture
-def r_clone_settings(
-    monkeypatch: pytest.MonkeyPatch, s3_provider: S3Provider, faker: Faker
-) -> RCloneSettings:
+def r_clone_settings(monkeypatch: pytest.MonkeyPatch, s3_provider: S3Provider, faker: Faker) -> RCloneSettings:
     monkeypatch.setenv("R_CLONE_PROVIDER", s3_provider.value)
     monkeypatch.setenv("S3_ENDPOINT", faker.url())
     monkeypatch.setenv("S3_ACCESS_KEY", faker.pystr())
@@ -33,9 +31,9 @@ def r_clone_settings(
 
 
 @pytest.fixture
-def skip_if_r_clone_is_missing() -> None:  # noqa: PT004
+def skip_if_r_clone_is_missing() -> None:
     try:
-        subprocess.check_output(["rclone", "--version"])  # noqa: S603, S607
+        subprocess.check_output(["rclone", "--version"])  # noqa: S607
     except Exception:  # pylint: disable=broad-except
         pytest.skip("rclone is not installed")
 
@@ -96,15 +94,10 @@ async def test__async_command_ok() -> None:
         ),
     ],
 )
-async def test__async_command_error(
-    cmd: list[str], exit_code: int, output: str
-) -> None:
+async def test__async_command_error(cmd: list[str], exit_code: int, output: str) -> None:
     with pytest.raises(r_clone.RCloneFailedError) as exe_info:
         await r_clone._async_r_clone_command(*cmd)  # noqa: SLF001
-    assert (
-        f"{exe_info.value}"
-        == f"Command {' '.join(cmd)} finished with exit code={exit_code}:\n{output}\n"
-    )
+    assert f"{exe_info.value}" == f"Command {' '.join(cmd)} finished with exit code={exit_code}:\n{output}\n"
 
 
 @pytest.fixture
@@ -200,7 +193,5 @@ async def test__get_exclude_filter(
         f"{exclude_patterns_validation_dir}",
     ]
     ls_result = await r_clone._async_r_clone_command(*command)  # noqa: SLF001
-    relative_files_paths: set[Path] = {
-        Path(x.lstrip("/")) for x in ls_result.split("\n") if x
-    }
+    relative_files_paths: set[Path] = {Path(x.lstrip("/")) for x in ls_result.split("\n") if x}
     assert relative_files_paths == expected_result

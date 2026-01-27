@@ -31,9 +31,7 @@ class EfsManager:
         project_specific_data_base_directory: str,
     ):
         settings = get_application_settings(app)
-        return cls(
-            app, efs_mounted_path, project_specific_data_base_directory, settings
-        )
+        return cls(app, efs_mounted_path, project_specific_data_base_directory, settings)
 
     async def initialize_directories(self):
         _dir_path = self._efs_mounted_path / self._project_specific_data_base_directory
@@ -54,48 +52,25 @@ class EfsManager:
         # Change the owner to user id 8006(efs) and group id 8106(efs-group)
         os.chown(_dir_path, self._settings.EFS_USER_ID, self._settings.EFS_GROUP_ID)
         # Set directory permissions to allow group write access
-        Path.chmod(
-            _dir_path, 0o770
-        )  # This gives rwx permissions to user and group, and nothing to others
+        Path.chmod(_dir_path, 0o770)  # This gives rwx permissions to user and group, and nothing to others
         return _dir_path
 
-    async def check_project_node_data_directory_exits(
-        self, project_id: ProjectID, node_id: NodeID
-    ) -> bool:
-        _dir_path = (
-            self._efs_mounted_path
-            / self._project_specific_data_base_directory
-            / f"{project_id}"
-            / f"{node_id}"
-        )
+    async def check_project_node_data_directory_exits(self, project_id: ProjectID, node_id: NodeID) -> bool:
+        _dir_path = self._efs_mounted_path / self._project_specific_data_base_directory / f"{project_id}" / f"{node_id}"
 
         return _dir_path.exists()
 
-    async def get_project_node_data_size(
-        self, project_id: ProjectID, node_id: NodeID
-    ) -> ByteSize:
-        _dir_path = (
-            self._efs_mounted_path
-            / self._project_specific_data_base_directory
-            / f"{project_id}"
-            / f"{node_id}"
-        )
+    async def get_project_node_data_size(self, project_id: ProjectID, node_id: NodeID) -> ByteSize:
+        _dir_path = self._efs_mounted_path / self._project_specific_data_base_directory / f"{project_id}" / f"{node_id}"
 
         return await efs_manager_utils.get_size_bash_async(_dir_path)
 
-    async def list_project_node_state_names(
-        self, project_id: ProjectID, node_id: NodeID
-    ) -> list[str]:
+    async def list_project_node_state_names(self, project_id: ProjectID, node_id: NodeID) -> list[str]:
         """
         These are currently state volumes that are mounted via docker volume to dynamic sidecar and user services
         (ex. ".data_assets" and "home_user_workspace")
         """
-        _dir_path = (
-            self._efs_mounted_path
-            / self._project_specific_data_base_directory
-            / f"{project_id}"
-            / f"{node_id}"
-        )
+        _dir_path = self._efs_mounted_path / self._project_specific_data_base_directory / f"{project_id}" / f"{node_id}"
 
         project_node_states = []
         for child in _dir_path.iterdir():
@@ -108,15 +83,8 @@ class EfsManager:
                 )
         return project_node_states
 
-    async def remove_project_node_data_write_permissions(
-        self, project_id: ProjectID, node_id: NodeID
-    ) -> None:
-        _dir_path = (
-            self._efs_mounted_path
-            / self._project_specific_data_base_directory
-            / f"{project_id}"
-            / f"{node_id}"
-        )
+    async def remove_project_node_data_write_permissions(self, project_id: ProjectID, node_id: NodeID) -> None:
+        _dir_path = self._efs_mounted_path / self._project_specific_data_base_directory / f"{project_id}" / f"{node_id}"
 
         await efs_manager_utils.remove_write_permissions_bash_async(_dir_path)
 
@@ -144,11 +112,7 @@ class EfsManager:
         return project_uuids
 
     async def remove_project_efs_data(self, project_id: ProjectID) -> None:
-        _dir_path = (
-            self._efs_mounted_path
-            / self._project_specific_data_base_directory
-            / f"{project_id}"
-        )
+        _dir_path = self._efs_mounted_path / self._project_specific_data_base_directory / f"{project_id}"
 
         if Path.exists(_dir_path):
             # Remove the directory and all its contents
@@ -158,9 +122,7 @@ class EfsManager:
             except FileNotFoundError:
                 _logger.exception("Directory %s does not exist.", _dir_path)
             except PermissionError:
-                _logger.exception(
-                    "Permission denied when trying to delete %s.", _dir_path
-                )
+                _logger.exception("Permission denied when trying to delete %s.", _dir_path)
             except NotADirectoryError:
                 _logger.exception("%s is not a directory.", _dir_path)
             except OSError:

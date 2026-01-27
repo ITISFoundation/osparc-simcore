@@ -40,10 +40,7 @@ assert ServiceListFilters.model_json_schema()["properties"].keys() == {
     "service_type",
     "service_key_pattern",
     "version_display_pattern",
-}, (
-    "ServiceListFilters is expected to only have the key 'service_type'. "
-    "Please update the mock if the schema changes."
-)
+}, "ServiceListFilters is expected to only have the key 'service_type'. Please update the mock if the schema changes."
 
 
 class CatalogRpcSideEffects:
@@ -67,7 +64,6 @@ class CatalogRpcSideEffects:
             LatestServiceGet.model_json_schema()["examples"],
         )
         if filters:
-
             filtered_services = []
             for src in services_list:
                 # Match service type if specified
@@ -75,17 +71,13 @@ class CatalogRpcSideEffects:
                     continue
 
                 # Match service key pattern if specified
-                if filters.service_key_pattern and not fnmatch.fnmatch(
-                    src.key, filters.service_key_pattern
-                ):
+                if filters.service_key_pattern and not fnmatch.fnmatch(src.key, filters.service_key_pattern):
                     continue
 
                 # Match version display pattern if specified
                 if filters.version_display_pattern and (
                     src.version_display is None
-                    or not fnmatch.fnmatch(
-                        src.version_display, filters.version_display_pattern
-                    )
+                    or not fnmatch.fnmatch(src.version_display, filters.version_display_pattern)
                 ):
                     continue
 
@@ -116,9 +108,7 @@ class CatalogRpcSideEffects:
         assert product_name
         assert user_id
 
-        got = ServiceGetV2.model_validate(
-            ServiceGetV2.model_json_schema()["examples"][0]
-        )
+        got = ServiceGetV2.model_validate(ServiceGetV2.model_json_schema()["examples"][0])
         got.version = service_version
         got.key = service_key
 
@@ -147,9 +137,7 @@ class CatalogRpcSideEffects:
         assert product_name
         assert user_id
 
-        got = ServiceGetV2.model_validate(
-            ServiceGetV2.model_json_schema()["examples"][0]
-        )
+        got = ServiceGetV2.model_validate(ServiceGetV2.model_json_schema()["examples"][0])
         got.version = service_version
         got.key = service_key
         return got.model_copy(update=update.model_dump(exclude_unset=True))
@@ -166,7 +154,6 @@ class CatalogRpcSideEffects:
         offset: PageOffsetInt = 0,
         filters: ServiceListFilters | None = None,
     ) -> PageRpc[ServiceRelease]:
-
         assert rpc_client
         assert product_name
         assert user_id
@@ -238,17 +225,13 @@ class CatalogRpcSideEffects:
                     continue
 
                 # Match service key pattern if specified
-                if filters.service_key_pattern and not fnmatch.fnmatch(
-                    summary.key, filters.service_key_pattern
-                ):
+                if filters.service_key_pattern and not fnmatch.fnmatch(summary.key, filters.service_key_pattern):
                     continue
 
                 # Match version display pattern if specified
                 if filters.version_display_pattern and (
                     summary.version_display is None
-                    or not fnmatch.fnmatch(
-                        summary.version_display, filters.version_display_pattern
-                    )
+                    or not fnmatch.fnmatch(summary.version_display, filters.version_display_pattern)
                 ):
                     continue
 

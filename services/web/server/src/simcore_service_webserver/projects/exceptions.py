@@ -12,7 +12,7 @@ from ..errors import WebServerBaseError
 
 
 class BaseProjectError(WebServerBaseError):
-    msg_template = "Unexpected error occured in projects submodule"
+    msg_template = "Unexpected error occurred in projects submodule"
 
     def __init__(self, msg=None, **ctx):
         super().__init__(**ctx)
@@ -36,9 +36,7 @@ class WrongTagIdsInQueryError(BaseProjectError):
 
 
 class ProjectInvalidRightsError(BaseProjectError):
-    msg_template = (
-        "User '{user_id}' has no rights to access project with uuid '{project_uuid}'"
-    )
+    msg_template = "User '{user_id}' has no rights to access project with uuid '{project_uuid}'"
 
     def __init__(self, *, user_id, project_uuid, **ctx):
         super().__init__(**ctx)
@@ -87,7 +85,9 @@ class ProjectsPatchError(BaseProjectError): ...
 
 
 class ProjectTypeAndTemplateIncompatibilityError(ProjectsPatchError):
-    msg_template = "Patching project '{project_uuid}' type {project_type} and template {project_template} is not allowed"
+    msg_template = (
+        "Patching project '{project_uuid}' type {project_type} and template {project_template} is not allowed"
+    )
 
 
 class InsufficientRoleForProjectTemplateTypeUpdateError(ProjectsPatchError): ...
@@ -101,15 +101,11 @@ class ProjectStoppingError(ProjectTrashError):
 
 
 class ProjectRunningConflictError(ProjectTrashError):
-    msg_template = (
-        "Cannot trash running project '{project_uuid}' except if forced option is on"
-    )
+    msg_template = "Cannot trash running project '{project_uuid}' except if forced option is on"
 
 
 class ProjectNotTrashedError(ProjectTrashError):
-    msg_template = (
-        "Cannot delete project {project_uuid} since it was not trashed first: {details}"
-    )
+    msg_template = "Cannot delete project {project_uuid} since it was not trashed first: {details}"
 
 
 class NodeNotFoundError(BaseProjectError):
@@ -122,9 +118,7 @@ class NodeNotFoundError(BaseProjectError):
 
 
 class NodeShareStateCannotBeComputedError(BaseProjectError):
-    msg_template = (
-        "Node '{node_uuid}' share state cannot be computed in project '{project_uuid}'"
-    )
+    msg_template = "Node '{node_uuid}' share state cannot be computed in project '{project_uuid}'"
 
     def __init__(self, *, project_uuid: ProjectID | None, node_uuid: NodeID, **ctx):
         super().__init__(**ctx)
@@ -159,7 +153,9 @@ class ProjectStartsTooManyDynamicNodesError(BaseProjectError):
 
 
 class ProjectTooManyProjectOpenedError(BaseProjectError):
-    msg_template = "You cannot open more than {max_num_projects} project/s at once. Please close another project and retry."
+    msg_template = (
+        "You cannot open more than {max_num_projects} project/s at once. Please close another project and retry."
+    )
 
     def __init__(self, *, max_num_projects: int, **ctx):
         super().__init__(**ctx)
@@ -185,9 +181,7 @@ class ProjectNodeResourcesInvalidError(BaseProjectError):
 
 
 class InvalidContainerInResourcesSpecsError(ProjectNodeResourcesInvalidError):
-    msg_template = (
-        "Incompatible '{container_name}' cannot be applied on any of {resource_keys}"
-    )
+    msg_template = "Incompatible '{container_name}' cannot be applied on any of {resource_keys}"
 
 
 class InvalidImageInResourcesSpecsError(ProjectNodeResourcesInvalidError):
@@ -199,9 +193,7 @@ class InvalidKeysInResourcesSpecsError(ProjectNodeResourcesInvalidError):
 
 
 class InvalidEC2TypeInResourcesSpecsError(ProjectNodeResourcesInvalidError):
-    msg_template = (
-        "Invalid EC2 type name selected {ec2_types}. TIP: adjust product configuration"
-    )
+    msg_template = "Invalid EC2 type name selected {ec2_types}. TIP: adjust product configuration"
 
 
 class ProjectNodeResourcesInsufficientRightsError(BaseProjectError): ...
@@ -239,10 +231,7 @@ class ProjectNodeOutputPortMissingValueError(ProjectNodeRequiredInputsNotSetErro
         unset_outputs_in_upstream: list[tuple[str, str]],
         **ctx,
     ):
-        start_messages = [
-            f"'{input_key}' of '{service_name}'"
-            for input_key, service_name in unset_outputs_in_upstream
-        ]
+        start_messages = [f"'{input_key}' of '{service_name}'" for input_key, service_name in unset_outputs_in_upstream]
         super().__init__(
             joined_start_message=", ".join(start_messages),
             unset_outputs_in_upstream=unset_outputs_in_upstream,
@@ -281,9 +270,7 @@ class ProjectInDebtCanNotOpenError(BaseProjectError):
 
 
 class ProjectWalletPendingTransactionError(BaseProjectError):
-    msg_template = (
-        "Project has currently pending transactions. It is forbidden to change wallet."
-    )
+    msg_template = "Project has currently pending transactions. It is forbidden to change wallet."
 
 
 assert ProjectLockError  # nosec

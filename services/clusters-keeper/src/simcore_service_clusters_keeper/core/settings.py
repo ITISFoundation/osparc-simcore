@@ -69,9 +69,7 @@ class ClustersKeeperSSMSettings(SSMSettings):
                 }
                 for example in SSMSettings.model_config[  # type:ignore[union-attr,index]
                     "json_schema_extra"
-                ][
-                    "examples"
-                ]
+                ]["examples"]
             ],
         },
     )
@@ -106,7 +104,7 @@ class WorkersEC2InstancesSettings(BaseCustomSettings):
         datetime.timedelta,
         Field(
             description="Usual time taken an EC2 instance with the given AMI takes to join the cluster "
-            "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)."
+            "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formatting)."
             "NOTE: be careful that this time should always be a factor larger than the real time, as EC2 instances"
             "that take longer than this time will be terminated as sometimes it happens that EC2 machine fail on start.",
         ),
@@ -141,7 +139,7 @@ class WorkersEC2InstancesSettings(BaseCustomSettings):
         datetime.timedelta,
         Field(
             description="Time after which an EC2 instance may be terminated (min 0 max 1 minute) "
-            "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
+            "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formatting)",
         ),
     ] = datetime.timedelta(minutes=1)
 
@@ -149,7 +147,7 @@ class WorkersEC2InstancesSettings(BaseCustomSettings):
         datetime.timedelta,
         Field(
             description="Time after which an EC2 instance may be terminated (min 0, max 59 minutes) "
-            "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
+            "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formatting)",
         ),
     ] = datetime.timedelta(minutes=3)
 
@@ -247,7 +245,7 @@ class PrimaryEC2InstancesSettings(BaseCustomSettings):
         datetime.timedelta,
         Field(
             description="Usual time taken an EC2 instance with the given AMI takes to startup and be ready to receive jobs "
-            "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)."
+            "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formatting)."
             "NOTE: be careful that this time should always be a factor larger than the real time, as EC2 instances"
             "that take longer than this time will be terminated as sometimes it happens that EC2 machine fail on start.",
         ),
@@ -281,9 +279,7 @@ class PrimaryEC2InstancesSettings(BaseCustomSettings):
 
     @field_validator("PRIMARY_EC2_INSTANCES_ALLOWED_TYPES")
     @classmethod
-    def _check_only_one_value(
-        cls, value: dict[str, EC2InstanceBootSpecific]
-    ) -> dict[str, EC2InstanceBootSpecific]:
+    def _check_only_one_value(cls, value: dict[str, EC2InstanceBootSpecific]) -> dict[str, EC2InstanceBootSpecific]:
         if len(value) != 1:
             msg = "Only one exact value is accepted (empty or multiple is invalid)"
             raise ValueError(msg)
@@ -330,9 +326,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     CLUSTERS_KEEPER_LOGLEVEL: Annotated[
         LogLevel,
         Field(
-            validation_alias=AliasChoices(
-                "CLUSTERS_KEEPER_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"
-            ),
+            validation_alias=AliasChoices("CLUSTERS_KEEPER_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"),
         ),
     ] = LogLevel.INFO
     CLUSTERS_KEEPER_LOG_FORMAT_LOCAL_DEV_ENABLED: Annotated[
@@ -349,9 +343,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         dict[LoggerName, list[MessageSubstring]],
         Field(
             default_factory=dict,
-            validation_alias=AliasChoices(
-                "CLUSTERS_KEEPER_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"
-            ),
+            validation_alias=AliasChoices("CLUSTERS_KEEPER_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"),
             description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
         ),
     ] = DEFAULT_FACTORY
@@ -383,15 +375,11 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         ),
     ]
 
-    CLUSTERS_KEEPER_RABBITMQ: Annotated[
-        RabbitSettings | None, Field(json_schema_extra={"auto_default_from_env": True})
-    ]
+    CLUSTERS_KEEPER_RABBITMQ: Annotated[RabbitSettings | None, Field(json_schema_extra={"auto_default_from_env": True})]
 
     CLUSTERS_KEEPER_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True
 
-    CLUSTERS_KEEPER_REDIS: Annotated[
-        RedisSettings, Field(json_schema_extra={"auto_default_from_env": True})
-    ]
+    CLUSTERS_KEEPER_REDIS: Annotated[RedisSettings, Field(json_schema_extra={"auto_default_from_env": True})]
 
     CLUSTERS_KEEPER_REGISTRY: Annotated[
         RegistrySettings | None,
@@ -402,7 +390,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         datetime.timedelta,
         Field(
             description="interval between each clusters clean check "
-            "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
+            "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formatting)",
         ),
     ] = datetime.timedelta(seconds=30)
 
@@ -410,7 +398,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         datetime.timedelta,
         Field(
             description="Service heartbeat interval (everytime a heartbeat is sent into RabbitMQ) "
-            "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
+            "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formatting)",
         ),
     ] = datetime.timedelta(seconds=60)
 
@@ -473,9 +461,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         ),
     ]
 
-    SWARM_STACK_NAME: Annotated[
-        str, Field(description="Stack name defined upon deploy (see main Makefile)")
-    ]
+    SWARM_STACK_NAME: Annotated[str, Field(description="Stack name defined upon deploy (see main Makefile)")]
 
     @cached_property
     def log_level(self) -> LogLevelInt:

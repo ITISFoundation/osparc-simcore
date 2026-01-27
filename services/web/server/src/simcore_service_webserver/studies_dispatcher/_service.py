@@ -87,9 +87,7 @@ async def validate_requested_viewer(
 
 
 @log_decorator(_logger, level=logging.DEBUG)
-def validate_requested_file(
-    app: web.Application, file_type: str, file_size: int | None = None
-):
+def validate_requested_file(app: web.Application, file_type: str, file_size: int | None = None):
     # NOTE in the future we might want to prevent some types to be pulled
     assert file_type  # nosec
 

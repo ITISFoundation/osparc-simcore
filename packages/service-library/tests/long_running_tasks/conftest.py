@@ -69,9 +69,7 @@ async def get_long_running_manager(
 async def rabbitmq_rpc_client(
     rabbit_service: RabbitSettings,
 ) -> AsyncIterable[RabbitMQRPCClient]:
-    client = await RabbitMQRPCClient.create(
-        client_name="test-lrt-rpc-client", settings=rabbit_service
-    )
+    client = await RabbitMQRPCClient.create(client_name="test-lrt-rpc-client", settings=rabbit_service)
     yield client
     await client.close()
 

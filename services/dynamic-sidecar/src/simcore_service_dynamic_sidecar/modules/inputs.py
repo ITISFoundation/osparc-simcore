@@ -3,9 +3,7 @@ from pydantic import BaseModel, Field
 
 
 class InputsState(BaseModel):
-    inputs_pulling_enabled: bool = Field(
-        default=False, description="can pull input ports"
-    )
+    inputs_pulling_enabled: bool = Field(default=False, description="can pull input ports")
 
 
 def enable_inputs_pulling(app: FastAPI) -> None:

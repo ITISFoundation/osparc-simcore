@@ -11,9 +11,7 @@ from servicelib.fastapi.long_running_tasks._client import retry_on_http_errors
         (HTTPError, {"message": ""}),
     ],
 )
-async def test_retry_on_errors(
-    error_class: type[Exception], error_args: dict[str, Any]
-):
+async def test_retry_on_errors(error_class: type[Exception], error_args: dict[str, Any]):
     class MockClient:
         def __init__(self) -> None:
             self.counter = 0

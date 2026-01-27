@@ -37,15 +37,11 @@ def get_product_name(request: web.Request) -> str:
 def get_current_product(request: web.Request) -> Product:
     """Returns product associated to current request"""
     product_name: ProductName = get_product_name(request)
-    current_product: Product = _service.get_product(
-        request.app, product_name=product_name
-    )
+    current_product: Product = _service.get_product(request.app, product_name=product_name)
     return current_product
 
 
-async def is_user_in_product_support_group(
-    request: web.Request, *, user_id: UserID
-) -> bool:
+async def is_user_in_product_support_group(request: web.Request, *, user_id: UserID) -> bool:
     """Checks if the user belongs to the support group of the given product.
     If the product does not have a support group, returns False.
     """
@@ -77,9 +73,7 @@ async def get_current_product_credit_price_info(
     of the service for the latest changes to take effect.
     """
     current_product_name = get_product_name(request)
-    return await _service.get_credit_price_info(
-        request.app, product_name=current_product_name
-    )
+    return await _service.get_credit_price_info(request.app, product_name=current_product_name)
 
 
 def _themed(dirname: str, template: str) -> Path:
@@ -94,12 +88,8 @@ async def _get_common_template_path(filename: str) -> Path:
     return common_template
 
 
-async def _cache_template_content(
-    request: web.Request, template_path: Path, template_name: str
-) -> None:
-    content = await _service.get_template_content(
-        request.app, template_name=template_name
-    )
+async def _cache_template_content(request: web.Request, template_path: Path, template_name: str) -> None:
+    content = await _service.get_template_content(request.app, template_name=template_name)
     try:
         async with aiofiles.open(template_path, "w") as fh:
             await fh.write(content)
@@ -109,9 +99,7 @@ async def _cache_template_content(
         raise
 
 
-async def _get_product_specific_template_path(
-    request: web.Request, product: Product, filename: str
-) -> Path | None:
+async def _get_product_specific_template_path(request: web.Request, product: Product, filename: str) -> Path | None:
     if template_name := product.get_template_name_for(filename):
         template_dir: Path = request.app[PRODUCTS_TEMPLATES_DIR_APPKEY]
         template_path = template_dir / template_name
@@ -128,9 +116,7 @@ async def _get_product_specific_template_path(
 
 async def get_product_template_path(request: web.Request, filename: str) -> Path:
     if (product := _get_current_product_or_none(request)) and (
-        template_path := await _get_product_specific_template_path(
-            request, product, filename
-        )
+        template_path := await _get_product_specific_template_path(request, product, filename)
     ):
         return template_path
 

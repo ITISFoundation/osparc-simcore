@@ -73,14 +73,10 @@ class ProgressBarData:  # pylint: disable=too-many-instance-attributes
             await third_step()
     """
 
-    num_steps: int = field(
-        metadata={"description": "Defines the number of steps in the progress bar"}
-    )
+    num_steps: int = field(metadata={"description": "Defines the number of steps in the progress bar"})
     step_weights: list[float] | None = field(
         default=None,
-        metadata={
-            "description": "Optionally defines the step relative weight (defaults to steps of equal weights)"
-        },
+        metadata={"description": "Optionally defines the step relative weight (defaults to steps of equal weights)"},
     )
     description: str = field(metadata={"description": "define the progress name"})
     progress_unit: ProgressUnit | None = None
@@ -118,7 +114,7 @@ class ProgressBarData:  # pylint: disable=too-many-instance-attributes
     def is_running(self) -> bool:
         return self._current_steps < self.num_steps
 
-    def compute_report_message_stuct(self) -> ProgressStructuredMessage:
+    def compute_report_message_struct(self) -> ProgressStructuredMessage:
         self_report = ProgressStructuredMessage(
             description=self.description,
             current=self._current_steps,
@@ -128,7 +124,7 @@ class ProgressBarData:  # pylint: disable=too-many-instance-attributes
         )
         for child in self._children:
             if child.is_running():
-                self_report.sub = child.compute_report_message_stuct()
+                self_report.sub = child.compute_report_message_struct()
         return self_report
 
     async def _report_external(self, value: float) -> None:
@@ -137,9 +133,7 @@ class ProgressBarData:  # pylint: disable=too-many-instance-attributes
 
         with log_catch(_logger, reraise=False):
             # NOTE: only report if at least a percent was increased
-            if (
-                (value - self._last_report_value) > _MIN_PROGRESS_UPDATE_PERCENT
-            ) or value == _FINAL_VALUE:
+            if ((value - self._last_report_value) > _MIN_PROGRESS_UPDATE_PERCENT) or value == _FINAL_VALUE:
                 # compute progress string
                 call = self.progress_report_cb(
                     ProgressReport(
@@ -148,7 +142,7 @@ class ProgressBarData:  # pylint: disable=too-many-instance-attributes
                         total=self.num_steps,
                         attempt=self._current_attempt,
                         unit=self.progress_unit,
-                        message=self.compute_report_message_stuct(),
+                        message=self.compute_report_message_struct(),
                     ),
                 )
                 if isawaitable(call):
@@ -162,10 +156,7 @@ class ProgressBarData:  # pylint: disable=too-many-instance-attributes
         if not self.step_weights:
             return steps / self.num_steps
         weight_index = int(steps)
-        return (
-            sum(self.step_weights[:weight_index])
-            + steps % 1 * self.step_weights[weight_index]
-        )
+        return sum(self.step_weights[:weight_index]) + steps % 1 * self.step_weights[weight_index]
 
     async def update(self, steps: float = 1) -> None:
         parent_update_value = 0.0

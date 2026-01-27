@@ -28,9 +28,7 @@ class ProjectNetworksRepo:
     ) -> ProjectsNetworks:
         async with pass_or_acquire_connection(self.engine, connection) as conn:
             result = await conn.execute(
-                sa.select(projects_networks).where(
-                    projects_networks.c.project_uuid == f"{project_id}"
-                )
+                sa.select(projects_networks).where(projects_networks.c.project_uuid == f"{project_id}")
             )
             row = result.first()
         if not row:

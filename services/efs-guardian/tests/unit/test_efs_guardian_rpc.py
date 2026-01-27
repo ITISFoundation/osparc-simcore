@@ -51,9 +51,7 @@ async def test_rpc_create_project_specific_data_dir(
 
     _storage_directory_name = faker.word()
 
-    with patch(
-        "simcore_service_efs_guardian.services.efs_manager.os.chown"
-    ) as mocked_chown:
+    with patch("simcore_service_efs_guardian.services.efs_manager.os.chown") as mocked_chown:
         result = await efs_manager.create_project_specific_data_dir(
             rpc_client,
             project_id=project_id,

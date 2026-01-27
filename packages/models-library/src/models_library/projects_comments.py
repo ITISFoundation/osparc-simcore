@@ -10,9 +10,7 @@ CommentID: TypeAlias = PositiveInt
 
 
 class _ProjectsCommentsBase(BaseModel):
-    comment_id: CommentID = Field(
-        ..., description="Primary key, identifies the comment"
-    )
+    comment_id: CommentID = Field(..., description="Primary key, identifies the comment")
     project_uuid: ProjectID = Field(..., description="project reference for this table")
     user_id: UserID = Field(
         ...,

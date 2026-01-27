@@ -18,9 +18,7 @@ class WorkspaceGet(OutputSchema):
     created_at: datetime
     modified_at: datetime
     trashed_at: datetime | None
-    trashed_by: Annotated[
-        GroupID | None, Field(description="The primary gid of the user who trashed")
-    ]
+    trashed_by: Annotated[GroupID | None, Field(description="The primary gid of the user who trashed")]
     my_access_rights: AccessRights
     access_rights: dict[GroupID, AccessRights]
 

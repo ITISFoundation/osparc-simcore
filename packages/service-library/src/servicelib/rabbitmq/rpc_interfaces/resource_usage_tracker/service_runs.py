@@ -85,9 +85,7 @@ async def get_osparc_credits_aggregated_usages_page(
 ) -> OsparcCreditsAggregatedUsagesPage:
     result = await rabbitmq_rpc_client.request(
         RESOURCE_USAGE_TRACKER_RPC_NAMESPACE,
-        _RPC_METHOD_NAME_ADAPTER.validate_python(
-            "get_osparc_credits_aggregated_usages_page"
-        ),
+        _RPC_METHOD_NAME_ADAPTER.validate_python("get_osparc_credits_aggregated_usages_page"),
         user_id=user_id,
         product_name=product_name,
         limit=limit,

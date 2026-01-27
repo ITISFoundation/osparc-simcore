@@ -22,9 +22,7 @@ depends_on = None
 # TRIGGERS ------------------------
 _TABLE_NAME: Final[str] = "products_to_templates"
 _TRIGGER_NAME: Final[str] = "trigger_auto_update"  # NOTE: scoped on table
-_PROCEDURE_NAME: Final[str] = (
-    f"{_TABLE_NAME}_auto_update_modified()"  # NOTE: scoped on database
-)
+_PROCEDURE_NAME: Final[str] = f"{_TABLE_NAME}_auto_update_modified()"  # NOTE: scoped on database
 
 modified_timestamp_trigger = sa.DDL(
     f"""
@@ -55,12 +53,8 @@ def upgrade():
         "products_to_templates",
         sa.Column("product_name", sa.String(), nullable=False),
         sa.Column("template_name", sa.String(), nullable=True),
-        sa.Column(
-            "created", sa.DateTime(), server_default=sa.text("now()"), nullable=False
-        ),
-        sa.Column(
-            "modified", sa.DateTime(), server_default=sa.text("now()"), nullable=False
-        ),
+        sa.Column("created", sa.DateTime(), server_default=sa.text("now()"), nullable=False),
+        sa.Column("modified", sa.DateTime(), server_default=sa.text("now()"), nullable=False),
         sa.ForeignKeyConstraint(
             ["product_name"],
             ["products.name"],
