@@ -1168,9 +1168,9 @@ qx.Class.define("osparc.data.Resources", {
       "notificationTemplates": {
         useCache: true,
         endpoints: {
-          getTemplates: {
+          getEmailTemplates: {
             method: "GET",
-            url: statics.API + "/notifications/templates:search"
+            url: statics.API + "/notifications/templates:search?channel=email"
           },
           getTemplatePreview: {
             method: "POST",
