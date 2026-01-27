@@ -52,11 +52,6 @@ qx.Class.define("osparc.editor.EmailEditor", {
 
     // Set initial tab colors
     this.__updateTabColors();
-
-    osparc.store.Faker.getInstance().fetchEmailTemplate("free-email")
-      .then(templateEmail => {
-        this.setTemplateEmail(templateEmail.body);
-      });
   },
 
   properties: {

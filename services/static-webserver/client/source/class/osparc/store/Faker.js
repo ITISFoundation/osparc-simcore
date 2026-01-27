@@ -76,11 +76,12 @@ qx.Class.define("osparc.store.Faker", {
       return new Promise((resolve) => resolve());
     },
 
-    fetchEmailTemplate: function(templateName) {
+    fetchEmailTemplates: function() {
       const templates = {
-        "free-email": {
-          subject: "",
-          body: `
+        "empty-email": {
+          subject: "sdfasdf",
+          content: {
+            body: `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -168,13 +169,11 @@ qx.Class.define("osparc.store.Faker", {
         <img src="https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/refs/heads/master/services/static-webserver/client/source/resource/osparc/Sim4Life_full_logo_black.svg" alt="Logo" class="logo">
       </a>
     </div>
-
     <div class="content">
-    <p>Hello,</p>
-    <p>This is a free-form email template. You can customize the content as needed.</p>
-    <p>Best regards,<br>The oSPARC Team</p>
+      <p>Hello,</p>
+      <p>This is a free-form email template. You can customize the content as needed.</p>
+      <p>Best regards,<br>The oSPARC Team</p>
     </div>
-
     <div class="footer">
       <p>
         Visit the <a href="https://sim4life.io/" target="_blank" rel="noopener noreferrer">Platform</a> |
@@ -189,17 +188,11 @@ qx.Class.define("osparc.store.Faker", {
 </body>
 </html>
 `
+          },
         },
       };
 
-      return new Promise((resolve, reject) => {
-        const template = templates[templateName];
-        if (template) {
-          resolve(template);
-        } else {
-          reject(new Error("Template not found"));
-        }
-      });
+      return new Promise((resolve) => resolve(templates));
     },
 
     sendEmail: function(data) {

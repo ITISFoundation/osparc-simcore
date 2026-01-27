@@ -20,14 +20,29 @@ qx.Class.define("osparc.po.SendEmail", {
 
   construct: function() {
     this.base(arguments);
+
     this.__selectedRecipients = [];
   },
 
   members: {
     __selectedRecipients: null,
+
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
+        case "email-template-selector": {
+          control = new qx.ui.form.SelectBox().set({
+            width: 200,
+            allowGrowX: false,
+          });
+          control.addListener("changeSelection", e => {
+            const selectedItem = e.getData()[0];
+            const templateId = selectedItem.getModel();
+            this.__templateSelected(templateId);
+          }, this);
+          this._add(control);
+          break;
+        }
         case "form-container": {
           control = new qx.ui.container.Composite(new qx.ui.layout.Grid(10, 5));
           control.getLayout().setColumnFlex(1, 1);
@@ -122,11 +137,39 @@ qx.Class.define("osparc.po.SendEmail", {
     },
 
     _buildLayout: function() {
+      const selectBox = this.getChildControl("email-template-selector");
       this.getChildControl("add-recipient-button");
       this.getChildControl("recipients-chips");
       this.getChildControl("subject-field");
       this.getChildControl("email-editor");
       this.getChildControl("send-email-button");
+
+      this.__populateEmailTemplates(selectBox);
+    },
+
+    __populateEmailTemplates: function(selectBox) {
+      osparc.message.Messages.getInstance().fetchTemplates()
+        .then(templates => {
+          templates.forEach(template => {
+            const item = new qx.ui.form.ListItem(template.id);
+            selectBox.add(item);
+          });
+          if (templates.length) {
+            const firstItem = selectBox.getChildren()[0];
+            selectBox.setSelection([firstItem]);
+            this.__templateSelected(firstItem.getLabel());
+          }
+        });
+    },
+
+    __templateSelected: function(templateId) {
+      const template = osparc.message.Messages.getInstance().getTemplate(templateId);
+      if (template) {
+        const subjectField = this.getChildControl("subject-field");
+        subjectField.setValue(template["subject"]);
+        const emailEditor = this.getChildControl("email-editor");
+        emailEditor.setTemplateEmail(template["content"]["body"]);
+      }
     },
 
     __openCollaboratorsManager: function() {

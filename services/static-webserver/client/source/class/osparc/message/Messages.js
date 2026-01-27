@@ -21,7 +21,8 @@ qx.Class.define("osparc.message.Messages", {
 
   construct: function() {
     this.base(arguments);
-    this.__templates = new qx.data.Array();
+
+    this.__templates = [];
   },
 
   statics: {
@@ -54,10 +55,13 @@ qx.Class.define("osparc.message.Messages", {
     __templates: null,
 
     fetchTemplates: function() {
-      return osparc.data.Resources.fetch("notificationTemplates", "getTemplates")
+      return osparc.store.Faker.getInstance().fetchEmailTemplates()
+      // return osparc.data.Resources.fetch("notificationTemplates", "getTemplates")
         .then(templates => {
-          templates.forEach(template => {
-            this.__addTemplate(template);
+          Object.keys(templates).forEach(templateId => {
+            const templateData = templates[templateId];
+            templateData["id"] = templateId;
+            this.__addTemplate(templateData);
           });
           return this.__templates;
         });
@@ -65,6 +69,10 @@ qx.Class.define("osparc.message.Messages", {
 
     getTemplates: function() {
       return this.__templates;
+    },
+
+    getTemplate: function(templateId) {
+      return this.__templates.find(template => template.id === templateId);
     },
 
     __addTemplate: function(templateData) {
