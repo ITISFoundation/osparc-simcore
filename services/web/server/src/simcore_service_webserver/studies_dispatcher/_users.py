@@ -12,7 +12,7 @@ import logging
 import secrets
 import string
 from contextlib import suppress
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Final
 
 import redis.asyncio as aioredis
@@ -71,12 +71,14 @@ async def get_authorized_user(request: web.Request) -> dict:
 #     - Prevents GC from deleting this GUEST user while it is being created
 #     - Since the user still does not have an ID assigned, the lock is named with his random_user_name
 #     - the timeout here is the TTL of the lock in Redis. in case the webserver is overwhelmed and cannot create
-#       a user during that time or crashes, then redis will ensure the lock disappears and let the garbage collector do its work
+#       a user during that time or crashes, then redis will ensure the lock disappears
+#       and let the garbage collector do its work
 #
 MAX_DELAY_TO_CREATE_USER: Final[int] = 8  # secs
 #
 #  2. During initialization
-#     - Prevents the GC from deleting this GUEST user, with ID assigned, while it gets initialized and acquires it's first resource
+#     - Prevents the GC from deleting this GUEST user, with ID assigned, while it gets initialized
+#       and acquires it's first resource
 #     - Uses the ID assigned to name the lock
 #
 MAX_DELAY_TO_GUEST_FIRST_CONNECTION: Final[int] = 15  # secs
@@ -101,14 +103,10 @@ async def create_temporary_guest_user(request: web.Request):
     settings: StudiesDispatcherSettings = get_plugin_settings(app=request.app)
     product_name = products_web.get_product_name(request)
 
-    random_user_name = "".join(
-        secrets.choice(string.ascii_lowercase) for _ in range(10)
-    )
-    email = TypeAdapter(LowerCaseEmailStr).validate_python(
-        f"{random_user_name}@guest-at-osparc.io"
-    )
+    random_user_name = "".join(secrets.choice(string.ascii_lowercase) for _ in range(10))
+    email = TypeAdapter(LowerCaseEmailStr).validate_python(f"{random_user_name}@guest-at-osparc.io")
     password = generate_password(length=12)
-    expires_at = datetime.utcnow() + settings.STUDIES_GUEST_ACCOUNT_LIFETIME
+    expires_at = datetime.now(tz=UTC) + settings.STUDIES_GUEST_ACCOUNT_LIFETIME
 
     user_id: UserID | None = None
 
@@ -130,9 +128,7 @@ async def create_temporary_guest_user(request: web.Request):
             user_id = user_row.id
 
             user = await users_service.get_user(request.app, user_id)
-            await groups_service.auto_add_user_to_product_group(
-                request.app, user_id=user_id, product_name=product_name
-            )
+            await groups_service.auto_add_user_to_product_group(request.app, user_id=user_id, product_name=product_name)
 
             # (2) read details above
             await redis_locks_client.lock(
@@ -153,16 +149,12 @@ async def create_temporary_guest_user(request: web.Request):
 
             async def _cleanup():
                 with suppress(Exception):
-                    await users_service.delete_user_without_projects(
-                        request.app, user_id=user_id, clean_cache=False
-                    )
+                    await users_service.delete_user_without_projects(request.app, user_id=user_id, clean_cache=False)
 
             fire_and_forget_task(
                 _cleanup(),
                 task_suffix_name="cleanup_temporary_guest_user",
-                fire_and_forget_tasks_collection=request.app[
-                    APP_FIRE_AND_FORGET_TASKS_KEY
-                ],
+                fire_and_forget_tasks_collection=request.app[APP_FIRE_AND_FORGET_TASKS_KEY],
             )
         raise GuestUsersLimitError from err
 
@@ -170,9 +162,7 @@ async def create_temporary_guest_user(request: web.Request):
 
 
 @log_decorator(_logger, level=logging.DEBUG)
-async def get_or_create_guest_user(
-    request: web.Request, *, allow_anonymous_or_guest_users: bool
-) -> UserInfo:
+async def get_or_create_guest_user(request: web.Request, *, allow_anonymous_or_guest_users: bool) -> UserInfo:
     """
     A user w/o authentication is denoted ANONYMOUS. If allow_anonymous_or_guest_users=True, then
     these users can be automatically promoted to GUEST. For that, a temporary guest account
@@ -222,9 +212,7 @@ async def get_or_create_guest_user(
     )
 
 
-async def ensure_authentication(
-    user: UserInfo, request: web.Request, response: web.Response
-):
+async def ensure_authentication(user: UserInfo, request: web.Request, response: web.Response):
     if user.needs_login:
         _logger.debug("Auto login for anonymous user %s", user.name)
         await security_web.remember_identity(
