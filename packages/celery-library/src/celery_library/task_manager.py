@@ -67,7 +67,7 @@ class CeleryTaskManager:
                     execution_metadata.name,
                     task_id=task_key,
                     kwargs={"task_key": task_key} | task_params,
-                    queue=execution_metadata.queue.value,
+                    queue=execution_metadata.queue,
                 )
             except CeleryError as exc:
                 try:

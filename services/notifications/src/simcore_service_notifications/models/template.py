@@ -7,7 +7,7 @@ from .context import NotificationsContext
 
 
 @dataclass(frozen=True)
-class TemplateRef:
+class NotificationsTemplateRef:
     """
     Identifies a template uniquely in the system.
     """
@@ -17,8 +17,8 @@ class TemplateRef:
 
 
 @dataclass(frozen=True)
-class NotificationTemplate(ABC):
-    ref: TemplateRef
+class NotificationsTemplate(ABC):
+    ref: NotificationsTemplateRef
     context_model: type[NotificationsContext]
 
     parts: tuple[str, ...]

@@ -3,7 +3,7 @@ from typing import Any
 
 from ..models.content import for_channel
 from ..models.preview import NotificationTemplatePreview
-from ..models.template import NotificationTemplate
+from ..models.template import NotificationsTemplate
 from ..repository.templates_repository import NotificationsTemplatesRepository
 from .renderer import NotificationsRenderer
 
@@ -14,7 +14,7 @@ class JinjaNotificationsRenderer(NotificationsRenderer):
 
     def preview_template(
         self,
-        template: NotificationTemplate,
+        template: NotificationsTemplate,
         context: dict[str, Any],
     ) -> NotificationTemplatePreview:
         content = {}

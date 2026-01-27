@@ -10,7 +10,7 @@ from models_library.notifications_errors import (
 from pydantic import ValidationError
 
 from ..models.preview import NotificationTemplatePreview
-from ..models.template import NotificationTemplate, TemplateRef
+from ..models.template import NotificationsTemplate, NotificationsTemplateRef
 from ..renderers.renderer import NotificationsRenderer
 from ..repository import NotificationsTemplatesRepository
 
@@ -22,7 +22,7 @@ class NotificationsTemplatesService:
     repository: NotificationsTemplatesRepository
     renderer: NotificationsRenderer
 
-    def preview_template(self, ref: TemplateRef, context: dict[str, Any]) -> NotificationTemplatePreview:
+    def preview_template(self, ref: NotificationsTemplateRef, context: dict[str, Any]) -> NotificationTemplatePreview:
         templates = self.repository.search_templates(
             channel=ref.channel,
             template_name=ref.template_name,
@@ -53,5 +53,5 @@ class NotificationsTemplatesService:
             context=validated_context.model_dump(),
         )
 
-    def search_templates(self, channel: ChannelType | None, template_name: str | None) -> list[NotificationTemplate]:
+    def search_templates(self, channel: ChannelType | None, template_name: str | None) -> list[NotificationsTemplate]:
         return self.repository.search_templates(channel=channel, template_name=template_name)

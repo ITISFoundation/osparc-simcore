@@ -14,7 +14,7 @@ from models_library.rpc.notifications.template import (
 )
 from servicelib.rabbitmq import RPCRouter
 
-from ...models.template import TemplateRef
+from ...models.template import NotificationsTemplateRef
 from .dependencies import get_notifications_templates_service
 
 router = RPCRouter()
@@ -36,7 +36,7 @@ async def preview_template(
     service = get_notifications_templates_service()
 
     preview = service.preview_template(
-        ref=TemplateRef(**request.ref.model_dump()),
+        ref=NotificationsTemplateRef(**request.ref.model_dump()),
         context=request.context,
     )
 

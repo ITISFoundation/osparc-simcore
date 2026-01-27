@@ -7,7 +7,7 @@ from models_library.notifications import ChannelType, TemplateName
 from pydantic import TypeAdapter
 
 from ..models.content import for_channel
-from ..models.template import NotificationTemplate, TemplateRef
+from ..models.template import NotificationsTemplate, NotificationsTemplateRef
 from ..templates.registry import get_context_model
 
 _TEMPLATE_EXTENSION = ".j2"
@@ -16,8 +16,8 @@ _EXPECTED_PATH_PARTS = 3  # channel/template_name/part
 _logger = logging.getLogger(__name__)
 
 
-def _build_template(ref: TemplateRef) -> NotificationTemplate:
-    return NotificationTemplate(
+def _build_template(ref: NotificationsTemplateRef) -> NotificationsTemplate:
+    return NotificationsTemplate(
         ref=ref,
         context_model=get_context_model(ref),
         parts=for_channel(ref.channel).get_field_names(),
@@ -43,7 +43,7 @@ def _matches_pattern(value: str, pattern: str) -> bool:
     return fnmatch.fnmatch(value, pattern)
 
 
-def template_path_prefix(template_ref: TemplateRef) -> str:
+def template_path_prefix(template_ref: NotificationsTemplateRef) -> str:
     return f"{template_ref.channel}/{template_ref.template_name}"
 
 
@@ -83,7 +83,7 @@ class NotificationsTemplatesRepository:
 
     def get_jinja_template(
         self,
-        template: NotificationTemplate,
+        template: NotificationsTemplate,
         part: str,
     ) -> Template:
         # NOTE: centralized template naming convention
@@ -95,7 +95,7 @@ class NotificationsTemplatesRepository:
         channel: ChannelType | None = None,
         template_name: str | None = None,
         part: str | None = None,
-    ) -> list[NotificationTemplate]:
+    ) -> list[NotificationsTemplate]:
         """Search for notification templates with wildcard support for template_name and part.
 
         Template path format: {channel}/{template_name}/{part}.j2
@@ -134,14 +134,14 @@ class NotificationsTemplatesRepository:
             return _matches_pattern(template_name_str, template_name or "*") and _matches_pattern(part_str, part or "*")
 
         # Use dict to deduplicate by (channel, template_name), keeping arbitrary part
-        templates_dict: dict[tuple[str, str], NotificationTemplate] = {}
+        templates_dict: dict[tuple[str, str], NotificationsTemplate] = {}
 
         for template_path in self.env.list_templates(filter_func=filter_func):
             channel_str, template_name_str, _ = self._parse_template_path(template_path)
             key = (channel_str, template_name_str)
 
             if key not in templates_dict:
-                template_ref = TemplateRef(
+                template_ref = NotificationsTemplateRef(
                     channel=ChannelType(channel_str),
                     template_name=TypeAdapter(TemplateName).validate_python(template_name_str),
                 )
