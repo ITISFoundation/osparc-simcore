@@ -18643,10 +18643,10 @@ components:
           default: ''
         user_from_id:
           anyOf:
-          - type: 'null'
           - type: integer
             exclusiveMinimum: true
             minimum: 0
+          - type: 'null'
           title: User From Id
         id:
           type: string
@@ -18703,10 +18703,10 @@ components:
           default: ''
         user_from_id:
           anyOf:
-          - type: 'null'
           - type: integer
             exclusiveMinimum: true
             minimum: 0
+          - type: 'null'
           title: User From Id
       type: object
       required:
