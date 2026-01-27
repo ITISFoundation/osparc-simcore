@@ -15,9 +15,7 @@ from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_delay
 from tenacity.wait import wait_exponential
 
-from servicelib.tracing import TracingConfig
-
-from ..tracing import setup_httpx_client_tracing
+from ..tracing import TracingConfig, setup_httpx_client_tracing
 from .http_client import BaseHTTPApi
 
 _logger = logging.getLogger(__name__)
