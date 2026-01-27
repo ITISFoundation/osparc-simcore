@@ -5,6 +5,7 @@ from uuid import UUID
 
 import orjson
 from common_library.json_serialization import json_dumps, json_loads
+from models_library.celery import DEFAULT_QUEUE
 from models_library.progress_bar import ProgressReport
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, TypeAdapter, model_validator
 from pydantic.config import JsonDict
@@ -145,7 +146,7 @@ class TasksQueue(StrEnum):
 class ExecutionMetadata(BaseModel):
     name: TaskName
     ephemeral: bool = True
-    queue: TasksQueue = TasksQueue.DEFAULT
+    queue: str = DEFAULT_QUEUE
 
 
 class TaskStreamItem(BaseModel):
