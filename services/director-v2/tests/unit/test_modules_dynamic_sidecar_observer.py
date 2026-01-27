@@ -2,21 +2,18 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=unused-argument
 
-from collections.abc import AsyncIterator, Callable
+from collections.abc import AsyncIterator
 from unittest.mock import AsyncMock
 
 import pytest
-from aiodocker import Docker
+from _helpers import setup_docker, shutdown_docker
 from faker import Faker
 from fastapi import FastAPI
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.models.dynamic_services_scheduler import SchedulerData
-from simcore_service_director_v2.modules.dynamic_sidecar.api_client import (
-    setup,
-    shutdown,
-)
+from simcore_service_director_v2.modules.dynamic_sidecar import api_client
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler import (
     DynamicSidecarsScheduler,
     setup_scheduler,
@@ -96,29 +93,17 @@ def mocked_app(mock_env: None) -> FastAPI:
     return app
 
 
-async def _setup_docker(app: FastAPI) -> None:
-    app.state.remote_docker_client = Docker()
-
-
-async def _shutdown_docker(app: FastAPI) -> None:
-    assert isinstance(app.state.remote_docker_client, Docker)
-    await app.state.remote_docker_client.close()
-
-
 @pytest.fixture
-async def dynamic_sidecar_scheduler(
-    mock_setup_remote_docker_client: Callable[[str], None],
-    mocked_app: FastAPI,
-) -> AsyncIterator[DynamicSidecarsScheduler]:
+async def dynamic_sidecar_scheduler(mocked_app: FastAPI) -> AsyncIterator[DynamicSidecarsScheduler]:
     await setup_scheduler(mocked_app)
-    await setup(mocked_app)
-    await _setup_docker(mocked_app)
+    await api_client.setup(mocked_app)
+    await setup_docker(mocked_app)
 
     yield mocked_app.state.dynamic_sidecar_scheduler
 
     await shutdown_scheduler(mocked_app)
-    await shutdown(mocked_app)
-    await _shutdown_docker(mocked_app)
+    await api_client.shutdown(mocked_app)
+    await shutdown_docker(mocked_app)
 
 
 def _is_observation_task_present(
