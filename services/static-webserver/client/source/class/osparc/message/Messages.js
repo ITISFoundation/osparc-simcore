@@ -21,7 +21,7 @@ qx.Class.define("osparc.message.Messages", {
   statics: {
     fetchEmailTemplates: function() {
       return osparc.store.Faker.getInstance().fetchEmailTemplates();
-      return osparc.data.Resources.fetch("notificationTemplates", "getTemplates");
+      return osparc.data.Resources.fetch("notificationTemplates", "getEmailTemplates");
     },
 
     fetchEmailPreview: function(templateName, context = {}) {
