@@ -12,7 +12,6 @@ from models_library.api_schemas_long_running_tasks.tasks import TaskGet
 from models_library.api_schemas_webserver.notifications import (
     NotificationsMessageBody,
     NotificationsTemplateGet,
-    NotificationsTemplateMessageBody,
     NotificationsTemplatePreviewBody,
     NotificationsTemplatePreviewGet,
     SearchTemplatesQueryParams,
@@ -59,12 +58,3 @@ async def search_templates(
 
     Returns templates with their context schema defining required variables for rendering.
     """
-
-
-@router.post(
-    "/notifications/templates:send",
-    response_model=Envelope[TaskGet],
-)
-async def send_message_from_template(
-    _body: NotificationsTemplateMessageBody,
-): ...

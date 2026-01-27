@@ -4767,25 +4767,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Envelope_list_NotificationsTemplateGet__'
-  /v0/notifications/templates:send:
-    post:
-      tags:
-      - notifications
-      summary: Send Message From Template
-      operationId: send_message_from_template
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/NotificationsTemplateMessageBody'
-        required: true
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Envelope_TaskGet_'
   /v0/projects:
     post:
       tags:
@@ -14819,27 +14800,6 @@ components:
       - ref
       - contextSchema
       title: NotificationsTemplateGet
-    NotificationsTemplateMessageBody:
-      properties:
-        ref:
-          $ref: '#/components/schemas/NotificationsTemplateRefGet'
-        recipients:
-          items:
-            type: integer
-            exclusiveMinimum: true
-            minimum: 0
-          type: array
-          title: Recipients
-        context:
-          additionalProperties: true
-          type: object
-          title: Context
-      type: object
-      required:
-      - ref
-      - recipients
-      - context
-      title: NotificationsTemplateMessageBody
     NotificationsTemplatePreviewBody:
       properties:
         ref:

@@ -137,10 +137,3 @@ async def search_templates(request: web.Request) -> web.Response:
     )
 
     return create_data_response([NotificationsTemplateGet(**template.model_dump()).data() for template in templates])
-
-
-@routes.post(f"{_notifications_prefix}/templates:send", name="send_message_from_template")
-@login_required
-@handle_notifications_exceptions
-async def send_message_from_template(request: web.Request) -> web.Response:
-    raise NotImplementedError
