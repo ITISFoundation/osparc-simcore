@@ -110,7 +110,7 @@ qx.Class.define("osparc.editor.EmailEditor", {
           const editorId = "email-html-editor-" + Date.now();
           const wrapper = osparc.wrapper.HtmlEditor.getInstance();
 
-          control = wrapper.createEditor(editorId, "<p>Write your email...</p>", {
+          const quillContainer = wrapper.createEditor(editorId, "<p>Write your email...</p>", {
             theme: 'snow',
             placeholder: 'Write your email...',
             modules: {
@@ -124,16 +124,13 @@ qx.Class.define("osparc.editor.EmailEditor", {
             }
           });
 
-          control.set({
-            allowGrowY: true,
-            allowGrowX: true,
-            minWidth: 500,
-            minHeight: 300,
-          });
+          // Wrap in scroll container
+          control = new qx.ui.container.Scroll();
+          control.add(quillContainer);
 
           // Initialize Quill after the DOM element is ready
-          control.addListenerOnce("appear", () => {
-            this.__quillInstance = wrapper.initializeEditor(editorId, control.getUserData("quillOptions"));
+          quillContainer.addListenerOnce("appear", () => {
+            this.__quillInstance = wrapper.initializeEditor(editorId, quillContainer.getUserData("quillOptions"));
           });
 
           this.getChildControl("editor-page").add(control, {
