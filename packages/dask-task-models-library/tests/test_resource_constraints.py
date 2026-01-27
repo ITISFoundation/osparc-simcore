@@ -26,10 +26,7 @@ def test_create_ec2_resource_constraint_key(faker: Faker):
     )
 
     empty_instance_type = ""
-    assert (
-        create_ec2_resource_constraint_key(empty_instance_type)
-        == f"{DASK_TASK_EC2_RESOURCE_RESTRICTION_KEY}:"
-    )
+    assert create_ec2_resource_constraint_key(empty_instance_type) == f"{DASK_TASK_EC2_RESOURCE_RESTRICTION_KEY}:"
 
 
 def test_get_ec2_instance_type_from_resources(faker: Faker):
@@ -40,7 +37,4 @@ def test_get_ec2_instance_type_from_resources(faker: Faker):
 
     faker_instance_type = faker.pystr()
     ec2_type_in_resources = {create_ec2_resource_constraint_key(faker_instance_type): 1}
-    assert (
-        get_ec2_instance_type_from_resources(ec2_type_in_resources)
-        == faker_instance_type
-    )
+    assert get_ec2_instance_type_from_resources(ec2_type_in_resources) == faker_instance_type

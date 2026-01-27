@@ -77,17 +77,13 @@ class RutPricingPlanGet(BaseModel):
             return self  # No units to check
 
         for unit in self.pricing_units:
-            if (
-                self.classification == PricingPlanClassification.TIER
-                and not isinstance(unit.unit_extra_info, UnitExtraInfoTier)
+            if self.classification == PricingPlanClassification.TIER and not isinstance(
+                unit.unit_extra_info, UnitExtraInfoTier
             ):
-                error_message = (
-                    "For TIER classification, unit_extra_info must be UnitExtraInfoTier"
-                )
+                error_message = "For TIER classification, unit_extra_info must be UnitExtraInfoTier"
                 raise ValueError(error_message)
-            if (
-                self.classification == PricingPlanClassification.LICENSE
-                and not isinstance(unit.unit_extra_info, UnitExtraInfoLicense)
+            if self.classification == PricingPlanClassification.LICENSE and not isinstance(
+                unit.unit_extra_info, UnitExtraInfoLicense
             ):
                 error_message = "For LICENSE classification, unit_extra_info must be UnitExtraInfoLicense"
                 raise ValueError(error_message)

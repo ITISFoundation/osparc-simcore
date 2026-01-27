@@ -44,27 +44,21 @@ async def create_compose_spec(
     mounted_volumes: MountedVolumes = app.state.mounted_volumes
 
     async with shared_store:
-        compose_spec_validation: ComposeSpecValidation = (
-            await get_and_validate_compose_spec(
-                settings=settings,
-                compose_file_content=containers_compose_spec.docker_compose_yaml,
-                mounted_volumes=mounted_volumes,
-            )
+        compose_spec_validation: ComposeSpecValidation = await get_and_validate_compose_spec(
+            settings=settings,
+            compose_file_content=containers_compose_spec.docker_compose_yaml,
+            mounted_volumes=mounted_volumes,
         )
         shared_store.compose_spec = compose_spec_validation.compose_spec
         shared_store.container_names = compose_spec_validation.current_container_names
-        shared_store.original_to_container_names = (
-            compose_spec_validation.original_to_current_container_names
-        )
+        shared_store.original_to_container_names = compose_spec_validation.original_to_current_container_names
 
     _logger.info("Validated compose-spec:\n%s", f"{shared_store.compose_spec}")
 
     assert shared_store.compose_spec
 
 
-def _format_result(
-    container_inspect: dict[str, Any], *, only_status: bool
-) -> dict[str, Any]:
+def _format_result(container_inspect: dict[str, Any], *, only_status: bool) -> dict[str, Any]:
     if only_status:
         container_state = container_inspect.get("State", {})
 
@@ -77,9 +71,7 @@ def _format_result(
     return container_inspect
 
 
-async def containers_docker_inspect(
-    app: FastAPI, *, only_status: bool
-) -> dict[str, Any]:
+async def containers_docker_inspect(app: FastAPI, *, only_status: bool) -> dict[str, Any]:
     container_restart_lock: Lock = app.state.container_restart_lock
     shared_store: SharedStore = app.state.shared_store
 
@@ -90,9 +82,7 @@ async def containers_docker_inspect(
         for container in container_names:
             container_instance = await docker.containers.get(container)
             container_inspect = await container_instance.show()
-            results[container] = _format_result(
-                container_inspect, only_status=only_status
-            )
+            results[container] = _format_result(container_inspect, only_status=only_status)
 
         return results
 
@@ -153,9 +143,7 @@ class MissingDockerComposeDownSpecError(BaseGetNameError):
 
 
 class ContainerNotFoundError(BaseGetNameError):
-    msg_template: str = (
-        "No container found for network={network_name} and exclude={exclude}"
-    )
+    msg_template: str = "No container found for network={network_name} and exclude={exclude}"
 
 
 async def get_containers_name(app: FastAPI, *, filters: str) -> str | dict[str, Any]:
@@ -202,9 +190,7 @@ async def get_containers_name(app: FastAPI, *, filters: str) -> str | dict[str, 
 
 
 class ContainerIsMissingError(OsparcErrorMixin, RuntimeError):
-    msg_template: str = (
-        "No container='{container_id}' was found in started_containers='{container_names}'"
-    )
+    msg_template: str = "No container='{container_id}' was found in started_containers='{container_names}'"
 
 
 async def inspect_container(
@@ -222,9 +208,7 @@ async def inspect_container(
             container_id,
             container_names,
         )
-        raise ContainerIsMissingError(
-            container_id=container_id, container_names=container_names
-        )
+        raise ContainerIsMissingError(container_id=container_id, container_names=container_names)
 
     async with docker_client() as docker:
         container_instance = await docker.containers.get(container_id)

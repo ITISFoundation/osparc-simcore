@@ -1,10 +1,10 @@
 # pylint: disable=protected-access
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 from servicelib.docker_utils import to_datetime
 
-NOW = datetime.now(tz=timezone.utc)
+NOW = datetime.now(tz=UTC)
 
 
 @pytest.mark.parametrize(
@@ -12,27 +12,27 @@ NOW = datetime.now(tz=timezone.utc)
     [
         (
             "2023-03-21T00:00:00Z",
-            datetime(2023, 3, 21, 0, 0, tzinfo=timezone.utc),
+            datetime(2023, 3, 21, 0, 0, tzinfo=UTC),
         ),
         (
             "2023-12-31T23:59:59Z",
-            datetime(2023, 12, 31, 23, 59, 59, tzinfo=timezone.utc),
+            datetime(2023, 12, 31, 23, 59, 59, tzinfo=UTC),
         ),
         (
             "2020-10-09T12:28:14.771034099Z",
-            datetime(2020, 10, 9, 12, 28, 14, 771034, tzinfo=timezone.utc),
+            datetime(2020, 10, 9, 12, 28, 14, 771034, tzinfo=UTC),
         ),
         (
             "2020-10-09T12:28:14.123456099Z",
-            datetime(2020, 10, 9, 12, 28, 14, 123456, tzinfo=timezone.utc),
+            datetime(2020, 10, 9, 12, 28, 14, 123456, tzinfo=UTC),
         ),
         (
             "2020-10-09T12:28:14.12345Z",
-            datetime(2020, 10, 9, 12, 28, 14, 123450, tzinfo=timezone.utc),
+            datetime(2020, 10, 9, 12, 28, 14, 123450, tzinfo=UTC),
         ),
         (
             "2023-03-15 13:01:21.774501",
-            datetime(2023, 3, 15, 13, 1, 21, 774501, tzinfo=timezone.utc),
+            datetime(2023, 3, 15, 13, 1, 21, 774501, tzinfo=UTC),
         ),
         (f"{NOW}", NOW),
         (NOW.strftime("%Y-%m-%dT%H:%M:%S.%f"), NOW),

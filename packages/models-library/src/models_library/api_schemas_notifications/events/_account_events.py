@@ -1,7 +1,8 @@
 from typing import Any, Literal
 
-from models_library.products import ProductName
 from pydantic import BaseModel, EmailStr, HttpUrl
+
+from models_library.products import ProductName
 
 
 class UserData(BaseModel):

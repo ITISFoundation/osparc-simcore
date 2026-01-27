@@ -8,7 +8,6 @@ from ._thin_client import DirectorV0ThinClient
 
 
 async def director_v0_lifespan(app: FastAPI) -> AsyncIterator[State]:
-
     thin_client = DirectorV0ThinClient(app)
     thin_client.set_to_app_state(app)
     thin_client.attach_lifespan_to(app)

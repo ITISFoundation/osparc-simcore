@@ -5,9 +5,7 @@ from .backend_errors import BaseBackEndError
 
 
 class TaskSchedulerError(BaseBackEndError):
-    msg_template: str = user_message(
-        "An error occurred in the task scheduler.", _version=1
-    )
+    msg_template: str = user_message("An error occurred in the task scheduler.", _version=1)
     status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
 
 
@@ -27,7 +25,5 @@ class TaskCancelledError(BaseBackEndError):
 
 
 class TaskError(BaseBackEndError):
-    msg_template: str = user_message(
-        "Task '{job_id}' encountered an error.", _version=1
-    )
+    msg_template: str = user_message("Task '{job_id}' encountered an error.", _version=1)
     status_code = status.HTTP_500_INTERNAL_SERVER_ERROR

@@ -24,9 +24,5 @@ from pytest_simcore.pydantic_models import (
         iter_model_examples_in_module(simcore_service_invitations.services.invitations),
     ),
 )
-def test_model_examples(
-    model_cls: type[BaseModel], example_name: str, example_data: Any
-):
-    assert_validation_model(
-        model_cls, example_name=example_name, example_data=example_data
-    )
+def test_model_examples(model_cls: type[BaseModel], example_name: str, example_data: Any):
+    assert_validation_model(model_cls, example_name=example_name, example_data=example_data)

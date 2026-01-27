@@ -33,9 +33,7 @@ def test_healthcheck(
 
     response = client.get("/")
     assert response.status_code == status.HTTP_200_OK
-    assert response.text.startswith(
-        "simcore_service_resource_usage_tracker.api.rest._health@"
-    )
+    assert response.text.startswith("simcore_service_resource_usage_tracker.api.rest._health@")
 
 
 def test_healthcheck__unhealthy(

@@ -17,12 +17,9 @@ async def aggregate_data_to_projects_from_request(
     headers: dict[str, str],
     projects: list[ProjectDict],
 ) -> list[ProjectDict]:
-
     update_permalink_per_project = [
         # permalink
-        _permalink_service.aggregate_permalink_in_project(
-            app, url, headers, project=prj
-        )
+        _permalink_service.aggregate_permalink_in_project(app, url, headers, project=prj)
         for prj in projects
     ]
 
@@ -36,10 +33,7 @@ def create_page_response(projects, request_url, total, limit, offset) -> web.Res
     page = Page[ProjectListItem].model_validate(
         paginate_data(
             chunk=[
-                ProjectListItem.from_domain_model(prj).model_dump(
-                    by_alias=True, exclude_unset=True
-                )
-                for prj in projects
+                ProjectListItem.from_domain_model(prj).model_dump(by_alias=True, exclude_unset=True) for prj in projects
             ],
             request_url=request_url,
             total=total,

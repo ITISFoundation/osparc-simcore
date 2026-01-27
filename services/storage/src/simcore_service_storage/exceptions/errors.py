@@ -21,9 +21,7 @@ class FileAccessRightError(DatabaseAccessError):
 
 
 class ProjectAccessRightError(DatabaseAccessError):
-    msg_template: str = (
-        "Insufficient access rights to {access_right} project {project_id}"
-    )
+    msg_template: str = "Insufficient access rights to {access_right} project {project_id}"
 
 
 class ProjectNotFoundError(DatabaseAccessError):

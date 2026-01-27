@@ -117,10 +117,7 @@ class FrontEndAppSettings(BaseCustomSettings):
             ),
         )
 
-        return {
-            snake_to_camel(k.replace("WEBSERVER_", "").lower()): v
-            for k, v in data.items()
-        }
+        return {snake_to_camel(k.replace("WEBSERVER_", "").lower()): v for k, v in data.items()}
 
 
 class StaticWebserverModuleSettings(BaseCustomSettings):

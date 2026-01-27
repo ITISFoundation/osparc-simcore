@@ -52,9 +52,7 @@ def cluster_machines_name_prefix(faker: Faker) -> str:
 def ec2_boot_specs(app_settings: ApplicationSettings) -> EC2InstanceBootSpecific:
     assert app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES
     ec2_boot_specs = next(
-        iter(
-            app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_ALLOWED_TYPES.values()
-        )
+        iter(app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_ALLOWED_TYPES.values())
     )
     assert isinstance(ec2_boot_specs, EC2InstanceBootSpecific)
     return ec2_boot_specs
@@ -113,9 +111,9 @@ def test_create_deploy_cluster_stack_script(
     clusters_keeper_docker_compose: dict[str, Any],
 ):
     additional_custom_tags = {
-        TypeAdapter(AWSTagKey)
-        .validate_python("pytest-tag-key"): TypeAdapter(AWSTagValue)
-        .validate_python("pytest-tag-value")
+        TypeAdapter(AWSTagKey).validate_python("pytest-tag-key"): TypeAdapter(AWSTagValue).validate_python(
+            "pytest-tag-value"
+        )
     }
     deploy_script = create_deploy_cluster_stack_script(
         app_settings,
@@ -128,15 +126,10 @@ def test_create_deploy_cluster_stack_script(
     # we have commands to init a docker-swarm
     assert "docker swarm init --default-addr-pool" in deploy_script
     # we have commands to deploy a stack
-    assert (
-        "docker stack deploy --with-registry-auth --compose-file=/docker-compose.yml dask_stack"
-        in deploy_script
-    )
+    assert "docker stack deploy --with-registry-auth --compose-file=/docker-compose.yml dask_stack" in deploy_script
     # before that we have commands that setup ENV variables, let's check we have all of them as defined in the docker-compose
     # let's get what was set in the startup script and compare with the expected one of the docker-compose
-    startup_script_envs_definition = (
-        deploy_script.splitlines()[-1].split("docker stack deploy")[0].strip()
-    )
+    startup_script_envs_definition = deploy_script.splitlines()[-1].split("docker stack deploy")[0].strip()
     assert startup_script_envs_definition
     # Use regular expression to split the string into key-value pairs (courtesy of chatGPT)
     startup_script_key_value_pairs: list[tuple[str, str]] = re.findall(
@@ -159,9 +152,7 @@ def test_create_deploy_cluster_stack_script(
         if isinstance(v, str) and v.startswith("${")
     ] + ["DOCKER_IMAGE_TAG"]
     for env_key in expected_env_keys:
-        assert (
-            env_key in startup_script_env_keys_names
-        ), f"{env_key} is missing from startup script! please adjust"
+        assert env_key in startup_script_env_keys_names, f"{env_key} is missing from startup script! please adjust"
 
     # check we do not define "too much"
     for env_key in startup_script_env_keys_names:
@@ -171,33 +162,23 @@ def test_create_deploy_cluster_stack_script(
     list_settings = [
         "WORKERS_EC2_INSTANCES_SECURITY_GROUP_IDS",
     ]
-    assert all(
-        re.search(rf"{i}=\[(\\\".+\\\")*\]", deploy_script) for i in list_settings
-    )
+    assert all(re.search(rf"{i}=\[(\\\".+\\\")*\]", deploy_script) for i in list_settings)
 
     # check dicts have \' in front
     dict_settings = [
         "WORKERS_EC2_INSTANCES_ALLOWED_TYPES",
         "WORKERS_EC2_INSTANCES_CUSTOM_TAGS",
     ]
-    assert all(
-        re.search(rf"{i}=\'{{(\".+\":\s\".*\")+}}\'", deploy_script)
-        for i in dict_settings
-    )
+    assert all(re.search(rf"{i}=\'{{(\".+\":\s\".*\")+}}\'", deploy_script) for i in dict_settings)
 
     # check that the RabbitMQ settings are null since rabbit is disabled
     assert re.search(r"AUTOSCALING_RABBITMQ=null", deploy_script)
 
     # check the additional tags are in
-    assert all(
-        f'"{key}": "{value}"' in deploy_script
-        for key, value in additional_custom_tags.items()
-    )
+    assert all(f'"{key}": "{value}"' in deploy_script for key, value in additional_custom_tags.items())
 
 
-@pytest.fixture(
-    params=["default", "custom"], ids=["defaultRabbitMQ", "specialClusterRabbitMQ"]
-)
+@pytest.fixture(params=["default", "custom"], ids=["defaultRabbitMQ", "specialClusterRabbitMQ"])
 def rabbitmq_settings_fixture(
     app_environment: EnvVarsDict,
     enabled_rabbitmq: RabbitSettings,
@@ -210,15 +191,13 @@ def rabbitmq_settings_fixture(
         custom_rabbit_settings = random.choice(  # noqa: S311
             RabbitSettings.model_json_schema()["examples"]
         )
-        monkeypatch.setenv(
-            "PRIMARY_EC2_INSTANCES_RABBIT", json_dumps(custom_rabbit_settings)
-        )
+        monkeypatch.setenv("PRIMARY_EC2_INSTANCES_RABBIT", json_dumps(custom_rabbit_settings))
         return RabbitSettings.model_validate(custom_rabbit_settings)
     assert request.param == "default"
     return enabled_rabbitmq
 
 
-def test_rabbitmq_settings_are_passed_with_pasword_clear(
+def test_rabbitmq_settings_are_passed_with_password_clear(
     docker_swarm: None,
     rabbitmq_settings_fixture: RabbitSettings | None,
     mocked_ec2_server_envs: EnvVarsDict,
@@ -230,15 +209,12 @@ def test_rabbitmq_settings_are_passed_with_pasword_clear(
 ):
     assert app_settings.CLUSTERS_KEEPER_RABBITMQ
     assert app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES
-    assert (
-        rabbitmq_settings_fixture
-        == app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_RABBIT
-    )
+    assert rabbitmq_settings_fixture == app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES.PRIMARY_EC2_INSTANCES_RABBIT
 
     additional_custom_tags = {
-        TypeAdapter(AWSTagKey)
-        .validate_python("pytest-tag-key"): TypeAdapter(AWSTagValue)
-        .validate_python("pytest-tag-value")
+        TypeAdapter(AWSTagKey).validate_python("pytest-tag-key"): TypeAdapter(AWSTagValue).validate_python(
+            "pytest-tag-value"
+        )
     }
     deploy_script = create_deploy_cluster_stack_script(
         app_settings,
@@ -264,9 +240,9 @@ def test_create_deploy_cluster_stack_script_below_64kb(
     clusters_keeper_docker_compose: dict[str, Any],
 ):
     additional_custom_tags = {
-        TypeAdapter(AWSTagKey)
-        .validate_python("pytest-tag-key"): TypeAdapter(AWSTagValue)
-        .validate_python("pytest-tag-value")
+        TypeAdapter(AWSTagKey).validate_python("pytest-tag-key"): TypeAdapter(AWSTagValue).validate_python(
+            "pytest-tag-value"
+        )
     }
     deploy_script = create_deploy_cluster_stack_script(
         app_settings,
@@ -296,9 +272,7 @@ def test_create_startup_script_script_size_below_16kb(
     )
     script_size_in_bytes = len(startup_script.encode("utf-8"))
 
-    print(
-        f"current script size is {TypeAdapter(ByteSize).validate_python(script_size_in_bytes).human_readable()}"
-    )
+    print(f"current script size is {TypeAdapter(ByteSize).validate_python(script_size_in_bytes).human_readable()}")
     # NOTE: EC2 user data cannot be above 16KB, we keep some margin here
     assert script_size_in_bytes < 15 * 1024
 
@@ -313,9 +287,9 @@ def test__prepare_environment_variables_defines_all_envs_for_docker_compose(
     clusters_keeper_docker_compose_file: Path,
 ):
     additional_custom_tags = {
-        TypeAdapter(AWSTagKey)
-        .validate_python("pytest-tag-key"): TypeAdapter(AWSTagValue)
-        .validate_python("pytest-tag-value")
+        TypeAdapter(AWSTagKey).validate_python("pytest-tag-key"): TypeAdapter(AWSTagValue).validate_python(
+            "pytest-tag-value"
+        )
     }
     environment_variables = _prepare_environment_variables(
         app_settings,
@@ -333,10 +307,7 @@ def test__prepare_environment_variables_defines_all_envs_for_docker_compose(
         ],
         capture_output=True,
         check=True,
-        env={
-            e.split("=", maxsplit=1)[0]: e.split("=", maxsplit=1)[1]
-            for e in environment_variables
-        },
+        env={e.split("=", maxsplit=1)[0]: e.split("=", maxsplit=1)[1] for e in environment_variables},
     )
     assert process
     assert process.stderr

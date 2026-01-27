@@ -44,9 +44,7 @@ _logger = logging.getLogger(__name__)
 
 _console = Console()
 
-_current_dir = (
-    Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
-)
+_current_dir = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 _WAIT_BEFORE_RETRY = 10
 _MAX_WAIT_TIME = 10 * 60
@@ -116,9 +114,7 @@ def _create_services_table(
         else:
             replicas_style = "red"
 
-        start_time_text = (
-            f"{status['start_time']:.1f}s" if status["start_time"] is not None else "⏳"
-        )
+        start_time_text = f"{status['start_time']:.1f}s" if status["start_time"] is not None else "⏳"
 
         # Compact task summary, sorted alphabetically by state
         tasks_summary = ""
@@ -237,11 +233,7 @@ async def _retrieve_started_services() -> list[dict[str, Any]]:
         services_list = await client.services.list()
 
         started_services = sorted(
-            (
-                s
-                for s in services_list
-                if s["Spec"]["Name"].split("_")[-1] in expected_services
-            ),
+            (s for s in services_list if s["Spec"]["Name"].split("_")[-1] in expected_services),
             key=_by_service_creation,
         )
         assert started_services, "no services started!"
@@ -267,13 +259,9 @@ async def _check_service_status(
         )
         service_name = service["Spec"]["Name"].split("_")[-1]
 
-        service_tasks: list[dict[str, Any]] = await client.tasks.list(
-            filters={"service": service["Spec"]["Name"]}
-        )
+        service_tasks: list[dict[str, Any]] = await client.tasks.list(filters={"service": service["Spec"]["Name"]})
 
-        running_replicas = sum(
-            task["Status"]["State"] == _RUNNING_STATE for task in service_tasks
-        )
+        running_replicas = sum(task["Status"]["State"] == _RUNNING_STATE for task in service_tasks)
         task_states = [task["Status"]["State"] for task in service_tasks]
 
         # Consistent status logic
@@ -288,9 +276,7 @@ async def _check_service_status(
 
         # Calculate start time: service CreatedAt -> latest running task Timestamp
         start_time = None
-        running_tasks = [
-            task for task in service_tasks if task["Status"]["State"] == _RUNNING_STATE
-        ]
+        running_tasks = [task for task in service_tasks if task["Status"]["State"] == _RUNNING_STATE]
         if running_tasks:
             service_created_at = arrow.get(service["CreatedAt"]).datetime
             latest_started_at = max(
@@ -365,9 +351,7 @@ async def _wait_for_services() -> int:
         # Check status of all services
         ready_services = []
         for service in started_services:
-            is_ready = await _check_service_status(
-                service, service_statuses, ops_services
-            )
+            is_ready = await _check_service_status(service, service_statuses, ops_services)
             if is_ready:
                 ready_services.append(service)
 
@@ -403,9 +387,7 @@ async def _wait_for_services() -> int:
 
     # Final summary
     total_time = time.time() - global_start_time
-    _console.print(
-        f"\n🎉 [bold green]All services are ready![/bold green] Total time: [bold]{total_time:.1f}s[/bold]"
-    )
+    _console.print(f"\n🎉 [bold green]All services are ready![/bold green] Total time: [bold]{total_time:.1f}s[/bold]")
 
     return os.EX_OK
 

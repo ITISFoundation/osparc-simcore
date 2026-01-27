@@ -34,9 +34,7 @@ class ComputationTask(BaseModel):
     id: TaskID = Field(..., description="the id of the computation task")
     state: RunningState = Field(..., description="the state of the computational task")
     result: str | None = Field(None, description="the result of the computational task")
-    pipeline_details: PipelineDetails = Field(
-        ..., description="the details of the generated pipeline"
-    )
+    pipeline_details: PipelineDetails = Field(..., description="the details of the generated pipeline")
     iteration: PositiveInt | None = Field(
         ...,
         description="the iteration id of the computation task (none if no task ran yet)",
@@ -65,9 +63,7 @@ class ComputationTask(BaseModel):
                         "pipeline_details": {
                             "adjacency_list": {
                                 "2fb4808a-e403-4a46-b52c-892560d27862": [],
-                                "19a40c7b-0a40-458a-92df-c77a5df7c886": [
-                                    "2fb4808a-e403-4a46-b52c-892560d27862"
-                                ],
+                                "19a40c7b-0a40-458a-92df-c77a5df7c886": ["2fb4808a-e403-4a46-b52c-892560d27862"],
                             },
                             "node_states": {
                                 "2fb4808a-e403-4a46-b52c-892560d27862": {
@@ -77,9 +73,7 @@ class ComputationTask(BaseModel):
                                 },
                                 "19a40c7b-0a40-458a-92df-c77a5df7c886": {
                                     "modified": False,
-                                    "dependencies": [
-                                        "2fb4808a-e403-4a46-b52c-892560d27862"
-                                    ],
+                                    "dependencies": ["2fb4808a-e403-4a46-b52c-892560d27862"],
                                     "progress": 0.0,
                                 },
                             },
@@ -96,9 +90,7 @@ class ComputationTask(BaseModel):
                         "pipeline_details": {
                             "adjacency_list": {
                                 "2fb4808a-e403-4a46-b52c-892560d27862": [],
-                                "19a40c7b-0a40-458a-92df-c77a5df7c886": [
-                                    "2fb4808a-e403-4a46-b52c-892560d27862"
-                                ],
+                                "19a40c7b-0a40-458a-92df-c77a5df7c886": ["2fb4808a-e403-4a46-b52c-892560d27862"],
                             },
                             "node_states": {
                                 "2fb4808a-e403-4a46-b52c-892560d27862": {
@@ -108,9 +100,7 @@ class ComputationTask(BaseModel):
                                 },
                                 "19a40c7b-0a40-458a-92df-c77a5df7c886": {
                                     "modified": False,
-                                    "dependencies": [
-                                        "2fb4808a-e403-4a46-b52c-892560d27862"
-                                    ],
+                                    "dependencies": ["2fb4808a-e403-4a46-b52c-892560d27862"],
                                     "progress": 1.0,
                                 },
                             },

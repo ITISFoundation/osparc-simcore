@@ -35,7 +35,6 @@ async def test_setup_client_instance():
 
     # test startup/shutdown
     async with LifespanManager(app):
-
         # check startup
         assert TheClientApi.get_instance(app)
         api_obj = TheClientApi.get_instance(app)
@@ -48,9 +47,7 @@ async def test_setup_client_instance():
             base_url="http://the_service",
             assert_all_mocked=True,
         ) as respx_mock:
-            respx_mock.get("/health", name="health_check").respond(
-                200, content="healthy"
-            )
+            respx_mock.get("/health", name="health_check").respond(200, content="healthy")
             # test responsitivity
             assert await api_obj.is_responsive()
             assert respx_mock["health_check"].called

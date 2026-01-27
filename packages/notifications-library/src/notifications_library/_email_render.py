@@ -40,7 +40,6 @@ def render_email_parts(
     product: ProductData,
     **other_data,
 ) -> EmailPartsTuple:
-
     data = other_data | {"user": user, "product": product}
 
     # NOTE: assumes template convention!
@@ -57,6 +56,4 @@ def render_email_parts(
         _logger.debug("Event %s has no html template: %s", event_name, err)
         html_content = None
 
-    return EmailPartsTuple(
-        subject=subject, text_content=text_content, html_content=html_content
-    )
+    return EmailPartsTuple(subject=subject, text_content=text_content, html_content=html_content)

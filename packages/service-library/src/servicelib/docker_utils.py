@@ -75,9 +75,7 @@ class DockerImageManifestsV2(BaseModel):
 
     @cached_property
     def layers_total_size(self) -> ByteSize:
-        return TypeAdapter(ByteSize).validate_python(
-            sum(layer.size for layer in self.layers)
-        )
+        return TypeAdapter(ByteSize).validate_python(sum(layer.size for layer in self.layers))
 
 
 class DockerImageMultiArchManifestsV2(BaseModel):
@@ -113,9 +111,7 @@ def _create_docker_hub_complete_url(image: DockerGenericTag) -> URL:
     return URL(f"https://{DOCKER_HUB_HOST}/{image}")
 
 
-def get_image_complete_url(
-    image: DockerGenericTag, registry_settings: RegistrySettings
-) -> URL:
+def get_image_complete_url(image: DockerGenericTag, registry_settings: RegistrySettings) -> URL:
     if registry_settings.REGISTRY_URL and registry_settings.REGISTRY_URL in image:
         # this is an image available in the private registry
         return URL(f"http{'s' if registry_settings.REGISTRY_AUTH else ''}://{image}")
@@ -149,9 +145,7 @@ class _PulledStatus:
     extracted: int = 0
 
 
-async def _parse_pull_information(
-    parsed_progress: _DockerPullImage, *, layer_id_to_size: dict[str, _PulledStatus]
-):
+async def _parse_pull_information(parsed_progress: _DockerPullImage, *, layer_id_to_size: dict[str, _PulledStatus]):
     match parsed_progress.status.lower():
         case progress_status if any(
             msg in progress_status
@@ -175,9 +169,7 @@ async def _parse_pull_information(
             ).downloaded = parsed_progress.progress_detail.current
         case "verifying checksum" | "download complete":
             assert parsed_progress.id  # nosec
-            layer_id_to_size.setdefault(
-                parsed_progress.id, _PulledStatus(0)
-            ).downloaded = layer_id_to_size.setdefault(
+            layer_id_to_size.setdefault(parsed_progress.id, _PulledStatus(0)).downloaded = layer_id_to_size.setdefault(
                 parsed_progress.id, _PulledStatus(0)
             ).size
         case "extracting":
@@ -190,17 +182,17 @@ async def _parse_pull_information(
             ).extracted = parsed_progress.progress_detail.current
         case "pull complete":
             assert parsed_progress.id  # nosec
-            layer_id_to_size.setdefault(
-                parsed_progress.id, _PulledStatus(0)
-            ).extracted = layer_id_to_size[parsed_progress.id].size
+            layer_id_to_size.setdefault(parsed_progress.id, _PulledStatus(0)).extracted = layer_id_to_size[
+                parsed_progress.id
+            ].size
         case "already exists":
             assert parsed_progress.id  # nosec
-            layer_id_to_size.setdefault(
-                parsed_progress.id, _PulledStatus(0)
-            ).extracted = layer_id_to_size[parsed_progress.id].size
-            layer_id_to_size.setdefault(
-                parsed_progress.id, _PulledStatus(0)
-            ).downloaded = layer_id_to_size[parsed_progress.id].size
+            layer_id_to_size.setdefault(parsed_progress.id, _PulledStatus(0)).extracted = layer_id_to_size[
+                parsed_progress.id
+            ].size
+            layer_id_to_size.setdefault(parsed_progress.id, _PulledStatus(0)).downloaded = layer_id_to_size[
+                parsed_progress.id
+            ].size
         case progress_status if any(
             msg in progress_status
             for msg in [
@@ -289,13 +281,9 @@ async def pull_image(
             _logger.info("attempt '%s' trying to pull image='%s'", attempt, image)
 
             reported_progress = 0.0
-            async for pull_progress in client.images.pull(
-                image, stream=True, auth=registry_auth
-            ):
+            async for pull_progress in client.images.pull(image, stream=True, auth=registry_auth):
                 try:
-                    parsed_progress = TypeAdapter(_DockerPullImage).validate_python(
-                        pull_progress
-                    )
+                    parsed_progress = TypeAdapter(_DockerPullImage).validate_python(pull_progress)
                 except ValidationError:
                     _logger.exception(
                         "Unexpected error while validating '%s'. "
@@ -304,17 +292,11 @@ async def pull_image(
                         f"{pull_progress=}",
                     )
                 else:
-                    await _parse_pull_information(
-                        parsed_progress, layer_id_to_size=layer_id_to_size
-                    )
+                    await _parse_pull_information(parsed_progress, layer_id_to_size=layer_id_to_size)
 
                 # compute total progress
-                total_downloaded_size = sum(
-                    layer.downloaded for layer in layer_id_to_size.values()
-                )
-                total_extracted_size = sum(
-                    layer.extracted for layer in layer_id_to_size.values()
-                )
+                total_downloaded_size = sum(layer.downloaded for layer in layer_id_to_size.values())
+                total_extracted_size = sum(layer.extracted for layer in layer_id_to_size.values())
                 total_progress = (total_downloaded_size + total_extracted_size) / 2.0
                 progress_to_report = total_progress - reported_progress
                 await progress_bar.update(progress_to_report)
@@ -328,21 +310,15 @@ async def pull_image(
         await _pull_image_with_retry()
 
 
-_CPUS_SAFE_MARGIN: Final[float] = (
-    1.4  # accounts for machine overhead (ops + sidecar itself)
-)
+_CPUS_SAFE_MARGIN: Final[float] = 1.4  # accounts for machine overhead (ops + sidecar itself)
 _MACHINE_TOTAL_RAM_SAFE_MARGIN_RATIO: Final[float] = (
     0.1  # NOTE: machines always have less available RAM than advertised
 )
-_SIDECARS_OPS_SAFE_RAM_MARGIN: Final[ByteSize] = TypeAdapter(ByteSize).validate_python(
-    "1GiB"
-)
+_SIDECARS_OPS_SAFE_RAM_MARGIN: Final[ByteSize] = TypeAdapter(ByteSize).validate_python("1GiB")
 DYNAMIC_SIDECAR_MIN_CPUS: Final[float] = 0.5
 
 
-def estimate_dynamic_sidecar_resources_from_ec2_instance(
-    cpus: float, ram: int
-) -> tuple[float, int]:
+def estimate_dynamic_sidecar_resources_from_ec2_instance(cpus: float, ram: int) -> tuple[float, int]:
     """Estimates the resources available to a dynamic-sidecar running in an EC2 instance,
     taking into account safe margins for CPU and RAM, as the EC2 full resources are not completely visible
 
@@ -351,8 +327,6 @@ def estimate_dynamic_sidecar_resources_from_ec2_instance(
     """
     # dynamic-sidecar usually needs less CPU
     sidecar_cpus = max(DYNAMIC_SIDECAR_MIN_CPUS, cpus - _CPUS_SAFE_MARGIN)
-    sidecar_ram = int(
-        ram - _MACHINE_TOTAL_RAM_SAFE_MARGIN_RATIO * ram - _SIDECARS_OPS_SAFE_RAM_MARGIN
-    )
+    sidecar_ram = int(ram - _MACHINE_TOTAL_RAM_SAFE_MARGIN_RATIO * ram - _SIDECARS_OPS_SAFE_RAM_MARGIN)
 
     return (sidecar_cpus, sidecar_ram)

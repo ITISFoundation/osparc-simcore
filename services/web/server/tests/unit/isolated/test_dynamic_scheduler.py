@@ -34,9 +34,7 @@ def node_id(faker: Faker) -> NodeID:
 
 
 @pytest.fixture
-def mock_rpc_client(
-    mocker: MockerFixture, expected_response: NodeGet | NodeGetIdle | DynamicServiceGet
-) -> None:
+def mock_rpc_client(mocker: MockerFixture, expected_response: NodeGet | NodeGetIdle | DynamicServiceGet) -> None:
     mocked_rpc_client = AsyncMock()
     mocked_rpc_client.request = AsyncMock(return_value=expected_response)
     mocker.patch(
@@ -47,22 +45,15 @@ def mock_rpc_client(
 
 @pytest.fixture
 def dynamic_service_start() -> DynamicServiceStart:
-    return DynamicServiceStart.model_validate(
-        DynamicServiceStart.model_json_schema()["example"]
-    )
+    return DynamicServiceStart.model_validate(DynamicServiceStart.model_json_schema()["example"])
 
 
 @pytest.mark.parametrize(
     "expected_response",
     [
-        *[
-            NodeGet.model_validate(x)
-            for x in NodeGet.model_config["json_schema_extra"]["examples"]
-        ],
+        *[NodeGet.model_validate(x) for x in NodeGet.model_config["json_schema_extra"]["examples"]],
         NodeGetIdle.model_validate(NodeGetIdle.model_json_schema()["examples"][0]),
-        DynamicServiceGet.model_validate(
-            DynamicServiceGet.model_json_schema()["examples"][0]
-        ),
+        DynamicServiceGet.model_validate(DynamicServiceGet.model_json_schema()["examples"][0]),
     ],
 )
 async def test_get_service_status(
@@ -93,21 +84,14 @@ async def test_get_service_status_raises_rpc_server_error(
         return_value=mocked_rpc_client,
     )
 
-    assert await get_dynamic_service(
-        mocked_app, node_id=node_id
-    ) == NodeGetUnknown.from_node_id(node_id)
+    assert await get_dynamic_service(mocked_app, node_id=node_id) == NodeGetUnknown.from_node_id(node_id)
 
 
 @pytest.mark.parametrize(
     "expected_response",
     [
-        *[
-            NodeGet.model_validate(x)
-            for x in NodeGet.model_config["json_schema_extra"]["examples"]
-        ],
-        DynamicServiceGet.model_validate(
-            DynamicServiceGet.model_json_schema()["examples"][0]
-        ),
+        *[NodeGet.model_validate(x) for x in NodeGet.model_config["json_schema_extra"]["examples"]],
+        DynamicServiceGet.model_validate(DynamicServiceGet.model_json_schema()["examples"][0]),
     ],
 )
 async def test_run_dynamic_service(
@@ -116,9 +100,4 @@ async def test_run_dynamic_service(
     expected_response: NodeGet | NodeGetIdle | DynamicServiceGet,
     dynamic_service_start: DynamicServiceStart,
 ):
-    assert (
-        await run_dynamic_service(
-            mocked_app, dynamic_service_start=dynamic_service_start
-        )
-        == expected_response
-    )
+    assert await run_dynamic_service(mocked_app, dynamic_service_start=dynamic_service_start) == expected_response

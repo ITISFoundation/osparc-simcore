@@ -8,14 +8,10 @@ from pyinstrument import Profiler
 
 from .incidents import LimitedOrderedStack, SlowCallback
 
-APP_SLOW_CALLBACKS_MONITOR_KEY: Final = web.AppKey(
-    "APP_SLOW_CALLBACKS_MONITOR_KEY", LimitedOrderedStack[SlowCallback]
-)
+APP_SLOW_CALLBACKS_MONITOR_KEY: Final = web.AppKey("APP_SLOW_CALLBACKS_MONITOR_KEY", LimitedOrderedStack[SlowCallback])
 
 
-def enable(
-    slow_duration_secs: float, incidents: LimitedOrderedStack[SlowCallback]
-) -> None:
+def enable(slow_duration_secs: float, incidents: LimitedOrderedStack[SlowCallback]) -> None:
     """Based in from aiodebug
 
     Patches ``asyncio.events.Handle`` to report an incident every time a callback
@@ -44,13 +40,9 @@ def enable(
             # the indentation is correct, the profiler needs to be stopped when
             # printing the output, the profiler is started and stopped by the
             # contextmanger
-            profiler_result = profiler.output_text(
-                unicode=True, color=False, show_all=True
-            )
+            profiler_result = profiler.output_text(unicode=True, color=False, show_all=True)
             incidents.append(SlowCallback(msg=profiler_result, delay_secs=dt))
-            aio_debug_logger.warning(
-                "Executing took %.3f seconds\n%s", dt, profiler_result
-            )
+            aio_debug_logger.warning("Executing took %.3f seconds\n%s", dt, profiler_result)
 
         return retval
 

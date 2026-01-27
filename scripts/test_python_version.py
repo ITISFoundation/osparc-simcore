@@ -11,22 +11,13 @@ def main():
     print(f"Found python version: {major_v}.{minor_v}.{patch_v}")
 
     min_major_v, min_minor_v = to_version(
-        (pl.Path(__file__).parent.parent / "requirements" / "PYTHON_VERSION")
-        .read_text()
-        .strip()
+        (pl.Path(__file__).parent.parent / "requirements" / "PYTHON_VERSION").read_text().strip()
     )
 
-    exit_code = (
-        1
-        if int(major_v) < min_major_v
-        or (int(major_v) == min_major_v and int(minor_v) < min_minor_v)
-        else 0
-    )
+    exit_code = 1 if int(major_v) < min_major_v or (int(major_v) == min_major_v and int(minor_v) < min_minor_v) else 0
 
     if exit_code > 0:
-        print(
-            f"Wrong python version, osparc compilation needs at least Python {min_major_v}.{min_minor_v}"
-        )
+        print(f"Wrong python version, osparc compilation needs at least Python {min_major_v}.{min_minor_v}")
 
     sys.exit(exit_code)
 

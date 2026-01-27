@@ -77,15 +77,11 @@ TaskRegistry.register(_string_list_task, allowed_errors=(_TestingError,))
 def server_routes() -> APIRouter:
     routes = APIRouter()
 
-    @routes.post(
-        "/string-list-task", response_model=TaskId, status_code=status.HTTP_202_ACCEPTED
-    )
+    @routes.post("/string-list-task", response_model=TaskId, status_code=status.HTTP_202_ACCEPTED)
     async def create_string_list_task(
         num_strings: int,
         sleep_time: float,
-        long_running_manager: Annotated[
-            FastAPILongRunningManager, Depends(get_long_running_manager)
-        ],
+        long_running_manager: Annotated[FastAPILongRunningManager, Depends(get_long_running_manager)],
         *,
         fail: bool = False,
     ) -> TaskId:
@@ -135,18 +131,14 @@ def start_long_running_task() -> Callable[[FastAPI, AsyncClient], Awaitable[Task
 
 
 @pytest.fixture
-def wait_for_task() -> (
-    Callable[[FastAPI, AsyncClient, TaskId, TaskContext], Awaitable[None]]
-):
+def wait_for_task() -> Callable[[FastAPI, AsyncClient, TaskId, TaskContext], Awaitable[None]]:
     async def _waiter(
         app: FastAPI,
         client: AsyncClient,
         task_id: TaskId,
         task_context: TaskContext,
     ) -> None:
-        status_url = URL(
-            app.url_path_for("get_task_status", task_id=task_id)
-        ).with_query(task_context)
+        status_url = URL(app.url_path_for("get_task_status", task_id=task_id)).with_query(task_context)
         async for attempt in AsyncRetrying(
             wait=wait_fixed(0.1),
             stop=stop_after_delay(60),
@@ -183,9 +175,7 @@ async def test_workflow(
             assert result.status_code == status.HTTP_200_OK
             task_status = TaskStatus.model_validate(result.json())
             assert task_status
-            progress_updates.append(
-                (task_status.task_progress.message, task_status.task_progress.percent)
-            )
+            progress_updates.append((task_status.task_progress.message, task_status.task_progress.percent))
             print(f"<-- received task status: {task_status.model_dump_json(indent=2)}")
             assert task_status.done, "task incomplete"
             print(
@@ -225,9 +215,7 @@ async def test_workflow(
         ("DELETE", "remove_task"),
     ],
 )
-async def test_get_task_wrong_task_id_raises_not_found(
-    app: FastAPI, client: AsyncClient, method: str, route_name: str
-):
+async def test_get_task_wrong_task_id_raises_not_found(app: FastAPI, client: AsyncClient, method: str, route_name: str):
     url = app.url_path_for(route_name, task_id="fake_task_id")
     result = await client.request(method, f"{url}")
     assert result.status_code == status.HTTP_404_NOT_FOUND
@@ -237,9 +225,7 @@ async def test_failing_task_returns_error(
     app: FastAPI,
     client: AsyncClient,
     start_long_running_task: Callable[[FastAPI, AsyncClient], Awaitable[TaskId]],
-    wait_for_task: Callable[
-        [FastAPI, AsyncClient, TaskId, TaskContext], Awaitable[None]
-    ],
+    wait_for_task: Callable[[FastAPI, AsyncClient, TaskId, TaskContext], Awaitable[None]],
 ) -> None:
     task_id = await start_long_running_task(app, client, fail=f"{True}")
     # wait for it to finish
@@ -303,15 +289,11 @@ async def test_list_tasks(
     app: FastAPI,
     client: AsyncClient,
     start_long_running_task: Callable[[FastAPI, AsyncClient], Awaitable[TaskId]],
-    wait_for_task: Callable[
-        [FastAPI, AsyncClient, TaskId, TaskContext], Awaitable[None]
-    ],
+    wait_for_task: Callable[[FastAPI, AsyncClient, TaskId, TaskContext], Awaitable[None]],
 ):
     # now start a few tasks
     NUM_TASKS = 10
-    results = await asyncio.gather(
-        *(start_long_running_task(app, client) for _ in range(NUM_TASKS))
-    )
+    results = await asyncio.gather(*(start_long_running_task(app, client) for _ in range(NUM_TASKS)))
 
     # check we have the full list
     list_url = app.url_path_for("list_tasks")
@@ -321,9 +303,7 @@ async def test_list_tasks(
     assert len(list_of_tasks) == NUM_TASKS
 
     # now wait for them to finish
-    await asyncio.gather(
-        *(wait_for_task(app, client, task_id, {}) for task_id in results)
-    )
+    await asyncio.gather(*(wait_for_task(app, client, task_id, {}) for task_id in results))
     # now get the result one by one
 
     for task_index, task_id in enumerate(results):

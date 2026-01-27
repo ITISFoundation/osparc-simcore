@@ -69,9 +69,7 @@ _FOLDER_ERRORS: ExceptionToHttpErrorMap = {
 _NODE_ERRORS: ExceptionToHttpErrorMap = {
     NodeNotFoundError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
-        user_message(
-            "Node '{node_uuid}' was not found in project '{project_uuid}'.", _version=1
-        ),
+        user_message("Node '{node_uuid}' was not found in project '{project_uuid}'.", _version=1),
     ),
     ParentNodeNotFoundError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
@@ -79,9 +77,7 @@ _NODE_ERRORS: ExceptionToHttpErrorMap = {
     ),
     ProjectNodeRequiredInputsNotSetError: HttpErrorInfo(
         status.HTTP_409_CONFLICT,
-        user_message(
-            "Required input values for this project node have not been set.", _version=1
-        ),
+        user_message("Required input values for this project node have not been set.", _version=1),
     ),
 }
 
@@ -96,9 +92,7 @@ _PROJECT_ERRORS: ExceptionToHttpErrorMap = {
     ),
     ProjectGroupNotFoundError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
-        user_message(
-            "The requested project group could not be found: {details}", _version=1
-        ),
+        user_message("The requested project group could not be found: {details}", _version=1),
     ),
     ProjectInvalidRightsError: HttpErrorInfo(
         status.HTTP_403_FORBIDDEN,
@@ -192,9 +186,7 @@ _WORKSPACE_ERRORS: ExceptionToHttpErrorMap = {
     ),
     WorkspaceNotFoundError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
-        user_message(
-            "The requested workspace could not be found: {details}", _version=1
-        ),
+        user_message("The requested workspace could not be found: {details}", _version=1),
     ),
 }
 
@@ -240,9 +232,7 @@ _CONVERSATION_ERRORS: ExceptionToHttpErrorMap = {
     ),
     ConversationMessageErrorNotFoundError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
-        user_message(
-            "The requested conversation message could not be found.", _version=1
-        ),
+        user_message("The requested conversation message could not be found.", _version=1),
     ),
 }
 
@@ -254,9 +244,7 @@ _OTHER_ERRORS: ExceptionToHttpErrorMap = {
     ),
     ClustersKeeperNotAvailableError: HttpErrorInfo(
         status.HTTP_503_SERVICE_UNAVAILABLE,
-        user_message(
-            "The clusters-keeper service is currently unavailable.", _version=1
-        ),
+        user_message("The clusters-keeper service is currently unavailable.", _version=1),
     ),
     CatalogForbiddenRpcError: HttpErrorInfo(
         status.HTTP_403_FORBIDDEN,
@@ -302,9 +290,7 @@ def _assert_duplicate():
 
 assert _assert_duplicate()  # nosec
 
-_TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
-    k: v for dikt in _ERRORS for k, v in dikt.items()
-}
+_TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {k: v for dikt in _ERRORS for k, v in dikt.items()}
 
 
 _handlers: ExceptionHandlersMap = {

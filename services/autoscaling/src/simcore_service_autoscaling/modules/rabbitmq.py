@@ -21,9 +21,7 @@ def setup(app: FastAPI) -> None:
             logger.warning("Rabbit MQ client is de-activated in the settings")
             return
         await wait_till_rabbitmq_responsive(settings.dsn)
-        app.state.rabbitmq_client = RabbitMQClient(
-            client_name="autoscaling", settings=settings
-        )
+        app.state.rabbitmq_client = RabbitMQClient(client_name="autoscaling", settings=settings)
 
     async def on_shutdown() -> None:
         if app.state.rabbitmq_client:
@@ -35,9 +33,7 @@ def setup(app: FastAPI) -> None:
 
 def get_rabbitmq_client(app: FastAPI) -> RabbitMQClient:
     if not app.state.rabbitmq_client:
-        raise ConfigurationError(
-            msg="RabbitMQ client is not available. Please check the configuration."
-        )
+        raise ConfigurationError(msg="RabbitMQ client is not available. Please check the configuration.")
     return cast(RabbitMQClient, app.state.rabbitmq_client)
 
 

@@ -78,10 +78,7 @@ def _distribute_capped_counts_proportionally(
         instance_type = instance_batch.instance_type
         current = result.get(instance_batch, 0)
         # Do not exceed per-type cap or batch's original request
-        if (
-            allocated_by_type[instance_type] < capped_by_type[instance_type]
-            and current < instance_desired_count
-        ):
+        if allocated_by_type[instance_type] < capped_by_type[instance_type] and current < instance_desired_count:
             result[instance_batch] = current + 1
             allocated_by_type[instance_type] += 1
             remaining -= 1
@@ -111,13 +108,8 @@ async def cap_needed_instances(
     )
     current_number_of_instances = len(current_instances)
     # 1. Check current capacity, raise if already at max
-    if (
-        current_number_of_instances
-        >= app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES
-    ):
-        raise EC2TooManyInstancesError(
-            num_instances=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES
-        )
+    if current_number_of_instances >= app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES:
+        raise EC2TooManyInstancesError(num_instances=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES)
 
     # 2. Check if needed instances fit, otherwise cap proportionally
     total_number_of_needed_instances = sum(needed_instances.values())
@@ -130,8 +122,7 @@ async def cap_needed_instances(
 
     # 3. we need to cap
     max_number_of_creatable_instances = (
-        app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES
-        - current_number_of_instances
+        app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES - current_number_of_instances
     )
 
     # Aggregate by instance type
@@ -141,14 +132,10 @@ async def cap_needed_instances(
 
     # Early exit if we can't even create 1 of each type
     if max_number_of_creatable_instances < len(needed_by_type):
-        return _cap_instances_minimal(
-            needed_instances, max_number_of_creatable_instances
-        )
+        return _cap_instances_minimal(needed_instances, max_number_of_creatable_instances)
 
     # Distribute capacity across types using round-robin
-    capped_by_type = _fill_capacity_round_robin(
-        needed_by_type, max_number_of_creatable_instances
-    )
+    capped_by_type = _fill_capacity_round_robin(needed_by_type, max_number_of_creatable_instances)
 
     # Distribute capped type counts back to label batches proportionally
     return _distribute_capped_counts_proportionally(

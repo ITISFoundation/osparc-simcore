@@ -62,9 +62,9 @@ async def assert_and_wait_for_pipeline_status(
 
     async def check_pipeline_state() -> ComputationGet:
         response = await client.get(f"{url}", params={"user_id": user_id})
-        assert (
-            response.status_code == status.HTTP_200_OK
-        ), f"response code is {response.status_code}, error: {response.text}"
+        assert response.status_code == status.HTTP_200_OK, (
+            f"response code is {response.status_code}, error: {response.text}"
+        )
         task_out = ComputationGet.model_validate(response.json())
         assert task_out.id == project_uuid
         assert task_out.url.path == f"/v2/computations/{project_uuid}"
@@ -72,9 +72,9 @@ async def assert_and_wait_for_pipeline_status(
             f"Pipeline '{project_uuid=}' current task out is '{task_out=}'",
         )
         assert wait_for_states
-        assert (
-            task_out.state in wait_for_states
-        ), f"current task state is '{task_out.state}', not in any of {wait_for_states}"
+        assert task_out.state in wait_for_states, (
+            f"current task state is '{task_out.state}', not in any of {wait_for_states}"
+        )
         return task_out
 
     start = time.monotonic()
@@ -91,7 +91,7 @@ async def assert_and_wait_for_pipeline_status(
             )
             task_out = await check_pipeline_state()
             print(
-                f"Pipeline '{project_uuid=}' state succesfuly became '{task_out.state}'\n{json.dumps(attempt.retry_state.retry_object.statistics, indent=2)}, time={elapsed_s}s"
+                f"Pipeline '{project_uuid=}' state successfully became '{task_out.state}'\n{json.dumps(attempt.retry_state.retry_object.statistics, indent=2)}, time={elapsed_s}s"
             )
 
             return task_out

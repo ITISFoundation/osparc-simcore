@@ -72,9 +72,7 @@ async def get_project_inputs(request: web.Request) -> web.Response:
 
     return envelope_json_response(
         {
-            node_id: ProjectInputGet(
-                key=node_id, label=workbench[node_id].label, value=value
-            )
+            node_id: ProjectInputGet(key=node_id, label=workbench[node_id].label, value=value)
             for node_id, value in inputs.items()
         }
     )
@@ -106,9 +104,7 @@ async def update_project_inputs(request: web.Request) -> web.Response:
             raise web.HTTPBadRequest(text=f"Invalid input key [{node_id}]")
 
         workbench[node_id].outputs = {"out_1": input_update.value}
-        partial_workbench_data[node_id] = workbench[node_id].model_dump(
-            include={"outputs"}, exclude_unset=True
-        )
+        partial_workbench_data[node_id] = workbench[node_id].model_dump(include={"outputs"}, exclude_unset=True)
 
     # patch workbench
     await check_user_project_permission(
@@ -127,16 +123,12 @@ async def update_project_inputs(request: web.Request) -> web.Response:
         client_session_id=header_params.client_session_id,
     )
 
-    workbench = TypeAdapter(dict[NodeID, Node]).validate_python(
-        updated_project["workbench"]
-    )
+    workbench = TypeAdapter(dict[NodeID, Node]).validate_python(updated_project["workbench"])
     inputs: dict[NodeID, Any] = _ports_service.get_project_inputs(workbench)
 
     return envelope_json_response(
         {
-            node_id: ProjectInputGet(
-                key=node_id, label=workbench[node_id].label, value=value
-            )
+            node_id: ProjectInputGet(key=node_id, label=workbench[node_id].label, value=value)
             for node_id, value in inputs.items()
         }
     )
@@ -166,9 +158,7 @@ async def get_project_outputs(request: web.Request) -> web.Response:
 
     return envelope_json_response(
         {
-            node_id: ProjectOutputGet(
-                key=node_id, label=workbench[node_id].label, value=value
-            )
+            node_id: ProjectOutputGet(key=node_id, label=workbench[node_id].label, value=value)
             for node_id, value in outputs.items()
         }
     )

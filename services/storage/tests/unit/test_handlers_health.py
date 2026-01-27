@@ -35,15 +35,12 @@ async def test_health_check(initialized_app: FastAPI, client: httpx.AsyncClient)
 async def test_health_status(initialized_app: FastAPI, client: httpx.AsyncClient):
     url = url_from_operation_id(client, initialized_app, "get_status")
     response = await client.get(f"{url}")
-    app_status_check, error = assert_status(
-        response, status.HTTP_200_OK, AppStatusCheck
-    )
+    app_status_check, error = assert_status(response, status.HTTP_200_OK, AppStatusCheck)
     assert app_status_check
     assert not error
 
     assert (
-        app_status_check.app_name
-        == simcore_service_storage._meta.PROJECT_NAME  # noqa: SLF001
+        app_status_check.app_name == simcore_service_storage._meta.PROJECT_NAME  # noqa: SLF001
     )
     assert app_status_check.version == str(
         simcore_service_storage._meta.VERSION  # noqa: SLF001
@@ -65,9 +62,7 @@ async def test_bad_health_status_if_bucket_missing(
 ):
     url = url_from_operation_id(client, initialized_app, "get_status")
     response = await client.get(f"{url}")
-    app_status_check, error = assert_status(
-        response, status.HTTP_200_OK, AppStatusCheck
-    )
+    app_status_check, error = assert_status(response, status.HTTP_200_OK, AppStatusCheck)
     assert app_status_check
     assert not error
     assert app_status_check.services["s3"]["healthy"] == "connected"
@@ -75,9 +70,7 @@ async def test_bad_health_status_if_bucket_missing(
     await s3_client.delete_bucket(Bucket=storage_s3_bucket)
     # check again the health
     response = await client.get(f"{url}")
-    app_status_check, error = assert_status(
-        response, status.HTTP_200_OK, AppStatusCheck
-    )
+    app_status_check, error = assert_status(response, status.HTTP_200_OK, AppStatusCheck)
     assert app_status_check
     assert not error
     assert app_status_check.services["s3"]["healthy"] == "no access to S3 bucket"
@@ -90,9 +83,7 @@ async def test_bad_health_status_if_s3_server_missing(
 ):
     url = url_from_operation_id(client, initialized_app, "get_status")
     response = await client.get(f"{url}")
-    app_status_check, error = assert_status(
-        response, status.HTTP_200_OK, AppStatusCheck
-    )
+    app_status_check, error = assert_status(response, status.HTTP_200_OK, AppStatusCheck)
     assert app_status_check
     assert not error
     assert app_status_check.services["s3"]["healthy"] == "connected"
@@ -100,9 +91,7 @@ async def test_bad_health_status_if_s3_server_missing(
     mocked_aws_server.stop()
     # check again the health
     response = await client.get(f"{url}")
-    app_status_check, error = assert_status(
-        response, status.HTTP_200_OK, AppStatusCheck
-    )
+    app_status_check, error = assert_status(response, status.HTTP_200_OK, AppStatusCheck)
     assert app_status_check
     assert not error
     assert app_status_check.services["s3"]["healthy"] == "failed"
@@ -110,9 +99,7 @@ async def test_bad_health_status_if_s3_server_missing(
     mocked_aws_server.start()
     # should be good again
     response = await client.get(f"{url}")
-    app_status_check, error = assert_status(
-        response, status.HTTP_200_OK, AppStatusCheck
-    )
+    app_status_check, error = assert_status(response, status.HTTP_200_OK, AppStatusCheck)
     assert app_status_check
     assert not error
     assert app_status_check.services["s3"]["healthy"] == "connected"

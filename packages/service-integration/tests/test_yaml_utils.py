@@ -52,9 +52,7 @@ def service_config_path(tmp_path: Path, compose_spec_path):
     dirpath.mkdir(parents=True, exist_ok=True)
 
     filepath = dirpath / "service-with-include.yml"
-    filepath.write_text(
-        YAML_BODY.format(os.path.relpath(compose_spec_path.resolve(), filepath.parent))
-    )
+    filepath.write_text(YAML_BODY.format(os.path.relpath(compose_spec_path.resolve(), filepath.parent)))
     return filepath
 
 

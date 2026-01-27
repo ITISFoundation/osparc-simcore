@@ -94,9 +94,7 @@ async def get_transaction_current_credits_by_service_run_id(
 ) -> Decimal:
     result = await rabbitmq_rpc_client.request(
         RESOURCE_USAGE_TRACKER_RPC_NAMESPACE,
-        _RPC_METHOD_NAME_ADAPTER.validate_python(
-            "get_transaction_current_credits_by_service_run_id"
-        ),
+        _RPC_METHOD_NAME_ADAPTER.validate_python("get_transaction_current_credits_by_service_run_id"),
         service_run_id=service_run_id,
         timeout_s=_DEFAULT_TIMEOUT_S,
     )

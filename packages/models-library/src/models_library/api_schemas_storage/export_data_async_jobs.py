@@ -14,6 +14,4 @@ class InvalidFileIdentifierError(StorageRpcBaseError):
 
 
 class AccessRightError(StorageRpcBaseError):
-    msg_template: str = (
-        "User {user_id} does not have access to file {file_id} with location {location_id}"
-    )
+    msg_template: str = "User {user_id} does not have access to file {file_id} with location {location_id}"

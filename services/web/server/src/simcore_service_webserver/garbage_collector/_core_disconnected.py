@@ -14,9 +14,7 @@ from ..resource_manager.registry import (
 _logger = logging.getLogger(__name__)
 
 
-async def remove_disconnected_user_resources(
-    registry: RedisResourceRegistry, app: web.Application
-) -> None:
+async def remove_disconnected_user_resources(registry: RedisResourceRegistry, app: web.Application) -> None:
     # NOTE:
     # Each user session is represented in the redis registry with two keys:
     # - "alive" is a string that keeps a TTL of the user session

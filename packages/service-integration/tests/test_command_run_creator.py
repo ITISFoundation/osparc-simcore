@@ -52,6 +52,4 @@ def test_make_service_cli_run(run_program_with_args, metadata_file_path: Path):
     )
 
     expected_snippet.discard("\t")
-    assert expected_snippet.issubset(
-        set(generated_code)
-    ), f"Got \n{pformat(generated_code)}"
+    assert expected_snippet.issubset(set(generated_code)), f"Got \n{pformat(generated_code)}"

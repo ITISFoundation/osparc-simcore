@@ -32,9 +32,7 @@ from .errors import (
 _logger = logging.getLogger(__name__)
 
 
-_SELECTION_ARGS = get_columns_from_db_model(
-    conversation_messages, ConversationMessageGetDB
-)
+_SELECTION_ARGS = get_columns_from_db_model(conversation_messages, ConversationMessageGetDB)
 
 
 async def create(
@@ -77,7 +75,6 @@ async def list_(
     # ordering
     order_by: OrderBy,
 ) -> tuple[PageTotalCount, list[ConversationMessageGetDB]]:
-
     base_query = (
         select(*_SELECTION_ARGS)
         .select_from(conversation_messages)
@@ -105,9 +102,7 @@ async def list_(
         total_count = await conn.scalar(count_query)
 
         result = await conn.stream(list_query)
-        items: list[ConversationMessageGetDB] = [
-            ConversationMessageGetDB.model_validate(row) async for row in result
-        ]
+        items: list[ConversationMessageGetDB] = [ConversationMessageGetDB.model_validate(row) async for row in result]
 
         return cast(int, total_count), items
 
@@ -132,9 +127,7 @@ async def get(
         result = await conn.execute(select_query)
         row = result.one_or_none()
         if row is None:
-            raise ConversationMessageErrorNotFoundError(
-                conversation_id=conversation_id, message_id=message_id
-            )
+            raise ConversationMessageErrorNotFoundError(conversation_id=conversation_id, message_id=message_id)
         return ConversationMessageGetDB.model_validate(row)
 
 
@@ -164,9 +157,7 @@ async def update(
         )
         row = result.one_or_none()
         if row is None:
-            raise ConversationMessageErrorNotFoundError(
-                conversation_id=conversation_id, message_id=message_id
-            )
+            raise ConversationMessageErrorNotFoundError(conversation_id=conversation_id, message_id=message_id)
         return ConversationMessageGetDB.model_validate(row)
 
 

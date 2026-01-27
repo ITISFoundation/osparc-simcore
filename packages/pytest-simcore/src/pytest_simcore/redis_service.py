@@ -34,9 +34,7 @@ async def redis_settings(
     prefix = env_vars_for_docker_compose["SWARM_STACK_NAME"]
     assert f"{prefix}_redis" in docker_stack["services"]
 
-    port = get_service_published_port(
-        "simcore_redis", int(env_vars_for_docker_compose["REDIS_PORT"])
-    )
+    port = get_service_published_port("simcore_redis", int(env_vars_for_docker_compose["REDIS_PORT"]))
     # test runner is running on the host computer
     settings = RedisSettings(
         REDIS_HOST=get_localhost_ip(),
@@ -59,9 +57,7 @@ def redis_service(
     """
     monkeypatch.setenv("REDIS_HOST", redis_settings.REDIS_HOST)
     monkeypatch.setenv("REDIS_PORT", str(redis_settings.REDIS_PORT))
-    monkeypatch.setenv(
-        "REDIS_PASSWORD", redis_settings.REDIS_PASSWORD.get_secret_value()
-    )
+    monkeypatch.setenv("REDIS_PASSWORD", redis_settings.REDIS_PASSWORD.get_secret_value())
     return redis_settings
 
 

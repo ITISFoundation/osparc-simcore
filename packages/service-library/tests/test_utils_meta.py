@@ -51,7 +51,6 @@ def test_app_name(
     is_valid_app_name: bool,
     is_correct_app_name: bool,
 ):
-
     def mock_distribution(name):
         return mocker.Mock(metadata={"Name": name, "Version": "1.0.0"})
 

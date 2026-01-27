@@ -19,9 +19,7 @@ from simcore_service_webserver.api_keys._controller.rest_exceptions import (
 router = APIRouter(
     prefix=f"/{API_VTAG}",
     tags=["auth"],
-    responses={
-        i.status_code: {"model": EnvelopedError} for i in _TO_HTTP_ERROR_MAP.values()
-    },
+    responses={i.status_code: {"model": EnvelopedError} for i in _TO_HTTP_ERROR_MAP.values()},
 )
 
 

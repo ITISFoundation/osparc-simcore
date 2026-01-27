@@ -33,9 +33,7 @@ _logger = logging.getLogger(__name__)
 _ANONYMOUS_USER_ID = -1
 
 # Messages reaching users
-_MSG_UNAUTHORIZED_MISSING_SESSION_INFO = (
-    "Sorry, we cannot identify you. Please reaload the page and login again."
-)
+_MSG_UNAUTHORIZED_MISSING_SESSION_INFO = "Sorry, we cannot identify you. Please reaload the page and login again."
 
 
 # Send service_deletion_timeout to client
@@ -53,20 +51,14 @@ def auth_user_factory(socket_id: SocketID):
             web.HTTPUnauthorized: when the user is not recognized. Keeps the original request
         """
         app = request.app
-        user_id = TypeAdapter(UserID).validate_python(
-            request.get(RQT_USERID_KEY, _ANONYMOUS_USER_ID)
-        )
+        user_id = TypeAdapter(UserID).validate_python(request.get(RQT_USERID_KEY, _ANONYMOUS_USER_ID))
         client_session_id = request.query.get("client_session_id", None)
         product = products_web.get_current_product(request)
 
-        _logger.debug(
-            "client %s,%s authenticated", f"{user_id=}", f"{client_session_id=}"
-        )
+        _logger.debug("client %s,%s authenticated", f"{user_id=}", f"{client_session_id=}")
 
         if not client_session_id:
-            _logger.error(
-                "Tab ID is missing", extra=get_log_record_extra(user_id=user_id)
-            )
+            _logger.error("Tab ID is missing", extra=get_log_record_extra(user_id=user_id))
             raise web.HTTPUnauthorized(text=_MSG_UNAUTHORIZED_MISSING_SESSION_INFO)
 
         # here we keep the original HTTP request in the socket session storage
@@ -86,9 +78,7 @@ def auth_user_factory(socket_id: SocketID):
     return _handler
 
 
-async def _set_user_in_group_rooms(
-    app: web.Application, user_id: UserID, socket_id: SocketID
-) -> None:
+async def _set_user_in_group_rooms(app: web.Application, user_id: UserID, socket_id: SocketID) -> None:
     """Adds user in rooms associated to its groups"""
 
     group_ids = await list_user_groups_ids_with_read_access(app, user_id=user_id)
@@ -110,9 +100,7 @@ async def _set_user_in_project_rooms(
 
     sio = get_socket_server(app)
     for project_id in project_ids:
-        await sio.enter_room(
-            socket_id, SocketIORoomStr.from_project_id(ProjectID(project_id))
-        )
+        await sio.enter_room(socket_id, SocketIORoomStr.from_project_id(ProjectID(project_id)))
 
 
 #
@@ -121,10 +109,8 @@ async def _set_user_in_project_rooms(
 
 
 @register_socketio_handler
-async def connect(
-    socket_id: SocketID, environ: EnvironDict, app: web.Application
-) -> bool:
-    """socketio reserved handler for when the fontend connects through socket.io
+async def connect(socket_id: SocketID, environ: EnvironDict, app: web.Application) -> bool:
+    """socketio reserved handler for when the frontend connects through socket.io
 
     Arguments:
         environ -- the WSGI environ, among other contains the original request
@@ -140,9 +126,7 @@ async def connect(
 
     try:
         auth_user_handler = auth_user_factory(socket_id)
-        user_id, product_name, client_session_id = await auth_user_handler(
-            environ["aiohttp.request"]
-        )
+        user_id, product_name, client_session_id = await auth_user_handler(environ["aiohttp.request"])
         _logger.info(
             "%s successfully connected with %s",
             f"{user_id=}",
@@ -155,9 +139,7 @@ async def connect(
 
         _logger.debug("Sending set_heartbeat_emit_interval with %s", _EMIT_INTERVAL_S)
 
-        await emit(
-            app, "SIGNAL_USER_CONNECTED", user_id, app, product_name, client_session_id
-        )
+        await emit(app, "SIGNAL_USER_CONNECTED", user_id, app, product_name, client_session_id)
 
         await send_message_to_user(
             app,
@@ -170,7 +152,7 @@ async def connect(
         )
 
     except web.HTTPUnauthorized as exc:
-        msg = "authentification failed"
+        msg = "authentication failed"
         raise socketio.exceptions.ConnectionRefusedError(msg) from exc
     except Exception as exc:  # pylint: disable=broad-except
         msg = f"Unexpected error: {exc}"

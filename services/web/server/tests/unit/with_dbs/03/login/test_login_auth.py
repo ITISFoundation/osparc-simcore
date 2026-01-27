@@ -35,9 +35,7 @@ from simcore_service_webserver.login.constants import (
 from simcore_service_webserver.session.settings import get_plugin_settings
 
 
-@pytest.mark.parametrize(
-    "user_role", [role for role in UserRole if role >= UserRole.USER]
-)
+@pytest.mark.parametrize("user_role", [role for role in UserRole if role >= UserRole.USER])
 async def test_check_auth(client: TestClient, logged_user: UserInfoDict):
     assert client.app
 
@@ -66,9 +64,7 @@ def test_login_plugin_setup_succeeded(client: TestClient):
 async def test_login_with_unknown_email(client: TestClient):
     assert client.app
     url = client.app.router["auth_login"].url_for()
-    r = await client.post(
-        url.path, json={"email": "unknown@email.com", "password": "wrong."}
-    )
+    r = await client.post(url.path, json={"email": "unknown@email.com", "password": "wrong."})
 
     _, error = await assert_status(r, status.HTTP_401_UNAUTHORIZED)
     assert MSG_UNKNOWN_EMAIL in error["errors"][0]["message"]
@@ -105,18 +101,14 @@ async def test_login_with_wrong_password(client: TestClient):
         (UserStatus.DELETED, MSG_USER_DELETED),
     ],
 )
-async def test_login_blocked_user(
-    client: TestClient, user_status: UserStatus, expected_msg: str
-):
+async def test_login_blocked_user(client: TestClient, user_status: UserStatus, expected_msg: str):
     assert client.app
     url = client.app.router["auth_login"].url_for()
     r = await client.post(url.path)
     assert expected_msg not in await r.text()
 
     async with NewUser({"status": user_status.name}, app=client.app) as user:
-        r = await client.post(
-            url.path, json={"email": user["email"], "password": user["raw_password"]}
-        )
+        r = await client.post(url.path, json={"email": user["email"], "password": user["raw_password"]})
 
     _, error = await assert_status(r, status.HTTP_401_UNAUTHORIZED)
     # expected_msg contains {support_email} at the end of the string
@@ -130,12 +122,8 @@ async def test_login_inactive_user(client: TestClient):
     r = await client.post(url.path)
     assert MSG_ACTIVATION_REQUIRED not in await r.text()
 
-    async with NewUser(
-        {"status": UserStatus.CONFIRMATION_PENDING.name}, app=client.app
-    ) as user:
-        r = await client.post(
-            url.path, json={"email": user["email"], "password": user["raw_password"]}
-        )
+    async with NewUser({"status": UserStatus.CONFIRMATION_PENDING.name}, app=client.app) as user:
+        r = await client.post(url.path, json={"email": user["email"], "password": user["raw_password"]})
 
     _, error = await assert_status(r, status.HTTP_401_UNAUTHORIZED)
     assert MSG_ACTIVATION_REQUIRED in error["errors"][0]["message"]
@@ -147,9 +135,7 @@ async def test_login_successfully(client: TestClient):
     url = client.app.router["auth_login"].url_for()
 
     async with NewUser(app=client.app) as user:
-        r = await client.post(
-            url.path, json={"email": user["email"], "password": user["raw_password"]}
-        )
+        r = await client.post(url.path, json={"email": user["email"], "password": user["raw_password"]})
 
     data, _ = await assert_status(r, status.HTTP_200_OK)
     assert MSG_LOGGED_IN in data["message"]
@@ -179,9 +165,7 @@ async def test_login_successfully_with_email_containing_uppercase_letters(
     "cookie_enabled,expected",
     [(True, status.HTTP_200_OK), (False, status.HTTP_401_UNAUTHORIZED)],
 )
-async def test_proxy_login(
-    client: TestClient, cookie_enabled: bool, expected: HTTPStatus
-):
+async def test_proxy_login(client: TestClient, cookie_enabled: bool, expected: HTTPStatus):
     assert client.app
     restricted_url = client.app.router["get_my_profile"].url_for()
     assert str(restricted_url) == "/v0/me"
@@ -213,11 +197,7 @@ async def test_proxy_login(
 
     # ---
     async with NewUser(app=client.app) as user:
-        cookies = (
-            _build_proxy_session_cookie(identity=user["email"])
-            if cookie_enabled
-            else {}
-        )
+        cookies = _build_proxy_session_cookie(identity=user["email"]) if cookie_enabled else {}
 
         resp = await client.get(f"{restricted_url}", cookies=cookies)
         data, error = await assert_status(resp, expected)
@@ -227,9 +207,7 @@ async def test_proxy_login(
 
 
 @pytest.fixture
-async def multiple_users(
-    client: TestClient, num_users: int = 5
-) -> AsyncIterator[list[dict[str, str]]]:
+async def multiple_users(client: TestClient, num_users: int = 5) -> AsyncIterator[list[dict[str, str]]]:
     """Fixture that creates multiple test users with an AsyncExitStack for cleanup."""
     async with AsyncExitStack() as exit_stack:
         users = []
@@ -284,9 +262,7 @@ async def test_multiple_users_login_logout_concurrently(
 
         # Try to access profile after logout
         profile_after_logout_resp = await user_client.get(profile_url)
-        _, error = await assert_status(
-            profile_after_logout_resp, status.HTTP_401_UNAUTHORIZED
-        )
+        _, error = await assert_status(profile_after_logout_resp, status.HTTP_401_UNAUTHORIZED)
 
         # No need to manually close the client as aiohttp_client fixture handles cleanup
 

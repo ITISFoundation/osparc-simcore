@@ -25,17 +25,12 @@ async def engine(
     sync_engine: sqlalchemy.engine.Engine,
     aiopg_engine: aiopg.sa.engine.Engine,
 ) -> AsyncIterator[aiopg.sa.engine.Engine]:
-
     metadata.drop_all(sync_engine)
     metadata.create_all(sync_engine)
 
     async with aiopg_engine.acquire() as conn:
-        await conn.execute(
-            comp_pipeline.insert().values(**fake_pipeline(project_id="PA"))
-        )
-        await conn.execute(
-            comp_pipeline.insert().values(**fake_pipeline(project_id="PB"))
-        )
+        await conn.execute(comp_pipeline.insert().values(**fake_pipeline(project_id="PA")))
+        await conn.execute(comp_pipeline.insert().values(**fake_pipeline(project_id="PB")))
 
     yield aiopg_engine
 
@@ -44,24 +39,12 @@ async def engine(
 
 async def test_unique_project_node_pairs(engine):
     async with engine.acquire() as conn:
-        task_id = await conn.scalar(
-            comp_tasks.insert().values(**fake_task(project_id="PA", node_id="N1"))
-        )
+        task_id = await conn.scalar(comp_tasks.insert().values(**fake_task(project_id="PA", node_id="N1")))
         assert task_id == 1
 
-        assert (
-            await conn.scalar(
-                comp_tasks.insert().values(**fake_task(project_id="PA", node_id="N2"))
-            )
-            == 2
-        )
+        assert await conn.scalar(comp_tasks.insert().values(**fake_task(project_id="PA", node_id="N2"))) == 2
 
-        assert (
-            await conn.scalar(
-                comp_tasks.insert().values(**fake_task(project_id="PB", node_id="N2"))
-            )
-            == 3
-        )
+        assert await conn.scalar(comp_tasks.insert().values(**fake_task(project_id="PB", node_id="N2"))) == 3
 
         task_inputs = await conn.scalar(
             sa.select(comp_tasks.c.inputs).where(
@@ -78,6 +61,4 @@ async def test_unique_project_node_pairs(engine):
             # psycopg2.errors.UniqueViolation:
             #   duplicate key value violates unique constraint "project_node_uniqueness" ...
             #
-            await conn.execute(
-                comp_tasks.insert().values(**fake_task(project_id="PA", node_id="N1"))
-            )
+            await conn.execute(comp_tasks.insert().values(**fake_task(project_id="PA", node_id="N1")))

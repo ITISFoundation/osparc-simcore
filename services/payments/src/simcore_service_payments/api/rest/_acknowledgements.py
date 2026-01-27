@@ -40,17 +40,13 @@ async def acknowledge_payment(
     payment_id: PaymentID,
     ack: AckPayment,
     _session: Annotated[SessionData, Depends(get_current_session)],
-    repo_pay: Annotated[
-        PaymentsTransactionsRepo, Depends(create_repository(PaymentsTransactionsRepo))
-    ],
-    repo_methods: Annotated[
-        PaymentsMethodsRepo, Depends(create_repository(PaymentsMethodsRepo))
-    ],
+    repo_pay: Annotated[PaymentsTransactionsRepo, Depends(create_repository(PaymentsTransactionsRepo))],
+    repo_methods: Annotated[PaymentsMethodsRepo, Depends(create_repository(PaymentsMethodsRepo))],
     rut_api: Annotated[ResourceUsageTrackerApi, Depends(get_rut_api)],
     notifier: Annotated[NotifierService, Depends(get_from_app_state(NotifierService))],
     background_tasks: BackgroundTasks,
 ):
-    """completes (ie. ack) request initated by `/init` on the payments-gateway API"""
+    """completes (ie. ack) request initiated by `/init` on the payments-gateway API"""
 
     with log_context(
         _logger,
@@ -61,13 +57,9 @@ async def acknowledge_payment(
         f"{payment_id=}",
     ):
         try:
-            transaction = await payments.acknowledge_one_time_payment(
-                repo_pay, payment_id=payment_id, ack=ack
-            )
+            transaction = await payments.acknowledge_one_time_payment(repo_pay, payment_id=payment_id, ack=ack)
         except PaymentNotFoundError as err:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail=f"{err}"
-            ) from err
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{err}") from err
 
     assert f"{payment_id}" == f"{transaction.payment_id}"  # nosec
     background_tasks.add_task(
@@ -115,13 +107,11 @@ async def acknowledge_payment_method(
     payment_method_id: PaymentMethodID,
     ack: AckPaymentMethod,
     _session: Annotated[SessionData, Depends(get_current_session)],
-    repo: Annotated[
-        PaymentsMethodsRepo, Depends(create_repository(PaymentsMethodsRepo))
-    ],
+    repo: Annotated[PaymentsMethodsRepo, Depends(create_repository(PaymentsMethodsRepo))],
     notifier: Annotated[NotifierService, Depends(get_from_app_state(NotifierService))],
     background_tasks: BackgroundTasks,
 ):
-    """completes (ie. ack) request initated by `/payments-methods:init` on the payments-gateway API"""
+    """completes (ie. ack) request initiated by `/payments-methods:init` on the payments-gateway API"""
     with log_context(
         _logger,
         logging.INFO,
@@ -135,9 +125,7 @@ async def acknowledge_payment_method(
                 repo=repo, payment_method_id=payment_method_id, ack=ack
             )
         except PaymentMethodNotFoundError as err:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail=f"{err}"
-            ) from err
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{err}") from err
 
         assert f"{payment_method_id}" == f"{acked.payment_method_id}"  # nosec
         background_tasks.add_task(

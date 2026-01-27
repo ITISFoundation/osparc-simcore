@@ -15,9 +15,7 @@ from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 def test_validate_legacy_timedelta(monkeypatch: pytest.MonkeyPatch, faker: Faker):
     class Settings(BaseSettings):
         APP_NAME: str
-        REQUEST_TIMEOUT: Annotated[
-            timedelta, BeforeValidator(_validate_legacy_timedelta_str)
-        ] = timedelta(hours=1)
+        REQUEST_TIMEOUT: Annotated[timedelta, BeforeValidator(_validate_legacy_timedelta_str)] = timedelta(hours=1)
 
         model_config = SettingsConfigDict()
 
@@ -40,16 +38,12 @@ def test_validate_legacy_timedelta(monkeypatch: pytest.MonkeyPatch, faker: Faker
     assert timedelta(days=2, hours=1, minutes=10) == settings.REQUEST_TIMEOUT
 
 
-def test_validate_timedelta_in_legacy_mode(
-    monkeypatch: pytest.MonkeyPatch, faker: Faker
-):
+def test_validate_timedelta_in_legacy_mode(monkeypatch: pytest.MonkeyPatch, faker: Faker):
     class Settings(BaseSettings):
         APP_NAME: str
         REQUEST_TIMEOUT: timedelta = timedelta(seconds=40)
 
-        _validate_request_timeout = validate_numeric_string_as_timedelta(
-            "REQUEST_TIMEOUT"
-        )
+        _validate_request_timeout = validate_numeric_string_as_timedelta("REQUEST_TIMEOUT")
 
         model_config = SettingsConfigDict()
 

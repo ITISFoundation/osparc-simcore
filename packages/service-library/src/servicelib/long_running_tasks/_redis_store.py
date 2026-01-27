@@ -81,11 +81,7 @@ class RedisStore:
                 self._get_redis_task_data_key(task_id),
             )
         )
-        return (
-            TypeAdapter(TaskData).validate_python(_load_from_redis_hash(result))
-            if result and len(result)
-            else None
-        )
+        return TypeAdapter(TaskData).validate_python(_load_from_redis_hash(result)) if result and len(result) else None
 
     async def add_task_data(self, task_id: TaskId, value: TaskData) -> None:
         await handle_redis_returns_union_types(
@@ -107,49 +103,29 @@ class RedisStore:
         )
 
     async def list_tasks_data(self) -> list[TaskData]:
-        hash_keys: list[str] = [
-            x
-            async for x in self._redis.scan_iter(self._get_redis_key_task_data_match())
-        ]
+        hash_keys: list[str] = [x async for x in self._redis.scan_iter(self._get_redis_key_task_data_match())]
 
         result = await limited_gather(
-            *[
-                handle_redis_returns_union_types(self._redis.hgetall(key))
-                for key in hash_keys
-            ],
+            *[handle_redis_returns_union_types(self._redis.hgetall(key)) for key in hash_keys],
             limit=_LIST_CONCURRENCY,
         )
 
-        return [
-            TypeAdapter(TaskData).validate_python(_load_from_redis_hash(item))
-            for item in result
-            if item
-        ]
+        return [TypeAdapter(TaskData).validate_python(_load_from_redis_hash(item)) for item in result if item]
 
     async def delete_task_data(self, task_id: TaskId) -> None:
-        await handle_redis_returns_union_types(
-            self._redis.delete(self._get_redis_task_data_key(task_id))
-        )
+        await handle_redis_returns_union_types(self._redis.delete(self._get_redis_task_data_key(task_id)))
 
     async def mark_for_removal(self, task_id: TaskId) -> None:
         await handle_redis_returns_union_types(
             self._redis.hset(
                 self._get_redis_task_data_key(task_id),
-                mapping=_to_redis_hash_mapping(
-                    {
-                        _MARKED_FOR_REMOVAL_AT_FIELD: datetime.datetime.now(
-                            tz=datetime.UTC
-                        )
-                    }
-                ),
+                mapping=_to_redis_hash_mapping({_MARKED_FOR_REMOVAL_AT_FIELD: datetime.datetime.now(tz=datetime.UTC)}),
             )
         )
 
     async def is_marked_for_removal(self, task_id: TaskId) -> bool:
         result = await handle_redis_returns_union_types(
-            self._redis.hget(
-                self._get_redis_task_data_key(task_id), _MARKED_FOR_REMOVAL_AT_FIELD
-            )
+            self._redis.hget(self._get_redis_task_data_key(task_id), _MARKED_FOR_REMOVAL_AT_FIELD)
         )
         decoded_result = None if result is None else json_loads(result)
         return decoded_result is not None

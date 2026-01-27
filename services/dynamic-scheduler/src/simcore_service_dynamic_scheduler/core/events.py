@@ -49,9 +49,7 @@ async def _settings_lifespan(app: FastAPI) -> AsyncIterator[State]:
         **create_prometheus_instrumentationmain_input_state(
             enabled=settings.DYNAMIC_SCHEDULER_PROMETHEUS_INSTRUMENTATION_ENABLED
         ),
-        **create_remote_docker_client_input_state(
-            settings.DYNAMIC_SCHEDULER_DOCKER_API_PROXY
-        ),
+        **create_remote_docker_client_input_state(settings.DYNAMIC_SCHEDULER_DOCKER_API_PROXY),
     }
 
 

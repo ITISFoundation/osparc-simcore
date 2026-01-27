@@ -62,14 +62,12 @@ async def test_payment_on_invalid_wallet(
     assert error
 
 
-@pytest.mark.acceptance_test(
-    "For https://github.com/ITISFoundation/osparc-simcore/issues/4657"
-)
+@pytest.mark.acceptance_test("For https://github.com/ITISFoundation/osparc-simcore/issues/4657")
 @pytest.mark.parametrize(
     "amount_usd,expected_status",
     [(1, status.HTTP_422_UNPROCESSABLE_ENTITY), (25, status.HTTP_201_CREATED)],
 )
-async def test_one_time_payment_worfklow(
+async def test_one_time_payment_workflow(
     latest_osparc_price: Decimal,
     client: TestClient,
     logged_user_wallet: WalletGet,
@@ -150,9 +148,7 @@ async def test_one_time_payment_worfklow(
         assert transaction.invoice_url is not None
 
         # Get invoice link
-        response = await client.get(
-            f"/v0/wallets/{wallet.wallet_id}/payments/{payment.payment_id}/invoice-link"
-        )
+        response = await client.get(f"/v0/wallets/{wallet.wallet_id}/payments/{payment.payment_id}/invoice-link")
         if response.status == status.HTTP_200_OK:
             # checks is a redirection
             assert len(response.history) == 1
@@ -225,10 +221,7 @@ async def test_multiple_payments(
 
     payments_cancelled.append(pending_id)
 
-    assert (
-        len(payments_cancelled) + len(payments_successful) + len(payments_pending)
-        == num_payments
-    )
+    assert len(payments_cancelled) + len(payments_successful) + len(payments_pending) == num_payments
 
     # list
     response = await client.get("/v0/wallets/-/payments")
@@ -242,9 +235,7 @@ async def test_multiple_payments(
     for pid in payments_cancelled:
         assert all_transactions[pid].state == PaymentTransactionState.CANCELED
         assert all_transactions[pid].invoice_url is None
-        assert not PaymentTransactionState(
-            all_transactions[pid].state
-        ).is_acknowledged()
+        assert not PaymentTransactionState(all_transactions[pid].state).is_acknowledged()
         assert PaymentTransactionState(all_transactions[pid].state).is_completed()
     for pid in payments_successful:
         assert all_transactions[pid].state == PaymentTransactionState.SUCCESS
@@ -254,9 +245,7 @@ async def test_multiple_payments(
     for pid in payments_pending:
         assert all_transactions[pid].state == PaymentTransactionState.PENDING
         assert all_transactions[pid].invoice_url is None
-        assert not PaymentTransactionState(
-            all_transactions[pid].state
-        ).is_acknowledged()
+        assert not PaymentTransactionState(all_transactions[pid].state).is_acknowledged()
         assert not PaymentTransactionState(all_transactions[pid].state).is_completed()
 
     assert send_message.called
@@ -327,9 +316,7 @@ async def test_billing_info_missing_error(
     wallet = logged_user_wallet
 
     # Pay
-    response = await client.post(
-        f"/v0/wallets/{wallet.wallet_id}/payments", json={"priceDollars": 25}
-    )
+    response = await client.post(f"/v0/wallets/{wallet.wallet_id}/payments", json={"priceDollars": 25})
     data, error = await assert_status(response, status.HTTP_503_SERVICE_UNAVAILABLE)
 
     assert not data
@@ -362,12 +349,7 @@ async def test_payment_not_found(
 
 def test_payment_transaction_state_and_literals_are_in_sync():
     state_literals = dict(PaymentTransaction.model_fields)["state"].annotation
-    assert (
-        TypeAdapter(list[state_literals]).validate_python(
-            [f"{s}" for s in PaymentTransactionState]
-        )
-        is not None
-    )
+    assert TypeAdapter(list[state_literals]).validate_python([f"{s}" for s in PaymentTransactionState]) is not None
 
 
 async def test_payment_on_wallet_without_access(
@@ -394,9 +376,7 @@ async def test_payment_on_wallet_without_access(
         assert f"{wallet.wallet_id}" in error_msg
 
 
-@pytest.mark.acceptance_test(
-    "https://github.com/ITISFoundation/osparc-simcore/pull/4897"
-)
+@pytest.mark.acceptance_test("https://github.com/ITISFoundation/osparc-simcore/pull/4897")
 async def test_cannot_get_payment_info_in_shared_wallet(
     latest_osparc_price: Decimal,
     logged_user: UserInfoDict,
@@ -442,8 +422,6 @@ async def test_cannot_get_payment_info_in_shared_wallet(
 
         # TEST auto-recharge must not be allowed!
         await assert_status(
-            await client.get(
-                f"/v0/wallets/{logged_user_wallet.wallet_id}/auto-recharge"
-            ),
+            await client.get(f"/v0/wallets/{logged_user_wallet.wallet_id}/auto-recharge"),
             status.HTTP_403_FORBIDDEN,
         )

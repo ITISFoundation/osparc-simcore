@@ -24,17 +24,11 @@ def setup(app: FastAPI) -> None:
             msg="RUT startup Rabbitmq",
         ):
             app.state.rabbitmq_client = None
-            settings: RabbitSettings | None = (
-                app.state.settings.RESOURCE_USAGE_TRACKER_RABBITMQ
-            )
+            settings: RabbitSettings | None = app.state.settings.RESOURCE_USAGE_TRACKER_RABBITMQ
             if not settings:
-                raise ConfigurationError(
-                    msg="Rabbit MQ client is de-activated in the settings"
-                )
+                raise ConfigurationError(msg="Rabbit MQ client is de-activated in the settings")
             await wait_till_rabbitmq_responsive(settings.dsn)
-            app.state.rabbitmq_client = RabbitMQClient(
-                client_name="resource-usage-tracker", settings=settings
-            )
+            app.state.rabbitmq_client = RabbitMQClient(client_name="resource-usage-tracker", settings=settings)
             app.state.rabbitmq_rpc_server = await RabbitMQRPCClient.create(
                 client_name="resource_usage_tracker_rpc_server", settings=settings
             )
@@ -60,9 +54,7 @@ def get_rabbitmq_client_from_request(request: Request):
 
 def get_rabbitmq_client(app: FastAPI) -> RabbitMQClient:
     if not app.state.rabbitmq_client:
-        raise ConfigurationError(
-            msg="RabbitMQ client is not available. Please check the configuration."
-        )
+        raise ConfigurationError(msg="RabbitMQ client is not available. Please check the configuration.")
     return cast(RabbitMQClient, app.state.rabbitmq_client)
 
 

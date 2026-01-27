@@ -173,9 +173,7 @@ class EC2InstancesSettings(BaseCustomSettings):
 
     @field_validator("EC2_INSTANCES_TIME_BEFORE_DRAINING")
     @classmethod
-    def _ensure_draining_delay_time_is_in_range(
-        cls, value: datetime.timedelta
-    ) -> datetime.timedelta:
+    def _ensure_draining_delay_time_is_in_range(cls, value: datetime.timedelta) -> datetime.timedelta:
         if value < datetime.timedelta(seconds=10):
             value = datetime.timedelta(seconds=10)
         elif value > datetime.timedelta(minutes=1):
@@ -184,9 +182,7 @@ class EC2InstancesSettings(BaseCustomSettings):
 
     @field_validator("EC2_INSTANCES_TIME_BEFORE_TERMINATION")
     @classmethod
-    def _ensure_termination_delay_time_is_in_range(
-        cls, value: datetime.timedelta
-    ) -> datetime.timedelta:
+    def _ensure_termination_delay_time_is_in_range(cls, value: datetime.timedelta) -> datetime.timedelta:
         if value < datetime.timedelta(minutes=0):
             value = datetime.timedelta(minutes=0)
         elif value > datetime.timedelta(minutes=59):
@@ -234,9 +230,7 @@ class NodesMonitoringSettings(BaseCustomSettings):
 
 
 class DaskMonitoringSettings(BaseCustomSettings):
-    DASK_MONITORING_URL: Annotated[
-        AnyUrl, Field(description="the url to the dask-scheduler")
-    ]
+    DASK_MONITORING_URL: Annotated[AnyUrl, Field(description="the url to the dask-scheduler")]
     DASK_SCHEDULER_AUTH: Annotated[
         ClusterAuthentication,
         Field(
@@ -278,9 +272,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         LogLevel,
         Field(
             LogLevel.INFO,
-            validation_alias=AliasChoices(
-                "AUTOSCALING_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"
-            ),
+            validation_alias=AliasChoices("AUTOSCALING_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"),
         ),
     ]
     AUTOSCALING_LOG_FORMAT_LOCAL_DEV_ENABLED: Annotated[
@@ -298,9 +290,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         dict[LoggerName, list[MessageSubstring]],
         Field(
             default_factory=dict,
-            validation_alias=AliasChoices(
-                "AUTOSCALING_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"
-            ),
+            validation_alias=AliasChoices("AUTOSCALING_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"),
             description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
         ),
     ]
@@ -333,13 +323,9 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         ),
     ] = datetime.timedelta(seconds=10)
 
-    AUTOSCALING_RABBITMQ: Annotated[
-        RabbitSettings | None, Field(json_schema_extra={"auto_default_from_env": True})
-    ]
+    AUTOSCALING_RABBITMQ: Annotated[RabbitSettings | None, Field(json_schema_extra={"auto_default_from_env": True})]
 
-    AUTOSCALING_REDIS: Annotated[
-        RedisSettings, Field(json_schema_extra={"auto_default_from_env": True})
-    ]
+    AUTOSCALING_REDIS: Annotated[RedisSettings, Field(json_schema_extra={"auto_default_from_env": True})]
 
     AUTOSCALING_REGISTRY: Annotated[
         RegistrySettings | None,
@@ -395,10 +381,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
 
     @model_validator(mode="after")
     def _exclude_both_dynamic_computational_mode(self) -> Self:
-        if (
-            self.AUTOSCALING_DASK is not None
-            and self.AUTOSCALING_NODES_MONITORING is not None
-        ):
+        if self.AUTOSCALING_DASK is not None and self.AUTOSCALING_NODES_MONITORING is not None:
             msg = "Autoscaling cannot be set to monitor both computational and dynamic services (both AUTOSCALING_DASK and AUTOSCALING_NODES_MONITORING are currently set!)"
             raise ValueError(msg)
         return self

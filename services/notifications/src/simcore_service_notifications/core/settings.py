@@ -50,9 +50,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         dict[LoggerName, list[MessageSubstring]],
         Field(
             default_factory=dict,
-            validation_alias=AliasChoices(
-                "NOTIFICATIONS_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"
-            ),
+            validation_alias=AliasChoices("NOTIFICATIONS_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"),
             description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
         ),
     ] = DEFAULT_FACTORY
@@ -82,9 +80,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
 
     NOTIFICATIONS_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True
 
-    NOTIFICATIONS_WORKER_MODE: Annotated[
-        bool, Field(description="If True, run as a worker")
-    ] = False
+    NOTIFICATIONS_WORKER_MODE: Annotated[bool, Field(description="If True, run as a worker")] = False
 
     @field_validator("LOG_LEVEL")
     @classmethod

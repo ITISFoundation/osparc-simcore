@@ -17,9 +17,10 @@ import jsonschema
 import pytest
 import pytest_asyncio
 import tenacity
+from settings_library.docker_registry import RegistrySettings
+
 from pytest_simcore.helpers.logging_tools import log_context
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from settings_library.docker_registry import RegistrySettings
 
 from .helpers.host import get_localhost_ip
 
@@ -115,18 +116,13 @@ def external_registry_settings(
     external_envfile_dict: EnvVarsDict,
 ) -> RegistrySettings | None:
     if external_envfile_dict:
-        config = {
-            field: external_envfile_dict.get(field, None)
-            for field in RegistrySettings.model_fields
-        }
+        config = {field: external_envfile_dict.get(field, None) for field in RegistrySettings.model_fields}
         return RegistrySettings.model_validate(config)
     return None
 
 
 @pytest.fixture
-def registry_settings(
-    docker_registry: str, external_registry_settings: RegistrySettings | None
-) -> RegistrySettings:
+def registry_settings(docker_registry: str, external_registry_settings: RegistrySettings | None) -> RegistrySettings:
     if external_registry_settings:
         return external_registry_settings
     return RegistrySettings.create_from_envs()
@@ -172,9 +168,7 @@ async def _pull_push_service(
             # and the catalog service automatically gives full access rights for testing it
             # otherwise it does not even get read rights
 
-            image_labels.update(
-                {"io.simcore.contact": f'{{"contact": "{owner_email}"}}'}
-            )
+            image_labels.update({"io.simcore.contact": f'{{"contact": "{owner_email}"}}'})
             image_labels.update(
                 {
                     "io.simcore.authors": f'{{"authors": [{{"name": "Tester", "email": "{owner_email}", "affiliation": "IT\'IS Foundation"}}] }}'
@@ -187,9 +181,7 @@ async def _pull_push_service(
 
             try:
                 # Rebuild to override image labels AND re-tag
-                image2, _ = client.images.build(
-                    path=str(df_path.parent), labels=image_labels, tag=f"{tag}-owned"
-                )
+                image2, _ = client.images.build(path=str(df_path.parent), labels=image_labels, tag=f"{tag}-owned")
                 print(json.dumps(image2.labels, indent=2))
                 image = image2
 
@@ -208,9 +200,7 @@ async def _pull_push_service(
     jsonschema.validate(io_simcore_labels, node_meta_schema)
 
     # tag image
-    new_image_tag = (
-        f"{new_registry}/{io_simcore_labels['key']}:{io_simcore_labels['version']}"
-    )
+    new_image_tag = f"{new_registry}/{io_simcore_labels['key']}:{io_simcore_labels['version']}"
     assert image.tag(new_image_tag)
 
     # push the image to the new location
@@ -237,9 +227,7 @@ async def _pull_push_service(
 def docker_registry_image_injector(
     docker_registry: str, node_meta_schema: dict
 ) -> Callable[[str, str, str | None], Awaitable[dict[str, Any]]]:
-    def inject_image(
-        source_image_repo: str, source_image_tag: str, owner_email: str | None = None
-    ):
+    def inject_image(source_image_repo: str, source_image_tag: str, owner_email: str | None = None):
         return _pull_push_service(
             source_image_repo,
             source_image_tag,
@@ -258,25 +246,17 @@ async def osparc_service(
     """pulls the service from service_repo:service_tag and pushes to docker_registry using the oSparc node meta schema
     NOTE: 'service_repo' and 'service_tag' defined as parametrization
     """
-    return await _pull_push_service(
-        service_repo, service_tag, docker_registry, node_meta_schema
-    )
+    return await _pull_push_service(service_repo, service_tag, docker_registry, node_meta_schema)
 
 
 @pytest_asyncio.fixture(scope="session", loop_scope="session")
-async def sleeper_service(
-    docker_registry: str, node_meta_schema: dict
-) -> dict[str, Any]:
+async def sleeper_service(docker_registry: str, node_meta_schema: dict) -> dict[str, Any]:
     """Adds a itisfoundation/sleeper in docker registry"""
-    return await _pull_push_service(
-        "itisfoundation/sleeper", "1.0.0", docker_registry, node_meta_schema
-    )
+    return await _pull_push_service("itisfoundation/sleeper", "1.0.0", docker_registry, node_meta_schema)
 
 
 @pytest_asyncio.fixture(scope="session", loop_scope="session")
-async def jupyter_service(
-    docker_registry: str, node_meta_schema: dict
-) -> dict[str, Any]:
+async def jupyter_service(docker_registry: str, node_meta_schema: dict) -> dict[str, Any]:
     """Adds a itisfoundation/jupyter-base-notebook in docker registry"""
     return await _pull_push_service(
         "itisfoundation/jupyter-base-notebook",
@@ -342,9 +322,7 @@ async def dy_static_file_server_dynamic_sidecar_compose_spec_service(
 @pytest.fixture
 def remove_images_from_host() -> Callable[[list[str]], Awaitable[None]]:
     async def _cleaner(images: list[str]) -> None:
-        with log_context(
-            logging.INFO, msg=(f"removing {images=}", f"removed {images=}")
-        ):
+        with log_context(logging.INFO, msg=(f"removing {images=}", f"removed {images=}")):
             async with aiodocker.Docker() as client:
                 delete_results = await asyncio.gather(
                     *(client.images.delete(image, force=True) for image in images),
@@ -356,8 +334,6 @@ def remove_images_from_host() -> Callable[[list[str]], Awaitable[None]]:
                     *(client.images.inspect(image) for image in images),
                     return_exceptions=True,
                 )
-                assert all(
-                    isinstance(r, aiodocker.DockerError) for r in inspect_results
-                )
+                assert all(isinstance(r, aiodocker.DockerError) for r in inspect_results)
 
     return _cleaner

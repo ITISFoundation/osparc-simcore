@@ -43,9 +43,7 @@ async def move_project_into_folder(
             )
         workspace_is_private = False
 
-    private_workspace_user_id_or_none: UserID | None = (
-        user_id if workspace_is_private else None
-    )
+    private_workspace_user_id_or_none: UserID | None = user_id if workspace_is_private else None
 
     if folder_id:
         # Check user has access to folder

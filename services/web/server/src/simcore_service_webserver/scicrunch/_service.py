@@ -122,9 +122,7 @@ class ScicrunchResourcesService:
         # Insert new or update if exists
         return await self.upsert_research_resource(resource)
 
-    async def upsert_research_resource(
-        self, resource: ResearchResource
-    ) -> ResearchResource:
+    async def upsert_research_resource(self, resource: ResearchResource) -> ResearchResource:
         """Create or update a research resource."""
         values = resource.model_dump(exclude_unset=True)
         row = await self._repo.upsert_resource(values)

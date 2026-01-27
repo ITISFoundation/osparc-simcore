@@ -39,13 +39,9 @@ class StopServicesCallback(Protocol):
     async def __call__(self, app: web.Application, project_uuid: ProjectID) -> None: ...
 
 
-async def batch_stop_services_in_project(
-    app: web.Application, *, user_id: UserID, project_uuid: ProjectID
-) -> None:
+async def batch_stop_services_in_project(app: web.Application, *, user_id: UserID, project_uuid: ProjectID) -> None:
     await asyncio.gather(
-        director_v2_service.stop_pipeline(
-            app, user_id=user_id, project_id=project_uuid
-        ),
+        director_v2_service.stop_pipeline(app, user_id=user_id, project_id=project_uuid),
         _projects_service.remove_project_dynamic_services(
             user_id=user_id,
             project_uuid=project_uuid,
@@ -61,7 +57,6 @@ async def delete_project_as_admin(
     *,
     project_uuid: ProjectID,
 ):
-
     state: dict[str, Any] = {}
 
     try:
@@ -77,9 +72,7 @@ async def delete_project_as_admin(
         # 2. stop
         with _monitor_step(state, name="stop", elapsed=True):
             # NOTE: this callback could take long or raise whatever!
-            await batch_stop_services_in_project(
-                app, user_id=project.prj_owner, project_uuid=project_uuid
-            )
+            await batch_stop_services_in_project(app, user_id=project.prj_owner, project_uuid=project_uuid)
 
         # 3. delete
         with _monitor_step(state, name="delete"):

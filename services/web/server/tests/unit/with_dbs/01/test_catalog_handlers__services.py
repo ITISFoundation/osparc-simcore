@@ -34,9 +34,7 @@ from simcore_service_webserver.db.models import UserRole
 
 
 @pytest.fixture
-def app_environment(
-    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
-) -> EnvVarsDict:
+def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
     return app_environment | setenvs_from_dict(
         monkeypatch,
         envs={
@@ -47,7 +45,6 @@ def app_environment(
 
 @pytest.fixture
 def mocked_catalog_rpc_api(mocker: MockerFixture) -> dict[str, MockType]:
-
     side_effects = CatalogRpcSideEffects()
 
     return {
@@ -335,9 +332,7 @@ async def test_get_and_patch_service(
         descriptionUi=True,
         accessRights={1: {"execute": True, "write": True}},
     )
-    response = await client.patch(
-        f"{url}", json=jsonable_encoder(update, exclude_unset=True)
-    )
+    response = await client.patch(f"{url}", json=jsonable_encoder(update, exclude_unset=True))
 
     data, error = await assert_status(response, status.HTTP_200_OK)
     assert data

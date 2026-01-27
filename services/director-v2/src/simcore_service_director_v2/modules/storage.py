@@ -6,8 +6,9 @@ from dataclasses import dataclass
 import httpx
 from fastapi import FastAPI, HTTPException
 from models_library.users import UserID
-from servicelib.fastapi.tracing import get_tracing_config, setup_httpx_client_tracing
+from servicelib.fastapi.tracing import get_tracing_config
 from servicelib.logging_utils import log_decorator
+from servicelib.tracing import setup_httpx_client_tracing
 from settings_library.s3 import S3Settings
 from settings_library.storage import StorageSettings
 from settings_library.tracing import TracingSettings
@@ -28,7 +29,6 @@ def setup(
     storage_settings: StorageSettings | None,
     tracing_settings: TracingSettings | None,
 ):
-
     if not storage_settings:
         storage_settings = StorageSettings()
 
@@ -78,9 +78,7 @@ class StorageClient:
 
     @log_decorator(logger=logger)
     async def get_s3_access(self, user_id: UserID) -> S3Settings:
-        resp = await self.request(
-            "POST", "/simcore-s3:access", params={"user_id": user_id}
-        )
+        resp = await self.request("POST", "/simcore-s3:access", params={"user_id": user_id})
         resp.raise_for_status()
         if resp.status_code == status.HTTP_200_OK:
             return S3Settings.model_validate(unenvelope_or_raise_error(resp))

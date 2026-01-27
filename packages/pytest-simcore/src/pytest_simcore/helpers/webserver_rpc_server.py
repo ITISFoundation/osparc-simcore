@@ -78,9 +78,7 @@ class WebserverRpcSideEffects:
             for item in ProjectJobRpcGet.model_json_schema()["examples"]
             if filters is None
             or filters.job_parent_resource_name_prefix is None
-            or item.get("job_parent_resource_name").startswith(
-                filters.job_parent_resource_name_prefix
-            )
+            or item.get("job_parent_resource_name").startswith(filters.job_parent_resource_name_prefix)
         ]
 
         return PageRpcProjectJobRpcGet.create(

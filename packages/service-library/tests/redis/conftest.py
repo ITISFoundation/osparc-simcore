@@ -12,9 +12,7 @@ from settings_library.redis import RedisDatabase
 
 @pytest.fixture
 async def redis_client_sdk(
-    get_in_process_redis_client_sdk: Callable[
-        [RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]
-    ],
+    get_in_process_redis_client_sdk: Callable[[RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]],
 ) -> AsyncIterator[RedisClientSDK]:
     async with get_in_process_redis_client_sdk(RedisDatabase.RESOURCES) as client:
         yield client

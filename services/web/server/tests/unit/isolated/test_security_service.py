@@ -29,14 +29,8 @@ def test_encrypt_password_raises_type_error_for_non_string_input():
         security_service.encrypt_password(123)
 
 
-@given(
-    st.text(
-        alphabet=string.ascii_letters + string.digits + string.punctuation, min_size=1
-    )
-)
-@pytest.mark.filterwarnings(
-    "ignore:passing settings to"
-)  # DeprecationWarning of sha256_crypt.hash
+@given(st.text(alphabet=string.ascii_letters + string.digits + string.punctuation, min_size=1))
+@pytest.mark.filterwarnings("ignore:passing settings to")  # DeprecationWarning of sha256_crypt.hash
 def test_encrypt_decrypt_deprecated_and_new_method_return_same_values(password: str):
     salt = "salt"  # Use a fixed salt value for consistent hash values
 

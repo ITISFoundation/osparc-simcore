@@ -32,9 +32,7 @@ async def list_datasets_metadata(
 ) -> Envelope[list[DatasetMetaDataGet]]:
     dsm = get_dsm_provider(request.app).get(location_id)
     data = await dsm.list_datasets(query_params.user_id, query_params.product_name)
-    return Envelope[list[DatasetMetaDataGet]](
-        data=[DatasetMetaDataGet(**d.model_dump()) for d in data]
-    )
+    return Envelope[list[DatasetMetaDataGet]](data=[DatasetMetaDataGet(**d.model_dump()) for d in data])
 
 
 @router.get(
@@ -54,6 +52,4 @@ async def list_dataset_files_metadata(
         dataset_id=dataset_id,
         expand_dirs=query_params.expand_dirs,
     )
-    return Envelope[list[FileMetaDataGet]](
-        data=[FileMetaDataGet(**d.model_dump()) for d in data]
-    )
+    return Envelope[list[FileMetaDataGet]](data=[FileMetaDataGet(**d.model_dump()) for d in data])

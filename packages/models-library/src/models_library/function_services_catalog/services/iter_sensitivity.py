@@ -98,9 +98,7 @@ def eval_sensitivity(
         yield (i, paramtestplus, paramtestminus)
 
 
-def _sensitivity_generator(
-    paramrefs: list[float], paramdiff: list[float], diff_or_fact: bool
-) -> Iterator[OutputsDict]:
+def _sensitivity_generator(paramrefs: list[float], paramdiff: list[float], diff_or_fact: bool) -> Iterator[OutputsDict]:
     for i, paramtestplus, paramtestminus in eval_sensitivity(
         paramrefs=paramrefs, paramdiff=paramdiff, diff_or_fact=diff_or_fact
     ):

@@ -29,9 +29,7 @@ async def trash_workspace(request: web.Request):
     user_id = get_user_id(request)
     product_name = products_web.get_product_name(request)
     path_params = parse_request_path_parameters_as(WorkspacesPathParams, request)
-    query_params: WorkspaceTrashQueryParams = parse_request_query_parameters_as(
-        WorkspaceTrashQueryParams, request
-    )
+    query_params: WorkspaceTrashQueryParams = parse_request_query_parameters_as(WorkspaceTrashQueryParams, request)
 
     await _trash_service.trash_workspace(
         request.app,

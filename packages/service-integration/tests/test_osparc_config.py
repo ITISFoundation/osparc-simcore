@@ -28,9 +28,7 @@ def labels(tests_data_dir: Path, labels_fixture_name: str) -> dict[str, str]:
         "rocket": "rocket",
     }
 
-    labels_annotations = data["services"][service_name[labels_fixture_name]]["build"][
-        "labels"
-    ]
+    labels_annotations = data["services"][service_name[labels_fixture_name]]["build"]["labels"]
 
     # patch -> replaces some environs
     if compose_spec := labels_annotations.get("simcore.service.compose-spec"):
@@ -45,9 +43,7 @@ def labels(tests_data_dir: Path, labels_fixture_name: str) -> dict[str, str]:
     "labels_fixture_name",
     ["legacy", "service-sidecared", "compose-sidecared", "rocket"],
 )
-def test_load_from_labels(
-    labels: dict[str, str], labels_fixture_name: str, tmp_path: Path
-):
+def test_load_from_labels(labels: dict[str, str], labels_fixture_name: str, tmp_path: Path):
     meta_cfg = MetadataConfig.from_labels_annotations(labels)
     runtime_cfg = RuntimeConfig.from_labels_annotations(labels)
     assert runtime_cfg.callbacks_mapping is not None
@@ -57,15 +53,9 @@ def test_load_from_labels(
 
     # create yamls from config
     for model in (runtime_cfg, meta_cfg):
-        config_path = (
-            tmp_path / f"{model.__class__.__name__.lower()}-{labels_fixture_name}.yml"
-        )
+        config_path = tmp_path / f"{model.__class__.__name__.lower()}-{labels_fixture_name}.yml"
         with open(config_path, "w") as fh:
-            data = json.loads(
-                model.model_dump_json(
-                    exclude_unset=True, by_alias=True, exclude_none=True
-                )
-            )
+            data = json.loads(model.model_dump_json(exclude_unset=True, by_alias=True, exclude_none=True))
             yaml.safe_dump(data, fh, sort_keys=False)
 
         # reload from yaml and compare

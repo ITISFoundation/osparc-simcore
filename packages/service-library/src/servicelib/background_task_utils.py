@@ -17,9 +17,7 @@ def exclusive_periodic(
     *,
     task_interval: datetime.timedelta,
     retry_after: datetime.timedelta = datetime.timedelta(seconds=1),
-) -> Callable[
-    [Callable[P, Coroutine[Any, Any, None]]], Callable[P, Coroutine[Any, Any, None]]
-]:
+) -> Callable[[Callable[P, Coroutine[Any, Any, None]]], Callable[P, Coroutine[Any, Any, None]]]:
     """decorates a function to become exclusive and periodic.
 
     Arguments:

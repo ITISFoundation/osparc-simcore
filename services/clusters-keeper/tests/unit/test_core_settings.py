@@ -33,9 +33,7 @@ def test_empty_primary_ec2_instances_raises(
     app_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
 ):
-    setenvs_from_dict(
-        monkeypatch, {"PRIMARY_EC2_INSTANCES_ALLOWED_TYPES": json.dumps({})}
-    )
+    setenvs_from_dict(monkeypatch, {"PRIMARY_EC2_INSTANCES_ALLOWED_TYPES": json.dumps({})})
     with pytest.raises(ValidationError, match="Only one exact value"):
         ApplicationSettings.create_from_envs()
 
@@ -53,9 +51,7 @@ def test_multiple_primary_ec2_instances_raises(
         {
             "PRIMARY_EC2_INSTANCES_ALLOWED_TYPES": json.dumps(
                 {
-                    ec2_type_name: secrets.choice(
-                        EC2InstanceBootSpecific.model_json_schema()["examples"]
-                    )
+                    ec2_type_name: secrets.choice(EC2InstanceBootSpecific.model_json_schema()["examples"])
                     for ec2_type_name in ec2_instances
                 }
             )

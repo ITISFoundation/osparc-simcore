@@ -33,9 +33,7 @@ def fake_profile_get(faker: Faker) -> MyProfileRestGet:
         user_name=fake_profile["username"],
         login=fake_profile["mail"],
         role="USER",
-        privacy=MyProfilePrivacyGet(
-            hide_fullname=True, hide_email=True, hide_username=False
-        ),
+        privacy=MyProfilePrivacyGet(hide_fullname=True, hide_email=True, hide_username=False),
         preferences={},
     )
 
@@ -43,9 +41,7 @@ def fake_profile_get(faker: Faker) -> MyProfileRestGet:
 def test_profile_get_expiration_date(fake_profile_get: MyProfileRestGet):
     fake_expiration = datetime.now(UTC)
 
-    profile = fake_profile_get.model_copy(
-        update={"expiration_date": fake_expiration.date()}
-    )
+    profile = fake_profile_get.model_copy(update={"expiration_date": fake_expiration.date()})
 
     assert fake_expiration.date() == profile.expiration_date
 
@@ -54,15 +50,12 @@ def test_profile_get_expiration_date(fake_profile_get: MyProfileRestGet):
 
 
 def test_auto_compute_gravatar__deprecated(fake_profile_get: MyProfileRestGet):
-
     profile = fake_profile_get.model_copy()
 
     envelope = Envelope[Any](data=profile)
     data = envelope.model_dump(**RESPONSE_MODEL_POLICY)["data"]
 
-    assert (
-        "gravatar_id" not in data
-    ), f"{dict(MyProfileRestGet.model_fields)['gravatar_id'].deprecated=}"
+    assert "gravatar_id" not in data, f"{dict(MyProfileRestGet.model_fields)['gravatar_id'].deprecated=}"
     assert data["id"] == profile.id
     assert data["first_name"] == profile.first_name
     assert data["last_name"] == profile.last_name
@@ -121,7 +114,6 @@ def test_parsing_output_of_get_user_profile():
 
 
 def test_mapping_update_models_from_rest_to_db():
-
     profile_update = MyProfileRestPatch.model_validate(
         # request payload
         {
@@ -147,6 +139,4 @@ def test_utils_user_generates_valid_myprofile_patch():
     username = utils_users._generate_username_from_email("xi@email.com")  # noqa: SLF001
 
     MyProfileRestPatch.model_validate({"userName": username})
-    MyProfileRestPatch.model_validate(
-        {"userName": utils_users.generate_alternative_username(username)}
-    )
+    MyProfileRestPatch.model_validate({"userName": utils_users.generate_alternative_username(username)})

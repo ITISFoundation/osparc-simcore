@@ -36,7 +36,5 @@ def resources_from_dask_task(task: DaskTask) -> Resources:
 
 
 def get_task_instance_restriction(task: DaskTask) -> str | None:
-    instance_ec2_type: str | None = get_ec2_instance_type_from_resources(
-        task.required_resources
-    )
+    instance_ec2_type: str | None = get_ec2_instance_type_from_resources(task.required_resources)
     return instance_ec2_type

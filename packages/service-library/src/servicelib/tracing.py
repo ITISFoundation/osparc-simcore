@@ -4,8 +4,10 @@ from typing import Final, Self
 
 import pyinstrument
 import pyinstrument.renderers
+from httpx import AsyncClient, Client
 from opentelemetry import context as otcontext
 from opentelemetry import trace
+from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
 from opentelemetry.instrumentation.logging import LoggingInstrumentor
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
@@ -72,6 +74,10 @@ class TracingConfig(BaseModel):
             tracing_settings=tracing_settings,
             tracer_provider=tracer_provider,
         )
+
+
+def setup_httpx_client_tracing(client: AsyncClient | Client, tracing_config: TracingConfig) -> None:
+    HTTPXClientInstrumentor.instrument_client(client, tracer_provider=tracing_config.tracer_provider)
 
 
 def setup_log_tracing(tracing_config: TracingConfig):

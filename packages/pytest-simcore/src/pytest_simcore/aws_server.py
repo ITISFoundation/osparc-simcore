@@ -80,9 +80,7 @@ def mocked_ec2_server_envs(
 
 
 @pytest.fixture
-def with_patched_ssm_server(
-    mocker: MockerFixture, external_envfile_dict: EnvVarsDict
-) -> mock.Mock:
+def with_patched_ssm_server(mocker: MockerFixture, external_envfile_dict: EnvVarsDict) -> mock.Mock:
     if external_envfile_dict:
         # NOTE: we run against AWS. so no need to mock
         return mock.Mock()
@@ -133,7 +131,5 @@ def mocked_s3_server_envs(
     mocked_s3_server_settings: S3Settings,
     monkeypatch: pytest.MonkeyPatch,
 ) -> EnvVarsDict:
-    changed_envs: EnvVarsDict = mocked_s3_server_settings.model_dump(
-        mode="json", exclude_unset=True
-    )
+    changed_envs: EnvVarsDict = mocked_s3_server_settings.model_dump(mode="json", exclude_unset=True)
     return setenvs_from_dict(monkeypatch, {**changed_envs})

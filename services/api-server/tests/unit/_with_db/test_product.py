@@ -39,9 +39,7 @@ async def test_product_webserver(
         wallet_to_api_keys_map[_wallet_id] = api_key
 
     def _check_key_product_compatibility(request: httpx.Request, **kwargs):
-        assert (
-            received_product_name := request.headers.get("x-simcore-products-name")
-        ) is not None
+        assert (received_product_name := request.headers.get("x-simcore-products-name")) is not None
         assert (wallet_id := kwargs.get("wallet_id")) is not None
         assert (api_key := wallet_to_api_keys_map[int(wallet_id)]) is not None
         assert api_key.product_name == received_product_name
@@ -64,9 +62,9 @@ async def test_product_webserver(
             ),
         )
 
-    wallet_get_mock = mocked_webserver_rest_api_base.get(
-        path__regex=r"/wallets/(?P<wallet_id>[-+]?\d+)"
-    ).mock(side_effect=_check_key_product_compatibility)
+    wallet_get_mock = mocked_webserver_rest_api_base.get(path__regex=r"/wallets/(?P<wallet_id>[-+]?\d+)").mock(
+        side_effect=_check_key_product_compatibility
+    )
 
     for wallet_id, api_key in wallet_to_api_keys_map.items():
         response = await client.get(

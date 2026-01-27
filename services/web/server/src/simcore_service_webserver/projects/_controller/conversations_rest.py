@@ -81,9 +81,7 @@ class _ProjectConversationsPutBodyParams(InputSchema):
 async def create_project_conversation(request: web.Request):
     req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
-    body_params = await parse_request_body_as(
-        _ProjectConversationsCreateBodyParams, request
-    )
+    body_params = await parse_request_body_as(_ProjectConversationsCreateBodyParams, request)
 
     conversation = await _conversations_service.create_project_conversation(
         app=request.app,
@@ -108,9 +106,7 @@ async def create_project_conversation(request: web.Request):
 async def list_project_conversations(request: web.Request):
     req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
-    query_params = parse_request_query_parameters_as(
-        _ListProjectConversationsQueryParams, request
-    )
+    query_params = parse_request_query_parameters_as(_ListProjectConversationsQueryParams, request)
 
     total, conversations = await _conversations_service.list_project_conversations(
         app=request.app,
@@ -122,10 +118,7 @@ async def list_project_conversations(request: web.Request):
     )
     page = Page[ConversationRestGet].model_validate(
         paginate_data(
-            chunk=[
-                ConversationRestGet.from_domain_model(conversation)
-                for conversation in conversations
-            ],
+            chunk=[ConversationRestGet.from_domain_model(conversation) for conversation in conversations],
             request_url=request.url,
             total=total,
             limit=query_params.limit,
@@ -147,12 +140,8 @@ async def list_project_conversations(request: web.Request):
 @handle_plugin_requests_exceptions
 async def update_project_conversation(request: web.Request):
     req_ctx = AuthenticatedRequestContext.model_validate(request)
-    path_params = parse_request_path_parameters_as(
-        _ProjectConversationsPathParams, request
-    )
-    body_params = await parse_request_body_as(
-        _ProjectConversationsPutBodyParams, request
-    )
+    path_params = parse_request_path_parameters_as(_ProjectConversationsPathParams, request)
+    body_params = await parse_request_body_as(_ProjectConversationsPutBodyParams, request)
 
     conversation = await _conversations_service.update_project_conversation(
         app=request.app,
@@ -176,9 +165,7 @@ async def update_project_conversation(request: web.Request):
 @handle_plugin_requests_exceptions
 async def delete_project_conversation(request: web.Request):
     req_ctx = AuthenticatedRequestContext.model_validate(request)
-    path_params = parse_request_path_parameters_as(
-        _ProjectConversationsPathParams, request
-    )
+    path_params = parse_request_path_parameters_as(_ProjectConversationsPathParams, request)
 
     await _conversations_service.delete_project_conversation(
         app=request.app,
@@ -199,9 +186,7 @@ async def delete_project_conversation(request: web.Request):
 @handle_plugin_requests_exceptions
 async def get_project_conversation(request: web.Request):
     req_ctx = AuthenticatedRequestContext.model_validate(request)
-    path_params = parse_request_path_parameters_as(
-        _ProjectConversationsPathParams, request
-    )
+    path_params = parse_request_path_parameters_as(_ProjectConversationsPathParams, request)
 
     conversation = await _conversations_service.get_project_conversation(
         app=request.app,
@@ -249,12 +234,8 @@ class _ProjectConversationMessagesPutBodyParams(BaseModel):
 @handle_plugin_requests_exceptions
 async def create_project_conversation_message(request: web.Request):
     req_ctx = AuthenticatedRequestContext.model_validate(request)
-    path_params = parse_request_path_parameters_as(
-        _ProjectConversationsPathParams, request
-    )
-    body_params = await parse_request_body_as(
-        _ProjectConversationMessagesCreateBodyParams, request
-    )
+    path_params = parse_request_path_parameters_as(_ProjectConversationsPathParams, request)
+    body_params = await parse_request_body_as(_ProjectConversationMessagesCreateBodyParams, request)
 
     message = await _conversations_service.create_project_conversation_message(
         app=request.app,
@@ -279,13 +260,9 @@ async def create_project_conversation_message(request: web.Request):
 @handle_plugin_requests_exceptions
 async def list_project_conversation_messages(request: web.Request):
     req_ctx = AuthenticatedRequestContext.model_validate(request)
-    path_params = parse_request_path_parameters_as(
-        _ProjectConversationsPathParams, request
-    )
-    query_params: _ListProjectConversationMessagesQueryParams = (
-        parse_request_query_parameters_as(
-            _ListProjectConversationMessagesQueryParams, request
-        )
+    path_params = parse_request_path_parameters_as(_ProjectConversationsPathParams, request)
+    query_params: _ListProjectConversationMessagesQueryParams = parse_request_query_parameters_as(
+        _ListProjectConversationMessagesQueryParams, request
     )
 
     total, messages = await _conversations_service.list_project_conversation_messages(
@@ -300,10 +277,7 @@ async def list_project_conversation_messages(request: web.Request):
 
     page = Page[ConversationMessageRestGet].model_validate(
         paginate_data(
-            chunk=[
-                ConversationMessageRestGet.from_domain_model(message)
-                for message in messages
-            ],
+            chunk=[ConversationMessageRestGet.from_domain_model(message) for message in messages],
             request_url=request.url,
             total=total,
             limit=query_params.limit,
@@ -325,12 +299,8 @@ async def list_project_conversation_messages(request: web.Request):
 @handle_plugin_requests_exceptions
 async def update_project_conversation_message(request: web.Request):
     req_ctx = AuthenticatedRequestContext.model_validate(request)
-    path_params = parse_request_path_parameters_as(
-        _ProjectConversationsMessagesPathParams, request
-    )
-    body_params = await parse_request_body_as(
-        _ProjectConversationMessagesPutBodyParams, request
-    )
+    path_params = parse_request_path_parameters_as(_ProjectConversationsMessagesPathParams, request)
+    body_params = await parse_request_body_as(_ProjectConversationMessagesPutBodyParams, request)
 
     message = await _conversations_service.update_project_conversation_message(
         app=request.app,
@@ -355,9 +325,7 @@ async def update_project_conversation_message(request: web.Request):
 @handle_plugin_requests_exceptions
 async def delete_project_conversation_message(request: web.Request):
     req_ctx = AuthenticatedRequestContext.model_validate(request)
-    path_params = parse_request_path_parameters_as(
-        _ProjectConversationsMessagesPathParams, request
-    )
+    path_params = parse_request_path_parameters_as(_ProjectConversationsMessagesPathParams, request)
 
     await _conversations_service.delete_project_conversation_message(
         app=request.app,
@@ -379,9 +347,7 @@ async def delete_project_conversation_message(request: web.Request):
 @handle_plugin_requests_exceptions
 async def get_project_conversation_message(request: web.Request):
     req_ctx = AuthenticatedRequestContext.model_validate(request)
-    path_params = parse_request_path_parameters_as(
-        _ProjectConversationsMessagesPathParams, request
-    )
+    path_params = parse_request_path_parameters_as(_ProjectConversationsMessagesPathParams, request)
 
     message = await _conversations_service.get_project_conversation_message(
         app=request.app,

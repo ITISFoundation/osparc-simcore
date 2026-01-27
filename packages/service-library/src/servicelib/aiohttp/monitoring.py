@@ -20,7 +20,7 @@ from ..logging_utils import log_catch
 from ..prometheus_metrics import (
     PrometheusMetrics,
     get_prometheus_metrics,
-    record_asyncio_event_looop_metrics,
+    record_asyncio_event_loop_metrics,
     record_request_metrics,
     record_response_metrics,
 )
@@ -39,7 +39,7 @@ def get_collector_registry(app: web.Application) -> CollectorRegistry:
 
 async def metrics_handler(request: web.Request):
     metrics = request.app[PROMETHEUS_METRICS_APPKEY]
-    await record_asyncio_event_looop_metrics(metrics)
+    await record_asyncio_event_loop_metrics(metrics)
 
     # NOTE: Cannot use ProcessPoolExecutor because registry is not pickable
     result = await request.loop.run_in_executor(None, generate_latest, metrics.registry)
@@ -75,9 +75,7 @@ def middleware_factory(
             metrics = request.app[PROMETHEUS_METRICS_APPKEY]
             assert isinstance(metrics, PrometheusMetrics)  # nosec
 
-            user_agent = request.headers.get(
-                X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
-            )
+            user_agent = request.headers.get(X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE)
 
             with record_request_metrics(
                 metrics=metrics,

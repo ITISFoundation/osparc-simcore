@@ -17,7 +17,7 @@ from utils import without_marked_for_removal_at
 
 
 def test_ensure_task_data_field_name_and_type():
-    # NOTE: ensure thse do not change, if you want to change them remeber that the db is invalid
+    # NOTE: ensure these do not change, if you want to change them remember that the db is invalid
     assert _MARKED_FOR_REMOVAL_AT_FIELD == "marked_for_removal_at"
     field = TaskData.model_fields[_MARKED_FOR_REMOVAL_AT_FIELD]
     assert field.annotation == datetime.datetime | None
@@ -25,17 +25,13 @@ def test_ensure_task_data_field_name_and_type():
 
 @pytest.fixture
 def task_data() -> TaskData:
-    return TypeAdapter(TaskData).validate_python(
-        TaskData.model_json_schema()["examples"][0]
-    )
+    return TypeAdapter(TaskData).validate_python(TaskData.model_json_schema()["examples"][0])
 
 
 @pytest.fixture
 async def store(
     use_in_memory_redis: RedisSettings,
-    get_redis_client_sdk: Callable[
-        [RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]
-    ],
+    get_redis_client_sdk: Callable[[RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]],
 ) -> AsyncIterable[RedisStore]:
     store = RedisStore(redis_settings=use_in_memory_redis, lrt_namespace="test")
 
@@ -74,13 +70,10 @@ async def test_workflow(store: RedisStore, task_data: TaskData) -> None:
 @pytest.fixture
 async def redis_stores(
     use_in_memory_redis: RedisSettings,
-    get_redis_client_sdk: Callable[
-        [RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]
-    ],
+    get_redis_client_sdk: Callable[[RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]],
 ) -> AsyncIterable[list[RedisStore]]:
     stores: list[RedisStore] = [
-        RedisStore(redis_settings=use_in_memory_redis, lrt_namespace=f"test-{i}")
-        for i in range(5)
+        RedisStore(redis_settings=use_in_memory_redis, lrt_namespace=f"test-{i}") for i in range(5)
     ]
     for store in stores:
         await store.setup()
@@ -98,7 +91,6 @@ async def redis_stores(
 async def test_workflow_multiple_redis_stores_with_different_namespaces(
     redis_stores: list[RedisStore], task_data: TaskData
 ):
-
     for store in redis_stores:
         assert await store.list_tasks_data() == []
 
@@ -107,9 +99,7 @@ async def test_workflow_multiple_redis_stores_with_different_namespaces(
         await store.mark_for_removal(task_data.task_id)
 
     for store in redis_stores:
-        assert [
-            without_marked_for_removal_at(x) for x in await store.list_tasks_data()
-        ] == [task_data]
+        assert [without_marked_for_removal_at(x) for x in await store.list_tasks_data()] == [task_data]
 
     for store in redis_stores:
         await store.delete_task_data(task_data.task_id)

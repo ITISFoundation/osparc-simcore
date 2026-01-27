@@ -10,7 +10,6 @@ might affect the others. E.g. files uploaded in one test can be listed in rext
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
-
 import logging
 import time
 from operator import attrgetter
@@ -37,9 +36,7 @@ def sleeper_solver(
     # this part is tested in test_solvers_api so it becomes a fixture here
 
     sleeper = services_registry["sleeper_service"]
-    solver: osparc.Solver = solvers_api.get_solver_release(
-        solver_key=sleeper["name"], version=sleeper["version"]
-    )
+    solver: osparc.Solver = solvers_api.get_solver_release(solver_key=sleeper["name"], version=sleeper["version"])
 
     assert isinstance(solver, osparc.Solver)
     assert solver.version == "2.1.1"
@@ -77,9 +74,7 @@ def sleeper_solver(
 
 
 @pytest.fixture(scope="module")
-def uploaded_input_file(
-    tmp_path_factory: pytest.TempPathFactory, files_api: osparc.FilesApi
-) -> osparc.File:
+def uploaded_input_file(tmp_path_factory: pytest.TempPathFactory, files_api: osparc.FilesApi) -> osparc.File:
     basedir: Path = tmp_path_factory.mktemp("uploaded_input_file")
 
     # produce an input file in place
@@ -124,9 +119,7 @@ def test_list_jobs(
         expected_jobs.append(job)
 
         jobs = solvers_api.list_jobs(solver.id, solver.version)
-        assert sorted(jobs, key=attrgetter("name")) == sorted(
-            expected_jobs, key=attrgetter("name")
-        )
+        assert sorted(jobs, key=attrgetter("name")) == sorted(expected_jobs, key=attrgetter("name"))
 
 
 def test_create_job(
@@ -155,7 +148,7 @@ def test_create_job(
     assert job.id
     assert job == solvers_api.get_job(solver.id, solver.version, job.id)
 
-    # with positional arguments (repects displayOrder ?)
+    # with positional arguments (respects displayOrder ?)
     # inputs=[input_file, 33, False] TODO: later, if time
     job2 = solvers_api.create_job(
         solver.id,
@@ -221,9 +214,7 @@ def test_run_job(
     # poll stop time-stamp
     while not status.stopped_at:
         time.sleep(0.5)
-        status: osparc.JobStatus = solvers_api.inspect_job(
-            solver.id, solver.version, job.id
-        )
+        status: osparc.JobStatus = solvers_api.inspect_job(solver.id, solver.version, job.id)
         assert isinstance(status, osparc.JobStatus)
 
         assert 0 <= status.progress <= 100
@@ -243,9 +234,7 @@ def test_run_job(
         return
 
     # check solver outputs
-    outputs: osparc.JobOutputs = solvers_api.get_job_outputs(
-        solver.id, solver.version, job.id
-    )
+    outputs: osparc.JobOutputs = solvers_api.get_job_outputs(solver.id, solver.version, job.id)
     assert isinstance(outputs, osparc.JobOutputs)
     assert outputs.job_id == job.id
     assert len(outputs.results) == 2
@@ -268,9 +257,7 @@ def test_run_job(
     # download log (Added in on API version 0.4.0 / client version 0.5.0 )
     if osparc_VERSION >= (0, 5, 0):
         print("Testing output logfile ...")
-        logfile: str = solvers_api.get_job_output_logfile(
-            solver.id, solver.version, job.id
-        )
+        logfile: str = solvers_api.get_job_output_logfile(solver.id, solver.version, job.id)
 
         zip_path = Path(logfile)
         print(
@@ -311,6 +298,4 @@ def test_sugar_syntax_on_solver_setup(
     )
     assert isinstance(job, osparc.Job)
 
-    assert job.runner_name == "solvers/{}/releases/{}".format(
-        quote_plus(str(solver.id)), solver.version
-    )
+    assert job.runner_name == f"solvers/{quote_plus(str(solver.id))}/releases/{solver.version}"

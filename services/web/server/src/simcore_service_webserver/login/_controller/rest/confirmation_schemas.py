@@ -35,9 +35,7 @@ def parse_extra_credits_in_usd_or_none(
 
 class PhoneConfirmationBody(InputSchema):
     email: LowerCaseEmailStr
-    phone: str = Field(
-        ..., description="Phone number E.164, needed on the deployments with 2FA"
-    )
+    phone: str = Field(..., description="Phone number E.164, needed on the deployments with 2FA")
     code: SecretStr
 
 

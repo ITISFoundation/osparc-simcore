@@ -24,9 +24,7 @@ def on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
         lock_key = f"{APP_NAME}:clusters-management_lock"
         lock_value = json.dumps({})
         app.state.clusters_cleaning_task = create_periodic_task(
-            exclusive(get_redis_client(app), lock_key=lock_key, lock_value=lock_value)(
-                check_clusters
-            ),
+            exclusive(get_redis_client(app), lock_key=lock_key, lock_value=lock_value)(check_clusters),
             interval=app_settings.CLUSTERS_KEEPER_TASK_INTERVAL,
             task_name=_TASK_NAME,
             app=app,
@@ -52,9 +50,7 @@ def setup(app: FastAPI):
             app_settings.CLUSTERS_KEEPER_SSM_ACCESS,
         ]
     ):
-        logger.warning(
-            "the clusters management background task is disabled by settings, nothing will happen!"
-        )
+        logger.warning("the clusters management background task is disabled by settings, nothing will happen!")
         return
     app.add_event_handler("startup", on_app_startup(app))
     app.add_event_handler("shutdown", on_app_shutdown(app))

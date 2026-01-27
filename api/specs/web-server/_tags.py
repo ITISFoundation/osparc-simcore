@@ -38,9 +38,7 @@ async def list_tags(): ...
     "/tags/{tag_id}",
     response_model=Envelope[TagGet],
 )
-async def update_tag(
-    _path_params: Annotated[TagPathParams, Depends()], _body: TagUpdate
-): ...
+async def update_tag(_path_params: Annotated[TagPathParams, Depends()], _body: TagUpdate): ...
 
 
 @router.delete(

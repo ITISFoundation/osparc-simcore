@@ -6,9 +6,7 @@ from ..._meta import APP_NAME
 
 def setup(app: FastAPI):
     async def on_startup() -> None:
-        await connect_to_db(
-            app, app.state.settings.EFS_GUARDIAN_POSTGRES, application_name=APP_NAME
-        )
+        await connect_to_db(app, app.state.settings.EFS_GUARDIAN_POSTGRES, application_name=APP_NAME)
 
     async def on_shutdown() -> None:
         await close_db_connection(app)

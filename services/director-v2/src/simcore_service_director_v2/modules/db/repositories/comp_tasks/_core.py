@@ -37,8 +37,7 @@ class CompTasksRepository(BaseRepository):
         async with self.db_engine.connect() as conn:
             result = await conn.execute(
                 sa.select(comp_tasks).where(
-                    (comp_tasks.c.project_id == f"{project_id}")
-                    & (comp_tasks.c.node_id == f"{node_id}")
+                    (comp_tasks.c.project_id == f"{project_id}") & (comp_tasks.c.node_id == f"{node_id}")
                 )
             )
             row = result.one_or_none()
@@ -52,9 +51,7 @@ class CompTasksRepository(BaseRepository):
     ) -> list[CompTaskAtDB]:
         tasks: list[CompTaskAtDB] = []
         async with self.db_engine.connect() as conn:
-            async for row in await conn.stream(
-                sa.select(comp_tasks).where(comp_tasks.c.project_id == f"{project_id}")
-            ):
+            async for row in await conn.stream(sa.select(comp_tasks).where(comp_tasks.c.project_id == f"{project_id}")):
                 task_db = CompTaskAtDB.model_validate(row)
                 tasks.append(task_db)
 
@@ -68,8 +65,7 @@ class CompTasksRepository(BaseRepository):
         async with self.db_engine.connect() as conn:
             async for row in await conn.stream(
                 sa.select(comp_tasks).where(
-                    (comp_tasks.c.project_id == f"{project_id}")
-                    & (comp_tasks.c.node_class == NodeClass.COMPUTATIONAL)
+                    (comp_tasks.c.project_id == f"{project_id}") & (comp_tasks.c.node_class == NodeClass.COMPUTATIONAL)
                 )
             ):
                 task_db = CompTaskAtDB.model_validate(row)
@@ -101,25 +97,17 @@ class CompTasksRepository(BaseRepository):
             )
             .select_from(comp_tasks)
             .where(
-                (
-                    comp_tasks.c.project_id.in_(
-                        [f"{project_id}" for project_id in project_ids]
-                    )
-                )
+                (comp_tasks.c.project_id.in_([f"{project_id}" for project_id in project_ids]))
                 & (comp_tasks.c.node_class == NodeClass.COMPUTATIONAL)
             )
         )
 
         # Select total count from base_query
-        count_query = sa.select(sa.func.count()).select_from(
-            base_select_query.subquery()
-        )
+        count_query = sa.select(sa.func.count()).select_from(base_select_query.subquery())
 
         # Ordering and pagination
         if order_by.direction == OrderDirection.ASC:
-            list_query = base_select_query.order_by(
-                sa.asc(getattr(comp_tasks.c, order_by.field)), comp_tasks.c.task_id
-            )
+            list_query = base_select_query.order_by(sa.asc(getattr(comp_tasks.c, order_by.field)), comp_tasks.c.task_id)
         else:
             list_query = base_select_query.order_by(
                 sa.desc(getattr(comp_tasks.c, order_by.field)), comp_tasks.c.task_id
@@ -139,8 +127,7 @@ class CompTasksRepository(BaseRepository):
         async with self.db_engine.connect() as conn:
             nid: str | None = await conn.scalar(
                 sa.select(comp_tasks.c.node_id).where(
-                    (comp_tasks.c.project_id == f"{project_id}")
-                    & (comp_tasks.c.node_id == f"{node_id}")
+                    (comp_tasks.c.project_id == f"{project_id}") & (comp_tasks.c.node_id == f"{node_id}")
                 )
             )
             return nid is not None
@@ -176,20 +163,15 @@ class CompTasksRepository(BaseRepository):
             )
             # get current tasks
             result = await conn.execute(
-                sa.select(comp_tasks.c.node_id).where(
-                    comp_tasks.c.project_id == str(project.uuid)
-                )
+                sa.select(comp_tasks.c.node_id).where(comp_tasks.c.project_id == str(project.uuid))
             )
             # remove the tasks that were removed from project workbench
             if all_nodes := result.all():
-                node_ids_to_delete = [
-                    t.node_id for t in all_nodes if t.node_id not in project.workbench
-                ]
+                node_ids_to_delete = [t.node_id for t in all_nodes if t.node_id not in project.workbench]
                 for node_id in node_ids_to_delete:
                     await conn.execute(
                         sa.delete(comp_tasks).where(
-                            (comp_tasks.c.project_id == str(project.uuid))
-                            & (comp_tasks.c.node_id == node_id)
+                            (comp_tasks.c.project_id == str(project.uuid)) & (comp_tasks.c.node_id == node_id)
                         )
                     )
 
@@ -199,20 +181,10 @@ class CompTasksRepository(BaseRepository):
 
             inserted_comp_tasks_db: list[CompTaskAtDB] = []
             for comp_task_db in list_of_comp_tasks_in_project:
-                insert_stmt = insert(comp_tasks).values(
-                    **comp_task_db.to_db_model(exclude={"created", "modified"})
-                )
+                insert_stmt = insert(comp_tasks).values(**comp_task_db.to_db_model(exclude={"created", "modified"}))
 
-                exclusion_rule = (
-                    {"state", "progress"}
-                    if comp_task_db.node_id not in published_nodes
-                    else set()
-                )
-                update_values = (
-                    {"progress": None}
-                    if comp_task_db.node_id in published_nodes
-                    else {}
-                )
+                exclusion_rule = {"state", "progress"} if comp_task_db.node_id not in published_nodes else set()
+                update_values = {"progress": None} if comp_task_db.node_id in published_nodes else {}
 
                 if to_node_class(comp_task_db.image.name) != NodeClass.FRONTEND:
                     exclusion_rule.add("outputs")
@@ -220,8 +192,7 @@ class CompTasksRepository(BaseRepository):
                     update_values = {}
                 on_update_stmt = insert_stmt.on_conflict_do_update(
                     index_elements=[comp_tasks.c.project_id, comp_tasks.c.node_id],
-                    set_=comp_task_db.to_db_model(exclude=exclusion_rule)
-                    | update_values,
+                    set_=comp_task_db.to_db_model(exclude=exclusion_rule) | update_values,
                 ).returning(literal_column("*"))
                 result = await conn.execute(on_update_stmt)
                 row = result.one()
@@ -243,10 +214,7 @@ class CompTasksRepository(BaseRepository):
             async with self.db_engine.begin() as conn:
                 result = await conn.execute(
                     sa.update(comp_tasks)
-                    .where(
-                        (comp_tasks.c.project_id == f"{project_id}")
-                        & (comp_tasks.c.node_id == f"{task}")
-                    )
+                    .where((comp_tasks.c.project_id == f"{project_id}") & (comp_tasks.c.node_id == f"{task}"))
                     .values(**task_kwargs)
                     .returning(literal_column("*"))
                 )
@@ -279,9 +247,7 @@ class CompTasksRepository(BaseRepository):
                         | (comp_tasks.c.state == StateType.WAITING_FOR_CLUSTER)
                     )
                 )
-                .values(
-                    state=StateType.ABORTED, progress=1.0, end=arrow.utcnow().datetime
-                )
+                .values(state=StateType.ABORTED, progress=1.0, end=arrow.utcnow().datetime)
             )
             # Sync with comp_run_snapshot_tasks table
             await conn.execute(
@@ -292,10 +258,7 @@ class CompTasksRepository(BaseRepository):
                     & (comp_run_snapshot_tasks.c.node_class == NodeClass.COMPUTATIONAL)
                     & (
                         (comp_run_snapshot_tasks.c.state == StateType.PUBLISHED)
-                        | (
-                            comp_run_snapshot_tasks.c.state
-                            == StateType.WAITING_FOR_CLUSTER
-                        )
+                        | (comp_run_snapshot_tasks.c.state == StateType.WAITING_FOR_CLUSTER)
                     )
                 )
                 .values(
@@ -342,12 +305,7 @@ class CompTasksRepository(BaseRepository):
             update_values["start"] = optional_started
         if optional_stopped is not None:
             update_values["end"] = optional_stopped
-        await logged_gather(
-            *(
-                self._update_task(project_id, task_id, run_id, **update_values)
-                for task_id in tasks
-            )
-        )
+        await logged_gather(*(self._update_task(project_id, task_id, run_id, **update_values) for task_id in tasks))
 
     async def update_project_task_progress(
         self,
@@ -365,23 +323,18 @@ class CompTasksRepository(BaseRepository):
         run_id: PositiveInt,
         heartbeat_time: datetime,
     ) -> None:
-        await self._update_task(
-            project_id, node_id, run_id, last_heartbeat=heartbeat_time
-        )
+        await self._update_task(project_id, node_id, run_id, last_heartbeat=heartbeat_time)
 
     async def delete_tasks_from_project(self, project_id: ProjectID) -> None:
         async with self.db_engine.begin() as conn:
-            await conn.execute(
-                sa.delete(comp_tasks).where(comp_tasks.c.project_id == f"{project_id}")
-            )
+            await conn.execute(sa.delete(comp_tasks).where(comp_tasks.c.project_id == f"{project_id}"))
 
     async def get_outputs_from_tasks(
         self, project_id: ProjectID, node_ids: set[NodeID]
     ) -> dict[NodeID, dict[IDStr, Any]]:
         selection = list(map(str, node_ids))
         query = sa.select(comp_tasks.c.node_id, comp_tasks.c.outputs).where(
-            (comp_tasks.c.project_id == f"{project_id}")
-            & (comp_tasks.c.node_id.in_(selection))
+            (comp_tasks.c.project_id == f"{project_id}") & (comp_tasks.c.node_id.in_(selection))
         )
         async with self.db_engine.connect() as conn:
             result = await conn.execute(query)

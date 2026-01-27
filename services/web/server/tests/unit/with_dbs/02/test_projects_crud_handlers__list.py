@@ -75,24 +75,16 @@ async def _list_projects(
         exp_last_page = ceil(meta["total"] / meta["limit"] - 1)
         assert links is not None
         complete_url = client.make_url(url)
-        assert links["self"] == str(
-            URL(complete_url).update_query({"offset": exp_offset, "limit": exp_limit})
-        )
-        assert links["first"] == str(
-            URL(complete_url).update_query({"offset": 0, "limit": exp_limit})
-        )
+        assert links["self"] == str(URL(complete_url).update_query({"offset": exp_offset, "limit": exp_limit}))
+        assert links["first"] == str(URL(complete_url).update_query({"offset": 0, "limit": exp_limit}))
         assert links["last"] == str(
-            URL(complete_url).update_query(
-                {"offset": exp_last_page * exp_limit, "limit": exp_limit}
-            )
+            URL(complete_url).update_query({"offset": exp_last_page * exp_limit, "limit": exp_limit})
         )
         if exp_offset <= 0:
             assert links["prev"] is None
         else:
             assert links["prev"] == str(
-                URL(complete_url).update_query(
-                    {"offset": max(exp_offset - exp_limit, 0), "limit": exp_limit}
-                )
+                URL(complete_url).update_query({"offset": max(exp_offset - exp_limit, 0), "limit": exp_limit})
             )
         if exp_offset >= (exp_last_page * exp_limit):
             assert links["next"] is None
@@ -100,9 +92,7 @@ async def _list_projects(
             assert links["next"] == str(
                 URL(complete_url).update_query(
                     {
-                        "offset": min(
-                            exp_offset + exp_limit, exp_last_page * exp_limit
-                        ),
+                        "offset": min(exp_offset + exp_limit, exp_last_page * exp_limit),
                         "limit": exp_limit,
                     }
                 )
@@ -168,14 +158,11 @@ async def test_list_projects_with_pagination(
     # let's create a few projects here
     created_projects = await asyncio.gather(
         *[
-            request_create_project(
-                client, expected.accepted, expected.created, logged_user, primary_group
-            )
+            request_create_project(client, expected.accepted, expected.created, logged_user, primary_group)
             for i in range(NUM_PROJECTS)
         ]
     )
     if expected.created == status.HTTP_201_CREATED:
-
         assert len(created_projects) == NUM_PROJECTS
         NUMBER_OF_CALLS = ceil(NUM_PROJECTS / limit)
         next_link = None
@@ -189,9 +176,7 @@ async def test_list_projects_with_pagination(
             data, meta, links = await _list_projects(
                 client,
                 expected.ok,
-                query_parameters=(
-                    next_link.query if next_link else default_query_parameter
-                ),
+                query_parameters=(next_link.query if next_link else default_query_parameter),
             )
             print("...received [", meta, "]")
             assert len(data) == meta["count"]
@@ -201,6 +186,4 @@ async def test_list_projects_with_pagination(
             next_link = URL(links["next"]) if links["next"] is not None else None
 
         assert len(projects) == len(created_projects)
-        assert {prj["uuid"] for prj in projects} == {
-            prj["uuid"] for prj in created_projects
-        }
+        assert {prj["uuid"] for prj in projects} == {prj["uuid"] for prj in created_projects}

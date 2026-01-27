@@ -35,7 +35,7 @@ def invalid_basic_auth(
     kwargs = {"username": fake_user_name, "password": fake_password}
 
     if invalid_case == "both":
-        kwargs = {key: "wrong" for key in kwargs}
+        kwargs = dict.fromkeys(kwargs, "wrong")
     else:
         kwargs[invalid_case] = "wronggg"
 

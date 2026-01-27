@@ -19,16 +19,12 @@ _logger = logging.getLogger(__name__)
 
 main = typer.Typer(name=PROJECT_NAME)
 
-main.command()(
-    create_settings_command(settings_cls=ApplicationSettings, logger=_logger)
-)
+main.command()(create_settings_command(settings_cls=ApplicationSettings, logger=_logger))
 main.callback()(create_version_callback(__version__))
 
 
 @main.command()
-def echo_dotenv(
-    ctx: typer.Context, *, auto_password: bool = True, minimal: bool = True
-):
+def echo_dotenv(ctx: typer.Context, *, auto_password: bool = True, minimal: bool = True):
     """Generates and displays a valid environment variables file (also known as dot-envfile)
 
     Usage:
@@ -40,9 +36,7 @@ def echo_dotenv(
 
     username = getpass.getuser()
     password: str = (
-        getpass.getpass(prompt="Password [Press Enter to auto-generate]: ")
-        if not auto_password
-        else None
+        getpass.getpass(prompt="Password [Press Enter to auto-generate]: ") if not auto_password else None
     ) or generate_password(length=32)
 
     # NOTE: we normally DO NOT USE `os.environ` to capture env vars but this is a special case
@@ -57,41 +51,27 @@ def echo_dotenv(
         PAYMENTS_USERNAME=username,
         PAYMENTS_PASSWORD=password,
         PAYMENTS_GATEWAY_URL="http://127.0.0.1:8000",  # NOSONAR
-        PAYMENTS_GATEWAY_API_SECRET=os.environ.get(
-            "PAYMENTS_GATEWAY_API_SECRET", "replace-with-api-secret"
-        ),
+        PAYMENTS_GATEWAY_API_SECRET=os.environ.get("PAYMENTS_GATEWAY_API_SECRET", "replace-with-api-secret"),
         PAYMENTS_RABBITMQ=os.environ.get(
             "PAYMENTS_RABBITMQ",
             RabbitSettings.create_from_envs(
                 RABBIT_HOST=os.environ.get("RABBIT_HOST", "replace-with-rabbit-host"),
                 RABBIT_SECURE=os.environ.get("RABBIT_SECURE", "0"),
                 RABBIT_USER=os.environ.get("RABBIT_USER", "replace-with-rabbit-user"),
-                RABBIT_PASSWORD=os.environ.get(
-                    "RABBIT_PASSWORD", "replace-with-rabbit-user"
-                ),
+                RABBIT_PASSWORD=os.environ.get("RABBIT_PASSWORD", "replace-with-rabbit-user"),
             ),
         ),
         PAYMENTS_POSTGRES=os.environ.get(
             "PAYMENTS_POSTGRES",
             PostgresSettings.create_from_envs(
-                POSTGRES_HOST=os.environ.get(
-                    "POSTGRES_HOST", "replace-with-postgres-host"
-                ),
-                POSTGRES_USER=os.environ.get(
-                    "POSTGRES_USER", "replace-with-postgres-user"
-                ),
+                POSTGRES_HOST=os.environ.get("POSTGRES_HOST", "replace-with-postgres-host"),
+                POSTGRES_USER=os.environ.get("POSTGRES_USER", "replace-with-postgres-user"),
                 POSTGRES_DB=os.environ.get("POSTGRES_DB", "replace-with-postgres-db"),
-                POSTGRES_PASSWORD=os.environ.get(
-                    "POSTGRES_PASSWORD", "replace-with-postgres-password"
-                ),
+                POSTGRES_PASSWORD=os.environ.get("POSTGRES_PASSWORD", "replace-with-postgres-password"),
             ),
         ),
-        PAYMENTS_STRIPE_URL=os.environ.get(
-            "PAYMENTS_STRIPE_URL", "https://api.stripe.com"
-        ),
-        PAYMENTS_STRIPE_API_SECRET=os.environ.get(
-            "PAYMENTS_STRIPE_API_SECRET", "replace-with-api-secret"
-        ),
+        PAYMENTS_STRIPE_URL=os.environ.get("PAYMENTS_STRIPE_URL", "https://api.stripe.com"),
+        PAYMENTS_STRIPE_API_SECRET=os.environ.get("PAYMENTS_STRIPE_API_SECRET", "replace-with-api-secret"),
     )
 
     print_as_envfile(

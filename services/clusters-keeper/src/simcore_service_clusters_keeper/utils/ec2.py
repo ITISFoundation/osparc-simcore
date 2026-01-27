@@ -20,13 +20,9 @@ _APPLICATION_VERSION_TAG: Final[EC2Tags] = TypeAdapter(EC2Tags).validate_python(
     {f"{_APPLICATION_TAG_KEY}.version": f"{VERSION}"}
 )
 
-HEARTBEAT_TAG_KEY: Final[AWSTagKey] = TypeAdapter(AWSTagKey).validate_python(
-    "last_heartbeat"
-)
+HEARTBEAT_TAG_KEY: Final[AWSTagKey] = TypeAdapter(AWSTagKey).validate_python("last_heartbeat")
 _CLUSTER_NAME_PREFIX: Final[str] = "osparc-computational-cluster-"
-_EC2_MINIMAL_APPLICATION_TAG_KEY: Final[AWSTagKey] = TypeAdapter(
-    AWSTagKey
-).validate_python(
+_EC2_MINIMAL_APPLICATION_TAG_KEY: Final[AWSTagKey] = TypeAdapter(AWSTagKey).validate_python(
     ".".join(
         [
             _APPLICATION_TAG_KEY,
@@ -55,9 +51,7 @@ def _minimal_identification_tag(app_settings: ApplicationSettings) -> EC2Tags:
     }
 
 
-def creation_ec2_tags(
-    app_settings: ApplicationSettings, *, user_id: UserID, wallet_id: WalletID | None
-) -> EC2Tags:
+def creation_ec2_tags(app_settings: ApplicationSettings, *, user_id: UserID, wallet_id: WalletID | None) -> EC2Tags:
     assert app_settings.CLUSTERS_KEEPER_PRIMARY_EC2_INSTANCES  # nosec
     return (
         _minimal_identification_tag(app_settings)
@@ -65,9 +59,7 @@ def creation_ec2_tags(
         | {
             # NOTE: this one gets special treatment in AWS GUI and is applied to the name of the instance
             EC2_NAME_TAG_KEY: TypeAdapter(AWSTagValue).validate_python(
-                get_cluster_name(
-                    app_settings, user_id=user_id, wallet_id=wallet_id, is_manager=True
-                )
+                get_cluster_name(app_settings, user_id=user_id, wallet_id=wallet_id, is_manager=True)
             ),
             USER_ID_TAG_KEY: TypeAdapter(AWSTagValue).validate_python(f"{user_id}"),
             WALLET_ID_TAG_KEY: TypeAdapter(AWSTagValue).validate_python(f"{wallet_id}"),

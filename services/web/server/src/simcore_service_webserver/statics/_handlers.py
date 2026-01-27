@@ -26,15 +26,11 @@ async def get_cached_frontend_index(request: web.Request):
     # SEE services/web/server/tests/unit/isolated/test_redirections.py
     #
 
-    cached_index_per_product: dict[str, str] = request.app[
-        FRONTEND_CACHED_INDEXES_APPKEY
-    ]
+    cached_index_per_product: dict[str, str] = request.app[FRONTEND_CACHED_INDEXES_APPKEY]
     if product_name not in cached_index_per_product:
         raise web.HTTPNotFound(text=f"No index.html found for {product_name}")
 
-    return web.Response(
-        body=cached_index_per_product[product_name], content_type=MIMETYPE_TEXT_HTML
-    )
+    return web.Response(body=cached_index_per_product[product_name], content_type=MIMETYPE_TEXT_HTML)
 
 
 async def get_statics_json(request: web.Request):

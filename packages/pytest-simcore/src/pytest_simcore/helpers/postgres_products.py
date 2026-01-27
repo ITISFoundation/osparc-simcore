@@ -10,9 +10,7 @@ from .postgres_tools import (
 
 
 @contextlib.asynccontextmanager
-async def insert_and_get_product_lifespan(
-    sqlalchemy_async_engine: AsyncEngine, **overrides
-):
+async def insert_and_get_product_lifespan(sqlalchemy_async_engine: AsyncEngine, **overrides):
     async with contextlib.AsyncExitStack() as stack:
         # wallets
         product = await stack.enter_async_context(

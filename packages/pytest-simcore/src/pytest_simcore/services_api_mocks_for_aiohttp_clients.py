@@ -79,11 +79,7 @@ def create_computation_cb(url, **kwargs) -> CallbackResult:
     body = kwargs["json"]
     for param in ["user_id", "project_id"]:
         assert param in body, f"{param} is missing from body: {body}"
-    state = (
-        RunningState.PUBLISHED
-        if body.get("start_pipeline")
-        else RunningState.NOT_STARTED
-    )
+    state = RunningState.PUBLISHED if body.get("start_pipeline") else RunningState.NOT_STARTED
     pipeline: dict[str, list[str]] = FULL_PROJECT_PIPELINE_ADJACENCY
     node_states = FULL_PROJECT_NODE_STATES
     if body.get("subgraph"):
@@ -168,25 +164,15 @@ async def director_v2_service_mock(
     """mocks responses of director-v2"""
 
     # computations
-    create_computation_pattern = re.compile(
-        r"^http://[a-z\-_]*director-v2:[0-9]+/v2/computations$"
-    )
+    create_computation_pattern = re.compile(r"^http://[a-z\-_]*director-v2:[0-9]+/v2/computations$")
 
-    get_computation_pattern = re.compile(
-        r"^http://[a-z\-_]*director-v2:[0-9]+/v2/computations/.*$"
-    )
-    stop_computation_pattern = re.compile(
-        r"^http://[a-z\-_]*director-v2:[0-9]+/v2/computations/.*:stop$"
-    )
+    get_computation_pattern = re.compile(r"^http://[a-z\-_]*director-v2:[0-9]+/v2/computations/.*$")
+    stop_computation_pattern = re.compile(r"^http://[a-z\-_]*director-v2:[0-9]+/v2/computations/.*:stop$")
     delete_computation_pattern = get_computation_pattern
 
-    get_services_pattern = re.compile(
-        r"^http://[a-z\-_]*director-v2:[0-9]+/v2/dynamic_services.*$"
-    )
+    get_services_pattern = re.compile(r"^http://[a-z\-_]*director-v2:[0-9]+/v2/dynamic_services.*$")
 
-    aioresponses_mocker.get(
-        get_services_pattern, status=status.HTTP_200_OK, repeat=True
-    )
+    aioresponses_mocker.get(get_services_pattern, status=status.HTTP_200_OK, repeat=True)
 
     aioresponses_mocker.post(
         create_computation_pattern,
@@ -233,9 +219,7 @@ def get_upload_link_cb(url: URL, **kwargs) -> CallbackResult:
         assert file_size
         upload_schema = FileUploadSchema(
             chunk_size=TypeAdapter(ByteSize).validate_python("5GiB"),
-            urls=[
-                TypeAdapter(AnyUrl).validate_python(f"{scheme[link_type]}://{file_id}")
-            ],
+            urls=[TypeAdapter(AnyUrl).validate_python(f"{scheme[link_type]}://{file_id}")],
             links=FileUploadLinks(
                 abort_upload=TypeAdapter(AnyUrl).validate_python(f"{url}:abort"),
                 complete_upload=TypeAdapter(AnyUrl).validate_python(f"{url}:complete"),
@@ -246,9 +230,7 @@ def get_upload_link_cb(url: URL, **kwargs) -> CallbackResult:
             payload={"data": jsonable_encoder(upload_schema)},
         )
     # version 1 returns a presigned link
-    presigned_link = PresignedLink(
-        link=TypeAdapter(AnyUrl).validate_python(f"{scheme[link_type]}://{file_id}")
-    )
+    presigned_link = PresignedLink(link=TypeAdapter(AnyUrl).validate_python(f"{scheme[link_type]}://{file_id}"))
     return CallbackResult(
         status=status.HTTP_200_OK,
         payload={"data": jsonable_encoder(presigned_link)},
@@ -266,38 +248,26 @@ def list_file_meta_data_cb(url: URL, **kwargs) -> CallbackResult:
 
 
 @pytest.fixture
-async def storage_v0_service_mock(
-    aioresponses_mocker: AioResponsesMock, faker: Faker
-) -> AioResponsesMock:
+async def storage_v0_service_mock(aioresponses_mocker: AioResponsesMock, faker: Faker) -> AioResponsesMock:
     """mocks responses of storage API"""
 
-    get_file_metadata_pattern = re.compile(
-        r"^http://[a-z\-_]*storage:[0-9]+/v0/locations/[0-9]+/files/.+/metadata.+$"
+    get_file_metadata_pattern = re.compile(r"^http://[a-z\-_]*storage:[0-9]+/v0/locations/[0-9]+/files/.+/metadata.+$")
+
+    get_upload_link_pattern = get_download_link_pattern = delete_file_pattern = re.compile(
+        r"^http://[a-z\-_]*storage:[0-9]+/v0/locations/[0-9]+/files.+$"
     )
 
-    get_upload_link_pattern = get_download_link_pattern = delete_file_pattern = (
-        re.compile(r"^http://[a-z\-_]*storage:[0-9]+/v0/locations/[0-9]+/files.+$")
-    )
+    get_locations_link_pattern = re.compile(r"^http://[a-z\-_]*storage:[0-9]+/v0/locations.+$")
 
-    get_locations_link_pattern = re.compile(
-        r"^http://[a-z\-_]*storage:[0-9]+/v0/locations.+$"
-    )
+    list_file_meta_data_pattern = re.compile(r"^http://[a-z\-_]*storage:[0-9]+/v0/locations/[0-9]+/files/metadata.+$")
 
-    list_file_meta_data_pattern = re.compile(
-        r"^http://[a-z\-_]*storage:[0-9]+/v0/locations/[0-9]+/files/metadata.+$"
-    )
-
-    storage_complete_link = re.compile(
-        r"^http://[a-z\-_]*storage:[0-9]+/v0/locations/[0-9]+/files/.+complete"
-    )
+    storage_complete_link = re.compile(r"^http://[a-z\-_]*storage:[0-9]+/v0/locations/[0-9]+/files/.+complete")
 
     storage_complete_link_futures = re.compile(
         r"^http://[a-z\-_]*storage:[0-9]+/v0/locations/[0-9]+/files/.+complete/futures/.+"
     )
 
-    storage_abort_link = re.compile(
-        r"^http://[a-z\-_]*storage:[0-9]+/v0/locations/[0-9]+/files/.+abort"
-    )
+    storage_abort_link = re.compile(r"^http://[a-z\-_]*storage:[0-9]+/v0/locations/[0-9]+/files/.+abort")
 
     aioresponses_mocker.get(
         get_file_metadata_pattern,
@@ -310,12 +280,8 @@ async def storage_v0_service_mock(
         callback=list_file_meta_data_cb,
         repeat=True,
     )
-    aioresponses_mocker.get(
-        get_download_link_pattern, callback=get_download_link_cb, repeat=True
-    )
-    aioresponses_mocker.put(
-        get_upload_link_pattern, callback=get_upload_link_cb, repeat=True
-    )
+    aioresponses_mocker.get(get_download_link_pattern, callback=get_download_link_cb, repeat=True)
+    aioresponses_mocker.put(get_upload_link_pattern, callback=get_upload_link_cb, repeat=True)
     aioresponses_mocker.delete(delete_file_pattern, status=status.HTTP_204_NO_CONTENT)
 
     aioresponses_mocker.get(
@@ -327,24 +293,16 @@ async def storage_v0_service_mock(
 
     def generate_future_link(url, **kwargs):
         parsed_url = urlparse(str(url))
-        stripped_url = urlunparse(
-            (parsed_url.scheme, parsed_url.netloc, parsed_url.path, "", "", "")
-        )
+        stripped_url = urlunparse((parsed_url.scheme, parsed_url.netloc, parsed_url.path, "", "", ""))
 
-        payload: FileUploadCompleteResponse = TypeAdapter(
-            FileUploadCompleteResponse
-        ).validate_python(
+        payload: FileUploadCompleteResponse = TypeAdapter(FileUploadCompleteResponse).validate_python(
             {
-                "links": {
-                    "state": stripped_url + ":complete/futures/" + str(faker.uuid4())
-                },
+                "links": {"state": stripped_url + ":complete/futures/" + str(faker.uuid4())},
             },
         )
         return CallbackResult(
             status=status.HTTP_200_OK,
-            payload=jsonable_encoder(
-                Envelope[FileUploadCompleteResponse](data=payload)
-            ),
+            payload=jsonable_encoder(Envelope[FileUploadCompleteResponse](data=payload)),
         )
 
     aioresponses_mocker.post(storage_complete_link, callback=generate_future_link)

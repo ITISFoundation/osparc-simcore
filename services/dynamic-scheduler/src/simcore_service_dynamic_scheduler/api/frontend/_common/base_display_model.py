@@ -7,12 +7,8 @@ CompleteModelDict: TypeAlias = dict[str, Any]
 
 
 class BaseUpdatableDisplayModel(BaseModel):
-    _on_type_change_subscribers: Annotated[
-        dict[str, Callable], PrivateAttr(default_factory=dict)
-    ]
-    _on_value_change_subscribers: Annotated[
-        dict[str, Callable], PrivateAttr(default_factory=dict)
-    ]
+    _on_type_change_subscribers: Annotated[dict[str, Callable], PrivateAttr(default_factory=dict)]
+    _on_value_change_subscribers: Annotated[dict[str, Callable], PrivateAttr(default_factory=dict)]
     _on_remove_from_ui_callback: Annotated[Callable | None, PrivateAttr(default=None)]
 
     def _get_on_change_callbacks_to_run(self, update_obj: Self) -> list[Callable]:
@@ -23,9 +19,7 @@ class BaseUpdatableDisplayModel(BaseModel):
                 callbacks_to_run.append(callback)
 
         for attribute_name, callback in self._on_type_change_subscribers.items():
-            if type(getattr(self, attribute_name)) is not type(
-                getattr(update_obj, attribute_name)
-            ):
+            if type(getattr(self, attribute_name)) is not type(getattr(update_obj, attribute_name)):
                 callbacks_to_run.append(callback)
 
         return callbacks_to_run

@@ -48,9 +48,7 @@ async def containers_docker_inspect(
 
 
 @log_decorator(_logger, level=logging.DEBUG)
-async def get_containers_activity(
-    rabbitmq_rpc_client: RabbitMQRPCClient, *, node_id: NodeID
-) -> ActivityInfoOrNone:
+async def get_containers_activity(rabbitmq_rpc_client: RabbitMQRPCClient, *, node_id: NodeID) -> ActivityInfoOrNone:
     rpc_namespace = get_rpc_namespace(node_id)
     result = await rabbitmq_rpc_client.request(
         rpc_namespace,
@@ -60,9 +58,7 @@ async def get_containers_activity(
 
 
 @log_decorator(_logger, level=logging.DEBUG)
-async def get_containers_name(
-    rabbitmq_rpc_client: RabbitMQRPCClient, *, node_id: NodeID, filters: str
-) -> str:
+async def get_containers_name(rabbitmq_rpc_client: RabbitMQRPCClient, *, node_id: NodeID, filters: str) -> str:
     rpc_namespace = get_rpc_namespace(node_id)
     result = await rabbitmq_rpc_client.request(
         rpc_namespace,

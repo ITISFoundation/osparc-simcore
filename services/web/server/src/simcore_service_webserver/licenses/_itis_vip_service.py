@@ -25,9 +25,7 @@ class _ItisVipApiResponse(BaseModel):
     stop=stop_after_attempt(5),
     retry=retry_if_exception_cause_type(httpx.RequestError),
 )
-async def get_category_items(
-    client: httpx.AsyncClient, url: HttpUrl
-) -> list[ItisVipData]:
+async def get_category_items(client: httpx.AsyncClient, url: HttpUrl) -> list[ItisVipData]:
     """
 
     Raises:

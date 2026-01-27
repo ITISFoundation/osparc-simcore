@@ -38,6 +38,7 @@ from models_library.rest_ordering import OrderBy
 from models_library.rest_pagination import PageMetaInfoLimitOffset
 from models_library.users import UserID
 from pydantic import PositiveInt, TypeAdapter
+
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
 
 from ._base import BaseRpcApi
@@ -167,9 +168,7 @@ class FunctionsRpcApi(BaseRpcApi):
         search_by_multi_columns: str | None = None,
     ) -> tuple[list[RegisteredFunction], PageMetaInfoLimitOffset]:
         """List available functions."""
-        return TypeAdapter(
-            tuple[list[RegisteredFunction], PageMetaInfoLimitOffset]
-        ).validate_python(
+        return TypeAdapter(tuple[list[RegisteredFunction], PageMetaInfoLimitOffset]).validate_python(
             await self._request(
                 "list_functions",
                 product_name=product_name,
@@ -195,9 +194,7 @@ class FunctionsRpcApi(BaseRpcApi):
         filter_by_function_job_collection_id: FunctionJobCollectionID | None = None,
     ) -> tuple[list[RegisteredFunctionJob], PageMetaInfoLimitOffset]:
         """List function jobs."""
-        return TypeAdapter(
-            tuple[list[RegisteredFunctionJob], PageMetaInfoLimitOffset]
-        ).validate_python(
+        return TypeAdapter(tuple[list[RegisteredFunctionJob], PageMetaInfoLimitOffset]).validate_python(
             await self._request(
                 "list_function_jobs",
                 product_name=product_name,
@@ -222,9 +219,7 @@ class FunctionsRpcApi(BaseRpcApi):
         filter_by_function_job_collection_id: FunctionJobCollectionID | None = None,
     ) -> tuple[list[RegisteredFunctionJobWithStatus], PageMetaInfoLimitOffset]:
         """List function jobs with status."""
-        return TypeAdapter(
-            tuple[list[RegisteredFunctionJobWithStatus], PageMetaInfoLimitOffset]
-        ).validate_python(
+        return TypeAdapter(tuple[list[RegisteredFunctionJobWithStatus], PageMetaInfoLimitOffset]).validate_python(
             await self._request(
                 "list_function_jobs_with_status",
                 product_name=product_name,
@@ -247,9 +242,7 @@ class FunctionsRpcApi(BaseRpcApi):
         filters: FunctionJobCollectionsListFilters | None = None,
     ) -> tuple[list[RegisteredFunctionJobCollection], PageMetaInfoLimitOffset]:
         """List function job collections."""
-        return TypeAdapter(
-            tuple[list[RegisteredFunctionJobCollection], PageMetaInfoLimitOffset]
-        ).validate_python(
+        return TypeAdapter(tuple[list[RegisteredFunctionJobCollection], PageMetaInfoLimitOffset]).validate_python(
             await self._request(
                 "list_function_job_collections",
                 product_name=product_name,

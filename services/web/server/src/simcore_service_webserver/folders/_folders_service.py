@@ -50,13 +50,9 @@ async def create_folder(
 
         # Check parent_folder_id lives in the workspace
         if parent_folder_id:
-            parent_folder_db = await _folders_repository.get(
-                app, folder_id=parent_folder_id, product_name=product_name
-            )
+            parent_folder_db = await _folders_repository.get(app, folder_id=parent_folder_id, product_name=product_name)
             if parent_folder_db.workspace_id != workspace_id:
-                raise WorkspaceFolderInconsistencyError(
-                    folder_id=parent_folder_id, workspace_id=workspace_id
-                )
+                raise WorkspaceFolderInconsistencyError(folder_id=parent_folder_id, workspace_id=workspace_id)
 
     if parent_folder_id:
         # Check user has access to the parent folder
@@ -98,9 +94,7 @@ async def get_folder(
     folder_id: FolderID,
     product_name: ProductName,
 ) -> FolderTuple:
-    folder_db = await _folders_repository.get(
-        app, folder_id=folder_id, product_name=product_name
-    )
+    folder_db = await _folders_repository.get(app, folder_id=folder_id, product_name=product_name)
 
     workspace_is_private = True
     user_folder_access_rights = AccessRights(read=True, write=True, delete=True)
@@ -124,9 +118,7 @@ async def get_folder(
     )
 
     trashed_by_primary_gid = (
-        await _folders_repository.get_trashed_by_primary_gid(
-            app, folder_id=folder_db.folder_id
-        )
+        await _folders_repository.get_trashed_by_primary_gid(app, folder_id=folder_db.folder_id)
         if folder_db.trashed_by
         else None
     )
@@ -161,9 +153,7 @@ async def list_folders(
             else FolderQuery(folder_scope=FolderScope.ROOT)
         ),
         workspace_query=(
-            WorkspaceQuery(
-                workspace_scope=WorkspaceScope.SHARED, workspace_id=workspace_id
-            )
+            WorkspaceQuery(workspace_scope=WorkspaceScope.SHARED, workspace_id=workspace_id)
             if workspace_id
             else WorkspaceQuery(workspace_scope=WorkspaceScope.PRIVATE)
         ),
@@ -174,10 +164,8 @@ async def list_folders(
         order_by=order_by,
     )
 
-    _trashed_by_primary_gid_values = (
-        await _folders_repository.batch_get_trashed_by_primary_gid(
-            app, folders_ids=[f.folder_id for f in folders]
-        )
+    _trashed_by_primary_gid_values = await _folders_repository.batch_get_trashed_by_primary_gid(
+        app, folders_ids=[f.folder_id for f in folders]
     )
 
     return (
@@ -187,9 +175,7 @@ async def list_folders(
                 trashed_by_primary_gid=trashed_by_primary_gid,
                 my_access_rights=folder.my_access_rights,
             )
-            for folder, trashed_by_primary_gid in zip(
-                folders, _trashed_by_primary_gid_values, strict=True
-            )
+            for folder, trashed_by_primary_gid in zip(folders, _trashed_by_primary_gid_values, strict=True)
         ],
         total_count,
     )
@@ -220,10 +206,8 @@ async def list_folders_full_depth(
         limit=limit,
         order_by=order_by,
     )
-    _trashed_by_primary_gid_values = (
-        await _folders_repository.batch_get_trashed_by_primary_gid(
-            app, folders_ids=[f.folder_id for f in folders]
-        )
+    _trashed_by_primary_gid_values = await _folders_repository.batch_get_trashed_by_primary_gid(
+        app, folders_ids=[f.folder_id for f in folders]
     )
 
     return (
@@ -233,9 +217,7 @@ async def list_folders_full_depth(
                 trashed_by_primary_gid=trashed_by_primary_gid,
                 my_access_rights=folder.my_access_rights,
             )
-            for folder, trashed_by_primary_gid in zip(
-                folders, _trashed_by_primary_gid_values, strict=True
-            )
+            for folder, trashed_by_primary_gid in zip(folders, _trashed_by_primary_gid_values, strict=True)
         ],
         total_count,
     )
@@ -250,9 +232,7 @@ async def update_folder(
     parent_folder_id: FolderID | None,
     product_name: ProductName,
 ) -> FolderTuple:
-    folder_db = await _folders_repository.get(
-        app, folder_id=folder_id, product_name=product_name
-    )
+    folder_db = await _folders_repository.get(app, folder_id=folder_id, product_name=product_name)
 
     workspace_is_private = True
     user_folder_access_rights = AccessRights(read=True, write=True, delete=True)
@@ -290,9 +270,7 @@ async def update_folder(
             app, folder_id=folder_id, product_name=product_name
         )
         if parent_folder_id in _child_folders:
-            raise FolderValueNotPermittedError(
-                details="Parent folder id should not be one of children"
-            )
+            raise FolderValueNotPermittedError(details="Parent folder id should not be one of children")
 
     folder_db = await _folders_repository.update(
         app,
@@ -303,9 +281,7 @@ async def update_folder(
     )
 
     trashed_by_primary_gid = (
-        await _folders_repository.get_trashed_by_primary_gid(
-            app, folder_id=folder_db.folder_id
-        )
+        await _folders_repository.get_trashed_by_primary_gid(app, folder_id=folder_db.folder_id)
         if folder_db.trashed_by
         else None
     )
@@ -323,9 +299,7 @@ async def delete_folder_with_all_content(
     folder_id: FolderID,
     product_name: ProductName,
 ) -> None:
-    folder_db = await _folders_repository.get(
-        app, folder_id=folder_id, product_name=product_name
-    )
+    folder_db = await _folders_repository.get(app, folder_id=folder_id, product_name=product_name)
 
     workspace_is_private = True
     if folder_db.workspace_id:
@@ -352,14 +326,12 @@ async def delete_folder_with_all_content(
     # NOTE: The reason for this is to be cautious and not delete projects by accident that
     # are not owned by the user (even if the user was granted delete permissions). As a consequence, after deleting the folder,
     # projects that the user does not own will appear in the root. (Maybe this can be changed as we now have a trash system).
-    project_id_list: list[ProjectID] = (
-        await _folders_repository.get_projects_recursively_only_if_user_is_owner(
-            app,
-            folder_id=folder_id,
-            private_workspace_user_id_or_none=user_id if workspace_is_private else None,
-            user_id=user_id,
-            product_name=product_name,
-        )
+    project_id_list: list[ProjectID] = await _folders_repository.get_projects_recursively_only_if_user_is_owner(
+        app,
+        folder_id=folder_id,
+        private_workspace_user_id_or_none=user_id if workspace_is_private else None,
+        user_id=user_id,
+        product_name=product_name,
     )
 
     for project_id in project_id_list:
@@ -370,6 +342,4 @@ async def delete_folder_with_all_content(
         )
 
     # 1.2 Delete all child folders
-    await _folders_repository.delete_recursively(
-        app, folder_id=folder_id, product_name=product_name
-    )
+    await _folders_repository.delete_recursively(app, folder_id=folder_id, product_name=product_name)

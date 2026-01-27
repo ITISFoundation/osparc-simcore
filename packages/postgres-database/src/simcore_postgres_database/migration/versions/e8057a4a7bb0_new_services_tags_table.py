@@ -29,12 +29,8 @@ def upgrade():
             onupdate="CASCADE",
             ondelete="CASCADE",
         ),
-        sa.ForeignKeyConstraint(
-            ["tag_id"], ["tags.id"], onupdate="CASCADE", ondelete="CASCADE"
-        ),
-        sa.UniqueConstraint(
-            "service_key", "service_version", "tag_id", name="services_tags_uc"
-        ),
+        sa.ForeignKeyConstraint(["tag_id"], ["tags.id"], onupdate="CASCADE", ondelete="CASCADE"),
+        sa.UniqueConstraint("service_key", "service_version", "tag_id", name="services_tags_uc"),
     )
     # ### end Alembic commands ###
 

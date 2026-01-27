@@ -1,6 +1,8 @@
 from datetime import datetime
 from typing import NamedTuple
 
+from pydantic import BaseModel, ConfigDict, PositiveInt
+
 from models_library.licenses import LicensedItemID, LicensedItemKey, LicensedItemVersion
 from models_library.products import ProductName
 from models_library.resource_tracker_licensed_items_checkouts import (
@@ -9,7 +11,6 @@ from models_library.resource_tracker_licensed_items_checkouts import (
 from models_library.services_types import ServiceRunID
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import BaseModel, ConfigDict, PositiveInt
 
 
 class LicensedItemCheckoutGet(BaseModel):

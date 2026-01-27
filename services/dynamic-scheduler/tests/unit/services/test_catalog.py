@@ -36,9 +36,7 @@ def app_environment(
 
 @pytest.fixture
 def simcore_service_labels() -> SimcoreServiceLabels:
-    return TypeAdapter(SimcoreServiceLabels).validate_python(
-        SimcoreServiceLabels.model_json_schema()["examples"][1]
-    )
+    return TypeAdapter(SimcoreServiceLabels).validate_python(SimcoreServiceLabels.model_json_schema()["examples"][1])
 
 
 @pytest.fixture
@@ -98,9 +96,7 @@ async def test_get_service_labels(
 ):
     client = CatalogPublicClient.get_from_app_state(app)
     result = await client.get_docker_image_labels(service_key, service_version)
-    assert result.model_dump(mode="json") == simcore_service_labels.model_dump(
-        mode="json"
-    )
+    assert result.model_dump(mode="json") == simcore_service_labels.model_dump(mode="json")
 
 
 async def test_get_services_specifications(
@@ -112,9 +108,5 @@ async def test_get_services_specifications(
     service_specifications: ServiceSpecifications,
 ):
     client = CatalogPublicClient.get_from_app_state(app)
-    result = await client.get_services_specifications(
-        user_id, service_key, service_version
-    )
-    assert result.model_dump(mode="json") == service_specifications.model_dump(
-        mode="json"
-    )
+    result = await client.get_services_specifications(user_id, service_key, service_version)
+    assert result.model_dump(mode="json") == service_specifications.model_dump(mode="json")

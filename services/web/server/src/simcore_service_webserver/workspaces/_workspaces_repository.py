@@ -80,9 +80,7 @@ async def create_workspace(
         return Workspace.model_validate(row)
 
 
-def _create_base_select_query(
-    caller_user_id: UserID, product_name: ProductName
-) -> Select:
+def _create_base_select_query(caller_user_id: UserID, product_name: ProductName) -> Select:
     # any other access
     access_rights_subquery = (
         select(
@@ -106,9 +104,7 @@ def _create_base_select_query(
     ).subquery("access_rights_subquery")
 
     # caller's access rights
-    my_access_rights_subquery = create_my_workspace_access_rights_subquery(
-        user_id=caller_user_id
-    )
+    my_access_rights_subquery = create_my_workspace_access_rights_subquery(user_id=caller_user_id)
 
     return (
         select(
@@ -138,20 +134,15 @@ async def list_workspaces_for_user(
     limit: NonNegativeInt,
     order_by: OrderBy,
 ) -> tuple[int, list[UserWorkspaceWithAccessRights]]:
-    base_select_query = _create_base_select_query(
-        caller_user_id=user_id, product_name=product_name
-    )
+    base_select_query = _create_base_select_query(caller_user_id=user_id, product_name=product_name)
 
     if filter_trashed is not None:
         base_select_query = base_select_query.where(
-            workspaces.c.trashed.is_not(None)
-            if filter_trashed
-            else workspaces.c.trashed.is_(None)
+            workspaces.c.trashed.is_not(None) if filter_trashed else workspaces.c.trashed.is_(None)
         )
     if filter_by_text is not None:
         base_select_query = base_select_query.where(
-            (workspaces.c.name.ilike(f"%{filter_by_text}%"))
-            | (workspaces.c.description.ilike(f"%{filter_by_text}%"))
+            (workspaces.c.name.ilike(f"%{filter_by_text}%")) | (workspaces.c.description.ilike(f"%{filter_by_text}%"))
         )
 
     # Select total count from base_query
@@ -159,13 +150,9 @@ async def list_workspaces_for_user(
 
     # Ordering and pagination
     if order_by.direction == OrderDirection.ASC:
-        list_query = base_select_query.order_by(
-            asc(getattr(workspaces.c, order_by.field))
-        )
+        list_query = base_select_query.order_by(asc(getattr(workspaces.c, order_by.field)))
     else:
-        list_query = base_select_query.order_by(
-            desc(getattr(workspaces.c, order_by.field))
-        )
+        list_query = base_select_query.order_by(desc(getattr(workspaces.c, order_by.field)))
     list_query = list_query.offset(offset).limit(limit)
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
@@ -187,9 +174,9 @@ async def get_workspace_for_user(
     workspace_id: WorkspaceID,
     product_name: ProductName,
 ) -> UserWorkspaceWithAccessRights:
-    select_query = _create_base_select_query(
-        caller_user_id=user_id, product_name=product_name
-    ).where(workspaces.c.workspace_id == workspace_id)
+    select_query = _create_base_select_query(caller_user_id=user_id, product_name=product_name).where(
+        workspaces.c.workspace_id == workspace_id
+    )
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         result = await conn.execute(select_query)
@@ -239,10 +226,7 @@ async def update_workspace(
         result = await conn.stream(
             workspaces.update()
             .values(**_updates)
-            .where(
-                (workspaces.c.workspace_id == workspace_id)
-                & (workspaces.c.product_name == product_name)
-            )
+            .where((workspaces.c.workspace_id == workspace_id) & (workspaces.c.product_name == product_name))
             .returning(*_WORKSPACE_SELECTION_COLS)
         )
         row = await result.first()
@@ -261,15 +245,12 @@ async def delete_workspace(
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         await conn.execute(
             workspaces.delete().where(
-                (workspaces.c.workspace_id == workspace_id)
-                & (workspaces.c.product_name == product_name)
+                (workspaces.c.workspace_id == workspace_id) & (workspaces.c.product_name == product_name)
             )
         )
 
 
-assert set(WorkspaceDBGet.model_fields.keys()) == {
-    col.name for col in _WORKSPACE_SELECTION_COLS
-}
+assert set(WorkspaceDBGet.model_fields.keys()) == {col.name for col in _WORKSPACE_SELECTION_COLS}
 
 
 async def list_workspaces_db_get_as_admin(
@@ -288,9 +269,7 @@ async def list_workspaces_db_get_as_admin(
     NOTE: This is an internal function used for administrative purposes.
     Ex. It lists trashed workspaces across the application for cleanup tasks.
     """
-    base_query = select(*_WORKSPACE_SELECTION_COLS).where(
-        workspaces.c.trashed.is_not(None)
-    )
+    base_query = select(*_WORKSPACE_SELECTION_COLS).where(workspaces.c.trashed.is_not(None))
 
     if is_set(trashed_before):
         assert isinstance(trashed_before, datetime)  # nosec
@@ -301,20 +280,14 @@ async def list_workspaces_db_get_as_admin(
 
     # Ordering and pagination
     if order_by.direction == OrderDirection.ASC:
-        list_query = base_query.order_by(
-            asc(getattr(workspaces.c, order_by.field)), workspaces.c.workspace_id
-        )
+        list_query = base_query.order_by(asc(getattr(workspaces.c, order_by.field)), workspaces.c.workspace_id)
     else:
-        list_query = base_query.order_by(
-            desc(getattr(workspaces.c, order_by.field)), workspaces.c.workspace_id
-        )
+        list_query = base_query.order_by(desc(getattr(workspaces.c, order_by.field)), workspaces.c.workspace_id)
     list_query = list_query.offset(offset).limit(limit)
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         total_count = await conn.scalar(count_query)
 
         result = await conn.stream(list_query)
-        workspaces_list: list[WorkspaceDBGet] = [
-            WorkspaceDBGet.model_validate(row) async for row in result
-        ]
+        workspaces_list: list[WorkspaceDBGet] = [WorkspaceDBGet.model_validate(row) async for row in result]
         return cast(int, total_count), workspaces_list

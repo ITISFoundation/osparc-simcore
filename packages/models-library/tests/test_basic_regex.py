@@ -143,9 +143,7 @@ VERSION_TESTFIXTURES = [
 @pytest.mark.parametrize("version_str, expected", VERSION_TESTFIXTURES)
 def test_SEMANTIC_VERSION_RE_W_CAPTURE_GROUPS(version_str: str, expected):
     # cg1 = major, cg2 = minor, cg3 = patch, cg4 = prerelease and cg5 = buildmetadata
-    assert_match_and_get_capture(
-        SEMANTIC_VERSION_RE_W_CAPTURE_GROUPS, version_str, expected
-    )
+    assert_match_and_get_capture(SEMANTIC_VERSION_RE_W_CAPTURE_GROUPS, version_str, expected)
 
 
 @pytest.mark.parametrize("version_str, expected", VERSION_TESTFIXTURES)
@@ -201,9 +199,7 @@ class webserver_timedate_utils:
         (datetime.utcnow().isoformat(), INVALID),  # as '2020-11-29T22:09:21.859469'
         (webserver_timedate_utils.now_str(), VALID),
         (
-            webserver_timedate_utils.format_datetime(
-                datetime(2020, 11, 29, 22, 13, 23, 57000)
-            ),
+            webserver_timedate_utils.format_datetime(datetime(2020, 11, 29, 22, 13, 23, 57000)),
             ("11", "29", "22", ":23", "23", ".057"),
         ),  # '2020-11-29T22:13:23.057Z'
     ],
@@ -246,7 +242,7 @@ def test_pep404_compare_versions():
 def test_variable_names_regex(string_under_test, expected_match):
     variable_re = re.compile(PUBLIC_VARIABLE_NAME_RE)
 
-    # NOTE: for keywords it is more difficult ot catch them in a regix.
+    # NOTE: for keywords it is more difficult to catch them in a regix.
     # Instead is better to add a validator( ... pre=True) in the field
     # that does the following check and invalidates them:
     # SEE https://docs.python.org/3/library/stdtypes.html?highlight=isidentifier#str.isidentifier

@@ -10,9 +10,7 @@ from pydantic import TypeAdapter
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:
-    group = parser.getgroup(
-        "oSparc e2e options", description="oSPARC-e2e specific parameters"
-    )
+    group = parser.getgroup("oSparc e2e options", description="oSPARC-e2e specific parameters")
     group.addoption(
         "--check-videostreaming",
         action="store_true",

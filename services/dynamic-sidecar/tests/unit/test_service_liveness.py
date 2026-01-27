@@ -20,9 +20,7 @@ def timeout() -> timedelta:
 
 
 @pytest.mark.parametrize("handler_return", [None, True])
-async def test_wait_for_service_liveness_ok(
-    check_interval: timedelta, timeout: timedelta, handler_return: bool | None
-):
+async def test_wait_for_service_liveness_ok(check_interval: timedelta, timeout: timedelta, handler_return: bool | None):
     async def _ok_handler() -> bool | None:
         return handler_return
 

@@ -153,9 +153,7 @@ class Resources(BaseModel, frozen=True):
     def __hash__(self) -> int:
         """Deterministic hash including cpus, ram (in bytes) and generic_resources."""
         # sort generic_resources items to ensure order-independent hashing
-        generic_items: tuple[tuple[str, GenericResourceValueType], ...] = tuple(
-            sorted(self.generic_resources.items())
-        )
+        generic_items: tuple[tuple[str, GenericResourceValueType], ...] = tuple(sorted(self.generic_resources.items()))
         return hash((self.cpus, self.ram, generic_items))
 
     def as_flat_dict(self) -> dict[str, int | float | str]:
@@ -175,9 +173,7 @@ class Resources(BaseModel, frozen=True):
         mapped_data = data
         if mapping:
             mapped_data = {mapping.get(k, k): v for k, v in data.items()}
-        generic_resources = {
-            k: v for k, v in mapped_data.items() if k not in {"cpus", "ram"}
-        }
+        generic_resources = {k: v for k, v in mapped_data.items() if k not in {"cpus", "ram"}}
 
         return cls(
             cpus=float(mapped_data.get("cpus", 0)),
