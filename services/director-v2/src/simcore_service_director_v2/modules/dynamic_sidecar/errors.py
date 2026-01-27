@@ -1,20 +1,8 @@
-from typing import Any
-
-from aiodocker import DockerError
-
 from ...core.errors import DirectorError
 
 
 class DynamicSidecarError(DirectorError):
     msg_template: str = "Unexpected dynamic sidecar error: {msg}"
-
-
-class GenericDockerError(DynamicSidecarError):
-    def __init__(self, original_exception: DockerError, **ctx: Any) -> None:
-        super().__init__(original_exception=original_exception, **ctx)
-        self.original_exception = original_exception
-
-    msg_template: str = "Unexpected error using docker client: {msg}"
 
 
 class DynamicSidecarNotFoundError(DirectorError):
@@ -26,7 +14,7 @@ class DockerServiceNotFoundError(DirectorError):
 
 
 class EntrypointContainerNotFoundError(DynamicSidecarError):
-    """Raised while the entrypoint container was nto yet started"""
+    """Raised while the entrypoint container was not yet started"""
 
 
 class LegacyServiceIsNotSupportedError(DirectorError):

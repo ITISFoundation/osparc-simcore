@@ -2,7 +2,7 @@
 
 
 TODO: Exceptions should provide all info to create Error instances of the API model
-For instance, assume there is a ficticious exception class FieldValidationError, then it would
+For instance, assume there is a fictitious exception class FieldValidationError, then it would
 translate into something like
 
 // response - 422
@@ -105,9 +105,7 @@ class TaskSchedulingError(ComputationalSchedulerError):
         ]
 
 
-class MissingComputationalResourcesError(
-    TaskSchedulingError
-):  # pylint: disable=too-many-ancestors
+class MissingComputationalResourcesError(TaskSchedulingError):  # pylint: disable=too-many-ancestors
     msg_template = (
         "Service {service_name}:{service_version} cannot be scheduled "
         "on cluster: task needs '{task_resources}', "
@@ -115,20 +113,17 @@ class MissingComputationalResourcesError(
     )
 
 
-class InsuficientComputationalResourcesError(
-    TaskSchedulingError
-):  # pylint: disable=too-many-ancestors
+class InsufficientComputationalResourcesError(TaskSchedulingError):  # pylint: disable=too-many-ancestors
     msg_template: str = (
-        "Insufficient computational resources to run {service_name}:{service_version} with {service_requested_resources} on cluster."
+        "Insufficient computational resources to run {service_name}:{service_version} "
+        "with {service_requested_resources} on cluster."
         "Cluster available workers: {cluster_available_resources}"
         "TIP: Reduce service required resources or contact oSparc support"
     )
 
 
 class PortsValidationError(TaskSchedulingError):  # pylint: disable=too-many-ancestors
-    msg_template: str = (
-        "Node {node_id} in {project_id} with ports having invalid values {errors_list}"
-    )
+    msg_template: str = "Node {node_id} in {project_id} with ports having invalid values {errors_list}"
 
 
 class ComputationalSchedulerChangedError(ComputationalSchedulerError):
@@ -144,9 +139,7 @@ class ComputationalBackendNoS3AccessError(ComputationalSchedulerError):
 
 
 class ComputationalBackendTaskNotFoundError(ComputationalSchedulerError):
-    msg_template = (
-        "The dask computational backend does not know about the task '{job_id}'"
-    )
+    msg_template = "The dask computational backend does not know about the task '{job_id}'"
 
 
 class ComputationalBackendTaskResultsNotReadyError(ComputationalSchedulerError):
@@ -158,9 +151,7 @@ class ClustersKeeperNotAvailableError(ComputationalSchedulerError):
 
 
 class ComputationalBackendOnDemandNotReadyError(ComputationalSchedulerError):
-    msg_template = (
-        "The on demand computational cluster is not ready 'est. remaining time: {eta}'"
-    )
+    msg_template = "The on demand computational cluster is not ready 'est. remaining time: {eta}'"
 
 
 #
@@ -176,9 +167,7 @@ class ClusterNotFoundError(ComputationalSchedulerError):
 
 
 class DaskClientRequestError(ComputationalSchedulerError):
-    msg_template = (
-        "The dask client to cluster on '{endpoint}' did an invalid request '{error}'"
-    )
+    msg_template = "The dask client to cluster on '{endpoint}' did an invalid request '{error}'"
 
 
 class DaskClusterError(ComputationalSchedulerError):
@@ -190,6 +179,4 @@ class DaskGatewayServerError(ComputationalSchedulerError):
 
 
 class DaskClientAcquisisitonError(ComputationalSchedulerError):
-    msg_template = (
-        "The dask client to cluster '{cluster}' encountered an error '{error}'"
-    )
+    msg_template = "The dask client to cluster '{cluster}' encountered an error '{error}'"

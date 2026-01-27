@@ -40,6 +40,7 @@ pytest_plugins = [
     "pytest_simcore.asyncio_event_loops",
     "pytest_simcore.dask_scheduler",
     "pytest_simcore.db_entries_mocks",
+    "pytest_simcore.docker_api_proxy",
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_registry",
     "pytest_simcore.docker_swarm",
@@ -85,14 +86,10 @@ def package_dir() -> Path:
 
 
 @pytest.fixture()
-def project_env_devel_environment(
-    monkeypatch: pytest.MonkeyPatch, project_slug_dir: Path
-) -> EnvVarsDict:
+def project_env_devel_environment(monkeypatch: pytest.MonkeyPatch, project_slug_dir: Path) -> EnvVarsDict:
     env_devel_file = project_slug_dir / ".env-devel"
     assert env_devel_file.exists()
-    return setenvs_from_envfile(
-        monkeypatch, env_devel_file.read_text(), verbose=True, interpolate=True
-    )
+    return setenvs_from_envfile(monkeypatch, env_devel_file.read_text(), verbose=True, interpolate=True)
 
 
 @pytest.fixture(scope="session")
@@ -331,16 +328,12 @@ def mock_redis(mocker: MockerFixture) -> None:
 
         app.add_event_handler("startup", on_startup)
 
-    mocker.patch(
-        "simcore_service_director_v2.modules.redis.setup", side_effect=_mock_setup
-    )
+    mocker.patch("simcore_service_director_v2.modules.redis.setup", side_effect=_mock_setup)
 
 
 @pytest.fixture
 def mock_exclusive(mock_redis: None, mocker: MockerFixture) -> None:
-    def _mock_exclusive(
-        _: Any, *, lock_key: str, lock_value: bytes | str | None = None
-    ):
+    def _mock_exclusive(_: Any, *, lock_key: str, lock_value: bytes | str | None = None):
         def decorator(func):
             @functools.wraps(func)
             async def wrapper(*args, **kwargs):
@@ -350,9 +343,7 @@ def mock_exclusive(mock_redis: None, mocker: MockerFixture) -> None:
 
         return decorator
 
-    module_base = (
-        "simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core._scheduler"
-    )
+    module_base = "simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core._scheduler"
     mocker.patch(f"{module_base}.exclusive", side_effect=_mock_exclusive)
 
 

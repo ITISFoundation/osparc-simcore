@@ -44,6 +44,7 @@ pytest_simcore_core_services_selection = [
     "agent",
     "catalog",
     "director",
+    "docker-api-proxy",
     "migration",
     "postgres",
     "rabbit",
@@ -56,6 +57,7 @@ pytest_simcore_ops_services_selection = ["adminer", "minio", "portainer"]
 
 @pytest.fixture()
 def mock_env(
+    setup_docker_api_proxy: None,
     mock_env: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
     redis_service: RedisSettings,
@@ -190,14 +192,10 @@ async def ensure_services_stopped(
                 # if node_uuid is present in the service name it needs to be removed
                 if node_uuid in service_name:
                     try:
-                        delete_result = await docker_client.services.delete(
-                            service_name
-                        )
+                        delete_result = await docker_client.services.delete(service_name)
                         assert delete_result is True
                     except aiodocker.exceptions.DockerError as e:
-                        assert (
-                            e.status == 404
-                        ), f"Unexpected error when deleting service: {e}"
+                        assert e.status == 404, f"Unexpected error when deleting service: {e}"  # noqa: PT017
 
         project_id = f"{dy_static_file_server_project.uuid}"
 
@@ -212,9 +210,7 @@ async def ensure_services_stopped(
 
 @pytest.fixture
 def mock_sidecars_client(mocker: MockerFixture) -> mock.Mock:
-    class_path = (
-        "simcore_service_director_v2.modules.dynamic_sidecar.api_client.SidecarsClient"
-    )
+    class_path = "simcore_service_director_v2.modules.dynamic_sidecar.api_client.SidecarsClient"
     for function_name, return_value in [
         ("pull_service_output_ports", 0),
         ("restore_service_state", 0),
@@ -224,7 +220,7 @@ def mock_sidecars_client(mocker: MockerFixture) -> mock.Mock:
         mocker.patch(
             f"{class_path}.{function_name}",
             # pylint: disable=cell-var-from-loop
-            side_effect=lambda *args, **kwargs: return_value,
+            side_effect=lambda *args, **kwargs: return_value,  # noqa: ARG005, B023
         )
 
     # also patch the long_running_tasks client context mangers handling the above

@@ -5,6 +5,7 @@ from common_library.json_serialization import json_dumps
 from fastapi import FastAPI, HTTPException, status
 from fastapi.exceptions import RequestValidationError
 from fastapi_lifespan_manager import LifespanManager
+from servicelib.fastapi.docker import setup_remote_docker_client
 from servicelib.fastapi.lifespan_utils import Lifespan
 from servicelib.fastapi.logging_lifespan import create_logging_shutdown_event
 from servicelib.fastapi.openapi import (
@@ -68,41 +69,29 @@ def _set_exception_handlers(app: FastAPI):
     # director-v2 core.errors mappend into HTTP errors
     app.add_exception_handler(
         ProjectNotFoundError,
-        make_http_error_handler_for_exception(
-            status.HTTP_404_NOT_FOUND, ProjectNotFoundError
-        ),
+        make_http_error_handler_for_exception(status.HTTP_404_NOT_FOUND, ProjectNotFoundError),
     )
     app.add_exception_handler(
         ProjectNetworkNotFoundError,
-        make_http_error_handler_for_exception(
-            status.HTTP_404_NOT_FOUND, ProjectNetworkNotFoundError
-        ),
+        make_http_error_handler_for_exception(status.HTTP_404_NOT_FOUND, ProjectNetworkNotFoundError),
     )
     app.add_exception_handler(
         PipelineNotFoundError,
-        make_http_error_handler_for_exception(
-            status.HTTP_404_NOT_FOUND, PipelineNotFoundError
-        ),
+        make_http_error_handler_for_exception(status.HTTP_404_NOT_FOUND, PipelineNotFoundError),
     )
     app.add_exception_handler(
         ClusterNotFoundError,
-        make_http_error_handler_for_exception(
-            status.HTTP_404_NOT_FOUND, ClusterNotFoundError
-        ),
+        make_http_error_handler_for_exception(status.HTTP_404_NOT_FOUND, ClusterNotFoundError),
     )
 
     # SEE https://docs.python.org/3/library/exceptions.html#exception-hierarchy
     app.add_exception_handler(
         NotImplementedError,
-        make_http_error_handler_for_exception(
-            status.HTTP_501_NOT_IMPLEMENTED, NotImplementedError
-        ),
+        make_http_error_handler_for_exception(status.HTTP_501_NOT_IMPLEMENTED, NotImplementedError),
     )
     app.add_exception_handler(
         Exception,
-        make_http_error_handler_for_exception(
-            status.HTTP_500_INTERNAL_SERVER_ERROR, Exception
-        ),
+        make_http_error_handler_for_exception(status.HTTP_500_INTERNAL_SERVER_ERROR, Exception),
     )
 
 
@@ -119,9 +108,7 @@ def create_base_app(
     if app_settings is None:
         app_settings = AppSettings.create_from_envs()
 
-    tracing_config = TracingConfig.create(
-        service_name=APP_NAME, tracing_settings=app_settings.DIRECTOR_V2_TRACING
-    )
+    tracing_config = TracingConfig.create(service_name=APP_NAME, tracing_settings=app_settings.DIRECTOR_V2_TRACING)
     logging_shutdown_event = create_logging_shutdown_event(
         log_format_local_dev_enabled=app_settings.DIRECTOR_V2_LOG_FORMAT_LOCAL_DEV_ENABLED,
         logger_filter_mapping=app_settings.DIRECTOR_V2_LOG_FILTER_MAPPING,
@@ -144,9 +131,7 @@ def create_base_app(
         description=SUMMARY,
         version=API_VERSION,
         openapi_url=f"/api/{API_VTAG}/openapi.json",
-        **get_common_oas_options(
-            is_devel_mode=app_settings.SC_BOOT_MODE.is_devel_mode()
-        ),
+        **get_common_oas_options(is_devel_mode=app_settings.SC_BOOT_MODE.is_devel_mode()),
     )
     override_fastapi_openapi_method(app)
     app.state.settings = app_settings
@@ -159,7 +144,7 @@ def create_base_app(
     return app
 
 
-def create_app(  # noqa: C901, PLR0912
+def create_app(  # noqa: C901
     settings: AppSettings | None = None,
 ) -> FastAPI:
     app = create_base_app(settings)
@@ -200,6 +185,8 @@ def create_app(  # noqa: C901, PLR0912
             tracing_settings=settings.DIRECTOR_V2_TRACING,
         )
 
+    setup_remote_docker_client(app, settings.DIRECTOR_V2_DOCKER_API_PROXY)
+
     db.setup(app, settings.POSTGRES)
 
     if get_tracing_config(app).tracing_enabled:
@@ -213,9 +200,7 @@ def create_app(  # noqa: C901, PLR0912
         and settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER.DIRECTOR_V2_DYNAMIC_SCHEDULER_ENABLED
     )
 
-    computational_backend_enabled = (
-        settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND.COMPUTATIONAL_BACKEND_ENABLED
-    )
+    computational_backend_enabled = settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND.COMPUTATIONAL_BACKEND_ENABLED
     if dynamic_scheduler_enabled or computational_backend_enabled:
         rabbitmq.setup(app)
         setup_rpc_api_routes(app)  # Requires rabbitmq to be setup first
@@ -227,9 +212,7 @@ def create_app(  # noqa: C901, PLR0912
         notifier.setup(app)
         long_running_tasks.setup(app)
 
-    if (
-        settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND.COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED
-    ):
+    if settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND.COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED:
         dask_clients_pool.setup(app, settings.DIRECTOR_V2_COMPUTATIONAL_BACKEND)
 
     if computational_backend_enabled:
