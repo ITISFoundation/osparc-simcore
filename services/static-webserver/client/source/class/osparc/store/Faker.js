@@ -170,6 +170,9 @@ qx.Class.define("osparc.store.Faker", {
     </div>
 
     <div class="content">
+    <p>Hello,</p>
+    <p>This is a free-form email template. You can customize the content as needed.</p>
+    <p>Best regards,<br>The oSPARC Team</p>
     </div>
 
     <div class="footer">

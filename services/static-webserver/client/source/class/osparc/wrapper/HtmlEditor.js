@@ -200,5 +200,10 @@ qx.Class.define("osparc.wrapper.HtmlEditor", {
     getHTML: function(quill) {
       return quill.root.innerHTML;
     },
+
+    setHTML: function(quill, html) {
+      const delta = quill.clipboard.convert(html);
+      quill.setContents(delta, 'silent');
+    },
   }
 });

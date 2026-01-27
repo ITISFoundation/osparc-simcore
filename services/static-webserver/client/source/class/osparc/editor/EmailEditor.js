@@ -27,6 +27,7 @@ qx.Class.define("osparc.editor.EmailEditor", {
     });
 
     this.__quillInstance = null;
+    this.__initialContent = "";
 
     // Initialize HtmlEditor wrapper
     osparc.wrapper.HtmlEditor.getInstance().init()
@@ -63,6 +64,7 @@ qx.Class.define("osparc.editor.EmailEditor", {
       check: "String",
       init: "",
       nullable: true,
+      apply: "__applyTemplateEmail",
     },
   },
 
@@ -109,8 +111,7 @@ qx.Class.define("osparc.editor.EmailEditor", {
         case "text-editor": {
           const editorId = "email-html-editor-" + Date.now();
           const htmlEditor = osparc.wrapper.HtmlEditor.getInstance();
-          const initContent = "";
-          const quillContainer = htmlEditor.createEditor(editorId, initContent, {
+          const quillContainer = htmlEditor.createEditor(editorId, this.__initialContent, {
             placeholder: 'Write your email...',
             modules: {
               toolbar: osparc.wrapper.HtmlEditor.getRichToolbarConfig()
@@ -124,6 +125,10 @@ qx.Class.define("osparc.editor.EmailEditor", {
           // Initialize Quill after the DOM element is ready
           quillContainer.addListenerOnce("appear", () => {
             this.__quillInstance = htmlEditor.initializeEditor(editorId, quillContainer.getUserData("quillOptions"));
+            // Set initial content if already loaded
+            if (this.__initialContent && this.__quillInstance) {
+              htmlEditor.setHTML(this.__quillInstance, this.__initialContent);
+            }
           });
 
           this.getChildControl("editor-page").add(control, {
@@ -150,6 +155,27 @@ qx.Class.define("osparc.editor.EmailEditor", {
       }
 
       return control || this.base(arguments, id);
+    },
+
+    __applyTemplateEmail: function(templateEmail) {
+      if (!templateEmail) {
+        return;
+      }
+
+      // Extract content section from the template email
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(templateEmail, "text/html");
+      const contentContainer = doc.querySelector(".content");
+
+      if (contentContainer) {
+        this.__initialContent = contentContainer.innerHTML;
+
+        // Update Quill editor if already initialized
+        if (this.__quillInstance) {
+          const wrapper = osparc.wrapper.HtmlEditor.getInstance();
+          wrapper.setHTML(this.__quillInstance, this.__initialContent);
+        }
+      }
     },
 
     __renderPreview: function() {
