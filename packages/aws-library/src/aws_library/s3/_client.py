@@ -4,7 +4,7 @@ import functools
 import logging
 import urllib.parse
 from collections import deque
-from collections.abc import AsyncGenerator, Sequence
+from collections.abc import AsyncGenerator, AsyncIterator, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Final, Literal, Protocol, cast
@@ -285,7 +285,7 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
         ):
             yield [S3MetaData.from_botocore_list_objects(obj) for obj in page.get("Contents", [])]
 
-    async def _list_all_objects(self, *, bucket: S3BucketName, prefix: str) -> AsyncGenerator[S3MetaData]:
+    async def _list_all_objects(self, *, bucket: S3BucketName, prefix: str) -> AsyncIterator[S3MetaData]:
         async for s3_objects in self.list_objects_paginated(bucket=bucket, prefix=prefix):
             for obj in s3_objects:
                 yield obj
@@ -537,8 +537,8 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
         if bytes_transferred_cb:
             copy_options |= {"Callback": functools.partial(bytes_transferred_cb, file_name=f"{dst_object_key}")}
         # NOTE: boto3 copy function uses copy_object until 'multipart_threshold' is reached then switches to multipart copy
-        # copy_object does not provide any callbacks so we can't track progress so we need to ensure at least the completion
-        # of the object is tracked
+        # copy_object does not provide any callbacks so we can't track progress so we need to ensure
+        # at least the completion of the object is tracked
         await self._client.copy(**copy_options)
         if bytes_transferred_cb:
             if object_metadata is None:
