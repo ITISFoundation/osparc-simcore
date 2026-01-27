@@ -38,8 +38,7 @@ _AUTHZ_BURST_CACHE_TTL: Final = (
     # Rationale:
     #   a user's access to a product does not change that frequently
     #   Keeps a cache during bursts to avoid stress on the database
-    30
-    * _MINUTE
+    30 * _MINUTE
 )
 
 
@@ -70,26 +69,20 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
         namespace=__name__,
         key_builder=lambda f, *ag, **kw: f"{f.__name__}/{kw['email']}",
     )
-    async def _get_authorized_user_or_none(
-        self, *, email: str
-    ) -> ActiveUserIdAndRole | None:
+    async def _get_authorized_user_or_none(self, *, email: str) -> ActiveUserIdAndRole | None:
         """
         Raises:
             web.HTTPServiceUnavailable: if database raises an exception
         """
         with _handle_exceptions_as_503():
-            return await _authz_repository.get_active_user_or_none(
-                get_async_engine(self._app), email=email
-            )
+            return await _authz_repository.get_active_user_or_none(get_async_engine(self._app), email=email)
 
     @cached(
         ttl=_AUTHZ_BURST_CACHE_TTL,
         namespace=__name__,
         key_builder=lambda f, *ag, **kw: f"{f.__name__}/{kw['user_id']}/{kw['product_name']}",
     )
-    async def _has_access_to_product(
-        self, *, user_id: UserID, product_name: ProductName
-    ) -> bool:
+    async def _has_access_to_product(self, *, user_id: UserID, product_name: ProductName) -> bool:
         """
         Raises:
             web.HTTPServiceUnavailable: if database raises an exception
@@ -133,14 +126,12 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
     #
 
     async def authorized_userid(self, identity: IdentityStr) -> int | None:
-        """Implements Inteface: Retrieve authorized user id.
+        """Implements Interface: Retrieve authorized user id.
 
         Return the user_id of the user identified by the identity
         or "None" if no user exists related to the identity.
         """
-        user_info: ActiveUserIdAndRole | None = await self._get_authorized_user_or_none(
-            email=identity
-        )
+        user_info: ActiveUserIdAndRole | None = await self._get_authorized_user_or_none(email=identity)
         if user_info is None:
             return None
 
@@ -203,9 +194,7 @@ class AuthorizationPolicy(AbstractAuthorizationPolicy):
             product_support_group_id is not None
             and user_role > UserRole.GUEST
             and permission in NAMED_GROUP_PERMISSIONS.get("PRODUCT_SUPPORT_GROUP", [])
-            and await self._is_user_in_group(
-                user_id=user_id, group_id=product_support_group_id
-            )
+            and await self._is_user_in_group(user_id=user_id, group_id=product_support_group_id)
         )
 
         return group_allowed  # noqa: RET504

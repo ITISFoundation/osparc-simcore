@@ -89,17 +89,11 @@ class ProjectStatus(str, Enum):
     MAINTAINING = "MAINTAINING"  # used for maintenance tasks, like removing EFS data
 
 
-ProjectShareStatus: TypeAlias = Annotated[
-    ProjectStatus, Field(description="The status of the project")
-]
-ProjectShareLocked: TypeAlias = Annotated[
-    bool, Field(description="True if the project is locked")
-]
+ProjectShareStatus: TypeAlias = Annotated[ProjectStatus, Field(description="The status of the project")]
+ProjectShareLocked: TypeAlias = Annotated[bool, Field(description="True if the project is locked")]
 ProjectShareCurrentUserGroupIDs: TypeAlias = Annotated[
     list[GroupID],
-    Field(
-        description="Current users in the project (if the project is locked, the list contains only the lock owner)"
-    ),
+    Field(description="Current users in the project (if the project is locked, the list contains only the lock owner)"),
 ]
 
 
@@ -147,9 +141,7 @@ class ProjectShareState(BaseModel):
             }
         )
 
-    model_config = ConfigDict(
-        extra="forbid", json_schema_extra=_update_json_schema_extra
-    )
+    model_config = ConfigDict(extra="forbid", json_schema_extra=_update_json_schema_extra)
 
     @model_validator(mode="after")
     def check_model_valid(self) -> Self:
@@ -174,9 +166,7 @@ class ProjectShareState(BaseModel):
             if self.current_user_groupids:
                 msg = "If the project is closed, the current_users list must be empty"
                 raise ValueError(msg)
-        elif not self.current_user_groupids and (
-            self.status is not ProjectStatus.MAINTAINING
-        ):
+        elif not self.current_user_groupids and (self.status is not ProjectStatus.MAINTAINING):
             msg = f"If the project is {self.status=}, the current_users list must not be empty"
             raise ValueError(msg)
 
@@ -225,12 +215,7 @@ class ProjectLocked(BaseModel):
         if (
             values["value"] is True
             and values.get("owner") is None
-            and values["status"]
-            in [
-                status.value
-                for status in ProjectStatus
-                if status != ProjectStatus.MAINTAINING
-            ]
+            and values["status"] in [status.value for status in ProjectStatus if status != ProjectStatus.MAINTAINING]
         ):
             msg = "Owner must be specified when the project is not in the 'MAINTAINING' status."
             raise ValueError(msg)
@@ -238,19 +223,13 @@ class ProjectLocked(BaseModel):
 
 
 class ProjectRunningState(BaseModel):
-    value: RunningState = Field(
-        ..., description="The running state of the project", examples=["STARTED"]
-    )
+    value: RunningState = Field(..., description="The running state of the project", examples=["STARTED"])
 
     model_config = ConfigDict(extra="forbid")
 
 
-ProjectStateShareState: TypeAlias = Annotated[
-    ProjectShareState, Field(description="The project share state")
-]
-ProjectStateRunningState: TypeAlias = Annotated[
-    ProjectRunningState, Field(description="The project running state")
-]
+ProjectStateShareState: TypeAlias = Annotated[ProjectShareState, Field(description="The project share state")]
+ProjectStateRunningState: TypeAlias = Annotated[ProjectRunningState, Field(description="The project running state")]
 
 
 class ProjectState(BaseModel):

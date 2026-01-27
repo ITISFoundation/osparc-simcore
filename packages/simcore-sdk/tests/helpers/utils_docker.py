@@ -11,12 +11,8 @@ from tenacity import after_log, retry, stop_after_attempt, wait_fixed
 log = logging.getLogger(__name__)
 
 
-@retry(
-    wait=wait_fixed(2), stop=stop_after_attempt(10), after=after_log(log, logging.WARN)
-)
-def get_service_published_port(
-    service_name: str, target_port: int | None = None
-) -> str:
+@retry(wait=wait_fixed(2), stop=stop_after_attempt(10), after=after_log(log, logging.WARN))
+def get_service_published_port(service_name: str, target_port: int | None = None) -> str:
     """
     WARNING: ENSURE that service name exposes a port in  Dockerfile file or docker-compose config file
     """
@@ -36,9 +32,7 @@ def get_service_published_port(
         )
 
     published_port = None
-    msg = ", ".join(
-        f"{p.get('TargetPort')} -> {p.get('PublishedPort')}" for p in service_ports
-    )
+    msg = ", ".join(f"{p.get('TargetPort')} -> {p.get('PublishedPort')}" for p in service_ports)
 
     if target_port is None:
         if len(service_ports) > 1:
@@ -86,8 +80,7 @@ def run_docker_compose_config(
         destination_path = temp_dir / "docker-compose.yml"
 
     config_paths = [
-        f"-f {os.path.relpath(docker_compose_path, workdir)}"
-        for docker_compose_path in docker_compose_paths
+        f"-f {os.path.relpath(docker_compose_path, workdir)}" for docker_compose_path in docker_compose_paths
     ]
     configs_prefix = " ".join(config_paths)
 

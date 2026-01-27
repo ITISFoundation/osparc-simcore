@@ -17,9 +17,7 @@ branch_labels = None
 depends_on = None
 
 # TRIGGERS -----------------
-drop_projects_to_projects_nodes_deleted_trigger = sa.DDL(
-    "DROP TRIGGER IF EXISTS entry_deleted on projects;"
-)
+drop_projects_to_projects_nodes_deleted_trigger = sa.DDL("DROP TRIGGER IF EXISTS entry_deleted on projects;")
 projects_to_projects_nodes_deleted_trigger = sa.DDL(
     """
 DROP TRIGGER IF EXISTS entry_deleted on projects;
@@ -47,9 +45,7 @@ FOR EACH ROW EXECUTE PROCEDURE projects_to_projects_nodes_auto_update_modified()
 )
 
 # PROCEDURES -------------------
-drop_delete_orphaned_project_nodes_procedure = sa.DDL(
-    "DROP FUNCTION delete_orphaned_project_nodes();"
-)
+drop_delete_orphaned_project_nodes_procedure = sa.DDL("DROP FUNCTION delete_orphaned_project_nodes();")
 delete_orphaned_project_nodes_procedure = sa.DDL(
     """
 CREATE OR REPLACE FUNCTION delete_orphaned_project_nodes()

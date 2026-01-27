@@ -34,9 +34,7 @@ def disable_rabbitmq_and_rpc_setup(mocker: MockerFixture) -> Callable:
         # The following services are affected if rabbitmq is not in place
         mocker.patch("simcore_service_efs_guardian.core.application.setup_rabbitmq")
         mocker.patch("simcore_service_efs_guardian.core.application.setup_rpc_routes")
-        mocker.patch(
-            "simcore_service_efs_guardian.core.application.setup_process_messages"
-        )
+        mocker.patch("simcore_service_efs_guardian.core.application.setup_process_messages")
 
     return _
 
@@ -61,9 +59,7 @@ async def rpc_client(
 @pytest.fixture
 def disable_postgres_setup(mocker: MockerFixture) -> Callable:
     def _setup(app: FastAPI):
-        app.state.engine = (
-            Mock()
-        )  # NOTE: avoids error in api._dependencies::get_db_engine
+        app.state.engine = Mock()  # NOTE: avoids error in api._dependencies::get_db_engine
 
     def _():
         # The following services are affected if postgres is not in place
@@ -101,9 +97,7 @@ MAX_TIME_FOR_APP_TO_SHUTDOWN = 10
 
 
 @pytest.fixture
-async def app(
-    app_environment: EnvVarsDict, is_pdb_enabled: bool
-) -> AsyncIterator[FastAPI]:
+async def app(app_environment: EnvVarsDict, is_pdb_enabled: bool) -> AsyncIterator[FastAPI]:
     the_test_app = create_app()
     async with LifespanManager(
         the_test_app,

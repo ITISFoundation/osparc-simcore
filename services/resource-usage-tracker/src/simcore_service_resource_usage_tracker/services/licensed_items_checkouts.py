@@ -80,12 +80,10 @@ async def get_licensed_item_checkout(
     product_name: ProductName,
     licensed_item_checkout_id: LicensedItemCheckoutID,
 ) -> LicensedItemCheckoutGet:
-    licensed_item_checkout_db: LicensedItemCheckoutDB = (
-        await licensed_items_checkouts_db.get(
-            db_engine,
-            product_name=product_name,
-            licensed_item_checkout_id=licensed_item_checkout_id,
-        )
+    licensed_item_checkout_db: LicensedItemCheckoutDB = await licensed_items_checkouts_db.get(
+        db_engine,
+        product_name=product_name,
+        licensed_item_checkout_id=licensed_item_checkout_id,
     )
 
     return LicensedItemCheckoutGet(
@@ -117,15 +115,12 @@ async def checkout_licensed_item(
     user_id: UserID,
     user_email: str,
 ) -> LicensedItemCheckoutGet:
-
-    _active_purchased_seats: int = (
-        await licensed_items_purchases_db.get_active_purchased_seats_for_key_version_wallet(
-            db_engine,
-            key=key,
-            version=version,
-            wallet_id=wallet_id,
-            product_name=product_name,
-        )
+    _active_purchased_seats: int = await licensed_items_purchases_db.get_active_purchased_seats_for_key_version_wallet(
+        db_engine,
+        key=key,
+        version=version,
+        wallet_id=wallet_id,
+        product_name=product_name,
     )
 
     _currently_used_seats = await licensed_items_checkouts_db.get_currently_used_seats_for_key_version_wallet(
@@ -138,9 +133,7 @@ async def checkout_licensed_item(
 
     available_seats = _active_purchased_seats - _currently_used_seats
     if available_seats <= 0:
-        raise NotEnoughAvailableSeatsError(
-            license_item_id=licensed_item_id, available_num_of_seats=available_seats
-        )
+        raise NotEnoughAvailableSeatsError(license_item_id=licensed_item_id, available_num_of_seats=available_seats)
 
     if available_seats - num_of_seats < 0:
         raise CanNotCheckoutNotEnoughAvailableSeatsError(
@@ -150,16 +143,9 @@ async def checkout_licensed_item(
         )
 
     # Check if the service run ID is currently running
-    service_run = await service_runs_db.get_service_run_by_id(
-        db_engine, service_run_id=service_run_id
-    )
-    if (
-        service_run is None
-        or service_run.service_run_status != ServiceRunStatus.RUNNING
-    ):
-        raise CanNotCheckoutServiceIsNotRunningError(
-            license_item_id=licensed_item_id, service_run=service_run
-        )
+    service_run = await service_runs_db.get_service_run_by_id(db_engine, service_run_id=service_run_id)
+    if service_run is None or service_run.service_run_status != ServiceRunStatus.RUNNING:
+        raise CanNotCheckoutServiceIsNotRunningError(license_item_id=licensed_item_id, service_run=service_run)
 
     _create_item_checkout = CreateLicensedItemCheckoutDB(
         licensed_item_id=licensed_item_id,
@@ -173,9 +159,7 @@ async def checkout_licensed_item(
         started_at=datetime.now(tz=UTC),
         num_of_seats=num_of_seats,
     )
-    licensed_item_checkout_db = await licensed_items_checkouts_db.create(
-        db_engine, data=_create_item_checkout
-    )
+    licensed_item_checkout_db = await licensed_items_checkouts_db.create(db_engine, data=_create_item_checkout)
 
     # Return checkout ID
     return LicensedItemCheckoutGet(
@@ -200,14 +184,11 @@ async def release_licensed_item(
     licensed_item_checkout_id: LicensedItemCheckoutID,
     product_name: ProductName,
 ) -> LicensedItemCheckoutGet:
-
-    licensed_item_checkout_db: LicensedItemCheckoutDB = (
-        await licensed_items_checkouts_db.update(
-            db_engine,
-            licensed_item_checkout_id=licensed_item_checkout_id,
-            product_name=product_name,
-            stopped_at=datetime.now(tz=UTC),
-        )
+    licensed_item_checkout_db: LicensedItemCheckoutDB = await licensed_items_checkouts_db.update(
+        db_engine,
+        licensed_item_checkout_id=licensed_item_checkout_id,
+        product_name=product_name,
+        stopped_at=datetime.now(tz=UTC),
     )
 
     return LicensedItemCheckoutGet(

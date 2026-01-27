@@ -39,7 +39,6 @@ def assemble_config_file(
     destination_endpoint: str = "https://s3.amazonaws.com",
     destination_provider: S3Provider = S3Provider.AWS,
 ) -> Path:
-
     config_content = CONFIG.format(
         source_access_key=source_access_key,
         source_secret_key=source_secret_key,
@@ -59,9 +58,7 @@ def assemble_config_file(
 
 
 @retry(stop=stop_after_attempt(3))
-def sync_file(
-    config_path: Path, s3_object: str, source_bucket: str, destination_bucket: str
-) -> None:
+def sync_file(config_path: Path, s3_object: str, source_bucket: str, destination_bucket: str) -> None:
     source_path = Path(source_bucket) / s3_object
     destination_path = Path(destination_bucket) / s3_object
     file_name = destination_path.name

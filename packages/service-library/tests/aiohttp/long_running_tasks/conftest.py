@@ -46,9 +46,7 @@ async def _string_list_task(
             raise _TestingError(msg)
 
     # NOTE: this code is used just for the sake of not returning the default 200
-    return web.json_response(
-        data={"data": generated_strings}, status=status.HTTP_201_CREATED
-    )
+    return web.json_response(data={"data": generated_strings}, status=status.HTTP_201_CREATED)
 
 
 TaskRegistry.register(_string_list_task, allowed_errors=(_TestingError,))
@@ -65,9 +63,7 @@ def long_running_task_entrypoint() -> str:
 
 
 @pytest.fixture
-def server_routes(
-    task_context: TaskContext, long_running_task_entrypoint: str
-) -> web.RouteTableDef:
+def server_routes(task_context: TaskContext, long_running_task_entrypoint: str) -> web.RouteTableDef:
     routes = web.RouteTableDef()
 
     class _LongTaskQueryParams(BaseModel):
@@ -119,11 +115,7 @@ def wait_for_task() -> Callable[[TestClient, TaskId, TaskContext], Awaitable[Non
         task_context: TaskContext,
     ) -> None:
         assert client.app
-        status_url = (
-            client.app.router["get_task_status"]
-            .url_for(task_id=task_id)
-            .with_query(task_context)
-        )
+        status_url = client.app.router["get_task_status"].url_for(task_id=task_id).with_query(task_context)
         async for attempt in AsyncRetrying(
             wait=wait_fixed(0.1),
             stop=stop_after_delay(60),

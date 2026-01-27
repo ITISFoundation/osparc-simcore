@@ -17,9 +17,6 @@ def test_package_metadata():
 
 @pytest.mark.parametrize("version", [__version__, INTEGRATION_API_VERSION])
 def test_package_metadata_versions(version):
-
-    assert re.match(
-        SEMANTIC_VERSION_RE_W_NAMED_GROUPS, version
-    ), f"{version} is invalid semantic version"
+    assert re.match(SEMANTIC_VERSION_RE_W_NAMED_GROUPS, version), f"{version} is invalid semantic version"
 
     assert Version(version)

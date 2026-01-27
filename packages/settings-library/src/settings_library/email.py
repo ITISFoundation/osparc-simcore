@@ -40,7 +40,7 @@ class SMTPSettings(BaseCustomSettings):
         username = self.SMTP_USERNAME
         password = self.SMTP_PASSWORD
 
-        if username is None and password or username and password is None:
+        if (username is None and password) or (username and password is None):
             msg = f"Please provide both {username=} and {password=} not just one"
             raise ValueError(msg)
 

@@ -41,12 +41,8 @@ async def client_session() -> AsyncIterable[ClientSession]:
         yield session
 
 
-async def test_raise_for_status(
-    aioresponses_mocker: aioresponses, client_session: ClientSession
-):
-    aioresponses_mocker.get(
-        A_TEST_ROUTE, body="OPSIE there was an error here", status=400
-    )
+async def test_raise_for_status(aioresponses_mocker: aioresponses, client_session: ClientSession):
+    aioresponses_mocker.get(A_TEST_ROUTE, body="OPSIE there was an error here", status=400)
 
     async with client_session.get(A_TEST_ROUTE) as resp:
         assert isinstance(resp, ClientResponse)
@@ -78,9 +74,7 @@ async def test_check_for_aws_http_errors(
     client_session: ClientSession,
     test_params: _TestParams,
 ):
-    aioresponses_mocker.get(
-        A_TEST_ROUTE, body=test_params.body, status=test_params.status_code
-    )
+    aioresponses_mocker.get(A_TEST_ROUTE, body=test_params.body, status=test_params.status_code)
 
     async with client_session.get(A_TEST_ROUTE) as resp:
         try:
@@ -166,11 +160,7 @@ async def _clean_bucket_content(s3_client: AioBaseClient, bucket: str):
     while response["KeyCount"] > 0:
         await s3_client.delete_objects(
             Bucket=bucket,
-            Delete={
-                "Objects": [
-                    {"Key": obj["Key"]} for obj in response["Contents"] if "Key" in obj
-                ]
-            },
+            Delete={"Objects": [{"Key": obj["Key"]} for obj in response["Contents"] if "Key" in obj]},
         )
         response = await s3_client.list_objects_v2(Bucket=bucket)
 
@@ -206,9 +196,7 @@ async def create_upload_links(
     file_id = "fake2"
 
     async def _creator(num_upload_links: int, chunk_size: ByteSize) -> FileUploadSchema:
-        response = await aiobotocore_s3_client.create_multipart_upload(
-            Bucket=bucket, Key=file_id
-        )
+        response = await aiobotocore_s3_client.create_multipart_upload(Bucket=bucket, Key=file_id)
         assert "UploadId" in response
         upload_id = response["UploadId"]
 
@@ -272,9 +260,7 @@ async def test_upload_file_to_presigned_links(
     """
     local_file = create_file_of_size(file_size)
     num_links = 2080
-    effective_chunk_size = TypeAdapter(ByteSize).validate_python(
-        local_file.stat().st_size / num_links
-    )
+    effective_chunk_size = TypeAdapter(ByteSize).validate_python(local_file.stat().st_size / num_links)
     assert effective_chunk_size <= used_chunk_size
     upload_links = await create_upload_links(num_links, used_chunk_size)
     assert len(upload_links.urls) == num_links

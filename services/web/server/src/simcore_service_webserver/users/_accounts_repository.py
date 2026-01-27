@@ -57,9 +57,7 @@ async def create_user_pre_registration(
         # If link_to_existing_user is True, try to find a matching user
         user_id = None
         if link_to_existing_user:
-            result = await conn.execute(
-                sa.select(users.c.id).where(users.c.email == email)
-            )
+            result = await conn.execute(sa.select(users.c.id).where(users.c.email == email))
             user = result.one_or_none()
             if user:
                 user_id = user.id
@@ -80,9 +78,7 @@ async def create_user_pre_registration(
             values["user_id"] = user_id
 
         result = await conn.execute(
-            sa.insert(users_pre_registration_details)
-            .values(**values)
-            .returning(users_pre_registration_details.c.id)
+            sa.insert(users_pre_registration_details).values(**values).returning(users_pre_registration_details.c.id)
         )
         pre_registration_id: int = result.scalar_one()
         return pre_registration_id
@@ -117,19 +113,14 @@ async def list_user_pre_registrations(
 
     # Apply filters if provided
     if filter_by_pre_email is not None:
-        where_conditions.append(
-            users_pre_registration_details.c.pre_email.ilike(f"%{filter_by_pre_email}%")
-        )
+        where_conditions.append(users_pre_registration_details.c.pre_email.ilike(f"%{filter_by_pre_email}%"))
 
     if not is_unset(filter_by_product_name):
-        where_conditions.append(
-            users_pre_registration_details.c.product_name == filter_by_product_name
-        )
+        where_conditions.append(users_pre_registration_details.c.product_name == filter_by_product_name)
 
     if filter_by_account_request_status is not None:
         where_conditions.append(
-            users_pre_registration_details.c.account_request_status
-            == filter_by_account_request_status
+            users_pre_registration_details.c.account_request_status == filter_by_account_request_status
         )
 
     # Combine conditions
@@ -141,9 +132,7 @@ async def list_user_pre_registrations(
 
     # Count query for pagination
     count_query = (
-        sa.select(sa.func.count().label("total"))
-        .select_from(users_pre_registration_details)
-        .where(where_clause)
+        sa.select(sa.func.count().label("total")).select_from(users_pre_registration_details).where(where_clause)
     )
 
     # Main query to get pre-registration data
@@ -178,8 +167,7 @@ async def list_user_pre_registrations(
                 users_pre_registration_details.c.created_by == creator_users_alias.c.id,
             ).outerjoin(
                 reviewer_users_alias,
-                users_pre_registration_details.c.account_request_reviewed_by
-                == reviewer_users_alias.c.id,
+                users_pre_registration_details.c.account_request_reviewed_by == reviewer_users_alias.c.id,
             )
         )
         .where(where_clause)
@@ -245,11 +233,7 @@ async def review_user_pre_registration(
                 )
             )
             current_extras_row = current_extras_result.one_or_none()
-            current_extras = (
-                current_extras_row.extras
-                if current_extras_row and current_extras_row.extras
-                else {}
-            )
+            current_extras = current_extras_row.extras if current_extras_row and current_extras_row.extras else {}
 
             # Merge with invitation extras
             merged_extras = {**current_extras, **invitation_extras}
@@ -274,10 +258,7 @@ def _create_account_request_reviewed_by_username_subquery() -> Any:
         sa.select(
             reviewer_alias.c.name,
         )
-        .where(
-            users_pre_registration_details.c.account_request_reviewed_by
-            == reviewer_alias.c.id
-        )
+        .where(users_pre_registration_details.c.account_request_reviewed_by == reviewer_alias.c.id)
         .label("account_request_reviewed_by_username")
     )
 
@@ -289,23 +270,13 @@ def _build_left_outer_join_query(
 ) -> sa.sql.Select | None:
     left_where_conditions = []
     if email_like is not None:
-        left_where_conditions.append(
-            users_pre_registration_details.c.pre_email.like(email_like)
-        )
+        left_where_conditions.append(users_pre_registration_details.c.pre_email.like(email_like))
     join_condition = users.c.id == users_pre_registration_details.c.user_id
     if product_name:
-        join_condition = join_condition & (
-            users_pre_registration_details.c.product_name == product_name
-        )
-    left_outer_join = sa.select(*columns).select_from(
-        users_pre_registration_details.outerjoin(users, join_condition)
-    )
+        join_condition = join_condition & (users_pre_registration_details.c.product_name == product_name)
+    left_outer_join = sa.select(*columns).select_from(users_pre_registration_details.outerjoin(users, join_condition))
 
-    return (
-        left_outer_join.where(sa.and_(*left_where_conditions))
-        if left_where_conditions
-        else None
-    )
+    return left_outer_join.where(sa.and_(*left_where_conditions)) if left_where_conditions else None
 
 
 def _build_right_outer_join_query(
@@ -324,9 +295,7 @@ def _build_right_outer_join_query(
         right_where_conditions.append(users.c.primary_gid == primary_group_id)
     join_condition = users.c.id == users_pre_registration_details.c.user_id
     if product_name:
-        join_condition = join_condition & (
-            users_pre_registration_details.c.product_name == product_name
-        )
+        join_condition = join_condition & (users_pre_registration_details.c.product_name == product_name)
     right_outer_join = sa.select(*columns).select_from(
         users.outerjoin(
             users_pre_registration_details,
@@ -334,11 +303,7 @@ def _build_right_outer_join_query(
         )
     )
 
-    return (
-        right_outer_join.where(sa.and_(*right_where_conditions))
-        if right_where_conditions
-        else None
-    )
+    return right_outer_join.where(sa.and_(*right_where_conditions)) if right_where_conditions else None
 
 
 async def search_merged_pre_and_registered_users(
@@ -361,9 +326,7 @@ async def search_merged_pre_and_registered_users(
         .label("invited_by")
     )
 
-    account_request_reviewed_by_username = (
-        _create_account_request_reviewed_by_username_subquery()
-    )
+    account_request_reviewed_by_username = _create_account_request_reviewed_by_username_subquery()
 
     columns = (
         users_pre_registration_details.c.id,
@@ -463,9 +426,7 @@ async def list_merged_pre_and_registered_users(
     # Add account request status filter if specified
     if filter_any_account_request_status:
         pre_reg_where.append(
-            users_pre_registration_details.c.account_request_status.in_(
-                filter_any_account_request_status
-            )
+            users_pre_registration_details.c.account_request_status.in_(filter_any_account_request_status)
         )
 
     # Add filter for deleted users
@@ -473,9 +434,7 @@ async def list_merged_pre_and_registered_users(
         users_where.append(users.c.status != UserStatus.DELETED)
 
     # Create subquery for reviewer username
-    account_request_reviewed_by_username = (
-        _create_account_request_reviewed_by_username_subquery()
-    )
+    account_request_reviewed_by_username = _create_account_request_reviewed_by_username_subquery()
 
     # Query for pre-registered users
     # We need to left join with users to identify if the pre-registered user is already in the system
@@ -508,9 +467,7 @@ async def list_merged_pre_and_registered_users(
             sa.literal_column("true").label("is_pre_registered"),
         )
         .select_from(
-            users_pre_registration_details.outerjoin(
-                users, users_pre_registration_details.c.user_id == users.c.id
-            )
+            users_pre_registration_details.outerjoin(users, users_pre_registration_details.c.user_id == users.c.id)
         )
         .where(sa.and_(*pre_reg_where))
     )
@@ -578,10 +535,7 @@ async def list_merged_pre_and_registered_users(
 
     # Count query (for pagination)
     count_query = sa.select(sa.func.count().label("total")).select_from(
-        sa.select(merged_query_subq.c.email)
-        .select_from(merged_query_subq)
-        .distinct()
-        .subquery()
+        sa.select(merged_query_subq.c.email).select_from(merged_query_subq).distinct().subquery()
     )
 
     async with pass_or_acquire_connection(engine, connection) as conn:

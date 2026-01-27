@@ -52,12 +52,7 @@ class OutputSchema(BaseModel):
     )
 
     def data(
-        self,
-        *,
-        exclude_unset: bool = False,
-        exclude_defaults: bool = False,
-        exclude_none: bool = False,
-        **kwargs
+        self, *, exclude_unset: bool = False, exclude_defaults: bool = False, exclude_none: bool = False, **kwargs
     ) -> dict[str, Any]:
         """Helper function to get envelope's data as a dict"""
         return self.model_dump(
@@ -69,12 +64,7 @@ class OutputSchema(BaseModel):
         )
 
     def data_json(
-        self,
-        *,
-        exclude_unset: bool = False,
-        exclude_defaults: bool = False,
-        exclude_none: bool = False,
-        **kwargs
+        self, *, exclude_unset: bool = False, exclude_defaults: bool = False, exclude_none: bool = False, **kwargs
     ) -> str:
         """Helper function to get envelope's data as a json str"""
         return self.model_dump_json(

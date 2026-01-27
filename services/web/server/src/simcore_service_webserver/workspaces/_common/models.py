@@ -32,15 +32,13 @@ class WorkspacesPathParams(StrictRequestParameters):
     workspace_id: WorkspaceID
 
 
-_WorkspacesListOrderQueryParams: type[RequestParameters] = (
-    create_ordering_query_model_class(
-        ordering_fields={
-            "modified_at",
-            "name",
-        },
-        default=OrderBy(field=IDStr("modified_at"), direction=OrderDirection.DESC),
-        ordering_fields_api_to_column_map={"modified_at": "modified"},
-    )
+_WorkspacesListOrderQueryParams: type[RequestParameters] = create_ordering_query_model_class(
+    ordering_fields={
+        "modified_at",
+        "name",
+    },
+    default=OrderBy(field=IDStr("modified_at"), direction=OrderDirection.DESC),
+    ordering_fields_api_to_column_map={"modified_at": "modified"},
 )
 
 
@@ -49,13 +47,11 @@ class WorkspacesFilters(Filters):
         default=False,
         description="Set to true to list trashed, false to list non-trashed (default), None to list all",
     )
-    text: Annotated[str | None, BeforeValidator(empty_str_to_none_pre_validator)] = (
-        Field(
-            default=None,
-            description="Multi column full text search",
-            max_length=100,
-            examples=["My Workspace"],
-        )
+    text: Annotated[str | None, BeforeValidator(empty_str_to_none_pre_validator)] = Field(
+        default=None,
+        description="Multi column full text search",
+        max_length=100,
+        examples=["My Workspace"],
     )
 
 

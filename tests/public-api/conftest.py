@@ -159,9 +159,7 @@ def registered_user(
 
 @pytest.fixture(scope="module")
 async def services_registry(
-    docker_registry_image_injector: Callable[
-        [str, str, str | None], Awaitable[dict[str, Any]]
-    ],
+    docker_registry_image_injector: Callable[[str, str, str | None], Awaitable[dict[str, Any]]],
     registered_user: RegisteredUserDict,
     env_vars_for_docker_compose: dict[str, str],
 ) -> dict[ServiceNameStr, ServiceInfoDict]:
@@ -180,9 +178,7 @@ async def services_registry(
     assert sleeper_service["image"]["tag"] == "2.1.1"
     assert sleeper_service["image"]["name"] == "simcore/services/comp/itis/sleeper"
     assert sleeper_service["schema"] == {
-        "authors": [
-            {"name": "Tester", "email": user_email, "affiliation": "IT'IS Foundation"}
-        ],
+        "authors": [{"name": "Tester", "email": user_email, "affiliation": "IT'IS Foundation"}],
         "contact": user_email,
         "description": "A service which awaits for time to pass, two times.",
         "inputs": {
@@ -203,8 +199,7 @@ async def services_registry(
             },
             "input_3": {
                 "defaultValue": False,
-                "description": "If set to true will cause service to "
-                "fail after it sleeps",
+                "description": "If set to true will cause service to fail after it sleeps",
                 "displayOrder": 3,
                 "label": "Fail after sleep",
                 "type": "boolean",
@@ -241,9 +236,7 @@ async def services_registry(
         "version": "2.1.1",
     }
 
-    wait_for_catalog_to_detect = float(
-        env_vars_for_docker_compose["CATALOG_BACKGROUND_TASK_REST_TIME"]
-    )
+    wait_for_catalog_to_detect = float(env_vars_for_docker_compose["CATALOG_BACKGROUND_TASK_REST_TIME"])
     print(
         f"Catalog should take {wait_for_catalog_to_detect} secs to detect new services ...",
     )
@@ -272,11 +265,7 @@ def api_client(
     print("Configuration:", cfg.to_debug_report())
 
     def as_dict(obj: object):
-        return {
-            attr: getattr(obj, attr)
-            for attr in obj.__dict__
-            if not attr.startswith("_")
-        }
+        return {attr: getattr(obj, attr) for attr in obj.__dict__ if not attr.startswith("_")}
 
     print("cfg", pformat(as_dict(cfg)))
 

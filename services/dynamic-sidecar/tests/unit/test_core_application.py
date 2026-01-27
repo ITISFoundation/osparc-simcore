@@ -35,9 +35,7 @@ def test_class_appstate_decorator_class(mock_environment_with_envdevel: EnvVarsD
 
         return_annotation = inspect.signature(prop.fget).return_annotation
         if get_origin(return_annotation) is Union:
-            return_annotation = tuple(
-                t for t in get_args(return_annotation) if inspect.isclass(t)
-            )
+            return_annotation = tuple(t for t in get_args(return_annotation) if inspect.isclass(t))
 
         assert isinstance(value, return_annotation)
 

@@ -44,15 +44,11 @@ class RegistrationSessionManager:
 
     def validate_pending_registration(self) -> RegistrationData:
         if not self._session.get(_REGISTRATION_PENDING_KEY):
-            raise PhoneRegistrationPendingNotFoundError(
-                user_id=self._user_id, product_name=self._product_name
-            )
+            raise PhoneRegistrationPendingNotFoundError(user_id=self._user_id, product_name=self._product_name)
 
         registration: RegistrationData | None = self._session.get(_REGISTRATION_KEY)
         if not registration or registration["user_id"] != self._user_id:
-            raise PhoneRegistrationSessionInvalidError(
-                user_id=self._user_id, product_name=self._product_name
-            )
+            raise PhoneRegistrationSessionInvalidError(user_id=self._user_id, product_name=self._product_name)
 
         return registration
 
@@ -63,9 +59,7 @@ class RegistrationSessionManager:
     def validate_confirmation_code(self, provided_code: str) -> None:
         expected_code = self._session.get(_REGISTRATION_CODE_KEY)
         if not expected_code or provided_code != expected_code:
-            raise PhoneRegistrationCodeInvalidError(
-                user_id=self._user_id, product_name=self._product_name
-            )
+            raise PhoneRegistrationCodeInvalidError(user_id=self._user_id, product_name=self._product_name)
 
     def clear_session(self) -> None:
         self._session.pop(_REGISTRATION_KEY, None)

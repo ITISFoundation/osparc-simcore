@@ -27,9 +27,7 @@ async def list_announcements(
 ) -> list[Announcement]:
     # get-all
     redis_client: aioredis.Redis = get_redis_announcements_client(app)
-    result: Awaitable[list] | list = redis_client.lrange(
-        _PUBLIC_ANNOUNCEMENTS_REDIS_KEY, 0, -1
-    )
+    result: Awaitable[list] | list = redis_client.lrange(_PUBLIC_ANNOUNCEMENTS_REDIS_KEY, 0, -1)
     assert isinstance(result, Awaitable)  # nosec
     items: list[str] = await result
 
@@ -45,7 +43,7 @@ async def list_announcements(
                 continue
             # OK
             announcements.append(model)
-        except ValidationError:  # noqa: PERF203
+        except ValidationError:
             _logger.exception(
                 "%s. Check item[%d]=%s",
                 _MSG_REDIS_ERROR,

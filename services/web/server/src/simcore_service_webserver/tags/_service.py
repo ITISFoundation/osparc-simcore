@@ -20,9 +20,7 @@ from .errors import (
 from .schemas import TagCreate, TagGet, TagUpdate
 
 
-async def create_tag(
-    app: web.Application, user_id: UserID, new_tag: TagCreate
-) -> TagGet:
+async def create_tag(app: web.Application, user_id: UserID, new_tag: TagCreate) -> TagGet:
     """Creates tag and user_id takes ownership"""
     engine: AsyncEngine = get_async_engine(app)
 
@@ -47,9 +45,7 @@ async def list_tags(
     return [TagGet.from_domain_model(t) for t in tags]
 
 
-async def update_tag(
-    app: web.Application, user_id: UserID, tag_id: IdInt, tag_updates: TagUpdate
-) -> TagGet:
+async def update_tag(app: web.Application, user_id: UserID, tag_id: IdInt, tag_updates: TagUpdate) -> TagGet:
     engine: AsyncEngine = get_async_engine(app)
 
     repo = TagsRepo(engine)
@@ -88,14 +84,10 @@ async def _validate_tag_sharing_permissions(
         InsufficientWriteAccessTagError
     """
     if group_id == EVERYONE_GROUP_ID:
-        raise ShareTagWithEveryoneNotAllowedError(
-            user_id=caller_user_id, tag_id=tag_id, group_id=group_id
-        )
+        raise ShareTagWithEveryoneNotAllowedError(user_id=caller_user_id, tag_id=tag_id, group_id=group_id)
 
     if _is_product_group(app, group_id=group_id):
-        user_role: UserRole = await users_service.get_user_role(
-            app, user_id=caller_user_id
-        )
+        user_role: UserRole = await users_service.get_user_role(app, user_id=caller_user_id)
         if user_role < UserRole.TESTER:
             raise ShareTagWithProductGroupNotAllowedError(
                 user_id=caller_user_id,
@@ -104,12 +96,8 @@ async def _validate_tag_sharing_permissions(
                 user_role=user_role,
             )
 
-    if not await repo.has_access_rights(
-        user_id=caller_user_id, tag_id=tag_id, write=True
-    ):
-        raise InsufficientTagShareAccessError(
-            user_id=caller_user_id, tag_id=tag_id, group_id=group_id
-        )
+    if not await repo.has_access_rights(user_id=caller_user_id, tag_id=tag_id, write=True):
+        raise InsufficientTagShareAccessError(user_id=caller_user_id, tag_id=tag_id, group_id=group_id)
 
 
 async def share_tag_with_group(
@@ -130,9 +118,7 @@ async def share_tag_with_group(
     """
     repo = TagsRepo(get_async_engine(app))
 
-    await _validate_tag_sharing_permissions(
-        app, repo, caller_user_id=caller_user_id, tag_id=tag_id, group_id=group_id
-    )
+    await _validate_tag_sharing_permissions(app, repo, caller_user_id=caller_user_id, tag_id=tag_id, group_id=group_id)
 
     return await repo.create_or_update_access_rights(
         tag_id=tag_id,
@@ -157,9 +143,7 @@ async def unshare_tag_with_group(
     """
     repo = TagsRepo(get_async_engine(app))
 
-    await _validate_tag_sharing_permissions(
-        app, repo, caller_user_id=caller_user_id, tag_id=tag_id, group_id=group_id
-    )
+    await _validate_tag_sharing_permissions(app, repo, caller_user_id=caller_user_id, tag_id=tag_id, group_id=group_id)
 
     deleted: bool = await repo.delete_access_rights(tag_id=tag_id, group_id=group_id)
     return deleted
@@ -174,9 +158,7 @@ async def list_tag_groups(
     """Returns list of groups sharing this tag"""
     repo = TagsRepo(get_async_engine(app))
 
-    if not await repo.has_access_rights(
-        user_id=caller_user_id, tag_id=tag_id, read=True
-    ):
+    if not await repo.has_access_rights(user_id=caller_user_id, tag_id=tag_id, read=True):
         return []
 
     return await repo.list_access_rights(tag_id=tag_id)

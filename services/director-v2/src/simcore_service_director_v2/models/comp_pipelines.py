@@ -20,7 +20,7 @@ class CompPipelineAtDB(BaseModel):
     def _convert_state_from_state_type_enum_if_needed(cls, v):
         if isinstance(v, str):
             # try to convert to a StateType, if it fails the validations will continue
-            # and pydantic will try to convert it to a RunninState later on
+            # and pydantic will try to convert it to a RunningState later on
             with suppress(ValueError):
                 v = StateType(v)
         if isinstance(v, StateType):
@@ -38,7 +38,8 @@ class CompPipelineAtDB(BaseModel):
         return cast(
             nx.DiGraph,
             nx.convert.from_dict_of_lists(
-                self.dag_adjacency_list, create_using=nx.DiGraph  # type: ignore[arg-type] # list is an Iterable but dict is Invariant
+                self.dag_adjacency_list,
+                create_using=nx.DiGraph,  # type: ignore[arg-type] # list is an Iterable but dict is Invariant
             ),
         )
 
@@ -50,9 +51,7 @@ class CompPipelineAtDB(BaseModel):
                 {
                     "project_id": "65fee9d2-e030-452c-a29c-45d288577ca5",
                     "dag_adjacency_list": {
-                        "539531c4-afb9-4ca8-bda3-06ad3d7bc339": [
-                            "f98e20e5-b235-43ed-a63d-15b71bc7c762"
-                        ],
+                        "539531c4-afb9-4ca8-bda3-06ad3d7bc339": ["f98e20e5-b235-43ed-a63d-15b71bc7c762"],
                         "f98e20e5-b235-43ed-a63d-15b71bc7c762": [],
                         "5332fcde-b043-41f5-8786-a3a359b110ad": [],
                     },

@@ -48,9 +48,7 @@ class BaseDataManager(ABC):
         """returns True if user with user_id is authorized to access the storage"""
 
     @abstractmethod
-    async def list_datasets(
-        self, user_id: UserID, product_name: ProductName
-    ) -> list[DatasetMetaData]:
+    async def list_datasets(self, user_id: UserID, product_name: ProductName) -> list[DatasetMetaData]:
         """returns all the top level datasets a user has access to"""
 
     @abstractmethod
@@ -91,9 +89,7 @@ class BaseDataManager(ABC):
         """returns a page of the file meta data a user has access to"""
 
     @abstractmethod
-    async def compute_path_size(
-        self, user_id: UserID, product_name: ProductName, *, path: Path
-    ) -> ByteSize:
+    async def compute_path_size(self, user_id: UserID, product_name: ProductName, *, path: Path) -> ByteSize:
         """returns the total size of an arbitrary path"""
 
     @abstractmethod
@@ -128,9 +124,7 @@ class BaseDataManager(ABC):
         to the latest version if available, else will delete the file"""
 
     @abstractmethod
-    async def create_file_download_link(
-        self, user_id: UserID, file_id: StorageFileID, link_type: LinkType
-    ) -> AnyUrl:
+    async def create_file_download_link(self, user_id: UserID, file_id: StorageFileID, link_type: LinkType) -> AnyUrl:
         """creates a download file link if user has the rights to"""
 
     @abstractmethod

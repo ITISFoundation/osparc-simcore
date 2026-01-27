@@ -59,26 +59,16 @@ def _assert_inputs_pulling(app: FastAPI, is_enabled: bool) -> None:
     assert inputs_state.inputs_pulling_enabled is is_enabled
 
 
-def _assert_outputs_event_propagation(
-    spy_output_watcher: dict[str, AsyncMock], is_enabled: bool
-) -> None:
-    assert spy_output_watcher["disable_event_propagation"].call_count == (
-        1 if not is_enabled else 0
-    )
-    assert spy_output_watcher["enable_event_propagation"].call_count == (
-        1 if is_enabled else 0
-    )
+def _assert_outputs_event_propagation(spy_output_watcher: dict[str, AsyncMock], is_enabled: bool) -> None:
+    assert spy_output_watcher["disable_event_propagation"].call_count == (1 if not is_enabled else 0)
+    assert spy_output_watcher["enable_event_propagation"].call_count == (1 if is_enabled else 0)
 
 
 @pytest.fixture
 def spy_output_watcher(mocker: MockerFixture) -> dict[str, AsyncMock]:
     return {
-        "disable_event_propagation": mocker.spy(
-            OutputsWatcher, "disable_event_propagation"
-        ),
-        "enable_event_propagation": mocker.spy(
-            OutputsWatcher, "enable_event_propagation"
-        ),
+        "disable_event_propagation": mocker.spy(OutputsWatcher, "disable_event_propagation"),
+        "enable_event_propagation": mocker.spy(OutputsWatcher, "enable_event_propagation"),
     }
 
 
@@ -106,19 +96,13 @@ async def test_toggle_ports_io(
 @pytest.fixture
 def mock_outputs_labels() -> dict[str, ServiceOutput]:
     return {
-        "output_port_1": TypeAdapter(ServiceOutput).validate_python(
-            ServiceOutput.model_json_schema()["examples"][3]
-        ),
-        "output_port_2": TypeAdapter(ServiceOutput).validate_python(
-            ServiceOutput.model_json_schema()["examples"][3]
-        ),
+        "output_port_1": TypeAdapter(ServiceOutput).validate_python(ServiceOutput.model_json_schema()["examples"][3]),
+        "output_port_2": TypeAdapter(ServiceOutput).validate_python(ServiceOutput.model_json_schema()["examples"][3]),
     }
 
 
 @pytest.fixture
-def mock_event_filter_enqueue(
-    app: FastAPI, monkeypatch: pytest.MonkeyPatch
-) -> AsyncMock:
+def mock_event_filter_enqueue(app: FastAPI, monkeypatch: pytest.MonkeyPatch) -> AsyncMock:
     mock = AsyncMock(return_value=None)
     outputs_watcher: OutputsWatcher = app.state.outputs_watcher
     monkeypatch.setattr(outputs_watcher._event_filter, "enqueue", mock)  # noqa: SLF001
@@ -156,10 +140,7 @@ async def test_container_create_outputs_dirs(
 
     await asyncio.sleep(_WAIT_FOR_OUTPUTS_WATCHER)
     EXPECT_EVENTS_WHEN_CREATING_OUTPUT_PORT_KEY_DIRS = 0
-    assert (
-        mock_event_filter_enqueue.call_count
-        == EXPECT_EVENTS_WHEN_CREATING_OUTPUT_PORT_KEY_DIRS
-    )
+    assert mock_event_filter_enqueue.call_count == EXPECT_EVENTS_WHEN_CREATING_OUTPUT_PORT_KEY_DIRS
 
 
 @pytest.fixture
@@ -240,15 +221,12 @@ def compose_spec_single_service() -> ContainersComposeSpec:
 
 
 @pytest.fixture(params=["compose_spec", "compose_spec_single_service"])
-def selected_spec(
-    request, compose_spec: str, compose_spec_single_service: str
-) -> ContainersComposeSpec:
+def selected_spec(request, compose_spec: str, compose_spec_single_service: str) -> ContainersComposeSpec:
     # check that fixture_name is present in this function's parameters
     fixture_name = request.param
     sig = signature(selected_spec)
     assert fixture_name in sig.parameters, (
-        f"Provided fixture name {fixture_name} was not found "
-        f"as a parameter in the signature {sig}"
+        f"Provided fixture name {fixture_name} was not found as a parameter in the signature {sig}"
     )
 
     # returns the parameter by name from the ones declared in the signature
@@ -274,9 +252,7 @@ async def _start_containers(
     compose_spec: ContainersComposeSpec,
     mock_metrics_params: CreateServiceMetricsAdditionalParams,
 ) -> list[str]:
-    await containers.create_compose_spec(
-        rpc_client, node_id=node_id, containers_compose_spec=compose_spec
-    )
+    await containers.create_compose_spec(rpc_client, node_id=node_id, containers_compose_spec=compose_spec)
 
     containers_create = ContainersCreate(metrics_params=mock_metrics_params)
     task_id = await containers_long_running_tasks.create_user_services(
@@ -345,9 +321,7 @@ async def test_attach_detach_container_to_network(
                 container_inspect = await container.show()
                 networks = container_inspect["NetworkSettings"]["Networks"]
                 assert network_id in networks
-                assert set(network_aliases).issubset(
-                    set(networks[network_id]["Aliases"])
-                )
+                assert set(network_aliases).issubset(set(networks[network_id]["Aliases"]))
 
                 # detach network from containers
                 for _ in range(2):  # running twice in a row
@@ -372,9 +346,7 @@ async def _docker_ps_a_container_names() -> list[str]:
     return stdout.split("\n")
 
 
-async def _assert_compose_spec_pulled(
-    docker_compose_yaml: str, settings: ApplicationSettings
-):
+async def _assert_compose_spec_pulled(docker_compose_yaml: str, settings: ApplicationSettings):
     """ensures all containers inside compose_spec are pulled"""
 
     result = await docker_compose_create(docker_compose_yaml, settings)
@@ -385,11 +357,7 @@ async def _assert_compose_spec_pulled(
     expected_services_count = len(dict_compose_spec["services"])
 
     docker_ps_names = await _docker_ps_a_container_names()
-    started_containers = [
-        x
-        for x in docker_ps_names
-        if x.startswith(settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE)
-    ]
+    started_containers = [x for x in docker_ps_names if x.startswith(settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE)]
     assert len(started_containers) == expected_services_count
 
 
@@ -460,9 +428,7 @@ def mock_aiodocker_containers_get(mocker: MockerFixture, faker: Faker) -> int:
     mock_status_code = faker.random_int(1, 999)
 
     async def mock_get(*args: str, **kwargs: Any) -> None:
-        raise aiodocker.exceptions.DockerError(
-            status=mock_status_code, data={"message": "aiodocker_mocked_error"}
-        )
+        raise aiodocker.exceptions.DockerError(status=mock_status_code, data={"message": "aiodocker_mocked_error"})
 
     mocker.patch("aiodocker.containers.DockerContainers.get", side_effect=mock_get)
 
@@ -477,18 +443,14 @@ async def test_containers_docker_status_docker_error(
     mock_aiodocker_containers_get: int,
 ):
     app_state = AppState(app)
-    with pytest.raises(
-        RPCServerError, match=f"status_code={mock_aiodocker_containers_get}"
-    ):
+    with pytest.raises(RPCServerError, match=f"status_code={mock_aiodocker_containers_get}"):
         await containers.containers_docker_inspect(
             rpc_client, node_id=app_state.settings.DY_SIDECAR_NODE_ID, only_status=True
         )
 
 
 @pytest.fixture
-def define_inactivity_command(
-    mock_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def define_inactivity_command(mock_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> None:
     setenvs_from_dict(
         monkeypatch,
         {
@@ -508,9 +470,7 @@ def define_inactivity_command(
 @pytest.fixture
 def mock_shared_store(app: FastAPI) -> None:
     shared_store: SharedStore = app.state.shared_store
-    shared_store.original_to_container_names["mock_container_name"] = (
-        "mock_container_name"
-    )
+    shared_store.original_to_container_names["mock_container_name"] = "mock_container_name"
 
 
 async def test_containers_activity_command_failed(

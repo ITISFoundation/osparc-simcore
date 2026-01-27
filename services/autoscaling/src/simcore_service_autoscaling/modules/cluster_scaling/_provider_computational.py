@@ -56,9 +56,7 @@ class ComputationalAutoscalingProvider:
         app_settings = get_application_settings(app)
         return utils_ec2.get_ec2_tags_computational(app_settings)
 
-    def get_new_node_docker_tags(
-        self, app: FastAPI, ec2_instance_data: EC2InstanceData
-    ) -> dict[DockerLabelKey, str]:
+    def get_new_node_docker_tags(self, app: FastAPI, ec2_instance_data: EC2InstanceData) -> dict[DockerLabelKey, str]:
         assert self  # nosec
         app_settings = get_application_settings(app)
         assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
@@ -71,9 +69,7 @@ class ComputationalAutoscalingProvider:
     async def list_unrunnable_tasks(self, app: FastAPI) -> list[DaskTask]:
         assert self  # nosec
         try:
-            unrunnable_tasks = await dask.list_unrunnable_tasks(
-                _scheduler_url(app), _scheduler_auth(app)
-            )
+            unrunnable_tasks = await dask.list_unrunnable_tasks(_scheduler_url(app), _scheduler_auth(app))
             # NOTE: any worker "processing" more than 1 task means that the other tasks are queued!
             # NOTE: that is not necessarily true, in cases where 1 worker takes multiple tasks?? (osparc.io)
             processing_tasks_by_worker = await dask.list_processing_tasks_per_worker(
@@ -89,44 +85,34 @@ class ComputationalAutoscalingProvider:
             )
             return unrunnable_tasks + queued_tasks
         except DaskSchedulerNotFoundError:
-            _logger.warning(
-                "No dask scheduler found. TIP: Normal during machine startup."
-            )
+            _logger.warning("No dask scheduler found. TIP: Normal during machine startup.")
             return []
 
     def get_task_required_resources(self, task) -> Resources:
         assert self  # nosec
         return utils.resources_from_dask_task(task)
 
-    async def get_task_defined_instance(
-        self, app: FastAPI, task
-    ) -> InstanceTypeType | None:
+    async def get_task_defined_instance(self, app: FastAPI, task) -> InstanceTypeType | None:
         assert self  # nosec
         assert app  # nosec
         return cast(InstanceTypeType | None, utils.get_task_instance_restriction(task))
 
-    async def get_task_instance_required_docker_tags(
-        self, app: FastAPI, task
-    ) -> dict[DockerLabelKey, str]:
+    async def get_task_instance_required_docker_tags(self, app: FastAPI, task) -> dict[DockerLabelKey, str]:
         assert self  # nosec
         assert app  # nosec
         assert task  # nosec
         # NOTE: currently no such constraints are defined for dask tasks
         return {}
 
-    async def compute_node_used_resources(
-        self, app: FastAPI, instance: AssociatedInstance
-    ) -> Resources:
+    async def compute_node_used_resources(self, app: FastAPI, instance: AssociatedInstance) -> Resources:
         assert self  # nosec
         try:
             resource = await dask.get_worker_used_resources(
                 _scheduler_url(app), _scheduler_auth(app), instance.ec2_instance
             )
             if resource == Resources.create_as_empty():
-                num_results_in_memory = (
-                    await dask.get_worker_still_has_results_in_memory(
-                        _scheduler_url(app), _scheduler_auth(app), instance.ec2_instance
-                    )
+                num_results_in_memory = await dask.get_worker_still_has_results_in_memory(
+                    _scheduler_url(app), _scheduler_auth(app), instance.ec2_instance
                 )
                 if num_results_in_memory > 0:
                     _logger.debug(
@@ -137,17 +123,13 @@ class ComputationalAutoscalingProvider:
                     # NOTE: this is a trick to consider the node still useful
                     return Resources(cpus=0, ram=ByteSize(1024 * 1024 * 1024))
 
-            _logger.debug(
-                "found %s for %s", f"{resource=}", f"{instance.ec2_instance.id}"
-            )
+            _logger.debug("found %s for %s", f"{resource=}", f"{instance.ec2_instance.id}")
             return resource
         except (DaskWorkerNotFoundError, DaskNoWorkersError):
             _logger.debug("no resource found for %s", f"{instance.ec2_instance.id}")
             return Resources.create_as_empty()
 
-    async def compute_cluster_used_resources(
-        self, app: FastAPI, instances: list[AssociatedInstance]
-    ) -> Resources:
+    async def compute_cluster_used_resources(self, app: FastAPI, instances: list[AssociatedInstance]) -> Resources:
         assert self  # nosec
         list_of_used_resources: list[Resources] = await logged_gather(
             *(self.compute_node_used_resources(app, i) for i in instances)
@@ -161,9 +143,7 @@ class ComputationalAutoscalingProvider:
         flat_counter.setdefault("ram", 0)
         return Resources.from_flat_dict(flat_counter)
 
-    async def compute_cluster_total_resources(
-        self, app: FastAPI, instances: list[AssociatedInstance]
-    ) -> Resources:
+    async def compute_cluster_total_resources(self, app: FastAPI, instances: list[AssociatedInstance]) -> Resources:
         assert self  # nosec
         try:
             return await dask.compute_cluster_total_resources(
@@ -174,44 +154,32 @@ class ComputationalAutoscalingProvider:
         except DaskNoWorkersError:
             return Resources.create_as_empty()
 
-    async def is_instance_active(
-        self, app: FastAPI, instance: AssociatedInstance
-    ) -> bool:
+    async def is_instance_active(self, app: FastAPI, instance: AssociatedInstance) -> bool:
         assert self  # nosec
         if not utils_docker.is_node_osparc_ready(instance.node):
             return False
 
         # now check if dask-scheduler/dask-worker is available and running
-        return await dask.is_worker_connected(
-            _scheduler_url(app), _scheduler_auth(app), instance.ec2_instance
-        )
+        return await dask.is_worker_connected(_scheduler_url(app), _scheduler_auth(app), instance.ec2_instance)
 
-    async def is_instance_retired(
-        self, app: FastAPI, instance: AssociatedInstance
-    ) -> bool:
+    async def is_instance_retired(self, app: FastAPI, instance: AssociatedInstance) -> bool:
         assert self  # nosec
         if not utils_docker.is_node_osparc_ready(instance.node):
             return False
-        return await dask.is_worker_retired(
-            _scheduler_url(app), _scheduler_auth(app), instance.ec2_instance
-        )
+        return await dask.is_worker_retired(_scheduler_url(app), _scheduler_auth(app), instance.ec2_instance)
 
     async def try_retire_nodes(self, app: FastAPI) -> None:
         assert self  # nosec
         await dask.try_retire_nodes(_scheduler_url(app), _scheduler_auth(app))
 
-    def add_instance_generic_resources(
-        self, app: FastAPI, instance: EC2InstanceData
-    ) -> None:
+    def add_instance_generic_resources(self, app: FastAPI, instance: EC2InstanceData) -> None:
         assert self  # nosec
         assert app  # nosec
         app_settings = get_application_settings(app)
         assert app_settings.AUTOSCALING_DASK  # nosec
         dask.add_instance_generic_resources(app_settings.AUTOSCALING_DASK, instance)
 
-    def adjust_instance_type_resources(
-        self, app: FastAPI, instance_type: EC2InstanceType
-    ) -> EC2InstanceType:
+    def adjust_instance_type_resources(self, app: FastAPI, instance_type: EC2InstanceType) -> EC2InstanceType:
         assert self  # nosec
         assert app  # nosec
         app_settings = get_application_settings(app)
@@ -221,11 +189,7 @@ class ComputationalAutoscalingProvider:
         )
         replaced_instance_type = dataclasses.replace(
             instance_type,
-            resources=instance_type.resources.model_copy(
-                update={"cpus": adjusted_cpus, "ram": ByteSize(adjusted_ram)}
-            ),
+            resources=instance_type.resources.model_copy(update={"cpus": adjusted_cpus, "ram": ByteSize(adjusted_ram)}),
         )
-        dask.add_instance_type_generic_resource(
-            app_settings.AUTOSCALING_DASK, replaced_instance_type
-        )
+        dask.add_instance_type_generic_resource(app_settings.AUTOSCALING_DASK, replaced_instance_type)
         return replaced_instance_type

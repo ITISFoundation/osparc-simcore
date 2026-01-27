@@ -18,7 +18,6 @@ Q&A:
         - SEE https://blog.sixeyed.com/docker-healthchecks-why-not-to-use-curl-or-iwr/
 """
 
-
 import os
 import sys
 from urllib.request import urlopen
@@ -33,9 +32,7 @@ is_debug_mode = os.getenv("SC_BOOT_MODE", "").lower() == "debug"
 
 
 def is_service_healthy() -> bool:
-    worker_mode = TypeAdapter(bool).validate_python(
-        os.getenv("STORAGE_WORKER_MODE", "False")
-    )
+    worker_mode = TypeAdapter(bool).validate_python(os.getenv("STORAGE_WORKER_MODE", "False"))
     if worker_mode:
         return is_healthy()
 

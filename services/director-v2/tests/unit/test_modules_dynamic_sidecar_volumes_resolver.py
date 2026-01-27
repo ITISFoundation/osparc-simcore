@@ -131,9 +131,7 @@ async def assert_creation_and_removal(volume_name: str) -> None:
         await named_volume.delete()
 
 
-async def test_volumes_unique_name_max_length_can_be_created(
-    faker: Faker, docker_swarm: None
-):
+async def test_volumes_unique_name_max_length_can_be_created(faker: Faker, docker_swarm: None):
     a_uuid = faker.uuid4()
     volume_name_len_255 = (a_uuid * 100)[:255]
     await assert_creation_and_removal(volume_name_len_255)
@@ -154,9 +152,7 @@ def test_volumes_get_truncated_as_expected(faker: Faker):
     service_run_id = ServiceRunID.get_resource_tracking_run_id_for_dynamic()
     assert node_uuid != service_run_id
     unique_volume_name = DynamicSidecarVolumesPathsResolver.source(
-        path=Path(
-            f"/home/user/a-{'-'.join(['very' for _ in range(34)])}-long-home-path/workspace"
-        ),
+        path=Path(f"/home/user/a-{'-'.join(['very' for _ in range(34)])}-long-home-path/workspace"),
         node_uuid=node_uuid,
         service_run_id=service_run_id,
     )

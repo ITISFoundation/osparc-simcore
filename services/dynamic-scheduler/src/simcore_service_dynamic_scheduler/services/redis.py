@@ -25,9 +25,7 @@ async def redis_lifespan(app: FastAPI) -> AsyncIterator[State]:
 
     app.state.redis_clients_manager = manager = RedisClientsManager(
         {RedisManagerDBConfig(database=x, decode_responses=False) for x in _BINARY_DBS}
-        | {
-            RedisManagerDBConfig(database=x, decode_responses=True) for x in _DECODE_DBS
-        },
+        | {RedisManagerDBConfig(database=x, decode_responses=True) for x in _DECODE_DBS},
         settings,
         client_name=APP_NAME,
     )

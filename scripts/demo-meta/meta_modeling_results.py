@@ -20,7 +20,6 @@ from osparc_webapi import (
 
 
 def print_checkpoints(client: httpx.Client):
-
     repos: list[ProjectRepo] = list(iter_repos(client))
     project_id = repos[0].project_uuid
 
@@ -63,9 +62,7 @@ def fetch_data(client: httpx.Client, project_id: UUID, checkpoint: CheckPoint):
 
         index.append(row.iteration_index)
 
-        data["progress"].append(
-            sum(row.results.progress.values()) / len(row.results.progress)
-        )
+        data["progress"].append(sum(row.results.progress.values()) / len(row.results.progress))
 
         for node_id, label in row.results.labels.items():
             for port_name, value in row.results.values[node_id].items():

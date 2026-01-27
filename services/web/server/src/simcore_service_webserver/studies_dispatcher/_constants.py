@@ -7,9 +7,7 @@ from common_library.user_messages import user_message
 #       Please keep alphabetical order
 #
 
-MSG_PROJECT_NOT_FOUND: Final[str] = user_message(
-    "The project with ID '{project_id}' could not be found.", _version=1
-)
+MSG_PROJECT_NOT_FOUND: Final[str] = user_message("The project with ID '{project_id}' could not be found.", _version=1)
 
 # This error happens when the linked project ID does not exists OR is not shared with everyone
 MSG_PROJECT_NOT_PUBLISHED: Final[str] = user_message(

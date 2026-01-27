@@ -50,3 +50,4 @@ repos:
     hooks:
       - id: typos
         name: spellchecker
+        exclude: "(^|/)generated_models/"

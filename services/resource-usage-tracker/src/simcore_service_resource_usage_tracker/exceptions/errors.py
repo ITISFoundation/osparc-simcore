@@ -43,10 +43,10 @@ class PricingPlanDoesNotExistsDBError(ResourceUsageTrackerBaseError):
     msg_template = "Pricing plan {pricing_plan_id} does not exists"
 
 
-class PricingPlanAndPricingUnitCombinationDoesNotExistsDBError(
-    ResourceUsageTrackerBaseError
-):
-    msg_template = "Pricing plan {pricing_plan_id} and pricing unit {pricing_unit_id} does not exists in product {product_name}"
+class PricingPlanAndPricingUnitCombinationDoesNotExistsDBError(ResourceUsageTrackerBaseError):
+    msg_template = (
+        "Pricing plan {pricing_plan_id} and pricing unit {pricing_unit_id} does not exists in product {product_name}"
+    )
 
 
 class PricingUnitCostDoesNotExistsDBError(ResourceUsageTrackerBaseError):
@@ -60,9 +60,7 @@ class RutNotFoundError(ResourceUsageTrackerBaseError): ...
 
 
 class PricingPlanNotFoundForServiceError(RutNotFoundError):
-    msg_template = (
-        "Pricing plan not found for service key {service_key} version {service_version}"
-    )
+    msg_template = "Pricing plan not found for service key {service_key} version {service_version}"
 
 
 class LicensedItemPurchaseNotFoundError(RutNotFoundError):

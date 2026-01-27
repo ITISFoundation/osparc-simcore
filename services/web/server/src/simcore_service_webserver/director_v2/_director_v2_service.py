@@ -90,10 +90,8 @@ async def create_or_update_pipeline(
 
 
 @log_decorator(logger=_logger)
-async def is_pipeline_running(
-    app: web.Application, user_id: PositiveInt, project_id: UUID
-) -> bool | None:
-    # NOTE: possiblity to make it cheaper by /computations/{project_id}/state. First trial shows
+async def is_pipeline_running(app: web.Application, user_id: PositiveInt, project_id: UUID) -> bool | None:
+    # NOTE: possibility to make it cheaper by /computations/{project_id}/state. First trial shows
     # that the efficiency gain is minimal but should be considered specially if the handler
     # gets heavier with time
     pipeline = await get_computation_task(app, user_id, project_id)
@@ -110,13 +108,9 @@ async def is_pipeline_running(
 
 
 @log_decorator(logger=_logger)
-async def get_computation_task(
-    app: web.Application, user_id: UserID, project_id: ProjectID
-) -> ComputationTask | None:
+async def get_computation_task(app: web.Application, user_id: UserID, project_id: ProjectID) -> ComputationTask | None:
     try:
-        dv2_computation = await DirectorV2RestClient(app).get_computation(
-            project_id=project_id, user_id=user_id
-        )
+        dv2_computation = await DirectorV2RestClient(app).get_computation(project_id=project_id, user_id=user_id)
         task_out = ComputationTask.model_validate(dv2_computation, from_attributes=True)
         _logger.debug("found computation task: %s", f"{task_out=}")
 
@@ -125,9 +119,7 @@ async def get_computation_task(
         if exc.status == status.HTTP_404_NOT_FOUND:
             # the pipeline might not exist and that is ok
             return None
-        _logger.warning(
-            "getting pipeline for project %s failed: %s.", f"{project_id=}", exc
-        )
+        _logger.warning("getting pipeline for project %s failed: %s.", f"{project_id=}", exc)
         return None
 
 
@@ -142,12 +134,8 @@ def _skip_if_pipeline_not_found(exception: BaseException) -> bool:
     reason="silence in case the pipeline does not exist",
     predicate=_skip_if_pipeline_not_found,
 )
-async def stop_pipeline(
-    app: web.Application, *, user_id: PositiveInt, project_id: ProjectID
-):
-    await DirectorV2RestClient(app).stop_computation(
-        project_id=project_id, user_id=user_id
-    )
+async def stop_pipeline(app: web.Application, *, user_id: PositiveInt, project_id: ProjectID):
+    await DirectorV2RestClient(app).stop_computation(project_id=project_id, user_id=user_id)
 
 
 @log_decorator(logger=_logger)
@@ -217,13 +205,9 @@ async def get_wallet_info(
     check_user_wallet_permission: bool = True,
 ) -> WalletInfo | None:
     app_settings = get_application_settings(app)
-    if not (
-        product.is_payment_enabled and app_settings.WEBSERVER_CREDIT_COMPUTATION_ENABLED
-    ):
+    if not (product.is_payment_enabled and app_settings.WEBSERVER_CREDIT_COMPUTATION_ENABLED):
         return None
-    project_wallet = await projects_wallets_service.get_project_wallet(
-        app, project_id=project_id
-    )
+    project_wallet = await projects_wallets_service.get_project_wallet(app, project_id=project_id)
     if project_wallet is None:
         user_default_wallet_preference = await user_preferences_service.get_frontend_user_preference(
             app,
@@ -233,9 +217,7 @@ async def get_wallet_info(
         )
         if user_default_wallet_preference is None:
             raise UserDefaultWalletNotFoundError(uid=user_id)
-        project_wallet_id = TypeAdapter(WalletID).validate_python(
-            user_default_wallet_preference.value
-        )
+        project_wallet_id = TypeAdapter(WalletID).validate_python(user_default_wallet_preference.value)
         await projects_wallets_service.connect_wallet_to_project(
             app,
             product_name=product_name,
@@ -248,13 +230,11 @@ async def get_wallet_info(
 
     if check_user_wallet_permission:
         # Check whether user has access to the wallet
-        wallet = (
-            await wallets_service.get_wallet_with_available_credits_by_user_and_wallet(
-                app,
-                user_id=user_id,
-                wallet_id=project_wallet_id,
-                product_name=product_name,
-            )
+        wallet = await wallets_service.get_wallet_with_available_credits_by_user_and_wallet(
+            app,
+            user_id=user_id,
+            wallet_id=project_wallet_id,
+            product_name=product_name,
         )
     else:
         # This function is used also when we are synchronizing the projects/projects_nodes with the comp_pipelines/comp_tasks tables in director-v2

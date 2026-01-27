@@ -52,8 +52,7 @@ def mocked_chatbot_api(faker: Faker) -> Iterator[respx.MockRouter]:
         # Create a side_effect that returns responses in sequence
         mock.post(path="/v1/chat/completions").mock(
             side_effect=[
-                httpx.Response(200, json=response.model_dump(mode="json"))
-                for response in chatbot_answer_responses
+                httpx.Response(200, json=response.model_dump(mode="json")) for response in chatbot_answer_responses
             ]
         )
         yield mock
@@ -82,9 +81,7 @@ async def support_team_user(client: TestClient) -> AsyncIterator[UserInfoDict]:
 
 
 @pytest.fixture
-def mocked_get_current_product(
-    chatbot_user: UserInfoDict, mocker: MockerFixture
-) -> MockType:
+def mocked_get_current_product(chatbot_user: UserInfoDict, mocker: MockerFixture) -> MockType:
     mock = mocker.patch.object(products_service, "get_product")
     mocked_product = mocker.Mock()
     mocked_product.support_chatbot_user_id = chatbot_user["id"]

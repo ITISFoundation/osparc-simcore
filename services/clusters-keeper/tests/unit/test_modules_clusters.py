@@ -136,15 +136,10 @@ async def test_get_cluster(
     # create multiple clusters for different users
     user_ids = [user_id, user_id + 13, user_id + 456]
     list_created_clusters = await asyncio.gather(
-        *(
-            _create_cluster(initialized_app, ec2_client, user_id=u, wallet_id=wallet_id)
-            for u in user_ids
-        )
+        *(_create_cluster(initialized_app, ec2_client, user_id=u, wallet_id=wallet_id) for u in user_ids)
     )
     for u, created_clusters in zip(user_ids, list_created_clusters, strict=True):
-        returned_cluster = await get_cluster(
-            initialized_app, user_id=u, wallet_id=wallet_id
-        )
+        returned_cluster = await get_cluster(initialized_app, user_id=u, wallet_id=wallet_id)
         assert created_clusters[0] == returned_cluster
 
 
@@ -166,10 +161,7 @@ async def test_get_cluster_workers_returns_empty_if_no_workers(
     wallet_id: WalletID,
     initialized_app: FastAPI,
 ):
-    assert (
-        await get_cluster_workers(initialized_app, user_id=user_id, wallet_id=wallet_id)
-        == []
-    )
+    assert await get_cluster_workers(initialized_app, user_id=user_id, wallet_id=wallet_id) == []
 
 
 async def test_get_cluster_workers_does_not_return_cluster_primary_machine(
@@ -180,10 +172,7 @@ async def test_get_cluster_workers_does_not_return_cluster_primary_machine(
     initialized_app: FastAPI,
 ):
     await _create_cluster(initialized_app, ec2_client, user_id, wallet_id)
-    assert (
-        await get_cluster_workers(initialized_app, user_id=user_id, wallet_id=wallet_id)
-        == []
-    )
+    assert await get_cluster_workers(initialized_app, user_id=user_id, wallet_id=wallet_id) == []
 
 
 async def test_get_cluster_workers(
@@ -195,9 +184,7 @@ async def test_get_cluster_workers(
     create_ec2_workers: Callable[[int], Awaitable[list[str]]],
 ):
     created_instance_ids = await create_ec2_workers(10)
-    returned_ec2_instances = await get_cluster_workers(
-        initialized_app, user_id=user_id, wallet_id=wallet_id
-    )
+    returned_ec2_instances = await get_cluster_workers(initialized_app, user_id=user_id, wallet_id=wallet_id)
     assert len(created_instance_ids) == len(returned_ec2_instances)
 
 
@@ -279,8 +266,6 @@ async def test_delete_cluster(
     wallet_id: WalletID,
     initialized_app: FastAPI,
 ):
-    created_instances = await _create_cluster(
-        initialized_app, ec2_client, user_id, wallet_id
-    )
+    created_instances = await _create_cluster(initialized_app, ec2_client, user_id, wallet_id)
     await delete_clusters(initialized_app, instances=created_instances)
     await _assert_all_clusters_terminated(ec2_client)

@@ -6,6 +6,4 @@ class BaseChatbotException(OsparcErrorMixin, Exception):
 
 
 class NoResponseFromChatbotError(BaseChatbotException):
-    msg_template = (
-        "No response received from chatbot for chat completion {chat_completion_id}"
-    )
+    msg_template = "No response received from chatbot for chat completion {chat_completion_id}"

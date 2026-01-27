@@ -1,10 +1,11 @@
 import sqlalchemy as sa
+from sqlalchemy.dialects.postgresql import insert as pg_insert
+
 from simcore_postgres_database.models.payments_autorecharge import payments_autorecharge
 from simcore_postgres_database.models.payments_methods import (
     InitPromptAckFlowState,
     payments_methods,
 )
-from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 
 class AutoRechargeStatements:
@@ -33,10 +34,7 @@ class AutoRechargeStatements:
                 payments_methods.join(
                     payments_autorecharge,
                     (payments_methods.c.wallet_id == payments_autorecharge.c.wallet_id)
-                    & (
-                        payments_methods.c.payment_method_id
-                        == payments_autorecharge.c.primary_payment_method_id
-                    ),
+                    & (payments_methods.c.payment_method_id == payments_autorecharge.c.primary_payment_method_id),
                 )
             )
             .where(

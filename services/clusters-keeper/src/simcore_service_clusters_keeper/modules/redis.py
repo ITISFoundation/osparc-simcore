@@ -16,9 +16,7 @@ def setup(app: FastAPI) -> None:
         app.state.redis_client_sdk = None
         settings: RedisSettings = get_application_settings(app).CLUSTERS_KEEPER_REDIS
         redis_locks_dsn = settings.build_redis_dsn(RedisDatabase.LOCKS)
-        app.state.redis_client_sdk = RedisClientSDK(
-            redis_locks_dsn, client_name=APP_NAME
-        )
+        app.state.redis_client_sdk = RedisClientSDK(redis_locks_dsn, client_name=APP_NAME)
         await app.state.redis_client_sdk.setup()
 
     async def on_shutdown() -> None:

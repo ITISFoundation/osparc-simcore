@@ -40,20 +40,16 @@ async def load(
 ) -> Nodeports:
     """creates a nodeport object from a row from comp_tasks"""
     log.debug(
-        "creating node_ports_v2 object from node %s with auto_uptate %s",
+        "creating node_ports_v2 object from node %s with auto_update %s",
         node_uuid,
         auto_update,
     )
-    port_config_str: str = await db_manager.get_ports_configuration_from_node_uuid(
-        project_id, node_uuid
-    )
+    port_config_str: str = await db_manager.get_ports_configuration_from_node_uuid(project_id, node_uuid)
     port_cfg = json_loads(port_config_str)
 
     log.debug(f"{port_cfg=}")  # pylint: disable=logging-fstring-interpolation
     if any(k not in port_cfg for k in NODE_REQUIRED_KEYS):
-        raise InvalidProtocolError(
-            port_cfg, "nodeport in comp_task does not follow protocol"
-        )
+        raise InvalidProtocolError(port_cfg, "nodeport in comp_task does not follow protocol")
 
     # convert to our internal node ports
     node_ports_cfg: dict[str, dict[str, Any]] = {}
@@ -92,9 +88,7 @@ async def load(
         project_id=project_id,
         node_uuid=node_uuid,
         save_to_db_cb=dump,
-        node_port_creator_cb=functools.partial(
-            load, io_log_redirect_cb=io_log_redirect_cb
-        ),
+        node_port_creator_cb=functools.partial(load, io_log_redirect_cb=io_log_redirect_cb),
         auto_update=auto_update,
         r_clone_settings=r_clone_settings,
         io_log_redirect_cb=io_log_redirect_cb,
@@ -131,18 +125,11 @@ async def dump(nodeports: Nodeports) -> None:
         )
 
         return {
-            "inputs": {
-                port_key: port.value for port_key, port in ports.internal_inputs.items()
-            },
-            "outputs": {
-                port_key: port.value
-                for port_key, port in ports.internal_outputs.items()
-            },
+            "inputs": {port_key: port.value for port_key, port in ports.internal_inputs.items()},
+            "outputs": {port_key: port.value for port_key, port in ports.internal_outputs.items()},
         }
 
-    run_hash = await compute_node_hash(
-        NodeID(nodeports.node_uuid), get_node_io_payload_cb
-    )
+    run_hash = await compute_node_hash(NodeID(nodeports.node_uuid), get_node_io_payload_cb)
 
     # convert to DB
     port_cfg: dict[str, Any] = {
@@ -154,11 +141,7 @@ async def dump(nodeports: Nodeports) -> None:
     for port_type in ["inputs", "outputs"]:
         for port_key, port_values in _nodeports_cfg[port_type].items():
             # schemas
-            key_schema = {
-                k: v
-                for k, v in _nodeports_cfg[port_type][port_key].items()
-                if k not in ["key", "value"]
-            }
+            key_schema = {k: v for k, v in _nodeports_cfg[port_type][port_key].items() if k not in ["key", "value"]}
             port_cfg["schema"][port_type][port_key] = key_schema
             # payload (only if default value was not used)
             # pylint: disable=protected-access

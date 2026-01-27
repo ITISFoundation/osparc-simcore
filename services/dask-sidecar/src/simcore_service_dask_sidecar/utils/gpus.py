@@ -41,9 +41,7 @@ def num_available_gpus() -> int:
         async with aiodocker.Docker() as docker:
             spec_config = _nvidia_smi_docker_config(["--list-gpus"])
             try:
-                container = await docker.containers.run(
-                    config=spec_config, name=f"sidecar_{uuid.uuid4()}_test_gpu"
-                )
+                container = await docker.containers.run(config=spec_config, name=f"sidecar_{uuid.uuid4()}_test_gpu")
                 if not container:
                     return 0
 
@@ -52,19 +50,11 @@ def num_available_gpus() -> int:
                     Coroutine,
                     container.log(stdout=True, stderr=True, follow=False),
                 )
-                num_gpus = (
-                    len(container_logs)
-                    if container_data.setdefault("StatusCode", 127) == 0
-                    else 0
-                )
+                num_gpus = len(container_logs) if container_data.setdefault("StatusCode", 127) == 0 else 0
             except TimeoutError as err:
-                logger.warning(
-                    "num_gpus timedout while check-run %s: %s", spec_config, err
-                )
+                logger.warning("num_gpus timedout while check-run %s: %s", spec_config, err)
             except aiodocker.exceptions.DockerError as err:
-                logger.warning(
-                    "num_gpus DockerError while check-run %s: %s", spec_config, err
-                )
+                logger.warning("num_gpus DockerError while check-run %s: %s", spec_config, err)
             finally:
                 if container is not None:
                     await container.delete(v=True, force=True)
@@ -108,13 +98,9 @@ def video_memory() -> int:
                         )
 
             except TimeoutError as err:
-                logger.warning(
-                    "num_gpus timedout while check-run %s: %s", spec_config, err
-                )
+                logger.warning("num_gpus timedout while check-run %s: %s", spec_config, err)
             except aiodocker.exceptions.DockerError as err:
-                logger.warning(
-                    "num_gpus DockerError while check-run %s: %s", spec_config, err
-                )
+                logger.warning("num_gpus DockerError while check-run %s: %s", spec_config, err)
             finally:
                 if container is not None:
                     await container.delete(v=True, force=True)

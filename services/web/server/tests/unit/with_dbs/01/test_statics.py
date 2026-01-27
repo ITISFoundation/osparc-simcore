@@ -29,12 +29,8 @@ from simcore_service_webserver.statics.plugin import setup_statics
 
 
 @pytest.fixture
-def app_environment(
-    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch, vcs_release_tag: str
-) -> EnvVarsDict:
-    return app_environment | setenvs_from_dict(
-        monkeypatch, envs={"SIMCORE_VCS_RELEASE_TAG": vcs_release_tag}
-    )
+def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch, vcs_release_tag: str) -> EnvVarsDict:
+    return app_environment | setenvs_from_dict(monkeypatch, envs={"SIMCORE_VCS_RELEASE_TAG": vcs_release_tag})
 
 
 @pytest.fixture
@@ -113,13 +109,13 @@ def mock_product_vendor(postgres_db: sa.engine.Engine, template_url: str) -> Non
             "v1.75.0",
             "https://example.com/releases/some_target_{vtag}.md",
             "https://example.com/releases/some_target_v1.75.0.md",
-            id="production_replacement_first_exmample",
+            id="production_replacement_first_example",
         ),
         pytest.param(
             "v2.1.0",
             "https://github.com/owner/repo/releases/{vtag}.md",
             "https://github.com/owner/repo/releases/v2.1.0.md",
-            id="production_replacement_second_exmample",
+            id="production_replacement_second_example",
         ),
         pytest.param(
             "latest",
@@ -137,7 +133,7 @@ def mock_product_vendor(postgres_db: sa.engine.Engine, template_url: str) -> Non
             "v1.75.0",
             "https://example.com/no_vtag.md",
             "https://example.com/no_vtag.md",
-            id="vtag_not_repalced_if_missing",
+            id="vtag_not_replaced_if_missing",
         ),
     ],
 )

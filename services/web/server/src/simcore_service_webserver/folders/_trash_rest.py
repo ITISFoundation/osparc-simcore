@@ -29,9 +29,7 @@ async def trash_folder(request: web.Request):
     user_id = get_user_id(request)
     product_name = products_web.get_product_name(request)
     path_params = parse_request_path_parameters_as(FoldersPathParams, request)
-    query_params: FolderTrashQueryParams = parse_request_query_parameters_as(
-        FolderTrashQueryParams, request
-    )
+    query_params: FolderTrashQueryParams = parse_request_query_parameters_as(FolderTrashQueryParams, request)
 
     await _trash_service.trash_folder(
         request.app,

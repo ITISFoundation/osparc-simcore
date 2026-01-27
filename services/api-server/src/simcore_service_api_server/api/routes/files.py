@@ -5,9 +5,8 @@ import logging
 from typing import IO, Annotated, Any
 from uuid import UUID
 
-from fastapi import APIRouter, Body, Depends
+from fastapi import APIRouter, Body, Depends, Header, Request, UploadFile, status
 from fastapi import File as FileParam
-from fastapi import Header, Request, UploadFile, status
 from fastapi.exceptions import HTTPException
 from fastapi_pagination.api import create_page
 from models_library.api_schemas_storage.storage_schemas import (
@@ -37,13 +36,11 @@ from ...models.pagination import Page, PaginationParams
 from ...models.schemas.errors import ErrorGet
 from ...models.schemas.files import (
     ClientFileUploadData,
-)
-from ...models.schemas.files import File as OutputFile
-from ...models.schemas.files import (
     FileUploadData,
     UploadLinks,
     UserFile,
 )
+from ...models.schemas.files import File as OutputFile
 from ...models.schemas.jobs import UserFileToProgramJob
 from ...services_http.storage import StorageApi, StorageFileMetaData, to_file_api_model
 from ...services_http.webserver import AuthSession
@@ -84,10 +81,8 @@ async def _get_file(
     """Gets metadata for a given file resource"""
 
     try:
-        stored_files: list[StorageFileMetaData] = (
-            await storage_client.search_owned_files(
-                user_id=user_id, file_id=file_id, limit=1
-            )
+        stored_files: list[StorageFileMetaData] = await storage_client.search_owned_files(
+            user_id=user_id, file_id=file_id, limit=1
         )
         if not stored_files:
             msg = "Not found in storage"
@@ -124,9 +119,7 @@ async def _create_domain_file(
                 detail=f"Job_id {project.uuid} is not a valid program job.",
             )
         node_id = next(iter(project.workbench.keys()))
-        file = client_file.to_domain_model(
-            project_id=project.uuid, node_id=NodeID(node_id)
-        )
+        file = client_file.to_domain_model(project_id=project.uuid, node_id=NodeID(node_id))
     else:
         err_msg = f"Invalid client_file type passed: {type(client_file)=}"
         raise TypeError(err_msg)
@@ -159,9 +152,7 @@ async def list_files(
     SEE `get_files_page` for a paginated version of this function
     """
 
-    stored_files: list[StorageFileMetaData] = await storage_client.list_files(
-        user_id=user_id
-    )
+    stored_files: list[StorageFileMetaData] = await storage_client.list_files(user_id=user_id)
 
     # Adapts storage API model to API model
     all_files: list[OutputFile] = []
@@ -173,8 +164,7 @@ async def list_files(
 
         except (ValidationError, ValueError, AttributeError) as err:
             _logger.warning(
-                "Skipping corrupted entry in storage '%s' (%s)"
-                "TIP: check this entry in file_meta_data table.",
+                "Skipping corrupted entry in storage '%s' (%s)TIP: check this entry in file_meta_data table.",
                 stored_file_meta.file_uuid,
                 err,
             )
@@ -234,9 +224,7 @@ async def upload_file(
     if file.filename is None:
         file.filename = "Undefined"
 
-    file_size = await asyncio.get_event_loop().run_in_executor(
-        None, _get_spooled_file_size, file.file
-    )
+    file_size = await asyncio.get_event_loop().run_in_executor(None, _get_spooled_file_size, file.file)
     # assign file_id.
     file_meta = await DomainFile.create_from_uploaded(
         file,
@@ -296,27 +284,19 @@ async def get_upload_links(
 ):
     """Get upload links for uploading a file to storage"""
     assert request  # nosec
-    file_meta = await _create_domain_file(
-        webserver_api=webserver_api, file_id=None, client_file=client_file
-    )
+    file_meta = await _create_domain_file(webserver_api=webserver_api, file_id=None, client_file=client_file)
 
-    with log_context(
-        logger=_logger, level=logging.DEBUG, msg=f"Getting upload links for {file_meta}"
-    ):
+    with log_context(logger=_logger, level=logging.DEBUG, msg=f"Getting upload links for {file_meta}"):
         upload_links = await storage_client.get_file_upload_links(
             user_id=user_id, file=file_meta, client_file=client_file
         )
 
-    completion_url: URL = request.url_for(
-        "complete_multipart_upload", file_id=file_meta.id
-    )
+    completion_url: URL = request.url_for("complete_multipart_upload", file_id=file_meta.id)
     abort_url: URL = request.url_for("abort_multipart_upload", file_id=file_meta.id)
     upload_data: FileUploadData = FileUploadData(
         chunk_size=upload_links.chunk_size,
         urls=upload_links.urls,  # type: ignore[arg-type]
-        links=UploadLinks(
-            complete_upload=completion_url.path, abort_upload=abort_url.path
-        ),
+        links=UploadLinks(complete_upload=completion_url.path, abort_upload=abort_url.path),
     )
     return ClientFileUploadData(file_id=file_meta.id, upload_schema=upload_data)
 
@@ -362,12 +342,8 @@ async def search_files_page(
     )
     if page_params.offset > len(stored_files):
         _logger.debug("File with sha256_checksum=%d not found.", sha256_checksum)
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Not found in storage"
-        )
-    file_list = [
-        OutputFile.from_domain_model(to_file_api_model(fmd)) for fmd in stored_files
-    ]
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found in storage")
+    file_list = [OutputFile.from_domain_model(to_file_api_model(fmd)) for fmd in stored_files]
     return create_page(
         file_list,
         total=len(stored_files),
@@ -389,9 +365,7 @@ async def delete_file(
         storage_client=storage_client,
         user_id=user_id,
     )
-    await storage_client.delete_file(
-        user_id=user_id, quoted_storage_file_id=file.quoted_storage_file_id
-    )
+    await storage_client.delete_file(user_id=user_id, quoted_storage_file_id=file.quoted_storage_file_id)
 
 
 @router.post(
@@ -410,9 +384,7 @@ async def abort_multipart_upload(
     assert request  # nosec
     assert user_id  # nosec
 
-    file = await _create_domain_file(
-        webserver_api=webserver_api, file_id=file_id, client_file=client_file
-    )
+    file = await _create_domain_file(webserver_api=webserver_api, file_id=file_id, client_file=client_file)
     await storage_client.abort_file_upload(user_id=user_id, file=file)
 
 
@@ -433,12 +405,8 @@ async def complete_multipart_upload(
     assert file_id  # nosec
     assert request  # nosec
     assert user_id  # nosec
-    file = await _create_domain_file(
-        webserver_api=webserver_api, file_id=file_id, client_file=client_file
-    )
-    e_tag = await storage_client.complete_file_upload(
-        user_id=user_id, file=file, uploaded_parts=uploaded_parts.parts
-    )
+    file = await _create_domain_file(webserver_api=webserver_api, file_id=file_id, client_file=client_file)
+    e_tag = await storage_client.complete_file_upload(user_id=user_id, file=file, uploaded_parts=uploaded_parts.parts)
     assert e_tag is not None  # nosec
 
     file.e_tag = e_tag
@@ -452,9 +420,7 @@ async def complete_multipart_upload(
     | {
         200: {
             "content": {
-                "application/octet-stream": {
-                    "schema": {"type": "string", "format": "binary"}
-                },
+                "application/octet-stream": {"schema": {"type": "string", "format": "binary"}},
                 "text/plain": {"schema": {"type": "string"}},
             },
             "description": "Returns a arbitrary binary data",

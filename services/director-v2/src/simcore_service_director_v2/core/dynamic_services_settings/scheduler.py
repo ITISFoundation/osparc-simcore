@@ -17,12 +17,9 @@ class DynamicServicesSchedulerSettings(BaseCustomSettings):
         description="interval at which the scheduler cycle is repeated",
     )
 
-    DIRECTOR_V2_DYNAMIC_SCHEDULER_PENDING_VOLUME_REMOVAL_INTERVAL_S: PositiveFloat = (
-        Field(
-            30 * _MINUTE,
-            description="interval at which cleaning of unused dy-sidecar "
-            "docker volume removal services is executed",
-        )
+    DIRECTOR_V2_DYNAMIC_SCHEDULER_PENDING_VOLUME_REMOVAL_INTERVAL_S: PositiveFloat = Field(
+        30 * _MINUTE,
+        description="interval at which cleaning of unused dy-sidecar docker volume removal services is executed",
     )
 
     SIMCORE_SERVICES_NETWORK_NAME: DockerNetworkName = Field(
@@ -64,9 +61,7 @@ class DynamicServicesSchedulerSettings(BaseCustomSettings):
         description="Prometheus will scrape service placed on these networks",
     )
 
-    DIRECTOR_V2_DYNAMIC_SCHEDULER_CLOSE_SERVICES_VIA_FRONTEND_WHEN_CREDITS_LIMIT_REACHED: (
-        bool
-    ) = Field(
+    DIRECTOR_V2_DYNAMIC_SCHEDULER_CLOSE_SERVICES_VIA_FRONTEND_WHEN_CREDITS_LIMIT_REACHED: bool = Field(
         default=True,
         description=(
             "when the message indicating there are no more credits left in a wallet "
@@ -87,9 +82,7 @@ class DynamicServicesSchedulerSettings(BaseCustomSettings):
 
     DYNAMIC_SIDECAR_API_CONNECT_TIMEOUT: PositiveFloat = Field(
         5.0,
-        description=(
-            "Connections to the dynamic-sidecars in the same swarm deployment should be very fast."
-        ),
+        description=("Connections to the dynamic-sidecars in the same swarm deployment should be very fast."),
     )
 
     DYNAMIC_SIDECAR_STARTUP_TIMEOUT_S: PositiveFloat = Field(
@@ -129,8 +122,7 @@ class DynamicServicesSchedulerSettings(BaseCustomSettings):
     DYNAMIC_SIDECAR_WAIT_FOR_CONTAINERS_TO_START: PositiveFloat = Field(
         60.0 * _MINUTE,
         description=(
-            "When starting container (`docker compose up`), images might "
-            "require pulling before containers are started."
+            "When starting container (`docker compose up`), images might require pulling before containers are started."
         ),
     )
 
@@ -145,9 +137,7 @@ class DynamicServicesSchedulerSettings(BaseCustomSettings):
 
     DYNAMIC_SIDECAR_PROJECT_NETWORKS_ATTACH_DETACH_S: PositiveFloat = Field(
         3.0 * _MINUTE,
-        description=(
-            "timeout for attaching/detaching project networks to/from a container"
-        ),
+        description=("timeout for attaching/detaching project networks to/from a container"),
     )
 
     DYNAMIC_SIDECAR_CLIENT_REQUEST_TIMEOUT_S: PositiveFloat = Field(
@@ -168,11 +158,9 @@ class DynamicServicesSchedulerSettings(BaseCustomSettings):
         timedelta(0), description="time to sleep before removing a container"
     )
 
-    _validate_director_v2_dynamic_scheduler_interval = (
-        validate_numeric_string_as_timedelta("DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL")
+    _validate_director_v2_dynamic_scheduler_interval = validate_numeric_string_as_timedelta(
+        "DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL"
     )
-    _validate_director_v2_dynamic_sidecar_sleep_after_container_removal = (
-        validate_numeric_string_as_timedelta(
-            "DIRECTOR_V2_DYNAMIC_SIDECAR_SLEEP_AFTER_CONTAINER_REMOVAL"
-        )
+    _validate_director_v2_dynamic_sidecar_sleep_after_container_removal = validate_numeric_string_as_timedelta(
+        "DIRECTOR_V2_DYNAMIC_SIDECAR_SLEEP_AFTER_CONTAINER_REMOVAL"
     )

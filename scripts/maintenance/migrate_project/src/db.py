@@ -1,7 +1,7 @@
 from collections import deque
 from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Any, Deque
+from typing import Any
 from uuid import UUID
 
 import typer
@@ -24,39 +24,29 @@ def db_connection(db_config: DBConfig) -> Iterator[Connection]:
         yield con
 
 
-def _project_uuid_exists_in_destination(
-    connection: Connection, project_id: str
-) -> bool:
+def _project_uuid_exists_in_destination(connection: Connection, project_id: str) -> bool:
     query = select(projects.c.id).where(projects.c.uuid == f"{project_id}")
     exists = len(list(connection.execute(query))) > 0
     return exists
 
 
 def _meta_data_exists_in_destination(connection: Connection, file_id: str) -> bool:
-    query = select(file_meta_data.c.file_id).where(
-        file_meta_data.c.file_id == f"{file_id}"
-    )
+    query = select(file_meta_data.c.file_id).where(file_meta_data.c.file_id == f"{file_id}")
     exists = len(list(connection.execute(query))) > 0
     return exists
 
 
 def _get_project(connection: Connection, project_uuid: UUID) -> ResultProxy:
-    return connection.execute(
-        select(projects).where(projects.c.uuid == f"{project_uuid}")
-    )
+    return connection.execute(select(projects).where(projects.c.uuid == f"{project_uuid}"))
 
 
 def _get_hidden_project(connection: Connection, prj_owner: int) -> ResultProxy:
     return connection.execute(
-        select(projects).where(
-            and_(projects.c.prj_owner == prj_owner, projects.c.hidden.is_(True))
-        )
+        select(projects).where(and_(projects.c.prj_owner == prj_owner, projects.c.hidden.is_(True)))
     )
 
 
-def _get_file_meta_data_without_soft_links(
-    connection: Connection, node_uuid: UUID, project_id: UUID
-) -> ResultProxy:
+def _get_file_meta_data_without_soft_links(connection: Connection, node_uuid: UUID, project_id: UUID) -> ResultProxy:
     return connection.execute(
         select(file_meta_data).where(
             and_(
@@ -94,7 +84,7 @@ def get_project_and_files_to_migrate(
     hidden_projects_for_user: int | None,
     src_conn: Connection,
     dst_conn: Connection,
-) -> tuple[Deque, Deque]:
+) -> tuple[deque, deque]:
     skipped_projects = deque()
     skipped_files_meta_data = deque()
 
@@ -164,16 +154,13 @@ def get_project_and_files_to_migrate(
     # if files and projects already exist
     if len(skipped_files_meta_data) > 0 or len(skipped_projects) > 0:
         _red_message(
-            "Projects skipped uuid(primary keys) listing: %s"
-            % [x["uuid"] for x in skipped_projects],
+            "Projects skipped uuid(primary keys) listing: %s" % [x["uuid"] for x in skipped_projects],
         )
         _red_message(
             "File meta data skipped object_name(primary keys) listing: %s"
             % [x["object_name"] for x in skipped_files_meta_data],
         )
-        raise Exception(
-            "Could not continue migration, some projects or files already exist."
-        )
+        raise Exception("Could not continue migration, some projects or files already exist.")
 
     return projects_to_migrate, files_meta_data_to_migrate
 

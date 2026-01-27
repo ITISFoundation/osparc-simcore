@@ -26,21 +26,13 @@ from simcore_service_webserver.user_preferences._models import (
 
 
 def test_get_preference_name_and_get_preference_identifier():
-    preference_name: PreferenceName = (
-        TelemetryLowDiskSpaceWarningThresholdFrontendUserPreference.get_preference_name()
-    )
-    assert (
-        preference_name == "TelemetryLowDiskSpaceWarningThresholdFrontendUserPreference"
-    )
-    preference_identifier: PreferenceIdentifier = get_preference_identifier(
-        preference_name
-    )
+    preference_name: PreferenceName = TelemetryLowDiskSpaceWarningThresholdFrontendUserPreference.get_preference_name()
+    assert preference_name == "TelemetryLowDiskSpaceWarningThresholdFrontendUserPreference"
+    preference_identifier: PreferenceIdentifier = get_preference_identifier(preference_name)
     assert preference_identifier != preference_name
     assert preference_identifier == "lowDiskSpaceThreshold"
 
-    preference_name_via_identifier: PreferenceName = get_preference_name(
-        preference_identifier
-    )
+    preference_name_via_identifier: PreferenceName = get_preference_name(preference_identifier)
     assert preference_name_via_identifier == preference_name
 
 
@@ -52,11 +44,7 @@ def app_environment(
 ) -> EnvVarsDict:
     return app_environment | setenvs_from_dict(
         monkeypatch,
-        {
-            "WEBSERVER_USERS": json.dumps(
-                {"USERS_FRONTEND_PREFERENCES_DEFAULTS_OVERWRITES": overwrites}
-            )
-        },
+        {"WEBSERVER_USERS": json.dumps({"USERS_FRONTEND_PREFERENCES_DEFAULTS_OVERWRITES": overwrites})},
     )
 
 
@@ -78,12 +66,8 @@ def app(client: TestClient) -> web.Application:
         }
     ],
 )
-def test_overwrite_user_preferences_defaults(
-    app: web.Application, overwrites: dict[str, Any]
-):
-    search_map: dict[str, type[FrontendUserPreference]] = {
-        x.__name__: x for x in ALL_FRONTEND_PREFERENCES
-    }
+def test_overwrite_user_preferences_defaults(app: web.Application, overwrites: dict[str, Any]):
+    search_map: dict[str, type[FrontendUserPreference]] = {x.__name__: x for x in ALL_FRONTEND_PREFERENCES}
     for class_name, expected_default in overwrites.items():
         instance = search_map[class_name]()
         assert instance.value == expected_default
@@ -109,8 +93,6 @@ def mock_app(app_environment: EnvVarsDict) -> Mock:
         {"DoNotShowAnnouncementsFrontendUserPreference": 3.4},
     ],
 )
-def test_overwrite_user_preferences_defaults_wrong_type(
-    mock_app: Mock, overwrites: dict[str, Any]
-):
+def test_overwrite_user_preferences_defaults_wrong_type(mock_app: Mock, overwrites: dict[str, Any]):
     with pytest.raises(TypeError):
         overwrite_user_preferences_defaults(mock_app)

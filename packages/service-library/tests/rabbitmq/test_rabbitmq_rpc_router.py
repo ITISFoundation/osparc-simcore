@@ -39,9 +39,7 @@ class MyExpectedRpcError(RPCInterfaceError): ...
 
 
 @router.expose()
-async def a_str_method(
-    a_global_arg: str, *, a_global_kwarg: str, a_specific_kwarg: str
-) -> str:
+async def a_str_method(a_global_arg: str, *, a_global_kwarg: str, a_specific_kwarg: str) -> str:
     return f"{a_global_arg}, that was a winner! {a_global_kwarg} {a_specific_kwarg}"
 
 
@@ -81,9 +79,7 @@ async def test_exposed_methods(
     a_kwargs = "What about McGiver?"
     a_specific_kwarg = "Yeah, it was actually good, too!"
 
-    await rpc_server.register_router(
-        router, router_namespace, a_arg, a_global_kwarg=a_kwargs
-    )
+    await rpc_server.register_router(router, router_namespace, a_arg, a_global_kwarg=a_kwargs)
 
     rpc_result = await rpc_client.request(
         router_namespace,

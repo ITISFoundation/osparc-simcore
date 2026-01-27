@@ -71,9 +71,5 @@ def list_fake_file_consumers() -> list[dict[str, Any]]:
 
 def list_supported_filetypes() -> list[str]:
     return sorted(
-        {
-            consumable.split(":")[0]
-            for service in FAKE_FILE_CONSUMER_SERVICES
-            for consumable in service["consumes"]
-        }
+        {consumable.split(":")[0] for service in FAKE_FILE_CONSUMER_SERVICES for consumable in service["consumes"]}
     )

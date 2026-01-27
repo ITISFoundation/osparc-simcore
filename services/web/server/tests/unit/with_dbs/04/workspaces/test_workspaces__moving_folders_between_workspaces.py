@@ -101,20 +101,12 @@ async def moving_folder_id(
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
     ## Double check whether everything is setup OK
-    url = (
-        client.app.router["list_projects"]
-        .url_for()
-        .with_query({"folder_id": f"{second_folder['folderId']}"})
-    )
+    url = client.app.router["list_projects"].url_for().with_query({"folder_id": f"{second_folder['folderId']}"})
     resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(data) == 2
 
-    url = (
-        client.app.router["list_projects"]
-        .url_for()
-        .with_query({"folder_id": f"{first_folder['folderId']}"})
-    )
+    url = client.app.router["list_projects"].url_for().with_query({"folder_id": f"{first_folder['folderId']}"})
     resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(data) == 0
@@ -129,11 +121,7 @@ async def moving_folder_id(
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(data) == 1
 
-    url = (
-        client.app.router["list_folders"]
-        .url_for()
-        .with_query({"folder_id": f"{first_folder['folderId']}"})
-    )
+    url = client.app.router["list_folders"].url_for().with_query({"folder_id": f"{first_folder['folderId']}"})
     resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(data) == 1
@@ -141,9 +129,7 @@ async def moving_folder_id(
     return f"{second_folder['folderId']}"
 
 
-async def _move_folder_to_workspace_and_assert(
-    client: TestClient, folder_id: str, workspace_id: str
-):
+async def _move_folder_to_workspace_and_assert(client: TestClient, folder_id: str, workspace_id: str):
     assert client.app
 
     # MOVE
@@ -246,11 +232,7 @@ async def test_moving_between_private_and_shared_workspaces(
     )
 
     # 4. Shared workspace -> Private workspace
-    await _move_folder_to_workspace_and_assert(
-        client, folder_id=moving_folder_id, workspace_id="null"
-    )
+    await _move_folder_to_workspace_and_assert(client, folder_id=moving_folder_id, workspace_id="null")
 
     # 5. (Corner case) Private workspace -> Private workspace
-    await _move_folder_to_workspace_and_assert(
-        client, folder_id=moving_folder_id, workspace_id="null"
-    )
+    await _move_folder_to_workspace_and_assert(client, folder_id=moving_folder_id, workspace_id="null")

@@ -37,9 +37,7 @@ async def get_project_inputs(project_id: ProjectID):
     "/projects/{project_id}/inputs",
     response_model=Envelope[dict[NodeID, ProjectInputGet]],
 )
-async def update_project_inputs(
-    project_id: ProjectID, _updates: list[ProjectInputUpdate]
-):
+async def update_project_inputs(project_id: ProjectID, _updates: list[ProjectInputUpdate]):
     """New in version *0.10*"""
 
 

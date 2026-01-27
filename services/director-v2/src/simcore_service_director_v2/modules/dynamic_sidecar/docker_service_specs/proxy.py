@@ -35,22 +35,14 @@ def get_dynamic_proxy_spec(
     The proxy is used to create network isolation
     from the rest of the platform.
     """
-    assert (
-        scheduler_data.product_name is not None
-    ), "ONLY for legacy. This function should not be called with product_name==None"  # nosec
+    assert scheduler_data.product_name is not None, (
+        "ONLY for legacy. This function should not be called with product_name==None"
+    )  # nosec
 
-    proxy_settings: DynamicSidecarProxySettings = (
-        dynamic_services_settings.DYNAMIC_SIDECAR_PROXY_SETTINGS
-    )
-    dynamic_sidecar_settings: DynamicSidecarSettings = (
-        dynamic_services_settings.DYNAMIC_SIDECAR
-    )
-    dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings = (
-        dynamic_services_settings.DYNAMIC_SCHEDULER
-    )
-    wb_auth_settings: webserver.WebServerSettings = (
-        dynamic_services_settings.WEBSERVER_AUTH_SETTINGS
-    )
+    proxy_settings: DynamicSidecarProxySettings = dynamic_services_settings.DYNAMIC_SIDECAR_PROXY_SETTINGS
+    dynamic_sidecar_settings: DynamicSidecarSettings = dynamic_services_settings.DYNAMIC_SIDECAR
+    dynamic_services_scheduler_settings: DynamicServicesSchedulerSettings = dynamic_services_settings.DYNAMIC_SCHEDULER
+    wb_auth_settings: webserver.WebServerSettings = dynamic_services_settings.WEBSERVER_AUTH_SETTINGS
 
     mounts = [
         # docker socket needed to use the docker api
@@ -61,9 +53,7 @@ def get_dynamic_proxy_spec(
             "ReadOnly": True,
         }
     ]
-    caddy_file = (
-        f"{{\n admin 0.0.0.0:{proxy_settings.DYNAMIC_SIDECAR_CADDY_ADMIN_API_PORT} \n}}"
-    )
+    caddy_file = f"{{\n admin 0.0.0.0:{proxy_settings.DYNAMIC_SIDECAR_CADDY_ADMIN_API_PORT} \n}}"
 
     # expose this service on an empty port
 

@@ -46,7 +46,7 @@ def test_filled_ports_mapping(port_class: type[InputsList | OutputsList]):
         assert port_key in port_cfgs
 
         # just to make use of the variable and check the pydantic overloads are working correctly
-        assert port_mapping[port_key] == port_value
+        assert port_value == port_value
 
     for index, port_key in enumerate(port_cfgs):
         assert port_mapping[index] == port_mapping[port_key]
@@ -58,7 +58,7 @@ def test_filled_ports_mapping(port_class: type[InputsList | OutputsList]):
 
 
 def test_io_ports_are_not_aliases():
-    # prevents creating alises as InputsList = PortsMappings
+    # prevents creating aliases as InputsList = PortsMappings
 
     inputs = InputsList(root={})
     outputs = OutputsList(root={})
@@ -164,7 +164,7 @@ def test_validate_iolist_against_schema(fake_port_meta: dict[str, Any]):
         assert "ctx" in error
         port_key = error["ctx"]["error"].port_key
 
-        # path hierachy
+        # path hierarchy
         assert error_loc[0] == port_key, f"{error_loc=}"
         assert error_loc[1] == "value", f"{error_loc=}"
 

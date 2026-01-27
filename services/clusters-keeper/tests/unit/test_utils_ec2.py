@@ -34,16 +34,12 @@ def test_get_cluster_name(
     assert app_settings.SWARM_STACK_NAME
     # manager
     assert (
-        get_cluster_name(
-            app_settings, user_id=user_id, wallet_id=wallet_id, is_manager=True
-        )
+        get_cluster_name(app_settings, user_id=user_id, wallet_id=wallet_id, is_manager=True)
         == f"{app_settings.CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX}osparc-computational-cluster-manager-{app_settings.SWARM_STACK_NAME}-user_id:{user_id}-wallet_id:{wallet_id}"
     )
     # worker
     assert (
-        get_cluster_name(
-            app_settings, user_id=user_id, wallet_id=wallet_id, is_manager=False
-        )
+        get_cluster_name(app_settings, user_id=user_id, wallet_id=wallet_id, is_manager=False)
         == f"{app_settings.CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX}osparc-computational-cluster-worker-{app_settings.SWARM_STACK_NAME}-user_id:{user_id}-wallet_id:{wallet_id}"
     )
 
@@ -52,9 +48,7 @@ def test_get_cluster_name(
         == f"{app_settings.CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX}osparc-computational-cluster-manager-{app_settings.SWARM_STACK_NAME}-user_id:{user_id}-wallet_id:None"
     )
     assert (
-        get_cluster_name(
-            app_settings, user_id=user_id, wallet_id=None, is_manager=False
-        )
+        get_cluster_name(app_settings, user_id=user_id, wallet_id=None, is_manager=False)
         == f"{app_settings.CLUSTERS_KEEPER_EC2_INSTANCES_PREFIX}osparc-computational-cluster-worker-{app_settings.SWARM_STACK_NAME}-user_id:{user_id}-wallet_id:None"
     )
 
@@ -68,9 +62,7 @@ def test_creation_ec2_tags(
     user_id: UserID,
     wallet_id: WalletID,
 ):
-    received_tags = creation_ec2_tags(
-        app_settings, user_id=user_id, wallet_id=wallet_id
-    )
+    received_tags = creation_ec2_tags(app_settings, user_id=user_id, wallet_id=wallet_id)
     assert received_tags
     EXPECTED_TAG_KEY_NAMES = [
         f"{_APPLICATION_TAG_KEY}.deploy",
@@ -81,12 +73,12 @@ def test_creation_ec2_tags(
         "role",
         "osparc-tag",
     ]
-    assert all(
-        tag_key_name in received_tags for tag_key_name in EXPECTED_TAG_KEY_NAMES
-    ), f"missing tag key names in {received_tags.keys()}, expected {EXPECTED_TAG_KEY_NAMES}"
-    assert all(
-        tag_key_name in EXPECTED_TAG_KEY_NAMES for tag_key_name in received_tags
-    ), f"non expected tag key names in {received_tags.keys()}, expected {EXPECTED_TAG_KEY_NAMES}"
+    assert all(tag_key_name in received_tags for tag_key_name in EXPECTED_TAG_KEY_NAMES), (
+        f"missing tag key names in {received_tags.keys()}, expected {EXPECTED_TAG_KEY_NAMES}"
+    )
+    assert all(tag_key_name in EXPECTED_TAG_KEY_NAMES for tag_key_name in received_tags), (
+        f"non expected tag key names in {received_tags.keys()}, expected {EXPECTED_TAG_KEY_NAMES}"
+    )
 
 
 def test_all_created_ec2_instances_filter(
@@ -101,12 +93,12 @@ def test_all_created_ec2_instances_filter(
     EXPECTED_TAG_KEY_NAMES = [
         f"{_APPLICATION_TAG_KEY}.deploy",
     ]
-    assert all(
-        tag_key_name in received_tags for tag_key_name in EXPECTED_TAG_KEY_NAMES
-    ), f"missing tag key names in {received_tags.keys()}, expected {EXPECTED_TAG_KEY_NAMES}"
-    assert all(
-        tag_key_name in EXPECTED_TAG_KEY_NAMES for tag_key_name in received_tags
-    ), f"non expected tag key names in {received_tags.keys()}, expected {EXPECTED_TAG_KEY_NAMES}"
+    assert all(tag_key_name in received_tags for tag_key_name in EXPECTED_TAG_KEY_NAMES), (
+        f"missing tag key names in {received_tags.keys()}, expected {EXPECTED_TAG_KEY_NAMES}"
+    )
+    assert all(tag_key_name in EXPECTED_TAG_KEY_NAMES for tag_key_name in received_tags), (
+        f"non expected tag key names in {received_tags.keys()}, expected {EXPECTED_TAG_KEY_NAMES}"
+    )
 
 
 @pytest.fixture

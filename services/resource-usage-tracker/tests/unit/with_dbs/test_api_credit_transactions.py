@@ -55,7 +55,6 @@ def resource_tracker_credit_transactions_db(
     postgres_db: sa.engine.Engine,
 ) -> Iterator[None]:
     with postgres_db.connect() as con:
-
         yield
 
         con.execute(resource_tracker_credit_transactions.delete())
@@ -127,9 +126,7 @@ async def test_credit_transactions_workflow(
     assert data["credit_transaction_id"] == 3
 
     url = URL("/v1/credit-transactions/credits:sum")
-    response = await async_client.post(
-        f'{url.with_query({"product_name": "osparc", "wallet_id": 1})}'
-    )
+    response = await async_client.post(f"{url.with_query({'product_name': 'osparc', 'wallet_id': 1})}")
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
     assert data["wallet_id"] == _WALLET_ID
@@ -163,9 +160,7 @@ async def resource_tracker_setup_db(
     product_name: ProductName,
     faker: Faker,
 ) -> AsyncIterator[None]:
-    async with insert_and_get_product_lifespan(
-        sqlalchemy_async_engine, name=product_name
-    ) as product_row:
+    async with insert_and_get_product_lifespan(sqlalchemy_async_engine, name=product_name) as product_row:
         product_name = product_row["name"]
 
         async with sqlalchemy_async_engine.begin() as conn:
@@ -329,12 +324,10 @@ async def test_pay_project_debt(
     product_name: ProductName,
     faker: Faker,
 ):
-    total_wallet_credits_for_wallet_in_debt_in_beginning = (
-        await credit_transactions.get_wallet_total_credits(
-            rpc_client,
-            product_name=product_name,
-            wallet_id=_WALLET_ID,
-        )
+    total_wallet_credits_for_wallet_in_debt_in_beginning = await credit_transactions.get_wallet_total_credits(
+        rpc_client,
+        product_name=product_name,
+        wallet_id=_WALLET_ID,
     )
 
     output = await credit_transactions.get_project_wallet_total_credits(
@@ -456,8 +449,7 @@ async def test_pay_project_debt(
     )
     assert isinstance(output, WalletTotalCredits)
     assert (
-        output.available_osparc_credits
-        == 400  # <-- 100 was deduced from the new wallet
+        output.available_osparc_credits == 400  # <-- 100 was deduced from the new wallet
     )
 
     # We check whether the credits were added back to the original wallet
@@ -535,22 +527,14 @@ async def test_sum_wallet_credits_db(
     initialized_app: FastAPI,
 ):
     engine = initialized_app.state.engine
-    output_including_pending_transaction = (
-        await credit_transactions_db.sum_wallet_credits(
-            engine, product_name=product_name, wallet_id=_WALLET_ID
-        )
+    output_including_pending_transaction = await credit_transactions_db.sum_wallet_credits(
+        engine, product_name=product_name, wallet_id=_WALLET_ID
     )
-    assert output_including_pending_transaction.available_osparc_credits == Decimal(
-        "-310.00"
+    assert output_including_pending_transaction.available_osparc_credits == Decimal("-310.00")
+    output_excluding_pending_transaction = await credit_transactions_db.sum_wallet_credits(
+        engine,
+        product_name=product_name,
+        wallet_id=_WALLET_ID,
+        include_pending_transactions=False,
     )
-    output_excluding_pending_transaction = (
-        await credit_transactions_db.sum_wallet_credits(
-            engine,
-            product_name=product_name,
-            wallet_id=_WALLET_ID,
-            include_pending_transactions=False,
-        )
-    )
-    assert output_excluding_pending_transaction.available_osparc_credits == Decimal(
-        "-240.00"
-    )
+    assert output_excluding_pending_transaction.available_osparc_credits == Decimal("-240.00")

@@ -53,9 +53,7 @@ def test_job_io_checksums(repeat: int):
     print(inputs2)
 
     assert inputs1 == inputs2
-    assert (
-        inputs1.compute_checksum() == inputs2.compute_checksum()
-    ), f"{inputs1}!={inputs2}"
+    assert inputs1.compute_checksum() == inputs2.compute_checksum(), f"{inputs1}!={inputs2}"
 
 
 def test_job_resource_names_has_associated_url(app: FastAPI):
@@ -74,16 +72,12 @@ def test_job_resource_names_has_associated_url(app: FastAPI):
     # - This is the corresponding HTTP URL     "https://calendar.googleapis.com/v3/users/john%20smith/events/123"
 
     # let's make sure the associated url route is always defined in the route
-    url_path = app.router.url_path_for(
-        "get_job", solver_key=solver_key, version=solver_version, job_id=str(job_id)
-    )
+    url_path = app.router.url_path_for("get_job", solver_key=solver_key, version=solver_version, job_id=str(job_id))
 
     assert url_path == f"/{API_VTAG}/{urllib.parse.unquote_plus(job_name)}"
 
 
-@pytest.mark.acceptance_test(
-    "Fixing https://github.com/ITISFoundation/osparc-simcore/issues/6556"
-)
+@pytest.mark.acceptance_test("Fixing https://github.com/ITISFoundation/osparc-simcore/issues/6556")
 def test_parsing_job_custom_metadata(job_id: JobID, faker: Faker):
     job_name = faker.name()
 

@@ -43,9 +43,7 @@ class MergeStructureTestParams:
             a={"labels": {"my_label1": "label_value1"}},
             b={"labels": {"my_label2": "label_value2"}},
             include=(["labels"],),
-            expected_dict={
-                "labels": {"my_label1": "label_value1", "my_label2": "label_value2"}
-            },
+            expected_dict={"labels": {"my_label1": "label_value1", "my_label2": "label_value2"}},
         ),
         MergeStructureTestParams(
             a={

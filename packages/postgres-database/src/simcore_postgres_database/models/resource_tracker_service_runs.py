@@ -241,8 +241,5 @@ resource_tracker_service_runs = sa.Table(
 sa.Index(
     "ix_resource_tracker_credit_transactions_status_running",
     resource_tracker_service_runs.c.service_run_status,
-    postgresql_where=(
-        resource_tracker_service_runs.c.service_run_status
-        == ResourceTrackerServiceRunStatus.RUNNING
-    ),
+    postgresql_where=(resource_tracker_service_runs.c.service_run_status == ResourceTrackerServiceRunStatus.RUNNING),
 )

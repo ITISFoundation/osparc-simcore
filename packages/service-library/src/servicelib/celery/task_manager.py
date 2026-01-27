@@ -17,34 +17,20 @@ from .models import (
 @runtime_checkable
 class TaskManager(Protocol):
     async def submit_task(
-        self,
-        execution_metadata: ExecutionMetadata,
-        *,
-        owner_metadata: OwnerMetadata,
-        **task_param
+        self, execution_metadata: ExecutionMetadata, *, owner_metadata: OwnerMetadata, **task_param
     ) -> TaskUUID: ...
 
-    async def cancel_task(
-        self, owner_metadata: OwnerMetadata, task_uuid: TaskUUID
-    ) -> None: ...
+    async def cancel_task(self, owner_metadata: OwnerMetadata, task_uuid: TaskUUID) -> None: ...
 
-    async def get_task_result(
-        self, owner_metadata: OwnerMetadata, task_uuid: TaskUUID
-    ) -> Any: ...
+    async def get_task_result(self, owner_metadata: OwnerMetadata, task_uuid: TaskUUID) -> Any: ...
 
-    async def get_task_status(
-        self, owner_metadata: OwnerMetadata, task_uuid: TaskUUID
-    ) -> TaskStatus: ...
+    async def get_task_status(self, owner_metadata: OwnerMetadata, task_uuid: TaskUUID) -> TaskStatus: ...
 
     async def list_tasks(self, owner_metadata: OwnerMetadata) -> list[Task]: ...
 
-    async def set_task_progress(
-        self, task_key: TaskKey, report: ProgressReport
-    ) -> None: ...
+    async def set_task_progress(self, task_key: TaskKey, report: ProgressReport) -> None: ...
 
-    async def push_task_stream_items(
-        self, task_key: TaskKey, *items: TaskStreamItem
-    ) -> None: ...
+    async def push_task_stream_items(self, task_key: TaskKey, *items: TaskStreamItem) -> None: ...
 
     async def pull_task_stream_items(
         self,

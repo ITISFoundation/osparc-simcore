@@ -32,7 +32,6 @@ def app(
     docker_compose_service_environment_dict: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
 ) -> web.Application:
-
     setenvs_from_dict(monkeypatch, {**docker_compose_service_environment_dict})
 
     # app_environment: EnvVarsDict) -> web.Application:
@@ -93,9 +92,7 @@ async def test_render_and_send_mail_for_registration(
             "host": http_request.host,
             "link": link,
             "name": destination_email.split("@")[0],
-            "product": SimpleNamespace(
-                display_name=product_name.capitalize(), name=product_name
-            ),
+            "product": SimpleNamespace(display_name=product_name.capitalize(), name=product_name),
         },
     )
 
@@ -123,9 +120,7 @@ async def test_render_and_send_mail_for_password(
         context={
             "host": http_request.host,
             "link": link,
-            "product": SimpleNamespace(
-                display_name=product_name.capitalize(), name=product_name
-            ),
+            "product": SimpleNamespace(display_name=product_name.capitalize(), name=product_name),
         },
     )
 
@@ -148,9 +143,7 @@ async def test_render_and_send_mail_to_change_email(
         context={
             "host": http_request.host,
             "link": link,
-            "product": SimpleNamespace(
-                display_name=product_name.capitalize(), name=product_name
-            ),
+            "product": SimpleNamespace(display_name=product_name.capitalize(), name=product_name),
         },
     )
 
@@ -172,13 +165,9 @@ async def test_render_and_send_mail_for_submission(
         template=await get_template_path(http_request, "service_submission.jinja2"),
         context={
             "user": destination_email,
-            "data": json2html.convert(
-                json=json.dumps(data), table_attributes='class="pure-table"'
-            ),
+            "data": json2html.convert(json=json.dumps(data), table_attributes='class="pure-table"'),
             "subject": "TEST",
-            "product": SimpleNamespace(
-                display_name=product_name.capitalize(), name=product_name
-            ),
+            "product": SimpleNamespace(display_name=product_name.capitalize(), name=product_name),
         },
         attachments=[
             AttachmentTuple(

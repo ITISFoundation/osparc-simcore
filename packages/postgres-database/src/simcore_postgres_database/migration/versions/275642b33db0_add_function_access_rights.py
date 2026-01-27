@@ -95,9 +95,7 @@ def upgrade():
             onupdate="CASCADE",
             ondelete="CASCADE",
         ),
-        sa.PrimaryKeyConstraint(
-            "function_uuid", "group_id", name="pk_func_access_to_func_group"
-        ),
+        sa.PrimaryKeyConstraint("function_uuid", "group_id", name="pk_func_access_to_func_group"),
     )
     op.create_table(
         "funcapi_function_jobs_access_rights",
@@ -132,9 +130,7 @@ def upgrade():
             onupdate="CASCADE",
             ondelete="CASCADE",
         ),
-        sa.PrimaryKeyConstraint(
-            "function_job_uuid", "group_id", name="pk_func_access_to_func_jobs_group"
-        ),
+        sa.PrimaryKeyConstraint("function_job_uuid", "group_id", name="pk_func_access_to_func_jobs_group"),
     )
     # ### end Alembic commands ###
 

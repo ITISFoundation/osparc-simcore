@@ -25,9 +25,7 @@ router = APIRouter(
     tags=[
         "long-running-tasks",
     ],
-    responses={
-        i.status_code: {"model": EnvelopedError} for i in _TO_HTTP_ERROR_MAP.values()
-    },
+    responses={i.status_code: {"model": EnvelopedError} for i in _TO_HTTP_ERROR_MAP.values()},
 )
 
 

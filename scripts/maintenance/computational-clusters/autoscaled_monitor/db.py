@@ -20,9 +20,7 @@ async def db_engine(
     async with contextlib.AsyncExitStack() as stack:
         assert state.environment["POSTGRES_HOST"]  # nosec
         assert state.environment["POSTGRES_PORT"]  # nosec
-        db_endpoint = (
-            f"{state.environment['POSTGRES_HOST']}:{state.environment['POSTGRES_PORT']}"
-        )
+        db_endpoint = f"{state.environment['POSTGRES_HOST']}:{state.environment['POSTGRES_PORT']}"
         if state.main_bastion_host:
             assert state.ssh_key_path  # nosec
             db_host, db_port = db_endpoint.split(":")
@@ -36,9 +34,7 @@ async def db_engine(
                 )
             )
             assert tunnel
-            db_endpoint = (
-                f"{tunnel.local_bind_address[0]}:{tunnel.local_bind_address[1]}"
-            )
+            db_endpoint = f"{tunnel.local_bind_address[0]}:{tunnel.local_bind_address[1]}"
 
         engine = None
         try:
@@ -56,11 +52,7 @@ async def db_engine(
 
             engine = create_async_engine(
                 f"{postgres_db.dsn}",
-                connect_args={
-                    "server_settings": {
-                        "application_name": "osparc-clusters-monitoring-script"
-                    }
-                },
+                connect_args={"server_settings": {"application_name": "osparc-clusters-monitoring-script"}},
             )
             yield engine
         finally:
@@ -68,17 +60,13 @@ async def db_engine(
                 await engine.dispose()
 
 
-async def abort_job_in_db(
-    state: AppState, project_id: uuid.UUID, node_id: uuid.UUID
-) -> None:
+async def abort_job_in_db(state: AppState, project_id: uuid.UUID, node_id: uuid.UUID) -> None:
     async with contextlib.AsyncExitStack() as stack:
         engine = await stack.enter_async_context(db_engine(state))
         db_connection = await stack.enter_async_context(engine.begin())
 
         await db_connection.execute(
-            sa.text(
-                f"UPDATE comp_tasks SET state = 'ABORTED' WHERE project_id='{project_id}' AND node_id='{node_id}'"
-            )
+            sa.text(f"UPDATE comp_tasks SET state = 'ABORTED' WHERE project_id='{project_id}' AND node_id='{node_id}'")
         )
         rich.print(f"set comp_tasks for {project_id=}/{node_id=} set to ABORTED")
 
@@ -91,18 +79,14 @@ async def check_db_connection(state: AppState) -> bool:
                 db_connection = await stack.enter_async_context(engine.connect())
                 result = await db_connection.execute(sa.text("SELECT 1"))
             result.one()
-            rich.print(
-                "[green]Database connection test completed successfully![/green]"
-            )
+            rich.print("[green]Database connection test completed successfully![/green]")
             return True
     except Exception as e:  # pylint: disable=broad-exception-caught
         rich.print(f"[red]Database connection test failed: {e}[/red]")
     return False
 
 
-async def list_computational_tasks_from_db(
-    state: AppState, user_id: int
-) -> list[ComputationalTask]:
+async def list_computational_tasks_from_db(state: AppState, user_id: int) -> list[ComputationalTask]:
     async with contextlib.AsyncExitStack() as stack:
         engine = await stack.enter_async_context(db_engine(state))
         db_connection = await stack.enter_async_context(engine.begin())

@@ -76,9 +76,7 @@ def user_primary_group_id(user: dict[str, Any]) -> GroupID:
 
 
 @pytest.fixture
-async def product(
-    app: FastAPI, product: dict[str, Any]
-) -> AsyncIterator[dict[str, Any]]:
+async def product(app: FastAPI, product: dict[str, Any]) -> AsyncIterator[dict[str, Any]]:
     """
     injects product in db
     """
@@ -104,25 +102,25 @@ async def successful_transaction(
     """
     injects transaction in db
     """
-    async with insert_and_get_wallet_lifespan(
-        get_engine(app),
-        product_name=product["name"],
-        user_group_id=user["primary_gid"],
-        wallet_id=successful_transaction["wallet_id"],
-    ):
-        async with insert_and_get_row_lifespan(  # pylint:disable=contextmanager-generator-missing-cleanup
+    async with (
+        insert_and_get_wallet_lifespan(
+            get_engine(app),
+            product_name=product["name"],
+            user_group_id=user["primary_gid"],
+            wallet_id=successful_transaction["wallet_id"],
+        ),
+        insert_and_get_row_lifespan(  # pylint:disable=contextmanager-generator-missing-cleanup
             get_engine(app),
             table=payments_transactions,
             values=successful_transaction,
             pk_col=payments_transactions.c.payment_id,
             pk_value=successful_transaction["payment_id"],
-        ) as row:
-            yield row
+        ) as row,
+    ):
+        yield row
 
 
-async def test_payments_user_repo(
-    app: FastAPI, user_id: UserID, user_primary_group_id: GroupID
-):
+async def test_payments_user_repo(app: FastAPI, user_id: UserID, user_primary_group_id: GroupID):
     repo = PaymentsUsersRepo(get_engine(app))
     assert await repo.get_primary_group_id(user_id) == user_primary_group_id
 
@@ -136,9 +134,7 @@ async def test_get_notification_data(
     repo = PaymentsUsersRepo(get_engine(app))
 
     # check once
-    data = await repo.get_notification_data(
-        user_id=user["id"], payment_id=successful_transaction["payment_id"]
-    )
+    data = await repo.get_notification_data(user_id=user["id"], payment_id=successful_transaction["payment_id"])
 
     assert data.payment_id == successful_transaction["payment_id"]
     assert data.first_name == user["first_name"]

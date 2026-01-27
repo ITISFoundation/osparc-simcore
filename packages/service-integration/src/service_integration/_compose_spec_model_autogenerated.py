@@ -20,9 +20,7 @@ class CpuPercent(RootModel[int]):
     model_config = ConfigDict(
         populate_by_name=True,
     )
-    root: Annotated[
-        int, Field(description="Percentage of CPU resources to use.", ge=0, le=100)
-    ]
+    root: Annotated[int, Field(description="Percentage of CPU resources to use.", ge=0, le=100)]
 
 
 class CredentialSpec(BaseModel):
@@ -34,12 +32,8 @@ class CredentialSpec(BaseModel):
         extra="forbid",
         populate_by_name=True,
     )
-    config: Annotated[
-        str | None, Field(description="The name of the credential spec Config to use.")
-    ] = None
-    file: Annotated[
-        str | None, Field(description="Path to a credential spec file.")
-    ] = None
+    config: Annotated[str | None, Field(description="The name of the credential spec Config to use.")] = None
+    file: Annotated[str | None, Field(description="Path to a credential spec file.")] = None
     registry: Annotated[
         str | None,
         Field(description="Path to a credential spec in the Windows registry."),
@@ -53,15 +47,11 @@ class DependsOn(BaseModel):
     )
     restart: Annotated[
         bool | str | None,
-        Field(
-            description="Whether to restart dependent services when this service is restarted."
-        ),
+        Field(description="Whether to restart dependent services when this service is restarted."),
     ] = None
     required: Annotated[
         bool | None,
-        Field(
-            description="Whether the dependency is required for the dependent service to start."
-        ),
+        Field(description="Whether the dependency is required for the dependent service to start."),
     ] = True
     condition: Annotated[
         Literal["service_started", "service_healthy", "service_completed_successfully"],
@@ -81,9 +71,7 @@ class Devices(BaseModel):
         str | None,
         Field(description="Path in the container where the device will be mapped."),
     ] = None
-    permissions: Annotated[
-        str | None, Field(description="Cgroup permissions for the device (rwm).")
-    ] = None
+    permissions: Annotated[str | None, Field(description="Cgroup permissions for the device (rwm).")] = None
 
 
 class Extends(BaseModel):
@@ -113,9 +101,7 @@ class Provider(BaseModel):
     )
     type: Annotated[
         str,
-        Field(
-            description="External component used by Compose to manage setup and teardown lifecycle of the service."
-        ),
+        Field(description="External component used by Compose to manage setup and teardown lifecycle of the service."),
     ]
     options: Annotated[
         dict[str, str | float | bool | list[str | float | bool]] | None,
@@ -134,9 +120,7 @@ class Logging(BaseModel):
     )
     driver: Annotated[
         str | None,
-        Field(
-            description="Logging driver to use, such as 'json-file', 'syslog', 'journald', etc."
-        ),
+        Field(description="Logging driver to use, such as 'json-file', 'syslog', 'journald', etc."),
     ] = None
     options: Annotated[
         dict[str, str | float | None] | None,
@@ -149,12 +133,8 @@ class Models(BaseModel):
         extra="forbid",
         populate_by_name=True,
     )
-    endpoint_var: Annotated[
-        str | None, Field(description="Environment variable set to AI model endpoint.")
-    ] = None
-    model_var: Annotated[
-        str | None, Field(description="Environment variable set to AI model name.")
-    ] = None
+    endpoint_var: Annotated[str | None, Field(description="Environment variable set to AI model endpoint.")] = None
+    model_var: Annotated[str | None, Field(description="Environment variable set to AI model name.")] = None
 
 
 class OomScoreAdj(RootModel[int]):
@@ -176,9 +156,7 @@ class Ports(BaseModel):
         extra="forbid",
         populate_by_name=True,
     )
-    name: Annotated[
-        str | None, Field(description="A human-readable name for this port mapping.")
-    ] = None
+    name: Annotated[str | None, Field(description="A human-readable name for this port mapping.")] = None
     mode: Annotated[
         str | None,
         Field(
@@ -186,20 +164,12 @@ class Ports(BaseModel):
         ),
     ] = None
     host_ip: Annotated[str | None, Field(description="The host IP to bind to.")] = None
-    target: Annotated[
-        int | str | None, Field(description="The port inside the container.")
-    ] = None
-    published: Annotated[
-        str | int | None, Field(description="The publicly exposed port.")
-    ] = None
-    protocol: Annotated[
-        str | None, Field(description="The port protocol (tcp or udp).")
-    ] = None
+    target: Annotated[int | str | None, Field(description="The port inside the container.")] = None
+    published: Annotated[str | int | None, Field(description="The publicly exposed port.")] = None
+    protocol: Annotated[str | None, Field(description="The port protocol (tcp or udp).")] = None
     app_protocol: Annotated[
         str | None,
-        Field(
-            description="Application protocol to use with the port (e.g., http, https, mysql)."
-        ),
+        Field(description="Application protocol to use with the port (e.g., http, https, mysql)."),
     ] = None
 
 
@@ -228,9 +198,7 @@ class Bind(BaseModel):
     ] = None
     selinux: Annotated[
         Literal["z", "Z"] | None,
-        Field(
-            description="SELinux relabeling options: 'z' for shared content, 'Z' for private unshared content."
-        ),
+        Field(description="SELinux relabeling options: 'z' for shared content, 'Z' for private unshared content."),
     ] = None
 
 
@@ -250,12 +218,8 @@ class Tmpfs(BaseModel):
         extra="forbid",
         populate_by_name=True,
     )
-    size: Annotated[
-        Size | str | None, Field(description="Size of the tmpfs mount in bytes.")
-    ] = None
-    mode: Annotated[
-        float | str | None, Field(description="File mode of the tmpfs in octal.")
-    ] = None
+    size: Annotated[Size | str | None, Field(description="Size of the tmpfs mount in bytes.")] = None
+    mode: Annotated[float | str | None, Field(description="File mode of the tmpfs in octal.")] = None
 
 
 class Image(BaseModel):
@@ -284,21 +248,15 @@ class Healthcheck(BaseModel):
     )
     disable: Annotated[
         bool | str | None,
-        Field(
-            description="Disable any container-specified healthcheck. Set to true to disable."
-        ),
+        Field(description="Disable any container-specified healthcheck. Set to true to disable."),
     ] = None
     interval: Annotated[
         str | None,
-        Field(
-            description="Time between running the check (e.g., '1s', '1m30s'). Default: 30s."
-        ),
+        Field(description="Time between running the check (e.g., '1s', '1m30s'). Default: 30s."),
     ] = None
     retries: Annotated[
         float | str | None,
-        Field(
-            description="Number of consecutive failures needed to consider the container as unhealthy. Default: 3."
-        ),
+        Field(description="Number of consecutive failures needed to consider the container as unhealthy. Default: 3."),
     ] = None
     test: Annotated[
         str | list[str] | None,
@@ -308,9 +266,7 @@ class Healthcheck(BaseModel):
     ] = None
     timeout: Annotated[
         str | None,
-        Field(
-            description="Maximum time to allow one check to run (e.g., '1s', '1m30s'). Default: 30s."
-        ),
+        Field(description="Maximum time to allow one check to run (e.g., '1s', '1m30s'). Default: 30s."),
     ] = None
     start_period: Annotated[
         str | None,
@@ -343,9 +299,7 @@ class RollbackConfig(BaseModel):
     ] = None
     delay: Annotated[
         str | None,
-        Field(
-            description="The time to wait between each container group's rollback (e.g., '1s', '1m30s')."
-        ),
+        Field(description="The time to wait between each container group's rollback (e.g., '1s', '1m30s')."),
     ] = None
     failure_action: Annotated[
         str | None,
@@ -353,9 +307,7 @@ class RollbackConfig(BaseModel):
     ] = None
     monitor: Annotated[
         str | None,
-        Field(
-            description="Duration to monitor each task for failures after it is created (e.g., '1s', '1m30s')."
-        ),
+        Field(description="Duration to monitor each task for failures after it is created (e.g., '1s', '1m30s')."),
     ] = None
     max_failure_ratio: Annotated[
         float | str | None,
@@ -363,9 +315,7 @@ class RollbackConfig(BaseModel):
     ] = None
     order: Annotated[
         Literal["start-first", "stop-first"] | None,
-        Field(
-            description="Order of operations during rollbacks: 'stop-first' (default) or 'start-first'."
-        ),
+        Field(description="Order of operations during rollbacks: 'stop-first' (default) or 'start-first'."),
     ] = None
 
 
@@ -384,15 +334,11 @@ class UpdateConfig(BaseModel):
     ] = None
     delay: Annotated[
         str | None,
-        Field(
-            description="The time to wait between updating a group of containers (e.g., '1s', '1m30s')."
-        ),
+        Field(description="The time to wait between updating a group of containers (e.g., '1s', '1m30s')."),
     ] = None
     failure_action: Annotated[
         str | None,
-        Field(
-            description="Action to take if an update fails: 'continue', 'pause', 'rollback'."
-        ),
+        Field(description="Action to take if an update fails: 'continue', 'pause', 'rollback'."),
     ] = None
     monitor: Annotated[
         str | None,
@@ -406,9 +352,7 @@ class UpdateConfig(BaseModel):
     ] = None
     order: Annotated[
         Literal["start-first", "stop-first"] | None,
-        Field(
-            description="Order of operations during updates: 'stop-first' (default) or 'start-first'."
-        ),
+        Field(description="Order of operations during updates: 'stop-first' (default) or 'start-first'."),
     ] = None
 
 
@@ -429,9 +373,7 @@ class Limits(BaseModel):
     ] = None
     memory: Annotated[
         str | None,
-        Field(
-            description="Limit on the amount of memory a container can allocate (e.g., '1g', '1024m')."
-        ),
+        Field(description="Limit on the amount of memory a container can allocate (e.g., '1g', '1024m')."),
     ] = None
     pids: Annotated[
         int | str | None,
@@ -450,9 +392,7 @@ class RestartPolicy(BaseModel):
     )
     condition: Annotated[
         str | None,
-        Field(
-            description="Condition for restarting the container: 'none', 'on-failure', 'any'."
-        ),
+        Field(description="Condition for restarting the container: 'none', 'on-failure', 'any'."),
     ] = None
     delay: Annotated[
         str | None,
@@ -464,9 +404,7 @@ class RestartPolicy(BaseModel):
     ] = None
     window: Annotated[
         str | None,
-        Field(
-            description="Time window used to evaluate the restart policy (e.g., '1s', '1m30s')."
-        ),
+        Field(description="Time window used to evaluate the restart policy (e.g., '1s', '1m30s')."),
     ] = None
 
 
@@ -477,9 +415,7 @@ class Preference(BaseModel):
     )
     spread: Annotated[
         str | None,
-        Field(
-            description="Spread tasks evenly across values of the specified node label."
-        ),
+        Field(description="Spread tasks evenly across values of the specified node label."),
     ] = None
 
 
@@ -494,9 +430,7 @@ class Placement(BaseModel):
     )
     constraints: Annotated[
         list[str] | None,
-        Field(
-            description="Placement constraints for the service (e.g., 'node.role==manager')."
-        ),
+        Field(description="Placement constraints for the service (e.g., 'node.role==manager')."),
     ] = None
     preferences: Annotated[
         list[Preference] | None,
@@ -517,9 +451,7 @@ class DiscreteResourceSpec(BaseModel):
         extra="forbid",
         populate_by_name=True,
     )
-    kind: Annotated[
-        str | None, Field(description="Type of resource (e.g., 'GPU', 'FPGA', 'SSD').")
-    ] = None
+    kind: Annotated[str | None, Field(description="Type of resource (e.g., 'GPU', 'FPGA', 'SSD').")] = None
     value: Annotated[
         float | str | None,
         Field(description="Number of resources of this kind to reserve."),
@@ -566,9 +498,7 @@ class ConfigItem(BaseModel):
         str | None,
         Field(description="Range of IPs from which to allocate container IPs."),
     ] = None
-    gateway: Annotated[
-        str | None, Field(description="IPv4 or IPv6 gateway for the subnet.")
-    ] = None
+    gateway: Annotated[str | None, Field(description="IPv4 or IPv6 gateway for the subnet.")] = None
     aux_addresses: Annotated[
         dict[str, str] | None,
         Field(description="Auxiliary IPv4 or IPv6 addresses used by Network driver."),
@@ -584,12 +514,8 @@ class Ipam(BaseModel):
         extra="forbid",
         populate_by_name=True,
     )
-    driver: Annotated[
-        str | None, Field(description="Custom IPAM driver, instead of the default.")
-    ] = None
-    config: Annotated[
-        list[ConfigItem] | None, Field(description="List of IPAM configuration blocks.")
-    ] = None
+    driver: Annotated[str | None, Field(description="Custom IPAM driver, instead of the default.")] = None
+    config: Annotated[list[ConfigItem] | None, Field(description="List of IPAM configuration blocks.")] = None
     options: Annotated[
         dict[str, str] | None,
         Field(description="Driver-specific options for the IPAM driver."),
@@ -607,9 +533,7 @@ class External(BaseModel):
     )
     name: Annotated[
         str | None,
-        Field(
-            description="Specifies the name of the external network. Deprecated: use the 'name' property instead."
-        ),
+        Field(description="Specifies the name of the external network. Deprecated: use the 'name' property instead."),
     ] = None
 
 
@@ -624,9 +548,7 @@ class External1(BaseModel):
     )
     name: Annotated[
         str | None,
-        Field(
-            description="Specifies the name of the external volume. Deprecated: use the 'name' property instead."
-        ),
+        Field(description="Specifies the name of the external volume. Deprecated: use the 'name' property instead."),
     ] = None
 
 
@@ -638,9 +560,7 @@ class External2(BaseModel):
     model_config = ConfigDict(
         populate_by_name=True,
     )
-    name: Annotated[
-        str | None, Field(description="Specifies the name of the external secret.")
-    ] = None
+    name: Annotated[str | None, Field(description="Specifies the name of the external secret.")] = None
 
 
 class External3(BaseModel):
@@ -653,9 +573,7 @@ class External3(BaseModel):
     )
     name: Annotated[
         str | None,
-        Field(
-            description="Specifies the name of the external config. Deprecated: use the 'name' property instead."
-        ),
+        Field(description="Specifies the name of the external config. Deprecated: use the 'name' property instead."),
     ] = None
 
 
@@ -707,9 +625,7 @@ class EnvFile1(BaseModel):
     ] = None
     required: Annotated[
         bool | str | None,
-        Field(
-            description="Whether the file is required. If true and the file doesn't exist, an error will be raised."
-        ),
+        Field(description="Whether the file is required. If true and the file doesn't exist, an error will be raised."),
     ] = True
 
 
@@ -751,9 +667,7 @@ class ListOrDict(RootModel[dict[str, str | float | bool | None] | ListOrDict1]):
     )
     root: Annotated[
         dict[str, str | float | bool | None] | ListOrDict1,
-        Field(
-            description="Either a dictionary mapping keys to values, or a list of strings."
-        ),
+        Field(description="Either a dictionary mapping keys to values, or a list of strings."),
     ]
 
 
@@ -761,9 +675,7 @@ class ExtraHosts1(RootModel[list[str]]):
     model_config = ConfigDict(
         populate_by_name=True,
     )
-    root: Annotated[
-        list[str], Field(description="List of IP addresses for the hostname.")
-    ]
+    root: Annotated[list[str], Field(description="List of IP addresses for the hostname.")]
 
 
 class ExtraHosts2(RootModel[list[str]]):
@@ -782,9 +694,7 @@ class ExtraHosts(RootModel[dict[str, str | ExtraHosts1] | ExtraHosts2]):
     )
     root: Annotated[
         dict[str, str | ExtraHosts1] | ExtraHosts2,
-        Field(
-            description="Additional hostnames to be defined in the container's /etc/hosts file."
-        ),
+        Field(description="Additional hostnames to be defined in the container's /etc/hosts file."),
     ]
 
 
@@ -797,14 +707,10 @@ class BlkioLimit(BaseModel):
         extra="forbid",
         populate_by_name=True,
     )
-    path: Annotated[
-        str | None, Field(description="Path to the device (e.g., '/dev/sda').")
-    ] = None
+    path: Annotated[str | None, Field(description="Path to the device (e.g., '/dev/sda').")] = None
     rate: Annotated[
         int | str | None,
-        Field(
-            description="Rate limit in bytes per second or IO operations per second."
-        ),
+        Field(description="Rate limit in bytes per second or IO operations per second."),
     ] = None
 
 
@@ -817,9 +723,7 @@ class BlkioWeight(BaseModel):
         extra="forbid",
         populate_by_name=True,
     )
-    path: Annotated[
-        str | None, Field(description="Path to the device (e.g., '/dev/sda').")
-    ] = None
+    path: Annotated[str | None, Field(description="Path to the device (e.g., '/dev/sda').")] = None
     weight: Annotated[
         int | str | None,
         Field(description="Relative weight for the device, between 10 and 1000."),
@@ -837,9 +741,7 @@ class ServiceConfigOrSecret1(BaseModel):
     )
     source: Annotated[
         str | None,
-        Field(
-            description="Name of the config or secret as defined in the top-level configs or secrets section."
-        ),
+        Field(description="Name of the config or secret as defined in the top-level configs or secrets section."),
     ] = None
     target: Annotated[
         str | None,
@@ -890,15 +792,11 @@ class Ulimits1(BaseModel):
     )
     hard: Annotated[
         int | str,
-        Field(
-            description="Hard limit for the ulimit type. This is the maximum allowed value."
-        ),
+        Field(description="Hard limit for the ulimit type. This is the maximum allowed value."),
     ]
     soft: Annotated[
         int | str,
-        Field(
-            description="Soft limit for the ulimit type. This is the value that's actually enforced."
-        ),
+        Field(description="Soft limit for the ulimit type. This is the value that's actually enforced."),
     ]
 
 
@@ -908,9 +806,7 @@ class Ulimits(RootModel[dict[str, int | str | Ulimits1]]):
     )
     root: Annotated[
         dict[str, int | str | Ulimits1],
-        Field(
-            description="Container ulimit options, controlling resource limits for processes inside the container."
-        ),
+        Field(description="Container ulimit options, controlling resource limits for processes inside the container."),
     ]
 
 
@@ -925,9 +821,7 @@ class Build(BaseModel):
     )
     context: Annotated[
         str | None,
-        Field(
-            description="Path to the build context. Can be a relative path or a URL."
-        ),
+        Field(description="Path to the build context. Can be a relative path or a URL."),
     ] = None
     dockerfile: Annotated[
         str | None,
@@ -935,21 +829,15 @@ class Build(BaseModel):
     ] = None
     dockerfile_inline: Annotated[
         str | None,
-        Field(
-            description="Inline Dockerfile content to use instead of a Dockerfile from the build context."
-        ),
+        Field(description="Inline Dockerfile content to use instead of a Dockerfile from the build context."),
     ] = None
     entitlements: Annotated[
         list[str] | None,
-        Field(
-            description="List of extra privileged entitlements to grant to the build process."
-        ),
+        Field(description="List of extra privileged entitlements to grant to the build process."),
     ] = None
     args: Annotated[
         ListOrDict | None,
-        Field(
-            description="Build-time variables, specified as a map or a list of KEY=VAL pairs."
-        ),
+        Field(description="Build-time variables, specified as a map or a list of KEY=VAL pairs."),
     ] = None
     ssh: Annotated[
         ListOrDict | None,
@@ -957,27 +845,19 @@ class Build(BaseModel):
             description="SSH agent socket or keys to expose to the build. Format is either a string or a list of 'default|<id>[=<socket>|<key>[,<key>]]'."
         ),
     ] = None
-    labels: Annotated[
-        ListOrDict | None, Field(description="Labels to apply to the built image.")
-    ] = None
+    labels: Annotated[ListOrDict | None, Field(description="Labels to apply to the built image.")] = None
     cache_from: Annotated[
         list[str] | None,
-        Field(
-            description="List of sources the image builder should use for cache resolution"
-        ),
+        Field(description="List of sources the image builder should use for cache resolution"),
     ] = None
-    cache_to: Annotated[
-        list[str] | None, Field(description="Cache destinations for the build cache.")
-    ] = None
+    cache_to: Annotated[list[str] | None, Field(description="Cache destinations for the build cache.")] = None
     no_cache: Annotated[
         bool | str | None,
         Field(description="Do not use cache when building the image."),
     ] = None
     additional_contexts: Annotated[
         ListOrDict | None,
-        Field(
-            description="Additional build contexts to use, specified as a map of name to context path or URL."
-        ),
+        Field(description="Additional build contexts to use, specified as a map of name to context path or URL."),
     ] = None
     network: Annotated[
         str | None,
@@ -985,12 +865,8 @@ class Build(BaseModel):
             description="Network mode to use for the build. Options include 'default', 'none', 'host', or a network name."
         ),
     ] = None
-    provenance: Annotated[
-        str | bool | None, Field(description="Add a provenance attestation")
-    ] = None
-    sbom: Annotated[str | bool | None, Field(description="Add a SBOM attestation")] = (
-        None
-    )
+    provenance: Annotated[str | bool | None, Field(description="Add a provenance attestation")] = None
+    sbom: Annotated[str | bool | None, Field(description="Add a SBOM attestation")] = None
     pull: Annotated[
         bool | str | None,
         Field(description="Always attempt to pull a newer version of the image."),
@@ -1011,9 +887,7 @@ class Build(BaseModel):
     ] = None
     isolation: Annotated[
         str | None,
-        Field(
-            description="Container isolation technology to use for the build process."
-        ),
+        Field(description="Container isolation technology to use for the build process."),
     ] = None
     privileged: Annotated[
         bool | str | None,
@@ -1021,9 +895,7 @@ class Build(BaseModel):
     ] = None
     secrets: Annotated[
         ServiceConfigOrSecret | None,
-        Field(
-            description="Secrets to expose to the build. These are accessible at build-time."
-        ),
+        Field(description="Secrets to expose to the build. These are accessible at build-time."),
     ] = None
     tags: Annotated[
         list[str] | None,
@@ -1035,9 +907,7 @@ class Build(BaseModel):
     ] = None
     platforms: Annotated[
         list[str] | None,
-        Field(
-            description="Platforms to build for, e.g., 'linux/amd64', 'linux/arm64', or 'windows/amd64'."
-        ),
+        Field(description="Platforms to build for, e.g., 'linux/amd64', 'linux/arm64', or 'windows/amd64'."),
     ] = None
 
 
@@ -1068,9 +938,7 @@ class BlkioConfig(BaseModel):
     ] = None
     weight: Annotated[
         int | str | None,
-        Field(
-            description="Block IO weight (relative weight) for the service, between 10 and 1000."
-        ),
+        Field(description="Block IO weight (relative weight) for the service, between 10 and 1000."),
     ] = None
     weight_device: Annotated[
         list[BlkioWeight] | None,
@@ -1093,19 +961,13 @@ class Networks(BaseModel):
     ] = None
     ipv4_address: Annotated[
         str | None,
-        Field(
-            description="Specify a static IPv4 address for this service on this network."
-        ),
+        Field(description="Specify a static IPv4 address for this service on this network."),
     ] = None
     ipv6_address: Annotated[
         str | None,
-        Field(
-            description="Specify a static IPv6 address for this service on this network."
-        ),
+        Field(description="Specify a static IPv6 address for this service on this network."),
     ] = None
-    link_local_ips: Annotated[
-        ListOfStrings | None, Field(description="List of link-local IPs.")
-    ] = None
+    link_local_ips: Annotated[ListOfStrings | None, Field(description="List of link-local IPs.")] = None
     mac_address: Annotated[
         str | None,
         Field(description="Specify a MAC address for this service on this network."),
@@ -1133,20 +995,14 @@ class Volume1(BaseModel):
         extra="forbid",
         populate_by_name=True,
     )
-    labels: Annotated[
-        ListOrDict | None, Field(description="Labels to apply to the volume.")
-    ] = None
+    labels: Annotated[ListOrDict | None, Field(description="Labels to apply to the volume.")] = None
     nocopy: Annotated[
         bool | str | None,
-        Field(
-            description="Flag to disable copying of data from a container when a volume is created."
-        ),
+        Field(description="Flag to disable copying of data from a container when a volume is created."),
     ] = None
     subpath: Annotated[
         str | None,
-        Field(
-            description="Path within the volume to mount instead of the volume root."
-        ),
+        Field(description="Path within the volume to mount instead of the volume root."),
     ] = None
 
 
@@ -1171,27 +1027,15 @@ class Volumes(BaseModel):
         str | None,
         Field(description="The path in the container where the volume is mounted."),
     ] = None
-    read_only: Annotated[
-        bool | str | None, Field(description="Flag to set the volume as read-only.")
-    ] = None
+    read_only: Annotated[bool | str | None, Field(description="Flag to set the volume as read-only.")] = None
     consistency: Annotated[
         str | None,
-        Field(
-            description="The consistency requirements for the mount. Available values are platform specific."
-        ),
+        Field(description="The consistency requirements for the mount. Available values are platform specific."),
     ] = None
-    bind: Annotated[
-        Bind | None, Field(description="Configuration specific to bind mounts.")
-    ] = None
-    volume: Annotated[
-        Volume1 | None, Field(description="Configuration specific to volume mounts.")
-    ] = None
-    tmpfs: Annotated[
-        Tmpfs | None, Field(description="Configuration specific to tmpfs mounts.")
-    ] = None
-    image: Annotated[
-        Image | None, Field(description="Configuration specific to image mounts.")
-    ] = None
+    bind: Annotated[Bind | None, Field(description="Configuration specific to bind mounts.")] = None
+    volume: Annotated[Volume1 | None, Field(description="Configuration specific to volume mounts.")] = None
+    tmpfs: Annotated[Tmpfs | None, Field(description="Configuration specific to tmpfs mounts.")] = None
+    image: Annotated[Image | None, Field(description="Configuration specific to image mounts.")] = None
 
 
 class Device(BaseModel):
@@ -1201,9 +1045,7 @@ class Device(BaseModel):
     )
     capabilities: Annotated[
         ListOfStrings,
-        Field(
-            description="List of capabilities the device needs to have (e.g., 'gpu', 'compute', 'utility')."
-        ),
+        Field(description="List of capabilities the device needs to have (e.g., 'gpu', 'compute', 'utility')."),
     ]
     count: Annotated[
         str | int | None,
@@ -1213,12 +1055,8 @@ class Device(BaseModel):
         ListOfStrings | None,
         Field(description="List of specific device IDs to reserve."),
     ] = None
-    driver: Annotated[
-        str | None, Field(description="Device driver to use (e.g., 'nvidia').")
-    ] = None
-    options: Annotated[
-        ListOrDict | None, Field(description="Driver-specific options for the device.")
-    ] = None
+    driver: Annotated[str | None, Field(description="Device driver to use (e.g., 'nvidia').")] = None
+    options: Annotated[ListOrDict | None, Field(description="Driver-specific options for the device.")] = None
 
 
 class DevicesModel(RootModel[list[Device]]):
@@ -1231,9 +1069,7 @@ class DevicesModel(RootModel[list[Device]]):
     )
     root: Annotated[
         list[Device],
-        Field(
-            description="Device reservations for containers, allowing services to access specific hardware devices."
-        ),
+        Field(description="Device reservations for containers, allowing services to access specific hardware devices."),
     ]
 
 
@@ -1243,23 +1079,15 @@ class Gpu(BaseModel):
     )
     capabilities: Annotated[
         ListOfStrings | None,
-        Field(
-            description="List of capabilities the GPU needs to have (e.g., 'compute', 'utility')."
-        ),
+        Field(description="List of capabilities the GPU needs to have (e.g., 'compute', 'utility')."),
     ] = None
-    count: Annotated[str | int | None, Field(description="Number of GPUs to use.")] = (
-        None
-    )
+    count: Annotated[str | int | None, Field(description="Number of GPUs to use.")] = None
     device_ids: Annotated[
         ListOfStrings | None,
         Field(description="List of specific GPU device IDs to use."),
     ] = None
-    driver: Annotated[
-        str | None, Field(description="GPU driver to use (e.g., 'nvidia').")
-    ] = None
-    options: Annotated[
-        ListOrDict | None, Field(description="Driver-specific options for the GPU.")
-    ] = None
+    driver: Annotated[str | None, Field(description="GPU driver to use (e.g., 'nvidia').")] = None
+    options: Annotated[ListOrDict | None, Field(description="Driver-specific options for the GPU.")] = None
 
 
 class Gpus(RootModel[Literal["all"] | list[Gpu]]):
@@ -1278,42 +1106,26 @@ class Network(BaseModel):
         extra="forbid",
         populate_by_name=True,
     )
-    name: Annotated[str | None, Field(description="Custom name for this network.")] = (
-        None
-    )
+    name: Annotated[str | None, Field(description="Custom name for this network.")] = None
     driver: Annotated[
         str | None,
-        Field(
-            description="Specify which driver should be used for this network. Default is 'bridge'."
-        ),
+        Field(description="Specify which driver should be used for this network. Default is 'bridge'."),
     ] = None
     driver_opts: Annotated[
         dict[str, str | float] | None,
-        Field(
-            description="Specify driver-specific options defined as key/value pairs."
-        ),
+        Field(description="Specify driver-specific options defined as key/value pairs."),
     ] = None
     ipam: Annotated[
         Ipam | None,
-        Field(
-            description="Custom IP Address Management configuration for this network."
-        ),
+        Field(description="Custom IP Address Management configuration for this network."),
     ] = None
     external: Annotated[
         External | None,
-        Field(
-            description="Specifies that this network already exists and was created outside of Compose."
-        ),
+        Field(description="Specifies that this network already exists and was created outside of Compose."),
     ] = None
-    internal: Annotated[
-        bool | str | None, Field(description="Create an externally isolated network.")
-    ] = None
-    enable_ipv4: Annotated[
-        bool | str | None, Field(description="Enable IPv4 networking.")
-    ] = None
-    enable_ipv6: Annotated[
-        bool | str | None, Field(description="Enable IPv6 networking.")
-    ] = None
+    internal: Annotated[bool | str | None, Field(description="Create an externally isolated network.")] = None
+    enable_ipv4: Annotated[bool | str | None, Field(description="Enable IPv4 networking.")] = None
+    enable_ipv6: Annotated[bool | str | None, Field(description="Enable IPv6 networking.")] = None
     attachable: Annotated[
         bool | str | None,
         Field(description="If true, standalone containers can attach to this network."),
@@ -1333,14 +1145,10 @@ class Volume(BaseModel):
         extra="forbid",
         populate_by_name=True,
     )
-    name: Annotated[str | None, Field(description="Custom name for this volume.")] = (
-        None
-    )
+    name: Annotated[str | None, Field(description="Custom name for this volume.")] = None
     driver: Annotated[
         str | None,
-        Field(
-            description="Specify which volume driver should be used for this volume."
-        ),
+        Field(description="Specify which volume driver should be used for this volume."),
     ] = None
     driver_opts: Annotated[
         dict[str, str | float] | None,
@@ -1348,13 +1156,9 @@ class Volume(BaseModel):
     ] = None
     external: Annotated[
         External1 | None,
-        Field(
-            description="Specifies that this volume already exists and was created outside of Compose."
-        ),
+        Field(description="Specifies that this volume already exists and was created outside of Compose."),
     ] = None
-    labels: Annotated[
-        ListOrDict | None, Field(description="Add metadata to the volume using labels.")
-    ] = None
+    labels: Annotated[ListOrDict | None, Field(description="Add metadata to the volume using labels.")] = None
 
 
 class Secret(BaseModel):
@@ -1366,32 +1170,20 @@ class Secret(BaseModel):
         extra="forbid",
         populate_by_name=True,
     )
-    name: Annotated[str | None, Field(description="Custom name for this secret.")] = (
-        None
-    )
+    name: Annotated[str | None, Field(description="Custom name for this secret.")] = None
     environment: Annotated[
         str | None,
-        Field(
-            description="Name of an environment variable from which to get the secret value."
-        ),
+        Field(description="Name of an environment variable from which to get the secret value."),
     ] = None
-    file: Annotated[
-        str | None, Field(description="Path to a file containing the secret value.")
-    ] = None
+    file: Annotated[str | None, Field(description="Path to a file containing the secret value.")] = None
     external: Annotated[
         External2 | None,
-        Field(
-            description="Specifies that this secret already exists and was created outside of Compose."
-        ),
+        Field(description="Specifies that this secret already exists and was created outside of Compose."),
     ] = None
-    labels: Annotated[
-        ListOrDict | None, Field(description="Add metadata to the secret using labels.")
-    ] = None
+    labels: Annotated[ListOrDict | None, Field(description="Add metadata to the secret using labels.")] = None
     driver: Annotated[
         str | None,
-        Field(
-            description="Specify which secret driver should be used for this secret."
-        ),
+        Field(description="Specify which secret driver should be used for this secret."),
     ] = None
     driver_opts: Annotated[
         dict[str, str | float] | None,
@@ -1412,30 +1204,18 @@ class Config(BaseModel):
         extra="forbid",
         populate_by_name=True,
     )
-    name: Annotated[str | None, Field(description="Custom name for this config.")] = (
-        None
-    )
-    content: Annotated[
-        str | None, Field(description="Inline content of the config.")
-    ] = None
+    name: Annotated[str | None, Field(description="Custom name for this config.")] = None
+    content: Annotated[str | None, Field(description="Inline content of the config.")] = None
     environment: Annotated[
         str | None,
-        Field(
-            description="Name of an environment variable from which to get the config value."
-        ),
+        Field(description="Name of an environment variable from which to get the config value."),
     ] = None
-    file: Annotated[
-        str | None, Field(description="Path to a file containing the config value.")
-    ] = None
+    file: Annotated[str | None, Field(description="Path to a file containing the config value.")] = None
     external: Annotated[
         External3 | None,
-        Field(
-            description="Specifies that this config already exists and was created outside of Compose."
-        ),
+        Field(description="Specifies that this config already exists and was created outside of Compose."),
     ] = None
-    labels: Annotated[
-        ListOrDict | None, Field(description="Add metadata to the config using labels.")
-    ] = None
+    labels: Annotated[ListOrDict | None, Field(description="Add metadata to the config using labels.")] = None
     template_driver: Annotated[
         str | None,
         Field(description="Driver to use for templating the config's value."),
@@ -1451,20 +1231,14 @@ class ServiceHook(BaseModel):
         extra="forbid",
         populate_by_name=True,
     )
-    command: Annotated[
-        Command, Field(description="Command to execute as part of the hook.")
-    ]
+    command: Annotated[Command, Field(description="Command to execute as part of the hook.")]
     user: Annotated[str | None, Field(description="User to run the command as.")] = None
     privileged: Annotated[
         bool | str | None,
         Field(description="Whether to run the command with extended privileges."),
     ] = None
-    working_dir: Annotated[
-        str | None, Field(description="Working directory for the command.")
-    ] = None
-    environment: Annotated[
-        ListOrDict | None, Field(description="Environment variables for the command.")
-    ] = None
+    working_dir: Annotated[str | None, Field(description="Working directory for the command.")] = None
+    environment: Annotated[ListOrDict | None, Field(description="Environment variables for the command.")] = None
 
 
 class StringOrList(RootModel[str | ListOfStrings]):
@@ -1482,12 +1256,8 @@ class WatchItem(BaseModel):
         extra="forbid",
         populate_by_name=True,
     )
-    ignore: Annotated[
-        StringOrList | None, Field(description="Patterns to exclude from watching.")
-    ] = None
-    include: Annotated[
-        StringOrList | None, Field(description="Patterns to include in watching.")
-    ] = None
+    ignore: Annotated[StringOrList | None, Field(description="Patterns to exclude from watching.")] = None
+    include: Annotated[StringOrList | None, Field(description="Patterns to include in watching.")] = None
     path: Annotated[str, Field(description="Path to watch for changes.")]
     action: Annotated[
         Literal["rebuild", "sync", "restart", "sync+restart", "sync+exec"],
@@ -1501,9 +1271,7 @@ class WatchItem(BaseModel):
     ] = None
     exec: Annotated[
         ServiceHook | None,
-        Field(
-            description="Command to execute when a change is detected and action is sync+exec."
-        ),
+        Field(description="Command to execute when a change is detected and action is sync+exec."),
     ] = None
     initial_sync: Annotated[
         bool | None,
@@ -1547,16 +1315,12 @@ class Reservations(BaseModel):
     ] = None
     memory: Annotated[
         str | None,
-        Field(
-            description="Reservation on the amount of memory a container can allocate (e.g., '1g', '1024m')."
-        ),
+        Field(description="Reservation on the amount of memory a container can allocate (e.g., '1g', '1024m')."),
     ] = None
-    generic_resources: Annotated[
-        GenericResources | None, Field(description="User-defined resources to reserve.")
-    ] = None
-    devices: Annotated[
-        DevicesModel | None, Field(description="Device reservations for the container.")
-    ] = None
+    generic_resources: Annotated[GenericResources | None, Field(description="User-defined resources to reserve.")] = (
+        None
+    )
+    devices: Annotated[DevicesModel | None, Field(description="Device reservations for the container.")] = None
 
 
 class Resources(BaseModel):
@@ -1568,9 +1332,7 @@ class Resources(BaseModel):
         extra="forbid",
         populate_by_name=True,
     )
-    limits: Annotated[
-        Limits | None, Field(description="Resource limits for the service containers.")
-    ] = None
+    limits: Annotated[Limits | None, Field(description="Resource limits for the service containers.")] = None
     reservations: Annotated[
         Reservations | None,
         Field(description="Resource reservations for the service containers."),
@@ -1588,9 +1350,7 @@ class Deployment(BaseModel):
     )
     mode: Annotated[
         str | None,
-        Field(
-            description="Deployment mode for the service: 'replicated' (default) or 'global'."
-        ),
+        Field(description="Deployment mode for the service: 'replicated' (default) or 'global'."),
     ] = None
     endpoint_mode: Annotated[
         str | None,
@@ -1600,16 +1360,12 @@ class Deployment(BaseModel):
         int | str | None,
         Field(description="Number of replicas of the service container to run."),
     ] = None
-    labels: Annotated[
-        ListOrDict | None, Field(description="Labels to apply to the service.")
-    ] = None
+    labels: Annotated[ListOrDict | None, Field(description="Labels to apply to the service.")] = None
     rollback_config: Annotated[
         RollbackConfig | None,
         Field(description="Configuration for rolling back a service update."),
     ] = None
-    update_config: Annotated[
-        UpdateConfig | None, Field(description="Configuration for updating a service.")
-    ] = None
+    update_config: Annotated[UpdateConfig | None, Field(description="Configuration for updating a service.")] = None
     resources: Annotated[
         Resources | None,
         Field(description="Resource constraints and reservations for the service."),
@@ -1637,9 +1393,7 @@ class Include1(BaseModel):
     )
     path: Annotated[
         StringOrList | None,
-        Field(
-            description="Path to the Compose application or sub-project files to include."
-        ),
+        Field(description="Path to the Compose application or sub-project files to include."),
     ] = None
     env_file: Annotated[
         StringOrList | None,
@@ -1680,20 +1434,14 @@ class Service(BaseModel):
         str | Build | None,
         Field(description="Configuration options for building the service's image."),
     ] = None
-    blkio_config: Annotated[
-        BlkioConfig | None, Field(description="Block IO configuration for the service.")
-    ] = None
+    blkio_config: Annotated[BlkioConfig | None, Field(description="Block IO configuration for the service.")] = None
     cap_add: Annotated[
         list[str] | None,
-        Field(
-            description="Add Linux capabilities. For example, 'CAP_SYS_ADMIN', 'SYS_ADMIN', or 'NET_ADMIN'."
-        ),
+        Field(description="Add Linux capabilities. For example, 'CAP_SYS_ADMIN', 'SYS_ADMIN', or 'NET_ADMIN'."),
     ] = None
     cap_drop: Annotated[
         list[str] | None,
-        Field(
-            description="Drop Linux capabilities. For example, 'CAP_SYS_ADMIN', 'SYS_ADMIN', or 'NET_ADMIN'."
-        ),
+        Field(description="Drop Linux capabilities. For example, 'CAP_SYS_ADMIN', 'SYS_ADMIN', or 'NET_ADMIN'."),
     ] = None
     cgroup: Annotated[
         Literal["host", "private"] | None,
@@ -1722,9 +1470,7 @@ class Service(BaseModel):
             pattern="[a-zA-Z0-9][a-zA-Z0-9_.-]+",
         ),
     ] = None
-    cpu_count: Annotated[
-        str | CpuCount | None, Field(description="Number of usable CPUs.")
-    ] = None
+    cpu_count: Annotated[str | CpuCount | None, Field(description="Number of usable CPUs.")] = None
     cpu_percent: Annotated[
         str | CpuPercent | None,
         Field(description="Percentage of CPU resources to use."),
@@ -1743,25 +1489,17 @@ class Service(BaseModel):
     ] = None
     cpu_rt_period: Annotated[
         float | str | None,
-        Field(
-            description="Limit the CPU real-time period in microseconds or a duration."
-        ),
+        Field(description="Limit the CPU real-time period in microseconds or a duration."),
     ] = None
     cpu_rt_runtime: Annotated[
         float | str | None,
-        Field(
-            description="Limit the CPU real-time runtime in microseconds or a duration."
-        ),
+        Field(description="Limit the CPU real-time runtime in microseconds or a duration."),
     ] = None
     cpus: Annotated[
         float | str | None,
-        Field(
-            description="Number of CPUs to use. A floating-point value is supported to request partial CPUs."
-        ),
+        Field(description="Number of CPUs to use. A floating-point value is supported to request partial CPUs."),
     ] = None
-    cpuset: Annotated[
-        str | None, Field(description="CPUs in which to allow execution (0-3, 0,1).")
-    ] = None
+    cpuset: Annotated[str | None, Field(description="CPUs in which to allow execution (0-3, 0,1).")] = None
     credential_spec: Annotated[
         CredentialSpec | None,
         Field(description="Configure the credential spec for managed service account."),
@@ -1786,9 +1524,7 @@ class Service(BaseModel):
     ] = None
     dns_opt: Annotated[
         list[str] | None,
-        Field(
-            description="Custom DNS options to be passed to the container's DNS resolver."
-        ),
+        Field(description="Custom DNS options to be passed to the container's DNS resolver."),
     ] = None
     dns_search: Annotated[
         StringOrList | None,
@@ -1812,15 +1548,11 @@ class Service(BaseModel):
     ] = None
     label_file: Annotated[
         LabelFile | None,
-        Field(
-            description="Add metadata to containers using files containing Docker labels."
-        ),
+        Field(description="Add metadata to containers using files containing Docker labels."),
     ] = None
     environment: Annotated[
         ListOrDict | None,
-        Field(
-            description="Add environment variables. You can use either an array or a list of KEY=VAL pairs."
-        ),
+        Field(description="Add environment variables. You can use either an array or a list of KEY=VAL pairs."),
     ] = None
     expose: Annotated[
         list[str | float] | None,
@@ -1830,9 +1562,7 @@ class Service(BaseModel):
     ] = None
     extends: Annotated[
         str | Extends | None,
-        Field(
-            description="Extend another service, in the current file or another file."
-        ),
+        Field(description="Extend another service, in the current file or another file."),
     ] = None
     provider: Annotated[
         Provider | None,
@@ -1848,9 +1578,7 @@ class Service(BaseModel):
     ] = None
     extra_hosts: Annotated[
         ExtraHosts | None,
-        Field(
-            description="Add hostname mappings to the container network interface configuration."
-        ),
+        Field(description="Add hostname mappings to the container network interface configuration."),
     ] = None
     gpus: Annotated[
         Gpus | None,
@@ -1860,15 +1588,11 @@ class Service(BaseModel):
     ] = None
     group_add: Annotated[
         list[str | float] | None,
-        Field(
-            description="Add additional groups which user inside the container should be member of."
-        ),
+        Field(description="Add additional groups which user inside the container should be member of."),
     ] = None
     healthcheck: Annotated[
         Healthcheck | None,
-        Field(
-            description="Configure a health check for the container to monitor its health status."
-        ),
+        Field(description="Configure a health check for the container to monitor its health status."),
     ] = None
     hostname: Annotated[
         str | None,
@@ -1882,9 +1606,7 @@ class Service(BaseModel):
     ] = None
     init: Annotated[
         bool | str | None,
-        Field(
-            description="Run as an init process inside the container that forwards signals and reaps processes."
-        ),
+        Field(description="Run as an init process inside the container that forwards signals and reaps processes."),
     ] = None
     ipc: Annotated[
         str | None,
@@ -1894,15 +1616,11 @@ class Service(BaseModel):
     ] = None
     isolation: Annotated[
         str | None,
-        Field(
-            description="Container isolation technology to use. Supported values are platform-specific."
-        ),
+        Field(description="Container isolation technology to use. Supported values are platform-specific."),
     ] = None
     labels: Annotated[
         ListOrDict | None,
-        Field(
-            description="Add metadata to containers using Docker labels. You can use either an array or a list."
-        ),
+        Field(description="Add metadata to containers using Docker labels. You can use either an array or a list."),
     ] = None
     links: Annotated[
         list[str] | None,
@@ -1910,21 +1628,13 @@ class Service(BaseModel):
             description="Link to containers in another service. Either specify both the service name and a link alias (SERVICE:ALIAS), or just the service name."
         ),
     ] = None
-    logging: Annotated[
-        Logging | None, Field(description="Logging configuration for the service.")
-    ] = None
-    mac_address: Annotated[
-        str | None, Field(description="Container MAC address to set.")
-    ] = None
+    logging: Annotated[Logging | None, Field(description="Logging configuration for the service.")] = None
+    mac_address: Annotated[str | None, Field(description="Container MAC address to set.")] = None
     mem_limit: Annotated[
         float | str | None,
-        Field(
-            description="Memory limit for the container. A string value can use suffix like '2g' for 2 gigabytes."
-        ),
+        Field(description="Memory limit for the container. A string value can use suffix like '2g' for 2 gigabytes."),
     ] = None
-    mem_reservation: Annotated[
-        str | int | None, Field(description="Memory reservation for the container.")
-    ] = None
+    mem_reservation: Annotated[str | int | None, Field(description="Memory reservation for the container.")] = None
     mem_swappiness: Annotated[
         int | str | None,
         Field(description="Container memory swappiness as percentage (0 to 100)."),
@@ -1943,9 +1653,7 @@ class Service(BaseModel):
     ] = None
     models: Annotated[
         ListOfStrings | dict[str, Models] | None,
-        Field(
-            description="AI Models to use, referencing entries under the top-level models key."
-        ),
+        Field(description="AI Models to use, referencing entries under the top-level models key."),
     ] = None
     networks: Annotated[
         ListOfStrings | dict[str, Networks | None] | None,
@@ -1953,39 +1661,27 @@ class Service(BaseModel):
             description="Networks to join, referencing entries under the top-level networks key. Can be a list of network names or a mapping of network name to network configuration."
         ),
     ] = None
-    oom_kill_disable: Annotated[
-        bool | str | None, Field(description="Disable OOM Killer for the container.")
-    ] = None
+    oom_kill_disable: Annotated[bool | str | None, Field(description="Disable OOM Killer for the container.")] = None
     oom_score_adj: Annotated[
         str | OomScoreAdj | None,
-        Field(
-            description="Tune host's OOM preferences for the container (accepts -1000 to 1000)."
-        ),
+        Field(description="Tune host's OOM preferences for the container (accepts -1000 to 1000)."),
     ] = None
     pid: Annotated[str | None, Field(description="PID mode for container.")] = None
     pids_limit: Annotated[
         float | str | None,
-        Field(
-            description="Tune a container's PIDs limit. Set to -1 for unlimited PIDs."
-        ),
+        Field(description="Tune a container's PIDs limit. Set to -1 for unlimited PIDs."),
     ] = None
     platform: Annotated[
         str | None,
-        Field(
-            description="Target platform to run on, e.g., 'linux/amd64', 'linux/arm64', or 'windows/amd64'."
-        ),
+        Field(description="Target platform to run on, e.g., 'linux/amd64', 'linux/arm64', or 'windows/amd64'."),
     ] = None
     ports: Annotated[
         list[float | str | Ports] | None,
-        Field(
-            description="Expose container ports. Short format ([HOST:]CONTAINER[/PROTOCOL])."
-        ),
+        Field(description="Expose container ports. Short format ([HOST:]CONTAINER[/PROTOCOL])."),
     ] = None
     post_start: Annotated[
         list[ServiceHook] | None,
-        Field(
-            description="Commands to run after the container starts. If any command fails, the container stops."
-        ),
+        Field(description="Commands to run after the container starts. If any command fails, the container stops."),
     ] = None
     pre_stop: Annotated[
         list[ServiceHook] | None,
@@ -2012,9 +1708,7 @@ class Service(BaseModel):
     ] = None
     pull_refresh_after: Annotated[
         str | None,
-        Field(
-            description="Time after which to refresh the image. Used with pull_policy=refresh."
-        ),
+        Field(description="Time after which to refresh the image. Used with pull_policy=refresh."),
     ] = None
     read_only: Annotated[
         bool | str | None,
@@ -2040,9 +1734,7 @@ class Service(BaseModel):
     ] = None
     shm_size: Annotated[
         float | str | None,
-        Field(
-            description="Size of /dev/shm. A string value can use suffix like '2g' for 2 gigabytes."
-        ),
+        Field(description="Size of /dev/shm. A string value can use suffix like '2g' for 2 gigabytes."),
     ] = None
     secrets: Annotated[
         ServiceConfigOrSecret | None,
@@ -2050,13 +1742,9 @@ class Service(BaseModel):
     ] = None
     sysctls: Annotated[
         ListOrDict | None,
-        Field(
-            description="Kernel parameters to set in the container. You can use either an array or a list."
-        ),
+        Field(description="Kernel parameters to set in the container. You can use either an array or a list."),
     ] = None
-    stdin_open: Annotated[
-        bool | str | None, Field(description="Keep STDIN open even if not attached.")
-    ] = None
+    stdin_open: Annotated[bool | str | None, Field(description="Keep STDIN open even if not attached.")] = None
     stop_grace_period: Annotated[
         str | None,
         Field(
@@ -2073,9 +1761,7 @@ class Service(BaseModel):
     ] = None
     tmpfs: Annotated[
         StringOrList | None,
-        Field(
-            description="Mount a temporary filesystem (tmpfs) into the container. Can be a single value or a list."
-        ),
+        Field(description="Mount a temporary filesystem (tmpfs) into the container. Can be a single value or a list."),
     ] = None
     tty: Annotated[
         bool | str | None,
@@ -2095,15 +1781,11 @@ class Service(BaseModel):
     ] = None
     uts: Annotated[
         str | None,
-        Field(
-            description="UTS namespace to use. 'host' shares the host's UTS namespace."
-        ),
+        Field(description="UTS namespace to use. 'host' shares the host's UTS namespace."),
     ] = None
     userns_mode: Annotated[
         str | None,
-        Field(
-            description="User namespace to use. 'host' shares the host's user namespace."
-        ),
+        Field(description="User namespace to use. 'host' shares the host's user namespace."),
     ] = None
     volumes: Annotated[
         list[str | Volumes] | None,
@@ -2119,9 +1801,7 @@ class Service(BaseModel):
     ] = None
     working_dir: Annotated[
         str | None,
-        Field(
-            description="The working directory in which the entrypoint or command will be run"
-        ),
+        Field(description="The working directory in which the entrypoint or command will be run"),
     ] = None
 
 
@@ -2136,19 +1816,13 @@ class ComposeSpecification(BaseModel):
     )
     version: Annotated[
         str | None,
-        Field(
-            description="declared for backward compatibility, ignored. Please remove it."
-        ),
+        Field(description="declared for backward compatibility, ignored. Please remove it."),
     ] = None
     name: Annotated[
         str | None,
-        Field(
-            description="define the Compose project name, until user defines one explicitly."
-        ),
+        Field(description="define the Compose project name, until user defines one explicitly."),
     ] = None
-    include: Annotated[
-        list[Include] | None, Field(description="compose sub-projects to be included.")
-    ] = None
+    include: Annotated[list[Include] | None, Field(description="compose sub-projects to be included.")] = None
     services: Annotated[
         dict[str, Service] | None,
         Field(description="The services that will be used by your application."),

@@ -100,9 +100,7 @@ async def wait_till_service_healthy(service_name: str, endpoint: URL):
                 # NOTE: Health-check endpoint require only a status code 200
                 # (see e.g. services/web/server/docker/healthcheck.py)
                 # regardless of the payload content
-                assert (
-                    response.status == 200
-                ), f"Connection to {service_name=} at {endpoint=} failed with {response=}"
+                assert response.status == 200, f"Connection to {service_name=} at {endpoint=} failed with {response=}"
 
             log.info(
                 "Connection to %s succeeded [%s]",
@@ -169,7 +167,7 @@ def services_endpoint(
 
 
 async def _wait_for_services_ready(services_endpoint: dict[str, URL]) -> None:
-    # Compose and log healthcheck url entpoints
+    # Compose and log healthcheck url endpoints
 
     health_endpoints = [
         ServiceHealthcheckEndpoint.create(service_name, endpoint)
@@ -196,9 +194,7 @@ async def _wait_for_services_ready(services_endpoint: dict[str, URL]) -> None:
 
 
 @pytest.fixture
-async def simcore_services_ready(
-    services_endpoint: dict[str, URL], monkeypatch: pytest.MonkeyPatch
-) -> None:
+async def simcore_services_ready(services_endpoint: dict[str, URL], monkeypatch: pytest.MonkeyPatch) -> None:
     await _wait_for_services_ready(services_endpoint)
     # patches environment variables with right host/port per service
     for service, endpoint in services_endpoint.items():

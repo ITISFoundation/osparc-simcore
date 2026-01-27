@@ -34,9 +34,7 @@ def _mock_env_vars(monkeypatch: pytest.MonkeyPatch, env_vars: dict[str, str]) ->
     ],
 )
 def test_model_ok(env_key: str, env_var: str, monkeypatch: pytest.MonkeyPatch) -> None:
-    registry_env_vars = _add_parameter_to_env(
-        MOCKED_BASE_REGISTRY_ENV_VARS, env_key, env_var
-    )
+    registry_env_vars = _add_parameter_to_env(MOCKED_BASE_REGISTRY_ENV_VARS, env_key, env_var)
     _mock_env_vars(monkeypatch, registry_env_vars)
 
     registry_settings = RegistrySettings()
@@ -45,12 +43,8 @@ def test_model_ok(env_key: str, env_var: str, monkeypatch: pytest.MonkeyPatch) -
 
 
 def test_registry_path_none_string(monkeypatch: pytest.MonkeyPatch) -> None:
-    registry_env_vars = _add_parameter_to_env(
-        MOCKED_BASE_REGISTRY_ENV_VARS, "REGISTRY_PATH", "None"
-    )
-    registry_env_vars = _add_parameter_to_env(
-        registry_env_vars, "REGISTRY_URL", "some_prod_url"
-    )
+    registry_env_vars = _add_parameter_to_env(MOCKED_BASE_REGISTRY_ENV_VARS, "REGISTRY_PATH", "None")
+    registry_env_vars = _add_parameter_to_env(registry_env_vars, "REGISTRY_URL", "some_prod_url")
     _mock_env_vars(monkeypatch, registry_env_vars)
 
     registry_settings = RegistrySettings()

@@ -30,36 +30,24 @@ class ISolveType(Enum):
 
 
 def get_isolves(solvers_api: osparc.SolversApi, latest: bool) -> list[osparc.Solver]:
-    solvers: osparc.Solver = (
-        solvers_api.list_solvers() if latest else solvers_api.list_solvers_releases()
-    )
+    solvers: osparc.Solver = solvers_api.list_solvers() if latest else solvers_api.list_solvers_releases()
 
     return [s for s in solvers if "isolve" in s.title]
 
 
 def is_type(solver: osparc.Solver, solver_type: ISolveType) -> bool:
     if solver_type == ISolveType.cpu:
-        return (
-            ISolveType.mpi.value not in solver.title
-            and ISolveType.gpu.value not in solver.title
-        )
+        return ISolveType.mpi.value not in solver.title and ISolveType.gpu.value not in solver.title
 
     return solver_type.value in solver.title
 
 
-def get_isolve(
-    solvers_api: osparc.SolversApi, solver_type: ISolveType, version: str
-) -> osparc.Solver:
+def get_isolve(solvers_api: osparc.SolversApi, solver_type: ISolveType, version: str) -> osparc.Solver:
     # finds the correct isolve version among all availables
     use_latest = version == "latest"
     isolves = get_isolves(solvers_api, use_latest)
     isolve = next(
-        (
-            solver
-            for solver in isolves
-            if (use_latest or solver.version == version)
-            and is_type(solver, solver_type)
-        ),
+        (solver for solver in isolves if (use_latest or solver.version == version) and is_type(solver, solver_type)),
         None,
     )
     return isolve
@@ -121,38 +109,32 @@ def submit_simulation(
         # For sim4life we can crate CJobProgressInfo and register the job in the taskmanager
         # However, I think the isolve Progress is not captured correctly in the sidecar.
         time.sleep(0.5)
-        status: osparc.JobStatus = solvers_api.inspect_job(
-            solver.id, solver.version, job.id
-        )
+        status: osparc.JobStatus = solvers_api.inspect_job(solver.id, solver.version, job.id)
 
         logger.info(f"Solver progress: {status.progress}/100")
 
     def get_results():
-        outputs: osparc.JobOutputs = solvers_api.get_job_outputs(
-            solver.id, solver.version, job.id
-        )
+        outputs: osparc.JobOutputs = solvers_api.get_job_outputs(solver.id, solver.version, job.id)
 
         output_file = outputs.results["output_1"]
         log_file = outputs.results["output_2"]
 
         # move the output.h5 to the correct place with the correct filename
-        if not output_file is None and isinstance(output_file, osparc.File):
+        if output_file is not None and isinstance(output_file, osparc.File):
             download_file_name: str = files_api.download_file(file_id=output_file.id)
             destination = sim.OutputFileName(0)
             shutil.move(download_file_name, destination)
 
         # move the log to the correct place with the correct filename
         # TODO: the axware logs will be extracted but not renamed. But then again, who needs them?
-        if not log_file is None and isinstance(log_file, osparc.File):
+        if log_file is not None and isinstance(log_file, osparc.File):
             download_file_name: str = files_api.download_file(file_id=log_file.id)
             destination_path = Path(sim.OutputFileName(0)).parent
             with tarfile.open(download_file_name, "r") as tar:
                 tar.extractall(destination_path)
                 log_file = destination_path / "input.log"
                 if log_file.exists():
-                    destination_file = destination_path / str(
-                        Path(sim.OutputFileName(0)).stem + ".log"
-                    )
+                    destination_file = destination_path / str(Path(sim.OutputFileName(0)).stem + ".log")
                     shutil.move(log_file, destination_file)
 
     logger.info(f"Solver finished with status: {status.state}")
@@ -171,22 +153,16 @@ def run_simulation(
     api_key: str | None = KEY,
     api_secret: str | None = SECRET,
 ):  # TODO: version should default to latest
-
     configuration = osparc.Configuration()
     configuration.host = host
     configuration.username = api_key
     configuration.password = api_secret
 
     with osparc.ApiClient(configuration) as api_client:
-
         solvers_api = osparc.SolversApi(api_client)
         files_api = osparc.FilesApi(api_client)
 
-        _job, _status = submit_simulation(
-            solvers_api, files_api, sim.raw, isolve_version, wait=True
-        )
+        _job, _status = submit_simulation(solvers_api, files_api, sim.raw, isolve_version, wait=True)
 
         logger.info(f"Simulation has results: {sim.HasResults()}")
-        logger.info(
-            f"Results have been written to: {Path(sim.GetOutputFileName()).parent}"
-        )
+        logger.info(f"Results have been written to: {Path(sim.GetOutputFileName()).parent}")

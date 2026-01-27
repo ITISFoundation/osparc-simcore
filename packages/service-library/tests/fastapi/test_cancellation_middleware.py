@@ -33,9 +33,7 @@ def server_cancelled_mock() -> AsyncMock:
 
 
 @pytest.fixture
-def fastapi_router(
-    server_done_event: threading.Event, server_cancelled_mock: AsyncMock
-) -> APIRouter:
+def fastapi_router(server_done_event: threading.Event, server_cancelled_mock: AsyncMock) -> APIRouter:
     router = APIRouter()
 
     @router.get("/")
@@ -68,9 +66,7 @@ def fastapi_router(
                 server_done_event.set()
 
     @router.get("/sleep-with-background-task")
-    async def sleep_with_background_task(
-        sleep_time: float, background_tasks: BackgroundTasks
-    ) -> dict[str, str]:
+    async def sleep_with_background_task(sleep_time: float, background_tasks: BackgroundTasks) -> dict[str, str]:
         with log_context(logging.INFO, msg="sleeper with background task"):
             background_tasks.add_task(_sleep_in_the_back, sleep_time)
             return {"message": "Sleeping in the back"}
@@ -89,7 +85,6 @@ def fastapi_app(fastapi_router: APIRouter) -> FastAPI:
 
 @pytest.fixture
 def uvicorn_server(fastapi_app: FastAPI) -> Iterator[URL]:
-
     server_host = "127.0.0.1"
     server_port = unused_port()
     server_url = f"http://{server_host}:{server_port}"
@@ -98,7 +93,6 @@ def uvicorn_server(fastapi_app: FastAPI) -> Iterator[URL]:
         logging.INFO,
         msg=f"with uvicorn server on {server_url}",
     ) as ctx:
-
         config = uvicorn.Config(
             fastapi_app,
             host=server_host,
@@ -115,9 +109,7 @@ def uvicorn_server(fastapi_app: FastAPI) -> Iterator[URL]:
         @retry(wait=wait_fixed(0.1), stop=stop_after_delay(10), reraise=True)
         def wait_for_server_ready() -> None:
             response = httpx.get(f"{server_url}/")
-            assert (
-                response.is_success
-            ), f"Server did not start successfully: {response.status_code} {response.text}"
+            assert response.is_success, f"Server did not start successfully: {response.status_code} {response.text}"
 
         wait_for_server_ready()
 
@@ -149,9 +141,7 @@ async def test_server_cancels_when_client_disconnects(
         server_done_event.clear()
 
         # 2. check slow call get cancelled
-        with log_context(
-            logging.INFO, msg="client calling endpoint for cancellation"
-        ) as ctx:
+        with log_context(logging.INFO, msg="client calling endpoint for cancellation") as ctx:
             with pytest.raises(httpx.ReadTimeout):
                 await client.get(
                     "/sleep",
@@ -160,7 +150,7 @@ async def test_server_cancels_when_client_disconnects(
                 )
             ctx.logger.info("client disconnected from server")
 
-        # request should have been cancelled after the ReadTimoeut!
+        # request should have been cancelled after the ReadTimeout!
         server_done_event.wait(5)
         server_cancelled_mock.assert_called_once()
         server_cancelled_mock.reset_mock()
@@ -175,6 +165,6 @@ async def test_server_cancels_when_client_disconnects(
             )
             assert response.status_code == 200
 
-        # request should have been cancelled after the ReadTimoeut!
+        # request should have been cancelled after the ReadTimeout!
         server_done_event.wait(5)
         server_cancelled_mock.assert_called_once()

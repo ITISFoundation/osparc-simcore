@@ -49,9 +49,7 @@ class MixinServiceSettings:
     # base_url  -> http://user:pass@example.com:8042
     # api_base  -> http://user:pass@example.com:8042/v0
 
-    def _safe_getattr(
-        self, key: str, req: URLPart, default: str | None = None
-    ) -> str | None:
+    def _safe_getattr(self, key: str, req: URLPart, default: str | None = None) -> str | None:
         """
 
         Raises:
@@ -96,11 +94,7 @@ class MixinServiceSettings:
         port_value = self._safe_getattr(f"{prefix}_PORT", port)
 
         parts = {
-            "scheme": (
-                "https"
-                if self._safe_getattr(f"{prefix}_SECURE", URLPart.OPTIONAL)
-                else "http"
-            ),
+            "scheme": ("https" if self._safe_getattr(f"{prefix}_SECURE", URLPart.OPTIONAL) else "http"),
             "host": self._safe_getattr(f"{prefix}_HOST", URLPart.REQUIRED),
             "port": int(port_value) if port_value is not None else None,
             "username": self._safe_getattr(f"{prefix}_USER", user),
@@ -122,9 +116,7 @@ class MixinServiceSettings:
             if value is not None:
                 kwargs[k] = value
 
-        assert all(
-            isinstance(v, (str, int)) or v is None for v in kwargs.values()
-        )  # nosec
+        assert all(isinstance(v, (str, int)) or v is None for v in kwargs.values())  # nosec
 
         composed_url: str = str(AnyUrl.build(**kwargs))  # type: ignore[arg-type] # pylint: disable=missing-kwoa
         return composed_url.rstrip("/")

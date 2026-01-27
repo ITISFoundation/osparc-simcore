@@ -20,9 +20,7 @@ from simcore_service_webserver.scicrunch.settings import SciCrunchSettings
     "name,rrid",
     TOOL_CITATIONS + ANTIBODY_CITATIONS + PLAMID_CITATIONS + ORGANISM_CITATIONS,
 )
-async def test_scicrunch_resolves_all_valid_rrids(
-    name: str, rrid: str, settings: SciCrunchSettings
-):
+async def test_scicrunch_resolves_all_valid_rrids(name: str, rrid: str, settings: SciCrunchSettings):
     # NOTE: this test run against https://scicrunch.org/resolver/{SCR_018997}.json
     # which is an open API (no auth required). Any change in the responses of that
     # service might cause a failure on this test
@@ -30,9 +28,7 @@ async def test_scicrunch_resolves_all_valid_rrids(
     # - Old problems: https://github.com/ITISFoundation/osparc-simcore/issues/3043
 
     async with ClientSession(timeout=ClientTimeout(total=30)) as client:
-        resolved_items: list[ResolvedItem] = await resolve_rrid(
-            identifier=rrid, client=client, settings=settings
-        )
+        resolved_items: list[ResolvedItem] = await resolve_rrid(identifier=rrid, client=client, settings=settings)
 
         for resolved in resolved_items:
             assert resolved
@@ -47,10 +43,7 @@ async def test_scicrunch_resolves_all_valid_rrids(
         # So far I found four different formats!! :-o
         if not name:
             # only rrid with a prefix
-            assert any(
-                resolved.proper_citation == f"RRID:{rrid}"
-                for resolved in resolved_items
-            )
+            assert any(resolved.proper_citation == f"RRID:{rrid}" for resolved in resolved_items)
         else:
             # proper_citation includes both 'name' and 'rrid' but in different formats!
             # AND has been changing in time. BELOW are some of the formats found!
@@ -68,11 +61,8 @@ async def test_scicrunch_resolves_all_valid_rrids(
                 f"({name},RRID:{rrid})",
                 f"{name} (RRID:{rrid})",
             )
-            resolved_citations = [
-                resolved.proper_citation for resolved in resolved_items
-            ]
+            resolved_citations = [resolved.proper_citation for resolved in resolved_items]
 
-            assert any(
-                proper_citation in valid_formats
-                for proper_citation in resolved_citations
-            ), f"No proper_citation found with both {name=} and {rrid=}: {resolved_citations=} not in {valid_formats=}"
+            assert any(proper_citation in valid_formats for proper_citation in resolved_citations), (
+                f"No proper_citation found with both {name=} and {rrid=}: {resolved_citations=} not in {valid_formats=}"
+            )

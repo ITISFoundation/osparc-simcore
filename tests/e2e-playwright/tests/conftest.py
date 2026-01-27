@@ -45,9 +45,7 @@ _OPENING_TUTORIAL_MAX_WAIT_TIME: Final[int] = 3 * MINUTE
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:
-    group = parser.getgroup(
-        "oSparc e2e options", description="oSPARC-e2e specific parameters"
-    )
+    group = parser.getgroup("oSparc e2e options", description="oSPARC-e2e specific parameters")
     group.addoption(
         "--product-url",
         action="store",
@@ -150,9 +148,7 @@ def pytest_runtest_setup(item):
 _FORMAT: Final = "%Y-%m-%dT%H:%M:%S.%fZ"
 
 
-def _construct_graylog_url(
-    product_url: str | None, start_time: datetime.datetime, end_time: datetime.datetime
-) -> str:
+def _construct_graylog_url(product_url: str | None, start_time: datetime.datetime, end_time: datetime.datetime) -> str:
     # Deduce monitoring url
     if product_url:
         scheme, tail = product_url.split("://", 1)
@@ -189,9 +185,7 @@ def pytest_runtest_makereport(item: pytest.Item, call):
         end_time = arrow.now().datetime
 
         if start_time:
-            diagnostics["graylog_url"] = _construct_graylog_url(
-                product_url, start_time, end_time
-            )
+            diagnostics["graylog_url"] = _construct_graylog_url(product_url, start_time, end_time)
             diagnostics["duration"] = str(end_time - start_time)
 
         with log_context(
@@ -237,9 +231,7 @@ def user_name(request: pytest.FixtureRequest, auto_register: bool, faker: Faker)
 
 
 @pytest.fixture
-def user_password(
-    request: pytest.FixtureRequest, auto_register: bool, faker: Faker
-) -> Secret4TestsStr:
+def user_password(request: pytest.FixtureRequest, auto_register: bool, faker: Faker) -> Secret4TestsStr:
     if auto_register:
         return Secret4TestsStr(DEFAULT_TEST_PASSWORD)
     if osparc_password := request.config.getoption("--password"):
@@ -343,9 +335,7 @@ def register(
             with page.expect_response(re.compile(r"/auth/register")) as response_info:
                 page.get_by_test_id("registrationSubmitBtn").click()
             assert response_info.value.ok, response_info.value.json()
-            return AutoRegisteredUser(
-                user_email=user_name, password=user_password.get_secret_value()
-            )
+            return AutoRegisteredUser(user_email=user_name, password=user_password.get_secret_value())
 
     return _do
 
@@ -416,9 +406,7 @@ def log_in_and_out(
     page.wait_for_timeout(5000)
     welcomeToSim4LifeLocator = page.get_by_text("Welcome to Sim4Life")
     if welcomeToSim4LifeLocator.is_visible():
-        page.get_by_text("").nth(
-            1
-        ).click()  # There is missing osparc-test-id for this button
+        page.get_by_text("").nth(1).click()  # There is missing osparc-test-id for this button
     # Quick start window
     quickStartWindowCloseBtnLocator = page.get_by_test_id("quickStartWindowCloseBtn")
     if quickStartWindowCloseBtnLocator.is_visible():
@@ -460,9 +448,7 @@ def _select_service_version(page: Page, *, version: str) -> None:
         # since https://github.com/ITISFoundation/osparc-simcore/pull/7060
         with log_context(logging.INFO, msg=f"selecting version {version}"):
             page.get_by_test_id("serviceSelectBox").click(timeout=5 * SECOND)
-            page.get_by_test_id(f"serviceVersionItem_{version}").click(
-                timeout=5 * SECOND
-            )
+            page.get_by_test_id(f"serviceVersionItem_{version}").click(timeout=5 * SECOND)
             # the call is cached so the best is to wait here a bit (sic)
             page.wait_for_timeout(2 * SECOND)
 
@@ -478,9 +464,7 @@ def create_new_project_and_delete(  # noqa: C901, PLR0915
     is_product_billable: bool,
     api_request_context: APIRequestContext,
     product_url: AnyUrl,
-) -> Iterator[
-    Callable[[tuple[RunningState, ...], bool, str | None, str | None], dict[str, Any]]
-]:
+) -> Iterator[Callable[[tuple[RunningState, ...], bool, str | None, str | None], dict[str, Any]]]:
     """The first available service currently displayed in the dashboard will be opened
     NOTE: cannot be used multiple times or going back to dashboard will fail!!
     """
@@ -492,14 +476,10 @@ def create_new_project_and_delete(  # noqa: C901, PLR0915
         template_id: str | None,
         service_version: str | None,
     ) -> dict[str, Any]:
-        with log_context(
-            logging.INFO, f"Open project in {product_url=} as {is_product_billable=}"
-        ) as ctx:
+        with log_context(logging.INFO, f"Open project in {product_url=} as {is_product_billable=}") as ctx:
             waiter = SocketIOProjectStateUpdatedWaiter(expected_states=expected_states)
             timeout = (
-                _OPENING_TUTORIAL_MAX_WAIT_TIME
-                if template_id is not None
-                else _OPENING_NEW_EMPTY_PROJECT_MAX_WAIT_TIME
+                _OPENING_TUTORIAL_MAX_WAIT_TIME if template_id is not None else _OPENING_NEW_EMPTY_PROJECT_MAX_WAIT_TIME
             )
 
             # Enhanced context for better debugging when timeout occurs
@@ -511,9 +491,7 @@ def create_new_project_and_delete(  # noqa: C901, PLR0915
                 expected_states,
             )
 
-            with log_in_and_out.expect_event(
-                "framereceived", waiter, timeout=timeout + 10 * SECOND
-            ):
+            with log_in_and_out.expect_event("framereceived", waiter, timeout=timeout + 10 * SECOND):
                 with page.expect_response(
                     re.compile(r"/projects/[^:]+:open"), timeout=timeout + 5 * SECOND
                 ) as response_info:
@@ -526,9 +504,7 @@ def create_new_project_and_delete(  # noqa: C901, PLR0915
                                 open_button.click()
                                 open_button = _open_with_resources(page, click_it=False)
                             # it returns a Long Running Task
-                            with page.expect_response(
-                                re.compile(rf"/projects\?from_study\={template_id}")
-                            ) as lrt:
+                            with page.expect_response(re.compile(rf"/projects\?from_study\={template_id}")) as lrt:
                                 open_button.click()
                             open_with_resources_clicked = True
                             lrt_data = lrt.value.json()
@@ -542,9 +518,7 @@ def create_new_project_and_delete(  # noqa: C901, PLR0915
                                     return urllib.parse.urlparse(url).path
 
                                 def wait_for_done(response):
-                                    if url_to_path(response.url) == url_to_path(
-                                        lrt_data["status_href"]
-                                    ):
+                                    if url_to_path(response.url) == url_to_path(lrt_data["status_href"]):
                                         resp_data = response.json()
                                         resp_data = resp_data["data"]
                                         assert "task_progress" in resp_data
@@ -555,16 +529,12 @@ def create_new_project_and_delete(  # noqa: C901, PLR0915
                                             task_progress["message"],
                                         )
                                         return False
-                                    if url_to_path(response.url) == url_to_path(
-                                        lrt_data["result_href"]
-                                    ):
+                                    if url_to_path(response.url) == url_to_path(lrt_data["result_href"]):
                                         copying_logger.logger.info("project created")
                                         return response.status == 201
                                     return False
 
-                                with page.expect_response(
-                                    wait_for_done, timeout=timeout
-                                ):
+                                with page.expect_response(wait_for_done, timeout=timeout):
                                     # if the above calls go to fast, this test could fail
                                     # not expected in the sim4life context though
                                     ...
@@ -598,11 +568,7 @@ def create_new_project_and_delete(  # noqa: C901, PLR0915
         if page.get_by_test_id("dashboardBtn").is_visible():
             with ExitStack() as stack:
                 for project_uuid in created_project_uuids:
-                    ctx = stack.enter_context(
-                        log_context(
-                            logging.INFO, f"Wait for closed project {project_uuid=}"
-                        )
-                    )
+                    ctx = stack.enter_context(log_context(logging.INFO, f"Wait for closed project {project_uuid=}"))
                     stack.enter_context(
                         log_in_and_out.expect_event(
                             "framereceived",
@@ -623,12 +589,8 @@ def create_new_project_and_delete(  # noqa: C901, PLR0915
             logging.INFO,
             f"Delete project with {project_uuid=} in {product_url=} as {is_product_billable=}",
         ):
-            response = api_request_context.delete(
-                f"{product_url}v0/projects/{project_uuid}"
-            )
-            assert (
-                response.status == 204
-            ), f"Unexpected error while deleting project: '{response.json()}'"
+            response = api_request_context.delete(f"{product_url}v0/projects/{project_uuid}")
+            assert response.status == 204, f"Unexpected error while deleting project: '{response.json()}'"
 
 
 # SEE https://github.com/ITISFoundation/osparc-simcore/pull/5618#discussion_r1553943415
@@ -641,9 +603,7 @@ def start_study_from_plus_button(
     page: Page,
 ) -> Callable[[str], None]:
     def _(plus_button_test_id: str) -> None:
-        with log_context(
-            logging.INFO, f"Find plus button {plus_button_test_id=} in study browser"
-        ):
+        with log_context(logging.INFO, f"Find plus button {plus_button_test_id=} in study browser"):
             page.get_by_test_id("newPlusBtn").click()
             page.get_by_test_id(plus_button_test_id).click()
 
@@ -692,9 +652,7 @@ def find_and_start_service_in_dashboard(
 @pytest.fixture
 def create_project_from_new_button(
     start_study_from_plus_button: Callable[[str], None],
-    create_new_project_and_delete: Callable[
-        [tuple[RunningState], bool, str | None, str | None], dict[str, Any]
-    ],
+    create_new_project_and_delete: Callable[[tuple[RunningState], bool, str | None, str | None], dict[str, Any]],
 ) -> Callable[[str], dict[str, Any]]:
     def _(plus_button_test_id: str) -> dict[str, Any]:
         start_study_from_plus_button(plus_button_test_id)
@@ -712,9 +670,7 @@ def create_project_from_new_button(
 @pytest.fixture
 def create_project_from_template_dashboard(
     find_and_click_template_in_dashboard: Callable[[str], None],
-    create_new_project_and_delete: Callable[
-        [tuple[RunningState], bool, str | None, str | None], dict[str, Any]
-    ],
+    create_new_project_and_delete: Callable[[tuple[RunningState], bool, str | None, str | None], dict[str, Any]],
 ) -> Callable[[str], dict[str, Any]]:
     def _(template_id: str) -> dict[str, Any]:
         find_and_click_template_in_dashboard(template_id)
@@ -732,9 +688,7 @@ def create_project_from_template_dashboard(
 @pytest.fixture
 def create_project_from_service_dashboard(
     find_and_start_service_in_dashboard: Callable[[ServiceType, str, str | None], None],
-    create_new_project_and_delete: Callable[
-        [tuple[RunningState], bool, str | None, str | None], dict[str, Any]
-    ],
+    create_new_project_and_delete: Callable[[tuple[RunningState], bool, str | None, str | None], dict[str, Any]],
 ) -> Callable[[ServiceType, str, str | None, str | None], dict[str, Any]]:
     def _(
         service_type: ServiceType,
@@ -742,9 +696,7 @@ def create_project_from_service_dashboard(
         service_key_prefix: str | None,
         service_version: str | None,
     ) -> dict[str, Any]:
-        find_and_start_service_in_dashboard(
-            service_type, service_name, service_key_prefix
-        )
+        find_and_start_service_in_dashboard(service_type, service_name, service_key_prefix)
         expected_states = (RunningState.NOT_STARTED,)
         if service_type is ServiceType.COMPUTATIONAL:
             expected_states = (RunningState.NOT_STARTED,)
@@ -792,8 +744,7 @@ def start_and_stop_pipeline(
                     timeout=_OUTER_CONTEXT_TIMEOUT_MS,
                 ) as event,
                 page.expect_request(
-                    lambda r: re.search(r"/computations", r.url)
-                    and r.method.upper() == "POST",  # type: ignore
+                    lambda r: re.search(r"/computations", r.url) and r.method.upper() == "POST",  # type: ignore
                     timeout=_INNER_CONTEXT_TIMEOUT_MS,
                 ) as request_info,
             ):
@@ -809,9 +760,7 @@ def start_and_stop_pipeline(
             pipeline_id = response_body["data"]["pipeline_id"]
             started_pipeline_ids.append(pipeline_id)
 
-            ctx.messages.done = (
-                f"Started computation with {pipeline_id=} in {product_url=}..."
-            )
+            ctx.messages.done = f"Started computation with {pipeline_id=} in {product_url=}..."
 
             return decode_socketio_42_message(event.value)
 
@@ -819,9 +768,7 @@ def start_and_stop_pipeline(
 
     # ensure all the pipelines are stopped properly
     for pipeline_id in started_pipeline_ids:
-        with log_context(
-            logging.INFO, f"Stop computation with {pipeline_id=} in {product_url=}"
-        ):
+        with log_context(logging.INFO, f"Stop computation with {pipeline_id=} in {product_url=}"):
             api_request_context.post(f"{product_url}v0/computations/{pipeline_id}:stop")
 
 

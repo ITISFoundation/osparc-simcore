@@ -143,9 +143,7 @@ async def _setup_publisher_and_subscriber(
     return topics_count
 
 
-async def _assert_wait_for_messages(
-    on_message_spy: mock.Mock, expected_results: int
-) -> None:
+async def _assert_wait_for_messages(on_message_spy: mock.Mock, expected_results: int) -> None:
     total_seconds_to_wait = expected_results * _ON_ERROR_DELAY_S * 2
     print(f"Will wait for messages for {total_seconds_to_wait} seconds")
     async for attempt in AsyncRetrying(
@@ -180,9 +178,7 @@ async def _assert_message_received(
             assert mocked_message_parser.call_count == expected_call_count
             if expected_call_count == 1:
                 assert expected_message
-                mocked_message_parser.assert_called_once_with(
-                    expected_message.message.encode()
-                )
+                mocked_message_parser.assert_called_once_with(expected_message.message.encode())
             elif expected_call_count == 0:
                 mocked_message_parser.assert_not_called()
             else:
@@ -272,11 +268,7 @@ async def test_subscribe_fail_then_success(
         message = entry.args[2]
         if message.headers == {}:
             original_message_count += 1
-        if (
-            message.headers
-            and "x-death" in message.headers
-            and message.headers["x-death"][0]["count"] == 1
-        ):
+        if message.headers and "x-death" in message.headers and message.headers["x-death"][0]["count"] == 1:
             requeued_message_count += 1
 
     assert original_message_count == topics_count
@@ -308,9 +300,7 @@ async def test_subscribe_always_returns_fails_stops(
 
     report = _get_spy_report(on_message_spy)
     routing_keys: list[str] = [""] if topics is None else topics
-    assert report == {
-        k: set(range(_DEFAULT_UNEXPECTED_ERROR_MAX_ATTEMPTS + 1)) for k in routing_keys
-    }
+    assert report == {k: set(range(_DEFAULT_UNEXPECTED_ERROR_MAX_ATTEMPTS + 1)) for k in routing_keys}
 
 
 @pytest.mark.parametrize("topics", _TOPICS)
@@ -352,9 +342,7 @@ async def test_publish_with_no_registered_subscriber(
             unexpected_error_retry_delay_s=ttl_s,
         )
 
-    async def _unsubscribe_consumer(
-        queue_name: QueueName, consumer_tag: ConsumerTag
-    ) -> None:
+    async def _unsubscribe_consumer(queue_name: QueueName, consumer_tag: ConsumerTag) -> None:
         await consumer.unsubscribe_consumer(queue_name, consumer_tag)
 
     # CASE 1 (subscribe immediately after publishing message)
@@ -424,9 +412,7 @@ async def test_rabbit_client_pub_many_subs(
     num_subs: int,
 ):
     consumers = (create_rabbitmq_client(f"consumer_{n}") for n in range(num_subs))
-    mocked_message_parsers = [
-        mocker.AsyncMock(return_value=True) for _ in range(num_subs)
-    ]
+    mocked_message_parsers = [mocker.AsyncMock(return_value=True) for _ in range(num_subs)]
 
     publisher = create_rabbitmq_client("publisher")
     message = random_rabbit_message()
@@ -439,12 +425,7 @@ async def test_rabbit_client_pub_many_subs(
     )
 
     await publisher.publish(exchange_name, message)
-    await asyncio.gather(
-        *(
-            _assert_message_received(parser, 1, message)
-            for parser in mocked_message_parsers
-        )
-    )
+    await asyncio.gather(*(_assert_message_received(parser, 1, message) for parser in mocked_message_parsers))
 
 
 async def test_rabbit_client_pub_sub_republishes_if_exception_raised(
@@ -501,9 +482,7 @@ async def test_pub_sub_with_non_exclusive_queue(
     ensure_queue_deletion: Callable[[QueueName], None],
 ):
     consumers = (create_rabbitmq_client(f"consumer_{n}") for n in range(num_subs))
-    mocked_message_parsers = [
-        mocker.AsyncMock(return_value=True) for _ in range(num_subs)
-    ]
+    mocked_message_parsers = [mocker.AsyncMock(return_value=True) for _ in range(num_subs)]
 
     publisher = create_rabbitmq_client("publisher")
     message = random_rabbit_message()
@@ -520,11 +499,7 @@ async def test_pub_sub_with_non_exclusive_queue(
         )
     )
     for queue_name, _ in list_queue_name_consumer_mappings:
-        assert (
-            queue_name == exchange_name
-            if defined_queue_name is None
-            else defined_queue_name
-        )
+        assert queue_name == exchange_name if defined_queue_name is None else defined_queue_name
         ensure_queue_deletion(queue_name)
         ensure_queue_deletion(f"delayed_{queue_name}")
     await publisher.publish(exchange_name, message)
@@ -554,9 +529,7 @@ def test_rabbit_pub_sub_performance(
     message = random_rabbit_message()
 
     exchange_name = random_exchange_name()
-    asyncio.get_event_loop().run_until_complete(
-        consumer.subscribe(exchange_name, mocked_message_parser)
-    )
+    asyncio.get_event_loop().run_until_complete(consumer.subscribe(exchange_name, mocked_message_parser))
 
     async def async_fct_to_test():
         await publisher.publish(exchange_name, message)
@@ -588,13 +561,9 @@ async def test_rabbit_pub_sub_with_topic(
 
     only_critical_consumer = create_rabbitmq_client("only_critical_consumer")
     only_critical_mocked_message_parser = mocker.AsyncMock(return_value=True)
-    await only_critical_consumer.subscribe(
-        exchange_name, only_critical_mocked_message_parser, topics=["*.*.critical"]
-    )
+    await only_critical_consumer.subscribe(exchange_name, only_critical_mocked_message_parser, topics=["*.*.critical"])
 
-    orange_and_critical_consumer = create_rabbitmq_client(
-        "orange_and_critical_consumer"
-    )
+    orange_and_critical_consumer = create_rabbitmq_client("orange_and_critical_consumer")
     orange_and_critical_mocked_message_parser = mocker.AsyncMock(return_value=True)
     await orange_and_critical_consumer.subscribe(
         exchange_name,
@@ -606,21 +575,11 @@ async def test_rabbit_pub_sub_with_topic(
     await publisher.publish(exchange_name, critical_message)
     await publisher.publish(exchange_name, debug_message)
 
-    await _assert_message_received(
-        all_receiving_mocked_message_parser, 2, critical_message
-    )
-    await _assert_message_received(
-        all_receiving_mocked_message_parser, 2, debug_message
-    )
-    await _assert_message_received(
-        only_critical_mocked_message_parser, 1, critical_message
-    )
-    await _assert_message_received(
-        orange_and_critical_mocked_message_parser, 2, critical_message
-    )
-    await _assert_message_received(
-        orange_and_critical_mocked_message_parser, 2, debug_message
-    )
+    await _assert_message_received(all_receiving_mocked_message_parser, 2, critical_message)
+    await _assert_message_received(all_receiving_mocked_message_parser, 2, debug_message)
+    await _assert_message_received(only_critical_mocked_message_parser, 1, critical_message)
+    await _assert_message_received(orange_and_critical_mocked_message_parser, 2, critical_message)
+    await _assert_message_received(orange_and_critical_mocked_message_parser, 2, debug_message)
 
 
 async def test_rabbit_pub_sub_bind_and_unbind_topics(
@@ -636,60 +595,44 @@ async def test_rabbit_pub_sub_bind_and_unbind_topics(
     messages = {sev: random_rabbit_message(topic=f"pytest.{sev}") for sev in severities}
 
     # send 1 message of each type
-    await asyncio.gather(
-        *(publisher.publish(exchange_name, m) for m in messages.values())
-    )
+    await asyncio.gather(*(publisher.publish(exchange_name, m) for m in messages.values()))
 
     # we should get no messages since no one was subscribed
-    queue_name, consumer_tag = await consumer.subscribe(
-        exchange_name, mocked_message_parser, topics=[]
-    )
+    queue_name, consumer_tag = await consumer.subscribe(exchange_name, mocked_message_parser, topics=[])
     await _assert_message_received(mocked_message_parser, 0)
 
     # now we should also not get anything since we are not interested in any topic
-    await asyncio.gather(
-        *(publisher.publish(exchange_name, m) for m in messages.values())
-    )
+    await asyncio.gather(*(publisher.publish(exchange_name, m) for m in messages.values()))
     await _assert_message_received(mocked_message_parser, 0)
 
     # we are interested in warnings and critical
     await consumer.add_topics(exchange_name, topics=["*.warning", "*.critical"])
-    await asyncio.gather(
-        *(publisher.publish(exchange_name, m) for m in messages.values())
-    )
+    await asyncio.gather(*(publisher.publish(exchange_name, m) for m in messages.values()))
     await _assert_message_received(mocked_message_parser, 2, messages["critical"])
     await _assert_message_received(mocked_message_parser, 2, messages["warning"])
     mocked_message_parser.reset_mock()
     # adding again the same topics makes no difference, we should still have 2 messages
     await consumer.add_topics(exchange_name, topics=["*.warning"])
-    await asyncio.gather(
-        *(publisher.publish(exchange_name, m) for m in messages.values())
-    )
+    await asyncio.gather(*(publisher.publish(exchange_name, m) for m in messages.values()))
     await _assert_message_received(mocked_message_parser, 2, messages["critical"])
     await _assert_message_received(mocked_message_parser, 2, messages["warning"])
     mocked_message_parser.reset_mock()
 
     # after unsubscribing, we do not receive warnings anymore
     await consumer.remove_topics(exchange_name, topics=["*.warning"])
-    await asyncio.gather(
-        *(publisher.publish(exchange_name, m) for m in messages.values())
-    )
+    await asyncio.gather(*(publisher.publish(exchange_name, m) for m in messages.values()))
     await _assert_message_received(mocked_message_parser, 1, messages["critical"])
     mocked_message_parser.reset_mock()
 
     # after unsubscribing something that does not exist, we still receive the same things
     await consumer.remove_topics(exchange_name, topics=[])
-    await asyncio.gather(
-        *(publisher.publish(exchange_name, m) for m in messages.values())
-    )
+    await asyncio.gather(*(publisher.publish(exchange_name, m) for m in messages.values()))
     await _assert_message_received(mocked_message_parser, 1, messages["critical"])
     mocked_message_parser.reset_mock()
 
     # after unsubscribing we receive nothing anymore
     await consumer.unsubscribe(queue_name)
-    await asyncio.gather(
-        *(publisher.publish(exchange_name, m) for m in messages.values())
-    )
+    await asyncio.gather(*(publisher.publish(exchange_name, m) for m in messages.values()))
     await _assert_message_received(mocked_message_parser, 0)
 
 
@@ -733,7 +676,7 @@ async def test_rabbit_not_using_the_same_exchange_type_raises(
     client = create_rabbitmq_client("consumer")
     # this will create a FANOUT exchange
     await client.subscribe(exchange_name, mocked_message_parser)
-    # now do a second subscribtion wiht topics, will create a TOPICS exchange
+    # now do a second subscription with topics, will create a TOPICS exchange
     with pytest.raises(aio_pika.exceptions.ChannelPreconditionFailed):
         await client.subscribe(exchange_name, mocked_message_parser, topics=[])
 
@@ -746,12 +689,10 @@ async def test_unsubscribe_consumer(
 ):
     exchange_name = f"{random_exchange_name()}"
     client = create_rabbitmq_client("consumer")
-    queue_name, consumer_tag = await client.subscribe(
-        exchange_name, mocked_message_parser, exclusive_queue=False
-    )
-    # Unsubsribe just a consumer, the queue will be still there
+    queue_name, consumer_tag = await client.subscribe(exchange_name, mocked_message_parser, exclusive_queue=False)
+    # Unsubscribe just a consumer, the queue will be still there
     await client.unsubscribe_consumer(queue_name, consumer_tag)
-    # Unsubsribe the queue
+    # Unsubscribe the queue
     await client.unsubscribe(queue_name)
     with pytest.raises(aio_pika.exceptions.ChannelNotFoundEntity):
         await client.unsubscribe(queue_name)

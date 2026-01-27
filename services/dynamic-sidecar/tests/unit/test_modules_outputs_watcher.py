@@ -84,9 +84,7 @@ def port_keys() -> list[str]:
 
 
 @pytest.fixture
-async def outputs_context(
-    mounted_volumes: MountedVolumes, port_keys: list[str]
-) -> OutputsContext:
+async def outputs_context(mounted_volumes: MountedVolumes, port_keys: list[str]) -> OutputsContext:
     outputs_context = OutputsContext(outputs_path=mounted_volumes.disk_outputs_path)
     await outputs_context.set_file_type_port_keys(port_keys)
     return outputs_context
@@ -114,21 +112,15 @@ async def outputs_watcher(
     outputs_context: OutputsContext,
     outputs_manager: OutputsManager,
 ) -> AsyncIterator[OutputsWatcher]:
-    mocker.patch.object(
-        outputs_watcher_core, "DEFAULT_OBSERVER_TIMEOUT", _TICK_INTERVAL
-    )
-    outputs_watcher = OutputsWatcher(
-        outputs_manager=outputs_manager, outputs_context=outputs_context
-    )
+    mocker.patch.object(outputs_watcher_core, "DEFAULT_OBSERVER_TIMEOUT", _TICK_INTERVAL)
+    outputs_watcher = OutputsWatcher(outputs_manager=outputs_manager, outputs_context=outputs_context)
     await outputs_watcher.start()
     yield outputs_watcher
     await outputs_watcher.shutdown()
 
 
 @pytest.fixture
-def mock_event_filter_upload_trigger(
-    mocker: MockerFixture, outputs_watcher: OutputsWatcher
-) -> AsyncMock:
+def mock_event_filter_upload_trigger(mocker: MockerFixture, outputs_watcher: OutputsWatcher) -> AsyncMock:
     mock_enqueue = AsyncMock(return_value=None)
 
     mocker.patch.object(
@@ -243,18 +235,10 @@ async def _random_events_in_path(
 
     event_awaitables: list[Awaitable] = [
         *(_empty_file(port_key_path / f"empty_file_{i}") for i in range(empty_files)),
+        *(_move_existing_file(port_key_path / f"moved_file_{i}") for i in range(moved_files)),
+        *(_remove_file(port_key_path / f"removed_file_{i}") for i in range(removed_files)),
         *(
-            _move_existing_file(port_key_path / f"moved_file_{i}")
-            for i in range(moved_files)
-        ),
-        *(
-            _remove_file(port_key_path / f"removed_file_{i}")
-            for i in range(removed_files)
-        ),
-        *(
-            _random_file(
-                port_key_path / f"big_file{i}", size=size, chunk_size=chunk_size
-            )
+            _random_file(port_key_path / f"big_file{i}", size=size, chunk_size=chunk_size)
             for i in range(files_per_port_key)
         ),
     ]
@@ -310,9 +294,7 @@ async def test_run_observer(
     await outputs_watcher.enable_event_propagation()
 
     # generates the first event chain
-    await _generate_event_burst(
-        outputs_watcher.outputs_context.outputs_path, port_keys[0]
-    )
+    await _generate_event_burst(outputs_watcher.outputs_context.outputs_path, port_keys[0])
 
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
@@ -320,9 +302,7 @@ async def test_run_observer(
             assert mock_event_filter_upload_trigger.call_count == 1
 
     # generates the second event chain
-    await _generate_event_burst(
-        outputs_watcher.outputs_context.outputs_path, port_keys[1]
-    )
+    await _generate_event_burst(outputs_watcher.outputs_context.outputs_path, port_keys[1])
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
             await asyncio.sleep(0)
@@ -388,13 +368,9 @@ async def test_port_key_sequential_event_generation(
 
     # Waiting for events to finish propagation and changes to be uploaded
     MARGIN_FOR_ALL_EVENT_PROCESSORS_TO_TRIGGER = 1
-    sleep_for = max(
-        max(wait_interval_for_port) + MARGIN_FOR_ALL_EVENT_PROCESSORS_TO_TRIGGER, 3
-    )
+    sleep_for = max(max(wait_interval_for_port) + MARGIN_FOR_ALL_EVENT_PROCESSORS_TO_TRIGGER, 3)
     print(f"max {sleep_for=} interval")
-    async for attempt in AsyncRetrying(
-        **{**_TENACITY_RETRY_PARAMS, "stop": stop_after_delay(sleep_for)}
-    ):
+    async for attempt in AsyncRetrying(**{**_TENACITY_RETRY_PARAMS, "stop": stop_after_delay(sleep_for)}):
         with attempt:
             await asyncio.sleep(0)
             assert mock_long_running_upload_outputs.call_count > 0

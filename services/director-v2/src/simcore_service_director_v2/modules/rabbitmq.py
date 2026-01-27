@@ -24,12 +24,10 @@ _logger = logging.getLogger(__name__)
 async def handler_out_of_credits(app: FastAPI, data: bytes) -> bool:
     message = WalletCreditsLimitReachedMessage.model_validate_json(data)
 
-    scheduler: "DynamicSidecarsScheduler" = app.state.dynamic_sidecar_scheduler  # type: ignore[name-defined] # noqa: F821
+    scheduler: DynamicSidecarsScheduler = app.state.dynamic_sidecar_scheduler  # type: ignore[name-defined] # noqa: F821
     settings: AppSettings = app.state.settings
 
-    if (
-        settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER.DIRECTOR_V2_DYNAMIC_SCHEDULER_CLOSE_SERVICES_VIA_FRONTEND_WHEN_CREDITS_LIMIT_REACHED
-    ):
+    if settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER.DIRECTOR_V2_DYNAMIC_SCHEDULER_CLOSE_SERVICES_VIA_FRONTEND_WHEN_CREDITS_LIMIT_REACHED:
         _logger.warning(
             "Notifying frontend to shutdown service: '%s' for user '%s' because wallet '%s' is out of credits.",
             message.node_id,
@@ -43,9 +41,7 @@ async def handler_out_of_credits(app: FastAPI, data: bytes) -> bool:
             wallet_id=message.wallet_id,
         )
     else:
-        await scheduler.mark_all_services_in_wallet_for_removal(
-            wallet_id=message.wallet_id
-        )
+        await scheduler.mark_all_services_in_wallet_for_removal(wallet_id=message.wallet_id)
 
     return True
 
@@ -54,9 +50,7 @@ def setup(app: FastAPI) -> None:
     async def on_startup() -> None:
         settings: RabbitSettings = app.state.settings.DIRECTOR_V2_RABBITMQ
         await wait_till_rabbitmq_responsive(settings.dsn)
-        app.state.rabbitmq_client = RabbitMQClient(
-            client_name="director-v2", settings=settings
-        )
+        app.state.rabbitmq_client = RabbitMQClient(client_name="director-v2", settings=settings)
         app.state.rabbitmq_rpc_client = await RabbitMQRPCClient.create(
             client_name="director-v2-rpc-client", settings=settings
         )
@@ -92,9 +86,7 @@ def get_rabbitmq_client(app: FastAPI) -> RabbitMQClient:
 
 def get_rabbitmq_rpc_client(app: FastAPI) -> RabbitMQRPCClient:
     if not hasattr(app.state, "rabbitmq_rpc_client"):
-        msg = (
-            "RabbitMQ client for RPC is not available. Please check the configuration."
-        )
+        msg = "RabbitMQ client for RPC is not available. Please check the configuration."
         raise ConfigurationError(msg=msg)
     return cast(RabbitMQRPCClient, app.state.rabbitmq_rpc_client)
 

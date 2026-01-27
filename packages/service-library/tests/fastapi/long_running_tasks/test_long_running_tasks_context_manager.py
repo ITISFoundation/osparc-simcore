@@ -44,9 +44,7 @@ TASK_SLEEP_INTERVAL: Final[PositiveFloat] = 0.1
 # UTILS
 
 
-async def _assert_task_removed(
-    http_client: HttpClient, task_id: TaskId, router_prefix: str
-) -> None:
+async def _assert_task_removed(http_client: HttpClient, task_id: TaskId, router_prefix: str) -> None:
     with pytest.raises(GenericClientError, match=f"No task with {task_id} found"):
         await http_client.get_task_status(task_id)
 
@@ -80,9 +78,7 @@ def user_routes() -> APIRouter:
 
     @router.get("/api/success", status_code=status.HTTP_200_OK)
     async def create_task_user_defined_route(
-        long_running_manager: Annotated[
-            FastAPILongRunningManager, Depends(get_long_running_manager)
-        ],
+        long_running_manager: Annotated[FastAPILongRunningManager, Depends(get_long_running_manager)],
     ) -> TaskId:
         return await lrt_api.start_task(
             long_running_manager.rpc_client,
@@ -92,9 +88,7 @@ def user_routes() -> APIRouter:
 
     @router.get("/api/failing", status_code=status.HTTP_200_OK)
     async def create_task_which_fails(
-        long_running_manager: Annotated[
-            FastAPILongRunningManager, Depends(get_long_running_manager)
-        ],
+        long_running_manager: Annotated[FastAPILongRunningManager, Depends(get_long_running_manager)],
     ) -> TaskId:
         return await lrt_api.start_task(
             long_running_manager.rpc_client,
@@ -181,10 +175,7 @@ async def test_task_result_times_out(
             status_poll_interval=TASK_SLEEP_INTERVAL / 3,
         ):
             pass
-    assert (
-        f"{exec_info.value}"
-        == f"Timed out after {timeout} seconds while awaiting '{task_id}' to complete"
-    )
+    assert f"{exec_info.value}" == f"Timed out after {timeout} seconds while awaiting '{task_id}' to complete"
 
     await _assert_task_removed(http_client, task_id, router_prefix)
 
@@ -213,9 +204,7 @@ async def test_progress_updater(repeat: int, mock_task_id: TaskId) -> None:
     counter = 0
     received = ()
 
-    async def progress_update(
-        message: ProgressMessage, percent: ProgressPercent | None, task_id: TaskId
-    ) -> None:
+    async def progress_update(message: ProgressMessage, percent: ProgressPercent | None, task_id: TaskId) -> None:
         nonlocal counter
         nonlocal received
         counter += 1
@@ -232,9 +221,7 @@ async def test_progress_updater(repeat: int, mock_task_id: TaskId) -> None:
         assert received == ("", None)
 
     for _ in range(repeat):
-        await progress_updater.update(
-            mock_task_id, percent=TypeAdapter(ProgressPercent).validate_python(0.0)
-        )
+        await progress_updater.update(mock_task_id, percent=TypeAdapter(ProgressPercent).validate_python(0.0))
         assert counter == 2
         assert received == ("", 0.0)
 

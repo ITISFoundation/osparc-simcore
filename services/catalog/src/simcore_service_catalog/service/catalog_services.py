@@ -217,25 +217,13 @@ async def _get_services_manifests(
     """
     # Get manifest of those with access rights
     got = await manifest.get_batch_services(
-        [
-            (sc.key, sc.version)
-            for sc in services
-            if access_rights.get((sc.key, sc.version))
-        ],
+        [(sc.key, sc.version) for sc in services if access_rights.get((sc.key, sc.version))],
         director_api,
     )
-    service_manifest = {
-        (sc.key, sc.version): sc
-        for sc in got
-        if isinstance(sc, ServiceMetaDataPublished)
-    }
+    service_manifest = {(sc.key, sc.version): sc for sc in got if isinstance(sc, ServiceMetaDataPublished)}
 
     # Log a warning for missing services
-    missing_services = [
-        (sc.key, sc.version)
-        for sc in services
-        if (sc.key, sc.version) not in service_manifest
-    ]
+    missing_services = [(sc.key, sc.version) for sc in services if (sc.key, sc.version) not in service_manifest]
     if missing_services:
         msg = f"Found {len(missing_services)} services that are in the database but missing in the registry manifest"
         _logger.warning(
@@ -295,9 +283,7 @@ async def list_all_service_summaries(
     )
 
     # Get access rights and manifests
-    access_rights = await _get_services_with_access_rights(
-        repo, services, product_name, user_id
-    )
+    access_rights = await _get_services_with_access_rights(repo, services, product_name, user_id)
     service_manifest = await _get_services_manifests(
         services,
         access_rights,
@@ -358,9 +344,7 @@ async def list_latest_catalog_services(
     )
 
     # Get access rights and manifests using shared functions
-    access_rights = await _get_services_with_access_rights(
-        repo, services, product_name, user_id
-    )
+    access_rights = await _get_services_with_access_rights(repo, services, product_name, user_id)
     service_manifest = await _get_services_manifests(
         services,
         access_rights,
@@ -380,10 +364,7 @@ async def list_latest_catalog_services(
             service_manifest=sm,
         )
         for sc in services
-        if (
-            (ar := access_rights.get((sc.key, sc.version)))
-            and (sm := service_manifest.get((sc.key, sc.version)))
-        )
+        if ((ar := access_rights.get((sc.key, sc.version))) and (sm := service_manifest.get((sc.key, sc.version))))
     ]
 
     return total_count, items
@@ -472,9 +453,7 @@ async def update_catalog_service(
         service_key,
         service_version,
         ServiceMetaDataDBPatch.model_validate(
-            update.model_dump(
-                exclude_unset=True, exclude={"access_rights"}, mode="json"
-            ),
+            update.model_dump(exclude_unset=True, exclude={"access_rights"}, mode="json"),
         ),
     )
 
@@ -589,9 +568,7 @@ async def check_catalog_service_permissions(
 _BatchIdsValidator = create_batch_ids_validator(tuple[ServiceKey, ServiceVersion])
 
 
-def _evaluate_user_access_rights(
-    access_rights: list, user_group_ids: set[GroupID]
-) -> ServiceGroupAccessRightsV2:
+def _evaluate_user_access_rights(access_rights: list, user_group_ids: set[GroupID]) -> ServiceGroupAccessRightsV2:
     """Evaluate user's access rights based on their group memberships."""
     my_access_rights = ServiceGroupAccessRightsV2(execute=False, write=False)
     for ar in access_rights:
@@ -607,9 +584,7 @@ def _find_service_owner(service_db, access_rights: list) -> GroupID | None:
     if not owner:
         # NOTE can be more than one. Just get first.
         with suppress(StopIteration):
-            owner = next(
-                ar.gid for ar in access_rights if ar.write_access and ar.execute_access
-            )
+            owner = next(ar.gid for ar in access_rights if ar.write_access and ar.execute_access)
     return owner
 
 
@@ -772,7 +747,7 @@ async def list_user_service_release_history(
 ) -> tuple[PageTotalCount, list[ServiceRelease]]:
     total_count, history = await repo.get_service_history_page(
         # NOTE: that the service history might be different for each user
-        # since access rights are defined on a version basis (i.e. one use can have access to v1 but ot to v2)
+        # since access rights are defined on a version basis (i.e. one use can have access to v1 or to v2)
         product_name=product_name,
         user_id=user_id,
         key=service_key,
@@ -838,6 +813,4 @@ async def get_user_services_ports(
 async def get_catalog_service_extras(
     director_api: DirectorClient, service_key: ServiceKey, service_version: VersionStr
 ) -> ServiceExtras:
-    return await director_api.get_service_extras(
-        service_key=service_key, service_version=service_version
-    )
+    return await director_api.get_service_extras(service_key=service_key, service_version=service_version)

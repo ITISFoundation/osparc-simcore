@@ -16,8 +16,6 @@ def get_data_manager_provider(
 
 async def get_data_manager(
     location_id: LocationID,
-    data_manager_provider: Annotated[
-        DataManagerProvider, Depends(get_data_manager_provider)
-    ],
+    data_manager_provider: Annotated[DataManagerProvider, Depends(get_data_manager_provider)],
 ) -> BaseDataManager:
     return data_manager_provider.get(location_id)

@@ -86,18 +86,9 @@ async def update_credit_transaction_credits(
                 last_heartbeat_at=data.last_heartbeat_at,
             )
             .where(
-                (
-                    resource_tracker_credit_transactions.c.service_run_id
-                    == data.service_run_id
-                )
-                & (
-                    resource_tracker_credit_transactions.c.transaction_status
-                    == CreditTransactionStatus.PENDING
-                )
-                & (
-                    resource_tracker_credit_transactions.c.last_heartbeat_at
-                    <= data.last_heartbeat_at
-                )
+                (resource_tracker_credit_transactions.c.service_run_id == data.service_run_id)
+                & (resource_tracker_credit_transactions.c.transaction_status == CreditTransactionStatus.PENDING)
+                & (resource_tracker_credit_transactions.c.last_heartbeat_at <= data.last_heartbeat_at)
             )
             .returning(resource_tracker_credit_transactions.c.service_run_id)
         )
@@ -123,14 +114,8 @@ async def update_credit_transaction_credits_and_status(
                 transaction_status=data.transaction_status,
             )
             .where(
-                (
-                    resource_tracker_credit_transactions.c.service_run_id
-                    == data.service_run_id
-                )
-                & (
-                    resource_tracker_credit_transactions.c.transaction_status
-                    == CreditTransactionStatus.PENDING
-                )
+                (resource_tracker_credit_transactions.c.service_run_id == data.service_run_id)
+                & (resource_tracker_credit_transactions.c.transaction_status == CreditTransactionStatus.PENDING)
             )
             .returning(resource_tracker_credit_transactions.c.service_run_id)
         )
@@ -157,17 +142,12 @@ async def batch_update_credit_transaction_status_for_in_debt_transactions(
         )
         .where(
             (resource_tracker_credit_transactions.c.wallet_id == wallet_id)
-            & (
-                resource_tracker_credit_transactions.c.transaction_status
-                == CreditTransactionStatus.IN_DEBT
-            )
+            & (resource_tracker_credit_transactions.c.transaction_status == CreditTransactionStatus.IN_DEBT)
         )
     )
 
     if project_id:
-        update_stmt = update_stmt.where(
-            resource_tracker_service_runs.c.project_id == f"{project_id}"
-        )
+        update_stmt = update_stmt.where(resource_tracker_service_runs.c.project_id == f"{project_id}")
     async with transaction_context(engine, connection) as conn:
         result = await conn.execute(update_stmt)
         # NOTE: see https://docs.sqlalchemy.org/en/20/tutorial/data_update.html#getting-affected-row-count-from-update-delete
@@ -196,9 +176,7 @@ async def sum_wallet_credits(
         ]
         if include_pending_transactions:
             statuses.append(CreditTransactionStatus.PENDING)
-        sum_stmt = sa.select(
-            sa.func.sum(resource_tracker_credit_transactions.c.osparc_credits)
-        ).where(
+        sum_stmt = sa.select(sa.func.sum(resource_tracker_credit_transactions.c.osparc_credits)).where(
             (resource_tracker_credit_transactions.c.product_name == product_name)
             & (resource_tracker_credit_transactions.c.wallet_id == wallet_id)
             & (resource_tracker_credit_transactions.c.transaction_status.in_(statuses))
@@ -212,9 +190,7 @@ async def sum_wallet_credits(
             wallet_id,
             product_name,
         )
-        return WalletTotalCredits(
-            wallet_id=wallet_id, available_osparc_credits=Decimal(0)
-        )
+        return WalletTotalCredits(wallet_id=wallet_id, available_osparc_credits=Decimal(0))
     return WalletTotalCredits(wallet_id=wallet_id, available_osparc_credits=row[0])
 
 
@@ -225,9 +201,7 @@ async def get_transaction_current_credits_by_service_run_id(
     service_run_id: ServiceRunID,
 ) -> Decimal:
     async with transaction_context(engine, connection) as conn:
-        select_stmt = sa.select(
-            resource_tracker_credit_transactions.c.osparc_credits
-        ).where(
+        select_stmt = sa.select(resource_tracker_credit_transactions.c.osparc_credits).where(
             resource_tracker_credit_transactions.c.service_run_id == f"{service_run_id}"
         )
         result = await conn.execute(select_stmt)

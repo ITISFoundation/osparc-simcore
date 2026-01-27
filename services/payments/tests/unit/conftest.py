@@ -70,9 +70,7 @@ def disable_rabbitmq_and_rpc_setup(mocker: MockerFixture) -> Callable:
         mocker.patch("simcore_service_payments.core.application.setup_socketio")
         mocker.patch("simcore_service_payments.core.application.setup_rabbitmq")
         mocker.patch("simcore_service_payments.core.application.setup_rpc_api_routes")
-        mocker.patch(
-            "simcore_service_payments.core.application.setup_auto_recharge_listener"
-        )
+        mocker.patch("simcore_service_payments.core.application.setup_auto_recharge_listener")
 
     return _
 
@@ -97,9 +95,7 @@ async def rpc_client(
 @pytest.fixture
 def disable_postgres_setup(mocker: MockerFixture) -> Callable:
     def _setup(app: FastAPI):
-        app.state.engine = (
-            Mock()
-        )  # NOTE: avoids error in api._dependencies::get_db_engine
+        app.state.engine = Mock()  # NOTE: avoids error in api._dependencies::get_db_engine
 
     def _():
         # The following services are affected if postgres is not in place
@@ -144,9 +140,7 @@ async def create_fake_payment_method_in_db(
     app: FastAPI,
     sqlalchemy_async_engine: AsyncEngine,
     product: dict[str, Any],
-) -> AsyncIterable[
-    Callable[[PaymentMethodID, WalletID, UserID], Awaitable[PaymentsMethodsDB]]
-]:
+) -> AsyncIterable[Callable[[PaymentMethodID, WalletID, UserID], Awaitable[PaymentsMethodsDB]]]:
     _repo = PaymentsMethodsRepo(app.state.engine)
     _created: list[PaymentsMethodsDB] = []
 
@@ -159,15 +153,11 @@ async def create_fake_payment_method_in_db(
         user_id: UserID,
     ) -> PaymentsMethodsDB:
         user_row = await stack.enter_async_context(
-            insert_and_get_user_and_secrets_lifespan(
-                sqlalchemy_async_engine, id=user_id
-            )
+            insert_and_get_user_and_secrets_lifespan(sqlalchemy_async_engine, id=user_id)
         )
 
         product_row = await stack.enter_async_context(
-            insert_and_get_product_lifespan(
-                sqlalchemy_async_engine, name=product["name"]
-            )
+            insert_and_get_product_lifespan(sqlalchemy_async_engine, name=product["name"])
         )
 
         await stack.enter_async_context(
@@ -214,9 +204,7 @@ MAX_TIME_FOR_APP_TO_SHUTDOWN = 10
 
 
 @pytest.fixture
-async def app(
-    app_environment: EnvVarsDict, is_pdb_enabled: bool
-) -> AsyncIterator[FastAPI]:
+async def app(app_environment: EnvVarsDict, is_pdb_enabled: bool) -> AsyncIterator[FastAPI]:
     the_test_app = create_app()
     async with LifespanManager(
         the_test_app,
@@ -290,9 +278,7 @@ def no_funds_payment_method_id(faker: Faker) -> PaymentMethodID:
 
 
 @pytest.fixture
-def mock_payments_methods_routes(
-    faker: Faker, no_funds_payment_method_id: PaymentMethodID
-) -> Iterator[Callable]:
+def mock_payments_methods_routes(faker: Faker, no_funds_payment_method_id: PaymentMethodID) -> Iterator[Callable]:
     class PaymentMethodInfoTuple(NamedTuple):
         init: InitPaymentMethod
         get: GetPaymentMethod
@@ -319,9 +305,7 @@ def mock_payments_methods_routes(
 
             try:
                 _, payment_method = _payment_methods[pm_id]
-                return httpx.Response(
-                    status.HTTP_200_OK, json=jsonable_encoder(payment_method)
-                )
+                return httpx.Response(status.HTTP_200_OK, json=jsonable_encoder(payment_method))
             except KeyError:
                 return httpx.Response(status.HTTP_404_NOT_FOUND)
 
@@ -428,9 +412,7 @@ def mock_payments_gateway_service_or_none(
 ) -> MockRouter | None:
     # EITHER tests against external payments-gateway
     if payments_gateway_url := external_envfile_dict.get("PAYMENTS_GATEWAY_URL"):
-        print(
-            "🚨 EXTERNAL: these tests are running against", f"{payments_gateway_url=}"
-        )
+        print("🚨 EXTERNAL: these tests are running against", f"{payments_gateway_url=}")
         mock_payments_gateway_service_api_base.stop()
         return None
 
@@ -473,9 +455,7 @@ def mock_payments_stripe_routes(faker: Faker) -> Callable:
         def _list_products(request: httpx.Request):
             assert "Bearer " in request.headers["authorization"]
 
-            return httpx.Response(
-                status.HTTP_200_OK, json={"object": "list", "data": []}
-            )
+            return httpx.Response(status.HTTP_200_OK, json={"object": "list", "data": []})
 
         def _get_invoice(request: httpx.Request):
             assert "Bearer " in request.headers["authorization"]
@@ -519,18 +499,14 @@ def external_stripe_environment(
 
 @pytest.fixture(scope="session")
 def external_invoice_id(request: pytest.FixtureRequest) -> str | None:
-    stripe_invoice_id_or_none = request.config.getoption(
-        "--external-stripe-invoice-id", default=None
-    )
+    stripe_invoice_id_or_none = request.config.getoption("--external-stripe-invoice-id", default=None)
     return f"{stripe_invoice_id_or_none}" if stripe_invoice_id_or_none else None
 
 
 @pytest.fixture
 def stripe_invoice_id(external_invoice_id: StripeInvoiceID | None) -> StripeInvoiceID:
     if external_invoice_id:
-        print(
-            f"📧 EXTERNAL `stripe_invoice_id` detected. Setting stripe_invoice_id={external_invoice_id}"
-        )
+        print(f"📧 EXTERNAL `stripe_invoice_id` detected. Setting stripe_invoice_id={external_invoice_id}")
         return StripeInvoiceID(external_invoice_id)
     return StripeInvoiceID("in_mYf5CIF3AU6h126Xj47jIPlB")
 
@@ -561,9 +537,7 @@ def mock_stripe_or_none(
 def rut_service_openapi_specs(
     osparc_simcore_services_dir: Path,
 ) -> dict[str, Any]:
-    openapi_path = (
-        osparc_simcore_services_dir / "resource-usage-tracker" / "openapi.json"
-    )
+    openapi_path = osparc_simcore_services_dir / "resource-usage-tracker" / "openapi.json"
     return jsonref.loads(openapi_path.read_text())
 
 
@@ -591,7 +565,7 @@ def mock_resource_usage_tracker_service_api_base(
 
 
 @pytest.fixture
-def mock_resoruce_usage_tracker_service_api(
+def mock_resource_usage_tracker_service_api(
     faker: Faker,
     mock_resource_usage_tracker_service_api_base: MockRouter,
     rut_service_openapi_specs: dict[str, Any],
@@ -604,8 +578,8 @@ def mock_resoruce_usage_tracker_service_api(
     )
 
     # fake successful response
-    mock_resource_usage_tracker_service_api_base.post(
-        "/v1/credit-transactions"
-    ).respond(json={"credit_transaction_id": faker.pyint()})
+    mock_resource_usage_tracker_service_api_base.post("/v1/credit-transactions").respond(
+        json={"credit_transaction_id": faker.pyint()}
+    )
 
     return mock_resource_usage_tracker_service_api_base

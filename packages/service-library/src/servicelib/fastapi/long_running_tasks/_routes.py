@@ -15,9 +15,7 @@ router = APIRouter(prefix="/task")
 @cancel_on_disconnect
 async def list_tasks(
     request: Request,
-    long_running_manager: Annotated[
-        FastAPILongRunningManager, Depends(get_long_running_manager)
-    ],
+    long_running_manager: Annotated[FastAPILongRunningManager, Depends(get_long_running_manager)],
 ) -> list[TaskGet]:
     assert request  # nosec
     return [
@@ -45,9 +43,7 @@ async def list_tasks(
 @cancel_on_disconnect
 async def get_task_status(
     request: Request,
-    long_running_manager: Annotated[
-        FastAPILongRunningManager, Depends(get_long_running_manager)
-    ],
+    long_running_manager: Annotated[FastAPILongRunningManager, Depends(get_long_running_manager)],
     task_id: TaskId,
 ) -> TaskStatus:
     assert request  # nosec
@@ -62,18 +58,14 @@ async def get_task_status(
 @router.get(
     "/{task_id}/result",
     responses={
-        status.HTTP_400_BAD_REQUEST: {
-            "description": "Task cancelled or finished with exception"
-        },
+        status.HTTP_400_BAD_REQUEST: {"description": "Task cancelled or finished with exception"},
         status.HTTP_404_NOT_FOUND: {"description": "Task does not exist"},
     },
 )
 @cancel_on_disconnect
 async def get_task_result(
     request: Request,
-    long_running_manager: Annotated[
-        FastAPILongRunningManager, Depends(get_long_running_manager)
-    ],
+    long_running_manager: Annotated[FastAPILongRunningManager, Depends(get_long_running_manager)],
     task_id: TaskId,
 ) -> TaskResult | Any:
     assert request  # nosec
@@ -97,9 +89,7 @@ async def get_task_result(
 @cancel_on_disconnect
 async def remove_task(
     request: Request,
-    long_running_manager: Annotated[
-        FastAPILongRunningManager, Depends(get_long_running_manager)
-    ],
+    long_running_manager: Annotated[FastAPILongRunningManager, Depends(get_long_running_manager)],
     task_id: TaskId,
 ) -> None:
     assert request  # nosec

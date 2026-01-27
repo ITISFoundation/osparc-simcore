@@ -87,10 +87,7 @@ def test_rabbitmq_initializes(
     assert initialized_app.state.rabbitmq_client is not None
     assert initialized_app.state.rabbitmq_rpc_server is not None
     assert get_rabbitmq_client(initialized_app) == initialized_app.state.rabbitmq_client
-    assert (
-        get_rabbitmq_rpc_client(initialized_app)
-        == initialized_app.state.rabbitmq_rpc_server
-    )
+    assert get_rabbitmq_rpc_client(initialized_app) == initialized_app.state.rabbitmq_rpc_server
     assert is_rabbitmq_enabled(initialized_app) is True
 
 
@@ -118,9 +115,7 @@ async def test_post_message(
             print(
                 f"--> checking for message in rabbit exchange {rabbit_message.channel_name}, {attempt.retry_state.retry_object.statistics}"
             )
-            mocked_message_handler.assert_called_once_with(
-                rabbit_message.model_dump_json().encode()
-            )
+            mocked_message_handler.assert_called_once_with(rabbit_message.model_dump_json().encode())
             print("... message received")
 
 

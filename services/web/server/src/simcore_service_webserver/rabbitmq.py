@@ -30,14 +30,10 @@ async def _on_healthcheck_async_adapter(app: web.Application) -> None:
 
 async def _rabbitmq_client_cleanup_ctx(app: web.Application) -> AsyncIterator[None]:
     settings: RabbitSettings = get_plugin_settings(app)
-    with log_context(
-        _logger, logging.INFO, msg=f"Check RabbitMQ backend is ready on {settings.dsn}"
-    ):
+    with log_context(_logger, logging.INFO, msg=f"Check RabbitMQ backend is ready on {settings.dsn}"):
         await wait_till_rabbitmq_responsive(f"{settings.dsn}")
 
-    with log_context(
-        _logger, logging.INFO, msg=f"Connect RabbitMQ clients to {settings.dsn}"
-    ):
+    with log_context(_logger, logging.INFO, msg=f"Connect RabbitMQ clients to {settings.dsn}"):
         app[RABBITMQ_CLIENT_APPKEY] = RabbitMQClient("webserver", settings)
         app[RABBITMQ_RPC_SERVER_APPKEY] = await RabbitMQRPCClient.create(
             client_name="webserver_rpc_server", settings=settings
@@ -57,9 +53,7 @@ async def _rabbitmq_client_cleanup_ctx(app: web.Application) -> AsyncIterator[No
 
 async def _rabbitmq_rpc_client_lifespan(app: web.Application):
     settings: RabbitSettings = get_plugin_settings(app)
-    rpc_client = await RabbitMQRPCClient.create(
-        client_name="webserver_rpc_client", settings=settings
-    )
+    rpc_client = await RabbitMQRPCClient.create(client_name="webserver_rpc_client", settings=settings)
 
     assert rpc_client  # nosec
 

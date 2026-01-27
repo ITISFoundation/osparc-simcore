@@ -52,13 +52,15 @@ def _handle_projects_metadata_exceptions(fct: F) -> F:
             raise ProjectNotFoundError(project_uuid=err.project_uuid) from err  # type: ignore[attr-defined] # context defined in pydantic error # pylint: disable=no-member
         except ProjectNodesNodeNotFoundError as err:
             raise NodeNotFoundError(
-                project_uuid=err.project_uuid, node_uuid=err.node_id  # type: ignore[attr-defined] # context defined in pydantic error # pylint: disable=no-member
+                project_uuid=err.project_uuid,
+                node_uuid=err.node_id,  # type: ignore[attr-defined] # context defined in pydantic error # pylint: disable=no-member
             ) from err
         except ProjectNodesNonUniqueNodeFoundError as err:
             raise ProjectInvalidUsageError from err
         except DBProjectInvalidParentNodeError as err:
             raise ParentNodeNotFoundError(
-                project_uuid=err.project_uuid, node_uuid=err.parent_node_id  # type: ignore[attr-defined] # context defined in pydantic error # pylint: disable=no-member
+                project_uuid=err.project_uuid,
+                node_uuid=err.parent_node_id,  # type: ignore[attr-defined] # context defined in pydantic error # pylint: disable=no-member
             ) from err
 
         except DBProjectInvalidParentProjectError as err:
@@ -74,37 +76,27 @@ def _handle_projects_metadata_exceptions(fct: F) -> F:
 @_handle_projects_metadata_exceptions
 async def get_project_id_from_node_id(engine: Engine, *, node_id: NodeID) -> ProjectID:
     async with engine.acquire() as connection:
-        return await ProjectNodesRepo.get_project_id_from_node_id(
-            connection, node_id=node_id
-        )
+        return await ProjectNodesRepo.get_project_id_from_node_id(connection, node_id=node_id)
 
 
 @_handle_projects_metadata_exceptions
-async def get_project_custom_metadata(
-    engine: Engine, project_uuid: ProjectID
-) -> MetadataDict:
+async def get_project_custom_metadata(engine: Engine, project_uuid: ProjectID) -> MetadataDict:
     """
     Raises:
         ProjectNotFoundError
         ValidationError: illegal metadata format in the database
     """
     async with engine.acquire() as connection:
-        metadata = await utils_projects_metadata.get(
-            connection, project_uuid=project_uuid
-        )
+        metadata = await utils_projects_metadata.get(connection, project_uuid=project_uuid)
         # NOTE: if no metadata in table, it returns None  -- which converts here to --> {}
         return TypeAdapter(MetadataDict).validate_python(metadata.custom or {})
 
 
 @_handle_projects_metadata_exceptions
-async def get_project_metadata_or_none(
-    engine: Engine, project_uuid: ProjectID
-) -> ProjectMetadata | None:
+async def get_project_metadata_or_none(engine: Engine, project_uuid: ProjectID) -> ProjectMetadata | None:
     async with engine.acquire() as connection:
         try:
-            return await utils_projects_metadata.get(
-                connection, project_uuid=project_uuid
-            )
+            return await utils_projects_metadata.get(connection, project_uuid=project_uuid)
         except DBProjectNotFoundError:
             return None
 
@@ -132,9 +124,7 @@ async def set_project_custom_metadata(
 @_handle_projects_metadata_exceptions
 async def project_has_ancestors(engine: Engine, *, project_uuid: ProjectID) -> bool:
     async with engine.acquire() as connection:
-        metadata = await utils_projects_metadata.get(
-            connection, project_uuid=project_uuid
-        )
+        metadata = await utils_projects_metadata.get(connection, project_uuid=project_uuid)
     return bool(metadata.parent_project_uuid is not None)
 
 

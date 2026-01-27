@@ -38,9 +38,7 @@ def upgrade():
             onupdate="CASCADE",
             ondelete="CASCADE",
         ),
-        sa.PrimaryKeyConstraint(
-            "service_key", "service_version", "gid", name="services_specifications_pk"
-        ),
+        sa.PrimaryKeyConstraint("service_key", "service_version", "gid", name="services_specifications_pk"),
     )
     # ### end Alembic commands ###
 

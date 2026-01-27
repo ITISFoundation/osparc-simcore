@@ -30,9 +30,7 @@ from .exceptions import (
 
 _logger = logging.getLogger(__name__)
 
-_DELETE_PROJECT_TASK_NAME = (
-    "background-task.delete_project/project_uuid={0}.user_id={1}"
-)
+_DELETE_PROJECT_TASK_NAME = "background-task.delete_project/project_uuid={0}.user_id={1}"
 
 
 class RemoveProjectServicesCallable(Protocol):
@@ -48,9 +46,7 @@ class RemoveProjectServicesCallable(Protocol):
     ) -> None: ...
 
 
-async def mark_project_as_deleted(
-    app: web.Application, project_uuid: ProjectID, user_id: UserID
-):
+async def mark_project_as_deleted(app: web.Application, project_uuid: ProjectID, user_id: UserID):
     """
     ::raises ProjectInvalidRightsError
     ::raises ProjectNotFoundError
@@ -122,14 +118,10 @@ async def delete_project(
         await db.delete_project(user_id, f"{project_uuid}")
 
     except ProjectLockError as err:
-        raise ProjectDeleteError(
-            project_uuid=project_uuid, details=f"Project currently in use {err}"
-        ) from err
+        raise ProjectDeleteError(project_uuid=project_uuid, details=f"Project currently in use {err}") from err
 
     except (ProjectInvalidRightsError, ProjectNotFoundError, UserNotFoundError) as err:
-        raise ProjectDeleteError(
-            project_uuid=project_uuid, details=f"Invalid project state {err}"
-        ) from err
+        raise ProjectDeleteError(project_uuid=project_uuid, details=f"Invalid project state {err}") from err
 
 
 def schedule_task(
@@ -153,9 +145,7 @@ def schedule_task(
         # state of the task when completed.
         try:
             fut.result()
-            logger.info(
-                "Deleted %s using %s permissions", f"{project_uuid=}", f"{user_id=}"
-            )
+            logger.info("Deleted %s using %s permissions", f"{project_uuid=}", f"{user_id=}")
 
         except asyncio.exceptions.CancelledError:
             logger.warning(
@@ -210,7 +200,5 @@ def get_scheduled_tasks(project_uuid: ProjectID, user_id: UserID) -> list[asynci
     return [
         task
         for task in asyncio.all_tasks()
-        if task.get_name().endswith(
-            _DELETE_PROJECT_TASK_NAME.format(project_uuid, user_id)
-        )
+        if task.get_name().endswith(_DELETE_PROJECT_TASK_NAME.format(project_uuid, user_id))
     ]

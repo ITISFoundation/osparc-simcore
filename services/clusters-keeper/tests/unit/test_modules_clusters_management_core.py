@@ -37,9 +37,7 @@ def wallet_id(faker: Faker, request: pytest.FixtureRequest) -> WalletID | None:
     return faker.pyint(min_value=1) if request.param == "with_wallet" else None
 
 
-_FAST_TIME_BEFORE_TERMINATION_SECONDS: Final[datetime.timedelta] = datetime.timedelta(
-    seconds=10
-)
+_FAST_TIME_BEFORE_TERMINATION_SECONDS: Final[datetime.timedelta] = datetime.timedelta(seconds=10)
 
 
 @pytest.fixture
@@ -73,9 +71,7 @@ async def _assert_cluster_exist_and_state(
     instances: list[EC2InstanceData],
     state: InstanceStateNameType,
 ) -> None:
-    described_instances = await ec2_client.describe_instances(
-        InstanceIds=[i.id for i in instances]
-    )
+    described_instances = await ec2_client.describe_instances(InstanceIds=[i.id for i in instances])
     assert described_instances
     assert "Reservations" in described_instances
 
@@ -135,16 +131,12 @@ async def test_cluster_management_core_properly_removes_unused_instances(
     initialized_app: FastAPI,
     mocked_dask_ping_scheduler: MockedDaskModule,
 ):
-    created_clusters = await create_cluster(
-        initialized_app, user_id=user_id, wallet_id=wallet_id
-    )
+    created_clusters = await create_cluster(initialized_app, user_id=user_id, wallet_id=wallet_id)
     assert len(created_clusters) == 1
 
     # running the cluster management task shall not remove anything
     await check_clusters(initialized_app)
-    await _assert_cluster_exist_and_state(
-        ec2_client, instances=created_clusters, state="running"
-    )
+    await _assert_cluster_exist_and_state(ec2_client, instances=created_clusters, state="running")
     mocked_dask_ping_scheduler.ping_scheduler.assert_called_once()
     mocked_dask_ping_scheduler.ping_scheduler.reset_mock()
     mocked_dask_ping_scheduler.is_scheduler_busy.assert_called_once()
@@ -154,9 +146,7 @@ async def test_cluster_management_core_properly_removes_unused_instances(
     await asyncio.sleep(_FAST_TIME_BEFORE_TERMINATION_SECONDS.total_seconds() + 1)
     await cluster_heartbeat(initialized_app, user_id=user_id, wallet_id=wallet_id)
     await check_clusters(initialized_app)
-    await _assert_cluster_exist_and_state(
-        ec2_client, instances=created_clusters, state="running"
-    )
+    await _assert_cluster_exist_and_state(ec2_client, instances=created_clusters, state="running")
     mocked_dask_ping_scheduler.ping_scheduler.assert_called_once()
     mocked_dask_ping_scheduler.ping_scheduler.reset_mock()
     mocked_dask_ping_scheduler.is_scheduler_busy.assert_called_once()
@@ -165,9 +155,7 @@ async def test_cluster_management_core_properly_removes_unused_instances(
     # after waiting the termination time, running the task shall remove the cluster
     await asyncio.sleep(_FAST_TIME_BEFORE_TERMINATION_SECONDS.total_seconds() + 1)
     await check_clusters(initialized_app)
-    await _assert_cluster_exist_and_state(
-        ec2_client, instances=created_clusters, state="terminated"
-    )
+    await _assert_cluster_exist_and_state(ec2_client, instances=created_clusters, state="terminated")
     mocked_dask_ping_scheduler.ping_scheduler.assert_called_once()
     mocked_dask_ping_scheduler.is_scheduler_busy.assert_called_once()
 
@@ -182,16 +170,12 @@ async def test_cluster_management_core_properly_removes_workers_on_shutdown(
     mocked_dask_ping_scheduler: MockedDaskModule,
     create_ec2_workers: Callable[[int], Awaitable[list[str]]],
 ):
-    created_clusters = await create_cluster(
-        initialized_app, user_id=user_id, wallet_id=wallet_id
-    )
+    created_clusters = await create_cluster(initialized_app, user_id=user_id, wallet_id=wallet_id)
     assert len(created_clusters) == 1
 
     # running the cluster management task shall not remove anything
     await check_clusters(initialized_app)
-    await _assert_cluster_exist_and_state(
-        ec2_client, instances=created_clusters, state="running"
-    )
+    await _assert_cluster_exist_and_state(ec2_client, instances=created_clusters, state="running")
     mocked_dask_ping_scheduler.ping_scheduler.assert_called_once()
     mocked_dask_ping_scheduler.ping_scheduler.reset_mock()
     mocked_dask_ping_scheduler.is_scheduler_busy.assert_called_once()
@@ -199,21 +183,15 @@ async def test_cluster_management_core_properly_removes_workers_on_shutdown(
 
     # create some workers
     worker_instance_ids = await create_ec2_workers(10)
-    await _assert_instances_state(
-        ec2_client, instance_ids=worker_instance_ids, state="running"
-    )
+    await _assert_instances_state(ec2_client, instance_ids=worker_instance_ids, state="running")
     # after waiting the termination time, running the task shall remove the cluster
     await asyncio.sleep(_FAST_TIME_BEFORE_TERMINATION_SECONDS.total_seconds() + 1)
     await check_clusters(initialized_app)
-    await _assert_cluster_exist_and_state(
-        ec2_client, instances=created_clusters, state="terminated"
-    )
+    await _assert_cluster_exist_and_state(ec2_client, instances=created_clusters, state="terminated")
     mocked_dask_ping_scheduler.ping_scheduler.assert_called_once()
     mocked_dask_ping_scheduler.is_scheduler_busy.assert_called_once()
     # check workers were also terminated
-    await _assert_instances_state(
-        ec2_client, instance_ids=worker_instance_ids, state="terminated"
-    )
+    await _assert_instances_state(ec2_client, instance_ids=worker_instance_ids, state="terminated")
 
 
 async def test_cluster_management_core_removes_long_starting_clusters_after_some_delay(
@@ -227,9 +205,7 @@ async def test_cluster_management_core_removes_long_starting_clusters_after_some
     app_settings: ApplicationSettings,
     mocker: MockerFixture,
 ):
-    created_clusters = await create_cluster(
-        initialized_app, user_id=user_id, wallet_id=wallet_id
-    )
+    created_clusters = await create_cluster(initialized_app, user_id=user_id, wallet_id=wallet_id)
     assert len(created_clusters) == 1
 
     # simulate unresponsive dask-scheduler
@@ -237,9 +213,7 @@ async def test_cluster_management_core_removes_long_starting_clusters_after_some
 
     # running the cluster management task shall not remove anything
     await check_clusters(initialized_app)
-    await _assert_cluster_exist_and_state(
-        ec2_client, instances=created_clusters, state="running"
-    )
+    await _assert_cluster_exist_and_state(ec2_client, instances=created_clusters, state="running")
     mocked_dask_ping_scheduler.ping_scheduler.assert_called_once()
     mocked_dask_ping_scheduler.ping_scheduler.reset_mock()
     mocked_dask_ping_scheduler.is_scheduler_busy.assert_not_called()
@@ -264,9 +238,7 @@ async def test_cluster_management_core_removes_long_starting_clusters_after_some
     )
     await check_clusters(initialized_app)
     mocked_get_all_clusters.assert_called_once()
-    await _assert_cluster_exist_and_state(
-        ec2_client, instances=created_clusters, state="terminated"
-    )
+    await _assert_cluster_exist_and_state(ec2_client, instances=created_clusters, state="terminated")
     mocked_dask_ping_scheduler.ping_scheduler.assert_called_once()
     mocked_dask_ping_scheduler.ping_scheduler.reset_mock()
     mocked_dask_ping_scheduler.is_scheduler_busy.assert_not_called()
@@ -284,9 +256,7 @@ async def test_cluster_management_core_removes_broken_clusters_after_some_delay(
     app_settings: ApplicationSettings,
     mocker: MockerFixture,
 ):
-    created_clusters = await create_cluster(
-        initialized_app, user_id=user_id, wallet_id=wallet_id
-    )
+    created_clusters = await create_cluster(initialized_app, user_id=user_id, wallet_id=wallet_id)
     assert len(created_clusters) == 1
 
     # simulate a responsive dask-scheduler
@@ -294,9 +264,7 @@ async def test_cluster_management_core_removes_broken_clusters_after_some_delay(
 
     # running the cluster management task shall not remove anything
     await check_clusters(initialized_app)
-    await _assert_cluster_exist_and_state(
-        ec2_client, instances=created_clusters, state="running"
-    )
+    await _assert_cluster_exist_and_state(ec2_client, instances=created_clusters, state="running")
     mocked_dask_ping_scheduler.ping_scheduler.assert_called_once()
     mocked_dask_ping_scheduler.ping_scheduler.reset_mock()
     mocked_dask_ping_scheduler.is_scheduler_busy.assert_called_once()
@@ -307,9 +275,7 @@ async def test_cluster_management_core_removes_broken_clusters_after_some_delay(
 
     # running now the cluster management will not instantly remove the cluster, so now nothing will happen
     await check_clusters(initialized_app)
-    await _assert_cluster_exist_and_state(
-        ec2_client, instances=created_clusters, state="running"
-    )
+    await _assert_cluster_exist_and_state(ec2_client, instances=created_clusters, state="running")
     mocked_dask_ping_scheduler.ping_scheduler.assert_called_once()
     mocked_dask_ping_scheduler.ping_scheduler.reset_mock()
     mocked_dask_ping_scheduler.is_scheduler_busy.assert_not_called()
@@ -318,9 +284,7 @@ async def test_cluster_management_core_removes_broken_clusters_after_some_delay(
     # waiting for the termination time will now terminate the cluster
     await asyncio.sleep(_FAST_TIME_BEFORE_TERMINATION_SECONDS.total_seconds() + 1)
     await check_clusters(initialized_app)
-    await _assert_cluster_exist_and_state(
-        ec2_client, instances=created_clusters, state="terminated"
-    )
+    await _assert_cluster_exist_and_state(ec2_client, instances=created_clusters, state="terminated")
     mocked_dask_ping_scheduler.ping_scheduler.assert_called_once()
     mocked_dask_ping_scheduler.ping_scheduler.reset_mock()
     mocked_dask_ping_scheduler.is_scheduler_busy.assert_not_called()

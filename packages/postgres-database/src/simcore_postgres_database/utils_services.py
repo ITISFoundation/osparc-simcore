@@ -16,11 +16,7 @@ def create_select_latest_services_query(
     return sa.select(
         services_meta_data.c.key,
         sa.func.array_to_string(
-            sa.func.max(
-                sa.func.string_to_array(services_meta_data.c.version, ".").cast(
-                    ARRAY(INTEGER)
-                )
-            ),
+            sa.func.max(sa.func.string_to_array(services_meta_data.c.version, ".").cast(ARRAY(INTEGER))),
             ".",
         ).label(column_version_label),
     ).group_by(services_meta_data.c.key)

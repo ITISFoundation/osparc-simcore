@@ -66,9 +66,7 @@ class NotifierService(SingletonInAppStateMixin):
 
         for provider in self.providers:
             self._run_in_background(
-                provider.notify_payment_method_acked(
-                    user_id=user_id, payment_method=payment_method
-                ),
+                provider.notify_payment_method_acked(user_id=user_id, payment_method=payment_method),
                 f"{provider.get_name()}_u_{user_id}_pm_{payment_method.payment_method_id}",
             )
 

@@ -64,14 +64,12 @@ class DiskUsage(BaseModel):
         free = values["free"]
         used = values["used"]
         if total != free + used:
-            msg = f"{total=} is different than the sum of {free=}+{used=} => sum={free+used}"
+            msg = f"{total=} is different than the sum of {free=}+{used=} => sum={free + used}"
             raise ValueError(msg)
         return values
 
     @classmethod
-    def from_efs_guardian(
-        cls, used: NonNegativeInt, total: NonNegativeInt
-    ) -> "DiskUsage":
+    def from_efs_guardian(cls, used: NonNegativeInt, total: NonNegativeInt) -> "DiskUsage":
         free = total - used
         return cls(
             used=ByteSize(used),
@@ -81,9 +79,7 @@ class DiskUsage(BaseModel):
         )
 
     @classmethod
-    def from_ps_util_disk_usage(
-        cls, ps_util_disk_usage: SDiskUsageProtocol
-    ) -> "DiskUsage":
+    def from_ps_util_disk_usage(cls, ps_util_disk_usage: SDiskUsageProtocol) -> "DiskUsage":
         total = ps_util_disk_usage.free + ps_util_disk_usage.used
         return cls.from_efs_guardian(ps_util_disk_usage.used, total)
 

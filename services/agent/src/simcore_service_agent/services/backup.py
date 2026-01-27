@@ -23,9 +23,7 @@ _TIMEOUT_PERMISSION_CHANGES: Final[timedelta] = timedelta(minutes=5)
 _logger = logging.getLogger(__name__)
 
 
-_R_CLONE_CONFIG: Final[
-    str
-] = """
+_R_CLONE_CONFIG: Final[str] = """
 [dst]
 type = s3
 provider = {destination_provider}
@@ -39,9 +37,7 @@ acl = private
 
 def _get_config_file_path(settings: ApplicationSettings) -> Path:
     config_content = _R_CLONE_CONFIG.format(
-        destination_provider=resolve_provider(
-            settings.AGENT_VOLUMES_CLEANUP_S3_PROVIDER
-        ),
+        destination_provider=resolve_provider(settings.AGENT_VOLUMES_CLEANUP_S3_PROVIDER),
         destination_access_key=settings.AGENT_VOLUMES_CLEANUP_S3_ACCESS_KEY,
         destination_secret_key=settings.AGENT_VOLUMES_CLEANUP_S3_SECRET_KEY,
         destination_endpoint=settings.AGENT_VOLUMES_CLEANUP_S3_ENDPOINT,
@@ -121,9 +117,7 @@ def _get_self_container_ip() -> str:
 async def _get_self_container() -> str:
     ip = _get_self_container_ip()
 
-    async with httpx.AsyncClient(
-        transport=httpx.AsyncHTTPTransport(uds="/var/run/docker.sock")
-    ) as client:
+    async with httpx.AsyncClient(transport=httpx.AsyncHTTPTransport(uds="/var/run/docker.sock")) as client:
         response = await client.get("http://localhost/containers/json")
         for entry in response.json():
             if ip in json.dumps(entry):
@@ -148,9 +142,7 @@ async def _ensure_permissions_on_source_dir(source_dir: Path) -> None:
         )
 
 
-async def _store_in_s3(
-    settings: ApplicationSettings, volume_name: str, volume_details: VolumeDetails
-) -> None:
+async def _store_in_s3(settings: ApplicationSettings, volume_name: str, volume_details: VolumeDetails) -> None:
     exclude_files = settings.AGENT_VOLUMES_CLEANUP_EXCLUDE_FILES
 
     config_file_path = _get_config_file_path(settings)
@@ -164,9 +156,7 @@ async def _store_in_s3(
         )
         return
 
-    s3_path = _get_s3_path(
-        settings.AGENT_VOLUMES_CLEANUP_S3_BUCKET, volume_details.labels
-    )
+    s3_path = _get_s3_path(settings.AGENT_VOLUMES_CLEANUP_S3_BUCKET, volume_details.labels)
 
     # listing files rclone will sync
     r_clone_ls = [
@@ -185,9 +175,7 @@ async def _store_in_s3(
     assert process.stdout  # nosec
     r_clone_ls_output = await _read_stream(process.stdout)
     await process.wait()
-    _log_expected_operation(
-        volume_details.labels, s3_path, r_clone_ls_output, volume_name
-    )
+    _log_expected_operation(volume_details.labels, s3_path, r_clone_ls_output, volume_name)
 
     await _ensure_permissions_on_source_dir(source_dir)
 
@@ -235,10 +223,6 @@ async def _store_in_s3(
         raise RuntimeError(msg)
 
 
-async def backup_volume(
-    app: FastAPI, volume_details: VolumeDetails, volume_name: str
-) -> None:
+async def backup_volume(app: FastAPI, volume_details: VolumeDetails, volume_name: str) -> None:
     settings: ApplicationSettings = app.state.settings
-    await _store_in_s3(
-        settings=settings, volume_name=volume_name, volume_details=volume_details
-    )
+    await _store_in_s3(settings=settings, volume_name=volume_name, volume_details=volume_details)

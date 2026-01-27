@@ -55,9 +55,7 @@ async def get_status(request: Request) -> Envelope[AppStatusCheck]:
             s3_state = (
                 "connected"
                 if await get_s3_client(request.app).bucket_exists(
-                    bucket=TypeAdapter(S3BucketName).validate_python(
-                        app_settings.STORAGE_S3.S3_BUCKET_NAME
-                    )
+                    bucket=TypeAdapter(S3BucketName).validate_python(app_settings.STORAGE_S3.S3_BUCKET_NAME)
                 )
                 else "no access to S3 bucket"
             )
@@ -67,11 +65,7 @@ async def get_status(request: Request) -> Envelope[AppStatusCheck]:
     postgres_state = "disabled"
 
     if app_settings.STORAGE_POSTGRES:
-        postgres_state = (
-            "connected"
-            if await check_postgres_liveness(get_engine(request.app))
-            else "failed"
-        )
+        postgres_state = "connected" if await check_postgres_liveness(get_engine(request.app)) else "failed"
 
     status = AppStatusCheck.model_validate(
         {

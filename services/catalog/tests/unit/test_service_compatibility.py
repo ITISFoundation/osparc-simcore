@@ -89,16 +89,11 @@ def test_compatible_with_patch_release():
 
 @pytest.fixture
 def versions_history() -> list[Version]:
-    return sorted(
-        Version(f"{M}.{m}.{p}")
-        for M in range(10)
-        for m in range(0, 5, 2)
-        for p in range(0, 10, 4)
-    )
+    return sorted(Version(f"{M}.{m}.{p}") for M in range(10) for m in range(0, 5, 2) for p in range(0, 10, 4))
 
 
 def test_version_specifiers(versions_history: list[Version]):
-    # given a list of versions, test the first compatibilty starting from the latest
+    # given a list of versions, test the first compatibility starting from the latest
     # If i have ">1.2.23,~=1.2.23"
 
     version = Version("1.2.3")
@@ -110,13 +105,9 @@ def test_version_specifiers(versions_history: list[Version]):
     minor_compatible_spec = SpecifierSet(f"~={version.major}.{version.minor}")
 
     # >= 1.2.3, == 1.2.*
-    patch_compatible_spec = SpecifierSet(
-        f"~={version.major}.{version.minor}.{version.micro}"
-    )
+    patch_compatible_spec = SpecifierSet(f"~={version.major}.{version.minor}.{version.micro}")
 
-    compatible = list(
-        (minor_compatible_spec & newer_version_spec).filter(versions_history)
-    )
+    compatible = list((minor_compatible_spec & newer_version_spec).filter(versions_history))
     assert version not in compatible
     assert all(v > version for v in compatible)
     assert all(v.major == version.major for v in compatible)
@@ -124,14 +115,10 @@ def test_version_specifiers(versions_history: list[Version]):
     latest_compatible = compatible[-1]
     assert version < latest_compatible
 
-    compatible = list(
-        (patch_compatible_spec & newer_version_spec).filter(versions_history)
-    )
+    compatible = list((patch_compatible_spec & newer_version_spec).filter(versions_history))
     assert version not in compatible
     assert all(v > version for v in compatible)
-    assert all(
-        v.major == version.major and v.minor == version.minor for v in compatible
-    )
+    assert all(v.major == version.major and v.minor == version.minor for v in compatible)
     latest_compatible = compatible[-1]
     assert version < latest_compatible
 
@@ -144,15 +131,15 @@ def test_get_latest_compatible_version(versions_history: list[Version]):
     assert _get_latest_compatible_version(latest, latest_first_releases) is None
 
     # bump MAJOR
-    not_released = Version(f"{latest.major+1}")
+    not_released = Version(f"{latest.major + 1}")
     assert _get_latest_compatible_version(not_released, latest_first_releases) is None
 
     # decrease patch
-    target = Version(f"{latest.major}.{latest.minor}.{latest.micro-1}")
+    target = Version(f"{latest.major}.{latest.minor}.{latest.micro - 1}")
     assert _get_latest_compatible_version(target, latest_first_releases) == latest
 
     # decrease minor (with default compatibility specs)
-    target = Version(f"{latest.major}.{latest.minor-2}.0")
+    target = Version(f"{latest.major}.{latest.minor - 2}.0")
     latest_compatible = _get_latest_compatible_version(target, latest_first_releases)
     assert latest_compatible
     assert latest_compatible < latest
@@ -174,9 +161,7 @@ def mock_repo(mocker: MockerFixture) -> MockType:
     return mocker.AsyncMock(ServicesRepository)
 
 
-async def test_evaluate_service_compatibility_map_with_default_policy(
-    mock_repo: MockType, user_id: UserID
-):
+async def test_evaluate_service_compatibility_map_with_default_policy(mock_repo: MockType, user_id: UserID):
     service_release_history = [
         _create_as(ReleaseDBGet, version="1.0.0"),
         _create_as(ReleaseDBGet, version="1.0.1"),
@@ -195,9 +180,7 @@ async def test_evaluate_service_compatibility_map_with_default_policy(
     assert compatibility_map[ServiceVersion("2.0.0")] is None
 
 
-async def test_evaluate_service_compatibility_map_with_custom_policy(
-    mock_repo: MockType, user_id: UserID
-):
+async def test_evaluate_service_compatibility_map_with_custom_policy(mock_repo: MockType, user_id: UserID):
     service_release_history = [
         _create_as(ReleaseDBGet, version="1.0.0"),
         _create_as(
@@ -214,19 +197,13 @@ async def test_evaluate_service_compatibility_map_with_custom_policy(
     )
 
     assert len(compatibility_map) == 4
-    assert (
-        compatibility_map[ServiceVersion("1.0.0")].can_update_to.version == "1.0.1"
-    )  # default
-    assert (
-        compatibility_map[ServiceVersion("1.0.1")].can_update_to.version == "2.0.0"
-    )  # version customized
+    assert compatibility_map[ServiceVersion("1.0.0")].can_update_to.version == "1.0.1"  # default
+    assert compatibility_map[ServiceVersion("1.0.1")].can_update_to.version == "2.0.0"  # version customized
     assert compatibility_map[ServiceVersion("1.2.0")] is None
     assert compatibility_map[ServiceVersion("2.0.0")] is None
 
 
-async def test_evaluate_service_compatibility_map_with_other_service(
-    mock_repo: MockType, user_id: UserID
-):
+async def test_evaluate_service_compatibility_map_with_other_service(mock_repo: MockType, user_id: UserID):
     service_release_history = [
         _create_as(ReleaseDBGet, version="1.0.0"),
         _create_as(
@@ -254,16 +231,11 @@ async def test_evaluate_service_compatibility_map_with_other_service(
     # NOTE: 1.0.1 is also upgradable but it is not evaluated as so because our algorithm only
     # checks comptatibility once instead of recursively
 
-    assert (
-        compatibility_map[ServiceVersion("1.0.1")].can_update_to.key
-        == "simcore/services/comp/other_service"
-    )
+    assert compatibility_map[ServiceVersion("1.0.1")].can_update_to.key == "simcore/services/comp/other_service"
     assert compatibility_map[ServiceVersion("1.0.1")].can_update_to.version == "5.1.0"
 
 
-async def test_evaluate_service_compatibility_map_with_deprecated_versions(
-    mock_repo: MockType, user_id: UserID
-):
+async def test_evaluate_service_compatibility_map_with_deprecated_versions(mock_repo: MockType, user_id: UserID):
     service_release_history = [
         _create_as(ReleaseDBGet, version="1.0.0"),
         _create_as(ReleaseDBGet, version="1.0.1", deprecated=arrow.now().datetime),
@@ -276,9 +248,7 @@ async def test_evaluate_service_compatibility_map_with_deprecated_versions(
     )
 
     assert len(compatibility_map) == 4
-    assert (
-        compatibility_map[ServiceVersion("1.0.0")] is None
-    )  # cannot upgrade to deprecated 1.0.1
+    assert compatibility_map[ServiceVersion("1.0.0")] is None  # cannot upgrade to deprecated 1.0.1
     assert compatibility_map[ServiceVersion("1.0.1")] is None  # Deprecated version
     assert compatibility_map[ServiceVersion("1.2.0")].can_update_to.version == "1.2.5"
     assert compatibility_map[ServiceVersion("1.2.5")] is None
