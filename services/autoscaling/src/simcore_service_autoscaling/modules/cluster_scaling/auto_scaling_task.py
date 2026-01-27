@@ -26,9 +26,7 @@ def on_app_startup(app: FastAPI) -> Callable[[], Awaitable[None]]:
         assert lock_key  # nosec
         assert lock_value  # nosec
         app.state.autoscaler_task = create_periodic_task(
-            exclusive(get_redis_client(app), lock_key=lock_key, lock_value=lock_value)(
-                auto_scale_cluster
-            ),
+            exclusive(get_redis_client(app), lock_key=lock_key, lock_value=lock_value)(auto_scale_cluster),
             interval=app_settings.AUTOSCALING_POLL_INTERVAL,
             task_name=_TASK_NAME,
             app=app,
@@ -64,9 +62,7 @@ def setup(app: FastAPI) -> None:
             app_settings.AUTOSCALING_DASK,
         ]
     ):
-        _logger.warning(
-            "the autoscaling background task is disabled by settings, nothing will happen!"
-        )
+        _logger.warning("the autoscaling background task is disabled by settings, nothing will happen!")
         return
     app.add_event_handler("startup", on_app_startup(app))
     app.add_event_handler("shutdown", on_app_shutdown(app))

@@ -50,9 +50,7 @@ class _RemoteProcess:
         assert self.process is None
         assert self.pid is None
 
-        self.process = await asyncio.create_subprocess_shell(
-            self.shell_command, env={"LISTEN_PORT": f"{self.port}"}
-        )
+        self.process = await asyncio.create_subprocess_shell(self.shell_command, env={"LISTEN_PORT": f"{self.port}"})
         self.pid = self.process.pid
 
     async def stop(self, *, graceful: bool = False):
@@ -76,26 +74,20 @@ async def get_remote_process(
     redis_client_sdk_deferred_tasks: RedisClientSDK,
 ) -> AsyncIterable[Callable[[], Awaitable[_RemoteProcess]]]:
     python_interpreter = sys.executable
-    current_module_path = (
-        Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
-    )
+    current_module_path = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
     app_to_start = current_module_path / "example_app.py"
     assert app_to_start.exists()
 
     started_processes: list[_RemoteProcess] = []
 
     async def _() -> _RemoteProcess:
-        process = _RemoteProcess(
-            shell_command=f"{python_interpreter} {app_to_start}", port=unused_port()
-        )
+        process = _RemoteProcess(shell_command=f"{python_interpreter} {app_to_start}", port=unused_port())
         started_processes.append(process)
         return process
 
     yield _
 
-    await asyncio.gather(
-        *[process.stop(graceful=True) for process in started_processes]
-    )
+    await asyncio.gather(*[process.stop(graceful=True) for process in started_processes])
 
 
 async def _tcp_command(
@@ -196,9 +188,7 @@ class _RemoteProcessLifecycleManager:
         return response
 
     async def get_scheduled(self) -> list[str]:
-        response = await _tcp_command(
-            "get-scheduled", {}, port=self.remote_process.port
-        )
+        response = await _tcp_command("get-scheduled", {}, port=self.remote_process.port)
         assert isinstance(response, list)
         return response
 
@@ -226,7 +216,7 @@ async def _assert_has_entries(
                     for entry in gathered_results:
                         assert len(entry) > 0
                 results: list[str] = list(itertools.chain(*gathered_results))
-                # enure sequence numbers appear at least once
+                # ensure sequence numbers appear at least once
                 # since results handler can be retries since they are interrupted
                 assert len(results) >= count
                 assert set(results) == {f"{x}" for x in range(count)}
@@ -291,21 +281,15 @@ async def test_workflow_with_outages_in_process_running_deferred_manager(
         await asyncio.gather(
             *[
                 manager.start_task(0.1, i)
-                for manager, sequence_ids in zip(
-                    managers, sequence_ids_list, strict=True
-                )
+                for manager, sequence_ids in zip(managers, sequence_ids_list, strict=True)
                 for i in sequence_ids
             ]
         )
         # makes sure tasks have been scheduled
-        await _assert_has_entries(
-            managers, "get-scheduled", count=deferred_tasks_to_start
-        )
+        await _assert_has_entries(managers, "get-scheduled", count=deferred_tasks_to_start)
 
         # if this fails all scheduled tasks have already finished
-        gathered_results: list[list[str]] = await asyncio.gather(
-            *[manager.get_results() for manager in managers]
-        )
+        gathered_results: list[list[str]] = await asyncio.gather(*[manager.get_results() for manager in managers])
         results: list[str] = list(itertools.chain(*gathered_results))
         assert len(results) <= deferred_tasks_to_start
 
@@ -354,7 +338,6 @@ async def test_workflow_with_third_party_services_outages(
     deferred_tasks_to_start: int,
     service: str,
 ):
-
     async with _RemoteProcessLifecycleManager(
         await get_remote_process(),
         rabbit_service,
@@ -362,13 +345,9 @@ async def test_workflow_with_third_party_services_outages(
         max_workers,
     ) as manager:
         # start all in parallel
-        await asyncio.gather(
-            *[manager.start_task(0.1, i) for i in range(deferred_tasks_to_start)]
-        )
+        await asyncio.gather(*[manager.start_task(0.1, i) for i in range(deferred_tasks_to_start)])
         # makes sure tasks have been scheduled
-        await _assert_has_entries(
-            [manager], "get-scheduled", count=deferred_tasks_to_start
-        )
+        await _assert_has_entries([manager], "get-scheduled", count=deferred_tasks_to_start)
 
         # if this fails all scheduled tasks have already finished
         assert len(await manager.get_results()) < deferred_tasks_to_start
@@ -384,13 +363,9 @@ async def test_workflow_with_third_party_services_outages(
 
             case "redis":
                 print("[redis]: pausing")
-                async with pause_redis(
-                    paused_container, redis_client_sdk_deferred_tasks
-                ):
+                async with pause_redis(paused_container, redis_client_sdk_deferred_tasks):
                     print("[redis]: paused")
                     await _sleep_in_interval(0.2, 0.4)
                 print("[redis]: resumed")
 
-        await _assert_has_entries(
-            [manager], "get-results", count=deferred_tasks_to_start
-        )
+        await _assert_has_entries([manager], "get-results", count=deferred_tasks_to_start)

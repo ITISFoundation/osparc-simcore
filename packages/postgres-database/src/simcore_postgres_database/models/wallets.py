@@ -46,7 +46,7 @@ wallets = sa.Table(
         "status",
         sa.Enum(WalletStatus),
         nullable=False,
-        doc="Status of the wallet: ACTIVE or DEACTIVE",
+        doc="Status of the wallet: ACTIVE or DEACTIVATE",
     ),
     column_created_datetime(timezone=True),
     column_modified_datetime(timezone=True),
@@ -91,9 +91,7 @@ END; $$ LANGUAGE 'plpgsql';
     """
 )
 
-sa.event.listen(
-    wallets, "after_create", assign_wallet_access_rights_to_owner_group_procedure
-)
+sa.event.listen(wallets, "after_create", assign_wallet_access_rights_to_owner_group_procedure)
 sa.event.listen(
     wallets,
     "after_create",

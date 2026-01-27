@@ -1,4 +1,4 @@
-from typing import TypeVar
+from typing import Self, TypeVar
 
 from fastapi import FastAPI
 
@@ -14,7 +14,7 @@ class SingletonInAppStateMixin:
     frozen: bool = True  # Will raise if set multiple times
 
     @classmethod
-    def get_from_app_state(cls: type[T], app: FastAPI) -> T:
+    def get_from_app_state(cls, app: FastAPI) -> Self:
         return getattr(app.state, cls.app_state_name)  # type:ignore[no-any-return]
 
     def set_to_app_state(self, app: FastAPI):
@@ -26,7 +26,7 @@ class SingletonInAppStateMixin:
         return self.get_from_app_state(app)
 
     @classmethod
-    def pop_from_app_state(cls: type[T], app: FastAPI) -> T:
+    def pop_from_app_state(cls, app: FastAPI) -> Self:
         """
         Raises:
             AttributeError: if instance is not in app.state

@@ -66,7 +66,6 @@ async def create_user(
     status_upon_creation: UserStatus,
     expires_at: datetime | None,
 ) -> UserInfoDict:
-
     asyncpg_engine = get_asyncpg_engine(app)
     repo = UsersRepo(asyncpg_engine)
     async with transaction_context(asyncpg_engine) as conn:
@@ -96,9 +95,7 @@ async def create_user(
 
 def check_not_null_user(user: UserInfoDict | None) -> UserInfoDict:
     if not user:
-        raise web.HTTPUnauthorized(
-            text=MSG_UNKNOWN_EMAIL, content_type=MIMETYPE_APPLICATION_JSON
-        )
+        raise web.HTTPUnauthorized(text=MSG_UNKNOWN_EMAIL, content_type=MIMETYPE_APPLICATION_JSON)
     return user
 
 
@@ -129,9 +126,7 @@ async def check_authorized_user_credentials(
 
     repo = UsersRepo(get_asyncpg_engine(app))
 
-    if not security_service.check_password(
-        password, password_hash=await repo.get_password_hash(user_id=user["id"])
-    ):
+    if not security_service.check_password(password, password_hash=await repo.get_password_hash(user_id=user["id"])):
         raise WrongPasswordError(user_id=user["id"], product_name=product.name)
     return user
 
@@ -152,11 +147,8 @@ async def check_authorized_user_in_product(
     product_group_id = product.group_id
     assert product_group_id is not None  # nosec
 
-    if (
-        product_group_id is not None
-        and not await groups_service.is_user_by_email_in_group(
-            app, user_email=user_email, group_id=product_group_id
-        )
+    if product_group_id is not None and not await groups_service.is_user_by_email_in_group(
+        app, user_email=user_email, group_id=product_group_id
     ):
         raise web.HTTPUnauthorized(text=MSG_UNKNOWN_EMAIL)
 
@@ -190,6 +182,4 @@ async def update_user_password(
 
     # Encrypt new password and update
     new_password_hash = security_service.encrypt_password(new_password)
-    await repo.update_user_password_hash(
-        user_id=user_id, password_hash=new_password_hash
-    )
+    await repo.update_user_password_hash(user_id=user_id, password_hash=new_password_hash)

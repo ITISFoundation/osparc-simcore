@@ -66,9 +66,7 @@ async def list_tasks(
     lrt_namespace: LRTNamespace,
     task_context: TaskContext,
 ) -> list[TaskBase]:
-    return await _rpc_client.list_tasks(
-        rabbitmq_rpc_client, lrt_namespace, task_context=task_context
-    )
+    return await _rpc_client.list_tasks(rabbitmq_rpc_client, lrt_namespace, task_context=task_context)
 
 
 async def get_task_status(

@@ -35,19 +35,15 @@ async def _fetch_new_project_owner_from_groups(
     # go through user_to_groups table and fetch all uid for matching gid
     for group_gid in standard_groups:
         # remove the current owner from the bunch
-        target_group_users = await users_service.get_users_in_group(
-            app=app, gid=int(group_gid)
-        ) - {user_id}
+        target_group_users = await users_service.get_users_in_group(app=app, gid=int(group_gid)) - {user_id}
         _logger.info("Found group users '%s'", target_group_users)
 
         for possible_user_id in target_group_users:
             # check if the possible_user is still present in the db
             try:
-                possible_user = await users_service.get_user(
-                    app=app, user_id=possible_user_id
-                )
+                possible_user = await users_service.get_user(app=app, user_id=possible_user_id)
                 return int(possible_user["primary_gid"])
-            except UserNotFoundError:  # noqa: PERF203
+            except UserNotFoundError:
                 _logger.warning(
                     "Could not find new owner '%s' will try a new one",
                     possible_user_id,
@@ -69,11 +65,9 @@ async def get_new_project_owner_gid(
     """
 
     access_rights = project["accessRights"]
-    # A Set[str] is prefered over Set[int] because access_writes
-    # is a Dict with only key,valus in {str, None}
-    other_users_access_rights: set[str] = set(access_rights.keys()) - {
-        f"{user_primary_gid}"
-    }
+    # A Set[str] is preferred over Set[int] because access_writes
+    # is a Dict with only key,values in {str, None}
+    other_users_access_rights: set[str] = set(access_rights.keys()) - {f"{user_primary_gid}"}
     _logger.debug(
         "Processing other user and groups access rights '%s'",
         other_users_access_rights,
@@ -133,34 +127,26 @@ async def replace_current_owner(
     project: dict,
 ) -> None:
     try:
-        new_project_owner_id = await users_service.get_user_id_from_gid(
-            app=app, primary_gid=new_project_owner_gid
-        )
+        new_project_owner_id = await users_service.get_user_id_from_gid(app=app, primary_gid=new_project_owner_gid)
 
     except (
         asyncpg.exceptions.PostgresError,
         ProjectNotFoundError,
         UserNotFoundError,
     ):
-        _logger.exception(
-            "Could not recover new user id from gid %s", new_project_owner_gid
-        )
+        _logger.exception("Could not recover new user id from gid %s", new_project_owner_gid)
         return
 
     # the result might me none
     if new_project_owner_id is None:
-        _logger.warning(
-            "Could not recover a new user id from gid %s", new_project_owner_gid
-        )
+        _logger.warning("Could not recover a new user id from gid %s", new_project_owner_gid)
         return
 
-    # unseting the project owner and saving the project back
+    # unsetting the project owner and saving the project back
     project["prj_owner"] = int(new_project_owner_id)
     # removing access rights entry
     del project["accessRights"][f"{user_primary_gid}"]
-    project["accessRights"][
-        f"{new_project_owner_gid}"
-    ] = ProjectAccessRights.OWNER.value
+    project["accessRights"][f"{new_project_owner_gid}"] = ProjectAccessRights.OWNER.value
     _logger.info("Syncing back project %s", project)
 
     # syncing back project data
@@ -170,9 +156,7 @@ async def replace_current_owner(
             app, project_id=ProjectID(project_uuid), group_id=user_primary_gid
         )
         # Update project owner in projects table
-        await app[
-            PROJECT_DBAPI_APPKEY
-        ].update_project_owner_without_checking_permissions(
+        await app[PROJECT_DBAPI_APPKEY].update_project_owner_without_checking_permissions(
             new_project_owner=new_project_owner_id,
             new_project_access_rights=project["accessRights"],
             project_uuid=project_uuid,

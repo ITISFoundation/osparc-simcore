@@ -63,8 +63,7 @@ async def discover_product_middleware(request: web.Request, handler: Handler):
         # - API entrypoints
         # - /static info for front-end
         # - socket-io
-        request.path.startswith(f"/{API_VTAG}")
-        or request.path in {"/static-frontend-data.json", "/socket.io/"}
+        request.path.startswith(f"/{API_VTAG}") or request.path in {"/static-frontend-data.json", "/socket.io/"}
     ):
         request[RQ_PRODUCT_KEY] = (
             _discover_product_by_request_header(request)
@@ -81,9 +80,7 @@ async def discover_product_middleware(request: web.Request, handler: Handler):
             or request.path.startswith("/view")
             or request.path == "/"
         )
-        request[RQ_PRODUCT_KEY] = _discover_product_by_hostname(
-            request
-        ) or _get_default_product_name(request.app)
+        request[RQ_PRODUCT_KEY] = _discover_product_by_hostname(request) or _get_default_product_name(request.app)
 
     _logger.debug(
         "Product middleware result: \n%s\n",

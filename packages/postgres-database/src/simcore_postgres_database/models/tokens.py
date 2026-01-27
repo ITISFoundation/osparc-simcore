@@ -1,6 +1,7 @@
 """User Tokens table"""
 
 import sqlalchemy as sa
+
 from simcore_postgres_database.models._common import RefActions
 
 from .base import metadata

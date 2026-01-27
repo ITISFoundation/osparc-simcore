@@ -60,17 +60,13 @@ async def setup_redis_client(app: web.Application):
 # UTILS --------------------------------------------------------------------------
 
 
-def _get_redis_client_sdk(
-    app: web.Application, database: RedisDatabase
-) -> RedisClientSDK:
+def _get_redis_client_sdk(app: web.Application, database: RedisDatabase) -> RedisClientSDK:
     redis_client: RedisClientsManager = app[APP_REDIS_CLIENT_KEY]
     return redis_client.client(database)
 
 
 def get_redis_resources_client(app: web.Application) -> aioredis.Redis:
-    redis_client: aioredis.Redis = _get_redis_client_sdk(
-        app, RedisDatabase.RESOURCES
-    ).redis
+    redis_client: aioredis.Redis = _get_redis_client_sdk(app, RedisDatabase.RESOURCES).redis
     return redis_client
 
 
@@ -88,30 +84,22 @@ def get_redis_document_manager_client_sdk(app: web.Application) -> RedisClientSD
 
 
 def get_redis_validation_code_client(app: web.Application) -> aioredis.Redis:
-    redis_client: aioredis.Redis = _get_redis_client_sdk(
-        app, RedisDatabase.VALIDATION_CODES
-    ).redis
+    redis_client: aioredis.Redis = _get_redis_client_sdk(app, RedisDatabase.VALIDATION_CODES).redis
     return redis_client
 
 
 def get_redis_scheduled_maintenance_client(app: web.Application) -> aioredis.Redis:
-    redis_client: aioredis.Redis = _get_redis_client_sdk(
-        app, RedisDatabase.SCHEDULED_MAINTENANCE
-    ).redis
+    redis_client: aioredis.Redis = _get_redis_client_sdk(app, RedisDatabase.SCHEDULED_MAINTENANCE).redis
     return redis_client
 
 
 def get_redis_user_notifications_client(app: web.Application) -> aioredis.Redis:
-    redis_client: aioredis.Redis = _get_redis_client_sdk(
-        app, RedisDatabase.USER_NOTIFICATIONS
-    ).redis
+    redis_client: aioredis.Redis = _get_redis_client_sdk(app, RedisDatabase.USER_NOTIFICATIONS).redis
     return redis_client
 
 
 def get_redis_announcements_client(app: web.Application) -> aioredis.Redis:
-    redis_client: aioredis.Redis = _get_redis_client_sdk(
-        app, RedisDatabase.ANNOUNCEMENTS
-    ).redis
+    redis_client: aioredis.Redis = _get_redis_client_sdk(app, RedisDatabase.ANNOUNCEMENTS).redis
     return redis_client
 
 
@@ -122,8 +110,6 @@ def get_redis_celery_tasks_client_sdk(app: web.Application) -> RedisClientSDK:
 # PLUGIN SETUP --------------------------------------------------------------------------
 
 
-@app_setup_func(
-    __name__, ModuleCategory.ADDON, settings_name="WEBSERVER_REDIS", logger=_logger
-)
+@app_setup_func(__name__, ModuleCategory.ADDON, settings_name="WEBSERVER_REDIS", logger=_logger)
 def setup_redis(app: web.Application):
     app.cleanup_ctx.append(setup_redis_client)

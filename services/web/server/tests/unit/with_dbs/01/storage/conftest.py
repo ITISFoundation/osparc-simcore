@@ -48,7 +48,6 @@ def storage_vtag() -> str:
 
 @pytest.fixture(scope="module")
 def fake_storage_app(storage_vtag: str) -> FastAPI:  # noqa: C901
-
     @contextlib.asynccontextmanager
     async def _app_lifespan(app: FastAPI):
         logging.info("Starting fake storage app ...")
@@ -72,10 +71,7 @@ def fake_storage_app(storage_vtag: str) -> FastAPI:  # noqa: C901
         assert "json_schema_extra" in FileLocation.model_config
 
         return Envelope[list[FileLocation]](
-            data=[
-                FileLocation.model_validate(e)
-                for e in FileLocation.model_json_schema()["examples"]
-            ]
+            data=[FileLocation.model_validate(e) for e in FileLocation.model_json_schema()["examples"]]
         )
 
     @router.get(
@@ -92,14 +88,13 @@ def fake_storage_app(storage_vtag: str) -> FastAPI:  # noqa: C901
         assert "json_schema_extra" in PathMetaDataGet.model_config
 
         example_index = len(file_filter.parts) if file_filter else 0
-        assert example_index < len(
-            PathMetaDataGet.model_json_schema()["examples"]
-        ), "fake server unable to server this example"
+        assert example_index < len(PathMetaDataGet.model_json_schema()["examples"]), (
+            "fake server unable to server this example"
+        )
         chosen_example = PathMetaDataGet.model_json_schema()["examples"][example_index]
 
         return create_page(
-            random.randint(3, 15)
-            * [PathMetaDataGet.model_validate(chosen_example)],  # noqa: S311
+            random.randint(3, 15) * [PathMetaDataGet.model_validate(chosen_example)],
             params=page_params,
             next_=None,
         )
@@ -120,35 +115,24 @@ def fake_storage_app(storage_vtag: str) -> FastAPI:  # noqa: C901
         if uuid_filter:
             return Envelope[list[FileMetaDataGet]](
                 data=random.sample(
-                    [
-                        FileMetaDataGet.model_validate(e)
-                        for e in FileMetaDataGet.model_json_schema()["examples"]
-                    ],
+                    [FileMetaDataGet.model_validate(e) for e in FileMetaDataGet.model_json_schema()["examples"]],
                     2,
                 )
             )
         return Envelope[list[FileMetaDataGet]](
-            data=[
-                FileMetaDataGet.model_validate(e)
-                for e in FileMetaDataGet.model_json_schema()["examples"]
-            ]
+            data=[FileMetaDataGet.model_validate(e) for e in FileMetaDataGet.model_json_schema()["examples"]]
         )
 
     @router.get(
         "/locations/{location_id}/files/{file_id:path}/metadata",
-        response_model=Envelope[FileMetaDataGet]
-        | Envelope[FileMetaDataGetv010]
-        | Envelope[dict],
+        response_model=Envelope[FileMetaDataGet] | Envelope[FileMetaDataGetv010] | Envelope[dict],
     )
     async def _get_file_metadata(user_id: UserID, request: Request):
         assert "json_schema_extra" in FileMetaDataGet.model_config
 
         return Envelope[FileMetaDataGet](
             data=random.choice(  # noqa: S311
-                [
-                    FileMetaDataGet.model_validate(e)
-                    for e in FileMetaDataGet.model_json_schema()["examples"]
-                ]
+                [FileMetaDataGet.model_validate(e) for e in FileMetaDataGet.model_json_schema()["examples"]]
             )
         )
 
@@ -160,10 +144,7 @@ def fake_storage_app(storage_vtag: str) -> FastAPI:  # noqa: C901
         assert "json_schema_extra" in DatasetMetaDataGet.model_config
 
         return Envelope[list[DatasetMetaDataGet]](
-            data=[
-                DatasetMetaDataGet.model_validate(e)
-                for e in DatasetMetaDataGet.model_json_schema()["examples"]
-            ]
+            data=[DatasetMetaDataGet.model_validate(e) for e in DatasetMetaDataGet.model_json_schema()["examples"]]
         )
 
     @router.get(
@@ -174,10 +155,7 @@ def fake_storage_app(storage_vtag: str) -> FastAPI:  # noqa: C901
         assert "json_schema_extra" in FileMetaDataGet.model_config
 
         return Envelope[list[FileMetaDataGet]](
-            data=[
-                FileMetaDataGet.model_validate(e)
-                for e in FileMetaDataGet.model_json_schema()["examples"]
-            ]
+            data=[FileMetaDataGet.model_validate(e) for e in FileMetaDataGet.model_json_schema()["examples"]]
         )
 
     @router.put(
@@ -229,12 +207,8 @@ def fake_storage_app(storage_vtag: str) -> FastAPI:  # noqa: C901
                 FileUploadSchema.model_json_schema()["examples"]
             )
         )
-        response.links.abort_upload = TypeAdapter(AnyUrl).validate_python(
-            f"{abort_url}"
-        )
-        response.links.complete_upload = TypeAdapter(AnyUrl).validate_python(
-            f"{complete_url}"
-        )
+        response.links.abort_upload = TypeAdapter(AnyUrl).validate_python(f"{abort_url}")
+        response.links.complete_upload = TypeAdapter(AnyUrl).validate_python(f"{complete_url}")
 
         return Envelope[FileUploadSchema](data=response)
 

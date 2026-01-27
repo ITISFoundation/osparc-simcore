@@ -100,9 +100,7 @@ async def test_user_can_see_marked_project(
 
     project = result[0]
     assert project.uuid == project_job_fixture.project_uuid
-    assert (
-        project.job_parent_resource_name == project_job_fixture.job_parent_resource_name
-    )
+    assert project.job_parent_resource_name == project_job_fixture.job_parent_resource_name
 
     # Verify workbench structure is maintained
     assert project.workbench is not None
@@ -171,9 +169,7 @@ async def test_user_can_filter_marked_project(
 
     project = result[0]
     assert project.uuid == project_job_fixture.project_uuid
-    assert (
-        project.job_parent_resource_name == project_job_fixture.job_parent_resource_name
-    )
+    assert project.job_parent_resource_name == project_job_fixture.job_parent_resource_name
 
     # Wildcard filter
     total_count, result = await list_my_projects_marked_as_jobs(
@@ -187,9 +183,7 @@ async def test_user_can_filter_marked_project(
 
     project = result[0]
     assert project.uuid == project_job_fixture.project_uuid
-    assert (
-        project.job_parent_resource_name == project_job_fixture.job_parent_resource_name
-    )
+    assert project.job_parent_resource_name == project_job_fixture.job_parent_resource_name
 
     # Non-matching filter
     total_count, result = await list_my_projects_marked_as_jobs(

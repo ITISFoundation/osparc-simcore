@@ -52,7 +52,7 @@ from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core._schedu
     create_model_from_scheduler_data,
 )
 
-# running scheduler at a high rate to stress out the system
+# running scheduler at a height rate to stress out the system
 # and ensure faster tests
 _TEST_SCHEDULER_INTERVAL_SECONDS: Final[NonNegativeFloat] = 0.1
 

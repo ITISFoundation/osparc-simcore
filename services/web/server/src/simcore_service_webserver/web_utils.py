@@ -18,9 +18,7 @@ def envelope_response(data: Any, *, status: int = HTTP_200_OK) -> web.Response:
     )
 
 
-def flash_response(
-    message: str, level: str = "INFO", *, status: int = HTTP_200_OK
-) -> web.Response:
+def flash_response(message: str, level: str = "INFO", *, status: int = HTTP_200_OK) -> web.Response:
     return envelope_response(
         data=asdict(LogMessageType(message, level)),
         status=status,

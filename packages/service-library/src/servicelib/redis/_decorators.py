@@ -24,9 +24,7 @@ P = ParamSpec("P")
 R = TypeVar("R")
 
 _EXCLUSIVE_TASK_NAME: Final[str] = "exclusive/{module_name}.{func_name}"
-_EXCLUSIVE_AUTO_EXTEND_TASK_NAME: Final[str] = (
-    "exclusive/autoextend_lock_{redis_lock_key}"
-)
+_EXCLUSIVE_AUTO_EXTEND_TASK_NAME: Final[str] = "exclusive/autoextend_lock_{redis_lock_key}"
 
 
 @periodic(interval=DEFAULT_LOCK_TTL / 2, raise_on_error=True)
@@ -48,9 +46,7 @@ def exclusive(  # noqa: PLR0915
     lock_value: bytes | str | None = None,
     blocking: bool = False,
     blocking_timeout: timedelta | None = None,
-) -> Callable[
-    [Callable[P, Coroutine[Any, Any, R]]], Callable[P, Coroutine[Any, Any, R]]
-]:
+) -> Callable[[Callable[P, Coroutine[Any, Any, R]]], Callable[P, Coroutine[Any, Any, R]]]:
     """
     Define a method to run exclusively across
     processes by leveraging a Redis Lock.
@@ -76,16 +72,10 @@ def exclusive(  # noqa: PLR0915
     ) -> Callable[P, Coroutine[Any, Any, R]]:
         @functools.wraps(coro)
         async def _wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
-            redis_lock_key = (
-                lock_key(*args, **kwargs) if callable(lock_key) else lock_key
-            )
+            redis_lock_key = lock_key(*args, **kwargs) if callable(lock_key) else lock_key
             assert isinstance(redis_lock_key, str)  # nosec
 
-            client = (
-                redis_client(*args, **kwargs)
-                if callable(redis_client)
-                else redis_client
-            )
+            client = redis_client(*args, **kwargs) if callable(redis_client) else redis_client
             assert isinstance(client, RedisClientSDK)  # nosec
             nonlocal lock_value
             if lock_value is None:
@@ -95,9 +85,7 @@ def exclusive(  # noqa: PLR0915
             if not await lock.acquire(
                 token=lock_value,
                 blocking=blocking,
-                blocking_timeout=(
-                    blocking_timeout.total_seconds() if blocking_timeout else None
-                ),
+                blocking_timeout=(blocking_timeout.total_seconds() if blocking_timeout else None),
             ):
                 raise CouldNotAcquireLockError(lock=lock)
 
@@ -108,12 +96,8 @@ def exclusive(  # noqa: PLR0915
                     cancellation_event = asyncio.Event()
                     # first create a task that will auto-extend the lock
                     auto_reacquisition_task = tg.create_task(
-                        _periodic_reacquisition(
-                            lock, auto_reacquisition_started, cancellation_event
-                        ),
-                        name=_EXCLUSIVE_AUTO_EXTEND_TASK_NAME.format(
-                            redis_lock_key=redis_lock_key
-                        ),
+                        _periodic_reacquisition(lock, auto_reacquisition_started, cancellation_event),
+                        name=_EXCLUSIVE_AUTO_EXTEND_TASK_NAME.format(redis_lock_key=redis_lock_key),
                     )
                     # NOTE: In case the work thread is raising right away,
                     # this ensures the extend task ran once and ensure cancellation works
@@ -123,9 +107,7 @@ def exclusive(  # noqa: PLR0915
                     assert asyncio.iscoroutinefunction(coro)  # nosec
                     work_task = tg.create_task(
                         coro(*args, **kwargs),
-                        name=_EXCLUSIVE_TASK_NAME.format(
-                            module_name=coro.__module__, func_name=coro.__name__
-                        ),
+                        name=_EXCLUSIVE_TASK_NAME.format(module_name=coro.__module__, func_name=coro.__name__),
                     )
                     try:
                         # NOTE: this try/finally ensures that cancellation_event is set when we exit the context

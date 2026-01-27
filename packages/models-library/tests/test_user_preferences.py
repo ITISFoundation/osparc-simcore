@@ -23,15 +23,11 @@ _SERVICE_KEY_AND_VERSION_SAMPLES: list[tuple[ServiceKey, ServiceVersion]] = [
         TypeAdapter(ServiceVersion).validate_python("0.0.1"),
     ),
     (
-        TypeAdapter(ServiceKey).validate_python(
-            "simcore/services/dynamic/something-1231"
-        ),
+        TypeAdapter(ServiceKey).validate_python("simcore/services/dynamic/something-1231"),
         TypeAdapter(ServiceVersion).validate_python("0.0.1"),
     ),
     (
-        TypeAdapter(ServiceKey).validate_python(
-            "simcore/services/frontend/something-1231"
-        ),
+        TypeAdapter(ServiceKey).validate_python("simcore/services/frontend/something-1231"),
         TypeAdapter(ServiceVersion).validate_python("0.0.1"),
     ),
 ]
@@ -47,24 +43,18 @@ def mock_file_path() -> Path:
     return Path("/a/file/path")
 
 
-def _get_base_user_preferences_data(
-    preference_type: PreferenceType, value: Any
-) -> dict[str, Any]:
+def _get_base_user_preferences_data(preference_type: PreferenceType, value: Any) -> dict[str, Any]:
     return {"preference_type": preference_type, "value": value}
 
 
 @pytest.mark.parametrize("preference_type", PreferenceType)
 def test_base_user_preference_model(value: Any, preference_type: PreferenceType):
-    base_data = _get_base_user_preferences_data(
-        preference_type=preference_type, value=value
-    )
+    base_data = _get_base_user_preferences_data(preference_type=preference_type, value=value)
     assert TypeAdapter(_BaseUserPreferenceModel).validate_python(base_data)
 
 
 def test_frontend_preferences(value: Any):
-    base_data = _get_base_user_preferences_data(
-        preference_type=PreferenceType.FRONTEND, value=value
-    )
+    base_data = _get_base_user_preferences_data(preference_type=PreferenceType.FRONTEND, value=value)
 
     base_data.update({"preference_identifier": "pref-name"})
     # check serialization
@@ -73,9 +63,7 @@ def test_frontend_preferences(value: Any):
 
 
 def test_user_service_preferences(value: Any, mock_file_path: Path):
-    base_data = _get_base_user_preferences_data(
-        preference_type=PreferenceType.USER_SERVICE, value=value
-    )
+    base_data = _get_base_user_preferences_data(preference_type=PreferenceType.USER_SERVICE, value=value)
     service_key, service_version = _SERVICE_KEY_AND_VERSION_SAMPLES[0]
     base_data.update(
         {
@@ -100,15 +88,11 @@ def unregister_defined_classes() -> Iterator[None]:
 
 
 def test__frontend__user_preference(value: Any, unregister_defined_classes: None):
-    pref1 = FrontendUserPreference.model_validate(
-        {"preference_identifier": "pref_id", "value": value}
-    )
+    pref1 = FrontendUserPreference.model_validate({"preference_identifier": "pref_id", "value": value})
     assert isinstance(pref1, FrontendUserPreference)
 
 
-@pytest.mark.parametrize(
-    "service_key, service_version", _SERVICE_KEY_AND_VERSION_SAMPLES
-)
+@pytest.mark.parametrize("service_key, service_version", _SERVICE_KEY_AND_VERSION_SAMPLES)
 def test__user_service__user_preference(
     value: Any,
     service_key: ServiceKey,
@@ -147,6 +131,4 @@ def test_redefine_class_with_same_name_is_not_allowed(unregister_defined_classes
 
 def test_get_preference_class_from_name_not_found():
     with pytest.raises(NoPreferenceFoundError, match="No preference class found"):
-        _BaseUserPreferenceModel.get_preference_class_from_name(
-            "__missing_preference_name__"
-        )
+        _BaseUserPreferenceModel.get_preference_class_from_name("__missing_preference_name__")

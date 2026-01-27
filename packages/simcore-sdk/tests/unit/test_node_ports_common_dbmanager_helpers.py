@@ -24,9 +24,7 @@ async def test_update_comp_run_snapshot_tasks_if_computational(monkeypatch):
     update_mock = AsyncMock()
 
     monkeypatch.setattr(dbmanager, "_get_node_from_db", get_node_mock)
-    monkeypatch.setattr(
-        dbmanager, "get_latest_run_id_for_project", get_latest_run_id_mock
-    )
+    monkeypatch.setattr(dbmanager, "get_latest_run_id_for_project", get_latest_run_id_mock)
     monkeypatch.setattr(dbmanager, "update_for_run_id_and_node_id", update_mock)
 
     await dbmanager._update_comp_run_snapshot_tasks_if_computational(
@@ -34,9 +32,7 @@ async def test_update_comp_run_snapshot_tasks_if_computational(monkeypatch):
     )
 
     get_node_mock.assert_awaited_once_with(project_id, node_uuid, connection)
-    get_latest_run_id_mock.assert_awaited_once_with(
-        engine, connection, project_id=project_id
-    )
+    get_latest_run_id_mock.assert_awaited_once_with(engine, connection, project_id=project_id)
     update_mock.assert_awaited_once()
     _, kwargs = update_mock.call_args
     assert kwargs["run_id"] == "run-1"
@@ -61,9 +57,7 @@ async def test_update_comp_run_snapshot_tasks_if_not_computational(monkeypatch):
     update_mock = AsyncMock()
 
     monkeypatch.setattr(dbmanager, "_get_node_from_db", get_node_mock)
-    monkeypatch.setattr(
-        dbmanager, "get_latest_run_id_for_project", get_latest_run_id_mock
-    )
+    monkeypatch.setattr(dbmanager, "get_latest_run_id_for_project", get_latest_run_id_mock)
     monkeypatch.setattr(dbmanager, "update_for_run_id_and_node_id", update_mock)
 
     await dbmanager._update_comp_run_snapshot_tasks_if_computational(

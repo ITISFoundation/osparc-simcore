@@ -49,15 +49,11 @@ class DirectorV2RestClient:
         self._app = app
         self._settings: DirectorV2Settings = get_plugin_settings(app)
 
-    async def get_computation(
-        self, project_id: ProjectID, user_id: UserID
-    ) -> DirectorV2ComputationGet:
+    async def get_computation(self, project_id: ProjectID, user_id: UserID) -> DirectorV2ComputationGet:
         computation_task_out = await request_director_v2(
             self._app,
             "GET",
-            (self._settings.base_url / "computations" / f"{project_id}").with_query(
-                user_id=int(user_id)
-            ),
+            (self._settings.base_url / "computations" / f"{project_id}").with_query(user_id=int(user_id)),
             expected_status=web.HTTPOk,
         )
         assert isinstance(computation_task_out, dict)  # nosec
@@ -80,9 +76,7 @@ class DirectorV2RestClient:
                 user_id=user_id,
                 project_id=project_id,
                 product_name=product_name,
-                product_api_base_url=TypeAdapter(AnyHttpUrl).validate_python(
-                    product_api_base_url
-                ),
+                product_api_base_url=TypeAdapter(AnyHttpUrl).validate_python(product_api_base_url),
                 **options,
             ).model_dump(mode="json", exclude_unset=True),
         )
@@ -100,9 +94,7 @@ class DirectorV2RestClient:
         )
 
 
-DIRECTOR_V2_CLIENT_APPKEY: Final = web.AppKey(
-    "DIRECTOR_V2_CLIENT", DirectorV2RestClient
-)
+DIRECTOR_V2_CLIENT_APPKEY: Final = web.AppKey("DIRECTOR_V2_CLIENT", DirectorV2RestClient)
 
 
 def set_directorv2_client(app: web.Application, obj: DirectorV2RestClient):

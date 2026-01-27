@@ -13,9 +13,7 @@ log = logging.getLogger(__name__)
 
 @pytest.fixture
 def app_resources(package_dir: Path) -> list[str]:
-    return [
-        str(p.relative_to(package_dir)) for p in (package_dir / "api").rglob("*.y*ml")
-    ]
+    return [str(p.relative_to(package_dir)) for p in (package_dir / "api").rglob("*.y*ml")]
 
 
 def test_paths(app_resources: list[str]):

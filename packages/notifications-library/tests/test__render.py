@@ -10,10 +10,7 @@ from notifications_library._render import (
 from notifications_library._templates import _print_tree, _templates_dir
 
 
-def test_render_env_from_folder(
-    tmp_path: Path, product_name: ProductName, product_data: ProductData
-):
-
+def test_render_env_from_folder(tmp_path: Path, product_name: ProductName, product_data: ProductData):
     pkg_env = create_render_environment_from_notifications_library()
 
     top_dir = tmp_path / "consolidated"

@@ -22,9 +22,7 @@ from simcore_service_catalog.clients.director import DirectorClient
 
 
 @pytest.fixture
-def app_environment(
-    monkeypatch: pytest.MonkeyPatch, app_environment: EnvVarsDict
-) -> EnvVarsDict:
+def app_environment(monkeypatch: pytest.MonkeyPatch, app_environment: EnvVarsDict) -> EnvVarsDict:
     return setenvs_from_dict(
         monkeypatch,
         {
@@ -60,13 +58,8 @@ async def test_director_client_high_level_api(
     assert await director_api.is_responsive()
 
     # GET
-    expected_service = ServiceMetaDataPublished(
-        **expected_director_rest_api_list_services[0]
-    )
-    assert (
-        await director_api.get_service(expected_service.key, expected_service.version)
-        == expected_service
-    )
+    expected_service = ServiceMetaDataPublished(**expected_director_rest_api_list_services[0])
+    assert await director_api.get_service(expected_service.key, expected_service.version) == expected_service
 
 
 async def test_director_client_low_level_api(
@@ -81,15 +74,11 @@ async def test_director_client_low_level_api(
 
     key, version = service_key_and_version
 
-    service_labels = await director_api.get(
-        f"/services/{urllib.parse.quote_plus(key)}/{version}/labels"
-    )
+    service_labels = await director_api.get(f"/services/{urllib.parse.quote_plus(key)}/{version}/labels")
 
     assert service_labels
 
-    service = await director_api.get(
-        f"/services/{urllib.parse.quote_plus(key)}/{version}"
-    )
+    service = await director_api.get(f"/services/{urllib.parse.quote_plus(key)}/{version}")
     assert service
 
 
@@ -115,14 +104,8 @@ async def test_director_client_get_service_extras_with_org_labels(
     # Check service build details are present (since we have org.label-schema labels)
     assert service_extras.service_build_details is not None
     assert service_extras.service_build_details.build_date == "2023-04-17T08:04:15Z"
-    assert (
-        service_extras.service_build_details.vcs_ref
-        == "4d79449a2e79f8a3b3b2e1dd0290af9f3d1a8792"
-    )
-    assert (
-        service_extras.service_build_details.vcs_url
-        == "https://github.com/ITISFoundation/jupyter-math.git"
-    )
+    assert service_extras.service_build_details.vcs_ref == "4d79449a2e79f8a3b3b2e1dd0290af9f3d1a8792"
+    assert service_extras.service_build_details.vcs_url == "https://github.com/ITISFoundation/jupyter-math.git"
 
 
 async def test_director_client_get_service_extras_without_org_labels(
@@ -145,11 +128,7 @@ async def test_director_client_get_service_extras_without_org_labels(
     def _get_service_labels_no_org(request, service_key, service_version):
         return httpx.Response(
             status_code=status.HTTP_200_OK,
-            json={
-                "data": get_mocked_service_labels(
-                    service_key, service_version, include_org_labels=False
-                )
-            },
+            json={"data": get_mocked_service_labels(service_key, service_version, include_org_labels=False)},
         )
 
     director_api = get_director_client(app)

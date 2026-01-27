@@ -19,9 +19,7 @@ from ._packaging import dir_from_bytes, dir_to_bytes
 from ._user_preference import get_model_class
 
 
-def _get_db_preference_name(
-    preference_name: PreferenceName, service_version: ServiceVersion
-) -> str:
+def _get_db_preference_name(preference_name: PreferenceName, service_version: ServiceVersion) -> str:
     version = Version(service_version)
     return f"{preference_name}/{version.major}.{version.minor}"
 
@@ -37,9 +35,7 @@ async def save_preferences(
     preference_class = get_model_class(service_key)
 
     dir_content: bytes = await dir_to_bytes(user_preferences_path)
-    preference = preference_class(
-        service_key=service_key, service_version=service_version, value=dir_content
-    )
+    preference = preference_class(service_key=service_key, service_version=service_version, value=dir_content)
 
     async with (
         DBContextManager(application_name=application_name) as engine,
@@ -49,9 +45,7 @@ async def save_preferences(
             conn,
             user_id=user_id,
             product_name=product_name,
-            preference_name=_get_db_preference_name(
-                preference_class.get_preference_name(), service_version
-            ),
+            preference_name=_get_db_preference_name(preference_class.get_preference_name(), service_version),
             payload=umsgpack.packb(preference.to_db()),
         )
 
@@ -74,14 +68,10 @@ async def load_preferences(
             conn,
             user_id=user_id,
             product_name=product_name,
-            preference_name=_get_db_preference_name(
-                preference_class.get_preference_name(), service_version
-            ),
+            preference_name=_get_db_preference_name(preference_class.get_preference_name(), service_version),
         )
     if payload is None:
         return
 
-    preference = TypeAdapter(preference_class).validate_python(
-        umsgpack.unpackb(payload)
-    )
+    preference = TypeAdapter(preference_class).validate_python(umsgpack.unpackb(payload))
     await dir_from_bytes(preference.value, user_preferences_path)

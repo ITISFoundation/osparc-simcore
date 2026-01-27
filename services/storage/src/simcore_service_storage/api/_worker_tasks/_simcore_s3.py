@@ -33,9 +33,7 @@ from ...simcore_s3_dsm import SimcoreS3DataManager
 _logger = logging.getLogger(__name__)
 
 
-async def _task_progress_cb(
-    task: Task, task_key: TaskKey, report: ProgressReport
-) -> None:
+async def _task_progress_cb(task: Task, task_key: TaskKey, report: ProgressReport) -> None:
     worker = get_app_server(task.app).task_manager
     assert task.name  # nosec
     await worker.set_task_progress(
@@ -52,9 +50,7 @@ async def deep_copy_files_from_project(
         logging.INFO,
         msg=f"copying {body.source['uuid']} -> {body.destination['uuid']} with {task.request.id}",
     ):
-        dsm = get_dsm_provider(get_app_server(task.app).app).get(
-            SimcoreS3DataManager.get_location_id()
-        )
+        dsm = get_dsm_provider(get_app_server(task.app).app).get(SimcoreS3DataManager.get_location_id())
         assert isinstance(dsm, SimcoreS3DataManager)  # nosec
         async with ProgressBarData(
             num_steps=1,
@@ -91,21 +87,16 @@ async def export_data(
         user_id,
         paths_to_export,
     ):
-        dsm = get_dsm_provider(get_app_server(task.app).app).get(
-            SimcoreS3DataManager.get_location_id()
-        )
+        dsm = get_dsm_provider(get_app_server(task.app).app).get(SimcoreS3DataManager.get_location_id())
         assert isinstance(dsm, SimcoreS3DataManager)  # nosec
 
         object_keys = [
-            TypeAdapter(S3ObjectKey).validate_python(f"{path_to_export}")
-            for path_to_export in paths_to_export
+            TypeAdapter(S3ObjectKey).validate_python(f"{path_to_export}") for path_to_export in paths_to_export
         ]
 
         async def _progress_cb(report: ProgressReport) -> None:
             assert task.name  # nosec
-            await get_app_server(task.app).task_manager.set_task_progress(
-                task_key, report
-            )
+            await get_app_server(task.app).task_manager.set_task_progress(task_key, report)
             _logger.debug("'%s' progress %s", task_key, report.percent_value)
 
         async with ProgressBarData(
@@ -140,9 +131,7 @@ async def export_data_as_download_link(
         paths_to_export=paths_to_export,
     )
 
-    dsm = get_dsm_provider(get_app_server(task.app).app).get(
-        SimcoreS3DataManager.get_location_id()
-    )
+    dsm = get_dsm_provider(get_app_server(task.app).app).get(SimcoreS3DataManager.get_location_id())
 
     download_link = await dsm.create_file_download_link(
         user_id=user_id, file_id=s3_object, link_type=LinkType.PRESIGNED
@@ -166,9 +155,7 @@ async def search(
         f"'{task_key}' search file {name_pattern=}",
     ):
         app_server = get_app_server(task.app)
-        dsm = get_dsm_provider(app_server.app).get(
-            SimcoreS3DataManager.get_location_id()
-        )
+        dsm = get_dsm_provider(app_server.app).get(SimcoreS3DataManager.get_location_id())
 
         assert isinstance(dsm, SimcoreS3DataManager)  # nosec
 

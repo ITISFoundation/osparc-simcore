@@ -25,9 +25,7 @@ class ProjectTemplateType(str, enum.Enum):
 projects = sa.Table(
     "projects",
     metadata,
-    sa.Column(
-        "id", sa.BigInteger, nullable=False, primary_key=True, doc="Identifier index"
-    ),
+    sa.Column("id", sa.BigInteger, nullable=False, primary_key=True, doc="Identifier index"),
     sa.Column(
         "type",
         sa.Enum(ProjectType),
@@ -245,9 +243,7 @@ END; $$ LANGUAGE 'plpgsql';
     """
 )
 
-sa.event.listen(
-    projects, "after_create", assign_project_access_rights_to_owner_group_procedure
-)
+sa.event.listen(projects, "after_create", assign_project_access_rights_to_owner_group_procedure)
 sa.event.listen(
     projects,
     "after_create",

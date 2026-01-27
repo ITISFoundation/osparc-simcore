@@ -24,9 +24,7 @@ LATEST_VERSION = "latest"
 PROGRAM_RESOURCE_NAME_RE = r"^programs/([^\s/]+)/releases/([\d\.]+)$"
 
 
-ProgramKeyId = Annotated[
-    str, StringConstraints(strip_whitespace=True, pattern=DYNAMIC_SERVICE_KEY_RE)
-]
+ProgramKeyId = Annotated[str, StringConstraints(strip_whitespace=True, pattern=DYNAMIC_SERVICE_KEY_RE)]
 
 
 class Program(BaseService, ApiServerOutputSchema):
@@ -93,12 +91,7 @@ class Program(BaseService, ApiServerOutputSchema):
 
     @classmethod
     def create_from_service_release(
-        cls,
-        *,
-        service_key: ServiceKey,
-        description: str,
-        name: str,
-        service: ServiceRelease
+        cls, *, service_key: ServiceKey, description: str, name: str, service: ServiceRelease
     ) -> "Program":
         return cls(
             id=service_key,

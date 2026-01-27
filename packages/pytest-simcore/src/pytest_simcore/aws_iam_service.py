@@ -39,19 +39,12 @@ async def iam_client(
 
 
 @pytest.fixture
-async def aws_instance_profile(
-    iam_client: IAMClient, faker: Faker
-) -> AsyncIterator[str]:
-
+async def aws_instance_profile(iam_client: IAMClient, faker: Faker) -> AsyncIterator[str]:
     profile = await iam_client.create_instance_profile(
         InstanceProfileName=faker.pystr(),
     )
     profile_arn = profile["InstanceProfile"]["Arn"]
-    with log_context(
-        logging.INFO, msg=f"Created InstanceProfile in AWS with {profile_arn=}"
-    ):
+    with log_context(logging.INFO, msg=f"Created InstanceProfile in AWS with {profile_arn=}"):
         yield profile_arn
 
-    await iam_client.delete_instance_profile(
-        InstanceProfileName=profile["InstanceProfile"]["InstanceProfileName"]
-    )
+    await iam_client.delete_instance_profile(InstanceProfileName=profile["InstanceProfile"]["InstanceProfileName"])

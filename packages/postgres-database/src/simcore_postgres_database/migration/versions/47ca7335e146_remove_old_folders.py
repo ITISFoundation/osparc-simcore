@@ -80,12 +80,8 @@ def downgrade():
         "folders_access_rights",
         sa.Column("folder_id", sa.BIGINT(), autoincrement=False, nullable=False),
         sa.Column("gid", sa.BIGINT(), autoincrement=False, nullable=False),
-        sa.Column(
-            "traversal_parent_id", sa.BIGINT(), autoincrement=False, nullable=True
-        ),
-        sa.Column(
-            "original_parent_id", sa.BIGINT(), autoincrement=False, nullable=True
-        ),
+        sa.Column("traversal_parent_id", sa.BIGINT(), autoincrement=False, nullable=True),
+        sa.Column("original_parent_id", sa.BIGINT(), autoincrement=False, nullable=True),
         sa.Column("read", sa.BOOLEAN(), autoincrement=False, nullable=False),
         sa.Column("write", sa.BOOLEAN(), autoincrement=False, nullable=False),
         sa.Column("delete", sa.BOOLEAN(), autoincrement=False, nullable=False),
@@ -163,8 +159,6 @@ def downgrade():
             onupdate="CASCADE",
             ondelete="CASCADE",
         ),
-        sa.PrimaryKeyConstraint(
-            "folder_id", "project_uuid", name="projects_to_folder_pk"
-        ),
+        sa.PrimaryKeyConstraint("folder_id", "project_uuid", name="projects_to_folder_pk"),
     )
     # ### end Alembic commands ###

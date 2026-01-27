@@ -24,12 +24,8 @@ from simcore_service_webserver.login.constants import MSG_USER_DELETED
 from simcore_service_webserver.products.products_service import get_product
 
 
-@pytest.mark.parametrize(
-    "user_role", [role for role in UserRole if role < UserRole.USER]
-)
-async def test_unregister_account_access_rights(
-    client: TestClient, logged_user: UserInfoDict, mocker: MockerFixture
-):
+@pytest.mark.parametrize("user_role", [role for role in UserRole if role < UserRole.USER])
+async def test_unregister_account_access_rights(client: TestClient, logged_user: UserInfoDict, mocker: MockerFixture):
     response = await client.post(
         "/v0/auth/unregister",
         json={
@@ -66,12 +62,8 @@ def mocked_captcha_session(mocker: MockerFixture) -> MagicMock:
     )
 
 
-@pytest.mark.parametrize(
-    "user_role", [role for role in UserRole if role >= UserRole.USER]
-)
-async def test_unregister_account(
-    client: TestClient, logged_user: UserInfoDict, mocked_send_email: MagicMock
-):
+@pytest.mark.parametrize("user_role", [role for role in UserRole if role >= UserRole.USER])
+async def test_unregister_account(client: TestClient, logged_user: UserInfoDict, mocked_send_email: MagicMock):
     assert client.app
 
     # is logged in
@@ -108,9 +100,7 @@ async def test_unregister_account(
     assert prefix_msg in error["errors"][0]["message"]
 
 
-@pytest.mark.parametrize(
-    "user_role", [role for role in UserRole if role >= UserRole.USER]
-)
+@pytest.mark.parametrize("user_role", [role for role in UserRole if role >= UserRole.USER])
 async def test_cannot_unregister_other_account(
     client: TestClient, logged_user: UserInfoDict, mocked_send_email: MagicMock
 ):
@@ -133,9 +123,7 @@ async def test_cannot_unregister_other_account(
 
 
 @pytest.mark.parametrize("invalidate", ["email", "raw_password"])
-@pytest.mark.parametrize(
-    "user_role", [role for role in UserRole if role >= UserRole.USER]
-)
+@pytest.mark.parametrize("user_role", [role for role in UserRole if role >= UserRole.USER])
 async def test_cannot_unregister_invalid_credentials(
     client: TestClient,
     logged_user: UserInfoDict,
@@ -176,9 +164,7 @@ async def test_request_an_account(
         "firstName": faker.first_name(),
         "lastName": faker.last_name(),
         "email": faker.email(),
-        "address": f"{faker.address()},  {faker.postcode()} {faker.city()} [{faker.state()}]".replace(
-            "\n", ", "
-        ),
+        "address": f"{faker.address()},  {faker.postcode()} {faker.city()} [{faker.state()}]".replace("\n", ", "),
         "country": faker.country(),
     }
 
@@ -198,18 +184,18 @@ async def test_request_an_account(
     assert mimetext["To"] == product.product_owners_email or product.support_email
 
     # check it appears in PO center
-    async with NewUser(
-        user_data={
-            "email": "po-user@email.com",
-            "name": "po-user-fixture",
-            "role": UserRole.PRODUCT_OWNER,
-        },
-        app=client.app,
-    ) as product_owner_user, switch_client_session_to(client, product_owner_user):
-
-        response = await client.get(
-            "v0/admin/user-accounts?limit=20&offset=0&review_status=PENDING"
-        )
+    async with (
+        NewUser(
+            user_data={
+                "email": "po-user@email.com",
+                "name": "po-user-fixture",
+                "role": UserRole.PRODUCT_OWNER,
+            },
+            app=client.app,
+        ) as product_owner_user,
+        switch_client_session_to(client, product_owner_user),
+    ):
+        response = await client.get("v0/admin/user-accounts?limit=20&offset=0&review_status=PENDING")
 
         data, _ = await assert_status(response, status.HTTP_200_OK)
 

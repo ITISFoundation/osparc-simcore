@@ -1,6 +1,5 @@
 from typing import Annotated, Any, TypeAlias
 
-from models_library.computations import CollectionRunID
 from pydantic import (
     AnyHttpUrl,
     AnyUrl,
@@ -11,6 +10,8 @@ from pydantic import (
     field_validator,
 )
 
+from models_library.computations import CollectionRunID
+
 from ..basic_types import IDStr
 from ..projects import ProjectID
 from ..projects_nodes_io import NodeID, SimcoreS3FileID
@@ -20,19 +21,12 @@ from ..wallets import WalletInfo
 
 
 class ComputationGet(ComputationTask):
-    url: Annotated[
-        AnyHttpUrl, Field(description="the link where to get the status of the task")
-    ]
-    stop_url: Annotated[
-        AnyHttpUrl | None, Field(description="the link where to stop the task")
-    ] = None
+    url: Annotated[AnyHttpUrl, Field(description="the link where to get the status of the task")]
+    stop_url: Annotated[AnyHttpUrl | None, Field(description="the link where to stop the task")] = None
 
     model_config = ConfigDict(
         json_schema_extra={
-            "examples": [
-                x | {"url": "https://url.local"}
-                for x in ComputationTask.model_json_schema()["examples"]
-            ]
+            "examples": [x | {"url": "https://url.local"} for x in ComputationTask.model_json_schema()["examples"]]
         }
     )
 
@@ -51,9 +45,7 @@ class ComputationCreate(BaseModel):
     ]
     subgraph: Annotated[
         list[NodeID] | None,
-        Field(
-            description="An optional set of nodes that must be executed, if empty the whole pipeline is executed"
-        ),
+        Field(description="An optional set of nodes that must be executed, if empty the whole pipeline is executed"),
     ] = None
     force_restart: Annotated[
         bool | None,
@@ -69,9 +61,7 @@ class ComputationCreate(BaseModel):
     ] = False
     wallet_info: Annotated[
         WalletInfo | None,
-        Field(
-            description="contains information about the wallet used to bill the running service"
-        ),
+        Field(description="contains information about the wallet used to bill the running service"),
     ] = None
     collection_run_id: Annotated[
         CollectionRunID | None,
@@ -82,9 +72,7 @@ class ComputationCreate(BaseModel):
 
     @field_validator("product_name")
     @classmethod
-    def _ensure_product_name_defined_if_computation_starts(
-        cls, v, info: ValidationInfo
-    ):
+    def _ensure_product_name_defined_if_computation_starts(cls, v, info: ValidationInfo):
         if info.data.get("start_pipeline") and v is None:
             msg = "product_name must be set if computation shall start!"
             raise ValueError(msg)
@@ -92,9 +80,7 @@ class ComputationCreate(BaseModel):
 
     @field_validator("collection_run_id")
     @classmethod
-    def _ensure_collection_run_id_dependency_on_start_pipeline(
-        cls, v, info: ValidationInfo
-    ):
+    def _ensure_collection_run_id_dependency_on_start_pipeline(cls, v, info: ValidationInfo):
         start_pipeline = info.data.get("start_pipeline")
         if start_pipeline and v is None:
             msg = "collection_run_id must be provided when start_pipeline is True!"
@@ -112,9 +98,7 @@ class ComputationStop(BaseModel):
 class ComputationDelete(ComputationStop):
     force: Annotated[
         bool | None,
-        Field(
-            description="if True then the pipeline will be removed even if it is running"
-        ),
+        Field(description="if True then the pipeline will be removed even if it is running"),
     ] = False
 
 

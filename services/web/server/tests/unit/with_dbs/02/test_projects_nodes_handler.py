@@ -90,9 +90,7 @@ async def test_get_node_resources(
 ):
     assert client.app
     for node_id in user_project["workbench"]:
-        url = client.app.router["get_node_resources"].url_for(
-            project_id=user_project["uuid"], node_id=node_id
-        )
+        url = client.app.router["get_node_resources"].url_for(project_id=user_project["uuid"], node_id=node_id)
         response = await client.get(f"{url}")
         data, error = await assert_status(response, expected)
         if data:
@@ -101,11 +99,7 @@ async def test_get_node_resources(
             assert node_resources
             assert DEFAULT_SINGLE_SERVICE_NAME in node_resources
             assert {k: v.model_dump() for k, v in node_resources.items()} == next(
-                iter(
-                    ServiceResourcesDictHelpers.model_config["json_schema_extra"][
-                        "examples"
-                    ]
-                )
+                iter(ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"])
             )  # type: ignore
         else:
             assert not data
@@ -125,9 +119,7 @@ async def test_get_wrong_project_raises_not_found_error(
 ):
     assert client.app
     for node_id in user_project["workbench"]:
-        url = client.app.router["get_node_resources"].url_for(
-            project_id=f"{uuid4()}", node_id=node_id
-        )
+        url = client.app.router["get_node_resources"].url_for(project_id=f"{uuid4()}", node_id=node_id)
         response = await client.get(f"{url}")
         await assert_status(response, expected)
 
@@ -144,9 +136,7 @@ async def test_get_wrong_node_raises_not_found_error(
     expected: HTTPStatus,
 ):
     assert client.app
-    url = client.app.router["get_node_resources"].url_for(
-        project_id=user_project["uuid"], node_id=f"{uuid4()}"
-    )
+    url = client.app.router["get_node_resources"].url_for(project_id=user_project["uuid"], node_id=f"{uuid4()}")
     response = await client.get(f"{url}")
     await assert_status(response, expected)
 
@@ -167,15 +157,11 @@ async def test_replace_node_resources_is_forbidden_by_default(
 ):
     assert client.app
     for node_id in user_project["workbench"]:
-        url = client.app.router["replace_node_resources"].url_for(
-            project_id=user_project["uuid"], node_id=node_id
-        )
+        url = client.app.router["replace_node_resources"].url_for(project_id=user_project["uuid"], node_id=node_id)
         response = await client.put(
             f"{url}",
             json=ServiceResourcesDictHelpers.create_jsonable(
-                ServiceResourcesDictHelpers.model_config["json_schema_extra"][
-                    "examples"
-                ][0]
+                ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"][0]
             ),
         )
         data, error = await assert_status(response, expected)
@@ -184,12 +170,7 @@ async def test_replace_node_resources_is_forbidden_by_default(
             node_resources = TypeAdapter(ServiceResourcesDict).validate_python(data)
             assert node_resources
             assert DEFAULT_SINGLE_SERVICE_NAME in node_resources
-            assert (
-                node_resources
-                == ServiceResourcesDictHelpers.model_config["json_schema_extra"][
-                    "examples"
-                ][0]
-            )
+            assert node_resources == ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"][0]
 
 
 @pytest.mark.parametrize(
@@ -209,15 +190,11 @@ async def test_replace_node_resources_is_ok_if_explicitly_authorized(
 ):
     assert client.app
     for node_id in user_project["workbench"]:
-        url = client.app.router["replace_node_resources"].url_for(
-            project_id=user_project["uuid"], node_id=node_id
-        )
+        url = client.app.router["replace_node_resources"].url_for(project_id=user_project["uuid"], node_id=node_id)
         response = await client.put(
             f"{url}",
             json=ServiceResourcesDictHelpers.create_jsonable(
-                ServiceResourcesDictHelpers.model_config["json_schema_extra"][
-                    "examples"
-                ][0]
+                ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"][0]
             ),
         )
         data, error = await assert_status(response, expected)
@@ -226,13 +203,9 @@ async def test_replace_node_resources_is_ok_if_explicitly_authorized(
             node_resources = TypeAdapter(ServiceResourcesDict).validate_python(data)
             assert node_resources
             assert DEFAULT_SINGLE_SERVICE_NAME in node_resources
-            assert {
-                k: v.model_dump() for k, v in node_resources.items()
-            } == ServiceResourcesDictHelpers.model_config["json_schema_extra"][
-                "examples"
-            ][
-                0
-            ]
+            assert {k: v.model_dump() for k, v in node_resources.items()} == ServiceResourcesDictHelpers.model_config[
+                "json_schema_extra"
+            ]["examples"][0]
 
 
 @pytest.mark.parametrize(
@@ -248,16 +221,12 @@ async def test_replace_node_resources_raises_422_if_resource_does_not_validate(
 ):
     assert client.app
     for node_id in user_project["workbench"]:
-        url = client.app.router["replace_node_resources"].url_for(
-            project_id=user_project["uuid"], node_id=node_id
-        )
+        url = client.app.router["replace_node_resources"].url_for(project_id=user_project["uuid"], node_id=node_id)
         response = await client.put(
             f"{url}",
             json=ServiceResourcesDictHelpers.create_jsonable(
                 # NOTE: we apply a different resource set
-                ServiceResourcesDictHelpers.model_config["json_schema_extra"][
-                    "examples"
-                ][1]
+                ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"][1]
             ),
         )
         await assert_status(response, expected)
@@ -277,9 +246,7 @@ async def test_replace_node_resources_raises_404_if_wrong_project_id_used(
 ):
     assert client.app
     for node_id in user_project["workbench"]:
-        url = client.app.router["replace_node_resources"].url_for(
-            project_id=faker.uuid4(), node_id=node_id
-        )
+        url = client.app.router["replace_node_resources"].url_for(project_id=faker.uuid4(), node_id=node_id)
         response = await client.put(
             f"{url}",
             json={},
@@ -325,16 +292,12 @@ async def test_create_node_returns_422_if_body_is_missing(
     for partial_body in [
         {},
         {"service_key": faker.pystr()},
-        {
-            "service_version": f"{faker.random_int()}.{faker.random_int()}.{faker.random_int()}"
-        },
+        {"service_version": f"{faker.random_int()}.{faker.random_int()}.{faker.random_int()}"},
     ]:
         response = await client.post(url.path, json=partial_body)
         assert response.status == expected.unprocessable
     # this does not start anything in the backend
-    mocked_dynamic_services_interface[
-        "dynamic_scheduler.api.run_dynamic_service"
-    ].assert_not_called()
+    mocked_dynamic_services_interface["dynamic_scheduler.api.run_dynamic_service"].assert_not_called()
 
 
 @pytest.mark.parametrize(
@@ -366,26 +329,18 @@ async def test_create_node(
     data, error = await assert_status(response, expected.created)
     if data:
         assert not error
-        mocked_dynamic_services_interface[
-            "director_v2.api.create_or_update_pipeline"
-        ].assert_called_once()
+        mocked_dynamic_services_interface["director_v2.api.create_or_update_pipeline"].assert_called_once()
         if expect_run_service_call:
-            mocked_dynamic_services_interface[
-                "dynamic_scheduler.api.run_dynamic_service"
-            ].assert_called_once()
+            mocked_dynamic_services_interface["dynamic_scheduler.api.run_dynamic_service"].assert_called_once()
         else:
-            mocked_dynamic_services_interface[
-                "dynamic_scheduler.api.run_dynamic_service"
-            ].assert_not_called()
+            mocked_dynamic_services_interface["dynamic_scheduler.api.run_dynamic_service"].assert_not_called()
 
         # check database is updated
         assert "node_id" in data
         create_node_id = data["node_id"]
         with postgres_db.connect() as conn:
             result = conn.execute(
-                sa.select(projects_db_model.c.workbench).where(
-                    projects_db_model.c.uuid == user_project["uuid"]
-                )
+                sa.select(projects_db_model.c.workbench).where(projects_db_model.c.uuid == user_project["uuid"])
             )
         assert result
         workbench = result.one()[projects_db_model.c.workbench]
@@ -436,9 +391,7 @@ async def test_create_and_delete_many_nodes_in_parallel(
             ]
 
         def inc_running_services(self, *args, **kwargs):  # noqa: ARG002
-            self.running_services_uuids.append(
-                kwargs["dynamic_service_start"].node_uuid
-            )
+            self.running_services_uuids.append(kwargs["dynamic_service_start"].node_uuid)
 
     # let's count the started services
     running_services = _RunningServices()
@@ -459,29 +412,18 @@ async def test_create_and_delete_many_nodes_in_parallel(
         "service_id": None,
     }
     NUM_DY_SERVICES = 150
-    responses = await asyncio.gather(
-        *(client.post(f"{url}", json=body) for _ in range(NUM_DY_SERVICES))
-    )
+    responses = await asyncio.gather(*(client.post(f"{url}", json=body) for _ in range(NUM_DY_SERVICES)))
     # all shall have worked
-    data_errors_list = await asyncio.gather(
-        *(assert_status(r, expected.created) for r in responses)
-    )
+    data_errors_list = await asyncio.gather(*(assert_status(r, expected.created) for r in responses))
 
     # but only the allowed number of services should have started
-    assert (
-        mocked_dynamic_services_interface[
-            "dynamic_scheduler.api.run_dynamic_service"
-        ].call_count
-        == NUM_DY_SERVICES
-    )
+    assert mocked_dynamic_services_interface["dynamic_scheduler.api.run_dynamic_service"].call_count == NUM_DY_SERVICES
     assert len(running_services.running_services_uuids) == NUM_DY_SERVICES
     assert len(set(running_services.running_services_uuids)) == NUM_DY_SERVICES
     # check that we do have NUM_DY_SERVICES nodes in the project
     with postgres_db.connect() as conn:
         result = conn.execute(
-            sa.select(projects_db_model.c.workbench).where(
-                projects_db_model.c.uuid == user_project["uuid"]
-            )
+            sa.select(projects_db_model.c.workbench).where(projects_db_model.c.uuid == user_project["uuid"])
         )
         assert result
         workbench = result.one()[projects_db_model.c.workbench]
@@ -494,9 +436,7 @@ async def test_create_and_delete_many_nodes_in_parallel(
     #
     delete_node_tasks = []
     for node_id in workbench:
-        delete_url = client.app.router["delete_node"].url_for(
-            project_id=user_project["uuid"], node_id=node_id
-        )
+        delete_url = client.app.router["delete_node"].url_for(project_id=user_project["uuid"], node_id=node_id)
         delete_node_tasks.append(client.delete(f"{delete_url}"))
     responses = await asyncio.gather(*delete_node_tasks)
     await asyncio.gather(*(assert_status(r, expected.no_content) for r in responses))
@@ -515,13 +455,9 @@ async def test_create_node_does_not_start_dynamic_node_if_there_are_already_too_
     max_amount_of_auto_started_dyn_services: int,
 ):
     assert client.app
-    project = await user_project_with_num_dynamic_services(
-        max_amount_of_auto_started_dyn_services
-    )
+    project = await user_project_with_num_dynamic_services(max_amount_of_auto_started_dyn_services)
     all_service_uuids = list(project["workbench"])
-    mocked_dynamic_services_interface[
-        "dynamic_scheduler.api.list_dynamic_services"
-    ].return_value = [
+    mocked_dynamic_services_interface["dynamic_scheduler.api.list_dynamic_services"].return_value = [
         {"service_uuid": service_uuid} for service_uuid in all_service_uuids
     ]
     url = client.app.router["create_node"].url_for(project_id=project["uuid"])
@@ -532,9 +468,7 @@ async def test_create_node_does_not_start_dynamic_node_if_there_are_already_too_
     }
     response = await client.post(f"{url}", json=body)
     await assert_status(response, expected.created)
-    mocked_dynamic_services_interface[
-        "dynamic_scheduler.api.run_dynamic_service"
-    ].assert_not_called()
+    mocked_dynamic_services_interface["dynamic_scheduler.api.run_dynamic_service"].assert_not_called()
 
 
 @pytest.mark.parametrize(*standard_user_role())
@@ -557,7 +491,7 @@ async def test_create_many_nodes_in_parallel_still_is_limited_to_the_defined_max
     SERVICE_IS_RUNNING_AFTER_S: Final[NonNegativeFloat] = 0.1
 
     @dataclass
-    class _RunninServices:
+    class _RunningServices:
         running_services_uuids: list[str] = field(default_factory=list)
 
         async def num_services(
@@ -565,21 +499,16 @@ async def test_create_many_nodes_in_parallel_still_is_limited_to_the_defined_max
             *args,
             **kwargs,  # noqa: ARG002
         ) -> list[dict[str, Any]]:
-            return [
-                {"service_uuid": service_uuid}
-                for service_uuid in self.running_services_uuids
-            ]
+            return [{"service_uuid": service_uuid} for service_uuid in self.running_services_uuids]
 
         async def inc_running_services(self, *args, **kwargs):  # noqa: ARG002
             # simulate delay when service is starting
             # reproduces real world conditions and makes test to fail
             await asyncio.sleep(SERVICE_IS_RUNNING_AFTER_S)
-            self.running_services_uuids.append(
-                kwargs["dynamic_service_start"].node_uuid
-            )
+            self.running_services_uuids.append(kwargs["dynamic_service_start"].node_uuid)
 
     # let's count the started services
-    running_services = _RunninServices()
+    running_services = _RunningServices()
     assert running_services.running_services_uuids == []
     mocked_dynamic_services_interface[
         "dynamic_scheduler.api.list_dynamic_services"
@@ -596,29 +525,20 @@ async def test_create_many_nodes_in_parallel_still_is_limited_to_the_defined_max
         "service_id": None,
     }
     NUM_DY_SERVICES: Final[NonNegativeInt] = 150
-    responses = await asyncio.gather(
-        *(client.post(f"{url}", json=body) for _ in range(NUM_DY_SERVICES))
-    )
+    responses = await asyncio.gather(*(client.post(f"{url}", json=body) for _ in range(NUM_DY_SERVICES)))
     # all shall have worked
     await asyncio.gather(*(assert_status(r, expected.created) for r in responses))
 
     # but only the allowed number of services should have started
     assert (
-        mocked_dynamic_services_interface[
-            "dynamic_scheduler.api.run_dynamic_service"
-        ].call_count
+        mocked_dynamic_services_interface["dynamic_scheduler.api.run_dynamic_service"].call_count
         == max_amount_of_auto_started_dyn_services
     )
-    assert (
-        len(running_services.running_services_uuids)
-        == max_amount_of_auto_started_dyn_services
-    )
+    assert len(running_services.running_services_uuids) == max_amount_of_auto_started_dyn_services
     # check that we do have NUM_DY_SERVICES nodes in the project
     with postgres_db.connect() as conn:
         result = conn.execute(
-            sa.select(projects_db_model.c.workbench).where(
-                projects_db_model.c.uuid == project["uuid"]
-            )
+            sa.select(projects_db_model.c.workbench).where(projects_db_model.c.uuid == project["uuid"])
         )
         assert result
         workbench = result.one()[projects_db_model.c.workbench]
@@ -639,9 +559,7 @@ async def test_create_node_does_start_dynamic_node_if_max_num_set_to_0(
     assert client.app
     project = await user_project_with_num_dynamic_services(faker.pyint(min_value=3))
     all_service_uuids = list(project["workbench"])
-    mocked_dynamic_services_interface[
-        "dynamic_scheduler.api.list_dynamic_services"
-    ].return_value = [
+    mocked_dynamic_services_interface["dynamic_scheduler.api.list_dynamic_services"].return_value = [
         {"service_uuid": service_uuid} for service_uuid in all_service_uuids
     ]
     url = client.app.router["create_node"].url_for(project_id=project["uuid"])
@@ -654,9 +572,7 @@ async def test_create_node_does_start_dynamic_node_if_max_num_set_to_0(
     }
     response = await client.post(f"{url}", json=body)
     await assert_status(response, expected.created)
-    mocked_dynamic_services_interface[
-        "dynamic_scheduler.api.run_dynamic_service"
-    ].assert_called_once()
+    mocked_dynamic_services_interface["dynamic_scheduler.api.run_dynamic_service"].assert_called_once()
 
 
 @pytest.mark.parametrize(
@@ -674,9 +590,7 @@ async def test_creating_deprecated_node_returns_406_not_acceptable(
     mock_catalog_api: dict[str, mock.Mock],
     node_class: str,
 ):
-    mock_catalog_api["get_service"].return_value["deprecated"] = (
-        datetime.utcnow() - timedelta(days=1)
-    ).isoformat()
+    mock_catalog_api["get_service"].return_value["deprecated"] = (datetime.utcnow() - timedelta(days=1)).isoformat()
     assert client.app
     url = client.app.router["create_node"].url_for(project_id=user_project["uuid"])
 
@@ -691,9 +605,7 @@ async def test_creating_deprecated_node_returns_406_not_acceptable(
     assert error
     assert not data
     # this does not start anything in the backend since this node is deprecated
-    mocked_dynamic_services_interface[
-        "dynamic_scheduler.api.run_dynamic_service"
-    ].assert_not_called()
+    mocked_dynamic_services_interface["dynamic_scheduler.api.run_dynamic_service"].assert_not_called()
 
 
 @pytest.mark.parametrize(
@@ -727,35 +639,25 @@ async def test_delete_node(
         if "/dynamic/" in service_data["key"] and dy_service_running
     ]
     _ = [
-        await create_dynamic_service_mock(
-            project_id=user_project["uuid"], service_uuid=service_uuid
-        )
+        await create_dynamic_service_mock(project_id=user_project["uuid"], service_uuid=service_uuid)
         for service_uuid in running_dy_services
     ]
     # mocked_dynamic_services_interface["dynamic_scheduler.api.list_dynamic_services"].return_value = [
     #     {"service_uuid": service_uuid} for service_uuid in running_dy_services
     # ]
     for node_id in user_project["workbench"]:
-        url = client.app.router["delete_node"].url_for(
-            project_id=user_project["uuid"], node_id=node_id
-        )
+        url = client.app.router["delete_node"].url_for(project_id=user_project["uuid"], node_id=node_id)
         response = await client.delete(url.path)
         data, error = await assert_status(response, expected.no_content)
         assert not data
         if error:
             continue
 
-        mocked_dynamic_services_interface[
-            "dynamic_scheduler.api.list_dynamic_services"
-        ].assert_called_once()
-        mocked_dynamic_services_interface[
-            "dynamic_scheduler.api.list_dynamic_services"
-        ].reset_mock()
+        mocked_dynamic_services_interface["dynamic_scheduler.api.list_dynamic_services"].assert_called_once()
+        mocked_dynamic_services_interface["dynamic_scheduler.api.list_dynamic_services"].reset_mock()
 
         if node_id in running_dy_services:
-            mocked_dynamic_services_interface[
-                "dynamic_scheduler.api.stop_dynamic_service"
-            ].assert_called_once_with(
+            mocked_dynamic_services_interface["dynamic_scheduler.api.stop_dynamic_service"].assert_called_once_with(
                 mock.ANY,
                 dynamic_service_stop=DynamicServiceStop(
                     user_id=logged_user["id"],
@@ -765,20 +667,14 @@ async def test_delete_node(
                     save_state=False,
                 ),
             )
-            mocked_dynamic_services_interface[
-                "dynamic_scheduler.api.stop_dynamic_service"
-            ].reset_mock()
+            mocked_dynamic_services_interface["dynamic_scheduler.api.stop_dynamic_service"].reset_mock()
         else:
-            mocked_dynamic_services_interface[
-                "dynamic_scheduler.api.stop_dynamic_service"
-            ].assert_not_called()
+            mocked_dynamic_services_interface["dynamic_scheduler.api.stop_dynamic_service"].assert_not_called()
 
         # ensure the node is gone
         with postgres_db.connect() as conn:
             result = conn.execute(
-                sa.select(projects_db_model.c.workbench).where(
-                    projects_db_model.c.uuid == user_project["uuid"]
-                )
+                sa.select(projects_db_model.c.workbench).where(projects_db_model.c.uuid == user_project["uuid"])
             )
             assert result
             workbench = result.one()[projects_db_model.c.workbench]
@@ -790,9 +686,7 @@ async def socket_io_node_updated_mock(
     mocker: MockerFixture,
     client: TestClient,
     logged_user,
-    create_socketio_connection: Callable[
-        [str | None, TestClient | None], Awaitable[tuple[socketio.AsyncClient, str]]
-    ],
+    create_socketio_connection: Callable[[str | None, TestClient | None], Awaitable[tuple[socketio.AsyncClient, str]]],
 ) -> mock.Mock:
     socket_io_conn, _ = await create_socketio_connection(None, client)
     mock_node_updated_handler = mocker.MagicMock()
@@ -824,20 +718,12 @@ async def test_start_node(
     response = await client.post(f"{url}")
     data, error = await assert_status(
         response,
-        (
-            status.HTTP_204_NO_CONTENT
-            if user_role == UserRole.GUEST
-            else expected.no_content
-        ),
+        (status.HTTP_204_NO_CONTENT if user_role == UserRole.GUEST else expected.no_content),
     )
     if error is None:
-        mocked_dynamic_services_interface[
-            "dynamic_scheduler.api.run_dynamic_service"
-        ].assert_called_once()
+        mocked_dynamic_services_interface["dynamic_scheduler.api.run_dynamic_service"].assert_called_once()
     else:
-        mocked_dynamic_services_interface[
-            "dynamic_scheduler.api.run_dynamic_service"
-        ].assert_not_called()
+        mocked_dynamic_services_interface["dynamic_scheduler.api.run_dynamic_service"].assert_not_called()
 
 
 @pytest.mark.parametrize(*standard_user_role())
@@ -860,9 +746,7 @@ async def test_start_stop_node_sends_node_updated_socketio_event(
     all_service_uuids = list(project["workbench"])
     # start the node, shall work as expected
     chosen_node_id = choice(all_service_uuids)  # noqa: S311
-    url = client.app.router["start_node"].url_for(
-        project_id=project["uuid"], node_id=chosen_node_id
-    )
+    url = client.app.router["start_node"].url_for(project_id=project["uuid"], node_id=chosen_node_id)
 
     # simulate that the dynamic service is running
     mocked_dynamic_services_interface[
@@ -878,9 +762,7 @@ async def test_start_stop_node_sends_node_updated_socketio_event(
 
     response = await client.post(f"{url}")
     await assert_status(response, expected.no_content)
-    mocked_dynamic_services_interface[
-        "dynamic_scheduler.api.run_dynamic_service"
-    ].assert_called_once()
+    mocked_dynamic_services_interface["dynamic_scheduler.api.run_dynamic_service"].assert_called_once()
 
     socket_io_node_updated_mock.assert_called_once()
     message = socket_io_node_updated_mock.call_args[0][0]
@@ -893,16 +775,12 @@ async def test_start_stop_node_sends_node_updated_socketio_event(
     assert received_node.state
     assert received_node.state.lock_state
     assert received_node.state.lock_state.locked is True
-    assert received_node.state.lock_state.current_user_groupids == [
-        logged_user["primary_gid"]
-    ]
+    assert received_node.state.lock_state.current_user_groupids == [logged_user["primary_gid"]]
     assert received_node.state.lock_state.status is NodeShareStatus.OPENED
     socket_io_node_updated_mock.reset_mock()
 
     # now stop the node
-    url = client.app.router["stop_node"].url_for(
-        project_id=project["uuid"], node_id=chosen_node_id
-    )
+    url = client.app.router["stop_node"].url_for(project_id=project["uuid"], node_id=chosen_node_id)
     # simulate that the dynamic service is idle
     mocked_dynamic_services_interface[
         "dynamic_scheduler.api.get_dynamic_service"
@@ -923,9 +801,7 @@ async def test_start_stop_node_sends_node_updated_socketio_event(
         reraise=True,
     ):
         with attempt:
-            mocked_dynamic_services_interface[
-                "dynamic_scheduler.api.stop_dynamic_service"
-            ].assert_called_once()
+            mocked_dynamic_services_interface["dynamic_scheduler.api.stop_dynamic_service"].assert_called_once()
             socket_io_node_updated_mock.assert_called_once()
     message = socket_io_node_updated_mock.call_args[0][0]
     assert "data" in message
@@ -953,13 +829,9 @@ async def test_start_node_raises_if_dynamic_services_limit_attained(
     max_amount_of_auto_started_dyn_services: int,
 ):
     assert client.app
-    project = await user_project_with_num_dynamic_services(
-        max_amount_of_auto_started_dyn_services
-    )
+    project = await user_project_with_num_dynamic_services(max_amount_of_auto_started_dyn_services)
     all_service_uuids = list(project["workbench"])
-    mocked_dynamic_services_interface[
-        "dynamic_scheduler.api.list_dynamic_services"
-    ].return_value = [
+    mocked_dynamic_services_interface["dynamic_scheduler.api.list_dynamic_services"].return_value = [
         {"service_uuid": service_uuid} for service_uuid in all_service_uuids
     ]
     # start the node, shall work as expected
@@ -974,9 +846,7 @@ async def test_start_node_raises_if_dynamic_services_limit_attained(
     )
     assert not data
     assert error
-    mocked_dynamic_services_interface[
-        "dynamic_scheduler.api.run_dynamic_service"
-    ].assert_not_called()
+    mocked_dynamic_services_interface["dynamic_scheduler.api.run_dynamic_service"].assert_not_called()
 
 
 @pytest.mark.parametrize(*standard_user_role())
@@ -993,9 +863,7 @@ async def test_start_node_starts_dynamic_service_if_max_number_of_services_set_t
     assert client.app
     project = await user_project_with_num_dynamic_services(faker.pyint(min_value=3))
     all_service_uuids = list(project["workbench"])
-    mocked_dynamic_services_interface[
-        "dynamic_scheduler.api.list_dynamic_services"
-    ].return_value = [
+    mocked_dynamic_services_interface["dynamic_scheduler.api.list_dynamic_services"].return_value = [
         {"service_uuid": service_uuid} for service_uuid in all_service_uuids
     ]
     # start the node, shall work as expected
@@ -1010,9 +878,7 @@ async def test_start_node_starts_dynamic_service_if_max_number_of_services_set_t
     )
     assert not data
     assert not error
-    mocked_dynamic_services_interface[
-        "dynamic_scheduler.api.run_dynamic_service"
-    ].assert_called_once()
+    mocked_dynamic_services_interface["dynamic_scheduler.api.run_dynamic_service"].assert_called_once()
 
 
 @pytest.mark.parametrize(*standard_user_role())
@@ -1027,9 +893,7 @@ async def test_start_node_raises_if_called_with_wrong_data(
     max_amount_of_auto_started_dyn_services: int,
 ):
     assert client.app
-    project = await user_project_with_num_dynamic_services(
-        max_amount_of_auto_started_dyn_services
-    )
+    project = await user_project_with_num_dynamic_services(max_amount_of_auto_started_dyn_services)
     all_service_uuids = list(project["workbench"])
 
     # start the node, with wrong project
@@ -1044,14 +908,10 @@ async def test_start_node_raises_if_called_with_wrong_data(
     )
     assert not data
     assert error
-    mocked_dynamic_services_interface[
-        "dynamic_scheduler.api.run_dynamic_service"
-    ].assert_not_called()
+    mocked_dynamic_services_interface["dynamic_scheduler.api.run_dynamic_service"].assert_not_called()
 
     # start the node, with wrong node
-    url = client.app.router["start_node"].url_for(
-        project_id=project["uuid"], node_id=faker.uuid4()
-    )
+    url = client.app.router["start_node"].url_for(project_id=project["uuid"], node_id=faker.uuid4())
     response = await client.post(f"{url}")
     data, error = await assert_status(
         response,
@@ -1059,9 +919,7 @@ async def test_start_node_raises_if_called_with_wrong_data(
     )
     assert not data
     assert error
-    mocked_dynamic_services_interface[
-        "dynamic_scheduler.api.run_dynamic_service"
-    ].assert_not_called()
+    mocked_dynamic_services_interface["dynamic_scheduler.api.run_dynamic_service"].assert_not_called()
 
 
 @pytest.mark.parametrize(*standard_role_response(), ids=str)
@@ -1101,9 +959,7 @@ async def test_stop_node(
             reraise=True,
         ):
             with attempt:
-                mocked_dynamic_services_interface[
-                    "dynamic_scheduler.api.stop_dynamic_service"
-                ].assert_called_once()
+                mocked_dynamic_services_interface["dynamic_scheduler.api.stop_dynamic_service"].assert_called_once()
     else:
         with suppress(RetryError):
             async for attempt in AsyncRetrying(
@@ -1113,15 +969,11 @@ async def test_stop_node(
                 reraise=True,
             ):
                 with attempt:
-                    mocked_dynamic_services_interface[
-                        "dynamic_scheduler.api.stop_dynamic_service"
-                    ].assert_not_called()
+                    mocked_dynamic_services_interface["dynamic_scheduler.api.stop_dynamic_service"].assert_not_called()
 
 
 @pytest.fixture
-def app_environment(
-    app_environment: dict[str, str], monkeypatch: pytest.MonkeyPatch
-) -> dict[str, str]:
+def app_environment(app_environment: dict[str, str], monkeypatch: pytest.MonkeyPatch) -> dict[str, str]:
     # test_read_project_nodes_previews needs WEBSERVER_DEV_FEATURES_ENABLED=1
     new_envs = setenvs_from_dict(monkeypatch, {"WEBSERVER_DEV_FEATURES_ENABLED": "1"})
     return app_environment | new_envs
@@ -1129,13 +981,9 @@ def app_environment(
 
 @pytest.fixture
 def mock_storage_calls(aioresponses_mocker: aioresponses, faker: Faker) -> None:
-    _get_files_in_node_folder = re.compile(
-        r"^http://[a-z\-_]*:[0-9]+/v[0-9]/locations/[0-9]+/files/metadata.+$"
-    )
+    _get_files_in_node_folder = re.compile(r"^http://[a-z\-_]*:[0-9]+/v[0-9]/locations/[0-9]+/files/metadata.+$")
 
-    _get_download_link = re.compile(
-        r"^http://[a-z\-_]*:[0-9]+/v[0-9]/locations/[0-9]+/files.+$"
-    )
+    _get_download_link = re.compile(r"^http://[a-z\-_]*:[0-9]+/v[0-9]/locations/[0-9]+/files.+$")
 
     file_uuid = f"{uuid4()}/{uuid4()}/assets/some_file.png"
     aioresponses_mocker.get(
@@ -1162,9 +1010,7 @@ def mock_storage_calls(aioresponses_mocker: aioresponses, faker: Faker) -> None:
     aioresponses_mocker.get(
         _get_download_link,
         status=status.HTTP_200_OK,
-        payload=jsonable_encoder(
-            Envelope[PresignedLink](data=PresignedLink(link=faker.image_url()))
-        ),
+        payload=jsonable_encoder(Envelope[PresignedLink](data=PresignedLink(link=faker.image_url()))),
         repeat=True,
     )
 
@@ -1180,9 +1026,7 @@ async def test_read_project_nodes_previews(
     project = await user_project_with_num_dynamic_services(3)
 
     # LIST all node previews
-    url = client.app.router["list_project_nodes_previews"].url_for(
-        project_id=project["uuid"]
-    )
+    url = client.app.router["list_project_nodes_previews"].url_for(project_id=project["uuid"])
     response = await client.get(f"{url}")
 
     data, error = await assert_status(

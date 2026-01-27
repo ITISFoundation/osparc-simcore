@@ -96,8 +96,7 @@ class Product(BaseModel):
     support_email: Annotated[
         LowerCaseEmailStr,
         Field(
-            description="Main support email."
-            " Other support emails can be defined under 'support' field",
+            description="Main support email. Other support emails can be defined under 'support' field",
         ),
     ]
 
@@ -139,19 +138,17 @@ class Product(BaseModel):
     max_open_studies_per_user: Annotated[
         PositiveInt | None,
         Field(
-            description="Limits the number of studies a user may have open concurently (disabled if NULL)",
+            description="Limits the number of studies a user may have open concurrently (disabled if NULL)",
         ),
     ] = None
 
-    group_id: Annotated[
-        int | None, Field(description="Groups associated to this product")
-    ] = None
+    group_id: Annotated[int | None, Field(description="Groups associated to this product")] = None
     support_standard_group_id: Annotated[
         int | None, Field(description="Support standard group ID, None if disabled")
     ] = None
-    support_chatbot_user_id: Annotated[
-        int | None, Field(description="Support chatbot user ID, None if disabled")
-    ] = None
+    support_chatbot_user_id: Annotated[int | None, Field(description="Support chatbot user ID, None if disabled")] = (
+        None
+    )
     support_assigned_fogbugz_person_id: Annotated[
         int | None,
         Field(description="Support assigned Fogbugz person ID, None if disabled"),
@@ -228,9 +225,7 @@ class Product(BaseModel):
                         **{
                             str(c.name): c.server_default.arg  # type: ignore[union-attr]
                             for c in products.columns
-                            if isinstance(c, Column)
-                            and c.server_default
-                            and isinstance(c.server_default.arg, str)  # type: ignore[union-attr]
+                            if isinstance(c, Column) and c.server_default and isinstance(c.server_default.arg, str)  # type: ignore[union-attr]
                         },
                     },
                     # Example of data in the database with a url set with blanks
@@ -354,8 +349,7 @@ class Product(BaseModel):
         template_name = filename.removesuffix(".jinja2")
         for name, field in self.__class__.model_fields.items():
             if (
-                field.json_schema_extra
-                and field.json_schema_extra.get("x_template_name") == template_name  # type: ignore[union-attr]
+                field.json_schema_extra and field.json_schema_extra.get("x_template_name") == template_name  # type: ignore[union-attr]
             ):
                 template_name_attribute: str = getattr(self, name)
                 return template_name_attribute

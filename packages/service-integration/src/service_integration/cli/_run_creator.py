@@ -66,9 +66,7 @@ json_input=$INPUT_FOLDER/inputs.json
             input_script.append(f"{input_key_upper}=$INPUT_FOLDER/{filename}")
             input_script.append(f"export {input_key_upper}")
         else:
-            input_script.append(
-                f"{input_key_upper}=$(< \"$json_input\" jq '.{input_key}')"
-            )
+            input_script.append(f"{input_key_upper}=$(< \"$json_input\" jq '.{input_key}')")
             input_script.append(f"export {input_key_upper}")
 
     input_script.extend(

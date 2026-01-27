@@ -32,9 +32,7 @@ _HOST_PROMETHEUS_PATH: Final[Path] = Path(f"/{_PROMETHEUS_FILE_NAME}")
 _HOST_PROMETHEUS_WEB_PATH: Final[Path] = Path(f"/{_PROMETHEUS_WEB_FILE_NAME}")
 _HOST_CERTIFICATES_BASE_PATH: Final[Path] = Path("/.dask-sidecar-certificates")
 _HOST_TLS_CA_FILE_PATH: Final[Path] = _HOST_CERTIFICATES_BASE_PATH / "tls_dask_ca.pem"
-_HOST_TLS_CERT_FILE_PATH: Final[Path] = (
-    _HOST_CERTIFICATES_BASE_PATH / "tls_dask_cert.pem"
-)
+_HOST_TLS_CERT_FILE_PATH: Final[Path] = _HOST_CERTIFICATES_BASE_PATH / "tls_dask_cert.pem"
 _HOST_TLS_KEY_FILE_PATH: Final[Path] = _HOST_CERTIFICATES_BASE_PATH / "tls_dask_key.pem"
 
 
@@ -57,9 +55,7 @@ def _prometheus_yml_base64_encoded() -> str:
 
 
 @functools.lru_cache
-def _prometheus_basic_auth_yml_base64_encoded(
-    prometheus_username: str, prometheus_password: str
-) -> str:
+def _prometheus_basic_auth_yml_base64_encoded(prometheus_username: str, prometheus_password: str) -> str:
     web_config = {"basic_auth_users": {prometheus_username: prometheus_password}}
     yaml_content = yaml.safe_dump(web_config)
     base64_bytes = base64.b64encode(yaml_content.encode("utf-8"))

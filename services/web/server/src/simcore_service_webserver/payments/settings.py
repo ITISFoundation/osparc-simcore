@@ -52,9 +52,7 @@ class PaymentsSettings(BaseCustomSettings, MixinServiceSettings):
     )
 
     PAYMENTS_FAKE_GATEWAY_URL: HttpUrl = Field(
-        default=TypeAdapter(HttpUrl).validate_python(
-            "https://fake-payment-gateway.com"
-        ),
+        default=TypeAdapter(HttpUrl).validate_python("https://fake-payment-gateway.com"),
         description="FAKE Base url to the payment gateway",
     )
 
@@ -62,7 +60,7 @@ class PaymentsSettings(BaseCustomSettings, MixinServiceSettings):
         NonNegativeDecimal,
         Field(
             description="Minimum balance in credits to top-up for auto-recharge"
-            # NOTE: Using credits (instead of USD) simplify RUT monitoring which is reponsible to trigger auto-recharge
+            # NOTE: Using credits (instead of USD) simplify RUT monitoring which is responsible to trigger auto-recharge
         ),
     ] = Decimal(100)
 
@@ -76,7 +74,7 @@ class PaymentsSettings(BaseCustomSettings, MixinServiceSettings):
     PAYMENTS_AUTORECHARGE_DEFAULT_MONTHLY_LIMIT: Annotated[
         NonNegativeDecimal | None,
         Field(
-            description="Default value in USD for the montly limit for auto-recharge (`mont] = hly_limit_in_usd`)",
+            description="Default value in USD for the monthly limit for auto-recharge (`mont] = hly_limit_in_usd`)",
         ),
     ] = Decimal(10_000)
 

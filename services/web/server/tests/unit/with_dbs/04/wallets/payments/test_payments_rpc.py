@@ -61,10 +61,8 @@ def app_environment(
     return new_envs
 
 
-@pytest.mark.acceptance_test(
-    "For https://github.com/ITISFoundation/osparc-simcore/issues/4657"
-)
-async def test_one_time_payment_worfklow(
+@pytest.mark.acceptance_test("For https://github.com/ITISFoundation/osparc-simcore/issues/4657")
+async def test_one_time_payment_workflow(
     client: TestClient,
     logged_user: UserInfoDict,
     setup_user_pre_registration_details_db: None,

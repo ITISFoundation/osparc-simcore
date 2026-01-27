@@ -30,9 +30,7 @@ class DynamicAutoscalingProvider:
         app_settings = get_application_settings(app)
         return utils_ec2.get_ec2_tags_dynamic(app_settings)
 
-    def get_new_node_docker_tags(
-        self, app: FastAPI, ec2_instance_data: EC2InstanceData
-    ) -> dict[DockerLabelKey, str]:
+    def get_new_node_docker_tags(self, app: FastAPI, ec2_instance_data: EC2InstanceData) -> dict[DockerLabelKey, str]:
         assert self  # nosec
         app_settings = get_application_settings(app)
         return utils_docker.get_new_node_docker_tags(app_settings, ec2_instance_data)
@@ -50,25 +48,15 @@ class DynamicAutoscalingProvider:
         assert self  # nosec
         return utils_docker.get_max_resources_from_docker_task(task)
 
-    async def get_task_defined_instance(
-        self, app: FastAPI, task
-    ) -> InstanceTypeType | None:
+    async def get_task_defined_instance(self, app: FastAPI, task) -> InstanceTypeType | None:
         assert self  # nosec
-        return await utils_docker.get_task_instance_restriction(
-            get_docker_client(app), task
-        )
+        return await utils_docker.get_task_instance_restriction(get_docker_client(app), task)
 
-    async def get_task_instance_required_docker_tags(
-        self, app: FastAPI, task
-    ) -> dict[DockerLabelKey, str]:
+    async def get_task_instance_required_docker_tags(self, app: FastAPI, task) -> dict[DockerLabelKey, str]:
         assert self  # nosec
-        return await utils_docker.get_task_osparc_custom_docker_placement_constraints(
-            get_docker_client(app), task
-        )
+        return await utils_docker.get_task_osparc_custom_docker_placement_constraints(get_docker_client(app), task)
 
-    async def compute_node_used_resources(
-        self, app: FastAPI, instance: AssociatedInstance
-    ) -> Resources:
+    async def compute_node_used_resources(self, app: FastAPI, instance: AssociatedInstance) -> Resources:
         assert self  # nosec
         docker_client = get_docker_client(app)
         app_settings = get_application_settings(app)
@@ -79,34 +67,22 @@ class DynamicAutoscalingProvider:
             service_labels=app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_SERVICE_LABELS,
         )
 
-    async def compute_cluster_used_resources(
-        self, app: FastAPI, instances: list[AssociatedInstance]
-    ) -> Resources:
+    async def compute_cluster_used_resources(self, app: FastAPI, instances: list[AssociatedInstance]) -> Resources:
         assert self  # nosec
         docker_client = get_docker_client(app)
-        return await utils_docker.compute_cluster_used_resources(
-            docker_client, [i.node for i in instances]
-        )
+        return await utils_docker.compute_cluster_used_resources(docker_client, [i.node for i in instances])
 
-    async def compute_cluster_total_resources(
-        self, app: FastAPI, instances: list[AssociatedInstance]
-    ) -> Resources:
+    async def compute_cluster_total_resources(self, app: FastAPI, instances: list[AssociatedInstance]) -> Resources:
         assert self  # nosec
         assert app  # nosec
-        return await utils_docker.compute_cluster_total_resources(
-            [i.node for i in instances]
-        )
+        return await utils_docker.compute_cluster_total_resources([i.node for i in instances])
 
-    async def is_instance_active(
-        self, app: FastAPI, instance: AssociatedInstance
-    ) -> bool:
+    async def is_instance_active(self, app: FastAPI, instance: AssociatedInstance) -> bool:
         assert self  # nosec
         assert app  # nosec
         return utils_docker.is_node_osparc_ready(instance.node)
 
-    async def is_instance_retired(
-        self, app: FastAPI, instance: AssociatedInstance
-    ) -> bool:
+    async def is_instance_retired(self, app: FastAPI, instance: AssociatedInstance) -> bool:
         assert self  # nosec
         assert app  # nosec
         assert instance  # nosec
@@ -118,28 +94,20 @@ class DynamicAutoscalingProvider:
         assert app  # nosec
         # nothing to do here
 
-    def add_instance_generic_resources(
-        self, app: FastAPI, instance: EC2InstanceData
-    ) -> None:
+    def add_instance_generic_resources(self, app: FastAPI, instance: EC2InstanceData) -> None:
         assert self  # nosec
         assert app  # nosec
         assert instance  # nosec
         # nothing to do at the moment
 
-    def adjust_instance_type_resources(
-        self, app: FastAPI, instance_type: EC2InstanceType
-    ) -> EC2InstanceType:
+    def adjust_instance_type_resources(self, app: FastAPI, instance_type: EC2InstanceType) -> EC2InstanceType:
         assert self  # nosec
         assert app  # nosec
-        adjusted_cpus, adjusted_ram = (
-            estimate_dynamic_sidecar_resources_from_ec2_instance(
-                instance_type.resources.cpus, instance_type.resources.ram
-            )
+        adjusted_cpus, adjusted_ram = estimate_dynamic_sidecar_resources_from_ec2_instance(
+            instance_type.resources.cpus, instance_type.resources.ram
         )
 
         return dataclasses.replace(
             instance_type,
-            resources=instance_type.resources.model_copy(
-                update={"cpus": adjusted_cpus, "ram": ByteSize(adjusted_ram)}
-            ),
+            resources=instance_type.resources.model_copy(update={"cpus": adjusted_cpus, "ram": ByteSize(adjusted_ram)}),
         )

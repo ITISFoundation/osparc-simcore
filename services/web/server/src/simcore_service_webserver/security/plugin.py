@@ -23,9 +23,7 @@ from ._identity_policy import SessionIdentityPolicy
 _logger = logging.getLogger(__name__)
 
 
-@app_setup_func(
-    __name__, ModuleCategory.SYSTEM, settings_name="WEBSERVER_SECURITY", logger=_logger
-)
+@app_setup_func(__name__, ModuleCategory.SYSTEM, settings_name="WEBSERVER_SECURITY", logger=_logger)
 def setup_security(app: web.Application):
     # NOTE: No need to add a dependency with products domain, i.e. do not call setup_products.
     #       The logic about the product is obtained via the security repository
@@ -37,7 +35,5 @@ def setup_security(app: web.Application):
 
     # Authorization Policy: role-based access model
     role_based_access_model = RoleBasedAccessModel.from_rawdata(ROLES_PERMISSIONS)
-    authorization_policy = AuthorizationPolicy(
-        app, access_model=role_based_access_model
-    )
+    authorization_policy = AuthorizationPolicy(app, access_model=role_based_access_model)
     aiohttp_security.setup(app, identity_policy, authorization_policy)

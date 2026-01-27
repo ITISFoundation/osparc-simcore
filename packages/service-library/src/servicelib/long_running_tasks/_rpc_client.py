@@ -9,7 +9,7 @@ from ..logging_utils import log_decorator
 from ..rabbitmq._client_rpc import RabbitMQRPCClient
 from ._rabbit_namespace import get_rabbit_namespace
 from ._serialization import loads
-from .errors import RPCTransferrableTaskError
+from .errors import RPCTransferableTaskError
 from .models import (
     LRTNamespace,
     RegisteredTaskName,
@@ -21,9 +21,7 @@ from .models import (
 
 _logger = logging.getLogger(__name__)
 
-_RPC_TIMEOUT_SHORT_REQUESTS: Final[PositiveInt] = int(
-    timedelta(seconds=20).total_seconds()
-)
+_RPC_TIMEOUT_SHORT_REQUESTS: Final[PositiveInt] = int(timedelta(seconds=20).total_seconds())
 
 
 @log_decorator(_logger, level=logging.DEBUG)
@@ -106,7 +104,7 @@ async def get_task_result(
         )
         assert isinstance(serialized_result, str)  # nosec
         return loads(serialized_result)
-    except RPCTransferrableTaskError as e:
+    except RPCTransferableTaskError as e:
         decoded_error = loads(f"{e}")
         raise decoded_error from e
 
@@ -119,7 +117,6 @@ async def remove_task(
     task_context: TaskContext,
     task_id: TaskId,
 ) -> None:
-
     result = await rabbitmq_rpc_client.request(
         get_rabbit_namespace(namespace),
         TypeAdapter(RPCMethodName).validate_python("remove_task"),

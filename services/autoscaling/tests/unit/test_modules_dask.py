@@ -51,23 +51,15 @@ from tenacity import AsyncRetrying, retry, stop_after_delay, wait_fixed
 
 _authentication_types = [
     NoAuthentication(),
-    TLSAuthentication.model_construct(
-        **TLSAuthentication.model_json_schema()["examples"][0]
-    ),
+    TLSAuthentication.model_construct(**TLSAuthentication.model_json_schema()["examples"][0]),
 ]
 
 
-@pytest.mark.parametrize(
-    "authentication", _authentication_types, ids=lambda p: f"authentication-{p.type}"
-)
-async def test__scheduler_client_with_wrong_url(
-    faker: Faker, authentication: ClusterAuthentication
-):
+@pytest.mark.parametrize("authentication", _authentication_types, ids=lambda p: f"authentication-{p.type}")
+async def test__scheduler_client_with_wrong_url(faker: Faker, authentication: ClusterAuthentication):
     with pytest.raises(DaskSchedulerNotFoundError):
         async with _scheduler_client(
-            TypeAdapter(AnyUrl).validate_python(
-                f"tcp://{faker.ipv4()}:{faker.port_number()}"
-            ),
+            TypeAdapter(AnyUrl).validate_python(f"tcp://{faker.ipv4()}:{faker.port_number()}"),
             authentication,
         ):
             ...
@@ -75,9 +67,7 @@ async def test__scheduler_client_with_wrong_url(
 
 @pytest.fixture
 def scheduler_url(dask_spec_local_cluster: distributed.SpecCluster) -> AnyUrl:
-    return TypeAdapter(AnyUrl).validate_python(
-        dask_spec_local_cluster.scheduler_address
-    )
+    return TypeAdapter(AnyUrl).validate_python(dask_spec_local_cluster.scheduler_address)
 
 
 @pytest.fixture
@@ -100,9 +90,7 @@ def dask_workers_config() -> dict[str, Any]:
     }
 
 
-async def test__scheduler_client(
-    scheduler_url: AnyUrl, scheduler_authentication: ClusterAuthentication
-):
+async def test__scheduler_client(scheduler_url: AnyUrl, scheduler_authentication: ClusterAuthentication):
     async with _scheduler_client(scheduler_url, scheduler_authentication):
         ...
 
@@ -110,9 +98,7 @@ async def test__scheduler_client(
 async def test_list_unrunnable_tasks_with_no_workers(
     dask_local_cluster_without_workers: distributed.SpecCluster,
 ):
-    scheduler_url = TypeAdapter(AnyUrl).validate_python(
-        dask_local_cluster_without_workers.scheduler_address
-    )
+    scheduler_url = TypeAdapter(AnyUrl).validate_python(dask_local_cluster_without_workers.scheduler_address)
     assert await list_unrunnable_tasks(scheduler_url, NoAuthentication()) == []
 
 
@@ -153,18 +139,13 @@ async def test_list_processing_tasks(
         return x + y
 
     # there is nothing now
-    assert (
-        await list_processing_tasks_per_worker(scheduler_url, scheduler_authentication)
-        == {}
-    )
+    assert await list_processing_tasks_per_worker(scheduler_url, scheduler_authentication) == {}
 
     # this function will be queued and executed as there are no specific resources needed
     future_queued_task = dask_spec_cluster_client.submit(_add_fct, 2, 5)
     assert future_queued_task
 
-    assert await list_processing_tasks_per_worker(
-        scheduler_url, scheduler_authentication
-    ) == {
+    assert await list_processing_tasks_per_worker(scheduler_url, scheduler_authentication) == {
         next(iter(dask_spec_cluster_client.scheduler_info()["workers"])): [
             DaskTask(
                 task_id=DaskTaskId(future_queued_task.key),
@@ -177,10 +158,7 @@ async def test_list_processing_tasks(
     assert result == 7
 
     # nothing processing anymore
-    assert (
-        await list_processing_tasks_per_worker(scheduler_url, scheduler_authentication)
-        == {}
-    )
+    assert await list_processing_tasks_per_worker(scheduler_url, scheduler_authentication) == {}
 
 
 _DASK_SCHEDULER_REACTION_TIME_S: Final[int] = 4
@@ -220,9 +198,7 @@ async def test_get_worker_still_has_results_in_memory_with_no_workers_raises(
     dask_local_cluster_without_workers: distributed.SpecCluster,
     fake_localhost_ec2_instance_data: EC2InstanceData,
 ):
-    scheduler_url = TypeAdapter(AnyUrl).validate_python(
-        dask_local_cluster_without_workers.scheduler_address
-    )
+    scheduler_url = TypeAdapter(AnyUrl).validate_python(dask_local_cluster_without_workers.scheduler_address)
     with pytest.raises(DaskNoWorkersError):
         await get_worker_still_has_results_in_memory(
             scheduler_url, NoAuthentication(), fake_localhost_ec2_instance_data
@@ -236,9 +212,7 @@ async def test_get_worker_still_has_results_in_memory_with_invalid_worker_host_r
 ):
     ec2_instance_data = fake_ec2_instance_data()
     with pytest.raises(DaskWorkerNotFoundError):
-        await get_worker_still_has_results_in_memory(
-            scheduler_url, scheduler_authentication, ec2_instance_data
-        )
+        await get_worker_still_has_results_in_memory(scheduler_url, scheduler_authentication, ec2_instance_data)
 
 
 @pytest.mark.parametrize("fct_shall_err", [True, False], ids=str)
@@ -282,9 +256,7 @@ async def test_get_worker_still_has_results_in_memory(
         )
         assert isinstance(exc, RuntimeError)
     else:
-        result = await future_queued_task.result(
-            timeout=_DASK_SCHEDULER_REACTION_TIME_S
-        )  # type: ignore
+        result = await future_queued_task.result(timeout=_DASK_SCHEDULER_REACTION_TIME_S)  # type: ignore
         assert result == 7
 
     await _wait_for_dask_scheduler_to_change_state()
@@ -323,13 +295,9 @@ async def test_worker_used_resources_with_no_workers_raises(
     dask_local_cluster_without_workers: distributed.SpecCluster,
     fake_localhost_ec2_instance_data: EC2InstanceData,
 ):
-    scheduler_url = TypeAdapter(AnyUrl).validate_python(
-        dask_local_cluster_without_workers.scheduler_address
-    )
+    scheduler_url = TypeAdapter(AnyUrl).validate_python(dask_local_cluster_without_workers.scheduler_address)
     with pytest.raises(DaskNoWorkersError):
-        await get_worker_used_resources(
-            scheduler_url, NoAuthentication(), fake_localhost_ec2_instance_data
-        )
+        await get_worker_used_resources(scheduler_url, NoAuthentication(), fake_localhost_ec2_instance_data)
 
 
 async def test_worker_used_resources_with_invalid_worker_host_raises(
@@ -339,9 +307,7 @@ async def test_worker_used_resources_with_invalid_worker_host_raises(
 ):
     ec2_instance_data = fake_ec2_instance_data()
     with pytest.raises(DaskWorkerNotFoundError):
-        await get_worker_used_resources(
-            scheduler_url, scheduler_authentication, ec2_instance_data
-        )
+        await get_worker_used_resources(scheduler_url, scheduler_authentication, ec2_instance_data)
 
 
 async def test_worker_used_resources(
@@ -352,9 +318,7 @@ async def test_worker_used_resources(
 ):
     # initial state
     assert (
-        await get_worker_used_resources(
-            scheduler_url, scheduler_authentication, fake_localhost_ec2_instance_data
-        )
+        await get_worker_used_resources(scheduler_url, scheduler_authentication, fake_localhost_ec2_instance_data)
         == Resources.create_as_empty()
     )
 
@@ -366,9 +330,7 @@ async def test_worker_used_resources(
 
     # run something that uses resources
     num_cpus = 2
-    future_queued_task = dask_spec_cluster_client.submit(
-        _add_fct, 2, 5, resources={"CPU": num_cpus}
-    )
+    future_queued_task = dask_spec_cluster_client.submit(_add_fct, 2, 5, resources={"CPU": num_cpus})
     assert future_queued_task
     await _wait_for_dask_scheduler_to_change_state()
     assert await get_worker_used_resources(
@@ -384,9 +346,7 @@ async def test_worker_used_resources(
 
     # back to no use
     assert (
-        await get_worker_used_resources(
-            scheduler_url, scheduler_authentication, fake_localhost_ec2_instance_data
-        )
+        await get_worker_used_resources(scheduler_url, scheduler_authentication, fake_localhost_ec2_instance_data)
         == Resources.create_as_empty()
     )
 
@@ -400,9 +360,7 @@ async def test_compute_cluster_total_resources(
 ):
     # asking for resources of empty cluster returns empty resources
     assert (
-        await compute_cluster_total_resources(
-            scheduler_url, scheduler_authentication, []
-        )
+        await compute_cluster_total_resources(scheduler_url, scheduler_authentication, [])
         == Resources.create_as_empty()
     )
     ec2_instance_data = fake_ec2_instance_data()
@@ -410,9 +368,7 @@ async def test_compute_cluster_total_resources(
     assert ec2_instance_data.resources.ram > 0
     assert ec2_instance_data.resources.generic_resources == {}
     assert (
-        await compute_cluster_total_resources(
-            scheduler_url, scheduler_authentication, [ec2_instance_data]
-        )
+        await compute_cluster_total_resources(scheduler_url, scheduler_authentication, [ec2_instance_data])
         == Resources.create_as_empty()
     ), "this instance is not connected and should not be accounted for"
 
@@ -422,9 +378,7 @@ async def test_compute_cluster_total_resources(
     assert cluster_total_resources.cpus > 0
     assert cluster_total_resources.ram > 0
     assert DASK_WORKER_THREAD_RESOURCE_NAME in cluster_total_resources.generic_resources
-    assert (
-        cluster_total_resources.generic_resources[DASK_WORKER_THREAD_RESOURCE_NAME] == 2
-    )
+    assert cluster_total_resources.generic_resources[DASK_WORKER_THREAD_RESOURCE_NAME] == 2
 
 
 @pytest.mark.parametrize(
@@ -452,18 +406,10 @@ def test_add_instance_generic_resources(
 
     add_instance_generic_resources(settings, ec2_instance_data)
     assert ec2_instance_data.resources.generic_resources != {}
-    assert (
-        DASK_WORKER_THREAD_RESOURCE_NAME
-        in ec2_instance_data.resources.generic_resources
-    )
+    assert DASK_WORKER_THREAD_RESOURCE_NAME in ec2_instance_data.resources.generic_resources
     if expected_threads_resource < 0:
-        expected_threads_resource = int(
-            ec2_instance_data.resources.cpus * dask_nthreads_multiplier
-        )
-    assert (
-        ec2_instance_data.resources.generic_resources[DASK_WORKER_THREAD_RESOURCE_NAME]
-        == expected_threads_resource
-    )
+        expected_threads_resource = int(ec2_instance_data.resources.cpus * dask_nthreads_multiplier)
+    assert ec2_instance_data.resources.generic_resources[DASK_WORKER_THREAD_RESOURCE_NAME] == expected_threads_resource
 
 
 async def test_is_worker_connected(
@@ -473,19 +419,9 @@ async def test_is_worker_connected(
     fake_localhost_ec2_instance_data: EC2InstanceData,
 ):
     ec2_instance_data = fake_ec2_instance_data()
-    assert (
-        await is_worker_connected(
-            scheduler_url, scheduler_authentication, ec2_instance_data
-        )
-        is False
-    )
+    assert await is_worker_connected(scheduler_url, scheduler_authentication, ec2_instance_data) is False
 
-    assert (
-        await is_worker_connected(
-            scheduler_url, scheduler_authentication, fake_localhost_ec2_instance_data
-        )
-        is True
-    )
+    assert await is_worker_connected(scheduler_url, scheduler_authentication, fake_localhost_ec2_instance_data) is True
 
 
 async def test_is_worker_retired(
@@ -496,26 +432,14 @@ async def test_is_worker_retired(
 ):
     ec2_instance_data = fake_ec2_instance_data()
     # fake instance is not connected, so it cannot be retired
-    assert (
-        await is_worker_retired(
-            scheduler_url, scheduler_authentication, ec2_instance_data
-        )
-        is False
-    )
+    assert await is_worker_retired(scheduler_url, scheduler_authentication, ec2_instance_data) is False
 
     # localhost is connected, but not retired
-    assert (
-        await is_worker_retired(
-            scheduler_url, scheduler_authentication, fake_localhost_ec2_instance_data
-        )
-        is False
-    )
+    assert await is_worker_retired(scheduler_url, scheduler_authentication, fake_localhost_ec2_instance_data) is False
 
     # retire localhost worker
     await try_retire_nodes(scheduler_url, scheduler_authentication)
-    async for attempt in AsyncRetrying(
-        stop=stop_after_delay(10), wait=wait_fixed(1), reraise=True
-    ):
+    async for attempt in AsyncRetrying(stop=stop_after_delay(10), wait=wait_fixed(1), reraise=True):
         with attempt:
             assert (
                 await is_worker_retired(

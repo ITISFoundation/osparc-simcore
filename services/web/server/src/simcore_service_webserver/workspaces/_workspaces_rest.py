@@ -46,20 +46,16 @@ async def create_workspace(request: web.Request):
     req_ctx = WorkspacesRequestContext.model_validate(request)
     body_params = await parse_request_body_as(WorkspaceCreateBodyParams, request)
 
-    workspace: UserWorkspaceWithAccessRights = (
-        await _workspaces_service.create_workspace(
-            request.app,
-            user_id=req_ctx.user_id,
-            name=body_params.name,
-            description=body_params.description,
-            thumbnail=body_params.thumbnail,
-            product_name=req_ctx.product_name,
-        )
+    workspace: UserWorkspaceWithAccessRights = await _workspaces_service.create_workspace(
+        request.app,
+        user_id=req_ctx.user_id,
+        name=body_params.name,
+        description=body_params.description,
+        thumbnail=body_params.thumbnail,
+        product_name=req_ctx.product_name,
     )
 
-    return envelope_json_response(
-        WorkspaceGet.from_domain_model(workspace), web.HTTPCreated
-    )
+    return envelope_json_response(WorkspaceGet.from_domain_model(workspace), web.HTTPCreated)
 
 
 @routes.get(f"/{VTAG}/workspaces", name="list_workspaces")
@@ -68,9 +64,7 @@ async def create_workspace(request: web.Request):
 @handle_plugin_requests_exceptions
 async def list_workspaces(request: web.Request):
     req_ctx = WorkspacesRequestContext.model_validate(request)
-    query_params: WorkspacesListQueryParams = parse_request_query_parameters_as(
-        WorkspacesListQueryParams, request
-    )
+    query_params: WorkspacesListQueryParams = parse_request_query_parameters_as(WorkspacesListQueryParams, request)
 
     if not query_params.filters:
         query_params.filters = WorkspacesFilters()

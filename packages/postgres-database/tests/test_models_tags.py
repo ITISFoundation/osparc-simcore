@@ -24,9 +24,7 @@ def test_migration_downgrade_script():
         sa.Column(
             "user_id",
             sa.BigInteger,
-            sa.ForeignKey(
-                "users.id", onupdate=RefActions.CASCADE, ondelete=RefActions.CASCADE
-            ),
+            sa.ForeignKey("users.id", onupdate=RefActions.CASCADE, ondelete=RefActions.CASCADE),
             nullable=False,
         ),
         sa.Column("name", sa.String, nullable=False),
@@ -34,15 +32,10 @@ def test_migration_downgrade_script():
         sa.Column("color", sa.String, nullable=False),
     )
 
-    j = users.join(
-        tags_access_rights, tags_access_rights.c.group_id == users.c.primary_gid
-    )
+    j = users.join(tags_access_rights, tags_access_rights.c.group_id == users.c.primary_gid)
 
     scalar_subq = (
-        sa.select(users.c.id)
-        .select_from(j)
-        .where(old_tags.c.id == tags_access_rights.c.tag_id)
-        .scalar_subquery()
+        sa.select(users.c.id).select_from(j).where(old_tags.c.id == tags_access_rights.c.tag_id).scalar_subquery()
     )
 
     update_stmt = old_tags.update().values(user_id=scalar_subq)

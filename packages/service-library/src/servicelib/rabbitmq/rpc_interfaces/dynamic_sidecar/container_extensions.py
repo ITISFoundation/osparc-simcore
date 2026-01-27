@@ -14,11 +14,7 @@ _logger = logging.getLogger(__name__)
 
 @log_decorator(_logger, level=logging.DEBUG)
 async def toggle_ports_io(
-    rabbitmq_rpc_client: RabbitMQRPCClient,
-    *,
-    node_id: NodeID,
-    enable_outputs: bool,
-    enable_inputs: bool
+    rabbitmq_rpc_client: RabbitMQRPCClient, *, node_id: NodeID, enable_outputs: bool, enable_inputs: bool
 ) -> None:
     rpc_namespace = get_rpc_namespace(node_id)
     result = await rabbitmq_rpc_client.request(
@@ -32,10 +28,7 @@ async def toggle_ports_io(
 
 @log_decorator(_logger, level=logging.DEBUG)
 async def create_output_dirs(
-    rabbitmq_rpc_client: RabbitMQRPCClient,
-    *,
-    node_id: NodeID,
-    outputs_labels: dict[str, ServiceOutput]
+    rabbitmq_rpc_client: RabbitMQRPCClient, *, node_id: NodeID, outputs_labels: dict[str, ServiceOutput]
 ) -> None:
     rpc_namespace = get_rpc_namespace(node_id)
     result = await rabbitmq_rpc_client.request(
@@ -53,7 +46,7 @@ async def attach_container_to_network(
     node_id: NodeID,
     container_id: str,
     network_id: str,
-    network_aliases: list[str]
+    network_aliases: list[str],
 ) -> None:
     rpc_namespace = get_rpc_namespace(node_id)
     result = await rabbitmq_rpc_client.request(
@@ -68,11 +61,7 @@ async def attach_container_to_network(
 
 @log_decorator(_logger, level=logging.DEBUG)
 async def detach_container_from_network(
-    rabbitmq_rpc_client: RabbitMQRPCClient,
-    *,
-    node_id: NodeID,
-    container_id: str,
-    network_id: str
+    rabbitmq_rpc_client: RabbitMQRPCClient, *, node_id: NodeID, container_id: str, network_id: str
 ) -> None:
     rpc_namespace = get_rpc_namespace(node_id)
     result = await rabbitmq_rpc_client.request(

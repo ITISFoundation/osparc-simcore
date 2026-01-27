@@ -112,9 +112,7 @@ async def create_node(request: web.Request) -> web.Response:
         body.service_version,
         req_ctx.product_name,
     ):
-        raise web.HTTPNotAcceptable(
-            text=f"Service {body.service_key}:{body.service_version} is deprecated"
-        )
+        raise web.HTTPNotAcceptable(text=f"Service {body.service_key}:{body.service_version} is deprecated")
 
     # ensure the project exists
     project_data = await _projects_service.get_project_for_user(
@@ -164,22 +162,16 @@ async def get_node(request: web.Request) -> web.Response:
         req_ctx.product_name,
     ):
         project_node = project["workbench"][f"{path_params.node_id}"]
-        raise web.HTTPNotAcceptable(
-            text=f"Service {project_node['key']}:{project_node['version']} is deprecated!"
-        )
+        raise web.HTTPNotAcceptable(text=f"Service {project_node['key']}:{project_node['version']} is deprecated!")
 
-    service_data: NodeGetIdle | NodeGetUnknown | DynamicServiceGet | NodeGet = (
-        await dynamic_scheduler_service.get_dynamic_service(
-            app=request.app, node_id=path_params.node_id
-        )
-    )
+    service_data: (
+        NodeGetIdle | NodeGetUnknown | DynamicServiceGet | NodeGet
+    ) = await dynamic_scheduler_service.get_dynamic_service(app=request.app, node_id=path_params.node_id)
 
     return envelope_json_response(get_status_as_dict(service_data))
 
 
-@routes.patch(
-    f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}", name="patch_project_node"
-)
+@routes.patch(f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}", name="patch_project_node")
 @login_required
 @permission_required("project.node.update")
 @handle_plugin_requests_exceptions
@@ -244,9 +236,7 @@ async def retrieve_node(request: web.Request) -> web.Response:
     retrieve = await parse_request_body_as(NodeRetrieve, request)
 
     return web.json_response(
-        await dynamic_scheduler_service.retrieve_inputs(
-            request.app, path_params.node_id, retrieve.port_keys
-        ),
+        await dynamic_scheduler_service.retrieve_inputs(request.app, path_params.node_id, retrieve.port_keys),
         dumps=json_dumps,
     )
 
@@ -313,18 +303,14 @@ async def _stop_dynamic_service_task(
     _ = progress
     # NOTE: _handle_project_nodes_exceptions only decorate handlers
     try:
-        await dynamic_scheduler_service.stop_dynamic_service(
-            app, dynamic_service_stop=dynamic_service_stop
-        )
+        await dynamic_scheduler_service.stop_dynamic_service(app, dynamic_service_stop=dynamic_service_stop)
         project = await _projects_service.get_project_for_user(
             app,
             f"{dynamic_service_stop.project_id}",
             dynamic_service_stop.user_id,
             include_state=True,
         )
-        await _projects_service.notify_project_node_update(
-            app, project, dynamic_service_stop.node_id, errors=None
-        )
+        await _projects_service.notify_project_node_update(app, project, dynamic_service_stop.node_id, errors=None)
         return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
     except (RPCServerError, ServiceWaitingForManualInterventionError) as exc:
@@ -365,9 +351,7 @@ def register_stop_dynamic_service_task(app: web.Application) -> None:
     TaskRegistry.register(_stop_dynamic_service_task, app=app)
 
 
-@routes.post(
-    f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}:stop", name="stop_node"
-)
+@routes.post(f"/{VTAG}/projects/{{project_id}}/nodes/{{node_id}}:stop", name="stop_node")
 @login_required
 @permission_required("project.update")
 @handle_plugin_requests_exceptions
@@ -396,9 +380,7 @@ async def stop_node(request: web.Request) -> web.Response:
             user_id=req_ctx.user_id,
             project_id=path_params.project_id,
             node_id=path_params.node_id,
-            simcore_user_agent=request.headers.get(
-                X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
-            ),
+            simcore_user_agent=request.headers.get(X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE),
             save_state=save_state,
         ),
         fire_and_forget=True,
@@ -417,9 +399,7 @@ async def restart_node(request: web.Request) -> web.Response:
 
     path_params = parse_request_path_parameters_as(NodePathParams, request)
 
-    await dynamic_scheduler_service.restart_user_services(
-        request.app, node_id=path_params.node_id
-    )
+    await dynamic_scheduler_service.restart_user_services(request.app, node_id=path_params.node_id)
 
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
@@ -451,15 +431,13 @@ async def get_node_resources(request: web.Request) -> web.Response:
         node_id = f"{path_params.node_id}"
         raise NodeNotFoundError(project_uuid=project_uuid, node_uuid=node_id)
 
-    resources: ServiceResourcesDict = (
-        await _projects_service.get_project_node_resources(
-            request.app,
-            user_id=req_ctx.user_id,
-            project_id=path_params.project_id,
-            node_id=path_params.node_id,
-            service_key=project["workbench"][f"{path_params.node_id}"]["key"],
-            service_version=project["workbench"][f"{path_params.node_id}"]["version"],
-        )
+    resources: ServiceResourcesDict = await _projects_service.get_project_node_resources(
+        request.app,
+        user_id=req_ctx.user_id,
+        project_id=path_params.project_id,
+        node_id=path_params.node_id,
+        service_key=project["workbench"][f"{path_params.node_id}"]["key"],
+        service_version=project["workbench"][f"{path_params.node_id}"]["version"],
     )
     return envelope_json_response(resources)
 
@@ -483,9 +461,7 @@ async def replace_node_resources(request: web.Request) -> web.Response:
         user_id=req_ctx.user_id,
     )
     if f"{path_params.node_id}" not in project["workbench"]:
-        raise NodeNotFoundError(
-            project_uuid=f"{path_params.project_id}", node_uuid=f"{path_params.node_id}"
-        )
+        raise NodeNotFoundError(project_uuid=f"{path_params.project_id}", node_uuid=f"{path_params.node_id}")
     try:
         new_node_resources = await _projects_service.update_project_node_resources(
             request.app,
@@ -540,10 +516,8 @@ async def get_project_services(request: web.Request) -> web.Response:
         permission="read",
     )
 
-    services_in_project: list[tuple[ServiceKey, ServiceVersion]] = (
-        await _nodes_service.get_project_nodes_services(
-            request.app, project_uuid=path_params.project_id
-        )
+    services_in_project: list[tuple[ServiceKey, ServiceVersion]] = await _nodes_service.get_project_nodes_services(
+        request.app, project_uuid=path_params.project_id
     )
 
     services = []
@@ -556,23 +530,15 @@ async def get_project_services(request: web.Request) -> web.Response:
             user_id=req_ctx.user_id,
             services_ids=services_in_project,
         )
-        services = [
-            NodeServiceGet.model_validate(sv, from_attributes=True)
-            for sv in batch_got.found_items
-        ]
+        services = [NodeServiceGet.model_validate(sv, from_attributes=True) for sv in batch_got.found_items]
         missing = (
-            [
-                ServiceKeyVersion(key=k, version=v)
-                for k, v in batch_got.missing_identifiers
-            ]
+            [ServiceKeyVersion(key=k, version=v) for k, v in batch_got.missing_identifiers]
             if batch_got.missing_identifiers
             else None
         )
 
     return envelope_json_response(
-        ProjectNodeServicesGet(
-            project_uuid=path_params.project_id, services=services, missing=missing
-        )
+        ProjectNodeServicesGet(project_uuid=path_params.project_id, services=services, missing=missing)
     )
 
 
@@ -586,9 +552,7 @@ async def get_project_services(request: web.Request) -> web.Response:
 async def get_project_services_access_for_gid(request: web.Request) -> web.Response:
     req_ctx = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(ProjectPathParams, request)
-    query_params: _ServicesAccessQuery = parse_request_query_parameters_as(
-        _ServicesAccessQuery, request
-    )
+    query_params: _ServicesAccessQuery = parse_request_query_parameters_as(_ServicesAccessQuery, request)
 
     project = await _projects_service.get_project_for_user(
         request.app,
@@ -597,8 +561,7 @@ async def get_project_services_access_for_gid(request: web.Request) -> web.Respo
         include_state=True,
     )
     project_services: list[ServiceKeyVersion] = [
-        ServiceKeyVersion(key=s["key"], version=s["version"])
-        for _, s in project["workbench"].items()
+        ServiceKeyVersion(key=s["key"], version=s["version"]) for _, s in project["workbench"].items()
     ]
 
     project_services_access_rights: list[ServiceAccessRightsGet] = await asyncio.gather(
@@ -628,12 +591,8 @@ async def get_project_services_access_for_gid(request: web.Request) -> web.Respo
 
     # Update groups to compare based on the type of sharing group
     if _sharing_with_group.group_type == GroupType.PRIMARY:
-        _user_id = await users_service.get_user_id_from_gid(
-            app=request.app, primary_gid=query_params.for_gid
-        )
-        user_groups_ids = await groups_service.list_all_user_groups_ids(
-            app=request.app, user_id=_user_id
-        )
+        _user_id = await users_service.get_user_id_from_gid(app=request.app, primary_gid=query_params.for_gid)
+        user_groups_ids = await groups_service.list_all_user_groups_ids(app=request.app, user_id=_user_id)
         groups_to_compare.update(set(user_groups_ids))
         groups_to_compare.add(query_params.for_gid)
     elif _sharing_with_group.group_type == GroupType.STANDARD:
@@ -647,9 +606,7 @@ async def get_project_services_access_for_gid(request: web.Request) -> web.Respo
         service_access_rights = service.gids_with_access_rights
 
         # Find common groups between service access rights and groups to compare
-        _groups_intersection = set(service_access_rights.keys()).intersection(
-            groups_to_compare
-        )
+        _groups_intersection = set(service_access_rights.keys()).intersection(groups_to_compare)
 
         _is_service_accessible = False
 

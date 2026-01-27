@@ -48,7 +48,7 @@ def mock_docker_compose(mocker: MockerFixture) -> None:
     [
         {"compose_spec": None, "container_names": []},
         {"compose_spec": "some_random_fake_spec", "container_names": []},
-        {"compose_spec": "some_random_fake_spec", "container_names": ["a_continaer"]},
+        {"compose_spec": "some_random_fake_spec", "container_names": ["a_container"]},
         {
             "compose_spec": "some_random_fake_spec",
             "container_names": ["a_ctnr", "b_cont"],
@@ -96,9 +96,7 @@ async def test_shared_store_updates(
         for state in shared_store.volume_states.values():
             state.last_changed = arrow.get(state.last_changed.isoformat()).datetime
 
-    shared_store_from_file = SharedStore.model_validate_json(
-        store_file_path.read_text()
-    )
+    shared_store_from_file = SharedStore.model_validate_json(store_file_path.read_text())
     _normalize_datetimes(shared_store)
     _normalize_datetimes(shared_store_from_file)
 
@@ -116,9 +114,7 @@ async def test_no_concurrency_with_parallel_writes(
             new_list.append(item)
             shared_store.container_names = new_list
 
-    await logged_gather(
-        *(replace_list_in_shared_store(f"{x}") for x in range(PARALLEL_CHANGES))
-    )
+    await logged_gather(*(replace_list_in_shared_store(f"{x}") for x in range(PARALLEL_CHANGES)))
     assert len(shared_store.container_names) == PARALLEL_CHANGES
 
 
@@ -127,17 +123,13 @@ async def test_init_from_disk_with_legacy_data_format(project_tests_dir: Path):
     LEGACY_SHARED_STORE = "legacy_shared_store.json"
 
     # ensure stored legacy format is parsable
-    disk_shared_store = await SharedStore.init_from_disk(
-        MOCKS_DIR, store_file_name=LEGACY_SHARED_STORE
-    )
+    disk_shared_store = await SharedStore.init_from_disk(MOCKS_DIR, store_file_name=LEGACY_SHARED_STORE)
     # if file is missing it correctly loaded the storage_file
     assert (MOCKS_DIR / STORE_FILE_NAME).exists() is False
 
     def _normalize_datetimes(data: dict[str, Any]) -> None:
         for state in data["volume_states"].values():
-            state["last_changed"] = arrow.get(
-                state["last_changed"]
-            ).datetime.isoformat()
+            state["last_changed"] = arrow.get(state["last_changed"]).datetime.isoformat()
 
     # ensure objects are compatible
     parsed_legacy_format = json.loads(disk_shared_store.model_dump_json())

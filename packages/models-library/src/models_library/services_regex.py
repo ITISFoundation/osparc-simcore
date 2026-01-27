@@ -23,7 +23,7 @@ FILENAME_RE = r".+"
 # e.g. simcore/services/comp/opencor
 SERVICE_KEY_RE: Final[re.Pattern[str]] = re.compile(
     r"^simcore/services/"
-    rf"(?P<type>({ '|'.join(SERVICE_TYPE_TO_NAME_MAP.values()) }))/"
+    rf"(?P<type>({'|'.join(SERVICE_TYPE_TO_NAME_MAP.values())}))/"
     r"(?P<subdir>[a-z0-9][a-z0-9_.-]*/)*"
     r"(?P<name>[a-z0-9-_]+[a-z0-9])$"
 )
@@ -49,19 +49,13 @@ def _create_key_format(service_type: ServiceType) -> str:
     return f"simcore/services/{SERVICE_TYPE_TO_NAME_MAP[service_type]}/{{service_name}}"
 
 
-COMPUTATIONAL_SERVICE_KEY_RE: Final[re.Pattern[str]] = _create_key_regex(
-    ServiceType.COMPUTATIONAL
-)
-COMPUTATIONAL_SERVICE_KEY_FORMAT: Final[str] = _create_key_format(
-    ServiceType.COMPUTATIONAL
-)
+COMPUTATIONAL_SERVICE_KEY_RE: Final[re.Pattern[str]] = _create_key_regex(ServiceType.COMPUTATIONAL)
+COMPUTATIONAL_SERVICE_KEY_FORMAT: Final[str] = _create_key_format(ServiceType.COMPUTATIONAL)
 
 DYNAMIC_SERVICE_KEY_RE: Final[re.Pattern[str]] = _create_key_regex(ServiceType.DYNAMIC)
 DYNAMIC_SERVICE_KEY_FORMAT: Final[str] = _create_key_format(ServiceType.DYNAMIC)
 
-FRONTEND_SERVICE_KEY_RE: Final[re.Pattern[str]] = _create_key_regex(
-    ServiceType.FRONTEND
-)
+FRONTEND_SERVICE_KEY_RE: Final[re.Pattern[str]] = _create_key_regex(ServiceType.FRONTEND)
 FRONTEND_SERVICE_KEY_FORMAT: Final[str] = _create_key_format(ServiceType.FRONTEND)
 
 

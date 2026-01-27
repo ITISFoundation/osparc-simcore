@@ -14,24 +14,18 @@ class _ClientDisconnectedError(Exception):
     pass
 
 
-async def _message_poller(
-    request: Request, queue: asyncio.Queue, receive: Receive
-) -> NoReturn:
+async def _message_poller(request: Request, queue: asyncio.Queue, receive: Receive) -> NoReturn:
     while True:
         message = await receive()
         if message["type"] == "http.disconnect":
-            _logger.debug(
-                "client disconnected the request to %s!", request.url, stacklevel=2
-            )
+            _logger.debug("client disconnected the request to %s!", request.url, stacklevel=2)
             raise _ClientDisconnectedError
 
         # Puts the message in the queue
         await queue.put(message)
 
 
-async def _handler(
-    app: ASGIApp, scope: Scope, queue: asyncio.Queue[Message], send: Send
-) -> None:
+async def _handler(app: ASGIApp, scope: Scope, queue: asyncio.Queue[Message], send: Send) -> None:
     return await app(scope, queue.get, send)
 
 
@@ -48,7 +42,7 @@ class RequestCancellationMiddleware:
     def __init__(self, app: ASGIApp) -> None:
         self.app = app
         _logger.warning(
-            "CancellationMiddleware is in use, in case of client disconection, "
+            "CancellationMiddleware is in use, in case of client disconnection, "
             "FastAPI BackgroundTasks will be cancelled too!",
         )
 
@@ -64,12 +58,8 @@ class RequestCancellationMiddleware:
         with log_context(_logger, logging.DEBUG, f"cancellable request {request.url}"):
             try:
                 async with asyncio.TaskGroup() as tg:
-                    handler_task = tg.create_task(
-                        _handler(self.app, scope, queue, send)
-                    )
-                    poller_task = tg.create_task(
-                        _message_poller(request, queue, receive)
-                    )
+                    handler_task = tg.create_task(_handler(self.app, scope, queue, send))
+                    poller_task = tg.create_task(_message_poller(request, queue, receive))
                     await handler_task
                     poller_task.cancel("handler completed, cancelling poller")
             except* _ClientDisconnectedError:

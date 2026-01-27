@@ -32,9 +32,7 @@ async def check_user_authorized(request: web.Request) -> UserID:
     return user_id
 
 
-async def check_user_permission(
-    request: web.Request, permission: str, *, context: OptionalContext = None
-) -> None:
+async def check_user_permission(request: web.Request, permission: str, *, context: OptionalContext = None) -> None:
     """Checker that passes only to authoraised users with given permission.
 
     Raises:
@@ -56,9 +54,7 @@ async def check_user_permission(
         raise web.HTTPForbidden(text=msg)
 
 
-async def check_user_permission_with_groups(
-    request: web.Request, permission: str
-) -> None:
+async def check_user_permission_with_groups(request: web.Request, permission: str) -> None:
     """Checker that passes to authorized users with given permission via roles OR groups.
 
     Raises:
@@ -71,9 +67,7 @@ async def check_user_permission_with_groups(
         "authorized_uid": await check_user_authorized(request),
         "enable_group_permissions": True,
         "request": request,
-        "product_support_group_id": products_web.get_current_product(
-            request
-        ).support_standard_group_id,
+        "product_support_group_id": products_web.get_current_product(request).support_standard_group_id,
     }
 
     allowed = await aiohttp_security.api.permits(request, permission, context)

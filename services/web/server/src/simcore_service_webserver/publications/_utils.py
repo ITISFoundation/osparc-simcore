@@ -54,7 +54,6 @@ LICENSE: MIT
 # deprecated feature that this library still uses
 #
 
-
 import sys
 
 if sys.version_info[:2] < (2, 7):
@@ -118,19 +117,11 @@ class Json2Html:
         This method is required to implement clubbing.
         It tries to come up with column headers for your input
         """
-        if (
-            not json_input
-            or not hasattr(json_input, "__getitem__")
-            or not hasattr(json_input[0], "keys")
-        ):
+        if not json_input or not hasattr(json_input, "__getitem__") or not hasattr(json_input[0], "keys"):
             return None
         column_headers = json_input[0].keys()
         for entry in json_input:
-            if (
-                not hasattr(entry, "keys")
-                or not hasattr(entry, "__iter__")
-                or len(entry.keys()) != len(column_headers)
-            ):
+            if not hasattr(entry, "keys") or not hasattr(entry, "__iter__") or len(entry.keys()) != len(column_headers):
                 return None
             for header in column_headers:
                 if header not in entry:
@@ -148,8 +139,7 @@ class Json2Html:
         if type(json_input) in text_types:
             if self.escape:
                 return html_escape(text(json_input))
-            else:
-                return text(json_input)
+            return text(json_input)
         if hasattr(json_input, "items"):
             return self.convert_object(json_input)
         if hasattr(json_input, "__iter__") and hasattr(json_input, "__getitem__"):
@@ -191,18 +181,13 @@ class Json2Html:
         if column_headers is not None:
             converted_output += self.table_init_markup
             converted_output += "<thead>"
-            converted_output += (
-                "<tr><th>" + "</th><th>".join(column_headers) + "</th></tr>"
-            )
+            converted_output += "<tr><th>" + "</th><th>".join(column_headers) + "</th></tr>"
             converted_output += "</thead>"
             converted_output += "<tbody>"
             for list_entry in list_input:
                 converted_output += "<tr><td>"
                 converted_output += "</td><td>".join(
-                    [
-                        self.convert_json_node(list_entry[column_header])
-                        for column_header in column_headers
-                    ]
+                    [self.convert_json_node(list_entry[column_header]) for column_header in column_headers]
                 )
                 converted_output += "</td></tr>"
             converted_output += "</tbody>"
@@ -212,9 +197,7 @@ class Json2Html:
         # so you don't want or need clubbing eh? This makes @muellermichel very sad... ;(
         # alright, let's fall back to a basic list here...
         converted_output = "<ul><li>"
-        converted_output += "</li><li>".join(
-            [self.convert_json_node(child) for child in list_input]
-        )
+        converted_output += "</li><li>".join([self.convert_json_node(child) for child in list_input])
         converted_output += "</li></ul>"
         return converted_output
 
@@ -228,8 +211,7 @@ class Json2Html:
         converted_output = self.table_init_markup + "<tr>"
         converted_output += "</tr><tr>".join(
             [
-                "<th>%s</th><td>%s</td>"
-                % (self.convert_json_node(k), self.convert_json_node(v))
+                "<th>%s</th><td>%s</td>" % (self.convert_json_node(k), self.convert_json_node(v))
                 for k, v in json_input.items()
             ]
         )

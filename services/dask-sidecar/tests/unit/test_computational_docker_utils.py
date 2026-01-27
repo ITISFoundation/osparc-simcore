@@ -99,7 +99,7 @@ async def test_create_container_config(
                 "LOG_FOLDER=/logs",
                 f"SC_COMP_SERVICES_SCHEDULED_AS={boot_mode.value}",
                 f"SIMCORE_NANO_CPUS_LIMIT={task_max_resources.get('CPU', 1) * 1e9:.0f}",
-                f"SIMCORE_MEMORY_BYTES_LIMIT={task_max_resources.get('RAM', 1024 ** 3)}",
+                f"SIMCORE_MEMORY_BYTES_LIMIT={task_max_resources.get('RAM', 1024**3)}",
                 *[f"{env_var}={env_value}" for env_var, env_value in task_envs.items()],
             ],
             "Cmd": command,
@@ -156,9 +156,7 @@ async def test_create_container_config(
         (
             "[PROGRESS]: 21% [ 1219946 / 5545233 ] Assembling matrix",
             0.21,
-            re.compile(
-                "^(?:\\[?PROGRESS\\]?:?)?\\s*(?P<value>[0-1]?\\.\\d+|\\d+\\s*(?P<percent_sign>%))"
-            ),
+            re.compile("^(?:\\[?PROGRESS\\]?:?)?\\s*(?P<value>[0-1]?\\.\\d+|\\d+\\s*(?P<percent_sign>%))"),
         ),
     ],
 )
@@ -172,9 +170,7 @@ async def test__try_parse_progress(
     if with_timestamp:
         log_line = f"{expected_time_stamp.isoformat()} {log_line}"
 
-    received_progress = await _try_parse_progress(
-        log_line, progress_regexp=progress_regexp
-    )
+    received_progress = await _try_parse_progress(log_line, progress_regexp=progress_regexp)
     assert received_progress == expected_progress_value
 
 
@@ -211,18 +207,12 @@ async def test_managed_container_always_removes_container(
     mocked_aiodocker = mocker.patch("aiodocker.Docker", autospec=True)
     async with aiodocker.Docker() as docker_client:
         with pytest.raises(type(exception_type)):
-            async with managed_container(
-                docker_client=docker_client, config=container_config
-            ) as container:
+            async with managed_container(docker_client=docker_client, config=container_config) as container:
                 mocked_aiodocker.assert_has_calls(
                     calls=[
                         call(),
                         call().__aenter__(),
-                        call()
-                        .__aenter__()
-                        .containers.create(
-                            container_config.model_dump(by_alias=True), name=None
-                        ),
+                        call().__aenter__().containers.create(container_config.model_dump(by_alias=True), name=None),
                     ]
                 )
                 mocked_aiodocker.reset_mock()
@@ -231,12 +221,7 @@ async def test_managed_container_always_removes_container(
                 raise exception_type
         # check the container was deleted
         mocked_aiodocker.assert_has_calls(
-            calls=[
-                call()
-                .__aenter__()
-                .containers.create()
-                .delete(remove=True, v=True, force=True)
-            ]
+            calls=[call().__aenter__().containers.create().delete(remove=True, v=True, force=True)]
         )
 
 
@@ -260,12 +245,10 @@ async def test_managed_container_with_broken_container_raises_docker_exception(
         labels={},
     )
     mocked_aiodocker = mocker.patch("aiodocker.Docker", autospec=True)
-    mocked_aiodocker.return_value.__aenter__.return_value.containers.create.return_value.delete.side_effect = aiodocker.DockerError(
-        "bad", {"message": "pytest fake bad message"}
+    mocked_aiodocker.return_value.__aenter__.return_value.containers.create.return_value.delete.side_effect = (
+        aiodocker.DockerError("bad", {"message": "pytest fake bad message"})
     )
     async with aiodocker.Docker() as docker_client:
         with pytest.raises(aiodocker.DockerError, match="pytest fake bad message"):
-            async with managed_container(
-                docker_client=docker_client, config=container_config
-            ) as container:
+            async with managed_container(docker_client=docker_client, config=container_config) as container:
                 assert container is not None

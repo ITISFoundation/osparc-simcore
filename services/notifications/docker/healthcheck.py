@@ -30,9 +30,7 @@ is_debug = os.getenv("SC_BOOT_MODE", "").lower() == "debug"
 
 
 def is_service_healthy() -> bool:
-    worker_mode = TypeAdapter(bool).validate_python(
-        os.getenv("NOTIFICATIONS_WORKER_MODE", "False")
-    )
+    worker_mode = TypeAdapter(bool).validate_python(os.getenv("NOTIFICATIONS_WORKER_MODE", "False"))
 
     if worker_mode:
         return is_healthy()

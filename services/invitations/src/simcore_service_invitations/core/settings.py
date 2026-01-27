@@ -27,9 +27,7 @@ class _BaseApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     INVITATIONS_LOGLEVEL: Annotated[
         LogLevel,
         Field(
-            validation_alias=AliasChoices(
-                "INVITATIONS_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"
-            ),
+            validation_alias=AliasChoices("INVITATIONS_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"),
         ),
     ] = LogLevel.INFO
 
@@ -48,9 +46,7 @@ class _BaseApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         dict[LoggerName, list[MessageSubstring]],
         Field(
             default_factory=dict,
-            validation_alias=AliasChoices(
-                "INVITATIONS_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"
-            ),
+            validation_alias=AliasChoices("INVITATIONS_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"),
             description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
         ),
     ] = DEFAULT_FACTORY
@@ -79,8 +75,7 @@ class MinimalApplicationSettings(_BaseApplicationSettings):
     INVITATIONS_SECRET_KEY: Annotated[
         SecretStr,
         Field(
-            description="Secret key to generate invitations. "
-            "TIP: simcore-service-invitations generate-key",
+            description="Secret key to generate invitations. TIP: simcore-service-invitations generate-key",
             min_length=44,
         ),
     ]

@@ -48,12 +48,8 @@ async def check_service_read_access(
     user_id: int,
     service_key: ServiceKey,
     service_version: ServiceVersion,
-    groups_repository: Annotated[
-        GroupsRepository, Depends(get_repository(GroupsRepository))
-    ],
-    services_repo: Annotated[
-        ServicesRepository, Depends(get_repository(ServicesRepository))
-    ],
+    groups_repository: Annotated[GroupsRepository, Depends(get_repository(GroupsRepository))],
+    services_repo: Annotated[ServicesRepository, Depends(get_repository(ServicesRepository))],
     x_simcore_products_name: str = Header(None),
 ) -> AccessInfo:
     # get the user's groups
@@ -61,7 +57,7 @@ async def check_service_read_access(
     if not user_groups:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="You have unsufficient rights to access the service",
+            detail="You have insufficient rights to access the service",
         )
 
     # check the user has access to this service and to which extent

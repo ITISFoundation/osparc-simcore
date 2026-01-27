@@ -12,9 +12,7 @@ async def batch_get_service_metadata(
     *,
     keys_and_versions: Iterable[tuple[ServiceKey, ServiceVersion]],
 ) -> dict[tuple[ServiceKey, ServiceVersion], ServiceMetadata]:
-    return await _repository.batch_service_metadata(
-        app, keys_and_versions=keys_and_versions
-    )
+    return await _repository.batch_service_metadata(app, keys_and_versions=keys_and_versions)
 
 
 async def get_service_metadata(

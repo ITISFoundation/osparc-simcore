@@ -49,9 +49,7 @@ async def get_public_user(app: web.Application, *, caller_id: UserID, user_id: U
     )
 
 
-async def search_public_users(
-    app: web.Application, *, caller_id: UserID, match_: str, limit: int
-) -> list:
+async def search_public_users(app: web.Application, *, caller_id: UserID, match_: str, limit: int) -> list:
     return await _users_repository.search_public_user(
         get_asyncpg_engine(app),
         caller_id=caller_id,
@@ -64,24 +62,18 @@ async def get_user(app: web.Application, user_id: UserID) -> dict[str, Any]:
     """
     :raises UserNotFoundError: if missing but NOT if marked for deletion!
     """
-    return await _users_repository.get_user_or_raise(
-        engine=get_asyncpg_engine(app), user_id=user_id
-    )
+    return await _users_repository.get_user_or_raise(engine=get_asyncpg_engine(app), user_id=user_id)
 
 
 async def get_user_email_legacy(app: web.Application, user_id: UserID | None) -> str:
     """
     :raises UserNotFoundError: if missing but NOT if marked for deletion!
     """
-    return await _users_repository.get_user_email_legacy(
-        engine=get_asyncpg_engine(app), user_id=user_id
-    )
+    return await _users_repository.get_user_email_legacy(engine=get_asyncpg_engine(app), user_id=user_id)
 
 
 async def get_user_primary_group_id(app: web.Application, user_id: UserID) -> GroupID:
-    return await _users_repository.get_user_primary_group_id(
-        engine=get_asyncpg_engine(app), user_id=user_id
-    )
+    return await _users_repository.get_user_primary_group_id(engine=get_asyncpg_engine(app), user_id=user_id)
 
 
 async def get_user_id_from_gid(app: web.Application, primary_gid: GroupID) -> UserID:
@@ -89,17 +81,13 @@ async def get_user_id_from_gid(app: web.Application, primary_gid: GroupID) -> Us
 
 
 async def get_users_in_group(app: web.Application, *, gid: GroupID) -> set[UserID]:
-    return await _users_repository.get_users_ids_in_group(
-        get_asyncpg_engine(app), group_id=gid
-    )
+    return await _users_repository.get_users_ids_in_group(get_asyncpg_engine(app), group_id=gid)
 
 
 get_guest_user_ids_and_names = _users_repository.get_guest_user_ids_and_names
 
 
-async def is_user_in_product(
-    app: web.Application, *, user_id: UserID, product_name: ProductName
-) -> bool:
+async def is_user_in_product(app: web.Application, *, user_id: UserID, product_name: ProductName) -> bool:
     return await _users_repository.is_user_in_product_name(
         get_asyncpg_engine(app), user_id=user_id, product_name=product_name
     )
@@ -117,9 +105,7 @@ async def get_user_fullname(app: web.Application, *, user_id: UserID) -> FullNam
     return await _users_repository.get_user_fullname(app, user_id=user_id)
 
 
-async def get_user_name_and_email(
-    app: web.Application, *, user_id: UserID
-) -> UserIdNamesTuple:
+async def get_user_name_and_email(app: web.Application, *, user_id: UserID) -> UserIdNamesTuple:
     """
     Raises:
         UserNotFoundError
@@ -135,9 +121,7 @@ async def get_user_name_and_email(
     return UserIdNamesTuple(name=row["name"], email=row["email"])
 
 
-async def get_user_display_and_id_names(
-    app: web.Application, *, user_id: UserID
-) -> UserDisplayAndIdNamesTuple:
+async def get_user_display_and_id_names(app: web.Application, *, user_id: UserID) -> UserDisplayAndIdNamesTuple:
     """
     Raises:
         UserNotFoundError
@@ -158,10 +142,7 @@ async def get_user_display_and_id_names(
 get_user_role = _users_repository.get_user_role
 
 
-async def get_user_credentials(
-    app: web.Application, *, user_id: UserID
-) -> UserCredentialsTuple:
-
+async def get_user_credentials(app: web.Application, *, user_id: UserID) -> UserCredentialsTuple:
     repo = UsersRepo(get_asyncpg_engine(app))
 
     user_row = await repo.get_user_by_id_or_none(user_id=user_id)
@@ -203,9 +184,7 @@ async def get_user_invoice_address(
     product_name: ProductName,
     user_id: UserID,
 ) -> UserInvoiceAddress:
-    user_billing_details = await get_user_billing_details(
-        app, user_id=user_id, product_name=product_name
-    )
+    user_billing_details = await get_user_billing_details(app, user_id=user_id, product_name=product_name)
 
     return UserInvoiceAddress(
         line1=user_billing_details.address,
@@ -221,21 +200,15 @@ async def get_user_invoice_address(
 #
 
 
-async def delete_user_without_projects(
-    app: web.Application, *, user_id: UserID, clean_cache: bool = True
-) -> None:
+async def delete_user_without_projects(app: web.Application, *, user_id: UserID, clean_cache: bool = True) -> None:
     """Deletes a user from the database if the user exists"""
-    # WARNING: user cannot be deleted without deleting first all ist project
+    # WARNING: user cannot be deleted without deleting first all its project
     # otherwise this function will raise asyncpg.exceptions.ForeignKeyViolationError
     # Consider "marking" users as deleted and havning a background job that
     # cleans it up
-    is_deleted = await _users_repository.delete_user_by_id(
-        engine=get_asyncpg_engine(app), user_id=user_id
-    )
+    is_deleted = await _users_repository.delete_user_by_id(engine=get_asyncpg_engine(app), user_id=user_id)
     if not is_deleted:
-        _logger.warning(
-            "User with id '%s' could not be deleted because it does not exist", user_id
-        )
+        _logger.warning("User with id '%s' could not be deleted because it does not exist", user_id)
         return
 
     if clean_cache:
@@ -245,9 +218,7 @@ async def delete_user_without_projects(
 
 
 async def set_user_as_deleted(app: web.Application, *, user_id: UserID) -> None:
-    await _users_repository.update_user_status(
-        get_asyncpg_engine(app), user_id=user_id, new_status=UserStatus.DELETED
-    )
+    await _users_repository.update_user_status(get_asyncpg_engine(app), user_id=user_id, new_status=UserStatus.DELETED)
 
 
 async def update_expired_users(app: web.Application) -> list[UserID]:
@@ -270,10 +241,8 @@ async def get_my_profile(
     my_profile = await _users_repository.get_my_profile(app, user_id=user_id)
 
     try:
-        preferences = (
-            await user_preferences_service.get_frontend_user_preferences_aggregation(
-                app, user_id=user_id, product_name=product_name
-            )
+        preferences = await user_preferences_service.get_frontend_user_preferences_aggregation(
+            app, user_id=user_id, product_name=product_name
         )
     except GroupExtraPropertiesNotFoundError as err:
         raise MissingGroupExtraPropertiesForProductError(
@@ -290,7 +259,6 @@ async def update_my_profile(
     user_id: UserID,
     update: MyProfileRestPatch,
 ) -> None:
-
     await _users_repository.update_user_profile(
         app,
         user_id=user_id,

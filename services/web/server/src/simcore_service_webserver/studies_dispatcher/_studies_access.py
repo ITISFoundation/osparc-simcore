@@ -92,13 +92,9 @@ async def _get_published_template_project(
             only_published=only_public_projects,
         )
         # 3. MUST be shared with EVERYONE=1 in read mode, i.e.
-        project_group_get = await get_project_group(
-            request.app, project_id=ProjectID(project_uuid), group_id=1
-        )
+        project_group_get = await get_project_group(request.app, project_id=ProjectID(project_uuid), group_id=1)
         if project_group_get.read is False:
-            raise ProjectGroupNotFoundError(
-                details=f"Project {project_uuid} group 1 not read access"
-            )
+            raise ProjectGroupNotFoundError(details=f"Project {project_uuid} group 1 not read access")
 
         if not prj:
             # Not sure this happens but this condition was checked before so better be safe
@@ -133,9 +129,7 @@ async def _get_published_template_project(
         ) from err
 
 
-async def copy_study_to_account(
-    request: web.Request, template_project: dict, user: dict
-):
+async def copy_study_to_account(request: web.Request, template_project: dict, user: dict):
     """
     Creates a copy of the study to a given project in user's account
 
@@ -149,9 +143,7 @@ async def copy_study_to_account(
     template_parameters = dict(request.query)
 
     # assign new uuid to copy
-    project_uuid = _compose_uuid(
-        template_project["uuid"], user["id"], str(template_parameters)
-    )
+    project_uuid = _compose_uuid(template_project["uuid"], user["id"], str(template_parameters))
 
     try:
         product_name = await db.get_project_product(template_project["uuid"])
@@ -168,9 +160,7 @@ async def copy_study_to_account(
 
     except ProjectNotFoundError:
         # New project cloned from template
-        project, nodes_map = clone_project_document(
-            template_project, forced_copy_project_id=UUID(project_uuid)
-        )
+        project, nodes_map = clone_project_document(template_project, forced_copy_project_id=UUID(project_uuid))
 
         # remove template access rights
         # TODO: PC: what should I do with this stuff? can we re-use the same entrypoint?
@@ -179,12 +169,8 @@ async def copy_study_to_account(
 
         # check project inputs and substitute template_parameters
         if template_parameters:
-            _logger.info(
-                "Substituting parameters '%s' in template", template_parameters
-            )
-            project = (
-                substitute_parameterized_inputs(project, template_parameters) or project
-            )
+            _logger.info("Substituting parameters '%s' in template", template_parameters)
+            project = substitute_parameterized_inputs(project, template_parameters) or project
         # add project model + copy data TODO: guarantee order and atomicity
         product_name = products_web.get_product_name(request)
         await db.insert_project(
@@ -218,9 +204,7 @@ async def copy_study_to_account(
             product_name,
             get_api_base_url(request),
         )
-        await dynamic_scheduler_service.update_projects_networks(
-            request.app, project_id=ProjectID(project["uuid"])
-        )
+        await dynamic_scheduler_service.update_projects_networks(request.app, project_id=ProjectID(project["uuid"]))
 
         await _projects_repository.copy_allow_guests_to_push_states_and_output_ports(
             request.app,
@@ -235,9 +219,7 @@ async def copy_study_to_account(
 
 
 class RedirectToFrontEndPageError(Exception):
-    def __init__(
-        self, human_readable_message: str, error_code: str, status_code: int
-    ) -> None:
+    def __init__(self, human_readable_message: str, error_code: str, status_code: int) -> None:
         self.human_readable_message = human_readable_message
         self.error_code = error_code
         self.status_code = status_code
@@ -271,9 +253,7 @@ def _handle_errors_with_error_page(handler: Handler):
 
         except Exception as err:
             error_code = create_error_code(err)
-            user_error_msg = compose_support_error_msg(
-                msg=MSG_UNEXPECTED_DISPATCH_ERROR, error_code=error_code
-            )
+            user_error_msg = compose_support_error_msg(msg=MSG_UNEXPECTED_DISPATCH_ERROR, error_code=error_code)
             _logger.exception(
                 **create_troubleshooting_log_kwargs(
                     user_error_msg,
@@ -387,9 +367,7 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
                 error_context={
                     "user_id": user.get("id"),
                     "user": dict(user),
-                    "template_project": {
-                        k: template_project.get(k) for k in ["name", "uuid"]
-                    },
+                    "template_project": {k: template_project.get(k) for k in ["name", "uuid"]},
                 },
                 tip=f"Failed while copying project '{template_project.get('name')}' to '{user.get('email')}'",
             )
@@ -402,11 +380,7 @@ async def get_redirection_to_study_page(request: web.Request) -> web.Response:
         ) from exc
 
     # Creating REDIRECTION LINK
-    redirect_url = (
-        request.app.router[INDEX_RESOURCE_NAME]
-        .url_for()
-        .with_fragment(f"/study/{copied_project_id}")
-    )
+    redirect_url = request.app.router[INDEX_RESOURCE_NAME].url_for().with_fragment(f"/study/{copied_project_id}")
 
     response = web.HTTPFound(location=redirect_url)
     if is_anonymous_user:

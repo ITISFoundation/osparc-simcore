@@ -19,12 +19,8 @@ from simcore_service_director_v2.models.comp_tasks import CompTaskAtDB
     "model_cls, example_name, example_data",
     iter_model_examples_in_class(CompTaskAtDB),
 )
-def test_computation_task_model_examples(
-    model_cls: type[BaseModel], example_name: str, example_data: dict[str, Any]
-):
-    model_instance = assert_validation_model(
-        model_cls, example_name=example_name, example_data=example_data
-    )
+def test_computation_task_model_examples(model_cls: type[BaseModel], example_name: str, example_data: dict[str, Any]):
+    model_instance = assert_validation_model(model_cls, example_name=example_name, example_data=example_data)
 
     assert isinstance(model_instance, CompTaskAtDB)
     db_model = model_instance.to_db_model()

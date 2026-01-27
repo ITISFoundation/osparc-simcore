@@ -130,13 +130,9 @@ class OsparcSessionVariablesTable(OsparcVariablesTable, SingletonInAppStateMixin
         table.register_from_handler("OSPARC_VARIABLE_USER_EMAIL")(request_user_email)
         table.register_from_handler("OSPARC_VARIABLE_USER_ROLE")(request_user_role)
         table.register_from_handler("OSPARC_VARIABLE_API_KEY")(create_user_api_key)
-        table.register_from_handler("OSPARC_VARIABLE_API_SECRET")(
-            create_user_api_secret
-        )
+        table.register_from_handler("OSPARC_VARIABLE_API_SECRET")(create_user_api_secret)
 
-        _logger.debug(
-            "Registered session_variables_table=%s", sorted(table.variables_names())
-        )
+        _logger.debug("Registered session_variables_table=%s", sorted(table.variables_names()))
         table.set_to_app_state(app)
         return table
 
@@ -187,9 +183,7 @@ async def resolve_and_substitute_session_variables_in_model(
 ) -> TBaseModel:
     result: TBaseModel = model
     try:
-        with log_context(
-            _logger, logging.DEBUG, "resolve_and_substitute_session_variables_in_model"
-        ):
+        with log_context(_logger, logging.DEBUG, "resolve_and_substitute_session_variables_in_model"):
             # checks before to avoid unnecessary calls to pg
             # if it raises an error vars need replacement
             raise_if_unresolved_osparc_variable_identifier_found(model)
@@ -269,9 +263,7 @@ def setup(app: FastAPI):
         - **session variables**: some session information as "current user email" or the "current product name"
         - **lifespan variables**: produced before a service is started and cleaned up after it finishes (e.g. API tokens )
     """
-    app.add_event_handler(
-        "startup", functools.partial(OsparcSessionVariablesTable.create, app)
-    )
+    app.add_event_handler("startup", functools.partial(OsparcSessionVariablesTable.create, app))
 
 
 #

@@ -46,9 +46,7 @@ from servicelib.sequences_utils import T, pairwise, partition_gen
         ),
     ],
 )
-def test_partition_gen(
-    input_list: list[Any], expected: list[tuple[Any, ...]], slice_size: int
-):
+def test_partition_gen(input_list: list[Any], expected: list[tuple[Any, ...]], slice_size: int):
     # check returned result
     result = list(partition_gen(input_list, slice_size=slice_size))
     assert result == expected

@@ -21,9 +21,7 @@ from ..docker_utils import (
 from ..logging_utils import log_catch
 from ..progress_bar import AsyncReportCB, ProgressBarData
 
-_DEFAULT_MIN_IMAGE_SIZE: Final[ByteSize] = TypeAdapter(ByteSize).validate_python(
-    "200MiB"
-)
+_DEFAULT_MIN_IMAGE_SIZE: Final[ByteSize] = TypeAdapter(ByteSize).validate_python("200MiB")
 
 _logger = logging.getLogger(__name__)
 
@@ -41,12 +39,8 @@ async def retrieve_image_layer_information(
                     password=registry_settings.REGISTRY_PW.get_secret_value(),
                 )
             # NOTE: either of type ubuntu:latest or ubuntu@sha256:lksfdjlskfjsldkfj
-            docker_image_name, docker_image_tag = get_image_name_and_tag(
-                image_complete_url
-            )
-            manifest_url = image_complete_url.with_path(
-                f"v2/{docker_image_name}/manifests/{docker_image_tag}"
-            )
+            docker_image_name, docker_image_tag = get_image_name_and_tag(image_complete_url)
+            manifest_url = image_complete_url.with_path(f"v2/{docker_image_name}/manifests/{docker_image_tag}")
 
             headers = {
                 "Accept": "application/vnd.docker.distribution.manifest.v2+json, application/vnd.oci.image.manifest.v1+json"
@@ -75,9 +69,7 @@ async def retrieve_image_layer_information(
             # if the image has multiple architectures
             json_response = response.json()
             try:
-                multi_arch_manifests = TypeAdapter(
-                    DockerImageMultiArchManifestsV2
-                ).validate_python(json_response)
+                multi_arch_manifests = TypeAdapter(DockerImageMultiArchManifestsV2).validate_python(json_response)
                 # find the correct platform
                 digest = ""
                 for manifest in multi_arch_manifests.manifests:
@@ -87,23 +79,15 @@ async def retrieve_image_layer_information(
                     ):
                         digest = manifest["digest"]
                         break
-                manifest_url = image_complete_url.with_path(
-                    f"v2/{docker_image_name}/manifests/{digest}"
-                )
-                response = await client.get(
-                    f"{manifest_url}", headers=headers, auth=auth
-                )
+                manifest_url = image_complete_url.with_path(f"v2/{docker_image_name}/manifests/{digest}")
+                response = await client.get(f"{manifest_url}", headers=headers, auth=auth)
                 response.raise_for_status()
                 assert response.status_code == status.HTTP_200_OK  # nosec
                 json_response = response.json()
-                return TypeAdapter(DockerImageManifestsV2).validate_python(
-                    json_response
-                )
+                return TypeAdapter(DockerImageManifestsV2).validate_python(json_response)
 
             except ValidationError:
-                return TypeAdapter(DockerImageManifestsV2).validate_python(
-                    json_response
-                )
+                return TypeAdapter(DockerImageManifestsV2).validate_python(json_response)
     return None
 
 
@@ -114,15 +98,9 @@ async def pull_images(
     log_cb: LogCB,
 ) -> None:
     images_layer_information = await asyncio.gather(
-        *[
-            retrieve_image_layer_information(image, registry_settings)
-            for image in images
-        ]
+        *[retrieve_image_layer_information(image, registry_settings) for image in images]
     )
-    images_total_size = sum(
-        i.layers_total_size if i else _DEFAULT_MIN_IMAGE_SIZE
-        for i in images_layer_information
-    )
+    images_total_size = sum(i.layers_total_size if i else _DEFAULT_MIN_IMAGE_SIZE for i in images_layer_information)
 
     async with ProgressBarData(
         num_steps=images_total_size,
@@ -130,7 +108,6 @@ async def pull_images(
         progress_unit="Byte",
         description=f"pulling {len(images)} images",
     ) as pbar:
-
         await asyncio.gather(
             *[
                 pull_image(
@@ -138,14 +115,8 @@ async def pull_images(
                     registry_settings,
                     pbar,
                     log_cb,
-                    (
-                        image_layer_info
-                        if isinstance(image_layer_info, DockerImageManifestsV2)
-                        else None
-                    ),
+                    (image_layer_info if isinstance(image_layer_info, DockerImageManifestsV2) else None),
                 )
-                for image, image_layer_info in zip(
-                    images, images_layer_information, strict=True
-                )
+                for image, image_layer_info in zip(images, images_layer_information, strict=True)
             ]
         )

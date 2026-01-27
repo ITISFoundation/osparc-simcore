@@ -1,9 +1,10 @@
 import datetime
 from typing import Annotated, Final
 
-from models_library.projects import ProjectID
 from pydantic import BaseModel, ByteSize, ConfigDict, Field
 from pydantic.alias_generators import to_camel
+
+from models_library.projects import ProjectID
 
 from .storage_schemas import UNDEFINED_SIZE_TYPE
 

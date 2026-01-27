@@ -5,7 +5,6 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
-
 from enum import Enum
 from typing import Annotated
 
@@ -137,9 +136,7 @@ async def init_creation_of_payment_method(wallet_id: WalletID): ...
     status_code=status.HTTP_204_NO_CONTENT,
     response_description="Successfully cancelled",
 )
-async def cancel_creation_of_payment_method(
-    wallet_id: WalletID, payment_method_id: PaymentMethodID
-): ...
+async def cancel_creation_of_payment_method(wallet_id: WalletID, payment_method_id: PaymentMethodID): ...
 
 
 @router.get(
@@ -154,9 +151,7 @@ async def list_payments_methods(wallet_id: WalletID):
     "/wallets/{wallet_id}/payments-methods/{payment_method_id}",
     response_model=Envelope[PaymentMethodGet],
 )
-async def get_payment_method(
-    wallet_id: WalletID, payment_method_id: PaymentMethodID
-): ...
+async def get_payment_method(wallet_id: WalletID, payment_method_id: PaymentMethodID): ...
 
 
 @router.delete(
@@ -164,9 +159,7 @@ async def get_payment_method(
     status_code=status.HTTP_204_NO_CONTENT,
     response_description="Successfully deleted",
 )
-async def delete_payment_method(
-    wallet_id: WalletID, payment_method_id: PaymentMethodID
-): ...
+async def delete_payment_method(wallet_id: WalletID, payment_method_id: PaymentMethodID): ...
 
 
 @router.post(
@@ -196,9 +189,7 @@ async def get_wallet_autorecharge(wallet_id: WalletID): ...
     "/wallets/{wallet_id}/auto-recharge",
     response_model=Envelope[GetWalletAutoRecharge],
 )
-async def replace_wallet_autorecharge(
-    wallet_id: WalletID, _body: ReplaceWalletAutoRecharge
-): ...
+async def replace_wallet_autorecharge(wallet_id: WalletID, _body: ReplaceWalletAutoRecharge): ...
 
 
 ### Wallets groups
@@ -211,9 +202,7 @@ _extra_tags: list[str | Enum] = ["groups"]
     status_code=status.HTTP_201_CREATED,
     tags=_extra_tags,
 )
-async def create_wallet_group(
-    wallet_id: WalletID, group_id: GroupID, body: _WalletsGroupsBodyParams
-): ...
+async def create_wallet_group(wallet_id: WalletID, group_id: GroupID, body: _WalletsGroupsBodyParams): ...
 
 
 @router.get(
@@ -229,9 +218,7 @@ async def list_wallet_groups(wallet_id: WalletID): ...
     response_model=Envelope[WalletGroupGet],
     tags=_extra_tags,
 )
-async def update_wallet_group(
-    wallet_id: WalletID, group_id: GroupID, body: _WalletsGroupsBodyParams
-): ...
+async def update_wallet_group(wallet_id: WalletID, group_id: GroupID, body: _WalletsGroupsBodyParams): ...
 
 
 @router.delete(

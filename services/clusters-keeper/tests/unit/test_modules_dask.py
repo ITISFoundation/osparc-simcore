@@ -24,23 +24,15 @@ from tenacity.wait import wait_fixed
 
 _authentication_types = [
     NoAuthentication(),
-    TLSAuthentication.model_construct(
-        **TLSAuthentication.model_json_schema()["examples"][0]
-    ),
+    TLSAuthentication.model_construct(**TLSAuthentication.model_json_schema()["examples"][0]),
 ]
 
 
-@pytest.mark.parametrize(
-    "authentication", _authentication_types, ids=lambda p: f"authentication-{p.type}"
-)
-async def test_ping_scheduler_non_existing_scheduler(
-    faker: Faker, authentication: ClusterAuthentication
-):
+@pytest.mark.parametrize("authentication", _authentication_types, ids=lambda p: f"authentication-{p.type}")
+async def test_ping_scheduler_non_existing_scheduler(faker: Faker, authentication: ClusterAuthentication):
     assert (
         await ping_scheduler(
-            TypeAdapter(AnyUrl).validate_python(
-                f"tcp://{faker.ipv4()}:{faker.port_number()}"
-            ),
+            TypeAdapter(AnyUrl).validate_python(f"tcp://{faker.ipv4()}:{faker.port_number()}"),
             authentication,
         )
         is False
@@ -50,9 +42,7 @@ async def test_ping_scheduler_non_existing_scheduler(
 async def test_ping_scheduler(dask_spec_local_cluster: SpecCluster):
     assert (
         await ping_scheduler(
-            TypeAdapter(AnyUrl).validate_python(
-                dask_spec_local_cluster.scheduler_address
-            ),
+            TypeAdapter(AnyUrl).validate_python(dask_spec_local_cluster.scheduler_address),
             NoAuthentication(),
         )
         is True
@@ -75,9 +65,7 @@ async def test_is_scheduler_busy(
     dask_spec_cluster_client: distributed.Client,
 ):
     # nothing runs right now
-    scheduler_address = TypeAdapter(AnyUrl).validate_python(
-        dask_spec_local_cluster.scheduler_address
-    )
+    scheduler_address = TypeAdapter(AnyUrl).validate_python(dask_spec_local_cluster.scheduler_address)
     assert await is_scheduler_busy(scheduler_address, NoAuthentication()) is False
     _SLEEP_TIME = 5
 

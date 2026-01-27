@@ -5,17 +5,16 @@
 import pytest
 from faker import Faker
 from pydantic import AnyHttpUrl, TypeAdapter
+from settings_library.s3 import S3Settings
+
 from pytest_simcore.helpers.docker import get_service_published_port
 from pytest_simcore.helpers.host import get_localhost_ip
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from settings_library.s3 import S3Settings
 
 
 @pytest.fixture
-def minio_s3_settings(
-    docker_stack: dict, env_vars_for_docker_compose: EnvVarsDict, faker: Faker
-) -> S3Settings:
+def minio_s3_settings(docker_stack: dict, env_vars_for_docker_compose: EnvVarsDict, faker: Faker) -> S3Settings:
     assert "pytest-ops_minio" in docker_stack["services"]
 
     return S3Settings(
@@ -34,7 +33,5 @@ def minio_s3_settings_envs(
     minio_s3_settings: S3Settings,
     monkeypatch: pytest.MonkeyPatch,
 ) -> EnvVarsDict:
-    changed_envs: EnvVarsDict = minio_s3_settings.model_dump(
-        mode="json", exclude_unset=True
-    )
+    changed_envs: EnvVarsDict = minio_s3_settings.model_dump(mode="json", exclude_unset=True)
     return setenvs_from_dict(monkeypatch, changed_envs)

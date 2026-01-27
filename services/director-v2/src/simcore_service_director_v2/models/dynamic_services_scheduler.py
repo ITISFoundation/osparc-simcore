@@ -431,11 +431,6 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         description="contains hardware information so we know on which hardware to run the service",
     )
 
-    requires_data_mounting: bool = Field(
-        default=False,
-        description="indicates whether data mounting is required for this service",
-    )
-
     @property
     def get_proxy_endpoint(self) -> AnyHttpUrl:
         """get the endpoint where the proxy's admin API is exposed"""

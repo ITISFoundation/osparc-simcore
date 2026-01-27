@@ -81,7 +81,6 @@ def run_program_in_repo(tmp_path: Path, jupytermath_repo: Path) -> Iterable[Call
                 f"at {workdir=}",
             )
             print("ENV:", runner.make_env())
-            #
             result = runner.invoke(cli.app, list(cmd))
             return Path(workdir), result
 
@@ -119,9 +118,7 @@ def compose_spec_reference(tests_data_dir: Path) -> dict[str, Any]:
     Digest: sha256:279a297b49f1fddb26289d205d4ba5acca1bb8e7bedadcfce00f821873935c03
     Status: Downloaded newer image for itisfoundation/ci-service-integration-library:v1.0.1-dev-25
     """
-    return yaml.safe_load(
-        (tests_data_dir / "docker-compose_jupyter-math_ad51f53.yml").read_text()
-    )
+    return yaml.safe_load((tests_data_dir / "docker-compose_jupyter-math_ad51f53.yml").read_text())
 
 
 def test_ooil_compose_wo_arguments(
@@ -153,10 +150,7 @@ def test_ooil_compose_wo_arguments(
     assert "jupyter-math" in compose_spec["services"]
 
     labels = compose_spec["services"]["jupyter-math"]["build"]["labels"]
-    assert (
-        labels["org.label-schema.vcs-url"]
-        == "https://github.com/ITISFoundation/jupyter-math"
-    )
+    assert labels["org.label-schema.vcs-url"] == "https://github.com/ITISFoundation/jupyter-math"
 
     # Comparison compose-specs
     #  following up with https://github.com/ITISFoundation/osparc-simcore/pull/3433#issuecomment-1275728062
@@ -164,39 +158,28 @@ def test_ooil_compose_wo_arguments(
     # PR 2657 does not seem to correspond to the version in the image 'itisfoundation/ci-service-integration-library:v1.0.1-dev-25'!
     # https://github.com/ITISFoundation/osparc-simcore/pull/2657/files#diff-908bfee2900285b2cfe9ec71fae205aa0527c840a293f5b3497e1a9157c65c65L39
     #
-    assert compose_spec_reference["services"]["jupyter-math"]["build"].pop("args") == {
-        "VERSION": "2.0.8"
-    }
+    assert compose_spec_reference["services"]["jupyter-math"]["build"].pop("args") == {"VERSION": "2.0.8"}
 
     # new ooil has complete SHA
-    compose_spec_reference["services"]["jupyter-math"]["build"]["labels"][
-        "org.label-schema.vcs-ref"
-    ] = "ad51f531548e88afa3ffe3b702a89d159ad8be7f"
+    compose_spec_reference["services"]["jupyter-math"]["build"]["labels"]["org.label-schema.vcs-ref"] = (
+        "ad51f531548e88afa3ffe3b702a89d159ad8be7f"
+    )
 
     # different dates
-    compose_spec["services"]["jupyter-math"]["build"]["labels"][
-        "org.label-schema.build-date"
-    ] = compose_spec_reference["services"]["jupyter-math"]["build"]["labels"][
-        "org.label-schema.build-date"
-    ]
+    compose_spec["services"]["jupyter-math"]["build"]["labels"]["org.label-schema.build-date"] = compose_spec_reference[
+        "services"
+    ]["jupyter-math"]["build"]["labels"]["org.label-schema.build-date"]
 
-    label_keys = compose_spec_reference["services"]["jupyter-math"]["build"][
-        "labels"
-    ].keys()
+    label_keys = compose_spec_reference["services"]["jupyter-math"]["build"]["labels"].keys()
 
     # NOTE: generally it is not a good idea to compare serialized values. It is difficult to debug
     # when it fails and a failure is not always indicative of a real error e.g. orjson serializes differently
     # to json.
     for k in label_keys:
-
         got_label_value = compose_spec["services"]["jupyter-math"]["build"]["labels"][k]
-        expected_label_value = compose_spec_reference["services"]["jupyter-math"][
-            "build"
-        ]["labels"][k]
+        expected_label_value = compose_spec_reference["services"]["jupyter-math"]["build"]["labels"][k]
         if k.startswith("io.simcore"):
             assert json_loads(got_label_value) == json_loads(expected_label_value)
-        assert (
-            got_label_value == expected_label_value
-        ), f"label {k} got a different dump"
+        assert got_label_value == expected_label_value, f"label {k} got a different dump"
 
     assert compose_spec == compose_spec_reference

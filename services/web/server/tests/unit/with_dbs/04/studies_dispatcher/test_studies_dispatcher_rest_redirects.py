@@ -44,11 +44,7 @@ def app_environment(
 ) -> EnvVarsDict:
     return setenvs_from_dict(
         monkeypatch,
-        {
-            "WEBSERVER_RABBITMQ": json_dumps(
-                model_dump_with_secrets(rabbit_service, show_secrets=True)
-            )
-        },
+        {"WEBSERVER_RABBITMQ": json_dumps(model_dump_with_secrets(rabbit_service, show_secrets=True))},
     )
 
 
@@ -65,9 +61,7 @@ def web_server(
     #
     # Extends web_server to start redis_service and ensure DB is populated
     #
-    print(
-        "Redis service started with settings: ", redis_service.model_dump_json(indent=1)
-    )
+    print("Redis service started with settings: ", redis_service.model_dump_json(indent=1))
     return web_server
 
 
@@ -143,12 +137,8 @@ FAKE_VIEWS_LIST = [
 
 @pytest.fixture
 def catalog_subsystem_mock(mocker: MockerFixture) -> None:
-    services_in_project = [
-        {"key": "simcore/services/frontend/file-picker", "version": "1.0.0"}
-    ]
-    services_in_project += [
-        {"key": s.key, "version": s.version} for s in FAKE_VIEWS_LIST
-    ]
+    services_in_project = [{"key": "simcore/services/frontend/file-picker", "version": "1.0.0"}]
+    services_in_project += [{"key": s.key, "version": s.version} for s in FAKE_VIEWS_LIST]
 
     mock = mocker.patch(
         "simcore_service_webserver.projects._crud_api_read.catalog_service.get_services_for_user_in_product",
@@ -168,23 +158,17 @@ def mocks_on_projects_api(mocker) -> None:
     """
     mocker.patch(
         "simcore_service_webserver.projects._projects_service._get_project_share_state",
-        return_value=ProjectShareState(
-            locked=False, status=ProjectStatus.CLOSED, current_user_groupids=[]
-        ),
+        return_value=ProjectShareState(locked=False, status=ProjectStatus.CLOSED, current_user_groupids=[]),
     )
 
 
-async def assert_redirected_to_study(
-    resp: ClientResponse, session: ClientSession
-) -> str:
+async def assert_redirected_to_study(resp: ClientResponse, session: ClientSession) -> str:
     content = await resp.text()
     assert resp.status == status.HTTP_200_OK, f"Got {content}"
 
     # Expects redirection to osparc web
     assert resp.url.path == "/"
-    assert (
-        "OSPARC-SIMCORE" in content
-    ), f"Expected front-end rendering workbench's study, got {content!s}"
+    assert "OSPARC-SIMCORE" in content, f"Expected front-end rendering workbench's study, got {content!s}"
 
     # Expects auth cookie for current user
     assert DEFAULT_SESSION_COOKIE_NAME in [c.key for c in session.cookie_jar]
@@ -192,14 +176,10 @@ async def assert_redirected_to_study(
     # Expects fragment to indicate client where to find newly created project
     unquoted_fragment = urllib.parse.unquote_plus(resp.real_url.fragment)
     match = re.match(r"/view\?(.+)", unquoted_fragment)
-    assert (
-        match
-    ), f"Expected fragment as /#/view?param1=value&param2=value, got {unquoted_fragment}"
+    assert match, f"Expected fragment as /#/view?param1=value&param2=value, got {unquoted_fragment}"
 
     query_s = match.group(1)
-    query_params = urllib.parse.parse_qs(
-        query_s
-    )  # returns {'param1': ['value'], 'param2': ['value']}
+    query_params = urllib.parse.parse_qs(query_s)  # returns {'param1': ['value'], 'param2': ['value']}
 
     assert "project_id" in query_params
     assert "viewer_node_id" in query_params
@@ -248,11 +228,7 @@ def redirect_url(redirect_type: str, client: TestClient) -> URL:
         msg = f"{redirect_type=} undefined"
         raise ValueError(msg)
 
-    return (
-        client.app.router["get_redirection_to_viewer"]
-        .url_for()
-        .with_query({k: f"{v}" for k, v in query.items()})
-    )
+    return client.app.router["get_redirection_to_viewer"].url_for().with_query({k: f"{v}" for k, v in query.items()})
 
 
 async def test_dispatch_study_anonymously(
@@ -278,9 +254,7 @@ async def test_dispatch_study_anonymously(
 
     if redirect_type == "file_only":
         message, status_code = assert_error_in_fragment(response)
-        assert (
-            status_code == status.HTTP_401_UNAUTHORIZED
-        ), f"Got instead {status_code=}, {message=}"
+        assert status_code == status.HTTP_401_UNAUTHORIZED, f"Got instead {status_code=}, {message=}"
 
     else:
         expected_project_id = await assert_redirected_to_study(response, client.session)
@@ -331,7 +305,7 @@ async def test_dispatch_logged_in_user(
     mocks_on_projects_api: None,
 ):
     assert client.app
-    mock_client_director_v2_pipline_update = mocker.patch(
+    mock_client_director_v2_pipeline_update = mocker.patch(
         "simcore_service_webserver.director_v2.director_v2_service.create_or_update_pipeline",
         return_value=None,
     )
@@ -367,7 +341,7 @@ async def test_dispatch_logged_in_user(
     assert expected_project_id == created_project["uuid"]
     assert created_project["prjOwner"] == data["login"]
 
-    assert mock_client_director_v2_pipline_update.called
+    assert mock_client_director_v2_pipeline_update.called
     assert mock_dynamic_scheduler_update_project_networks.called
 
     # delete before exiting
@@ -381,9 +355,7 @@ def assert_error_in_fragment(resp: ClientResponse) -> tuple[str, int]:
     # Expects fragment to indicate client where to find newly created project
     unquoted_fragment = urllib.parse.unquote_plus(resp.real_url.fragment)
     match = re.match(r"/error\?(.+)", unquoted_fragment, re.DOTALL)
-    assert (
-        match
-    ), f"Expected error fragment as /#/error?message=..., got {unquoted_fragment}"
+    assert match, f"Expected error fragment as /#/error?message=..., got {unquoted_fragment}"
 
     query_s = match.group(1)
     # returns {'param1': ['value'], 'param2': ['value']}
@@ -449,9 +421,7 @@ async def test_viewer_redirect_with_client_errors(client: TestClient):
     assert status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
-@pytest.mark.parametrize(
-    "missing_parameter", ["file_type", "file_size", "download_link"]
-)
+@pytest.mark.parametrize("missing_parameter", ["file_type", "file_size", "download_link"])
 async def test_missing_file_param(client: TestClient, missing_parameter: str):
     assert client.app
 
@@ -466,9 +436,7 @@ async def test_missing_file_param(client: TestClient, missing_parameter: str):
     }
     query.pop(missing_parameter)
 
-    redirect_url = (
-        client.app.router["get_redirection_to_viewer"].url_for().with_query(query)
-    )
+    redirect_url = client.app.router["get_redirection_to_viewer"].url_for().with_query(query)
 
     response = await client.get(f"{redirect_url}")
     assert response.status == 200

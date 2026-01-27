@@ -1,6 +1,6 @@
 """CRUD operations on a computation's tasks sub-resource
 
-A task is computation sub-resource that respresents a running computational service in the pipeline described above
+A task is computation sub-resource that represents a running computational service in the pipeline described above
 Therefore,
  - the task ID is the same as the associated node uuid
 
@@ -47,12 +47,8 @@ router = APIRouter()
 async def get_all_tasks_log_files(
     user_id: UserID,
     project_id: ProjectID,
-    comp_pipelines_repo: Annotated[
-        CompPipelinesRepository, Depends(get_repository(CompPipelinesRepository))
-    ],
-    comp_tasks_repo: Annotated[
-        CompTasksRepository, Depends(get_repository(CompTasksRepository))
-    ],
+    comp_pipelines_repo: Annotated[CompPipelinesRepository, Depends(get_repository(CompPipelinesRepository))],
+    comp_tasks_repo: Annotated[CompTasksRepository, Depends(get_repository(CompTasksRepository))],
 ) -> list[TaskLogFileGet]:
     """Returns download links to log-files of each task in a computation.
     Each log is only available when the corresponding task is done
@@ -68,10 +64,7 @@ async def get_all_tasks_log_files(
     iter_task_ids = (t.node_id for t in info.filtered_tasks)
 
     tasks_logs_files: list[TaskLogFileGet] = await logged_gather(
-        *[
-            dask_utils.get_task_log_file(user_id, project_id, node_id)
-            for node_id in iter_task_ids
-        ],
+        *[dask_utils.get_task_log_file(user_id, project_id, node_id) for node_id in iter_task_ids],
         reraise=True,
         log=log,
     )
@@ -87,9 +80,7 @@ async def get_task_log_file(
     user_id: UserID,
     project_id: ProjectID,
     node_uuid: NodeID,
-    comp_tasks_repo: Annotated[
-        CompTasksRepository, Depends(get_repository(CompTasksRepository))
-    ],
+    comp_tasks_repo: Annotated[CompTasksRepository, Depends(get_repository(CompTasksRepository))],
 ) -> TaskLogFileGet:
     """Returns a link to download logs file of a give task.
     The log is only available when the task is done
@@ -108,22 +99,14 @@ async def get_task_log_file(
     "/{project_id}/tasks/-/outputs:batchGet",
     summary="Gets all outputs for selected tasks",
     response_model=TasksOutputs,
-    responses={
-        status.HTTP_404_NOT_FOUND: {
-            "description": "Cannot find computation or the tasks in it"
-        }
-    },
+    responses={status.HTTP_404_NOT_FOUND: {"description": "Cannot find computation or the tasks in it"}},
 )
 async def get_batch_tasks_outputs(
     project_id: ProjectID,
     selection: TasksSelection,
-    comp_tasks_repo: Annotated[
-        CompTasksRepository, Depends(get_repository(CompTasksRepository))
-    ],
+    comp_tasks_repo: Annotated[CompTasksRepository, Depends(get_repository(CompTasksRepository))],
 ):
-    nodes_outputs = await comp_tasks_repo.get_outputs_from_tasks(
-        project_id, set(selection.nodes_ids)
-    )
+    nodes_outputs = await comp_tasks_repo.get_outputs_from_tasks(project_id, set(selection.nodes_ids))
 
     if not nodes_outputs:
         raise HTTPException(status.HTTP_404_NOT_FOUND)

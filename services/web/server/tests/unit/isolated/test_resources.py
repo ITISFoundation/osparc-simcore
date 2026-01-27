@@ -15,8 +15,7 @@ def app_resources(package_dir: Path) -> list[str]:
     for name in ("api", "templates"):
         folder = base / name
         resource_names += [
-            f"{p.relative_to(base)}"
-            for p in itertools.chain(folder.rglob("*.y*ml"), folder.rglob("*.jinja2"))
+            f"{p.relative_to(base)}" for p in itertools.chain(folder.rglob("*.y*ml"), folder.rglob("*.jinja2"))
         ]
 
     assert resource_names

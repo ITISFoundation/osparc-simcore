@@ -36,9 +36,7 @@ async def clean_users_db_table(asyncpg_engine: AsyncEngine):
         await connection.execute(users.delete())
 
 
-async def test_user_status_as_pending(
-    asyncpg_engine: AsyncEngine, faker: Faker, clean_users_db_table: None
-):
+async def test_user_status_as_pending(asyncpg_engine: AsyncEngine, faker: Faker, clean_users_db_table: None):
     """Checks a bug where the expression
 
         `user_status = UserStatus(user["status"])`
@@ -61,9 +59,7 @@ async def test_user_status_as_pending(
         with pytest.raises(DBAPIError) as err_info:
             await connection.execute(users.insert().values(data))
 
-        assert (
-            'invalid input value for enum userstatus: "PENDING"' in f"{err_info.value}"
-        )
+        assert 'invalid input value for enum userstatus: "PENDING"' in f"{err_info.value}"
 
 
 @pytest.mark.parametrize(
@@ -84,9 +80,7 @@ async def test_user_status_inserted_as_enum_or_int(
     assert data["status"] == status_value
 
     async with transaction_context(asyncpg_engine) as connection:
-        user_id = await connection.scalar(
-            users.insert().values(data).returning(users.c.id)
-        )
+        user_id = await connection.scalar(users.insert().values(data).returning(users.c.id))
 
         # get as UserStatus.CONFIRMATION_PENDING
         result = await connection.execute(users.select().where(users.c.id == user_id))
@@ -97,9 +91,7 @@ async def test_user_status_inserted_as_enum_or_int(
         assert user.status == UserStatus.CONFIRMATION_PENDING
 
 
-async def test_unique_username(
-    asyncpg_engine: AsyncEngine, faker: Faker, clean_users_db_table: None
-):
+async def test_unique_username(asyncpg_engine: AsyncEngine, faker: Faker, clean_users_db_table: None):
     data = random_user(
         faker,
         status=UserStatus.ACTIVE,
@@ -109,9 +101,7 @@ async def test_unique_username(
         last_name="Crespo Valero",
     )
     async with transaction_context(asyncpg_engine) as connection:
-        user_id = await connection.scalar(
-            users.insert().values(data).returning(users.c.id)
-        )
+        user_id = await connection.scalar(users.insert().values(data).returning(users.c.id))
         result = await connection.execute(users.select().where(users.c.id == user_id))
         user = result.one_or_none()
         assert user
@@ -132,16 +122,13 @@ async def test_unique_username(
         await connection.scalar(users.insert().values(data).returning(users.c.id))
 
     async with transaction_context(asyncpg_engine) as connection:
-
         # and another one
         data["name"] = generate_alternative_username(data["name"])
         data["email"] = faker.email()
         await connection.scalar(users.insert().values(data).returning(users.c.id))
 
 
-async def test_new_user(
-    asyncpg_engine: AsyncEngine, faker: Faker, clean_users_db_table: None
-):
+async def test_new_user(asyncpg_engine: AsyncEngine, faker: Faker, clean_users_db_table: None):
     data = {
         "email": faker.email(),
         "password_hash": "foo",
@@ -164,14 +151,9 @@ async def test_new_user(
     assert other_user.name != new_user.name
 
     async with pass_or_acquire_connection(asyncpg_engine) as connection:
-        assert (
-            await repo.get_email(connection, user_id=other_user.id) == other_user.email
-        )
+        assert await repo.get_email(connection, user_id=other_user.id) == other_user.email
         assert await repo.get_role(connection, user_id=other_user.id) == other_user.role
-        assert (
-            await repo.get_active_user_email(connection, user_id=other_user.id)
-            == other_user.email
-        )
+        assert await repo.get_active_user_email(connection, user_id=other_user.id) == other_user.email
 
 
 async def test_trial_accounts(asyncpg_engine: AsyncEngine, clean_users_db_table: None):
@@ -195,24 +177,18 @@ async def test_trial_accounts(asyncpg_engine: AsyncEngine, clean_users_db_table:
 
         # check expiration date
         result = await connection.execute(
-            sa.select(users.c.status, users.c.created_at, users.c.expires_at).where(
-                users.c.id == user_id
-            )
+            sa.select(users.c.status, users.c.created_at, users.c.expires_at).where(users.c.id == user_id)
         )
         row = result.one_or_none()
         assert row
-        assert row.created_at - client_now < timedelta(
-            minutes=1
-        ), "Difference between server and client now should not differ much"
+        assert row.created_at - client_now < timedelta(minutes=1), (
+            "Difference between server and client now should not differ much"
+        )
         assert row.expires_at - row.created_at == EXPIRATION_INTERVAL
         assert row.status == UserStatus.ACTIVE
 
         # sets user as expired
-        await connection.execute(
-            users.update()
-            .values(status=UserStatus.EXPIRED)
-            .where(users.c.id == user_id)
-        )
+        await connection.execute(users.update().values(status=UserStatus.EXPIRED).where(users.c.id == user_id))
 
 
 @pytest.fixture
@@ -243,9 +219,7 @@ def sync_engine_with_migration(
     postgres_tools.force_drop_all_tables(sync_engine)
 
 
-def test_users_secrets_migration_upgrade_downgrade(
-    sync_engine_with_migration: sqlalchemy.engine.Engine, faker: Faker
-):
+def test_users_secrets_migration_upgrade_downgrade(sync_engine_with_migration: sqlalchemy.engine.Engine, faker: Faker):
     """Tests the migration script that moves password_hash from users to users_secrets table.
 
 
@@ -269,9 +243,7 @@ def test_users_secrets_migration_upgrade_downgrade(
     with sync_engine_with_migration.connect() as conn:
         # Ensure the users_secrets table does NOT exist yet
         with pytest.raises(sqlalchemy.exc.ProgrammingError) as exc_info:
-            conn.execute(
-                sa.select(sa.func.count()).select_from(sa.table("users_secrets"))
-            ).scalar()
+            conn.execute(sa.select(sa.func.count()).select_from(sa.table("users_secrets"))).scalar()
         assert "psycopg2.errors.UndefinedTable" in f"{exc_info.value}"
 
         # INSERT users with password hashes (emulates data in-place before migration)
@@ -284,7 +256,7 @@ def test_users_secrets_migration_upgrade_downgrade(
                     role=UserRole.USER.value,
                     status=UserStatus.ACTIVE,
                 ),
-                "password_hash": "hashed_password_1",  # noqa: S106
+                "password_hash": "hashed_password_1",
             },
             {
                 **random_user(
@@ -294,7 +266,7 @@ def test_users_secrets_migration_upgrade_downgrade(
                     role=UserRole.USER.value,
                     status=UserStatus.ACTIVE,
                 ),
-                "password_hash": "hashed_password_2",  # noqa: S106
+                "password_hash": "hashed_password_2",
             },
         ]
 
@@ -327,9 +299,7 @@ def test_users_secrets_migration_upgrade_downgrade(
 
     with sync_engine_with_migration.connect() as conn:
         # Verify users_secrets table exists and contains the password hashes
-        result = conn.execute(
-            sa.text("SELECT user_id, password_hash FROM users_secrets ORDER BY user_id")
-        ).fetchall()
+        result = conn.execute(sa.text("SELECT user_id, password_hash FROM users_secrets ORDER BY user_id")).fetchall()
 
         # Only users with non-null password hashes should be in users_secrets
         assert len(result) == 2

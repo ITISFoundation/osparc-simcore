@@ -13,9 +13,7 @@ def _get_task_id_from_error(e: TaskAlreadyRunningError) -> str:
     return cast(str, e.managed_task.task_id)  # type: ignore[attr-defined] # pylint:disable=no-member
 
 
-async def pull_user_services_images(
-    rpc_client: RabbitMQRPCClient, lrt_namespace: LRTNamespace
-) -> TaskId:
+async def pull_user_services_images(rpc_client: RabbitMQRPCClient, lrt_namespace: LRTNamespace) -> TaskId:
     try:
         return await lrt_api.start_task(
             rpc_client,
@@ -44,9 +42,7 @@ async def create_user_services(
         return _get_task_id_from_error(e)
 
 
-async def remove_user_services(
-    rpc_client: RabbitMQRPCClient, lrt_namespace: LRTNamespace
-) -> TaskId:
+async def remove_user_services(rpc_client: RabbitMQRPCClient, lrt_namespace: LRTNamespace) -> TaskId:
     try:
         return await lrt_api.start_task(
             rpc_client,
@@ -58,9 +54,7 @@ async def remove_user_services(
         return _get_task_id_from_error(e)
 
 
-async def restore_user_services_state_paths(
-    rpc_client: RabbitMQRPCClient, lrt_namespace: LRTNamespace
-) -> TaskId:
+async def restore_user_services_state_paths(rpc_client: RabbitMQRPCClient, lrt_namespace: LRTNamespace) -> TaskId:
     try:
         return await lrt_api.start_task(
             rpc_client,
@@ -72,9 +66,7 @@ async def restore_user_services_state_paths(
         return _get_task_id_from_error(e)
 
 
-async def save_user_services_state_paths(
-    rpc_client: RabbitMQRPCClient, lrt_namespace: LRTNamespace
-) -> TaskId:
+async def save_user_services_state_paths(rpc_client: RabbitMQRPCClient, lrt_namespace: LRTNamespace) -> TaskId:
     try:
         return await lrt_api.start_task(
             rpc_client,
@@ -120,9 +112,7 @@ async def pull_user_services_output_ports(
         return _get_task_id_from_error(e)
 
 
-async def push_user_services_output_ports(
-    rpc_client: RabbitMQRPCClient, lrt_namespace: LRTNamespace
-) -> TaskId:
+async def push_user_services_output_ports(rpc_client: RabbitMQRPCClient, lrt_namespace: LRTNamespace) -> TaskId:
     try:
         return await lrt_api.start_task(
             rpc_client,
@@ -134,9 +124,7 @@ async def push_user_services_output_ports(
         return _get_task_id_from_error(e)
 
 
-async def restart_user_services(
-    rpc_client: RabbitMQRPCClient, lrt_namespace: LRTNamespace
-) -> TaskId:
+async def restart_user_services(rpc_client: RabbitMQRPCClient, lrt_namespace: LRTNamespace) -> TaskId:
     try:
         return await lrt_api.start_task(
             rpc_client,

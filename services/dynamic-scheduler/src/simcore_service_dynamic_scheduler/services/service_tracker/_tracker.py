@@ -21,25 +21,14 @@ class Tracker:
         await self.redis_client_sdk.redis.set(_get_key(node_id), model.to_bytes())
 
     async def load(self, node_id: NodeID) -> TrackedServiceModel | None:
-        model_as_bytes: bytes | None = await self.redis_client_sdk.redis.get(
-            _get_key(node_id)
-        )
-        return (
-            None
-            if model_as_bytes is None
-            else TrackedServiceModel.from_bytes(model_as_bytes)
-        )
+        model_as_bytes: bytes | None = await self.redis_client_sdk.redis.get(_get_key(node_id))
+        return None if model_as_bytes is None else TrackedServiceModel.from_bytes(model_as_bytes)
 
     async def delete(self, node_id: NodeID) -> None:
         await self.redis_client_sdk.redis.delete(_get_key(node_id))
 
     async def all(self) -> dict[NodeID, TrackedServiceModel]:
-        found_keys = [
-            x
-            async for x in self.redis_client_sdk.redis.scan_iter(
-                match=f"{_KEY_PREFIX}*"
-            )
-        ]
+        found_keys = [x async for x in self.redis_client_sdk.redis.scan_iter(match=f"{_KEY_PREFIX}*")]
         found_values = await self.redis_client_sdk.redis.mget(found_keys)
 
         return {

@@ -52,16 +52,12 @@ def get_project_and_file_inputs_from_job_inputs(
     new_inputs: list[ProjectInputUpdate] = []
     for node_id, node_dict in project_inputs.items():
         if node_dict.label in job_inputs_dict:
-            new_inputs.append(
-                ProjectInputUpdate(key=node_id, value=job_inputs_dict[node_dict.label])
-            )
+            new_inputs.append(ProjectInputUpdate(key=node_id, value=job_inputs_dict[node_dict.label]))
 
     return ProjectInputs(new_inputs, file_inputs)
 
 
-def get_study_job_rest_interface_links(
-    *, url_for: Callable, study_id: StudyID
-) -> JobLinks:
+def get_study_job_rest_interface_links(*, url_for: Callable, study_id: StudyID) -> JobLinks:
     return JobLinks(
         url_template=url_for(
             "get_study_job",
@@ -77,9 +73,7 @@ def get_study_job_rest_interface_links(
     )
 
 
-def create_job_from_study(
-    study_key: StudyID, project: ProjectGet, job_inputs: JobInputs, job_links: JobLinks
-) -> Job:
+def create_job_from_study(study_key: StudyID, project: ProjectGet, job_inputs: JobInputs, job_links: JobLinks) -> Job:
     """
     Given a study, creates a job
 
@@ -120,11 +114,7 @@ async def create_job_outputs_from_project_outputs(
         name = node_dict["label"]
         value = node_dict["value"]
 
-        if (
-            value
-            and isinstance(value, dict)
-            and {"store", "path"}.issubset(value.keys())
-        ):
+        if value and isinstance(value, dict) and {"store", "path"}.issubset(value.keys()):
             assert (  # nosec
                 TypeAdapter(LinkToFileTypes).validate_python(value) is not None
             )

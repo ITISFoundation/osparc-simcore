@@ -44,8 +44,7 @@ def create_app(
         )
 
     app = FastAPI(
-        debug=settings.SC_BOOT_MODE
-        in [BootModeEnum.DEBUG, BootModeEnum.DEVELOPMENT, BootModeEnum.LOCAL],
+        debug=settings.SC_BOOT_MODE in [BootModeEnum.DEBUG, BootModeEnum.DEVELOPMENT, BootModeEnum.LOCAL],
         title=PROJECT_NAME,
         description=SUMMARY,
         version=API_VERSION,
@@ -71,9 +70,7 @@ def create_app(
 
     if settings.SC_BOOT_MODE != BootModeEnum.PRODUCTION:
         # middleware to time requests (ONLY for development)
-        app.add_middleware(
-            BaseHTTPMiddleware, dispatch=timing_middleware.add_process_time_header
-        )
+        app.add_middleware(BaseHTTPMiddleware, dispatch=timing_middleware.add_process_time_header)
 
     app.add_middleware(GZipMiddleware)
 

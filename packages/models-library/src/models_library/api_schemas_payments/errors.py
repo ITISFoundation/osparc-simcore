@@ -55,9 +55,7 @@ class PaymentMethodNotFoundError(PaymentsMethodsError):
 
 
 class PaymentMethodAlreadyAckedError(PaymentsMethodsError):
-    msg_template = (
-        "Cannot create payment-method '{payment_method_id}' since it was already closed"
-    )
+    msg_template = "Cannot create payment-method '{payment_method_id}' since it was already closed"
 
 
 class PaymentMethodUniqueViolationError(PaymentsMethodsError):

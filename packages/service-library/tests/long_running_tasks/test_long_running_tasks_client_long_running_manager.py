@@ -18,9 +18,7 @@ from utils import without_marked_for_removal_at
 
 @pytest.fixture
 def task_data() -> TaskData:
-    return TypeAdapter(TaskData).validate_python(
-        TaskData.model_json_schema()["examples"][0]
-    )
+    return TypeAdapter(TaskData).validate_python(TaskData.model_json_schema()["examples"][0])
 
 
 @pytest.fixture
@@ -31,9 +29,7 @@ def lrt_namespace(faker: Faker) -> LRTNamespace:
 @pytest.fixture
 async def store(
     use_in_memory_redis: RedisSettings,
-    get_redis_client_sdk: Callable[
-        [RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]
-    ],
+    get_redis_client_sdk: Callable[[RedisDatabase], AbstractAsyncContextManager[RedisClientSDK]],
     lrt_namespace: LRTNamespace,
 ) -> AsyncIterable[RedisStore]:
     store = RedisStore(redis_settings=use_in_memory_redis, lrt_namespace=lrt_namespace)
@@ -69,14 +65,12 @@ async def test_cleanup_namespace(
     await store.mark_for_removal(task_data.task_id)
 
     # entries exit
-    assert [
-        without_marked_for_removal_at(x) for x in await store.list_tasks_data()
-    ] == [task_data]
+    assert [without_marked_for_removal_at(x) for x in await store.list_tasks_data()] == [task_data]
 
     # removes
     await long_running_client_helper.cleanup(lrt_namespace)
 
-    # entris were removed
+    # entries were removed
     assert await store.list_tasks_data() == []
 
     # ensore it does not raise errors if there is nothing to remove

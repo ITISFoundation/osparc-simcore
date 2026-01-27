@@ -50,11 +50,7 @@ def app_environment(
 ) -> EnvVarsDict:
     return setenvs_from_dict(
         monkeypatch,
-        {
-            "WEBSERVER_RABBITMQ": json_dumps(
-                model_dump_with_secrets(rabbit_service, show_secrets=True)
-            )
-        },
+        {"WEBSERVER_RABBITMQ": json_dumps(model_dump_with_secrets(rabbit_service, show_secrets=True))},
     )
 
 
@@ -103,9 +99,7 @@ def viewer_info(view: dict[str, Any]) -> ViewerInfo:
 
 
 @pytest.mark.parametrize("only_service", [True, False])
-@pytest.mark.parametrize(
-    "view", FAKE_FILE_VIEWS, ids=[c["display_name"] for c in FAKE_FILE_VIEWS]
-)
+@pytest.mark.parametrize("view", FAKE_FILE_VIEWS, ids=[c["display_name"] for c in FAKE_FILE_VIEWS])
 async def test_add_new_project_from_model_instance(
     viewer_info: ViewerInfo,
     only_service: bool,

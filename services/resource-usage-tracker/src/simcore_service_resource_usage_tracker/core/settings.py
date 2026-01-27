@@ -55,9 +55,7 @@ class _BaseApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     )
     RESOURCE_USAGE_TRACKER_LOGLEVEL: LogLevel = Field(
         default=LogLevel.INFO,
-        validation_alias=AliasChoices(
-            "RESOURCE_USAGE_TRACKER_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"
-        ),
+        validation_alias=AliasChoices("RESOURCE_USAGE_TRACKER_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"),
     )
     RESOURCE_USAGE_TRACKER_LOG_FORMAT_LOCAL_DEV_ENABLED: bool = Field(
         default=False,
@@ -67,13 +65,9 @@ class _BaseApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         ),
         description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
     )
-    RESOURCE_USAGE_TRACKER_LOG_FILTER_MAPPING: dict[
-        LoggerName, list[MessageSubstring]
-    ] = Field(
+    RESOURCE_USAGE_TRACKER_LOG_FILTER_MAPPING: dict[LoggerName, list[MessageSubstring]] = Field(
         default_factory=dict,
-        validation_alias=AliasChoices(
-            "RESOURCE_USAGE_TRACKER_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"
-        ),
+        validation_alias=AliasChoices("RESOURCE_USAGE_TRACKER_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"),
         description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
     )
 
@@ -122,11 +116,11 @@ class ApplicationSettings(MinimalApplicationSettings):
     )
     RESOURCE_USAGE_TRACKER_MISSED_HEARTBEAT_INTERVAL_SEC: datetime.timedelta = Field(
         default=datetime.timedelta(minutes=5),
-        description="Interval to check heartbeat of running services. (default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)",
+        description="Interval to check heartbeat of running services. (default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formatting)",
     )
     RESOURCE_USAGE_TRACKER_MISSED_HEARTBEAT_COUNTER_FAIL: int = Field(
         default=6,
-        description="Heartbeat couter limit when RUT considers service as unhealthy.",
+        description="Heartbeat counter limit when RUT considers service as unhealthy.",
     )
     RESOURCE_USAGE_TRACKER_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True
     RESOURCE_USAGE_TRACKER_S3: S3Settings | None = Field(
@@ -137,9 +131,7 @@ class ApplicationSettings(MinimalApplicationSettings):
         json_schema_extra={"auto_default_from_env": True},
     )
 
-    @field_validator(
-        "RESOURCE_USAGE_TRACKER_MISSED_HEARTBEAT_INTERVAL_SEC", mode="before"
-    )
+    @field_validator("RESOURCE_USAGE_TRACKER_MISSED_HEARTBEAT_INTERVAL_SEC", mode="before")
     @classmethod
     def _validate_interval(cls, v):
         if isinstance(v, str) and v.isnumeric():

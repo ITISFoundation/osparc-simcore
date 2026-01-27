@@ -96,9 +96,7 @@ def app_environment(
             # .env-devel
             **env_devel_dict,
             # Variables directly define inside Dockerfile
-            "DASK_SIDECAR_RABBITMQ": json_dumps(
-                model_dump_with_secrets(rabbit_service, show_secrets=True)
-            ),
+            "DASK_SIDECAR_RABBITMQ": json_dumps(model_dump_with_secrets(rabbit_service, show_secrets=True)),
             "SC_BOOT_MODE": "debug",
             "DASK_SIDECAR_LOGLEVEL": "DEBUG",
             "SIDECAR_COMP_SERVICES_SHARED_VOLUME_NAME": "simcore_computational_shared_data",
@@ -188,9 +186,7 @@ def s3_settings(mocked_s3_server_envs: None) -> S3Settings:
 @pytest.fixture
 def s3_remote_file_url(s3_settings: S3Settings, faker: Faker) -> Callable[..., AnyUrl]:
     def creator(file_path: Path | None = None) -> AnyUrl:
-        file_path_with_bucket = Path(s3_settings.S3_BUCKET_NAME) / (
-            file_path or faker.file_name()
-        )
+        file_path_with_bucket = Path(s3_settings.S3_BUCKET_NAME) / (file_path or faker.file_name())
         return TypeAdapter(AnyUrl).validate_python(f"s3://{file_path_with_bucket}")
 
     return creator
@@ -252,14 +248,6 @@ def task_owner(
         user_id=user_id,
         project_id=project_id,
         node_id=node_id,
-        parent_project_id=(
-            None
-            if request.param == "no_parent_node"
-            else cast(ProjectID, faker.uuid4(cast_to=None))
-        ),
-        parent_node_id=(
-            None
-            if request.param == "no_parent_node"
-            else cast(NodeID, faker.uuid4(cast_to=None))
-        ),
+        parent_project_id=(None if request.param == "no_parent_node" else cast(ProjectID, faker.uuid4(cast_to=None))),
+        parent_node_id=(None if request.param == "no_parent_node" else cast(NodeID, faker.uuid4(cast_to=None))),
     )

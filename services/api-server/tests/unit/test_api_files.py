@@ -49,9 +49,7 @@ class DummyFileData:
     _file_name: str = "myfile.txt"
     _final_e_tag: ETag = "07d1c1a4-b073-4be7-b022-f405d90e99aa"
     _file_size: int = 100000
-    _file_sha256_checksum: SHA256Str = SHA256Str(
-        "E7a5B06A880dDee55A16fbc27Dc29705AE1aceadcaf0aDFd15fAF839ff5E2C2e"
-    )
+    _file_sha256_checksum: SHA256Str = SHA256Str("E7a5B06A880dDee55A16fbc27Dc29705AE1aceadcaf0aDFd15fAF839ff5E2C2e")
 
     @classmethod
     def file(cls) -> File:
@@ -82,9 +80,7 @@ class DummyFileData:
 
     @classmethod
     def uploaded_parts(cls) -> FileUploadCompletionBody:
-        return FileUploadCompletionBody(
-            parts=[UploadedPart(number=ii + 1, e_tag=_FAKER.uuid4()) for ii in range(5)]
-        )
+        return FileUploadCompletionBody(parts=[UploadedPart(number=ii + 1, e_tag=_FAKER.uuid4()) for ii in range(5)])
 
     @classmethod
     def final_e_tag(cls) -> ETag:
@@ -96,9 +92,7 @@ class DummyFileData:
 
 
 @pytest.mark.xfail(reason="Under dev")
-async def test_list_files_legacy(
-    client: AsyncClient, mocked_storage_rest_api_base: MockRouter
-):
+async def test_list_files_legacy(client: AsyncClient, mocked_storage_rest_api_base: MockRouter):
     response = await client.get(f"{API_VTAG}/files")
 
     assert response.status_code == status.HTTP_200_OK
@@ -146,15 +140,11 @@ async def test_list_files_with_pagination(
 
 
 @pytest.mark.xfail(reason="Under dev")
-async def test_upload_content(
-    client: AsyncClient, mocked_storage_rest_api_base: MockRouter, tmp_path: Path
-):
+async def test_upload_content(client: AsyncClient, mocked_storage_rest_api_base: MockRouter, tmp_path: Path):
     upload_path = tmp_path / "test_upload_content.txt"
     upload_path.write_text("test_upload_content")
 
-    response = await client.put(
-        f"{API_VTAG}/files/content", files={"upload-file": upload_path.open("rb")}
-    )
+    response = await client.put(f"{API_VTAG}/files/content", files={"upload-file": upload_path.open("rb")})
 
     assert response.status_code == status.HTTP_200_OK
     assert response.json() == {
@@ -166,12 +156,8 @@ async def test_upload_content(
 
 
 @pytest.mark.xfail(reason="Under dev")
-async def test_get_file(
-    client: AsyncClient, mocked_storage_rest_api_base: MockRouter, tmp_path: Path
-):
-    response = await client.get(
-        f"{API_VTAG}/files/3fa85f64-5717-4562-b3fc-2c963f66afa6"
-    )
+async def test_get_file(client: AsyncClient, mocked_storage_rest_api_base: MockRouter, tmp_path: Path):
+    response = await client.get(f"{API_VTAG}/files/3fa85f64-5717-4562-b3fc-2c963f66afa6")
 
     assert response.status_code == status.HTTP_200_OK
     assert response.json() == {
@@ -211,19 +197,13 @@ async def test_delete_file(
         side_effects_callbacks=[search_side_effect, delete_side_effect],
     )
 
-    response = await client.delete(
-        f"{API_VTAG}/files/3fa85f64-5717-4562-b3fc-2c963f66afa6", auth=auth
-    )
+    response = await client.delete(f"{API_VTAG}/files/3fa85f64-5717-4562-b3fc-2c963f66afa6", auth=auth)
     assert response.status_code == status.HTTP_200_OK
 
 
 @pytest.mark.xfail(reason="Under dev")
-async def test_download_content(
-    client: AsyncClient, mocked_storage_rest_api_base: MockRouter, tmp_path: Path
-):
-    response = await client.get(
-        f"{API_VTAG}/files/3fa85f64-5717-4562-b3fc-2c963f66afa6/content"
-    )
+async def test_download_content(client: AsyncClient, mocked_storage_rest_api_base: MockRouter, tmp_path: Path):
+    response = await client.get(f"{API_VTAG}/files/3fa85f64-5717-4562-b3fc-2c963f66afa6/content")
 
     assert response.status_code == status.HTTP_200_OK
     assert response.headers["content-type"] == "application/octet-stream"
@@ -249,9 +229,7 @@ async def test_get_upload_links(
     payload: dict[str, str] = response.json()
 
     assert response.status_code == status.HTTP_200_OK
-    client_upload_schema: ClientFileUploadData = ClientFileUploadData.model_validate(
-        payload
-    )
+    client_upload_schema: ClientFileUploadData = ClientFileUploadData.model_validate(payload)
 
     if follow_up_request == "complete":
         body = {
@@ -273,9 +251,7 @@ async def test_get_upload_links(
         body = {
             "client_file": jsonable_encoder(DummyFileData.client_file()),
         }
-        response = await client.post(
-            client_upload_schema.upload_schema.links.abort_upload, json=body, auth=auth
-        )
+        response = await client.post(client_upload_schema.upload_schema.links.abort_upload, json=body, auth=auth)
         assert response.status_code == status.HTTP_200_OK
     else:
         raise AssertionError
@@ -364,7 +340,7 @@ async def test_search_file(
 
 async def test_download_file_openapi_specs(openapi_dev_specs: dict[str, Any]):
     """Test that openapi-specs for download file entrypoint specifies a binary file is returned in case of return status 200"""
-    file_download_responses: dict[str, Any] = openapi_dev_specs["paths"][
-        f"/{API_VTAG}/files/{{file_id}}/content"
-    ]["get"]["responses"]
+    file_download_responses: dict[str, Any] = openapi_dev_specs["paths"][f"/{API_VTAG}/files/{{file_id}}/content"][
+        "get"
+    ]["responses"]
     assert "application/octet-stream" in file_download_responses["200"]["content"]

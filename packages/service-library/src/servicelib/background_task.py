@@ -39,9 +39,7 @@ def periodic(
     interval: datetime.timedelta,
     raise_on_error: bool = False,
     early_wake_up_event: asyncio.Event | None = None,
-) -> Callable[
-    [Callable[P, Coroutine[Any, Any, None]]], Callable[P, Coroutine[Any, Any, None]]
-]:
+) -> Callable[[Callable[P, Coroutine[Any, Any, None]]], Callable[P, Coroutine[Any, Any, None]]]:
     """Calls the function periodically with a given interval or triggered by an early wake-up event.
 
     Arguments:
@@ -65,21 +63,13 @@ def periodic(
             # e.g. when this decorators is used twice on the same function
             ...
 
-        nap = (
-            asyncio.sleep
-            if early_wake_up_event is None
-            else SleepUsingAsyncioEvent(early_wake_up_event)
-        )
+        nap = asyncio.sleep if early_wake_up_event is None else SleepUsingAsyncioEvent(early_wake_up_event)
 
         @retry(
             sleep=nap,
             wait=wait_fixed(interval.total_seconds()),
             reraise=True,
-            retry=(
-                retry_if_exception_type(_InternalTryAgain)
-                if raise_on_error
-                else retry_if_exception_type()
-            ),
+            retry=(retry_if_exception_type(_InternalTryAgain) if raise_on_error else retry_if_exception_type()),
             before_sleep=before_sleep_log(_logger, logging.DEBUG),
         )
         @functools.wraps(async_fun)
@@ -112,9 +102,7 @@ def create_periodic_task(
     async def _() -> None:
         await task(**kwargs)
 
-    with log_context(
-        _logger, logging.DEBUG, msg=f"create periodic background task '{task_name}'"
-    ):
+    with log_context(_logger, logging.DEBUG, msg=f"create periodic background task '{task_name}'"):
         return asyncio.create_task(_(), name=task_name)
 
 

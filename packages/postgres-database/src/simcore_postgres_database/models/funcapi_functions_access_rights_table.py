@@ -1,6 +1,7 @@
 """Functions access rights table"""
 
 import sqlalchemy as sa
+
 from simcore_postgres_database.models._common import (
     RefActions,
     column_created_datetime,
@@ -60,7 +61,5 @@ functions_access_rights_table = sa.Table(
     ),
     column_created_datetime(),
     column_modified_datetime(),
-    sa.PrimaryKeyConstraint(
-        "function_uuid", "group_id", "product_name", name="pk_func_access_to_func_group"
-    ),
+    sa.PrimaryKeyConstraint("function_uuid", "group_id", "product_name", name="pk_func_access_to_func_group"),
 )
