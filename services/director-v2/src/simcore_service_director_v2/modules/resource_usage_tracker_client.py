@@ -22,7 +22,8 @@ from models_library.resource_tracker import (
 )
 from models_library.services import ServiceKey, ServiceVersion
 from models_library.wallets import WalletID
-from servicelib.fastapi.tracing import get_tracing_config, setup_httpx_client_tracing
+from servicelib.fastapi.tracing import get_tracing_config
+from servicelib.tracing import setup_httpx_client_tracing
 
 from ..core.errors import PricingPlanUnitNotFoundError
 from ..core.settings import AppSettings
@@ -36,9 +37,7 @@ class ResourceUsageTrackerClient:
     exit_stack: contextlib.AsyncExitStack
 
     @classmethod
-    def create(
-        cls, app: FastAPI, settings: AppSettings
-    ) -> "ResourceUsageTrackerClient":
+    def create(cls, app: FastAPI, settings: AppSettings) -> "ResourceUsageTrackerClient":
         client = httpx.AsyncClient(
             base_url=settings.DIRECTOR_V2_RESOURCE_USAGE_TRACKER.api_base_url,
         )
@@ -162,9 +161,7 @@ class ResourceUsageTrackerClient:
     def setup(cls, app: FastAPI):
         assert app.state  # nosec
         if exists := getattr(app.state, "resource_usage_api", None):
-            _logger.warning(
-                "Skipping setup. Cannot setup more than once %s: %s", cls, exists
-            )
+            _logger.warning("Skipping setup. Cannot setup more than once %s: %s", cls, exists)
             return
 
         assert not hasattr(app.state, "resource_usage_api")  # nosec

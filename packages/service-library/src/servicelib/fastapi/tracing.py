@@ -5,12 +5,10 @@ from collections.abc import AsyncIterator
 
 from fastapi import FastAPI, Request
 from fastapi_lifespan_manager import State
-from httpx import AsyncClient, Client
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
     OTLPSpanExporter as OTLPSpanExporterHTTP,
 )
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
-from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
 from opentelemetry.sdk.trace import SpanProcessor, TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from settings_library.tracing import TracingSettings
@@ -181,10 +179,6 @@ def initialize_fastapi_app_tracing(
     if add_response_trace_id_header:
         app.add_middleware(ResponseTraceIdHeaderMiddleware)
     FastAPIInstrumentor.instrument_app(app, tracer_provider=tracing_config.tracer_provider)
-
-
-def setup_httpx_client_tracing(client: AsyncClient | Client, tracing_config: TracingConfig) -> None:
-    HTTPXClientInstrumentor.instrument_client(client, tracer_provider=tracing_config.tracer_provider)
 
 
 def setup_tracing(app: FastAPI, tracing_config: TracingConfig) -> None:

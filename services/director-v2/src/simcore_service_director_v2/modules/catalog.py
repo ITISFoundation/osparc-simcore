@@ -11,7 +11,8 @@ from models_library.services import ServiceKey, ServiceVersion
 from models_library.services_resources import ServiceResourcesDict
 from models_library.users import UserID
 from pydantic import TypeAdapter
-from servicelib.fastapi.tracing import get_tracing_config, setup_httpx_client_tracing
+from servicelib.fastapi.tracing import get_tracing_config
+from servicelib.tracing import setup_httpx_client_tracing
 from settings_library.catalog import CatalogSettings
 from settings_library.tracing import TracingSettings
 
@@ -25,7 +26,6 @@ def setup(
     catalog_settings: CatalogSettings | None,
     tracing_settings: TracingSettings | None,
 ) -> None:
-
     if not catalog_settings:
         catalog_settings = CatalogSettings()
 
@@ -106,9 +106,7 @@ class CatalogClient:
         )
         resp.raise_for_status()
         if resp.status_code == status.HTTP_200_OK:
-            json_response: ServiceResourcesDict = TypeAdapter(
-                ServiceResourcesDict
-            ).validate_python(resp.json())
+            json_response: ServiceResourcesDict = TypeAdapter(ServiceResourcesDict).validate_python(resp.json())
             return json_response
         raise HTTPException(status_code=resp.status_code, detail=resp.content)
 
@@ -124,9 +122,7 @@ class CatalogClient:
             return SimcoreServiceLabels.model_validate(resp.json())
         raise HTTPException(status_code=resp.status_code, detail=resp.content)
 
-    async def get_service_extras(
-        self, service_key: ServiceKey, service_version: ServiceVersion
-    ) -> ServiceExtras:
+    async def get_service_extras(self, service_key: ServiceKey, service_version: ServiceVersion) -> ServiceExtras:
         resp = await self.request(
             "GET",
             f"/services/{urllib.parse.quote_plus(service_key)}/{service_version}/extras",

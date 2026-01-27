@@ -317,6 +317,10 @@ h11==0.16.0
     # via
     #   httpcore
     #   wsproto
+h2==4.3.0
+    # via httpx
+hpack==4.1.0
+    # via h2
 httpcore==1.0.9
     # via httpx
 httpx==0.28.1
@@ -369,8 +373,13 @@ httpx==0.28.1
     #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../packages/simcore-sdk/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../../requirements/constraints.txt
+    #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../../packages/simcore-sdk/requirements/_base.in
     #   -r requirements/_base.in
+hyperframe==6.1.0
+    # via h2
 idna==3.3
     # via
     #   anyio
@@ -541,6 +550,7 @@ opentelemetry-api==1.34.1
     #   opentelemetry-instrumentation-aiopg
     #   opentelemetry-instrumentation-asyncpg
     #   opentelemetry-instrumentation-dbapi
+    #   opentelemetry-instrumentation-httpx
     #   opentelemetry-instrumentation-logging
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
@@ -567,6 +577,7 @@ opentelemetry-instrumentation==0.55b1
     #   opentelemetry-instrumentation-aiopg
     #   opentelemetry-instrumentation-asyncpg
     #   opentelemetry-instrumentation-dbapi
+    #   opentelemetry-instrumentation-httpx
     #   opentelemetry-instrumentation-logging
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
@@ -590,6 +601,11 @@ opentelemetry-instrumentation-asyncpg==0.55b1
     #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
 opentelemetry-instrumentation-dbapi==0.55b1
     # via opentelemetry-instrumentation-aiopg
+opentelemetry-instrumentation-httpx==0.55b1
+    # via
+    #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
 opentelemetry-instrumentation-logging==0.55b1
     # via
     #   -r requirements/../../../../packages/celery-library/requirements/../../../packages/service-library/requirements/_base.in
@@ -624,6 +640,7 @@ opentelemetry-semantic-conventions==0.55b1
     #   opentelemetry-instrumentation-aiohttp-server
     #   opentelemetry-instrumentation-asyncpg
     #   opentelemetry-instrumentation-dbapi
+    #   opentelemetry-instrumentation-httpx
     #   opentelemetry-instrumentation-redis
     #   opentelemetry-instrumentation-requests
     #   opentelemetry-sdk
@@ -631,6 +648,7 @@ opentelemetry-util-http==0.55b1
     # via
     #   opentelemetry-instrumentation-aiohttp-client
     #   opentelemetry-instrumentation-aiohttp-server
+    #   opentelemetry-instrumentation-httpx
     #   opentelemetry-instrumentation-requests
 orderly-set==5.2.3
     # via deepdiff
@@ -1366,6 +1384,7 @@ wrapt==1.16.0
     #   opentelemetry-instrumentation-aiohttp-server
     #   opentelemetry-instrumentation-aiopg
     #   opentelemetry-instrumentation-dbapi
+    #   opentelemetry-instrumentation-httpx
     #   opentelemetry-instrumentation-redis
 wsproto==1.2.0
     # via simple-websocket
