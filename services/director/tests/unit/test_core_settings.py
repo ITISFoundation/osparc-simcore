@@ -32,12 +32,8 @@ def test_valid_application_settings(app_environment: EnvVarsDict):
     )
 
 
-def test_invalid_client_timeout_raises(
-    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
-):
-    monkeypatch.setenv(
-        "DIRECTOR_REGISTRY_CLIENT_TIMEOUT", f"{datetime.timedelta(seconds=-10)}"
-    )
+def test_invalid_client_timeout_raises(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("DIRECTOR_REGISTRY_CLIENT_TIMEOUT", f"{datetime.timedelta(seconds=-10)}")
     with pytest.raises(ValidationError):
         ApplicationSettings.create_from_envs()
 
@@ -49,19 +45,23 @@ def test_docker_container_env_sample(monkeypatch: pytest.MonkeyPatch):
         monkeypatch,
         """
         DIRECTOR_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS={}
-        DIRECTOR_REGISTRY_CACHING=True
         DIRECTOR_REGISTRY_CACHING_TTL=00:15:00
+        DIRECTOR_REGISTRY_CACHING=True
         DIRECTOR_SELF_SIGNED_SSL_FILENAME=
         DIRECTOR_SELF_SIGNED_SSL_SECRET_ID=
         DIRECTOR_SELF_SIGNED_SSL_SECRET_NAME=
-        DIRECTOR_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS=["node.labels.io.simcore.autoscaled-node!=true"]
         DIRECTOR_SERVICES_CUSTOM_LABELS={"com.example.description":"Accounting webapp"}
+        DIRECTOR_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS=["node.labels.io.simcore.autoscaled-node!=true"]
+        DOCKER_API_PROXY_HOST=test
+        DOCKER_API_PROXY_PASSWORD=test
+        DOCKER_API_PROXY_USER=test
         EXTRA_HOSTS_SUFFIX=undefined
         GPG_KEY=0D96DF4D4110E5C43FBFB17F2D347EA6AA65421D
         HOME=/root
         HOSTNAME=osparc-master-01-2
         LANG=C.UTF-8
         LC_ALL=C.UTF-8
+        LOG_FORMAT_LOCAL_DEV_ENABLED=1
         LOGLEVEL=WARNING
         MONITORING_ENABLED=True
         PATH=/home/scu/.venv/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
@@ -73,12 +73,12 @@ def test_docker_container_env_sample(monkeypatch: pytest.MonkeyPatch):
         POSTGRES_USER=scu
         PUBLISHED_HOST_NAME=osparc-master.speag.com
         PWD=/home/scu
-        PYTHONDONTWRITEBYTECODE=1
-        PYTHONOPTIMIZE=TRUE
         PYTHON_GET_PIP_SHA256=adsfasdf
         PYTHON_GET_PIP_URL=https://github.com/pypa/get-pip/raw/eff16c878c7fd6b688b9b4c4267695cf1a0bf01b/get-pip.py
         PYTHON_PIP_VERSION=20.1.1
         PYTHON_VERSION=3.6.10
+        PYTHONDONTWRITEBYTECODE=1
+        PYTHONOPTIMIZE=TRUE
         REGISTRY_AUTH=True
         REGISTRY_PATH=
         REGISTRY_PW=adsfasdf
@@ -103,7 +103,6 @@ def test_docker_container_env_sample(monkeypatch: pytest.MonkeyPatch):
         TRACING_OPENTELEMETRY_COLLECTOR_EXPORTER_ENDPOINT=http://jaeger:4318
         TRAEFIK_SIMCORE_ZONE=master_internal_simcore_stack
         VIRTUAL_ENV=/home/scu/.venv
-        LOG_FORMAT_LOCAL_DEV_ENABLED=1
     """,
     )
 
@@ -112,9 +111,7 @@ def test_docker_container_env_sample(monkeypatch: pytest.MonkeyPatch):
     assert settings.DIRECTOR_DEFAULT_MAX_MEMORY == 0, "default!"
 
 
-def test_docker_compose_environment_sample(
-    monkeypatch: pytest.MonkeyPatch, app_environment: EnvVarsDict
-):
+def test_docker_compose_environment_sample(monkeypatch: pytest.MonkeyPatch, app_environment: EnvVarsDict):
     setenvs_from_dict(
         monkeypatch,
         {

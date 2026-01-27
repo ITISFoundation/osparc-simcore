@@ -23,10 +23,11 @@ pytest_plugins = [
     "fixtures.fake_services",
     "pytest_simcore.asyncio_event_loops",
     "pytest_simcore.cli_runner",
-    "pytest_simcore.docker",
+    "pytest_simcore.docker_api_proxy",
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_registry",
     "pytest_simcore.docker_swarm",
+    "pytest_simcore.docker",
     "pytest_simcore.environment_configs",
     "pytest_simcore.faker_projects_data",
     "pytest_simcore.faker_users_data",
@@ -60,9 +61,7 @@ def common_schemas_specs_dir(osparc_simcore_root_dir: Path) -> Path:
 
 
 @pytest.fixture
-def configure_swarm_stack_name(
-    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
-) -> EnvVarsDict:
+def configure_swarm_stack_name(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
     return app_environment | setenvs_from_dict(
         monkeypatch,
         envs={
@@ -157,18 +156,25 @@ MAX_TIME_FOR_APP_TO_SHUTDOWN = 10
 
 
 @pytest.fixture
-def app_settings(app_environment: EnvVarsDict) -> ApplicationSettings:
+def app_settings(
+    mock_setup_remote_docker_client: Callable[[str], None], app_environment: EnvVarsDict
+) -> ApplicationSettings:
+    mock_setup_remote_docker_client("simcore_service_director.core.application.setup_remote_docker_client")
     return ApplicationSettings.create_from_envs()
 
 
 @pytest.fixture
 async def app(
-    app_settings: ApplicationSettings, is_pdb_enabled: bool
+    app_settings: ApplicationSettings,
+    is_pdb_enabled: bool,
+    mock_remote_docker_client: Callable[[FastAPI], None],
 ) -> AsyncIterator[FastAPI]:
     tracing_config = TracingConfig.create(
-        service_name=APP_NAME, tracing_settings=None  # disable tracing in tests
+        service_name=APP_NAME,
+        tracing_settings=None,  # disable tracing in tests
     )
     the_test_app = create_app(settings=app_settings, tracing_config=tracing_config)
+    mock_remote_docker_client(the_test_app)
     async with LifespanManager(
         the_test_app,
         startup_timeout=None if is_pdb_enabled else MAX_TIME_FOR_APP_TO_STARTUP,

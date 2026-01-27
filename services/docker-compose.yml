@@ -357,6 +357,12 @@ services:
       DIRECTOR_SERVICES_CUSTOM_LABELS: ${DIRECTOR_SERVICES_CUSTOM_LABELS}
       DIRECTOR_TRACING: ${DIRECTOR_TRACING}
 
+      DOCKER_API_PROXY_HOST: ${DOCKER_API_PROXY_HOST}
+      DOCKER_API_PROXY_PASSWORD: ${DOCKER_API_PROXY_PASSWORD}
+      DOCKER_API_PROXY_PORT: ${DOCKER_API_PROXY_PORT}
+      DOCKER_API_PROXY_SECURE: ${DOCKER_API_PROXY_SECURE}
+      DOCKER_API_PROXY_USER: ${DOCKER_API_PROXY_USER}
+
       SIMCORE_SERVICES_NETWORK_NAME: interactive_services_subnet
       STORAGE_ENDPOINT: ${STORAGE_ENDPOINT}
       SWARM_STACK_NAME: ${SWARM_STACK_NAME}
@@ -611,6 +617,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - autoscaling_subnet
+      - interactive_services_subnet
       - docker_api_subnet
 
   static-webserver:
