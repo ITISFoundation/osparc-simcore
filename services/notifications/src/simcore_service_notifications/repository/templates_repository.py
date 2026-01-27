@@ -128,7 +128,7 @@ class NotificationsTemplatesRepository:
                 return False
 
             # Channel filtering: exact match only, no wildcards
-            if channel is not None and channel_str != channel.value:
+            if channel is not None and channel_str != channel:
                 return False
 
             return _matches_pattern(template_name_str, template_name or "*") and _matches_pattern(part_str, part or "*")
