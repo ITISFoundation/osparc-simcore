@@ -185,18 +185,6 @@ qx.Class.define("osparc.wrapper.HtmlEditor", {
       return quill;
     },
 
-    getContent: function(quill) {
-      return quill.getContents();
-    },
-
-    setContent: function(quill, content) {
-      quill.setContents(content);
-    },
-
-    getText: function(quill) {
-      return quill.getText();
-    },
-
     getHTML: function(quill) {
       return quill.root.innerHTML;
     },
