@@ -105,8 +105,8 @@ qx.Class.define("osparc.editor.EmailEditor", {
           break;
         case "text-editor": {
           const editorId = "email-html-editor-" + Date.now();
-          const htmlEditor = osparc.wrapper.HtmlEditor.getInstance();
-          const quillContainer = htmlEditor.createEditor(editorId, this.__initialContent, {
+          const htmlEditorWrapper = osparc.wrapper.HtmlEditor.getInstance();
+          const quillContainer = htmlEditorWrapper.createEditor(editorId, this.__initialContent, {
             placeholder: 'Write your email...',
             modules: {
               toolbar: osparc.wrapper.HtmlEditor.getRichToolbarConfig()
@@ -119,12 +119,12 @@ qx.Class.define("osparc.editor.EmailEditor", {
 
           // Initialize Quill after the DOM element is ready
           quillContainer.addListenerOnce("appear", () => {
-            this.__quillInstance = htmlEditor.initializeEditor(editorId, quillContainer.getUserData("quillOptions"));
+            this.__quillInstance = htmlEditorWrapper.initializeEditor(editorId, quillContainer.getUserData("quillOptions"));
             // Set initial content if already loaded
             if (this.__initialContent && this.__quillInstance) {
-              htmlEditor.setHTML(this.__quillInstance, this.__initialContent);
+              htmlEditorWrapper.setHTML(this.__quillInstance, this.__initialContent);
             }
-          });
+          }, this);
 
           this.getChildControl("editor-page").add(control, {
             flex: 1
@@ -167,8 +167,8 @@ qx.Class.define("osparc.editor.EmailEditor", {
 
         // Update Quill editor if already initialized
         if (this.__quillInstance) {
-          const wrapper = osparc.wrapper.HtmlEditor.getInstance();
-          wrapper.setHTML(this.__quillInstance, this.__initialContent);
+          const htmlEditorWrapper = osparc.wrapper.HtmlEditor.getInstance();
+          htmlEditorWrapper.setHTML(this.__quillInstance, this.__initialContent);
         }
       }
     },

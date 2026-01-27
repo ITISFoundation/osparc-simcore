@@ -190,6 +190,7 @@ qx.Class.define("osparc.wrapper.HtmlEditor", {
     },
 
     setHTML: function(quill, html) {
+      return;
       const delta = quill.clipboard.convert(html);
       quill.setContents(delta, 'silent');
     },
