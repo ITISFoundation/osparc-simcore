@@ -26,9 +26,19 @@ qx.Class.define("osparc.editor.EmailEditor", {
       barPosition: "top"
     });
 
+    this.__quillInstance = null;
+
+    // Initialize HtmlEditor wrapper
+    osparc.wrapper.HtmlEditor.getInstance().init()
+      .then(() => {
+        this.getChildControl("editor-page");
+        this.getChildControl("preview-page");
+        this.getChildControl("text-editor");
+        this.getChildControl("preview-email");
+      });
+
     this.getChildControl("editor-page");
     this.getChildControl("preview-page");
-    this.getChildControl("text-editor");
     this.getChildControl("preview-email");
 
     this.addListener("changeSelection", () => {
@@ -96,20 +106,41 @@ qx.Class.define("osparc.editor.EmailEditor", {
           });
           this.add(control);
           break;
-        case "text-editor":
-          control = new osparc.editor.MarkdownEditorInline().set({
+        case "text-editor": {
+          const editorId = "email-html-editor-" + Date.now();
+          const wrapper = osparc.wrapper.HtmlEditor.getInstance();
+
+          control = wrapper.createEditor(editorId, "<p>Write your email...</p>", {
+            theme: 'snow',
+            placeholder: 'Write your email...',
+            modules: {
+              toolbar: [
+                [{ 'header': [1, 2, 3, false] }],
+                ['bold', 'italic', 'underline', 'strike'],
+                ['link', 'blockquote', 'code-block'],
+                [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                ['clean']
+              ]
+            }
+          });
+
+          control.set({
             allowGrowY: true,
             allowGrowX: true,
             minWidth: 500,
             minHeight: 300,
           });
-          control.getChildControl("text-area").set({
-            placeholder: "Write your email..."
+
+          // Initialize Quill after the DOM element is ready
+          control.addListenerOnce("appear", () => {
+            this.__quillInstance = wrapper.initializeEditor(editorId, control.getUserData("quillOptions"));
           });
+
           this.getChildControl("editor-page").add(control, {
             flex: 1
           });
           break;
+        }
         case "preview-email":
           // using qx.ui.embed.Iframe instead of qx.ui.embed.Html because:
           // - CSS isolation
@@ -134,10 +165,13 @@ qx.Class.define("osparc.editor.EmailEditor", {
     __renderPreview: function() {
       const previewEmail = this.getChildControl("preview-email");
 
-      const textEditor = this.getChildControl("text-editor");
-      let emailContent = textEditor.getValueAsHtml();
-      // Convert the line breaks
-      // emailContent = emailContent.replaceAll("\n", "<br/>");
+      if (!this.__quillInstance) {
+        console.warn("Quill editor not yet initialized");
+        return;
+      }
+
+      const wrapper = osparc.wrapper.HtmlEditor.getInstance();
+      let emailContent = wrapper.getHTML(this.__quillInstance);
       const templateEmail = this.getTemplateEmail();
       const previewHtml = this.__buildPreviewHtml(templateEmail, emailContent);
 
