@@ -10,5 +10,4 @@ fastapi[standard]
 fastapi-lifespan-manager
 httpx[http2]
 opentelemetry-instrumentation-fastapi
-opentelemetry-instrumentation-httpx
 prometheus-client
