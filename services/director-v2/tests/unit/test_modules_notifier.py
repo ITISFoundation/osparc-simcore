@@ -52,12 +52,14 @@ def disable_modules_setup(mock_exclusive: None, mocker: MockerFixture) -> None:
 
 @pytest.fixture
 def mock_env(
+    mock_setup_remote_docker_client: Callable[[str], None],
     disable_modules_setup: None,
     monkeypatch: pytest.MonkeyPatch,
     mock_env: EnvVarsDict,
     rabbit_service: RabbitSettings,
     faker: Faker,
 ) -> EnvVarsDict:
+    mock_setup_remote_docker_client("simcore_service_director_v2.core.application.setup_remote_docker_client")
     setenvs_from_dict(
         monkeypatch,
         {
@@ -79,9 +81,7 @@ def mock_env(
 @pytest.fixture
 async def socketio_server(
     initialized_app: FastAPI,
-    socketio_server_factory: Callable[
-        [RabbitSettings], _AsyncGeneratorContextManager[AsyncServer]
-    ],
+    socketio_server_factory: Callable[[RabbitSettings], _AsyncGeneratorContextManager[AsyncServer]],
 ) -> AsyncIterable[AsyncServer]:
     # Same configuration as simcore_service_webserver/socketio/server.py
     settings: AppSettings = initialized_app.state.settings
@@ -121,9 +121,7 @@ def _get_on_no_more_credits_event(
 
 
 async def _assert_call_count(mock: AsyncMock, *, call_count: int) -> None:
-    async for attempt in AsyncRetrying(
-        wait=wait_fixed(0.1), stop=stop_after_attempt(500), reraise=True
-    ):
+    async for attempt in AsyncRetrying(wait=wait_fixed(0.1), stop=stop_after_attempt(500), reraise=True):
         with attempt:
             assert mock.call_count == call_count
 
@@ -135,9 +133,7 @@ async def test_notifier_publish_message(
     user_id: UserID,
     node_id: NodeID,
     wallet_id: WalletID,
-    socketio_client_factory: Callable[
-        [], _AsyncGeneratorContextManager[socketio.AsyncClient]
-    ],
+    socketio_client_factory: Callable[[], _AsyncGeneratorContextManager[socketio.AsyncClient]],
 ):
     # web server spy events
     server_connect = socketio_server_events["connect"]
@@ -155,31 +151,20 @@ async def test_notifier_publish_message(
         await _assert_call_count(server_connect, call_count=number_of_clients)
 
         # client emits and check it was received
-        await logged_gather(
-            *[
-                frontend_client.emit("check", data="an_event")
-                for frontend_client in frontend_clients
-            ]
-        )
+        await logged_gather(*[frontend_client.emit("check", data="an_event") for frontend_client in frontend_clients])
         await _assert_call_count(server_on_check, call_count=number_of_clients)
 
         # attach spy to client
-        no_no_more_credits_events: list[AsyncMock] = [
-            _get_on_no_more_credits_event(c) for c in frontend_clients
-        ]
+        no_no_more_credits_events: list[AsyncMock] = [_get_on_no_more_credits_event(c) for c in frontend_clients]
 
         # server publishes a message
-        await publish_shutdown_no_more_credits(
-            initialized_app, user_id=user_id, node_id=node_id, wallet_id=wallet_id
-        )
+        await publish_shutdown_no_more_credits(initialized_app, user_id=user_id, node_id=node_id, wallet_id=wallet_id)
 
         # check that all clients received it
         for on_no_more_credits_event in no_no_more_credits_events:
             await _assert_call_count(on_no_more_credits_event, call_count=1)
             on_no_more_credits_event.assert_awaited_once_with(
-                jsonable_encoder(
-                    ServiceNoMoreCredits(node_id=node_id, wallet_id=wallet_id)
-                )
+                jsonable_encoder(ServiceNoMoreCredits(node_id=node_id, wallet_id=wallet_id))
             )
 
     await _assert_call_count(server_disconnect, call_count=number_of_clients * 2)
