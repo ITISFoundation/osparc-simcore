@@ -200,7 +200,7 @@
               }
             ],
             "title": "Extra Credits In Usd",
-            "description": "If set, the account's primary wallet will add extra credits corresponding to this ammount in USD"
+            "description": "If set, the account's primary wallet will add extra credits corresponding to this amount in USD"
           },
           "product": {
             "type": "string",
@@ -271,7 +271,7 @@
               }
             ],
             "title": "Extra Credits In Usd",
-            "description": "If set, the account's primary wallet will add extra credits corresponding to this ammount in USD"
+            "description": "If set, the account's primary wallet will add extra credits corresponding to this amount in USD"
           },
           "product": {
             "type": "string",
@@ -352,7 +352,7 @@
               }
             ],
             "title": "Extra Credits In Usd",
-            "description": "If set, the account's primary wallet will add extra credits corresponding to this ammount in USD"
+            "description": "If set, the account's primary wallet will add extra credits corresponding to this amount in USD"
           },
           "product": {
             "anyOf": [
