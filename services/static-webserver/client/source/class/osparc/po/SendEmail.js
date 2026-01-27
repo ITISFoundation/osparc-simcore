@@ -30,6 +30,14 @@ qx.Class.define("osparc.po.SendEmail", {
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
+        case "email-template-container": {
+          control = new qx.ui.container.Composite(new qx.ui.layout.HBox(10).set({
+            alignY: "middle",
+            marginBottom: 10,
+          }));
+          this._add(control);
+          break;
+        }
         case "email-template-selector": {
           control = new qx.ui.form.SelectBox().set({
             width: 200,
@@ -40,7 +48,12 @@ qx.Class.define("osparc.po.SendEmail", {
             const templateId = selectedItem.getModel();
             this.__templateSelected(templateId);
           }, this);
-          this._add(control);
+          this.getChildControl("email-template-container").add(control);
+          break;
+        }
+        case "email-template-helper": {
+          control = new qx.ui.basic.Label(this.tr("Select an email template"));
+          this.getChildControl("email-template-container").add(control);
           break;
         }
         case "form-container": {
@@ -137,7 +150,8 @@ qx.Class.define("osparc.po.SendEmail", {
     },
 
     _buildLayout: function() {
-      const selectBox = this.getChildControl("email-template-selector");
+      this.getChildControl("email-template-selector");
+      this.getChildControl("email-template-helper");
       this.getChildControl("add-recipient-button");
       this.getChildControl("recipients-chips");
       this.getChildControl("subject-field");
