@@ -2,10 +2,11 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=unused-argument
 
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Callable
 from unittest.mock import AsyncMock
 
 import pytest
+from aiodocker import Docker
 from faker import Faker
 from fastapi import FastAPI
 from pytest_mock.plugin import MockerFixture
@@ -95,17 +96,29 @@ def mocked_app(mock_env: None) -> FastAPI:
     return app
 
 
+async def _setup_docker(app: FastAPI) -> None:
+    app.state.remote_docker_client = Docker()
+
+
+async def _shutdown_docker(app: FastAPI) -> None:
+    assert isinstance(app.state.remote_docker_client, Docker)
+    await app.state.remote_docker_client.close()
+
+
 @pytest.fixture
 async def dynamic_sidecar_scheduler(
+    mock_setup_remote_docker_client: Callable[[str], None],
     mocked_app: FastAPI,
 ) -> AsyncIterator[DynamicSidecarsScheduler]:
     await setup_scheduler(mocked_app)
     await setup(mocked_app)
+    await _setup_docker(mocked_app)
 
     yield mocked_app.state.dynamic_sidecar_scheduler
 
     await shutdown_scheduler(mocked_app)
     await shutdown(mocked_app)
+    await _shutdown_docker(mocked_app)
 
 
 def _is_observation_task_present(
@@ -113,8 +126,7 @@ def _is_observation_task_present(
     scheduler_data_from_http_request,
 ) -> bool:
     return (
-        scheduler_data_from_http_request.service_name
-        in dynamic_sidecar_scheduler.scheduler._service_observation_task  # noqa: SLF001
+        scheduler_data_from_http_request.service_name in dynamic_sidecar_scheduler.scheduler._service_observation_task  # noqa: SLF001
     )
 
 
@@ -128,19 +140,12 @@ async def test_regression_break_endless_loop_cancellation_edge_case(
     can_save: bool | None,
 ):
     # in this situation the scheduler would never end loops forever
-    await dynamic_sidecar_scheduler.scheduler.add_service_from_scheduler_data(
-        scheduler_data_from_http_request
-    )
+    await dynamic_sidecar_scheduler.scheduler.add_service_from_scheduler_data(scheduler_data_from_http_request)
 
     # simulate edge case
     scheduler_data_from_http_request.dynamic_sidecar.were_containers_created = True
 
-    assert (
-        _is_observation_task_present(
-            dynamic_sidecar_scheduler, scheduler_data_from_http_request
-        )
-        is False
-    )
+    assert _is_observation_task_present(dynamic_sidecar_scheduler, scheduler_data_from_http_request) is False
 
     # NOTE: this will create the observation task as well!
     # Simulates user action like going back to the dashboard.
@@ -150,22 +155,10 @@ async def test_regression_break_endless_loop_cancellation_edge_case(
         skip_observation_recreation=False,
     )
 
-    assert (
-        _is_observation_task_present(
-            dynamic_sidecar_scheduler, scheduler_data_from_http_request
-        )
-        is True
-    )
+    assert _is_observation_task_present(dynamic_sidecar_scheduler, scheduler_data_from_http_request) is True
 
     # requires an extra pass to remove the service
     for _ in range(3):
-        await _apply_observation_cycle(
-            dynamic_sidecar_scheduler, scheduler_data_from_http_request
-        )
+        await _apply_observation_cycle(dynamic_sidecar_scheduler, scheduler_data_from_http_request)
 
-    assert (
-        _is_observation_task_present(
-            dynamic_sidecar_scheduler, scheduler_data_from_http_request
-        )
-        is False
-    )
+    assert _is_observation_task_present(dynamic_sidecar_scheduler, scheduler_data_from_http_request) is False
