@@ -132,7 +132,7 @@ httpcore==1.0.9
     # via httpx
 httptools==0.6.4
     # via uvicorn
-httpx==0.27.0
+httpx==0.28.1
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -146,6 +146,7 @@ httpx==0.27.0
     #   -c requirements/../../../packages/settings-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/settings-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../requirements/constraints.txt
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
     #   -r requirements/../../../packages/service-library/requirements/_fastapi.in
     #   fastapi
     #   fastapi-cloud-cli
@@ -472,7 +473,6 @@ sniffio==1.3.1
     # via
     #   anyio
     #   asgi-lifespan
-    #   httpx
 starlette==0.47.2
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
