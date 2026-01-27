@@ -449,7 +449,9 @@ opentelemetry-instrumentation-asyncpg==0.59b0
 opentelemetry-instrumentation-fastapi==0.59b0
     # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
 opentelemetry-instrumentation-httpx==0.59b0
-    # via -r requirements/../../../packages/service-library/requirements/_fastapi.in
+    # via
+    #   -r requirements/../../../packages/service-library/requirements/_base.in
+    #   -r requirements/../../../packages/simcore-sdk/requirements/../../../packages/service-library/requirements/_base.in
 opentelemetry-instrumentation-logging==0.59b0
     # via
     #   -r requirements/../../../packages/service-library/requirements/_base.in
