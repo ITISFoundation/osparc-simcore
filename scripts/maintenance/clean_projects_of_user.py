@@ -92,16 +92,12 @@ async def login_user(client: AsyncClient, email: EmailStr, password: SecretStr) 
     """Authenticate user with email and password."""
     with console.status("[cyan]Authenticating...[/cyan]"):
         path = "/auth/login"
-        r = await client.post(
-            path, json={"email": email, "password": password.get_secret_value()}
-        )
+        r = await client.post(path, json={"email": email, "password": password.get_secret_value()})
         r.raise_for_status()
     _display_status_message(f"Successfully logged in as {email}", "success")
 
 
-async def get_project_for_user(
-    client: AsyncClient, project_id: str
-) -> ProjectInfo | None:
+async def get_project_for_user(client: AsyncClient, project_id: str) -> ProjectInfo | None:
     """Fetch a single project by ID."""
     path = f"/projects/{project_id}"
     r = await client.get(path, params={"type": "all", "show_hidden": True})
@@ -117,9 +113,7 @@ async def get_project_for_user(
 
 async def get_user_project_count(client: AsyncClient) -> int:
     """Fetch the total number of projects for the user."""
-    r = await client.get(
-        "/projects", params={"type": "all", "limit": 1, "show_hidden": True}
-    )
+    r = await client.get("/projects", params={"type": "all", "limit": 1, "show_hidden": True})
     r.raise_for_status()
     response_dict = r.json()
     return response_dict.get("_meta", {}).get("total", 0)
@@ -144,9 +138,7 @@ async def delete_project(client: AsyncClient, project: ProjectInfo) -> ProjectIn
 
 def _display_projects_table(projects: list[ProjectInfo]) -> None:
     """Display a formatted table of projects."""
-    table = Table(
-        title="Projects to be Deleted", show_header=True, header_style="bold cyan"
-    )
+    table = Table(title="Projects to be Deleted", show_header=True, header_style="bold cyan")
     table.add_column("UUID", style="magenta")
     table.add_column("Name", style="green")
 
@@ -157,9 +149,7 @@ def _display_projects_table(projects: list[ProjectInfo]) -> None:
     console.print(table)
 
 
-def _display_summary_report(
-    stats: DeletionStats, failed_projects: list[ProjectInfo]
-) -> None:
+def _display_summary_report(stats: DeletionStats, failed_projects: list[ProjectInfo]) -> None:
     """Display a comprehensive summary report."""
     summary_text = f"""
 [bold cyan]╔═══════════════════════════════════════════╗[/bold cyan]
@@ -176,9 +166,7 @@ def _display_summary_report(
     console.print(summary_text)
 
     if failed_projects:
-        error_table = Table(
-            title="Failed Deletions", show_header=True, header_style="bold red"
-        )
+        error_table = Table(title="Failed Deletions", show_header=True, header_style="bold red")
         error_table.add_column("UUID", style="magenta")
         error_table.add_column("Error", style="red")
 
@@ -205,15 +193,11 @@ async def _process_batch(
 
     if dry_run:
         for project in batch:
-            progress.console.print(
-                f"[dim]Would delete project: {project.uuid} ({project.name})[/dim]"
-            )
+            progress.console.print(f"[dim]Would delete project: {project.uuid} ({project.name})[/dim]")
             progress.update(task_id, advance=1)
         return 0, []
 
-    progress.update(
-        task_id, description=f"[cyan]Deleting batch of {len(batch)} projects...[/cyan]"
-    )
+    progress.update(task_id, description=f"[cyan]Deleting batch of {len(batch)} projects...[/cyan]")
 
     tasks = [delete_project(client, project) for project in batch]
     results = await asyncio.gather(*tasks, return_exceptions=True)
@@ -229,25 +213,19 @@ async def _process_batch(
             project.status = "failed"
             project.error_message = f"Exception: {result}"
             failed_projects.append(project)
-            progress.console.print(
-                f"[red]Failed to delete {project.uuid}: {project.error_message}[/red]"
-            )
+            progress.console.print(f"[red]Failed to delete {project.uuid}: {project.error_message}[/red]")
             continue
         if isinstance(result, BaseException):
             project.status = "failed"
             project.error_message = f"BaseException: {result}"
             failed_projects.append(project)
-            progress.console.print(
-                f"[red]Failed to delete {project.uuid}: {project.error_message}[/red]"
-            )
+            progress.console.print(f"[red]Failed to delete {project.uuid}: {project.error_message}[/red]")
             continue
         # result is ProjectInfo
         proj = result
         if proj.status == "failed":
             failed_projects.append(proj)
-            progress.console.print(
-                f"[red]Failed to delete {proj.uuid}: {proj.error_message}[/red]"
-            )
+            progress.console.print(f"[red]Failed to delete {proj.uuid}: {proj.error_message}[/red]")
         elif proj.status == "deleted":
             deleted_count += 1
 
@@ -261,9 +239,7 @@ async def _process_batch(
     retry=retry_if_exception_type((HTTPStatusError, Exception)),
     reraise=True,
 )
-async def _fetch_batch(
-    client: AsyncClient, batch_size: int, offset: int
-) -> list[dict[str, Any]]:
+async def _fetch_batch(client: AsyncClient, batch_size: int, offset: int) -> list[dict[str, Any]]:
     """Fetch a batch of projects with retries."""
     r = await client.get(
         "/projects",
@@ -307,14 +283,10 @@ async def process_deletion_stream(
             if exc.response.status_code == codes.NOT_FOUND:
                 # After retries, if we still get 404, assume end of stream
                 break
-            progress.console.print(
-                f"[red]Error fetching projects after retries: {exc}[/red]"
-            )
+            progress.console.print(f"[red]Error fetching projects after retries: {exc}[/red]")
             break
         except Exception as exc:  # pylint: disable=broad-except
-            progress.console.print(
-                f"[red]Error fetching projects after retries: {exc}[/red]"
-            )
+            progress.console.print(f"[red]Error fetching projects after retries: {exc}[/red]")
             break
 
         if not projects_data:
@@ -328,9 +300,7 @@ async def process_deletion_stream(
             for p in projects_data
         ]
 
-        count, failed = await _process_batch(
-            client, batch=batch, progress=progress, task_id=task_id, dry_run=dry_run
-        )
+        count, failed = await _process_batch(client, batch=batch, progress=progress, task_id=task_id, dry_run=dry_run)
 
         deleted_count += count
         all_failed_projects.extend(failed)
@@ -343,9 +313,7 @@ async def process_deletion_stream(
     return deleted_count, all_failed_projects
 
 
-async def clean_single_project(
-    client: AsyncClient, *, project_id: str, dry_run: bool
-) -> int:
+async def clean_single_project(client: AsyncClient, *, project_id: str, dry_run: bool) -> int:
     """Handle deletion of a single project."""
     with console.status("[cyan]Fetching project...[/cyan]"):
         project = await get_project_for_user(client, project_id)
@@ -375,9 +343,7 @@ async def clean_single_project(
         _display_status_message("Project successfully deleted", "success")
         return 0
 
-    _display_status_message(
-        f"Failed to delete project: {result.error_message}", "error"
-    )
+    _display_status_message(f"Failed to delete project: {result.error_message}", "error")
     return 1
 
 
@@ -408,9 +374,7 @@ async def clean_all_projects(
             _display_status_message("Deletion cancelled", "info")
             return 0
     else:
-        _display_status_message(
-            f"Starting DRY-RUN ({total_projects} projects would be deleted)", "warning"
-        )
+        _display_status_message(f"Starting DRY-RUN ({total_projects} projects would be deleted)", "warning")
 
     _display_status_message("Fetching and processing projects...", "info")
 
@@ -426,9 +390,7 @@ async def clean_all_projects(
         TimeRemainingColumn(),
         console=console,
     ) as progress:
-        task_id = progress.add_task(
-            "[cyan]Processing projects...[/cyan]", total=total_projects
-        )
+        task_id = progress.add_task("[cyan]Processing projects...[/cyan]", total=total_projects)
 
         stats.deleted_count, failed_projects = await process_deletion_stream(
             client,
@@ -484,15 +446,11 @@ async def clean(
         Exit code (0 for success, 1 for failure)
     """
     try:
-        async with AsyncClient(
-            base_url=endpoint.join("v0"), timeout=DEFAULT_TIMEOUT, follow_redirects=True
-        ) as client:
+        async with AsyncClient(base_url=endpoint.join("v0"), timeout=DEFAULT_TIMEOUT, follow_redirects=True) as client:
             await login_user(client, username, password)
 
             if project_id:
-                return await clean_single_project(
-                    client, project_id=project_id, dry_run=dry_run
-                )
+                return await clean_single_project(client, project_id=project_id, dry_run=dry_run)
 
             return await clean_all_projects(
                 client,
@@ -543,9 +501,7 @@ def main(
     ] = DEFAULT_BATCH_SIZE,
     dry_run: Annotated[
         bool,
-        typer.Option(
-            "--dry-run", help="Show what would be deleted without actually deleting"
-        ),
+        typer.Option("--dry-run", help="Show what would be deleted without actually deleting"),
     ] = False,
 ) -> int:
     """Clean all projects for a given user and endpoint."""

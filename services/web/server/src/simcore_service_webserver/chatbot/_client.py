@@ -4,7 +4,9 @@ from typing import Annotated, Any, Final, Literal
 import httpx
 from aiohttp import web
 from pydantic import BaseModel, Field, model_validator
+from servicelib.aiohttp.tracing import TRACING_CONFIG_KEY
 from servicelib.mimetype_constants import MIMETYPE_APPLICATION_JSON
+from servicelib.tracing import TracingConfig, setup_httpx_client_tracing
 
 from .exceptions import NoResponseFromChatbotError
 from .settings import ChatbotSettings, get_plugin_settings
@@ -29,9 +31,7 @@ class ChatResponse(BaseModel):
 class Message(BaseModel):
     role: Literal["user", "assistant", "developer"]
     content: Annotated[str, Field(description="Content of the message")]
-    name: Annotated[
-        str | None, Field(description="Optional name of the message sender")
-    ] = None
+    name: Annotated[str | None, Field(description="Optional name of the message sender")] = None
 
     @model_validator(mode="after")
     def check_name_requires_user_role(self) -> "Message":
@@ -42,8 +42,10 @@ class Message(BaseModel):
 
 
 class ChatbotRestClient:
-    def __init__(self, chatbot_settings: ChatbotSettings) -> None:
+    def __init__(self, chatbot_settings: ChatbotSettings, tracing_config: TracingConfig) -> None:
         self._client = httpx.AsyncClient()
+        if tracing_config.tracing_enabled:
+            setup_httpx_client_tracing(client=self._client, tracing_config=tracing_config)
         self._chatbot_settings = chatbot_settings
 
     async def get_settings(self) -> dict[str, Any]:
@@ -72,14 +74,9 @@ class ChatbotRestClient:
             return await self._client.post(
                 url,
                 json={
-                    "messages": [
-                        msg.model_dump(mode="json", exclude_none=True)
-                        for msg in messages
-                    ],
+                    "messages": [msg.model_dump(mode="json", exclude_none=True) for msg in messages],
                     "model": self._chatbot_settings.CHATBOT_MODEL,
-                    "metadata": {
-                        "collection_name": self._chatbot_settings.CHATBOT_COLLECTION_NAME
-                    },
+                    "metadata": {"collection_name": self._chatbot_settings.CHATBOT_COLLECTION_NAME},
                 },
                 headers={
                     "Content-Type": MIMETYPE_APPLICATION_JSON,
@@ -92,15 +89,15 @@ class ChatbotRestClient:
             response = await _request()
             response.raise_for_status()
             chat_response = ChatResponse.model_validate(response.json())
-            if len(chat_response.choices) == 0:
-                raise NoResponseFromChatbotError(chat_completion_id=chat_response.id)
-            return chat_response.choices[0].message
-
         except Exception:
             _logger.error(  # noqa: TRY400
                 "Failed to ask question to chatbot at %s", url
             )
             raise
+
+        if len(chat_response.choices) == 0:
+            raise NoResponseFromChatbotError(chat_completion_id=chat_response.id)
+        return chat_response.choices[0].message
 
 
 _APPKEY: Final = web.AppKey(ChatbotRestClient.__name__, ChatbotRestClient)
@@ -108,10 +105,9 @@ _APPKEY: Final = web.AppKey(ChatbotRestClient.__name__, ChatbotRestClient)
 
 async def setup_chatbot_rest_client(app: web.Application) -> None:
     chatbot_settings = get_plugin_settings(app)
+    tracing_config = app[TRACING_CONFIG_KEY]
 
-    client = ChatbotRestClient(
-        chatbot_settings=chatbot_settings,
-    )
+    client = ChatbotRestClient(chatbot_settings=chatbot_settings, tracing_config=tracing_config)
 
     app[_APPKEY] = client
 

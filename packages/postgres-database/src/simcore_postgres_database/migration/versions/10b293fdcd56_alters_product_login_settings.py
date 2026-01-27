@@ -51,9 +51,7 @@ def downgrade():
     rows = conn.execute(sa.DDL("SELECT name, login_settings FROM products")).fetchall()
     for row in rows:
         data = row["login_settings"] or {}
-        data["two_factor_enabled"] = data.pop(
-            "LOGIN_2FA_REQUIRED", False
-        )  # back to default
+        data["two_factor_enabled"] = data.pop("LOGIN_2FA_REQUIRED", False)  # back to default
         data = json.dumps(data)
         conn.execute(
             sa.DDL(

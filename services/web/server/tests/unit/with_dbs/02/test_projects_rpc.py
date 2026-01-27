@@ -115,14 +115,10 @@ async def test_rpc_client_list_my_projects_marked_as_jobs(
     )
 
     # List projects marked as jobs
-    page: PageRpcProjectJobRpcGet = (
-        await webserver_rpc_client.projects.list_projects_marked_as_jobs(
-            product_name=product_name,
-            user_id=user_id,
-            filters=ListProjectsMarkedAsJobRpcFilters(
-                job_parent_resource_name_prefix="solvers/solver123"
-            ),
-        )
+    page: PageRpcProjectJobRpcGet = await webserver_rpc_client.projects.list_projects_marked_as_jobs(
+        product_name=product_name,
+        user_id=user_id,
+        filters=ListProjectsMarkedAsJobRpcFilters(job_parent_resource_name_prefix="solvers/solver123"),
     )
 
     assert page.meta.total == 1
@@ -142,7 +138,6 @@ async def other_user(
     client: TestClient,
     logged_user: UserInfoDict,
 ) -> AsyncIterator[UserInfoDict]:
-
     async with NewUser(
         user_data={
             "name": "other-user",
@@ -150,7 +145,6 @@ async def other_user(
         },
         app=client.app,
     ) as other_user_info:
-
         assert other_user_info["name"] != logged_user["name"]
         yield other_user_info
 
@@ -237,17 +231,13 @@ async def test_rpc_client_list_projects_marked_as_jobs_with_metadata_filter(
     )
 
     # Test with exact match on metadata field
-    page: PageRpcProjectJobRpcGet = (
-        await webserver_rpc_client.projects.list_projects_marked_as_jobs(
-            product_name=product_name,
-            user_id=user_id,
-            filters=ListProjectsMarkedAsJobRpcFilters(
-                job_parent_resource_name_prefix="solvers/solver123",
-                any_custom_metadata=[
-                    MetadataFilterItem(name="solver_type", pattern="FEM")
-                ],
-            ),
-        )
+    page: PageRpcProjectJobRpcGet = await webserver_rpc_client.projects.list_projects_marked_as_jobs(
+        product_name=product_name,
+        user_id=user_id,
+        filters=ListProjectsMarkedAsJobRpcFilters(
+            job_parent_resource_name_prefix="solvers/solver123",
+            any_custom_metadata=[MetadataFilterItem(name="solver_type", pattern="FEM")],
+        ),
     )
 
     assert page.meta.total == 1
@@ -349,7 +339,6 @@ async def test_rpc_client_get_project_marked_as_job_not_found(
     logged_user: UserInfoDict,
     user_project: ProjectDict,
 ):
-
     project_uuid = ProjectID(user_project["uuid"])
     user_id = logged_user["id"]
     job_parent_resource_name = "solvers/solver123/version/1.2.3"

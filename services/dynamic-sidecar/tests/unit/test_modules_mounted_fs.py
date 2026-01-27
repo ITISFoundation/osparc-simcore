@@ -61,26 +61,13 @@ async def test_expected_paths_and_volumes(
 ):
     assert (
         len(set(mounted_volumes.volume_name_state_paths()))
-        == len(
-            {
-                x
-                async for x in mounted_volumes.iter_state_paths_to_docker_volumes(
-                    service_run_id
-                )
-            }
-        )
+        == len({x async for x in mounted_volumes.iter_state_paths_to_docker_volumes(service_run_id)})
         == len(set(mounted_volumes.disk_state_paths_iter()))
     )
 
     # check location on disk
-    assert (
-        mounted_volumes.disk_outputs_path
-        == mounted_volumes._dy_volumes / outputs_dir.relative_to("/")
-    )
-    assert (
-        mounted_volumes.disk_inputs_path
-        == mounted_volumes._dy_volumes / inputs_dir.relative_to("/")
-    )
+    assert mounted_volumes.disk_outputs_path == mounted_volumes._dy_volumes / outputs_dir.relative_to("/")
+    assert mounted_volumes.disk_inputs_path == mounted_volumes._dy_volumes / inputs_dir.relative_to("/")
 
     assert set(mounted_volumes.disk_state_paths_iter()) == {
         mounted_volumes._dy_volumes / x.relative_to("/") for x in state_paths_dirs
@@ -88,17 +75,12 @@ async def test_expected_paths_and_volumes(
 
     # check volume mount point
     assert (
-        mounted_volumes.volume_name_outputs
-        == f"dyv_{service_run_id}_{node_id}_{_replace_slashes(outputs_dir)[::-1]}"
+        mounted_volumes.volume_name_outputs == f"dyv_{service_run_id}_{node_id}_{_replace_slashes(outputs_dir)[::-1]}"
     )
-    assert (
-        mounted_volumes.volume_name_inputs
-        == f"dyv_{service_run_id}_{node_id}_{_replace_slashes(inputs_dir)[::-1]}"
-    )
+    assert mounted_volumes.volume_name_inputs == f"dyv_{service_run_id}_{node_id}_{_replace_slashes(inputs_dir)[::-1]}"
 
     assert set(mounted_volumes.volume_name_state_paths()) == {
-        f"dyv_{service_run_id}_{node_id}_{_replace_slashes(x)[::-1]}"
-        for x in state_paths_dirs
+        f"dyv_{service_run_id}_{node_id}_{_replace_slashes(x)[::-1]}" for x in state_paths_dirs
     }
 
     def _get_container_mount(mount_path: str) -> str:
@@ -106,21 +88,14 @@ async def test_expected_paths_and_volumes(
 
     # check docker_volume
     assert (
-        _get_container_mount(
-            await mounted_volumes.get_inputs_docker_volume(service_run_id)
-        )
+        _get_container_mount(await mounted_volumes.get_inputs_docker_volume(service_run_id))
         == f"{mounted_volumes.inputs_path}"
     )
     assert (
-        _get_container_mount(
-            await mounted_volumes.get_outputs_docker_volume(service_run_id)
-        )
+        _get_container_mount(await mounted_volumes.get_outputs_docker_volume(service_run_id))
         == f"{mounted_volumes.outputs_path}"
     )
 
     assert {
-        _get_container_mount(x)
-        async for x in mounted_volumes.iter_state_paths_to_docker_volumes(
-            service_run_id
-        )
+        _get_container_mount(x) async for x in mounted_volumes.iter_state_paths_to_docker_volumes(service_run_id)
     } == {f"{state_path}" for state_path in state_paths_dirs}

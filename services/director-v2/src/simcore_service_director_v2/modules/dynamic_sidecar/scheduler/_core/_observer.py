@@ -37,9 +37,7 @@ async def _apply_observation_cycle(
     and updates the status back
     """
     app: FastAPI = scheduler.app
-    settings: DynamicServicesSchedulerSettings = (
-        app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
-    )
+    settings: DynamicServicesSchedulerSettings = app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
     initial_status = deepcopy(scheduler_data.dynamic_sidecar.status)
 
     if (  # do not refactor, second part of "and condition" is skipped most times
@@ -51,9 +49,7 @@ async def _apply_observation_cycle(
     ):
         # NOTE: once marked for removal the observation cycle needs
         # to continue in order for the service to be removed
-        logger.warning(
-            "Removing service %s from observation", scheduler_data.service_name
-        )
+        logger.warning("Removing service %s from observation", scheduler_data.service_name)
         await scheduler.mark_service_for_removal(
             node_uuid=scheduler_data.node_uuid,
             can_save=scheduler_data.dynamic_sidecar.were_containers_created,
@@ -61,9 +57,7 @@ async def _apply_observation_cycle(
         )
 
     for dynamic_scheduler_event in REGISTERED_EVENTS:
-        if await dynamic_scheduler_event.will_trigger(
-            app=app, scheduler_data=scheduler_data
-        ):
+        if await dynamic_scheduler_event.will_trigger(app=app, scheduler_data=scheduler_data):
             # event.action will apply changes to the output_scheduler_data
             await dynamic_scheduler_event.action(app, scheduler_data)
 
@@ -113,9 +107,7 @@ async def observing_single_service(
                     scheduler._observation_counter,  # pylint:disable=protected-access  # noqa: SLF001
                     dynamic_scheduler.DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL.total_seconds(),
                 )
-                and await is_dynamic_sidecar_stack_missing(
-                    scheduler_data.node_uuid, dynamic_scheduler.SWARM_STACK_NAME
-                )
+                and await is_dynamic_sidecar_stack_missing(scheduler_data.node_uuid, dynamic_scheduler.SWARM_STACK_NAME)
             ):
                 # if both proxy and sidecar ar missing at this point it
                 # is safe to assume that user manually removed them from

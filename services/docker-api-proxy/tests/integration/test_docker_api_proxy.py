@@ -18,9 +18,7 @@ pytest_simcore_core_services_selection = [
 async def test_authenticated_docker_client(
     docker_swarm: None,
     docker_api_proxy_settings: DockerApiProxysettings,
-    setup_docker_client: Callable[
-        [EnvVarsDict], AbstractAsyncContextManager[aiodocker.Docker]
-    ],
+    setup_docker_client: Callable[[EnvVarsDict], AbstractAsyncContextManager[aiodocker.Docker]],
 ):
     envs = {
         "DOCKER_API_PROXY_HOST": "127.0.0.1",
@@ -43,9 +41,7 @@ async def test_authenticated_docker_client(
 async def test_unauthenticated_docker_client(
     docker_swarm: None,
     docker_api_proxy_settings: DockerApiProxysettings,
-    setup_docker_client: Callable[
-        [EnvVarsDict], AbstractAsyncContextManager[aiodocker.Docker]
-    ],
+    setup_docker_client: Callable[[EnvVarsDict], AbstractAsyncContextManager[aiodocker.Docker]],
     user: str,
     password: str,
 ):

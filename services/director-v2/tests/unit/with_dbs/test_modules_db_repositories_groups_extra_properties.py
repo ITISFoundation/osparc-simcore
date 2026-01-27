@@ -56,9 +56,7 @@ def mock_env(
     # NOTE: drops the default internet policy added by the migration to test
     # otherwise any user will always have access to the internet
     with postgres_db.connect() as con:
-        con.execute(
-            groups_extra_properties.delete(groups_extra_properties.c.group_id == 1)
-        )
+        con.execute(groups_extra_properties.delete(groups_extra_properties.c.group_id == 1))
     return env_vars
 
 
@@ -68,9 +66,7 @@ def give_internet_to_group(
 ) -> Iterator[Callable[..., dict]]:
     to_remove = []
 
-    def creator(
-        group_id: int, has_internet_access: bool, product_name: str = None
-    ) -> dict[str, Any]:
+    def creator(group_id: int, has_internet_access: bool, product_name: str = None) -> dict[str, Any]:
         with postgres_db.connect() as con:
             groups_extra_properties_config = {
                 "group_id": group_id,
@@ -86,9 +82,7 @@ def give_internet_to_group(
             )
             # this is needed to get the primary_gid correctly
             result = con.execute(
-                sa.select(groups_extra_properties).where(
-                    groups_extra_properties.c.group_id == group_id
-                )
+                sa.select(groups_extra_properties).where(groups_extra_properties.c.group_id == group_id)
             )
             entry = result.first()
             assert entry
@@ -100,11 +94,7 @@ def give_internet_to_group(
     yield creator
 
     with postgres_db.connect() as con:
-        con.execute(
-            groups_extra_properties.delete().where(
-                groups_extra_properties.c.group_id.in_(to_remove)
-            )
-        )
+        con.execute(groups_extra_properties.delete().where(groups_extra_properties.c.group_id.in_(to_remove)))
     print(f"<-- deleted groups_extra_properties {to_remove=}")
 
 
@@ -121,9 +111,7 @@ async def user(
     with_internet_access: bool,
 ) -> dict[str, Any]:
     user = create_registered_user()
-    group_info = give_internet_to_group(
-        group_id=user["primary_gid"], has_internet_access=with_internet_access
-    )
+    group_info = give_internet_to_group(group_id=user["primary_gid"], has_internet_access=with_internet_access)
     user["product_name"] = group_info["product_name"]
     return user
 
@@ -143,14 +131,10 @@ async def test_has_internet_access(
     assert allow_internet_access is with_internet_access
 
 
-async def test_regression_group_id_is_not_unique(
-    mock_env: EnvVarsDict, postgres_db: sa.engine.Engine
-):
+async def test_regression_group_id_is_not_unique(mock_env: EnvVarsDict, postgres_db: sa.engine.Engine):
     def _get_group_id(con: sa.engine.Connection) -> int:
         groups_config = {"name": "", "description": ""}
-        result = con.execute(
-            groups.insert().values(groups_config).returning(sa.literal_column("*"))
-        )
+        result = con.execute(groups.insert().values(groups_config).returning(sa.literal_column("*")))
         return result.first()[0]
 
     def _insert_product(con: sa.engine.Connection, group_id: int, name: str) -> int:
@@ -162,16 +146,12 @@ async def test_regression_group_id_is_not_unique(
         }
         con.execute(products.insert().values(product_config))
 
-    def _insert_groups_extra_properties(
-        con: sa.engine.Connection, group_id: int, product_name: str
-    ) -> int:
+    def _insert_groups_extra_properties(con: sa.engine.Connection, group_id: int, product_name: str) -> int:
         groups_extra_properties_config = {
             "product_name": product_name,
             "group_id": group_id,
         }
-        con.execute(
-            groups_extra_properties.insert().values(groups_extra_properties_config)
-        )
+        con.execute(groups_extra_properties.insert().values(groups_extra_properties_config))
 
     with postgres_db.connect() as con:
         group_id_1 = _get_group_id(con)

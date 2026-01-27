@@ -65,9 +65,7 @@ def mock_list_usage_services(mocker: MockerFixture) -> tuple:
 
 
 @pytest.fixture()
-def setup_wallets_db(
-    postgres_db: sa.engine.Engine, logged_user: UserInfoDict
-) -> Iterator[int]:
+def setup_wallets_db(postgres_db: sa.engine.Engine, logged_user: UserInfoDict) -> Iterator[int]:
     with postgres_db.connect() as con:
         result = con.execute(
             wallets.insert()
@@ -127,11 +125,7 @@ async def test_list_service_usage(
     assert mock_list_usage_services.call_count == 1
 
     # list service usage with wallets as "accountant"
-    url = (
-        client.app.router["list_resource_usage_services"]
-        .url_for()
-        .with_query(wallet_id=f"{setup_wallets_db}")
-    )
+    url = client.app.router["list_resource_usage_services"].url_for().with_query(wallet_id=f"{setup_wallets_db}")
     resp = await client.get(f"{url}")
     await assert_status(resp, status.HTTP_200_OK)
     assert mock_list_usage_services.call_count == 2
@@ -142,17 +136,11 @@ async def test_list_service_usage(
         wallet_id=f"{setup_wallets_db}",
         group_id=f"{logged_user['primary_gid']}",
     )
-    resp = await client.put(
-        f"{url}", json={"read": True, "write": False, "delete": False}
-    )
+    resp = await client.put(f"{url}", json={"read": True, "write": False, "delete": False})
     await assert_status(resp, status.HTTP_200_OK)
 
     # list service usage with wallets as "basic" user
-    url = (
-        client.app.router["list_resource_usage_services"]
-        .url_for()
-        .with_query(wallet_id=f"{setup_wallets_db}")
-    )
+    url = client.app.router["list_resource_usage_services"].url_for().with_query(wallet_id=f"{setup_wallets_db}")
     resp = await client.get(f"{url}")
     await assert_status(resp, status.HTTP_200_OK)
     assert mock_list_usage_services.call_count == 3
@@ -176,47 +164,29 @@ async def test_list_service_usage_with_order_by_query_param(
 
     # with order by query parameter
     _filter = {"field": "started_at", "direction": "desc"}
-    url = (
-        client.app.router["list_resource_usage_services"]
-        .url_for()
-        .with_query(order_by=json.dumps(_filter))
-    )
+    url = client.app.router["list_resource_usage_services"].url_for().with_query(order_by=json.dumps(_filter))
     resp = await client.get(f"{url}")
     await assert_status(resp, status.HTTP_200_OK)
     assert mock_list_usage_services.called
 
     # with order by query parameter
     _filter = {"field": "started_at", "direction": "asc"}
-    url = (
-        client.app.router["list_resource_usage_services"]
-        .url_for()
-        .with_query(order_by=json.dumps(_filter))
-    )
+    url = client.app.router["list_resource_usage_services"].url_for().with_query(order_by=json.dumps(_filter))
     resp = await client.get(f"{url}")
     await assert_status(resp, status.HTTP_200_OK)
     assert mock_list_usage_services.called
 
     # with non-supported field in order by query parameter
     _filter = {"field": "non-supported", "direction": "desc"}
-    url = (
-        client.app.router["list_resource_usage_services"]
-        .url_for()
-        .with_query(order_by=json.dumps(_filter))
-    )
+    url = client.app.router["list_resource_usage_services"].url_for().with_query(order_by=json.dumps(_filter))
     resp = await client.get(f"{url}")
     _, error = await assert_status(resp, status.HTTP_422_UNPROCESSABLE_ENTITY)
     assert mock_list_usage_services.called
     assert error["status"] == status.HTTP_422_UNPROCESSABLE_ENTITY
-    assert error["errors"][0]["message"].startswith(
-        "Value error, We do not support ordering by provided field"
-    )
+    assert error["errors"][0]["message"].startswith("Value error, We do not support ordering by provided field")
 
     # with non-parsable field in order by query parameter
-    url = (
-        client.app.router["list_resource_usage_services"]
-        .url_for()
-        .with_query(order_by=",invalid json")
-    )
+    url = client.app.router["list_resource_usage_services"].url_for().with_query(order_by=",invalid json")
     resp = await client.get(f"{url}")
     _, error = await assert_status(resp, status.HTTP_422_UNPROCESSABLE_ENTITY)
     assert mock_list_usage_services.called
@@ -225,22 +195,14 @@ async def test_list_service_usage_with_order_by_query_param(
 
     # with order by without direction
     _filter = {"field": "started_at"}
-    url = (
-        client.app.router["list_resource_usage_services"]
-        .url_for()
-        .with_query(order_by=json.dumps(_filter))
-    )
+    url = client.app.router["list_resource_usage_services"].url_for().with_query(order_by=json.dumps(_filter))
     resp = await client.get(f"{url}")
     await assert_status(resp, status.HTTP_200_OK)
     assert mock_list_usage_services.called
 
     # with wrong direction
     _filter = {"field": "non-supported", "direction": "wrong"}
-    url = (
-        client.app.router["list_resource_usage_services"]
-        .url_for()
-        .with_query(order_by=json.dumps(_filter))
-    )
+    url = client.app.router["list_resource_usage_services"].url_for().with_query(order_by=json.dumps(_filter))
     resp = await client.get(f"{url}")
     _, error = await assert_status(resp, status.HTTP_422_UNPROCESSABLE_ENTITY)
     assert mock_list_usage_services.called
@@ -255,11 +217,7 @@ async def test_list_service_usage_with_order_by_query_param(
 
     # without field
     _filter = {"direction": "asc"}
-    url = (
-        client.app.router["list_resource_usage_services"]
-        .url_for()
-        .with_query(order_by=json.dumps(_filter))
-    )
+    url = client.app.router["list_resource_usage_services"].url_for().with_query(order_by=json.dumps(_filter))
     resp = await client.get(f"{url}")
     _, error = await assert_status(resp, status.HTTP_422_UNPROCESSABLE_ENTITY)
     assert mock_list_usage_services.called
@@ -279,11 +237,7 @@ async def test_list_service_usage_with_filters_query_param(
     assert client.app
 
     # with unable to decode filter query parameter
-    url = (
-        client.app.router["list_resource_usage_services"]
-        .url_for()
-        .with_query(filters='{"test"}')
-    )
+    url = client.app.router["list_resource_usage_services"].url_for().with_query(filters='{"test"}')
     resp = await client.get(f"{url}")
     _, error = await assert_status(resp, status.HTTP_422_UNPROCESSABLE_ENTITY)
     assert error["status"] == status.HTTP_422_UNPROCESSABLE_ENTITY
@@ -291,21 +245,13 @@ async def test_list_service_usage_with_filters_query_param(
 
     # with correct filter query parameter
     _filter = {"started_at": {"from": "2023-12-01", "until": "2024-01-01"}}
-    url = (
-        client.app.router["list_resource_usage_services"]
-        .url_for()
-        .with_query(filters=json.dumps(_filter))
-    )
+    url = client.app.router["list_resource_usage_services"].url_for().with_query(filters=json.dumps(_filter))
     resp = await client.get(f"{url}")
     await assert_status(resp, status.HTTP_200_OK)
     assert mock_list_usage_services.called
 
     # with only one started_at filter query parameter
     _filter = {"started_at": {"until": "2023-12-02"}}
-    url = (
-        client.app.router["list_resource_usage_services"]
-        .url_for()
-        .with_query(filters=json.dumps(_filter))
-    )
+    url = client.app.router["list_resource_usage_services"].url_for().with_query(filters=json.dumps(_filter))
     resp = await client.get(f"{url}")
     await assert_status(resp, status.HTTP_200_OK)

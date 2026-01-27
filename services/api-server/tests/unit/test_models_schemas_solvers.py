@@ -20,17 +20,13 @@ def test_solvers_sorting_by_name_and_version(faker: Faker):
     one_solver.version = f"{major}.{minor}.{micro}"
 
     # and a different version of the same
-    # NOTE: that id=None so that it can be re-coputed
-    earlier_release = one_solver.model_copy(
-        update={"version": f"{one_solver.version}beta"}, deep=True
-    )
+    # NOTE: that id=None so that it can be re-computed
+    earlier_release = one_solver.model_copy(update={"version": f"{one_solver.version}beta"}, deep=True)
     assert earlier_release.pep404_version.is_prerelease
     assert earlier_release.pep404_version < one_solver.pep404_version
 
     # and yet a completely different solver
-    another_solver = one_solver.model_copy(
-        update={"id": "simcore/services/comp/zSolve"}
-    )
+    another_solver = one_solver.model_copy(update={"id": "simcore/services/comp/zSolve"})
     assert one_solver.id != another_solver.id
     assert one_solver.pep404_version == another_solver.pep404_version
 

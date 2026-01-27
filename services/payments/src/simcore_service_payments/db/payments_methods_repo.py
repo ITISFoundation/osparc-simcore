@@ -43,9 +43,7 @@ class PaymentsMethodsRepo(BaseRepository):
                 return payment_method_id
 
         except IntegrityError as err:
-            raise PaymentMethodUniqueViolationError(
-                payment_method_id=payment_method_id
-            ) from err
+            raise PaymentMethodUniqueViolationError(payment_method_id=payment_method_id) from err
 
     async def update_ack_payment_method(
         self,
@@ -78,9 +76,7 @@ class PaymentsMethodsRepo(BaseRepository):
                 raise PaymentMethodNotFoundError(payment_method_id=payment_method_id)
 
             if row.completed_at is not None:
-                raise PaymentMethodAlreadyAckedError(
-                    payment_method_id=payment_method_id
-                )
+                raise PaymentMethodAlreadyAckedError(payment_method_id=payment_method_id)
 
             result = await conn.execute(
                 payments_methods.update()
@@ -120,7 +116,7 @@ class PaymentsMethodsRepo(BaseRepository):
         user_id: UserID,
         wallet_id: WalletID,
     ) -> list[PaymentsMethodsDB]:
-        # NOTE: we do not expect many payment methods, so no pagination is neede here
+        # NOTE: we do not expect many payment methods, so no pagination is needed here
         async with self.db_engine.begin() as conn:
             result = await conn.execute(
                 payments_methods.select()

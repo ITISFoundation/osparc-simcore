@@ -87,7 +87,7 @@ JOBS_STATUS_CODES: dict[int | str, dict[str, Any]] = {
         ],
     ),
 )
-async def create_solver_job(  # noqa: PLR0913
+async def create_solver_job(
     solver_key: SolverKeyId,
     version: VersionStr,
     inputs: JobInputs,
@@ -109,9 +109,7 @@ async def create_solver_job(  # noqa: PLR0913
         hidden=hidden,
         x_simcore_parent_project_uuid=x_simcore_parent_project_uuid,
         x_simcore_parent_node_id=x_simcore_parent_node_id,
-        job_links=get_solver_job_rest_interface_links(
-            url_for=url_for, solver_key=solver_key, version=version
-        ),
+        job_links=get_solver_job_rest_interface_links(url_for=url_for, solver_key=solver_key, version=version),
     )
 
 
@@ -141,8 +139,7 @@ async def delete_job(
 @router.delete(
     "/{solver_key:path}/releases/{version}/jobs/{job_id:uuid}/assets",
     status_code=status.HTTP_204_NO_CONTENT,
-    responses=JOBS_STATUS_CODES
-    | {status.HTTP_409_CONFLICT: {"description": "Job not finished yet"}},
+    responses=JOBS_STATUS_CODES | {status.HTTP_409_CONFLICT: {"description": "Job not finished yet"}},
     description=create_route_description(
         base="Deletes assets associated with an existing solver job. N.B. this renders the solver job un-startable",
         changelog=[
@@ -159,19 +156,13 @@ async def delete_job_assets(
     job_parent_resource_name = Solver.compose_resource_name(solver_key, version)
 
     # check that job exists and is accessible to user
-    project_job_rpc_get = await job_service.get_job(
-        job_parent_resource_name=job_parent_resource_name, job_id=job_id
-    )
+    project_job_rpc_get = await job_service.get_job(job_parent_resource_name=job_parent_resource_name, job_id=job_id)
     assert project_job_rpc_get.uuid == job_id  # nosec
-    job_status = await job_service.inspect_solver_job(
-        solver_key=solver_key, version=version, job_id=job_id
-    )
+    job_status = await job_service.inspect_solver_job(solver_key=solver_key, version=version, job_id=job_id)
     if job_status.stopped_at is None:
         raise SolverJobNotStoppedYetError(job_id=job_id, state=job_status.state)
 
-    await job_service.delete_job_assets(
-        job_parent_resource_name=job_parent_resource_name, job_id=job_id
-    )
+    await job_service.delete_job_assets(job_parent_resource_name=job_parent_resource_name, job_id=job_id)
 
 
 @router.post(
@@ -200,15 +191,11 @@ async def delete_job_assets(
     description=create_route_description(
         base="Starts job job_id created with the solver solver_key:version",
         changelog=[
-            FMSG_CHANGELOG_ADDED_IN_VERSION.format(
-                "0.4.3", "query parameter `cluster_id`"
-            ),
+            FMSG_CHANGELOG_ADDED_IN_VERSION.format("0.4.3", "query parameter `cluster_id`"),
             FMSG_CHANGELOG_ADDED_IN_VERSION.format(
                 "0.6", "responds with a 202 when successfully starting a computation"
             ),
-            FMSG_CHANGELOG_CHANGED_IN_VERSION.format(
-                "0.7", "query parameter `cluster_id` deprecated"
-            ),
+            FMSG_CHANGELOG_CHANGED_IN_VERSION.format("0.7", "query parameter `cluster_id` deprecated"),
         ],
     ),
 )
@@ -232,12 +219,8 @@ async def start_job(
             pricing_spec=pricing_spec,
         )
     except ProjectAlreadyStartedError:
-        job_status = await job_service.inspect_solver_job(
-            solver_key=solver_key, version=version, job_id=job_id
-        )
-        return JSONResponse(
-            status_code=status.HTTP_200_OK, content=job_status.model_dump(mode="json")
-        )
+        job_status = await job_service.inspect_solver_job(solver_key=solver_key, version=version, job_id=job_id)
+        return JSONResponse(status_code=status.HTTP_200_OK, content=job_status.model_dump(mode="json"))
 
 
 @router.post(
@@ -261,9 +244,7 @@ async def stop_job(
     job_name = compose_solver_job_resource_name(solver_key, version, job_id)
     _logger.debug("Stopping Job '%s'", job_name)
 
-    return await stop_project(
-        job_id=job_id, user_id=user_id, director2_api=director2_api
-    )
+    return await stop_project(job_id=job_id, user_id=user_id, director2_api=director2_api)
 
 
 @router.post(
@@ -286,9 +267,7 @@ async def inspect_job(
     job_name = compose_solver_job_resource_name(solver_key, version, job_id)
     _logger.debug("Inspecting Job '%s'", job_name)
 
-    return await job_service.inspect_solver_job(
-        solver_key=solver_key, version=version, job_id=job_id
-    )
+    return await job_service.inspect_solver_job(solver_key=solver_key, version=version, job_id=job_id)
 
 
 @router.patch(

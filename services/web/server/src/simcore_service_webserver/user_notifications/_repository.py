@@ -23,9 +23,7 @@ class UserNotificationsRepository:
     def create_from_app(cls, app: web.Application) -> "UserNotificationsRepository":
         return cls(redis_client=get_redis_user_notifications_client(app))
 
-    async def list_notifications(
-        self, user_id: UserID, product_name: str
-    ) -> list[UserNotification]:
+    async def list_notifications(self, user_id: UserID, product_name: str) -> list[UserNotification]:
         """Returns a list of notifications where the latest notification is at index 0"""
         raw_notifications: list[str] = await handle_redis_returns_union_types(
             self._redis_client.lrange(
@@ -54,16 +52,12 @@ class UserNotificationsRepository:
             pipe.ltrim(key, 0, MAX_NOTIFICATIONS_FOR_USER_TO_KEEP - 1)
             await pipe.execute()
 
-    async def update_notification(
-        self, user_id: UserID, notification_id: str, update_data: dict[str, Any]
-    ) -> bool:
+    async def update_notification(self, user_id: UserID, notification_id: str, update_data: dict[str, Any]) -> bool:
         """Update a specific notification. Returns True if found and updated."""
         key = get_notification_key(user_id)
         all_user_notifications: list[UserNotification] = [
             UserNotification.model_validate_json(x)
-            for x in await handle_redis_returns_union_types(
-                self._redis_client.lrange(key, 0, -1)
-            )
+            for x in await handle_redis_returns_union_types(self._redis_client.lrange(key, 0, -1))
         ]
 
         for k, user_notification in enumerate(all_user_notifications):

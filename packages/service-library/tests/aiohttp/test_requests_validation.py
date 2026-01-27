@@ -113,9 +113,7 @@ async def client(aiohttp_client: Callable, faker: Faker) -> TestClient:
     async def _handler(request: web.Request) -> web.Response:
         # --------- UNDER TEST -------
         # NOTE: app context does NOT need to be validated everytime!
-        context = MyRequestContext.model_validate(
-            {**dict(request.app), **dict(request)}
-        )
+        context = MyRequestContext.model_validate({**dict(request.app), **dict(request)})
 
         path_params = parse_request_path_parameters_as(MyRequestPathParams, request)
         query_params = parse_request_query_parameters_as(MyRequestQueryParams, request)
@@ -213,7 +211,6 @@ async def test_parse_request_with_invalid_path_params(
     body: MyBody,
     headers_params: MyRequestHeadersParams,
 ):
-
     r = await client.get(
         "/projects/invalid-uuid",
         params=query_params.as_params(),
@@ -237,7 +234,6 @@ async def test_parse_request_with_invalid_query_params(
     body: MyBody,
     headers_params: MyRequestHeadersParams,
 ):
-
     r = await client.get(
         f"/projects/{path_params.project_uuid}",
         params={},
@@ -260,7 +256,6 @@ async def test_parse_request_with_invalid_body(
     query_params: MyRequestQueryParams,
     headers_params: MyRequestHeadersParams,
 ):
-
     r = await client.get(
         f"/projects/{path_params.project_uuid}",
         params=query_params.as_params(),
@@ -284,7 +279,6 @@ async def test_parse_request_with_invalid_json_body(
     query_params: MyRequestQueryParams,
     headers_params: MyRequestHeadersParams,
 ):
-
     r = await client.get(
         f"/projects/{path_params.project_uuid}",
         params=query_params.as_params(),
@@ -303,7 +297,6 @@ async def test_parse_request_with_invalid_headers_params(
     body: MyBody,
     headers_params: MyRequestHeadersParams,
 ):
-
     r = await client.get(
         f"/projects/{path_params.project_uuid}",
         params=query_params.as_params(),
@@ -315,17 +308,13 @@ async def test_parse_request_with_invalid_headers_params(
     response_body = await r.json()
 
     error_model = EnvelopedError.model_validate(response_body).error
-    assert (
-        error_model.message
-        == "Invalid parameter/s 'X-Simcore-User-Agent' in request headers"
-    )
+    assert error_model.message == "Invalid parameter/s 'X-Simcore-User-Agent' in request headers"
     assert error_model.status == status.HTTP_422_UNPROCESSABLE_ENTITY
     assert error_model.errors[0].field == "X-Simcore-User-Agent"
     assert error_model.errors[0].code == "missing"
 
 
 def test_parse_request_query_parameters_as_with_order_by_query_models():
-
     OrderQueryModel = create_ordering_query_model_class(
         ordering_fields={"modified", "name"}, default=OrderBy(field="name")
     )

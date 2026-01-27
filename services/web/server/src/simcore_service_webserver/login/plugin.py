@@ -72,13 +72,11 @@ async def _resolve_login_settings_per_product(app: web.Application):
         errors = {}
         for product in products_service.list_products(app):
             try:
-                login_settings_per_product[product.name] = (
-                    LoginSettingsForProduct.create_from_composition(
-                        app_login_settings=app_login_settings,
-                        product_login_settings=product.login_settings,
-                    )
+                login_settings_per_product[product.name] = LoginSettingsForProduct.create_from_composition(
+                    app_login_settings=app_login_settings,
+                    product_login_settings=product.login_settings,
                 )
-            except ValidationError as err:  # noqa: PERF203
+            except ValidationError as err:
                 errors[product.name] = err
 
         if errors:
@@ -92,9 +90,7 @@ async def _resolve_login_settings_per_product(app: web.Application):
     # product-based public config: Overrides  ApplicationSettings.public_dict
     public_data_per_product = {}
     for product_name, settings in login_settings_per_product.items():
-        public_data_per_product[product_name] = {
-            "invitation_required": settings.LOGIN_REGISTRATION_INVITATION_REQUIRED
-        }
+        public_data_per_product[product_name] = {"invitation_required": settings.LOGIN_REGISTRATION_INVITATION_REQUIRED}
 
     app.setdefault(APP_PUBLIC_CONFIG_PER_PRODUCT, public_data_per_product)
 

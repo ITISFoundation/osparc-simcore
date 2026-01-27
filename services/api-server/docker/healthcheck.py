@@ -31,9 +31,7 @@ is_debug_mode = os.environ.get("SC_BOOT_MODE", "").lower() == "debug"
 
 
 def is_service_healthy() -> bool:
-    worker_mode = TypeAdapter(bool).validate_python(
-        os.getenv("API_SERVER_WORKER_MODE", "False")
-    )
+    worker_mode = TypeAdapter(bool).validate_python(os.getenv("API_SERVER_WORKER_MODE", "False"))
     if worker_mode:
         return is_healthy()
 

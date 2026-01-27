@@ -35,9 +35,7 @@ async def test_get_project(
     assert client.app
 
     # Get valid project
-    got_project = await projects_service_repository.get_project(
-        client.app, project_uuid=user_project["uuid"]
-    )
+    got_project = await projects_service_repository.get_project(client.app, project_uuid=user_project["uuid"])
 
     assert got_project.uuid == UUID(user_project["uuid"])
     assert got_project.name == user_project["name"]
@@ -46,9 +44,7 @@ async def test_get_project(
     # Get non-existent project
     non_existent_project_uuid = UUID("00000000-0000-0000-0000-000000000000")
     with pytest.raises(ProjectNotFoundError):
-        await projects_service_repository.get_project(
-            client.app, project_uuid=non_existent_project_uuid
-        )
+        await projects_service_repository.get_project(client.app, project_uuid=non_existent_project_uuid)
 
 
 async def test_patch_project(
@@ -93,24 +89,18 @@ async def test_delete_project(
     assert client.app
 
     # Delete valid project
-    deleted_project = await projects_service_repository.delete_project(
-        client.app, project_uuid=user_project["uuid"]
-    )
+    deleted_project = await projects_service_repository.delete_project(client.app, project_uuid=user_project["uuid"])
 
     assert deleted_project.uuid == UUID(user_project["uuid"])
 
     # Check deleted
     with pytest.raises(ProjectNotFoundError):
-        await projects_service_repository.delete_project(
-            client.app, project_uuid=user_project["uuid"]
-        )
+        await projects_service_repository.delete_project(client.app, project_uuid=user_project["uuid"])
 
     # Delete non-existent project
     non_existent_project_uuid = UUID("00000000-0000-0000-0000-000000000000")
     with pytest.raises(ProjectNotFoundError):
-        await projects_service_repository.delete_project(
-            client.app, project_uuid=non_existent_project_uuid
-        )
+        await projects_service_repository.delete_project(client.app, project_uuid=non_existent_project_uuid)
 
 
 @pytest.fixture
@@ -161,11 +151,9 @@ async def test_get_trashed_by_primary_gid(
     assert client.app
 
     # Get trashed by primary gid
-    trashed_by_primary_gid = (
-        await projects_service_repository.get_trashed_by_primary_gid(
-            client.app,
-            projects_uuid=trashed_project.uuid,
-        )
+    trashed_by_primary_gid = await projects_service_repository.get_trashed_by_primary_gid(
+        client.app,
+        projects_uuid=trashed_project.uuid,
     )
 
     assert trashed_by_primary_gid == logged_user["primary_gid"]
@@ -181,15 +169,13 @@ async def test_batch_get_trashed_by_primary_gid(
     non_existent_project_uuid = UUID("00000000-0000-0000-0000-000000000000")
 
     # Batch get trashed by primary gid
-    trashed_by_primary_gid = (
-        await projects_service_repository.batch_get_trashed_by_primary_gid(
-            client.app,
-            projects_uuids=[
-                trashed_project.uuid,
-                non_existent_project_uuid,  # non-existent
-                trashed_project.uuid,  # repeated
-            ],
-        )
+    trashed_by_primary_gid = await projects_service_repository.batch_get_trashed_by_primary_gid(
+        client.app,
+        projects_uuids=[
+            trashed_project.uuid,
+            non_existent_project_uuid,  # non-existent
+            trashed_project.uuid,  # repeated
+        ],
     )
 
     assert trashed_by_primary_gid == [
@@ -199,33 +185,27 @@ async def test_batch_get_trashed_by_primary_gid(
     ]
 
 
-async def _assert_allows_to_psuh(
-    app: web.Application, project_uuid: str, *, expected: bool
-) -> None:
-    result = (
-        await projects_service_repository.allows_guests_to_push_states_and_output_ports(
-            app, project_uuid=project_uuid
-        )
+async def _assert_allows_to_push(app: web.Application, project_uuid: str, *, expected: bool) -> None:
+    result = await projects_service_repository.allows_guests_to_push_states_and_output_ports(
+        app, project_uuid=project_uuid
     )
     assert result is expected
 
 
-async def test_guest_allowed_to_push(
-    client: TestClient, user_project: ProjectDict, shared_project: ProjectDict
-):
+async def test_guest_allowed_to_push(client: TestClient, user_project: ProjectDict, shared_project: ProjectDict):
     assert client.app
 
     source_uuid = user_project["uuid"]
     copy_uuid = shared_project["uuid"]
 
-    await _assert_allows_to_psuh(client.app, source_uuid, expected=False)
+    await _assert_allows_to_push(client.app, source_uuid, expected=False)
 
     # add the entry in the table
     await projects_service_repository._set_allow_guests_to_push_states_and_output_ports(  # noqa: SLF001
         client.app, project_uuid=source_uuid
     )
 
-    await _assert_allows_to_psuh(client.app, source_uuid, expected=True)
+    await _assert_allows_to_push(client.app, source_uuid, expected=True)
 
     assert (
         await projects_service_repository.allows_guests_to_push_states_and_output_ports(
@@ -233,8 +213,8 @@ async def test_guest_allowed_to_push(
         )
         is False
     )
-    await _assert_allows_to_psuh(client.app, copy_uuid, expected=False)
+    await _assert_allows_to_push(client.app, copy_uuid, expected=False)
     await projects_service_repository.copy_allow_guests_to_push_states_and_output_ports(
         client.app, from_project_uuid=source_uuid, to_project_uuid=copy_uuid
     )
-    await _assert_allows_to_psuh(client.app, copy_uuid, expected=True)
+    await _assert_allows_to_push(client.app, copy_uuid, expected=True)

@@ -43,16 +43,12 @@ def expected_sha256sum() -> SHA256Str:
     return _sha256sum
 
 
-async def test_create_filemetadata_from_path(
-    mock_filepath: Path, expected_sha256sum: SHA256Str
-):
+async def test_create_filemetadata_from_path(mock_filepath: Path, expected_sha256sum: SHA256Str):
     file_meta = await File.create_from_path(mock_filepath)
     assert file_meta.sha256_checksum == expected_sha256sum
 
 
-async def test_create_filemetadata_from_starlette_uploadfile(
-    mock_filepath: Path, expected_sha256sum: SHA256Str
-):
+async def test_create_filemetadata_from_starlette_uploadfile(mock_filepath: Path, expected_sha256sum: SHA256Str):
     # WARNING: upload is a wrapper around a file handler that can actually be in memory as well
 
     # in file
@@ -76,18 +72,12 @@ async def test_create_filemetadata_from_starlette_uploadfile(
         assert upload_in_memory.file.tell() == 0
 
         file_meta = await File.create_from_uploaded(upload_in_memory)
-        assert (
-            upload_in_memory.file.tell() > 0
-        ), "modifies current position is at the end"
+        assert upload_in_memory.file.tell() > 0, "modifies current position is at the end"
 
 
 def test_convert_between_file_models():
-    storage_file_meta = StorageFileMetaData(
-        **StorageFileMetaData.model_json_schema()["examples"][1]
-    )
-    storage_file_meta.file_id = TypeAdapter(StorageFileID).validate_python(
-        f"api/{uuid4()}/extensionless"
-    )
+    storage_file_meta = StorageFileMetaData(**StorageFileMetaData.model_json_schema()["examples"][1])
+    storage_file_meta.file_id = TypeAdapter(StorageFileID).validate_python(f"api/{uuid4()}/extensionless")
     apiserver_file_meta = to_file_api_model(storage_file_meta)
 
     assert apiserver_file_meta.id
@@ -96,13 +86,9 @@ def test_convert_between_file_models():
     assert apiserver_file_meta.e_tag == storage_file_meta.entity_tag
 
     with pytest.raises(ValueError):
-        storage_file_meta.file_id = TypeAdapter(StorageFileID).validate_python(
-            f"{uuid4()}/{uuid4()}/foo.txt"
-        )
+        storage_file_meta.file_id = TypeAdapter(StorageFileID).validate_python(f"{uuid4()}/{uuid4()}/foo.txt")
         to_file_api_model(storage_file_meta)
 
     with pytest.raises(ValidationError):
-        storage_file_meta.file_id = TypeAdapter(StorageFileID).validate_python(
-            "api/NOTUUID/foo.txt"
-        )
+        storage_file_meta.file_id = TypeAdapter(StorageFileID).validate_python("api/NOTUUID/foo.txt")
         to_file_api_model(storage_file_meta)

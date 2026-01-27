@@ -48,9 +48,7 @@ from simcore_service_webserver.models import PhoneNumberStr
 
 
 @pytest.fixture
-def app_environment(
-    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
-) -> EnvVarsDict:
+def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
     # disables GC and DB-listener
     return app_environment | setenvs_from_dict(
         monkeypatch,
@@ -124,11 +122,7 @@ async def support_user(
     "user_role,expected",
     [
         (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
-        *(
-            (role, status.HTTP_403_FORBIDDEN)
-            for role in UserRole
-            if UserRole.ANONYMOUS < role < UserRole.PRODUCT_OWNER
-        ),
+        *((role, status.HTTP_403_FORBIDDEN) for role in UserRole if UserRole.ANONYMOUS < role < UserRole.PRODUCT_OWNER),
         (UserRole.PRODUCT_OWNER, status.HTTP_200_OK),
         (UserRole.ADMIN, status.HTTP_200_OK),
     ],
@@ -214,9 +208,7 @@ async def pre_registration_details_db_cleanup(
         await conn.commit()
 
 
-@pytest.mark.acceptance_test(
-    "pre-registration in https://github.com/ITISFoundation/osparc-simcore/issues/5138"
-)
+@pytest.mark.acceptance_test("pre-registration in https://github.com/ITISFoundation/osparc-simcore/issues/5138")
 @pytest.mark.parametrize(
     "user_role",
     [
@@ -233,16 +225,10 @@ async def test_search_and_pre_registration(
 
     # NOTE: listing of user accounts drops nullable fields to avoid lengthy responses (even if they have no defaults)
     # therefore they are reconstructed here from http response payloads
-    nullable_fields = {
-        name: None
-        for name, field in UserAccountGet.model_fields.items()
-        if is_nullable(field)
-    }
+    nullable_fields = {name: None for name, field in UserAccountGet.model_fields.items() if is_nullable(field)}
 
     # ONLY in `users` and NOT `users_pre_registration_details`
-    resp = await client.get(
-        "/v0/admin/user-accounts:search", params={"email": logged_user["email"]}
-    )
+    resp = await client.get("/v0/admin/user-accounts:search", params={"email": logged_user["email"]})
     assert resp.status == status.HTTP_200_OK
 
     found, _ = await assert_status(resp, status.HTTP_200_OK)
@@ -272,9 +258,7 @@ async def test_search_and_pre_registration(
     # NOT in `users` and ONLY `users_pre_registration_details`
 
     # create pre-registration
-    resp = await client.post(
-        "/v0/admin/user-accounts:pre-register", json=account_request_form
-    )
+    resp = await client.post("/v0/admin/user-accounts:pre-register", json=account_request_form)
     assert resp.status == status.HTTP_200_OK
 
     resp = await client.get(
@@ -291,14 +275,12 @@ async def test_search_and_pre_registration(
     }
 
     # Emulating registration of pre-register user
-    new_user = (
-        await simcore_service_webserver.login._auth_service.create_user(  # noqa: SLF001
-            client.app,
-            email=account_request_form["email"],
-            password=DEFAULT_TEST_PASSWORD,
-            status_upon_creation=UserStatus.ACTIVE,
-            expires_at=None,
-        )
+    new_user = await simcore_service_webserver.login._auth_service.create_user(  # noqa: SLF001
+        client.app,
+        email=account_request_form["email"],
+        password=DEFAULT_TEST_PASSWORD,
+        status_upon_creation=UserStatus.ACTIVE,
+        expires_at=None,
     )
 
     resp = await client.get(
@@ -349,9 +331,7 @@ async def test_list_users_accounts(
 
     # Verify all pre-registered users are in PENDING status
     url = client.app.router["list_users_accounts"].url_for()
-    resp = await client.get(
-        f"{url}?review_status=PENDING", headers={X_PRODUCT_NAME_HEADER: product_name}
-    )
+    resp = await client.get(f"{url}?review_status=PENDING", headers={X_PRODUCT_NAME_HEADER: product_name})
     assert resp.status == status.HTTP_200_OK
     response_json = await resp.json()
 
@@ -359,9 +339,7 @@ async def test_list_users_accounts(
     page_model = Page[UserAccountGet].model_validate(response_json)
 
     # Access the items field from the paginated response
-    pending_users = [
-        user for user in page_model.data if user.account_request_status == "PENDING"
-    ]
+    pending_users = [user for user in page_model.data if user.account_request_status == "PENDING"]
     pending_emails = [user.email for user in pending_users]
 
     for pre_user in pre_registered_users:
@@ -391,9 +369,7 @@ async def test_list_users_accounts(
     # 3. Test filtering by status
     # a. Check PENDING filter (should exclude the registered user)
     url = client.app.router["list_users_accounts"].url_for()
-    resp = await client.get(
-        f"{url}?review_status=PENDING", headers={X_PRODUCT_NAME_HEADER: product_name}
-    )
+    resp = await client.get(f"{url}?review_status=PENDING", headers={X_PRODUCT_NAME_HEADER: product_name})
     assert resp.status == status.HTTP_200_OK
     response_json = await resp.json()
     pending_page = Page[UserAccountGet].model_validate(response_json)
@@ -404,9 +380,7 @@ async def test_list_users_accounts(
     assert len(pending_emails) >= len(pre_registered_users) - 1
 
     # b. Check REVIEWED users (should include the registered user)
-    resp = await client.get(
-        f"{url}?review_status=REVIEWED", headers={X_PRODUCT_NAME_HEADER: product_name}
-    )
+    resp = await client.get(f"{url}?review_status=REVIEWED", headers={X_PRODUCT_NAME_HEADER: product_name})
     assert resp.status == status.HTTP_200_OK
     response_json = await resp.json()
     reviewed_page = Page[UserAccountGet].model_validate(response_json)
@@ -504,9 +478,7 @@ async def test_reject_user_account(
 
     # 2. Verify the user is in PENDING status
     url = client.app.router["list_users_accounts"].url_for()
-    resp = await client.get(
-        f"{url}?review_status=PENDING", headers={X_PRODUCT_NAME_HEADER: product_name}
-    )
+    resp = await client.get(f"{url}?review_status=PENDING", headers={X_PRODUCT_NAME_HEADER: product_name})
     data, _ = await assert_status(resp, status.HTTP_200_OK)
 
     pending_emails = [user["email"] for user in data if user["status"] is None]
@@ -535,9 +507,7 @@ async def test_reject_user_account(
 
     # 5. Verify the user is no longer in PENDING status
     url = client.app.router["list_users_accounts"].url_for()
-    resp = await client.get(
-        f"{url}?review_status=PENDING", headers={X_PRODUCT_NAME_HEADER: product_name}
-    )
+    resp = await client.get(f"{url}?review_status=PENDING", headers={X_PRODUCT_NAME_HEADER: product_name})
     pending_data, _ = await assert_status(resp, status.HTTP_200_OK)
     pending_emails = [user["email"] for user in pending_data]
     assert pre_registered_email not in pending_emails

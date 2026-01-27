@@ -12,19 +12,13 @@ def test_licensed_item_from_domain_model():
         assert item.display_name == got.display_name
 
         # nullable doi
-        assert (
-            got.licensed_resources[0].source.doi
-            == item.licensed_resources[0]["source"]["doi"]
-        )
+        assert got.licensed_resources[0].source.doi == item.licensed_resources[0]["source"]["doi"]
 
         # date is required
         assert got.licensed_resources[0].source.features["date"]
 
         # id is required
-        assert (
-            got.licensed_resources[0].source.id
-            == item.licensed_resources[0]["source"]["id"]
-        )
+        assert got.licensed_resources[0].source.id == item.licensed_resources[0]["source"]["id"]
 
         # checks unset fields
         assert "category_icon" not in got.licensed_resources[0].model_fields_set

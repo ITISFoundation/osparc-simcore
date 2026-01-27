@@ -2,8 +2,10 @@
 
   During integration testing,
       - the app under test (i.e. the webserver) will be installed and started in the host
-      - every test module (i.e. integration/**/test_*.py) deploys a stack in a swarm fixture with a seleciton of core and op-services
-      - the selection of core/op services are listed in the 'core_services' and 'ops_serices' variables in each test module
+      - every test module (i.e. integration/**/test_*.py) deploys a stack in a swarm fixture
+        with a selection of core and op-services
+      - the selection of core/op services are listed in the 'core_services' and 'ops_services'
+        variables in each test module
 
 NOTE: services/web/server/tests/conftest.py is pre-loaded
 
@@ -34,11 +36,10 @@ _logger = logging.getLogger(__name__)
 
 
 @pytest.fixture(scope="module")
-def webserver_environ(
-    request, docker_stack: dict, simcore_docker_compose: dict
-) -> dict[str, str]:
+def webserver_environ(request, docker_stack: dict, simcore_docker_compose: dict) -> dict[str, str]:
     """
-    This assumes that a swarm was already started with the services' stack that the integration tests need (via dependency with 'docker_stack')
+    This assumes that a swarm was already started with the services' stack that the integration tests need
+    (via dependency with 'docker_stack')
 
     Environment variable are expected for the web-server in
     an test-integration context: i.e. the web-server runs directly on the host and the
@@ -47,9 +48,7 @@ def webserver_environ(
     """
     assert "webserver" not in docker_stack["services"]
 
-    docker_compose_environ = simcore_docker_compose["services"]["webserver"].get(
-        "environment", {}
-    )
+    docker_compose_environ = simcore_docker_compose["services"]["webserver"].get("environment", {})
 
     environ = {}
     environ.update(docker_compose_environ)
@@ -60,7 +59,7 @@ def webserver_environ(
     # OVERRIDES:
     #   One of the biggest differences with respect to the real system
     #   is that the webserver application is replaced by a light-weight
-    #   version tha loads only the subsystems under test. For that reason,
+    #   version that loads only the subsystems under test. For that reason,
     #   the test webserver is built-up in webserver_service fixture that runs
     #   on the host.
     EXCLUDED_SERVICES = [
@@ -76,17 +75,14 @@ def webserver_environ(
     services_with_published_ports = [
         name
         for name in core_services
-        if "ports" in simcore_docker_compose["services"][name]
-        and name not in EXCLUDED_SERVICES
+        if "ports" in simcore_docker_compose["services"][name] and name not in EXCLUDED_SERVICES
     ]
     for name in services_with_published_ports:
         host_key = f"{name.upper().replace('-', '_')}_HOST"
         port_key = f"{name.upper().replace('-', '_')}_PORT"
 
         # published port is sometimes dynamically defined by the swarm
-        assert (
-            host_key in environ
-        ), "Variables names expected to be prefix with service names in docker-compose"
+        assert host_key in environ, "Variables names expected to be prefix with service names in docker-compose"
         assert port_key in environ
 
         # to swarm boundary since webserver is installed in the host and therefore outside the swarm's network
@@ -158,9 +154,7 @@ def _default_app_config_for_integration_tests(
 
 
 @pytest.fixture()
-def app_config(
-    _default_app_config_for_integration_tests: AppConfigDict, unused_tcp_port_factory
-) -> AppConfigDict:
+def app_config(_default_app_config_for_integration_tests: AppConfigDict, unused_tcp_port_factory) -> AppConfigDict:
     """
     Swarm with integration stack already started
     This fixture can be safely modified during test since it is renovated on every call

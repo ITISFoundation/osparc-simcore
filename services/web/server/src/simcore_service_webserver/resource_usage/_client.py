@@ -115,11 +115,7 @@ async def get_pricing_plan_unit(
 ) -> RutPricingUnitGet:
     settings: ResourceUsageTrackerSettings = get_plugin_settings(app)
     url = (
-        URL(settings.api_base_url)
-        / "pricing-plans"
-        / str(pricing_plan_id)
-        / "pricing-units"
-        / str(pricing_unit_id)
+        URL(settings.api_base_url) / "pricing-plans" / str(pricing_plan_id) / "pricing-units" / str(pricing_unit_id)
     ).with_query(
         {
             "product_name": product_name,
@@ -138,9 +134,7 @@ async def sum_total_available_credits_in_the_wallet(
     wallet_id: WalletID,
 ) -> WalletTotalCredits:
     settings: ResourceUsageTrackerSettings = get_plugin_settings(app)
-    url = (
-        URL(settings.api_base_url) / "credit-transactions" / "credits:sum"
-    ).with_query(
+    url = (URL(settings.api_base_url) / "credit-transactions" / "credits:sum").with_query(
         {
             "product_name": product_name,
             "wallet_id": wallet_id,

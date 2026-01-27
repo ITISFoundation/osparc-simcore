@@ -18,9 +18,7 @@ def ordered_safe_load(stream, object_pairs_hook=OrderedDict):
         loader.flatten_mapping(node)
         return object_pairs_hook(loader.construct_pairs(node))
 
-    OrderedLoader.add_constructor(
-        yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, construct_mapping
-    )
+    OrderedLoader.add_constructor(yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, construct_mapping)
     return yaml.load(stream, OrderedLoader)  # nosec
 
 
@@ -30,9 +28,7 @@ def ordered_safe_dump(data, stream=None, **kwds):
         pass
 
     def _dict_representer(dumper, data):
-        return dumper.represent_mapping(
-            yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, data.items()
-        )
+        return dumper.represent_mapping(yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, data.items())
 
     OrderedDumper.add_representer(OrderedDict, _dict_representer)
     return yaml.dump(data, stream, OrderedDumper, **kwds)
@@ -48,8 +44,7 @@ class _LoaderWithInclude(yaml.SafeLoader):
         except AttributeError:
             self._basepath = os.getcwd()
             logger.warning(
-                "Cannot deduce path to yaml file from a %s."
-                "Defaulting to '%s' as base path for all !include nodes",
+                "Cannot deduce path to yaml file from a %s.Defaulting to '%s' as base path for all !include nodes",
                 type(stream),
                 self._basepath,
             )

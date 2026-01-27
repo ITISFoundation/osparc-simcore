@@ -102,9 +102,9 @@ def _compute_node_requirements(
 
     for image_data in node_resources.values():
         for resource_name, resource_value in image_data.resources.items():
-            node_defined_resources[resource_name] = node_defined_resources.get(
-                resource_name, 0
-            ) + min(resource_value.limit, resource_value.reservation)
+            node_defined_resources[resource_name] = node_defined_resources.get(resource_name, 0) + min(
+                resource_value.limit, resource_value.reservation
+            )
     return NodeRequirements(**node_defined_resources)
 
 
@@ -135,9 +135,7 @@ async def _get_node_infos(
     user_id: UserID,
     product_name: str,
     node: ServiceKeyVersion,
-) -> tuple[
-    ServiceMetaDataPublished | None, ServiceExtras | None, SimcoreServiceLabels | None
-]:
+) -> tuple[ServiceMetaDataPublished | None, ServiceExtras | None, SimcoreServiceLabels | None]:
     if to_node_class(node.key) == NodeClass.FRONTEND:
         return (
             _FRONTEND_SERVICES_CATALOG.get(node.key, None),
@@ -145,12 +143,10 @@ async def _get_node_infos(
             None,
         )
 
-    result: tuple[ServiceMetaDataPublished, ServiceExtras, SimcoreServiceLabels] = (
-        await asyncio.gather(
-            _get_service_details(catalog_client, user_id, product_name, node),
-            catalog_client.get_service_extras(node.key, node.version),
-            catalog_client.get_service_labels(node.key, node.version),
-        )
+    result: tuple[ServiceMetaDataPublished, ServiceExtras, SimcoreServiceLabels] = await asyncio.gather(
+        _get_service_details(catalog_client, user_id, product_name, node),
+        catalog_client.get_service_extras(node.key, node.version),
+        catalog_client.get_service_labels(node.key, node.version),
     )
     return result
 
@@ -173,13 +169,9 @@ async def _generate_task_image(
     }
     project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)
     project_node = await project_nodes_repo.get(connection, node_id=node_id)
-    node_resources = TypeAdapter(ServiceResourcesDict).validate_python(
-        project_node.required_resources
-    )
+    node_resources = TypeAdapter(ServiceResourcesDict).validate_python(project_node.required_resources)
     if not node_resources:
-        node_resources = await catalog_client.get_service_resources(
-            user_id, node.key, node.version
-        )
+        node_resources = await catalog_client.get_service_resources(user_id, node.key, node.version)
 
     if node_resources:
         data.update(node_requirements=_compute_node_requirements(node_resources))
@@ -206,9 +198,7 @@ async def _get_pricing_and_hardware_infos(
         # NOTE: frontend services have no pricing plans, therefore no need to call RUT
         return None, HardwareInfo(aws_ec2_instances=[])
     project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)
-    output = await project_nodes_repo.get_project_node_pricing_unit_id(
-        connection, node_uuid=node_id
-    )
+    output = await project_nodes_repo.get_project_node_pricing_unit_id(connection, node_uuid=node_id)
     # NOTE: this is some kind of lazy insertion of the pricing unit
     # the projects_nodes is already in at this time, and not in sync with the hardware info
     # this will need to move away and be in sync.
@@ -220,9 +210,7 @@ async def _get_pricing_and_hardware_infos(
             pricing_unit_id,
             _,
             _,
-        ) = await rut_client.get_default_pricing_and_hardware_info(
-            product_name, node_key, node_version
-        )
+        ) = await rut_client.get_default_pricing_and_hardware_info(product_name, node_key, node_version)
         await project_nodes_repo.connect_pricing_unit_to_project_node(
             connection,
             node_uuid=node_id,
@@ -230,9 +218,7 @@ async def _get_pricing_and_hardware_infos(
             pricing_unit_id=pricing_unit_id,
         )
 
-    pricing_unit_get = await rut_client.get_pricing_unit(
-        product_name, pricing_plan_id, pricing_unit_id
-    )
+    pricing_unit_get = await rut_client.get_pricing_unit(product_name, pricing_plan_id, pricing_unit_id)
     pricing_unit_cost_id = pricing_unit_get.current_cost_per_unit_id
     aws_ec2_instances = pricing_unit_get.specific_info.aws_ec2_instances
 
@@ -246,9 +232,7 @@ async def _get_pricing_and_hardware_infos(
     return pricing_info, hardware_info
 
 
-_RAM_SAFE_MARGIN_RATIO: Final[float] = (
-    0.1  # NOTE: machines always have less available RAM than advertised
-)
+_RAM_SAFE_MARGIN_RATIO: Final[float] = 0.1  # NOTE: machines always have less available RAM than advertised
 _CPUS_SAFE_MARGIN: Final[float] = 0.1
 
 
@@ -266,11 +250,9 @@ async def _update_project_node_resources_from_hardware_info(
     if not hardware_info.aws_ec2_instances:
         return
     try:
-        unordered_list_ec2_instance_types: list[EC2InstanceTypeGet] = (
-            await get_instance_type_details(
-                rabbitmq_rpc_client,
-                instance_type_names=set(hardware_info.aws_ec2_instances),
-            )
+        unordered_list_ec2_instance_types: list[EC2InstanceTypeGet] = await get_instance_type_details(
+            rabbitmq_rpc_client,
+            instance_type_names=set(hardware_info.aws_ec2_instances),
         )
 
         assert unordered_list_ec2_instance_types  # nosec
@@ -279,27 +261,19 @@ async def _update_project_node_resources_from_hardware_info(
         def _by_type_name(ec2: EC2InstanceTypeGet) -> bool:
             return bool(ec2.name == hardware_info.aws_ec2_instances[0])
 
-        selected_ec2_instance_type = next(
-            iter(filter(_by_type_name, unordered_list_ec2_instance_types))
-        )
+        selected_ec2_instance_type = next(iter(filter(_by_type_name, unordered_list_ec2_instance_types)))
 
         # now update the project node required resources
         # NOTE: we keep a safe margin with the RAM as the dask-sidecar "sees"
         # less memory than the machine theoretical amount
         project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)
         node = await project_nodes_repo.get(connection, node_id=node_id)
-        node_resources = TypeAdapter(ServiceResourcesDict).validate_python(
-            node.required_resources
-        )
+        node_resources = TypeAdapter(ServiceResourcesDict).validate_python(node.required_resources)
         if DEFAULT_SINGLE_SERVICE_NAME in node_resources:
-            image_resources: ImageResources = node_resources[
-                DEFAULT_SINGLE_SERVICE_NAME
-            ]
-            adjusted_cpus, adjusted_ram = (
-                estimate_dask_worker_resources_from_ec2_instance(
-                    float(selected_ec2_instance_type.cpus),
-                    selected_ec2_instance_type.ram,
-                )
+            image_resources: ImageResources = node_resources[DEFAULT_SINGLE_SERVICE_NAME]
+            adjusted_cpus, adjusted_ram = estimate_dask_worker_resources_from_ec2_instance(
+                float(selected_ec2_instance_type.cpus),
+                selected_ec2_instance_type.ram,
             )
             image_resources.resources["CPU"].set_value(adjusted_cpus)
             image_resources.resources["RAM"].set_value(adjusted_ram)
@@ -307,18 +281,13 @@ async def _update_project_node_resources_from_hardware_info(
             await project_nodes_repo.update(
                 connection,
                 node_id=node_id,
-                required_resources=ServiceResourcesDictHelpers.create_jsonable(
-                    node_resources
-                ),
+                required_resources=ServiceResourcesDictHelpers.create_jsonable(node_resources),
             )
         else:
-            _logger.warning(
-                "Services resource override not implemented yet for multi-container services!!!"
-            )
+            _logger.warning("Services resource override not implemented yet for multi-container services!!!")
     except StopIteration as exc:
         msg = (
-            f"invalid EC2 type name selected {set(hardware_info.aws_ec2_instances)}."
-            " TIP: adjust product configuration"
+            f"invalid EC2 type name selected {set(hardware_info.aws_ec2_instances)}. TIP: adjust product configuration"
         )
         raise ConfigurationError(msg=msg) from exc
     except (
@@ -344,9 +313,7 @@ async def generate_tasks_list_from_project(
     list_comp_tasks = []
 
     unique_service_key_versions: set[ServiceKeyVersion] = {
-        ServiceKeyVersion(
-            key=node.key, version=node.version
-        )  # the service key version is frozen
+        ServiceKeyVersion(key=node.key, version=node.version)  # the service key version is frozen
         for node in project.workbench.values()
     }
 
@@ -376,10 +343,7 @@ async def generate_tasks_list_from_project(
         task_progress = None
         if task_state in COMPLETED_STATES:
             task_progress = node.state.progress
-        if (
-            NodeID(node_id) in published_nodes
-            and to_node_class(node.key) == NodeClass.COMPUTATIONAL
-        ):
+        if NodeID(node_id) in published_nodes and to_node_class(node.key) == NodeClass.COMPUTATIONAL:
             task_state = RunningState.PUBLISHED
 
         pricing_info, hardware_info = await _get_pricing_and_hardware_infos(
@@ -432,9 +396,7 @@ async def generate_tasks_list_from_project(
             project_id=project.uuid,
             node_id=NodeID(node_id),
             schema=NodeSchema(
-                **node_details.model_dump(
-                    exclude_unset=True, by_alias=True, include={"inputs", "outputs"}
-                )
+                **node_details.model_dump(exclude_unset=True, by_alias=True, include={"inputs", "outputs"})
             ),
             inputs=node.inputs,
             outputs=node.outputs,
@@ -446,11 +408,7 @@ async def generate_tasks_list_from_project(
             last_heartbeat=None,
             created=arrow.utcnow().datetime,
             modified=arrow.utcnow().datetime,
-            pricing_info=(
-                pricing_info.model_dump(exclude={"pricing_unit_cost"})
-                if pricing_info
-                else None
-            ),
+            pricing_info=(pricing_info.model_dump(exclude={"pricing_unit_cost"}) if pricing_info else None),
             hardware_info=hardware_info,
         )
 

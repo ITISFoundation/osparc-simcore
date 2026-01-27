@@ -111,9 +111,7 @@ class RedisTaskStore:
             return None
 
     async def list_tasks(self, owner_metadata: OwnerMetadata) -> list[Task]:
-        search_key = _CELERY_TASK_PREFIX + owner_metadata.model_dump_task_key(
-            task_uuid=WILDCARD
-        )
+        search_key = _CELERY_TASK_PREFIX + owner_metadata.model_dump_task_key(task_uuid=WILDCARD)
 
         keys: list[str] = []
         pipe = self._redis_client_sdk.redis.pipeline()
@@ -121,11 +119,7 @@ class RedisTaskStore:
             match=search_key, count=_CELERY_TASK_SCAN_COUNT_PER_BATCH
         ):
             # fake redis (tests) returns bytes, real redis returns str
-            _key = (
-                key.decode(_CELERY_TASK_ID_KEY_ENCODING)
-                if isinstance(key, bytes)
-                else key
-            )
+            _key = key.decode(_CELERY_TASK_ID_KEY_ENCODING) if isinstance(key, bytes) else key
             keys.append(_key)
             pipe.hget(_key, _CELERY_TASK_EXEC_METADATA_KEY)
 
@@ -152,9 +146,7 @@ class RedisTaskStore:
             _build_redis_task_key(task_key),
         )
 
-    async def set_task_progress(
-        self, task_key: TaskKey, report: ProgressReport
-    ) -> None:
+    async def set_task_progress(self, task_key: TaskKey, report: ProgressReport) -> None:
         await handle_redis_returns_union_types(
             self._redis_client_sdk.redis.hset(
                 name=_build_redis_task_key(task_key),
@@ -170,17 +162,13 @@ class RedisTaskStore:
         assert isinstance(n, int)  # nosec
         return n > 0
 
-    async def push_task_stream_items(
-        self, task_key: TaskKey, *result: TaskStreamItem
-    ) -> None:
+    async def push_task_stream_items(self, task_key: TaskKey, *result: TaskStreamItem) -> None:
         stream_key = _build_redis_stream_key(task_key)
         stream_meta_key = _build_redis_stream_meta_key(task_key)
 
         pipe = self._redis_client_sdk.redis.pipeline()
         pipe.rpush(stream_key, *(r.model_dump_json(by_alias=True) for r in result))
-        pipe.hset(
-            stream_meta_key, mapping={"last_update": datetime.now(tz=UTC).isoformat()}
-        )
+        pipe.hset(stream_meta_key, mapping={"last_update": datetime.now(tz=UTC).isoformat()})
         pipe.expire(stream_key, _CELERY_TASK_STREAM_EXPIRY)
         pipe.expire(stream_meta_key, _CELERY_TASK_STREAM_EXPIRY)
         await pipe.execute()
@@ -217,18 +205,9 @@ class RedisTaskStore:
             pipe.hget(meta_key, _CELERY_TASK_STREAM_LAST_UPDATE_KEY)
             raw_items, done, last_update = await pipe.execute()
 
-        stream_items = (
-            [TaskStreamItem.model_validate_json(item) for item in raw_items]
-            if raw_items
-            else []
-        )
+        stream_items = [TaskStreamItem.model_validate_json(item) for item in raw_items] if raw_items else []
 
-        empty = (
-            await handle_redis_returns_union_types(
-                self._redis_client_sdk.redis.llen(stream_key)
-            )
-            == 0
-        )
+        empty = await handle_redis_returns_union_types(self._redis_client_sdk.redis.llen(stream_key)) == 0
 
         return (
             stream_items,

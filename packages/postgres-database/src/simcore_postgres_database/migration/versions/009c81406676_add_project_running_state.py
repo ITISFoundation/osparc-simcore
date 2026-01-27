@@ -28,7 +28,6 @@ DB_TRIGGER_NAME: str = f"{DB_PROCEDURE_NAME}_event"
 
 
 def upgrade():
-
     # create the new type
     state_type = postgresql.ENUM(
         "NOT_STARTED",

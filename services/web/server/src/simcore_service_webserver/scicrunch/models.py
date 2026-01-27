@@ -26,9 +26,7 @@ logger = logging.getLogger(__name__)
 #
 # SEE https://scicrunch.org/resources
 
-STRICT_RRID_PATTERN = (
-    r"^(RRID:)([^_\s]{1,30})_(\S{1,30})$"  # Expected in db labels and models
-)
+STRICT_RRID_PATTERN = r"^(RRID:)([^_\s]{1,30})_(\S{1,30})$"  # Expected in db labels and models
 
 RRID_TAG_PATTERN = r"(RRID:)?\s{0,5}([^:_\s]{1,30})_(\S{1,30})"
 rrid_capture_re = re.compile(RRID_TAG_PATTERN)

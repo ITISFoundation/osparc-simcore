@@ -3,7 +3,6 @@ from typing import Annotated, Self, TypeVar
 
 from common_library.basic_types import DEFAULT_FACTORY
 from common_library.dict_tools import remap_keys
-from models_library.string_types import DescriptionSafeStr, NameSafeStr
 from pydantic import (
     AnyHttpUrl,
     AnyUrl,
@@ -16,6 +15,8 @@ from pydantic import (
     model_validator,
 )
 from pydantic.config import JsonDict
+
+from models_library.string_types import DescriptionSafeStr, NameSafeStr
 
 from ..emails import LowerCaseEmailStr
 from ..groups import (
@@ -59,9 +60,7 @@ class GroupGetBase(OutputSchema):
     gid: Annotated[GroupID, Field(description="the group's unique ID")]
     label: Annotated[str, Field(description="the group's display name")]
     description: str
-    thumbnail: Annotated[
-        AnyUrl | None, Field(description="a link to the group's thumbnail")
-    ] = None
+    thumbnail: Annotated[AnyUrl | None, Field(description="a link to the group's thumbnail")] = None
 
     @field_validator("thumbnail", mode="before")
     @classmethod
@@ -198,15 +197,11 @@ class MyGroupsGet(OutputSchema):
     product: GroupGet | None = None
     support: Annotated[
         GroupGetBase | None,
-        Field(
-            description="Group ID of the app support team or None if no support is defined for this product"
-        ),
+        Field(description="Group ID of the app support team or None if no support is defined for this product"),
     ] = None
     chatbot: Annotated[
         GroupGetBase | None,
-        Field(
-            description="Group ID of the support chatbot user or None if no chatbot is defined for this product"
-        ),
+        Field(description="Group ID of the support chatbot user or None if no chatbot is defined for this product"),
     ] = None
 
     model_config = ConfigDict(
@@ -275,26 +270,16 @@ class MyGroupsGet(OutputSchema):
 
         return cls(
             me=GroupGet.from_domain_model(*groups_by_type.primary),
-            organizations=[
-                GroupGet.from_domain_model(*gi) for gi in groups_by_type.standard
-            ],
+            organizations=[GroupGet.from_domain_model(*gi) for gi in groups_by_type.standard],
             all=GroupGet.from_domain_model(*groups_by_type.everyone),
-            product=(
-                GroupGet.from_domain_model(*my_product_group)
-                if my_product_group
-                else None
-            ),
+            product=(GroupGet.from_domain_model(*my_product_group) if my_product_group else None),
             support=(
-                GroupGetBase.model_validate(
-                    GroupGetBase.dump_basic_group_data(product_support_group)
-                )
+                GroupGetBase.model_validate(GroupGetBase.dump_basic_group_data(product_support_group))
                 if product_support_group
                 else None
             ),
             chatbot=(
-                GroupGetBase.model_validate(
-                    GroupGetBase.dump_basic_group_data(product_chatbot_primary_group)
-                )
+                GroupGetBase.model_validate(GroupGetBase.dump_basic_group_data(product_chatbot_primary_group))
                 if product_chatbot_primary_group
                 else None
             ),
@@ -302,11 +287,8 @@ class MyGroupsGet(OutputSchema):
 
 
 class GroupUserGet(OutputSchemaWithoutCamelCase):
-
     id: Annotated[UserID | None, Field(description="the user's id")] = None
-    user_name: Annotated[
-        UserNameID | None, Field(alias="userName", description="None if private")
-    ] = None
+    user_name: Annotated[UserNameID | None, Field(alias="userName", description="None if private")] = None
     gid: Annotated[
         GroupID | None,
         Field(description="the user primary gid"),
@@ -318,9 +300,7 @@ class GroupUserGet(OutputSchemaWithoutCamelCase):
     ] = None
     first_name: Annotated[str | None, Field(description="None if private")] = None
     last_name: Annotated[str | None, Field(description="None if private")] = None
-    gravatar_id: Annotated[
-        str | None, Field(description="the user gravatar id hash", deprecated=True)
-    ] = None
+    gravatar_id: Annotated[str | None, Field(description="the user gravatar id hash", deprecated=True)] = None
 
     # Access Rights
     access_rights: Annotated[
@@ -397,9 +377,7 @@ class GroupUserAdd(InputSchema):
     user_name: Annotated[UserNameSafeID | None, Field(alias="userName")] = None
     email: Annotated[
         LowerCaseEmailStr | None,
-        Field(
-            description="Accessible only if the user has opted to share their email in privacy settings"
-        ),
+        Field(description="Accessible only if the user has opted to share their email in privacy settings"),
     ] = None
 
     _check_uid_or_email = model_validator(mode="after")(

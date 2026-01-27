@@ -35,7 +35,5 @@ comp_runs_collections = sa.Table(
         "ix_comp_runs_collections_client_or_system_generated_id",
         "client_or_system_generated_id",
     ),
-    sa.UniqueConstraint(
-        "client_or_system_generated_id", name="client_or_system_generated_id_uniqueness"
-    ),
+    sa.UniqueConstraint("client_or_system_generated_id", name="client_or_system_generated_id_uniqueness"),
 )

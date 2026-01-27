@@ -52,9 +52,7 @@ class _PortKeyTracker:
         self._uploading_port_keys: set[str] = set()
 
     def __str__(self) -> str:
-        return (
-            f"pending={self._pending_port_keys} uploading={self._uploading_port_keys}"
-        )
+        return f"pending={self._pending_port_keys} uploading={self._uploading_port_keys}"
 
     async def add_pending(self, port_key: str) -> None:
         async with self._lock:
@@ -66,16 +64,11 @@ class _PortKeyTracker:
 
     async def can_schedule_ports_to_upload(self) -> bool:
         async with self._lock:
-            return (
-                len(self._uploading_port_keys) == 0 and len(self._pending_port_keys) > 0
-            )
+            return len(self._uploading_port_keys) == 0 and len(self._pending_port_keys) > 0
 
     async def no_tracked_ports(self) -> bool:
         async with self._lock:
-            return (
-                len(self._pending_port_keys) == 0
-                and len(self._uploading_port_keys) == 0
-            )
+            return len(self._pending_port_keys) == 0 and len(self._uploading_port_keys) == 0
 
     async def move_all_ports_to_uploading(self) -> None:
         async with self._lock:
@@ -130,9 +123,7 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
         assert len(port_keys) > 0  # nosec
 
         async def _upload_ports() -> None:
-            with log_context(
-                _logger, logging.INFO, f"Uploading port keys: {port_keys}"
-            ):
+            with log_context(_logger, logging.INFO, f"Uploading port keys: {port_keys}"):
                 async with progress_bar.ProgressBarData(
                     num_steps=1,
                     progress_report_cb=self.task_progress_cb,
@@ -172,9 +163,7 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
                 except Exception as e:  # pylint: disable=broad-except
                     self._last_upload_error_tracker[port_key] = e
 
-            self._task_uploading_followup = create_task(
-                self._port_key_tracker.remove_all_uploading()
-            )
+            self._task_uploading_followup = create_task(self._port_key_tracker.remove_all_uploading())
 
         self._task_uploading.add_done_callback(_remove_downloads)
 
@@ -184,9 +173,7 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
             await self._port_key_tracker.move_all_uploading_to_pending()
             self._task_uploading = None
         if self._task_uploading_followup is not None:
-            await _cancel_task(
-                self._task_uploading_followup, self.task_cancellation_timeout_s
-            )
+            await _cancel_task(self._task_uploading_followup, self.task_cancellation_timeout_s)
             self._task_uploading_followup = None
 
     async def _scheduler_worker(self) -> None:
@@ -213,9 +200,7 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
         with log_context(_logger, logging.INFO, f"{OutputsManager.__name__} shutdown"):
             await self._uploading_task_cancel()
             if self._task_scheduler_worker is not None:
-                await cancel_wait_task(
-                    self._task_scheduler_worker, max_delay=self.task_monitor_interval_s
-                )
+                await cancel_wait_task(self._task_scheduler_worker, max_delay=self.task_monitor_interval_s)
 
     async def port_key_content_changed(self, port_key: str) -> None:
         await self._port_key_tracker.add_pending(port_key)
@@ -257,9 +242,7 @@ class OutputsManager:  # pylint: disable=too-many-instance-attributes
 
         # NOTE: checking if there were any errors during the last port upload,
         # for each port. If any error is detected this will raise.
-        any_failed_upload = any(
-            True for v in self._last_upload_error_tracker.values() if v is not None
-        )
+        any_failed_upload = any(True for v in self._last_upload_error_tracker.values() if v is not None)
         if any_failed_upload:
             raise UploadPortsFailedError(failures=self._last_upload_error_tracker)
 
@@ -282,9 +265,7 @@ def setup_outputs_manager(app: FastAPI) -> None:
         outputs_manager = app.state.outputs_manager = OutputsManager(
             outputs_context=outputs_context,
             io_log_redirect_cb=io_log_redirect_cb,
-            progress_cb=partial(
-                post_progress_message, app, ProgressType.SERVICE_OUTPUTS_PUSHING
-            ),
+            progress_cb=partial(post_progress_message, app, ProgressType.SERVICE_OUTPUTS_PUSHING),
             port_notifier=PortNotifier(
                 app,
                 settings.DY_SIDECAR_USER_ID,

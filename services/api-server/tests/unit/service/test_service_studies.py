@@ -8,9 +8,7 @@ from simcore_service_api_server._service_jobs import JobService
 from simcore_service_api_server.models.schemas.studies import StudyID
 
 
-async def test_list_jobs_no_study_id(
-    mocked_rabbit_rpc_client: MockType, job_service: JobService
-):
+async def test_list_jobs_no_study_id(mocked_rabbit_rpc_client: MockType, job_service: JobService):
     # Test with default parameters
     jobs, page_meta = await job_service.list_study_jobs()
 
@@ -26,17 +24,10 @@ async def test_list_jobs_no_study_id(
     assert page_meta.offset == 0
 
     # Verify proper prefix was used
-    assert (
-        mocked_rabbit_rpc_client.request.call_args.kwargs[
-            "filters"
-        ].job_parent_resource_name_prefix
-        == "study"
-    )
+    assert mocked_rabbit_rpc_client.request.call_args.kwargs["filters"].job_parent_resource_name_prefix == "study"
 
     # Check pagination parameters were passed correctly
-    assert (
-        mocked_rabbit_rpc_client.request.call_args.kwargs["offset"] == page_meta.offset
-    )
+    assert mocked_rabbit_rpc_client.request.call_args.kwargs["offset"] == page_meta.offset
     assert mocked_rabbit_rpc_client.request.call_args.kwargs["limit"] == page_meta.limit
 
 
@@ -52,14 +43,10 @@ async def test_list_jobs_with_study_id(
 
     # Verify proper prefix was used with study ID
     assert (
-        mocked_rabbit_rpc_client.request.call_args.kwargs[
-            "filters"
-        ].job_parent_resource_name_prefix
+        mocked_rabbit_rpc_client.request.call_args.kwargs["filters"].job_parent_resource_name_prefix
         == f"study/{study_id}"
     )
 
     # Check pagination parameters were passed correctly
-    assert (
-        mocked_rabbit_rpc_client.request.call_args.kwargs["offset"] == page_meta.offset
-    )
+    assert mocked_rabbit_rpc_client.request.call_args.kwargs["offset"] == page_meta.offset
     assert mocked_rabbit_rpc_client.request.call_args.kwargs["limit"] == page_meta.limit

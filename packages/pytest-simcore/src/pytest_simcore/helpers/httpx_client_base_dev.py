@@ -14,8 +14,8 @@ from .httpx_calls_capture_models import HttpApiCallCaptureModel, get_captured_mo
 _logger = logging.getLogger(__name__)
 
 
-_HTTP_API_CALL_CAPTURE_MODEL_ADAPTER: TypeAdapter[list[HttpApiCallCaptureModel]] = (
-    TypeAdapter(list[HttpApiCallCaptureModel])
+_HTTP_API_CALL_CAPTURE_MODEL_ADAPTER: TypeAdapter[list[HttpApiCallCaptureModel]] = TypeAdapter(
+    list[HttpApiCallCaptureModel]
 )
 
 
@@ -38,19 +38,12 @@ class AsyncClientCaptureWrapper(httpx.AsyncClient):
         capture_name = f"{method} {url}"
         _logger.info("Capturing %s ... [might be slow]", capture_name)
         try:
-            capture: HttpApiCallCaptureModel = get_captured_model(
-                name=capture_name, response=response
-            )
-            if (
-                not self._capture_file.is_file()
-                or self._capture_file.read_text().strip() == ""
-            ):
+            capture: HttpApiCallCaptureModel = get_captured_model(name=capture_name, response=response)
+            if not self._capture_file.is_file() or self._capture_file.read_text().strip() == "":
                 self._capture_file.write_text("[]")
 
-            serialized_captures: list[HttpApiCallCaptureModel] = (
-                _HTTP_API_CALL_CAPTURE_MODEL_ADAPTER.validate_json(
-                    self._capture_file.read_text()
-                )
+            serialized_captures: list[HttpApiCallCaptureModel] = _HTTP_API_CALL_CAPTURE_MODEL_ADAPTER.validate_json(
+                self._capture_file.read_text()
             )
             serialized_captures.append(capture)
             self._capture_file.write_text(

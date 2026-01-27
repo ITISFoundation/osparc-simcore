@@ -45,9 +45,7 @@ async def enter_middleware_cb(request: web.Request):
 
 async def exit_middleware_cb(request: web.Request, _response: web.StreamResponse):
     resp_time_secs: float = time.time() - request[kSTART_TIME]
-    if not str(request.path).startswith("/socket.io") and is_sensing_enabled(
-        request.app
-    ):
+    if not str(request.path).startswith("/socket.io") and is_sensing_enabled(request.app):
         request.app[HEALTH_LATENCY_PROBE_APPKEY].observe(resp_time_secs)
 
 
@@ -63,9 +61,7 @@ def setup_monitoring(app: web.Application):
         exit_middleware_cb=exit_middleware_cb,
     )
 
-    monitor_services.add_instrumentation(
-        app, reg=get_collector_registry(app), app_name=prometheus_friendly_app_name
-    )
+    monitor_services.add_instrumentation(app, reg=get_collector_registry(app), app_name=prometheus_friendly_app_name)
 
     # on-the fly stats
     app[HEALTH_LATENCY_PROBE_APPKEY] = DelayWindowProbe()

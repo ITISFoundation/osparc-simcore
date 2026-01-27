@@ -9,9 +9,7 @@ class BaseBackEndError(ApiServerBaseError):
     """status_code: the default return status which will be returned to the client calling the
     api-server (in case this exception is raised)"""
 
-    msg_template = user_message(
-        "An error occurred when contacting the backend service.", _version=1
-    )
+    msg_template = user_message("An error occurred when contacting the backend service.", _version=1)
     status_code = status.HTTP_502_BAD_GATEWAY
 
     @classmethod
@@ -32,9 +30,7 @@ class InvalidInputError(BaseBackEndError):
 
 
 class ListSolversOrStudiesError(BaseBackEndError):
-    msg_template = user_message(
-        "Unable to retrieve the list of solvers and projects.", _version=1
-    )
+    msg_template = user_message("Unable to retrieve the list of solvers and projects.", _version=1)
     status_code = status.HTTP_404_NOT_FOUND
 
 
@@ -70,16 +66,12 @@ class ServiceForbiddenAccessError(BaseBackEndError):
 
 
 class JobForbiddenAccessError(BaseBackEndError):
-    msg_template = user_message(
-        "You do not have permission to access job {project_id}.", _version=1
-    )
+    msg_template = user_message("You do not have permission to access job {project_id}.", _version=1)
     status_code = status.HTTP_403_FORBIDDEN
 
 
 class JobNotFoundError(BaseBackEndError):
-    msg_template = user_message(
-        "The solver or project job {project_id} could not be found.", _version=1
-    )
+    msg_template = user_message("The solver or project job {project_id} could not be found.", _version=1)
     status_code = status.HTTP_404_NOT_FOUND
 
 
@@ -92,9 +84,7 @@ class LogFileNotFoundError(BaseBackEndError):
 
 
 class SolverOutputNotFoundError(BaseBackEndError):
-    msg_template = user_message(
-        "The output for project {project_id} could not be found.", _version=1
-    )
+    msg_template = user_message("The output for project {project_id} could not be found.", _version=1)
     status_code = status.HTTP_404_NOT_FOUND
 
 
@@ -119,23 +109,17 @@ class WalletNotFoundError(BaseBackEndError):
 
 
 class ForbiddenWalletError(BaseBackEndError):
-    msg_template = user_message(
-        "You do not have permission to access this wallet.", _version=1
-    )
+    msg_template = user_message("You do not have permission to access this wallet.", _version=1)
     status_code = status.HTTP_403_FORBIDDEN
 
 
 class ProjectPortsNotFoundError(BaseBackEndError):
-    msg_template = user_message(
-        "The ports for job or project {project_id} could not be found.", _version=1
-    )
+    msg_template = user_message("The ports for job or project {project_id} could not be found.", _version=1)
     status_code = status.HTTP_404_NOT_FOUND
 
 
 class ProjectMetadataNotFoundError(BaseBackEndError):
-    msg_template = user_message(
-        "The metadata for job or project {project_id} could not be found.", _version=1
-    )
+    msg_template = user_message("The metadata for job or project {project_id} could not be found.", _version=1)
     status_code = status.HTTP_404_NOT_FOUND
 
 
@@ -155,9 +139,7 @@ class ProjectAlreadyStartedError(BaseBackEndError):
 
 
 class InsufficientNumberOfSeatsError(BaseBackEndError):
-    msg_template = user_message(
-        "Not enough available seats for license item {licensed_item_id}.", _version=1
-    )
+    msg_template = user_message("Not enough available seats for license item {licensed_item_id}.", _version=1)
     status_code = status.HTTP_409_CONFLICT
 
 

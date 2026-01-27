@@ -84,9 +84,7 @@ async def test_folders_full_search(
     subsubfolder_folder, _ = await assert_status(resp, status.HTTP_201_CREATED)
 
     # move sub sub folder to root folder
-    url = client.app.router["replace_folder"].url_for(
-        folder_id=f"{subsubfolder_folder['folderId']}"
-    )
+    url = client.app.router["replace_folder"].url_for(folder_id=f"{subsubfolder_folder['folderId']}")
     resp = await client.put(
         f"{url}",
         json={

@@ -17,9 +17,7 @@ def setup_db(app: FastAPI) -> None:
     async def _on_startup() -> None:
         app_settings = get_application_settings(app)
         assert app_settings.STORAGE_POSTGRES is not None  # nosec
-        await connect_to_db(
-            app, app_settings.STORAGE_POSTGRES, application_name=APP_NAME
-        )
+        await connect_to_db(app, app_settings.STORAGE_POSTGRES, application_name=APP_NAME)
 
     async def _on_shutdown() -> None:
         await close_db_connection(app)

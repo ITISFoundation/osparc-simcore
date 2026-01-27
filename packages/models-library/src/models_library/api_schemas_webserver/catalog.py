@@ -24,17 +24,13 @@ class _BaseCommonApiExtension(BaseModel):
         description="Short name for the unit for display (html-compatible), if available",
     )
 
-    model_config = ConfigDict(
-        alias_generator=snake_to_camel, populate_by_name=True, extra="forbid"
-    )
+    model_config = ConfigDict(alias_generator=snake_to_camel, populate_by_name=True, extra="forbid")
 
 
 class ServiceInputGet(ServiceInput, _BaseCommonApiExtension):
     """Extends fields of api_schemas_catalog.services.ServiceGet.outputs[*]"""
 
-    key_id: Annotated[
-        ServiceInputKey, Field(description="Unique name identifier for this input")
-    ]
+    key_id: Annotated[ServiceInputKey, Field(description="Unique name identifier for this input")]
 
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:
@@ -78,9 +74,7 @@ class ServiceInputGet(ServiceInput, _BaseCommonApiExtension):
 class ServiceOutputGet(ServiceOutput, _BaseCommonApiExtension):
     """Extends fields of api_schemas_catalog.services.ServiceGet.outputs[*]"""
 
-    key_id: Annotated[
-        ServiceOutputKey, Field(description="Unique name identifier for this input")
-    ]
+    key_id: Annotated[ServiceOutputKey, Field(description="Unique name identifier for this input")]
 
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:
@@ -115,11 +109,7 @@ class CatalogLatestServiceGet(api_schemas_catalog_services.LatestServiceGet):
 
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:
-        base_example = (
-            api_schemas_catalog_services.LatestServiceGet.model_json_schema()[
-                "examples"
-            ][0]
-        )
+        base_example = api_schemas_catalog_services.LatestServiceGet.model_json_schema()["examples"][0]
 
         schema.update(
             {
@@ -246,18 +236,12 @@ class CatalogServiceGet(api_schemas_catalog_services.ServiceGetV2):
         schema.update(
             {
                 "example": {
-                    **api_schemas_catalog_services.ServiceGetV2.model_json_schema()[
-                        "examples"
-                    ][0],
+                    **api_schemas_catalog_services.ServiceGetV2.model_json_schema()["examples"][0],
                     "inputs": {
                         f"input{i}": example
-                        for i, example in enumerate(
-                            ServiceInputGet.model_json_schema()["examples"]
-                        )
+                        for i, example in enumerate(ServiceInputGet.model_json_schema()["examples"])
                     },
-                    "outputs": {
-                        "outFile": ServiceOutputGet.model_json_schema()["example"]
-                    },
+                    "outputs": {"outFile": ServiceOutputGet.model_json_schema()["example"]},
                 }
             }
         )

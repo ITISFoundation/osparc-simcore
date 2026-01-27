@@ -96,9 +96,7 @@ async def test_progress_bar_progress_report_cb(
 
         # 2nd step is a sub progress bar of 10 steps
         inner_num_steps_step2 = 100
-        async with root.sub_progress(
-            steps=inner_num_steps_step2, description=faker.pystr()
-        ) as sub:
+        async with root.sub_progress(steps=inner_num_steps_step2, description=faker.pystr()) as sub:
             assert sub._current_steps == pytest.approx(0)  # noqa: SLF001
             assert root._current_steps == pytest.approx(1)  # noqa: SLF001
             for i in range(inner_num_steps_step2):
@@ -112,22 +110,17 @@ async def test_progress_bar_progress_report_cb(
         )
         assert root._current_steps == pytest.approx(2)  # noqa: SLF001
         mocked_cb.assert_called()
-        assert mocked_cb.call_args_list[-1].args[0].percent_value == pytest.approx(
-            2 / 3
-        )
+        assert mocked_cb.call_args_list[-1].args[0].percent_value == pytest.approx(2 / 3)
         for call_index, call in enumerate(mocked_cb.call_args_list[1:-1]):
             assert (
-                call.args[0].percent_value
-                - mocked_cb.call_args_list[call_index].args[0].percent_value
+                call.args[0].percent_value - mocked_cb.call_args_list[call_index].args[0].percent_value
             ) > _MIN_PROGRESS_UPDATE_PERCENT
 
         mocked_cb.reset_mock()
 
         # 3rd step is another subprogress of 50 steps
         inner_num_steps_step3 = 50
-        async with root.sub_progress(
-            steps=inner_num_steps_step3, description=faker.pystr()
-        ) as sub:
+        async with root.sub_progress(steps=inner_num_steps_step3, description=faker.pystr()) as sub:
             assert sub._current_steps == pytest.approx(0)  # noqa: SLF001
             assert root._current_steps == pytest.approx(2)  # noqa: SLF001
             for i in range(inner_num_steps_step3):
@@ -147,9 +140,7 @@ async def test_progress_bar_progress_report_cb(
 
 def test_creating_progress_bar_with_invalid_unit_fails(faker: Faker):
     with pytest.raises(ValidationError):
-        ProgressBarData(
-            num_steps=321, progress_unit="invalid", description=faker.pystr()
-        )
+        ProgressBarData(num_steps=321, progress_unit="invalid", description=faker.pystr())
 
 
 async def test_progress_bar_always_reports_0_on_creation_and_1_on_finish(
@@ -196,9 +187,7 @@ async def test_progress_bar_always_reports_0_on_creation_and_1_on_finish(
     )
 
 
-async def test_progress_bar_always_reports_1_on_finish(
-    mocked_progress_bar_cb: mock.Mock, faker: Faker
-):
+async def test_progress_bar_always_reports_1_on_finish(mocked_progress_bar_cb: mock.Mock, faker: Faker):
     num_steps = 156587
     chunks = 123.3
 
@@ -366,15 +355,11 @@ async def test_weighted_progress_bar(mocked_progress_bar_cb: mock.Mock, faker: F
         mocked_progress_bar_cb.reset_mock()
         assert root.step_weights == [1 / 5, 3 / 5, 1 / 5, 0]
         await root.update()
-        assert mocked_progress_bar_cb.call_args.args[0].percent_value == pytest.approx(
-            1 / 5
-        )
+        assert mocked_progress_bar_cb.call_args.args[0].percent_value == pytest.approx(1 / 5)
         mocked_progress_bar_cb.reset_mock()
         assert root._current_steps == pytest.approx(1)  # noqa: SLF001
         await root.update()
-        assert mocked_progress_bar_cb.call_args.args[0].percent_value == pytest.approx(
-            1 / 5 + 3 / 5
-        )
+        assert mocked_progress_bar_cb.call_args.args[0].percent_value == pytest.approx(1 / 5 + 3 / 5)
         mocked_progress_bar_cb.reset_mock()
         assert root._current_steps == pytest.approx(2)  # noqa: SLF001
 
@@ -395,9 +380,7 @@ async def test_weighted_progress_bar(mocked_progress_bar_cb: mock.Mock, faker: F
     assert root._current_steps == pytest.approx(3)  # noqa: SLF001
 
 
-async def test_weighted_progress_bar_with_weighted_sub_progress(
-    mocked_progress_bar_cb: mock.Mock, faker: Faker
-):
+async def test_weighted_progress_bar_with_weighted_sub_progress(mocked_progress_bar_cb: mock.Mock, faker: Faker):
     outer_num_steps = 3
     async with ProgressBarData(
         num_steps=outer_num_steps,
@@ -422,16 +405,12 @@ async def test_weighted_progress_bar_with_weighted_sub_progress(
         assert root.step_weights == [1 / 5, 3 / 5, 1 / 5, 0]
         # first step
         await root.update()
-        assert mocked_progress_bar_cb.call_args.args[0].percent_value == pytest.approx(
-            1 / 5
-        )
+        assert mocked_progress_bar_cb.call_args.args[0].percent_value == pytest.approx(1 / 5)
         mocked_progress_bar_cb.reset_mock()
         assert root._current_steps == pytest.approx(1)  # noqa: SLF001
 
         # 2nd step is a sub progress bar of 5 steps
-        async with root.sub_progress(
-            steps=5, step_weights=[2, 5, 1, 2, 3], description=faker.pystr()
-        ) as sub:
+        async with root.sub_progress(steps=5, step_weights=[2, 5, 1, 2, 3], description=faker.pystr()) as sub:
             assert sub.step_weights == [2 / 13, 5 / 13, 1 / 13, 2 / 13, 3 / 13, 0]
             assert sub._current_steps == pytest.approx(0)  # noqa: SLF001
             assert root._current_steps == pytest.approx(1)  # noqa: SLF001
@@ -466,9 +445,7 @@ async def test_weighted_progress_bar_with_weighted_sub_progress(
         assert root._current_steps == pytest.approx(2)  # noqa: SLF001
         mocked_progress_bar_cb.assert_called()
         assert mocked_progress_bar_cb.call_count == 5
-        assert mocked_progress_bar_cb.call_args_list[4].args[
-            0
-        ].percent_value == pytest.approx(1 / 5 + 3 / 5)
+        assert mocked_progress_bar_cb.call_args_list[4].args[0].percent_value == pytest.approx(1 / 5 + 3 / 5)
         mocked_progress_bar_cb.reset_mock()
         assert root._current_steps == pytest.approx(2)  # noqa: SLF001
     mocked_progress_bar_cb.assert_called_once_with(
@@ -490,25 +467,19 @@ async def test_weighted_progress_bar_with_weighted_sub_progress(
 
 async def test_weighted_progress_bar_wrong_num_weights_raises(faker: Faker):
     with pytest.raises(RuntimeError):
-        async with ProgressBarData(
-            num_steps=3, step_weights=[3, 1], description=faker.pystr()
-        ):
+        async with ProgressBarData(num_steps=3, step_weights=[3, 1], description=faker.pystr()):
             ...
 
 
 async def test_weighted_progress_bar_with_0_weights_is_equivalent_to_standard_progress_bar(
     faker: Faker,
 ):
-    async with ProgressBarData(
-        num_steps=3, step_weights=[0, 0, 0], description=faker.pystr()
-    ) as root:
+    async with ProgressBarData(num_steps=3, step_weights=[0, 0, 0], description=faker.pystr()) as root:
         assert root.step_weights == [1, 1, 1, 0]
 
 
 @pytest.mark.xfail(reason="show how to not use the progress bar")
-async def test_concurrent_sub_progress_update_correct_sub_progress(
-    mocked_progress_bar_cb: mock.Mock, faker: Faker
-):
+async def test_concurrent_sub_progress_update_correct_sub_progress(mocked_progress_bar_cb: mock.Mock, faker: Faker):
     async with ProgressBarData(
         num_steps=3,
         step_weights=[3, 1, 2],
@@ -531,6 +502,4 @@ async def test_concurrent_sub_progress_update_correct_sub_progress(
         # so sub 3 is done here
         assert sub_progress3._current_steps == 12  # noqa: SLF001
         assert mocked_progress_bar_cb.call_count == 2
-        assert mocked_progress_bar_cb.call_args.args[0].percent_value == pytest.approx(
-            2 / 6
-        )
+        assert mocked_progress_bar_cb.call_args.args[0].percent_value == pytest.approx(2 / 6)

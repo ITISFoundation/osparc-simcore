@@ -26,14 +26,10 @@ _logger = logging.getLogger(__name__)
 #
 
 
-def _compose_file_and_service_dispatcher_prefix_url(
-    request: web.Request, viewer: ViewerInfo
-) -> HttpUrl:
+def _compose_file_and_service_dispatcher_prefix_url(request: web.Request, viewer: ViewerInfo) -> HttpUrl:
     """This is denoted PREFIX URL because it needs to append extra query parameters"""
     params = ViewerQueryParams.from_viewer(viewer).model_dump()
-    absolute_url = request.url.join(
-        request.app.router["get_redirection_to_viewer"].url_for().with_query(**params)
-    )
+    absolute_url = request.url.join(request.app.router["get_redirection_to_viewer"].url_for().with_query(**params))
     absolute_url_: HttpUrl = TypeAdapter(HttpUrl).validate_python(f"{absolute_url}")
     return absolute_url_
 
@@ -45,9 +41,7 @@ def _compose_service_only_dispatcher_prefix_url(
         viewer_key=TypeAdapter(ServiceKey).validate_python(service_key),
         viewer_version=TypeAdapter(ServiceVersion).validate_python(service_version),
     ).model_dump(exclude_none=True, exclude_unset=True)
-    absolute_url = request.url.join(
-        request.app.router["get_redirection_to_viewer"].url_for().with_query(**params)
-    )
+    absolute_url = request.url.join(request.app.router["get_redirection_to_viewer"].url_for().with_query(**params))
     absolute_url_: HttpUrl = TypeAdapter(HttpUrl).validate_python(f"{absolute_url}")
     return absolute_url_
 
@@ -74,9 +68,7 @@ class Viewer(BaseModel):
     A viewer can be dispatched using the view_url and appending the
     """
 
-    title: str = Field(
-        ..., description="Short formatted label with name and version of the viewer"
-    )
+    title: str = Field(..., description="Short formatted label with name and version of the viewer")
     file_type: str = Field(..., description="Identifier for the file type")
     view_url: HttpUrl = Field(
         ...,

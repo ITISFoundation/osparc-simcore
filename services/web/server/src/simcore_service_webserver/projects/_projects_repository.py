@@ -64,14 +64,11 @@ async def list_projects_db_get_as_admin(
     # order
     order_by: OrderBy,
 ) -> tuple[int, list[ProjectDBGet]]:
-
     base_query = sql.select(*PROJECT_DB_COLS).where(projects.c.trashed.is_not(None))
 
     if is_set(trashed_explicitly):
         assert isinstance(trashed_explicitly, bool)  # nosec
-        base_query = base_query.where(
-            projects.c.trashed_explicitly.is_(trashed_explicitly)
-        )
+        base_query = base_query.where(projects.c.trashed_explicitly.is_(trashed_explicitly))
 
     if is_set(trashed_before):
         assert isinstance(trashed_before, datetime)  # nosec
@@ -85,19 +82,13 @@ async def list_projects_db_get_as_admin(
     count_query = sql.select(sql.func.count()).select_from(base_query.subquery())
 
     # Ordering and pagination
-    list_query = (
-        base_query.order_by(_to_sql_expression(projects, order_by), projects.c.id)
-        .offset(offset)
-        .limit(limit)
-    )
+    list_query = base_query.order_by(_to_sql_expression(projects, order_by), projects.c.id).offset(offset).limit(limit)
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         total_count = await conn.scalar(count_query)
 
         result = await conn.stream(list_query)
-        projects_list: list[ProjectDBGet] = [
-            ProjectDBGet.model_validate(row) async for row in result
-        ]
+        projects_list: list[ProjectDBGet] = [ProjectDBGet.model_validate(row) async for row in result]
         return cast(int, total_count), projects_list
 
 
@@ -123,9 +114,7 @@ async def get_project_with_workbench(
     project_uuid: ProjectID,
 ) -> ProjectWithWorkbenchDBGet:
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
-        query = sql.select(*PROJECT_DB_COLS, projects.c.workbench).where(
-            projects.c.uuid == f"{project_uuid}"
-        )
+        query = sql.select(*PROJECT_DB_COLS, projects.c.workbench).where(projects.c.uuid == f"{project_uuid}")
         result = await conn.execute(query)
         row = result.one_or_none()
         if row is None:
@@ -155,10 +144,7 @@ async def batch_get_project_name(
         # Preserves the order of projects_uuids
         # SEE https://docs.sqlalchemy.org/en/20/core/sqlelement.html#sqlalchemy.sql.expression.case
         sql.case(
-            {
-                project_uuid: index
-                for index, project_uuid in enumerate(projects_uuids_str)
-            },
+            {project_uuid: index for index, project_uuid in enumerate(projects_uuids_str)},
             value=projects.c.uuid,
         )
     )
@@ -179,15 +165,10 @@ async def batch_get_projects(
         return {}
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         query = (
-            sql.select(projects)
-            .select_from(projects)
-            .where(projects.c.uuid.in_([f"{uuid}" for uuid in project_uuids]))
+            sql.select(projects).select_from(projects).where(projects.c.uuid.in_([f"{uuid}" for uuid in project_uuids]))
         )
         result = await conn.stream(query)
-        return {
-            ProjectID(row.uuid): ProjectDBGet.model_validate(row)
-            async for row in result
-        }
+        return {ProjectID(row.uuid): ProjectDBGet.model_validate(row) async for row in result}
 
 
 def _select_trashed_by_primary_gid_query() -> sql.Select:
@@ -203,9 +184,7 @@ async def get_trashed_by_primary_gid(
     *,
     projects_uuid: ProjectID,
 ) -> GroupID | None:
-    query = _select_trashed_by_primary_gid_query().where(
-        projects.c.uuid == f"{projects_uuid}"
-    )
+    query = _select_trashed_by_primary_gid_query().where(projects.c.uuid == f"{projects_uuid}")
 
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         result = await conn.execute(query)
@@ -229,18 +208,11 @@ async def batch_get_trashed_by_primary_gid(
 
     projects_uuids_str = [f"{uuid}" for uuid in projects_uuids]
 
-    query = (
-        _select_trashed_by_primary_gid_query().where(
-            projects.c.uuid.in_(projects_uuids_str)
-        )
-    ).order_by(
+    query = (_select_trashed_by_primary_gid_query().where(projects.c.uuid.in_(projects_uuids_str))).order_by(
         # Preserves the order of project_uuids
         # SEE https://docs.sqlalchemy.org/en/20/core/sqlelement.html#sqlalchemy.sql.expression.case
         sql.case(
-            {
-                project_uuid: index
-                for index, project_uuid in enumerate(projects_uuids_str)
-            },
+            {project_uuid: index for index, project_uuid in enumerate(projects_uuids_str)},
             value=projects.c.uuid,
         )
     )
@@ -282,9 +254,7 @@ async def delete_project(
 ) -> ProjectDBGet:
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         result = await conn.stream(
-            projects.delete()
-            .where(projects.c.uuid == f"{project_uuid}")
-            .returning(*PROJECT_DB_COLS)
+            projects.delete().where(projects.c.uuid == f"{project_uuid}").returning(*PROJECT_DB_COLS)
         )
         row = await result.one_or_none()
         if row is None:
@@ -300,9 +270,9 @@ async def allows_guests_to_push_states_and_output_ports(
 ) -> bool:
     async with pass_or_acquire_connection(get_asyncpg_engine(app), connection) as conn:
         result: bool | None = await conn.scalar(
-            sa.select(
-                projects_extensions.c.allow_guests_to_push_states_and_output_ports
-            ).where(projects_extensions.c.project_uuid == project_uuid)
+            sa.select(projects_extensions.c.allow_guests_to_push_states_and_output_ports).where(
+                projects_extensions.c.project_uuid == project_uuid
+            )
         )
         return result if result is not None else False
 
@@ -330,12 +300,8 @@ async def copy_allow_guests_to_push_states_and_output_ports(
     to_project_uuid: str,
 ) -> None:
     # get setting from template project
-    allow_guests = await allows_guests_to_push_states_and_output_ports(
-        app, connection, project_uuid=from_project_uuid
-    )
+    allow_guests = await allows_guests_to_push_states_and_output_ports(app, connection, project_uuid=from_project_uuid)
 
     # set same setting in new project if True
     if allow_guests:
-        await _set_allow_guests_to_push_states_and_output_ports(
-            app, connection, project_uuid=to_project_uuid
-        )
+        await _set_allow_guests_to_push_states_and_output_ports(app, connection, project_uuid=to_project_uuid)

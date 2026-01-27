@@ -14,9 +14,7 @@ from respx import MockRouter
 from simcore_service_api_server._meta import API_VTAG
 
 
-async def test_check_service_health(
-    mocker: MockRouter, client: AsyncClient, app: FastAPI
-):
+async def test_check_service_health(mocker: MockRouter, client: AsyncClient, app: FastAPI):
     class MockHealthChecker:
         @property
         def healthy(self) -> bool:

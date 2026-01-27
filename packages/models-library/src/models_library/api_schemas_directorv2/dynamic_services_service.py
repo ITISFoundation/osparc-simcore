@@ -64,12 +64,8 @@ class RunningDynamicServiceDetails(ServiceDetails):
         ),
     )
 
-    host: str = Field(
-        ..., description="the service swarm internal host name", alias="service_host"
-    )
-    internal_port: PortInt = Field(
-        ..., description="the service swarm internal port", alias="service_port"
-    )
+    host: str = Field(..., description="the service swarm internal host name", alias="service_host")
+    internal_port: PortInt = Field(..., description="the service swarm internal port", alias="service_port")
     published_port: PortInt | None = Field(
         default=None,
         description="the service swarm published port if any",
@@ -81,9 +77,7 @@ class RunningDynamicServiceDetails(ServiceDetails):
         description="if empty the service entrypoint is on the root endpoint.",
         deprecated=True,
     )
-    state: ServiceState = Field(
-        ..., description="service current state", alias="service_state"
-    )
+    state: ServiceState = Field(..., description="service current state", alias="service_state")
     message: str | None = Field(
         default=None,
         description="additional information related to service state",

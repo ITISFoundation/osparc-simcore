@@ -22,12 +22,8 @@ def upgrade():
         "projects_to_products",
         sa.Column("project_uuid", sa.String(), nullable=False),
         sa.Column("product_name", sa.String(), nullable=False),
-        sa.Column(
-            "created", sa.DateTime(), server_default=sa.text("now()"), nullable=False
-        ),
-        sa.Column(
-            "modified", sa.DateTime(), server_default=sa.text("now()"), nullable=False
-        ),
+        sa.Column("created", sa.DateTime(), server_default=sa.text("now()"), nullable=False),
+        sa.Column("modified", sa.DateTime(), server_default=sa.text("now()"), nullable=False),
         sa.ForeignKeyConstraint(
             ["product_name"],
             ["products.name"],

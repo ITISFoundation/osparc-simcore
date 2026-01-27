@@ -49,9 +49,7 @@ def mock_rabbitmq_rpc_client_class(mocker: MockerFixture) -> MockType:
 
 @pytest.fixture
 def app_environment(monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
-    return setenvs_from_dict(
-        monkeypatch, RabbitSettings.model_json_schema()["examples"][0]
-    )
+    return setenvs_from_dict(monkeypatch, RabbitSettings.model_json_schema()["examples"][0])
 
 
 @pytest.fixture
@@ -63,9 +61,7 @@ def app_lifespan(
     assert app_environment
 
     class AppSettings(BaseApplicationSettings):
-        RABBITMQ: RabbitSettings = Field(
-            ..., json_schema_extra={"auto_default_from_env": True}
-        )
+        RABBITMQ: RabbitSettings = Field(..., json_schema_extra={"auto_default_from_env": True})
 
     # setup settings
     async def my_app_settings(app: FastAPI) -> AsyncIterator[State]:
@@ -79,9 +75,7 @@ def app_lifespan(
     async def my_app_rpc_server(app: FastAPI, state: State) -> AsyncIterator[State]:
         assert "RABBIT_CONNECTIVITY_LIFESPAN_NAME" in state
 
-        async with rabbitmq_rpc_client_context(
-            "rpc_server", app.state.settings.RABBITMQ
-        ) as rpc_server:
+        async with rabbitmq_rpc_client_context("rpc_server", app.state.settings.RABBITMQ) as rpc_server:
             app.state.rpc_server = rpc_server
             yield {}
 
@@ -89,9 +83,7 @@ def app_lifespan(
     async def my_app_rpc_client(app: FastAPI, state: State) -> AsyncIterator[State]:
         assert "RABBIT_CONNECTIVITY_LIFESPAN_NAME" in state
 
-        async with rabbitmq_rpc_client_context(
-            "rpc_client", app.state.settings.RABBITMQ
-        ) as rpc_client:
+        async with rabbitmq_rpc_client_context("rpc_client", app.state.settings.RABBITMQ) as rpc_client:
             app.state.rpc_client = rpc_client
             yield {}
 
@@ -122,9 +114,7 @@ async def test_lifespan_rabbitmq_in_an_app(
         shutdown_timeout=None if is_pdb_enabled else 10,
     ):
         # Verify that RabbitMQ responsiveness was checked
-        mock_rabbitmq_connection.assert_called_once_with(
-            app.state.settings.RABBITMQ.dsn
-        )
+        mock_rabbitmq_connection.assert_called_once_with(app.state.settings.RABBITMQ.dsn)
 
         # Verify that RabbitMQ settings are in the lifespan manager state
         assert app.state.settings.RABBITMQ

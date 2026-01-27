@@ -47,9 +47,7 @@ def set_exception_handlers(app: FastAPI) -> None:
     ):
         app.add_exception_handler(
             exc_not_found,
-            make_http_error_handler_for_exception(
-                status.HTTP_404_NOT_FOUND, exc_not_found, envelope_error=True
-            ),
+            make_http_error_handler_for_exception(status.HTTP_404_NOT_FOUND, exc_not_found, envelope_error=True),
         )
     for exc_access in (
         FileAccessRightError,
@@ -57,9 +55,7 @@ def set_exception_handlers(app: FastAPI) -> None:
     ):
         app.add_exception_handler(
             exc_access,
-            make_http_error_handler_for_exception(
-                status.HTTP_403_FORBIDDEN, exc_access, envelope_error=True
-            ),
+            make_http_error_handler_for_exception(status.HTTP_403_FORBIDDEN, exc_access, envelope_error=True),
         )
     app.add_exception_handler(
         LinkAlreadyExistsError,

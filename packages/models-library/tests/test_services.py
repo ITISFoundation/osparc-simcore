@@ -130,13 +130,9 @@ def test_SERVICE_KEY_RE(service_key: str, pattern: re.Pattern):
     # tests formatters
     new_service_key = None
     service_type = match.group(3)
-    service_name = match.group(4).strip(
-        "/"
-    )  # FIXME: SERVICE_KEY_RE MUST eliminate / in the last capture!!!
+    service_name = match.group(4).strip("/")  # FIXME: SERVICE_KEY_RE MUST eliminate / in the last capture!!!
     if service_type == "comp":
-        new_service_key = COMPUTATIONAL_SERVICE_KEY_FORMAT.format(
-            service_name=service_name
-        )
+        new_service_key = COMPUTATIONAL_SERVICE_KEY_FORMAT.format(service_name=service_name)
     elif service_type == "dynamic":
         new_service_key = DYNAMIC_SERVICE_KEY_FORMAT.format(service_name=service_name)
 
@@ -196,15 +192,13 @@ FIELD_NAME_EXCEPTIONS: set[str] = {
 }
 
 
-def test_service_docker_data_labels_convesion():
+def test_service_docker_data_labels_conversion():
     # tests that no future fields have "dashed names"
     # we want labels to look like io.simcore.a_label_property
-    convension_breaking_fields: set[tuple[str, str]] = set()
+    conversion_breaking_fields: set[tuple[str, str]] = set()
 
     fields_with_aliases: list[tuple[str, str]] = [
-        (name, info.alias)
-        for name, info in ServiceMetaDataPublished.model_fields.items()
-        if info.alias is not None
+        (name, info.alias) for name, info in ServiceMetaDataPublished.model_fields.items() if info.alias is not None
     ]
 
     for name, alias in fields_with_aliases:
@@ -212,7 +206,7 @@ def test_service_docker_data_labels_convesion():
             continue
         # check dashes and uppercase
         if alias.lower() != alias or "-" in alias:
-            convension_breaking_fields.add((name, alias))
-    assert (
-        len(convension_breaking_fields) == 0
-    ), "You are no longer allowed to add labels with dashes in them. All lables should be snake cased!"
+            conversion_breaking_fields.add((name, alias))
+    assert len(conversion_breaking_fields) == 0, (
+        "You are no longer allowed to add labels with dashes in them. All labels should be snake cased!"
+    )

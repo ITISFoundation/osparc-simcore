@@ -70,9 +70,7 @@ async def create_folder(request: web.Request):
 @handle_plugin_requests_exceptions
 async def list_folders(request: web.Request):
     req_ctx = FoldersRequestContext.model_validate(request)
-    query_params: FoldersListQueryParams = parse_request_query_parameters_as(
-        FoldersListQueryParams, request
-    )
+    query_params: FoldersListQueryParams = parse_request_query_parameters_as(FoldersListQueryParams, request)
 
     if not query_params.filters:
         query_params.filters = FolderFilters()
@@ -107,9 +105,7 @@ async def list_folders(request: web.Request):
 @handle_plugin_requests_exceptions
 async def list_folders_full_search(request: web.Request):
     req_ctx = FoldersRequestContext.model_validate(request)
-    query_params: FolderSearchQueryParams = parse_request_query_parameters_as(
-        FolderSearchQueryParams, request
-    )
+    query_params: FolderSearchQueryParams = parse_request_query_parameters_as(FolderSearchQueryParams, request)
 
     if not query_params.filters:
         query_params.filters = FolderFilters()

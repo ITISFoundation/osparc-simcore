@@ -44,9 +44,7 @@ def random_thumbnail_url(fake: Faker):
 
 def random_phone_number(fake: Faker = DEFAULT_FAKER) -> str:
     # NOTE: faker.phone_number() does not validate with `phonenumbers` library.
-    phone = fake.random_element(
-        ["+41763456789", "+19104630364", "+13013044567", "+34 950 453 837"]
-    )
+    phone = fake.random_element(["+41763456789", "+19104630364", "+13013044567", "+34 950 453 837"])
     tail = f"{fake.pyint(100, 999)}"
     return phone[: -len(tail)] + tail  # ensure phone keeps its length
 
@@ -134,9 +132,7 @@ def random_pre_registration_details(
         users_pre_registration_details,
     )
 
-    assert set(overrides.keys()).issubset(
-        {c.name for c in users_pre_registration_details.columns}
-    )
+    assert set(overrides.keys()).issubset({c.name for c in users_pre_registration_details.columns})
 
     data = {
         "user_id": user_id,
@@ -163,9 +159,7 @@ def random_pre_registration_details(
         "account_request_reviewed_by": account_request_reviewed_by,
     }
 
-    assert set(data.keys()).issubset(
-        {c.name for c in users_pre_registration_details.columns}
-    )
+    assert set(data.keys()).issubset({c.name for c in users_pre_registration_details.columns})
 
     data.update(overrides)
     return data
@@ -310,12 +304,8 @@ def random_product(
         "host_regex": r"[a-zA-Z0-9]+\.com",
         "base_url": f"https://{suffix}.com",
         "support_email": f"support@{suffix}.io",
-        "product_owners_email": fake.random_element(
-            elements=[f"product-owners@{suffix}.io", None]
-        ),
-        "twilio_messaging_sid": fake.random_element(
-            elements=(None, f"{fake.uuid4()}"[:34])
-        ),
+        "product_owners_email": fake.random_element(elements=[f"product-owners@{suffix}.io", None]),
+        "twilio_messaging_sid": fake.random_element(elements=(None, f"{fake.uuid4()}"[:34])),
         "vendor": Vendor(
             name=fake.company(),
             copyright=fake.company_suffix(),
@@ -362,17 +352,13 @@ def random_product(
     return data
 
 
-def random_product_price(
-    *, product_name: str, fake: Faker = DEFAULT_FAKER, **overrides
-) -> dict[str, Any]:
+def random_product_price(*, product_name: str, fake: Faker = DEFAULT_FAKER, **overrides) -> dict[str, Any]:
     from simcore_postgres_database.models.products_prices import products_prices
 
     data = {
         "product_name": product_name,
         "usd_per_credit": fake.pydecimal(left_digits=2, right_digits=2, positive=True),
-        "min_payment_amount_usd": fake.pydecimal(
-            left_digits=2, right_digits=2, positive=True
-        ),
+        "min_payment_amount_usd": fake.pydecimal(left_digits=2, right_digits=2, positive=True),
         "comment": fake.sentence(),
         "valid_from": fake.date_time_this_decade(),
         "stripe_price_id": fake.uuid4(),
@@ -500,9 +486,7 @@ def random_payment_autorecharge(
     return data
 
 
-def random_api_auth(
-    product_name: str, user_id: int, fake: Faker = DEFAULT_FAKER, **overrides
-) -> dict[str, Any]:
+def random_api_auth(product_name: str, user_id: int, fake: Faker = DEFAULT_FAKER, **overrides) -> dict[str, Any]:
     from simcore_postgres_database.models.api_keys import api_keys
 
     data = {
@@ -518,9 +502,7 @@ def random_api_auth(
     return data
 
 
-def random_payment_method_view(
-    fake: Faker = DEFAULT_FAKER, **overrides
-) -> dict[str, Any]:
+def random_payment_method_view(fake: Faker = DEFAULT_FAKER, **overrides) -> dict[str, Any]:
     # Produces data for GetPaymentMethod
     data = {
         "id": fake.uuid4(),
@@ -555,9 +537,7 @@ def random_service_meta_data(
         # optional
         "description_ui": fake.pybool(),
         "owner": owner_primary_gid,
-        "thumbnail": fake.random_element(
-            [random_thumbnail_url(fake), None]
-        ),  # nullable
+        "thumbnail": fake.random_element([random_thumbnail_url(fake), None]),  # nullable
         "icon": fake.random_element([random_icon_url(fake), None]),  # nullable
         "version_display": fake.random_element([f"v{_version}", None]),  # nullable
         "classifiers": [],  # has default

@@ -23,11 +23,7 @@ async def fake_scicrunch_ids(aiopg_engine: Engine) -> list[str]:
     row_ids = []
     async with aiopg_engine.acquire() as conn:
         for row in (row1, row2):
-            row_id = await conn.scalar(
-                scicrunch_resources.insert()
-                .values(**row)
-                .returning(scicrunch_resources.c.rrid)
-            )
+            row_id = await conn.scalar(scicrunch_resources.insert().values(**row).returning(scicrunch_resources.c.rrid))
             assert row_id, f"{row} failed"
             row_ids.append(row_id)
 
@@ -52,7 +48,6 @@ async def scicrunch_orm(aiopg_engine: Engine) -> Iterator[BaseOrm[str]]:
 
 
 async def test_orm_fetch(scicrunch_orm: BaseOrm[str], fake_scicrunch_ids: list[str]):
-
     # insert 1 and 2
     scicrunch_id1, scicrunch_id2 = fake_scicrunch_ids
     assert scicrunch_id1 is not None
@@ -74,9 +69,7 @@ async def test_orm_fetch(scicrunch_orm: BaseOrm[str], fake_scicrunch_ids: list[s
     assert scicrunch_resource in all_scicrunch_resources
 
     # partial columns fetch
-    scicrunch_resource = await scicrunch_orm.fetch(
-        "name description", rowid=scicrunch_id1
-    )
+    scicrunch_resource = await scicrunch_orm.fetch("name description", rowid=scicrunch_id1)
     assert scicrunch_resource
     assert scicrunch_resource.name == "foo"
     assert scicrunch_resource.description == "fooing"
@@ -95,10 +88,7 @@ async def test_orm_fetch(scicrunch_orm: BaseOrm[str], fake_scicrunch_ids: list[s
     assert len(all_scicrunch_resources) == 2
 
 
-async def test_orm_fetch_defaults(
-    scicrunch_orm: BaseOrm[str], fake_scicrunch_ids: list[str]
-):
-
+async def test_orm_fetch_defaults(scicrunch_orm: BaseOrm[str], fake_scicrunch_ids: list[str]):
     # insert 1 and 2
     scicrunch_id1, scicrunch_id2 = fake_scicrunch_ids
     assert scicrunch_id1 is not None
@@ -130,10 +120,7 @@ async def test_orm_fetch_defaults(
     assert not hasattr(scicrunch_resource, "rrid")
 
 
-async def test_orm_fetchall_page(
-    scicrunch_orm: BaseOrm[str], fake_scicrunch_ids: list[str]
-):
-
+async def test_orm_fetchall_page(scicrunch_orm: BaseOrm[str], fake_scicrunch_ids: list[str]):
     # insert 1 and 2
     scicrunch_id1, scicrunch_id2 = fake_scicrunch_ids
     assert scicrunch_id1 is not None
@@ -163,9 +150,7 @@ async def test_orm_fetchall_page(
 
     # sorted
     # pylint: disable=protected-access
-    page, total_rows = await scicrunch_orm.fetch_page(
-        "rrid", offset=0, sort_by=scicrunch_orm._primary_key
-    )
+    page, total_rows = await scicrunch_orm.fetch_page("rrid", offset=0, sort_by=scicrunch_orm._primary_key)
     assert len(page) == total_rows
 
     all_scicrunch_resources.reverse()
@@ -173,21 +158,15 @@ async def test_orm_fetchall_page(
 
 
 async def test_orm_insert(scicrunch_orm: BaseOrm[str]):
-
     # insert 1 and 2
-    scicrunch_id1 = await scicrunch_orm.insert(
-        rrid="RRID:foo", name="foo", description="fooing"
-    )
+    scicrunch_id1 = await scicrunch_orm.insert(rrid="RRID:foo", name="foo", description="fooing")
     assert scicrunch_id1 == "RRID:foo"
 
-    scicrunch_id2 = await scicrunch_orm.insert(
-        rrid="RRID:bar", name="bar", description="barring"
-    )
+    scicrunch_id2 = await scicrunch_orm.insert(rrid="RRID:bar", name="bar", description="barring")
     assert scicrunch_id2 == "RRID:bar"
 
 
 async def test_orm_insert_with_different_returns(scicrunch_orm: BaseOrm[str]):
-
     # insert 1 and 2
     scicrunch1 = await scicrunch_orm.insert(
         returning_cols=ALL_COLUMNS, rrid="RRID:foo", name="foo", description="fooing"
@@ -195,9 +174,7 @@ async def test_orm_insert_with_different_returns(scicrunch_orm: BaseOrm[str]):
     assert scicrunch1
     assert isinstance(scicrunch1, RowProxy)
     assert scicrunch1.rrid == "RRID:foo"
-    assert {"rrid", "name", "description", "creation_date", "last_change_date"} == set(
-        scicrunch1.keys()
-    )
+    assert {"rrid", "name", "description", "creation_date", "last_change_date"} == set(scicrunch1.keys())
 
     scicrunch2 = await scicrunch_orm.insert(
         returning_cols=["rrid", "creation_date"],
@@ -212,13 +189,12 @@ async def test_orm_insert_with_different_returns(scicrunch_orm: BaseOrm[str]):
 
 
 async def test_orm_update(scicrunch_orm: BaseOrm[str], fake_scicrunch_ids: list[str]):
-
     scicrunch_id1, scicrunch_id2 = fake_scicrunch_ids
 
     # FIXME: since no row is pinned, update applies to all rows
     # but only the first one is returned
-    first_udpated_row_id = await scicrunch_orm.update(name="w/o pin")
-    assert first_udpated_row_id
+    first_updated_row_id = await scicrunch_orm.update(name="w/o pin")
+    assert first_updated_row_id
 
     rows = await scicrunch_orm.fetch_all("name rrid")
     assert all(row.name == "w/o pin" for row in rows)
@@ -231,10 +207,7 @@ async def test_orm_update(scicrunch_orm: BaseOrm[str], fake_scicrunch_ids: list[
     assert (await scicrunch_orm.fetch(rowid=scicrunch_id2)).name == "w/ pin"
 
 
-async def test_orm_update_with_different_returns(
-    scicrunch_orm: BaseOrm[str], fake_scicrunch_ids: list[str]
-):
-
+async def test_orm_update_with_different_returns(scicrunch_orm: BaseOrm[str], fake_scicrunch_ids: list[str]):
     scicrunch_id1, _ = fake_scicrunch_ids
 
     scicrunch_orm.set_filter(rowid=scicrunch_id1)
@@ -242,9 +215,7 @@ async def test_orm_update_with_different_returns(
     scicrunch1_before = await scicrunch_orm.fetch()
     assert scicrunch1_before
 
-    scicrunch1_after = await scicrunch_orm.update(
-        name="updated name", returning_cols=ALL_COLUMNS
-    )
+    scicrunch1_after = await scicrunch_orm.update(name="updated name", returning_cols=ALL_COLUMNS)
     assert scicrunch1_after
     assert isinstance(scicrunch1_after, RowProxy)
 
@@ -259,10 +230,7 @@ async def test_orm_update_with_different_returns(
     assert scicrunch1_before.last_change_date < scicrunch1_after.last_change_date
 
 
-async def test_orm_fail_to_update(
-    scicrunch_orm: BaseOrm[str], fake_scicrunch_ids: list[str]
-):
-
+async def test_orm_fail_to_update(scicrunch_orm: BaseOrm[str], fake_scicrunch_ids: list[str]):
     scicrunch_id1, scicrunch_id2 = fake_scicrunch_ids
 
     # read only

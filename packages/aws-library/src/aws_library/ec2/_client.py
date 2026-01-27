@@ -61,9 +61,7 @@ class SimcoreEC2API:
         )
         assert isinstance(session_client, ClientCreatorContext)  # nosec
         exit_stack = contextlib.AsyncExitStack()
-        ec2_client = cast(
-            EC2Client, await exit_stack.enter_async_context(session_client)
-        )
+        ec2_client = cast(EC2Client, await exit_stack.enter_async_context(session_client))
         return cls(ec2_client, session, exit_stack)
 
     async def close(self) -> None:
@@ -99,9 +97,7 @@ class SimcoreEC2API:
                 msg = "`instance_type_names` cannot be an empty set. Use either a selection or 'ALL'"
                 raise ValueError(msg)
 
-        instance_types = await self.client.describe_instance_types(
-            InstanceTypes=selection_or_all_if_empty
-        )
+        instance_types = await self.client.describe_instance_types(InstanceTypes=selection_or_all_if_empty)
         list_instances: list[EC2InstanceType] = []
         for instance in instance_types.get("InstanceTypes", []):
             with contextlib.suppress(KeyError):
@@ -119,9 +115,7 @@ class SimcoreEC2API:
                     # Sum up all GPUs (some instances have multiple GPU types)
                     total_gpus = sum(gpu.get("Count", 0) for gpu in gpu_info["Gpus"])
                     total_vram_mib = sum(
-                        gpu.get("Count", 0)
-                        * gpu.get("MemoryInfo", {}).get("SizeInMiB", 0)
-                        for gpu in gpu_info["Gpus"]
+                        gpu.get("Count", 0) * gpu.get("MemoryInfo", {}).get("SizeInMiB", 0) for gpu in gpu_info["Gpus"]
                     )
 
                     if total_gpus > 0:
@@ -135,9 +129,7 @@ class SimcoreEC2API:
                         name=instance["InstanceType"],
                         resources=Resources(
                             cpus=instance["VCpuInfo"]["DefaultVCpus"],
-                            ram=ByteSize(
-                                int(instance["MemoryInfo"]["SizeInMiB"]) * 1024 * 1024
-                            ),
+                            ram=ByteSize(int(instance["MemoryInfo"]["SizeInMiB"]) * 1024 * 1024),
                             generic_resources=generic_resources,
                         ),
                     )
@@ -158,8 +150,10 @@ class SimcoreEC2API:
         Arguments:
             instance_config -- The EC2 instance configuration
             min_number_of_instances -- the minimal number of instances required (fails if this amount cannot be reached)
-            number_of_instances -- the ideal number of instances needed (it it cannot be reached AWS will return a number >=min_number_of_instances)
-            max_total_number_of_instances -- The total maximum allowed number of instances for this given instance_config
+            number_of_instances -- the ideal number of instances needed (it it cannot be reached AWS
+                                    will return a number >=min_number_of_instances)
+            max_total_number_of_instances -- The total maximum allowed number of instances for this
+                                            given instance_config
 
         Raises:
             EC2TooManyInstancesError: max_total_number_of_instances would be exceeded
@@ -190,9 +184,7 @@ class SimcoreEC2API:
             # and avoid trying to launch instances in subnets that are already full
             # and also allows to circumvent a moto bug that does not raise
             # InsufficientInstanceCapacity when a subnet is full
-            subnet_id_to_available_ips = await get_subnet_capacity(
-                self.client, subnet_ids=instance_config.subnet_ids
-            )
+            subnet_id_to_available_ips = await get_subnet_capacity(self.client, subnet_ids=instance_config.subnet_ids)
 
             total_available_ips = sum(subnet_id_to_available_ips.values())
             if total_available_ips < min_number_of_instances:
@@ -210,16 +202,13 @@ class SimcoreEC2API:
             ]
 
             resource_tags: list[TagTypeDef] = [
-                {"Key": tag_key, "Value": tag_value}
-                for tag_key, tag_value in instance_config.tags.items()
+                {"Key": tag_key, "Value": tag_value} for tag_key, tag_value in instance_config.tags.items()
             ]
 
             # Try each subnet in order until one succeeds
             for subnet_id in subnet_ids_with_capacity:
                 try:
-                    _logger.debug(
-                        "Attempting to launch instances in subnet %s", subnet_id
-                    )
+                    _logger.debug("Attempting to launch instances in subnet %s", subnet_id)
 
                     instances = await self.client.run_instances(
                         ImageId=instance_config.ami_id,
@@ -241,7 +230,7 @@ class SimcoreEC2API:
                                 "Tags": resource_tags,
                             },
                         ],
-                        UserData=compose_user_data(instance_config.startup_script),
+                        UserData=compose_user_data(instance_config.startup_script, run_on_every_boot=False),
                         NetworkInterfaces=[
                             {
                                 "AssociatePublicIpAddress": True,
@@ -266,9 +255,7 @@ class SimcoreEC2API:
                     raise
 
             else:
-                subnet_zones = await get_subnet_azs(
-                    self.client, subnet_ids=subnet_ids_with_capacity
-                )
+                subnet_zones = await get_subnet_azs(self.client, subnet_ids=subnet_ids_with_capacity)
                 raise EC2InsufficientCapacityError(
                     availability_zones=subnet_zones,
                     instance_type=instance_config.type.name,
@@ -288,9 +275,7 @@ class SimcoreEC2API:
                 await waiter.wait(InstanceIds=instance_ids)
 
             # NOTE: waiting for pending ensures we get all the IPs back
-            described_instances = await self.client.describe_instances(
-                InstanceIds=instance_ids
-            )
+            described_instances = await self.client.describe_instances(InstanceIds=instance_ids)
             assert "Instances" in described_instances["Reservations"][0]  # nosec
             return [
                 await ec2_instance_data_from_aws_instance(self, i)
@@ -318,7 +303,8 @@ class SimcoreEC2API:
             the instances found
         """
         # NOTE: be careful: Name=instance-state-name,Values=["pending", "running"] means pending OR running
-        # NOTE2: AND is done by repeating Name=instance-state-name,Values=pending Name=instance-state-name,Values=running
+        # NOTE2: AND is done by repeating Name=instance-state-name,Values=pending
+        # Name=instance-state-name,Values=running
         if state_names is None:
             state_names = ["pending", "running"]
 
@@ -329,39 +315,36 @@ class SimcoreEC2API:
             },
             {"Name": "instance-state-name", "Values": state_names},
         ]
-        filters.extend(
-            [{"Name": f"tag:{key}", "Values": [value]} for key, value in tags.items()]
-        )
+        filters.extend([{"Name": f"tag:{key}", "Values": [value]} for key, value in tags.items()])
 
         instances = await self.client.describe_instances(Filters=filters)
         all_instances = []
         for reservation in instances["Reservations"]:
             assert "Instances" in reservation  # nosec
-            all_instances.extend(
-                [
-                    await ec2_instance_data_from_aws_instance(self, i)
-                    for i in reservation["Instances"]
-                ]
-            )
-        _logger.debug(
-            "received: %s instances with %s", f"{len(all_instances)}", f"{state_names=}"
-        )
+            all_instances.extend([await ec2_instance_data_from_aws_instance(self, i) for i in reservation["Instances"]])
+        _logger.debug("received: %s instances with %s", f"{len(all_instances)}", f"{state_names=}")
         return all_instances
 
     @ec2_exception_handler(_logger)
     async def start_instances(
-        self, instance_datas: Iterable[EC2InstanceData]
+        self,
+        instance_datas: Iterable[EC2InstanceData],
+        *,
+        change_startup_script: str | None = None,
     ) -> list[EC2InstanceData]:
         """starts stopped instances. Will return once the started instances are pending so that their IPs are available.
 
         Arguments:
             instance_datas -- the instances to start
+            change_startup_script -- optional user data script to set on instances before starting
+                        Note: this will overwrite any existing user data on the instance
+                        Note2: By default, EC2 instances execute user data only on first launch; per-boot execution is enabled via MIME multi-part format (run_on_every_boot=True).
 
         Raises:
             EC2InstanceNotFoundError: if some of the instance_datas are not found
 
         Returns:
-            the started instance datas with their respective IPs
+            the started instance data with their respective IPs
         """
         instance_ids = [i.id for i in instance_datas]
         with log_context(
@@ -369,6 +352,14 @@ class SimcoreEC2API:
             logging.INFO,
             msg=f"start instances {instance_ids}",
         ):
+            if change_startup_script is not None:
+                # modify user data on stopped instances before starting
+                # use run_on_every_boot=True so the script executes on every restart (e.g., warm buffer activation)
+                for instance_id in instance_ids:
+                    await self.client.modify_instance_attribute(
+                        InstanceId=instance_id,
+                        UserData={"Value": compose_user_data(change_startup_script, run_on_every_boot=True)},
+                    )
             await self.client.start_instances(InstanceIds=instance_ids)
             # wait for the instance to be in a pending state
             # NOTE: reference to EC2 states https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-lifecycle.html
@@ -376,9 +367,7 @@ class SimcoreEC2API:
             await waiter.wait(InstanceIds=instance_ids)
             _logger.info("instances %s exists now.", instance_ids)
             # NOTE: waiting for pending ensure we get all the IPs back
-            aws_instances = await self.client.describe_instances(
-                InstanceIds=instance_ids
-            )
+            aws_instances = await self.client.describe_instances(InstanceIds=instance_ids)
             assert len(aws_instances["Reservations"]) == 1  # nosec
             assert "Instances" in aws_instances["Reservations"][0]  # nosec
             return [
@@ -405,22 +394,16 @@ class SimcoreEC2API:
             await self.client.stop_instances(InstanceIds=[i.id for i in instance_datas])
 
     @ec2_exception_handler(_logger)
-    async def terminate_instances(
-        self, instance_datas: Iterable[EC2InstanceData]
-    ) -> None:
+    async def terminate_instances(self, instance_datas: Iterable[EC2InstanceData]) -> None:
         with log_context(
             _logger,
             logging.INFO,
             msg=f"terminate instances {[i.id for i in instance_datas]}",
         ):
-            await self.client.terminate_instances(
-                InstanceIds=[i.id for i in instance_datas]
-            )
+            await self.client.terminate_instances(InstanceIds=[i.id for i in instance_datas])
 
     @ec2_exception_handler(_logger)
-    async def set_instances_tags(
-        self, instances: Sequence[EC2InstanceData], *, tags: EC2Tags
-    ) -> None:
+    async def set_instances_tags(self, instances: Sequence[EC2InstanceData], *, tags: EC2Tags) -> None:
         try:
             with log_context(
                 _logger,
@@ -429,10 +412,7 @@ class SimcoreEC2API:
             ):
                 await self.client.create_tags(
                     Resources=[i.id for i in instances],
-                    Tags=[
-                        {"Key": tag_key, "Value": tag_value}
-                        for tag_key, tag_value in tags.items()
-                    ],
+                    Tags=[{"Key": tag_key, "Value": tag_value} for tag_key, tag_value in tags.items()],
                 )
         except botocore.exceptions.ClientError as exc:
             if exc.response.get("Error", {}).get("Code", "") == "InvalidID":

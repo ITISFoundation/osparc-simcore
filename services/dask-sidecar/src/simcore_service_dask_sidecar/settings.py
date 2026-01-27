@@ -16,9 +16,7 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     DASK_SIDECAR_LOGLEVEL: Annotated[
         LogLevel,
         Field(
-            validation_alias=AliasChoices(
-                "DASK_SIDECAR_LOGLEVEL", "SIDECAR_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"
-            ),
+            validation_alias=AliasChoices("DASK_SIDECAR_LOGLEVEL", "SIDECAR_LOGLEVEL", "LOG_LEVEL", "LOGLEVEL"),
         ),
     ] = LogLevel.INFO
 
@@ -53,16 +51,12 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         dict[LoggerName, list[MessageSubstring]],
         Field(
             default_factory=dict,
-            validation_alias=AliasChoices(
-                "DASK_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"
-            ),
+            validation_alias=AliasChoices("DASK_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"),
             description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
         ),
     ]
 
-    DASK_SIDECAR_RABBITMQ: Annotated[
-        RabbitSettings | None, Field(json_schema_extra={"auto_default_from_env": True})
-    ]
+    DASK_SIDECAR_RABBITMQ: Annotated[RabbitSettings | None, Field(json_schema_extra={"auto_default_from_env": True})]
 
     DASK_SIDECAR_MAX_LOG_SILENCE_TIMEOUT: Annotated[
         datetime.timedelta,

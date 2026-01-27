@@ -38,12 +38,8 @@ pytest_simcore_ops_services_selection = ["adminer"]
 CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 
-async def test_simcore_s3_access_returns_default(
-    initialized_app: FastAPI, client: httpx.AsyncClient
-):
-    url = url_from_operation_id(
-        client, initialized_app, "get_or_create_temporary_s3_access"
-    ).with_query(user_id=1)
+async def test_simcore_s3_access_returns_default(initialized_app: FastAPI, client: httpx.AsyncClient):
+    url = url_from_operation_id(client, initialized_app, "get_or_create_temporary_s3_access").with_query(user_id=1)
 
     response = await client.post(f"{url}")
     received_settings, error = assert_status(response, status.HTTP_200_OK, S3Settings)
@@ -64,9 +60,7 @@ async def test_connect_to_external(
         initialized_app,
         "list_files_metadata",
         location_id=f"{SimcoreS3DataManager.get_location_id()}",
-    ).with_query(
-        user_id=f"{user_id}", product_name=product_name, uuid_filter=f"{project_id}"
-    )
+    ).with_query(user_id=f"{user_id}", product_name=product_name, uuid_filter=f"{project_id}")
     resp = await client.get(f"{url}")
     data, _ = assert_status(resp, status.HTTP_200_OK, list[FileMetaDataGet])
     print(data)
@@ -94,9 +88,7 @@ async def uploaded_file_ids(
 
 
 @pytest.fixture
-async def search_files_query_params(
-    query_params_choice: str, user_id: UserID
-) -> SearchFilesQueryParams:
+async def search_files_query_params(query_params_choice: str, user_id: UserID) -> SearchFilesQueryParams:
     match query_params_choice:
         case "default":
             q = SearchFilesQueryParams(user_id=user_id, kind="owned")
@@ -129,9 +121,7 @@ async def test_search_files_request(
 
     assert search_files_query_params.user_id == user_id
     url = url_from_operation_id(client, initialized_app, "search_files").with_query(
-        jsonable_encoder(
-            search_files_query_params, exclude_unset=True, exclude_none=True
-        )
+        jsonable_encoder(search_files_query_params, exclude_unset=True, exclude_none=True)
     )
 
     response = await client.post(f"{url}")
@@ -140,8 +130,7 @@ async def test_search_files_request(
     assert found is not None
 
     expected = uploaded_file_ids[
-        search_files_query_params.offset : search_files_query_params.offset
-        + search_files_query_params.limit
+        search_files_query_params.offset : search_files_query_params.offset + search_files_query_params.limit
     ]
     assert [_.file_uuid for _ in found] == expected
 
@@ -183,9 +172,7 @@ async def test_search_files(
         assert_status(response, status.HTTP_422_UNPROCESSABLE_ENTITY, None)
         return
 
-    list_fmds, error = assert_status(
-        response, status.HTTP_200_OK, list[FileMetaDataGet]
-    )
+    list_fmds, error = assert_status(response, status.HTTP_200_OK, list[FileMetaDataGet])
     assert not error
     assert not list_fmds
 
@@ -197,9 +184,7 @@ async def test_search_files(
     )
     # search again should return something
     response = await client.post(f"{url}")
-    list_fmds, error = assert_status(
-        response, status.HTTP_200_OK, list[FileMetaDataGet]
-    )
+    list_fmds, error = assert_status(response, status.HTTP_200_OK, list[FileMetaDataGet])
     assert not error
     assert list_fmds
     assert len(list_fmds) == 1
@@ -215,9 +200,7 @@ async def test_search_files(
         url.update_query(sha256_checksum=_sha256_checksum)
 
     response = await client.post(f"{url}")
-    list_fmds, error = assert_status(
-        response, status.HTTP_200_OK, list[FileMetaDataGet]
-    )
+    list_fmds, error = assert_status(response, status.HTTP_200_OK, list[FileMetaDataGet])
     assert not error
     assert list_fmds
     assert len(list_fmds) == 1
@@ -237,8 +220,6 @@ async def test_search_files(
 
     if search_startswith or search_sha256_checksum:
         response = await client.post(f"{url}")
-        list_fmds, error = assert_status(
-            response, status.HTTP_200_OK, list[FileMetaDataGet]
-        )
+        list_fmds, error = assert_status(response, status.HTTP_200_OK, list[FileMetaDataGet])
         assert not error
         assert not list_fmds

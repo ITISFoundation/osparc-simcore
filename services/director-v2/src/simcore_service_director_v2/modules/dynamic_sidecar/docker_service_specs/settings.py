@@ -50,9 +50,7 @@ def _parse_mount_settings(settings: list[dict]) -> list[dict]:
             if field in s:
                 mount[field] = s[field]
             else:
-                log.warning(
-                    "Mount settings have wrong format. Required keys [Source, Target, Type]"
-                )
+                log.warning("Mount settings have wrong format. Required keys [Source, Target, Type]")
                 continue
 
         log.debug("Append mount settings %s", mount)
@@ -88,10 +86,7 @@ def extract_service_port_from_settings(
         if (
             param.setting_type == "EndpointSpec"
             and "Ports" in param.value
-            and (
-                isinstance(param.value["Ports"], list)
-                and "TargetPort" in param.value["Ports"][0]
-            )
+            and (isinstance(param.value["Ports"], list) and "TargetPort" in param.value["Ports"][0])
         ):
             return PortInt(param.value["Ports"][0]["TargetPort"])
     msg = "service port not found!"
@@ -110,76 +105,50 @@ def update_service_params_from_settings(
         if param.setting_type.capitalize() == "Resources":
             # python-API compatible for backward compatibility
             if "mem_limit" in param.value:
-                create_service_params["task_template"]["Resources"]["Limits"][
-                    "MemoryBytes"
-                ] = param.value["mem_limit"]
+                create_service_params["task_template"]["Resources"]["Limits"]["MemoryBytes"] = param.value["mem_limit"]
             if "cpu_limit" in param.value:
-                create_service_params["task_template"]["Resources"]["Limits"][
-                    "NanoCPUs"
-                ] = param.value["cpu_limit"]
+                create_service_params["task_template"]["Resources"]["Limits"]["NanoCPUs"] = param.value["cpu_limit"]
             if "mem_reservation" in param.value:
-                create_service_params["task_template"]["Resources"]["Reservations"][
-                    "MemoryBytes"
-                ] = param.value["mem_reservation"]
+                create_service_params["task_template"]["Resources"]["Reservations"]["MemoryBytes"] = param.value[
+                    "mem_reservation"
+                ]
             if "cpu_reservation" in param.value:
-                create_service_params["task_template"]["Resources"]["Reservations"][
-                    "NanoCPUs"
-                ] = param.value["cpu_reservation"]
+                create_service_params["task_template"]["Resources"]["Reservations"]["NanoCPUs"] = param.value[
+                    "cpu_reservation"
+                ]
             # REST-API compatible
             if "Limits" in param.value or "Reservations" in param.value:
                 # NOTE: The Docker REST API reads Reservation when actually it's Reservations
                 create_service_params["task_template"]["Resources"].update(param.value)
 
         # placement constraints
-        elif (
-            param.name == "constraints" or param.setting_type == "Constraints"
-        ):  # python-API compatible
-            create_service_params["task_template"]["Placement"][
-                "Constraints"
-            ] += param.value
+        elif param.name == "constraints" or param.setting_type == "Constraints":  # python-API compatible
+            create_service_params["task_template"]["Placement"]["Constraints"] += param.value
 
         elif param.name == "env":
             log.debug("Found env parameter %s", param.value)
             env_settings = _parse_env_settings(param.value)
             if env_settings:
-                create_service_params["task_template"]["ContainerSpec"]["Env"].update(
-                    env_settings
-                )
+                create_service_params["task_template"]["ContainerSpec"]["Env"].update(env_settings)
         elif param.name == "mount":
             log.debug("Found mount parameter %s", param.value)
             mount_settings: list[dict] = _parse_mount_settings(param.value)
             if mount_settings:
-                create_service_params["task_template"]["ContainerSpec"][
-                    "Mounts"
-                ].extend(mount_settings)
+                create_service_params["task_template"]["ContainerSpec"]["Mounts"].extend(mount_settings)
 
     container_spec = create_service_params["task_template"]["ContainerSpec"]
     # set labels for CPU and Memory limits, for both service and container labels
     # NOTE: cpu-limit is a float not NanoCPUs!!
-    container_spec["Labels"][f"{to_simcore_runtime_docker_label_key('cpu-limit')}"] = (
-        str(
-            float(
-                create_service_params["task_template"]["Resources"]["Limits"][
-                    "NanoCPUs"
-                ]
-            )
-            / (1 * 10**9)
-        )
+    container_spec["Labels"][f"{to_simcore_runtime_docker_label_key('cpu-limit')}"] = str(
+        float(create_service_params["task_template"]["Resources"]["Limits"]["NanoCPUs"]) / (1 * 10**9)
     )
-    create_service_params["labels"][
-        f"{to_simcore_runtime_docker_label_key('cpu-limit')}"
-    ] = str(
-        float(create_service_params["task_template"]["Resources"]["Limits"]["NanoCPUs"])
-        / (1 * 10**9)
+    create_service_params["labels"][f"{to_simcore_runtime_docker_label_key('cpu-limit')}"] = str(
+        float(create_service_params["task_template"]["Resources"]["Limits"]["NanoCPUs"]) / (1 * 10**9)
     )
-    container_spec["Labels"][
-        f"{to_simcore_runtime_docker_label_key('memory-limit')}"
-    ] = str(
+    container_spec["Labels"][f"{to_simcore_runtime_docker_label_key('memory-limit')}"] = str(
         create_service_params["task_template"]["Resources"]["Limits"]["MemoryBytes"]
     )
-    create_service_params["labels"][
-        f"{to_simcore_runtime_docker_label_key('memory-limit')}"
-    ] = str(
+    create_service_params["labels"][f"{to_simcore_runtime_docker_label_key('memory-limit')}"] = str(
         create_service_params["task_template"]["Resources"]["Limits"]["MemoryBytes"]
     )
 
@@ -191,9 +160,7 @@ def update_service_params_from_settings(
         constraints = list(set(constraints))
         constraints.sort()
         # a docker placement constraint does not contain spaces
-        create_service_params["task_template"]["Placement"]["Constraints"] = [
-            c.replace(" ", "") for c in constraints
-        ]
+        create_service_params["task_template"]["Placement"]["Constraints"] = [c.replace(" ", "") for c in constraints]
 
 
 def _assemble_key(service_key: str, service_tag: str) -> str:
@@ -218,9 +185,7 @@ async def _extract_osparc_involved_service_labels(
     # initialize with existing labels
     # stores labels mapped by image_name service:tag
     _default_key = _assemble_key(service_key=service_key, service_tag=service_tag)
-    docker_image_name_by_services: dict[str, SimcoreServiceLabels] = {
-        _default_key: service_labels
-    }
+    docker_image_name_by_services: dict[str, SimcoreServiceLabels] = {_default_key: service_labels}
     # maps form image_name to compose_spec key
     reverse_mapping: dict[str, str] = {_default_key: DEFAULT_SINGLE_SERVICE_NAME}
 
@@ -244,25 +209,17 @@ async def _extract_osparc_involved_service_labels(
         # - `${SIMCORE_REGISTRY}/**SOME_SERVICE_NAME**:1.2.3` a hardcoded tag
         if not image.startswith(MATCH_IMAGE_START) or ":" not in image:
             continue
-        if not image.startswith(MATCH_IMAGE_START) or not image.endswith(
-            MATCH_IMAGE_END
-        ):
+        if not image.startswith(MATCH_IMAGE_START) or not image.endswith(MATCH_IMAGE_END):
             continue
 
         # strips `${SIMCORE_REGISTRY}/`; replaces `${SERVICE_VERSION}` with `service_tag`
-        osparc_image_key = image.replace(MATCH_SERVICE_VERSION, service_tag).replace(
-            MATCH_IMAGE_START, ""
-        )
+        osparc_image_key = image.replace(MATCH_SERVICE_VERSION, service_tag).replace(MATCH_IMAGE_START, "")
         current_service_key, current_service_tag = osparc_image_key.split(":")
-        involved_key = _assemble_key(
-            service_key=current_service_key, service_tag=current_service_tag
-        )
+        involved_key = _assemble_key(service_key=current_service_key, service_tag=current_service_tag)
         reverse_mapping[involved_key] = compose_service_key
 
-        simcore_service_labels: SimcoreServiceLabels = (
-            await catalog_client.get_service_labels(
-                current_service_key, current_service_tag
-            )
+        simcore_service_labels: SimcoreServiceLabels = await catalog_client.get_service_labels(
+            current_service_key, current_service_tag
         )
         docker_image_name_by_services[involved_key] = simcore_service_labels
 
@@ -309,39 +266,29 @@ def _merge_resources_in_settings(
         result.append(entry)
 
     # merge all resources
-    empty_resource_entry: SimcoreServiceSettingLabelEntry = (
-        SimcoreServiceSettingLabelEntry.model_validate(
-            {
-                "name": "Resources",
-                "type": "Resources",
-                "value": {
-                    "Limits": {"NanoCPUs": 0, "MemoryBytes": 0},
-                    "Reservations": {
-                        "NanoCPUs": 0,
-                        "MemoryBytes": 0,
-                        "GenericResources": [],
-                    },
+    empty_resource_entry: SimcoreServiceSettingLabelEntry = SimcoreServiceSettingLabelEntry.model_validate(
+        {
+            "name": "Resources",
+            "type": "Resources",
+            "value": {
+                "Limits": {"NanoCPUs": 0, "MemoryBytes": 0},
+                "Reservations": {
+                    "NanoCPUs": 0,
+                    "MemoryBytes": 0,
+                    "GenericResources": [],
                 },
-            }
-        )
+            },
+        }
     )
 
     for image_resources in service_resources.values():
         for resource_name, resource_value in image_resources.resources.items():
             if resource_name == "CPU":
-                empty_resource_entry.value["Limits"]["NanoCPUs"] += int(
-                    float(resource_value.limit) * GIGA
-                )
-                empty_resource_entry.value["Reservations"]["NanoCPUs"] += int(
-                    float(resource_value.reservation) * GIGA
-                )
+                empty_resource_entry.value["Limits"]["NanoCPUs"] += int(float(resource_value.limit) * GIGA)
+                empty_resource_entry.value["Reservations"]["NanoCPUs"] += int(float(resource_value.reservation) * GIGA)
             elif resource_name == "RAM":
-                empty_resource_entry.value["Limits"][
-                    "MemoryBytes"
-                ] += resource_value.limit
-                empty_resource_entry.value["Reservations"][
-                    "MemoryBytes"
-                ] += resource_value.reservation
+                empty_resource_entry.value["Limits"]["MemoryBytes"] += resource_value.limit
+                empty_resource_entry.value["Reservations"]["MemoryBytes"] += resource_value.reservation
             else:  # generic resources
                 if resource_name in placement_substitutions:
                     # NOTE: placement constraint will be used in favour of this generic resource
@@ -354,9 +301,7 @@ def _merge_resources_in_settings(
                         "Value": resource_value.reservation,
                     }
                 }
-                empty_resource_entry.value["Reservations"]["GenericResources"].extend(
-                    [generic_resource]
-                )
+                empty_resource_entry.value["Reservations"]["GenericResources"].extend([generic_resource])
     # since some services do not define CPU limitations, by default 0.1% CPU is assigned
     # ensuring limit is at least 1.0 CPUs otherwise the dynamic-sidecar is not able to work
     # properly
@@ -379,9 +324,7 @@ def _patch_target_service_into_env_vars(
 
     def _format_env_var(env_var: str, destination_container: list[str]) -> str:
         var_name, var_payload = env_var.split("=")
-        json_encoded = json_dumps(
-            {"destination_containers": destination_container, "env_var": var_payload}
-        )
+        json_encoded = json_dumps({"destination_containers": destination_container, "env_var": var_payload})
         return f"{var_name}={json_encoded}"
 
     entry: SimcoreServiceSettingLabelEntry
@@ -395,9 +338,7 @@ def _patch_target_service_into_env_vars(
             # transforms settings defined environment variables
             # from `ENV_VAR=PAYLOAD`
             # to   `ENV_VAR={"destination_container": ["destination_container"], "env_var": "PAYLOAD"}`
-            entry.value = [
-                _format_env_var(x, destination_containers) for x in list_of_env_vars
-            ]
+            entry.value = [_format_env_var(x, destination_containers) for x in list_of_env_vars]
 
     return settings
 
@@ -422,18 +363,12 @@ def _assemble_env_vars_for_boot_options(
     env_vars: deque[str] = deque()
     for env_var_key, boot_option in boot_options.items():
         # fetch value selected by the user or use default if not present
-        value = service_user_selection_boot_options.get(
-            env_var_key, boot_option.default
-        )
+        value = service_user_selection_boot_options.get(env_var_key, boot_option.default)
         env_var_name = f"{BOOT_OPTION_PREFIX}_{env_var_key}".upper()
         env_vars.append(f"{env_var_name}={value}")
 
     return SimcoreServiceSettingsLabel(
-        root=[
-            SimcoreServiceSettingLabelEntry(
-                name="env", setting_type="string", value=list(env_vars)
-            )
-        ]
+        root=[SimcoreServiceSettingLabelEntry(name="env", setting_type="string", value=list(env_vars))]
     )
 
 
@@ -442,23 +377,17 @@ async def get_labels_for_involved_services(
     service_key: ServiceKey,
     service_tag: ServiceVersion,
 ) -> dict[str, SimcoreServiceLabels]:
-    simcore_service_labels: SimcoreServiceLabels = (
-        await catalog_client.get_service_labels(service_key, service_tag)
-    )
-    log.info(
-        "image=%s, tag=%s, labels=%s", service_key, service_tag, simcore_service_labels
-    )
+    simcore_service_labels: SimcoreServiceLabels = await catalog_client.get_service_labels(service_key, service_tag)
+    log.info("image=%s, tag=%s, labels=%s", service_key, service_tag, simcore_service_labels)
 
     # paths_mapping express how to map dynamic-sidecar paths to the compose-spec volumes
     # where the service expects to find its certain folders
 
-    labels_for_involved_services: dict[str, SimcoreServiceLabels] = (
-        await _extract_osparc_involved_service_labels(
-            catalog_client=catalog_client,
-            service_key=service_key,
-            service_tag=service_tag,
-            service_labels=simcore_service_labels,
-        )
+    labels_for_involved_services: dict[str, SimcoreServiceLabels] = await _extract_osparc_involved_service_labels(
+        catalog_client=catalog_client,
+        service_key=service_key,
+        service_tag=service_tag,
+        service_labels=simcore_service_labels,
     )
     logging.info("labels_for_involved_services=%s", labels_for_involved_services)
     return labels_for_involved_services

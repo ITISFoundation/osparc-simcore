@@ -29,11 +29,7 @@ class PrunableFolder:
 
     def capture(self) -> None:
         # captures leaf paths in folder at this moment
-        self.before_relpaths = {
-            p.relative_to(self.basedir)
-            for p in self.basedir.rglob("*")
-            if is_leaf_path(p)
-        }
+        self.before_relpaths = {p.relative_to(self.basedir) for p in self.basedir.rglob("*") if is_leaf_path(p)}
 
     def prune(self, exclude: set[Path]) -> None:
         """

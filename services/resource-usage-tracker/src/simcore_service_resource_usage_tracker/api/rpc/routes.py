@@ -37,8 +37,6 @@ def setup_rpc_api_routes(app: FastAPI) -> None:
         ):
             rpc_server = get_rabbitmq_rpc_server(app)
             for router in ROUTERS:
-                await rpc_server.register_router(
-                    router, RESOURCE_USAGE_TRACKER_RPC_NAMESPACE, app
-                )
+                await rpc_server.register_router(router, RESOURCE_USAGE_TRACKER_RPC_NAMESPACE, app)
 
     app.add_event_handler("startup", startup)

@@ -1,6 +1,6 @@
 import asyncio
 from collections.abc import Callable, Iterator
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from decimal import Decimal
 from unittest import mock
 
@@ -65,13 +65,11 @@ def resource_tracker_pricing_tables_db(postgres_db: sa.engine.Engine) -> Iterato
             resource_tracker_pricing_units.insert().values(
                 pricing_plan_id=1,
                 unit_name="S",
-                unit_extra_info=UnitExtraInfoTier.model_config["json_schema_extra"][
-                    "examples"
-                ][0],
+                unit_extra_info=UnitExtraInfoTier.model_config["json_schema_extra"]["examples"][0],
                 default=False,
                 specific_info={},
-                created=datetime.now(tz=timezone.utc),
-                modified=datetime.now(tz=timezone.utc),
+                created=datetime.now(tz=UTC),
+                modified=datetime.now(tz=UTC),
             )
         )
         con.execute(
@@ -81,11 +79,11 @@ def resource_tracker_pricing_tables_db(postgres_db: sa.engine.Engine) -> Iterato
                 pricing_unit_id=1,
                 pricing_unit_name="S",
                 cost_per_unit=Decimal(0),
-                valid_from=datetime.now(tz=timezone.utc),
+                valid_from=datetime.now(tz=UTC),
                 valid_to=None,
-                created=datetime.now(tz=timezone.utc),
+                created=datetime.now(tz=UTC),
                 comment="",
-                modified=datetime.now(tz=timezone.utc),
+                modified=datetime.now(tz=UTC),
             )
         )
         con.execute(
@@ -152,29 +150,25 @@ async def test_process_event_functions(
     assert output.osparc_credits == 0.0
     assert output.transaction_status == "PENDING"
     assert output.transaction_classification == "DEDUCT_SERVICE_RUN"
-    first_occurence_of_last_heartbeat_at = output.last_heartbeat_at
+    first_occurrence_of_last_heartbeat_at = output.last_heartbeat_at
     modified_at = output.modified
 
     await asyncio.sleep(0)
     heartbeat_msg = RabbitResourceTrackingHeartbeatMessage(
-        service_run_id=msg.service_run_id, created_at=datetime.now(tz=timezone.utc)
+        service_run_id=msg.service_run_id, created_at=datetime.now(tz=UTC)
     )
     await _process_heartbeat_event(engine, heartbeat_msg, publisher)
-    output = await assert_credit_transactions_db_row(
-        postgres_db, msg.service_run_id, modified_at
-    )
+    output = await assert_credit_transactions_db_row(postgres_db, msg.service_run_id, modified_at)
     assert output.osparc_credits == 0.0
     assert output.transaction_status == "PENDING"
-    assert first_occurence_of_last_heartbeat_at < output.last_heartbeat_at
+    assert first_occurrence_of_last_heartbeat_at < output.last_heartbeat_at
 
     stopped_msg = RabbitResourceTrackingStoppedMessage(
         service_run_id=msg.service_run_id,
-        created_at=datetime.now(tz=timezone.utc),
+        created_at=datetime.now(tz=UTC),
         simcore_platform_status=SimcorePlatformStatus.OK,
     )
     await _process_stop_event(engine, stopped_msg, publisher)
-    output = await assert_credit_transactions_db_row(
-        postgres_db, msg.service_run_id, modified_at
-    )
+    output = await assert_credit_transactions_db_row(postgres_db, msg.service_run_id, modified_at)
     assert output.osparc_credits == 0.0
     assert output.transaction_status == "BILLED"

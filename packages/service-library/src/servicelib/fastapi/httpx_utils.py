@@ -7,9 +7,7 @@ def _get_headers_safely(request: httpx.Request) -> dict[str, str]:
     return mask_sensitive_data(dict(request.headers))
 
 
-def to_httpx_command(
-    request: httpx.Request, *, use_short_options: bool = True, multiline: bool = False
-) -> str:
+def to_httpx_command(request: httpx.Request, *, use_short_options: bool = True, multiline: bool = False) -> str:
     """Command with httpx CLI
 
     $ httpx --help
@@ -22,19 +20,16 @@ def to_httpx_command(
     ]
 
     #  -m, --method METHOD
-    cmd.append(f'{"-m" if use_short_options else "--method"} {request.method}')
+    cmd.append(f"{'-m' if use_short_options else '--method'} {request.method}")
 
     # -c, --content TEXT  Byte content to include in the request body.
     if content := request.read().decode():
-        cmd.append(f'{"-c" if use_short_options else "--content"} \'{content}\'')
+        cmd.append(f"{'-c' if use_short_options else '--content'} '{content}'")
 
     # -h, --headers <NAME VALUE> ...  Include additional HTTP headers in the request.
     if headers := _get_headers_safely(request):
         cmd.extend(
-            [
-                f'{"-h" if use_short_options else "--headers"} "{name}" "{value}"'
-                for name, value in headers.items()
-            ]
+            [f'{"-h" if use_short_options else "--headers"} "{name}" "{value}"' for name, value in headers.items()]
         )
 
     cmd.append(f"{request.url}")
@@ -42,9 +37,7 @@ def to_httpx_command(
     return separator.join(cmd)
 
 
-def to_curl_command(
-    request: httpx.Request, *, use_short_options: bool = True, multiline: bool = False
-) -> str:
+def to_curl_command(request: httpx.Request, *, use_short_options: bool = True, multiline: bool = False) -> str:
     """Composes a curl command from a given request
 
     $ curl --help
@@ -58,17 +51,12 @@ def to_curl_command(
 
     # https://curl.se/docs/manpage.html#-X
     # -X, --request {method}
-    cmd.append(f'{"-X" if use_short_options else "--request"} {request.method}')
+    cmd.append(f"{'-X' if use_short_options else '--request'} {request.method}")
 
     # https://curl.se/docs/manpage.html#-H
     # H, --header <header/@file> Pass custom header(s) to server
     if headers := _get_headers_safely(request):
-        cmd.extend(
-            [
-                f'{"-H" if use_short_options else "--header"} "{k}: {v}"'
-                for k, v in headers.items()
-            ]
-        )
+        cmd.extend([f'{"-H" if use_short_options else "--header"} "{k}: {v}"' for k, v in headers.items()])
 
     # https://curl.se/docs/manpage.html#-d
     # -d, --data <data>          HTTP POST data

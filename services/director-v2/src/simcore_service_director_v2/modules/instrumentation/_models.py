@@ -138,8 +138,6 @@ class DirectorV2Instrumentation:
     dynamic_sidecar_metrics: DynamiSidecarMetrics = field(init=False)
 
     def __post_init__(self) -> None:
-        self.dynamic_sidecar_metrics = (
-            DynamiSidecarMetrics(  # pylint: disable=unexpected-keyword-arg
-                subsystem="dynamic_services", registry=self.registry
-            )
+        self.dynamic_sidecar_metrics = DynamiSidecarMetrics(  # pylint: disable=unexpected-keyword-arg
+            subsystem="dynamic_services", registry=self.registry
         )

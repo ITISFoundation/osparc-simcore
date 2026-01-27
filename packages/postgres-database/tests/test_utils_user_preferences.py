@@ -86,9 +86,7 @@ async def _assert_preference_not_saved(
     assert not_found is None
 
 
-def _get_random_payload(
-    faker: Faker, preference_repo: type[BasePreferencesRepo]
-) -> Any:
+def _get_random_payload(faker: Faker, preference_repo: type[BasePreferencesRepo]) -> Any:
     if preference_repo == FrontendUserPreferencesRepo:
         return {faker.pystr(): faker.pystr()}
     if preference_repo == UserServicesUserPreferencesRepo:
@@ -100,9 +98,7 @@ def _get_random_payload(
 async def _create_user_id(asyncpg_engine: AsyncEngine, faker: Faker) -> int:
     data = random_user(role=faker.random_element(elements=UserRole))
     async with asyncpg_engine.begin() as connection:
-        user_id = await connection.scalar(
-            users.insert().values(**data).returning(users.c.id)
-        )
+        user_id = await connection.scalar(users.insert().values(**data).returning(users.c.id))
     assert user_id
     return user_id
 

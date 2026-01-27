@@ -90,9 +90,7 @@ class BaseOrm(Generic[RowUId]):
 
         return query
 
-    def _append_returning(
-        self, columns: str | list[str], query: QueryT
-    ) -> tuple[QueryT, bool]:
+    def _append_returning(self, columns: str | list[str], query: QueryT) -> tuple[QueryT, bool]:
         column_names: list[str] = _normalize(columns)
 
         is_scalar: bool = len(column_names) == 1
@@ -135,10 +133,7 @@ class BaseOrm(Generic[RowUId]):
         elif unique_id:
             self._where_clause = functools.reduce(
                 operator.and_,
-                (
-                    operator.eq(self._table.columns[name], value)
-                    for name, value in unique_id.items()
-                ),
+                (operator.eq(self._table.columns[name], value) for name, value in unique_id.items()),
             )
         if not self.is_filter_set():
             msg = "Either identifier or unique condition required. None provided"
@@ -213,9 +208,7 @@ class BaseOrm(Generic[RowUId]):
         if offset > 0 or limit is not None:
             # eval total count if pagination options enabled
             total_count = await self._conn.scalar(
-                query.with_only_columns(func.count())
-                .select_from(self._table)
-                .order_by(None)
+                query.with_only_columns(func.count()).select_from(self._table).order_by(None)
             )
 
         if offset:
@@ -234,9 +227,7 @@ class BaseOrm(Generic[RowUId]):
         rows: list[RowProxy] = await result.fetchall()
         return rows, total_count
 
-    async def update(
-        self, returning_cols: str | list[str] = PRIMARY_KEY, **values
-    ) -> RowUId | RowProxy | None:
+    async def update(self, returning_cols: str | list[str] = PRIMARY_KEY, **values) -> RowUId | RowProxy | None:
         self._check_access_rights(self._readonly, values)
         self._check_access_rights(self._writeonce, values)
 
@@ -253,9 +244,7 @@ class BaseOrm(Generic[RowUId]):
         row: RowProxy | None = await result.first()
         return row
 
-    async def insert(
-        self, returning_cols: str | list[str] = PRIMARY_KEY, **values
-    ) -> RowUId | RowProxy | None:
+    async def insert(self, returning_cols: str | list[str] = PRIMARY_KEY, **values) -> RowUId | RowProxy | None:
         self._check_access_rights(self._readonly, values)
 
         query: Insert = self._table.insert().values(**values)

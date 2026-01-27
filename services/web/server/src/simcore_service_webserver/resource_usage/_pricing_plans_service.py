@@ -16,13 +16,11 @@ async def get_default_service_pricing_plan(
     service_key: ServiceKey,
     service_version: ServiceVersion,
 ) -> RutPricingPlanGet:
-    data: RutPricingPlanGet = (
-        await resource_tracker_client.get_default_service_pricing_plan(
-            app=app,
-            product_name=product_name,
-            service_key=service_key,
-            service_version=service_version,
-        )
+    data: RutPricingPlanGet = await resource_tracker_client.get_default_service_pricing_plan(
+        app=app,
+        product_name=product_name,
+        service_key=service_key,
+        service_version=service_version,
     )
 
     return data

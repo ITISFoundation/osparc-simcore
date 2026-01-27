@@ -13,9 +13,7 @@ def dev_vendors_docker_compose(
     env_file_for_testing: Path,
     temp_folder: Path,
 ) -> dict[str, Any]:
-    docker_compose_path = (
-        osparc_simcore_root_dir / "services" / "docker-compose-dev-vendors.yml"
-    )
+    docker_compose_path = osparc_simcore_root_dir / "services" / "docker-compose-dev-vendors.yml"
     assert docker_compose_path.exists()
 
     return run_docker_compose_config(

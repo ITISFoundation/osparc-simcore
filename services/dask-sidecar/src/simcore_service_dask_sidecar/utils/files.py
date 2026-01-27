@@ -107,12 +107,8 @@ async def _copy_file(
     src_storage_kwargs = src_storage_cfg or {}
     dst_storage_kwargs = dst_storage_cfg or {}
     with (
-        fsspec.open(
-            f"{src_url}", mode="rb", expand=False, **src_storage_kwargs
-        ) as src_fp,
-        fsspec.open(
-            f"{dst_url}", mode="wb", expand=False, **dst_storage_kwargs
-        ) as dst_fp,
+        fsspec.open(f"{src_url}", mode="rb", expand=False, **src_storage_kwargs) as src_fp,
+        fsspec.open(f"{dst_url}", mode="wb", expand=False, **dst_storage_kwargs) as dst_fp,
     ):
         assert isinstance(src_fp, IOBase)  # nosec
         assert isinstance(dst_fp, IOBase)  # nosec
@@ -124,9 +120,7 @@ async def _copy_file(
             (
                 data_read,
                 data_written,
-            ) = await asyncio.get_event_loop().run_in_executor(
-                None, _file_chunk_streamer, src_fp, dst_fp
-            )
+            ) = await asyncio.get_event_loop().run_in_executor(None, _file_chunk_streamer, src_fp, dst_fp)
             elapsed_time = time.process_time() - t
             total_data_written += data_written or 0
             await log_publishing_cb(
@@ -184,9 +178,7 @@ async def pull_file_from_remote(
         if need_unzipping:
             # we need to extract the file, so we create a temporary directory
             # where the file will be downloaded and extracted
-            tmp_dir = await exit_stack.enter_async_context(
-                aiofiles.tempfile.TemporaryDirectory()
-            )
+            tmp_dir = await exit_stack.enter_async_context(aiofiles.tempfile.TemporaryDirectory())
             download_dst_path = Path(f"{tmp_dir}") / Path(src_url.path).name
         else:
             # no extraction needed, so we can use the provided dst_path directly
@@ -206,25 +198,15 @@ async def pull_file_from_remote(
         )
 
         if need_unzipping:
-            await log_publishing_cb(
-                f"Uncompressing '{download_dst_path.name}'...", logging.INFO
-            )
-            logger.debug(
-                "%s is a zip file and will be now uncompressed", download_dst_path
-            )
+            await log_publishing_cb(f"Uncompressing '{download_dst_path.name}'...", logging.INFO)
+            logger.debug("%s is a zip file and will be now uncompressed", download_dst_path)
             with repro_zipfile.ReproducibleZipFile(download_dst_path, "r") as zip_obj:
-                await asyncio.get_event_loop().run_in_executor(
-                    None, zip_obj.extractall, dst_path.parents[0]
-                )
+                await asyncio.get_event_loop().run_in_executor(None, zip_obj.extractall, dst_path.parents[0])
             # finally remove the zip archive
-            await log_publishing_cb(
-                f"Uncompressing '{download_dst_path.name}' complete.", logging.INFO
-            )
+            await log_publishing_cb(f"Uncompressing '{download_dst_path.name}' complete.", logging.INFO)
 
 
-async def _push_file_to_http_link(
-    file_to_upload: Path, dst_url: AnyUrl, log_publishing_cb: LogPublishingCB
-) -> None:
+async def _push_file_to_http_link(file_to_upload: Path, dst_url: AnyUrl, log_publishing_cb: LogPublishingCB) -> None:
     # NOTE: special case for http scheme when uploading. this is typically a S3 put presigned link.
     # Therefore, we need to use the http filesystem directly in order to call the put_file function.
     # writing on httpfilesystem is disabled by default.
@@ -301,12 +283,8 @@ async def push_file_to_remote(
                 logging.INFO,
             )
 
-            with repro_zipfile.ReproducibleZipFile(
-                archive_file_path, mode="w", compression=zipfile.ZIP_STORED
-            ) as zfp:
-                await asyncio.get_event_loop().run_in_executor(
-                    None, zfp.write, src_path, src_path.name
-                )
+            with repro_zipfile.ReproducibleZipFile(archive_file_path, mode="w", compression=zipfile.ZIP_STORED) as zfp:
+                await asyncio.get_event_loop().run_in_executor(None, zfp.write, src_path, src_path.name)
             logger.debug("%s created.", archive_file_path)
             assert archive_file_path.exists()  # nosec
             file_to_upload = archive_file_path
@@ -315,17 +293,13 @@ async def push_file_to_remote(
                 logging.INFO,
             )
 
-        await log_publishing_cb(
-            f"Uploading '{file_to_upload.name}' to '{dst_url}'...", logging.INFO
-        )
+        await log_publishing_cb(f"Uploading '{file_to_upload.name}' to '{dst_url}'...", logging.INFO)
 
         if dst_url.scheme in HTTP_FILE_SYSTEM_SCHEMES:
             logger.debug("destination is a http presigned link")
             await _push_file_to_http_link(file_to_upload, dst_url, log_publishing_cb)
         else:
-            await _push_file_to_remote(
-                file_to_upload, dst_url, log_publishing_cb, s3_settings
-            )
+            await _push_file_to_remote(file_to_upload, dst_url, log_publishing_cb, s3_settings)
 
     await log_publishing_cb(
         f"Upload of '{src_path.name}' to '{dst_url.path.strip('/')}' complete",

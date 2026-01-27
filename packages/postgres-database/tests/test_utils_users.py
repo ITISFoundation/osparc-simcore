@@ -40,14 +40,8 @@ async def test_users_repo_get(asyncpg_engine: AsyncEngine, user: dict[str, Any])
     async with pass_or_acquire_connection(asyncpg_engine) as connection:
         assert await repo.get_email(connection, user_id=user["id"]) == user["email"]
         assert await repo.get_role(connection, user_id=user["id"]) == user["role"]
-        assert (
-            await repo.get_password_hash(connection, user_id=user["id"])
-            == user["password_hash"]
-        )
-        assert (
-            await repo.get_active_user_email(connection, user_id=user["id"])
-            == user["email"]
-        )
+        assert await repo.get_password_hash(connection, user_id=user["id"]) == user["password_hash"]
+        assert await repo.get_active_user_email(connection, user_id=user["id"]) == user["email"]
 
         with pytest.raises(UserNotFoundInRepoError):
             await repo.get_role(connection, user_id=55)
@@ -67,23 +61,17 @@ async def test_update_user_password_hash_updates_modified_column(
     async with pass_or_acquire_connection(asyncpg_engine) as connection:
         # Get initial modified timestamp
         result = await connection.execute(
-            sa.select(users_secrets.c.modified).where(
-                users_secrets.c.user_id == user["id"]
-            )
+            sa.select(users_secrets.c.modified).where(users_secrets.c.user_id == user["id"])
         )
         initial_modified = result.scalar_one()
 
         # Update password hash
         new_password_hash = faker.password()
-        await repo.update_user_password_hash(
-            connection, user_id=user["id"], password_hash=new_password_hash
-        )
+        await repo.update_user_password_hash(connection, user_id=user["id"], password_hash=new_password_hash)
 
         # Get updated modified timestamp
         result = await connection.execute(
-            sa.select(users_secrets.c.modified).where(
-                users_secrets.c.user_id == user["id"]
-            )
+            sa.select(users_secrets.c.modified).where(users_secrets.c.user_id == user["id"])
         )
         updated_modified = result.scalar_one()
 
@@ -91,7 +79,4 @@ async def test_update_user_password_hash_updates_modified_column(
         assert updated_modified > initial_modified
 
         # Verify password hash was actually updated
-        assert (
-            await repo.get_password_hash(connection, user_id=user["id"])
-            == new_password_hash
-        )
+        assert await repo.get_password_hash(connection, user_id=user["id"]) == new_password_hash

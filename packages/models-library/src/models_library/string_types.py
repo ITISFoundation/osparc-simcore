@@ -89,9 +89,7 @@ _SAFE_XSS_PATTERNS: Final[list[XSSPattern]] = [
         "Contains control or invisible characters",
     ),
     XSSPattern(
-        re.compile(
-            r"(?i)(\$\{[^}]{0,200}\}|\#\{[^}]{0,200}\}|<%[^%]{0,200}%>|{{[^}]{0,200}})"
-        ),
+        re.compile(r"(?i)(\$\{[^}]{0,200}\}|\#\{[^}]{0,200}\}|<%[^%]{0,200}%>|{{[^}]{0,200}})"),
         "Contains template injection patterns",
     ),
     XSSPattern(
@@ -103,11 +101,7 @@ _SAFE_XSS_PATTERNS: Final[list[XSSPattern]] = [
 
 def _contains_percent_or_entity_obfuscation(value_lower: str) -> bool:
     # simple substring checks — no heavy regex backtracking
-    if (
-        "javascript%3a" in value_lower
-        or "vbscript%3a" in value_lower
-        or "data%3a" in value_lower
-    ):
+    if "javascript%3a" in value_lower or "vbscript%3a" in value_lower or "data%3a" in value_lower:
         return True
     return "data:text/html" in value_lower
 
@@ -203,7 +197,7 @@ GlobPatternSafeStr: TypeAlias = Annotated[
         max_length=200,
         strip_whitespace=True,
         pattern=r"^[A-Za-z0-9 ._\*@-]*$",  # Allow alphanumeric, spaces, dots, underscores, hyphens, asterisks and at signs
-        to_lower=True # make case-insensitive
+        to_lower=True,  # make case-insensitive
     ),
     AfterValidator(validate_input_xss_safety),
 ]
@@ -216,7 +210,7 @@ SearchPatternSafeStr: TypeAlias = Annotated[
         min_length=1,
         max_length=200,
         pattern=r"^[A-Za-z0-9 ._@-]*$",  # Allow alphanumeric, spaces, dots, underscores, hyphens, and at signs
-        to_lower=True # make case-insensitive
+        to_lower=True,  # make case-insensitive
     ),
     AfterValidator(validate_input_xss_safety),
     annotated_types.doc(

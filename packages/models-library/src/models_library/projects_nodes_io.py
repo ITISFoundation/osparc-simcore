@@ -10,7 +10,6 @@ from pathlib import Path
 from typing import Annotated, TypeAlias
 from uuid import UUID
 
-from models_library.basic_types import ConstrainedStr, KeyIDStr
 from pydantic import (
     AnyUrl,
     BaseModel,
@@ -22,6 +21,8 @@ from pydantic import (
     ValidationInfo,
     field_validator,
 )
+
+from models_library.basic_types import ConstrainedStr, KeyIDStr
 
 from .basic_regex import (
     DATCORE_FILE_ID_RE,
@@ -39,9 +40,7 @@ LocationID: TypeAlias = int
 LocationName: TypeAlias = str
 
 
-SimcoreS3FileID: TypeAlias = Annotated[
-    str, StringConstraints(pattern=SIMCORE_S3_FILE_ID_RE)
-]
+SimcoreS3FileID: TypeAlias = Annotated[str, StringConstraints(pattern=SIMCORE_S3_FILE_ID_RE)]
 
 
 class SimcoreS3DirectoryID(ConstrainedStr):
@@ -63,10 +62,7 @@ class SimcoreS3DirectoryID(ConstrainedStr):
         try:
             return f"{parents[-parent_index]}"
         except IndexError as err:
-            msg = (
-                f"'{s3_object}' does not have enough parents, "
-                f"expected {parent_index} found {parents}"
-            )
+            msg = f"'{s3_object}' does not have enough parents, expected {parent_index} found {parents}"
             raise ValueError(msg) from err
 
     @classmethod
@@ -121,9 +117,9 @@ class PortLink(BaseModel):
 class DownloadLink(BaseModel):
     """I/O port type to hold a generic download link to a file (e.g. S3 pre-signed link, etc)"""
 
-    download_link: Annotated[
-        str, BeforeValidator(lambda x: str(TypeAdapter(AnyUrl).validate_python(x)))
-    ] = Field(..., alias="downloadLink")
+    download_link: Annotated[str, BeforeValidator(lambda x: str(TypeAdapter(AnyUrl).validate_python(x)))] = Field(
+        ..., alias="downloadLink"
+    )
     label: str | None = Field(default=None, description="Display name")
     model_config = ConfigDict(
         extra="forbid",
@@ -154,9 +150,7 @@ class BaseFileLink(BaseModel):
         union_mode="left_to_right",
     )
 
-    label: str | None = Field(
-        default=None, description="The real file name", validate_default=True
-    )
+    label: str | None = Field(default=None, description="The real file name", validate_default=True)
 
     e_tag: str | None = Field(
         default=None,

@@ -73,15 +73,18 @@ greenlet==3.2.4
     #   sqlalchemy
 h11==0.16.0
     # via
+    #   -c requirements/_base.txt
     #   -c requirements/_fastapi.txt
     #   httpcore
 httpcore==1.0.9
     # via
+    #   -c requirements/_base.txt
     #   -c requirements/_fastapi.txt
     #   httpx
 httpx==0.28.1
     # via
     #   -c requirements/../../../requirements/constraints.txt
+    #   -c requirements/_base.txt
     #   -c requirements/_fastapi.txt
     #   respx
 icdiff==2.0.7

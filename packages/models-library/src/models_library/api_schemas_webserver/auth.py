@@ -1,11 +1,12 @@
 from datetime import timedelta
 from typing import Annotated, Any
 
-from models_library.basic_types import IDStr
-from models_library.rest_base import RequestParameters
 from pydantic import AliasGenerator, ConfigDict, Field, HttpUrl, SecretStr
 from pydantic.alias_generators import to_camel
 from pydantic.config import JsonDict
+
+from models_library.basic_types import IDStr
+from models_library.rest_base import RequestParameters
 
 from ..emails import LowerCaseEmailStr
 from ._base import InputSchema, OutputSchema

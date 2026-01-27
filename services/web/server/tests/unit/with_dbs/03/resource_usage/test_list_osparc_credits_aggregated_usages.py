@@ -46,9 +46,7 @@ def mock_get_osparc_credits_aggregated_usages_page(mocker: MockerFixture) -> Mag
 
 
 @pytest.fixture()
-def setup_wallets_db(
-    postgres_db: sa.engine.Engine, logged_user: UserInfoDict
-) -> Iterator[int]:
+def setup_wallets_db(postgres_db: sa.engine.Engine, logged_user: UserInfoDict) -> Iterator[int]:
     with postgres_db.connect() as con:
         result = con.execute(
             wallets.insert()

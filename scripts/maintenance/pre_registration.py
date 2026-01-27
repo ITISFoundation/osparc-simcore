@@ -82,9 +82,7 @@ class InvitationGenerateRequest(BaseModel):
     extraCreditsInUsd: Annotated[int, Field(ge=0, lt=500)] | None = None
 
 
-async def _login(
-    client: AsyncClient, email: EmailStr, password: SecretStr
-) -> dict[str, Any]:
+async def _login(client: AsyncClient, email: EmailStr, password: SecretStr) -> dict[str, Any]:
     """Login user with the provided credentials"""
     path = "/v0/auth/login"
 
@@ -162,9 +160,7 @@ async def _create_invitation(
 
     response = await client.post(
         path,
-        json=invitation_data.model_dump(
-            exclude_none=True, exclude_unset=True, mode="json"
-        ),
+        json=invitation_data.model_dump(exclude_none=True, exclude_unset=True, mode="json"),
     )
     response.raise_for_status()
 
@@ -202,7 +198,7 @@ async def _pre_register_users_from_list(
             )
 
         except Exception as e:
-            _print_error(f"Failed to pre-register user {user_data.email}: {str(e)}")
+            _print_error(f"Failed to pre-register user {user_data.email}: {e!s}")
 
     return results
 
@@ -227,13 +223,11 @@ async def _create_invitations_from_list(
             _print_success(f"Successfully generated invitation for: {email}")
 
         except HTTPStatusError as e:
-            _print_error(
-                f"Failed to generate invitation for {email} with {e.response.status_code}: {e.response.text}"
-            )
+            _print_error(f"Failed to generate invitation for {email} with {e.response.status_code}: {e.response.text}")
             results.append({"email": email, "error": str(e)})
 
         except Exception as e:
-            _print_error(f"Failed to generate invitation for {email}: {str(e)}")
+            _print_error(f"Failed to generate invitation for {email}: {e!s}")
             results.append({"email": email, "error": str(e)})
 
     return results
@@ -249,9 +243,7 @@ async def run_pre_registration(
     # Read and parse the users file
     try:
         users_data_raw = json.loads(users_file_path.read_text())
-        users_data = TypeAdapter(list[PreRegisterUserRequest]).validate_python(
-            users_data_raw
-        )
+        users_data = TypeAdapter(list[PreRegisterUserRequest]).validate_python(users_data_raw)
     except json.JSONDecodeError:
         _print_error(f"{users_file_path} is not a valid JSON file")
         sys.exit(os.EX_DATAERR)
@@ -259,7 +251,7 @@ async def run_pre_registration(
         _print_error(f"Invalid user data format: {e}")
         sys.exit(os.EX_DATAERR)
     except Exception as e:
-        _print_error(f"Reading or parsing {users_file_path}: {str(e)}")
+        _print_error(f"Reading or parsing {users_file_path}: {e!s}")
         sys.exit(os.EX_IOERR)
 
     # Create an HTTP client and process
@@ -292,7 +284,7 @@ async def run_pre_registration(
             await _logout_current_user(client)
 
         except Exception as e:
-            _print_error(f"{str(e)}")
+            _print_error(f"{e!s}")
             sys.exit(os.EX_SOFTWARE)
 
 
@@ -317,9 +309,7 @@ async def run_create_invitation(
 
             # Generate invitation
             _print_info(f"Generating invitation for {guest_email}...")
-            result = await _create_invitation(
-                client, guest_email, trial_days=trial_days, extra_credits=extra_credits
-            )
+            result = await _create_invitation(client, guest_email, trial_days=trial_days, extra_credits=extra_credits)
 
             # Display invitation link
             _print_success(f"Successfully generated invitation for {guest_email}")
@@ -337,12 +327,10 @@ async def run_create_invitation(
             await _logout_current_user(client)
 
         except HTTPStatusError as e:
-            _print_error(
-                f"Failed to generate invitation with {e.response.status_code}: {e.response.text}"
-            )
+            _print_error(f"Failed to generate invitation with {e.response.status_code}: {e.response.text}")
             sys.exit(os.EX_SOFTWARE)
         except Exception as e:
-            _print_error(f"{str(e)}")
+            _print_error(f"{e!s}")
             sys.exit(os.EX_SOFTWARE)
 
 
@@ -369,14 +357,10 @@ async def run_bulk_create_invitation(
                 # List of objects with email property (like pre-registered users)
                 data = [item["email"].lower() for item in data]
             else:
-                _print_error(
-                    "File must contain either a list of email strings or objects with 'email' property"
-                )
+                _print_error("File must contain either a list of email strings or objects with 'email' property")
                 sys.exit(os.EX_DATAERR)
 
-            emails = TypeAdapter(
-                list[Annotated[BeforeValidator(lambda s: s.lower()), EmailStr]]
-            ).validate_python(data)
+            emails = TypeAdapter(list[Annotated[BeforeValidator(lambda s: s.lower()), EmailStr]]).validate_python(data)
         else:
             _print_error("File must contain a JSON array")
             sys.exit(os.EX_DATAERR)
@@ -388,7 +372,7 @@ async def run_bulk_create_invitation(
         _print_error(f"Invalid email format: {e}")
         sys.exit(os.EX_DATAERR)
     except Exception as e:
-        _print_error(f"Reading or parsing {emails_file_path}: {str(e)}")
+        _print_error(f"Reading or parsing {emails_file_path}: {e!s}")
         sys.exit(os.EX_IOERR)
 
     # Create an HTTP client and process
@@ -409,9 +393,7 @@ async def run_bulk_create_invitation(
             )
 
             successful = sum(1 for r in results if "invitation" in r)
-            _print_success(
-                f"Successfully generated {successful} invitations out of {len(emails)} users"
-            )
+            _print_success(f"Successfully generated {successful} invitations out of {len(emails)} users")
 
             # Dump results to a file
             timestamp = datetime.datetime.now(tz=datetime.UTC).strftime("%Y%m%d_%H%M%S")
@@ -427,7 +409,7 @@ async def run_bulk_create_invitation(
             await _logout_current_user(client)
 
         except Exception as e:
-            _print_error(f"{str(e)}")
+            _print_error(f"{e!s}")
             sys.exit(os.EX_SOFTWARE)
 
 

@@ -32,7 +32,7 @@ class PaymentsUsersRepo(BaseRepository):
         raise ValueError(msg)
 
     async def get_notification_data(self, user_id: UserID, payment_id: PaymentID):
-        """Retrives data that will be injected in a notification for the user on this payment"""
+        """Retrieves data that will be injected in a notification for the user on this payment"""
         if row := await self._get(
             sa.select(
                 payments_transactions.c.payment_id,
@@ -55,10 +55,7 @@ class PaymentsUsersRepo(BaseRepository):
                     payments_transactions.c.product_name == products.c.name,
                 )
             )
-            .where(
-                (payments_transactions.c.payment_id == payment_id)
-                & (payments_transactions.c.user_id == user_id)
-            )
+            .where((payments_transactions.c.payment_id == payment_id) & (payments_transactions.c.user_id == user_id))
         ):
             return row
 

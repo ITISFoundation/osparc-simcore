@@ -61,7 +61,7 @@ async def enable_resource_usage_tracker_s3(
         monkeypatch.delenv("RESOURCE_USAGE_TRACKER_S3")
 
 
-@pytest.mark.rpc_test()
+@pytest.mark.rpc_test
 async def test_rpc_list_service_runs_which_was_billed(
     enable_resource_usage_tracker_s3: None,
     mocked_redis_server: None,

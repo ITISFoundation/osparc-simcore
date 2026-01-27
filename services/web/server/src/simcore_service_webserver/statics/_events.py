@@ -71,9 +71,7 @@ async def create_cached_indexes(app: web.Application) -> None:
         try:
             body = ""
             # web-static server might still not be up
-            async for attempt in AsyncRetrying(
-                **_STATIC_WEBSERVER_RETRY_ON_STARTUP_POLICY
-            ):
+            async for attempt in AsyncRetrying(**_STATIC_WEBSERVER_RETRY_ON_STARTUP_POLICY):
                 with attempt:
                     response = await session.get(url, raise_for_status=True)
                     body = await response.text()
@@ -142,7 +140,7 @@ async def create_and_cache_statics_json(app: web.Application) -> None:
             and product.vendor
             and (template_url := product.vendor.get("release_notes_url_template", None))
         ):
-            # template URL should be somethign like:
+            # template URL should be something like:
             # https://github.com/ITISFoundation/osparc-issues/blob/master/release-notes/osparc/{vtag}.md
             release_vtag = _get_release_notes_vtag(vtag)
             data["vcsReleaseUrl"] = template_url.format(vtag=release_vtag)

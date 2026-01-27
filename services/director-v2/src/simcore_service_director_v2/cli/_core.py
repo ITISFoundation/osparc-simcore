@@ -55,15 +55,11 @@ async def _initialized_app(only_db: bool = False) -> AsyncIterator[FastAPI]:
 ### PROJECT SAVE STATE
 
 
-def _get_dynamic_sidecar_endpoint(
-    settings: AppSettings, node_id: NodeIDStr
-) -> AnyHttpUrl:
+def _get_dynamic_sidecar_endpoint(settings: AppSettings, node_id: NodeIDStr) -> AnyHttpUrl:
     dynamic_sidecar_names = DynamicSidecarNamesHelper.make(NodeID(node_id))
     hostname = dynamic_sidecar_names.service_name_dynamic_sidecar
     port = settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_PORT
-    url: AnyHttpUrl = TypeAdapter(AnyHttpUrl).validate_python(
-        f"http://{hostname}:{port}"
-    )
+    url: AnyHttpUrl = TypeAdapter(AnyHttpUrl).validate_python(f"http://{hostname}:{port}")
     return url
 
 
@@ -82,22 +78,18 @@ async def _save_node_state(
     ):
         with attempt:
             typer.echo(f"Attempting to save {node_uuid} {label}")
-            await sidecars_client.save_service_state(
-                _get_dynamic_sidecar_endpoint(app.state.settings, node_uuid)
-            )
+            await sidecars_client.save_service_state(_get_dynamic_sidecar_endpoint(app.state.settings, node_uuid))
 
 
 async def async_project_save_state(project_id: ProjectID, save_attempts: int) -> None:
     async with _initialized_app() as app:
-        projects_repository: ProjectsRepository = get_repository(
-            app, ProjectsRepository
-        )
+        projects_repository: ProjectsRepository = get_repository(app, ProjectsRepository)
         project_at_db = await projects_repository.get_project(project_id)
 
         typer.echo(f"Saving project '{project_at_db.uuid}' - '{project_at_db.name}'")
         nodes_failed_to_save: list[NodeIDStr] = []
         for node_uuid, node_content in project_at_db.workbench.items():
-            # onl dynamic-sidecars are used
+            # only dynamic-sidecars are used
             if not await requires_dynamic_sidecar(
                 service_key=node_content.key,
                 service_version=node_content.version,
@@ -119,9 +111,7 @@ async def async_project_save_state(project_id: ProjectID, save_attempts: int) ->
     if nodes_failed_to_save:
         typer.echo(
             "The following nodes failed to save:"
-            + "\n- "
-            + "\n- ".join(nodes_failed_to_save)
-            + "\nPlease try to save them individually!"
+            "\n- " + "\n- ".join(nodes_failed_to_save) + "\nPlease try to save them individually!"
         )
         sys.exit(1)
 
@@ -146,9 +136,7 @@ class RenderData(BaseModel):
     state: str
 
 
-async def _get_dy_service_state(
-    client: AsyncClient, node_uuid: NodeIDStr
-) -> DynamicServiceGet | None:
+async def _get_dy_service_state(client: AsyncClient, node_uuid: NodeIDStr) -> DynamicServiceGet | None:
     try:
         result = await client.get(
             f"http://localhost:8000/v2/dynamic_services/{node_uuid}",  # NOSONAR
@@ -162,9 +150,7 @@ async def _get_dy_service_state(
         return None
 
     result_dict = result.json()
-    return DynamicServiceGet(
-        **(result_dict["data"] if "data" in result_dict else result_dict)
-    )
+    return DynamicServiceGet(**(result_dict["data"] if "data" in result_dict else result_dict))
 
 
 async def _to_render_data(
@@ -234,11 +220,7 @@ async def _get_nodes_render_data(
     async with AsyncClient() as client:
         for node_uuid, node_content in project_at_db.workbench.items():
             service_type = get_service_from_key(service_key=node_content.key)
-            render_data.append(
-                await _to_render_data(
-                    client, node_uuid, node_content.label, service_type
-                )
-            )
+            render_data.append(await _to_render_data(client, node_uuid, node_content.label, service_type))
     sorted_render_data: list[RenderData] = sorted(render_data, key=_get_node_id)
     return sorted_render_data
 
@@ -272,13 +254,9 @@ async def _display(
             live.update(generate_table(await _get_nodes_render_data(app, project_id)))
 
 
-async def async_project_state(
-    project_id: ProjectID, blocking: bool, update_interval: PositiveInt
-) -> None:
+async def async_project_state(project_id: ProjectID, blocking: bool, update_interval: PositiveInt) -> None:
     async with _initialized_app(only_db=True) as app:
-        await _display(
-            app, project_id, update_interval=update_interval, blocking=blocking
-        )
+        await _display(app, project_id, update_interval=update_interval, blocking=blocking)
 
 
 async def async_service_state(node_id: NodeID) -> None:

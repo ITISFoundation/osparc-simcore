@@ -56,9 +56,7 @@ def test_resources_dict_parsed_as_expected(resources_dict: ResourcesDict) -> Non
 
 
 def test_image_resources_parsed_as_expected() -> None:
-    result: ImageResources = ImageResources.model_validate(
-        ImageResources.model_config["json_schema_extra"]["example"]
-    )
+    result: ImageResources = ImageResources.model_validate(ImageResources.model_config["json_schema_extra"]["example"])
     _ensure_resource_value_is_an_object(result.resources)
     assert type(result) == ImageResources
 
@@ -69,9 +67,7 @@ def test_image_resources_parsed_as_expected() -> None:
     _ensure_resource_value_is_an_object(result.resources)
 
 
-@pytest.mark.parametrize(
-    "example", ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"]
-)
+@pytest.mark.parametrize("example", ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"])
 def test_service_resource_parsed_as_expected(
     example: dict[DockerGenericTag, Any], compose_image: DockerGenericTag
 ) -> None:
@@ -84,27 +80,19 @@ def test_service_resource_parsed_as_expected(
         for image_resources in service_resources_dict.values():
             _ensure_resource_value_is_an_object(image_resources.resources)
 
-    service_resources_dict: ServiceResourcesDict = TypeAdapter(
-        ServiceResourcesDict
-    ).validate_python(example)
+    service_resources_dict: ServiceResourcesDict = TypeAdapter(ServiceResourcesDict).validate_python(example)
     _assert_service_resources_dict(service_resources_dict)
 
     for image_resources in example.values():
-        service_resources_dict_from_single_service = (
-            ServiceResourcesDictHelpers.create_from_single_service(
-                image=compose_image,
-                resources=ImageResources.model_validate(image_resources).resources,
-            )
+        service_resources_dict_from_single_service = ServiceResourcesDictHelpers.create_from_single_service(
+            image=compose_image,
+            resources=ImageResources.model_validate(image_resources).resources,
         )
         _assert_service_resources_dict(service_resources_dict_from_single_service)
 
 
-@pytest.mark.parametrize(
-    "example", ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"]
-)
+@pytest.mark.parametrize("example", ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"])
 def test_create_jsonable_dict(example: dict[DockerGenericTag, Any]) -> None:
-    service_resources_dict: ServiceResourcesDict = TypeAdapter(
-        ServiceResourcesDict
-    ).validate_python(example)
+    service_resources_dict: ServiceResourcesDict = TypeAdapter(ServiceResourcesDict).validate_python(example)
     result = ServiceResourcesDictHelpers.create_jsonable(service_resources_dict)
     assert example == result

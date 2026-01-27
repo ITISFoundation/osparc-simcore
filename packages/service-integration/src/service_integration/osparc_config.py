@@ -62,9 +62,7 @@ class DockerComposeOverwriteConfig(ComposeSpecification):
     """Content of docker-compose.overwrite.yml configuration file"""
 
     @classmethod
-    def create_default(
-        cls, service_name: str | None = None
-    ) -> "DockerComposeOverwriteConfig":
+    def create_default(cls, service_name: str | None = None) -> "DockerComposeOverwriteConfig":
         return cls.model_validate(
             {
                 "services": {
@@ -115,9 +113,7 @@ class MetadataConfig(ServiceMetaDataPublished):
 
     @classmethod
     def from_labels_annotations(cls, labels: LabelsAnnotationsDict) -> "MetadataConfig":
-        data = from_labels(
-            labels, prefix_key=OSPARC_LABEL_PREFIXES[0], trim_key_head=False
-        )
+        data = from_labels(labels, prefix_key=OSPARC_LABEL_PREFIXES[0], trim_key_head=False)
         return cls.model_validate(data)
 
     def to_labels_annotations(self) -> LabelsAnnotationsDict:
@@ -138,9 +134,7 @@ class MetadataConfig(ServiceMetaDataPublished):
         if registry in "dockerhub":
             # dockerhub allows only one-level names -> dot it
             # TODO: check thisname is compatible with REGEX
-            service_path = TypeAdapter(ServiceKey).validate_python(
-                service_path.replace("/", ".")
-            )
+            service_path = TypeAdapter(ServiceKey).validate_python(service_path.replace("/", "."))
 
         service_version = self.version
         return f"{registry_prefix}{service_path}:{service_version}"
@@ -212,9 +206,7 @@ class RuntimeConfig(BaseModel):
 
     restart_policy: RestartPolicy = RestartPolicy.NO_RESTART
 
-    callbacks_mapping: Annotated[
-        CallbacksMapping | None, Field(default_factory=dict)
-    ] = DEFAULT_FACTORY
+    callbacks_mapping: Annotated[CallbacksMapping | None, Field(default_factory=dict)] = DEFAULT_FACTORY
 
     paths_mapping: PathMappingsLabel | None = None
 
@@ -228,9 +220,7 @@ class RuntimeConfig(BaseModel):
 
     containers_allowed_outgoing_internet: set[str] | None = None
 
-    settings: Annotated[list[SettingsItem], Field(default_factory=list)] = (
-        DEFAULT_FACTORY
-    )
+    settings: Annotated[list[SettingsItem], Field(default_factory=list)] = DEFAULT_FACTORY
 
     @model_validator(mode="before")
     @classmethod

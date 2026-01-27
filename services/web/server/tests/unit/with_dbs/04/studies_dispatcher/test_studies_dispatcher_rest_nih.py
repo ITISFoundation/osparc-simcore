@@ -34,11 +34,7 @@ def app_environment(
 ) -> EnvVarsDict:
     return setenvs_from_dict(
         monkeypatch,
-        {
-            "WEBSERVER_RABBITMQ": json_dumps(
-                model_dump_with_secrets(rabbit_service, show_secrets=True)
-            )
-        },
+        {"WEBSERVER_RABBITMQ": json_dumps(model_dump_with_secrets(rabbit_service, show_secrets=True))},
     )
 
 
@@ -55,9 +51,7 @@ def web_server(
     #
     # Extends web_server to start redis_service and ensure DB is populated
     #
-    print(
-        "Redis service started with settings: ", redis_service.model_dump_json(indent=1)
-    )
+    print("Redis service started with settings: ", redis_service.model_dump_json(indent=1))
     return web_server
 
 

@@ -63,9 +63,7 @@ async def run_new_pipeline(
 
     with contextlib.suppress(ComputationalRunNotFoundError):
         # if the run already exists and is scheduled, do not schedule again.
-        last_run = await CompRunsRepository.instance(db_engine).get(
-            user_id=user_id, project_id=project_id
-        )
+        last_run = await CompRunsRepository.instance(db_engine).get(user_id=user_id, project_id=project_id)
         if last_run.result.is_running():
             _logger.warning(
                 "run for project %s is already running. not scheduling it again.",
@@ -83,16 +81,14 @@ async def run_new_pipeline(
     )
 
     tasks_to_run = await _get_pipeline_tasks_at_db(db_engine, project_id, dag)
-    db_create_snaphot_tasks = [
+    db_create_snapshot_tasks = [
         {
             **task.to_db_model(exclude={"created", "modified"}),
             "run_id": new_run.run_id,
         }
         for task in tasks_to_run
     ]
-    await CompRunsSnapshotTasksRepository.instance(db_engine).batch_create(
-        data=db_create_snaphot_tasks
-    )
+    await CompRunsSnapshotTasksRepository.instance(db_engine).batch_create(data=db_create_snapshot_tasks)
 
     rabbitmq_client = get_rabbitmq_client(app)
     await request_pipeline_scheduling(
@@ -109,9 +105,7 @@ async def run_new_pipeline(
         log=f"Project pipeline scheduled using {'on-demand clusters' if use_on_demand_clusters else 'pre-defined clusters'}, starting soon...",
         log_level=logging.INFO,
     )
-    await publish_pipeline_scheduling_state(
-        rabbitmq_client, user_id, project_id, new_run.result
-    )
+    await publish_pipeline_scheduling_state(rabbitmq_client, user_id, project_id, new_run.result)
 
 
 async def stop_pipeline(
@@ -122,14 +116,10 @@ async def stop_pipeline(
     iteration: int | None = None,
 ) -> None:
     db_engine = get_db_engine(app)
-    comp_run = await CompRunsRepository.instance(db_engine).get(
-        user_id, project_id, iteration
-    )
+    comp_run = await CompRunsRepository.instance(db_engine).get(user_id, project_id, iteration)
 
     # mark the scheduled pipeline for stopping
-    updated_comp_run = await CompRunsRepository.instance(
-        db_engine
-    ).mark_for_cancellation(
+    updated_comp_run = await CompRunsRepository.instance(db_engine).mark_for_cancellation(
         user_id=user_id, project_id=project_id, iteration=comp_run.iteration
     )
     if updated_comp_run:
@@ -144,9 +134,7 @@ async def stop_pipeline(
         )
 
 
-async def _get_pipeline_at_db(
-    project_id: ProjectID, db_engine: AsyncEngine
-) -> CompPipelineAtDB:
+async def _get_pipeline_at_db(project_id: ProjectID, db_engine: AsyncEngine) -> CompPipelineAtDB:
     comp_pipeline_repo = CompPipelinesRepository.instance(db_engine)
     return await comp_pipeline_repo.get_pipeline(project_id)
 
@@ -177,9 +165,7 @@ async def schedule_all_pipelines(app: FastAPI) -> None:
             never_scheduled=True,
             processed_since=SCHEDULER_INTERVAL,
         )
-        possibly_lost_scheduled_pipelines = await CompRunsRepository.instance(
-            db_engine
-        ).list_(
+        possibly_lost_scheduled_pipelines = await CompRunsRepository.instance(db_engine).list_(
             filter_by_state=SCHEDULED_STATES,
             scheduled_since=SCHEDULER_INTERVAL * _LOST_TASKS_FACTOR,
         )
@@ -187,10 +173,7 @@ async def schedule_all_pipelines(app: FastAPI) -> None:
             _logger.error(
                 "found %d lost pipelines, they will be re-scheduled now. '%s'",
                 len(possibly_lost_scheduled_pipelines),
-                ", ".join(
-                    f"{run.project_uuid=}|{run.iteration=}"
-                    for run in possibly_lost_scheduled_pipelines
-                ),
+                ", ".join(f"{run.project_uuid=}|{run.iteration=}" for run in possibly_lost_scheduled_pipelines),
             )
 
         rabbitmq_client = get_rabbitmq_client(app)

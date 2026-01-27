@@ -31,9 +31,7 @@ def _assert_exclusive_tasks_are_cancelled(lock_name: str, func: Callable) -> Non
     assert _EXCLUSIVE_AUTO_EXTEND_TASK_NAME.format(redis_lock_key=lock_name) not in [
         t.get_name() for t in asyncio.tasks.all_tasks()
     ], "the auto extend lock task was not properly stopped!"
-    assert _EXCLUSIVE_TASK_NAME.format(
-        module_name=func.__module__, func_name=func.__name__
-    ) not in [
+    assert _EXCLUSIVE_TASK_NAME.format(module_name=func.__module__, func_name=func.__name__) not in [
         t.get_name() for t in asyncio.tasks.all_tasks()
     ], "the exclusive task was not properly stopped!"
 
@@ -50,9 +48,7 @@ def _exclusive_sleeping_task(
 ) -> Callable[..., Awaitable[float]]:
     @exclusive(redis_client_sdk, lock_key=lock_name)
     async def _() -> float:
-        resolved_client = (
-            redis_client_sdk() if callable(redis_client_sdk) else redis_client_sdk
-        )
+        resolved_client = redis_client_sdk() if callable(redis_client_sdk) else redis_client_sdk
         resolved_lock_name = lock_name() if callable(lock_name) else lock_name
         assert await _is_locked(resolved_client, resolved_lock_name)
         await asyncio.sleep(sleep_duration)
@@ -81,12 +77,7 @@ async def test_exclusive_decorator_runs_original_method(
     sleep_duration: float,
 ):
     for _ in range(3):
-        assert (
-            await _exclusive_sleeping_task(
-                redis_client_sdk, lock_name, sleep_duration
-            )()
-            == sleep_duration
-        )
+        assert await _exclusive_sleeping_task(redis_client_sdk, lock_name, sleep_duration)() == sleep_duration
 
 
 async def test_exclusive_decorator_with_key_builder(
@@ -100,12 +91,7 @@ async def test_exclusive_decorator_with_key_builder(
         return lock_name
 
     for _ in range(3):
-        assert (
-            await _exclusive_sleeping_task(
-                redis_client_sdk, _get_lock_name, sleep_duration
-            )()
-            == sleep_duration
-        )
+        assert await _exclusive_sleeping_task(redis_client_sdk, _get_lock_name, sleep_duration)() == sleep_duration
 
 
 async def test_exclusive_decorator_with_client_builder(
@@ -119,12 +105,7 @@ async def test_exclusive_decorator_with_client_builder(
         return redis_client_sdk
 
     for _ in range(3):
-        assert (
-            await _exclusive_sleeping_task(
-                _get_redis_client_builder, lock_name, sleep_duration
-            )()
-            == sleep_duration
-        )
+        assert await _exclusive_sleeping_task(_get_redis_client_builder, lock_name, sleep_duration)() == sleep_duration
 
 
 async def _acquire_lock_and_exclusively_sleep(
@@ -153,17 +134,13 @@ async def test_exclusive_parallel_lock_is_released_and_reacquired(
     parallel_tasks = 10
     results = await logged_gather(
         *[
-            _acquire_lock_and_exclusively_sleep(
-                redis_client_sdk, lock_name, sleep_duration=1
-            )
+            _acquire_lock_and_exclusively_sleep(redis_client_sdk, lock_name, sleep_duration=1)
             for _ in range(parallel_tasks)
         ],
         reraise=False,
     )
     assert results.count(None) == 1
-    assert [isinstance(x, CouldNotAcquireLockError) for x in results].count(
-        True
-    ) == parallel_tasks - 1
+    assert [isinstance(x, CouldNotAcquireLockError) for x in results].count(True) == parallel_tasks - 1
 
     # check lock is released
     assert not await _is_locked(redis_client_sdk, lock_name)
@@ -197,9 +174,7 @@ def lock_data(faker: Faker) -> str:
     return faker.text()
 
 
-async def test_exclusive_with_lock_value(
-    redis_client_sdk: RedisClientSDK, lock_name: str, lock_data: str
-):
+async def test_exclusive_with_lock_value(redis_client_sdk: RedisClientSDK, lock_name: str, lock_data: str):
     started_event = asyncio.Event()
 
     @exclusive(redis_client_sdk, lock_key=lock_name, lock_value=lock_data)
@@ -227,9 +202,7 @@ async def test_exclusive_with_lock_value(
     _assert_exclusive_tasks_are_cancelled(lock_name, _sleeper)
 
 
-async def test_exclusive_task_erroring_releases_lock(
-    redis_client_sdk: RedisClientSDK, lock_name: str
-):
+async def test_exclusive_task_erroring_releases_lock(redis_client_sdk: RedisClientSDK, lock_name: str):
     @exclusive(redis_client_sdk, lock_key=lock_name)
     async def _raising_func() -> None:
         msg = "Expected error"
@@ -268,9 +241,7 @@ async def test_lock_acquired_in_parallel_to_update_same_resource(
 
     counter = RaceConditionCounter()
     # ensures it does not time out before acquiring the lock
-    time_for_all_inc_counter_calls_to_finish = (
-        with_short_default_redis_lock_ttl * INCREASE_OPERATIONS * 10
-    )
+    time_for_all_inc_counter_calls_to_finish = with_short_default_redis_lock_ttl * INCREASE_OPERATIONS * 10
 
     @exclusive(
         redis_client_sdk,
@@ -281,17 +252,13 @@ async def test_lock_acquired_in_parallel_to_update_same_resource(
     async def _inc_counter() -> None:
         await counter.race_condition_increase(INCREASE_BY)
 
-    await limited_gather(
-        *(_inc_counter() for _ in range(INCREASE_OPERATIONS)), limit=15
-    )
+    await limited_gather(*(_inc_counter() for _ in range(INCREASE_OPERATIONS)), limit=15)
     assert counter.value == INCREASE_BY * INCREASE_OPERATIONS
 
     _assert_exclusive_tasks_are_cancelled(lock_name, _inc_counter)
 
 
-async def test_cancelling_exclusive_task_cancels_properly(
-    redis_client_sdk: RedisClientSDK, lock_name: str
-):
+async def test_cancelling_exclusive_task_cancels_properly(redis_client_sdk: RedisClientSDK, lock_name: str):
     started_event = asyncio.Event()
 
     @exclusive(redis_client_sdk, lock_key=lock_name)

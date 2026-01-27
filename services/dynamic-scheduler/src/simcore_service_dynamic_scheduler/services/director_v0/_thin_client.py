@@ -17,9 +17,7 @@ from yarl import URL
 from ...core.settings import ApplicationSettings
 
 
-class DirectorV0ThinClient(
-    SingletonInAppStateMixin, BaseThinClient, AttachLifespanMixin
-):
+class DirectorV0ThinClient(SingletonInAppStateMixin, BaseThinClient, AttachLifespanMixin):
     app_state_name: str = "director_v0_thin_client"
 
     def __init__(self, app: FastAPI) -> None:
@@ -27,9 +25,7 @@ class DirectorV0ThinClient(
         assert settings.CLIENT_REQUEST.HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT  # nosec
 
         super().__init__(
-            total_retry_interval=int(
-                settings.CLIENT_REQUEST.HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT
-            ),
+            total_retry_interval=int(settings.CLIENT_REQUEST.HTTP_CLIENT_REQUEST_TOTAL_TIMEOUT),
             extra_allowed_method_names={
                 "attach_lifespan_to",
                 "get_from_app_state",
@@ -42,16 +38,12 @@ class DirectorV0ThinClient(
 
     @retry_on_errors()
     @expect_status(status.HTTP_200_OK)
-    async def get_running_interactive_service_details(
-        self, node_id: NodeID
-    ) -> Response:
+    async def get_running_interactive_service_details(self, node_id: NodeID) -> Response:
         return await self.client.get(f"/running_interactive_services/{node_id}")
 
     @retry_on_errors()
     @expect_status(status.HTTP_200_OK)
-    async def get_running_interactive_services(
-        self, user_id: UserID | None, project_id: ProjectID | None
-    ) -> Response:
+    async def get_running_interactive_services(self, user_id: UserID | None, project_id: ProjectID | None) -> Response:
         request_url = URL("/running_interactive_services").with_query(
             as_dict_exclude_none(user_id=user_id, study_id=project_id)
         )

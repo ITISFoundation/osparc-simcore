@@ -12,8 +12,7 @@ from ...exception_handling import (
 function_error_classes = [
     obj
     for name, obj in inspect.getmembers(sys.modules["models_library.functions_errors"])
-    if inspect.isclass(obj)
-    and obj.__module__.startswith("models_library.functions_errors")
+    if inspect.isclass(obj) and obj.__module__.startswith("models_library.functions_errors")
 ]
 
 _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
@@ -26,6 +25,4 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     if hasattr(cls, "status_code") and hasattr(cls, "msg_template")
 }
 
-handle_rest_requests_exceptions = exception_handling_decorator(
-    to_exceptions_handlers_map(_TO_HTTP_ERROR_MAP)
-)
+handle_rest_requests_exceptions = exception_handling_decorator(to_exceptions_handlers_map(_TO_HTTP_ERROR_MAP))

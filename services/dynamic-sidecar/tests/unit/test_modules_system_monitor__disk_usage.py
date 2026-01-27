@@ -38,9 +38,7 @@ def dy_volumes(tmp_path: Path) -> Path:
 def get_monitored_paths(
     dy_volumes: Path, node_id: NodeID
 ) -> Callable[[Path, Path, list[Path]], dict[MountPathCategory, set[Path]]]:
-    def _(
-        inputs: Path, outputs: Path, states: list[Path]
-    ) -> dict[MountPathCategory, set[Path]]:
+    def _(inputs: Path, outputs: Path, states: list[Path]) -> dict[MountPathCategory, set[Path]]:
         mounted_volumes = MountedVolumes(
             service_run_id=ServiceRunID.get_resource_tracking_run_id_for_dynamic(),
             node_id=node_id,
@@ -103,9 +101,7 @@ def _get_byte_size(byte_size_as_str: str) -> ByteSize:
 
 def _get_mocked_disk_usage(byte_size_as_str: str) -> DiskUsage:
     bytes_size = _get_byte_size(byte_size_as_str)
-    return DiskUsage(
-        total=bytes_size, used=ByteSize(0), free=bytes_size, used_percent=0
-    )
+    return DiskUsage(total=bytes_size, used=ByteSize(0), free=bytes_size, used_percent=0)
 
 
 async def _assert_monitor_triggers(
@@ -123,9 +119,7 @@ async def _assert_monitor_triggers(
 
 async def test_disk_usage_monitor(
     mock_disk_usage: Callable[[dict[str, ByteSize]], None],
-    get_monitored_paths: Callable[
-        [Path, Path, list[Path]], dict[MountPathCategory, set[Path]]
-    ],
+    get_monitored_paths: Callable[[Path, Path, list[Path]], dict[MountPathCategory, set[Path]]],
     dy_volumes: Path,
     publish_disk_usage_spy: Mock,
     node_id: NodeID,
@@ -135,9 +129,7 @@ async def test_disk_usage_monitor(
         user_id=1,
         node_id=node_id,
         interval=timedelta(seconds=5),
-        monitored_paths=get_monitored_paths(
-            Path("/inputs"), Path("/outputs"), [Path("/workspace")]
-        ),
+        monitored_paths=get_monitored_paths(Path("/inputs"), Path("/outputs"), [Path("/workspace")]),
         dy_volumes_mount_dir=dy_volumes,
     )
 
@@ -146,17 +138,15 @@ async def test_disk_usage_monitor(
     for i in range(1, 3):
         mock_disk_usage(
             {
-                f"{p}": _get_byte_size(f"{i*2}kb")
+                f"{p}": _get_byte_size(f"{i * 2}kb")
                 for p in disk_usage_monitor._monitored_paths_set  # noqa: SLF001
             },
         )
 
-        await _assert_monitor_triggers(
-            disk_usage_monitor, publish_disk_usage_spy, expected_events=1
-        )
+        await _assert_monitor_triggers(disk_usage_monitor, publish_disk_usage_spy, expected_events=1)
 
         assert _get_entry(publish_disk_usage_spy, index=0) == {
-            MountPathCategory.HOST: _get_mocked_disk_usage(f"{i*2}kb"),
+            MountPathCategory.HOST: _get_mocked_disk_usage(f"{i * 2}kb"),
         }
 
         # reset mock to test again
@@ -178,9 +168,7 @@ async def test_get_usage(tmp_path: Path, faker: Faker):
 
 async def test_disk_usage_monitor_new_frontend_format(
     mock_disk_usage: Callable[[dict[str, ByteSize]], None],
-    get_monitored_paths: Callable[
-        [Path, Path, list[Path]], dict[MountPathCategory, set[Path]]
-    ],
+    get_monitored_paths: Callable[[Path, Path, list[Path]], dict[MountPathCategory, set[Path]]],
     publish_disk_usage_spy: Mock,
     node_id: NodeID,
     dy_volumes: Path,
@@ -216,9 +204,7 @@ async def test_disk_usage_monitor_new_frontend_format(
     print(json_dumps(frontend_usage, indent=2))
     assert len(frontend_usage) == 1
     assert MountPathCategory.HOST in frontend_usage
-    assert frontend_usage[MountPathCategory.HOST] == _get_mocked_disk_usage(
-        "1294390525952"
-    )
+    assert frontend_usage[MountPathCategory.HOST] == _get_mocked_disk_usage("1294390525952")
 
     # emulate EFS sending metrics, 2 entries are found
 
@@ -234,12 +220,8 @@ async def test_disk_usage_monitor_new_frontend_format(
     assert len(frontend_usage) == 2
     assert MountPathCategory.HOST in frontend_usage
     assert MountPathCategory.STATES_VOLUMES in frontend_usage
-    assert frontend_usage[MountPathCategory.HOST] == _get_mocked_disk_usage(
-        "1294390525952"
-    )
-    assert frontend_usage[MountPathCategory.STATES_VOLUMES] == _get_mocked_disk_usage(
-        "1GB"
-    )
+    assert frontend_usage[MountPathCategory.HOST] == _get_mocked_disk_usage("1294390525952")
+    assert frontend_usage[MountPathCategory.STATES_VOLUMES] == _get_mocked_disk_usage("1GB")
 
     # emulate data could not be mapped
     disk_usage_monitor.set_disk_usage_for_path(

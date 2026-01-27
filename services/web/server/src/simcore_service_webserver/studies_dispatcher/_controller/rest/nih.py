@@ -32,9 +32,7 @@ async def list_latest_services(request: Request):
     engine = get_asyncpg_engine(request.app)
 
     services = []
-    async for service_data in iter_latest_product_services(
-        plugin_settings, engine, product_name=product_name
-    ):
+    async for service_data in iter_latest_product_services(plugin_settings, engine, product_name=product_name):
         try:
             service = ServiceGet.create(service_data, request)
             services.append(service)
@@ -63,8 +61,6 @@ async def list_default_viewers(request: Request):
 
     viewers = [
         Viewer.create(request, viewer).model_dump()
-        for viewer in await _service.list_viewers_info(
-            request.app, file_type=file_type, only_default=True
-        )
+        for viewer in await _service.list_viewers_info(request.app, file_type=file_type, only_default=True)
     ]
     return envelope_json_response(viewers)

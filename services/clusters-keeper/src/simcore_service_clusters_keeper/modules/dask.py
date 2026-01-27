@@ -31,9 +31,7 @@ async def ping_scheduler(url: AnyUrl, authentication: ClusterAuthentication) -> 
                 tls_client_key=f"{authentication.tls_client_key}",
                 require_encryption=True,
             )
-        async with distributed.Client(
-            f"{url}", asynchronous=True, timeout=_CONNECTION_TIMEOUT, security=security
-        ):
+        async with distributed.Client(f"{url}", asynchronous=True, timeout=_CONNECTION_TIMEOUT, security=security):
             ...
         return True
     except OSError:
@@ -60,15 +58,9 @@ async def is_scheduler_busy(url: AnyUrl, authentication: ClusterAuthentication) 
         datasets_on_scheduler = await _wrap_client_async_routine(client.list_datasets())
         _logger.info("cluster currently has %s datasets", len(datasets_on_scheduler))
         num_processing_tasks = 0
-        if worker_to_processing_tasks := await _wrap_client_async_routine(
-            client.processing()
-        ):
-            _logger.info(
-                "cluster current workers: %s", worker_to_processing_tasks.keys()
-            )
-            num_processing_tasks = sum(
-                len(tasks) for tasks in worker_to_processing_tasks.values()
-            )
+        if worker_to_processing_tasks := await _wrap_client_async_routine(client.processing()):
+            _logger.info("cluster current workers: %s", worker_to_processing_tasks.keys())
+            num_processing_tasks = sum(len(tasks) for tasks in worker_to_processing_tasks.values())
             _logger.info("cluster currently processes %s tasks", num_processing_tasks)
 
         return bool(datasets_on_scheduler or num_processing_tasks)

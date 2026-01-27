@@ -18,11 +18,7 @@ def test_project_locked_with_missing_owner_ok_during_maintaining():
 
 @pytest.mark.parametrize(
     "lock, status",
-    [
-        (False, x)
-        for x in ProjectStatus
-        if x not in [ProjectStatus.CLOSED, ProjectStatus.OPENED]
-    ]
+    [(False, x) for x in ProjectStatus if x not in [ProjectStatus.CLOSED, ProjectStatus.OPENED]]
     + [(True, ProjectStatus.CLOSED)],
 )
 def test_project_locked_with_allowed_values(lock: bool, status: ProjectStatus):

@@ -89,9 +89,7 @@ async def async_close_and_save_service(
 ) -> None:
     task_id: TaskId
     async with _minimal_app() as app, ThinDV2LocalhostClient() as thin_dv2_localhost_client:
-        rich.print(
-            f"[yellow]Starting[/yellow] cleanup for service [green]{node_id}[/green]"
-        )
+        rich.print(f"[yellow]Starting[/yellow] cleanup for service [green]{node_id}[/green]")
 
         rich.print(f"{HEADING} disabling service observation")
         async for attempt in AsyncRetrying(
@@ -101,9 +99,7 @@ async def async_close_and_save_service(
             reraise=True,
         ):
             with attempt:
-                await thin_dv2_localhost_client.toggle_service_observation(
-                    f"{node_id}", is_disabled=True
-                )
+                await thin_dv2_localhost_client.toggle_service_observation(f"{node_id}", is_disabled=True)
 
         client = HttpClient(
             app=app,
@@ -113,13 +109,9 @@ async def async_close_and_save_service(
 
         if not skip_container_removal:
             rich.print(f"{HEADING} deleting service containers")
-            response = await thin_dv2_localhost_client.delete_service_containers(
-                f"{node_id}"
-            )
+            response = await thin_dv2_localhost_client.delete_service_containers(f"{node_id}")
             task_id = response.json()
-            await _track_and_display(
-                client, task_id, update_interval, task_timeout=5 * _MIN
-            )
+            await _track_and_display(client, task_id, update_interval, task_timeout=5 * _MIN)
 
         if not skip_state_saving:
             rich.print(f"{HEADING} saving service state")
@@ -129,13 +121,9 @@ async def async_close_and_save_service(
                 reraise=True,
             ):
                 with attempt:
-                    response = await thin_dv2_localhost_client.save_service_state(
-                        f"{node_id}"
-                    )
+                    response = await thin_dv2_localhost_client.save_service_state(f"{node_id}")
                     task_id = response.json()
-                    await _track_and_display(
-                        client, task_id, update_interval, task_timeout=60 * _MIN
-                    )
+                    await _track_and_display(client, task_id, update_interval, task_timeout=60 * _MIN)
 
         if not skip_outputs_pushing:
             rich.print(f"{HEADING} pushing service outputs")
@@ -145,25 +133,13 @@ async def async_close_and_save_service(
                 reraise=True,
             ):
                 with attempt:
-                    response = await thin_dv2_localhost_client.push_service_outputs(
-                        f"{node_id}"
-                    )
+                    response = await thin_dv2_localhost_client.push_service_outputs(f"{node_id}")
                     task_id = response.json()
-                    await _track_and_display(
-                        client, task_id, update_interval, task_timeout=60 * _MIN
-                    )
+                    await _track_and_display(client, task_id, update_interval, task_timeout=60 * _MIN)
 
         if not skip_docker_resources_removal:
-            rich.print(
-                f"{HEADING} deleting service docker resources and removing service"
-            )
-            response = await thin_dv2_localhost_client.delete_service_docker_resources(
-                f"{node_id}"
-            )
+            rich.print(f"{HEADING} deleting service docker resources and removing service")
+            response = await thin_dv2_localhost_client.delete_service_docker_resources(f"{node_id}")
             task_id = response.json()
-            await _track_and_display(
-                client, task_id, update_interval, task_timeout=5 * _MIN
-            )
-        rich.print(
-            f"[green]Finished[/green] cleanup for service [green]{node_id}[/green]"
-        )
+            await _track_and_display(client, task_id, update_interval, task_timeout=5 * _MIN)
+        rich.print(f"[green]Finished[/green] cleanup for service [green]{node_id}[/green]")

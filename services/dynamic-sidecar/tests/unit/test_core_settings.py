@@ -70,9 +70,7 @@ def test_settings_with_node_ports_storage_auth(
     assert settings.NODE_PORTS_STORAGE_AUTH.STORAGE_PASSWORD
 
     # enforce avoiding credentials leaks
-    assert (
-        settings.NODE_PORTS_STORAGE_AUTH.STORAGE_PASSWORD.get_secret_value() == "passwd"
-    )
+    assert settings.NODE_PORTS_STORAGE_AUTH.STORAGE_PASSWORD.get_secret_value() == "passwd"
     assert "passwd" not in settings.NODE_PORTS_STORAGE_AUTH.model_dump_json()
 
 

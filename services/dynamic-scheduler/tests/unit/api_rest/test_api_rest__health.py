@@ -27,9 +27,7 @@ def mock_rabbitmq_clients(
 ) -> None:
     base_path = "simcore_service_dynamic_scheduler.api.rest._dependencies"
 
-    mocker.patch(
-        f"{base_path}.get_rabbitmq_client", return_value=MockHealth(rabbit_client_ok)
-    )
+    mocker.patch(f"{base_path}.get_rabbitmq_client", return_value=MockHealth(rabbit_client_ok))
     mocker.patch(
         f"{base_path}.get_rabbitmq_rpc_server",
         return_value=MockHealth(rabbit_rpc_server_ok),
@@ -51,9 +49,7 @@ def mock_redis_client(
 @pytest.fixture
 def mock_docker_api_proxy(mocker: MockerFixture, docker_api_proxy_ok: bool) -> None:
     base_path = "simcore_service_dynamic_scheduler.api.rest._health"
-    mocker.patch(
-        f"{base_path}.is_docker_api_proxy_ready", return_value=docker_api_proxy_ok
-    )
+    mocker.patch(f"{base_path}.is_docker_api_proxy_ready", return_value=docker_api_proxy_ok)
 
 
 @pytest.fixture

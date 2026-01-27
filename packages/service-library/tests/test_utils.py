@@ -59,9 +59,7 @@ def mock_logger(mocker: MockerFixture) -> Iterator[mock.Mock]:
 
     assert mock_logger.mock_calls
     mock_logger.warning.assert_called()
-    assert (
-        len(mock_logger.warning.mock_calls) == 3
-    ), "Expected all 3 errors ALWAYS logged as warnings"
+    assert len(mock_logger.warning.mock_calls) == 3, "Expected all 3 errors ALWAYS logged as warnings"
 
 
 async def test_logged_gather(
@@ -156,9 +154,7 @@ async def test_fire_and_forget_1000s_tasks(faker: Faker):
             fire_and_forget_tasks_collection=tasks_collection,
         )
     assert len(tasks_collection) == 1000
-    done, pending = await asyncio.wait(
-        tasks_collection, timeout=10, return_when=asyncio.ALL_COMPLETED
-    )
+    done, pending = await asyncio.wait(tasks_collection, timeout=10, return_when=asyncio.ALL_COMPLETED)
     assert len(done) == 1000
     assert len(pending) == 0
     assert len(tasks_collection) == 0
@@ -262,9 +258,7 @@ async def test_limited_gather(
     assert isinstance(excinfo.value, RuntimeError)
 
     unfinished_tasks = [
-        task
-        for task in asyncio.all_tasks(asyncio.get_running_loop())
-        if task is not asyncio.current_task()
+        task for task in asyncio.all_tasks(asyncio.get_running_loop()) if task is not asyncio.current_task()
     ]
     final_results = await asyncio.gather(*unfinished_tasks, return_exceptions=True)
     for result in final_results:
@@ -272,9 +266,7 @@ async def test_limited_gather(
             assert isinstance(result, ValueError | RuntimeError)
 
 
-async def test_limited_gather_wo_raising(
-    coros: list[Coroutine], mock_logger: mock.Mock
-):
+async def test_limited_gather_wo_raising(coros: list[Coroutine], mock_logger: mock.Mock):
     results = await limited_gather(*coros, reraise=False, log=mock_logger, limit=0)
 
     assert results[0] == 0
@@ -294,8 +286,6 @@ async def test_limited_gather_cancellation(slow_successful_coros_list: list[Coro
 
     # check all coros are cancelled
     unfinished_tasks = [
-        task
-        for task in asyncio.all_tasks(asyncio.get_running_loop())
-        if task is not asyncio.current_task()
+        task for task in asyncio.all_tasks(asyncio.get_running_loop()) if task is not asyncio.current_task()
     ]
     assert not unfinished_tasks

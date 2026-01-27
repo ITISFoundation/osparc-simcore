@@ -32,9 +32,7 @@ from .notifier_abc import NotificationProvider
 _logger = logging.getLogger(__name__)
 
 
-_BASE_HTML: Final[
-    str
-] = """
+_BASE_HTML: Final[str] = """
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -98,7 +96,9 @@ The {{ product.display_name }} Team
 """
 
 
-_NOTIFY_PAYMENTS_SUBJECT = "Your Payment {{ payment.price_dollars }} USD for {{ payment.osparc_credits }} Credits Was Successful"
+_NOTIFY_PAYMENTS_SUBJECT = (
+    "Your Payment {{ payment.price_dollars }} USD for {{ payment.osparc_credits }} Credits Was Successful"
+)
 
 
 _PRODUCT_NOTIFICATIONS_TEMPLATES = {
@@ -143,9 +143,7 @@ def retry_if_status_code(response):
     )  # Retry for these common transient errors
 
 
-exception_retry_condition = retry_if_exception_type(
-    (httpx.ConnectError, httpx.ReadTimeout)
-)
+exception_retry_condition = retry_if_exception_type((httpx.ConnectError, httpx.ReadTimeout))
 result_retry_condition = retry_if_result(retry_if_status_code)
 
 
@@ -265,7 +263,7 @@ async def _create_email_session(
         # By default, if the server advertises STARTTLS support, aiosmtplib will upgrade the connection automatically.
         # Setting use_tls=True for STARTTLS servers will typically result in a connection error
         # To opt out of STARTTLS on connect, pass start_tls=False.
-        # NOTE: for that reason TLS and STARTLS are mutally exclusive
+        # NOTE: for that reason TLS and STARTLS are mutually exclusive
         use_tls=settings.SMTP_PROTOCOL == EmailProtocol.TLS,
         start_tls=settings.SMTP_PROTOCOL == EmailProtocol.STARTTLS,
     ) as smtp:

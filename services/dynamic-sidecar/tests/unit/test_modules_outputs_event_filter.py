@@ -73,15 +73,11 @@ async def outputs_manager(
 
 
 @pytest.fixture
-def mocked_port_key_content_changed(
-    mocker: MockerFixture, outputs_manager: OutputsManager
-) -> AsyncMock:
+def mocked_port_key_content_changed(mocker: MockerFixture, outputs_manager: OutputsManager) -> AsyncMock:
     async def _mock_upload_outputs(*args, **kwargs) -> None:
         pass
 
-    return mocker.patch.object(
-        outputs_manager, "port_key_content_changed", side_effect=_mock_upload_outputs
-    )
+    return mocker.patch.object(outputs_manager, "port_key_content_changed", side_effect=_mock_upload_outputs)
 
 
 @pytest.fixture
@@ -112,9 +108,7 @@ def mock_get_directory_total_size(mocker: MockerFixture) -> AsyncMock:
 async def event_filter(
     outputs_manager: OutputsManager, mock_delay_policy: BaseDelayPolicy
 ) -> AsyncIterator[EventFilter]:
-    event_filter = EventFilter(
-        outputs_manager=outputs_manager, delay_policy=mock_delay_policy
-    )
+    event_filter = EventFilter(outputs_manager=outputs_manager, delay_policy=mock_delay_policy)
     await event_filter.start()
     yield event_filter
     await event_filter.shutdown()
@@ -240,7 +234,4 @@ def test_default_delay_policy():
     assert wait_policy.get_wait_interval(UPPER_BOUND - 1) < 10.0
     assert wait_policy.get_wait_interval(UPPER_BOUND) == 10.0
     assert wait_policy.get_wait_interval(UPPER_BOUND + 1) == 10.0
-    assert (
-        wait_policy.get_wait_interval(TypeAdapter(ByteSize).validate_python("1Tib"))
-        == 10.0
-    )
+    assert wait_policy.get_wait_interval(TypeAdapter(ByteSize).validate_python("1Tib")) == 10.0

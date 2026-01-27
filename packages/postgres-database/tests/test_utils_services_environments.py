@@ -34,9 +34,7 @@ MappedExpectedSecretes: TypeAlias = dict[str, ExpectedSecrets]
 async def product_name(connection: SAConnection) -> str:
     a_product_name = "a_prod"
     await connection.execute(
-        products.insert().values(
-            name=a_product_name, host_regex="", base_url="http://example.com"
-        )
+        products.insert().values(name=a_product_name, host_regex="", base_url="http://example.com")
     )
     yield a_product_name
     await connection.execute(products.delete())
@@ -107,11 +105,7 @@ async def expected_secrets(
                 service_key=vendor_service,
                 service_base_version="1.0.0",  # valid from
                 secrets_map={
-                    (
-                        key.removeprefix(VENDOR_SECRET_PREFIX)
-                        if bool(random.getrandbits(1))
-                        else key
-                    ): value
+                    (key.removeprefix(VENDOR_SECRET_PREFIX) if bool(random.getrandbits(1)) else key): value
                     for key, value in new_secrets.items()
                 },
                 product_name=product_name,
@@ -174,9 +168,4 @@ async def test_get_service_vendor_secrets(
             case _:
                 pytest.fail(f"{expected_result} not considered")
 
-        assert (
-            await get_vendor_secrets(
-                connection, product_name, vendor_service, service_version
-            )
-            == expected
-        )
+        assert await get_vendor_secrets(connection, product_name, vendor_service, service_version) == expected
