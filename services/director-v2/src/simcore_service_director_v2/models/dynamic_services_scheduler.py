@@ -389,6 +389,8 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
     user_preferences_path: Path | None = None
     callbacks_mapping: Annotated[CallbacksMapping, Field(default_factory=dict)]
 
+    requires_data_mounting: bool = False
+
     dynamic_sidecar_network_name: str = Field(
         ...,
         description="overlay network biding the proxy to the container spaned by the dynamic-sidecar",
