@@ -163,10 +163,10 @@ qx.Class.define("osparc.po.SendEmail", {
     },
 
     __populateEmailTemplates: function(selectBox) {
-      osparc.message.Messages.getInstance().fetchTemplates()
+      osparc.message.Messages.fetchEmailTemplates()
         .then(templates => {
           templates.forEach(template => {
-            const item = new qx.ui.form.ListItem(template.id);
+            const item = new qx.ui.form.ListItem(template["ref"]["templateName"]);
             selectBox.add(item);
           });
           if (templates.length) {
@@ -178,13 +178,13 @@ qx.Class.define("osparc.po.SendEmail", {
     },
 
     __templateSelected: function(templateId) {
-      const template = osparc.message.Messages.getInstance().getTemplate(templateId);
-      if (template) {
-        const subjectField = this.getChildControl("subject-field");
-        subjectField.setValue(template["subject"]);
-        const emailEditor = this.getChildControl("email-editor");
-        emailEditor.setTemplateEmail(template["content"]["body"]);
-      }
+      osparc.message.Messages.fetchEmailPreview(templateId)
+        .then(template => {
+          const subjectField = this.getChildControl("subject-field");
+          subjectField.setValue(template["subject"]);
+          const emailEditor = this.getChildControl("email-editor");
+          emailEditor.setTemplateEmail(template["content"]["body"]);
+        });
     },
 
     __openCollaboratorsManager: function() {

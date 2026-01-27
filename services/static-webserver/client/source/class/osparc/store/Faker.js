@@ -77,11 +77,27 @@ qx.Class.define("osparc.store.Faker", {
     },
 
     fetchEmailTemplates: function() {
-      const templates = {
-        "empty-email": {
-          subject: "sdfasdf",
-          content: {
-            body: `
+      const templates = [{
+        "ref": {
+          "channel": "email",
+          "templateName": "empty-email",
+        },
+        "contextSchema": {}
+      }];
+      return new Promise((resolve) => resolve(templates));
+    },
+
+    fetchEmailPreview: function(templateName, context) {
+      console.log("Faker fetching email preview for template:", templateName, "with context:", context);
+      const preview = {
+        "ref": {
+          "channel": "email",
+          "templateName": "empty-email"
+        },
+        "content": {
+          "subject": "sdfasdf",
+          "content": {
+            "bodyHtml": `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -187,12 +203,13 @@ qx.Class.define("osparc.store.Faker", {
   </div>
 </body>
 </html>
-`
+`,
+            "bodyText": "Hello username,\n\nThis is a free-form email template. You can customize the content as needed.\n\nBest regards,\nThe oSPARC Team"
           },
         },
       };
 
-      return new Promise((resolve) => resolve(templates));
+      return new Promise((resolve) => resolve(preview));
     },
 
     sendEmail: function(data) {
