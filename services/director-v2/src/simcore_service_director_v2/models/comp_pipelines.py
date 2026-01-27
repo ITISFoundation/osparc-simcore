@@ -30,7 +30,8 @@ class CompPipelineAtDB(BaseModel):
     @field_validator("dag_adjacency_list", mode="before")
     @classmethod
     def _auto_convert_dag(cls, v):
-        # this enforcement is here because the serialization using json is not happy with non str Dict keys, also comparison gets funny if the lists are having sometimes UUIDs or str.
+        # this enforcement is here because the serialization using json is not happy with non str Dict keys,
+        # also comparison gets funny if the lists are having sometimes UUIDs or str.
         # NOTE: this might not be necessary anymore once we have something fully defined
         return {str(key): [str(n) for n in value] for key, value in v.items()}
 
@@ -38,8 +39,8 @@ class CompPipelineAtDB(BaseModel):
         return cast(
             nx.DiGraph,
             nx.convert.from_dict_of_lists(
-                self.dag_adjacency_list,
-                create_using=nx.DiGraph,  # type: ignore[arg-type] # list is an Iterable but dict is Invariant
+                self.dag_adjacency_list,  # type: ignore[arg-type] # list is an Iterable but dict is Invariant
+                create_using=nx.DiGraph,
             ),
         )
 
