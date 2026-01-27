@@ -1,3 +1,5 @@
+# pytest:disable=unused-import
+
 from jinja2 import Environment
 from notifications_library._render import create_render_environment_from_notifications_library
 
