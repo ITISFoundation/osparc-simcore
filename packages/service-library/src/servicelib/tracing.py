@@ -1,9 +1,10 @@
 from contextlib import contextmanager
 from contextvars import Token
-from typing import TYPE_CHECKING, Final, Self
+from typing import Final, Self
 
 import pyinstrument
 import pyinstrument.renderers
+from httpx import AsyncClient, Client
 from opentelemetry import context as otcontext
 from opentelemetry import trace
 from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
@@ -13,10 +14,6 @@ from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.sampling import ParentBased, TraceIdRatioBased
 from pydantic import BaseModel, ConfigDict, model_validator
 from settings_library.tracing import TracingSettings
-
-if TYPE_CHECKING:
-    from httpx import AsyncClient, Client
-
 
 type TracingContext = otcontext.Context | None
 
@@ -79,7 +76,7 @@ class TracingConfig(BaseModel):
         )
 
 
-def setup_httpx_client_tracing(client: "AsyncClient | Client", tracing_config: TracingConfig) -> None:
+def setup_httpx_client_tracing(client: AsyncClient | Client, tracing_config: TracingConfig) -> None:
     HTTPXClientInstrumentor.instrument_client(client, tracer_provider=tracing_config.tracer_provider)
 
 
