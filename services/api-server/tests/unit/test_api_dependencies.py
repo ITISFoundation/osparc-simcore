@@ -118,7 +118,7 @@ def test_metadata_filter_in_api_route():
     }
 
     # Test with Unicode characters
-    unicode_query = "/test-filter?metadata.any=emoji:%F0%9F%98%8A&metadata.any=international:calf%C3%A9"
+    unicode_query = "/test-filter?metadata.any=emoji:%F0%9F%98%8A&metadata.any=international:caf%C3%A9"
     response = client.get(unicode_query)
     assert response.status_code == status.HTTP_200_OK
     assert response.json() == {
