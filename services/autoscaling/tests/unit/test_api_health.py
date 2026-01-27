@@ -5,7 +5,7 @@
 import httpx
 import pytest
 from moto.server import ThreadedMotoServer
-from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict
+from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from simcore_service_autoscaling.api.health import _StatusGet
 from starlette import status
 
@@ -23,7 +23,14 @@ def app_environment(
     mocked_ec2_server_envs: EnvVarsDict,
     mocked_ssm_server_envs: EnvVarsDict,
     mocked_redis_server: None,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> EnvVarsDict:
+    setenvs_from_dict(
+        monkeypatch,
+        {
+            "AUTOSCALING_DOCKER_API_PROXY": "null",
+        },
+    )
     return app_environment
 
 
