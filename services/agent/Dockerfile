@@ -170,11 +170,11 @@ EXPOSE 8000
 ENTRYPOINT [ "/bin/sh", "services/agent/docker/entrypoint.sh" ]
 CMD ["/bin/sh", "services/agent/docker/boot.sh"]
 
-# NOTE: this value gets overwritten in the `boot.sh` script
-# Since there is not wayt to start the image in `settings` mode
-# to run the `simcore-service settings` command, the entrypoint has to
-# be overwritten, which does makes this mandatory env var disappear
-# and the settings vlidation fails.
+# NOTE: This value is overwritten by `boot.sh` at runtime.
+# There is currently no supported way to start this image in `settings` mode
+# to run `simcore-service settings`. In CI, the entrypoint is overridden for
+# that command, which removes this mandatory env var and makes settings
+# validation fail unless we provide a default here.
 ENV AGENT_VOLUMES_CLEANUP_R_CLONE_VERSION=0.0.0
 
 
