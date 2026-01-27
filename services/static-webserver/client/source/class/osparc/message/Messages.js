@@ -21,12 +21,21 @@ qx.Class.define("osparc.message.Messages", {
   statics: {
     fetchEmailTemplates: function() {
       return osparc.store.Faker.getInstance().fetchEmailTemplates();
-      // return osparc.data.Resources.fetch("notificationTemplates", "getTemplates");
+      return osparc.data.Resources.fetch("notificationTemplates", "getTemplates");
     },
 
-    fetchEmailPreview: function(templateId, context = {}) {
-      return osparc.store.Faker.getInstance().fetchEmailPreview(templateId, context);
-      // return osparc.data.Resources.fetch("notificationTemplates", "getTemplatePreview")
+    fetchEmailPreview: function(templateName, context = {}) {
+      return osparc.store.Faker.getInstance().fetchEmailPreview(templateName, context);
+      const params = {
+        data: {
+          "ref:": {
+            "channel": "email",
+            "templateName": templateName,
+          },
+          "context": context,
+        },
+      };
+      return osparc.data.Resources.fetch("notificationTemplates", "getTemplatePreview")
     },
 
     sendMessageFromTemplate: function(data) {
@@ -36,10 +45,18 @@ qx.Class.define("osparc.message.Messages", {
       return osparc.data.Resources.fetch("sendMessageFromTemplate", "post", params);
     },
 
-    sendMessage: function(data) {
+    sendMessage: function(recipients, subject, bodyHtml, bodyText) {
       return new Promise((resolve) => resolve());
       const params = {
-        data,
+        data: {
+          "channel": "email",
+          "recipients": recipients,
+          "content": {
+            "subject": subject,
+            "bodyHtml": bodyHtml,
+            "bodyText": bodyText,
+          },
+        },
       };
       return osparc.data.Resources.fetch("sendMessage", "post", params);
     },
