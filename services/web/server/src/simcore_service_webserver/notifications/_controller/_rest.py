@@ -50,7 +50,6 @@ async def send_message(request: web.Request) -> web.Response:
 
     # move to service layer
     product = get_product(request.app, req_ctx.product_name)
-    _logger.error("product=%s", product)
 
     to: list[EmailAddress] = []
 
