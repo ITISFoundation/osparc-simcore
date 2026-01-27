@@ -89,6 +89,8 @@ qx.Class.define("osparc.wrapper.HtmlEditor", {
           console.log(quillPath + " loaded");
           this.setLibReady(true);
 
+          this.__applyStyles();
+
           resolve();
         }, this);
 
@@ -100,6 +102,41 @@ qx.Class.define("osparc.wrapper.HtmlEditor", {
 
         dynLoader.start();
       });
+    },
+
+    __applyStyles: function() {
+      const styleId = "quill-osparc-style";
+      if (!document.getElementById(styleId)) {
+        const color = qx.theme.manager.Color.getInstance().resolve("text");
+        const style = document.createElement("style");
+        style.id = styleId;
+        style.innerHTML = `
+          .ql-toolbar .ql-stroke {
+            stroke: ${color} !important;
+          }
+          .ql-toolbar .ql-fill {
+            fill: ${color} !important;
+          }
+          .ql-toolbar .ql-picker-label {
+            color: ${color} !important;
+          }
+          .ql-toolbar button:hover .ql-stroke,
+          .ql-toolbar button:focus .ql-stroke,
+          .ql-toolbar button.ql-active .ql-stroke {
+            stroke: ${color} !important;
+          }
+          .ql-toolbar button:hover .ql-fill,
+          .ql-toolbar button:focus .ql-fill,
+          .ql-toolbar button.ql-active .ql-fill {
+            fill: ${color} !important;
+          }
+          .ql-editor.ql-blank::before {
+            color: ${color} !important;
+            opacity: 0.6;
+          }
+        `;
+        document.head.appendChild(style);
+      }
     },
 
     createEditor: function(divId, initialContent = "", options = {}) {
