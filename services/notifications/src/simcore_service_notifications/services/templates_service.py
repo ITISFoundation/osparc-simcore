@@ -2,6 +2,7 @@ import logging
 from dataclasses import dataclass
 from typing import Any
 
+from models_library.notifications import ChannelType
 from models_library.notifications_errors import (
     NotificationsTemplateContextValidationError,
     NotificationsTemplateNotFoundError,
@@ -52,5 +53,5 @@ class NotificationsTemplatesService:
             context=validated_context.model_dump(),
         )
 
-    def search_templates(self, channel: str | None, template_name: str | None) -> list[NotificationTemplate]:
+    def search_templates(self, channel: ChannelType | None, template_name: str | None) -> list[NotificationTemplate]:
         return self.repository.search_templates(channel=channel, template_name=template_name)

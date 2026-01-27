@@ -1,6 +1,7 @@
 import logging
 
 from fastapi import FastAPI
+from models_library.notifications import ChannelType
 from models_library.notifications_errors import (
     NotificationsTemplateContextValidationError,
     NotificationsTemplateNotFoundError,
@@ -49,8 +50,8 @@ async def preview_template(
 async def search_templates(
     _app: FastAPI,
     *,
-    channel: str,
-    template_name: str,
+    channel: ChannelType | None,
+    template_name: str | None,
 ) -> list[NotificationsTemplateRpcResponse]:
     service = get_notifications_templates_service()
     templates = service.search_templates(channel=channel, template_name=template_name)
