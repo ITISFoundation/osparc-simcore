@@ -108,9 +108,8 @@ qx.Class.define("osparc.editor.EmailEditor", {
           break;
         case "text-editor": {
           const editorId = "email-html-editor-" + Date.now();
-          const wrapper = osparc.wrapper.HtmlEditor.getInstance();
-
-          const quillContainer = wrapper.createEditor(editorId, "<p>Write your email...</p>", {
+          const htmlEditor = osparc.wrapper.HtmlEditor.getInstance();
+          const quillContainer = htmlEditor.createEditor(editorId, "<p>Write your email...</p>", {
             theme: 'snow',
             placeholder: 'Write your email...',
             modules: {
@@ -130,7 +129,7 @@ qx.Class.define("osparc.editor.EmailEditor", {
 
           // Initialize Quill after the DOM element is ready
           quillContainer.addListenerOnce("appear", () => {
-            this.__quillInstance = wrapper.initializeEditor(editorId, quillContainer.getUserData("quillOptions"));
+            this.__quillInstance = htmlEditor.initializeEditor(editorId, quillContainer.getUserData("quillOptions"));
           });
 
           this.getChildControl("editor-page").add(control, {
@@ -168,7 +167,7 @@ qx.Class.define("osparc.editor.EmailEditor", {
       }
 
       const wrapper = osparc.wrapper.HtmlEditor.getInstance();
-      let emailContent = wrapper.getHTML(this.__quillInstance);
+      const emailContent = wrapper.getHTML(this.__quillInstance);
       const templateEmail = this.getTemplateEmail();
       const previewHtml = this.__buildPreviewHtml(templateEmail, emailContent);
 
