@@ -7,7 +7,7 @@ import json
 import logging
 import os
 import urllib.parse
-from collections.abc import AsyncIterator, Iterator
+from collections.abc import AsyncIterator, Callable, Iterator
 from contextlib import asynccontextmanager
 from typing import Any, NamedTuple
 from unittest.mock import Mock
@@ -98,6 +98,7 @@ def dynamic_sidecar_headers() -> dict[str, str]:
 
 @pytest.fixture()
 def mock_env(
+    mock_setup_remote_docker_client: Callable[[str], None],
     mock_env: EnvVarsDict,
     mock_exclusive: None,
     disable_postgres: None,
@@ -106,6 +107,8 @@ def mock_env(
     monkeypatch: pytest.MonkeyPatch,
     faker: Faker,
 ) -> None:
+    mock_setup_remote_docker_client("simcore_service_director_v2.core.application.setup_remote_docker_client")
+
     # Works as below line in docker.compose.yml
     # ${DOCKER_REGISTRY:-itisfoundation}/dynamic-sidecar:${DOCKER_IMAGE_TAG:-latest}
 
@@ -164,9 +167,9 @@ async def mock_retrieve_features(
             service_details = RunningDynamicServiceDetails.model_validate(
                 RunningDynamicServiceDetails.model_json_schema()["examples"][0]
             )
-            respx_mock.post(
-                f"{service_details.legacy_service_url}/retrieve", name="retrieve"
-            ).respond(json=RetrieveDataOutEnveloped.model_json_schema()["examples"][0])
+            respx_mock.post(f"{service_details.legacy_service_url}/retrieve", name="retrieve").respond(
+                json=RetrieveDataOutEnveloped.model_json_schema()["examples"][0]
+            )
 
             yield respx_mock
             # no cleanup required
@@ -240,11 +243,7 @@ def mocked_director_v0_service_api(
         respx_mock.get(
             f"/running_interactive_services/{service['node_uuid']}",
             name="running interactive service",
-        ).respond(
-            json={
-                "data": RunningDynamicServiceDetails.model_json_schema()["examples"][0]
-            }
-        )
+        ).respond(json={"data": RunningDynamicServiceDetails.model_json_schema()["examples"][0]})
 
         yield respx_mock
 
@@ -337,9 +336,9 @@ def test_create_dynamic_services(
         json=json.loads(post_data.model_dump_json()),
         follow_redirects=False,
     )
-    assert (
-        response.status_code == exp_status_code
-    ), f"expected status code {exp_status_code}, received {response.status_code}: {response.text}"
+    assert response.status_code == exp_status_code, (
+        f"expected status code {exp_status_code}, received {response.status_code}: {response.text}"
+    )
 
     if exp_status_code == status.HTTP_307_TEMPORARY_REDIRECT:
         # check redirection header goes to director-v0
@@ -403,18 +402,15 @@ def test_get_service_status(
     url = URL(f"/v2/dynamic_services/{service['node_uuid']}")
 
     response = client.get(str(url), follow_redirects=False)
-    assert (
-        response.status_code == exp_status_code
-    ), f"expected status code {exp_status_code}, received {response.status_code}: {response.text}"
+    assert response.status_code == exp_status_code, (
+        f"expected status code {exp_status_code}, received {response.status_code}: {response.text}"
+    )
     if exp_status_code == status.HTTP_307_TEMPORARY_REDIRECT:
         # check redirection header goes to director-v0
         assert "location" in response.headers
         redirect_url = URL(response.headers["location"])
         assert redirect_url.host == "director"
-        assert (
-            redirect_url.path
-            == f"/v0/running_interactive_services/{service['node_uuid']}"
-        )
+        assert redirect_url.path == f"/v0/running_interactive_services/{service['node_uuid']}"
         assert redirect_url.params == QueryParams("")  # empty query
 
 
@@ -450,9 +446,7 @@ def test_get_service_status(
         ),
     ],
 )
-@pytest.mark.parametrize(
-    "can_save, exp_save_state", [(None, True), (True, True), (False, False)]
-)
+@pytest.mark.parametrize("can_save, exp_save_state", [(None, True), (True, True), (False, False)])
 def test_delete_service(  # pylint:disable=too-many-arguments
     docker_swarm: None,
     mocked_director_v0_service_api: MockRouter,
@@ -471,18 +465,15 @@ def test_delete_service(  # pylint:disable=too-many-arguments
         url = url.copy_with(params={"can_save": can_save})
 
     response = client.delete(str(url), follow_redirects=False)
-    assert (
-        response.status_code == exp_status_code
-    ), f"expected status code {exp_status_code}, received {response.status_code}: {response.text}"
+    assert response.status_code == exp_status_code, (
+        f"expected status code {exp_status_code}, received {response.status_code}: {response.text}"
+    )
     if exp_status_code == status.HTTP_307_TEMPORARY_REDIRECT:
         # check redirection header goes to director-v0
         assert "location" in response.headers
         redirect_url = URL(response.headers["location"])
         assert redirect_url.host == "director"
-        assert (
-            redirect_url.path
-            == f"/v0/running_interactive_services/{service['node_uuid']}"
-        )
+        assert redirect_url.path == f"/v0/running_interactive_services/{service['node_uuid']}"
         assert redirect_url.params == QueryParams(can_save=exp_save_state)
 
 
@@ -523,9 +514,9 @@ def test_delete_service_waiting_for_manual_intervention(
         headers=dynamic_sidecar_headers,
         json=json.loads(post_data.model_dump_json()),
     )
-    assert (
-        response.status_code == exp_status_code
-    ), f"expected status code {exp_status_code}, received {response.status_code}: {response.text}"
+    assert response.status_code == exp_status_code, (
+        f"expected status code {exp_status_code}, received {response.status_code}: {response.text}"
+    )
 
     # mark service as failed and waiting for human intervention
     node_uuid = UUID(service["node_uuid"])
@@ -584,12 +575,10 @@ def test_retrieve(
 ) -> None:
     url = URL(f"/v2/dynamic_services/{service['node_uuid']}:retrieve")
     response = client.post(str(url), json={"port_keys": []}, follow_redirects=False)
-    assert (
-        response.status_code == exp_status_code
-    ), f"expected status code {exp_status_code}, received {response.status_code}: {response.text}"
-    assert (
-        response.json() == RetrieveDataOutEnveloped.model_json_schema()["examples"][0]
+    assert response.status_code == exp_status_code, (
+        f"expected status code {exp_status_code}, received {response.status_code}: {response.text}"
     )
+    assert response.json() == RetrieveDataOutEnveloped.model_json_schema()["examples"][0]
 
 
 @pytest.fixture
@@ -604,9 +593,7 @@ def mock_internals_inactivity(
         return_value=[],
     )
 
-    service_inactivity_map: dict[str, ActivityInfoOrNone] = {
-        faker.uuid4(): s for s in services_activity
-    }
+    service_inactivity_map: dict[str, ActivityInfoOrNone] = {faker.uuid4(): s for s in services_activity}
 
     mock_project = Mock()
     mock_project.workbench = list(service_inactivity_map.keys())
@@ -628,9 +615,7 @@ def mock_internals_inactivity(
         f"{module_base}.DynamicSidecarsScheduler.get_service_activity",
         side_effect=get_service_activity,
     )
-    mocker.patch(
-        f"{module_base}.DynamicSidecarsScheduler.is_service_tracked", return_value=True
-    )
+    mocker.patch(f"{module_base}.DynamicSidecarsScheduler.is_service_tracked", return_value=True)
 
 
 @pytest.mark.parametrize(
