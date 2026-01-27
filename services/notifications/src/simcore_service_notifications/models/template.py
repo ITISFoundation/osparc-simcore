@@ -2,7 +2,8 @@ from abc import ABC
 from dataclasses import dataclass
 
 from models_library.notifications import ChannelType, TemplateName
-from pydantic import BaseModel
+
+from .context import NotificationsContext
 
 
 @dataclass(frozen=True)
@@ -18,6 +19,6 @@ class TemplateRef:
 @dataclass(frozen=True)
 class NotificationTemplate(ABC):
     ref: TemplateRef
-    context_model: type[BaseModel]
+    context_model: type[NotificationsContext]
 
     parts: tuple[str, ...]
