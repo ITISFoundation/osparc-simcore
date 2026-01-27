@@ -192,6 +192,9 @@ def mock_env(
             "SWARM_STACK_NAME": "pytest-simcore",
             "TRAEFIK_SIMCORE_ZONE": "test_traefik_zone",
             "DIRECTOR_V2_TRACING": "null",
+            "DOCKER_API_PROXY_HOST": "test",
+            "DOCKER_API_PROXY_USER": "test",
+            "DOCKER_API_PROXY_PASSWORD": "test",
         },
     )
 
@@ -206,7 +209,11 @@ async def initialized_app(mock_env: EnvVarsDict) -> AsyncIterable[FastAPI]:
 
 
 @pytest.fixture()
-async def client(mock_env: EnvVarsDict) -> AsyncIterator[TestClient]:
+async def client(
+    mock_setup_remote_docker_client: Callable[[str], None], mock_env: EnvVarsDict
+) -> AsyncIterator[TestClient]:
+    mock_setup_remote_docker_client("simcore_service_director_v2.core.application.setup_remote_docker_client")
+
     # NOTE: this way we ensure the events are run in the application
     # since it starts the app on a test server
     settings = AppSettings.create_from_envs()

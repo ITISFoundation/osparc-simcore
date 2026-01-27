@@ -1,5 +1,6 @@
 import logging
-from collections.abc import AsyncIterator, Callable
+from collections.abc import Callable
+from contextlib import AsyncExitStack
 
 import aiodocker
 import pytest
@@ -66,17 +67,19 @@ async def docker_api_proxy_settings(
 
 @pytest.fixture
 async def mock_setup_remote_docker_client(mocker: MockerFixture) -> Callable[[str], None]:
-    def _(to_mock: str) -> None:
-        mocker.patch(to_mock, autospec=True)
+    def _(target_setip_to_replace: str) -> None:
+        def _setup(app: FastAPI, *args, **kwargs) -> None:
+            exit_stack = AsyncExitStack()
+
+            async def on_startup() -> None:
+                app.state.remote_docker_client = await exit_stack.enter_async_context(aiodocker.Docker())
+
+            async def on_shutdown() -> None:
+                await exit_stack.aclose()
+
+            app.add_event_handler("startup", on_startup)
+            app.add_event_handler("shutdown", on_shutdown)
+
+        mocker.patch(target_setip_to_replace, new=_setup)
 
     return _
-
-
-@pytest.fixture
-async def mock_remote_docker_client() -> AsyncIterator[Callable[[FastAPI], None]]:
-    async with aiodocker.Docker() as docker_client:
-
-        def _(app: FastAPI) -> None:
-            app.state.remote_docker_client = docker_client
-
-        yield _
