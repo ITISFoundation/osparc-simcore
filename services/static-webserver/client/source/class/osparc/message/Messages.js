@@ -38,13 +38,6 @@ qx.Class.define("osparc.message.Messages", {
       return osparc.data.Resources.fetch("notificationTemplates", "getTemplatePreview")
     },
 
-    sendMessageFromTemplate: function(data) {
-      const params = {
-        data,
-      };
-      return osparc.data.Resources.fetch("sendMessageFromTemplate", "post", params);
-    },
-
     sendMessage: function(recipients, subject, bodyHtml, bodyText) {
       return new Promise((resolve) => resolve());
       const params = {
