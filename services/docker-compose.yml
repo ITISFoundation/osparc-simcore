@@ -580,7 +580,6 @@ services:
     hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     networks:
       - default
-      - docker_api_subnet
     environment:
       <<:
         - *common_logging_environments
@@ -624,7 +623,7 @@ services:
     networks:
       - autoscaling_subnet
       - interactive_services_subnet
-      - docker_api_subnet
+      - default
 
   static-webserver:
     image: ${DOCKER_REGISTRY:-itisfoundation}/static-webserver:${DOCKER_IMAGE_TAG:-latest}
@@ -1600,15 +1599,6 @@ networks:
     internal: false
     labels:
       com.simcore.description: "computational services network"
-  docker_api_subnet:
-    name: ${SWARM_STACK_NAME}_docker_api_subnet
-    driver: overlay
-    attachable: true
-    internal: true
-    driver_opts:
-      encrypted: "true"
-    labels:
-      com.simcore.description: "used for internal access to the docker swarm api"
 
 secrets:
   dask_tls_key:
