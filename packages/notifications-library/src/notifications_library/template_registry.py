@@ -6,7 +6,7 @@ Each template can optionally define its context model in a context.py file.
 
 import importlib
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 import notifications_library
 
@@ -18,19 +18,22 @@ if TYPE_CHECKING:
 _logger = logging.getLogger(__name__)
 
 
+_CONTEXT_CLASS_NAME: Final[str] = "Context"
+
+
 def get_context_model(channel: "ChannelType", template_name: "TemplateName") -> type["NotificationsTemplateContext"]:
     """
     Get the context model for a specific template.
 
     Attempts to import a context module from the template directory.
-    Falls back to the base NotificationsContext if no specific context is defined.
+    Falls back to the base NotificationsTemplateContext if no specific context is defined.
 
     Args:
         channel: The notification channel (e.g., ChannelType.email)
-        template_name: The template identifier
+        template_name: The template name (e.g., account_approved)
 
     Returns:
-        The context model class for the template, or NotificationsContext as fallback
+        The context model class for the template, or NotificationsTemplateContext as fallback
     """
     from .template_context import NotificationsTemplateContext  # noqa: PLC0415
 
@@ -40,7 +43,7 @@ def get_context_model(channel: "ChannelType", template_name: "TemplateName") -> 
 
     try:
         module = importlib.import_module(module_path)
-        context_class = getattr(module, "Context", None)
+        context_class = getattr(module, _CONTEXT_CLASS_NAME, None)
 
         if context_class and issubclass(context_class, NotificationsTemplateContext):
             _logger.debug(
@@ -57,13 +60,13 @@ def get_context_model(channel: "ChannelType", template_name: "TemplateName") -> 
         )
     except ImportError:
         _logger.debug(
-            "No custom context found for %s/%s, using base NotificationsContext",
+            "No custom context found for %s/%s, using base NotificationsTemplateContext",
             channel,
             template_name,
         )
     except Exception:
         _logger.exception(
-            "Error loading context model from %s, using base NotificationsContext",
+            "Error loading context model from %s, using base NotificationsTemplateContext",
             module_path,
         )
 
