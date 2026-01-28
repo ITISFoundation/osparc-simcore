@@ -43,7 +43,10 @@ _TEMPLATE_NAME_PARTS_COUNT: Final[int] = 3
 def split_template_name(template_name: str) -> NamedTemplateTuple:
     parts = template_name.split(_TEMPLATE_NAME_SEPARATOR)
     if len(parts) != _TEMPLATE_NAME_PARTS_COUNT:
-        msg = f"Invalid template name format: {template_name}"
+        msg = (
+            f"Invalid template name format: {template_name!r}. "
+            "Expected format: {channel}/{template_name}/{part}.{ext}"
+        )
         raise TypeError(msg)
     channel, template_id, filename = parts
     part, ext = filename.rsplit(".", 1)
