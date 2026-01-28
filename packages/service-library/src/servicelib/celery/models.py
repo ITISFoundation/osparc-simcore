@@ -140,7 +140,6 @@ class TasksQueue(StrEnum):
     CPU_BOUND = "cpu_bound"
     DEFAULT = "default"
     API_WORKER_QUEUE = "api_worker_queue"
-    NOTIFICATIONS = "notifications"
 
 
 class ExecutionMetadata(BaseModel):
