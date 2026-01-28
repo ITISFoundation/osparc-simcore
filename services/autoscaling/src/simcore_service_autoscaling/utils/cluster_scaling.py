@@ -122,7 +122,7 @@ def sort_drained_nodes(
 ) -> tuple[DrainedNodes, HotBufferDrainedNodes, TerminatingNodes]:
     assert app_settings.AUTOSCALING_EC2_INSTANCES  # nosec
     hot_buffer_requirements: dict[InstanceTypeType, tuple[int, datetime.timedelta | None]] = {
-        type_name: (config.hot_buffer_count, config.hot_buffer_max_inactivity_time)
+        typing.cast(InstanceTypeType, type_name): (config.hot_buffer_count, config.hot_buffer_max_inactivity_time)
         for type_name, config in app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES.items()
         if config.hot_buffer_count > 0
     }
@@ -134,8 +134,7 @@ def sort_drained_nodes(
     candidates_by_type: dict[InstanceTypeType, list[AssociatedInstance]] = {}
     now = datetime.datetime.now(datetime.UTC)
     for node in remaining_drained_nodes:
-        instance_type: InstanceTypeType = typing.cast(InstanceTypeType, node.ec2_instance.type)
-        requirement = hot_buffer_requirements.get(instance_type)
+        requirement = hot_buffer_requirements.get(node.ec2_instance.type)
         if not requirement:
             continue
         _, inactivity_limit = requirement
@@ -143,7 +142,7 @@ def sort_drained_nodes(
         if inactivity_limit is not None and (now - last_ready_update) >= inactivity_limit:
             # Too old to keep in buffer, let normal termination flow handle it
             continue
-        candidates_by_type.setdefault(instance_type, []).append(node)
+        candidates_by_type.setdefault(node.ec2_instance.type, []).append(node)
 
     hot_buffer_drained_nodes: list[AssociatedInstance] = []
     for ec2_type in available_ec2_types:

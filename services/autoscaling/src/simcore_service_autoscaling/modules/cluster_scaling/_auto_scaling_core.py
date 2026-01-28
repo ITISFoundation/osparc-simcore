@@ -115,7 +115,7 @@ def _compute_hot_buffer_missing(app_settings: ApplicationSettings, cluster: Clus
         return {}
 
     pending_by_type = collections.Counter(
-        cast(InstanceTypeType, instance.ec2_instance.type)
+        instance.ec2_instance.type
         for instance in itertools.chain(cluster.pending_ec2s, cluster.pending_nodes)
         if not instance.assigned_tasks
     )
