@@ -186,7 +186,9 @@ def dynamic_sidecar_service_spec(
             f"{to_simcore_runtime_docker_label_key('project_id')}": f"{uuid4()}",
             f"{to_simcore_runtime_docker_label_key('user_id')}": "123",
             f"{to_simcore_runtime_docker_label_key('node_id')}": f"{uuid4()}",
-            f"{to_simcore_runtime_docker_label_key('swarm_stack_name')}": f"{dynamic_services_scheduler_settings.SWARM_STACK_NAME}",  # noqa: E501
+            f"{to_simcore_runtime_docker_label_key('swarm_stack_name')}": (
+                f"{dynamic_services_scheduler_settings.SWARM_STACK_NAME}"
+            ),
             f"{to_simcore_runtime_docker_label_key('service_port')}": "80",
             f"{to_simcore_runtime_docker_label_key('service_key')}": "simcore/services/dynamic/3dviewer",
             f"{to_simcore_runtime_docker_label_key('service_version')}": "2.4.5",
@@ -229,7 +231,9 @@ def dynamic_sidecar_stack_specs(
                 f"{to_simcore_runtime_docker_label_key('project_id')}": f"{project_id}",
                 f"{to_simcore_runtime_docker_label_key('user_id')}": f"{user_id}",
                 f"{to_simcore_runtime_docker_label_key('node_id')}": f"{node_uuid}",
-                f"{to_simcore_runtime_docker_label_key('swarm_stack_name')}": f"{dynamic_services_scheduler_settings.SWARM_STACK_NAME}",  # noqa: E501
+                f"{to_simcore_runtime_docker_label_key('swarm_stack_name')}": (
+                    f"{dynamic_services_scheduler_settings.SWARM_STACK_NAME}"
+                ),
                 f"{to_simcore_runtime_docker_label_key('service_port')}": "80",
                 f"{to_simcore_runtime_docker_label_key('service_key')}": "simcore/services/dynamic/3dviewer",
                 f"{to_simcore_runtime_docker_label_key('service_version')}": "2.4.5",
@@ -242,7 +246,9 @@ def dynamic_sidecar_stack_specs(
                 f"{to_simcore_runtime_docker_label_key('project_id')}": f"{project_id}",
                 f"{to_simcore_runtime_docker_label_key('user_id')}": f"{user_id}",
                 f"{to_simcore_runtime_docker_label_key('node_id')}": f"{node_uuid}",
-                f"{to_simcore_runtime_docker_label_key('swarm_stack_name')}": f"{dynamic_services_scheduler_settings.SWARM_STACK_NAME}",  # noqa: E501
+                f"{to_simcore_runtime_docker_label_key('swarm_stack_name')}": (
+                    f"{dynamic_services_scheduler_settings.SWARM_STACK_NAME}"
+                ),
                 f"{to_simcore_runtime_docker_label_key('service_port')}": "80",
                 f"{to_simcore_runtime_docker_label_key('service_key')}": "simcore/services/dynamic/3dviewer",
                 f"{to_simcore_runtime_docker_label_key('service_version')}": "2.4.5",
