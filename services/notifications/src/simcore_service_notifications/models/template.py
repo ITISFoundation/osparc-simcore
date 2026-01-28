@@ -2,7 +2,7 @@ from abc import ABC
 from dataclasses import dataclass
 
 from models_library.notifications import ChannelType, TemplateName
-from notifications_library.template_context import NotificationsTemplateContext
+from notifications_library.template_context import BaseTemplateContext
 
 
 @dataclass(frozen=True)
@@ -18,6 +18,6 @@ class NotificationsTemplateRef:
 @dataclass(frozen=True)
 class NotificationsTemplate(ABC):
     ref: NotificationsTemplateRef
-    context_model: type[NotificationsTemplateContext]
+    context_model: type[BaseTemplateContext]
 
     parts: tuple[str, ...]

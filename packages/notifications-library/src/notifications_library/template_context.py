@@ -6,7 +6,5 @@ from pydantic import BaseModel
 from pydantic.json_schema import SkipJsonSchema
 
 
-class NotificationsTemplateContext(BaseModel):
-    """Base context model that all template-specific contexts must inherit from."""
-
+class BaseTemplateContext(BaseModel):
     product: SkipJsonSchema[dict[str, Any]]
