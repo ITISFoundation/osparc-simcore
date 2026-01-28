@@ -1,3 +1,4 @@
+# pylint: disable=unused-argument
 from collections.abc import Awaitable, Callable
 
 import pytest

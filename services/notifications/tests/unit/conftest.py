@@ -21,6 +21,7 @@ from celery_library.worker.signals import _worker_init_wrapper, _worker_shutdown
 from faker import Faker
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+from jinja2 import DictLoader, Environment, select_autoescape
 from notifications_library._models import ProductData, ProductUIData
 from pydantic import EmailStr
 from pytest_mock import MockerFixture
@@ -42,6 +43,32 @@ pytest_plugins = [
     "pytest_simcore.environment_configs",
     "pytest_simcore.faker_users_data",
 ]
+
+
+# Mock templates for testing
+MOCK_TEMPLATES = {
+    "email/account_approved/subject.j2": "Account Approved",
+    "email/account_approved/body_html.j2": "<p>Your account has been approved</p>",
+    "email/account_approved/body_text.j2": "Your account has been approved",
+    "email/account_rejected/subject.j2": "Account Rejected",
+    "email/account_rejected/body_html.j2": "<p>Your account has been rejected</p>",
+    "email/account_rejected/body_text.j2": "Your account has been rejected",
+    "email/welcome/subject.j2": "Welcome!",
+    "email/welcome/body_html.j2": "<p>Welcome to our platform</p>",
+    "email/welcome/body_text.j2": "Welcome to our platform",
+    "email/password_reset/subject.j2": "Reset Your Password",
+    "email/password_reset/body_html.j2": "<p>Click here to reset your password</p>",
+    "email/password_reset/body_text.j2": "Click here to reset your password",
+}
+
+
+@pytest.fixture
+def mock_jinja_env() -> Environment:
+    """Create a mock Jinja2 environment with test templates."""
+    return Environment(
+        loader=DictLoader(MOCK_TEMPLATES),
+        autoescape=select_autoescape(enabled_extensions=("j2",)),
+    )
 
 
 @pytest.fixture
@@ -76,6 +103,15 @@ def app_environment(
             **external_envfile_dict,
         },
     )
+
+
+@pytest.fixture
+def mock_jinja_env_in_dependencies(mocker: MockerFixture, mock_jinja_env: Environment) -> Environment:
+    mocker.patch(
+        "simcore_service_notifications.api.rpc.dependencies.get_jinja_env",
+        return_value=mock_jinja_env,
+    )
+    return mock_jinja_env
 
 
 @pytest.fixture
