@@ -7,7 +7,7 @@ from models_library.notifications import ChannelType
 
 
 class EmailAddress(BaseModel):
-    display_name: str
+    display_name: str = ""
     addr_spec: LowerCaseEmailStr
 
 
