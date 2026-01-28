@@ -65,7 +65,7 @@ async def test_get_service_status(
     assert await get_dynamic_service(mocked_app, node_id=node_id) == expected_response
 
 
-async def test_get_service_status_raises_rpc_server_error(
+async def test_get_service_status_raises_rpc_client_error(
     mocker: MockerFixture, mocked_app: AsyncMock, node_id: NodeID
 ):
     mocked_rpc_client = AsyncMock()

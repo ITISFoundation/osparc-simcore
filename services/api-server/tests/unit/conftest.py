@@ -51,13 +51,13 @@ from moto.server import ThreadedMotoServer
 from packaging.version import Version
 from pydantic import EmailStr, HttpUrl, TypeAdapter
 from pytest_mock import MockerFixture, MockType
-from pytest_simcore.helpers.catalog_rpc_server import CatalogRpcSideEffects
-from pytest_simcore.helpers.director_v2_rpc_server import DirectorV2SideEffects
+from pytest_simcore.helpers.catalog_rpc import CatalogRpcSideEffects
+from pytest_simcore.helpers.director_v2_rpc import DirectorV2SideEffects
 from pytest_simcore.helpers.host import get_localhost_ip
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
-from pytest_simcore.helpers.storage_rpc_server import StorageSideEffects
+from pytest_simcore.helpers.storage_rpc import StorageSideEffects
 from pytest_simcore.helpers.typing_mock import HandlerMockFactory
-from pytest_simcore.helpers.webserver_rpc_server import WebserverRpcSideEffects
+from pytest_simcore.helpers.webserver_rpc import WebserverRpcSideEffects
 from pytest_simcore.simcore_webserver_projects_rest_api import GET_PROJECT
 from requests.auth import HTTPBasicAuth
 from respx import MockRouter

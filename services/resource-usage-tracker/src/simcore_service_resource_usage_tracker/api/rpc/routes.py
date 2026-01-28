@@ -7,7 +7,7 @@ from models_library.api_schemas_resource_usage_tracker import (
 from servicelib.logging_utils import log_context
 from servicelib.rabbitmq import RPCRouter
 
-from ...services.modules.rabbitmq import get_rabbitmq_rpc_server
+from ...services.modules.rabbitmq import get_rabbitmq_rpc_client
 from . import (
     _credit_transactions,
     _licensed_items_checkouts,
@@ -35,8 +35,8 @@ def setup_rpc_api_routes(app: FastAPI) -> None:
             logging.INFO,
             msg="RUT startup RPC API Routes",
         ):
-            rpc_server = get_rabbitmq_rpc_server(app)
+            rpc_client = get_rabbitmq_rpc_client(app)
             for router in ROUTERS:
-                await rpc_server.register_router(router, RESOURCE_USAGE_TRACKER_RPC_NAMESPACE, app)
+                await rpc_client.register_router(router, RESOURCE_USAGE_TRACKER_RPC_NAMESPACE, app)
 
     app.add_event_handler("startup", startup)

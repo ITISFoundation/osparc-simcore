@@ -68,7 +68,7 @@ def test_rabbitmq_does_not_initialize_if_deactivated(
 ):
     assert hasattr(initialized_app.state, "rabbitmq_client")
     assert initialized_app.state.rabbitmq_client is None
-    assert initialized_app.state.rabbitmq_rpc_server is None
+    assert initialized_app.state.rabbitmq_rpc_client is None
     with pytest.raises(ConfigurationError):
         get_rabbitmq_client(initialized_app)
     with pytest.raises(ConfigurationError):
@@ -85,9 +85,9 @@ def test_rabbitmq_initializes(
 ):
     assert hasattr(initialized_app.state, "rabbitmq_client")
     assert initialized_app.state.rabbitmq_client is not None
-    assert initialized_app.state.rabbitmq_rpc_server is not None
+    assert initialized_app.state.rabbitmq_rpc_client is not None
     assert get_rabbitmq_client(initialized_app) == initialized_app.state.rabbitmq_client
-    assert get_rabbitmq_rpc_client(initialized_app) == initialized_app.state.rabbitmq_rpc_server
+    assert get_rabbitmq_rpc_client(initialized_app) == initialized_app.state.rabbitmq_rpc_client
     assert is_rabbitmq_enabled(initialized_app) is True
 
 
@@ -113,7 +113,8 @@ async def test_post_message(
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
             print(
-                f"--> checking for message in rabbit exchange {rabbit_message.channel_name}, {attempt.retry_state.retry_object.statistics}"
+                f"--> checking for message in rabbit exchange {rabbit_message.channel_name}, "
+                f"{attempt.retry_state.retry_object.statistics}"
             )
             mocked_message_handler.assert_called_once_with(rabbit_message.model_dump_json().encode())
             print("... message received")

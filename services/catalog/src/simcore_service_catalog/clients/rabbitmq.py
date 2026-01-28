@@ -21,18 +21,18 @@ async def rabbitmq_lifespan(app: FastAPI) -> AsyncIterator[State]:
     settings: RabbitSettings = get_rabbitmq_settings(app)
     await wait_till_rabbitmq_responsive(settings.dsn)
 
-    app.state.rabbitmq_rpc_server = await RabbitMQRPCClient.create(
-        client_name=f"{PROJECT_NAME}_rpc_server", settings=settings
+    app.state.rabbitmq_rpc_client = await RabbitMQRPCClient.create(
+        client_name=f"{PROJECT_NAME}_rpc_client", settings=settings
     )
 
     try:
         yield {}
     finally:
-        if app.state.rabbitmq_rpc_server:
-            await app.state.rabbitmq_rpc_server.close()
-            app.state.rabbitmq_rpc_server = None
+        if app.state.rabbitmq_rpc_client:
+            await app.state.rabbitmq_rpc_client.close()
+            app.state.rabbitmq_rpc_client = None
 
 
-def get_rabbitmq_rpc_server(app: FastAPI) -> RabbitMQRPCClient:
-    assert app.state.rabbitmq_rpc_server  # nosec
-    return cast(RabbitMQRPCClient, app.state.rabbitmq_rpc_server)
+def get_rabbitmq_rpc_client(app: FastAPI) -> RabbitMQRPCClient:
+    assert app.state.rabbitmq_rpc_client  # nosec
+    return cast(RabbitMQRPCClient, app.state.rabbitmq_rpc_client)

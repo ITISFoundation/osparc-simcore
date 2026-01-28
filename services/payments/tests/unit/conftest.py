@@ -278,7 +278,7 @@ def no_funds_payment_method_id(faker: Faker) -> PaymentMethodID:
 
 
 @pytest.fixture
-def mock_payments_methods_routes(faker: Faker, no_funds_payment_method_id: PaymentMethodID) -> Iterator[Callable]:
+def mock_payments_methods_routes(faker: Faker, no_funds_payment_method_id: PaymentMethodID) -> Iterator[Callable]:  # noqa: C901
     class PaymentMethodInfoTuple(NamedTuple):
         init: InitPaymentMethod
         get: GetPaymentMethod

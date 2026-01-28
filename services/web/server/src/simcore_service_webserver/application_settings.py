@@ -136,7 +136,10 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         bool,
         Field(
             validation_alias=AliasChoices("WEBSERVER_LOG_FORMAT_LOCAL_DEV_ENABLED", "LOG_FORMAT_LOCAL_DEV_ENABLED"),
-            description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
+            description=(
+                "Enables local development log format. WARNING: make sure it is "
+                "disabled if you want to have structured logs!"
+            ),
         ),
     ] = False
 
@@ -145,26 +148,28 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         Field(
             default_factory=dict,
             validation_alias=AliasChoices("WEBSERVER_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"),
-            description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
+            description=(
+                "is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') "
+                "to a list of log message patterns that should be filtered out."
+            ),
         ),
     ] = DEFAULT_FACTORY
 
     WEBSERVER_RPC_NAMESPACE: Annotated[
         RPCNamespace | None,
         Field(
-            description="Namespace for the RPC server (if any) otherwise None"
-            "NOTE that some webserver variants do NOT expose an RPC server e.g. wg-garbage-collector, wg-auth, etc"
+            description="Namespace for the RPC client (if any) otherwise None"
+            "NOTE that some webserver variants do NOT expose an RPC client e.g. wg-garbage-collector, wg-auth, etc"
         ),
     ]
 
     WEBSERVER_SERVER_HOST: Annotated[
-        # TODO: find a better name!?
         str,
         Field(
             description="host name to serve within the container."
             "NOTE that this different from WEBSERVER_HOST env which is the host seen outside the container",
         ),
-    ] = "0.0.0.0"  # nosec
+    ] = "0.0.0.0"  # nosec  # noqa: S104
 
     WEBSERVER_HOST: Annotated[
         str | None,
@@ -464,7 +469,10 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
             if json_schema.get(_X_FEATURE_UNDER_DEVELOPMENT):
                 assert not dev_features_allowed  # nosec
                 _logger.warning(
-                    "'%s' is still under development and will be forcibly disabled [WEBSERVER_DEV_FEATURES_ENABLED=%s].",
+                    (
+                        "'%s' is still under development and will be forcibly disabled "
+                        "[WEBSERVER_DEV_FEATURES_ENABLED=%s]."
+                    ),
                     field_name,
                     dev_features_allowed,
                 )

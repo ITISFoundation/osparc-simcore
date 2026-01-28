@@ -111,7 +111,7 @@ async def test_process_message__called(
     create_rabbitmq_client: Callable[[str], RabbitMQClient],
 ):
     publisher = create_rabbitmq_client("publisher")
-    msg = WalletCreditsMessage(wallet_id=1, credits=Decimal(80.5), product_name="s4l")
+    msg = WalletCreditsMessage(wallet_id=1, credits=Decimal("80.5"), product_name="s4l")
     await publisher.publish(WalletCreditsMessage.get_channel_name(), msg)
 
     async for attempt in AsyncRetrying(
@@ -188,23 +188,7 @@ async def mock_rpc_client(
     rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
     mocker: MockerFixture,
 ) -> RabbitMQRPCClient:
-    rpc_client = await rabbitmq_rpc_client("client")
-
-    # mock returned client
-    mocker.patch(
-        "simcore_service_payments.services.auto_recharge_process_message.get_rabbitmq_rpc_client",
-        return_value=rpc_client,
-    )
-
-    return rpc_client
-
-
-@pytest.fixture
-async def mock_rpc_server(
-    rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
-    mocker: MockerFixture,
-) -> RabbitMQRPCClient:
-    rpc_server = await rabbitmq_rpc_client("mock_server")
+    rpc_client = await rabbitmq_rpc_client("mock_client")
 
     router = RPCRouter()
 
@@ -218,9 +202,15 @@ async def mock_rpc_server(
     ) -> InvoiceDataGet:
         return InvoiceDataGet.model_validate(InvoiceDataGet.model_config["json_schema_extra"]["examples"][0])
 
-    await rpc_server.register_router(router, namespace=DEFAULT_WEBSERVER_RPC_NAMESPACE)
+    await rpc_client.register_router(router, namespace=DEFAULT_WEBSERVER_RPC_NAMESPACE)
 
-    return rpc_server
+    # mock returned client
+    mocker.patch(
+        "simcore_service_payments.services.auto_recharge_process_message.get_rabbitmq_rpc_client",
+        return_value=rpc_client,
+    )
+
+    return rpc_client
 
 
 async def _assert_payments_transactions_db_row(
@@ -237,7 +227,7 @@ async def _assert_payments_transactions_db_row(
                 result = await con.execute(sa.select(payments_transactions))
                 row = result.first()
                 assert row
-                return PaymentsTransactionsDB.model_validate(row)
+    return PaymentsTransactionsDB.model_validate(row)
 
 
 async def test_process_message__whole_autorecharge_flow_success(
@@ -246,14 +236,13 @@ async def test_process_message__whole_autorecharge_flow_success(
     wallet_id: int,
     populate_test_db: None,
     mocked_pay_with_payment_method: mock.AsyncMock,
-    mock_rpc_server: RabbitMQRPCClient,
     mock_rpc_client: RabbitMQRPCClient,
     mock_resource_usage_tracker_service_api: MockRouter,
     # postgres_db: sa.engine.Engine,
     sqlalchemy_async_engine: AsyncEngine,
 ):
     publisher = create_rabbitmq_client("publisher")
-    msg = WalletCreditsMessage(wallet_id=wallet_id, credits=Decimal(80.5), product_name="s4l")
+    msg = WalletCreditsMessage(wallet_id=wallet_id, credits=Decimal("80.5"), product_name="s4l")
     await publisher.publish(WalletCreditsMessage.get_channel_name(), msg)
 
     row = await _assert_payments_transactions_db_row(sqlalchemy_async_engine)

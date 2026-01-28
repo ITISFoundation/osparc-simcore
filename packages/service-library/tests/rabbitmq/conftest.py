@@ -17,13 +17,6 @@ async def rpc_client(
 
 
 @pytest.fixture
-async def rpc_server(
-    rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
-) -> RabbitMQRPCClient:
-    return await rabbitmq_rpc_client("pytest_rpc_server")
-
-
-@pytest.fixture
 def namespace() -> RPCNamespace:
     return RPCNamespace.from_entries({f"test{i}": f"test{i}" for i in range(8)})
 
