@@ -85,7 +85,7 @@ class DynamicSidecarStatus(str, Enum):
     FAILING = "failing"  # requests to the sidecar API are failing service should be cosnidered as unavailable
 
 
-class Status(BaseModel):
+class Status(BaseModel):  # noqa: PLW1641 # NOTE: absolutely do not add hashing here it breaks the scheduler internals
     """Generated from data from docker container inspect API"""
 
     current: DynamicSidecarStatus = Field(..., description="status of the service")
@@ -109,9 +109,6 @@ class Status(BaseModel):
         if not isinstance(other, Status):
             return NotImplemented
         return self.current == other.current and self.info == other.info
-
-    def __hash__(self) -> int:
-        return hash((self.current, self.info))
 
     @classmethod
     def create_as_initially_ok(cls) -> "Status":
