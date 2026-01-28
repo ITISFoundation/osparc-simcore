@@ -13,5 +13,4 @@ class NotificationsRenderer(ABC):
         self,
         template: NotificationsTemplate,
         context: dict[str, Any],
-    ) -> NotificationTemplatePreview:
-        raise NotImplementedError
+    ) -> NotificationTemplatePreview: ...
