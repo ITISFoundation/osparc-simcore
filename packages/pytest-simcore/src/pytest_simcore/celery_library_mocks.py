@@ -63,7 +63,7 @@ def mock_task_manager_object(
 
     def _set_return_or_raise(method, value):
         if isinstance(value, Exception):
-            method.side_effect = lambda: (_ for _ in ()).throw(value)
+            method.side_effect = lambda *args, **kwargs: (_ for _ in ()).throw(value)  # noqa: ARG005
         else:
             method.return_value = value
 
