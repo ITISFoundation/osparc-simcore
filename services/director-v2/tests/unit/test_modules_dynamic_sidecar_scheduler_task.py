@@ -186,11 +186,11 @@ def mocked_dynamic_scheduler_events(error_raised_by_saving_state: bool, use_case
 
     class AlwaysTriggersDynamicSchedulerEvent(DynamicSchedulerEvent):
         @classmethod
-        async def will_trigger(cls, app: FastAPI, scheduler_data: SchedulerData) -> bool:
+        async def will_trigger(cls, app: FastAPI, scheduler_data: SchedulerData) -> bool:  # noqa: ARG003
             return True
 
         @classmethod
-        async def action(cls, app: FastAPI, scheduler_data: SchedulerData) -> None:
+        async def action(cls, app: FastAPI, scheduler_data: SchedulerData) -> None:  # noqa: ARG003
             counter.increment()
             if error_raised_by_saving_state:
                 # emulate the error was generated while saving the state
@@ -247,9 +247,10 @@ async def test_skip_observation_cycle_after_error(
     # add a task, emulate an error make sure no observation cycle is
     # being triggered again
     assert mocked_dynamic_scheduler_events.count == 0
+    scheduler_data.requires_data_mounting = False
     await scheduler.scheduler.add_service_from_scheduler_data(scheduler_data)
     # check it is being tracked
-    assert scheduler_data.node_uuid in scheduler.scheduler._inverse_search_mapping
+    assert scheduler_data.node_uuid in scheduler.scheduler._inverse_search_mapping  # noqa: SLF001
 
     # ensure observation cycle triggers a lot
     await asyncio.sleep(SCHEDULER_INTERVAL_SECONDS * 10)
@@ -260,8 +261,8 @@ async def test_skip_observation_cycle_after_error(
     # check if service was properly removed or is still kept for manual interventions
     if error_raised_by_saving_state:
         if use_case.outcome_service_removed:
-            assert scheduler_data.node_uuid not in scheduler.scheduler._inverse_search_mapping
+            assert scheduler_data.node_uuid not in scheduler.scheduler._inverse_search_mapping  # noqa: SLF001
         else:
-            assert scheduler_data.node_uuid in scheduler.scheduler._inverse_search_mapping
+            assert scheduler_data.node_uuid in scheduler.scheduler._inverse_search_mapping  # noqa: SLF001
     else:
-        assert scheduler_data.node_uuid not in scheduler.scheduler._inverse_search_mapping
+        assert scheduler_data.node_uuid not in scheduler.scheduler._inverse_search_mapping  # noqa: SLF001

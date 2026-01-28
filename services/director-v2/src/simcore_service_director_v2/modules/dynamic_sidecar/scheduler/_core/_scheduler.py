@@ -50,11 +50,13 @@ from .....core.dynamic_services_settings.scheduler import (
     DynamicServicesSchedulerSettings,
 )
 from .....models.dynamic_services_scheduler import SchedulerData, ServiceName
+from .....modules.db.repositories.groups_extra_properties import GroupsExtraPropertiesRepository
 from .....modules.instrumentation import (
     get_instrumentation,
     get_metrics_labels,
     get_rate,
 )
+from .....utils.db import get_repository
 from ...api_client import SidecarsClient, get_sidecars_client
 from ...docker_api import update_scheduler_data_label
 from ...errors import DynamicSidecarError, DynamicSidecarNotFoundError
@@ -222,6 +224,11 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
         can_save: bool,
     ) -> None:
         """Invoked before the service is started"""
+        groups_extra_properties = get_repository(self.app, GroupsExtraPropertiesRepository)
+        user_extra_properties = await groups_extra_properties.get_user_extra_properties(
+            user_id=service.user_id, product_name=service.product_name
+        )
+
         scheduler_data = SchedulerData.from_http_request(
             service=service,
             simcore_service_labels=simcore_service_labels,
@@ -230,6 +237,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
             request_scheme=request_scheme,
             request_simcore_user_agent=request_simcore_user_agent,
             can_save=can_save,
+            requires_data_mounting=user_extra_properties.mount_data,
         )
         scheduler_data.dynamic_sidecar.instrumentation.start_requested_at = arrow.utcnow().datetime
         await self.add_service_from_scheduler_data(scheduler_data)
@@ -245,8 +253,9 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
 
             if scheduler_data.node_uuid in self._inverse_search_mapping:
                 msg = (
-                    f"node_uuids at a global level collided. A running service for node {scheduler_data.node_uuid} already exists."
-                    " Please checkout other projects which may have this issue."
+                    f"node_uuids at a global level collided. A running service for node "
+                    f"{scheduler_data.node_uuid} already exists. "
+                    "Please checkout other projects which may have this issue."
                 )
                 raise DynamicSidecarError(msg=msg)
 
@@ -285,9 +294,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
                 scheduler_data = self.get_scheduler_data(node_id)
                 if user_id and scheduler_data.user_id != user_id:
                     return False
-                if project_id and scheduler_data.project_id != project_id:
-                    return False
-                return True
+                return not (project_id and scheduler_data.project_id != project_id)
             except DynamicSidecarNotFoundError:
                 return False
 
@@ -301,8 +308,8 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
     async def mark_service_for_removal(
         self,
         node_uuid: NodeID,
-        can_save: bool | None,
         *,
+        can_save: bool | None,
         skip_observation_recreation: bool,
     ) -> None:
         """Marks service for removal, causing RemoveMarkedService to trigger"""
@@ -326,7 +333,6 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
 
             current.dynamic_sidecar.instrumentation.close_requested_at = arrow.utcnow().datetime
 
-            # PC-> ANE: could you please review what to do when can_save=None
             assert can_save is not None  # nosec
             current.dynamic_sidecar.service_removal_state.mark_to_remove(can_save=can_save)
             await update_scheduler_data_label(current)

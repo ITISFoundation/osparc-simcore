@@ -55,16 +55,17 @@ TEMPORARY_PORT_NUMBER = 65_534
 MAX_ALLOWED_SERVICE_NAME_LENGTH: int = 63
 
 
-DockerStatus: TypeAlias = Status1
+# replace TypeAlias with type https://github.com/ITISFoundation/osparc-simcore/issues/8772
+DockerStatus: TypeAlias = Status1  # noqa: UP040
 
 
-DockerId: TypeAlias = Annotated[str, StringConstraints(max_length=25, pattern=r"[A-Za-z0-9]{25}")]
+DockerId: TypeAlias = Annotated[str, StringConstraints(max_length=25, pattern=r"[A-Za-z0-9]{25}")]  # noqa: UP040
 
-ServiceId: TypeAlias = DockerId
-NetworkId: TypeAlias = DockerId
+ServiceId: TypeAlias = DockerId  # noqa: UP040
+NetworkId: TypeAlias = DockerId  # noqa: UP040
 
 
-ServiceName: TypeAlias = Annotated[str, StringConstraints(min_length=2, strip_whitespace=True)]
+ServiceName: TypeAlias = Annotated[str, StringConstraints(min_length=2, strip_whitespace=True)]  # noqa: UP040
 
 
 logger = logging.getLogger()
@@ -84,7 +85,7 @@ class DynamicSidecarStatus(str, Enum):
     FAILING = "failing"  # requests to the sidecar API are failing service should be cosnidered as unavailable
 
 
-class Status(BaseModel):
+class Status(BaseModel):  # noqa: PLW1641 # NOTE: absolutely do not add hashing here it breaks the scheduler internals
     """Generated from data from docker container inspect API"""
 
     current: DynamicSidecarStatus = Field(..., description="status of the service")
@@ -348,7 +349,7 @@ class DynamicSidecarNamesHelper(BaseModel):
 
 
 class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
-    # TODO: ANE this object is just the context of the dy-sidecar. Should
+    # this object is just the context of the dy-sidecar. Should
     # be called like so and subcontexts for different handlers should
     # also be added. It will make keeping track of env vars more easily
 
@@ -384,6 +385,8 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
 
     user_preferences_path: Path | None = None
     callbacks_mapping: Annotated[CallbacksMapping, Field(default_factory=dict)]
+
+    requires_data_mounting: bool = False
 
     dynamic_sidecar_network_name: str = Field(
         ...,
@@ -462,7 +465,9 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
         request_dns: str,
         request_scheme: str,
         request_simcore_user_agent: str,
+        *,
         can_save: bool,
+        requires_data_mounting: bool,
         run_id: ServiceRunID | None = None,
     ) -> "SchedulerData":
         # This constructor method sets current product
@@ -497,6 +502,7 @@ class SchedulerData(CommonServiceDetails, DynamicSidecarServiceLabels):
             "wallet_info": service.wallet_info,
             "pricing_info": service.pricing_info,
             "hardware_info": service.hardware_info,
+            "requires_data_mounting": requires_data_mounting,
         }
         if run_id:
             obj_dict["run_id"] = run_id

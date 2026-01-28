@@ -7,6 +7,7 @@ from textwrap import dedent
 from typing import Final
 
 from httpx import AsyncClient, HTTPError
+from models_library.api_schemas_directorv2.services import DYNAMIC_SIDECAR_RCLONE_CONTAINER_PREFIX
 from models_library.basic_types import PortInt
 from models_library.progress_bar import ProgressReport
 from models_library.projects_nodes_io import NodeID, StorageFileID
@@ -39,8 +40,6 @@ _DEFAULT_UPDATE_INTERVAL: Final[timedelta] = timedelta(seconds=1)
 _DEFAULT_R_CLONE_CLIENT_REQUEST_TIMEOUT: Final[timedelta] = timedelta(seconds=20)
 
 _TPSLIMIT: Final[NonNegativeInt] = 2000
-
-_DOCKER_PREFIX_MOUNT: Final[str] = "rcm"
 
 
 _R_CLONE_MOUNT_TEMPLATE: Final[str] = dedent(
@@ -213,11 +212,11 @@ class ContainerManager:  # pylint:disable=too-many-instance-attributes
     @cached_property
     def _r_clone_container_name(self) -> str:
         mount_id = get_mount_id(self.local_mount_path, self.index)
-        return f"{_DOCKER_PREFIX_MOUNT}-c-{self.node_id}-{mount_id}"[:63]
+        return f"{DYNAMIC_SIDECAR_RCLONE_CONTAINER_PREFIX}-{self.node_id}-{mount_id}"[:63]
 
     async def create(self):
         # ensure nothing was left from previous runs
-        await _docker_utils.remove_container_if_exists(self.delegate, self._r_clone_container_name)
+        await self.delegate.remove_container(self._r_clone_container_name)
 
         assert self.r_clone_settings.R_CLONE_VERSION is not None  # nosec
         mount_settings = self.r_clone_settings.R_CLONE_SIMCORE_SDK_MOUNT_SETTINGS
@@ -242,7 +241,7 @@ class ContainerManager:  # pylint:disable=too-many-instance-attributes
         )
 
     async def remove(self):
-        await _docker_utils.remove_container_if_exists(self.delegate, self._r_clone_container_name)
+        await self.delegate.remove_container(self._r_clone_container_name)
 
 
 class RemoteControlHttpClient:

@@ -101,8 +101,8 @@ class SchedulerPublicInterface(ABC):
     async def mark_service_for_removal(
         self,
         node_uuid: NodeID,
-        can_save: bool | None,
         *,
+        can_save: bool | None,
         skip_observation_recreation: bool,
     ) -> None:
         """The service will be removed as soon as possible"""
