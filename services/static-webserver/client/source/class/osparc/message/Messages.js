@@ -30,8 +30,8 @@ qx.Class.define("osparc.message.Messages", {
             "channel": "email",
             "templateName": templateName,
           },
-          "context": context
-        }
+          "context": context,
+        },
       };
       return osparc.data.Resources.fetch("notifications", "previewTemplate", params)
     },
@@ -45,8 +45,8 @@ qx.Class.define("osparc.message.Messages", {
             "subject": subject,
             "bodyHtml": bodyHtml,
             "bodyText": bodyText,
-          }
-        }
+          },
+        },
       };
       return osparc.data.Resources.fetch("notifications", "sendMessage", params);
     },
