@@ -20,26 +20,23 @@ qx.Class.define("osparc.message.Messages", {
 
   statics: {
     fetchEmailTemplates: function() {
-      return osparc.store.Faker.getInstance().fetchEmailTemplates();
-      return osparc.data.Resources.fetch("notificationTemplates", "getEmailTemplates");
+      return osparc.data.Resources.fetch("notifications", "searchEmailTemplates");
     },
 
     fetchEmailPreview: function(templateName, context = {}) {
-      return osparc.store.Faker.getInstance().fetchEmailPreview(templateName, context);
       const params = {
         data: {
-          "ref:": {
+          "ref": {
             "channel": "email",
             "templateName": templateName,
           },
-          "context": context,
-        },
+          "context": context
+        }
       };
-      return osparc.data.Resources.fetch("notificationTemplates", "getTemplatePreview")
+      return osparc.data.Resources.fetch("notifications", "previewTemplate", params)
     },
 
     sendMessage: function(recipients, subject, bodyHtml, bodyText) {
-      return osparc.store.Faker.getInstance().sendEmail(recipients, subject, bodyHtml, bodyText);
       const params = {
         data: {
           "channel": "email",
@@ -48,10 +45,10 @@ qx.Class.define("osparc.message.Messages", {
             "subject": subject,
             "bodyHtml": bodyHtml,
             "bodyText": bodyText,
-          },
-        },
+          }
+        }
       };
-      return osparc.data.Resources.fetch("sendMessage", "post", params);
+      return osparc.data.Resources.fetch("notifications", "sendMessage", params);
     },
   }
 });

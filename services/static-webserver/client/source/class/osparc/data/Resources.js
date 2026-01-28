@@ -1165,20 +1165,16 @@ qx.Class.define("osparc.data.Resources", {
           }
         }
       },
-      "notificationTemplates": {
+      "notifications": {
         useCache: true,
         endpoints: {
-          getEmailTemplates: {
+          searchEmailTemplates: {
             method: "GET",
             url: statics.API + "/notifications/templates:search?channel=email"
           },
-          getTemplatePreview: {
+          previewTemplate: {
             method: "POST",
             url: statics.API + "/notifications/templates:preview"
-          },
-          sendMessageFromTemplate: {
-            method: "POST",
-            url: statics.API + "/notifications/templates:send"
           },
           sendMessage: {
             method: "POST",
