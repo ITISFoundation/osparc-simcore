@@ -230,12 +230,12 @@ qx.Class.define("osparc.desktop.SlideshowView", {
       if (node.isParameter()) {
         view.bind("backgroundColor", view.getChildControl("frame"), "backgroundColor");
         view.set({
-          backgroundColor: "navigation_bar_background_color",
+          backgroundColor: "navbar-background",
           padding: 6
         });
       } else {
         view.getMainView().set({
-          backgroundColor: "navigation_bar_background_color",
+          backgroundColor: "navbar-background",
           padding: 6,
           paddingTop: 0,
           paddingBottom: 0
@@ -243,7 +243,7 @@ qx.Class.define("osparc.desktop.SlideshowView", {
       }
       if (node.isFilePicker()) {
         view.getMainView().set({
-          backgroundColor: "navigation_bar_background_color"
+          backgroundColor: "navbar-background"
         });
       }
     },

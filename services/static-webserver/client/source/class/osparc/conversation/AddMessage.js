@@ -117,7 +117,7 @@ qx.Class.define("osparc.conversation.AddMessage", {
         case "add-comment-button":
           control = new qx.ui.form.Button(null, "@FontAwesome5Solid/arrow-up/16").set({
             toolTipText: this.tr("Ctrl+Enter"),
-            backgroundColor: "input_background",
+            backgroundColor: "input-background",
             allowGrowX: false,
             alignX: "right",
             alignY: "middle",
