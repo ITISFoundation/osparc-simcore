@@ -23,14 +23,13 @@ from servicelib.rabbitmq.rpc_interfaces.notifications.notifications_templates im
     search_templates as remote_search_templates,
 )
 
-from simcore_service_webserver.products._service import get_product
-from simcore_service_webserver.users._users_service import get_user, get_users_in_group
-
 from ..._meta import API_VTAG
 from ...celery import get_task_manager
 from ...login.decorators import login_required
 from ...models import AuthenticatedRequestContext, WebServerOwnerMetadata
+from ...products._service import get_product
 from ...rabbitmq import get_rabbitmq_rpc_client
+from ...users._users_service import get_user, get_users_in_group
 from .. import _service
 from ._rest_exceptions import handle_notifications_exceptions
 
