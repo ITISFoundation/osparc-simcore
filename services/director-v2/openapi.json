@@ -3063,6 +3063,11 @@
             "$ref": "#/components/schemas/DynamicSidecar",
             "description": "stores information fetched from the dynamic-sidecar"
           },
+          "requires_data_mounting": {
+            "type": "boolean",
+            "title": "Requires Data Mounting",
+            "default": false
+          },
           "dynamic_sidecar_network_name": {
             "type": "string",
             "title": "Dynamic Sidecar Network Name",
@@ -3156,12 +3161,6 @@
               }
             ],
             "description": "contains hardware information so we know on which hardware to run the service"
-          },
-          "requires_data_mounting": {
-            "type": "boolean",
-            "title": "Requires Data Mounting",
-            "description": "indicates whether data mounting is required for this service",
-            "default": false
           },
           "product_name": {
             "anyOf": [
