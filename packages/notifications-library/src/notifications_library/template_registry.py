@@ -6,14 +6,13 @@ Each template can optionally define its context model in a context.py file.
 
 import importlib
 import logging
-from typing import TYPE_CHECKING, Final
+from typing import Final
+
+from models_library.notifications import ChannelType, TemplateName
 
 import notifications_library
 
-if TYPE_CHECKING:
-    from models_library.notifications import ChannelType, TemplateName
-
-    from .template_context import NotificationsTemplateContext
+from .template_context import NotificationsTemplateContext
 
 _logger = logging.getLogger(__name__)
 
@@ -21,7 +20,7 @@ _logger = logging.getLogger(__name__)
 _CONTEXT_CLASS_NAME: Final[str] = "Context"
 
 
-def get_context_model(channel: "ChannelType", template_name: "TemplateName") -> type["NotificationsTemplateContext"]:
+def get_context_model(channel: ChannelType, template_name: TemplateName) -> type[NotificationsTemplateContext]:
     """
     Get the context model for a specific template.
 
@@ -35,8 +34,6 @@ def get_context_model(channel: "ChannelType", template_name: "TemplateName") -> 
     Returns:
         The context model class for the template, or NotificationsTemplateContext as fallback
     """
-    from .template_context import NotificationsTemplateContext  # noqa: PLC0415
-
     # Try to import context module for this template
     # Expected location: notifications_library.templates.{channel}.{template_name}.context
     module_path = f"{notifications_library.__name__}.templates.{channel}.{template_name}.context"
@@ -64,7 +61,7 @@ def get_context_model(channel: "ChannelType", template_name: "TemplateName") -> 
             channel,
             template_name,
         )
-    except Exception:
+    except Exception:  # pylint: disable=W0718
         _logger.exception(
             "Error loading context model from %s, using base NotificationsTemplateContext",
             module_path,
