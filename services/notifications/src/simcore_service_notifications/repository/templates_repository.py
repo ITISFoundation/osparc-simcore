@@ -4,11 +4,11 @@ from dataclasses import dataclass
 
 from jinja2 import Environment, Template
 from models_library.notifications import ChannelType, TemplateName
+from notifications_library.template_registry import get_context_model
 from pydantic import TypeAdapter
 
 from ..models.content import for_channel
 from ..models.template import NotificationsTemplate, NotificationsTemplateRef
-from ..templates.registry import get_context_model
 
 _TEMPLATE_EXTENSION = ".j2"
 _EXPECTED_PATH_PARTS = 3  # channel/template_name/part
@@ -19,7 +19,7 @@ _logger = logging.getLogger(__name__)
 def _build_template(ref: NotificationsTemplateRef) -> NotificationsTemplate:
     return NotificationsTemplate(
         ref=ref,
-        context_model=get_context_model(ref),
+        context_model=get_context_model(ref.channel, ref.template_name),
         parts=for_channel(ref.channel).get_field_names(),
     )
 
