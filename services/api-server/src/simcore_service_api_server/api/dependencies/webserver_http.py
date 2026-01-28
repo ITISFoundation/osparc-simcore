@@ -21,9 +21,7 @@ def _get_settings(
 ) -> WebServerSettings:
     settings = app_settings.API_SERVER_WEBSERVER
     if not settings:
-        raise HTTPException(
-            status.HTTP_503_SERVICE_UNAVAILABLE, detail=MSG_BACKEND_SERVICE_UNAVAILABLE
-        )
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, detail=MSG_BACKEND_SERVICE_UNAVAILABLE)
     assert isinstance(settings, WebServerSettings)  # nosec
     return settings
 
@@ -39,9 +37,7 @@ def get_session_cookie(
     fernet: Fernet | None = getattr(app.state, "webserver_fernet", None)
 
     if fernet is None:
-        raise HTTPException(
-            status.HTTP_503_SERVICE_UNAVAILABLE, detail=MSG_BACKEND_SERVICE_UNAVAILABLE
-        )
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, detail=MSG_BACKEND_SERVICE_UNAVAILABLE)
 
     # builds session cookie
     cookie_name = settings.WEBSERVER_SESSION_NAME

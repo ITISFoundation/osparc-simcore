@@ -45,9 +45,7 @@ def _get_comparison_fields(file: File) -> dict:
 
 
 @pytest.mark.parametrize("file_type", ["binary", "text"])
-def test_upload_list_and_download(
-    files_api: osparc.FilesApi, tmp_path: Path, file_type: str, faker
-):
+def test_upload_list_and_download(files_api: osparc.FilesApi, tmp_path: Path, file_type: str, faker):
     input_path = tmp_path / (file_type + ".bin" if file_type == "binary" else ".txt")
 
     if file_type == "text":

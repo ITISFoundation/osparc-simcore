@@ -42,9 +42,7 @@ def test_changelog_entry_classes():
     changed_entry = ChangedEndpoint("0.6.0", "Added authentication")
     assert changed_entry.entry_type == ChangelogType.CHANGED
     assert changed_entry.get_version() == Version("0.6.0")
-    assert (
-        "Changed in *version 0.6.0*: Added authentication" in changed_entry.to_string()
-    )
+    assert "Changed in *version 0.6.0*: Added authentication" in changed_entry.to_string()
 
     # Test DeprecatedEndpoint
     deprecated_entry = DeprecatedEndpoint("/v1/better-endpoint", "0.7.0")
@@ -225,7 +223,6 @@ def test_create_route_config_with_regular_endpoint(current_api_version: str) -> 
 
 
 def test_create_route_config_with_mixed_changelog(current_api_version: str) -> None:
-
     alternative_route = "/v1/better-endpoint"
     changelog = [
         NewEndpoint("0.5.0"),
@@ -254,7 +251,6 @@ def test_create_route_config_with_mixed_changelog(current_api_version: str) -> N
 
 
 def test_create_route_config_with_empty_changelog(current_api_version: str) -> None:
-
     config = create_route_config(
         base_description="This endpoint has no changelog",
         current_version=current_api_version,

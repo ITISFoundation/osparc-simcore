@@ -1,8 +1,7 @@
 # pylint:disable=unused-import
 
-from typing import TYPE_CHECKING, Final
+from typing import Final
 
-from aiohttp import web
 from common_library.user_messages import user_message
 from servicelib.aiohttp.application_keys import (
     APP_AIOPG_ENGINE_KEY,
@@ -11,8 +10,6 @@ from servicelib.aiohttp.application_keys import (
     APP_FIRE_AND_FORGET_TASKS_KEY,
 )
 from servicelib.aiohttp.request_keys import RQT_USERID_KEY
-
-from ._meta import APP_NAME
 
 assert APP_CLIENT_SESSION_KEY  # nosec
 assert APP_CONFIG_KEY  # nosec

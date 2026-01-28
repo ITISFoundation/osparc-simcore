@@ -52,7 +52,7 @@ qx.Class.define("osparc.dashboard.SearchBarFilter", {
 
   statics: {
     HEIGHT: 36,
-    BG_COLOR: "input_background",
+    BG_COLOR: "input-background",
 
     getInitialFilterData: function() {
       return {

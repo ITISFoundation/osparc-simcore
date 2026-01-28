@@ -86,9 +86,7 @@ async def list_services_paginated(
         user_id=user_id,
         limit=limit,
         offset=offset,
-        filters=TypeAdapter(ServiceDBFilters | None).validate_python(
-            filters, from_attributes=True
-        ),
+        filters=TypeAdapter(ServiceDBFilters | None).validate_python(filters, from_attributes=True),
     )
 
     assert len(items) <= total_count  # nosec
@@ -228,7 +226,6 @@ async def batch_get_my_services(
     assert app.state.engine  # nosec
 
     try:
-
         batch_got = await catalog_services.batch_get_user_services(
             repo=ServicesRepository(app.state.engine),
             groups_repo=GroupsRepository(app.state.engine),
@@ -239,12 +236,10 @@ async def batch_get_my_services(
 
     except BatchNotFoundError as e:
         ctx = e.error_context()
-        ctx["name"] = f"{ctx.get('missing_services',[])}"
+        ctx["name"] = f"{ctx.get('missing_services', [])}"
         raise CatalogBatchNotFoundRpcError(**ctx) from e
 
-    assert [
-        (sv.key, sv.release.version) for sv in batch_got.found_items
-    ] == ids  # nosec
+    assert [(sv.key, sv.release.version) for sv in batch_got.found_items] == ids  # nosec
 
     return MyServicesRpcBatchGet(
         found_items=batch_got.found_items,
@@ -274,9 +269,7 @@ async def list_my_service_history_latest_first(
         service_key=service_key,
         pagination_limit=limit,
         pagination_offset=offset,
-        filters=TypeAdapter(ServiceDBFilters | None).validate_python(
-            filters, from_attributes=True
-        ),
+        filters=TypeAdapter(ServiceDBFilters | None).validate_python(filters, from_attributes=True),
     )
 
     assert len(items) <= total_count  # nosec
@@ -368,9 +361,7 @@ async def list_all_services_summaries_paginated(
         user_id=user_id,
         limit=limit,
         offset=offset,
-        filters=TypeAdapter(ServiceDBFilters | None).validate_python(
-            filters, from_attributes=True
-        ),
+        filters=TypeAdapter(ServiceDBFilters | None).validate_python(filters, from_attributes=True),
     )
 
     assert len(items) <= total_count  # nosec

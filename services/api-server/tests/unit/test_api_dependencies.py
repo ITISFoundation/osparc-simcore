@@ -63,22 +63,13 @@ def test_metadata_filter_in_api_route():
     # Define a route that uses the get_metadata_filter dependency
     @app.get("/test-filter")
     def filter_endpoint(
-        metadata_filter: Annotated[
-            JobMetadataFilter | None, Depends(get_job_metadata_filter)
-        ] = None,
+        metadata_filter: Annotated[JobMetadataFilter | None, Depends(get_job_metadata_filter)] = None,
     ):
         if not metadata_filter:
             return {"filters": None}
 
         # Convert to dict for easier comparison in test
-        return {
-            "filters": {
-                "any": [
-                    {"name": item.name, "pattern": item.pattern}
-                    for item in metadata_filter.any
-                ]
-            }
-        }
+        return {"filters": {"any": [{"name": item.name, "pattern": item.pattern} for item in metadata_filter.any]}}
 
     # Create a test client
     client = TestClient(app)
@@ -91,14 +82,10 @@ def test_metadata_filter_in_api_route():
     # Test with single filter
     response = client.get("/test-filter?metadata.any=key1:val*")
     assert response.status_code == status.HTTP_200_OK
-    assert response.json() == {
-        "filters": {"any": [{"name": "key1", "pattern": "val*"}]}
-    }
+    assert response.json() == {"filters": {"any": [{"name": "key1", "pattern": "val*"}]}}
 
     # Test with multiple filters
-    response = client.get(
-        "/test-filter?metadata.any=key1:val*&metadata.any=key2:exactval"
-    )
+    response = client.get("/test-filter?metadata.any=key1:val*&metadata.any=key2:exactval")
     assert response.status_code == status.HTTP_200_OK
     assert response.json() == {
         "filters": {
@@ -110,17 +97,15 @@ def test_metadata_filter_in_api_route():
     }
 
     # Test with invalid filter (should skip the invalid one)
-    response = client.get(
-        "/test-filter?metadata.any=invalid&metadata.any=key2:exactval"
-    )
+    response = client.get("/test-filter?metadata.any=invalid&metadata.any=key2:exactval")
     assert response.status_code == status.HTTP_200_OK
-    assert response.json() == {
-        "filters": {"any": [{"name": "key2", "pattern": "exactval"}]}
-    }
+    assert response.json() == {"filters": {"any": [{"name": "key2", "pattern": "exactval"}]}}
 
     # Test with URL-encoded characters
     # Use special characters that need encoding: space, &, =, +, /, ?
-    encoded_query = "/test-filter?metadata.any=special%20key:value%20with%20spaces&metadata.any=symbols:a%2Bb%3Dc%26d%3F%2F"
+    encoded_query = (
+        "/test-filter?metadata.any=special%20key:value%20with%20spaces&metadata.any=symbols:a%2Bb%3Dc%26d%3F%2F"
+    )
     response = client.get(encoded_query)
     assert response.status_code == status.HTTP_200_OK
     assert response.json() == {

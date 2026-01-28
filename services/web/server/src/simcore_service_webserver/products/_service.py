@@ -54,16 +54,12 @@ async def list_products_names(app: web.Application) -> list[ProductName]:
     return names
 
 
-async def get_credit_price_info(
-    app: web.Application, product_name: ProductName
-) -> ProductPriceInfo | None:
+async def get_credit_price_info(app: web.Application, product_name: ProductName) -> ProductPriceInfo | None:
     repo = ProductRepository.create_from_app(app)
     return await repo.get_product_latest_price_info_or_none(product_name)
 
 
-async def get_product_ui(
-    repo: ProductRepository, product_name: ProductName
-) -> dict[str, Any]:
+async def get_product_ui(repo: ProductRepository, product_name: ProductName) -> dict[str, Any]:
     ui = await repo.get_product_ui(product_name=product_name)
     if ui is not None:
         return ui
@@ -107,16 +103,12 @@ async def get_credit_amount(
     return CreditResult(product_name=product_name, credit_amount=credit_amount)
 
 
-async def is_product_billable(
-    app: web.Application, *, product_name: ProductName
-) -> bool:
+async def is_product_billable(app: web.Application, *, product_name: ProductName) -> bool:
     repo = ProductRepository.create_from_app(app)
     return await repo.is_product_billable(product_name=product_name)
 
 
-async def get_product_stripe_info(
-    app: web.Application, *, product_name: ProductName
-) -> ProductStripeInfo:
+async def get_product_stripe_info(app: web.Application, *, product_name: ProductName) -> ProductStripeInfo:
     repo = ProductRepository.create_from_app(app)
 
     product_stripe_info = await repo.get_product_stripe_info_or_none(product_name)

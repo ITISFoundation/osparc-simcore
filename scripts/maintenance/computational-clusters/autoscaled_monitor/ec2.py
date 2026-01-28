@@ -27,12 +27,7 @@ def _list_running_ec2_instances(
         {"Name": "key-name", "Values": [key_name]},
     ]
     if custom_tags:
-        ec2_filters.extend(
-            [
-                {"Name": f"tag:{key}", "Values": [f"{value}"]}
-                for key, value in custom_tags.items()
-            ]
-        )
+        ec2_filters.extend([{"Name": f"tag:{key}", "Values": [f"{value}"]} for key, value in custom_tags.items()])
 
     if user_id:
         ec2_filters.append({"Name": "tag:user_id", "Values": [f"{user_id}"]})
@@ -50,10 +45,9 @@ async def list_computational_instances_from_ec2(
 ) -> ServiceResourceInstancesCollection:
     assert state.environment["PRIMARY_EC2_INSTANCES_KEY_NAME"]
     assert state.environment["WORKERS_EC2_INSTANCES_KEY_NAME"]
-    assert (
-        state.environment["PRIMARY_EC2_INSTANCES_KEY_NAME"]
-        == state.environment["WORKERS_EC2_INSTANCES_KEY_NAME"]
-    ), "key name is different on primary and workers. TIP: adjust this code now"
+    assert state.environment["PRIMARY_EC2_INSTANCES_KEY_NAME"] == state.environment["WORKERS_EC2_INSTANCES_KEY_NAME"], (
+        "key name is different on primary and workers. TIP: adjust this code now"
+    )
     custom_tags = {}
     if state.environment["PRIMARY_EC2_INSTANCES_CUSTOM_TAGS"]:
         assert (
@@ -110,9 +104,7 @@ async def get_computational_bastion_instance(state: AppState) -> Instance:
         None,
     )
 
-    possible_bastions = list(
-        filter(lambda i: _DEFAULT_BASTION_NAME in get_instance_name(i), instances)
-    )
+    possible_bastions = list(filter(lambda i: _DEFAULT_BASTION_NAME in get_instance_name(i), instances))
     assert len(possible_bastions) == 1
     return possible_bastions[0]
 
@@ -130,9 +122,7 @@ async def get_dynamic_bastion_instance(state: AppState) -> Instance:
         None,
     )
 
-    possible_bastions = list(
-        filter(lambda i: _DEFAULT_BASTION_NAME in get_instance_name(i), instances)
-    )
+    possible_bastions = list(filter(lambda i: _DEFAULT_BASTION_NAME in get_instance_name(i), instances))
     assert len(possible_bastions) == 1
     return possible_bastions[0]
 
@@ -147,9 +137,7 @@ def autoscaling_region(state: AppState) -> str:
     return state.environment["AUTOSCALING_EC2_REGION_NAME"]
 
 
-async def get_bastion_instance_from_remote_instance(
-    state: AppState, remote_instance: Instance
-) -> Instance:
+async def get_bastion_instance_from_remote_instance(state: AppState, remote_instance: Instance) -> Instance:
     availability_zone = remote_instance.placement["AvailabilityZone"]
     if cluster_keeper_region(state) in availability_zone:
         return await get_computational_bastion_instance(state)
@@ -164,9 +152,7 @@ def cluster_keeper_ec2_client(state: AppState) -> EC2ServiceResource:
         "ec2",
         region_name=cluster_keeper_region(state),
         aws_access_key_id=state.environment["CLUSTERS_KEEPER_EC2_ACCESS_KEY_ID"],
-        aws_secret_access_key=state.environment[
-            "CLUSTERS_KEEPER_EC2_SECRET_ACCESS_KEY"
-        ],
+        aws_secret_access_key=state.environment["CLUSTERS_KEEPER_EC2_SECRET_ACCESS_KEY"],
     )
 
 

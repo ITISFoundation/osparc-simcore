@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from decimal import Decimal
 
 import sqlalchemy as sa
@@ -193,15 +193,11 @@ class PaymentsTransactionsRepo(BaseRepository):
             return PaymentsTransactionsDB.model_validate(row) if row else None
 
     async def sum_current_month_dollars(self, *, wallet_id: WalletID) -> Decimal:
-        _current_timestamp = datetime.now(tz=timezone.utc)
-        _current_month_start_timestamp = _current_timestamp.replace(
-            day=1, hour=0, minute=0, second=0, microsecond=0
-        )
+        _current_timestamp = datetime.now(tz=UTC)
+        _current_month_start_timestamp = _current_timestamp.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
 
         async with self.db_engine.begin() as conn:
-            sum_stmt = sa.select(
-                sa.func.sum(payments_transactions.c.price_dollars)
-            ).where(
+            sum_stmt = sa.select(sa.func.sum(payments_transactions.c.price_dollars)).where(
                 (payments_transactions.c.wallet_id == wallet_id)
                 & (
                     payments_transactions.c.state.in_(
@@ -210,18 +206,13 @@ class PaymentsTransactionsRepo(BaseRepository):
                         ]
                     )
                 )
-                & (
-                    payments_transactions.c.completed_at
-                    >= _current_month_start_timestamp
-                )
+                & (payments_transactions.c.completed_at >= _current_month_start_timestamp)
             )
             result = await conn.execute(sum_stmt)
         row = result.first()
         return Decimal(0) if row is None or row[0] is None else Decimal(row[0])
 
-    async def get_last_payment_transaction_for_wallet(
-        self, *, wallet_id: WalletID
-    ) -> PaymentsTransactionsDB | None:
+    async def get_last_payment_transaction_for_wallet(self, *, wallet_id: WalletID) -> PaymentsTransactionsDB | None:
         async with self.db_engine.begin() as connection:
             result = await connection.execute(
                 payments_transactions.select()

@@ -9,9 +9,7 @@ from pydantic import BaseModel, ByteSize, Field
 class DatasetMetaData(BaseModel):
     id: str
     display_name: str
-    size: Annotated[
-        ByteSize | None, Field(description="Size of the dataset in bytes if available")
-    ]
+    size: Annotated[ByteSize | None, Field(description="Size of the dataset in bytes if available")]
 
 
 @unique

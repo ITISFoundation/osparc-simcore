@@ -13,7 +13,7 @@ from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
 from opentelemetry.instrumentation.aiohttp_client import (  # pylint:disable=no-name-in-module
     AioHttpClientInstrumentor,
 )
-from opentelemetry.instrumentation.aiohttp_server import (
+from opentelemetry.instrumentation.aiohttp_server import (  # pylint:disable=no-name-in-module
     _parse_active_request_count_attrs,
     _parse_duration_attrs,
     collect_request_attributes,

@@ -8,7 +8,6 @@ See how is used to validate input/output content-schemas of service models
 
 # SEE possible enhancements in https://github.com/ITISFoundation/osparc-simcore/issues/3008
 
-
 from collections.abc import Sequence
 from contextlib import suppress
 from copy import deepcopy
@@ -56,9 +55,7 @@ _LATEST_VALIDATOR = validators.validator_for(True)
 _EXTENDED_VALIDATOR = _extend_with_default(_LATEST_VALIDATOR)
 
 
-def jsonschema_validate_data(
-    instance: Any, schema: dict[str, Any], *, return_with_default: bool = False
-):
+def jsonschema_validate_data(instance: Any, schema: dict[str, Any], *, return_with_default: bool = False):
     """Checks whether data satisfies schema contract
 
     : raises JsonSchemaValidationError
@@ -101,18 +98,16 @@ class GenerateResolvedJsonSchema(GenerateJsonSchema):
     Usage: pydantic_base_model.model_json_schema(schema_generator=GenerateResolvedJsonSchema) returns a json schema where it is guaranteed that all json references are resolved.
     """
 
-    def generate(
-        self, schema: CoreSchema, mode: JsonSchemaMode = "validation"
-    ) -> JsonSchemaValue:
+    def generate(self, schema: CoreSchema, mode: JsonSchemaMode = "validation") -> JsonSchemaValue:
         schema_value = super().generate(schema=schema, mode=mode)
         schema_value = jsonref.replace_refs(schema_value, jsonschema=True)
         return JsonSchemaValue(schema_value)
 
 
 __all__: tuple[str, ...] = (
-    "any_ref_key",
     "InvalidJsonSchema",
+    "JsonSchemaValidationError",
+    "any_ref_key",
     "jsonschema_validate_data",
     "jsonschema_validate_schema",
-    "JsonSchemaValidationError",
 )

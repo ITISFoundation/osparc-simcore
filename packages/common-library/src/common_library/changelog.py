@@ -153,10 +153,7 @@ def validate_changelog(changelog: Sequence[ChangelogEntryAbstract]) -> None:
     prev_type = None
     for entry in changelog:
         if prev_type is not None and entry.entry_type.value < prev_type.value:
-            msg = (
-                f"Changelog entries must be in lifecycle order. "
-                f"Found {entry.entry_type.name} after {prev_type.name}."
-            )
+            msg = f"Changelog entries must be in lifecycle order. Found {entry.entry_type.name} after {prev_type.name}."
             raise ValueError(msg)
         prev_type = entry.entry_type
 
@@ -166,9 +163,7 @@ def validate_changelog(changelog: Sequence[ChangelogEntryAbstract]) -> None:
         raise ValueError(msg)
 
     # Ensure there's at most one DEPRECATED entry
-    deprecated_entries = [
-        e for e in changelog if e.entry_type == ChangelogType.DEPRECATED
-    ]
+    deprecated_entries = [e for e in changelog if e.entry_type == ChangelogType.DEPRECATED]
     if len(deprecated_entries) > 1:
         msg = "Only one DEPRECATED entry is allowed in a changelog"
         raise ValueError(msg)

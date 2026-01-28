@@ -50,9 +50,7 @@ async def resource_tracker_setup_db(
 ) -> AsyncIterator[None]:
     async with AsyncExitStack() as exit_stack:
         await exit_stack.enter_async_context(
-            insert_and_get_product_lifespan(
-                sqlalchemy_async_engine, name="s4l"
-            )  # osparc already created
+            insert_and_get_product_lifespan(sqlalchemy_async_engine, name="s4l")  # osparc already created
         )
 
         async with sqlalchemy_async_engine.connect() as conn:
@@ -153,9 +151,7 @@ async def test_process_event_functions(
         # threshold, we need to make this field artificaly older in this test
         with postgres_db.connect() as con:
             fake_old_modified_at = datetime.now(tz=UTC) - timedelta(minutes=5)
-            update_stmt = resource_tracker_service_runs.update().values(
-                modified=fake_old_modified_at
-            )
+            update_stmt = resource_tracker_service_runs.update().values(modified=fake_old_modified_at)
             con.execute(update_stmt)
 
     # Check max acceptable missed heartbeats reached before considering them as unhealthy
@@ -195,9 +191,7 @@ async def test_process_event_functions(
 
     with postgres_db.connect() as con:
         result = con.execute(sa.select(resource_tracker_credit_transactions))
-        credit_transaction_db = [
-            CreditTransactionDB.model_validate(row) for row in result
-        ]
+        credit_transaction_db = [CreditTransactionDB.model_validate(row) for row in result]
     for transaction in credit_transaction_db:
         if transaction.service_run_id in (
             _SERVICE_RUN_ID_OSPARC_10_MIN_OLD,
@@ -205,9 +199,7 @@ async def test_process_event_functions(
         ):
             if transaction.service_run_id == _SERVICE_RUN_ID_OSPARC_10_MIN_OLD:
                 # Computational service is not billed
-                assert (
-                    transaction.transaction_status == CreditTransactionStatus.NOT_BILLED
-                )
+                assert transaction.transaction_status == CreditTransactionStatus.NOT_BILLED
             else:
                 # Dynamic service is billed
                 assert transaction.transaction_status == CreditTransactionStatus.BILLED

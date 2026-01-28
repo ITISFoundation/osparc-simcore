@@ -29,8 +29,8 @@ class Entrypoint(NamedTuple):
 
 @pytest.fixture(scope="session")
 def openapi_specs_path() -> Path:
-    # NOTE: cannot be defined as a session scope because it is designed to be overriden
-    pytest.fail(reason="Must be overriden in caller test suite")
+    # NOTE: cannot be defined as a session scope because it is designed to be overridden
+    pytest.fail(reason="Must be overridden in caller test suite")
 
 
 def _load(file: Path, base_uri: str = "") -> dict:
@@ -56,9 +56,7 @@ def _load(file: Path, base_uri: str = "") -> dict:
 @pytest.fixture(scope="session")
 def openapi_specs(openapi_specs_path: Path) -> dict[str, Any]:
     assert openapi_specs_path.is_file()
-    openapi: dict[str, Any] = _load(
-        openapi_specs_path, base_uri=openapi_specs_path.as_uri()
-    )
+    openapi: dict[str, Any] = _load(openapi_specs_path, base_uri=openapi_specs_path.as_uri())
     return deepcopy(openapi)
 
 
@@ -84,9 +82,7 @@ def openapi_specs_entrypoints(
 if has_aiohttp:
 
     @pytest.fixture
-    def create_aiohttp_app_rest_entrypoints() -> (
-        Callable[[web.Application], set[Entrypoint]]
-    ):
+    def create_aiohttp_app_rest_entrypoints() -> Callable[[web.Application], set[Entrypoint]]:
         def _(app: web.Application):
             entrypoints: set[Entrypoint] = set()
 

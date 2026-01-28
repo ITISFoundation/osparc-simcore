@@ -41,9 +41,7 @@ from ._base import BaseRepository
 
 logger = logging.getLogger(__name__)
 
-_POSTGRES_FK_COLUMN_TO_ERROR_MAP: Final[
-    dict[sa.Column, tuple[type[DirectorError], tuple[str, ...]]]
-] = {
+_POSTGRES_FK_COLUMN_TO_ERROR_MAP: Final[dict[sa.Column, tuple[type[DirectorError], tuple[str, ...]]]] = {
     comp_runs.c.user_id: (UserNotFoundError, ("users", "user_id")),
     comp_runs.c.project_uuid: (
         ProjectNotFoundError,
@@ -52,37 +50,27 @@ _POSTGRES_FK_COLUMN_TO_ERROR_MAP: Final[
 }
 
 
-async def _get_next_iteration(
-    conn: AsyncConnection, user_id: UserID, project_id: ProjectID
-) -> PositiveInt:
+async def _get_next_iteration(conn: AsyncConnection, user_id: UserID, project_id: ProjectID) -> PositiveInt:
     """Calculate the next iteration number for a project"""
     last_iteration = await conn.scalar(
         sa.select(comp_runs.c.iteration)
-        .where(
-            (comp_runs.c.user_id == user_id)
-            & (comp_runs.c.project_uuid == f"{project_id}")
-        )
+        .where((comp_runs.c.user_id == user_id) & (comp_runs.c.project_uuid == f"{project_id}"))
         .order_by(desc(comp_runs.c.iteration))
     )
     return cast(PositiveInt, (last_iteration or 0) + 1)
 
 
-def _handle_foreign_key_violation(
-    exc: sql_exc.IntegrityError, **error_keys: Any
-) -> None:
+def _handle_foreign_key_violation(exc: sql_exc.IntegrityError, **error_keys: Any) -> None:
     """Handle foreign key violation errors and raise appropriate exceptions"""
     if not isinstance(exc.orig, AsyncAdapt_asyncpg_dbapi.IntegrityError):
         return
 
-    if (
-        not hasattr(exc.orig, "pgcode")
-        or exc.orig.pgcode != asyncpg.ForeignKeyViolationError.sqlstate
-    ):
+    if not hasattr(exc.orig, "pgcode") or exc.orig.pgcode != asyncpg.ForeignKeyViolationError.sqlstate:
         return
 
-    if not isinstance(
-        exc.orig.__cause__, asyncpg.ForeignKeyViolationError
-    ) or not hasattr(exc.orig.__cause__, "constraint_name"):
+    if not isinstance(exc.orig.__cause__, asyncpg.ForeignKeyViolationError) or not hasattr(
+        exc.orig.__cause__, "constraint_name"
+    ):
         return
 
     constraint_name = exc.orig.__cause__.constraint_name
@@ -183,14 +171,7 @@ class CompRunsRepository(BaseRepository):
 
         conditions = []
         if filter_by_state:
-            conditions.append(
-                or_(
-                    *[
-                        comp_runs.c.result == RUNNING_STATE_TO_DB[s]
-                        for s in filter_by_state
-                    ]
-                )
-            )
+            conditions.append(or_(*[comp_runs.c.result == RUNNING_STATE_TO_DB[s] for s in filter_by_state]))
 
         scheduling_or_conditions = []
         if never_scheduled:
@@ -201,10 +182,7 @@ class CompRunsRepository(BaseRepository):
             scheduled_cutoff = arrow.utcnow().datetime - scheduled_since
             scheduling_filter = (
                 comp_runs.c.scheduled.is_not(None)
-                & (
-                    comp_runs.c.processed.is_(None)
-                    | (comp_runs.c.scheduled > comp_runs.c.processed)
-                )
+                & (comp_runs.c.processed.is_(None) | (comp_runs.c.scheduled > comp_runs.c.processed))
                 & (comp_runs.c.scheduled <= scheduled_cutoff)
             )
             scheduling_or_conditions.append(scheduling_filter)
@@ -282,18 +260,11 @@ class CompRunsRepository(BaseRepository):
         )
         if filter_only_running:
             _latest_runs = _latest_runs.where(
-                comp_runs.c.result.in_(
-                    [
-                        RUNNING_STATE_TO_DB[item]
-                        for item in RunningState.list_running_states()
-                    ]
-                )
+                comp_runs.c.result.in_([RUNNING_STATE_TO_DB[item] for item in RunningState.list_running_states()])
             )
         _latest_runs_subquery = _latest_runs.subquery().alias("latest_runs")
 
-        base_select_query = sa.select(
-            *self._COMPUTATION_RUNS_RPC_GET_COLUMNS
-        ).select_from(
+        base_select_query = sa.select(*self._COMPUTATION_RUNS_RPC_GET_COLUMNS).select_from(
             _latest_runs_subquery.join(
                 comp_runs,
                 sa.and_(
@@ -304,19 +275,13 @@ class CompRunsRepository(BaseRepository):
         )
 
         # Select total count from base_query
-        count_query = sa.select(sa.func.count()).select_from(
-            base_select_query.subquery()
-        )
+        count_query = sa.select(sa.func.count()).select_from(base_select_query.subquery())
 
         # Ordering and pagination
         if order_by.direction == OrderDirection.ASC:
-            list_query = base_select_query.order_by(
-                sa.asc(getattr(comp_runs.c, order_by.field)), comp_runs.c.run_id
-            )
+            list_query = base_select_query.order_by(sa.asc(getattr(comp_runs.c, order_by.field)), comp_runs.c.run_id)
         else:
-            list_query = base_select_query.order_by(
-                desc(getattr(comp_runs.c, order_by.field)), comp_runs.c.run_id
-            )
+            list_query = base_select_query.order_by(desc(getattr(comp_runs.c, order_by.field)), comp_runs.c.run_id)
         list_query = list_query.offset(offset).limit(limit)
 
         async with pass_or_acquire_connection(self.db_engine) as conn:
@@ -356,30 +321,20 @@ class CompRunsRepository(BaseRepository):
             *self._COMPUTATION_RUNS_RPC_GET_COLUMNS,
         ).where(
             (comp_runs.c.user_id == user_id)
-            & (
-                comp_runs.c.project_uuid.in_(
-                    [f"{project_id}" for project_id in project_ids]
-                )
-            )
+            & (comp_runs.c.project_uuid.in_([f"{project_id}" for project_id in project_ids]))
             & (
                 comp_runs.c.metadata["product_name"].astext == product_name
             )  # <-- NOTE: We might create a separate column for this for fast retrieval
         )
 
         # Select total count from base_query
-        count_query = sa.select(sa.func.count()).select_from(
-            base_select_query.subquery()
-        )
+        count_query = sa.select(sa.func.count()).select_from(base_select_query.subquery())
 
         # Ordering and pagination
         if order_by.direction == OrderDirection.ASC:
-            list_query = base_select_query.order_by(
-                sa.asc(getattr(comp_runs.c, order_by.field)), comp_runs.c.run_id
-            )
+            list_query = base_select_query.order_by(sa.asc(getattr(comp_runs.c, order_by.field)), comp_runs.c.run_id)
         else:
-            list_query = base_select_query.order_by(
-                desc(getattr(comp_runs.c, order_by.field)), comp_runs.c.run_id
-            )
+            list_query = base_select_query.order_by(desc(getattr(comp_runs.c, order_by.field)), comp_runs.c.run_id)
         list_query = list_query.offset(offset).limit(limit)
 
         async with pass_or_acquire_connection(self.db_engine) as conn:
@@ -415,22 +370,13 @@ class CompRunsRepository(BaseRepository):
                 & (
                     comp_runs.c.metadata["product_name"].astext == product_name
                 )  # <-- NOTE: We might create a separate column for this for fast retrieval
-                & (
-                    comp_runs.c.result.in_(
-                        [
-                            RUNNING_STATE_TO_DB[item]
-                            for item in RunningState.list_running_states()
-                        ]
-                    )
-                )
+                & (comp_runs.c.result.in_([RUNNING_STATE_TO_DB[item] for item in RunningState.list_running_states()]))
             )
             .distinct()
         )
 
         async with pass_or_acquire_connection(self.db_engine) as conn:
-            return [
-                CollectionRunID(row[0]) async for row in await conn.stream(list_query)
-            ]
+            return [CollectionRunID(row[0]) async for row in await conn.stream(list_query)]
 
     async def list_group_by_collection_run_id(
         self,
@@ -459,39 +405,25 @@ class CompRunsRepository(BaseRepository):
                 ),
                 else_=sa.func.max(comp_runs.c.ended),
             ).label("ended_at"),
-        ).where(
-            (comp_runs.c.user_id == user_id)
-            & (comp_runs.c.metadata["product_name"].astext == product_name)
-        )
+        ).where((comp_runs.c.user_id == user_id) & (comp_runs.c.metadata["product_name"].astext == product_name))
 
         if project_ids_or_none is not None:
             base_select_query = base_select_query.where(
-                comp_runs.c.project_uuid.in_(
-                    [f"{project_id}" for project_id in project_ids_or_none]
-                )
+                comp_runs.c.project_uuid.in_([f"{project_id}" for project_id in project_ids_or_none])
             )
         if collection_run_ids_or_none is not None:
             base_select_query = base_select_query.where(
                 comp_runs.c.collection_run_id.in_(
-                    [
-                        f"{collection_run_id}"
-                        for collection_run_id in collection_run_ids_or_none
-                    ]
+                    [f"{collection_run_id}" for collection_run_id in collection_run_ids_or_none]
                 )
             )
 
-        base_select_query_with_group_by = base_select_query.group_by(
-            comp_runs.c.collection_run_id
-        )
+        base_select_query_with_group_by = base_select_query.group_by(comp_runs.c.collection_run_id)
 
-        count_query = sa.select(sa.func.count()).select_from(
-            base_select_query_with_group_by.subquery()
-        )
+        count_query = sa.select(sa.func.count()).select_from(base_select_query_with_group_by.subquery())
 
         # Default ordering by min_run_id descending (biggest first)
-        list_query = base_select_query_with_group_by.order_by(
-            desc(literal_column("min_run_id"))
-        )
+        list_query = base_select_query_with_group_by.order_by(desc(literal_column("min_run_id")))
 
         list_query = list_query.offset(offset).limit(limit)
 

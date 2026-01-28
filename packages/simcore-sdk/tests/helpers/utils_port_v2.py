@@ -32,18 +32,16 @@ def create_valid_port_mapping(
     }.items():
         port = create_valid_port_config(
             t,
-            key=f"{'input' if mapping_class==InputsList else 'output'}_{t}_{suffix}",
+            key=f"{'input' if mapping_class == InputsList else 'output'}_{t}_{suffix}",
             value=v,
         )
         port_cfgs[port["key"]] = port
 
-    key_for_file_port = (
-        f"{'input' if mapping_class==InputsList else 'output'}_file_{suffix}"
-    )
+    key_for_file_port = f"{'input' if mapping_class == InputsList else 'output'}_file_{suffix}"
     port_cfgs[key_for_file_port] = create_valid_port_config(
         "data:*/*",
         key=key_for_file_port,
         fileToKeyMap={file_to_key: key_for_file_port} if file_to_key else None,
     )
-    port_mapping = mapping_class(**{"root": port_cfgs})
+    port_mapping = mapping_class(root=port_cfgs)
     return port_mapping

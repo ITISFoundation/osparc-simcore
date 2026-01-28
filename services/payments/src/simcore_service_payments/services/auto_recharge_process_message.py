@@ -16,6 +16,7 @@ from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.rabbitmq_messages import WalletCreditsMessage
 from models_library.wallets import WalletID
 from pydantic import TypeAdapter
+
 from simcore_service_payments.db.auto_recharge_repo import AutoRechargeRepo
 from simcore_service_payments.db.payments_methods_repo import PaymentsMethodsRepo
 from simcore_service_payments.db.payments_transactions_repo import (
@@ -63,15 +64,11 @@ async def process_message(app: FastAPI, data: bytes) -> bool:
 
     # Step 3: Check spending limits
     _payments_transactions_repo = PaymentsTransactionsRepo(db_engine=app.state.engine)
-    if await _exceeds_monthly_limit(
-        _payments_transactions_repo, rabbit_message.wallet_id, wallet_auto_recharge
-    ):
+    if await _exceeds_monthly_limit(_payments_transactions_repo, rabbit_message.wallet_id, wallet_auto_recharge):
         return True  # We do not auto recharge
 
     # Step 4: Check last top-up time
-    if await _was_wallet_topped_up_recently(
-        _payments_transactions_repo, rabbit_message.wallet_id
-    ):
+    if await _was_wallet_topped_up_recently(_payments_transactions_repo, rabbit_message.wallet_id):
         return True  # We do not auto recharge
 
     # Step 5: Check if timestamp when message was created is not too old
@@ -87,9 +84,7 @@ async def process_message(app: FastAPI, data: bytes) -> bool:
     # Step 7: Perform auto-recharge
     if settings.PAYMENTS_AUTORECHARGE_ENABLED:
         try:
-            await _perform_auto_recharge(
-                app, rabbit_message, payment_method_db, wallet_auto_recharge
-            )
+            await _perform_auto_recharge(app, rabbit_message, payment_method_db, wallet_auto_recharge)
         except Exception as e:  # pylint: disable=broad-except
             _logger.exception(
                 **create_troubleshooting_log_kwargs(
@@ -97,12 +92,8 @@ async def process_message(app: FastAPI, data: bytes) -> bool:
                     error=e,
                     error_context={
                         "wallet_id": str(rabbit_message.wallet_id),
-                        "payment_method_id": str(
-                            wallet_auto_recharge.payment_method_id
-                        ),
-                        "top_up_amount_in_usd": str(
-                            wallet_auto_recharge.top_up_amount_in_usd
-                        ),
+                        "payment_method_id": str(wallet_auto_recharge.payment_method_id),
+                        "top_up_amount_in_usd": str(wallet_auto_recharge.top_up_amount_in_usd),
                         "product_name": rabbit_message.product_name,
                     },
                     tip=(
@@ -119,9 +110,7 @@ async def process_message(app: FastAPI, data: bytes) -> bool:
     return True
 
 
-async def _check_wallet_credits_above_threshold(
-    threshold_in_credits: NonNegativeDecimal, _credits: Decimal
-) -> bool:
+async def _check_wallet_credits_above_threshold(threshold_in_credits: NonNegativeDecimal, _credits: Decimal) -> bool:
     return bool(_credits > threshold_in_credits)
 
 
@@ -140,37 +129,27 @@ async def _exceeds_monthly_limit(
     wallet_id: WalletID,
     wallet_auto_recharge: GetWalletAutoRecharge,
 ):
-    cumulative_current_month_spending = (
-        await payments_transactions_repo.sum_current_month_dollars(wallet_id=wallet_id)
-    )
+    cumulative_current_month_spending = await payments_transactions_repo.sum_current_month_dollars(wallet_id=wallet_id)
     return (
         wallet_auto_recharge.monthly_limit_in_usd is not None
-        and cumulative_current_month_spending
-        + wallet_auto_recharge.top_up_amount_in_usd
+        and cumulative_current_month_spending + wallet_auto_recharge.top_up_amount_in_usd
         > wallet_auto_recharge.monthly_limit_in_usd
     )
 
 
-async def _was_wallet_topped_up_recently(
-    payments_transactions_repo: PaymentsTransactionsRepo, wallet_id: WalletID
-):
+async def _was_wallet_topped_up_recently(payments_transactions_repo: PaymentsTransactionsRepo, wallet_id: WalletID):
     """
     As safety, we check if the last transaction was initiated within the last 5 minutes
     in that case we do not auto recharge
     """
-    last_wallet_transaction = (
-        await payments_transactions_repo.get_last_payment_transaction_for_wallet(
-            wallet_id=wallet_id
-        )
+    last_wallet_transaction = await payments_transactions_repo.get_last_payment_transaction_for_wallet(
+        wallet_id=wallet_id
     )
 
     current_timestamp = datetime.now(tz=UTC)
     current_timestamp_minus_5_minutes = current_timestamp - timedelta(minutes=5)
 
-    return (
-        last_wallet_transaction
-        and last_wallet_transaction.initiated_at > current_timestamp_minus_5_minutes
-    )
+    return last_wallet_transaction and last_wallet_transaction.initiated_at > current_timestamp_minus_5_minutes
 
 
 async def _is_message_too_old(
@@ -209,7 +188,6 @@ async def _perform_auto_recharge(
         repo_transactions=PaymentsTransactionsRepo(db_engine=app.state.engine),
         repo_methods=PaymentsMethodsRepo(db_engine=app.state.engine),
         notifier=NotifierService.get_from_app_state(app),
-        #
         payment_method_id=cast(PaymentMethodID, wallet_auto_recharge.payment_method_id),
         amount_dollars=wallet_auto_recharge.top_up_amount_in_usd,
         target_credits=invoice_data_get.credit_amount,

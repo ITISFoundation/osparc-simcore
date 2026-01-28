@@ -25,34 +25,16 @@ async def engine(aiopg_engine: Engine):
         await conn.execute(users.insert().values(**random_user()))
         await conn.execute(users.insert().values(**random_user()))
 
-        await conn.execute(
-            products.insert().values(**random_product(name="test-product"))
-        )
+        await conn.execute(products.insert().values(**random_product(name="test-product")))
 
-        await conn.execute(
-            projects.insert().values(
-                **random_project(prj_owner=1, product_name="test-product")
-            )
-        )
-        await conn.execute(
-            projects.insert().values(
-                **random_project(prj_owner=2, product_name="test-product")
-            )
-        )
-        await conn.execute(
-            projects.insert().values(
-                **random_project(prj_owner=3, product_name="test-product")
-            )
-        )
+        await conn.execute(projects.insert().values(**random_project(prj_owner=1, product_name="test-product")))
+        await conn.execute(projects.insert().values(**random_project(prj_owner=2, product_name="test-product")))
+        await conn.execute(projects.insert().values(**random_project(prj_owner=3, product_name="test-product")))
         with pytest.raises(ForeignKeyViolation):
             await conn.execute(projects.insert().values(**random_project(prj_owner=4)))
 
         with pytest.raises(ForeignKeyViolation):
-            await conn.execute(
-                projects.insert().values(
-                    **random_project(prj_owner=1, product_name="unknown-product")
-                )
-            )
+            await conn.execute(projects.insert().values(**random_project(prj_owner=1, product_name="unknown-product")))
 
     return aiopg_engine
 
@@ -61,9 +43,7 @@ async def engine(aiopg_engine: Engine):
 async def test_insert_user(engine):
     async with engine.acquire() as conn:
         # execute + scalar
-        res: ResultProxy = await conn.execute(
-            users.insert().values(**random_user(name="FOO"))
-        )
+        res: ResultProxy = await conn.execute(users.insert().values(**random_user(name="FOO")))
         assert res.returns_rows
         assert res.rowcount == 1
         assert res.keys() == ("id",)
@@ -73,16 +53,12 @@ async def test_insert_user(engine):
         assert user_id > 0
 
         # only scalar
-        user2_id: int = await conn.scalar(
-            users.insert().values(**random_user(name="BAR"))
-        )
+        user2_id: int = await conn.scalar(users.insert().values(**random_user(name="BAR")))
         assert isinstance(user2_id, int)
         assert user2_id == user_id + 1
 
         # query result
-        res: ResultProxy = await conn.execute(
-            users.select().where(users.c.id == user2_id)
-        )
+        res: ResultProxy = await conn.execute(users.select().where(users.c.id == user2_id))
         assert res.returns_rows
         assert res.rowcount == 1
         assert len(res.keys()) > 1
@@ -93,9 +69,7 @@ async def test_insert_user(engine):
         # Fetch the first row and then close the result set unconditionally.
         assert res.closed
 
-        res: ResultProxy = await conn.execute(
-            users.select().where(users.c.id == user2_id)
-        )
+        res: ResultProxy = await conn.execute(users.select().where(users.c.id == user2_id))
         user2a: RowProxy = await res.fetchone()
         # If rows are present, the cursor remains open after this is called.
         assert not res.closed
@@ -112,14 +86,10 @@ async def test_count_users(engine):
         users_count = await conn.scalar(sa.select(func.count()).select_from(users))
         assert users_count == 3
 
-        users_count = await conn.scalar(
-            sa.select(sa.func.count()).where(users.c.name == "A")
-        )
+        users_count = await conn.scalar(sa.select(sa.func.count()).where(users.c.name == "A"))
         assert users_count == 1
 
-        users_count = await conn.scalar(
-            sa.select(sa.func.count()).where(users.c.name == "UNKNOWN NAME")
-        )
+        users_count = await conn.scalar(sa.select(sa.func.count()).where(users.c.name == "UNKNOWN NAME"))
         assert users_count == 0
 
 
@@ -132,7 +102,6 @@ async def test_view(engine):
         async for row in conn.execute(projects.select()):
             print(row)
 
-        #
         await conn.execute(users.delete().where(users.c.name == "A"))
 
         res: ResultProxy = None

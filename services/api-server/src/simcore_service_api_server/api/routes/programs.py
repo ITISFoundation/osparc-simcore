@@ -16,6 +16,7 @@ from simcore_sdk.node_ports_common.filemanager import (
     complete_file_upload,
     get_upload_links_from_s3,
 )
+
 from simcore_service_api_server.models.api_resources import JobLinks
 
 from ..._service_jobs import JobService
@@ -61,9 +62,7 @@ async def list_programs(
     page_params.offset = page_meta.offset
 
     for program in programs:
-        program.url = url_for(
-            "get_program_release", program_key=program.id, version=program.version
-        )
+        program.url = url_for("get_program_release", program_key=program.id, version=program.version)
 
     return create_page(
         programs,
@@ -98,9 +97,7 @@ async def list_program_history(
     page_params.offset = page_meta.offset
 
     for program in programs:
-        program.url = url_for(
-            "get_program_release", program_key=program.id, version=program.version
-        )
+        program.url = url_for("get_program_release", program_key=program.id, version=program.version)
 
     return create_page(
         programs,
@@ -126,9 +123,7 @@ async def get_program_release(
             version=version,
         )
 
-        program.url = url_for(
-            "get_program_release", program_key=program.id, version=program.version
-        )
+        program.url = url_for("get_program_release", program_key=program.id, version=program.version)
         return program
 
     except (
@@ -156,12 +151,8 @@ async def create_program_job(
     job_service: Annotated[JobService, Depends(get_job_service)],
     x_simcore_parent_project_uuid: Annotated[ProjectID | None, Header()] = None,
     x_simcore_parent_node_id: Annotated[NodeID | None, Header()] = None,
-    name: Annotated[
-        str | None, StringConstraints(max_length=DEFAULT_MAX_STRING_LENGTH), Body()
-    ] = None,
-    description: Annotated[
-        str | None, StringConstraints(max_length=DEFAULT_MAX_STRING_LENGTH), Body()
-    ] = None,
+    name: Annotated[str | None, StringConstraints(max_length=DEFAULT_MAX_STRING_LENGTH), Body()] = None,
+    description: Annotated[str | None, StringConstraints(max_length=DEFAULT_MAX_STRING_LENGTH), Body()] = None,
 ):
     """Creates a program job"""
 

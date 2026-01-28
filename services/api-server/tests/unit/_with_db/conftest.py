@@ -41,15 +41,11 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 ## POSTGRES -----
 
 
-_CURRENT_DIR = (
-    Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
-)
+_CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve().parent
 
 
 @pytest.fixture(scope="session")
-def docker_compose_file(
-    default_app_env_vars: dict[str, str], tmpdir_factory: Callable
-) -> Path:
+def docker_compose_file(default_app_env_vars: dict[str, str], tmpdir_factory: Callable) -> Path:
     # Overrides fixture in https://github.com/avast/pytest-docker
 
     # NOTE: do not forget to add the current environ here, otherwise docker compose fails
@@ -81,13 +77,11 @@ class PostgreServiceInfoDict(TypedDict):
     password: str
     host: str
     port: int
-    datbase: str
+    database: str
 
 
 @pytest.fixture(scope="session")
-def postgres_service(
-    docker_services, docker_ip, docker_compose_file: Path
-) -> PostgreServiceInfoDict:
+def postgres_service(docker_services, docker_ip, docker_compose_file: Path) -> PostgreServiceInfoDict:
     # check docker-compose's environ is resolved properly
     config = yaml.safe_load(docker_compose_file.read_text())
     environ = config["services"]["postgres"]["environment"]
@@ -168,9 +162,7 @@ def app_environment(
 ) -> EnvVarsDict:
     """app environments WITH database settings"""
     mocker.patch("simcore_service_api_server.core.application.setup_rabbitmq")
-    mocker.patch(
-        "simcore_service_api_server.core._prometheus_instrumentation.setup_prometheus_instrumentation"
-    )
+    mocker.patch("simcore_service_api_server.core._prometheus_instrumentation.setup_prometheus_instrumentation")
 
     envs = setenvs_from_dict(monkeypatch, {**default_app_env_vars})
     assert "API_SERVER_POSTGRES" not in envs
@@ -204,17 +196,13 @@ async def create_user_ids(
             while True:
                 user = random_user()
                 async with async_engine.connect() as conn:
-                    result = await conn.execute(
-                        users.select().where(users.c.name == user["name"])
-                    )
+                    result = await conn.execute(users.select().where(users.c.name == user["name"]))
                     entry = result.one_or_none()
                     if entry is None:
                         break
 
             async with async_engine.begin() as conn:
-                uid = await conn.scalar(
-                    users.insert().values(user).returning(users.c.id)
-                )
+                uid = await conn.scalar(users.insert().values(user).returning(users.c.id))
                 assert uid
 
             _generate_user_ids.generated_ids.append(uid)
@@ -249,9 +237,7 @@ async def create_product_names(
                         break
 
             async with async_engine.begin() as conn:
-                name = await conn.scalar(
-                    products.insert().values(product).returning(products.c.name)
-                )
+                name = await conn.scalar(products.insert().values(product).returning(products.c.name))
 
             assert name
             _generate_product_names.generated_names.append(name)
@@ -272,7 +258,6 @@ async def create_fake_api_keys(
     create_user_ids: Callable[[PositiveInt], AsyncGenerator[PositiveInt]],
     create_product_names: Callable[[PositiveInt], AsyncGenerator[str]],
 ) -> AsyncGenerator[Callable[[PositiveInt], AsyncGenerator[ApiKeyInDB]]]:
-
     async def _generate_fake_api_key(n: PositiveInt):
         users, products = create_user_ids(n), create_product_names(n)
         excluded_column = "api_secret"
@@ -289,9 +274,7 @@ async def create_fake_api_keys(
                 result = await conn.execute(
                     api_keys.insert()
                     .values(
-                        api_secret=sa.func.crypt(
-                            plain_api_secret, sa.func.gen_salt("bf", 10)
-                        ),
+                        api_secret=sa.func.crypt(plain_api_secret, sa.func.gen_salt("bf", 10)),
                         **api_auth,
                     )
                     .returning(*returning_cols)
@@ -301,17 +284,13 @@ async def create_fake_api_keys(
 
             _generate_fake_api_key.row_ids.append(row.id)
 
-            yield ApiKeyInDB.model_validate(
-                {"api_secret": plain_api_secret, **row._asdict()}
-            )
+            yield ApiKeyInDB.model_validate({"api_secret": plain_api_secret, **row._asdict()})
 
     _generate_fake_api_key.row_ids = []
     yield _generate_fake_api_key
 
     async with async_engine.begin() as conn:
-        await conn.execute(
-            api_keys.delete().where(api_keys.c.id.in_(_generate_fake_api_key.row_ids))
-        )
+        await conn.execute(api_keys.delete().where(api_keys.c.id.in_(_generate_fake_api_key.row_ids)))
 
 
 @pytest.fixture

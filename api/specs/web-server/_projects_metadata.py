@@ -8,7 +8,6 @@ This OAS are the source of truth
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
-
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, status
@@ -43,6 +42,4 @@ async def get_project_metadata(_params: Annotated[ProjectPathParams, Depends()])
     response_model=Envelope[ProjectMetadataGet],
     status_code=status.HTTP_200_OK,
 )
-async def update_project_metadata(
-    _params: Annotated[ProjectPathParams, Depends()], _body: ProjectMetadataUpdate
-): ...
+async def update_project_metadata(_params: Annotated[ProjectPathParams, Depends()], _body: ProjectMetadataUpdate): ...

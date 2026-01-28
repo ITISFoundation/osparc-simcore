@@ -95,14 +95,10 @@ async def _cluster_dask_client(
         blocking_timeout=None,
     )
     @asynccontextmanager
-    async def _acquire_client(
-        user_id: UserID, scheduler: "DaskScheduler"
-    ) -> AsyncIterator[DaskClient]:
+    async def _acquire_client(user_id: UserID, scheduler: "DaskScheduler") -> AsyncIterator[DaskClient]:
         async with scheduler.dask_clients_pool.acquire(
             cluster,
-            ref=_DASK_CLIENT_RUN_REF.format(
-                user_id=user_id, project_id=project_id, run_id=run_id
-            ),
+            ref=_DASK_CLIENT_RUN_REF.format(user_id=user_id, project_id=project_id, run_id=run_id),
         ) as client:
             yield client
 
@@ -270,9 +266,7 @@ class DaskScheduler(BaseCompScheduler):
                 )
             )
 
-    async def _stop_tasks(
-        self, user_id: UserID, tasks: list[CompTaskAtDB], comp_run: CompRunsAtDB
-    ) -> None:
+    async def _stop_tasks(self, user_id: UserID, tasks: list[CompTaskAtDB], comp_run: CompRunsAtDB) -> None:
         # NOTE: if this exception raises, it means the backend was anyway not up
         with contextlib.suppress(ComputationalBackendOnDemandNotReadyError):
             async with _cluster_dask_client(
@@ -308,10 +302,7 @@ class DaskScheduler(BaseCompScheduler):
             run_metadata=comp_run.metadata,
         ) as client:
             tasks_results = await limited_gather(
-                *(
-                    client.get_task_result(t.current.job_id or "undefined")
-                    for t in tasks
-                ),
+                *(client.get_task_result(t.current.job_id or "undefined") for t in tasks),
                 reraise=False,
                 log=_logger,
                 limit=1,  # to avoid overloading the dask scheduler
@@ -402,12 +393,8 @@ class DaskScheduler(BaseCompScheduler):
                     # already had a timeout error, let's keep it
                     task_errors.append(error)
                     assert "ctx" in error  # nosec
-                    assert (
-                        _TASK_RETRIEVAL_ERROR_CONTEXT_TIME_KEY in error["ctx"]
-                    )  # nosec
-                    check_time = arrow.get(
-                        error["ctx"][_TASK_RETRIEVAL_ERROR_CONTEXT_TIME_KEY]
-                    )
+                    assert _TASK_RETRIEVAL_ERROR_CONTEXT_TIME_KEY in error["ctx"]  # nosec
+                    check_time = arrow.get(error["ctx"][_TASK_RETRIEVAL_ERROR_CONTEXT_TIME_KEY])
                     break
         if not task_errors:
             # first time we have this error
@@ -425,10 +412,7 @@ class DaskScheduler(BaseCompScheduler):
 
         # if the task has been running for too long, we consider it failed
         elapsed_time = arrow.utcnow() - check_time
-        if (
-            elapsed_time
-            > self.settings.COMPUTATIONAL_BACKEND_MAX_WAITING_FOR_RETRIEVING_RESULTS
-        ):
+        if elapsed_time > self.settings.COMPUTATIONAL_BACKEND_MAX_WAITING_FOR_RETRIEVING_RESULTS:
             _logger.error(
                 **create_troubleshooting_log_kwargs(
                     f"Task {task.job_id} failed because results could not be retrieved after {elapsed_time}",
@@ -505,9 +489,7 @@ class DaskScheduler(BaseCompScheduler):
         comp_run: CompRunsAtDB,
     ) -> tuple[bool, str | None]:
         """Returns True and the job ID if the task was successfully processed and can be released from the Dask cluster."""
-        with log_context(
-            _logger, logging.DEBUG, msg=f"{comp_run.run_id=}, {task=}, {result=}"
-        ):
+        with log_context(_logger, logging.DEBUG, msg=f"{comp_run.run_id=}, {task=}, {result=}"):
             log_error_context = {
                 "user_id": comp_run.user_id,
                 "project_id": f"{comp_run.project_uuid}",
@@ -521,9 +503,7 @@ class DaskScheduler(BaseCompScheduler):
                     simcore_platform_status,
                     task_errors,
                     task_completed,
-                ) = await self._handle_successful_run(
-                    task.current, result, log_error_context
-                )
+                ) = await self._handle_successful_run(task.current, result, log_error_context)
 
             elif isinstance(result, ComputationalBackendTaskResultsNotReadyError):
                 (
@@ -531,9 +511,7 @@ class DaskScheduler(BaseCompScheduler):
                     simcore_platform_status,
                     task_errors,
                     task_completed,
-                ) = await self._handle_computational_retrieval_error(
-                    task.current, result, log_error_context
-                )
+                ) = await self._handle_computational_retrieval_error(task.current, result, log_error_context)
             elif isinstance(result, ComputationalBackendNotConnectedError):
                 (
                     task_final_state,
@@ -549,9 +527,7 @@ class DaskScheduler(BaseCompScheduler):
                     simcore_platform_status,
                     task_errors,
                     task_completed,
-                ) = await self._handle_task_error(
-                    task.current, result, log_error_context
-                )
+                ) = await self._handle_task_error(task.current, result, log_error_context)
 
                 # we need to remove any invalid files in the storage
                 await clean_task_output_and_log_files_if_invalid(
@@ -596,9 +572,7 @@ class DaskScheduler(BaseCompScheduler):
 
             return task_completed, task.current.job_id
 
-    async def _task_progress_change_handler(
-        self, event: tuple[UnixTimestamp, Any]
-    ) -> None:
+    async def _task_progress_change_handler(self, event: tuple[UnixTimestamp, Any]) -> None:
         with log_catch(_logger, reraise=False):
             task_progress_event = TaskProgressEvent.model_validate_json(event[1])
             _logger.debug("received task progress update: %s", task_progress_event)

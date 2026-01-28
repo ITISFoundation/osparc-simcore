@@ -29,15 +29,11 @@ router = RPCRouter()
 async def list_tracked_dynamic_services(
     app: FastAPI, *, user_id: UserID | None = None, project_id: ProjectID | None = None
 ) -> list[DynamicServiceGet]:
-    return await common_interface.list_tracked_dynamic_services(
-        app, user_id=user_id, project_id=project_id
-    )
+    return await common_interface.list_tracked_dynamic_services(app, user_id=user_id, project_id=project_id)
 
 
 @router.expose()
-async def get_service_status(
-    app: FastAPI, *, node_id: NodeID
-) -> NodeGet | DynamicServiceGet | NodeGetIdle:
+async def get_service_status(app: FastAPI, *, node_id: NodeID) -> NodeGet | DynamicServiceGet | NodeGetIdle:
     return await common_interface.get_service_status(app, node_id=node_id)
 
 
@@ -45,9 +41,7 @@ async def get_service_status(
 async def run_dynamic_service(
     app: FastAPI, *, dynamic_service_start: DynamicServiceStart
 ) -> NodeGet | DynamicServiceGet:
-    return await common_interface.run_dynamic_service(
-        app, dynamic_service_start=dynamic_service_start
-    )
+    return await common_interface.run_dynamic_service(app, dynamic_service_start=dynamic_service_start)
 
 
 @router.expose(
@@ -56,12 +50,8 @@ async def run_dynamic_service(
         ServiceWasNotFoundError,
     )
 )
-async def stop_dynamic_service(
-    app: FastAPI, *, dynamic_service_stop: DynamicServiceStop
-) -> None:
-    return await common_interface.stop_dynamic_service(
-        app, dynamic_service_stop=dynamic_service_stop
-    )
+async def stop_dynamic_service(app: FastAPI, *, dynamic_service_stop: DynamicServiceStop) -> None:
+    return await common_interface.stop_dynamic_service(app, dynamic_service_stop=dynamic_service_stop)
 
 
 @router.expose()
@@ -82,9 +72,7 @@ async def restart_user_services(app: FastAPI, *, node_id: NodeID) -> None:
 async def retrieve_inputs(
     app: FastAPI, *, node_id: NodeID, port_keys: list[ServicePortKey]
 ) -> RetrieveDataOutEnveloped:
-    return await common_interface.retrieve_inputs(
-        app, node_id=node_id, port_keys=port_keys
-    )
+    return await common_interface.retrieve_inputs(app, node_id=node_id, port_keys=port_keys)
 
 
 @router.expose()

@@ -69,12 +69,8 @@ class BaseCluster(BaseModel):
         validate_default=True,
     )
     endpoint: AnyUrl
-    authentication: ClusterAuthentication = Field(
-        ..., description="Dask gateway authentication", discriminator="type"
-    )
-    _from_equivalent_enums = field_validator("type", mode="before")(
-        create_enums_pre_validator(ClusterTypeInModel)
-    )
+    authentication: ClusterAuthentication = Field(..., description="Dask gateway authentication", discriminator="type")
+    _from_equivalent_enums = field_validator("type", mode="before")(create_enums_pre_validator(ClusterTypeInModel))
 
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:
@@ -109,9 +105,7 @@ class BaseCluster(BaseModel):
             }
         )
 
-    model_config = ConfigDict(
-        use_enum_values=True, json_schema_extra=_update_json_schema_extra
-    )
+    model_config = ConfigDict(use_enum_values=True, json_schema_extra=_update_json_schema_extra)
 
 
 ClusterID: TypeAlias = NonNegativeInt

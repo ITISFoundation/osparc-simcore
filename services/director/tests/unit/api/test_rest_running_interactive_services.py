@@ -25,9 +25,7 @@ def _assert_response_and_unwrap_envelope(got: httpx.Response):
     return body.get("data"), body.get("error")
 
 
-@pytest.mark.parametrize(
-    "save_state, expected_save_state_call", [(True, True), (False, False), (None, True)]
-)
+@pytest.mark.parametrize("save_state, expected_save_state_call", [(True, True), (False, False), (None, True)])
 async def test_running_services_post_and_delete(
     configure_swarm_stack_name: EnvVarsDict,
     configure_registry_access: EnvVarsDict,
@@ -45,9 +43,7 @@ async def test_running_services_post_and_delete(
     ensure_run_in_sequence_context_is_empty: None,
 ):
     params = {}
-    resp = await client.post(
-        f"/{api_version_prefix}/running_interactive_services", params=params
-    )
+    resp = await client.post(f"/{api_version_prefix}/running_interactive_services", params=params)
     assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
     params = {
@@ -58,9 +54,7 @@ async def test_running_services_post_and_delete(
         "service_tag": "None",  # optional
         "service_basepath": "None",  # optional
     }
-    resp = await client.post(
-        f"/{api_version_prefix}/running_interactive_services", params=params
-    )
+    resp = await client.post(f"/{api_version_prefix}/running_interactive_services", params=params)
     data = resp.json()
     assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, data
 
@@ -74,9 +68,7 @@ async def test_running_services_post_and_delete(
     data = resp.json()
     assert resp.status_code == status.HTTP_404_NOT_FOUND, data
 
-    created_services = await push_services(
-        number_of_computational_services=0, number_of_interactive_services=2
-    )
+    created_services = await push_services(number_of_computational_services=0, number_of_interactive_services=2)
     assert len(created_services) == 2
     for created_service in created_services:
         service_description = created_service["service_description"]
@@ -112,14 +104,9 @@ async def test_running_services_post_and_delete(
                 "service_basepath",
             ]
         )
-        assert (
-            running_service_enveloped["data"]["service_uuid"] == params["service_uuid"]
-        )
+        assert running_service_enveloped["data"]["service_uuid"] == params["service_uuid"]
         assert running_service_enveloped["data"]["service_key"] == params["service_key"]
-        assert (
-            running_service_enveloped["data"]["service_version"]
-            == params["service_tag"]
-        )
+        assert running_service_enveloped["data"]["service_version"] == params["service_tag"]
         assert running_service_enveloped["data"]["service_port"] == service_port
         service_published_port = running_service_enveloped["data"]["published_port"]
         assert not service_published_port
@@ -150,18 +137,10 @@ async def test_running_services_post_and_delete(
                 "entry_point",
             ]
         )
-        assert (
-            running_service_enveloped["data"]["service_uuid"] == params["service_uuid"]
-        )
+        assert running_service_enveloped["data"]["service_uuid"] == params["service_uuid"]
         assert running_service_enveloped["data"]["service_key"] == params["service_key"]
-        assert (
-            running_service_enveloped["data"]["service_version"]
-            == params["service_tag"]
-        )
-        assert (
-            running_service_enveloped["data"]["published_port"]
-            == service_published_port
-        )
+        assert running_service_enveloped["data"]["service_version"] == params["service_tag"]
+        assert running_service_enveloped["data"]["published_port"] == service_published_port
         assert running_service_enveloped["data"]["entry_point"] == service_entry_point
         assert running_service_enveloped["data"]["service_host"] == service_host
         assert running_service_enveloped["data"]["service_port"] == service_port
@@ -245,12 +224,8 @@ async def test_running_interactive_services_list_get(
             params = {}
             # list by user_id
             params["user_id"] = user_id
-            response = await client.get(
-                "/v0/running_interactive_services", params=params
-            )
-            assert (
-                response.status_code == status.HTTP_200_OK
-            ), f"Response body is : {response.text}"
+            response = await client.get("/v0/running_interactive_services", params=params)
+            assert response.status_code == status.HTTP_200_OK, f"Response body is : {response.text}"
             data, error = _assert_response_and_unwrap_envelope(response)
             assert data
             assert not error
@@ -258,12 +233,8 @@ async def test_running_interactive_services_list_get(
             assert len(services_list) == len(project_ids) * NUM_SERVICES
             # list by user_id and project_id
             params["project_id"] = project_id
-            response = await client.get(
-                "/v0/running_interactive_services", params=params
-            )
-            assert (
-                response.status_code == status.HTTP_200_OK
-            ), f"Response body is : {response.text}"
+            response = await client.get("/v0/running_interactive_services", params=params)
+            assert response.status_code == status.HTTP_200_OK, f"Response body is : {response.text}"
             data, error = _assert_response_and_unwrap_envelope(response)
             assert data
             assert not error
@@ -272,12 +243,8 @@ async def test_running_interactive_services_list_get(
             # list by project_id
             params = {}
             params["project_id"] = project_id
-            response = await client.get(
-                "/v0/running_interactive_services", params=params
-            )
-            assert (
-                response.status_code == status.HTTP_200_OK
-            ), f"Response body is : {response.text}"
+            response = await client.get("/v0/running_interactive_services", params=params)
+            assert response.status_code == status.HTTP_200_OK, f"Response body is : {response.text}"
             data, error = _assert_response_and_unwrap_envelope(response)
             assert data
             assert not error
@@ -285,9 +252,7 @@ async def test_running_interactive_services_list_get(
             assert len(services_list) == len(user_ids) * NUM_SERVICES
     # get all the running services
     response = await client.get("/v0/running_interactive_services")
-    assert (
-        response.status_code == status.HTTP_200_OK
-    ), f"Response body is : {response.text}"
+    assert response.status_code == status.HTTP_200_OK, f"Response body is : {response.text}"
     data, error = _assert_response_and_unwrap_envelope(response)
     assert data
     assert not error

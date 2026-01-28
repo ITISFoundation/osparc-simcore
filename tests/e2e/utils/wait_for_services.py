@@ -120,15 +120,11 @@ def wait_for_services() -> int:
         ):
             with attempt:
                 started_services = sorted(
-                    (
-                        s
-                        for s in client.services.list()
-                        if s.name.split("_")[-1] in expected_services
-                    ),
+                    (s for s in client.services.list() if s.name.split("_")[-1] in expected_services),
                     key=by_service_creation,
                 )
 
-                assert len(started_services), "no services started!"
+                assert started_services, "no services started!"
                 assert len(expected_services) == len(started_services), (
                     "Some services are missing or unexpected:\n"
                     f"expected: {len(expected_services)} {expected_services}\n"
@@ -159,17 +155,12 @@ def wait_for_services() -> int:
 
                     #
                     # NOTE: a service could set 'ready' as desired-state instead of 'running' if
-                    # it constantly breaks and the swarm desides to "stop trying".
+                    # it constantly breaks and the swarm decides to "stop trying".
                     #
-                    valid_replicas = sum(
-                        task["Status"]["State"] == RUNNING_STATE
-                        for task in service_tasks
-                    )
+                    valid_replicas = sum(task["Status"]["State"] == RUNNING_STATE for task in service_tasks)
                     assert valid_replicas == expected_replicas
         except RetryError:
-            print(
-                f"ERROR: Service {service.name} failed to start {expected_replicas} replica/s"
-            )
+            print(f"ERROR: Service {service.name} failed to start {expected_replicas} replica/s")
             print(json.dumps(service.attrs, indent=1))
             return os.EX_SOFTWARE
 

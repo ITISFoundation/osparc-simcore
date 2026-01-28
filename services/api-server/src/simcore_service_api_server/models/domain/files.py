@@ -104,12 +104,10 @@ class File(BaseModel):
         )
 
     @classmethod
-    async def create_from_uploaded(
-        cls, file: UploadFile, *, file_size=None, created_at=None
-    ) -> "File":
+    async def create_from_uploaded(cls, file: UploadFile, *, file_size=None, created_at=None) -> "File":
         sha256check = await create_sha256_checksum(file)
-        # WARNING: UploadFile wraps a stream and wil checkt its cursor position: file.file.tell() != 0
-        # WARNING: await file.seek(0) might introduce race condition if not done carefuly
+        # WARNING: UploadFile wraps a stream and will checked its cursor position: file.file.tell() != 0
+        # WARNING: await file.seek(0) might introduce race condition if not done carefully
 
         return cls(
             id=cls.create_id(sha256check or file_size, file.filename, created_at),
@@ -120,9 +118,7 @@ class File(BaseModel):
 
     @classmethod
     async def create_from_quoted_storage_id(cls, quoted_storage_id: str) -> "File":
-        storage_file_id: StorageFileID = TypeAdapter(StorageFileID).validate_python(
-            _unquote(quoted_storage_id)
-        )
+        storage_file_id: StorageFileID = TypeAdapter(StorageFileID).validate_python(_unquote(quoted_storage_id))
         _, fid, fname = Path(storage_file_id).parts
         return cls(id=UUID(fid), filename=fname, checksum=None)
 
@@ -137,9 +133,7 @@ class File(BaseModel):
             return TypeAdapter(StorageFileID).validate_python(
                 f"{program_path.project_id}/{program_path.node_id}/{program_path.workspace_path}"
             )
-        return TypeAdapter(StorageFileID).validate_python(
-            f"api/{self.id}/{self.filename}"
-        )
+        return TypeAdapter(StorageFileID).validate_python(f"api/{self.id}/{self.filename}")
 
     @property
     def quoted_storage_file_id(self) -> str:

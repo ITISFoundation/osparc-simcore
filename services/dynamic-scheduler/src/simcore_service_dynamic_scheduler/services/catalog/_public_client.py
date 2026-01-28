@@ -20,15 +20,15 @@ class CatalogPublicClient(SingletonInAppStateMixin):
     async def get_docker_image_labels(
         self, service_key: ServiceKey, service_version: ServiceVersion
     ) -> SimcoreServiceLabels:
-        response = await CatalogThinClient.get_from_app_state(
-            self.app
-        ).get_docker_image_labels(service_key, service_version)
+        response = await CatalogThinClient.get_from_app_state(self.app).get_docker_image_labels(
+            service_key, service_version
+        )
         return TypeAdapter(SimcoreServiceLabels).validate_python(response.json())
 
     async def get_services_specifications(
         self, user_id: UserID, service_key: ServiceKey, service_version: ServiceVersion
     ) -> ServiceSpecifications:
-        response = await CatalogThinClient.get_from_app_state(
-            self.app
-        ).get_services_specifications(user_id, service_key, service_version)
+        response = await CatalogThinClient.get_from_app_state(self.app).get_services_specifications(
+            user_id, service_key, service_version
+        )
         return TypeAdapter(ServiceSpecifications).validate_python(response.json())

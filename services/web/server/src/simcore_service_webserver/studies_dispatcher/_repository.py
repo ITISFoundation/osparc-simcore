@@ -36,7 +36,6 @@ def create_viewer_info_from_db(row: Row) -> ViewerInfo:
 
 
 class StudiesDispatcherRepository(BaseRepository):
-
     async def list_viewers_info(
         self,
         connection: AsyncConnection | None = None,
@@ -72,9 +71,7 @@ class StudiesDispatcherRepository(BaseRepository):
                         yield consumer
 
                     except ValidationError as err:
-                        _logger.warning(
-                            "Review invalid service metadata %s: %s", row, err
-                        )
+                        _logger.warning("Review invalid service metadata %s: %s", row, err)
 
         return [viewer async for viewer in _iter_viewers()]
 
@@ -85,9 +82,7 @@ class StudiesDispatcherRepository(BaseRepository):
         file_type: str,
     ) -> ViewerInfo | None:
         """Get the default viewer for a specific file type."""
-        viewers = await self.list_viewers_info(
-            connection=connection, file_type=file_type, only_default=True
-        )
+        viewers = await self.list_viewers_info(connection=connection, file_type=file_type, only_default=True)
         return viewers[0] if viewers else None
 
     async def find_compatible_viewer(
@@ -105,10 +100,7 @@ class StudiesDispatcherRepository(BaseRepository):
             .where(
                 (services_consume_filetypes.c.filetype == file_type)
                 & (services_consume_filetypes.c.service_key == service_key)
-                & (
-                    _version(services_consume_filetypes.c.service_version)
-                    <= _version(service_version)
-                )
+                & (_version(services_consume_filetypes.c.service_version) <= _version(service_version))
             )
             .order_by(_version(services_consume_filetypes.c.service_version).desc())
             .limit(1)
@@ -119,9 +111,7 @@ class StudiesDispatcherRepository(BaseRepository):
             row = result.one_or_none()
             if row:
                 view = create_viewer_info_from_db(row)
-                view.version = TypeAdapter(ServiceVersion).validate_python(
-                    service_version
-                )
+                view.version = TypeAdapter(ServiceVersion).validate_python(service_version)
                 return view
 
         return None

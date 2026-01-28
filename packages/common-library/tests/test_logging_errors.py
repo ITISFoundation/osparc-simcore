@@ -22,9 +22,7 @@ def test_create_troubleshooting_log_message(caplog: pytest.LogCaptureFixture):
     error_code = create_error_code(exc)
 
     eoc1_fingerprint, eoc1_snapshot = parse_error_code_parts(error_code)
-    eoc2_fingerprint, eoc2_snapshot = parse_error_code_parts(
-        exc.get_or_create_error_code()
-    )
+    eoc2_fingerprint, eoc2_snapshot = parse_error_code_parts(exc.get_or_create_error_code())
 
     assert eoc1_fingerprint == eoc2_fingerprint
     assert eoc1_snapshot <= eoc2_snapshot
@@ -50,8 +48,7 @@ def test_create_troubleshooting_log_message(caplog: pytest.LogCaptureFixture):
     assert log_kwargs["extra"] is not None
     assert (
         # pylint: disable=unsubscriptable-object
-        log_kwargs["extra"].get("log_uid")
-        == "123"
+        log_kwargs["extra"].get("log_uid") == "123"
     ), "user_id is injected as extra from context"
 
     with caplog.at_level(logging.WARNING):

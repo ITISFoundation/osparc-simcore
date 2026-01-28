@@ -21,9 +21,7 @@ def fake_file_name(tmp_path: Path, faker: Faker) -> Iterable[Path]:
 
 
 @pytest.fixture
-def create_file_of_size(
-    tmp_path: Path, faker: Faker
-) -> Iterator[Callable[[ByteSize], Path]]:
+def create_file_of_size(tmp_path: Path, faker: Faker) -> Iterator[Callable[[ByteSize], Path]]:
     created_files = []
 
     def _creator(size: ByteSize, name: str | None = None) -> Path:

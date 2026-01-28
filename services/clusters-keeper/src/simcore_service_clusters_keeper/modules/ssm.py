@@ -19,9 +19,7 @@ _logger = logging.getLogger(__name__)
 def setup(app: FastAPI) -> None:
     async def on_startup() -> None:
         app.state.ssm_client = None
-        settings: SSMSettings | None = get_application_settings(
-            app
-        ).CLUSTERS_KEEPER_SSM_ACCESS
+        settings: SSMSettings | None = get_application_settings(app).CLUSTERS_KEEPER_SSM_ACCESS
 
         if not settings:
             _logger.warning("SSM client is de-activated in the settings")
@@ -50,7 +48,5 @@ def setup(app: FastAPI) -> None:
 
 def get_ssm_client(app: FastAPI) -> SimcoreSSMAPI:
     if not app.state.ssm_client:
-        raise ConfigurationError(
-            msg="SSM client is not available. Please check the configuration."
-        )
+        raise ConfigurationError(msg="SSM client is not available. Please check the configuration.")
     return cast(SimcoreSSMAPI, app.state.ssm_client)

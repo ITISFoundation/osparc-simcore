@@ -57,9 +57,7 @@ class AutoRechargeRepo(BaseRepository):
             )
 
             if await conn.scalar(stmt) != new.primary_payment_method_id:
-                raise InvalidPaymentMethodError(
-                    payment_method_id=new.primary_payment_method_id
-                )
+                raise InvalidPaymentMethodError(payment_method_id=new.primary_payment_method_id)
 
             stmt = AutoRechargeStatements.upsert_wallet_autorecharge(
                 wallet_id=wallet_id,

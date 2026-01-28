@@ -8,19 +8,13 @@ router = RPCRouter()
 
 
 @router.expose()
-async def toggle_ports_io(
-    app: FastAPI, *, enable_outputs: bool, enable_inputs: bool
-) -> None:
+async def toggle_ports_io(app: FastAPI, *, enable_outputs: bool, enable_inputs: bool) -> None:
     """Enable/disable ports i/o"""
-    await container_extensions.toggle_ports_io(
-        app, enable_outputs=enable_outputs, enable_inputs=enable_inputs
-    )
+    await container_extensions.toggle_ports_io(app, enable_outputs=enable_outputs, enable_inputs=enable_inputs)
 
 
 @router.expose()
-async def create_output_dirs(
-    app: FastAPI, *, outputs_labels: dict[str, ServiceOutput]
-) -> None:
+async def create_output_dirs(app: FastAPI, *, outputs_labels: dict[str, ServiceOutput]) -> None:
     """
     Creates the output directories declared by the docker images's labels.
     It is more convenient to pass the labels from director-v2,
@@ -44,11 +38,7 @@ async def attach_container_to_network(
 
 
 @router.expose()
-async def detach_container_from_network(
-    app: FastAPI, *, container_id: str, network_id: str
-) -> None:
+async def detach_container_from_network(app: FastAPI, *, container_id: str, network_id: str) -> None:
     """detach container from a network, if not already detached"""
     _ = app
-    await container_extensions.detach_container_from_network(
-        container_id=container_id, network_id=network_id
-    )
+    await container_extensions.detach_container_from_network(container_id=container_id, network_id=network_id)

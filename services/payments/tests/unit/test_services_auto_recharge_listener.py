@@ -126,44 +126,46 @@ async def test_process_message__called(
 
 @pytest.fixture()
 async def populate_test_db(sqlalchemy_async_engine: AsyncEngine, faker: Faker, wallet_id: int) -> AsyncIterator[None]:
-    async with insert_and_get_user_and_secrets_lifespan(sqlalchemy_async_engine) as user_row:  # noqa: SIM117
-        async with insert_and_get_product_lifespan(sqlalchemy_async_engine, name="s4l") as product_row:
-            product_name = product_row["name"]
-            async with insert_and_get_wallet_lifespan(
-                sqlalchemy_async_engine,
-                product_name=product_name,
-                user_group_id=user_row["primary_gid"],
-                wallet_id=wallet_id,
-            ):
-                async with sqlalchemy_async_engine.begin() as con:
-                    _primary_payment_method_id = faker.uuid4()
-                    _completed_at = datetime.now(tz=UTC) + timedelta(minutes=1)
+    async with (
+        insert_and_get_user_and_secrets_lifespan(sqlalchemy_async_engine) as user_row,
+        insert_and_get_product_lifespan(sqlalchemy_async_engine, name="s4l") as product_row,
+    ):
+        product_name = product_row["name"]
+        async with insert_and_get_wallet_lifespan(
+            sqlalchemy_async_engine,
+            product_name=product_name,
+            user_group_id=user_row["primary_gid"],
+            wallet_id=wallet_id,
+        ):
+            async with sqlalchemy_async_engine.begin() as con:
+                _primary_payment_method_id = faker.uuid4()
+                _completed_at = datetime.now(tz=UTC) + timedelta(minutes=1)
 
-                    await con.execute(
-                        payments_methods.insert().values(
-                            **random_payment_method(
-                                payment_method_id=_primary_payment_method_id,
-                                user_id=user_row["id"],
-                                wallet_id=wallet_id,
-                                state="SUCCESS",
-                                completed_at=_completed_at,
-                            )
+                await con.execute(
+                    payments_methods.insert().values(
+                        **random_payment_method(
+                            payment_method_id=_primary_payment_method_id,
+                            user_id=user_row["id"],
+                            wallet_id=wallet_id,
+                            state="SUCCESS",
+                            completed_at=_completed_at,
                         )
                     )
-                    await con.execute(
-                        payments_autorecharge.insert().values(
-                            **random_payment_autorecharge(
-                                primary_payment_method_id=_primary_payment_method_id,
-                                wallet_id=wallet_id,
-                            )
+                )
+                await con.execute(
+                    payments_autorecharge.insert().values(
+                        **random_payment_autorecharge(
+                            primary_payment_method_id=_primary_payment_method_id,
+                            wallet_id=wallet_id,
                         )
                     )
+                )
 
-                yield
+            yield
 
-                async with sqlalchemy_async_engine.begin() as con:
-                    await con.execute(payments_methods.delete())
-                    await con.execute(payments_autorecharge.delete())
+            async with sqlalchemy_async_engine.begin() as con:
+                await con.execute(payments_methods.delete())
+                await con.execute(payments_autorecharge.delete())
 
 
 @pytest.fixture()
@@ -186,7 +188,7 @@ async def mock_rpc_client(
     rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
     mocker: MockerFixture,
 ) -> RabbitMQRPCClient:
-    rpc_client = await rabbitmq_rpc_client("mock_server")
+    rpc_client = await rabbitmq_rpc_client("mock_client")
 
     router = RPCRouter()
 
@@ -304,33 +306,35 @@ async def test_check_autorecharge_conditions_not_met(
 
 @pytest.fixture()
 async def populate_payment_transaction_db(sqlalchemy_async_engine: AsyncEngine, wallet_id: int) -> AsyncIterator[None]:
-    async with insert_and_get_user_and_secrets_lifespan(sqlalchemy_async_engine) as user_row:  # noqa: SIM117
-        async with insert_and_get_product_lifespan(sqlalchemy_async_engine, name="s4l") as product_row:
-            product_name = product_row["name"]
-            async with insert_and_get_wallet_lifespan(
-                sqlalchemy_async_engine,
-                product_name=product_name,
-                user_group_id=user_row["primary_gid"],
-                wallet_id=wallet_id,
-            ):
-                async with sqlalchemy_async_engine.begin() as con:
-                    await con.execute(
-                        payments_transactions.insert().values(
-                            **random_payment_transaction(
-                                price_dollars=Decimal(9500),
-                                wallet_id=wallet_id,
-                                user_id=user_row["id"],
-                                state=PaymentTransactionState.SUCCESS,
-                                completed_at=datetime.now(tz=UTC),
-                                initiated_at=datetime.now(tz=UTC) - timedelta(seconds=10),
-                            )
+    async with (
+        insert_and_get_user_and_secrets_lifespan(sqlalchemy_async_engine) as user_row,
+        insert_and_get_product_lifespan(sqlalchemy_async_engine, name="s4l") as product_row,
+    ):
+        product_name = product_row["name"]
+        async with insert_and_get_wallet_lifespan(
+            sqlalchemy_async_engine,
+            product_name=product_name,
+            user_group_id=user_row["primary_gid"],
+            wallet_id=wallet_id,
+        ):
+            async with sqlalchemy_async_engine.begin() as con:
+                await con.execute(
+                    payments_transactions.insert().values(
+                        **random_payment_transaction(
+                            price_dollars=Decimal(9500),
+                            wallet_id=wallet_id,
+                            user_id=user_row["id"],
+                            state=PaymentTransactionState.SUCCESS,
+                            completed_at=datetime.now(tz=UTC),
+                            initiated_at=datetime.now(tz=UTC) - timedelta(seconds=10),
                         )
                     )
+                )
 
-                yield
+            yield
 
-                async with sqlalchemy_async_engine.begin() as con:
-                    await con.execute(payments_transactions.delete())
+            async with sqlalchemy_async_engine.begin() as con:
+                await con.execute(payments_transactions.delete())
 
 
 @pytest.mark.parametrize(
@@ -384,36 +388,38 @@ async def test_was_wallet_topped_up_recently_true(
 async def populate_payment_transaction_db_with_older_trans(
     sqlalchemy_async_engine, wallet_id: int
 ) -> AsyncIterator[None]:
-    async with insert_and_get_user_and_secrets_lifespan(sqlalchemy_async_engine) as user_row:  # noqa: SIM117
-        async with insert_and_get_product_lifespan(sqlalchemy_async_engine, name="s4l") as product_row:
-            product_name = product_row["name"]
-            async with insert_and_get_wallet_lifespan(
-                sqlalchemy_async_engine,
-                product_name=product_name,
-                user_group_id=user_row["primary_gid"],
-                wallet_id=wallet_id,
-            ):
-                async with sqlalchemy_async_engine.begin() as con:
-                    current_timestamp = datetime.now(tz=UTC)
-                    current_timestamp_minus_10_minutes = current_timestamp - timedelta(minutes=10)
+    async with (
+        insert_and_get_user_and_secrets_lifespan(sqlalchemy_async_engine) as user_row,
+        insert_and_get_product_lifespan(sqlalchemy_async_engine, name="s4l") as product_row,
+    ):
+        product_name = product_row["name"]
+        async with insert_and_get_wallet_lifespan(
+            sqlalchemy_async_engine,
+            product_name=product_name,
+            user_group_id=user_row["primary_gid"],
+            wallet_id=wallet_id,
+        ):
+            async with sqlalchemy_async_engine.begin() as con:
+                current_timestamp = datetime.now(tz=UTC)
+                current_timestamp_minus_10_minutes = current_timestamp - timedelta(minutes=10)
 
-                    await con.execute(
-                        payments_transactions.insert().values(
-                            **random_payment_transaction(
-                                price_dollars=Decimal(9500),
-                                wallet_id=wallet_id,
-                                user_id=user_row["id"],
-                                product_name=product_name,
-                                state=PaymentTransactionState.SUCCESS,
-                                initiated_at=current_timestamp_minus_10_minutes,
-                            )
+                await con.execute(
+                    payments_transactions.insert().values(
+                        **random_payment_transaction(
+                            price_dollars=Decimal(9500),
+                            wallet_id=wallet_id,
+                            user_id=user_row["id"],
+                            product_name=product_name,
+                            state=PaymentTransactionState.SUCCESS,
+                            initiated_at=current_timestamp_minus_10_minutes,
                         )
                     )
+                )
 
-                yield
+            yield
 
-                async with sqlalchemy_async_engine.begin() as con:
-                    await con.execute(payments_transactions.delete())
+            async with sqlalchemy_async_engine.begin() as con:
+                await con.execute(payments_transactions.delete())
 
 
 async def test_was_wallet_topped_up_recently_false(

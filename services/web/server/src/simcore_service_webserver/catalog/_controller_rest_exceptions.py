@@ -39,17 +39,12 @@ assert CatalogItemNotFoundRpcError  # nosec
 _logger = logging.getLogger(__name__)
 
 
-async def _handler_catalog_client_errors(
-    request: web.Request, exception: Exception
-) -> web.Response:
+async def _handler_catalog_client_errors(request: web.Request, exception: Exception) -> web.Response:
     assert isinstance(  # nosec
         exception, CatalogResponseError | CatalogConnectionError
     ), f"check mapping, got {exception=}"
 
-    if (
-        isinstance(exception, CatalogResponseError)
-        and exception.status == status.HTTP_404_NOT_FOUND
-    ):
+    if isinstance(exception, CatalogResponseError) and exception.status == status.HTTP_404_NOT_FOUND:
         error = ErrorGet(
             status=status.HTTP_404_NOT_FOUND,
             message=MSG_CATALOG_SERVICE_NOT_FOUND,
@@ -99,21 +94,15 @@ _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
     ),
     CatalogItemNotFoundRpcError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
-        user_message(
-            "This catalog item does not exist or has been removed.", _version=2
-        ),
+        user_message("This catalog item does not exist or has been removed.", _version=2),
     ),
     DefaultPricingPlanNotFoundError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
-        user_message(
-            "No default pricing plan is available for this operation.", _version=2
-        ),
+        user_message("No default pricing plan is available for this operation.", _version=2),
     ),
     DefaultPricingUnitForServiceNotFoundError: HttpErrorInfo(
         status.HTTP_404_NOT_FOUND,
-        user_message(
-            "No default pricing unit is defined for this service.", _version=2
-        ),
+        user_message("No default pricing unit is defined for this service.", _version=2),
     ),
 }
 
@@ -124,6 +113,4 @@ catalog_exceptions_handlers_map: ExceptionHandlersMap = {
 }
 catalog_exceptions_handlers_map.update(to_exceptions_handlers_map(_TO_HTTP_ERROR_MAP))
 
-handle_plugin_requests_exceptions = exception_handling_decorator(
-    catalog_exceptions_handlers_map
-)
+handle_plugin_requests_exceptions = exception_handling_decorator(catalog_exceptions_handlers_map)

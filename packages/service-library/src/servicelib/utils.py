@@ -51,10 +51,7 @@ def get_http_client_request_aiohttp_connect_timeout() -> int | None:
 
 
 def get_http_client_request_aiohttp_sock_connect_timeout() -> int | None:
-    return (
-        int(os.environ.get("HTTP_CLIENT_REQUEST_AIOHTTP_SOCK_CONNECT_TIMEOUT", "5"))
-        or None
-    )
+    return int(os.environ.get("HTTP_CLIENT_REQUEST_AIOHTTP_SOCK_CONNECT_TIMEOUT", "5")) or None
 
 
 _EXPECTED: Final = {".github", "packages", "services"}
@@ -112,7 +109,7 @@ async def logged_gather(
     max_concurrency: int = 0,
 ) -> list[Any]:
     """
-        Thin wrapper around asyncio.gather that allows excuting ALL tasks concurently until the end
+        Thin wrapper around asyncio.gather that allows executing ALL tasks concurrently until the end
         even if any of them fail. Finally, all errors are logged and the first raised (if reraise=True)
         as asyncio.gather would do with return_exceptions=True
 
@@ -164,9 +161,7 @@ def ensure_ends_with(input_string: str, char: str) -> str:
     return input_string
 
 
-def partition_gen(
-    input_list: Iterable, *, slice_size: NonNegativeInt
-) -> Generator[tuple[Any, ...]]:
+def partition_gen(input_list: Iterable, *, slice_size: NonNegativeInt) -> Generator[tuple[Any, ...]]:
     """
     Given an iterable and the slice_size yields tuples containing
     slice_size elements in them.
@@ -233,14 +228,10 @@ async def limited_as_completed(
 
     try:
         while pending_futures or not completed_all_awaitables:
-            while (
-                limit < 1 or len(pending_futures) < limit
-            ) and not completed_all_awaitables:
+            while (limit < 1 or len(pending_futures) < limit) and not completed_all_awaitables:
                 try:
                     aw = (
-                        await anext(awaitable_iterator)
-                        if is_async
-                        else next(awaitable_iterator)  # type: ignore[call-overload]
+                        await anext(awaitable_iterator) if is_async else next(awaitable_iterator)  # type: ignore[call-overload]
                     )
                     future: asyncio.Task = asyncio.ensure_future(aw)
                     if tasks_group_prefix:
@@ -251,9 +242,7 @@ async def limited_as_completed(
                     completed_all_awaitables = True
             if not pending_futures:
                 return
-            done, pending_futures = await asyncio.wait(
-                pending_futures, return_when=asyncio.FIRST_COMPLETED
-            )
+            done, pending_futures = await asyncio.wait(pending_futures, return_when=asyncio.FIRST_COMPLETED)
 
             for future in done:
                 yield future
@@ -338,8 +327,7 @@ async def limited_gather(
     """
 
     indexed_awaitables = [
-        _wrapped(awaitable, reraise=reraise, index=index, logger=log)
-        for index, awaitable in enumerate(awaitables)
+        _wrapped(awaitable, reraise=reraise, index=index, logger=log) for index, awaitable in enumerate(awaitables)
     ]
 
     interim_results: list[T | BaseException | None] = [None] * len(indexed_awaitables)
@@ -357,7 +345,5 @@ async def limited_gather(
 
 @lru_cache
 def load_script(package: str, script_name: str) -> str:
-    with resources.as_file(
-        resources.files(package) / f"{script_name}.lua"
-    ) as script_file:
+    with resources.as_file(resources.files(package) / f"{script_name}.lua") as script_file:
         return script_file.read_text(encoding="utf-8").strip()

@@ -18,9 +18,7 @@ from simcore_service_webserver.projects.exceptions import (
     "resources",
     [
         TypeAdapter(ServiceResourcesDict).validate_python(example)
-        for example in ServiceResourcesDictHelpers.model_config["json_schema_extra"][
-            "examples"
-        ]
+        for example in ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"]
     ],
 )
 def test_check_can_update_service_resources_with_same_does_not_raise(
@@ -34,17 +32,14 @@ def test_check_can_update_service_resources_with_same_does_not_raise(
     "resources",
     [
         TypeAdapter(ServiceResourcesDict).validate_python(example)
-        for example in ServiceResourcesDictHelpers.model_config["json_schema_extra"][
-            "examples"
-        ]
+        for example in ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"]
     ],
 )
 def test_check_can_update_service_resources_with_invalid_container_name_raises(
     resources: ServiceResourcesDict,
 ):
     new_resources = {
-        f"{resource_name}-invalid-name": resource_data
-        for resource_name, resource_data in resources.items()
+        f"{resource_name}-invalid-name": resource_data for resource_name, resource_data in resources.items()
     }
 
     with pytest.raises(ProjectNodeResourcesInvalidError, match="invalid-name"):
@@ -55,21 +50,15 @@ def test_check_can_update_service_resources_with_invalid_container_name_raises(
     "resources",
     [
         TypeAdapter(ServiceResourcesDict).validate_python(example)
-        for example in ServiceResourcesDictHelpers.model_config["json_schema_extra"][
-            "examples"
-        ]
+        for example in ServiceResourcesDictHelpers.model_config["json_schema_extra"]["examples"]
     ],
 )
 def test_check_can_update_service_resources_with_invalid_image_name_raises(
     resources: ServiceResourcesDict,
 ):
     new_resources = {
-        resource_name: resource_data.model_copy(
-            update={"image": "some-invalid-image-name"}
-        )
+        resource_name: resource_data.model_copy(update={"image": "some-invalid-image-name"})
         for resource_name, resource_data in resources.items()
     }
-    with pytest.raises(
-        ProjectNodeResourcesInvalidError, match="some-invalid-image-name"
-    ):
+    with pytest.raises(ProjectNodeResourcesInvalidError, match="some-invalid-image-name"):
         validate_new_service_resources(resources, new_resources=new_resources)

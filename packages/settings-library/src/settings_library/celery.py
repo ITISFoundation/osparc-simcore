@@ -4,6 +4,7 @@ from typing import Annotated
 
 from pydantic import Field
 from pydantic_settings import SettingsConfigDict
+
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 
@@ -18,29 +19,23 @@ class CeleryPoolType(StrEnum):
 
 
 class CelerySettings(BaseCustomSettings):
-    CELERY_RABBIT_BROKER: Annotated[
-        RabbitSettings, Field(json_schema_extra={"auto_default_from_env": True})
-    ]
-    CELERY_REDIS_RESULT_BACKEND: Annotated[
-        RedisSettings, Field(json_schema_extra={"auto_default_from_env": True})
-    ]
+    CELERY_RABBIT_BROKER: Annotated[RabbitSettings, Field(json_schema_extra={"auto_default_from_env": True})]
+    CELERY_REDIS_RESULT_BACKEND: Annotated[RedisSettings, Field(json_schema_extra={"auto_default_from_env": True})]
     CELERY_RESULT_EXPIRES: Annotated[
         timedelta,
         Field(
-            description="Time after which task results will be deleted (default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)."
+            description="Time after which task results will be deleted (default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formatting)."
         ),
     ] = timedelta(days=7)
     CELERY_EPHEMERAL_RESULT_EXPIRES: Annotated[
         timedelta,
         Field(
-            description="Time after which ephemeral task results will be deleted (default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formating)."
+            description="Time after which ephemeral task results will be deleted (default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formatting)."
         ),
     ] = timedelta(hours=1)
     CELERY_RESULT_PERSISTENT: Annotated[
         bool,
-        Field(
-            description="If set to True, result messages will be persistent (after a broker restart)."
-        ),
+        Field(description="If set to True, result messages will be persistent (after a broker restart)."),
     ] = True
 
     CELERY_POOL: Annotated[

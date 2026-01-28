@@ -38,7 +38,5 @@ faker = Faker()
     ],
 )
 async def test_raw_message_parsing(raw_data: str, class_type: type):
-    result = TypeAdapter(
-        ProgressRabbitMessageNode | ProgressRabbitMessageProject
-    ).validate_json(raw_data)
+    result = TypeAdapter(ProgressRabbitMessageNode | ProgressRabbitMessageProject).validate_json(raw_data)
     assert type(result) is class_type

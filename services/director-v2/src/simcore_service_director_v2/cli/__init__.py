@@ -38,9 +38,7 @@ main.command()(create_settings_command(settings_cls=AppSettings, logger=_logger)
 
 
 @main.command()
-def project_save_state(
-    project_id: ProjectID, save_attempts: int = DEFAULT_NODE_SAVE_ATTEMPTS
-):
+def project_save_state(project_id: ProjectID, save_attempts: int = DEFAULT_NODE_SAVE_ATTEMPTS):
     """
     Saves the state of all dy-sidecars in a project.
     In case of error while saving the state of an individual node,

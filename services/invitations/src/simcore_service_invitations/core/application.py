@@ -27,7 +27,6 @@ def create_app(
     settings: ApplicationSettings | None = None,
     tracing_config: TracingConfig | None = None,
 ) -> FastAPI:
-
     app = FastAPI(
         title=f"{PROJECT_NAME} web API",
         description=SUMMARY,

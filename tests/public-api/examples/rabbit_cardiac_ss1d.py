@@ -37,17 +37,13 @@ with osparc.ApiClient(cfg) as api_client:
     # Upload init states file.
 
     files_api = osparc.FilesApi(api_client)
-    initial_wtstates_file = files_api.upload_file(
-        str(data_dir / "initial_WTstates.txt")
-    )
+    initial_wtstates_file = files_api.upload_file(str(data_dir / "initial_WTstates.txt"))
 
     # Create our simulation.
 
     solvers_api = osparc.SolversApi(api_client)
 
-    solver = solvers_api.get_solver_release(
-        "simcore/services/comp/rabbit-ss-1d-cardiac-model", "1.0.0"
-    )
+    solver = solvers_api.get_solver_release("simcore/services/comp/rabbit-ss-1d-cardiac-model", "1.0.0")
 
     # SEE data_rabbit_cardiac/ss1d_meta.json::inputs
     job = solvers_api.create_job(
@@ -118,7 +114,6 @@ with osparc.ApiClient(cfg) as api_client:
                 last_status.progress == 100 or not last_status.stopped_at,
             )
         else:
-
             # Print out the id of our simulation results file (?).
 
             print("---------------------------------------")

@@ -8,7 +8,7 @@ from unittest import mock
 import pytest
 from fastapi import FastAPI
 from pytest_mock import MockerFixture
-from simcore_service_storage.dsm_cleaner import _TASK_NAME_PERIODICALY_CLEAN_DSM
+from simcore_service_storage.dsm_cleaner import _TASK_NAME_PERIODICALLY_CLEAN_DSM
 
 pytest_simcore_core_services_selection = ["postgres"]
 pytest_simcore_ops_services_selection = ["adminer"]
@@ -36,18 +36,12 @@ def short_dsm_cleaner_interval(monkeypatch: pytest.MonkeyPatch) -> int:
 
 async def test_setup_dsm_cleaner(initialized_app: FastAPI):
     all_tasks = asyncio.all_tasks()
-    assert any(
-        t.get_name().startswith(f"{_TASK_NAME_PERIODICALY_CLEAN_DSM}")
-        for t in all_tasks
-    )
+    assert any(t.get_name().startswith(f"{_TASK_NAME_PERIODICALLY_CLEAN_DSM}") for t in all_tasks)
 
 
 async def test_disable_dsm_cleaner(disable_dsm_cleaner, initialized_app: FastAPI):
     all_tasks = asyncio.all_tasks()
-    assert not any(
-        t.get_name().startswith(f"{_TASK_NAME_PERIODICALY_CLEAN_DSM}")
-        for t in all_tasks
-    )
+    assert not any(t.get_name().startswith(f"{_TASK_NAME_PERIODICALLY_CLEAN_DSM}") for t in all_tasks)
 
 
 async def test_dsm_cleaner_task_restarts_if_error(

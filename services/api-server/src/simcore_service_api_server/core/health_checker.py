@@ -51,9 +51,7 @@ class ApiServerHealthChecker:
         _logger.info("Api server health check dummy job_id=%s", f"{self._dummy_job_id}")
 
     async def setup(self, health_check_task_period_seconds: PositiveFloat):
-        await self._log_distributor.register(
-            job_id=self._dummy_job_id, queue=self._dummy_queue
-        )
+        await self._log_distributor.register(job_id=self._dummy_job_id, queue=self._dummy_queue)
         self._background_task = create_periodic_task(
             task=self._background_task_method,
             interval=timedelta(seconds=health_check_task_period_seconds),
@@ -63,9 +61,7 @@ class ApiServerHealthChecker:
     async def teardown(self):
         if self._background_task:
             with log_catch(_logger, reraise=False):
-                await cancel_wait_task(
-                    self._background_task, max_delay=self._timeout_seconds
-                )
+                await cancel_wait_task(self._background_task, max_delay=self._timeout_seconds)
         await self._log_distributor.deregister(job_id=self._dummy_job_id)
 
     @property
@@ -86,14 +82,10 @@ class ApiServerHealthChecker:
             _ = self._dummy_queue.get_nowait()
         try:
             await asyncio.wait_for(
-                self._rabbit_client.publish(
-                    self._dummy_message.channel_name, self._dummy_message
-                ),
+                self._rabbit_client.publish(self._dummy_message.channel_name, self._dummy_message),
                 timeout=self._timeout_seconds,
             )
-            _ = await asyncio.wait_for(
-                self._dummy_queue.get(), timeout=self._timeout_seconds
-            )
+            _ = await asyncio.wait_for(self._dummy_queue.get(), timeout=self._timeout_seconds)
             self._health_check_failure_count = 0
         except TimeoutError:
             self._increment_health_check_failure_count()
@@ -102,7 +94,5 @@ class ApiServerHealthChecker:
 def get_health_checker(
     app: Annotated[FastAPI, Depends(get_app)],
 ) -> ApiServerHealthChecker:
-    assert (
-        app.state.health_checker
-    ), "Api-server healthchecker is not setup. Please check the configuration"  # nosec
+    assert app.state.health_checker, "Api-server healthchecker is not setup. Please check the configuration"  # nosec
     return cast(ApiServerHealthChecker, app.state.health_checker)

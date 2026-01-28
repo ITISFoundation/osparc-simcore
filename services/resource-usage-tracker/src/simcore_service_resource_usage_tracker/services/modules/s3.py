@@ -43,9 +43,7 @@ def setup(app: FastAPI) -> None:
             ):
                 with attempt:
                     connected = await client.http_check_bucket_connected(
-                        bucket=TypeAdapter(S3BucketName).validate_python(
-                            settings.S3_BUCKET_NAME
-                        )
+                        bucket=TypeAdapter(S3BucketName).validate_python(settings.S3_BUCKET_NAME)
                     )
                     if not connected:
                         raise S3NotConnectedError  # pragma: no cover
@@ -65,7 +63,5 @@ def setup(app: FastAPI) -> None:
 
 def get_s3_client(app: FastAPI) -> SimcoreS3API:
     if not app.state.s3_client:
-        raise ConfigurationError(
-            msg="S3 client is not available. Please check the configuration."
-        )
+        raise ConfigurationError(msg="S3 client is not available. Please check the configuration.")
     return cast(SimcoreS3API, app.state.s3_client)

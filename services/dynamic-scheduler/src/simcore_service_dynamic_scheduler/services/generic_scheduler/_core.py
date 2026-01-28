@@ -22,7 +22,7 @@ from ._core_utils import (
     get_steps_statuses,
     raise_if_overwrites_any_operation_provided_key,
     safe_event,
-    set_unexpected_opration_state,
+    set_unexpected_operation_state,
     start_and_mark_as_started,
     start_steps_which_were_not_started,
 )
@@ -109,20 +109,14 @@ class Core(SingletonInAppStateMixin):
 
         for required_key in operation.initial_context_required_keys:
             if required_key not in initial_operation_context:
-                raise OperationInitialContextKeyNotFoundError(
-                    operation_name=operation_name, required_key=required_key
-                )
+                raise OperationInitialContextKeyNotFoundError(operation_name=operation_name, required_key=required_key)
 
         # NOTE: to ensure reproducibility of operations, the
         # operation steps cannot overwrite keys in the
         # initial context with their results
-        raise_if_overwrites_any_operation_provided_key(
-            operation, initial_operation_context
-        )
+        raise_if_overwrites_any_operation_provided_key(operation, initial_operation_context)
 
-        schedule_data_proxy = ScheduleDataStoreProxy(
-            store=self._store, schedule_id=schedule_id
-        )
+        schedule_data_proxy = ScheduleDataStoreProxy(store=self._store, schedule_id=schedule_id)
         await schedule_data_proxy.create_or_update_multiple(
             {
                 "operation_name": operation_name,
@@ -139,9 +133,7 @@ class Core(SingletonInAppStateMixin):
         await operation_content_proxy.create_or_update(initial_operation_context)
 
         if on_execute_completed:
-            await register_to_start_after_on_executed_completed(
-                self.app, schedule_id, to_start=on_execute_completed
-            )
+            await register_to_start_after_on_executed_completed(self.app, schedule_id, to_start=on_execute_completed)
 
         if on_revert_completed:
             await register_to_start_after_on_reverted_completed(
@@ -159,9 +151,7 @@ class Core(SingletonInAppStateMixin):
 
         # NOTE: SEE `_on_schedule_event` for more details
         """
-        schedule_data_proxy = ScheduleDataStoreProxy(
-            store=self._store, schedule_id=schedule_id
-        )
+        schedule_data_proxy = ScheduleDataStoreProxy(store=self._store, schedule_id=schedule_id)
 
         is_executing = await schedule_data_proxy.read("is_executing")
 
@@ -193,16 +183,11 @@ class Core(SingletonInAppStateMixin):
 
         # not allowed to cancel while waiting for manual intervention
         require_manual_intervention = await limited_gather(
-            *(
-                get_requires_manual_intervention(step)
-                for step in group_step_proxies.values()
-            ),
+            *(get_requires_manual_intervention(step) for step in group_step_proxies.values()),
             limit=PARALLEL_REQUESTS,
         )
         if any(require_manual_intervention):
-            raise CannotCancelWhileWaitingForManualInterventionError(
-                schedule_id=schedule_id
-            )
+            raise CannotCancelWhileWaitingForManualInterventionError(schedule_id=schedule_id)
 
         expected_steps_count = len(step_group)
 
@@ -228,26 +213,16 @@ class Core(SingletonInAppStateMixin):
                     step_group_name=step_group_name,
                     is_executing=is_executing,
                 )
-                if (
-                    await group_proxy.increment_and_get_done_steps_count()
-                    == expected_steps_count
-                ):
+                if await group_proxy.increment_and_get_done_steps_count() == expected_steps_count:
                     await enqueue_schedule_event(self.app, schedule_id)
 
         await limited_gather(
-            *(
-                _cancel_step(step_name, step_proxy)
-                for step_name, step_proxy in group_step_proxies.items()
-            ),
+            *(_cancel_step(step_name, step_proxy) for step_name, step_proxy in group_step_proxies.items()),
             limit=PARALLEL_REQUESTS,
         )
 
-    async def get_operation_name_or_none(
-        self, schedule_id: ScheduleId
-    ) -> OperationName | None:
-        schedule_data_proxy = ScheduleDataStoreProxy(
-            store=self._store, schedule_id=schedule_id
-        )
+    async def get_operation_name_or_none(self, schedule_id: ScheduleId) -> OperationName | None:
+        schedule_data_proxy = ScheduleDataStoreProxy(store=self._store, schedule_id=schedule_id)
         try:
             return await schedule_data_proxy.read("operation_name")
         except NoDataFoundError:
@@ -266,9 +241,7 @@ class Core(SingletonInAppStateMixin):
 
         raises NoDataFoundError
         """
-        schedule_data_proxy = ScheduleDataStoreProxy(
-            store=self._store, schedule_id=schedule_id
-        )
+        schedule_data_proxy = ScheduleDataStoreProxy(store=self._store, schedule_id=schedule_id)
         is_executing = await schedule_data_proxy.read("is_executing")
         operation_name = await schedule_data_proxy.read("operation_name")
         group_index = await schedule_data_proxy.read("group_index")
@@ -277,9 +250,7 @@ class Core(SingletonInAppStateMixin):
         step_group = operation.step_groups[group_index]
         step_group_name = step_group.get_step_group_name(index=group_index)
 
-        if step_name not in {
-            step.get_step_name() for step in step_group.get_step_subgroup_to_run()
-        }:
+        if step_name not in {step.get_step_name() for step in step_group.get_step_subgroup_to_run()}:
             raise StepNameNotInCurrentGroupError(
                 step_name=step_name,
                 step_group_name=step_group_name,
@@ -306,9 +277,7 @@ class Core(SingletonInAppStateMixin):
             "deferred_task_uid",
         ]
         if in_manual_intervention:
-            requires_manual_intervention = await get_requires_manual_intervention(
-                step_proxy
-            )
+            requires_manual_intervention = await get_requires_manual_intervention(step_proxy)
 
             if requires_manual_intervention is False:
                 raise StepNotWaitingForManualInterventionError(step_name=step_name)
@@ -316,9 +285,7 @@ class Core(SingletonInAppStateMixin):
             step_keys_to_remove.append("requires_manual_intervention")
 
         # restart the step
-        schedule_data_proxy = ScheduleDataStoreProxy(
-            store=self._store, schedule_id=schedule_id
-        )
+        schedule_data_proxy = ScheduleDataStoreProxy(store=self._store, schedule_id=schedule_id)
         group_proxy = StepGroupProxy(
             store=self._store,
             schedule_id=schedule_id,
@@ -327,11 +294,9 @@ class Core(SingletonInAppStateMixin):
             is_executing=is_executing,
         )
 
-        # remove previus entries for the step
+        # remove previous entries for the step
         await step_proxy.delete_keys(*step_keys_to_remove)
-        await schedule_data_proxy.delete_keys(
-            "operation_error_type", "operation_error_message"
-        )
+        await schedule_data_proxy.delete_keys("operation_error_type", "operation_error_message")
         await group_proxy.decrement_and_get_done_steps_count()
 
         _logger.debug(
@@ -388,16 +353,14 @@ class Core(SingletonInAppStateMixin):
         - MANUAL_INTERVENTION: step failed during `execute()` and flagged for manual intervention
             -> requires support intervention
         - STEP_ISSUE: a step failed during `revert()` due to an error in the step's revert code
-            -> unexpected behviour / requires developer intervention
+            -> unexpected behaviour / requires developer intervention
         - FRAMEWORK_ISSUE: a step failed during `revert()` because it was cancelled
-            -> unexpected behviour / requires developer intervention
+            -> unexpected behaviour / requires developer intervention
 
         NOTE: only MANUAL_INTERVENTION is an allowed to happen all other failuires are to be treated
         as bugs and reported.
         """
-        schedule_data_proxy = ScheduleDataStoreProxy(
-            store=self._store, schedule_id=schedule_id
-        )
+        schedule_data_proxy = ScheduleDataStoreProxy(store=self._store, schedule_id=schedule_id)
 
         operation_name = await schedule_data_proxy.read("operation_name")
         is_executing = await schedule_data_proxy.read("is_executing")
@@ -508,9 +471,7 @@ class Core(SingletonInAppStateMixin):
             return
 
         # 3) -> restart all steps in the group
-        await limited_gather(
-            *(x.delete() for x in step_proxies), limit=PARALLEL_REQUESTS
-        )
+        await limited_gather(*(x.delete() for x in step_proxies), limit=PARALLEL_REQUESTS)
         group_proxy = StepGroupProxy(
             store=self._store,
             schedule_id=schedule_id,
@@ -540,39 +501,24 @@ class Core(SingletonInAppStateMixin):
 
         # 1) if all steps in group in SUUCESS
         if all(status == StepStatus.SUCCESS for status in steps_statuses.values()):
-
             # 1a) -> move to next group
             try:
                 next_group_index = group_index + 1
                 # does a next group exist?
                 _ = operation.step_groups[next_group_index]
-                await schedule_data_proxy.create_or_update(
-                    "group_index", value=next_group_index
-                )
+                await schedule_data_proxy.create_or_update("group_index", value=next_group_index)
                 await enqueue_schedule_event(self.app, schedule_id)
             except IndexError:
-
                 # 1b) if reached the end of the EXECUTE operation -> remove all created data [EMIT execute complete event]
-                on_executed_proxy = OperationEventsProxy(
-                    self._store, schedule_id, EventType.ON_EXECUTEDD_COMPLETED
-                )
+                on_executed_proxy = OperationEventsProxy(self._store, schedule_id, EventType.ON_EXECUTEDD_COMPLETED)
                 on_executed_operation_name: OperationName | None = None
                 on_executed_initial_context: OperationContext | None = None
                 if await on_executed_proxy.exists():
-                    on_executed_operation_name = await on_executed_proxy.read(
-                        "operation_name"
-                    )
-                    on_executed_initial_context = await on_executed_proxy.read(
-                        "initial_context"
-                    )
+                    on_executed_operation_name = await on_executed_proxy.read("operation_name")
+                    on_executed_initial_context = await on_executed_proxy.read("initial_context")
 
-                await cleanup_after_finishing(
-                    self._store, schedule_id=schedule_id, is_executing=True
-                )
-                if (
-                    on_executed_operation_name is not None
-                    and on_executed_initial_context is not None
-                ):
+                await cleanup_after_finishing(self._store, schedule_id=schedule_id, is_executing=True)
+                if on_executed_operation_name is not None and on_executed_initial_context is not None:
                     await enqueue_execute_completed_event(
                         self.app,
                         schedule_id,
@@ -592,15 +538,11 @@ class Core(SingletonInAppStateMixin):
                     store=self._store,
                     schedule_id=schedule_id,
                     operation_name=operation_name,
-                    step_group_name=current_step_group.get_step_group_name(
-                        index=group_index
-                    ),
+                    step_group_name=current_step_group.get_step_group_name(index=group_index),
                     step_name=step.get_step_name(),
                     is_executing=True,
                 )
-                await step_proxy.create_or_update(
-                    "requires_manual_intervention", value=True
-                )
+                await step_proxy.create_or_update("requires_manual_intervention", value=True)
                 manual_intervention_step_names.add(step.get_step_name())
 
         if manual_intervention_step_names:
@@ -609,28 +551,23 @@ class Core(SingletonInAppStateMixin):
                 f"requires manual intervention for steps: {manual_intervention_step_names}"
             )
             _logger.warning(message)
-            await set_unexpected_opration_state(
+            await set_unexpected_operation_state(
                 self._store, schedule_id, OperationErrorType.STEP_ISSUE, message=message
             )
             return
 
         # 3) if any step in CANCELLED or FAILED (and not in manual intervention) -> move to revert
-        if any(
-            s in {StepStatus.FAILED, StepStatus.CANCELLED}
-            for s in steps_statuses.values()
-        ):
+        if any(s in {StepStatus.FAILED, StepStatus.CANCELLED} for s in steps_statuses.values()):
             with log_context(
                 _logger,
                 logging.DEBUG,
-                f"{operation_name=} was not successfull: {steps_statuses=}, moving to revert",
+                f"{operation_name=} was not successful: {steps_statuses=}, moving to revert",
             ):
                 await schedule_data_proxy.create_or_update("is_executing", value=False)
                 await enqueue_schedule_event(self.app, schedule_id)
             return
 
-        raise UnexpectedStepHandlingError(
-            direction="creation", steps_statuses=steps_statuses, schedule_id=schedule_id
-        )
+        raise UnexpectedStepHandlingError(direction="creation", steps_statuses=steps_statuses, schedule_id=schedule_id)
 
     async def _advance_as_reverting(
         self,
@@ -652,28 +589,16 @@ class Core(SingletonInAppStateMixin):
         if all(s == StepStatus.SUCCESS for s in steps_statuses.values()):
             previous_group_index = group_index - 1
             if previous_group_index < 0:
-
                 # 1a) if reached the end of the REVERT operation -> remove all created data [EMIT revert complete event]
-                on_reverted_proxy = OperationEventsProxy(
-                    self._store, schedule_id, EventType.ON_REVERT_COMPLETED
-                )
+                on_reverted_proxy = OperationEventsProxy(self._store, schedule_id, EventType.ON_REVERT_COMPLETED)
                 on_reverted_operation_name: OperationName | None = None
                 on_reverted_initial_context: OperationContext | None = None
                 if await on_reverted_proxy.exists():
-                    on_reverted_operation_name = await on_reverted_proxy.read(
-                        "operation_name"
-                    )
-                    on_reverted_initial_context = await on_reverted_proxy.read(
-                        "initial_context"
-                    )
+                    on_reverted_operation_name = await on_reverted_proxy.read("operation_name")
+                    on_reverted_initial_context = await on_reverted_proxy.read("initial_context")
 
-                await cleanup_after_finishing(
-                    self._store, schedule_id=schedule_id, is_executing=False
-                )
-                if (
-                    on_reverted_operation_name is not None
-                    and on_reverted_initial_context is not None
-                ):
+                await cleanup_after_finishing(self._store, schedule_id=schedule_id, is_executing=False)
+                if on_reverted_operation_name is not None and on_reverted_initial_context is not None:
                     await enqueue_revert_completed_event(
                         self.app,
                         schedule_id,
@@ -683,16 +608,12 @@ class Core(SingletonInAppStateMixin):
                 return
 
             # 1b) -> move to previous group
-            await schedule_data_proxy.create_or_update(
-                "group_index", value=previous_group_index
-            )
+            await schedule_data_proxy.create_or_update("group_index", value=previous_group_index)
             await enqueue_schedule_event(self.app, schedule_id)
             return
 
         # 2) it is unexpected to have a FAILED step -> do nothing else
-        if failed_step_names := [
-            n for n, s in steps_statuses.items() if s == StepStatus.FAILED
-        ]:
+        if failed_step_names := [n for n, s in steps_statuses.items() if s == StepStatus.FAILED]:
             error_tracebacks: list[tuple[StepName, str]] = await limited_gather(
                 *(
                     get_step_error_traceback(
@@ -709,8 +630,7 @@ class Core(SingletonInAppStateMixin):
             )
 
             formatted_tracebacks = "\n".join(
-                f"Step '{step_name}':\n{traceback}"
-                for step_name, traceback in error_tracebacks
+                f"Step '{step_name}':\n{traceback}" for step_name, traceback in error_tracebacks
             )
             message = (
                 f"Operation 'revert' for schedule_id='{schedule_id}' failed for steps: "
@@ -718,21 +638,19 @@ class Core(SingletonInAppStateMixin):
                 f"please report to developers:\n{formatted_tracebacks}"
             )
             _logger.error(message)
-            await set_unexpected_opration_state(
+            await set_unexpected_operation_state(
                 self._store, schedule_id, OperationErrorType.STEP_ISSUE, message=message
             )
             return
 
         # 3) it is unexpected to have a CANCELLED step -> do nothing else
-        if cancelled_step_names := [
-            n for n, s in steps_statuses.items() if s == StepStatus.CANCELLED
-        ]:
+        if cancelled_step_names := [n for n, s in steps_statuses.items() if s == StepStatus.CANCELLED]:
             message = (
                 f"Operation 'revert' for schedule_id='{schedule_id}' was cancelled for steps: "
                 f"{cancelled_step_names}. This should not happen, and should be addressed."
             )
             _logger.error(message)
-            await set_unexpected_opration_state(
+            await set_unexpected_operation_state(
                 self._store,
                 schedule_id,
                 OperationErrorType.FRAMEWORK_ISSUE,
@@ -740,9 +658,7 @@ class Core(SingletonInAppStateMixin):
             )
             return
 
-        raise UnexpectedStepHandlingError(
-            direction="revert", steps_statuses=steps_statuses, schedule_id=schedule_id
-        )
+        raise UnexpectedStepHandlingError(direction="revert", steps_statuses=steps_statuses, schedule_id=schedule_id)
 
 
 async def start_operation(
@@ -774,9 +690,7 @@ async def cancel_operation(app: FastAPI, schedule_id: ScheduleId) -> None:
     await Core.get_from_app_state(app).cancel_operation(schedule_id)
 
 
-async def get_operation_name_or_none(
-    app: FastAPI, schedule_id: ScheduleId
-) -> OperationName | None:
+async def get_operation_name_or_none(app: FastAPI, schedule_id: ScheduleId) -> OperationName | None:
     """returns the name of the operation or None if not found"""
     return await Core.get_from_app_state(app).get_operation_name_or_none(schedule_id)
 

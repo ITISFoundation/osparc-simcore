@@ -67,13 +67,9 @@ def core_stack_namespace(env_vars_for_docker_compose: EnvVarsDict) -> str:
 
 
 @pytest.fixture(scope="module")
-def core_stack_compose_specs(
-    docker_stack: DockerStackInfo, simcore_docker_compose: dict
-) -> ComposeSpec:
+def core_stack_compose_specs(docker_stack: DockerStackInfo, simcore_docker_compose: dict) -> ComposeSpec:
     # verifies core_services_selection
-    assert set(docker_stack["stacks"]["core"]["compose"]["services"]) == set(
-        simcore_docker_compose["services"]
-    )
+    assert set(docker_stack["stacks"]["core"]["compose"]["services"]) == set(simcore_docker_compose["services"])
     return docker_stack["stacks"]["core"]["compose"]
 
 
@@ -86,7 +82,7 @@ def simcore_stack_deployed_services(
     docker_client: DockerClient,
 ) -> list[Service]:
     # NOTE: the goal here is NOT to test time-to-deploy but
-    # rather guaranteing that the framework is fully deployed before starting
+    # rather guaranteeing that the framework is fully deployed before starting
     # tests. Obviously in a critical state in which the frameworks has a problem
     # the fixture will fail
     try:
@@ -104,7 +100,7 @@ def simcore_stack_deployed_services(
         for stack_namespace in (core_stack_namespace, ops_stack_namespace):
             subprocess.run(
                 f"docker stack ps {stack_namespace}",
-                shell=True,  # noqa: S602
+                shell=True,
                 check=False,
             )
 
@@ -117,14 +113,10 @@ def simcore_stack_deployed_services(
         # ...
 
     core_stack_services: list[Service] = list(
-        docker_client.services.list(
-            filters={"label": f"com.docker.stack.namespace={core_stack_namespace}"}
-        )
+        docker_client.services.list(filters={"label": f"com.docker.stack.namespace={core_stack_namespace}"})
     )
 
-    assert (
-        core_stack_services
-    ), f"Expected some services in core stack '{core_stack_namespace}'"
+    assert core_stack_services, f"Expected some services in core stack '{core_stack_namespace}'"
 
     assert len(core_stack_compose_specs["services"].keys()) == len(core_stack_services)
 
@@ -150,11 +142,7 @@ def ops_stack_namespace(env_vars_for_docker_compose: EnvVarsDict) -> str:
 
 
 @pytest.fixture(scope="module")
-def ops_stack_compose_specs(
-    docker_stack: DockerStackInfo, ops_docker_compose: ComposeSpec
-) -> ComposeSpec:
+def ops_stack_compose_specs(docker_stack: DockerStackInfo, ops_docker_compose: ComposeSpec) -> ComposeSpec:
     # verifies ops_services_selection
-    assert set(docker_stack["stacks"]["ops"]["compose"]["services"]) == set(
-        ops_docker_compose["services"]
-    )
+    assert set(docker_stack["stacks"]["ops"]["compose"]["services"]) == set(ops_docker_compose["services"])
     return docker_stack["stacks"]["core"]["compose"]

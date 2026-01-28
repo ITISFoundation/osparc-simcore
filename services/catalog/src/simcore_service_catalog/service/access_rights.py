@@ -24,9 +24,7 @@ from ..utils.versioning import as_version, is_patch_release
 
 _logger = logging.getLogger(__name__)
 
-_OLD_SERVICES_CUTOFF_DATETIME: datetime = datetime(
-    year=2020, month=8, day=19, tzinfo=UTC
-)
+_OLD_SERVICES_CUTOFF_DATETIME: datetime = datetime(year=2020, month=8, day=19, tzinfo=UTC)
 
 
 class InheritedData(TypedDict):
@@ -42,14 +40,10 @@ async def _is_old_service(app: FastAPI, service: ServiceMetaDataPublished) -> bo
     #
     # NOTE: https://github.com/ITISFoundation/osparc-simcore/pull/6003#discussion_r1658200909
     #
-    service_extras = await get_director_client(app).get_service_extras(
-        service.key, service.version
-    )
+    service_extras = await get_director_client(app).get_service_extras(service.key, service.version)
 
     # 1. w/o build details
-    has_no_build_data = (
-        not service_extras or service_extras.service_build_details is None
-    )
+    has_no_build_data = not service_extras or service_extras.service_build_details is None
     if has_no_build_data:
         _logger.debug(
             "Service %s:%s is considered legacy because it has no build details",
@@ -60,9 +54,7 @@ async def _is_old_service(app: FastAPI, service: ServiceMetaDataPublished) -> bo
 
     # 2. check if built before cutoff date
     assert service_extras.service_build_details
-    service_build_datetime = arrow.get(
-        service_extras.service_build_details.build_date
-    ).datetime
+    service_build_datetime = arrow.get(service_extras.service_build_details.build_date).datetime
 
     is_older_than_cutoff = service_build_datetime < _OLD_SERVICES_CUTOFF_DATETIME
     if is_older_than_cutoff:
@@ -117,9 +109,7 @@ async def evaluate_default_service_ownership_and_rights(
         )
 
     # 2. Deducing the owner gid
-    possible_owner_email = [service.contact] + [
-        author.email for author in service.authors
-    ]
+    possible_owner_email = [service.contact] + [author.email for author in service.authors]
 
     for user_email in possible_owner_email:
         possible_gid = await groups_repo.get_user_gid_from_email(user_email)
@@ -130,16 +120,14 @@ async def evaluate_default_service_ownership_and_rights(
     else:
         group_ids.append(owner_gid)
 
-    # 3. Aplying default access rights
+    # 3. Applying default access rights
     default_access_rights = [
         ServiceAccessRightsDB(
             key=service.key,
             version=service.version,
             gid=gid,
             execute_access=True,
-            write_access=(
-                gid == owner_gid
-            ),  # we add the owner with full rights, unless it's everyone
+            write_access=(gid == owner_gid),  # we add the owner with full rights, unless it's everyone
             product_name=product_name,
         )
         for gid in set(group_ids)
@@ -210,9 +198,7 @@ async def inherit_from_latest_compatible_release(
         "metadata_updates": {},
     }
 
-    previous_release = await _find_latest_patch_compatible_release(
-        services_repo, service_metadata=service_metadata
-    )
+    previous_release = await _find_latest_patch_compatible_release(services_repo, service_metadata=service_metadata)
 
     if not previous_release:
         return inherited_data

@@ -76,18 +76,14 @@ class LogDistributor:
         if job_id in self._log_streamers:
             raise LogStreamerRegistrationConflictError(job_id=job_id)
         self._log_streamers[job_id] = queue
-        await self._rabbit_client.add_topics(
-            LoggerRabbitMessage.get_channel_name(), topics=[f"{job_id}.*"]
-        )
+        await self._rabbit_client.add_topics(LoggerRabbitMessage.get_channel_name(), topics=[f"{job_id}.*"])
 
     async def deregister(self, job_id: JobID):
         _logger.debug("Deregistering log streamer for job_id=%s", job_id)
         if job_id not in self._log_streamers:
             msg = f"No stream was connected to {job_id}."
             raise LogStreamerNotRegisteredError(details=msg, job_id=job_id)
-        await self._rabbit_client.remove_topics(
-            LoggerRabbitMessage.get_channel_name(), topics=[f"{job_id}.*"]
-        )
+        await self._rabbit_client.remove_topics(LoggerRabbitMessage.get_channel_name(), topics=[f"{job_id}.*"])
         self._log_streamers.pop(job_id)
 
     @property
@@ -114,9 +110,7 @@ class LogStreamer:
         self._log_check_timeout: NonNegativeInt = log_check_timeout
 
     async def _project_done(self) -> bool:
-        task = await self._director2_api.get_computation(
-            project_id=self._job_id, user_id=self._user_id
-        )
+        task = await self._director2_api.get_computation(project_id=self._job_id, user_id=self._user_id)
         return task.stopped is not None
 
     async def log_generator(self) -> AsyncIterable[str]:
@@ -124,9 +118,7 @@ class LogStreamer:
             done: bool = False
             while not done:
                 try:
-                    log: JobLog = await asyncio.wait_for(
-                        self.queue.get(), timeout=self._log_check_timeout
-                    )
+                    log: JobLog = await asyncio.wait_for(self.queue.get(), timeout=self._log_check_timeout)
                     yield log.model_dump_json() + _NEW_LINE
                 except TimeoutError:
                     done = await self._project_done()

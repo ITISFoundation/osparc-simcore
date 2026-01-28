@@ -25,8 +25,7 @@ class Study(BaseModel):
 class StudyPort(solvers.SolverPort):
     key: projects_nodes_io.NodeID = Field(  # type: ignore[assignment]
         ...,
-        description="port identifier name."
-        "Corresponds to the UUID of the parameter/probe node in the study",
+        description="port identifier name.Corresponds to the UUID of the parameter/probe node in the study",
         title="Key name",
     )
     model_config = ConfigDict(

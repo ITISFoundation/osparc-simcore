@@ -39,47 +39,36 @@ from ..socketio.messages import (
 from ..socketio.models import WebSocketNodeProgress, WebSocketProjectProgress
 from ..wallets import api as wallets_service
 from . import project_logs
-from ._rabbitmq_consumers_common import SubcribeArgumentsTuple, subscribe_to_rabbitmq
+from ._rabbitmq_consumers_common import SubscribeArgumentsTuple, subscribe_to_rabbitmq
 
 _logger = logging.getLogger(__name__)
 
 _RABBITMQ_CONSUMERS_APPKEY: Final = web.AppKey("RABBITMQ_CONSUMERS", MutableMapping)
 WALLET_SUBSCRIPTIONS_COUNT_APPKEY: Final = web.AppKey(
-    "WALLET_SUBSCRIPTIONS_COUNT", defaultdict  # wallet_id -> subscriber count
+    "WALLET_SUBSCRIPTIONS_COUNT",
+    defaultdict,  # wallet_id -> subscriber count
 )
-WALLET_SUBSCRIPTION_LOCK_APPKEY: Final = web.AppKey(
-    "WALLET_SUBSCRIPTION_LOCK", asyncio.Lock
-)
+WALLET_SUBSCRIPTION_LOCK_APPKEY: Final = web.AppKey("WALLET_SUBSCRIPTION_LOCK", asyncio.Lock)
 
 
-async def _notify_comp_node_progress(
-    app: web.Application, message: ProgressRabbitMessageNode
-) -> None:
+async def _notify_comp_node_progress(app: web.Application, message: ProgressRabbitMessageNode) -> None:
     project = await _projects_service.get_project_for_user(
         app, f"{message.project_id}", message.user_id, include_state=True
     )
-    await _projects_service.notify_project_node_update(
-        app, project, message.node_id, None
-    )
+    await _projects_service.notify_project_node_update(app, project, message.node_id, None)
 
 
 async def _progress_message_parser(app: web.Application, data: bytes) -> bool:
-    rabbit_message: ProgressRabbitMessageNode | ProgressRabbitMessageProject = (
-        TypeAdapter(
-            ProgressRabbitMessageNode | ProgressRabbitMessageProject
-        ).validate_json(data)
-    )
+    rabbit_message: ProgressRabbitMessageNode | ProgressRabbitMessageProject = TypeAdapter(
+        ProgressRabbitMessageNode | ProgressRabbitMessageProject
+    ).validate_json(data)
     message: SocketMessageDict | None = None
     if isinstance(rabbit_message, ProgressRabbitMessageProject):
-        message = WebSocketProjectProgress.from_rabbit_message(
-            rabbit_message
-        ).to_socket_dict()
+        message = WebSocketProjectProgress.from_rabbit_message(rabbit_message).to_socket_dict()
     elif rabbit_message.progress_type is ProgressType.COMPUTATION_RUNNING:
         await _notify_comp_node_progress(app, rabbit_message)
     else:
-        message = WebSocketNodeProgress.from_rabbit_message(
-            rabbit_message
-        ).to_socket_dict()
+        message = WebSocketNodeProgress.from_rabbit_message(rabbit_message).to_socket_dict()
 
     if message:
         await send_message_to_project_room(
@@ -94,9 +83,7 @@ def _is_computational_node(node_key: str) -> bool:
     return "/comp/" in node_key
 
 
-async def _computational_pipeline_status_message_parser(
-    app: web.Application, data: bytes
-) -> bool:
+async def _computational_pipeline_status_message_parser(app: web.Application, data: bytes) -> bool:
     rabbit_message = ComputationalPipelineStatusMessage.model_validate_json(data)
     try:
         project = await _projects_service.get_project_for_user(
@@ -117,16 +104,12 @@ async def _computational_pipeline_status_message_parser(
         # the pipeline finished, the frontend needs to update all computational nodes
         computational_node_ids = (
             n.node_id
-            for n in await _nodes_service.get_project_nodes(
-                app, project_uuid=project["uuid"]
-            )
+            for n in await _nodes_service.get_project_nodes(app, project_uuid=project["uuid"])
             if _is_computational_node(n.key)
         )
         await limited_gather(
             *[
-                _projects_service.notify_project_node_update(
-                    app, project, n_id, errors=None
-                )
+                _projects_service.notify_project_node_update(app, project, n_id, errors=None)
                 for n_id in computational_node_ids
             ],
             limit=10,  # notify 10 nodes at a time
@@ -165,9 +148,7 @@ async def _events_message_parser(app: web.Application, data: bytes) -> bool:
     return True
 
 
-async def _webserver_internal_events_message_parser(
-    app: web.Application, data: bytes
-) -> bool:
+async def _webserver_internal_events_message_parser(app: web.Application, data: bytes) -> bool:
     """
     Handles internal webserver events that need to be propagated to other webserver replicas
 
@@ -178,10 +159,7 @@ async def _webserver_internal_events_message_parser(
 
     rabbit_message = WebserverInternalEventRabbitMessage.model_validate_json(data)
 
-    if (
-        rabbit_message.action
-        == WebserverInternalEventRabbitMessageAction.UNSUBSCRIBE_FROM_PROJECT_LOGS_RABBIT_QUEUE
-    ):
+    if rabbit_message.action == WebserverInternalEventRabbitMessageAction.UNSUBSCRIBE_FROM_PROJECT_LOGS_RABBIT_QUEUE:
         _project_id = rabbit_message.data.get("project_id")
 
         if _project_id:
@@ -196,9 +174,7 @@ async def _webserver_internal_events_message_parser(
             )
 
     else:
-        _logger.warning(
-            "Unknown webserver internal event message action %s", rabbit_message.action
-        )
+        _logger.warning("Unknown webserver internal event message action %s", rabbit_message.action)
 
     return True
 
@@ -225,33 +201,33 @@ async def _osparc_credits_message_parser(app: web.Application, data: bytes) -> b
     return True
 
 
-_EXCHANGE_TO_PARSER_CONFIG: Final[tuple[SubcribeArgumentsTuple, ...]] = (
-    SubcribeArgumentsTuple(
+_EXCHANGE_TO_PARSER_CONFIG: Final[tuple[SubscribeArgumentsTuple, ...]] = (
+    SubscribeArgumentsTuple(
         LoggerRabbitMessage.get_channel_name(),
         _log_message_parser,
         {"topics": []},
     ),
-    SubcribeArgumentsTuple(
+    SubscribeArgumentsTuple(
         ProgressRabbitMessageNode.get_channel_name(),
         _progress_message_parser,
         {"topics": []},
     ),
-    SubcribeArgumentsTuple(
+    SubscribeArgumentsTuple(
         EventRabbitMessage.get_channel_name(),
         _events_message_parser,
         {},
     ),
-    SubcribeArgumentsTuple(
+    SubscribeArgumentsTuple(
         WebserverInternalEventRabbitMessage.get_channel_name(),
         _webserver_internal_events_message_parser,
         {},
     ),
-    SubcribeArgumentsTuple(
+    SubscribeArgumentsTuple(
         WalletCreditsMessage.get_channel_name(),
         _osparc_credits_message_parser,
         {"topics": []},
     ),
-    SubcribeArgumentsTuple(
+    SubscribeArgumentsTuple(
         ComputationalPipelineStatusMessage.get_channel_name(),
         _computational_pipeline_status_message_parser,
         {"topics": []},
@@ -266,19 +242,14 @@ async def _unsubscribe_from_rabbitmq(app) -> None:
     ):
         rabbit_client: RabbitMQClient = get_rabbitmq_client(app)
         await logged_gather(
-            *(
-                rabbit_client.unsubscribe(queue_name)
-                for queue_name, _ in app[_RABBITMQ_CONSUMERS_APPKEY].values()
-            ),
+            *(rabbit_client.unsubscribe(queue_name) for queue_name, _ in app[_RABBITMQ_CONSUMERS_APPKEY].values()),
         )
 
 
 async def on_cleanup_ctx_rabbitmq_consumers(
     app: web.Application,
 ) -> AsyncIterator[None]:
-    app[_RABBITMQ_CONSUMERS_APPKEY] = await subscribe_to_rabbitmq(
-        app, _EXCHANGE_TO_PARSER_CONFIG
-    )
+    app[_RABBITMQ_CONSUMERS_APPKEY] = await subscribe_to_rabbitmq(app, _EXCHANGE_TO_PARSER_CONFIG)
 
     app[WALLET_SUBSCRIPTIONS_COUNT_APPKEY] = defaultdict(
         int

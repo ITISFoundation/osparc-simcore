@@ -2,9 +2,10 @@ import datetime
 
 import httpx
 from fastapi import FastAPI
+
 from servicelib.tracing import TracingConfig
 
-from .tracing import setup_httpx_client_tracing
+from ..tracing import setup_httpx_client_tracing
 
 
 def setup_client_session(
@@ -12,7 +13,7 @@ def setup_client_session(
     *,
     default_timeout: datetime.timedelta = datetime.timedelta(seconds=20),
     max_keepalive_connections: int = 20,
-    tracing_config: TracingConfig | None
+    tracing_config: TracingConfig | None,
 ) -> None:
     async def on_startup() -> None:
         session = httpx.AsyncClient(

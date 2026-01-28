@@ -23,6 +23,4 @@ class GeneralLogFilter(logging.Filter):
         msg = record.getMessage()
 
         # Check if the filtered routes exists in the message
-        return not any(
-            filter_criteria in msg for filter_criteria in self.filtered_routes
-        )
+        return not any(filter_criteria in msg for filter_criteria in self.filtered_routes)

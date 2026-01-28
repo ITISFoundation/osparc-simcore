@@ -74,9 +74,7 @@ class OsparcVariablesTable:
     def variables_names(self):
         return self._variables_getters.keys()
 
-    def copy(
-        self, include: set[str] | None = None, exclude: set[str] | None = None
-    ) -> dict[str, ContextGetter]:
+    def copy(self, include: set[str] | None = None, exclude: set[str] | None = None) -> dict[str, ContextGetter]:
         all_ = set(self._variables_getters.keys())
         exclude = exclude or set()
         include = include or all_

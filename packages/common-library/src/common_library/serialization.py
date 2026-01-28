@@ -23,17 +23,13 @@ def model_dump_with_secrets(
             data[field_name] = field_data.total_seconds()
 
         elif isinstance(field_data, SecretStr):
-            data[field_name] = (
-                field_data.get_secret_value() if show_secrets else str(field_data)
-            )
+            data[field_name] = field_data.get_secret_value() if show_secrets else str(field_data)
 
         elif isinstance(field_data, Url):
             data[field_name] = str(field_data)
 
         elif isinstance(field_data, dict):
-            possible_pydantic_model = settings_obj.__class__.model_fields[
-                field_name
-            ].annotation
+            possible_pydantic_model = settings_obj.__class__.model_fields[field_name].annotation
             # NOTE: data could be a dict which does not represent a pydantic model or a union of models
             with contextlib.suppress(AttributeError, ValidationError):
                 data[field_name] = model_dump_with_secrets(

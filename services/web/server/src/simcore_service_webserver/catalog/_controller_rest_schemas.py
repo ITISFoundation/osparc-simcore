@@ -53,9 +53,7 @@ class UnitHtmlFormat:
     long: str
 
 
-def get_html_formatted_unit(
-    port: BaseServiceIOModel, ureg: UnitRegistry
-) -> UnitHtmlFormat | None:
+def get_html_formatted_unit(port: BaseServiceIOModel, ureg: UnitRegistry) -> UnitHtmlFormat | None:
     try:
         unit_name = get_unit_name(port)
         if unit_name is None:

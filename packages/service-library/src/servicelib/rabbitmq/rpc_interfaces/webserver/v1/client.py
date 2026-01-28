@@ -1,6 +1,7 @@
 """Main WebServer RPC Client."""
 
 from models_library.rabbitmq_basic_types import RPCNamespace
+
 from servicelib.rabbitmq import RabbitMQRPCClient
 
 from .api_keys import ApiKeysRpcApi

@@ -38,31 +38,21 @@ async def get_group_by_gid(app: web.Application, group_id: GroupID) -> Group | N
 #
 
 
-async def list_user_groups_with_read_access(
-    app: web.Application, *, user_id: UserID
-) -> GroupsByTypeTuple:
+async def list_user_groups_with_read_access(app: web.Application, *, user_id: UserID) -> GroupsByTypeTuple:
     """
     Returns the user primary group, standard groups and the all group
     """
     # NOTE: Careful! It seems we are filtering out groups, such as Product Groups,
     # because they do not have read access. I believe this was done because the
     # frontend did not want to display them.
-    return await _groups_repository.get_all_user_groups_with_read_access(
-        app, user_id=user_id
-    )
+    return await _groups_repository.get_all_user_groups_with_read_access(app, user_id=user_id)
 
 
-async def list_user_groups_ids_with_read_access(
-    app: web.Application, *, user_id: UserID
-) -> list[GroupID]:
-    return await _groups_repository.get_ids_of_all_user_groups_with_read_access(
-        app, user_id=user_id
-    )
+async def list_user_groups_ids_with_read_access(app: web.Application, *, user_id: UserID) -> list[GroupID]:
+    return await _groups_repository.get_ids_of_all_user_groups_with_read_access(app, user_id=user_id)
 
 
-async def list_all_user_groups_ids(
-    app: web.Application, *, user_id: UserID
-) -> list[GroupID]:
+async def list_all_user_groups_ids(app: web.Application, *, user_id: UserID) -> list[GroupID]:
     return await _groups_repository.get_ids_of_all_user_groups(app, user_id=user_id)
 
 
@@ -73,9 +63,7 @@ async def get_product_group_for_user(
     Returns product's group if user belongs to it, otherwise it
     raises GroupNotFoundError
     """
-    return await _groups_repository.get_any_group_for_user(
-        app, user_id=user_id, group_gid=product_gid
-    )
+    return await _groups_repository.get_any_group_for_user(app, user_id=user_id, group_gid=product_gid)
 
 
 async def get_user_profile_groups(
@@ -107,15 +95,11 @@ async def get_user_profile_groups(
     product_support_group = None
     if product.support_standard_group_id:  # Support group is optional
         # NOTE: my_support_group can be part of groups_by_type.standard!
-        product_support_group = await get_group_by_gid(
-            app, product.support_standard_group_id
-        )
+        product_support_group = await get_group_by_gid(app, product.support_standard_group_id)
 
     product_chatbot_primary_group = None
     if product.support_chatbot_user_id:
-        _group_id = await users_service.get_user_primary_group_id(
-            app, user_id=product.support_chatbot_user_id
-        )
+        _group_id = await users_service.get_user_primary_group_id(app, user_id=product.support_chatbot_user_id)
         product_chatbot_primary_group = await get_group_by_gid(app, _group_id)
 
     return (
@@ -160,9 +144,7 @@ async def get_associated_group(
     raises GroupNotFoundError
     raises UserInsufficientRightsError: needs READ access
     """
-    return await _groups_repository.get_user_group(
-        app, user_id=user_id, group_id=group_id
-    )
+    return await _groups_repository.get_user_group(app, user_id=user_id, group_id=group_id)
 
 
 async def update_standard_group(
@@ -186,17 +168,13 @@ async def update_standard_group(
     )
 
 
-async def delete_standard_group(
-    app: web.Application, *, user_id: UserID, group_id: GroupID
-) -> None:
+async def delete_standard_group(app: web.Application, *, user_id: UserID, group_id: GroupID) -> None:
     """NOTE: creation/update and deletion restricted to STANDARD groups
 
     raises GroupNotFoundError
     raises UserInsufficientRightsError: needs DELETE access
     """
-    return await _groups_repository.delete_standard_group(
-        app, user_id=user_id, group_id=group_id
-    )
+    return await _groups_repository.delete_standard_group(app, user_id=user_id, group_id=group_id)
 
 
 #
@@ -212,9 +190,7 @@ async def list_group_members_with_caller_check(
     )
 
 
-async def list_group_members(
-    app: web.Application, group_id: GroupID
-) -> list[GroupMember]:
+async def list_group_members(app: web.Application, group_id: GroupID) -> list[GroupMember]:
     return await _groups_repository.list_users_in_group(app, group_id=group_id)
 
 
@@ -224,7 +200,6 @@ async def get_group_member(
     group_id: GroupID,
     the_user_id_in_group: UserID,
 ) -> GroupMember:
-
     return await _groups_repository.get_user_in_group(
         app,
         caller_id=user_id,
@@ -263,10 +238,7 @@ async def delete_group_member(
     )
 
 
-async def is_user_by_email_in_group(
-    app: web.Application, user_email: LowerCaseEmailStr, group_id: GroupID
-) -> bool:
-
+async def is_user_by_email_in_group(app: web.Application, user_email: LowerCaseEmailStr, group_id: GroupID) -> bool:
     return await _groups_repository.is_user_by_email_in_group(
         app,
         email=user_email,
@@ -274,12 +246,8 @@ async def is_user_by_email_in_group(
     )
 
 
-async def is_user_in_group(
-    app: web.Application, *, user_id: UserID, group_id: GroupID
-) -> bool:
-    return await _groups_repository.is_user_in_group(
-        app, user_id=user_id, group_id=group_id
-    )
+async def is_user_in_group(app: web.Application, *, user_id: UserID, group_id: GroupID) -> bool:
+    return await _groups_repository.is_user_in_group(app, user_id=user_id, group_id=group_id)
 
 
 async def auto_add_user_to_groups(app: web.Application, user_id: UserID) -> None:
@@ -292,9 +260,7 @@ async def auto_add_user_to_product_group(
     user_id: UserID,
     product_name: ProductName,
 ) -> GroupID:
-    return await _groups_repository.auto_add_user_to_product_group(
-        app, user_id=user_id, product_name=product_name
-    )
+    return await _groups_repository.auto_add_user_to_product_group(app, user_id=user_id, product_name=product_name)
 
 
 def _only_one_true(*args):
@@ -325,15 +291,11 @@ async def add_user_in_group(
         raise GroupsError(msg=msg)
 
     # First check if caller has write access to the group
-    await _groups_repository.check_group_write_access(
-        app, caller_id=user_id, group_id=group_id
-    )
+    await _groups_repository.check_group_write_access(app, caller_id=user_id, group_id=group_id)
 
     # get target user to add to group
     if new_by_user_email:
-        user = await _groups_repository.get_user_from_email(
-            app, email=new_by_user_email, caller_id=user_id
-        )
+        user = await _groups_repository.get_user_from_email(app, email=new_by_user_email, caller_id=user_id)
         new_by_user_id = user.id
 
     if new_by_user_id is not None:

@@ -62,9 +62,7 @@ async def get_dynamic_service(
     app: web.Application, *, node_id: NodeID
 ) -> NodeGetIdle | NodeGetUnknown | DynamicServiceGet | NodeGet:
     try:
-        return await services.get_service_status(
-            get_rabbitmq_rpc_client(app), node_id=node_id
-        )
+        return await services.get_service_status(get_rabbitmq_rpc_client(app), node_id=node_id)
     except RPCServerError as e:
         _logger.debug("Responding state unknown. Received error: %s", e)
         return NodeGetUnknown.from_node_id(node_id)
@@ -106,29 +104,19 @@ async def stop_dynamic_service(
             await stack.enter_async_context(progress)
 
         rpc_client = get_rabbitmq_rpc_client(app)
-        await services.stop_dynamic_service(
-            rpc_client, dynamic_service_stop=dynamic_service_stop
-        )
+        await services.stop_dynamic_service(rpc_client, dynamic_service_stop=dynamic_service_stop)
 
         # wait for the service to be stopped, until it becomes idle
         settings: DynamicSchedulerSettings = get_plugin_settings(app)
         async for attempt in AsyncRetrying(
             wait=wait_fixed(1.0),
-            stop=stop_after_delay(
-                settings.DYNAMIC_SCHEDULER_STOP_SERVICE_TIMEOUT.total_seconds()
-            ),
-            before_sleep=partial(
-                _wait_for_idle_before_sleep, dynamic_service_stop.node_id
-            ),
+            stop=stop_after_delay(settings.DYNAMIC_SCHEDULER_STOP_SERVICE_TIMEOUT.total_seconds()),
+            before_sleep=partial(_wait_for_idle_before_sleep, dynamic_service_stop.node_id),
             reraise=False,
-            retry_error_callback=partial(
-                _wait_for_idle_retry_error, dynamic_service_stop.node_id
-            ),
+            retry_error_callback=partial(_wait_for_idle_retry_error, dynamic_service_stop.node_id),
         ):
             with attempt:
-                service_status = await services.get_service_status(
-                    rpc_client, node_id=dynamic_service_stop.node_id
-                )
+                service_status = await services.get_service_status(rpc_client, node_id=dynamic_service_stop.node_id)
                 if not isinstance(service_status, NodeGetIdle):
                     raise TryAgain
 
@@ -158,9 +146,7 @@ async def stop_dynamic_services_in_project(
     save_state: bool,
 ) -> None:
     """Stops all dynamic services in the project"""
-    running_dynamic_services = await list_dynamic_services(
-        app, user_id=user_id, project_id=project_id
-    )
+    running_dynamic_services = await list_dynamic_services(app, user_id=user_id, project_id=project_id)
 
     async with AsyncExitStack() as stack:
         progress_bar = await stack.enter_async_context(
@@ -186,9 +172,7 @@ async def stop_dynamic_services_in_project(
                     simcore_user_agent=simcore_user_agent,
                     save_state=save_state,
                 ),
-                progress=progress_bar.sub_progress(
-                    1, description=f"{service.node_uuid}"
-                ),
+                progress=progress_bar.sub_progress(1, description=f"{service.node_uuid}"),
             )
             for service in running_dynamic_services
         ]
@@ -220,9 +204,7 @@ async def restart_user_services(app: web.Application, *, node_id: NodeID) -> Non
     await services.restart_user_services(
         get_rabbitmq_rpc_client(app),
         node_id=node_id,
-        timeout_s=int(
-            settings.DYNAMIC_SCHEDULER_RESTART_USER_SERVICES_TIMEOUT.total_seconds()
-        ),
+        timeout_s=int(settings.DYNAMIC_SCHEDULER_RESTART_USER_SERVICES_TIMEOUT.total_seconds()),
     )
 
 
@@ -234,15 +216,9 @@ async def retrieve_inputs(
         get_rabbitmq_rpc_client(app),
         node_id=node_id,
         port_keys=port_keys,
-        timeout_s=int(
-            settings.DYNAMIC_SCHEDULER_SERVICE_UPLOAD_DOWNLOAD_TIMEOUT.total_seconds()
-        ),
+        timeout_s=int(settings.DYNAMIC_SCHEDULER_SERVICE_UPLOAD_DOWNLOAD_TIMEOUT.total_seconds()),
     )
 
 
-async def update_projects_networks(
-    app: web.Application, *, project_id: ProjectID
-) -> None:
-    await services.update_projects_networks(
-        get_rabbitmq_rpc_client(app), project_id=project_id
-    )
+async def update_projects_networks(app: web.Application, *, project_id: ProjectID) -> None:
+    await services.update_projects_networks(get_rabbitmq_rpc_client(app), project_id=project_id)

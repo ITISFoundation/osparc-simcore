@@ -107,7 +107,6 @@ def products_raw_data() -> dict[ProductName, dict[str, Any]]:
 
 @pytest.fixture(scope="module")
 def products_prices_raw_data() -> dict[ProductName, dict[str, Any]]:
-
     return {
         "osparc": random_product_price(
             product_name="osparc",
@@ -177,9 +176,7 @@ def app(
 
 @pytest.fixture
 async def product_repository(app: web.Application) -> ProductRepository:
-    repo = ProductRepository.create_from_request(
-        request=make_mocked_request("GET", "/fake", app=app)
-    )
+    repo = ProductRepository.create_from_request(request=make_mocked_request("GET", "/fake", app=app))
     assert repo.engine
 
     return repo
@@ -224,9 +221,7 @@ async def test_product_repository_get_product_latest_price_info_or_none(
     product_repository: ProductRepository,
 ):
     product_name = "tis"
-    price_info = await product_repository.get_product_latest_price_info_or_none(
-        product_name
-    )
+    price_info = await product_repository.get_product_latest_price_info_or_none(product_name)
     assert price_info is None or isinstance(price_info, ProductPriceInfo)
 
 

@@ -17,7 +17,6 @@ def app_environment(
     monkeypatch: pytest.MonkeyPatch,
     app_environment: EnvVarsDict,
 ) -> EnvVarsDict:
-
     monkeypatch.delenv("WEBSERVER_STUDIES_DISPATCHER", raising=False)
     app_environment.pop("WEBSERVER_STUDIES_DISPATCHER", None)
 
@@ -48,7 +47,6 @@ def app_environment(
 
 @pytest.mark.skip(reason="UNDER DEV: test_group_handlers")
 async def test_unauntheticated_request_to_scicrunch(client):
-
     with aioresponses() as scicrunch_service_api_mock:
         scicrunch_service_api_mock.get(
             re.compile(r"^https://scicrunch\.org/api/1/resource/fields/view/.*"),

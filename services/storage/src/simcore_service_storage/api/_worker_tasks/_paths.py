@@ -49,9 +49,7 @@ async def delete_paths(
         msg=f"delete {paths=} in {location_id=} for {user_id=}",
     ):
         dsm = get_dsm_provider(get_app_server(task.app).app).get(location_id)
-        files_ids: set[StorageFileID] = {
-            TypeAdapter(StorageFileID).validate_python(f"{path}") for path in paths
-        }
+        files_ids: set[StorageFileID] = {TypeAdapter(StorageFileID).validate_python(f"{path}") for path in paths}
         await limited_gather(
             *[dsm.delete_file(user_id, file_id) for file_id in files_ids],
             limit=MAX_CONCURRENT_S3_TASKS,

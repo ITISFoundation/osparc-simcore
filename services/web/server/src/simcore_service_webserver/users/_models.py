@@ -65,9 +65,7 @@ class UserModelAdapter(BaseModel):
     @classmethod
     def from_rest_schema_model(cls, profile_update: MyProfileRestPatch) -> Self:
         # The mapping of embed fields to flatten keys is done here
-        return cls.model_validate(
-            flatten_dict(profile_update.model_dump(exclude_unset=True, by_alias=False))
-        )
+        return cls.model_validate(flatten_dict(profile_update.model_dump(exclude_unset=True, by_alias=False)))
 
     def to_db_values(self) -> dict[str, Any]:
         return self.model_dump(exclude_unset=True, by_alias=False)

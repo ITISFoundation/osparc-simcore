@@ -14,9 +14,7 @@ from ...long_running_tasks.errors import (
 _logger = logging.getLogger(__name__)
 
 
-async def base_long_running_error_handler(
-    _: Request, exception: BaseLongRunningError
-) -> JSONResponse:
+async def base_long_running_error_handler(_: Request, exception: BaseLongRunningError) -> JSONResponse:
     _logger.debug("%s", exception, stack_info=True)
     error_fields = {"code": exception.code, "message": f"{exception}"}
     status_code = (

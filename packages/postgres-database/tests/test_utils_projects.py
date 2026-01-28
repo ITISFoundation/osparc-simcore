@@ -23,9 +23,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 
 async def _delete_project(connection: SAConnection, project_uuid: uuid.UUID) -> None:
-    result = await connection.execute(
-        sa.delete(projects).where(projects.c.uuid == f"{project_uuid}")
-    )
+    result = await connection.execute(sa.delete(projects).where(projects.c.uuid == f"{project_uuid}"))
     assert result.rowcount == 1
 
 
@@ -84,14 +82,10 @@ async def test_get_project_trashed_column_can_be_converted_to_datetime(
     assert trashed == expected
 
 
-async def test_get_project_last_change_date(
-    asyncpg_engine: AsyncEngine, registered_project: dict, faker: Faker
-):
+async def test_get_project_last_change_date(asyncpg_engine: AsyncEngine, registered_project: dict, faker: Faker):
     projects_repo = ProjectsRepo(asyncpg_engine)
 
-    project_last_change_date = await projects_repo.get_project_last_change_date(
-        project_uuid=registered_project["uuid"]
-    )
+    project_last_change_date = await projects_repo.get_project_last_change_date(project_uuid=registered_project["uuid"])
     assert isinstance(project_last_change_date, datetime)
 
     with pytest.raises(DBProjectNotFoundError):

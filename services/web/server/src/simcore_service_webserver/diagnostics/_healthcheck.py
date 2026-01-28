@@ -47,12 +47,8 @@ class DelayWindowProbe:
         return delay
 
 
-HEALTH_INCIDENTS_REGISTRY_APPKEY: Final = web.AppKey(
-    "HEALTH_INCIDENTS_REGISTRY", IncidentsRegistry
-)
-HEALTH_LATENCY_PROBE_APPKEY: Final = web.AppKey(
-    "HEALTH_LATENCY_PROBE", DelayWindowProbe
-)
+HEALTH_INCIDENTS_REGISTRY_APPKEY: Final = web.AppKey("HEALTH_INCIDENTS_REGISTRY", IncidentsRegistry)
+HEALTH_LATENCY_PROBE_APPKEY: Final = web.AppKey("HEALTH_LATENCY_PROBE", DelayWindowProbe)
 
 HEALTH_LAST_REQUESTS_AVG_LATENCY: Final = f"{__name__}.last_requests_avg_latency"
 HEALTH_MAX_AVG_RESP_LATENCY: Final = f"{__name__}.max_avg_response_latency"
@@ -66,7 +62,7 @@ _logged_once = False
 
 
 def is_sensing_enabled(app: web.Application):
-    """Diagnostics will not activate sensing immediatly but after some
+    """Diagnostics will not activate sensing immediately but after some
     time since the app started
     """
     global _logged_once  # pylint: disable=global-statement

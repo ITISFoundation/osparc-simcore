@@ -20,9 +20,7 @@ ResourceName = str
 
 # NOTE: replace hard coded `container` with function which can
 # extract the name from the `service_key` or `registry_address/service_key`
-DEFAULT_SINGLE_SERVICE_NAME: Final[DockerGenericTag] = TypeAdapter(
-    DockerGenericTag
-).validate_python("container")
+DEFAULT_SINGLE_SERVICE_NAME: Final[DockerGenericTag] = TypeAdapter(DockerGenericTag).validate_python("container")
 
 MEMORY_50MB: Final[int] = TypeAdapter(ByteSize).validate_python("50mib")
 MEMORY_250MB: Final[int] = TypeAdapter(ByteSize).validate_python("250mib")
@@ -146,9 +144,7 @@ class ServiceResourcesDictHelpers:
                             "CPU": {"limit": 0.1, "reservation": 0.1},
                             "RAM": {
                                 "limit": TypeAdapter(ByteSize).validate_python("2Gib"),
-                                "reservation": TypeAdapter(ByteSize).validate_python(
-                                    "2Gib"
-                                ),
+                                "reservation": TypeAdapter(ByteSize).validate_python("2Gib"),
                             },
                         },
                         "boot_modes": [BootMode.CPU],
@@ -179,9 +175,7 @@ class ServiceResourcesDictHelpers:
                             "CPU": {"limit": 0.1, "reservation": 0.1},
                             "RAM": {
                                 "limit": TypeAdapter(ByteSize).validate_python("2Gib"),
-                                "reservation": TypeAdapter(ByteSize).validate_python(
-                                    "2Gib"
-                                ),
+                                "reservation": TypeAdapter(ByteSize).validate_python("2Gib"),
                             },
                         },
                         "boot_modes": [BootMode.CPU],
@@ -195,9 +189,7 @@ class ServiceResourcesDictHelpers:
                             "CPU": {"limit": 0.1, "reservation": 0.1},
                             "RAM": {
                                 "limit": TypeAdapter(ByteSize).validate_python("2Gib"),
-                                "reservation": TypeAdapter(ByteSize).validate_python(
-                                    "2Gib"
-                                ),
+                                "reservation": TypeAdapter(ByteSize).validate_python("2Gib"),
                             },
                         },
                         "boot_modes": [BootMode.CPU],
@@ -208,9 +200,7 @@ class ServiceResourcesDictHelpers:
                             "CPU": {"limit": 0.1, "reservation": 0.1},
                             "RAM": {
                                 "limit": TypeAdapter(ByteSize).validate_python("2Gib"),
-                                "reservation": TypeAdapter(ByteSize).validate_python(
-                                    "2Gib"
-                                ),
+                                "reservation": TypeAdapter(ByteSize).validate_python("2Gib"),
                             },
                         },
                         "boot_modes": [BootMode.CPU],

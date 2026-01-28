@@ -85,9 +85,7 @@ def test_update_user(users_api: osparc.UsersApi):
     before: osparc.Profile = users_api.get_my_profile()
     assert before.first_name != "Richard"
 
-    after: osparc.Profile = users_api.update_my_profile(
-        osparc.ProfileUpdate(first_name="Richard")
-    )
+    after: osparc.Profile = users_api.update_my_profile(osparc.ProfileUpdate(first_name="Richard"))
     assert after != before
     assert after.first_name == "Richard"
     assert after == users_api.get_my_profile()

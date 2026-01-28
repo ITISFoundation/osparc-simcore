@@ -69,9 +69,7 @@ async def test_setup_projects_db(client: TestClient):
 
 
 @pytest.fixture
-def app_environment(
-    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
-) -> EnvVarsDict:
+def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
     # improve speed by using more clients
     envs_plugins = setenvs_from_dict(
         monkeypatch,
@@ -111,12 +109,8 @@ def _assert_added_project(
     assert {k: v for k, v in expected_prj.items() if k in _DIFFERENT_KEYS} != {
         k: v for k, v in added_prj.items() if k in _DIFFERENT_KEYS
     }
-    assert to_datetime(added_prj["creationDate"]) > to_datetime(
-        expected_prj["creationDate"]
-    )
-    assert to_datetime(added_prj["creationDate"]) <= to_datetime(
-        added_prj["lastChangeDate"]
-    )
+    assert to_datetime(added_prj["creationDate"]) > to_datetime(expected_prj["creationDate"])
+    assert to_datetime(added_prj["creationDate"]) <= to_datetime(added_prj["lastChangeDate"])
     expected_prj.update(exp_overrides)
     for k in _DIFFERENT_KEYS:
         added_prj.pop(k, None)
@@ -126,9 +120,7 @@ def _assert_added_project(
     assert added_prj == expected_prj
 
 
-async def _assert_projects_nodes_db_rows(
-    aiopg_engine: aiopg.sa.engine.Engine, project: dict[str, Any]
-) -> None:
+async def _assert_projects_nodes_db_rows(aiopg_engine: aiopg.sa.engine.Engine, project: dict[str, Any]) -> None:
     async with aiopg_engine.acquire() as conn:
         repo = ProjectNodesRepo(project_uuid=ProjectID(f"{project['uuid']}"))
         list_of_nodes = await repo.list(conn)
@@ -139,13 +131,9 @@ async def _assert_projects_nodes_db_rows(
         assert new_style_node_ids == old_style_node_ids
 
 
-def _assert_project_db_row(
-    postgres_db: sa.engine.Engine, project: dict[str, Any], **kwargs
-):
+def _assert_project_db_row(postgres_db: sa.engine.Engine, project: dict[str, Any], **kwargs):
     with postgres_db.connect() as conn:
-        row: Row | None = conn.execute(
-            sa.select(projects).where(projects.c.uuid == f"{project['uuid']}")
-        ).fetchone()
+        row: Row | None = conn.execute(sa.select(projects).where(projects.c.uuid == f"{project['uuid']}")).fetchone()
 
     expected_db_entries = {
         "type": ProjectType.STANDARD,
@@ -190,9 +178,9 @@ async def insert_project_in_db(
         }
         default_config.update(**overrides)
         new_project = await db_api.insert_project(**default_config)
-        if _access_rights := default_config["project"].get(
-            "access_rights", {}
-        ) | default_config["project"].get("accessRights", {}):
+        if _access_rights := default_config["project"].get("access_rights", {}) | default_config["project"].get(
+            "accessRights", {}
+        ):
             for group_id, permissions in _access_rights.items():
                 await update_or_insert_project_group(
                     client.app,
@@ -210,9 +198,7 @@ async def insert_project_in_db(
 
     print(f"<-- removing {len(inserted_projects)} projects...")
     async with aiopg_engine.acquire() as conn:
-        await conn.execute(
-            projects.delete().where(projects.c.uuid.in_(inserted_projects))
-        )
+        await conn.execute(projects.delete().where(projects.c.uuid.in_(inserted_projects)))
     print(f"<-- removal of {len(inserted_projects)} projects done.")
 
 
@@ -385,9 +371,7 @@ async def test_patch_user_project_workbench_creates_nodes(
     workbench = empty_fake_project.setdefault("workbench", {})
     assert isinstance(workbench, dict)
     workbench.clear()
-    new_project = await insert_project_in_db(
-        empty_fake_project, user_id=logged_user["id"]
-    )
+    new_project = await insert_project_in_db(empty_fake_project, user_id=logged_user["id"])
     await _assert_projects_nodes_db_rows(aiopg_engine, new_project)
     partial_workbench_data = {
         faker.uuid4(): {
@@ -430,9 +414,7 @@ async def test_patch_user_project_workbench_creates_nodes_raises_if_invalid_node
     assert isinstance(workbench, dict)
     workbench.clear()
 
-    new_project = await insert_project_in_db(
-        empty_fake_project, user_id=logged_user["id"]
-    )
+    new_project = await insert_project_in_db(empty_fake_project, user_id=logged_user["id"])
     await _assert_projects_nodes_db_rows(aiopg_engine, new_project)
     partial_workbench_data = {
         faker.uuid4(): {
@@ -509,18 +491,16 @@ async def test_patch_user_project_workbench_concurrently(
     for n in range(_NUMBER_OF_NODES):
         expected_project["workbench"][node_uuids[n]].update(randomly_created_outputs[n])
 
-    patched_projects: list[tuple[dict[str, Any], dict[str, Any]]] = (
-        await asyncio.gather(
-            *[
-                db_api._update_project_workbench(  # noqa: SLF001
-                    {NodeIDStr(node_uuids[n]): randomly_created_outputs[n]},
-                    user_id=logged_user["id"],
-                    project_uuid=new_project["uuid"],
-                    allow_workbench_changes=False,
-                )
-                for n in range(_NUMBER_OF_NODES)
-            ]
-        )
+    patched_projects: list[tuple[dict[str, Any], dict[str, Any]]] = await asyncio.gather(
+        *[
+            db_api._update_project_workbench(  # noqa: SLF001
+                {NodeIDStr(node_uuids[n]): randomly_created_outputs[n]},
+                user_id=logged_user["id"],
+                project_uuid=new_project["uuid"],
+                allow_workbench_changes=False,
+            )
+            for n in range(_NUMBER_OF_NODES)
+        ]
     )
     # NOTE: each returned project contains the project with some updated workbenches
     # the ordering is uncontrolled.
@@ -533,9 +513,7 @@ async def test_patch_user_project_workbench_concurrently(
         assert changed_entries == {node_uuid: {"outputs": exp_outputs["outputs"]}}
 
     # get the latest change date
-    latest_change_date = max(
-        to_datetime(prj["lastChangeDate"]) for prj, _ in patched_projects
-    )
+    latest_change_date = max(to_datetime(prj["lastChangeDate"]) for prj, _ in patched_projects)
 
     # check the nodes are completely patched as expected
     _assert_project_db_row(
@@ -563,9 +541,7 @@ async def test_patch_user_project_workbench_concurrently(
     )
 
     # get the latest change date
-    latest_change_date = max(
-        to_datetime(prj["lastChangeDate"]) for prj, _ in patched_projects
-    )
+    latest_change_date = max(to_datetime(prj["lastChangeDate"]) for prj, _ in patched_projects)
 
     # check the nodes are completely patched as expected
     _assert_project_db_row(
@@ -593,9 +569,7 @@ async def test_patch_user_project_workbench_concurrently(
     )
 
     # get the latest change date
-    latest_change_date = max(
-        to_datetime(prj["lastChangeDate"]) for prj, _ in patched_projects
-    )
+    latest_change_date = max(to_datetime(prj["lastChangeDate"]) for prj, _ in patched_projects)
 
     # check the nodes are completely patched as expected
     _assert_project_db_row(
@@ -643,9 +617,7 @@ async def some_projects_and_nodes(
         )
 
     created_projects = await logged_gather(*project_creation_tasks)
-    await asyncio.gather(
-        *(_assert_projects_nodes_db_rows(aiopg_engine, prj) for prj in created_projects)
-    )
+    await asyncio.gather(*(_assert_projects_nodes_db_rows(aiopg_engine, prj) for prj in created_projects))
     print(f"---> created {len(all_created_projects)} projects in the database")
     return all_created_projects
 
@@ -654,18 +626,12 @@ async def some_projects_and_nodes(
     "user_role",
     [UserRole.USER],
 )
-async def test_node_id_exists(
-    db_api: ProjectDBAPI, some_projects_and_nodes: dict[ProjectID, list[NodeID]]
-):
+async def test_node_id_exists(db_api: ProjectDBAPI, some_projects_and_nodes: dict[ProjectID, list[NodeID]]):
     # create a node uuid that does not exist from an existing project
     existing_project_id = choice(list(some_projects_and_nodes.keys()))
-    not_existing_node_id_in_existing_project = uuid5(
-        existing_project_id, "node_invalid_node"
-    )
+    not_existing_node_id_in_existing_project = uuid5(existing_project_id, "node_invalid_node")
 
-    node_id_exists = await db_api.node_id_exists(
-        not_existing_node_id_in_existing_project
-    )
+    node_id_exists = await db_api.node_id_exists(not_existing_node_id_in_existing_project)
     assert node_id_exists is False
     existing_node_id = choice(some_projects_and_nodes[existing_project_id])
     node_id_exists = await db_api.node_id_exists(existing_node_id)
@@ -676,19 +642,12 @@ async def test_node_id_exists(
     "user_role",
     [UserRole.USER],
 )
-async def test_get_node_ids_from_project(
-    db_api: ProjectDBAPI, some_projects_and_nodes: dict[ProjectID, list[NodeID]]
-):
+async def test_get_node_ids_from_project(db_api: ProjectDBAPI, some_projects_and_nodes: dict[ProjectID, list[NodeID]]):
     node_ids_inside_project_list = await asyncio.gather(
-        *(
-            db_api.list_node_ids_in_project(project_id)
-            for project_id in some_projects_and_nodes
-        )
+        *(db_api.list_node_ids_in_project(project_id) for project_id in some_projects_and_nodes)
     )
 
-    for project_id, node_ids_inside_project in zip(
-        some_projects_and_nodes, node_ids_inside_project_list, strict=True
-    ):
+    for project_id, node_ids_inside_project in zip(some_projects_and_nodes, node_ids_inside_project_list, strict=True):
         assert node_ids_inside_project == set(some_projects_and_nodes[project_id])
 
 
@@ -742,9 +701,7 @@ async def test_has_permission(
 
         # user does not exits
         assert (
-            await has_user_project_access_rights(
-                client.app, project_id=project_id, user_id=-1, permission=permission
-            )
+            await has_user_project_access_rights(client.app, project_id=project_id, user_id=-1, permission=permission)
             is False
         )
 
@@ -838,7 +795,6 @@ async def test_check_project_node_has_all_required_inputs_raises(
     inserted_project: dict,
     expected_error: str,
 ):
-
     with pytest.raises(ProjectNodeRequiredInputsNotSetError) as exc:
         await _check_project_node_has_all_required_inputs(
             client.app,

@@ -13,7 +13,6 @@ _MINUTE: Final[int] = 60  # secs
 
 
 class SessionSettings(BaseCustomSettings, MixinSessionSettings):
-
     SESSION_SECRET_KEY: Annotated[
         SecretStr,
         Field(

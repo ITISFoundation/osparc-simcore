@@ -75,9 +75,7 @@ async def get_config(request: web.Request):
     app_public_config: dict[str, Any] = request.app[APP_SETTINGS_APPKEY].public_dict()
 
     product_name = products_web.get_product_name(request=request)
-    product_public_config = request.app.get(APP_PUBLIC_CONFIG_PER_PRODUCT, {}).get(
-        product_name, {}
-    )
+    product_public_config = request.app.get(APP_PUBLIC_CONFIG_PER_PRODUCT, {}).get(product_name, {})
 
     return envelope_json_response(app_public_config | product_public_config)
 

@@ -33,8 +33,7 @@ confirmations = sa.Table(
     sa.Column(
         "user_id",
         sa.BigInteger,
-        doc="User id of the code issuer."
-        "Removing the issuer would result in the deletion of all associated codes",
+        doc="User id of the code issuer.Removing the issuer would result in the deletion of all associated codes",
     ),
     sa.Column(
         "action",

@@ -102,15 +102,9 @@ def test_store_discriminator():
         },
     }
 
-    datacore_node = Node.model_validate(
-        workbench["89f95b67-a2a3-4215-a794-2356684deb61"]
-    )
-    rawgraph_node = Node.model_validate(
-        workbench["88119776-e869-4df2-a529-4aae9d9fa35c"]
-    )
-    simcore_node = Node.model_validate(
-        workbench["75c1707c-ec1c-49ac-a7bf-af6af9088f38"]
-    )
+    datacore_node = Node.model_validate(workbench["89f95b67-a2a3-4215-a794-2356684deb61"])
+    rawgraph_node = Node.model_validate(workbench["88119776-e869-4df2-a529-4aae9d9fa35c"])
+    simcore_node = Node.model_validate(workbench["75c1707c-ec1c-49ac-a7bf-af6af9088f38"])
 
     # must cast to the right subclass within project_nodes.py's InputTypes and OutputTypes unions
     assert datacore_node.outputs
@@ -123,9 +117,7 @@ def test_store_discriminator():
 
 def test_simcore_s3_directory_id():
     # the only allowed path is the following
-    result = TypeAdapter(SimcoreS3DirectoryID).validate_python(
-        f"{UUID_0}/{UUID_0}/ok-simcore-dir/"
-    )
+    result = TypeAdapter(SimcoreS3DirectoryID).validate_python(f"{UUID_0}/{UUID_0}/ok-simcore-dir/")
     assert result == f"{UUID_0}/{UUID_0}/ok-simcore-dir/"
 
     # re-parsing must work the same thing works
@@ -140,9 +132,7 @@ def test_simcore_s3_directory_id():
             TypeAdapter(SimcoreS3DirectoryID).validate_python(invalid_path)
 
     with pytest.raises(ValidationError, match="Not allowed subdirectory found in"):
-        TypeAdapter(SimcoreS3DirectoryID).validate_python(
-            f"{UUID_0}/{UUID_0}/a-dir/a-subdir/"
-        )
+        TypeAdapter(SimcoreS3DirectoryID).validate_python(f"{UUID_0}/{UUID_0}/a-dir/a-subdir/")
 
 
 @pytest.mark.parametrize(

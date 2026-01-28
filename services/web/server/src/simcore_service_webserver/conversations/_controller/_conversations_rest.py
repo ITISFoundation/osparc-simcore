@@ -98,28 +98,21 @@ async def create_conversation(request: web.Request):
 async def list_conversations(request: web.Request):
     """List conversations for the authenticated user (supports only type='support')"""
     req_ctx = AuthenticatedRequestContext.model_validate(request)
-    query_params = parse_request_query_parameters_as(
-        _ListConversationsQueryParams, request
-    )
+    query_params = parse_request_query_parameters_as(_ListConversationsQueryParams, request)
     if query_params.type.is_support_type() is False:
         raise_unsupported_type(query_params.type)
 
-    total, conversations = (
-        await _conversation_service.list_support_conversations_for_user(
-            app=request.app,
-            user_id=req_ctx.user_id,
-            product_name=req_ctx.product_name,
-            offset=query_params.offset,
-            limit=query_params.limit,
-        )
+    total, conversations = await _conversation_service.list_support_conversations_for_user(
+        app=request.app,
+        user_id=req_ctx.user_id,
+        product_name=req_ctx.product_name,
+        offset=query_params.offset,
+        limit=query_params.limit,
     )
 
     page = Page[ConversationRestGet].model_validate(
         paginate_data(
-            chunk=[
-                ConversationRestGet.from_domain_model(conversation)
-                for conversation in conversations
-            ],
+            chunk=[ConversationRestGet.from_domain_model(conversation) for conversation in conversations],
             request_url=request.url,
             total=total,
             limit=query_params.limit,
@@ -214,9 +207,7 @@ async def delete_conversation(request: web.Request):
         raise_unsupported_type(conversation.type)
 
     # Only support conversation creator can delete conversation
-    _user_group_id = await users_service.get_user_primary_group_id(
-        request.app, user_id=req_ctx.user_id
-    )
+    _user_group_id = await users_service.get_user_primary_group_id(request.app, user_id=req_ctx.user_id)
     await _conversation_service.get_conversation_for_user(
         app=request.app,
         conversation_id=path_params.conversation_id,

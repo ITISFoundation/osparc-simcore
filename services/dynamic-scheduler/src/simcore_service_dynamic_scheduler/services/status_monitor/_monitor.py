@@ -27,9 +27,7 @@ _MAX_CONCURRENCY: Final[NonNegativeInt] = 10
 _REMOVE_AFTER_IDLE_FOR: Final[timedelta] = timedelta(minutes=5)
 
 
-async def _start_get_status_deferred(
-    app: FastAPI, node_id: NodeID, *, next_check_delay: timedelta
-) -> None:
+async def _start_get_status_deferred(app: FastAPI, node_id: NodeID, *, next_check_delay: timedelta) -> None:
     await service_tracker.set_service_scheduled_to_run(app, node_id, next_check_delay)
     await DeferredGetStatus.start(node_id=node_id)
 
@@ -37,13 +35,10 @@ async def _start_get_status_deferred(
 def _can_be_removed(model: TrackedServiceModel) -> bool:
     # requested **as** `STOPPED`
     # service **reports** `IDLE`
-    if (
-        model.current_state == SchedulerServiceState.IDLE
-        and model.requested_state == UserRequestedState.STOPPED
-    ):
+    if model.current_state == SchedulerServiceState.IDLE and model.requested_state == UserRequestedState.STOPPED:
         return True
 
-    # NOTE: currently dynamic-scheduler does nto automatically start a
+    # NOTE: currently dynamic-scheduler does not automatically start a
     # service reported who's requested_state is STARTED
     # to avoid monitoring services which no longer exist,
     # the service has to be removed.
@@ -53,8 +48,7 @@ def _can_be_removed(model: TrackedServiceModel) -> bool:
     if (  # noqa: SIM103
         model.current_state == SchedulerServiceState.IDLE
         and model.requested_state == UserRequestedState.RUNNING
-        and arrow.utcnow().timestamp() - model.last_state_change
-        > _REMOVE_AFTER_IDLE_FOR.total_seconds()
+        and arrow.utcnow().timestamp() - model.last_state_change > _REMOVE_AFTER_IDLE_FOR.total_seconds()
     ):
         return True
 
@@ -79,9 +73,7 @@ class Monitor:
 
         # NOTE: this worker runs on only once across all instances of the scheduler
 
-        models: dict[NodeID, TrackedServiceModel] = (
-            await service_tracker.get_all_tracked_services(self.app)
-        )
+        models: dict[NodeID, TrackedServiceModel] = await service_tracker.get_all_tracked_services(self.app)
 
         to_remove: list[NodeID] = []
         to_start: list[NodeID] = []
@@ -115,19 +107,14 @@ class Monitor:
 
         _logger.debug("Removing tracked services: '%s'", to_remove)
         await limited_gather(
-            *(
-                service_tracker.remove_tracked_service(self.app, node_id)
-                for node_id in to_remove
-            ),
+            *(service_tracker.remove_tracked_service(self.app, node_id) for node_id in to_remove),
             limit=_MAX_CONCURRENCY,
         )
 
         _logger.debug("Poll status for tracked services: '%s'", to_start)
         await limited_gather(
             *(
-                _start_get_status_deferred(
-                    self.app, node_id, next_check_delay=NORMAL_RATE_POLL_INTERVAL
-                )
+                _start_get_status_deferred(self.app, node_id, next_check_delay=NORMAL_RATE_POLL_INTERVAL)
                 for node_id in to_start
             ),
             limit=_MAX_CONCURRENCY,

@@ -133,9 +133,7 @@ async def _list_projects(
     return data
 
 
-async def _replace_project(
-    client: TestClient, project_update: ProjectDict, expected: int
-) -> ProjectDict:
+async def _replace_project(client: TestClient, project_update: ProjectDict, expected: int) -> ProjectDict:
     assert client.app
 
     # PATCH /v0/projects/{project_id}
@@ -144,9 +142,7 @@ async def _replace_project(
     resp = await client.patch(f"{url}", json=project_update)
     data, error = await assert_status(resp, expected)
     if not error:
-        url = client.app.router["get_project"].url_for(
-            project_id=project_update["uuid"]
-        )
+        url = client.app.router["get_project"].url_for(project_id=project_update["uuid"])
         resp = await client.get(f"{url}")
         get_data, _ = await assert_status(resp, HTTPStatus.OK)
         assert_replaced(current_project=get_data, update_data=project_update)
@@ -182,9 +178,7 @@ async def _open_project(
     raise AssertionError(msg)
 
 
-async def _close_project(
-    client: TestClient, client_id: str, project: dict, expected: int
-):
+async def _close_project(client: TestClient, client_id: str, project: dict, expected: int):
     assert client.app
 
     url = client.app.router["close_project"].url_for(project_id=project["uuid"])
@@ -223,18 +217,16 @@ async def _assert_project_state_updated(
             before_sleep=before_sleep_log(ctx.logger, logging.INFO),
         )
         async def _received_project_update_event() -> None:
-            assert handler.call_count == len(
-                expected_project_state_updates
-            ), f"received {handler.call_count}:{handler.call_args_list} of {len(expected_project_state_updates)} expected calls"
+            assert handler.call_count == len(expected_project_state_updates), (
+                f"received {handler.call_count}:{handler.call_args_list} of {len(expected_project_state_updates)} expected calls"
+            )
             if expected_project_state_updates:
                 calls = [
                     call(
                         jsonable_encoder(
                             {
                                 "project_uuid": shared_project["uuid"],
-                                "data": p_state.model_dump(
-                                    by_alias=True, exclude_unset=True
-                                ),
+                                "data": p_state.model_dump(by_alias=True, exclude_unset=True),
                             }
                         )
                     )
@@ -424,9 +416,7 @@ async def test_share_project_access_rights(
         resp = await _delete_project(client, new_project)
         await assert_status(
             resp,
-            expected_status_code=(
-                expected.no_content if share_rights["delete"] else expected.forbidden
-            ),
+            expected_status_code=(expected.no_content if share_rights["delete"] else expected.forbidden),
         )
 
 
@@ -473,9 +463,7 @@ async def test_open_project(
 
     if resp.status == status.HTTP_200_OK:
         # calls notifications to subscribe to this project
-        mocked_notifications_plugin["subscribe"].assert_called_once_with(
-            client.app, ProjectID(user_project["uuid"])
-        )
+        mocked_notifications_plugin["subscribe"].assert_called_once_with(client.app, ProjectID(user_project["uuid"]))
         # calls all dynamic-services in project to start
         dynamic_services = {
             service_uuid: service
@@ -501,18 +489,14 @@ async def test_open_project(
                         can_save=save_state,
                         product_name=osparc_product_name,
                         product_api_base_url=osparc_product_api_base_url,
-                        service_resources=ServiceResourcesDictHelpers.create_jsonable(
-                            mock_service_resources
-                        ),
+                        service_resources=ServiceResourcesDictHelpers.create_jsonable(mock_service_resources),
                         wallet_info=None,
                         pricing_info=None,
                         hardware_info=None,
                     ),
                 )
             )
-        mocked_dynamic_services_interface[
-            "dynamic_scheduler.api.run_dynamic_service"
-        ].assert_has_calls(calls)
+        mocked_dynamic_services_interface["dynamic_scheduler.api.run_dynamic_service"].assert_has_calls(calls)
     else:
         mocked_notifications_plugin["subscribe"].assert_not_called()
 
@@ -553,9 +537,7 @@ async def test_open_project__in_debt(
 ):
     # create a new wallet
     url = client.app.router["create_wallet"].url_for()
-    resp = await client.post(
-        f"{url}", json={"name": "My first wallet", "description": "Custom description"}
-    )
+    resp = await client.post(f"{url}", json={"name": "My first wallet", "description": "Custom description"})
     added_wallet, _ = await assert_status(resp, status.HTTP_201_CREATED)
 
     mock_get_project_wallet_total_credits = mocker.patch(
@@ -619,9 +601,7 @@ async def test_open_template_project_for_edition(
     assert client.app
     # NOTE: we need write access right to open a template
     template_project = await create_template_project(
-        accessRights={
-            logged_user["primary_gid"]: {"read": True, "write": True, "delete": False}
-        }
+        accessRights={logged_user["primary_gid"]: {"read": True, "write": True, "delete": False}}
     )
 
     # Only create socketio connection for non-anonymous users
@@ -658,9 +638,7 @@ async def test_open_template_project_for_edition(
                         simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
                         request_dns=request_dns,
                         can_save=save_state,
-                        service_resources=ServiceResourcesDictHelpers.create_jsonable(
-                            mock_service_resources
-                        ),
+                        service_resources=ServiceResourcesDictHelpers.create_jsonable(mock_service_resources),
                         product_name=osparc_product_name,
                         product_api_base_url=osparc_product_api_base_url,
                         wallet_info=None,
@@ -669,9 +647,7 @@ async def test_open_template_project_for_edition(
                     ),
                 )
             )
-        mocked_dynamic_services_interface[
-            "dynamic_scheduler.api.run_dynamic_service"
-        ].assert_has_calls(calls)
+        mocked_dynamic_services_interface["dynamic_scheduler.api.run_dynamic_service"].assert_has_calls(calls)
     else:
         mocked_notifications_plugin["subscribe"].assert_not_called()
 
@@ -702,9 +678,7 @@ async def test_open_template_project_for_edition_with_missing_write_rights(
     assert client.app
     # NOTE: we need write access right to open a template
     template_project = await create_template_project(
-        accessRights={
-            logged_user["primary_gid"]: {"read": True, "write": False, "delete": True}
-        }
+        accessRights={logged_user["primary_gid"]: {"read": True, "write": False, "delete": True}}
     )
 
     # Only create socketio connection for non-anonymous users
@@ -737,9 +711,7 @@ async def test_open_project_with_small_amount_of_dynamic_services_starts_them_au
     num_of_dyn_services = max_amount_of_auto_started_dyn_services
     project = await user_project_with_num_dynamic_services(num_of_dyn_services)
     all_service_uuids = list(project["workbench"])
-    num_service_already_running = faker.pyint(
-        min_value=1, max_value=num_of_dyn_services - 1
-    )
+    num_service_already_running = faker.pyint(min_value=1, max_value=num_of_dyn_services - 1)
     assert num_service_already_running < num_of_dyn_services
     _ = [
         await create_dynamic_service_mock(
@@ -757,16 +729,12 @@ async def test_open_project_with_small_amount_of_dynamic_services_starts_them_au
     url = client.app.router["open_project"].url_for(project_id=project["uuid"])
     resp = await client.post(f"{url}", json=client_id)
     await assert_status(resp, expected.ok)
-    mocked_notifications_plugin["subscribe"].assert_called_once_with(
-        client.app, ProjectID(project["uuid"])
-    )
+    mocked_notifications_plugin["subscribe"].assert_called_once_with(client.app, ProjectID(project["uuid"]))
     mocked_notifications_plugin["subscribe"].reset_mock()
-    assert mocked_dynamic_services_interface[
-        "dynamic_scheduler.api.run_dynamic_service"
-    ].call_count == (num_of_dyn_services - num_service_already_running)
-    mocked_dynamic_services_interface[
-        "dynamic_scheduler.api.run_dynamic_service"
-    ].reset_mock()
+    assert mocked_dynamic_services_interface["dynamic_scheduler.api.run_dynamic_service"].call_count == (
+        num_of_dyn_services - num_service_already_running
+    )
+    mocked_dynamic_services_interface["dynamic_scheduler.api.run_dynamic_service"].reset_mock()
 
 
 @pytest.mark.parametrize(*standard_user_role_response())
@@ -785,24 +753,17 @@ async def test_open_project_with_disable_service_auto_start_set_overrides_behavi
     mocked_notifications_plugin: dict[str, mock.Mock],
 ):
     assert client.app
-    project = await user_project_with_num_dynamic_services(
-        max_amount_of_auto_started_dyn_services
-    )
+    project = await user_project_with_num_dynamic_services(max_amount_of_auto_started_dyn_services)
     all_service_uuids = list(project["workbench"])
     for num_service_already_running in range(max_amount_of_auto_started_dyn_services):
-        mocked_dynamic_services_interface[
-            "dynamic_scheduler.api.list_dynamic_services"
-        ].return_value = [
-            {"service_uuid": all_service_uuids[service_id]}
-            for service_id in range(num_service_already_running)
+        mocked_dynamic_services_interface["dynamic_scheduler.api.list_dynamic_services"].return_value = [
+            {"service_uuid": all_service_uuids[service_id]} for service_id in range(num_service_already_running)
         ]
 
         # Only create socketio connection for non-anonymous users
         client_id = ""
         if expected.ok:
-            sio, client_id, *_ = await create_socketio_connection_with_handlers(
-                None, client
-            )
+            sio, client_id, *_ = await create_socketio_connection_with_handlers(None, client)
         url = (
             client.app.router["open_project"]
             .url_for(project_id=project["uuid"])
@@ -813,13 +774,9 @@ async def test_open_project_with_disable_service_auto_start_set_overrides_behavi
         await assert_status(resp, expected.ok)
         if expected.ok:
             await sio.disconnect()
-        mocked_notifications_plugin["subscribe"].assert_called_once_with(
-            client.app, ProjectID(project["uuid"])
-        )
+        mocked_notifications_plugin["subscribe"].assert_called_once_with(client.app, ProjectID(project["uuid"]))
         mocked_notifications_plugin["subscribe"].reset_mock()
-        mocked_dynamic_services_interface[
-            "dynamic_scheduler.api.run_dynamic_service"
-        ].assert_not_called()
+        mocked_dynamic_services_interface["dynamic_scheduler.api.run_dynamic_service"].assert_not_called()
 
 
 @pytest.mark.parametrize(*standard_user_role_response())
@@ -841,13 +798,9 @@ async def test_open_project_with_large_amount_of_dynamic_services_does_not_start
 ):
     assert client.app
 
-    project = await user_project_with_num_dynamic_services(
-        max_amount_of_auto_started_dyn_services + 1
-    )
+    project = await user_project_with_num_dynamic_services(max_amount_of_auto_started_dyn_services + 1)
     all_service_uuids = list(project["workbench"])
-    num_service_already_running = faker.pyint(
-        min_value=0, max_value=max_amount_of_auto_started_dyn_services
-    )
+    num_service_already_running = faker.pyint(min_value=0, max_value=max_amount_of_auto_started_dyn_services)
     assert num_service_already_running <= max_amount_of_auto_started_dyn_services
     _ = [
         await create_dynamic_service_mock(
@@ -865,13 +818,9 @@ async def test_open_project_with_large_amount_of_dynamic_services_does_not_start
     url = client.app.router["open_project"].url_for(project_id=project["uuid"])
     resp = await client.post(f"{url}", json=client_id)
     await assert_status(resp, expected.ok)
-    mocked_notifications_plugin["subscribe"].assert_called_once_with(
-        client.app, ProjectID(project["uuid"])
-    )
+    mocked_notifications_plugin["subscribe"].assert_called_once_with(client.app, ProjectID(project["uuid"]))
     mocked_notifications_plugin["subscribe"].reset_mock()
-    mocked_dynamic_services_interface[
-        "dynamic_scheduler.api.run_dynamic_service"
-    ].assert_not_called()
+    mocked_dynamic_services_interface["dynamic_scheduler.api.run_dynamic_service"].assert_not_called()
 
 
 @pytest.mark.parametrize(*standard_user_role_response())
@@ -902,9 +851,7 @@ async def test_open_project_with_large_amount_of_dynamic_services_starts_them_if
     num_of_dyn_services = 7
     project = await user_project_with_num_dynamic_services(num_of_dyn_services + 1)
     all_service_uuids = list(project["workbench"])
-    num_service_already_running = faker.pyint(
-        min_value=0, max_value=num_of_dyn_services
-    )
+    num_service_already_running = faker.pyint(min_value=0, max_value=num_of_dyn_services)
     assert num_service_already_running <= num_of_dyn_services
     _ = [
         await create_dynamic_service_mock(
@@ -922,13 +869,9 @@ async def test_open_project_with_large_amount_of_dynamic_services_starts_them_if
     url = client.app.router["open_project"].url_for(project_id=project["uuid"])
     resp = await client.post(f"{url}", json=client_id)
     await assert_status(resp, expected.ok)
-    mocked_notifications_plugin["subscribe"].assert_called_once_with(
-        client.app, ProjectID(project["uuid"])
-    )
+    mocked_notifications_plugin["subscribe"].assert_called_once_with(client.app, ProjectID(project["uuid"]))
     mocked_notifications_plugin["subscribe"].reset_mock()
-    mocked_dynamic_services_interface[
-        "dynamic_scheduler.api.run_dynamic_service"
-    ].assert_called()
+    mocked_dynamic_services_interface["dynamic_scheduler.api.run_dynamic_service"].assert_called()
 
 
 @pytest.mark.parametrize(*standard_user_role_response())
@@ -947,9 +890,7 @@ async def test_open_project_with_deprecated_services_ok_but_does_not_start_dynam
     mock_catalog_api: dict[str, mock.Mock],
     mocked_notifications_plugin: dict[str, mock.Mock],
 ):
-    mock_catalog_api["get_service"].return_value["deprecated"] = (
-        datetime.now(UTC) - timedelta(days=1)
-    ).isoformat()
+    mock_catalog_api["get_service"].return_value["deprecated"] = (datetime.now(UTC) - timedelta(days=1)).isoformat()
     # Only create socketio connection for non-anonymous users
     client_id = ""
     if expected.ok:
@@ -957,36 +898,24 @@ async def test_open_project_with_deprecated_services_ok_but_does_not_start_dynam
     url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
     resp = await client.post(url, json=client_id)
     await assert_status(resp, expected.ok)
-    mocked_notifications_plugin["subscribe"].assert_called_once_with(
-        client.app, ProjectID(user_project["uuid"])
-    )
-    mocked_dynamic_services_interface[
-        "dynamic_scheduler.api.run_dynamic_service"
-    ].assert_not_called()
+    mocked_notifications_plugin["subscribe"].assert_called_once_with(client.app, ProjectID(user_project["uuid"]))
+    mocked_dynamic_services_interface["dynamic_scheduler.api.run_dynamic_service"].assert_not_called()
 
 
 @pytest.fixture
-def one_max_open_studies_per_user(
-    postgres_db: sa.engine.Engine, osparc_product_name: str
-) -> Iterator[None]:
+def one_max_open_studies_per_user(postgres_db: sa.engine.Engine, osparc_product_name: str) -> Iterator[None]:
     with postgres_db.connect() as conn:
         old_value = conn.scalar(
-            sa.select(products.c.max_open_studies_per_user).where(
-                products.c.name == osparc_product_name
-            )
+            sa.select(products.c.max_open_studies_per_user).where(products.c.name == osparc_product_name)
         )
         conn.execute(
-            products.update()
-            .values(max_open_studies_per_user=1)
-            .where(products.c.name == osparc_product_name)
+            products.update().values(max_open_studies_per_user=1).where(products.c.name == osparc_product_name)
         )
     yield
 
     with postgres_db.connect() as conn:
         conn.execute(
-            products.update()
-            .values(max_open_studies_per_user=old_value)
-            .where(products.c.name == osparc_product_name)
+            products.update().values(max_open_studies_per_user=old_value).where(products.c.name == osparc_product_name)
         )
 
 
@@ -1026,11 +955,7 @@ async def test_open_project_more_than_limitation_of_max_studies_open_per_user(
         client,
         client_id_2,
         shared_project,
-        (
-            HTTPStatus(expected.conflict)
-            if user_role != UserRole.GUEST
-            else HTTPStatus.CONFLICT
-        ),
+        (HTTPStatus(expected.conflict) if user_role != UserRole.GUEST else HTTPStatus.CONFLICT),
     )
 
 
@@ -1064,17 +989,11 @@ async def test_close_project(
     resp = await client.post(f"{url}", json=client_id)
 
     if resp.status == status.HTTP_200_OK:
-        mocked_notifications_plugin["subscribe"].assert_called_once_with(
-            client.app, ProjectID(user_project["uuid"])
-        )
-        mocked_dynamic_services_interface[
-            "dynamic_scheduler.api.list_dynamic_services"
-        ].assert_any_call(
+        mocked_notifications_plugin["subscribe"].assert_called_once_with(client.app, ProjectID(user_project["uuid"]))
+        mocked_dynamic_services_interface["dynamic_scheduler.api.list_dynamic_services"].assert_any_call(
             client.app, user_id=user_id, project_id=ProjectID(user_project["uuid"])
         )
-        mocked_dynamic_services_interface[
-            "dynamic_scheduler.api.list_dynamic_services"
-        ].reset_mock()
+        mocked_dynamic_services_interface["dynamic_scheduler.api.list_dynamic_services"].reset_mock()
     else:
         mocked_notifications_plugin["subscribe"].assert_not_called()
 
@@ -1099,9 +1018,7 @@ async def test_close_project(
                 project_id=ProjectID(user_project["uuid"]),
             ),
         ]
-        mocked_dynamic_services_interface[
-            "dynamic_scheduler.api.list_dynamic_services"
-        ].assert_has_calls(calls)
+        mocked_dynamic_services_interface["dynamic_scheduler.api.list_dynamic_services"].assert_has_calls(calls)
 
         calls = [
             call(
@@ -1117,9 +1034,7 @@ async def test_close_project(
             )
             for service in fake_dynamic_services
         ]
-        mocked_dynamic_services_interface[
-            "dynamic_scheduler.api.stop_dynamic_service"
-        ].assert_has_calls(calls)
+        mocked_dynamic_services_interface["dynamic_scheduler.api.stop_dynamic_service"].assert_has_calls(calls)
 
         # should not be callsed request_retrieve_dyn_service
 
@@ -1139,9 +1054,7 @@ async def test_get_active_project(
     logged_user: UserInfoDict,
     user_project: ProjectDict,
     expected: int,
-    create_socketio_connection: Callable[
-        [str | None, TestClient | None], Awaitable[tuple[socketio.AsyncClient, str]]
-    ],
+    create_socketio_connection: Callable[[str | None, TestClient | None], Awaitable[tuple[socketio.AsyncClient, str]]],
     mocked_dynamic_services_interface: dict[str, mock.Mock],
     mock_catalog_api: dict[str, mock.Mock],
     mocked_notifications_plugin: dict[str, mock.Mock],
@@ -1157,11 +1070,7 @@ async def test_get_active_project(
     assert client.app
 
     # get active projects -> empty
-    get_active_projects_url = (
-        client.app.router["get_active_project"]
-        .url_for()
-        .with_query(client_session_id=client_id1)
-    )
+    get_active_projects_url = client.app.router["get_active_project"].url_for().with_query(client_session_id=client_id1)
     resp = await client.get(f"{get_active_projects_url}")
     data, error = await assert_status(resp, expected)
     if resp.status == status.HTTP_200_OK:
@@ -1169,18 +1078,14 @@ async def test_get_active_project(
         assert not error
 
     # open project
-    open_project_url = client.app.router["open_project"].url_for(
-        project_id=user_project["uuid"]
-    )
+    open_project_url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
     resp = await client.post(f"{open_project_url}", json=client_id1)
     await assert_status(resp, expected)
 
     resp = await client.get(f"{get_active_projects_url}")
     data, error = await assert_status(resp, expected)
     if resp.status == status.HTTP_200_OK:
-        mocked_notifications_plugin["subscribe"].assert_called_once_with(
-            client.app, ProjectID(user_project["uuid"])
-        )
+        mocked_notifications_plugin["subscribe"].assert_called_once_with(client.app, ProjectID(user_project["uuid"]))
         assert not error
         assert ProjectStateOutputSchema(**data.pop("state")).share_state.locked
         data.pop("folderId", None)
@@ -1202,11 +1107,7 @@ async def test_get_active_project(
         if expected == status.HTTP_200_OK:
             pytest.fail("socket io connection should not fail")
     # get active projects -> empty
-    get_active_projects_url = (
-        client.app.router["get_active_project"]
-        .url_for()
-        .with_query(client_session_id=client_id2)
-    )
+    get_active_projects_url = client.app.router["get_active_project"].url_for().with_query(client_session_id=client_id2)
     resp = await client.get(f"{get_active_projects_url}")
     data, error = await assert_status(resp, expected)
     if resp.status == status.HTTP_200_OK:
@@ -1263,20 +1164,14 @@ async def test_project_node_lifetime(  # noqa: PLR0915
     data, errors = await assert_status(resp, expected_response_on_create)
     dynamic_node_id = None
     if resp.status == status.HTTP_201_CREATED:
-        mocked_dynamic_services_interface[
-            "dynamic_scheduler.api.run_dynamic_service"
-        ].assert_called_once()
+        mocked_dynamic_services_interface["dynamic_scheduler.api.run_dynamic_service"].assert_called_once()
         assert "node_id" in data
         dynamic_node_id = data["node_id"]
     else:
-        mocked_dynamic_services_interface[
-            "dynamic_scheduler.api.run_dynamic_service"
-        ].assert_not_called()
+        mocked_dynamic_services_interface["dynamic_scheduler.api.run_dynamic_service"].assert_not_called()
 
     # create a new NOT dynamic node...
-    mocked_dynamic_services_interface[
-        "dynamic_scheduler.api.run_dynamic_service"
-    ].reset_mock()
+    mocked_dynamic_services_interface["dynamic_scheduler.api.run_dynamic_service"].reset_mock()
     url = client.app.router["create_node"].url_for(project_id=user_project["uuid"])
     body = {
         "service_key": "simcore/services/comp/key",
@@ -1287,15 +1182,11 @@ async def test_project_node_lifetime(  # noqa: PLR0915
     data, errors = await assert_status(resp, expected_response_on_create)
     computational_node_id = None
     if resp.status == status.HTTP_201_CREATED:
-        mocked_dynamic_services_interface[
-            "dynamic_scheduler.api.run_dynamic_service"
-        ].assert_not_called()
+        mocked_dynamic_services_interface["dynamic_scheduler.api.run_dynamic_service"].assert_not_called()
         assert "node_id" in data
         computational_node_id = data["node_id"]
     else:
-        mocked_dynamic_services_interface[
-            "dynamic_scheduler.api.run_dynamic_service"
-        ].assert_not_called()
+        mocked_dynamic_services_interface["dynamic_scheduler.api.run_dynamic_service"].assert_not_called()
 
     # get the node state
     _created_dynamic_service_mock = await create_dynamic_service_mock(
@@ -1305,9 +1196,7 @@ async def test_project_node_lifetime(  # noqa: PLR0915
         service_state=ServiceState.RUNNING,
     )
     assert dynamic_node_id
-    url = client.app.router["get_node"].url_for(
-        project_id=user_project["uuid"], node_id=dynamic_node_id
-    )
+    url = client.app.router["get_node"].url_for(project_id=user_project["uuid"], node_id=dynamic_node_id)
 
     node_sample = deepcopy(NodeGet.model_config["json_schema_extra"]["examples"][1])
     assert node_sample
@@ -1328,9 +1217,7 @@ async def test_project_node_lifetime(  # noqa: PLR0915
 
     # get the NOT dynamic node state
     assert computational_node_id
-    url = client.app.router["get_node"].url_for(
-        project_id=user_project["uuid"], node_id=computational_node_id
-    )
+    url = client.app.router["get_node"].url_for(project_id=user_project["uuid"], node_id=computational_node_id)
     mocked_dynamic_services_interface[
         "dynamic_scheduler.api.get_dynamic_service"
     ].return_value = NodeGetIdle.model_validate(
@@ -1346,42 +1233,28 @@ async def test_project_node_lifetime(  # noqa: PLR0915
         assert data["service_state"] == "idle"
 
     # delete the node
-    url = client.app.router["delete_node"].url_for(
-        project_id=user_project["uuid"], node_id=dynamic_node_id
-    )
+    url = client.app.router["delete_node"].url_for(project_id=user_project["uuid"], node_id=dynamic_node_id)
     resp = await client.delete(f"{url}")
     data, errors = await assert_status(resp, expected_response_on_delete)
     await asyncio.sleep(5)
     if resp.status == status.HTTP_204_NO_CONTENT:
-        mocked_dynamic_services_interface[
-            "dynamic_scheduler.api.stop_dynamic_service"
-        ].assert_called_once()
+        mocked_dynamic_services_interface["dynamic_scheduler.api.stop_dynamic_service"].assert_called_once()
         mock_storage_api_delete_data_folders_of_project_node.assert_called_once()
     else:
-        mocked_dynamic_services_interface[
-            "dynamic_scheduler.api.stop_dynamic_service"
-        ].assert_not_called()
+        mocked_dynamic_services_interface["dynamic_scheduler.api.stop_dynamic_service"].assert_not_called()
         mock_storage_api_delete_data_folders_of_project_node.assert_not_called()
 
     # delete the NOT dynamic node
-    mocked_dynamic_services_interface[
-        "dynamic_scheduler.api.stop_dynamic_service"
-    ].reset_mock()
+    mocked_dynamic_services_interface["dynamic_scheduler.api.stop_dynamic_service"].reset_mock()
     mock_storage_api_delete_data_folders_of_project_node.reset_mock()
-    url = client.app.router["delete_node"].url_for(
-        project_id=user_project["uuid"], node_id=computational_node_id
-    )
+    url = client.app.router["delete_node"].url_for(project_id=user_project["uuid"], node_id=computational_node_id)
     resp = await client.delete(f"{url}")
     data, errors = await assert_status(resp, expected_response_on_delete)
     if resp.status == status.HTTP_204_NO_CONTENT:
-        mocked_dynamic_services_interface[
-            "dynamic_scheduler.api.stop_dynamic_service"
-        ].assert_not_called()
+        mocked_dynamic_services_interface["dynamic_scheduler.api.stop_dynamic_service"].assert_not_called()
         mock_storage_api_delete_data_folders_of_project_node.assert_called_once()
     else:
-        mocked_dynamic_services_interface[
-            "dynamic_scheduler.api.stop_dynamic_service"
-        ].assert_not_called()
+        mocked_dynamic_services_interface["dynamic_scheduler.api.stop_dynamic_service"].assert_not_called()
         mock_storage_api_delete_data_folders_of_project_node.assert_not_called()
 
 
@@ -1417,9 +1290,7 @@ async def test_open_shared_project_multiple_users(
 
     # current state is closed and unlocked
     closed_project_state = ProjectStateOutputSchema(
-        share_state=ProjectShareStateOutputSchema(
-            locked=False, status=ProjectStatus.CLOSED, current_user_groupids=[]
-        ),
+        share_state=ProjectShareStateOutputSchema(locked=False, status=ProjectStatus.CLOSED, current_user_groupids=[]),
         state=ProjectRunningState(value=RunningState.NOT_STARTED),
     )
     await _state_project(base_client, shared_project, expected.ok, closed_project_state)
@@ -1443,16 +1314,12 @@ async def test_open_shared_project_multiple_users(
     await _state_project(base_client, shared_project, expected.ok, opened_project_state)
 
     # now we create more users and open the same project until we reach the maximum number of user sessions
-    other_users: list[
-        tuple[UserInfoDict, TestClient, str, socketio.AsyncClient, SocketHandlers]
-    ] = []
+    other_users: list[tuple[UserInfoDict, TestClient, str, socketio.AsyncClient, SocketHandlers]] = []
     for user_session in range(1, max_number_of_user_sessions):
         client_i = client_on_running_server_factory()
 
         # user i logs in
-        user_i = await exit_stack.enter_async_context(
-            LoggedUser(client_i, {"role": logged_user["role"]})
-        )
+        user_i = await exit_stack.enter_async_context(LoggedUser(client_i, {"role": logged_user["role"]}))
 
         (
             sio_i,
@@ -1478,8 +1345,7 @@ async def test_open_shared_project_multiple_users(
         await _assert_project_state_updated(
             sio_i_handlers[SOCKET_IO_PROJECT_UPDATED_EVENT],
             shared_project,
-            [opened_project_state]
-            * 1,  # NOTE: only one call per user since they are part of the everyone group
+            [opened_project_state] * 1,  # NOTE: only one call per user since they are part of the everyone group
         )
         for _user_j, client_j, _, _sio_j, sio_j_handlers in other_users:
             # check already opened  by other users which should also notify
@@ -1488,31 +1354,22 @@ async def test_open_shared_project_multiple_users(
                 shared_project,
                 [opened_project_state],
             )
-            await _state_project(
-                client_j, shared_project, expected.ok, opened_project_state
-            )
+            await _state_project(client_j, shared_project, expected.ok, opened_project_state)
 
         await _assert_project_state_updated(
             sio_base_handlers[SOCKET_IO_PROJECT_UPDATED_EVENT],
             shared_project,
-            [opened_project_state]
-            * 2,  # NOTE: 2 calls since base user is part of the primary group and the all group
+            [opened_project_state] * 2,  # NOTE: 2 calls since base user is part of the primary group and the all group
         )
-        await _state_project(
-            client_i, shared_project, expected.ok, opened_project_state
-        )
-        await _state_project(
-            base_client, shared_project, expected.ok, opened_project_state
-        )
+        await _state_project(client_i, shared_project, expected.ok, opened_project_state)
+        await _state_project(base_client, shared_project, expected.ok, opened_project_state)
         other_users.append((user_i, client_i, client_i_tab_id, sio_i, sio_i_handlers))
 
     #
     # TEST more user sessions cannot be opened: create an additional user, opening the project again shall raise
     client_n = client_on_running_server_factory()
 
-    user_n = await exit_stack.enter_async_context(
-        LoggedUser(client_n, {"role": logged_user["role"]})
-    )
+    user_n = await exit_stack.enter_async_context(LoggedUser(client_n, {"role": logged_user["role"]}))
     assert user_n
     (
         sio_n,
@@ -1524,14 +1381,10 @@ async def test_open_shared_project_multiple_users(
 
     # user i opens the shared project --> no events since it's blocked
     await _open_project(client_n, client_n_tab_id, shared_project, expected.conflict)
-    await _assert_project_state_updated(
-        sio_n_handlers[SOCKET_IO_PROJECT_UPDATED_EVENT], shared_project, []
-    )
+    await _assert_project_state_updated(sio_n_handlers[SOCKET_IO_PROJECT_UPDATED_EVENT], shared_project, [])
 
     # close project from base user shall trigger an event for all the other users
-    await _close_project(
-        base_client, base_client_tab_id, shared_project, expected.no_content
-    )
+    await _close_project(base_client, base_client_tab_id, shared_project, expected.no_content)
     opened_project_state = opened_project_state.model_copy(
         update={
             "share_state": ProjectShareStateOutputSchema(
@@ -1540,8 +1393,7 @@ async def test_open_shared_project_multiple_users(
                 current_user_groupids=[
                     gid
                     for gid in opened_project_state.share_state.current_user_groupids
-                    if gid
-                    != TypeAdapter(GroupID).validate_python(logged_user["primary_gid"])
+                    if gid != TypeAdapter(GroupID).validate_python(logged_user["primary_gid"])
                 ],
             ),
         }
@@ -1558,9 +1410,7 @@ async def test_open_shared_project_multiple_users(
             shared_project,
             [opened_project_state],
         )
-        await _state_project(
-            client_i, shared_project, expected.ok, opened_project_state
-        )
+        await _state_project(client_i, shared_project, expected.ok, opened_project_state)
 
 
 @pytest.mark.parametrize(*standard_user_role_response())
@@ -1588,9 +1438,7 @@ async def test_refreshing_tab_of_opened_project_multiple_users(
 
     # current state is closed and unlocked
     closed_project_state = ProjectStateOutputSchema(
-        share_state=ProjectShareStateOutputSchema(
-            locked=False, status=ProjectStatus.CLOSED, current_user_groupids=[]
-        ),
+        share_state=ProjectShareStateOutputSchema(locked=False, status=ProjectStatus.CLOSED, current_user_groupids=[]),
         state=ProjectRunningState(value=RunningState.NOT_STARTED),
     )
     await _state_project(client, shared_project, expected.ok, closed_project_state)
@@ -1609,8 +1457,7 @@ async def test_refreshing_tab_of_opened_project_multiple_users(
     await _assert_project_state_updated(
         original_socket_handlers[SOCKET_IO_PROJECT_UPDATED_EVENT],
         shared_project,
-        [opened_project_state]
-        * 2,  # NOTE: 2 calls since base user is part of the primary group and the all group
+        [opened_project_state] * 2,  # NOTE: 2 calls since base user is part of the primary group and the all group
     )
     await _state_project(client, shared_project, expected.ok, opened_project_state)
     # opening a second time should also work as this is a no-op
@@ -1618,8 +1465,7 @@ async def test_refreshing_tab_of_opened_project_multiple_users(
     await _assert_project_state_updated(
         original_socket_handlers[SOCKET_IO_PROJECT_UPDATED_EVENT],
         shared_project,
-        [opened_project_state]
-        * 2,  # NOTE: 2 calls since base user is part of the primary group and the all group
+        [opened_project_state] * 2,  # NOTE: 2 calls since base user is part of the primary group and the all group
     )
     await _state_project(client, shared_project, expected.ok, opened_project_state)
 
@@ -1645,8 +1491,7 @@ async def test_refreshing_tab_of_opened_project_multiple_users(
     await _assert_project_state_updated(
         new_socket_handlers[SOCKET_IO_PROJECT_UPDATED_EVENT],
         shared_project,
-        [opened_project_state]
-        * 2,  # NOTE: 2 calls since base user is part of the primary group and the all group
+        [opened_project_state] * 2,  # NOTE: 2 calls since base user is part of the primary group and the all group
     )
     # check old socket is silent
     await _assert_project_state_updated(
@@ -1682,9 +1527,7 @@ async def test_closing_and_reopening_tab_of_opened_project_multiple_users(
 
     # current state is closed and unlocked
     closed_project_state = ProjectStateOutputSchema(
-        share_state=ProjectShareStateOutputSchema(
-            locked=False, status=ProjectStatus.CLOSED, current_user_groupids=[]
-        ),
+        share_state=ProjectShareStateOutputSchema(locked=False, status=ProjectStatus.CLOSED, current_user_groupids=[]),
         state=ProjectRunningState(value=RunningState.NOT_STARTED),
     )
     await _state_project(client, shared_project, expected.ok, closed_project_state)
@@ -1703,8 +1546,7 @@ async def test_closing_and_reopening_tab_of_opened_project_multiple_users(
     await _assert_project_state_updated(
         original_socket_handlers[SOCKET_IO_PROJECT_UPDATED_EVENT],
         shared_project,
-        [opened_project_state]
-        * 2,  # NOTE: 2 calls since base user is part of the primary group and the all group
+        [opened_project_state] * 2,  # NOTE: 2 calls since base user is part of the primary group and the all group
     )
     await _state_project(client, shared_project, expected.ok, opened_project_state)
 
@@ -1728,8 +1570,7 @@ async def test_closing_and_reopening_tab_of_opened_project_multiple_users(
     await _assert_project_state_updated(
         new_socketio_handlers[SOCKET_IO_PROJECT_UPDATED_EVENT],
         shared_project,
-        [opened_project_state]
-        * 2,  # NOTE: 2 calls since base user is part of the primary group and the all group
+        [opened_project_state] * 2,  # NOTE: 2 calls since base user is part of the primary group and the all group
     )
     # check old socket is silent
     await _assert_project_state_updated(
@@ -1766,14 +1607,10 @@ async def test_open_shared_project_2_users_locked_remove_once_rtc_collaboration_
     client_2 = client_on_running_server_factory()
 
     # 1. user 1 opens project
-    sio1, client_id1, sio1_handlers = await create_socketio_connection_with_handlers(
-        None, client_1
-    )
+    sio1, client_id1, sio1_handlers = await create_socketio_connection_with_handlers(None, client_1)
     # expected is that the project is closed and unlocked
     expected_project_state_client_1 = ProjectStateOutputSchema(
-        share_state=ProjectShareStateOutputSchema(
-            locked=False, status=ProjectStatus.CLOSED, current_user_groupids=[]
-        ),
+        share_state=ProjectShareStateOutputSchema(locked=False, status=ProjectStatus.CLOSED, current_user_groupids=[]),
         state=ProjectRunningState(value=RunningState.NOT_STARTED),
     )
     for _client_id in [client_id1, None]:
@@ -1795,9 +1632,7 @@ async def test_open_shared_project_2_users_locked_remove_once_rtc_collaboration_
             "share_state": ProjectShareStateOutputSchema(
                 locked=True,
                 status=ProjectStatus.OPENED,
-                current_user_groupids=[
-                    logged_user["primary_gid"]
-                ],  # this should be the group of that user
+                current_user_groupids=[logged_user["primary_gid"]],  # this should be the group of that user
             ),
         }
     )
@@ -1806,8 +1641,7 @@ async def test_open_shared_project_2_users_locked_remove_once_rtc_collaboration_
     await _assert_project_state_updated(
         sio1_handlers[SOCKET_IO_PROJECT_UPDATED_EVENT],
         shared_project,
-        [expected_project_state_client_1]
-        * (0 if user_role == UserRole.ANONYMOUS else 2),
+        [expected_project_state_client_1] * (0 if user_role == UserRole.ANONYMOUS else 2),
     )
     await _state_project(
         client_1,
@@ -1823,9 +1657,7 @@ async def test_open_shared_project_2_users_locked_remove_once_rtc_collaboration_
         enable_check=user_role != UserRole.ANONYMOUS,
         exit_stack=exit_stack,
     )
-    sio2, client_id2, sio2_handlers = await create_socketio_connection_with_handlers(
-        None, client_2
-    )
+    sio2, client_id2, sio2_handlers = await create_socketio_connection_with_handlers(None, client_2)
     await _open_project(
         client_2,
         client_id2,
@@ -1879,17 +1711,9 @@ async def test_open_shared_project_2_users_locked_remove_once_rtc_collaboration_
                 }
             )
         ]
-        * (
-            0
-            if any(user_role == role for role in [UserRole.ANONYMOUS, UserRole.GUEST])
-            else 2
-        )
+        * (0 if any(user_role == role for role in [UserRole.ANONYMOUS, UserRole.GUEST]) else 2)
         + [expected_project_state_client_1]
-        * (
-            0
-            if any(user_role == role for role in [UserRole.ANONYMOUS, UserRole.GUEST])
-            else 2
-        ),
+        * (0 if any(user_role == role for role in [UserRole.ANONYMOUS, UserRole.GUEST]) else 2),
     )
     await _assert_project_state_updated(
         sio2_handlers[SOCKET_IO_PROJECT_UPDATED_EVENT],
@@ -1905,17 +1729,9 @@ async def test_open_shared_project_2_users_locked_remove_once_rtc_collaboration_
                 }
             )
         ]
-        * (
-            0
-            if any(user_role == role for role in [UserRole.ANONYMOUS, UserRole.GUEST])
-            else 1
-        )
+        * (0 if any(user_role == role for role in [UserRole.ANONYMOUS, UserRole.GUEST]) else 1)
         + [expected_project_state_client_1]
-        * (
-            0
-            if any(user_role == role for role in [UserRole.ANONYMOUS, UserRole.GUEST])
-            else 1
-        ),
+        * (0 if any(user_role == role for role in [UserRole.ANONYMOUS, UserRole.GUEST]) else 1),
     )
     await _state_project(
         client_1,
@@ -1956,21 +1772,13 @@ async def test_open_shared_project_2_users_locked_remove_once_rtc_collaboration_
         sio1_handlers[SOCKET_IO_PROJECT_UPDATED_EVENT],
         shared_project,
         [expected_project_state_client_1]
-        * (
-            0
-            if any(user_role == role for role in [UserRole.ANONYMOUS, UserRole.GUEST])
-            else 2
-        ),
+        * (0 if any(user_role == role for role in [UserRole.ANONYMOUS, UserRole.GUEST]) else 2),
     )
     await _assert_project_state_updated(
         sio2_handlers[SOCKET_IO_PROJECT_UPDATED_EVENT],
         shared_project,
         [expected_project_state_client_1]
-        * (
-            0
-            if any(user_role == role for role in [UserRole.ANONYMOUS, UserRole.GUEST])
-            else 1
-        ),
+        * (0 if any(user_role == role for role in [UserRole.ANONYMOUS, UserRole.GUEST]) else 1),
     )
     await _state_project(
         client_1,
@@ -2004,12 +1812,8 @@ async def test_open_shared_project_at_same_time(
     NUMBER_OF_ADDITIONAL_CLIENTS = 10
     # log client 1
     client_1 = client
-    sio_1, client_id1, _ = await create_socketio_connection_with_handlers(
-        None, client_1
-    )
-    clients = [
-        {"client": client_1, "user": logged_user, "client_id": client_id1, "sio": sio_1}
-    ]
+    sio_1, client_id1, _ = await create_socketio_connection_with_handlers(None, client_1)
+    clients = [{"client": client_1, "user": logged_user, "client_id": client_id1, "sio": sio_1}]
     # create other clients
     for _i in range(NUMBER_OF_ADDITIONAL_CLIENTS):
         new_client = client_on_running_server_factory()
@@ -2019,12 +1823,8 @@ async def test_open_shared_project_at_same_time(
             enable_check=user_role != UserRole.ANONYMOUS,
             exit_stack=exit_stack,
         )
-        sio, client_id, _ = await create_socketio_connection_with_handlers(
-            None, new_client
-        )
-        clients.append(
-            {"client": new_client, "user": user, "client_id": client_id, "sio": sio}
-        )
+        sio, client_id, _ = await create_socketio_connection_with_handlers(None, new_client)
+        clients.append({"client": new_client, "user": user, "client_id": client_id, "sio": sio})
 
     # try opening projects at same time (more or less)
     open_project_tasks = [
@@ -2034,11 +1834,7 @@ async def test_open_shared_project_at_same_time(
             shared_project,
             [
                 expected.ok if user_role != UserRole.GUEST else status.HTTP_200_OK,
-                (
-                    expected.locked
-                    if user_role != UserRole.GUEST
-                    else status.HTTP_423_LOCKED
-                ),
+                (expected.locked if user_role != UserRole.GUEST else status.HTTP_423_LOCKED),
             ],
         )
         for c in clients
@@ -2085,9 +1881,7 @@ async def test_opened_project_can_still_be_opened_after_refreshing_tab(
     mock_catalog_api: dict[str, mock.Mock],
     clean_redis_table,
     mocked_notifications_plugin: dict[str, mock.Mock],
-    create_socketio_connection: Callable[
-        [str | None, TestClient | None], Awaitable[tuple[socketio.AsyncClient, str]]
-    ],
+    create_socketio_connection: Callable[[str | None, TestClient | None], Awaitable[tuple[socketio.AsyncClient, str]]],
 ):
     """Simulating a refresh goes as follows:
     The user opens a project, then hit the F5 refresh page.
@@ -2099,9 +1893,7 @@ async def test_opened_project_can_still_be_opened_after_refreshing_tab(
     assert client.app
     url = client.app.router["open_project"].url_for(project_id=user_project["uuid"])
     resp = await client.post(f"{url}", json=client_session_id)
-    await assert_status(
-        resp, expected.ok if user_role != UserRole.GUEST else status.HTTP_200_OK
-    )
+    await assert_status(resp, expected.ok if user_role != UserRole.GUEST else status.HTTP_200_OK)
     if resp.status != status.HTTP_200_OK:
         return
 
@@ -2111,13 +1903,9 @@ async def test_opened_project_can_still_be_opened_after_refreshing_tab(
     # give some time
     await asyncio.sleep(1)
     # re-connect using the same client session id
-    sio2, received_client_session_id = await create_socketio_connection(
-        client_session_id, client
-    )
+    sio2, received_client_session_id = await create_socketio_connection(client_session_id, client)
     assert sio2
     assert received_client_session_id == client_session_id
     # re-open the project
     resp = await client.post(f"{url}", json=client_session_id)
-    await assert_status(
-        resp, expected.ok if user_role != UserRole.GUEST else status.HTTP_200_OK
-    )
+    await assert_status(resp, expected.ok if user_role != UserRole.GUEST else status.HTTP_200_OK)

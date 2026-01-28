@@ -24,9 +24,7 @@ async def check_service_health(
     health_checker: Annotated[ApiServerHealthChecker, Depends(get_health_checker)],
 ):
     if not health_checker.healthy:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="unhealthy"
-        )
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="unhealthy")
 
     return f"{__name__}@{datetime.datetime.now(tz=datetime.UTC).isoformat()}"
 
@@ -58,9 +56,9 @@ async def get_service_state(
         version=API_VERSION,
         services={
             api.service_name: {
-                "healthy": bool(is_healty),
+                "healthy": bool(is_healthy),
             }
-            for api, is_healty in zip(apis, healths, strict=True)
+            for api, is_healthy in zip(apis, healths, strict=True)
         },
         url=url_for("get_service_state"),
     )

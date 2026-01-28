@@ -87,9 +87,7 @@ END; $$ LANGUAGE 'plpgsql';
     """
 )
 
-sa.event.listen(
-    workspaces, "after_create", assign_workspace_access_rights_to_owner_group_procedure
-)
+sa.event.listen(workspaces, "after_create", assign_workspace_access_rights_to_owner_group_procedure)
 sa.event.listen(
     workspaces,
     "after_create",

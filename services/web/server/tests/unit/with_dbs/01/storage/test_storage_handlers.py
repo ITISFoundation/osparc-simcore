@@ -24,9 +24,7 @@ from simcore_postgres_database.models.users import UserRole
 
 
 @pytest.fixture
-def app_environment(
-    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
-) -> EnvVarsDict:
+def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
     return app_environment | setenvs_from_dict(
         monkeypatch,
         {
@@ -60,12 +58,8 @@ MOCK_FILE_UPLOAD_SCHEMA = FileUploadSchema(
     chunk_size=TypeAdapter(ByteSize).validate_python("5GiB"),
     urls=[TypeAdapter(AnyUrl).validate_python("s3://file_id")],
     links=FileUploadLinks(
-        abort_upload=TypeAdapter(AnyUrl).validate_python(
-            "http://private-url/operation:abort"
-        ),
-        complete_upload=TypeAdapter(AnyUrl).validate_python(
-            "http://private-url/operation:complete"
-        ),
+        abort_upload=TypeAdapter(AnyUrl).validate_python("http://private-url/operation:abort"),
+        complete_upload=TypeAdapter(AnyUrl).validate_python("http://private-url/operation:complete"),
     ),
 )
 
@@ -86,8 +80,12 @@ MOCK_FILE_UPLOAD_COMPLETE_RESPONSE = FileUploadCompleteResponse.model_validate(
 )
 
 
-DOUBLE_ENCODE_SLASH_IN_FILE_ID = "ef944bbe-14c7-11ee-a195-02420a0f07ab%252F46ac4913-92dc-432c-98e3-2dea21d3f0ed%252Fa_text_file.txt"
-SINGLE_ENCODE_SLASH_IN_FILE_ID = "ef944bbe-14c7-11ee-a195-02420a0f07ab%2F46ac4913-92dc-432c-98e3-2dea21d3f0ed%2Fa_text_file.txt"
+DOUBLE_ENCODE_SLASH_IN_FILE_ID = (
+    "ef944bbe-14c7-11ee-a195-02420a0f07ab%252F46ac4913-92dc-432c-98e3-2dea21d3f0ed%252Fa_text_file.txt"
+)
+SINGLE_ENCODE_SLASH_IN_FILE_ID = (
+    "ef944bbe-14c7-11ee-a195-02420a0f07ab%2F46ac4913-92dc-432c-98e3-2dea21d3f0ed%2Fa_text_file.txt"
+)
 
 PREFIX = "/" + "v0" + "/storage"
 
@@ -105,9 +103,7 @@ async def test_pytest_asyncio_failure(
 
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
-@pytest.mark.parametrize(
-    "file_id", [SINGLE_ENCODE_SLASH_IN_FILE_ID, DOUBLE_ENCODE_SLASH_IN_FILE_ID]
-)
+@pytest.mark.parametrize("file_id", [SINGLE_ENCODE_SLASH_IN_FILE_ID, DOUBLE_ENCODE_SLASH_IN_FILE_ID])
 @pytest.mark.parametrize(
     "method, path, body, expected_response",
     [
