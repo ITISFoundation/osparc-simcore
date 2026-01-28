@@ -1062,16 +1062,18 @@ def with_instances_machines_hot_buffer(
 
 
 @pytest.fixture
-def hot_buffer_instance_type(app_settings: ApplicationSettings) -> InstanceTypeType:
+def hot_buffer_instance_types(app_settings: ApplicationSettings) -> set[InstanceTypeType]:
     assert app_settings.AUTOSCALING_EC2_INSTANCES
-    return cast(
-        InstanceTypeType,
-        next(iter(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES)),
-    )
+    return {
+        cast(InstanceTypeType, k)
+        for k, v in app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES.items()
+        if v.hot_buffer_count > 0
+    }
 
 
 @pytest.fixture
-def hot_buffer_count(app_settings: ApplicationSettings, hot_buffer_instance_type: InstanceTypeType) -> int:
+def hot_buffer_count(app_settings: ApplicationSettings, hot_buffer_instance_types: set[InstanceTypeType]) -> int:
+    # TODO: fix this
     assert app_settings.AUTOSCALING_EC2_INSTANCES
     return app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[hot_buffer_instance_type].hot_buffer_count
 
@@ -1081,6 +1083,7 @@ def hot_buffer_has_pre_pull(
     app_settings: ApplicationSettings,
     hot_buffer_instance_type: InstanceTypeType,
 ) -> bool:
+    # TODO: fix this
     assert app_settings.AUTOSCALING_EC2_INSTANCES
     return bool(
         app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_COLD_START_DOCKER_IMAGES_PRE_PULLING
