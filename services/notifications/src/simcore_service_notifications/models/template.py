@@ -2,7 +2,7 @@ from abc import ABC
 from dataclasses import dataclass
 
 from models_library.notifications import ChannelType, TemplateName
-from notifications_library.template_context import BaseTemplateContext
+from notifications_library.context import BaseTemplateContext
 
 
 @dataclass(frozen=True)

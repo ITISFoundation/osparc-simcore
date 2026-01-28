@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 from jinja2 import Environment, Template
 from models_library.notifications import ChannelType, TemplateName
-from notifications_library.template_registry import get_context_model
+from notifications_library.registry import get_context_model
 from pydantic import TypeAdapter
 
 from ..models.content import for_channel
