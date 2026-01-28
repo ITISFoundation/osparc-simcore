@@ -15,7 +15,7 @@ from models_library.rpc.notifications.template import NotificationsTemplatePrevi
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import parse_request_body_as, parse_request_query_parameters_as
 from servicelib.aiohttp.rest_responses import create_data_response
-from servicelib.celery.models import ExecutionMetadata, OwnerMetadata, TasksQueue
+from servicelib.celery.models import ExecutionMetadata, OwnerMetadata
 from servicelib.rabbitmq.rpc_interfaces.notifications.notifications_templates import (
     preview_template as remote_preview_template,
 )
@@ -77,10 +77,7 @@ async def send_message(request: web.Request) -> web.Response:
 
     async_job_get = await submit_job(
         get_task_manager(request.app),
-        execution_metadata=ExecutionMetadata(
-            name=f"send_{body.channel}",
-            queue=TasksQueue.NOTIFICATIONS,  # GCR: fix me
-        ),
+        execution_metadata=ExecutionMetadata(name=f"send_{body.channel}", queue="notifications"),
         owner_metadata=OwnerMetadata.model_validate(
             WebServerOwnerMetadata(
                 user_id=req_ctx.user_id,
