@@ -1165,7 +1165,7 @@ qx.Class.define("osparc.data.Resources", {
           }
         }
       },
-      "notifications": {
+      "notificationTemplates": {
         useCache: true,
         endpoints: {
           searchEmailTemplates: {

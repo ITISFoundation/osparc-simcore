@@ -20,7 +20,7 @@ qx.Class.define("osparc.message.Messages", {
 
   statics: {
     fetchEmailTemplates: function() {
-      return osparc.data.Resources.fetch("notifications", "searchEmailTemplates");
+      return osparc.data.Resources.fetch("notificationTemplates", "searchEmailTemplates");
     },
 
     fetchEmailPreview: function(templateName, context = {}) {
@@ -33,7 +33,7 @@ qx.Class.define("osparc.message.Messages", {
           "context": context,
         },
       };
-      return osparc.data.Resources.fetch("notifications", "previewTemplate", params)
+      return osparc.data.Resources.fetch("notificationTemplates", "previewTemplate", params)
     },
 
     sendMessage: function(recipients, subject, bodyHtml, bodyText) {
@@ -48,7 +48,7 @@ qx.Class.define("osparc.message.Messages", {
           },
         },
       };
-      return osparc.data.Resources.fetch("notifications", "sendMessage", params);
+      return osparc.data.Resources.fetch("notificationTemplates", "sendMessage", params);
     },
   }
 });
