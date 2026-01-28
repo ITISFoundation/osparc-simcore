@@ -340,7 +340,7 @@ async def send_approval_email_to_user(
     # Render email parts
     parts = render_email_parts(
         env=create_render_environment_from_notifications_library(),
-        event_name="on_account_approved",
+        template_name="account_approved",
         user=user_data,
         product=product_data,
         **event_extra_data,
@@ -395,7 +395,7 @@ async def send_rejection_email_to_user(
     # Render email parts
     parts = render_email_parts(
         env=create_render_environment_from_notifications_library(),
-        event_name="on_account_rejected",
+        template_name="account_rejected",
         user=user_data,
         product=product_data,
         **event_extra_data,
