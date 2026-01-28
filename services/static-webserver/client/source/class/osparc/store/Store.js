@@ -254,6 +254,10 @@ qx.Class.define("osparc.store.Store", {
       check: "Array",
       init: []
     },
+    notificationTemplates: {
+      check: "Array",
+      init: []
+    },
   },
 
   members: {

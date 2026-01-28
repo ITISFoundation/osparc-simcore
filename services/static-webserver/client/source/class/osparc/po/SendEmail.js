@@ -168,18 +168,18 @@ qx.Class.define("osparc.po.SendEmail", {
           templates.forEach(template => {
             const templateName = template["ref"]["templateName"];
             const item = new qx.ui.form.ListItem(templateName);
-            item.setModel(templateName);
             selectBox.add(item);
           });
           if (templates.length) {
             const firstItem = selectBox.getChildren()[0];
             selectBox.setSelection([firstItem]);
-            this.__templateSelected(firstItem.getModel());
+            this.__templateSelected(firstItem.getLabel());
           }
         });
     },
 
     __templateSelected: function(templateId) {
+      if (!templateId) return;
       osparc.message.Messages.fetchEmailPreview(templateId)
         .then(template => {
           const subjectField = this.getChildControl("subject-field");

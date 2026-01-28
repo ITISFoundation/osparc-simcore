@@ -20,7 +20,10 @@ qx.Class.define("osparc.message.Messages", {
 
   statics: {
     fetchEmailTemplates: function() {
-      return osparc.data.Resources.fetch("notificationTemplates", "searchEmailTemplates");
+      return osparc.data.Resources.fetch("notificationTemplates", "searchEmailTemplates")
+        .then(templates => {
+          return templates.filter(t => t.ref.templateName === "empty");
+        });
     },
 
     fetchEmailPreview: function(templateName, context = {}) {
