@@ -12,7 +12,7 @@ from models_library.notifications import ChannelType, TemplateName
 
 import notifications_library
 
-from .template_context import BaseTemplateContext
+from .context import BaseTemplateContext
 
 _logger = logging.getLogger(__name__)
 
