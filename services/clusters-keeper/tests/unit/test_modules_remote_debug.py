@@ -9,9 +9,7 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 
 
 @pytest.fixture
-def app_environment(
-    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
-) -> EnvVarsDict:
+def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
     return app_environment | setenvs_from_dict(
         monkeypatch,
         envs={

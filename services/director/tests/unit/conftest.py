@@ -162,9 +162,7 @@ def app_settings(app_environment: EnvVarsDict) -> ApplicationSettings:
 
 @pytest.fixture
 async def app(
-    mock_setup_remote_docker_client: Callable[[str], None],
-    app_settings: ApplicationSettings,
-    is_pdb_enabled: bool,
+    mock_setup_remote_docker_client: Callable[[str], None], app_settings: ApplicationSettings, is_pdb_enabled: bool
 ) -> AsyncIterator[FastAPI]:
     tracing_config = TracingConfig.create(
         service_name=APP_NAME,

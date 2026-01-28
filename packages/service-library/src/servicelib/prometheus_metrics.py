@@ -139,9 +139,7 @@ def record_request_metrics(
         user_agent (str): The user agent header value.
     """
 
-    with metrics.in_flight_requests.labels(
-        method, endpoint, user_agent
-    ).track_inprogress():
+    with metrics.in_flight_requests.labels(method, endpoint, user_agent).track_inprogress():
         yield
 
 
@@ -155,16 +153,13 @@ def record_response_metrics(
     response_latency_seconds: float,
 ) -> None:
     exemplar = _get_exemplar()
-    metrics.request_count.labels(method, endpoint, http_status, user_agent).inc(
-        exemplar=exemplar
-    )
+    metrics.request_count.labels(method, endpoint, http_status, user_agent).inc(exemplar=exemplar)
     metrics.response_latency_with_labels.labels(method, endpoint, user_agent).observe(
         amount=response_latency_seconds, exemplar=exemplar
     )
 
 
-async def record_asyncio_event_looop_metrics(metrics: PrometheusMetrics) -> None:
-
+async def record_asyncio_event_loop_metrics(metrics: PrometheusMetrics) -> None:
     metrics.event_loop_tasks.set(len(asyncio.all_tasks()))
 
     start_time = time.perf_counter()

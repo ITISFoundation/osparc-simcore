@@ -127,9 +127,11 @@ class RCloneMountManager:
         self,
         r_clone_settings: RCloneSettings,
         *,
+        requires_data_mounting: bool,
         delegate: DelegateInterface,
     ) -> None:
         self.r_clone_settings = r_clone_settings
+        self.requires_data_mounting = requires_data_mounting
         self.delegate = delegate
         if r_clone_settings.R_CLONE_VERSION is None:
             msg = "R_CLONE_VERSION setting is not set"
@@ -225,5 +227,10 @@ class RCloneMountManager:
         if self._task_ensure_mounts_working is not None:
             await cancel_wait_task(self._task_ensure_mounts_working)
 
-        await asyncio.gather(*[mount.stop_mount() for mount in self._tracked_mounts.values()])
+        await asyncio.gather(
+            *[
+                self.ensure_unmounted(local_mount_path=tracked_mount.local_mount_path, index=tracked_mount.index)
+                for tracked_mount in self._tracked_mounts.values()
+            ]
+        )
         self._tracked_mounts.clear()

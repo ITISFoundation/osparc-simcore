@@ -103,12 +103,8 @@ def test_error_with_constructor():
     "str_format,ctx,expected",
     [
         pytest.param("{value:10}", {"value": "Python"}, "Python    ", id="left-align"),
-        pytest.param(
-            "{value:>10}", {"value": "Python"}, "    Python", id="right-align"
-        ),
-        pytest.param(
-            "{value:^10}", {"value": "Python"}, "  Python  ", id="center-align"
-        ),
+        pytest.param("{value:>10}", {"value": "Python"}, "    Python", id="right-align"),
+        pytest.param("{value:^10}", {"value": "Python"}, "  Python  ", id="center-align"),
         pytest.param("{v:.2f}", {"v": 3.1415926}, "3.14", id="decimals"),
         pytest.param(
             "{dt:%Y-%m-%d %H:%M}",
@@ -118,9 +114,7 @@ def test_error_with_constructor():
         ),
     ],
 )
-def test_msg_template_with_different_formats(
-    str_format: str, ctx: dict[str, Any], expected: str
-):
+def test_msg_template_with_different_formats(str_format: str, ctx: dict[str, Any], expected: str):
     class MyError(OsparcErrorMixin, ValueError):
         msg_template = str_format
 

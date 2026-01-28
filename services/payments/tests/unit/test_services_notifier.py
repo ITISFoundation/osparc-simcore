@@ -71,9 +71,7 @@ def app_environment(
 @pytest.fixture
 async def socketio_server(
     app: FastAPI,
-    socketio_server_factory: Callable[
-        [RabbitSettings], _AsyncGeneratorContextManager[AsyncServer]
-    ],
+    socketio_server_factory: Callable[[RabbitSettings], _AsyncGeneratorContextManager[AsyncServer]],
 ) -> AsyncIterable[AsyncServer]:
     async with socketio_server_factory(get_rabbitmq_settings(app)) as server:
         yield server
@@ -86,9 +84,7 @@ def room_name(user_primary_group_id: GroupID) -> SocketIORoomStr:
 
 @pytest.fixture
 async def socketio_client(
-    socketio_client_factory: Callable[
-        [], _AsyncGeneratorContextManager[socketio.AsyncClient]
-    ],
+    socketio_client_factory: Callable[[], _AsyncGeneratorContextManager[socketio.AsyncClient]],
 ) -> AsyncIterable[socketio.AsyncClient]:
     async with socketio_client_factory() as client:
         yield client
@@ -110,27 +106,19 @@ async def socketio_client_events(
 
 
 @pytest.fixture
-async def notify_payment(
-    app: FastAPI, user_id: UserID
-) -> Callable[[], Awaitable[None]]:
+async def notify_payment(app: FastAPI, user_id: UserID) -> Callable[[], Awaitable[None]]:
     async def _() -> None:
         transaction = PaymentsTransactionsDB(
-            **random_payment_transaction(
-                user_id=user_id, completed_at=arrow.utcnow().datetime
-            )
+            **random_payment_transaction(user_id=user_id, completed_at=arrow.utcnow().datetime)
         )
         notifier: NotifierService = NotifierService.get_from_app_state(app)
-        await notifier.notify_payment_completed(
-            user_id=transaction.user_id, payment=to_payments_api_model(transaction)
-        )
+        await notifier.notify_payment_completed(user_id=transaction.user_id, payment=to_payments_api_model(transaction))
 
     return _
 
 
 async def _assert_called_once(mock: AsyncMock) -> None:
-    async for attempt in AsyncRetrying(
-        wait=wait_fixed(0.1), stop=stop_after_delay(5), reraise=True
-    ):
+    async for attempt in AsyncRetrying(wait=wait_fixed(0.1), stop=stop_after_delay(5), reraise=True):
         with attempt:
             assert mock.call_count == 1
 
@@ -140,9 +128,7 @@ async def test_emit_message_as_external_process_to_frontend_client(
     socketio_client: socketio.AsyncClient,
     socketio_client_events: dict[str, AsyncMock],
     notify_payment: Callable[[], Awaitable[None]],
-    socketio_client_factory: Callable[
-        [], _AsyncGeneratorContextManager[socketio.AsyncClient]
-    ],
+    socketio_client_factory: Callable[[], _AsyncGeneratorContextManager[socketio.AsyncClient]],
 ):
     """
     front-end  -> socketio client (many different clients)

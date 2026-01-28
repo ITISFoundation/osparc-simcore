@@ -69,9 +69,7 @@ class File(ApiServerOutputSchema):
             alias="checksum",  # alias for backwards compatibility
         ),
     ] = None
-    e_tag: Annotated[ETag | None, Field(default=None, description="S3 entity tag")] = (
-        None
-    )
+    e_tag: Annotated[ETag | None, Field(default=None, description="S3 entity tag")] = None
 
     model_config = ConfigDict(
         populate_by_name=True,

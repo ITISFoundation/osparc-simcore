@@ -6,9 +6,7 @@ from unittest.mock import AsyncMock
 import pytest
 from pytest_mock import MockerFixture
 
-_MODULE: Final["str"] = (
-    "simcore_service_dynamic_scheduler.api.frontend.routes_external_scheduler._service"
-)
+_MODULE: Final["str"] = "simcore_service_dynamic_scheduler.api.frontend.routes_external_scheduler._service"
 
 
 @pytest.fixture

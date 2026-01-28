@@ -33,12 +33,8 @@ services:
     return f"docker compose -f {docker_compose} up"
 
 
-@pytest.mark.parametrize(
-    "sleep,timeout,expected_success", [(1, 10, True), (10, 2, False)]
-)
-async def test_async_command_with_timeout(
-    cmd: str, sleep: int, timeout: int, expected_success: bool
-):
+@pytest.mark.parametrize("sleep,timeout,expected_success", [(1, 10, True), (10, 2, False)])
+async def test_async_command_with_timeout(cmd: str, sleep: int, timeout: int, expected_success: bool):
     result: CommandResult = await async_command(cmd, timeout)
 
     assert result.success == expected_success, result

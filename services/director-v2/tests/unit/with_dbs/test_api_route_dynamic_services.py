@@ -1,5 +1,6 @@
 # pylint: disable=no-self-use
 # pylint: disable=redefined-outer-name
+# pylint: disable=too-many-arguments
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 
@@ -10,7 +11,7 @@ import urllib.parse
 from collections.abc import AsyncIterator, Callable, Iterator
 from contextlib import asynccontextmanager
 from typing import Any, NamedTuple
-from unittest.mock import Mock
+from unittest.mock import AsyncMock, Mock
 from uuid import UUID
 
 import pytest
@@ -43,6 +44,9 @@ from servicelib.common_headers import (
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from simcore_service_director_v2.models.dynamic_services_scheduler import SchedulerData
+from simcore_service_director_v2.modules.db.repositories.groups_extra_properties import (
+    UserExtraProperties,
+)
 from simcore_service_director_v2.modules.dynamic_sidecar.errors import (
     DynamicSidecarNotFoundError,
 )
@@ -285,6 +289,21 @@ def mocked_director_v2_scheduler(mocker: MockerFixture, exp_status_code: int) ->
     )
 
 
+@pytest.fixture
+def mock_user_extra_properties_repo(mocker: MockerFixture) -> None:
+    module_base = "simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core._scheduler"
+    repo_mock = mocker.Mock()
+    repo_mock.get_user_extra_properties = AsyncMock(
+        return_value=UserExtraProperties(
+            is_internet_enabled=False,
+            is_telemetry_enabled=False,
+            is_efs_enabled=False,
+            mount_data=False,
+        )
+    )
+    mocker.patch(f"{module_base}.get_repository", return_value=repo_mock, autospec=True)
+
+
 @pytest.mark.parametrize(
     "service, service_labels, exp_status_code, is_legacy",
     [
@@ -318,6 +337,7 @@ def mocked_director_v2_scheduler(mocker: MockerFixture, exp_status_code: int) ->
     ],
 )
 def test_create_dynamic_services(
+    mock_user_extra_properties_repo: None,
     minimal_config: None,
     mocked_director_v0_service_api: MockRouter,
     mocked_catalog_service_api: MockRouter,
@@ -496,6 +516,7 @@ def dynamic_sidecar_scheduler(minimal_app: FastAPI) -> DynamicSidecarsScheduler:
     ],
 )
 def test_delete_service_waiting_for_manual_intervention(
+    mock_user_extra_properties_repo: None,
     minimal_config: None,
     mocked_director_v0_service_api: MockRouter,
     mocked_catalog_service_api: MockRouter,

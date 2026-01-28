@@ -96,9 +96,7 @@ class EventFilter:
             port_key = port_event
 
             if port_key not in self._port_key_tracked_event:
-                self._port_key_tracked_event[port_key] = TrackedEvent(
-                    last_detection=time.time()
-                )
+                self._port_key_tracked_event[port_key] = TrackedEvent(last_detection=time.time())
             else:
                 self._port_key_tracked_event[port_key].last_detection = time.time()
 
@@ -115,9 +113,7 @@ class EventFilter:
                 elapsed_since_detection = current_time - tracked_event.last_detection
 
                 # ensure minimum interval has passed
-                if elapsed_since_detection < (
-                    tracked_event.wait_interval or self.delay_policy.get_min_interval()
-                ):
+                if elapsed_since_detection < (tracked_event.wait_interval or self.delay_policy.get_min_interval()):
                     continue
 
                 # Set the wait_interval for future events.
@@ -126,16 +122,9 @@ class EventFilter:
                 # Size of directory will only be computed if:
                 # - event was just added
                 # - already waited more than the wait_interval
-                if (
-                    tracked_event.wait_interval is None
-                    or elapsed_since_detection > tracked_event.wait_interval
-                ):
-                    port_key_dir_path = (
-                        self.outputs_manager.outputs_context.outputs_path / port_key
-                    )
-                    total_wait_for = self.delay_policy.get_wait_interval(
-                        get_directory_total_size(port_key_dir_path)
-                    )
+                if tracked_event.wait_interval is None or elapsed_since_detection > tracked_event.wait_interval:
+                    port_key_dir_path = self.outputs_manager.outputs_context.outputs_path / port_key
+                    total_wait_for = self.delay_policy.get_wait_interval(get_directory_total_size(port_key_dir_path))
                     tracked_event.wait_interval = total_wait_for
 
                 # could require to wait more since wait_interval was just updated
@@ -153,9 +142,7 @@ class EventFilter:
     async def _worker_event_emitter(self) -> None:
         """checks at fixed intervals if it should emit events to upload"""
         with ThreadPoolExecutor(max_workers=1) as pool:
-            await asyncio.get_event_loop().run_in_executor(
-                pool, self._worker_blocking_event_emitter
-            )
+            await asyncio.get_event_loop().run_in_executor(pool, self._worker_blocking_event_emitter)
 
     async def _worker_upload_events(self) -> None:
         """enqueues uploads for port  `port_key`"""

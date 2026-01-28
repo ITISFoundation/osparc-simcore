@@ -172,9 +172,7 @@ class FogbugzRestClient:
 
         return _status
 
-    async def reopen_case(
-        self, case_id: str, assigned_fogbugz_person_id: str, reopen_msg: str = ""
-    ) -> None:
+    async def reopen_case(self, case_id: str, assigned_fogbugz_person_id: str, reopen_msg: str = "") -> None:
         """Reopen a case in Fogbugz (uses reactivate for resolved cases, reopen for closed cases)"""
         # First get the current status to determine which command to use
         current_status = await self.get_case_status(case_id)

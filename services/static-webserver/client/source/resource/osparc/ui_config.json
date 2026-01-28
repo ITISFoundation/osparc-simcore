@@ -108,7 +108,8 @@
         "resourceType": "service",
         "expectedKey": "simcore/services/dynamic/s4l-ui-edge",
         "title": "Sim4Life-edge",
-        "newStudyLabel": "New Sim4Life-edge"
+        "newStudyLabel": "New Sim4Life-edge",
+        "idToWidget": "startS4LEdgeButton"
       }, {
         "resourceType": "service",
         "expectedKey": "simcore/services/dynamic/s4l-jupyter",

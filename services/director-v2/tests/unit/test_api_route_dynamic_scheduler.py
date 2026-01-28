@@ -4,6 +4,7 @@
 
 import asyncio
 from collections.abc import AsyncIterator
+from unittest.mock import AsyncMock
 
 import pytest
 import respx
@@ -20,6 +21,9 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
 from simcore_service_director_v2.models.dynamic_services_scheduler import SchedulerData
+from simcore_service_director_v2.modules.db.repositories.groups_extra_properties import (
+    UserExtraProperties,
+)
 from simcore_service_director_v2.modules.dynamic_sidecar.errors import (
     DynamicSidecarNotFoundError,
 )
@@ -84,6 +88,21 @@ def mock_free_reserved_disk_space(mocker: MockerFixture) -> None:
 
 
 @pytest.fixture
+def mock_user_extra_properties_repo(mocker: MockerFixture) -> None:
+    module_base = "simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core._scheduler"
+    repo_mock = mocker.Mock()
+    repo_mock.get_user_extra_properties = AsyncMock(
+        return_value=UserExtraProperties(
+            is_internet_enabled=False,
+            is_telemetry_enabled=False,
+            is_efs_enabled=False,
+            mount_data=False,
+        )
+    )
+    mocker.patch(f"{module_base}.get_repository", return_value=repo_mock, autospec=True)
+
+
+@pytest.fixture
 async def mock_sidecar_api(
     scheduler_data: SchedulerData,
 ) -> AsyncIterator[None]:
@@ -95,6 +114,7 @@ async def mock_sidecar_api(
 
 @pytest.fixture
 async def observed_service(
+    mock_user_extra_properties_repo: None,
     dynamic_sidecar_scheduler: DynamicSidecarsScheduler,
     dynamic_service_create: DynamicServiceCreate,
     simcore_service_labels: SimcoreServiceLabels,

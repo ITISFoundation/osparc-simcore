@@ -30,21 +30,15 @@ class DBProjectNotFoundError(BaseProjectsMetadataError):
 
 
 class DBProjectInvalidAncestorsError(BaseProjectsMetadataError):
-    msg_template: str = (
-        "Projects metadata invalid ancestors given (both must be set or none)"
-    )
+    msg_template: str = "Projects metadata invalid ancestors given (both must be set or none)"
 
 
 class DBProjectInvalidParentProjectError(BaseProjectsMetadataError):
-    msg_template: str = (
-        "Project project_uuid={project_uuid!r} has invalid parent project uuid={parent_project_uuid!r}"
-    )
+    msg_template: str = "Project project_uuid={project_uuid!r} has invalid parent project uuid={parent_project_uuid!r}"
 
 
 class DBProjectInvalidParentNodeError(BaseProjectsMetadataError):
-    msg_template: str = (
-        "Project project_uuid={project_uuid!r} has invalid parent project uuid={parent_node_id!r}"
-    )
+    msg_template: str = "Project project_uuid={project_uuid!r} has invalid parent project uuid={parent_node_id!r}"
 
 
 #
@@ -116,9 +110,7 @@ def _check_valid_ancestors_combination(
         raise DBProjectInvalidAncestorsError
 
 
-async def _project_has_any_child(
-    connection: DBConnection, project_uuid: uuid.UUID
-) -> bool:
+async def _project_has_any_child(connection: DBConnection, project_uuid: uuid.UUID) -> bool:
     get_stmt = sa.select(projects_metadata.c.project_uuid).where(
         projects_metadata.c.parent_project_uuid == f"{project_uuid}"
     )
@@ -169,9 +161,7 @@ async def set_project_ancestors(
         DBProjectInvalidParentNodeError: the parent_node_ID is invalid
         DBProjectNotFoundError: the project_uuid is not found
     """
-    _check_valid_ancestors_combination(
-        project_uuid, parent_project_uuid, parent_node_id
-    )
+    _check_valid_ancestors_combination(project_uuid, parent_project_uuid, parent_node_id)
     if await _project_has_any_child(connection, project_uuid):
         msg = "Cannot set ancestors for a project with children"
         raise NotImplementedError(msg)
@@ -186,18 +176,10 @@ async def set_project_ancestors(
     )
     data = {
         "project_uuid": f"{project_uuid}",
-        "parent_project_uuid": (
-            f"{parent_project_uuid}" if parent_project_uuid is not None else None
-        ),
+        "parent_project_uuid": (f"{parent_project_uuid}" if parent_project_uuid is not None else None),
         "parent_node_id": f"{parent_node_id}" if parent_node_id is not None else None,
-        "root_parent_project_uuid": (
-            f"{root_parent_project_uuid}"
-            if root_parent_project_uuid is not None
-            else None
-        ),
-        "root_parent_node_id": (
-            f"{root_parent_node_id}" if root_parent_node_id is not None else None
-        ),
+        "root_parent_project_uuid": (f"{root_parent_project_uuid}" if root_parent_project_uuid is not None else None),
+        "root_parent_node_id": (f"{root_parent_node_id}" if root_parent_node_id is not None else None),
     }
     insert_stmt = pg_insert(projects_metadata).values(**data)
     upsert_stmt = insert_stmt.on_conflict_do_update(
@@ -214,9 +196,7 @@ async def set_project_ancestors(
     except ForeignKeyViolation as err:
         assert err.pgerror is not None  # nosec  # noqa: PT017
         if "fk_projects_metadata_parent_node_id" in err.pgerror:
-            raise DBProjectInvalidParentNodeError(
-                project_uuid=project_uuid, parent_node_id=parent_node_id
-            ) from err
+            raise DBProjectInvalidParentNodeError(project_uuid=project_uuid, parent_node_id=parent_node_id) from err
 
         raise DBProjectNotFoundError(project_uuid=project_uuid) from err
     except sa_exc.IntegrityError as exc:

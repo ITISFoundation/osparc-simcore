@@ -64,14 +64,11 @@ def parse_changes(filename: Path):
         for line in fh:
             if match := DIFF_PATTERN.match(line):
                 file_a, file_b = match.groups()
-                assert (
-                    file_a == file_b
-                ), f"Should compare same files but {file_a}!={file_b}"
+                assert file_a == file_b, f"Should compare same files but {file_a}!={file_b}"
             elif match := BEFORE_PATTERN.match(line):
                 name, version = match.groups()
                 before[name].append(Version(version))
                 changes.append(name)
-                #
                 if file_a:
                     lib2reqs[name].append(file_a)
             elif match := AFTER_PATTERN.match(line):
@@ -87,11 +84,7 @@ class ReqsClassification(NamedTuple):
 
 
 def classify_reqs_path(reqs_path: str) -> ReqsClassification:
-
-    if (
-        any(k in reqs_path for k in ("_test.txt", "requirements.txt"))
-        or "test" in reqs_path
-    ):
+    if any(k in reqs_path for k in ("_test.txt", "requirements.txt")) or "test" in reqs_path:
         reqs_type = "test"
     else:
         reqs_type = reqs_path.split("/")[-1].replace(".txt", "").strip("_")
@@ -124,7 +117,6 @@ def format_reqs_paths(req_paths):
 
 
 def main_changes_stats() -> None:
-
     filepath = Path("changes.ignore.log")
     if not filepath.exists():
         dump_changes(filepath)
@@ -161,9 +153,9 @@ def main_changes_stats() -> None:
                 "|",
                 f"{name:25s}",
                 "|",
-                f'{", ".join(from_versions):15s}',
+                f"{', '.join(from_versions):15s}",
                 "|",
-                f'{",".join(to_versions) if to_versions else "🗑️ removed":10s}',
+                f"{','.join(to_versions) if to_versions else '🗑️ removed':10s}",
                 "|",
                 # how big the version change is
                 (
@@ -213,9 +205,7 @@ def parse_dependencies(repodir: Path, *, exclude: set | None = None) -> list[Req
         if any(fnmatch.fnmatch(f"{reqfile}", x) for x in exclude):
             continue
         try:
-            t = {"_base.txt": "base", "_test.txt": "test", "_tools.txt": "tool"}[
-                reqfile.name
-            ]
+            t = {"_base.txt": "base", "_test.txt": "test", "_tools.txt": "tool"}[reqfile.name]
         except KeyError:
             if "test" in f"{reqfile.parent}":
                 t = "test"
@@ -246,9 +236,7 @@ def repo_wide_changes(exclude: set | None = None) -> None:
             deps[name]["name"] = name  # type: ignore
             deps[name][r.target].append(version)
 
-    with printing_table(
-        columns=["#", "name", "versions-base", "versions-test", "versions-tool"]
-    ):
+    with printing_table(columns=["#", "name", "versions-base", "versions-test", "versions-tool"]):
         for i, name in enumerate(sorted(deps.keys()), start=1):
 
             def _norm(thing):
@@ -264,20 +252,18 @@ def repo_wide_changes(exclude: set | None = None) -> None:
                 "|",
                 f"{name:25s}",
                 "|",
-                f'{", ".join(bases):25s}',
+                f"{', '.join(bases):25s}",
                 "|",
-                f'{", ".join(tests):25s}',
+                f"{', '.join(tests):25s}",
                 "|",
-                f'{", ".join(tools):25s}',
+                f"{', '.join(tools):25s}",
                 "|",
             )
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="CLI to use")
-    parser.add_argument(
-        "--changed-reqs", action="store_true", help="print only changed"
-    )
+    parser.add_argument("--changed-reqs", action="store_true", help="print only changed")
     args = parser.parse_args()
 
     if args.changed_reqs:

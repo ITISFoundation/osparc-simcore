@@ -22,13 +22,11 @@ from models_library.generated_models.docker_rest_api import (
     Limit,
     NamedResourceSpec,
     ResourceObject,
+    ServiceSpec,
+    TaskSpec,
 )
 from models_library.generated_models.docker_rest_api import (
     Resources1 as ServiceTaskResources,
-)
-from models_library.generated_models.docker_rest_api import (
-    ServiceSpec,
-    TaskSpec,
 )
 from models_library.products import ProductName
 from models_library.users import UserID
@@ -63,9 +61,7 @@ async def services_specifications_injector(
         service_spec: ServiceSpecificationsAtDB,
     ):
         async with sqlalchemy_async_engine.begin() as conn:
-            await conn.execute(
-                services_specifications.insert().values(jsonable_encoder(service_spec))
-            )
+            await conn.execute(services_specifications.insert().values(jsonable_encoder(service_spec)))
         inserted_specs.append(service_spec)
 
     yield _injector
@@ -76,10 +72,7 @@ async def services_specifications_injector(
             await conn.execute(
                 services_specifications.delete().where(
                     (services_specifications.c.service_key == spec.service_key)
-                    & (
-                        services_specifications.c.service_version
-                        == spec.service_version
-                    )
+                    & (services_specifications.c.service_version == spec.service_version)
                     & (services_specifications.c.gid == spec.gid)
                 )
             )
@@ -109,9 +102,7 @@ def create_service_specifications(
                             GenericResources=GenericResources(
                                 root=[
                                     GenericResource(
-                                        NamedResourceSpec=NamedResourceSpec(
-                                            Kind=faker.pystr(), Value=faker.pystr()
-                                        ),
+                                        NamedResourceSpec=NamedResourceSpec(Kind=faker.pystr(), Value=faker.pystr()),
                                         DiscreteResourceSpec=DiscreteResourceSpec(
                                             Kind=faker.pystr(), Value=faker.pyint()
                                         ),
@@ -135,15 +126,9 @@ async def test_get_service_specifications_returns_403_if_user_does_not_exist(
     user_id: UserID,
     faker: Faker,
 ):
-    service_key = (
-        f"simcore/services/{faker.random_element(['comp', 'dynamic'])}/jupyter-math"
-    )
-    service_version = (
-        f"{faker.random_int(0,100)}.{faker.random_int(0,100)}.{faker.random_int(0,100)}"
-    )
-    url = URL(
-        f"/v0/services/{service_key}/{service_version}/specifications"
-    ).with_query(user_id=user_id)
+    service_key = f"simcore/services/{faker.random_element(['comp', 'dynamic'])}/jupyter-math"
+    service_version = f"{faker.random_int(0, 100)}.{faker.random_int(0, 100)}.{faker.random_int(0, 100)}"
+    url = URL(f"/v0/services/{service_key}/{service_version}/specifications").with_query(user_id=user_id)
     response = client.get(f"{url}")
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
@@ -158,21 +143,14 @@ async def test_get_service_specifications_of_unknown_service_returns_default_spe
     faker: Faker,
 ):
     service_key = f"simcore/services/{faker.random_element(['comp', 'dynamic'])}/{faker.pystr().lower()}"
-    service_version = (
-        f"{faker.random_int(0,100)}.{faker.random_int(0,100)}.{faker.random_int(0,100)}"
-    )
-    url = URL(
-        f"/v0/services/{service_key}/{service_version}/specifications"
-    ).with_query(user_id=user_id)
+    service_version = f"{faker.random_int(0, 100)}.{faker.random_int(0, 100)}.{faker.random_int(0, 100)}"
+    url = URL(f"/v0/services/{service_key}/{service_version}/specifications").with_query(user_id=user_id)
     response = client.get(f"{url}")
     assert response.status_code == status.HTTP_200_OK
     service_specs = ServiceSpecifications.model_validate(response.json())
     assert service_specs
 
-    assert (
-        service_specs.model_dump()
-        == client.app.state.settings.CATALOG_SERVICES_DEFAULT_SPECIFICATIONS.model_dump()
-    )
+    assert service_specs.model_dump() == client.app.state.settings.CATALOG_SERVICES_DEFAULT_SPECIFICATIONS.model_dump()
 
 
 async def test_get_service_specifications(
@@ -204,46 +182,33 @@ async def test_get_service_specifications(
         ]
     )
 
-    url = URL(
-        f"/v0/services/{SERVICE_KEY}/{SERVICE_VERSION}/specifications"
-    ).with_query(user_id=user_id)
+    url = URL(f"/v0/services/{SERVICE_KEY}/{SERVICE_VERSION}/specifications").with_query(user_id=user_id)
 
     # this should now return default specs since there are none in the db
     response = client.get(f"{url}")
     assert response.status_code == status.HTTP_200_OK
     service_specs = ServiceSpecifications.model_validate(response.json())
     assert service_specs
-    assert (
-        service_specs.model_dump()
-        == client.app.state.settings.CATALOG_SERVICES_DEFAULT_SPECIFICATIONS.model_dump()
-    )
+    assert service_specs.model_dump() == client.app.state.settings.CATALOG_SERVICES_DEFAULT_SPECIFICATIONS.model_dump()
 
     everyone_gid, user_gid, team_gid = user_groups_ids
     # let's inject some rights for everyone group
-    everyone_service_specs = create_service_specifications(
-        SERVICE_KEY, SERVICE_VERSION, everyone_gid
-    )
+    everyone_service_specs = create_service_specifications(SERVICE_KEY, SERVICE_VERSION, everyone_gid)
     await services_specifications_injector(everyone_service_specs)
     response = client.get(f"{url}")
     assert response.status_code == status.HTTP_200_OK
     service_specs = ServiceSpecifications.model_validate(response.json())
     assert service_specs
-    assert service_specs == ServiceSpecifications.model_validate(
-        everyone_service_specs.model_dump()
-    )
+    assert service_specs == ServiceSpecifications.model_validate(everyone_service_specs.model_dump())
 
     # let's inject some rights in a standard group, user is not part of that group yet, so it should still return only everyone
-    standard_group_service_specs = create_service_specifications(
-        SERVICE_KEY, SERVICE_VERSION, team_gid
-    )
+    standard_group_service_specs = create_service_specifications(SERVICE_KEY, SERVICE_VERSION, team_gid)
     await services_specifications_injector(standard_group_service_specs)
     response = client.get(f"{url}")
     assert response.status_code == status.HTTP_200_OK
     service_specs = ServiceSpecifications.model_validate(response.json())
     assert service_specs
-    assert service_specs == ServiceSpecifications.model_validate(
-        everyone_service_specs.model_dump()
-    )
+    assert service_specs == ServiceSpecifications.model_validate(everyone_service_specs.model_dump())
 
     # put the user in that group now and try again
     async with sqlalchemy_async_engine.begin() as conn:
@@ -252,22 +217,16 @@ async def test_get_service_specifications(
     assert response.status_code == status.HTTP_200_OK
     service_specs = ServiceSpecifications.model_validate(response.json())
     assert service_specs
-    assert service_specs == ServiceSpecifications.model_validate(
-        standard_group_service_specs.model_dump()
-    )
+    assert service_specs == ServiceSpecifications.model_validate(standard_group_service_specs.model_dump())
 
     # now add some other spec in the primary gid, this takes precedence
-    user_group_service_specs = create_service_specifications(
-        SERVICE_KEY, SERVICE_VERSION, user_gid
-    )
+    user_group_service_specs = create_service_specifications(SERVICE_KEY, SERVICE_VERSION, user_gid)
     await services_specifications_injector(user_group_service_specs)
     response = client.get(f"{url}")
     assert response.status_code == status.HTTP_200_OK
     service_specs = ServiceSpecifications.model_validate(response.json())
     assert service_specs
-    assert service_specs == ServiceSpecifications.model_validate(
-        user_group_service_specs.model_dump()
-    )
+    assert service_specs == ServiceSpecifications.model_validate(user_group_service_specs.model_dump())
 
 
 async def test_get_service_specifications_are_passed_to_newer_versions_of_service(
@@ -333,62 +292,45 @@ async def test_get_service_specifications_are_passed_to_newer_versions_of_servic
 
     # check versions before first speced service return the default
     for version in sorted_versions[:INDEX_FIRST_SERVICE_VERSION_WITH_SPEC]:
-        url = URL(f"/v0/services/{SERVICE_KEY}/{version}/specifications").with_query(
-            user_id=user_id
-        )
+        url = URL(f"/v0/services/{SERVICE_KEY}/{version}/specifications").with_query(user_id=user_id)
         response = client.get(f"{url}")
         assert response.status_code == status.HTTP_200_OK
         service_specs = ServiceSpecifications.model_validate(response.json())
         assert service_specs
         assert (
-            service_specs.model_dump()
-            == client.app.state.settings.CATALOG_SERVICES_DEFAULT_SPECIFICATIONS.model_dump()
+            service_specs.model_dump() == client.app.state.settings.CATALOG_SERVICES_DEFAULT_SPECIFICATIONS.model_dump()
         )
 
     # check version between first index and second all return the specs of the first
-    for version in sorted_versions[
-        INDEX_FIRST_SERVICE_VERSION_WITH_SPEC:INDEX_SECOND_SERVICE_VERSION_WITH_SPEC
-    ]:
-        url = URL(f"/v0/services/{SERVICE_KEY}/{version}/specifications").with_query(
-            user_id=user_id
-        )
+    for version in sorted_versions[INDEX_FIRST_SERVICE_VERSION_WITH_SPEC:INDEX_SECOND_SERVICE_VERSION_WITH_SPEC]:
+        url = URL(f"/v0/services/{SERVICE_KEY}/{version}/specifications").with_query(user_id=user_id)
         response = client.get(f"{url}")
         assert response.status_code == status.HTTP_200_OK
         service_specs = ServiceSpecifications.model_validate(response.json())
         assert service_specs
-        assert service_specs == ServiceSpecifications.model_validate(
-            version_speced[0].model_dump()
-        ), f"specifications for {version=} are not passed down from {sorted_versions[INDEX_FIRST_SERVICE_VERSION_WITH_SPEC]}"
+        assert service_specs == ServiceSpecifications.model_validate(version_speced[0].model_dump()), (
+            f"specifications for {version=} are not passed down from {sorted_versions[INDEX_FIRST_SERVICE_VERSION_WITH_SPEC]}"
+        )
 
     # check version from second to last use the second version
     for version in sorted_versions[INDEX_SECOND_SERVICE_VERSION_WITH_SPEC:]:
-        url = URL(f"/v0/services/{SERVICE_KEY}/{version}/specifications").with_query(
-            user_id=user_id
-        )
+        url = URL(f"/v0/services/{SERVICE_KEY}/{version}/specifications").with_query(user_id=user_id)
         response = client.get(f"{url}")
         assert response.status_code == status.HTTP_200_OK
         service_specs = ServiceSpecifications.model_validate(response.json())
         assert service_specs
-        assert service_specs == ServiceSpecifications.model_validate(
-            version_speced[1].model_dump()
-        ), f"specifications for {version=} are not passed down from {sorted_versions[INDEX_SECOND_SERVICE_VERSION_WITH_SPEC]}"
+        assert service_specs == ServiceSpecifications.model_validate(version_speced[1].model_dump()), (
+            f"specifications for {version=} are not passed down from {sorted_versions[INDEX_SECOND_SERVICE_VERSION_WITH_SPEC]}"
+        )
 
     # if we call with the strict parameter set to true, then we should only get the specs for the one that were specified
     for version in sorted_versions:
-        url = URL(f"/v0/services/{SERVICE_KEY}/{version}/specifications").with_query(
-            user_id=user_id, strict=1
-        )
+        url = URL(f"/v0/services/{SERVICE_KEY}/{version}/specifications").with_query(user_id=user_id, strict=1)
         response = client.get(f"{url}")
         assert response.status_code == status.HTTP_200_OK
         service_specs = ServiceSpecifications.model_validate(response.json())
         assert service_specs
         if version in versions_with_specs:
-            assert (
-                service_specs
-                != client.app.state.settings.CATALOG_SERVICES_DEFAULT_SPECIFICATIONS
-            )
+            assert service_specs != client.app.state.settings.CATALOG_SERVICES_DEFAULT_SPECIFICATIONS
         else:
-            assert (
-                service_specs
-                == client.app.state.settings.CATALOG_SERVICES_DEFAULT_SPECIFICATIONS
-            )
+            assert service_specs == client.app.state.settings.CATALOG_SERVICES_DEFAULT_SPECIFICATIONS

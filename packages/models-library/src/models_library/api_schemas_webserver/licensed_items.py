@@ -1,10 +1,11 @@
 from datetime import date, datetime
 from typing import Literal, NamedTuple, NotRequired, Self, TypedDict, cast
 
-from models_library.basic_types import IDStr
-from models_library.resource_tracker import PricingPlanId
 from pydantic import BaseModel, ConfigDict, HttpUrl, NonNegativeInt, PositiveInt
 from pydantic.config import JsonDict
+
+from models_library.basic_types import IDStr
+from models_library.resource_tracker import PricingPlanId
 
 from ..licenses import (
     VIP_DETAILS_EXAMPLE,
@@ -179,14 +180,10 @@ class LicensedItemRestGet(OutputSchema):
                     },
                     exclude_unset=True,
                 ),
-                "licensed_resources": [
-                    _ItisVipResourceRestData(**x) for x in item.licensed_resources
-                ],
+                "licensed_resources": [_ItisVipResourceRestData(**x) for x in item.licensed_resources],
                 "category_id": item.licensed_resources[0]["category_id"],
                 "category_display": item.licensed_resources[0]["category_display"],
-                "terms_of_use_url": item.licensed_resources[0].get(
-                    "terms_of_use_url", None
-                ),
+                "terms_of_use_url": item.licensed_resources[0].get("terms_of_use_url", None),
             }
         )
 

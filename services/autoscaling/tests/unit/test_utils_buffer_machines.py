@@ -45,9 +45,7 @@ from simcore_service_autoscaling.utils.buffer_machines import (
         ),
         pytest.param(
             ["itisfoundation/dynamic-sidecar:latest", "itisfoundation/agent:latest"],
-            {
-                PRE_PULLED_IMAGES_EC2_TAG_KEY: '["itisfoundation/dynamic-sidecar:latest","itisfoundation/agent:latest"]'
-            },
+            {PRE_PULLED_IMAGES_EC2_TAG_KEY: '["itisfoundation/dynamic-sidecar:latest","itisfoundation/agent:latest"]'},
             id="<256 characters jsonized number of images does not get chunked",
         ),
         pytest.param(
@@ -57,9 +55,7 @@ from simcore_service_autoscaling.utils.buffer_machines import (
         ),
     ],
 )
-def test_dump_load_pre_pulled_images_as_tags(
-    images: list[DockerGenericTag], expected_tags: EC2Tags
-):
+def test_dump_load_pre_pulled_images_as_tags(images: list[DockerGenericTag], expected_tags: EC2Tags):
     assert dump_pre_pulled_images_as_tags(images) == expected_tags
     assert load_pre_pulled_images_from_tags(expected_tags) == sorted(images)
 
@@ -71,9 +67,7 @@ def test_load_pre_pulled_images_as_tags_no_tag_present_returns_empty_list(faker:
 def test_load_pre_pulled_images_backward_compatibility_single_tag():
     """Test loading from single tag format (used for small data)"""
     # Single tag format: complete JSON in one tag
-    single_format_tags: EC2Tags = {
-        PRE_PULLED_IMAGES_EC2_TAG_KEY: '["image:v1","image:v2","image:v3"]'
-    }
+    single_format_tags: EC2Tags = {PRE_PULLED_IMAGES_EC2_TAG_KEY: '["image:v1","image:v2","image:v3"]'}
     result = load_pre_pulled_images_from_tags(single_format_tags)
     assert result == ["image:v1", "image:v2", "image:v3"]
 
@@ -132,9 +126,7 @@ def test_dump_and_load_pre_pulled_images_round_trip():
         ),
         pytest.param(
             ["itisfoundation/dynamic-sidecar:latest", "itisfoundation/agent:latest"],
-            {
-                PRE_PULLED_IMAGES_EC2_TAG_KEY: '["itisfoundation/dynamic-sidecar:latest","itisfoundation/agent:latest"]'
-            },
+            {PRE_PULLED_IMAGES_EC2_TAG_KEY: '["itisfoundation/dynamic-sidecar:latest","itisfoundation/agent:latest"]'},
             id="<256 characters jsonized number of images does not get chunked",
         ),
         pytest.param(
@@ -144,10 +136,6 @@ def test_dump_and_load_pre_pulled_images_round_trip():
         ),
     ],
 )
-def test_list_pre_pulled_images_tag_keys(
-    images: list[DockerGenericTag], expected_tags: EC2Tags
-):
+def test_list_pre_pulled_images_tag_keys(images: list[DockerGenericTag], expected_tags: EC2Tags):
     assert dump_pre_pulled_images_as_tags(images) == expected_tags
-    assert list_pre_pulled_images_tag_keys(expected_tags) == sorted(
-        expected_tags.keys()
-    )
+    assert list_pre_pulled_images_tag_keys(expected_tags) == sorted(expected_tags.keys())

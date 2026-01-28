@@ -35,9 +35,7 @@ _logger = logging.getLogger(__name__)
 class PlacementSettings(BaseCustomSettings):
     DIRECTOR_V2_SERVICES_CUSTOM_PLACEMENT_CONSTRAINTS: Annotated[
         list[DockerPlacementConstraint],
-        Field(
-            default_factory=list, examples=['["node.labels.region==east", "one!=yes"]']
-        ),
+        Field(default_factory=list, examples=['["node.labels.region==east", "one!=yes"]']),
     ] = DEFAULT_FACTORY
 
     DIRECTOR_V2_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS: Annotated[
@@ -68,17 +66,11 @@ class PlacementSettings(BaseCustomSettings):
         "DIRECTOR_V2_GENERIC_RESOURCE_PLACEMENT_CONSTRAINTS_SUBSTITUTIONS",
     )(ensure_unique_dict_values_validator)
 
-    @field_validator(
-        "DIRECTOR_V2_DYNAMIC_SIDECAR_OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS"
-    )
+    @field_validator("DIRECTOR_V2_DYNAMIC_SIDECAR_OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS")
     @classmethod
-    def validate_osparc_custom_docker_placement_constraints_keys(
-        cls, value: dict[str, str]
-    ) -> dict[str, str]:
+    def validate_osparc_custom_docker_placement_constraints_keys(cls, value: dict[str, str]) -> dict[str, str]:
         """Validate that all keys are in the allowed set."""
-        invalid_keys = set(value.keys()) - set(
-            OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS
-        )
+        invalid_keys = set(value.keys()) - set(OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS)
         if invalid_keys:
             msg = (
                 f"Invalid custom placement label keys: {invalid_keys}. "
@@ -104,9 +96,7 @@ class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
     DYNAMIC_SIDECAR_ENDPOINT_SPECS_MODE_DNSRR_ENABLED: Annotated[
         bool,
         Field(
-            validation_alias=AliasChoices(
-                "DYNAMIC_SIDECAR_ENDPOINT_SPECS_MODE_DNSRR_ENABLED"
-            ),
+            validation_alias=AliasChoices("DYNAMIC_SIDECAR_ENDPOINT_SPECS_MODE_DNSRR_ENABLED"),
             description="dynamic-sidecar's service 'endpoint_spec' with {'Mode': 'dnsrr'}",
         ),
     ] = False
@@ -114,9 +104,7 @@ class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
         BootModeEnum,
         Field(
             description="Boot mode used for the dynamic-sidecar services By defaults, it uses the same boot mode set for the director-v2",
-            validation_alias=AliasChoices(
-                "DYNAMIC_SIDECAR_SC_BOOT_MODE", "SC_BOOT_MODE"
-            ),
+            validation_alias=AliasChoices("DYNAMIC_SIDECAR_SC_BOOT_MODE", "SC_BOOT_MODE"),
         ),
     ]
 
@@ -124,9 +112,7 @@ class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
         str,
         Field(
             description="log level of the dynamic sidecar If defined, it captures global env vars LOG_LEVEL and LOGLEVEL from the director-v2 service",
-            validation_alias=AliasChoices(
-                "DYNAMIC_SIDECAR_LOG_LEVEL", "LOG_LEVEL", "LOGLEVEL"
-            ),
+            validation_alias=AliasChoices("DYNAMIC_SIDECAR_LOG_LEVEL", "LOG_LEVEL", "LOGLEVEL"),
         ),
     ] = "WARNING"
 
@@ -169,9 +155,7 @@ class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
 
     DYNAMIC_SIDECAR_PORT: Annotated[
         PortInt,
-        Field(
-            description="port on which the webserver for the dynamic-sidecar is exposed [DEVELOPMENT ONLY]"
-        ),
+        Field(description="port on which the webserver for the dynamic-sidecar is exposed [DEVELOPMENT ONLY]"),
     ] = DEFAULT_FASTAPI_PORT
 
     DYNAMIC_SIDECAR_EXPOSE_PORT: Annotated[
@@ -185,10 +169,7 @@ class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
     @field_validator("DYNAMIC_SIDECAR_MOUNT_PATH_DEV", mode="before")
     @classmethod
     def auto_disable_if_production(cls, v, info: ValidationInfo):
-        if (
-            v
-            and info.data.get("DYNAMIC_SIDECAR_SC_BOOT_MODE") == BootModeEnum.PRODUCTION
-        ):
+        if v and info.data.get("DYNAMIC_SIDECAR_SC_BOOT_MODE") == BootModeEnum.PRODUCTION:
             _logger.warning(
                 "In production DYNAMIC_SIDECAR_MOUNT_PATH_DEV cannot be set to %s, enforcing None",
                 v,
@@ -199,9 +180,7 @@ class DynamicSidecarSettings(BaseCustomSettings, MixinLoggingSettings):
     @field_validator("DYNAMIC_SIDECAR_EXPOSE_PORT", mode="before")
     @classmethod
     def auto_enable_if_development(cls, v, info: ValidationInfo):
-        if (
-            boot_mode := info.data.get("DYNAMIC_SIDECAR_SC_BOOT_MODE")
-        ) and boot_mode.is_devel_mode():
+        if (boot_mode := info.data.get("DYNAMIC_SIDECAR_SC_BOOT_MODE")) and boot_mode.is_devel_mode():
             # Can be used to access swagger doc from the host as http://127.0.0.1:30023/dev/doc
             return True
         return v

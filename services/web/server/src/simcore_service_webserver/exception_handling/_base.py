@@ -85,11 +85,7 @@ class ExceptionHandlingContextManager(AbstractAsyncContextManager):
         exc_handler = self._exc_handlers_map.get(exc_type)
         if not exc_handler and (
             base_exc_type := next(
-                (
-                    _type
-                    for _type in self._exc_types_by_specificity
-                    if isinstance(exc_value, _type)
-                ),
+                (_type for _type in self._exc_types_by_specificity if isinstance(exc_value, _type)),
                 None,
             )
         ):
@@ -113,9 +109,7 @@ class ExceptionHandlingContextManager(AbstractAsyncContextManager):
             and issubclass(exc_type, Exception)
             and (exc_handler := self._get_exc_handler_or_none(exc_type, exc_value))
         ):
-            self._response = await exc_handler(
-                request=self._request, exception=exc_value
-            )
+            self._response = await exc_handler(request=self._request, exception=exc_value)
             return True  # suppress
         return False  # reraise
 
@@ -138,9 +132,7 @@ def exception_handling_decorator(
     def _decorator(handler: WebHandler):
         @functools.wraps(handler)
         async def _wrapper(request: web.Request) -> web.StreamResponse:
-            cm = ExceptionHandlingContextManager(
-                exception_handlers_map, request=request
-            )
+            cm = ExceptionHandlingContextManager(exception_handlers_map, request=request)
             async with cm:
                 return await handler(request)
 
@@ -161,9 +153,7 @@ def exception_handling_middleware(
 
     SEE examples test_exception_handling
     """
-    _handle_excs = exception_handling_decorator(
-        exception_handlers_map=exception_handlers_map
-    )
+    _handle_excs = exception_handling_decorator(exception_handlers_map=exception_handlers_map)
 
     @web.middleware
     async def middleware_handler(request: web.Request, handler: WebHandler):

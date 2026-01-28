@@ -25,11 +25,7 @@ def force_drop_all_tables(sa_sync_engine: sa.engine.Engine):
         conn.execute(
             # NOTE: terminates all open transactions before dropping all tables
             # This solves https://github.com/ITISFoundation/osparc-simcore/issues/7008
-            sa.DDL(
-                "SELECT pg_terminate_backend(pid) "
-                "FROM pg_stat_activity "
-                "WHERE state = 'idle in transaction';"
-            )
+            sa.DDL("SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE state = 'idle in transaction';")
         )
         # for table in tables:
         #     conn.execute(sa.text(f'DROP TABLE IF EXISTS "{table}" CASCADE'))
@@ -48,9 +44,7 @@ def migrated_pg_tables_context(
     using migration upgrade/downgrade routines
     """
 
-    dsn = "postgresql://{user}:{password}@{host}:{port}/{database}".format(
-        **postgres_config
-    )
+    dsn = "postgresql://{user}:{password}@{host}:{port}/{database}".format(**postgres_config)
 
     assert simcore_postgres_database.cli.discover.callback
     assert simcore_postgres_database.cli.upgrade.callback
@@ -115,9 +109,7 @@ async def _async_insert_and_get_row(
     else:
         returning_cols = [pk_col]
 
-    result = await conn.execute(
-        table.insert().values(**values).returning(*returning_cols)
-    )
+    result = await conn.execute(table.insert().values(**values).returning(*returning_cols))
     row = result.one()
 
     if composite_pk_provided:
@@ -129,9 +121,7 @@ async def _async_insert_and_get_row(
                 assert getattr(row, col.name) == expected_value
 
         # Build WHERE clause for composite key
-        where_clause = sa.and_(
-            *[col == val for col, val in zip(pk_cols, pk_values, strict=True)]
-        )
+        where_clause = sa.and_(*[col == val for col, val in zip(pk_cols, pk_values, strict=True)])
     else:
         # Handle single primary key (existing logic)
         if pk_value is None:
@@ -182,9 +172,7 @@ def _sync_insert_and_get_row(
                 assert getattr(row, col.name) == expected_value
 
         # Build WHERE clause for composite key
-        where_clause = sa.and_(
-            *[col == val for col, val in zip(pk_cols, pk_values, strict=True)]
-        )
+        where_clause = sa.and_(*[col == val for col, val in zip(pk_cols, pk_values, strict=True)])
     else:
         # Handle single primary key (existing logic)
         if pk_value is None:
@@ -316,9 +304,7 @@ async def insert_and_get_row_lifespan(
         if pk_cols is not None:
             if pk_values is None:
                 pk_values = [getattr(row, col.name) for col in pk_cols]
-            where_clause = sa.and_(
-                *[col == val for col, val in zip(pk_cols, pk_values, strict=True)]
-            )
+            where_clause = sa.and_(*[col == val for col, val in zip(pk_cols, pk_values, strict=True)])
         else:
             if pk_value is None:
                 pk_value = getattr(row, pk_col.name)
@@ -371,9 +357,7 @@ def sync_insert_and_get_row_lifespan(
         if pk_cols is not None:
             if pk_values is None:
                 pk_values = [getattr(row, col.name) for col in pk_cols]
-            where_clause = sa.and_(
-                *[col == val for col, val in zip(pk_cols, pk_values, strict=True)]
-            )
+            where_clause = sa.and_(*[col == val for col, val in zip(pk_cols, pk_values, strict=True)])
         else:
             if pk_value is None:
                 pk_value = getattr(row, pk_col.name)

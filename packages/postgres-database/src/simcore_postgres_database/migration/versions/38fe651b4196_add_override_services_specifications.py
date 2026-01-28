@@ -38,15 +38,9 @@ def upgrade():
     )
 
     # default to false
-    op.execute(
-        groups_extra_properties_table.update().values(
-            override_services_specifications=False
-        )
-    )
+    op.execute(groups_extra_properties_table.update().values(override_services_specifications=False))
     # # set to non nullable
-    op.alter_column(
-        "groups_extra_properties", "override_services_specifications", nullable=False
-    )
+    op.alter_column("groups_extra_properties", "override_services_specifications", nullable=False)
 
 
 def downgrade():

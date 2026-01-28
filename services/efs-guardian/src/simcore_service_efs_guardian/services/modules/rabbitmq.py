@@ -19,13 +19,9 @@ def setup(app: FastAPI) -> None:
         app.state.rabbitmq_client = None
         settings: RabbitSettings | None = app.state.settings.EFS_GUARDIAN_RABBITMQ
         if not settings:
-            raise ApplicationSetupError(
-                msg="Rabbit MQ client is de-activated in the settings"
-            )
+            raise ApplicationSetupError(msg="Rabbit MQ client is de-activated in the settings")
         await wait_till_rabbitmq_responsive(settings.dsn)
-        app.state.rabbitmq_client = RabbitMQClient(
-            client_name="efs-guardian", settings=settings
-        )
+        app.state.rabbitmq_client = RabbitMQClient(client_name="efs-guardian", settings=settings)
         app.state.rabbitmq_rpc_server = await RabbitMQRPCClient.create(
             client_name="efs_guardian_rpc_server", settings=settings
         )
@@ -47,9 +43,7 @@ def setup(app: FastAPI) -> None:
 
 def get_rabbitmq_client(app: FastAPI) -> RabbitMQClient:
     if not app.state.rabbitmq_client:
-        raise ApplicationSetupError(
-            msg="RabbitMQ client is not available. Please check the configuration."
-        )
+        raise ApplicationSetupError(msg="RabbitMQ client is not available. Please check the configuration.")
     return cast(RabbitMQClient, app.state.rabbitmq_client)
 
 

@@ -130,9 +130,7 @@ async def test_post_message(
             print(
                 f"--> checking for message in rabbit exchange {rabbit_message.channel_name}, {attempt.retry_state.retry_object.statistics}"
             )
-            mocked_message_handler.assert_called_once_with(
-                rabbit_message.model_dump_json().encode()
-            )
+            mocked_message_handler.assert_called_once_with(rabbit_message.model_dump_json().encode())
             print("... message received")
 
 
@@ -149,20 +147,12 @@ async def test_post_message_with_disabled_rabbit_does_not_raise(
 
 async def _switch_off_rabbit_mq_instance(async_docker_client: aiodocker.Docker) -> None:
     # remove the rabbit MQ instance
-    rabbit_services = [
-        s
-        for s in await async_docker_client.services.list()
-        if "rabbit" in s["Spec"]["Name"]
-    ]
-    await asyncio.gather(
-        *(async_docker_client.services.delete(s["ID"]) for s in rabbit_services)
-    )
+    rabbit_services = [s for s in await async_docker_client.services.list() if "rabbit" in s["Spec"]["Name"]]
+    await asyncio.gather(*(async_docker_client.services.delete(s["ID"]) for s in rabbit_services))
 
     @retry(**_TENACITY_RETRY_PARAMS)
     async def _check_service_task_gone(service: Mapping[str, Any]) -> None:
-        print(
-            f"--> checking if service {service['ID']}:{service['Spec']['Name']} is really gone..."
-        )
+        print(f"--> checking if service {service['ID']}:{service['Spec']['Name']} is really gone...")
         list_of_tasks = await async_docker_client.containers.list(
             all=True,
             filters={

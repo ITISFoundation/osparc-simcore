@@ -86,10 +86,7 @@ async def _enqueue_schedule_event_if_group_is_done(context: DeferredContext) -> 
     schedule_id: ScheduleId = context["schedule_id"]
     expected_steps_count: NonNegativeInt = context["expected_steps_count"]
 
-    if (
-        await get_step_group_proxy(context).increment_and_get_done_steps_count()
-        == expected_steps_count
-    ):
+    if await get_step_group_proxy(context).increment_and_get_done_steps_count() == expected_steps_count:
         await enqueue_schedule_event(app, schedule_id)
 
 
@@ -140,11 +137,7 @@ class DeferredRunner(BaseDeferredHandler[None]):
     async def get_retries(cls, context: DeferredContext) -> int:
         is_executing = context["is_executing"]
         step = _get_step(context)
-        return (
-            await step.get_execute_retries(context)
-            if is_executing
-            else await step.get_revert_retries(context)
-        )
+        return await step.get_execute_retries(context) if is_executing else await step.get_revert_retries(context)
 
     @classmethod
     async def get_timeout(cls, context: DeferredContext) -> timedelta:
@@ -167,56 +160,42 @@ class DeferredRunner(BaseDeferredHandler[None]):
         app = context["app"]
         is_executing = context["is_executing"]
 
-        await get_step_store_proxy(context).create_or_update(
-            "status", StepStatus.RUNNING
-        )
+        await get_step_store_proxy(context).create_or_update("status", StepStatus.RUNNING)
 
         step = _get_step(context)
 
         operation_context_proxy = get_operation_context_proxy(context)
 
         if is_executing:
-            required_context = await operation_context_proxy.read(
-                *step.get_execute_requires_context_keys()
-            )
+            required_context = await operation_context_proxy.read(*step.get_execute_requires_context_keys())
             _raise_if_any_context_value_is_none(required_context)
 
             step_provided_operation_context = await step.execute(app, required_context)
             provided_operation_context = step_provided_operation_context or {}
             execute_provides_keys = step.get_execute_provides_context_keys()
 
-            _raise_if_provided_context_keys_are_missing_or_none(
-                provided_operation_context, execute_provides_keys
-            )
+            _raise_if_provided_context_keys_are_missing_or_none(provided_operation_context, execute_provides_keys)
         else:
-            required_context = await operation_context_proxy.read(
-                *step.get_revert_requires_context_keys()
-            )
+            required_context = await operation_context_proxy.read(*step.get_revert_requires_context_keys())
             _raise_if_any_context_value_is_none(required_context)
 
             step_provided_operation_context = await step.revert(app, required_context)
             provided_operation_context = step_provided_operation_context or {}
             revert_provides_keys = step.get_revert_provides_context_keys()
 
-            _raise_if_provided_context_keys_are_missing_or_none(
-                provided_operation_context, revert_provides_keys
-            )
+            _raise_if_provided_context_keys_are_missing_or_none(provided_operation_context, revert_provides_keys)
 
         await operation_context_proxy.create_or_update(provided_operation_context)
 
     @classmethod
     async def on_result(cls, result: None, context: DeferredContext) -> None:
         _ = result
-        await get_step_store_proxy(context).create_or_update(
-            "status", StepStatus.SUCCESS
-        )
+        await get_step_store_proxy(context).create_or_update("status", StepStatus.SUCCESS)
 
         await _enqueue_schedule_event_if_group_is_done(context)
 
     @classmethod
-    async def on_finished_with_error(
-        cls, error: TaskResultError, context: DeferredContext
-    ) -> None:
+    async def on_finished_with_error(cls, error: TaskResultError, context: DeferredContext) -> None:
         await get_step_store_proxy(context).create_or_update_multiple(
             {"status": StepStatus.FAILED, "error_traceback": error.format_error()}
         )

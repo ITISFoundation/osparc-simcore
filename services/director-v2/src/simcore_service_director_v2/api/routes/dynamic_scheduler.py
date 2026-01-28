@@ -63,9 +63,7 @@ def _toggle_observation_succeeded(
 async def update_service_observation(
     node_uuid: NodeID,
     observation_item: ObservationItem,
-    dynamic_sidecars_scheduler: Annotated[
-        DynamicSidecarsScheduler, Depends(get_dynamic_sidecar_scheduler)
-    ],
+    dynamic_sidecars_scheduler: Annotated[DynamicSidecarsScheduler, Depends(get_dynamic_sidecar_scheduler)],
 ) -> NoContentResponse:
     if _toggle_observation_succeeded(
         dynamic_sidecars_scheduler=dynamic_sidecars_scheduler,
@@ -85,27 +83,15 @@ async def update_service_observation(
     summary="Removes the service's user services",
     status_code=status.HTTP_202_ACCEPTED,
     response_model=TaskId,
-    responses={
-        status.HTTP_409_CONFLICT: {
-            "description": "Task already running, cannot start a new one"
-        }
-    },
+    responses={status.HTTP_409_CONFLICT: {"description": "Task already running, cannot start a new one"}},
 )
 async def delete_service_containers(
     node_uuid: NodeID,
-    long_running_manager: Annotated[
-        FastAPILongRunningManager, Depends(get_long_running_manager)
-    ],
-    dynamic_sidecars_scheduler: Annotated[
-        DynamicSidecarsScheduler, Depends(get_dynamic_sidecar_scheduler)
-    ],
+    long_running_manager: Annotated[FastAPILongRunningManager, Depends(get_long_running_manager)],
+    dynamic_sidecars_scheduler: Annotated[DynamicSidecarsScheduler, Depends(get_dynamic_sidecar_scheduler)],
 ):
-    async def _task_remove_service_containers(
-        progress: TaskProgress, node_uuid: NodeID
-    ) -> None:
-        async def _progress_callback(
-            message: ProgressMessage, percent: ProgressPercent | None, _: TaskId
-        ) -> None:
+    async def _task_remove_service_containers(progress: TaskProgress, node_uuid: NodeID) -> None:
+        async def _progress_callback(message: ProgressMessage, percent: ProgressPercent | None, _: TaskId) -> None:
             await progress.update(message=message, percent=percent)
 
         await dynamic_sidecars_scheduler.remove_service_containers(
@@ -136,13 +122,9 @@ async def delete_service_containers(
 )
 async def get_service_state(
     node_uuid: NodeID,
-    dynamic_sidecars_scheduler: Annotated[
-        DynamicSidecarsScheduler, Depends(get_dynamic_sidecar_scheduler)
-    ],
+    dynamic_sidecars_scheduler: Annotated[DynamicSidecarsScheduler, Depends(get_dynamic_sidecar_scheduler)],
 ):
-    return dynamic_sidecars_scheduler.scheduler.get_scheduler_data(  # noqa: SLF001
-        node_uuid
-    )
+    return dynamic_sidecars_scheduler.scheduler.get_scheduler_data(node_uuid)
 
 
 @router.post(
@@ -150,33 +132,21 @@ async def get_service_state(
     summary="Starts the saving of the state for the service",
     status_code=status.HTTP_202_ACCEPTED,
     response_model=TaskId,
-    responses={
-        status.HTTP_409_CONFLICT: {
-            "description": "Task already running, cannot start a new one"
-        }
-    },
+    responses={status.HTTP_409_CONFLICT: {"description": "Task already running, cannot start a new one"}},
 )
 async def save_service_state(
     node_uuid: NodeID,
-    long_running_manager: Annotated[
-        FastAPILongRunningManager, Depends(get_long_running_manager)
-    ],
-    dynamic_sidecars_scheduler: Annotated[
-        DynamicSidecarsScheduler, Depends(get_dynamic_sidecar_scheduler)
-    ],
+    long_running_manager: Annotated[FastAPILongRunningManager, Depends(get_long_running_manager)],
+    dynamic_sidecars_scheduler: Annotated[DynamicSidecarsScheduler, Depends(get_dynamic_sidecar_scheduler)],
 ):
     async def _task_save_service_state(
         progress: TaskProgress,
         node_uuid: NodeID,
     ) -> None:
-        async def _progress_callback(
-            message: ProgressMessage, percent: ProgressPercent | None, _: TaskId
-        ) -> None:
+        async def _progress_callback(message: ProgressMessage, percent: ProgressPercent | None, _: TaskId) -> None:
             await progress.update(message=message, percent=percent)
 
-        await dynamic_sidecars_scheduler.save_service_state(
-            node_uuid=node_uuid, progress_callback=_progress_callback
-        )
+        await dynamic_sidecars_scheduler.save_service_state(node_uuid=node_uuid, progress_callback=_progress_callback)
 
     TaskRegistry.register(_task_save_service_state)
 
@@ -199,32 +169,18 @@ async def save_service_state(
     summary="Starts the pushing of the outputs for the service",
     status_code=status.HTTP_202_ACCEPTED,
     response_model=TaskId,
-    responses={
-        status.HTTP_409_CONFLICT: {
-            "description": "Task already running, cannot start a new one"
-        }
-    },
+    responses={status.HTTP_409_CONFLICT: {"description": "Task already running, cannot start a new one"}},
 )
 async def push_service_outputs(
     node_uuid: NodeID,
-    long_running_manager: Annotated[
-        FastAPILongRunningManager, Depends(get_long_running_manager)
-    ],
-    dynamic_sidecars_scheduler: Annotated[
-        DynamicSidecarsScheduler, Depends(get_dynamic_sidecar_scheduler)
-    ],
+    long_running_manager: Annotated[FastAPILongRunningManager, Depends(get_long_running_manager)],
+    dynamic_sidecars_scheduler: Annotated[DynamicSidecarsScheduler, Depends(get_dynamic_sidecar_scheduler)],
 ):
-    async def _task_push_service_outputs(
-        progress: TaskProgress, node_uuid: NodeID
-    ) -> None:
-        async def _progress_callback(
-            message: ProgressMessage, percent: ProgressPercent | None, _: TaskId
-        ) -> None:
+    async def _task_push_service_outputs(progress: TaskProgress, node_uuid: NodeID) -> None:
+        async def _progress_callback(message: ProgressMessage, percent: ProgressPercent | None, _: TaskId) -> None:
             await progress.update(message=message, percent=percent)
 
-        await dynamic_sidecars_scheduler.push_service_outputs(
-            node_uuid=node_uuid, progress_callback=_progress_callback
-        )
+        await dynamic_sidecars_scheduler.push_service_outputs(node_uuid=node_uuid, progress_callback=_progress_callback)
 
     TaskRegistry.register(_task_push_service_outputs)
 
@@ -247,24 +203,14 @@ async def push_service_outputs(
     summary="Removes the service's sidecar, proxy and docker networks & volumes",
     status_code=status.HTTP_202_ACCEPTED,
     response_model=TaskId,
-    responses={
-        status.HTTP_409_CONFLICT: {
-            "description": "Task already running, cannot start a new one"
-        }
-    },
+    responses={status.HTTP_409_CONFLICT: {"description": "Task already running, cannot start a new one"}},
 )
 async def delete_service_docker_resources(
     node_uuid: NodeID,
-    long_running_manager: Annotated[
-        FastAPILongRunningManager, Depends(get_long_running_manager)
-    ],
-    dynamic_sidecars_scheduler: Annotated[
-        DynamicSidecarsScheduler, Depends(get_dynamic_sidecar_scheduler)
-    ],
+    long_running_manager: Annotated[FastAPILongRunningManager, Depends(get_long_running_manager)],
+    dynamic_sidecars_scheduler: Annotated[DynamicSidecarsScheduler, Depends(get_dynamic_sidecar_scheduler)],
 ):
-    async def _task_cleanup_service_docker_resources(
-        progress: TaskProgress, node_uuid: NodeID
-    ) -> None:
+    async def _task_cleanup_service_docker_resources(progress: TaskProgress, node_uuid: NodeID) -> None:
         await dynamic_sidecars_scheduler.remove_service_sidecar_proxy_docker_networks_and_volumes(
             task_progress=progress, node_uuid=node_uuid
         )
@@ -292,8 +238,6 @@ async def delete_service_docker_resources(
 )
 async def free_reserved_disk_space(
     node_uuid: NodeID,
-    dynamic_sidecars_scheduler: Annotated[
-        DynamicSidecarsScheduler, Depends(get_dynamic_sidecar_scheduler)
-    ],
+    dynamic_sidecars_scheduler: Annotated[DynamicSidecarsScheduler, Depends(get_dynamic_sidecar_scheduler)],
 ):
     await dynamic_sidecars_scheduler.free_reserved_disk_space(node_id=node_uuid)

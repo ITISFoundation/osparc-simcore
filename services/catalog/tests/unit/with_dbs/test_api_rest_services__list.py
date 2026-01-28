@@ -57,9 +57,7 @@ async def test_list_services_with_details(
     url = URL("/v0/services").with_query({"user_id": user_id, "details": "true"})
 
     # now fake the director such that it returns half the services
-    fake_registry_service_data = ServiceMetaDataPublished.model_json_schema()[
-        "examples"
-    ][0]
+    fake_registry_service_data = ServiceMetaDataPublished.model_json_schema()["examples"][0]
 
     mocked_director_rest_api_base.get("/services", name="list_services").respond(
         200,
@@ -75,9 +73,7 @@ async def test_list_services_with_details(
         },
     )
 
-    response = benchmark(
-        client.get, f"{url}", headers={"x-simcore-products-name": target_product}
-    )
+    response = benchmark(client.get, f"{url}", headers={"x-simcore-products-name": target_product})
 
     assert response.status_code == 200
     data = response.json()
@@ -95,7 +91,6 @@ async def test_list_services_without_details(
     client: TestClient,
     benchmark,
 ):
-
     # injects fake data in db
     NUM_SERVICES = 1000
     SERVICE_KEY = "simcore/services/dynamic/jupyterlab"
@@ -113,9 +108,7 @@ async def test_list_services_without_details(
     )
 
     url = URL("/v0/services").with_query({"user_id": user_id, "details": "false"})
-    response = benchmark(
-        client.get, f"{url}", headers={"x-simcore-products-name": target_product}
-    )
+    response = benchmark(client.get, f"{url}", headers={"x-simcore-products-name": target_product})
     assert response.status_code == 200
     data = response.json()
     assert len(data) == NUM_SERVICES
@@ -138,7 +131,6 @@ async def test_list_services_without_details_with_wrong_user_id_returns_403(
     services_db_tables_injector: Callable,
     client: TestClient,
 ):
-
     # injects fake data in db
     NUM_SERVICES = 1
     await services_db_tables_injector(
@@ -203,7 +195,6 @@ async def test_list_services_without_details_with_wrong_product_returns_0_servic
     services_db_tables_injector: Callable,
     client: TestClient,
 ):
-
     # injects fake data in db
     NUM_SERVICES = 1
     await services_db_tables_injector(
@@ -220,9 +211,7 @@ async def test_list_services_without_details_with_wrong_product_returns_0_servic
     )
 
     url = URL("/v0/services").with_query({"user_id": user_id, "details": "false"})
-    response = client.get(
-        f"{url}", headers={"x-simcore-products-name": "no valid product"}
-    )
+    response = client.get(f"{url}", headers={"x-simcore-products-name": "no valid product"})
     assert response.status_code == 200
     data = response.json()
     assert len(data) == 0
@@ -239,7 +228,6 @@ async def test_list_services_that_are_deprecated(
     services_db_tables_injector: Callable,
     client: TestClient,
 ):
-
     # injects fake data in db
     deprecation_date = datetime.utcnow() + timedelta(  # NOTE: old offset-naive column
         days=1
@@ -265,9 +253,7 @@ async def test_list_services_that_are_deprecated(
     assert received_service.deprecated == deprecation_date
 
     # for details, the director must return the same service
-    fake_registry_service_data = ServiceMetaDataPublished.model_json_schema()[
-        "examples"
-    ][0]
+    fake_registry_service_data = ServiceMetaDataPublished.model_json_schema()["examples"][0]
     mocked_director_rest_api_base.get("/services", name="list_services").respond(
         200,
         json={

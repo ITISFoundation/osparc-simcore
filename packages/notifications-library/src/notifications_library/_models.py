@@ -33,9 +33,7 @@ class ProductUIData:
     logo_url: str | None = (
         None  # default_logo = "https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/refs/heads/master/services/static-webserver/client/source/resource/osparc/osparc-white.svg" in base.html
     )
-    strong_color: str | None = (
-        None  # default_strong_color = "rgb(131, 0, 191)" in base.html
-    )
+    strong_color: str | None = None  # default_strong_color = "rgb(131, 0, 191)" in base.html
 
 
 @dataclass(frozen=True)

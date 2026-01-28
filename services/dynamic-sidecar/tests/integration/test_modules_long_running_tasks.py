@@ -69,11 +69,7 @@ def project_id(user_id: int, postgres_db: sa.engine.Engine) -> Iterable[ProjectI
     # inject project for user in db. This will give user_id, the full project's ownership
 
     # pylint: disable=no-value-for-parameter
-    stmt = (
-        projects.insert()
-        .values(**random_project(prj_owner=user_id))
-        .returning(projects.c.uuid)
-    )
+    stmt = projects.insert().values(**random_project(prj_owner=user_id)).returning(projects.c.uuid)
     print(f"{stmt}")
     with postgres_db.connect() as conn:
         result = conn.execute(stmt)
@@ -145,9 +141,7 @@ def app_state(app: FastAPI) -> AppState:
 
 
 @pytest.fixture
-def state_paths_to_legacy_archives(
-    app_state: AppState, project_tests_dir: Path
-) -> dict[Path, Path]:
+def state_paths_to_legacy_archives(app_state: AppState, project_tests_dir: Path) -> dict[Path, Path]:
     LEGACY_STATE_ARCHIVES_DIR = project_tests_dir / "mocks" / "legacy_state_archives"
     assert LEGACY_STATE_ARCHIVES_DIR.exists()
 
@@ -245,11 +239,7 @@ def _files_in_dir(
     discard: set[Path] | None = None,
 ) -> set[Path]:
     parent_dir_name = dir_path.name if include_parent_dir_name else ""
-    result = {
-        Path(parent_dir_name) / p.relative_to(dir_path)
-        for p in dir_path.rglob("*")
-        if p.is_file()
-    }
+    result = {Path(parent_dir_name) / p.relative_to(dir_path) for p in dir_path.rglob("*") if p.is_file()}
 
     if discard is None:
         return result
@@ -317,9 +307,7 @@ async def s3_client(s3_settings: S3Settings) -> AsyncIterable[S3Client]:
         yield client
 
 
-async def _is_key_in_s3(
-    s3_client: S3Client, bucket_name: S3BucketName, key: str
-) -> bool:
+async def _is_key_in_s3(s3_client: S3Client, bucket_name: S3BucketName, key: str) -> bool:
     try:
         await s3_client.head_object(Bucket=bucket_name, Key=key)
     except ClientError:
@@ -335,21 +323,16 @@ async def _assert_keys_in_s3(
     each_key_is_in_s3: bool,
 ) -> None:
     keys_exist_in_s3 = await logged_gather(
-        *[
-            _is_key_in_s3(s3_client=s3_client, bucket_name=bucket_name, key=key)
-            for key in keys
-        ]
+        *[_is_key_in_s3(s3_client=s3_client, bucket_name=bucket_name, key=key) for key in keys]
     )
     results: dict[str, bool] = dict(zip(keys, keys_exist_in_s3, strict=True))
     for key, key_exists in results.items():
-        assert (
-            key_exists is each_key_is_in_s3
-        ), f"Unexpected result: {key_exists=} != {each_key_is_in_s3=} for '{key}'\nAll results: {results}"
+        assert key_exists is each_key_is_in_s3, (
+            f"Unexpected result: {key_exists=} != {each_key_is_in_s3=} for '{key}'\nAll results: {results}"
+        )
 
 
-def _get_expected_s3_objects(
-    project_id: ProjectID, node_id: NodeID, state_dirs: list[Path]
-) -> list[str]:
+def _get_expected_s3_objects(project_id: ProjectID, node_id: NodeID, state_dirs: list[Path]) -> list[str]:
     result: set[Path] = set()
     for state_path in state_dirs:
         result |= _files_in_dir(state_path, include_parent_dir_name=True)
@@ -391,9 +374,7 @@ async def test_legacy_state_open_and_clone(
         f"{project_id}/{node_id}/{legacy_archive_path.name}"
         for legacy_archive_path in state_paths_to_legacy_archives.values()
     ]
-    await _assert_keys_in_s3(
-        s3_client, bucket_name, keys=legacy_s3_keys, each_key_is_in_s3=True
-    )
+    await _assert_keys_in_s3(s3_client, bucket_name, keys=legacy_s3_keys, each_key_is_in_s3=True)
 
     for _ in range(repeat_count):
         await save_user_services_state_paths(
@@ -404,17 +385,11 @@ async def test_legacy_state_open_and_clone(
         )
 
     # check that all local files are present in s3
-    expected_s3_objects = _get_expected_s3_objects(
-        project_id, node_id, list(expected_contents_paths.keys())
-    )
-    await _assert_keys_in_s3(
-        s3_client, bucket_name, keys=expected_s3_objects, each_key_is_in_s3=True
-    )
+    expected_s3_objects = _get_expected_s3_objects(project_id, node_id, list(expected_contents_paths.keys()))
+    await _assert_keys_in_s3(s3_client, bucket_name, keys=expected_s3_objects, each_key_is_in_s3=True)
 
     # the legacy archives should now be missing
-    await _assert_keys_in_s3(
-        s3_client, bucket_name, keys=legacy_s3_keys, each_key_is_in_s3=False
-    )
+    await _assert_keys_in_s3(s3_client, bucket_name, keys=legacy_s3_keys, each_key_is_in_s3=False)
 
 
 @pytest.mark.parametrize("repeat_count", [1, 2])
@@ -444,12 +419,8 @@ async def test_state_open_and_close(
         )
 
     # check that no other objects are in s3
-    expected_s3_objects = _get_expected_s3_objects(
-        project_id, node_id, list(expected_contents_paths.keys())
-    )
-    await _assert_keys_in_s3(
-        s3_client, bucket_name, keys=expected_s3_objects, each_key_is_in_s3=False
-    )
+    expected_s3_objects = _get_expected_s3_objects(project_id, node_id, list(expected_contents_paths.keys()))
+    await _assert_keys_in_s3(s3_client, bucket_name, keys=expected_s3_objects, each_key_is_in_s3=False)
 
     # check that no files are present in the local directories
     for state_dir_path in expected_contents_paths:
@@ -470,13 +441,9 @@ async def test_state_open_and_close(
         )
 
     # check generated files are in S3
-    expected_s3_objects = _get_expected_s3_objects(
-        project_id, node_id, list(expected_contents_paths.keys())
-    )
+    expected_s3_objects = _get_expected_s3_objects(project_id, node_id, list(expected_contents_paths.keys()))
     assert len(expected_s3_objects) > 0
-    await _assert_keys_in_s3(
-        s3_client, bucket_name, keys=expected_s3_objects, each_key_is_in_s3=True
-    )
+    await _assert_keys_in_s3(s3_client, bucket_name, keys=expected_s3_objects, each_key_is_in_s3=True)
 
     # remove and check no file is present any longer
     for state_dir_path in expected_contents_paths:

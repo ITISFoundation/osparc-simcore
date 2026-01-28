@@ -110,8 +110,7 @@ async def get_payments_page(
         timeout_s=2 * RPC_REQUEST_DEFAULT_TIMEOUT_S,
     )
     assert (  # nosec
-        TypeAdapter(tuple[int, list[PaymentTransaction]]).validate_python(result)
-        is not None
+        TypeAdapter(tuple[int, list[PaymentTransaction]]).validate_python(result) is not None
     )
     return result
 

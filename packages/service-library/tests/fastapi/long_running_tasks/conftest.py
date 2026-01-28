@@ -15,9 +15,7 @@ from settings_library.redis import RedisSettings
 
 
 @pytest.fixture
-async def bg_task_app(
-    router_prefix: str, redis_service: RedisSettings, rabbit_service: RabbitSettings
-) -> FastAPI:
+async def bg_task_app(router_prefix: str, redis_service: RedisSettings, rabbit_service: RabbitSettings) -> FastAPI:
     app = FastAPI()
 
     long_running_tasks.server.setup(
@@ -34,7 +32,7 @@ async def bg_task_app(
 async def async_client(bg_task_app: FastAPI) -> AsyncIterable[AsyncClient]:
     async with AsyncClient(
         transport=ASGITransport(app=bg_task_app),
-        base_url="http://backgroud.testserver.io",
+        base_url="http://background.testserver.io",
         headers={"Content-Type": "application/json"},
     ) as client:
         yield client
@@ -44,8 +42,6 @@ async def async_client(bg_task_app: FastAPI) -> AsyncIterable[AsyncClient]:
 async def rabbitmq_rpc_client(
     rabbit_service: RabbitSettings,
 ) -> AsyncIterable[RabbitMQRPCClient]:
-    client = await RabbitMQRPCClient.create(
-        client_name="test-lrt-rpc-client", settings=rabbit_service
-    )
+    client = await RabbitMQRPCClient.create(client_name="test-lrt-rpc-client", settings=rabbit_service)
     yield client
     await client.close()

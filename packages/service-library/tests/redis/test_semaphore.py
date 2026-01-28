@@ -1,4 +1,4 @@
-# ruff: noqa: SLF001, EM101, TRY003, PT011, PLR0917
+# ruff: noqa: EM101
 # pylint: disable=no-value-for-parameter
 # pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
@@ -51,19 +51,14 @@ async def test_semaphore_initialization(
     semaphore_name: str,
     semaphore_capacity: int,
 ):
-    semaphore = DistributedSemaphore(
-        redis_client=redis_client_sdk, key=semaphore_name, capacity=semaphore_capacity
-    )
+    semaphore = DistributedSemaphore(redis_client=redis_client_sdk, key=semaphore_name, capacity=semaphore_capacity)
 
     assert semaphore.key == semaphore_name
     assert semaphore.capacity == semaphore_capacity
     assert semaphore.ttl == DEFAULT_SEMAPHORE_TTL
     assert semaphore.blocking is True
     assert semaphore.instance_id is not None
-    assert (
-        semaphore.semaphore_key
-        == f"{SEMAPHORE_KEY_PREFIX}{semaphore_name}_cap{semaphore_capacity}"
-    )
+    assert semaphore.semaphore_key == f"{SEMAPHORE_KEY_PREFIX}{semaphore_name}_cap{semaphore_capacity}"
     assert semaphore.tokens_key.startswith(f"{semaphore.semaphore_key}:")
     assert semaphore.holders_set.startswith(f"{semaphore.semaphore_key}:")
     assert semaphore.holder_key.startswith(f"{semaphore.semaphore_key}:")
@@ -74,14 +69,10 @@ async def test_invalid_semaphore_initialization(
     semaphore_name: str,
 ):
     with pytest.raises(ValueError, match="Input should be greater than 0"):
-        DistributedSemaphore(
-            redis_client=redis_client_sdk, key=semaphore_name, capacity=0
-        )
+        DistributedSemaphore(redis_client=redis_client_sdk, key=semaphore_name, capacity=0)
 
     with pytest.raises(ValueError, match="Input should be greater than 0"):
-        DistributedSemaphore(
-            redis_client=redis_client_sdk, key=semaphore_name, capacity=-1
-        )
+        DistributedSemaphore(redis_client=redis_client_sdk, key=semaphore_name, capacity=-1)
 
     with pytest.raises(ValueError, match="TTL must be positive"):
         DistributedSemaphore(
@@ -117,9 +108,7 @@ async def _assert_semaphore_redis_state(
     expected_expired: bool = False,
 ):
     """Helper to assert the internal Redis state of the semaphore"""
-    holders = await handle_redis_returns_union_types(
-        redis_client_sdk.redis.smembers(semaphore.holders_set)
-    )
+    holders = await handle_redis_returns_union_types(redis_client_sdk.redis.smembers(semaphore.holders_set))
     assert len(holders) == expected_count
     if expected_count > 0:
         assert semaphore.instance_id in holders
@@ -128,9 +117,7 @@ async def _assert_semaphore_redis_state(
             assert holder_key_exists == 0
         else:
             assert holder_key_exists == 1
-    tokens = await handle_redis_returns_union_types(
-        redis_client_sdk.redis.lrange(semaphore.tokens_key, 0, -1)
-    )
+    tokens = await handle_redis_returns_union_types(redis_client_sdk.redis.lrange(semaphore.tokens_key, 0, -1))
     assert len(tokens) == expected_free_tokens
 
 
@@ -298,10 +285,7 @@ async def test_semaphore_multiple_instances_capacity_limit(
 ):
     capacity = 2
     semaphores = [
-        DistributedSemaphore(
-            redis_client=redis_client_sdk, key=semaphore_name, capacity=capacity
-        )
-        for _ in range(4)
+        DistributedSemaphore(redis_client=redis_client_sdk, key=semaphore_name, capacity=capacity) for _ in range(4)
     ]
 
     # Acquire first two should succeed
@@ -536,9 +520,7 @@ async def test_semaphore_context_manager_lost_renewal(
             # wait a bit to let the auto-renewal task detect the lost lock
             # the sleep will be interrupted by the exception and the context manager will exit
             with pytest.raises(asyncio.CancelledError):
-                await asyncio.sleep(
-                    with_short_default_semaphore_ttl.total_seconds() + 0.5
-                )
+                await asyncio.sleep(with_short_default_semaphore_ttl.total_seconds() + 0.5)
             raise asyncio.CancelledError
 
 
@@ -607,11 +589,7 @@ async def test_multiple_semaphores_different_keys(
     capacity = 1
 
     async with (
-        distributed_semaphore(
-            redis_client=redis_client_sdk, key=key1, capacity=capacity
-        ),
-        distributed_semaphore(
-            redis_client=redis_client_sdk, key=key2, capacity=capacity
-        ),
+        distributed_semaphore(redis_client=redis_client_sdk, key=key1, capacity=capacity),
+        distributed_semaphore(redis_client=redis_client_sdk, key=key2, capacity=capacity),
     ):
         ...

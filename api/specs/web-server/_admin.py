@@ -27,8 +27,6 @@ router = APIRouter(
     "/email:test",
     response_model=Envelope[Union[EmailTestFailed, EmailTestPassed]],
 )
-async def test_email(
-    _body: TestEmail, x_simcore_products_name: str | None = Header(default=None)
-):
+async def test_email(_body: TestEmail, x_simcore_products_name: str | None = Header(default=None)):
     # X-Simcore-Products-Name
     ...

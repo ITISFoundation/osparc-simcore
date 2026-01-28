@@ -17,11 +17,7 @@ logger = logging.getLogger(__name__)
 class CompPipelinesRepository(BaseRepository):
     async def get_pipeline(self, project_id: ProjectID) -> CompPipelineAtDB:
         async with self.db_engine.connect() as conn:
-            result = await conn.execute(
-                sa.select(comp_pipeline).where(
-                    comp_pipeline.c.project_id == str(project_id)
-                )
-            )
+            result = await conn.execute(sa.select(comp_pipeline).where(comp_pipeline.c.project_id == str(project_id)))
             row = result.one_or_none()
         if not row:
             raise PipelineNotFoundError(pipeline_id=project_id)
@@ -38,9 +34,7 @@ class CompPipelinesRepository(BaseRepository):
             dag_adjacency_list=nx.to_dict_of_lists(dag_graph),
             state=RunningState.PUBLISHED if publish else RunningState.NOT_STARTED,
         )
-        insert_stmt = insert(comp_pipeline).values(
-            **pipeline_at_db.model_dump(mode="json", by_alias=True)
-        )
+        insert_stmt = insert(comp_pipeline).values(**pipeline_at_db.model_dump(mode="json", by_alias=True))
         # FIXME: This is not a nice thing. this part of the information should be kept in comp_runs.
         on_update_stmt = insert_stmt.on_conflict_do_update(
             index_elements=[comp_pipeline.c.project_id],
@@ -55,18 +49,10 @@ class CompPipelinesRepository(BaseRepository):
 
     async def delete_pipeline(self, project_id: ProjectID) -> None:
         async with self.db_engine.begin() as conn:
-            await conn.execute(
-                sa.delete(comp_pipeline).where(
-                    comp_pipeline.c.project_id == str(project_id)
-                )
-            )
+            await conn.execute(sa.delete(comp_pipeline).where(comp_pipeline.c.project_id == str(project_id)))
 
-    async def mark_pipeline_state(
-        self, project_id: ProjectID, state: RunningState
-    ) -> None:
+    async def mark_pipeline_state(self, project_id: ProjectID, state: RunningState) -> None:
         async with self.db_engine.begin() as conn:
             await conn.execute(
-                sa.update(comp_pipeline)
-                .where(comp_pipeline.c.project_id == str(project_id))
-                .values(state=state)
+                sa.update(comp_pipeline).where(comp_pipeline.c.project_id == str(project_id)).values(state=state)
             )

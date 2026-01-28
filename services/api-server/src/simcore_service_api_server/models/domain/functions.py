@@ -36,17 +36,11 @@ class FunctionJobPatch(BaseModel):
     @model_validator(mode="after")
     def validate_function_class_consistency(self) -> "FunctionJobPatch":
         """Validate consistency between function_class and job IDs."""
-        if (
-            self.solver_job_id is not None
-            and self.function_class != FunctionClass.SOLVER
-        ):
+        if self.solver_job_id is not None and self.function_class != FunctionClass.SOLVER:
             msg = f"solver_job_id must be None when function_class is {self.function_class}, expected {FunctionClass.SOLVER}"
             raise ValueError(msg)
 
-        if (
-            self.project_job_id is not None
-            and self.function_class != FunctionClass.PROJECT
-        ):
+        if self.project_job_id is not None and self.function_class != FunctionClass.PROJECT:
             msg = f"project_job_id must be None when function_class is {self.function_class}, expected {FunctionClass.PROJECT}"
             raise ValueError(msg)
 

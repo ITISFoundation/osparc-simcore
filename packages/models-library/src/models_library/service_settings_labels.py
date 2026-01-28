@@ -189,9 +189,7 @@ class SimcoreServiceSettingLabelEntry(BaseModel):
             }
         )
 
-    model_config = _BaseConfig | ConfigDict(
-        populate_by_name=True, json_schema_extra=_update_json_schema_extra
-    )
+    model_config = _BaseConfig | ConfigDict(populate_by_name=True, json_schema_extra=_update_json_schema_extra)
 
 
 SimcoreServiceSettingsLabel = ListModel[SimcoreServiceSettingLabelEntry]
@@ -205,9 +203,7 @@ class LegacyState(BaseModel):
 class PathMappingsLabel(BaseModel):
     """Content of "simcore.service.paths-mapping" label"""
 
-    inputs_path: Annotated[
-        Path, Field(description="folder path where the service expects all the inputs")
-    ]
+    inputs_path: Annotated[Path, Field(description="folder path where the service expects all the inputs")]
 
     outputs_path: Annotated[
         Path,
@@ -245,17 +241,14 @@ class PathMappingsLabel(BaseModel):
         LegacyState | None,
         Field(
             description=(
-                "if present, the service needs to first try to download the legacy state"
-                "coming from a different path."
+                "if present, the service needs to first try to download the legacy statecoming from a different path."
             ),
         ),
     ] = None
 
     @field_validator("legacy_state")
     @classmethod
-    def _validate_legacy_state(
-        cls, v: LegacyState | None, info: ValidationInfo
-    ) -> LegacyState | None:
+    def _validate_legacy_state(cls, v: LegacyState | None, info: ValidationInfo) -> LegacyState | None:
         if v is None:
             return v
 
@@ -284,10 +277,7 @@ class PathMappingsLabel(BaseModel):
             outputs_path: Path | None = info.data.get("outputs_path")
             state_paths: list[Path] | None = info.data.get("state_paths")
             path = Path(path_str)
-            if not (
-                path in (inputs_path, outputs_path)
-                or (state_paths is not None and path in state_paths)
-            ):
+            if not (path in (inputs_path, outputs_path) or (state_paths is not None and path in state_paths)):
                 msg = f"path={path!r} not found in inputs_path={inputs_path!r}, outputs_path={outputs_path!r}, state_paths={state_paths!r}"
                 raise ValueError(msg)
         output: str | None = v
@@ -366,8 +356,7 @@ class DynamicSidecarServiceLabels(BaseModel):
         Field(
             alias="simcore.service.paths-mapping",
             description=(
-                "json encoded, determines how the folders are mapped in "
-                "the service. Required by dynamic-sidecar."
+                "json encoded, determines how the folders are mapped in the service. Required by dynamic-sidecar."
             ),
         ),
     ] = None
@@ -376,9 +365,7 @@ class DynamicSidecarServiceLabels(BaseModel):
         bool,
         Field(
             alias="simcore.service.is-collaborative",
-            description=(
-                "if True, the service is collaborative and will not be locked"
-            ),
+            description=("if True, the service is collaborative and will not be locked"),
         ),
     ] = False
 
@@ -412,10 +399,7 @@ class DynamicSidecarServiceLabels(BaseModel):
         Path | None,
         Field(
             alias="simcore.service.user-preferences-path",
-            description=(
-                "path where the user user preferences folder "
-                "will be mounted in the user services"
-            ),
+            description=("path where the user user preferences folder will be mounted in the user services"),
         ),
     ] = None
 
@@ -464,9 +448,7 @@ class DynamicSidecarServiceLabels(BaseModel):
 
     @field_validator("container_http_entry")
     @classmethod
-    def _compose_spec_requires_container_http_entry(
-        cls, v, info: ValidationInfo
-    ) -> str | None:
+    def _compose_spec_requires_container_http_entry(cls, v, info: ValidationInfo) -> str | None:
         v = None if v == "" else v
         if v is None and info.data.get("compose_spec") is not None:
             msg = "Field `container_http_entry` must be defined but is missing"
@@ -478,9 +460,7 @@ class DynamicSidecarServiceLabels(BaseModel):
 
     @field_validator("containers_allowed_outgoing_permit_list")
     @classmethod
-    def _containers_allowed_outgoing_permit_list_in_compose_spec(
-        cls, v, info: ValidationInfo
-    ):
+    def _containers_allowed_outgoing_permit_list_in_compose_spec(cls, v, info: ValidationInfo):
         if v is None:
             return v
 
@@ -501,18 +481,14 @@ class DynamicSidecarServiceLabels(BaseModel):
 
     @field_validator("containers_allowed_outgoing_internet")
     @classmethod
-    def _containers_allowed_outgoing_internet_in_compose_spec(
-        cls, v, info: ValidationInfo
-    ):
+    def _containers_allowed_outgoing_internet_in_compose_spec(cls, v, info: ValidationInfo):
         if v is None:
             return None
 
         compose_spec: dict | None = info.data.get("compose_spec")
         if compose_spec is None:
             if {DEFAULT_SINGLE_SERVICE_NAME} != v:
-                err_msg = (
-                    f"Expected only 1 entry '{DEFAULT_SINGLE_SERVICE_NAME}' not '{v}'"
-                )
+                err_msg = f"Expected only 1 entry '{DEFAULT_SINGLE_SERVICE_NAME}' not '{v}'"
                 raise ValueError(err_msg)
         else:
             containers_in_compose_spec = set(compose_spec["services"].keys())
@@ -557,9 +533,7 @@ class DynamicSidecarServiceLabels(BaseModel):
 
     @field_validator("user_preferences_path")
     @classmethod
-    def _user_preferences_path_no_included_in_other_volumes(
-        cls, v: CallbacksMapping, info: ValidationInfo
-    ):
+    def _user_preferences_path_no_included_in_other_volumes(cls, v: CallbacksMapping, info: ValidationInfo):
         paths_mapping: PathMappingsLabel | None = info.data.get("paths_mapping", None)
         if paths_mapping is None:
             return v
@@ -585,10 +559,7 @@ class DynamicSidecarServiceLabels(BaseModel):
             err_msg = f"Expected the following keys {match_keys} to be present {cls.model_fields=}"
             raise ValueError(err_msg)
 
-        if (
-            self.containers_allowed_outgoing_internet is None
-            or self.containers_allowed_outgoing_permit_list is None
-        ):
+        if self.containers_allowed_outgoing_internet is None or self.containers_allowed_outgoing_permit_list is None:
             return self
 
         common_containers = set(self.containers_allowed_outgoing_internet) & set(
@@ -645,17 +616,13 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
                     # legacy service
                     {
                         "simcore.service.settings": json_dumps(
-                            SimcoreServiceSettingLabelEntry.model_json_schema()[
-                                "examples"
-                            ]
+                            SimcoreServiceSettingLabelEntry.model_json_schema()["examples"]
                         )
                     },
                     # dynamic-service
                     {
                         "simcore.service.settings": json_dumps(
-                            SimcoreServiceSettingLabelEntry.model_json_schema()[
-                                "examples"
-                            ]
+                            SimcoreServiceSettingLabelEntry.model_json_schema()["examples"]
                         ),
                         "simcore.service.paths-mapping": json_dumps(
                             PathMappingsLabel.model_json_schema()["examples"][0]
@@ -678,9 +645,7 @@ class SimcoreServiceLabels(DynamicSidecarServiceLabels):
                     # dynamic-service with compose spec
                     {
                         "simcore.service.settings": json_dumps(
-                            SimcoreServiceSettingLabelEntry.model_json_schema()[
-                                "examples"
-                            ]
+                            SimcoreServiceSettingLabelEntry.model_json_schema()["examples"]
                         ),
                         "simcore.service.paths-mapping": json_dumps(
                             PathMappingsLabel.model_json_schema()["examples"][0],

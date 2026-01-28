@@ -11,9 +11,7 @@ from simcore_service_webserver.login._confirmation_repository import (
 )
 
 
-async def test_logout(
-    client: TestClient, confirmation_repository: ConfirmationRepository
-):
+async def test_logout(client: TestClient, confirmation_repository: ConfirmationRepository):
     assert client.app
 
     logout_url = client.app.router["auth_logout"].url_for()

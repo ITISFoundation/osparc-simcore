@@ -84,9 +84,7 @@ def test_create_log_and_parse_error_code(caplog: pytest.LogCaptureFixture):
     logger.exception("Fake Unexpected error", extra={"error_code": error_code})
 
     # logs something like E.g. 2022-07-06 14:31:13,432 OEC:140350117529856 : Fake Unexpected error
-    assert parse_error_codes(
-        f"2022-07-06 14:31:13,432 {error_code} : Fake Unexpected error"
-    ) == [
+    assert parse_error_codes(f"2022-07-06 14:31:13,432 {error_code} : Fake Unexpected error") == [
         error_code,
     ]
 
@@ -96,9 +94,7 @@ def test_create_log_and_parse_error_code(caplog: pytest.LogCaptureFixture):
     logger.exception("Fake without error_code")
 
     # 4. inform user (e.g. with new error or sending message)
-    user_message = (
-        f"This is a user-friendly message to inform about an error. [{error_code}]"
-    )
+    user_message = f"This is a user-friendly message to inform about an error. [{error_code}]"
 
     assert parse_error_codes(user_message) == [
         error_code,

@@ -54,9 +54,7 @@ comp_run_snapshot_tasks = sa.Table(
         nullable=True,
         doc="Hashes inputs before run. Used to detect changes in inputs.",
     ),
-    sa.Column(
-        "image", sa.JSON, doc="Metadata about service image associated to this node"
-    ),
+    sa.Column("image", sa.JSON, doc="Metadata about service image associated to this node"),
     sa.Column(
         "state",
         sa.Enum(StateType, name="statetype"),
@@ -68,8 +66,7 @@ comp_run_snapshot_tasks = sa.Table(
         "errors",
         postgresql.JSONB,
         nullable=True,
-        doc="List[models_library.errors.ErrorDict] with error information"
-        " for a failing state, otherwise set to None",
+        doc="List[models_library.errors.ErrorDict] with error information for a failing state, otherwise set to None",
     ),
     sa.Column(
         "progress",
@@ -77,12 +74,8 @@ comp_run_snapshot_tasks = sa.Table(
         nullable=True,
         doc="current progress of the task if available",
     ),
-    sa.Column(
-        "start", sa.DateTime(timezone=True), doc="UTC timestamp when task started"
-    ),
-    sa.Column(
-        "end", sa.DateTime(timezone=True), doc="UTC timestamp for task completion"
-    ),
+    sa.Column("start", sa.DateTime(timezone=True), doc="UTC timestamp when task started"),
+    sa.Column("end", sa.DateTime(timezone=True), doc="UTC timestamp for task completion"),
     sa.Column(
         "last_heartbeat",
         sa.DateTime(timezone=True),
@@ -100,6 +93,6 @@ comp_run_snapshot_tasks = sa.Table(
         "hardware_info",
         postgresql.JSONB,
         nullable=True,
-        doc="Harware information of this task",
+        doc="Hardware information of this task",
     ),
 )

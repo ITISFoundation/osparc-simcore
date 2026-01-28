@@ -28,6 +28,4 @@ def test_valid_individual_json_schemas_specs(spec_file_path: Path):
             return
         else:
             # this is also not good and bad from the validator...
-            pytest.fail(
-                f"Expecting an instance validation error if the schema in {spec_file_path} was correct"
-            )
+            pytest.fail(f"Expecting an instance validation error if the schema in {spec_file_path} was correct")

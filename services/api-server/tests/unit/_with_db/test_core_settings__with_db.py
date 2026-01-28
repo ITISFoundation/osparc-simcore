@@ -17,6 +17,4 @@ def test_unit_with_db_app_environment(app_environment: EnvVarsDict):
     assert settings.SC_BOOT_MODE == BootModeEnum.PRODUCTION
     assert settings.log_level == logging.DEBUG
 
-    assert URL(settings.API_SERVER_POSTGRES.dsn) == URL(
-        "postgresql://test:test@127.0.0.1:5432/test"
-    )
+    assert URL(settings.API_SERVER_POSTGRES.dsn) == URL("postgresql://test:test@127.0.0.1:5432/test")

@@ -271,6 +271,10 @@ qx.Class.define("osparc.share.NewCollaboratorsManager", {
             // all users can share hypertool with ProductEveryone
             showProductEveryone = true;
             break;
+          case "emailRecipients":
+            // emails can be broadcasted to ProductEveryone
+            showProductEveryone = true;
+            break;
         }
       }
       return showProductEveryone;

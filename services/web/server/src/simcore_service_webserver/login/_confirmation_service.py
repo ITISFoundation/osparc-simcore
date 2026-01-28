@@ -41,9 +41,7 @@ class ConfirmationService:
         action: ActionLiteralStr,
     ) -> Confirmation:
         """Get existing or create new confirmation token for user action."""
-        confirmation = await self._repository.get_confirmation(
-            filter_dict={"user_id": user_id, "action": action}
-        )
+        confirmation = await self._repository.get_confirmation(filter_dict={"user_id": user_id, "action": action})
 
         if confirmation is not None and self.is_confirmation_expired(confirmation):
             await self._repository.delete_confirmation(confirmation=confirmation)
@@ -54,9 +52,7 @@ class ConfirmationService:
             confirmation = None
 
         if confirmation is None:
-            confirmation = await self._repository.create_confirmation(
-                user_id=user_id, action=action
-            )
+            confirmation = await self._repository.create_confirmation(user_id=user_id, action=action)
 
         return confirmation
 
@@ -75,9 +71,7 @@ class ConfirmationService:
         """Validate confirmation code and return confirmation if valid."""
         assert not code.startswith("***"), "forgot .get_secret_value()??"  # nosec
 
-        confirmation = await self._repository.get_confirmation(
-            filter_dict={"code": code}
-        )
+        confirmation = await self._repository.get_confirmation(filter_dict={"code": code})
         if confirmation and self.is_confirmation_expired(confirmation):
             await self._repository.delete_confirmation(confirmation=confirmation)
             _logger.warning(
@@ -104,9 +98,7 @@ class ConfirmationService:
             updates=updates,
         )
 
-    async def get_confirmation(
-        self, filter_dict: dict[str, Any]
-    ) -> Confirmation | None:
+    async def get_confirmation(self, filter_dict: dict[str, Any]) -> Confirmation | None:
         """Get a confirmation by filter criteria."""
         return await self._repository.get_confirmation(filter_dict=filter_dict)
 
@@ -114,14 +106,8 @@ class ConfirmationService:
         self, user_id: UserID, action: ActionLiteralStr, data: str | None = None
     ) -> Confirmation:
         """Create a new confirmation token for a user action."""
-        return await self._repository.create_confirmation(
-            user_id=user_id, action=action, data=data
-        )
+        return await self._repository.create_confirmation(user_id=user_id, action=action, data=data)
 
-    async def delete_confirmation_and_user(
-        self, user_id: UserID, confirmation: Confirmation
-    ) -> None:
+    async def delete_confirmation_and_user(self, user_id: UserID, confirmation: Confirmation) -> None:
         """Atomically delete confirmation and user."""
-        await self._repository.delete_confirmation_and_user(
-            user_id=user_id, confirmation=confirmation
-        )
+        await self._repository.delete_confirmation_and_user(user_id=user_id, confirmation=confirmation)

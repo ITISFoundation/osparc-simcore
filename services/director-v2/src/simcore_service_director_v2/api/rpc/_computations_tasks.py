@@ -40,9 +40,7 @@ async def get_computation_task_log_file_ids(
     return [
         TaskLogFileIdGet(
             task_id=node_id,
-            file_id=data_items_utils.create_simcore_file_id(
-                Path(LOGS_FILE_NAME), f"{project_id}", f"{node_id}"
-            ),
+            file_id=data_items_utils.create_simcore_file_id(Path(LOGS_FILE_NAME), f"{project_id}", f"{node_id}"),
         )
         for node_id in iter_task_ids
     ]

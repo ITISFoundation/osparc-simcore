@@ -36,6 +36,4 @@ pydantic_types_to_register = (
 class ApiServerOwnerMetadata(OwnerMetadata):
     user_id: UserID
     product_name: ProductName
-    owner: Annotated[
-        str, StringConstraints(pattern=rf"^{APP_NAME}$"), Field(frozen=True)
-    ] = APP_NAME
+    owner: Annotated[str, StringConstraints(pattern=rf"^{APP_NAME}$"), Field(frozen=True)] = APP_NAME

@@ -37,10 +37,7 @@ async def get_vendor_secrets(
         query = query.where(
             (services_vendor_secrets.c.product_name == product_name)
             & (services_vendor_secrets.c.service_key == vendor_service_key)
-            & (
-                services_vendor_secrets.c.service_base_version
-                == latest_version.scalar_subquery()
-            )
+            & (services_vendor_secrets.c.service_base_version == latest_version.scalar_subquery())
         )
     else:
         assert len([int(p) for p in vendor_service_version.split(".")]) == 3  # nosec
@@ -49,10 +46,7 @@ async def get_vendor_secrets(
             query.where(
                 (services_vendor_secrets.c.product_name == product_name)
                 & (services_vendor_secrets.c.service_key == vendor_service_key)
-                & (
-                    _version(services_vendor_secrets.c.service_base_version)
-                    <= _version(vendor_service_version)
-                )
+                & (_version(services_vendor_secrets.c.service_base_version) <= _version(vendor_service_version))
             )
             .order_by(_version(services_vendor_secrets.c.service_base_version).desc())
             .limit(1)

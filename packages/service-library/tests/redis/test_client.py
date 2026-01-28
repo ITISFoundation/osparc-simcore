@@ -61,9 +61,7 @@ async def test_redis_lock_no_ttl(redis_client_sdk: RedisClientSDK, lock_name: st
     assert not await lock.owned()
 
 
-async def test_redis_lock_context_manager_no_ttl(
-    redis_client_sdk: RedisClientSDK, lock_name: str
-):
+async def test_redis_lock_context_manager_no_ttl(redis_client_sdk: RedisClientSDK, lock_name: str):
     lock = redis_client_sdk.create_lock(lock_name, ttl=None)
     assert not await lock.locked()
 

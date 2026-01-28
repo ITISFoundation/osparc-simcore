@@ -58,9 +58,5 @@ def test_bump_version_string(
         iter_model_examples_in_class(ServiceVersionInfo),
     ),
 )
-def test_version_info_model_examples(
-    model_cls: type[BaseModel], example_name: str, example_data: Any
-):
-    assert_validation_model(
-        model_cls, example_name=example_name, example_data=example_data
-    )
+def test_version_info_model_examples(model_cls: type[BaseModel], example_name: str, example_data: Any):
+    assert_validation_model(model_cls, example_name=example_name, example_data=example_data)

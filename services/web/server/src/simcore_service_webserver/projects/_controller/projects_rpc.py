@@ -40,9 +40,7 @@ async def mark_project_as_job(
     job_parent_resource_name: str,
     storage_assets_deleted: bool,
 ) -> None:
-
     try:
-
         await _jobs_service.set_project_as_job(
             app,
             product_name=product_name,
@@ -70,21 +68,15 @@ async def list_projects_marked_as_jobs(
     limit: PageLimitInt,
     filters: ListProjectsMarkedAsJobRpcFilters | None = None,
 ) -> PageRpcProjectJobRpcGet:
-
     total, projects = await _jobs_service.list_my_projects_marked_as_jobs(
         app,
         product_name=product_name,
         user_id=user_id,
         pagination_offset=offset,
         pagination_limit=limit,
-        filter_by_job_parent_resource_name_prefix=(
-            filters.job_parent_resource_name_prefix if filters else None
-        ),
+        filter_by_job_parent_resource_name_prefix=(filters.job_parent_resource_name_prefix if filters else None),
         filter_any_custom_metadata=(
-            [
-                (custom_metadata.name, custom_metadata.pattern)
-                for custom_metadata in filters.any_custom_metadata
-            ]
+            [(custom_metadata.name, custom_metadata.pattern) for custom_metadata in filters.any_custom_metadata]
             if filters and filters.any_custom_metadata
             else None
         ),
@@ -130,7 +122,6 @@ async def get_project_marked_as_job(
     project_uuid: ProjectID,
     job_parent_resource_name: str,
 ) -> ProjectJobRpcGet:
-
     try:
         project = await _jobs_service.get_project_marked_as_job(
             app,

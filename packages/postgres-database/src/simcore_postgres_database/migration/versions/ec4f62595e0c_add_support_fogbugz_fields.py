@@ -24,9 +24,7 @@ def upgrade():
     )
     op.add_column(
         "products",
-        sa.Column(
-            "support_assigned_fogbugz_project_id", sa.BigInteger(), nullable=True
-        ),
+        sa.Column("support_assigned_fogbugz_project_id", sa.BigInteger(), nullable=True),
     )
     # ### end Alembic commands ###
 

@@ -16,8 +16,9 @@
 extend-exclude = [
       ".gitignore",
       "**/migration/**",
-          "**/*.svg",
-          "**/*.css",
+      "**/*.svg",
+      "**/*.css",
+      "services/static-webserver/client/source/resource/**",
 ]
 ignore-hidden = true
 ignore-files = true

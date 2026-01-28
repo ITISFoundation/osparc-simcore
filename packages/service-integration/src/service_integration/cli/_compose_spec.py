@@ -76,13 +76,9 @@ def create_docker_compose_image_spec(
 
     # REQUIRED
     if docker_compose_overwrite_path:
-        docker_compose_overwrite_cfg = DockerComposeOverwriteConfig.from_yaml(
-            docker_compose_overwrite_path
-        )
+        docker_compose_overwrite_cfg = DockerComposeOverwriteConfig.from_yaml(docker_compose_overwrite_path)
     else:
-        docker_compose_overwrite_cfg = DockerComposeOverwriteConfig.create_default(
-            service_name=meta_cfg.service_name()
-        )
+        docker_compose_overwrite_cfg = DockerComposeOverwriteConfig.create_default(service_name=meta_cfg.service_name())
 
     # OPTIONAL
     runtime_cfg = None
@@ -95,9 +91,7 @@ def create_docker_compose_image_spec(
     # OCI annotations (optional)
     extra_labels: LabelsAnnotationsDict = {}
     try:
-        oci_spec = yaml.safe_load(
-            (config_basedir / f"{OCI_LABEL_PREFIX}.yml").read_text()
-        )
+        oci_spec = yaml.safe_load((config_basedir / f"{OCI_LABEL_PREFIX}.yml").read_text())
         if not oci_spec:
             raise UndefinedOciImageSpecError
 
@@ -106,15 +100,11 @@ def create_docker_compose_image_spec(
     except (FileNotFoundError, UndefinedOciImageSpecError):
         try:
             # if not OCI, try label-schema
-            ls_spec = yaml.safe_load(
-                (config_basedir / f"{LS_LABEL_PREFIX}.yml").read_text()
-            )
+            ls_spec = yaml.safe_load((config_basedir / f"{LS_LABEL_PREFIX}.yml").read_text())
             ls_labels = to_labels(ls_spec, prefix_key=LS_LABEL_PREFIX)
             extra_labels.update(ls_labels)
         except FileNotFoundError:
-            rich.print(
-                "No explicit config for OCI/label-schema found (optional), skipping OCI annotations."
-            )
+            rich.print("No explicit config for OCI/label-schema found (optional), skipping OCI annotations.")
     # add required labels
 
     # SEE https://github.com/opencontainers/image-spec/blob/main/annotations.md#pre-defined-annotation-keys
@@ -123,9 +113,7 @@ def create_docker_compose_image_spec(
     extra_labels[f"{LS_LABEL_PREFIX}.build-date"] = rfc3339_format
     extra_labels[f"{LS_LABEL_PREFIX}.schema-version"] = "1.0"
 
-    extra_labels[f"{LS_LABEL_PREFIX}.vcs-ref"] = _run_git_or_empty_string(
-        "rev-parse", "HEAD"
-    )
+    extra_labels[f"{LS_LABEL_PREFIX}.vcs-ref"] = _run_git_or_empty_string("rev-parse", "HEAD")
     extra_labels[f"{LS_LABEL_PREFIX}.vcs-url"] = _strip_credentials(
         _run_git_or_empty_string("config", "--get", "remote.origin.url")
     )
@@ -196,9 +184,7 @@ def create_compose(
     for subdir in filter(lambda p: p.is_dir(), basedir.rglob("*")):
         if not (subdir / "metadata.yml").exists():
             relative_subdir = subdir.relative_to(basedir)
-            rich.print(
-                f"[warning] Subfolder '{relative_subdir}' does not contain a 'metadata.yml' file. Skipping."
-            )
+            rich.print(f"[warning] Subfolder '{relative_subdir}' does not contain a 'metadata.yml' file. Skipping.")
 
     if not configs_kwargs_map:
         rich.print(f"[warning] No config files were found in '{config_path}'")
@@ -210,9 +196,9 @@ def create_compose(
     settings: AppSettings = ctx.parent.settings  # type: ignore[attr-defined] # pylint:disable=no-member
 
     for n, config_name in enumerate(configs_kwargs_map):
-        nth_compose_spec = create_docker_compose_image_spec(
-            settings, **configs_kwargs_map[config_name]
-        ).model_dump(exclude_unset=True)
+        nth_compose_spec = create_docker_compose_image_spec(settings, **configs_kwargs_map[config_name]).model_dump(
+            exclude_unset=True
+        )
 
         if n == 0:
             compose_spec_dict = nth_compose_spec

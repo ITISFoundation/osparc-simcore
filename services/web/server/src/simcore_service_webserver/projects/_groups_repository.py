@@ -90,19 +90,14 @@ async def get_project_group(
             project_to_groups.c.modified,
         )
         .select_from(project_to_groups)
-        .where(
-            (project_to_groups.c.project_uuid == f"{project_id}")
-            & (project_to_groups.c.gid == group_id)
-        )
+        .where((project_to_groups.c.project_uuid == f"{project_id}") & (project_to_groups.c.gid == group_id))
     )
 
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         result = await conn.stream(stmt)
         row = await result.first()
         if row is None:
-            raise ProjectGroupNotFoundError(
-                details=f"Project {project_id} group {group_id} not found"
-            )
+            raise ProjectGroupNotFoundError(details=f"Project {project_id} group {group_id} not found")
         return ProjectGroupGetDB.model_validate(row)
 
 
@@ -116,7 +111,6 @@ async def replace_project_group(
     write: bool,
     delete: bool,
 ) -> ProjectGroupGetDB:
-
     query = (
         project_to_groups.update()
         .values(
@@ -124,10 +118,7 @@ async def replace_project_group(
             write=write,
             delete=delete,
         )
-        .where(
-            (project_to_groups.c.project_uuid == f"{project_id}")
-            & (project_to_groups.c.gid == group_id)
-        )
+        .where((project_to_groups.c.project_uuid == f"{project_id}") & (project_to_groups.c.gid == group_id))
         .returning(literal_column("*"))
     )
 
@@ -135,9 +126,7 @@ async def replace_project_group(
         result = await conn.stream(query)
         row = await result.first()
         if row is None:
-            raise ProjectGroupNotFoundError(
-                details=f"Project {project_id} group {group_id} not found"
-            )
+            raise ProjectGroupNotFoundError(details=f"Project {project_id} group {group_id} not found")
         return ProjectGroupGetDB.model_validate(row)
 
 
@@ -183,8 +172,7 @@ async def delete_project_group(
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
         await conn.stream(
             project_to_groups.delete().where(
-                (project_to_groups.c.project_uuid == f"{project_id}")
-                & (project_to_groups.c.gid == group_id)
+                (project_to_groups.c.project_uuid == f"{project_id}") & (project_to_groups.c.gid == group_id)
             )
         )
 
@@ -196,8 +184,4 @@ async def delete_all_project_groups(
     project_id: ProjectID,
 ) -> None:
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        await conn.stream(
-            project_to_groups.delete().where(
-                project_to_groups.c.project_uuid == f"{project_id}"
-            )
-        )
+        await conn.stream(project_to_groups.delete().where(project_to_groups.c.project_uuid == f"{project_id}"))

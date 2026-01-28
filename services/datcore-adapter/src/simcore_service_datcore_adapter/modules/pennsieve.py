@@ -35,9 +35,7 @@ Total = int
 _GATHER_MAX_CONCURRENCY = 10
 
 
-def _to_file_meta_data(
-    package: dict[str, Any], files: list[DatCorePackageMetaData], base_path: Path
-) -> FileMetaData:
+def _to_file_meta_data(package: dict[str, Any], files: list[DatCorePackageMetaData], base_path: Path) -> FileMetaData:
     """creates a FileMetaData from a pennsieve data structure."""
     pck_name: str = package["content"]["name"]
     if "extension" in package and not pck_name.endswith(package["extension"]):
@@ -57,24 +55,16 @@ def _to_file_meta_data(
         size=file_size,
         created_at=package["content"]["createdAt"],
         last_modified_at=package["content"]["updatedAt"],
-        data_type=(
-            DataType.FOLDER
-            if package["content"]["packageType"] == "Collection"
-            else DataType.FILE
-        ),
+        data_type=(DataType.FOLDER if package["content"]["packageType"] == "Collection" else DataType.FILE),
     )
 
 
-def _compute_file_path(
-    all_packages: dict[str, dict[str, Any]], pck: dict[str, Any]
-) -> Path:
+def _compute_file_path(all_packages: dict[str, dict[str, Any]], pck: dict[str, Any]) -> Path:
     file_path = Path(pck["content"]["name"])
     if "extension" in pck:
         file_path = Path(".".join((f"{file_path}", pck["extension"])))
     if parent_id := pck["content"].get("parentId"):
-        file_path = (
-            _compute_file_path(all_packages, all_packages[parent_id]) / file_path
-        )
+        file_path = _compute_file_path(all_packages, all_packages[parent_id]) / file_path
     return Path(file_path)
 
 
@@ -120,9 +110,7 @@ class PennsieveApiClient(BaseServiceClientApi):
 
     _bearer_cache = SimpleMemoryCache()
 
-    async def _get_authorization_headers(
-        self, api_key: str, api_secret: str
-    ) -> PennsieveAuthorizationHeaders:
+    async def _get_authorization_headers(self, api_key: str, api_secret: str) -> PennsieveAuthorizationHeaders:
         """returns the authorization bearer code as described
         in the pennsieve recipe
         https://docs.pennsieve.io/recipes
@@ -134,9 +122,7 @@ class PennsieveApiClient(BaseServiceClientApi):
         if pennsieve_header := await self._bearer_cache.get(f"{api_key}_{api_secret}"):
             return typing.cast(PennsieveAuthorizationHeaders, pennsieve_header)
 
-        with log_context(
-            logger, logging.DEBUG, msg="getting new authorization headers"
-        ):
+        with log_context(logger, logging.DEBUG, msg="getting new authorization headers"):
             response = await self.client.get("/authentication/cognito-config")
             response.raise_for_status()
             cognito_config = response.json()
@@ -147,9 +133,7 @@ class PennsieveApiClient(BaseServiceClientApi):
                 None, _get_bearer_code, cognito_config, api_key, api_secret
             )
 
-        await self._bearer_cache.set(
-            f"{api_key}_{api_secret}", pennsieve_header, ttl=expiration_time - 30
-        )
+        await self._bearer_cache.set(f"{api_key}_{api_secret}", pennsieve_header, ttl=expiration_time - 30)
 
         return typing.cast(PennsieveAuthorizationHeaders, pennsieve_header)
 
@@ -184,20 +168,14 @@ class PennsieveApiClient(BaseServiceClientApi):
         response.raise_for_status()
         return response.json()
 
-    async def _get_dataset_packages_count(
-        self, api_key: str, api_secret: str, dataset_id: str
-    ) -> Total:
+    async def _get_dataset_packages_count(self, api_key: str, api_secret: str, dataset_id: str) -> Total:
         package_type_counts = cast(
             dict[str, Any],
-            await self._request(
-                api_key, api_secret, "GET", f"/datasets/{dataset_id}/packageTypeCounts"
-            ),
+            await self._request(api_key, api_secret, "GET", f"/datasets/{dataset_id}/packageTypeCounts"),
         )
         return sum(package_type_counts.values())
 
-    async def _get_dataset(
-        self, api_key: str, api_secret: str, dataset_id: str
-    ) -> dict[str, Any]:
+    async def _get_dataset(self, api_key: str, api_secret: str, dataset_id: str) -> dict[str, Any]:
         return cast(
             dict[str, Any],
             await self._request(
@@ -231,14 +209,10 @@ class PennsieveApiClient(BaseServiceClientApi):
                 },
             ),
         )
-        packages["packages"] = [
-            f for f in packages["packages"] if f["content"]["state"] != "DELETED"
-        ]
+        packages["packages"] = [f for f in packages["packages"] if f["content"]["state"] != "DELETED"]
         return packages
 
-    async def _get_package(
-        self, api_key: str, api_secret: str, package_id: str
-    ) -> dict[str, Any]:
+    async def _get_package(self, api_key: str, api_secret: str, package_id: str) -> dict[str, Any]:
         return cast(
             dict[str, Any],
             await self._request(
@@ -275,29 +249,16 @@ class PennsieveApiClient(BaseServiceClientApi):
 
             path = (
                 Path(dataset_id)
-                / Path(
-                    "/".join(
-                        ancestor["content"]["id"]
-                        for ancestor in package_info.get("ancestors", [])
-                    )
-                )
+                / Path("/".join(ancestor["content"]["id"] for ancestor in package_info.get("ancestors", [])))
                 / Path(package_info["content"]["name"])
             )
             display_path = (
                 Path(dataset["content"]["name"])
-                / Path(
-                    "/".join(
-                        ancestor["content"]["name"]
-                        for ancestor in package_info.get("ancestors", [])
-                    )
-                )
+                / Path("/".join(ancestor["content"]["name"] for ancestor in package_info.get("ancestors", [])))
                 / Path(package_info["content"]["name"])
             )
 
-        return [
-            DatCorePackageMetaData(**_["content"], path=path, display_path=display_path)
-            for _ in raw_data
-        ]
+        return [DatCorePackageMetaData(**_["content"], path=path, display_path=display_path) for _ in raw_data]
 
     async def _get_pck_id_files(
         self, api_key: str, api_secret: str, pck_id: str, pck: dict[str, Any]
@@ -316,9 +277,7 @@ class PennsieveApiClient(BaseServiceClientApi):
 
     async def get_user_profile(self, api_key: str, api_secret: str) -> Profile:
         """returns the user profile id"""
-        pennsieve_user = cast(
-            dict[str, Any], await self._request(api_key, api_secret, "GET", "/user/")
-        )
+        pennsieve_user = cast(dict[str, Any], await self._request(api_key, api_secret, "GET", "/user/"))
 
         return Profile(id=pennsieve_user["id"])
 
@@ -358,16 +317,12 @@ class PennsieveApiClient(BaseServiceClientApi):
             dataset_page["totalCount"],
         )
 
-    async def get_dataset(
-        self, api_key: str, api_secret: str, dataset_id: str
-    ) -> DatasetMetaData:
+    async def get_dataset(self, api_key: str, api_secret: str, dataset_id: str) -> DatasetMetaData:
         dataset_pck = await self._get_dataset(api_key, api_secret, dataset_id)
         return DatasetMetaData(
             id=dataset_pck["content"]["id"],
             display_name=dataset_pck["content"]["name"],
-            size=(
-                ByteSize(dataset_pck["storage"]) if dataset_pck["storage"] > 0 else None
-            ),
+            size=(ByteSize(dataset_pck["storage"]) if dataset_pck["storage"] > 0 else None),
         )
 
     async def list_packages_in_dataset(
@@ -396,11 +351,7 @@ class PennsieveApiClient(BaseServiceClientApi):
             [
                 _to_file_meta_data(
                     pck,
-                    (
-                        package_files[pck["content"]["id"]]
-                        if pck["content"]["packageType"] != "Collection"
-                        else []
-                    ),
+                    (package_files[pck["content"]["id"]] if pck["content"]["packageType"] != "Collection" else []),
                     base_path=Path(dataset_pck["content"]["name"]),
                 )
                 for pck in islice(dataset_pck["children"], offset, offset + limit)
@@ -421,12 +372,7 @@ class PennsieveApiClient(BaseServiceClientApi):
         collection_pck = await self._get_package(api_key, api_secret, collection_id)
         # compute base path ancestors are ordered
         base_path = Path(dataset["content"]["name"]) / (
-            Path(
-                "/".join(
-                    ancestor_pck["content"]["name"]
-                    for ancestor_pck in collection_pck["ancestors"]
-                )
-            )
+            Path("/".join(ancestor_pck["content"]["name"] for ancestor_pck in collection_pck["ancestors"]))
             / collection_pck["content"]["name"]
         )
         # get the information about the files
@@ -447,11 +393,7 @@ class PennsieveApiClient(BaseServiceClientApi):
             [
                 _to_file_meta_data(
                     pck,
-                    (
-                        package_files[pck["content"]["id"]]
-                        if pck["content"]["packageType"] != "Collection"
-                        else []
-                    ),
+                    (package_files[pck["content"]["id"]] if pck["content"]["packageType"] != "Collection" else []),
                     base_path=base_path,
                 )
                 for pck in islice(collection_pck["children"], offset, offset + limit)
@@ -459,9 +401,7 @@ class PennsieveApiClient(BaseServiceClientApi):
             len(collection_pck["children"]),
         )
 
-    async def list_all_dataset_files(
-        self, api_key: str, api_secret: str, dataset_id: str
-    ) -> list[FileMetaData]:
+    async def list_all_dataset_files(self, api_key: str, api_secret: str, dataset_id: str) -> list[FileMetaData]:
         """returns ALL the files belonging to the dataset, can be slow if there are a lot of files"""
 
         file_meta_data = []
@@ -477,14 +417,10 @@ class PennsieveApiClient(BaseServiceClientApi):
 
         # get all data packages inside the dataset
         all_packages: dict[str, dict[str, Any]] = {}
-        while resp := await self._get_dataset_packages(
-            api_key, api_secret, dataset_id, PAGE_SIZE, cursor
-        ):
+        while resp := await self._get_dataset_packages(api_key, api_secret, dataset_id, PAGE_SIZE, cursor):
             cursor = resp.get("cursor")  # type: ignore[assignment]
             assert isinstance(cursor, str | None)  # nosec
-            all_packages.update(
-                {p["content"]["id"]: p for p in resp.get("packages", [])}
-            )
+            all_packages.update({p["content"]["id"]: p for p in resp.get("packages", [])})
             logger.debug(
                 "received dataset packages [%s/%s], cursor: %s",
                 len(all_packages),
@@ -524,17 +460,11 @@ class PennsieveApiClient(BaseServiceClientApi):
 
                 file_path = base_path / _compute_file_path(all_packages, package)
 
-                file_meta_data.append(
-                    _to_file_meta_data(
-                        package, package_files[package_id], file_path.parent
-                    )
-                )
+                file_meta_data.append(_to_file_meta_data(package, package_files[package_id], file_path.parent))
 
         return file_meta_data
 
-    async def get_presigned_download_link(
-        self, api_key: str, api_secret: str, package_id: str
-    ) -> URL:
+    async def get_presigned_download_link(self, api_key: str, api_secret: str, package_id: str) -> URL:
         """returns the presigned download link of the first file in the package"""
         files = await self.get_package_files(
             api_key=api_key,
@@ -549,17 +479,13 @@ class PennsieveApiClient(BaseServiceClientApi):
         file_id = files[0].id
         file_link = cast(
             dict[str, Any],
-            await self._request(
-                api_key, api_secret, "GET", f"/packages/{package_id}/files/{file_id}"
-            ),
+            await self._request(api_key, api_secret, "GET", f"/packages/{package_id}/files/{file_id}"),
         )
         return URL(file_link["url"])
 
     async def delete_object(self, api_key: str, api_secret: str, obj_id: str) -> None:
         """deletes the file in datcore"""
-        await self._request(
-            api_key, api_secret, "POST", "/data/delete", json={"things": [obj_id]}
-        )
+        await self._request(api_key, api_secret, "POST", "/data/delete", json={"things": [obj_id]})
 
 
 def setup(app: FastAPI, settings: PennsieveSettings) -> None:

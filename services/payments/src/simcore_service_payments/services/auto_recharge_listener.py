@@ -23,9 +23,7 @@ async def _subscribe_to_rabbitmq(app) -> tuple[QueueName, ConsumerTag]:
         )
 
 
-async def _unsubscribe_consumer(
-    app, queue_name: QueueName, consumer_tag: ConsumerTag
-) -> None:
+async def _unsubscribe_consumer(app, queue_name: QueueName, consumer_tag: ConsumerTag) -> None:
     with log_context(_logger, logging.INFO, msg="Unsubscribing from rabbitmq queue"):
         rabbit_client = get_rabbitmq_client(app)
         await rabbit_client.unsubscribe_consumer(queue_name, consumer_tag)

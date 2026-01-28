@@ -15,9 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 class _ExtendedInotifyBuffer(InotifyBuffer):
-    def __init__(
-        self, path: bytes, *, recursive: bool = False
-    ):  # pylint:disable=super-init-not-called
+    def __init__(self, path: bytes, *, recursive: bool = False):  # pylint:disable=super-init-not-called
         # below call to `BaseThread.__init__` is correct since we want to
         # overwrite the `InotifyBuffer.__init__` method
         BaseThread.__init__(self)  # pylint:disable=non-parent-init-called
@@ -45,9 +43,7 @@ class ExtendedInotifyObserver(BaseObserver):
     """
 
     def __init__(self):
-        super().__init__(
-            emitter_class=_ExtendedInotifyEmitter, timeout=DEFAULT_OBSERVER_TIMEOUT
-        )
+        super().__init__(emitter_class=_ExtendedInotifyEmitter, timeout=DEFAULT_OBSERVER_TIMEOUT)
 
 
 class SafeFileSystemEventHandler(ABC, FileSystemEventHandler):

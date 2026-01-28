@@ -10,8 +10,6 @@ router = RPCRouter()
 
 @router.expose()
 @validate_call(config={"arbitrary_types_allowed": True})
-async def update_volume_status(
-    app: FastAPI, *, status: VolumeStatus, category: VolumeCategory
-) -> None:
+async def update_volume_status(app: FastAPI, *, status: VolumeStatus, category: VolumeCategory) -> None:
     """Updates the state of the volume"""
     await volumes.update_volume_status(app, status=status, category=category)

@@ -58,25 +58,19 @@ async def register_licensed_resource(
     )
 
     try:
-        licensed_resource = (
-            await _licensed_resources_repository.get_by_resource_identifier(
-                app,
-                licensed_resource_name=licensed_resource_name,
-                licensed_resource_type=licensed_resource_type,
-            )
+        licensed_resource = await _licensed_resources_repository.get_by_resource_identifier(
+            app,
+            licensed_resource_name=licensed_resource_name,
+            licensed_resource_type=licensed_resource_type,
         )
 
         if licensed_resource.licensed_resource_data != new_licensed_resource_data:
-            ddiff = DeepDiff(
-                licensed_resource.licensed_resource_data, new_licensed_resource_data
-            )
+            ddiff = DeepDiff(licensed_resource.licensed_resource_data, new_licensed_resource_data)
             msg = (
                 f"DIFFERENT_RESOURCE: {resource_key=} found in licensed_resource_id={licensed_resource.licensed_resource_id} with different data. "
                 f"Diff:\n\t{pformat(ddiff, indent=2, width=200)}"
             )
-            return RegistrationResult(
-                licensed_resource, RegistrationState.DIFFERENT_RESOURCE, msg
-            )
+            return RegistrationResult(licensed_resource, RegistrationState.DIFFERENT_RESOURCE, msg)
 
         return RegistrationResult(
             licensed_resource,

@@ -24,9 +24,7 @@ class FoldersRuntimeError(WebServerBaseError, RuntimeError): ...
 
 
 class FolderNotTrashedError(FoldersRuntimeError):
-    msg_template = (
-        "Cannot delete folder {folder_id} since it was not trashed first: {details}"
-    )
+    msg_template = "Cannot delete folder {folder_id} since it was not trashed first: {details}"
 
 
 class FolderBatchDeleteError(FoldersRuntimeError):

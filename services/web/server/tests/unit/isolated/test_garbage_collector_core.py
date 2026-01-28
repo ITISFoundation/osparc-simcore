@@ -24,9 +24,7 @@ from simcore_service_webserver.garbage_collector._core_orphans import (
 from simcore_service_webserver.resource_manager.registry import UserSession
 from simcore_service_webserver.users.exceptions import UserNotFoundError
 
-MODULE_GC_CORE_ORPHANS: Final[str] = (
-    "simcore_service_webserver.garbage_collector._core_orphans"
-)
+MODULE_GC_CORE_ORPHANS: Final[str] = "simcore_service_webserver.garbage_collector._core_orphans"
 
 
 @pytest.fixture
@@ -40,21 +38,13 @@ def client_session_id(faker: Faker) -> str:
 
 
 @pytest.fixture
-def mock_registry(
-    user_id: UserID, project_id: ProjectID, client_session_id: str
-) -> mock.AsyncMock:
-    async def _fake_get_all_resource_keys() -> (
-        tuple[list[UserSession], list[UserSession]]
-    ):
+def mock_registry(user_id: UserID, project_id: ProjectID, client_session_id: str) -> mock.AsyncMock:
+    async def _fake_get_all_resource_keys() -> tuple[list[UserSession], list[UserSession]]:
         return ([UserSession(user_id=user_id, client_session_id=client_session_id)], [])
 
     registry = mock.AsyncMock()
-    registry.get_all_resource_keys = mock.AsyncMock(
-        side_effect=_fake_get_all_resource_keys
-    )
-    registry.get_resources = mock.AsyncMock(
-        return_value={"project_id": f"{project_id}"}
-    )
+    registry.get_all_resource_keys = mock.AsyncMock(side_effect=_fake_get_all_resource_keys)
+    registry.get_resources = mock.AsyncMock(return_value={"project_id": f"{project_id}"})
     return registry
 
 
@@ -78,9 +68,7 @@ def node_exists(request: pytest.FixtureRequest) -> bool:
 
 
 @pytest.fixture
-async def mock_is_node_id_present_in_any_project_workbench(
-    mocker: MockerFixture, node_exists: bool
-) -> mock.AsyncMock:
+async def mock_is_node_id_present_in_any_project_workbench(mocker: MockerFixture, node_exists: bool) -> mock.AsyncMock:
     return mocker.patch(
         f"{MODULE_GC_CORE_ORPHANS}.is_node_id_present_in_any_project_workbench",
         autospec=True,
@@ -123,9 +111,7 @@ async def test_remove_orphaned_services_with_no_running_services_does_nothing(
 @pytest.fixture
 def faker_dynamic_service_get() -> Callable[[], DynamicServiceGet]:
     def _() -> DynamicServiceGet:
-        return DynamicServiceGet.model_validate(
-            DynamicServiceGet.model_json_schema()["examples"][1]
-        )
+        return DynamicServiceGet.model_validate(DynamicServiceGet.model_json_schema()["examples"][1])
 
     return _
 
@@ -136,9 +122,7 @@ def has_write_permission(request: pytest.FixtureRequest) -> bool:
 
 
 @pytest.fixture
-async def mock_has_write_permission(
-    mocker: MockerFixture, has_write_permission: bool
-) -> mock.AsyncMock:
+async def mock_has_write_permission(mocker: MockerFixture, has_write_permission: bool) -> mock.AsyncMock:
     return mocker.patch(
         f"{MODULE_GC_CORE_ORPHANS}.has_user_project_access_rights",
         autospec=True,
@@ -152,9 +136,7 @@ def user_role(request: pytest.FixtureRequest) -> UserRole:
 
 
 @pytest.fixture
-async def mock_get_user_role(
-    mocker: MockerFixture, user_role: UserRole
-) -> mock.AsyncMock:
+async def mock_get_user_role(mocker: MockerFixture, user_role: UserRole) -> mock.AsyncMock:
     return mocker.patch(
         f"{MODULE_GC_CORE_ORPHANS}.users_service.get_user_role",
         autospec=True,
@@ -181,14 +163,10 @@ async def test_remove_orphaned_services(
     mock_list_dynamic_services.return_value = [fake_running_service]
     await remove_orphaned_services(mock_registry, mock_app)
     mock_list_dynamic_services.assert_called_once()
-    mock_is_node_id_present_in_any_project_workbench.assert_called_once_with(
-        mock.ANY, fake_running_service.node_uuid
-    )
+    mock_is_node_id_present_in_any_project_workbench.assert_called_once_with(mock.ANY, fake_running_service.node_uuid)
     mock_list_node_ids_in_project.assert_called_once_with(mock.ANY, project_id)
 
-    expected_save_state = bool(
-        node_exists and user_role > UserRole.GUEST and has_write_permission
-    )
+    expected_save_state = bool(node_exists and user_role > UserRole.GUEST and has_write_permission)
     if node_exists and user_role > UserRole.GUEST:
         mock_get_user_role.assert_called_once()
         mock_has_write_permission.assert_called_once_with(
@@ -217,9 +195,7 @@ async def test_remove_orphaned_services(
 
 
 @pytest.mark.parametrize("node_exists", [True], indirect=True)
-@pytest.mark.parametrize(
-    "get_user_role_error", [UserNotFoundError, ValueError], ids=str
-)
+@pytest.mark.parametrize("get_user_role_error", [UserNotFoundError, ValueError], ids=str)
 async def test_remove_orphaned_services_inexisting_user_does_not_save_state(
     mock_app: mock.AsyncMock,
     mock_registry: mock.AsyncMock,
@@ -238,13 +214,9 @@ async def test_remove_orphaned_services_inexisting_user_does_not_save_state(
     mock_list_dynamic_services.return_value = [fake_running_service]
     await remove_orphaned_services(mock_registry, mock_app)
     mock_list_dynamic_services.assert_called_once()
-    mock_is_node_id_present_in_any_project_workbench.assert_called_once_with(
-        mock.ANY, fake_running_service.node_uuid
-    )
+    mock_is_node_id_present_in_any_project_workbench.assert_called_once_with(mock.ANY, fake_running_service.node_uuid)
     mock_list_node_ids_in_project.assert_called_once_with(mock.ANY, project_id)
-    mock_get_user_role.assert_called_once_with(
-        mock_app, user_id=fake_running_service.user_id
-    )
+    mock_get_user_role.assert_called_once_with(mock_app, user_id=fake_running_service.user_id)
     mock_has_write_permission.assert_not_called()
     mock_stop_dynamic_service.assert_called_once_with(
         mock_app,
@@ -276,9 +248,7 @@ async def test_remove_orphaned_services_raises_exception_does_not_reraise(
     # this should not raise
     await remove_orphaned_services(mock_registry, mock_app)
     mock_list_dynamic_services.assert_called_once()
-    mock_is_node_id_present_in_any_project_workbench.assert_called_once_with(
-        mock.ANY, fake_running_service.node_uuid
-    )
+    mock_is_node_id_present_in_any_project_workbench.assert_called_once_with(mock.ANY, fake_running_service.node_uuid)
     # there should be error messages though
     error_records = [_ for _ in caplog.records if _.levelname == "ERROR"]
     assert len(error_records) == 1

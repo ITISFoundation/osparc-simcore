@@ -18,9 +18,7 @@ from simcore_postgres_database.utils_products import (
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 
-async def test_default_product(
-    asyncpg_engine: AsyncEngine, make_products_table: Callable
-):
+async def test_default_product(asyncpg_engine: AsyncEngine, make_products_table: Callable):
     async with asyncpg_engine.begin() as conn:
         await make_products_table(conn)
         default_product = await get_default_product_name(conn)
@@ -34,30 +32,22 @@ async def test_default_product_undefined(asyncpg_engine: AsyncEngine):
             await get_default_product_name(conn)
 
 
-async def test_get_or_create_group_product(
-    asyncpg_engine: AsyncEngine, make_products_table: Callable
-):
+async def test_get_or_create_group_product(asyncpg_engine: AsyncEngine, make_products_table: Callable):
     async with asyncpg_engine.connect() as conn:
         await make_products_table(conn)
 
         async for product_row in await conn.stream(
-            sa.select(products.c.name, products.c.group_id).order_by(
-                products.c.priority
-            )
+            sa.select(products.c.name, products.c.group_id).order_by(products.c.priority)
         ):
             # get or create
-            product_group_id = await get_or_create_product_group(
-                conn, product_name=product_row.name
-            )
+            product_group_id = await get_or_create_product_group(conn, product_name=product_row.name)
 
             # check product's group
             if product_row.group_id is not None:
                 # if existed, gets the same
                 assert product_group_id == product_row.group_id
 
-            result = await conn.execute(
-                groups.select().where(groups.c.gid == product_group_id)
-            )
+            result = await conn.execute(groups.select().where(groups.c.gid == product_group_id))
             product_group = result.one()
 
             # check product's group
@@ -67,35 +57,20 @@ async def test_get_or_create_group_product(
 
             # idempotent
             for _ in range(3):
-                assert (
-                    await get_or_create_product_group(
-                        conn, product_name=product_row.name
-                    )
-                    == product_group_id
-                )
+                assert await get_or_create_product_group(conn, product_name=product_row.name) == product_group_id
 
             # does not create more groups with this name
-            result = await conn.execute(
-                groups.select().where(groups.c.name == product_row.name)
-            )
+            result = await conn.execute(groups.select().where(groups.c.name == product_row.name))
             assert result.one()
 
-            assert product_group_id == await get_product_group_id_or_none(
-                conn, product_name=product_row.name
-            )
+            assert product_group_id == await get_product_group_id_or_none(conn, product_name=product_row.name)
 
             # group-id is UPDATED -> product.group_id is updated to the new value
-            await conn.execute(
-                groups.update().where(groups.c.gid == product_group_id).values(gid=1000)
-            )
-            product_group_id = await get_product_group_id_or_none(
-                conn, product_name=product_row.name
-            )
+            await conn.execute(groups.update().where(groups.c.gid == product_group_id).values(gid=1000))
+            product_group_id = await get_product_group_id_or_none(conn, product_name=product_row.name)
             assert product_group_id == 1000
 
             # if group is DELETED -> product.group_id=null
             await conn.execute(groups.delete().where(groups.c.gid == product_group_id))
-            product_group_id = await get_product_group_id_or_none(
-                conn, product_name=product_row.name
-            )
+            product_group_id = await get_product_group_id_or_none(conn, product_name=product_row.name)
             assert product_group_id is None

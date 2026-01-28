@@ -11,7 +11,7 @@ from .base import metadata
 class PricingPlanClassification(str, enum.Enum):
     """
     These are our custom pricing plan classifications, each of them can have different behaviour.
-    Potentional examples:
+    Potential examples:
       - TIER
       - STORAGE
       - CPU_HOUR
@@ -78,7 +78,5 @@ resource_tracker_pricing_plans = sa.Table(
         doc="Unique human readable pricing plan key that might be used for integration",
     ),
     # ---------------------------
-    sa.UniqueConstraint(
-        "product_name", "pricing_plan_key", name="pricing_plans_pricing_plan_key"
-    ),
+    sa.UniqueConstraint("product_name", "pricing_plan_key", name="pricing_plans_pricing_plan_key"),
 )

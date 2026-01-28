@@ -7,8 +7,8 @@ from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.users import UserID
 from servicelib.aiohttp.observer import (
-    registed_observers_report,
     register_observer,
+    registered_observers_report,
     setup_observer_registry,
 )
 from servicelib.logging_utils import log_context
@@ -45,15 +45,11 @@ async def _on_user_connected(
             logging.DEBUG,
             msg=f"user connects and subscribes to following {projects=}",
         ):
-            await logged_gather(
-                *[project_logs.subscribe(app, ProjectID(prj)) for prj in projects]
-            )
+            await logged_gather(*[project_logs.subscribe(app, ProjectID(prj)) for prj in projects])
 
         await logged_gather(
             *[
-                retrieve_and_notify_project_locked_state(
-                    user_id, prj, app, notify_only_prj_user=True
-                )
+                retrieve_and_notify_project_locked_state(user_id, prj, app, notify_only_prj_user=True)
                 for prj in projects
             ]
         )
@@ -74,18 +70,11 @@ async def _on_user_disconnected(
     assert len(projects) <= 1, "At the moment, at most one project per session"  # nosec
 
     await logged_gather(
-        *[
-            retrieve_and_notify_project_locked_state(
-                user_id, prj, app, notify_only_prj_user=True
-            )
-            for prj in projects
-        ]
+        *[retrieve_and_notify_project_locked_state(user_id, prj, app, notify_only_prj_user=True) for prj in projects]
     )
 
     for _project_id in projects:  # At the moment, only 1 is expected
-        await conditionally_unsubscribe_project_logs_across_replicas(
-            app, ProjectID(_project_id), user_id
-        )
+        await conditionally_unsubscribe_project_logs_across_replicas(app, ProjectID(_project_id), user_id)
 
 
 def setup_project_observer_events(app: web.Application) -> None:
@@ -94,6 +83,4 @@ def setup_project_observer_events(app: web.Application) -> None:
     register_observer(app, _on_user_connected, event="SIGNAL_USER_CONNECTED")
     register_observer(app, _on_user_disconnected, event="SIGNAL_USER_DISCONNECTED")
 
-    _logger.info(
-        "App registered events (at this point):\n%s", registed_observers_report(app)
-    )
+    _logger.info("App registered events (at this point):\n%s", registered_observers_report(app))

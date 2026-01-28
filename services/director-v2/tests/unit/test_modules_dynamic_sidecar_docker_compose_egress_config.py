@@ -81,19 +81,14 @@ def envoy_conf(mocks_dir: Path) -> dict[str, Any]:
                 NATRule(hostname="xyz", tcp_ports=[_PortRange(lower=1, upper=N), 999]),
             ],
             [
-                _u(OrderedSet({_pr("abc", x)}) for x in range(1, N + 1))
-                | OrderedSet({_pr("abc", 999)}),
-                _u(OrderedSet({_pr("xyz", x)}) for x in range(1, N + 1))
-                | OrderedSet({_pr("xyz", 999)}),
+                _u(OrderedSet({_pr("abc", x)}) for x in range(1, N + 1)) | OrderedSet({_pr("abc", 999)}),
+                _u(OrderedSet({_pr("xyz", x)}) for x in range(1, N + 1)) | OrderedSet({_pr("xyz", 999)}),
             ],
             id="mix_same_ports_on_two_separate_hosts",
         ),
         pytest.param(
             [NATRule(hostname=f"abc{x}", tcp_ports=[80, 443]) for x in range(2)],
-            [
-                OrderedSet({_pr(f"abc{x}", 80)}) | OrderedSet({_pr(f"abc{x}", 443)})
-                for x in range(2)
-            ],
+            [OrderedSet({_pr(f"abc{x}", 80)}) | OrderedSet({_pr(f"abc{x}", 443)}) for x in range(2)],
             id="mix_lots_of_http_permit_listing",
         ),
     ],
@@ -105,12 +100,8 @@ def test_get_egress_proxy_dns_port_rules(
     grouped_proxy_rules = _get_egress_proxy_dns_port_rules(host_permit_list_policies)
 
     # sorting by hostname in set
-    sorted_grouped_proxy_rules = sorted(
-        grouped_proxy_rules, key=lambda x: iter(x).__next__()[0]
-    )
-    sorted_expected_grouped_proxy_rules = sorted(
-        expected_grouped_proxy_rules, key=lambda x: iter(x).__next__()[0]
-    )
+    sorted_grouped_proxy_rules = sorted(grouped_proxy_rules, key=lambda x: iter(x).__next__()[0])
+    sorted_expected_grouped_proxy_rules = sorted(expected_grouped_proxy_rules, key=lambda x: iter(x).__next__()[0])
     assert sorted_grouped_proxy_rules == sorted_expected_grouped_proxy_rules
 
 

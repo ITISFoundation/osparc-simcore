@@ -79,9 +79,7 @@ async def long_running_managers(
 ) -> list[LongRunningManager]:
     maanagers: list[LongRunningManager] = []
     for _ in range(managers_count):
-        long_running_manager = await get_long_running_manager(
-            use_in_memory_redis, rabbit_service, "some-service"
-        )
+        long_running_manager = await get_long_running_manager(use_in_memory_redis, rabbit_service, "some-service")
         maanagers.append(long_running_manager)
 
     return maanagers
@@ -94,15 +92,9 @@ def _get_long_running_manager(
 
 
 async def _assert_task_status(
-    rabbitmq_rpc_client: RabbitMQRPCClient,
-    long_running_manager: LongRunningManager,
-    task_id: TaskId,
-    *,
-    is_done: bool
+    rabbitmq_rpc_client: RabbitMQRPCClient, long_running_manager: LongRunningManager, task_id: TaskId, *, is_done: bool
 ) -> None:
-    result = await lrt_api.get_task_status(
-        rabbitmq_rpc_client, long_running_manager.lrt_namespace, {}, task_id
-    )
+    result = await lrt_api.get_task_status(rabbitmq_rpc_client, long_running_manager.lrt_namespace, {}, task_id)
     assert result.done is is_done
 
 
@@ -111,7 +103,7 @@ async def _assert_task_status_on_random_manager(
     long_running_managers: list[LongRunningManager],
     task_ids: list[TaskId],
     *,
-    is_done: bool = True
+    is_done: bool = True,
 ) -> None:
     for task_id in task_ids:
         result = await lrt_api.get_task_status(
@@ -128,7 +120,7 @@ async def _assert_task_status_done_on_all_managers(
     long_running_managers: list[LongRunningManager],
     task_id: TaskId,
     *,
-    is_done: bool = True
+    is_done: bool = True,
 ) -> None:
     async for attempt in AsyncRetrying(**_RETRY_PARAMS):
         with attempt:
@@ -141,9 +133,7 @@ async def _assert_task_status_done_on_all_managers(
 
     # check can do this form any task manager
     for manager in long_running_managers:
-        await _assert_task_status(
-            rabbitmq_rpc_client, manager, task_id, is_done=is_done
-        )
+        await _assert_task_status(rabbitmq_rpc_client, manager, task_id, is_done=is_done)
 
 
 async def _assert_list_tasks_from_all_managers(
@@ -153,9 +143,7 @@ async def _assert_list_tasks_from_all_managers(
     task_count: int,
 ) -> None:
     for manager in long_running_managers:
-        tasks = await lrt_api.list_tasks(
-            rabbitmq_rpc_client, manager.lrt_namespace, task_context
-        )
+        tasks = await lrt_api.list_tasks(rabbitmq_rpc_client, manager.lrt_namespace, task_context)
         assert len(tasks) == task_count
 
 
@@ -196,18 +184,14 @@ async def test_workflow_with_result(
         task_ids.append(task_id)
 
     for task_id in task_ids:
-        await _assert_task_status_done_on_all_managers(
-            rabbitmq_rpc_client, long_running_managers, task_id
-        )
+        await _assert_task_status_done_on_all_managers(rabbitmq_rpc_client, long_running_managers, task_id)
 
     await _assert_list_tasks_from_all_managers(
         rabbitmq_rpc_client, long_running_managers, saved_context, task_count=task_count
     )
 
     # avoids tasks getting garbage collected
-    await _assert_task_status_on_random_manager(
-        rabbitmq_rpc_client, long_running_managers, task_ids, is_done=True
-    )
+    await _assert_task_status_on_random_manager(rabbitmq_rpc_client, long_running_managers, task_ids, is_done=True)
 
     for task_id in task_ids:
         result = await lrt_api.get_task_result(
@@ -218,9 +202,7 @@ async def test_workflow_with_result(
         )
         assert result == to_return
 
-        await assert_task_is_no_longer_present(
-            _get_long_running_manager(long_running_managers), task_id, saved_context
-        )
+        await assert_task_is_no_longer_present(_get_long_running_manager(long_running_managers), task_id, saved_context)
 
 
 @pytest.mark.parametrize("task_count", _TASK_COUNT)
@@ -252,18 +234,14 @@ async def test_workflow_raises_error(
         task_ids.append(task_id)
 
     for task_id in task_ids:
-        await _assert_task_status_done_on_all_managers(
-            rabbitmq_rpc_client, long_running_managers, task_id
-        )
+        await _assert_task_status_done_on_all_managers(rabbitmq_rpc_client, long_running_managers, task_id)
 
     await _assert_list_tasks_from_all_managers(
         rabbitmq_rpc_client, long_running_managers, saved_context, task_count=task_count
     )
 
     # avoids tasks getting garbage collected
-    await _assert_task_status_on_random_manager(
-        rabbitmq_rpc_client, long_running_managers, task_ids, is_done=True
-    )
+    await _assert_task_status_on_random_manager(rabbitmq_rpc_client, long_running_managers, task_ids, is_done=True)
 
     for task_id in task_ids:
         with pytest.raises(_TestingError, match="This task always raises an error"):
@@ -274,9 +252,7 @@ async def test_workflow_raises_error(
                 task_id,
             )
 
-        await assert_task_is_no_longer_present(
-            _get_long_running_manager(long_running_managers), task_id, saved_context
-        )
+        await assert_task_is_no_longer_present(_get_long_running_manager(long_running_managers), task_id, saved_context)
 
 
 @pytest.mark.parametrize("task_context", _TASK_CONTEXT)
@@ -300,9 +276,7 @@ async def test_remove_task(
     )
     saved_context = task_context or {}
 
-    await _assert_task_status_done_on_all_managers(
-        rabbitmq_rpc_client, long_running_managers, task_id, is_done=False
-    )
+    await _assert_task_status_done_on_all_managers(rabbitmq_rpc_client, long_running_managers, task_id, is_done=False)
 
     await lrt_api.remove_task(
         rabbitmq_rpc_client,
@@ -311,6 +285,4 @@ async def test_remove_task(
         task_id,
     )
 
-    await assert_task_is_no_longer_present(
-        _get_long_running_manager(long_running_managers), task_id, saved_context
-    )
+    await assert_task_is_no_longer_present(_get_long_running_manager(long_running_managers), task_id, saved_context)

@@ -38,9 +38,7 @@ class ServiceMetaDataEditable(ServiceBaseDisplay):
         ),
     ] = None
     classifiers: list[str] | None
-    quality: Annotated[
-        dict[str, Any], Field(default_factory=dict, json_schema_extra={"default": {}})
-    ] = DEFAULT_FACTORY
+    quality: Annotated[dict[str, Any], Field(default_factory=dict, json_schema_extra={"default": {}})] = DEFAULT_FACTORY
 
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:
@@ -55,20 +53,14 @@ class ServiceMetaDataEditable(ServiceBaseDisplay):
                     "icon": "https://cdn-icons-png.flaticon.com/512/25/25231.png",
                     "quality": {
                         "enabled": True,
-                        "tsr_target": {
-                            f"r{n:02d}": {"level": 4, "references": ""}
-                            for n in range(1, 11)
-                        },
+                        "tsr_target": {f"r{n:02d}": {"level": 4, "references": ""} for n in range(1, 11)},
                         "annotations": {
                             "vandv": "",
                             "limitations": "",
                             "certificationLink": "",
                             "certificationStatus": "Uncertified",
                         },
-                        "tsr_current": {
-                            f"r{n:02d}": {"level": 0, "references": ""}
-                            for n in range(1, 11)
-                        },
+                        "tsr_current": {f"r{n:02d}": {"level": 0, "references": ""} for n in range(1, 11)},
                     },
                     "classifiers": [],
                 }

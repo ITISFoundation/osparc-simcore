@@ -339,9 +339,7 @@ async def test__list_projects_full_search_with_template_type_hypertool_and_tutor
     base_url = client.app.router["list_projects_full_search"].url_for()
 
     # Test: Filter by template_type="hypertool"
-    url = base_url.with_query(
-        {"text": "Project Test", "type": "template", "template_type": "HYPERTOOL"}
-    )
+    url = base_url.with_query({"text": "Project Test", "type": "template", "template_type": "HYPERTOOL"})
     resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     hypertool_uuids = [p["uuid"] for p in data]
@@ -349,9 +347,7 @@ async def test__list_projects_full_search_with_template_type_hypertool_and_tutor
     assert tutorial_project_created["uuid"] not in hypertool_uuids
 
     # Test: Filter by template_type="tutorial"
-    url = base_url.with_query(
-        {"text": "Project Test", "type": "template", "template_type": "TUTORIAL"}
-    )
+    url = base_url.with_query({"text": "Project Test", "type": "template", "template_type": "TUTORIAL"})
     resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     tutorial_uuids = [p["uuid"] for p in data]
@@ -417,9 +413,7 @@ async def test__list_projects_full_search_with_template_type_regular_and_none(
     await assert_status(resp, status.HTTP_422_UNPROCESSABLE_ENTITY)
 
     # Test: Filter by type= template_type="null"
-    url = base_url.with_query(
-        {"text": "Project Test", "type": "all", "template_type": "null"}
-    )
+    url = base_url.with_query({"text": "Project Test", "type": "all", "template_type": "null"})
     resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     none_template_uuids = [p["uuid"] for p in data]
@@ -429,9 +423,7 @@ async def test__list_projects_full_search_with_template_type_regular_and_none(
     assert hypertool_project_created["uuid"] in none_template_uuids
 
     # Test: Filter by type="user" & template_type="None"
-    url = base_url.with_query(
-        {"text": "Project Test", "type": "user", "template_type": "None"}
-    )
+    url = base_url.with_query({"text": "Project Test", "type": "user", "template_type": "None"})
     resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     none_template_uuids = [p["uuid"] for p in data]

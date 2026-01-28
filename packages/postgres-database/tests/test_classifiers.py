@@ -18,14 +18,7 @@ from sqlalchemy import func, literal_column
 
 @pytest.fixture
 def web_client_resource_folder(osparc_simcore_root_dir: Path) -> Path:
-    wcrf_path = (
-        osparc_simcore_root_dir
-        / "services"
-        / "static-webserver"
-        / "client"
-        / "source"
-        / "resource"
-    )
+    wcrf_path = osparc_simcore_root_dir / "services" / "static-webserver" / "client" / "source" / "resource"
     assert wcrf_path.exists()
     return wcrf_path
 
@@ -37,25 +30,15 @@ def classifiers_bundle(web_client_resource_folder: Path) -> dict:
     return json.loads(bundle_path.read_text())
 
 
-async def test_operations_on_group_classifiers(
-    aiopg_engine: Engine, classifiers_bundle: dict
-):
+async def test_operations_on_group_classifiers(aiopg_engine: Engine, classifiers_bundle: dict):
     # NOTE: mostly for TDD
     async with aiopg_engine.acquire() as conn:
         # creates a group
-        stmt = (
-            groups.insert()
-            .values(**random_group(name="MyGroup"))
-            .returning(groups.c.gid)
-        )
+        stmt = groups.insert().values(**random_group(name="MyGroup")).returning(groups.c.gid)
         gid = await conn.scalar(stmt)
 
         # adds classifiers to a group
-        stmt = (
-            group_classifiers.insert()
-            .values(bundle=classifiers_bundle, gid=gid)
-            .returning(literal_column("*"))
-        )
+        stmt = group_classifiers.insert().values(bundle=classifiers_bundle, gid=gid).returning(literal_column("*"))
         result = await conn.execute(stmt)
         row = await result.first()
 
@@ -64,9 +47,7 @@ async def test_operations_on_group_classifiers(
         assert row[group_classifiers.c.bundle] == classifiers_bundle
 
         # get bundle in one query
-        bundle = await conn.scalar(
-            sa.select(group_classifiers.c.bundle).where(group_classifiers.c.gid == gid)
-        )
+        bundle = await conn.scalar(sa.select(group_classifiers.c.bundle).where(group_classifiers.c.gid == gid))
         assert bundle
         assert classifiers_bundle == bundle
 
@@ -79,20 +60,14 @@ async def test_operations_on_group_classifiers(
         await conn.execute(groups.delete().where(groups.c.gid == gid))
 
         groups_count = await conn.scalar(sa.select(func.count(groups.c.gid)))
-        classifiers_count = await conn.scalar(
-            sa.select(func.count()).select_from(group_classifiers)
-        )
+        classifiers_count = await conn.scalar(sa.select(func.count()).select_from(group_classifiers))
 
-        assert (
-            groups_count == 1
-        ), "There should be only the Everyone group in the database!"
+        assert groups_count == 1, "There should be only the Everyone group in the database!"
         assert isinstance(classifiers_count, int)
         assert isinstance(groups_count, int)
         assert classifiers_count <= groups_count
         assert classifiers_count == 0
 
         # no bundle
-        bundle = await conn.scalar(
-            sa.select(group_classifiers.c.bundle).where(group_classifiers.c.gid == gid)
-        )
+        bundle = await conn.scalar(sa.select(group_classifiers.c.bundle).where(group_classifiers.c.gid == gid))
         assert bundle is None

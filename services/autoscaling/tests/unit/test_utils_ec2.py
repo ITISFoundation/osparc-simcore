@@ -63,9 +63,7 @@ async def test_find_best_fitting_ec2_instance_closest_instance_policy_with_resou
         *[
             (
                 Resources(cpus=n, ram=ByteSize(n)),
-                EC2InstanceType(
-                    name="c5ad.12xlarge", resources=Resources(cpus=n, ram=ByteSize(n))
-                ),
+                EC2InstanceType(name="c5ad.12xlarge", resources=Resources(cpus=n, ram=ByteSize(n))),
             )
             for n in range(1, 30)
         ],
@@ -74,9 +72,7 @@ async def test_find_best_fitting_ec2_instance_closest_instance_policy_with_resou
                 Resources(cpus=15, ram=ByteSize(128), generic_resources={"gpu": 1}),
                 EC2InstanceType(
                     name="c5ad.12xlarge",
-                    resources=Resources(
-                        cpus=15, ram=ByteSize(128), generic_resources={"gpu": 12}
-                    ),
+                    resources=Resources(cpus=15, ram=ByteSize(128), generic_resources={"gpu": 12}),
                 ),
             )
         ],
@@ -208,9 +204,7 @@ def test_load_from_ec2_tags_single_format():
     base_key = TypeAdapter(AWSTagKey).validate_python("test.key")
     tags: EC2Tags = {base_key: '["image:v1", "image:v2"]'}
 
-    result = load_from_ec2_tags(
-        tags, base_tag_key=base_key, type_adapter=TypeAdapter(list[str])
-    )
+    result = load_from_ec2_tags(tags, base_tag_key=base_key, type_adapter=TypeAdapter(list[str]))
 
     assert result == ["image:v1", "image:v2"]
 
@@ -223,9 +217,7 @@ def test_load_from_ec2_tags_chunked_format():
         TypeAdapter(AWSTagKey).validate_python("test.key_1"): ':v1"]',
     }
 
-    result = load_from_ec2_tags(
-        tags, base_tag_key=base_key, type_adapter=TypeAdapter(list[str])
-    )
+    result = load_from_ec2_tags(tags, base_tag_key=base_key, type_adapter=TypeAdapter(list[str]))
 
     assert result == ["image:v1"]
 
@@ -234,9 +226,7 @@ def test_load_from_ec2_tags_empty_returns_none():
     base_key = TypeAdapter(AWSTagKey).validate_python("test.key")
     tags: EC2Tags = {}
 
-    result = load_from_ec2_tags(
-        tags, base_tag_key=base_key, type_adapter=TypeAdapter(list[str])
-    )
+    result = load_from_ec2_tags(tags, base_tag_key=base_key, type_adapter=TypeAdapter(list[str]))
 
     assert result is None
 
@@ -246,9 +236,7 @@ def test_load_from_ec2_tags_malformed_raises():
     tags: EC2Tags = {base_key: "not-valid-json{"}
 
     with pytest.raises(Ec2TagDeserializationError):
-        load_from_ec2_tags(
-            tags, base_tag_key=base_key, type_adapter=TypeAdapter(list[str])
-        )
+        load_from_ec2_tags(tags, base_tag_key=base_key, type_adapter=TypeAdapter(list[str]))
 
 
 def test_list_chunked_tag_keys_single_format():

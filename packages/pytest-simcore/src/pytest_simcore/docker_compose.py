@@ -34,14 +34,10 @@ _logger = logging.getLogger(__name__)
 
 
 @pytest.fixture(scope="module")
-def temp_folder(
-    request: pytest.FixtureRequest, tmp_path_factory: pytest.TempPathFactory
-) -> Path:
+def temp_folder(request: pytest.FixtureRequest, tmp_path_factory: pytest.TempPathFactory) -> Path:
     """**Module scoped** temporary folder"""
     prefix = __name__.replace(".", "_")
-    return tmp_path_factory.mktemp(
-        basename=f"{prefix}_temp_folder_{request.module.__name__}", numbered=True
-    )
+    return tmp_path_factory.mktemp(basename=f"{prefix}_temp_folder_{request.module.__name__}", numbered=True)
 
 
 @pytest.fixture(scope="session")
@@ -70,9 +66,7 @@ def env_vars_for_docker_compose(env_devel_file: Path) -> EnvVarsDict:
     env_devel["REGISTRY_AUTH"] = "False"
 
     env_devel["SWARM_STACK_NAME"] = "pytest-simcore"
-    env_devel.setdefault(
-        "SWARM_STACK_NAME_NO_HYPHEN", env_devel["SWARM_STACK_NAME"].replace("-", "_")
-    )
+    env_devel.setdefault("SWARM_STACK_NAME_NO_HYPHEN", env_devel["SWARM_STACK_NAME"].replace("-", "_"))
 
     env_devel[
         "AIOCACHE_DISABLE"
@@ -109,9 +103,8 @@ def env_vars_for_docker_compose(env_devel_file: Path) -> EnvVarsDict:
     env_devel["S3_BUCKET_NAME"] = "pytestbucket"
 
     # ensure OpenTelemetry is not enabled
-    env_devel |= {
-        tracing_setting: "null"
-        for tracing_setting in (
+    env_devel |= dict.fromkeys(
+        (
             "AGENT_TRACING",
             "API_SERVER_TRACING",
             "AUTOSCALING_TRACING",
@@ -129,8 +122,9 @@ def env_vars_for_docker_compose(env_devel_file: Path) -> EnvVarsDict:
             "WB_DB_EL_TRACING",
             "WB_GC_TRACING",
             "WEBSERVER_TRACING",
-        )
-    }
+        ),
+        "null",
+    )
 
     return {key: value for key, value in env_devel.items() if value is not None}
 
@@ -197,13 +191,8 @@ def simcore_docker_compose(
     assert env_file_for_docker_compose.exists()
 
     # target docker compose path
-    docker_compose_paths = [
-        osparc_simcore_root_dir / "services" / filename
-        for filename in COMPOSE_FILENAMES
-    ]
-    assert all(
-        docker_compose_path.exists() for docker_compose_path in docker_compose_paths
-    )
+    docker_compose_paths = [osparc_simcore_root_dir / "services" / filename for filename in COMPOSE_FILENAMES]
+    assert all(docker_compose_path.exists() for docker_compose_path in docker_compose_paths)
 
     return run_docker_compose_config(
         project_dir=osparc_simcore_root_dir / "services",
@@ -229,9 +218,7 @@ def ops_docker_compose(
     assert env_file_for_docker_compose.exists()
 
     # target docker compose path
-    docker_compose_path = (
-        osparc_simcore_root_dir / "services" / "docker-compose-ops.yml"
-    )
+    docker_compose_path = osparc_simcore_root_dir / "services" / "docker-compose-ops.yml"
     assert docker_compose_path.exists()
 
     return run_docker_compose_config(
@@ -248,9 +235,9 @@ def core_services_selection(request) -> list[str]:
     """Selection of services from the simcore stack"""
     core_services = getattr(request.module, FIXTURE_CONFIG_CORE_SERVICES_SELECTION, [])
 
-    assert (
-        core_services
-    ), f"Expected at least one service in '{FIXTURE_CONFIG_CORE_SERVICES_SELECTION}' within '{request.module.__name__}'"
+    assert core_services, (
+        f"Expected at least one service in '{FIXTURE_CONFIG_CORE_SERVICES_SELECTION}' within '{request.module.__name__}'"
+    )
     return core_services
 
 
@@ -265,9 +252,7 @@ def core_docker_compose_file(
     """
     docker_compose_path = Path(temp_folder / "simcore_docker_compose.filtered.yml")
 
-    _filter_services_and_dump(
-        core_services_selection, simcore_docker_compose, docker_compose_path
-    )
+    _filter_services_and_dump(core_services_selection, simcore_docker_compose, docker_compose_path)
 
     _logger.info(
         "Content of '%s':\n%s",
@@ -284,9 +269,7 @@ def ops_services_selection(request) -> list[str]:
 
 
 @pytest.fixture(scope="module")
-def ops_docker_compose_file(
-    ops_services_selection: list[str], temp_folder: Path, ops_docker_compose: dict
-) -> Path:
+def ops_docker_compose_file(ops_services_selection: list[str], temp_folder: Path, ops_docker_compose: dict) -> Path:
     """A compose with a selection of services from ops_docker_compose
 
     Creates a docker compose config file for every stack of services in 'ops_services_selection' module variable
@@ -301,15 +284,9 @@ def ops_docker_compose_file(
             "Note that services such as '%s' are removed from the stack when running in the CI",
             ops_view_only_services,
         )
-        ops_services_selection = list(
-            filter(
-                lambda item: item not in ops_view_only_services, ops_services_selection
-            )
-        )
+        ops_services_selection = list(filter(lambda item: item not in ops_view_only_services, ops_services_selection))
 
-    _filter_services_and_dump(
-        ops_services_selection, ops_docker_compose, docker_compose_path
-    )
+    _filter_services_and_dump(ops_services_selection, ops_docker_compose, docker_compose_path)
 
     _logger.info(
         "Content of '%s':\n%s",
@@ -324,7 +301,9 @@ def _save_docker_logs_to_folder(failed_test_directory: Path):
         save_docker_infos(failed_test_directory)
     except OSError as exc:
         if exc.errno == 36:  # OSError [Errno 36] File name too long
-            short_name = f"{failed_test_directory.name[:5]}_{hash(failed_test_directory.name)}_{failed_test_directory.name[-5:]}"
+            short_name = (
+                f"{failed_test_directory.name[:5]}_{hash(failed_test_directory.name)}_{failed_test_directory.name[-5:]}"
+            )
             failed_test_directory = failed_test_directory.parent / short_name
 
             save_docker_infos(failed_test_directory)
@@ -333,9 +312,7 @@ def _save_docker_logs_to_folder(failed_test_directory: Path):
 
 
 @pytest.hookimpl()
-def pytest_exception_interact(
-    node, call: pytest.CallInfo[Any], report: pytest.CollectReport
-):
+def pytest_exception_interact(node, call: pytest.CallInfo[Any], report: pytest.CollectReport):
     # get the node root dir (guaranteed to exist)
     root_directory: Path = Path(node.config.rootdir)
     failed_test_directory = root_directory / "test_failures" / node.name
@@ -365,14 +342,10 @@ def _escape_cpus(serialized_yaml: str) -> str:
     # remove when this issues is fixed, this will most likely occur
     # when upgrading the version of docker compose
 
-    return re.sub(
-        pattern=r"cpus: (\d+\.\d+|\d+)", repl="cpus: '\\1'", string=serialized_yaml
-    )
+    return re.sub(pattern=r"cpus: (\d+\.\d+|\d+)", repl="cpus: '\\1'", string=serialized_yaml)
 
 
-def _filter_services_and_dump(
-    include: list, services_compose: dict, docker_compose_path: Path
-):
+def _filter_services_and_dump(include: list, services_compose: dict, docker_compose_path: Path):
     content = deepcopy(services_compose)
 
     # filters services

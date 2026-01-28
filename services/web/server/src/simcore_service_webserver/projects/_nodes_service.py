@@ -59,9 +59,7 @@ def check_num_service_per_projects_limit(
     if project_settings.PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES > 0 and (
         number_of_services >= project_settings.PROJECTS_MAX_NUM_RUNNING_DYNAMIC_NODES
     ):
-        raise ProjectStartsTooManyDynamicNodesError(
-            user_id=user_id, project_uuid=project_uuid
-        )
+        raise ProjectStartsTooManyDynamicNodesError(user_id=user_id, project_uuid=project_uuid)
 
 
 def get_total_project_dynamic_nodes_creation_interval(
@@ -77,14 +75,10 @@ def get_total_project_dynamic_nodes_creation_interval(
 async def get_project_nodes_services(
     app: web.Application, *, project_uuid: ProjectID
 ) -> list[tuple[ServiceKey, ServiceVersion]]:
-    return await _nodes_repository.get_project_nodes_services(
-        app, project_uuid=project_uuid
-    )
+    return await _nodes_repository.get_project_nodes_services(app, project_uuid=project_uuid)
 
 
-async def get_project_nodes(
-    app: web.Application, *, project_uuid: ProjectID
-) -> list[ProjectNode]:
+async def get_project_nodes(app: web.Application, *, project_uuid: ProjectID) -> list[ProjectNode]:
     return await _nodes_repository.get_project_nodes(app, project_uuid=project_uuid)
 
 
@@ -171,9 +165,7 @@ def _get_files_with_thumbnails(
             )
         )
         # remove entries which have been used
-        selected_file_entries.pop(
-            __get_search_key(selected_file_entries[selected_file]), None
-        )
+        selected_file_entries.pop(__get_search_key(selected_file_entries[selected_file]), None)
         selected_file_entries.pop(__get_search_key(thumbnail), None)
 
     no_thumbnail_image: list[_FileWithThumbnail] = [
@@ -183,9 +175,7 @@ def _get_files_with_thumbnails(
     return with_thumbnail_image + no_thumbnail_image
 
 
-async def __get_link(
-    app: web.Application, user_id: UserID, file_meta_data: FileMetaDataGet
-) -> tuple[str, HttpUrl]:
+async def __get_link(app: web.Application, user_id: UserID, file_meta_data: FileMetaDataGet) -> tuple[str, HttpUrl]:
     return __get_search_key(file_meta_data), await get_download_link(
         app,
         user_id,
@@ -232,11 +222,7 @@ async def get_node_screenshots(
 ) -> list[NodeScreenshot]:
     screenshots: list[NodeScreenshot] = []
 
-    if (
-        "file-picker" in node.key
-        and "fake" in node.label.lower()
-        and node.outputs is not None
-    ):
+    if "file-picker" in node.key and "fake" in node.label.lower() and node.outputs is not None:
         # Example of file that can be added in file-picker:
         # Example https://github.com/Ybalrid/Ogre_glTF/raw/6a59adf2f04253a3afb9459549803ab297932e8d/Media/Monster.glb
         try:

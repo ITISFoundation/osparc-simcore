@@ -53,9 +53,7 @@ async def get_licensed_item_purchase(
 
 
 @router.expose(reraise_if_error_type=())
-async def create_licensed_item_purchase(
-    app: FastAPI, *, data: LicensedItemsPurchasesCreate
-) -> LicensedItemPurchaseGet:
+async def create_licensed_item_purchase(app: FastAPI, *, data: LicensedItemsPurchasesCreate) -> LicensedItemPurchaseGet:
     return await licensed_items_purchases.create_licensed_item_purchase(
         rabbitmq_client=app.state.rabbitmq_client, db_engine=app.state.engine, data=data
     )

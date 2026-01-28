@@ -66,9 +66,7 @@ def test_fmd_build_api():
 
 
 def test_fmd_build_webapi():
-    file_id = TypeAdapter(SimcoreS3FileID).validate_python(
-        f"{uuid.uuid4()}/{uuid.uuid4()}/xx.dat"
-    )
+    file_id = TypeAdapter(SimcoreS3FileID).validate_python(f"{uuid.uuid4()}/{uuid.uuid4()}/xx.dat")
     fmd = FileMetaData.from_simcore_node(
         user_id=12,
         file_id=file_id,

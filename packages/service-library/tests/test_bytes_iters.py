@@ -35,7 +35,7 @@ def _ensure_dir(path: Path) -> Path:
 
 @pytest.fixture
 def local_files_dir(tmp_path: Path) -> Path:
-    # Cotent to add to the zip
+    # Content to add to the zip
     return _ensure_dir(tmp_path / "local_files_dir")
 
 
@@ -102,14 +102,12 @@ async def test_get_zip_bytes_iter(
     local_unpacked_archive: Path,
     use_file_like: bool,
 ):
-    # 1. generate archive form soruces
+    # 1. generate archive form sources
     archive_files: ArchiveEntries = []
     for file in (x for x in local_files_dir.rglob("*") if x.is_file()):
         archive_name = get_relative_to(local_files_dir, file)
 
-        archive_files.append(
-            (archive_name, DiskStreamReader(file).get_bytes_streamer())
-        )
+        archive_files.append((archive_name, DiskStreamReader(file).get_bytes_streamer()))
 
     writer = DiskStreamWriter(local_archive_path)
 
@@ -118,9 +116,7 @@ async def test_get_zip_bytes_iter(
         progress_report_cb=mocked_progress_bar_cb,
         description="root_bar",
     ) as root:
-        bytes_iter = get_zip_bytes_iter(
-            archive_files, progress_bar=root, chunk_size=1024
-        )
+        bytes_iter = get_zip_bytes_iter(archive_files, progress_bar=root, chunk_size=1024)
 
         if use_file_like:
             await writer.write_from_file_like(FileLikeBytesIterReader(bytes_iter))

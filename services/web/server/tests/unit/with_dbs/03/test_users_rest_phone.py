@@ -25,9 +25,7 @@ from simcore_service_webserver.users._controller.rest.users_rest import (
 
 
 @pytest.fixture
-def app_environment(
-    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
-) -> EnvVarsDict:
+def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
     # disables GC and DB-listener
     return app_environment | setenvs_from_dict(
         monkeypatch,

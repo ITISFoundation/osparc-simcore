@@ -91,9 +91,7 @@ def _get_node_get_with(state: str, node_id: NodeID = _DEFAULT_NODE_ID) -> NodeGe
     return TypeAdapter(NodeGet).validate_python(dict_data)
 
 
-def _get_dynamic_service_get_legacy_with(
-    state: str, node_id: NodeID = _DEFAULT_NODE_ID
-) -> DynamicServiceGet:
+def _get_dynamic_service_get_legacy_with(state: str, node_id: NodeID = _DEFAULT_NODE_ID) -> DynamicServiceGet:
     dict_data = deepcopy(DynamicServiceGet.model_json_schema()["examples"][0])
     _add_to_dict(
         dict_data,
@@ -105,9 +103,7 @@ def _get_dynamic_service_get_legacy_with(
     return TypeAdapter(DynamicServiceGet).validate_python(dict_data)
 
 
-def _get_dynamic_service_get_new_style_with(
-    state: str, node_id: NodeID = _DEFAULT_NODE_ID
-) -> DynamicServiceGet:
+def _get_dynamic_service_get_new_style_with(state: str, node_id: NodeID = _DEFAULT_NODE_ID) -> DynamicServiceGet:
     dict_data = deepcopy(DynamicServiceGet.model_json_schema()["examples"][1])
     _add_to_dict(
         dict_data,
@@ -131,9 +127,7 @@ def _get_node_get_idle(node_id: NodeID = _DEFAULT_NODE_ID) -> NodeGetIdle:
 
 
 class _ResponseTimeline:
-    def __init__(
-        self, timeline: list[NodeGet | DynamicServiceGet | NodeGetIdle]
-    ) -> None:
+    def __init__(self, timeline: list[NodeGet | DynamicServiceGet | NodeGetIdle]) -> None:
         self._timeline = timeline
 
         self._client_access_history: dict[NodeID, NonNegativeInt] = {}
@@ -158,9 +152,7 @@ class _ResponseTimeline:
         return status
 
 
-async def _assert_call_to(
-    deferred_status_spies: dict[str, AsyncMock], *, method: str, count: NonNegativeInt
-) -> None:
+async def _assert_call_to(deferred_status_spies: dict[str, AsyncMock], *, method: str, count: NonNegativeInt) -> None:
     async for attempt in AsyncRetrying(
         reraise=True,
         stop=stop_after_delay(1),
@@ -169,9 +161,7 @@ async def _assert_call_to(
     ):
         with attempt:
             call_count = deferred_status_spies[method].call_count
-            assert (
-                call_count == count
-            ), f"Received calls {call_count} != {count} (expected) to '{method}'"
+            assert call_count == count, f"Received calls {call_count} != {count} (expected) to '{method}'"
 
 
 async def _assert_result(
@@ -187,14 +177,10 @@ async def _assert_result(
     ):
         with attempt:
             assert deferred_status_spies["on_result"].call_count == len(timeline)
-            assert [
-                x.args[0] for x in deferred_status_spies["on_result"].call_args_list
-            ] == timeline
+            assert [x.args[0] for x in deferred_status_spies["on_result"].call_args_list] == timeline
 
 
-async def _assert_notification_count(
-    mock: AsyncMock, expected_count: NonNegativeInt
-) -> None:
+async def _assert_notification_count(mock: AsyncMock, expected_count: NonNegativeInt) -> None:
     async for attempt in AsyncRetrying(
         reraise=True,
         stop=stop_after_delay(1),
@@ -206,9 +192,7 @@ async def _assert_notification_count(
 
 
 @pytest.fixture
-async def mock_director_v2_status(
-    app: FastAPI, response_timeline: _ResponseTimeline
-) -> AsyncIterable[None]:
+async def mock_director_v2_status(app: FastAPI, response_timeline: _ResponseTimeline) -> AsyncIterable[None]:
     def _side_effect_node_status_response(request: Request) -> Response:
         node_id = NodeID(f"{request.url}".split("/")[-1])
 
@@ -217,9 +201,7 @@ async def mock_director_v2_status(
         if isinstance(service_status, NodeGet):
             return Response(
                 status.HTTP_200_OK,
-                text=json.dumps(
-                    jsonable_encoder({"data": service_status.model_dump()})
-                ),
+                text=json.dumps(jsonable_encoder({"data": service_status.model_dump()})),
             )
         if isinstance(service_status, DynamicServiceGet):
             return Response(status.HTTP_200_OK, text=service_status.model_dump_json())
@@ -233,9 +215,7 @@ async def mock_director_v2_status(
         assert_all_called=False,
         assert_all_mocked=True,
     ) as mock:
-        mock.get(re.compile(r"/dynamic_services/([\w-]+)")).mock(
-            side_effect=_side_effect_node_status_response
-        )
+        mock.get(re.compile(r"/dynamic_services/([\w-]+)")).mock(side_effect=_side_effect_node_status_response)
         yield
 
 
@@ -263,9 +243,7 @@ def deferred_status_spies(mocker: MockerFixture) -> dict[str, AsyncMock]:
 
 @pytest.fixture
 def remove_tracked_spy(mocker: MockerFixture) -> AsyncMock:
-    mock_method = mocker.AsyncMock(
-        wraps=_monitor.service_tracker.remove_tracked_service
-    )
+    mock_method = mocker.AsyncMock(wraps=_monitor.service_tracker.remove_tracked_service)
     return mocker.patch.object(
         _monitor.service_tracker,
         _monitor.service_tracker.remove_tracked_service.__name__,
@@ -287,9 +265,7 @@ def mocked_notify_frontend(mocker: MockerFixture) -> AsyncMock:
 
 @pytest.fixture
 def disable_status_monitor_background_task(mocker: MockerFixture) -> None:
-    mocker.patch(
-        "simcore_service_dynamic_scheduler.services.status_monitor._monitor.Monitor.setup"
-    )
+    mocker.patch("simcore_service_dynamic_scheduler.services.status_monitor._monitor.Monitor.setup")
 
 
 @pytest.mark.parametrize(
@@ -304,9 +280,7 @@ def disable_status_monitor_background_task(mocker: MockerFixture) -> None:
         ),
         pytest.param(
             True,
-            _ResponseTimeline(
-                [_get_dynamic_service_get_legacy_with("running") for _ in range(10)]
-            ),
+            _ResponseTimeline([_get_dynamic_service_get_legacy_with("running") for _ in range(10)]),
             1,
             0,
             id="requested_running_state_changes_1_for_multiple_same_state_no_task_removal",
@@ -332,10 +306,7 @@ def disable_status_monitor_background_task(mocker: MockerFixture) -> None:
                     *[_get_node_get_idle() for _ in range(10)],
                     _get_dynamic_service_get_new_style_with("pending"),
                     _get_dynamic_service_get_new_style_with("pulling"),
-                    *[
-                        _get_dynamic_service_get_new_style_with("starting")
-                        for _ in range(10)
-                    ],
+                    *[_get_dynamic_service_get_new_style_with("starting") for _ in range(10)],
                     _get_dynamic_service_get_new_style_with("running"),
                     _get_dynamic_service_get_new_style_with("stopping"),
                     _get_dynamic_service_get_new_style_with("complete"),
@@ -352,10 +323,7 @@ def disable_status_monitor_background_task(mocker: MockerFixture) -> None:
                 [
                     _get_dynamic_service_get_new_style_with("pending"),
                     _get_dynamic_service_get_new_style_with("pulling"),
-                    *[
-                        _get_dynamic_service_get_new_style_with("starting")
-                        for _ in range(10)
-                    ],
+                    *[_get_dynamic_service_get_new_style_with("starting") for _ in range(10)],
                     _get_dynamic_service_get_new_style_with("running"),
                     _get_dynamic_service_get_new_style_with("stopping"),
                     _get_dynamic_service_get_new_style_with("complete"),
@@ -393,33 +361,21 @@ async def test_expected_calls_to_notify_frontend(  # pylint:disable=too-many-arg
     entries_in_timeline = len(response_timeline)
 
     for i in range(entries_in_timeline):
-        async for attempt in AsyncRetrying(
-            reraise=True, stop=stop_after_delay(10), wait=wait_fixed(0.1)
-        ):
+        async for attempt in AsyncRetrying(reraise=True, stop=stop_after_delay(10), wait=wait_fixed(0.1)):
             with attempt:
                 # pylint:disable=protected-access
                 await monitor._worker_check_services_require_status_update()  # noqa: SLF001
                 for method in ("start", "on_created", "on_result"):
-                    await _assert_call_to(
-                        deferred_status_spies, method=method, count=i + 1
-                    )
+                    await _assert_call_to(deferred_status_spies, method=method, count=i + 1)
 
-    await _assert_call_to(
-        deferred_status_spies, method="run", count=entries_in_timeline
-    )
-    await _assert_call_to(
-        deferred_status_spies, method="on_finished_with_error", count=0
-    )
+    await _assert_call_to(deferred_status_spies, method="run", count=entries_in_timeline)
+    await _assert_call_to(deferred_status_spies, method="on_finished_with_error", count=0)
 
     await _assert_result(deferred_status_spies, timeline=response_timeline.entries)
 
-    await _assert_notification_count(
-        mocked_notify_frontend, expected_notification_count
-    )
+    await _assert_notification_count(mocked_notify_frontend, expected_notification_count)
 
-    async for attempt in AsyncRetrying(
-        reraise=True, stop=stop_after_delay(1), wait=wait_fixed(0.1)
-    ):
+    async for attempt in AsyncRetrying(reraise=True, stop=stop_after_delay(1), wait=wait_fixed(0.1)):
         with attempt:
             # pylint:disable=protected-access
             await monitor._worker_check_services_require_status_update()  # noqa: SLF001

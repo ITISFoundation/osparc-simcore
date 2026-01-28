@@ -34,9 +34,7 @@ async def test_groups_access_rights(
     assert f"{url}" == f"/{API_VTAG}/groups"
 
     response = await client.get(f"{url}")
-    await assert_status(
-        response, expected.ok if user_role != UserRole.GUEST else status.HTTP_200_OK
-    )
+    await assert_status(response, expected.ok if user_role != UserRole.GUEST else status.HTTP_200_OK)
 
     url = client.app.router["create_group"].url_for()
     assert f"{url}" == f"/{API_VTAG}/groups"
@@ -105,9 +103,7 @@ async def test_list_user_groups_and_try_modify_organizations(
         await assert_status(response, status.HTTP_403_FORBIDDEN)
 
         # try to modify the user in the group
-        url = client.app.router["update_group_user"].url_for(
-            gid=f"{group['gid']}", uid=f"{logged_user['id']}"
-        )
+        url = client.app.router["update_group_user"].url_for(gid=f"{group['gid']}", uid=f"{logged_user['id']}")
         response = await client.patch(
             f"{url}",
             json={"accessRights": {"read": True, "write": True, "delete": True}},
@@ -115,9 +111,7 @@ async def test_list_user_groups_and_try_modify_organizations(
         await assert_status(response, status.HTTP_403_FORBIDDEN)
 
         # try to remove the user from the group
-        url = client.app.router["delete_group_user"].url_for(
-            gid=f"{group['gid']}", uid=f"{logged_user['id']}"
-        )
+        url = client.app.router["delete_group_user"].url_for(gid=f"{group['gid']}", uid=f"{logged_user['id']}")
         response = await client.delete(f"{url}")
         await assert_status(response, status.HTTP_403_FORBIDDEN)
 
@@ -146,10 +140,7 @@ async def test_group_creation_workflow(
     group = GroupGet.model_validate(data)
 
     # we get a new gid and the rest keeps the same
-    assert (
-        group.model_dump(include={"label", "description", "thumbnail"}, mode="json")
-        == new_group_data
-    )
+    assert group.model_dump(include={"label", "description", "thumbnail"}, mode="json") == new_group_data
 
     # we get full ownership (i.e all rights) on the group since we are the creator
     assert group.access_rights.model_dump() == {
@@ -166,10 +157,7 @@ async def test_group_creation_workflow(
     my_groups = MyGroupsGet.model_validate(data)
     assert my_groups.organizations
     assert len(my_groups.organizations) == 1
-    assert (
-        my_groups.organizations[0].model_dump(include=set(new_group_data), mode="json")
-        == new_group_data
-    )
+    assert my_groups.organizations[0].model_dump(include=set(new_group_data), mode="json") == new_group_data
 
     # check getting one group
     url = client.app.router["get_group"].url_for(gid=f"{group.gid}")
@@ -185,9 +173,7 @@ async def test_group_creation_workflow(
     data, _ = await assert_status(resp, status.HTTP_200_OK)
 
     updated_group = GroupGet.model_validate(data)
-    assert updated_group.model_dump(exclude={"label"}) == got_group.model_dump(
-        exclude={"label"}
-    )
+    assert updated_group.model_dump(exclude={"label"}) == got_group.model_dump(exclude={"label"})
     assert updated_group.label == "Led Zeppelin"
 
     # check getting the group returns the newly modified group

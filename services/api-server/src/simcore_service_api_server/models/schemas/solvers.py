@@ -33,9 +33,7 @@ LATEST_VERSION = "latest"
 SOLVER_RESOURCE_NAME_RE = r"^solvers/([^\s/]+)/releases/([\d\.]+)$"
 
 
-SolverKeyId = Annotated[
-    str, StringConstraints(strip_whitespace=True, pattern=COMPUTATIONAL_SERVICE_KEY_RE)
-]
+SolverKeyId = Annotated[str, StringConstraints(strip_whitespace=True, pattern=COMPUTATIONAL_SERVICE_KEY_RE)]
 
 
 class Solver(BaseService):
@@ -76,9 +74,7 @@ class Solver(BaseService):
         )
 
     @classmethod
-    def create_from_service(
-        cls, service: ServiceGetV2 | LatestServiceGet | ServiceSummary
-    ) -> Self:
+    def create_from_service(cls, service: ServiceGetV2 | LatestServiceGet | ServiceSummary) -> Self:
         # Common fields in all service types
         maintainer = ""
         if hasattr(service, "contact") and service.contact:
@@ -90,9 +86,7 @@ class Solver(BaseService):
             title=service.name,
             description=service.description,
             maintainer=maintainer or "UNDEFINED",
-            version_display=(
-                service.version_display if hasattr(service, "version_display") else None
-            ),
+            version_display=(service.version_display if hasattr(service, "version_display") else None),
             url=None,
         )
 
@@ -104,7 +98,7 @@ class Solver(BaseService):
         description: str,
         contact: LowerCaseEmailStr | None,
         name: str,
-        service: ServiceRelease
+        service: ServiceRelease,
     ) -> "Solver":
         return cls(
             id=service_key,

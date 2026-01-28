@@ -25,12 +25,8 @@ logger = logging.getLogger(__name__)
 
 
 class ComputationTaskGet(ComputationTask):
-    url: AnyHttpUrl = Field(
-        ..., description="the link where to get the status of the task"
-    )
-    stop_url: AnyHttpUrl | None = Field(
-        None, description="the link where to stop the task"
-    )
+    url: AnyHttpUrl = Field(..., description="the link where to get the status of the task")
+    stop_url: AnyHttpUrl | None = Field(None, description="the link where to stop the task")
 
     def guess_progress(self) -> PercentageInt:
         # guess progress based on self.state
@@ -65,19 +61,12 @@ class TaskLogFileGet(BaseModel):
 
 # API CLASS ---------------------------------------------
 
-_client_status_code_to_exception = partial(
-    service_exception_mapper, service_name="Director V2"
-)
+_client_status_code_to_exception = partial(service_exception_mapper, service_name="Director V2")
 
 
 class DirectorV2Api(BaseServiceClientApi):
-
-    @_client_status_code_to_exception(
-        http_status_map={status.HTTP_404_NOT_FOUND: JobNotFoundError}
-    )
-    async def get_computation(
-        self, *, project_id: UUID, user_id: PositiveInt
-    ) -> ComputationTaskGet:
+    @_client_status_code_to_exception(http_status_map={status.HTTP_404_NOT_FOUND: JobNotFoundError})
+    async def get_computation(self, *, project_id: UUID, user_id: PositiveInt) -> ComputationTaskGet:
         response = await self.client.get(
             f"/v2/computations/{project_id}",
             params={
@@ -90,9 +79,7 @@ class DirectorV2Api(BaseServiceClientApi):
             from_attributes=True,
         )
 
-    @_client_status_code_to_exception(
-        http_status_map={status.HTTP_404_NOT_FOUND: JobNotFoundError}
-    )
+    @_client_status_code_to_exception(http_status_map={status.HTTP_404_NOT_FOUND: JobNotFoundError})
     async def stop_computation(self, *, project_id: UUID, user_id: PositiveInt) -> None:
         response = await self.client.post(
             f"/v2/computations/{project_id}:stop",
@@ -102,12 +89,8 @@ class DirectorV2Api(BaseServiceClientApi):
         )
         response.raise_for_status()
 
-    @_client_status_code_to_exception(
-        http_status_map={status.HTTP_404_NOT_FOUND: JobNotFoundError}
-    )
-    async def delete_computation(
-        self, *, project_id: UUID, user_id: PositiveInt
-    ) -> None:
+    @_client_status_code_to_exception(http_status_map={status.HTTP_404_NOT_FOUND: JobNotFoundError})
+    async def delete_computation(self, *, project_id: UUID, user_id: PositiveInt) -> None:
         response = await self.client.request(
             "DELETE",
             f"/v2/computations/{project_id}",
@@ -118,12 +101,8 @@ class DirectorV2Api(BaseServiceClientApi):
         )
         response.raise_for_status()
 
-    @_client_status_code_to_exception(
-        http_status_map={status.HTTP_404_NOT_FOUND: LogFileNotFoundError}
-    )
-    async def get_computation_logs(
-        self, *, user_id: PositiveInt, project_id: UUID
-    ) -> JobLogsMap:
+    @_client_status_code_to_exception(http_status_map={status.HTTP_404_NOT_FOUND: LogFileNotFoundError})
+    async def get_computation_logs(self, *, user_id: PositiveInt, project_id: UUID) -> JobLogsMap:
         response = await self.client.get(
             f"/v2/computations/{project_id}/tasks/-/logfile",
             params={
@@ -136,9 +115,7 @@ class DirectorV2Api(BaseServiceClientApi):
 
         log_links: list[LogLink] = [
             LogLink(node_name=f"{r.task_id}", download_link=r.download_link)
-            for r in TypeAdapter(list[TaskLogFileGet]).validate_json(
-                response.text or "[]"
-            )
+            for r in TypeAdapter(list[TaskLogFileGet]).validate_json(response.text or "[]")
             if r.download_link
         ]
 
@@ -148,9 +125,7 @@ class DirectorV2Api(BaseServiceClientApi):
 # MODULES APP SETUP -------------------------------------------------------------
 
 
-def setup(
-    app: FastAPI, settings: DirectorV2Settings, tracing_settings: TracingSettings | None
-) -> None:
+def setup(app: FastAPI, settings: DirectorV2Settings, tracing_settings: TracingSettings | None) -> None:
     setup_client_instance(
         app,
         DirectorV2Api,

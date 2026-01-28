@@ -36,13 +36,9 @@ def exception_handlers_map(build_method: str) -> ExceptionHandlersMap:
 
     if build_method == "function":
 
-        async def _value_error_as_422_func(
-            request: web.Request, exception: BaseException
-        ) -> web.Response:
+        async def _value_error_as_422_func(request: web.Request, exception: BaseException) -> web.Response:
             # custom exception handler
-            return web.json_response(
-                reason=f"{build_method=}", status=status.HTTP_422_UNPROCESSABLE_ENTITY
-            )
+            return web.json_response(reason=f"{build_method=}", status=status.HTTP_422_UNPROCESSABLE_ENTITY)
 
         exception_handlers_map = {
             ValueError: _value_error_as_422_func,
@@ -50,11 +46,7 @@ def exception_handlers_map(build_method: str) -> ExceptionHandlersMap:
 
     elif build_method == "http_map":
         exception_handlers_map = to_exceptions_handlers_map(
-            {
-                ValueError: HttpErrorInfo(
-                    status.HTTP_422_UNPROCESSABLE_ENTITY, f"{build_method=}"
-                )
-            }
+            {ValueError: HttpErrorInfo(status.HTTP_422_UNPROCESSABLE_ENTITY, f"{build_method=}")}
         )
     else:
         pytest.fail(f"Undefined {build_method=}")
@@ -68,7 +60,6 @@ async def test_handling_exceptions_decorating_a_route(
     exception_handlers_map: ExceptionHandlersMap,
     build_method: str,
 ):
-
     # 1. create decorator
     exc_handling = exception_handling_decorator(exception_handlers_map)
 
@@ -126,7 +117,7 @@ async def test_handling_exceptions_decorating_a_route(
 
 
 @pytest.mark.parametrize("build_method", ["function", "http_map"])
-async def test_handling_exceptions_with_middelware(
+async def test_handling_exceptions_with_middleware(
     aiohttp_client: Callable,
     exception_handlers_map: ExceptionHandlersMap,
     build_method: str,
@@ -164,9 +155,7 @@ async def test_handling_exceptions_with_middelware(
 
 
 @pytest.mark.parametrize("with_middleware", [True, False])
-async def test_raising_aiohttp_http_errors(
-    aiohttp_client: Callable, with_middleware: bool
-):
+async def test_raising_aiohttp_http_errors(aiohttp_client: Callable, with_middleware: bool):
     routes = web.RouteTableDef()
 
     @routes.post("/raise-http-error")
@@ -179,9 +168,7 @@ async def test_raising_aiohttp_http_errors(
 
     # 2. create & install middleware handlers for ALL http (optional)
     if with_middleware:
-        exc_handling = exception_handling_middleware(
-            exception_handlers_map=create_http_error_exception_handlers_map()
-        )
+        exc_handling = exception_handling_middleware(exception_handlers_map=create_http_error_exception_handlers_map())
         app.middlewares.append(exc_handling)
 
     # 3. testing from the client side

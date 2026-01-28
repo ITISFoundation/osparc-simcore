@@ -49,7 +49,6 @@ def logged_in_context(
 
 @pytest.fixture(scope="module")
 def test_module_teardown() -> Iterable[None]:
-
     yield  # Run the tests
 
     file_path = Path("state.json")
@@ -57,9 +56,7 @@ def test_module_teardown() -> Iterable[None]:
         file_path.unlink()
 
 
-def test_simple_folder_workflow(
-    logged_in_context: BrowserContext, product_url: AnyUrl, test_module_teardown: None
-):
+def test_simple_folder_workflow(logged_in_context: BrowserContext, product_url: AnyUrl, test_module_teardown: None):
     page = logged_in_context.new_page()
 
     page.goto(f"{product_url}")
@@ -68,9 +65,7 @@ def test_simple_folder_workflow(
     page.get_by_test_id("newFolderButton").click()
 
     with page.expect_response(
-        lambda response: "folders" in response.url
-        and response.status == 201
-        and response.request.method == "POST"
+        lambda response: "folders" in response.url and response.status == 201 and response.request.method == "POST"
     ) as response_info:
         page.get_by_test_id("folderEditorTitle").fill("My new folder")
         page.get_by_test_id("folderEditorCreate").click()
@@ -80,9 +75,7 @@ def test_simple_folder_workflow(
     page.get_by_test_id("workspacesAndFoldersTreeItem_null_null").click()
 
 
-def test_simple_workspace_workflow(
-    logged_in_context: BrowserContext, product_url: AnyUrl, test_module_teardown: None
-):
+def test_simple_workspace_workflow(logged_in_context: BrowserContext, product_url: AnyUrl, test_module_teardown: None):
     page = logged_in_context.new_page()
 
     page.goto(f"{product_url}")
@@ -90,9 +83,7 @@ def test_simple_workspace_workflow(
     page.get_by_test_id("workspacesAndFoldersTreeItem_-1_null").click()
 
     with page.expect_response(
-        lambda response: "workspaces" in response.url
-        and response.status == 201
-        and response.request.method == "POST"
+        lambda response: "workspaces" in response.url and response.status == 201 and response.request.method == "POST"
     ) as response_info:
         page.get_by_test_id("newWorkspaceButton").click()
 

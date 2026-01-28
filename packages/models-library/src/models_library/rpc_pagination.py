@@ -35,11 +35,7 @@ class PageRefsParams(PageRefs[PageQueryParameters]):
             {
                 "self": {"offset": offset, "limit": limit},
                 "first": {"offset": 0, "limit": limit},
-                "prev": (
-                    {"offset": max(offset - limit, 0), "limit": limit}
-                    if offset > 0 and total > 0
-                    else None
-                ),
+                "prev": ({"offset": max(offset - limit, 0), "limit": limit} if offset > 0 and total > 0 else None),
                 "next": (
                     {
                         "offset": min(offset + limit, last_page * limit),
@@ -54,7 +50,6 @@ class PageRefsParams(PageRefs[PageQueryParameters]):
 
 
 class PageRpc(Page[ItemT], Generic[ItemT]):
-
     links: PageRefsParams = Field(alias="_links")  # type: ignore
 
     @classmethod
@@ -67,9 +62,7 @@ class PageRpc(Page[ItemT], Generic[ItemT]):
         offset: int,
     ) -> "PageRpc":
         return cls(
-            _meta=PageMetaInfoLimitOffset(
-                total=total, count=len(chunk), limit=limit, offset=offset
-            ),
+            _meta=PageMetaInfoLimitOffset(total=total, count=len(chunk), limit=limit, offset=offset),
             _links=PageRefsParams.create(total=total, limit=limit, offset=offset),
             data=chunk,
         )

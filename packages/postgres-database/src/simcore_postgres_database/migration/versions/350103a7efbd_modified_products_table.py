@@ -34,9 +34,7 @@ def upgrade():
     # ### end Alembic commands ###
 
     # recreates inits
-    op.execute(
-        f"INSERT INTO products (name, host_regex) VALUES ('osparc', '{DEFAULT_OSPARC_HOST_REGEX}')"
-    )
+    op.execute(f"INSERT INTO products (name, host_regex) VALUES ('osparc', '{DEFAULT_OSPARC_HOST_REGEX}')")
 
 
 def downgrade():
@@ -65,6 +63,4 @@ def downgrade():
     # ### end Alembic commands ###
 
     op.execute("DELETE FROM products WHERE name = 'osparc'")
-    op.execute(
-        "INSERT INTO products (name, urls, frontend) VALUES ('osparc', '{\"osparc.io\"}', 'osparc')"
-    )
+    op.execute("INSERT INTO products (name, urls, frontend) VALUES ('osparc', '{\"osparc.io\"}', 'osparc')")

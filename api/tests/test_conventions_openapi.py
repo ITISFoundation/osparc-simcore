@@ -19,9 +19,7 @@ CONVERTED_SUFFIX = "-converted.yaml"
 # NOTE: to debug use the wildcard and select problematic file, e.g. list_files_in_api_specs("*log_message.y*ml"))
 
 non_converted_yamls = [
-    pathstr
-    for pathstr in list_files_in_api_specs("*.yaml")
-    if not f"{pathstr}".endswith(CONVERTED_SUFFIX)
+    pathstr for pathstr in list_files_in_api_specs("*.yaml") if not f"{pathstr}".endswith(CONVERTED_SUFFIX)
 ]  # skip converted schemas
 
 assert non_converted_yamls

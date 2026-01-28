@@ -20,9 +20,7 @@ router = APIRouter()
 @cancel_on_disconnect
 async def pull_container_images(
     request: Request,
-    long_running_manager: Annotated[
-        FastAPILongRunningManager, Depends(get_long_running_manager)
-    ],
+    long_running_manager: Annotated[FastAPILongRunningManager, Depends(get_long_running_manager)],
 ) -> TaskId:
     """Pulls all the docker container images for the user services"""
     _ = request
@@ -36,9 +34,7 @@ async def pull_container_images(
 async def create_containers(  # pylint: disable=too-many-arguments
     request: Request,
     containers_create: ContainersCreate,
-    long_running_manager: Annotated[
-        FastAPILongRunningManager, Depends(get_long_running_manager)
-    ],
+    long_running_manager: Annotated[FastAPILongRunningManager, Depends(get_long_running_manager)],
 ) -> TaskId:
     """
     Starts the containers as defined in ContainerCreate by:
@@ -56,15 +52,11 @@ async def create_containers(  # pylint: disable=too-many-arguments
     )
 
 
-@router.post(
-    "/containers:down", status_code=status.HTTP_202_ACCEPTED, response_model=TaskId
-)
+@router.post("/containers:down", status_code=status.HTTP_202_ACCEPTED, response_model=TaskId)
 @cancel_on_disconnect
 async def down_containers(
     request: Request,
-    long_running_manager: Annotated[
-        FastAPILongRunningManager, Depends(get_long_running_manager)
-    ],
+    long_running_manager: Annotated[FastAPILongRunningManager, Depends(get_long_running_manager)],
 ) -> TaskId:
     """Remove the previously started containers"""
     _ = request
@@ -81,9 +73,7 @@ async def down_containers(
 @cancel_on_disconnect
 async def restore_containers_state_paths(
     request: Request,
-    long_running_manager: Annotated[
-        FastAPILongRunningManager, Depends(get_long_running_manager)
-    ],
+    long_running_manager: Annotated[FastAPILongRunningManager, Depends(get_long_running_manager)],
 ) -> TaskId:
     """Restores the state of the dynamic service"""
     _ = request
@@ -100,9 +90,7 @@ async def restore_containers_state_paths(
 @cancel_on_disconnect
 async def save_containers_state_paths(
     request: Request,
-    long_running_manager: Annotated[
-        FastAPILongRunningManager, Depends(get_long_running_manager)
-    ],
+    long_running_manager: Annotated[FastAPILongRunningManager, Depends(get_long_running_manager)],
 ) -> TaskId:
     """Stores the state of the dynamic service"""
     _ = request
@@ -119,9 +107,7 @@ async def save_containers_state_paths(
 @cancel_on_disconnect
 async def pull_container_port_inputs(
     request: Request,
-    long_running_manager: Annotated[
-        FastAPILongRunningManager, Depends(get_long_running_manager)
-    ],
+    long_running_manager: Annotated[FastAPILongRunningManager, Depends(get_long_running_manager)],
     port_keys: list[str] | None = None,
 ) -> TaskId:
     """Pull input ports data"""
@@ -139,9 +125,7 @@ async def pull_container_port_inputs(
 @cancel_on_disconnect
 async def pull_container_port_outputs(
     request: Request,
-    long_running_manager: Annotated[
-        FastAPILongRunningManager, Depends(get_long_running_manager)
-    ],
+    long_running_manager: Annotated[FastAPILongRunningManager, Depends(get_long_running_manager)],
     port_keys: list[str] | None = None,
 ) -> TaskId:
     """Pull output ports data"""
@@ -159,9 +143,7 @@ async def pull_container_port_outputs(
 @cancel_on_disconnect
 async def push_container_port_outputs(
     request: Request,
-    long_running_manager: Annotated[
-        FastAPILongRunningManager, Depends(get_long_running_manager)
-    ],
+    long_running_manager: Annotated[FastAPILongRunningManager, Depends(get_long_running_manager)],
 ) -> TaskId:
     """Push output ports data"""
     _ = request
@@ -178,9 +160,7 @@ async def push_container_port_outputs(
 @cancel_on_disconnect
 async def restart_containers(
     request: Request,
-    long_running_manager: Annotated[
-        FastAPILongRunningManager, Depends(get_long_running_manager)
-    ],
+    long_running_manager: Annotated[FastAPILongRunningManager, Depends(get_long_running_manager)],
 ) -> TaskId:
     """Restarts previously started user services"""
     _ = request

@@ -69,9 +69,7 @@ async def test_process_msg(
     app.state.efs_manager = mock_efs_manager
     mock_efs_manager.check_project_node_data_directory_exits.return_value = True
     mock_efs_manager.get_project_node_data_size.return_value = 4000
-    mock_efs_manager.list_project_node_state_names.return_value = (
-        _expected_project_node_states
-    )
+    mock_efs_manager.list_project_node_state_names.return_value = _expected_project_node_states
 
     result = await process_dynamic_service_running_message(app, data=model_bytes)
 

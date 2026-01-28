@@ -26,7 +26,6 @@ def test_login_with_invitation(monkeypatch: pytest.MonkeyPatch):
 
 @pytest.fixture
 def twilio_config(monkeypatch: pytest.MonkeyPatch) -> dict[str, str]:
-
     TWILO_CONFIG = {
         "TWILIO_ACCOUNT_SID": "fake-account",
         "TWILIO_AUTH_TOKEN": "fake-token",
@@ -38,9 +37,7 @@ def twilio_config(monkeypatch: pytest.MonkeyPatch) -> dict[str, str]:
     return TWILO_CONFIG
 
 
-def test_login_settings_with_2fa(
-    monkeypatch: pytest.MonkeyPatch, twilio_config: dict[str, str]
-):
+def test_login_settings_with_2fa(monkeypatch: pytest.MonkeyPatch, twilio_config: dict[str, str]):
     setenvs_from_dict(
         monkeypatch,
         {
@@ -52,9 +49,7 @@ def test_login_settings_with_2fa(
     assert LoginSettingsForProduct.create_from_envs(LOGIN_2FA_REQUIRED=1)
 
 
-def test_login_settings_fails_with_2fa_but_wo_twilio(
-    monkeypatch: pytest.MonkeyPatch, twilio_config: dict[str, str]
-):
+def test_login_settings_fails_with_2fa_but_wo_twilio(monkeypatch: pytest.MonkeyPatch, twilio_config: dict[str, str]):
     # cannot enable 2fa w/o twilio settings
     setenvs_from_dict(
         monkeypatch,
@@ -73,9 +68,7 @@ def test_login_settings_fails_with_2fa_but_wo_twilio(
 
 
 @pytest.fixture
-def no_registration_environment(
-    monkeypatch: pytest.MonkeyPatch, twilio_config: dict[str, str]
-):
+def no_registration_environment(monkeypatch: pytest.MonkeyPatch, twilio_config: dict[str, str]):
     # cannot enable 2fa w/o email confirmation
     setenvs_from_dict(
         monkeypatch,
@@ -118,7 +111,6 @@ def test_login_settings_fails_with_2fa_but_wo_confirmed_email_using_merge(
 
 
 def test_smtp_settings(mock_env_devel_environment: dict[str, Any]):
-
     settings = SMTPSettings.create_from_envs()
 
     cfg = settings.model_dump(exclude_unset=True)
@@ -137,6 +129,6 @@ def test_smtp_settings(mock_env_devel_environment: dict[str, Any]):
 def test_product_login_settings_in_plugin_settings():
     # pylint: disable=no-member
     customizable_attributes = set(ProductLoginSettingsDict.__annotations__.keys())
-    settings_atrributes = set(LoginSettingsForProduct.model_fields.keys())
+    settings_attributes = set(LoginSettingsForProduct.model_fields.keys())
 
-    assert customizable_attributes.issubset(settings_atrributes)
+    assert customizable_attributes.issubset(settings_attributes)

@@ -291,7 +291,7 @@ class FunctionJobTaskClientService:
             check_write_permissions=False,
         )
 
-    async def create_function_job_creation_tasks(  # noqa: PLR0913
+    async def create_function_job_creation_tasks(
         self,
         *,
         function: RegisteredFunction,

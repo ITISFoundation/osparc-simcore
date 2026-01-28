@@ -1,6 +1,6 @@
 import asyncio
 from collections.abc import Callable, Iterator
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from decimal import Decimal
 
 import pytest
@@ -58,13 +58,11 @@ def resource_tracker_pricing_tables_db(postgres_db: sa.engine.Engine) -> Iterato
             resource_tracker_pricing_units.insert().values(
                 pricing_plan_id=1,
                 unit_name="S",
-                unit_extra_info=UnitExtraInfoTier.model_config["json_schema_extra"][
-                    "examples"
-                ][0],
+                unit_extra_info=UnitExtraInfoTier.model_config["json_schema_extra"]["examples"][0],
                 default=False,
                 specific_info={},
-                created=datetime.now(tz=timezone.utc),
-                modified=datetime.now(tz=timezone.utc),
+                created=datetime.now(tz=UTC),
+                modified=datetime.now(tz=UTC),
             )
         )
         con.execute(
@@ -74,24 +72,22 @@ def resource_tracker_pricing_tables_db(postgres_db: sa.engine.Engine) -> Iterato
                 pricing_unit_id=1,
                 pricing_unit_name="S",
                 cost_per_unit=Decimal(500),
-                valid_from=datetime.now(tz=timezone.utc),
+                valid_from=datetime.now(tz=UTC),
                 valid_to=None,
-                created=datetime.now(tz=timezone.utc),
+                created=datetime.now(tz=UTC),
                 comment="",
-                modified=datetime.now(tz=timezone.utc),
+                modified=datetime.now(tz=UTC),
             )
         )
         con.execute(
             resource_tracker_pricing_units.insert().values(
                 pricing_plan_id=1,
                 unit_name="M",
-                unit_extra_info=UnitExtraInfoTier.model_config["json_schema_extra"][
-                    "examples"
-                ][0],
+                unit_extra_info=UnitExtraInfoTier.model_config["json_schema_extra"]["examples"][0],
                 default=True,
                 specific_info={},
-                created=datetime.now(tz=timezone.utc),
-                modified=datetime.now(tz=timezone.utc),
+                created=datetime.now(tz=UTC),
+                modified=datetime.now(tz=UTC),
             )
         )
         con.execute(
@@ -101,24 +97,22 @@ def resource_tracker_pricing_tables_db(postgres_db: sa.engine.Engine) -> Iterato
                 pricing_unit_id=2,
                 pricing_unit_name="M",
                 cost_per_unit=Decimal(1000),
-                valid_from=datetime.now(tz=timezone.utc),
+                valid_from=datetime.now(tz=UTC),
                 valid_to=None,
-                created=datetime.now(tz=timezone.utc),
+                created=datetime.now(tz=UTC),
                 comment="",
-                modified=datetime.now(tz=timezone.utc),
+                modified=datetime.now(tz=UTC),
             )
         )
         con.execute(
             resource_tracker_pricing_units.insert().values(
                 pricing_plan_id=1,
                 unit_name="L",
-                unit_extra_info=UnitExtraInfoTier.model_config["json_schema_extra"][
-                    "examples"
-                ][0],
+                unit_extra_info=UnitExtraInfoTier.model_config["json_schema_extra"]["examples"][0],
                 default=False,
                 specific_info={},
-                created=datetime.now(tz=timezone.utc),
-                modified=datetime.now(tz=timezone.utc),
+                created=datetime.now(tz=UTC),
+                modified=datetime.now(tz=UTC),
             )
         )
         con.execute(
@@ -128,11 +122,11 @@ def resource_tracker_pricing_tables_db(postgres_db: sa.engine.Engine) -> Iterato
                 pricing_unit_id=3,
                 pricing_unit_name="L",
                 cost_per_unit=Decimal(1500),
-                valid_from=datetime.now(tz=timezone.utc),
+                valid_from=datetime.now(tz=UTC),
                 valid_to=None,
-                created=datetime.now(tz=timezone.utc),
+                created=datetime.now(tz=UTC),
                 comment="",
-                modified=datetime.now(tz=timezone.utc),
+                modified=datetime.now(tz=UTC),
             )
         )
         con.execute(
@@ -185,19 +179,15 @@ async def test_process_events_via_rabbit(
     await assert_service_runs_db_row(postgres_db, msg.service_run_id, "RUNNING")
 
     heartbeat_msg = RabbitResourceTrackingHeartbeatMessage(
-        service_run_id=msg.service_run_id, created_at=datetime.now(tz=timezone.utc)
+        service_run_id=msg.service_run_id, created_at=datetime.now(tz=UTC)
     )
-    await publisher.publish(
-        RabbitResourceTrackingBaseMessage.get_channel_name(), heartbeat_msg
-    )
+    await publisher.publish(RabbitResourceTrackingBaseMessage.get_channel_name(), heartbeat_msg)
     await assert_service_runs_db_row(postgres_db, msg.service_run_id, "RUNNING")
 
     stopped_msg = RabbitResourceTrackingStoppedMessage(
         service_run_id=msg.service_run_id,
-        created_at=datetime.now(tz=timezone.utc),
+        created_at=datetime.now(tz=UTC),
         simcore_platform_status=SimcorePlatformStatus.OK,
     )
-    await publisher.publish(
-        RabbitResourceTrackingBaseMessage.get_channel_name(), stopped_msg
-    )
+    await publisher.publish(RabbitResourceTrackingBaseMessage.get_channel_name(), stopped_msg)
     await assert_service_runs_db_row(postgres_db, msg.service_run_id, "SUCCESS")

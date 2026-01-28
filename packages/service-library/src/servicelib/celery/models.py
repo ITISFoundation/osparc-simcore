@@ -12,16 +12,12 @@ from pydantic.config import JsonDict
 ModelType = TypeVar("ModelType", bound=BaseModel)
 
 TaskKey: TypeAlias = str
-TaskName: TypeAlias = Annotated[
-    str, StringConstraints(strip_whitespace=True, min_length=1)
-]
+TaskName: TypeAlias = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
 TaskUUID: TypeAlias = UUID
 _TASK_ID_KEY_DELIMITATOR: Final[str] = ":"
 _FORBIDDEN_KEY_CHARS = ("*", _TASK_ID_KEY_DELIMITATOR, "=")
 _FORBIDDEN_VALUE_CHARS = (_TASK_ID_KEY_DELIMITATOR, "=")
-AllowedTypes = (
-    int | float | bool | str | None | list[str] | list[int] | list[float] | list[bool]
-)
+AllowedTypes = int | float | bool | str | None | list[str] | list[int] | list[float] | list[bool]
 
 Wildcard: TypeAlias = Literal["*"]
 WILDCARD: Final[Wildcard] = "*"
@@ -56,9 +52,7 @@ class OwnerMetadata(BaseModel):
     owner: Annotated[
         str,
         StringConstraints(min_length=1, pattern=r"^[a-z_-]+$"),
-        Field(
-            description='Identifies the service owning the task. Should be the "APP_NAME" of the service.'
-        ),
+        Field(description='Identifies the service owning the task. Should be the "APP_NAME" of the service.'),
     ]
 
     @model_validator(mode="after")
@@ -83,9 +77,7 @@ class OwnerMetadata(BaseModel):
     def model_dump_task_key(self, task_uuid: TaskUUID | Wildcard) -> TaskKey:
         data = self.model_dump(mode="json")
         data.update({_TASK_UUID_KEY: f"{task_uuid}"})
-        return _TASK_ID_KEY_DELIMITATOR.join(
-            [f"{k}={json_dumps(v)}" for k, v in sorted(data.items())]
-        )
+        return _TASK_ID_KEY_DELIMITATOR.join([f"{k}={json_dumps(v)}" for k, v in sorted(data.items())])
 
     @classmethod
     def model_validate_task_key(cls, task_key: TaskKey) -> Self:
@@ -95,9 +87,7 @@ class OwnerMetadata(BaseModel):
 
     @classmethod
     def _deserialize_task_key(cls, task_key: TaskKey) -> dict[str, AllowedTypes]:
-        key_value_pairs = [
-            item.split("=") for item in task_key.split(_TASK_ID_KEY_DELIMITATOR)
-        ]
+        key_value_pairs = [item.split("=") for item in task_key.split(_TASK_ID_KEY_DELIMITATOR)]
         try:
             return {key: json_loads(value) for key, value in key_value_pairs}
         except orjson.JSONDecodeError as err:
@@ -195,9 +185,7 @@ class TaskStore(Protocol):
 
     async def task_exists(self, task_key: TaskKey) -> bool: ...
 
-    async def get_task_metadata(
-        self, task_key: TaskKey
-    ) -> ExecutionMetadata | None: ...
+    async def get_task_metadata(self, task_key: TaskKey) -> ExecutionMetadata | None: ...
 
     async def get_task_progress(self, task_key: TaskKey) -> ProgressReport | None: ...
 
@@ -215,9 +203,7 @@ class TaskStore(Protocol):
 
     async def set_task_stream_last_update(self, task_key: TaskKey) -> None: ...
 
-    async def push_task_stream_items(
-        self, task_key: TaskKey, *item: TaskStreamItem
-    ) -> None: ...
+    async def push_task_stream_items(self, task_key: TaskKey, *item: TaskStreamItem) -> None: ...
 
     async def pull_task_stream_items(
         self, task_key: TaskKey, limit: int
@@ -231,7 +217,6 @@ class TaskStatus(BaseModel):
 
     @staticmethod
     def _update_json_schema_extra(schema: JsonDict) -> None:
-
         schema.update(
             {
                 "examples": [

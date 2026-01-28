@@ -36,9 +36,7 @@ def mock_redis_client_sdk(mocker: MockerFixture) -> MockType:
 
 @pytest.fixture
 def app_environment(monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
-    return setenvs_from_dict(
-        monkeypatch, RedisSettings.model_json_schema()["examples"][0]
-    )
+    return setenvs_from_dict(monkeypatch, RedisSettings.model_json_schema()["examples"][0])
 
 
 @pytest.fixture

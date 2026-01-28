@@ -11,11 +11,7 @@ from .postgres_tools import (
 
 @contextlib.asynccontextmanager
 async def insert_and_get_wallet_lifespan(
-    sqlalchemy_async_engine: AsyncEngine,
-    *,
-    product_name: str,
-    user_group_id: int,
-    **overrides
+    sqlalchemy_async_engine: AsyncEngine, *, product_name: str, user_group_id: int, **overrides
 ):
     async with contextlib.AsyncExitStack() as stack:
         # wallets
@@ -23,9 +19,7 @@ async def insert_and_get_wallet_lifespan(
             insert_and_get_row_lifespan(  # pylint:disable=contextmanager-generator-missing-cleanup
                 sqlalchemy_async_engine,
                 table=wallets,
-                values=random_wallet(
-                    product_name=product_name, user_group_id=user_group_id, **overrides
-                ),
+                values=random_wallet(product_name=product_name, user_group_id=user_group_id, **overrides),
                 pk_col=wallets.c.wallet_id,
             )
         )

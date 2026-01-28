@@ -83,15 +83,11 @@ def mock_sidecars_client_stops_failing(mocker: MockerFixture) -> None:
 
 @pytest.fixture
 def docker_container_inspect() -> DockerContainerInspect:
-    return DockerContainerInspect(
-        status=DockerStatus.dead, container_state=ContainerState(), name="", id=""
-    )
+    return DockerContainerInspect(status=DockerStatus.dead, container_state=ContainerState(), name="", id="")
 
 
 @pytest.fixture
-def scheduler_data(
-    scheduler_data: SchedulerData, docker_container_inspect: DockerContainerInspect
-) -> SchedulerData:
+def scheduler_data(scheduler_data: SchedulerData, docker_container_inspect: DockerContainerInspect) -> SchedulerData:
     scheduler_data.dynamic_sidecar.containers_inspect = [docker_container_inspect]
     return scheduler_data
 

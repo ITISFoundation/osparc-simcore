@@ -2,9 +2,10 @@ from datetime import datetime
 from typing import Annotated, Any, TypeAlias
 
 from common_library.basic_types import DEFAULT_FACTORY
-from models_library.rpc_pagination import PageRpc
 from pydantic import ConfigDict, Field, HttpUrl, NonNegativeInt
 from pydantic.config import JsonDict
+
+from models_library.rpc_pagination import PageRpc
 
 from ..batch_operations import BatchGetEnvelope
 from ..boot_options import BootOptions
@@ -154,9 +155,7 @@ _EXAMPLE_SLEEPER: dict[str, Any] = {
 }
 
 
-class ServiceGet(
-    ServiceMetaDataPublished, ServiceAccessRights, ServiceMetaDataEditable
-):  # pylint: disable=too-many-ancestors
+class ServiceGet(ServiceMetaDataPublished, ServiceAccessRights, ServiceMetaDataEditable):  # pylint: disable=too-many-ancestors
     owner: Annotated[
         LowerCaseEmailStr | None,
         Field(description="None when the owner email cannot be found in the database"),
@@ -317,9 +316,7 @@ class ServiceGetV2(_BaseServiceGetV2):
                             {
                                 "version": "2.0.0",
                                 "compatibility": {
-                                    "canUpdateTo": {
-                                        "version": _EXAMPLE_SLEEPER["version"]
-                                    },
+                                    "canUpdateTo": {"version": _EXAMPLE_SLEEPER["version"]},
                                 },
                             },
                             {"version": "0.9.11"},
@@ -464,9 +461,7 @@ class MyServicesRpcBatchGet(
 class ServiceListFilters(Filters):
     service_type: Annotated[
         ServiceType | None,
-        Field(
-            description="Filter only services of a given type. If None, then all types are returned"
-        ),
+        Field(description="Filter only services of a given type. If None, then all types are returned"),
     ] = None
 
     service_key_pattern: Annotated[

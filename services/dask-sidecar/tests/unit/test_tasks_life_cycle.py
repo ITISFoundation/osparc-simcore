@@ -28,26 +28,18 @@ def test_task_state_lifecycle(local_cluster: distributed.LocalCluster) -> None:
         raise RuntimeError(msg)
 
     local_cluster.scale(0)
-    for attempt in Retrying(
-        stop=stop_after_delay(10), wait=wait_fixed(1), reraise=True
-    ):
+    for attempt in Retrying(stop=stop_after_delay(10), wait=wait_fixed(1), reraise=True):
         with attempt:
             assert len(local_cluster.workers) == 0
     with distributed.Client(local_cluster) as dask_client:
         # submit the task and wait until it goes into WAITING_FOR_RESOURCES
         future = dask_client.submit(_some_task, resources={"CPU": 1})
-        for attempt in Retrying(
-            stop=stop_after_delay(10), wait=wait_fixed(1), reraise=True
-        ):
+        for attempt in Retrying(stop=stop_after_delay(10), wait=wait_fixed(1), reraise=True):
             with attempt:
-                events = dask_client.get_events(
-                    TASK_LIFE_CYCLE_EVENT.format(key=future.key)
-                )
+                events = dask_client.get_events(TASK_LIFE_CYCLE_EVENT.format(key=future.key))
                 assert isinstance(events, tuple)
                 assert len(events) >= 2
-                parsed_events = [
-                    TaskLifeCycleState.model_validate(event[1]) for event in events
-                ]
+                parsed_events = [TaskLifeCycleState.model_validate(event[1]) for event in events]
         assert parsed_events[0].state is RunningState.PENDING
         assert parsed_events[-1].state is RunningState.WAITING_FOR_RESOURCES
 
@@ -59,9 +51,7 @@ def test_task_state_lifecycle(local_cluster: distributed.LocalCluster) -> None:
 
         events = dask_client.get_events(TASK_LIFE_CYCLE_EVENT.format(key=future.key))
         assert isinstance(events, tuple)
-        parsed_events = [
-            TaskLifeCycleState.model_validate(event[1]) for event in events
-        ]
+        parsed_events = [TaskLifeCycleState.model_validate(event[1]) for event in events]
         assert parsed_events[0].state is RunningState.PENDING
         assert RunningState.STARTED in {event.state for event in parsed_events}
         assert RunningState.FAILED not in {event.state for event in parsed_events}
@@ -72,9 +62,7 @@ def test_task_state_lifecycle(local_cluster: distributed.LocalCluster) -> None:
             future.result(timeout=10)
         events = dask_client.get_events(TASK_LIFE_CYCLE_EVENT.format(key=future.key))
         assert isinstance(events, Iterable)
-        parsed_events = [
-            TaskLifeCycleState.model_validate(event[1]) for event in events
-        ]
+        parsed_events = [TaskLifeCycleState.model_validate(event[1]) for event in events]
         assert parsed_events[0].state is RunningState.PENDING
         assert RunningState.STARTED in {event.state for event in parsed_events}
         assert RunningState.FAILED in {event.state for event in parsed_events}

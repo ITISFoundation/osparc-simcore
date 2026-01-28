@@ -15,6 +15,7 @@ from models_library.basic_types import KeyIDStr, VersionStr
 from models_library.projects import Project
 from models_library.projects_nodes import InputID
 from pydantic import TypeAdapter
+
 from simcore_service_api_server.models.api_resources import JobLinks
 
 from ..models.domain.projects import InputTypes, Node, SimCoreFileLink
@@ -111,7 +112,7 @@ def create_job_inputs_from_node_inputs(inputs: dict[InputID, InputTypes]) -> Job
 
 def get_node_id(project_id, solver_id) -> str:
     # By clumsy design, the webserver needs a global uuid,
-    # so we decieded to compose as this
+    # so we decided to compose as this
     return compose_uuid_from(project_id, solver_id)
 
 
@@ -141,9 +142,7 @@ def create_new_project_for_job(
 
     # map Job inputs with solveri nputs
     # TODO: ArgumentType -> InputTypes dispatcher and reversed
-    solver_inputs: dict[InputID, InputTypes] = create_node_inputs_from_job_inputs(
-        inputs
-    )
+    solver_inputs: dict[InputID, InputTypes] = create_node_inputs_from_job_inputs(inputs)
 
     solver_service = Node(
         key=solver_or_program.id,
@@ -154,15 +153,12 @@ def create_new_project_for_job(
     )
 
     # Ensembles project model so it can be used as input for create_project
-    job_info = job.model_dump_json(
-        include={"id", "name", "inputs_checksum", "created_at"}, indent=2
-    )
+    job_info = job.model_dump_json(include={"id", "name", "inputs_checksum", "created_at"}, indent=2)
 
     return ProjectCreateNew(
         uuid=project_id,
         name=project_name or job.name,
-        description=description
-        or f"Study associated to solver/study/program job:\n{job_info}",
+        description=description or f"Study associated to solver/study/program job:\n{job_info}",
         thumbnail="https://via.placeholder.com/170x120.png",  # type: ignore[arg-type]
         workbench={solver_id: solver_service},
         ui=StudyUI(
@@ -182,9 +178,7 @@ def create_new_project_for_job(
     )
 
 
-def get_solver_job_rest_interface_links(
-    *, url_for: Callable, solver_key: SolverKeyId, version: VersionStr
-) -> JobLinks:
+def get_solver_job_rest_interface_links(*, url_for: Callable, solver_key: SolverKeyId, version: VersionStr) -> JobLinks:
     return JobLinks(
         url_template=url_for(
             "get_job",
@@ -223,9 +217,7 @@ def create_job_from_project(
     assert len(project.workbench) == 1  # nosec
 
     solver_node: Node = next(iter(project.workbench.values()))
-    job_inputs: JobInputs = create_job_inputs_from_node_inputs(
-        inputs=solver_node.inputs or {}
-    )
+    job_inputs: JobInputs = create_job_inputs_from_node_inputs(inputs=solver_node.inputs or {})
 
     # create solver's job
     solver_or_program_name = solver_or_program.resource_name
@@ -234,9 +226,7 @@ def create_job_from_project(
 
     return Job(
         id=job_id,
-        name=Job.compose_resource_name(
-            parent_name=solver_or_program_name, job_id=job_id
-        ),
+        name=Job.compose_resource_name(parent_name=solver_or_program_name, job_id=job_id),
         inputs_checksum=job_inputs.compute_checksum(),
         created_at=project.creation_date,  # type: ignore[arg-type]
         runner_name=solver_or_program_name,

@@ -24,9 +24,7 @@ async def test_locations(
     user_id: UserID,
     fake_datcore_tokens: tuple[str, str],
 ):
-    url = url_from_operation_id(
-        client, initialized_app, "list_storage_locations"
-    ).with_query(user_id=user_id)
+    url = url_from_operation_id(client, initialized_app, "list_storage_locations").with_query(user_id=user_id)
     response = await client.get(f"{url}")
     data, _ = assert_status(response, status.HTTP_200_OK, list[FileLocation])
     assert data
@@ -46,9 +44,7 @@ async def test_locations_without_tokens(
     client: httpx.AsyncClient,
     user_id: UserID,
 ):
-    url = url_from_operation_id(
-        client, initialized_app, "list_storage_locations"
-    ).with_query(user_id=user_id)
+    url = url_from_operation_id(client, initialized_app, "list_storage_locations").with_query(user_id=user_id)
     response = await client.get(f"{url}")
     data, _ = assert_status(response, status.HTTP_200_OK, list[FileLocation])
     assert data

@@ -79,7 +79,6 @@ async def list_project_conversations(
     # ordering
     order_by: OrderBy,
 ) -> tuple[PageTotalCount, list[ConversationGetDB]]:
-
     base_query = (
         select(*_SELECTION_ARGS)
         .select_from(conversations)
@@ -117,9 +116,7 @@ async def list_project_conversations(
         total_count = await conn.scalar(count_query)
 
         result = await conn.stream(list_query)
-        items: list[ConversationGetDB] = [
-            ConversationGetDB.model_validate(row) async for row in result
-        ]
+        items: list[ConversationGetDB] = [ConversationGetDB.model_validate(row) async for row in result]
 
         return cast(int, total_count), items
 
@@ -136,16 +133,13 @@ async def list_support_conversations_for_user(
     # ordering
     order_by: OrderBy,
 ) -> tuple[PageTotalCount, list[ConversationGetDB]]:
-
     base_query = (
         select(*_SELECTION_ARGS)
         .select_from(conversations)
         .where(
             (conversations.c.user_group_id == user_group_id)
             & (
-                conversations.c.type.in_(
-                    (ConversationType.SUPPORT, ConversationType.SUPPORT_CALL)
-                )
+                conversations.c.type.in_((ConversationType.SUPPORT, ConversationType.SUPPORT_CALL))
                 & (conversations.c.product_name == product_name)
             )
         )
@@ -172,9 +166,7 @@ async def list_support_conversations_for_user(
         total_count = await conn.scalar(count_query)
 
         result = await conn.stream(list_query)
-        items: list[ConversationGetDB] = [
-            ConversationGetDB.model_validate(row) async for row in result
-        ]
+        items: list[ConversationGetDB] = [ConversationGetDB.model_validate(row) async for row in result]
 
         return cast(int, total_count), items
 
@@ -190,16 +182,11 @@ async def list_all_support_conversations_for_support_user(
     # ordering
     order_by: OrderBy,
 ) -> tuple[PageTotalCount, list[ConversationGetDB]]:
-
     base_query = (
         select(*_SELECTION_ARGS)
         .select_from(conversations)
         .where(
-            (
-                conversations.c.type.in_(
-                    (ConversationType.SUPPORT, ConversationType.SUPPORT_CALL)
-                )
-            )
+            (conversations.c.type.in_((ConversationType.SUPPORT, ConversationType.SUPPORT_CALL)))
             & (conversations.c.product_name == product_name)
         )
     )
@@ -225,9 +212,7 @@ async def list_all_support_conversations_for_support_user(
         total_count = await conn.scalar(count_query)
 
         result = await conn.stream(list_query)
-        items: list[ConversationGetDB] = [
-            ConversationGetDB.model_validate(row) async for row in result
-        ]
+        items: list[ConversationGetDB] = [ConversationGetDB.model_validate(row) async for row in result]
 
         return cast(int, total_count), items
 
@@ -263,8 +248,7 @@ async def get_for_user(
         select(*_SELECTION_ARGS)
         .select_from(conversations)
         .where(
-            (conversations.c.conversation_id == f"{conversation_id}")
-            & (conversations.c.user_group_id == user_group_id)
+            (conversations.c.conversation_id == f"{conversation_id}") & (conversations.c.user_group_id == user_group_id)
         )
     )
 
@@ -312,8 +296,4 @@ async def delete(
     conversation_id: ConversationID,
 ) -> None:
     async with transaction_context(get_asyncpg_engine(app), connection) as conn:
-        await conn.execute(
-            conversations.delete().where(
-                conversations.c.conversation_id == f"{conversation_id}"
-            )
-        )
+        await conn.execute(conversations.delete().where(conversations.c.conversation_id == f"{conversation_id}"))

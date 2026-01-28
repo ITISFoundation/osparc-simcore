@@ -16,12 +16,8 @@ async def ensure_run_in_sequence_context_is_empty() -> AsyncIterable[None]:
     """
 
     # nothing on-startup
-    assert (
-        len(_sequential_jobs_contexts) == 0
-    ), "Not all contexts were cleaned up on startup"
+    assert len(_sequential_jobs_contexts) == 0, "Not all contexts were cleaned up on startup"
 
     yield
 
-    assert (
-        len(_sequential_jobs_contexts) == 0
-    ), "Not all contexts were cleaned up on teardown"
+    assert len(_sequential_jobs_contexts) == 0, "Not all contexts were cleaned up on teardown"

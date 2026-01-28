@@ -88,9 +88,7 @@ def _parse_and_validate_arguments(
     return module_name, depends, section, config_enabled
 
 
-def _is_addon_enabled_from_config(
-    cfg: dict[str, Any], dotted_section: str, section
-) -> bool:
+def _is_addon_enabled_from_config(cfg: dict[str, Any], dotted_section: str, section) -> bool:
     try:
         parts: list[str] = dotted_section.split(".")
         # navigates app_config (cfg) searching for section
@@ -98,9 +96,7 @@ def _is_addon_enabled_from_config(
         for part in parts:
             if section and part == "enabled":
                 # if section exists, no need to explicitly enable it
-                return TypeAdapter(bool).validate_python(
-                    searched_config.get(part, True)
-                )
+                return TypeAdapter(bool).validate_python(searched_config.get(part, True))
             searched_config = searched_config[part]
 
     except KeyError as ee:
@@ -205,20 +201,15 @@ def ensure_single_setup(
         return False
 
     def decorator(setup_func: _SetupFunc) -> _SetupFunc:
-
         @functools.wraps(setup_func)
         def _wrapper(app: web.Application, *args: Any, **kwargs: Any) -> bool:
-
             # pre-setup init
             if APP_SETUP_COMPLETED_KEY not in app:
                 app[APP_SETUP_COMPLETED_KEY] = []
 
             # check
             if is_setup_completed(module_name, app):
-                _log_skip(
-                    f"'{module_name}' was already initialized in {app}."
-                    " Setup can only be executed once per app."
-                )
+                _log_skip(f"'{module_name}' was already initialized in {app}. Setup can only be executed once per app.")
                 return False
 
             try:
@@ -305,16 +296,13 @@ def app_module_setup(
         )
 
     def decorator(setup_func: _SetupFunc) -> _SetupFunc:
-
         assert (  # nosec
             "setup_" in setup_func.__name__
         ), f"Rename '{setup_func.__name__}' like 'setup_$(plugin-name)'"
 
         @functools.wraps(setup_func)
         @ensure_single_setup(module_name, logger=logger)
-        @_SetupTimingContext(
-            module_name, category=category, depends=depends, logger=logger
-        )
+        @_SetupTimingContext(module_name, category=category, depends=depends, logger=logger)
         def _wrapper(app: web.Application, *args, **kargs) -> bool:
             if category == ModuleCategory.ADDON:
                 # ONLY addons can be enabled/disabled
@@ -323,9 +311,7 @@ def app_module_setup(
                     # Fall back to config if settings_name is not explicitly defined
                     # TODO: deprecate
                     cfg = app[APP_CONFIG_KEY]
-                    is_enabled = _is_addon_enabled_from_config(
-                        cfg, config_enabled, section
-                    )
+                    is_enabled = _is_addon_enabled_from_config(cfg, config_enabled, section)
                     if not is_enabled:
                         logger.info(
                             "Skipping '%s' setup. Explicitly disabled in config",
@@ -343,11 +329,7 @@ def app_module_setup(
                     app_settings_key,
                 )
 
-                if (
-                    app_settings
-                    and module_settings_name
-                    and not app_settings.is_enabled(module_settings_name)
-                ):
+                if app_settings and module_settings_name and not app_settings.is_enabled(module_settings_name):
                     logger.info(
                         "Skipping setup %s. %s disabled in settings",
                         f"{module_name=}",
@@ -356,9 +338,7 @@ def app_module_setup(
                     return False
 
             if depends:
-                uninitialized = [
-                    dep for dep in depends if not is_setup_completed(dep, app)
-                ]
+                uninitialized = [dep for dep in depends if not is_setup_completed(dep, app)]
                 if uninitialized:
                     msg = f"Cannot setup app module '{module_name}' because the following dependencies are still uninitialized: {uninitialized}"
                     raise DependencyError(msg)
@@ -368,9 +348,7 @@ def app_module_setup(
 
             return completed
 
-        assert (
-            _wrapper.__wrapped__ == setup_func
-        ), "this is added by functools.wraps decorator"  # nosec
+        assert _wrapper.__wrapped__ == setup_func, "this is added by functools.wraps decorator"  # nosec
 
         setattr(_wrapper, "metadata", _setup_metadata)  # noqa: B010
         setattr(_wrapper, "mark_as_simcore_servicelib_setup_func", True)  # noqa: B010
@@ -384,8 +362,5 @@ def is_setup_function(fun: Callable) -> bool:
     return (
         inspect.isfunction(fun)
         and hasattr(fun, "mark_as_simcore_servicelib_setup_func")
-        and any(
-            param.annotation == web.Application
-            for _, param in inspect.signature(fun).parameters.items()
-        )
+        and any(param.annotation == web.Application for _, param in inspect.signature(fun).parameters.items())
     )

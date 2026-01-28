@@ -33,8 +33,7 @@ _logger = logging.getLogger(__name__)
 
 def create_app(settings: ApplicationSettings, tracing_config: TracingConfig) -> FastAPI:
     app = FastAPI(
-        debug=settings.SC_BOOT_MODE
-        in [BootModeEnum.DEBUG, BootModeEnum.DEVELOPMENT, BootModeEnum.LOCAL],
+        debug=settings.SC_BOOT_MODE in [BootModeEnum.DEBUG, BootModeEnum.DEVELOPMENT, BootModeEnum.LOCAL],
         title=APP_NAME,
         description="Interfaces with Pennsieve storage service",
         version=API_VERSION,
@@ -58,9 +57,7 @@ def create_app(settings: ApplicationSettings, tracing_config: TracingConfig) -> 
 
     if settings.SC_BOOT_MODE != BootModeEnum.PRODUCTION:
         # middleware to time requests (ONLY for development)
-        app.add_middleware(
-            BaseHTTPMiddleware, dispatch=timing_middleware.add_process_time_header
-        )
+        app.add_middleware(BaseHTTPMiddleware, dispatch=timing_middleware.add_process_time_header)
     app.add_middleware(GZipMiddleware)
 
     if tracing_config.tracing_enabled:

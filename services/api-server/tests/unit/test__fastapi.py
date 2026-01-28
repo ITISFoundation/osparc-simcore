@@ -2,7 +2,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 """
-This is a light compatibilty test to check some expected features on fastapi
+This is a light compatibility test to check some expected features on fastapi
 
 These tests aim to detect changes in some selected feature specs after upgrades of fastapi
 or related libraries.
@@ -92,9 +92,7 @@ def test_fastapi_route_paths_in_paths(client: TestClient, faker: Faker):
 
     # can be raw
     raw_solver_key = solver_key
-    resp = client.get(
-        f"/{API_VTAG}/solvers/{raw_solver_key}/releases/{version}/jobs/{job_id}"
-    )
+    resp = client.get(f"/{API_VTAG}/solvers/{raw_solver_key}/releases/{version}/jobs/{job_id}")
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json() == {
         "action": "get_job",
@@ -105,9 +103,7 @@ def test_fastapi_route_paths_in_paths(client: TestClient, faker: Faker):
 
     # can be quoted
     quoted_solver_key = urllib.parse.quote_plus("simcore/services/comp/itis/isolve")
-    resp = client.get(
-        f"/{API_VTAG}/solvers/{quoted_solver_key}/releases/{version}/jobs/{job_id}"
-    )
+    resp = client.get(f"/{API_VTAG}/solvers/{quoted_solver_key}/releases/{version}/jobs/{job_id}")
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json() == {
         "action": "get_job",
@@ -128,18 +124,12 @@ def test_fastapi_route_name_parsing(client: TestClient, app: FastAPI, faker: Fak
 
     # Checks whether parse correctly ":action" suffix
     for action in ("start", "stop"):
-        expected_path = app.router.url_path_for(
-            f"{action}_job", solver_key=solver_key, version=version, job_id=job_id
-        )
-        resp = client.post(
-            f"/{API_VTAG}/solvers/{solver_key}/releases/{version}/jobs/{job_id}:{action}"
-        )
+        expected_path = app.router.url_path_for(f"{action}_job", solver_key=solver_key, version=version, job_id=job_id)
+        resp = client.post(f"/{API_VTAG}/solvers/{solver_key}/releases/{version}/jobs/{job_id}:{action}")
         assert resp.url.path == expected_path
         assert resp.status_code == status.HTTP_200_OK
         assert resp.json()["action"] == f"{action}_job"
 
-    resp = client.get(
-        f"/{API_VTAG}/solvers/{solver_key}/releases/{version}/jobs/{job_id}"
-    )
+    resp = client.get(f"/{API_VTAG}/solvers/{solver_key}/releases/{version}/jobs/{job_id}")
     assert resp.status_code == status.HTTP_200_OK
     assert resp.json()["action"] == "get_job"

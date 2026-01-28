@@ -68,11 +68,9 @@ def test_check_invitation(
     )
     assert response.status_code == status.HTTP_200_OK, f"{response.json()=}"
 
-    # up ot here, identifcal to above.
+    # up to here, identical to above.
     # Let's use invitation link
-    invitation_url = ApiInvitationContentAndLink.model_validate(
-        response.json()
-    ).invitation_url
+    invitation_url = ApiInvitationContentAndLink.model_validate(response.json()).invitation_url
 
     # check invitation_url
     response = client.post(
@@ -140,9 +138,7 @@ def test_check_invalid_invitation_with_different_secret(
         json={"invitation_url": f"{invitation_url}"},
         auth=basic_auth,
     )
-    assert (
-        response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
-    ), f"{response.json()=}"
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, f"{response.json()=}"
 
     assert response.json()["detail"] == INVALID_INVITATION_URL_MSG
 
@@ -154,14 +150,10 @@ def test_check_invalid_invitation_with_wrong_fragment(
     # check invitation_url
     response = client.post(
         f"/{API_VTAG}/invitations:extract",
-        json={
-            "invitation_url": "https://foo.com#/page?some_value=True"
-        },  # <-- NOTE: DIFFERENT fragment
+        json={"invitation_url": "https://foo.com#/page?some_value=True"},  # <-- NOTE: DIFFERENT fragment
         auth=basic_auth,
     )
-    assert (
-        response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
-    ), f"{response.json()=}"
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, f"{response.json()=}"
 
     assert response.json()["detail"] == INVALID_INVITATION_URL_MSG
 
@@ -188,8 +180,6 @@ def test_check_invalid_invitation_with_wrong_code(
         json={"invitation_url": invitation_url_with_invalid_code},
         auth=basic_auth,
     )
-    assert (
-        response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
-    ), f"{response.json()=}"
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, f"{response.json()=}"
 
     assert response.json()["detail"] == INVALID_INVITATION_URL_MSG

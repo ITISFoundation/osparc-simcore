@@ -47,27 +47,11 @@ def test_paginating_data(base_url):
         total=total_number_of_items, count=len(data_chunk), limit=limit, offset=offset
     )
     assert model_instance.links == PageLinks(
-        self=str(
-            URL(base_url).with_query(
-                f"some=1&random=4&query=true&offset={offset}&limit={limit}"
-            )
-        ),
-        first=str(
-            URL(base_url).with_query(
-                f"some=1&random=4&query=true&offset=0&limit={limit}"
-            )
-        ),
+        self=str(URL(base_url).with_query(f"some=1&random=4&query=true&offset={offset}&limit={limit}")),
+        first=str(URL(base_url).with_query(f"some=1&random=4&query=true&offset=0&limit={limit}")),
         prev=None,
-        next=str(
-            URL(base_url).with_query(
-                f"some=1&random=4&query=true&offset={offset+limit}&limit={limit}"
-            )
-        ),
-        last=str(
-            URL(base_url).with_query(
-                f"some=1&random=4&query=true&offset={last_chunk_offset}&limit={limit}"
-            )
-        ),
+        next=str(URL(base_url).with_query(f"some=1&random=4&query=true&offset={offset + limit}&limit={limit}")),
+        last=str(URL(base_url).with_query(f"some=1&random=4&query=true&offset={last_chunk_offset}&limit={limit}")),
     )
 
     # next "call"s
@@ -92,31 +76,11 @@ def test_paginating_data(base_url):
             offset=offset,
         )
         assert model_instance.links == PageLinks(
-            self=str(
-                URL(base_url).with_query(
-                    f"some=1&random=4&query=true&offset={offset}&limit={limit}"
-                )
-            ),
-            first=str(
-                URL(base_url).with_query(
-                    f"some=1&random=4&query=true&offset=0&limit={limit}"
-                )
-            ),
-            prev=str(
-                URL(base_url).with_query(
-                    f"some=1&random=4&query=true&offset={offset-limit}&limit={limit}"
-                )
-            ),
-            next=str(
-                URL(base_url).with_query(
-                    f"some=1&random=4&query=true&offset={offset+limit}&limit={limit}"
-                )
-            ),
-            last=str(
-                URL(base_url).with_query(
-                    f"some=1&random=4&query=true&offset={last_chunk_offset}&limit={limit}"
-                )
-            ),
+            self=str(URL(base_url).with_query(f"some=1&random=4&query=true&offset={offset}&limit={limit}")),
+            first=str(URL(base_url).with_query(f"some=1&random=4&query=true&offset=0&limit={limit}")),
+            prev=str(URL(base_url).with_query(f"some=1&random=4&query=true&offset={offset - limit}&limit={limit}")),
+            next=str(URL(base_url).with_query(f"some=1&random=4&query=true&offset={offset + limit}&limit={limit}")),
+            last=str(URL(base_url).with_query(f"some=1&random=4&query=true&offset={last_chunk_offset}&limit={limit}")),
         )
 
     # last "call"
@@ -146,25 +110,11 @@ def test_paginating_data(base_url):
         offset=offset,
     )
     assert model_instance.links == PageLinks(
-        self=str(
-            URL(base_url).with_query(
-                f"some=1&random=4&query=true&offset={offset}&limit={limit}"
-            )
-        ),
-        first=str(
-            URL(base_url).with_query(
-                f"some=1&random=4&query=true&offset=0&limit={limit}"
-            )
-        ),
+        self=str(URL(base_url).with_query(f"some=1&random=4&query=true&offset={offset}&limit={limit}")),
+        first=str(URL(base_url).with_query(f"some=1&random=4&query=true&offset=0&limit={limit}")),
         prev=str(
-            URL(base_url).with_query(
-                f"some=1&random=4&query=true&offset={last_chunk_offset - limit}&limit={limit}"
-            )
+            URL(base_url).with_query(f"some=1&random=4&query=true&offset={last_chunk_offset - limit}&limit={limit}")
         ),
         next=None,
-        last=str(
-            URL(base_url).with_query(
-                f"some=1&random=4&query=true&offset={last_chunk_offset}&limit={limit}"
-            )
-        ),
+        last=str(URL(base_url).with_query(f"some=1&random=4&query=true&offset={last_chunk_offset}&limit={limit}")),
     )

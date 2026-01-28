@@ -83,9 +83,7 @@ async def mocked_aiosmtplib(mocker: MockerFixture) -> MagicMock:
     mocked_lib.return_value.__aenter__.return_value.hostname = settings.SMTP_HOST
     mocked_lib.return_value.__aenter__.return_value.port = settings.SMTP_PORT
     mocked_lib.return_value.__aenter__.return_value.timeout = 100
-    mocked_lib.return_value.__aenter__.return_value.use_tls = (
-        settings.SMTP_PROTOCOL == EmailProtocol.TLS
-    )
+    mocked_lib.return_value.__aenter__.return_value.use_tls = settings.SMTP_PROTOCOL == EmailProtocol.TLS
     return mocked_lib
 
 
@@ -119,13 +117,9 @@ async def test_email_handlers(
     assert logged_user["role"] == user_role
     destination_email = faker.email()
 
-    response = await client.post(
-        f"/{API_VTAG}/email:test", json={"to": destination_email}
-    )
+    response = await client.post(f"/{API_VTAG}/email:test", json={"to": destination_email})
 
-    data, error = await assert_status(
-        response, expected_status_code=expected_response_cls
-    )
+    data, error = await assert_status(response, expected_status_code=expected_response_cls)
 
     if error:
         assert not mocked_send_email.called

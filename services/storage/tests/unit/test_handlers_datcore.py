@@ -37,9 +37,7 @@ async def test_entrypoint_without_api_tokens_return_401(
     user_id: UserID,
     product_name: ProductName,
 ):
-    url = url_from_operation_id(
-        client, initialized_app, entrypoint, location_id=f"{location_id}"
-    ).with_query(
+    url = url_from_operation_id(client, initialized_app, entrypoint, location_id=f"{location_id}").with_query(
         user_id=user_id,
         product_name=product_name,
     )

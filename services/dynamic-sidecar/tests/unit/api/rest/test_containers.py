@@ -158,11 +158,7 @@ async def _assert_compose_spec_pulled(compose_spec: str, settings: ApplicationSe
     expected_services_count = len(dict_compose_spec["services"])
 
     docker_ps_names = await _docker_ps_a_container_names()
-    started_containers = [
-        x
-        for x in docker_ps_names
-        if x.startswith(settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE)
-    ]
+    started_containers = [x for x in docker_ps_names if x.startswith(settings.DYNAMIC_SIDECAR_COMPOSE_NAMESPACE)]
     assert len(started_containers) == expected_services_count
 
 
@@ -176,9 +172,7 @@ def mock_environment(
         monkeypatch,
         {
             **mock_environment,
-            "RABBIT_SETTINGS": json.dumps(
-                model_dump_with_secrets(rabbit_service, show_secrets=True)
-            ),
+            "RABBIT_SETTINGS": json.dumps(model_dump_with_secrets(rabbit_service, show_secrets=True)),
         },
     )
 
@@ -253,8 +247,7 @@ def selected_spec(request, compose_spec: str, compose_spec_single_service: str) 
     fixture_name = request.param
     sig = signature(selected_spec)
     assert fixture_name in sig.parameters, (
-        f"Provided fixture name {fixture_name} was not found "
-        f"as a parameter in the signature {sig}"
+        f"Provided fixture name {fixture_name} was not found as a parameter in the signature {sig}"
     )
 
     # returns the parameter by name from the ones declared in the signature
@@ -282,12 +275,8 @@ def not_started_containers() -> list[str]:
 @pytest.fixture
 def mock_outputs_labels() -> dict[str, ServiceOutput]:
     return {
-        "output_port_1": TypeAdapter(ServiceOutput).validate_python(
-            ServiceOutput.model_json_schema()["examples"][3]
-        ),
-        "output_port_2": TypeAdapter(ServiceOutput).validate_python(
-            ServiceOutput.model_json_schema()["examples"][3]
-        ),
+        "output_port_1": TypeAdapter(ServiceOutput).validate_python(ServiceOutput.model_json_schema()["examples"][3]),
+        "output_port_2": TypeAdapter(ServiceOutput).validate_python(ServiceOutput.model_json_schema()["examples"][3]),
     }
 
 
@@ -324,9 +313,7 @@ def mock_aiodocker_containers_get(mocker: MockerFixture, faker: Faker) -> int:
     mock_status_code = faker.random_int(1, 999)
 
     async def mock_get(*args: str, **kwargs: Any) -> None:
-        raise aiodocker.exceptions.DockerError(
-            status=mock_status_code, data={"message": "aiodocker_mocked_error"}
-        )
+        raise aiodocker.exceptions.DockerError(status=mock_status_code, data={"message": "aiodocker_mocked_error"})
 
     mocker.patch("aiodocker.containers.DockerContainers.get", side_effect=mock_get)
 
@@ -334,9 +321,7 @@ def mock_aiodocker_containers_get(mocker: MockerFixture, faker: Faker) -> int:
 
 
 @pytest.fixture
-def mock_event_filter_enqueue(
-    app: FastAPI, monkeypatch: pytest.MonkeyPatch
-) -> AsyncMock:
+def mock_event_filter_enqueue(app: FastAPI, monkeypatch: pytest.MonkeyPatch) -> AsyncMock:
     mock = AsyncMock(return_value=None)
     outputs_watcher: OutputsWatcher = app.state.outputs_watcher
     monkeypatch.setattr(outputs_watcher._event_filter, "enqueue", mock)  # noqa: SLF001
@@ -344,9 +329,7 @@ def mock_event_filter_enqueue(
 
 
 @pytest.fixture
-async def mocked_port_key_events_queue_coro_get(
-    app: FastAPI, mocker: MockerFixture
-) -> Mock:
+async def mocked_port_key_events_queue_coro_get(app: FastAPI, mocker: MockerFixture) -> Mock:
     outputs_context: OutputsContext = app.state.outputs_context
 
     target = getattr(outputs_context.port_key_events_queue, "coro_get")  # noqa: B009
@@ -382,14 +365,10 @@ def test_ensure_api_vtag_is_v1():
 async def test_start_same_space_twice(compose_spec: str, test_client: TestClient):
     settings = test_client.application.state.settings
 
-    settings_1 = settings.model_copy(
-        update={"DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": "test_name_space_1"}, deep=True
-    )
+    settings_1 = settings.model_copy(update={"DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": "test_name_space_1"}, deep=True)
     await _assert_compose_spec_pulled(compose_spec, settings_1)
 
-    settings_2 = settings.model_copy(
-        update={"DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": "test_name_space_2"}, deep=True
-    )
+    settings_2 = settings.model_copy(update={"DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": "test_name_space_2"}, deep=True)
     await _assert_compose_spec_pulled(compose_spec, settings_2)
 
 
@@ -413,9 +392,7 @@ async def test_containers_get_status(
     started_containers: list[str],
     ensure_external_volumes: None,
 ):
-    response = await test_client.get(
-        f"/{API_VTAG}/containers", query_string={"only_status": True}
-    )
+    response = await test_client.get(f"/{API_VTAG}/containers", query_string={"only_status": True})
     assert response.status_code == status.HTTP_200_OK, response.text
 
     decoded_response = response.json()
@@ -439,13 +416,9 @@ async def test_containers_docker_status_docker_error(
     assert response.status_code == mock_aiodocker_containers_get, response.text
 
 
-async def test_container_missing_container(
-    test_client: TestClient, not_started_containers: list[str]
-):
+async def test_container_missing_container(test_client: TestClient, not_started_containers: list[str]):
     def _expected_error_string(container: str) -> dict[str, str]:
-        return {
-            "detail": f"No container='{container}' was found in started_containers='[]'"
-        }
+        return {"detail": f"No container='{container}' was found in started_containers='[]'"}
 
     for container in not_started_containers:
         # inspect container
@@ -461,9 +434,7 @@ async def test_container_docker_error(
 ):
     def _expected_error_string(status_code: int) -> dict[str, Any]:
         return {
-            "errors": [
-                f"An unexpected Docker error occurred status_code={status_code}, message=aiodocker_mocked_error"
-            ]
+            "errors": [f"An unexpected Docker error occurred status_code={status_code}, message=aiodocker_mocked_error"]
         }
 
     for container in started_containers:
@@ -552,9 +523,7 @@ async def test_container_create_outputs_dirs(
 
     assert mock_event_filter_enqueue.call_count == 0
 
-    json_outputs_labels = {
-        k: v.model_dump(by_alias=True) for k, v in mock_outputs_labels.items()
-    }
+    json_outputs_labels = {k: v.model_dump(by_alias=True) for k, v in mock_outputs_labels.items()}
     response = await test_client.post(
         f"/{API_VTAG}/containers/ports/outputs/dirs",
         json={"outputs_labels": json_outputs_labels},
@@ -567,16 +536,11 @@ async def test_container_create_outputs_dirs(
 
     await asyncio.sleep(_WAIT_FOR_OUTPUTS_WATCHER)
     EXPECT_EVENTS_WHEN_CREATING_OUTPUT_PORT_KEY_DIRS = 0
-    assert (
-        mock_event_filter_enqueue.call_count
-        == EXPECT_EVENTS_WHEN_CREATING_OUTPUT_PORT_KEY_DIRS
-    )
+    assert mock_event_filter_enqueue.call_count == EXPECT_EVENTS_WHEN_CREATING_OUTPUT_PORT_KEY_DIRS
 
 
 def _get_entrypoint_container_name(test_client: TestClient) -> str:
-    parsed_spec = parse_compose_spec(
-        test_client.application.state.shared_store.compose_spec
-    )
+    parsed_spec = parse_compose_spec(test_client.application.state.shared_store.compose_spec)
     container_name = None
     for service_name, service_details in parsed_spec["services"].items():
         if service_details.get("labels", None) is not None:
@@ -615,13 +579,9 @@ async def test_containers_entrypoint_name_containers_not_started(
     entrypoint_container = _get_entrypoint_container_name(test_client)
 
     # remove the container from the spec
-    parsed_spec = parse_compose_spec(
-        test_client.application.state.shared_store.compose_spec
-    )
+    parsed_spec = parse_compose_spec(test_client.application.state.shared_store.compose_spec)
     del parsed_spec["services"][entrypoint_container]
-    test_client.application.state.shared_store.compose_spec = yaml.safe_dump(
-        parsed_spec
-    )
+    test_client.application.state.shared_store.compose_spec = yaml.safe_dump(parsed_spec)
 
     filters_dict = {"network": dynamic_sidecar_network_name}
     if include_exclude_filter_option:
@@ -648,9 +608,7 @@ async def test_attach_detach_container_to_network(
     attachable_networks_and_ids: dict[str, str],
     mock_metrics_params: CreateServiceMetricsAdditionalParams,
 ):
-    container_names = await _start_containers(
-        test_client, selected_spec, mock_metrics_params
-    )
+    container_names = await _start_containers(test_client, selected_spec, mock_metrics_params)
 
     async with aiodocker.Docker() as docker:
         for container_name in container_names:
@@ -666,17 +624,13 @@ async def test_attach_detach_container_to_network(
                             "network_aliases": network_aliases,
                         },
                     )
-                    assert (
-                        response.status_code == status.HTTP_204_NO_CONTENT
-                    ), response.text
+                    assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
 
                 container = await docker.containers.get(container_name)
                 container_inspect = await container.show()
                 networks = container_inspect["NetworkSettings"]["Networks"]
                 assert network_id in networks
-                assert set(network_aliases).issubset(
-                    set(networks[network_id]["Aliases"])
-                )
+                assert set(network_aliases).issubset(set(networks[network_id]["Aliases"]))
 
                 # detach network from containers
                 for _ in range(2):  # running twice in a row
@@ -684,9 +638,7 @@ async def test_attach_detach_container_to_network(
                         f"/{API_VTAG}/containers/{container_name}/networks:detach",
                         json={"network_id": network_id},
                     )
-                    assert (
-                        response.status_code == status.HTTP_204_NO_CONTENT
-                    ), response.text
+                    assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
 
                 container = await docker.containers.get(container_name)
                 container_inspect = await container.show()
@@ -695,9 +647,7 @@ async def test_attach_detach_container_to_network(
 
 
 @pytest.fixture
-def define_inactivity_command(
-    mock_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def define_inactivity_command(mock_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> None:
     setenvs_from_dict(
         monkeypatch,
         {
@@ -717,9 +667,7 @@ def define_inactivity_command(
 @pytest.fixture
 def mock_shared_store(app: FastAPI) -> None:
     shared_store: SharedStore = app.state.shared_store
-    shared_store.original_to_container_names["mock_container_name"] = (
-        "mock_container_name"
-    )
+    shared_store.original_to_container_names["mock_container_name"] = "mock_container_name"
 
 
 async def test_containers_activity_command_failed(
@@ -727,15 +675,10 @@ async def test_containers_activity_command_failed(
 ):
     response = await test_client.get(f"/{API_VTAG}/containers/activity")
     assert response.status_code == 200, response.text
-    assert (
-        response.json()
-        == ActivityInfo(seconds_inactive=_INACTIVE_FOR_LONG_TIME).model_dump()
-    )
+    assert response.json() == ActivityInfo(seconds_inactive=_INACTIVE_FOR_LONG_TIME).model_dump()
 
 
-async def test_containers_activity_no_inactivity_defined(
-    test_client: TestClient, mock_shared_store: None
-):
+async def test_containers_activity_no_inactivity_defined(test_client: TestClient, mock_shared_store: None):
     response = await test_client.get(f"/{API_VTAG}/containers/activity")
     assert response.status_code == 200, response.text
     assert response.json() is None
@@ -785,7 +728,4 @@ async def test_containers_activity_unexpected_response(
 ):
     response = await test_client.get(f"/{API_VTAG}/containers/activity")
     assert response.status_code == 200, response.text
-    assert (
-        response.json()
-        == ActivityInfo(seconds_inactive=_INACTIVE_FOR_LONG_TIME).model_dump()
-    )
+    assert response.json() == ActivityInfo(seconds_inactive=_INACTIVE_FOR_LONG_TIME).model_dump()

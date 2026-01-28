@@ -21,15 +21,13 @@ from .docker_utils import docker_client
 logger = logging.getLogger(__name__)
 
 
-async def _logs_fetcher_worker(
-    container_name: str, dispatch_log: Callable[..., Coroutine[Any, Any, None]]
-) -> None:
+async def _logs_fetcher_worker(container_name: str, dispatch_log: Callable[..., Coroutine[Any, Any, None]]) -> None:
     logger.debug("Started log fetching for container %s", container_name)
 
     async with docker_client() as docker:
         container = await docker.containers.get(container_name)
 
-        # extact image to display in logs, Eg: from
+        # extract image to display in logs, Eg: from
         # registry:5000/simcore/services/dynamic/dy-static-file-server-dynamic-sidecar:2.0.2
         # "dy-static-file-server-dynamic-sidecar:2.0.2"
         container_inspect = await container.show()
@@ -66,9 +64,7 @@ class BackgroundLogFetcher:
 
     async def start_log_feching(self, container_name: str) -> None:
         self._log_processor_tasks[container_name] = create_task(
-            _logs_fetcher_worker(
-                container_name=container_name, dispatch_log=self._dispatch_logs
-            ),
+            _logs_fetcher_worker(container_name=container_name, dispatch_log=self._dispatch_logs),
             name=f"rabbitmq_log_processor_tasks/{container_name}",
         )
 
@@ -79,9 +75,7 @@ class BackgroundLogFetcher:
 
         task: Task | None = self._log_processor_tasks.pop(container_name, None)
         if task is None:
-            logger.info(
-                "No log_processor task found for container: %s ", container_name
-            )
+            logger.info("No log_processor task found for container: %s ", container_name)
             return
 
         task.cancel("stopping log fetching task")
