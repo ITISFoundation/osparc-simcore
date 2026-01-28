@@ -3,6 +3,7 @@
 
 import datetime
 from collections.abc import AsyncIterator, Iterator
+from dataclasses import asdict
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
@@ -20,6 +21,7 @@ from celery_library.worker.signals import _worker_init_wrapper, _worker_shutdown
 from faker import Faker
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+from notifications_library._models import ProductData, ProductUIData
 from pydantic import EmailStr
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
@@ -179,6 +181,23 @@ def fake_ipinfo(faker: Faker) -> dict[str, Any]:
         "x-forwarded-for": faker.ipv4(),
         "peername": faker.ipv4(),
     }
+
+
+@pytest.fixture
+def fake_product_data(faker: Faker) -> dict[str, Any]:
+    return asdict(
+        ProductData(
+            product_name=faker.company(),
+            display_name=faker.company(),
+            vendor_display_inline=faker.company_suffix(),
+            support_email=faker.email(),
+            homepage_url=faker.url(),
+            ui=ProductUIData(
+                logo_url=faker.image_url(),
+                strong_color=faker.color_name(),
+            ),
+        )
+    )
 
 
 @pytest.fixture
