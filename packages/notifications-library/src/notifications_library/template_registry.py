@@ -6,7 +6,7 @@ Each template can optionally define its context model in a context.py file.
 
 import importlib
 import logging
-from typing import Final
+from typing import Final, cast
 
 from models_library.notifications import ChannelType, TemplateName
 
@@ -49,7 +49,7 @@ def get_context_model(channel: ChannelType, template_name: TemplateName) -> type
                 template_name,
                 module_path,
             )
-            return context_class
+            return cast(type[NotificationsTemplateContext], context_class)
 
         _logger.warning(
             "Module %s exists but does not define a valid Context class",
