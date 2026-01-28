@@ -8,7 +8,7 @@ from typing import Any
 
 import pytest
 from aiohttp.test_utils import TestClient
-from aioresponses import aioresponses as AioResponsesMock
+from aioresponses import aioresponses
 from faker import Faker
 from models_library.api_schemas_catalog.services import ServiceGetV2
 from models_library.api_schemas_webserver.catalog import (
@@ -20,7 +20,7 @@ from models_library.utils.fastapi_encoders import jsonable_encoder
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.assert_checks import assert_status
-from pytest_simcore.helpers.catalog_rpc_server import CatalogRpcSideEffects
+from pytest_simcore.helpers.catalog_rpc import CatalogRpcSideEffects
 from pytest_simcore.helpers.faker_factories import random_icon_url
 from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -67,7 +67,7 @@ def mocked_catalog_rpc_api(mocker: MockerFixture) -> dict[str, MockType]:
 
 
 @pytest.fixture
-def mocked_catalog_rest_api(aioresponses_mocker: AioResponsesMock) -> dict[str, Any]:
+def mocked_catalog_rest_api(aioresponses_mocker: aioresponses) -> dict[str, Any]:
     """Fixture that mocks catalog service responses for tests"""
     url_pattern = re.compile(r"http://catalog:8000/v0/services/.*")
     service_payload = ServiceGetV2.model_json_schema()["examples"][0]

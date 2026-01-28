@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 def setup(app: FastAPI) -> None:
     async def on_startup() -> None:
         app.state.rabbitmq_client = None
-        app.state.rabbitmq_rpc_server = None
+        app.state.rabbitmq_rpc_client = None
         settings: RabbitSettings | None = get_application_settings(app).CLUSTERS_KEEPER_RABBITMQ
         if not settings:
             logger.warning("Rabbit MQ client is de-activated in the settings")
@@ -29,15 +29,15 @@ def setup(app: FastAPI) -> None:
         await wait_till_rabbitmq_responsive(settings.dsn)
         # create the clients
         app.state.rabbitmq_client = RabbitMQClient(client_name="clusters_keeper", settings=settings)
-        app.state.rabbitmq_rpc_server = await RabbitMQRPCClient.create(
-            client_name="clusters_keeper_rpc_server", settings=settings
+        app.state.rabbitmq_rpc_client = await RabbitMQRPCClient.create(
+            client_name="clusters_keeper_rpc_client", settings=settings
         )
 
     async def on_shutdown() -> None:
         if app.state.rabbitmq_client:
             await app.state.rabbitmq_client.close()
-        if app.state.rabbitmq_rpc_server:
-            await app.state.rabbitmq_rpc_server.close()
+        if app.state.rabbitmq_rpc_client:
+            await app.state.rabbitmq_rpc_client.close()
 
     app.add_event_handler("startup", on_startup)
     app.add_event_handler("shutdown", on_shutdown)
@@ -54,9 +54,9 @@ def is_rabbitmq_enabled(app: FastAPI) -> bool:
 
 
 def get_rabbitmq_rpc_client(app: FastAPI) -> RabbitMQRPCClient:
-    if not app.state.rabbitmq_rpc_server:
+    if not app.state.rabbitmq_rpc_client:
         raise ConfigurationError(msg="RabbitMQ client for RPC is not available. Please check the configuration.")
-    return cast(RabbitMQRPCClient, app.state.rabbitmq_rpc_server)
+    return cast(RabbitMQRPCClient, app.state.rabbitmq_rpc_client)
 
 
 async def post_message(app: FastAPI, message: RabbitMessageBase) -> None:

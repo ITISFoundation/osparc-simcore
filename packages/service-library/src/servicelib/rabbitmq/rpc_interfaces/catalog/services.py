@@ -1,4 +1,4 @@
-"""RPC client-side for the RPC server at the payments service
+"""RPC client side for the payments service
 
 In this interface (and all below), the context of the caller is passed in the following arguments:
 - `user_id` is intended for the caller's identifier. Do not add other user_id that is not the callers!.

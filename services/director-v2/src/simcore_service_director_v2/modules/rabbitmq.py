@@ -19,8 +19,7 @@ from ..core.settings import AppSettings
 from .notifier import publish_shutdown_no_more_credits
 
 if TYPE_CHECKING:
-    # This is very dirty!
-    from .dynamic_sidecar.scheduler._task import DynamicSidecarsScheduler
+    from ..modules.dynamic_sidecar.scheduler import DynamicSidecarsScheduler
 
 _logger = logging.getLogger(__name__)
 
@@ -28,7 +27,7 @@ _logger = logging.getLogger(__name__)
 async def handler_out_of_credits(app: FastAPI, data: bytes) -> bool:
     message = WalletCreditsLimitReachedMessage.model_validate_json(data)
 
-    scheduler: DynamicSidecarsScheduler = app.state.dynamic_sidecar_scheduler
+    scheduler: "DynamicSidecarsScheduler" = app.state.dynamic_sidecar_scheduler  # noqa: UP037
     settings: AppSettings = app.state.settings
 
     if settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER.DIRECTOR_V2_DYNAMIC_SCHEDULER_CLOSE_SERVICES_VIA_FRONTEND_WHEN_CREDITS_LIMIT_REACHED:  # noqa: E501
@@ -58,9 +57,6 @@ def setup(app: FastAPI) -> None:
         app.state.rabbitmq_rpc_client = await RabbitMQRPCClient.create(
             client_name="director-v2-rpc-client", settings=settings
         )
-        app.state.rabbitmq_rpc_server = await RabbitMQRPCClient.create(
-            client_name="director-v2-rpc-server", settings=settings
-        )
 
         await app.state.rabbitmq_client.subscribe(
             WalletCreditsLimitReachedMessage.get_channel_name(),
@@ -74,8 +70,6 @@ def setup(app: FastAPI) -> None:
             await app.state.rabbitmq_client.close()
         if app.state.rabbitmq_rpc_client:
             await app.state.rabbitmq_rpc_client.close()
-        if app.state.rabbitmq_rpc_server:
-            await app.state.rabbitmq_rpc_server.close()
 
     app.add_event_handler("startup", on_startup)
     app.add_event_handler("shutdown", on_shutdown)
@@ -93,8 +87,3 @@ def get_rabbitmq_rpc_client(app: FastAPI) -> RabbitMQRPCClient:
         msg = "RabbitMQ client for RPC is not available. Please check the configuration."
         raise ConfigurationError(msg=msg)
     return cast(RabbitMQRPCClient, app.state.rabbitmq_rpc_client)
-
-
-def get_rabbitmq_rpc_server(app: FastAPI) -> RabbitMQRPCClient:
-    assert app.state.rabbitmq_rpc_server  # nosec
-    return cast(RabbitMQRPCClient, app.state.rabbitmq_rpc_server)

@@ -7,9 +7,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Final
 
-from aiodocker import Docker
+from aiodocker import Docker, DockerError
 from aiodocker.types import JSONObject
-from fastapi import FastAPI
+from fastapi import FastAPI, status
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStop,
 )
@@ -147,6 +147,21 @@ class DynamicSidecarRCloneMountDelegate(DelegateInterface):
             existing_container = await client.containers.get(container_name)
             await existing_container.delete(force=True)
 
+            try:
+                container = await client.containers.get(container_name)
+            except DockerError as e:
+                if e.status == status.HTTP_404_NOT_FOUND:
+                    return
+                raise
+
+            # NOTE: to ensure graceful shutdown a SIGTERM signal is required
+            # if SIGKILL is sent directly FUSE mount will not unmount cleanly
+
+            # sends SIGTERM
+            await container.stop()
+            # sends SIGKILL and removes
+            await container.delete(force=True)
+
     async def get_node_address(self) -> str:
         async with _get_docker_client() as client:
             system_info = await client.system.info()
@@ -161,6 +176,7 @@ def setup_r_clone_mount_manager(app: FastAPI):
 
         app.state.r_clone_mount_manager = r_clone_mount_manager = RCloneMountManager(
             settings.DY_SIDECAR_R_CLONE_SETTINGS,
+            requires_data_mounting=settings.DY_SIDECAR_REQUIRES_DATA_MOUNTING,
             delegate=DynamicSidecarRCloneMountDelegate(app, settings, mounted_volumes),
         )
         await r_clone_mount_manager.setup()

@@ -29,7 +29,7 @@ async def add_me(*, x: Any, y: Any) -> Any:
     # result's type will on the caller side will be the one it has here
 
 
-class CustomClass:
+class CustomClass:  # noqa: PLW1641
     def __init__(self, x: Any, y: Any) -> None:
         self.x = x
         self.y = y
@@ -68,40 +68,30 @@ class CustomClass:
     ],
 )
 async def test_base_rpc_pattern(
-    rpc_client: RabbitMQRPCClient,
-    rpc_server: RabbitMQRPCClient,
-    x: Any,
-    y: Any,
-    expected_result: Any,
-    expected_type: type,
-    namespace: RPCNamespace,
+    rpc_client: RabbitMQRPCClient, x: Any, y: Any, expected_result: Any, expected_type: type, namespace: RPCNamespace
 ):
-    await rpc_server.register_handler(namespace, RPCMethodName(add_me.__name__), add_me)
+    await rpc_client.register_handler(namespace, RPCMethodName(add_me.__name__), add_me)
 
     request_result = await rpc_client.request(namespace, RPCMethodName(add_me.__name__), x=x, y=y)
     assert request_result == expected_result
-    assert type(request_result) == expected_type
+    assert type(request_result) == expected_type  # noqa: E721
 
-    await rpc_server.unregister_handler(add_me)
+    await rpc_client.unregister_handler(add_me)
 
 
 async def test_multiple_requests_sequence_same_replier_and_requester(
-    rpc_client: RabbitMQRPCClient,
-    rpc_server: RabbitMQRPCClient,
-    namespace: RPCNamespace,
+    rpc_client: RabbitMQRPCClient, namespace: RPCNamespace
 ):
-    await rpc_server.register_handler(namespace, RPCMethodName(add_me.__name__), add_me)
+    await rpc_client.register_handler(namespace, RPCMethodName(add_me.__name__), add_me)
 
     for i in range(MULTIPLE_REQUESTS_COUNT):
         assert await rpc_client.request(namespace, RPCMethodName(add_me.__name__), x=1 + i, y=2 + i) == 3 + i * 2
 
 
 async def test_multiple_requests_parallel_same_replier_and_requester(
-    rpc_client: RabbitMQRPCClient,
-    rpc_server: RabbitMQRPCClient,
-    namespace: RPCNamespace,
+    rpc_client: RabbitMQRPCClient, namespace: RPCNamespace
 ):
-    await rpc_server.register_handler(namespace, RPCMethodName(add_me.__name__), add_me)
+    await rpc_client.register_handler(namespace, RPCMethodName(add_me.__name__), add_me)
 
     expected_result: list[int] = []
     requests: list[Awaitable] = []
@@ -113,11 +103,9 @@ async def test_multiple_requests_parallel_same_replier_and_requester(
 
 
 async def test_multiple_requests_parallel_same_replier_different_requesters(
-    rabbit_service: RabbitSettings,
-    rpc_server: RabbitMQRPCClient,
-    namespace: RPCNamespace,
+    rabbit_service: RabbitSettings, rpc_client: RabbitMQRPCClient, namespace: RPCNamespace
 ):
-    await rpc_server.register_handler(namespace, RPCMethodName(add_me.__name__), add_me)
+    await rpc_client.register_handler(namespace, RPCMethodName(add_me.__name__), add_me)
 
     clients: list[RabbitMQRPCClient] = []
     for _ in range(MULTIPLE_REQUESTS_COUNT):
@@ -169,20 +157,12 @@ async def test_replier_not_started(rpc_client: RabbitMQRPCClient, namespace: RPC
     await _assert_event_not_registered(rpc_client, namespace)
 
 
-async def test_replier_handler_not_registered(
-    rpc_client: RabbitMQRPCClient,
-    rpc_server: RabbitMQRPCClient,
-    namespace: RPCNamespace,
-):
+async def test_replier_handler_not_registered(rpc_client: RabbitMQRPCClient, namespace: RPCNamespace):
     await _assert_event_not_registered(rpc_client, namespace)
 
 
-async def test_request_is_missing_arguments(
-    rpc_client: RabbitMQRPCClient,
-    rpc_server: RabbitMQRPCClient,
-    namespace: RPCNamespace,
-):
-    await rpc_server.register_handler(namespace, RPCMethodName(add_me.__name__), add_me)
+async def test_request_is_missing_arguments(rpc_client: RabbitMQRPCClient, namespace: RPCNamespace):
+    await rpc_client.register_handler(namespace, RPCMethodName(add_me.__name__), add_me)
 
     # missing 1 argument
     with pytest.raises(TypeError) as exec_info:
@@ -199,14 +179,12 @@ async def test_request_is_missing_arguments(
 
 
 async def test_requester_cancels_long_running_request_or_requester_takes_too_much_to_respond(
-    rpc_client: RabbitMQRPCClient,
-    rpc_server: RabbitMQRPCClient,
-    namespace: RPCNamespace,
+    rpc_client: RabbitMQRPCClient, namespace: RPCNamespace
 ):
     async def _long_running(*, time_to_sleep: float) -> None:
         await asyncio.sleep(time_to_sleep)
 
-    await rpc_server.register_handler(namespace, RPCMethodName(_long_running.__name__), _long_running)
+    await rpc_client.register_handler(namespace, RPCMethodName(_long_running.__name__), _long_running)
 
     with pytest.raises(asyncio.TimeoutError):
         await rpc_client.request(
@@ -217,16 +195,12 @@ async def test_requester_cancels_long_running_request_or_requester_takes_too_muc
         )
 
 
-async def test_replier_handler_raises_error(
-    rpc_client: RabbitMQRPCClient,
-    rpc_server: RabbitMQRPCClient,
-    namespace: RPCNamespace,
-):
+async def test_replier_handler_raises_error(rpc_client: RabbitMQRPCClient, namespace: RPCNamespace):
     async def _raising_error() -> None:
         msg = "failed as requested"
         raise RuntimeError(msg)
 
-    await rpc_server.register_handler(namespace, RPCMethodName(_raising_error.__name__), _raising_error)
+    await rpc_client.register_handler(namespace, RPCMethodName(_raising_error.__name__), _raising_error)
 
     with pytest.raises(RuntimeError) as exec_info:
         await rpc_client.request(namespace, RPCMethodName(_raising_error.__name__))
@@ -234,9 +208,7 @@ async def test_replier_handler_raises_error(
 
 
 async def test_replier_responds_with_not_locally_defined_object_instance(
-    rpc_client: RabbitMQRPCClient,
-    rpc_server: RabbitMQRPCClient,
-    namespace: RPCNamespace,
+    rpc_client: RabbitMQRPCClient, namespace: RPCNamespace
 ):
     async def _replier_scope() -> None:
         class Custom:
@@ -246,7 +218,7 @@ async def test_replier_responds_with_not_locally_defined_object_instance(
         async def _get_custom(x: Any) -> Custom:
             return Custom(x)
 
-        await rpc_server.register_handler(namespace, RPCMethodName("a_name"), _get_custom)
+        await rpc_client.register_handler(namespace, RPCMethodName("a_name"), _get_custom)
 
     async def _requester_scope() -> None:
         # NOTE: what is happening here?
@@ -260,16 +232,16 @@ async def test_replier_responds_with_not_locally_defined_object_instance(
     await _requester_scope()
 
 
-async def test_register_handler_under_same_name_raises_error(rpc_server: RabbitMQRPCClient, namespace: RPCNamespace):
+async def test_register_handler_under_same_name_raises_error(rpc_client: RabbitMQRPCClient, namespace: RPCNamespace):
     async def _a_handler() -> None:
         pass
 
     async def _another_handler() -> None:
         pass
 
-    await rpc_server.register_handler(namespace, RPCMethodName("same_name"), _a_handler)
+    await rpc_client.register_handler(namespace, RPCMethodName("same_name"), _a_handler)
     with pytest.raises(RuntimeError) as exec_info:
-        await rpc_server.register_handler(namespace, RPCMethodName("same_name"), _another_handler)
+        await rpc_client.register_handler(namespace, RPCMethodName("same_name"), _another_handler)
     assert "Method name already used for" in f"{exec_info.value}"
 
 
@@ -281,13 +253,13 @@ async def test_register_handler_under_same_name_raises_error(rpc_server: RabbitM
     ],
 )
 async def test_get_namespaced_method_name_max_length(
-    rpc_server: RabbitMQRPCClient, handler_name: str, expect_fail: bool
+    rpc_client: RabbitMQRPCClient, handler_name: str, expect_fail: bool
 ):
     async def _a_handler() -> None:
         pass
 
     if expect_fail:
         with pytest.raises(ValidationError, match="String should have at most 255 characters"):
-            await rpc_server.register_handler(RPCNamespace("a"), RPCMethodName(handler_name), _a_handler)
+            await rpc_client.register_handler(RPCNamespace("a"), RPCMethodName(handler_name), _a_handler)
     else:
-        await rpc_server.register_handler(RPCNamespace("a"), RPCMethodName(handler_name), _a_handler)
+        await rpc_client.register_handler(RPCNamespace("a"), RPCMethodName(handler_name), _a_handler)

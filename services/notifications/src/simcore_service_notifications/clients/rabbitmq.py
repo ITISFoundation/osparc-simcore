@@ -12,19 +12,19 @@ from ..core.settings import ApplicationSettings
 async def rabbitmq_lifespan(app: FastAPI) -> AsyncIterator[State]:
     settings: ApplicationSettings = app.state.settings
     rabbit_settings: RabbitSettings = settings.NOTIFICATIONS_RABBITMQ
-    app.state.rabbitmq_rpc_server = None
+    app.state.rabbitmq_rpc_client = None
 
     await wait_till_rabbitmq_responsive(rabbit_settings.dsn)
 
-    app.state.rabbitmq_rpc_server = await RabbitMQRPCClient.create(
-        client_name="notifications_rpc_server", settings=rabbit_settings
+    app.state.rabbitmq_rpc_client = await RabbitMQRPCClient.create(
+        client_name="notifications_rpc_client", settings=rabbit_settings
     )
 
     yield {}
 
-    await app.state.rabbitmq_rpc_server.close()
+    await app.state.rabbitmq_rpc_client.close()
 
 
-def get_rabbitmq_rpc_server(app: FastAPI) -> RabbitMQRPCClient:
-    assert app.state.rabbitmq_rpc_server  # nosec
-    return cast(RabbitMQRPCClient, app.state.rabbitmq_rpc_server)
+def get_rabbitmq_rpc_client(app: FastAPI) -> RabbitMQRPCClient:
+    assert app.state.rabbitmq_rpc_client  # nosec
+    return cast(RabbitMQRPCClient, app.state.rabbitmq_rpc_client)

@@ -10,7 +10,7 @@ from models_library.errors import (
 from servicelib.rabbitmq import RabbitMQClient
 
 from ...clients.postgres import PostgresLiveness
-from .dependencies import get_postgres_liveness, get_rabbitmq_client
+from .dependencies import get_postgres_liveness, get_rabbitmq_rpc_client
 
 router = APIRouter()
 
@@ -21,7 +21,7 @@ class HealthCheckError(RuntimeError):
 
 @router.get("/", response_model=HealthCheckGet)
 async def check_service_health(
-    rabbitmq_client: Annotated[RabbitMQClient, Depends(get_rabbitmq_client)],
+    rabbitmq_client: Annotated[RabbitMQClient, Depends(get_rabbitmq_rpc_client)],
     postgres_liveness: Annotated[PostgresLiveness, Depends(get_postgres_liveness)],
 ):
     if not rabbitmq_client.healthy:

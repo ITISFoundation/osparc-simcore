@@ -7,7 +7,7 @@ from models_library.api_schemas_directorv2 import (
 from servicelib.logging_utils import log_context
 from servicelib.rabbitmq import RPCRouter
 
-from ...modules.rabbitmq import get_rabbitmq_rpc_server
+from ...modules.rabbitmq import get_rabbitmq_rpc_client
 from . import _computations, _computations_tasks
 
 _logger = logging.getLogger(__name__)
@@ -23,8 +23,8 @@ def setup_rpc_api_routes(app: FastAPI) -> None:
             logging.INFO,
             msg="Director-v2 startup RPC API Routes",
         ):
-            rpc_server = get_rabbitmq_rpc_server(app)
+            rpc_client = get_rabbitmq_rpc_client(app)
             for router in ROUTERS:
-                await rpc_server.register_router(router, DIRECTOR_V2_RPC_NAMESPACE, app)
+                await rpc_client.register_router(router, DIRECTOR_V2_RPC_NAMESPACE, app)
 
     app.add_event_handler("startup", startup)

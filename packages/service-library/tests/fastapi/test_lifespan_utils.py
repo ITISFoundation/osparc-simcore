@@ -90,11 +90,11 @@ def rabbitmq_lifespan() -> LifespanManager:
     @lifespan_manager.add
     async def _setup_rabbitmq(app: FastAPI) -> AsyncIterator[State]:
         with log_context(logging.INFO, "rabbitmq"):
-            with pytest.raises(AttributeError, match="rabbitmq_rpc_server"):
-                _ = app.state.rabbitmq_rpc_server
+            with pytest.raises(AttributeError, match="rabbitmq_rpc_client"):
+                _ = app.state.rabbitmq_rpc_client
 
             # pass state to children
-            yield {"rabbitmq_rpc_server": "Some RabbitMQ RPC Server"}
+            yield {"rabbitmq_rpc_client": "Some RabbitMQ RPC Client"}
 
     return lifespan_manager
 
@@ -124,9 +124,9 @@ async def test_app_lifespan_composition(postgres_lifespan: LifespanManager, rabb
     @rabbitmq_lifespan.add
     async def rpc_service_lifespan(app: FastAPI, state: State) -> AsyncIterator[State]:
         with log_context(logging.INFO, "app rpc-server"):
-            assert "rabbitmq_rpc_server" in state
+            assert "rabbitmq_rpc_client" in state
 
-            app.state.rpc_server = state["rabbitmq_rpc_server"]
+            app.state.rpc_client = state["rabbitmq_rpc_client"]
 
             yield {}
 
@@ -143,12 +143,12 @@ async def test_app_lifespan_composition(postgres_lifespan: LifespanManager, rabb
                 "engine": "Some Engine",
                 "aengine": "Some Async Engine",
             },
-            "rabbitmq_rpc_server": "Some RabbitMQ RPC Server",
+            "rabbitmq_rpc_client": "Some RabbitMQ RPC Client",
         }
 
         # app state
         assert app.state.database_engine
-        assert app.state.rpc_server
+        assert app.state.rpc_client
 
         # NOTE: these are different states!
         assert app.state._state != asgi_manager._state  # noqa: SLF001

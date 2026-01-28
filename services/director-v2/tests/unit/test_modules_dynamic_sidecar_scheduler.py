@@ -5,8 +5,9 @@
 
 import logging
 import re
-from collections.abc import AsyncGenerator, Awaitable, Callable, Iterator
+from collections.abc import AsyncGenerator, Awaitable, Callable, Iterable, Iterator
 from contextlib import asynccontextmanager, contextmanager
+from copy import deepcopy
 from typing import Final
 from unittest.mock import AsyncMock
 
@@ -20,8 +21,7 @@ from models_library.api_schemas_directorv2.dynamic_services_service import (
     RunningDynamicServiceDetails,
 )
 from models_library.services_enums import ServiceState
-from models_library.wallets import WalletID
-from pydantic import NonNegativeFloat
+from pydantic import AnyHttpUrl, NonNegativeFloat
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from respx.router import MockRouter
@@ -31,7 +31,6 @@ from simcore_service_director_v2.models.dynamic_services_scheduler import (
     DockerContainerInspect,
     DynamicSidecarStatus,
     SchedulerData,
-    ServiceName,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.errors import (
     DynamicSidecarError,
@@ -56,6 +55,7 @@ from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core._schedu
 # running scheduler at a height rate to stress out the system
 # and ensure faster tests
 _TEST_SCHEDULER_INTERVAL_SECONDS: Final[NonNegativeFloat] = 0.1
+_MODULE_BASE: Final[str] = "simcore_service_director_v2.modules.dynamic_sidecar.scheduler"
 
 _logger = logging.getLogger(__name__)
 
@@ -66,7 +66,7 @@ pytest_simcore_core_services_selection = [
 pytest_simcore_ops_services_selection = ["adminer"]
 
 
-def get_url(dynamic_sidecar_endpoint: str, postfix: str) -> str:
+def _get_url(dynamic_sidecar_endpoint: AnyHttpUrl, postfix: str) -> str:
     return f"{dynamic_sidecar_endpoint}{postfix}"
 
 
@@ -75,14 +75,13 @@ def get_url(dynamic_sidecar_endpoint: str, postfix: str) -> str:
 def _mock_containers_docker_status(
     scheduler_data: SchedulerData,
 ) -> Iterator[MockRouter]:
-    service_endpoint = scheduler_data.endpoint
     with respx.mock as mock:
         mock.get(
             re.compile(rf"^http://{scheduler_data.service_name}:{scheduler_data.port}/health"),
             name="health",
         ).respond(json={"is_healthy": True, "error": None})
         mock.post(
-            get_url(service_endpoint, "/v1/containers:down"),
+            _get_url(scheduler_data.endpoint, "/v1/containers:down"),
             name="begin_service_destruction",
         ).respond(text="")
 
@@ -129,7 +128,7 @@ def mock_env(
     mock_env: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
     simcore_services_network_name: str,
-    mock_docker_api: None,
+    mock_service_pending: None,
     faker: Faker,
 ) -> None:
     monkeypatch.setenv("SIMCORE_SERVICES_NETWORK_NAME", simcore_services_network_name)
@@ -168,29 +167,33 @@ def mocked_dynamic_scheduler_events(mocker: MockerFixture) -> None:
             _logger.warning(message)
 
     # replace REGISTERED EVENTS
-    mocker.patch(
-        "simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core._observer.REGISTERED_EVENTS",
-        [AlwaysTriggersDynamicSchedulerEvent],
-    )
+    mocker.patch(f"{_MODULE_BASE}._core._observer.REGISTERED_EVENTS", [AlwaysTriggersDynamicSchedulerEvent])
 
 
 @pytest.fixture
-def scheduler(minimal_app: FastAPI) -> DynamicSidecarsScheduler:
-    return minimal_app.state.dynamic_sidecar_scheduler
+def scheduler(minimal_app: FastAPI) -> Iterable[DynamicSidecarsScheduler]:
+    dynamic_sidecar_scheduler: DynamicSidecarsScheduler = minimal_app.state.dynamic_sidecar_scheduler
+
+    dynamic_sidecar_scheduler.scheduler._to_observe.clear()  # noqa: SLF001
+    dynamic_sidecar_scheduler.scheduler._inverse_search_mapping.clear()  # noqa: SLF001
+
+    yield dynamic_sidecar_scheduler
+
+    dynamic_sidecar_scheduler.scheduler._to_observe.clear()  # noqa: SLF001
+    dynamic_sidecar_scheduler.scheduler._inverse_search_mapping.clear()  # noqa: SLF001
 
 
 @pytest.fixture
 def scheduler_data(scheduler_data_from_http_request: SchedulerData) -> SchedulerData:
-    return scheduler_data_from_http_request
+    return deepcopy(scheduler_data_from_http_request)
 
 
 @pytest.fixture
 def mocked_api_client(scheduler_data: SchedulerData) -> Iterator[MockRouter]:
-    service_endpoint = scheduler_data.endpoint
     with respx.mock as mock:
-        mock.get(get_url(service_endpoint, "/health"), name="is_healthy").respond(json={"is_healthy": True})
+        mock.get(_get_url(scheduler_data.endpoint, "/health"), name="is_healthy").respond(json={"is_healthy": True})
         mock.post(
-            get_url(service_endpoint, "/v1/containers:down"),
+            _get_url(scheduler_data.endpoint, "/v1/containers:down"),
             name="begin_service_destruction",
         ).respond(text="")
 
@@ -198,45 +201,72 @@ def mocked_api_client(scheduler_data: SchedulerData) -> Iterator[MockRouter]:
 
 
 @pytest.fixture
-def mock_service_running(mock_docker_api, mocker: MockerFixture) -> AsyncMock:
-    return mocker.patch(
-        "simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core._scheduler_utils.get_dynamic_sidecar_state",
-        return_value=(ServiceState.RUNNING, ""),
+def mock_docker_api(mocker: MockerFixture) -> None:
+    mocker.patch(
+        f"{_MODULE_BASE}._core._scheduler_utils.get_dynamic_sidecars_to_observe",
+        autospec=True,
+        return_value=[],
     )
+    mocker.patch(
+        f"{_MODULE_BASE}._core._observer.are_sidecar_and_proxy_services_present",
+        autospec=True,
+        return_value=True,
+    )
+
+
+@pytest.fixture
+def mock_docker_with_status(mock_docker_api: None, mocker: MockerFixture) -> Callable[[ServiceState], AsyncMock]:
+    def _(status: ServiceState) -> AsyncMock:
+        return mocker.patch(
+            f"{_MODULE_BASE}._core._scheduler_utils.get_dynamic_sidecar_state",
+            return_value=(status, ""),
+        )
+
+    return _
+
+
+@pytest.fixture
+def mock_service_pending(mock_docker_with_status: Callable[[ServiceState], AsyncMock]) -> None:
+    mock_docker_with_status(ServiceState.PENDING)
+
+
+@pytest.fixture
+def mock_service_running(mock_docker_with_status: Callable[[ServiceState], AsyncMock]) -> AsyncMock:
+    return mock_docker_with_status(ServiceState.RUNNING)
 
 
 @pytest.fixture
 def mock_update_label(mocker: MockerFixture) -> None:
     mocker.patch(
-        "simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core._scheduler.update_scheduler_data_label",
+        f"{_MODULE_BASE}._core._scheduler.update_scheduler_data_label",
         return_value=None,
     )
 
 
 @pytest.fixture
-def disabled_scheduler_background_task(mocker: MockerFixture):
-    mocker.patch(
-        "simcore_service_director_v2.modules.dynamic_sidecar.scheduler._task.DynamicSidecarsScheduler.start",
-        autospec=True,
-    )
+def disabled_scheduler_background_tasks(mocker: MockerFixture):
+    mocker.patch(f"{_MODULE_BASE}._task.DynamicSidecarsScheduler.start", autospec=True)
+    mocker.patch(f"{_MODULE_BASE}._core._scheduler.Scheduler._run_scheduler_task", autospec=True)
+    mocker.patch(f"{_MODULE_BASE}._core._scheduler.Scheduler._run_trigger_observation_queue_task", autospec=True)
+    mocker.patch(f"{_MODULE_BASE}._core._observer.observing_single_service", autospec=True)
 
 
 @pytest.fixture
 async def manually_trigger_scheduler(
     scheduler: DynamicSidecarsScheduler, scheduler_data: SchedulerData
 ) -> Callable[[], Awaitable[None]]:
-    async def _coroutine() -> None:
+    async def _() -> None:
         await _apply_observation_cycle(scheduler, scheduler_data)
 
-    return _coroutine
+    return _
 
 
 @pytest.mark.parametrize("with_observation_cycle", [True, False])
 async def test_scheduler_add_remove(
-    disabled_scheduler_background_task: None,
-    manually_trigger_scheduler: Callable[[], Awaitable[None]],
+    disabled_scheduler_background_tasks: None,
     scheduler: DynamicSidecarsScheduler,
     scheduler_data: SchedulerData,
+    manually_trigger_scheduler: Callable[[], Awaitable[None]],
     mocked_api_client: MockRouter,
     docker_swarm: None,
     mocked_dynamic_scheduler_events: None,
@@ -265,12 +295,12 @@ async def test_scheduler_add_remove(
 
 @pytest.mark.flaky(max_runs=3)
 async def test_scheduler_removes_partially_started_services(
-    disabled_scheduler_background_task: None,
-    manually_trigger_scheduler: Callable[[], Awaitable[None]],
+    disabled_scheduler_background_tasks: None,
     scheduler: DynamicSidecarsScheduler,
     scheduler_data: SchedulerData,
+    manually_trigger_scheduler: Callable[[], Awaitable[None]],
     mocked_dynamic_scheduler_events: None,
-    mock_docker_api: None,
+    mock_service_pending: None,
 ) -> None:
     await manually_trigger_scheduler()
     await scheduler.scheduler.add_service_from_scheduler_data(scheduler_data)
@@ -280,10 +310,10 @@ async def test_scheduler_removes_partially_started_services(
 
 
 async def test_scheduler_is_failing(
-    disabled_scheduler_background_task: None,
-    manually_trigger_scheduler: Callable[[], Awaitable[None]],
+    disabled_scheduler_background_tasks: None,
     scheduler: DynamicSidecarsScheduler,
     scheduler_data: SchedulerData,
+    manually_trigger_scheduler: Callable[[], Awaitable[None]],
     mocked_dynamic_scheduler_events: None,
 ) -> None:
     await manually_trigger_scheduler()
@@ -294,10 +324,10 @@ async def test_scheduler_is_failing(
 
 
 async def test_scheduler_health_timing_out(
-    disabled_scheduler_background_task: None,
-    manually_trigger_scheduler: Callable[[], Awaitable[None]],
+    disabled_scheduler_background_tasks: None,
     scheduler: DynamicSidecarsScheduler,
     scheduler_data: SchedulerData,
+    manually_trigger_scheduler: Callable[[], Awaitable[None]],
     mocked_dynamic_scheduler_events: None,
 ):
     await manually_trigger_scheduler()
@@ -319,15 +349,15 @@ async def test_adding_service_two_times_does_not_raise(
     await scheduler.scheduler.add_service_from_scheduler_data(scheduler_data)
 
 
-async def test_collition_at_global_level_raises(
+async def test_collision_at_global_level_raises(
     scheduler: DynamicSidecarsScheduler,
     scheduler_data: SchedulerData,
     mocked_dynamic_scheduler_events: None,
-    mock_docker_api: None,
+    mock_service_pending: None,
 ):
     scheduler.scheduler._inverse_search_mapping[  # noqa: SLF001
         scheduler_data.node_uuid
-    ] = ServiceName("mock_service_name")
+    ] = "mock_service_name"
     with pytest.raises(DynamicSidecarError) as execinfo:
         await scheduler.scheduler.add_service_from_scheduler_data(scheduler_data)
     assert "collide" in str(execinfo.value)
@@ -337,7 +367,7 @@ async def test_remove_missing_no_error(
     scheduler: DynamicSidecarsScheduler,
     scheduler_data: SchedulerData,
     mocked_dynamic_scheduler_events: None,
-    mock_docker_api: None,
+    mock_service_pending: None,
 ) -> None:
     with pytest.raises(DynamicSidecarNotFoundError) as execinfo:
         await scheduler.mark_service_for_removal(
@@ -347,12 +377,12 @@ async def test_remove_missing_no_error(
 
 
 async def test_get_stack_status(
-    disabled_scheduler_background_task: None,
-    manually_trigger_scheduler: Callable[[], Awaitable[None]],
+    disabled_scheduler_background_tasks: None,
     scheduler: DynamicSidecarsScheduler,
     scheduler_data: SchedulerData,
+    manually_trigger_scheduler: Callable[[], Awaitable[None]],
     mocked_dynamic_scheduler_events: None,
-    mock_docker_api: None,
+    mock_service_pending: None,
 ) -> None:
     await manually_trigger_scheduler()
     await scheduler.scheduler.add_service_from_scheduler_data(scheduler_data)
@@ -370,7 +400,7 @@ async def test_get_stack_status_missing(
     scheduler: DynamicSidecarsScheduler,
     scheduler_data: SchedulerData,
     mocked_dynamic_scheduler_events: None,
-    mock_docker_api: None,
+    mock_service_pending: None,
 ) -> None:
     with pytest.raises(DynamicSidecarNotFoundError, match=rf"{scheduler_data.node_uuid} not found"):
         await scheduler.get_stack_status(scheduler_data.node_uuid)
@@ -380,7 +410,7 @@ async def test_get_stack_status_failing_sidecar(
     scheduler: DynamicSidecarsScheduler,
     scheduler_data: SchedulerData,
     mocked_dynamic_scheduler_events: None,
-    mock_docker_api: None,
+    mock_service_pending: None,
 ) -> None:
     failing_message = "some_failing_message"
     scheduler_data.dynamic_sidecar.status.update_failing_status(failing_message)
@@ -397,12 +427,12 @@ async def test_get_stack_status_failing_sidecar(
 
 
 async def test_get_stack_status_containers_are_starting(
+    disabled_scheduler_background_tasks: None,
     scheduler: DynamicSidecarsScheduler,
     scheduler_data: SchedulerData,
     mock_service_running: AsyncMock,
     mocked_dynamic_scheduler_events: None,
     mock_update_label: None,
-    mock_docker_api: None,
 ) -> None:
     async with _assert_get_dynamic_services_mocked(
         scheduler, scheduler_data, mock_service_running, expected_status="created"
@@ -421,7 +451,6 @@ async def test_get_stack_status_ok(
     mock_service_running: AsyncMock,
     mocked_dynamic_scheduler_events: None,
     mock_update_label: None,
-    mock_docker_api: None,
 ) -> None:
     async with _assert_get_dynamic_services_mocked(
         scheduler, scheduler_data, mock_service_running, expected_status="running"
@@ -450,7 +479,7 @@ async def test_regression_remove_service_from_observation(
 
     # emulate service was previously added
     node_uuid = faker.uuid4(cast_to=None)
-    service_name = ServiceName(f"service_{node_uuid}")
+    service_name = f"service_{node_uuid}"
     scheduler._inverse_search_mapping[node_uuid] = service_name  # noqa: SLF001
     if not missing_to_observe_entry:
         scheduler._to_observe[service_name] = AsyncMock()  # noqa: SLF001
@@ -465,18 +494,18 @@ async def test_regression_remove_service_from_observation(
 
 @pytest.mark.parametrize("call_count", [1, 10])
 async def test_mark_all_services_in_wallet_for_removal(
-    disabled_scheduler_background_task: None,
+    disabled_scheduler_background_tasks: None,
     scheduler: DynamicSidecarsScheduler,
     scheduler_data: SchedulerData,
     mocked_dynamic_scheduler_events: None,
     faker: Faker,
     call_count: int,
 ) -> None:
-    for wallet_id in [WalletID(1), WalletID(2)]:
+    for wallet_id in [1, 2]:
         for _ in range(2):
             new_scheduler_data = scheduler_data.model_copy(deep=True)
             new_scheduler_data.node_uuid = faker.uuid4(cast_to=None)
-            new_scheduler_data.service_name = ServiceName(f"fake_{new_scheduler_data.node_uuid}")
+            new_scheduler_data.service_name = f"fake_{new_scheduler_data.node_uuid}"
             assert new_scheduler_data.wallet_info
             new_scheduler_data.wallet_info.wallet_id = wallet_id
 
@@ -484,16 +513,16 @@ async def test_mark_all_services_in_wallet_for_removal(
 
     assert len(scheduler.scheduler._to_observe) == 4  # noqa: SLF001
     # pylint: disable=redefined-argument-from-local
-    for scheduler_data in scheduler.scheduler._to_observe.values():  # noqa: SLF001
-        assert scheduler_data.dynamic_sidecar.service_removal_state.can_remove is False
+    for observed_scheduler_data in scheduler.scheduler._to_observe.values():  # noqa: SLF001
+        assert observed_scheduler_data.dynamic_sidecar.service_removal_state.can_remove is False
 
     for _ in range(call_count):
-        await scheduler.scheduler.mark_all_services_in_wallet_for_removal(wallet_id=WalletID(1))
+        await scheduler.scheduler.mark_all_services_in_wallet_for_removal(wallet_id=1)
 
-    for scheduler_data in scheduler.scheduler._to_observe.values():  # noqa: SLF001
-        assert scheduler_data.wallet_info
-        wallet_id = scheduler_data.wallet_info.wallet_id
-        can_remove = scheduler_data.dynamic_sidecar.service_removal_state.can_remove
+    for observed_scheduler_data in scheduler.scheduler._to_observe.values():  # noqa: SLF001
+        assert observed_scheduler_data.wallet_info
+        wallet_id = observed_scheduler_data.wallet_info.wallet_id
+        can_remove = observed_scheduler_data.dynamic_sidecar.service_removal_state.can_remove
         match wallet_id:
             case 1:
                 assert can_remove is True

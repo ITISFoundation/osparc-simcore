@@ -257,7 +257,7 @@ class ZeroListingCatalogRpcSideEffects:
     async def get_service(self, *args, **kwargs): ...
     async def update_service(self, *args, **kwargs): ...
     async def get_service_ports(self, *args, **kwargs): ...
-    async def list_my_service_history_latest_first(self, *args, **kwargs):
+    async def list_my_service_history_latest_first(self, *args, **kwargs):  # noqa: ARG002
         return PageRpc[ServiceRelease].create(
             [],
             total=0,
@@ -265,7 +265,7 @@ class ZeroListingCatalogRpcSideEffects:
             offset=0,
         )
 
-    async def list_all_services_summaries_paginated(self, *args, **kwargs):
+    async def list_all_services_summaries_paginated(self, *args, **kwargs):  # noqa: ARG002
         return PageRpc[ServiceSummary].create(
             [],
             total=0,

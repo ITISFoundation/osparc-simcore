@@ -90,8 +90,8 @@ class DynamicSidecarsScheduler(SchedulerInternalsInterface, SchedulerPublicInter
     async def mark_service_for_removal(
         self,
         node_uuid: NodeID,
-        can_save: bool | None,
         *,
+        can_save: bool | None,
         skip_observation_recreation: bool,
     ) -> None:
         return await self.scheduler.mark_service_for_removal(

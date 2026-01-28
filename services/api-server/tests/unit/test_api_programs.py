@@ -14,7 +14,7 @@ from httpx import AsyncClient
 from models_library.api_schemas_storage.storage_schemas import FileUploadSchema
 from models_library.users import UserID
 from pytest_mock import MockerFixture, MockType
-from pytest_simcore.helpers.catalog_rpc_server import ZeroListingCatalogRpcSideEffects
+from pytest_simcore.helpers.catalog_rpc import ZeroListingCatalogRpcSideEffects
 from pytest_simcore.helpers.faker_factories import DEFAULT_FAKER
 from pytest_simcore.helpers.httpx_calls_capture_models import (
     CreateRespxMockCallback,
