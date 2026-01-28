@@ -22,15 +22,11 @@ def get_rabbitmq_settings(app: FastAPI) -> RabbitSettings:
 def setup_rabbitmq(app: FastAPI) -> None:
     settings: RabbitSettings = get_rabbitmq_settings(app)
     app.state.rabbitmq_client = None
-    app.state.rabbitmq_rpc_server = None
 
     async def _on_startup() -> None:
         await wait_till_rabbitmq_responsive(settings.dsn)
 
         app.state.rabbitmq_client = RabbitMQClient(client_name="payments", settings=settings)
-        app.state.rabbitmq_rpc_server = await RabbitMQRPCClient.create(
-            client_name="payments_rpc_server", settings=settings
-        )
         app.state.rabbitmq_rpc_client = await RabbitMQRPCClient.create(
             client_name="payments_rpc_client", settings=settings
         )
@@ -39,9 +35,6 @@ def setup_rabbitmq(app: FastAPI) -> None:
         if app.state.rabbitmq_client:
             await app.state.rabbitmq_client.close()
             app.state.rabbitmq_client = None
-        if app.state.rabbitmq_rpc_server:
-            await app.state.rabbitmq_rpc_server.close()
-            app.state.rabbitmq_rpc_server = None
         if app.state.rabbitmq_rpc_client:
             await app.state.rabbitmq_rpc_client.close()
             app.state.rabbitmq_rpc_client = None
@@ -57,11 +50,6 @@ def get_rabbitmq_client(app: FastAPI) -> RabbitMQClient:
 
 def get_rabbitmq_client_from_request(request: Request):
     return get_rabbitmq_client(request.app)
-
-
-def get_rabbitmq_rpc_server(app: FastAPI) -> RabbitMQRPCClient:
-    assert app.state.rabbitmq_rpc_server  # nosec
-    return cast(RabbitMQRPCClient, app.state.rabbitmq_rpc_server)
 
 
 def get_rabbitmq_rpc_client(app: FastAPI) -> RabbitMQRPCClient:

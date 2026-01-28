@@ -21,15 +21,11 @@ async def rabbitmq_lifespan(app: FastAPI) -> AsyncIterator[State]:
     app.state.rabbitmq_rpc_client = await RabbitMQRPCClient.create(
         client_name="dynamic_scheduler_rpc_client", settings=settings
     )
-    app.state.rabbitmq_rpc_server = await RabbitMQRPCClient.create(
-        client_name="dynamic_scheduler_rpc_server", settings=settings
-    )
 
     yield {}
 
     await app.state.rabbitmq_client.close()
     await app.state.rabbitmq_rpc_client.close()
-    await app.state.rabbitmq_rpc_server.close()
 
 
 def get_rabbitmq_client(app: FastAPI) -> RabbitMQClient:
@@ -40,11 +36,6 @@ def get_rabbitmq_client(app: FastAPI) -> RabbitMQClient:
 def get_rabbitmq_rpc_client(app: FastAPI) -> RabbitMQRPCClient:
     assert app.state.rabbitmq_rpc_client
     return cast(RabbitMQRPCClient, app.state.rabbitmq_rpc_client)
-
-
-def get_rabbitmq_rpc_server(app: FastAPI) -> RabbitMQRPCClient:
-    assert app.state.rabbitmq_rpc_server  # nosec
-    return cast(RabbitMQRPCClient, app.state.rabbitmq_rpc_server)
 
 
 async def post_message(app: FastAPI, message: RabbitMessageBase) -> None:

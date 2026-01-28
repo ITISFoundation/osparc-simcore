@@ -43,7 +43,7 @@ class WebServerSettings(WebServerBaseSettings, MixinSessionSettings):
     WEBSERVER_RPC_NAMESPACE: Annotated[
         RPCNamespace,
         Field(
-            description="Namespace for the RPC server."
+            description="Namespace for the RPC client."
             "IMPORTANT: this is typically `wb-api-server` service variant of the `webserver` image"
         ),
     ]
@@ -81,7 +81,10 @@ class BasicSettings(BaseCustomSettings, MixinLoggingSettings):
                 "API_SERVER_LOG_FORMAT_LOCAL_DEV_ENABLED",
                 "LOG_FORMAT_LOCAL_DEV_ENABLED",
             ),
-            description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
+            description=(
+                "Enables local development log format. WARNING: make sure it "
+                "is disabled if you want to have structured logs!"
+            ),
         ),
     ] = False
 
@@ -90,7 +93,10 @@ class BasicSettings(BaseCustomSettings, MixinLoggingSettings):
         Field(
             default_factory=dict,
             validation_alias=AliasChoices("API_SERVER_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"),
-            description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
+            description=(
+                "is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') "
+                "to a list of log message patterns that should be filtered out."
+            ),
         ),
     ] = DEFAULT_FACTORY
 

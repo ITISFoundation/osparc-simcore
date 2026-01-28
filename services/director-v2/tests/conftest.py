@@ -299,7 +299,7 @@ def disable_rabbitmq(mocker: MockerFixture) -> None:
         app.state.rabbitmq_client = AsyncMock()
 
     def rpc_api_routes_mock_setup(app: FastAPI) -> None:
-        app.state.rabbitmq_rpc_server = AsyncMock()
+        app.state.rabbitmq_rpc_client = AsyncMock()
 
     mocker.patch(
         "simcore_service_director_v2.modules.rabbitmq.setup",

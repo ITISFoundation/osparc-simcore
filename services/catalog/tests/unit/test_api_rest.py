@@ -14,15 +14,15 @@ from simcore_service_catalog.api.rest._health import HealthCheckError
 
 
 @pytest.fixture
-def mocked_get_rabbitmq_rpc_server(mocker: MockerFixture, is_healthy: bool) -> None:
+def mocked_get_rabbitmq_rpc_client(mocker: MockerFixture, is_healthy: bool) -> None:
     mock = Mock()
     mock.healthy = is_healthy
-    mocker.patch("simcore_service_catalog.api.rest._health.get_rabbitmq_rpc_server", return_value=mock)
+    mocker.patch("simcore_service_catalog.api.rest._health.get_rabbitmq_rpc_client", return_value=mock)
 
 
 @pytest.mark.parametrize("is_healthy", [True, False])
 def test_sync_client(
-    mocked_get_rabbitmq_rpc_server: None,
+    mocked_get_rabbitmq_rpc_client: None,
     repository_lifespan_disabled: None,
     rabbitmq_and_rpc_setup_disabled: None,
     background_task_lifespan_disabled: None,
@@ -43,7 +43,7 @@ def test_sync_client(
 
 @pytest.mark.parametrize("is_healthy", [True, False])
 async def test_async_client(
-    mocked_get_rabbitmq_rpc_server: None,
+    mocked_get_rabbitmq_rpc_client: None,
     repository_lifespan_disabled: None,
     rabbitmq_and_rpc_setup_disabled: None,
     background_task_lifespan_disabled: None,

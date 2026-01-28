@@ -73,13 +73,12 @@ async def test_exposed_methods(
     router_namespace: RPCNamespace,
 ):
     rpc_client = await rabbitmq_rpc_client("client")
-    rpc_server = await rabbitmq_rpc_client("server")
 
     a_arg = "The A-Team"
     a_kwargs = "What about McGiver?"
     a_specific_kwarg = "Yeah, it was actually good, too!"
 
-    await rpc_server.register_router(router, router_namespace, a_arg, a_global_kwarg=a_kwargs)
+    await rpc_client.register_router(router, router_namespace, a_arg, a_global_kwarg=a_kwargs)
 
     rpc_result = await rpc_client.request(
         router_namespace,
