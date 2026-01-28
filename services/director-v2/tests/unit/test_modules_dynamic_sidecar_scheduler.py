@@ -5,7 +5,7 @@
 
 import logging
 import re
-from collections.abc import AsyncGenerator, Awaitable, Callable, Iterable, Iterator
+from collections.abc import AsyncGenerator, AsyncIterable, AsyncIterator, Awaitable, Callable, Iterator
 from contextlib import asynccontextmanager, contextmanager
 from copy import deepcopy
 from typing import Final
@@ -13,6 +13,8 @@ from unittest.mock import AsyncMock
 
 import pytest
 import respx
+from _helpers import setup_docker, shutdown_docker
+from asgi_lifespan import LifespanManager
 from common_library.json_serialization import json_dumps
 from common_library.serialization import model_dump_with_secrets
 from faker import Faker
@@ -21,23 +23,29 @@ from models_library.api_schemas_directorv2.dynamic_services_service import (
     RunningDynamicServiceDetails,
 )
 from models_library.services_enums import ServiceState
+from models_library.wallets import WalletID
 from pydantic import AnyHttpUrl, NonNegativeFloat
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from respx.router import MockRouter
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisSettings
+from simcore_service_director_v2.core.settings import AppSettings
 from simcore_service_director_v2.models.dynamic_services_scheduler import (
     DockerContainerInspect,
     DynamicSidecarStatus,
     SchedulerData,
 )
+from simcore_service_director_v2.modules import redis
+from simcore_service_director_v2.modules.dynamic_sidecar import api_client
 from simcore_service_director_v2.modules.dynamic_sidecar.errors import (
     DynamicSidecarError,
     DynamicSidecarNotFoundError,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler import (
     DynamicSidecarsScheduler,
+    setup_scheduler,
+    shutdown_scheduler,
 )
 from simcore_service_director_v2.modules.dynamic_sidecar.scheduler._core._events import (
     DynamicSchedulerEvent,
@@ -173,16 +181,27 @@ def mocked_dynamic_scheduler_events(mocker: MockerFixture) -> None:
 
 
 @pytest.fixture
-def scheduler(minimal_app: FastAPI) -> Iterable[DynamicSidecarsScheduler]:
-    dynamic_sidecar_scheduler: DynamicSidecarsScheduler = minimal_app.state.dynamic_sidecar_scheduler
+async def mocked_app(mock_env: None) -> AsyncIterable[FastAPI]:
+    app = FastAPI()
+    app.state.settings = AppSettings.create_from_envs()
+    app.state.rabbitmq_client = AsyncMock()
+    redis.setup(app)
 
-    dynamic_sidecar_scheduler.scheduler._to_observe.clear()  # noqa: SLF001
-    dynamic_sidecar_scheduler.scheduler._inverse_search_mapping.clear()  # noqa: SLF001
+    async with LifespanManager(app):
+        yield app
 
-    yield dynamic_sidecar_scheduler
 
-    dynamic_sidecar_scheduler.scheduler._to_observe.clear()  # noqa: SLF001
-    dynamic_sidecar_scheduler.scheduler._inverse_search_mapping.clear()  # noqa: SLF001
+@pytest.fixture
+async def scheduler(mocked_app: FastAPI) -> AsyncIterator[DynamicSidecarsScheduler]:
+    await setup_scheduler(mocked_app)
+    await api_client.setup(mocked_app)
+    await setup_docker(mocked_app)
+
+    yield mocked_app.state.dynamic_sidecar_scheduler
+
+    await shutdown_scheduler(mocked_app)
+    await api_client.shutdown(mocked_app)
+    await shutdown_docker(mocked_app)
 
 
 @pytest.fixture
@@ -509,17 +528,17 @@ async def test_mark_all_services_in_wallet_for_removal(
             await scheduler.scheduler.add_service_from_scheduler_data(new_scheduler_data)
 
     assert len(scheduler.scheduler._to_observe) == 4  # noqa: SLF001
-    # pylint: disable=redefined-argument-from-local
-    for observed_scheduler_data in scheduler.scheduler._to_observe.values():  # noqa: SLF001
-        assert observed_scheduler_data.dynamic_sidecar.service_removal_state.can_remove is False
+
+    for _scheduler_data in scheduler.scheduler._to_observe.values():  # noqa: SLF001
+        assert _scheduler_data.dynamic_sidecar.service_removal_state.can_remove is False
 
     for _ in range(call_count):
-        await scheduler.scheduler.mark_all_services_in_wallet_for_removal(wallet_id=1)
+        await scheduler.scheduler.mark_all_services_in_wallet_for_removal(wallet_id=WalletID(1))
 
-    for observed_scheduler_data in scheduler.scheduler._to_observe.values():  # noqa: SLF001
-        assert observed_scheduler_data.wallet_info
-        wallet_id = observed_scheduler_data.wallet_info.wallet_id
-        can_remove = observed_scheduler_data.dynamic_sidecar.service_removal_state.can_remove
+    for _scheduler_data in scheduler.scheduler._to_observe.values():  # noqa: SLF001
+        assert _scheduler_data.wallet_info
+        wallet_id = _scheduler_data.wallet_info.wallet_id
+        can_remove = _scheduler_data.dynamic_sidecar.service_removal_state.can_remove
         match wallet_id:
             case 1:
                 assert can_remove is True
