@@ -12,7 +12,7 @@ import logging
 import secrets
 import string
 from contextlib import suppress
-from datetime import UTC, datetime
+from datetime import datetime
 from typing import Final
 
 import redis.asyncio as aioredis
@@ -106,7 +106,7 @@ async def create_temporary_guest_user(request: web.Request):
     random_user_name = "".join(secrets.choice(string.ascii_lowercase) for _ in range(10))
     email: LowerCaseEmailStr = TypeAdapter(LowerCaseEmailStr).validate_python(f"{random_user_name}@guest-at-osparc.io")
     password = generate_password(length=12)
-    expires_at = datetime.now(tz=UTC) + settings.STUDIES_GUEST_ACCOUNT_LIFETIME
+    expires_at = datetime.utcnow() + settings.STUDIES_GUEST_ACCOUNT_LIFETIME  # noqa: DTZ003
 
     user_id: UserID | None = None
 
