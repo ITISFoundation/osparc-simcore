@@ -293,9 +293,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
                 scheduler_data = self.get_scheduler_data(node_id)
                 if user_id and scheduler_data.user_id != user_id:
                     return False
-                if project_id and scheduler_data.project_id != project_id:  # noqa: SIM103
-                    return False
-                return True
+                return not (project_id and scheduler_data.project_id != project_id)
             except DynamicSidecarNotFoundError:
                 return False
 
