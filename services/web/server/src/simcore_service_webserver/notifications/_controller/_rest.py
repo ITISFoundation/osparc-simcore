@@ -48,7 +48,7 @@ async def send_message(request: web.Request) -> web.Response:
     req_ctx = AuthenticatedRequestContext.model_validate(request)
     body = await parse_request_body_as(NotificationsMessageBody, request)
 
-    # move to service layer
+    # GCR: move to service layer
     product = get_product(request.app, req_ctx.product_name)
 
     to: list[EmailAddress] = []
@@ -57,7 +57,6 @@ async def send_message(request: web.Request) -> web.Response:
         user_ids = await get_users_in_group(request.app, gid=recipient)
         for user_id in user_ids:
             user = await get_user(request.app, user_id=user_id)
-            _logger.error("user=%s", user)
             to.append(
                 EmailAddress(
                     display_name=user["first_name"] or user["email"],
