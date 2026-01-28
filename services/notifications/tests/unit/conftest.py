@@ -35,6 +35,7 @@ from simcore_service_notifications.api.celery import _email
 from simcore_service_notifications.api.celery.tasks import (
     register_worker_tasks,
 )
+from simcore_service_notifications.api.rpc import dependencies as rpc_dependencies
 from simcore_service_notifications.core.application import create_app
 from simcore_service_notifications.core.settings import ApplicationSettings
 from simcore_service_notifications.main import app_factory
@@ -108,7 +109,7 @@ def app_environment(
 @pytest.fixture
 def mock_jinja_env_in_dependencies(mocker: MockerFixture, mock_jinja_env: Environment) -> Environment:
     mocker.patch(
-        "simcore_service_notifications.api.rpc.dependencies.get_jinja_env",
+        f"{rpc_dependencies.__name__}.get_jinja_env",
         return_value=mock_jinja_env,
     )
     return mock_jinja_env
