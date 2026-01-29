@@ -82,21 +82,18 @@ async def _celery_task_status(
         user_id=user_id,
         product_name=product_name,
     )
+    task_uuid = TypeAdapter(TaskUUID).validate_python(f"{job_creation_task_id}")
     try:
-        task_status = await task_manager.get_task_status(
-            task_uuid=TypeAdapter(TaskUUID).validate_python(f"{job_creation_task_id}"), owner_metadata=owner_metadata
-        )
+        task_status = await task_manager.get_task_status(owner_metadata=owner_metadata, task_uuid=task_uuid)
         return FunctionJobCreationTaskStatus[task_status.task_state]
     except TaskNotFoundError as err:
-        user_msg = f"Job creation task not found for task_uuid={
-            TypeAdapter(TaskUUID).validate_python(f'{job_creation_task_id}')
-        }"
+        user_msg = f"Job creation task not found for task_uuid={task_uuid!r}."
         _logger.exception(
             **create_troubleshooting_log_kwargs(
                 user_msg,
                 error=err,
                 error_context={
-                    "task_uuid": TypeAdapter(TaskUUID).validate_python(f"{job_creation_task_id}"),
+                    "task_uuid": task_uuid,
                     "owner_metadata": owner_metadata,
                     "user_id": user_id,
                     "product_name": product_name,
