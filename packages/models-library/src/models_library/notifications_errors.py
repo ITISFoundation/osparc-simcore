@@ -11,3 +11,7 @@ class NotificationsTemplateNotFoundError(BaseNotificationsError):
 
 class NotificationsTemplateContextValidationError(BaseNotificationsError):
     msg_template = "Validation of context failed for template '{template_name}'."
+
+
+class NotificationsUnsupportedChannelError(BaseNotificationsError):
+    msg_template = "Channel '{channel}' is not supported."

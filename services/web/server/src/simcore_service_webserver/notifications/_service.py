@@ -4,6 +4,7 @@ from models_library.api_schemas_async_jobs.async_jobs import AsyncJobGet
 from models_library.emails import LowerCaseEmailStr
 from models_library.groups import GroupID
 from models_library.notifications import ChannelType
+from models_library.notifications_errors import NotificationsUnsupportedChannelError
 from models_library.products import ProductName
 from models_library.users import UserID
 from notifications_library._models import ProductData, ProductUIData, UserData
@@ -116,8 +117,7 @@ async def send_message(
             content=content,
         )
     else:
-        msg = f"Unsupported channel type: {channel}"
-        raise NotImplementedError(msg)
+        raise NotificationsUnsupportedChannelError(channel=channel)
 
     return await submit_job(
         get_task_manager(app),
