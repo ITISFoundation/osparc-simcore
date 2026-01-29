@@ -1,5 +1,4 @@
 import logging
-from typing import cast
 
 from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.rpc.notifications import NOTIFICATIONS_RPC_NAMESPACE
@@ -28,8 +27,7 @@ async def preview_template(
         TypeAdapter(RPCMethodName).validate_python("preview_template"),
         request=request,
     )
-    assert TypeAdapter(NotificationsTemplatePreviewRpcResponse).validate_python(result) is not None  # nosec
-    return cast(NotificationsTemplatePreviewRpcResponse, result)
+    return TypeAdapter(NotificationsTemplatePreviewRpcResponse).validate_python(result)
 
 
 @log_decorator(_logger, level=logging.DEBUG)
@@ -46,5 +44,4 @@ async def search_templates(
         channel=channel,
         template_name=template_name,
     )
-    assert TypeAdapter(list[NotificationsTemplateRpcResponse]).validate_python(result) is not None  # nosec
-    return cast(list[NotificationsTemplateRpcResponse], result)
+    return TypeAdapter(list[NotificationsTemplateRpcResponse]).validate_python(result)
