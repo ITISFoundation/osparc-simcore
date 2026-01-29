@@ -30,7 +30,7 @@ from servicelib.aiohttp import status
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.notifications._controller import _rest
 
-pytest_simcore_core_services_selection = ["rabbit"]
+pytest_simcore_core_services_selection = []
 
 
 @pytest.fixture
