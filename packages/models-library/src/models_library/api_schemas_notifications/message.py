@@ -19,7 +19,7 @@ class EmailAttachment(BaseModel):
 class EmailContent(BaseModel):
     subject: str
     body_text: str
-    body_html: str | None = None
+    body_html: str
 
 
 class EmailNotificationMessage(BaseModel):
