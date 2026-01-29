@@ -1,6 +1,6 @@
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from models_library.groups import GroupID
 
@@ -9,18 +9,48 @@ from ..notifications import ChannelType, TemplateName
 
 
 class NotificationsEmailContentBody(InputSchema):
-    subject: str
-    body_html: str
-    body_text: str
+    subject: str = Field(
+        ...,
+        min_length=1,
+        max_length=998,
+        description="Email subject line (RFC 2822: max header line length)",
+    )
+    body_html: str = Field(
+        ...,
+        min_length=1,
+        max_length=1_048_576,
+        description="HTML email body (1 MB limit per RFC 5321 SMTP practical limits)",
+    )
+    body_text: str = Field(
+        ...,
+        min_length=1,
+        max_length=1_048_576,
+        description="Plain text email body (1 MB limit per RFC 5321 SMTP practical limits)",
+    )
 
 
 type NotificationsContentBody = NotificationsEmailContentBody
 
 
 class NotificationsEmailContentGet(OutputSchema):
-    subject: str
-    body_html: str
-    body_text: str
+    subject: str = Field(
+        ...,
+        min_length=1,
+        max_length=998,
+        description="Email subject line (RFC 2822: max header line length)",
+    )
+    body_html: str = Field(
+        ...,
+        min_length=1,
+        max_length=1_048_576,
+        description="HTML email body (1 MB limit per RFC 5321 SMTP practical limits)",
+    )
+    body_text: str = Field(
+        ...,
+        min_length=1,
+        max_length=1_048_576,
+        description="Plain text email body (1 MB limit per RFC 5321 SMTP practical limits)",
+    )
 
 
 type NotificationsContentGet = NotificationsEmailContentGet
