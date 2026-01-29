@@ -71,7 +71,7 @@ async def _create_email_message(
     recipients: list[GroupID],
     content: BaseModel,
 ) -> EmailNotificationMessage:
-    to: list[EmailAddress] = []
+    to: set[EmailAddress] = set()
 
     product = get_product(app, product_name)
 
@@ -79,7 +79,7 @@ async def _create_email_message(
         u_ids = await get_users_in_group(app, gid=recipient)
         for u_id in u_ids:
             user = await get_user(app, user_id=u_id)
-            to.append(
+            to.add(
                 EmailAddress(
                     display_name=user["first_name"] or user["email"],
                     addr_spec=user["email"],
@@ -92,7 +92,7 @@ async def _create_email_message(
             display_name=product.display_name,
             addr_spec=product.support_email,
         ),
-        to=to,
+        to=list(to),
         content=EmailContent(**content.model_dump()),
     )
 
