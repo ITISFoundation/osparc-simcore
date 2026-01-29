@@ -4715,6 +4715,20 @@ paths:
       tags:
       - notifications
       summary: Preview Template
+      description: 'Generates a preview of a notification template with the provided
+        data.
+
+
+        This endpoint renders the specified notification template using the supplied
+
+        template data, allowing users to see how the final notification will appear
+
+        before sending it.
+
+
+        Returns a rendered version of the notification template with all variables
+
+        substituted with the provided data.'
       operationId: preview_template
       requestBody:
         content:
@@ -14738,13 +14752,23 @@ components:
       properties:
         subject:
           type: string
+          maxLength: 998
+          minLength: 1
           title: Subject
+          description: 'Email subject line (RFC 2822: max header line length)'
         bodyHtml:
           type: string
+          maxLength: 1048576
+          minLength: 1
           title: Bodyhtml
+          description: HTML email body (1 MB limit per RFC 5321 SMTP practical limits)
         bodyText:
           type: string
+          maxLength: 1048576
+          minLength: 1
           title: Bodytext
+          description: Plain text email body (1 MB limit per RFC 5321 SMTP practical
+            limits)
       type: object
       required:
       - subject
@@ -14755,13 +14779,23 @@ components:
       properties:
         subject:
           type: string
+          maxLength: 998
+          minLength: 1
           title: Subject
+          description: 'Email subject line (RFC 2822: max header line length)'
         bodyHtml:
           type: string
+          maxLength: 1048576
+          minLength: 1
           title: Bodyhtml
+          description: HTML email body (1 MB limit per RFC 5321 SMTP practical limits)
         bodyText:
           type: string
+          maxLength: 1048576
+          minLength: 1
           title: Bodytext
+          description: Plain text email body (1 MB limit per RFC 5321 SMTP practical
+            limits)
       type: object
       required:
       - subject
