@@ -22,7 +22,7 @@ from ..._meta import API_VTAG
 from ...login.decorators import login_required
 from ...models import AuthenticatedRequestContext
 from ...rabbitmq import get_rabbitmq_rpc_client
-from .. import _service
+from .. import _helpers, _service
 from ._rest_exceptions import handle_notifications_exceptions
 
 routes = web.RouteTableDef()
@@ -68,7 +68,7 @@ async def preview_template(request: web.Request) -> web.Response:
     req_ctx = AuthenticatedRequestContext.model_validate(request)
     body = await parse_request_body_as(NotificationsTemplatePreviewBody, request)
 
-    product_data = _service.get_product_data(app=request.app, product_name=req_ctx.product_name)
+    product_data = _helpers.get_product_data(app=request.app, product_name=req_ctx.product_name)
 
     enriched_body = body.model_copy(update={"context": {**body.context, "product": product_data}}, deep=True)
 
