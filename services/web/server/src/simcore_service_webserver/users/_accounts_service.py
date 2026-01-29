@@ -13,7 +13,7 @@ from pydantic import HttpUrl
 from settings_library.email import SMTPSettings
 
 from ..db.plugin import get_asyncpg_engine
-from ..notifications._service import create_user_data, get_product_data
+from ..notifications._helpers import create_user_data, get_product_data
 from . import _accounts_repository, _users_repository
 from .exceptions import (
     AlreadyPreRegisteredError,
