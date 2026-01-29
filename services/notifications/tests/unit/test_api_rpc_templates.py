@@ -12,7 +12,6 @@ from models_library.rpc.notifications.template import (
     NotificationsTemplatePreviewRpcRequest,
     NotificationsTemplatePreviewRpcResponse,
     NotificationsTemplateRefRpc,
-    NotificationsTemplateRpcResponse,
 )
 from servicelib.rabbitmq import RabbitMQRPCClient, RPCServerError
 from servicelib.rabbitmq.rpc_interfaces.notifications.notifications_templates import (
@@ -27,23 +26,6 @@ pytest_simcore_core_services_selection = [
 ]
 
 
-async def test_search_templates_no_filters(
-    mock_fastapi_app: FastAPI,
-    rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
-):
-    assert mock_fastapi_app
-
-    rpc_client = await rabbitmq_rpc_client("notifications-test-client")
-
-    templates = await search_templates(rpc_client)
-    assert isinstance(templates, list)
-    if templates:
-        assert isinstance(templates[0], NotificationsTemplateRpcResponse)
-        assert templates[0].ref.channel is not None
-        assert templates[0].ref.template_name is not None
-        assert isinstance(templates[0].context_schema, dict)
-
-
 async def test_search_templates_by_channel(
     mock_fastapi_app: FastAPI,
     rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
@@ -52,12 +34,34 @@ async def test_search_templates_by_channel(
 
     rpc_client = await rabbitmq_rpc_client("notifications-test-client")
 
-    templates = await search_templates(rpc_client)
-    if templates:
-        channel = templates[0].ref.channel
+    all_templates = await search_templates(rpc_client)
+    if all_templates:
+        channel = ChannelType.email
         filtered = await search_templates(rpc_client, channel=channel)
-        assert isinstance(filtered, list)
+        # Check that all returned templates match the filter
         assert all(t.ref.channel == channel for t in filtered)
+        # Check that filtered is a subset of all_templates
+        assert set(filtered).issubset(set(all_templates))
+
+
+async def test_search_templates_by_ref(
+    mock_fastapi_app: FastAPI,
+    rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
+):
+    assert mock_fastapi_app
+
+    rpc_client = await rabbitmq_rpc_client("notifications-test-client")
+
+    all_templates = await search_templates(rpc_client)
+    if all_templates:
+        channel = ChannelType.email
+        template_name = "empty"
+        filtered = await search_templates(rpc_client, channel=channel, template_name=template_name)
+        assert len(filtered) == 1
+
+        # Check that all returned templates match the filter
+        assert filtered[0].ref.channel == channel
+        assert filtered[0].ref.template_name == template_name
 
 
 async def test_search_templates_non_existent(
