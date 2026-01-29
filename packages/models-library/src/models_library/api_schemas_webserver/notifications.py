@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Annotated, Any
 
 from pydantic import BaseModel, Field
 
@@ -9,48 +9,66 @@ from ..notifications import ChannelType, TemplateName
 
 
 class NotificationsEmailContentBody(InputSchema):
-    subject: str = Field(
-        ...,
-        min_length=1,
-        max_length=998,
-        description="Email subject line (RFC 2822: max header line length)",
-    )
-    body_html: str = Field(
-        ...,
-        min_length=1,
-        max_length=1_048_576,
-        description="HTML email body (1 MB limit per RFC 5321 SMTP practical limits)",
-    )
-    body_text: str = Field(
-        ...,
-        min_length=1,
-        max_length=1_048_576,
-        description="Plain text email body (1 MB limit per RFC 5321 SMTP practical limits)",
-    )
+    subject: Annotated[
+        str,
+        Field(
+            ...,
+            min_length=1,
+            max_length=998,
+            description="Email subject line (RFC 2822: max header line length)",
+        ),
+    ]
+    body_html: Annotated[
+        str,
+        Field(
+            ...,
+            min_length=1,
+            max_length=1_048_576,
+            description="HTML email body (1 MB limit per RFC 5321 SMTP practical limits)",
+        ),
+    ]
+    body_text: Annotated[
+        str,
+        Field(
+            ...,
+            min_length=1,
+            max_length=1_048_576,
+            description="Plain text email body (1 MB limit per RFC 5321 SMTP practical limits)",
+        ),
+    ]
 
 
 type NotificationsContentBody = NotificationsEmailContentBody
 
 
 class NotificationsEmailContentGet(OutputSchema):
-    subject: str = Field(
-        ...,
-        min_length=1,
-        max_length=998,
-        description="Email subject line (RFC 2822: max header line length)",
-    )
-    body_html: str = Field(
-        ...,
-        min_length=1,
-        max_length=1_048_576,
-        description="HTML email body (1 MB limit per RFC 5321 SMTP practical limits)",
-    )
-    body_text: str = Field(
-        ...,
-        min_length=1,
-        max_length=1_048_576,
-        description="Plain text email body (1 MB limit per RFC 5321 SMTP practical limits)",
-    )
+    subject: Annotated[
+        str,
+        Field(
+            ...,
+            min_length=1,
+            max_length=998,
+            description="Email subject line (RFC 2822: max header line length)",
+        ),
+    ]
+    body_html: Annotated[
+        str,
+        Field(
+            ...,
+            min_length=1,
+            max_length=1_048_576,
+            description="HTML email body (1 MB limit per RFC 5321 SMTP practical limits)",
+        ),
+    ]
+    body_text: Annotated[
+        str,
+        Field(
+            ...,
+            min_length=1,
+            max_length=1_048_576,
+            description="Plain text email body (1 MB limit per RFC 5321 SMTP practical limits)",
+        ),
+    ]
 
 
 type NotificationsContentGet = NotificationsEmailContentGet
