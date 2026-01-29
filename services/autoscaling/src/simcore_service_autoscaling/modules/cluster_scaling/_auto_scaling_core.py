@@ -215,9 +215,7 @@ async def _analyze_current_cluster(
         else:
             pending_nodes.append(instance)
 
-    drained_nodes, hot_buffer_drained_nodes, terminating_nodes = sort_drained_nodes(
-        app_settings, all_drained_nodes, allowed_instance_types
-    )
+    drained_nodes, hot_buffer_drained_nodes, terminating_nodes = sort_drained_nodes(app_settings, all_drained_nodes)
     cluster = Cluster(
         active_nodes=active_nodes,
         pending_nodes=pending_nodes,
@@ -274,7 +272,6 @@ async def _try_attach_pending_ec2s(
     app: FastAPI,
     cluster: Cluster,
     auto_scaling_mode: AutoscalingProvider,
-    allowed_instance_types: list[EC2InstanceType],
 ) -> Cluster:
     """label the drained instances that connected to the swarm which are missing the monitoring labels"""
     new_found_instances: list[AssociatedInstance] = []
@@ -332,9 +329,7 @@ async def _try_attach_pending_ec2s(
 
     # NOTE: first provision the reserve drained nodes if possible
     all_drained_nodes = cluster.drained_nodes + cluster.hot_buffer_drained_nodes + new_found_instances
-    drained_nodes, hot_buffer_drained_nodes, _ = sort_drained_nodes(
-        app_settings, all_drained_nodes, allowed_instance_types
-    )
+    drained_nodes, hot_buffer_drained_nodes, _ = sort_drained_nodes(app_settings, all_drained_nodes)
     return dataclasses.replace(
         cluster,
         drained_nodes=drained_nodes,
@@ -1496,7 +1491,7 @@ async def auto_scale_cluster(*, app: FastAPI, auto_scaling_mode: AutoscalingProv
     # cleanup
     cluster = await _cleanup_disconnected_nodes(app, cluster)
     cluster = await _terminate_broken_ec2s(app, cluster)
-    cluster = await _try_attach_pending_ec2s(app, cluster, auto_scaling_mode, allowed_instance_types)
+    cluster = await _try_attach_pending_ec2s(app, cluster, auto_scaling_mode)
     cluster = await _drain_retired_nodes(app, cluster)
 
     # desired state
