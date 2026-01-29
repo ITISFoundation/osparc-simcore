@@ -35,9 +35,7 @@ from tenacity.wait import wait_fixed
 
 
 @pytest.fixture
-def ensure_service_runs_in_ci(
-    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
-) -> EnvVarsDict:
+def ensure_service_runs_in_ci(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
     return app_environment | setenvs_from_dict(
         monkeypatch,
         envs={
@@ -61,9 +59,7 @@ async def run_services(
 ) -> AsyncIterator[Callable[[int, int], Awaitable[list[dict[str, Any]]]]]:
     started_services = []
 
-    async def push_start_services(
-        number_comp: int, number_dyn: int, dependant=False
-    ) -> list[dict[str, Any]]:
+    async def push_start_services(number_comp: int, number_dyn: int, dependant=False) -> list[dict[str, Any]]:
         pushed_services = await push_services(
             number_of_computational_services=number_comp,
             number_of_interactive_services=number_dyn,
@@ -114,9 +110,7 @@ async def run_services(
             # wait for service to be running
             node_details = await producer.get_service_details(app, service_uuid)
             max_time = 60
-            for attempt in Retrying(
-                wait=wait_fixed(1), stop=stop_after_delay(max_time), reraise=True
-            ):
+            for attempt in Retrying(wait=wait_fixed(1), stop=stop_after_delay(max_time), reraise=True):
                 with attempt:
                     print(
                         f"--> waiting for {started_service['service_key']}:{started_service['service_version']} to run..."
@@ -127,12 +121,10 @@ async def run_services(
                     )
                     for service in docker_client.services.list():
                         tasks = service.tasks()
-                        print(
-                            f"service details {service.id}:{service.name}: {json.dumps( tasks, indent=2)}"
-                        )
-                    assert (
-                        node_details["service_state"] == "running"
-                    ), f"current state is {node_details['service_state']}"
+                        print(f"service details {service.id}:{service.name}: {json.dumps(tasks, indent=2)}")
+                    assert node_details["service_state"] == "running", (
+                        f"current state is {node_details['service_state']}"
+                    )
 
             started_service["service_state"] = node_details["service_state"]
             started_service["service_message"] = node_details["service_message"]
@@ -209,9 +201,7 @@ async def test_service_assigned_env_variables(
     client = docker.from_env()
     for service in started_services:
         service_uuid = service["service_uuid"]
-        list_of_services = client.services.list(
-            filters={"label": f"io.simcore.runtime.node-id={service_uuid}"}
-        )
+        list_of_services = client.services.list(filters={"label": f"io.simcore.runtime.node-id={service_uuid}"})
         assert len(list_of_services) == 1
         docker_service = list_of_services[0]
         # check env
@@ -259,9 +249,7 @@ async def test_interactive_service_published_port(
 
     client = docker.from_env()
     service_uuid = service["service_uuid"]
-    list_of_services = client.services.list(
-        filters={"label": f"io.simcore.runtime.node-id={service_uuid}"}
-    )
+    list_of_services = client.services.list(filters={"label": f"io.simcore.runtime.node-id={service_uuid}"})
     assert len(list_of_services) == 1
 
     docker_service = list_of_services[0]
@@ -277,23 +265,16 @@ async def test_interactive_service_in_correct_network(
     configured_docker_network: EnvVarsDict,
     run_services,
 ):
-    running_dynamic_services = await run_services(
-        number_comp=0, number_dyn=2, dependant=False
-    )
+    running_dynamic_services = await run_services(number_comp=0, number_dyn=2, dependant=False)
     assert len(running_dynamic_services) == 2
     for service in running_dynamic_services:
         client = docker.from_env()
         service_uuid = service["service_uuid"]
-        list_of_services = client.services.list(
-            filters={"label": f"io.simcore.runtime.node-id={service_uuid}"}
-        )
+        list_of_services = client.services.list(filters={"label": f"io.simcore.runtime.node-id={service_uuid}"})
         assert list_of_services
         assert len(list_of_services) == 1
         docker_service = list_of_services[0]
-        assert (
-            docker_service.attrs["Spec"]["Networks"][0]["Target"]
-            == with_docker_network["Id"]
-        )
+        assert docker_service.attrs["Spec"]["Networks"][0]["Target"] == with_docker_network["Id"]
 
 
 async def test_dependent_services_have_common_network(
@@ -301,17 +282,13 @@ async def test_dependent_services_have_common_network(
     configured_docker_network: EnvVarsDict,
     run_services,
 ):
-    running_dynamic_services = await run_services(
-        number_comp=0, number_dyn=2, dependant=True
-    )
+    running_dynamic_services = await run_services(number_comp=0, number_dyn=2, dependant=True)
     assert len(running_dynamic_services) == 2
 
     for service in running_dynamic_services:
         client = docker.from_env()
         service_uuid = service["service_uuid"]
-        list_of_services = client.services.list(
-            filters={"label": f"io.simcore.runtime.node-id={service_uuid}"}
-        )
+        list_of_services = client.services.list(filters={"label": f"io.simcore.runtime.node-id={service_uuid}"})
         # there is one dependency per service
         assert len(list_of_services) == 2
         # check they have same network
@@ -356,9 +333,7 @@ async def test_get_service_key_version_from_docker_service(
     docker_service_partial_inspect = {
         "Spec": {
             "TaskTemplate": {
-                "ContainerSpec": {
-                    "Image": f"{registry_settings.resolved_registry_url}{fake_service.service_str}"
-                }
+                "ContainerSpec": {"Image": f"{registry_settings.resolved_registry_url}{fake_service.service_str}"}
             }
         }
     }

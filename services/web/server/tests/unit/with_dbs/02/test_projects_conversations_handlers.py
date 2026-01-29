@@ -38,12 +38,7 @@ def mock_functions_factory(
     mocker: MockerFixture,
 ) -> Callable[[Iterable[tuple[object, str]]], SimpleNamespace]:
     def _patch(targets_and_names: Iterable[tuple[object, str]]) -> SimpleNamespace:
-        return SimpleNamespace(
-            **{
-                name: mocker.patch.object(target, name)
-                for target, name in targets_and_names
-            }
-        )
+        return SimpleNamespace(**{name: mocker.patch.object(target, name) for target, name in targets_and_names})
 
     return _patch
 
@@ -65,16 +60,12 @@ async def test_project_conversations_user_role_access(
     expected: HTTPStatus,
 ):
     assert client.app
-    base_url = client.app.router["list_project_conversations"].url_for(
-        project_id=user_project["uuid"]
-    )
+    base_url = client.app.router["list_project_conversations"].url_for(project_id=user_project["uuid"])
     resp = await client.get(f"{base_url}")
     assert resp.status == 401 if user_role == UserRole.ANONYMOUS else 200
 
 
-@pytest.mark.acceptance_test(
-    "https://github.com/ITISFoundation/private-issues/issues/51"
-)
+@pytest.mark.acceptance_test("https://github.com/ITISFoundation/private-issues/issues/51")
 @pytest.mark.parametrize(
     "user_role,expected",
     [
@@ -96,9 +87,7 @@ async def test_project_conversations_full_workflow(
         ]
     )
 
-    base_url = client.app.router["list_project_conversations"].url_for(
-        project_id=user_project["uuid"]
-    )
+    base_url = client.app.router["list_project_conversations"].url_for(project_id=user_project["uuid"])
     resp = await client.get(f"{base_url}")
     data, _, meta, links = await assert_status(
         resp,
@@ -200,9 +189,7 @@ async def test_project_conversations_full_workflow(
     assert meta["total"] == 1
 
 
-@pytest.mark.acceptance_test(
-    "https://github.com/ITISFoundation/private-issues/issues/51"
-)
+@pytest.mark.acceptance_test("https://github.com/ITISFoundation/private-issues/issues/51")
 @pytest.mark.parametrize(
     "user_role,expected",
     [
@@ -234,9 +221,7 @@ async def test_project_conversation_messages_full_workflow(
         ]
     )
 
-    base_project_url = client.app.router["list_project_conversations"].url_for(
-        project_id=user_project["uuid"]
-    )
+    base_project_url = client.app.router["list_project_conversations"].url_for(project_id=user_project["uuid"])
     # Now we will create conversation
     body = {"name": "My conversation", "type": "PROJECT_STATIC"}
     resp = await client.post(f"{base_project_url}", json=body)
@@ -247,9 +232,9 @@ async def test_project_conversation_messages_full_workflow(
     assert ConversationRestGet.model_validate(data)
     _conversation_id = data["conversationId"]
 
-    base_project_conversation_url = client.app.router[
-        "list_project_conversation_messages"
-    ].url_for(project_id=user_project["uuid"], conversation_id=_conversation_id)
+    base_project_conversation_url = client.app.router["list_project_conversation_messages"].url_for(
+        project_id=user_project["uuid"], conversation_id=_conversation_id
+    )
 
     # Now we will add first message
     body = {"content": "My first message", "type": "MESSAGE"}
@@ -435,9 +420,7 @@ async def test_project_conversation_messages_full_workflow(
         assert data["content"] == updated_content
 
         # New user will delete comment of the previous user
-        resp = await client.delete(
-            f"{base_project_conversation_url}/{_first_message_id}"
-        )
+        resp = await client.delete(f"{base_project_conversation_url}/{_first_message_id}")
         data, _ = await assert_status(
             resp,
             status.HTTP_204_NO_CONTENT,

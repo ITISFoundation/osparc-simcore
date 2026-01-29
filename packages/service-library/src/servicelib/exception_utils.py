@@ -45,9 +45,7 @@ class DelayedExceptionHandler(BaseModel):
     _first_exception_skip: datetime | None = PrivateAttr(None)
     _failure_counter: int = PrivateAttr(0)
 
-    delay_for: NonNegativeFloat = Field(
-        description="interval of time during which exceptions are ignored"
-    )
+    delay_for: NonNegativeFloat = Field(description="interval of time during which exceptions are ignored")
 
     def try_to_raise(self, exception: BaseException) -> None:
         """raises `exception` after `delay_for` passed from the first call"""
@@ -58,9 +56,7 @@ class DelayedExceptionHandler(BaseModel):
             self._first_exception_skip = datetime.utcnow()
 
         # raise if subsequent exception is outside of delay window
-        elif (
-            datetime.utcnow() - self._first_exception_skip
-        ).total_seconds() > self.delay_for:
+        elif (datetime.utcnow() - self._first_exception_skip).total_seconds() > self.delay_for:
             raise exception
 
         _logger.debug("%s %s: %s", self._failure_counter, _SKIPS_MESSAGE, exception)
@@ -145,9 +141,7 @@ def suppress_exceptions(
                     return await func_or_coro(*args, **kwargs)
                 except exceptions as exc:
                     # Check if exception should be suppressed
-                    if not _should_suppress_exception(
-                        exc, predicate, func_or_coro.__name__
-                    ):
+                    if not _should_suppress_exception(exc, predicate, func_or_coro.__name__):
                         raise  # Re-raise if predicate returns False or fails
 
                     _logger.debug(
@@ -166,9 +160,7 @@ def suppress_exceptions(
                 return func_or_coro(*args, **kwargs)
             except exceptions as exc:
                 # Check if exception should be suppressed
-                if not _should_suppress_exception(
-                    exc, predicate, func_or_coro.__name__
-                ):
+                if not _should_suppress_exception(exc, predicate, func_or_coro.__name__):
                     raise  # Re-raise if predicate returns False or fails
 
                 _logger.debug(

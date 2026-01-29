@@ -77,9 +77,7 @@ def test_get_service_with_details(
     service_key = expected_service["key"]
     service_version = expected_service["version"]
 
-    url = URL(
-        f"/v0/services/{urllib.parse.quote_plus(service_key)}/{service_version}"
-    ).with_query({"user_id": user_id})
+    url = URL(f"/v0/services/{urllib.parse.quote_plus(service_key)}/{service_version}").with_query({"user_id": user_id})
 
     response = client.get(
         f"{url}",

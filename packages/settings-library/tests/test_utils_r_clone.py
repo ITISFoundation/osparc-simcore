@@ -11,9 +11,7 @@ from settings_library.utils_r_clone import (
 
 
 @pytest.fixture(params=list(S3Provider))
-def r_clone_settings(
-    request: pytest.FixtureRequest, monkeypatch: pytest.MonkeyPatch, faker: Faker
-) -> RCloneSettings:
+def r_clone_settings(request: pytest.FixtureRequest, monkeypatch: pytest.MonkeyPatch, faker: Faker) -> RCloneSettings:
     monkeypatch.setenv("R_CLONE_PROVIDER", request.param)
     monkeypatch.setenv("S3_ENDPOINT", faker.url())
     monkeypatch.setenv("S3_ACCESS_KEY", faker.pystr())

@@ -91,23 +91,17 @@ async def simcore_s3_api(
 @pytest.fixture
 def bucket_name(faker: Faker) -> S3BucketName:
     # NOTE: no faker here as we need some specific namings
-    return TypeAdapter(S3BucketName).validate_python(
-        faker.pystr().replace("_", "-").lower()
-    )
+    return TypeAdapter(S3BucketName).validate_python(faker.pystr().replace("_", "-").lower())
 
 
 @pytest.fixture
-async def ensure_bucket_name_deleted(
-    bucket_name: S3BucketName, s3_client: S3Client
-) -> AsyncIterator[None]:
+async def ensure_bucket_name_deleted(bucket_name: S3BucketName, s3_client: S3Client) -> AsyncIterator[None]:
     yield
     await s3_client.delete_bucket(Bucket=bucket_name)
 
 
 @pytest.fixture
-async def with_s3_bucket(
-    s3_client: S3Client, bucket_name: S3BucketName
-) -> AsyncIterator[S3BucketName]:
+async def with_s3_bucket(s3_client: S3Client, bucket_name: S3BucketName) -> AsyncIterator[S3BucketName]:
     await s3_client.create_bucket(Bucket=bucket_name)
     yield bucket_name
     await s3_client.delete_bucket(Bucket=bucket_name)
@@ -115,22 +109,16 @@ async def with_s3_bucket(
 
 @pytest.fixture
 def non_existing_s3_bucket(faker: Faker) -> S3BucketName:
-    return TypeAdapter(S3BucketName).validate_python(
-        faker.pystr().replace("_", "-").lower()
-    )
+    return TypeAdapter(S3BucketName).validate_python(faker.pystr().replace("_", "-").lower())
 
 
 @pytest.fixture
 async def upload_to_presigned_link(
     s3_client: S3Client,
-) -> AsyncIterator[
-    Callable[[Path, AnyUrl, S3BucketName, S3ObjectKey], Awaitable[None]]
-]:
+) -> AsyncIterator[Callable[[Path, AnyUrl, S3BucketName, S3ObjectKey], Awaitable[None]]]:
     uploaded_object_keys: dict[S3BucketName, list[S3ObjectKey]] = defaultdict(list)
 
-    async def _(
-        file: Path, presigned_url: AnyUrl, bucket: S3BucketName, s3_object: S3ObjectKey
-    ) -> None:
+    async def _(file: Path, presigned_url: AnyUrl, bucket: S3BucketName, s3_object: S3ObjectKey) -> None:
         await upload_file_to_presigned_link(
             file,
             MultiPartUploadLinks(
@@ -209,11 +197,7 @@ async def upload_file_to_multipart_presigned_link_without_completing(
     faker: Faker,
     default_expiration_time_seconds: int,
     s3_client: S3Client,
-) -> AsyncIterator[
-    Callable[
-        ..., Awaitable[tuple[S3ObjectKey, MultiPartUploadLinks, list[UploadedPart]]]
-    ]
-]:
+) -> AsyncIterator[Callable[..., Awaitable[tuple[S3ObjectKey, MultiPartUploadLinks, list[UploadedPart]]]]]:
     possibly_updated_files: list[S3ObjectKey] = []
 
     async def _uploader(
@@ -234,14 +218,10 @@ async def upload_file_to_multipart_presigned_link_without_completing(
 
         # check there is no file yet
         with pytest.raises(S3KeyNotFoundError, match=f"{object_key}"):
-            await simcore_s3_api.get_object_metadata(
-                bucket=with_s3_bucket, object_key=object_key
-            )
+            await simcore_s3_api.get_object_metadata(bucket=with_s3_bucket, object_key=object_key)
 
         # check we have the multipart upload initialized and listed
-        ongoing_multipart_uploads = await simcore_s3_api.list_ongoing_multipart_uploads(
-            bucket=with_s3_bucket
-        )
+        ongoing_multipart_uploads = await simcore_s3_api.list_ongoing_multipart_uploads(bucket=with_s3_bucket)
         assert ongoing_multipart_uploads
         assert len(ongoing_multipart_uploads) == 1
         ongoing_upload_id, ongoing_object_key = ongoing_multipart_uploads[0]
@@ -257,14 +237,10 @@ async def upload_file_to_multipart_presigned_link_without_completing(
 
         # check there is no file yet
         with pytest.raises(S3KeyNotFoundError):
-            await simcore_s3_api.get_object_metadata(
-                bucket=with_s3_bucket, object_key=object_key
-            )
+            await simcore_s3_api.get_object_metadata(bucket=with_s3_bucket, object_key=object_key)
 
         # check we have the multipart upload initialized and listed
-        ongoing_multipart_uploads = await simcore_s3_api.list_ongoing_multipart_uploads(
-            bucket=with_s3_bucket
-        )
+        ongoing_multipart_uploads = await simcore_s3_api.list_ongoing_multipart_uploads(bucket=with_s3_bucket)
         assert ongoing_multipart_uploads
         assert len(ongoing_multipart_uploads) == 1
         ongoing_upload_id, ongoing_object_key = ongoing_multipart_uploads[0]
@@ -329,12 +305,8 @@ async def upload_file(
         object_key = file.name
         if base_path:
             object_key = f"{file.relative_to(base_path)}"
-        with log_context(
-            logging.INFO, msg=f"uploading {file} to {with_s3_bucket}/{object_key}"
-        ) as ctx:
-            progress_cb = _UploadProgressCallback(
-                file_size=file.stat().st_size, action="uploaded", logger=ctx.logger
-            )
+        with log_context(logging.INFO, msg=f"uploading {file} to {with_s3_bucket}/{object_key}") as ctx:
+            progress_cb = _UploadProgressCallback(file_size=file.stat().st_size, action="uploaded", logger=ctx.logger)
             response = await simcore_s3_api.upload_file(
                 bucket=with_s3_bucket,
                 file=file,
@@ -344,21 +316,14 @@ async def upload_file(
         # there is no response from aioboto3...
         assert not response
 
-        assert (
-            await simcore_s3_api.object_exists(
-                bucket=with_s3_bucket, object_key=object_key
-            )
-            is True
-        )
+        assert await simcore_s3_api.object_exists(bucket=with_s3_bucket, object_key=object_key) is True
         uploaded_object_keys.append(object_key)
         return UploadedFile(local_path=file, s3_key=object_key)
 
     yield _uploader
 
     with log_context(logging.INFO, msg=f"delete {len(uploaded_object_keys)}"):
-        await delete_all_object_versions(
-            s3_client, with_s3_bucket, uploaded_object_keys
-        )
+        await delete_all_object_versions(s3_client, with_s3_bucket, uploaded_object_keys)
 
 
 @pytest.fixture(autouse=True)
@@ -393,11 +358,7 @@ async def create_folder_on_s3(
             list_uploaded_files = [
                 await uploaded_file
                 async for uploaded_file in limited_as_completed(
-                    (
-                        upload_file(file, folder.parent)
-                        for file in folder.rglob("*")
-                        if file.is_file()
-                    ),
+                    (upload_file(file, folder.parent) for file in folder.rglob("*") if file.is_file()),
                     limit=20,
                 )
             ]
@@ -421,13 +382,9 @@ async def copy_file(
     copied_object_keys = []
 
     async def _copier(src_key: S3ObjectKey, dst_key: S3ObjectKey) -> S3ObjectKey:
-        file_metadata = await simcore_s3_api.get_object_metadata(
-            bucket=with_s3_bucket, object_key=src_key
-        )
+        file_metadata = await simcore_s3_api.get_object_metadata(bucket=with_s3_bucket, object_key=src_key)
         with log_context(logging.INFO, msg=f"copying {src_key} to {dst_key}") as ctx:
-            progress_cb = _CopyProgressCallback(
-                file_size=file_metadata.size, action="copied", logger=ctx.logger
-            )
+            progress_cb = _CopyProgressCallback(file_size=file_metadata.size, action="copied", logger=ctx.logger)
             await simcore_s3_api.copy_object(
                 bucket=with_s3_bucket,
                 src_object_key=src_key,
@@ -450,9 +407,7 @@ async def copy_files_recursively(
     copied_dst_prefixes = []
 
     async def _copier(src_prefix: str, dst_prefix: str) -> str:
-        src_directory_metadata = await simcore_s3_api.get_directory_metadata(
-            bucket=with_s3_bucket, prefix=src_prefix
-        )
+        src_directory_metadata = await simcore_s3_api.get_directory_metadata(bucket=with_s3_bucket, prefix=src_prefix)
         assert src_directory_metadata.size is not None
         with log_context(
             logging.INFO,
@@ -470,9 +425,7 @@ async def copy_files_recursively(
                 bytes_transferred_cb=progress_cb,
             )
 
-        dst_directory_metadata = await simcore_s3_api.get_directory_metadata(
-            bucket=with_s3_bucket, prefix=dst_prefix
-        )
+        dst_directory_metadata = await simcore_s3_api.get_directory_metadata(bucket=with_s3_bucket, prefix=dst_prefix)
         assert dst_directory_metadata.size == src_directory_metadata.size
 
         copied_dst_prefixes.append(dst_prefix)
@@ -482,9 +435,7 @@ async def copy_files_recursively(
 
     # cleanup
     for dst_prefix in copied_dst_prefixes:
-        await simcore_s3_api.delete_objects_recursively(
-            bucket=with_s3_bucket, prefix=dst_prefix
-        )
+        await simcore_s3_api.delete_objects_recursively(bucket=with_s3_bucket, prefix=dst_prefix)
 
 
 async def test_aiobotocore_s3_client_when_s3_server_goes_up_and_down(
@@ -511,9 +462,7 @@ async def test_bucket_exists(
 ):
     assert not await simcore_s3_api.bucket_exists(bucket=non_existing_s3_bucket)
     assert await simcore_s3_api.bucket_exists(bucket=with_s3_bucket)
-    assert not await simcore_s3_api.http_check_bucket_connected(
-        bucket=non_existing_s3_bucket
-    )
+    assert not await simcore_s3_api.http_check_bucket_connected(bucket=non_existing_s3_bucket)
     assert await simcore_s3_api.http_check_bucket_connected(bucket=with_s3_bucket)
 
 
@@ -522,17 +471,11 @@ async def test_http_check_bucket_connected(
     simcore_s3_api: SimcoreS3API,
     with_s3_bucket: S3BucketName,
 ):
-    assert (
-        await simcore_s3_api.http_check_bucket_connected(bucket=with_s3_bucket) is True
-    )
+    assert await simcore_s3_api.http_check_bucket_connected(bucket=with_s3_bucket) is True
     mocked_aws_server.stop()
-    assert (
-        await simcore_s3_api.http_check_bucket_connected(bucket=with_s3_bucket) is False
-    )
+    assert await simcore_s3_api.http_check_bucket_connected(bucket=with_s3_bucket) is False
     mocked_aws_server.start()
-    assert (
-        await simcore_s3_api.http_check_bucket_connected(bucket=with_s3_bucket) is True
-    )
+    assert await simcore_s3_api.http_check_bucket_connected(bucket=with_s3_bucket) is True
 
 
 _ROOT_LEVEL: Final[int] = -2
@@ -586,24 +529,18 @@ async def test_count_objects(
 
     # Start from the root and go down to the directory containing the deepest file
     for level in range(len(prefixes)):
-        current_prefix = (
-            Path(prefixes[0]).joinpath(*prefixes[1:level]) if level > 0 else None
-        )
+        current_prefix = Path(prefixes[0]).joinpath(*prefixes[1:level]) if level > 0 else None
 
         directories, files = _get_paths_with_prefix(
             with_uploaded_folder_on_s3, prefix_level=level, path_prefix=current_prefix
         )
         all_paths = directories | files
 
-        num_objects = await simcore_s3_api.count_objects(
-            bucket=with_s3_bucket, prefix=current_prefix, start_after=None
-        )
+        num_objects = await simcore_s3_api.count_objects(bucket=with_s3_bucket, prefix=current_prefix, start_after=None)
         assert num_objects == len(all_paths)
 
     # get number on root is 1
-    got = await simcore_s3_api.count_objects(
-        bucket=with_s3_bucket, prefix=None, start_after=None
-    )
+    got = await simcore_s3_api.count_objects(bucket=with_s3_bucket, prefix=None, start_after=None)
     assert got == len(directories)
 
 
@@ -636,9 +573,7 @@ async def test_list_objects_prefix(
 
     # Start from the root and go down to the directory containing the deepest file
     for level in range(len(prefixes)):
-        current_prefix = (
-            Path(prefixes[0]).joinpath(*prefixes[1:level]) if level > 0 else None
-        )
+        current_prefix = Path(prefixes[0]).joinpath(*prefixes[1:level]) if level > 0 else None
 
         directories, files = _get_paths_with_prefix(
             with_uploaded_folder_on_s3, prefix_level=level, path_prefix=current_prefix
@@ -654,9 +589,7 @@ async def test_list_objects_prefix(
 
         # Check files and directories are correctly separated
         received_files = {_ for _ in objects if isinstance(_, S3MetaData)}
-        received_directories = {
-            _ for _ in objects if isinstance(_, S3DirectoryMetaData)
-        }
+        received_directories = {_ for _ in objects if isinstance(_, S3DirectoryMetaData)}
         assert len(received_files) == len(files)
         assert len(received_directories) == len(directories)
 
@@ -706,9 +639,7 @@ async def test_list_objects_pagination(
 ):
     total_num_files = len(with_uploaded_folder_on_s3)
     # pre-condition
-    directories, files = _get_paths_with_prefix(
-        with_uploaded_folder_on_s3, prefix_level=0, path_prefix=None
-    )
+    directories, files = _get_paths_with_prefix(with_uploaded_folder_on_s3, prefix_level=0, path_prefix=None)
     assert len(directories) == 1, "test pre-condition not fulfilled!"
     assert not files
 
@@ -716,9 +647,7 @@ async def test_list_objects_pagination(
     first_level_directories, first_level_files = _get_paths_with_prefix(
         with_uploaded_folder_on_s3, prefix_level=1, path_prefix=first_level_prefix
     )
-    assert (
-        not first_level_directories
-    ), "test pre-condition not fulfilled, there should be only files for this test"
+    assert not first_level_directories, "test pre-condition not fulfilled, there should be only files for this test"
     assert len(first_level_files) == total_num_files
 
     # now we will fetch the file objects according to the given limit
@@ -766,9 +695,7 @@ async def test_list_objects_partial_prefix(
 ):
     total_num_files = len(with_uploaded_folder_on_s3)
     # pre-condition
-    directories, files = _get_paths_with_prefix(
-        with_uploaded_folder_on_s3, prefix_level=0, path_prefix=None
-    )
+    directories, files = _get_paths_with_prefix(with_uploaded_folder_on_s3, prefix_level=0, path_prefix=None)
     assert len(directories) == 1, "test pre-condition not fulfilled!"
     assert not files
 
@@ -776,16 +703,12 @@ async def test_list_objects_partial_prefix(
     first_level_directories, first_level_files = _get_paths_with_prefix(
         with_uploaded_folder_on_s3, prefix_level=1, path_prefix=first_level_prefix
     )
-    assert (
-        not first_level_directories
-    ), "test pre-condition not fulfilled, there should be only files for this test"
+    assert not first_level_directories, "test pre-condition not fulfilled, there should be only files for this test"
     assert len(first_level_files) == total_num_files
 
     a_random_file = random.choice(list(first_level_files))  # noqa: S311
     a_partial_prefix = a_random_file.name[0:1]
-    expected_files = {
-        file for file in first_level_files if file.name.startswith(a_partial_prefix)
-    }
+    expected_files = {file for file in first_level_files if file.name.startswith(a_partial_prefix)}
 
     # now we will fetch the file objects according to the given limit
     objects, next_cursor = await simcore_s3_api.list_objects(
@@ -822,20 +745,14 @@ async def test_list_entries_paginated_basic_functionality(
 
     # Collect all entries from all pages
     all_entries: list[S3MetaData | S3DirectoryMetaData] = []
-    async for page_entries in simcore_s3_api.list_entries_paginated(
-        bucket=with_s3_bucket, prefix=""
-    ):
+    async for page_entries in simcore_s3_api.list_entries_paginated(bucket=with_s3_bucket, prefix=""):
         all_entries.extend(page_entries)
 
     # Verify that we get both files and directories
     files = [entry for entry in all_entries if isinstance(entry, S3MetaData)]
-    directories = [
-        entry for entry in all_entries if isinstance(entry, S3DirectoryMetaData)
-    ]
+    directories = [entry for entry in all_entries if isinstance(entry, S3DirectoryMetaData)]
 
-    assert len(files) == len(
-        with_uploaded_folder_on_s3
-    ), "Should find all uploaded files"
+    assert len(files) == len(with_uploaded_folder_on_s3), "Should find all uploaded files"
     assert len(directories) > 0, "Should find at least one directory"
 
     # Verify all uploaded files are found
@@ -863,9 +780,7 @@ async def test_list_entries_paginated_with_prefix(
     simcore_s3_api: SimcoreS3API,
 ):
     """Test list_entries_paginated with a specific prefix"""
-    directories, _ = _get_paths_with_prefix(
-        with_uploaded_folder_on_s3, prefix_level=0, path_prefix=None
-    )
+    directories, _ = _get_paths_with_prefix(with_uploaded_folder_on_s3, prefix_level=0, path_prefix=None)
     assert len(directories) >= 1, "Should have at least one directory"
 
     first_directory = next(iter(directories))
@@ -873,21 +788,15 @@ async def test_list_entries_paginated_with_prefix(
 
     # List entries with the prefix
     all_entries: list[S3MetaData | S3DirectoryMetaData] = []
-    async for page_entries in simcore_s3_api.list_entries_paginated(
-        bucket=with_s3_bucket, prefix=prefix
-    ):
+    async for page_entries in simcore_s3_api.list_entries_paginated(bucket=with_s3_bucket, prefix=prefix):
         all_entries.extend(page_entries)
 
     # Verify that all entries start with the prefix
     for entry in all_entries:
         if isinstance(entry, S3MetaData):
-            assert entry.object_key.startswith(
-                prefix
-            ), f"File {entry.object_key} should start with prefix {prefix}"
+            assert entry.object_key.startswith(prefix), f"File {entry.object_key} should start with prefix {prefix}"
         elif isinstance(entry, S3DirectoryMetaData):
-            assert str(entry.prefix).startswith(
-                prefix
-            ), f"Directory {entry.prefix} should start with prefix {prefix}"
+            assert str(entry.prefix).startswith(prefix), f"Directory {entry.prefix} should start with prefix {prefix}"
 
 
 async def test_list_entries_paginated_items_per_page_validation(
@@ -918,9 +827,7 @@ async def test_list_entries_paginated_items_per_page_validation(
     ],
     ids=byte_size_ids,
 )
-@pytest.mark.parametrize(
-    "items_per_page", [5, 10, 20], ids=lambda x: f"items_per_page={x}"
-)
+@pytest.mark.parametrize("items_per_page", [5, 10, 20], ids=lambda x: f"items_per_page={x}")
 async def test_list_entries_paginated_pagination(
     mocked_s3_server_envs: EnvVarsDict,
     with_s3_bucket: S3BucketName,
@@ -938,18 +845,14 @@ async def test_list_entries_paginated_pagination(
         all_entries.extend(page_entries)
         page_count += 1
         # Each page should not exceed the specified limit
-        assert (
-            len(page_entries) <= items_per_page
-        ), f"Page size should not exceed {items_per_page}"
+        assert len(page_entries) <= items_per_page, f"Page size should not exceed {items_per_page}"
 
     # Should have at least one page
     assert page_count >= 1, "Should have at least one page of results"
 
     # Verify total number of files matches uploaded files
     files = [entry for entry in all_entries if isinstance(entry, S3MetaData)]
-    assert len(files) == len(
-        with_uploaded_folder_on_s3
-    ), "Should find all uploaded files across all pages"
+    assert len(files) == len(with_uploaded_folder_on_s3), "Should find all uploaded files across all pages"
 
 
 @pytest.mark.parametrize(
@@ -974,9 +877,7 @@ async def test_list_entries_paginated_breadth_first_traversal(
     discovered_directories: list[Path] = []
     all_entries: list[S3MetaData | S3DirectoryMetaData] = []
 
-    async for page_entries in simcore_s3_api.list_entries_paginated(
-        bucket=with_s3_bucket, prefix=""
-    ):
+    async for page_entries in simcore_s3_api.list_entries_paginated(bucket=with_s3_bucket, prefix=""):
         for entry in page_entries:
             all_entries.append(entry)
             if isinstance(entry, S3DirectoryMetaData):
@@ -1001,14 +902,11 @@ async def test_list_entries_paginated_breadth_first_traversal(
             current_level_dirs = directories_by_level[current_level]
             next_level_dirs = directories_by_level[next_level]
 
-            last_current = max(
-                discovered_directories.index(d) for d in current_level_dirs
-            )
+            last_current = max(discovered_directories.index(d) for d in current_level_dirs)
             first_next = min(discovered_directories.index(d) for d in next_level_dirs)
 
             assert last_current < first_next, (
-                f"BFS violated: level {current_level} directory found after "
-                f"level {next_level} directory"
+                f"BFS violated: level {current_level} directory found after level {next_level} directory"
             )
 
 
@@ -1019,9 +917,7 @@ async def test_list_entries_paginated_empty_bucket(
 ):
     """Test list_entries_paginated with empty bucket"""
     page_count = 0
-    async for page_entries in simcore_s3_api.list_entries_paginated(
-        bucket=with_s3_bucket, prefix=""
-    ):
+    async for page_entries in simcore_s3_api.list_entries_paginated(bucket=with_s3_bucket, prefix=""):
         page_count += 1
         assert len(page_entries) == 0, "Empty bucket should return empty pages"
 
@@ -1051,9 +947,7 @@ async def test_list_entries_paginated_nonexistent_prefix(
     nonexistent_prefix = f"nonexistent_{faker.uuid4()}/deeper/path/"
 
     page_count = 0
-    async for page_entries in simcore_s3_api.list_entries_paginated(
-        bucket=with_s3_bucket, prefix=nonexistent_prefix
-    ):
+    async for page_entries in simcore_s3_api.list_entries_paginated(bucket=with_s3_bucket, prefix=nonexistent_prefix):
         page_count += 1
         assert len(page_entries) == 0, "Non-existent prefix should return empty pages"
 
@@ -1071,9 +965,7 @@ async def test_get_file_metadata(
     s3_metadata = await simcore_s3_api.get_object_metadata(
         bucket=with_s3_bucket, object_key=with_uploaded_file_on_s3.s3_key
     )
-    aioboto_s3_object_response = await s3_client.get_object(
-        Bucket=with_s3_bucket, Key=with_uploaded_file_on_s3.s3_key
-    )
+    aioboto_s3_object_response = await s3_client.get_object(Bucket=with_s3_bucket, Key=with_uploaded_file_on_s3.s3_key)
     assert s3_metadata.object_key == with_uploaded_file_on_s3.s3_key
     assert s3_metadata.last_modified == aioboto_s3_object_response["LastModified"]
     assert s3_metadata.e_tag == json.loads(aioboto_s3_object_response["ETag"])
@@ -1100,9 +992,7 @@ async def test_get_file_metadata_with_non_existing_key_raises(
     faker: Faker,
 ):
     with pytest.raises(S3KeyNotFoundError):
-        await simcore_s3_api.get_object_metadata(
-            bucket=with_s3_bucket, object_key=faker.pystr()
-        )
+        await simcore_s3_api.get_object_metadata(bucket=with_s3_bucket, object_key=faker.pystr())
 
 
 async def test_delete_file(
@@ -1112,19 +1002,13 @@ async def test_delete_file(
     with_uploaded_file_on_s3: UploadedFile,
 ):
     # delete the file
-    await simcore_s3_api.delete_object(
-        bucket=with_s3_bucket, object_key=with_uploaded_file_on_s3.s3_key
-    )
+    await simcore_s3_api.delete_object(bucket=with_s3_bucket, object_key=with_uploaded_file_on_s3.s3_key)
 
     # check it is not available
-    assert not await simcore_s3_api.object_exists(
-        bucket=with_s3_bucket, object_key=with_uploaded_file_on_s3.s3_key
-    )
+    assert not await simcore_s3_api.object_exists(bucket=with_s3_bucket, object_key=with_uploaded_file_on_s3.s3_key)
 
     # calling again does not raise
-    await simcore_s3_api.delete_object(
-        bucket=with_s3_bucket, object_key=with_uploaded_file_on_s3.s3_key
-    )
+    await simcore_s3_api.delete_object(bucket=with_s3_bucket, object_key=with_uploaded_file_on_s3.s3_key)
 
 
 async def test_delete_file_non_existing_bucket_raises(
@@ -1134,9 +1018,7 @@ async def test_delete_file_non_existing_bucket_raises(
     faker: Faker,
 ):
     with pytest.raises(S3BucketInvalidError):
-        await simcore_s3_api.delete_object(
-            bucket=non_existing_s3_bucket, object_key=faker.pystr()
-        )
+        await simcore_s3_api.delete_object(bucket=non_existing_s3_bucket, object_key=faker.pystr())
 
 
 async def test_undelete_file(
@@ -1171,41 +1053,24 @@ async def test_undelete_file(
     assert file_metadata.e_tag != new_file_metadata.e_tag
 
     # this deletes the new_file, so it's gone
-    await simcore_s3_api.delete_object(
-        bucket=with_s3_bucket, object_key=with_uploaded_file_on_s3.s3_key
-    )
-    assert not await simcore_s3_api.object_exists(
-        bucket=with_s3_bucket, object_key=with_uploaded_file_on_s3.s3_key
-    )
+    await simcore_s3_api.delete_object(bucket=with_s3_bucket, object_key=with_uploaded_file_on_s3.s3_key)
+    assert not await simcore_s3_api.object_exists(bucket=with_s3_bucket, object_key=with_uploaded_file_on_s3.s3_key)
 
     # undelete the file, the new file is back
-    await simcore_s3_api.undelete_object(
-        bucket=with_s3_bucket, object_key=with_uploaded_file_on_s3.s3_key
-    )
-    await simcore_s3_api.object_exists(
-        bucket=with_s3_bucket, object_key=with_uploaded_file_on_s3.s3_key
-    )
+    await simcore_s3_api.undelete_object(bucket=with_s3_bucket, object_key=with_uploaded_file_on_s3.s3_key)
+    await simcore_s3_api.object_exists(bucket=with_s3_bucket, object_key=with_uploaded_file_on_s3.s3_key)
     assert (
-        await simcore_s3_api.get_object_metadata(
-            bucket=with_s3_bucket, object_key=with_uploaded_file_on_s3.s3_key
-        )
+        await simcore_s3_api.get_object_metadata(bucket=with_s3_bucket, object_key=with_uploaded_file_on_s3.s3_key)
         == new_file_metadata
     )
     # does nothing
-    await simcore_s3_api.undelete_object(
-        bucket=with_s3_bucket, object_key=with_uploaded_file_on_s3.s3_key
-    )
+    await simcore_s3_api.undelete_object(bucket=with_s3_bucket, object_key=with_uploaded_file_on_s3.s3_key)
 
     # delete the file again
-    await simcore_s3_api.delete_object(
-        bucket=with_s3_bucket, object_key=with_uploaded_file_on_s3.s3_key
-    )
+    await simcore_s3_api.delete_object(bucket=with_s3_bucket, object_key=with_uploaded_file_on_s3.s3_key)
     # check it is not available
     assert (
-        await simcore_s3_api.object_exists(
-            bucket=with_s3_bucket, object_key=with_uploaded_file_on_s3.s3_key
-        )
-        is False
+        await simcore_s3_api.object_exists(bucket=with_s3_bucket, object_key=with_uploaded_file_on_s3.s3_key) is False
     )
 
 
@@ -1217,13 +1082,9 @@ async def test_undelete_file_raises_if_file_does_not_exists(
     faker: Faker,
 ):
     with pytest.raises(S3BucketInvalidError):
-        await simcore_s3_api.undelete_object(
-            bucket=non_existing_s3_bucket, object_key=faker.pystr()
-        )
+        await simcore_s3_api.undelete_object(bucket=non_existing_s3_bucket, object_key=faker.pystr())
     with pytest.raises(S3KeyNotFoundError):
-        await simcore_s3_api.undelete_object(
-            bucket=with_s3_bucket, object_key=faker.pystr()
-        )
+        await simcore_s3_api.undelete_object(bucket=with_s3_bucket, object_key=faker.pystr())
 
 
 async def test_undelete_file_with_no_versioning_raises(
@@ -1232,13 +1093,9 @@ async def test_undelete_file_with_no_versioning_raises(
     simcore_s3_api: SimcoreS3API,
     with_uploaded_file_on_s3: UploadedFile,
 ):
-    await simcore_s3_api.delete_object(
-        bucket=with_s3_bucket, object_key=with_uploaded_file_on_s3.s3_key
-    )
+    await simcore_s3_api.delete_object(bucket=with_s3_bucket, object_key=with_uploaded_file_on_s3.s3_key)
     with pytest.raises(S3KeyNotFoundError):
-        await simcore_s3_api.undelete_object(
-            bucket=with_s3_bucket, object_key=with_uploaded_file_on_s3.s3_key
-        )
+        await simcore_s3_api.undelete_object(bucket=with_s3_bucket, object_key=with_uploaded_file_on_s3.s3_key)
 
 
 async def test_create_single_presigned_download_link(
@@ -1250,9 +1107,7 @@ async def test_create_single_presigned_download_link(
     tmp_path: Path,
     faker: Faker,
 ):
-    assert await simcore_s3_api.object_exists(
-        bucket=with_s3_bucket, object_key=with_uploaded_file_on_s3.s3_key
-    )
+    assert await simcore_s3_api.object_exists(bucket=with_s3_bucket, object_key=with_uploaded_file_on_s3.s3_key)
     download_url = await simcore_s3_api.create_single_presigned_download_link(
         bucket=with_s3_bucket,
         object_key=with_uploaded_file_on_s3.s3_key,
@@ -1307,9 +1162,7 @@ async def test_create_single_presigned_upload_link(
     simcore_s3_api: SimcoreS3API,
     create_file_of_size: Callable[[ByteSize], Path],
     default_expiration_time_seconds: int,
-    upload_to_presigned_link: Callable[
-        [Path, AnyUrl, S3BucketName, S3ObjectKey], Awaitable[None]
-    ],
+    upload_to_presigned_link: Callable[[Path, AnyUrl, S3BucketName, S3ObjectKey], Awaitable[None]],
 ):
     file = create_file_of_size(TypeAdapter(ByteSize).validate_python("1Mib"))
     s3_object_key = file.name
@@ -1324,9 +1177,7 @@ async def test_create_single_presigned_upload_link(
     await upload_to_presigned_link(file, presigned_url, with_s3_bucket, s3_object_key)
 
     # check it is there
-    s3_metadata = await simcore_s3_api.get_object_metadata(
-        bucket=with_s3_bucket, object_key=s3_object_key
-    )
+    s3_metadata = await simcore_s3_api.get_object_metadata(bucket=with_s3_bucket, object_key=s3_object_key)
     assert s3_metadata.size == file.stat().st_size
     assert s3_metadata.last_modified
     assert s3_metadata.e_tag
@@ -1382,15 +1233,11 @@ async def test_create_multipart_presigned_upload_link(
     )
 
     # check that the multipart upload is not listed anymore
-    list_ongoing_uploads = await simcore_s3_api.list_ongoing_multipart_uploads(
-        bucket=with_s3_bucket
-    )
+    list_ongoing_uploads = await simcore_s3_api.list_ongoing_multipart_uploads(bucket=with_s3_bucket)
     assert list_ongoing_uploads == []
 
     # check the object is complete
-    s3_metadata = await simcore_s3_api.get_object_metadata(
-        bucket=with_s3_bucket, object_key=file_id
-    )
+    s3_metadata = await simcore_s3_api.get_object_metadata(bucket=with_s3_bucket, object_key=file_id)
     assert s3_metadata.size == file_size
     assert s3_metadata.last_modified
     assert s3_metadata.e_tag == f"{json.loads(received_e_tag)}"
@@ -1488,9 +1335,7 @@ async def test_break_completion_of_multipart_upload(
             timeout=VERY_SHORT_TIMEOUT,
         )
     # check we have the multipart upload initialized and listed
-    ongoing_multipart_uploads = await simcore_s3_api.list_ongoing_multipart_uploads(
-        bucket=with_s3_bucket
-    )
+    ongoing_multipart_uploads = await simcore_s3_api.list_ongoing_multipart_uploads(bucket=with_s3_bucket)
     assert ongoing_multipart_uploads
     assert len(ongoing_multipart_uploads) == 1
     ongoing_upload_id, ongoing_file_id = ongoing_multipart_uploads[0]
@@ -1501,14 +1346,10 @@ async def test_break_completion_of_multipart_upload(
     await asyncio.sleep(10)
 
     # check that the completion of the update completed...
-    assert (
-        await simcore_s3_api.list_ongoing_multipart_uploads(bucket=with_s3_bucket) == []
-    )
+    assert await simcore_s3_api.list_ongoing_multipart_uploads(bucket=with_s3_bucket) == []
 
     # check the object is complete
-    s3_metadata = await simcore_s3_api.get_object_metadata(
-        bucket=with_s3_bucket, object_key=object_key
-    )
+    s3_metadata = await simcore_s3_api.get_object_metadata(bucket=with_s3_bucket, object_key=object_key)
     assert s3_metadata.size == file_size
     assert s3_metadata.last_modified
     assert s3_metadata.e_tag
@@ -1559,16 +1400,11 @@ async def test_abort_multipart_upload(
         )
 
     # now check that the listing is empty
-    ongoing_multipart_uploads = await simcore_s3_api.list_ongoing_multipart_uploads(
-        bucket=with_s3_bucket
-    )
+    ongoing_multipart_uploads = await simcore_s3_api.list_ongoing_multipart_uploads(bucket=with_s3_bucket)
     assert ongoing_multipart_uploads == []
 
     # check it is not available
-    assert (
-        await simcore_s3_api.object_exists(bucket=with_s3_bucket, object_key=object_key)
-        is False
-    )
+    assert await simcore_s3_api.object_exists(bucket=with_s3_bucket, object_key=object_key) is False
 
 
 @pytest.mark.parametrize(
@@ -1624,15 +1460,8 @@ async def test_copy_file(
     await copy_file(uploaded_file.s3_key, dst_object_key)
 
     # check the object is uploaded
-    assert (
-        await simcore_s3_api.object_exists(
-            bucket=with_s3_bucket, object_key=dst_object_key
-        )
-        is True
-    )
-    dst_file_metadata = await simcore_s3_api.get_object_metadata(
-        bucket=with_s3_bucket, object_key=dst_object_key
-    )
+    assert await simcore_s3_api.object_exists(bucket=with_s3_bucket, object_key=dst_object_key) is True
+    dst_file_metadata = await simcore_s3_api.get_object_metadata(bucket=with_s3_bucket, object_key=dst_object_key)
     assert uploaded_file.local_path.stat().st_size == dst_file_metadata.size
 
 
@@ -1752,9 +1581,7 @@ async def test_delete_file_recursively(
     files_exists = set(
         await asyncio.gather(
             *[
-                simcore_s3_api.object_exists(
-                    bucket=with_s3_bucket, object_key=file.s3_key
-                )
+                simcore_s3_api.object_exists(bucket=with_s3_bucket, object_key=file.s3_key)
                 for file in with_uploaded_folder_on_s3
             ]
         )
@@ -1794,12 +1621,8 @@ async def test_delete_file_recursively_raises(
         prefix=f"{faker.pystr()}",
     )
     # and this files still exist
-    some_file = next(
-        iter(filter(lambda f: f.local_path.is_file(), with_uploaded_folder_on_s3))
-    )
-    await simcore_s3_api.object_exists(
-        bucket=with_s3_bucket, object_key=some_file.s3_key
-    )
+    some_file = next(iter(filter(lambda f: f.local_path.is_file(), with_uploaded_folder_on_s3)))
+    await simcore_s3_api.object_exists(bucket=with_s3_bucket, object_key=some_file.s3_key)
 
 
 @pytest.mark.parametrize(
@@ -1859,26 +1682,17 @@ def test_is_multipart(file_size: ByteSize, expected_multipart: bool):
         (
             "some-bucket",
             "an/object/separate/by/slashes",
-            TypeAdapter(AnyUrl).validate_python(
-                "s3://some-bucket/an/object/separate/by/slashes"
-            ),
+            TypeAdapter(AnyUrl).validate_python("s3://some-bucket/an/object/separate/by/slashes"),
         ),
         (
             "some-bucket",
             "an/object/separate/by/slashes-?/3#$",
-            TypeAdapter(AnyUrl).validate_python(
-                r"s3://some-bucket/an/object/separate/by/slashes-%3F/3%23%24"
-            ),
+            TypeAdapter(AnyUrl).validate_python(r"s3://some-bucket/an/object/separate/by/slashes-%3F/3%23%24"),
         ),
     ],
 )
-def test_compute_s3_url(
-    bucket: S3BucketName, object_key: S3ObjectKey, expected_s3_url: AnyUrl
-):
-    assert (
-        SimcoreS3API.compute_s3_url(bucket=bucket, object_key=object_key)
-        == expected_s3_url
-    )
+def test_compute_s3_url(bucket: S3BucketName, object_key: S3ObjectKey, expected_s3_url: AnyUrl):
+    assert SimcoreS3API.compute_s3_url(bucket=bucket, object_key=object_key) == expected_s3_url
 
 
 @pytest.mark.parametrize(
@@ -1941,9 +1755,7 @@ def test_copy_recursively_performance(
         return (dst_folder,), {}
 
     def run_async_test(dst_folder: str) -> None:
-        asyncio.get_event_loop().run_until_complete(
-            copy_files_recursively(src_folder, dst_folder)
-        )
+        asyncio.get_event_loop().run_until_complete(copy_files_recursively(src_folder, dst_folder))
 
     benchmark.pedantic(run_async_test, setup=dst_folder_setup, rounds=4)
 
@@ -1986,18 +1798,14 @@ async def test_upload_object_from_file_like(
         await simcore_s3_api.upload_object_from_file_like(
             with_s3_bucket,
             object_key,
-            FileLikeBytesIterReader(
-                bytes_streamer.with_progress_bytes_iter(AsyncMock())
-            ),
+            FileLikeBytesIterReader(bytes_streamer.with_progress_bytes_iter(AsyncMock())),
         )
     else:
         await simcore_s3_api.upload_object_from_file_like(
             with_s3_bucket,
             object_key,
             FileLikeBytesIterReader(
-                DiskStreamReader(with_uploaded_file_on_s3.local_path)
-                .get_bytes_streamer()
-                .bytes_iter_callable()
+                DiskStreamReader(with_uploaded_file_on_s3.local_path).get_bytes_streamer().bytes_iter_callable()
             ),
         )
 
@@ -2006,9 +1814,7 @@ async def test_upload_object_from_file_like(
 
 @contextmanager
 def _folder_with_files(
-    create_folder_of_size_with_multiple_files: Callable[
-        [ByteSize, ByteSize, ByteSize, Path | None], Path
-    ],
+    create_folder_of_size_with_multiple_files: Callable[[ByteSize, ByteSize, ByteSize, Path | None], Path],
     target_folder: Path,
 ) -> Iterator[dict[str, Path]]:
     target_folder.mkdir(parents=True, exist_ok=True)
@@ -2030,9 +1836,7 @@ def _folder_with_files(
 @pytest.fixture
 def path_local_files_for_archive(
     tmp_path: Path,
-    create_folder_of_size_with_multiple_files: Callable[
-        [ByteSize, ByteSize, ByteSize, Path | None], Path
-    ],
+    create_folder_of_size_with_multiple_files: Callable[[ByteSize, ByteSize, ByteSize, Path | None], Path],
 ) -> Iterator[Path]:
     dir_path = tmp_path / "not_uploaded"
     with _folder_with_files(create_folder_of_size_with_multiple_files, dir_path):
@@ -2042,30 +1846,22 @@ def path_local_files_for_archive(
 @pytest.fixture
 async def path_s3_files_for_archive(
     tmp_path: Path,
-    create_folder_of_size_with_multiple_files: Callable[
-        [ByteSize, ByteSize, ByteSize, Path | None], Path
-    ],
+    create_folder_of_size_with_multiple_files: Callable[[ByteSize, ByteSize, ByteSize, Path | None], Path],
     s3_client: S3Client,
     with_s3_bucket: S3BucketName,
 ) -> AsyncIterator[Path]:
     dir_path = tmp_path / "stored_in_s3"
-    with _folder_with_files(
-        create_folder_of_size_with_multiple_files, dir_path
-    ) as relative_names_to_paths:
+    with _folder_with_files(create_folder_of_size_with_multiple_files, dir_path) as relative_names_to_paths:
         await limited_gather(
             *(
-                s3_client.upload_file(
-                    Filename=f"{file}", Bucket=with_s3_bucket, Key=s3_object_key
-                )
+                s3_client.upload_file(Filename=f"{file}", Bucket=with_s3_bucket, Key=s3_object_key)
                 for s3_object_key, file in relative_names_to_paths.items()
             ),
             limit=10,
         )
         yield dir_path
 
-        await delete_all_object_versions(
-            s3_client, with_s3_bucket, relative_names_to_paths.keys()
-        )
+        await delete_all_object_versions(s3_client, with_s3_bucket, relative_names_to_paths.keys())
 
 
 @pytest.fixture
@@ -2140,9 +1936,7 @@ async def test_workflow_compress_s3_objects_and_local_files_in_a_single_archive_
         archive_entries.append(
             (
                 s3_object_key,
-                await simcore_s3_api.get_bytes_streamer_from_object(
-                    with_s3_bucket, s3_object_key
-                ),
+                await simcore_s3_api.get_bytes_streamer_from_object(with_s3_bucket, s3_object_key),
             )
         )
 
@@ -2174,9 +1968,7 @@ async def test_workflow_compress_s3_objects_and_local_files_in_a_single_archive_
 
     # 2. download zip archive form S3
     print(f"downloading {archive_download_path}")
-    await s3_client.download_file(
-        with_s3_bucket, archive_s3_object_key, f"{archive_download_path}"
-    )
+    await s3_client.download_file(with_s3_bucket, archive_s3_object_key, f"{archive_download_path}")
 
     # 3. extract archive
     await unarchive_dir(archive_download_path, extracted_archive_path)
@@ -2185,6 +1977,4 @@ async def test_workflow_compress_s3_objects_and_local_files_in_a_single_archive_
     print("comparing files")
     all_files_in_zip = get_files_info_from_path(path_local_files_for_archive) | s3_files
 
-    await assert_same_contents(
-        all_files_in_zip, get_files_info_from_path(extracted_archive_path)
-    )
+    await assert_same_contents(all_files_in_zip, get_files_info_from_path(extracted_archive_path))

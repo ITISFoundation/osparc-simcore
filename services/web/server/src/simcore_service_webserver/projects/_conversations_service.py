@@ -121,9 +121,7 @@ async def delete_project_conversation(
         project_id=project_uuid,
         permission="write",
     )
-    conversation = await conversations_service.get_conversation(
-        app, conversation_id=conversation_id
-    )
+    conversation = await conversations_service.get_conversation(app, conversation_id=conversation_id)
     await conversations_service.delete_conversation(
         app,
         product_name=product_name,
@@ -149,9 +147,7 @@ async def get_project_conversation(
         project_id=project_uuid,
         permission="read",
     )
-    conversation = await conversations_service.get_conversation(
-        app, conversation_id=conversation_id
-    )
+    conversation = await conversations_service.get_conversation(app, conversation_id=conversation_id)
     assert conversation.project_uuid == project_uuid  # nosec
     assert conversation.type.is_project_type()  # nosec
     return conversation
@@ -287,6 +283,4 @@ async def get_project_conversation_message(
         project_id=project_uuid,
         permission="read",
     )
-    return await conversations_service.get_message(
-        app, conversation_id=conversation_id, message_id=message_id
-    )
+    return await conversations_service.get_message(app, conversation_id=conversation_id, message_id=message_id)

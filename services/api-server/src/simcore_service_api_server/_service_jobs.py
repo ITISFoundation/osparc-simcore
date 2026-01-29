@@ -213,7 +213,7 @@ class JobService:
             pagination_limit=pagination_limit,
         )
 
-    async def create_project_marked_as_job(  # noqa: PLR0913
+    async def create_project_marked_as_job(
         self,
         *,
         solver_or_program: Solver | Program,
@@ -385,7 +385,7 @@ class JobService:
             storage_assets_deleted=True,
         )
 
-    async def create_solver_job(  # noqa: PLR0913
+    async def create_solver_job(
         self,
         *,
         solver_key: SolverKeyId,
@@ -455,7 +455,7 @@ class JobService:
             job_id=job_id,
         )
 
-    async def create_studies_job(  # noqa: PLR0913
+    async def create_studies_job(
         self,
         *,
         study_id: StudyID,

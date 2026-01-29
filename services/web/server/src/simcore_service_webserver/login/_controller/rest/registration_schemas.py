@@ -32,9 +32,7 @@ class InvitationInfo(InputSchema):
 class RegisterBody(InputSchema):
     email: LowerCaseEmailStr
     password: SecretStr
-    confirm: Annotated[SecretStr | None, Field(description="Password confirmation")] = (
-        None
-    )
+    confirm: Annotated[SecretStr | None, Field(description="Password confirmation")] = None
     invitation: Annotated[str | None, Field(description="Invitation code")] = None
 
     _password_confirm_match = field_validator("confirm")(check_confirm_password_match)

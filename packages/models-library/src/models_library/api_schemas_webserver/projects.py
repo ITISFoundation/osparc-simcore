@@ -66,18 +66,14 @@ class ProjectCreateNew(InputSchema):
     access_rights: dict[GroupIDStr, AccessRights]
 
     tags: Annotated[list[int], Field(default_factory=list)] = DEFAULT_FACTORY
-    classifiers: Annotated[list[ClassifierID], Field(default_factory=list)] = (
-        DEFAULT_FACTORY
-    )
+    classifiers: Annotated[list[ClassifierID], Field(default_factory=list)] = DEFAULT_FACTORY
 
     ui: StudyUI | None = None
 
     workspace_id: WorkspaceID | None = None
     folder_id: FolderID | None = None
 
-    _empty_is_none = field_validator("uuid", "thumbnail", "description", mode="before")(
-        empty_str_to_none_pre_validator
-    )
+    _empty_is_none = field_validator("uuid", "thumbnail", "description", mode="before")(empty_str_to_none_pre_validator)
 
     _null_or_none_to_none = field_validator("workspace_id", "folder_id", mode="before")(
         null_or_none_str_to_none_validator
@@ -98,9 +94,7 @@ class ProjectCopyOverride(InputSchema):
     thumbnail: HttpUrl | None = None
     prj_owner: LowerCaseEmailStr
 
-    _empty_is_none = field_validator("thumbnail", mode="before")(
-        empty_str_to_none_pre_validator
-    )
+    _empty_is_none = field_validator("thumbnail", mode="before")(empty_str_to_none_pre_validator)
 
     def to_domain_model(self) -> dict[str, Any]:
         return self.model_dump(
@@ -142,9 +136,7 @@ class ProjectGet(OutputSchema):
     last_change_date: DateTimeStr
     state: ProjectStateOutputSchema | None = None
     trashed_at: datetime | None
-    trashed_by: Annotated[
-        GroupID | None, Field(description="The primary gid of the user who trashed")
-    ] = None
+    trashed_by: Annotated[GroupID | None, Field(description="The primary gid of the user who trashed")] = None
 
     # labeling
     tags: list[int]
@@ -153,9 +145,7 @@ class ProjectGet(OutputSchema):
         Field(default_factory=list, json_schema_extra={"default": []}),
     ] = DEFAULT_FACTORY
 
-    quality: Annotated[
-        dict[str, Any], Field(default_factory=dict, json_schema_extra={"default": {}})
-    ] = DEFAULT_FACTORY
+    quality: Annotated[dict[str, Any], Field(default_factory=dict, json_schema_extra={"default": {}})] = DEFAULT_FACTORY
 
     # front-end
     ui: EmptyModel | StudyUI | None = None
@@ -235,9 +225,7 @@ class ProjectReplace(InputSchema):
     workbench: NodesDict
     access_rights: dict[GroupIDStr, AccessRights]
 
-    tags: Annotated[
-        list[int] | None, Field(default_factory=list, json_schema_extra={"default": []})
-    ] = DEFAULT_FACTORY
+    tags: Annotated[list[int] | None, Field(default_factory=list, json_schema_extra={"default": []})] = DEFAULT_FACTORY
 
     classifiers: Annotated[
         list[ClassifierID] | None,
@@ -246,9 +234,7 @@ class ProjectReplace(InputSchema):
 
     ui: StudyUI | None = None
 
-    quality: Annotated[
-        dict[str, Any], Field(default_factory=dict, json_schema_extra={"default": {}})
-    ] = DEFAULT_FACTORY
+    quality: Annotated[dict[str, Any], Field(default_factory=dict, json_schema_extra={"default": {}})] = DEFAULT_FACTORY
 
 
 class ProjectPatch(InputSchema):

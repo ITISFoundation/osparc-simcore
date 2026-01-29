@@ -33,9 +33,7 @@ def test_middleware_restrictions_opentelemetry_is_second_middleware(
 ):
     settings = ApplicationSettings.create_from_envs()
     assert settings.WEBSERVER_TRACING
-    tracing_config = TracingConfig.create(
-        service_name=APP_NAME, tracing_settings=settings.WEBSERVER_TRACING
-    )
+    tracing_config = TracingConfig.create(service_name=APP_NAME, tracing_settings=settings.WEBSERVER_TRACING)
 
     app = create_application(tracing_config=tracing_config)
     assert app.middlewares

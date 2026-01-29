@@ -61,11 +61,8 @@ async def _list_root_child_folders(
     user_id: UserID,
     workspace_id: WorkspaceID,
 ) -> list[FolderID]:
-
     child_folders: list[FolderID] = []
-    for page_params in iter_pagination_params(
-        offset=0, limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
-    ):
+    for page_params in iter_pagination_params(offset=0, limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE):
         (
             folders,
             page_params.total_number_of_items,
@@ -93,11 +90,8 @@ async def _list_root_child_projects(
     user_id: UserID,
     workspace_id: WorkspaceID,
 ) -> list[ProjectID]:
-
     child_projects: list[ProjectID] = []
-    for page_params in iter_pagination_params(
-        offset=0, limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
-    ):
+    for page_params in iter_pagination_params(offset=0, limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE):
         (
             projects,
             page_params.total_number_of_items,
@@ -113,9 +107,7 @@ async def _list_root_child_projects(
             trashed=None,
             offset=page_params.offset,
             limit=page_params.limit,
-            order_by=OrderBy(
-                field=IDStr("last_change_date"), direction=OrderDirection.DESC
-            ),
+            order_by=OrderBy(field=IDStr("last_change_date"), direction=OrderDirection.DESC),
         )
 
         child_projects.extend([Project(**project).uuid for project in projects])
@@ -131,9 +123,7 @@ async def trash_workspace(
     workspace_id: WorkspaceID,
     force_stop_first: bool,
 ):
-    await _check_exists_and_access(
-        app, product_name=product_name, user_id=user_id, workspace_id=workspace_id
-    )
+    await _check_exists_and_access(app, product_name=product_name, user_id=user_id, workspace_id=workspace_id)
 
     trashed_at = arrow.utcnow().datetime
 
@@ -190,9 +180,7 @@ async def untrash_workspace(
     user_id: UserID,
     workspace_id: WorkspaceID,
 ):
-    await _check_exists_and_access(
-        app, product_name=product_name, user_id=user_id, workspace_id=workspace_id
-    )
+    await _check_exists_and_access(app, product_name=product_name, user_id=user_id, workspace_id=workspace_id)
 
     async with transaction_context(get_asyncpg_engine(app)) as connection:
         # EXPLICIT UNtrash
@@ -227,9 +215,7 @@ async def untrash_workspace(
         )
 
         for project_id in child_projects:
-            await untrash_project(
-                app, product_name=product_name, user_id=user_id, project_id=project_id
-            )
+            await untrash_project(app, product_name=product_name, user_id=user_id, project_id=project_id)
 
 
 def _can_delete(
@@ -253,7 +239,6 @@ async def delete_trashed_workspace(
     workspace_id: WorkspaceID,
     until_equal_datetime: datetime | None = None,
 ) -> None:
-
     workspace = await _workspaces_service_crud_read.get_workspace(
         app,
         user_id=user_id,
@@ -289,9 +274,7 @@ async def list_trashed_workspaces(
 ) -> list[WorkspaceID]:
     trashed_workspace_ids: list[WorkspaceID] = []
 
-    for page_params in iter_pagination_params(
-        offset=0, limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
-    ):
+    for page_params in iter_pagination_params(offset=0, limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE):
         (
             page_params.total_number_of_items,
             workspaces,
@@ -328,13 +311,10 @@ async def batch_delete_trashed_workspaces_as_admin(
     trashed_before: datetime,
     fail_fast: bool,
 ) -> list[WorkspaceID]:
-
     deleted_workspace_ids: list[WorkspaceID] = []
     errors: list[tuple[WorkspaceID, Exception]] = []
 
-    for page_params in iter_pagination_params(
-        offset=0, limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE
-    ):
+    for page_params in iter_pagination_params(offset=0, limit=MAXIMUM_NUMBER_OF_ITEMS_PER_PAGE):
         (
             page_params.total_number_of_items,
             expired_trashed_workspaces,
@@ -343,9 +323,7 @@ async def batch_delete_trashed_workspaces_as_admin(
             trashed_before=trashed_before,
             offset=page_params.offset,
             limit=page_params.limit,
-            order_by=OrderBy(
-                field=IDStr("workspace_id"), direction=OrderDirection.DESC
-            ),
+            order_by=OrderBy(field=IDStr("workspace_id"), direction=OrderDirection.DESC),
         )
         # BATCH delete
         for trashed_workspace in expired_trashed_workspaces:

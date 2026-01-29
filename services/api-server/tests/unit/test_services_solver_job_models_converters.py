@@ -49,9 +49,7 @@ def test_create_project_model_for_job(faker: Faker):
 
     print(inputs.model_dump_json(indent=2))
 
-    job = Job.create_job_from_solver_or_program(
-        solver_or_program_name=solver.name, inputs=inputs
-    )
+    job = Job.create_job_from_solver_or_program(solver_or_program_name=solver.name, inputs=inputs)
 
     # body of create project!
     createproject_body = create_new_project_for_job(
@@ -173,11 +171,7 @@ def test_create_job_from_project(faker: Faker):
             "classifiers": [],
             "ui": {
                 "slideshow": {},
-                "workbench": {
-                    "e694de0b-2e91-5be7-9319-d89404170991": {
-                        "position": {"x": 633, "y": 229}
-                    }
-                },
+                "workbench": {"e694de0b-2e91-5be7-9319-d89404170991": {"position": {"x": 633, "y": 229}}},
                 "currentNodeId": "e694de0b-2e91-5be7-9319-d89404170991",
             },
             "quality": {},
@@ -235,16 +229,12 @@ def test_create_job_from_project(faker: Faker):
 
     field_names = Job.model_fields.keys()
 
-    non_propagated_fields = {
-        name for name in field_names if name.endswith("url")
-    }.union({"name"})
+    non_propagated_fields = {name for name in field_names if name.endswith("url")}.union({"name"})
     assert all(getattr(job, _) for _ in non_propagated_fields)
 
     # this tends to be a problem
     assert job.inputs_checksum == expected_job.inputs_checksum
-    assert job.model_dump(exclude=non_propagated_fields) == expected_job.model_dump(
-        exclude=non_propagated_fields
-    )
+    assert job.model_dump(exclude=non_propagated_fields) == expected_job.model_dump(exclude=non_propagated_fields)
 
 
 @pytest.mark.skip(reason="TODO: next PR")

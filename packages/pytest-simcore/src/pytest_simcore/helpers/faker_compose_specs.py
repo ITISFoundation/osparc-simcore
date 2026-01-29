@@ -21,9 +21,7 @@ def _range(faker: Faker, num_items: int = _RANDOM, min_: int = 1, max_: int = 4)
     return range(num_items)
 
 
-def generate_fake_docker_compose(
-    faker: Faker, num_services: int = _RANDOM
-) -> dict[str, Any]:
+def generate_fake_docker_compose(faker: Faker, num_services: int = _RANDOM) -> dict[str, Any]:
     """
     Fakes https://docs.docker.com/compose/compose-file/compose-file-v3/
 
@@ -50,9 +48,6 @@ def generate_fake_service_specs(faker: Faker) -> tuple[str, dict[str, Any]]:
     service = {
         "image": faker.word(),
         "environment": {faker.word(): faker.word() for _ in _range(faker, max_=10)},
-        "ports": [
-            f"{faker.random_int(1000, 9999)}:{faker.random_int(1000, 9999)}"
-            for _ in _range(faker)
-        ],
+        "ports": [f"{faker.random_int(1000, 9999)}:{faker.random_int(1000, 9999)}" for _ in _range(faker)],
     }
     return service_name, service

@@ -3,7 +3,7 @@ from contextlib import suppress
 from typing import TYPE_CHECKING, Any
 
 from ..rabbitmq import RPCRouter
-from .errors import BaseLongRunningError, RPCTransferrableTaskError, TaskNotFoundError
+from .errors import BaseLongRunningError, RPCTransferableTaskError, TaskNotFoundError
 from .models import (
     RegisteredTaskName,
     TaskBase,
@@ -43,12 +43,8 @@ async def start_task(
 
 
 @router.expose(reraise_if_error_type=(BaseLongRunningError,))
-async def list_tasks(
-    long_running_manager: "LongRunningManager", *, task_context: TaskContext
-) -> list[TaskBase]:
-    return await long_running_manager.tasks_manager.list_tasks(
-        with_task_context=task_context
-    )
+async def list_tasks(long_running_manager: "LongRunningManager", *, task_context: TaskContext) -> list[TaskBase]:
+    return await long_running_manager.tasks_manager.list_tasks(with_task_context=task_context)
 
 
 @router.expose(reraise_if_error_type=(BaseLongRunningError,))
@@ -58,12 +54,10 @@ async def get_task_status(
     task_context: TaskContext,
     task_id: TaskId,
 ) -> TaskStatus:
-    return await long_running_manager.tasks_manager.get_task_status(
-        task_id=task_id, with_task_context=task_context
-    )
+    return await long_running_manager.tasks_manager.get_task_status(task_id=task_id, with_task_context=task_context)
 
 
-@router.expose(reraise_if_error_type=(BaseLongRunningError, RPCTransferrableTaskError))
+@router.expose(reraise_if_error_type=(BaseLongRunningError, RPCTransferableTaskError))
 async def get_task_result(
     long_running_manager: "LongRunningManager",
     *,
@@ -71,11 +65,9 @@ async def get_task_result(
     task_id: TaskId,
 ) -> str:
     try:
-        result_field = await long_running_manager.tasks_manager.get_task_result(
-            task_id, with_task_context=task_context
-        )
+        result_field = await long_running_manager.tasks_manager.get_task_result(task_id, with_task_context=task_context)
         if result_field.str_error is not None:
-            raise RPCTransferrableTaskError(result_field.str_error)
+            raise RPCTransferableTaskError(result_field.str_error)
 
         if result_field.str_result is not None:
             return result_field.str_result

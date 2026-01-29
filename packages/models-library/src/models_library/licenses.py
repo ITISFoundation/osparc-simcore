@@ -12,9 +12,10 @@ from typing import (
 )
 from uuid import UUID
 
-from models_library.resource_tracker import PricingPlanId
 from pydantic import BaseModel, ConfigDict, PositiveInt, StringConstraints
 from pydantic.config import JsonDict
+
+from models_library.resource_tracker import PricingPlanId
 
 from .products import ProductName
 from .resource_tracker import PricingPlanId
@@ -25,9 +26,7 @@ LicensedResourceID: TypeAlias = UUID
 
 LICENSED_ITEM_VERSION_RE = r"^\d+\.\d+\.\d+$"
 LicensedItemKey = NewType("LicensedItemKey", str)
-LicensedItemVersion = Annotated[
-    str, StringConstraints(pattern=LICENSED_ITEM_VERSION_RE)
-]
+LicensedItemVersion = Annotated[str, StringConstraints(pattern=LICENSED_ITEM_VERSION_RE)]
 
 
 class LicensedResourceType(StrAutoEnum):

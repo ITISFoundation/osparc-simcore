@@ -34,7 +34,7 @@ def create_route_description(
     base: str = "",
     deprecated: bool = False,
     alternative: str | None = None,  # alternative
-    changelog: list[str] | None = None
+    changelog: list[str] | None = None,
 ) -> str:
     """
     Builds a consistent route/query description with optional deprecation and changelog information.

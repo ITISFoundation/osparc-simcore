@@ -1,6 +1,7 @@
 import logging
 
 from aiohttp import web
+
 from simcore_service_webserver.scicrunch.plugin import setup_scicrunch
 
 from ..application_setup import ModuleCategory, app_setup_func

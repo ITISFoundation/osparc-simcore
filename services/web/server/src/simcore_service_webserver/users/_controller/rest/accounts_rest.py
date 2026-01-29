@@ -52,9 +52,7 @@ async def list_users_accounts(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
     assert req_ctx.product_name  # nosec
 
-    query_params = parse_request_query_parameters_as(
-        UsersAccountListQueryParams, request
-    )
+    query_params = parse_request_query_parameters_as(UsersAccountListQueryParams, request)
 
     if query_params.review_status == "PENDING":
         filter_any_account_request_status = [AccountRequestStatus.PENDING]
@@ -81,9 +79,7 @@ async def list_users_accounts(request: web.Request) -> web.Response:
             extras=account_details.pop("extras") or {},
             pre_registration_id=account_details.pop("id"),
             pre_registration_created=account_details.pop("created"),
-            account_request_reviewed_by=account_details.pop(
-                "account_request_reviewed_by_username"
-            ),
+            account_request_reviewed_by=account_details.pop("account_request_reviewed_by_username"),
             **account_details,
         )
 
@@ -121,16 +117,11 @@ async def search_user_accounts(request: web.Request) -> web.Response:
     )
 
     return envelope_json_response(
-        [
-            user_for_admin.model_dump(**_RESPONSE_MODEL_MINIMAL_POLICY)
-            for user_for_admin in found
-        ]
+        [user_for_admin.model_dump(**_RESPONSE_MODEL_MINIMAL_POLICY) for user_for_admin in found]
     )
 
 
-@routes.post(
-    f"/{API_VTAG}/admin/user-accounts:pre-register", name="pre_register_user_account"
-)
+@routes.post(f"/{API_VTAG}/admin/user-accounts:pre-register", name="pre_register_user_account")
 @login_required
 @permission_required("admin.users.write")
 @handle_rest_requests_exceptions
@@ -145,9 +136,7 @@ async def pre_register_user_account(request: web.Request) -> web.Response:
         product_name=req_ctx.product_name,
     )
 
-    return envelope_json_response(
-        user_profile.model_dump(**_RESPONSE_MODEL_MINIMAL_POLICY)
-    )
+    return envelope_json_response(user_profile.model_dump(**_RESPONSE_MODEL_MINIMAL_POLICY))
 
 
 @routes.post(f"/{API_VTAG}/admin/user-accounts:approve", name="approve_user_account")
@@ -185,12 +174,10 @@ async def approve_user_account(request: web.Request) -> web.Response:
             )
 
             assert (  # nosec
-                invitation_result.extra_credits_in_usd
-                == approval_data.invitation.extra_credits_in_usd
+                invitation_result.extra_credits_in_usd == approval_data.invitation.extra_credits_in_usd
             )
             assert (  # nosec
-                invitation_result.trial_account_days
-                == approval_data.invitation.trial_account_days
+                invitation_result.trial_account_days == approval_data.invitation.trial_account_days
             )
             assert invitation_result.guest == approval_data.email  # nosec
 
@@ -200,11 +187,7 @@ async def approve_user_account(request: web.Request) -> web.Response:
         pre_registration_email=approval_data.email,
         product_name=req_ctx.product_name,
         reviewer_id=req_ctx.user_id,
-        invitation_extras=(
-            {"invitation": invitation_result.model_dump(mode="json")}
-            if invitation_result
-            else None
-        ),
+        invitation_extras=({"invitation": invitation_result.model_dump(mode="json")} if invitation_result else None),
     )
     assert pre_registration_id  # nosec
 
@@ -237,9 +220,7 @@ async def approve_user_account(request: web.Request) -> web.Response:
                     last_name=user_account.last_name or "",
                 ),
                 task_suffix_name=f"{__name__}.send_approval_email_to_user.{approval_data.email}",
-                fire_and_forget_tasks_collection=request.app[
-                    APP_FIRE_AND_FORGET_TASKS_KEY
-                ],
+                fire_and_forget_tasks_collection=request.app[APP_FIRE_AND_FORGET_TASKS_KEY],
             )
 
     return web.json_response(status=status.HTTP_204_NO_CONTENT)

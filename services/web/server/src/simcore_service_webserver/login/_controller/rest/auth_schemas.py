@@ -28,6 +28,4 @@ class LoginTwoFactorAuthBody(InputSchema):
 
 
 class LogoutBody(InputSchema):
-    client_session_id: str | None = Field(
-        None, examples=["5ac57685-c40f-448f-8711-70be1936fd63"]
-    )
+    client_session_id: str | None = Field(None, examples=["5ac57685-c40f-448f-8711-70be1936fd63"])

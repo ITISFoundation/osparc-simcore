@@ -18,10 +18,7 @@ async def validate_prices_in_product_settings_on_startup(app: web.Application):
 
     for product in products_service.list_products(app):
         if product.min_payment_amount_usd is not None:
-            if (
-                product.min_payment_amount_usd
-                > payment_settings.PAYMENTS_AUTORECHARGE_DEFAULT_TOP_UP_AMOUNT
-            ):
+            if product.min_payment_amount_usd > payment_settings.PAYMENTS_AUTORECHARGE_DEFAULT_TOP_UP_AMOUNT:
                 raise BelowMinimumPaymentError(
                     amount_usd=payment_settings.PAYMENTS_AUTORECHARGE_DEFAULT_TOP_UP_AMOUNT,
                     min_payment_amount_usd=product.min_payment_amount_usd,
@@ -29,10 +26,7 @@ async def validate_prices_in_product_settings_on_startup(app: web.Application):
             assert (  # nosec
                 payment_settings.PAYMENTS_AUTORECHARGE_DEFAULT_MONTHLY_LIMIT is not None
             )
-            if (
-                product.min_payment_amount_usd
-                > payment_settings.PAYMENTS_AUTORECHARGE_DEFAULT_MONTHLY_LIMIT
-            ):
+            if product.min_payment_amount_usd > payment_settings.PAYMENTS_AUTORECHARGE_DEFAULT_MONTHLY_LIMIT:
                 raise BelowMinimumPaymentError(
                     amount_usd=payment_settings.PAYMENTS_AUTORECHARGE_DEFAULT_MONTHLY_LIMIT,
                     min_payment_amount_usd=product.min_payment_amount_usd,

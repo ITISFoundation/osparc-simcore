@@ -25,9 +25,7 @@ _NAMED_PATTERN = re.compile(
 _PATTERN = re.compile(r"OEC:[a-fA-F0-9]{12}-\d{13,14}")
 
 
-ErrorCodeStr: TypeAlias = Annotated[
-    str, StringConstraints(strip_whitespace=True, pattern=_NAMED_PATTERN)
-]
+ErrorCodeStr: TypeAlias = Annotated[str, StringConstraints(strip_whitespace=True, pattern=_NAMED_PATTERN)]
 
 
 def _create_fingerprint(exc: BaseException) -> str:
@@ -79,7 +77,5 @@ def parse_error_code_parts(oec: ErrorCodeStr) -> tuple[str, datetime]:
         msg = f"Invalid error code format: {oec}"
         raise ValueError(msg)
     fingerprint = match.group("fingerprint")
-    timestamp = datetime.fromtimestamp(
-        float(match.group("timestamp")) / _SECS_TO_MILISECS, tz=UTC
-    )
+    timestamp = datetime.fromtimestamp(float(match.group("timestamp")) / _SECS_TO_MILISECS, tz=UTC)
     return fingerprint, timestamp

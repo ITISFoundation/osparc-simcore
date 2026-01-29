@@ -24,9 +24,7 @@ APP_STARTED_BANNER_MSG = r"""
 / /___ | (_| || |_ | (_| || || (_) || (_| |
 \____/  \__,_| \__| \__,_||_| \___/  \__, |
                                      |___/     {}
-""".format(
-    f"v{__version__}"
-)
+""".format(f"v{__version__}")
 
 
 APP_FINISHED_BANNER_MSG = info.get_finished_banner()

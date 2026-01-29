@@ -43,9 +43,7 @@ async def test_load_products(app: web.Application):
 
 
 async def test_load_products_validation_error(app: web.Application, mocker):
-    mock_repo = mocker.patch(
-        "simcore_service_webserver.products._service.ProductRepository.create_from_app"
-    )
+    mock_repo = mocker.patch("simcore_service_webserver.products._service.ProductRepository.create_from_app")
 
     try:
         TypeAdapter(int).validate_python("not-an-int")
@@ -82,12 +80,8 @@ async def test_list_products_names(app: web.Application):
     assert all(isinstance(name, ProductName) for name in product_names)
 
 
-async def test_get_credit_price_info(
-    app: web.Application, default_product_name: ProductName
-):
-    price_info = await _service.get_credit_price_info(
-        app, product_name=default_product_name
-    )
+async def test_get_credit_price_info(app: web.Application, default_product_name: ProductName):
+    price_info = await _service.get_credit_price_info(app, product_name=default_product_name)
     assert price_info is None or isinstance(price_info, ProductPriceInfo)
 
 
@@ -100,41 +94,27 @@ async def test_get_product_ui(app: web.Application, default_product_name: Produc
         await products_service.get_product_ui(repo, product_name="undefined")
 
 
-async def test_get_credit_amount(
-    app: web.Application, default_product_name: ProductName, mocker: MockerFixture
-):
+async def test_get_credit_amount(app: web.Application, default_product_name: ProductName, mocker: MockerFixture):
     # Test when ProductPriceNotDefinedError is raised
     with pytest.raises(ProductPriceNotDefinedError):
-        await products_service.get_credit_amount(
-            app, dollar_amount=1, product_name=default_product_name
-        )
+        await products_service.get_credit_amount(app, dollar_amount=1, product_name=default_product_name)
 
 
-async def test_get_credit_amount_with_repo_faking_data(
-    default_product_name: ProductName, mocker: MockerFixture
-):
+async def test_get_credit_amount_with_repo_faking_data(default_product_name: ProductName, mocker: MockerFixture):
     # NO need of database since repo is mocked
     app = web.Application()
 
     # Mock the repository to return a valid price info
-    mock_repo = mocker.patch(
-        "simcore_service_webserver.products._service.ProductRepository.create_from_app"
-    )
+    mock_repo = mocker.patch("simcore_service_webserver.products._service.ProductRepository.create_from_app")
 
     async def _get_product_latest_price_info_or_none(*args, **kwargs):
-        return ProductPriceInfo(
-            usd_per_credit=Decimal("10.0"), min_payment_amount_usd=Decimal("5.0")
-        )
+        return ProductPriceInfo(usd_per_credit=Decimal("10.0"), min_payment_amount_usd=Decimal("5.0"))
 
-    mock_repo.return_value.get_product_latest_price_info_or_none.side_effect = (
-        _get_product_latest_price_info_or_none
-    )
+    mock_repo.return_value.get_product_latest_price_info_or_none.side_effect = _get_product_latest_price_info_or_none
 
     # Test when BelowMinimumPaymentError is raised
     with pytest.raises(BelowMinimumPaymentError):
-        await products_service.get_credit_amount(
-            app, dollar_amount=Decimal("3.0"), product_name=default_product_name
-        )
+        await products_service.get_credit_amount(app, dollar_amount=Decimal("3.0"), product_name=default_product_name)
 
     # Test when CreditResultGet is returned successfully
     credit_result = await products_service.get_credit_amount(
@@ -144,40 +124,28 @@ async def test_get_credit_amount_with_repo_faking_data(
     assert credit_result.product_name == default_product_name
 
 
-async def test_get_product_stripe_info(
-    app: web.Application, default_product_name: ProductName
-):
+async def test_get_product_stripe_info(app: web.Application, default_product_name: ProductName):
     # database has no info
     with pytest.raises(MissingStripeConfigError, match=default_product_name):
-        await products_service.get_product_stripe_info(
-            app, product_name=default_product_name
-        )
+        await products_service.get_product_stripe_info(app, product_name=default_product_name)
 
 
-async def test_get_product_stripe_info_with_repo_faking_data(
-    default_product_name: ProductName, mocker: MockerFixture
-):
+async def test_get_product_stripe_info_with_repo_faking_data(default_product_name: ProductName, mocker: MockerFixture):
     # NO need of database since repo is mocked
     app = web.Application()
 
     # Mock the repository to return a valid stripe info
-    mock_repo = mocker.patch(
-        "simcore_service_webserver.products._service.ProductRepository.create_from_app"
-    )
+    mock_repo = mocker.patch("simcore_service_webserver.products._service.ProductRepository.create_from_app")
 
     # Test when stripe info is returned successfully
-    expected_stripe_info = ProductStripeInfo(
-        stripe_price_id="price_id", stripe_tax_rate_id="tax_id"
-    )
+    expected_stripe_info = ProductStripeInfo(stripe_price_id="price_id", stripe_tax_rate_id="tax_id")
 
     async def _mock(*args, **kw):
         return expected_stripe_info
 
     mock_repo.return_value.get_product_stripe_info_or_none.side_effect = _mock
 
-    stripe_info = await products_service.get_product_stripe_info(
-        app, product_name=default_product_name
-    )
+    stripe_info = await products_service.get_product_stripe_info(app, product_name=default_product_name)
     assert stripe_info == expected_stripe_info
 
 
@@ -191,6 +159,4 @@ async def test_auto_create_products_groups(app: web.Application):
     groups = await _service.auto_create_products_groups(app)
     assert isinstance(groups, dict)
 
-    assert all(
-        group_id is not None for group_id in groups.values()
-    ), f"Invalid {groups}"
+    assert all(group_id is not None for group_id in groups.values()), f"Invalid {groups}"

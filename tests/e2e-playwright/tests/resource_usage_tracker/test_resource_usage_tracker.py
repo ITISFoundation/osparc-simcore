@@ -8,7 +8,7 @@
 
 import os
 from collections.abc import Iterator
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from http import HTTPStatus
 
 import pytest
@@ -26,9 +26,7 @@ STUDY_ID = os.environ["STUDY_ID"]
 
 
 @pytest.fixture
-def stop_pipeline(
-    api_request_context: APIRequestContext, product_url: str
-) -> Iterator[None]:
+def stop_pipeline(api_request_context: APIRequestContext, product_url: str) -> Iterator[None]:
     yield
 
     api_request_context.post(f"{product_url}v0/computations/{STUDY_ID}:stop")
@@ -66,9 +64,7 @@ def test_resource_usage_tracker(
         reraise=True,
     ):
         with attempt:
-            test_logger.info(
-                f"====================={datetime.now(tz=timezone.utc)}============================="
-            )
+            test_logger.info(f"====================={datetime.now(tz=UTC)}=============================")
             output = api_request_context.get(f"{product_url}v0/projects/{STUDY_ID}")
             assert output.status == HTTPStatus.OK
             workbench = output.json()["data"]["workbench"]

@@ -1,9 +1,10 @@
 import logging
 from pathlib import Path
 
-import notifications_library
 from common_library.json_serialization import json_dumps
 from jinja2 import Environment, FileSystemLoader, PackageLoader, select_autoescape
+
+import notifications_library
 
 _logger = logging.getLogger(__name__)
 
@@ -12,7 +13,7 @@ def create_render_environment_from_notifications_library(**kwargs) -> Environmen
     env = Environment(
         loader=PackageLoader(notifications_library.__name__, "templates"),
         autoescape=select_autoescape(["html", "xml"]),
-        **kwargs
+        **kwargs,
     )
     env.globals["dumps"] = json_dumps
     return env

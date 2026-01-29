@@ -22,10 +22,7 @@ def assert_cluster_state(
     assert spied_cluster_analysis.call_count == expected_calls
 
     assert isinstance(spied_cluster_analysis.spy_return, Cluster)
-    assert (
-        spied_cluster_analysis.spy_return.total_number_of_machines()
-        == expected_num_machines
-    )
+    assert spied_cluster_analysis.spy_return.total_number_of_machines() == expected_num_machines
     print("current cluster state:", spied_cluster_analysis.spy_return)
     cluster = spied_cluster_analysis.spy_return
     spied_cluster_analysis.reset_mock()
@@ -52,20 +49,15 @@ def create_fake_association(
                 assert fake_node.spec.labels
                 fake_node.spec.labels |= {
                     _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY: arrow.utcnow().isoformat(),
-                    _OSPARC_SERVICE_READY_LABEL_KEY: (
-                        "true" if instance.id != drained_machine_id else "false"
-                    ),
+                    _OSPARC_SERVICE_READY_LABEL_KEY: ("true" if instance.id != drained_machine_id else "false"),
                 }
                 if instance.id == terminating_machine_id:
-                    fake_node.spec.labels |= {
-                        _OSPARC_NODE_TERMINATION_PROCESS_LABEL_KEY: arrow.utcnow().isoformat()
-                    }
+                    fake_node.spec.labels |= {_OSPARC_NODE_TERMINATION_PROCESS_LABEL_KEY: arrow.utcnow().isoformat()}
                 fake_node_to_instance_map[instance] = fake_node
             return fake_node_to_instance_map[instance]
 
         associated_instances = [
-            AssociatedInstance(node=_create_fake_node_with_labels(i), ec2_instance=i)
-            for i in ec2_instances
+            AssociatedInstance(node=_create_fake_node_with_labels(i), ec2_instance=i) for i in ec2_instances
         ]
 
         return associated_instances, []

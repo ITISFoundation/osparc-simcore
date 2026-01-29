@@ -8,7 +8,6 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from .models import Deployment
 
-#
 _DEPLOYMENTS_MAP = {
     Deployment.master: "osparc-master.speag.com",
     Deployment.aws_staging: "osparc-staging.io",
@@ -48,14 +47,11 @@ class ReleaseSettings(BaseSettings):
 
     @model_validator(mode="after")
     def deduce_portainer_url(self) -> Self:
-        self.portainer_url = TypeAdapter(HttpUrl).validate_python(
-            f"https://{self.PORTAINER_DOMAIN}"
-        )
+        self.portainer_url = TypeAdapter(HttpUrl).validate_python(f"https://{self.PORTAINER_DOMAIN}")
         return self
 
 
 def get_release_settings(env_file_path: Path):
-
     # NOTE: these conversions and checks are done to keep
     deployment_name = get_deployment_name_or_none(env_file_path)
     if deployment_name is None:
@@ -226,6 +222,5 @@ def get_legacy_settings(env_file, deployment: str) -> LegacySettings:
             swarm_stack_name="staging-simcore",
             portainer_endpoint_version=1,
         )
-    else:
-        msg = "Invalid environment type provided."
-        raise ValueError(msg)
+    msg = "Invalid environment type provided."
+    raise ValueError(msg)

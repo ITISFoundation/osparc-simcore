@@ -957,9 +957,9 @@ qx.Class.define("osparc.data.Resources", {
         }
       },
       /*
-       * NOTIFICATIONS
+       * BELL NOTIFICATIONS
        */
-      "notifications": {
+      "bellNotifications": {
         useCache: false,
         idField: "notification",
         endpoints: {
@@ -1162,6 +1162,27 @@ qx.Class.define("osparc.data.Resources", {
           preRegister: {
             method: "POST",
             url: statics.API + "/admin/user-accounts:pre-register"
+          }
+        }
+      },
+      "notificationTemplates": {
+        useCache: true,
+        endpoints: {
+          getEmailTemplates: {
+            method: "GET",
+            url: statics.API + "/notifications/templates:search?channel=email"
+          },
+          getTemplatePreview: {
+            method: "POST",
+            url: statics.API + "/notifications/templates:preview"
+          },
+          sendMessageFromTemplate: {
+            method: "POST",
+            url: statics.API + "/notifications/templates:send"
+          },
+          sendMessage: {
+            method: "POST",
+            url: statics.API + "/notifications/messages:send"
           }
         }
       },
@@ -1695,7 +1716,7 @@ qx.Class.define("osparc.data.Resources", {
               .catch(err => {
                 if ("status" in err && err.status === 401) {
                   // Unauthorized again, the cookie might have expired.
-                  // We can assume that all calls after this will respond with 401, so bring the user ot the login page.
+                  // We can assume that all calls after this will respond with 401, so bring the user of the login page.
                   qx.core.Init.getApplication().logout(qx.locale.Manager.tr("You have been logged out. Your cookie might have expired."));
                 }
               });

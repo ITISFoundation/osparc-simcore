@@ -28,9 +28,7 @@ class _StoreMixin(BaseModel):
 
     async def _persist_to_disk(self) -> None:
         assert self._shared_store_dir  # nosec
-        async with aiofiles.open(
-            self._shared_store_dir / STORE_FILE_NAME, "w"
-        ) as data_file:
+        async with aiofiles.open(self._shared_store_dir / STORE_FILE_NAME, "w") as data_file:
             await data_file.write(self.model_dump_json())
 
     def post_init(self, shared_store_dir: Path):
@@ -51,9 +49,7 @@ class SharedStore(_StoreMixin):  # noqa: PLW1641
             shared_store.container_names = copied_list
     """
 
-    compose_spec: DockerComposeYamlStr | None = Field(
-        default=None, description="stores the stringified compose spec"
-    )
+    compose_spec: DockerComposeYamlStr | None = Field(default=None, description="stores the stringified compose spec")
     container_names: list[ContainerNameStr] = Field(
         default_factory=list,
         description="stores the container names from the compose_spec",
@@ -90,9 +86,7 @@ class SharedStore(_StoreMixin):  # noqa: PLW1641
                 self.volume_states[category] = VolumeState(status=status)
 
     @classmethod
-    async def init_from_disk(
-        cls, shared_store_dir: Path, *, store_file_name: "str"
-    ) -> "SharedStore":
+    async def init_from_disk(cls, shared_store_dir: Path, *, store_file_name: "str") -> "SharedStore":
         data_file_path = shared_store_dir / store_file_name
 
         if not data_file_path.exists():

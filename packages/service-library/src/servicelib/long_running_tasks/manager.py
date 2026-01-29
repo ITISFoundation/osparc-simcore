@@ -13,7 +13,7 @@ from .task import TasksManager
 
 class LongRunningManager(ABC):
     """
-    Provides a commond inteface for aiohttp and fastapi services
+    Provides a common interface for aiohttp and fastapi services
     """
 
     def __init__(
@@ -32,17 +32,11 @@ class LongRunningManager(ABC):
         )
         self._lrt_namespace = lrt_namespace
         self.rabbit_settings = rabbit_settings
-        self._rpc_server: RabbitMQRPCClient | None = None
         self._rpc_client: RabbitMQRPCClient | None = None
 
     @property
     def tasks_manager(self) -> TasksManager:
         return self._tasks_manager
-
-    @property
-    def rpc_server(self) -> RabbitMQRPCClient:
-        assert self._rpc_server is not None  # nosec
-        return self._rpc_server
 
     @property
     def rpc_client(self) -> RabbitMQRPCClient:
@@ -55,27 +49,14 @@ class LongRunningManager(ABC):
 
     async def setup(self) -> None:
         await self._tasks_manager.setup()
-        self._rpc_server = await RabbitMQRPCClient.create(
-            client_name=f"lrt-server-{self.lrt_namespace}",
-            settings=self.rabbit_settings,
-        )
         self._rpc_client = await RabbitMQRPCClient.create(
-            client_name=f"lrt-client-{self.lrt_namespace}",
-            settings=self.rabbit_settings,
+            client_name=f"lrt-{self.lrt_namespace}", settings=self.rabbit_settings
         )
 
-        await self.rpc_server.register_router(
-            router,
-            get_rabbit_namespace(self.lrt_namespace),
-            self,
-        )
+        await self.rpc_client.register_router(router, get_rabbit_namespace(self.lrt_namespace), self)
 
     async def teardown(self) -> None:
         await self._tasks_manager.teardown()
-
-        if self._rpc_server is not None:
-            await self._rpc_server.close()
-            self._rpc_server = None
 
         if self._rpc_client is not None:
             await self._rpc_client.close()

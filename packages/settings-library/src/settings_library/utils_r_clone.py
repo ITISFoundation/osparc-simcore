@@ -35,9 +35,7 @@ def format_config(config_key: str, settings_options: dict[str, str]) -> str:
         return string_io.read()
 
 
-def get_s3_r_clone_config(
-    r_clone_settings: RCloneSettings, *, s3_config_key: str
-) -> str:
+def get_s3_r_clone_config(r_clone_settings: RCloneSettings, *, s3_config_key: str) -> str:
     """
     Arguments:
         r_clone_settings -- current rclone configuration
@@ -48,13 +46,9 @@ def get_s3_r_clone_config(
         stringified *.ini rclone configuration
     """
     settings_options: dict[str, str] = deepcopy(_COMMON_SETTINGS_OPTIONS)
-    settings_options.update(
-        _PROVIDER_SETTINGS_OPTIONS[r_clone_settings.R_CLONE_PROVIDER]
-    )
+    settings_options.update(_PROVIDER_SETTINGS_OPTIONS[r_clone_settings.R_CLONE_PROVIDER])
 
-    r_clone_config_template = format_config(
-        config_key=s3_config_key, settings_options=settings_options
-    )
+    r_clone_config_template = format_config(config_key=s3_config_key, settings_options=settings_options)
 
     # replace entries in template
     return r_clone_config_template.format(

@@ -205,7 +205,6 @@ async def test_update_transaction_failures_and_exceptions(
     init_transaction: Callable,
     payment_id: str,
 ):
-
     async with asyncpg_engine.connect() as connection:
         kwargs = {
             "connection": connection,
@@ -260,9 +259,7 @@ async def create_fake_user_transactions(
                     )
 
                     async with transaction_context(asyncpg_engine) as connection:
-                        payment_id = await insert_init_payment_transaction(
-                            connection, **values
-                        )
+                        payment_id = await insert_init_payment_transaction(connection, **values)
                     assert payment_id
                     payment_ids.append(payment_id)
 
@@ -298,22 +295,14 @@ async def test_get_user_payments_transactions_with_pagination_options(
     limit = int(expected_total / 2)
 
     async with asyncpg_engine.connect() as connection:
-        total, rows = await get_user_payments_transactions(
-            connection, user_id=user_id, limit=limit, offset=offset
-        )
+        total, rows = await get_user_payments_transactions(connection, user_id=user_id, limit=limit, offset=offset)
         assert total == expected_total
-        assert [r.payment_id for r in rows] == expected_payments_ids[::-1][
-            offset : (offset + limit)
-        ], "newest first"
+        assert [r.payment_id for r in rows] == expected_payments_ids[::-1][offset : (offset + limit)], "newest first"
 
         # test  offset>=expected_total?
-        total, rows = await get_user_payments_transactions(
-            connection, user_id=user_id, offset=expected_total
-        )
+        total, rows = await get_user_payments_transactions(connection, user_id=user_id, offset=expected_total)
         assert not rows
 
         # test  limit==0?
-        total, rows = await get_user_payments_transactions(
-            connection, user_id=user_id, limit=0
-        )
+        total, rows = await get_user_payments_transactions(connection, user_id=user_id, limit=0)
         assert not rows

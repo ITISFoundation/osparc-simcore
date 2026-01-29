@@ -2,7 +2,6 @@ from models_library.app_diagnostics import AppStatusCheck
 
 
 def test_annotated_defaults_and_default_factories():
-
     model = AppStatusCheck(app_name="foo", version="1.2.3")
     assert model.app_name == "foo"
     assert model.version == "1.2.3"

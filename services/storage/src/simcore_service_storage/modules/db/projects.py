@@ -25,9 +25,7 @@ class ProjectRepository(BaseRepository):
         """
         async with pass_or_acquire_connection(self.db_engine, connection) as conn:
             async for row in await conn.stream(
-                sa.select(projects).where(
-                    projects.c.uuid.in_(f"{pid}" for pid in include_uuids)
-                )
+                sa.select(projects).where(projects.c.uuid.in_(f"{pid}" for pid in include_uuids))
             ):
                 with suppress(ValidationError):
                     yield ProjectAtDB.model_validate(row)
@@ -41,9 +39,7 @@ class ProjectRepository(BaseRepository):
         async with pass_or_acquire_connection(self.db_engine, connection) as conn:
             return bool(
                 await conn.scalar(
-                    sa.select(sa.func.count())
-                    .select_from(projects)
-                    .where(projects.c.uuid == f"{project_uuid}")
+                    sa.select(sa.func.count()).select_from(projects).where(projects.c.uuid == f"{project_uuid}")
                 )
                 == 1
             )
@@ -62,8 +58,7 @@ class ProjectRepository(BaseRepository):
                 )
             ):
                 mapping[ProjectID(f"{row.uuid}")] = {f"{row.uuid}": row.name} | {
-                    f"{node_id}": node["label"]
-                    for node_id, node in row.workbench.items()
+                    f"{node_id}": node["label"] for node_id, node in row.workbench.items()
                 }
 
         return mapping

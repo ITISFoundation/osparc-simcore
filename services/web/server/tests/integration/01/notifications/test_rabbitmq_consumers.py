@@ -105,16 +105,12 @@ async def _assert_handler_called(handler: mock.Mock, expected_call: mock._Call) 
         reraise=True,
     ):
         with attempt:
-            print(
-                f"--> checking if messages reached webclient... {attempt.retry_state.attempt_number} attempt"
-            )
+            print(f"--> checking if messages reached webclient... {attempt.retry_state.attempt_number} attempt")
             handler.assert_has_calls([expected_call])
             print(f"calls received! {attempt.retry_state.retry_object.statistics}")
 
 
-async def _assert_handler_called_with_json(
-    handler: mock.Mock, expected_call: dict[str, Any]
-) -> None:
+async def _assert_handler_called_with_json(handler: mock.Mock, expected_call: dict[str, Any]) -> None:
     async for attempt in AsyncRetrying(
         wait=wait_fixed(0.2),
         stop=stop_after_delay(10),
@@ -122,9 +118,7 @@ async def _assert_handler_called_with_json(
         reraise=True,
     ):
         with attempt:
-            print(
-                f"--> checking if messages reached webclient... {attempt.retry_state.attempt_number} attempt"
-            )
+            print(f"--> checking if messages reached webclient... {attempt.retry_state.attempt_number} attempt")
             handler.assert_called_once()
             call_args, _call_kwargs = handler.call_args
             assert call_args[0] == expected_call
@@ -210,19 +204,13 @@ def sender_user_id(user_id: UserID, sender_same_user_id: bool, faker: Faker) -> 
 
 
 @pytest.mark.parametrize("user_role", [UserRole.GUEST], ids=str)
-@pytest.mark.parametrize(
-    "sender_same_user_id", [True, False], ids=lambda id_: f"same_sender_id={id_}"
-)
-@pytest.mark.parametrize(
-    "subscribe_to_logs", [True, False], ids=lambda id_: f"subscribed={id_}"
-)
+@pytest.mark.parametrize("sender_same_user_id", [True, False], ids=lambda id_: f"same_sender_id={id_}")
+@pytest.mark.parametrize("subscribe_to_logs", [True, False], ids=lambda id_: f"subscribed={id_}")
 async def test_log_workflow(
     client: TestClient,
     rabbitmq_publisher: RabbitMQClient,
     subscribe_to_logs: bool,
-    create_socketio_connection: Callable[
-        [str | None, TestClient | None], Awaitable[tuple[socketio.AsyncClient, str]]
-    ],
+    create_socketio_connection: Callable[[str | None, TestClient | None], Awaitable[tuple[socketio.AsyncClient, str]]],
     # user
     sender_same_user_id: bool,
     sender_user_id: UserID,
@@ -255,9 +243,7 @@ async def test_log_workflow(
 
     call_expected = sender_same_user_id and subscribe_to_logs
     if call_expected:
-        expected_call = jsonable_encoder(
-            log_message, exclude={"user_id", "channel_name"}
-        )
+        expected_call = jsonable_encoder(log_message, exclude={"user_id", "channel_name"})
         await _assert_handler_called_with_json(mock_log_handler, expected_call)
     else:
         await _assert_handler_not_called(mock_log_handler)
@@ -319,18 +305,12 @@ async def test_log_workflow_only_receives_messages_if_subscribed(
     [p for p in ProgressType if p is not ProgressType.COMPUTATION_RUNNING],
     ids=str,
 )
-@pytest.mark.parametrize(
-    "sender_same_user_id", [True, False], ids=lambda id_: f"same_sender_id={id_}"
-)
-@pytest.mark.parametrize(
-    "subscribe_to_logs", [True, False], ids=lambda id_: f"subscribed={id_}"
-)
+@pytest.mark.parametrize("sender_same_user_id", [True, False], ids=lambda id_: f"same_sender_id={id_}")
+@pytest.mark.parametrize("subscribe_to_logs", [True, False], ids=lambda id_: f"subscribed={id_}")
 async def test_progress_non_computational_workflow(
     client: TestClient,
     rabbitmq_publisher: RabbitMQClient,
-    create_socketio_connection: Callable[
-        [str | None, TestClient | None], Awaitable[tuple[socketio.AsyncClient, str]]
-    ],
+    create_socketio_connection: Callable[[str | None, TestClient | None], Awaitable[tuple[socketio.AsyncClient, str]]],
     subscribe_to_logs: bool,
     progress_type: ProgressType,
     # user
@@ -350,15 +330,13 @@ async def test_progress_non_computational_workflow(
 
     mock_progress_handler = mocker.MagicMock()
 
-    socket_io_conn.on(
-        WebSocketNodeProgress.get_event_type(), handler=mock_progress_handler
-    )
+    socket_io_conn.on(WebSocketNodeProgress.get_event_type(), handler=mock_progress_handler)
 
     if subscribe_to_logs:
         assert client.app
         await project_logs.subscribe(client.app, user_project_id)
 
-    # this simulates the user openning the project
+    # this simulates the user opening the project
     await get_socket_server(client.app).enter_room(
         socket_io_conn.get_sid(), SocketIORoomStr.from_project_id(user_project_id)
     )
@@ -373,9 +351,7 @@ async def test_progress_non_computational_workflow(
 
     call_expected = subscribe_to_logs
     if call_expected:
-        expected_call = WebSocketNodeProgress.from_rabbit_message(
-            progress_message
-        ).to_socket_dict()["data"]
+        expected_call = WebSocketNodeProgress.from_rabbit_message(progress_message).to_socket_dict()["data"]
         await _assert_handler_called_with_json(mock_progress_handler, expected_call)
     else:
         await _assert_handler_not_called(mock_progress_handler)
@@ -431,16 +407,12 @@ async def test_instrumentation_workflow(
 
 
 @pytest.mark.parametrize("user_role", [UserRole.GUEST], ids=str)
-@pytest.mark.parametrize(
-    "sender_same_user_id", [True, False], ids=lambda id_: f"same_sender_id={id_}"
-)
+@pytest.mark.parametrize("sender_same_user_id", [True, False], ids=lambda id_: f"same_sender_id={id_}")
 async def test_event_workflow(
     mocker: MockerFixture,
     client: TestClient,
     rabbitmq_publisher: RabbitMQClient,
-    create_socketio_connection: Callable[
-        [str | None, TestClient | None], Awaitable[tuple[socketio.AsyncClient, str]]
-    ],
+    create_socketio_connection: Callable[[str | None, TestClient | None], Awaitable[tuple[socketio.AsyncClient, str]]],
     # user
     sender_same_user_id: bool,
     sender_user_id: UserID,

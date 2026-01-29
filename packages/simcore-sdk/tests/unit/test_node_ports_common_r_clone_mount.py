@@ -142,8 +142,12 @@ class _TestingDelegate(DelegateInterface):
 
     async def remove_container(self, container_name: str) -> None:
         async with Docker() as client:
-            existing_container = await client.containers.get(container_name)
-            await existing_container.delete(force=True)
+            try:
+                existing_container = await client.containers.get(container_name)
+                await existing_container.delete(force=True)
+            except aiodocker.exceptions.DockerError as e:
+                if e.status != 404:
+                    raise
 
     async def get_node_address(self) -> str:
         async with Docker() as client:
@@ -156,7 +160,9 @@ class _TestingDelegate(DelegateInterface):
 async def r_clone_mount_manager(
     r_clone_settings: RCloneSettings, mocked_shutdown: AsyncMock, vfs_cache_path: Path
 ) -> AsyncIterator[RCloneMountManager]:
-    manager = RCloneMountManager(r_clone_settings, delegate=_TestingDelegate(vfs_cache_path, mocked_shutdown))
+    manager = RCloneMountManager(
+        r_clone_settings, requires_data_mounting=True, delegate=_TestingDelegate(vfs_cache_path, mocked_shutdown)
+    )
     await manager.setup()
 
     yield manager

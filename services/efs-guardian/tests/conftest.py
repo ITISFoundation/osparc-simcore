@@ -54,9 +54,7 @@ def installed_package_dir() -> Path:
 
 
 @pytest.fixture
-def env_devel_dict(
-    env_devel_dict: EnvVarsDict, external_envfile_dict: EnvVarsDict
-) -> EnvVarsDict:
+def env_devel_dict(env_devel_dict: EnvVarsDict, external_envfile_dict: EnvVarsDict) -> EnvVarsDict:
     if external_envfile_dict:
         return deepcopy(external_envfile_dict)
     return env_devel_dict

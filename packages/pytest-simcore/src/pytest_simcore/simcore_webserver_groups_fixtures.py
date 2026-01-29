@@ -8,7 +8,6 @@ Fixtures for groups
 NOTE: These fixtures are used in integration and unit tests
 """
 
-
 from collections.abc import AsyncIterator
 from typing import Any
 
@@ -18,13 +17,14 @@ from aiohttp.test_utils import TestClient
 from models_library.api_schemas_webserver.groups import GroupGet
 from models_library.groups import GroupsByTypeTuple, StandardGroupCreate
 from models_library.users import UserID
-from pytest_simcore.helpers.webserver_users import NewUser, UserInfoDict
 from simcore_service_webserver.groups._groups_service import (
     add_user_in_group,
     create_standard_group,
     delete_standard_group,
     list_user_groups_with_read_access,
 )
+
+from pytest_simcore.helpers.webserver_users import NewUser, UserInfoDict
 
 
 def _groupget_model_dump(group, access_rights) -> dict[str, Any]:
@@ -35,9 +35,7 @@ def _groupget_model_dump(group, access_rights) -> dict[str, Any]:
     )
 
 
-async def _create_organization(
-    app: web.Application, user_id: UserID, new_group: dict
-) -> dict[str, Any]:
+async def _create_organization(app: web.Application, user_id: UserID, new_group: dict) -> dict[str, Any]:
     group, access_rights = await create_standard_group(
         app,
         user_id=user_id,
@@ -69,7 +67,6 @@ async def standard_groups_owner(
         },
         client.app,
     ) as owner_user:
-
         # creates two groups
         sparc_group = await _create_organization(
             app=client.app,
@@ -111,12 +108,8 @@ async def standard_groups_owner(
         yield owner_user
 
         # clean groups
-        await delete_standard_group(
-            client.app, user_id=owner_user["id"], group_id=sparc_group["gid"]
-        )
-        await delete_standard_group(
-            client.app, user_id=owner_user["id"], group_id=team_black_group["gid"]
-        )
+        await delete_standard_group(client.app, user_id=owner_user["id"], group_id=sparc_group["gid"])
+        await delete_standard_group(client.app, user_id=owner_user["id"], group_id=team_black_group["gid"])
 
 
 @pytest.fixture
@@ -127,9 +120,7 @@ async def logged_user_groups_by_type(
 
     assert logged_user["id"] != standard_groups_owner["id"]
 
-    groups_by_type = await list_user_groups_with_read_access(
-        client.app, user_id=logged_user["id"]
-    )
+    groups_by_type = await list_user_groups_with_read_access(client.app, user_id=logged_user["id"])
     assert groups_by_type.primary
     assert groups_by_type.everyone
     return groups_by_type

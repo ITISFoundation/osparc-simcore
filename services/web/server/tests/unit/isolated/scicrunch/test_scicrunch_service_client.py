@@ -15,7 +15,7 @@ from pathlib import Path
 import pytest
 from aiohttp import web
 from aioresponses import aioresponses as AioResponsesMock
-from pytest_mock import MockerFixture  # noqa: N812
+from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from servicelib.aiohttp.application import create_safe_application
 from servicelib.aiohttp.client_session import get_client_session
@@ -35,9 +35,7 @@ def mock_scicrunch_service_api(
     mock_env_devel_environment: EnvVarsDict,
     aioresponses_mocker: AioResponsesMock,
 ) -> AioResponsesMock:
-    assert mock_env_devel_environment["SCICRUNCH_API_KEY"] == os.environ.get(
-        "SCICRUNCH_API_KEY"
-    )
+    assert mock_env_devel_environment["SCICRUNCH_API_KEY"] == os.environ.get("SCICRUNCH_API_KEY")
 
     API_KEY = os.environ.get("SCICRUNCH_API_KEY")
     assert os.environ.get("SCICRUNCH_API_BASE_URL") == "https://scicrunch.org/api/1"
@@ -71,9 +69,7 @@ def mock_scicrunch_service_api(
     aioresponses_mocker.get(
         f"https://scicrunch.org/api/1/resource/fields/view/SCR_018997?key={API_KEY}",
         status=200,
-        payload=json.loads(
-            (fake_data_dir / "get_osparc_resource_payload.json").read_text()
-        ),
+        payload=json.loads((fake_data_dir / "get_osparc_resource_payload.json").read_text()),
     )
     # curl -X GET "https://scicrunch.org/api/1/resource/versions/all/SCR_018997" -H "accept: application/json"
     aioresponses_mocker.get(
@@ -96,9 +92,7 @@ async def mock_scicrunch_service_resolver(
     aioresponses_mocker.get(
         "https://scicrunch.org/resolver/SCR_018997.json",
         status=200,
-        payload=json.loads(
-            (fake_data_dir / "get_scicrunch_resolver_response.json").read_text()
-        ),
+        payload=json.loads((fake_data_dir / "get_scicrunch_resolver_response.json").read_text()),
     )
 
 

@@ -64,7 +64,7 @@ payments_autorecharge = sa.Table(
         doc="Primary payment method selected for auto-recharge or None if unassigned",
         # NOTE: Initially we thought 'ondelete=SET NULL' but it would require nullability and therefore dropping uniqueness
         # Not to mention the state where 'enabled=True' and 'primary_payment_method_id=None'. Finally we decided to fully
-        # delete the line which will result in wallet default introduced by the api-layer. The only dissadvantage is that
+        # delete the line which will result in wallet default introduced by the api-layer. The only disadvantage is that
         # the user would loose his previous settings.
     ),
     sa.Column(
@@ -78,8 +78,7 @@ payments_autorecharge = sa.Table(
         sa.Numeric(**NUMERIC_KWARGS),  # type: ignore
         nullable=True,
         server_default=None,
-        doc="[Optional] Maximum amount in USD charged within a natural month"
-        "If None, indicates no limit",
+        doc="[Optional] Maximum amount in USD charged within a natural monthIf None, indicates no limit",
     ),
     # time-stamps
     column_created_datetime(timezone=True),

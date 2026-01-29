@@ -6,6 +6,7 @@ from models_library.services_types import ServiceKey, ServiceVersion
 from models_library.users import UserID
 from packaging.specifiers import SpecifierSet
 from packaging.version import Version
+
 from simcore_service_catalog.utils.versioning import as_version
 
 from ..models.services_db import ReleaseDBGet
@@ -18,9 +19,7 @@ def _get_default_compatibility_specs(target: ServiceVersion | Version) -> Specif
     SEE https://packaging.python.org/en/latest/specifications/version-specifiers/#id5
     """
     version = as_version(target)
-    return SpecifierSet(
-        f">{version}, ~={version.major}.{version.minor}.{version.micro}"
-    )
+    return SpecifierSet(f">{version}, ~={version.major}.{version.minor}.{version.micro}")
 
 
 def _get_latest_compatible_version(
@@ -32,9 +31,7 @@ def _get_latest_compatible_version(
     Returns latest version in history that satisfies `>X.Y.Z, ~=X.Y.Z` (default policy if compatibility_specs=None) or compatibility_specs
     Returns None if no version in history satisfies specs.
     """
-    compatibility_specs = compatibility_specs or _get_default_compatibility_specs(
-        target
-    )
+    compatibility_specs = compatibility_specs or _get_default_compatibility_specs(target)
     compatible_versions = [v for v in service_versions if v in compatibility_specs]
     return max(compatible_versions, default=None)
 
@@ -69,9 +66,7 @@ async def _evaluate_custom_compatibility(
     versions_specifier = SpecifierSet(compatibility_policy["versions_specifier"])
     versions_to_check = other_service_versions or released_versions
 
-    if latest_version := _get_latest_compatible_version(
-        target_version, versions_to_check, versions_specifier
-    ):
+    if latest_version := _get_latest_compatible_version(target_version, versions_to_check, versions_specifier):
         if other_service_key:
             return Compatibility(
                 can_update_to=CompatibleService(
@@ -116,9 +111,7 @@ async def evaluate_service_compatibility_map(
             release.version,
             released_versions,
         ):
-            compatibility = Compatibility(
-                can_update_to=CompatibleService(version=f"{latest_version}")
-            )
+            compatibility = Compatibility(can_update_to=CompatibleService(version=f"{latest_version}"))
         compatibility_map[release.version] = compatibility
 
     return compatibility_map

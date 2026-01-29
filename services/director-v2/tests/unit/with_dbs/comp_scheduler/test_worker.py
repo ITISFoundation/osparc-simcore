@@ -84,9 +84,7 @@ async def test_worker_properly_autocalls_scheduler_api(
 
 @pytest.fixture
 async def mocked_scheduler_api(mocker: MockerFixture) -> mock.Mock:
-    return mocker.patch(
-        "simcore_service_director_v2.modules.comp_scheduler._scheduler_base.BaseCompScheduler.apply"
-    )
+    return mocker.patch("simcore_service_director_v2.modules.comp_scheduler._scheduler_base.BaseCompScheduler.apply")
 
 
 @pytest.fixture
@@ -100,9 +98,7 @@ def with_scheduling_concurrency(
 
 
 @pytest.mark.parametrize("scheduling_concurrency", [1, 50, 100])
-@pytest.mark.parametrize(
-    "queue_name", [SchedulePipelineRabbitMessage.get_channel_name()]
-)
+@pytest.mark.parametrize("queue_name", [SchedulePipelineRabbitMessage.get_channel_name()])
 async def test_worker_scheduling_parallelism(
     rabbit_service: RabbitSettings,
     ensure_parametrized_queue_is_empty: None,
@@ -136,9 +132,7 @@ async def test_worker_scheduling_parallelism(
         )
 
     # whatever scheduling concurrency we call in here, we shall always see the same number of calls to the scheduler
-    await asyncio.gather(
-        *(_project_pipeline_creation_workflow() for _ in range(scheduling_concurrency))
-    )
+    await asyncio.gather(*(_project_pipeline_creation_workflow() for _ in range(scheduling_concurrency)))
     # the call to run the pipeline is async so we need to wait here
     mocked_scheduler_api.assert_called()
 

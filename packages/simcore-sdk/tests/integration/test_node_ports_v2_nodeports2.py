@@ -95,10 +95,7 @@ async def _check_port_valid(
         if isinstance(port_values[key_name], dict):
             assert port.value
             assert isinstance(port.value, DownloadLink | PortLink | BaseFileLink)
-            assert (
-                port.value.model_dump(by_alias=True, exclude_unset=True)
-                == port_values[key_name]
-            )
+            assert port.value.model_dump(by_alias=True, exclude_unset=True) == port_values[key_name]
         else:
             assert port.value == port_values[key_name]
     elif "defaultValue" in port_schema:
@@ -317,53 +314,33 @@ async def test_port_file_accessors(
     )
     await check_config_valid(PORTS, config_dict)
     assert (
-        await (await PORTS.outputs)[
-            TypeAdapter(ServicePortKey).validate_python("out_34")
-        ].get()
-        is None
-    )  # check emptyness
+        await (await PORTS.outputs)[TypeAdapter(ServicePortKey).validate_python("out_34")].get() is None
+    )  # check emptiness
     with pytest.raises(exceptions.S3InvalidPathError):
-        await (await PORTS.inputs)[
-            TypeAdapter(ServicePortKey).validate_python("in_1")
-        ].get()
+        await (await PORTS.inputs)[TypeAdapter(ServicePortKey).validate_python("in_1")].get()
 
     # this triggers an upload to S3 + configuration change
-    await (await PORTS.outputs)[
-        TypeAdapter(ServicePortKey).validate_python("out_34")
-    ].set(item_value)
+    await (await PORTS.outputs)[TypeAdapter(ServicePortKey).validate_python("out_34")].set(item_value)
     # this is the link to S3 storage
-    value = (await PORTS.outputs)[
-        TypeAdapter(ServicePortKey).validate_python("out_34")
-    ].value
+    value = (await PORTS.outputs)[TypeAdapter(ServicePortKey).validate_python("out_34")].value
     assert isinstance(value, DownloadLink | PortLink | BaseFileLink)
     received_file_link = value.model_dump(by_alias=True, exclude_unset=True)
     assert received_file_link["store"] == s3_simcore_location
     assert (
-        received_file_link["path"]
-        == Path(
-            f"{project_id}", f"{node_uuid}", "out_34", Path(item_value).name
-        ).as_posix()
+        received_file_link["path"] == Path(f"{project_id}", f"{node_uuid}", "out_34", Path(item_value).name).as_posix()
     )
     # the eTag is created by the S3 server
     assert received_file_link["eTag"]
 
     # this triggers a download from S3 to a location in /tempdir/simcorefiles/item_key
     assert isinstance(
-        await (await PORTS.outputs)[
-            TypeAdapter(ServicePortKey).validate_python("out_34")
-        ].get(),
+        await (await PORTS.outputs)[TypeAdapter(ServicePortKey).validate_python("out_34")].get(),
         item_pytype,
     )
-    downloaded_file = await (await PORTS.outputs)[
-        TypeAdapter(ServicePortKey).validate_python("out_34")
-    ].get()
+    downloaded_file = await (await PORTS.outputs)[TypeAdapter(ServicePortKey).validate_python("out_34")].get()
     assert isinstance(downloaded_file, Path)
     assert downloaded_file.exists()
-    assert str(
-        await (await PORTS.outputs)[
-            TypeAdapter(ServicePortKey).validate_python("out_34")
-        ].get()
-    ).startswith(
+    assert str(await (await PORTS.outputs)[TypeAdapter(ServicePortKey).validate_python("out_34")].get()).startswith(
         str(
             Path(
                 tempfile.gettempdir(),
@@ -408,9 +385,7 @@ async def test_adding_new_ports(
         }
     )
     config_dict["inputs"].update({"in_15": 15})
-    np_helpers.update_configuration(
-        postgres_db, project_id, node_uuid, config_dict
-    )  # pylint: disable=E1101
+    np_helpers.update_configuration(postgres_db, project_id, node_uuid, config_dict)  # pylint: disable=E1101
     await check_config_valid(PORTS, config_dict)
 
     # # replace the configuration now, add an output
@@ -424,9 +399,7 @@ async def test_adding_new_ports(
             }
         }
     )
-    np_helpers.update_configuration(
-        postgres_db, project_id, node_uuid, config_dict
-    )  # pylint: disable=E1101
+    np_helpers.update_configuration(postgres_db, project_id, node_uuid, config_dict)  # pylint: disable=E1101
     await check_config_valid(PORTS, config_dict)
 
 
@@ -454,16 +427,12 @@ async def test_removing_ports(
     # let's remove the first input
     del config_dict["schema"]["inputs"]["in_14"]
     del config_dict["inputs"]["in_14"]
-    np_helpers.update_configuration(
-        postgres_db, project_id, node_uuid, config_dict
-    )  # pylint: disable=E1101
+    np_helpers.update_configuration(postgres_db, project_id, node_uuid, config_dict)  # pylint: disable=E1101
     await check_config_valid(PORTS, config_dict)
     # let's do the same for the second output
     del config_dict["schema"]["outputs"]["out_2"]
     del config_dict["outputs"]["out_2"]
-    np_helpers.update_configuration(
-        postgres_db, project_id, node_uuid, config_dict
-    )  # pylint: disable=E1101
+    np_helpers.update_configuration(postgres_db, project_id, node_uuid, config_dict)  # pylint: disable=E1101
     await check_config_valid(PORTS, config_dict)
 
 
@@ -514,16 +483,9 @@ async def test_get_value_from_previous_node(
     )
 
     await check_config_valid(PORTS, config_dict)
-    input_value = await (await PORTS.inputs)[
-        TypeAdapter(ServicePortKey).validate_python("in_15")
-    ].get()
+    input_value = await (await PORTS.inputs)[TypeAdapter(ServicePortKey).validate_python("in_15")].get()
     assert isinstance(input_value, item_pytype)
-    assert (
-        await (await PORTS.inputs)[
-            TypeAdapter(ServicePortKey).validate_python("in_15")
-        ].get()
-        == item_value
-    )
+    assert await (await PORTS.inputs)[TypeAdapter(ServicePortKey).validate_python("in_15")].get() == item_value
 
 
 @pytest.mark.parametrize(
@@ -550,9 +512,7 @@ async def test_get_file_from_previous_node(
 ):
     config_dict, _, _ = await create_2nodes_configuration(
         prev_node_inputs=None,
-        prev_node_outputs=[
-            ("output_int", item_type, await create_store_link(item_value))
-        ],
+        prev_node_outputs=[("output_int", item_type, await create_store_link(item_value))],
         inputs=[("in_15", item_type, create_node_link("output_int"))],
         outputs=None,
         project_id=project_id,
@@ -567,9 +527,7 @@ async def test_get_file_from_previous_node(
         db_manager=default_db_manager,
     )
     await check_config_valid(PORTS, config_dict)
-    file_path = await (await PORTS.inputs)[
-        TypeAdapter(ServicePortKey).validate_python("in_15")
-    ].get()
+    file_path = await (await PORTS.inputs)[TypeAdapter(ServicePortKey).validate_python("in_15")].get()
     assert isinstance(file_path, item_pytype)
     assert file_path == Path(
         tempfile.gettempdir(),
@@ -628,13 +586,9 @@ async def test_get_file_from_previous_node_with_mapping_of_same_key_name(
     await check_config_valid(PORTS, config_dict)
     # add a filetokeymap
     config_dict["schema"]["inputs"]["in_15"]["fileToKeyMap"] = {item_alias: "in_15"}
-    np_helpers.update_configuration(
-        postgres_db, project_id, this_node_uuid, config_dict
-    )  # pylint: disable=E1101
+    np_helpers.update_configuration(postgres_db, project_id, this_node_uuid, config_dict)  # pylint: disable=E1101
     await check_config_valid(PORTS, config_dict)
-    file_path = await (await PORTS.inputs)[
-        TypeAdapter(ServicePortKey).validate_python("in_15")
-    ].get()
+    file_path = await (await PORTS.inputs)[TypeAdapter(ServicePortKey).validate_python("in_15")].get()
     assert isinstance(file_path, item_pytype)
     assert file_path == Path(
         tempfile.gettempdir(),
@@ -692,13 +646,9 @@ async def test_file_mapping(
     # add a filetokeymap
     config_dict["schema"]["inputs"]["in_1"]["fileToKeyMap"] = {item_alias: "in_1"}
     config_dict["schema"]["outputs"]["out_1"]["fileToKeyMap"] = {item_alias: "out_1"}
-    np_helpers.update_configuration(
-        postgres_db, project_id, node_uuid, config_dict
-    )  # pylint: disable=E1101
+    np_helpers.update_configuration(postgres_db, project_id, node_uuid, config_dict)  # pylint: disable=E1101
     await check_config_valid(PORTS, config_dict)
-    file_path = await (await PORTS.inputs)[
-        TypeAdapter(ServicePortKey).validate_python("in_1")
-    ].get()
+    file_path = await (await PORTS.inputs)[TypeAdapter(ServicePortKey).validate_python("in_1")].get()
     assert isinstance(file_path, item_pytype)
     assert file_path == Path(
         tempfile.gettempdir(),
@@ -709,9 +659,7 @@ async def test_file_mapping(
     )
 
     # let's get it a second time to see if replacing works
-    file_path = await (await PORTS.inputs)[
-        TypeAdapter(ServicePortKey).validate_python("in_1")
-    ].get()
+    file_path = await (await PORTS.inputs)[TypeAdapter(ServicePortKey).validate_python("in_1")].get()
     assert isinstance(file_path, item_pytype)
     assert file_path == Path(
         tempfile.gettempdir(),
@@ -728,9 +676,7 @@ async def test_file_mapping(
     assert isinstance(file_path, Path)
     await PORTS.set_file_by_keymap(file_path)
     file_id = create_valid_file_uuid("out_1", file_path)
-    value = (await PORTS.outputs)[
-        TypeAdapter(ServicePortKey).validate_python("out_1")
-    ].value
+    value = (await PORTS.outputs)[TypeAdapter(ServicePortKey).validate_python("out_1")].value
     assert isinstance(value, DownloadLink | PortLink | BaseFileLink)
     received_file_link = value.model_dump(by_alias=True, exclude_unset=True)
     assert received_file_link["store"] == s3_simcore_location
@@ -787,24 +733,16 @@ async def test_regression_concurrent_port_update_fails(
 
     # when writing in serial these are expected to work
     for item_key, _, _ in outputs:
-        await (await PORTS.outputs)[
-            TypeAdapter(ServicePortKey).validate_python(item_key)
-        ].set(int_item_value)
-        assert (await PORTS.outputs)[
-            TypeAdapter(ServicePortKey).validate_python(item_key)
-        ].value == int_item_value
+        await (await PORTS.outputs)[TypeAdapter(ServicePortKey).validate_python(item_key)].set(int_item_value)
+        assert (await PORTS.outputs)[TypeAdapter(ServicePortKey).validate_python(item_key)].value == int_item_value
 
     # when writing in parallel and reading back,
     # they fail, with enough concurrency
     async def _upload_create_task(item_key: str) -> None:
-        await (await PORTS.outputs)[
-            TypeAdapter(ServicePortKey).validate_python(item_key)
-        ].set(parallel_int_item_value)
+        await (await PORTS.outputs)[TypeAdapter(ServicePortKey).validate_python(item_key)].set(parallel_int_item_value)
 
     # updating in parallel creates a race condition
-    results = await gather(
-        *[_upload_create_task(item_key) for item_key, _, _ in outputs]
-    )
+    results = await gather(*[_upload_create_task(item_key) for item_key, _, _ in outputs])
     assert len(results) == port_count
 
     # since a race condition was created when uploading values in parallel
@@ -824,7 +762,7 @@ class _Callbacks(OutputsCallbacks):
     async def aborted(self, key: ServicePortKey) -> None:
         pass
 
-    async def finished_succesfully(self, key: ServicePortKey) -> None:
+    async def finished_successfully(self, key: ServicePortKey) -> None:
         pass
 
     async def finished_with_error(self, key: ServicePortKey) -> None:
@@ -837,12 +775,10 @@ async def output_callbacks() -> _Callbacks:
 
 
 @pytest.fixture
-async def spy_outputs_callbaks(
-    mocker: MockerFixture, output_callbacks: _Callbacks
-) -> dict[str, AsyncMock]:
+async def spy_outputs_callbacks(mocker: MockerFixture, output_callbacks: _Callbacks) -> dict[str, AsyncMock]:
     return {
         "aborted": mocker.spy(output_callbacks, "aborted"),
-        "finished_succesfully": mocker.spy(output_callbacks, "finished_succesfully"),
+        "finished_successfully": mocker.spy(output_callbacks, "finished_successfully"),
         "finished_with_error": mocker.spy(output_callbacks, "finished_with_error"),
     }
 
@@ -857,7 +793,7 @@ async def test_batch_update_inputs_outputs(
     option_r_clone_settings: RCloneSettings | None,
     faker: Faker,
     output_callbacks: _Callbacks,
-    spy_outputs_callbaks: dict[str, AsyncMock],
+    spy_outputs_callbacks: dict[str, AsyncMock],
     use_output_callbacks: bool,
     default_db_manager: DBManager,
 ) -> None:
@@ -865,9 +801,7 @@ async def test_batch_update_inputs_outputs(
 
     outputs = [(f"value_out_{i}", "integer", None) for i in range(port_count)]
     inputs = [(f"value_in_{i}", "integer", None) for i in range(port_count)]
-    config_dict, _, _ = await create_special_configuration(
-        inputs=inputs, outputs=outputs
-    )
+    config_dict, _, _ = await create_special_configuration(inputs=inputs, outputs=outputs)
 
     PORTS = await node_ports_v2.ports(
         user_id=user_id,
@@ -881,14 +815,11 @@ async def test_batch_update_inputs_outputs(
     async with ProgressBarData(num_steps=2, description=faker.pystr()) as progress_bar:
         port_values = (await PORTS.outputs).values()
         await PORTS.set_multiple(
-            {
-                TypeAdapter(ServicePortKey).validate_python(port.key): (k, None)
-                for k, port in enumerate(port_values)
-            },
+            {TypeAdapter(ServicePortKey).validate_python(port.key): (k, None) for k, port in enumerate(port_values)},
             progress_bar=progress_bar,
             outputs_callbacks=callbacks,
         )
-        assert len(spy_outputs_callbaks["finished_succesfully"].call_args_list) == (
+        assert len(spy_outputs_callbacks["finished_successfully"].call_args_list) == (
             len(port_values) if use_output_callbacks else 0
         )
         # pylint: disable=protected-access
@@ -902,7 +833,7 @@ async def test_batch_update_inputs_outputs(
             outputs_callbacks=callbacks,
         )
         # inputs do not trigger callbacks
-        assert len(spy_outputs_callbaks["finished_succesfully"].call_args_list) == (
+        assert len(spy_outputs_callbacks["finished_successfully"].call_args_list) == (
             len(port_values) if use_output_callbacks else 0
         )
         assert progress_bar._current_steps == pytest.approx(2)  # noqa: SLF001
@@ -911,45 +842,25 @@ async def test_batch_update_inputs_outputs(
     ports_inputs = await PORTS.inputs
     for k, asd in enumerate(outputs):
         item_key, _, _ = asd
-        assert (
-            ports_outputs[TypeAdapter(ServicePortKey).validate_python(item_key)].value
-            == k
-        )
-        assert (
-            await ports_outputs[
-                TypeAdapter(ServicePortKey).validate_python(item_key)
-            ].get()
-            == k
-        )
+        assert ports_outputs[TypeAdapter(ServicePortKey).validate_python(item_key)].value == k
+        assert await ports_outputs[TypeAdapter(ServicePortKey).validate_python(item_key)].get() == k
 
     for k, asd in enumerate(inputs, start=1000):
         item_key, _, _ = asd
-        assert (
-            ports_inputs[TypeAdapter(ServicePortKey).validate_python(item_key)].value
-            == k
-        )
-        assert (
-            await ports_inputs[
-                TypeAdapter(ServicePortKey).validate_python(item_key)
-            ].get()
-            == k
-        )
+        assert ports_inputs[TypeAdapter(ServicePortKey).validate_python(item_key)].value == k
+        assert await ports_inputs[TypeAdapter(ServicePortKey).validate_python(item_key)].get() == k
 
     # test missing key raises error
     async with ProgressBarData(num_steps=1, description=faker.pystr()) as progress_bar:
         with pytest.raises(UnboundPortError):
             await PORTS.set_multiple(
-                {
-                    TypeAdapter(ServicePortKey).validate_python(
-                        "missing_key_in_both"
-                    ): (123132, None)
-                },
+                {TypeAdapter(ServicePortKey).validate_python("missing_key_in_both"): (123132, None)},
                 progress_bar=progress_bar,
                 outputs_callbacks=callbacks,
             )
 
-    assert len(spy_outputs_callbaks["finished_succesfully"].call_args_list) == (
+    assert len(spy_outputs_callbacks["finished_successfully"].call_args_list) == (
         len(port_values) if use_output_callbacks else 0
     )
-    assert len(spy_outputs_callbaks["aborted"].call_args_list) == 0
-    assert len(spy_outputs_callbaks["finished_with_error"].call_args_list) == 0
+    assert len(spy_outputs_callbacks["aborted"].call_args_list) == 0
+    assert len(spy_outputs_callbacks["finished_with_error"].call_args_list) == 0

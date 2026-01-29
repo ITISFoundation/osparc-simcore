@@ -34,12 +34,8 @@ from ._users import UserInfo
 _logger = logging.getLogger(__name__)
 
 
-_FILE_PICKER_KEY: ServiceKey = TypeAdapter(ServiceKey).validate_python(
-    "simcore/services/frontend/file-picker"
-)
-_FILE_PICKER_VERSION: ServiceVersion = TypeAdapter(ServiceVersion).validate_python(
-    "1.0.0"
-)
+_FILE_PICKER_KEY: ServiceKey = TypeAdapter(ServiceKey).validate_python("simcore/services/frontend/file-picker")
+_FILE_PICKER_VERSION: ServiceVersion = TypeAdapter(ServiceVersion).validate_python("1.0.0")
 
 
 def _generate_nodeids(project_id: ProjectID) -> tuple[NodeID, NodeID]:
@@ -155,9 +151,7 @@ def _create_project_with_filepicker_and_service(
     download_link: HttpUrl,
     viewer_info: ViewerInfo,
 ) -> Project:
-    file_picker, file_picker_output_id = _create_file_picker(
-        f"{download_link}", output_label=None
-    )
+    file_picker, file_picker_output_id = _create_file_picker(f"{download_link}", output_label=None)
 
     viewer_service = Node(
         key=viewer_info.key,
@@ -209,9 +203,7 @@ async def _add_new_project(
     db: ProjectDBAPI = app[PROJECT_DBAPI_APPKEY]
 
     # validated project is transform in dict via json to use only primitive types
-    project_in: dict = json_loads(
-        project.model_dump_json(exclude_none=True, by_alias=True)
-    )
+    project_in: dict = json_loads(project.model_dump_json(exclude_none=True, by_alias=True))
     # NOTE: Because of legacy reasons I do not want to remove the exclude_none=True from line above
     #       so I need to set the templateType here if it was removed.
     project_in["templateType"] = project_in.get("templateType")
@@ -230,9 +222,7 @@ async def _add_new_project(
     #
     # TODO: Ensure this user has access to these services!
     #
-    await create_or_update_pipeline(
-        app, user.id, project.uuid, product_name, product_api_base_url
-    )
+    await create_or_update_pipeline(app, user.id, project.uuid, product_name, product_api_base_url)
 
 
 async def _project_exists(
@@ -272,22 +262,16 @@ async def get_or_create_project_with_file_and_service(
     #   - if user requests several times, the same project is reused
     #   - if user is not a guest, the project will be saved in it's account (desired?)
     #
-    project_uid: ProjectID = _service.compose_uuid_from(
-        user.id, viewer.footprint, download_link
-    )
+    project_uid: ProjectID = _service.compose_uuid_from(user.id, viewer.footprint, download_link)
 
     # Ids are linked to produce a footprint (see viewer_project_exists)
     file_picker_id, service_id = _generate_nodeids(project_uid)
 
     try:
-        project_db: dict = await get_project_for_user(
-            app, f"{project_uid}", user.id, include_state=False
-        )
+        project_db: dict = await get_project_for_user(app, f"{project_uid}", user.id, include_state=False)
 
         # check if viewer already created by this app module
-        is_valid = {file_picker_id, service_id} == set(
-            project_db.get("workbench", {}).keys()
-        )
+        is_valid = {file_picker_id, service_id} == set(project_db.get("workbench", {}).keys())
         if is_valid:
             exists = True
         else:
@@ -382,9 +366,7 @@ async def get_or_create_project_with_file(
         project_uuid=project_uid,
     ):
         # nodes
-        file_picker, _ = _create_file_picker(
-            f"{file_params.download_link}", output_label=file_params.file_name
-        )
+        file_picker, _ = _create_file_picker(f"{file_params.download_link}", output_label=file_params.file_name)
 
         # project
         project = _create_project(

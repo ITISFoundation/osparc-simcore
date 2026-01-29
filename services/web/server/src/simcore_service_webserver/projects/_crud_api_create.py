@@ -88,9 +88,7 @@ async def _prepare_project_copy(
     assert settings  # nosec
     if max_bytes := settings.PROJECTS_MAX_COPY_SIZE_BYTES:
         # get project total data size
-        project_data_size = await get_project_total_size_simcore_s3(
-            app, user_id, src_project_uuid
-        )
+        project_data_size = await get_project_total_size_simcore_s3(app, user_id, src_project_uuid)
         if project_data_size >= max_bytes:
             raise web.HTTPUnprocessableEntity(
                 text=f"Source project data size is {project_data_size.human_readable()}."
@@ -112,9 +110,7 @@ async def _prepare_project_copy(
 
     copy_project_nodes_coro = None
     if len(nodes_map) > 0:
-        copy_project_nodes_coro = _copy_project_nodes_from_source_project(
-            app, source_project, nodes_map
-        )
+        copy_project_nodes_coro = _copy_project_nodes_from_source_project(app, source_project, nodes_map)
 
     copy_file_coro = None
     if deep_copy and len(nodes_map) > 0:
@@ -188,11 +184,7 @@ async def _copy_files_from_source_project(
                     else None
                 ),
                 percent=TypeAdapter(ProgressPercent).validate_python(
-                    (
-                        starting_value
-                        + async_job_composed_result.status.progress.percent_value
-                        * (1.0 - starting_value)
-                    ),
+                    (starting_value + async_job_composed_result.status.progress.percent_value * (1.0 - starting_value)),
                 ),
             )
             if async_job_composed_result.done:
@@ -231,9 +223,7 @@ async def _compose_project_data(
             NodeID(node_id): ProjectNodeCreate(
                 node_id=NodeID(node_id),
                 required_resources=jsonable_encoder(
-                    await catalog_service.get_service_resources(
-                        app, user_id, node_data["key"], node_data["version"]
-                    )
+                    await catalog_service.get_service_resources(app, user_id, node_data["key"], node_data["version"])
                 ),
                 key=node_data.get("key"),
                 version=node_data.get("version"),
@@ -346,9 +336,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
             prj_to_folder_db = await _folders_repository.get_project_to_folder(
                 app,
                 project_id=from_study,
-                private_workspace_user_id_or_none=(
-                    user_id if workspace_id is None else None
-                ),
+                private_workspace_user_id_or_none=(user_id if workspace_id is None else None),
             )
             if prj_to_folder_db:
                 # As user has access to the project, it has implicitly access to the folder
@@ -394,9 +382,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
                 app,
                 project_id=new_project["uuid"],
                 folder_id=folder_id,
-                private_workspace_user_id_or_none=(
-                    user_id if workspace_id is None else None
-                ),
+                private_workspace_user_id_or_none=(user_id if workspace_id is None else None),
             )
 
         # 4. deep copy source project's files
@@ -413,9 +399,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
             )
 
         # update the network information in director-v2
-        await dynamic_scheduler_service.update_projects_networks(
-            app, project_id=ProjectID(new_project["uuid"])
-        )
+        await dynamic_scheduler_service.update_projects_networks(app, project_id=ProjectID(new_project["uuid"]))
         await progress.update()
 
         # This is a new project and every new graph needs to be reflected in the pipeline tables
@@ -427,28 +411,18 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
             product_api_base_url,
         )
         # get the latest state of the project (lastChangeDate for instance)
-        new_project, _ = await _projects_repository_legacy.get_project_dict_and_type(
-            project_uuid=new_project["uuid"]
-        )
+        new_project, _ = await _projects_repository_legacy.get_project_dict_and_type(project_uuid=new_project["uuid"])
         # Appends state
-        new_project = await _projects_service.add_project_states_for_user(
-            user_id=user_id, project=new_project, app=app
-        )
+        new_project = await _projects_service.add_project_states_for_user(user_id=user_id, project=new_project, app=app)
         await progress.update()
 
         # Adds permalink
-        await update_or_pop_permalink_in_project(
-            app, request_url, request_headers, new_project
-        )
+        await update_or_pop_permalink_in_project(app, request_url, request_headers, new_project)
 
         # Adds folderId
-        user_specific_project_data_db = (
-            await _projects_repository_legacy.get_user_specific_project_data_db(
-                project_uuid=new_project["uuid"],
-                private_workspace_user_id_or_none=(
-                    user_id if workspace_id is None else None
-                ),
-            )
+        user_specific_project_data_db = await _projects_repository_legacy.get_user_specific_project_data_db(
+            project_uuid=new_project["uuid"],
+            private_workspace_user_id_or_none=(user_id if workspace_id is None else None),
         )
         new_project["folderId"] = user_specific_project_data_db.folder_id
 
@@ -462,24 +436,17 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
                 permission=None,
             )
             new_project["accessRights"] = {
-                f"{gid}": access.model_dump()
-                for gid, access in workspace.access_rights.items()
+                f"{gid}": access.model_dump() for gid, access in workspace.access_rights.items()
             }
 
-        _project_product_name = await _projects_repository_legacy.get_project_product(
-            project_uuid=new_project["uuid"]
-        )
+        _project_product_name = await _projects_repository_legacy.get_project_product(project_uuid=new_project["uuid"])
         assert (
             _project_product_name == product_name  # nosec
         ), "Project product name mismatch"
         if _project_product_name != product_name:
-            raise web.HTTPBadRequest(
-                text=f"Project product name mismatch {product_name=} {_project_product_name=}"
-            )
+            raise web.HTTPBadRequest(text=f"Project product name mismatch {product_name=} {_project_product_name=}")
 
-        data = ProjectGet.from_domain_model(new_project).model_dump(
-            **RESPONSE_MODEL_POLICY
-        )
+        data = ProjectGet.from_domain_model(new_project).model_dump(**RESPONSE_MODEL_POLICY)
 
         return web.HTTPCreated(
             text=json_dumps({"data": data}),

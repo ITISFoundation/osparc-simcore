@@ -6,7 +6,7 @@
 
 
 from collections.abc import AsyncIterator
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from typing import cast
 
@@ -77,43 +77,39 @@ async def populate_payment_transaction_db(
     invoice_url: HttpUrl,
     stripe_invoice_id: StripeInvoiceID | None,
 ) -> AsyncIterator[PaymentID]:
-
-    async with insert_and_get_user_and_secrets_lifespan(
-        sqlalchemy_async_engine, id=user_id
-    ) as user_row:
-        async with insert_and_get_product_lifespan(
-            sqlalchemy_async_engine, name=product_name
-        ):
-            async with insert_and_get_wallet_lifespan(
-                sqlalchemy_async_engine,
-                product_name=product_name,
-                user_group_id=user_row["primary_gid"],
-                wallet_id=wallet_id,
-            ):
-                async with sqlalchemy_async_engine.begin() as con:
-                    result = await con.execute(
-                        payments_transactions.insert()
-                        .values(
-                            **random_payment_transaction(
-                                price_dollars=Decimal(9500),
-                                wallet_id=wallet_id,
-                                user_id=user_id,
-                                state=PaymentTransactionState.SUCCESS,
-                                completed_at=datetime.now(tz=timezone.utc),
-                                initiated_at=datetime.now(tz=timezone.utc)
-                                - timedelta(seconds=10),
-                                invoice_url=invoice_url,
-                                stripe_invoice_id=stripe_invoice_id,
-                            )
-                        )
-                        .returning(payments_transactions.c.payment_id)
+    async with (
+        insert_and_get_user_and_secrets_lifespan(sqlalchemy_async_engine, id=user_id) as user_row,
+        insert_and_get_product_lifespan(sqlalchemy_async_engine, name=product_name),
+        insert_and_get_wallet_lifespan(
+            sqlalchemy_async_engine,
+            product_name=product_name,
+            user_group_id=user_row["primary_gid"],
+            wallet_id=wallet_id,
+        ),
+    ):
+        async with sqlalchemy_async_engine.begin() as con:
+            result = await con.execute(
+                payments_transactions.insert()
+                .values(
+                    **random_payment_transaction(
+                        price_dollars=Decimal(9500),
+                        wallet_id=wallet_id,
+                        user_id=user_id,
+                        state=PaymentTransactionState.SUCCESS,
+                        completed_at=datetime.now(tz=UTC),
+                        initiated_at=datetime.now(tz=UTC) - timedelta(seconds=10),
+                        invoice_url=invoice_url,
+                        stripe_invoice_id=stripe_invoice_id,
                     )
-                    row = result.first()
+                )
+                .returning(payments_transactions.c.payment_id)
+            )
+            row = result.first()
 
-                yield cast(PaymentID, row[0])
+        yield cast(PaymentID, row[0])
 
-                async with sqlalchemy_async_engine.begin() as con:
-                    await con.execute(payments_transactions.delete())
+        async with sqlalchemy_async_engine.begin() as con:
+            await con.execute(payments_transactions.delete())
 
 
 @pytest.mark.parametrize(
@@ -134,7 +130,6 @@ async def test_get_payment_invoice_url(
     invoice_url = await payments.get_payment_invoice_url(
         repo=PaymentsTransactionsRepo(db_engine=app.state.engine),
         stripe_api=StripeApi.get_from_app_state(app),
-        #
         user_id=user_id,
         wallet_id=wallet_id,
         payment_id=populate_payment_transaction_db,

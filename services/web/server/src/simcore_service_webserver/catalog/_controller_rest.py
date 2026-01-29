@@ -68,9 +68,7 @@ routes = RouteTableDef()
 @handle_plugin_requests_exceptions
 async def list_services_latest(request: Request):
     request_ctx = CatalogRequestContext.create(request)
-    query_params: ListServiceParams = parse_request_query_parameters_as(
-        ListServiceParams, request
-    )
+    query_params: ListServiceParams = parse_request_query_parameters_as(ListServiceParams, request)
 
     page_items, page_meta = await _service.list_latest_services(
         request.app,
@@ -132,9 +130,7 @@ async def get_service(request: Request):
 async def update_service(request: Request):
     request_ctx = CatalogRequestContext.create(request)
     path_params = parse_request_path_parameters_as(ServicePathParams, request)
-    update: CatalogServiceUpdate = await parse_request_body_as(
-        CatalogServiceUpdate, request
-    )
+    update: CatalogServiceUpdate = await parse_request_body_as(CatalogServiceUpdate, request)
 
     assert request_ctx  # nosec
     assert path_params  # nosec
@@ -164,14 +160,10 @@ async def list_service_inputs(request: Request):
     path_params = parse_request_path_parameters_as(ServicePathParams, request)
 
     # Evaluate and return validated model
-    response_model = await _service.list_service_inputs(
-        path_params.service_key, path_params.service_version, ctx
-    )
+    response_model = await _service.list_service_inputs(path_params.service_key, path_params.service_version, ctx)
 
     data = [m.model_dump(**RESPONSE_MODEL_POLICY) for m in response_model]
-    return await asyncio.get_event_loop().run_in_executor(
-        None, envelope_json_response, data
-    )
+    return await asyncio.get_event_loop().run_in_executor(None, envelope_json_response, data)
 
 
 @routes.get(
@@ -193,9 +185,7 @@ async def get_service_input(request: Request):
     )
 
     data = response_model.model_dump(**RESPONSE_MODEL_POLICY)
-    return await asyncio.get_event_loop().run_in_executor(
-        None, envelope_json_response, data
-    )
+    return await asyncio.get_event_loop().run_in_executor(None, envelope_json_response, data)
 
 
 @routes.get(
@@ -221,9 +211,7 @@ async def get_compatible_inputs_given_source_output(request: Request):
         ctx,
     )
 
-    return await asyncio.get_event_loop().run_in_executor(
-        None, envelope_json_response, data
-    )
+    return await asyncio.get_event_loop().run_in_executor(None, envelope_json_response, data)
 
 
 @routes.get(
@@ -237,14 +225,10 @@ async def list_service_outputs(request: Request):
     path_params = parse_request_path_parameters_as(ServicePathParams, request)
 
     # Evaluate and return validated model
-    response_model = await _service.list_service_outputs(
-        path_params.service_key, path_params.service_version, ctx
-    )
+    response_model = await _service.list_service_outputs(path_params.service_key, path_params.service_version, ctx)
 
     data = [m.model_dump(**RESPONSE_MODEL_POLICY) for m in response_model]
-    return await asyncio.get_event_loop().run_in_executor(
-        None, envelope_json_response, data
-    )
+    return await asyncio.get_event_loop().run_in_executor(None, envelope_json_response, data)
 
 
 @routes.get(
@@ -266,9 +250,7 @@ async def get_service_output(request: Request):
     )
 
     data = response_model.model_dump(**RESPONSE_MODEL_POLICY)
-    return await asyncio.get_event_loop().run_in_executor(
-        None, envelope_json_response, data
-    )
+    return await asyncio.get_event_loop().run_in_executor(None, envelope_json_response, data)
 
 
 @routes.get(
@@ -285,9 +267,7 @@ async def get_compatible_outputs_given_target_input(request: Request):
     """
     ctx = CatalogRequestContext.create(request)
     path_params = parse_request_path_parameters_as(ServicePathParams, request)
-    query_params: ToServiceInputsQueryParams = parse_request_query_parameters_as(
-        ToServiceInputsQueryParams, request
-    )
+    query_params: ToServiceInputsQueryParams = parse_request_query_parameters_as(ToServiceInputsQueryParams, request)
 
     data = await _service.get_compatible_outputs_given_target_input(
         path_params.service_key,
@@ -298,9 +278,7 @@ async def get_compatible_outputs_given_target_input(request: Request):
         ctx,
     )
 
-    return await asyncio.get_event_loop().run_in_executor(
-        None, envelope_json_response, data
-    )
+    return await asyncio.get_event_loop().run_in_executor(None, envelope_json_response, data)
 
 
 @routes.get(
@@ -317,19 +295,15 @@ async def get_service_resources(request: Request):
     """
     ctx = CatalogRequestContext.create(request)
     path_params = parse_request_path_parameters_as(ServicePathParams, request)
-    service_resources: ServiceResourcesDict = (
-        await _catalog_rest_client_service.get_service_resources(
-            request.app,
-            user_id=ctx.user_id,
-            service_key=path_params.service_key,
-            service_version=path_params.service_version,
-        )
+    service_resources: ServiceResourcesDict = await _catalog_rest_client_service.get_service_resources(
+        request.app,
+        user_id=ctx.user_id,
+        service_key=path_params.service_key,
+        service_version=path_params.service_version,
     )
 
     data = ServiceResourcesDictHelpers.create_jsonable(service_resources)
-    return await asyncio.get_event_loop().run_in_executor(
-        None, envelope_json_response, data
-    )
+    return await asyncio.get_event_loop().run_in_executor(None, envelope_json_response, data)
 
 
 @routes.get(
@@ -355,9 +329,7 @@ async def get_service_pricing_plan(request: Request):
             service_version=f"{path_params.service_version}",
         )
 
-    return envelope_json_response(
-        PricingPlanGet.model_validate(pricing_plan.model_dump())
-    )
+    return envelope_json_response(PricingPlanGet.model_validate(pricing_plan.model_dump()))
 
 
 @routes.get(

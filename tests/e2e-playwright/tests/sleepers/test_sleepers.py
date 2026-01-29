@@ -37,12 +37,8 @@ _WAITING_FOR_PIPELINE_TO_CHANGE_STATE: Final[int] = 1 * MINUTE
 _WAITING_FOR_CLUSTER_MAX_WAITING_TIME: Final[int] = 5 * MINUTE
 _WAITING_FOR_STARTED_MAX_WAITING_TIME: Final[int] = 5 * MINUTE
 _WAITING_FOR_SUCCESS_MAX_WAITING_TIME_PER_SLEEPER: Final[int] = 1 * MINUTE
-_WAITING_FOR_FILE_NAMES_MAX_WAITING_TIME: Final[datetime.timedelta] = (
-    datetime.timedelta(seconds=30)
-)
-_WAITING_FOR_FILE_NAMES_WAIT_INTERVAL: Final[datetime.timedelta] = datetime.timedelta(
-    seconds=1
-)
+_WAITING_FOR_FILE_NAMES_MAX_WAITING_TIME: Final[datetime.timedelta] = datetime.timedelta(seconds=30)
+_WAITING_FOR_FILE_NAMES_WAIT_INTERVAL: Final[datetime.timedelta] = datetime.timedelta(seconds=1)
 
 _VERSION_TO_EXPECTED_FILE_NAMES: Final[dict[Version, list[str]]] = {
     parse_version("1.0.0"): ["logs.zip", "single_number.txt"],
@@ -51,9 +47,7 @@ _VERSION_TO_EXPECTED_FILE_NAMES: Final[dict[Version, list[str]]] = {
 
 
 def _get_expected_file_names_for_version(version: Version) -> list[str]:
-    for base_version, expected_file_names in reversed(
-        _VERSION_TO_EXPECTED_FILE_NAMES.items()
-    ):
+    for base_version, expected_file_names in reversed(_VERSION_TO_EXPECTED_FILE_NAMES.items()):
         if version >= base_version:
             return expected_file_names
     return []
@@ -81,16 +75,12 @@ def _get_file_names(page: Page) -> list[str]:
 def test_sleepers(
     page: Page,
     log_in_and_out: RobustWebSocket,
-    create_project_from_service_dashboard: Callable[
-        [ServiceType, str, str | None, str | None], dict[str, Any]
-    ],
+    create_project_from_service_dashboard: Callable[[ServiceType, str, str | None, str | None], dict[str, Any]],
     start_and_stop_pipeline: Callable[..., SocketIOEvent],
     num_sleepers: int,
     input_sleep_time: int | None,
 ):
-    project_data = create_project_from_service_dashboard(
-        ServiceType.COMPUTATIONAL, "sleeper", "itis", None
-    )
+    project_data = create_project_from_service_dashboard(ServiceType.COMPUTATIONAL, "sleeper", "itis", None)
 
     # we are now in the workbench
     with log_context(
@@ -98,9 +88,7 @@ def test_sleepers(
         f"create {num_sleepers} sleeper(s)...",
     ):
         for _ in range(1, num_sleepers):
-            with page.expect_response(
-                re.compile(rf"/projects/{project_data['uuid']}/nodes")
-            ):
+            with page.expect_response(re.compile(rf"/projects/{project_data['uuid']}/nodes")):
                 page.get_by_test_id("newNodeBtn").click()
                 page.get_by_placeholder("Filter").click()
                 page.get_by_placeholder("Filter").fill("sleeper")
@@ -108,9 +96,7 @@ def test_sleepers(
 
     # get sleeper version
     sleeper_version = parse_version("1.0.0")
-    sleeper_expected_output_files = _get_expected_file_names_for_version(
-        sleeper_version
-    )
+    sleeper_expected_output_files = _get_expected_file_names_for_version(sleeper_version)
     for index, sleeper in enumerate(page.get_by_test_id("nodeTreeItem").all()[1:]):
         with log_context(
             logging.INFO,
@@ -122,9 +108,7 @@ def test_sleepers(
             ctx.logger.info("found sleeper version: %s", version_string)
             assert version_string
             sleeper_version = parse_version(version_string)
-            sleeper_expected_output_files = _get_expected_file_names_for_version(
-                sleeper_version
-            )
+            sleeper_expected_output_files = _get_expected_file_names_for_version(sleeper_version)
             ctx.logger.info(
                 "we will expect the following outputs: %s",
                 sleeper_expected_output_files,
@@ -139,9 +123,7 @@ def test_sleepers(
     # set inputs if needed
     if input_sleep_time:
         for index, sleeper in enumerate(page.get_by_test_id("nodeTreeItem").all()[1:]):
-            with log_context(
-                logging.INFO, f"set sleeper {index} input time to {input_sleep_time}"
-            ):
+            with log_context(logging.INFO, f"set sleeper {index} input time to {input_sleep_time}"):
                 sleeper.click()
                 sleep_interval_selector = page.get_by_role("textbox").nth(1)
                 sleep_interval_selector.click()
@@ -226,9 +208,7 @@ def test_sleepers(
                 page.get_by_test_id("nodeFilesBtn").click()
                 output_file_names_found = _get_file_names(page)
 
-            msg = (
-                f"found {output_file_names_found=} in sleeper {index} service outputs."
-            )
+            msg = f"found {output_file_names_found=} in sleeper {index} service outputs."
             ctx.logger.info(msg)
             assert output_file_names_found == sleeper_expected_output_files
             page.get_by_test_id("nodeDataManagerCloseBtn").click()

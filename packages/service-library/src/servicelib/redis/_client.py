@@ -99,9 +99,7 @@ class RedisClientSDK:
         )
 
     async def shutdown(self) -> None:
-        with log_context(
-            _logger, level=logging.DEBUG, msg=f"Shutdown RedisClientSDK {self}"
-        ):
+        with log_context(_logger, level=logging.DEBUG, msg=f"Shutdown RedisClientSDK {self}"):
             if self._task_health_check:
                 assert self._started_event_task_health_check  # nosec
                 await self._started_event_task_health_check.wait()
@@ -131,9 +129,7 @@ class RedisClientSDK:
         """
         return self._is_healthy
 
-    def create_lock(
-        self, lock_name: str, *, ttl: datetime.timedelta | None = DEFAULT_LOCK_TTL
-    ) -> Lock:
+    def create_lock(self, lock_name: str, *, ttl: datetime.timedelta | None = DEFAULT_LOCK_TTL) -> Lock:
         return self._client.lock(
             name=lock_name,
             timeout=ttl.total_seconds() if ttl is not None else None,

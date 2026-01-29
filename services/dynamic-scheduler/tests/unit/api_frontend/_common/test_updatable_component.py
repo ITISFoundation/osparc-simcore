@@ -103,7 +103,9 @@ def not_initialized_app(
     nicegui.app.include_router(router)
 
     nicegui.ui.run_with(
-        minimal_app, mount_path=mount_path, storage_secret="test-secret"  # noqa: S106
+        minimal_app,
+        mount_path=mount_path,
+        storage_secret="test-secret",  # noqa: S106
     )
     set_parent_app(minimal_app)
     return minimal_app
@@ -162,11 +164,11 @@ class PersonComponent(BaseUpdatableComponent[Person]):
         with ui.element().classes("border"):
             # NOTE:
             # There are 3 ways to bind the UI to the model changes:
-            # 1. using nicegui builting facilties
+            # 1. using nicegui builting facilities
             # 2. via model attribute VALE change
             # 3. via model attribute TYPE change
             # The model attribute changes allow to trigger re-rendering of subcomponents.
-            # This should be mainly used for chainging the UI layout based on
+            # This should be mainly used for changing the UI layout based on
             # the attribute's value or type.
 
             # 1. bind the label directly to the model's attribute
@@ -225,9 +227,7 @@ async def _ensure_person_is_present(async_page: Page, person: Person) -> None:
     await _ensure_after_corpus(async_page)
 
 
-async def _ensure_companion_not_present(
-    async_page: Page, companion: Pet | Friend
-) -> None:
+async def _ensure_companion_not_present(async_page: Page, companion: Pet | Friend) -> None:
     if isinstance(companion, Pet):
         await assert_not_contains_text(async_page, f"Pet Name: {companion.name}")
         await assert_not_contains_text(async_page, f"Pet Species: {companion.species}")
@@ -327,7 +327,7 @@ async def test_updatable_component(
     await _ensure_after_corpus(async_page)
 
 
-async def test_multiple_componenets_management(
+async def test_multiple_components_management(
     app_runner: None,
     ensure_page_loaded: Callable[[Callable[[], None]], Awaitable[None]],
     async_page: Page,

@@ -1,8 +1,6 @@
 import logging
 from pathlib import Path
-from typing import Final
 
-from aiodocker.exceptions import DockerError
 from aiodocker.types import JSONObject
 from models_library.basic_types import PortInt
 from pydantic import ByteSize, NonNegativeInt
@@ -10,8 +8,6 @@ from pydantic import ByteSize, NonNegativeInt
 from ._models import DelegateInterface
 
 _logger = logging.getLogger(__name__)
-
-_NOT_FOUND: Final[int] = 404
 
 
 async def _get_config(
@@ -61,11 +57,3 @@ async def create_r_clone_container(
     _logger.debug(
         "Started rclone mount container '%s' with command='%s' (inspect=%s)", container_name, command, container_inspect
     )
-
-
-async def remove_container_if_exists(delegate: DelegateInterface, container_name: str) -> None:
-    try:
-        await delegate.remove_container(container_name)
-    except DockerError as e:
-        if e.status != _NOT_FOUND:
-            raise

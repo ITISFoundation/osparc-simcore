@@ -56,13 +56,11 @@ async def get_service_default_pricing_plan(
     service_version: ServiceVersion,
     db_engine: Annotated[AsyncEngine, Depends(get_resource_tracker_db_engine)],
 ) -> RutPricingPlanGet:
-    active_service_pricing_plans = (
-        await pricing_plans_db.list_active_service_pricing_plans_by_product_and_service(
-            db_engine,
-            product_name=product_name,
-            service_key=service_key,
-            service_version=service_version,
-        )
+    active_service_pricing_plans = await pricing_plans_db.list_active_service_pricing_plans_by_product_and_service(
+        db_engine,
+        product_name=product_name,
+        service_key=service_key,
+        service_version=service_version,
     )
 
     default_pricing_plan = None
@@ -72,9 +70,7 @@ async def get_service_default_pricing_plan(
             break
 
     if default_pricing_plan is None:
-        raise PricingPlanNotFoundForServiceError(
-            service_key=service_key, service_version=service_version
-        )
+        raise PricingPlanNotFoundForServiceError(service_key=service_key, service_version=service_version)
 
     pricing_plan_unit_db = await pricing_plans_db.list_pricing_units_by_pricing_plan(
         db_engine, pricing_plan_id=default_pricing_plan.pricing_plan_id
@@ -88,15 +84,12 @@ async def list_connected_services_to_pricing_plan_by_pricing_plan(
     pricing_plan_id: PricingPlanId,
     db_engine: Annotated[AsyncEngine, Depends(get_resource_tracker_db_engine)],
 ):
-    output_list: list[PricingPlanToServiceDB] = (
-        await pricing_plans_db.list_connected_services_to_pricing_plan_by_pricing_plan(
-            db_engine, product_name=product_name, pricing_plan_id=pricing_plan_id
-        )
+    output_list: list[
+        PricingPlanToServiceDB
+    ] = await pricing_plans_db.list_connected_services_to_pricing_plan_by_pricing_plan(
+        db_engine, product_name=product_name, pricing_plan_id=pricing_plan_id
     )
-    return [
-        TypeAdapter(PricingPlanToServiceGet).validate_python(item.model_dump())
-        for item in output_list
-    ]
+    return [TypeAdapter(PricingPlanToServiceGet).validate_python(item.model_dump()) for item in output_list]
 
 
 async def connect_service_to_pricing_plan(
@@ -106,14 +99,12 @@ async def connect_service_to_pricing_plan(
     service_version: ServiceVersion,
     db_engine: Annotated[AsyncEngine, Depends(get_resource_tracker_db_engine)],
 ) -> PricingPlanToServiceGet:
-    output: PricingPlanToServiceDB = (
-        await pricing_plans_db.upsert_service_to_pricing_plan(
-            db_engine,
-            product_name=product_name,
-            pricing_plan_id=pricing_plan_id,
-            service_key=service_key,
-            service_version=service_version,
-        )
+    output: PricingPlanToServiceDB = await pricing_plans_db.upsert_service_to_pricing_plan(
+        db_engine,
+        product_name=product_name,
+        pricing_plan_id=pricing_plan_id,
+        service_key=service_key,
+        service_version=service_version,
     )
     return TypeAdapter(PricingPlanToServiceGet).validate_python(output.model_dump())
 

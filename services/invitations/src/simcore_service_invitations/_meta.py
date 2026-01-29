@@ -25,9 +25,7 @@ APP_STARTED_BANNER_MSG = r"""
          (..)               /|o  |
          /\/\  Invitations /o|  o|
         c\db/o............/o_|_o_|  {}
-""".format(
-    f"v{__version__}"
-)
+""".format(f"v{__version__}")
 
 
 APP_FINISHED_BANNER_MSG = info.get_finished_banner()

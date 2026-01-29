@@ -15,9 +15,7 @@ CURRENT_DIR = Path(sys.argv[0] if __name__ == "__main__" else __file__).resolve(
 
 
 if __name__ == "__main__":
-    with Path.open(
-        CURRENT_DIR.parent / "common/schemas/project-v0.0.1-pydantic.json", "w"
-    ) as f:
+    with Path.open(CURRENT_DIR.parent / "common/schemas/project-v0.0.1-pydantic.json", "w") as f:
         schema = json_dumps(Project.model_json_schema())
         schema_without_ref = jsonref.loads(schema)
 

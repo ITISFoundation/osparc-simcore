@@ -67,9 +67,7 @@ async def shared_project(
 ):
     fake_project.update(
         {
-            "accessRights": {
-                f"{all_group['gid']}": {"read": True, "write": False, "delete": False}
-            },
+            "accessRights": {f"{all_group['gid']}": {"read": True, "write": False, "delete": False}},
         },
     )
     async with NewProject(
@@ -97,9 +95,7 @@ async def template_project(
     project_data = deepcopy(fake_project)
     project_data["name"] = "Fake template"
     project_data["uuid"] = "d4d0eca3-d210-4db6-84f9-63670b07176b"
-    project_data["accessRights"] = {
-        str(all_group["gid"]): {"read": True, "write": False, "delete": False}
-    }
+    project_data["accessRights"] = {str(all_group["gid"]): {"read": True, "write": False, "delete": False}}
 
     async with NewProject(
         project_data,

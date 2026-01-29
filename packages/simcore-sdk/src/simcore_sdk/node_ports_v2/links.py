@@ -47,9 +47,7 @@ DataItemValue = Union[
 # - ItemValue values are resolved into ItemConcreteValue using Port.get()
 # - ItemConcreteValue are the types finally consumed by the actual service port
 #
-SchemaValidatedTypes = Union[
-    StrictBool, StrictInt, StrictFloat, StrictStr, list[Any], dict[str, Any]
-]
+SchemaValidatedTypes = Union[StrictBool, StrictInt, StrictFloat, StrictStr, list[Any], dict[str, Any]]
 ItemValue = Union[SchemaValidatedTypes, AnyUrl]
 ItemConcreteValue = Union[SchemaValidatedTypes, Path]
 ItemConcreteValueTypes = (
@@ -68,6 +66,6 @@ __all__: tuple[str, ...] = (
     "DownloadLink",
     "FileLink",
     "ItemConcreteValue",
-    "SchemaValidatedTypes",
     "PortLink",
+    "SchemaValidatedTypes",
 )

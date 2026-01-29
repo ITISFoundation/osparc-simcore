@@ -57,9 +57,7 @@ class ServiceInRegistryInfoDict(TypedDict):
 def _create_service_description(
     service_type: Literal["computational", "dynamic"], name: str, tag: str
 ) -> ServiceDescriptionDict:
-    service_desc = json.loads(
-        (CURRENT_DIR / "dummy_service_description-v1.json").read_text()
-    )
+    service_desc = json.loads((CURRENT_DIR / "dummy_service_description-v1.json").read_text())
 
     if service_type == "computational":
         service_key_type = "comp"
@@ -76,16 +74,12 @@ def _create_service_description(
     return service_desc
 
 
-def _create_docker_labels(
-    service_description: ServiceDescriptionDict, *, bad_json_format: bool
-) -> dict[str, str]:
+def _create_docker_labels(service_description: ServiceDescriptionDict, *, bad_json_format: bool) -> dict[str, str]:
     docker_labels = {}
     for key, value in service_description.items():
         docker_labels[".".join(["io", "simcore", key])] = json.dumps({key: value})
         if bad_json_format:
-            docker_labels[".".join(["io", "simcore", key])] = (
-                "d32;'" + docker_labels[".".join(["io", "simcore", key])]
-            )
+            docker_labels[".".join(["io", "simcore", key])] = "d32;'" + docker_labels[".".join(["io", "simcore", key])]
 
     return docker_labels
 
@@ -100,9 +94,7 @@ CMD while true; do sleep 10; done
 
     # build docker base image
     docker = Docker()
-    base_docker_image = await docker.images.build(
-        fileobj=tar_obj, encoding="gzip", rm=True, labels=labels, tag=tag
-    )
+    base_docker_image = await docker.images.build(fileobj=tar_obj, encoding="gzip", rm=True, labels=labels, tag=tag)
     await docker.close()
     return base_docker_image
 
@@ -119,9 +111,7 @@ async def _build_and_push_image(
 ) -> ServiceInRegistryInfoDict:
     # crate image
     service_description = _create_service_description(service_type, name, tag)
-    docker_labels = _create_docker_labels(
-        service_description, bad_json_format=bad_json_format
-    )
+    docker_labels = _create_docker_labels(service_description, bad_json_format=bad_json_format)
     additional_docker_labels = [
         {
             "name": "constraints",
@@ -153,9 +143,7 @@ async def _build_and_push_image(
         )
     docker_labels["simcore.service.settings"] = json.dumps(additional_docker_labels)
     if bad_json_format:
-        docker_labels["simcore.service.settings"] = (
-            "'fjks" + docker_labels["simcore.service.settings"]
-        )
+        docker_labels["simcore.service.settings"] = "'fjks" + docker_labels["simcore.service.settings"]
 
     if dependent_image is not None:
         dependent_description = dependent_image["service_description"]
@@ -165,13 +153,9 @@ async def _build_and_push_image(
                 "tag": dependent_description["version"],
             }
         ]
-        docker_labels["simcore.service.dependencies"] = json.dumps(
-            dependency_docker_labels
-        )
+        docker_labels["simcore.service.dependencies"] = json.dumps(dependency_docker_labels)
         if bad_json_format:
-            docker_labels["simcore.service.dependencies"] = (
-                "'fjks" + docker_labels["simcore.service.dependencies"]
-            )
+            docker_labels["simcore.service.dependencies"] = "'fjks" + docker_labels["simcore.service.dependencies"]
 
     # create the typical org.label-schema labels
     service_extras = ServiceExtrasDict(
@@ -188,9 +172,7 @@ async def _build_and_push_image(
     docker_labels["org.label-schema.vcs-ref"] = service_extras["vcs_ref"]
     docker_labels["org.label-schema.vcs-url"] = service_extras["vcs_url"]
 
-    image_tag = registry_url + "/{key}:{version}".format(
-        key=service_description["key"], version=tag
-    )
+    image_tag = registry_url + "/{key}:{version}".format(key=service_description["key"], version=tag)
     await _create_base_image(docker_labels, image_tag)
 
     # push image to registry
@@ -247,9 +229,7 @@ class PushServicesCallable(Protocol):
 
 
 @pytest.fixture
-def push_services(
-    docker_registry: str, app_settings: ApplicationSettings
-) -> Iterator[PushServicesCallable]:
+def push_services(docker_registry: str, app_settings: ApplicationSettings) -> Iterator[PushServicesCallable]:
     list_of_pushed_images_tags: list[ServiceInRegistryInfoDict] = []
     dependent_images = []
 

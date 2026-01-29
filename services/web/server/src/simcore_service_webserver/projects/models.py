@@ -65,12 +65,8 @@ class ProjectDBGet(BaseModel):
     model_config = ConfigDict(from_attributes=True, arbitrary_types_allowed=True)
 
     # validators
-    _empty_thumbnail_is_none = field_validator("thumbnail", mode="before")(
-        empty_str_to_none_pre_validator
-    )
-    _none_description_is_empty = field_validator("description", mode="before")(
-        none_to_empty_str_pre_validator
-    )
+    _empty_thumbnail_is_none = field_validator("thumbnail", mode="before")(empty_str_to_none_pre_validator)
+    _none_description_is_empty = field_validator("description", mode="before")(none_to_empty_str_pre_validator)
 
 
 class ProjectWithWorkbenchDBGet(ProjectDBGet):

@@ -35,6 +35,4 @@ def handle_invalid_invitation_code_error(request: Request, exception: Exception)
 
 
 def setup(app: FastAPI):
-    app.add_exception_handler(
-        InvalidInvitationCodeError, handle_invalid_invitation_code_error
-    )
+    app.add_exception_handler(InvalidInvitationCodeError, handle_invalid_invitation_code_error)

@@ -157,7 +157,7 @@ def register_task[**P_Task, R_Task](
 ) -> None: ...
 
 
-def register_task(  # type: ignore[misc]  # noqa: PLR0913
+def register_task(  # type: ignore[misc]
     app: Celery,
     fn: (Callable[Concatenate[Task, TaskKey, P], Coroutine[Any, Any, R]] | Callable[Concatenate[Task, P], R]),
     task_name: str | None = None,

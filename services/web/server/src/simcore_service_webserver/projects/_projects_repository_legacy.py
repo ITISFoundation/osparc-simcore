@@ -64,7 +64,6 @@ from simcore_postgres_database.webserver_models import (
     projects,
     users,
 )
-from simcore_service_webserver.constants import APP_AIOPG_ENGINE_KEY
 from sqlalchemy import func, literal_column, sql
 from sqlalchemy.dialects.postgresql import BOOLEAN, INTEGER
 from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -72,6 +71,8 @@ from sqlalchemy.sql import ColumnElement, CompoundSelect, Select, and_
 from tenacity import TryAgain
 from tenacity.asyncio import AsyncRetrying
 from tenacity.retry import retry_if_exception_type
+
+from simcore_service_webserver.constants import APP_AIOPG_ENGINE_KEY
 
 from ..application_settings import get_application_settings
 from ..models import ClientSessionID
@@ -104,9 +105,7 @@ _logger = logging.getLogger(__name__)
 
 ANY_USER = ANY_USER_ID_SENTINEL
 
-DEFAULT_ORDER_BY = OrderBy(
-    field=IDStr("last_change_date"), direction=OrderDirection.DESC
-)
+DEFAULT_ORDER_BY = OrderBy(field=IDStr("last_change_date"), direction=OrderDirection.DESC)
 
 
 # pylint: disable=too-many-public-methods
@@ -171,13 +170,7 @@ class ProjectDBAPI(BaseProjectDB):
                             result: ResultProxy = await conn.execute(
                                 projects.insert()
                                 .values(**insert_values)
-                                .returning(
-                                    *[
-                                        c
-                                        for c in projects.columns
-                                        if c.name not in ["hidden", "published"]
-                                    ]
-                                )
+                                .returning(*[c for c in projects.columns if c.name not in ["hidden", "published"]])
                             )
                             row: RowProxy | None = await result.fetchone()
                             assert row  # nosec
@@ -207,9 +200,7 @@ class ProjectDBAPI(BaseProjectDB):
 
                         # NOTE: this will at some point completely replace workbench in the DB
                         if selected_values["workbench"]:
-                            project_nodes_repo = ProjectNodesRepo(
-                                project_uuid=project_uuid
-                            )
+                            project_nodes_repo = ProjectNodesRepo(project_uuid=project_uuid)
                             if project_nodes is None:
                                 project_nodes = {
                                     NodeID(node_id): ProjectNodeCreate(
@@ -219,9 +210,7 @@ class ProjectDBAPI(BaseProjectDB):
                                         version=node_info.get("version"),
                                         label=node_info.get("label"),
                                     )
-                                    for node_id, node_info in selected_values[
-                                        "workbench"
-                                    ].items()
+                                    for node_id, node_info in selected_values["workbench"].items()
                                 }
 
                             nodes = [
@@ -235,9 +224,7 @@ class ProjectDBAPI(BaseProjectDB):
                                         label=node_info.get("label"),
                                     ),
                                 )
-                                for node_id, node_info in selected_values[
-                                    "workbench"
-                                ].items()
+                                for node_id, node_info in selected_values["workbench"].items()
                             ]
                             await project_nodes_repo.add(conn, nodes=nodes)
         return selected_values
@@ -265,21 +252,15 @@ class ProjectDBAPI(BaseProjectDB):
         """
 
         # NOTE: tags are removed in convert_to_db_names so we keep it
-        project_tag_ids = TypeAdapter(list[int]).validate_python(
-            project.get("tags", []).copy()
-        )
+        project_tag_ids = TypeAdapter(list[int]).validate_python(project.get("tags", []).copy())
         insert_values = convert_to_db_names(project)
         insert_values.update(
             {
                 "type": (
-                    ProjectType.TEMPLATE.value
-                    if (force_as_template or user_id is None)
-                    else ProjectType.STANDARD.value
+                    ProjectType.TEMPLATE.value if (force_as_template or user_id is None) else ProjectType.STANDARD.value
                 ),
                 "template_type": (
-                    ProjectTemplateType.TEMPLATE.value
-                    if (force_as_template or user_id is None)
-                    else None
+                    ProjectTemplateType.TEMPLATE.value if (force_as_template or user_id is None) else None
                 ),
                 "prj_owner": user_id if user_id else None,
                 "hidden": hidden,
@@ -294,13 +275,9 @@ class ProjectDBAPI(BaseProjectDB):
         # validate access_rights. are the gids valid? also ensure prj_owner is in there
         if user_id:
             async with self.engine.acquire() as conn:
-                primary_gid = await self._get_user_primary_group_gid(
-                    conn, user_id=user_id
-                )
+                primary_gid = await self._get_user_primary_group_gid(conn, user_id=user_id)
             insert_values.setdefault("access_rights", {})
-            insert_values["access_rights"].update(
-                create_project_access_rights(primary_gid, ProjectAccessRights.OWNER)
-            )
+            insert_values["access_rights"].update(create_project_access_rights(primary_gid, ProjectAccessRights.OWNER))
 
         # ensure we have the minimal amount of data here
         # All non-default in projects table
@@ -349,12 +326,8 @@ class ProjectDBAPI(BaseProjectDB):
             my_access_rights_subquery = (
                 sa.select(project_to_groups.c.project_uuid)
                 .where(
-                    (
-                        project_to_groups.c.read
-                    )  # Filters out entries where "read" is False
-                    & (
-                        project_to_groups.c.gid.in_(user_groups)
-                    )  # Filters gid to be in user_groups
+                    (project_to_groups.c.read)  # Filters out entries where "read" is False
+                    & (project_to_groups.c.gid.in_(user_groups))  # Filters gid to be in user_groups
                 )
                 .group_by(project_to_groups.c.project_uuid)
             ).subquery("my_access_rights_subquery")
@@ -424,8 +397,7 @@ class ProjectDBAPI(BaseProjectDB):
                 .select_from(
                     projects.join(
                         my_workspace_access_rights_subquery,
-                        projects.c.workspace_id
-                        == my_workspace_access_rights_subquery.c.workspace_id,
+                        projects.c.workspace_id == my_workspace_access_rights_subquery.c.workspace_id,
                     ).join(
                         projects_to_folders,
                         (
@@ -438,8 +410,7 @@ class ProjectDBAPI(BaseProjectDB):
                 .where(projects.c.product_name == product_name)
             )
             assert (  # nosec
-                my_workspace_access_rights_subquery.description
-                == "my_workspace_access_rights_subquery"
+                my_workspace_access_rights_subquery.description == "my_workspace_access_rights_subquery"
             )
 
             if workspace_query.workspace_scope == WorkspaceScope.ALL:
@@ -449,8 +420,7 @@ class ProjectDBAPI(BaseProjectDB):
             else:
                 assert workspace_query.workspace_scope == WorkspaceScope.SHARED
                 shared_workspace_query = shared_workspace_query.where(
-                    projects.c.workspace_id
-                    == workspace_query.workspace_id  # <-- Specific shared workspace
+                    projects.c.workspace_id == workspace_query.workspace_id  # <-- Specific shared workspace
                 )
 
             if is_search_by_multi_columns:
@@ -481,9 +451,7 @@ class ProjectDBAPI(BaseProjectDB):
             attributes_filters.append(projects.c.type == filter_by_project_type.value)
 
         if filter_by_template_type is not None:
-            attributes_filters.append(
-                projects.c.template_type == filter_by_template_type.value
-            )
+            attributes_filters.append(projects.c.template_type == filter_by_template_type.value)
 
         if filter_hidden is not None:
             attributes_filters.append(projects.c.hidden.is_(filter_hidden))
@@ -494,10 +462,7 @@ class ProjectDBAPI(BaseProjectDB):
         if filter_trashed is not None:
             attributes_filters.append(
                 # marked explicitly as trashed
-                (
-                    projects.c.trashed.is_not(None)
-                    & projects.c.trashed_explicitly.is_(True)
-                )
+                (projects.c.trashed.is_not(None) & projects.c.trashed_explicitly.is_(True))
                 if filter_trashed
                 # not marked as trashed
                 else projects.c.trashed.is_(None)
@@ -512,15 +477,11 @@ class ProjectDBAPI(BaseProjectDB):
             )
 
         if search_by_project_name is not None:
-            attributes_filters.append(
-                projects.c.name.like(f"%{search_by_project_name}%")
-            )
+            attributes_filters.append(projects.c.name.like(f"%{search_by_project_name}%"))
 
         if folder_query.folder_scope is not FolderScope.ALL:
             if folder_query.folder_scope == FolderScope.SPECIFIC:
-                attributes_filters.append(
-                    projects_to_folders.c.folder_id == folder_query.folder_id
-                )
+                attributes_filters.append(projects_to_folders.c.folder_id == folder_query.folder_id)
             else:
                 assert folder_query.folder_scope == FolderScope.ROOT  # nosec
                 attributes_filters.append(projects_to_folders.c.folder_id.is_(None))
@@ -551,9 +512,7 @@ class ProjectDBAPI(BaseProjectDB):
         order_by: OrderBy = DEFAULT_ORDER_BY,
     ) -> tuple[list[dict[str, Any]], int]:
         async with self.engine.acquire() as conn:
-            user_groups_proxy: list[RowProxy] = await self._list_user_groups(
-                conn, user_id
-            )
+            user_groups_proxy: list[RowProxy] = await self._list_user_groups(conn, user_id)
             user_groups: list[GroupID] = [group.gid for group in user_groups_proxy]
 
             ###
@@ -598,22 +557,15 @@ class ProjectDBAPI(BaseProjectDB):
             ###
 
             combined_query: CompoundSelect | Select | None = None
-            if (
-                private_workspace_query is not None
-                and shared_workspace_query is not None
-            ):
+            if private_workspace_query is not None and shared_workspace_query is not None:
                 combined_query = sa.union_all(
                     private_workspace_query.where(sa.and_(*attributes_filters)),
                     shared_workspace_query.where(sa.and_(*attributes_filters)),
                 )
             elif private_workspace_query is not None:
-                combined_query = private_workspace_query.where(
-                    sa.and_(*attributes_filters)
-                )
+                combined_query = private_workspace_query.where(sa.and_(*attributes_filters))
             elif shared_workspace_query is not None:
-                combined_query = shared_workspace_query.where(
-                    sa.and_(*attributes_filters)
-                )
+                combined_query = shared_workspace_query.where(sa.and_(*attributes_filters))
 
             if combined_query is None:
                 msg = f"No valid queries were provided to combine. Workspace scope: {workspace_query.workspace_scope}"
@@ -651,9 +603,7 @@ class ProjectDBAPI(BaseProjectDB):
         async with self.engine.acquire() as conn:
             return [
                 row[projects.c.uuid]
-                async for row in conn.execute(
-                    sa.select(projects.c.uuid).where(projects.c.prj_owner == user_id)
-                )
+                async for row in conn.execute(sa.select(projects.c.uuid).where(projects.c.prj_owner == user_id))
             ]
 
     async def get_project_dict_and_type(
@@ -709,10 +659,7 @@ class ProjectDBAPI(BaseProjectDB):
                         projects_to_folders,
                         (
                             (projects_to_folders.c.project_uuid == projects.c.uuid)
-                            & (
-                                projects_to_folders.c.user_id
-                                == private_workspace_user_id_or_none
-                            )
+                            & (projects_to_folders.c.user_id == private_workspace_user_id_or_none)
                         ),
                         isouter=True,
                     )
@@ -735,20 +682,12 @@ class ProjectDBAPI(BaseProjectDB):
         """
         _SELECTION_ARGS = (
             user_to_groups.c.uid,
-            func.max(project_to_groups.c.read.cast(INTEGER))
-            .cast(BOOLEAN)
-            .label("read"),
-            func.max(project_to_groups.c.write.cast(INTEGER))
-            .cast(BOOLEAN)
-            .label("write"),
-            func.max(project_to_groups.c.delete.cast(INTEGER))
-            .cast(BOOLEAN)
-            .label("delete"),
+            func.max(project_to_groups.c.read.cast(INTEGER)).cast(BOOLEAN).label("read"),
+            func.max(project_to_groups.c.write.cast(INTEGER)).cast(BOOLEAN).label("write"),
+            func.max(project_to_groups.c.delete.cast(INTEGER)).cast(BOOLEAN).label("delete"),
         )
 
-        _JOIN_TABLES = user_to_groups.join(
-            project_to_groups, user_to_groups.c.gid == project_to_groups.c.gid
-        )
+        _JOIN_TABLES = user_to_groups.join(project_to_groups, user_to_groups.c.gid == project_to_groups.c.gid)
 
         stmt = (
             sa.select(*_SELECTION_ARGS)
@@ -765,18 +704,12 @@ class ProjectDBAPI(BaseProjectDB):
             result = await conn.execute(stmt)
             row = await result.fetchone()
             if row is None:
-                raise ProjectInvalidRightsError(
-                    user_id=user_id, project_uuid=project_uuid
-                )
+                raise ProjectInvalidRightsError(user_id=user_id, project_uuid=project_uuid)
             return UserProjectAccessRightsDB.model_validate(row)
 
     async def get_project_product(self, project_uuid: ProjectID) -> ProductName:
         async with self.engine.acquire() as conn:
-            result = await conn.execute(
-                sa.select(projects.c.product_name).where(
-                    projects.c.uuid == f"{project_uuid}"
-                )
-            )
+            result = await conn.execute(sa.select(projects.c.product_name).where(projects.c.uuid == f"{project_uuid}"))
             row = await result.fetchone()
             if row is None:
                 raise ProjectNotFoundError(project_uuid=project_uuid)
@@ -915,9 +848,7 @@ class ProjectDBAPI(BaseProjectDB):
             (
                 project_document,
                 document_version,
-            ) = await create_project_document_and_increment_version(
-                self._app, project_uuid
-            )
+            ) = await create_project_document_and_increment_version(self._app, project_uuid)
 
             await notify_project_document_updated(
                 app=self._app,
@@ -986,9 +917,7 @@ class ProjectDBAPI(BaseProjectDB):
 
             user_email = await self._get_user_email(db_connection, project.prj_owner)
 
-            tags = await self._get_tags_by_project(
-                db_connection, project_id=project[projects.c.id]
-            )
+            tags = await self._get_tags_by_project(db_connection, project_id=project[projects.c.id])
             return (
                 convert_to_schema_names(project, user_email, tags=tags),
                 changed_entries,
@@ -1064,16 +993,11 @@ class ProjectDBAPI(BaseProjectDB):
         project_nodes_repo = ProjectNodesRepo(project_uuid=project_id)
         async with self.engine.acquire() as conn:
             if check_update_allowed:
-                user_extra_properties = (
-                    await GroupExtraPropertiesRepo.get_aggregated_properties_for_user(
-                        conn, user_id=user_id, product_name=product_name
-                    )
+                user_extra_properties = await GroupExtraPropertiesRepo.get_aggregated_properties_for_user(
+                    conn, user_id=user_id, product_name=product_name
                 )
                 if not user_extra_properties.override_services_specifications:
-                    msg = (
-                        "User not allowed to modify node resources! "
-                        "TIP: Ask your administrator or contact support"
-                    )
+                    msg = "User not allowed to modify node resources! TIP: Ask your administrator or contact support"
                     raise ProjectNodeResourcesInsufficientRightsError(msg)
             return await project_nodes_repo.update(conn, node_id=node_id, **values)
 
@@ -1086,9 +1010,7 @@ class ProjectDBAPI(BaseProjectDB):
         """Returns True if the node id exists in any of the available projects"""
         async with self.engine.acquire() as conn:
             num_entries = await conn.scalar(
-                sa.select(func.count())
-                .select_from(projects_nodes)
-                .where(projects_nodes.c.node_id == f"{node_id}")
+                sa.select(func.count()).select_from(projects_nodes).where(projects_nodes.c.node_id == f"{node_id}")
             )
         assert num_entries is not None  # nosec
         assert isinstance(num_entries, int)  # nosec
@@ -1112,9 +1034,7 @@ class ProjectDBAPI(BaseProjectDB):
     ) -> PricingPlanAndUnitIdsTuple | None:
         project_nodes_repo = ProjectNodesRepo(project_uuid=project_uuid)
         async with self.engine.acquire() as conn:
-            output = await project_nodes_repo.get_project_node_pricing_unit_id(
-                conn, node_uuid=node_uuid
-            )
+            output = await project_nodes_repo.get_project_node_pricing_unit_id(conn, node_uuid=node_uuid)
             if output:
                 pricing_plan_id, pricing_unit_id = output
                 return PricingPlanAndUnitIdsTuple(pricing_plan_id, pricing_unit_id)
@@ -1140,14 +1060,10 @@ class ProjectDBAPI(BaseProjectDB):
     # Project TAGS
     #
 
-    async def add_tag(
-        self, user_id: int, project_uuid: str, tag_id: int
-    ) -> ProjectDict:
+    async def add_tag(self, user_id: int, project_uuid: str, tag_id: int) -> ProjectDict:
         """Creates a tag and associates it to this project"""
         async with self.engine.acquire() as conn:
-            project = await self._get_project(
-                conn, project_uuid=project_uuid, exclude_foreign=None
-            )
+            project = await self._get_project(conn, project_uuid=project_uuid, exclude_foreign=None)
             user_email = await self._get_user_email(conn, user_id)
 
             project_tags: list[int] = project["tags"]
@@ -1165,9 +1081,7 @@ class ProjectDBAPI(BaseProjectDB):
 
             return convert_to_schema_names(project, user_email)
 
-    async def remove_tag(
-        self, user_id: int, project_uuid: str, tag_id: int
-    ) -> ProjectDict:
+    async def remove_tag(self, user_id: int, project_uuid: str, tag_id: int) -> ProjectDict:
         async with self.engine.acquire() as conn:
             project = await self._get_project(conn, project_uuid)
             user_email = await self._get_user_email(conn, user_id)
@@ -1185,9 +1099,7 @@ class ProjectDBAPI(BaseProjectDB):
 
     async def get_tags_by_project(self, project_id: str) -> list[int]:
         async with self.engine.acquire() as conn:
-            query = sa.select(projects_tags.c.tag_id).where(
-                projects_tags.c.project_id == project_id
-            )
+            query = sa.select(projects_tags.c.tag_id).where(projects_tags.c.project_id == project_id)
             return [row.tag_id async for row in conn.execute(query)]
 
     #
@@ -1210,11 +1122,7 @@ class ProjectDBAPI(BaseProjectDB):
                     wallets.c.created,
                     wallets.c.modified,
                 )
-                .select_from(
-                    projects_to_wallet.join(
-                        wallets, projects_to_wallet.c.wallet_id == wallets.c.wallet_id
-                    )
-                )
+                .select_from(projects_to_wallet.join(wallets, projects_to_wallet.c.wallet_id == wallets.c.wallet_id))
                 .where(projects_to_wallet.c.project_uuid == f"{project_uuid}")
             )
             row = await result.fetchone()
@@ -1248,9 +1156,7 @@ class ProjectDBAPI(BaseProjectDB):
     #
     async def is_hidden(self, project_uuid: ProjectID) -> bool:
         async with self.engine.acquire() as conn:
-            result = await conn.scalar(
-                sa.select(projects.c.hidden).where(projects.c.uuid == f"{project_uuid}")
-            )
+            result = await conn.scalar(sa.select(projects.c.hidden).where(projects.c.uuid == f"{project_uuid}"))
         return bool(result)
 
     #
@@ -1259,9 +1165,7 @@ class ProjectDBAPI(BaseProjectDB):
 
     async def get_project_type(self, project_uuid: ProjectID) -> ProjectType:
         async with self.engine.acquire() as conn:
-            result = await conn.execute(
-                sa.select(projects.c.type).where(projects.c.uuid == f"{project_uuid}")
-            )
+            result = await conn.execute(sa.select(projects.c.type).where(projects.c.uuid == f"{project_uuid}"))
             row = await result.first()
             if row:
                 return ProjectType(row[projects.c.type])

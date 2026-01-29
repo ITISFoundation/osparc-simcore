@@ -1,8 +1,7 @@
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query, Request, status
 from fastapi import Path as PathParam
-from fastapi import Query, Request, status
 from models_library.api_schemas_directorv2.dynamic_services import ContainersComposeSpec
 from models_library.api_schemas_dynamic_sidecar.containers import (
     ActivityInfoOrNone,
@@ -23,29 +22,21 @@ router = APIRouter()
 @router.post(
     "/containers/compose-spec",
     status_code=status.HTTP_202_ACCEPTED,
-    responses={
-        status.HTTP_500_INTERNAL_SERVER_ERROR: {"description": "Errors in container"}
-    },
+    responses={status.HTTP_500_INTERNAL_SERVER_ERROR: {"description": "Errors in container"}},
 )
 @cancel_on_disconnect
-async def create_compose_spec(
-    request: Request, containers_compose_spec: ContainersComposeSpec
-):
+async def create_compose_spec(request: Request, containers_compose_spec: ContainersComposeSpec):
     """
     Validates and stores the docker compose spec for the user services.
     """
     _ = request
 
-    await containers.create_compose_spec(
-        app=request.app, containers_compose_spec=containers_compose_spec
-    )
+    await containers.create_compose_spec(app=request.app, containers_compose_spec=containers_compose_spec)
 
 
 @router.get(
     "/containers",
-    responses={
-        status.HTTP_500_INTERNAL_SERVER_ERROR: {"description": "Errors in container"}
-    },
+    responses={status.HTTP_500_INTERNAL_SERVER_ERROR: {"description": "Errors in container"}},
 )
 @cancel_on_disconnect
 async def containers_docker_inspect(
@@ -59,9 +50,7 @@ async def containers_docker_inspect(
     the status of the containers is returned
     """
     _ = request
-    return await containers.containers_docker_inspect(
-        app=request.app, only_status=only_status
-    )
+    return await containers.containers_docker_inspect(app=request.app, only_status=only_status)
 
 
 @router.get("/containers/activity")
@@ -78,12 +67,8 @@ async def get_containers_activity(request: Request) -> ActivityInfoOrNone:
 @router.get(
     "/containers/name",
     responses={
-        status.HTTP_404_NOT_FOUND: {
-            "description": "No entrypoint container found or spec is not yet present"
-        },
-        status.HTTP_422_UNPROCESSABLE_ENTITY: {
-            "description": "Filters could not be parsed"
-        },
+        status.HTTP_404_NOT_FOUND: {"description": "No entrypoint container found or spec is not yet present"},
+        status.HTTP_422_UNPROCESSABLE_ENTITY: {"description": "Filters could not be parsed"},
     },
 )
 @cancel_on_disconnect
@@ -91,10 +76,7 @@ async def get_containers_name(
     request: Request,
     filters: str = Query(
         ...,
-        description=(
-            "JSON encoded dictionary. FastAPI does not "
-            "allow for dict as type in query parameters"
-        ),
+        description=("JSON encoded dictionary. FastAPI does not allow for dict as type in query parameters"),
     ),
 ) -> str | dict[str, Any]:
     """
@@ -125,15 +107,11 @@ async def get_containers_name(
     },
 )
 @cancel_on_disconnect
-async def inspect_container(
-    request: Request, container_id: str = PathParam(..., alias="id")
-) -> dict[str, Any]:
+async def inspect_container(request: Request, container_id: str = PathParam(..., alias="id")) -> dict[str, Any]:
     """Returns information about the container, like docker inspect command"""
     _ = request
 
     try:
-        return await containers.inspect_container(
-            app=request.app, container_id=container_id
-        )
+        return await containers.inspect_container(app=request.app, container_id=container_id)
     except ContainerIsMissingError as e:
         raise HTTPException(status.HTTP_404_NOT_FOUND, detail=f"{e}") from e

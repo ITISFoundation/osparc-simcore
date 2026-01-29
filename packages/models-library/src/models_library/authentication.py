@@ -3,7 +3,7 @@ from enum import auto
 from .utils.enums import StrAutoEnum
 
 
-class TwoFactorAuthentificationMethod(StrAutoEnum):
+class TwoFactorAuthenticationMethod(StrAutoEnum):
     SMS = auto()
     EMAIL = auto()
     DISABLED = auto()

@@ -115,9 +115,9 @@ async def _assert_reservation(
 ) -> list[InstanceTypeDef]:
     list_instances: list[InstanceTypeDef] = []
     assert "Instances" in reservation
-    assert (
-        len(reservation["Instances"]) == expected_num_instances
-    ), f"expected {expected_num_instances}, found {len(reservation['Instances'])}"
+    assert len(reservation["Instances"]) == expected_num_instances, (
+        f"expected {expected_num_instances}, found {len(reservation['Instances'])}"
+    )
     for instance in reservation["Instances"]:
         assert "InstanceType" in instance
         assert instance["InstanceType"] == expected_instance_type
@@ -140,13 +140,9 @@ async def _assert_reservation(
                 assert "Key" in ec2_tag
                 return ec2_tag["Key"] == "io.simcore.autoscaling.pre_pulled_images"
 
-            instance_pre_pulled_images_aws_tag = next(
-                iter(filter(_by_pre_pull_image, instance["Tags"]))
-            )
+            instance_pre_pulled_images_aws_tag = next(iter(filter(_by_pre_pull_image, instance["Tags"])))
             assert "Value" in instance_pre_pulled_images_aws_tag
-            assert sorted(
-                json_loads(instance_pre_pulled_images_aws_tag["Value"])
-            ) == sorted(expected_pre_pulled_images)
+            assert sorted(json_loads(instance_pre_pulled_images_aws_tag["Value"])) == sorted(expected_pre_pulled_images)
 
         assert "PrivateDnsName" in instance
         instance_private_dns_name = instance["PrivateDnsName"]

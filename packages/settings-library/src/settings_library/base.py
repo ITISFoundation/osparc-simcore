@@ -40,9 +40,7 @@ def _create_settings_from_env(field_name: str, info: FieldInfo):
         except ValidationError as err:
             if is_nullable(info):
                 # e.g. Optional[PostgresSettings] would warn if defaults to None
-                msg = _AUTO_DEFAULT_FACTORY_RESOLVES_TO_NONE_FSTRING.format(
-                    field_name=field_name, err=err
-                )
+                msg = _AUTO_DEFAULT_FACTORY_RESOLVES_TO_NONE_FSTRING.format(field_name=field_name, err=err)
                 _logger.warning(msg)
                 return None
             _logger.warning("Validation errors=%s", err.errors())
@@ -61,9 +59,7 @@ _MARKED_AS_UNSET: Final[dict] = {}
 
 
 class EnvSettingsWithAutoDefaultSource(EnvSettingsSource):
-    def __init__(
-        self, settings_cls: type[BaseSettings], env_settings: EnvSettingsSource
-    ):
+    def __init__(self, settings_cls: type[BaseSettings], env_settings: EnvSettingsSource):
         super().__init__(
             settings_cls,
             env_settings.case_sensitive,
@@ -81,9 +77,7 @@ class EnvSettingsWithAutoDefaultSource(EnvSettingsSource):
         value: Any,
         value_is_complex: bool,  # noqa: FBT001
     ) -> Any:
-        prepared_value = super().prepare_field_value(
-            field_name, field, value, value_is_complex
-        )
+        prepared_value = super().prepare_field_value(field_name, field, value, value_is_complex)
         if (
             _is_auto_default_from_env_enabled(field)
             and field.default_factory

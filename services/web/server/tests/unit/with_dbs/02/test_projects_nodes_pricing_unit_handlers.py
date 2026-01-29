@@ -53,11 +53,7 @@ async def test_project_node_pricing_unit_user_role_access(
         project_id=user_project["uuid"], node_id=node_id
     )
     resp = await client.get(f"{base_url}")
-    assert (
-        resp.status == status.HTTP_401_UNAUTHORIZED
-        if user_role == UserRole.ANONYMOUS
-        else status.HTTP_200_OK
-    )
+    assert resp.status == status.HTTP_401_UNAUTHORIZED if user_role == UserRole.ANONYMOUS else status.HTTP_200_OK
 
 
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_200_OK)])
@@ -91,9 +87,7 @@ _PRICING_UNIT_ID_2 = 2
 
 
 @pytest.fixture
-def mock_rut_api_responses(
-    client: TestClient, aioresponses_mocker: AioResponsesMock
-) -> AioResponsesMock:
+def mock_rut_api_responses(client: TestClient, aioresponses_mocker: AioResponsesMock) -> AioResponsesMock:
     assert client.app
     settings: ResourceUsageTrackerSettings = get_plugin_settings(client.app)
 
@@ -120,12 +114,8 @@ def mock_rut_api_responses(
 
 
 @pytest.fixture
-def mocked_clusters_keeper_service_get_instance_type_details(
-    mocker: MockerFixture, faker: Faker
-) -> mock.Mock:
-    def _fake_instance_type_details(
-        rabbitmq_client, instance_type_names: set[str]
-    ) -> list[EC2InstanceTypeGet]:
+def mocked_clusters_keeper_service_get_instance_type_details(mocker: MockerFixture, faker: Faker) -> mock.Mock:
+    def _fake_instance_type_details(rabbitmq_client, instance_type_names: set[str]) -> list[EC2InstanceTypeGet]:
         assert len(instance_type_names) > 0
         return [
             EC2InstanceTypeGet(

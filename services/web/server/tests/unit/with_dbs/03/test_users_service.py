@@ -34,9 +34,7 @@ from simcore_service_webserver.users.users_service import (
 
 
 @pytest.fixture
-def app_environment(
-    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
-) -> EnvVarsDict:
+def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
     # disables GC and DB-listener
     return app_environment | setenvs_from_dict(
         monkeypatch,
@@ -66,9 +64,7 @@ async def test_reading_a_user(client: TestClient, faker: Faker, user: UserInfoDi
 
     # NOTE: designed to always provide some display name
     got = await get_user_display_and_id_names(client.app, user_id=user_id)
-    assert (
-        got.first_name.lower() == (user.get("first_name") or user.get("name")).lower()
-    )
+    assert got.first_name.lower() == (user.get("first_name") or user.get("name")).lower()
     assert got.last_name.lower() == (user.get("last_name") or "").lower()
     assert got.name == user["name"]
 
@@ -98,9 +94,7 @@ async def test_listing_users(client: TestClient, faker: Faker, user: UserInfoDic
 
     async with NewUser(user_data={"role": UserRole.GUEST}, app=client.app) as guest:
         got = await get_guest_user_ids_and_names(client.app)
-        assert (guest["id"], guest["name"]) in TypeAdapter(
-            list[tuple[UserID, UserNameID]]
-        ).validate_python(got)
+        assert (guest["id"], guest["name"]) in TypeAdapter(list[tuple[UserID, UserNameID]]).validate_python(got)
 
     guests = await get_guest_user_ids_and_names(client.app)
     assert not guests
@@ -138,9 +132,7 @@ TOMORROW = _NOW + timedelta(days=1)
 
 
 @pytest.mark.parametrize("expires_at", [YESTERDAY, TOMORROW, None])
-async def test_update_expired_users(
-    expires_at: datetime | None, client: TestClient, faker: Faker
-):
+async def test_update_expired_users(expires_at: datetime | None, client: TestClient, faker: Faker):
     has_expired = expires_at == YESTERDAY
     async with NewUser(
         {
@@ -175,9 +167,7 @@ async def test_update_expired_users(
 
         # after update
         r2 = await _rq_login()
-        await assert_status(
-            r2, status.HTTP_401_UNAUTHORIZED if has_expired else status.HTTP_200_OK
-        )
+        await assert_status(r2, status.HTTP_401_UNAUTHORIZED if has_expired else status.HTTP_200_OK)
 
 
 async def test_get_username_and_email(client: TestClient, faker: Faker):

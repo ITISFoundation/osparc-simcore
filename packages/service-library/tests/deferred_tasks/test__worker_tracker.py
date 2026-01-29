@@ -83,7 +83,6 @@ async def __h_sum_numbers(deferred_context: DeferredContext) -> float:
 
 
 async def __h_stringify(deferred_context: DeferredContext) -> str:
-
     return f"{deferred_context['name']} is {deferred_context['age']} years old"
 
 
@@ -108,7 +107,6 @@ async def test_returns_task_result_success(
     context: DeferredContext,
     expected_result: Any,
 ):
-
     deferred_handler = _get_mock_deferred_handler(handler)
     result = await worker_tracker.handle_run(
         deferred_handler,  # type: ignore

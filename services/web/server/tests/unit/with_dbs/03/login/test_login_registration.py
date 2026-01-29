@@ -38,9 +38,7 @@ from simcore_service_webserver.login.settings import (
 
 
 @pytest.fixture
-def app_environment(
-    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
-) -> EnvVarsDict:
+def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
     login_envs = setenvs_from_dict(
         monkeypatch,
         {
@@ -75,9 +73,7 @@ async def test_register_entrypoint(
     assert user_email in data["message"]
 
 
-async def test_register_body_validation(
-    client: TestClient, user_password: str, cleanup_db_tables: None
-):
+async def test_register_body_validation(client: TestClient, user_password: str, cleanup_db_tables: None):
     assert client.app
     url = client.app.router["auth_register"].url_for()
     response = await client.post(
@@ -127,9 +123,7 @@ async def test_registration_with_registered_user(
     assert client.app
 
     async with NewUser(app=client.app) as user:
-        await auto_add_user_to_product_group(
-            client.app, user_id=user["id"], product_name=default_product_name
-        )
+        await auto_add_user_to_product_group(client.app, user_id=user["id"], product_name=default_product_name)
 
         url = client.app.router["auth_register"].url_for()
         response = await client.post(
@@ -193,9 +187,7 @@ async def test_registration_invitation_stays_valid_if_once_tried_with_weak_passw
         await assert_error(
             response,
             status.HTTP_401_UNAUTHORIZED,
-            MSG_WEAK_PASSWORD.format(
-                LOGIN_PASSWORD_MIN_LENGTH=session_plugin_settings.LOGIN_PASSWORD_MIN_LENGTH
-            ),
+            MSG_WEAK_PASSWORD.format(LOGIN_PASSWORD_MIN_LENGTH=session_plugin_settings.LOGIN_PASSWORD_MIN_LENGTH),
         )
         response = await client.post(
             url.path,
@@ -206,9 +198,7 @@ async def test_registration_invitation_stays_valid_if_once_tried_with_weak_passw
                 "invitation": confirmation["code"],
             },
         )
-        assert not await confirmation_repository.get_confirmation(
-            filter_dict={"code": confirmation["code"]}
-        )
+        assert not await confirmation_repository.get_confirmation(filter_dict={"code": confirmation["code"]})
 
 
 async def test_registration_with_weak_password_fails(
@@ -233,9 +223,7 @@ async def test_registration_with_weak_password_fails(
     await assert_error(
         response,
         status.HTTP_401_UNAUTHORIZED,
-        MSG_WEAK_PASSWORD.format(
-            LOGIN_PASSWORD_MIN_LENGTH=login_settings.LOGIN_PASSWORD_MIN_LENGTH
-        ),
+        MSG_WEAK_PASSWORD.format(LOGIN_PASSWORD_MIN_LENGTH=login_settings.LOGIN_PASSWORD_MIN_LENGTH),
     )
 
 
@@ -260,9 +248,7 @@ async def test_registration_with_invalid_confirmation_code(
         ),
     )
 
-    confirmation_link = _url_for_confirmation(
-        client.app, code="INVALID_CONFIRMATION_CODE"
-    )
+    confirmation_link = _url_for_confirmation(client.app, code="INVALID_CONFIRMATION_CODE")
     response = await client.get(f"{confirmation_link}")
 
     # Invalid code redirect to root without any error to the login page
@@ -358,10 +344,7 @@ async def test_registration_with_confirmation(
     response = await client.get(confirmation_url)
     text = await response.text()
 
-    assert (
-        "This is a result of disable_static_webserver fixture for product OSPARC"
-        in text
-    )
+    assert "This is a result of disable_static_webserver fixture for product OSPARC" in text
     assert response.status == 200
 
     # user is active
@@ -423,9 +406,7 @@ async def test_registration_with_invitation(
                 "email": user_email,
                 "password": user_password,
                 "confirm": user_password,
-                "invitation": (
-                    confirmation["code"] if has_valid_invitation else "WRONG_CODE"
-                ),
+                "invitation": (confirmation["code"] if has_valid_invitation else "WRONG_CODE"),
             },
         )
         await assert_status(response, expected_response)
@@ -442,9 +423,7 @@ async def test_registration_with_invitation(
             await assert_status(response, expected_response)
 
         if is_invitation_required and has_valid_invitation:
-            assert not await confirmation_repository.get_confirmation(
-                filter_dict={"code": confirmation["code"]}
-            )
+            assert not await confirmation_repository.get_confirmation(filter_dict={"code": confirmation["code"]})
 
 
 async def test_registraton_with_invitation_for_trial_account(
@@ -486,9 +465,7 @@ async def test_registraton_with_invitation_for_trial_account(
 
     # (1) creates a invitation to register a TRIAL account
     TRIAL_DAYS = 1
-    async with NewInvitation(
-        client, guest_email=faker.email(), trial_days=TRIAL_DAYS
-    ) as invitation:
+    async with NewInvitation(client, guest_email=faker.email(), trial_days=TRIAL_DAYS) as invitation:
         assert invitation.confirmation
 
         # (3) use register using the invitation code

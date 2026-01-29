@@ -41,17 +41,13 @@ async def get_zip_bytes_iter(
     if progress_bar is None:
         progress_bar = ProgressBarData(num_steps=1, description="zip archive stream")
 
-    total_stream_lenth = DataSize(
-        sum(bytes_streamer.data_size for _, bytes_streamer in archive_entries)
-    )
-    description = f"files: count={len(archive_entries)}, size={total_stream_lenth.human_readable()}"
+    total_stream_length = DataSize(sum(bytes_streamer.data_size for _, bytes_streamer in archive_entries))
+    description = f"files: count={len(archive_entries)}, size={total_stream_length.human_readable()}"
 
     async with progress_bar.sub_progress(
-        steps=total_stream_lenth, description=description, progress_unit="Byte"
+        steps=total_stream_length, description=description, progress_unit="Byte"
     ) as sub_progress:
         # NOTE: do not disable compression or the streams will be
         # loaded fully in memory before yielding their content
-        async for chunk in async_stream_zip(
-            _member_files_iter(archive_entries, sub_progress), chunk_size=chunk_size
-        ):
+        async for chunk in async_stream_zip(_member_files_iter(archive_entries, sub_progress), chunk_size=chunk_size):
             yield chunk

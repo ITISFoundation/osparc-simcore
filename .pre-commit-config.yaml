@@ -6,7 +6,7 @@ default_language_version:
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
     # Ruff version.
-    rev: v0.14.10
+    rev: v0.14.14
     hooks:
       # Run the linter.
       - id: ruff-check
@@ -50,3 +50,4 @@ repos:
     hooks:
       - id: typos
         name: spellchecker
+        exclude: "(^|/)generated_models/"

@@ -7,22 +7,15 @@ from ..exceptions import SDSException
 from ._sds import create_sds_directory
 
 
-async def _compress_dir(
-    folder_to_zip: Path, destination_folder: Path, project_id: str
-) -> Path:
+async def _compress_dir(folder_to_zip: Path, destination_folder: Path, project_id: str) -> Path:
     """compresses a folder and returns the path to the new archive"""
 
     archive_name: Path = destination_folder / f"sds_{project_id}.zip"
     if archive_name.is_file():
-        msg = (
-            f"Cannot archive '{folder_to_zip}' because "
-            f"'{archive_name}' already exists"
-        )
+        msg = f"Cannot archive '{folder_to_zip}' because '{archive_name}' already exists"
         raise SDSException(msg)
 
-    await archive_dir(
-        dir_to_compress=folder_to_zip, destination=archive_name, compress=True
-    )
+    await archive_dir(dir_to_compress=folder_to_zip, destination=archive_name, compress=True)
 
     return archive_name
 

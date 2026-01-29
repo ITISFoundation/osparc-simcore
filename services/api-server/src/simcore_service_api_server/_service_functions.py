@@ -45,9 +45,7 @@ class FunctionService:
     ) -> tuple[list[RegisteredFunction], PageMetaInfoLimitOffset]:
         """Lists all functions for a user with pagination"""
 
-        pagination_kwargs = as_dict_exclude_none(
-            pagination_offset=pagination_offset, pagination_limit=pagination_limit
-        )
+        pagination_kwargs = as_dict_exclude_none(pagination_offset=pagination_offset, pagination_limit=pagination_limit)
 
         return await self._web_rpc_client.list_functions(
             user_id=self.user_id,
@@ -55,9 +53,7 @@ class FunctionService:
             **pagination_kwargs,
         )
 
-    async def get_function_job_links(
-        self, function: RegisteredFunction, url_for: Callable
-    ) -> JobLinks:
+    async def get_function_job_links(self, function: RegisteredFunction, url_for: Callable) -> JobLinks:
         if function.function_class == FunctionClass.SOLVER:
             return get_solver_job_rest_interface_links(
                 url_for=url_for,
@@ -93,10 +89,8 @@ class FunctionService:
         raises FunctionExecuteAccessDeniedError if user cannot execute this functions
         """
 
-        user_api_access_rights = (
-            await self._web_rpc_client.get_functions_user_api_access_rights(
-                user_id=self.user_id, product_name=self.product_name
-            )
+        user_api_access_rights = await self._web_rpc_client.get_functions_user_api_access_rights(
+            user_id=self.user_id, product_name=self.product_name
         )
         if not user_api_access_rights.execute_functions:
             raise FunctionsExecuteApiAccessDeniedError(

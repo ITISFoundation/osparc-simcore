@@ -21,7 +21,7 @@ TEST_MARKS = re.compile(r"TEST (\w+):(.*)")
 
 
 def parse_test_marks(text):
-    """Checs for marks as
+    """Checks for marks as
 
     TEST name:123123
     TEST link:some-value
@@ -48,13 +48,11 @@ async def log_client_in(
     assert client.app
 
     # create account
-    user = await _create_account_in_db(
-        client.app, exit_stack=exit_stack, user_data=user_data
-    )
+    user = await _create_account_in_db(client.app, exit_stack=exit_stack, user_data=user_data)
 
     # login (requires)
     url = client.app.router["auth_login"].url_for()
-    reponse = await client.post(
+    response = await client.post(
         str(url),
         json={
             "email": user["email"],
@@ -63,7 +61,7 @@ async def log_client_in(
     )
 
     if enable_check:
-        await assert_status(reponse, status.HTTP_200_OK, MSG_LOGGED_IN)
+        await assert_status(response, status.HTTP_200_OK, MSG_LOGGED_IN)
 
     return user
 
@@ -93,16 +91,14 @@ class LoggedUser(NewUser):
 
 
 @contextlib.asynccontextmanager
-async def switch_client_session_to(
-    client: TestClient, user: UserInfoDict
-) -> AsyncIterator[TestClient]:
+async def switch_client_session_to(client: TestClient, user: UserInfoDict) -> AsyncIterator[TestClient]:
     assert client.app
 
-    await client.post(f'{client.app.router["auth_logout"].url_for()}')
+    await client.post(f"{client.app.router['auth_logout'].url_for()}")
     # sometimes 4xx if user already logged out. Ignore
 
     resp = await client.post(
-        f'{client.app.router["auth_login"].url_for()}',
+        f"{client.app.router['auth_login'].url_for()}",
         json={
             "email": user["email"],
             "password": user["raw_password"],
@@ -112,7 +108,7 @@ async def switch_client_session_to(
 
     yield client
 
-    resp = await client.post(f'{client.app.router["auth_logout"].url_for()}')
+    resp = await client.post(f"{client.app.router['auth_logout'].url_for()}")
     await assert_status(resp, status.HTTP_200_OK)
 
 

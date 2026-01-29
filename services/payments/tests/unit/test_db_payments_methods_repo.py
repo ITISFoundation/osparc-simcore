@@ -50,70 +50,64 @@ def app_environment(
 async def test_create_payments_method_annotations_workflow(
     app: FastAPI, product: str, sqlalchemy_async_engine: AsyncEngine
 ):
-
-    fake = PaymentsMethodsDB(
-        **PaymentsMethodsDB.model_config["json_schema_extra"]["examples"][1]
-    )
+    fake = PaymentsMethodsDB(**PaymentsMethodsDB.model_config["json_schema_extra"]["examples"][1])
 
     repo = PaymentsMethodsRepo(app.state.engine)
 
-    async with insert_and_get_user_and_secrets_lifespan(
-        sqlalchemy_async_engine, id=fake.user_id
-    ) as user_row:
-        async with insert_and_get_product_lifespan(
-            sqlalchemy_async_engine, name=product["name"]
-        ) as product_row:
-            product_name = product_row["name"]
-            async with insert_and_get_wallet_lifespan(
-                sqlalchemy_async_engine,
-                product_name=product_name,
-                user_group_id=user_row["primary_gid"],
+    async with (
+        insert_and_get_user_and_secrets_lifespan(sqlalchemy_async_engine, id=fake.user_id) as user_row,
+        insert_and_get_product_lifespan(sqlalchemy_async_engine, name=product["name"]) as product_row,
+    ):
+        product_name = product_row["name"]
+        async with insert_and_get_wallet_lifespan(
+            sqlalchemy_async_engine,
+            product_name=product_name,
+            user_group_id=user_row["primary_gid"],
+            wallet_id=fake.wallet_id,
+        ):
+            # annotate init
+            payment_method_id = await repo.insert_init_payment_method(
+                fake.payment_method_id,
+                user_id=fake.user_id,
                 wallet_id=fake.wallet_id,
-            ):
+                initiated_at=fake.initiated_at,
+            )
 
-                # annotate init
-                payment_method_id = await repo.insert_init_payment_method(
-                    fake.payment_method_id,
-                    user_id=fake.user_id,
-                    wallet_id=fake.wallet_id,
-                    initiated_at=fake.initiated_at,
-                )
+            assert payment_method_id == fake.payment_method_id
 
-                assert payment_method_id == fake.payment_method_id
+            # annotate ack
+            acked = await repo.update_ack_payment_method(
+                fake.payment_method_id,
+                completion_state=InitPromptAckFlowState.SUCCESS,
+                state_message="DONE",
+            )
 
-                # annotate ack
-                acked = await repo.update_ack_payment_method(
-                    fake.payment_method_id,
-                    completion_state=InitPromptAckFlowState.SUCCESS,
-                    state_message="DONE",
-                )
+            # list
+            listed = await repo.list_user_payment_methods(
+                user_id=fake.user_id,
+                wallet_id=fake.wallet_id,
+            )
+            assert len(listed) == 1
+            assert listed[0] == acked
 
-                # list
-                listed = await repo.list_user_payment_methods(
-                    user_id=fake.user_id,
-                    wallet_id=fake.wallet_id,
-                )
-                assert len(listed) == 1
-                assert listed[0] == acked
+            # get
+            got = await repo.get_payment_method(
+                payment_method_id,
+                user_id=fake.user_id,
+                wallet_id=fake.wallet_id,
+            )
+            assert got == acked
 
-                # get
-                got = await repo.get_payment_method(
-                    payment_method_id,
-                    user_id=fake.user_id,
-                    wallet_id=fake.wallet_id,
-                )
-                assert got == acked
+            # delete
+            deleted = await repo.delete_payment_method(
+                payment_method_id,
+                user_id=fake.user_id,
+                wallet_id=fake.wallet_id,
+            )
+            assert deleted == got
 
-                # delete
-                deleted = await repo.delete_payment_method(
-                    payment_method_id,
-                    user_id=fake.user_id,
-                    wallet_id=fake.wallet_id,
-                )
-                assert deleted == got
-
-                listed = await repo.list_user_payment_methods(
-                    user_id=fake.user_id,
-                    wallet_id=fake.wallet_id,
-                )
-                assert not listed
+            listed = await repo.list_user_payment_methods(
+                user_id=fake.user_id,
+                wallet_id=fake.wallet_id,
+            )
+            assert not listed

@@ -29,9 +29,7 @@ class OsparcUserBase(FastHttpUser):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.deploy_auth = DeploymentAuth()
-        _logger.debug(
-            "Using deployment auth with username: %s", self.deploy_auth.SC_USER_NAME
-        )
+        _logger.debug("Using deployment auth with username: %s", self.deploy_auth.SC_USER_NAME)
 
     def authenticated_get(self, url, **kwargs):
         """Make GET request with deployment auth"""
@@ -95,8 +93,7 @@ class OsparcWebUserBase(OsparcUserBase):
         super().__init__(*args, **kwargs)
         # Determine if login is required once during initialization
         self._login_required = (
-            getattr(self.__class__, "requires_login", False)
-            or self.environment.parsed_options.requires_login
+            getattr(self.__class__, "requires_login", False) or self.environment.parsed_options.requires_login
         )
 
         # Initialize auth if login is required
@@ -133,13 +130,9 @@ class OsparcWebUserBase(OsparcUserBase):
             },
         )
         response.raise_for_status()
-        _logger.debug(
-            "Logged in user with email: %s", self.osparc_auth.OSPARC_USER_NAME
-        )
+        _logger.debug("Logged in user with email: %s", self.osparc_auth.OSPARC_USER_NAME)
 
     def _logout(self) -> None:
         # Implement logout logic here
         self.authenticated_post("/v0/auth/logout")
-        _logger.debug(
-            "Logged out user with email: %s", self.osparc_auth.OSPARC_USER_NAME
-        )
+        _logger.debug("Logged out user with email: %s", self.osparc_auth.OSPARC_USER_NAME)

@@ -1,6 +1,7 @@
 import logging
 from collections.abc import Iterator
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
+from pathlib import Path
 from typing import Final
 
 from aiodocker import DockerError
@@ -12,18 +13,24 @@ from models_library.api_schemas_directorv2.services import (
 )
 from servicelib.docker_constants import PREFIX_DYNAMIC_SIDECAR_VOLUMES
 from servicelib.logging_utils import log_catch, log_context
-from simcore_service_agent.core.settings import ApplicationSettings
 from starlette import status
 
+from ..core.settings import ApplicationSettings
 from ..models.volumes import VolumeDetails, VolumeDetailsAdapter
 from .backup import backup_volume
 from .instrumentation import get_instrumentation
 
 _logger = logging.getLogger(__name__)
 
+_TRANSPORT_ENDPOINT_IS_NOT_CONNECTED_SUBSTR: Final[str] = "transport endpoint is not connected"
+
 
 def _reverse_string(to_reverse: str) -> str:
     return to_reverse[::-1]
+
+
+def _is_transport_endpoint_not_connected_error(exc: DockerError) -> bool:
+    return _TRANSPORT_ENDPOINT_IS_NOT_CONNECTED_SUBSTR in str(exc).lower()
 
 
 _VOLUMES_NOT_TO_BACKUP: Final[tuple[str, ...]] = (
@@ -77,55 +84,138 @@ def _log_volume_not_found(volume_name: str) -> Iterator[None]:
 async def _backup_volume(app: FastAPI, docker: Docker, *, volume_name: str) -> None:
     """Backs up only volumes which require a backup"""
     if _does_volume_require_backup(volume_name):
-        with log_context(
-            _logger, logging.INFO, f"backup '{volume_name}'", log_duration=True
-        ):
+        with log_context(_logger, logging.INFO, f"backup '{volume_name}'", log_duration=True):
             volume_details = await get_volume_details(docker, volume_name=volume_name)
             settings: ApplicationSettings = app.state.settings
-            get_instrumentation(app).agent_metrics.backedup_volumes(
-                settings.AGENT_DOCKER_NODE_ID
-            )
+            get_instrumentation(app).agent_metrics.backedup_volumes(settings.AGENT_DOCKER_NODE_ID)
             await backup_volume(app, volume_details, volume_name)
     else:
         _logger.debug("No backup is required for '%s'", volume_name)
 
 
-async def remove_volume(
-    app: FastAPI, docker: Docker, *, volume_name: str, requires_backup: bool
-) -> None:
+async def remove_volume(app: FastAPI, docker: Docker, *, volume_name: str, requires_backup: bool) -> None:
     """Removes a volume and backs data up if required"""
-    with log_context(
-        _logger, logging.DEBUG, f"removing '{volume_name}'", log_duration=True
-    ), log_catch(_logger, reraise=False), _log_volume_not_found(volume_name):
+    with (
+        log_context(_logger, logging.DEBUG, f"removing '{volume_name}'", log_duration=True),
+        log_catch(_logger, reraise=False),
+        _log_volume_not_found(volume_name),
+    ):
         if requires_backup:
             await _backup_volume(app, docker, volume_name=volume_name)
 
-        await DockerVolume(docker, volume_name).delete()
-
         settings: ApplicationSettings = app.state.settings
-        get_instrumentation(app).agent_metrics.remove_volumes(
-            settings.AGENT_DOCKER_NODE_ID
-        )
+        get_instrumentation(app).agent_metrics.remove_volumes(settings.AGENT_DOCKER_NODE_ID)
+
+        volume = DockerVolume(docker, volume_name)
+
+        try:
+            await volume.delete()
+        except DockerError as err:
+            if err.status == status.HTTP_404_NOT_FOUND:
+                raise
+
+            if not _is_transport_endpoint_not_connected_error(err):
+                raise
+
+            # NOTE: This happens on hosts with stale FUSE mountpoints under the
+            # docker volumes directory (e.g. after abrupt shutdowns). Docker may
+            # fail volume deletion while trying to `lstat` the mountpoint.
+            _logger.info(
+                "Failed to remove volume '%s' due to stale mountpoint; attempting lazy unmount and retry",
+                volume_name,
+            )
+
+            mountpoint: Path | None = None
+            try:
+                volume_info = await volume.show()
+                mountpoint_str = volume_info.get("Mountpoint")
+                mountpoint = Path(mountpoint_str) if mountpoint_str else None
+            except DockerError as show_err:
+                if show_err.status == status.HTTP_404_NOT_FOUND:
+                    raise
+
+            if mountpoint is not None:
+                with log_context(
+                    _logger,
+                    logging.INFO,
+                    f"lazy unmount of stale mountpoint '{mountpoint}' for volume '{volume_name}'",
+                    log_duration=True,
+                ):
+                    await _try_lazy_unmount(docker, mountpoint, settings.AGENT_VOLUMES_CLEANUP_R_CLONE_VERSION)
+
+            await volume.delete(force=True)
+
+        get_instrumentation(app).agent_metrics.remove_volumes(settings.AGENT_DOCKER_NODE_ID)
+
+
+def _find_volumes_root(path: Path) -> Path:
+    # path =  /mnt/sdb1/volumes/volume_name...
+    parts = path.parts
+    first_occurrence = parts.index("volumes")
+    return Path(*parts[: first_occurrence + 1])
+
+
+async def _try_lazy_unmount(docker: Docker, mountpoint: Path, r_clone_version: str) -> None:
+    volumes_root = _find_volumes_root(mountpoint)
+
+    container = await docker.containers.run(
+        config={
+            "Image": f"rclone/rclone:{r_clone_version}",
+            "Entrypoint": ["sh", "-c", f"fusermount3 -uz {mountpoint}"],
+            "HostConfig": {
+                "AutoRemove": True,
+                "CapAdd": ["SYS_ADMIN"],
+                "Devices": [
+                    {
+                        "PathOnHost": "/dev/fuse",
+                        "PathInContainer": "/dev/fuse",
+                        "CgroupPermissions": "rwm",
+                    }
+                ],
+                "SecurityOpt": ["apparmor:unconfined"],
+                "Binds": [
+                    f"{volumes_root}:{volumes_root}:rshared",
+                ],
+            },
+        }
+    )
+
+    # Wait for container to stop and get its exit status
+    result = await container.wait()
+    status_code = result.get("StatusCode", 1)
+
+    if status_code != 0:
+        logs = await container.log(stdout=True, stderr=True)
+        msg = f"rclone helper failed (exit {status_code}):\n{''.join(logs)}"
+        raise RuntimeError(msg)
 
 
 async def get_containers_with_prefixes(docker: Docker, prefixes: set[str]) -> set[str]:
     """Returns a set of container names matching any of the given prefixes"""
-    all_containers = await docker.containers.list(all=True)
+    filtered_containers = await docker.containers.list(all=True, filters={"name": list(prefixes)})
 
     result: set[str] = set()
-    for container in all_containers:
-        container_info = await container.show()
-        container_name = container_info.get("Name", "").lstrip("/")
-        if any(container_name.startswith(prefix) for prefix in prefixes):
-            result.add(container_name)
+
+    for container in filtered_containers:
+        for name in container["Names"]:
+            container_name = name.lstrip("/")
+            if any(container_name.startswith(prefix) for prefix in prefixes):
+                result.add(container_name)
 
     return result
 
 
-async def remove_container_forcefully(docker: Docker, container_id: str) -> None:
+async def remove_container_forcefully(docker: Docker, container_id: str, *, stop_before_removal: bool) -> None:
     """Removes a container regardless of it's state"""
     try:
         container = await docker.containers.get(container_id)
+        if stop_before_removal:
+            with (
+                suppress(DockerError),
+                log_context(_logger, logging.DEBUG, f"stopping container '{container_id}'", log_duration=True),
+            ):
+                await container.stop()
+
         await container.delete(force=True)
     except DockerError as e:
         if e.status != status.HTTP_404_NOT_FOUND:

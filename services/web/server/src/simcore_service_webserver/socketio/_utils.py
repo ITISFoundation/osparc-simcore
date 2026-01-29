@@ -7,9 +7,7 @@ from typing import Any, Final, TypeAlias
 from aiohttp import web
 from socketio import AsyncServer  # type: ignore[import-untyped]
 
-_CLIENT_SOCKET_DECORATED_HANDLERS_APPKEY: Final = web.AppKey(
-    "CLIENT_SOCKET_DECORATED_HANDLERS", list[Callable]
-)
+_CLIENT_SOCKET_DECORATED_HANDLERS_APPKEY: Final = web.AppKey("CLIENT_SOCKET_DECORATED_HANDLERS", list[Callable])
 CLIENT_SOCKET_SERVER_APPKEY: Final = web.AppKey(
     # NOTE: AsyncServer stub library is missing
     "CLIENT_SOCKET_SERVER",
@@ -28,32 +26,22 @@ SocketID: TypeAlias = str
 EnvironDict: TypeAlias = dict[str, Any]
 
 # Connect event
-SocketioConnectEventHandler: TypeAlias = Callable[
-    [SocketID, EnvironDict, web.Application], Awaitable[None]
-]
+SocketioConnectEventHandler: TypeAlias = Callable[[SocketID, EnvironDict, web.Application], Awaitable[None]]
 
 # Disconnect event
-SocketioDisconnectEventHandler: TypeAlias = Callable[
-    [SocketID, web.Application], Awaitable[None]
-]
+SocketioDisconnectEventHandler: TypeAlias = Callable[[SocketID, web.Application], Awaitable[None]]
 
 # Event
 AnyData: TypeAlias = Any
-SocketioEventHandler: TypeAlias = Callable[
-    [SocketID, AnyData, web.Application], Awaitable[None]
-]
+SocketioEventHandler: TypeAlias = Callable[[SocketID, AnyData, web.Application], Awaitable[None]]
 
 _socketio_handlers_registry: list[
-    (
-        SocketioEventHandler
-        | SocketioConnectEventHandler
-        | SocketioDisconnectEventHandler
-    )
+    (SocketioEventHandler | SocketioConnectEventHandler | SocketioDisconnectEventHandler)
 ] = []
 
 
 def _socket_io_handler(app: web.Application):
-    """This decorator allows passing additional paramters to python-socketio compatible handlers.
+    """This decorator allows passing additional parameters to python-socketio compatible handlers.
 
     i.e. python-socketio handler expect functions of type `async def function(sid, *args, **kwargs)`
 
@@ -79,13 +67,9 @@ def _has_socket_io_handler_signature(fun: Callable) -> bool:
 
 def register_socketio_handlers(app: web.Application, module: ModuleType):
     sio = get_socket_server(app)
-    member_fcts = [
-        fct for fct in _socketio_handlers_registry if inspect.getmodule(fct) == module
-    ]
+    member_fcts = [fct for fct in _socketio_handlers_registry if inspect.getmodule(fct) == module]
     # convert handler
-    partial_fcts = [
-        _socket_io_handler(app)(func_handler) for func_handler in member_fcts
-    ]
+    partial_fcts = [_socket_io_handler(app)(func_handler) for func_handler in member_fcts]
     app[_CLIENT_SOCKET_DECORATED_HANDLERS_APPKEY] = partial_fcts
 
     # register the fcts
@@ -107,9 +91,7 @@ def register_socketio_handler(func: Callable) -> Callable:
     """
 
     is_handler = (
-        inspect.isfunction(func)
-        and _has_socket_io_handler_signature(func)
-        and inspect.iscoroutinefunction(func)
+        inspect.isfunction(func) and _has_socket_io_handler_signature(func) and inspect.iscoroutinefunction(func)
     )
     if is_handler:
         _socketio_handlers_registry.append(func)

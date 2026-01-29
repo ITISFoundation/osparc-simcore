@@ -134,6 +134,7 @@ def _get_environment_variables(
         "DY_SIDECAR_USER_ID": f"{scheduler_data.user_id}",
         "DYNAMIC_SIDECAR_COMPOSE_NAMESPACE": compose_namespace,
         "DYNAMIC_SIDECAR_LOG_LEVEL": app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_LOG_LEVEL,
+        "DY_SIDECAR_REQUIRES_DATA_MOUNTING": f"{scheduler_data.requires_data_mounting}",
         "DY_SIDECAR_LOG_FORMAT_LOCAL_DEV_ENABLED": f"{app_settings.DIRECTOR_V2_LOG_FORMAT_LOCAL_DEV_ENABLED}",
         "POSTGRES_DB": f"{app_settings.POSTGRES.POSTGRES_DB}",
         "POSTGRES_HOST": f"{app_settings.POSTGRES.POSTGRES_HOST}",
@@ -305,7 +306,7 @@ async def _get_mounts(
                 )
             )
 
-    if scheduler_data.paths_mapping.state_paths and user_extra_properties.mount_data:
+    if scheduler_data.paths_mapping.state_paths and scheduler_data.requires_data_mounting:
         mounts.append(
             DynamicSidecarVolumesPathsResolver.mount_vfs_cache(
                 swarm_stack_name=dynamic_services_scheduler_settings.SWARM_STACK_NAME,

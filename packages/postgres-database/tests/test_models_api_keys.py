@@ -32,9 +32,7 @@ async def user_id(connection: SAConnection) -> AsyncIterable[int]:
 @pytest.fixture
 async def product_name(connection: SAConnection) -> AsyncIterable[str]:
     name = await connection.scalar(
-        products.insert()
-        .values(random_product(name="s4l", group_id=None))
-        .returning(products.c.name)
+        products.insert().values(random_product(name="s4l", group_id=None)).returning(products.c.name)
     )
     assert name
     yield name
@@ -42,13 +40,9 @@ async def product_name(connection: SAConnection) -> AsyncIterable[str]:
     await connection.execute(products.delete().where(products.c.name == name))
 
 
-async def test_create_and_delete_api_key(
-    connection: SAConnection, user_id: int, product_name: str
-):
+async def test_create_and_delete_api_key(connection: SAConnection, user_id: int, product_name: str):
     apikey_id = await connection.scalar(
-        api_keys.insert()
-        .values(**random_api_auth(product_name, user_id))
-        .returning(api_keys.c.id)
+        api_keys.insert().values(**random_api_auth(product_name, user_id)).returning(api_keys.c.id)
     )
 
     assert apikey_id
@@ -58,15 +52,11 @@ async def test_create_and_delete_api_key(
 
 
 @pytest.fixture
-async def session_auth(
-    connection: SAConnection, user_id: int, product_name: str
-) -> AsyncIterable[RowProxy]:
+async def session_auth(connection: SAConnection, user_id: int, product_name: str) -> AsyncIterable[RowProxy]:
     # user_id under product_name creates an api-key+secret and
     # uses to authenticate a session.
     result = await connection.execute(
-        api_keys.insert()
-        .values(**random_api_auth(product_name, user_id))
-        .returning(sa.literal_column("*"))
+        api_keys.insert().values(**random_api_auth(product_name, user_id)).returning(sa.literal_column("*"))
     )
     row = await result.fetchone()
     assert row
@@ -87,8 +77,7 @@ async def test_get_session_identity_for_api_server(
             api_keys.c.user_id,
             api_keys.c.product_name,
         ).where(
-            (api_keys.c.api_key == session_auth.api_key)
-            & (api_keys.c.api_secret == session_auth.api_secret),
+            (api_keys.c.api_key == session_auth.api_key) & (api_keys.c.api_secret == session_auth.api_secret),
         )
     )
     row = await result.fetchone()

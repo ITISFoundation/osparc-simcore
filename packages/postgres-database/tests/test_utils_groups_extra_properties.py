@@ -56,14 +56,10 @@ async def create_fake_group_extra_properties(
 ) -> AsyncIterator[Callable[..., Awaitable[GroupExtraProperties]]]:
     created_properties = []
 
-    async def _creator(
-        gid: int, product_name: str, **group_extra_properties_kwars
-    ) -> GroupExtraProperties:
+    async def _creator(gid: int, product_name: str, **group_extra_properties_kwars) -> GroupExtraProperties:
         result = await connection.execute(
             sqlalchemy.insert(groups_extra_properties)
-            .values(
-                group_id=gid, product_name=product_name, **group_extra_properties_kwars
-            )
+            .values(group_id=gid, product_name=product_name, **group_extra_properties_kwars)
             .returning(literal_column("*"))
         )
         assert result
@@ -97,9 +93,7 @@ async def test_get_v2(
         )
 
     await create_fake_product(product_name)
-    created_extra_properties = await create_fake_group_extra_properties(
-        registered_user.primary_gid, product_name
-    )
+    created_extra_properties = await create_fake_group_extra_properties(registered_user.primary_gid, product_name)
     received_extra_properties = await GroupExtraPropertiesRepo.get_v2(
         asyncpg_engine, gid=registered_user.primary_gid, product_name=product_name
     )
@@ -108,9 +102,7 @@ async def test_get_v2(
 
 @pytest.fixture
 async def everyone_group_id(connection: aiopg.sa.connection.SAConnection) -> int:
-    result = await connection.scalar(
-        sqlalchemy.select(groups.c.gid).where(groups.c.type == GroupType.EVERYONE)
-    )
+    result = await connection.scalar(sqlalchemy.select(groups.c.gid).where(groups.c.type == GroupType.EVERYONE))
     assert result
     return result
 
@@ -132,9 +124,7 @@ async def _add_user_to_group(
     user_id: int,
     group_id: int,
 ) -> None:
-    await connection.execute(
-        sqlalchemy.insert(user_to_groups).values(uid=user_id, gid=group_id)
-    )
+    await connection.execute(sqlalchemy.insert(user_to_groups).values(uid=user_id, gid=group_id))
 
 
 async def test_get_aggregated_properties_for_user_returns_properties_in_expected_priority(
@@ -154,43 +144,32 @@ async def test_get_aggregated_properties_for_user_returns_properties_in_expected
     created_groups = [await create_fake_group(connection) for _ in range(5)]
 
     # create a specific extra properties for group everyone
-    everyone_group_extra_properties = await create_fake_group_extra_properties(
-        everyone_group_id, product_name
-    )
+    everyone_group_extra_properties = await create_fake_group_extra_properties(everyone_group_id, product_name)
 
     # this should return the everyone group properties
-    aggregated_group_properties = (
-        await GroupExtraPropertiesRepo.get_aggregated_properties_for_user(
-            connection_factory, user_id=registered_user.id, product_name=product_name
-        )
+    aggregated_group_properties = await GroupExtraPropertiesRepo.get_aggregated_properties_for_user(
+        connection_factory, user_id=registered_user.id, product_name=product_name
     )
     assert aggregated_group_properties == everyone_group_extra_properties
 
     # let's add the user in these groups
     for group in created_groups:
-        await _add_user_to_group(
-            connection_factory, user_id=registered_user.id, group_id=group.gid
-        )
+        await _add_user_to_group(connection_factory, user_id=registered_user.id, group_id=group.gid)
 
     # this changes nothing
-    aggregated_group_properties = (
-        await GroupExtraPropertiesRepo.get_aggregated_properties_for_user(
-            connection_factory, user_id=registered_user.id, product_name=product_name
-        )
+    aggregated_group_properties = await GroupExtraPropertiesRepo.get_aggregated_properties_for_user(
+        connection_factory, user_id=registered_user.id, product_name=product_name
     )
     assert aggregated_group_properties == everyone_group_extra_properties
 
     # now create some extra properties
     standard_group_extra_properties = [
-        await create_fake_group_extra_properties(group.gid, product_name)
-        for group in created_groups
+        await create_fake_group_extra_properties(group.gid, product_name) for group in created_groups
     ]
 
     # this returns the last properties created
-    aggregated_group_properties = (
-        await GroupExtraPropertiesRepo.get_aggregated_properties_for_user(
-            connection_factory, user_id=registered_user.id, product_name=product_name
-        )
+    aggregated_group_properties = await GroupExtraPropertiesRepo.get_aggregated_properties_for_user(
+        connection_factory, user_id=registered_user.id, product_name=product_name
     )
     assert aggregated_group_properties != everyone_group_extra_properties
     assert aggregated_group_properties == standard_group_extra_properties[0]
@@ -200,10 +179,8 @@ async def test_get_aggregated_properties_for_user_returns_properties_in_expected
         registered_user.primary_gid, product_name
     )
     # this now returns the primary properties
-    aggregated_group_properties = (
-        await GroupExtraPropertiesRepo.get_aggregated_properties_for_user(
-            connection_factory, user_id=registered_user.id, product_name=product_name
-        )
+    aggregated_group_properties = await GroupExtraPropertiesRepo.get_aggregated_properties_for_user(
+        connection_factory, user_id=registered_user.id, product_name=product_name
     )
     assert aggregated_group_properties == personal_group_extra_properties
 
@@ -225,21 +202,16 @@ async def test_get_aggregated_properties_for_user_returns_properties_in_expected
     created_groups = [await create_fake_group(connection) for _ in range(5)]
     # let's add the user in these groups
     for group in created_groups:
-        await _add_user_to_group(
-            connection_factory, user_id=registered_user.id, group_id=group.gid
-        )
+        await _add_user_to_group(connection_factory, user_id=registered_user.id, group_id=group.gid)
 
     # now create some extra properties
     standard_group_extra_properties = [
-        await create_fake_group_extra_properties(group.gid, product_name)
-        for group in created_groups
+        await create_fake_group_extra_properties(group.gid, product_name) for group in created_groups
     ]
 
     # this returns the last properties created
-    aggregated_group_properties = (
-        await GroupExtraPropertiesRepo.get_aggregated_properties_for_user(
-            connection_factory, user_id=registered_user.id, product_name=product_name
-        )
+    aggregated_group_properties = await GroupExtraPropertiesRepo.get_aggregated_properties_for_user(
+        connection_factory, user_id=registered_user.id, product_name=product_name
     )
     assert aggregated_group_properties == standard_group_extra_properties[0]
 
@@ -248,10 +220,8 @@ async def test_get_aggregated_properties_for_user_returns_properties_in_expected
         registered_user.primary_gid, product_name
     )
     # this now returns the primary properties
-    aggregated_group_properties = (
-        await GroupExtraPropertiesRepo.get_aggregated_properties_for_user(
-            connection_factory, user_id=registered_user.id, product_name=product_name
-        )
+    aggregated_group_properties = await GroupExtraPropertiesRepo.get_aggregated_properties_for_user(
+        connection_factory, user_id=registered_user.id, product_name=product_name
     )
     assert aggregated_group_properties == personal_group_extra_properties
 
@@ -278,10 +248,8 @@ async def test_get_aggregated_properties_for_user_returns_property_values_as_tru
         use_on_demand_clusters=False,
     )
     # this should return the everyone group properties
-    aggregated_group_properties = (
-        await GroupExtraPropertiesRepo.get_aggregated_properties_for_user(
-            connection_factory, user_id=registered_user.id, product_name=product_name
-        )
+    aggregated_group_properties = await GroupExtraPropertiesRepo.get_aggregated_properties_for_user(
+        connection_factory, user_id=registered_user.id, product_name=product_name
     )
     assert aggregated_group_properties == everyone_group_extra_properties
 
@@ -295,15 +263,11 @@ async def test_get_aggregated_properties_for_user_returns_property_values_as_tru
             override_services_specifications=False,
             use_on_demand_clusters=False,
         )
-        await _add_user_to_group(
-            connection_factory, user_id=registered_user.id, group_id=group.gid
-        )
+        await _add_user_to_group(connection_factory, user_id=registered_user.id, group_id=group.gid)
 
     # now we still should not have any of these value Truthy
-    aggregated_group_properties = (
-        await GroupExtraPropertiesRepo.get_aggregated_properties_for_user(
-            connection_factory, user_id=registered_user.id, product_name=product_name
-        )
+    aggregated_group_properties = await GroupExtraPropertiesRepo.get_aggregated_properties_for_user(
+        connection_factory, user_id=registered_user.id, product_name=product_name
     )
     assert aggregated_group_properties.internet_access is False
     assert aggregated_group_properties.override_services_specifications is False
@@ -319,10 +283,8 @@ async def test_get_aggregated_properties_for_user_returns_property_values_as_tru
     assert result.rowcount == 1
 
     # now we should have internet access
-    aggregated_group_properties = (
-        await GroupExtraPropertiesRepo.get_aggregated_properties_for_user(
-            connection_factory, user_id=registered_user.id, product_name=product_name
-        )
+    aggregated_group_properties = await GroupExtraPropertiesRepo.get_aggregated_properties_for_user(
+        connection_factory, user_id=registered_user.id, product_name=product_name
     )
     assert aggregated_group_properties.internet_access is True
     assert aggregated_group_properties.override_services_specifications is False
@@ -338,10 +300,8 @@ async def test_get_aggregated_properties_for_user_returns_property_values_as_tru
     assert result.rowcount == 1
 
     # now we should have internet access and service override
-    aggregated_group_properties = (
-        await GroupExtraPropertiesRepo.get_aggregated_properties_for_user(
-            connection_factory, user_id=registered_user.id, product_name=product_name
-        )
+    aggregated_group_properties = await GroupExtraPropertiesRepo.get_aggregated_properties_for_user(
+        connection_factory, user_id=registered_user.id, product_name=product_name
     )
     assert aggregated_group_properties.internet_access is True
     assert aggregated_group_properties.override_services_specifications is True
@@ -357,10 +317,8 @@ async def test_get_aggregated_properties_for_user_returns_property_values_as_tru
     )
     assert personal_group_extra_properties
 
-    aggregated_group_properties = (
-        await GroupExtraPropertiesRepo.get_aggregated_properties_for_user(
-            connection_factory, user_id=registered_user.id, product_name=product_name
-        )
+    aggregated_group_properties = await GroupExtraPropertiesRepo.get_aggregated_properties_for_user(
+        connection_factory, user_id=registered_user.id, product_name=product_name
     )
     assert aggregated_group_properties.internet_access is False
     assert aggregated_group_properties.override_services_specifications is False

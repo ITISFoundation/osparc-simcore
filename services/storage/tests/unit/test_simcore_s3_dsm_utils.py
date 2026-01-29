@@ -52,10 +52,7 @@ _FOLDERS_PATH = Path("nested/folders/path")
     ],
 )
 def test__base_path_parent(selection: Path | str, s3_object: Path, expected: str):
-    assert (
-        _base_path_parent(UserSelectionStr(f"{selection}"), S3ObjectKey(f"{s3_object}"))
-        == expected
-    )
+    assert _base_path_parent(UserSelectionStr(f"{selection}"), S3ObjectKey(f"{s3_object}")) == expected
 
 
 @pytest.mark.parametrize(
@@ -74,13 +71,8 @@ def test__base_path_parent(selection: Path | str, s3_object: Path, expected: str
         (["a/a.txt", "a.txt", "c.txt", "a/d.txt"], False),
     ],
 )
-def test_ensure_user_selection_from_same_base_directory(
-    user_selection: list[S3ObjectKey | Path], expected: bool
-):
-    assert (
-        ensure_user_selection_from_same_base_directory([f"{x}" for x in user_selection])
-        == expected
-    )
+def test_ensure_user_selection_from_same_base_directory(user_selection: list[S3ObjectKey | Path], expected: bool):
+    assert ensure_user_selection_from_same_base_directory([f"{x}" for x in user_selection]) == expected
 
 
 _PID1: Final[ProjectID] = UUID(int=1)

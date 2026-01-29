@@ -104,9 +104,7 @@ pytest_simcore_ops_services_selection = [
 ]
 
 
-def _assert_dask_client_correctly_initialized(
-    mocked_dask_client: mock.MagicMock, scheduler: BaseCompScheduler
-) -> None:
+def _assert_dask_client_correctly_initialized(mocked_dask_client: mock.MagicMock, scheduler: BaseCompScheduler) -> None:
     mocked_dask_client.create.assert_called_once_with(
         app=mock.ANY,
         settings=mock.ANY,
@@ -285,9 +283,7 @@ async def _assert_publish_in_dask_backend(
         any_order=True,
     )
     task_to_callback_mapping = {
-        task.node_id: mocked_dask_client.send_computation_tasks.call_args_list[
-            i
-        ].kwargs["callback"]
+        task.node_id: mocked_dask_client.send_computation_tasks.call_args_list[i].kwargs["callback"]
         for i, task in enumerate(expected_pending_tasks)
     }
     mocked_dask_client.send_computation_tasks.reset_mock()
@@ -342,9 +338,7 @@ async def instrumentation_rabbit_client_parser(
 ) -> AsyncIterator[mock.AsyncMock]:
     client = create_rabbitmq_client("instrumentation_pytest_consumer")
     mock = mocker.AsyncMock(return_value=True)
-    queue_name, _ = await client.subscribe(
-        InstrumentationRabbitMessage.get_channel_name(), mock
-    )
+    queue_name, _ = await client.subscribe(InstrumentationRabbitMessage.get_channel_name(), mock)
     yield mock
     await client.unsubscribe(queue_name)
 
@@ -355,9 +349,7 @@ async def resource_tracking_rabbit_client_parser(
 ) -> AsyncIterator[mock.AsyncMock]:
     client = create_rabbitmq_client("resource_tracking_pytest_consumer")
     mock = mocker.AsyncMock(return_value=True)
-    queue_name, _ = await client.subscribe(
-        RabbitResourceTrackingBaseMessage.get_channel_name(), mock
-    )
+    queue_name, _ = await client.subscribe(RabbitResourceTrackingBaseMessage.get_channel_name(), mock)
     yield mock
     await client.unsubscribe(queue_name)
 
@@ -408,29 +400,22 @@ async def _assert_message_received(
             print(
                 f"--> waiting for rabbitmq message [{attempt.retry_state.attempt_number}, {attempt.retry_state.idle_for}]"
             )
-            assert (
-                mocked_message_parser.call_count == expected_call_count
-            ), mocked_message_parser.call_args_list
+            assert mocked_message_parser.call_count == expected_call_count, mocked_message_parser.call_args_list
             print(
                 f"<-- rabbitmq message received after [{attempt.retry_state.attempt_number}, {attempt.retry_state.idle_for}]"
             )
     parsed_messages = [
-        message_parser(mocked_message_parser.call_args_list[c].args[0])
-        for c in range(expected_call_count)
+        message_parser(mocked_message_parser.call_args_list[c].args[0]) for c in range(expected_call_count)
     ]
 
     mocked_message_parser.reset_mock()
     return parsed_messages
 
 
-def _with_mock_send_computation_tasks(
-    tasks: list[CompTaskAtDB], mocked_dask_client: mock.MagicMock
-) -> mock.Mock:
+def _with_mock_send_computation_tasks(tasks: list[CompTaskAtDB], mocked_dask_client: mock.MagicMock) -> mock.Mock:
     node_id_to_job_id_map = {task.node_id: task.job_id for task in tasks}
 
-    async def _send_computation_tasks(
-        *args, tasks: dict[NodeID, Image], **kwargs
-    ) -> list[PublishedComputationTask]:
+    async def _send_computation_tasks(*args, tasks: dict[NodeID, Image], **kwargs) -> list[PublishedComputationTask]:
         for node_id in tasks:
             assert NodeID(f"{node_id}") in node_id_to_job_id_map
         return [
@@ -519,12 +504,7 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
 
     async def _return_1st_task_running(job_ids: list[str]) -> list[RunningState]:
         return [
-            (
-                RunningState.STARTED
-                if job_id == exp_started_task.job_id
-                else RunningState.PENDING
-            )
-            for job_id in job_ids
+            (RunningState.STARTED if job_id == exp_started_task.job_id else RunningState.PENDING) for job_id in job_ids
         ]
 
     mocked_dask_client.get_tasks_status.side_effect = _return_1st_task_running
@@ -658,12 +638,7 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
     # 4. the dask-worker completed the task successfully
     async def _return_1st_task_success(job_ids: list[str]) -> list[RunningState]:
         return [
-            (
-                RunningState.SUCCESS
-                if job_id == exp_started_task.job_id
-                else RunningState.PENDING
-            )
-            for job_id in job_ids
+            (RunningState.SUCCESS if job_id == exp_started_task.job_id else RunningState.PENDING) for job_id in job_ids
         ]
 
     mocked_dask_client.get_tasks_status.side_effect = _return_1st_task_success
@@ -723,11 +698,7 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
     await assert_comp_tasks_and_comp_run_snapshot_tasks(
         sqlalchemy_async_engine,
         project_uuid=published_project.project.uuid,
-        task_ids=[
-            p.node_id
-            for p in published_project.tasks
-            if p not in expected_pending_tasks + completed_tasks
-        ],
+        task_ids=[p.node_id for p in published_project.tasks if p not in expected_pending_tasks + completed_tasks],
         expected_state=RunningState.PUBLISHED,
         expected_progress=None,  # since we bypass the API entrypoint this is correct
         run_id=_comp_runs_db[0].run_id,
@@ -745,15 +716,11 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
     )
     mocked_dask_client.send_computation_tasks.reset_mock()
     mocked_dask_client.get_tasks_status.assert_has_calls(
-        calls=[
-            mock.call([p.job_id for p in completed_tasks + expected_pending_tasks[:1]])
-        ],
+        calls=[mock.call([p.job_id for p in completed_tasks + expected_pending_tasks[:1]])],
         any_order=True,
     )
     mocked_dask_client.get_tasks_status.reset_mock()
-    mocked_dask_client.get_task_result.assert_called_once_with(
-        completed_tasks[0].job_id
-    )
+    mocked_dask_client.get_task_result.assert_called_once_with(completed_tasks[0].job_id)
     mocked_dask_client.get_task_result.reset_mock()
     mocked_parse_output_data_fct.assert_called_once_with(
         mock.ANY,
@@ -766,17 +733,12 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
     # 6. the dask-worker starts processing a task
     exp_started_task = next_pending_task
 
-    async def _return_2nd_task_running(job_ids: list[str]) -> list[RunningState]:
+    async def _return_2and_task_running(job_ids: list[str]) -> list[RunningState]:
         return [
-            (
-                RunningState.STARTED
-                if job_id == exp_started_task.job_id
-                else RunningState.PENDING
-            )
-            for job_id in job_ids
+            (RunningState.STARTED if job_id == exp_started_task.job_id else RunningState.PENDING) for job_id in job_ids
         ]
 
-    mocked_dask_client.get_tasks_status.side_effect = _return_2nd_task_running
+    mocked_dask_client.get_tasks_status.side_effect = _return_2and_task_running
     # trigger the scheduler, run state should keep to STARTED, task should be as well
     assert exp_started_task.job_id
     await _trigger_progress_event(
@@ -810,9 +772,7 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
     )
     mocked_dask_client.send_computation_tasks.assert_not_called()
     expected_pending_tasks.reverse()
-    mocked_dask_client.get_tasks_status.assert_called_once_with(
-        [p.job_id for p in expected_pending_tasks]
-    )
+    mocked_dask_client.get_tasks_status.assert_called_once_with([p.job_id for p in expected_pending_tasks])
     mocked_dask_client.get_tasks_status.reset_mock()
     mocked_dask_client.get_task_result.assert_not_called()
     messages = await _assert_message_received(
@@ -831,17 +791,12 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
 
     # -------------------------------------------------------------------------------
     # 7. the task fails
-    async def _return_2nd_task_failed(job_ids: list[str]) -> list[RunningState]:
+    async def _return_2and_task_failed(job_ids: list[str]) -> list[RunningState]:
         return [
-            (
-                RunningState.FAILED
-                if job_id == exp_started_task.job_id
-                else RunningState.PENDING
-            )
-            for job_id in job_ids
+            (RunningState.FAILED if job_id == exp_started_task.job_id else RunningState.PENDING) for job_id in job_ids
         ]
 
-    mocked_dask_client.get_tasks_status.side_effect = _return_2nd_task_failed
+    mocked_dask_client.get_tasks_status.side_effect = _return_2and_task_failed
     mocked_dask_client.get_task_result.side_effect = ServiceRuntimeError(
         service_key="simcore/services/dynamic/some-service",
         service_version="1.0.0",
@@ -875,9 +830,7 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
         run_id=_comp_runs_db[0].run_id,
     )
     mocked_dask_client.send_computation_tasks.assert_not_called()
-    mocked_dask_client.get_tasks_status.assert_called_once_with(
-        [p.job_id for p in expected_pending_tasks]
-    )
+    mocked_dask_client.get_tasks_status.assert_called_once_with([p.job_id for p in expected_pending_tasks])
     mocked_dask_client.get_tasks_status.reset_mock()
     mocked_dask_client.get_task_result.assert_called_once_with(exp_started_task.job_id)
     mocked_dask_client.get_task_result.reset_mock()
@@ -902,12 +855,7 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
 
     async def _return_3rd_task_success(job_ids: list[str]) -> list[RunningState]:
         return [
-            (
-                RunningState.SUCCESS
-                if job_id == exp_started_task.job_id
-                else RunningState.PENDING
-            )
-            for job_id in job_ids
+            (RunningState.SUCCESS if job_id == exp_started_task.job_id else RunningState.PENDING) for job_id in job_ids
         ]
 
     mocked_dask_client.get_tasks_status.side_effect = _return_3rd_task_success
@@ -944,9 +892,7 @@ async def test_proper_pipeline_is_scheduled(  # noqa: PLR0915
         run_id=_comp_runs_db[0].run_id,
     )
     mocked_dask_client.send_computation_tasks.assert_not_called()
-    mocked_dask_client.get_tasks_status.assert_called_once_with(
-        [p.job_id for p in expected_pending_tasks]
-    )
+    mocked_dask_client.get_tasks_status.assert_called_once_with([p.job_id for p in expected_pending_tasks])
     mocked_dask_client.get_task_result.assert_called_once_with(exp_started_task.job_id)
     messages = await _assert_message_received(
         instrumentation_rabbit_client_parser,
@@ -1026,12 +972,7 @@ async def with_started_project(
 
     async def _return_1st_task_running(job_ids: list[str]) -> list[RunningState]:
         return [
-            (
-                RunningState.STARTED
-                if job_id == exp_started_task.job_id
-                else RunningState.PENDING
-            )
-            for job_id in job_ids
+            (RunningState.STARTED if job_id == exp_started_task.job_id else RunningState.PENDING) for job_id in job_ids
         ]
 
     assert isinstance(mocked_dask_client.get_tasks_status, mock.Mock)
@@ -1238,9 +1179,7 @@ async def test_broken_pipeline_configuration_is_not_scheduled_and_aborted(
     """A pipeline which comp_tasks are missing should not be scheduled.
     It shall be aborted and shown as such in the comp_runs db"""
     user = create_registered_user()
-    sleepers_project = await create_project(
-        user, workbench=fake_workbench_without_outputs
-    )
+    sleepers_project = await create_project(user, workbench=fake_workbench_without_outputs)
     await create_pipeline(
         project_id=f"{sleepers_project.uuid}",
         dag_adjacency_list=fake_workbench_adjacency,
@@ -1287,8 +1226,7 @@ async def test_broken_pipeline_configuration_is_not_scheduled_and_aborted(
         sqlalchemy_async_engine,
         expected_total=1,
         expected_state=RunningState.FAILED,
-        where_statement=(comp_runs.c.user_id == user["id"])
-        & (comp_runs.c.project_uuid == f"{sleepers_project.uuid}"),
+        where_statement=(comp_runs.c.user_id == user["id"]) & (comp_runs.c.project_uuid == f"{sleepers_project.uuid}"),
     )
     await _assert_message_received(
         computational_pipeline_rabbit_client_parser,
@@ -1350,9 +1288,7 @@ async def test_task_progress_triggers(
         )
         await cast(  # noqa: SLF001
             DaskScheduler, scheduler_api
-        )._task_progress_change_handler(
-            (arrow.utcnow().timestamp(), progress_event.model_dump_json())
-        )
+        )._task_progress_change_handler((arrow.utcnow().timestamp(), progress_event.model_dump_json()))
         # NOTE: not sure whether it should switch to STARTED.. it would make sense
         await assert_comp_tasks_and_comp_run_snapshot_tasks(
             sqlalchemy_async_engine,
@@ -1449,11 +1385,7 @@ async def test_handling_of_disconnected_scheduler_dask(
     await assert_comp_tasks_and_comp_run_snapshot_tasks(
         sqlalchemy_async_engine,
         project_uuid=published_project.project.uuid,
-        task_ids=[
-            t.node_id
-            for t in published_project.tasks
-            if t.node_class == NodeClass.COMPUTATIONAL
-        ],
+        task_ids=[t.node_id for t in published_project.tasks if t.node_class == NodeClass.COMPUTATIONAL],
         expected_state=RunningState.ABORTED,
         expected_progress=1,
         run_id=run_in_db.run_id,
@@ -1546,9 +1478,7 @@ class RebootState:
         pytest.param(
             RebootState(
                 dask_task_status=RunningState.STARTED,
-                task_result=ComputationalBackendTaskResultsNotReadyError(
-                    job_id="fake_job_id"
-                ),
+                task_result=ComputationalBackendTaskResultsNotReadyError(job_id="fake_job_id"),
                 expected_task_state_group1=RunningState.STARTED,
                 expected_task_progress_group1=0,
                 expected_task_state_group2=RunningState.STARTED,
@@ -1611,11 +1541,7 @@ async def test_handling_scheduled_tasks_after_director_reboots(
     mocked_dask_client.get_tasks_status.assert_called_once()
     if reboot_state.expected_run_state in COMPLETED_STATES:
         mocked_dask_client.get_task_result.assert_has_calls(
-            [
-                mock.call(t.job_id)
-                for t in running_project.tasks
-                if t.node_class == NodeClass.COMPUTATIONAL
-            ],
+            [mock.call(t.job_id) for t in running_project.tasks if t.node_class == NodeClass.COMPUTATIONAL],
             any_order=True,
         )
     else:
@@ -1696,10 +1622,8 @@ async def test_handling_cancellation_of_jobs_after_reboot(
             expected_total=1,
             expected_state=RunningState.STARTED,
             where_statement=and_(
-                comp_runs.c.user_id
-                == running_project_mark_for_cancellation.project.prj_owner,
-                comp_runs.c.project_uuid
-                == f"{running_project_mark_for_cancellation.project.uuid}",
+                comp_runs.c.user_id == running_project_mark_for_cancellation.project.prj_owner,
+                comp_runs.c.project_uuid == f"{running_project_mark_for_cancellation.project.uuid}",
             ),
         )
     )[0]
@@ -1731,20 +1655,14 @@ async def test_handling_cancellation_of_jobs_after_reboot(
     )
     mocked_dask_client.abort_computation_task.assert_called()
     assert mocked_dask_client.abort_computation_task.call_count == len(
-        [
-            t.node_id
-            for t in running_project_mark_for_cancellation.tasks
-            if t.node_class == NodeClass.COMPUTATIONAL
-        ]
+        [t.node_id for t in running_project_mark_for_cancellation.tasks if t.node_class == NodeClass.COMPUTATIONAL]
     )
     # in the DB they are still running, they will be stopped in the next iteration
     await assert_comp_tasks_and_comp_run_snapshot_tasks(
         sqlalchemy_async_engine,
         project_uuid=running_project_mark_for_cancellation.project.uuid,
         task_ids=[
-            t.node_id
-            for t in running_project_mark_for_cancellation.tasks
-            if t.node_class == NodeClass.COMPUTATIONAL
+            t.node_id for t in running_project_mark_for_cancellation.tasks if t.node_class == NodeClass.COMPUTATIONAL
         ],
         expected_state=RunningState.STARTED,
         expected_progress=0,
@@ -1755,10 +1673,8 @@ async def test_handling_cancellation_of_jobs_after_reboot(
         expected_total=1,
         expected_state=RunningState.STARTED,
         where_statement=and_(
-            comp_runs.c.user_id
-            == running_project_mark_for_cancellation.project.prj_owner,
-            comp_runs.c.project_uuid
-            == f"{running_project_mark_for_cancellation.project.uuid}",
+            comp_runs.c.user_id == running_project_mark_for_cancellation.project.prj_owner,
+            comp_runs.c.project_uuid == f"{running_project_mark_for_cancellation.project.uuid}",
         ),
     )
 
@@ -1784,9 +1700,7 @@ async def test_handling_cancellation_of_jobs_after_reboot(
         sqlalchemy_async_engine,
         project_uuid=running_project_mark_for_cancellation.project.uuid,
         task_ids=[
-            t.node_id
-            for t in running_project_mark_for_cancellation.tasks
-            if t.node_class == NodeClass.COMPUTATIONAL
+            t.node_id for t in running_project_mark_for_cancellation.tasks if t.node_class == NodeClass.COMPUTATIONAL
         ],
         expected_state=RunningState.ABORTED,
         expected_progress=1,
@@ -1797,10 +1711,8 @@ async def test_handling_cancellation_of_jobs_after_reboot(
         expected_total=1,
         expected_state=RunningState.ABORTED,
         where_statement=and_(
-            comp_runs.c.user_id
-            == running_project_mark_for_cancellation.project.prj_owner,
-            comp_runs.c.project_uuid
-            == f"{running_project_mark_for_cancellation.project.uuid}",
+            comp_runs.c.user_id == running_project_mark_for_cancellation.project.prj_owner,
+            comp_runs.c.project_uuid == f"{running_project_mark_for_cancellation.project.uuid}",
         ),
     )
     mocked_clean_task_output_fct.assert_called()
@@ -1814,9 +1726,7 @@ async def test_handling_cancellation_of_jobs_after_reboot(
 @pytest.fixture
 def with_fast_service_heartbeat_s(monkeypatch: pytest.MonkeyPatch) -> int:
     seconds = 1
-    monkeypatch.setenv(
-        "SERVICE_TRACKING_HEARTBEAT", f"{datetime.timedelta(seconds=seconds)}"
-    )
+    monkeypatch.setenv("SERVICE_TRACKING_HEARTBEAT", f"{datetime.timedelta(seconds=seconds)}")
     return seconds
 
 
@@ -1860,12 +1770,7 @@ async def test_running_pipeline_triggers_heartbeat(
 
     async def _return_1st_task_running(job_ids: list[str]) -> list[RunningState]:
         return [
-            (
-                RunningState.STARTED
-                if job_id == exp_started_task.job_id
-                else RunningState.PENDING
-            )
-            for job_id in job_ids
+            (RunningState.STARTED if job_id == exp_started_task.job_id else RunningState.PENDING) for job_id in job_ids
         ]
 
     mocked_dask_client.get_tasks_status.side_effect = _return_1st_task_running
@@ -1953,10 +1858,8 @@ async def test_pipeline_with_on_demand_cluster_with_not_ready_backend_waits(
     computational_pipeline_rabbit_client_parser: mock.AsyncMock,
     fake_collection_run_id: CollectionRunID,
 ):
-    mocked_get_or_create_cluster.side_effect = (
-        ComputationalBackendOnDemandNotReadyError(
-            eta=faker.time_delta(datetime.timedelta(hours=1))
-        )
+    mocked_get_or_create_cluster.side_effect = ComputationalBackendOnDemandNotReadyError(
+        eta=faker.time_delta(datetime.timedelta(hours=1))
     )
     # running the pipeline will trigger a call to the clusters-keeper
     assert published_project.project.prj_owner
@@ -2309,15 +2212,9 @@ async def test_getting_task_result_raises_exception_does_not_fail_task_and_retri
 
     mocked_dask_client.get_tasks_status.side_effect = mocked_get_tasks_status
 
-    computational_tasks = [
-        t for t in running_project.tasks if t.node_class is NodeClass.COMPUTATIONAL
-    ]
-    expected_timeouted_tasks = random.sample(
-        computational_tasks, k=len(computational_tasks) - 1
-    )
-    successful_tasks = [
-        t for t in computational_tasks if t not in expected_timeouted_tasks
-    ]
+    computational_tasks = [t for t in running_project.tasks if t.node_class is NodeClass.COMPUTATIONAL]
+    expected_timeouted_tasks = random.sample(computational_tasks, k=len(computational_tasks) - 1)
+    successful_tasks = [t for t in computational_tasks if t not in expected_timeouted_tasks]
 
     async def mocked_get_task_result(job_id: str) -> TaskOutputData:
         if job_id in [t.job_id for t in successful_tasks]:
@@ -2353,9 +2250,7 @@ async def test_getting_task_result_raises_exception_does_not_fail_task_and_retri
         assert error_dict["type"] == _TASK_RETRIEVAL_ERROR_TYPE
         assert "ctx" in error_dict
         assert _TASK_RETRIEVAL_ERROR_CONTEXT_TIME_KEY in error_dict["ctx"]
-        retrieval_times.append(
-            error_dict["ctx"][_TASK_RETRIEVAL_ERROR_CONTEXT_TIME_KEY]
-        )
+        retrieval_times.append(error_dict["ctx"][_TASK_RETRIEVAL_ERROR_CONTEXT_TIME_KEY])
     assert len(retrieval_times) == len(expected_timeouted_tasks)
 
     await assert_comp_tasks_and_comp_run_snapshot_tasks(
@@ -2384,9 +2279,7 @@ async def test_getting_task_result_raises_exception_does_not_fail_task_and_retri
             project_id=running_project.project.uuid,
             iteration=1,
         )
-        assert mocked_dask_client.get_task_result.call_count == (
-            len(expected_timeouted_tasks)
-        )
+        assert mocked_dask_client.get_task_result.call_count == (len(expected_timeouted_tasks))
         mocked_dask_client.get_task_result.reset_mock()
 
     comp_tasks, _ = await assert_comp_tasks_and_comp_run_snapshot_tasks(
@@ -2406,9 +2299,7 @@ async def test_getting_task_result_raises_exception_does_not_fail_task_and_retri
         assert "ctx" in error_dict
         assert _TASK_RETRIEVAL_ERROR_CONTEXT_TIME_KEY in error_dict["ctx"]
         # the time shall be the same as before
-        assert (
-            error_dict["ctx"][_TASK_RETRIEVAL_ERROR_CONTEXT_TIME_KEY] in retrieval_times
-        )
+        assert error_dict["ctx"][_TASK_RETRIEVAL_ERROR_CONTEXT_TIME_KEY] in retrieval_times
     await assert_comp_runs(
         sqlalchemy_async_engine,
         expected_total=1,
@@ -2426,9 +2317,7 @@ async def test_getting_task_result_raises_exception_does_not_fail_task_and_retri
         project_id=running_project.project.uuid,
         iteration=1,
     )
-    assert mocked_dask_client.get_task_result.call_count == len(
-        expected_timeouted_tasks
-    )
+    assert mocked_dask_client.get_task_result.call_count == len(expected_timeouted_tasks)
     # NOTE: we do not check all tasks here as some are depending on random others
     # so some are ABORTED and others are FAILED depending on the random sample above
     await assert_comp_runs(
@@ -2460,9 +2349,7 @@ async def test_getting_task_result_raises_s3_invalid_path_fails_task_immediately
 
     mocked_dask_client.get_tasks_status.side_effect = mocked_get_tasks_status
 
-    computational_tasks = [
-        t for t in running_project.tasks if t.node_class is NodeClass.COMPUTATIONAL
-    ]
+    computational_tasks = [t for t in running_project.tasks if t.node_class is NodeClass.COMPUTATIONAL]
 
     fake_error_msg = "s3://invalid/path/to/data"
     mocked_parse_output_data_fct.side_effect = S3InvalidPathError(fake_error_msg)

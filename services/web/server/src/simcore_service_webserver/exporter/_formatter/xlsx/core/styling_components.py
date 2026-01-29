@@ -19,11 +19,11 @@ COLOR_YELLOW_DARK = "FFD254"
 
 
 class T(BaseXLSXCellData):
-    """Helper for inputing text into cells"""
+    """Helper for inputting text into cells"""
 
     alignment = Alignment(wrap_text=True)
 
-    def __init__(self, text: str | int | float | None):
+    def __init__(self, text: str | float | None):
         # when text is none write emptystring
         super().__init__(value="" if text is None else text)
 
@@ -33,13 +33,11 @@ class TB(T):
 
 
 class Comment(BaseXLSXCellData):
-    """Used to insert a commnet in a cell"""
+    """Used to insert a comment in a cell"""
 
     def __init__(self, text: str, author: str, height: int = 100, width: int = 150):
         text += f"\n - {author}"
-        super().__init__(
-            comment=PyXLComment(text=text, author=author, height=height, width=width)
-        )
+        super().__init__(comment=PyXLComment(text=text, author=author, height=height, width=width))
 
 
 class Link(T):
@@ -51,9 +49,7 @@ class Link(T):
 
 class BackgroundWithColor(BaseXLSXCellData):
     def __init__(self, color: str):
-        super().__init__(
-            fill=PatternFill(start_color=color, end_color=color, fill_type="solid")
-        )
+        super().__init__(fill=PatternFill(start_color=color, end_color=color, fill_type="solid"))
 
 
 class Backgrounds:
@@ -71,7 +67,7 @@ class BorderWithStyle(BaseXLSXCellData):
 
     def __init__(self, *borders_sides: Any, border_style: str, color: str):
         side = Side(border_style=border_style, color=color)
-        super().__init__(border=Border(**{x: side for x in borders_sides}))  # type: ignore[arg-type]
+        super().__init__(border=Border(**dict.fromkeys(borders_sides, side)))  # type: ignore[arg-type]
 
 
 def _all_borders() -> list[str]:
@@ -81,51 +77,27 @@ def _all_borders() -> list[str]:
 class Borders:
     """Collector for different border styles"""
 
-    light_grid = BorderWithStyle(
-        *_all_borders(), border_style=BORDER_THIN, color=COLOR_GRAY
-    )
+    light_grid = BorderWithStyle(*_all_borders(), border_style=BORDER_THIN, color=COLOR_GRAY)
 
-    medium_grid = BorderWithStyle(
-        *_all_borders(), border_style=BORDER_THIN, color=COLOR_BLACK
-    )
+    medium_grid = BorderWithStyle(*_all_borders(), border_style=BORDER_THIN, color=COLOR_BLACK)
 
-    bold_grid = BorderWithStyle(
-        *_all_borders(), border_style=BORDER_MEDIUM, color=COLOR_BLACK
-    )
+    bold_grid = BorderWithStyle(*_all_borders(), border_style=BORDER_MEDIUM, color=COLOR_BLACK)
 
-    border_bottom_thick = BorderWithStyle(
-        "bottom", border_style=BORDER_MEDIUM, color=COLOR_BLACK
-    )
-    border_top_thick = BorderWithStyle(
-        "top", border_style=BORDER_MEDIUM, color=COLOR_BLACK
-    )
-    border_left_thick = BorderWithStyle(
-        "left", border_style=BORDER_MEDIUM, color=COLOR_BLACK
-    )
-    border_right_thick = BorderWithStyle(
-        "right", border_style=BORDER_MEDIUM, color=COLOR_BLACK
-    )
+    border_bottom_thick = BorderWithStyle("bottom", border_style=BORDER_MEDIUM, color=COLOR_BLACK)
+    border_top_thick = BorderWithStyle("top", border_style=BORDER_MEDIUM, color=COLOR_BLACK)
+    border_left_thick = BorderWithStyle("left", border_style=BORDER_MEDIUM, color=COLOR_BLACK)
+    border_right_thick = BorderWithStyle("right", border_style=BORDER_MEDIUM, color=COLOR_BLACK)
 
-    border_bottom_light = BorderWithStyle(
-        "bottom", border_style=BORDER_THIN, color=COLOR_BLACK
-    )
-    border_bottom_medium = BorderWithStyle(
-        "bottom", border_style=BORDER_THIN, color=COLOR_BLACK
-    )
-    border_top_light = BorderWithStyle(
-        "top", border_style=BORDER_THIN, color=COLOR_BLACK
-    )
-    border_left_light = BorderWithStyle(
-        "left", border_style=BORDER_THIN, color=COLOR_BLACK
-    )
-    border_right_light = BorderWithStyle(
-        "right", border_style=BORDER_THIN, color=COLOR_BLACK
-    )
+    border_bottom_light = BorderWithStyle("bottom", border_style=BORDER_THIN, color=COLOR_BLACK)
+    border_bottom_medium = BorderWithStyle("bottom", border_style=BORDER_THIN, color=COLOR_BLACK)
+    border_top_light = BorderWithStyle("top", border_style=BORDER_THIN, color=COLOR_BLACK)
+    border_left_light = BorderWithStyle("left", border_style=BORDER_THIN, color=COLOR_BLACK)
+    border_right_light = BorderWithStyle("right", border_style=BORDER_THIN, color=COLOR_BLACK)
 
 
-class AllignTopCenter(BaseXLSXCellData):
+class AlignTopCenter(BaseXLSXCellData):
     alignment = Alignment(horizontal="center", vertical="top")
 
 
-class AllignTop(BaseXLSXCellData):
+class AlignTop(BaseXLSXCellData):
     alignment = Alignment(vertical="top")

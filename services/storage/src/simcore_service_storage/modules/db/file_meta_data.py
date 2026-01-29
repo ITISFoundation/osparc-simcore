@@ -60,9 +60,7 @@ def _create_next_cursor(
     total_count: TotalChildren, limit: int, cursor_params: _PathsCursorParameters
 ) -> GenericCursor | None:
     if cursor_params.offset + limit < total_count:
-        return cursor_params.model_copy(
-            update={"offset": cursor_params.offset + limit}
-        ).model_dump_json()
+        return cursor_params.model_copy(update={"offset": cursor_params.offset + limit}).model_dump_json()
     return None
 
 
@@ -85,19 +83,13 @@ def _list_filter_with_partial_file_id_stmt(
         conditions.append(
             sa.or_(
                 file_meta_data.c.user_id == user_id,
-                (
-                    file_meta_data.c.project_id.in_(f"{_}" for _ in project_ids)
-                    if project_ids
-                    else False
-                ),
+                (file_meta_data.c.project_id.in_(f"{_}" for _ in project_ids) if project_ids else False),
             )
         )
     else:
         project_ids = user_or_project_filter.project_ids
         if len(project_ids) > 0:
-            conditions.append(
-                file_meta_data.c.project_id.in_(f"{_}" for _ in project_ids)
-            )
+            conditions.append(file_meta_data.c.project_id.in_(f"{_}" for _ in project_ids))
 
     # Optional filters
     if file_id_prefix:
@@ -119,15 +111,11 @@ def _list_filter_with_partial_file_id_stmt(
 
 
 class FileMetaDataRepository(BaseRepository):
-    async def exists(
-        self, *, connection: AsyncConnection | None = None, file_id: SimcoreS3FileID
-    ) -> bool:
+    async def exists(self, *, connection: AsyncConnection | None = None, file_id: SimcoreS3FileID) -> bool:
         async with pass_or_acquire_connection(self.db_engine, connection) as conn:
             return bool(
                 await conn.scalar(
-                    sa.select(sa.func.count())
-                    .select_from(file_meta_data)
-                    .where(file_meta_data.c.file_id == file_id)
+                    sa.select(sa.func.count()).select_from(file_meta_data).where(file_meta_data.c.file_id == file_id)
                 )
                 == 1
             )
@@ -140,11 +128,7 @@ class FileMetaDataRepository(BaseRepository):
     ) -> FileMetaDataAtDB:
         # NOTE: upsert file_meta_data, if the file already exists, we update the whole row
         # so we get the correct time stamps
-        fmd_db = (
-            FileMetaDataAtDB.model_validate(fmd)
-            if isinstance(fmd, FileMetaData)
-            else fmd
-        )
+        fmd_db = FileMetaDataAtDB.model_validate(fmd) if isinstance(fmd, FileMetaData) else fmd
         insert_statement = pg_insert(file_meta_data).values(**fmd_db.model_dump())
         on_update_statement = insert_statement.on_conflict_do_update(
             index_elements=[file_meta_data.c.file_id], set_=fmd_db.model_dump()
@@ -154,26 +138,18 @@ class FileMetaDataRepository(BaseRepository):
             row = result.one()
         return FileMetaDataAtDB.model_validate(row)
 
-    async def insert(
-        self, *, connection: AsyncConnection | None = None, fmd: FileMetaData
-    ) -> FileMetaDataAtDB:
+    async def insert(self, *, connection: AsyncConnection | None = None, fmd: FileMetaData) -> FileMetaDataAtDB:
         fmd_db = FileMetaDataAtDB.model_validate(fmd)
         async with transaction_context(self.db_engine, connection) as conn:
             result = await conn.execute(
-                file_meta_data.insert()
-                .values(jsonable_encoder(fmd_db))
-                .returning(literal_column("*"))
+                file_meta_data.insert().values(jsonable_encoder(fmd_db)).returning(literal_column("*"))
             )
             row = result.one()
         return FileMetaDataAtDB.model_validate(row)
 
-    async def get(
-        self, *, connection: AsyncConnection | None = None, file_id: SimcoreS3FileID
-    ) -> FileMetaDataAtDB:
+    async def get(self, *, connection: AsyncConnection | None = None, file_id: SimcoreS3FileID) -> FileMetaDataAtDB:
         async with pass_or_acquire_connection(self.db_engine, connection) as conn:
-            result = await conn.execute(
-                sa.select(file_meta_data).where(file_meta_data.c.file_id == file_id)
-            )
+            result = await conn.execute(sa.select(file_meta_data).where(file_meta_data.c.file_id == file_id))
         if row := result.one_or_none():
             return FileMetaDataAtDB.model_validate(row)
         raise FileMetaDataNotFoundError(file_id=file_id)
@@ -200,10 +176,7 @@ class FileMetaDataRepository(BaseRepository):
             offset=offset,
         )
         async with pass_or_acquire_connection(self.db_engine, connection) as conn:
-            return [
-                FileMetaDataAtDB.model_validate(row)
-                async for row in await conn.stream(stmt)
-            ]
+            return [FileMetaDataAtDB.model_validate(row) async for row in await conn.stream(stmt)]
 
     async def try_get_directory(
         self, *, connection: AsyncConnection | None = None, file_filter: Path
@@ -216,9 +189,7 @@ class FileMetaDataRepository(BaseRepository):
                 for file_id in potential_directories:
                     # there should be only 1 entry if this is a directory
                     result = await conn.execute(
-                        sa.select(file_meta_data).where(
-                            file_meta_data.c.file_id == f"{file_id}"
-                        )
+                        sa.select(file_meta_data).where(file_meta_data.c.file_id == f"{file_id}")
                     )
                     if row := result.one_or_none():
                         fmd = FileMetaDataAtDB.model_validate(row)
@@ -232,9 +203,7 @@ class FileMetaDataRepository(BaseRepository):
         self,
         *,
         connection: AsyncConnection | None = None,
-        filter_by_project_ids: Annotated[
-            list[ProjectID] | None, Field(max_length=10000)
-        ],
+        filter_by_project_ids: Annotated[list[ProjectID] | None, Field(max_length=10000)],
         filter_by_file_prefix: Path | None,
         cursor: GenericCursor | None,
         limit: int,
@@ -256,22 +225,16 @@ class FileMetaDataRepository(BaseRepository):
         if cursor_params.file_prefix:
             prefix_levels = len(cursor_params.file_prefix.parts) - 1
             search_prefix = (
-                f"{cursor_params.file_prefix}%"
-                if cursor_params.partial
-                else f"{cursor_params.file_prefix / '%'}"
+                f"{cursor_params.file_prefix}%" if cursor_params.partial else f"{cursor_params.file_prefix / '%'}"
             )
             search_regex = rf"^[^/]+(?:/[^/]+){{{prefix_levels}}}{'' if cursor_params.partial else '/[^/]+'}"
             ranked_files = (
                 sa.select(
                     file_meta_data.c.file_id,
-                    sa.func.substring(file_meta_data.c.file_id, search_regex).label(
-                        "path"
-                    ),
+                    sa.func.substring(file_meta_data.c.file_id, search_regex).label("path"),
                     sa.func.row_number()
                     .over(
-                        partition_by=sa.func.substring(
-                            file_meta_data.c.file_id, search_regex
-                        ),
+                        partition_by=sa.func.substring(file_meta_data.c.file_id, search_regex),
                         order_by=(file_meta_data.c.file_id.asc(),),
                     )
                     .label("row_num"),
@@ -280,9 +243,7 @@ class FileMetaDataRepository(BaseRepository):
                     and_(
                         file_meta_data.c.file_id.like(search_prefix),
                         (
-                            file_meta_data.c.project_id.in_(
-                                [f"{_}" for _ in filter_by_project_ids]
-                            )
+                            file_meta_data.c.project_id.in_([f"{_}" for _ in filter_by_project_ids])
                             if filter_by_project_ids
                             else True
                         ),
@@ -297,17 +258,13 @@ class FileMetaDataRepository(BaseRepository):
                     sa.func.split_part(file_meta_data.c.file_id, "/", 1).label("path"),
                     sa.func.row_number()
                     .over(
-                        partition_by=sa.func.split_part(
-                            file_meta_data.c.file_id, "/", 1
-                        ),
+                        partition_by=sa.func.split_part(file_meta_data.c.file_id, "/", 1),
                         order_by=(file_meta_data.c.file_id.asc(),),
                     )
                     .label("row_num"),
                 )
                 .where(
-                    file_meta_data.c.project_id.in_(
-                        [f"{_}" for _ in filter_by_project_ids]
-                    )
+                    file_meta_data.c.project_id.in_([f"{_}" for _ in filter_by_project_ids])
                     if filter_by_project_ids
                     else True
                 )
@@ -330,15 +287,12 @@ class FileMetaDataRepository(BaseRepository):
         )
         async with pass_or_acquire_connection(self.db_engine, connection) as conn:
             total_count = await conn.scalar(
-                sa.select(sa.func.count())
-                .select_from(ranked_files)
-                .where(ranked_files.c.row_num == 1)
+                sa.select(sa.func.count()).select_from(ranked_files).where(ranked_files.c.row_num == 1)
             )
 
             items = [
                 PathMetaData(
-                    path=row.path
-                    or row.file_id,  # NOTE: if path_prefix is partial then path is None
+                    path=row.path or row.file_id,  # NOTE: if path_prefix is partial then path is None
                     display_path=row.path or row.file_id,
                     location_id=row.location_id,
                     location=row.location,
@@ -375,34 +329,18 @@ class FileMetaDataRepository(BaseRepository):
         stmt = sa.select(file_meta_data).where(
             and_(
                 (file_meta_data.c.user_id == f"{user_id}") if user_id else True,
-                (
-                    (file_meta_data.c.project_id.in_([f"{p}" for p in project_ids]))
-                    if project_ids
-                    else True
-                ),
+                ((file_meta_data.c.project_id.in_([f"{p}" for p in project_ids])) if project_ids else True),
                 (file_meta_data.c.file_id.in_(file_ids)) if file_ids else True,
-                (
-                    (file_meta_data.c.upload_expires_at < expired_after)
-                    if expired_after
-                    else True
-                ),
+                ((file_meta_data.c.upload_expires_at < expired_after) if expired_after else True),
             )
         )
         async with pass_or_acquire_connection(self.db_engine, connection) as conn:
-            return [
-                FileMetaDataAtDB.model_validate(row)
-                async for row in await conn.stream(stmt)
-            ]
+            return [FileMetaDataAtDB.model_validate(row) async for row in await conn.stream(stmt)]
 
     async def total(self, *, connection: AsyncConnection | None = None) -> int:
         """returns the number of uploaded file entries"""
         async with pass_or_acquire_connection(self.db_engine, connection) as conn:
-            return (
-                await conn.scalar(
-                    sa.select(sa.func.count()).select_from(file_meta_data)
-                )
-                or 0
-            )
+            return await conn.scalar(sa.select(sa.func.count()).select_from(file_meta_data)) or 0
 
     async def list_valid_uploads(
         self,
@@ -413,9 +351,7 @@ class FileMetaDataRepository(BaseRepository):
         async with pass_or_acquire_connection(self.db_engine, connection) as conn:
             async for row in await conn.stream(
                 sa.select(file_meta_data).where(
-                    file_meta_data.c.upload_expires_at.is_(
-                        None
-                    )  # lgtm [py/test-equals-none]
+                    file_meta_data.c.upload_expires_at.is_(None)  # lgtm [py/test-equals-none]
                 )
             ):
                 fmd_at_db = FileMetaDataAtDB.model_validate(row)
@@ -428,24 +364,14 @@ class FileMetaDataRepository(BaseRepository):
         file_ids: list[SimcoreS3FileID],
     ) -> None:
         async with transaction_context(self.db_engine, connection) as conn:
-            await conn.execute(
-                file_meta_data.delete().where(file_meta_data.c.file_id.in_(file_ids))
-            )
+            await conn.execute(file_meta_data.delete().where(file_meta_data.c.file_id.in_(file_ids)))
 
     async def delete_all_from_project(
         self, *, connection: AsyncConnection | None = None, project_id: ProjectID
     ) -> None:
         async with transaction_context(self.db_engine, connection) as conn:
-            await conn.execute(
-                file_meta_data.delete().where(
-                    file_meta_data.c.project_id == f"{project_id}"
-                )
-            )
+            await conn.execute(file_meta_data.delete().where(file_meta_data.c.project_id == f"{project_id}"))
 
-    async def delete_all_from_node(
-        self, *, connection: AsyncConnection | None = None, node_id: NodeID
-    ) -> None:
+    async def delete_all_from_node(self, *, connection: AsyncConnection | None = None, node_id: NodeID) -> None:
         async with transaction_context(self.db_engine, connection) as conn:
-            await conn.execute(
-                file_meta_data.delete().where(file_meta_data.c.node_id == f"{node_id}")
-            )
+            await conn.execute(file_meta_data.delete().where(file_meta_data.c.node_id == f"{node_id}"))

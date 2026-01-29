@@ -92,9 +92,7 @@ async def test_get_product(
 ):
     # give access to user to this product
     assert client.app
-    await auto_add_user_to_product_group(
-        client.app, user_id=logged_user["id"], product_name=product_name
-    )
+    await auto_add_user_to_product_group(client.app, user_id=logged_user["id"], product_name=product_name)
 
     current_product_headers = {X_PRODUCT_NAME_HEADER: product_name}
     response = await client.get("/v0/products/current", headers=current_product_headers)
@@ -140,17 +138,10 @@ async def test_get_current_product_ui(
 
     # give access to user to this product
     assert client.app
-    await auto_add_user_to_product_group(
-        client.app, user_id=logged_user["id"], product_name=product_name
-    )
+    await auto_add_user_to_product_group(client.app, user_id=logged_user["id"], product_name=product_name)
 
-    assert (
-        client.app.router["get_current_product_ui"].url_for().path
-        == "/v0/products/current/ui"
-    )
-    response = await client.get(
-        "/v0/products/current/ui", headers={X_PRODUCT_NAME_HEADER: product_name}
-    )
+    assert client.app.router["get_current_product_ui"].url_for().path == "/v0/products/current/ui"
+    response = await client.get("/v0/products/current/ui", headers={X_PRODUCT_NAME_HEADER: product_name})
 
     data, error = await assert_status(response, expected_status_code)
 

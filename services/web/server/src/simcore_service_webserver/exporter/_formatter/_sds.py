@@ -68,7 +68,7 @@ async def _add_rrid_entries(
     project_data: ProjectDict,
     params_code_description: dict[str, Any],
 ) -> None:
-    rrid_entires: deque[RRIDEntry] = deque()
+    rrid_entries: deque[RRIDEntry] = deque()
 
     service = app[SCICRUNCH_SERVICE_APPKEY]
     classifiers = project_data["classifiers"]
@@ -77,7 +77,7 @@ async def _add_rrid_entries(
         if scicrunch_resource is None:
             continue
 
-        rrid_entires.append(
+        rrid_entries.append(
             RRIDEntry.model_validate(
                 {
                     "rrid_term": scicrunch_resource.name,
@@ -85,12 +85,10 @@ async def _add_rrid_entries(
                 },
             )
         )
-    params_code_description["rrid_entires"] = list(rrid_entires)
+    params_code_description["rrid_entries"] = list(rrid_entries)
 
 
-def _add_tsr_entries(
-    project_data: ProjectDict, params_code_description: dict[str, Any]
-) -> None:
+def _add_tsr_entries(project_data: ProjectDict, params_code_description: dict[str, Any]) -> None:
     # adding TSR data
     quality_data = project_data["quality"]
     if quality_data.get("enabled", False):
@@ -125,9 +123,7 @@ def _add_tsr_entries(
         else:
             # User might have a deprecated version here, asking to regenerate the TSR.
             # This should make it exportable once again after the format is saved.
-            msg = (
-                "Current TSR data format is too old. Please `Edit` and `Save` it again."
-            )
+            msg = "Current TSR data format is too old. Please `Edit` and `Save` it again."
             _logger.warning("%s Stored data: %s", msg, quality_data)
             raise SDSException(msg)
     else:
@@ -159,11 +155,7 @@ async def create_sds_directory(
     dataset_description_params = DatasetDescriptionParams.model_validate(
         {
             "name": project_data["name"],
-            "description": (
-                ""
-                if project_data["description"] is None
-                else project_data["description"]
-            ),
+            "description": ("" if project_data["description"] is None else project_data["description"]),
         },
     )
 

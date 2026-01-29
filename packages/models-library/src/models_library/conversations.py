@@ -3,17 +3,16 @@ from enum import auto
 from typing import Annotated, Any, TypeAlias
 from uuid import UUID
 
+from pydantic import BaseModel, ConfigDict, StringConstraints
+
 from models_library.groups import GroupID
 from models_library.projects import ProjectID
-from pydantic import BaseModel, ConfigDict, StringConstraints
 
 from .products import ProductName
 from .utils.enums import StrAutoEnum
 
 ConversationID: TypeAlias = UUID
-ConversationName: TypeAlias = Annotated[
-    str, StringConstraints(strip_whitespace=True, min_length=1, max_length=255)
-]
+ConversationName: TypeAlias = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=255)]
 
 ConversationMessageID: TypeAlias = UUID
 

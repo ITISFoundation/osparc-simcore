@@ -25,17 +25,13 @@ _NODE_DOMAIN_MODEL_DICT_EXAMPLES = Node.model_json_schema()["examples"]
     _NODE_DOMAIN_MODEL_DICT_EXAMPLES,
     ids=[f"example-{i}" for i in range(len(_NODE_DOMAIN_MODEL_DICT_EXAMPLES))],
 )
-def test_adapters_between_different_node_models(
-    node_data: dict[str, Any], faker: Faker
-):
+def test_adapters_between_different_node_models(node_data: dict[str, Any], faker: Faker):
     # dict -> to Node (from models_library)
     node_id = UUID(faker.uuid4())
     node = Node.model_validate(node_data)
 
     # Node -> ProjectNodeCreate (from simcore_postgres_database) using adapters
-    project_node_create = _nodes_models_adapters.project_node_create_from_node(
-        node, node_id
-    )
+    project_node_create = _nodes_models_adapters.project_node_create_from_node(node, node_id)
     assert isinstance(project_node_create, ProjectNodeCreate)
     assert project_node_create.node_id == node_id
 
@@ -53,10 +49,7 @@ def test_adapters_between_different_node_models(
     assert project_node_create.node_id == node_id
 
     # ProjectNodeCreate -> Node (from models_library) using adapters
-    assert (
-        _nodes_models_adapters.node_from_project_node_create(project_node_create)
-        == node
-    )
+    assert _nodes_models_adapters.node_from_project_node_create(project_node_create) == node
 
     # ProjectNode -> Node (from models_library) using adapters
     assert _nodes_models_adapters.node_from_project_node(project_node) == node

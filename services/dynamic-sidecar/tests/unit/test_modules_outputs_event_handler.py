@@ -41,9 +41,7 @@ def outputs_port_keys() -> list[str]:
 
 
 @pytest.fixture
-async def outputs_context(
-    path_to_observe: Path, outputs_port_keys: list[str]
-) -> OutputsContext:
+async def outputs_context(path_to_observe: Path, outputs_port_keys: list[str]) -> OutputsContext:
     outputs_context = OutputsContext(path_to_observe)
     await outputs_context.set_file_type_port_keys(outputs_port_keys)
     return outputs_context
@@ -221,9 +219,7 @@ class _MockAioQueue:
             id="close_file_outside_does_nothing",
         ),
         pytest.param(
-            FileClosedEvent(
-                src_path=f"{_STATE_PATH}/output_1/asdsadsasad.txt", dest_path=""
-            ),
+            FileClosedEvent(src_path=f"{_STATE_PATH}/output_1/asdsadsasad.txt", dest_path=""),
             "output_1",
             id="close_file_inside_triggers_event",
         ),
@@ -232,7 +228,6 @@ class _MockAioQueue:
 def test_port_keys_event_handler_triggers_for_events(
     mock_state_path: Path, event: FileSystemEvent, expected_port_key: str | None
 ) -> None:
-
     queue = _MockAioQueue()
 
     event_handler = _PortKeysEventHandler(mock_state_path, queue)

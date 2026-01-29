@@ -52,8 +52,7 @@ class CreditPriceGet(OutputSchema):
         ]
         | None,
         Field(
-            description="Price of a credit in USD. "
-            "If None, then this product's price is UNDEFINED",
+            description="Price of a credit in USD. If None, then this product's price is UNDEFINED",
         ),
     ]
 
@@ -97,18 +96,12 @@ class ProductTemplateGet(OutputSchema):
 class ProductGet(OutputSchema):
     name: ProductName
     display_name: str
-    short_name: Annotated[
-        str | None, Field(description="Short display name for SMS")
-    ] = None
+    short_name: Annotated[str | None, Field(description="Short display name for SMS")] = None
 
     vendor: Annotated[dict | None, Field(description="vendor attributes")] = None
-    issues: Annotated[
-        list[dict] | None, Field(description="Reference to issues tracker")
-    ] = None
+    issues: Annotated[list[dict] | None, Field(description="Reference to issues tracker")] = None
     manuals: Annotated[list[dict] | None, Field(description="List of manuals")] = None
-    support: Annotated[
-        list[dict] | None, Field(description="List of support resources")
-    ] = None
+    support: Annotated[list[dict] | None, Field(description="List of support resources")] = None
 
     login_settings: dict
     max_open_studies_per_user: PositiveInt | None
@@ -137,9 +130,7 @@ ExtraCreditsUsdRangeInt: TypeAlias = Annotated[int, Field(ge=0, lt=500)]
 
 TrialAccountAnnotated: TypeAlias = Annotated[
     PositiveInt | None,
-    Field(
-        description="Expiration time in days for trial accounts; `null` means not a trial account"
-    ),
+    Field(description="Expiration time in days for trial accounts; `null` means not a trial account"),
 ]
 
 WelcomeCreditsAnnotated: TypeAlias = Annotated[

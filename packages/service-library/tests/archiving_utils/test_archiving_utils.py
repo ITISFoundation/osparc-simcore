@@ -26,9 +26,7 @@ def dir_with_random_content(faker: Faker) -> Iterable[Path]:
 
     def make_files_in_dir(dir_path: Path, file_count: int) -> None:
         for _ in range(file_count):
-            (dir_path / f"{random_string(8)}.bin").write_bytes(
-                os.urandom(faker.random_int(1, 10))
-            )
+            (dir_path / f"{random_string(8)}.bin").write_bytes(os.urandom(faker.random_int(1, 10)))
 
     def ensure_dir(path_to_ensure: Path) -> Path:
         path_to_ensure.mkdir(parents=True, exist_ok=True)
@@ -41,9 +39,7 @@ def dir_with_random_content(faker: Faker) -> Iterable[Path]:
             file_count=faker.random_int(1, max_file_count),
         )
 
-    def make_subdirectories_with_content(
-        subdir_name: Path, max_subdirectories_count: int, max_file_count: int
-    ) -> None:
+    def make_subdirectories_with_content(subdir_name: Path, max_subdirectories_count: int, max_file_count: int) -> None:
         subdirectories_count = faker.random_int(1, max_subdirectories_count)
         for _ in range(subdirectories_count):
             make_subdirectory_with_content(
@@ -58,9 +54,7 @@ def dir_with_random_content(faker: Faker) -> Iterable[Path]:
         temp_dir_path = Path(temp_dir)
         data_container = ensure_dir(temp_dir_path / "study_data")
 
-        make_subdirectories_with_content(
-            subdir_name=data_container, max_subdirectories_count=5, max_file_count=5
-        )
+        make_subdirectories_with_content(subdir_name=data_container, max_subdirectories_count=5, max_file_count=5)
         make_files_in_dir(dir_path=data_container, file_count=5)
 
         # creates a good amount of files
@@ -84,11 +78,7 @@ def strip_directory_from_path(input_path: Path, to_strip: Path) -> Path:
 
 
 def get_all_files_in_dir(dir_path: Path) -> set[Path]:
-    return {
-        strip_directory_from_path(x, dir_path)
-        for x in dir_path.rglob("*")
-        if x.is_file()
-    }
+    return {strip_directory_from_path(x, dir_path) for x in dir_path.rglob("*") if x.is_file()}
 
 
 def full_file_path_from_dir_and_subdirs(dir_path: Path) -> list[Path]:
@@ -114,35 +104,26 @@ async def assert_same_directory_content(
     if inject_relative_path is not None:
         input_set = {_relative_path(x) for x in input_set}
 
-    assert (
-        input_set == output_set
-    ), f"There following files are missing {input_set - output_set}"
+    assert input_set == output_set, f"There following files are missing {input_set - output_set}"
 
     # computing the hashes for dir_to_compress and map in a dict
     # with the name starting from the root of the directory and md5sum
     dir_to_compress_hashes = {
         strip_directory_from_path(k, dir_to_compress): v
-        for k, v in (
-            await compute_hashes(full_file_path_from_dir_and_subdirs(dir_to_compress))
-        ).items()
+        for k, v in (await compute_hashes(full_file_path_from_dir_and_subdirs(dir_to_compress))).items()
     }
 
     # computing the hashes for output_dir and map in a dict
     # with the name starting from the root of the directory and md5sum
     output_dir_hashes = {
         strip_directory_from_path(k, output_dir): v
-        for k, v in (
-            await compute_hashes(full_file_path_from_dir_and_subdirs(output_dir))
-        ).items()
+        for k, v in (await compute_hashes(full_file_path_from_dir_and_subdirs(output_dir))).items()
     }
 
     # finally check if hashes are mapped 1 to 1 in order to verify
     # that the compress/decompress worked correctly
     for key in dir_to_compress_hashes:
-        assert (
-            dir_to_compress_hashes[key]
-            == output_dir_hashes[_relative_path(key) if inject_relative_path else key]
-        )
+        assert dir_to_compress_hashes[key] == output_dir_hashes[_relative_path(key) if inject_relative_path else key]
 
 
 def assert_unarchived_paths(
@@ -151,7 +132,7 @@ def assert_unarchived_paths(
     dst_dir: Path,
 ):
     def is_file_or_emptydir(path: Path) -> bool:
-        return path.is_file() or path.is_dir() and not any(path.glob("*"))
+        return path.is_file() or (path.is_dir() and not any(path.glob("*")))
 
     # all unarchivedare under dst_dir
     assert all(dst_dir in f.parents for f in unarchived_paths)
@@ -163,20 +144,14 @@ def assert_unarchived_paths(
     basedir = str(dst_dir)
 
     got_tails = {os.path.relpath(f, basedir) for f in unarchived_paths}
-    expected_tails = {
-        os.path.relpath(f, src_dir)
-        for f in src_dir.rglob("*")
-        if is_file_or_emptydir(f)
-    }
+    expected_tails = {os.path.relpath(f, src_dir) for f in src_dir.rglob("*") if is_file_or_emptydir(f)}
     expected_tails = {_escape_undecodable_str(x) for x in expected_tails}
     got_tails = {x.replace("�", "?") for x in got_tails}
     assert got_tails == expected_tails
 
 
 @pytest.mark.skip(reason="DEV:only for manual tessting")
-async def test_archiving_utils_against_sample(
-    osparc_simcore_root_dir: Path, tmp_path: Path
-):
+async def test_archiving_utils_against_sample(osparc_simcore_root_dir: Path, tmp_path: Path):
     """
     ONLY for manual testing
     User MUST provide a sample of a zip file in ``sample_path``
@@ -190,9 +165,7 @@ async def test_archiving_utils_against_sample(
     for p in extracted_paths:
         assert isinstance(p, Path), p
 
-    await archive_dir(
-        dir_to_compress=destination, destination=tmp_path / "test_it.zip", compress=True
-    )
+    await archive_dir(dir_to_compress=destination, destination=tmp_path / "test_it.zip", compress=True)
 
 
 @pytest.mark.parametrize("compress", [True, False])
@@ -215,9 +188,7 @@ async def test_archive_unarchive_same_structure_dir(
         compress=compress,
     )
 
-    unarchived_paths: set[Path] = await unarchive_dir(
-        archive_to_extract=archive_file, destination_folder=temp_dir_two
-    )
+    unarchived_paths: set[Path] = await unarchive_dir(archive_to_extract=archive_file, destination_folder=temp_dir_two)
 
     assert_unarchived_paths(
         unarchived_paths,
@@ -249,9 +220,7 @@ async def test_unarchive_in_same_dir_as_archive(
         compress=compress,
     )
 
-    unarchived_paths = await unarchive_dir(
-        archive_to_extract=archive_file, destination_folder=tmp_path
-    )
+    unarchived_paths = await unarchive_dir(archive_to_extract=archive_file, destination_folder=tmp_path)
 
     archive_file.unlink()  # delete before comparing contents
 
@@ -269,9 +238,7 @@ async def test_unarchive_in_same_dir_as_archive(
 
 
 @pytest.mark.parametrize("compress", [True, False])
-async def test_regression_unsupported_characters(
-    tmp_path: Path, compress: bool
-) -> None:
+async def test_regression_unsupported_characters(tmp_path: Path, compress: bool) -> None:
     archive_path = tmp_path / "archive.zip"
     dir_to_archive = tmp_path / "to_compress"
     dir_to_archive.mkdir()
@@ -294,9 +261,7 @@ async def test_regression_unsupported_characters(
         compress=compress,
     )
 
-    unarchived_paths = await unarchive_dir(
-        archive_to_extract=archive_path, destination_folder=dst_dir
-    )
+    unarchived_paths = await unarchive_dir(archive_to_extract=archive_path, destination_folder=dst_dir)
 
     assert_unarchived_paths(
         unarchived_paths,
@@ -323,14 +288,10 @@ ALL_ITEMS_SET: set[Path] = {
 file_suffix = 0
 
 
-async def _archive_dir_performance(
-    input_path: Path, destination_path: Path, compress: bool
-):
+async def _archive_dir_performance(input_path: Path, destination_path: Path, compress: bool):
     global file_suffix  # pylint: disable=global-statement  # noqa: PLW0603
 
-    await archive_dir(
-        input_path, destination_path / f"archive_{file_suffix}.zip", compress=compress
-    )
+    await archive_dir(input_path, destination_path / f"archive_{file_suffix}.zip", compress=compress)
     file_suffix += 1
 
 
@@ -348,10 +309,7 @@ def test_archive_dir_performance(
     num_files: int,
 ):
     # create a bunch of different files
-    files_to_compress = [
-        create_file_of_size(file_size, f"inputs/test_file_{n}")
-        for n in range(num_files)
-    ]
+    files_to_compress = [create_file_of_size(file_size, f"inputs/test_file_{n}") for n in range(num_files)]
     assert len(files_to_compress) == num_files
     parent_path = files_to_compress[0].parent
     assert all(f.parent == parent_path for f in files_to_compress)
@@ -362,9 +320,7 @@ def test_archive_dir_performance(
     assert destination_path.exists()
 
     def run_async_test(*args, **kwargs):
-        asyncio.get_event_loop().run_until_complete(
-            _archive_dir_performance(parent_path, destination_path, compress)
-        )
+        asyncio.get_event_loop().run_until_complete(_archive_dir_performance(parent_path, destination_path, compress))
 
     benchmark(run_async_test)
 
@@ -376,9 +332,7 @@ def _touch_all_files_in_path(path_to_archive: Path) -> None:
 
 
 @pytest.mark.parametrize("compress", [False])
-async def test_regression_archive_hash_does_not_change(
-    mixed_file_types: Path, tmp_path: Path, compress: bool
-):
+async def test_regression_archive_hash_does_not_change(mixed_file_types: Path, tmp_path: Path, compress: bool):
     destination_path = tmp_path / "archives_to_compare"
     destination_path.mkdir(parents=True, exist_ok=True)
 

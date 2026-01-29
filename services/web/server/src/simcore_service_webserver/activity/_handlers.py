@@ -59,14 +59,8 @@ async def get_activity_status(request: aiohttp.web.Request):
     for node in metric:
         limits = {"cpus": 0.0, "mem": 0.0}
         metric_labels = node["metric"]
-        limits["cpus"] = float(
-            metric_labels.get("container_label_nano_cpus_limit", 0)
-        ) / pow(
-            10, 9
-        )  # Nanocpus to cpus
-        limits["mem"] = float(metric_labels.get("container_label_mem_limit", 0)) / pow(
-            1024, 2
-        )  # In MB
+        limits["cpus"] = float(metric_labels.get("container_label_nano_cpus_limit", 0)) / pow(10, 9)  # Nanocpus to cpus
+        limits["mem"] = float(metric_labels.get("container_label_mem_limit", 0)) / pow(1024, 2)  # In MB
         node_id = metric_labels.get("container_label_node_id")
         res[node_id]["limits"] = limits
 

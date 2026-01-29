@@ -1,7 +1,7 @@
-"""RPC client-side for the RPC server at the payments service
+"""RPC client side for the payments service
 
-In this interface (and all belows), the context of the caller is passed in the following arguments:
-- `user_id` is intended for the caller's identifer. Do not add other user_id that is not the callers!.
+In this interface (and all below), the context of the caller is passed in the following arguments:
+- `user_id` is intended for the caller's identifier. Do not add other user_id that is not the callers!.
     - Ideally this could be injected by an authentication layer (as in the rest API)
         but  for now we are passing it as an argument.
 - `product_name` is the name of the product at the caller's context as well
@@ -212,9 +212,7 @@ async def list_my_service_history_latest_first(  # pylint: disable=too-many-argu
     """
     result = await rpc_client.request(
         CATALOG_RPC_NAMESPACE,
-        TypeAdapter(RPCMethodName).validate_python(
-            "list_my_service_history_latest_first"
-        ),
+        TypeAdapter(RPCMethodName).validate_python("list_my_service_history_latest_first"),
         product_name=product_name,
         user_id=user_id,
         service_key=service_key,
@@ -253,9 +251,7 @@ async def get_service_ports(
         service_key=service_key,
         service_version=service_version,
     )
-    assert (
-        TypeAdapter(list[ServicePortGet]).validate_python(result) is not None
-    )  # nosec
+    assert TypeAdapter(list[ServicePortGet]).validate_python(result) is not None  # nosec
     return cast(list[ServicePortGet], result)
 
 
@@ -290,9 +286,7 @@ async def list_all_services_summaries_paginated(  # pylint: disable=too-many-arg
     """
     result = await rpc_client.request(
         CATALOG_RPC_NAMESPACE,
-        TypeAdapter(RPCMethodName).validate_python(
-            list_all_services_summaries_paginated.__name__
-        ),
+        TypeAdapter(RPCMethodName).validate_python(list_all_services_summaries_paginated.__name__),
         product_name=product_name,
         user_id=user_id,
         limit=limit,
@@ -301,7 +295,5 @@ async def list_all_services_summaries_paginated(  # pylint: disable=too-many-arg
         timeout_s=40 * RPC_REQUEST_DEFAULT_TIMEOUT_S,
     )
 
-    assert (
-        TypeAdapter(PageRpc[ServiceSummary]).validate_python(result) is not None
-    )  # nosec
+    assert TypeAdapter(PageRpc[ServiceSummary]).validate_python(result) is not None  # nosec
     return cast(PageRpc[ServiceSummary], result)

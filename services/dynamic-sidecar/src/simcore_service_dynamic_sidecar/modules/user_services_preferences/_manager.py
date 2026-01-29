@@ -50,14 +50,10 @@ class UserServicesPreferencesManager:
 
 
 async def save_user_services_preferences(app: FastAPI) -> None:
-    user_services_preferences_manager: UserServicesPreferencesManager = (
-        app.state.user_services_preferences_manager
-    )
+    user_services_preferences_manager: UserServicesPreferencesManager = app.state.user_services_preferences_manager
     await user_services_preferences_manager.save_preferences()
 
 
 async def load_user_services_preferences(app: FastAPI) -> None:
-    user_services_preferences_manager: UserServicesPreferencesManager = (
-        app.state.user_services_preferences_manager
-    )
+    user_services_preferences_manager: UserServicesPreferencesManager = app.state.user_services_preferences_manager
     await user_services_preferences_manager.load_preferences()

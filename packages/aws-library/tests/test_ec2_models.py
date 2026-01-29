@@ -101,9 +101,7 @@ from pydantic import ByteSize, TypeAdapter, ValidationError
     ],
     ids=str,
 )
-def test_resources_ge_operator(
-    a: Resources, b: Resources, a_greater_or_equal_than_b: bool
-):
+def test_resources_ge_operator(a: Resources, b: Resources, a_greater_or_equal_than_b: bool):
     assert (a >= b) is a_greater_or_equal_than_b
 
 
@@ -236,9 +234,7 @@ def test_resources_gt_operator(a: Resources, b: Resources, a_greater_than_b: boo
             Resources(cpus=1.1, ram=ByteSize(35), generic_resources={"GPU": 2}),
         ),
         (
-            Resources(
-                cpus=0.1, ram=ByteSize(1), generic_resources={"GPU": 1, "SSE": "yes"}
-            ),
+            Resources(cpus=0.1, ram=ByteSize(1), generic_resources={"GPU": 1, "SSE": "yes"}),
             Resources(cpus=1, ram=ByteSize(34), generic_resources={"GPU": 1}),
             Resources(cpus=1.1, ram=ByteSize(35), generic_resources={"GPU": 2}),
         ),  # string resources are not summed
@@ -260,9 +256,7 @@ def test_resources_add(a: Resources, b: Resources, result: Resources):
 
 
 def test_resources_create_as_empty():
-    assert Resources.create_as_empty() == Resources(
-        cpus=0, ram=ByteSize(0), generic_resources={}
-    )
+    assert Resources.create_as_empty() == Resources(cpus=0, ram=ByteSize(0), generic_resources={})
 
 
 @pytest.mark.parametrize(
@@ -281,32 +275,22 @@ def test_resources_create_as_empty():
         (
             Resources(cpus=0.1, ram=ByteSize(1), generic_resources={"GPU": 1}),
             Resources(cpus=1, ram=ByteSize(34)),
-            Resources.model_construct(
-                cpus=-0.9, ram=ByteSize(-33), generic_resources={"GPU": 1}
-            ),
+            Resources.model_construct(cpus=-0.9, ram=ByteSize(-33), generic_resources={"GPU": 1}),
         ),
         (
             Resources(cpus=0.1, ram=ByteSize(1)),
             Resources(cpus=1, ram=ByteSize(34), generic_resources={"GPU": 1}),
-            Resources.model_construct(
-                cpus=-0.9, ram=ByteSize(-33), generic_resources={"GPU": -1}
-            ),
+            Resources.model_construct(cpus=-0.9, ram=ByteSize(-33), generic_resources={"GPU": -1}),
         ),
         (
             Resources(cpus=0.1, ram=ByteSize(1), generic_resources={"GPU": 1}),
             Resources(cpus=1, ram=ByteSize(34), generic_resources={"GPU": 1}),
-            Resources.model_construct(
-                cpus=-0.9, ram=ByteSize(-33), generic_resources={"GPU": 0}
-            ),
+            Resources.model_construct(cpus=-0.9, ram=ByteSize(-33), generic_resources={"GPU": 0}),
         ),
         (
-            Resources(
-                cpus=0.1, ram=ByteSize(1), generic_resources={"GPU": 1, "SSE": "yes"}
-            ),
+            Resources(cpus=0.1, ram=ByteSize(1), generic_resources={"GPU": 1, "SSE": "yes"}),
             Resources(cpus=1, ram=ByteSize(34), generic_resources={"GPU": 1}),
-            Resources.model_construct(
-                cpus=-0.9, ram=ByteSize(-33), generic_resources={"GPU": 0}
-            ),
+            Resources.model_construct(cpus=-0.9, ram=ByteSize(-33), generic_resources={"GPU": 0}),
         ),  # string resources are not summed
         (
             Resources(cpus=0.1, ram=ByteSize(1), generic_resources={"GPU": "1"}),
@@ -322,9 +306,7 @@ def test_resources_sub(a: Resources, b: Resources, result: Resources):
 
 
 def test_resources_flat_dict():
-    r = Resources(
-        cpus=0.1, ram=ByteSize(1024), generic_resources={"GPU": 2, "SSE": "yes"}
-    )
+    r = Resources(cpus=0.1, ram=ByteSize(1024), generic_resources={"GPU": 2, "SSE": "yes"})
     flat = r.as_flat_dict()
     assert flat == {"cpus": 0.1, "ram": 1024, "GPU": 2, "SSE": "yes"}
 
@@ -332,10 +314,8 @@ def test_resources_flat_dict():
     assert reconstructed == r
 
     # test with mapping
-    flat_with_oter_names = {"CPU": 0.1, "RAM": 1024, "GPU": 2, "SSE": "yes"}
-    reconstructed2 = Resources.from_flat_dict(
-        flat_with_oter_names, mapping={"CPU": "cpus", "RAM": "ram"}
-    )
+    flat_with_other_names = {"CPU": 0.1, "RAM": 1024, "GPU": 2, "SSE": "yes"}
+    reconstructed2 = Resources.from_flat_dict(flat_with_other_names, mapping={"CPU": "cpus", "RAM": "ram"})
     assert reconstructed2 == r
 
 
@@ -363,9 +343,9 @@ def test_ec2_instance_data_hashable(faker: Faker):
                 ram=ByteSize(faker.pyint(min_value=123)),
             ),
             {
-                TypeAdapter(AWSTagKey)
-                .validate_python("mytagkey"): TypeAdapter(AWSTagValue)
-                .validate_python("mytagvalue")
+                TypeAdapter(AWSTagKey).validate_python("mytagkey"): TypeAdapter(AWSTagValue).validate_python(
+                    "mytagvalue"
+                )
             },
         )
     }
@@ -382,9 +362,9 @@ def test_ec2_instance_data_hashable(faker: Faker):
                 ram=ByteSize(faker.pyint(min_value=123)),
             ),
             {
-                TypeAdapter(AWSTagKey)
-                .validate_python("mytagkey"): TypeAdapter(AWSTagValue)
-                .validate_python("mytagvalue")
+                TypeAdapter(AWSTagKey).validate_python("mytagkey"): TypeAdapter(AWSTagValue).validate_python(
+                    "mytagvalue"
+                )
             },
         )
     }

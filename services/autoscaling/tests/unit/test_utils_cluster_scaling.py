@@ -80,9 +80,7 @@ async def test_associate_ec2_instances_with_nodes_with_invalid_dns(
     node: Callable[..., DockerNode],
 ):
     nodes = [node() for _ in range(10)]
-    ec2_instances = [
-        fake_ec2_instance_data(aws_private_dns="invalid-dns-name") for _ in range(10)
-    ]
+    ec2_instances = [fake_ec2_instance_data(aws_private_dns="invalid-dns-name") for _ in range(10)]
 
     (
         associated_instances,
@@ -102,9 +100,7 @@ async def test_associate_ec2_instances_with_corresponding_nodes(
     for n in range(10):
         host_name = f"ip-10-12-32-{n + 1}"
         nodes.append(node(Description={"Hostname": host_name}))
-        ec2_instances.append(
-            fake_ec2_instance_data(aws_private_dns=f"{host_name}.internal-data")
-        )
+        ec2_instances.append(fake_ec2_instance_data(aws_private_dns=f"{host_name}.internal-data"))
 
     (
         associated_instances,
@@ -118,10 +114,7 @@ async def test_associate_ec2_instances_with_corresponding_nodes(
     for associated_instance in associated_instances:
         assert associated_instance.node.description
         assert associated_instance.node.description.hostname
-        assert (
-            associated_instance.node.description.hostname
-            in associated_instance.ec2_instance.aws_private_dns
-        )
+        assert associated_instance.node.description.hostname in associated_instance.ec2_instance.aws_private_dns
 
 
 @pytest.fixture
@@ -142,9 +135,7 @@ def ec2_instances_boot_just_ami(
     envs = setenvs_from_dict(
         monkeypatch,
         {
-            "EC2_INSTANCES_ALLOWED_TYPES": json.dumps(
-                {"t2.micro": {"ami_id": faker.pystr()}}
-            ),
+            "EC2_INSTANCES_ALLOWED_TYPES": json.dumps({"t2.micro": {"ami_id": faker.pystr()}}),
         },
     )
     return app_environment | envs
@@ -156,17 +147,11 @@ async def test_ec2_startup_script_just_ami(
     app_settings: ApplicationSettings,
 ):
     assert app_settings.AUTOSCALING_EC2_INSTANCES
-    instance_boot_specific = next(
-        iter(
-            app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES.values()
-        )
-    )
+    instance_boot_specific = next(iter(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES.values()))
     assert not instance_boot_specific.pre_pull_images
     startup_script = await ec2_startup_script(instance_boot_specific, app_settings)
     assert len(startup_script.split("&&")) == 2
-    assert re.fullmatch(
-        r"^docker swarm join --availability=drain --token .*$", startup_script
-    )
+    assert re.fullmatch(r"^docker swarm join --availability=drain --token .*$", startup_script)
 
 
 @pytest.fixture
@@ -225,11 +210,7 @@ async def test_ec2_startup_script_with_pre_pulling(
     app_settings: ApplicationSettings,
 ):
     assert app_settings.AUTOSCALING_EC2_INSTANCES
-    instance_boot_specific = next(
-        iter(
-            app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES.values()
-        )
-    )
+    instance_boot_specific = next(iter(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES.values()))
     assert instance_boot_specific.pre_pull_images
     startup_script = await ec2_startup_script(instance_boot_specific, app_settings)
     assert len(startup_script.split("&&")) == 6
@@ -246,16 +227,10 @@ async def test_ec2_startup_script_with_custom_scripts(
 ):
     for _ in range(3):
         assert app_settings.AUTOSCALING_EC2_INSTANCES
-        instance_boot_specific = next(
-            iter(
-                app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES.values()
-            )
-        )
+        instance_boot_specific = next(iter(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES.values()))
         assert not instance_boot_specific.pre_pull_images
         startup_script = await ec2_startup_script(instance_boot_specific, app_settings)
-        assert len(startup_script.split("&&")) == 2 + len(
-            ec2_instances_boot_ami_scripts
-        )
+        assert len(startup_script.split("&&")) == 2 + len(ec2_instances_boot_ami_scripts)
         assert re.fullmatch(
             rf"^([^&&]+ &&){{{len(ec2_instances_boot_ami_scripts)}}} (docker swarm join .+)$",
             startup_script,
@@ -269,26 +244,17 @@ async def test_ec2_startup_script_with_pre_pulling_but_no_registry(
     app_settings: ApplicationSettings,
 ):
     assert app_settings.AUTOSCALING_EC2_INSTANCES
-    instance_boot_specific = next(
-        iter(
-            app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES.values()
-        )
-    )
+    instance_boot_specific = next(iter(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES.values()))
     assert instance_boot_specific.pre_pull_images
     startup_script = await ec2_startup_script(instance_boot_specific, app_settings)
     assert len(startup_script.split("&&")) == 1
-    assert re.fullmatch(
-        r"^docker swarm join --availability=drain --token .*$", startup_script
-    )
+    assert re.fullmatch(r"^docker swarm join --availability=drain --token .*$", startup_script)
 
 
 def test_get_machine_buffer_type(
     random_fake_available_instances: list[EC2InstanceType],
 ):
-    assert (
-        get_hot_buffer_type(random_fake_available_instances)
-        == random_fake_available_instances[0]
-    )
+    assert get_hot_buffer_type(random_fake_available_instances) == random_fake_available_instances[0]
 
 
 def test_sort_empty_drained_nodes(
@@ -314,9 +280,7 @@ def test_sort_drained_nodes(
     assert app_settings.AUTOSCALING_EC2_INSTANCES
     machine_buffer_type = get_hot_buffer_type(random_fake_available_instances)
     _NUM_DRAINED_NODES = 20
-    _NUM_NODE_WITH_TYPE_BUFFER = (
-        3 * app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
-    )
+    _NUM_NODE_WITH_TYPE_BUFFER = 3 * app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
     _NUM_NODES_TERMINATING = 13
     fake_drained_nodes = []
     for _ in range(_NUM_DRAINED_NODES):
@@ -326,11 +290,7 @@ def test_sort_drained_nodes(
             terminateable_time=False,
             fake_ec2_instance_data_override={
                 "type": choice(  # noqa: S311
-                    [
-                        i
-                        for i in random_fake_available_instances
-                        if i != machine_buffer_type
-                    ]
+                    [i for i in random_fake_available_instances if i != machine_buffer_type]
                 ).name
             },
         )
@@ -349,9 +309,7 @@ def test_sort_drained_nodes(
         fake_node = create_fake_node()
         assert fake_node.spec
         assert fake_node.spec.labels
-        fake_node.spec.labels[_OSPARC_NODE_TERMINATION_PROCESS_LABEL_KEY] = (
-            arrow.utcnow().datetime.isoformat()
-        )
+        fake_node.spec.labels[_OSPARC_NODE_TERMINATION_PROCESS_LABEL_KEY] = arrow.utcnow().datetime.isoformat()
         fake_associated_instance = create_associated_instance(
             fake_node,
             terminateable_time=False,
@@ -360,27 +318,19 @@ def test_sort_drained_nodes(
         fake_drained_nodes.append(fake_associated_instance)
     shuffle(fake_drained_nodes)
 
-    assert (
-        len(fake_drained_nodes)
-        == _NUM_DRAINED_NODES + _NUM_NODE_WITH_TYPE_BUFFER + _NUM_NODES_TERMINATING
-    )
+    assert len(fake_drained_nodes) == _NUM_DRAINED_NODES + _NUM_NODE_WITH_TYPE_BUFFER + _NUM_NODES_TERMINATING
     (
         sorted_drained_nodes,
         sorted_buffer_drained_nodes,
         terminating_nodes,
-    ) = sort_drained_nodes(
-        app_settings, fake_drained_nodes, random_fake_available_instances
-    )
+    ) = sort_drained_nodes(app_settings, fake_drained_nodes, random_fake_available_instances)
     assert app_settings.AUTOSCALING_EC2_INSTANCES
     assert len(sorted_drained_nodes) == (
         _NUM_DRAINED_NODES
         + _NUM_NODE_WITH_TYPE_BUFFER
         - app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
     )
-    assert (
-        len(sorted_buffer_drained_nodes)
-        == app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
-    )
+    assert len(sorted_buffer_drained_nodes) == app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
     assert len(terminating_nodes) == _NUM_NODES_TERMINATING
     for n in terminating_nodes:
         assert n.node.spec

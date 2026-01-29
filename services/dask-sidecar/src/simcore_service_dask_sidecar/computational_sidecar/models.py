@@ -27,13 +27,11 @@ PROGRESS_REGEXP: re.Pattern[str] = re.compile(
 
 class ContainerHostConfig(BaseModel):
     # NOTE: https://github.com/ITISFoundation/osparc-simcore/issues/3506
-    # Be careful! --priviledged, --pid=host --cap-add XXX should never be usable here!!
+    # Be careful! --privileged, --pid=host --cap-add XXX should never be usable here!!
     # at the moment they are not part of the possible configuration but if they were
     # to, ensure they are properly validated
 
-    binds: list[str] = Field(
-        ..., alias="Binds", description="A list of volume bindings for this container"
-    )
+    binds: list[str] = Field(..., alias="Binds", description="A list of volume bindings for this container")
     init: bool = Field(
         default=True,
         alias="Init",
@@ -45,9 +43,7 @@ class ContainerHostConfig(BaseModel):
         alias="MemorySwap",
         description="Total memory limit (memory + swap). Set as -1 to enable unlimited swap.",
     )
-    nano_cpus: int = Field(
-        ..., alias="NanoCPUs", description="CPU quota in units of 10-9 CPUs"
-    )
+    nano_cpus: int = Field(..., alias="NanoCPUs", description="CPU quota in units of 10-9 CPUs")
 
     @model_validator(mode="after")
     def ensure_memory_swap_is_not_unlimited(self) -> Self:
@@ -104,6 +100,6 @@ class ImageLabels(BaseModel):
         return re.compile(self.progress_regexp)
 
 
-assert set(ImageLabels.model_fields).issubset(
-    ServiceMetaDataPublished.model_fields
-), "ImageLabels must be compatible with ServiceDockerData"
+assert set(ImageLabels.model_fields).issubset(ServiceMetaDataPublished.model_fields), (
+    "ImageLabels must be compatible with ServiceDockerData"
+)

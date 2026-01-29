@@ -106,14 +106,9 @@ def get_rabbitmq_client(app: FastAPI) -> RabbitMQClient:
     return cast(RabbitMQClient, app.state.rabbitmq_client)
 
 
-def get_rabbitmq_rpc_server(app: FastAPI) -> RabbitMQRPCClient:
-    _raise_if_not_initialized(app, "rabbitmq_rpc_server")
-    return cast(RabbitMQRPCClient, app.state.rabbitmq_rpc_server)
-
-
 def get_rabbitmq_rpc_client(app: FastAPI) -> RabbitMQRPCClient:
     _raise_if_not_initialized(app, "rabbitmq_rpc_client")
-    return cast(RabbitMQRPCClient, app.state.rabbitmq_rpc_server)
+    return cast(RabbitMQRPCClient, app.state.rabbitmq_rpc_client)
 
 
 def setup_rabbitmq(app: FastAPI) -> None:
@@ -128,11 +123,6 @@ def setup_rabbitmq(app: FastAPI) -> None:
                 settings=settings,
             )
         with log_context(_logger, logging.INFO, msg="Create RabbitMQRPCClient"):
-            app.state.rabbitmq_rpc_server = await RabbitMQRPCClient.create(
-                client_name=f"dynamic-sidecar_rpc_server_{app_settings.DY_SIDECAR_NODE_ID}",
-                settings=settings,
-            )
-        with log_context(_logger, logging.INFO, msg="Create RabbitMQRPCClient"):
             app.state.rabbitmq_rpc_client = await RabbitMQRPCClient.create(
                 client_name=f"dynamic-sidecar_rpc_client_{app_settings.DY_SIDECAR_NODE_ID}",
                 settings=settings,
@@ -141,8 +131,6 @@ def setup_rabbitmq(app: FastAPI) -> None:
     async def on_shutdown() -> None:
         if app.state.rabbitmq_client:
             await app.state.rabbitmq_client.close()
-        if app.state.rabbitmq_rpc_server:
-            await app.state.rabbitmq_rpc_server.close()
         if app.state.rabbitmq_rpc_client:
             await app.state.rabbitmq_rpc_client.close()
 

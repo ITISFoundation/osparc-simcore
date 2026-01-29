@@ -18,8 +18,8 @@ _logger = logging.getLogger(__name__)
 
 _RPC_METHOD_NAME_ADAPTER: TypeAdapter[RPCMethodName] = TypeAdapter(RPCMethodName)
 
-_GET_COMPUTATION_TASK_LOG_FILE_IDS: Final[RPCMethodName] = (
-    _RPC_METHOD_NAME_ADAPTER.validate_python("get_computation_task_log_file_ids")
+_GET_COMPUTATION_TASK_LOG_FILE_IDS: Final[RPCMethodName] = _RPC_METHOD_NAME_ADAPTER.validate_python(
+    "get_computation_task_log_file_ids"
 )
 
 

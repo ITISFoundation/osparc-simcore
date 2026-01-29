@@ -49,18 +49,14 @@ async def test_create_payment_method(
         # unique payment_method_id - should fail in a separate transaction
         async with asyncpg_engine.begin() as connection:
             with pytest.raises(sa.exc.IntegrityError) as err_info:
-                await connection.execute(
-                    payments_methods.insert().values(**init_values)
-                )
+                await connection.execute(payments_methods.insert().values(**init_values))
             assert "payment_method_id" in str(err_info.value)
 
         # Create payment-method for another entity
         for _ in range(2):
             # Create additional users and wallets
             async with (
-                insert_and_get_user_and_secrets_lifespan(
-                    asyncpg_engine
-                ) as other_user_row,
+                insert_and_get_user_and_secrets_lifespan(asyncpg_engine) as other_user_row,
                 insert_and_get_wallet_lifespan(
                     asyncpg_engine,
                     product_name=product_row["name"],
@@ -83,9 +79,7 @@ async def test_create_payment_method(
             result = await connection.execute(
                 sa.select(payments_methods).where(
                     (payments_methods.c.wallet_id == init_values["wallet_id"])
-                    & (
-                        payments_methods.c.user_id == init_values["user_id"]
-                    )  # ensures ownership
+                    & (payments_methods.c.user_id == init_values["user_id"])  # ensures ownership
                     & (payments_methods.c.state == InitPromptAckFlowState.PENDING)
                 )
             )
@@ -96,10 +90,7 @@ async def test_create_payment_method(
             # get payment-method wallet_id / payment_method_id
             result = await connection.execute(
                 sa.select(payments_methods).where(
-                    (
-                        payments_methods.c.payment_method_id
-                        == init_values["payment_method_id"]
-                    )
+                    (payments_methods.c.payment_method_id == init_values["payment_method_id"])
                     & (payments_methods.c.wallet_id == init_values["wallet_id"])
                 )
             )

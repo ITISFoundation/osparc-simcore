@@ -79,12 +79,10 @@ async def get_licensed_item_purchase(
     product_name: ProductName,
     licensed_item_purchase_id: LicensedItemPurchaseID,
 ) -> LicensedItemPurchaseGet:
-    licensed_item_purchase_db: LicensedItemsPurchasesDB = (
-        await licensed_items_purchases_db.get(
-            db_engine,
-            product_name=product_name,
-            licensed_item_purchase_id=licensed_item_purchase_id,
-        )
+    licensed_item_purchase_db: LicensedItemsPurchasesDB = await licensed_items_purchases_db.get(
+        db_engine,
+        product_name=product_name,
+        licensed_item_purchase_id=licensed_item_purchase_id,
     )
 
     return LicensedItemPurchaseGet(
@@ -113,7 +111,6 @@ async def create_licensed_item_purchase(
     *,
     data: LicensedItemsPurchasesCreate,
 ) -> LicensedItemPurchaseGet:
-
     async with transaction_context(db_engine) as conn:
         item_purchase_create = CreateLicensedItemsPurchasesDB(
             product_name=data.product_name,
@@ -132,10 +129,8 @@ async def create_licensed_item_purchase(
             purchased_at=data.purchased_at,
         )
 
-        licensed_item_purchase_db: LicensedItemsPurchasesDB = (
-            await licensed_items_purchases_db.create(
-                db_engine, connection=conn, data=item_purchase_create
-            )
+        licensed_item_purchase_db: LicensedItemsPurchasesDB = await licensed_items_purchases_db.create(
+            db_engine, connection=conn, data=item_purchase_create
         )
 
         # Deduct credits from credit_transactions table
@@ -157,9 +152,7 @@ async def create_licensed_item_purchase(
             created_at=data.start_at,
             last_heartbeat_at=data.start_at,
         )
-        await credit_transactions_db.create_credit_transaction(
-            db_engine, connection=conn, data=transaction_create
-        )
+        await credit_transactions_db.create_credit_transaction(db_engine, connection=conn, data=transaction_create)
 
     # Publish wallet total credits to RabbitMQ
     await sum_credit_transactions_and_publish_to_rabbitmq(

@@ -1,4 +1,4 @@
-"""backround task that cleans the DSM pending/expired uploads
+"""background task that cleans the DSM pending/expired uploads
 
 # Rationale:
  - for each upload an entry is created in the file_meta_data table in the database
@@ -35,7 +35,7 @@ from .simcore_s3_dsm import SimcoreS3DataManager
 
 _logger = logging.getLogger(__name__)
 
-_TASK_NAME_PERIODICALY_CLEAN_DSM = "periodic_cleanup_of_dsm"
+_TASK_NAME_PERIODICALLY_CLEAN_DSM = "periodic_cleanup_of_dsm"
 
 
 async def dsm_cleaner_task(app: FastAPI) -> None:
@@ -60,9 +60,7 @@ def setup_dsm_cleaner(app: FastAPI) -> None:
         async def _periodic_dsm_clean() -> None:
             await dsm_cleaner_task(app)
 
-        app.state.dsm_cleaner_task = asyncio.create_task(
-            _periodic_dsm_clean(), name=_TASK_NAME_PERIODICALY_CLEAN_DSM
-        )
+        app.state.dsm_cleaner_task = asyncio.create_task(_periodic_dsm_clean(), name=_TASK_NAME_PERIODICALLY_CLEAN_DSM)
 
     async def _on_shutdown() -> None:
         assert isinstance(app.state.dsm_cleaner_task, asyncio.Task)  # nosec

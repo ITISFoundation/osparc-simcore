@@ -37,23 +37,17 @@ NONE_ERRORS = (HTTPOk.status_code, HTTPNotModified.status_code)
 ABOVE_599 = (600, 10000.1)
 
 
-@pytest.mark.parametrize(
-    "http_exc", [HTTPBadRequest, HTTPGone, HTTPInternalServerError]
-)
+@pytest.mark.parametrize("http_exc", [HTTPBadRequest, HTTPGone, HTTPInternalServerError])
 def test_get_http_exception_class_from_code(http_exc: HTTPException):
     assert get_http_error_class_or_none(http_exc.status_code) == http_exc
 
 
-@pytest.mark.parametrize(
-    "status_code", itertools.chain(BELOW_1XX, NONE_ERRORS, ABOVE_599)
-)
+@pytest.mark.parametrize("status_code", itertools.chain(BELOW_1XX, NONE_ERRORS, ABOVE_599))
 def test_get_none_for_invalid_or_not_errors_code(status_code):
     assert get_http_error_class_or_none(status_code) is None
 
 
-@pytest.mark.parametrize(
-    "status_code, http_error_cls", _STATUS_CODE_TO_HTTP_ERRORS.items()
-)
+@pytest.mark.parametrize("status_code, http_error_cls", _STATUS_CODE_TO_HTTP_ERRORS.items())
 def test_collected_http_errors_map(status_code: int, http_error_cls: type[HTTPError]):
     assert 399 < status_code < 600, "expected 4XX, 5XX"
     assert http_error_cls.status_code == status_code
@@ -86,11 +80,9 @@ def test_collected_http_errors_map(status_code: int, http_error_cls: type[HTTPEr
         "503",
     ],
 )
-def tests_exception_to_response(
-    error_code: ErrorCodeStr | None, http_error_cls: type[HTTPError]
-):
+def tests_exception_to_response(error_code: ErrorCodeStr | None, http_error_cls: type[HTTPError]):
     expected_status_reason = "SHORT REASON"
-    expected_error_message = "Something whent wrong !"
+    expected_error_message = "Something went wrong !"
     expected_exceptions: list[Exception] = [RuntimeError("foo")]
 
     http_error = create_http_error(

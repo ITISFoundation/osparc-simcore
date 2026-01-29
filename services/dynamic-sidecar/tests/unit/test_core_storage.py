@@ -56,9 +56,7 @@ def mock_storage_app(username: str | None, password: str | None) -> FastAPI:
 
 
 @pytest.fixture
-def storage_auth_settings(
-    username: str | None, password: str | None
-) -> StorageAuthSettings:
+def storage_auth_settings(username: str | None, password: str | None) -> StorageAuthSettings:
     return TypeAdapter(StorageAuthSettings).validate_python(
         {
             "STORAGE_HOST": "localhost",
@@ -119,9 +117,7 @@ _USERNAME_PASSWORD_TEST_CASES: Final[list] = [
 
 
 @pytest.mark.parametrize("username, password", _USERNAME_PASSWORD_TEST_CASES)
-async def test_wait_for_storage_liveness(
-    mock_storage_server: None, mock_dynamic_sidecar_app: Mock
-):
+async def test_wait_for_storage_liveness(mock_storage_server: None, mock_dynamic_sidecar_app: Mock):
     await wait_for_storage_liveness(mock_dynamic_sidecar_app)
 
 

@@ -30,21 +30,15 @@ def upgrade():
     )
     op.add_column(
         "projects_nodes",
-        sa.Column(
-            "version", sa.String(), nullable=True, comment="Semantic version number"
-        ),
+        sa.Column("version", sa.String(), nullable=True, comment="Semantic version number"),
     )
     op.add_column(
         "projects_nodes",
-        sa.Column(
-            "label", sa.String(), nullable=True, comment="Short name used for display"
-        ),
+        sa.Column("label", sa.String(), nullable=True, comment="Short name used for display"),
     )
     op.add_column(
         "projects_nodes",
-        sa.Column(
-            "progress", sa.Numeric(), nullable=True, comment="Progress value (0-100)"
-        ),
+        sa.Column("progress", sa.Numeric(), nullable=True, comment="Progress value (0-100)"),
     )
     op.add_column(
         "projects_nodes",

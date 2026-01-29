@@ -21,17 +21,11 @@ async def test_list_no_services_available(
     configure_registry_access: EnvVarsDict,
     app: FastAPI,
 ):
-    computational_services = await registry_proxy.list_services(
-        app, registry_proxy.ServiceType.COMPUTATIONAL
-    )
+    computational_services = await registry_proxy.list_services(app, registry_proxy.ServiceType.COMPUTATIONAL)
     assert not computational_services  # it's empty
-    interactive_services = await registry_proxy.list_services(
-        app, registry_proxy.ServiceType.DYNAMIC
-    )
+    interactive_services = await registry_proxy.list_services(app, registry_proxy.ServiceType.DYNAMIC)
     assert not interactive_services
-    all_services = await registry_proxy.list_services(
-        app, registry_proxy.ServiceType.ALL
-    )
+    all_services = await registry_proxy.list_services(app, registry_proxy.ServiceType.ALL)
     assert not all_services
 
 
@@ -40,13 +34,9 @@ async def test_list_computational_services(
     app: FastAPI,
     push_services,
 ):
-    await push_services(
-        number_of_computational_services=6, number_of_interactive_services=3
-    )
+    await push_services(number_of_computational_services=6, number_of_interactive_services=3)
 
-    computational_services = await registry_proxy.list_services(
-        app, registry_proxy.ServiceType.COMPUTATIONAL
-    )
+    computational_services = await registry_proxy.list_services(app, registry_proxy.ServiceType.COMPUTATIONAL)
     assert len(computational_services) == 6
 
 
@@ -55,12 +45,8 @@ async def test_list_interactive_services(
     app: FastAPI,
     push_services,
 ):
-    await push_services(
-        number_of_computational_services=5, number_of_interactive_services=4
-    )
-    interactive_services = await registry_proxy.list_services(
-        app, registry_proxy.ServiceType.DYNAMIC
-    )
+    await push_services(number_of_computational_services=5, number_of_interactive_services=4)
+    interactive_services = await registry_proxy.list_services(app, registry_proxy.ServiceType.DYNAMIC)
     assert len(interactive_services) == 4
 
 
@@ -69,9 +55,7 @@ async def test_list_of_image_tags(
     app: FastAPI,
     push_services,
 ):
-    images = await push_services(
-        number_of_computational_services=5, number_of_interactive_services=3
-    )
+    images = await push_services(number_of_computational_services=5, number_of_interactive_services=3)
     image_number = {}
     for image in images:
         service_description = image["service_description"]
@@ -99,15 +83,11 @@ async def test_list_interactive_service_dependencies(
         service_description = image["service_description"]
         docker_labels = image["docker_labels"]
         if "simcore.service.dependencies" in docker_labels:
-            docker_dependencies = json.loads(
-                docker_labels["simcore.service.dependencies"]
-            )
-            image_dependencies = (
-                await registry_proxy.list_interactive_service_dependencies(
-                    app,
-                    service_description["key"],
-                    service_description["version"],
-                )
+            docker_dependencies = json.loads(docker_labels["simcore.service.dependencies"])
+            image_dependencies = await registry_proxy.list_interactive_service_dependencies(
+                app,
+                service_description["key"],
+                service_description["version"],
             )
             assert isinstance(image_dependencies, list)
             assert len(image_dependencies) == len(docker_dependencies)
@@ -115,9 +95,7 @@ async def test_list_interactive_service_dependencies(
             assert image_dependencies[0]["tag"] == docker_dependencies[0]["tag"]
 
 
-@pytest.fixture(
-    params=["docker_registry", "docker_registry_v2"], ids=["registry_v3", "registry_v2"]
-)
+@pytest.fixture(params=["docker_registry", "docker_registry_v2"], ids=["registry_v3", "registry_v2"])
 def configure_registry_access_both_versions(
     app_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
@@ -193,12 +171,9 @@ def test_get_service_first_name():
     assert registry_proxy.get_service_first_name(repo) == "invalid service"
 
 
-def test_get_service_last_namess():
+def test_get_service_last_names():
     repo = "simcore/services/dynamic/myservice/modeler/my-sub-modeler"
-    assert (
-        registry_proxy.get_service_last_names(repo)
-        == "myservice_modeler_my-sub-modeler"
-    )
+    assert registry_proxy.get_service_last_names(repo) == "myservice_modeler_my-sub-modeler"
     repo = "simcore/services/dynamic/myservice/modeler"
     assert registry_proxy.get_service_last_names(repo) == "myservice_modeler"
     repo = "simcore/services/dynamic/myservice"
@@ -216,9 +191,7 @@ async def test_get_image_details(
     app: FastAPI,
     push_services,
 ):
-    images = await push_services(
-        number_of_computational_services=1, number_of_interactive_services=1
-    )
+    images = await push_services(number_of_computational_services=1, number_of_interactive_services=1)
     for image in images:
         service_description = image["service_description"]
         details = await registry_proxy.get_image_details(
@@ -236,27 +209,19 @@ async def test_list_services(
     app: FastAPI,
     push_services,
 ):
-    await push_services(
-        number_of_computational_services=21, number_of_interactive_services=21
-    )
+    await push_services(number_of_computational_services=21, number_of_interactive_services=21)
     services = await registry_proxy.list_services(app, registry_proxy.ServiceType.ALL)
     assert len(services) == 42
 
 
 @pytest.fixture
-def configure_registry_caching(
-    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
-) -> EnvVarsDict:
-    return app_environment | setenvs_from_dict(
-        monkeypatch, {"DIRECTOR_REGISTRY_CACHING": True}
-    )
+def configure_registry_caching(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
+    return app_environment | setenvs_from_dict(monkeypatch, {"DIRECTOR_REGISTRY_CACHING": True})
 
 
 @pytest.fixture
 def with_disabled_auto_caching(mocker: MockerFixture) -> mock.Mock:
-    return mocker.patch(
-        "simcore_service_director.registry_proxy._list_all_services_task", autospec=True
-    )
+    return mocker.patch("simcore_service_director.registry_proxy._list_all_services_task", autospec=True)
 
 
 async def test_registry_caching(
@@ -267,9 +232,7 @@ async def test_registry_caching(
     app: FastAPI,
     push_services,
 ):
-    images = await push_services(
-        number_of_computational_services=201, number_of_interactive_services=201
-    )
+    images = await push_services(number_of_computational_services=201, number_of_interactive_services=201)
     assert app_settings.DIRECTOR_REGISTRY_CACHING is True
 
     start_time = time.perf_counter()
@@ -309,9 +272,7 @@ def test_list_services_performance(
 ):
     async def _list_services():
         start_time = time.perf_counter()
-        services = await registry_proxy.list_services(
-            app, registry_proxy.ServiceType.ALL
-        )
+        services = await registry_proxy.list_services(app, registry_proxy.ServiceType.ALL)
         stop_time = time.perf_counter()
         print(
             f"\nTime to list services: {stop_time - start_time:.3}s, {len(services)} services in {registry_settings.resolved_registry_url}, rate: {(stop_time - start_time) / len(services or [1]):.3}s/service"
