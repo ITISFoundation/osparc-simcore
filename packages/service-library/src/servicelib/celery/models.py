@@ -26,6 +26,10 @@ WILDCARD: Final[Wildcard] = "*"
 _TASK_UUID_KEY: Final[str] = "task_uuid"
 
 
+class _TypeValidationModel(BaseModel):
+    filters: dict[str, AllowedTypes]
+
+
 class OwnerMetadata(BaseModel):
     """
     Class for associating metadata with a celery task.
@@ -62,9 +66,6 @@ class OwnerMetadata(BaseModel):
     @model_validator(mode="after")
     def _check_valid_filters(self) -> Self:
         def _validate_type() -> None:
-            class _TypeValidationModel(BaseModel):
-                filters: dict[str, AllowedTypes]
-
             try:
                 _TypeValidationModel.model_validate({"filters": self.model_dump()})
             except ValueError as err:
