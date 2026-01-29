@@ -14753,19 +14753,16 @@ components:
         subject:
           type: string
           maxLength: 998
-          minLength: 1
           title: Subject
           description: 'Email subject line (RFC 2822: max header line length)'
         bodyHtml:
           type: string
           maxLength: 1048576
-          minLength: 1
           title: Bodyhtml
           description: HTML email body (1 MB limit per RFC 5321 SMTP practical limits)
         bodyText:
           type: string
           maxLength: 1048576
-          minLength: 1
           title: Bodytext
           description: Plain text email body (1 MB limit per RFC 5321 SMTP practical
             limits)
@@ -14780,19 +14777,16 @@ components:
         subject:
           type: string
           maxLength: 998
-          minLength: 1
           title: Subject
           description: 'Email subject line (RFC 2822: max header line length)'
         bodyHtml:
           type: string
           maxLength: 1048576
-          minLength: 1
           title: Bodyhtml
           description: HTML email body (1 MB limit per RFC 5321 SMTP practical limits)
         bodyText:
           type: string
           maxLength: 1048576
-          minLength: 1
           title: Bodytext
           description: Plain text email body (1 MB limit per RFC 5321 SMTP practical
             limits)
