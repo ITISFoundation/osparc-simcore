@@ -1,3 +1,5 @@
+from pydantic import Field
+
 from ..api_schemas_webserver._base import OutputSchema
 
 
@@ -8,7 +10,7 @@ class EmailNotificationContentGet(OutputSchema):
 
 
 class SMSNotificationContentGet(OutputSchema):
-    text: str
+    text: str = Field(..., min_length=1)
 
 
 type NotificationContentGet = EmailNotificationContentGet | SMSNotificationContentGet
