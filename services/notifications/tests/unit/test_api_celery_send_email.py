@@ -53,6 +53,7 @@ async def test_send_mail(
             content=EmailContent(
                 subject="Test Email",
                 body_text="This is a test email sent from the notifications service.",
+                body_html="<p>This is a test email sent from the notifications service.</p>",
             ),
         ).model_dump(),
     )
