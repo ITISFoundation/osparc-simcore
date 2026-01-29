@@ -11,7 +11,7 @@ from servicelib.celery.models import ExecutionMetadata, OwnerMetadata
 
 from ..celery import get_task_manager
 from ..models import WebServerOwnerMetadata
-from ..products.products_service import get_product
+from ..products import products_service
 from ._models import EmailAddress, EmailContent, EmailNotificationMessage
 
 
@@ -27,7 +27,7 @@ async def _create_email_message(
 
     to: set[EmailAddress] = set()
 
-    product = get_product(app, product_name)
+    product = products_service.get_product(app, product_name)
 
     for recipient in recipients:
         u_ids = await get_users_in_group(app, gid=recipient)
