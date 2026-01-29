@@ -7,6 +7,7 @@ import pytest
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from settings_library.rabbit import RabbitSettings
+from simcore_service_webserver.notifications._controller import _rest
 
 
 @pytest.fixture
@@ -38,12 +39,12 @@ def mocked_notifications_rpc_client(
 
     # Mock the RPC interface functions
     mocker.patch(
-        "simcore_service_webserver.notifications._controller._rest.remote_preview_template",
+        f"{_rest.__name__}.remote_preview_template",
         autospec=True,
     )
 
     mocker.patch(
-        "simcore_service_webserver.notifications._controller._rest.remote_search_templates",
+        f"{_rest.__name__}.remote_search_templates",
         autospec=True,
     )
 
