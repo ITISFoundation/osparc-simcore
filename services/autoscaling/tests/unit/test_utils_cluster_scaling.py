@@ -258,7 +258,6 @@ async def test_ec2_startup_script_with_pre_pulling_but_no_registry(
 def test_sort_empty_drained_nodes(
     minimal_configuration: None,
     app_settings: ApplicationSettings,
-    random_fake_available_instances: list[EC2InstanceType],
 ):
     assert sort_drained_nodes(app_settings, []) == (
         [],

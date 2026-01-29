@@ -325,6 +325,7 @@ async def create_services_batch(
 )
 async def test_cluster_scaling_with_no_services_does_nothing(
     minimal_configuration: None,
+    with_disabled_hot_buffers: EnvVarsDict,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
     mock_launch_instances: mock.Mock,
@@ -472,6 +473,7 @@ async def test_cluster_scaling_with_no_services_and_machine_buffer_starts_expect
 )
 async def test_cluster_scaling_with_service_asking_for_too_much_resources_starts_nothing(
     minimal_configuration: None,
+    with_disabled_hot_buffers: EnvVarsDict,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
     create_services_batch: Callable[[_ScaleUpParams], Awaitable[list[Service]]],
@@ -996,6 +998,7 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915,C901
 )
 async def test_cluster_scaling_up_and_down(
     minimal_configuration: None,
+    with_disabled_hot_buffers: EnvVarsDict,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
     create_services_batch: Callable[[_ScaleUpParams], Awaitable[list[Service]]],
@@ -1074,6 +1077,7 @@ async def test_cluster_scaling_up_and_down_against_aws(
     disable_buffers_pool_background_task: None,
     mocked_redis_server: None,
     external_envfile_dict: EnvVarsDict,
+    with_disabled_hot_buffers: EnvVarsDict,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
     create_services_batch: Callable[[_ScaleUpParams], Awaitable[list[Service]]],
@@ -1160,6 +1164,7 @@ async def test_cluster_scaling_up_and_down_against_aws(
 async def test_cluster_scaling_up_starts_multiple_instances(
     patch_ec2_client_launch_instances_min_number_of_instances: mock.Mock,
     minimal_configuration: None,
+    with_disabled_hot_buffers: EnvVarsDict,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
     create_services_batch: Callable[[_ScaleUpParams], Awaitable[list[Service]]],
@@ -1244,6 +1249,7 @@ async def test_cluster_scaling_up_starts_multiple_instances(
 async def test_cluster_adapts_machines_on_the_fly(  # noqa: PLR0915
     patch_ec2_client_launch_instances_min_number_of_instances: mock.Mock,
     minimal_configuration: None,
+    with_disabled_hot_buffers: EnvVarsDict,
     ec2_client: EC2Client,
     initialized_app: FastAPI,
     app_settings: ApplicationSettings,
@@ -1499,6 +1505,7 @@ async def test_cluster_adapts_machines_on_the_fly(  # noqa: PLR0915
 async def test_long_pending_ec2_is_detected_as_broken_terminated_and_restarted(
     with_short_ec2_instances_max_start_time: EnvVarsDict,
     minimal_configuration: None,
+    with_disabled_hot_buffers: EnvVarsDict,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
     create_services_batch: Callable[[_ScaleUpParams], Awaitable[list[Service]]],
@@ -1622,6 +1629,7 @@ async def test_long_pending_ec2_is_detected_as_broken_terminated_and_restarted(
 )
 async def test__find_terminateable_nodes_with_no_hosts(
     minimal_configuration: None,
+    with_disabled_hot_buffers: EnvVarsDict,
     initialized_app: FastAPI,
     cluster: Callable[..., Cluster],
     host_node: Node,
@@ -1651,6 +1659,7 @@ async def test__find_terminateable_nodes_with_no_hosts(
 async def test__try_scale_down_cluster_with_no_nodes(
     minimal_configuration: None,
     with_valid_time_before_termination: datetime.timedelta,
+    with_disabled_hot_buffers: EnvVarsDict,
     initialized_app: FastAPI,
     cluster: Callable[..., Cluster],
     mock_remove_nodes: mock.Mock,
@@ -1687,6 +1696,7 @@ async def test__try_scale_down_cluster_with_no_nodes(
 async def test__activate_drained_nodes_with_no_tasks(
     minimal_configuration: None,
     with_valid_time_before_termination: datetime.timedelta,
+    with_disabled_hot_buffers: EnvVarsDict,
     initialized_app: FastAPI,
     host_node: Node,
     drained_host_node: Node,
@@ -1728,6 +1738,7 @@ async def test__activate_drained_nodes_with_no_tasks(
 async def test__activate_drained_nodes_with_no_drained_nodes(
     minimal_configuration: None,
     with_valid_time_before_termination: datetime.timedelta,
+    with_disabled_hot_buffers: EnvVarsDict,
     autoscaling_docker: AutoscalingDocker,
     initialized_app: FastAPI,
     host_node: Node,
@@ -1771,6 +1782,7 @@ async def test__activate_drained_nodes_with_no_drained_nodes(
 async def test__activate_drained_nodes_with_drained_node(
     minimal_configuration: None,
     with_valid_time_before_termination: datetime.timedelta,
+    with_disabled_hot_buffers: EnvVarsDict,
     autoscaling_docker: AutoscalingDocker,
     initialized_app: FastAPI,
     instance_type_filters: Sequence[FilterTypeDef],
@@ -2226,6 +2238,7 @@ async def with_multiple_small_subnet_ids(
 async def test_fresh_instance_is_started_in_second_subnet_if_warm_buffers_used_up_all_ips_in_first_subnet(
     patch_ec2_client_launch_instances_min_number_of_instances: mock.Mock,
     minimal_configuration: None,
+    with_disabled_hot_buffers: EnvVarsDict,
     with_multiple_small_subnet_ids: tuple[str, ...],
     initialized_app: FastAPI,
     app_settings: ApplicationSettings,
@@ -2321,6 +2334,7 @@ def mock_start_instances_to_raise_insufficient_capacity_error(
 async def test_fresh_instance_is_launched_if_warm_buffers_cannot_start_due_to_insufficient_capacity_error(
     patch_ec2_client_launch_instances_min_number_of_instances: mock.Mock,
     minimal_configuration: None,
+    with_disabled_hot_buffers: EnvVarsDict,
     with_multiple_small_subnet_ids: tuple[str, ...],
     initialized_app: FastAPI,
     mock_start_instances_to_raise_insufficient_capacity_error: None,
