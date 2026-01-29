@@ -6,6 +6,7 @@
 
 
 from http import HTTPStatus
+from typing import Any
 
 import pytest
 from aiohttp.test_utils import TestClient
@@ -67,6 +68,16 @@ def fake_template_response(faker: Faker) -> NotificationsTemplateRpcResponse:
     )
 
 
+@pytest.fixture
+def fake_email_content() -> dict[str, Any]:
+    """Create standard email content object"""
+    return {
+        "subject": "Test",
+        "bodyHtml": "<p>Test Body</p>",
+        "bodyText": "Test Body",
+    }
+
+
 @pytest.mark.parametrize(
     "user_role,expected_status",
     [
@@ -82,6 +93,7 @@ async def test_send_message_access_control(
     user_role: UserRole,
     expected_status: HTTPStatus,
     mocked_notifications_rpc_client: MockerFixture,
+    fake_email_content: dict[str, Any],
 ):
     """Test access control for send_message endpoint"""
     assert client.app
@@ -91,11 +103,7 @@ async def test_send_message_access_control(
     body = {
         "channel": "email",
         "recipients": [42],
-        "content": {
-            "subject": "Test Subject",
-            "bodyHtml": "<p>Test Body</p>",
-            "bodyText": "Test Body",
-        },
+        "content": fake_email_content,
     }
 
     response = await client.post(url.path, json=body)
@@ -107,6 +115,7 @@ async def test_send_message_returns_task(
     client: TestClient,
     logged_user: UserInfoDict,
     mocked_notifications_rpc_client: MockerFixture,
+    fake_email_content: dict[str, Any],
 ):
     """Test that send_message returns a task resource"""
     assert client.app
@@ -116,11 +125,7 @@ async def test_send_message_returns_task(
     body = {
         "channel": "email",
         "recipients": [42],
-        "content": {
-            "subject": "Test Subject",
-            "bodyHtml": "<p>Test Body</p>",
-            "bodyText": "Test Body",
-        },
+        "content": fake_email_content,
     }
 
     response = await client.post(url.path, json=body)
@@ -140,20 +145,18 @@ async def test_send_message_returns_task(
 
 @pytest.mark.parametrize("user_role", [UserRole.USER])
 @pytest.mark.parametrize(
-    "channel,recipients,content,expected_status",
+    "channel,recipients,expected_status",
     [
         # Valid email notification
         (
             "email",
             [42],
-            {"subject": "Test", "bodyHtml": "<p>Test Body</p>", "bodyText": "Test Body"},
             status.HTTP_202_ACCEPTED,
         ),
         # Multiple recipients
         (
             "email",
             [42, 314],
-            {"subject": "Test", "bodyHtml": "<p>Test Body</p>", "bodyText": "Test Body"},
             status.HTTP_202_ACCEPTED,
         ),
     ],
@@ -162,10 +165,10 @@ async def test_send_message_with_different_inputs(
     client: TestClient,
     logged_user: UserInfoDict,
     channel: str,
-    recipients: list[dict[str, str]],
-    content: dict[str, str],
+    recipients: list[int],
     expected_status: HTTPStatus,
     mocked_notifications_rpc_client: MockerFixture,
+    fake_email_content: dict[str, Any],
 ):
     """Test send_message with various valid inputs"""
     assert client.app
@@ -174,7 +177,7 @@ async def test_send_message_with_different_inputs(
     body = {
         "channel": channel,
         "recipients": recipients,
-        "content": content,
+        "content": fake_email_content,
     }
 
     response = await client.post(url.path, json=body)
@@ -235,6 +238,7 @@ async def test_preview_template_success(
     logged_user: UserInfoDict,
     mocked_notifications_rpc_client: MockerFixture,
     fake_template_preview_response: NotificationsTemplatePreviewRpcResponse,
+    fake_email_content: dict[str, Any],
 ):
     """Test successful template preview"""
     assert client.app
@@ -252,10 +256,7 @@ async def test_preview_template_success(
             "channel": "email",
             "template_name": "test_template",
         },
-        "context": {
-            "subject": "Test",
-            "body": "Body",
-        },
+        "context": fake_email_content,
     }
 
     response = await client.post(url.path, json=body)
@@ -275,6 +276,7 @@ async def test_preview_template_enriches_context_with_product_data(
     logged_user: UserInfoDict,
     mocked_notifications_rpc_client: MockerFixture,
     mocker: MockerFixture,
+    fake_email_content: dict[str, Any],
 ):
     """Test that preview_template enriches context with product data"""
     assert client.app
@@ -298,10 +300,7 @@ async def test_preview_template_enriches_context_with_product_data(
             "channel": "email",
             "template_name": "test_template",
         },
-        "context": {
-            "subject": "Test",
-            "body": "Body",
-        },
+        "context": fake_email_content,
     }
 
     response = await client.post(url.path, json=body)
