@@ -192,4 +192,14 @@ async def test_transaction_context(asyncpg_engine: AsyncEngine):
             assert (await tags_repo.get_page(conn, limit=10, offset=0)).total_count == 4
             _something_raises_here()
 
+    # auto-rollback nested
+    with pytest.raises(RuntimeError, match=fake_error_msg):  # noqa: PT012
+        async with transaction_context(asyncpg_engine) as conn:
+            await tags_repo.create(conn, name="violet tag", color="violet")
+            assert (await tags_repo.get_page(conn, limit=10, offset=0)).total_count == 4
+            async with transaction_context(asyncpg_engine, conn) as conn2:
+                await tags_repo.create(conn2, name="violet tag", color="violet")
+                assert (await tags_repo.get_page(conn2, limit=10, offset=0)).total_count == 5
+                _something_raises_here()
+
     assert (await tags_repo.get_page(limit=10, offset=0)).total_count == 3
