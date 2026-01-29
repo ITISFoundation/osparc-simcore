@@ -53,6 +53,18 @@ async def search_templates(
     channel: ChannelType | None,
     template_name: str | None,
 ) -> list[NotificationsTemplateRpcResponse]:
+    """
+    Searches for notification templates based on the specified channel and template name.
+
+    Args:
+        _app: The FastAPI application instance.
+        channel: The channel type to filter templates. Use `None` to search across all channels.
+        template_name: The name of the template to search for.
+            Use wildcards (e.g., `*`, `?`) for partial matches. `None` searches for all templates.
+
+    Returns:
+        A list of notification template responses matching the search criteria.
+    """
     service = get_notifications_templates_service()
     templates = service.search_templates(channel=channel, template_name=template_name)
 
