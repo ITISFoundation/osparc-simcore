@@ -12,10 +12,8 @@ from ..diagnostics.plugin import setup_diagnostics
 from ..rabbitmq import setup_rabbitmq
 from ..socketio.plugin import setup_socketio
 from ..wallets.plugin import setup_wallets
-from . import (
-    _rabbitmq_exclusive_queue_consumers,
-    _rabbitmq_nonexclusive_queue_consumers,
-)
+from . import _rabbitmq_exclusive_queue_consumers, _rabbitmq_nonexclusive_queue_consumers
+from ._controller import _rest
 
 _logger = logging.getLogger(__name__)
 
@@ -35,6 +33,9 @@ def setup_notifications(app: web.Application):
 
     setup_rabbitmq(app)
     setup_socketio(app)
+
+    app.router.add_routes(_rest.routes)
+
     # Subscribe to rabbit upon startup for logs, progress and other
     # metrics on the execution reported by sidecars
     app.cleanup_ctx.append(_rabbitmq_exclusive_queue_consumers.on_cleanup_ctx_rabbitmq_consumers)

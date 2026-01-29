@@ -54,7 +54,7 @@ class GroupsRepository(BaseRepository):
             return email or None
 
     async def list_user_emails_from_gids(self, gids: set[PositiveInt]) -> dict[PositiveInt, LowerCaseEmailStr | None]:
-        service_owners = {}
+        service_owners: dict[PositiveInt, LowerCaseEmailStr | None] = {}
         async with self.db_engine.connect() as conn:
             async for row in await conn.stream(
                 sa.select([users.c.primary_gid, users.c.email]).where(users.c.primary_gid.in_(gids))

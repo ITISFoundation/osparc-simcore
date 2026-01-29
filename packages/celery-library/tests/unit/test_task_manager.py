@@ -20,6 +20,7 @@ from celery_library.worker.app_server import get_app_server
 from common_library.errors_classes import OsparcErrorMixin
 from faker import Faker
 from models_library.progress_bar import ProgressReport
+from pydantic import TypeAdapter
 from servicelib.celery.models import (
     ExecutionMetadata,
     OwnerMetadata,
@@ -368,7 +369,7 @@ async def test_pull_task_stream_items_from_nonexistent_task_raises_error(
     task_manager: CeleryTaskManager,
 ):
     owner_metadata = MyOwnerMetadata(user_id=42, owner="test-owner")
-    fake_task_uuid = TaskUUID(_faker.uuid4())
+    fake_task_uuid = TypeAdapter(TaskUUID).validate_python(_faker.uuid4())
 
     with pytest.raises(TaskNotFoundError):
         await task_manager.pull_task_stream_items(owner_metadata, fake_task_uuid)

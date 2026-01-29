@@ -13,7 +13,7 @@ from pydantic import HttpUrl
 from settings_library.email import SMTPSettings
 
 from ..db.plugin import get_asyncpg_engine
-from ..products._service import get_product
+from ..notifications._helpers import create_user_data, get_product_data
 from . import _accounts_repository, _users_repository
 from .exceptions import (
     AlreadyPreRegisteredError,
@@ -304,64 +304,6 @@ async def reject_user_account(
     return pre_registration_id
 
 
-def _create_product_and_user_data(
-    app: web.Application,
-    *,
-    product_name: ProductName,
-    user_email: LowerCaseEmailStr,
-    first_name: str,
-    last_name: str,
-) -> Annotated[
-    tuple[Any, Any],
-    doc("Tuple containing (ProductData, UserData) objects for email rendering"),
-]:
-    """Create ProductData and UserData objects for email rendering."""
-
-    from notifications_library._models import (  # noqa: PLC0415
-        ProductData,
-        ProductUIData,
-        UserData,
-    )
-
-    # Get product data from the app
-    product = get_product(app, product_name=product_name)
-
-    # Extract vendor information
-    vendor_display_inline = (
-        str(product.vendor.get("name"))
-        if product.vendor and product.vendor.get("name") is not None
-        else "IT'IS Foundation"
-    )
-
-    # Extract UI information from product.vendor.ui (optional)
-    ui_data = ProductUIData(
-        logo_url=(product.vendor.get("ui", {}).get("logo_url") if product.vendor else None),
-        strong_color=(product.vendor.get("ui", {}).get("strong_color") if product.vendor else None),
-    )
-
-    # Extract homepage URL
-    homepage_url = product.vendor.get("url") if product.vendor else None
-
-    product_data = ProductData(
-        product_name=product_name,
-        display_name=product.display_name,
-        vendor_display_inline=vendor_display_inline,
-        support_email=product.support_email,
-        homepage_url=homepage_url,
-        ui=ui_data,
-    )
-
-    # Create user data
-    user_data = UserData(
-        user_name=f"{first_name} {last_name}".strip(),
-        email=user_email,
-        first_name=first_name,
-        last_name=last_name,
-    )
-
-    return product_data, user_data
-
-
 async def send_approval_email_to_user(
     app: web.Application,
     *,
@@ -382,9 +324,8 @@ async def send_approval_email_to_user(
     )
 
     # Create product and user data
-    product_data, user_data = _create_product_and_user_data(
-        app,
-        product_name=product_name,
+    product_data = get_product_data(app, product_name=product_name)
+    user_data = create_user_data(
         user_email=user_email,
         first_name=first_name,
         last_name=last_name,
@@ -399,7 +340,7 @@ async def send_approval_email_to_user(
     # Render email parts
     parts = render_email_parts(
         env=create_render_environment_from_notifications_library(),
-        event_name="on_account_approved",
+        template_name="account_approved",
         user=user_data,
         product=product_data,
         **event_extra_data,
@@ -408,7 +349,7 @@ async def send_approval_email_to_user(
     # Compose email
     msg = compose_email(
         from_=get_support_address(product_data),
-        to=get_user_address(user_data),
+        to=[get_user_address(user_data)],
         subject=parts.subject,
         content_text=parts.text_content,
         content_html=parts.html_content,
@@ -439,9 +380,8 @@ async def send_rejection_email_to_user(
     )
 
     # Create product and user data
-    product_data, user_data = _create_product_and_user_data(
-        app,
-        product_name=product_name,
+    product_data = get_product_data(app, product_name=product_name)
+    user_data = create_user_data(
         user_email=user_email,
         first_name=first_name,
         last_name=last_name,
@@ -455,7 +395,7 @@ async def send_rejection_email_to_user(
     # Render email parts
     parts = render_email_parts(
         env=create_render_environment_from_notifications_library(),
-        event_name="on_account_rejected",
+        template_name="account_rejected",
         user=user_data,
         product=product_data,
         **event_extra_data,
@@ -464,7 +404,7 @@ async def send_rejection_email_to_user(
     # Compose email
     msg = compose_email(
         from_=get_support_address(product_data),
-        to=get_user_address(user_data),
+        to=[get_user_address(user_data)],
         subject=parts.subject,
         content_text=parts.text_content,
         content_html=parts.html_content,

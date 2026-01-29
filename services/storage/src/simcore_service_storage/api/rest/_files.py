@@ -170,10 +170,12 @@ async def upload_file(
     v1 rationale:
         - client calls this handler, which returns a single link (either direct S3 or presigned) to the S3 backend
         - client uploads the file
-        - storage relies on lazy update to find if the file is finished uploaded (when client calls get_file_meta_data, or if the dsm_cleaner goes over it after the upload time is expired)
+        - storage relies on lazy update to find if the file is finished uploaded (when client calls get_file_meta_data,
+        or if the dsm_cleaner goes over it after the upload time is expired)
 
     v2 rationale:
-        - client calls this handler, which returns a FileUploadSchema object containing 1 or more links (either S3/presigned links)
+        - client calls this handler, which returns a FileUploadSchema object containing 1
+        or more links (either S3/presigned links)
         - client uploads the file (by chunking it if there are more than 1 presigned link)
         - client calls complete_upload handle which will reconstruct the file on S3 backend
         - client waits for completion to finish and then the file is accessible on S3 backend
@@ -183,11 +185,16 @@ async def upload_file(
     Use-case v1.1: if query.link_type=presigned or None, returns a presigned link (limited to a single 5GB file)
     Use-case v1.2: if query.link_type=s3, returns a s3 direct link (limited to a single 5TB file)
 
-    User-case v2: query.is_directory is True (query.file_size is forced to -1), returns an s3 path where to upload all the content of the directory
-    User-case v2: if query.file_size is defined, returns a FileUploadSchema model, expects client to call "complete_upload" when the file is finished uploading
-    Use-case v2.1: if query.file_size == 0 and query.link_type=presigned or None, returns a single presigned link inside FileUploadSchema (limited to a single 5Gb file)
-    Use-case v2.2: if query.file_size > 0 and query.link_type=presigned or None, returns 1 or more presigned links depending on the file size (limited to a single 5TB file)
-    Use-case v2.3: if query.link_type=s3 and query.file_size>=0, returns a single s3 direct link (limited to a single 5TB file)
+    User-case v2: query.is_directory is True (query.file_size is forced to -1),
+    returns an s3 path where to upload all the content of the directory
+    User-case v2: if query.file_size is defined, returns a FileUploadSchema model,
+    expects client to call "complete_upload" when the file is finished uploading
+    Use-case v2.1: if query.file_size == 0 and query.link_type=presigned or None,
+    returns a single presigned link inside FileUploadSchema (limited to a single 5Gb file)
+    Use-case v2.2: if query.file_size > 0 and query.link_type=presigned or None,
+    returns 1 or more presigned links depending on the file size (limited to a single 5TB file)
+    Use-case v2.3: if query.link_type=s3 and query.file_size>=0,
+    returns a single s3 direct link (limited to a single 5TB file)
     """
     # NOTE: Used by legacy dynamic services with single presigned link -> MUST BE BACKWARDS COMPATIBLE
     dsm = get_dsm_provider(request.app).get(location_id)
@@ -338,13 +345,15 @@ async def is_completed_upload_file(
     # if it returns slow we return a 202 - Accepted, the client will have to check later
     # for completeness
     owner_metadata = _get_owner_metadata(user_id=query_params.user_id)
-    task_status = await task_manager.get_task_status(owner_metadata=owner_metadata, task_uuid=TaskUUID(future_id))
+    task_status = await task_manager.get_task_status(
+        owner_metadata=owner_metadata, task_uuid=TypeAdapter(TaskUUID).validate_python(future_id)
+    )
     # first check if the task is in the app
     if task_status.is_done:
         task_result = TypeAdapter(FileMetaData).validate_python(
             await task_manager.get_task_result(
                 owner_metadata=owner_metadata,
-                task_uuid=TaskUUID(future_id),
+                task_uuid=TypeAdapter(TaskUUID).validate_python(future_id),
             )
         )
         new_fmd = task_result

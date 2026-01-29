@@ -55,6 +55,7 @@ SETUP = {
     "package_data": {
         "": [
             "py.typed",
+            "templates/**/*.j2",
             "templates/**/*.jinja2",
             "templates/**/*.html",
             "templates/**/*.txt",
