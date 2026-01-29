@@ -42,7 +42,17 @@ async def send_message(
 )
 async def preview_template(
     _body: NotificationsTemplatePreviewBody,
-): ...
+):
+    """
+    Generates a preview of a notification template with the provided data.
+
+    This endpoint renders the specified notification template using the supplied
+    template data, allowing users to see how the final notification will appear
+    before sending it.
+
+    Returns a rendered version of the notification template with all variables
+    substituted with the provided data.
+    """
 
 
 @router.get(
