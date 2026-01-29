@@ -13,7 +13,6 @@ class NotificationsEmailContentBody(InputSchema):
         str,
         Field(
             ...,
-            min_length=1,
             max_length=998,
             description="Email subject line (RFC 2822: max header line length)",
         ),
@@ -22,7 +21,6 @@ class NotificationsEmailContentBody(InputSchema):
         str,
         Field(
             ...,
-            min_length=1,
             max_length=1_048_576,
             description="HTML email body (1 MB limit per RFC 5321 SMTP practical limits)",
         ),
@@ -31,7 +29,6 @@ class NotificationsEmailContentBody(InputSchema):
         str,
         Field(
             ...,
-            min_length=1,
             max_length=1_048_576,
             description="Plain text email body (1 MB limit per RFC 5321 SMTP practical limits)",
         ),
@@ -46,7 +43,6 @@ class NotificationsEmailContentGet(OutputSchema):
         str,
         Field(
             ...,
-            min_length=1,
             max_length=998,
             description="Email subject line (RFC 2822: max header line length)",
         ),
@@ -55,7 +51,6 @@ class NotificationsEmailContentGet(OutputSchema):
         str,
         Field(
             ...,
-            min_length=1,
             max_length=1_048_576,
             description="HTML email body (1 MB limit per RFC 5321 SMTP practical limits)",
         ),
@@ -64,7 +59,6 @@ class NotificationsEmailContentGet(OutputSchema):
         str,
         Field(
             ...,
-            min_length=1,
             max_length=1_048_576,
             description="Plain text email body (1 MB limit per RFC 5321 SMTP practical limits)",
         ),
