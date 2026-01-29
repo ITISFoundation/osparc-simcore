@@ -41,7 +41,7 @@ async def test_search_templates_by_channel(
         # Check that all returned templates match the filter
         assert all(t.ref.channel == channel for t in filtered)
         # Check that filtered is a subset of all_templates
-        assert set(filtered).issubset(set(all_templates))
+        assert all(template in all_templates for template in filtered)
 
 
 async def test_search_templates_by_ref(
@@ -59,7 +59,7 @@ async def test_search_templates_by_ref(
         filtered = await search_templates(rpc_client, channel=channel, template_name=template_name)
         assert len(filtered) == 1
 
-        # Check that all returned templates match the filter
+        # Check that returned template match the filter
         assert filtered[0].ref.channel == channel
         assert filtered[0].ref.template_name == template_name
 
