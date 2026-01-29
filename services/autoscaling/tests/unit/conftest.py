@@ -1072,37 +1072,42 @@ def hot_buffer_instance_types(app_settings: ApplicationSettings) -> set[Instance
 
 
 @pytest.fixture
-def hot_buffer_count(app_settings: ApplicationSettings, hot_buffer_instance_types: set[InstanceTypeType]) -> int:
-    # TODO: fix this
+def hot_buffer_count(app_settings: ApplicationSettings) -> int:
     assert app_settings.AUTOSCALING_EC2_INSTANCES
-    return app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[hot_buffer_instance_type].hot_buffer_count
+    return sum(v.hot_buffer_count for v in app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES.values())
 
 
 @pytest.fixture
 def hot_buffer_has_pre_pull(
     app_settings: ApplicationSettings,
-    hot_buffer_instance_type: InstanceTypeType,
-) -> bool:
-    # TODO: fix this
-    assert app_settings.AUTOSCALING_EC2_INSTANCES
-    return bool(
-        app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_COLD_START_DOCKER_IMAGES_PRE_PULLING
-        or app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[hot_buffer_instance_type].pre_pull_images
-    )
+) -> Callable[[InstanceTypeType], bool]:
+    def _(instance_type: InstanceTypeType) -> bool:
+        assert app_settings.AUTOSCALING_EC2_INSTANCES
+        return bool(
+            app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_COLD_START_DOCKER_IMAGES_PRE_PULLING
+            or app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[instance_type].pre_pull_images
+        )
+
+    return _
 
 
 @pytest.fixture
 def hot_buffer_expected_pre_pulled_images(
     app_settings: ApplicationSettings,
-    hot_buffer_instance_type: InstanceTypeType,
-) -> list[DockerGenericTag]:
-    assert app_settings.AUTOSCALING_EC2_INSTANCES
-    return sorted(
-        set(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_COLD_START_DOCKER_IMAGES_PRE_PULLING)
-        | set(
-            app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[hot_buffer_instance_type].pre_pull_images
+    hot_buffer_instance_types: set[InstanceTypeType],
+) -> Callable[[InstanceTypeType], list[DockerGenericTag]]:
+    def _(hot_buffer_instance_type: InstanceTypeType) -> list[DockerGenericTag]:
+        assert app_settings.AUTOSCALING_EC2_INSTANCES
+        return sorted(
+            set(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_COLD_START_DOCKER_IMAGES_PRE_PULLING)
+            | set(
+                app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
+                    hot_buffer_instance_type
+                ].pre_pull_images
+            )
         )
-    )
+
+    return _
 
 
 @pytest.fixture
