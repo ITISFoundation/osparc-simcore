@@ -1086,6 +1086,30 @@ def with_multiple_hot_buffer_instance_types(
 
 
 @pytest.fixture
+def with_single_hot_buffer_instance_type(
+    num_hot_buffer: int,
+    app_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+    aws_allowed_ec2_instance_type_names: list[InstanceTypeType],
+) -> Callable[[InstanceTypeType | None], EnvVarsDict]:
+    allowed_types = json.loads(app_environment["EC2_INSTANCES_ALLOWED_TYPES"])
+    single_type = next(iter(allowed_types.keys()))
+
+    for instance_type_name in allowed_types:
+        allowed_types[instance_type_name]["hot_buffer_count"] = (
+            num_hot_buffer if instance_type_name == single_type else 0
+        )
+        allowed_types[instance_type_name].setdefault("hot_buffer_max_inactivity_time", None)
+
+    return app_environment | setenvs_from_dict(
+        monkeypatch,
+        {
+            "EC2_INSTANCES_ALLOWED_TYPES": json_dumps(allowed_types),
+        },
+    )
+
+
+@pytest.fixture
 def hot_buffer_instance_types(app_settings: ApplicationSettings) -> set[InstanceTypeType]:
     assert app_settings.AUTOSCALING_EC2_INSTANCES
     return {
