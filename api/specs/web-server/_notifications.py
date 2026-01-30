@@ -30,6 +30,7 @@ router = APIRouter(
 @router.post(
     "/notifications/messages:send",
     response_model=Envelope[TaskGet],
+    tags=["po"],
 )
 async def send_message(
     _body: NotificationsMessageBody,
@@ -39,6 +40,7 @@ async def send_message(
 @router.post(
     "/notifications/templates:preview",
     response_model=Envelope[NotificationsTemplatePreviewGet],
+    tags=["po"],
 )
 async def preview_template(
     _body: NotificationsTemplatePreviewBody,
@@ -58,6 +60,7 @@ async def preview_template(
 @router.get(
     "/notifications/templates:search",
     response_model=Envelope[list[NotificationsTemplateGet]],
+    tags=["po"],
 )
 async def search_templates(
     _query: Annotated[SearchTemplatesQueryParams, Depends()],

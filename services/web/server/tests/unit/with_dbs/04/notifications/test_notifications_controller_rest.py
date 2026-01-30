@@ -82,9 +82,11 @@ def fake_email_content() -> dict[str, Any]:
     "user_role,expected_status",
     [
         (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
-        (UserRole.GUEST, status.HTTP_202_ACCEPTED),
-        (UserRole.USER, status.HTTP_202_ACCEPTED),
-        (UserRole.TESTER, status.HTTP_202_ACCEPTED),
+        (UserRole.GUEST, status.HTTP_403_FORBIDDEN),
+        (UserRole.USER, status.HTTP_403_FORBIDDEN),
+        (UserRole.TESTER, status.HTTP_403_FORBIDDEN),
+        (UserRole.PRODUCT_OWNER, status.HTTP_202_ACCEPTED),
+        (UserRole.ADMIN, status.HTTP_202_ACCEPTED),
     ],
 )
 async def test_send_message_access_control(
@@ -110,7 +112,7 @@ async def test_send_message_access_control(
     await assert_status(response, expected_status)
 
 
-@pytest.mark.parametrize("user_role", [UserRole.USER])
+@pytest.mark.parametrize("user_role", [UserRole.PRODUCT_OWNER, UserRole.ADMIN])
 async def test_send_message_returns_task(
     client: TestClient,
     logged_user: UserInfoDict,
@@ -143,7 +145,7 @@ async def test_send_message_returns_task(
     assert f"{task.task_id}" in task.result_href
 
 
-@pytest.mark.parametrize("user_role", [UserRole.USER])
+@pytest.mark.parametrize("user_role", [UserRole.PRODUCT_OWNER, UserRole.ADMIN])
 @pytest.mark.parametrize(
     "channel,recipients,expected_status",
     [
@@ -193,9 +195,11 @@ async def test_send_message_with_different_inputs(
     "user_role,expected_status",
     [
         (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
-        (UserRole.GUEST, status.HTTP_200_OK),
-        (UserRole.USER, status.HTTP_200_OK),
-        (UserRole.TESTER, status.HTTP_200_OK),
+        (UserRole.GUEST, status.HTTP_403_FORBIDDEN),
+        (UserRole.USER, status.HTTP_403_FORBIDDEN),
+        (UserRole.TESTER, status.HTTP_403_FORBIDDEN),
+        (UserRole.PRODUCT_OWNER, status.HTTP_200_OK),
+        (UserRole.ADMIN, status.HTTP_200_OK),
     ],
 )
 async def test_preview_template_access_control(
@@ -232,7 +236,7 @@ async def test_preview_template_access_control(
     await assert_status(response, expected_status)
 
 
-@pytest.mark.parametrize("user_role", [UserRole.USER])
+@pytest.mark.parametrize("user_role", [UserRole.PRODUCT_OWNER, UserRole.ADMIN])
 async def test_preview_template_success(
     client: TestClient,
     logged_user: UserInfoDict,
@@ -270,7 +274,7 @@ async def test_preview_template_success(
     assert preview.content
 
 
-@pytest.mark.parametrize("user_role", [UserRole.USER])
+@pytest.mark.parametrize("user_role", [UserRole.PRODUCT_OWNER, UserRole.ADMIN])
 async def test_preview_template_enriches_context_with_product_data(
     client: TestClient,
     logged_user: UserInfoDict,
@@ -318,9 +322,11 @@ async def test_preview_template_enriches_context_with_product_data(
     "user_role,expected_status",
     [
         (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
-        (UserRole.GUEST, status.HTTP_200_OK),
-        (UserRole.USER, status.HTTP_200_OK),
-        (UserRole.TESTER, status.HTTP_200_OK),
+        (UserRole.GUEST, status.HTTP_403_FORBIDDEN),
+        (UserRole.USER, status.HTTP_403_FORBIDDEN),
+        (UserRole.TESTER, status.HTTP_403_FORBIDDEN),
+        (UserRole.PRODUCT_OWNER, status.HTTP_200_OK),
+        (UserRole.ADMIN, status.HTTP_200_OK),
     ],
 )
 async def test_search_templates_access_control(
@@ -346,7 +352,7 @@ async def test_search_templates_access_control(
     await assert_status(response, expected_status)
 
 
-@pytest.mark.parametrize("user_role", [UserRole.USER])
+@pytest.mark.parametrize("user_role", [UserRole.PRODUCT_OWNER, UserRole.ADMIN])
 async def test_search_templates_no_filters(
     client: TestClient,
     logged_user: UserInfoDict,
@@ -376,7 +382,7 @@ async def test_search_templates_no_filters(
     assert templates[0].context_schema
 
 
-@pytest.mark.parametrize("user_role", [UserRole.USER])
+@pytest.mark.parametrize("user_role", [UserRole.PRODUCT_OWNER, UserRole.ADMIN])
 @pytest.mark.parametrize(
     "query_params,expected_status",
     [
@@ -423,7 +429,7 @@ async def test_search_templates_with_filters(
         assert call_kwargs["template_name"] == query_params["template_name"]
 
 
-@pytest.mark.parametrize("user_role", [UserRole.USER])
+@pytest.mark.parametrize("user_role", [UserRole.PRODUCT_OWNER, UserRole.ADMIN])
 async def test_search_templates_empty_result(
     client: TestClient,
     logged_user: UserInfoDict,
