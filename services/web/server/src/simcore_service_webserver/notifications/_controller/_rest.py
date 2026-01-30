@@ -22,6 +22,7 @@ from ..._meta import API_VTAG
 from ...login.decorators import login_required
 from ...models import AuthenticatedRequestContext
 from ...rabbitmq import get_rabbitmq_rpc_client
+from ...security.decorators import permission_required
 from .. import _helpers, _service
 from ._rest_exceptions import handle_notifications_exceptions
 
@@ -31,7 +32,7 @@ _notifications_prefix = f"/{API_VTAG}/notifications"
 
 @routes.post(f"{_notifications_prefix}/messages:send", name="send_message")
 @login_required
-# @permission_required("admin.write")  # GCR: fix me
+@permission_required("notification.message.send")
 @handle_notifications_exceptions
 async def send_message(request: web.Request) -> web.Response:
     req_ctx = AuthenticatedRequestContext.model_validate(request)
@@ -62,7 +63,7 @@ async def send_message(request: web.Request) -> web.Response:
 
 @routes.post(f"{_notifications_prefix}/templates:preview", name="preview_template")
 @login_required
-# @permission_required("admin.read")  # GCR: fix me
+@permission_required("notification.template.preview")
 @handle_notifications_exceptions
 async def preview_template(request: web.Request) -> web.Response:
     req_ctx = AuthenticatedRequestContext.model_validate(request)
@@ -82,7 +83,7 @@ async def preview_template(request: web.Request) -> web.Response:
 
 @routes.get(f"{_notifications_prefix}/templates:search", name="search_templates")
 @login_required
-# @permission_required("admin.read")  # GCR: fix me
+@permission_required("notification.template.search")
 @handle_notifications_exceptions
 async def search_templates(request: web.Request) -> web.Response:
     query_params = parse_request_query_parameters_as(SearchTemplatesQueryParams, request)
