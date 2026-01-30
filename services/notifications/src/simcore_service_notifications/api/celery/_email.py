@@ -26,6 +26,7 @@ def _create_email_message(message: EmailNotificationMessage) -> _EmailMessage:
         content_text=message.content.body_text,
         content_html=message.content.body_html,
         reply_to=Address(**message.reply_to.model_dump()) if message.reply_to else None,
+        bcc=[Address(**addr.model_dump()) for addr in message.bcc] if message.bcc else None,
     )
 
 

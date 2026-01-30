@@ -10,23 +10,36 @@ class EmailAddress(BaseModel):
     display_name: str = ""
     addr_spec: LowerCaseEmailStr
 
+    model_config = ConfigDict(
+        frozen=True,
+    )
+
 
 class EmailAttachment(BaseModel):
     content: bytes
     filename: str
 
+    model_config = ConfigDict(
+        frozen=True,
+    )
+
 
 class EmailContent(BaseModel):
     subject: str
     body_text: str
-    body_html: str
+    body_html: str | None = None
+
+    model_config = ConfigDict(
+        frozen=True,
+    )
 
 
 class EmailNotificationMessage(BaseModel):
     channel: ChannelType = ChannelType.email
 
     from_: Annotated[EmailAddress, Field(alias="from")]
-    to: list[EmailAddress]
+    to: set[EmailAddress]
+    bcc: set[EmailAddress] | None = None
     reply_to: EmailAddress | None = None
 
     content: EmailContent
@@ -34,6 +47,7 @@ class EmailNotificationMessage(BaseModel):
     attachments: list[EmailAttachment] | None = None
 
     model_config = ConfigDict(
+        frozen=True,
         validate_by_alias=True,
         validate_by_name=True,
     )
