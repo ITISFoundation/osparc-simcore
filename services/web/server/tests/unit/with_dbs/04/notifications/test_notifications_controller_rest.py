@@ -82,9 +82,11 @@ def fake_email_content() -> dict[str, Any]:
     "user_role,expected_status",
     [
         (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
-        (UserRole.GUEST, status.HTTP_202_ACCEPTED),
-        (UserRole.USER, status.HTTP_202_ACCEPTED),
-        (UserRole.TESTER, status.HTTP_202_ACCEPTED),
+        (UserRole.GUEST, status.HTTP_403_FORBIDDEN),
+        (UserRole.USER, status.HTTP_403_FORBIDDEN),
+        (UserRole.TESTER, status.HTTP_403_FORBIDDEN),
+        (UserRole.PRODUCT_OWNER, status.HTTP_202_ACCEPTED),
+        (UserRole.ADMIN, status.HTTP_202_ACCEPTED),
     ],
 )
 async def test_send_message_access_control(
@@ -193,9 +195,11 @@ async def test_send_message_with_different_inputs(
     "user_role,expected_status",
     [
         (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
-        (UserRole.GUEST, status.HTTP_200_OK),
-        (UserRole.USER, status.HTTP_200_OK),
-        (UserRole.TESTER, status.HTTP_200_OK),
+        (UserRole.GUEST, status.HTTP_403_FORBIDDEN),
+        (UserRole.USER, status.HTTP_403_FORBIDDEN),
+        (UserRole.TESTER, status.HTTP_403_FORBIDDEN),
+        (UserRole.PRODUCT_OWNER, status.HTTP_202_ACCEPTED),
+        (UserRole.ADMIN, status.HTTP_202_ACCEPTED),
     ],
 )
 async def test_preview_template_access_control(
