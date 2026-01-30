@@ -1037,21 +1037,13 @@ def create_associated_instance(
 
 
 @pytest.fixture
-def num_hot_buffer() -> NonNegativeInt:
-    return 5
-
-
-@pytest.fixture
-def with_instances_machines_hot_buffer(
-    num_hot_buffer: int,
+def with_disabled_hot_buffers(
     app_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
-    aws_allowed_ec2_instance_type_names: list[InstanceTypeType],
 ) -> EnvVarsDict:
     allowed_types = json.loads(app_environment["EC2_INSTANCES_ALLOWED_TYPES"])
-    for index, instance_type_name in enumerate(allowed_types):
-        allowed_types[instance_type_name]["hot_buffer_count"] = num_hot_buffer if index == 0 else 0
-        allowed_types[instance_type_name].setdefault("hot_buffer_max_inactivity_time", None)
+    for instance_type_name in allowed_types:
+        allowed_types[instance_type_name]["hot_buffer_count"] = 0
 
     return app_environment | setenvs_from_dict(
         monkeypatch,
@@ -1059,6 +1051,11 @@ def with_instances_machines_hot_buffer(
             "EC2_INSTANCES_ALLOWED_TYPES": json_dumps(allowed_types),
         },
     )
+
+
+@pytest.fixture
+def num_hot_buffer() -> NonNegativeInt:
+    return 5
 
 
 @pytest.fixture
@@ -1096,23 +1093,6 @@ def hot_buffer_instance_types(app_settings: ApplicationSettings) -> set[Instance
         for k, v in app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES.items()
         if v.hot_buffer_count > 0
     }
-
-
-@pytest.fixture
-def with_disabled_hot_buffers(
-    app_environment: EnvVarsDict,
-    monkeypatch: pytest.MonkeyPatch,
-) -> EnvVarsDict:
-    allowed_types = json.loads(app_environment["EC2_INSTANCES_ALLOWED_TYPES"])
-    for instance_type_name in allowed_types:
-        allowed_types[instance_type_name]["hot_buffer_count"] = 0
-
-    return app_environment | setenvs_from_dict(
-        monkeypatch,
-        {
-            "EC2_INSTANCES_ALLOWED_TYPES": json_dumps(allowed_types),
-        },
-    )
 
 
 @pytest.fixture

@@ -353,7 +353,7 @@ async def test_cluster_scaling_with_no_services_does_nothing(
 async def test_cluster_scaling_with_no_services_and_machine_buffer_starts_expected_machines(
     patch_ec2_client_launch_instances_min_number_of_instances: mock.Mock,
     minimal_configuration: None,
-    with_instances_machines_hot_buffer: EnvVarsDict,
+    with_multiple_hot_buffer_instance_types: EnvVarsDict,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
     aws_allowed_ec2_instance_type_names_env: list[str],
@@ -1849,7 +1849,7 @@ async def test__activate_drained_nodes_with_drained_node(
 async def test_warm_buffers_are_started_to_replace_missing_hot_buffers(
     patch_ec2_client_launch_instances_min_number_of_instances: mock.Mock,
     minimal_configuration: None,
-    with_instances_machines_hot_buffer: EnvVarsDict,
+    with_multiple_hot_buffer_instance_types: EnvVarsDict,
     ec2_client: EC2Client,
     initialized_app: FastAPI,
     app_settings: ApplicationSettings,
@@ -1966,7 +1966,7 @@ async def test_warm_buffers_are_started_to_replace_missing_hot_buffers(
 async def test_warm_buffers_only_replace_hot_buffer_if_service_is_started_issue7071(  # noqa: PLR0915
     patch_ec2_client_launch_instances_min_number_of_instances: mock.Mock,
     minimal_configuration: None,
-    with_instances_machines_hot_buffer: EnvVarsDict,
+    with_multiple_hot_buffer_instance_types: EnvVarsDict,
     with_drain_nodes_labelled: bool,
     ec2_client: EC2Client,
     initialized_app: FastAPI,
