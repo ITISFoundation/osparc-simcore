@@ -274,7 +274,7 @@ def test_sort_drained_nodes(
     create_fake_node: Callable[..., DockerNode],
     create_associated_instance: Callable[..., AssociatedInstance],
     hot_buffer_instance_types: set[InstanceTypeType],
-    hot_buffer_count: int,
+    hot_buffer_total_count: int,
 ):
     assert len(hot_buffer_instance_types) > 0, "this test needs at least 2 hot buffer instance types configured"
     assert app_settings.AUTOSCALING_EC2_INSTANCES
@@ -324,7 +324,7 @@ def test_sort_drained_nodes(
 
     assert (
         len(fake_drained_nodes)
-        == _NUM_DRAINED_NODES + _RATIO_HOT_BUFFER_TYPES * hot_buffer_count + _NUM_NODES_TERMINATING
+        == _NUM_DRAINED_NODES + _RATIO_HOT_BUFFER_TYPES * hot_buffer_total_count + _NUM_NODES_TERMINATING
     )
     (
         sorted_drained_nodes,
@@ -333,9 +333,9 @@ def test_sort_drained_nodes(
     ) = sort_drained_nodes(app_settings, fake_drained_nodes)
     assert app_settings.AUTOSCALING_EC2_INSTANCES
     assert len(sorted_drained_nodes) == (
-        _NUM_DRAINED_NODES + _RATIO_HOT_BUFFER_TYPES * hot_buffer_count - hot_buffer_count
+        _NUM_DRAINED_NODES + _RATIO_HOT_BUFFER_TYPES * hot_buffer_total_count - hot_buffer_total_count
     )
-    assert len(sorted_buffer_drained_nodes) == hot_buffer_count
+    assert len(sorted_buffer_drained_nodes) == hot_buffer_total_count
     assert len(terminating_nodes) == _NUM_NODES_TERMINATING
     for n in terminating_nodes:
         assert n.node.spec
@@ -351,7 +351,7 @@ def test_sort_drained_nodes_inactivity_timeout(
     create_fake_node: Callable[..., DockerNode],
     create_associated_instance: Callable[..., AssociatedInstance],
     hot_buffer_instance_types: set[InstanceTypeType],
-    hot_buffer_count: int,
+    hot_buffer_total_count: int,
 ):
     assert len(hot_buffer_instance_types) > 0, "this test needs at least 2 hot buffer instance types configured"
     assert app_settings.AUTOSCALING_EC2_INSTANCES
@@ -361,7 +361,7 @@ def test_sort_drained_nodes_inactivity_timeout(
     ec2_config = app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
         selected_ec2_instance_type_with_inactivity_timeout
     ]
-    ec2_config.hot_buffer_count = 2
+    ec2_config.hot_buffer_total_count = 2
     ec2_config.hot_buffer_max_inactivity_time = datetime.timedelta(seconds=5)
 
     old_node = create_fake_node()
