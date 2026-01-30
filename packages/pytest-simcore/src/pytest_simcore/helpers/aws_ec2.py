@@ -84,6 +84,7 @@ async def assert_autoscaled_dynamic_warm_pools_ec2_instances(
     expected_pre_pulled_images: list[DockerGenericTag] | None,
     instance_filters: Sequence[FilterTypeDef] | None,
     check_reservation_index: int | None = None,
+    check_instance_type: InstanceTypeType | None = None,
 ) -> list[InstanceTypeDef]:
     return await assert_ec2_instances(
         ec2_client,
@@ -101,6 +102,7 @@ async def assert_autoscaled_dynamic_warm_pools_ec2_instances(
         expected_user_data=[],
         instance_filters=instance_filters,
         check_reservation_index=check_reservation_index,
+        check_instance_type=check_instance_type,
     )
 
 

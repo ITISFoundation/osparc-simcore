@@ -1884,39 +1884,44 @@ async def test_warm_buffers_are_started_to_replace_missing_hot_buffers(
     mock_find_node_with_name_returns_fake_node: mock.Mock,
     mock_compute_node_used_resources: mock.Mock,
     mock_docker_tag_node: mock.Mock,
+    hot_buffer_instance_types: set[InstanceTypeType],
     hot_buffer_total_count: int,
 ):
     # pre-requisites
+    assert len(hot_buffer_instance_types) >= 1, "this test requires at least 1 hot buffer instance type"
     assert app_settings.AUTOSCALING_EC2_INSTANCES
     assert hot_buffer_total_count > 0
+    assert buffer_count * len(hot_buffer_instance_types) >= hot_buffer_total_count, (
+        "this test requires to have at least as many warm buffers as hot buffers"
+    )
 
     # we have nothing running now
     all_instances = await ec2_client.describe_instances()
     assert not all_instances["Reservations"]
 
     # have a few warm buffers ready with the same type as the hot buffer machines
-    buffer_machines = await create_buffer_machines(
-        buffer_count,
-        cast(
-            InstanceTypeType,
-            next(iter(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES)),
-        ),
-        "stopped",
-        None,
-    )
-    await assert_autoscaled_dynamic_warm_pools_ec2_instances(
-        ec2_client,
-        expected_num_reservations=1,
-        expected_num_instances=buffer_count,
-        expected_instance_type=cast(
-            InstanceTypeType,
-            next(iter(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES)),
-        ),
-        expected_instance_state="stopped",
-        expected_additional_tag_keys=list(ec2_instance_custom_tags),
-        expected_pre_pulled_images=None,
-        instance_filters=None,
-    )
+    buffer_machines: list[str] = []
+    for instance_type in hot_buffer_instance_types:
+        buffer_machines.extend(
+            await create_buffer_machines(
+                buffer_count,
+                instance_type,
+                "stopped",
+                None,
+            )
+        )
+    for instance_type in hot_buffer_instance_types:
+        await assert_autoscaled_dynamic_warm_pools_ec2_instances(
+            ec2_client,
+            expected_num_reservations=len(hot_buffer_instance_types),
+            expected_num_instances=buffer_count,
+            expected_instance_type=instance_type,
+            expected_instance_state="stopped",
+            expected_additional_tag_keys=list(ec2_instance_custom_tags),
+            expected_pre_pulled_images=None,
+            instance_filters=None,
+            check_instance_type=instance_type,
+        )
 
     # let's autoscale, this should move the warm buffers to hot buffers
     await auto_scale_cluster(app=initialized_app, auto_scaling_mode=DynamicAutoscalingProvider())
@@ -1932,22 +1937,24 @@ async def test_warm_buffers_are_started_to_replace_missing_hot_buffers(
     assert len(analyzed_cluster.warm_buffer_ec2s) == len(buffer_machines)
 
     # now we should have a warm buffer moved to the hot buffer
-    await assert_autoscaled_dynamic_ec2_instances(
-        ec2_client,
-        expected_num_reservations=1,
-        expected_num_instances=hot_buffer_total_count,
-        expected_instance_type=cast(
-            InstanceTypeType,
-            next(iter(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES)),
-        ),
-        expected_instance_state="running",
-        expected_additional_tag_keys=[
-            *list(ec2_instance_custom_tags),
-            BUFFER_MACHINE_TAG_KEY,
-        ],
-        instance_filters=instance_type_filters,
-        expected_user_data=[],
-    )
+    for instance_type in hot_buffer_instance_types:
+        expected_num_instances = app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
+            instance_type
+        ].hot_buffer_count
+        await assert_autoscaled_dynamic_ec2_instances(
+            ec2_client,
+            expected_num_reservations=len(hot_buffer_instance_types),
+            expected_num_instances=expected_num_instances,
+            expected_instance_type=instance_type,
+            expected_instance_state="running",
+            expected_additional_tag_keys=[
+                *list(ec2_instance_custom_tags),
+                BUFFER_MACHINE_TAG_KEY,
+            ],
+            instance_filters=instance_type_filters,
+            expected_user_data=[],
+            check_instance_type=instance_type,
+        )
 
     # let's autoscale again, to check the cluster analysis and tag the nodes
     await auto_scale_cluster(app=initialized_app, auto_scaling_mode=DynamicAutoscalingProvider())
@@ -1962,10 +1969,10 @@ async def test_warm_buffers_are_started_to_replace_missing_hot_buffers(
     assert not analyzed_cluster.active_nodes
     assert len(analyzed_cluster.warm_buffer_ec2s) == max(
         0,
-        buffer_count - hot_buffer_total_count,
+        buffer_count * len(hot_buffer_instance_types) - hot_buffer_total_count,
     ), (
         "the warm buffers were not used as expected there should be"
-        f" {buffer_count - hot_buffer_total_count} remaining, "
+        f" {buffer_count * len(hot_buffer_instance_types) - hot_buffer_total_count} remaining, "
         f"found {len(analyzed_cluster.warm_buffer_ec2s)}"
     )
     assert len(analyzed_cluster.pending_ec2s) == hot_buffer_total_count
