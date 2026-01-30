@@ -30,9 +30,7 @@
       padding-bottom: 10px;
       margin-bottom: 20px;
   }
-  .logo {
-      height: 40px;
-  }
+
   .content {
       color: #333;
       font-size: 16px;
@@ -76,17 +74,13 @@
       color: #007bff;
       text-decoration: none;
   }
-  .github-logo {
-    height: 20px;
-    vertical-align: bottom;
-  }
 </style>
 </head>
 <body>
   <div class="email-container">
     <div class="header">
       <a href="{{ product.homepage_url | default(default_homepage) }}" target="_blank" rel="noopener noreferrer">
-        <img src="{{ product.ui.logo_url | default(default_logo) }}" alt="Logo" class="logo">
+        <img src="{{ product.ui.logo_url | default(default_logo) }}" alt="Logo" style="height: 40px;">
       </a>
     </div>
 
@@ -101,7 +95,7 @@
         Need help? <a href="mailto:{{ product.support_email }}">Support</a> |
         Powered by oSPARC
         <a href="https://github.com/ITISFoundation/osparc-simcore" target="_blank" rel="noopener noreferrer">
-          <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" alt="GitHub" class="github-logo">
+          <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" alt="GitHub" style="height:20px; vertical-align: bottom;">
         </a>
       </p>
     </div>
