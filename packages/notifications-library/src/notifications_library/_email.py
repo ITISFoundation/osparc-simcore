@@ -12,8 +12,6 @@ _logger = logging.getLogger(__name__)
 
 
 def compose_email(
-    # NOTE: to, bcc are lists and not set because email.headerregistry.Address is not hashable
-    # ensure unicity at a higher level, if needed.
     from_: Address,
     to: list[Address],
     subject: str,
@@ -22,6 +20,12 @@ def compose_email(
     reply_to: Address | None = None,
     bcc: list[Address] | None = None,
 ) -> EmailMessage:
+    """Compose an email message.
+
+    Note:
+        to and bcc params are lists and not set because email.headerregistry.Address is not hashable.
+        Ensure unicity at a higher level, if needed.
+    """
     msg = EmailMessage()
     msg["From"] = from_
     msg["To"] = to
