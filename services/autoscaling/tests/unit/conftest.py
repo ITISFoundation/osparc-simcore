@@ -1091,7 +1091,7 @@ def with_single_hot_buffer_instance_type(
     app_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
     aws_allowed_ec2_instance_type_names: list[InstanceTypeType],
-) -> Callable[[InstanceTypeType | None], EnvVarsDict]:
+) -> EnvVarsDict:
     allowed_types = json.loads(app_environment["EC2_INSTANCES_ALLOWED_TYPES"])
     single_type = next(iter(allowed_types.keys()))
 
