@@ -395,17 +395,18 @@ async def test_cluster_scaling_with_no_services_and_machine_buffer_starts_expect
     mock_rabbitmq_post_message.reset_mock()
     # calling again should attach the new nodes to the reserve, but nothing should start
     # it will also trigger pre-pulling of images if there is pre-pulling
-    expected_pre_pull_tag_keys = (
-        [
-            MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY,
-            MACHINE_PULLING_EC2_TAG_KEY,
-            PRE_PULLED_IMAGES_EC2_TAG_KEY,
-        ]
-        if hot_buffer_has_pre_pull
-        else []
-    )
+
     await auto_scale_cluster(app=initialized_app, auto_scaling_mode=DynamicAutoscalingProvider())
     for instance_type in hot_buffer_instance_types:
+        expected_pre_pull_tag_keys = (
+            [
+                MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY,
+                MACHINE_PULLING_EC2_TAG_KEY,
+                PRE_PULLED_IMAGES_EC2_TAG_KEY,
+            ]
+            if hot_buffer_has_pre_pull(instance_type)
+            else []
+        )
         expected_num_instances = app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
             instance_type
         ].hot_buffer_count
@@ -438,11 +439,11 @@ async def test_cluster_scaling_with_no_services_and_machine_buffer_starts_expect
     )
 
     # calling it again should not create anything new, pre-pulling should be done
-    expected_pre_pull_tag_keys = [PRE_PULLED_IMAGES_EC2_TAG_KEY] if hot_buffer_has_pre_pull else []
     for _ in range(10):
         await auto_scale_cluster(app=initialized_app, auto_scaling_mode=DynamicAutoscalingProvider())
 
     for instance_type in hot_buffer_instance_types:
+        expected_pre_pull_tag_keys = [PRE_PULLED_IMAGES_EC2_TAG_KEY] if hot_buffer_has_pre_pull(instance_type) else []
         expected_num_instances = app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
             instance_type
         ].hot_buffer_count
