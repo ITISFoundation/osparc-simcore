@@ -361,7 +361,7 @@ def test_sort_drained_nodes_inactivity_timeout(
     ec2_config = app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
         selected_ec2_instance_type_with_inactivity_timeout
     ]
-    ec2_config.hot_buffer_total_count = 2
+    ec2_config.hot_buffer_count = 2
     ec2_config.hot_buffer_max_inactivity_time = datetime.timedelta(seconds=5)
 
     old_node = create_fake_node()

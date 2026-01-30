@@ -1096,7 +1096,7 @@ def hot_buffer_instance_types(app_settings: ApplicationSettings) -> set[Instance
 
 
 @pytest.fixture
-def hot_buffer_count(app_settings: ApplicationSettings) -> int:
+def hot_buffer_total_count(app_settings: ApplicationSettings) -> int:
     assert app_settings.AUTOSCALING_EC2_INSTANCES
     return sum(v.hot_buffer_count for v in app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES.values())
 
