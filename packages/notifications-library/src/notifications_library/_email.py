@@ -12,7 +12,7 @@ _logger = logging.getLogger(__name__)
 
 
 def compose_email(
-    # NOTE: to, bcc are lists and not set because email.message.EmailMessage is not hashable
+    # NOTE: to, bcc are lists and not set because email.headerregistry.Address is not hashable
     # ensure unicity at a higher level, if needed.
     from_: Address,
     to: list[Address],
