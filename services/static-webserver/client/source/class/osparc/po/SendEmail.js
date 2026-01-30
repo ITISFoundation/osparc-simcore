@@ -166,7 +166,8 @@ qx.Class.define("osparc.po.SendEmail", {
       osparc.message.Messages.fetchEmailTemplates()
         .then(templates => {
           templates.forEach(template => {
-            const item = new qx.ui.form.ListItem(template["ref"]["templateName"]);
+            const templateName = template["ref"]["templateName"];
+            const item = new qx.ui.form.ListItem(templateName);
             selectBox.add(item);
           });
           if (templates.length) {
@@ -178,6 +179,7 @@ qx.Class.define("osparc.po.SendEmail", {
     },
 
     __templateSelected: function(templateId) {
+      if (!templateId) return;
       osparc.message.Messages.fetchEmailPreview(templateId)
         .then(template => {
           const subjectField = this.getChildControl("subject-field");

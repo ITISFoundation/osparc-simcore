@@ -37,10 +37,3 @@ async def task_manager_lifespan(app: FastAPI) -> AsyncIterator[State]:
 
     if redis_client_sdk:
         await redis_client_sdk.shutdown()
-
-
-def get_task_manager(app: FastAPI) -> CeleryTaskManager:
-    assert hasattr(app.state, "task_manager")  # nosec
-    task_manager = app.state.task_manager
-    assert isinstance(task_manager, CeleryTaskManager)  # nosec
-    return task_manager

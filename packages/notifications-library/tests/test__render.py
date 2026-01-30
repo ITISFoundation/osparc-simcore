@@ -24,8 +24,8 @@ def test_render_env_from_folder(tmp_path: Path, product_name: ProductName, produ
 
     consolidated_env = create_render_environment_from_folder(top_dir)
 
-    product_template = consolidated_env.get_template(f"{product_name}/base.html")
-    common_template = pkg_env.get_template("base.html")
+    product_template = consolidated_env.get_template(f"{product_name}/email/_base/body_html.j2")
+    common_template = pkg_env.get_template("email/_base/body_html.j2")
 
     data = {"product": product_data}
     assert product_template.render(data) == common_template.render(data)

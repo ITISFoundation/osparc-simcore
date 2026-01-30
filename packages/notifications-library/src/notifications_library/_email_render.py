@@ -34,7 +34,7 @@ def get_support_address(product: ProductData) -> Address:
 
 def render_email_parts(
     env: Environment,
-    event_name: str,
+    template_name: str,
     *,
     user: UserData,
     product: ProductData,
@@ -43,17 +43,17 @@ def render_email_parts(
     data = other_data | {"user": user, "product": product}
 
     # NOTE: assumes template convention!
-    subject = env.get_template(f"{event_name}.email.subject.txt").render(data)
+    subject = env.get_template(f"email/{template_name}/subject.j2").render(data)
 
     # Body
-    text_template = env.get_template(f"{event_name}.email.content.txt")
+    text_template = env.get_template(f"email/{template_name}/body_text.j2")
     text_content = text_template.render(data)
 
     try:
-        html_template = env.get_template(f"{event_name}.email.content.html")
+        html_template = env.get_template(f"email/{template_name}/body_html.j2")
         html_content = html_template.render(data)
     except TemplateNotFound as err:
-        _logger.debug("Event %s has no html template: %s", event_name, err)
+        _logger.debug("Event %s has no html template: %s", template_name, err)
         html_content = None
 
     return EmailPartsTuple(subject=subject, text_content=text_content, html_content=html_content)

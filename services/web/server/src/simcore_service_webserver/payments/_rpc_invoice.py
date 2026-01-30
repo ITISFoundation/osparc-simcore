@@ -5,6 +5,7 @@ from models_library.emails import LowerCaseEmailStr
 from models_library.payments import InvoiceDataGet, UserInvoiceAddress
 from models_library.products import ProductName
 from models_library.users import UserID
+from pydantic import TypeAdapter
 from servicelib.rabbitmq import RPCRouter
 
 from ..application_settings import get_application_settings
@@ -39,7 +40,7 @@ async def get_invoice_data(
         stripe_tax_rate_id=product_stripe_info.stripe_tax_rate_id,
         user_invoice_address=user_invoice_address,
         user_display_name=user_info.full_name,
-        user_email=LowerCaseEmailStr(user_info.email),
+        user_email=TypeAdapter(LowerCaseEmailStr).validate_python(user_info.email),
     )
 
 

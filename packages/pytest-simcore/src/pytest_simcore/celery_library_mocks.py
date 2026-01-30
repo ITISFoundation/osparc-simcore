@@ -4,6 +4,7 @@ from collections.abc import Callable
 
 import pytest
 from faker import Faker
+from pydantic import TypeAdapter
 from pytest_mock import MockerFixture, MockType
 from servicelib.celery.models import TaskStatus, TaskUUID
 from servicelib.celery.task_manager import Task, TaskManager
@@ -13,7 +14,7 @@ _faker = Faker()
 
 @pytest.fixture
 def submit_task_return_value() -> TaskUUID:
-    return TaskUUID(_faker.uuid4())
+    return TypeAdapter(TaskUUID).validate_python(_faker.uuid4())
 
 
 @pytest.fixture
@@ -62,7 +63,7 @@ def mock_task_manager_object(
 
     def _set_return_or_raise(method, value):
         if isinstance(value, Exception):
-            method.side_effect = lambda *a, **kw: (_ for _ in ()).throw(value)
+            method.side_effect = lambda *args, **kwargs: (_ for _ in ()).throw(value)  # noqa: ARG005
         else:
             method.return_value = value
 

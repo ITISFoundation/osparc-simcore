@@ -1,9 +1,9 @@
-"""Free functions to inject dependencies in routes handlers"""
+# pylint:disable=unused-import
 
 from typing import Annotated, cast
 
 from fastapi import Depends, FastAPI, Request
-from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
+from servicelib.rabbitmq import RabbitMQRPCClient
 
 from ...clients import postgres
 from ...clients.postgres import PostgresLiveness

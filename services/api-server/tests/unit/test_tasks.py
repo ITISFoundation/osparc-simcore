@@ -12,6 +12,7 @@ from httpx import AsyncClient, BasicAuth
 from models_library.api_schemas_long_running_tasks.tasks import TaskGet, TaskStatus
 from models_library.progress_bar import ProgressReport, ProgressStructuredMessage
 from models_library.utils.json_schema import GenerateResolvedJsonSchema
+from pydantic import TypeAdapter
 from pytest_mock import MockerFixture, MockType
 from servicelib.celery.models import TaskState, TaskUUID
 from servicelib.celery.models import TaskStatus as CeleryTaskStatus
@@ -89,7 +90,8 @@ async def test_get_task_result(
 
 
 @pytest.mark.parametrize(
-    "method, url, list_tasks_return_value, get_task_status_return_value, cancel_task_return_value, get_task_result_return_value, expected_status_code",
+    "method, url, list_tasks_return_value, get_task_status_return_value, "
+    "cancel_task_return_value, get_task_result_return_value, expected_status_code",
     [
         (
             "GET",
@@ -132,7 +134,7 @@ async def test_get_task_result(
             f"/v0/tasks/{_faker.uuid4()}/result",
             None,
             CeleryTaskStatus(
-                task_uuid=TaskUUID("123e4567-e89b-12d3-a456-426614174000"),
+                task_uuid=TypeAdapter(TaskUUID).validate_python("123e4567-e89b-12d3-a456-426614174000"),
                 task_state=TaskState.STARTED,
                 progress_report=ProgressReport(
                     actual_value=0.5,

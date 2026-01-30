@@ -126,7 +126,7 @@ async def email_templates(
     all_templates = {"other.html": f"Fake template {email_template_mark}"}
 
     # only subjects are overridden in db
-    subject_templates = get_default_named_templates(media="email", part="subject")
+    subject_templates = get_default_named_templates(channel="email", part="subject")
     for name, path in subject_templates.items():
         assert "subject" in name
         all_templates[name] = f"{email_template_mark} {path.read_text()}"

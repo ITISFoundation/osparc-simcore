@@ -3,6 +3,7 @@
 
 import datetime
 from collections.abc import AsyncIterator, Iterator
+from dataclasses import asdict
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
@@ -20,6 +21,8 @@ from celery_library.worker.signals import _worker_init_wrapper, _worker_shutdown
 from faker import Faker
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+from jinja2 import DictLoader, Environment, select_autoescape
+from notifications_library._models import ProductData, ProductUIData
 from pydantic import EmailStr
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
@@ -28,18 +31,45 @@ from servicelib.fastapi.celery.app_server import FastAPIAppServer
 from servicelib.redis import RedisClientSDK
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisDatabase, RedisSettings
+from simcore_service_notifications.api.celery import _email
+from simcore_service_notifications.api.celery.tasks import (
+    register_worker_tasks,
+)
+from simcore_service_notifications.api.rpc import dependencies as rpc_dependencies
 from simcore_service_notifications.core.application import create_app
 from simcore_service_notifications.core.settings import ApplicationSettings
 from simcore_service_notifications.main import app_factory
-from simcore_service_notifications.modules.celery.worker import _email_tasks
-from simcore_service_notifications.modules.celery.worker.tasks import (
-    register_worker_tasks,
-)
 
 pytest_plugins = [
     "pytest_simcore.environment_configs",
     "pytest_simcore.faker_users_data",
 ]
+
+
+# Mock templates for testing
+MOCK_TEMPLATES = {
+    "email/account_approved/subject.j2": "Account Approved",
+    "email/account_approved/body_html.j2": "<p>Your account has been approved</p>",
+    "email/account_approved/body_text.j2": "Your account has been approved",
+    "email/account_rejected/subject.j2": "Account Rejected",
+    "email/account_rejected/body_html.j2": "<p>Your account has been rejected</p>",
+    "email/account_rejected/body_text.j2": "Your account has been rejected",
+    "email/welcome/subject.j2": "Welcome!",
+    "email/welcome/body_html.j2": "<p>Welcome to our platform</p>",
+    "email/welcome/body_text.j2": "Welcome to our platform",
+    "email/password_reset/subject.j2": "Reset Your Password",
+    "email/password_reset/body_html.j2": "<p>Click here to reset your password</p>",
+    "email/password_reset/body_text.j2": "Click here to reset your password",
+}
+
+
+@pytest.fixture
+def mock_jinja_env() -> Environment:
+    """Create a mock Jinja2 environment with test templates."""
+    return Environment(
+        loader=DictLoader(MOCK_TEMPLATES),
+        autoescape=select_autoescape(enabled_extensions=("j2",)),
+    )
 
 
 @pytest.fixture
@@ -74,6 +104,15 @@ def app_environment(
             **external_envfile_dict,
         },
     )
+
+
+@pytest.fixture
+def mock_jinja_env_in_dependencies(mocker: MockerFixture, mock_jinja_env: Environment) -> Environment:
+    mocker.patch(
+        f"{rpc_dependencies.__name__}.get_jinja_env",
+        return_value=mock_jinja_env,
+    )
+    return mock_jinja_env
 
 
 @pytest.fixture
@@ -161,6 +200,8 @@ async def task_manager(
         )
         await redis_client_sdk.setup()
 
+        assert app_settings.NOTIFICATIONS_CELERY is not None
+
         yield CeleryTaskManager(
             mock_celery_app,
             app_settings.NOTIFICATIONS_CELERY,
@@ -180,12 +221,29 @@ def fake_ipinfo(faker: Faker) -> dict[str, Any]:
 
 
 @pytest.fixture
+def fake_product_data(faker: Faker) -> dict[str, Any]:
+    return asdict(
+        ProductData(
+            product_name=faker.company(),
+            display_name=faker.company(),
+            vendor_display_inline=faker.company_suffix(),
+            support_email=faker.email(),
+            homepage_url=faker.url(),
+            ui=ProductUIData(
+                logo_url=faker.image_url(),
+                strong_color=faker.color_name(),
+            ),
+        )
+    )
+
+
+@pytest.fixture
 def smtp_mock_or_none(
     mocker: MockerFixture, is_external_user_email: EmailStr | None, user_email: EmailStr
 ) -> MagicMock | None:
     if not is_external_user_email:
         mock_smtp = AsyncMock()
-        mock_create_email_session = mocker.patch.object(_email_tasks, "create_email_session")
+        mock_create_email_session = mocker.patch.object(_email, "create_email_session")
         mock_create_email_session.return_value.__aenter__.return_value = mock_smtp
         return mock_smtp
     print("🚨 Emails might be sent to", f"{user_email=}")

@@ -638,9 +638,7 @@
             "description": "Name of the author"
           },
           "email": {
-            "type": "string",
-            "format": "email",
-            "title": "Email",
+            "$ref": "#/components/schemas/LowerCaseEmailStr",
             "description": "Email address"
           },
           "affiliation": {
@@ -1589,6 +1587,10 @@
         "type": "object",
         "title": "LogDriver1",
         "description": "Specifies the log driver to use for tasks created from this spec. If\nnot present, the default one for the swarm will be used, finally\nfalling back to the engine default if not specified."
+      },
+      "LowerCaseEmailStr": {
+        "type": "string",
+        "format": "email"
       },
       "Mode": {
         "type": "string",
@@ -2927,9 +2929,7 @@
             "title": "Authors"
           },
           "contact": {
-            "type": "string",
-            "format": "email",
-            "title": "Contact",
+            "$ref": "#/components/schemas/LowerCaseEmailStr",
             "description": "email to correspond to the authors about the node"
           },
           "inputs": {
@@ -3008,14 +3008,12 @@
           "owner": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "email"
+                "$ref": "#/components/schemas/LowerCaseEmailStr"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Owner",
             "description": "None when the owner email cannot be found in the database"
           }
         },
