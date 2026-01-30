@@ -112,6 +112,8 @@ ROLES_PERMISSIONS: dict[UserRole, PermissionDict] = {
             "admin.users.write",
             "product.details.*",
             "product.invitations.create",
+            "notification.message.*",
+            "notification.template.*",
         ],
         inherits=[UserRole.TESTER],
     ),
