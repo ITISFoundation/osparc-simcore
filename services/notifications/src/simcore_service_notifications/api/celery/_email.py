@@ -6,7 +6,6 @@ from email.message import EmailMessage as _EmailMessage
 
 from celery import Task  # type: ignore[import-untyped]
 from models_library.api_schemas_notifications.message import EmailNotificationMessage
-from models_library.notifications import ChannelType
 from notifications_library._email import (
     add_attachments,
     compose_email,
@@ -42,8 +41,6 @@ async def send_email(
 ) -> None:
     assert task  # nosec
     assert task_key  # nosec
-
-    assert message.channel == ChannelType.email  # nosec
 
     msg = _create_email_message(message)
 
