@@ -50,6 +50,7 @@ async def assert_autoscaled_dynamic_ec2_instances(
     instance_filters: Sequence[FilterTypeDef] | None,
     expected_user_data: list[str] | None = None,
     check_reservation_index: int | None = None,
+    check_instance_type: InstanceTypeType | None = None,
 ) -> list[InstanceTypeDef]:
     if expected_user_data is None:
         expected_user_data = ["docker swarm join"]
@@ -68,6 +69,7 @@ async def assert_autoscaled_dynamic_ec2_instances(
         expected_pre_pulled_images=expected_pre_pulled_images,
         instance_filters=instance_filters,
         check_reservation_index=check_reservation_index,
+        check_instance_type=check_instance_type,
     )
 
 
@@ -179,12 +181,35 @@ async def assert_ec2_instances(
     expected_pre_pulled_images: list[DockerGenericTag] | None = None,
     instance_filters: Sequence[FilterTypeDef] | None = None,
     check_reservation_index: int | None = None,
+    check_instance_type: InstanceTypeType | None = None,
 ) -> list[InstanceTypeDef]:
     all_instances = await ec2_client.describe_instances(Filters=instance_filters or [])
     assert len(all_instances["Reservations"]) == expected_num_reservations
     if check_reservation_index is not None:
         assert check_reservation_index < len(all_instances["Reservations"])
         reservation = all_instances["Reservations"][check_reservation_index]
+        return await _assert_reservation(
+            ec2_client,
+            reservation,
+            expected_num_instances=expected_num_instances,
+            expected_instance_type=expected_instance_type,
+            expected_instance_state=expected_instance_state,
+            expected_instance_tag_keys=expected_instance_tag_keys,
+            expected_user_data=expected_user_data,
+            expected_pre_pulled_images=expected_pre_pulled_images,
+        )
+    if check_instance_type is not None:
+        reservation_index: set[int] = set()
+        for reservation in all_instances["Reservations"]:
+            assert "Instances" in reservation
+            for instance in reservation["Instances"]:
+                assert "InstanceType" in instance
+                if instance["InstanceType"] == check_instance_type:
+                    reservation_index.add(all_instances["Reservations"].index(reservation))
+        assert len(reservation_index) == 1, (
+            f"Expected only one reservation with the given instance type, got {reservation_index}"
+        )
+        reservation = all_instances["Reservations"][reservation_index.pop()]
         return await _assert_reservation(
             ec2_client,
             reservation,

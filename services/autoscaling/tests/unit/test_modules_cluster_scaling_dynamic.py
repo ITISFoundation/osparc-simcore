@@ -350,7 +350,7 @@ async def test_cluster_scaling_with_no_services_does_nothing(
     ["with_AUTOSCALING_DRAIN_NODES_WITH_LABELS"],
     indirect=True,
 )
-async def test_cluster_scaling_with_no_services_and_machine_buffer_starts_expected_machines(
+async def test_cluster_scaling_with_no_services_and_enabled_hot_buffers_starts_expected_machines(
     patch_ec2_client_launch_instances_min_number_of_instances: mock.Mock,
     minimal_configuration: None,
     with_multiple_hot_buffer_instance_types: EnvVarsDict,
@@ -379,12 +379,13 @@ async def test_cluster_scaling_with_no_services_and_machine_buffer_starts_expect
         ].hot_buffer_count
         await assert_autoscaled_dynamic_ec2_instances(
             ec2_client,
-            expected_num_reservations=1,
+            expected_num_reservations=len(hot_buffer_instance_types),
             expected_num_instances=expected_num_instances,
             expected_instance_type=instance_type,
             expected_instance_state="running",
             expected_additional_tag_keys=list(ec2_instance_custom_tags),
             instance_filters=instance_type_filters,
+            check_instance_type=instance_type,
         )
     _assert_rabbit_autoscaling_message_sent(
         mock_rabbitmq_post_message,
@@ -407,18 +408,20 @@ async def test_cluster_scaling_with_no_services_and_machine_buffer_starts_expect
             if hot_buffer_has_pre_pull(instance_type)
             else []
         )
+        expected_pre_pulled_images = hot_buffer_expected_pre_pulled_images(instance_type) or None
         expected_num_instances = app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
             instance_type
         ].hot_buffer_count
         await assert_autoscaled_dynamic_ec2_instances(
             ec2_client,
-            expected_num_reservations=1,
+            expected_num_reservations=len(hot_buffer_instance_types),
             expected_num_instances=expected_num_instances,
             expected_instance_type=instance_type,
             expected_instance_state="running",
             expected_additional_tag_keys=list(ec2_instance_custom_tags.keys() | expected_pre_pull_tag_keys),
-            expected_pre_pulled_images=hot_buffer_expected_pre_pulled_images or None,
+            expected_pre_pulled_images=expected_pre_pulled_images,
             instance_filters=instance_type_filters,
+            check_instance_type=instance_type,
         )
         assert fake_node.description
         assert fake_node.description.resources
@@ -444,18 +447,20 @@ async def test_cluster_scaling_with_no_services_and_machine_buffer_starts_expect
 
     for instance_type in hot_buffer_instance_types:
         expected_pre_pull_tag_keys = [PRE_PULLED_IMAGES_EC2_TAG_KEY] if hot_buffer_has_pre_pull(instance_type) else []
+        expected_pre_pulled_images = hot_buffer_expected_pre_pulled_images(instance_type) or None
         expected_num_instances = app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
             instance_type
         ].hot_buffer_count
         await assert_autoscaled_dynamic_ec2_instances(
             ec2_client,
-            expected_num_reservations=1,
+            expected_num_reservations=len(hot_buffer_instance_types),
             expected_num_instances=expected_num_instances,
             expected_instance_type=instance_type,
             expected_instance_state="running",
             expected_additional_tag_keys=list(ec2_instance_custom_tags.keys() | expected_pre_pull_tag_keys),
-            expected_pre_pulled_images=hot_buffer_expected_pre_pulled_images or None,
+            expected_pre_pulled_images=expected_pre_pulled_images,
             instance_filters=instance_type_filters,
+            check_instance_type=instance_type,
         )
 
 
