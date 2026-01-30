@@ -112,7 +112,7 @@ async def test_send_message_access_control(
     await assert_status(response, expected_status)
 
 
-@pytest.mark.parametrize("user_role", [UserRole.USER])
+@pytest.mark.parametrize("user_role", [UserRole.PRODUCT_OWNER, UserRole.ADMIN])
 async def test_send_message_returns_task(
     client: TestClient,
     logged_user: UserInfoDict,
@@ -145,7 +145,7 @@ async def test_send_message_returns_task(
     assert f"{task.task_id}" in task.result_href
 
 
-@pytest.mark.parametrize("user_role", [UserRole.USER])
+@pytest.mark.parametrize("user_role", [UserRole.PRODUCT_OWNER, UserRole.ADMIN])
 @pytest.mark.parametrize(
     "channel,recipients,expected_status",
     [
@@ -236,7 +236,7 @@ async def test_preview_template_access_control(
     await assert_status(response, expected_status)
 
 
-@pytest.mark.parametrize("user_role", [UserRole.USER])
+@pytest.mark.parametrize("user_role", [UserRole.PRODUCT_OWNER, UserRole.ADMIN])
 async def test_preview_template_success(
     client: TestClient,
     logged_user: UserInfoDict,
@@ -274,7 +274,7 @@ async def test_preview_template_success(
     assert preview.content
 
 
-@pytest.mark.parametrize("user_role", [UserRole.USER])
+@pytest.mark.parametrize("user_role", [UserRole.PRODUCT_OWNER, UserRole.ADMIN])
 async def test_preview_template_enriches_context_with_product_data(
     client: TestClient,
     logged_user: UserInfoDict,
