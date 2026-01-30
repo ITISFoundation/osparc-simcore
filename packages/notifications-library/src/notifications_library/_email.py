@@ -12,13 +12,15 @@ _logger = logging.getLogger(__name__)
 
 
 def compose_email(
+    # NOTE: to, bcc are lists and not set because email.message.EmailMessage is not hashable
+    # ensure unicity at a higher level, if needed.
     from_: Address,
     to: list[Address],
     subject: str,
     content_text: str,
     content_html: str | None = None,
     reply_to: Address | None = None,
-    bcc: Address | None = None,
+    bcc: list[Address] | None = None,
 ) -> EmailMessage:
     msg = EmailMessage()
     msg["From"] = from_
