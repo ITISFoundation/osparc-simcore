@@ -198,8 +198,8 @@ async def test_send_message_with_different_inputs(
         (UserRole.GUEST, status.HTTP_403_FORBIDDEN),
         (UserRole.USER, status.HTTP_403_FORBIDDEN),
         (UserRole.TESTER, status.HTTP_403_FORBIDDEN),
-        (UserRole.PRODUCT_OWNER, status.HTTP_202_ACCEPTED),
-        (UserRole.ADMIN, status.HTTP_202_ACCEPTED),
+        (UserRole.PRODUCT_OWNER, status.HTTP_200_OK),
+        (UserRole.ADMIN, status.HTTP_200_OK),
     ],
 )
 async def test_preview_template_access_control(
