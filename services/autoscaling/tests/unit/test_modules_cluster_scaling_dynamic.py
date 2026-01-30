@@ -370,7 +370,7 @@ async def test_cluster_scaling_with_no_services_and_enabled_hot_buffers_starts_e
     hot_buffer_expected_pre_pulled_images: Callable[[InstanceTypeType], list[DockerGenericTag]],
     hot_buffer_total_count: int,
 ):
-    assert len(hot_buffer_instance_types) > 1, "need multiple hot buffer types in this test"
+    assert len(hot_buffer_instance_types) > 1, "need at least 2 hot buffer types in this test"
     assert app_settings.AUTOSCALING_EC2_INSTANCES
     await auto_scale_cluster(app=initialized_app, auto_scaling_mode=DynamicAutoscalingProvider())
     for instance_type in hot_buffer_instance_types:
