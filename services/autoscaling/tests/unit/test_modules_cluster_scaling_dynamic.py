@@ -373,15 +373,19 @@ async def test_cluster_scaling_with_no_services_and_machine_buffer_starts_expect
     assert len(hot_buffer_instance_types) > 1, "need multiple hot buffer types in this test"
     assert app_settings.AUTOSCALING_EC2_INSTANCES
     await auto_scale_cluster(app=initialized_app, auto_scaling_mode=DynamicAutoscalingProvider())
-    await assert_autoscaled_dynamic_ec2_instances(
-        ec2_client,
-        expected_num_reservations=1,
-        expected_num_instances=hot_buffer_total_count,
-        expected_instance_type=hot_buffer_instance_types,
-        expected_instance_state="running",
-        expected_additional_tag_keys=list(ec2_instance_custom_tags),
-        instance_filters=instance_type_filters,
-    )
+    for instance_type in hot_buffer_instance_types:
+        expected_num_instances = app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
+            instance_type
+        ].hot_buffer_count
+        await assert_autoscaled_dynamic_ec2_instances(
+            ec2_client,
+            expected_num_reservations=1,
+            expected_num_instances=expected_num_instances,
+            expected_instance_type=instance_type,
+            expected_instance_state="running",
+            expected_additional_tag_keys=list(ec2_instance_custom_tags),
+            instance_filters=instance_type_filters,
+        )
     _assert_rabbit_autoscaling_message_sent(
         mock_rabbitmq_post_message,
         app_settings,
@@ -401,20 +405,24 @@ async def test_cluster_scaling_with_no_services_and_machine_buffer_starts_expect
         else []
     )
     await auto_scale_cluster(app=initialized_app, auto_scaling_mode=DynamicAutoscalingProvider())
-    await assert_autoscaled_dynamic_ec2_instances(
-        ec2_client,
-        expected_num_reservations=1,
-        expected_num_instances=hot_buffer_total_count,
-        expected_instance_type=hot_buffer_instance_types,
-        expected_instance_state="running",
-        expected_additional_tag_keys=list(ec2_instance_custom_tags.keys() | expected_pre_pull_tag_keys),
-        expected_pre_pulled_images=hot_buffer_expected_pre_pulled_images or None,
-        instance_filters=instance_type_filters,
-    )
-    assert fake_node.description
-    assert fake_node.description.resources
-    assert fake_node.description.resources.nano_cp_us
-    assert fake_node.description.resources.memory_bytes
+    for instance_type in hot_buffer_instance_types:
+        expected_num_instances = app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
+            instance_type
+        ].hot_buffer_count
+        await assert_autoscaled_dynamic_ec2_instances(
+            ec2_client,
+            expected_num_reservations=1,
+            expected_num_instances=expected_num_instances,
+            expected_instance_type=instance_type,
+            expected_instance_state="running",
+            expected_additional_tag_keys=list(ec2_instance_custom_tags.keys() | expected_pre_pull_tag_keys),
+            expected_pre_pulled_images=hot_buffer_expected_pre_pulled_images or None,
+            instance_filters=instance_type_filters,
+        )
+        assert fake_node.description
+        assert fake_node.description.resources
+        assert fake_node.description.resources.nano_cp_us
+        assert fake_node.description.resources.memory_bytes
     _assert_rabbit_autoscaling_message_sent(
         mock_rabbitmq_post_message,
         app_settings,
@@ -433,16 +441,21 @@ async def test_cluster_scaling_with_no_services_and_machine_buffer_starts_expect
     expected_pre_pull_tag_keys = [PRE_PULLED_IMAGES_EC2_TAG_KEY] if hot_buffer_has_pre_pull else []
     for _ in range(10):
         await auto_scale_cluster(app=initialized_app, auto_scaling_mode=DynamicAutoscalingProvider())
-    await assert_autoscaled_dynamic_ec2_instances(
-        ec2_client,
-        expected_num_reservations=1,
-        expected_num_instances=hot_buffer_total_count,
-        expected_instance_type=hot_buffer_instance_types,
-        expected_instance_state="running",
-        expected_additional_tag_keys=list(ec2_instance_custom_tags.keys() | expected_pre_pull_tag_keys),
-        expected_pre_pulled_images=hot_buffer_expected_pre_pulled_images or None,
-        instance_filters=instance_type_filters,
-    )
+
+    for instance_type in hot_buffer_instance_types:
+        expected_num_instances = app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
+            instance_type
+        ].hot_buffer_count
+        await assert_autoscaled_dynamic_ec2_instances(
+            ec2_client,
+            expected_num_reservations=1,
+            expected_num_instances=expected_num_instances,
+            expected_instance_type=instance_type,
+            expected_instance_state="running",
+            expected_additional_tag_keys=list(ec2_instance_custom_tags.keys() | expected_pre_pull_tag_keys),
+            expected_pre_pulled_images=hot_buffer_expected_pre_pulled_images or None,
+            instance_filters=instance_type_filters,
+        )
 
 
 @pytest.mark.parametrize(
