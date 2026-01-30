@@ -353,7 +353,7 @@ def test_sort_drained_nodes_inactivity_timeout(
     hot_buffer_instance_types: set[InstanceTypeType],
     hot_buffer_total_count: int,
 ):
-    assert len(hot_buffer_instance_types) > 0, "this test needs at least 2 hot buffer instance types configured"
+    assert len(hot_buffer_instance_types) > 1, "this test needs at least 2 hot buffer instance types configured"
     assert app_settings.AUTOSCALING_EC2_INSTANCES
 
     selected_ec2_instance_type_with_inactivity_timeout = secrets.choice(tuple(hot_buffer_instance_types))
