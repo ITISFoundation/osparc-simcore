@@ -36,7 +36,7 @@ def workflow_name() -> WorkflowName:
 
 def _get_base_steps(definition: WorkflowDefinition) -> set[type[BaseStep]]:
     steps: set[type[BaseStep]] = set()
-    for step_type, requires_step_types in definition:
+    for step_type, requires_step_types in definition.steps:
         steps.add(step_type)
 
         for required_step_type in requires_step_types:
@@ -49,24 +49,30 @@ def _get_base_steps(definition: WorkflowDefinition) -> set[type[BaseStep]]:
     "workflow, expected",
     [
         pytest.param(
-            [],
+            WorkflowDefinition(initial_context=set(), steps=[]),
             DagStepSequences(apply=(), revert=()),
             id="empty-workflow",
         ),
         pytest.param(
-            [
-                (A, []),
-            ],
+            WorkflowDefinition(
+                initial_context=set(),
+                steps=[
+                    (A, []),
+                ],
+            ),
             DagStepSequences(apply=({f"{__name__}.A"},), revert=({f"{__name__}.A"},)),
             id="single-node-workflow",
         ),
         pytest.param(
-            [
-                (A, []),
-                (B, []),
-                (C, []),
-                (D, []),
-            ],
+            WorkflowDefinition(
+                initial_context=set(),
+                steps=[
+                    (A, []),
+                    (B, []),
+                    (C, []),
+                    (D, []),
+                ],
+            ),
             DagStepSequences(
                 apply=({f"{__name__}.A", f"{__name__}.B", f"{__name__}.C", f"{__name__}.D"},),
                 revert=({f"{__name__}.A", f"{__name__}.B", f"{__name__}.C", f"{__name__}.D"},),
@@ -74,12 +80,15 @@ def _get_base_steps(definition: WorkflowDefinition) -> set[type[BaseStep]]:
             id="no-requirements-workflow",
         ),
         pytest.param(
-            [
-                (A, []),
-                (B, [A]),
-                (C, [A]),
-                (D, [B, C, A]),
-            ],
+            WorkflowDefinition(
+                initial_context=set(),
+                steps=[
+                    (A, []),
+                    (B, [A]),
+                    (C, [A]),
+                    (D, [B, C, A]),
+                ],
+            ),
             DagStepSequences(
                 apply=({f"{__name__}.A"}, {f"{__name__}.B", f"{__name__}.C"}, {f"{__name__}.D"}),
                 revert=({f"{__name__}.D"}, {f"{__name__}.B", f"{__name__}.C"}, {f"{__name__}.A"}),
@@ -104,23 +113,32 @@ async def test__get_step_sequence(
 
 
 def test__get_step_sequence_raises_on_cycle():
-    workflow_with_cycle: WorkflowDefinition = [
-        (A, [C]),
-        (B, [A]),
-        (C, [B]),
-    ]
+    workflow_with_cycle: WorkflowDefinition = WorkflowDefinition(
+        initial_context=set(),
+        steps=[
+            (A, [C]),
+            (B, [A]),
+            (C, [B]),
+        ],
+    )
     with pytest.raises(ValueError, match="not a DAG"):
         _get_step_sequence(workflow_with_cycle)
 
 
 async def test_dag_manager_registers_unique_steps_only(dag_manager: WorkflowManager, workflow_name: WorkflowName):
-    workflow_1: WorkflowDefinition = [
-        (A, []),
-        (B, [A]),
-    ]
-    workflow_2: WorkflowDefinition = [
-        (A, [C]),
-    ]
+    workflow_1: WorkflowDefinition = WorkflowDefinition(
+        initial_context=set(),
+        steps=[
+            (A, []),
+            (B, [A]),
+        ],
+    )
+    workflow_2: WorkflowDefinition = WorkflowDefinition(
+        initial_context=set(),
+        steps=[
+            (A, [C]),
+        ],
+    )
     for k, workflow in enumerate([workflow_1, workflow_2]):
         dag_manager.register_workflow(f"{workflow_name}_{k}", workflow)
 
