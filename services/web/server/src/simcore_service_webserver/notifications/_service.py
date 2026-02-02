@@ -1,9 +1,13 @@
 from aiohttp import web
 from celery_library.async_jobs import submit_job
+from common_library.users_enums import UserStatus
 from models_library.api_schemas_async_jobs.async_jobs import AsyncJobGet
 from models_library.groups import GroupID
 from models_library.notifications import ChannelType
-from models_library.notifications_errors import NotificationsUnsupportedChannelError
+from models_library.notifications_errors import (
+    NotificationsNoActiveRecipientsError,
+    NotificationsUnsupportedChannelError,
+)
 from models_library.products import ProductName
 from models_library.users import UserID
 from pydantic import BaseModel
@@ -15,40 +19,56 @@ from ..products import products_service
 from ._models import EmailAddress, EmailContent, EmailNotificationMessage
 
 
+def _get_user_display_name(user: dict) -> str:
+    first_name = user.get("first_name") or ""
+    last_name = user.get("last_name") or ""
+    return f"{first_name} {last_name}".strip()
+
+
+async def _collect_active_recipients(app: web.Application, recipient_groups: list[GroupID]) -> set[EmailAddress]:
+    from ..users.users_service import get_user, get_users_in_group  # noqa: PLC0415
+
+    recipients: set[EmailAddress] = set()
+    for group_id in recipient_groups:
+        user_ids = await get_users_in_group(app, gid=group_id)
+        for user_id in user_ids:
+            user = await get_user(app, user_id=user_id)
+            if user["status"] == UserStatus.ACTIVE:
+                recipients.add(
+                    EmailAddress(
+                        display_name=_get_user_display_name(user),
+                        addr_spec=user["email"],
+                    )
+                )
+    return recipients
+
+
 async def _create_email_message(
     app: web.Application,
     *,
     product_name: ProductName,
-    channel: ChannelType,
     recipients: list[GroupID],
     content: BaseModel,
 ) -> EmailNotificationMessage:
-    from ..users.users_service import get_user, get_users_in_group  # noqa: PLC0415
-
-    to: set[EmailAddress] = set()
-
     product = products_service.get_product(app, product_name)
 
-    for recipient in recipients:
-        u_ids = await get_users_in_group(app, gid=recipient)
-        for u_id in u_ids:
-            user = await get_user(app, user_id=u_id)
-            to.add(
-                EmailAddress(
-                    display_name=user["first_name"] or user["email"],
-                    addr_spec=user["email"],
-                )
-            )
-
-    return EmailNotificationMessage(
-        channel=channel,
-        from_=EmailAddress(
-            display_name=product.display_name,
-            addr_spec=product.support_email,
-        ),
-        to=list(to),
-        content=EmailContent(**content.model_dump()),
+    from_ = EmailAddress(
+        display_name=f"{product.display_name} Support",
+        addr_spec=product.support_email,
     )
+
+    to = await _collect_active_recipients(app, recipients)
+
+    if not to:
+        raise NotificationsNoActiveRecipientsError
+
+    email_content = EmailContent(**content.model_dump())
+    to_list = list(to)
+
+    if len(to_list) == 1:
+        return EmailNotificationMessage(from_=from_, to=to_list, content=email_content)
+
+    return EmailNotificationMessage(from_=from_, to=[], bcc=to_list, content=email_content)
 
 
 async def send_message(
@@ -60,17 +80,16 @@ async def send_message(
     recipients: list[GroupID],
     content: BaseModel,
 ) -> AsyncJobGet:
-    # Dispatch to the appropriate message creator based on channel type
-    if channel == ChannelType.email:
-        message = await _create_email_message(
-            app,
-            product_name=product_name,
-            channel=channel,
-            recipients=recipients,
-            content=content,
-        )
-    else:
-        raise NotificationsUnsupportedChannelError(channel=channel)
+    match channel:
+        case ChannelType.email:
+            message = await _create_email_message(
+                app,
+                product_name=product_name,
+                recipients=recipients,
+                content=content,
+            )
+        case _:
+            raise NotificationsUnsupportedChannelError(channel=channel)
 
     return await submit_job(
         get_task_manager(app),

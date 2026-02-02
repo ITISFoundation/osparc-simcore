@@ -1,5 +1,6 @@
 from common_library.user_messages import user_message
 from models_library.notifications_errors import (
+    NotificationsNoActiveRecipientsError,
     NotificationsTemplateContextValidationError,
     NotificationsTemplateNotFoundError,
     NotificationsUnsupportedChannelError,
@@ -14,6 +15,13 @@ from ...exception_handling import (
 )
 
 _TO_HTTP_ERROR_MAP: ExceptionToHttpErrorMap = {
+    NotificationsNoActiveRecipientsError: HttpErrorInfo(
+        status.HTTP_400_BAD_REQUEST,
+        user_message(
+            "No active recipients selected.",
+            _version=1,
+        ),
+    ),
     NotificationsTemplateContextValidationError: HttpErrorInfo(
         status.HTTP_422_UNPROCESSABLE_ENTITY,
         user_message(
