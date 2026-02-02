@@ -26,9 +26,9 @@ class EmailNotificationMessage(BaseModel):
     channel: ChannelType = ChannelType.email
 
     from_: Annotated[EmailAddress, Field(alias="from")]
-    to: set[EmailAddress]
-    bcc: set[EmailAddress] | None = None
+    to: list[EmailAddress]
     reply_to: EmailAddress | None = None
+    bcc: list[EmailAddress] | None = None
 
     content: EmailContent
 
