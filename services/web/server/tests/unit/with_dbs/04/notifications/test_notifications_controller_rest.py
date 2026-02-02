@@ -134,7 +134,7 @@ async def test_send_message_no_active_recipients(
     fake_email_content: dict[str, Any],
     create_test_users: Callable[[int, list | None], AbstractAsyncContextManager[list[GroupID]]],
 ):
-    """Test access control for send_message endpoint"""
+    """Test that send_message returns 400 when no active recipients are provided"""
     assert client.app
     url = client.app.router["send_message"].url_for()
 
