@@ -19,7 +19,6 @@ from models_library.api_schemas_webserver.notifications import (
     NotificationsTemplateGet,
     NotificationsTemplatePreviewGet,
 )
-from models_library.groups import GroupID
 from models_library.notifications import ChannelType
 from models_library.rpc.notifications.template import (
     NotificationsTemplatePreviewRpcResponse,
@@ -100,17 +99,17 @@ async def test_send_message_access_control(
     expected_status: HTTPStatus,
     mocked_notifications_rpc_client: MockerFixture,
     fake_email_content: dict[str, Any],
-    create_test_users: Callable[[int, list | None], AbstractAsyncContextManager[list[GroupID]]],
+    create_test_users: Callable[[int, list | None], AbstractAsyncContextManager[list[UserInfoDict]]],
 ):
     """Test access control for send_message endpoint"""
     assert client.app
     url = client.app.router["send_message"].url_for()
 
-    async with create_test_users(1, None) as gids:
+    async with create_test_users(1, None) as users:
         # Prepare request body
         body = {
             "channel": "email",
-            "recipients": [gids[0]],
+            "recipients": [users[0]["primary_gid"]],
             "content": fake_email_content,
         }
 
@@ -132,17 +131,17 @@ async def test_send_message_no_active_recipients(
     expected_status: HTTPStatus,
     mocked_notifications_rpc_client: MockerFixture,
     fake_email_content: dict[str, Any],
-    create_test_users: Callable[[int, list | None], AbstractAsyncContextManager[list[GroupID]]],
+    create_test_users: Callable[[int, list | None], AbstractAsyncContextManager[list[UserInfoDict]]],
 ):
     """Test that send_message returns 400 when no active recipients are provided"""
     assert client.app
     url = client.app.router["send_message"].url_for()
 
-    async with create_test_users(3, [UserStatus.ACTIVE, UserStatus.BANNED, UserStatus.EXPIRED]) as gids:
+    async with create_test_users(3, [UserStatus.ACTIVE, UserStatus.BANNED, UserStatus.EXPIRED]) as (_, user2, user3):
         # Prepare request body
         body = {
             "channel": "email",
-            "recipients": [gids[1], gids[2]],
+            "recipients": [user2["primary_gid"], user3["primary_gid"]],
             "content": fake_email_content,
         }
 
@@ -156,17 +155,17 @@ async def test_send_message_returns_task(
     logged_user: UserInfoDict,
     mocked_notifications_rpc_client: MockerFixture,
     fake_email_content: dict[str, Any],
-    create_test_users: Callable[[int, list | None], AbstractAsyncContextManager[list[GroupID]]],
+    create_test_users: Callable[[int, list | None], AbstractAsyncContextManager[list[UserInfoDict]]],
 ):
     """Test that send_message returns a task resource"""
     assert client.app
     url = client.app.router["send_message"].url_for()
 
-    async with create_test_users(count=1) as gids:
+    async with create_test_users(1, None) as users:
         # Prepare request body
         body = {
             "channel": "email",
-            "recipients": [gids[0]],
+            "recipients": [users[0]["primary_gid"]],
             "content": fake_email_content,
         }
 
@@ -202,15 +201,14 @@ async def test_send_message_with_different_inputs(
     expected_status: HTTPStatus,
     mocked_notifications_rpc_client: MockerFixture,
     fake_email_content: dict[str, Any],
-    create_test_users: Callable[[int, list | None], AbstractAsyncContextManager[list[GroupID]]],
+    create_test_users: Callable[[int, list | None], AbstractAsyncContextManager[list[UserInfoDict]]],
 ):
     """Test send_message with various valid inputs"""
     assert client.app
     url = client.app.router["send_message"].url_for()
 
-    async with create_test_users(recipients_count, None) as gids:
-        # Use the appropriate number of recipients
-        recipients = gids[:recipients_count]
+    async with create_test_users(recipients_count, None) as users:
+        recipients = [user["primary_gid"] for user in users]
 
         body = {
             "channel": "email",
