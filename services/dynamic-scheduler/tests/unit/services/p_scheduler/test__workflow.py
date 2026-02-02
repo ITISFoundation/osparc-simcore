@@ -4,12 +4,12 @@ import pytest
 from simcore_service_dynamic_scheduler.services.p_scheduler._abc import (
     BaseStep,
 )
-from simcore_service_dynamic_scheduler.services.p_scheduler._dag import DagManager, _get_step_sequence
 from simcore_service_dynamic_scheduler.services.p_scheduler._models import (
     DagStepSequences,
     WorkflowDefinition,
     WorkflowName,
 )
+from simcore_service_dynamic_scheduler.services.p_scheduler._workflow import WorkflowManager, _get_step_sequence
 
 
 class A(BaseStep): ...
@@ -25,8 +25,8 @@ class D(BaseStep): ...
 
 
 @pytest.fixture
-def dag_manager() -> DagManager:
-    return DagManager()
+def dag_manager() -> WorkflowManager:
+    return WorkflowManager()
 
 
 @pytest.fixture
@@ -89,7 +89,7 @@ def _get_base_steps(definition: WorkflowDefinition) -> set[type[BaseStep]]:
     ],
 )
 async def test__get_step_sequence(
-    dag_manager: DagManager, workflow_name: WorkflowName, workflow: WorkflowDefinition, expected: DagStepSequences
+    dag_manager: WorkflowManager, workflow_name: WorkflowName, workflow: WorkflowDefinition, expected: DagStepSequences
 ):
     dag_manager.register_workflow(workflow_name, workflow)
     await dag_manager.setup()
@@ -113,7 +113,7 @@ def test__get_step_sequence_raises_on_cycle():
         _get_step_sequence(workflow_with_cycle)
 
 
-async def test_dag_manager_registers_unique_steps_only(dag_manager: DagManager, workflow_name: WorkflowName):
+async def test_dag_manager_registers_unique_steps_only(dag_manager: WorkflowManager, workflow_name: WorkflowName):
     workflow_1: WorkflowDefinition = [
         (A, []),
         (B, [A]),

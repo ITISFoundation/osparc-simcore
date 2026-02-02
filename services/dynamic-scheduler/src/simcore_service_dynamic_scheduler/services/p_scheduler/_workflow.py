@@ -30,7 +30,7 @@ def _get_step_references_to_types(definition: WorkflowDefinition) -> dict[DagNod
     return result
 
 
-class DagManager:
+class WorkflowManager:
     def __init__(self) -> None:
         self._workflows: dict[WorkflowName, WorkflowDefinition] = {}
         self._dag_step_sequences: dict[WorkflowName, DagStepSequences] = {}
