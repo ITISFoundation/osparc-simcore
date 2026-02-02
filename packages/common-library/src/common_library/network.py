@@ -16,10 +16,7 @@ def redact_url(url: str) -> str:
     if not parsed.password:
         return url
 
-    if parsed.username:
-        new_netloc = f"{parsed.username}:***@{parsed.hostname}"
-    else:
-        new_netloc = f":***@{parsed.hostname}"
+    new_netloc = f"{parsed.username}:***@{parsed.hostname}" if parsed.username else f":***@{parsed.hostname}"
 
     if parsed.port:
         new_netloc = f"{new_netloc}:{parsed.port}"
