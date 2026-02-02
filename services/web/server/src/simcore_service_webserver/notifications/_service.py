@@ -28,18 +28,23 @@ def _get_user_display_name(user: dict) -> str:
 async def _collect_active_recipients(app: web.Application, recipient_groups: list[GroupID]) -> set[EmailAddress]:
     from ..users.users_service import get_user, get_users_in_group  # noqa: PLC0415
 
-    recipients: set[EmailAddress] = set()
+    # Collect all unique user IDs from all groups
+    all_user_ids: set[UserID] = set()
     for group_id in recipient_groups:
         user_ids = await get_users_in_group(app, gid=group_id)
-        for user_id in user_ids:
-            user = await get_user(app, user_id=user_id)
-            if user["status"] == UserStatus.ACTIVE:
-                recipients.add(
-                    EmailAddress(
-                        display_name=_get_user_display_name(user),
-                        addr_spec=user["email"],
-                    )
+        all_user_ids.update(user_ids)
+
+    # Fetch users and filter active ones
+    recipients: set[EmailAddress] = set()
+    for user_id in all_user_ids:
+        user = await get_user(app, user_id=user_id)
+        if user["status"] == UserStatus.ACTIVE:
+            recipients.add(
+                EmailAddress(
+                    display_name=_get_user_display_name(user),
+                    addr_spec=user["email"],
                 )
+            )
     return recipients
 
 
