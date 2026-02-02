@@ -5,8 +5,8 @@
 <p>Thank you for your interest in {{ product.display_name }}. We are pleased to provide you with a one-time invitation link to register on the platform.</p>
 <p>
   <!-- Many email clients strip or ignore certain CSS properties, including them inline -->
-  <button class="strong-button" style="border-radius: 4px;">
-    <a href="{{ link }}" style="color: white;">Register</a>
+  <button style="{{ strong_button_style }}">
+    <a href="{{ link }}" style="{{ strong_button_link_style }}">Register</a>
   </button>
 </p>
 <p>Please follow the on-screen information and proceed with your registration.</p>
