@@ -3,9 +3,15 @@
 # pylint: disable=unused-variable
 
 
+from collections.abc import AsyncIterator
+from contextlib import AsyncExitStack, asynccontextmanager
+
 import pytest
+from aiohttp.test_utils import TestClient
+from models_library.groups import GroupID
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
+from pytest_simcore.helpers.webserver_users import NewUser
 from simcore_service_webserver.notifications._controller import _rest
 
 
@@ -42,3 +48,27 @@ def mocked_notifications_rpc_client(
     )
 
     return mocker
+
+
+@pytest.fixture
+def create_test_users(
+    client: TestClient,
+):
+    @asynccontextmanager
+    async def _create(count: int = 1, statuses: list | None = None) -> AsyncIterator[list[GroupID]]:
+        async with AsyncExitStack() as exit_stack:
+            gids: list[GroupID] = []
+
+            for i in range(count):
+                user_data = {}
+                if statuses and i < len(statuses):
+                    user_data["status"] = statuses[i]
+
+                user = await exit_stack.enter_async_context(
+                    NewUser(user_data=user_data if user_data else None, app=client.app)
+                )
+                gids.append(int(user["primary_gid"]))
+
+            yield gids
+
+    return _create
