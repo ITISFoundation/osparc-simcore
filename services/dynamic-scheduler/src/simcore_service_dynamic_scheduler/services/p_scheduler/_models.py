@@ -38,9 +38,10 @@ type StepSequence = tuple[set[DagNodeUniqueReference], ...]
 
 class SchedulerServiceStatus(StrAutoEnum):
     IS_ABSENT = auto()  # not running
-    TRANSITIONING = auto()  # either starting or stopping
     IS_PRESENT = auto()  # running without issues
     IN_ERROR = auto()  # in error state
+    TRANSITION_TO_PRESENT = auto()  # transitioning to running
+    TRANSITION_TO_ABSENT = auto()  # transitioning to not running
 
 
 type WorkerId = str
