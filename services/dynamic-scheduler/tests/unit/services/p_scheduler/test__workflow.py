@@ -44,7 +44,7 @@ async def _manager_lifespan(manager: WorkflowManager) -> AsyncIterator[None]:
     await manager.teardown()
 
 
-class A(BaseStep):
+class SA(BaseStep):
     @classmethod
     def apply_requests_inputs(cls) -> set[KeyConfig]:
         return {KeyConfig(name="a_optional", optional=True)}
@@ -62,13 +62,13 @@ class A(BaseStep):
         return {KeyConfig(name="a_produced_revert")}
 
 
-class B(BaseStep): ...
+class SB(BaseStep): ...
 
 
-class C(BaseStep): ...
+class SC(BaseStep): ...
 
 
-class D(BaseStep):
+class SD(BaseStep):
     @classmethod
     def apply_requests_inputs(cls) -> set[KeyConfig]:
         return {KeyConfig(name="from_initial_context_1"), KeyConfig(name="a_produced_apply")}
@@ -90,6 +90,10 @@ class D(BaseStep):
         return {KeyConfig(name="d_produced_revert")}
 
 
+def _get_name(base_step: type[BaseStep]) -> str:
+    return f"{__name__}.{base_step.__name__}"
+
+
 @pytest.mark.parametrize(
     "workflow, expected",
     [
@@ -102,35 +106,35 @@ class D(BaseStep):
             WorkflowDefinition(
                 initial_context=set(),
                 steps=[
-                    (A, []),
+                    (SA, []),
                 ],
             ),
-            ({f"{__name__}.A"},),
+            ({_get_name(SA)},),
             id="single-node-workflow",
         ),
         pytest.param(
             WorkflowDefinition(
                 initial_context=set(),
                 steps=[
-                    (A, []),
-                    (B, []),
-                    (C, []),
+                    (SA, []),
+                    (SB, []),
+                    (SC, []),
                 ],
             ),
-            ({f"{__name__}.A", f"{__name__}.B", f"{__name__}.C"},),
+            ({_get_name(SA), _get_name(SB), _get_name(SC)},),
             id="no-requirements-workflow",
         ),
         pytest.param(
             WorkflowDefinition(
                 initial_context={KeyConfig(name="from_initial_context_1")},
                 steps=[
-                    (A, []),
-                    (B, [A]),
-                    (C, [A]),
-                    (D, [B, C, A]),
+                    (SA, []),
+                    (SB, [SA]),
+                    (SC, [SA]),
+                    (SD, [SB, SC, SA]),
                 ],
             ),
-            ({f"{__name__}.A"}, {f"{__name__}.B", f"{__name__}.C"}, {f"{__name__}.D"}),
+            ({_get_name(SA)}, {_get_name(SB), _get_name(SC)}, {_get_name(SD)}),
             id="multi-node-workflow-with-requirements",
         ),
     ],
@@ -152,9 +156,9 @@ def test__get_step_sequence_raises_on_cycle():
     workflow_with_cycle: WorkflowDefinition = WorkflowDefinition(
         initial_context=set(),
         steps=[
-            (A, [C]),
-            (B, [A]),
-            (C, [B]),
+            (SA, [SC]),
+            (SB, [SA]),
+            (SC, [SB]),
         ],
     )
     with pytest.raises(ValueError, match="not a DAG"):
@@ -165,18 +169,18 @@ async def test_dag_manager_registers_unique_steps_only(dag_manager: WorkflowMana
     workflow_1: WorkflowDefinition = WorkflowDefinition(
         initial_context=set(),
         steps=[
-            (A, []),
-            (B, [A]),
+            (SA, []),
+            (SB, [SA]),
         ],
     )
     workflow_2: WorkflowDefinition = WorkflowDefinition(
         initial_context=set(),
         steps=[
-            (A, [C]),
+            (SA, [SC]),
         ],
     )
     for k, workflow in enumerate([workflow_1, workflow_2]):
         dag_manager.register_workflow(f"{workflow_name}_{k}", workflow)
 
-    with pytest.raises(ValueError, match=f"'{A.get_unique_reference()}' already registered"):
+    with pytest.raises(ValueError, match=f"'{SA.get_unique_reference()}' already registered"):
         await dag_manager.setup()
