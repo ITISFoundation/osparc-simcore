@@ -139,7 +139,7 @@ class SD(BaseStep):
         ),
     ],
 )
-async def test__workflow_registration_ok(
+async def test__workflow_setup_ok(
     dag_manager: WorkflowManager, workflow_name: WorkflowName, workflow: WorkflowDefinition, expected: StepSequence
 ):
     dag_manager.register_workflow(workflow_name, workflow)
@@ -150,6 +150,91 @@ async def test__workflow_registration_ok(
         for base_step in _get_base_steps(workflow):
             retrieved = dag_manager.get_base_step(base_step.get_unique_reference())
             assert retrieved == base_step
+
+
+class FE(BaseStep):
+    @classmethod
+    def apply_provides_outputs(cls) -> set[KeyConfig]:
+        return {KeyConfig(name="common_apply")}
+
+
+class FF(FE): ...
+
+
+class FG(BaseStep):
+    @classmethod
+    def revert_provides_outputs(cls) -> set[KeyConfig]:
+        return {KeyConfig(name="common_revert")}
+
+
+class FH(FG): ...
+
+
+@pytest.mark.parametrize(
+    "workflow, expected_error_message",
+    [
+        pytest.param(
+            WorkflowDefinition(
+                initial_context=set(),
+                steps=[
+                    (FE, []),
+                    (FF, []),
+                ],
+            ),
+            "'common_apply' already added by a step in APPLY",
+            id="parallel-steps-write-same-key",
+        ),
+        pytest.param(
+            WorkflowDefinition(
+                initial_context=set(),
+                steps=[
+                    (FG, []),
+                    (FH, []),
+                ],
+            ),
+            "'common_revert' already added by a step in REVERT",
+            id="parallel-steps-write-same-key",
+        ),
+        pytest.param(
+            WorkflowDefinition(
+                initial_context={KeyConfig(name="from_initial_context_1", optional=True)},
+                steps=[
+                    (SA, []),
+                ],
+            ),
+            "Initial context cannot have optional keys",
+            id="optional-in-initial-context",
+        ),
+        pytest.param(
+            WorkflowDefinition(
+                initial_context=set(),
+                steps=[
+                    (SD, []),
+                ],
+            ),
+            "'from_initial_context_1' not present in sequence_context",
+            id="missing-apply-inputs-from-initial-context",
+        ),
+        # pytest.param(
+        #     WorkflowDefinition(
+        #         initial_context={KeyConfig(name="from_initial_context_1")},
+        #         steps=[
+        #             (SD, []),
+        #         ],
+        #     ),
+        #     "'from_initial_context_1' not present in sequence_context",
+        #     id="missing-apply-inputs-from-initial-context",
+        # ),
+    ],
+)
+async def test__workflow_setup_fails(
+    dag_manager: WorkflowManager, workflow_name: WorkflowName, workflow: WorkflowDefinition, expected_error_message: str
+):
+    dag_manager.register_workflow(workflow_name, workflow)
+
+    with pytest.raises(ValueError, match=expected_error_message):
+        async with _manager_lifespan(dag_manager):
+            ...
 
 
 def test__get_step_sequence_raises_on_cycle():
