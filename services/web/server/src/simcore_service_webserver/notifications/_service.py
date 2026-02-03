@@ -1,6 +1,5 @@
 from aiohttp import web
 from celery_library.async_jobs import submit_job
-from common_library.users_enums import UserStatus
 from models_library.api_schemas_async_jobs.async_jobs import AsyncJobGet
 from models_library.groups import GroupID
 from models_library.notifications import ChannelType
@@ -25,7 +24,7 @@ def _get_user_display_name(user: dict) -> str:
     return f"{first_name} {last_name}".strip()
 
 
-async def _collect_active_recipients(app: web.Application, recipient_groups: list[GroupID]) -> set[EmailAddress]:
+async def _collect_active_recipients(app: web.Application, recipient_groups: list[GroupID]) -> list[EmailAddress]:
     from ..users import users_service  # noqa: PLC0415
 
     # Collect all unique user IDs from all groups
@@ -34,18 +33,18 @@ async def _collect_active_recipients(app: web.Application, recipient_groups: lis
         user_ids = await users_service.get_users_in_group(app, gid=group_id)
         all_user_ids.update(user_ids)
 
-    # Fetch users and filter active ones
-    recipients: set[EmailAddress] = set()
-    for user_id in all_user_ids:
-        user = await users_service.get_user(app, user_id=user_id)
-        if user["status"] == UserStatus.ACTIVE:
-            recipients.add(
-                EmailAddress(
-                    display_name=_get_user_display_name(user),
-                    addr_spec=user["email"],
-                )
-            )
-    return recipients
+    active_users = await users_service.get_active_users_email_data(app, user_ids=list(all_user_ids))
+
+    # Deduplicate by email address while preserving order
+    recipients_dict: dict[str, EmailAddress] = {}
+    for user in active_users:
+        email_addr = EmailAddress(
+            display_name=_get_user_display_name(user),
+            addr_spec=user["email"],
+        )
+        recipients_dict[user["email"]] = email_addr
+
+    return list(recipients_dict.values())
 
 
 async def _create_email_message(
@@ -68,12 +67,11 @@ async def _create_email_message(
         raise NotificationsNoActiveRecipientsError
 
     email_content = EmailContent(**content.model_dump())
-    to_list = list(to)
 
-    if len(to_list) == 1:
-        return EmailNotificationMessage(from_=from_, to=to_list, content=email_content)
+    if len(to) == 1:
+        return EmailNotificationMessage(from_=from_, to=to, content=email_content)
 
-    return EmailNotificationMessage(from_=from_, to=[], bcc=to_list, content=email_content)
+    return EmailNotificationMessage(from_=from_, to=[], bcc=to, content=email_content)
 
 
 async def send_message(
