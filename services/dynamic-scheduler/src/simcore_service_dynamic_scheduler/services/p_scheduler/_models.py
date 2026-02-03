@@ -37,15 +37,10 @@ type StepSequence = tuple[set[DagNodeUniqueReference], ...]
 
 
 class SchedulerServiceStatus(StrAutoEnum):
-    IDLE = auto()
-    RUNNING = auto()
-    FAILED = auto()
-
-
-@dataclass
-class DagStepSequences:
-    apply: StepSequence
-    revert: StepSequence
+    IS_ABSENT = auto()  # not running
+    TRANSITIONING = auto()  # either starting or stopping
+    IS_PRESENT = auto()  # running without issues
+    IN_ERROR = auto()  # in error state
 
 
 type WorkerId = str
@@ -53,7 +48,7 @@ type StepId = int
 type RunId = int
 
 
-class ServiceRequested(StrAutoEnum):
+class UserDesiredState(StrAutoEnum):
     PRESENT = auto()
     ABSENT = auto()
 
@@ -75,7 +70,7 @@ class UserRequest:
     product_name: ProductName
 
     requested_at: datetime
-    service_requested: ServiceRequested
+    user_desired_state: UserDesiredState
     payload: DynamicServiceStart | DynamicServiceStop
 
 
