@@ -1,9 +1,9 @@
-from copy import deepcopy
+import itertools
 
 import networkx as nx
 
-from ._abc import BaseStep
-from ._models import DagNodeUniqueReference, DagStepSequences, KeyConfig, StepSequence, WorkflowDefinition, WorkflowName
+from ._abc import BaseStep, InDataKeys
+from ._models import DagNodeUniqueReference, KeyConfig, StepSequence, WorkflowDefinition, WorkflowName
 
 
 def _get_step_sequence(definition: WorkflowDefinition) -> StepSequence:
@@ -50,61 +50,57 @@ def _check_no_parallel_steps_write_same_key(
                 current_outputs.add(key_config.name)
 
 
+def _check_requests_inputs_present(
+    in_data_keys: InDataKeys, step: DagNodeUniqueReference, sequence_context: set[str], *, phase: str
+) -> None:
+    for key_config in in_data_keys:
+        if key_config.name not in sequence_context and key_config.optional is False:
+            msg = f"{phase} {step=} requires input key '{key_config.name}' not present in {sequence_context=}"
+            raise ValueError(msg)
+
+
 def _validate_step_sequences(
-    dag_step_sequences: DagStepSequences,
+    step_sequence: StepSequence,
     mapping: dict[DagNodeUniqueReference, type[BaseStep]],
     initial_context: set[KeyConfig],
 ) -> None:
-    _check_no_parallel_steps_write_same_key(dag_step_sequences.apply, mapping, phase="apply")
-    _check_no_parallel_steps_write_same_key(dag_step_sequences.revert, mapping, phase="revert")
+    _check_no_parallel_steps_write_same_key(step_sequence, mapping, phase="apply")
+    _check_no_parallel_steps_write_same_key(step_sequence, mapping, phase="revert")
 
-    detected_input_keys: set[str] = {key_config.name for key_config in initial_context}
-    sequence_minimum_keys: dict[int, set[str]] = {}
+    sequence_context: set[str] = set()
+    for key_config in initial_context:
+        if key_config.optional is True:
+            msg = f"Initial context cannot have optional keys: {key_config=}"
+            raise ValueError(msg)
+        sequence_context.add(key_config.name)
 
-    # check that all requered inputs are present for every step in apply
-    for k, step_sequence in enumerate(dag_step_sequences.apply):
-        # the minuimum keys can be the ones before the step provided outputs
-        sequence_minimum_keys[k] = deepcopy(detected_input_keys)
-
-        for step in step_sequence:
+    # check apply key sequence
+    for sequence in step_sequence:
+        sequence_output_keys: set[str] = set()
+        for step in sequence:
             step_class = mapping[step]
-            step_inputs = step_class.apply_requests_inputs()
-            for key_config in step_inputs:
-                if key_config.name not in detected_input_keys and not key_config.optional:
-                    msg = (
-                        f"'{step=}' requires input key '{key_config.name}' that is not provided by any previous "
-                        f"step or the initial context: {detected_input_keys=}"
-                    )
-                    raise ValueError(msg)
 
-                detected_input_keys.add(key_config.name)
+            _check_requests_inputs_present(step_class.apply_requests_inputs(), step, sequence_context, phase="APPLY")
+            _check_requests_inputs_present(step_class.revert_requests_inputs(), step, sequence_context, phase="REVERT")
 
-    # check that all requered inputs are present for every step in revert
-    # worst case scenario is considered here, these are the keys that do not exist beofe the apply counterpart ran
-    for k, step_sequence in enumerate(dag_step_sequences.revert):
-        minimum_keys = sequence_minimum_keys[k]
-        for step in step_sequence:
-            step_class = mapping[step]
-            step_inputs = step_class.revert_requests_inputs()
-            for key_config in step_inputs:
-                if key_config.name not in minimum_keys and not key_config.optional:
-                    msg = (
-                        f"'{step=}' requires input key '{key_config.name}' that is not provided by any previous "
-                        f"step or in the: {minimum_keys=}"
-                    )
-                    raise ValueError(msg)
+            # add APPLY and REVERT outputs
+            for key_config in itertools.chain(
+                step_class.apply_provides_outputs(), step_class.revert_provides_outputs()
+            ):
+                sequence_output_keys.add(key_config.name)
+        sequence_context.update(sequence_output_keys)
 
 
 class WorkflowManager:
     def __init__(self) -> None:
         self._workflows: dict[WorkflowName, WorkflowDefinition] = {}
-        self._dag_step_sequences: dict[WorkflowName, DagStepSequences] = {}
+        self._dag_step_sequences: dict[WorkflowName, StepSequence] = {}
         self._mapping_reference_to_base_step: dict[DagNodeUniqueReference, type[BaseStep]] = {}
 
     def register_workflow(self, name: WorkflowName, definition: WorkflowDefinition) -> None:
         self._workflows[name] = definition
 
-    def get_workflow_step_sequences(self, name: WorkflowName) -> DagStepSequences:
+    def get_workflow_step_sequences(self, name: WorkflowName) -> StepSequence:
         return self._dag_step_sequences[name]
 
     def get_base_step(self, dag_node_name: DagNodeUniqueReference) -> type[BaseStep]:
@@ -115,18 +111,17 @@ class WorkflowManager:
         for name, definition in self._workflows.items():
             mapping = _get_step_references_to_types(definition)
             step_sequence = _get_step_sequence(definition)
-            dag_step_sequences = DagStepSequences(apply=step_sequence, revert=tuple(reversed(step_sequence)))
 
             for key in mapping:
                 if key in self._mapping_reference_to_base_step:
                     msg = (
-                        f"'{key}' already registered in {self._mapping_reference_to_base_step}. "
+                        f"{key=} already registered in {self._mapping_reference_to_base_step}. "
                         f"Ensure name of the {BaseStep.__class__.__name__} is unique."
                     )
                     raise ValueError(msg)
-            _validate_step_sequences(dag_step_sequences, mapping, definition.initial_context)
+            _validate_step_sequences(step_sequence, mapping, definition.initial_context)
 
-            self._dag_step_sequences[name] = dag_step_sequences
+            self._dag_step_sequences[name] = step_sequence
             self._mapping_reference_to_base_step.update(mapping)
 
     async def teardown(self) -> None:
