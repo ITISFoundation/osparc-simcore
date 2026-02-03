@@ -92,8 +92,8 @@ def _validate_step_sequences(
         sequence_context.update(sequence_output_keys)
 
 
-class WorkflowManager(SingletonInAppStateMixin):
-    app_state_name: str = "p_scheduler_workflow_manager"
+class WorkflowRegistry(SingletonInAppStateMixin):
+    app_state_name: str = "p_scheduler_workflow_registry"
 
     def __init__(self) -> None:
         self._workflows: dict[WorkflowName, WorkflowDefinition] = {}

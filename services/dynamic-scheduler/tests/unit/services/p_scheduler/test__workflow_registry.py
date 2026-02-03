@@ -13,12 +13,15 @@ from simcore_service_dynamic_scheduler.services.p_scheduler._models import (
     WorkflowDefinition,
     WorkflowName,
 )
-from simcore_service_dynamic_scheduler.services.p_scheduler._workflow import WorkflowManager, _get_step_sequence
+from simcore_service_dynamic_scheduler.services.p_scheduler._workflow_registry import (
+    WorkflowRegistry,
+    _get_step_sequence,
+)
 
 
 @pytest.fixture
-def dag_manager() -> WorkflowManager:
-    return WorkflowManager()
+def workflow_registry() -> WorkflowRegistry:
+    return WorkflowRegistry()
 
 
 @pytest.fixture
@@ -38,12 +41,12 @@ def _get_base_steps(definition: WorkflowDefinition) -> set[type[BaseStep]]:
 
 
 @asynccontextmanager
-async def _manager_lifespan(manager: WorkflowManager) -> AsyncIterator[None]:
-    await manager.setup()
+async def _registry_lifespan(registry: WorkflowRegistry) -> AsyncIterator[None]:
+    await registry.setup()
     try:
         yield
     finally:
-        await manager.teardown()
+        await registry.teardown()
 
 
 def _get_name(base_step: type[BaseStep]) -> str:
@@ -138,15 +141,18 @@ class SD(BaseStep):
     ],
 )
 async def test__workflow_setup_ok(
-    dag_manager: WorkflowManager, workflow_name: WorkflowName, workflow: WorkflowDefinition, expected: StepSequence
+    workflow_registry: WorkflowRegistry,
+    workflow_name: WorkflowName,
+    workflow: WorkflowDefinition,
+    expected: StepSequence,
 ):
-    dag_manager.register_workflow(workflow_name, workflow)
+    workflow_registry.register_workflow(workflow_name, workflow)
 
-    async with _manager_lifespan(dag_manager):
-        assert dag_manager.get_workflow_step_sequences(workflow_name) == expected
+    async with _registry_lifespan(workflow_registry):
+        assert workflow_registry.get_workflow_step_sequences(workflow_name) == expected
 
         for base_step in _get_base_steps(workflow):
-            retrieved = dag_manager.get_base_step(base_step.get_unique_reference())
+            retrieved = workflow_registry.get_base_step(base_step.get_unique_reference())
             assert retrieved == base_step
 
 
@@ -238,12 +244,15 @@ class FJ(BaseStep):
     ],
 )
 async def test__workflow_setup_fails(
-    dag_manager: WorkflowManager, workflow_name: WorkflowName, workflow: WorkflowDefinition, expected_error_message: str
+    workflow_registry: WorkflowRegistry,
+    workflow_name: WorkflowName,
+    workflow: WorkflowDefinition,
+    expected_error_message: str,
 ):
-    dag_manager.register_workflow(workflow_name, workflow)
+    workflow_registry.register_workflow(workflow_name, workflow)
 
     with pytest.raises(ValueError, match=expected_error_message):
-        async with _manager_lifespan(dag_manager):
+        async with _registry_lifespan(workflow_registry):
             ...
 
 
@@ -260,7 +269,9 @@ def test__get_step_sequence_raises_on_cycle():
         _get_step_sequence(workflow_with_cycle)
 
 
-async def test_dag_manager_registers_unique_steps_only(dag_manager: WorkflowManager, workflow_name: WorkflowName):
+async def test_workflow_registry_registers_unique_steps_only(
+    workflow_registry: WorkflowRegistry, workflow_name: WorkflowName
+):
     workflow_1: WorkflowDefinition = WorkflowDefinition(
         initial_context=set(),
         steps=[
@@ -275,7 +286,7 @@ async def test_dag_manager_registers_unique_steps_only(dag_manager: WorkflowMana
         ],
     )
     for k, workflow in enumerate([workflow_1, workflow_2]):
-        dag_manager.register_workflow(f"{workflow_name}_{k}", workflow)
+        workflow_registry.register_workflow(f"{workflow_name}_{k}", workflow)
 
     with pytest.raises(ValueError, match=f"'{SA.get_unique_reference()}' already registered"):
-        await dag_manager.setup()
+        await workflow_registry.setup()
