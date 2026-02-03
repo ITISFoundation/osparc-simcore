@@ -34,7 +34,7 @@ qx.Class.define("osparc.editor.EmailEditor", {
       .then(() => {
         this.getChildControl("editor-page");
         this.getChildControl("preview-page");
-        this.getChildControl("text-editor");
+        this.getChildControl("email-editor");
         this.getChildControl("preview-email");
       });
 
@@ -71,7 +71,7 @@ qx.Class.define("osparc.editor.EmailEditor", {
           control = new qx.ui.tabview.Page(this.tr("Editor")).set({
             layout: new qx.ui.layout.VBox()
           });
-          control.setUserData("id", "text-editor");
+          control.setUserData("id", "email-editor");
           // Style the tab button for better active state visibility
           control.getButton().set({
             padding: [4, 8],
@@ -103,23 +103,19 @@ qx.Class.define("osparc.editor.EmailEditor", {
           });
           this.add(control);
           break;
-        case "text-editor": {
+        case "email-editor": {
           const editorId = "email-html-editor-" + Date.now();
           const htmlEditorWrapper = osparc.wrapper.HtmlEditor.getInstance();
-          const quillContainer = htmlEditorWrapper.createEditor(editorId, this.__initialContent, {
+          control = htmlEditorWrapper.createEditor(editorId, this.__initialContent, {
             placeholder: 'Write your email...',
             modules: {
               toolbar: osparc.wrapper.HtmlEditor.getRichToolbarConfig()
             }
           });
 
-          // Wrap in scroll container
-          control = new qx.ui.container.Scroll();
-          control.add(quillContainer);
-
           // Initialize Quill after the DOM element is ready
-          quillContainer.addListenerOnce("appear", () => {
-            this.__quillInstance = htmlEditorWrapper.initializeEditor(editorId, quillContainer.getUserData("quillOptions"));
+          control.addListenerOnce("appear", () => {
+            this.__quillInstance = htmlEditorWrapper.initializeEditor(editorId, control.getUserData("quillOptions"));
             // Set initial content if already loaded
             if (this.__initialContent && this.__quillInstance) {
               htmlEditorWrapper.setHTML(this.__quillInstance, this.__initialContent);
