@@ -44,6 +44,10 @@ async def _manager_lifespan(manager: WorkflowManager) -> AsyncIterator[None]:
     await manager.teardown()
 
 
+def _get_name(base_step: type[BaseStep]) -> str:
+    return f"{__name__}.{base_step.__name__}"
+
+
 class SA(BaseStep):
     @classmethod
     def apply_requests_inputs(cls) -> set[KeyConfig]:
@@ -88,10 +92,6 @@ class SD(BaseStep):
     @classmethod
     def revert_provides_outputs(cls) -> set[KeyConfig]:
         return {KeyConfig(name="d_produced_revert")}
-
-
-def _get_name(base_step: type[BaseStep]) -> str:
-    return f"{__name__}.{base_step.__name__}"
 
 
 @pytest.mark.parametrize(
@@ -139,7 +139,7 @@ def _get_name(base_step: type[BaseStep]) -> str:
         ),
     ],
 )
-async def test__get_step_sequence(
+async def test__workflow_registration_ok(
     dag_manager: WorkflowManager, workflow_name: WorkflowName, workflow: WorkflowDefinition, expected: StepSequence
 ):
     dag_manager.register_workflow(workflow_name, workflow)
@@ -176,7 +176,7 @@ async def test_dag_manager_registers_unique_steps_only(dag_manager: WorkflowMana
     workflow_2: WorkflowDefinition = WorkflowDefinition(
         initial_context=set(),
         steps=[
-            (SA, [SC]),
+            (SA, []),  # same as in workflow_1
         ],
     )
     for k, workflow in enumerate([workflow_1, workflow_2]):
