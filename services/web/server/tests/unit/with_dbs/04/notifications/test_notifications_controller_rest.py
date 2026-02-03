@@ -5,11 +5,14 @@
 # pylint: disable=unused-variable
 
 
+from collections.abc import Callable
+from contextlib import AbstractAsyncContextManager
 from http import HTTPStatus
 from typing import Any
 
 import pytest
 from aiohttp.test_utils import TestClient
+from common_library.users_enums import UserStatus
 from faker import Faker
 from models_library.api_schemas_long_running_tasks.tasks import TaskGet
 from models_library.api_schemas_webserver.notifications import (
@@ -96,20 +99,54 @@ async def test_send_message_access_control(
     expected_status: HTTPStatus,
     mocked_notifications_rpc_client: MockerFixture,
     fake_email_content: dict[str, Any],
+    create_test_users: Callable[[int, list | None], AbstractAsyncContextManager[list[UserInfoDict]]],
 ):
     """Test access control for send_message endpoint"""
     assert client.app
     url = client.app.router["send_message"].url_for()
 
-    # Prepare request body
-    body = {
-        "channel": "email",
-        "recipients": [42],
-        "content": fake_email_content,
-    }
+    async with create_test_users(1, None) as users:
+        # Prepare request body
+        body = {
+            "channel": "email",
+            "recipients": [users[0]["primary_gid"]],
+            "content": fake_email_content,
+        }
 
-    response = await client.post(url.path, json=body)
-    await assert_status(response, expected_status)
+        response = await client.post(url.path, json=body)
+        await assert_status(response, expected_status)
+
+
+@pytest.mark.parametrize(
+    "user_role,expected_status",
+    [
+        (UserRole.PRODUCT_OWNER, status.HTTP_400_BAD_REQUEST),
+        (UserRole.ADMIN, status.HTTP_400_BAD_REQUEST),
+    ],
+)
+async def test_send_message_no_active_recipients(
+    client: TestClient,
+    logged_user: UserInfoDict,
+    user_role: UserRole,
+    expected_status: HTTPStatus,
+    mocked_notifications_rpc_client: MockerFixture,
+    fake_email_content: dict[str, Any],
+    create_test_users: Callable[[int, list | None], AbstractAsyncContextManager[list[UserInfoDict]]],
+):
+    """Test that send_message returns 400 when no active recipients are provided"""
+    assert client.app
+    url = client.app.router["send_message"].url_for()
+
+    async with create_test_users(3, [UserStatus.ACTIVE, UserStatus.BANNED, UserStatus.EXPIRED]) as (_, user2, user3):
+        # Prepare request body
+        body = {
+            "channel": "email",
+            "recipients": [user2["primary_gid"], user3["primary_gid"]],
+            "content": fake_email_content,
+        }
+
+        response = await client.post(url.path, json=body)
+        await assert_status(response, expected_status)
 
 
 @pytest.mark.parametrize("user_role", [UserRole.PRODUCT_OWNER, UserRole.ADMIN])
@@ -118,77 +155,74 @@ async def test_send_message_returns_task(
     logged_user: UserInfoDict,
     mocked_notifications_rpc_client: MockerFixture,
     fake_email_content: dict[str, Any],
+    create_test_users: Callable[[int, list | None], AbstractAsyncContextManager[list[UserInfoDict]]],
 ):
     """Test that send_message returns a task resource"""
     assert client.app
     url = client.app.router["send_message"].url_for()
 
-    # Prepare request body
-    body = {
-        "channel": "email",
-        "recipients": [42],
-        "content": fake_email_content,
-    }
+    async with create_test_users(1, None) as users:
+        # Prepare request body
+        body = {
+            "channel": "email",
+            "recipients": [users[0]["primary_gid"]],
+            "content": fake_email_content,
+        }
 
-    response = await client.post(url.path, json=body)
-    data, error = await assert_status(response, status.HTTP_202_ACCEPTED)
-    assert not error
+        response = await client.post(url.path, json=body)
+        data, error = await assert_status(response, status.HTTP_202_ACCEPTED)
+        assert not error
 
-    # Validate response structure
-    task = TaskGet.model_validate(data)
+        # Validate response structure
+        task = TaskGet.model_validate(data)
 
-    # Validate that hrefs are properly formed
-    assert f"{task.task_id}" in task.status_href
-    assert f"{task.task_id}" in task.abort_href
+        # Validate that hrefs are properly formed
+        assert f"{task.task_id}" in task.status_href
+        assert f"{task.task_id}" in task.abort_href
 
-    assert task.result_href is not None
-    assert f"{task.task_id}" in task.result_href
+        assert task.result_href is not None
+        assert f"{task.task_id}" in task.result_href
 
 
 @pytest.mark.parametrize("user_role", [UserRole.PRODUCT_OWNER, UserRole.ADMIN])
 @pytest.mark.parametrize(
-    "channel,recipients,expected_status",
+    "recipients_count,expected_status",
     [
-        # Valid email notification
-        (
-            "email",
-            [42],
-            status.HTTP_202_ACCEPTED,
-        ),
+        # Single recipient
+        (1, status.HTTP_202_ACCEPTED),
         # Multiple recipients
-        (
-            "email",
-            [42, 314],
-            status.HTTP_202_ACCEPTED,
-        ),
+        (2, status.HTTP_202_ACCEPTED),
     ],
 )
 async def test_send_message_with_different_inputs(
     client: TestClient,
     logged_user: UserInfoDict,
-    channel: str,
-    recipients: list[int],
+    recipients_count: int,
     expected_status: HTTPStatus,
     mocked_notifications_rpc_client: MockerFixture,
     fake_email_content: dict[str, Any],
+    create_test_users: Callable[[int, list | None], AbstractAsyncContextManager[list[UserInfoDict]]],
 ):
     """Test send_message with various valid inputs"""
     assert client.app
     url = client.app.router["send_message"].url_for()
 
-    body = {
-        "channel": channel,
-        "recipients": recipients,
-        "content": fake_email_content,
-    }
+    async with create_test_users(recipients_count, None) as users:
+        recipients = [user["primary_gid"] for user in users]
 
-    response = await client.post(url.path, json=body)
-    data, error = await assert_status(response, expected_status)
+        body = {
+            "channel": "email",
+            "recipients": recipients,
+            "content": fake_email_content,
+        }
 
-    if expected_status == status.HTTP_202_ACCEPTED:
-        assert not error
-        task = TaskGet.model_validate(data)
-        assert task.task_id
+        response = await client.post(url.path, json=body)
+        data, error = await assert_status(response, expected_status)
+
+        if expected_status == status.HTTP_202_ACCEPTED:
+            assert not error
+            task = TaskGet.model_validate(data)
+            assert task.task_id
 
 
 @pytest.mark.parametrize(

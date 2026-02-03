@@ -84,6 +84,11 @@ async def get_users_in_group(app: web.Application, *, gid: GroupID) -> set[UserI
     return await _users_repository.get_users_ids_in_group(get_asyncpg_engine(app), group_id=gid)
 
 
+async def get_active_users_email_data(app: web.Application, *, user_ids: list[UserID]) -> list[dict[str, Any]]:
+    rows = await _users_repository.get_active_users_email_data_by_ids(get_asyncpg_engine(app), user_ids=user_ids)
+    return [row._asdict() for row in rows]
+
+
 get_guest_user_ids_and_names = _users_repository.get_guest_user_ids_and_names
 
 
