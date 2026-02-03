@@ -15,3 +15,7 @@ class NotificationsTemplateContextValidationError(BaseNotificationsError):
 
 class NotificationsUnsupportedChannelError(BaseNotificationsError):
     msg_template = "Channel '{channel}' is not supported."
+
+
+class NotificationsNoActiveRecipientsError(BaseNotificationsError):
+    msg_template = "No active recipients selected."

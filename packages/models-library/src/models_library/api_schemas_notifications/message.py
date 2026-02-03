@@ -28,6 +28,7 @@ class EmailNotificationMessage(BaseModel):
     from_: Annotated[EmailAddress, Field(alias="from")]
     to: list[EmailAddress]
     reply_to: EmailAddress | None = None
+    bcc: list[EmailAddress] | None = None
 
     content: EmailContent
 

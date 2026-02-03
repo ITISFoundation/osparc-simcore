@@ -18,8 +18,14 @@ def compose_email(
     content_text: str,
     content_html: str | None = None,
     reply_to: Address | None = None,
-    bcc: Address | None = None,
+    bcc: list[Address] | None = None,
 ) -> EmailMessage:
+    """Compose an email message.
+
+    Note:
+        to and bcc params are lists and not set because email.headerregistry.Address is not hashable.
+        Ensure unicity at a higher level, if needed.
+    """
     msg = EmailMessage()
     msg["From"] = from_
     msg["To"] = to
