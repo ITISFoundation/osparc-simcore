@@ -120,7 +120,7 @@ qx.Class.define("osparc.po.SendEmail", {
           });
           break;
         }
-        case "email-editor": {
+        case "email-editor-and-preview": {
           control = new osparc.editor.EmailEditor();
           const container = new qx.ui.container.Scroll();
           container.add(control);
@@ -139,7 +139,7 @@ qx.Class.define("osparc.po.SendEmail", {
           break;
         }
         case "send-email-button":
-          control = new qx.ui.form.Button(this.tr("Send")).set({
+          control = new osparc.ui.form.FetchButton(this.tr("Send")).set({
             appearance: "strong-button",
             allowGrowX: false
           });
@@ -156,7 +156,7 @@ qx.Class.define("osparc.po.SendEmail", {
       this.getChildControl("add-recipient-button");
       this.getChildControl("recipients-chips");
       this.getChildControl("subject-field");
-      this.getChildControl("email-editor");
+      this.getChildControl("email-editor-and-preview");
       this.getChildControl("send-email-button");
 
       this.__populateEmailTemplates(selectBox);
@@ -184,7 +184,7 @@ qx.Class.define("osparc.po.SendEmail", {
         .then(template => {
           const subjectField = this.getChildControl("subject-field");
           subjectField.setValue(template["content"]["subject"]);
-          const emailEditor = this.getChildControl("email-editor");
+          const emailEditor = this.getChildControl("email-editor-and-preview");
           emailEditor.setTemplateEmail(template["content"]["bodyHtml"]);
         });
     },
@@ -233,23 +233,66 @@ qx.Class.define("osparc.po.SendEmail", {
     },
 
     __sendEmailClicked: function() {
+      // make sure at least one recipient is selected
       if (!this.__selectedRecipients.length) {
         osparc.FlashMessenger.logAs(this.tr("Please select at least one recipient"), "WARNING");
         return;
       }
 
+      // make sure subject is not empty
+      const subjectField = this.getChildControl("subject-field");
+      if (!subjectField.getValue()) {
+        osparc.FlashMessenger.logAs(this.tr("Please enter a subject"), "WARNING");
+        return;
+      }
+
+      // if the user is not in the preview page, force them there so they can see the final email before sending
+      const previewPage = this.getChildControl("email-editor-and-preview").getChildControl("preview-page");
+      if (!previewPage.isVisible()) {
+        const tabView = previewPage.getLayoutParent().getLayoutParent();
+        tabView.setSelection([previewPage]);
+        osparc.FlashMessenger.logAs(this.tr("Please preview the email before sending"), "WARNING");
+        return;
+      }
+
+      this.__sendEmail();
+    },
+
+    __sendEmail: function() {
+      const sending = () => {
+        this.setEnabled(false);
+        this.getChildControl("send-email-button").setFetching(true);
+      }
+
+      const notSending = () => {
+        this.setEnabled(true);
+        this.getChildControl("send-email-button").setFetching(false);
+      }
+
+      sending();
+
       const subjectField = this.getChildControl("subject-field");
       const subject = subjectField.getValue();
-      const emailEditor = this.getChildControl("email-editor");
+      const emailEditor = this.getChildControl("email-editor-and-preview");
       const bodyHtml = emailEditor.composeWholeHtml();
       const bodyText = emailEditor.getBodyText();
-      osparc.message.Messages.sendMessage(this.__selectedRecipients, subject, bodyHtml, bodyText)
-        .then(() => {
-          osparc.FlashMessenger.logAs(this.tr("Email sent successfully"), "INFO");
+      const sendMessagePromise = osparc.message.Messages.sendMessage(this.__selectedRecipients, subject, bodyHtml, bodyText);
+      const pollTasks = osparc.store.PollTasks.getInstance();
+      pollTasks.createPollingTask(sendMessagePromise)
+        .then(task => {
+          task.addListener("resultReceived", () => {
+            osparc.FlashMessenger.logAs(this.tr("Email sent successfully"), "INFO");
+            notSending();
+          });
+          task.addListener("pollingError", e => {
+            osparc.FlashMessenger.logError(e.getData());
+            notSending();
+          });
         })
         .catch(err => {
           const errorMsg = err.message || this.tr("An error occurred while sending the test email");
           osparc.FlashMessenger.logError(errorMsg);
+          notSending();
         });
     },
   }
