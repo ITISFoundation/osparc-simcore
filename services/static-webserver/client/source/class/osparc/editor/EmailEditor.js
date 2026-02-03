@@ -115,6 +115,22 @@ qx.Class.define("osparc.editor.EmailEditor", {
 
           // Initialize Quill after the DOM element is ready
           control.addListenerOnce("appear", () => {
+            // Set up proper flex layout for Quill's structure (toolbar + container)
+            const element = control.getContentElement().getDomElement();
+            if (element) {
+              // Make the wrapper a flex column container
+              element.style.display = 'flex';
+              element.style.flexDirection = 'column';
+              element.style.overflow = 'hidden';
+
+              // Find the Quill container and make it flex to fill remaining space
+              const qlContainer = element.querySelector('.ql-container');
+              if (qlContainer) {
+                qlContainer.style.flex = '1';
+                qlContainer.style.overflow = 'auto';
+              }
+            }
+
             this.__quillInstance = htmlEditorWrapper.initializeEditor(editorId, control.getUserData("quillOptions"));
             // Set initial content if already loaded
             if (this.__initialContent && this.__quillInstance) {
