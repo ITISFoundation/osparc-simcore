@@ -260,12 +260,12 @@ qx.Class.define("osparc.po.SendEmail", {
 
     __sendEmail: function() {
       const sending = () => {
-        this.setEnabled(true);
+        this.setEnabled(false);
         this.getChildControl("send-email-button").setFetching(true);
       }
 
       const notSending = () => {
-        this.setEnabled(false);
+        this.setEnabled(true);
         this.getChildControl("send-email-button").setFetching(false);
       }
 
