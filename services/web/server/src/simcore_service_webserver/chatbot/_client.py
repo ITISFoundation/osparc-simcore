@@ -76,7 +76,6 @@ class ChatbotRestClient:
                 json={
                     "messages": [msg.model_dump(mode="json", exclude_none=True) for msg in messages],
                     "model": self._chatbot_settings.CHATBOT_MODEL,
-                    "metadata": {"collection_name": self._chatbot_settings.CHATBOT_COLLECTION_NAME},
                 },
                 headers={
                     "Content-Type": MIMETYPE_APPLICATION_JSON,
