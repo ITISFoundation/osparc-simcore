@@ -160,7 +160,10 @@ qx.Class.define("osparc.wrapper.HtmlEditor", {
     createEditor: function(divId, initialContent = "", options = {}) {
       // Create container with initial content if provided
       const htmlContent = initialContent || "<p><br /></p>";
-      const container = new qx.ui.embed.Html("<div id='"+divId+"'>"+htmlContent+"</div>");
+      const container = new qx.ui.embed.Html("<div id='"+divId+"'>"+htmlContent+"</div>").set({
+        focusable: false,  // Don't let qooxdoo intercept focus/keyboard events (whitespace issue)
+        nativeContextMenu: true
+      });
       container.setUserData("quillDivId", divId);
 
       // Default options following Quill documentation
