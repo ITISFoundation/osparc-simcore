@@ -1,6 +1,7 @@
 import itertools
 
 import networkx as nx
+from servicelib.fastapi.app_state import SingletonInAppStateMixin
 
 from ._abc import BaseStep, InDataKeys
 from ._models import DagNodeUniqueReference, KeyConfig, StepSequence, WorkflowDefinition, WorkflowName
@@ -91,7 +92,9 @@ def _validate_step_sequences(
         sequence_context.update(sequence_output_keys)
 
 
-class WorkflowManager:
+class WorkflowManager(SingletonInAppStateMixin):
+    app_state_name: str = "p_scheduler_workflow_manager"
+
     def __init__(self) -> None:
         self._workflows: dict[WorkflowName, WorkflowDefinition] = {}
         self._dag_step_sequences: dict[WorkflowName, StepSequence] = {}
