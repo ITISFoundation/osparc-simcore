@@ -40,8 +40,10 @@ def _get_base_steps(definition: WorkflowDefinition) -> set[type[BaseStep]]:
 @asynccontextmanager
 async def _manager_lifespan(manager: WorkflowManager) -> AsyncIterator[None]:
     await manager.setup()
-    yield
-    await manager.teardown()
+    try:
+        yield
+    finally:
+        await manager.teardown()
 
 
 def _get_name(base_step: type[BaseStep]) -> str:
@@ -170,6 +172,18 @@ class FG(BaseStep):
 class FH(FG): ...
 
 
+class FI(BaseStep):
+    @classmethod
+    def apply_requests_inputs(cls) -> set[KeyConfig]:
+        return {KeyConfig(name="apply_missing_key")}
+
+
+class FJ(BaseStep):
+    @classmethod
+    def revert_requests_inputs(cls) -> set[KeyConfig]:
+        return {KeyConfig(name="revert_missing_key")}
+
+
 @pytest.mark.parametrize(
     "workflow, expected_error_message",
     [
@@ -209,22 +223,22 @@ class FH(FG): ...
             WorkflowDefinition(
                 initial_context=set(),
                 steps=[
-                    (SD, []),
+                    (FI, []),
                 ],
             ),
-            "'from_initial_context_1' not present in sequence_context",
-            id="missing-apply-inputs-from-initial-context",
+            "'apply_missing_key' not present in APPLY sequence_context",
+            id="missing-apply-inputs",
         ),
-        # pytest.param(
-        #     WorkflowDefinition(
-        #         initial_context={KeyConfig(name="from_initial_context_1")},
-        #         steps=[
-        #             (SD, []),
-        #         ],
-        #     ),
-        #     "'from_initial_context_1' not present in sequence_context",
-        #     id="missing-apply-inputs-from-initial-context",
-        # ),
+        pytest.param(
+            WorkflowDefinition(
+                initial_context=set(),
+                steps=[
+                    (FJ, []),
+                ],
+            ),
+            "'revert_missing_key' not present in REVERT sequence_context",
+            id="missing-revert-inputs",
+        ),
     ],
 )
 async def test__workflow_setup_fails(

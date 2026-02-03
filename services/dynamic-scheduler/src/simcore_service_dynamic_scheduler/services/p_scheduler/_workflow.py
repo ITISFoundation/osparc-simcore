@@ -55,7 +55,7 @@ def _check_requests_inputs_present(
 ) -> None:
     for key_config in in_data_keys:
         if key_config.name not in sequence_context and key_config.optional is False:
-            msg = f"{phase} {step=} requires input key '{key_config.name}' not present in {sequence_context=}"
+            msg = f"{step=} requires input key '{key_config.name}' not present in {phase} {sequence_context=}"
             raise ValueError(msg)
 
 
