@@ -259,7 +259,17 @@ qx.Class.define("osparc.po.SendEmail", {
     },
 
     __sendEmail: function() {
-      this.getChildControl("send-email-button").setFetching(true);
+      const sending = () => {
+        this.setEnabled(true);
+        this.getChildControl("send-email-button").setFetching(true);
+      }
+
+      const notSending = () => {
+        this.setEnabled(false);
+        this.getChildControl("send-email-button").setFetching(false);
+      }
+
+      sending();
 
       const subjectField = this.getChildControl("subject-field");
       const subject = subjectField.getValue();
@@ -272,17 +282,17 @@ qx.Class.define("osparc.po.SendEmail", {
         .then(task => {
           task.addListener("resultReceived", () => {
             osparc.FlashMessenger.logAs(this.tr("Email sent successfully"), "INFO");
-            this.getChildControl("send-email-button").setFetching(false);
+            notSending();
           });
           task.addListener("pollingError", e => {
             osparc.FlashMessenger.logError(e.getData());
-            this.getChildControl("send-email-button").setFetching(false);
+            notSending();
           });
         })
         .catch(err => {
           const errorMsg = err.message || this.tr("An error occurred while sending the test email");
           osparc.FlashMessenger.logError(errorMsg);
-          this.getChildControl("send-email-button").setFetching(false);
+          notSending();
         });
     },
   }
