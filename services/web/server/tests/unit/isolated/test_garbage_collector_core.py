@@ -190,6 +190,7 @@ async def test_remove_orphaned_services(
             node_id=fake_running_service.node_uuid,
             simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
             save_state=expected_save_state,
+            product_name="osparc",
         ),
     )
 
@@ -226,6 +227,7 @@ async def test_remove_orphaned_services_inexisting_user_does_not_save_state(
             node_id=fake_running_service.node_uuid,
             simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
             save_state=False,
+            product_name="osparc",
         ),
     )
 

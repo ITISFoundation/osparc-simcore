@@ -5,6 +5,7 @@ from contextlib import contextmanager
 from typing import Any, Protocol
 
 from aiohttp import web
+from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.users import UserID
 from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
@@ -39,7 +40,9 @@ class StopServicesCallback(Protocol):
     async def __call__(self, app: web.Application, project_uuid: ProjectID) -> None: ...
 
 
-async def batch_stop_services_in_project(app: web.Application, *, user_id: UserID, project_uuid: ProjectID) -> None:
+async def batch_stop_services_in_project(
+    app: web.Application, *, user_id: UserID, project_uuid: ProjectID, product_name: ProductName
+) -> None:
     await asyncio.gather(
         director_v2_service.stop_pipeline(app, user_id=user_id, project_id=project_uuid),
         _projects_service.remove_project_dynamic_services(
@@ -47,6 +50,7 @@ async def batch_stop_services_in_project(app: web.Application, *, user_id: UserI
             project_uuid=project_uuid,
             app=app,
             simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
+            product_name=product_name,
             notify_users=False,
         ),
     )
@@ -56,6 +60,7 @@ async def delete_project_as_admin(
     app: web.Application,
     *,
     project_uuid: ProjectID,
+    product_name: ProductName,
 ):
     state: dict[str, Any] = {}
 
@@ -72,7 +77,9 @@ async def delete_project_as_admin(
         # 2. stop
         with _monitor_step(state, name="stop", elapsed=True):
             # NOTE: this callback could take long or raise whatever!
-            await batch_stop_services_in_project(app, user_id=project.prj_owner, project_uuid=project_uuid)
+            await batch_stop_services_in_project(
+                app, user_id=project.prj_owner, project_uuid=project_uuid, product_name=product_name
+            )
 
         # 3. delete
         with _monitor_step(state, name="delete"):

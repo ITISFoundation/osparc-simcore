@@ -136,7 +136,7 @@ async def list_folders(
     product_name: ProductName,
     folder_id: FolderID | None,
     workspace_id: WorkspaceID | None,
-    trashed: bool | None,
+    trashed: bool | None,  # noqa: FBT001
     offset: NonNegativeInt,
     limit: int,
     order_by: OrderBy,
@@ -324,8 +324,10 @@ async def delete_folder_with_all_content(
     # 1. Delete folder content
     # 1.1 Delete all child projects that I am an owner
     # NOTE: The reason for this is to be cautious and not delete projects by accident that
-    # are not owned by the user (even if the user was granted delete permissions). As a consequence, after deleting the folder,
-    # projects that the user does not own will appear in the root. (Maybe this can be changed as we now have a trash system).
+    # are not owned by the user (even if the user was granted delete permissions).
+    #   As a consequence, after deleting the folder,
+    # projects that the user does not own will appear in the root.
+    #   (Maybe this can be changed as we now have a trash system).
     project_id_list: list[ProjectID] = await _folders_repository.get_projects_recursively_only_if_user_is_owner(
         app,
         folder_id=folder_id,
@@ -339,6 +341,7 @@ async def delete_folder_with_all_content(
             app,
             project_uuid=project_id,
             user_id=user_id,
+            product_name=product_name,
         )
 
     # 1.2 Delete all child folders
