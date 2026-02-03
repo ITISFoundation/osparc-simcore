@@ -266,9 +266,12 @@ qx.Class.define("osparc.po.SendEmail", {
       const emailEditor = this.getChildControl("email-editor");
       const bodyHtml = emailEditor.composeWholeHtml();
       const bodyText = emailEditor.getBodyText();
-      osparc.message.Messages.sendMessage(this.__selectedRecipients, subject, bodyHtml, bodyText)
+      const sendMessagePromise = osparc.message.Messages.sendMessage(this.__selectedRecipients, subject, bodyHtml, bodyText);
+      const pollTasks = osparc.store.PollTasks.getInstance();
+      pollTasks.createPollingTask(sendMessagePromise)
         .then(() => {
-          // if it went through the response is a PollTask
+          task.addListener("resultReceived", () => osparc.FlashMessenger.logAs(this.tr("Email sent successfully"), "INFO"));
+          task.addListener("pollingError", e => osparc.FlashMessenger.logError(e.getData()));
         })
         .catch(err => {
           const errorMsg = err.message || this.tr("An error occurred while sending the test email");
