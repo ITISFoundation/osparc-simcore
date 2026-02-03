@@ -28,7 +28,7 @@ from simcore_service_dynamic_scheduler.repository.project_networks import (
     ProjectNetworksRepo,
 )
 from simcore_service_dynamic_scheduler.services.base_repository import (
-    get_repo,
+    get_repository,
 )
 from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -111,7 +111,7 @@ async def project_in_db(
 
 @pytest.fixture()
 def project_networks_repo(app: FastAPI) -> ProjectNetworksRepo:
-    return get_repo(app, ProjectNetworksRepo)
+    return get_repository(app, ProjectNetworksRepo)
 
 
 @pytest.fixture
