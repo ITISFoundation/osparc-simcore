@@ -269,15 +269,19 @@ qx.Class.define("osparc.po.SendEmail", {
       const sendMessagePromise = osparc.message.Messages.sendMessage(this.__selectedRecipients, subject, bodyHtml, bodyText);
       const pollTasks = osparc.store.PollTasks.getInstance();
       pollTasks.createPollingTask(sendMessagePromise)
-        .then(() => {
-          task.addListener("resultReceived", () => osparc.FlashMessenger.logAs(this.tr("Email sent successfully"), "INFO"));
-          task.addListener("pollingError", e => osparc.FlashMessenger.logError(e.getData()));
+        .then(task => {
+          task.addListener("resultReceived", () => {
+            osparc.FlashMessenger.logAs(this.tr("Email sent successfully"), "INFO");
+            this.getChildControl("send-email-button").setFetching(false);
+          });
+          task.addListener("pollingError", e => {
+            osparc.FlashMessenger.logError(e.getData());
+            this.getChildControl("send-email-button").setFetching(false);
+          });
         })
         .catch(err => {
           const errorMsg = err.message || this.tr("An error occurred while sending the test email");
           osparc.FlashMessenger.logError(errorMsg);
-        })
-        .finally(() => {
           this.getChildControl("send-email-button").setFetching(false);
         });
     },
