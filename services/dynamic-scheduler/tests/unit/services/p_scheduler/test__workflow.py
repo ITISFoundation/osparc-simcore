@@ -16,6 +16,34 @@ from simcore_service_dynamic_scheduler.services.p_scheduler._models import (
 from simcore_service_dynamic_scheduler.services.p_scheduler._workflow import WorkflowManager, _get_step_sequence
 
 
+@pytest.fixture
+def dag_manager() -> WorkflowManager:
+    return WorkflowManager()
+
+
+@pytest.fixture
+def workflow_name() -> WorkflowName:
+    return "test-workflow"
+
+
+def _get_base_steps(definition: WorkflowDefinition) -> set[type[BaseStep]]:
+    steps: set[type[BaseStep]] = set()
+    for step_type, requires_step_types in definition.steps:
+        steps.add(step_type)
+
+        for required_step_type in requires_step_types:
+            steps.add(required_step_type)
+
+    return steps
+
+
+@asynccontextmanager
+async def _manager_lifespan(manager: WorkflowManager) -> AsyncIterator[None]:
+    await manager.setup()
+    yield
+    await manager.teardown()
+
+
 class A(BaseStep):
     @classmethod
     def apply_requests_inputs(cls) -> set[KeyConfig]:
@@ -60,34 +88,6 @@ class D(BaseStep):
     @classmethod
     def revert_provides_outputs(cls) -> set[KeyConfig]:
         return {KeyConfig(name="d_produced_revert")}
-
-
-@pytest.fixture
-def dag_manager() -> WorkflowManager:
-    return WorkflowManager()
-
-
-@pytest.fixture
-def workflow_name() -> WorkflowName:
-    return "test-workflow"
-
-
-def _get_base_steps(definition: WorkflowDefinition) -> set[type[BaseStep]]:
-    steps: set[type[BaseStep]] = set()
-    for step_type, requires_step_types in definition.steps:
-        steps.add(step_type)
-
-        for required_step_type in requires_step_types:
-            steps.add(required_step_type)
-
-    return steps
-
-
-@asynccontextmanager
-async def _manager_lifespan(manager: WorkflowManager) -> AsyncIterator[None]:
-    await manager.setup()
-    yield
-    await manager.teardown()
 
 
 @pytest.mark.parametrize(

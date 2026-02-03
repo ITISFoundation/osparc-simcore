@@ -33,12 +33,12 @@ def _get_step_references_to_types(definition: WorkflowDefinition) -> dict[DagNod
 
 
 def _check_no_parallel_steps_write_same_key(
-    step_sequences: StepSequence, mapping: dict[DagNodeUniqueReference, type[BaseStep]], *, phase: str
+    step_sequences: StepSequence, step_references_to_types: dict[DagNodeUniqueReference, type[BaseStep]], *, phase: str
 ) -> None:
     for step_sequence in step_sequences:
         current_outputs: set[str] = set()
         for step in step_sequence:
-            step_class = mapping[step]
+            step_class = step_references_to_types[step]
             outputs = step_class.apply_provides_outputs() if phase == "apply" else step_class.revert_provides_outputs()
             for key_config in outputs:
                 if key_config.name in current_outputs:
@@ -61,11 +61,11 @@ def _check_requests_inputs_present(
 
 def _validate_step_sequences(
     step_sequence: StepSequence,
-    mapping: dict[DagNodeUniqueReference, type[BaseStep]],
+    step_references_to_types: dict[DagNodeUniqueReference, type[BaseStep]],
     initial_context: set[KeyConfig],
 ) -> None:
-    _check_no_parallel_steps_write_same_key(step_sequence, mapping, phase="apply")
-    _check_no_parallel_steps_write_same_key(step_sequence, mapping, phase="revert")
+    _check_no_parallel_steps_write_same_key(step_sequence, step_references_to_types, phase="apply")
+    _check_no_parallel_steps_write_same_key(step_sequence, step_references_to_types, phase="revert")
 
     sequence_context: set[str] = set()
     for key_config in initial_context:
@@ -78,7 +78,7 @@ def _validate_step_sequences(
     for sequence in step_sequence:
         sequence_output_keys: set[str] = set()
         for step in sequence:
-            step_class = mapping[step]
+            step_class = step_references_to_types[step]
 
             _check_requests_inputs_present(step_class.apply_requests_inputs(), step, sequence_context, phase="APPLY")
             _check_requests_inputs_present(step_class.revert_requests_inputs(), step, sequence_context, phase="REVERT")
@@ -95,7 +95,7 @@ class WorkflowManager:
     def __init__(self) -> None:
         self._workflows: dict[WorkflowName, WorkflowDefinition] = {}
         self._dag_step_sequences: dict[WorkflowName, StepSequence] = {}
-        self._mapping_reference_to_base_step: dict[DagNodeUniqueReference, type[BaseStep]] = {}
+        self._mapping_step_references_to_types: dict[DagNodeUniqueReference, type[BaseStep]] = {}
 
     def register_workflow(self, name: WorkflowName, definition: WorkflowDefinition) -> None:
         self._workflows[name] = definition
@@ -104,27 +104,26 @@ class WorkflowManager:
         return self._dag_step_sequences[name]
 
     def get_base_step(self, dag_node_name: DagNodeUniqueReference) -> type[BaseStep]:
-        return self._mapping_reference_to_base_step[dag_node_name]
+        return self._mapping_step_references_to_types[dag_node_name]
 
     async def setup(self) -> None:
-        # it takes a bit to compute the dag, precompute everything
         for name, definition in self._workflows.items():
-            mapping = _get_step_references_to_types(definition)
+            step_references_to_types = _get_step_references_to_types(definition)
             step_sequence = _get_step_sequence(definition)
 
-            for key in mapping:
-                if key in self._mapping_reference_to_base_step:
+            for key in step_references_to_types:
+                if key in self._mapping_step_references_to_types:
                     msg = (
-                        f"{key=} already registered in {self._mapping_reference_to_base_step}. "
+                        f"{key=} already registered in {self._mapping_step_references_to_types}. "
                         f"Ensure name of the {BaseStep.__class__.__name__} is unique."
                     )
                     raise ValueError(msg)
-            _validate_step_sequences(step_sequence, mapping, definition.initial_context)
+            _validate_step_sequences(step_sequence, step_references_to_types, definition.initial_context)
 
             self._dag_step_sequences[name] = step_sequence
-            self._mapping_reference_to_base_step.update(mapping)
+            self._mapping_step_references_to_types.update(step_references_to_types)
 
     async def teardown(self) -> None:
         self._workflows.clear()
         self._dag_step_sequences.clear()
-        self._mapping_reference_to_base_step.clear()
+        self._mapping_step_references_to_types.clear()
