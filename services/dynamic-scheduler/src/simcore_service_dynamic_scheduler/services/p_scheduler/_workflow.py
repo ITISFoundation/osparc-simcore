@@ -39,12 +39,12 @@ def _check_no_parallel_steps_write_same_key(
         current_outputs: set[str] = set()
         for step in step_sequence:
             step_class = step_references_to_types[step]
-            outputs = step_class.apply_provides_outputs() if phase == "apply" else step_class.revert_provides_outputs()
+            outputs = step_class.apply_provides_outputs() if phase == "APPLY" else step_class.revert_provides_outputs()
             for key_config in outputs:
                 if key_config.name in current_outputs:
                     msg = (
-                        f"'{step=}' in parallel execution produces output key '{key_config.name}' that is "
-                        f"already produced by another step in the same {phase} sequence: {step_sequence=}"
+                        f"'{step=}' in parallel execution produces output key '{key_config.name}' "
+                        f"already added by a step in {phase} sequence: {step_sequence=}"
                     )
                     raise ValueError(msg)
                 current_outputs.add(key_config.name)
@@ -64,8 +64,8 @@ def _validate_step_sequences(
     step_references_to_types: dict[DagNodeUniqueReference, type[BaseStep]],
     initial_context: set[KeyConfig],
 ) -> None:
-    _check_no_parallel_steps_write_same_key(step_sequence, step_references_to_types, phase="apply")
-    _check_no_parallel_steps_write_same_key(step_sequence, step_references_to_types, phase="revert")
+    _check_no_parallel_steps_write_same_key(step_sequence, step_references_to_types, phase="APPLY")
+    _check_no_parallel_steps_write_same_key(step_sequence, step_references_to_types, phase="REVERT")
 
     sequence_context: set[str] = set()
     for key_config in initial_context:
