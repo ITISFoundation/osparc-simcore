@@ -85,11 +85,7 @@ class SD(BaseStep):
 
     @classmethod
     def revert_requests_inputs(cls) -> set[KeyConfig]:
-        return {
-            KeyConfig(name="a_produced_revert"),
-            # KeyConfig(name="d_produced_revert"),    # fails
-            # KeyConfig(name="d_produced_apply"),  # fails
-        }
+        return {KeyConfig(name="a_produced_revert")}
 
     @classmethod
     def revert_provides_outputs(cls) -> set[KeyConfig]:
