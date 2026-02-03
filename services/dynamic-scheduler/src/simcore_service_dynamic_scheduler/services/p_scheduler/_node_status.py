@@ -27,29 +27,9 @@ _PREFIX: Final[str] = "pss"
 _STATUS: Final[str] = "s"
 _TRACKING: Final[str] = "tracked-services"
 
-_MAP_AS_IS_ABSENT: Final[set[ServiceState]] = {
-    ServiceState.IDLE,
-    ServiceState.COMPLETE,
-}
-_MAP_AS_TRANSISITON_TO_PRESENT: Final[set[ServiceState]] = {
-    ServiceState.PENDING,
-    ServiceState.PULLING,
-    ServiceState.STARTING,
-}
-_MAP_AS_TRANSISITON_TO_ABSENT: Final[set[ServiceState]] = {
-    ServiceState.STOPPING,
-}
-_MAP_AS_IN_ERROR: Final[set[ServiceState]] = {
-    ServiceState.FAILED,
-}
-
-_MAP_AS_IN_PRESENT: Final[set[ServiceState]] = {
-    ServiceState.RUNNING,
-}
-
 
 async def _get_scheduler_service_status(app: FastAPI, node_id: NodeID) -> SchedulerServiceStatus:
-    """Remaps plafrom service status to something that the scheduler understands"""
+    """Remaps platform service status to something that the scheduler understands"""
     service_status: NodeGet | DynamicServiceGet | NodeGetIdle = await get_service_status(app, node_id=node_id)
 
     if isinstance(service_status, NodeGetIdle):
@@ -59,20 +39,17 @@ async def _get_scheduler_service_status(app: FastAPI, node_id: NodeID) -> Schedu
         service_status.state if isinstance(service_status, DynamicServiceGet) else service_status.service_state
     )
 
-    if state in _MAP_AS_IS_ABSENT:
-        return SchedulerServiceStatus.IS_ABSENT
-
-    if state in _MAP_AS_IN_PRESENT:
-        return SchedulerServiceStatus.IS_PRESENT
-
-    if state in _MAP_AS_TRANSISITON_TO_PRESENT:
-        return SchedulerServiceStatus.TRANSITION_TO_PRESENT
-
-    if state in _MAP_AS_TRANSISITON_TO_ABSENT:
-        return SchedulerServiceStatus.TRANSITION_TO_ABSENT
-
-    if state in _MAP_AS_IN_ERROR:
-        return SchedulerServiceStatus.IN_ERROR
+    match state:
+        case ServiceState.IDLE | ServiceState.COMPLETE:
+            return SchedulerServiceStatus.IS_ABSENT
+        case ServiceState.RUNNING:
+            return SchedulerServiceStatus.IS_PRESENT
+        case ServiceState.PENDING | ServiceState.PULLING | ServiceState.STARTING:
+            return SchedulerServiceStatus.TRANSITION_TO_PRESENT
+        case ServiceState.STOPPING:
+            return SchedulerServiceStatus.TRANSITION_TO_ABSENT
+        case ServiceState.FAILED:
+            return SchedulerServiceStatus.IN_ERROR
 
     msg = f"Unhandled service {state=} for {service_status=}"
     raise NotImplementedError(msg)
