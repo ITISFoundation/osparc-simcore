@@ -31,10 +31,12 @@ _ABSENT_EQUIVALENTS_STATES: Final[set[ServiceState]] = {
     ServiceState.IDLE,
     ServiceState.COMPLETE,
 }
-_TRANSITIONING_EQUIVALENT_STATES: Final[set[ServiceState]] = {
+_TRANSITIONING_TO_PRESENT: Final[set[ServiceState]] = {
     ServiceState.PENDING,
     ServiceState.PULLING,
     ServiceState.STARTING,
+}
+_TRANSITIONING_TO_ABSENT: Final[set[ServiceState]] = {
     ServiceState.STOPPING,
 }
 
@@ -56,8 +58,11 @@ async def _get_scheduler_service_status(app: FastAPI, node_id: NodeID) -> Schedu
     if state == ServiceState.RUNNING:
         return SchedulerServiceStatus.IS_PRESENT
 
-    if state in _TRANSITIONING_EQUIVALENT_STATES:
-        return SchedulerServiceStatus.TRANSITIONING
+    if state in _TRANSITIONING_TO_PRESENT:
+        return SchedulerServiceStatus.TRANSITION_TO_PRESENT
+
+    if state in _TRANSITIONING_TO_ABSENT:
+        return SchedulerServiceStatus.TRANSITION_TO_ABSENT
 
     if state == ServiceState.FAILED:
         return SchedulerServiceStatus.IN_ERROR

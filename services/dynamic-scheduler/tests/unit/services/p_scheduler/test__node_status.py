@@ -1,3 +1,4 @@
+# pylint: disable=protected-access
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 
@@ -80,14 +81,22 @@ def _node(service_state: ServiceState) -> NodeGet:
         pytest.param(_dynamic(ServiceState.COMPLETE), SchedulerServiceStatus.IS_ABSENT, id="dynamic-COMPLETE"),
         pytest.param(_node(ServiceState.COMPLETE), SchedulerServiceStatus.IS_ABSENT, id="node-COMPLETE"),
         # TRANSITIONING
-        pytest.param(_dynamic(ServiceState.PENDING), SchedulerServiceStatus.TRANSITIONING, id="dynamic-PENDING"),
-        pytest.param(_node(ServiceState.PENDING), SchedulerServiceStatus.TRANSITIONING, id="node-PENDING"),
-        pytest.param(_dynamic(ServiceState.PULLING), SchedulerServiceStatus.TRANSITIONING, id="dynamic-PULLING"),
-        pytest.param(_node(ServiceState.PULLING), SchedulerServiceStatus.TRANSITIONING, id="node-PULLING"),
-        pytest.param(_dynamic(ServiceState.STARTING), SchedulerServiceStatus.TRANSITIONING, id="dynamic-STARTING"),
-        pytest.param(_node(ServiceState.STARTING), SchedulerServiceStatus.TRANSITIONING, id="node-STARTING"),
-        pytest.param(_dynamic(ServiceState.STOPPING), SchedulerServiceStatus.TRANSITIONING, id="dynamic-STOPPING"),
-        pytest.param(_node(ServiceState.STOPPING), SchedulerServiceStatus.TRANSITIONING, id="node-STOPPING"),
+        pytest.param(
+            _dynamic(ServiceState.PENDING), SchedulerServiceStatus.TRANSITION_TO_PRESENT, id="dynamic-PENDING"
+        ),
+        pytest.param(_node(ServiceState.PENDING), SchedulerServiceStatus.TRANSITION_TO_PRESENT, id="node-PENDING"),
+        pytest.param(
+            _dynamic(ServiceState.PULLING), SchedulerServiceStatus.TRANSITION_TO_PRESENT, id="dynamic-PULLING"
+        ),
+        pytest.param(_node(ServiceState.PULLING), SchedulerServiceStatus.TRANSITION_TO_PRESENT, id="node-PULLING"),
+        pytest.param(
+            _dynamic(ServiceState.STARTING), SchedulerServiceStatus.TRANSITION_TO_PRESENT, id="dynamic-STARTING"
+        ),
+        pytest.param(_node(ServiceState.STARTING), SchedulerServiceStatus.TRANSITION_TO_PRESENT, id="node-STARTING"),
+        pytest.param(
+            _dynamic(ServiceState.STOPPING), SchedulerServiceStatus.TRANSITION_TO_ABSENT, id="dynamic-STOPPING"
+        ),
+        pytest.param(_node(ServiceState.STOPPING), SchedulerServiceStatus.TRANSITION_TO_ABSENT, id="node-STOPPING"),
     ],
 )
 async def test__get_scheduler_service_status(
@@ -101,7 +110,7 @@ async def test__get_scheduler_service_status(
 
 @pytest.fixture
 def scheduler_status() -> SchedulerServiceStatus:
-    return SchedulerServiceStatus.TRANSITIONING
+    return SchedulerServiceStatus.IS_PRESENT
 
 
 @pytest.fixture
@@ -136,6 +145,10 @@ async def status_manager(app: FastAPI) -> AsyncIterable[StatusManager]:
     await manager.teardown()
 
 
+async def _wait_for_keys_to_expire() -> None:
+    await asyncio.sleep(_TTL_SECONDS * 1.1)
+
+
 async def test__redis_interface(
     mock__get_scheduler_service_status: None,
     status_manager: StatusManager,
@@ -149,8 +162,7 @@ async def test__redis_interface(
 
     await redis_interface.set_status(node_id, scheduler_status, ttl_milliseconds=_TTL_MS)
     assert await redis_interface.get_status(node_id) == scheduler_status
-    # wait for key to expire
-    await asyncio.sleep(_TTL_SECONDS * 1.1)
+    await _wait_for_keys_to_expire()
     assert await redis_interface.get_status(node_id) is None
 
     assert await redis_interface.get_all_tracked() == set()
@@ -182,8 +194,12 @@ async def assert_scheduler_status(
     return _
 
 
-async def _wait_for__worker_update_scheduler_service_status() -> None:
-    await asyncio.sleep(_FAST_UPDATE_STATUSES_INTERVAL.total_seconds() * 2.1)
+@pytest.fixture
+async def run_worker_update_scheduler_service_status(status_manager: StatusManager) -> Callable[[], Awaitable[None]]:
+    async def _() -> None:
+        await status_manager._worker_update_scheduler_service_status()  # noqa: SLF001
+
+    return _
 
 
 async def test_status_manager(
@@ -193,6 +209,7 @@ async def test_status_manager(
     node_id: NodeID,
     caplog: pytest.LogCaptureFixture,
     assert_scheduler_status: Callable[[], Awaitable[None]],
+    run_worker_update_scheduler_service_status: Callable[[], Awaitable[None]],
 ):
     caplog.set_level("DEBUG")
 
@@ -210,17 +227,17 @@ async def test_status_manager(
     await status_manager.set_tracked_services({node_id})
     assert await status_manager.redis_interface.get_all_tracked() == {node_id}
 
-    # wait a bit, it will APPEAR
-    await _wait_for__worker_update_scheduler_service_status()
-
+    # register service
+    await run_worker_update_scheduler_service_status()
     await assert_scheduler_status()
     _assert_no_cache_log(caplog, node_id)
 
     await status_manager.set_tracked_services(set())
     assert await status_manager.redis_interface.get_all_tracked() == set()
 
-    # after a bit it will DISAPPEAR
-    await _wait_for__worker_update_scheduler_service_status()
+    # deregister service
+    await run_worker_update_scheduler_service_status()
+    await _wait_for_keys_to_expire()
     _assert_no_cache_log(caplog, node_id)
 
     await assert_scheduler_status()
