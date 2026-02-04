@@ -79,8 +79,8 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
     },
 
     __addNewPaymentMethod: function() {
-      const walletId = osparc.store.Store.getInstance().getMyWallet().getWalletId();
-      if (!walletId) {
+      const wallet = osparc.store.Store.getInstance().getMyWallet();
+      if (!wallet) {
         const msg = this.tr("You don't have a personal wallet. Please contact your administrator.");
         osparc.FlashMessenger.logAs(msg, "WARNING");
         return;
@@ -88,7 +88,7 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
 
       const params = {
         url: {
-          walletId
+          walletId: wallet.getWalletId(),
         }
       };
       osparc.data.Resources.fetch("paymentMethods", "init", params)
@@ -104,8 +104,8 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
     },
 
     __cancelPaymentMethod: function(paymentMethodId) {
-      const walletId = osparc.store.Store.getInstance().getMyWallet().getWalletId();
-      if (!walletId) {
+      const wallet = osparc.store.Store.getInstance().getMyWallet();
+      if (!wallet) {
         const msg = this.tr("You don't have a personal wallet. Please contact your administrator.");
         osparc.FlashMessenger.logAs(msg, "WARNING");
         return;
@@ -114,7 +114,7 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
       // inform backend
       const params = {
         url: {
-          walletId,
+          walletId: wallet.getWalletId(),
           paymentMethodId
         }
       };
@@ -146,8 +146,8 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
     },
 
     __fetchPaymentMethods: function() {
-      const walletId = osparc.store.Store.getInstance().getMyWallet().getWalletId();
-      if (!walletId) {
+      const wallet = osparc.store.Store.getInstance().getMyWallet();
+      if (!wallet) {
         const msg = this.tr("You don't have a personal wallet. Please contact your administrator.");
         osparc.FlashMessenger.logAs(msg, "WARNING");
         return;
@@ -156,7 +156,7 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
       this.__fetchingMsg.setVisibility("visible");
       const params = {
         url: {
-          walletId
+          walletId: wallet.getWalletId(),
         }
       };
       osparc.data.Resources.fetch("paymentMethods", "get", params)
