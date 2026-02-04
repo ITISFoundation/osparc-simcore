@@ -81,7 +81,7 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
     __addNewPaymentMethod: function() {
       const wallet = osparc.store.Store.getInstance().getMyWallet();
       if (!wallet) {
-        const msg = this.tr("You don't have a personal wallet. Please contact your administrator.");
+        const msg = osparc.store.Store.NO_PERSONAL_WALLET_MSG;
         osparc.FlashMessenger.logAs(msg, "WARNING");
         return;
       }
@@ -106,7 +106,7 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
     __cancelPaymentMethod: function(paymentMethodId) {
       const wallet = osparc.store.Store.getInstance().getMyWallet();
       if (!wallet) {
-        const msg = this.tr("You don't have a personal wallet. Please contact your administrator.");
+        const msg = osparc.store.Store.NO_PERSONAL_WALLET_MSG;
         osparc.FlashMessenger.logAs(msg, "WARNING");
         return;
       }
@@ -148,7 +148,7 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
     __fetchPaymentMethods: function() {
       const wallet = osparc.store.Store.getInstance().getMyWallet();
       if (!wallet) {
-        const msg = this.tr("You don't have a personal wallet. Please contact your administrator.");
+        const msg = osparc.store.Store.NO_PERSONAL_WALLET_MSG;
         osparc.FlashMessenger.logAs(msg, "WARNING");
         return;
       }
