@@ -61,7 +61,12 @@ def replace_email_local(email_str: str, new_local: str, new_display_name: str | 
         raise ValueError(msg) from exc
 
     # Determine display name: use provided value, auto-generate, or empty
-    new_name = new_display_name if new_display_name is not None else new_local.replace("-", " ").title() if name else ""
+    if new_display_name is not None:
+        new_name = new_display_name
+    elif name:
+        new_name = new_local.replace("-", " ").title()
+    else:
+        new_name = ""
 
     new_addr = f"{new_local}@{domain}"
 
