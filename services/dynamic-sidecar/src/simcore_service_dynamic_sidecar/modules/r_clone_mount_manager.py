@@ -114,6 +114,7 @@ class DynamicSidecarRCloneMountDelegate(DelegateInterface):
         client = get_rabbitmq_rpc_client(self.app)
 
         with log_context(_logger, logging.INFO, "requesting service shutdown via dynamic-scheduler"):
+            assert self.settings.DY_SIDECAR_PRODUCT_NAME  # nosec
             await stop_dynamic_service(
                 client,
                 dynamic_service_stop=DynamicServiceStop(
@@ -122,6 +123,7 @@ class DynamicSidecarRCloneMountDelegate(DelegateInterface):
                     node_id=self.settings.DY_SIDECAR_NODE_ID,
                     simcore_user_agent="",
                     save_state=True,
+                    product_name=self.settings.DY_SIDECAR_PRODUCT_NAME,
                 ),
             )
             await post_sidecar_log_message(

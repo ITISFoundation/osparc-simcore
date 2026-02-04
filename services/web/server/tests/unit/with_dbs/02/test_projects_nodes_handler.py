@@ -8,7 +8,7 @@ import re
 from collections.abc import Awaitable, Callable
 from contextlib import suppress
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from http import HTTPStatus
 from pathlib import Path
 from random import choice
@@ -379,7 +379,7 @@ async def test_create_and_delete_many_nodes_in_parallel(
 
         def num_services(
             self,
-            *args,
+            *_args,
             **kwargs,  # noqa: ARG002
         ) -> list[DynamicServiceGet]:
             return [
@@ -414,7 +414,7 @@ async def test_create_and_delete_many_nodes_in_parallel(
     NUM_DY_SERVICES = 150
     responses = await asyncio.gather(*(client.post(f"{url}", json=body) for _ in range(NUM_DY_SERVICES)))
     # all shall have worked
-    data_errors_list = await asyncio.gather(*(assert_status(r, expected.created) for r in responses))
+    _data_errors_list = await asyncio.gather(*(assert_status(r, expected.created) for r in responses))
 
     # but only the allowed number of services should have started
     assert mocked_dynamic_services_interface["dynamic_scheduler.api.run_dynamic_service"].call_count == NUM_DY_SERVICES
@@ -496,7 +496,7 @@ async def test_create_many_nodes_in_parallel_still_is_limited_to_the_defined_max
 
         async def num_services(
             self,
-            *args,
+            *_args,
             **kwargs,  # noqa: ARG002
         ) -> list[dict[str, Any]]:
             return [{"service_uuid": service_uuid} for service_uuid in self.running_services_uuids]
@@ -590,7 +590,7 @@ async def test_creating_deprecated_node_returns_406_not_acceptable(
     mock_catalog_api: dict[str, mock.Mock],
     node_class: str,
 ):
-    mock_catalog_api["get_service"].return_value["deprecated"] = (datetime.utcnow() - timedelta(days=1)).isoformat()
+    mock_catalog_api["get_service"].return_value["deprecated"] = (datetime.now(tz=UTC) - timedelta(days=1)).isoformat()
     assert client.app
     url = client.app.router["create_node"].url_for(project_id=user_project["uuid"])
 
@@ -665,6 +665,7 @@ async def test_delete_node(
                     node_id=NodeID(node_id),
                     simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
                     save_state=False,
+                    product_name="osparc",
                 ),
             )
             mocked_dynamic_services_interface["dynamic_scheduler.api.stop_dynamic_service"].reset_mock()
@@ -716,7 +717,7 @@ async def test_start_node(
         node_id=choice(all_service_uuids),  # noqa: S311
     )
     response = await client.post(f"{url}")
-    data, error = await assert_status(
+    _data, error = await assert_status(
         response,
         (status.HTTP_204_NO_CONTENT if user_role == UserRole.GUEST else expected.no_content),
     )
