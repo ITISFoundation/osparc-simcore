@@ -39,7 +39,8 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsStepper", {
       this.__form.addListener("submit", e => {
         const {
           amountDollars: priceDollars,
-          osparcCredits, paymentMethodId
+          osparcCredits,
+          paymentMethodId,
         } = e.getData();
         const params = {
           url: {
