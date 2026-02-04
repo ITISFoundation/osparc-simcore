@@ -1,4 +1,5 @@
-from typing import Annotated
+from email.utils import parseaddr
+from typing import Annotated, Self
 
 from models_library.emails import LowerCaseEmailStr
 from models_library.notifications import ChannelType
@@ -8,6 +9,16 @@ from pydantic import BaseModel, ConfigDict, Field
 class EmailAddress(BaseModel):
     display_name: str = ""
     addr_spec: LowerCaseEmailStr
+
+    @classmethod
+    def from_email_str(cls, email_str: str) -> Self:
+        display_name, addr_spec = parseaddr(email_str)
+        return cls(display_name=display_name, addr_spec=addr_spec)
+
+    def to_email_str(self) -> str:
+        if self.display_name:
+            return f"{self.display_name} <{self.addr_spec}>"
+        return self.addr_spec
 
     model_config = ConfigDict(
         frozen=True,

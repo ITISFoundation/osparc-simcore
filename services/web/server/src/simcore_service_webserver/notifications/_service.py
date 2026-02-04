@@ -1,5 +1,6 @@
 from aiohttp import web
 from celery_library.async_jobs import submit_job
+from common_library.network import NO_REPLY_LOCAL, replace_email_local
 from models_library.api_schemas_async_jobs.async_jobs import AsyncJobGet
 from models_library.groups import GroupID
 from models_library.notifications import ChannelType
@@ -71,7 +72,15 @@ async def _create_email_message(
     if len(to) == 1:
         return EmailNotificationMessage(from_=from_, to=to, content=email_content)
 
-    return EmailNotificationMessage(from_=from_, to=[], bcc=to, content=email_content)
+    return EmailNotificationMessage(
+        from_=from_,
+        to=[
+            # send to original 'from' but as no-reply
+            EmailAddress.from_email_str(replace_email_local(from_.to_email_str(), NO_REPLY_LOCAL)),
+        ],
+        bcc=to,
+        content=email_content,
+    )
 
 
 async def send_message(

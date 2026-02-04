@@ -1,5 +1,5 @@
 import pytest
-from common_library.network import is_ip_address, redact_url
+from common_library.network import is_ip_address, redact_url, replace_email_local
 
 
 @pytest.mark.parametrize(
@@ -79,3 +79,53 @@ def test_is_ip_address(host: str, expected: bool):
 )
 def test_redact_url(url: str, expected: str):
     assert redact_url(url) == expected
+
+
+def test_replace_email_local_valid():
+    # Test with a valid email and new local part
+    email = "Support Team <support@example.com>"
+    new_local = "no-reply"
+    expected = "No Reply <no-reply@example.com>"
+    assert replace_email_local(email, new_local) == expected
+
+
+def test_replace_email_local_invalid_email():
+    # Test with an invalid email format
+    email = "invalid-email"
+    new_local = "no-reply"
+    with pytest.raises(ValueError, match="Invalid email address:"):
+        replace_email_local(email, new_local)
+
+
+def test_replace_email_local_no_name():
+    # Test with an email that has no display name
+    email = "<user@example.com>"
+    new_local = "alerts"
+    expected = "alerts@example.com"
+    assert replace_email_local(email, new_local) == expected
+
+
+def test_replace_email_local_with_hyphen():
+    # Test with a new local part that contains a hyphen
+    email = "Support Team <support@example.com>"
+    new_local = "new-alerts"
+    expected = "New Alerts <new-alerts@example.com>"
+    assert replace_email_local(email, new_local) == expected
+
+
+def test_replace_email_local_with_custom_display_name():
+    # Test with a custom display name override
+    email = "Support Team <support@example.com>"
+    new_local = "no-reply"
+    new_display_name = "Custom Name"
+    expected = "Custom Name <no-reply@example.com>"
+    assert replace_email_local(email, new_local, new_display_name) == expected
+
+
+def test_replace_email_local_with_empty_custom_display_name():
+    # Test with an empty string as custom display name
+    email = "Support Team <support@example.com>"
+    new_local = "no-reply"
+    new_display_name = ""
+    expected = "no-reply@example.com"
+    assert replace_email_local(email, new_local, new_display_name) == expected
