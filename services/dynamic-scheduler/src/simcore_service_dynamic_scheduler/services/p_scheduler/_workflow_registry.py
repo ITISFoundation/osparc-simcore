@@ -4,10 +4,10 @@ import networkx as nx
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
 
 from ._abc import BaseStep, InDataKeys
-from ._models import DagNodeUniqueReference, KeyConfig, StepSequence, WorkflowDefinition, WorkflowName
+from ._models import DagNodeUniqueReference, KeyConfig, StepsSequence, WorkflowDefinition, WorkflowName
 
 
-def _get_step_sequence(definition: WorkflowDefinition) -> StepSequence:
+def _get_step_sequence(definition: WorkflowDefinition) -> StepsSequence:
     graph = nx.DiGraph()
 
     for step_type, requires_step_types in definition.steps:
@@ -34,7 +34,7 @@ def _get_step_references_to_types(definition: WorkflowDefinition) -> dict[DagNod
 
 
 def _check_no_parallel_steps_write_same_key(
-    step_sequences: StepSequence, step_references_to_types: dict[DagNodeUniqueReference, type[BaseStep]], *, phase: str
+    step_sequences: StepsSequence, step_references_to_types: dict[DagNodeUniqueReference, type[BaseStep]], *, phase: str
 ) -> None:
     for step_sequence in step_sequences:
         current_outputs: set[str] = set()
@@ -61,7 +61,7 @@ def _check_requests_inputs_present(
 
 
 def _validate_step_sequences(
-    step_sequence: StepSequence,
+    step_sequence: StepsSequence,
     step_references_to_types: dict[DagNodeUniqueReference, type[BaseStep]],
     initial_context: set[KeyConfig],
 ) -> None:
@@ -97,13 +97,13 @@ class WorkflowRegistry(SingletonInAppStateMixin):
 
     def __init__(self) -> None:
         self._workflows: dict[WorkflowName, WorkflowDefinition] = {}
-        self._dag_step_sequences: dict[WorkflowName, StepSequence] = {}
+        self._dag_step_sequences: dict[WorkflowName, StepsSequence] = {}
         self._mapping_step_references_to_types: dict[DagNodeUniqueReference, type[BaseStep]] = {}
 
     def register_workflow(self, name: WorkflowName, definition: WorkflowDefinition) -> None:
         self._workflows[name] = definition
 
-    def get_workflow_step_sequences(self, name: WorkflowName) -> StepSequence:
+    def get_workflow_steps_sequence(self, name: WorkflowName) -> StepsSequence:
         return self._dag_step_sequences[name]
 
     def get_base_step(self, dag_node_name: DagNodeUniqueReference) -> type[BaseStep]:
