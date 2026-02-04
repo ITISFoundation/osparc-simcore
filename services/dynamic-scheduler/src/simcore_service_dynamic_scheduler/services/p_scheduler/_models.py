@@ -33,7 +33,7 @@ class WorkflowDefinition:
 
 type WorkflowName = str
 type DagNodeUniqueReference = str
-type StepSequence = tuple[set[DagNodeUniqueReference], ...]
+type StepsSequence = tuple[set[DagNodeUniqueReference], ...]
 
 
 class SchedulerServiceStatus(StrAutoEnum):
@@ -83,7 +83,7 @@ class Run:
     node_id: NodeID
     workflow_name: WorkflowName
 
-    is_rolling_back: bool
+    is_reverting: bool
     waiting_manual_intervention: bool
 
 
@@ -102,15 +102,19 @@ class Step:  # pylint: disable=too-many-instance-attributes
     step_id: StepId
     created_at: datetime
 
+    # 3 fields for primary key
     run_id: RunId
     step_type: DagNodeUniqueReference
+    is_reverting: bool
 
-    finished_at: datetime | None
+    timeout: timedelta
+
     available_attempts: int
     attempt_number: int
-    timeout: timedelta
+
     state: StepState
     message: str | None
+    finished_at: datetime | None
 
 
 @dataclass
