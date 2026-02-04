@@ -440,6 +440,13 @@ qx.Class.define("osparc.store.Store", {
       return null;
     },
 
+    getMyWallet: function() {
+      const wallets = this.getWallets();
+      const myGroupId = osparc.auth.Data.getInstance().getGroupId();
+      const myWallet = wallets.find(wallet => wallet.getOwner() === myGroupId);
+      return myWallet || null;
+    },
+
     fetchCreditPrice: function() {
       const store = osparc.store.Store.getInstance();
       store.setCreditPrice(null);
