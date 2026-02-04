@@ -39,15 +39,18 @@ def redact_url(url: str) -> str:
     )
 
 
-def replace_email_local(email_str: str, new_local: str, new_display_name: str | None = None) -> str:
+def replace_email_parts(email_str: str, new_local: str, new_display_name: str | None = None) -> str:
     """
-    Replace the local part of an email string to use a new local part, preserving the domain and display name.
+    Replace the local part and optionally the display name of an email string.
+
+    Preserves the domain. If new_display_name is not provided, auto-generates from new_local
+    if the original email had a display name.
 
     Args:
         email_str: Original email, e.g., "Support Team <support@example.com>"
         new_local: New local part, e.g., "no-reply" or "alerts"
-        new_display_name: Optional custom display name. If not provided, auto-generates from new_local
-          if original had a name
+        new_display_name: Optional custom display name. If not provided and original had a name,
+          auto-generates from new_local. If original had no name, remains empty.
 
     Returns:
         Transformed email, e.g., "No Reply <no-reply@example.com>"

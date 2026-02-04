@@ -1,6 +1,6 @@
 from aiohttp import web
 from celery_library.async_jobs import submit_job
-from common_library.network import NO_REPLY_LOCAL, replace_email_local
+from common_library.network import NO_REPLY_DISPLAY_NAME, NO_REPLY_LOCAL
 from models_library.api_schemas_async_jobs.async_jobs import AsyncJobGet
 from models_library.groups import GroupID
 from models_library.notifications import ChannelType
@@ -70,13 +70,18 @@ async def _create_email_message(
     email_content = EmailContent(**content.model_dump())
 
     if len(to) == 1:
+        # single recipient, no Bcc
         return EmailNotificationMessage(from_=from_, to=to, content=email_content)
 
+    # multiple recipients, use Bcc
     return EmailNotificationMessage(
         from_=from_,
         to=[
             # send to original 'from' but as no-reply
-            EmailAddress.from_email_str(replace_email_local(from_.to_email_str(), NO_REPLY_LOCAL)),
+            from_.replace(
+                new_display_name=NO_REPLY_DISPLAY_NAME,
+                new_addr_local=NO_REPLY_LOCAL,
+            ),
         ],
         bcc=to,
         content=email_content,

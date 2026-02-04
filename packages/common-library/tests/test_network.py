@@ -1,5 +1,5 @@
 import pytest
-from common_library.network import is_ip_address, redact_url, replace_email_local
+from common_library.network import is_ip_address, redact_url, replace_email_parts
 
 
 @pytest.mark.parametrize(
@@ -86,7 +86,7 @@ def test_replace_email_local_valid():
     email = "Support Team <support@example.com>"
     new_local = "no-reply"
     expected = "No Reply <no-reply@example.com>"
-    assert replace_email_local(email, new_local) == expected
+    assert replace_email_parts(email, new_local) == expected
 
 
 def test_replace_email_local_invalid_email():
@@ -94,7 +94,7 @@ def test_replace_email_local_invalid_email():
     email = "invalid-email"
     new_local = "no-reply"
     with pytest.raises(ValueError, match="Invalid email address:"):
-        replace_email_local(email, new_local)
+        replace_email_parts(email, new_local)
 
 
 def test_replace_email_local_no_name():
@@ -102,7 +102,7 @@ def test_replace_email_local_no_name():
     email = "<user@example.com>"
     new_local = "alerts"
     expected = "alerts@example.com"
-    assert replace_email_local(email, new_local) == expected
+    assert replace_email_parts(email, new_local) == expected
 
 
 def test_replace_email_local_no_name_no_autogen():
@@ -110,7 +110,7 @@ def test_replace_email_local_no_name_no_autogen():
     email = "user@example.com"
     new_local = "no-reply"
     expected = "no-reply@example.com"
-    assert replace_email_local(email, new_local) == expected
+    assert replace_email_parts(email, new_local) == expected
 
 
 def test_replace_email_local_with_hyphen():
@@ -118,7 +118,7 @@ def test_replace_email_local_with_hyphen():
     email = "Support Team <support@example.com>"
     new_local = "new-alerts"
     expected = "New Alerts <new-alerts@example.com>"
-    assert replace_email_local(email, new_local) == expected
+    assert replace_email_parts(email, new_local) == expected
 
 
 def test_replace_email_local_with_custom_display_name():
@@ -127,7 +127,7 @@ def test_replace_email_local_with_custom_display_name():
     new_local = "no-reply"
     new_display_name = "Custom Name"
     expected = "Custom Name <no-reply@example.com>"
-    assert replace_email_local(email, new_local, new_display_name) == expected
+    assert replace_email_parts(email, new_local, new_display_name) == expected
 
 
 def test_replace_email_local_with_empty_custom_display_name():
@@ -136,4 +136,4 @@ def test_replace_email_local_with_empty_custom_display_name():
     new_local = "no-reply"
     new_display_name = ""
     expected = "no-reply@example.com"
-    assert replace_email_local(email, new_local, new_display_name) == expected
+    assert replace_email_parts(email, new_local, new_display_name) == expected
