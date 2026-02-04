@@ -504,6 +504,7 @@ async def delete_project_by_user(
     project_uuid: ProjectID,
     user_id: UserID,
     simcore_user_agent: str = UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
+    product_name: ProductName,
     wait_until_completed: bool = True,
 ) -> None:
     task = await submit_delete_project_task(
@@ -511,6 +512,7 @@ async def delete_project_by_user(
         project_uuid=project_uuid,
         user_id=user_id,
         simcore_user_agent=simcore_user_agent,
+        product_name=product_name,
     )
     if wait_until_completed:
         await task
@@ -528,6 +530,7 @@ async def submit_delete_project_task(
     project_uuid: ProjectID,
     user_id: UserID,
     simcore_user_agent: str,
+    product_name: ProductName,
 ) -> asyncio.Task:
     """
     Marks a project as deleted and schedules a task to perform the entire removal workflow
@@ -552,6 +555,7 @@ async def submit_delete_project_task(
             project_uuid,
             user_id,
             simcore_user_agent,
+            product_name,
             remove_project_dynamic_services,
             _logger,
         )
@@ -738,7 +742,7 @@ async def _check_project_node_has_all_required_inputs(
         raise ProjectNodeOutputPortMissingValueError(unset_outputs_in_upstream=unset_outputs_in_upstream)
 
 
-async def _start_dynamic_service(  # pylint: disable=too-many-statements  # noqa: C901
+async def _start_dynamic_service(  # pylint: disable=too-many-statements  # noqa: C901, PLR0915
     request: web.Request,
     *,
     service_key: ServiceKey,
@@ -1044,6 +1048,7 @@ async def _remove_service_and_its_data_folders(
     project_uuid: ProjectID,
     node_uuid: NodeIDStr,
     user_agent: str,
+    product_name: ProductName,
     stop_service: bool,
 ) -> None:
     if stop_service:
@@ -1055,6 +1060,7 @@ async def _remove_service_and_its_data_folders(
                 project_id=project_uuid,
                 node_id=NodeID(node_uuid),
                 simcore_user_agent=user_agent,
+                product_name=product_name,
                 save_state=False,
             ),
         )
@@ -1095,6 +1101,7 @@ async def delete_project_node(
             project_uuid=project_uuid,
             node_uuid=node_uuid,
             user_agent=request.headers.get(X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE),
+            product_name=product_name,
             stop_service=any(f"{s.node_uuid}" == node_uuid for s in list_running_dynamic_services),
         ),
         task_suffix_name=f"_remove_service_and_its_data_folders_{user_id=}_{project_uuid=}_{node_uuid}",
@@ -1488,7 +1495,7 @@ def create_user_notification_cb(user_id: UserID, project_uuid: ProjectID, app: w
     return _notification_cb
 
 
-async def try_open_project_for_user(
+async def try_open_project_for_user(  # noqa: C901
     user_id: UserID,
     project_uuid: ProjectID,
     client_session_id: ClientSessionID,
@@ -1584,7 +1591,8 @@ async def try_open_project_for_user(
                         or (len(sessions_with_project) < max_number_of_user_sessions_per_project)
                     )
                 ):
-                    # if there are no sessions with this project, or the number of sessions is less than the maximum allowed
+                    # if there are no sessions with this project, or the number of sessions
+                    # is less than the maximum allowed
                     await user_session.add(PROJECT_ID_KEY, f"{project_uuid}")
                     return True
 
@@ -1620,6 +1628,7 @@ async def close_project_for_user(
     client_session_id: ClientSessionID,
     app: web.Application,
     simcore_user_agent: str,
+    product_name: ProductName,
     *,
     wait_for_service_closed: bool = False,
 ):
@@ -1651,7 +1660,9 @@ async def close_project_for_user(
     _logger.debug("remaining user_to_session_ids: %s", all_user_sessions_with_project)
     if not all_user_sessions_with_project:
         # NOTE: depending on the garbage collector speed, it might already be removing it
-        remove_services_task = remove_project_dynamic_services(user_id, project_uuid, app, simcore_user_agent)
+        remove_services_task = remove_project_dynamic_services(
+            user_id, project_uuid, app, simcore_user_agent, product_name
+        )
         if wait_for_service_closed:
             # wait for the task to finish
             await remove_services_task
@@ -1681,9 +1692,12 @@ async def _get_project_share_state(
 ) -> ProjectShareState:
     """returns the lock state of a project
     1. If a project is locked for any reason, first return the project as locked and STATUS defined by lock
-    3. If any other user than user_id is using the project (even disconnected before the TTL is finished) then the project is Locked and OPENED.
-    4. If the same user is using the project with a valid socket id (meaning a tab is currently active) then the project is Locked and OPENED.
-    5. If the same user is using the project with NO socket id (meaning there is no current tab active) then the project is Unlocked and OPENED. which means the user can open it again.
+    3. If any other user than user_id is using the project (even disconnected before the TTL is finished)
+        then the project is Locked and OPENED.
+    4. If the same user is using the project with a valid socket id (meaning a tab is currently active)
+        then the project is Locked and OPENED.
+    5. If the same user is using the project with NO socket id (meaning there is no current tab active)
+        then the project is Unlocked and OPENED. which means the user can open it again.
     """
     app_settings = get_application_settings(app)
     prj_locked_state = await get_project_locked_state(get_redis_lock_manager_client_sdk(app), project_uuid)
@@ -1751,7 +1765,10 @@ async def _get_project_share_state(
         ):
             # in this case the project is re-openable by the same user until it gets closed
             _logger.debug(
-                "project [%s] is in use by the same user [%s] that is currently disconnected, so it is unlocked for this specific user and opened",
+                (
+                    "project [%s] is in use by the same user [%s] that is currently disconnected, "
+                    "so it is unlocked for this specific user and opened"
+                ),
                 f"{project_uuid=}",
                 f"{active_user_ids=}",
             )
@@ -2004,6 +2021,7 @@ async def remove_project_dynamic_services(
     project_uuid: ProjectID,
     app: web.Application,
     simcore_user_agent: str,
+    product_name: ProductName,
     *,
     notify_users: bool = True,
 ) -> None:
@@ -2051,6 +2069,7 @@ async def remove_project_dynamic_services(
                 project_id=project_uuid,
                 simcore_user_agent=simcore_user_agent,
                 save_state=save_state,
+                product_name=product_name,
             )
 
     await _locked_stop_dynamic_services_in_project()
@@ -2138,6 +2157,7 @@ async def retrieve_and_notify_project_locked_state(
     user_id: int,
     project_uuid: str,
     app: web.Application,
+    *,
     notify_only_prj_user: bool = False,
 ):
     project = await get_project_for_user(app, project_uuid, user_id, include_state=True)

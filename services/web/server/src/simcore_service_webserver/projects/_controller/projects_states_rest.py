@@ -158,6 +158,7 @@ async def open_project(request: web.Request) -> web.Response:
             client_session_id=client_session_id,
             app=request.app,
             simcore_user_agent=request.headers.get(X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE),
+            product_name=req_ctx.product_name,
         )
         raise web.HTTPServiceUnavailable(text="Unexpected error while starting services.") from exc
 
@@ -194,6 +195,7 @@ async def close_project(request: web.Request) -> web.Response:
         client_session_id,
         request.app,
         simcore_user_agent=request.headers.get(X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE),
+        product_name=req_ctx.product_name,
     )
 
     return web.json_response(status=status.HTTP_204_NO_CONTENT)

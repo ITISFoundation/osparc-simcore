@@ -10,6 +10,7 @@ import logging
 from typing import Protocol
 
 from aiohttp import web
+from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.users import UserID
 from servicelib.utils import fire_and_forget_task
@@ -41,6 +42,7 @@ class RemoveProjectServicesCallable(Protocol):
         project_uuid: ProjectID,
         app: web.Application,
         simcore_user_agent: str,
+        product_name: ProductName,
         *,
         notify_users: bool = True,
     ) -> None: ...
@@ -77,6 +79,7 @@ async def delete_project(
     project_uuid: ProjectID,
     user_id: UserID,
     simcore_user_agent: str,
+    product_name: ProductName,
     remove_project_dynamic_services: RemoveProjectServicesCallable,
 ) -> None:
     """Stops dynamic services, deletes data and finally deletes project
@@ -104,6 +107,7 @@ async def delete_project(
             project_uuid=project_uuid,
             app=app,
             simcore_user_agent=simcore_user_agent,
+            product_name=product_name,
             notify_users=False,
         )
 
@@ -129,6 +133,7 @@ def schedule_task(
     project_uuid: ProjectID,
     user_id: UserID,
     simcore_user_agent: str,
+    product_name: ProductName,
     remove_project_dynamic_services: RemoveProjectServicesCallable,
     logger: logging.Logger,
 ) -> asyncio.Task:
@@ -183,6 +188,7 @@ def schedule_task(
             project_uuid,
             user_id,
             simcore_user_agent,
+            product_name,
             remove_project_dynamic_services,
         ),
         task_suffix_name=_DELETE_PROJECT_TASK_NAME.format(project_uuid, user_id),
