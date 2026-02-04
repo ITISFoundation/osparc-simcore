@@ -100,7 +100,8 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
               this.__fetchPaymentMethods();
             }
           });
-        });
+        })
+        .catch(err => osparc.FlashMessenger.logError(err));
     },
 
     __cancelPaymentMethod: function(paymentMethodId) {
