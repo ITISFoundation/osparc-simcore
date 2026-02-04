@@ -9,11 +9,9 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsStepper", {
   extend: qx.ui.container.Stack,
   construct(paymentMethods) {
     this.base(arguments);
+
     this.__paymentMethods = paymentMethods;
-    const groupsStore = osparc.store.Groups.getInstance();
-    const myGid = groupsStore.getMyGroupId()
-    const store = osparc.store.Store.getInstance();
-    this.__personalWallet = store.getWallets().find(wallet => wallet.getOwner() === myGid)
+
     this.__buildLayout()
   },
   events: {
@@ -29,6 +27,13 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsStepper", {
   },
   members: {
     __buildLayout() {
+      const wallet = osparc.store.Store.getInstance().getMyWallet();
+      if (!wallet) {
+        const msg = osparc.store.Store.NO_PERSONAL_WALLET_MSG;
+        osparc.FlashMessenger.logAs(msg, "WARNING");
+        return;
+      }
+
       this.removeAll();
       this.__form = new osparc.desktop.credits.BuyCreditsForm(this.__paymentMethods);
       this.__form.addListener("submit", e => {
@@ -38,7 +43,7 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsStepper", {
         } = e.getData();
         const params = {
           url: {
-            walletId: this.__personalWallet.getWalletId()
+            walletId: wallet.getWalletId()
           },
           data: {
             priceDollars,
@@ -113,9 +118,15 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsStepper", {
     },
     cancelPayment: function() {
       if (this.__isGatewaySelected() && this.getPaymentId()) {
+        const wallet = osparc.store.Store.getInstance().getMyWallet();
+        if (!wallet) {
+          const msg = osparc.store.Store.NO_PERSONAL_WALLET_MSG;
+          osparc.FlashMessenger.logAs(msg, "WARNING");
+          return;
+        }
         osparc.data.Resources.fetch("payments", "cancelPayment", {
           url: {
-            walletId: this.__personalWallet.getWalletId(),
+            walletId: wallet.getWalletId(),
             paymentId: this.getPaymentId()
           }
         })
