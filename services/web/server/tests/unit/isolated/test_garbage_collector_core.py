@@ -93,7 +93,16 @@ async def mock_stop_dynamic_service(mocker: MockerFixture) -> mock.AsyncMock:
     )
 
 
+@pytest.fixture
+def mock_project_db_api_get_project_db(mocker: MockerFixture) -> None:
+    mocker.patch(
+        f"{MODULE_GC_CORE_ORPHANS}.ProjectDBAPI.get_from_app_context",
+        autospec=True,
+    ).return_value.get_project_db = mock.AsyncMock(return_value=mock.Mock(product_name="osparc"))
+
+
 async def test_remove_orphaned_services_with_no_running_services_does_nothing(
+    mock_project_db_api_get_project_db: None,
     mock_list_node_ids_in_project: mock.AsyncMock,
     mock_list_dynamic_services: mock.AsyncMock,
     mock_is_node_id_present_in_any_project_workbench: mock.AsyncMock,
@@ -145,6 +154,7 @@ async def mock_get_user_role(mocker: MockerFixture, user_role: UserRole) -> mock
 
 
 async def test_remove_orphaned_services(
+    mock_project_db_api_get_project_db: None,
     mock_app: mock.AsyncMock,
     mock_registry: mock.AsyncMock,
     mock_list_node_ids_in_project: mock.AsyncMock,
@@ -198,6 +208,7 @@ async def test_remove_orphaned_services(
 @pytest.mark.parametrize("node_exists", [True], indirect=True)
 @pytest.mark.parametrize("get_user_role_error", [UserNotFoundError, ValueError], ids=str)
 async def test_remove_orphaned_services_inexisting_user_does_not_save_state(
+    mock_project_db_api_get_project_db: None,
     mock_app: mock.AsyncMock,
     mock_registry: mock.AsyncMock,
     mock_list_node_ids_in_project: mock.AsyncMock,
@@ -234,6 +245,7 @@ async def test_remove_orphaned_services_inexisting_user_does_not_save_state(
 
 @pytest.mark.parametrize("node_exists", [False], indirect=True)
 async def test_remove_orphaned_services_raises_exception_does_not_reraise(
+    mock_project_db_api_get_project_db: None,
     mock_app: mock.AsyncMock,
     mock_registry: mock.AsyncMock,
     mock_list_node_ids_in_project: mock.AsyncMock,
