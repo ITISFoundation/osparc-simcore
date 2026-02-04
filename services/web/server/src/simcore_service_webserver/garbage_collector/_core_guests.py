@@ -50,7 +50,8 @@ async def _delete_all_projects_for_user(app: web.Application, user_id: int) -> N
         return
 
     # fetch all projects for the user
-    user_project_uuids = await ProjectDBAPI.get_from_app_context(app).list_projects_uuids(user_id=user_id)
+    project_repo = ProjectDBAPI.get_from_app_context(app)
+    user_project_uuids = await project_repo.list_projects_uuids(user_id=user_id)
 
     _logger.info(
         "Removing or transferring projects of user with %s, %s: %s",
@@ -95,11 +96,14 @@ async def _delete_all_projects_for_user(app: web.Application, user_id: int) -> N
                     f"{project_uuid=}",
                     f"{user_id=}",
                 )
+                project_id = ProjectID(project_uuid)
+                project_at_db = await project_repo.get_project_db(project_id)
                 task = await submit_delete_project_task(
                     app,
-                    ProjectID(project_uuid),
+                    project_id,
                     user_id,
                     UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
+                    product_name=project_at_db.product_name,
                 )
                 assert task  # nosec
                 delete_tasks.append(task)

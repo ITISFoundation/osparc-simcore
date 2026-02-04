@@ -61,6 +61,24 @@ qx.Class.define("osparc.wrapper.HtmlEditor", {
         [{ 'list': 'ordered'}, { 'list': 'bullet' }]
       ];
     },
+
+    makeLayoutFlex: function(htmlContainer) {
+      // Set up proper flex layout for Quill's structure (toolbar + container)
+      const element = htmlContainer.getContentElement().getDomElement();
+      if (element) {
+        // Make the wrapper a flex column container
+        element.style.display = 'flex';
+        element.style.flexDirection = 'column';
+        element.style.overflow = 'hidden';
+
+        // Find the Quill container and make it flex to fill remaining space
+        const qlContainer = element.querySelector('.ql-container');
+        if (qlContainer) {
+          qlContainer.style.flex = '1';
+          qlContainer.style.overflow = 'auto';
+        }
+      }
+    },
   },
 
   members: {
@@ -142,7 +160,10 @@ qx.Class.define("osparc.wrapper.HtmlEditor", {
     createEditor: function(divId, initialContent = "", options = {}) {
       // Create container with initial content if provided
       const htmlContent = initialContent || "<p><br /></p>";
-      const container = new qx.ui.embed.Html("<div id='"+divId+"'>"+htmlContent+"</div>");
+      const container = new qx.ui.embed.Html("<div id='"+divId+"'>"+htmlContent+"</div>").set({
+        focusable: false,  // Don't let qooxdoo intercept focus/keyboard events (whitespace issue)
+        nativeContextMenu: true
+      });
       container.setUserData("quillDivId", divId);
 
       // Default options following Quill documentation

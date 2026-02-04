@@ -40,6 +40,7 @@ async def _empty_explicitly_trashed_projects(app: web.Application, product_name:
                     app,
                     user_id=user_id,
                     project_id=project_id,
+                    product_name=product_name,
                 )
 
             except Exception as exc:  # pylint: disable=broad-exception-caught

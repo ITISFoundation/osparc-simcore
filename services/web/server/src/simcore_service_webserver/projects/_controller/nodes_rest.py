@@ -332,7 +332,7 @@ async def _stop_dynamic_service_task(
                 },
             )
         )
-        # ANE: in case there is an error reply as not found
+        # in case there is an error reply as not found
         return create_error_response(
             error=ErrorGet(
                 message=user_error_msg,
@@ -381,6 +381,7 @@ async def stop_node(request: web.Request) -> web.Response:
             project_id=path_params.project_id,
             node_id=path_params.node_id,
             simcore_user_agent=request.headers.get(X_SIMCORE_USER_AGENT, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE),
+            product_name=req_ctx.product_name,
             save_state=save_state,
         ),
         fire_and_forget=True,
