@@ -9,7 +9,7 @@ from simcore_service_dynamic_scheduler.services.p_scheduler._abc import (
 )
 from simcore_service_dynamic_scheduler.services.p_scheduler._models import (
     KeyConfig,
-    StepSequence,
+    StepsSequence,
     WorkflowDefinition,
     WorkflowName,
 )
@@ -144,12 +144,12 @@ async def test__workflow_setup_ok(
     workflow_registry: WorkflowRegistry,
     workflow_name: WorkflowName,
     workflow: WorkflowDefinition,
-    expected: StepSequence,
+    expected: StepsSequence,
 ):
     workflow_registry.register_workflow(workflow_name, workflow)
 
     async with _registry_lifespan(workflow_registry):
-        assert workflow_registry.get_workflow_step_sequences(workflow_name) == expected
+        assert workflow_registry.get_workflow_steps_sequence(workflow_name) == expected
 
         for base_step in _get_base_steps(workflow):
             retrieved = workflow_registry.get_base_step(base_step.get_unique_reference())
