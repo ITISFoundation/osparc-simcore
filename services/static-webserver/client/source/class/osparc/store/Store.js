@@ -260,6 +260,10 @@ qx.Class.define("osparc.store.Store", {
     },
   },
 
+  statics: {
+    NO_PERSONAL_WALLET_MSG: qx.locale.Manager.tr("You don't have a personal wallet. Please contact support."),
+  },
+
   members: {
     // fetch resources that do not require log in
     preloadCalls: async function() {
@@ -513,7 +517,7 @@ qx.Class.define("osparc.store.Store", {
               wallets.push(wallet);
             });
             if (!personalWalletFound) {
-              const msg = this.tr("No personal wallet found, some functionalities might not work properly. Please contact support.");
+              const msg = this.self().NO_PERSONAL_WALLET_MSG;
               osparc.FlashMessenger.logAs(msg, "WARNING");
             }
             this.setWallets(wallets);
