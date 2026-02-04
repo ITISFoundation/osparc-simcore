@@ -105,6 +105,14 @@ def test_replace_email_local_no_name():
     assert replace_email_local(email, new_local) == expected
 
 
+def test_replace_email_local_no_name_no_autogen():
+    # Test that display name is not auto-generated when original email has no display name
+    email = "user@example.com"
+    new_local = "no-reply"
+    expected = "no-reply@example.com"
+    assert replace_email_local(email, new_local) == expected
+
+
 def test_replace_email_local_with_hyphen():
     # Test with a new local part that contains a hyphen
     email = "Support Team <support@example.com>"
