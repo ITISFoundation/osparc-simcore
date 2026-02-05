@@ -21,6 +21,7 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.redis import RedisSettings
 from simcore_service_dynamic_scheduler.services.p_scheduler._models import SchedulerServiceStatus
 from simcore_service_dynamic_scheduler.services.p_scheduler._node_status import (
+    _PERIODIC_HANDLING_MESSAGE,
     StatusManager,
     _get_scheduler_service_status,
 )
@@ -243,3 +244,60 @@ async def test_status_manager(
 
     await assert_scheduler_status()
     _assert_cache_log_found(caplog, node_id)
+
+
+@pytest.fixture
+async def status_managers(app: FastAPI) -> AsyncIterable[list[StatusManager]]:
+    managers: list[StatusManager] = []
+
+    for _ in range(10):
+        manager = StatusManager(
+            app, status_ttl=_FAST_STATUS_TTL_CACHE, update_statuses_interval=_FAST_UPDATE_STATUSES_INTERVAL
+        )
+        managers.append(manager)
+
+    for manager in managers:
+        await manager.setup()
+
+    yield managers
+
+    for manager in managers:
+        await manager.shutdown()
+
+
+def _ensure_unique_log_message(caplog: pytest.LogCaptureFixture) -> str:
+    found_messages = []
+
+    for line in caplog.text.splitlines():
+        if _PERIODIC_HANDLING_MESSAGE in line:
+            found_messages.append(line)
+            print(line)
+
+    assert len(found_messages) > 1
+    assert len(set(found_messages)) == 1
+    return found_messages.pop()
+
+
+async def test_status_manager_is_switched_if_killed(
+    mock__get_scheduler_service_status: None, status_managers: list[StatusManager], caplog: pytest.LogCaptureFixture
+):
+    sleep_interval = 0.4
+    caplog.set_level("DEBUG")
+
+    # 1. ensure log messages
+    await asyncio.sleep(sleep_interval)
+    log_message = _ensure_unique_log_message(caplog)
+
+    # 2. get active manager and close it
+    logged_manager_id = log_message.split("'")[-2]
+    ids_to_managers = {f"{id(manager)}": manager for manager in status_managers}
+    status_manager = ids_to_managers[logged_manager_id]
+    await status_manager.shutdown()
+    caplog.clear()
+
+    # 3. another manager should take over and log a message (different from the previous one)
+    await asyncio.sleep(sleep_interval)
+    new_log_message = _ensure_unique_log_message(caplog)
+
+    # messages are different
+    assert new_log_message != log_message

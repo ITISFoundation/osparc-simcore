@@ -26,6 +26,7 @@ _logger = logging.getLogger(__name__)
 _PREFIX: Final[str] = "pss"
 _STATUS: Final[str] = "s"
 _TRACKING: Final[str] = "tracked-services"
+_PERIODIC_HANDLING_MESSAGE: Final[str] = "Periodic check handled by app_id="
 
 
 async def _get_scheduler_service_status(app: FastAPI, node_id: NodeID) -> SchedulerServiceStatus:
@@ -144,6 +145,7 @@ class StatusManager(SingletonInAppStateMixin, SupportsLifecycle):
             retry_after=self.update_statuses_interval,
         )
         async def _periodic_check_services_require_status_update() -> None:
+            _logger.debug("%s='%s'", _PERIODIC_HANDLING_MESSAGE, id(self))
             await self._worker_update_scheduler_service_status()
 
         self._task_scheduler_service_status = create_task(
