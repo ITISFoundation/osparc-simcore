@@ -4,16 +4,20 @@ from typing import Any
 from aiohttp import web
 from common_library.users_enums import AccountRequestStatus
 from models_library.api_schemas_invitations.invitations import ApiInvitationInputs
+from models_library.api_schemas_webserver.notifications import NotificationsContentGet
 from models_library.api_schemas_webserver.users import (
     UserAccountApproveBody,
     UserAccountGet,
     UserAccountPreviewApprovalBody,
+    UserAccountPreviewApprovalGet,
     UserAccountReject,
     UserAccountSearchQueryParams,
     UsersAccountListQueryParams,
 )
+from models_library.notifications import ChannelType, TemplateRef
 from models_library.rest_pagination import Page
 from models_library.rest_pagination_utils import paginate_data
+from pydantic import TypeAdapter
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
@@ -27,6 +31,7 @@ from ...._meta import API_VTAG
 from ....constants import APP_FIRE_AND_FORGET_TASKS_KEY
 from ....invitations import api as invitations_service
 from ....login.decorators import login_required
+from ....notifications import _service as notifications_service
 from ....security.decorators import (
     group_or_role_permission_required,
     permission_required,
@@ -150,37 +155,10 @@ async def approve_user_account(request: web.Request) -> web.Response:
 
     approval_data = await parse_request_body_as(UserAccountApproveBody, request)
 
-    invitation_result = None
-    if approval_data.invitation:
-        with log_context(
-            _logger,
-            logging.DEBUG,
-            "User is being approved with invitation %s for user %s",
-            approval_data.invitation.model_dump_json(indent=1),
-            approval_data.email,
-        ):
-            # Generate invitation
-            invitation_params = ApiInvitationInputs(
-                issuer=str(req_ctx.user_id),
-                guest=approval_data.email,
-                trial_account_days=approval_data.invitation.trial_account_days,
-                extra_credits_in_usd=approval_data.invitation.extra_credits_in_usd,
-                product=req_ctx.product_name,
-            )
-
-            invitation_result = await invitations_service.generate_invitation(
-                request.app,
-                params=invitation_params,
-                product_origin_url=request.url.origin(),
-            )
-
-            assert (  # nosec
-                invitation_result.extra_credits_in_usd == approval_data.invitation.extra_credits_in_usd
-            )
-            assert (  # nosec
-                invitation_result.trial_account_days == approval_data.invitation.trial_account_days
-            )
-            assert invitation_result.guest == approval_data.email  # nosec
+    invitation_result = await invitations_service.extract_invitation(
+        request.app,
+        f"{approval_data.invitation_url}",
+    )
 
     # Approve the user account, passing the current user's ID as the reviewer
     pre_registration_id = await _accounts_service.approve_user_account(
@@ -215,7 +193,7 @@ async def approve_user_account(request: web.Request) -> web.Response:
                 _accounts_service.send_approval_email_to_user(
                     request.app,
                     product_name=req_ctx.product_name,
-                    invitation_link=invitation_result.invitation_url,
+                    invitation_link=approval_data.invitation_url,
                     user_email=approval_data.email,
                     first_name=user_account.first_name or "User",
                     last_name=user_account.last_name or "",
@@ -237,9 +215,73 @@ async def preview_approval_user_account(request: web.Request) -> web.Response:
 
     approval_data = await parse_request_body_as(UserAccountPreviewApprovalBody, request)
 
-    assert approval_data
+    invitation_url = None
+    if approval_data.invitation:
+        with log_context(
+            _logger,
+            logging.DEBUG,
+            "User is being approved with invitation %s for user %s",
+            approval_data.invitation.model_dump_json(indent=1),
+            approval_data.email,
+        ):
+            # Generate invitation
+            invitation_params = ApiInvitationInputs(
+                issuer=str(req_ctx.user_id),
+                guest=approval_data.email,
+                trial_account_days=approval_data.invitation.trial_account_days,
+                extra_credits_in_usd=approval_data.invitation.extra_credits_in_usd,
+                product=req_ctx.product_name,
+            )
 
-    raise NotImplementedError
+            invitation_result = await invitations_service.generate_invitation(
+                request.app,
+                params=invitation_params,
+                product_origin_url=request.url.origin(),
+            )
+
+            assert (  # nosec
+                invitation_result.extra_credits_in_usd == approval_data.invitation.extra_credits_in_usd
+            )
+            assert (  # nosec
+                invitation_result.trial_account_days == approval_data.invitation.trial_account_days
+            )
+            assert invitation_result.guest == approval_data.email  # nosec
+
+            invitation_url = invitation_result.invitation_url
+
+        # get pre-registration data
+    found = await _accounts_service.search_users_accounts(
+        request.app,
+        filter_by_email_glob=approval_data.email,
+        product_name=req_ctx.product_name,
+        include_products=False,
+    )
+    user_account = found[0]
+    assert user_account.email == approval_data.email  # nosec
+
+    _logger.error("Generating preview for user %s", user_account)
+
+    preview = await notifications_service.preview_template(
+        app=request.app,
+        product_name=req_ctx.product_name,
+        ref=TemplateRef(
+            channel=ChannelType.email,
+            template_name="account_approved",
+        ),
+        context={
+            "user": {
+                "first_name": user_account.first_name,
+            },
+            "link": invitation_url,
+        },
+    )
+
+    response = UserAccountPreviewApprovalGet(
+        invitation_url=invitation_url,
+        message_content=TypeAdapter(NotificationsContentGet).validate_python(preview.content),
+    )
+
+    return envelope_json_response(response.model_dump(**_RESPONSE_MODEL_MINIMAL_POLICY))
 
 
 @routes.post(f"/{API_VTAG}/admin/user-accounts:reject", name="reject_user_account")

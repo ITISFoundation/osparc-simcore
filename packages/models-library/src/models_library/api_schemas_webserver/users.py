@@ -13,6 +13,7 @@ from pydantic import (
     ConfigDict,
     EmailStr,
     Field,
+    HttpUrl,
     ValidationInfo,
     field_validator,
     model_validator,
@@ -326,17 +327,20 @@ class _InvitationDetails(InputSchema):
     extra_credits_in_usd: WelcomeCreditsAnnotated = None
 
 
+class UserAccountApproveBody(InputSchema):
+    email: EmailStr
+    invitation_url: HttpUrl
+    message_content: NotificationsContentBody | None = None
+
+
 class UserAccountPreviewApprovalBody(InputSchema):
     email: EmailStr
     invitation: _InvitationDetails | None = None
 
 
-class UserAccountApproveBody(UserAccountPreviewApprovalBody):
-    content: NotificationsContentBody | None = None
-
-
 class UserAccountPreviewApprovalGet(OutputSchema):
-    content: NotificationsContentGet
+    invitation_url: HttpUrl | None
+    message_content: NotificationsContentGet | None = None
 
 
 class UserAccountReject(InputSchema):

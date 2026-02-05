@@ -6,7 +6,6 @@ from pydantic import BaseModel, HttpUrl
 
 class User(BaseModel):
     first_name: str | None = None
-    user_name: str
 
 
 class TemplateContext(BaseTemplateContext):
