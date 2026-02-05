@@ -1,10 +1,10 @@
 """Context model for the 'account_approved' email template."""
 
 from notifications_library.context import BaseTemplateContext
-from pydantic import HttpUrl
+from pydantic import BaseModel, HttpUrl
 
 
-class User:
+class User(BaseModel):
     first_name: str | None = None
     user_name: str
 
