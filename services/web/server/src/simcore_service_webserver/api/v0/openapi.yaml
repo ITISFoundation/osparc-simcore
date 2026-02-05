@@ -1791,7 +1791,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UserAccountApprove'
+              $ref: '#/components/schemas/UserAccountApproveBody'
         required: true
       responses:
         '204':
@@ -1807,7 +1807,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UserAccountApprove'
+              $ref: '#/components/schemas/UserAccountPreviewApprovalBody'
         required: true
       responses:
         '200':
@@ -18566,7 +18566,7 @@ components:
       - number
       - e_tag
       title: UploadedPart
-    UserAccountApprove:
+    UserAccountApproveBody:
       properties:
         email:
           type: string
@@ -18576,10 +18576,14 @@ components:
           anyOf:
           - $ref: '#/components/schemas/_InvitationDetails'
           - type: 'null'
+        content:
+          anyOf:
+          - $ref: '#/components/schemas/NotificationsContentBody'
+          - type: 'null'
       type: object
       required:
       - email
-      title: UserAccountApprove
+      title: UserAccountApproveBody
     UserAccountGet:
       properties:
         firstName:
@@ -18727,6 +18731,20 @@ components:
       - accountRequestStatus
       - registered
       title: UserAccountGet
+    UserAccountPreviewApprovalBody:
+      properties:
+        email:
+          type: string
+          format: email
+          title: Email
+        invitation:
+          anyOf:
+          - $ref: '#/components/schemas/_InvitationDetails'
+          - type: 'null'
+      type: object
+      required:
+      - email
+      title: UserAccountPreviewApprovalBody
     UserAccountPreviewApprovalGet:
       properties:
         content:

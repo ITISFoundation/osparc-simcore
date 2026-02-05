@@ -5,7 +5,7 @@ from aiohttp import web
 from common_library.users_enums import AccountRequestStatus
 from models_library.api_schemas_invitations.invitations import ApiInvitationInputs
 from models_library.api_schemas_webserver.users import (
-    UserAccountApprove,
+    UserAccountApproveBody,
     UserAccountGet,
     UserAccountReject,
     UserAccountSearchQueryParams,
@@ -147,7 +147,7 @@ async def approve_user_account(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
     assert req_ctx.product_name  # nosec
 
-    approval_data = await parse_request_body_as(UserAccountApprove, request)
+    approval_data = await parse_request_body_as(UserAccountApproveBody, request)
 
     invitation_result = None
     if approval_data.invitation:

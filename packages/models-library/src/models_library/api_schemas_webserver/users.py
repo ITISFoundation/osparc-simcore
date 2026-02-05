@@ -326,13 +326,13 @@ class _InvitationDetails(InputSchema):
     extra_credits_in_usd: WelcomeCreditsAnnotated = None
 
 
-class UserAccountApprove(InputSchema):
+class UserAccountPreviewApprovalBody(InputSchema):
     email: EmailStr
     invitation: _InvitationDetails | None = None
 
 
-class UserAccountApproveWithContent(UserAccountApprove):
-    content: NotificationsContentBody
+class UserAccountApproveBody(UserAccountPreviewApprovalBody):
+    content: NotificationsContentBody | None = None
 
 
 class UserAccountPreviewApprovalGet(OutputSchema):

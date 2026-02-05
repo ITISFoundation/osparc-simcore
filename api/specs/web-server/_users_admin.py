@@ -10,8 +10,9 @@ from typing import Annotated
 from _common import as_query
 from fastapi import APIRouter, Depends, status
 from models_library.api_schemas_webserver.users import (
-    UserAccountApprove,
+    UserAccountApproveBody,
     UserAccountGet,
+    UserAccountPreviewApprovalBody,
     UserAccountPreviewApprovalGet,
     UserAccountReject,
     UserAccountSearchQueryParams,
@@ -42,7 +43,7 @@ async def list_users_accounts(
     status_code=status.HTTP_204_NO_CONTENT,
     tags=_extra_tags,
 )
-async def approve_user_account(_body: UserAccountApprove): ...
+async def approve_user_account(_body: UserAccountApproveBody): ...
 
 
 @router.post(
@@ -50,7 +51,7 @@ async def approve_user_account(_body: UserAccountApprove): ...
     response_model=Envelope[UserAccountPreviewApprovalGet],
     tags=_extra_tags,
 )
-async def preview_approval_user_account(_body: UserAccountApprove): ...
+async def preview_approval_user_account(_body: UserAccountPreviewApprovalBody): ...
 
 
 @router.post(
