@@ -7,6 +7,7 @@ from models_library.api_schemas_invitations.invitations import ApiInvitationInpu
 from models_library.api_schemas_webserver.users import (
     UserAccountApproveBody,
     UserAccountGet,
+    UserAccountPreviewApprovalBody,
     UserAccountReject,
     UserAccountSearchQueryParams,
     UsersAccountListQueryParams,
@@ -224,6 +225,21 @@ async def approve_user_account(request: web.Request) -> web.Response:
             )
 
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
+
+
+@routes.post(f"/{API_VTAG}/admin/user-accounts:preview-approval", name="preview_approval_user_account")
+@login_required
+@permission_required("admin.users.read")
+@handle_rest_requests_exceptions
+async def preview_approval_user_account(request: web.Request) -> web.Response:
+    req_ctx = UsersRequestContext.model_validate(request)
+    assert req_ctx.product_name  # nosec
+
+    approval_data = await parse_request_body_as(UserAccountPreviewApprovalBody, request)
+
+    assert approval_data
+
+    raise NotImplementedError
 
 
 @routes.post(f"/{API_VTAG}/admin/user-accounts:reject", name="reject_user_account")
