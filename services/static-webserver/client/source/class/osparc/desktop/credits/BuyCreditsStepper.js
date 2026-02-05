@@ -7,19 +7,18 @@
 
 qx.Class.define("osparc.desktop.credits.BuyCreditsStepper", {
   extend: qx.ui.container.Stack,
+
   construct(paymentMethods) {
     this.base(arguments);
-    this.__paymentMethods = paymentMethods;
-    const groupsStore = osparc.store.Groups.getInstance();
-    const myGid = groupsStore.getMyGroupId()
-    const store = osparc.store.Store.getInstance();
-    this.__personalWallet = store.getWallets().find(wallet => wallet.getOwner() === myGid)
-    this.__buildLayout()
+
+    this.__buildLayout(paymentMethods);
   },
+
   events: {
     "completed": "qx.event.type.Event",
     "cancelled": "qx.event.type.Event",
   },
+
   properties: {
     paymentId: {
       check: "String",
@@ -27,40 +26,49 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsStepper", {
       nullable: true
     }
   },
+
   members: {
-    __buildLayout() {
+    __buildLayout(paymentMethods) {
+      const wallet = osparc.store.Store.getInstance().getMyWallet();
+      if (!wallet) {
+        const msg = osparc.store.Store.NO_PERSONAL_WALLET_MSG;
+        osparc.FlashMessenger.logAs(msg, "WARNING");
+        return;
+      }
+
       this.removeAll();
-      this.__form = new osparc.desktop.credits.BuyCreditsForm(this.__paymentMethods);
-      this.__form.addListener("submit", e => {
+      const form = new osparc.desktop.credits.BuyCreditsForm(paymentMethods);
+      form.addListener("submit", e => {
         const {
           amountDollars: priceDollars,
-          osparcCredits, paymentMethodId
+          osparcCredits,
+          paymentMethodId,
         } = e.getData();
         const params = {
           url: {
-            walletId: this.__personalWallet.getWalletId()
+            walletId: wallet.getWalletId()
           },
           data: {
             priceDollars,
             osparcCredits
           }
         };
-        this.__form.setFetching(true);
+        form.setFetching(true);
         if (paymentMethodId) {
           params.url.paymentMethodId = paymentMethodId;
           osparc.data.Resources.fetch("payments", "payWithPaymentMethod", params)
             .then(data => {
-              const { paymentId } = data
+              const { paymentId } = data;
               osparc.wrapper.WebSocket.getInstance().getSocket().once("paymentCompleted", paymentData => {
                 if (paymentId === paymentData.paymentId) {
-                  this.__paymentCompleted(paymentData)
-                  this.__form.setFetching(false);
+                  this.__paymentCompleted(paymentData);
+                  form.setFetching(false);
                 }
               });
             })
             .catch(err => {
               osparc.FlashMessenger.logError(err);
-              this.__form.setFetching(false);
+              form.setFetching(false);
             })
         } else {
           osparc.data.Resources.fetch("payments", "startPayment", params)
@@ -79,13 +87,14 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsStepper", {
               });
             })
             .catch(err => osparc.FlashMessenger.logError(err))
-            .finally(() => this.__form.setFetching(false));
+            .finally(() => form.setFetching(false));
         }
       });
-      this.__form.addListener("cancel", () => this.fireEvent("cancelled"));
-      this.add(this.__form);
-      this.setSelection([this.__form])
+      form.addListener("cancel", () => this.fireEvent("cancelled"));
+      this.add(form);
+      this.setSelection([form]);
     },
+
     __paymentCompleted(paymentData) {
       if (paymentData && paymentData.completedStatus) {
         const msg = this.tr("Payment ") + osparc.utils.Utils.onlyFirstsUp(paymentData.completedStatus);
@@ -107,15 +116,23 @@ qx.Class.define("osparc.desktop.credits.BuyCreditsStepper", {
       }
       this.fireEvent("completed");
     },
+
     __isGatewaySelected() {
-      const selection = this.getSelection()
-      return selection.length === 1 && selection[0] === this.__iframe
+      const selection = this.getSelection();
+      return selection.length === 1 && selection[0] === this.__iframe;
     },
+
     cancelPayment: function() {
       if (this.__isGatewaySelected() && this.getPaymentId()) {
+        const wallet = osparc.store.Store.getInstance().getMyWallet();
+        if (!wallet) {
+          const msg = osparc.store.Store.NO_PERSONAL_WALLET_MSG;
+          osparc.FlashMessenger.logAs(msg, "WARNING");
+          return;
+        }
         osparc.data.Resources.fetch("payments", "cancelPayment", {
           url: {
-            walletId: this.__personalWallet.getWalletId(),
+            walletId: wallet.getWalletId(),
             paymentId: this.getPaymentId()
           }
         })
