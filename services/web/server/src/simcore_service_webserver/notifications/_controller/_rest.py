@@ -7,13 +7,10 @@ from models_library.api_schemas_webserver.notifications import (
     NotificationsTemplatePreviewGet,
     SearchTemplatesQueryParams,
 )
-from models_library.rpc.notifications.template import NotificationsTemplatePreviewRpcRequest
+from models_library.notifications import TemplateRef
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import parse_request_body_as, parse_request_query_parameters_as
 from servicelib.aiohttp.rest_responses import create_data_response
-from servicelib.rabbitmq.rpc_interfaces.notifications.notifications_templates import (
-    preview_template as remote_preview_template,
-)
 from servicelib.rabbitmq.rpc_interfaces.notifications.notifications_templates import (
     search_templates as remote_search_templates,
 )
@@ -23,7 +20,7 @@ from ...login.decorators import login_required
 from ...models import AuthenticatedRequestContext
 from ...rabbitmq import get_rabbitmq_rpc_client
 from ...security.decorators import permission_required
-from .. import _helpers, _service
+from .. import _service
 from ._rest_exceptions import handle_notifications_exceptions
 
 routes = web.RouteTableDef()
@@ -67,15 +64,13 @@ async def send_message(request: web.Request) -> web.Response:
 @handle_notifications_exceptions
 async def preview_template(request: web.Request) -> web.Response:
     req_ctx = AuthenticatedRequestContext.model_validate(request)
-    body = await parse_request_body_as(NotificationsTemplatePreviewBody, request)
+    req_body = await parse_request_body_as(NotificationsTemplatePreviewBody, request)
 
-    product_data = _helpers.get_product_data(app=request.app, product_name=req_ctx.product_name)
-
-    enriched_body = body.model_copy(update={"context": {**body.context, "product": product_data}}, deep=True)
-
-    preview = await remote_preview_template(
-        get_rabbitmq_rpc_client(request.app),
-        request=NotificationsTemplatePreviewRpcRequest(**enriched_body.model_dump()),
+    preview = await _service.preview_template(
+        request.app,
+        product_name=req_ctx.product_name,
+        ref=TemplateRef(**req_body.ref.model_dump()),
+        context=req_body.context,
     )
 
     return create_data_response(NotificationsTemplatePreviewGet(**preview.model_dump()).data())

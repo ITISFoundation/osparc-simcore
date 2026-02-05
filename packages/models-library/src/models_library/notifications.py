@@ -1,5 +1,5 @@
 from enum import StrEnum
-from typing import Annotated
+from typing import Annotated, Any
 
 from pydantic import BaseModel, EmailStr, Field
 
@@ -9,6 +9,11 @@ class ChannelType(StrEnum):
 
 
 type TemplateName = Annotated[str, Field(min_length=1)]
+
+
+class TemplateRef(BaseModel):
+    channel: ChannelType
+    template_name: TemplateName
 
 
 class NotificationsEmailAddress(BaseModel):
@@ -37,3 +42,8 @@ class NotificationsEmailMessage(NotificationsMessage):
     from_: Annotated[NotificationsEmailAddress, Field(alias="from")]
     to: list[NotificationsEmailAddress]
     content: NotificationsEmailMessageContent
+
+
+class NotificationsTemplatePreview(BaseModel):
+    ref: TemplateRef
+    content: dict[str, Any]

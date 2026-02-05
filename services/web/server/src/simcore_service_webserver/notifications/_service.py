@@ -1,21 +1,33 @@
+from dataclasses import asdict
+from typing import Any
+
 from aiohttp import web
 from celery_library.async_jobs import submit_job
 from common_library.network import NO_REPLY_DISPLAY_NAME, NO_REPLY_LOCAL
 from models_library.api_schemas_async_jobs.async_jobs import AsyncJobGet
 from models_library.groups import GroupID
-from models_library.notifications import ChannelType
+from models_library.notifications import ChannelType, NotificationsTemplatePreview, TemplateRef
 from models_library.notifications_errors import (
     NotificationsNoActiveRecipientsError,
     NotificationsUnsupportedChannelError,
 )
 from models_library.products import ProductName
+from models_library.rpc.notifications.template import (
+    NotificationsTemplatePreviewRpcRequest,
+    NotificationsTemplateRefRpc,
+)
 from models_library.users import UserID
 from pydantic import BaseModel
 from servicelib.celery.models import ExecutionMetadata, OwnerMetadata
+from servicelib.rabbitmq.rpc_interfaces.notifications.notifications_templates import (
+    preview_template as remote_preview_template,
+)
 
 from ..celery import get_task_manager
 from ..models import WebServerOwnerMetadata
 from ..products import products_service
+from ..rabbitmq import get_rabbitmq_rpc_client
+from ._helpers import get_product_data
 from ._models import EmailAddress, EmailContent, EmailNotificationMessage
 
 
@@ -86,6 +98,30 @@ async def _create_email_message(
         bcc=to,
         content=email_content,
     )
+
+
+async def preview_template(
+    app: web.Application,
+    *,
+    product_name: ProductName,
+    ref: TemplateRef,
+    context: dict[str, Any],
+) -> NotificationsTemplatePreview:
+    product_data = get_product_data(app, product_name=product_name)
+
+    enriched_context = {**context, "product": asdict(product_data)}
+
+    request = NotificationsTemplatePreviewRpcRequest(
+        ref=NotificationsTemplateRefRpc(**ref.model_dump()),
+        context=enriched_context,
+    )
+
+    preview = await remote_preview_template(
+        get_rabbitmq_rpc_client(app),
+        request=request,
+    )
+
+    return NotificationsTemplatePreview(**preview.model_dump())
 
 
 async def send_message(

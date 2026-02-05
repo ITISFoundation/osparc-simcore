@@ -73,6 +73,11 @@ class SearchTemplatesQueryParams(BaseModel):
     template_name: str | None = None
 
 
+class NotificationsTemplateRefBody(InputSchema):
+    channel: ChannelType
+    template_name: TemplateName
+
+
 class NotificationsTemplateRefGet(OutputSchema):
     channel: ChannelType
     template_name: TemplateName
@@ -84,7 +89,7 @@ class NotificationsTemplateGet(OutputSchema):
 
 
 class NotificationsTemplatePreviewBody(InputSchema):
-    ref: NotificationsTemplateRefGet
+    ref: NotificationsTemplateRefBody
     context: dict[str, Any]
 
 
@@ -94,7 +99,7 @@ class NotificationsTemplatePreviewGet(OutputSchema):
 
 
 class NotificationsTemplateMessageBody(InputSchema):
-    ref: NotificationsTemplateRefGet
+    ref: NotificationsTemplateRefBody
     recipients: list[GroupID]
     context: dict[str, Any]
 
