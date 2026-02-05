@@ -14867,7 +14867,7 @@ components:
     NotificationsTemplatePreviewBody:
       properties:
         ref:
-          $ref: '#/components/schemas/NotificationsTemplateRefGet'
+          $ref: '#/components/schemas/NotificationsTemplateRefBody'
         context:
           additionalProperties: true
           type: object
@@ -14888,6 +14888,17 @@ components:
       - ref
       - content
       title: NotificationsTemplatePreviewGet
+    NotificationsTemplateRefBody:
+      properties:
+        channel:
+          $ref: '#/components/schemas/ChannelType'
+        templateName:
+          $ref: '#/components/schemas/TemplateName'
+      type: object
+      required:
+      - channel
+      - templateName
+      title: NotificationsTemplateRefBody
     NotificationsTemplateRefGet:
       properties:
         channel:
@@ -18572,17 +18583,20 @@ components:
           type: string
           format: email
           title: Email
-        invitation:
-          anyOf:
-          - $ref: '#/components/schemas/_InvitationDetails'
-          - type: 'null'
-        content:
+        invitationUrl:
+          type: string
+          maxLength: 2083
+          minLength: 1
+          format: uri
+          title: Invitationurl
+        messageContent:
           anyOf:
           - $ref: '#/components/schemas/NotificationsContentBody'
           - type: 'null'
       type: object
       required:
       - email
+      - invitationUrl
       title: UserAccountApproveBody
     UserAccountGet:
       properties:
@@ -18747,11 +18761,21 @@ components:
       title: UserAccountPreviewApprovalBody
     UserAccountPreviewApprovalGet:
       properties:
-        content:
-          $ref: '#/components/schemas/NotificationsContentGet'
+        invitationUrl:
+          anyOf:
+          - type: string
+            maxLength: 2083
+            minLength: 1
+            format: uri
+          - type: 'null'
+          title: Invitationurl
+        messageContent:
+          anyOf:
+          - $ref: '#/components/schemas/NotificationsContentGet'
+          - type: 'null'
       type: object
       required:
-      - content
+      - invitationUrl
       title: UserAccountPreviewApprovalGet
     UserAccountReject:
       properties:
