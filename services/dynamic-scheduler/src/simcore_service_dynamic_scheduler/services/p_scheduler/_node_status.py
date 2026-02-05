@@ -28,6 +28,8 @@ _STATUS: Final[str] = "s"
 _TRACKING: Final[str] = "tracked-services"
 _PERIODIC_HANDLING_MESSAGE: Final[str] = "Periodic check handled by app_id="
 
+_MAX_CONCURRENCY: Final[NonNegativeInt] = 10
+
 
 async def _get_scheduler_service_status(app: FastAPI, node_id: NodeID) -> SchedulerServiceStatus:
     """Remaps platform service status to something that the scheduler understands"""
@@ -90,9 +92,6 @@ class _RedisInterface:
 
 
 _NAME: Final[str] = "scheduler_status_manager"
-
-
-_MAX_CONCURRENCY: Final[NonNegativeInt] = 10
 
 
 class StatusManager(SingletonInAppStateMixin, SupportsLifecycle):
