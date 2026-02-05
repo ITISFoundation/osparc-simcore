@@ -4,6 +4,7 @@ import networkx as nx
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
 
 from ._abc import BaseStep, InDataKeys
+from ._lifecycle_protocol import SupportsLifecycle
 from ._models import DagNodeUniqueReference, KeyConfig, StepsSequence, WorkflowDefinition, WorkflowName
 
 
@@ -92,7 +93,7 @@ def _validate_step_sequences(
         sequence_context.update(sequence_output_keys)
 
 
-class WorkflowRegistry(SingletonInAppStateMixin):
+class WorkflowRegistry(SingletonInAppStateMixin, SupportsLifecycle):
     app_state_name: str = "p_scheduler_workflow_registry"
 
     def __init__(self) -> None:
@@ -126,7 +127,7 @@ class WorkflowRegistry(SingletonInAppStateMixin):
             self._dag_step_sequences[name] = step_sequence
             self._mapping_step_references_to_types.update(step_references_to_types)
 
-    async def teardown(self) -> None:
+    async def shutdown(self) -> None:
         self._workflows.clear()
         self._dag_step_sequences.clear()
         self._mapping_step_references_to_types.clear()

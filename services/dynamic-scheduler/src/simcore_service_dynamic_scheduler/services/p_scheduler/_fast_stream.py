@@ -29,7 +29,7 @@ class FastStreamManager(SingletonInAppStateMixin):
     async def _subscie_handler(self, routing_key: str, handler: MessageHandlerProtocol) -> None:
         self.broker.subscriber(routing_key)(handler)
 
-    async def publish(self, message: str, routing_key: str) -> None:
+    async def publish(self, message: Any, routing_key: RoutingKey) -> None:
         await self.broker.publish(message, routing_key)
 
     async def setup(self) -> None:

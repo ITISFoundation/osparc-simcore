@@ -19,6 +19,7 @@ from servicelib.utils import limited_gather
 
 from ..common_interface import get_service_status
 from ..redis import RedisDatabase, get_redis_client
+from ._lifecycle_protocol import SupportsLifecycle
 from ._models import SchedulerServiceStatus
 
 _logger = logging.getLogger(__name__)
@@ -94,7 +95,7 @@ _NAME: Final[str] = "scheduler_status_manager"
 _MAX_CONCURRENCY: Final[NonNegativeInt] = 10
 
 
-class StatusManager(SingletonInAppStateMixin):
+class StatusManager(SingletonInAppStateMixin, SupportsLifecycle):
     app_state_name: str = f"p_{_NAME}"
 
     def __init__(self, app: FastAPI, *, status_ttl: timedelta, update_statuses_interval: timedelta) -> None:
@@ -147,6 +148,6 @@ class StatusManager(SingletonInAppStateMixin):
             task_name=_NAME,
         )
 
-    async def teardown(self) -> None:
+    async def shutdown(self) -> None:
         if self._task_scheduler_service_status is not None:
             await cancel_wait_task(self._task_scheduler_service_status)
