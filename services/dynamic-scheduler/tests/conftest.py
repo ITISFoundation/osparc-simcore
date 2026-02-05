@@ -68,7 +68,8 @@ def docker_compose_service_dynamic_scheduler_env_vars(
             envs[name] = string.Template(value).substitute(env_devel_dict)
         except (KeyError, ValueError) as err:
             pytest.fail(
-                f"{err}: {value} is not defined in .env-devel but used as RHS in docker-compose services['dynamic-schdlr'].environment[{name}]"
+                f"{err}: {value} is not defined in .env-devel but used as RHS in "
+                f"docker-compose services['dynamic-schdlr'].environment[{name}]"
             )
     return envs
 
@@ -124,6 +125,11 @@ def disable_status_monitor_lifespan(mocker: MockerFixture) -> None:
 @pytest.fixture
 def disable_generic_scheduler_lifespan(mocker: MockerFixture) -> None:
     mocker.patch(f"{_EVENTS_MODULE}.generic_scheduler_lifespan")
+
+
+@pytest.fixture
+def disable_p_scheduler_lifespan(mocker: MockerFixture) -> None:
+    mocker.patch(f"{_EVENTS_MODULE}.p_scheduler_lifespan")
 
 
 @pytest.fixture

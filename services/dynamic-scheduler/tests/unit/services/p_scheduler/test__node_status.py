@@ -129,6 +129,7 @@ def app_environment(
     disable_deferred_manager_lifespan: None,
     disable_notifier_lifespan: None,
     disable_status_monitor_lifespan: None,
+    disable_p_scheduler_lifespan: None,
     use_in_memory_redis: RedisSettings,
     app_environment: EnvVarsDict,
 ) -> EnvVarsDict:
@@ -142,7 +143,7 @@ async def status_manager(app: FastAPI) -> AsyncIterable[StatusManager]:
     )
     await manager.setup()
     yield manager
-    await manager.teardown()
+    await manager.shutdown()
 
 
 async def _wait_for_keys_to_expire() -> None:
