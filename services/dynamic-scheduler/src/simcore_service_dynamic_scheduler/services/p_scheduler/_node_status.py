@@ -1,5 +1,5 @@
 import logging
-from asyncio import Task
+from asyncio import Task, create_task
 from datetime import timedelta
 from typing import Final
 
@@ -10,10 +10,9 @@ from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGet
 from models_library.projects_nodes_io import NodeID
 from models_library.services_enums import ServiceState
 from pydantic import NonNegativeInt
-from servicelib.background_task import create_periodic_task
+from servicelib.background_task_utils import exclusive_periodic
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
 from servicelib.logging_utils import log_catch
-from servicelib.redis import exclusive
 from servicelib.redis._utils import handle_redis_returns_union_types
 from servicelib.utils import limited_gather
 
@@ -139,13 +138,16 @@ class StatusManager(SingletonInAppStateMixin, SupportsLifecycle):
         )
 
     async def setup(self) -> None:
-        self._task_scheduler_service_status = create_periodic_task(
-            exclusive(
-                get_redis_client(self.app, RedisDatabase.LOCKS),
-                lock_key=f"{_NAME}_{self._worker_update_scheduler_service_status.__name__}",
-            )(self._worker_update_scheduler_service_status),
-            interval=self.update_statuses_interval,
-            task_name=_NAME,
+        @exclusive_periodic(
+            get_redis_client(self.app, RedisDatabase.LOCKS),
+            task_interval=self.update_statuses_interval,
+            retry_after=self.update_statuses_interval,
+        )
+        async def _periodic_check_services_require_status_update() -> None:
+            await self._worker_update_scheduler_service_status()
+
+        self._task_scheduler_service_status = create_task(
+            _periodic_check_services_require_status_update(), name=f"periodic_{_NAME}"
         )
 
     async def shutdown(self) -> None:
