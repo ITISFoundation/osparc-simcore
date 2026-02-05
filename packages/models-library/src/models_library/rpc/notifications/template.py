@@ -26,6 +26,13 @@ class NotificationsTemplatePreviewRpcRequest(BaseModel):
     model_config = ConfigDict(frozen=True)
 
 
+class NotificationsSendFromTemplateRpcRequest(BaseModel):
+    ref: NotificationsTemplateRefRpc
+    context: dict[str, Any]
+
+    model_config = ConfigDict(frozen=True)
+
+
 class NotificationsTemplatePreviewRpcResponse(BaseModel):
     ref: NotificationsTemplateRefRpc
     content: dict[str, Any]
