@@ -23,7 +23,7 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethods", {
 
     this._setLayout(new qx.ui.layout.VBox(20));
 
-    this.__buildLayout()
+    this.__buildLayout();
   },
 
   properties: {
