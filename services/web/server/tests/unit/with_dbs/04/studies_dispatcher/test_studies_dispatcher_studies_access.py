@@ -433,7 +433,9 @@ async def test_access_cookie_of_expired_user(
 
         prj_id = projects[0]["uuid"]
 
-        delete_task = await submit_delete_project_task(app, prj_id, uid, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE)
+        delete_task = await submit_delete_project_task(
+            app, prj_id, uid, UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE, "osparc"
+        )
         await delete_task
 
         await delete_user_without_projects(app, user_id=uid)

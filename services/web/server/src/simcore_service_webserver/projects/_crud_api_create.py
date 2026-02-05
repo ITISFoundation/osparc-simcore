@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from collections.abc import Coroutine
-from typing import Any, TypeAlias
+from typing import Any
 
 from aiohttp import web
 from common_library.json_serialization import json_dumps
@@ -65,8 +65,8 @@ OVERRIDABLE_DOCUMENT_KEYS = [
 
 _logger = logging.getLogger(__name__)
 
-CopyFileCoro: TypeAlias = Coroutine[Any, Any, None]
-CopyProjectNodesCoro: TypeAlias = Coroutine[Any, Any, dict[NodeID, ProjectNodeCreate]]
+type CopyFileCoro = Coroutine[Any, Any, None]
+type CopyProjectNodesCoro = Coroutine[Any, Any, dict[NodeID, ProjectNodeCreate]]
 
 
 async def _prepare_project_copy(
@@ -237,7 +237,7 @@ async def _compose_project_data(
     return new_project, project_nodes
 
 
-async def create_project(  # pylint: disable=too-many-arguments,too-many-branches,too-many-statements  # noqa: C901, PLR0913
+async def create_project(  # pylint: disable=too-many-arguments,too-many-branches,too-many-statements  # noqa: C901, PLR0912, PLR0913, PLR0915
     progress: TaskProgress,
     *,
     app: web.Application,
@@ -469,6 +469,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
                 project_uuid=project_uuid,
                 user_id=user_id,
                 simcore_user_agent=simcore_user_agent,
+                product_name=product_name,
             )
         raise web.HTTPNotFound(text=f"{exc}") from exc
 
@@ -483,6 +484,7 @@ async def create_project(  # pylint: disable=too-many-arguments,too-many-branche
                 project_uuid=project_uuid,
                 user_id=user_id,
                 simcore_user_agent=simcore_user_agent,
+                product_name=product_name,
             )
         raise
 

@@ -48,6 +48,7 @@ class DynamicServiceStop(BaseModel):
     node_id: NodeID
     simcore_user_agent: str
     save_state: bool
+    product_name: str
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -57,6 +58,7 @@ class DynamicServiceStop(BaseModel):
                 "node_id": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
                 "simcore_user_agent": "",
                 "save_state": True,
+                "product_name": "osparc",
             }
         }
     )
