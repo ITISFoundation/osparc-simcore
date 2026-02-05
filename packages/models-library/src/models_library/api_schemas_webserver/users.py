@@ -19,15 +19,13 @@ from pydantic import (
 )
 from pydantic.config import JsonDict
 
-from models_library.groups import AccessRightsDict
-from models_library.rest_filters import Filters
-from models_library.rest_pagination import PageQueryParameters
-
 from ..basic_types import IDStr
 from ..emails import LowerCaseEmailStr
 from ..groups import AccessRightsDict, Group, GroupID, GroupsByTypeTuple, PrimaryGroupID
 from ..products import ProductName
 from ..rest_base import RequestParameters
+from ..rest_filters import Filters
+from ..rest_pagination import PageQueryParameters
 from ..string_types import (
     GlobPatternSafeStr,
     SearchPatternSafeStr,
@@ -50,6 +48,7 @@ from ._base import (
     OutputSchemaWithoutCamelCase,
 )
 from .groups import MyGroupsGet
+from .notifications import NotificationsContentBody, NotificationsContentGet
 from .products import TrialAccountAnnotated, WelcomeCreditsAnnotated
 from .users_preferences import AggregatedPreferences
 
@@ -240,7 +239,10 @@ class MyProfileRestPatch(InputSchemaWithoutCamelCase):
     def _validate_user_name(cls, value: str):
         # Ensure valid characters (alphanumeric + . _ -)
         if not re.match(r"^[a-zA-Z][a-zA-Z0-9._-]*$", value):
-            msg = f"Username '{value}' must start with a letter and can only contain letters, numbers and '_', '.' or '-'."
+            msg = (
+                f"Username '{value}' must start with a letter and can only "
+                "contain letters, numbers and '_', '.' or '-'."
+            )
             raise ValueError(msg)
 
         # Ensure no consecutive special characters
@@ -327,6 +329,14 @@ class _InvitationDetails(InputSchema):
 class UserAccountApprove(InputSchema):
     email: EmailStr
     invitation: _InvitationDetails | None = None
+
+
+class UserAccountApproveWithContent(UserAccountApprove):
+    content: NotificationsContentBody
+
+
+class UserAccountPreviewApprovalGet(OutputSchema):
+    content: NotificationsContentGet
 
 
 class UserAccountReject(InputSchema):

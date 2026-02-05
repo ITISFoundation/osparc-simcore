@@ -1796,6 +1796,26 @@ paths:
       responses:
         '204':
           description: Successful Response
+  /v0/admin/user-accounts:preview-approval:
+    post:
+      tags:
+      - users
+      - admin
+      summary: Preview Approval User Account
+      operationId: preview_approval_user_account
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserAccountApprove'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_UserAccountPreviewApprovalGet_'
   /v0/admin/user-accounts:reject:
     post:
       tags:
@@ -11638,6 +11658,19 @@ components:
           title: Error
       type: object
       title: Envelope[UserAccountGet]
+    Envelope_UserAccountPreviewApprovalGet_:
+      properties:
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/UserAccountPreviewApprovalGet'
+          - type: 'null'
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[UserAccountPreviewApprovalGet]
     Envelope_WalletGetWithAvailableCredits_:
       properties:
         data:
@@ -18694,6 +18727,14 @@ components:
       - accountRequestStatus
       - registered
       title: UserAccountGet
+    UserAccountPreviewApprovalGet:
+      properties:
+        content:
+          $ref: '#/components/schemas/NotificationsContentGet'
+      type: object
+      required:
+      - content
+      title: UserAccountPreviewApprovalGet
     UserAccountReject:
       properties:
         email:
