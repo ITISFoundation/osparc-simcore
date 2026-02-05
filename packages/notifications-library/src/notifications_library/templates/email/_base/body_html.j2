@@ -20,19 +20,19 @@
 <title>{% block title %}{% endblock %}</title>
 </head>
 <body style="{{ body_style }}">
-  <div class="email-container" style="{{ email_container_style }}">
-    <div class="header" style="{{ header_style }}">
+  <div style="{{ email_container_style }}">
+    <div style="{{ header_style }}">
       <a href="{{ product.homepage_url | default(default_homepage) }}" target="_blank" rel="noopener noreferrer">
         <img src="{{ product.ui.logo_url | default(default_logo) }}" alt="Logo" style="height: 40px;">
       </a>
     </div>
 
-    <div class="content" style="{{ content_style }}">
+    <div style="{{ content_style }}">
       {% block content %}
       {% endblock %}
     </div>
 
-    <div class="footer" style="{{ footer_style }}">
+    <div style="{{ footer_style }}">
       <p>
         Visit the <a href="{{ product.homepage_url | default(default_homepage) }}" target="_blank" rel="noopener noreferrer">Platform</a> |
         Need help? <a href="mailto:{{ product.support_email }}">Support</a> |
