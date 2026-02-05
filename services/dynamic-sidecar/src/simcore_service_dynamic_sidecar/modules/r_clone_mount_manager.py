@@ -146,9 +146,6 @@ class DynamicSidecarRCloneMountDelegate(DelegateInterface):
 
     async def remove_container(self, container_name: str) -> None:
         async with _get_docker_client() as client:
-            existing_container = await client.containers.get(container_name)
-            await existing_container.delete(force=True)
-
             try:
                 container = await client.containers.get(container_name)
             except DockerError as e:
