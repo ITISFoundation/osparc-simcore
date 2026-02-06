@@ -9,19 +9,19 @@ _PARALLELISM_LIMIT: Final[NonNegativeInt] = 10
 
 T = TypeVar("T")
 
-Callback = Callable[[T], Awaitable[None]]
+OnChange = Callable[[T], Awaitable[None]]
 
 
 class ChangeNotifier[T]:
     def __init__(self) -> None:
-        self._subscribers: set[Callback] = set()
+        self._subscribers: set[OnChange] = set()
         self._lock = asyncio.Lock()
 
-    async def subscribe(self, handler: Callback) -> None:
+    async def subscribe(self, handler: OnChange) -> None:
         async with self._lock:
             self._subscribers.add(handler)
 
-    async def unsubscribe(self, handler: Callback) -> None:
+    async def unsubscribe(self, handler: OnChange) -> None:
         async with self._lock:
             self._subscribers.discard(handler)
 
