@@ -49,7 +49,7 @@ from ._base import (
     OutputSchemaWithoutCamelCase,
 )
 from .groups import MyGroupsGet
-from .notifications import NotificationsContentBody, NotificationsContentGet
+from .notifications import MessageContentBody, MessageContentGet
 from .products import TrialAccountAnnotated, WelcomeCreditsAnnotated
 from .users_preferences import AggregatedPreferences
 
@@ -330,7 +330,7 @@ class _InvitationDetails(InputSchema):
 class UserAccountApproveBody(InputSchema):
     email: EmailStr
     invitation_url: HttpUrl
-    message_content: NotificationsContentBody | None = None
+    message_content: MessageContentBody | None = None
 
 
 class UserAccountPreviewApprovalBody(InputSchema):
@@ -340,7 +340,7 @@ class UserAccountPreviewApprovalBody(InputSchema):
 
 class UserAccountPreviewApprovalGet(OutputSchema):
     invitation_url: HttpUrl | None
-    message_content: NotificationsContentGet | None = None
+    message_content: MessageContentGet | None = None
 
 
 class UserAccountReject(InputSchema):
