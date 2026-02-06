@@ -1,6 +1,6 @@
 # pylint: disable=redefined-outer-name
 
-import asyncio
+from asyncio import QueueFull, sleep
 from collections.abc import AsyncIterable
 from datetime import timedelta
 from typing import Final
@@ -29,11 +29,11 @@ async def queue(queue_size: int) -> AsyncIterable[BoundedPubSubQueue[str]]:
 async def test_queue_workflow(queue: BoundedPubSubQueue[str], queue_size: int) -> None:
     async def faster_consumer(msg: str) -> None:
         print("[F]", msg)
-        await asyncio.sleep(_SLEEP_DURATION)
+        await sleep(_SLEEP_DURATION)
 
     async def slower_consumer(msg: str) -> None:
         print("[S]", msg)
-        await asyncio.sleep(_SLEEP_DURATION * 4)
+        await sleep(_SLEEP_DURATION * 4)
 
     # 1. fill up the queue to capacity
     for i in range(queue_size // 2):
@@ -43,10 +43,10 @@ async def test_queue_workflow(queue: BoundedPubSubQueue[str], queue_size: int) -
         await queue.put(f"async-put-{i}")
 
     # 2. raises when queue is full
-    with pytest.raises(asyncio.QueueFull):
+    with pytest.raises(QueueFull):
         queue.put_nowait("queue-full")
 
-    with pytest.raises(asyncio.QueueFull):
+    with pytest.raises(QueueFull):
         await queue.put("queue-full")
 
     # subscribe two consumers
