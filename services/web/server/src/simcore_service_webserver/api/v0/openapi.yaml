@@ -4722,7 +4722,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/NotificationsMessageBody'
+              $ref: '#/components/schemas/NotificationMessageBody'
         required: true
       responses:
         '200':
@@ -14784,6 +14784,26 @@ components:
       - ANNOTATION_NOTE
       - WALLET_SHARED
       title: NotificationCategory
+    NotificationMessageBody:
+      properties:
+        channel:
+          $ref: '#/components/schemas/ChannelType'
+        groupIds:
+          anyOf:
+          - items:
+              type: integer
+              exclusiveMinimum: true
+              minimum: 0
+            type: array
+          - type: 'null'
+          title: Groupids
+        messageContent:
+          $ref: '#/components/schemas/NotificationsContentBody'
+      type: object
+      required:
+      - channel
+      - messageContent
+      title: NotificationMessageBody
     NotificationsContentBody:
       properties:
         subject:
@@ -14832,25 +14852,6 @@ components:
       - bodyHtml
       - bodyText
       title: NotificationsEmailContentGet
-    NotificationsMessageBody:
-      properties:
-        channel:
-          $ref: '#/components/schemas/ChannelType'
-        recipients:
-          items:
-            type: integer
-            exclusiveMinimum: true
-            minimum: 0
-          type: array
-          title: Recipients
-        content:
-          $ref: '#/components/schemas/NotificationsContentBody'
-      type: object
-      required:
-      - channel
-      - recipients
-      - content
-      title: NotificationsMessageBody
     NotificationsTemplateGet:
       properties:
         ref:
