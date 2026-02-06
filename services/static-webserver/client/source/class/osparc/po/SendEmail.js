@@ -21,11 +21,11 @@ qx.Class.define("osparc.po.SendEmail", {
   construct: function() {
     this.base(arguments);
 
-    this.__selectedRecipients = [];
+    this.__selectedGroupIds = [];
   },
 
   members: {
-    __selectedRecipients: null,
+    __selectedGroupIds: null,
 
     _createChildControlImpl: function(id) {
       let control;
@@ -199,8 +199,8 @@ qx.Class.define("osparc.po.SendEmail", {
         const data = e.getData();
         const selectedGids = data.selectedGids;
         selectedGids.forEach(gid => {
-          if (!this.__selectedRecipients.includes(gid)) {
-            this.__selectedRecipients.push(gid);
+          if (!this.__selectedGroupIds.includes(gid)) {
+            this.__selectedGroupIds.push(gid);
           }
         });
         this.__updateRecipientsChips();
@@ -212,7 +212,7 @@ qx.Class.define("osparc.po.SendEmail", {
       const chipsContainer = this.getChildControl("recipients-chips");
       chipsContainer.removeAll();
       const groupsStore = osparc.store.Groups.getInstance();
-      this.__selectedRecipients.forEach((gid, index) => {
+      this.__selectedGroupIds.forEach((gid, index) => {
         const group = groupsStore.getGroup(gid);
         const chip = new qx.ui.basic.Atom(group.getLabel(), "@FontAwesome5Solid/times/10").set({
           toolTipText: group.getDescription(),
@@ -225,7 +225,7 @@ qx.Class.define("osparc.po.SendEmail", {
           backgroundColor: "background-main-3",
         });
         chip.addListener("tap", () => {
-          this.__selectedRecipients.splice(index, 1);
+          this.__selectedGroupIds.splice(index, 1);
           this.__updateRecipientsChips();
         }, this);
         chipsContainer.add(chip);
@@ -234,7 +234,7 @@ qx.Class.define("osparc.po.SendEmail", {
 
     __sendEmailClicked: function() {
       // make sure at least one recipient is selected
-      if (!this.__selectedRecipients.length) {
+      if (!this.__selectedGroupIds.length) {
         osparc.FlashMessenger.logAs(this.tr("Please select at least one recipient"), "WARNING");
         return;
       }
@@ -276,7 +276,7 @@ qx.Class.define("osparc.po.SendEmail", {
       const emailEditor = this.getChildControl("email-editor-and-preview");
       const bodyHtml = emailEditor.composeWholeHtml();
       const bodyText = emailEditor.getBodyText();
-      const sendMessagePromise = osparc.message.Messages.sendMessage(this.__selectedRecipients, subject, bodyHtml, bodyText);
+      const sendMessagePromise = osparc.message.Messages.sendMessage(this.__selectedGroupIds, subject, bodyHtml, bodyText);
       const pollTasks = osparc.store.PollTasks.getInstance();
       pollTasks.createPollingTask(sendMessagePromise)
         .then(task => {
