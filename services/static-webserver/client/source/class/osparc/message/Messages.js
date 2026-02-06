@@ -43,8 +43,8 @@ qx.Class.define("osparc.message.Messages", {
       const params = {
         data: {
           "channel": "email",
-          "group_ids": group_ids,
-          "content": {
+          "groupIds": group_ids,
+          "messageContent": {
             "subject": subject,
             "bodyHtml": bodyHtml,
             "bodyText": bodyText,
