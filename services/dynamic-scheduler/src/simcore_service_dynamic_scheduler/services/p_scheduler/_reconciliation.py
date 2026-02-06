@@ -1,10 +1,22 @@
 import logging
+import time
+from asyncio import QueueFull, Task, create_task
+from datetime import timedelta
+from functools import cached_property
 from typing import Final
 
+from common_library.async_tools import cancel_wait_task
 from fastapi import FastAPI
 from models_library.projects_nodes_io import NodeID
+from pydantic import NonNegativeInt
+from servicelib.background_task_utils import exclusive_periodic
+from servicelib.fastapi.app_state import SingletonInAppStateMixin
+from servicelib.logging_utils import log_context
 
 from ..base_repository import get_repository
+from ..redis import RedisDatabase, get_redis_client
+from ._lifecycle_protocol import SupportsLifecycle
+from ._metrics import MetricsManager
 from ._models import (
     DagNodeUniqueReference,
     Run,
@@ -16,7 +28,8 @@ from ._models import (
     UserRequest,
 )
 from ._node_status import StatusManager
-from ._notifications import NotificationsManager
+from ._notifications import RK_RECONSILIATION, NotificationsManager
+from ._queue import BoundedPubSubQueue, get_worker_count
 from ._repositories.runs import RunsRepository
 from ._repositories.steps import StepsRepository
 from ._repositories.user_requests import UserRequestsRepository
@@ -102,7 +115,7 @@ async def _if_any_reschedule_failed_steps_or_give_up(
 ) -> bool:
     """tries to reschedule failed steps.
     if no retries are left either cancels the workflow or sets it to wait for manual intervention
-    returns True if action was taken that prevents further processing of the workflow in this loop iteration
+    returns True if action was taken that prevents further processing of the workflow in this iteration
     """
     for step in run_steps.values():
         if step.state == StepState.FAILED:
@@ -162,7 +175,7 @@ async def _cleanup_run_if_completed(
     _logger.info("workflow '%s' for node_id='%s:' completed successfully", current_run.workflow_name, node_id)
 
 
-async def loop(app: FastAPI, node_id: NodeID) -> None:
+async def _reconciliate(app: FastAPI, *, node_id: NodeID) -> None:
     status_manager = StatusManager.get_from_app_state(app)
     workflow_registry = WorkflowRegistry.get_from_app_state(app)
     workflow_manager = WorkflowManager.get_from_app_state(app)
@@ -213,3 +226,95 @@ async def loop(app: FastAPI, node_id: NodeID) -> None:
 
     # 4. CLEANUP RUN IF COMPLETED
     return await _cleanup_run_if_completed(node_id, workflow_manager, steps_repo, current_run)
+
+
+_NAME: Final[str] = "scheduler_reconciliation_manager"
+
+
+class ReconciliationManager(SingletonInAppStateMixin, SupportsLifecycle):
+    app_state_name: str = f"p_{_NAME}"
+
+    def __init__(
+        self,
+        app: FastAPI,
+        *,
+        periodic_checks_interval: timedelta,
+        queue_consumer_expected_runtime_duration: timedelta,
+        queue_max_burst: NonNegativeInt,
+    ) -> None:
+        self.app = app
+        self.periodic_checks_interval = periodic_checks_interval
+
+        self._worker_count = get_worker_count(queue_consumer_expected_runtime_duration, queue_max_burst)
+        self._queue: BoundedPubSubQueue[NodeID] = BoundedPubSubQueue(maxsize=self._worker_count)
+
+        self._task_periodic_checks: Task | None = None
+
+    @cached_property
+    def _notifications_manager(self) -> NotificationsManager:
+        return NotificationsManager.get_from_app_state(self.app)
+
+    @cached_property
+    def _runs_repo(self) -> RunsRepository:
+        return get_repository(self.app, RunsRepository)
+
+    @cached_property
+    def _metrics_manager(self) -> MetricsManager:
+        return MetricsManager.get_from_app_state(self.app)
+
+    async def _push_to_queue(self, node_id: NodeID) -> None:
+        try:
+            await self._queue.put(node_id)
+        except QueueFull:
+            self._metrics_manager.inc_dropped_reconciliation_requests()
+            _logger.warning("reconciliation queue is full, dropping reconciliation request for node_id=%s", node_id)
+
+    async def _handle_reconciliation_notification(self, message: NodeID) -> None:
+        await self._push_to_queue(message)
+
+    async def _unique_worker_periodic_checks(self) -> None:
+        """
+        This setup will only be done if a lock is acquired,
+        Only one instance globally will handle the reconciliation.
+        """
+        tracked_runs = await self._runs_repo.get_all_runs()
+        with log_context(_logger, logging.DEBUG, "requesting checks for %s tracked runs", len(tracked_runs)):
+            for run in tracked_runs:
+                await self._notifications_manager.send_riconciliation_event(run.node_id)
+
+    async def _run_reconciliate_safe(self, node_id: NodeID) -> None:
+        with log_context(_logger, logging.DEBUG, "reconciliation node_id=%s", node_id):
+            try:
+                start = time.perf_counter()
+                await _reconciliate(self.app, node_id=node_id)
+                elapsed = time.perf_counter() - start
+
+                self._metrics_manager.duration_of_reconciliation(elapsed)
+                _logger.debug("reconciliation for node_id=%s took %.2f seconds", node_id, elapsed)
+            except Exception:
+                self._metrics_manager.inc_reconciliation_failures()
+                raise
+
+    async def setup(self) -> None:
+        for _ in range(self._worker_count):
+            self._queue.subscribe(self._run_reconciliate_safe)
+
+        self._notifications_manager.subscribe_handler(
+            routing_key=RK_RECONSILIATION, handler=self._handle_reconciliation_notification
+        )
+
+        @exclusive_periodic(
+            get_redis_client(self.app, RedisDatabase.LOCKS),
+            task_interval=self.periodic_checks_interval,
+            retry_after=self.periodic_checks_interval,
+        )
+        async def _periodic_unique_worker_periodic_checks() -> None:
+            await self._unique_worker_periodic_checks()
+
+        self._task_periodic_checks = create_task(_periodic_unique_worker_periodic_checks(), name=f"periodic_{_NAME}")
+
+    async def shutdown(self) -> None:
+        if self._task_periodic_checks is not None:
+            await cancel_wait_task(self._task_periodic_checks)
+
+        await self._queue.close()
