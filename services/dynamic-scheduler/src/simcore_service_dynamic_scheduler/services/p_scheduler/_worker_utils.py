@@ -1,15 +1,15 @@
 import asyncio
 from collections.abc import Awaitable, Callable
-from typing import Any, Final, TypeVar
+from typing import Final, TypeVar
 
 from pydantic import NonNegativeInt
 from servicelib.utils import limited_gather
 
-Callback = Callable[[Any], Awaitable[None]]
-
 _PARALLELISM_LIMIT: Final[NonNegativeInt] = 10
 
 T = TypeVar("T")
+
+Callback = Callable[[T], Awaitable[None]]
 
 
 class ChangeNotifier[T]:
