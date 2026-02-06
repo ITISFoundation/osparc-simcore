@@ -4,7 +4,7 @@ from typing import Any
 from aiohttp import web
 from common_library.users_enums import AccountRequestStatus
 from models_library.api_schemas_invitations.invitations import ApiInvitationInputs
-from models_library.api_schemas_webserver.notifications import NotificationsContentGet
+from models_library.api_schemas_webserver.notifications import MessageContentGet
 from models_library.api_schemas_webserver.users import (
     UserAccountApproveBody,
     UserAccountGet,
@@ -276,7 +276,7 @@ async def preview_approval_user_account(request: web.Request) -> web.Response:
 
     response = UserAccountPreviewApprovalGet(
         invitation_url=invitation_url,
-        message_content=TypeAdapter(NotificationsContentGet).validate_python(preview.content),
+        message_content=TypeAdapter(MessageContentGet).validate_python(preview.content),
     )
 
     return envelope_json_response(response.model_dump(**_RESPONSE_MODEL_MINIMAL_POLICY))
