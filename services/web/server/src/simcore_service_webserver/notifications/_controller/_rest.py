@@ -41,7 +41,8 @@ async def send_message(request: web.Request) -> web.Response:
         product_name=req_ctx.product_name,
         channel=body.channel,
         group_ids=body.group_ids,
-        contacts=None,  # contacts are not supported for now from this endpoint, only group_ids
+        # NOTE: external contacts are not supported for now from this endpoint, only group_ids
+        external_contacts=None,
         message_content=body.message_content.model_dump(),
     )
 

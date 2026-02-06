@@ -64,7 +64,7 @@ async def _create_email_message(
     *,
     product_name: ProductName,
     group_ids: list[GroupID] | None,
-    contacts: list[Contact] | None,
+    external_contacts: list[Contact] | None,
     message_content: dict[str, Any],
 ) -> EmailNotificationMessage:
     product = products_service.get_product(app, product_name)
@@ -79,8 +79,8 @@ async def _create_email_message(
     if group_ids:
         to = await _collect_active_recipients(app, group_ids=group_ids)
 
-    if contacts:
-        to.extend(contacts)
+    if external_contacts:
+        to.extend(external_contacts)
 
     if not to:
         raise NotificationsNoActiveRecipientsError
@@ -137,8 +137,8 @@ async def send_message(
     product_name: ProductName,
     channel: ChannelType,
     group_ids: list[GroupID] | None,
-    contacts: list[Contact] | None,
-    message_content: dict[str, Any],  # validated internally
+    external_contacts: list[Contact] | None,
+    message_content: dict[str, Any],  # NOTE: validated internally
 ) -> AsyncJobGet:
     match channel:
         case ChannelType.email:
@@ -146,7 +146,7 @@ async def send_message(
                 app,
                 product_name=product_name,
                 group_ids=group_ids,
-                contacts=contacts,
+                external_contacts=external_contacts,
                 message_content=message_content,
             )
         case _:
