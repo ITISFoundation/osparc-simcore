@@ -1,7 +1,7 @@
 from aiohttp import web
 from models_library.api_schemas_long_running_tasks.tasks import TaskGet
 from models_library.api_schemas_webserver.notifications import (
-    NotificationsMessageBody,
+    NotificationMessageBody,
     NotificationsTemplateGet,
     NotificationsTemplatePreviewBody,
     NotificationsTemplatePreviewGet,
@@ -33,15 +33,16 @@ _notifications_prefix = f"/{API_VTAG}/notifications"
 @handle_notifications_exceptions
 async def send_message(request: web.Request) -> web.Response:
     req_ctx = AuthenticatedRequestContext.model_validate(request)
-    body = await parse_request_body_as(NotificationsMessageBody, request)
+    body = await parse_request_body_as(NotificationMessageBody, request)
 
     async_job = await notifications_service.send_message(
         request.app,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
         channel=body.channel,
-        recipients=body.recipients,
-        content=body.content,
+        group_ids=body.group_ids,
+        contacts=None,  # contacts are not supported for now from this endpoint, only group_ids
+        message_content=body.message_content.model_dump(),
     )
 
     task_id = f"{async_job.job_id}"

@@ -10,7 +10,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 from models_library.api_schemas_long_running_tasks.tasks import TaskGet
 from models_library.api_schemas_webserver.notifications import (
-    NotificationsMessageBody,
+    NotificationMessageBody,
     NotificationsTemplateGet,
     NotificationsTemplatePreviewBody,
     NotificationsTemplatePreviewGet,
@@ -33,7 +33,7 @@ router = APIRouter(
     tags=["po"],
 )
 async def send_message(
-    _body: NotificationsMessageBody,
+    _body: NotificationMessageBody,
 ): ...
 
 

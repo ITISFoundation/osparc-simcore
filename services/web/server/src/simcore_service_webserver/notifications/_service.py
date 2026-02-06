@@ -17,7 +17,6 @@ from models_library.rpc.notifications.template import (
     NotificationsTemplateRefRpc,
 )
 from models_library.users import UserID
-from pydantic import BaseModel
 from servicelib.celery.models import ExecutionMetadata, OwnerMetadata
 from servicelib.rabbitmq.rpc_interfaces.notifications.notifications_templates import (
     preview_template as remote_preview_template,
@@ -28,7 +27,7 @@ from ..models import WebServerOwnerMetadata
 from ..products import products_service
 from ..rabbitmq import get_rabbitmq_rpc_client
 from ._helpers import get_product_data
-from ._models import EmailAddress, EmailContent, EmailNotificationMessage
+from ._models import Contact, EmailContact, EmailContent, EmailNotificationMessage
 
 
 def _get_user_display_name(user: dict) -> str:
@@ -37,23 +36,23 @@ def _get_user_display_name(user: dict) -> str:
     return f"{first_name} {last_name}".strip()
 
 
-async def _collect_active_recipients(app: web.Application, recipient_groups: list[GroupID]) -> list[EmailAddress]:
+async def _collect_active_recipients(app: web.Application, group_ids: list[GroupID]) -> list[EmailContact]:
     from ..users import users_service  # noqa: PLC0415
 
     # Collect all unique user IDs from all groups
     all_user_ids: set[UserID] = set()
-    for group_id in recipient_groups:
+    for group_id in group_ids:
         user_ids = await users_service.get_users_in_group(app, gid=group_id)
         all_user_ids.update(user_ids)
 
     active_users = await users_service.get_active_users_email_data(app, user_ids=list(all_user_ids))
 
     # Deduplicate by email address while preserving order
-    recipients_dict: dict[str, EmailAddress] = {}
+    recipients_dict: dict[str, EmailContact] = {}
     for user in active_users:
-        email_addr = EmailAddress(
-            display_name=_get_user_display_name(user),
-            addr_spec=user["email"],
+        email_addr = EmailContact(
+            name=_get_user_display_name(user),
+            email=user["email"],
         )
         recipients_dict[user["email"]] = email_addr
 
@@ -64,22 +63,29 @@ async def _create_email_message(
     app: web.Application,
     *,
     product_name: ProductName,
-    recipients: list[GroupID],
-    content: BaseModel,
+    group_ids: list[GroupID] | None,
+    contacts: list[Contact] | None,
+    message_content: dict[str, Any],
 ) -> EmailNotificationMessage:
     product = products_service.get_product(app, product_name)
 
-    from_ = EmailAddress(
-        display_name=f"{product.display_name} Support",
-        addr_spec=product.support_email,
+    from_ = EmailContact(
+        name=f"{product.display_name} Support",
+        email=product.support_email,
     )
 
-    to = await _collect_active_recipients(app, recipients)
+    to: list[EmailContact] = []
+
+    if group_ids:
+        to = await _collect_active_recipients(app, group_ids=group_ids)
+
+    if contacts:
+        to.extend(contacts)
 
     if not to:
         raise NotificationsNoActiveRecipientsError
 
-    email_content = EmailContent(**content.model_dump())
+    email_content = EmailContent(**message_content)
 
     if len(to) == 1:
         # single recipient, no Bcc
@@ -91,8 +97,8 @@ async def _create_email_message(
         to=[
             # send to original 'from' but as no-reply
             from_.replace(
-                new_display_name=NO_REPLY_DISPLAY_NAME,
-                new_addr_local=NO_REPLY_LOCAL,
+                new_name=NO_REPLY_DISPLAY_NAME,
+                new_local=NO_REPLY_LOCAL,
             ),
         ],
         bcc=to,
@@ -130,16 +136,18 @@ async def send_message(
     user_id: UserID,
     product_name: ProductName,
     channel: ChannelType,
-    recipients: list[GroupID],
-    content: BaseModel,
+    group_ids: list[GroupID] | None,
+    contacts: list[Contact] | None,
+    message_content: dict[str, Any],  # validated internally
 ) -> AsyncJobGet:
     match channel:
         case ChannelType.email:
             message = await _create_email_message(
                 app,
                 product_name=product_name,
-                recipients=recipients,
-                content=content,
+                group_ids=group_ids,
+                contacts=contacts,
+                message_content=message_content,
             )
         case _:
             raise NotificationsUnsupportedChannelError(channel=channel)

@@ -100,11 +100,11 @@ class NotificationsTemplatePreviewGet(OutputSchema):
 
 class NotificationsTemplateMessageBody(InputSchema):
     ref: NotificationsTemplateRefBody
-    recipients: list[GroupID]
+    group_ids: list[GroupID]
     context: dict[str, Any]
 
 
-class NotificationsMessageBody(InputSchema):
+class NotificationMessageBody(InputSchema):
     channel: ChannelType
-    recipients: list[GroupID]
-    content: NotificationsContentBody
+    group_ids: list[GroupID] | None = None
+    message_content: NotificationsContentBody

@@ -1,14 +1,13 @@
 from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
-from models_library.emails import LowerCaseEmailStr
 from models_library.notifications import ChannelType
 
 
-class EmailAddress(BaseModel):
-    display_name: str = ""
-    addr_spec: LowerCaseEmailStr
+class EmailContact(BaseModel):
+    name: str | None = None
+    email: EmailStr
 
 
 class EmailAttachment(BaseModel):
@@ -22,13 +21,13 @@ class EmailContent(BaseModel):
     body_html: str
 
 
-class EmailNotificationMessage(BaseModel):
+class EmailMessage(BaseModel):
     channel: ChannelType = ChannelType.email
 
-    from_: Annotated[EmailAddress, Field(alias="from")]
-    to: list[EmailAddress]
-    reply_to: EmailAddress | None = None
-    bcc: list[EmailAddress] | None = None
+    from_: Annotated[EmailContact, Field(alias="from")]
+    to: list[EmailContact]
+    reply_to: EmailContact | None = None
+    bcc: list[EmailContact] | None = None
 
     content: EmailContent
 
