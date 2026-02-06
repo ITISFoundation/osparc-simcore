@@ -259,8 +259,6 @@ async def preview_approval_user_account(request: web.Request) -> web.Response:
     user_account = found[0]
     assert user_account.email == approval_data.email  # nosec
 
-    _logger.error("Generating preview for user %s", user_account)
-
     preview = await notifications_service.preview_template(
         app=request.app,
         product_name=req_ctx.product_name,
