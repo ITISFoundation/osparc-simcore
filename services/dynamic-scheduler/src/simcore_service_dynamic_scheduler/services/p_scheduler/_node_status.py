@@ -28,8 +28,6 @@ _STATUS: Final[str] = "s"
 _TRACKING: Final[str] = "tracked-services"
 _PERIODIC_HANDLING_MESSAGE: Final[str] = "Periodic check handled by app_id="
 
-_MAX_CONCURRENCY: Final[NonNegativeInt] = 10
-
 
 async def _get_scheduler_service_status(app: FastAPI, node_id: NodeID) -> SchedulerServiceStatus:
     """Remaps platform service status to something that the scheduler understands"""
@@ -97,11 +95,19 @@ _NAME: Final[str] = "scheduler_status_manager"
 class StatusManager(SingletonInAppStateMixin, SupportsLifecycle):
     app_state_name: str = f"p_{_NAME}"
 
-    def __init__(self, app: FastAPI, *, status_ttl: timedelta, update_statuses_interval: timedelta) -> None:
+    def __init__(
+        self,
+        app: FastAPI,
+        *,
+        status_ttl: timedelta,
+        update_statuses_interval: timedelta,
+        max_parallel_updates: NonNegativeInt,
+    ) -> None:
         self.app = app
         self.redis_interface = _RedisInterface(app)
         self._ttl_ms = int(status_ttl.total_seconds() * 1000)
         self.update_statuses_interval = update_statuses_interval
+        self.max_parallel_updates = max_parallel_updates
 
         self._task_scheduler_service_status: Task | None = None
 
@@ -133,7 +139,7 @@ class StatusManager(SingletonInAppStateMixin, SupportsLifecycle):
         tracked_services = await self.redis_interface.get_all_tracked()
         await limited_gather(
             *(self._safe_service_status_update(node_id) for node_id in tracked_services),
-            limit=_MAX_CONCURRENCY,
+            limit=self.max_parallel_updates,
             log=_logger,
         )
 
