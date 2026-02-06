@@ -268,7 +268,7 @@ class ReconciliationManager(SingletonInAppStateMixin, SupportsLifecycle):
             await self._queue.put(node_id)
         except QueueFull:
             self._metrics_manager.inc_dropped_reconciliation_requests()
-            _logger.warning("reconciliation queue is full, dropping reconciliation request for node_id=%s", node_id)
+            _logger.warning("reconciliation queue is full, dropping request for node_id=%s", node_id)
 
     async def _handle_reconciliation_notification(self, message: NodeID) -> None:
         await self._push_to_queue(message)
@@ -283,8 +283,8 @@ class ReconciliationManager(SingletonInAppStateMixin, SupportsLifecycle):
             for run in tracked_runs:
                 await self._notifications_manager.send_riconciliation_event(run.node_id)
 
-    async def _run_reconciliate_safe(self, node_id: NodeID) -> None:
-        with log_context(_logger, logging.DEBUG, "reconciliation node_id=%s", node_id):
+    async def _safe_reconciliate(self, node_id: NodeID) -> None:
+        with log_context(_logger, logging.DEBUG, "reconciliation node_id='%s'", node_id):
             try:
                 start = time.perf_counter()
                 await _reconciliate(self.app, node_id=node_id)
@@ -298,7 +298,7 @@ class ReconciliationManager(SingletonInAppStateMixin, SupportsLifecycle):
 
     async def setup(self) -> None:
         for _ in range(self._consumer_count):
-            self._queue.subscribe(self._run_reconciliate_safe)
+            self._queue.subscribe(self._safe_reconciliate)
 
         self._notifications_manager.subscribe_handler(
             routing_key=RK_RECONSILIATION, handler=self._handle_reconciliation_notification
