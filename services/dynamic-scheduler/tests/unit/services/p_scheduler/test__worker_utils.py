@@ -2,7 +2,7 @@ from simcore_service_dynamic_scheduler.services.p_scheduler._worker_utils import
 
 
 async def test_change_notifier() -> None:
-    notifier = ChangeNotifier()
+    notifier = ChangeNotifier[str]()
 
     calls: list[str] = []
 
