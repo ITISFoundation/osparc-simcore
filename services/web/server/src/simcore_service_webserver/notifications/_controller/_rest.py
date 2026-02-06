@@ -20,7 +20,7 @@ from ...login.decorators import login_required
 from ...models import AuthenticatedRequestContext
 from ...rabbitmq import get_rabbitmq_rpc_client
 from ...security.decorators import permission_required
-from .. import _service
+from .. import notifications_service
 from ._rest_exceptions import handle_notifications_exceptions
 
 routes = web.RouteTableDef()
@@ -35,7 +35,7 @@ async def send_message(request: web.Request) -> web.Response:
     req_ctx = AuthenticatedRequestContext.model_validate(request)
     body = await parse_request_body_as(NotificationsMessageBody, request)
 
-    async_job = await _service.send_message(
+    async_job = await notifications_service.send_message(
         request.app,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
@@ -66,7 +66,7 @@ async def preview_template(request: web.Request) -> web.Response:
     req_ctx = AuthenticatedRequestContext.model_validate(request)
     req_body = await parse_request_body_as(NotificationsTemplatePreviewBody, request)
 
-    preview = await _service.preview_template(
+    preview = await notifications_service.preview_template(
         request.app,
         product_name=req_ctx.product_name,
         ref=TemplateRef(**req_body.ref.model_dump()),

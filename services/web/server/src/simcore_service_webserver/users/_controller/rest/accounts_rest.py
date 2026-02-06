@@ -31,7 +31,7 @@ from ...._meta import API_VTAG
 from ....constants import APP_FIRE_AND_FORGET_TASKS_KEY
 from ....invitations import api as invitations_service
 from ....login.decorators import login_required
-from ....notifications import _service as notifications_service
+from ....notifications import notifications_service
 from ....security.decorators import (
     group_or_role_permission_required,
     permission_required,
