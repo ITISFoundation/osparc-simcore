@@ -7,7 +7,7 @@ from typing import Final
 
 import pytest
 from pydantic import NonNegativeFloat, NonNegativeInt
-from simcore_service_dynamic_scheduler.services.p_scheduler._queue import BoundedPubSubQueue, get_worker_count
+from simcore_service_dynamic_scheduler.services.p_scheduler._queue import BoundedPubSubQueue, get_consumer_count
 
 _SLEEP_DURATION: Final[NonNegativeFloat] = timedelta(milliseconds=1).total_seconds()
 
@@ -65,5 +65,5 @@ async def test_queue_workflow(queue: BoundedPubSubQueue[str], queue_size: int) -
         pytest.param(timedelta(milliseconds=200), 20, 4, id="more-workers"),
     ],
 )
-def test_get_worker_count(duration: timedelta, max_burst: NonNegativeInt, expected_workers: NonNegativeInt) -> None:
-    assert get_worker_count(duration, max_burst) == expected_workers
+def test_get_consumer_count(duration: timedelta, max_burst: NonNegativeInt, expected_workers: NonNegativeInt) -> None:
+    assert get_consumer_count(duration, max_burst) == expected_workers

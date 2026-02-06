@@ -29,7 +29,7 @@ from ._models import (
 )
 from ._node_status import StatusManager
 from ._notifications import RK_RECONSILIATION, NotificationsManager
-from ._queue import BoundedPubSubQueue, get_worker_count
+from ._queue import BoundedPubSubQueue, get_consumer_count
 from ._repositories.runs import RunsRepository
 from ._repositories.steps import StepsRepository
 from ._repositories.user_requests import UserRequestsRepository
@@ -245,8 +245,9 @@ class ReconciliationManager(SingletonInAppStateMixin, SupportsLifecycle):
         self.app = app
         self.periodic_checks_interval = periodic_checks_interval
 
-        self._worker_count = get_worker_count(queue_consumer_expected_runtime_duration, queue_max_burst)
-        self._queue: BoundedPubSubQueue[NodeID] = BoundedPubSubQueue(maxsize=self._worker_count)
+        self._consumer_count = get_consumer_count(queue_consumer_expected_runtime_duration, queue_max_burst)
+        _logger.info("reconciliation worker_count=%s", self._consumer_count)
+        self._queue: BoundedPubSubQueue[NodeID] = BoundedPubSubQueue(maxsize=self._consumer_count)
 
         self._task_periodic_checks: Task | None = None
 
@@ -296,7 +297,7 @@ class ReconciliationManager(SingletonInAppStateMixin, SupportsLifecycle):
                 raise
 
     async def setup(self) -> None:
-        for _ in range(self._worker_count):
+        for _ in range(self._consumer_count):
             self._queue.subscribe(self._run_reconciliate_safe)
 
         self._notifications_manager.subscribe_handler(
