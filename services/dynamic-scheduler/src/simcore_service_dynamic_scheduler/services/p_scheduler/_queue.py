@@ -1,6 +1,9 @@
 import asyncio
 from collections.abc import Awaitable, Callable
+from datetime import timedelta
 from typing import TypeVar
+
+from pydantic import NonNegativeInt
 
 T = TypeVar("T")
 
@@ -92,3 +95,9 @@ class BoundedPubSubQueue[T]:
         # Wait for them to finish.
         await asyncio.gather(*self._consumers, return_exceptions=True)
         self._consumers.clear()
+
+
+def get_worker_count(consumer_expected_runtime_duration: timedelta, queue_max_burst: NonNegativeInt) -> NonNegativeInt:
+    requests_per_second = 1 / consumer_expected_runtime_duration.total_seconds()
+    worker_count = queue_max_burst / requests_per_second
+    return max(1, int(worker_count))
