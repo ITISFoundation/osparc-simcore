@@ -246,7 +246,7 @@ class ReconciliationManager(SingletonInAppStateMixin, SupportsLifecycle):
         self.periodic_checks_interval = periodic_checks_interval
 
         self._consumer_count = get_consumer_count(queue_consumer_expected_runtime_duration, queue_max_burst)
-        _logger.info("reconciliation worker_count=%s", self._consumer_count)
+        _logger.info("reconciliation queue consumers count=%s", self._consumer_count)
         self._queue: BoundedPubSubQueue[NodeID] = BoundedPubSubQueue(maxsize=self._consumer_count)
 
         self._task_periodic_checks: Task | None = None
