@@ -32,6 +32,7 @@ from ....constants import APP_FIRE_AND_FORGET_TASKS_KEY
 from ....invitations import api as invitations_service
 from ....login.decorators import login_required
 from ....notifications import notifications_service
+from ....notifications._models import EmailContact
 from ....security.decorators import (
     group_or_role_permission_required,
     permission_required,
@@ -189,18 +190,16 @@ async def approve_user_account(request: web.Request) -> web.Response:
             assert user_account.email == approval_data.email  # nosec
 
             # send email to user
-            fire_and_forget_task(
-                _accounts_service.send_approval_email_to_user(
+            if approval_data.message_content:
+                await notifications_service.send_message(
                     request.app,
+                    user_id=req_ctx.user_id,
                     product_name=req_ctx.product_name,
-                    invitation_link=approval_data.invitation_url,
-                    user_email=approval_data.email,
-                    first_name=user_account.first_name or "User",
-                    last_name=user_account.last_name or "",
-                ),
-                task_suffix_name=f"{__name__}.send_approval_email_to_user.{approval_data.email}",
-                fire_and_forget_tasks_collection=request.app[APP_FIRE_AND_FORGET_TASKS_KEY],
-            )
+                    channel=ChannelType.email,
+                    group_ids=None,
+                    external_contacts=[EmailContact(email=approval_data.email)],
+                    message_content=approval_data.message_content.model_dump(),
+                )
 
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
