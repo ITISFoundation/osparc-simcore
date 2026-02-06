@@ -10,11 +10,11 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 from models_library.api_schemas_long_running_tasks.tasks import TaskGet
 from models_library.api_schemas_webserver.notifications import (
-    NotificationMessageBody,
-    NotificationsTemplateGet,
-    NotificationsTemplatePreviewBody,
-    NotificationsTemplatePreviewGet,
+    MessageBody,
     SearchTemplatesQueryParams,
+    TemplateGet,
+    TemplatePreviewBody,
+    TemplatePreviewGet,
 )
 from models_library.generics import Envelope
 from simcore_service_webserver._meta import API_VTAG
@@ -33,17 +33,17 @@ router = APIRouter(
     tags=["po"],
 )
 async def send_message(
-    _body: NotificationMessageBody,
+    _body: MessageBody,
 ): ...
 
 
 @router.post(
     "/notifications/templates:preview",
-    response_model=Envelope[NotificationsTemplatePreviewGet],
+    response_model=Envelope[TemplatePreviewGet],
     tags=["po"],
 )
 async def preview_template(
-    _body: NotificationsTemplatePreviewBody,
+    _body: TemplatePreviewBody,
 ):
     """
     Generates a preview of a notification template with the provided data.
@@ -59,7 +59,7 @@ async def preview_template(
 
 @router.get(
     "/notifications/templates:search",
-    response_model=Envelope[list[NotificationsTemplateGet]],
+    response_model=Envelope[list[TemplateGet]],
     tags=["po"],
 )
 async def search_templates(

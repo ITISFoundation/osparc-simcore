@@ -16,8 +16,8 @@ from common_library.users_enums import UserStatus
 from faker import Faker
 from models_library.api_schemas_long_running_tasks.tasks import TaskGet
 from models_library.api_schemas_webserver.notifications import (
-    NotificationsTemplateGet,
-    NotificationsTemplatePreviewGet,
+    TemplateGet,
+    TemplatePreviewGet,
 )
 from models_library.notifications import ChannelType
 from models_library.rpc.notifications.template import (
@@ -302,7 +302,7 @@ async def test_preview_template_success(
     assert not error
 
     # Validate response structure
-    preview = NotificationsTemplatePreviewGet.model_validate(data)
+    preview = TemplatePreviewGet.model_validate(data)
     assert preview.ref.channel == ChannelType.email
     assert preview.ref.template_name == "test_template"
     assert preview.content
@@ -409,7 +409,7 @@ async def test_search_templates_no_filters(
     assert not error
 
     # Validate response structure
-    templates = TypeAdapter(list[NotificationsTemplateGet]).validate_python(data)
+    templates = TypeAdapter(list[TemplateGet]).validate_python(data)
     assert len(templates) == 1
     assert templates[0].ref.channel == ChannelType.email
     assert templates[0].ref.template_name == "test_template"
@@ -485,5 +485,5 @@ async def test_search_templates_empty_result(
     assert not error
 
     # Validate response is empty list
-    templates = TypeAdapter(list[NotificationsTemplateGet]).validate_python(data)
+    templates = TypeAdapter(list[TemplateGet]).validate_python(data)
     assert len(templates) == 0

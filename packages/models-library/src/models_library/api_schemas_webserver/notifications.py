@@ -8,7 +8,7 @@ from ..api_schemas_webserver._base import InputSchema, OutputSchema
 from ..notifications import ChannelType, TemplateName
 
 
-class NotificationsEmailContentBody(InputSchema):
+class EmailMessageContentBody(InputSchema):
     subject: Annotated[
         str,
         Field(
@@ -35,10 +35,10 @@ class NotificationsEmailContentBody(InputSchema):
     ]
 
 
-type NotificationsContentBody = NotificationsEmailContentBody
+type MessageContentBody = EmailMessageContentBody
 
 
-class NotificationsEmailContentGet(OutputSchema):
+class EmailMessageContentGet(OutputSchema):
     subject: Annotated[
         str,
         Field(
@@ -65,7 +65,7 @@ class NotificationsEmailContentGet(OutputSchema):
     ]
 
 
-type NotificationsContentGet = NotificationsEmailContentGet
+type MessageContentGet = EmailMessageContentGet
 
 
 class SearchTemplatesQueryParams(BaseModel):
@@ -73,38 +73,38 @@ class SearchTemplatesQueryParams(BaseModel):
     template_name: str | None = None
 
 
-class NotificationsTemplateRefBody(InputSchema):
+class TemplateRefBody(InputSchema):
     channel: ChannelType
     template_name: TemplateName
 
 
-class NotificationsTemplateRefGet(OutputSchema):
+class TemplateRefGet(OutputSchema):
     channel: ChannelType
     template_name: TemplateName
 
 
-class NotificationsTemplateGet(OutputSchema):
-    ref: NotificationsTemplateRefGet
+class TemplateGet(OutputSchema):
+    ref: TemplateRefGet
     context_schema: dict[str, Any]
 
 
-class NotificationsTemplatePreviewBody(InputSchema):
-    ref: NotificationsTemplateRefBody
+class TemplatePreviewBody(InputSchema):
+    ref: TemplateRefBody
     context: dict[str, Any]
 
 
-class NotificationsTemplatePreviewGet(OutputSchema):
-    ref: NotificationsTemplateRefGet
-    content: NotificationsContentGet
+class TemplatePreviewGet(OutputSchema):
+    ref: TemplateRefGet
+    content: MessageContentGet
 
 
-class NotificationsTemplateMessageBody(InputSchema):
-    ref: NotificationsTemplateRefBody
+class TemplateMessageBody(InputSchema):
+    ref: TemplateRefBody
     group_ids: list[GroupID]
     context: dict[str, Any]
 
 
-class NotificationMessageBody(InputSchema):
+class MessageBody(InputSchema):
     channel: ChannelType
     group_ids: list[GroupID] | None = None
-    message_content: NotificationsContentBody
+    message_content: MessageContentBody
