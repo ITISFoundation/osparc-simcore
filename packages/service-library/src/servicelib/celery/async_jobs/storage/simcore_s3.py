@@ -8,12 +8,15 @@ from models_library.users import UserID
 from ...models import (
     ExecutionMetadata,
     OwnerMetadata,
-    TasksQueue,
 )
 from ...task_manager import TaskManager
 
 EXPORT_DATA_TASK_NAME: Final[str] = "export_data"
 EXPORT_DATA_AS_DOWNLOAD_LINK_TASK_NAME: Final[str] = "export_data_as_download_link"
+
+
+class TaskQueueNames:
+    CPU_BOUND: Final[str] = "cpu_bound"
 
 
 async def submit_export_data(
@@ -36,7 +39,7 @@ async def submit_export_data(
         execution_metadata=ExecutionMetadata(
             name=task_name,
             ephemeral=False,
-            queue=TasksQueue.CPU_BOUND,
+            queue=TaskQueueNames.CPU_BOUND,
         ),
         owner_metadata=owner_metadata,
         user_id=user_id,
