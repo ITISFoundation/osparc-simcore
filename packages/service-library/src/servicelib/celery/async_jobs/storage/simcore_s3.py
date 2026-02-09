@@ -1,3 +1,4 @@
+from enum import StrEnum
 from typing import Final, Literal
 
 from models_library.api_schemas_async_jobs.async_jobs import AsyncJobGet
@@ -15,8 +16,8 @@ EXPORT_DATA_TASK_NAME: Final[str] = "export_data"
 EXPORT_DATA_AS_DOWNLOAD_LINK_TASK_NAME: Final[str] = "export_data_as_download_link"
 
 
-class TaskQueueNames:
-    CPU_BOUND: Final[str] = "cpu_bound"
+class TaskQueueNames(StrEnum):
+    CPU_BOUND = "cpu_bound"
 
 
 async def submit_export_data(
