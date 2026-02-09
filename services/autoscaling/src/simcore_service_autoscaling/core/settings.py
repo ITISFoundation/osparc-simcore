@@ -61,7 +61,8 @@ class EC2InstancesSettings(BaseCustomSettings):
     EC2_INSTANCES_ALLOWED_TYPES: Annotated[
         Json[dict[str, EC2InstanceBootSpecific]],
         Field(
-            description="Defines which EC2 instances are considered as candidates for new EC2 instance and their respective boot specific parameters"
+            description="Defines which EC2 instances are considered as candidates "
+            "for new EC2 instance and their respective boot specific parameters"
             "NOTE: minimum length >0",
         ),
     ]
@@ -83,13 +84,6 @@ class EC2InstancesSettings(BaseCustomSettings):
             "this is required to start a new EC2 instance",
         ),
     ]
-    EC2_INSTANCES_MACHINES_BUFFER: Annotated[
-        NonNegativeInt,
-        Field(
-            description="Constant reserve of drained ready machines for fast(er) usage,"
-            "disabled when set to 0. Uses 1st machine defined in EC2_INSTANCES_ALLOWED_TYPES",
-        ),
-    ] = 0
     EC2_INSTANCES_MAX_INSTANCES: Annotated[
         int,
         Field(
@@ -100,9 +94,12 @@ class EC2InstancesSettings(BaseCustomSettings):
         datetime.timedelta,
         Field(
             description="Usual time taken an EC2 instance with the given AMI takes to join the cluster "
-            "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formatting)."
-            "NOTE: be careful that this time should always be a factor larger than the real time, as EC2 instances"
-            "that take longer than this time will be terminated as sometimes it happens that EC2 machine fail on start.",
+            "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types"
+            " for string formatting)."
+            "NOTE: be careful that this time should always be a factor larger than the real time, "
+            "as EC2 instances"
+            "that take longer than this time will be terminated as sometimes it happens that EC2 "
+            "machine fail on start.",
         ),
     ] = datetime.timedelta(minutes=1)
 
@@ -118,7 +115,8 @@ class EC2InstancesSettings(BaseCustomSettings):
         Json[list[str]],
         Field(
             min_length=1,
-            description="A security group acts as a virtual firewall for your EC2 instances to control incoming and outgoing traffic"
+            description="A security group acts as a virtual firewall for your EC2 instances "
+            "to control incoming and outgoing traffic"
             " (https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-security-groups.html), "
             " this is required to start a new EC2 instance",
         ),
@@ -136,16 +134,20 @@ class EC2InstancesSettings(BaseCustomSettings):
     EC2_INSTANCES_TIME_BEFORE_DRAINING: Annotated[
         datetime.timedelta,
         Field(
-            description="Time after which an EC2 instance may be drained (10s<=T<=1 minutes, is automatically capped)"
-            "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formatting)",
+            description="Time after which an EC2 instance may be drained (10s<=T<=1 minutes, "
+            "is automatically capped)"
+            "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types"
+            " for string formatting)",
         ),
     ] = datetime.timedelta(seconds=10)
 
     EC2_INSTANCES_TIME_BEFORE_TERMINATION: Annotated[
         datetime.timedelta,
         Field(
-            description="Time after which an EC2 instance may begin the termination process (0<=T<=59 minutes, is automatically capped)"
-            "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formatting)",
+            description="Time after which an EC2 instance may begin the termination process "
+            "(0<=T<=59 minutes, is automatically capped)"
+            "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types"
+            " for string formatting)",
         ),
     ] = datetime.timedelta(minutes=1)
 
@@ -153,21 +155,25 @@ class EC2InstancesSettings(BaseCustomSettings):
         datetime.timedelta,
         Field(
             description="Time after which an EC2 instance is terminated after draining"
-            "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formatting)",
+            "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types"
+            " for string formatting)",
         ),
     ] = datetime.timedelta(seconds=30)
 
     EC2_INSTANCES_CUSTOM_TAGS: Annotated[
         Json[EC2Tags],
         Field(
-            description="Allows to define tags that should be added to the created EC2 instance default tags. "
-            "a tag must have a key and an optional value. see [https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html]",
+            description="Allows to define tags that should be added to the created EC2 instance default"
+            " tags. "
+            "a tag must have a key and an optional value. "
+            "see [https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Using_Tags.html]",
         ),
     ]
     EC2_INSTANCES_ATTACHED_IAM_PROFILE: Annotated[
         str,
         Field(
-            description="ARN the EC2 instance should be attached to (example: arn:aws:iam::XXXXX:role/NAME), to disable pass an empty string",
+            description="ARN the EC2 instance should be attached to "
+            "(example: arn:aws:iam::XXXXX:role/NAME), to disable pass an empty string",
         ),
     ]
 
@@ -205,26 +211,43 @@ class EC2InstancesSettings(BaseCustomSettings):
 
         return value
 
+    @model_validator(mode="after")
+    def _validate_hot_buffer_limits(self) -> Self:
+        total_hot_buffer = sum(
+            instance_type_config.hot_buffer_count for instance_type_config in self.EC2_INSTANCES_ALLOWED_TYPES.values()
+        )
+        if total_hot_buffer > self.EC2_INSTANCES_MAX_INSTANCES:
+            msg = (
+                "Sum of hot_buffer_count across EC2_INSTANCES_ALLOWED_TYPES "
+                f"({total_hot_buffer}) exceeds EC2_INSTANCES_MAX_INSTANCES ({self.EC2_INSTANCES_MAX_INSTANCES})"
+            )
+            raise ValueError(msg)
+        return self
+
 
 class NodesMonitoringSettings(BaseCustomSettings):
     NODES_MONITORING_NODE_LABELS: Annotated[
         list[DockerLabelKey],
         Field(
-            description="autoscaling will only monitor nodes with the given labels (if empty all nodes will be monitored), these labels will be added to the new created nodes by default",
+            description="autoscaling will only monitor nodes with the given labels "
+            "(if empty all nodes will be monitored), these labels will be added to the"
+            " new created nodes by default",
         ),
     ]
 
     NODES_MONITORING_SERVICE_LABELS: Annotated[
         list[DockerLabelKey],
         Field(
-            description="autoscaling will only monitor services with the given labels (if empty all services will be monitored)",
+            description="autoscaling will only monitor services with the given labels "
+            "(if empty all services will be monitored)",
         ),
     ]
 
     NODES_MONITORING_NEW_NODES_LABELS: Annotated[
         list[DockerLabelKey],
         Field(
-            description="autoscaling will add these labels to any new node it creates (additional to the ones in NODES_MONITORING_NODE_LABELS",
+            description="autoscaling will add these labels to any new node it creates"
+            " (additional to the ones in NODES_MONITORING_NODE_LABELS",
         ),
     ]
 
@@ -240,13 +263,16 @@ class DaskMonitoringSettings(BaseCustomSettings):
     DASK_NTHREADS: Annotated[
         NonNegativeInt,
         Field(
-            description="if >0, it overrides the default number of threads per process in the dask-sidecars, (see description in dask-sidecar)",
+            description="if >0, it overrides the default number of threads per process in the"
+            " dask-sidecars, (see description in dask-sidecar)",
         ),
     ]
     DASK_NTHREADS_MULTIPLIER: Annotated[
         PositiveInt,
         Field(
-            description="if >1, it overrides the default number of threads per process in the dask-sidecars, by multiplying the number of vCPUs with this factor (see description in dask-sidecar)",
+            description="if >1, it overrides the default number of threads per process in "
+            "the dask-sidecars, by multiplying the number of vCPUs with this factor "
+            "(see description in dask-sidecar)",
         ),
     ]
 
@@ -282,7 +308,8 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
                 "AUTOSCALING_LOG_FORMAT_LOCAL_DEV_ENABLED",
                 "LOG_FORMAT_LOCAL_DEV_ENABLED",
             ),
-            description="Enables local development log format. WARNING: make sure it is disabled if you want to have structured logs!",
+            description="Enables local development log format. "
+            "WARNING: make sure it is disabled if you want to have structured logs!",
         ),
     ] = False
 
@@ -291,7 +318,9 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         Field(
             default_factory=dict,
             validation_alias=AliasChoices("AUTOSCALING_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"),
-            description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
+            description="is a dictionary that maps specific loggers "
+            "(such as 'uvicorn.access' or 'gunicorn.access') to a list of "
+            "log message patterns that should be filtered out.",
         ),
     ]
 
@@ -319,7 +348,8 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         datetime.timedelta,
         Field(
             description="interval between each resource check "
-            "(default to seconds, or see https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formatting)",
+            "(default to seconds, or see "
+            "https://pydantic-docs.helpmanual.io/usage/types/#datetime-types for string formatting)",
         ),
     ] = datetime.timedelta(seconds=10)
 
@@ -382,7 +412,10 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     @model_validator(mode="after")
     def _exclude_both_dynamic_computational_mode(self) -> Self:
         if self.AUTOSCALING_DASK is not None and self.AUTOSCALING_NODES_MONITORING is not None:
-            msg = "Autoscaling cannot be set to monitor both computational and dynamic services (both AUTOSCALING_DASK and AUTOSCALING_NODES_MONITORING are currently set!)"
+            msg = (
+                "Autoscaling cannot be set to monitor both computational and "
+                "dynamic services (both AUTOSCALING_DASK and AUTOSCALING_NODES_MONITORING are currently set!)"
+            )
             raise ValueError(msg)
         return self
 
