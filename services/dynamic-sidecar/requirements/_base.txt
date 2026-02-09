@@ -914,7 +914,7 @@ typing-inspection==0.4.1
     # via pydantic
 u-msgpack-python==2.8.0
     # via -r requirements/_base.in
-urllib3==2.5.0
+urllib3==2.6.3
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt

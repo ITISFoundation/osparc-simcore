@@ -780,7 +780,7 @@ typing-inspection==0.4.2
     # via pydantic
 tzdata==2025.2
     # via faker
-urllib3==2.5.0
+urllib3==2.6.3
     # via
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../requirements/constraints.txt

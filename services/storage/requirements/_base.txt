@@ -1181,7 +1181,7 @@ tzdata==2025.2
     # via kombu
 tzlocal==5.3.1
     # via celery
-urllib3==2.5.0
+urllib3==2.6.3
     # via
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/aws-library/requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
