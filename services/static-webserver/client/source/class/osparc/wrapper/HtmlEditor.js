@@ -129,6 +129,9 @@ qx.Class.define("osparc.wrapper.HtmlEditor", {
         const style = document.createElement("style");
         style.id = styleId;
         style.innerHTML = `
+          .ql-container {
+            overflow: auto;
+          }
           .ql-toolbar .ql-stroke {
             stroke: ${color} !important;
           }
