@@ -17,10 +17,13 @@ from settings_library.email import SMTPSettings
 _logger = logging.getLogger(__name__)
 
 
+UNDISCLOSED_RECIPIENTS = "undisclosed-recipients:;"
+
+
 def _create_email_message(message: EmailNotificationMessage) -> _EmailMessage:
     return compose_email(
         from_=Address(**message.from_.model_dump()),
-        to=[Address(**addr.model_dump()) for addr in message.to],
+        to=[Address(**addr.model_dump()) for addr in message.to] if message.to else UNDISCLOSED_RECIPIENTS,
         subject=message.content.subject,
         content_text=message.content.body_text,
         content_html=message.content.body_html,
