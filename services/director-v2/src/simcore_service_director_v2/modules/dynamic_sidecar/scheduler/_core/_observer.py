@@ -23,7 +23,7 @@ from ...docker_api import (
 )
 from ...errors import GenericDockerError
 from ._events import REGISTERED_EVENTS
-from ._events_utils import attempt_pod_removal_and_data_saving
+from ._events_utils import attempt_pod_removal_and_data_saving, traced_operation
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +35,21 @@ async def _apply_observation_cycle(
     """
     fetches status for service and then processes all the registered events
     and updates the status back
+    """
+    with traced_operation(
+        "dynamic_sidecar.observation_cycle",
+        scheduler_data,
+        service_status=scheduler_data.dynamic_sidecar.status.current.value,
+    ):
+        await _apply_observation_cycle_impl(scheduler, scheduler_data)
+
+
+async def _apply_observation_cycle_impl(
+    scheduler: "DynamicSidecarsScheduler",  # type: ignore  # noqa: F821
+    scheduler_data: SchedulerData,
+) -> None:
+    """
+    Implementation of observation cycle.
     """
     app: FastAPI = scheduler.app
     settings: DynamicServicesSchedulerSettings = app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
@@ -72,12 +87,12 @@ async def _apply_observation_cycle(
 
 def _trigger_every_30_seconds(observation_counter: int, wait_interval: float) -> bool:
     # divisor to figure out if 30 seconds have passed based on the cycle count
-    modulo_divisor = max(1, int(floor(30 / wait_interval)))
+    modulo_divisor = max(1, floor(30 / wait_interval))
     return observation_counter % modulo_divisor == 0
 
 
 async def observing_single_service(
-    scheduler: "DynamicSidecarsScheduler",  # type: ignore
+    scheduler: "DynamicSidecarsScheduler",  # type: ignore  # noqa: F821
     service_name: ServiceName,
     scheduler_data: SchedulerData,
     dynamic_scheduler: DynamicServicesSchedulerSettings,

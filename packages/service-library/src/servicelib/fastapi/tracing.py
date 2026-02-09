@@ -183,6 +183,9 @@ def _shutdown() -> None:
     if HAS_REQUESTS:
         with log_catch(_logger, reraise=False):
             RequestsInstrumentor().uninstrument()
+    if HAS_AIOHTTP_CLIENT:
+        with log_catch(_logger, reraise=False):
+            AioHttpClientInstrumentor().uninstrument()
 
 
 def initialize_fastapi_app_tracing(

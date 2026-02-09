@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, cast
 
 from common_library.json_serialization import json_loads
@@ -19,6 +20,9 @@ from models_library.shared_user_preferences import (
 from models_library.sidecar_volumes import VolumeCategory, VolumeStatus
 from models_library.user_preferences import FrontendUserPreference
 from models_library.users import UserID
+from opentelemetry import trace
+from opentelemetry.propagate import extract
+from opentelemetry.trace import Link
 from servicelib.fastapi.http_client_thin import BaseHttpClientError
 from servicelib.logging_utils import log_context
 from servicelib.long_running_tasks.errors import TaskExceptionError
@@ -87,6 +91,110 @@ if TYPE_CHECKING:
     from .._task import DynamicSidecarsScheduler
 
 _logger = logging.getLogger(__name__)
+
+
+def _get_common_span_attributes(scheduler_data: SchedulerData) -> dict[str, str]:
+    return {
+        "service.key": scheduler_data.key,
+        "service.version": scheduler_data.version,
+        "service.node_id": f"{scheduler_data.node_uuid}",
+        "project.id": f"{scheduler_data.project_id}",
+        "user.id": f"{scheduler_data.user_id}",
+        "service.name": scheduler_data.service_name,
+    }
+
+
+def extract_span_links_from_scheduler_data(scheduler_data: SchedulerData) -> list[Link]:
+    """Extract span links from stored trace context in scheduler_data.
+
+    Returns empty list if tracing is disabled or no trace context is stored.
+    """
+    instrumentation = scheduler_data.dynamic_sidecar.instrumentation
+
+    # Return early if no trace context stored or tracing is disabled
+    if not instrumentation.request_traceparent:
+        _logger.debug(
+            "No traceparent stored for service %s, skipping link creation",
+            scheduler_data.service_name,
+        )
+        return []
+
+    if not trace.get_current_span().is_recording():
+        _logger.debug(
+            "Tracing not recording for service %s, skipping link creation",
+            scheduler_data.service_name,
+        )
+        return []
+
+    # Reconstruct carrier dict from stored headers
+    carrier = {"traceparent": instrumentation.request_traceparent}
+    if instrumentation.request_tracestate:
+        carrier["tracestate"] = instrumentation.request_tracestate
+
+    _logger.info(
+        "Extracting span link for service %s from traceparent=%s",
+        scheduler_data.service_name,
+        instrumentation.request_traceparent,
+    )
+
+    # Extract the context
+    ctx = extract(carrier)
+    span = trace.get_current_span(ctx)
+    span_context = span.get_span_context()
+
+    # Create link if we have a valid span context
+    if span_context and span_context.is_valid:
+        _logger.info(
+            "Created span link for service %s: trace_id=%s, span_id=%s",
+            scheduler_data.service_name,
+            format(span_context.trace_id, "032x"),
+            format(span_context.span_id, "016x"),
+        )
+        return [Link(span_context)]
+
+    _logger.warning(
+        "Could not create valid span link for service %s",
+        scheduler_data.service_name,
+    )
+    return []
+
+
+@contextmanager
+def traced_operation(
+    operation_name: str,
+    scheduler_data: SchedulerData,
+    *,
+    include_links: bool = True,
+    **extra_attributes: str,
+):
+    """Context manager for creating traced spans with common attributes.
+
+    When tracing is disabled, this becomes a no-op context manager.
+    """
+    # Get tracer - will be no-op if tracing is disabled
+    tracer = trace.get_tracer(__name__)
+
+    # Prepare attributes
+    attributes = _get_common_span_attributes(scheduler_data)
+    attributes.update(extra_attributes)
+
+    # Get links if requested
+    links = extract_span_links_from_scheduler_data(scheduler_data) if include_links else []
+
+    _logger.info(
+        "Creating traced span '%s' for service %s with %d link(s)",
+        operation_name,
+        scheduler_data.service_name,
+        len(links),
+    )
+
+    # This is safe even when tracing is disabled - creates no-op span
+    with tracer.start_as_current_span(
+        operation_name,
+        links=links,
+        attributes=attributes,
+    ):
+        yield
 
 
 def get_director_v0_client(app: FastAPI) -> DirectorV0Client:
