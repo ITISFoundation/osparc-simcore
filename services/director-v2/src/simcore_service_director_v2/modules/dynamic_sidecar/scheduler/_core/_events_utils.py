@@ -144,13 +144,20 @@ def extract_span_links_from_scheduler_data(scheduler_data: SchedulerData) -> lis
 
     # Create link if we have a valid span context
     if span_context and span_context.is_valid:
+        # Add attributes to the link for better discoverability in Jaeger
+        link_attributes = _get_common_span_attributes(scheduler_data) | {
+            "link.type": "dynamic_sidecar_request",
+            "link.trace_id": trace.format_trace_id(span_context.trace_id),
+            "link.span_id": trace.format_span_id(span_context.span_id),
+        }
+
         _logger.info(
             "Created span link for service %s: trace_id=%s, span_id=%s",
             scheduler_data.service_name,
-            format(span_context.trace_id, "032x"),
-            format(span_context.span_id, "016x"),
+            trace.format_trace_id(span_context.trace_id),
+            trace.format_span_id(span_context.span_id),
         )
-        return [Link(span_context)]
+        return [Link(span_context, attributes=link_attributes)]
 
     _logger.warning(
         "Could not create valid span link for service %s",
