@@ -1,17 +1,17 @@
 annotated-types==0.7.0
     # via pydantic
-arrow==1.3.0
+arrow==1.4.0
     # via
     #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   cookiecutter
     #   jinja2-time
-attrs==25.3.0
+attrs==25.4.0
     # via
     #   jsonschema
     #   referencing
 binaryornot==0.4.4
     # via cookiecutter
-certifi==2025.8.3
+certifi==2026.1.4
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -20,9 +20,9 @@ certifi==2025.8.3
     #   requests
 chardet==5.2.0
     # via binaryornot
-charset-normalizer==3.4.3
+charset-normalizer==3.4.4
     # via requests
-click==8.3.0
+click==8.3.1
     # via
     #   -r requirements/_base.in
     #   cookiecutter
@@ -35,12 +35,12 @@ docker==7.1.0
     # via -r requirements/_base.in
 email-validator==2.3.0
     # via pydantic
-idna==3.10
+idna==3.11
     # via
     #   email-validator
     #   requests
     #   yarl
-iniconfig==2.1.0
+iniconfig==2.3.0
     # via pytest
 jinja2==3.1.6
     # via
@@ -54,7 +54,7 @@ jinja2-time==0.2.0
     # via -r requirements/_base.in
 jsonref==1.1.0
     # via -r requirements/../../../packages/models-library/requirements/_base.in
-jsonschema==4.25.1
+jsonschema==4.26.0
     # via
     #   -r requirements/../../../packages/models-library/requirements/_base.in
     #   -r requirements/_base.in
@@ -66,9 +66,9 @@ markupsafe==3.0.3
     # via jinja2
 mdurl==0.1.2
     # via markdown-it-py
-multidict==6.6.4
+multidict==6.7.1
     # via yarl
-orjson==3.11.4
+orjson==3.11.7
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -77,13 +77,13 @@ orjson==3.11.4
     #   -r requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../packages/models-library/requirements/_base.in
-packaging==25.0
+packaging==26.0
     # via pytest
 pluggy==1.6.0
     # via pytest
-propcache==0.3.2
+propcache==0.4.1
     # via yarl
-pydantic==2.11.9
+pydantic==2.11.10
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -96,7 +96,7 @@ pydantic==2.11.9
     #   pydantic-settings
 pydantic-core==2.33.2
     # via pydantic
-pydantic-extra-types==2.10.5
+pydantic-extra-types==2.11.0
     # via
     #   -r requirements/../../../packages/common-library/requirements/_base.in
     #   -r requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/_base.in
@@ -112,11 +112,11 @@ pygments==2.19.2
     # via
     #   pytest
     #   rich
-pytest==8.4.2
+pytest==9.0.2
     # via -r requirements/_base.in
 python-dateutil==2.9.0.post0
     # via arrow
-python-dotenv==1.1.1
+python-dotenv==1.2.1
     # via pydantic-settings
 python-slugify==8.0.4
     # via cookiecutter
@@ -140,11 +140,11 @@ requests==2.32.5
     # via
     #   cookiecutter
     #   docker
-rich==14.1.0
+rich==14.3.2
     # via
     #   cookiecutter
     #   typer
-rpds-py==0.28.0
+rpds-py==0.30.0
     # via
     #   jsonschema
     #   referencing
@@ -154,10 +154,8 @@ six==1.17.0
     # via python-dateutil
 text-unidecode==1.3
     # via python-slugify
-typer==0.19.2
+typer==0.21.1
     # via -r requirements/_base.in
-types-python-dateutil==2.9.0.20250822
-    # via arrow
 typing-extensions==4.15.0
     # via
     #   pydantic
@@ -167,7 +165,9 @@ typing-extensions==4.15.0
     #   typing-inspection
 typing-inspection==0.4.2
     # via pydantic
-urllib3==2.5.0
+tzdata==2025.3
+    # via arrow
+urllib3==2.6.3
     # via
     #   -c requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
     #   -c requirements/../../../packages/models-library/requirements/../../../packages/common-library/requirements/../../../requirements/constraints.txt
@@ -175,5 +175,5 @@ urllib3==2.5.0
     #   -c requirements/../../../requirements/constraints.txt
     #   docker
     #   requests
-yarl==1.20.1
+yarl==1.22.0
     # via -r requirements/_base.in

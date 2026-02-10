@@ -1,69 +1,71 @@
-astroid==3.3.11
+astroid==4.0.4
     # via pylint
-black==25.9.0
+black==26.1.0
     # via -r requirements/../../../requirements/devenv.txt
 bump2version==1.0.1
     # via -r requirements/../../../requirements/devenv.txt
-cfgv==3.4.0
+cfgv==3.5.0
     # via pre-commit
-click==8.3.0
+click==8.3.1
     # via
     #   -c requirements/_base.txt
     #   black
-dill==0.4.0
+dill==0.4.1
     # via pylint
 distlib==0.4.0
     # via virtualenv
-filelock==3.19.1
+filelock==3.20.3
     # via virtualenv
-identify==2.6.15
+identify==2.6.16
     # via pre-commit
-isort==6.1.0
+isort==7.0.0
     # via
     #   -r requirements/../../../requirements/devenv.txt
     #   pylint
+librt==0.7.8
+    # via mypy
 mccabe==0.7.0
     # via pylint
-mypy==1.18.2
+mypy==1.19.1
     # via -r requirements/../../../requirements/devenv.txt
 mypy-extensions==1.1.0
     # via
     #   black
     #   mypy
-nodeenv==1.9.1
+nodeenv==1.10.0
     # via pre-commit
-packaging==25.0
+packaging==26.0
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_test.txt
     #   black
-pathspec==0.12.1
+pathspec==1.0.4
     # via
     #   black
     #   mypy
-platformdirs==4.4.0
+platformdirs==4.5.1
     # via
     #   black
     #   pylint
     #   virtualenv
-pre-commit==4.3.0
+pre-commit==4.5.1
     # via -r requirements/../../../requirements/devenv.txt
-pylint==3.3.8
+pylint==4.0.4
     # via -r requirements/../../../requirements/devenv.txt
-pytokens==0.1.10
+pytokens==0.4.1
     # via black
 pyyaml==6.0.3
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_test.txt
     #   pre-commit
-ruff==0.13.3
+ruff==0.15.0
     # via -r requirements/../../../requirements/devenv.txt
-tomlkit==0.13.3
+tomlkit==0.14.0
     # via pylint
 typing-extensions==4.15.0
     # via
     #   -c requirements/_base.txt
     #   mypy
-virtualenv==20.34.0
+virtualenv==20.36.1
     # via pre-commit

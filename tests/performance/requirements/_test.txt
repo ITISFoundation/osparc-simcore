@@ -1,6 +1,6 @@
 annotated-types==0.7.0
     # via pydantic
-attrs==25.3.0
+attrs==25.4.0
     # via
     #   jsonschema
     #   referencing
@@ -8,45 +8,42 @@ bidict==0.23.1
     # via python-socketio
 blinker==1.9.0
     # via flask
-brotli==1.1.0
+brotli==1.2.0
     # via geventhttpclient
-certifi==2025.8.3
+certifi==2026.1.4
     # via
     #   geventhttpclient
     #   requests
-charset-normalizer==3.4.3
+charset-normalizer==3.4.4
     # via requests
-click==8.3.0
+click==8.3.1
     # via flask
 configargparse==1.7.1
-    # via
-    #   locust
-    #   locust-cloud
-faker==37.8.0
+    # via locust
+faker==40.4.0
     # via jsf
 flask==3.1.2
     # via
     #   flask-cors
     #   flask-login
     #   locust
-flask-cors==6.0.1
+flask-cors==6.0.2
     # via locust
 flask-login==0.6.3
     # via locust
-gevent==25.5.1
+gevent==25.9.1
     # via
     #   geventhttpclient
     #   locust
-    #   locust-cloud
-geventhttpclient==2.3.4
+geventhttpclient==2.3.7
     # via locust
-greenlet==3.2.4
+greenlet==3.3.1
     # via gevent
 h11==0.16.0
     # via wsproto
-idna==3.10
+idna==3.11
     # via requests
-iniconfig==2.1.0
+iniconfig==2.3.0
     # via pytest
 itsdangerous==2.2.0
     # via flask
@@ -54,64 +51,57 @@ jinja2==3.1.6
     # via flask
 jsf==0.11.2
     # via -r requirements/_test.in
-jsonschema==4.25.1
+jsonschema==4.26.0
     # via jsf
 jsonschema-specifications==2025.9.1
     # via jsonschema
-locust==2.41.3
+locust==2.43.2
     # via
     #   -r requirements/_test.in
     #   locust-plugins
-locust-cloud==1.27.2
-    # via locust
-locust-plugins==4.7.0
+locust-plugins==5.0.0
     # via -r requirements/_test.in
 markupsafe==3.0.3
     # via
     #   flask
     #   jinja2
     #   werkzeug
-msgpack==1.1.1
+msgpack==1.1.2
     # via locust
-packaging==25.0
+packaging==26.0
     # via pytest
-platformdirs==4.4.0
-    # via locust-cloud
 pluggy==1.6.0
     # via pytest
-psutil==7.1.0
+psutil==7.2.2
     # via locust
 psycogreen==1.0.2
     # via locust-plugins
 psycopg2-binary==2.9.11
     # via locust-plugins
-pydantic==2.11.9
+pydantic==2.12.5
     # via
     #   -r requirements/_test.in
     #   jsf
     #   pydantic-settings
-pydantic-core==2.33.2
+pydantic-core==2.41.5
     # via pydantic
-pydantic-settings==2.11.0
+pydantic-settings==2.12.0
     # via -r requirements/_test.in
 pygments==2.19.2
     # via pytest
-pytest==8.4.2
+pytest==9.0.2
     # via locust
-python-dotenv==1.1.1
+python-dotenv==1.2.1
     # via pydantic-settings
-python-engineio==4.12.3
+python-engineio==4.13.1
     # via
     #   locust
-    #   locust-cloud
     #   python-socketio
-python-socketio==5.13.0
-    # via
-    #   locust
-    #   locust-cloud
+python-socketio==5.16.1
+    # via locust
 pyzmq==27.1.0
     # via locust
-referencing==0.36.2
+referencing==0.37.0
     # via
     #   jsonschema
     #   jsonschema-specifications
@@ -120,21 +110,17 @@ requests==2.32.5
     #   locust
     #   python-socketio
     #   smart-open
-rpds-py==0.28.0
+rpds-py==0.30.0
     # via
     #   jsonschema
     #   referencing
 rstr==3.2.2
     # via jsf
-setuptools==80.9.0
-    # via
-    #   locust
-    #   zope-event
 simple-websocket==1.1.0
     # via python-engineio
-smart-open==7.3.1
+smart-open==7.5.0
     # via jsf
-tenacity==9.1.2
+tenacity==9.1.4
     # via -r requirements/_test.in
 typing-extensions==4.15.0
     # via
@@ -147,25 +133,23 @@ typing-inspection==0.4.2
     # via
     #   pydantic
     #   pydantic-settings
-tzdata==2025.2
-    # via faker
-urllib3==2.5.0
+urllib3==2.6.3
     # via
     #   geventhttpclient
     #   requests
-websocket-client==1.8.0
+websocket-client==1.9.0
     # via python-socketio
-werkzeug==3.1.3
+werkzeug==3.1.5
     # via
     #   flask
     #   flask-cors
     #   flask-login
     #   locust
-wrapt==1.17.3
+wrapt==2.1.1
     # via smart-open
-wsproto==1.2.0
+wsproto==1.3.2
     # via simple-websocket
-zope-event==6.0
+zope-event==6.1
     # via gevent
-zope-interface==8.0.1
+zope-interface==8.2
     # via gevent

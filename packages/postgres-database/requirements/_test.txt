@@ -1,31 +1,39 @@
 aiopg==1.4.0
     # via -r requirements/_test.in
-arrow==1.3.0
+arrow==1.4.0
     # via -r requirements/_test.in
 async-timeout==4.0.3
     # via aiopg
-attrs==25.3.0
+attrs==25.4.0
     # via pytest-docker
-coverage==7.10.7
+cffi==2.0.0
+    # via cryptography
+coverage==7.13.4
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-faker==37.8.0
+cryptography==46.0.4
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   types-paramiko
+faker==40.4.0
     # via -r requirements/_test.in
-greenlet==3.2.4
+greenlet==3.3.1
     # via
     #   -c requirements/_base.txt
     #   -c requirements/_migration.txt
     #   sqlalchemy
-iniconfig==2.1.0
+iniconfig==2.3.0
     # via pytest
-mypy==1.18.2
+librt==0.7.8
+    # via mypy
+mypy==1.19.1
     # via sqlalchemy
 mypy-extensions==1.1.0
     # via mypy
-packaging==25.0
+packaging==26.0
     # via pytest
-pathspec==0.12.1
+pathspec==1.0.4
     # via mypy
 pluggy==1.6.0
     # via
@@ -36,20 +44,22 @@ psycopg2-binary==2.9.11
     #   -c requirements/_base.txt
     #   aiopg
     #   sqlalchemy
+pycparser==3.0
+    # via cffi
 pygments==2.19.2
     # via pytest
-pytest==8.4.2
+pytest==9.0.2
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
     #   pytest-cov
     #   pytest-docker
     #   pytest-instafail
-pytest-asyncio==1.2.0
+pytest-asyncio==1.3.0
     # via -r requirements/_test.in
 pytest-cov==7.0.0
     # via -r requirements/_test.in
-pytest-docker==3.2.3
+pytest-docker==3.2.5
     # via -r requirements/_test.in
 pytest-instafail==0.5.0
     # via -r requirements/_test.in
@@ -72,13 +82,13 @@ sqlalchemy==1.4.54
     #   aiopg
 sqlalchemy2-stubs==0.0.2a38
     # via sqlalchemy
-types-docker==7.1.0.20250916
+types-docker==7.1.0.20260109
     # via -r requirements/_test.in
-types-psycopg2==2.9.21.20250915
+types-paramiko==4.0.0.20250822
+    # via types-docker
+types-psycopg2==2.9.21.20251012
     # via -r requirements/_test.in
-types-python-dateutil==2.9.0.20250822
-    # via arrow
-types-requests==2.32.4.20250913
+types-requests==2.32.4.20260107
     # via types-docker
 typing-extensions==4.15.0
     # via
@@ -86,9 +96,9 @@ typing-extensions==4.15.0
     #   -c requirements/_migration.txt
     #   mypy
     #   sqlalchemy2-stubs
-tzdata==2025.2
-    # via faker
-urllib3==2.5.0
+tzdata==2025.3
+    # via arrow
+urllib3==2.6.3
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_migration.txt

@@ -1,6 +1,6 @@
-aioboto3==15.1.0
+aioboto3==15.5.0
     # via -r requirements/_test.in
-aiobotocore==2.24.0
+aiobotocore==2.25.1
     # via aioboto3
 aiofiles==24.1.0
     # via
@@ -15,7 +15,7 @@ aiohttp==3.12.12
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   aiobotocore
-aioitertools==0.12.0
+aioitertools==0.13.0
     # via aiobotocore
 aiosignal==1.3.2
     # via
@@ -41,18 +41,20 @@ attrs==25.1.0
     #   aiohttp
     #   jsonschema
     #   referencing
-aws-sam-translator==1.100.0
-    # via cfn-lint
-aws-xray-sdk==2.14.0
+aws-sam-translator==1.103.0
+    # via
+    #   cfn-lint
+    #   moto
+aws-xray-sdk==2.15.0
     # via moto
 blinker==1.9.0
     # via flask
-boto3==1.39.11
+boto3==1.40.61
     # via
     #   aiobotocore
     #   aws-sam-translator
     #   moto
-botocore==1.39.11
+botocore==1.40.61
     # via
     #   aiobotocore
     #   aws-xray-sdk
@@ -68,7 +70,7 @@ certifi==2025.1.31
     #   requests
 cffi==2.0.0
     # via cryptography
-cfn-lint==1.40.0
+cfn-lint==1.41.0
     # via moto
 charset-normalizer==3.4.1
     # via
@@ -78,31 +80,31 @@ click==8.2.1
     # via
     #   -c requirements/_base.txt
     #   flask
-coverage==7.10.7
+coverage==7.13.4
     # via
     #   -r requirements/_test.in
     #   pytest-cov
-cryptography==46.0.2
+cryptography==46.0.4
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   joserfc
     #   moto
 docker==7.1.0
     # via moto
-faker==37.8.0
+faker==40.4.0
     # via -r requirements/_test.in
 flask==3.1.2
     # via
     #   flask-cors
     #   moto
-flask-cors==6.0.1
+flask-cors==6.0.2
     # via moto
 frozenlist==1.5.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
     #   aiosignal
-graphql-core==3.2.6
+graphql-core==3.2.7
     # via moto
 h11==0.16.0
     # via
@@ -124,7 +126,7 @@ idna==3.10
     #   httpx
     #   requests
     #   yarl
-iniconfig==2.1.0
+iniconfig==2.3.0
     # via pytest
 itsdangerous==2.2.0
     # via flask
@@ -134,12 +136,12 @@ jinja2==3.1.6
     #   -c requirements/_base.txt
     #   flask
     #   moto
-jmespath==1.0.1
+jmespath==1.1.0
     # via
     #   aiobotocore
     #   boto3
     #   botocore
-joserfc==1.3.4
+joserfc==1.6.1
     # via moto
 jsonpatch==1.33
     # via cfn-lint
@@ -168,7 +170,7 @@ markupsafe==3.0.2
     #   flask
     #   jinja2
     #   werkzeug
-moto==5.1.13
+moto==5.1.21
     # via -r requirements/_test.in
 mpmath==1.3.0
     # via sympy
@@ -178,7 +180,7 @@ multidict==6.1.0
     #   aiobotocore
     #   aiohttp
     #   yarl
-networkx==3.5
+networkx==3.6.1
     # via cfn-lint
 openapi-schema-validator==0.6.3
     # via openapi-spec-validator
@@ -201,15 +203,16 @@ propcache==0.3.0
     #   -c requirements/_base.txt
     #   aiohttp
     #   yarl
-py-partiql-parser==0.6.1
+py-partiql-parser==0.6.3
     # via moto
-pycparser==2.23
+pycparser==3.0
     # via cffi
 pydantic==2.11.7
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   aws-sam-translator
+    #   moto
 pydantic-core==2.33.2
     # via
     #   -c requirements/_base.txt
@@ -218,15 +221,15 @@ pygments==2.19.1
     # via
     #   -c requirements/_base.txt
     #   pytest
-pyparsing==3.2.5
+pyparsing==3.3.2
     # via moto
-pytest==8.4.2
+pytest==9.0.2
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
     #   pytest-cov
     #   pytest-mock
-pytest-asyncio==1.2.0
+pytest-asyncio==1.3.0
     # via -r requirements/_test.in
 pytest-cov==7.0.0
     # via -r requirements/_test.in
@@ -259,7 +262,7 @@ referencing==0.35.1
     #   jsonschema
     #   jsonschema-path
     #   jsonschema-specifications
-regex==2025.11.3
+regex==2026.1.15
     # via cfn-lint
 requests==2.32.4
     # via
@@ -277,9 +280,9 @@ rpds-py==0.28.0
     #   -c requirements/_base.txt
     #   jsonschema
     #   referencing
-s3transfer==0.13.1
+s3transfer==0.14.0
     # via boto3
-setuptools==80.9.0
+setuptools==82.0.0
     # via moto
 six==1.17.0
     # via
@@ -305,8 +308,6 @@ typing-inspection==0.4.1
     # via
     #   -c requirements/_base.txt
     #   pydantic
-tzdata==2025.2
-    # via faker
 urllib3==2.5.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -315,7 +316,7 @@ urllib3==2.5.0
     #   docker
     #   requests
     #   responses
-werkzeug==3.1.3
+werkzeug==3.1.5
     # via
     #   flask
     #   flask-cors

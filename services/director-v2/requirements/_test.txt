@@ -24,7 +24,7 @@ attrs==25.4.0
     # via
     #   -c requirements/_base.txt
     #   pytest-docker
-bokeh==3.8.1
+bokeh==3.8.2
     # via dask
 certifi==2025.11.12
     # via
@@ -49,7 +49,7 @@ cloudpickle==3.1.2
     #   distributed
 contourpy==1.3.3
     # via bokeh
-coverage==7.11.3
+coverage==7.13.4
     # via pytest-cov
 dask==2025.11.0
     # via
@@ -64,9 +64,9 @@ docker==7.1.0
     # via -r requirements/_test.in
 execnet==2.1.2
     # via pytest-xdist
-faker==38.0.0
+faker==40.4.0
     # via -r requirements/_test.in
-fakeredis==2.32.1
+fakeredis==2.33.0
     # via -r requirements/_test.in
 flaky==3.8.1
     # via -r requirements/_test.in
@@ -91,7 +91,7 @@ httpx==0.28.1
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   respx
-icdiff==2.0.7
+icdiff==2.0.10
     # via pytest-icdiff
 idna==3.11
     # via
@@ -109,6 +109,8 @@ jinja2==3.1.6
     #   bokeh
     #   dask
     #   distributed
+librt==0.7.8
+    # via mypy
 locket==1.0.0
     # via
     #   -c requirements/_base.txt
@@ -135,11 +137,11 @@ multidict==6.7.0
     #   -c requirements/_base.txt
     #   async-asgi-testclient
     #   yarl
-mypy==1.18.2
+mypy==1.19.1
     # via sqlalchemy
 mypy-extensions==1.1.0
     # via mypy
-narwhals==2.11.0
+narwhals==2.16.0
     # via bokeh
 numpy==2.3.5
     # via
@@ -159,15 +161,15 @@ pamqp==3.3.0
     # via
     #   -c requirements/_base.txt
     #   aiormq
-pandas==2.3.3
+pandas==3.0.0
     # via bokeh
 partd==1.4.2
     # via
     #   -c requirements/_base.txt
     #   dask
-pathspec==0.12.1
+pathspec==1.0.4
     # via mypy
-pillow==12.0.0
+pillow==12.1.0
     # via bokeh
 pluggy==1.6.0
     # via
@@ -187,7 +189,7 @@ pygments==2.19.2
     # via
     #   -c requirements/_base.txt
     #   pytest
-pytest==9.0.1
+pytest==9.0.2
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
@@ -214,8 +216,6 @@ python-dateutil==2.9.0.post0
     # via
     #   -c requirements/_base.txt
     #   pandas
-pytz==2025.2
-    # via pandas
 pyyaml==6.0.3
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -272,7 +272,7 @@ tornado==6.5.2
     #   -c requirements/_base.txt
     #   bokeh
     #   distributed
-types-networkx==3.5.0.20251106
+types-networkx==3.6.1.20260210
     # via -r requirements/_test.in
 types-psycopg2==2.9.21.20251012
     # via -r requirements/_test.in
@@ -284,11 +284,6 @@ typing-extensions==4.15.0
     #   alembic
     #   mypy
     #   sqlalchemy2-stubs
-tzdata==2025.2
-    # via
-    #   -c requirements/_base.txt
-    #   faker
-    #   pandas
 urllib3==2.5.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -296,7 +291,7 @@ urllib3==2.5.0
     #   distributed
     #   docker
     #   requests
-xyzservices==2025.10.0
+xyzservices==2025.11.0
     # via bokeh
 yarl==1.22.0
     # via

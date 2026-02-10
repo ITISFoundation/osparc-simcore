@@ -38,13 +38,13 @@ charset-normalizer==3.4.0
     # via
     #   -c requirements/_base.txt
     #   requests
-coverage==7.10.7
+coverage==7.13.4
     # via
     #   -r requirements/_test.in
     #   pytest-cov
 docker==7.1.0
     # via -r requirements/_test.in
-faker==37.8.0
+faker==40.4.0
     # via -r requirements/_test.in
 frozenlist==1.5.0
     # via
@@ -69,7 +69,7 @@ httpx==0.28.1
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
     #   respx
-icdiff==2.0.7
+icdiff==2.0.10
     # via pytest-icdiff
 idna==3.10
     # via
@@ -78,18 +78,20 @@ idna==3.10
     #   httpx
     #   requests
     #   yarl
-iniconfig==2.1.0
+iniconfig==2.3.0
     # via pytest
 jsonref==1.1.0
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
+librt==0.7.8
+    # via mypy
 multidict==6.1.0
     # via
     #   -c requirements/_base.txt
     #   aiohttp
     #   yarl
-mypy==1.18.2
+mypy==1.19.1
     # via sqlalchemy
 mypy-extensions==1.1.0
     # via mypy
@@ -97,7 +99,7 @@ packaging==24.2
     # via
     #   -c requirements/_base.txt
     #   pytest
-pathspec==0.12.1
+pathspec==1.0.4
     # via mypy
 pluggy==1.6.0
     # via
@@ -114,7 +116,7 @@ pygments==2.18.0
     # via
     #   -c requirements/_base.txt
     #   pytest
-pytest==8.4.2
+pytest==9.0.2
     # via
     #   -r requirements/_test.in
     #   pytest-asyncio
@@ -122,7 +124,7 @@ pytest==8.4.2
     #   pytest-icdiff
     #   pytest-mock
     #   pytest-sugar
-pytest-asyncio==1.2.0
+pytest-asyncio==1.3.0
     # via -r requirements/_test.in
 pytest-cov==7.0.0
     # via -r requirements/_test.in
@@ -168,9 +170,9 @@ sqlalchemy==1.4.54
     #   -r requirements/_test.in
 sqlalchemy2-stubs==0.0.2a38
     # via sqlalchemy
-termcolor==3.1.0
+termcolor==3.3.0
     # via pytest-sugar
-types-aiofiles==24.1.0.20250822
+types-aiofiles==25.1.0.20251011
     # via -r requirements/_test.in
 types-pyasn1==0.6.0.20250914
     # via types-python-jose
@@ -183,8 +185,6 @@ typing-extensions==4.14.1
     #   -c requirements/_base.txt
     #   mypy
     #   sqlalchemy2-stubs
-tzdata==2025.2
-    # via faker
 urllib3==2.5.0
     # via
     #   -c requirements/../../../requirements/constraints.txt
