@@ -25,6 +25,7 @@ def app_environment(
         {
             **app_environment,
             "WEBSERVER_GARBAGE_COLLECTOR": "null",
+            "WEBSERVER_DEV_FEATURES_ENABLED": "1",
         },
     )
 
