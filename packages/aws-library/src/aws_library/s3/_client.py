@@ -585,27 +585,19 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
         # it will buffer the entire file in memory instead of reading it
         # chunk by chunk
 
-        # below is a quick call
+        # below is a quick call to get file size
         head_response = await self._client.head_object(Bucket=bucket_name, Key=object_key)
         data_size = DataSize(head_response["ContentLength"])
 
         async def _() -> BytesIter:
-            # Download the file in chunks
-            position = 0
-            while position < data_size:
-                # Calculate the range for this chunk
-                end = min(position + chunk_size - 1, data_size - 1)
-                range_header = f"bytes={position}-{end}"
-
-                # Download the chunk
-                response = await self._client.get_object(Bucket=bucket_name, Key=object_key, Range=range_header)
-
-                chunk = await response["Body"].read()
-
-                # Yield the chunk for processing
+            # Use a single get_object request and stream from the body
+            response = await self._client.get_object(Bucket=bucket_name, Key=object_key)
+            body = response["Body"]
+            while True:
+                chunk = await body.read(chunk_size)
+                if not chunk:
+                    break
                 yield chunk
-
-                position += chunk_size
 
         return BytesStreamer(data_size, _)
 
