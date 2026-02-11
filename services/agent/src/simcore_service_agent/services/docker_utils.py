@@ -5,7 +5,7 @@ from contextlib import contextmanager, suppress
 from pathlib import Path
 from typing import Final
 
-from aiocache import cached
+from aiocache import cached  # type: ignore[import-untyped]
 from aiodocker import DockerError
 from aiodocker.docker import Docker
 from aiodocker.volumes import DockerVolume
