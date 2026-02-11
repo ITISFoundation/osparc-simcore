@@ -8,7 +8,7 @@ from models_library.utils.enums import StrAutoEnum
 
 
 class MountActivityStatus(StrAutoEnum):
-    FILES_UPLOAD_STARTED = auto()
+    FILES_UPLOAD_ONGOING = auto()
     FILES_UPLOAD_ENDED = auto()
 
 

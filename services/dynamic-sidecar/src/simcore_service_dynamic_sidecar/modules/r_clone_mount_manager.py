@@ -118,7 +118,7 @@ class DynamicSidecarRCloneMountDelegate(DelegateInterface):
         if summary.files_queued == 0 and len(summary.files_in_transfer) == 0:
             await self.state_paths_notifier.send_state_paths_status(MountActivityStatus.FILES_UPLOAD_ENDED)
             return
-        await self.state_paths_notifier.send_state_paths_status(MountActivityStatus.FILES_UPLOAD_STARTED)
+        await self.state_paths_notifier.send_state_paths_status(MountActivityStatus.FILES_UPLOAD_ONGOING)
 
     async def request_shutdown(self) -> None:
         client = get_rabbitmq_rpc_client(self.app)
