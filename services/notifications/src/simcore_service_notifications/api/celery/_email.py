@@ -45,6 +45,10 @@ def send_single_email(msg: SingleEmailMessage) -> None:
     asyncio.run(_send_single_email_async(msg))
 
 
+# Rate limit is 12 emails/minute = 1 email every 5 seconds
+_SECONDS_BETWEEN_EMAILS = 5
+
+
 def send_email(
     task: Task,
     task_key: TaskKey,
@@ -63,4 +67,11 @@ def send_email(
         for to in message.to
     ]
 
-    group([send_single_email.s(single_msg.model_dump()) for single_msg in single_msgs]).apply_async()  # type: ignore
+    # Use countdown to enforce strict rate limiting from the start,
+    # avoiding the token bucket initial burst behavior
+    group(
+        [
+            send_single_email.s(single_msg.model_dump()).set(countdown=i * _SECONDS_BETWEEN_EMAILS)
+            for i, single_msg in enumerate(single_msgs)
+        ]
+    ).apply_async()  # type: ignore
