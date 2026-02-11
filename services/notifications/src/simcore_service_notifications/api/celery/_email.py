@@ -1,43 +1,65 @@
 # pylint: disable=unused-argument
 
+import asyncio
 import logging
 from email.headerregistry import Address
-from email.message import EmailMessage as _EmailMessage
+from typing import Annotated
 
-from celery import Task  # type: ignore[import-untyped]
+from celery import Task, group, shared_task  # type: ignore[import-untyped]
 from models_library.api_schemas_notifications.message import EmailNotificationMessage
 from notifications_library._email import (
-    add_attachments,
     compose_email,
     create_email_session,
 )
+from pydantic import BaseModel, ConfigDict, Field
 from servicelib.celery.models import TaskKey
 from settings_library.email import SMTPSettings
+
+from ...models.content import EmailNotificationContent
+from ...models.message import EmailAddress
 
 _logger = logging.getLogger(__name__)
 
 
-UNDISCLOSED_RECIPIENTS = "undisclosed-recipients:;"
+class SingleEmailNotificationMessage(BaseModel):
+    from_: Annotated[EmailAddress, Field(alias="from")]
+    to: EmailAddress
+    reply_to: EmailAddress | None = None
 
+    # Content fields
+    content: EmailNotificationContent
 
-def _create_email_message(message: EmailNotificationMessage) -> _EmailMessage:
-    return compose_email(
-        from_=Address(**message.from_.model_dump()),
-        to=[Address(**addr.model_dump()) for addr in message.to] if message.to else UNDISCLOSED_RECIPIENTS,
-        subject=message.content.subject,
-        content_text=message.content.body_text,
-        content_html=message.content.body_html,
-        reply_to=Address(**message.reply_to.model_dump()) if message.reply_to else None,
-        bcc=[Address(**addr.model_dump()) for addr in message.bcc] if message.bcc else None,
+    model_config = ConfigDict(
+        validate_by_alias=True,
+        validate_by_name=True,
     )
 
 
-async def _send_email(msg: _EmailMessage) -> None:
+def _to_address(address: EmailAddress) -> Address:
+    return Address(display_name=address.name, addr_spec=address.email)
+
+
+async def _send_single_email_async(msg: SingleEmailNotificationMessage) -> None:
+    _logger.info("🚨 Sending email to %s", msg.to.email)
     async with create_email_session(settings=SMTPSettings.create_from_envs()) as smtp:
-        await smtp.send_message(msg)
+        await smtp.send_message(
+            compose_email(
+                from_=_to_address(msg.from_),
+                to=_to_address(msg.to),
+                subject=msg.content.subject,
+                content_text=msg.content.body_text,
+                content_html=msg.content.body_html,
+                reply_to=_to_address(msg.reply_to) if msg.reply_to else None,
+            )
+        )
 
 
-async def send_email(
+@shared_task(name="send_single_email", pydantic=True, queue="notifications", rate_limit="12/m")
+def send_single_email(msg: SingleEmailNotificationMessage) -> None:
+    asyncio.run(_send_single_email_async(msg))
+
+
+def send_email(
     task: Task,
     task_key: TaskKey,
     message: EmailNotificationMessage,
@@ -45,9 +67,14 @@ async def send_email(
     assert task  # nosec
     assert task_key  # nosec
 
-    msg = _create_email_message(message)
+    single_msgs = [
+        SingleEmailNotificationMessage(
+            from_=EmailAddress(**message.from_.model_dump()),
+            to=EmailAddress(**to.model_dump()),
+            reply_to=EmailAddress(**message.reply_to.model_dump()) if message.reply_to else None,
+            content=EmailNotificationContent(**message.content.model_dump()),
+        )
+        for to in message.to
+    ]
 
-    if message.attachments:
-        add_attachments(msg, [(a.content, a.filename) for a in message.attachments])
-
-    await _send_email(msg)
+    group([send_single_email.s(single_msg.model_dump()) for single_msg in single_msgs]).apply_async()  # type: ignore

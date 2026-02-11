@@ -13,7 +13,7 @@ _logger = logging.getLogger(__name__)
 
 def compose_email(
     from_: Address,
-    to: list[Address],
+    to: Address,
     subject: str,
     content_text: str,
     content_html: str | None = None,
@@ -23,7 +23,7 @@ def compose_email(
     """Compose an email message.
 
     Note:
-        to and bcc params are lists and not set because email.headerregistry.Address is not hashable.
+        bcc param is a list and not set because email.headerregistry.Address is not hashable.
         Ensure unicity at a higher level, if needed.
     """
     msg = EmailMessage()

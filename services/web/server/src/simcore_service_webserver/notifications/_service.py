@@ -40,8 +40,8 @@ async def _collect_active_recipients(app: web.Application, recipient_groups: lis
     recipients_dict: dict[str, EmailAddress] = {}
     for user in active_users:
         email_addr = EmailAddress(
-            display_name=_get_user_display_name(user),
-            addr_spec=user["email"],
+            name=_get_user_display_name(user),
+            email=user["email"],
         )
         recipients_dict[user["email"]] = email_addr
 
@@ -59,16 +59,15 @@ async def _create_email_message(
 
     from_ = EmailAddress.from_email_str(replace_email_parts(product.support_email, new_local=NO_REPLY_LOCAL))
 
-    bcc = await _collect_active_recipients(app, recipients)
-
-    if not bcc:
+    to = await _collect_active_recipients(app, recipients)
+    if not to:
         raise NotificationsNoActiveRecipientsError
 
     email_content = EmailContent(**content.model_dump())
 
     return EmailNotificationMessage(
         from_=from_,
-        bcc=bcc,
+        to=to,
         content=email_content,
     )
 

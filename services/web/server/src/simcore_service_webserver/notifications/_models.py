@@ -2,50 +2,49 @@ from email.utils import parseaddr
 from typing import Annotated, Self
 
 from common_library.network import replace_email_parts
-from models_library.emails import LowerCaseEmailStr
 from models_library.notifications import ChannelType
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 class EmailAddress(BaseModel):
-    display_name: str = ""
-    addr_spec: LowerCaseEmailStr
+    name: str = ""
+    email: EmailStr
 
     @classmethod
     def from_email_str(cls, email_str: str) -> Self:
-        display_name, addr_spec = parseaddr(email_str)
-        return cls(display_name=display_name, addr_spec=addr_spec)
+        name, email = parseaddr(email_str)
+        return cls(name=name, email=email)
 
     def to_email_str(self) -> str:
-        if self.display_name:
-            return f"{self.display_name} <{self.addr_spec}>"
-        return self.addr_spec
+        if self.name:
+            return f"{self.name} <{self.email}>"
+        return self.email
 
     def replace(
         self,
-        new_display_name: str | None = None,
-        new_addr_local: str | None = None,
+        new_name: str | None = None,
+        new_local: str | None = None,
     ) -> Self:
         """Replace the local part and/or display name of the email address.
 
         Args:
-            new_addr_local: New local part (before @). If None, keeps current.
-            new_display_name: Optional custom display name. If None and new_addr_local is provided,
-              auto-generates from new_addr_local if original had a display name.
+            new_name: Optional custom display name. If None and new_local is provided,
+              auto-generates from new_local if original had a display name.
+            new_local: New local part (before @). If None, keeps current.
 
         Returns:
             New EmailAddress instance with updated values
         """
-        if new_addr_local is None:
+        if new_local is None:
             # Only update display_name if provided, otherwise return copy as-is
-            if new_display_name is not None:
-                return self.model_copy(update={"display_name": new_display_name})
+            if new_name is not None:
+                return self.model_copy(update={"name": new_name})
             return self
 
         transformed_email = replace_email_parts(
             self.to_email_str(),
-            new_addr_local,
-            new_display_name,
+            new_local,
+            new_name,
         )
 
         return type(self).from_email_str(transformed_email)

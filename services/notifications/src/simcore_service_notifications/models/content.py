@@ -18,7 +18,7 @@ class EmailNotificationContent(NotificationContent):
 
     subject: str
     body_html: str
-    body_text: str | None = None
+    body_text: str
 
 
 _CONTENT_MODELS_BY_CHANNEL: dict[ChannelType, type[NotificationContent]] = {

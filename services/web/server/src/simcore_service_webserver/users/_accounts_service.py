@@ -349,7 +349,7 @@ async def send_approval_email_to_user(
     # Compose email
     msg = compose_email(
         from_=get_support_address(product_data),
-        to=[get_user_address(user_data)],
+        to=get_user_address(user_data),
         subject=parts.subject,
         content_text=parts.text_content,
         content_html=parts.html_content,
@@ -404,7 +404,7 @@ async def send_rejection_email_to_user(
     # Compose email
     msg = compose_email(
         from_=get_support_address(product_data),
-        to=[get_user_address(user_data)],
+        to=get_user_address(user_data),
         subject=parts.subject,
         content_text=parts.text_content,
         content_html=parts.html_content,
