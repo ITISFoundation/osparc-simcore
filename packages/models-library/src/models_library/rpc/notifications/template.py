@@ -5,29 +5,29 @@ from pydantic import BaseModel, ConfigDict
 from ...notifications import ChannelType, TemplateName
 
 
-class NotificationsTemplateRefRpc(BaseModel):
+class TemplateRefRpc(BaseModel):
     channel: ChannelType
     template_name: TemplateName
 
     model_config = ConfigDict(frozen=True)
 
 
-class NotificationsTemplateRpcResponse(BaseModel):
-    ref: NotificationsTemplateRefRpc
+class TemplateRpcResponse(BaseModel):
+    ref: TemplateRefRpc
     context_schema: dict[str, Any]
 
     model_config = ConfigDict(frozen=True)
 
 
-class NotificationsTemplatePreviewRpcRequest(BaseModel):
-    ref: NotificationsTemplateRefRpc
+class TemplatePreviewRpcRequest(BaseModel):
+    ref: TemplateRefRpc
     context: dict[str, Any]
 
     model_config = ConfigDict(frozen=True)
 
 
-class NotificationsTemplatePreviewRpcResponse(BaseModel):
-    ref: NotificationsTemplateRefRpc
+class TemplatePreviewRpcResponse(BaseModel):
+    ref: TemplateRefRpc
     content: dict[str, Any]
 
     model_config = ConfigDict(frozen=True)

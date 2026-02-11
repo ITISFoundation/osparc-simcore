@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from ..exceptions.errors import ContentModelNotFoundError
 
 
-class NotificationContent(BaseModel):
+class Content(BaseModel):
     """Base class for all notification content models."""
 
     @classmethod
@@ -13,7 +13,7 @@ class NotificationContent(BaseModel):
         return tuple(cls.model_fields.keys())
 
 
-class EmailNotificationContent(NotificationContent):
+class EmailContent(Content):
     """Email notification content model."""
 
     subject: str
@@ -21,13 +21,13 @@ class EmailNotificationContent(NotificationContent):
     body_text: str
 
 
-_CONTENT_MODELS_BY_CHANNEL: dict[ChannelType, type[NotificationContent]] = {
-    ChannelType.email: EmailNotificationContent,
+_CONTENT_MODELS_BY_CHANNEL: dict[ChannelType, type[Content]] = {
+    ChannelType.email: EmailContent,
     # add other channel content models here
 }
 
 
-def for_channel(channel: ChannelType) -> type[NotificationContent]:
+def for_channel(channel: ChannelType) -> type[Content]:
     """Get content model class for a specific channel."""
     if channel not in _CONTENT_MODELS_BY_CHANNEL:
         raise ContentModelNotFoundError(channel=channel)

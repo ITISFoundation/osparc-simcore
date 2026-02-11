@@ -7,7 +7,7 @@ from models_library.api_schemas_webserver.notifications import (
     NotificationsTemplatePreviewGet,
     SearchTemplatesQueryParams,
 )
-from models_library.rpc.notifications.template import NotificationsTemplatePreviewRpcRequest
+from models_library.rpc.notifications.template import TemplatePreviewRpcRequest
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import parse_request_body_as, parse_request_query_parameters_as
 from servicelib.aiohttp.rest_responses import create_data_response
@@ -75,7 +75,7 @@ async def preview_template(request: web.Request) -> web.Response:
 
     preview = await remote_preview_template(
         get_rabbitmq_rpc_client(request.app),
-        request=NotificationsTemplatePreviewRpcRequest(**enriched_body.model_dump()),
+        request=TemplatePreviewRpcRequest(**enriched_body.model_dump()),
     )
 
     return create_data_response(NotificationsTemplatePreviewGet(**preview.model_dump()).data())

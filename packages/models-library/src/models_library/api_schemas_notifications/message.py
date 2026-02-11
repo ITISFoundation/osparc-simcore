@@ -5,17 +5,17 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field
 from models_library.notifications import ChannelType
 
 
-class EmailNotificationMessageAddress(BaseModel):
+class EmailAddress(BaseModel):
     name: str = ""
     email: EmailStr
 
 
-class EmailNotificationMessageAttachment(BaseModel):
+class EmailAttachment(BaseModel):
     content: bytes
     filename: str
 
 
-class EmailNotificationMessageContent(BaseModel):
+class EmailContent(BaseModel):
     subject: Annotated[
         str,
         Field(
@@ -27,20 +27,22 @@ class EmailNotificationMessageContent(BaseModel):
     body_html: str | None = None
 
 
-class EmailNotificationMessage(BaseModel):
+class EmailMessage(BaseModel):
+    """Email message with multiple recipients for bulk sending."""
+
     channel: ChannelType = ChannelType.email
 
     # Envelope fields
-    from_: Annotated[EmailNotificationMessageAddress, Field(alias="from")]
-    to: Annotated[list[EmailNotificationMessageAddress], Field(min_length=1)]
-    reply_to: EmailNotificationMessageAddress | None = None
-    cc: list[EmailNotificationMessageAddress] | None = None
-    bcc: list[EmailNotificationMessageAddress] | None = None
+    from_: Annotated[EmailAddress, Field(alias="from")]
+    to: Annotated[list[EmailAddress], Field(min_length=1)]
+    reply_to: EmailAddress | None = None
+    cc: list[EmailAddress] | None = None
+    bcc: list[EmailAddress] | None = None
 
     # Content fields
-    content: EmailNotificationMessageContent
+    content: EmailContent
 
-    attachments: list[EmailNotificationMessageAttachment] | None = None
+    attachments: list[EmailAttachment] | None = None
 
     model_config = ConfigDict(
         validate_by_alias=True,
