@@ -2,7 +2,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 from faker import Faker
-from models_library.api_schemas_notifications.message import (
+from models_library.celery.notifications import (
     EmailAddress,
     EmailContent,
     EmailMessage,
