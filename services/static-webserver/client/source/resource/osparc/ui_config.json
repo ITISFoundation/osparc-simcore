@@ -232,8 +232,8 @@
       "resources": [{
         "resourceType": "study",
         "icon": "@FontAwesome5Solid/file/18",
-        "title": "Empty Study",
-        "newStudyLabel": "New Study",
+        "title": "Empty Project",
+        "newStudyLabel": "New Project",
         "idToWidget": "emptyStudyBtn"
       }, {
         "resourceType": "service",
