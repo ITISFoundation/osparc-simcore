@@ -132,5 +132,9 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
             if not config_file.exists():
                 msg = f"{key} environment variable is not set and {config_file} file does not exist"
                 raise ValueError(msg)
-            data[key] = config_file.read_text().strip()
+            try:
+                data[key] = config_file.read_text().strip()
+            except UnicodeDecodeError as e:
+                msg = f"could not detect contes of {config_file}"
+                raise ValueError(msg) from e
         return data
