@@ -175,7 +175,7 @@ CMD ["/bin/sh", "services/agent/docker/boot.sh"]
 
 # --------------------------Development stage -------------------
 # Source code accessible in host but runs in container
-# Runs as my with same gid/uid as host
+# Runs as scu with same gid/uid as host
 # Placed at the end to speed-up the build if images targeting production
 #
 #  + /devel         WORKDIR
