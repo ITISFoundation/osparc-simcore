@@ -1,12 +1,11 @@
 from datetime import timedelta
-from pathlib import Path
 from typing import Annotated
 
 from common_library.basic_types import DEFAULT_FACTORY
 from common_library.logging.logging_utils_filtering import LoggerName, MessageSubstring
 from models_library.basic_types import BootModeEnum, LogLevel
 from models_library.docker import DockerNodeID
-from pydantic import AliasChoices, AnyHttpUrl, Field, field_validator, model_validator
+from pydantic import AliasChoices, AnyHttpUrl, Field, field_validator
 from settings_library.base import BaseCustomSettings
 from settings_library.r_clone import S3Provider
 from settings_library.rabbit import RabbitSettings
@@ -122,19 +121,3 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
     @classmethod
     def valid_log_level(cls, value) -> LogLevel:
         return LogLevel(cls.validate_log_level(value))
-
-    @model_validator(mode="before")
-    @classmethod
-    def load_r_clone_version_from_file(cls, data: dict) -> dict:
-        key = "AGENT_VOLUMES_CLEANUP_R_CLONE_VERSION"
-        if not data.get(key):
-            config_file = Path("/configs/r_clone_version")
-            if not config_file.exists():
-                msg = f"{key} environment variable is not set and {config_file} file does not exist"
-                raise ValueError(msg)
-            try:
-                data[key] = config_file.read_text().strip()
-            except UnicodeDecodeError as e:
-                msg = f"could not detect contes of {config_file}"
-                raise ValueError(msg) from e
-        return data

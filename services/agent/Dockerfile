@@ -73,7 +73,8 @@ RUN \
   --mount=type=bind,source=scripts/install_rclone.bash,target=/tmp/install_rclone.bash \
   ./tmp/install_rclone.bash && \
   mkdir -p /configs && \
-  rclone version | head -n1 | awk '{print $2}' | sed 's/^v//' > /configs/r_clone_version
+  export AGENT_VOLUMES_CLEANUP_R_CLONE_VERSION=$(rclone version | head -n1 | awk '{print $2}' | sed 's/^v//') && \
+  echo "AGENT_VOLUMES_CLEANUP_R_CLONE_VERSION=${AGENT_VOLUMES_CLEANUP_R_CLONE_VERSION}" >> /etc/environment
 
 # -------------------------- Build stage -------------------
 # Installs build/package management tools and third party dependencies
