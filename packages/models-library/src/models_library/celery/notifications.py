@@ -22,7 +22,8 @@ class EmailContent(BaseModel):
         str,
         Field(
             min_length=1,
-            max_length=998,  # RFC 2822 limit
+            # NOTE: RFC 2822 limit
+            max_length=998,
         ),
     ]
     body_text: str
