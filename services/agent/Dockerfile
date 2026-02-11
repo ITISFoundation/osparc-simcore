@@ -71,9 +71,7 @@ ARG TARGETARCH
 ENV TARGETARCH=${TARGETARCH}
 RUN \
   --mount=type=bind,source=scripts/install_rclone.bash,target=/tmp/install_rclone.bash \
-  ./tmp/install_rclone.bash && \
-  export AGENT_VOLUMES_CLEANUP_R_CLONE_VERSION=$(rclone version | head -n1 | awk '{print $2}' | sed 's/^v//') && \
-  echo "AGENT_VOLUMES_CLEANUP_R_CLONE_VERSION=${AGENT_VOLUMES_CLEANUP_R_CLONE_VERSION}" >> /etc/environment
+  ./tmp/install_rclone.bash
 
 # -------------------------- Build stage -------------------
 # Installs build/package management tools and third party dependencies
