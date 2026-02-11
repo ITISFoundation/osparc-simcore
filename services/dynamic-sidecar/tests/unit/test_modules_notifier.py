@@ -213,10 +213,10 @@ def _get_on_input_port_spy(
 ) -> AsyncMock:
     # emulates front-end receiving message
 
-    async def on_service_status(data):
-        assert TypeAdapter(ServiceDiskUsage).validate_python(data) is not None
+    async def on_input_port_status(data):
+        assert TypeAdapter(InputPortStatus).validate_python(data) is not None
 
-    on_event_spy = AsyncMock(wraps=on_service_status)
+    on_event_spy = AsyncMock(wraps=on_input_port_status)
     socketio_client.on(SOCKET_IO_STATE_INPUT_PORTS_EVENT, on_event_spy)
 
     return on_event_spy
@@ -289,10 +289,10 @@ def _get_on_output_port_spy(
 ) -> AsyncMock:
     # emulates front-end receiving message
 
-    async def on_service_status(data):
-        assert TypeAdapter(ServiceDiskUsage).validate_python(data) is not None
+    async def on_output_port_status(data):
+        assert TypeAdapter(OutputPortStatus).validate_python(data) is not None
 
-    on_event_spy = AsyncMock(wraps=on_service_status)
+    on_event_spy = AsyncMock(wraps=on_output_port_status)
     socketio_client.on(SOCKET_IO_STATE_OUTPUT_PORTS_EVENT, on_event_spy)
 
     return on_event_spy
