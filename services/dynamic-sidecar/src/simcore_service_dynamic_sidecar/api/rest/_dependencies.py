@@ -38,7 +38,7 @@ def get_rabbitmq_client(
     return rabbitmq.get_rabbitmq_client(app)
 
 
-def get_rabbitmq_rpc_server(
+def get_rabbitmq_rpc_client(
     app: Annotated[FastAPI, Depends(get_application)],
 ) -> RabbitMQRPCClient:
-    return rabbitmq.get_rabbitmq_rpc_server(app)
+    return rabbitmq.get_rabbitmq_rpc_client(app)

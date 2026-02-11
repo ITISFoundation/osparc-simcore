@@ -38,9 +38,7 @@ def data() -> dict[str, Any]:
             },
             "Resources": {},
             "Placement": {},
-            "Networks": [
-                {"Target": "roybucjnp44t561jvgy47dd14", "Aliases": ["api-server"]}
-            ],
+            "Networks": [{"Target": "roybucjnp44t561jvgy47dd14", "Aliases": ["api-server"]}],
             "ForceUpdate": 0,
         },
         "ServiceID": "77hyhjm6bqs81xp5g3e4ov7wv",
@@ -75,9 +73,7 @@ def data() -> dict[str, Any]:
                     },
                     "DriverState": {
                         "Name": "overlay",
-                        "Options": {
-                            "com.docker.network.driver.overlay.vxlanid_list": "4096"
-                        },
+                        "Options": {"com.docker.network.driver.overlay.vxlanid_list": "4096"},
                     },
                     "IPAMOptions": {
                         "Driver": {"Name": "default"},
@@ -101,9 +97,7 @@ def data() -> dict[str, Any]:
                     },
                     "DriverState": {
                         "Name": "overlay",
-                        "Options": {
-                            "com.docker.network.driver.overlay.vxlanid_list": "4098"
-                        },
+                        "Options": {"com.docker.network.driver.overlay.vxlanid_list": "4098"},
                     },
                     "IPAMOptions": {
                         "Driver": {"Name": "default"},
@@ -130,16 +124,12 @@ def test_update_dict():
 
 
 def test_get_from_dict(data: dict[str, Any]):
-
-    assert get_from_dict(data, "Spec.ContainerSpec.Labels") == {
-        "com.docker.stack.namespace": "master-simcore"
-    }
+    assert get_from_dict(data, "Spec.ContainerSpec.Labels") == {"com.docker.stack.namespace": "master-simcore"}
     # TODO: see that dotted keys cannot be used here,
     assert get_from_dict(data, "Invalid.Invalid.Invalid", default=42) == 42
 
 
 def test_copy_from_dict(data: dict[str, Any]):
-
     selected_data = copy_from_dict(
         data,
         include={
@@ -153,10 +143,7 @@ def test_copy_from_dict(data: dict[str, Any]):
     )
 
     assert selected_data["ID"] == data["ID"]
-    assert (
-        selected_data["Spec"]["ContainerSpec"]["Image"]
-        == data["Spec"]["ContainerSpec"]["Image"]
-    )
+    assert selected_data["Spec"]["ContainerSpec"]["Image"] == data["Spec"]["ContainerSpec"]["Image"]
     assert selected_data["Status"]["State"] == data["Status"]["State"]
     assert "Message" not in selected_data["Status"]["State"]
     assert "running" in data["Status"]["State"]

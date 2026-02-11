@@ -13,9 +13,7 @@ from aiohttp import web
 from ._manager import get_long_running_manager
 from ._server import setup, start_long_running_task
 
-APP_LONG_RUNNING_TASKS_KEY: Final = web.AppKey(
-    "APP_LONG_RUNNING_TASKS_KEY", dict[str, object]
-)
+APP_LONG_RUNNING_TASKS_KEY: Final = web.AppKey("APP_LONG_RUNNING_TASKS_KEY", dict[str, object])
 
 __all__: tuple[str, ...] = (
     "get_long_running_manager",

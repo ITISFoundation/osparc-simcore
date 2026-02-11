@@ -9,6 +9,7 @@ from faker import Faker
 from models_library.products import ProductName
 from models_library.progress_bar import ProgressReport
 from models_library.users import UserID
+from pydantic import TypeAdapter
 from pytest_mock import MockerFixture, MockType
 from servicelib.celery.models import TaskState, TaskStatus, TaskUUID
 from servicelib.celery.task_manager import TaskManager
@@ -45,7 +46,7 @@ async def create_mock_task_manager(
     "status_or_exception",
     [
         TaskStatus(
-            task_uuid=TaskUUID(_faker.uuid4()),
+            task_uuid=TypeAdapter(TaskUUID).validate_python(_faker.uuid4()),
             task_state=state,
             progress_report=ProgressReport(actual_value=3.14),
         )

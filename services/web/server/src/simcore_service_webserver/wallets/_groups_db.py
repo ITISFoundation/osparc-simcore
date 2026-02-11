@@ -94,19 +94,14 @@ async def get_wallet_group(
             wallet_to_groups.c.modified,
         )
         .select_from(wallet_to_groups)
-        .where(
-            (wallet_to_groups.c.wallet_id == wallet_id)
-            & (wallet_to_groups.c.gid == group_id)
-        )
+        .where((wallet_to_groups.c.wallet_id == wallet_id) & (wallet_to_groups.c.gid == group_id))
     )
 
     async with get_database_engine_legacy(app).acquire() as conn:
         result = await conn.execute(stmt)
         row = await result.first()
         if row is None:
-            raise WalletGroupNotFoundError(
-                details=f"Wallet {wallet_id} group {group_id} not found"
-            )
+            raise WalletGroupNotFoundError(details=f"Wallet {wallet_id} group {group_id} not found")
         return WalletGroupGetDB.model_validate(row)
 
 
@@ -127,17 +122,12 @@ async def update_wallet_group(
                 write=write,
                 delete=delete,
             )
-            .where(
-                (wallet_to_groups.c.wallet_id == wallet_id)
-                & (wallet_to_groups.c.gid == group_id)
-            )
+            .where((wallet_to_groups.c.wallet_id == wallet_id) & (wallet_to_groups.c.gid == group_id))
             .returning(literal_column("*"))
         )
         row = await result.first()
         if row is None:
-            raise WalletGroupNotFoundError(
-                details=f"Wallet {wallet_id} group {group_id} not found"
-            )
+            raise WalletGroupNotFoundError(details=f"Wallet {wallet_id} group {group_id} not found")
         return WalletGroupGetDB.model_validate(row)
 
 
@@ -149,7 +139,6 @@ async def delete_wallet_group(
     async with get_database_engine_legacy(app).acquire() as conn:
         await conn.execute(
             wallet_to_groups.delete().where(
-                (wallet_to_groups.c.wallet_id == wallet_id)
-                & (wallet_to_groups.c.gid == group_id)
+                (wallet_to_groups.c.wallet_id == wallet_id) & (wallet_to_groups.c.gid == group_id)
             )
         )

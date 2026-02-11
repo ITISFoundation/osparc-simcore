@@ -10,9 +10,9 @@ from .licenses import LicensesRpcApi
 from .projects import ProjectsRpcApi
 
 __all__: tuple[str, ...] = (
-    "WebServerRpcClient",
-    "ProjectsRpcApi",
-    "LicensesRpcApi",
-    "FunctionsRpcApi",
     "ApiKeysRpcApi",
+    "FunctionsRpcApi",
+    "LicensesRpcApi",
+    "ProjectsRpcApi",
+    "WebServerRpcClient",
 )

@@ -66,9 +66,7 @@ def app_environment(
     )
 
 
-@pytest.mark.acceptance_test(
-    "https://github.com/ITISFoundation/osparc-simcore/pull/4715"
-)
+@pytest.mark.acceptance_test("https://github.com/ITISFoundation/osparc-simcore/pull/4715")
 async def test_successful_create_payment_method_workflow(
     is_pdb_enabled: bool,
     app: FastAPI,
@@ -95,58 +93,50 @@ async def test_successful_create_payment_method_workflow(
         autospec=True,
     )
 
-    async with insert_and_get_user_and_secrets_lifespan(
-        sqlalchemy_async_engine, id=user_id
-    ) as user_row:
-        async with insert_and_get_product_lifespan(
-            sqlalchemy_async_engine, name=product["name"]
-        ) as product_row:
-            product_name = product_row["name"]
-            async with insert_and_get_wallet_lifespan(
-                sqlalchemy_async_engine,
-                product_name=product_name,
-                user_group_id=user_row["primary_gid"],
+    async with (
+        insert_and_get_user_and_secrets_lifespan(sqlalchemy_async_engine, id=user_id) as user_row,
+        insert_and_get_product_lifespan(sqlalchemy_async_engine, name=product["name"]) as product_row,
+    ):
+        product_name = product_row["name"]
+        async with insert_and_get_wallet_lifespan(
+            sqlalchemy_async_engine,
+            product_name=product_name,
+            user_group_id=user_row["primary_gid"],
+            wallet_id=wallet_id,
+        ):
+            # INIT via api/rpc
+            inited = await rpc_client.request(
+                PAYMENTS_RPC_NAMESPACE,
+                TypeAdapter(RPCMethodName).validate_python("init_creation_of_payment_method"),
                 wallet_id=wallet_id,
-            ):
-                # INIT via api/rpc
-                inited = await rpc_client.request(
-                    PAYMENTS_RPC_NAMESPACE,
-                    TypeAdapter(RPCMethodName).validate_python(
-                        "init_creation_of_payment_method"
-                    ),
-                    wallet_id=wallet_id,
-                    wallet_name=wallet_name,
-                    user_id=user_id,
-                    user_name=user_name,
-                    user_email=user_email,
-                    timeout_s=None if is_pdb_enabled else RPC_REQUEST_DEFAULT_TIMEOUT_S,
-                )
+                wallet_name=wallet_name,
+                user_id=user_id,
+                user_name=user_name,
+                user_email=user_email,
+                timeout_s=None if is_pdb_enabled else RPC_REQUEST_DEFAULT_TIMEOUT_S,
+            )
 
-                assert isinstance(inited, PaymentMethodInitiated)
-                assert mock_payments_gateway_service_or_none.routes[
-                    "init_payment_method"
-                ].called
+            assert isinstance(inited, PaymentMethodInitiated)
+            assert mock_payments_gateway_service_or_none.routes["init_payment_method"].called
 
-                # ACK via api/rest
-                response = await client.post(
-                    f"/v1/payments-methods/{inited.payment_method_id}:ack",
-                    json=jsonable_encoder(
-                        AckPayment(success=True, invoice_url=faker.url()).model_dump()
-                    ),
-                    headers=auth_headers,
-                )
+            # ACK via api/rest
+            response = await client.post(
+                f"/v1/payments-methods/{inited.payment_method_id}:ack",
+                json=jsonable_encoder(AckPayment(success=True, invoice_url=faker.url()).model_dump()),
+                headers=auth_headers,
+            )
 
-                assert response.status_code == status.HTTP_200_OK
-                assert mock_on_payment_method_completed.called
+            assert response.status_code == status.HTTP_200_OK
+            assert mock_on_payment_method_completed.called
 
-                # GET via api/rpc
-                got = await rpc_client.request(
-                    PAYMENTS_RPC_NAMESPACE,
-                    TypeAdapter(RPCMethodName).validate_python("get_payment_method"),
-                    payment_method_id=inited.payment_method_id,
-                    user_id=user_id,
-                    wallet_id=wallet_id,
-                )
+            # GET via api/rpc
+            got = await rpc_client.request(
+                PAYMENTS_RPC_NAMESPACE,
+                TypeAdapter(RPCMethodName).validate_python("get_payment_method"),
+                payment_method_id=inited.payment_method_id,
+                user_id=user_id,
+                wallet_id=wallet_id,
+            )
 
-                assert isinstance(got, PaymentMethodGet)
-                assert got.idr == inited.payment_method_id
+            assert isinstance(got, PaymentMethodGet)
+            assert got.idr == inited.payment_method_id

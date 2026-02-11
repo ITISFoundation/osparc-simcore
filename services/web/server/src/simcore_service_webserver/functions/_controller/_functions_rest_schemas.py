@@ -43,19 +43,17 @@ class FunctionFilters(Filters):
     ] = None
 
 
-FunctionListOrderQueryParams: type[RequestParameters] = (
-    create_ordering_query_model_class(
-        ordering_fields={
-            "created_at",
-            "modified_at",
-            "name",
-        },
-        default=OrderBy(field=IDStr("modified_at"), direction=OrderDirection.DESC),
-        ordering_fields_api_to_column_map={
-            "created_at": "created",
-            "modified_at": "modified",
-        },
-    )
+FunctionListOrderQueryParams: type[RequestParameters] = create_ordering_query_model_class(
+    ordering_fields={
+        "created_at",
+        "modified_at",
+        "name",
+    },
+    default=OrderBy(field=IDStr("modified_at"), direction=OrderDirection.DESC),
+    ordering_fields_api_to_column_map={
+        "created_at": "created",
+        "modified_at": "modified",
+    },
 )
 
 

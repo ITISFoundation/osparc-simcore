@@ -3,14 +3,15 @@ from typing import TypedDict
 from uuid import UUID
 
 import sqlalchemy as sa
+from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.sql.selectable import ScalarSelect
+
 from simcore_postgres_database.models.groups import user_to_groups
 from simcore_postgres_database.models.projects_tags import projects_tags
 from simcore_postgres_database.models.services_tags import services_tags
 from simcore_postgres_database.models.tags import tags
 from simcore_postgres_database.models.tags_access_rights import tags_access_rights
 from simcore_postgres_database.models.users import users
-from sqlalchemy.dialects.postgresql import insert as pg_insert
-from sqlalchemy.sql.selectable import ScalarSelect
 
 _TAG_COLUMNS = [
     tags.c.id,
@@ -136,14 +137,8 @@ def update_tag_stmt(*, user_id: int, tag_id: int, **updates):
     return (
         tags.update()
         .where(tags.c.id == tag_id)
-        .where(
-            (tags.c.id == tags_access_rights.c.tag_id)
-            & (tags_access_rights.c.write.is_(True))
-        )
-        .where(
-            (tags_access_rights.c.group_id == user_to_groups.c.gid)
-            & (user_to_groups.c.uid == user_id)
-        )
+        .where((tags.c.id == tags_access_rights.c.tag_id) & (tags_access_rights.c.write.is_(True)))
+        .where((tags_access_rights.c.group_id == user_to_groups.c.gid) & (user_to_groups.c.uid == user_id))
         .values(**updates)
         .returning(*_TAG_COLUMNS, *_ACCESS_RIGHTS_COLUMNS)
     )
@@ -153,14 +148,8 @@ def delete_tag_stmt(*, user_id: int, tag_id: int):
     return (
         tags.delete()
         .where(tags.c.id == tag_id)
-        .where(
-            (tags_access_rights.c.tag_id == tag_id)
-            & (tags_access_rights.c.delete.is_(True))
-        )
-        .where(
-            (tags_access_rights.c.group_id == user_to_groups.c.gid)
-            & (user_to_groups.c.uid == user_id)
-        )
+        .where((tags_access_rights.c.tag_id == tag_id) & (tags_access_rights.c.delete.is_(True)))
+        .where((tags_access_rights.c.group_id == user_to_groups.c.gid) & (user_to_groups.c.uid == user_id))
         .returning(tags_access_rights.c.delete)
     )
 
@@ -200,9 +189,7 @@ def has_access_rights_stmt(
     if caller_user_id is not None:
         group_condition = (
             tags_access_rights.c.group_id
-            == sa.select(users.c.primary_gid)
-            .where(users.c.id == caller_user_id)
-            .scalar_subquery()
+            == sa.select(users.c.primary_gid).where(users.c.id == caller_user_id).scalar_subquery()
         )
     elif caller_group_id is not None:
         group_condition = tags_access_rights.c.group_id == caller_group_id
@@ -229,9 +216,7 @@ def has_access_rights_stmt(
 
 
 def list_tag_group_access_stmt(*, tag_id: int):
-    return sa.select(*_TAG_ACCESS_RIGHTS_COLS).where(
-        tags_access_rights.c.tag_id == tag_id
-    )
+    return sa.select(*_TAG_ACCESS_RIGHTS_COLS).where(tags_access_rights.c.tag_id == tag_id)
 
 
 def upsert_tags_access_rights_stmt(
@@ -250,11 +235,7 @@ def upsert_tags_access_rights_stmt(
 
     if user_id:
         assert not group_id  # nosec
-        target_group_id = (
-            sa.select(users.c.primary_gid)
-            .where(users.c.id == user_id)
-            .scalar_subquery()
-        )
+        target_group_id = sa.select(users.c.primary_gid).where(users.c.id == user_id).scalar_subquery()
     else:
         assert group_id  # nosec
         target_group_id = group_id
@@ -279,10 +260,7 @@ def upsert_tags_access_rights_stmt(
 def delete_tag_access_rights_stmt(*, tag_id: int, group_id: int):
     return (
         sa.delete(tags_access_rights)
-        .where(
-            (tags_access_rights.c.tag_id == tag_id)
-            & (tags_access_rights.c.group_id == group_id)
-        )
+        .where((tags_access_rights.c.tag_id == tag_id) & (tags_access_rights.c.group_id == group_id))
         .returning(tags_access_rights.c.tag_id.is_not(None))
     )
 
@@ -293,14 +271,10 @@ def delete_tag_access_rights_stmt(*, tag_id: int, group_id: int):
 
 
 def get_tags_for_project_stmt(*, project_index: int):
-    return sa.select(projects_tags.c.tag_id).where(
-        projects_tags.c.project_id == project_index
-    )
+    return sa.select(projects_tags.c.tag_id).where(projects_tags.c.project_id == project_index)
 
 
-def add_tag_to_project_stmt(
-    *, project_index: int, tag_id: int, project_uuid_for_rut: UUID
-):
+def add_tag_to_project_stmt(*, project_index: int, tag_id: int, project_uuid_for_rut: UUID):
     return (
         pg_insert(projects_tags)
         .values(
@@ -319,8 +293,7 @@ def add_tag_to_project_stmt(
 
 def get_tags_for_services_stmt(*, key: str, version: str):
     return sa.select(services_tags.c.tag_id).where(
-        (services_tags.c.service_key == key)
-        & (services_tags.c.service_version == version)
+        (services_tags.c.service_key == key) & (services_tags.c.service_version == version)
     )
 
 

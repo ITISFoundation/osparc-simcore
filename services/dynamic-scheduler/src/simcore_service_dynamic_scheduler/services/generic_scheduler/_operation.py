@@ -34,11 +34,9 @@ class BaseStep(ABC):
 
     @classmethod
     @abstractmethod
-    async def execute(
-        cls, app: FastAPI, required_context: RequiredOperationContext
-    ) -> ProvidedOperationContext | None:
+    async def execute(cls, app: FastAPI, required_context: RequiredOperationContext) -> ProvidedOperationContext | None:
         """
-        [mandatory] handler to be implemented with the code resposible for achieving a goal
+        [mandatory] handler to be implemented with the code responsible for achieving a goal
         NOTE: Ensure this is successful if:
             - `execute` is called multiple times and does not cause duplicate resources
         """
@@ -68,9 +66,7 @@ class BaseStep(ABC):
         return _DEFAULT_STEP_RETRIES
 
     @classmethod
-    async def get_execute_wait_between_attempts(
-        cls, context: DeferredContext
-    ) -> timedelta:
+    async def get_execute_wait_between_attempts(cls, context: DeferredContext) -> timedelta:
         """
         [optional] wait time between retires case of creation
         HINT: you can use `get_operation_context_proxy()`, `get_step_group_proxy(context)`
@@ -89,9 +85,7 @@ class BaseStep(ABC):
     ### REVERT
 
     @classmethod
-    async def revert(
-        cls, app: FastAPI, required_context: RequiredOperationContext
-    ) -> ProvidedOperationContext | None:
+    async def revert(cls, app: FastAPI, required_context: RequiredOperationContext) -> ProvidedOperationContext | None:
         """
         [optional] handler responsible for cleanup of resources executed above.
         NOTE: Ensure this is successful if:
@@ -128,9 +122,7 @@ class BaseStep(ABC):
         return _DEFAULT_STEP_RETRIES
 
     @classmethod
-    async def get_revert_wait_between_attempts(
-        cls, context: DeferredContext
-    ) -> timedelta:
+    async def get_revert_wait_between_attempts(cls, context: DeferredContext) -> timedelta:
         """
         [optional] timeout between retires in case of failure
         HINT: you can use `get_operation_context_proxy()`, `get_step_group_proxy(context)`
@@ -181,9 +173,7 @@ class SingleStepGroup(BaseStepGroup):
         wait_before_repeat: timedelta = _DEFAULT_WAIT_BEFORE_REPEAT,
     ) -> None:
         self._step: type[BaseStep] = step
-        super().__init__(
-            repeat_steps=repeat_steps, wait_before_repeat=wait_before_repeat
-        )
+        super().__init__(repeat_steps=repeat_steps, wait_before_repeat=wait_before_repeat)
 
     def __len__(self) -> int:
         return 1
@@ -209,9 +199,7 @@ class ParallelStepGroup(BaseStepGroup):
         wait_before_repeat: timedelta = _DEFAULT_WAIT_BEFORE_REPEAT,
     ) -> None:
         self._steps: list[type[BaseStep]] = list(steps)
-        super().__init__(
-            repeat_steps=repeat_steps, wait_before_repeat=wait_before_repeat
-        )
+        super().__init__(repeat_steps=repeat_steps, wait_before_repeat=wait_before_repeat)
 
     def __len__(self) -> int:
         return len(self._steps)
@@ -239,9 +227,7 @@ class Operation:
     ) -> None:
         self.step_groups = list(step_groups)
         self.initial_context_required_keys = (
-            set()
-            if initial_context_required_keys is None
-            else initial_context_required_keys
+            set() if initial_context_required_keys is None else initial_context_required_keys
         )
         self.is_cancellable = is_cancellable
 
@@ -266,10 +252,7 @@ def _validate_operation(  # noqa: C901, PLR0912 # pylint: disable=too-many-branc
     revert_provided_keys: set[str] = set()
 
     for k, step_group in enumerate(operation.step_groups):
-        if (
-            isinstance(step_group, ParallelStepGroup)
-            and len(step_group.steps) < _MIN_PARALLEL_STEPS
-        ):
+        if isinstance(step_group, ParallelStepGroup) and len(step_group.steps) < _MIN_PARALLEL_STEPS:
             msg = (
                 f"{ParallelStepGroup.__name__} needs at least {_MIN_PARALLEL_STEPS} "
                 f"steps. TIP: use {SingleStepGroup.__name__} instead."
@@ -296,8 +279,7 @@ def _validate_operation(  # noqa: C901, PLR0912 # pylint: disable=too-many-branc
             for key in step.get_execute_provides_context_keys():
                 if key in ALL_RESERVED_CONTEXT_KEYS:
                     msg = (
-                        f"Step {step_name=} provides {key=} which is part of reserved keys "
-                        f"{ALL_RESERVED_CONTEXT_KEYS=}"
+                        f"Step {step_name=} provides {key=} which is part of reserved keys {ALL_RESERVED_CONTEXT_KEYS=}"
                     )
                     raise ValueError(msg)
                 if key in execute_provided_keys:
@@ -311,8 +293,7 @@ def _validate_operation(  # noqa: C901, PLR0912 # pylint: disable=too-many-branc
             for key in step.get_revert_provides_context_keys():
                 if key in ALL_RESERVED_CONTEXT_KEYS:
                     msg = (
-                        f"Step {step_name=} provides {key=} which is part of reserved keys "
-                        f"{ALL_RESERVED_CONTEXT_KEYS=}"
+                        f"Step {step_name=} provides {key=} which is part of reserved keys {ALL_RESERVED_CONTEXT_KEYS=}"
                     )
                     raise ValueError(msg)
                 if key in revert_provided_keys:
@@ -326,10 +307,7 @@ def _validate_operation(  # noqa: C901, PLR0912 # pylint: disable=too-many-branc
         if (
             step_group.repeat_steps is True
             and k == len(operation.step_groups) - 1
-            and any(
-                step.wait_for_manual_intervention()
-                for step in step_group.get_step_subgroup_to_run()
-            )
+            and any(step.wait_for_manual_intervention() for step in step_group.get_step_subgroup_to_run())
         ):
             msg = (
                 "Step groups with repeat_steps=True cannot have steps that require "
@@ -379,9 +357,7 @@ class OperationRegistry:
         return cls._OPERATIONS[operation_name]["operation"]
 
     @classmethod
-    def get_step(
-        cls, operation_name: OperationName, step_name: StepName
-    ) -> type[BaseStep]:
+    def get_step(cls, operation_name: OperationName, step_name: StepName) -> type[BaseStep]:
         if operation_name not in cls._OPERATIONS:
             raise OperationNotFoundError(
                 operation_name=operation_name,

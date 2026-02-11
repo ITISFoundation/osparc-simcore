@@ -31,18 +31,16 @@ from simcore_service_webserver.users._controller.rest._rest_schemas import (
 )
 def test_valid_phone_numbers(phone: str):
     # This test is used to tune options of PhoneNumberValidator
-    assert MyPhoneRegister.model_validate({"phone": phone}).phone == TypeAdapter(
-        PhoneNumberStr
-    ).validate_python(phone)
+    assert MyPhoneRegister.model_validate({"phone": phone}).phone == TypeAdapter(PhoneNumberStr).validate_python(phone)
 
 
 def test_random_phone_number():
     # This test is used to tune options of PhoneNumberValidator
     for _ in range(10):
         phone = random_phone_number(Faker(seed=42))
-        assert MyPhoneRegister.model_validate({"phone": phone}).phone == TypeAdapter(
-            PhoneNumberStr
-        ).validate_python(phone)
+        assert MyPhoneRegister.model_validate({"phone": phone}).phone == TypeAdapter(PhoneNumberStr).validate_python(
+            phone
+        )
 
 
 @pytest.mark.parametrize(

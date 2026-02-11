@@ -36,7 +36,6 @@ def fake_data_dict(faker: Faker) -> dict[str, Any]:
 
 
 def test_json_dump_variants():
-
     uuid_obj = uuid4()
 
     with pytest.raises(TypeError) as exc_info:
@@ -83,14 +82,10 @@ def _expected_json_dumps(obj: Any, default=pydantic_encoder, **json_dumps_kwargs
         pytest.param(
             {"separators": (",", ":")}, id="default_separators-kw"
         ),  # NOTE: e.g. engineio.packet has `self.json.dumps(self.data, separators=(',', ':'))`
-        pytest.param(
-            {"indent": 2}, id="indent-kw"
-        ),  # NOTE: only one-to-one with indent=2
+        pytest.param({"indent": 2}, id="indent-kw"),  # NOTE: only one-to-one with indent=2
     ],
 )
-def test_compatibility_with_json_interface(
-    fake_data_dict: dict[str, Any], kwargs: dict[str, Any]
-):
+def test_compatibility_with_json_interface(fake_data_dict: dict[str, Any], kwargs: dict[str, Any]):
     orjson_dump = JsonNamespace.dumps(fake_data_dict, **kwargs)
     json_dump = _expected_json_dumps(fake_data_dict, **kwargs)
 
@@ -129,7 +124,4 @@ def test_json_dumps_with_representation_encoder():
     # Using representation_encoder as the default encoder
     result = json_dumps(obj, default=representation_encoder, indent=1)
 
-    assert (
-        result
-        == '{\n  "custom": "CustomObjectRepresentation",\n  "some": {\n    "x": 42\n  }\n}'
-    )
+    assert result == '{\n  "custom": "CustomObjectRepresentation",\n  "some": {\n    "x": 42\n  }\n}'

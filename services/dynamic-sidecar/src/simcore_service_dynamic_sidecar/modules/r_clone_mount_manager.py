@@ -7,9 +7,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Final
 
-from aiodocker import Docker
+from aiodocker import Docker, DockerError
 from aiodocker.types import JSONObject
-from fastapi import FastAPI
+from fastapi import FastAPI, status
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStop,
 )
@@ -114,6 +114,7 @@ class DynamicSidecarRCloneMountDelegate(DelegateInterface):
         client = get_rabbitmq_rpc_client(self.app)
 
         with log_context(_logger, logging.INFO, "requesting service shutdown via dynamic-scheduler"):
+            assert self.settings.DY_SIDECAR_PRODUCT_NAME  # nosec
             await stop_dynamic_service(
                 client,
                 dynamic_service_stop=DynamicServiceStop(
@@ -122,6 +123,7 @@ class DynamicSidecarRCloneMountDelegate(DelegateInterface):
                     node_id=self.settings.DY_SIDECAR_NODE_ID,
                     simcore_user_agent="",
                     save_state=True,
+                    product_name=self.settings.DY_SIDECAR_PRODUCT_NAME,
                 ),
             )
             await post_sidecar_log_message(
@@ -144,8 +146,20 @@ class DynamicSidecarRCloneMountDelegate(DelegateInterface):
 
     async def remove_container(self, container_name: str) -> None:
         async with _get_docker_client() as client:
-            existing_container = await client.containers.get(container_name)
-            await existing_container.delete(force=True)
+            try:
+                container = await client.containers.get(container_name)
+            except DockerError as e:
+                if e.status == status.HTTP_404_NOT_FOUND:
+                    return
+                raise
+
+            # NOTE: to ensure graceful shutdown a SIGTERM signal is required
+            # if SIGKILL is sent directly FUSE mount will not unmount cleanly
+
+            # sends SIGTERM
+            await container.stop()
+            # sends SIGKILL and removes
+            await container.delete(force=True)
 
     async def get_node_address(self) -> str:
         async with _get_docker_client() as client:
@@ -161,6 +175,7 @@ def setup_r_clone_mount_manager(app: FastAPI):
 
         app.state.r_clone_mount_manager = r_clone_mount_manager = RCloneMountManager(
             settings.DY_SIDECAR_R_CLONE_SETTINGS,
+            requires_data_mounting=settings.DY_SIDECAR_REQUIRES_DATA_MOUNTING,
             delegate=DynamicSidecarRCloneMountDelegate(app, settings, mounted_volumes),
         )
         await r_clone_mount_manager.setup()

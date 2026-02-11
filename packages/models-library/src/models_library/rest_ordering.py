@@ -27,8 +27,7 @@ class OrderBy(BaseModel):
         OrderDirection,
         Field(
             description=(
-                f"As [A,B,C,...] if `{OrderDirection.ASC.value}`"
-                f" or [Z,Y,X, ...] if `{OrderDirection.DESC.value}`"
+                f"As [A,B,C,...] if `{OrderDirection.ASC.value}` or [Z,Y,X, ...] if `{OrderDirection.DESC.value}`"
             )
         ),
     ] = OrderDirection.ASC
@@ -90,10 +89,7 @@ def create_ordering_query_model_class(
         @classmethod
         def _check_ordering_field_and_map(cls, v):
             if v not in ordering_fields:
-                msg = (
-                    f"We do not support ordering by provided field '{v}'. "
-                    f"Fields supported are {msg_field_options}."
-                )
+                msg = f"We do not support ordering by provided field '{v}'. Fields supported are {msg_field_options}."
                 raise ValueError(msg)
 
             # API field name -> DB column_name conversion
@@ -153,10 +149,7 @@ def _parse_order_by(v):
             clauses.append((token, OrderDirection.ASC))
 
     # 2. check for duplicates and conflicting directions
-    return [
-        {"field": field, "direction": direction}
-        for field, direction in check_ordering_list(clauses)
-    ]
+    return [{"field": field, "direction": direction} for field, direction in check_ordering_list(clauses)]
 
 
 class OrderingQueryParams(BaseModel, Generic[TField]):

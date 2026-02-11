@@ -26,9 +26,7 @@ from simcore_service_webserver.catalog.catalog_service import (
     "user_role",
     [UserRole.USER],
 )
-@pytest.mark.parametrize(
-    "backend_status_code", [status.HTTP_200_OK, status.HTTP_500_INTERNAL_SERVER_ERROR]
-)
+@pytest.mark.parametrize("backend_status_code", [status.HTTP_200_OK, status.HTTP_500_INTERNAL_SERVER_ERROR])
 async def test_server_responsive(
     client: TestClient,
     logged_user: UserInfoDict,
@@ -49,9 +47,7 @@ async def test_server_responsive(
     "user_role",
     [UserRole.USER],
 )
-@pytest.mark.parametrize(
-    "backend_status_code", [status.HTTP_200_OK, status.HTTP_404_NOT_FOUND]
-)
+@pytest.mark.parametrize("backend_status_code", [status.HTTP_200_OK, status.HTTP_404_NOT_FOUND])
 async def test_get_services_for_user_in_product(
     client: TestClient,
     logged_user: UserInfoDict,
@@ -110,8 +106,5 @@ async def test_get_service_access_rights(
 
 
 async def test_catalog_exceptions():
-
-    error = DefaultPricingUnitForServiceNotFoundError(
-        service_key="key", service_version="version"
-    )
+    error = DefaultPricingUnitForServiceNotFoundError(service_key="key", service_version="version")
     assert isinstance(error.debug_message(), str)

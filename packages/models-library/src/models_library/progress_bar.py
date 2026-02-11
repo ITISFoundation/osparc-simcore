@@ -1,8 +1,9 @@
 from typing import Literal, TypeAlias
 
-from models_library.utils.json_schema import GenerateResolvedJsonSchema
 from pydantic import BaseModel, ConfigDict
 from pydantic.config import JsonDict
+
+from models_library.utils.json_schema import GenerateResolvedJsonSchema
 
 # NOTE: keep a list of possible unit, and please use correct official unit names
 ProgressUnit: TypeAlias = Literal["Byte"]
@@ -100,9 +101,9 @@ class ProgressReport(BaseModel):
                 {
                     "actual_value": 0.3,
                     "total": 1.0,
-                    "message": ProgressStructuredMessage.model_json_schema(
-                        schema_generator=GenerateResolvedJsonSchema
-                    )["examples"][2],
+                    "message": ProgressStructuredMessage.model_json_schema(schema_generator=GenerateResolvedJsonSchema)[
+                        "examples"
+                    ][2],
                 },
             ]
         },

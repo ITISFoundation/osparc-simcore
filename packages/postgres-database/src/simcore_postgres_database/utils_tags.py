@@ -190,9 +190,7 @@ class TagsRepo:
     ) -> TagDict:
         async with transaction_context(self.engine, connection) as conn:
             updates = {
-                name: value
-                for name, value in fields.items()
-                if name in {"name", "color", "description", "priority"}
+                name: value for name, value in fields.items() if name in {"name", "color", "description", "priority"}
             }
 
             if not updates:
@@ -203,9 +201,7 @@ class TagsRepo:
             result = await conn.execute(update_stmt)
             row = result.first()
             if not row:
-                raise TagOperationNotAllowedError(
-                    operation="update", tag_id=tag_id, user_id=user_id
-                )
+                raise TagOperationNotAllowedError(operation="update", tag_id=tag_id, user_id=user_id)
 
             return TagDict(
                 id=row.id,
@@ -228,9 +224,7 @@ class TagsRepo:
         async with transaction_context(self.engine, connection) as conn:
             deleted = await conn.scalar(stmt_delete)
             if not deleted:
-                raise TagOperationNotAllowedError(
-                    operation="delete", tag_id=tag_id, user_id=user_id
-                )
+                raise TagOperationNotAllowedError(operation="delete", tag_id=tag_id, user_id=user_id)
 
     #
     # ACCESS RIGHTS
@@ -316,7 +310,5 @@ class TagsRepo:
         group_id: int,
     ) -> bool:
         async with transaction_context(self.engine, connection) as conn:
-            deleted: bool = await conn.scalar(
-                delete_tag_access_rights_stmt(tag_id=tag_id, group_id=group_id)
-            )
+            deleted: bool = await conn.scalar(delete_tag_access_rights_stmt(tag_id=tag_id, group_id=group_id))
             return deleted

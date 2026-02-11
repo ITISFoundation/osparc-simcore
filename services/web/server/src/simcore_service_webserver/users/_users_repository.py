@@ -76,9 +76,7 @@ async def get_public_user(
     caller_id: UserID,
     user_id: UserID,
 ):
-    query = sa.select(*_public_user_cols(caller_id=caller_id)).where(
-        users.c.id == user_id
-    )
+    query = sa.select(*_public_user_cols(caller_id=caller_id)).where(users.c.id == user_id)
 
     async with pass_or_acquire_connection(engine, connection) as conn:
         result = await conn.execute(query)
@@ -101,20 +99,11 @@ async def search_public_user(
     query = (
         sa.select(*_public_user_cols(caller_id=caller_id))
         .where(
-            (
-                is_public(users.c.privacy_hide_username, caller_id)
-                & users.c.name.ilike(_pattern)
-            )
-            | (
-                is_public(users.c.privacy_hide_email, caller_id)
-                & users.c.email.ilike(_pattern)
-            )
+            (is_public(users.c.privacy_hide_username, caller_id) & users.c.name.ilike(_pattern))
+            | (is_public(users.c.privacy_hide_email, caller_id) & users.c.email.ilike(_pattern))
             | (
                 is_public(users.c.privacy_hide_fullname, caller_id)
-                & (
-                    users.c.first_name.ilike(_pattern)
-                    | users.c.last_name.ilike(_pattern)
-                )
+                & (users.c.first_name.ilike(_pattern) | users.c.last_name.ilike(_pattern))
             )
         )
         .limit(limit)
@@ -138,9 +127,7 @@ async def get_user_or_raise(
     assert return_column_names is not None  # nosec
     assert set(return_column_names).issubset(users.columns.keys())  # nosec
 
-    query = sa.select(*(users.columns[name] for name in return_column_names)).where(
-        users.c.id == user_id
-    )
+    query = sa.select(*(users.columns[name] for name in return_column_names)).where(users.c.id == user_id)
 
     async with pass_or_acquire_connection(engine, connection) as conn:
         result = await conn.execute(query)
@@ -182,6 +169,31 @@ async def get_users_ids_in_group(
             ).where(user_to_groups.c.gid == group_id)
         )
         return {row.uid async for row in result}
+
+
+async def get_active_users_email_data_by_ids(
+    engine: AsyncEngine,
+    connection: AsyncConnection | None = None,
+    *,
+    user_ids: list[UserID],
+) -> list[Row]:
+    if not user_ids:
+        return []
+
+    query = (
+        sa.select(
+            users.c.id,
+            users.c.first_name,
+            users.c.last_name,
+            users.c.email,
+        )
+        .where(users.c.id.in_(user_ids))
+        .where(users.c.status == UserStatus.ACTIVE)
+    )
+
+    async with pass_or_acquire_connection(engine, connection) as conn:
+        result = await conn.stream(query)
+        return [row async for row in result]
 
 
 async def get_user_id_from_pgid(app: web.Application, *, primary_gid: int) -> UserID:
@@ -277,14 +289,10 @@ async def list_user_permissions(
     engine = get_asyncpg_engine(app)
     with contextlib.suppress(GroupExtraPropertiesNotFoundError):
         async with pass_or_acquire_connection(engine, connection) as conn:
-            user_group_extra_properties = (
-                await GroupExtraPropertiesRepo.get_aggregated_properties_for_user(
-                    conn, user_id=user_id, product_name=product_name
-                )
+            user_group_extra_properties = await GroupExtraPropertiesRepo.get_aggregated_properties_for_user(
+                conn, user_id=user_id, product_name=product_name
             )
-        override_services_specifications.allowed = (
-            user_group_extra_properties.override_services_specifications
-        )
+        override_services_specifications.allowed = user_group_extra_properties.override_services_specifications
 
     return [override_services_specifications]
 
@@ -354,8 +362,7 @@ async def get_user_products(
             .select_from(
                 users.join(user_to_groups, user_to_groups.c.uid == users.c.id).join(
                     groups,
-                    (groups.c.gid == user_to_groups.c.gid)
-                    & groups.c.gid.in_(products_group_ids_subq),
+                    (groups.c.gid == user_to_groups.c.gid) & groups.c.gid.in_(products_group_ids_subq),
                 )
             )
             .where(users.c.id == user_id)
@@ -377,17 +384,13 @@ async def get_user_billing_details(
     Raises:
         BillingDetailsNotFoundError
     """
-    row = await UsersRepo(engine).get_billing_details(
-        connection, product_name=product_name, user_id=user_id
-    )
+    row = await UsersRepo(engine).get_billing_details(connection, product_name=product_name, user_id=user_id)
     if not row:
         raise BillingDetailsNotFoundError(user_id=user_id)
     return UserBillingDetails.model_validate(row)
 
 
-async def delete_user_by_id(
-    engine: AsyncEngine, connection: AsyncConnection | None = None, *, user_id: UserID
-) -> bool:
+async def delete_user_by_id(engine: AsyncEngine, connection: AsyncConnection | None = None, *, user_id: UserID) -> bool:
     async with transaction_context(engine, connection) as conn:
         result = await conn.execute(
             delete(users)

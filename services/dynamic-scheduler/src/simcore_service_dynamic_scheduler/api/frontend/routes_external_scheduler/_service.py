@@ -33,7 +33,7 @@ def _render_remove_from_tracking(node_id):
         ui.markdown(f"Remove the service **{node_id}** form the tracker?")
         ui.label(
             "This action will result in the removal of the service form the internal tracker. "
-            "This action should be used whn you are facing issues and the service is not "
+            "This action should be used when you are facing issues and the service is not "
             "automatically removed."
         )
         ui.label(
@@ -61,13 +61,9 @@ def _render_danger_zone(node_id: NodeID) -> None:
     ui.separator()
 
     ui.markdown("**Danger Zone, beware!**").classes("text-2xl text-red-700")
-    ui.label(
-        "Do not use these actions if you do not know what they are doing."
-    ).classes("text-red-700")
+    ui.label("Do not use these actions if you do not know what they are doing.").classes("text-red-700")
 
-    ui.label(
-        "They are reserved as means of recovering the system form a failing state."
-    ).classes("text-red-700")
+    ui.label("They are reserved as means of recovering the system form a failing state.").classes("text-red-700")
 
     _render_remove_from_tracking(node_id)
 
@@ -116,6 +112,7 @@ async def service_stop(node_id: NodeID):
 
     assert service_model.user_id  #  nosec
     assert service_model.project_id  # nosec
+    assert service_model.dynamic_service_start  # nosec
 
     await stop_dynamic_service(
         get_rabbitmq_rpc_client(get_parent_app(app)),
@@ -125,6 +122,7 @@ async def service_stop(node_id: NodeID):
             node_id=node_id,
             simcore_user_agent="",
             save_state=True,
+            product_name=service_model.dynamic_service_start.product_name,
         ),
     )
 

@@ -26,7 +26,6 @@ from simcore_service_webserver.workspaces._workspaces_rest import (
 
 
 def test_workspaces_order_query_model_post_validator():
-
     # on default
     query_params = WorkspacesListQueryParams.model_validate({})
     assert query_params.order_by
@@ -34,9 +33,7 @@ def test_workspaces_order_query_model_post_validator():
     assert query_params.order_by.direction == OrderDirection.DESC
 
     # on partial default
-    query_params = WorkspacesListQueryParams.model_validate(
-        {"order_by": {"field": "modified_at"}}
-    )
+    query_params = WorkspacesListQueryParams.model_validate({"order_by": {"field": "modified_at"}})
     assert query_params.order_by
     assert query_params.order_by.field == "modified"
     assert query_params.order_by.direction == OrderDirection.ASC
@@ -89,18 +86,14 @@ async def test_workspaces_workflow(
     # LIST user workspaces
     url = client.app.router["list_workspaces"].url_for()
     resp = await client.get(f"{url}")
-    data, _, meta, links = await assert_status(
-        resp, status.HTTP_200_OK, include_meta=True, include_links=True
-    )
+    data, _, meta, links = await assert_status(resp, status.HTTP_200_OK, include_meta=True, include_links=True)
     assert len(data) == 1
     assert WorkspaceGet.model_validate(data[0]) == added_workspace
     assert meta["count"] == 1
     assert links
 
     # GET a user workspace
-    url = client.app.router["get_workspace"].url_for(
-        workspace_id=f"{added_workspace.workspace_id}"
-    )
+    url = client.app.router["get_workspace"].url_for(workspace_id=f"{added_workspace.workspace_id}")
     resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert data["workspaceId"] == added_workspace.workspace_id
@@ -108,9 +101,7 @@ async def test_workspaces_workflow(
     assert data["description"] == "Custom description"
 
     # REPLACE a workspace
-    url = client.app.router["replace_workspace"].url_for(
-        workspace_id=f"{added_workspace.workspace_id}"
-    )
+    url = client.app.router["replace_workspace"].url_for(workspace_id=f"{added_workspace.workspace_id}")
     resp = await client.put(
         f"{url}",
         json={
@@ -129,9 +120,7 @@ async def test_workspaces_workflow(
     assert WorkspaceGet.model_validate(data[0]) == replaced_workspace
 
     # DELETE a workspace
-    url = client.app.router["delete_workspace"].url_for(
-        workspace_id=f"{added_workspace.workspace_id}"
-    )
+    url = client.app.router["delete_workspace"].url_for(workspace_id=f"{added_workspace.workspace_id}")
     resp = await client.delete(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
@@ -187,43 +176,23 @@ async def test_list_workspaces_with_text_search(
     # LIST user workspaces
     url = client.app.router["list_workspaces"].url_for()
     resp = await client.get(f"{url}")
-    data, _, meta, links = await assert_status(
-        resp, status.HTTP_200_OK, include_meta=True, include_links=True
-    )
+    data, _, meta, links = await assert_status(resp, status.HTTP_200_OK, include_meta=True, include_links=True)
     assert len(data) == 2
 
     # LIST user workspaces
-    url = (
-        client.app.router["list_workspaces"]
-        .url_for()
-        .with_query({"filters": '{"text": "first"}'})
-    )
+    url = client.app.router["list_workspaces"].url_for().with_query({"filters": '{"text": "first"}'})
     resp = await client.get(f"{url}")
-    data, _, meta, links = await assert_status(
-        resp, status.HTTP_200_OK, include_meta=True, include_links=True
-    )
+    data, _, meta, links = await assert_status(resp, status.HTTP_200_OK, include_meta=True, include_links=True)
     assert len(data) == 1
 
     # LIST user workspaces
-    url = (
-        client.app.router["list_workspaces"]
-        .url_for()
-        .with_query({"filters": '{"text": "important"}'})
-    )
+    url = client.app.router["list_workspaces"].url_for().with_query({"filters": '{"text": "important"}'})
     resp = await client.get(f"{url}")
-    data, _, meta, links = await assert_status(
-        resp, status.HTTP_200_OK, include_meta=True, include_links=True
-    )
+    data, _, meta, links = await assert_status(resp, status.HTTP_200_OK, include_meta=True, include_links=True)
     assert len(data) == 1
 
     # LIST user workspaces
-    url = (
-        client.app.router["list_workspaces"]
-        .url_for()
-        .with_query({"filters": '{"text": "non-existing"}'})
-    )
+    url = client.app.router["list_workspaces"].url_for().with_query({"filters": '{"text": "non-existing"}'})
     resp = await client.get(f"{url}")
-    data, _, meta, links = await assert_status(
-        resp, status.HTTP_200_OK, include_meta=True, include_links=True
-    )
+    data, _, meta, links = await assert_status(resp, status.HTTP_200_OK, include_meta=True, include_links=True)
     assert len(data) == 0

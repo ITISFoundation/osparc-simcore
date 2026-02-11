@@ -24,9 +24,7 @@ zzz_resource_tracker_service_runs__osparc_io_archive_2026Q1 = sa.Table(
     "zzz_resource_tracker_service_runs__osparc_io_archive_2026Q1",
     metadata,
     # Primary keys
-    sa.Column(
-        "product_name", sa.String, nullable=False, doc="Product name", primary_key=True
-    ),
+    sa.Column("product_name", sa.String, nullable=False, doc="Product name", primary_key=True),
     sa.Column(
         "service_run_id",
         sa.String,

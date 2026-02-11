@@ -29,9 +29,7 @@ _logger = logging.getLogger(__name__)
 #
 
 
-def _create_redirect_response_to_error_page(
-    app: web.Application, message: str, status_code: int
-) -> web.HTTPFound:
+def _create_redirect_response_to_error_page(app: web.Application, message: str, status_code: int) -> web.HTTPFound:
     # NOTE: these are 'error' page params and need to be interpreted by front-end correctly!
     return create_redirect_to_page_response(
         app,
@@ -80,9 +78,7 @@ def _create_simple_error_redirect(
 
     WARNING: note that the `public_error` is exposed as-is in the user-message
     """
-    user_error_msg = user_message(
-        f"Unable to open your project: {public_error}", _version=1
-    )
+    user_error_msg = user_message(f"Unable to open your project: {public_error}", _version=1)
     return _create_redirect_response_to_error_page(
         request.app,
         message=user_error_msg,

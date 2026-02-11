@@ -39,20 +39,13 @@ def app_environment_for_wb_authz_service_dict(
     docker_compose_service_hostname: str,
     default_app_cfg: AppConfigDict,
 ) -> EnvVarsDict:
-
     postgres_cfg = default_app_cfg["db"]["postgres"]
 
     # Checks that docker-compose service environment is correct
-    assert (
-        docker_compose_service_environment_dict["WEBSERVER_APP_FACTORY_NAME"]
-        == "WEBSERVER_AUTHZ_APP_FACTORY"
-    )
+    assert docker_compose_service_environment_dict["WEBSERVER_APP_FACTORY_NAME"] == "WEBSERVER_AUTHZ_APP_FACTORY"
     # expected tracing in the docker-environ BUT we will disable it for tests
     assert "WEBSERVER_TRACING" in docker_compose_service_environment_dict
-    assert (
-        "TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT"
-        in docker_compose_service_environment_dict
-    )
+    assert "TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT" in docker_compose_service_environment_dict
     assert "WEBSERVER_DIAGNOSTICS" in docker_compose_service_environment_dict
     assert "WEBSERVER_PROFILING" in docker_compose_service_environment_dict
 
@@ -80,9 +73,7 @@ def app_environment_for_wb_authz_service(
 ) -> EnvVarsDict:
     """Mocks the environment variables for the auth app service (considering docker-compose's environment)."""
 
-    mocked_envs = setenvs_from_dict(
-        monkeypatch, {**app_environment_for_wb_authz_service_dict}
-    )
+    mocked_envs = setenvs_from_dict(monkeypatch, {**app_environment_for_wb_authz_service_dict})
 
     # test how service will load
     settings = ApplicationSettings.create_from_envs()
@@ -112,9 +103,7 @@ async def wb_auth_app(
 
     settings = get_application_settings(app)
     assert settings.WEBSERVER_APP_FACTORY_NAME == "WEBSERVER_AUTHZ_APP_FACTORY"
-    assert (
-        settings.APP_NAME == "simcore_service_wb_auth"
-    ), "APP_NAME in docker-compose for wb-auth is not set correctly"
+    assert settings.APP_NAME == "simcore_service_wb_auth", "APP_NAME in docker-compose for wb-auth is not set correctly"
 
     # checks endpoint exposed
     url = app.router["check_auth"].url_for()
@@ -137,9 +126,7 @@ async def web_server(
     async def test_login(request: web.Request) -> web.Response:
         data = await request.json()
         response = web.Response(status=200)
-        return await security_web.remember_identity(
-            request, response, user_email=data["email"]
-        )
+        return await security_web.remember_identity(request, response, user_email=data["email"])
 
     async def test_logout(request: web.Request) -> web.Response:
         response = web.Response(status=200)
@@ -186,15 +173,11 @@ def test_docker_compose_dev_vendors_forwardauth_configuration(
     """
 
     # Load docker-compose file
-    compose_config = yaml.safe_load(
-        services_docker_compose_dev_vendors_file.read_text()
-    )
+    compose_config = yaml.safe_load(services_docker_compose_dev_vendors_file.read_text())
 
     # Get the manual service configuration
     manual_service = compose_config.get("services", {}).get("manual")
-    assert (
-        manual_service is not None
-    ), "Manual service not found in docker-compose-dev-vendors.yml"
+    assert manual_service is not None, "Manual service not found in docker-compose-dev-vendors.yml"
 
     # Extract forwardauth.address from deploy labels
     deploy_labels = manual_service.get("deploy", {}).get("labels", [])
@@ -205,40 +188,24 @@ def test_docker_compose_dev_vendors_forwardauth_configuration(
             forwardauth_address_label = label
             break
 
-    assert (
-        forwardauth_address_label is not None
-    ), "forwardauth.address label not found in manual service"
+    assert forwardauth_address_label is not None, "forwardauth.address label not found in manual service"
 
     # Parse the forwardauth address
     # Expected format: traefik.http.middlewares.${SWARM_STACK_NAME}_manual-auth.forwardauth.address=http://${WB_AUTH_WEBSERVER_HOST}:${WB_AUTH_WEBSERVER_PORT}/v0/auth:check
     address_part = forwardauth_address_label.split("forwardauth.address=")[1]
 
     # Verify it contains the expected pattern
-    assert (
-        "${WB_AUTH_WEBSERVER_HOST}" in address_part
-    ), "forwardauth.address should reference WB_AUTH_WEBSERVER_HOST"
-    assert (
-        "${WB_AUTH_WEBSERVER_PORT}" in address_part
-    ), "forwardauth.address should reference WB_AUTH_WEBSERVER_PORT"
-    assert (
-        "/v0/auth:check" in address_part
-    ), "forwardauth.address should point to /v0/auth:check endpoint"
+    assert "${WB_AUTH_WEBSERVER_HOST}" in address_part, "forwardauth.address should reference WB_AUTH_WEBSERVER_HOST"
+    assert "${WB_AUTH_WEBSERVER_PORT}" in address_part, "forwardauth.address should reference WB_AUTH_WEBSERVER_PORT"
+    assert "/v0/auth:check" in address_part, "forwardauth.address should point to /v0/auth:check endpoint"
 
     # Verify the full expected pattern
-    expected_pattern = (
-        "http://${WB_AUTH_WEBSERVER_HOST}:${WB_AUTH_WEBSERVER_PORT}/v0/auth:check"
-    )
-    assert (
-        address_part == expected_pattern
-    ), f"forwardauth.address should be '{expected_pattern}', got '{address_part}'"
+    expected_pattern = "http://${WB_AUTH_WEBSERVER_HOST}:${WB_AUTH_WEBSERVER_PORT}/v0/auth:check"
+    assert address_part == expected_pattern, f"forwardauth.address should be '{expected_pattern}', got '{address_part}'"
 
     # Verify that WB_AUTH_WEBSERVER_HOST and WB_AUTH_WEBSERVER_PORT are configured in the .env-devel file!
     wb_auth_host = env_devel_dict.get("WB_AUTH_WEBSERVER_HOST")
     wb_auth_port = env_devel_dict.get("WB_AUTH_WEBSERVER_PORT")
 
-    assert (
-        wb_auth_host is not None
-    ), "WB_AUTH_WEBSERVER_HOST should be configured in test environment"
-    assert (
-        wb_auth_port is not None
-    ), "WB_AUTH_WEBSERVER_PORT should be configured in test environment"
+    assert wb_auth_host is not None, "WB_AUTH_WEBSERVER_HOST should be configured in test environment"
+    assert wb_auth_port is not None, "WB_AUTH_WEBSERVER_PORT should be configured in test environment"

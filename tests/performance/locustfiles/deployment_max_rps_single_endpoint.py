@@ -66,9 +66,7 @@ class WebApiUser(OsparcWebUserBase):
         if len(self.environment.parsed_options.body) > 0:
             kwargs["json"] = json.loads(self.environment.parsed_options.body)
         if len(self.environment.parsed_options.body_json_schema) > 0:
-            faker = jsf.JSF(
-                json.loads(self.environment.parsed_options.body_json_schema)
-            )
+            faker = jsf.JSF(json.loads(self.environment.parsed_options.body_json_schema))
             kwargs["json"] = faker.generate()
         if len(self.environment.parsed_options.headers) > 0:
             kwargs["headers"] = json.loads(self.environment.parsed_options.headers)

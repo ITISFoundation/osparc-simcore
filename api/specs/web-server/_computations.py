@@ -46,12 +46,8 @@ async def get_computation(_path: Annotated[ComputationPathParams, Depends()]): .
     "/computations/{project_id}:start",
     response_model=Envelope[ComputationStarted],
     responses={
-        status.HTTP_402_PAYMENT_REQUIRED: {
-            "description": "Insufficient credits to run computation"
-        },
-        status.HTTP_404_NOT_FOUND: {
-            "description": "Project/wallet/pricing details were not found"
-        },
+        status.HTTP_402_PAYMENT_REQUIRED: {"description": "Insufficient credits to run computation"},
+        status.HTTP_404_NOT_FOUND: {"description": "Project/wallet/pricing details were not found"},
         status.HTTP_406_NOT_ACCEPTABLE: {"description": "Cluster not found"},
         status.HTTP_409_CONFLICT: {"description": "Project already started"},
         status.HTTP_422_UNPROCESSABLE_ENTITY: {"description": "Configuration error"},
@@ -76,9 +72,7 @@ async def stop_computation(_path: Annotated[ComputationPathParams, Depends()]): 
     response_model=Page[ComputationRunRestGet],
 )
 async def list_computations_latest_iteration(
-    _query: Annotated[
-        as_query(ComputationRunIterationsLatestListQueryParams), Depends()
-    ],
+    _query: Annotated[as_query(ComputationRunIterationsLatestListQueryParams), Depends()],
 ): ...
 
 

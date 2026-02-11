@@ -38,7 +38,6 @@ print(cfg.host)
 print("-" * 100)
 
 with osparc.ApiClient(cfg) as api_client:
-
     profile = UsersApi(api_client).get_my_profile()
     print(profile)
     #
@@ -60,9 +59,7 @@ with osparc.ApiClient(cfg) as api_client:
     input_file: File = files_api.upload_file(file="file_with_number.txt")
 
     solvers_api = SolversApi(api_client)
-    solver: Solver = solvers_api.get_solver_release(
-        "simcore/services/comp/itis/sleeper", "2.0.2"
-    )
+    solver: Solver = solvers_api.get_solver_release("simcore/services/comp/itis/sleeper", "2.0.2")
 
     job: Job = solvers_api.create_job(
         solver.id,
@@ -93,9 +90,7 @@ with osparc.ApiClient(cfg) as api_client:
 
     # download log (NEW on API version 0.4.0 / client version 0.5.0 )
     if CLIENT_VERSION >= (0, 5, 0):
-        logfile_path: str = solvers_api.get_job_output_logfile(
-            solver.id, solver.version, job.id
-        )
+        logfile_path: str = solvers_api.get_job_output_logfile(solver.id, solver.version, job.id)
         zip_path = Path(logfile_path)
         print(
             f"{zip_path=}",

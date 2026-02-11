@@ -32,12 +32,8 @@ def test_valid_application_settings(app_environment: EnvVarsDict):
     )
 
 
-def test_invalid_client_timeout_raises(
-    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
-):
-    monkeypatch.setenv(
-        "DIRECTOR_REGISTRY_CLIENT_TIMEOUT", f"{datetime.timedelta(seconds=-10)}"
-    )
+def test_invalid_client_timeout_raises(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("DIRECTOR_REGISTRY_CLIENT_TIMEOUT", f"{datetime.timedelta(seconds=-10)}")
     with pytest.raises(ValidationError):
         ApplicationSettings.create_from_envs()
 
@@ -112,9 +108,7 @@ def test_docker_container_env_sample(monkeypatch: pytest.MonkeyPatch):
     assert settings.DIRECTOR_DEFAULT_MAX_MEMORY == 0, "default!"
 
 
-def test_docker_compose_environment_sample(
-    monkeypatch: pytest.MonkeyPatch, app_environment: EnvVarsDict
-):
+def test_docker_compose_environment_sample(monkeypatch: pytest.MonkeyPatch, app_environment: EnvVarsDict):
     setenvs_from_dict(
         monkeypatch,
         {

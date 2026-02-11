@@ -32,6 +32,4 @@ async def test_get_service_extras(
     result = await aclient.get(f"/v0/services/{service_key}/{service_version}/extras")
     assert result.status_code == status.HTTP_200_OK, result.text
 
-    assert (
-        TypeAdapter(ServiceExtras).validate_python(result.json()) == mock_service_extras
-    )
+    assert TypeAdapter(ServiceExtras).validate_python(result.json()) == mock_service_extras

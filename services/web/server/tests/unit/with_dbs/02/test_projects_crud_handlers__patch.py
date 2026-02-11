@@ -42,9 +42,7 @@ async def test_patch_project_entrypoint_access(
     expected: HTTPStatus,
 ):
     assert client.app
-    base_url = client.app.router["patch_project"].url_for(
-        project_id=user_project["uuid"]
-    )
+    base_url = client.app.router["patch_project"].url_for(project_id=user_project["uuid"])
     # name & description
     resp = await client.patch(
         f"{base_url}",
@@ -57,9 +55,7 @@ async def test_patch_project_entrypoint_access(
     await assert_status(resp, expected)
 
 
-@pytest.mark.parametrize(
-    "user_role,expected", [(UserRole.USER, status.HTTP_204_NO_CONTENT)]
-)
+@pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_204_NO_CONTENT)])
 async def test_patch_project(
     mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     client: TestClient,
@@ -68,9 +64,7 @@ async def test_patch_project(
     expected: HTTPStatus,
 ):
     assert client.app
-    base_url = client.app.router["patch_project"].url_for(
-        project_id=user_project["uuid"]
-    )
+    base_url = client.app.router["patch_project"].url_for(project_id=user_project["uuid"])
     # name & description
     resp = await client.patch(
         f"{base_url}",
@@ -91,15 +85,7 @@ async def test_patch_project(
     )
     await assert_status(resp, expected)
     # UI
-    _patch_ui = {
-        "ui": {
-            "workbench": {
-                "77a04d71-b7e1-41d0-ab47-c99aa72b62d7": {
-                    "position": {"x": 250, "y": 100}
-                }
-            }
-        }
-    }
+    _patch_ui = {"ui": {"workbench": {"77a04d71-b7e1-41d0-ab47-c99aa72b62d7": {"position": {"x": 250, "y": 100}}}}}
     resp = await client.patch(f"{base_url}", data=json.dumps(_patch_ui))
     await assert_status(resp, expected)
     # UI 2
@@ -107,11 +93,7 @@ async def test_patch_project(
         "ui": {
             "mode": "workbench",
             "slideshow": {},
-            "workbench": {
-                "d03d2752-e970-42cd-9483-69440ab9e4b7": {
-                    "position": {"x": 250, "y": 100}
-                }
-            },
+            "workbench": {"d03d2752-e970-42cd-9483-69440ab9e4b7": {"position": {"x": 250, "y": 100}}},
             "currentNodeId": "d03d2752-e970-42cd-9483-69440ab9e4b7",
         }
     }
@@ -191,9 +173,7 @@ async def test_patch_project(
     assert data["dev"] == _patch_dev["dev"]
 
 
-@pytest.mark.parametrize(
-    "user_role,expected", [(UserRole.USER, status.HTTP_204_NO_CONTENT)]
-)
+@pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_204_NO_CONTENT)])
 async def test_patch_project_with_client_session_header(
     client: TestClient,
     logged_user: UserInfoDict,
@@ -201,9 +181,7 @@ async def test_patch_project_with_client_session_header(
     expected: HTTPStatus,
 ):
     assert client.app
-    base_url = client.app.router["patch_project"].url_for(
-        project_id=user_project["uuid"]
-    )
+    base_url = client.app.router["patch_project"].url_for(project_id=user_project["uuid"])
 
     # Generate a valid UUID for client session ID
     client_session_id = str(uuid.uuid4())
@@ -248,9 +226,7 @@ async def test_patch_project_with_client_session_header(
     await assert_status(resp, status.HTTP_422_UNPROCESSABLE_ENTITY)
 
 
-@pytest.mark.parametrize(
-    "user_role,expected", [(UserRole.USER, status.HTTP_204_NO_CONTENT)]
-)
+@pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_204_NO_CONTENT)])
 async def test_patch_project_with_mocked_header_parsing(
     client: TestClient,
     logged_user: UserInfoDict,
@@ -259,9 +235,7 @@ async def test_patch_project_with_mocked_header_parsing(
 ):
     """Test that header_params = parse_request_headers_as(ClientSessionHeaderParams, request) works correctly"""
     assert client.app
-    base_url = client.app.router["patch_project"].url_for(
-        project_id=user_project["uuid"]
-    )
+    base_url = client.app.router["patch_project"].url_for(project_id=user_project["uuid"])
 
     # Generate a valid client session ID
     test_client_session_id = str(uuid.uuid4())
@@ -295,9 +269,7 @@ async def test_patch_project_with_mocked_header_parsing(
         assert call_args.kwargs["client_session_id"] == test_client_session_id
 
 
-@pytest.mark.parametrize(
-    "user_role,expected", [(UserRole.USER, status.HTTP_204_NO_CONTENT)]
-)
+@pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_204_NO_CONTENT)])
 async def test_patch_project_without_client_session_header(
     client: TestClient,
     logged_user: UserInfoDict,
@@ -306,9 +278,7 @@ async def test_patch_project_without_client_session_header(
 ):
     """Test patch project works when X-Client-Session-Id header is not provided"""
     assert client.app
-    base_url = client.app.router["patch_project"].url_for(
-        project_id=user_project["uuid"]
-    )
+    base_url = client.app.router["patch_project"].url_for(project_id=user_project["uuid"])
 
     # Mock the _projects_service.patch_project_for_user to spy on the client_session_id parameter
     with patch(

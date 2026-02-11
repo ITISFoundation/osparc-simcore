@@ -37,18 +37,12 @@ ANOTHER_NODE_PAYLOAD = {"outputs": {ANOTHER_NODE_OUTPUT_KEY: 36}}
                     "input_int": 12,
                     "input_bool": True,
                     "input_string": "string",
-                    "input_downloadlink": DownloadLink(
-                        downloadLink="http://httpbin.org/image/jpeg"
-                    ),
+                    "input_downloadlink": DownloadLink(downloadLink="http://httpbin.org/image/jpeg"),
                     "input_simcorelink": SimCoreFileLink(
                         store=0,
-                        path=SimcoreS3FileID(
-                            "api/6cb6d306-2b05-49ed-8d6a-5deca53d184a/file.ext"
-                        ),
+                        path=SimcoreS3FileID("api/6cb6d306-2b05-49ed-8d6a-5deca53d184a/file.ext"),
                     ),
-                    "input_portlink": PortLink(
-                        nodeUuid=ANOTHER_NODE_ID, output=ANOTHER_NODE_OUTPUT_KEY
-                    ),
+                    "input_portlink": PortLink(nodeUuid=ANOTHER_NODE_ID, output=ANOTHER_NODE_OUTPUT_KEY),
                     "input_null": None,
                 },
                 "outputs": {
@@ -67,9 +61,7 @@ ANOTHER_NODE_PAYLOAD = {"outputs": {ANOTHER_NODE_OUTPUT_KEY: 36}}
         ),
     ],
 )
-async def test_compute_node_hash(
-    node_id: NodeID, node_payload: dict[str, Any], expected_hash: str
-):
+async def test_compute_node_hash(node_id: NodeID, node_payload: dict[str, Any], expected_hash: str):
     async def get_node_io_payload_cb(some_node_id: NodeID) -> dict[str, Any]:
         assert some_node_id in [node_id, ANOTHER_NODE_ID]
         return node_payload if some_node_id == node_id else ANOTHER_NODE_PAYLOAD

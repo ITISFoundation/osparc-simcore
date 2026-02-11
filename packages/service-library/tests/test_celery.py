@@ -7,7 +7,7 @@ import pydantic
 import pytest
 from common_library.json_serialization import json_dumps
 from faker import Faker
-from pydantic import StringConstraints
+from pydantic import StringConstraints, TypeAdapter
 from servicelib.celery.models import (
     OwnerMetadata,
     TaskUUID,
@@ -47,7 +47,6 @@ async def test_task_filter_serialization(
 
 
 async def test_task_filter_sorting_key_not_serialized():
-
     class _OwnerMetadata(OwnerMetadata):
         a: int | Wildcard
         b: str | Wildcard
@@ -55,13 +54,11 @@ async def test_task_filter_sorting_key_not_serialized():
     owner_metadata = _OwnerMetadata.model_validate(
         {"a": _faker.random_int(), "b": _faker.word(), "owner": _faker.word().lower()}
     )
-    task_uuid = TaskUUID(_faker.uuid4())
+    task_uuid = TypeAdapter(TaskUUID).validate_python(_faker.uuid4())
     copy_owner_metadata = owner_metadata.model_dump()
     copy_owner_metadata.update({"task_uuid": f"{task_uuid}"})
 
-    expected_key = ":".join(
-        [f"{k}={json_dumps(v)}" for k, v in sorted(copy_owner_metadata.items())]
-    )
+    expected_key = ":".join([f"{k}={json_dumps(v)}" for k, v in sorted(copy_owner_metadata.items())])
     assert owner_metadata.model_dump_task_key(task_uuid=task_uuid) == expected_key
 
 
@@ -69,13 +66,12 @@ async def test_task_filter_task_uuid(
     test_owner_metadata: dict[str, str | int | bool | None | list[str]],
 ):
     task_filter = _TestOwnerMetadata.model_validate(test_owner_metadata)
-    task_uuid = TaskUUID(_faker.uuid4())
+    task_uuid = TypeAdapter(TaskUUID).validate_python(_faker.uuid4())
     task_key = task_filter.model_dump_task_key(task_uuid)
     assert OwnerMetadata.get_task_uuid(task_key=task_key) == task_uuid
 
 
 async def test_owner_metadata_task_key_dump_and_validate():
-
     class MyModel(OwnerMetadata):
         int_: int
         bool_: bool
@@ -99,7 +95,7 @@ async def test_owner_metadata_task_key_dump_and_validate():
         list_i=[1, 2],
         list_s=["a", "b"],
     )
-    task_uuid = TaskUUID(_faker.uuid4())
+    task_uuid = TypeAdapter(TaskUUID).validate_python(_faker.uuid4())
     task_key = mymodel.model_dump_task_key(task_uuid)
     mymodel_recreated = MyModel.model_validate_task_key(task_key=task_key)
     assert mymodel_recreated == mymodel
@@ -132,9 +128,7 @@ async def test_task_owner():
         MyOwnerMetadata(owner="UPPER_CASE", extra_field="value")
 
     class MyNextFilter(OwnerMetadata):
-        owner: Annotated[
-            str, StringConstraints(strip_whitespace=True, pattern=r"^the_task_owner$")
-        ]
+        owner: Annotated[str, StringConstraints(strip_whitespace=True, pattern=r"^the_task_owner$")]
 
     with pytest.raises(pydantic.ValidationError):
         MyNextFilter(owner="wrong_owner")

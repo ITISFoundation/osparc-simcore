@@ -10,9 +10,7 @@ from settings_library.s3 import S3Settings
 from ..core.settings import get_application_settings
 
 
-async def get_or_create_temporary_token_for_user(
-    app: FastAPI, _user_id: UserID
-) -> S3Settings:
+async def get_or_create_temporary_token_for_user(app: FastAPI, _user_id: UserID) -> S3Settings:
     app_settings = get_application_settings(app)
     assert app_settings.STORAGE_S3  # nosec
     return app_settings.STORAGE_S3

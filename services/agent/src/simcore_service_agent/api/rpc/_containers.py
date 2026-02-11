@@ -14,7 +14,5 @@ router = RPCRouter()
 
 @router.expose()
 async def force_container_cleanup(app: FastAPI, *, node_id: NodeID) -> None:
-    with log_context(
-        _logger, logging.INFO, f"removing all orphan container for {node_id=}"
-    ):
+    with log_context(_logger, logging.INFO, f"removing all orphan container for {node_id=}"):
         await ContainersManager.get_from_app_state(app).force_container_cleanup(node_id)

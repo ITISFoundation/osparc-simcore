@@ -20,6 +20,7 @@ qx.Class.define("osparc.store.Faker", {
   type: "singleton",
 
   statics: {
+    // spellchecker:off
     IDK: [
       "Ez dakit",
       "No lo sé",
@@ -34,6 +35,7 @@ qx.Class.define("osparc.store.Faker", {
       "Ik weet ni",
       "Neviem",
     ],
+    // spellchecker:on
   },
 
   members: {
@@ -71,6 +73,13 @@ qx.Class.define("osparc.store.Faker", {
         );
       }, delay);
 
+      return new Promise((resolve) => resolve());
+    },
+
+    sendEmail: function(recipients, subject, bodyHtml, bodyText) {
+      console.log("Faker sending email: ", subject, " to ", recipients);
+      console.log("Body HTML: ", bodyHtml);
+      console.log("Body Text: ", bodyText);
       return new Promise((resolve) => resolve());
     },
   }

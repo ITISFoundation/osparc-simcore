@@ -42,7 +42,7 @@ def upgrade():
     # Populate new columns with values from the existing column
     op.execute(
         sa.DDL(
-            f"""
+            """
 
                 UPDATE resource_tracker_service_runs
                 SET parent_project_id = project_id,

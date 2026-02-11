@@ -28,15 +28,11 @@ async def test_wallets_groups_full_workflow(
 
     # create a new wallet
     url = client.app.router["create_wallet"].url_for()
-    resp = await client.post(
-        f"{url}", json={"name": "My first wallet", "description": "Custom description"}
-    )
+    resp = await client.post(f"{url}", json={"name": "My first wallet", "description": "Custom description"})
     added_wallet, _ = await assert_status(resp, status.HTTP_201_CREATED)
 
     # check the default wallet permissions
-    url = client.app.router["list_wallet_groups"].url_for(
-        wallet_id=f"{added_wallet['walletId']}"
-    )
+    url = client.app.router["list_wallet_groups"].url_for(wallet_id=f"{added_wallet['walletId']}")
     resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(data) == 1
@@ -53,15 +49,11 @@ async def test_wallets_groups_full_workflow(
             wallet_id=f"{added_wallet['walletId']}",
             group_id=f"{new_user['primary_gid']}",
         )
-        resp = await client.post(
-            f"{url}", json={"read": True, "write": False, "delete": False}
-        )
+        resp = await client.post(f"{url}", json={"read": True, "write": False, "delete": False})
         data, _ = await assert_status(resp, status.HTTP_201_CREATED)
 
         # Check the wallet permissions of added user
-        url = client.app.router["list_wallet_groups"].url_for(
-            wallet_id=f"{added_wallet['walletId']}"
-        )
+        url = client.app.router["list_wallet_groups"].url_for(wallet_id=f"{added_wallet['walletId']}")
         resp = await client.get(f"{url}")
         data, _ = await assert_status(resp, status.HTTP_200_OK)
         assert len(data) == 2
@@ -75,9 +67,7 @@ async def test_wallets_groups_full_workflow(
             wallet_id=f"{added_wallet['walletId']}",
             group_id=f"{new_user['primary_gid']}",
         )
-        resp = await client.put(
-            f"{url}", json={"read": True, "write": True, "delete": False}
-        )
+        resp = await client.put(f"{url}", json={"read": True, "write": True, "delete": False})
         data, _ = await assert_status(resp, status.HTTP_200_OK)
         assert data["gid"] == new_user["primary_gid"]
         assert data["read"] is True
@@ -85,9 +75,7 @@ async def test_wallets_groups_full_workflow(
         assert data["delete"] is False
 
         # List the wallet groups
-        url = client.app.router["list_wallet_groups"].url_for(
-            wallet_id=f"{added_wallet['walletId']}"
-        )
+        url = client.app.router["list_wallet_groups"].url_for(wallet_id=f"{added_wallet['walletId']}")
         resp = await client.get(f"{url}")
         data, _ = await assert_status(resp, status.HTTP_200_OK)
         assert len(data) == 2
@@ -105,9 +93,7 @@ async def test_wallets_groups_full_workflow(
         await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
         # List the wallet groups
-        url = client.app.router["list_wallet_groups"].url_for(
-            wallet_id=f"{added_wallet['walletId']}"
-        )
+        url = client.app.router["list_wallet_groups"].url_for(wallet_id=f"{added_wallet['walletId']}")
         resp = await client.get(f"{url}")
         data, _ = await assert_status(resp, status.HTTP_200_OK)
         assert len(data) == 1

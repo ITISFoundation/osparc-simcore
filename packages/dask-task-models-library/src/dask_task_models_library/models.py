@@ -11,9 +11,7 @@ DaskResources: TypeAlias = dict[str, int | float]
 
 TASK_LIFE_CYCLE_EVENT: Final[str] = "task-lifecycle-{key}"
 TASK_RUNNING_PROGRESS_EVENT: Final[str] = "task-progress-{key}"
-_SCHEDULER_TASK_STATE_TO_RUNNING_STATE: Final[
-    dict[SchedulerTaskState, RunningState]
-] = {
+_SCHEDULER_TASK_STATE_TO_RUNNING_STATE: Final[dict[SchedulerTaskState, RunningState]] = {
     "released": RunningState.NOT_STARTED,  # Known but not actively computing or in memory
     "waiting": RunningState.PENDING,  # On track to be computed, waiting on dependencies to arrive in memory
     "no-worker": RunningState.WAITING_FOR_RESOURCES,  # Ready to be computed, but no appropriate worker exists (for example because of resource restrictions, or because no worker is connected at all).
@@ -61,9 +59,7 @@ class TaskLifeCycleState(BaseModel):
         )
 
     @classmethod
-    def from_worker_task_state(
-        cls, key: Key, worker: str | None, task_state: WorkerTaskState
-    ) -> "TaskLifeCycleState":
+    def from_worker_task_state(cls, key: Key, worker: str | None, task_state: WorkerTaskState) -> "TaskLifeCycleState":
         return cls(
             key=f"{key!r}",
             source="worker",

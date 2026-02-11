@@ -58,9 +58,7 @@ async def test_interactive_services_removed_after_logout(
     create_project: Callable[..., Awaitable[ProjectAtDB]],
     mocked_dynamic_services_interface: dict[str, mock.MagicMock],
     create_dynamic_service_mock: Callable[..., Awaitable[DynamicServiceGet]],
-    create_socketio_connection: Callable[
-        [str | None, TestClient | None], Awaitable[tuple[socketio.AsyncClient, str]]
-    ],
+    create_socketio_connection: Callable[[str | None, TestClient | None], Awaitable[tuple[socketio.AsyncClient, str]]],
     storage_subsystem_mock: MockedStorageSubsystem,  # when guest user logs out garbage is collected
     director_v2_service_mock: aioresponses,
     expected_save_state: bool,
@@ -70,9 +68,7 @@ async def test_interactive_services_removed_after_logout(
     assert client.app
     user_id = logged_user["id"]
     empty_user_project = await create_project(logged_user)
-    service = await create_dynamic_service_mock(
-        user_id=user_id, project_id=empty_user_project.uuid
-    )
+    service = await create_dynamic_service_mock(user_id=user_id, project_id=empty_user_project.uuid)
     # create websocket
     sio, client_session_id1 = await create_socketio_connection(None, client)
     assert sio
@@ -80,13 +76,11 @@ async def test_interactive_services_removed_after_logout(
     await open_project(client, empty_user_project.uuid, client_session_id1)
     # logout
     logout_url = client.app.router["auth_logout"].url_for()
-    r = await client.post(
-        f"{logout_url}", json={"client_session_id": client_session_id1}
-    )
+    r = await client.post(f"{logout_url}", json={"client_session_id": client_session_id1})
     assert r.url.path == logout_url.path
     await assert_status(r, status.HTTP_200_OK)
 
-    # check result perfomed by background task
+    # check result performed by background task
     await asyncio.sleep(fast_service_deletion_delay + 1)
     await gc_core.collect_garbage(client.app)
 
@@ -96,9 +90,7 @@ async def test_interactive_services_removed_after_logout(
             print(
                 f"--> Waiting for stop_dynamic_service with: {service.node_uuid}, {expected_save_state=}",
             )
-            mocked_dynamic_services_interface[
-                "dynamic_scheduler.api.stop_dynamic_service"
-            ].assert_awaited_with(
+            mocked_dynamic_services_interface["dynamic_scheduler.api.stop_dynamic_service"].assert_awaited_with(
                 app=client.app,
                 dynamic_service_stop=DynamicServiceStop(
                     user_id=user_id,
@@ -106,6 +98,7 @@ async def test_interactive_services_removed_after_logout(
                     node_id=service.node_uuid,
                     simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
                     save_state=expected_save_state,
+                    product_name="osparc",
                 ),
                 progress=mock.ANY,
             )
@@ -127,9 +120,7 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
     create_project: Callable[..., Awaitable[ProjectAtDB]],
     mocked_dynamic_services_interface,
     create_dynamic_service_mock: Callable[..., Awaitable[DynamicServiceGet]],
-    create_socketio_connection: Callable[
-        [str | None, TestClient | None], Awaitable[tuple[socketio.AsyncClient, str]]
-    ],
+    create_socketio_connection: Callable[[str | None, TestClient | None], Awaitable[tuple[socketio.AsyncClient, str]]],
     storage_subsystem_mock,  # when guest user logs out garbage is collected
     expected_save_state: bool,
     mocker: MockerFixture,
@@ -139,9 +130,7 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
     assert client.app
     user_id = logged_user["id"]
     empty_user_project = await create_project(logged_user)
-    service = await create_dynamic_service_mock(
-        user_id=user_id, project_id=empty_user_project.uuid
-    )
+    service = await create_dynamic_service_mock(user_id=user_id, project_id=empty_user_project.uuid)
     # create first websocket
     sio, client_session_id1 = await create_socketio_connection(None, client)
     # open project in client 1
@@ -157,12 +146,10 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
     )
     # disconnect first websocket
     # NOTE: since the service deletion delay is set to 1 second for the test, we should not sleep as long here, or the user will be deleted
-    # We have no mock-up for the heatbeat...
+    # We have no mock-up for the heartbeat...
     await sio.disconnect()
     assert not sio.sid
-    async for attempt in AsyncRetrying(
-        **(_TENACITY_ASSERT_RETRY | {"wait": wait_fixed(0.1)})
-    ):
+    async for attempt in AsyncRetrying(**(_TENACITY_ASSERT_RETRY | {"wait": wait_fixed(0.1)})):
         with attempt:
             socket_project_state_update_mock_callable.assert_called_with(
                 jsonable_encoder(
@@ -186,28 +173,20 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
     await gc_core.collect_garbage(client.app)
 
     # assert dynamic service is still around
-    mocked_dynamic_services_interface[
-        "dynamic_scheduler.api.stop_dynamic_service"
-    ].assert_not_called()
+    mocked_dynamic_services_interface["dynamic_scheduler.api.stop_dynamic_service"].assert_not_called()
     # disconnect second websocket
     await sio2.disconnect()
     assert not sio2.sid
     # assert dynamic service is still around for now
-    mocked_dynamic_services_interface[
-        "dynamic_scheduler.api.stop_dynamic_service"
-    ].assert_not_called()
+    mocked_dynamic_services_interface["dynamic_scheduler.api.stop_dynamic_service"].assert_not_called()
     # reconnect websocket
-    sio2, same_client_session_id2 = await create_socketio_connection(
-        client_session_id2, client
-    )
+    sio2, same_client_session_id2 = await create_socketio_connection(client_session_id2, client)
     assert same_client_session_id2 == client_session_id2
     # it should still be there even after waiting for auto deletion from garbage collector
     await asyncio.sleep(fast_service_deletion_delay + 1)
     await gc_core.collect_garbage(client.app)
 
-    mocked_dynamic_services_interface[
-        "dynamic_scheduler.api.stop_dynamic_service"
-    ].assert_not_called()
+    mocked_dynamic_services_interface["dynamic_scheduler.api.stop_dynamic_service"].assert_not_called()
     # now really disconnect
     await sio2.disconnect()
     await sio2.wait()
@@ -228,13 +207,12 @@ async def test_interactive_services_remain_after_websocket_reconnection_from_2_t
                 simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
                 save_state=expected_save_state,
                 node_id=service.node_uuid,
+                product_name="osparc",
             ),
             progress=mock.ANY,
         )
     ]
-    mocked_dynamic_services_interface[
-        "dynamic_scheduler.api.stop_dynamic_service"
-    ].assert_has_calls(calls)
+    mocked_dynamic_services_interface["dynamic_scheduler.api.stop_dynamic_service"].assert_has_calls(calls)
 
 
 @pytest.mark.parametrize(
@@ -253,9 +231,7 @@ async def test_interactive_services_removed_per_project(
     create_project: Callable[..., Awaitable[ProjectAtDB]],
     mocked_dynamic_services_interface,
     create_dynamic_service_mock: Callable[..., Awaitable[DynamicServiceGet]],
-    create_socketio_connection: Callable[
-        [str | None, TestClient | None], Awaitable[tuple[socketio.AsyncClient, str]]
-    ],
+    create_socketio_connection: Callable[[str | None, TestClient | None], Awaitable[tuple[socketio.AsyncClient, str]]],
     storage_subsystem_mock,  # when guest user logs out garbage is collected
     expected_save_state: bool,
     open_project: Callable,
@@ -264,16 +240,10 @@ async def test_interactive_services_removed_per_project(
     user_id = logged_user["id"]
     empty_user_project = await create_project(logged_user)
     # create server with delay set to DELAY
-    service1 = await create_dynamic_service_mock(
-        user_id=user_id, project_id=empty_user_project.uuid
-    )
+    service1 = await create_dynamic_service_mock(user_id=user_id, project_id=empty_user_project.uuid)
     empty_user_project2 = await create_project(logged_user)
-    service2 = await create_dynamic_service_mock(
-        user_id=user_id, project_id=empty_user_project2.uuid
-    )
-    service3 = await create_dynamic_service_mock(
-        user_id=user_id, project_id=empty_user_project2.uuid
-    )
+    service2 = await create_dynamic_service_mock(user_id=user_id, project_id=empty_user_project2.uuid)
+    service3 = await create_dynamic_service_mock(user_id=user_id, project_id=empty_user_project2.uuid)
     # create websocket1 from tab1
     sio1, client_session_id1 = await create_socketio_connection(None, client)
     await open_project(client, empty_user_project.uuid, client_session_id1)
@@ -284,9 +254,7 @@ async def test_interactive_services_removed_per_project(
     await sio1.disconnect()
     assert not sio1.sid
     # assert dynamic service is still around
-    mocked_dynamic_services_interface[
-        "dynamic_scheduler.api.stop_dynamic_service"
-    ].assert_not_called()
+    mocked_dynamic_services_interface["dynamic_scheduler.api.stop_dynamic_service"].assert_not_called()
     # wait the defined delay
     await asyncio.sleep(fast_service_deletion_delay + 1)
     await gc_core.collect_garbage(client.app)
@@ -300,24 +268,19 @@ async def test_interactive_services_removed_per_project(
                 node_id=service1.node_uuid,
                 simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
                 save_state=expected_save_state,
+                product_name="osparc",
             ),
             progress=mock.ANY,
         )
     ]
-    mocked_dynamic_services_interface[
-        "dynamic_scheduler.api.stop_dynamic_service"
-    ].assert_has_calls(calls)
-    mocked_dynamic_services_interface[
-        "dynamic_scheduler.api.stop_dynamic_service"
-    ].reset_mock()
+    mocked_dynamic_services_interface["dynamic_scheduler.api.stop_dynamic_service"].assert_has_calls(calls)
+    mocked_dynamic_services_interface["dynamic_scheduler.api.stop_dynamic_service"].reset_mock()
 
     # disconnect websocket2
     await sio2.disconnect()
     assert not sio2.sid
     # assert dynamic services are still around
-    mocked_dynamic_services_interface[
-        "dynamic_scheduler.api.stop_dynamic_service"
-    ].assert_not_called()
+    mocked_dynamic_services_interface["dynamic_scheduler.api.stop_dynamic_service"].assert_not_called()
     # wait the defined delay
     await asyncio.sleep(fast_service_deletion_delay + 1)
     await gc_core.collect_garbage(client.app)
@@ -331,6 +294,7 @@ async def test_interactive_services_removed_per_project(
                 node_id=service2.node_uuid,
                 simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
                 save_state=expected_save_state,
+                product_name="osparc",
             ),
             progress=mock.ANY,
         ),
@@ -342,21 +306,16 @@ async def test_interactive_services_removed_per_project(
                 node_id=service3.node_uuid,
                 simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
                 save_state=expected_save_state,
+                product_name="osparc",
             ),
             progress=mock.ANY,
         ),
     ]
-    mocked_dynamic_services_interface[
-        "dynamic_scheduler.api.stop_dynamic_service"
-    ].assert_has_calls(calls)
-    mocked_dynamic_services_interface[
-        "dynamic_scheduler.api.stop_dynamic_service"
-    ].reset_mock()
+    mocked_dynamic_services_interface["dynamic_scheduler.api.stop_dynamic_service"].assert_has_calls(calls)
+    mocked_dynamic_services_interface["dynamic_scheduler.api.stop_dynamic_service"].reset_mock()
 
 
-@pytest.mark.xfail(
-    reason="it is currently not permitted to open the same project from 2 different tabs"
-)
+@pytest.mark.xfail(reason="it is currently not permitted to open the same project from 2 different tabs")
 @pytest.mark.parametrize(
     "user_role, expected_save_state",
     [
@@ -374,18 +333,14 @@ async def test_services_remain_after_closing_one_out_of_two_tabs(
     create_project: Callable[..., Awaitable[ProjectAtDB]],
     mocked_dynamic_services_interface,
     create_dynamic_service_mock: Callable[..., Awaitable[DynamicServiceGet]],
-    create_socketio_connection: Callable[
-        [str | None, TestClient | None], Awaitable[tuple[socketio.AsyncClient, str]]
-    ],
+    create_socketio_connection: Callable[[str | None, TestClient | None], Awaitable[tuple[socketio.AsyncClient, str]]],
     expected_save_state: bool,
     open_project: Callable[[TestClient, ProjectID, str], Awaitable[None]],
     close_project: Callable[[TestClient, ProjectID, str], Awaitable[None]],
 ):
     empty_user_project = await create_project(logged_user)
     # create server with delay set to DELAY
-    service = await create_dynamic_service_mock(
-        user_id=logged_user["id"], project_id=empty_user_project.uuid
-    )
+    service = await create_dynamic_service_mock(user_id=logged_user["id"], project_id=empty_user_project.uuid)
     # open project in tab1
     sio1, client_session_id1 = await create_socketio_connection(None, client)
     assert sio1
@@ -400,17 +355,13 @@ async def test_services_remain_after_closing_one_out_of_two_tabs(
     await asyncio.sleep(fast_service_deletion_delay + 1)
     await gc_core.collect_garbage(client.app)
     # assert dynamic service is still around
-    mocked_dynamic_services_interface[
-        "dynamic_scheduler.api.stop_dynamic_service"
-    ].assert_not_called()
+    mocked_dynamic_services_interface["dynamic_scheduler.api.stop_dynamic_service"].assert_not_called()
     # close project in tab2
     await close_project(client, empty_user_project.uuid, client_session_id2)
     # wait the defined delay
     await asyncio.sleep(fast_service_deletion_delay + 1)
     await gc_core.collect_garbage(client.app)
-    mocked_dynamic_services_interface[
-        "dynamic_scheduler.api.stop_dynamic_service"
-    ].assert_has_calls(
+    mocked_dynamic_services_interface["dynamic_scheduler.api.stop_dynamic_service"].assert_has_calls(
         [mock.call(client.server.app, service.node_uuid, expected_save_state)]
     )
 
@@ -431,9 +382,7 @@ async def test_websocket_disconnected_remove_or_maintain_files_based_on_role(
     create_project: Callable[..., Awaitable[ProjectAtDB]],
     mocked_dynamic_services_interface,
     create_dynamic_service_mock: Callable[..., Awaitable[DynamicServiceGet]],
-    create_socketio_connection: Callable[
-        [str | None, TestClient | None], Awaitable[tuple[socketio.AsyncClient, str]]
-    ],
+    create_socketio_connection: Callable[[str | None, TestClient | None], Awaitable[tuple[socketio.AsyncClient, str]]],
     # asyncpg_storage_system_mock,
     storage_subsystem_mock,  # when guest user logs out garbage is collected
     expect_call: bool,
@@ -443,9 +392,7 @@ async def test_websocket_disconnected_remove_or_maintain_files_based_on_role(
 ):
     user_id = logged_user["id"]
     empty_user_project = await create_project(logged_user)
-    service = await create_dynamic_service_mock(
-        user_id=user_id, project_id=empty_user_project.uuid
-    )
+    service = await create_dynamic_service_mock(user_id=user_id, project_id=empty_user_project.uuid)
     # create websocket
     sio, client_session_id1 = await create_socketio_connection(None, client)
     assert sio
@@ -471,13 +418,12 @@ async def test_websocket_disconnected_remove_or_maintain_files_based_on_role(
                 simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
                 save_state=expected_save_state,
                 node_id=service.node_uuid,
+                product_name="osparc",
             ),
             progress=mock.ANY,
         )
     ]
-    mocked_dynamic_services_interface[
-        "dynamic_scheduler.api.stop_dynamic_service"
-    ].assert_has_calls(calls)
+    mocked_dynamic_services_interface["dynamic_scheduler.api.stop_dynamic_service"].assert_has_calls(calls)
 
     # this call is done async, so wait a bit here to ensure it is correctly done
     async for attempt in AsyncRetrying(**_TENACITY_ASSERT_RETRY):

@@ -12,7 +12,7 @@ import secrets
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, Final, TypeAlias, cast, get_args
+from typing import Any, Final, cast, get_args
 from unittest import mock
 
 import aiodocker
@@ -41,9 +41,6 @@ from models_library.docker import (
 )
 from models_library.generated_models.docker_rest_api import (
     Availability,
-)
-from models_library.generated_models.docker_rest_api import Node as DockerNode
-from models_library.generated_models.docker_rest_api import (
     NodeDescription,
     NodeSpec,
     NodeState,
@@ -53,6 +50,7 @@ from models_library.generated_models.docker_rest_api import (
     Service,
     TaskSpec,
 )
+from models_library.generated_models.docker_rest_api import Node as DockerNode
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.services_metadata_runtime import SimcoreContainerLabels
@@ -146,8 +144,7 @@ def mocked_ec2_server_envs(
 ) -> EnvVarsDict:
     # NOTE: overrides the EC2Settings with what autoscaling expects
     changed_envs: EnvVarsDict = {
-        f"{AUTOSCALING_ENV_PREFIX}{k}": v
-        for k, v in mocked_ec2_server_settings.model_dump().items()
+        f"{AUTOSCALING_ENV_PREFIX}{k}": v for k, v in mocked_ec2_server_settings.model_dump().items()
     }
     return setenvs_from_dict(monkeypatch, changed_envs)  # type: ignore
 
@@ -205,9 +202,7 @@ def fake_ssm_settings() -> SSMSettings:
     assert "json_schema_extra" in SSMSettings.model_config
     assert isinstance(SSMSettings.model_config["json_schema_extra"], dict)
     assert isinstance(SSMSettings.model_config["json_schema_extra"]["examples"], list)
-    return SSMSettings.model_validate(
-        SSMSettings.model_config["json_schema_extra"]["examples"][0]
-    )
+    return SSMSettings.model_validate(SSMSettings.model_config["json_schema_extra"]["examples"][0])
 
 
 @pytest.fixture
@@ -263,9 +258,7 @@ def app_environment(
             "SSM_ACCESS_KEY_ID": faker.pystr(),
             "SSM_SECRET_ACCESS_KEY": faker.pystr(),
             "EC2_INSTANCES_KEY_NAME": faker.pystr(),
-            "EC2_INSTANCES_SECURITY_GROUP_IDS": json_dumps(
-                faker.pylist(allowed_types=(str,))
-            ),
+            "EC2_INSTANCES_SECURITY_GROUP_IDS": json_dumps(faker.pylist(allowed_types=(str,))),
             "EC2_INSTANCES_SUBNET_IDS": json_dumps(faker.pylist(allowed_types=(str,))),
             "EC2_INSTANCES_ALLOWED_TYPES": json_dumps(
                 {
@@ -302,9 +295,7 @@ def mocked_ec2_instances_envs(
                 {
                     ec2_type_name: cast(
                         dict,
-                        secrets.choice(
-                            EC2InstanceBootSpecific.model_json_schema()["examples"]
-                        ),
+                        secrets.choice(EC2InstanceBootSpecific.model_json_schema()["examples"]),
                     )
                     | {"ami_id": aws_ami_id}
                     for ec2_type_name in aws_allowed_ec2_instance_type_names
@@ -365,12 +356,8 @@ def enabled_dynamic_mode(
         {
             "AUTOSCALING_NODES_MONITORING": "{}",
             "NODES_MONITORING_NODE_LABELS": json_dumps(["pytest.fake-node-label"]),
-            "NODES_MONITORING_SERVICE_LABELS": json_dumps(
-                ["pytest.fake-service-label"]
-            ),
-            "NODES_MONITORING_NEW_NODES_LABELS": json_dumps(
-                ["pytest.fake-new-node-label"]
-            ),
+            "NODES_MONITORING_SERVICE_LABELS": json_dumps(["pytest.fake-service-label"]),
+            "NODES_MONITORING_NEW_NODES_LABELS": json_dumps(["pytest.fake-new-node-label"]),
         },
     )
 
@@ -392,9 +379,7 @@ def enabled_computational_mode(
 
 
 @pytest.fixture
-def disabled_rabbitmq(
-    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def disabled_rabbitmq(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("AUTOSCALING_RABBITMQ", "null")
 
 
@@ -409,9 +394,7 @@ def disabled_ssm(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) 
 
 
 @pytest.fixture
-def enabled_rabbitmq(
-    app_environment: EnvVarsDict, rabbit_service: RabbitSettings
-) -> RabbitSettings:
+def enabled_rabbitmq(app_environment: EnvVarsDict, rabbit_service: RabbitSettings) -> RabbitSettings:
     return rabbit_service
 
 
@@ -427,9 +410,7 @@ async def initialized_app(app_environment: EnvVarsDict) -> AsyncIterator[FastAPI
     )
     app = create_app(settings, tracing_config=tracing_config)
     # NOTE: the timeout is sometime too small for CI machines, and even larger machines
-    async with LifespanManager(
-        app, startup_timeout=_LIFESPAN_TIMEOUT, shutdown_timeout=_LIFESPAN_TIMEOUT
-    ):
+    async with LifespanManager(app, startup_timeout=_LIFESPAN_TIMEOUT, shutdown_timeout=_LIFESPAN_TIMEOUT):
         yield app
 
 
@@ -471,9 +452,7 @@ async def host_node(
     docker_swarm: None,
     async_docker_client: aiodocker.Docker,
 ) -> AsyncIterator[DockerNode]:
-    nodes = TypeAdapter(list[DockerNode]).validate_python(
-        await async_docker_client.nodes.list()
-    )
+    nodes = TypeAdapter(list[DockerNode]).validate_python(await async_docker_client.nodes.list())
     assert len(nodes) == 1
     # keep state of node for later revert
     old_node = deepcopy(nodes[0])
@@ -503,9 +482,7 @@ async def host_node(
     )
     yield modified_host_node
     # revert state
-    current_node = TypeAdapter(DockerNode).validate_python(
-        await async_docker_client.nodes.inspect(node_id=old_node.id)
-    )
+    current_node = TypeAdapter(DockerNode).validate_python(await async_docker_client.nodes.inspect(node_id=old_node.id))
     assert current_node.id
     assert current_node.version
     assert current_node.version.index
@@ -537,7 +514,11 @@ def create_fake_node(faker: Faker) -> Callable[..., DockerNode]:
             ),
             "Spec": NodeSpec(
                 name=None,
-                labels=faker.pydict(allowed_types=(str,)),
+                labels={
+                    _OSPARC_SERVICE_READY_LABEL_KEY: "false",
+                    _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY: datetime.datetime.now(tz=datetime.UTC).isoformat(),
+                    **faker.pydict(allowed_types=(str,)),
+                },
                 role=None,
                 availability=Availability.drain,
             ),
@@ -563,8 +544,8 @@ def task_template() -> dict[str, Any]:
     }
 
 
-_GIGA_NANO_CPU = 10**9
-NUM_CPUS: TypeAlias = PositiveInt
+_GIGA_NANO_CPU: Final[int] = 10**9
+type NUM_CPUS = PositiveInt
 
 
 @pytest.fixture
@@ -582,11 +563,10 @@ def create_task_reservations() -> Callable[[NUM_CPUS, int], dict[str, Any]]:
                     "GenericResources": (
                         [
                             {
-                                (
-                                    "NamedResourceSpec"
-                                    if isinstance(v, str)
-                                    else "DiscreteResourceSpec"
-                                ): {"Kind": k, "Value": v}
+                                ("NamedResourceSpec" if isinstance(v, str) else "DiscreteResourceSpec"): {
+                                    "Kind": k,
+                                    "Value": v,
+                                }
                             }
                             for k, v in generic_resources.items()
                         ]
@@ -620,9 +600,7 @@ async def create_service(
     async_docker_client: aiodocker.Docker,
     docker_swarm: None,
     faker: Faker,
-) -> AsyncIterator[
-    Callable[[dict[str, Any], dict[DockerLabelKey, str] | None], Awaitable[Service]]
-]:
+) -> AsyncIterator[Callable[[dict[str, Any], dict[DockerLabelKey, str] | None], Awaitable[Service]]]:
     created_services = []
 
     async def _creator(
@@ -633,28 +611,20 @@ async def create_service(
     ) -> Service:
         service_name = f"pytest_{faker.pystr()}"
         base_labels: dict[DockerLabelKey, Any] = {}
-        task_labels = task_template.setdefault("ContainerSpec", {}).setdefault(
-            "Labels", base_labels
-        )
+        task_labels = task_template.setdefault("ContainerSpec", {}).setdefault("Labels", base_labels)
         if placement_constraints:
-            task_template.setdefault("Placement", {}).setdefault(
-                "Constraints", placement_constraints
-            )
+            task_template.setdefault("Placement", {}).setdefault("Constraints", placement_constraints)
         if labels:
             task_labels |= labels
             base_labels |= labels
-        with log_context(
-            logging.INFO, msg=f"create docker service {service_name}"
-        ) as ctx:
+        with log_context(logging.INFO, msg=f"create docker service {service_name}") as ctx:
             service = await async_docker_client.services.create(
                 task_template=task_template,
                 name=service_name,
                 labels=base_labels,  # type: ignore
             )
             assert service
-            service = TypeAdapter(Service).validate_python(
-                await async_docker_client.services.inspect(service["ID"])
-            )
+            service = TypeAdapter(Service).validate_python(await async_docker_client.services.inspect(service["ID"]))
             assert service.spec
             ctx.logger.info(
                 "%s",
@@ -667,9 +637,7 @@ async def create_service(
 
         assert service.spec.name == service_name
 
-        original_task_template_model = TypeAdapter(TaskSpec).validate_python(
-            task_template
-        )
+        original_task_template_model = TypeAdapter(TaskSpec).validate_python(task_template)
 
         excluded_paths = {
             "force_update",
@@ -690,15 +658,10 @@ async def create_service(
             if (
                 original_task_template_model.resources
                 and original_task_template_model.resources.reservations
-                and getattr(
-                    original_task_template_model.resources.reservations, reservation
-                )
-                == 0
+                and getattr(original_task_template_model.resources.reservations, reservation) == 0
             ):
                 # NOTE: if a 0 memory reservation is done, docker removes it from the task inspection
-                excluded_paths.add(
-                    f"root['resources']['reservations']['{reservation}']"
-                )
+                excluded_paths.add(f"root['resources']['reservations']['{reservation}']")
 
         assert service.spec.task_template
         diff = DeepDiff(
@@ -708,9 +671,7 @@ async def create_service(
         )
         assert not diff, f"{diff}"
         assert service.spec.labels == base_labels
-        await _assert_wait_for_service_state(
-            async_docker_client, service, [wait_for_service_state]
-        )
+        await _assert_wait_for_service_state(async_docker_client, service, [wait_for_service_state])
         return service
 
     yield _creator
@@ -751,9 +712,7 @@ WAIT_TIME: Final[float] = 0.5
 async def _assert_wait_for_service_state(
     async_docker_client: aiodocker.Docker, service: Service, expected_states: list[str]
 ) -> None:
-    with log_context(
-        logging.INFO, msg=f"wait for service {service.id} to become {expected_states}"
-    ) as ctx:
+    with log_context(logging.INFO, msg=f"wait for service {service.id} to become {expected_states}") as ctx:
         number_of_success = {"count": 0}
 
         @retry(
@@ -766,31 +725,29 @@ async def _assert_wait_for_service_state(
         )
         async def _() -> None:
             assert service.id
-            services = await async_docker_client.services.list(
-                filters={"id": service.id}
-            )
+            services = await async_docker_client.services.list(filters={"id": service.id})
             assert services, f"no service with {service.id}!"
             assert len(services) == 1
             found_service = services[0]
 
-            tasks = await async_docker_client.tasks.list(
-                filters={"service": found_service["Spec"]["Name"]}
-            )
+            tasks = await async_docker_client.tasks.list(filters={"service": found_service["Spec"]["Name"]})
             assert tasks, f"no tasks available for {found_service['Spec']['Name']}"
             assert len(tasks) == 1
             service_task = tasks[0]
-            assert (
-                service_task["Status"]["State"] in expected_states
-            ), f"service {found_service['Spec']['Name']}'s task is {service_task['Status']['State']}"
+            assert service_task["Status"]["State"] in expected_states, (
+                f"service {found_service['Spec']['Name']}'s task is {service_task['Status']['State']}"
+            )
             ctx.logger.info(
                 "%s",
-                f"service {found_service['Spec']['Name']} is now {service_task['Status']['State']} {'.' * number_of_success['count']}",
+                f"service {found_service['Spec']['Name']} is now "
+                f"{service_task['Status']['State']} {'.' * number_of_success['count']}",
             )
             number_of_success["count"] += 1
             assert (number_of_success["count"] * WAIT_TIME) >= SUCCESS_STABLE_TIME_S
             ctx.logger.info(
                 "%s",
-                f"service {found_service['Spec']['Name']} is now {service_task['Status']['State']} after {SUCCESS_STABLE_TIME_S} seconds",
+                f"service {found_service['Spec']['Name']} is now {service_task['Status']['State']} "
+                f"after {SUCCESS_STABLE_TIME_S} seconds",
             )
 
         await _()
@@ -941,9 +898,7 @@ async def create_dask_task(
     def _remote_pytest_fct(x: int, y: int) -> int:
         return x + y
 
-    def _creator(
-        required_resources: DaskTaskResources, **overrides
-    ) -> distributed.Future:
+    def _creator(required_resources: DaskTaskResources, **overrides) -> distributed.Future:
         # NOTE: pure will ensure dask does not re-use the task results if we run it several times
         future = dask_spec_cluster_client.submit(
             _remote_pytest_fct,
@@ -967,9 +922,7 @@ def mock_docker_set_node_availability(mocker: MockerFixture) -> mock.Mock:
     ) -> DockerNode:
         returned_node = deepcopy(node)
         assert returned_node.spec
-        returned_node.spec.availability = (
-            Availability.active if available else Availability.drain
-        )
+        returned_node.spec.availability = Availability.active if available else Availability.drain
         returned_node.updated_at = datetime.datetime.now(tz=datetime.UTC).isoformat()
         return returned_node
 
@@ -992,9 +945,7 @@ def mock_docker_tag_node(mocker: MockerFixture) -> mock.Mock:
         updated_node = deepcopy(node)
         assert updated_node.spec
         updated_node.spec.labels = deepcopy(cast(dict[str, str], tags))
-        updated_node.spec.availability = (
-            Availability.active if available else Availability.drain
-        )
+        updated_node.spec.availability = Availability.active if available else Availability.drain
         return updated_node
 
     return mocker.patch(
@@ -1036,9 +987,7 @@ def random_fake_available_instances(faker: Faker) -> list[EC2InstanceType]:
     ] + [
         EC2InstanceType(
             name=random.choice(get_args(InstanceTypeType)),  # noqa: S311
-            resources=Resources(
-                cpus=15, ram=ByteSize(128), generic_resources={"gpu": 12}
-            ),
+            resources=Resources(cpus=15, ram=ByteSize(128), generic_resources={"gpu": 12}),
         )
     ]
     random.shuffle(list_of_instances)
@@ -1064,11 +1013,7 @@ def create_associated_instance(
             < app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
         ), "this tests relies on the fact that the time before termination is above 10 seconds"
         assert app_settings.AUTOSCALING_EC2_INSTANCES
-        seconds_delta = (
-            -datetime.timedelta(seconds=10)
-            if terminateable_time
-            else datetime.timedelta(seconds=10)
-        )
+        seconds_delta = -datetime.timedelta(seconds=10) if terminateable_time else datetime.timedelta(seconds=10)
 
         if fake_ec2_instance_data_override is None:
             fake_ec2_instance_data_override = {}
@@ -1092,63 +1037,125 @@ def create_associated_instance(
 
 
 @pytest.fixture
-def num_hot_buffer() -> NonNegativeInt:
-    return 5
-
-
-@pytest.fixture
-def with_instances_machines_hot_buffer(
-    num_hot_buffer: int,
+def with_disabled_hot_buffers(
     app_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
 ) -> EnvVarsDict:
+    allowed_types = json.loads(app_environment["EC2_INSTANCES_ALLOWED_TYPES"])
+    for instance_type_name in allowed_types:
+        allowed_types[instance_type_name]["hot_buffer_count"] = 0
+
     return app_environment | setenvs_from_dict(
         monkeypatch,
         {
-            "EC2_INSTANCES_MACHINES_BUFFER": f"{num_hot_buffer}",
+            "EC2_INSTANCES_ALLOWED_TYPES": json_dumps(allowed_types),
         },
     )
 
 
 @pytest.fixture
-def hot_buffer_instance_type(app_settings: ApplicationSettings) -> InstanceTypeType:
-    assert app_settings.AUTOSCALING_EC2_INSTANCES
-    return cast(
-        InstanceTypeType,
-        next(iter(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES)),
+def num_hot_buffer() -> NonNegativeInt:
+    return 5
+
+
+@pytest.fixture
+def with_multiple_hot_buffer_instance_types(
+    num_hot_buffer: int,
+    app_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+    aws_allowed_ec2_instance_type_names: list[InstanceTypeType],
+) -> EnvVarsDict:
+    allowed_types = json.loads(app_environment["EC2_INSTANCES_ALLOWED_TYPES"])
+    multiple_types = random.sample(
+        aws_allowed_ec2_instance_type_names,
+        k=min(2, len(aws_allowed_ec2_instance_type_names)),
     )
+
+    for instance_type_name in allowed_types:
+        allowed_types[instance_type_name]["hot_buffer_count"] = (
+            num_hot_buffer if instance_type_name in multiple_types else 0
+        )
+        allowed_types[instance_type_name].setdefault("hot_buffer_max_inactivity_time", None)
+
+    return app_environment | setenvs_from_dict(
+        monkeypatch,
+        {
+            "EC2_INSTANCES_ALLOWED_TYPES": json_dumps(allowed_types),
+        },
+    )
+
+
+@pytest.fixture
+def with_single_hot_buffer_instance_type(
+    num_hot_buffer: int,
+    app_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+    aws_allowed_ec2_instance_type_names: list[InstanceTypeType],
+) -> EnvVarsDict:
+    allowed_types = json.loads(app_environment["EC2_INSTANCES_ALLOWED_TYPES"])
+    single_type = next(iter(allowed_types.keys()))
+
+    for instance_type_name in allowed_types:
+        allowed_types[instance_type_name]["hot_buffer_count"] = (
+            num_hot_buffer if instance_type_name == single_type else 0
+        )
+        allowed_types[instance_type_name].setdefault("hot_buffer_max_inactivity_time", None)
+
+    return app_environment | setenvs_from_dict(
+        monkeypatch,
+        {
+            "EC2_INSTANCES_ALLOWED_TYPES": json_dumps(allowed_types),
+        },
+    )
+
+
+@pytest.fixture
+def hot_buffer_instance_types(app_settings: ApplicationSettings) -> set[InstanceTypeType]:
+    assert app_settings.AUTOSCALING_EC2_INSTANCES
+    return {
+        cast(InstanceTypeType, k)
+        for k, v in app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES.items()
+        if v.hot_buffer_count > 0
+    }
+
+
+@pytest.fixture
+def hot_buffer_total_count(app_settings: ApplicationSettings) -> int:
+    assert app_settings.AUTOSCALING_EC2_INSTANCES
+    return sum(v.hot_buffer_count for v in app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES.values())
 
 
 @pytest.fixture
 def hot_buffer_has_pre_pull(
     app_settings: ApplicationSettings,
-    hot_buffer_instance_type: InstanceTypeType,
-) -> bool:
-    assert app_settings.AUTOSCALING_EC2_INSTANCES
-    return bool(
-        app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_COLD_START_DOCKER_IMAGES_PRE_PULLING
-        or app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
-            hot_buffer_instance_type
-        ].pre_pull_images
-    )
+) -> Callable[[InstanceTypeType], bool]:
+    def _(instance_type: InstanceTypeType) -> bool:
+        assert app_settings.AUTOSCALING_EC2_INSTANCES
+        return bool(
+            app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_COLD_START_DOCKER_IMAGES_PRE_PULLING
+            or app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[instance_type].pre_pull_images
+        )
+
+    return _
 
 
 @pytest.fixture
 def hot_buffer_expected_pre_pulled_images(
     app_settings: ApplicationSettings,
-    hot_buffer_instance_type: InstanceTypeType,
-) -> list[DockerGenericTag]:
-    assert app_settings.AUTOSCALING_EC2_INSTANCES
-    return sorted(
-        set(
-            app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_COLD_START_DOCKER_IMAGES_PRE_PULLING
+    hot_buffer_instance_types: set[InstanceTypeType],
+) -> Callable[[InstanceTypeType], list[DockerGenericTag]]:
+    def _(hot_buffer_instance_type: InstanceTypeType) -> list[DockerGenericTag]:
+        assert app_settings.AUTOSCALING_EC2_INSTANCES
+        return sorted(
+            set(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_COLD_START_DOCKER_IMAGES_PRE_PULLING)
+            | set(
+                app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
+                    hot_buffer_instance_type
+                ].pre_pull_images
+            )
         )
-        | set(
-            app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
-                hot_buffer_instance_type
-            ].pre_pull_images
-        )
-    )
+
+    return _
 
 
 @pytest.fixture
@@ -1228,30 +1235,20 @@ def ec2_instances_allowed_types_with_only_1_buffered(
     allowed_ec2_types = external_ec2_instances_allowed_types
     allowed_ec2_types_with_buffer_defined = dict(
         filter(
-            lambda instance_type_and_settings: instance_type_and_settings[
-                1
-            ].buffer_count
-            > 0,
+            lambda instance_type_and_settings: instance_type_and_settings[1].buffer_count > 0,
             allowed_ec2_types.items(),
         )
     )
-    assert (
-        allowed_ec2_types_with_buffer_defined
-    ), "one type with buffer is needed for the tests!"
-    assert (
-        len(allowed_ec2_types_with_buffer_defined) == 1
-    ), "more than one type with buffer is disallowed in this test!"
+    assert allowed_ec2_types_with_buffer_defined, "one type with buffer is needed for the tests!"
+    assert len(allowed_ec2_types_with_buffer_defined) == 1, "more than one type with buffer is disallowed in this test!"
     return {
-        TypeAdapter(InstanceTypeType).validate_python(k): v
-        for k, v in allowed_ec2_types_with_buffer_defined.items()
+        TypeAdapter(InstanceTypeType).validate_python(k): v for k, v in allowed_ec2_types_with_buffer_defined.items()
     }
 
 
 @pytest.fixture
 def buffer_count(
-    ec2_instances_allowed_types_with_only_1_buffered: dict[
-        InstanceTypeType, EC2InstanceBootSpecific
-    ],
+    ec2_instances_allowed_types_with_only_1_buffered: dict[InstanceTypeType, EC2InstanceBootSpecific],
 ) -> int:
     def _by_buffer_count(
         instance_type_and_settings: tuple[InstanceTypeType, EC2InstanceBootSpecific],
@@ -1260,13 +1257,9 @@ def buffer_count(
         return boot_specific.buffer_count > 0
 
     allowed_ec2_types = ec2_instances_allowed_types_with_only_1_buffered
-    allowed_ec2_types_with_buffer_defined = dict(
-        filter(_by_buffer_count, allowed_ec2_types.items())
-    )
+    allowed_ec2_types_with_buffer_defined = dict(filter(_by_buffer_count, allowed_ec2_types.items()))
     assert allowed_ec2_types_with_buffer_defined, "you need one type with buffer"
-    assert (
-        len(allowed_ec2_types_with_buffer_defined) == 1
-    ), "more than one type with buffer is disallowed in this test!"
+    assert len(allowed_ec2_types_with_buffer_defined) == 1, "more than one type with buffer is disallowed in this test!"
     return next(iter(allowed_ec2_types_with_buffer_defined.values())).buffer_count
 
 
@@ -1306,9 +1299,7 @@ async def create_buffer_machines(
                     "Value": f"{json_dumps(pre_pull_images)}",
                 }
             )
-        with log_context(
-            logging.INFO, f"creating {num} buffer machines of {instance_type}"
-        ):
+        with log_context(logging.INFO, f"creating {num} buffer machines of {instance_type}"):
             instances = await ec2_client.run_instances(
                 ImageId=aws_ami_id,
                 MaxCount=num,
@@ -1316,12 +1307,8 @@ async def create_buffer_machines(
                 InstanceType=instance_type,
                 KeyName=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_KEY_NAME,
                 SecurityGroupIds=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_SECURITY_GROUP_IDS,
-                SubnetId=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_SUBNET_IDS[
-                    0
-                ],
-                IamInstanceProfile={
-                    "Arn": app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ATTACHED_IAM_PROFILE
-                },
+                SubnetId=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_SUBNET_IDS[0],
+                IamInstanceProfile={"Arn": app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ATTACHED_IAM_PROFILE},
                 TagSpecifications=[
                     {"ResourceType": "instance", "Tags": resource_tags},
                     {"ResourceType": "volume", "Tags": resource_tags},
@@ -1329,9 +1316,7 @@ async def create_buffer_machines(
                 ],
                 UserData="echo 'I am pytest'",
             )
-            instance_ids = [
-                i["InstanceId"] for i in instances["Instances"] if "InstanceId" in i
-            ]
+            instance_ids = [i["InstanceId"] for i in instances["Instances"] if "InstanceId" in i]
 
         waiter = ec2_client.get_waiter("instance_exists")
         await waiter.wait(InstanceIds=instance_ids)

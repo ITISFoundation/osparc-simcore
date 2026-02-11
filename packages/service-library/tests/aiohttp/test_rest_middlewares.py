@@ -226,9 +226,7 @@ async def test_404_not_found_when_entrypoint_not_exposed(client: TestClient):
     assert not data
 
 
-async def test_raised_unhandled_exception(
-    client: TestClient, caplog: pytest.LogCaptureFixture
-):
+async def test_raised_unhandled_exception(client: TestClient, caplog: pytest.LogCaptureFixture):
     with caplog.at_level(logging.ERROR):
         response = await client.get("/v1/raise_exception")
 
@@ -282,9 +280,7 @@ async def test_raised_unhandled_exception(
 
 async def test_not_implemented_error_is_501(client: TestClient):
     """Test that NotImplementedError is correctly mapped to HTTP 501 NOT IMPLEMENTED."""
-    response = await client.get(
-        "/v1/raise_exception", params={"exc": NotImplementedError.__name__}
-    )
+    response = await client.get("/v1/raise_exception", params={"exc": NotImplementedError.__name__})
     assert response.status == status.HTTP_501_NOT_IMPLEMENTED
 
     # Check that the response is properly enveloped
@@ -300,9 +296,7 @@ async def test_not_implemented_error_is_501(client: TestClient):
 
 async def test_timeout_error_is_504(client: TestClient):
     """Test that TimeoutError is correctly mapped to HTTP 504 GATEWAY TIMEOUT."""
-    response = await client.get(
-        "/v1/raise_exception", params={"exc": asyncio.TimeoutError.__name__}
-    )
+    response = await client.get("/v1/raise_exception", params={"exc": asyncio.TimeoutError.__name__})
     assert response.status == status.HTTP_504_GATEWAY_TIMEOUT
 
     # Check that the response is properly enveloped
@@ -356,9 +350,7 @@ async def test_http_ok_with_raw_text_is_not_allowed(client: TestClient):
     assert response.status == status.HTTP_500_INTERNAL_SERVER_ERROR
 
 
-async def test_exception_in_handler_returns_500(
-    client: TestClient, mocker: MockerFixture
-):
+async def test_exception_in_handler_returns_500(client: TestClient, mocker: MockerFixture):
     """Test that exceptions in the handler functions are caught and return 500."""
 
     # Mock _handle_aiohttp_web_http_successful to raise an exception
@@ -372,9 +364,7 @@ async def test_exception_in_handler_returns_500(
     )
 
     # Trigger a successful HTTP response that will be processed by our mocked handler
-    response = await client.get(
-        "/v1/raise_exception", params={"exc": web.HTTPOk.__name__}
-    )
+    response = await client.get("/v1/raise_exception", params={"exc": web.HTTPOk.__name__})
 
     # Should return 500 since our handler raised an exception
     assert response.status == status.HTTP_500_INTERNAL_SERVER_ERROR

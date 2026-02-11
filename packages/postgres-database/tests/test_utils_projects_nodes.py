@@ -31,12 +31,8 @@ from sqlalchemy.ext.asyncio import AsyncConnection
 # NOTE: Temporary usage of connection_factory until asyncpg is used
 
 
-async def _delete_project(
-    connection_factory: SAConnection, project_uuid: uuid.UUID
-) -> None:
-    result = await connection_factory.execute(
-        sqlalchemy.delete(projects).where(projects.c.uuid == f"{project_uuid}")
-    )
+async def _delete_project(connection_factory: SAConnection, project_uuid: uuid.UUID) -> None:
+    result = await connection_factory.execute(sqlalchemy.delete(projects).where(projects.c.uuid == f"{project_uuid}"))
     assert result.rowcount == 1
 
 
@@ -169,7 +165,8 @@ async def test_list_project_nodes(
     created_nodes = await projects_nodes_repo.add(
         connection_factory,
         nodes=[
-            create_fake_projects_node() for _ in range(randint(3, 12))  # noqa: S311
+            create_fake_projects_node()
+            for _ in range(randint(3, 12))  # noqa: S311
         ],
     )
 
@@ -183,9 +180,7 @@ async def test_get_project_node_of_invalid_project_raises(
     projects_nodes_repo_of_invalid_project: ProjectNodesRepo,
 ):
     with pytest.raises(ProjectNodesNodeNotFoundError):
-        await projects_nodes_repo_of_invalid_project.get(
-            connection_factory, node_id=uuid.uuid4()
-        )
+        await projects_nodes_repo_of_invalid_project.get(connection_factory, node_id=uuid.uuid4())
 
 
 async def test_get_project_node_of_empty_project_raises(
@@ -201,15 +196,11 @@ async def test_get_project_node(
     projects_nodes_repo: ProjectNodesRepo,
     create_fake_projects_node: Callable[..., ProjectNodeCreate],
 ):
-    new_nodes = await projects_nodes_repo.add(
-        connection_factory, nodes=[create_fake_projects_node()]
-    )
+    new_nodes = await projects_nodes_repo.add(connection_factory, nodes=[create_fake_projects_node()])
     assert len(new_nodes) == 1
     assert new_nodes[0]
 
-    received_node = await projects_nodes_repo.get(
-        connection_factory, node_id=new_nodes[0].node_id
-    )
+    received_node = await projects_nodes_repo.get(connection_factory, node_id=new_nodes[0].node_id)
 
     assert received_node == new_nodes[0]
 
@@ -241,9 +232,7 @@ async def test_update_project_node(
     create_fake_projects_node: Callable[..., ProjectNodeCreate],
     faker: Faker,
 ):
-    new_nodes = await projects_nodes_repo.add(
-        connection_factory, nodes=[create_fake_projects_node()]
-    )
+    new_nodes = await projects_nodes_repo.add(connection_factory, nodes=[create_fake_projects_node()])
     assert len(new_nodes) == 1
     assert new_nodes[0]
     assert new_nodes[0].created == new_nodes[0].modified
@@ -264,9 +253,7 @@ async def test_delete_invalid_node_does_nothing(
     connection_factory: SAConnection | AsyncConnection,
     projects_nodes_repo_of_invalid_project: ProjectNodesRepo,
 ):
-    await projects_nodes_repo_of_invalid_project.delete(
-        connection_factory, node_id=uuid.uuid4()
-    )
+    await projects_nodes_repo_of_invalid_project.delete(connection_factory, node_id=uuid.uuid4())
 
 
 async def test_delete_node(
@@ -281,9 +268,7 @@ async def test_delete_node(
     assert len(new_nodes) == 1
     assert new_nodes[0]
 
-    received_node = await projects_nodes_repo.get(
-        connection_factory, node_id=new_nodes[0].node_id
-    )
+    received_node = await projects_nodes_repo.get(connection_factory, node_id=new_nodes[0].node_id)
     assert received_node == new_nodes[0]
     await projects_nodes_repo.delete(connection_factory, node_id=new_nodes[0].node_id)
 
@@ -303,9 +288,7 @@ async def test_delete_project_delete_all_nodes(
     )
     assert len(new_nodes) == 1
     assert new_nodes[0]
-    received_node = await projects_nodes_repo.get(
-        connection_factory, node_id=new_nodes[0].node_id
-    )
+    received_node = await projects_nodes_repo.get(connection_factory, node_id=new_nodes[0].node_id)
     assert received_node == new_nodes[0]
 
     # now delete the project from the projects table
@@ -317,9 +300,7 @@ async def test_delete_project_delete_all_nodes(
 
     # the underlying projects_nodes should also be gone, thanks to migration
     result = await connection_factory.execute(
-        sqlalchemy.select(projects_nodes).where(
-            projects_nodes.c.node_id == f"{new_nodes[0].node_id}"
-        )
+        sqlalchemy.select(projects_nodes).where(projects_nodes.c.node_id == f"{new_nodes[0].node_id}")
     )
     assert result
     row = await maybe_await(result.first())
@@ -339,9 +320,7 @@ async def test_multiple_creation_deletion_of_nodes(
 
     async def _workflow() -> None:
         async with aiopg_engine.acquire() as connection:
-            project = await create_fake_project(
-                connection, registered_user, registered_product
-            )
+            project = await create_fake_project(connection, registered_user, registered_product)
             projects_nodes_repo = ProjectNodesRepo(project_uuid=project.uuid)
 
             await projects_nodes_repo.add(
@@ -376,9 +355,7 @@ async def test_get_project_id_from_node_id(
 
     async def _workflow() -> dict[uuid.UUID, list[uuid.UUID]]:
         async with aiopg_engine.acquire() as connection:
-            project = await create_fake_project(
-                connection, registered_user, registered_product
-            )
+            project = await create_fake_project(connection, registered_user, registered_product)
             projects_nodes_repo = ProjectNodesRepo(project_uuid=project.uuid)
 
             list_of_nodes = await projects_nodes_repo.add(
@@ -389,9 +366,7 @@ async def test_get_project_id_from_node_id(
         return {uuid.UUID(project["uuid"]): [node.node_id for node in list_of_nodes]}
 
     # create some projects
-    list_of_project_id_node_ids_map = await asyncio.gather(
-        *(_workflow() for _ in range(10))
-    )
+    list_of_project_id_node_ids_map = await asyncio.gather(*(_workflow() for _ in range(10)))
 
     for project_id_to_node_ids_map in list_of_project_id_node_ids_map:
         project_id = next(iter(project_id_to_node_ids_map))
@@ -411,9 +386,7 @@ async def test_get_project_id_from_node_id_raises_for_invalid_node_id(
     random_uuid = faker.uuid4(cast_to=None)
     assert isinstance(random_uuid, uuid.UUID)
     with pytest.raises(ProjectNodesNodeNotFoundError):
-        await ProjectNodesRepo.get_project_id_from_node_id(
-            connection_factory, node_id=random_uuid
-        )
+        await ProjectNodesRepo.get_project_id_from_node_id(connection_factory, node_id=random_uuid)
 
 
 async def test_get_project_id_from_node_id_raises_if_multiple_projects_with_same_node_id_exist(
@@ -426,14 +399,10 @@ async def test_get_project_id_from_node_id_raises_if_multiple_projects_with_same
     create_fake_project: Callable[..., Awaitable[RowProxy]],
     create_fake_projects_node: Callable[..., ProjectNodeCreate],
 ):
-    project1 = await create_fake_project(
-        connection, registered_user, registered_product
-    )
+    project1 = await create_fake_project(connection, registered_user, registered_product)
     project1_repo = ProjectNodesRepo(project_uuid=project1.uuid)
 
-    project2 = await create_fake_project(
-        connection, registered_user, registered_product
-    )
+    project2 = await create_fake_project(connection, registered_user, registered_product)
     project2_repo = ProjectNodesRepo(project_uuid=project2.uuid)
 
     shared_node = create_fake_projects_node()
@@ -444,10 +413,6 @@ async def test_get_project_id_from_node_id_raises_if_multiple_projects_with_same
     assert len(project2_nodes) == 1
     assert project1_nodes[0].model_dump(
         include=ProjectNodeCreate.get_field_names(exclude={"created", "modified"})
-    ) == project2_nodes[0].model_dump(
-        include=ProjectNodeCreate.get_field_names(exclude={"created", "modified"})
-    )
+    ) == project2_nodes[0].model_dump(include=ProjectNodeCreate.get_field_names(exclude={"created", "modified"}))
     with pytest.raises(ProjectNodesNonUniqueNodeFoundError):
-        await ProjectNodesRepo.get_project_id_from_node_id(
-            connection_factory, node_id=project1_nodes[0].node_id
-        )
+        await ProjectNodesRepo.get_project_id_from_node_id(connection_factory, node_id=project1_nodes[0].node_id)

@@ -24,9 +24,7 @@ from sqlalchemy.sql.selectable import Select
 
 from ..models.services_db import ServiceDBFilters, ServiceMetaDataDBGet
 
-SERVICES_META_DATA_COLS = get_columns_from_db_model(
-    services_meta_data, ServiceMetaDataDBGet
-)
+SERVICES_META_DATA_COLS = get_columns_from_db_model(services_meta_data, ServiceMetaDataDBGet)
 
 
 def list_services_stmt(
@@ -53,17 +51,15 @@ def list_services_stmt(
 
         # on groups
         if gids:
-            conditions.append(
-                or_(*[services_access_rights.c.gid == gid for gid in gids])
-            )
+            conditions.append(or_(*[services_access_rights.c.gid == gid for gid in gids]))
 
         # and product name
         if product_name:
             conditions.append(services_access_rights.c.product_name == product_name)
 
-        stmt = stmt.distinct(
-            services_meta_data.c.key, services_meta_data.c.version
-        ).select_from(services_meta_data.join(services_access_rights))
+        stmt = stmt.distinct(services_meta_data.c.key, services_meta_data.c.version).select_from(
+            services_meta_data.join(services_access_rights)
+        )
         if conditions:
             stmt = stmt.where(and_(*conditions))
         stmt = stmt.order_by(services_meta_data.c.key, services_meta_data.c.version)
@@ -79,13 +75,9 @@ def by_version(column_or_value):
 
 class AccessRightsClauses:
     can_execute = services_access_rights.c.execute_access
-    can_read = (
-        services_access_rights.c.execute_access | services_access_rights.c.write_access
-    )
+    can_read = services_access_rights.c.execute_access | services_access_rights.c.write_access
     can_edit = services_access_rights.c.write_access
-    is_owner = (
-        services_access_rights.c.execute_access & services_access_rights.c.write_access
-    )
+    is_owner = services_access_rights.c.execute_access & services_access_rights.c.write_access
 
 
 def _join_services_with_access_rights():
@@ -139,9 +131,7 @@ def apply_services_filters(
     if filters.version_display_pattern:
         # Convert glob pattern to SQL LIKE pattern and handle NULL values
         sql_pattern = filters.version_display_pattern.replace("*", "%")
-        version_display_condition = services_meta_data.c.version_display.like(
-            sql_pattern
-        )
+        version_display_condition = services_meta_data.c.version_display.like(sql_pattern)
 
         if sql_pattern == "%":
             conditions.append(
@@ -177,8 +167,7 @@ def latest_services_total_count_stmt(
                 & (services_access_rights.c.product_name == product_name),
             ).join(
                 user_to_groups,
-                (user_to_groups.c.gid == services_access_rights.c.gid)
-                & (user_to_groups.c.uid == user_id),
+                (user_to_groups.c.gid == services_access_rights.c.gid) & (user_to_groups.c.uid == user_id),
             )
         )
         .where(access_rights)
@@ -214,8 +203,7 @@ def list_latest_services_stmt(
                 & (services_access_rights.c.product_name == product_name),
             ).join(
                 user_to_groups,
-                (user_to_groups.c.gid == services_access_rights.c.gid)
-                & (user_to_groups.c.uid == user_id),
+                (user_to_groups.c.gid == services_access_rights.c.gid) & (user_to_groups.c.uid == user_id),
             )
         )
         .where(access_rights)
@@ -253,8 +241,7 @@ def list_latest_services_stmt(
         )
         .join(
             cte,
-            (services_meta_data.c.key == cte.c.key)
-            & (services_meta_data.c.version == cte.c.latest_version),
+            (services_meta_data.c.key == cte.c.key) & (services_meta_data.c.version == cte.c.latest_version),
         )
         # NOTE: owner can be NULL
         .join(
@@ -459,9 +446,7 @@ def all_services_total_count_stmt(
             )
         )
         .where(
-            (services_access_rights.c.product_name == product_name)
-            & (user_to_groups.c.uid == user_id)
-            & access_rights
+            (services_access_rights.c.product_name == product_name) & (user_to_groups.c.uid == user_id) & access_rights
         )
     )
 
@@ -494,13 +479,9 @@ def list_all_services_stmt(
             )
         )
         .where(
-            (services_access_rights.c.product_name == product_name)
-            & (user_to_groups.c.uid == user_id)
-            & access_rights
+            (services_access_rights.c.product_name == product_name) & (user_to_groups.c.uid == user_id) & access_rights
         )
-        .order_by(
-            services_meta_data.c.key, sa.desc(by_version(services_meta_data.c.version))
-        )
+        .order_by(services_meta_data.c.key, sa.desc(by_version(services_meta_data.c.version)))
     )
 
     if filters:

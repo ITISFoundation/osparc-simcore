@@ -51,7 +51,7 @@ def _create_possible_outcomes(accepted, rejected):
 _POSSIBLE_PAYMENTS_OUTCOMES = _create_possible_outcomes(
     accepted={
         "completion_state": PaymentTransactionState.SUCCESS,
-        "message": "Succesful payment (fake)",
+        "message": "Successful payment (fake)",
         "invoice_url": TypeAdapter(HttpUrl).validate_python(
             "https://assets.website-files.com/63206faf68ab2dc3ee3e623b/634ea60a9381021f775e7a28_Placeholder%20PDF.pdf",
         ),
@@ -71,9 +71,7 @@ async def _fake_payment_completion(app: web.Application, payment_id: PaymentID):
         _POSSIBLE_PAYMENTS_OUTCOMES
     )
 
-    await _ack_creation_of_wallet_payment(
-        app, payment_id=payment_id, notify_enabled=True, **kwargs
-    )
+    await _ack_creation_of_wallet_payment(app, payment_id=payment_id, notify_enabled=True, **kwargs)
 
 
 _POSSIBLE_PAYMENTS_METHODS_OUTCOMES = _create_possible_outcomes(
@@ -88,18 +86,14 @@ _POSSIBLE_PAYMENTS_METHODS_OUTCOMES = _create_possible_outcomes(
 
 
 @log_decorator(_logger, level=logging.INFO)
-async def _fake_payment_method_completion(
-    app: web.Application, payment_method_id: PaymentMethodID
-):
+async def _fake_payment_method_completion(app: web.Application, payment_method_id: PaymentMethodID):
     await _check_and_sleep(app)
 
     kwargs: dict[str, Any] = random.choice(  # nosec # noqa: S311 # NOSONAR
         _POSSIBLE_PAYMENTS_METHODS_OUTCOMES
     )
 
-    await _ack_creation_of_wallet_payment_method(
-        app, payment_method_id=payment_method_id, **kwargs
-    )
+    await _ack_creation_of_wallet_payment_method(app, payment_method_id=payment_method_id, **kwargs)
 
 
 @retry(
@@ -117,9 +111,7 @@ async def _run_resilient_task(app: web.Application):
     pending = await get_pending_payment_methods_ids(app)
     _logger.debug("Pending payment-methods: %s", pending)
     if pending:
-        await asyncio.gather(
-            *(_fake_payment_method_completion(app, id_) for id_ in pending)
-        )
+        await asyncio.gather(*(_fake_payment_method_completion(app, id_) for id_ in pending))
 
 
 async def _run_periodically(app: web.Application, wait_period_s: float):

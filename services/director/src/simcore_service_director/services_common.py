@@ -14,8 +14,7 @@ class ServicesCommonSettings(BaseSettings):
     director_dynamic_service_save_timeout: PositiveInt = Field(
         default=_BASE_TIMEOUT_FOR_STOPPING_SERVICES,
         description=(
-            "When stopping a dynamic service, if it has "
-            "big payloads it is important to have longer timeouts."
+            "When stopping a dynamic service, if it has big payloads it is important to have longer timeouts."
         ),
     )
     webserver_director_stop_service_timeout: PositiveInt = Field(
@@ -35,6 +34,4 @@ class ServicesCommonSettings(BaseSettings):
             "allow the service to finish the operation."
         ),
     )
-    model_config = SettingsConfigDict(
-        env_prefix="SERVICES_COMMON_", case_sensitive=False
-    )
+    model_config = SettingsConfigDict(env_prefix="SERVICES_COMMON_", case_sensitive=False)

@@ -47,9 +47,7 @@ def test_make_docker_compose_meta(
     assert target_compose_specs.exists()
 
     # valid compose specs
-    compose_cfg = ComposeSpecification.model_validate(
-        yaml.safe_load(target_compose_specs.read_text())
-    )
+    compose_cfg = ComposeSpecification.model_validate(yaml.safe_load(target_compose_specs.read_text()))
     assert compose_cfg.services
 
     # compose labels vs metadata fild

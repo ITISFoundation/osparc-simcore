@@ -83,9 +83,7 @@ async def test_moving_between_private_and_shared_workspaces(
     assert data["workspaceId"] == added_workspace["workspaceId"]  # <-- Workspace ID
 
     # Move project from workspace to your private workspace
-    base_url = client.app.router["move_project_to_workspace"].url_for(
-        project_id=project["uuid"], workspace_id="null"
-    )
+    base_url = client.app.router["move_project_to_workspace"].url_for(project_id=project["uuid"], workspace_id="null")
     resp = await client.post(f"{base_url}")
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
@@ -242,9 +240,7 @@ async def test_moving_between_workspaces_check_removed_from_folder(
     assert data["workspaceId"] == added_workspace["workspaceId"]  # <-- Workspace ID
 
     # Move project from workspace to your private workspace
-    base_url = client.app.router["move_project_to_workspace"].url_for(
-        project_id=project["uuid"], workspace_id="none"
-    )
+    base_url = client.app.router["move_project_to_workspace"].url_for(project_id=project["uuid"], workspace_id="none")
     resp = await client.post(f"{base_url}")
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
 

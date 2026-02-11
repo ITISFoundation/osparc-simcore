@@ -10,7 +10,7 @@ from models_library.products import ProductName
 from models_library.rpc.webserver import DEFAULT_WEBSERVER_RPC_NAMESPACE
 from models_library.users import UserID
 from pytest_mock import MockerFixture, MockType
-from pytest_simcore.helpers.catalog_rpc_server import CatalogRpcSideEffects
+from pytest_simcore.helpers.catalog_rpc import CatalogRpcSideEffects
 from simcore_service_api_server._service_jobs import JobService
 from simcore_service_api_server._service_programs import ProgramService
 from simcore_service_api_server._service_solvers import SolverService

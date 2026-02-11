@@ -37,11 +37,7 @@ class RedisSettings(BaseCustomSettings):
             RedisDsn.build(  # pylint: disable=no-member
                 scheme="rediss" if self.REDIS_SECURE else "redis",
                 username=self.REDIS_USER or None,
-                password=(
-                    self.REDIS_PASSWORD.get_secret_value()
-                    if self.REDIS_PASSWORD
-                    else None
-                ),
+                password=(self.REDIS_PASSWORD.get_secret_value() if self.REDIS_PASSWORD else None),
                 host=self.REDIS_HOST,
                 port=self.REDIS_PORT,
                 path=f"{db_index}",

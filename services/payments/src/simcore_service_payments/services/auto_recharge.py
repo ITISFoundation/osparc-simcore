@@ -28,9 +28,7 @@ def _from_db_to_api_model(
     )
 
 
-def _from_api_to_db_model(
-    wallet_id: WalletID, api_model: ReplaceWalletAutoRecharge
-) -> PaymentsAutorechargeDB:
+def _from_api_to_db_model(wallet_id: WalletID, api_model: ReplaceWalletAutoRecharge) -> PaymentsAutorechargeDB:
     return PaymentsAutorechargeDB(
         wallet_id=wallet_id,
         enabled=api_model.enabled,
@@ -53,8 +51,8 @@ async def get_wallet_auto_recharge(
     *,
     wallet_id: WalletID,
 ) -> GetWalletAutoRecharge | None:
-    payments_autorecharge_db: PaymentsAutorechargeDB | None = (
-        await auto_recharge_repo.get_wallet_autorecharge(wallet_id=wallet_id)
+    payments_autorecharge_db: PaymentsAutorechargeDB | None = await auto_recharge_repo.get_wallet_autorecharge(
+        wallet_id=wallet_id
     )
     if payments_autorecharge_db:
         return GetWalletAutoRecharge(

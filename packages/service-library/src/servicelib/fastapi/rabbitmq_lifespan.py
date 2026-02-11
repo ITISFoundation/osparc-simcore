@@ -23,9 +23,7 @@ class RabbitMQLifespanState(BaseModel):
     RABBIT_SETTINGS: RabbitSettings
 
 
-async def rabbitmq_connectivity_lifespan(
-    _: FastAPI, state: State
-) -> AsyncIterator[State]:
+async def rabbitmq_connectivity_lifespan(_: FastAPI, state: State) -> AsyncIterator[State]:
     """Ensures RabbitMQ connectivity during lifespan.
 
     For creating clients, use additional lifespans like rabbitmq_rpc_client_context.
@@ -33,7 +31,6 @@ async def rabbitmq_connectivity_lifespan(
     _lifespan_name = f"{__name__}.{rabbitmq_connectivity_lifespan.__name__}"
 
     with lifespan_context(_logger, logging.INFO, _lifespan_name, state) as called_state:
-
         # Validate input state
         try:
             rabbit_state = RabbitMQLifespanState.model_validate(state)

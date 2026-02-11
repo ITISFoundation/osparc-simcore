@@ -8,9 +8,7 @@ from .application_setup import ModuleCategory, app_setup_func
 log = logging.getLogger(__name__)
 
 
-@app_setup_func(
-    __name__, ModuleCategory.ADDON, settings_name="WEBSERVER_TRACING", logger=log
-)
+@app_setup_func(__name__, ModuleCategory.ADDON, settings_name="WEBSERVER_TRACING", logger=log)
 def setup_app_tracing(app: web.Application):
     """
     Sets up OpenTelemetry tracing for the application.

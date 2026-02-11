@@ -38,9 +38,7 @@ async def test_volumes_state_saved_ok(
     settings: ApplicationSettings = app.state.settings
 
     # check that initial status is as expected
-    assert shared_store.volume_states[volume_category] == VolumeState(
-        status=initial_expected_status
-    )
+    assert shared_store.volume_states[volume_category] == VolumeState(status=initial_expected_status)
 
     await volumes.update_volume_status(
         rpc_client,
@@ -50,9 +48,7 @@ async def test_volumes_state_saved_ok(
     )
 
     # check that content was saved
-    assert shared_store.volume_states[volume_category] == VolumeState(
-        status=VolumeStatus.CONTENT_WAS_SAVED
-    )
+    assert shared_store.volume_states[volume_category] == VolumeState(status=VolumeStatus.CONTENT_WAS_SAVED)
 
 
 @pytest.mark.parametrize("invalid_volume_category", ["outputs", "outputS"])
@@ -62,7 +58,6 @@ async def test_volumes_state_saved_error(
     rpc_client: RabbitMQRPCClient,
     invalid_volume_category: VolumeCategory,
 ):
-
     settings: ApplicationSettings = app.state.settings
 
     with pytest.raises(RPCServerError, match="ValidationError"):

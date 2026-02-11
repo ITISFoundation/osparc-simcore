@@ -19,13 +19,9 @@ def setup(app: FastAPI) -> None:
     registry = setup_rest_instrumentation(app)
 
     async def on_startup() -> None:
-        metrics_subsystem = (
-            "dynamic" if app_settings.AUTOSCALING_NODES_MONITORING else "computational"
-        )
-        app.state.instrumentation = (
-            AutoscalingInstrumentation(  # pylint: disable=unexpected-keyword-arg
-                registry=registry, subsystem=metrics_subsystem
-            )
+        metrics_subsystem = "dynamic" if app_settings.AUTOSCALING_NODES_MONITORING else "computational"
+        app.state.instrumentation = AutoscalingInstrumentation(  # pylint: disable=unexpected-keyword-arg
+            registry=registry, subsystem=metrics_subsystem
         )
 
     async def on_shutdown() -> None: ...
@@ -36,9 +32,7 @@ def setup(app: FastAPI) -> None:
 
 def get_instrumentation(app: FastAPI) -> AutoscalingInstrumentation:
     if not hasattr(app.state, "instrumentation"):
-        raise ConfigurationError(
-            msg="Instrumentation not setup. Please check the configuration."
-        )
+        raise ConfigurationError(msg="Instrumentation not setup. Please check the configuration.")
     return cast(AutoscalingInstrumentation, app.state.instrumentation)
 
 

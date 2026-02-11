@@ -36,15 +36,10 @@ def test_studies_dispatcher_settings(environment: EnvVarsDict):
     assert not settings.is_login_required()
 
     # 2 days 1h and 10 mins
-    assert (
-        timedelta(days=2, hours=1, minutes=10)
-        == settings.STUDIES_GUEST_ACCOUNT_LIFETIME
-    )
+    assert timedelta(days=2, hours=1, minutes=10) == settings.STUDIES_GUEST_ACCOUNT_LIFETIME
 
 
-def test_studies_dispatcher_settings_invalid_lifetime(
-    environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
-):
+def test_studies_dispatcher_settings_invalid_lifetime(environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv("STUDIES_GUEST_ACCOUNT_LIFETIME", "-2")
 
     with pytest.raises(ValidationError) as exc_info:

@@ -27,6 +27,4 @@ async def backend_error_handler(request: Request, exc: Exception) -> JSONRespons
                 tip="Unexpected error",
             )
         )
-    return create_error_json_response(
-        user_error_msg, status_code=exc.status_code, support_id=support_id
-    )
+    return create_error_json_response(user_error_msg, status_code=exc.status_code, support_id=support_id)

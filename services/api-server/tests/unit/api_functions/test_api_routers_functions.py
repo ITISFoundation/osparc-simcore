@@ -38,7 +38,7 @@ from models_library.functions_errors import (
 from models_library.products import ProductName
 from models_library.rest_pagination import PageMetaInfoLimitOffset
 from models_library.users import UserID
-from pydantic import EmailStr
+from pydantic import EmailStr, TypeAdapter
 from pytest_mock import MockerFixture, MockType
 from pytest_simcore.helpers.httpx_calls_capture_models import HttpApiCallCaptureModel
 from servicelib.aiohttp import status
@@ -482,7 +482,7 @@ async def test_run_project_function(
 
     job = await _functions_tasks.run_function(
         task=MagicMock(spec=Task),
-        task_key=TaskKey(_faker.uuid4()),
+        task_key=TypeAdapter(TaskKey).validate_python(_faker.uuid4()),
         user_identity=user_identity,
         function=fake_registered_project_function,
         pre_registered_function_job_data=pre_registered_function_job_data,

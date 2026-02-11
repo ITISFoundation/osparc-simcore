@@ -31,7 +31,6 @@ def products_names(products_regex: dict[str, str]) -> list[str]:
 def make_products_table(products_regex: dict[str, str], faker: Faker) -> Callable:
     async def _make(conn) -> None:
         for n, (name, regex) in enumerate(products_regex.items()):
-
             result = await conn.execute(
                 pg_insert(products)
                 .values(

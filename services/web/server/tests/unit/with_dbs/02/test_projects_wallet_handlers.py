@@ -48,15 +48,9 @@ async def test_project_wallets_user_role_access(
     user_role: UserRole,
     expected: HTTPStatus,
 ):
-    base_url = client.app.router["get_project_wallet"].url_for(
-        project_id=user_project["uuid"]
-    )
+    base_url = client.app.router["get_project_wallet"].url_for(project_id=user_project["uuid"])
     resp = await client.get(f"{base_url}")
-    assert (
-        resp.status == status.HTTP_401_UNAUTHORIZED
-        if user_role == UserRole.ANONYMOUS
-        else status.HTTP_200_OK
-    )
+    assert resp.status == status.HTTP_401_UNAUTHORIZED if user_role == UserRole.ANONYMOUS else status.HTTP_200_OK
 
 
 @pytest.mark.parametrize("user_role,expected", [(UserRole.USER, status.HTTP_200_OK)])
@@ -67,27 +61,21 @@ async def test_project_wallets_user_project_access(
     expected: HTTPStatus,
     # postgres_db: sa.engine.Engine,
 ):
-    base_url = client.app.router["get_project_wallet"].url_for(
-        project_id=user_project["uuid"]
-    )
+    base_url = client.app.router["get_project_wallet"].url_for(project_id=user_project["uuid"])
     resp = await client.get(f"{base_url}")
     data, _ = await assert_status(resp, expected)
     assert data is None
 
     # Now we will log as a different user who doesnt have access to the project
     async with LoggedUser(client):
-        base_url = client.app.router["get_project_wallet"].url_for(
-            project_id=user_project["uuid"]
-        )
+        base_url = client.app.router["get_project_wallet"].url_for(project_id=user_project["uuid"])
         resp = await client.get(f"{base_url}")
         _, errors = await assert_status(resp, status.HTTP_403_FORBIDDEN)
         assert errors
 
 
 @pytest.fixture()
-def setup_wallets_db(
-    postgres_db: sa.engine.Engine, logged_user: UserInfoDict
-) -> Iterator[list[WalletGet]]:
+def setup_wallets_db(postgres_db: sa.engine.Engine, logged_user: UserInfoDict) -> Iterator[list[WalletGet]]:
     with postgres_db.connect() as con:
         output = []
         for name in ["My wallet 1", "My wallet 2"]:
@@ -107,15 +95,11 @@ def setup_wallets_db(
 
 
 @pytest.fixture
-def mock_get_project_wallet_total_credits(
-    mocker: MockerFixture, setup_wallets_db: list[WalletGet]
-):
+def mock_get_project_wallet_total_credits(mocker: MockerFixture, setup_wallets_db: list[WalletGet]):
     mocker.patch(
         "simcore_service_webserver.projects._wallets_service.credit_transactions.get_project_wallet_total_credits",
         spec=True,
-        return_value=WalletTotalCredits(
-            wallet_id=setup_wallets_db[0].wallet_id, available_osparc_credits=Decimal(0)
-        ),
+        return_value=WalletTotalCredits(wallet_id=setup_wallets_db[0].wallet_id, available_osparc_credits=Decimal(0)),
     )
 
 
@@ -140,9 +124,7 @@ async def test_project_wallets_full_workflow(
 ):
     assert client.app
 
-    base_url = client.app.router["get_project_wallet"].url_for(
-        project_id=user_project["uuid"]
-    )
+    base_url = client.app.router["get_project_wallet"].url_for(project_id=user_project["uuid"])
     resp = await client.get(f"{base_url}")
     data, _ = await assert_status(resp, expected)
     assert data is None
@@ -155,9 +137,7 @@ async def test_project_wallets_full_workflow(
     data, _ = await assert_status(resp, expected)
     assert data["walletId"] == setup_wallets_db[0].wallet_id
 
-    base_url = client.app.router["get_project_wallet"].url_for(
-        project_id=user_project["uuid"]
-    )
+    base_url = client.app.router["get_project_wallet"].url_for(project_id=user_project["uuid"])
     resp = await client.get(f"{base_url}")
     data, _ = await assert_status(resp, expected)
     assert data["walletId"] == setup_wallets_db[0].wallet_id
@@ -170,9 +150,7 @@ async def test_project_wallets_full_workflow(
     data, _ = await assert_status(resp, expected)
     assert data["walletId"] == setup_wallets_db[1].wallet_id
 
-    base_url = client.app.router["get_project_wallet"].url_for(
-        project_id=user_project["uuid"]
-    )
+    base_url = client.app.router["get_project_wallet"].url_for(project_id=user_project["uuid"])
     resp = await client.get(f"{base_url}")
     data, _ = await assert_status(resp, expected)
     assert data["walletId"] == setup_wallets_db[1].wallet_id
@@ -224,9 +202,7 @@ async def test_pay_project_debt(
     base_url = client.app.router["pay_project_debt"].url_for(
         project_id=user_project["uuid"], wallet_id=f"{setup_wallets_db[1].wallet_id}"
     )
-    resp = await client.post(
-        f"{base_url}", json={"amount": 100}
-    )  # <-- Error input (must be negative!)
+    resp = await client.post(f"{base_url}", json={"amount": 100})  # <-- Error input (must be negative!)
     await assert_status(resp, status.HTTP_422_UNPROCESSABLE_ENTITY)
 
     # Use endpoint properly

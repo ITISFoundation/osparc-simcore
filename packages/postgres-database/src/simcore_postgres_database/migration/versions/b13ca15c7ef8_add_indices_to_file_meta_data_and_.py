@@ -29,12 +29,8 @@ def upgrade():
         ["project_id"],
         unique=False,
     )
-    op.create_index(
-        op.f("ix_file_meta_data_user_id"), "file_meta_data", ["user_id"], unique=False
-    )
-    op.create_index(
-        op.f("ix_projects_prj_owner"), "projects", ["prj_owner"], unique=False
-    )
+    op.create_index(op.f("ix_file_meta_data_user_id"), "file_meta_data", ["user_id"], unique=False)
+    op.create_index(op.f("ix_projects_prj_owner"), "projects", ["prj_owner"], unique=False)
     # ### end Alembic commands ###
 
 

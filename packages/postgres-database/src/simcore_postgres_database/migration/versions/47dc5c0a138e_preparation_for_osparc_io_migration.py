@@ -52,9 +52,7 @@ def upgrade():
             ),
             nullable=False,
         ),
-        sa.Column(
-            "service_resources", postgresql.JSONB(astext_type=sa.Text()), nullable=False
-        ),
+        sa.Column("service_resources", postgresql.JSONB(astext_type=sa.Text()), nullable=False),
         sa.Column(
             "service_additional_metadata",
             postgresql.JSONB(astext_type=sa.Text()),
@@ -84,17 +82,13 @@ def upgrade():
         sa.PrimaryKeyConstraint("product_name", "service_run_id"),
     )
     op.create_index(
-        op.f(
-            "ix_zzz_resource_tracker_service_runs__osparc_io_archive_2026Q1_started_at"
-        ),
+        op.f("ix_zzz_resource_tracker_service_runs__osparc_io_archive_2026Q1_started_at"),
         "zzz_resource_tracker_service_runs__osparc_io_archive_2026Q1",
         ["started_at"],
         unique=False,
     )
     op.create_index(
-        op.f(
-            "ix_zzz_resource_tracker_service_runs__osparc_io_archive_2026Q1_wallet_id"
-        ),
+        op.f("ix_zzz_resource_tracker_service_runs__osparc_io_archive_2026Q1_wallet_id"),
         "zzz_resource_tracker_service_runs__osparc_io_archive_2026Q1",
         ["wallet_id"],
         unique=False,
@@ -110,12 +104,8 @@ def upgrade():
     # NOTE: I am adding this manually >>>>
     # Seems that when projects_to_wallet table was created, by mistake the FK was named: fk_projects_comments_project_uuid
     # Which now causes trouble when dropping the projects_comments table which also has this foreign key name in its definition
-    op.execute(
-        "ALTER TABLE projects_comments DROP CONSTRAINT IF EXISTS fk_projects_comments_project_uuid;"
-    )
-    op.execute(
-        "ALTER TABLE projects_to_wallet DROP CONSTRAINT IF EXISTS fk_projects_comments_project_uuid;"
-    )
+    op.execute("ALTER TABLE projects_comments DROP CONSTRAINT IF EXISTS fk_projects_comments_project_uuid;")
+    op.execute("ALTER TABLE projects_to_wallet DROP CONSTRAINT IF EXISTS fk_projects_comments_project_uuid;")
     op.execute(
         """  ALTER TABLE projects_to_wallet
             ADD CONSTRAINT fk_projects_wallet_project_uuid
@@ -155,9 +145,7 @@ def upgrade():
     #     nullable=False,
     #     postgresql_using="user_id::bigint",
     # )
-    op.execute(
-        "ALTER TABLE file_meta_data ALTER COLUMN user_id TYPE BIGINT USING user_id::bigint"
-    )
+    op.execute("ALTER TABLE file_meta_data ALTER COLUMN user_id TYPE BIGINT USING user_id::bigint")
     op.execute("ALTER TABLE file_meta_data ALTER COLUMN user_id SET NOT NULL")
 
     op.create_foreign_key(
@@ -288,12 +276,8 @@ def downgrade():
         "payments_transactions",
         type_="foreignkey",
     )
-    op.drop_constraint(
-        "fk_payments_methods_to_wallet_id", "payments_methods", type_="foreignkey"
-    )
-    op.drop_constraint(
-        "fk_payments_methods_to_user_id", "payments_methods", type_="foreignkey"
-    )
+    op.drop_constraint("fk_payments_methods_to_wallet_id", "payments_methods", type_="foreignkey")
+    op.drop_constraint("fk_payments_methods_to_user_id", "payments_methods", type_="foreignkey")
     op.drop_constraint(
         "fk_payments_autorecharge_id_wallets",
         "payments_autorecharge",
@@ -316,9 +300,7 @@ def downgrade():
         ["parent_folder_id"],
         ["folder_id"],
     )
-    op.drop_constraint(
-        "fk_file_meta_data_user_id_users", "file_meta_data", type_="foreignkey"
-    )
+    op.drop_constraint("fk_file_meta_data_user_id_users", "file_meta_data", type_="foreignkey")
 
     # NOTE: this was automatically generated, but does not work with PostgresSQL, so we use op.execute
     # op.alter_column(
@@ -329,9 +311,7 @@ def downgrade():
     #     nullable=True,
     # )
 
-    op.execute(
-        "ALTER TABLE file_meta_data ALTER COLUMN user_id TYPE VARCHAR USING user_id::varchar"
-    )
+    op.execute("ALTER TABLE file_meta_data ALTER COLUMN user_id TYPE VARCHAR USING user_id::varchar")
     op.execute("ALTER TABLE file_meta_data ALTER COLUMN user_id DROP NOT NULL")
 
     op.drop_constraint("user_confirmation_fkey", "confirmations", type_="foreignkey")
@@ -398,15 +378,11 @@ def downgrade():
         table_name="zzz_resource_tracker_service_runs__osparc_io_archive_2026Q1",
     )
     op.drop_index(
-        op.f(
-            "ix_zzz_resource_tracker_service_runs__osparc_io_archive_2026Q1_wallet_id"
-        ),
+        op.f("ix_zzz_resource_tracker_service_runs__osparc_io_archive_2026Q1_wallet_id"),
         table_name="zzz_resource_tracker_service_runs__osparc_io_archive_2026Q1",
     )
     op.drop_index(
-        op.f(
-            "ix_zzz_resource_tracker_service_runs__osparc_io_archive_2026Q1_started_at"
-        ),
+        op.f("ix_zzz_resource_tracker_service_runs__osparc_io_archive_2026Q1_started_at"),
         table_name="zzz_resource_tracker_service_runs__osparc_io_archive_2026Q1",
     )
     op.drop_table("zzz_resource_tracker_service_runs__osparc_io_archive_2026Q1")

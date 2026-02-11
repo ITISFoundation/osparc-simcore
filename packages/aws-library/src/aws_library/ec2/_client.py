@@ -338,7 +338,8 @@ class SimcoreEC2API:
             instance_datas -- the instances to start
             change_startup_script -- optional user data script to set on instances before starting
                         Note: this will overwrite any existing user data on the instance
-                        Note2: By default, EC2 instances execute user data only on first launch; per-boot execution is enabled via MIME multi-part format (run_on_every_boot=True).
+                        Note2: By default, EC2 instances execute user data only on first launch;
+                        per-boot execution is enabled via MIME multi-part format (run_on_every_boot=True).
 
         Raises:
             EC2InstanceNotFoundError: if some of the instance_datas are not found
@@ -368,11 +369,13 @@ class SimcoreEC2API:
             _logger.info("instances %s exists now.", instance_ids)
             # NOTE: waiting for pending ensure we get all the IPs back
             aws_instances = await self.client.describe_instances(InstanceIds=instance_ids)
-            assert len(aws_instances["Reservations"]) == 1  # nosec
-            assert "Instances" in aws_instances["Reservations"][0]  # nosec
+
+            # Important: when starting instances they might be part of different reservations
+            # so we have to collect all instances from all reservations returned!
             return [
                 await ec2_instance_data_from_aws_instance(self, i)
-                for i in aws_instances["Reservations"][0]["Instances"]
+                for r in aws_instances["Reservations"]
+                for i in r["Instances"]
             ]
 
     @ec2_exception_handler(_logger)

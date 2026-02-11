@@ -75,9 +75,7 @@ def mocked_backend(
     return MockedBackendApiDict(webserver=mocked_webserver_rest_api_base, catalog=None)
 
 
-@pytest.mark.acceptance_test(
-    "Implements https://github.com/ITISFoundation/osparc-simcore/issues/4177"
-)
+@pytest.mark.acceptance_test("Implements https://github.com/ITISFoundation/osparc-simcore/issues/4177")
 async def test_studies_read_workflow(
     client: httpx.AsyncClient,
     auth: httpx.BasicAuth,
@@ -118,9 +116,7 @@ async def test_studies_read_workflow(
     error = TypeAdapter(ErrorGet).validate_python(resp.json())
     assert f"{inexistent_study_id}" in error.errors[0]
 
-    resp = await client.get(
-        f"/{API_VTAG}/studies/{inexistent_study_id}/ports", auth=auth
-    )
+    resp = await client.get(f"/{API_VTAG}/studies/{inexistent_study_id}/ports", auth=auth)
     assert resp.status_code == status.HTTP_404_NOT_FOUND
     error = TypeAdapter(ErrorGet).validate_python(resp.json())
     assert f"{inexistent_study_id}" in error.errors[0]
@@ -149,9 +145,7 @@ async def test_list_study_ports(
     assert resp.json() == {"items": fake_study_ports, "total": len(fake_study_ports)}
 
 
-@pytest.mark.acceptance_test(
-    "Implements https://github.com/ITISFoundation/osparc-simcore/issues/4651"
-)
+@pytest.mark.acceptance_test("Implements https://github.com/ITISFoundation/osparc-simcore/issues/4651")
 @pytest.mark.parametrize(
     "parent_node_id, parent_project_id",
     [(_faker.uuid4(), _faker.uuid4()), (None, None)],
@@ -173,20 +167,14 @@ async def test_clone_study(
 
     def clone_project_side_effect(request: httpx.Request):
         if parent_project_id is not None:
-            _parent_project_id = dict(request.headers).get(
-                X_SIMCORE_PARENT_PROJECT_UUID.lower()
-            )
+            _parent_project_id = dict(request.headers).get(X_SIMCORE_PARENT_PROJECT_UUID.lower())
             assert _parent_project_id == f"{parent_project_id}"
         if parent_node_id is not None:
-            _parent_node_id = dict(request.headers).get(
-                X_SIMCORE_PARENT_NODE_ID.lower()
-            )
+            _parent_node_id = dict(request.headers).get(X_SIMCORE_PARENT_NODE_ID.lower())
             assert _parent_node_id == f"{parent_node_id}"
         return callback(request)
 
-    mocked_webserver_rest_api_base["create_projects"].side_effect = (
-        clone_project_side_effect
-    )
+    mocked_webserver_rest_api_base["create_projects"].side_effect = clone_project_side_effect
 
     _headers = {}
     if parent_project_id is not None:
@@ -194,9 +182,7 @@ async def test_clone_study(
     if parent_node_id is not None:
         _headers[X_SIMCORE_PARENT_NODE_ID] = f"{parent_node_id}"
 
-    resp = await client.post(
-        f"/{API_VTAG}/studies/{study_id}:clone", headers=_headers, auth=auth
-    )
+    resp = await client.post(f"/{API_VTAG}/studies/{study_id}:clone", headers=_headers, auth=auth)
 
     assert mocked_webserver_rest_api_base["create_projects"].called
 
@@ -267,9 +253,7 @@ async def test_clone_study_with_title(
         # this is needed to return the patched project
         _project_id = kwargs.get("project_id")
         assert _project_id is not None
-        result = Envelope[ProjectGet].model_validate(
-            {"data": ProjectGet.model_json_schema()["examples"][0]}
-        )
+        result = Envelope[ProjectGet].model_validate({"data": ProjectGet.model_json_schema()["examples"][0]})
         assert result.data is not None
         if title is not None:
             result.data.name = title
@@ -278,12 +262,8 @@ async def test_clone_study_with_title(
         result.data.uuid = UUID(_project_id)
         return httpx.Response(status.HTTP_200_OK, content=result.model_dump_json())
 
-    mocked_webserver_rest_api_base["create_projects"].side_effect = (
-        clone_project_side_effect
-    )
-    mocked_webserver_rest_api_base["project_patch"].side_effect = (
-        patch_project_side_effect
-    )
+    mocked_webserver_rest_api_base["create_projects"].side_effect = clone_project_side_effect
+    mocked_webserver_rest_api_base["project_patch"].side_effect = patch_project_side_effect
     mocked_webserver_rest_api_base["project_get"].side_effect = get_project_side_effect
 
     query = dict()
@@ -298,9 +278,7 @@ async def test_clone_study_with_title(
     if description is not None:
         body["description"] = description
 
-    resp = await client.post(
-        f"/{API_VTAG}/studies/{study_id}:clone", auth=auth, json=body, params=query
-    )
+    resp = await client.post(f"/{API_VTAG}/studies/{study_id}:clone", auth=auth, json=body, params=query)
 
     assert mocked_webserver_rest_api_base["create_projects"].called
     if title or description:

@@ -20,9 +20,7 @@ def preserve_caplog_for_async_logging(mocker: MockerFixture) -> None:
     def patched_async_loggers(**kwargs) -> Iterator[None]:
         # Find caplog's handler in root logger
         root_logger = logging.getLogger()
-        caplog_handlers = [
-            h for h in root_logger.handlers if "LogCaptureHandler" in f"{type(h)}"
-        ]
+        caplog_handlers = [h for h in root_logger.handlers if "LogCaptureHandler" in f"{type(h)}"]
 
         with original_setup(**kwargs):
             # After setup, restore caplog handlers alongside queue handler

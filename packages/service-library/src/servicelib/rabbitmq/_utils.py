@@ -104,7 +104,5 @@ async def declare_queue(
     try:
         return await channel.declare_queue(**queue_parameters)
     except ChannelPreconditionFailed:
-        _logger.exception(
-            "Most likely the rabbit queue parameters have changed. See notes above to fix!"
-        )
+        _logger.exception("Most likely the rabbit queue parameters have changed. See notes above to fix!")
         raise

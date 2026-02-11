@@ -52,9 +52,7 @@ def test_serialization(
     "dynamic_service_start",
     [
         None,
-        TypeAdapter(DynamicServiceStart).validate_python(
-            DynamicServiceStart.model_json_schema()["example"]
-        ),
+        TypeAdapter(DynamicServiceStart).validate_python(DynamicServiceStart.model_json_schema()["example"]),
     ],
 )
 @pytest.mark.parametrize("project_id", [None, uuid4()])
@@ -80,9 +78,7 @@ async def test_set_check_status_after_to(
 
 
 async def test_legacy_format_compatibility(project_slug_dir: Path):
-    legacy_format_path = (
-        project_slug_dir / "tests" / "assets" / "legacy_tracked_service_model.bin"
-    )
+    legacy_format_path = project_slug_dir / "tests" / "assets" / "legacy_tracked_service_model.bin"
     assert legacy_format_path.exists()
 
     model_from_disk = TrackedServiceModel.from_bytes(legacy_format_path.read_bytes())

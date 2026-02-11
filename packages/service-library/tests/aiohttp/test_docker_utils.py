@@ -45,9 +45,7 @@ async def test_retrieve_image_layer_information(
     docker_image = TypeAdapter(DockerGenericTag).validate_python(
         f"{registry_settings.REGISTRY_URL}/{osparc_service['image']['name']}:{osparc_service['image']['tag']}",
     )
-    layer_information = await retrieve_image_layer_information(
-        docker_image, registry_settings
-    )
+    layer_information = await retrieve_image_layer_information(docker_image, registry_settings)
 
     assert layer_information
 
@@ -89,22 +87,16 @@ async def mocked_progress_cb(mocker: MockerFixture) -> mock.AsyncMock:
     return mocker.AsyncMock(side_effect=_progress_cb)
 
 
-def _assert_progress_report_values(
-    mocked_progress_cb: mock.AsyncMock, *, total: float
-) -> None:
+def _assert_progress_report_values(mocked_progress_cb: mock.AsyncMock, *, total: float) -> None:
     # NOTE: we exclude the message part here as this is already tested in servicelib
     # check first progress
-    assert mocked_progress_cb.call_args_list[0].args[0].dict(
-        exclude={"message", "attempt"}
-    ) == ProgressReport(actual_value=0, total=total, unit="Byte").model_dump(
-        exclude={"message", "attempt"}
-    )
+    assert mocked_progress_cb.call_args_list[0].args[0].dict(exclude={"message", "attempt"}) == ProgressReport(
+        actual_value=0, total=total, unit="Byte"
+    ).model_dump(exclude={"message", "attempt"})
     # check last progress
-    assert mocked_progress_cb.call_args_list[-1].args[0].dict(
-        exclude={"message", "attempt"}
-    ) == ProgressReport(actual_value=total, total=total, unit="Byte").model_dump(
-        exclude={"message", "attempt"}
-    )
+    assert mocked_progress_cb.call_args_list[-1].args[0].dict(exclude={"message", "attempt"}) == ProgressReport(
+        actual_value=total, total=total, unit="Byte"
+    ).model_dump(exclude={"message", "attempt"})
 
 
 @pytest.mark.parametrize(
@@ -140,9 +132,7 @@ async def test_pull_image(
         )
         mocked_log_cb.assert_called()
 
-    _assert_progress_report_values(
-        mocked_progress_cb, total=layer_information.layers_total_size
-    )
+    _assert_progress_report_values(mocked_progress_cb, total=layer_information.layers_total_size)
 
     mocked_progress_cb.reset_mock()
     mocked_log_cb.reset_mock()
@@ -167,8 +157,6 @@ async def test_pull_image(
         )
         mocked_log_cb.assert_called()
 
-    _assert_progress_report_values(
-        mocked_progress_cb, total=layer_information.layers_total_size
-    )
+    _assert_progress_report_values(mocked_progress_cb, total=layer_information.layers_total_size)
     # check there were no warnings
     assert not [r.message for r in caplog.records if r.levelname == "WARNING"]

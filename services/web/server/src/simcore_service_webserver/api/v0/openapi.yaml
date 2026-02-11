@@ -4691,6 +4691,99 @@ paths:
       responses:
         '302':
           description: Opens osparc and opens a copy of published study
+  /v0/notifications/messages:send:
+    post:
+      tags:
+      - notifications
+      - po
+      summary: Send Message
+      operationId: send_message
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationsMessageBody'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_TaskGet_'
+  /v0/notifications/templates:preview:
+    post:
+      tags:
+      - notifications
+      - po
+      summary: Preview Template
+      description: 'Generates a preview of a notification template with the provided
+        data.
+
+
+        This endpoint renders the specified notification template using the supplied
+
+        template data, allowing users to see how the final notification will appear
+
+        before sending it.
+
+
+        Returns a rendered version of the notification template with all variables
+
+        substituted with the provided data.'
+      operationId: preview_template
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationsTemplatePreviewBody'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_NotificationsTemplatePreviewGet_'
+  /v0/notifications/templates:search:
+    get:
+      tags:
+      - notifications
+      - po
+      summary: Search Templates
+      description: 'Search for available notification templates by channel and/or
+        template name.
+
+        Both channel and template_name support wildcard patterns for flexible matching.
+
+
+        Returns templates with their context schema defining required variables for
+        rendering.'
+      operationId: search_templates
+      parameters:
+      - name: channel
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - $ref: '#/components/schemas/ChannelType'
+          - type: 'null'
+          title: Channel
+      - name: template_name
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Template Name
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_list_NotificationsTemplateGet__'
   /v0/projects:
     post:
       tags:
@@ -9265,9 +9358,7 @@ components:
           title: Name
           description: Name of the author
         email:
-          type: string
-          format: email
-          title: Email
+          $ref: '#/components/schemas/LowerCaseEmailStr'
           description: Email address
         affiliation:
           anyOf:
@@ -9356,10 +9447,8 @@ components:
           title: Versiondisplay
         contact:
           anyOf:
-          - type: string
-            format: email
+          - $ref: '#/components/schemas/LowerCaseEmailStr'
           - type: 'null'
-          title: Contact
         type:
           $ref: '#/components/schemas/ServiceType'
         thumbnail:
@@ -9390,10 +9479,8 @@ components:
           title: Authors
         owner:
           anyOf:
-          - type: string
-            format: email
+          - $ref: '#/components/schemas/LowerCaseEmailStr'
           - type: 'null'
-          title: Owner
           description: None when the owner email cannot be found in the database
         inputs:
           type: object
@@ -9582,10 +9669,8 @@ components:
           title: Versiondisplay
         contact:
           anyOf:
-          - type: string
-            format: email
+          - $ref: '#/components/schemas/LowerCaseEmailStr'
           - type: 'null'
-          title: Contact
         type:
           $ref: '#/components/schemas/ServiceType'
         thumbnail:
@@ -9616,10 +9701,8 @@ components:
           title: Authors
         owner:
           anyOf:
-          - type: string
-            format: email
+          - $ref: '#/components/schemas/LowerCaseEmailStr'
           - type: 'null'
-          title: Owner
           description: None when the owner email cannot be found in the database
         inputs:
           type: object
@@ -9835,6 +9918,11 @@ components:
       - new
       - confirm
       title: ChangePasswordBody
+    ChannelType:
+      type: string
+      enum:
+      - email
+      title: ChannelType
     CodePageParams:
       properties:
         message:
@@ -11140,6 +11228,19 @@ components:
           title: Error
       type: object
       title: Envelope[NodeRetrieved]
+    Envelope_NotificationsTemplatePreviewGet_:
+      properties:
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/NotificationsTemplatePreviewGet'
+          - type: 'null'
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[NotificationsTemplatePreviewGet]
     Envelope_PaymentMethodGet_:
       properties:
         data:
@@ -11909,6 +12010,22 @@ components:
           title: Error
       type: object
       title: Envelope[list[MyTokenGet]]
+    Envelope_list_NotificationsTemplateGet__:
+      properties:
+        data:
+          anyOf:
+          - items:
+              $ref: '#/components/schemas/NotificationsTemplateGet'
+            type: array
+          - type: 'null'
+          title: Data
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[list[NotificationsTemplateGet]]
     Envelope_list_PaymentMethodGet__:
       properties:
         data:
@@ -12980,10 +13097,8 @@ components:
           title: Username
         email:
           anyOf:
-          - type: string
-            format: email
+          - $ref: '#/components/schemas/LowerCaseEmailStr'
           - type: 'null'
-          title: Email
           description: Accessible only if the user has opted to share their email
             in privacy settings
       type: object
@@ -13017,10 +13132,8 @@ components:
           description: the user primary gid
         login:
           anyOf:
-          - type: string
-            format: email
+          - $ref: '#/components/schemas/LowerCaseEmailStr'
           - type: 'null'
-          title: Login
           description: the user's email or None if private
         first_name:
           anyOf:
@@ -13162,9 +13275,7 @@ components:
     InvitationGenerate:
       properties:
         guest:
-          type: string
-          format: email
-          title: Guest
+          $ref: '#/components/schemas/LowerCaseEmailStr'
         trialAccountDays:
           anyOf:
           - type: integer
@@ -13196,9 +13307,7 @@ components:
           type: string
           title: Issuer
         guest:
-          type: string
-          format: email
-          title: Guest
+          $ref: '#/components/schemas/LowerCaseEmailStr'
         trialAccountDays:
           anyOf:
           - type: integer
@@ -13235,10 +13344,8 @@ components:
       properties:
         email:
           anyOf:
-          - type: string
-            format: email
+          - $ref: '#/components/schemas/LowerCaseEmailStr'
           - type: 'null'
-          title: Email
           description: Email associated to invitation or None
       additionalProperties: false
       type: object
@@ -13323,9 +13430,7 @@ components:
           title: Purchasedbyuser
           minimum: 0
         userEmail:
-          type: string
-          format: email
-          title: Useremail
+          $ref: '#/components/schemas/LowerCaseEmailStr'
         purchasedAt:
           type: string
           format: date-time
@@ -13536,9 +13641,7 @@ components:
     LoginBody:
       properties:
         email:
-          type: string
-          format: email
-          title: Email
+          $ref: '#/components/schemas/LowerCaseEmailStr'
         password:
           type: string
           format: password
@@ -13567,9 +13670,7 @@ components:
     LoginTwoFactorAuthBody:
       properties:
         email:
-          type: string
-          format: email
-          title: Email
+          $ref: '#/components/schemas/LowerCaseEmailStr'
         code:
           type: string
           format: password
@@ -13591,6 +13692,9 @@ components:
       additionalProperties: false
       type: object
       title: LogoutBody
+    LowerCaseEmailStr:
+      type: string
+      format: email
     MarkerUI:
       properties:
         color:
@@ -13832,9 +13936,7 @@ components:
           - type: 'null'
           title: Last Name
         login:
-          type: string
-          format: email
-          title: Login
+          $ref: '#/components/schemas/LowerCaseEmailStr'
         phone:
           anyOf:
           - type: string
@@ -14649,6 +14751,121 @@ components:
       - ANNOTATION_NOTE
       - WALLET_SHARED
       title: NotificationCategory
+    NotificationsContentBody:
+      properties:
+        subject:
+          type: string
+          maxLength: 998
+          title: Subject
+          description: 'Email subject line (RFC 2822: max header line length)'
+        bodyHtml:
+          type: string
+          maxLength: 1048576
+          title: Bodyhtml
+          description: HTML email body (1 MB limit per RFC 5321 SMTP practical limits)
+        bodyText:
+          type: string
+          maxLength: 1048576
+          title: Bodytext
+          description: Plain text email body (1 MB limit per RFC 5321 SMTP practical
+            limits)
+      type: object
+      required:
+      - subject
+      - bodyHtml
+      - bodyText
+      title: NotificationsEmailContentBody
+    NotificationsContentGet:
+      properties:
+        subject:
+          type: string
+          maxLength: 998
+          title: Subject
+          description: 'Email subject line (RFC 2822: max header line length)'
+        bodyHtml:
+          type: string
+          maxLength: 1048576
+          title: Bodyhtml
+          description: HTML email body (1 MB limit per RFC 5321 SMTP practical limits)
+        bodyText:
+          type: string
+          maxLength: 1048576
+          title: Bodytext
+          description: Plain text email body (1 MB limit per RFC 5321 SMTP practical
+            limits)
+      type: object
+      required:
+      - subject
+      - bodyHtml
+      - bodyText
+      title: NotificationsEmailContentGet
+    NotificationsMessageBody:
+      properties:
+        channel:
+          $ref: '#/components/schemas/ChannelType'
+        recipients:
+          items:
+            type: integer
+            exclusiveMinimum: true
+            minimum: 0
+          type: array
+          title: Recipients
+        content:
+          $ref: '#/components/schemas/NotificationsContentBody'
+      type: object
+      required:
+      - channel
+      - recipients
+      - content
+      title: NotificationsMessageBody
+    NotificationsTemplateGet:
+      properties:
+        ref:
+          $ref: '#/components/schemas/NotificationsTemplateRefGet'
+        contextSchema:
+          additionalProperties: true
+          type: object
+          title: Contextschema
+      type: object
+      required:
+      - ref
+      - contextSchema
+      title: NotificationsTemplateGet
+    NotificationsTemplatePreviewBody:
+      properties:
+        ref:
+          $ref: '#/components/schemas/NotificationsTemplateRefGet'
+        context:
+          additionalProperties: true
+          type: object
+          title: Context
+      type: object
+      required:
+      - ref
+      - context
+      title: NotificationsTemplatePreviewBody
+    NotificationsTemplatePreviewGet:
+      properties:
+        ref:
+          $ref: '#/components/schemas/NotificationsTemplateRefGet'
+        content:
+          $ref: '#/components/schemas/NotificationsContentGet'
+      type: object
+      required:
+      - ref
+      - content
+      title: NotificationsTemplatePreviewGet
+    NotificationsTemplateRefGet:
+      properties:
+        channel:
+          $ref: '#/components/schemas/ChannelType'
+        templateName:
+          $ref: '#/components/schemas/TemplateName'
+      type: object
+      required:
+      - channel
+      - templateName
+      title: NotificationsTemplateRefGet
     OsparcCreditsAggregatedByServiceGet:
       properties:
         osparc_credits:
@@ -15240,9 +15457,7 @@ components:
     PhoneConfirmationBody:
       properties:
         email:
-          type: string
-          format: email
-          title: Email
+          $ref: '#/components/schemas/LowerCaseEmailStr'
         phone:
           type: string
           title: Phone
@@ -15682,9 +15897,7 @@ components:
           - type: 'null'
           title: Thumbnail
         prjOwner:
-          type: string
-          format: email
-          title: Prjowner
+          $ref: '#/components/schemas/LowerCaseEmailStr'
       type: object
       required:
       - name
@@ -15838,9 +16051,7 @@ components:
           type: object
           title: Workbench
         prjOwner:
-          type: string
-          format: email
-          title: Prjowner
+          $ref: '#/components/schemas/LowerCaseEmailStr'
         accessRights:
           additionalProperties:
             $ref: '#/components/schemas/AccessRights'
@@ -16040,9 +16251,7 @@ components:
           type: object
           title: Workbench
         prjOwner:
-          type: string
-          format: email
-          title: Prjowner
+          $ref: '#/components/schemas/LowerCaseEmailStr'
         accessRights:
           additionalProperties:
             $ref: '#/components/schemas/AccessRights'
@@ -16493,9 +16702,7 @@ components:
     RegisterBody:
       properties:
         email:
-          type: string
-          format: email
-          title: Email
+          $ref: '#/components/schemas/LowerCaseEmailStr'
         password:
           type: string
           format: password
@@ -16524,9 +16731,7 @@ components:
     RegisterPhoneBody:
       properties:
         email:
-          type: string
-          format: email
-          title: Email
+          $ref: '#/components/schemas/LowerCaseEmailStr'
         phone:
           type: string
           format: phone
@@ -16795,9 +17000,7 @@ components:
     Resend2faBody:
       properties:
         email:
-          type: string
-          format: email
-          title: Email
+          $ref: '#/components/schemas/LowerCaseEmailStr'
           description: User email (identifier)
         via:
           type: string
@@ -16814,9 +17017,7 @@ components:
     ResetPasswordBody:
       properties:
         email:
-          type: string
-          format: email
-          title: Email
+          $ref: '#/components/schemas/LowerCaseEmailStr'
       additionalProperties: false
       type: object
       required:
@@ -18129,19 +18330,18 @@ components:
       - items
       - end
       title: TaskStreamResponse
+    TemplateName:
+      type: string
+      minLength: 1
     TestEmail:
       properties:
         from_:
           anyOf:
-          - type: string
-            format: email
+          - $ref: '#/components/schemas/LowerCaseEmailStr'
           - type: 'null'
-          title: From
           description: Email sender
         to:
-          type: string
-          format: email
-          title: To
+          $ref: '#/components/schemas/LowerCaseEmailStr'
           description: Email receiver
         template_name:
           type: string
@@ -18264,9 +18464,7 @@ components:
     UnregisterCheck:
       properties:
         email:
-          type: string
-          format: email
-          title: Email
+          $ref: '#/components/schemas/LowerCaseEmailStr'
         password:
           type: string
           format: password
@@ -18362,9 +18560,7 @@ components:
           - type: 'null'
           title: Lastname
         email:
-          type: string
-          format: email
-          title: Email
+          $ref: '#/components/schemas/LowerCaseEmailStr'
         institution:
           anyOf:
           - type: string
@@ -18517,9 +18713,7 @@ components:
           type: string
           title: Lastname
         email:
-          type: string
-          format: email
-          title: Email
+          $ref: '#/components/schemas/LowerCaseEmailStr'
         institution:
           anyOf:
           - type: string
@@ -18643,10 +18837,10 @@ components:
           default: ''
         user_from_id:
           anyOf:
-          - type: 'null'
           - type: integer
             exclusiveMinimum: true
             minimum: 0
+          - type: 'null'
           title: User From Id
         id:
           type: string
@@ -18703,10 +18897,10 @@ components:
           default: ''
         user_from_id:
           anyOf:
-          - type: 'null'
           - type: integer
             exclusiveMinimum: true
             minimum: 0
+          - type: 'null'
           title: User From Id
       type: object
       required:

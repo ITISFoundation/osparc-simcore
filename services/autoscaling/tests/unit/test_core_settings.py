@@ -3,7 +3,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 """
-We can validate actual .env files (also refered as `repo.config` files) by passing them via the CLI
+We can validate actual .env files (also referred as `repo.config` files) by passing them via the CLI
 
 $ ln -s /path/to/osparc-config/deployments/mydeploy.com/repo.config .secrets
 $ pytest --external-envfile=.secrets --pdb tests/unit/test_core_settings.py
@@ -74,9 +74,7 @@ def test_settings(app_environment: EnvVarsDict):
     assert settings.AUTOSCALING_REDIS
 
 
-def test_settings_multiple_subnets(
-    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch, faker: Faker
-):
+def test_settings_multiple_subnets(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch, faker: Faker):
     subnets = [faker.pystr() for _ in range(3)]
     monkeypatch.setenv("EC2_INSTANCES_SUBNET_IDS", json_dumps(subnets))
     settings = ApplicationSettings.create_from_envs()
@@ -120,17 +118,11 @@ def test_invalid_EC2_INSTANCES_TIME_BEFORE_DRAINING(  # noqa: N802
     settings = ApplicationSettings.create_from_envs()
     assert settings.AUTOSCALING_EC2_INSTANCES
     assert settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_DRAINING
-    assert (
-        datetime.timedelta(minutes=1)
-        == settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_DRAINING
-    )
+    assert datetime.timedelta(minutes=1) == settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_DRAINING
     setenvs_from_dict(monkeypatch, {"EC2_INSTANCES_TIME_BEFORE_DRAINING": "-1:05:00"})
     settings = ApplicationSettings.create_from_envs()
     assert settings.AUTOSCALING_EC2_INSTANCES
-    assert (
-        datetime.timedelta(seconds=10)
-        == settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_DRAINING
-    )
+    assert datetime.timedelta(seconds=10) == settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_DRAINING
 
 
 def test_invalid_EC2_INSTANCES_TIME_BEFORE_TERMINATION(  # noqa: N802
@@ -140,19 +132,11 @@ def test_invalid_EC2_INSTANCES_TIME_BEFORE_TERMINATION(  # noqa: N802
     settings = ApplicationSettings.create_from_envs()
     assert settings.AUTOSCALING_EC2_INSTANCES
     assert settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
-    assert (
-        datetime.timedelta(minutes=59)
-        == settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
-    )
-    setenvs_from_dict(
-        monkeypatch, {"EC2_INSTANCES_TIME_BEFORE_TERMINATION": "-1:05:00"}
-    )
+    assert datetime.timedelta(minutes=59) == settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
+    setenvs_from_dict(monkeypatch, {"EC2_INSTANCES_TIME_BEFORE_TERMINATION": "-1:05:00"})
     settings = ApplicationSettings.create_from_envs()
     assert settings.AUTOSCALING_EC2_INSTANCES
-    assert (
-        datetime.timedelta(minutes=0)
-        == settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
-    )
+    assert datetime.timedelta(minutes=0) == settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_TIME_BEFORE_TERMINATION
 
 
 def test_EC2_INSTANCES_ALLOWED_TYPES_valid(  # noqa: N802
@@ -219,9 +203,7 @@ def test_EC2_INSTANCES_ALLOWED_TYPES_passing_valid_image_tags(  # noqa: N802
     )
     settings = ApplicationSettings.create_from_envs()
     assert settings.AUTOSCALING_EC2_INSTANCES
-    assert next(
-        iter(settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES.values())
-    ).pre_pull_images == [
+    assert next(iter(settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES.values())).pre_pull_images == [
         "nginx:latest",
         "itisfoundation/my-very-nice-service:latest",
         "simcore/services/dynamic/another-nice-one:2.4.5",
@@ -235,12 +217,8 @@ ENABLED_VALUE: Final = "{}"
 def test_EC2_INSTANCES_ALLOWED_TYPES_empty_not_allowed(  # noqa: N802
     app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
 ):
-    assert (
-        os.environ["AUTOSCALING_EC2_INSTANCES"] == ENABLED_VALUE
-    )  # parent field in ApplicationSettings
-    monkeypatch.setenv(
-        "EC2_INSTANCES_ALLOWED_TYPES", "{}"
-    )  # child field in EC2InstancesSettings
+    assert os.environ["AUTOSCALING_EC2_INSTANCES"] == ENABLED_VALUE  # parent field in ApplicationSettings
+    monkeypatch.setenv("EC2_INSTANCES_ALLOWED_TYPES", "{}")  # child field in EC2InstancesSettings
 
     with pytest.raises(ValidationError) as err_info:
         # test **child** EC2InstancesSettings
@@ -254,12 +232,8 @@ def test_EC2_INSTANCES_ALLOWED_TYPES_empty_not_allowed_with_main_field_env_var( 
     monkeypatch: pytest.MonkeyPatch,
     caplog: pytest.LogCaptureFixture,
 ):
-    assert (
-        os.environ["AUTOSCALING_EC2_INSTANCES"] == ENABLED_VALUE
-    )  # parent field in ApplicationSettings
-    monkeypatch.setenv(
-        "EC2_INSTANCES_ALLOWED_TYPES", "{}"
-    )  # child field in EC2InstancesSettings
+    assert os.environ["AUTOSCALING_EC2_INSTANCES"] == ENABLED_VALUE  # parent field in ApplicationSettings
+    monkeypatch.setenv("EC2_INSTANCES_ALLOWED_TYPES", "{}")  # child field in EC2InstancesSettings
 
     # explicit init of parent -> fails
     with pytest.raises(ValidationError) as exc_info:
@@ -293,12 +267,8 @@ def test_EC2_INSTANCES_ALLOWED_TYPES_empty_not_allowed_without_main_field_env_va
     caplog: pytest.LogCaptureFixture,
 ):
     assert os.environ["AUTOSCALING_EC2_INSTANCES"] == ENABLED_VALUE
-    monkeypatch.delenv(
-        "AUTOSCALING_EC2_INSTANCES"
-    )  # parent field in ApplicationSettings
-    monkeypatch.setenv(
-        "EC2_INSTANCES_ALLOWED_TYPES", "{}"
-    )  # child field in EC2InstancesSettings
+    monkeypatch.delenv("AUTOSCALING_EC2_INSTANCES")  # parent field in ApplicationSettings
+    monkeypatch.setenv("EC2_INSTANCES_ALLOWED_TYPES", "{}")  # child field in EC2InstancesSettings
 
     # removing any value for AUTOSCALING_EC2_INSTANCES
     caplog.clear()
@@ -385,3 +355,46 @@ def test_EC2_INSTANCES_ALLOWED_TYPES_invalid_custom_node_labels(  # noqa: N802
             ).split("pytest")[0]
             in caplog.text
         )
+
+
+def test_start_with_too_many_hot_buffers(
+    app_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+    faker: Faker,
+    caplog: pytest.LogCaptureFixture,
+):
+    settings = ApplicationSettings.create_from_envs()
+    assert settings.AUTOSCALING_EC2_INSTANCES
+
+    # setting too many hot buffers
+    assert settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES < 1000
+    setenvs_from_dict(
+        monkeypatch,
+        {
+            "EC2_INSTANCES_ALLOWED_TYPES": json.dumps(
+                {"t3.micro": {"ami_id": faker.pystr(), "pre_pull_images": [], "hot_buffer_count": 1000}}
+            )
+        },
+    )
+    caplog.clear()
+    with caplog.at_level(logging.WARNING):
+        settings = ApplicationSettings.create_from_envs()
+        assert settings.AUTOSCALING_EC2_INSTANCES is None
+
+        assert (
+            _AUTO_DEFAULT_FACTORY_RESOLVES_TO_NONE_FSTRING.format(
+                field_name="AUTOSCALING_EC2_INSTANCES", err="pytest"
+            ).split("pytest")[0]
+            in caplog.text
+        )
+
+        assert "Sum of hot_buffer_count" in caplog.text
+
+
+def test_settings_log_level(
+    app_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    monkeypatch.setenv("AUTOSCALING_LOG_LEVEL", "DEBUG")
+    settings = ApplicationSettings.create_from_envs()
+    assert settings.log_level == settings.AUTOSCALING_LOGLEVEL

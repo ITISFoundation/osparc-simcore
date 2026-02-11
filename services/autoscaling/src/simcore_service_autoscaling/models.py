@@ -27,9 +27,7 @@ class _TaskAssignmentMixin:
         task_required_node_labels: dict[DockerLabelKey, str],
     ) -> None:
         self.assigned_tasks.append(task)
-        object.__setattr__(
-            self, "available_resources", self.available_resources - task_resources
-        )
+        object.__setattr__(self, "available_resources", self.available_resources - task_resources)
         if task_required_node_labels:
             object.__setattr__(
                 self,
@@ -56,10 +54,7 @@ class AssignedTasksToInstanceType(_TaskAssignmentMixin):
         in both dicts, the values must be the same.
         """
         for key, value in task_labels.items():
-            if (
-                key in self.osparc_custom_node_labels
-                and self.osparc_custom_node_labels[key] != value
-            ):
+            if key in self.osparc_custom_node_labels and self.osparc_custom_node_labels[key] != value:
                 return False
         return True
 
@@ -109,14 +104,10 @@ class Cluster:  # pylint: disable=too-many-instance-attributes
         }
     )
     pending_nodes: list[AssociatedInstance] = field(
-        metadata={
-            "description": "This is a EC2-backed docker node which is active and NOT yet ready to receive tasks"
-        }
+        metadata={"description": "This is a EC2-backed docker node which is active and NOT yet ready to receive tasks"}
     )
     drained_nodes: list[AssociatedInstance] = field(
-        metadata={
-            "description": "This is a EC2-backed docker node which is drained (cannot accept tasks)"
-        }
+        metadata={"description": "This is a EC2-backed docker node which is drained (cannot accept tasks)"}
     )
     hot_buffer_drained_nodes: list[AssociatedInstance] = field(
         metadata={
@@ -124,9 +115,7 @@ class Cluster:  # pylint: disable=too-many-instance-attributes
         }
     )
     pending_ec2s: list[NonAssociatedInstance] = field(
-        metadata={
-            "description": "This is an EC2 instance that is not yet associated to a docker node"
-        }
+        metadata={"description": "This is an EC2 instance that is not yet associated to a docker node"}
     )
     broken_ec2s: list[NonAssociatedInstance] = field(
         metadata={
@@ -139,14 +128,10 @@ class Cluster:  # pylint: disable=too-many-instance-attributes
         }
     )
     disconnected_nodes: list[Node] = field(
-        metadata={
-            "description": "This is a docker node which is not backed by a running EC2 instance"
-        }
+        metadata={"description": "This is a docker node which is not backed by a running EC2 instance"}
     )
     terminating_nodes: list[AssociatedInstance] = field(
-        metadata={
-            "description": "This is a EC2-backed docker node which is docker drained and waiting for termination"
-        }
+        metadata={"description": "This is a EC2-backed docker node which is docker drained and waiting for termination"}
     )
     retired_nodes: list[AssociatedInstance] = field(
         metadata={
@@ -229,9 +214,7 @@ class WarmBufferPool:
             f"broken-count={len(self.broken_instances)})"
         )
 
-    def _sort_by_readiness(
-        self, *, invert: bool = False
-    ) -> Generator[set[EC2InstanceData], Any, None]:
+    def _sort_by_readiness(self, *, invert: bool = False) -> Generator[set[EC2InstanceData], Any]:
         order = (
             self.ready_instances,
             self.stopping_instances,
@@ -264,9 +247,7 @@ class WarmBufferPool:
 
 @dataclass
 class WarmBufferPoolManager:
-    buffer_pools: dict[InstanceTypeType, WarmBufferPool] = field(
-        default_factory=lambda: defaultdict(WarmBufferPool)
-    )
+    buffer_pools: dict[InstanceTypeType, WarmBufferPool] = field(default_factory=lambda: defaultdict(WarmBufferPool))
 
     def __repr__(self) -> str:
         return f"WarmBufferPoolManager({dict(self.buffer_pools)})"

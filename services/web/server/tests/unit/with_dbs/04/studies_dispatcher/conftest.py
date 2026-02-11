@@ -30,9 +30,7 @@ from simcore_service_webserver.studies_dispatcher.settings import (
 
 
 @pytest.fixture
-def app_environment(
-    app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
-) -> EnvVarsDict:
+def app_environment(app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
     envs_plugins = setenvs_from_dict(
         monkeypatch,
         {

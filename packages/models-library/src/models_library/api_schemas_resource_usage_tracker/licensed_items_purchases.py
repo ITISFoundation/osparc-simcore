@@ -2,6 +2,8 @@ from datetime import datetime
 from decimal import Decimal
 from typing import NamedTuple
 
+from pydantic import BaseModel, ConfigDict, PositiveInt
+
 from models_library.licenses import LicensedItemID, LicensedItemKey, LicensedItemVersion
 from models_library.products import ProductName
 from models_library.resource_tracker import PricingUnitCostId
@@ -10,7 +12,6 @@ from models_library.resource_tracker_licensed_items_purchases import (
 )
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from pydantic import BaseModel, ConfigDict, PositiveInt
 
 
 class LicensedItemPurchaseGet(BaseModel):

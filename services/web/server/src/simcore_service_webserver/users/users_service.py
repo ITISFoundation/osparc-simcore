@@ -6,6 +6,7 @@ from ._accounts_service import (
 from ._models import FullNameDict
 from ._users_service import (
     delete_user_without_projects,
+    get_active_users_email_data,
     get_guest_user_ids_and_names,
     get_user,
     get_user_credentials,
@@ -27,6 +28,7 @@ from ._users_service import (
 __all__: tuple[str, ...] = (
     "FullNameDict",
     "delete_user_without_projects",
+    "get_active_users_email_data",
     "get_guest_user_ids_and_names",
     "get_user",
     "get_user_credentials",
@@ -45,4 +47,3 @@ __all__: tuple[str, ...] = (
     "set_user_as_deleted",
     "update_expired_users",
 )
-# nopycln: file

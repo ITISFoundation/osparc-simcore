@@ -6,6 +6,7 @@ import pytest
 from aws_library.s3._models import S3ObjectKey
 from models_library.projects import ProjectID, ProjectIDStr
 from models_library.projects_nodes_io import NodeIDStr
+from pydantic import TypeAdapter
 from simcore_service_storage.models import NodeID
 from simcore_service_storage.utils.simcore_s3_dsm_utils import (
     UserSelectionStr,
@@ -53,7 +54,10 @@ _FOLDERS_PATH = Path("nested/folders/path")
 )
 def test__base_path_parent(selection: Path | str, s3_object: Path, expected: str):
     assert (
-        _base_path_parent(UserSelectionStr(f"{selection}"), S3ObjectKey(f"{s3_object}"))
+        _base_path_parent(
+            TypeAdapter(UserSelectionStr).validate_python(f"{selection}"),
+            TypeAdapter(S3ObjectKey).validate_python(f"{s3_object}"),
+        )
         == expected
     )
 
@@ -74,13 +78,8 @@ def test__base_path_parent(selection: Path | str, s3_object: Path, expected: str
         (["a/a.txt", "a.txt", "c.txt", "a/d.txt"], False),
     ],
 )
-def test_ensure_user_selection_from_same_base_directory(
-    user_selection: list[S3ObjectKey | Path], expected: bool
-):
-    assert (
-        ensure_user_selection_from_same_base_directory([f"{x}" for x in user_selection])
-        == expected
-    )
+def test_ensure_user_selection_from_same_base_directory(user_selection: list[S3ObjectKey | Path], expected: bool):
+    assert ensure_user_selection_from_same_base_directory([f"{x}" for x in user_selection]) == expected
 
 
 _PID1: Final[ProjectID] = UUID(int=1)

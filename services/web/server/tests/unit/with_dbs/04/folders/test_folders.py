@@ -66,9 +66,7 @@ async def test_folders_full_workflow(
     # list user folders
     url = client.app.router["list_folders"].url_for()
     resp = await client.get(f"{url}")
-    data, _, meta, links = await assert_status(
-        resp, status.HTTP_200_OK, include_meta=True, include_links=True
-    )
+    data, _, meta, links = await assert_status(resp, status.HTTP_200_OK, include_meta=True, include_links=True)
     assert len(data) == 1
     assert data[0]["folderId"] == added_folder.folder_id
     assert data[0]["name"] == added_folder.name
@@ -84,9 +82,7 @@ async def test_folders_full_workflow(
     assert got_folder.name == added_folder.name
 
     # update a folder
-    url = client.app.router["replace_folder"].url_for(
-        folder_id=f"{added_folder.folder_id}"
-    )
+    url = client.app.router["replace_folder"].url_for(folder_id=f"{added_folder.folder_id}")
     resp = await client.put(
         f"{url}",
         json={"name": "My Second folder"},
@@ -104,9 +100,7 @@ async def test_folders_full_workflow(
     assert data[0]["name"] == "My Second folder"
 
     # delete a folder
-    url = client.app.router["delete_folder"].url_for(
-        folder_id=f"{added_folder.folder_id}"
-    )
+    url = client.app.router["delete_folder"].url_for(folder_id=f"{added_folder.folder_id}")
     resp = await client.delete(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
@@ -156,11 +150,7 @@ async def test_sub_folders_full_workflow(
     assert data[0]["name"] == "My first folder"
 
     # list user specific folder
-    url = (
-        client.app.router["list_folders"]
-        .url_for()
-        .with_query({"folder_id": f"{subfolder_folder['folderId']}"})
-    )
+    url = client.app.router["list_folders"].url_for().with_query({"folder_id": f"{subfolder_folder['folderId']}"})
     resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(data) == 0
@@ -177,11 +167,7 @@ async def test_sub_folders_full_workflow(
     subsubfolder_folder, _ = await assert_status(resp, status.HTTP_201_CREATED)
 
     # list user subfolder folders
-    url = (
-        client.app.router["list_folders"]
-        .url_for()
-        .with_query({"folder_id": f"{subfolder_folder['folderId']}"})
-    )
+    url = client.app.router["list_folders"].url_for().with_query({"folder_id": f"{subfolder_folder['folderId']}"})
     resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(data) == 1
@@ -202,9 +188,7 @@ async def test_sub_folders_full_workflow(
     await assert_status(resp, status.HTTP_409_CONFLICT)
 
     # move sub sub folder to root folder
-    url = client.app.router["replace_folder"].url_for(
-        folder_id=f"{subsubfolder_folder['folderId']}"
-    )
+    url = client.app.router["replace_folder"].url_for(folder_id=f"{subsubfolder_folder['folderId']}")
     resp = await client.put(
         f"{url}",
         json={
@@ -262,9 +246,7 @@ async def test_project_folder_movement_full_workflow(
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
     # move project to the root directory
-    url = client.app.router["replace_project_folder"].url_for(
-        folder_id="null", project_id=f"{user_project['uuid']}"
-    )
+    url = client.app.router["replace_project_folder"].url_for(folder_id="null", project_id=f"{user_project['uuid']}")
     resp = await client.put(f"{url}")
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
@@ -293,11 +275,7 @@ async def test_project_listing_inside_of_private_folder(
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
     # list project in user private folder
-    url = (
-        client.app.router["list_projects"]
-        .url_for()
-        .with_query({"folder_id": f"{original_user_folder['folderId']}"})
-    )
+    url = client.app.router["list_projects"].url_for().with_query({"folder_id": f"{original_user_folder['folderId']}"})
     resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(data) == 1
@@ -321,20 +299,14 @@ async def test_project_listing_inside_of_private_folder(
         await update_or_insert_project_group(
             client.app,
             project_id=user_project["uuid"],
-            group_id=TypeAdapter(GroupID).validate_python(
-                new_logged_user["primary_gid"]
-            ),
+            group_id=TypeAdapter(GroupID).validate_python(new_logged_user["primary_gid"]),
             read=True,
             write=True,
             delete=False,
         )
 
         # list new user root folder
-        url = (
-            client.app.router["list_projects"]
-            .url_for()
-            .with_query({"folder_id": "null"})
-        )
+        url = client.app.router["list_projects"].url_for().with_query({"folder_id": "null"})
         resp = await client.get(f"{url}")
         data, _ = await assert_status(resp, status.HTTP_200_OK)
         assert len(data) == 1
@@ -356,11 +328,7 @@ async def test_project_listing_inside_of_private_folder(
         await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
         # list new user specific folder
-        url = (
-            client.app.router["list_projects"]
-            .url_for()
-            .with_query({"folder_id": f"{new_user_folder['folderId']}"})
-        )
+        url = client.app.router["list_projects"].url_for().with_query({"folder_id": f"{new_user_folder['folderId']}"})
         resp = await client.get(f"{url}")
         data, _ = await assert_status(resp, status.HTTP_200_OK)
         assert len(data) == 1
@@ -450,11 +418,7 @@ async def test_folders_deletion(
     assert len(data) == 1
 
     # list subfolder projects
-    url = (
-        client.app.router["list_projects"]
-        .url_for()
-        .with_query({"folder_id": f"{subfolder_2['folderId']}"})
-    )
+    url = client.app.router["list_projects"].url_for().with_query({"folder_id": f"{subfolder_2['folderId']}"})
     resp = await client.get(f"{url}")
     data, _ = await assert_status(resp, status.HTTP_200_OK)
     assert len(data) == 1
@@ -467,16 +431,12 @@ async def test_folders_deletion(
     assert len(data) == 0
 
     # delete a subfolder
-    url = client.app.router["delete_folder"].url_for(
-        folder_id=f"{subfolder_1['folderId']}"
-    )
+    url = client.app.router["delete_folder"].url_for(folder_id=f"{subfolder_1['folderId']}")
     resp = await client.delete(f"{url}")
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
 
     # delete a root folder
-    url = client.app.router["delete_folder"].url_for(
-        folder_id=f"{root_folder['folderId']}"
-    )
+    url = client.app.router["delete_folder"].url_for(folder_id=f"{root_folder['folderId']}")
     resp = await client.delete(f"{url}")
     await assert_status(resp, status.HTTP_204_NO_CONTENT)
 

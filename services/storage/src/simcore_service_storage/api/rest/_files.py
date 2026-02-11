@@ -78,16 +78,12 @@ async def list_files_metadata(
         or f"{query_params.project_id or ''}",  # NOTE: https://github.com/ITISFoundation/osparc-issues/issues/1593
         project_id=query_params.project_id,
     )
-    return Envelope[list[FileMetaDataGet]](
-        data=[FileMetaDataGet(**d.model_dump()) for d in data]
-    )
+    return Envelope[list[FileMetaDataGet]](data=[FileMetaDataGet(**d.model_dump()) for d in data])
 
 
 @router.get(
     "/locations/{location_id}/files/{file_id:path}/metadata",
-    response_model=Envelope[FileMetaDataGet]
-    | Envelope[FileMetaDataGetv010]
-    | Envelope[dict],
+    response_model=Envelope[FileMetaDataGet] | Envelope[FileMetaDataGetv010] | Envelope[dict],
 )
 async def get_file_metadata(
     query_params: Annotated[StorageQueryParamsBase, Depends()],
@@ -151,9 +147,7 @@ async def download_file(
 ) -> Envelope[FileDownloadResponse]:
     # NOTE: Used by legacy dynamic services -> MUST BE BACKWARDS COMPATIBLE
     dsm = get_dsm_provider(request.app).get(location_id)
-    link = await dsm.create_file_download_link(
-        query_params.user_id, file_id, query_params.link_type
-    )
+    link = await dsm.create_file_download_link(query_params.user_id, file_id, query_params.link_type)
     return Envelope[FileDownloadResponse](data=FileDownloadResponse(link=link))
 
 
@@ -176,10 +170,12 @@ async def upload_file(
     v1 rationale:
         - client calls this handler, which returns a single link (either direct S3 or presigned) to the S3 backend
         - client uploads the file
-        - storage relies on lazy update to find if the file is finished uploaded (when client calls get_file_meta_data, or if the dsm_cleaner goes over it after the upload time is expired)
+        - storage relies on lazy update to find if the file is finished uploaded (when client calls get_file_meta_data,
+        or if the dsm_cleaner goes over it after the upload time is expired)
 
     v2 rationale:
-        - client calls this handler, which returns a FileUploadSchema object containing 1 or more links (either S3/presigned links)
+        - client calls this handler, which returns a FileUploadSchema object containing 1
+        or more links (either S3/presigned links)
         - client uploads the file (by chunking it if there are more than 1 presigned link)
         - client calls complete_upload handle which will reconstruct the file on S3 backend
         - client waits for completion to finish and then the file is accessible on S3 backend
@@ -189,17 +185,20 @@ async def upload_file(
     Use-case v1.1: if query.link_type=presigned or None, returns a presigned link (limited to a single 5GB file)
     Use-case v1.2: if query.link_type=s3, returns a s3 direct link (limited to a single 5TB file)
 
-    User-case v2: query.is_directory is True (query.file_size is forced to -1), returns an s3 path where to upload all the content of the directory
-    User-case v2: if query.file_size is defined, returns a FileUploadSchema model, expects client to call "complete_upload" when the file is finished uploading
-    Use-case v2.1: if query.file_size == 0 and query.link_type=presigned or None, returns a single presigned link inside FileUploadSchema (limited to a single 5Gb file)
-    Use-case v2.2: if query.file_size > 0 and query.link_type=presigned or None, returns 1 or more presigned links depending on the file size (limited to a single 5TB file)
-    Use-case v2.3: if query.link_type=s3 and query.file_size>=0, returns a single s3 direct link (limited to a single 5TB file)
+    User-case v2: query.is_directory is True (query.file_size is forced to -1),
+    returns an s3 path where to upload all the content of the directory
+    User-case v2: if query.file_size is defined, returns a FileUploadSchema model,
+    expects client to call "complete_upload" when the file is finished uploading
+    Use-case v2.1: if query.file_size == 0 and query.link_type=presigned or None,
+    returns a single presigned link inside FileUploadSchema (limited to a single 5Gb file)
+    Use-case v2.2: if query.file_size > 0 and query.link_type=presigned or None,
+    returns 1 or more presigned links depending on the file size (limited to a single 5TB file)
+    Use-case v2.3: if query.link_type=s3 and query.file_size>=0,
+    returns a single s3 direct link (limited to a single 5TB file)
     """
     # NOTE: Used by legacy dynamic services with single presigned link -> MUST BE BACKWARDS COMPATIBLE
     dsm = get_dsm_provider(request.app).get(location_id)
-    with log_context(
-        logger=_logger, level=logging.DEBUG, msg=f"Creating upload links for {file_id=}"
-    ):
+    with log_context(logger=_logger, level=logging.DEBUG, msg=f"Creating upload links for {file_id=}"):
         links: UploadLinks = await dsm.create_file_upload_links(
             user_id=query_params.user_id,
             file_id=file_id,
@@ -211,9 +210,7 @@ async def upload_file(
     if query_params.is_v1_upload:
         # return v1 response
         assert len(links.urls) == 1  # nosec
-        return Envelope[FileUploadResponseV1](
-            data=FileUploadResponseV1(link=links.urls[0])
-        )
+        return Envelope[FileUploadResponseV1](data=FileUploadResponseV1(link=links.urls[0]))
 
     # v2 response
 
@@ -327,9 +324,7 @@ async def complete_upload_file(
     complete_task_state_url = f"{route}"
 
     response = FileUploadCompleteResponse(
-        links=FileUploadCompleteLinks(
-            state=TypeAdapter(AnyUrl).validate_python(complete_task_state_url)
-        )
+        links=FileUploadCompleteLinks(state=TypeAdapter(AnyUrl).validate_python(complete_task_state_url))
     )
     return Envelope[FileUploadCompleteResponse](data=response)
 
@@ -351,14 +346,14 @@ async def is_completed_upload_file(
     # for completeness
     owner_metadata = _get_owner_metadata(user_id=query_params.user_id)
     task_status = await task_manager.get_task_status(
-        owner_metadata=owner_metadata, task_uuid=TaskUUID(future_id)
+        owner_metadata=owner_metadata, task_uuid=TypeAdapter(TaskUUID).validate_python(future_id)
     )
     # first check if the task is in the app
     if task_status.is_done:
         task_result = TypeAdapter(FileMetaData).validate_python(
             await task_manager.get_task_result(
                 owner_metadata=owner_metadata,
-                task_uuid=TaskUUID(future_id),
+                task_uuid=TypeAdapter(TaskUUID).validate_python(future_id),
             )
         )
         new_fmd = task_result
@@ -388,9 +383,7 @@ async def delete_file(
     await dsm.delete_file(query_params.user_id, file_id)
 
 
-@router.post(
-    "/files/{file_id:path}:soft-copy", response_model=Envelope[FileMetaDataGet]
-)
+@router.post("/files/{file_id:path}:soft-copy", response_model=Envelope[FileMetaDataGet])
 async def copy_as_soft_link(
     query_params: Annotated[StorageQueryParamsBase, Depends()],
     file_id: StorageFileID,

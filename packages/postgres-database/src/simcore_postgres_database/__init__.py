@@ -7,8 +7,8 @@ __version__: str = version("simcore-postgres-database")
 
 __all__: tuple[str, ...] = (
     "metadata",
-    "webserver_models",
     "storage_models",
+    "webserver_models",
 )
 
 # nopycln: file

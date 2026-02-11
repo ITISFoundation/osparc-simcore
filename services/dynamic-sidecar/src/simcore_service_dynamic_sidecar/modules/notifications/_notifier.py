@@ -4,7 +4,7 @@ import socketio  # type: ignore[import-untyped]
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
 from models_library.api_schemas_dynamic_sidecar.ports import (
-    InputPortSatus,
+    InputPortStatus,
     InputStatus,
     OutputPortStatus,
     OutputStatus,
@@ -77,7 +77,7 @@ class Notifier(SingletonInAppStateMixin):
         await self._sio_manager.emit(
             SOCKET_IO_STATE_INPUT_PORTS_EVENT,
             data=jsonable_encoder(
-                InputPortSatus(
+                InputPortStatus(
                     project_id=project_id,
                     node_id=node_id,
                     port_key=port_key,

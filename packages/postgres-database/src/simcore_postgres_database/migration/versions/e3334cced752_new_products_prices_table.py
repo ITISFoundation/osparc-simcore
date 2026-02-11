@@ -29,9 +29,7 @@ def upgrade():
             server_default=sa.text("now()"),
             nullable=False,
         ),
-        sa.CheckConstraint(
-            "usd_per_credit >= 0", name="non_negative_usd_per_credit_constraint"
-        ),
+        sa.CheckConstraint("usd_per_credit >= 0", name="non_negative_usd_per_credit_constraint"),
         sa.ForeignKeyConstraint(
             ["product_name"],
             ["products.name"],

@@ -400,7 +400,7 @@ qx.Theme.define("osparc.theme.Appearance", {
 
     "dialog-window-content": {
       style: () => ({
-        backgroundColor: "transparent_overlay"
+        backgroundColor: "transparent-overlay"
       })
     },
     /*
@@ -579,7 +579,7 @@ qx.Theme.define("osparc.theme.Appearance", {
         const style = {
           decorator: "form-input",
           padding: 5,
-          backgroundColor: "input_background"
+          backgroundColor: "input-background"
         };
         if (states.hovered) {
           style.backgroundColor = "info";
@@ -601,7 +601,7 @@ qx.Theme.define("osparc.theme.Appearance", {
         const style = {
           decorator: "form-input",
           padding: 5,
-          backgroundColor: "input_background"
+          backgroundColor: "input-background"
         };
         if (states.focused) {
           style.decorator = "form-input-focused";
@@ -645,9 +645,9 @@ qx.Theme.define("osparc.theme.Appearance", {
         if (states.readonly) {
           backgroundColor = "transparent";
         } else if (states.disabled) {
-          backgroundColor = "input_background_disable";
+          backgroundColor = "input-background-disable";
         } else {
-          backgroundColor = "input_background";
+          backgroundColor = "input-background";
         }
 
         return {
@@ -735,7 +735,7 @@ qx.Theme.define("osparc.theme.Appearance", {
           decorator: "fab-button",
           cursor: "pointer",
           padding: 5,
-          textColor: "fab_text",
+          textColor: "fab-text",
           backgroundColor: "fab-background",
           center: true
         };
@@ -766,7 +766,7 @@ qx.Theme.define("osparc.theme.Appearance", {
           decorator: "thumbnail",
           cursor: "pointer",
           padding: 5,
-          textColor: "fab_text",
+          textColor: "fab-text",
           backgroundColor: "fab-background",
           center: true
         };
@@ -1247,7 +1247,7 @@ qx.Theme.define("osparc.theme.Appearance", {
         marginLeft: state.hovered && state.editable ? 0 : 1,
         padding: 5,
         cursor: state.editable ? "text" : "auto",
-        backgroundColor: "input_background"
+        backgroundColor: "input-background"
       })
     },
 

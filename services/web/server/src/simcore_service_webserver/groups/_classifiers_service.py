@@ -42,9 +42,7 @@ TreePath: TypeAlias = Annotated[
 
 
 class ClassifierItem(BaseModel):
-    classifier: str = Field(
-        ..., description="Unique identifier used to tag studies or services"
-    )
+    classifier: str = Field(..., description="Unique identifier used to tag studies or services")
     display_name: str
     short_description: str | None
     url: Annotated[
@@ -80,18 +78,14 @@ class GroupClassifiersService:
         self.app = app
         self._repo = GroupClassifierRepository.create_from_app(app)
 
-    async def get_group_classifiers(
-        self, gid: int, tree_view_mode: Literal["std"] = "std"
-    ) -> dict[str, Any]:
+    async def get_group_classifiers(self, gid: int, tree_view_mode: Literal["std"] = "std") -> dict[str, Any]:
         """Get classifiers for a group, either from bundle or dynamic tree view."""
         if not await self._repo.group_uses_scicrunch(gid):
             bundle = await self._repo.get_classifiers_from_bundle(gid)
             if bundle:
                 try:
                     # truncate bundle to what is needed and drop the rest
-                    return Classifiers(**bundle).model_dump(
-                        exclude_unset=True, exclude_none=True
-                    )
+                    return Classifiers(**bundle).model_dump(exclude_unset=True, exclude_none=True)
                 except ValidationError as err:
                     _logger.exception(
                         **create_troubleshooting_log_kwargs(
@@ -112,9 +106,7 @@ class GroupClassifiersService:
             # Return empty view on any error (including ScicrunchError)
             return {}
 
-    async def _build_rrids_tree_view(
-        self, tree_view_mode: Literal["std"] = "std"
-    ) -> dict[str, Any]:
+    async def _build_rrids_tree_view(self, tree_view_mode: Literal["std"] = "std") -> dict[str, Any]:
         if tree_view_mode != "std":
             msg = "Currently only 'std' option for the classifiers tree view is implemented"
             raise NotImplementedError(msg)
@@ -131,9 +123,7 @@ class GroupClassifiersService:
                     url=service.get_resolver_web_url(resource.rrid),
                 )
 
-                node = TypeAdapter(TreePath).validate_python(
-                    validated_item.display_name.replace(":", " ")
-                )
+                node = TypeAdapter(TreePath).validate_python(validated_item.display_name.replace(":", " "))
                 flat_tree_view[node] = validated_item
 
             except ValidationError as err:
@@ -142,6 +132,4 @@ class GroupClassifiersService:
                     err,
                 )
 
-        return Classifiers.model_construct(classifiers=flat_tree_view).model_dump(
-            exclude_unset=True
-        )
+        return Classifiers.model_construct(classifiers=flat_tree_view).model_dump(exclude_unset=True)

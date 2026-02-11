@@ -1,6 +1,6 @@
 from collections.abc import Mapping
 from dataclasses import fields, is_dataclass
-from typing import Any, TypeVar
+from typing import Any, Self, TypeVar
 
 from sqlalchemy.engine.row import Row
 
@@ -11,7 +11,7 @@ class FromRowMixin:
     """Mixin to allow instance construction from database row objects"""
 
     @classmethod
-    def from_row(cls: type[ModelType], row: Any) -> ModelType:
+    def from_row(cls, row: Any) -> Self:
         """Creates an instance from a database row.
 
         Supports both Row objects and mapping-like objects.

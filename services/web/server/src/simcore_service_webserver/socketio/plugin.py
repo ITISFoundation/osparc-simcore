@@ -17,9 +17,7 @@ from .server import setup_socketio_server
 
 _logger = logging.getLogger(__name__)
 
-APP_SOCKETIO_SERVER_KEY: Final = web.AppKey(
-    "APP_SOCKETIO_SERVER_KEY", object
-)  # socketio.AsyncServer
+APP_SOCKETIO_SERVER_KEY: Final = web.AppKey("APP_SOCKETIO_SERVER_KEY", object)  # socketio.AsyncServer
 
 
 @app_setup_func(

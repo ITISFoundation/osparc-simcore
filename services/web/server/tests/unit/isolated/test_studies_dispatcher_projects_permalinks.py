@@ -24,9 +24,7 @@ from simcore_service_webserver.studies_dispatcher.settings import get_plugin_set
 
 
 @pytest.fixture
-def app_environment(
-    env_devel_dict: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
-) -> EnvVarsDict:
+def app_environment(env_devel_dict: EnvVarsDict, monkeypatch: pytest.MonkeyPatch) -> EnvVarsDict:
     # remove
     for env in ("WEBSERVER_STUDIES_DISPATCHER", "WEBSERVER_STUDIES_ACCESS_ENABLED"):
         monkeypatch.delenv(env, raising=False)
@@ -106,9 +104,7 @@ def test_create_permalink(fake_get_project_request: web.Request, is_public: bool
 
 
 @pytest.fixture(params=[True, False])
-def valid_project_kwargs(
-    request: pytest.FixtureRequest, fake_get_project_request: web.Request
-):
+def valid_project_kwargs(request: pytest.FixtureRequest, fake_get_project_request: web.Request):
     return {
         "project_uuid": fake_get_project_request.match_info["project_uuid"],
         "project_type": ProjectType.TEMPLATE,
@@ -125,7 +121,7 @@ def test_permalink_only_for_template_projects(
             fake_get_project_request.app,
             request_url=fake_get_project_request.url,
             request_headers=dict(fake_get_project_request.headers),
-            **{**valid_project_kwargs, "project_type": ProjectType.STANDARD}
+            **{**valid_project_kwargs, "project_type": ProjectType.STANDARD},
         )
 
 
@@ -139,10 +135,8 @@ def test_permalink_only_when_read_access_to_everyone(
             request_headers=dict(fake_get_project_request.headers),
             **{
                 **valid_project_kwargs,
-                "project_access_rights": {
-                    "1": {"read": False, "write": False, "delete": False}
-                },
-            }
+                "project_access_rights": {"1": {"read": False, "write": False, "delete": False}},
+            },
         )
 
     with pytest.raises(PermalinkNotAllowedError):
@@ -152,8 +146,6 @@ def test_permalink_only_when_read_access_to_everyone(
             request_headers=dict(fake_get_project_request.headers),
             **{
                 **valid_project_kwargs,
-                "project_access_rights": {
-                    "2000": {"read": False, "write": False, "delete": False}
-                },
-            }
+                "project_access_rights": {"2000": {"read": False, "write": False, "delete": False}},
+            },
         )

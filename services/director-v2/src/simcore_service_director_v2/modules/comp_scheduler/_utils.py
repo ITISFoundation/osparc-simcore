@@ -57,9 +57,7 @@ def create_service_resources_from_task(task: CompTaskAtDB) -> ServiceResourcesDi
         DockerGenericTag(f"{task.image.name}:{task.image.tag}"),
         {
             res_name: ResourceValue(limit=res_value, reservation=res_value)
-            for res_name, res_value in task.image.node_requirements.model_dump(
-                by_alias=True
-            ).items()
+            for res_name, res_value in task.image.node_requirements.model_dump(by_alias=True).items()
             if res_value is not None
         },
         [task.image.boot_mode],
@@ -82,14 +80,10 @@ def get_redis_client_from_app(*args, **kwargs) -> RedisClientSDK:
     return get_redis_client_manager(app).client(RedisDatabase.LOCKS)
 
 
-def get_redis_lock_key(
-    suffix: str, *, unique_lock_key_builder: Callable[..., str] | None
-) -> Callable[..., str]:
+def get_redis_lock_key(suffix: str, *, unique_lock_key_builder: Callable[..., str] | None) -> Callable[..., str]:
     def _(*args, **kwargs) -> str:
         app = _get_app_from_args(*args, **kwargs)
-        unique_lock_part = (
-            unique_lock_key_builder(*args, **kwargs) if unique_lock_key_builder else ""
-        )
+        unique_lock_part = unique_lock_key_builder(*args, **kwargs) if unique_lock_key_builder else ""
         if unique_lock_part:
             unique_lock_part = f"-{unique_lock_part}"
         return f"{app.title}-{suffix}{unique_lock_part}"

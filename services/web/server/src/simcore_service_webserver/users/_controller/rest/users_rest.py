@@ -12,6 +12,7 @@ from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import (
     parse_request_body_as,
 )
+
 from simcore_service_webserver.application_settings_utils import (
     requires_dev_feature_enabled,
 )
@@ -32,9 +33,7 @@ from ._rest_schemas import MyPhoneConfirm, MyPhoneRegister, UsersRequestContext
 
 _logger = logging.getLogger(__name__)
 
-_REGISTRATION_CODE_VALUE_FAKE = (
-    "123456"  # NOTE: temporary fake while developing registration feature
-)
+_REGISTRATION_CODE_VALUE_FAKE = "123456"  # NOTE: temporary fake while developing registration feature
 
 
 routes = web.RouteTableDef()
@@ -57,9 +56,7 @@ async def get_my_profile(request: web.Request) -> web.Response:
         my_product_group,
         product_support_group,
         product_chatbot_primary_group,
-    ) = await groups_service.get_user_profile_groups(
-        request.app, user_id=req_ctx.user_id, product=product
-    )
+    ) = await groups_service.get_user_profile_groups(request.app, user_id=req_ctx.user_id, product=product)
 
     assert groups_by_type.primary  # nosec
     assert groups_by_type.everyone  # nosec
@@ -74,9 +71,7 @@ async def get_my_profile(request: web.Request) -> web.Response:
         user_billing_details = await _users_service.get_user_billing_details(
             request.app, product_name=product.name, user_id=req_ctx.user_id
         )
-        my_address = MyProfileAddressGet.model_validate(
-            user_billing_details, from_attributes=True
-        )
+        my_address = MyProfileAddressGet.model_validate(user_billing_details, from_attributes=True)
     except BillingDetailsNotFoundError:
         my_address = None
 
@@ -101,9 +96,7 @@ async def update_my_profile(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
     profile_update = await parse_request_body_as(MyProfileRestPatch, request)
 
-    await _users_service.update_my_profile(
-        request.app, user_id=req_ctx.user_id, update=profile_update
-    )
+    await _users_service.update_my_profile(request.app, user_id=req_ctx.user_id, update=profile_update)
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -122,12 +115,8 @@ async def my_phone_register(request: web.Request) -> web.Response:
     phone_register = await parse_request_body_as(MyPhoneRegister, request)
 
     session = await get_session(request)
-    registration_session_manager = RegistrationSessionManager(
-        session, req_ctx.user_id, req_ctx.product_name
-    )
-    registration_session_manager.start_registration(
-        phone_register.phone, code=_REGISTRATION_CODE_VALUE_FAKE
-    )
+    registration_session_manager = RegistrationSessionManager(session, req_ctx.user_id, req_ctx.product_name)
+    registration_session_manager.start_registration(phone_register.phone, code=_REGISTRATION_CODE_VALUE_FAKE)
 
     return web.json_response(status=status.HTTP_202_ACCEPTED)
 
@@ -141,9 +130,7 @@ async def my_phone_resend(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
 
     session = await get_session(request)
-    registration_session_manager = RegistrationSessionManager(
-        session, req_ctx.user_id, req_ctx.product_name
-    )
+    registration_session_manager = RegistrationSessionManager(session, req_ctx.user_id, req_ctx.product_name)
     registration_session_manager.regenerate_code(new_code=_REGISTRATION_CODE_VALUE_FAKE)
 
     return web.json_response(status=status.HTTP_202_ACCEPTED)
@@ -159,9 +146,7 @@ async def my_phone_confirm(request: web.Request) -> web.Response:
     phone_confirm = await parse_request_body_as(MyPhoneConfirm, request)
 
     session = await get_session(request)
-    registration_session_manager = RegistrationSessionManager(
-        session, req_ctx.user_id, req_ctx.product_name
-    )
+    registration_session_manager = RegistrationSessionManager(session, req_ctx.user_id, req_ctx.product_name)
 
     registration = registration_session_manager.validate_pending_registration()
     registration_session_manager.validate_confirmation_code(phone_confirm.code)

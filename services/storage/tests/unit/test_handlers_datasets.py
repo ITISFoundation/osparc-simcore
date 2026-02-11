@@ -91,9 +91,7 @@ async def test_list_dataset_files_metadata(
         ).with_query(user_id=user_id, product_name=product_name)
 
         response = await client.get(f"{url}")
-        list_fmds, error = assert_status(
-            response, status.HTTP_200_OK, list[FileMetaDataGet]
-        )
+        list_fmds, error = assert_status(response, status.HTTP_200_OK, list[FileMetaDataGet])
         assert not error
         assert list_fmds
         assert len(list_fmds) == (n + 1)
@@ -126,9 +124,7 @@ async def test_list_datasets_metadata(
     ).with_query(user_id=user_id, product_name=product_name)
 
     response = await client.get(f"{url}")
-    list_datasets, _ = assert_status(
-        response, status.HTTP_200_OK, list[DatasetMetaDataGet]
-    )
+    list_datasets, _ = assert_status(response, status.HTTP_200_OK, list[DatasetMetaDataGet])
     assert response.status_code == status.HTTP_200_OK
     assert list_datasets
     assert len(list_datasets) == 1

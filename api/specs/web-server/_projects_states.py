@@ -46,26 +46,14 @@ def to_desc(exceptions: list[type[Exception]] | type[Exception]):
     response_model=Envelope[ProjectGet],
     responses={
         status.HTTP_400_BAD_REQUEST: {"description": to_desc([ValidationError])},
-        status.HTTP_402_PAYMENT_REQUIRED: {
-            "description": to_desc([WalletNotEnoughCreditsError])
-        },
-        status.HTTP_403_FORBIDDEN: {
-            "description": to_desc([ProjectInvalidRightsError])
-        },
-        status.HTTP_404_NOT_FOUND: {
-            "description": to_desc(
-                [ProjectNotFoundError, UserDefaultWalletNotFoundError]
-            )
-        },
+        status.HTTP_402_PAYMENT_REQUIRED: {"description": to_desc([WalletNotEnoughCreditsError])},
+        status.HTTP_403_FORBIDDEN: {"description": to_desc([ProjectInvalidRightsError])},
+        status.HTTP_404_NOT_FOUND: {"description": to_desc([ProjectNotFoundError, UserDefaultWalletNotFoundError])},
         status.HTTP_409_CONFLICT: {
             "description": to_desc([ProjectTooManyProjectOpenedError]),
         },
-        status.HTTP_422_UNPROCESSABLE_ENTITY: {
-            "description": to_desc([ValidationError])
-        },
-        status.HTTP_503_SERVICE_UNAVAILABLE: {
-            "description": to_desc([DirectorV2ServiceError])
-        },
+        status.HTTP_422_UNPROCESSABLE_ENTITY: {"description": to_desc([ValidationError])},
+        status.HTTP_503_SERVICE_UNAVAILABLE: {"description": to_desc([DirectorV2ServiceError])},
     },
 )
 def open_project(
@@ -82,9 +70,7 @@ def close_project(
 ): ...
 
 
-@router.get(
-    "/projects/{project_id}/state", response_model=Envelope[ProjectStateOutputSchema]
-)
+@router.get("/projects/{project_id}/state", response_model=Envelope[ProjectStateOutputSchema])
 def get_project_state(
     _path_params: Annotated[ProjectPathParams, Depends()],
 ): ...

@@ -13,13 +13,9 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 log = logging.getLogger(__name__)
 
 
-async def get_updated_project(
-    sqlalchemy_async_engine: AsyncEngine, project_id: str
-) -> dict[str, Any]:
+async def get_updated_project(sqlalchemy_async_engine: AsyncEngine, project_id: str) -> dict[str, Any]:
     async with sqlalchemy_async_engine.connect() as conn:
-        result = await conn.execute(
-            sa.select(projects).where(projects.c.uuid == project_id)
-        )
+        result = await conn.execute(sa.select(projects).where(projects.c.uuid == project_id))
         row = result.one()
         return row._asdict()
 

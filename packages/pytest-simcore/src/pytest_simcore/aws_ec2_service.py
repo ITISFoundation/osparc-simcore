@@ -91,9 +91,7 @@ async def create_aws_subnet_id(
     created_subnet_ids: set[str] = set()
 
     async def _(cidr_override: str | None = None) -> str:
-        subnet = await ec2_client.create_subnet(
-            CidrBlock=cidr_override or create_subnet_cidr_block(), VpcId=aws_vpc_id
-        )
+        subnet = await ec2_client.create_subnet(CidrBlock=cidr_override or create_subnet_cidr_block(), VpcId=aws_vpc_id)
         assert "Subnet" in subnet
         assert "SubnetId" in subnet["Subnet"]
         subnet_id = subnet["Subnet"]["SubnetId"]

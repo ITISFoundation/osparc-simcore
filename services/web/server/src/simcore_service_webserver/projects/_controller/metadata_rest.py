@@ -51,9 +51,7 @@ async def get_project_metadata(request: web.Request) -> web.Response:
         request.app, user_id=req_ctx.user_id, project_uuid=path_params.project_id
     )
 
-    return envelope_json_response(
-        ProjectMetadataGet(project_uuid=path_params.project_id, custom=custom_metadata)
-    )
+    return envelope_json_response(ProjectMetadataGet(project_uuid=path_params.project_id, custom=custom_metadata))
 
 
 @routes.patch(
@@ -82,6 +80,4 @@ async def update_project_metadata(request: web.Request) -> web.Response:
             custom_metadata=custom_metadata,
         )
 
-    return envelope_json_response(
-        ProjectMetadataGet(project_uuid=path_params.project_id, custom=custom_metadata)
-    )
+    return envelope_json_response(ProjectMetadataGet(project_uuid=path_params.project_id, custom=custom_metadata))

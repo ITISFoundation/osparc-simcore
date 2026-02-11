@@ -27,9 +27,7 @@ async def get_service_access_rights(
     service_key: ServiceKey,
     service_version: ServiceVersion,
     _user: Annotated[AccessInfo, Depends(check_service_read_access)],
-    services_repo: Annotated[
-        ServicesRepository, Depends(get_repository(ServicesRepository))
-    ],
+    services_repo: Annotated[ServicesRepository, Depends(get_repository(ServicesRepository))],
     x_simcore_products_name: Annotated[str, Header(...)],
 ):
     service_access_rights = await services_repo.get_service_access_rights(

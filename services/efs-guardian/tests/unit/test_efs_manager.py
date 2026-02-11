@@ -53,15 +53,15 @@ def assert_permissions(
     is_writable = bool(file_permissions & stat.S_IWUSR)
     is_executable = bool(file_permissions & stat.S_IXUSR)
 
-    assert (
-        is_readable == expected_readable
-    ), f"Expected readable={expected_readable}, but got readable={is_readable} for {file_path}"
-    assert (
-        is_writable == expected_writable
-    ), f"Expected writable={expected_writable}, but got writable={is_writable} for {file_path}"
-    assert (
-        is_executable == expected_executable
-    ), f"Expected executable={expected_executable}, but got executable={is_executable} for {file_path}"
+    assert is_readable == expected_readable, (
+        f"Expected readable={expected_readable}, but got readable={is_readable} for {file_path}"
+    )
+    assert is_writable == expected_writable, (
+        f"Expected writable={expected_writable}, but got writable={is_writable} for {file_path}"
+    )
+    assert is_executable == expected_executable, (
+        f"Expected executable={expected_executable}, but got executable={is_executable} for {file_path}"
+    )
 
 
 async def test_remove_write_access_rights(
@@ -84,21 +84,12 @@ async def test_remove_write_access_rights(
 
     efs_manager: EfsManager = app.state.efs_manager
 
-    assert (
-        await efs_manager.check_project_node_data_directory_exits(
-            project_id=project_id, node_id=node_id
-        )
-        is False
-    )
+    assert await efs_manager.check_project_node_data_directory_exits(project_id=project_id, node_id=node_id) is False
 
     with pytest.raises(FileNotFoundError):
-        await efs_manager.list_project_node_state_names(
-            project_id=project_id, node_id=node_id
-        )
+        await efs_manager.list_project_node_state_names(project_id=project_id, node_id=node_id)
 
-    with patch(
-        "simcore_service_efs_guardian.services.efs_manager.os.chown"
-    ) as mocked_chown:
+    with patch("simcore_service_efs_guardian.services.efs_manager.os.chown") as mocked_chown:
         await efs_manager.create_project_specific_data_dir(
             project_id=project_id,
             node_id=node_id,
@@ -106,21 +97,12 @@ async def test_remove_write_access_rights(
         )
         assert mocked_chown.called
 
-    assert (
-        await efs_manager.check_project_node_data_directory_exits(
-            project_id=project_id, node_id=node_id
-        )
-        is True
-    )
+    assert await efs_manager.check_project_node_data_directory_exits(project_id=project_id, node_id=node_id) is True
 
-    project_node_state_names = await efs_manager.list_project_node_state_names(
-        project_id=project_id, node_id=node_id
-    )
+    project_node_state_names = await efs_manager.list_project_node_state_names(project_id=project_id, node_id=node_id)
     assert project_node_state_names == [_storage_directory_name]
 
-    size_before = await efs_manager.get_project_node_data_size(
-        project_id=project_id, node_id=node_id
-    )
+    size_before = await efs_manager.get_project_node_data_size(project_id=project_id, node_id=node_id)
 
     file_paths = []
     for i in range(3):  # Let's create 3 small files for testing
@@ -128,9 +110,7 @@ async def test_remove_write_access_rights(
         file_path.write_text(f"This is file {i}")
         file_paths.append(file_path)
 
-    size_after = await efs_manager.get_project_node_data_size(
-        project_id=project_id, node_id=node_id
-    )
+    size_after = await efs_manager.get_project_node_data_size(project_id=project_id, node_id=node_id)
     assert size_after > size_before
 
     # Now we will check removal of write permissions
@@ -142,9 +122,7 @@ async def test_remove_write_access_rights(
             expected_executable=False,
         )
 
-    await efs_manager.remove_project_node_data_write_permissions(
-        project_id=project_id, node_id=node_id
-    )
+    await efs_manager.remove_project_node_data_write_permissions(project_id=project_id, node_id=node_id)
 
     for file_path in file_paths:
         assert_permissions(

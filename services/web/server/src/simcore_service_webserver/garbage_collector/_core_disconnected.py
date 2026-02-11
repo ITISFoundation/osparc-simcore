@@ -7,6 +7,7 @@ from servicelib.common_headers import UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE
 from servicelib.logging_utils import log_catch, log_context
 
 from ..projects import _projects_service
+from ..projects._projects_repository_legacy import ProjectDBAPI
 from ..resource_manager.registry import (
     RedisResourceRegistry,
 )
@@ -14,9 +15,7 @@ from ..resource_manager.registry import (
 _logger = logging.getLogger(__name__)
 
 
-async def remove_disconnected_user_resources(
-    registry: RedisResourceRegistry, app: web.Application
-) -> None:
+async def remove_disconnected_user_resources(registry: RedisResourceRegistry, app: web.Application) -> None:
     # NOTE:
     # Each user session is represented in the redis registry with two keys:
     # - "alive" is a string that keeps a TTL of the user session
@@ -27,6 +26,8 @@ async def remove_disconnected_user_resources(
 
     _, dead_user_sessions = await registry.get_all_resource_keys()
     _logger.debug("potential dead keys: %s", dead_user_sessions)
+
+    project_repo = ProjectDBAPI.get_from_app_context(app)
 
     # clean up all resources of expired keys
     for dead_session in dead_user_sessions:
@@ -58,11 +59,13 @@ async def remove_disconnected_user_resources(
                         f"Closing project {project_id} for user {user_id=}",
                     ),
                 ):
+                    project_at_db = await project_repo.get_project_db(project_id)
                     await _projects_service.close_project_for_user(
                         user_id=user_id,
                         project_uuid=project_id,
                         client_session_id=dead_session.client_session_id,
                         app=app,
                         simcore_user_agent=UNDEFINED_DEFAULT_SIMCORE_USER_AGENT_VALUE,
+                        product_name=project_at_db.product_name,
                         wait_for_service_closed=True,
                     )

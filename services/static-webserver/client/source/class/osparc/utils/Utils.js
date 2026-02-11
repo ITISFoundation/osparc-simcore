@@ -1086,7 +1086,7 @@ qx.Class.define("osparc.utils.Utils", {
       // Why is it here? To ensure:
       // 1. the element is able to have focus and selection.
       // 2. if element was to flash render it has minimal visual impact.
-      // 3. less flakyness with selection and copying which **might** occur if
+      // 3. less flakiness with selection and copying which **might** occur if
       //    the textarea element is not visible.
       //
       // The likelihood is the element won't even render, not even a
@@ -1374,6 +1374,38 @@ qx.Class.define("osparc.utils.Utils", {
       for (let i=nChildren-1; i>=0; i--) {
         container.remove(container.getChildren()[i]);
       }
+    },
+
+    /**
+     * Enables line break insertion when Enter key is pressed in a TextArea
+     * @param {qx.ui.form.TextArea} textArea - The TextArea widget to enhance
+     */
+    enableTextAreaLineBreaks: function(textArea) {
+      textArea.addListener("keypress", function(e) {
+        if (e.getKeyIdentifier() === "Enter" && !e.isShiftPressed() && !e.isCtrlPressed()) {
+          e.preventDefault();
+
+          const dom = textArea.getContentElement().getDomElement();
+          if (!dom) return;
+
+          const value = textArea.getValue() || "";
+          const start = dom.selectionStart != null ? dom.selectionStart : value.length;
+          const end = dom.selectionEnd != null ? dom.selectionEnd : value.length;
+
+          const newValue = value.substring(0, start) + "\n" + value.substring(end);
+          const newPos = start + 1;
+
+          textArea.setValue(newValue);
+          textArea.focus();
+
+          qx.event.Timer.once(function() {
+            const dom2 = textArea.getContentElement().getDomElement();
+            if (!dom2) return;
+            dom2.selectionStart = newPos;
+            dom2.selectionEnd = newPos;
+          }, this, 0);
+        }
+      }, textArea);
     }
   }
 });

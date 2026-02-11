@@ -9,9 +9,9 @@ assert issubclass(BootModeEnum, Enum)  # nosec
 assert issubclass(BuildTargetEnum, Enum)  # nosec
 
 __all__: tuple[str, ...] = (
-    "LogLevel",
     "BootModeEnum",
     "BuildTargetEnum",
+    "LogLevel",
 )
 
 
@@ -26,6 +26,4 @@ VersionTag: TypeAlias = Annotated[str, StringConstraints(pattern=r"^v\d$")]
 
 # non-empty bounded string used as identifier
 # e.g. "123" or "name_123" or "fa327c73-52d8-462a-9267-84eeaf0f90e3" but NOT ""
-IDStr: TypeAlias = Annotated[
-    str, StringConstraints(strip_whitespace=True, min_length=1, max_length=50)
-]
+IDStr: TypeAlias = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=50)]

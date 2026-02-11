@@ -47,10 +47,7 @@ def parse_last_resource_id(resource_name: RelativeResourceName) -> str:
 
 
 def compose_resource_name(*collection_or_resource_ids) -> RelativeResourceName:
-    quoted_parts = [
-        urllib.parse.quote_plus(f"{_id}".lstrip("/"))
-        for _id in collection_or_resource_ids
-    ]
+    quoted_parts = [urllib.parse.quote_plus(f"{_id}".lstrip("/")) for _id in collection_or_resource_ids]
     return TypeAdapter(RelativeResourceName).validate_python("/".join(quoted_parts))
 
 
@@ -121,16 +118,12 @@ class JobLinks(BaseModel):
 
     url_template: Annotated[str | None, AfterValidator(_url_missing_only_job_id)]
     runner_url_template: str | None
-    outputs_url_template: Annotated[
-        str | None, AfterValidator(_url_missing_only_job_id)
-    ]
+    outputs_url_template: Annotated[str | None, AfterValidator(_url_missing_only_job_id)]
 
     def url(self, job_id: UUID) -> HttpUrl | None:
         if self.url_template is None:
             return None
-        return TypeAdapter(HttpUrl).validate_python(
-            self.url_template.format(job_id=job_id)
-        )
+        return TypeAdapter(HttpUrl).validate_python(self.url_template.format(job_id=job_id))
 
     def runner_url(self, job_id: UUID) -> HttpUrl | None:
         assert job_id  # nosec
@@ -141,6 +134,4 @@ class JobLinks(BaseModel):
     def outputs_url(self, job_id: UUID) -> HttpUrl | None:
         if self.outputs_url_template is None:
             return None
-        return TypeAdapter(HttpUrl).validate_python(
-            self.outputs_url_template.format(job_id=job_id)
-        )
+        return TypeAdapter(HttpUrl).validate_python(self.outputs_url_template.format(job_id=job_id))

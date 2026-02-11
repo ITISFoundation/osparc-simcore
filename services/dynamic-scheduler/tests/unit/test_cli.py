@@ -30,9 +30,7 @@ def test_cli_help_and_version(cli_runner: CliRunner):
     assert result.stdout.strip() == API_VERSION
 
 
-def test_echo_dotenv(
-    app_environment: EnvVarsDict, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch
-):
+def test_echo_dotenv(app_environment: EnvVarsDict, cli_runner: CliRunner, monkeypatch: pytest.MonkeyPatch):
     # simcore-service-dynamic-scheduler echo-dotenv
     result = cli_runner.invoke(cli_main, "echo-dotenv")
     assert result.exit_code == os.EX_OK, _format_cli_error(result)
@@ -50,20 +48,14 @@ def _get_default_environs(cli_runner: CliRunner) -> EnvVarsDict:
     return load_dotenv(result.stdout)
 
 
-def test_list_settings(
-    cli_runner: CliRunner, app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
-):
+def test_list_settings(cli_runner: CliRunner, app_environment: EnvVarsDict, monkeypatch: pytest.MonkeyPatch):
     with monkeypatch.context() as patch:
         setenvs_from_dict(patch, _get_default_environs(cli_runner))
 
         # simcore-service-dynamic-scheduler settings --show-secrets --as-json
-        result = cli_runner.invoke(
-            cli_main, ["settings", "--show-secrets", "--as-json"]
-        )
+        result = cli_runner.invoke(cli_main, ["settings", "--show-secrets", "--as-json"])
         assert result.exit_code == os.EX_OK, _format_cli_error(result)
 
         print(result.output)
         settings = ApplicationSettings(result.output)
-        assert (
-            settings.model_dump() == ApplicationSettings.create_from_envs().model_dump()
-        )
+        assert settings.model_dump() == ApplicationSettings.create_from_envs().model_dump()

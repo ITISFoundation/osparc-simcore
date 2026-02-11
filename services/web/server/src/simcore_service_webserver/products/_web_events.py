@@ -44,9 +44,7 @@ async def _load_products_on_startup(app: web.Application):
     """
     Loads info on products stored in the database into app's storage (i.e. memory)
     """
-    app_products: dict[ProductName, Product] = {
-        product.name: product for product in await _service.load_products(app)
-    }
+    app_products: dict[ProductName, Product] = {product.name: product for product in await _service.load_products(app)}
 
     default_product_name = await _service.get_default_product_name(app)
 
@@ -69,7 +67,6 @@ async def _setup_product_templates(app: web.Application):
 
 
 def setup_web_events(app: web.Application):
-
     app.on_startup.append(
         # NOTE: must go BEFORE _load_products_on_startup
         _auto_create_products_groups

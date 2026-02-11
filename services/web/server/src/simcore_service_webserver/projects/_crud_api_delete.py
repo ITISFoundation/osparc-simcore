@@ -10,6 +10,7 @@ import logging
 from typing import Protocol
 
 from aiohttp import web
+from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.users import UserID
 from servicelib.utils import fire_and_forget_task
@@ -30,9 +31,7 @@ from .exceptions import (
 
 _logger = logging.getLogger(__name__)
 
-_DELETE_PROJECT_TASK_NAME = (
-    "background-task.delete_project/project_uuid={0}.user_id={1}"
-)
+_DELETE_PROJECT_TASK_NAME = "background-task.delete_project/project_uuid={0}.user_id={1}"
 
 
 class RemoveProjectServicesCallable(Protocol):
@@ -43,14 +42,13 @@ class RemoveProjectServicesCallable(Protocol):
         project_uuid: ProjectID,
         app: web.Application,
         simcore_user_agent: str,
+        product_name: ProductName,
         *,
         notify_users: bool = True,
     ) -> None: ...
 
 
-async def mark_project_as_deleted(
-    app: web.Application, project_uuid: ProjectID, user_id: UserID
-):
+async def mark_project_as_deleted(app: web.Application, project_uuid: ProjectID, user_id: UserID):
     """
     ::raises ProjectInvalidRightsError
     ::raises ProjectNotFoundError
@@ -81,6 +79,7 @@ async def delete_project(
     project_uuid: ProjectID,
     user_id: UserID,
     simcore_user_agent: str,
+    product_name: ProductName,
     remove_project_dynamic_services: RemoveProjectServicesCallable,
 ) -> None:
     """Stops dynamic services, deletes data and finally deletes project
@@ -108,6 +107,7 @@ async def delete_project(
             project_uuid=project_uuid,
             app=app,
             simcore_user_agent=simcore_user_agent,
+            product_name=product_name,
             notify_users=False,
         )
 
@@ -122,14 +122,10 @@ async def delete_project(
         await db.delete_project(user_id, f"{project_uuid}")
 
     except ProjectLockError as err:
-        raise ProjectDeleteError(
-            project_uuid=project_uuid, details=f"Project currently in use {err}"
-        ) from err
+        raise ProjectDeleteError(project_uuid=project_uuid, details=f"Project currently in use {err}") from err
 
     except (ProjectInvalidRightsError, ProjectNotFoundError, UserNotFoundError) as err:
-        raise ProjectDeleteError(
-            project_uuid=project_uuid, details=f"Invalid project state {err}"
-        ) from err
+        raise ProjectDeleteError(project_uuid=project_uuid, details=f"Invalid project state {err}") from err
 
 
 def schedule_task(
@@ -137,6 +133,7 @@ def schedule_task(
     project_uuid: ProjectID,
     user_id: UserID,
     simcore_user_agent: str,
+    product_name: ProductName,
     remove_project_dynamic_services: RemoveProjectServicesCallable,
     logger: logging.Logger,
 ) -> asyncio.Task:
@@ -153,9 +150,7 @@ def schedule_task(
         # state of the task when completed.
         try:
             fut.result()
-            logger.info(
-                "Deleted %s using %s permissions", f"{project_uuid=}", f"{user_id=}"
-            )
+            logger.info("Deleted %s using %s permissions", f"{project_uuid=}", f"{user_id=}")
 
         except asyncio.exceptions.CancelledError:
             logger.warning(
@@ -193,6 +188,7 @@ def schedule_task(
             project_uuid,
             user_id,
             simcore_user_agent,
+            product_name,
             remove_project_dynamic_services,
         ),
         task_suffix_name=_DELETE_PROJECT_TASK_NAME.format(project_uuid, user_id),
@@ -210,7 +206,5 @@ def get_scheduled_tasks(project_uuid: ProjectID, user_id: UserID) -> list[asynci
     return [
         task
         for task in asyncio.all_tasks()
-        if task.get_name().endswith(
-            _DELETE_PROJECT_TASK_NAME.format(project_uuid, user_id)
-        )
+        if task.get_name().endswith(_DELETE_PROJECT_TASK_NAME.format(project_uuid, user_id))
     ]

@@ -92,9 +92,7 @@ async def test_tracker_listing(tracker: Tracker, item_count: NonNegativeInt) -> 
 
     data_to_insert = {uuid4(): model_to_insert for _ in range(item_count)}
 
-    await logged_gather(
-        *[tracker.save(k, v) for k, v in data_to_insert.items()], max_concurrency=100
-    )
+    await logged_gather(*[tracker.save(k, v) for k, v in data_to_insert.items()], max_concurrency=100)
 
     response = await tracker.all()
     for key in response:

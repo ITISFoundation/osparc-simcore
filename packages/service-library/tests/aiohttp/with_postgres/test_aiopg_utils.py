@@ -28,9 +28,7 @@ tbl = sa.Table(
 
 
 @pytest.fixture
-async def postgres_service_with_fake_data(
-    request, postgres_service: DataSourceName
-) -> DataSourceName:
+async def postgres_service_with_fake_data(request, postgres_service: DataSourceName) -> DataSourceName:
     async def _create_table(engine: aiopg.sa.Engine):
         async with engine.acquire() as conn:
             await conn.execute(f"DROP TABLE IF EXISTS {tbl.name}")
@@ -41,13 +39,9 @@ async def postgres_service_with_fake_data(
             )
 
     dsn = deepcopy(postgres_service)
-    dsn.application_name = (
-        f"setup {request.module.__name__}.{request.function.__name__}"
-    )
+    dsn.application_name = f"setup {request.module.__name__}.{request.function.__name__}"
 
-    async with aiopg.sa.create_engine(
-        dsn.to_uri(), application_name=dsn.application_name
-    ) as engine:
+    async with aiopg.sa.create_engine(dsn.to_uri(), application_name=dsn.application_name) as engine:
         await _create_table(engine)
 
     dsn.application_name = f"{request.module.__name__}.{request.function.__name__}"
@@ -98,7 +92,7 @@ async def test_create_pg_engine(postgres_service_with_fake_data: DataSourceName)
         async with create_pg_engine(dsn) as engine4:
             assert engine4.dsn == engine3.dsn
             assert not engine4.closed
-            raise ValueError()
+            raise ValueError
     except ValueError:
         assert engine4.closed
 

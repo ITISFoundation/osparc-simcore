@@ -24,9 +24,7 @@ def network_name() -> str:
 
 
 @pytest.fixture
-async def ensure_swarm_and_networks(
-    network_name: str, docker_swarm: None
-) -> AsyncIterator[None]:
+async def ensure_swarm_and_networks(network_name: str, docker_swarm: None) -> AsyncIterator[None]:
     """
     Make sure to always have a docker swarm network.
     If one is not present crete one. There can not be more then one.
@@ -64,9 +62,7 @@ def mock_projects_networks_repository(mocker: MockerFixture) -> None:
             "simcore_service_director_v2.modules.db.repositories."
             "projects_networks.ProjectsNetworksRepository.get_projects_networks"
         ),
-        return_value=ProjectsNetworks.model_validate(
-            {"project_uuid": uuid4(), "networks_with_aliases": {}}
-        ),
+        return_value=ProjectsNetworks.model_validate({"project_uuid": uuid4(), "networks_with_aliases": {}}),
     )
 
 

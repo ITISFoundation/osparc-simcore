@@ -36,7 +36,7 @@ qx.Class.define("osparc.desktop.paymentMethods.PaymentMethodDetails", {
         padding: 10
       });
       const viewWidth = 300;
-      const viewHeight = 300;
+      const viewHeight = 200;
       const win = osparc.ui.window.Window.popUpInWindow(paymentMethodDetails, title, viewWidth, viewHeight);
       win.center();
       win.open();

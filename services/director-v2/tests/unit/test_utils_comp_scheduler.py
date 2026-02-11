@@ -47,10 +47,7 @@ def test_scheduler_knows_all_the_states():
 
 @pytest.mark.parametrize(
     "task",
-    [
-        CompTaskAtDB.model_validate(example)
-        for example in CompTaskAtDB.model_config["json_schema_extra"]["examples"]
-    ],
+    [CompTaskAtDB.model_validate(example) for example in CompTaskAtDB.model_config["json_schema_extra"]["examples"]],
     ids=str,
 )
 def test_create_service_resources_from_task(task: CompTaskAtDB):
@@ -72,17 +69,12 @@ def test_create_service_resources_from_task(task: CompTaskAtDB):
     assert service_resources.resources["RAM"].limit == task.image.node_requirements.ram
     if task.image.node_requirements.gpu:
         assert "GPU" in service_resources.resources
-        assert (
-            service_resources.resources["GPU"].limit == task.image.node_requirements.gpu
-        )
+        assert service_resources.resources["GPU"].limit == task.image.node_requirements.gpu
     else:
         assert "GPU" not in service_resources.resources
 
     if task.image.node_requirements.vram:
         assert "VRAM" in service_resources.resources
-        assert (
-            service_resources.resources["VRAM"].limit
-            == task.image.node_requirements.vram
-        )
+        assert service_resources.resources["VRAM"].limit == task.image.node_requirements.vram
     else:
         assert "VRAM" not in service_resources.resources

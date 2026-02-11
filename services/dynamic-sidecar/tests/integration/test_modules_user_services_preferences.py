@@ -47,9 +47,7 @@ def dy_sidecar_user_preferences_path(tmp_path: Path) -> Path:
 
 @pytest.fixture
 def service_key() -> ServiceKey:
-    return TypeAdapter(ServiceKey).validate_python(
-        "simcore/services/dynamic/test-service-34"
-    )
+    return TypeAdapter(ServiceKey).validate_python("simcore/services/dynamic/test-service-34")
 
 
 @pytest.fixture
@@ -109,9 +107,7 @@ async def app(
 
 @pytest.fixture
 def user_preferences_path(app: FastAPI) -> Path:
-    user_services_preferences_manager: UserServicesPreferencesManager = (
-        app.state.user_services_preferences_manager
-    )
+    user_services_preferences_manager: UserServicesPreferencesManager = app.state.user_services_preferences_manager
     return user_services_preferences_manager.user_preferences_path
 
 
@@ -119,9 +115,7 @@ def _get_files_preferences_path(user_preferences_path: Path) -> set[Path]:
     return {x for x in user_preferences_path.rglob("*") if x.is_file()}
 
 
-def _make_files_in_preferences_path(
-    user_preferences_path: Path, file_count: int, subdir_count: int
-) -> set[Path]:
+def _make_files_in_preferences_path(user_preferences_path: Path, file_count: int, subdir_count: int) -> set[Path]:
     file_names: set[Path] = set()
     for s in range(subdir_count):
         (user_preferences_path / f"subdir-{s}").mkdir(parents=True, exist_ok=True)
@@ -148,9 +142,7 @@ async def test_user_service_workflow(app: FastAPI, user_preferences_path: Path):
     # mock user service creates some preferences
     FILE_COUNT = 4
     SUBDIR_COUNT = 2
-    file_names = _make_files_in_preferences_path(
-        user_preferences_path, FILE_COUNT, SUBDIR_COUNT
-    )
+    file_names = _make_files_in_preferences_path(user_preferences_path, FILE_COUNT, SUBDIR_COUNT)
     assert _get_files_preferences_path(user_preferences_path) == file_names
 
     # save preferences to be recovered at later date

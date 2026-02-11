@@ -1,7 +1,7 @@
 import logging
 from contextlib import suppress
 from pathlib import Path
-from typing import Final, TypeAlias
+from typing import Final
 from uuid import uuid4
 
 from aws_library.s3 import S3MetaData, SimcoreS3API
@@ -22,10 +22,10 @@ from pydantic import ByteSize, NonNegativeInt, TypeAdapter
 from servicelib.bytes_iters import ArchiveEntries, get_zip_bytes_iter
 from servicelib.progress_bar import ProgressBarData
 from servicelib.s3_utils import FileLikeBytesIterReader
-from servicelib.utils import ensure_ends_with
+from servicelib.utils import ensure_ends_with, limited_gather
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from ..constants import EXPORTS_S3_PREFIX
+from ..constants import EXPORTS_S3_PREFIX, MAX_CONCURRENT_S3_TASKS
 from ..exceptions.errors import FileMetaDataNotFoundError, ProjectAccessRightError
 from ..models import FileMetaData, FileMetaDataAtDB, GenericCursor, PathMetaData
 from ..modules.db.access_layer import AccessLayerRepository
@@ -45,9 +45,7 @@ async def _list_all_files_in_folder(
     prefix: str,
     max_files_to_list: int,
 ) -> list[S3MetaData]:
-    async for s3_objects in s3_client.list_objects_paginated(
-        bucket, prefix, items_per_page=max_files_to_list
-    ):
+    async for s3_objects in s3_client.list_objects_paginated(bucket, prefix, items_per_page=max_files_to_list):
         # NOTE: stop immediately after listing after `max_files_to_list`
         return s3_objects
     return []
@@ -106,9 +104,7 @@ def get_simcore_directory(file_id: SimcoreS3FileID) -> str:
     return f"{Path(directory_id)}"
 
 
-async def _try_get_fmd(
-    db_engine: AsyncEngine, s3_file_id: StorageFileID
-) -> FileMetaDataAtDB | None:
+async def _try_get_fmd(db_engine: AsyncEngine, s3_file_id: StorageFileID) -> FileMetaDataAtDB | None:
     with suppress(FileMetaDataNotFoundError):
         return await FileMetaDataRepository.instance(db_engine).get(
             file_id=TypeAdapter(SimcoreS3FileID).validate_python(s3_file_id)
@@ -116,9 +112,7 @@ async def _try_get_fmd(
     return None
 
 
-async def get_directory_file_id(
-    db_engine: AsyncEngine, file_id: SimcoreS3FileID
-) -> SimcoreS3FileID | None:
+async def get_directory_file_id(db_engine: AsyncEngine, file_id: SimcoreS3FileID) -> SimcoreS3FileID | None:
     """
     returns the containing file's `directory_file_id` if the entry exists
     in the `file_meta_data` table
@@ -134,9 +128,7 @@ async def get_directory_file_id(
         # could not extract a directory name from the provided path
         return None
 
-    directory_file_id = TypeAdapter(SimcoreS3FileID).validate_python(
-        directory_file_id_str
-    )
+    directory_file_id = TypeAdapter(SimcoreS3FileID).validate_python(directory_file_id_str)
     directory_file_id_fmd = await _try_get_fmd(db_engine, directory_file_id)
 
     return directory_file_id if directory_file_id_fmd else None
@@ -157,9 +149,7 @@ def is_nested_level_file_id(file_id: str) -> bool:
 
 
 def create_random_export_name(user_id: UserID) -> StorageFileID:
-    return TypeAdapter(StorageFileID).validate_python(
-        f"{EXPORTS_S3_PREFIX}/{user_id}/{uuid4()}.zip"
-    )
+    return TypeAdapter(StorageFileID).validate_python(f"{EXPORTS_S3_PREFIX}/{user_id}/{uuid4()}.zip")
 
 
 def ensure_user_selection_from_same_base_directory(
@@ -169,7 +159,7 @@ def ensure_user_selection_from_same_base_directory(
     return len(set(parents)) <= 1
 
 
-UserSelectionStr: TypeAlias = str
+type UserSelectionStr = str
 
 
 def _base_path_parent(base_path: UserSelectionStr, s3_object: S3ObjectKey) -> str:
@@ -222,20 +212,28 @@ async def create_and_upload_export(
     progress_bar: ProgressBarData,
 ) -> None:
     ids_names_map = await project_repository.get_project_id_and_node_id_to_names_map(
-        project_uuids=_get_project_ids(
-            user_selection={x[0] for x in source_object_keys}
-        )
+        project_uuids=_get_project_ids(user_selection={x[0] for x in source_object_keys})
     )
 
+    # Build list of (selection, s3_object) pairs to maintain order
+    source_keys_list = list(source_object_keys)
+
+    # Parallelize HEAD requests for all files (required to get file sizes)
+    byte_streamers = await limited_gather(
+        *[s3_client.get_bytes_streamer_from_object(bucket, s3_object) for (_, s3_object) in source_keys_list],
+        limit=MAX_CONCURRENT_S3_TASKS,
+    )
+
+    # Build archive entries with the parallelized results
     archive_entries: ArchiveEntries = [
         (
             _base_path_parent(
                 _replace_node_id_project_id_in_path(ids_names_map, selection),
                 _replace_node_id_project_id_in_path(ids_names_map, s3_object),
             ),
-            await s3_client.get_bytes_streamer_from_object(bucket, s3_object),
+            streamer,
         )
-        for (selection, s3_object) in source_object_keys
+        for (selection, s3_object), streamer in zip(source_keys_list, byte_streamers, strict=True)
     ]
 
     async with progress_bar:
@@ -293,10 +291,7 @@ async def list_child_paths_from_s3(
             is_partial_prefix=True,
         )
 
-    paths_metadata = [
-        PathMetaData.from_s3_object_in_dir(s3_object, dir_fmd)
-        for s3_object in list_s3_objects
-    ]
+    paths_metadata = [PathMetaData.from_s3_object_in_dir(s3_object, dir_fmd) for s3_object in list_s3_objects]
     next_cursor = None
     if objects_next_cursor:
         _logger.debug(
@@ -357,6 +352,4 @@ async def get_accessible_project_ids(
         if not project_access_rights.read:
             raise ProjectAccessRightError(access_right="read", project_id=project_id)
         return [project_id]
-    return await access_layer_repo.get_readable_project_ids(
-        user_id=user_id, product_name=product_name
-    )
+    return await access_layer_repo.get_readable_project_ids(user_id=user_id, product_name=product_name)

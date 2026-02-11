@@ -12,16 +12,10 @@ router = APIRouter()
 @router.get(
     "/metrics",
     response_class=PlainTextResponse,
-    responses={
-        status.HTTP_500_INTERNAL_SERVER_ERROR: {
-            "description": "error in recovering data from user service"
-        }
-    },
+    responses={status.HTTP_500_INTERNAL_SERVER_ERROR: {"description": "error in recovering data from user service"}},
 )
 async def metrics_endpoint(
-    user_services_metrics: Annotated[
-        UserServicesMetrics, Depends(get_user_services_metrics)
-    ],
+    user_services_metrics: Annotated[UserServicesMetrics, Depends(get_user_services_metrics)],
 ):
     """Exposes metrics form the underlying user service.
 

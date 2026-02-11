@@ -17,6 +17,4 @@ class ChangePasswordBody(InputSchema):
     new: SecretStr
     confirm: SecretStr
 
-    _password_confirm_match = field_validator("confirm")(
-        create_password_match_validator(reference_field="new")
-    )
+    _password_confirm_match = field_validator("confirm")(create_password_match_validator(reference_field="new"))

@@ -26,9 +26,7 @@ from simcore_postgres_database.models.projects_to_jobs import projects_to_jobs
 
 
 @pytest.fixture
-def sync_engine(
-    sync_engine: sqlalchemy.engine.Engine, db_metadata: sa.MetaData
-) -> Iterator[sqlalchemy.engine.Engine]:
+def sync_engine(sync_engine: sqlalchemy.engine.Engine, db_metadata: sa.MetaData) -> Iterator[sqlalchemy.engine.Engine]:
     # EXTENDS sync_engine fixture to include cleanup and parare migration
 
     # cleanup tables
@@ -74,9 +72,7 @@ def _prepare_data(
     return prepared_params
 
 
-def test_populate_projects_to_jobs_during_migration(
-    sync_engine: sqlalchemy.engine.Engine, faker: Faker
-):
+def test_populate_projects_to_jobs_during_migration(sync_engine: sqlalchemy.engine.Engine, faker: Faker):
     assert simcore_postgres_database.cli.discover.callback
     assert simcore_postgres_database.cli.upgrade.callback
 
@@ -84,12 +80,9 @@ def test_populate_projects_to_jobs_during_migration(
     simcore_postgres_database.cli.upgrade.callback("8403acca8759")
 
     with sync_engine.connect() as conn:
-
         # Ensure the projects_to_jobs table does NOT exist yet
         with pytest.raises(sqlalchemy.exc.ProgrammingError) as exc_info:
-            conn.execute(
-                sa.select(sa.func.count()).select_from(projects_to_jobs)
-            ).scalar()
+            conn.execute(sa.select(sa.func.count()).select_from(projects_to_jobs)).scalar()
         assert "psycopg2.errors.UndefinedTable" in f"{exc_info.value}"
 
         # INSERT data (emulates data in-place)
@@ -98,9 +91,7 @@ def test_populate_projects_to_jobs_during_migration(
             name="test_populate_projects_to_jobs_during_migration",
             role=UserRole.USER.value,
         )
-        user_data["password_hash"] = (
-            "password_hash_was_still_here_at_this_migration_commit"  # noqa: S105
-        )
+        user_data["password_hash"] = "password_hash_was_still_here_at_this_migration_commit"  # noqa: S105
 
         columns = list(user_data.keys())
         values_clause = ", ".join(f":{col}" for col in columns)
@@ -185,16 +176,12 @@ def test_populate_projects_to_jobs_during_migration(
             "workspace_id": None,
         }
 
-        excluded_columns = [
-            "product_name"
-        ]  # NOTE: columns not present at that migration time
+        excluded_columns = ["product_name"]  # NOTE: columns not present at that migration time
 
         # NOTE: cannot use `projects` table directly here because it changes
         # throughout time
         for prj in projects_data:
-            prj_prepared = _prepare_data(
-                prj, excluded_columns, client_default_column_values
-            )
+            prj_prepared = _prepare_data(prj, excluded_columns, client_default_column_values)
 
             columns = list(prj_prepared.keys())
             values_clause = ", ".join(f":{col}" for col in columns)
@@ -245,16 +232,9 @@ def test_populate_projects_to_jobs_during_migration(
                 projects.c.name,
                 projects.c.uuid,
                 projects_to_jobs.c.job_parent_resource_name,
-            ).select_from(
-                projects.join(
-                    projects_to_jobs, projects.c.uuid == projects_to_jobs.c.project_uuid
-                )
-            )
+            ).select_from(projects.join(projects_to_jobs, projects.c.uuid == projects_to_jobs.c.project_uuid))
         ).fetchall()
 
         # Print or assert the result as needed
         for project_name, project_uuid, job_parent_resource_name in result:
-            assert (
-                f"{job_parent_resource_name}/jobs/{project_uuid}"
-                == project_name.strip()
-            )
+            assert f"{job_parent_resource_name}/jobs/{project_uuid}" == project_name.strip()

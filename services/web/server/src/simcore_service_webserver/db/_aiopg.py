@@ -42,9 +42,7 @@ warnings.warn(
 
 
 @retry(**PostgresRetryPolicyUponInitialization(_logger).kwargs)
-async def _ensure_pg_ready(
-    settings: PostgresSettings, *, application_name: str
-) -> Engine:
+async def _ensure_pg_ready(settings: PostgresSettings, *, application_name: str) -> Engine:
     engine = await create_engine(
         settings.dsn,
         application_name=settings.client_name(f"{application_name}", suffix="aiopg"),
@@ -81,9 +79,7 @@ async def postgres_cleanup_ctx(app: web.Application) -> AsyncIterator[None]:
     yield  # -------------------
 
     if aiopg_engine is not app.get(APP_AIOPG_ENGINE_KEY):
-        _logger.critical(
-            "app[APP_AIOPG_ENGINE_KEY] does not hold right db engine. Somebody has changed it??"
-        )
+        _logger.critical("app[APP_AIOPG_ENGINE_KEY] does not hold right db engine. Somebody has changed it??")
 
     await close_engine(aiopg_engine)
 

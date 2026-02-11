@@ -20,9 +20,7 @@ def setup(app: FastAPI) -> None:
     async def on_startup() -> None:
         app.state.ec2_client = None
 
-        settings: EC2Settings | None = get_application_settings(
-            app
-        ).CLUSTERS_KEEPER_EC2_ACCESS
+        settings: EC2Settings | None = get_application_settings(app).CLUSTERS_KEEPER_EC2_ACCESS
 
         if not settings:
             logger.warning("EC2 client is de-activated in the settings")
@@ -51,7 +49,5 @@ def setup(app: FastAPI) -> None:
 
 def get_ec2_client(app: FastAPI) -> SimcoreEC2API:
     if not app.state.ec2_client:
-        raise ConfigurationError(
-            msg="EC2 client is not available. Please check the configuration."
-        )
+        raise ConfigurationError(msg="EC2 client is not available. Please check the configuration.")
     return cast(SimcoreEC2API, app.state.ec2_client)

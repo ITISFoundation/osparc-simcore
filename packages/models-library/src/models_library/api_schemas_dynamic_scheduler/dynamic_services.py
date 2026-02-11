@@ -1,3 +1,6 @@
+from pydantic import BaseModel, ConfigDict
+from pydantic.config import JsonDict
+
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceCreate
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
@@ -5,8 +8,6 @@ from models_library.resource_tracker import HardwareInfo, PricingInfo
 from models_library.services_resources import ServiceResourcesDictHelpers
 from models_library.users import UserID
 from models_library.wallets import WalletInfo
-from pydantic import BaseModel, ConfigDict
-from pydantic.config import JsonDict
 
 
 class DynamicServiceStart(DynamicServiceCreate):
@@ -47,6 +48,7 @@ class DynamicServiceStop(BaseModel):
     node_id: NodeID
     simcore_user_agent: str
     save_state: bool
+    product_name: str
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -56,6 +58,7 @@ class DynamicServiceStop(BaseModel):
                 "node_id": "75c7f3f4-18f9-4678-8610-54a2ade78eaa",
                 "simcore_user_agent": "",
                 "save_state": True,
+                "product_name": "osparc",
             }
         }
     )

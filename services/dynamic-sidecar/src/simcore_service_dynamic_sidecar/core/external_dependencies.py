@@ -9,9 +9,7 @@ from .storage import wait_for_storage_liveness
 
 
 class CouldNotReachExternalDependenciesError(OsparcErrorMixin, Exception):
-    msg_template: str = (
-        "Could not start because the following external dependencies failed: {failed}"
-    )
+    msg_template: str = "Could not start because the following external dependencies failed: {failed}"
 
 
 def setup_check_dependencies(app: FastAPI) -> None:

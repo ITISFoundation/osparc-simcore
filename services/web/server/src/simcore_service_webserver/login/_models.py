@@ -7,9 +7,7 @@ from pydantic import BaseModel, ConfigDict, SecretStr, ValidationInfo
 
 from .constants import MSG_PASSWORD_MISMATCH
 
-ActionLiteralStr = Literal[
-    "REGISTRATION", "INVITATION", "RESET_PASSWORD", "CHANGE_EMAIL"
-]
+ActionLiteralStr = Literal["REGISTRATION", "INVITATION", "RESET_PASSWORD", "CHANGE_EMAIL"]
 
 
 class BaseConfirmationTokenDict(TypedDict):
@@ -56,6 +54,4 @@ def create_password_match_validator(
     return _check
 
 
-check_confirm_password_match = create_password_match_validator(
-    reference_field="password"
-)
+check_confirm_password_match = create_password_match_validator(reference_field="password")

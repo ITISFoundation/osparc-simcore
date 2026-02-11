@@ -28,9 +28,9 @@ routes = web.RouteTableDef()
 
 class _ProjectWorkspacesPathParams(BaseModel):
     project_id: ProjectID
-    workspace_id: Annotated[
-        WorkspaceID | None, BeforeValidator(null_or_none_str_to_none_validator)
-    ] = Field(default=None)
+    workspace_id: Annotated[WorkspaceID | None, BeforeValidator(null_or_none_str_to_none_validator)] = Field(
+        default=None
+    )
 
     model_config = ConfigDict(extra="forbid")
 
@@ -44,9 +44,7 @@ class _ProjectWorkspacesPathParams(BaseModel):
 @handle_plugin_requests_exceptions
 async def move_project_to_workspace(request: web.Request):
     req_ctx = AuthenticatedRequestContext.model_validate(request)
-    path_params = parse_request_path_parameters_as(
-        _ProjectWorkspacesPathParams, request
-    )
+    path_params = parse_request_path_parameters_as(_ProjectWorkspacesPathParams, request)
     header_params = parse_request_headers_as(ClientSessionHeaderParams, request)
 
     await _workspaces_service.move_project_into_workspace(

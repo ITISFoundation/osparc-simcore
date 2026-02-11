@@ -21,9 +21,7 @@ def _get_kwargs_from_overrides(overrides: dict) -> tuple[dict, dict]:
 
 
 @contextlib.asynccontextmanager
-async def insert_and_get_user_and_secrets_lifespan(
-    sqlalchemy_async_engine: AsyncEngine, **overrides
-):
+async def insert_and_get_user_and_secrets_lifespan(sqlalchemy_async_engine: AsyncEngine, **overrides):
     user_kwargs, secrets_kwargs = _get_kwargs_from_overrides(overrides)
 
     async with contextlib.AsyncExitStack() as stack:
@@ -53,9 +51,7 @@ async def insert_and_get_user_and_secrets_lifespan(
 
 
 @contextlib.contextmanager
-def sync_insert_and_get_user_and_secrets_lifespan(
-    sqlalchemy_sync_engine: sa.engine.Engine, **overrides
-):
+def sync_insert_and_get_user_and_secrets_lifespan(sqlalchemy_sync_engine: sa.engine.Engine, **overrides):
     user_kwargs, secrets_kwargs = _get_kwargs_from_overrides(overrides)
 
     with contextlib.ExitStack() as stack:
@@ -91,16 +87,10 @@ async def insert_user_and_secrets(conn, **overrides) -> int:
     user_kwargs, secrets_kwargs = _get_kwargs_from_overrides(overrides)
 
     # user data
-    user_id = await conn.scalar(
-        users.insert().values(**random_user(**user_kwargs)).returning(users.c.id)
-    )
+    user_id = await conn.scalar(users.insert().values(**random_user(**user_kwargs)).returning(users.c.id))
     assert user_id is not None
 
     # secrets
-    await conn.execute(
-        users_secrets.insert().values(
-            **random_user_secrets(user_id=user_id, **secrets_kwargs)
-        )
-    )
+    await conn.execute(users_secrets.insert().values(**random_user_secrets(user_id=user_id, **secrets_kwargs)))
 
     return user_id
