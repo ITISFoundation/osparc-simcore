@@ -157,8 +157,15 @@ async def _delete_legacy_archive(project_id: ProjectID, node_id: NodeID, path: P
     await filemanager.delete_file(user_id=owner_id, store_id=SIMCORE_LOCATION, s3_object=s3_object)
 
 
-async def _stop_mount(mount_manager: RCloneMountManager, destination_path: Path, index: NonNegativeInt) -> None:
+async def _stop_mount(
+    mount_manager: RCloneMountManager, destination_path: Path, index: NonNegativeInt, progress_bar: ProgressBarData
+) -> None:
+    if not progress_bar:
+        progress_bar = ProgressBarData(num_steps=1, description="stopping mount")
+
     await mount_manager.ensure_unmounted(destination_path, index)
+
+    await progress_bar.update(1)
 
 
 async def push(  # pylint: disable=too-many-arguments  # noqa: PLR0913
@@ -179,7 +186,7 @@ async def push(  # pylint: disable=too-many-arguments  # noqa: PLR0913
     """pushes and removes the legacy archive if present"""
 
     if mount_manager.is_mount_tracked(source_path, index):
-        await _stop_mount(mount_manager, source_path, index)
+        await _stop_mount(mount_manager, source_path, index, progress_bar)
     else:
         await _push_directory(
             user_id=user_id,
@@ -235,15 +242,20 @@ async def _start_mount_if_required(
     index: NonNegativeInt,
     *,
     requires_data_mounting: bool,
+    progress_bar: ProgressBarData,
 ) -> None:
     if not requires_data_mounting:
         return
+
+    if not progress_bar:
+        progress_bar = ProgressBarData(num_steps=2, description="starting mount")
 
     s3_object = __create_s3_object_key(project_id, node_id, destination_path)
 
     await filemanager.create_r_clone_mounted_directory_entry(
         user_id=user_id, s3_object=s3_object, store_id=SIMCORE_LOCATION
     )
+    await progress_bar.update(1)
 
     await mount_manager.ensure_mounted(
         destination_path,
@@ -252,6 +264,7 @@ async def _start_mount_if_required(
         remote_type=MountRemoteType.S3,
         remote_path=s3_object,
     )
+    await progress_bar.update(1)
 
 
 async def pull(  # pylint: disable=too-many-arguments
@@ -306,6 +319,7 @@ async def pull(  # pylint: disable=too-many-arguments
                     destination_path,
                     index,
                     requires_data_mounting=mount_manager.requires_data_mounting,
+                    progress_bar=progress_bar,
                 )
             return
 
@@ -334,6 +348,7 @@ async def pull(  # pylint: disable=too-many-arguments
                 destination_path,
                 index,
                 requires_data_mounting=mount_manager.requires_data_mounting,
+                progress_bar=progress_bar,
             )
         return
 
@@ -354,6 +369,7 @@ async def pull(  # pylint: disable=too-many-arguments
                 destination_path,
                 index,
                 requires_data_mounting=mount_manager.requires_data_mounting,
+                progress_bar=progress_bar,
             )
         else:
             await _pull_directory(
@@ -376,5 +392,6 @@ async def pull(  # pylint: disable=too-many-arguments
         destination_path,
         index,
         requires_data_mounting=mount_manager.requires_data_mounting,
+        progress_bar=progress_bar,
     )
     _logger.debug("No content previously saved for '%s'", destination_path)
