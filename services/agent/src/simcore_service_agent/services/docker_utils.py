@@ -5,6 +5,7 @@ from contextlib import contextmanager, suppress
 from pathlib import Path
 from typing import Final
 
+from aiocache import cached
 from aiodocker import DockerError
 from aiodocker.docker import Docker
 from aiodocker.volumes import DockerVolume
@@ -156,7 +157,8 @@ def _find_volumes_root(path: Path) -> Path:
     return Path(*parts[: first_occurrence + 1])
 
 
-async def _get_docker_version() -> str:
+@cached()
+async def _get_rclone_version() -> str:
     proc = await asyncio.create_subprocess_exec(
         "rclone",
         "--version",
@@ -171,7 +173,7 @@ async def _get_docker_version() -> str:
 async def _try_lazy_unmount(docker: Docker, mountpoint: Path) -> None:
     volumes_root = _find_volumes_root(mountpoint)
 
-    r_clone_version = await _get_docker_version()
+    r_clone_version = await _get_rclone_version()
 
     container = await docker.containers.run(
         config={
