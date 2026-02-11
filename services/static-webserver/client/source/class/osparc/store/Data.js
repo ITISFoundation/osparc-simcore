@@ -180,7 +180,7 @@ qx.Class.define("osparc.store.Data", {
             fileUuid: encodeURIComponent(fileUuid)
           }
         };
-        if (!download && fileSize) {
+        if (!download && fileSize != null) {
           params.url["fileSize"] = fileSize;
         }
         osparc.data.Resources.fetch("storageLink", download ? "getOne" : "put", params)
