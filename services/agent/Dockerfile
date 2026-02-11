@@ -71,7 +71,9 @@ ARG TARGETARCH
 ENV TARGETARCH=${TARGETARCH}
 RUN \
   --mount=type=bind,source=scripts/install_rclone.bash,target=/tmp/install_rclone.bash \
-  ./tmp/install_rclone.bash
+  ./tmp/install_rclone.bash && \
+  mkdir -p /configs && \
+  rclone version | head -n1 | awk '{print $2}' | sed 's/^v//' > /configs/r_clone_version
 
 # -------------------------- Build stage -------------------
 # Installs build/package management tools and third party dependencies
@@ -169,14 +171,6 @@ EXPOSE 8000
 
 ENTRYPOINT [ "/bin/sh", "services/agent/docker/entrypoint.sh" ]
 CMD ["/bin/sh", "services/agent/docker/boot.sh"]
-
-# NOTE: This value is overwritten by `boot.sh` at runtime.
-# There is currently no supported way to start this image in `settings` mode
-# to run `simcore-service settings`. In CI, the entrypoint is overridden for
-# that command, which removes this mandatory env var and makes settings
-# validation fail unless we provide a default here.
-ENV AGENT_VOLUMES_CLEANUP_R_CLONE_VERSION=0.0.0
-
 
 # --------------------------Development stage -------------------
 # Source code accessible in host but runs in container
