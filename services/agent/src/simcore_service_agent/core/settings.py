@@ -58,7 +58,7 @@ class ApplicationSettings(BaseCustomSettings, MixinLoggingSettings):
         str,
         Field(
             pattern=r"^\d+\.\d+\.\d+$",
-            description="version of rclone for the container image. Can be loaded from /configs/r_clone_version file",
+            description="version of rclone for the container image",
         ),
     ]
     AGENT_VOLUMES_CLEANUP_S3_ENDPOINT: AnyHttpUrl
