@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from models_library.projects_nodes_io import StorageFileID
 from models_library.services import ServiceOutput
 from servicelib.rabbitmq import RPCRouter
 
@@ -42,3 +43,9 @@ async def detach_container_from_network(app: FastAPI, *, container_id: str, netw
     """detach container from a network, if not already detached"""
     _ = app
     await container_extensions.detach_container_from_network(container_id=container_id, network_id=network_id)
+
+
+@router.expose()
+async def refresh_containers_files(app: FastAPI, *, s3_directory: StorageFileID, recursive: bool) -> None:
+    """refresh directory content from s3, if data is mounted from S3"""
+    await container_extensions.refresh_containers_files(app=app, s3_directory=s3_directory, recursive=recursive)
