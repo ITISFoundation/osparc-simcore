@@ -160,12 +160,8 @@ async def _delete_legacy_archive(project_id: ProjectID, node_id: NodeID, path: P
 async def _stop_mount(
     mount_manager: RCloneMountManager, destination_path: Path, index: NonNegativeInt, progress_bar: ProgressBarData
 ) -> None:
-    if not progress_bar:
-        progress_bar = ProgressBarData(num_steps=1, description="stopping mount")
-
-    await mount_manager.ensure_unmounted(destination_path, index)
-
-    await progress_bar.update(1)
+    async with progress_bar.sub_progress(steps=1, description=f"stopping mount of {destination_path.name}"):
+        await mount_manager.ensure_unmounted(destination_path, index)
 
 
 async def push(  # pylint: disable=too-many-arguments  # noqa: PLR0913
@@ -247,24 +243,21 @@ async def _start_mount_if_required(
     if not requires_data_mounting:
         return
 
-    if not progress_bar:
-        progress_bar = ProgressBarData(num_steps=2, description="starting mount")
+    async with progress_bar.sub_progress(steps=2, description=f"starting mount of {destination_path.name}") as sub_prog:
+        s3_object = __create_s3_object_key(project_id, node_id, destination_path)
 
-    s3_object = __create_s3_object_key(project_id, node_id, destination_path)
+        await filemanager.create_r_clone_mounted_directory_entry(
+            user_id=user_id, s3_object=s3_object, store_id=SIMCORE_LOCATION
+        )
+        await sub_prog.update(1)
 
-    await filemanager.create_r_clone_mounted_directory_entry(
-        user_id=user_id, s3_object=s3_object, store_id=SIMCORE_LOCATION
-    )
-    await progress_bar.update(1)
-
-    await mount_manager.ensure_mounted(
-        destination_path,
-        index,
-        node_id=node_id,
-        remote_type=MountRemoteType.S3,
-        remote_path=s3_object,
-    )
-    await progress_bar.update(1)
+        await mount_manager.ensure_mounted(
+            destination_path,
+            index,
+            node_id=node_id,
+            remote_type=MountRemoteType.S3,
+            remote_path=s3_object,
+        )
 
 
 async def pull(  # pylint: disable=too-many-arguments
