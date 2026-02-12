@@ -33,9 +33,9 @@ from simcore_sdk.node_ports_common.r_clone_mount import (
     DelegateInterface,
     MountActivity,
     MountRemoteType,
+    NoMountFoundForRemotePathError,
     RCloneMountManager,
 )
-from simcore_sdk.node_ports_common.r_clone_mount._errors import NoMountFoundForRemotePathError
 from simcore_sdk.node_ports_common.r_clone_mount._utils import get_mount_id
 from tenacity import (
     AsyncRetrying,
