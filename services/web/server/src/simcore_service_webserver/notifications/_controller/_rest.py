@@ -16,6 +16,7 @@ from servicelib.rabbitmq.rpc_interfaces.notifications.notifications_templates im
 )
 
 from ..._meta import API_VTAG
+from ...application_settings_utils import requires_dev_feature_enabled
 from ...login.decorators import login_required
 from ...models import AuthenticatedRequestContext
 from ...rabbitmq import get_rabbitmq_rpc_client
@@ -30,6 +31,7 @@ _notifications_prefix = f"/{API_VTAG}/notifications"
 @routes.post(f"{_notifications_prefix}/messages:send", name="send_message")
 @login_required
 @permission_required("notification.message.send")
+@requires_dev_feature_enabled
 @handle_notifications_exceptions
 async def send_message(request: web.Request) -> web.Response:
     req_ctx = AuthenticatedRequestContext.model_validate(request)

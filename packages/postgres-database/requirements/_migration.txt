@@ -42,7 +42,7 @@ typing-extensions==4.15.0
     # via
     #   -c requirements/_base.txt
     #   alembic
-urllib3==2.5.0
+urllib3==2.6.3
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -r requirements/_migration.in
