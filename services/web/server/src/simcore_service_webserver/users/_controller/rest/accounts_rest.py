@@ -190,7 +190,7 @@ async def approve_user_account(request: web.Request) -> web.Response:
             assert user_account.email == approval_data.email  # nosec
 
             # send email to user
-            if approval_data.message_content:
+            if approval_data.content:
                 await notifications_service.send_message(
                     request.app,
                     user_id=req_ctx.user_id,
@@ -198,7 +198,7 @@ async def approve_user_account(request: web.Request) -> web.Response:
                     channel=ChannelType.email,
                     group_ids=None,
                     external_contacts=[EmailContact(email=approval_data.email)],
-                    message_content=approval_data.message_content.model_dump(),
+                    content=approval_data.content.model_dump(),
                 )
 
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
@@ -275,7 +275,7 @@ async def preview_approval_user_account(request: web.Request) -> web.Response:
 
     response = UserAccountPreviewApprovalGet(
         invitation_url=invitation_url,
-        message_content=TypeAdapter(MessageContentGet).validate_python(preview.content),
+        content=TypeAdapter(MessageContentGet).validate_python(preview.content),
     )
 
     return envelope_json_response(response.model_dump(**_RESPONSE_MODEL_MINIMAL_POLICY))

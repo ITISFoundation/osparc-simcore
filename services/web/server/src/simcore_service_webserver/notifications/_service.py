@@ -65,7 +65,7 @@ async def _create_email_message(
     product_name: ProductName,
     group_ids: list[GroupID] | None,
     external_contacts: list[Contact] | None,
-    message_content: dict[str, Any],
+    content: dict[str, Any],
 ) -> EmailNotificationMessage:
     product = products_service.get_product(app, product_name)
 
@@ -85,7 +85,7 @@ async def _create_email_message(
     if not to:
         raise NotificationsNoActiveRecipientsError
 
-    email_content = EmailContent(**message_content)
+    email_content = EmailContent(**content)
 
     if len(to) == 1:
         # single recipient, no Bcc
@@ -138,7 +138,7 @@ async def send_message(
     channel: ChannelType,
     group_ids: list[GroupID] | None,
     external_contacts: list[Contact] | None,
-    message_content: dict[str, Any],  # NOTE: validated internally
+    content: dict[str, Any],  # NOTE: validated internally
 ) -> AsyncJobGet:
     match channel:
         case ChannelType.email:
@@ -147,7 +147,7 @@ async def send_message(
                 product_name=product_name,
                 group_ids=group_ids,
                 external_contacts=external_contacts,
-                message_content=message_content,
+                content=content,
             )
         case _:
             raise NotificationsUnsupportedChannelError(channel=channel)

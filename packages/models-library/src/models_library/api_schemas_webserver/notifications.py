@@ -107,4 +107,4 @@ class TemplateMessageBody(InputSchema):
 class MessageBody(InputSchema):
     channel: ChannelType
     group_ids: list[GroupID] | None = None
-    message_content: MessageContentBody
+    content: MessageContentBody

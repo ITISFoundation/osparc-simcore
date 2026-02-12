@@ -330,7 +330,7 @@ class _InvitationDetails(InputSchema):
 class UserAccountApproveBody(InputSchema):
     email: EmailStr
     invitation_url: HttpUrl
-    message_content: MessageContentBody | None = None
+    content: MessageContentBody | None = None
 
 
 class UserAccountPreviewApprovalBody(InputSchema):
@@ -340,7 +340,7 @@ class UserAccountPreviewApprovalBody(InputSchema):
 
 class UserAccountPreviewApprovalGet(OutputSchema):
     invitation_url: HttpUrl | None
-    message_content: MessageContentGet | None = None
+    content: MessageContentGet | None = None
 
 
 class UserAccountReject(InputSchema):

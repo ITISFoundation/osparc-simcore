@@ -45,7 +45,7 @@ async def send_message(request: web.Request) -> web.Response:
         group_ids=body.group_ids,
         # NOTE: external contacts are not supported for now from this endpoint, only group_ids
         external_contacts=None,
-        message_content=body.message_content.model_dump(),
+        content=body.content.model_dump(),
     )
 
     task_id = f"{async_job.job_id}"
