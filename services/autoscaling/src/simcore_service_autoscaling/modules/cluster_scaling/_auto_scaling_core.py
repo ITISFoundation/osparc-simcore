@@ -944,7 +944,7 @@ async def _find_drainable_nodes(app: FastAPI, cluster: Cluster) -> list[Associat
     drainable_nodes: list[AssociatedInstance] = []
 
     for instance in cluster.active_nodes:
-        if instance.has_assigned_tasks():
+        if instance.has_assigned_tasks_or_resources_in_use():
             await utils_docker.set_node_found_empty(get_docker_client(app), instance.node, empty=False)
             continue
         node_last_empty = await utils_docker.get_node_empty_since(instance.node)
@@ -1193,7 +1193,7 @@ async def _scale_down_unused_cluster_instances(
     cluster: Cluster,
     auto_scaling_mode: AutoscalingProvider,
 ) -> Cluster:
-    if any(not instance.has_assigned_tasks() for instance in cluster.active_nodes):
+    if any(not instance.has_assigned_tasks_or_resources_in_use() for instance in cluster.active_nodes):
         # ask the provider to try to retire nodes actively
         with (
             log_catch(_logger, reraise=False),

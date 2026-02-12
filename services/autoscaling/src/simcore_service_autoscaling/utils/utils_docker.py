@@ -602,6 +602,11 @@ async def set_node_osparc_ready(
     if additional_labels:
         new_tags.update(additional_labels)
 
+    if ready:
+        # NOTE: clean empty tag in case we activate a node that was previously found empty,
+        # we do not want to keep the old timestamp in this case
+        new_tags.pop(_OSPARC_NODE_EMPTY_DATETIME_LABEL_KEY, None)
+
     # Remove custom placement labels when draining (not ready)
     if not ready:
         for label_key in OSPARC_CUSTOM_DOCKER_PLACEMENT_CONSTRAINTS_LABEL_KEYS:

@@ -642,6 +642,7 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915,C901
         available=with_drain_nodes_labelled,
     )
     # update our fake node
+    assert fake_attached_node.spec.labels
     fake_attached_node.spec.labels[_OSPARC_SERVICE_READY_LABEL_KEY] = "true"
     fake_attached_node.spec.labels[_OSPARC_SERVICES_READY_DATETIME_LABEL_KEY] = mock_docker_tag_node.call_args_list[2][
         1
@@ -973,7 +974,9 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915,C901
             _ScaleUpParams(
                 imposed_instance_type=None,
                 service_resources=Resources(cpus=4, ram=TypeAdapter(ByteSize).validate_python("114Gib")),
-                service_custom_placement_constraints={"product-name": "osparc"},
+                service_custom_placement_constraints={
+                    TypeAdapter(DockerLabelKey).validate_python("product-name"): "osparc"
+                },
                 num_services=1,
                 expected_instance_type="r5n.4xlarge",
                 expected_num_instances=1,
