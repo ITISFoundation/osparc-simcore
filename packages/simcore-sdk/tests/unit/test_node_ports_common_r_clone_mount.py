@@ -6,7 +6,7 @@
 import asyncio
 import os
 import tempfile
-from collections.abc import AsyncIterable, AsyncIterator, Iterator
+from collections.abc import AsyncIterable, AsyncIterator, Callable, Iterator
 from pathlib import Path
 from typing import Any, cast
 from unittest.mock import AsyncMock
@@ -180,17 +180,23 @@ async def r_clone_mount_manager(
 
 
 @pytest.fixture
-def local_mount_path(tmpdir: LocalPath) -> Path:
-    local_mount_path = Path(tmpdir) / "local_mount_path"
-    local_mount_path.mkdir(parents=True, exist_ok=True)
-    return local_mount_path
+def ensure_tmp_dir(tmpdir: LocalPath) -> Callable[[Path], Path]:
+    def _(path: Path) -> Path:
+        tmp_path = Path(tmpdir) / path
+        tmp_path.mkdir(parents=True, exist_ok=True)
+        return tmp_path
+
+    return _
 
 
 @pytest.fixture
-def vfs_cache_path(tmpdir: LocalPath) -> Path:
-    vfs_cache_path = Path(tmpdir) / "vfs_cache_path"
-    vfs_cache_path.mkdir(parents=True, exist_ok=True)
-    return vfs_cache_path
+def local_mount_path(ensure_tmp_dir: Callable[[Path], Path]) -> Path:
+    return ensure_tmp_dir(Path("local_mount_path"))
+
+
+@pytest.fixture
+def vfs_cache_path(ensure_tmp_dir: Callable[[Path], Path]) -> Path:
+    return ensure_tmp_dir(Path("vfs_cache_path"))
 
 
 @pytest.fixture
@@ -199,8 +205,17 @@ def index() -> int:
 
 
 @pytest.fixture
-def remote_path(faker: Faker) -> StorageFileID:
-    return TypeAdapter(StorageFileID).validate_python(f"{faker.uuid4()}/{faker.uuid4()}/mounted-path")
+def ensure_remote_path(faker: Faker) -> Callable[[], StorageFileID]:
+    def _() -> StorageFileID:
+        remote = f"{faker.uuid4()}/{faker.uuid4()}/mounted-path"
+        return TypeAdapter(StorageFileID).validate_python(remote)
+
+    return _
+
+
+@pytest.fixture
+def remote_path(ensure_remote_path: Callable[[], StorageFileID]) -> StorageFileID:
+    return ensure_remote_path()
 
 
 @pytest.fixture
@@ -410,8 +425,10 @@ async def test_refresh_path(
     r_clone_settings: RCloneSettings,
     bucket_name: S3BucketName,
     node_id: NodeID,
-    remote_path: StorageFileID,
     local_mount_path: Path,
+    remote_path: StorageFileID,
+    ensure_tmp_dir: Callable[[Path], Path],
+    ensure_remote_path: Callable[[], StorageFileID],
     index: int,
     s3_client: S3Client,
     file_count: NonNegativeInt,
@@ -425,13 +442,18 @@ async def test_refresh_path(
     local_checksums = await _get_file_checksums_from_path(local_mount_path)
     assert len(local_checksums) == 0, "Local mount should be empty at the start of the test"
 
-    await r_clone_mount_manager.ensure_mounted(
-        local_mount_path=local_mount_path,
-        remote_type=MountRemoteType.S3,
-        remote_path=remote_path,
-        node_id=node_id,
-        index=index,
-    )
+    for remote, local in [
+        (ensure_remote_path(), ensure_tmp_dir(Path("other1"))),
+        (remote_path, local_mount_path),
+        (ensure_remote_path(), ensure_tmp_dir(Path("other2") / "else")),
+    ]:
+        await r_clone_mount_manager.ensure_mounted(
+            local_mount_path=local,
+            remote_type=MountRemoteType.S3,
+            remote_path=remote,
+            node_id=node_id,
+            index=index,
+        )
 
     # 1. create random files in S3
     s3_create_files_checums: dict[Path, str] = dict(
