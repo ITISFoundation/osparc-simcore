@@ -68,10 +68,10 @@ class _BaseInstance(_TaskAssignmentMixin):
         if self.available_resources == Resources.create_as_empty():
             object.__setattr__(self, "available_resources", self.ec2_instance.resources)
 
-    def has_assigned_tasks(self) -> bool:
+    def has_assigned_tasks_or_resources_in_use(self) -> bool:
         # NOTE: This function is needed because assigned_tasks can be empty while still have used resources (this is not nice and should be changed)
         # see https://github.com/ITISFoundation/osparc-simcore/issues/8559
-        return bool(self.available_resources < self.ec2_instance.resources)
+        return bool(self.assigned_tasks) or bool(self.available_resources < self.ec2_instance.resources)
 
     @property
     def osparc_custom_node_labels(self) -> dict[DockerLabelKey, str]:
