@@ -4722,7 +4722,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/NotificationMessageBody'
+              $ref: '#/components/schemas/MessageBody'
         required: true
       responses:
         '200':
@@ -4756,7 +4756,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/NotificationsTemplatePreviewBody'
+              $ref: '#/components/schemas/TemplatePreviewBody'
         required: true
       responses:
         '200':
@@ -4764,7 +4764,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_NotificationsTemplatePreviewGet_'
+                $ref: '#/components/schemas/Envelope_TemplatePreviewGet_'
   /v0/notifications/templates:search:
     get:
       tags:
@@ -4803,7 +4803,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_NotificationsTemplateGet__'
+                $ref: '#/components/schemas/Envelope_list_TemplateGet__'
   /v0/projects:
     post:
       tags:
@@ -11248,19 +11248,6 @@ components:
           title: Error
       type: object
       title: Envelope[NodeRetrieved]
-    Envelope_NotificationsTemplatePreviewGet_:
-      properties:
-        data:
-          anyOf:
-          - $ref: '#/components/schemas/NotificationsTemplatePreviewGet'
-          - type: 'null'
-        error:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Error
-      type: object
-      title: Envelope[NotificationsTemplatePreviewGet]
     Envelope_PaymentMethodGet_:
       properties:
         data:
@@ -11586,6 +11573,19 @@ components:
           title: Error
       type: object
       title: Envelope[TaskStreamResponse]
+    Envelope_TemplatePreviewGet_:
+      properties:
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/TemplatePreviewGet'
+          - type: 'null'
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[TemplatePreviewGet]
     Envelope_Union_EmailTestFailed__EmailTestPassed__:
       properties:
         data:
@@ -12043,22 +12043,6 @@ components:
           title: Error
       type: object
       title: Envelope[list[MyTokenGet]]
-    Envelope_list_NotificationsTemplateGet__:
-      properties:
-        data:
-          anyOf:
-          - items:
-              $ref: '#/components/schemas/NotificationsTemplateGet'
-            type: array
-          - type: 'null'
-          title: Data
-        error:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Error
-      type: object
-      title: Envelope[list[NotificationsTemplateGet]]
     Envelope_list_PaymentMethodGet__:
       properties:
         data:
@@ -12235,6 +12219,22 @@ components:
           title: Error
       type: object
       title: Envelope[list[TaskGet]]
+    Envelope_list_TemplateGet__:
+      properties:
+        data:
+          anyOf:
+          - items:
+              $ref: '#/components/schemas/TemplateGet'
+            type: array
+          - type: 'null'
+          title: Data
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[list[TemplateGet]]
     Envelope_list_UserAccountGet__:
       properties:
         data:
@@ -13739,6 +13739,74 @@ components:
       required:
       - color
       title: MarkerUI
+    MessageBody:
+      properties:
+        channel:
+          $ref: '#/components/schemas/ChannelType'
+        groupIds:
+          anyOf:
+          - items:
+              type: integer
+              exclusiveMinimum: true
+              minimum: 0
+            type: array
+          - type: 'null'
+          title: Groupids
+        content:
+          $ref: '#/components/schemas/MessageContentBody'
+      type: object
+      required:
+      - channel
+      - content
+      title: MessageBody
+    MessageContentBody:
+      properties:
+        subject:
+          type: string
+          maxLength: 998
+          title: Subject
+          description: 'Email subject line (RFC 2822: max header line length)'
+        bodyHtml:
+          type: string
+          maxLength: 1048576
+          title: Bodyhtml
+          description: HTML email body (1 MB limit per RFC 5321 SMTP practical limits)
+        bodyText:
+          type: string
+          maxLength: 1048576
+          title: Bodytext
+          description: Plain text email body (1 MB limit per RFC 5321 SMTP practical
+            limits)
+      type: object
+      required:
+      - subject
+      - bodyHtml
+      - bodyText
+      title: EmailMessageContentBody
+    MessageContentGet:
+      properties:
+        subject:
+          type: string
+          maxLength: 998
+          title: Subject
+          description: 'Email subject line (RFC 2822: max header line length)'
+        bodyHtml:
+          type: string
+          maxLength: 1048576
+          title: Bodyhtml
+          description: HTML email body (1 MB limit per RFC 5321 SMTP practical limits)
+        bodyText:
+          type: string
+          maxLength: 1048576
+          title: Bodytext
+          description: Plain text email body (1 MB limit per RFC 5321 SMTP practical
+            limits)
+      type: object
+      required:
+      - subject
+      - bodyHtml
+      - bodyText
+      title: EmailMessageContentGet
     MyFunctionPermissionsGet:
       properties:
         readFunctions:
@@ -14784,133 +14852,6 @@ components:
       - ANNOTATION_NOTE
       - WALLET_SHARED
       title: NotificationCategory
-    NotificationMessageBody:
-      properties:
-        channel:
-          $ref: '#/components/schemas/ChannelType'
-        groupIds:
-          anyOf:
-          - items:
-              type: integer
-              exclusiveMinimum: true
-              minimum: 0
-            type: array
-          - type: 'null'
-          title: Groupids
-        messageContent:
-          $ref: '#/components/schemas/NotificationsContentBody'
-      type: object
-      required:
-      - channel
-      - messageContent
-      title: NotificationMessageBody
-    NotificationsContentBody:
-      properties:
-        subject:
-          type: string
-          maxLength: 998
-          title: Subject
-          description: 'Email subject line (RFC 2822: max header line length)'
-        bodyHtml:
-          type: string
-          maxLength: 1048576
-          title: Bodyhtml
-          description: HTML email body (1 MB limit per RFC 5321 SMTP practical limits)
-        bodyText:
-          type: string
-          maxLength: 1048576
-          title: Bodytext
-          description: Plain text email body (1 MB limit per RFC 5321 SMTP practical
-            limits)
-      type: object
-      required:
-      - subject
-      - bodyHtml
-      - bodyText
-      title: NotificationsEmailContentBody
-    NotificationsContentGet:
-      properties:
-        subject:
-          type: string
-          maxLength: 998
-          title: Subject
-          description: 'Email subject line (RFC 2822: max header line length)'
-        bodyHtml:
-          type: string
-          maxLength: 1048576
-          title: Bodyhtml
-          description: HTML email body (1 MB limit per RFC 5321 SMTP practical limits)
-        bodyText:
-          type: string
-          maxLength: 1048576
-          title: Bodytext
-          description: Plain text email body (1 MB limit per RFC 5321 SMTP practical
-            limits)
-      type: object
-      required:
-      - subject
-      - bodyHtml
-      - bodyText
-      title: NotificationsEmailContentGet
-    NotificationsTemplateGet:
-      properties:
-        ref:
-          $ref: '#/components/schemas/NotificationsTemplateRefGet'
-        contextSchema:
-          additionalProperties: true
-          type: object
-          title: Contextschema
-      type: object
-      required:
-      - ref
-      - contextSchema
-      title: NotificationsTemplateGet
-    NotificationsTemplatePreviewBody:
-      properties:
-        ref:
-          $ref: '#/components/schemas/NotificationsTemplateRefBody'
-        context:
-          additionalProperties: true
-          type: object
-          title: Context
-      type: object
-      required:
-      - ref
-      - context
-      title: NotificationsTemplatePreviewBody
-    NotificationsTemplatePreviewGet:
-      properties:
-        ref:
-          $ref: '#/components/schemas/NotificationsTemplateRefGet'
-        content:
-          $ref: '#/components/schemas/NotificationsContentGet'
-      type: object
-      required:
-      - ref
-      - content
-      title: NotificationsTemplatePreviewGet
-    NotificationsTemplateRefBody:
-      properties:
-        channel:
-          $ref: '#/components/schemas/ChannelType'
-        templateName:
-          $ref: '#/components/schemas/TemplateName'
-      type: object
-      required:
-      - channel
-      - templateName
-      title: NotificationsTemplateRefBody
-    NotificationsTemplateRefGet:
-      properties:
-        channel:
-          $ref: '#/components/schemas/ChannelType'
-        templateName:
-          $ref: '#/components/schemas/TemplateName'
-      type: object
-      required:
-      - channel
-      - templateName
-      title: NotificationsTemplateRefGet
     OsparcCreditsAggregatedByServiceGet:
       properties:
         osparc_credits:
@@ -18375,9 +18316,68 @@ components:
       - items
       - end
       title: TaskStreamResponse
+    TemplateGet:
+      properties:
+        ref:
+          $ref: '#/components/schemas/TemplateRefGet'
+        contextSchema:
+          additionalProperties: true
+          type: object
+          title: Contextschema
+      type: object
+      required:
+      - ref
+      - contextSchema
+      title: TemplateGet
     TemplateName:
       type: string
       minLength: 1
+    TemplatePreviewBody:
+      properties:
+        ref:
+          $ref: '#/components/schemas/TemplateRefBody'
+        context:
+          additionalProperties: true
+          type: object
+          title: Context
+      type: object
+      required:
+      - ref
+      - context
+      title: TemplatePreviewBody
+    TemplatePreviewGet:
+      properties:
+        ref:
+          $ref: '#/components/schemas/TemplateRefGet'
+        content:
+          $ref: '#/components/schemas/MessageContentGet'
+      type: object
+      required:
+      - ref
+      - content
+      title: TemplatePreviewGet
+    TemplateRefBody:
+      properties:
+        channel:
+          $ref: '#/components/schemas/ChannelType'
+        templateName:
+          $ref: '#/components/schemas/TemplateName'
+      type: object
+      required:
+      - channel
+      - templateName
+      title: TemplateRefBody
+    TemplateRefGet:
+      properties:
+        channel:
+          $ref: '#/components/schemas/ChannelType'
+        templateName:
+          $ref: '#/components/schemas/TemplateName'
+      type: object
+      required:
+      - channel
+      - templateName
+      title: TemplateRefGet
     TestEmail:
       properties:
         from_:
@@ -18590,9 +18590,9 @@ components:
           minLength: 1
           format: uri
           title: Invitationurl
-        messageContent:
+        content:
           anyOf:
-          - $ref: '#/components/schemas/NotificationsContentBody'
+          - $ref: '#/components/schemas/MessageContentBody'
           - type: 'null'
       type: object
       required:
@@ -18770,9 +18770,9 @@ components:
             format: uri
           - type: 'null'
           title: Invitationurl
-        messageContent:
+        content:
           anyOf:
-          - $ref: '#/components/schemas/NotificationsContentGet'
+          - $ref: '#/components/schemas/MessageContentGet'
           - type: 'null'
       type: object
       required:
