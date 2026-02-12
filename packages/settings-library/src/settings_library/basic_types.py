@@ -2,7 +2,7 @@ from enum import Enum
 from typing import Annotated
 
 from common_library.basic_types import BootModeEnum, BuildTargetEnum, LogLevel
-from pydantic import Field, SecretStr, StringConstraints
+from pydantic import Field, StringConstraints
 
 assert issubclass(LogLevel, Enum)  # nosec
 assert issubclass(BootModeEnum, Enum)  # nosec
@@ -26,7 +26,4 @@ type VersionTag = Annotated[str, StringConstraints(pattern=r"^v\d$")]
 
 # non-empty bounded string used as identifier
 # e.g. "123" or "name_123" or "fa327c73-52d8-462a-9267-84eeaf0f90e3" but NOT ""
-IDStringConstraints = StringConstraints(strip_whitespace=True, min_length=1, max_length=50)
-
-type IDStr = Annotated[str, IDStringConstraints]
-type SecretIDStr = Annotated[SecretStr, IDStringConstraints]
+type IDStr = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=50)]
