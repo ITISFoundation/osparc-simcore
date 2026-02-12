@@ -179,7 +179,7 @@ async def push(  # pylint: disable=too-many-arguments  # noqa: PLR0913
     application_name: str,
     mount_manager: RCloneMountManager,
 ) -> None:
-    """pushes and removes the legacy archive if present"""
+    """saves state folder, if present, removes any legacy archive"""
 
     if mount_manager.is_mount_tracked(source_path, index):
         await _stop_mount(mount_manager, source_path, index, progress_bar)
@@ -273,7 +273,7 @@ async def pull(  # pylint: disable=too-many-arguments
     legacy_state: LegacyState | None,
     mount_manager: RCloneMountManager,
 ) -> None:
-    """restores the state folder"""
+    """restores the state folder, if present, restores the legacy archive"""
 
     if legacy_state and legacy_state.new_state_path == destination_path:
         _logger.info(
