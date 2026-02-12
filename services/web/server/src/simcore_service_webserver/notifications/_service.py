@@ -13,8 +13,8 @@ from models_library.notifications_errors import (
 )
 from models_library.products import ProductName
 from models_library.rpc.notifications.template import (
-    NotificationsTemplatePreviewRpcRequest,
-    NotificationsTemplateRefRpc,
+    TemplatePreviewRpcRequest,
+    TemplateRefRpc,
 )
 from models_library.users import UserID
 from servicelib.celery.models import ExecutionMetadata, OwnerMetadata
@@ -117,8 +117,8 @@ async def preview_template(
 
     enriched_context = {**context, "product": asdict(product_data)}
 
-    request = NotificationsTemplatePreviewRpcRequest(
-        ref=NotificationsTemplateRefRpc(**ref.model_dump()),
+    request = TemplatePreviewRpcRequest(
+        ref=TemplateRefRpc(**ref.model_dump()),
         context=enriched_context,
     )
 

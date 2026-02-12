@@ -9,9 +9,9 @@ from models_library.notifications_errors import (
     NotificationsTemplateNotFoundError,
 )
 from models_library.rpc.notifications.template import (
-    NotificationsTemplatePreviewRpcRequest,
-    NotificationsTemplatePreviewRpcResponse,
-    NotificationsTemplateRefRpc,
+    TemplatePreviewRpcRequest,
+    TemplatePreviewRpcResponse,
+    TemplateRefRpc,
 )
 from servicelib.rabbitmq import RabbitMQRPCClient, RPCServerError
 from servicelib.rabbitmq.rpc_interfaces.notifications.notifications_templates import (
@@ -89,7 +89,7 @@ async def test_preview_template_success(
     assert len(templates) == 1
 
     template = templates[0]
-    request = NotificationsTemplatePreviewRpcRequest(
+    request = TemplatePreviewRpcRequest(
         ref=template.ref,
         context={
             "subject": "Test Email",
@@ -99,7 +99,7 @@ async def test_preview_template_success(
     )
 
     response = await preview_template(rpc_client, request=request)
-    assert isinstance(response, NotificationsTemplatePreviewRpcResponse)
+    assert isinstance(response, TemplatePreviewRpcResponse)
     assert response.ref == template.ref
     assert isinstance(response.content, dict)
 
@@ -112,8 +112,8 @@ async def test_preview_template_not_found(
 
     rpc_client = await rabbitmq_rpc_client("notifications-test-client")
 
-    request = NotificationsTemplatePreviewRpcRequest(
-        ref=NotificationsTemplateRefRpc(
+    request = TemplatePreviewRpcRequest(
+        ref=TemplateRefRpc(
             channel=ChannelType.email,
             template_name="non_existent_template",
         ),
@@ -136,7 +136,7 @@ async def test_preview_template_invalid_context(
     templates = await search_templates(rpc_client)
     if templates:
         template = templates[0]
-        request = NotificationsTemplatePreviewRpcRequest(
+        request = TemplatePreviewRpcRequest(
             ref=template.ref,
             context={"invalid_key": "invalid_value"},  # Invalid context
         )
