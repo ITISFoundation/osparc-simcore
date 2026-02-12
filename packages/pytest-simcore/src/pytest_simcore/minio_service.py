@@ -4,7 +4,7 @@
 
 import pytest
 from faker import Faker
-from pydantic import AnyHttpUrl, TypeAdapter
+from pydantic import AnyHttpUrl, SecretStr, TypeAdapter
 from settings_library.s3 import S3Settings
 
 from pytest_simcore.helpers.docker import get_service_published_port
@@ -18,8 +18,8 @@ def minio_s3_settings(docker_stack: dict, env_vars_for_docker_compose: EnvVarsDi
     assert "pytest-ops_minio" in docker_stack["services"]
 
     return S3Settings(
-        S3_ACCESS_KEY=env_vars_for_docker_compose["S3_ACCESS_KEY"],
-        S3_SECRET_KEY=env_vars_for_docker_compose["S3_SECRET_KEY"],
+        S3_ACCESS_KEY=SecretStr(env_vars_for_docker_compose["S3_ACCESS_KEY"]),
+        S3_SECRET_KEY=SecretStr(env_vars_for_docker_compose["S3_SECRET_KEY"]),
         S3_ENDPOINT=TypeAdapter(AnyHttpUrl).validate_python(
             f"http://{get_localhost_ip()}:{get_service_published_port('minio')}"
         ),
