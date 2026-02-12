@@ -1791,7 +1791,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UserAccountApproveBody'
+              $ref: '#/components/schemas/UserAccountApprove'
         required: true
       responses:
         '204':
@@ -10756,6 +10756,34 @@ components:
       title: DownloadLink
       description: I/O port type to hold a generic download link to a file (e.g. S3
         pre-signed link, etc)
+    EmailMessageContentBody:
+      properties:
+        html:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Html
+        text:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Text
+      type: object
+      title: EmailMessageContentBody
+    EmailMessageContentBodyGet:
+      properties:
+        html:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Html
+        text:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Text
+      type: object
+      title: EmailMessageContentBodyGet
     EmailTestFailed:
       properties:
         test_name:
@@ -13753,36 +13781,26 @@ components:
           - type: 'null'
           title: Groupids
         content:
-          $ref: '#/components/schemas/MessageContentBody'
+          $ref: '#/components/schemas/MessageContent'
       type: object
       required:
       - channel
       - content
       title: MessageBody
-    MessageContentBody:
+    MessageContent:
       properties:
         subject:
           type: string
           maxLength: 998
           title: Subject
           description: 'Email subject line (RFC 2822: max header line length)'
-        bodyHtml:
-          type: string
-          maxLength: 1048576
-          title: Bodyhtml
-          description: HTML email body (1 MB limit per RFC 5321 SMTP practical limits)
-        bodyText:
-          type: string
-          maxLength: 1048576
-          title: Bodytext
-          description: Plain text email body (1 MB limit per RFC 5321 SMTP practical
-            limits)
+        body:
+          $ref: '#/components/schemas/EmailMessageContentBody'
       type: object
       required:
       - subject
-      - bodyHtml
-      - bodyText
-      title: EmailMessageContentBody
+      - body
+      title: EmailMessageContent
     MessageContentGet:
       properties:
         subject:
@@ -13790,22 +13808,12 @@ components:
           maxLength: 998
           title: Subject
           description: 'Email subject line (RFC 2822: max header line length)'
-        bodyHtml:
-          type: string
-          maxLength: 1048576
-          title: Bodyhtml
-          description: HTML email body (1 MB limit per RFC 5321 SMTP practical limits)
-        bodyText:
-          type: string
-          maxLength: 1048576
-          title: Bodytext
-          description: Plain text email body (1 MB limit per RFC 5321 SMTP practical
-            limits)
+        body:
+          $ref: '#/components/schemas/EmailMessageContentBodyGet'
       type: object
       required:
       - subject
-      - bodyHtml
-      - bodyText
+      - body
       title: EmailMessageContentGet
     MyFunctionPermissionsGet:
       properties:
@@ -18578,7 +18586,7 @@ components:
       - number
       - e_tag
       title: UploadedPart
-    UserAccountApproveBody:
+    UserAccountApprove:
       properties:
         email:
           type: string
@@ -18590,15 +18598,15 @@ components:
           minLength: 1
           format: uri
           title: Invitationurl
-        content:
+        messageContent:
           anyOf:
-          - $ref: '#/components/schemas/MessageContentBody'
+          - $ref: '#/components/schemas/MessageContent'
           - type: 'null'
       type: object
       required:
       - email
       - invitationUrl
-      title: UserAccountApproveBody
+      title: UserAccountApprove
     UserAccountGet:
       properties:
         firstName:
@@ -18770,7 +18778,7 @@ components:
             format: uri
           - type: 'null'
           title: Invitationurl
-        content:
+        messageContent:
           anyOf:
           - $ref: '#/components/schemas/MessageContentGet'
           - type: 'null'

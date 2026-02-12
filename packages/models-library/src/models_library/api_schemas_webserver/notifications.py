@@ -1,14 +1,36 @@
-from typing import Annotated, Any
+from typing import Annotated, Any, Self
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from models_library.groups import GroupID
 
 from ..api_schemas_webserver._base import InputSchema, OutputSchema
 from ..notifications import ChannelType, TemplateName
 
+#
+# Email Message
+#
 
-class EmailMessageContentBody(InputSchema):
+
+class _EmailMessageContentBodyMixin(BaseModel):
+    html: str | None = None
+    text: str | None = None
+
+    @model_validator(mode="after")
+    def _require_at_least_one_format(self) -> Self:
+        if self.html is None and self.text is None:
+            msg = "At least one of 'html' or 'text' is required"
+            raise ValueError(msg)
+        return self
+
+
+class EmailMessageContentBody(_EmailMessageContentBodyMixin, InputSchema): ...
+
+
+class EmailMessageContentBodyGet(_EmailMessageContentBodyMixin, OutputSchema): ...
+
+
+class _EmailMessageContentMixin(BaseModel):
     subject: Annotated[
         str,
         Field(
@@ -17,55 +39,25 @@ class EmailMessageContentBody(InputSchema):
             description="Email subject line (RFC 2822: max header line length)",
         ),
     ]
-    body_html: Annotated[
-        str,
-        Field(
-            ...,
-            max_length=1_048_576,
-            description="HTML email body (1 MB limit per RFC 5321 SMTP practical limits)",
-        ),
-    ]
-    body_text: Annotated[
-        str,
-        Field(
-            ...,
-            max_length=1_048_576,
-            description="Plain text email body (1 MB limit per RFC 5321 SMTP practical limits)",
-        ),
-    ]
 
 
-type MessageContentBody = EmailMessageContentBody
+class EmailMessageContent(_EmailMessageContentMixin, InputSchema):
+    body: EmailMessageContentBody
 
 
-class EmailMessageContentGet(OutputSchema):
-    subject: Annotated[
-        str,
-        Field(
-            ...,
-            max_length=998,
-            description="Email subject line (RFC 2822: max header line length)",
-        ),
-    ]
-    body_html: Annotated[
-        str,
-        Field(
-            ...,
-            max_length=1_048_576,
-            description="HTML email body (1 MB limit per RFC 5321 SMTP practical limits)",
-        ),
-    ]
-    body_text: Annotated[
-        str,
-        Field(
-            ...,
-            max_length=1_048_576,
-            description="Plain text email body (1 MB limit per RFC 5321 SMTP practical limits)",
-        ),
-    ]
+class EmailMessageContentGet(_EmailMessageContentMixin, OutputSchema):
+    body: EmailMessageContentBodyGet
 
 
-type MessageContentGet = EmailMessageContentGet
+# Message
+
+type MessageContent = EmailMessageContent  # | OtherMessageContent for other channels
+type MessageContentGet = EmailMessageContentGet  # | OtherMessageContentGet for other channels
+
+
+#
+# Template
+#
 
 
 class SearchTemplatesQueryParams(BaseModel):
@@ -107,4 +99,4 @@ class TemplateMessageBody(InputSchema):
 class MessageBody(InputSchema):
     channel: ChannelType
     group_ids: list[GroupID] | None = None
-    content: MessageContentBody
+    content: MessageContent

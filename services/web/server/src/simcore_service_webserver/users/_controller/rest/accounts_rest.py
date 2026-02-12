@@ -6,7 +6,7 @@ from common_library.users_enums import AccountRequestStatus
 from models_library.api_schemas_invitations.invitations import ApiInvitationInputs
 from models_library.api_schemas_webserver.notifications import MessageContentGet
 from models_library.api_schemas_webserver.users import (
-    UserAccountApproveBody,
+    UserAccountApprove,
     UserAccountGet,
     UserAccountPreviewApprovalBody,
     UserAccountPreviewApprovalGet,
@@ -154,7 +154,7 @@ async def approve_user_account(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
     assert req_ctx.product_name  # nosec
 
-    approval_data = await parse_request_body_as(UserAccountApproveBody, request)
+    approval_data = await parse_request_body_as(UserAccountApprove, request)
 
     invitation_result = await invitations_service.extract_invitation(
         request.app,
@@ -190,7 +190,7 @@ async def approve_user_account(request: web.Request) -> web.Response:
             assert user_account.email == approval_data.email  # nosec
 
             # send email to user
-            if approval_data.content:
+            if approval_data.message_content:
                 await notifications_service.send_message(
                     request.app,
                     user_id=req_ctx.user_id,
@@ -198,7 +198,7 @@ async def approve_user_account(request: web.Request) -> web.Response:
                     channel=ChannelType.email,
                     group_ids=None,
                     external_contacts=[EmailContact(email=approval_data.email)],
-                    content=approval_data.content.model_dump(),
+                    content=approval_data.message_content.model_dump(),
                 )
 
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
@@ -275,7 +275,7 @@ async def preview_approval_user_account(request: web.Request) -> web.Response:
 
     response = UserAccountPreviewApprovalGet(
         invitation_url=invitation_url,
-        content=TypeAdapter(MessageContentGet).validate_python(preview.content),
+        message_content=TypeAdapter(MessageContentGet).validate_python(preview.content),
     )
 
     return envelope_json_response(response.model_dump(**_RESPONSE_MODEL_MINIMAL_POLICY))
