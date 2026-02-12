@@ -42,4 +42,5 @@ async def test_get_simcore_s3_access(
     simcore_s3_settings: S3Settings = await storage_client.get_s3_access(user_id)
 
     assert mocked_storage_service_api["get_or_create_temporary_s3_access"].called
-    assert fake_s3_settings == simcore_s3_settings
+    # NOTE: Compare using model_dump(mode='json') to serialize SecretStr fields to plain strings
+    assert fake_s3_settings.model_dump(mode="json") == simcore_s3_settings.model_dump(mode="json")
