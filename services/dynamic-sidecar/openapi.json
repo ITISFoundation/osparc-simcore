@@ -495,6 +495,41 @@
         }
       }
     },
+    "/v1/containers/files:refresh": {
+      "post": {
+        "tags": [
+          "containers"
+        ],
+        "summary": "Refresh Containers Files",
+        "description": "refresh directory content from s3, if data is mounted from S3",
+        "operationId": "refresh_containers_files_v1_containers_files_refresh_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshContainerFiles"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/containers/images:pull": {
       "post": {
         "tags": [
@@ -1159,6 +1194,33 @@
           "status"
         ],
         "title": "PutVolumeItem"
+      },
+      "RefreshContainerFiles": {
+        "properties": {
+          "s3_directory": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(exports\\/\\d+\\/[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}\\.zip)|((api|([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}))\\/([0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12})\\/(.+)$)"
+              },
+              {
+                "type": "string",
+                "pattern": "^N:package:[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}$"
+              }
+            ],
+            "title": "S3 Directory"
+          },
+          "recursive": {
+            "type": "boolean",
+            "title": "Recursive"
+          }
+        },
+        "type": "object",
+        "required": [
+          "s3_directory",
+          "recursive"
+        ],
+        "title": "RefreshContainerFiles"
       },
       "ResourceValue": {
         "properties": {
