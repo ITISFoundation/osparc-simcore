@@ -305,7 +305,7 @@ async def test_preview_template_success(
     preview = TemplatePreviewGet.model_validate(data)
     assert preview.ref.channel == ChannelType.email
     assert preview.ref.template_name == "test_template"
-    assert preview.content
+    assert preview.message_content
 
 
 @pytest.mark.parametrize("user_role", [UserRole.PRODUCT_OWNER, UserRole.ADMIN])

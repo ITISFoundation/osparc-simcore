@@ -61,18 +61,21 @@ type MessageContentGet = EmailMessageContentGet  # | OtherMessageContentGet for 
 
 
 class SearchTemplatesQueryParams(BaseModel):
+    """Search for templates based on channel and/or template name."""
+
     channel: ChannelType | None = None
     template_name: str | None = None
 
 
-class TemplateRefBody(InputSchema):
+class _TemplateRefMixin(BaseModel):
     channel: ChannelType
     template_name: TemplateName
 
 
-class TemplateRefGet(OutputSchema):
-    channel: ChannelType
-    template_name: TemplateName
+class TemplateRef(_TemplateRefMixin, InputSchema): ...
+
+
+class TemplateRefGet(_TemplateRefMixin, OutputSchema): ...
 
 
 class TemplateGet(OutputSchema):
@@ -81,17 +84,17 @@ class TemplateGet(OutputSchema):
 
 
 class TemplatePreviewBody(InputSchema):
-    ref: TemplateRefBody
+    ref: TemplateRef
     context: dict[str, Any]
 
 
 class TemplatePreviewGet(OutputSchema):
     ref: TemplateRefGet
-    content: MessageContentGet
+    message_content: MessageContentGet
 
 
 class TemplateMessageBody(InputSchema):
-    ref: TemplateRefBody
+    ref: TemplateRef
     group_ids: list[GroupID]
     context: dict[str, Any]
 
