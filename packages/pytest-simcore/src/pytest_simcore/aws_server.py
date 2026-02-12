@@ -11,9 +11,9 @@ from aiohttp.test_utils import unused_port
 from faker import Faker
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from moto.server import ThreadedMotoServer
-from pydantic import SecretStr
+from pydantic import SecretStr, TypeAdapter
 from pytest_mock.plugin import MockerFixture
-from settings_library.basic_types import IDStr
+from settings_library.basic_types import IDStr, SecretIDStr
 from settings_library.ec2 import EC2Settings
 from settings_library.s3 import S3Settings
 from settings_library.ssm import SSMSettings
@@ -118,11 +118,11 @@ def mocked_s3_server_settings(
     mocked_aws_server: ThreadedMotoServer, reset_aws_server_state: None, faker: Faker
 ) -> S3Settings:
     return S3Settings(
-        S3_ACCESS_KEY=IDStr("xxx"),
+        S3_ACCESS_KEY=TypeAdapter(SecretIDStr).validate_python("xxx"),
         S3_ENDPOINT=f"http://{mocked_aws_server._ip_address}:{mocked_aws_server._port}",  # type: ignore[arg-type] # pylint: disable=protected-access  # noqa: SLF001
-        S3_SECRET_KEY=IDStr("xxx"),
-        S3_BUCKET_NAME=IDStr(f"pytest{faker.pystr().lower()}"),
-        S3_REGION=IDStr("us-east-1"),
+        S3_SECRET_KEY=TypeAdapter(SecretIDStr).validate_python("xxx"),
+        S3_BUCKET_NAME=TypeAdapter(IDStr).validate_python(f"pytest{faker.pystr().lower()}"),
+        S3_REGION=TypeAdapter(IDStr).validate_python("us-east-1"),
     )
 
 
