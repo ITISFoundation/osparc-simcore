@@ -26,8 +26,8 @@ async def iam_client(
     session_client = session.client(
         "iam",
         endpoint_url=ec2_settings.EC2_ENDPOINT,
-        aws_access_key_id=ec2_settings.EC2_ACCESS_KEY_ID,
-        aws_secret_access_key=ec2_settings.EC2_SECRET_ACCESS_KEY,
+        aws_access_key_id=ec2_settings.EC2_ACCESS_KEY_ID.get_secret_value(),
+        aws_secret_access_key=ec2_settings.EC2_SECRET_ACCESS_KEY.get_secret_value(),
         region_name=ec2_settings.EC2_REGION_NAME,
     )
     assert isinstance(session_client, ClientCreatorContext)
