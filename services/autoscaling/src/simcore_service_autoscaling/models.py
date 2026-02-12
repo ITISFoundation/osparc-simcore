@@ -63,9 +63,10 @@ class AssignedTasksToInstanceType(_TaskAssignmentMixin):
 class _BaseInstance(_TaskAssignmentMixin):
     ec2_instance: EC2InstanceData
     _osparc_custom_node_labels: dict[DockerLabelKey, str] = field(default_factory=dict)
+    _available_resources_was_set: bool = field(default=False, repr=False)
 
     def __post_init__(self) -> None:
-        if self.available_resources == Resources.create_as_empty():
+        if not self._available_resources_was_set and self.available_resources == Resources.create_as_empty():
             object.__setattr__(self, "available_resources", self.ec2_instance.resources)
 
     def has_assigned_tasks_or_resources_in_use(self) -> bool:
