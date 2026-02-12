@@ -1,18 +1,18 @@
 from typing import Annotated
 
-from pydantic import AnyHttpUrl, Field, SecretStr
+from pydantic import AnyHttpUrl, Field
 from pydantic_settings import SettingsConfigDict
 
 from .base import BaseCustomSettings
-from .basic_types import IDStr
+from .basic_types import IDStr, SecretIDStr
 
 
 class S3Settings(BaseCustomSettings):
-    S3_ACCESS_KEY: Annotated[SecretStr, IDStr]
+    S3_ACCESS_KEY: SecretIDStr
     S3_BUCKET_NAME: IDStr
     S3_ENDPOINT: Annotated[AnyHttpUrl | None, Field(description="do not define if using standard AWS")] = None
     S3_REGION: IDStr
-    S3_SECRET_KEY: Annotated[SecretStr, IDStr]
+    S3_SECRET_KEY: SecretIDStr
 
     model_config = SettingsConfigDict(
         json_schema_extra={
