@@ -183,9 +183,9 @@ qx.Class.define("osparc.po.SendEmail", {
       osparc.message.Messages.fetchEmailPreview(templateId)
         .then(template => {
           const subjectField = this.getChildControl("subject-field");
-          subjectField.setValue(template["content"]["subject"]);
+          subjectField.setValue(template["messageContent"]["subject"]);
           const emailEditor = this.getChildControl("email-editor-and-preview");
-          emailEditor.setTemplateEmail(template["content"]["bodyHtml"]);
+          emailEditor.setTemplateEmail(template["messageContent"]["body"]["html"]);
         });
     },
 
