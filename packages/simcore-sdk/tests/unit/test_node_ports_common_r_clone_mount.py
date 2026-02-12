@@ -5,6 +5,7 @@
 # pylint: disable=unused-argument
 import asyncio
 import os
+import tempfile
 from collections.abc import AsyncIterable, AsyncIterator, Iterator
 from pathlib import Path
 from typing import Any, cast
@@ -23,7 +24,7 @@ from faker import Faker
 from models_library.api_schemas_storage.storage_schemas import S3BucketName
 from models_library.projects_nodes_io import NodeID, StorageFileID
 from moto.server import ThreadedMotoServer
-from pydantic import ByteSize, TypeAdapter
+from pydantic import ByteSize, NonNegativeInt, TypeAdapter
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.file_utils import create_sha256_checksum
 from servicelib.logging_utils import _dampen_noisy_loggers
@@ -34,6 +35,7 @@ from simcore_sdk.node_ports_common.r_clone_mount import (
     MountRemoteType,
     RCloneMountManager,
 )
+from simcore_sdk.node_ports_common.r_clone_mount._errors import NoMountFoundForRemotePathError
 from simcore_sdk.node_ports_common.r_clone_mount._utils import get_mount_id
 from tenacity import (
     AsyncRetrying,
@@ -92,6 +94,13 @@ async def s3_client(r_clone_settings: RCloneSettings, bucket_name: S3BucketName)
         await client.create_bucket(Bucket=bucket_name)
 
         yield client
+
+        # Cleanup: remove all files from bucket
+        response = await client.list_objects_v2(Bucket=bucket_name)
+        if "Contents" in response:
+            objects_to_delete = [{"Key": obj["Key"]} for obj in response["Contents"]]
+            if objects_to_delete:
+                await client.delete_objects(Bucket=bucket_name, Delete={"Objects": objects_to_delete})
 
 
 @pytest.fixture
@@ -273,6 +282,18 @@ async def _get_file_checksums_from_s3(
     return checksums
 
 
+async def _create_file_in_s3_path(
+    s3_client: S3Client, bucket_name: S3BucketName, remote_path: StorageFileID, *, file_name: Path, file_size: ByteSize
+) -> tuple[Path, str]:
+    with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
+        await _create_random_binary_file(Path(tmp_file.name), file_size)
+        await s3_client.upload_file(tmp_file.name, bucket_name, f"{remote_path}/{file_name}")
+        async with aiofiles.open(tmp_file.name, mode="rb") as file:
+            checksum = await create_sha256_checksum(file)
+
+    return file_name, checksum
+
+
 async def test_workflow(
     docker_swarm: None,
     moto_server: None,
@@ -285,7 +306,10 @@ async def test_workflow(
     index: int,
     s3_client: S3Client,
     mocked_shutdown: AsyncMock,
-) -> None:
+):
+    s3_checksums = await _get_file_checksums_from_s3(s3_client, bucket_name, remote_path)
+    assert len(s3_checksums) == 0, "S3 should be empty at the start of the test"
+
     await r_clone_mount_manager.ensure_mounted(
         local_mount_path=local_mount_path,
         remote_type=MountRemoteType.S3,
@@ -335,7 +359,7 @@ async def test_container_recovers_and_shutdown_is_emitted(
     local_mount_path: Path,
     index: int,
     mocked_shutdown: AsyncMock,
-) -> None:
+):
     await r_clone_mount_manager.ensure_mounted(
         local_mount_path=local_mount_path,
         remote_type=MountRemoteType.S3,
@@ -366,3 +390,83 @@ async def test_container_recovers_and_shutdown_is_emitted(
         with attempt:
             await asyncio.sleep(0)
             mocked_shutdown.assert_called()
+
+
+async def test_refresh_path_with_no_tracked_mount(
+    r_clone_mount_manager: RCloneMountManager, remote_path: StorageFileID
+):
+    with pytest.raises(NoMountFoundForRemotePathError):
+        await r_clone_mount_manager.refresh_path(remote_path=remote_path)
+
+
+@pytest.mark.parametrize("file_count", [10])
+@pytest.mark.parametrize("file_size", [TypeAdapter(ByteSize).validate_python("100kb")])
+@pytest.mark.parametrize("recursive", [True, False])
+@pytest.mark.parametrize("sub_path", ["", "sub-path"])
+async def test_refresh_path(
+    docker_swarm: None,
+    moto_server: None,
+    r_clone_mount_manager: RCloneMountManager,
+    r_clone_settings: RCloneSettings,
+    bucket_name: S3BucketName,
+    node_id: NodeID,
+    remote_path: StorageFileID,
+    local_mount_path: Path,
+    index: int,
+    s3_client: S3Client,
+    file_count: NonNegativeInt,
+    file_size: ByteSize,
+    recursive: bool,
+    sub_path: str,
+):
+    s3_checksums = await _get_file_checksums_from_s3(s3_client, bucket_name, remote_path)
+    assert len(s3_checksums) == 0, "S3 should be empty at the start of the test"
+
+    local_checksums = await _get_file_checksums_from_path(local_mount_path)
+    assert len(local_checksums) == 0, "Local mount should be empty at the start of the test"
+
+    await r_clone_mount_manager.ensure_mounted(
+        local_mount_path=local_mount_path,
+        remote_type=MountRemoteType.S3,
+        remote_path=remote_path,
+        node_id=node_id,
+        index=index,
+    )
+
+    # 1. create random files in S3
+    s3_create_files_checums: dict[Path, str] = dict(
+        await asyncio.gather(
+            *[
+                _create_file_in_s3_path(
+                    s3_client,
+                    bucket_name,
+                    remote_path,
+                    file_name=Path(f"{Path(sub_path) / 'test_file'}/{i}.bin"),
+                    file_size=file_size,
+                )
+                for i in range(file_count)
+            ]
+        )
+    )
+    assert len(s3_create_files_checums) == file_count
+
+    s3_checksums = await _get_file_checksums_from_s3(s3_client, bucket_name, remote_path)
+    assert len(s3_checksums) == file_count
+
+    assert s3_create_files_checums == s3_checksums
+
+    # 2. ensure files are present on disk
+    await r_clone_mount_manager.refresh_path(remote_path=f"{Path(remote_path) / sub_path}", recursive=recursive)
+
+    # wait for rclone to sync back the new files
+    async for attempt in AsyncRetrying(
+        stop=stop_after_delay(10),
+        wait=wait_fixed(0.1),
+        retry=retry_if_exception_type(AssertionError),
+        reraise=True,
+    ):
+        with attempt:
+            local_checksums_2 = await _get_file_checksums_from_path(local_mount_path)
+            assert s3_create_files_checums == local_checksums_2
+
+    assert len(local_checksums_2) == file_count
