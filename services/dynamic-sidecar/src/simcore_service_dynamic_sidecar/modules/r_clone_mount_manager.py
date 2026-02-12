@@ -13,6 +13,7 @@ from fastapi import FastAPI, status
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
     DynamicServiceStop,
 )
+from models_library.api_schemas_dynamic_sidecar.state_paths import MountActivityStatus
 from pydantic import NonNegativeInt
 from servicelib.logging_utils import log_context
 from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.services import (
@@ -28,6 +29,7 @@ from simcore_sdk.node_ports_common.r_clone_mount import (
 from ..core.rabbitmq import get_rabbitmq_rpc_client, post_sidecar_log_message
 from ..core.settings import ApplicationSettings
 from ..modules.mounted_fs import MountedVolumes
+from .notifications import StatePathsNotifier
 
 _logger = logging.getLogger(__name__)
 
@@ -37,7 +39,6 @@ _EXPECTED_BIND_PATHS_COUNT: Final[NonNegativeInt] = 2
 
 @dataclass
 class _MountActivitySummary:
-    path: Path
     files_queued: int
     files_in_transfer: FilesInTransfer
 
@@ -53,6 +54,12 @@ class DynamicSidecarRCloneMountDelegate(DelegateInterface):
         self.app = app
         self.settings = settings
         self.mounted_volumes = mounted_volumes
+        self.state_paths_notifier = StatePathsNotifier(
+            app=app,
+            user_id=settings.DY_SIDECAR_USER_ID,
+            project_id=settings.DY_SIDECAR_PROJECT_ID,
+            node_id=settings.DY_SIDECAR_NODE_ID,
+        )
 
     async def _get_vfs_paths(self) -> tuple[Path, Path]:
         vfs_cache_path = await self.mounted_volumes.get_vfs_cache_docker_volume(self.settings.DY_SIDECAR_RUN_ID)
@@ -105,10 +112,13 @@ class DynamicSidecarRCloneMountDelegate(DelegateInterface):
     async def mount_activity(self, state_path: Path, activity: MountActivity) -> None:
         # Frontend should receive and use this message to provide feedback to the user
         # regarding the mount activity
-        summary = _MountActivitySummary(
-            path=state_path, files_queued=len(activity.queued), files_in_transfer=activity.in_transfer
-        )
-        _logger.info("Mount activity %s", summary)
+        summary = _MountActivitySummary(files_queued=len(activity.queued), files_in_transfer=activity.in_transfer)
+        _logger.info("%s mount activity for  %s", state_path, summary)
+
+        if summary.files_queued == 0 and len(summary.files_in_transfer) == 0:
+            await self.state_paths_notifier.send_state_paths_status(MountActivityStatus.FILES_UPLOAD_ENDED)
+            return
+        await self.state_paths_notifier.send_state_paths_status(MountActivityStatus.FILES_UPLOAD_ONGOING)
 
     async def request_shutdown(self) -> None:
         client = get_rabbitmq_rpc_client(self.app)

@@ -672,26 +672,32 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
       const lazyLoadContent = () => {
         const resourceData = this.__resourceData;
         let collaboratorsView = null;
-        if (osparc.utils.Resources.isService(resourceData)) {
-          collaboratorsView = new osparc.share.CollaboratorsService(resourceData);
-        } else if (osparc.utils.Resources.isFunction(resourceData)) {
-          collaboratorsView = new osparc.share.CollaboratorsFunction(resourceData);
-        } else if (osparc.utils.Resources.isStudy(resourceData)) {
-          collaboratorsView = new osparc.share.CollaboratorsStudy(resourceData);
-          collaboratorsView.getChildControl("study-link").show();
-        } else if (
-          osparc.utils.Resources.isTemplate(resourceData) ||
-          osparc.utils.Resources.isTutorial(resourceData)
-        ) {
-          collaboratorsView = new osparc.share.CollaboratorsStudy(resourceData);
-          collaboratorsView.getChildControl("template-link").show();
+        switch (resourceData["resourceType"]) {
+          case "study":
+            collaboratorsView = new osparc.share.CollaboratorsStudy(resourceData);
+            collaboratorsView.getChildControl("study-link").show();
+            break;
+          case "template":
+          case "tutorial":
+          case "hypertool":
+            collaboratorsView = new osparc.share.CollaboratorsStudy(resourceData);
+            collaboratorsView.getChildControl("template-link").show();
+            break;
+          case "function":
+            collaboratorsView = new osparc.share.CollaboratorsFunction(resourceData);
+            break;
+          case "service":
+            collaboratorsView = new osparc.share.CollaboratorsService(resourceData);
+            break;
         }
-        collaboratorsView.addListener("updateAccessRights", e => {
-          const updatedData = e.getData();
-          this.__fireUpdateEvent(resourceData, updatedData);
-        }, this);
-        page.addToContent(collaboratorsView);
-        this.__widgets.push(collaboratorsView);
+        if (collaboratorsView) {
+          collaboratorsView.addListener("updateAccessRights", e => {
+            const updatedData = e.getData();
+            this.__fireUpdateEvent(resourceData, updatedData);
+          }, this);
+          page.addToContent(collaboratorsView);
+          this.__widgets.push(collaboratorsView);
+        }
       }
       page.addListenerOnce("appear", lazyLoadContent, this);
 
