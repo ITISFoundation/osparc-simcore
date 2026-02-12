@@ -18343,7 +18343,7 @@ components:
     TemplatePreviewBody:
       properties:
         ref:
-          $ref: '#/components/schemas/TemplateRefBody'
+          $ref: '#/components/schemas/TemplateRef'
         context:
           additionalProperties: true
           type: object
@@ -18357,14 +18357,14 @@ components:
       properties:
         ref:
           $ref: '#/components/schemas/TemplateRefGet'
-        content:
+        messageContent:
           $ref: '#/components/schemas/MessageContentGet'
       type: object
       required:
       - ref
-      - content
+      - messageContent
       title: TemplatePreviewGet
-    TemplateRefBody:
+    TemplateRef:
       properties:
         channel:
           $ref: '#/components/schemas/ChannelType'
@@ -18374,7 +18374,7 @@ components:
       required:
       - channel
       - templateName
-      title: TemplateRefBody
+      title: TemplateRef
     TemplateRefGet:
       properties:
         channel:
