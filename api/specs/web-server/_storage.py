@@ -26,6 +26,7 @@ from models_library.api_schemas_webserver.storage import (
     SearchBodyParams,
     StorageLocationPathParams,
     StoragePathComputeSizeParams,
+    StoragePathRefreshParams,
 )
 from models_library.generics import Envelope
 from models_library.projects_nodes_io import LocationID
@@ -48,7 +49,7 @@ router = APIRouter(
 # slashes, and when applying validation via `StorageFileID`
 # it raises an error. Before `StorageFileID`, `str` was the
 # type used in the OpenAPI specs.
-StorageFileIDStr: TypeAlias = str
+StorageFileIDStr: TypeAlias = str  # noqa: UP040
 
 
 @router.get(
@@ -69,6 +70,14 @@ async def list_storage_paths(
     _query: Annotated[ListPathsQueryParams, Depends()],
 ):
     """Lists the files/directories in WorkingDirectory"""
+
+
+@router.post(
+    "/storage/locations/{location_id}/paths/{s3_directory}:refresh",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def refresh_files_in_path(_path: Annotated[StoragePathRefreshParams, Depends()]):
+    """triggers a reaload of the files from S3 for a given directory"""
 
 
 @router.post(
@@ -112,8 +121,8 @@ async def list_datasets_metadata(
 async def get_files_metadata(
     _path: Annotated[StorageLocationPathParams, Depends()],
     uuid_filter: str = "",
-    expand_dirs: bool = Query(
-        True,
+    expand_dirs: bool = Query(  # noqa: FBT001
+        True,  # noqa: FBT003
         description=("Automatic directory expansion. This will be replaced by pagination the future"),
     ),
 ):
@@ -128,8 +137,8 @@ async def get_files_metadata(
 async def list_dataset_files_metadata(
     location_id: LocationID,
     dataset_id: str,
-    expand_dirs: bool = Query(
-        True,
+    expand_dirs: bool = Query(  # noqa: FBT001
+        True,  # noqa: FBT003
         description=("Automatic directory expansion. This will be replaced by pagination the future"),
     ),
 ):
@@ -168,7 +177,7 @@ async def upload_file(
     file_id: StorageFileIDStr,
     file_size: ByteSize | None,
     link_type: LinkType = LinkType.PRESIGNED,
-    is_directory: bool = False,
+    is_directory: bool = False,  # noqa: FBT001, FBT002
 ):
     """creates one or more upload file links if user has the rights to, expects the client to complete/abort upload"""
 

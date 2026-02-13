@@ -21,7 +21,7 @@ from models_library.api_schemas_webserver.projects_nodes import (
 from models_library.products import ProductName
 from models_library.progress_bar import ProgressReport
 from models_library.projects import ProjectID
-from models_library.projects_nodes_io import NodeID
+from models_library.projects_nodes_io import NodeID, StorageFileID
 from models_library.rabbitmq_messages import ProgressRabbitMessageProject, ProgressType
 from models_library.services import ServicePortKey
 from models_library.users import UserID
@@ -225,3 +225,8 @@ async def retrieve_inputs(
 
 async def update_projects_networks(app: web.Application, *, project_id: ProjectID) -> None:
     await services.update_projects_networks(get_rabbitmq_rpc_client(app), project_id=project_id)
+
+
+async def refresh_containers_files(app: web.Application, *, s3_directory: StorageFileID) -> None:
+    node_id = NodeID(s3_directory.split("/")[1])
+    await services.refresh_containers_files(get_rabbitmq_rpc_client(app), node_id=node_id, s3_directory=s3_directory)
