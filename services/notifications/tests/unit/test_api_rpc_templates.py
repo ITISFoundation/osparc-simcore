@@ -101,7 +101,7 @@ async def test_preview_template_success(
     response = await preview_template(rpc_client, request=request)
     assert isinstance(response, TemplatePreviewRpcResponse)
     assert response.ref == template.ref
-    assert isinstance(response.content, dict)
+    assert isinstance(response.message_content, dict)
 
 
 async def test_preview_template_not_found(
