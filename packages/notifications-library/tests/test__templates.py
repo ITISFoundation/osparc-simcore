@@ -9,26 +9,26 @@ from notifications_library._templates import (
 
 
 @pytest.mark.parametrize(
-    "event_name",
+    "template_name",
     [
-        "on_account_requested",
-        "on_change_email",
-        "on_new_code",
-        "on_new_invitation",
-        "on_paid",
-        "on_registered",
-        "on_reset_password",
-        "on_share_project",
-        "on_unregister",
+        "account_requested",
+        "change_email",
+        "new_code",
+        "new_invitation",
+        "paid",
+        "registered",
+        "reset_password",
+        "share_project",
+        "unregister",
     ],
 )
-def test_email_templates_are_complete(event_name: str):
-    event_templates = set(get_default_named_templates(event=event_name, media="email"))
+def test_email_templates_are_complete(template_name: str):
+    event_templates = set(get_default_named_templates(template_name=template_name, channel="email"))
 
     assert event_templates
 
-    with_html = {f"{event_name}.email.{suffix}" for suffix in ["subject.txt", "content.html", "content.txt"]}
-    without_html = {f"{event_name}.email.{suffix}" for suffix in ["subject.txt", "content.txt"]}
+    with_html = {f"email/{template_name}/{suffix}" for suffix in ["subject.j2", "body_html.j2", "body_text.j2"]}
+    without_html = {f"email/{template_name}/{suffix}" for suffix in ["subject.j2", "body_text.j2"]}
 
     assert event_templates in (with_html, without_html)
 
@@ -39,8 +39,14 @@ def test_named_templates(template_name: str, template_path: Path):
     assert get_default_named_templates(*parts) == {template_name: template_path}
 
 
-def test_generic_templates():
-    assert (_templates_dir / "base.html").exists()
+@pytest.mark.parametrize(
+    "channel",
+    [
+        "email",
+    ],
+)
+def test_generic_templates(channel: str):
+    assert (_templates_dir / channel / "_base" / "body_html.j2").exists()
 
     with pytest.raises(TypeError):
         split_template_name("base.html")

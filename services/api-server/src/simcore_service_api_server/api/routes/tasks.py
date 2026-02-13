@@ -17,6 +17,7 @@ from models_library.api_schemas_long_running_tasks.tasks import (
 )
 from models_library.products import ProductName
 from models_library.users import UserID
+from pydantic import TypeAdapter
 from servicelib.celery.models import TaskState, TaskUUID
 from servicelib.fastapi.dependencies import get_app
 
@@ -119,7 +120,7 @@ async def get_task_status(
     with _exception_mapper(task_uuid=task_uuid):
         task_status = await task_manager.get_task_status(
             owner_metadata=owner_metadata,
-            task_uuid=TaskUUID(f"{task_uuid}"),
+            task_uuid=TypeAdapter(TaskUUID).validate_python(f"{task_uuid}"),
         )
 
     return TaskStatus(
@@ -158,7 +159,7 @@ async def cancel_task(
     with _exception_mapper(task_uuid=task_uuid):
         await task_manager.cancel_task(
             owner_metadata=owner_metadata,
-            task_uuid=TaskUUID(f"{task_uuid}"),
+            task_uuid=TypeAdapter(TaskUUID).validate_python(f"{task_uuid}"),
         )
 
 
@@ -195,7 +196,7 @@ async def get_task_result(
     with _exception_mapper(task_uuid=task_uuid):
         task_status = await task_manager.get_task_status(
             owner_metadata=owner_metadata,
-            task_uuid=TaskUUID(f"{task_uuid}"),
+            task_uuid=TypeAdapter(TaskUUID).validate_python(f"{task_uuid}"),
         )
 
         if not task_status.is_done:
@@ -206,7 +207,7 @@ async def get_task_result(
 
         task_result = await task_manager.get_task_result(
             owner_metadata=owner_metadata,
-            task_uuid=TaskUUID(f"{task_uuid}"),
+            task_uuid=TypeAdapter(TaskUUID).validate_python(f"{task_uuid}"),
         )
 
         if task_status.task_state == TaskState.FAILURE:

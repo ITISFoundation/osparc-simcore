@@ -45,6 +45,7 @@ openapi_modules = [
         "_licensed_items_checkouts",
         "_nih_sparc",
         "_nih_sparc_redirections",
+        "_notifications",
         "_projects",
         "_projects_access_rights",
         "_projects_conversations",
@@ -106,10 +107,10 @@ def main():
     if not oas_path.exists():
         oas_path.parent.mkdir(parents=True)
         oas_path.write_text("")
-    print(f"Writing {oas_path}...", end=None)
+    print(f"Writing {oas_path}...", end=None)  # noqa: T201
     with oas_path.open("wt") as fh:
         yaml.safe_dump(openapi, stream=fh, sort_keys=False)
-    print("done")
+    print("done")  # noqa: T201
 
 
 if __name__ == "__main__":

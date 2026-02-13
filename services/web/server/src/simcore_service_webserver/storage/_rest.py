@@ -51,6 +51,7 @@ from servicelib.aiohttp.requests_validation import (
 )
 from servicelib.aiohttp.rest_responses import create_data_response
 from servicelib.celery.async_jobs.storage.paths import COMPUTE_PATH_SIZE_TASK_NAME, DELETE_PATHS_TASK_NAME
+from servicelib.celery.async_jobs.storage.simcore_s3 import submit_export_data
 from servicelib.celery.models import ExecutionMetadata, OwnerMetadata
 from servicelib.common_headers import X_FORWARDED_PROTO
 from servicelib.rest_responses import unwrap_envelope
@@ -500,11 +501,8 @@ async def export_data(request: web.Request) -> web.Response:
 
     body = await parse_request_body_as(model_schema_cls=DataExportPost, request=request)
 
-    async_job_get = await submit_job(
-        get_task_manager(request.app),
-        execution_metadata=ExecutionMetadata(
-            name="export_data",
-        ),
+    async_job_get = await submit_export_data(
+        task_manager=get_task_manager(request.app),
         owner_metadata=OwnerMetadata.model_validate(
             WebServerOwnerMetadata(
                 user_id=req_ctx.user_id,
@@ -514,6 +512,7 @@ async def export_data(request: web.Request) -> web.Response:
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
         paths_to_export=body.paths,
+        export_as="path",
     )
 
     job_id_str = f"{async_job_get.job_id}"

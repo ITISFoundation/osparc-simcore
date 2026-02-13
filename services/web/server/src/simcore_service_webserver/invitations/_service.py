@@ -96,7 +96,7 @@ async def validate_invitation_url(
     assert invitation.product == current_product.name  # nosec
     is_user_registered_in_product: bool = await is_user_by_email_in_group(
         app,
-        user_email=LowerCaseEmailStr(invitation.guest),
+        user_email=TypeAdapter(LowerCaseEmailStr).validate_python(invitation.guest),
         group_id=current_product.group_id,
     )
     if is_user_registered_in_product:

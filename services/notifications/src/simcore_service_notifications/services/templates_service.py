@@ -1,0 +1,57 @@
+import logging
+from dataclasses import dataclass
+from typing import Any
+
+from models_library.notifications import ChannelType
+from models_library.notifications_errors import (
+    NotificationsTemplateContextValidationError,
+    NotificationsTemplateNotFoundError,
+)
+from pydantic import ValidationError
+
+from ..models.preview import NotificationTemplatePreview
+from ..models.template import NotificationsTemplate, NotificationsTemplateRef
+from ..renderers.renderer import NotificationsRenderer
+from ..repository import NotificationsTemplatesRepository
+
+_logger = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True)
+class NotificationsTemplatesService:
+    repository: NotificationsTemplatesRepository
+    renderer: NotificationsRenderer
+
+    def preview_template(self, ref: NotificationsTemplateRef, context: dict[str, Any]) -> NotificationTemplatePreview:
+        templates = self.repository.search_templates(
+            channel=ref.channel,
+            template_name=ref.template_name,
+        )
+
+        if not templates:
+            raise NotificationsTemplateNotFoundError(channel=ref.channel, template_name=ref.template_name)
+
+        template = templates[0]
+
+        try:
+            # validates incoming variables against the template's variables model
+            validated_context = template.context_model.model_validate(context)
+        except ValidationError as e:
+            _logger.warning(
+                "Context validation error for template %s with context %s: %s",
+                ref,
+                context,
+                e,
+            )
+            raise NotificationsTemplateContextValidationError(
+                template_name=ref.template_name,
+                channel=ref.channel,
+            ) from e
+
+        return self.renderer.preview_template(
+            template=template,
+            context=validated_context.model_dump(),
+        )
+
+    def search_templates(self, channel: ChannelType | None, template_name: str | None) -> list[NotificationsTemplate]:
+        return self.repository.search_templates(channel=channel, template_name=template_name)

@@ -6,6 +6,7 @@ import pytest
 from aws_library.s3._models import S3ObjectKey
 from models_library.projects import ProjectID, ProjectIDStr
 from models_library.projects_nodes_io import NodeIDStr
+from pydantic import TypeAdapter
 from simcore_service_storage.models import NodeID
 from simcore_service_storage.utils.simcore_s3_dsm_utils import (
     UserSelectionStr,
@@ -52,7 +53,13 @@ _FOLDERS_PATH = Path("nested/folders/path")
     ],
 )
 def test__base_path_parent(selection: Path | str, s3_object: Path, expected: str):
-    assert _base_path_parent(UserSelectionStr(f"{selection}"), S3ObjectKey(f"{s3_object}")) == expected
+    assert (
+        _base_path_parent(
+            TypeAdapter(UserSelectionStr).validate_python(f"{selection}"),
+            TypeAdapter(S3ObjectKey).validate_python(f"{s3_object}"),
+        )
+        == expected
+    )
 
 
 @pytest.mark.parametrize(

@@ -71,12 +71,14 @@ async def get_authorized_user(request: web.Request) -> dict:
 #     - Prevents GC from deleting this GUEST user while it is being created
 #     - Since the user still does not have an ID assigned, the lock is named with his random_user_name
 #     - the timeout here is the TTL of the lock in Redis. in case the webserver is overwhelmed and cannot create
-#       a user during that time or crashes, then redis will ensure the lock disappears and let the garbage collector do its work
+#       a user during that time or crashes, then redis will ensure the lock disappears
+#       and let the garbage collector do its work
 #
 MAX_DELAY_TO_CREATE_USER: Final[int] = 8  # secs
 #
 #  2. During initialization
-#     - Prevents the GC from deleting this GUEST user, with ID assigned, while it gets initialized and acquires it's first resource
+#     - Prevents the GC from deleting this GUEST user, with ID assigned, while it gets initialized
+#       and acquires it's first resource
 #     - Uses the ID assigned to name the lock
 #
 MAX_DELAY_TO_GUEST_FIRST_CONNECTION: Final[int] = 15  # secs
@@ -102,9 +104,9 @@ async def create_temporary_guest_user(request: web.Request):
     product_name = products_web.get_product_name(request)
 
     random_user_name = "".join(secrets.choice(string.ascii_lowercase) for _ in range(10))
-    email = TypeAdapter(LowerCaseEmailStr).validate_python(f"{random_user_name}@guest-at-osparc.io")
+    email: LowerCaseEmailStr = TypeAdapter(LowerCaseEmailStr).validate_python(f"{random_user_name}@guest-at-osparc.io")
     password = generate_password(length=12)
-    expires_at = datetime.utcnow() + settings.STUDIES_GUEST_ACCOUNT_LIFETIME
+    expires_at = datetime.utcnow() + settings.STUDIES_GUEST_ACCOUNT_LIFETIME  # noqa: DTZ003
 
     user_id: UserID | None = None
 

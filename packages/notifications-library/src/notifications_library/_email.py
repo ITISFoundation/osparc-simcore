@@ -13,13 +13,19 @@ _logger = logging.getLogger(__name__)
 
 def compose_email(
     from_: Address,
-    to: Address,
+    to: list[Address],
     subject: str,
     content_text: str,
     content_html: str | None = None,
     reply_to: Address | None = None,
-    bcc: Address | None = None,
+    bcc: list[Address] | None = None,
 ) -> EmailMessage:
+    """Compose an email message.
+
+    Note:
+        to and bcc params are lists and not set because email.headerregistry.Address is not hashable.
+        Ensure unicity at a higher level, if needed.
+    """
     msg = EmailMessage()
     msg["From"] = from_
     msg["To"] = to
@@ -73,7 +79,7 @@ async def create_email_session(
         # By default, if the server advertises STARTTLS support, aiosmtplib will upgrade the connection automatically.
         # Setting use_tls=True for STARTTLS servers will typically result in a connection error
         # To opt out of STARTTLS on connect, pass start_tls=False.
-        # NOTE: for that reason TLS and STARTLS are mutally exclusive
+        # NOTE: for that reason TLS and STARTLS are mutually exclusive
         use_tls=settings.SMTP_PROTOCOL == EmailProtocol.TLS,
         start_tls=settings.SMTP_PROTOCOL == EmailProtocol.STARTTLS,
     ) as smtp:

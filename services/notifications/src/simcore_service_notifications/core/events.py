@@ -17,7 +17,7 @@ from .._meta import (
     APP_STARTED_BANNER_MSG,
     APP_WORKER_STARTED_BANNER_MSG,
 )
-from ..api.rpc.routing import rpc_api_routes_lifespan
+from ..api.rpc.routes import rpc_api_routes_lifespan
 from ..clients.celery import task_manager_lifespan
 from ..clients.postgres import postgres_lifespan
 from ..clients.rabbitmq import rabbitmq_lifespan

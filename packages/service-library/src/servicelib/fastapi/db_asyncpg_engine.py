@@ -1,6 +1,7 @@
 import logging
 import warnings
 
+from common_library.network import redact_url
 from fastapi import FastAPI
 from settings_library.postgres import PostgresSettings
 from simcore_postgres_database.utils_aiosqlalchemy import (  # type: ignore[import-not-found] # this on is unclear
@@ -25,7 +26,7 @@ async def connect_to_db(app: FastAPI, settings: PostgresSettings, application_na
     with log_context(
         _logger,
         logging.DEBUG,
-        f"Connecting and migraging {settings.dsn_with_async_sqlalchemy}",
+        f"Connecting and migrating {redact_url(settings.dsn_with_async_sqlalchemy)}",
     ):
         engine = await create_async_engine_and_database_ready(settings, application_name)
 

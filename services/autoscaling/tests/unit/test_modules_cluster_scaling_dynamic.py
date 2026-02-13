@@ -325,6 +325,7 @@ async def create_services_batch(
 )
 async def test_cluster_scaling_with_no_services_does_nothing(
     minimal_configuration: None,
+    with_disabled_hot_buffers: EnvVarsDict,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
     mock_launch_instances: mock.Mock,
@@ -349,10 +350,10 @@ async def test_cluster_scaling_with_no_services_does_nothing(
     ["with_AUTOSCALING_DRAIN_NODES_WITH_LABELS"],
     indirect=True,
 )
-async def test_cluster_scaling_with_no_services_and_machine_buffer_starts_expected_machines(
+async def test_cluster_scaling_with_no_services_and_enabled_hot_buffers_starts_expected_machines(
     patch_ec2_client_launch_instances_min_number_of_instances: mock.Mock,
     minimal_configuration: None,
-    with_instances_machines_hot_buffer: EnvVarsDict,
+    with_multiple_hot_buffer_instance_types: EnvVarsDict,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
     aws_allowed_ec2_instance_type_names_env: list[str],
@@ -364,85 +365,103 @@ async def test_cluster_scaling_with_no_services_and_machine_buffer_starts_expect
     ec2_client: EC2Client,
     ec2_instance_custom_tags: dict[str, str],
     instance_type_filters: Sequence[FilterTypeDef],
-    hot_buffer_instance_type: InstanceTypeType,
-    hot_buffer_has_pre_pull: bool,
-    hot_buffer_expected_pre_pulled_images: list[DockerGenericTag],
+    hot_buffer_instance_types: set[InstanceTypeType],
+    hot_buffer_has_pre_pull: Callable[[InstanceTypeType], bool],
+    hot_buffer_expected_pre_pulled_images: Callable[[InstanceTypeType], list[DockerGenericTag]],
+    hot_buffer_total_count: int,
 ):
+    assert len(hot_buffer_instance_types) > 1, "need at least 2 hot buffer types in this test"
     assert app_settings.AUTOSCALING_EC2_INSTANCES
     await auto_scale_cluster(app=initialized_app, auto_scaling_mode=DynamicAutoscalingProvider())
-    await assert_autoscaled_dynamic_ec2_instances(
-        ec2_client,
-        expected_num_reservations=1,
-        expected_num_instances=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER,
-        expected_instance_type=hot_buffer_instance_type,
-        expected_instance_state="running",
-        expected_additional_tag_keys=list(ec2_instance_custom_tags),
-        instance_filters=instance_type_filters,
-    )
+    for instance_type in hot_buffer_instance_types:
+        expected_num_instances = app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
+            instance_type
+        ].hot_buffer_count
+        await assert_autoscaled_dynamic_ec2_instances(
+            ec2_client,
+            expected_num_reservations=len(hot_buffer_instance_types),
+            expected_num_instances=expected_num_instances,
+            expected_instance_type=instance_type,
+            expected_instance_state="running",
+            expected_additional_tag_keys=list(ec2_instance_custom_tags),
+            instance_filters=instance_type_filters,
+            check_instance_type=instance_type,
+        )
     _assert_rabbit_autoscaling_message_sent(
         mock_rabbitmq_post_message,
         app_settings,
         initialized_app,
-        instances_pending=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER,
+        instances_pending=hot_buffer_total_count,
     )
     mock_rabbitmq_post_message.reset_mock()
     # calling again should attach the new nodes to the reserve, but nothing should start
     # it will also trigger pre-pulling of images if there is pre-pulling
-    expected_pre_pull_tag_keys = (
-        [
-            MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY,
-            MACHINE_PULLING_EC2_TAG_KEY,
-            PRE_PULLED_IMAGES_EC2_TAG_KEY,
-        ]
-        if hot_buffer_has_pre_pull
-        else []
-    )
+
     await auto_scale_cluster(app=initialized_app, auto_scaling_mode=DynamicAutoscalingProvider())
-    await assert_autoscaled_dynamic_ec2_instances(
-        ec2_client,
-        expected_num_reservations=1,
-        expected_num_instances=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER,
-        expected_instance_type=hot_buffer_instance_type,
-        expected_instance_state="running",
-        expected_additional_tag_keys=list(ec2_instance_custom_tags.keys() | expected_pre_pull_tag_keys),
-        expected_pre_pulled_images=hot_buffer_expected_pre_pulled_images or None,
-        instance_filters=instance_type_filters,
-    )
-    assert fake_node.description
-    assert fake_node.description.resources
-    assert fake_node.description.resources.nano_cp_us
-    assert fake_node.description.resources.memory_bytes
+    for instance_type in hot_buffer_instance_types:
+        expected_pre_pull_tag_keys = (
+            [
+                MACHINE_PULLING_COMMAND_ID_EC2_TAG_KEY,
+                MACHINE_PULLING_EC2_TAG_KEY,
+                PRE_PULLED_IMAGES_EC2_TAG_KEY,
+            ]
+            if hot_buffer_has_pre_pull(instance_type)
+            else []
+        )
+        expected_pre_pulled_images = hot_buffer_expected_pre_pulled_images(instance_type) or None
+        expected_num_instances = app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
+            instance_type
+        ].hot_buffer_count
+        await assert_autoscaled_dynamic_ec2_instances(
+            ec2_client,
+            expected_num_reservations=len(hot_buffer_instance_types),
+            expected_num_instances=expected_num_instances,
+            expected_instance_type=instance_type,
+            expected_instance_state="running",
+            expected_additional_tag_keys=list(ec2_instance_custom_tags.keys() | expected_pre_pull_tag_keys),
+            expected_pre_pulled_images=expected_pre_pulled_images,
+            instance_filters=instance_type_filters,
+            check_instance_type=instance_type,
+        )
+        assert fake_node.description
+        assert fake_node.description.resources
+        assert fake_node.description.resources.nano_cp_us
+        assert fake_node.description.resources.memory_bytes
     _assert_rabbit_autoscaling_message_sent(
         mock_rabbitmq_post_message,
         app_settings,
         initialized_app,
-        nodes_total=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER,
-        nodes_drained=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER,
-        instances_running=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER,
+        nodes_total=hot_buffer_total_count,
+        nodes_drained=hot_buffer_total_count,
+        instances_running=hot_buffer_total_count,
         cluster_total_resources={
-            "cpus": app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
-            * fake_node.description.resources.nano_cp_us
-            / 1e9,
-            "ram": app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
-            * fake_node.description.resources.memory_bytes,
+            "cpus": hot_buffer_total_count * fake_node.description.resources.nano_cp_us / 1e9,
+            "ram": hot_buffer_total_count * fake_node.description.resources.memory_bytes,
             "generic_resources": {},
         },
     )
 
     # calling it again should not create anything new, pre-pulling should be done
-    expected_pre_pull_tag_keys = [PRE_PULLED_IMAGES_EC2_TAG_KEY] if hot_buffer_has_pre_pull else []
     for _ in range(10):
         await auto_scale_cluster(app=initialized_app, auto_scaling_mode=DynamicAutoscalingProvider())
-    await assert_autoscaled_dynamic_ec2_instances(
-        ec2_client,
-        expected_num_reservations=1,
-        expected_num_instances=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER,
-        expected_instance_type=hot_buffer_instance_type,
-        expected_instance_state="running",
-        expected_additional_tag_keys=list(ec2_instance_custom_tags.keys() | expected_pre_pull_tag_keys),
-        expected_pre_pulled_images=hot_buffer_expected_pre_pulled_images or None,
-        instance_filters=instance_type_filters,
-    )
+
+    for instance_type in hot_buffer_instance_types:
+        expected_pre_pull_tag_keys = [PRE_PULLED_IMAGES_EC2_TAG_KEY] if hot_buffer_has_pre_pull(instance_type) else []
+        expected_pre_pulled_images = hot_buffer_expected_pre_pulled_images(instance_type) or None
+        expected_num_instances = app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
+            instance_type
+        ].hot_buffer_count
+        await assert_autoscaled_dynamic_ec2_instances(
+            ec2_client,
+            expected_num_reservations=len(hot_buffer_instance_types),
+            expected_num_instances=expected_num_instances,
+            expected_instance_type=instance_type,
+            expected_instance_state="running",
+            expected_additional_tag_keys=list(ec2_instance_custom_tags.keys() | expected_pre_pull_tag_keys),
+            expected_pre_pulled_images=expected_pre_pulled_images,
+            instance_filters=instance_type_filters,
+            check_instance_type=instance_type,
+        )
 
 
 @pytest.mark.parametrize(
@@ -474,6 +493,7 @@ async def test_cluster_scaling_with_no_services_and_machine_buffer_starts_expect
 )
 async def test_cluster_scaling_with_service_asking_for_too_much_resources_starts_nothing(
     minimal_configuration: None,
+    with_disabled_hot_buffers: EnvVarsDict,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
     create_services_batch: Callable[[_ScaleUpParams], Awaitable[list[Service]]],
@@ -622,6 +642,7 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915,C901
         available=with_drain_nodes_labelled,
     )
     # update our fake node
+    assert fake_attached_node.spec.labels
     fake_attached_node.spec.labels[_OSPARC_SERVICE_READY_LABEL_KEY] = "true"
     fake_attached_node.spec.labels[_OSPARC_SERVICES_READY_DATETIME_LABEL_KEY] = mock_docker_tag_node.call_args_list[2][
         1
@@ -953,7 +974,9 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915,C901
             _ScaleUpParams(
                 imposed_instance_type=None,
                 service_resources=Resources(cpus=4, ram=TypeAdapter(ByteSize).validate_python("114Gib")),
-                service_custom_placement_constraints={"product-name": "osparc"},
+                service_custom_placement_constraints={
+                    TypeAdapter(DockerLabelKey).validate_python("product-name"): "osparc"
+                },
                 num_services=1,
                 expected_instance_type="r5n.4xlarge",
                 expected_num_instances=1,
@@ -998,6 +1021,7 @@ async def _test_cluster_scaling_up_and_down(  # noqa: PLR0915,C901
 )
 async def test_cluster_scaling_up_and_down(
     minimal_configuration: None,
+    with_disabled_hot_buffers: EnvVarsDict,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
     create_services_batch: Callable[[_ScaleUpParams], Awaitable[list[Service]]],
@@ -1076,6 +1100,7 @@ async def test_cluster_scaling_up_and_down_against_aws(
     disable_buffers_pool_background_task: None,
     mocked_redis_server: None,
     external_envfile_dict: EnvVarsDict,
+    with_disabled_hot_buffers: EnvVarsDict,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
     create_services_batch: Callable[[_ScaleUpParams], Awaitable[list[Service]]],
@@ -1162,6 +1187,7 @@ async def test_cluster_scaling_up_and_down_against_aws(
 async def test_cluster_scaling_up_starts_multiple_instances(
     patch_ec2_client_launch_instances_min_number_of_instances: mock.Mock,
     minimal_configuration: None,
+    with_disabled_hot_buffers: EnvVarsDict,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
     create_services_batch: Callable[[_ScaleUpParams], Awaitable[list[Service]]],
@@ -1246,6 +1272,7 @@ async def test_cluster_scaling_up_starts_multiple_instances(
 async def test_cluster_adapts_machines_on_the_fly(  # noqa: PLR0915
     patch_ec2_client_launch_instances_min_number_of_instances: mock.Mock,
     minimal_configuration: None,
+    with_disabled_hot_buffers: EnvVarsDict,
     ec2_client: EC2Client,
     initialized_app: FastAPI,
     app_settings: ApplicationSettings,
@@ -1501,6 +1528,7 @@ async def test_cluster_adapts_machines_on_the_fly(  # noqa: PLR0915
 async def test_long_pending_ec2_is_detected_as_broken_terminated_and_restarted(
     with_short_ec2_instances_max_start_time: EnvVarsDict,
     minimal_configuration: None,
+    with_disabled_hot_buffers: EnvVarsDict,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
     create_services_batch: Callable[[_ScaleUpParams], Awaitable[list[Service]]],
@@ -1624,6 +1652,7 @@ async def test_long_pending_ec2_is_detected_as_broken_terminated_and_restarted(
 )
 async def test__find_terminateable_nodes_with_no_hosts(
     minimal_configuration: None,
+    with_disabled_hot_buffers: EnvVarsDict,
     initialized_app: FastAPI,
     cluster: Callable[..., Cluster],
     host_node: Node,
@@ -1653,6 +1682,7 @@ async def test__find_terminateable_nodes_with_no_hosts(
 async def test__try_scale_down_cluster_with_no_nodes(
     minimal_configuration: None,
     with_valid_time_before_termination: datetime.timedelta,
+    with_disabled_hot_buffers: EnvVarsDict,
     initialized_app: FastAPI,
     cluster: Callable[..., Cluster],
     mock_remove_nodes: mock.Mock,
@@ -1689,6 +1719,7 @@ async def test__try_scale_down_cluster_with_no_nodes(
 async def test__activate_drained_nodes_with_no_tasks(
     minimal_configuration: None,
     with_valid_time_before_termination: datetime.timedelta,
+    with_disabled_hot_buffers: EnvVarsDict,
     initialized_app: FastAPI,
     host_node: Node,
     drained_host_node: Node,
@@ -1730,6 +1761,7 @@ async def test__activate_drained_nodes_with_no_tasks(
 async def test__activate_drained_nodes_with_no_drained_nodes(
     minimal_configuration: None,
     with_valid_time_before_termination: datetime.timedelta,
+    with_disabled_hot_buffers: EnvVarsDict,
     autoscaling_docker: AutoscalingDocker,
     initialized_app: FastAPI,
     host_node: Node,
@@ -1773,6 +1805,7 @@ async def test__activate_drained_nodes_with_no_drained_nodes(
 async def test__activate_drained_nodes_with_drained_node(
     minimal_configuration: None,
     with_valid_time_before_termination: datetime.timedelta,
+    with_disabled_hot_buffers: EnvVarsDict,
     autoscaling_docker: AutoscalingDocker,
     initialized_app: FastAPI,
     instance_type_filters: Sequence[FilterTypeDef],
@@ -1839,7 +1872,7 @@ async def test__activate_drained_nodes_with_drained_node(
 async def test_warm_buffers_are_started_to_replace_missing_hot_buffers(
     patch_ec2_client_launch_instances_min_number_of_instances: mock.Mock,
     minimal_configuration: None,
-    with_instances_machines_hot_buffer: EnvVarsDict,
+    with_multiple_hot_buffer_instance_types: EnvVarsDict,
     ec2_client: EC2Client,
     initialized_app: FastAPI,
     app_settings: ApplicationSettings,
@@ -1854,38 +1887,44 @@ async def test_warm_buffers_are_started_to_replace_missing_hot_buffers(
     mock_find_node_with_name_returns_fake_node: mock.Mock,
     mock_compute_node_used_resources: mock.Mock,
     mock_docker_tag_node: mock.Mock,
+    hot_buffer_instance_types: set[InstanceTypeType],
+    hot_buffer_total_count: int,
 ):
     # pre-requisites
+    assert len(hot_buffer_instance_types) >= 1, "this test requires at least 1 hot buffer instance type"
     assert app_settings.AUTOSCALING_EC2_INSTANCES
-    assert app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER > 0
+    assert hot_buffer_total_count > 0
+    assert buffer_count * len(hot_buffer_instance_types) >= hot_buffer_total_count, (
+        "this test requires to have at least as many warm buffers as hot buffers"
+    )
 
     # we have nothing running now
     all_instances = await ec2_client.describe_instances()
     assert not all_instances["Reservations"]
 
     # have a few warm buffers ready with the same type as the hot buffer machines
-    buffer_machines = await create_buffer_machines(
-        buffer_count,
-        cast(
-            InstanceTypeType,
-            next(iter(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES)),
-        ),
-        "stopped",
-        None,
-    )
-    await assert_autoscaled_dynamic_warm_pools_ec2_instances(
-        ec2_client,
-        expected_num_reservations=1,
-        expected_num_instances=buffer_count,
-        expected_instance_type=cast(
-            InstanceTypeType,
-            next(iter(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES)),
-        ),
-        expected_instance_state="stopped",
-        expected_additional_tag_keys=list(ec2_instance_custom_tags),
-        expected_pre_pulled_images=None,
-        instance_filters=None,
-    )
+    buffer_machines: list[str] = []
+    for instance_type in hot_buffer_instance_types:
+        buffer_machines.extend(
+            await create_buffer_machines(
+                buffer_count,
+                instance_type,
+                "stopped",
+                None,
+            )
+        )
+    for instance_type in hot_buffer_instance_types:
+        await assert_autoscaled_dynamic_warm_pools_ec2_instances(
+            ec2_client,
+            expected_num_reservations=len(hot_buffer_instance_types),
+            expected_num_instances=buffer_count,
+            expected_instance_type=instance_type,
+            expected_instance_state="stopped",
+            expected_additional_tag_keys=list(ec2_instance_custom_tags),
+            expected_pre_pulled_images=None,
+            instance_filters=None,
+            check_instance_type=instance_type,
+        )
 
     # let's autoscale, this should move the warm buffers to hot buffers
     await auto_scale_cluster(app=initialized_app, auto_scaling_mode=DynamicAutoscalingProvider())
@@ -1901,43 +1940,45 @@ async def test_warm_buffers_are_started_to_replace_missing_hot_buffers(
     assert len(analyzed_cluster.warm_buffer_ec2s) == len(buffer_machines)
 
     # now we should have a warm buffer moved to the hot buffer
-    await assert_autoscaled_dynamic_ec2_instances(
-        ec2_client,
-        expected_num_reservations=1,
-        expected_num_instances=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER,
-        expected_instance_type=cast(
-            InstanceTypeType,
-            next(iter(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES)),
-        ),
-        expected_instance_state="running",
-        expected_additional_tag_keys=[
-            *list(ec2_instance_custom_tags),
-            BUFFER_MACHINE_TAG_KEY,
-        ],
-        instance_filters=instance_type_filters,
-        expected_user_data=[],
-    )
+    for instance_type in hot_buffer_instance_types:
+        expected_num_instances = app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
+            instance_type
+        ].hot_buffer_count
+        await assert_autoscaled_dynamic_ec2_instances(
+            ec2_client,
+            expected_num_reservations=len(hot_buffer_instance_types),
+            expected_num_instances=expected_num_instances,
+            expected_instance_type=instance_type,
+            expected_instance_state="running",
+            expected_additional_tag_keys=[
+                *list(ec2_instance_custom_tags),
+                BUFFER_MACHINE_TAG_KEY,
+            ],
+            instance_filters=instance_type_filters,
+            expected_user_data=[],
+            check_instance_type=instance_type,
+        )
 
     # let's autoscale again, to check the cluster analysis and tag the nodes
     await auto_scale_cluster(app=initialized_app, auto_scaling_mode=DynamicAutoscalingProvider())
     mock_docker_tag_node.assert_called()
-    assert mock_docker_tag_node.call_count == app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
+    assert mock_docker_tag_node.call_count == hot_buffer_total_count
     # at analysis time, we had no machines running
     analyzed_cluster = assert_cluster_state(
         spied_cluster_analysis,
         expected_calls=1,
-        expected_num_machines=app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER,
+        expected_num_machines=hot_buffer_total_count,
     )
     assert not analyzed_cluster.active_nodes
     assert len(analyzed_cluster.warm_buffer_ec2s) == max(
         0,
-        buffer_count - app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER,
+        buffer_count * len(hot_buffer_instance_types) - hot_buffer_total_count,
     ), (
         "the warm buffers were not used as expected there should be"
-        f" {buffer_count - app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER} remaining, "
+        f" {buffer_count * len(hot_buffer_instance_types) - hot_buffer_total_count} remaining, "
         f"found {len(analyzed_cluster.warm_buffer_ec2s)}"
     )
-    assert len(analyzed_cluster.pending_ec2s) == app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
+    assert len(analyzed_cluster.pending_ec2s) == hot_buffer_total_count
 
 
 @pytest.mark.parametrize(
@@ -1955,7 +1996,7 @@ async def test_warm_buffers_are_started_to_replace_missing_hot_buffers(
 async def test_warm_buffers_only_replace_hot_buffer_if_service_is_started_issue7071(  # noqa: PLR0915
     patch_ec2_client_launch_instances_min_number_of_instances: mock.Mock,
     minimal_configuration: None,
-    with_instances_machines_hot_buffer: EnvVarsDict,
+    with_single_hot_buffer_instance_type: EnvVarsDict,
     with_drain_nodes_labelled: bool,
     ec2_client: EC2Client,
     initialized_app: FastAPI,
@@ -1967,9 +2008,9 @@ async def test_warm_buffers_only_replace_hot_buffer_if_service_is_started_issue7
         Awaitable[list[str]],
     ],
     create_services_batch: Callable[[_ScaleUpParams], Awaitable[list[Service]]],
-    hot_buffer_instance_type: InstanceTypeType,
-    hot_buffer_has_pre_pull: bool,
-    hot_buffer_expected_pre_pulled_images: list[DockerGenericTag],
+    hot_buffer_instance_types: set[InstanceTypeType],
+    hot_buffer_has_pre_pull: Callable[[InstanceTypeType], bool],
+    hot_buffer_expected_pre_pulled_images: Callable[[InstanceTypeType], list[DockerGenericTag]],
     spied_cluster_analysis: MockType,
     instance_type_filters: Sequence[FilterTypeDef],
     stopped_instance_type_filters: Sequence[FilterTypeDef],
@@ -1978,15 +2019,18 @@ async def test_warm_buffers_only_replace_hot_buffer_if_service_is_started_issue7
     mock_docker_tag_node: mock.Mock,
     mocker: MockerFixture,
     fake_node: Node,
+    hot_buffer_total_count: int,
 ):
     # NOTE: https://github.com/ITISFoundation/osparc-simcore/issues/7071
 
     #
     # PRE-requisites
     #
+    assert len(hot_buffer_instance_types) == 1, "need single hot buffer types in this test"
+    expected_hot_buffer_instance_type = next(iter(hot_buffer_instance_types))
     assert app_settings.AUTOSCALING_EC2_INSTANCES
-    assert app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER > 0
-    num_hot_buffer = app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MACHINES_BUFFER
+    assert hot_buffer_total_count > 0
+    num_hot_buffer = hot_buffer_total_count
 
     # we have nothing running now
     all_instances = await ec2_client.describe_instances()
@@ -1998,7 +2042,7 @@ async def test_warm_buffers_only_replace_hot_buffer_if_service_is_started_issue7
         ec2_client,
         expected_num_reservations=1,
         expected_num_instances=num_hot_buffer,
-        expected_instance_type=hot_buffer_instance_type,
+        expected_instance_type=expected_hot_buffer_instance_type,
         expected_instance_state="running",
         expected_additional_tag_keys=list(ec2_instance_custom_tags),
         instance_filters=instance_type_filters,
@@ -2018,9 +2062,9 @@ async def test_warm_buffers_only_replace_hot_buffer_if_service_is_started_issue7
             + app_settings.AUTOSCALING_NODES_MONITORING.NODES_MONITORING_NEW_NODES_LABELS,
             "true",
         )
-        | {DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY: f"{hot_buffer_instance_type}"}
+        | {DOCKER_TASK_EC2_INSTANCE_TYPE_PLACEMENT_CONSTRAINT_KEY: f"{expected_hot_buffer_instance_type}"}
         | app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
-            hot_buffer_instance_type
+            expected_hot_buffer_instance_type
         ].custom_node_labels
     )
     fake_attached_node_base.spec.labels |= expected_docker_node_tags | {_OSPARC_SERVICE_READY_LABEL_KEY: "false"}
@@ -2043,14 +2087,15 @@ async def test_warm_buffers_only_replace_hot_buffer_if_service_is_started_issue7
     # there we are done pre-pulling images
     await auto_scale_cluster(app=initialized_app, auto_scaling_mode=auto_scaling_mode)
     expected_pre_pull_tag_keys = [PRE_PULLED_IMAGES_EC2_TAG_KEY] if hot_buffer_has_pre_pull else []
+    expected_pre_pulled_images = hot_buffer_expected_pre_pulled_images(expected_hot_buffer_instance_type) or None
     await assert_autoscaled_dynamic_ec2_instances(
         ec2_client,
         expected_num_reservations=1,
         expected_num_instances=num_hot_buffer,
-        expected_instance_type=hot_buffer_instance_type,
+        expected_instance_type=expected_hot_buffer_instance_type,
         expected_instance_state="running",
         expected_additional_tag_keys=list(ec2_instance_custom_tags.keys() | expected_pre_pull_tag_keys),
-        expected_pre_pulled_images=hot_buffer_expected_pre_pulled_images or None,
+        expected_pre_pulled_images=expected_pre_pulled_images,
         instance_filters=instance_type_filters,
     )
     spied_cluster = assert_cluster_state(spied_cluster_analysis, expected_calls=1, expected_num_machines=5)
@@ -2060,7 +2105,7 @@ async def test_warm_buffers_only_replace_hot_buffer_if_service_is_started_issue7
     # have a few warm buffers ready with the same type as the hot buffer machines
     await create_buffer_machines(
         buffer_count,
-        hot_buffer_instance_type,
+        expected_hot_buffer_instance_type,
         "stopped",
         None,
     )
@@ -2068,7 +2113,7 @@ async def test_warm_buffers_only_replace_hot_buffer_if_service_is_started_issue7
         ec2_client,
         expected_num_reservations=1,
         expected_num_instances=buffer_count,
-        expected_instance_type=hot_buffer_instance_type,
+        expected_instance_type=expected_hot_buffer_instance_type,
         expected_instance_state="stopped",
         expected_additional_tag_keys=list(ec2_instance_custom_tags),
         expected_pre_pulled_images=None,
@@ -2081,17 +2126,17 @@ async def test_warm_buffers_only_replace_hot_buffer_if_service_is_started_issue7
         ec2_client,
         expected_num_reservations=1,
         expected_num_instances=num_hot_buffer,
-        expected_instance_type=hot_buffer_instance_type,
+        expected_instance_type=expected_hot_buffer_instance_type,
         expected_instance_state="running",
         expected_additional_tag_keys=list(ec2_instance_custom_tags.keys() | expected_pre_pull_tag_keys),
-        expected_pre_pulled_images=hot_buffer_expected_pre_pulled_images or None,
+        expected_pre_pulled_images=expected_pre_pulled_images,
         instance_filters=instance_type_filters,
     )
     await assert_autoscaled_dynamic_warm_pools_ec2_instances(
         ec2_client,
         expected_num_reservations=1,
         expected_num_instances=buffer_count,
-        expected_instance_type=hot_buffer_instance_type,
+        expected_instance_type=expected_hot_buffer_instance_type,
         expected_instance_state="stopped",
         expected_additional_tag_keys=list(ec2_instance_custom_tags),
         expected_pre_pulled_images=None,
@@ -2105,12 +2150,12 @@ async def test_warm_buffers_only_replace_hot_buffer_if_service_is_started_issue7
     # BUG REPRODUCTION
     #
     # start a service that imposes same type as the hot buffer
-    assert hot_buffer_instance_type == "t2.xlarge", (
+    assert expected_hot_buffer_instance_type == "t2.xlarge", (
         "the test is hard-coded for this type and accordingly resource. "
         "If this changed then the resource shall be changed too"
     )
     scale_up_params = _ScaleUpParams(
-        imposed_instance_type=hot_buffer_instance_type,
+        imposed_instance_type=expected_hot_buffer_instance_type,
         service_resources=Resources(cpus=2, ram=TypeAdapter(ByteSize).validate_python("1Gib")),
         num_services=1,
         expected_instance_type="t2.xlarge",
@@ -2125,10 +2170,10 @@ async def test_warm_buffers_only_replace_hot_buffer_if_service_is_started_issue7
         expected_num_reservations=2,
         check_reservation_index=0,
         expected_num_instances=num_hot_buffer,
-        expected_instance_type=hot_buffer_instance_type,
+        expected_instance_type=expected_hot_buffer_instance_type,
         expected_instance_state="running",
         expected_additional_tag_keys=list(ec2_instance_custom_tags.keys() | expected_pre_pull_tag_keys),
-        expected_pre_pulled_images=hot_buffer_expected_pre_pulled_images or None,
+        expected_pre_pulled_images=expected_pre_pulled_images,
         instance_filters=instance_type_filters,
     )
     await assert_autoscaled_dynamic_warm_pools_ec2_instances(
@@ -2136,7 +2181,7 @@ async def test_warm_buffers_only_replace_hot_buffer_if_service_is_started_issue7
         expected_num_reservations=2,
         check_reservation_index=1,
         expected_num_instances=1,
-        expected_instance_type=hot_buffer_instance_type,
+        expected_instance_type=expected_hot_buffer_instance_type,
         expected_instance_state="running",
         expected_additional_tag_keys=list(ec2_instance_custom_tags),
         expected_pre_pulled_images=None,
@@ -2146,7 +2191,7 @@ async def test_warm_buffers_only_replace_hot_buffer_if_service_is_started_issue7
         ec2_client,
         expected_num_reservations=1,
         expected_num_instances=buffer_count - 1,
-        expected_instance_type=hot_buffer_instance_type,
+        expected_instance_type=expected_hot_buffer_instance_type,
         expected_instance_state="stopped",
         expected_additional_tag_keys=list(ec2_instance_custom_tags),
         expected_pre_pulled_images=None,
@@ -2226,6 +2271,7 @@ async def with_multiple_small_subnet_ids(
 async def test_fresh_instance_is_started_in_second_subnet_if_warm_buffers_used_up_all_ips_in_first_subnet(
     patch_ec2_client_launch_instances_min_number_of_instances: mock.Mock,
     minimal_configuration: None,
+    with_disabled_hot_buffers: EnvVarsDict,
     with_multiple_small_subnet_ids: tuple[str, ...],
     initialized_app: FastAPI,
     app_settings: ApplicationSettings,
@@ -2321,6 +2367,7 @@ def mock_start_instances_to_raise_insufficient_capacity_error(
 async def test_fresh_instance_is_launched_if_warm_buffers_cannot_start_due_to_insufficient_capacity_error(
     patch_ec2_client_launch_instances_min_number_of_instances: mock.Mock,
     minimal_configuration: None,
+    with_disabled_hot_buffers: EnvVarsDict,
     with_multiple_small_subnet_ids: tuple[str, ...],
     initialized_app: FastAPI,
     mock_start_instances_to_raise_insufficient_capacity_error: None,

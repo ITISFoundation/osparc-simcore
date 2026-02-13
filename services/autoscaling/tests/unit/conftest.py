@@ -517,7 +517,11 @@ def create_fake_node(faker: Faker) -> Callable[..., DockerNode]:
             ),
             "Spec": NodeSpec(
                 name=None,
-                labels=faker.pydict(allowed_types=(str,)),
+                labels={
+                    _OSPARC_SERVICE_READY_LABEL_KEY: "false",
+                    _OSPARC_SERVICES_READY_DATETIME_LABEL_KEY: datetime.datetime.now(tz=datetime.UTC).isoformat(),
+                    **faker.pydict(allowed_types=(str,)),
+                },
                 role=None,
                 availability=Availability.drain,
             ),
@@ -738,8 +742,8 @@ async def _assert_wait_for_service_state(
             )
             ctx.logger.info(
                 "%s",
-                f"service {found_service['Spec']['Name']} is now {service_task['Status']['State']} "
-                f"{'.' * number_of_success['count']}",
+                f"service {found_service['Spec']['Name']} is now "
+                f"{service_task['Status']['State']} {'.' * number_of_success['count']}",
             )
             number_of_success["count"] += 1
             assert (number_of_success["count"] * WAIT_TIME) >= SUCCESS_STABLE_TIME_S
@@ -1036,57 +1040,125 @@ def create_associated_instance(
 
 
 @pytest.fixture
-def num_hot_buffer() -> NonNegativeInt:
-    return 5
-
-
-@pytest.fixture
-def with_instances_machines_hot_buffer(
-    num_hot_buffer: int,
+def with_disabled_hot_buffers(
     app_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
 ) -> EnvVarsDict:
+    allowed_types = json.loads(app_environment["EC2_INSTANCES_ALLOWED_TYPES"])
+    for instance_type_name in allowed_types:
+        allowed_types[instance_type_name]["hot_buffer_count"] = 0
+
     return app_environment | setenvs_from_dict(
         monkeypatch,
         {
-            "EC2_INSTANCES_MACHINES_BUFFER": f"{num_hot_buffer}",
+            "EC2_INSTANCES_ALLOWED_TYPES": json_dumps(allowed_types),
         },
     )
 
 
 @pytest.fixture
-def hot_buffer_instance_type(app_settings: ApplicationSettings) -> InstanceTypeType:
-    assert app_settings.AUTOSCALING_EC2_INSTANCES
-    return cast(
-        InstanceTypeType,
-        next(iter(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES)),
+def num_hot_buffer() -> NonNegativeInt:
+    return 5
+
+
+@pytest.fixture
+def with_multiple_hot_buffer_instance_types(
+    num_hot_buffer: int,
+    app_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+    aws_allowed_ec2_instance_type_names: list[InstanceTypeType],
+) -> EnvVarsDict:
+    allowed_types = json.loads(app_environment["EC2_INSTANCES_ALLOWED_TYPES"])
+    multiple_types = random.sample(
+        aws_allowed_ec2_instance_type_names,
+        k=min(2, len(aws_allowed_ec2_instance_type_names)),
     )
+
+    for instance_type_name in allowed_types:
+        allowed_types[instance_type_name]["hot_buffer_count"] = (
+            num_hot_buffer if instance_type_name in multiple_types else 0
+        )
+        allowed_types[instance_type_name].setdefault("hot_buffer_max_inactivity_time", None)
+
+    return app_environment | setenvs_from_dict(
+        monkeypatch,
+        {
+            "EC2_INSTANCES_ALLOWED_TYPES": json_dumps(allowed_types),
+        },
+    )
+
+
+@pytest.fixture
+def with_single_hot_buffer_instance_type(
+    num_hot_buffer: int,
+    app_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+    aws_allowed_ec2_instance_type_names: list[InstanceTypeType],
+) -> EnvVarsDict:
+    allowed_types = json.loads(app_environment["EC2_INSTANCES_ALLOWED_TYPES"])
+    single_type = next(iter(allowed_types.keys()))
+
+    for instance_type_name in allowed_types:
+        allowed_types[instance_type_name]["hot_buffer_count"] = (
+            num_hot_buffer if instance_type_name == single_type else 0
+        )
+        allowed_types[instance_type_name].setdefault("hot_buffer_max_inactivity_time", None)
+
+    return app_environment | setenvs_from_dict(
+        monkeypatch,
+        {
+            "EC2_INSTANCES_ALLOWED_TYPES": json_dumps(allowed_types),
+        },
+    )
+
+
+@pytest.fixture
+def hot_buffer_instance_types(app_settings: ApplicationSettings) -> set[InstanceTypeType]:
+    assert app_settings.AUTOSCALING_EC2_INSTANCES
+    return {
+        cast(InstanceTypeType, k)
+        for k, v in app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES.items()
+        if v.hot_buffer_count > 0
+    }
+
+
+@pytest.fixture
+def hot_buffer_total_count(app_settings: ApplicationSettings) -> int:
+    assert app_settings.AUTOSCALING_EC2_INSTANCES
+    return sum(v.hot_buffer_count for v in app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES.values())
 
 
 @pytest.fixture
 def hot_buffer_has_pre_pull(
     app_settings: ApplicationSettings,
-    hot_buffer_instance_type: InstanceTypeType,
-) -> bool:
-    assert app_settings.AUTOSCALING_EC2_INSTANCES
-    return bool(
-        app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_COLD_START_DOCKER_IMAGES_PRE_PULLING
-        or app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[hot_buffer_instance_type].pre_pull_images
-    )
+) -> Callable[[InstanceTypeType], bool]:
+    def _(instance_type: InstanceTypeType) -> bool:
+        assert app_settings.AUTOSCALING_EC2_INSTANCES
+        return bool(
+            app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_COLD_START_DOCKER_IMAGES_PRE_PULLING
+            or app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[instance_type].pre_pull_images
+        )
+
+    return _
 
 
 @pytest.fixture
 def hot_buffer_expected_pre_pulled_images(
     app_settings: ApplicationSettings,
-    hot_buffer_instance_type: InstanceTypeType,
-) -> list[DockerGenericTag]:
-    assert app_settings.AUTOSCALING_EC2_INSTANCES
-    return sorted(
-        set(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_COLD_START_DOCKER_IMAGES_PRE_PULLING)
-        | set(
-            app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[hot_buffer_instance_type].pre_pull_images
+    hot_buffer_instance_types: set[InstanceTypeType],
+) -> Callable[[InstanceTypeType], list[DockerGenericTag]]:
+    def _(hot_buffer_instance_type: InstanceTypeType) -> list[DockerGenericTag]:
+        assert app_settings.AUTOSCALING_EC2_INSTANCES
+        return sorted(
+            set(app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_COLD_START_DOCKER_IMAGES_PRE_PULLING)
+            | set(
+                app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_ALLOWED_TYPES[
+                    hot_buffer_instance_type
+                ].pre_pull_images
+            )
         )
-    )
+
+    return _
 
 
 @pytest.fixture

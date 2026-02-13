@@ -3,7 +3,7 @@ import logging
 import os
 import shutil
 from pathlib import Path
-from typing import NamedTuple
+from typing import Final, NamedTuple
 
 import aiofiles
 from aiofiles.os import wrap as sync_to_async
@@ -25,27 +25,54 @@ _templates_dir = Path(os.fspath(_templates))  # type:ignore
 #     part of the message (e.g. subject, content) and format (e.g. html or txt). (see test__templates.py)
 #  - generic: are used in other templates (can be seen as "templates of templates")
 #
-#    e.g. base.html is a generic template vs on_paid.email.content.html that is a named template
+#    e.g. _base/body_html.j2 is a generic template vs email/paid/body_html.j2 that is a named template
 
 
 class NamedTemplateTuple(NamedTuple):
-    # Named templates are named as "{event_name}.{provider}.{part}.{format}"
-    event: str
-    media: str
+    # Named templates are stored as {channel}/{template_name}/{part}.{format}"
+    channel: str
+    template_name: str
     part: str
     ext: str
 
 
-_TEMPLATE_NAME_SEPARATOR = "."
+_TEMPLATE_NAME_SEPARATOR: Final[str] = "/"
+_TEMPLATE_NAME_PARTS_COUNT: Final[int] = 3
 
 
 def split_template_name(template_name: str) -> NamedTemplateTuple:
-    return NamedTemplateTuple(*template_name.split(_TEMPLATE_NAME_SEPARATOR))
+    parts = template_name.split(_TEMPLATE_NAME_SEPARATOR)
+    if len(parts) != _TEMPLATE_NAME_PARTS_COUNT:
+        msg = (
+            f"Invalid template name format: {template_name!r}. "
+            "Expected format: {channel}/{template_name}/{part}.{ext}"
+        )
+        raise TypeError(msg)
+    channel, template_id, filename = parts
+    part, ext = filename.rsplit(".", 1)
+    return NamedTemplateTuple(channel, template_id, part, ext)
 
 
-def get_default_named_templates(event: str = "*", media: str = "*", part: str = "*", ext: str = "*") -> dict[str, Path]:
-    pattern = _TEMPLATE_NAME_SEPARATOR.join([event, media, part, ext])
-    return {p.name: p for p in _templates_dir.glob(pattern)}
+def get_default_named_templates(
+    channel: str = "*", template_name: str = "*", part: str = "*", ext: str = "*"
+) -> dict[str, Path]:
+    # If all parameters are specific (no wildcards), try direct path first
+    if channel != "*" and template_name != "*" and part != "*" and ext != "*":
+        filename = f"{part}.{ext}"
+        direct_path = _templates_dir / channel / template_name / filename
+        if direct_path.exists():
+            template_id = _TEMPLATE_NAME_SEPARATOR.join([channel, template_name, filename])
+            return {template_id: direct_path}
+
+    # Otherwise use glob pattern matching
+    pattern = _TEMPLATE_NAME_SEPARATOR.join([channel, template_name, f"{part}.{ext}"])
+    result = {}
+    for p in _templates_dir.glob(pattern):
+        # Build the template name as channel/template_name/filename
+        relative_path = p.relative_to(_templates_dir)
+        template_id = _TEMPLATE_NAME_SEPARATOR.join(relative_path.parts)
+        result[template_id] = p
+    return result
 
 
 def _print_tree(top: Path, indent=0, prefix="", **print_kwargs):

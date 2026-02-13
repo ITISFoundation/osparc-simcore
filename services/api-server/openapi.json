@@ -9825,6 +9825,10 @@
       "LogMessageStr": {
         "type": "string"
       },
+      "LowerCaseEmailStr": {
+        "type": "string",
+        "format": "email"
+      },
       "Meta": {
         "properties": {
           "name": {
@@ -10569,9 +10573,7 @@
             "minimum": 0
           },
           "login": {
-            "type": "string",
-            "format": "email",
-            "title": "Login"
+            "$ref": "#/components/schemas/LowerCaseEmailStr"
           },
           "role": {
             "$ref": "#/components/schemas/UserRoleEnum"

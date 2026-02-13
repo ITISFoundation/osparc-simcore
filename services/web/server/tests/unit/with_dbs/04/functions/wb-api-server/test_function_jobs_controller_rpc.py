@@ -557,7 +557,7 @@ async def test_find_cached_function_jobs_with_status(
                 title=_faker.word(),
                 description=_faker.sentence(),
                 project_job_id=ProjectID(_faker.uuid4()),
-                job_creation_task_id=TaskKey(_faker.uuid4()),
+                job_creation_task_id=TypeAdapter(TaskKey).validate_python(_faker.uuid4()),
                 inputs={"input1": _faker.pyint(min_value=0, max_value=1000)},
                 outputs={"output1": _faker.word()},
             ),
@@ -575,7 +575,7 @@ async def test_find_cached_function_jobs_with_status(
             RegisteredSolverFunctionJobPatch(
                 title=_faker.word(),
                 description=_faker.sentence(),
-                job_creation_task_id=TaskKey(_faker.uuid4()),
+                job_creation_task_id=TypeAdapter(TaskKey).validate_python(_faker.uuid4()),
                 inputs={"input1": _faker.pyint(min_value=0, max_value=1000)},
                 outputs={"output1": _faker.word()},
                 solver_job_id=_faker.uuid4(),
@@ -650,7 +650,7 @@ async def test_patch_registered_function_jobs(
             RegisteredSolverFunctionJobPatch(
                 title=_faker.word(),
                 description=_faker.sentence(),
-                job_creation_task_id=TaskKey(_faker.uuid4()),
+                job_creation_task_id=TypeAdapter(TaskKey).validate_python(_faker.uuid4()),
                 inputs={"input1": _faker.pyint(min_value=0, max_value=1000)},
                 outputs={"output1": _faker.word()},
                 solver_job_id=_faker.uuid4(),
