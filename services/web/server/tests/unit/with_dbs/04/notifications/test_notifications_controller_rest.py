@@ -31,6 +31,7 @@ from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from simcore_postgres_database.models.users import UserRole
+from simcore_service_webserver.notifications import _service
 from simcore_service_webserver.notifications._controller import _rest
 
 pytest_simcore_core_services_selection = []
@@ -109,7 +110,7 @@ async def test_send_message_access_control(
         # Prepare request body
         body = {
             "channel": "email",
-            "recipients": [users[0]["primary_gid"]],
+            "groupIds": [users[0]["primary_gid"]],
             "content": fake_email_content,
         }
 
@@ -141,7 +142,7 @@ async def test_send_message_no_active_recipients(
         # Prepare request body
         body = {
             "channel": "email",
-            "recipients": [user2["primary_gid"], user3["primary_gid"]],
+            "groupIds": [user2["primary_gid"], user3["primary_gid"]],
             "content": fake_email_content,
         }
 
@@ -165,7 +166,7 @@ async def test_send_message_returns_task(
         # Prepare request body
         body = {
             "channel": "email",
-            "recipients": [users[0]["primary_gid"]],
+            "groupIds": [users[0]["primary_gid"]],
             "content": fake_email_content,
         }
 
@@ -208,11 +209,11 @@ async def test_send_message_with_different_inputs(
     url = client.app.router["send_message"].url_for()
 
     async with create_test_users(recipients_count, None) as users:
-        recipients = [user["primary_gid"] for user in users]
+        groupIds = [user["primary_gid"] for user in users]
 
         body = {
             "channel": "email",
-            "recipients": recipients,
+            "groupIds": groupIds,
             "content": fake_email_content,
         }
 
@@ -249,7 +250,7 @@ async def test_preview_template_access_control(
 
     # Mock the RPC call
     mocked_notifications_rpc_client.patch(
-        f"{_rest.__name__}.remote_preview_template",
+        f"{_service.__name__}.remote_preview_template",
         return_value=fake_template_preview_response,
     )
 
@@ -258,7 +259,7 @@ async def test_preview_template_access_control(
     body = {
         "ref": {
             "channel": "email",
-            "template_name": "empty",
+            "templateName": "empty",
         },
         "context": {
             "subject": "Test",
@@ -283,7 +284,7 @@ async def test_preview_template_success(
 
     # Mock the RPC call
     mocked_notifications_rpc_client.patch(
-        f"{_rest.__name__}.remote_preview_template",
+        f"{_service.__name__}.remote_preview_template",
         return_value=fake_template_preview_response,
     )
 
@@ -292,7 +293,7 @@ async def test_preview_template_success(
     body = {
         "ref": {
             "channel": "email",
-            "template_name": "test_template",
+            "templateName": "test_template",
         },
         "context": fake_email_content,
     }
@@ -321,7 +322,7 @@ async def test_preview_template_enriches_context_with_product_data(
 
     # Spy on the RPC call to verify the enriched context
     mock_rpc_call = mocker.patch(
-        f"{_rest.__name__}.remote_preview_template",
+        f"{_service.__name__}.remote_preview_template",
         return_value=TemplatePreviewRpcResponse(
             ref=TemplateRefRpc(
                 channel=ChannelType.email,
