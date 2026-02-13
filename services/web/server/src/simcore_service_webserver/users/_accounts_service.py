@@ -13,7 +13,7 @@ from pydantic import PositiveInt
 
 from ..db.plugin import get_asyncpg_engine
 from ..invitations import api as invitations_service
-from ..notifications import notifications_service as ns
+from ..notifications import notifications_service
 from ..notifications._models import EmailContact
 from . import _accounts_repository, _users_repository
 from ._models import PreviewApproval
@@ -276,7 +276,7 @@ async def approve_user_account(
 
     # Send email to user if message content is provided
     if message_content:
-        await ns.send_message(
+        await notifications_service.send_message(
             app,
             user_id=reviewer_id,
             product_name=product_name,
@@ -332,7 +332,7 @@ async def reject_user_account(
 
     # Send email to user if message content is provided
     if message_content:
-        await ns.send_message(
+        await notifications_service.send_message(
             app,
             user_id=reviewer_id,
             product_name=product_name,
@@ -383,7 +383,7 @@ async def preview_approval_user_account(
     assert user_account.email == approval_email  # nosec
 
     # Preview the notification template
-    preview = await ns.preview_template(
+    preview = await notifications_service.preview_template(
         app=app,
         product_name=product_name,
         ref=TemplateRef(
