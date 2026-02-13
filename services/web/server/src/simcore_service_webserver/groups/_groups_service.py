@@ -252,9 +252,9 @@ async def is_user_in_group(app: web.Application, *, user_id: UserID, group_id: G
 
 
 async def auto_add_user_to_groups(app: web.Application, user_id: UserID) -> None:
-    from .._users._users_service import get_user  # noqa: PLC0415
+    from ..users import _users_service  # noqa: PLC0415
 
-    user: dict = await get_user(app, user_id)
+    user: dict = await _users_service.get_user(app, user_id)
     return await _groups_repository.auto_add_user_to_groups(app, user=user)
 
 
