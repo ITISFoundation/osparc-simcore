@@ -11,7 +11,6 @@ from models_library.products import ProductName
 from models_library.users import UserID
 
 from ..db.plugin import get_asyncpg_engine
-from ..invitations import api as invitations_service
 from ..notifications import notifications_service
 from ..notifications._models import EmailContact
 from . import _accounts_repository, _users_repository
@@ -256,6 +255,8 @@ async def approve_user_account(
     # Extract invitation data if URL is provided
     invitation_extras: dict[str, Any] | None = None
     if invitation_url:
+        from ..invitations import api as invitations_service  # noqa: PLC0415
+
         invitation_result = await invitations_service.extract_invitation(
             app,
             invitation_url,

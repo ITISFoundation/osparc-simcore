@@ -29,7 +29,6 @@ from simcore_postgres_database.models.confirmations import ConfirmationAction
 from simcore_postgres_database.models.users import UserStatus
 from yarl import URL
 
-from ..groups.api import is_user_by_email_in_group
 from ..invitations.api import (
     extract_invitation,
     is_service_invitation_code,
@@ -95,6 +94,8 @@ ACTION_TO_DATA_TYPE: dict[ConfirmationAction, type | None] = {
 
 
 async def _raise_if_registered_in_product(app: web.Application, user_email, product):
+    from ..groups.api import is_user_by_email_in_group  # noqa: PLC0415
+
     # NOTE on `product.group_id is None`: A user can be registered in one of more products only if product groups are defined
     if product.group_id is None or await is_user_by_email_in_group(
         app, user_email=user_email, group_id=product.group_id
