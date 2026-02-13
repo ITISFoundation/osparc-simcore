@@ -23,7 +23,6 @@ from common_library.serialization import model_dump_with_secrets
 from faker import Faker
 from fastapi import FastAPI, status
 from models_library.api_schemas_dynamic_sidecar.containers import ActivityInfo
-from models_library.projects_nodes_io import StorageFileID
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from models_library.services_io import ServiceOutput
 from pydantic import TypeAdapter
@@ -730,18 +729,3 @@ async def test_containers_activity_unexpected_response(
     response = await test_client.get(f"/{API_VTAG}/containers/activity")
     assert response.status_code == 200, response.text
     assert response.json() == ActivityInfo(seconds_inactive=_INACTIVE_FOR_LONG_TIME).model_dump()
-
-
-@pytest.fixture
-def s3_directory(faker: Faker) -> StorageFileID:
-    remote = f"{faker.uuid4()}/{faker.uuid4()}/remote-dir"
-    return TypeAdapter(StorageFileID).validate_python(remote)
-
-
-async def test_containers_files_refresh(test_client: TestClient, s3_directory: StorageFileID):
-    response = await test_client.post(
-        f"/{API_VTAG}/containers/files:refresh",
-        json={"s3_directory": s3_directory, "recursive": True},
-    )
-    assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
-    assert response.text == ""

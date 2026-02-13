@@ -2,7 +2,6 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, FastAPI, Response, status
 from fastapi import Path as PathParam
-from models_library.projects_nodes_io import StorageFileID
 from models_library.services import ServiceOutput
 from pydantic.main import BaseModel
 
@@ -29,11 +28,6 @@ class AttachContainerToNetworkItem(_BaseNetworkItem):
 
 class DetachContainerFromNetworkItem(_BaseNetworkItem):
     pass
-
-
-class RefreshContainerFiles(BaseModel):
-    s3_directory: StorageFileID
-    recursive: bool
 
 
 #
@@ -108,14 +102,3 @@ async def detach_container_from_network(
         container_id=container_id,
         network_id=item.network_id,
     )
-
-
-@router.post(
-    "/containers/files:refresh",
-    status_code=status.HTTP_204_NO_CONTENT,
-)
-async def refresh_containers_files(
-    item: RefreshContainerFiles, app: Annotated[FastAPI, Depends(get_application)]
-) -> None:
-    """refresh directory content from s3, if data is mounted from S3"""
-    await container_extensions.refresh_containers_files(app, s3_directory=item.s3_directory, recursive=item.recursive)
