@@ -11,6 +11,7 @@ from models_library.emails import LowerCaseEmailStr
 from pydantic import AnyHttpUrl, HttpUrl, TypeAdapter, ValidationError
 from yarl import URL
 
+from ..groups.api import is_user_by_email_in_group
 from ..products.models import Product
 from ._client import get_invitations_service_api
 from .errors import (
@@ -93,8 +94,6 @@ async def validate_invitation_url(
 
     # check invitation used
     assert invitation.product == current_product.name  # nosec
-    from ..groups.api import is_user_by_email_in_group  # noqa: PLC0415
-
     is_user_registered_in_product: bool = await is_user_by_email_in_group(
         app,
         user_email=TypeAdapter(LowerCaseEmailStr).validate_python(invitation.guest),

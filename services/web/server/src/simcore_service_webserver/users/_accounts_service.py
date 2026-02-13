@@ -12,6 +12,9 @@ from models_library.users import UserID
 from pydantic import PositiveInt
 
 from ..db.plugin import get_asyncpg_engine
+from ..invitations import api as invitations_service
+from ..notifications import notifications_service as ns
+from ..notifications._models import EmailContact
 from . import _accounts_repository, _users_repository
 from ._models import PreviewApproval
 from .exceptions import (
@@ -255,8 +258,6 @@ async def approve_user_account(
     # Extract invitation data if URL is provided
     invitation_extras: dict[str, Any] | None = None
     if invitation_url:
-        from ..invitations import api as invitations_service  # noqa: PLC0415
-
         invitation_result = await invitations_service.extract_invitation(
             app,
             invitation_url,
@@ -275,9 +276,6 @@ async def approve_user_account(
 
     # Send email to user if message content is provided
     if message_content:
-        from ..notifications import notifications_service as ns  # noqa: PLC0415
-        from ..notifications._models import EmailContact  # noqa: PLC0415  # noqa: PLC0415
-
         await ns.send_message(
             app,
             user_id=reviewer_id,
@@ -334,9 +332,6 @@ async def reject_user_account(
 
     # Send email to user if message content is provided
     if message_content:
-        from ..notifications import notifications_service as ns  # noqa: PLC0415
-        from ..notifications._models import EmailContact  # noqa: PLC0415
-
         await ns.send_message(
             app,
             user_id=reviewer_id,
@@ -373,9 +368,6 @@ async def preview_approval_user_account(
     Raises:
         PendingPreRegistrationNotFoundError: If no pre-registration is found for the email/product
     """
-    # Lazy import to avoid circular dependency
-    from ..notifications import notifications_service as ns  # noqa: PLC0415
-
     # Get pre-registration data
     found = await search_users_accounts(
         app,

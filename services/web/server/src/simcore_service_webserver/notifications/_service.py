@@ -26,6 +26,7 @@ from ..celery import get_task_manager
 from ..models import WebServerOwnerMetadata
 from ..products import products_service
 from ..rabbitmq import get_rabbitmq_rpc_client
+from ..users._users_service import get_active_users_email_data, get_users_in_group
 from ._helpers import get_product_data
 from ._models import Contact, EmailContact, EmailContent, EmailNotificationMessage
 
@@ -37,11 +38,6 @@ def _get_user_display_name(user: dict) -> str:
 
 
 async def _collect_active_recipients(app: web.Application, group_ids: list[GroupID]) -> list[EmailContact]:
-    from ..users._users_service import (  # noqa: PLC0415
-        get_active_users_email_data,
-        get_users_in_group,
-    )
-
     # Collect all unique user IDs from all groups
     all_user_ids: set[UserID] = set()
     for group_id in group_ids:
