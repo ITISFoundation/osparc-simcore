@@ -195,25 +195,23 @@ async def _build_and_push_image(
     )
 
 
-def _clean_registry(list_of_images: list[ServiceInRegistryInfoDict]):
+def _clean_registry(list_of_images: list[ServiceInRegistryInfoDict]) -> None:
     request_headers = {"accept": "application/vnd.docker.distribution.manifest.v2+json"}
     for image in list_of_images:
         service_description = image["service_description"]
         # get the image digest
         tag = service_description["version"]
         registry_url = image["image_path"].split("/")[0]
-        url = "http://{host}/v2/{name}/manifests/{tag}".format(
-            host=registry_url, name=service_description["key"], tag=tag
-        )
-        response = requests.get(url, headers=request_headers, timeout=10)
+        url = f"http://{registry_url}/v2/{service_description['key']}/manifests/{tag}"
+
+        response = requests.head(url, headers=request_headers, timeout=10)
+        response.raise_for_status()
+
         docker_content_digest = response.headers["Docker-Content-Digest"]
         # remove the image from the registry
-        url = "http://{host}/v2/{name}/manifests/{digest}".format(
-            host=registry_url,
-            name=service_description["key"],
-            digest=docker_content_digest,
-        )
-        response = requests.delete(url, headers=request_headers, timeout=5)
+        delete_url = f"http://{registry_url}/v2/{service_description['key']}/manifests/{docker_content_digest}"
+        delete_resp = requests.delete(delete_url, headers=request_headers, timeout=5)
+        delete_resp.raise_for_status()
 
 
 class PushServicesCallable(Protocol):
