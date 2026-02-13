@@ -1807,7 +1807,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UserAccountPreviewApprovalBody'
+              $ref: '#/components/schemas/UserAccountPreviewApproval'
         required: true
       responses:
         '200':
@@ -1832,6 +1832,26 @@ paths:
       responses:
         '204':
           description: Successful Response
+  /v0/admin/user-accounts:preview-rejection:
+    post:
+      tags:
+      - users
+      - admin
+      summary: Preview Rejection User Account
+      operationId: preview_rejection_user_account
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserAccountPreviewRejection'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_UserAccountPreviewRejectionGet_'
   /v0/admin/user-accounts:search:
     get:
       tags:
@@ -11671,6 +11691,19 @@ components:
           title: Error
       type: object
       title: Envelope[UserAccountPreviewApprovalGet]
+    Envelope_UserAccountPreviewRejectionGet_:
+      properties:
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/UserAccountPreviewRejectionGet'
+          - type: 'null'
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[UserAccountPreviewRejectionGet]
     Envelope_WalletGetWithAvailableCredits_:
       properties:
         data:
@@ -18740,7 +18773,7 @@ components:
       - accountRequestStatus
       - registered
       title: UserAccountGet
-    UserAccountPreviewApprovalBody:
+    UserAccountPreviewApproval:
       properties:
         email:
           type: string
@@ -18753,7 +18786,7 @@ components:
       type: object
       required:
       - email
-      title: UserAccountPreviewApprovalBody
+      title: UserAccountPreviewApproval
     UserAccountPreviewApprovalGet:
       properties:
         invitationUrl:
@@ -18772,6 +18805,24 @@ components:
       required:
       - invitationUrl
       title: UserAccountPreviewApprovalGet
+    UserAccountPreviewRejection:
+      properties:
+        email:
+          type: string
+          format: email
+          title: Email
+      type: object
+      required:
+      - email
+      title: UserAccountPreviewRejection
+    UserAccountPreviewRejectionGet:
+      properties:
+        messageContent:
+          anyOf:
+          - $ref: '#/components/schemas/MessageContentGet'
+          - type: 'null'
+      type: object
+      title: UserAccountPreviewRejectionGet
     UserAccountReject:
       properties:
         email:
