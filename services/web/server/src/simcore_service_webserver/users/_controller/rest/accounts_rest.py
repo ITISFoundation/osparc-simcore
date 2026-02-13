@@ -275,7 +275,7 @@ async def preview_approval_user_account(request: web.Request) -> web.Response:
 
     response = UserAccountPreviewApprovalGet(
         invitation_url=invitation_url,
-        message_content=TypeAdapter(MessageContentGet).validate_python(preview.content),
+        message_content=TypeAdapter(MessageContentGet).validate_python(preview.message_content),
     )
 
     return envelope_json_response(response.model_dump(**_RESPONSE_MODEL_MINIMAL_POLICY))
