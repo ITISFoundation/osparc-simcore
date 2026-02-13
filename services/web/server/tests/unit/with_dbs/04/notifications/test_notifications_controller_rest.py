@@ -337,7 +337,7 @@ async def test_preview_template_enriches_context_with_product_data(
     body = {
         "ref": {
             "channel": "email",
-            "template_name": "test_template",
+            "templateName": "test_template",
         },
         "context": fake_email_content,
     }
