@@ -480,7 +480,7 @@ async def test_run_partial_computation(
     )
 
     # run it a second time. the tasks are all up-to-date, nothing should be run
-    # FIXME: currently the webserver is the one updating the projects table so we need to fake this  # noqa: FIX001
+    # NOTE: currently the webserver is the one updating the projects table so we need to fake this
     # by copying the run_hash
     update_project_workbench_with_comp_tasks(str(sleepers_project.uuid))
 
