@@ -4,7 +4,7 @@
 # pylint: disable=too-many-arguments
 
 
-from typing import Annotated, Any, Final, TypeAlias
+from typing import Annotated, Any, Final
 
 from fastapi import APIRouter, Depends, Query, status
 from models_library.api_schemas_long_running_tasks.tasks import TaskGet
@@ -49,7 +49,7 @@ router = APIRouter(
 # slashes, and when applying validation via `StorageFileID`
 # it raises an error. Before `StorageFileID`, `str` was the
 # type used in the OpenAPI specs.
-StorageFileIDStr: TypeAlias = str  # noqa: UP040
+type StorageFileIDStr = str
 
 
 @router.get(
