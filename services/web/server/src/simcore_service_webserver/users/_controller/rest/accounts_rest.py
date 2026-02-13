@@ -212,7 +212,7 @@ async def preview_approval_user_account(request: web.Request) -> web.Response:
         invitation_url = invitation_result.invitation_url
 
     # Get preview of approval notification
-    preview_data = await _accounts_service.preview_approval_user_account(
+    preview_result = await _accounts_service.preview_approval_user_account(
         request.app,
         approval_email=approval_data.email,
         product_name=req_ctx.product_name,
@@ -221,7 +221,10 @@ async def preview_approval_user_account(request: web.Request) -> web.Response:
         extra_credits_in_usd=approval_data.invitation.extra_credits_in_usd,
     )
 
-    response = UserAccountPreviewApprovalGet(**preview_data.model_dump())
+    response = UserAccountPreviewApprovalGet(
+        invitation_url=preview_result.invitation_url,
+        message_content=TypeAdapter(MessageContentGet).validate_python(preview_result.message_content),
+    )
 
     return envelope_json_response(response.model_dump(**_RESPONSE_MODEL_MINIMAL_POLICY))
 

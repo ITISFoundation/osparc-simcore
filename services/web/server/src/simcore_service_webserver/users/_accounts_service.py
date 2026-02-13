@@ -372,6 +372,9 @@ async def preview_approval_user_account(
     Raises:
         PendingPreRegistrationNotFoundError: If no pre-registration is found for the email/product
     """
+    # Lazy import to avoid circular dependency
+    from ..notifications import notifications_service as ns  # noqa: PLC0415
+
     # Get pre-registration data
     found = await search_users_accounts(
         app,
@@ -387,8 +390,6 @@ async def preview_approval_user_account(
     assert user_account.email == approval_email  # nosec
 
     # Preview the notification template
-    from ..notifications import notifications_service as ns  # noqa: PLC0415
-
     preview = await ns.preview_template(
         app=app,
         product_name=product_name,
