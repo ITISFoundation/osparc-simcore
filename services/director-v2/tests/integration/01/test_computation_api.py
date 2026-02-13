@@ -717,8 +717,6 @@ async def test_abort_computation(
         wait_for_states=[RunningState.ABORTED],
     )
     assert task_out.state == RunningState.ABORTED
-    # FIXME: Here ideally we should connect to the dask scheduler and check  # noqa: FIX001
-    # that the task is really aborted
 
 
 async def test_update_and_delete_computation(
