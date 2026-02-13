@@ -67,7 +67,7 @@ async def docker_api_proxy_settings(
 
 @pytest.fixture
 async def mock_setup_remote_docker_client(mocker: MockerFixture) -> Callable[[str], None]:
-    def _(target_setip_to_replace: str) -> None:
+    def _(target_setup_to_replace: str) -> None:
         def _setup(app: FastAPI, settings: DockerApiProxysettings) -> None:
             _ = settings
             exit_stack = AsyncExitStack()
@@ -81,6 +81,6 @@ async def mock_setup_remote_docker_client(mocker: MockerFixture) -> Callable[[st
             app.add_event_handler("startup", on_startup)
             app.add_event_handler("shutdown", on_shutdown)
 
-        mocker.patch(target_setip_to_replace, new=_setup)
+        mocker.patch(target_setup_to_replace, new=_setup)
 
     return _
