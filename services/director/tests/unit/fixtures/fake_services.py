@@ -196,6 +196,23 @@ async def _build_and_push_image(
 
 
 def _clean_registry(list_of_images: list[ServiceInRegistryInfoDict]) -> None:
+    registry_catalog_url = f"http://{list_of_images[0]['image_path'].split('/')[0]}/v2/_catalog"
+    response = requests.get(registry_catalog_url, timeout=5)
+    response.raise_for_status()
+    repositories = response.json().get("repositories", [])
+    if not repositories:
+        _logger.warning("No repositories found in registry, skipping cleanup")
+        return
+
+    # log all images in the registry
+    for repo in repositories:
+        tags_url = f"http://{list_of_images[0]['image_path'].split('/')[0]}/v2/{repo}/tags/list"
+        tags_response = requests.get(tags_url, timeout=5)
+        tags_response.raise_for_status()
+        tags = tags_response.json().get("tags", [])
+        for tag in tags:
+            _logger.info("Registry has image %s:%s", repo, tag)
+
     request_headers = {"accept": "application/vnd.docker.distribution.manifest.v2+json"}
     for image in list_of_images:
         service_description = image["service_description"]
