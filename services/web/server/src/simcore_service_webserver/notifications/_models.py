@@ -33,7 +33,7 @@ class EmailContact(BaseModel):
               auto-generates from new_local if original had a display name.
 
         Returns:
-            New EmailRecipient instance with updated values
+            New EmailContact instance with updated values
         """
         if new_local is None:
             # Only update name if provided, otherwise return copy as-is
