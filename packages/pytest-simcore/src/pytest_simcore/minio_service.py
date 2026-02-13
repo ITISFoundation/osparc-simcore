@@ -36,9 +36,8 @@ def minio_s3_settings_envs(
     changed_envs: EnvVarsDict = minio_s3_settings.model_dump(
         mode="json",
         exclude_unset=True,
-        exclude={"S3_ACCESS_KEY", "S3_SECRET_KEY"},
-    ) | {
-        "S3_ACCESS_KEY": minio_s3_settings.S3_ACCESS_KEY.get_secret_value(),
-        "S3_SECRET_KEY": minio_s3_settings.S3_SECRET_KEY.get_secret_value(),
-    }
+    )
+    changed_envs["S3_ACCESS_KEY"] = minio_s3_settings.S3_ACCESS_KEY.get_secret_value()
+    changed_envs["S3_SECRET_KEY"] = minio_s3_settings.S3_SECRET_KEY.get_secret_value()
+
     return setenvs_from_dict(monkeypatch, changed_envs)

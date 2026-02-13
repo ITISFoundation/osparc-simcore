@@ -131,5 +131,10 @@ def mocked_s3_server_envs(
     mocked_s3_server_settings: S3Settings,
     monkeypatch: pytest.MonkeyPatch,
 ) -> EnvVarsDict:
-    changed_envs: EnvVarsDict = mocked_s3_server_settings.model_dump(mode="json", exclude_unset=True)
+    changed_envs: EnvVarsDict = mocked_s3_server_settings.model_dump(
+        mode="json",
+        exclude_unset=True,
+    )
+    changed_envs["S3_ACCESS_KEY"] = mocked_s3_server_settings.S3_ACCESS_KEY.get_secret_value()
+    changed_envs["S3_SECRET_KEY"] = mocked_s3_server_settings.S3_SECRET_KEY.get_secret_value()
     return setenvs_from_dict(monkeypatch, {**changed_envs})
