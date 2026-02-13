@@ -190,17 +190,23 @@ qx.Class.define("osparc.form.tag.TagManager", {
     },
 
     __saveAddTag: function(tagId, tagButton) {
-      osparc.store.Study.getInstance().addTag(this.__resourceId, tagId)
-        .then(() => this.__selectedTags.push(tagId))
-        .catch(() => tagButton.setValue(false))
-        .finally(() => tagButton.setFetching(false));
+      return osparc.store.Study.getInstance().addTag(this.__resourceId, tagId)
+        .then(updatedStudy => {
+          this.__selectedTags.push(tagId);
+          return updatedStudy;
+        })
+        .catch(() => tagButton ? tagButton.setValue(false) : null)
+        .finally(() => tagButton ? tagButton.setFetching(false) : null);
     },
 
     __saveRemoveTag: function(tagId, tagButton) {
-      osparc.store.Study.getInstance().removeTag(this.__resourceId, tagId)
-        .then(() => this.__selectedTags.remove(tagId))
-        .catch(() => tagButton.setValue(true))
-        .finally(() => tagButton.setFetching(false));
+      return osparc.store.Study.getInstance().removeTag(this.__resourceId, tagId)
+        .then(updatedStudy => {
+          this.__selectedTags.remove(tagId);
+          return updatedStudy;
+        })
+        .catch(() => tagButton ? tagButton.setValue(true) : null)
+        .finally(() => tagButton ? tagButton.setFetching(false) : null);
     },
 
     __save: async function(saveButton) {
@@ -211,15 +217,13 @@ qx.Class.define("osparc.form.tag.TagManager", {
       for (let i=0; i<this.__selectedTags.length; i++) {
         const tagId = this.__selectedTags.getItem(i);
         if (!this.__studyData["tags"].includes(tagId)) {
-          updatedStudy = await osparc.store.Study.getInstance().addTag(this.__resourceId, tagId)
-            .then(updatedData => updatedData);
+          updatedStudy = await this.__saveAddTag(tagId);
         }
       }
       for (let i=0; i<this.__studyData["tags"].length; i++) {
         const tagId = this.__studyData["tags"][i];
         if (!this.__selectedTags.includes(tagId)) {
-          updatedStudy = await osparc.store.Study.getInstance().removeTag(this.__resourceId, tagId)
-            .then(updatedData => updatedData);
+          updatedStudy = await this.__saveRemoveTag(tagId);
         }
       }
 
