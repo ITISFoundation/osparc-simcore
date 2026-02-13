@@ -33,6 +33,7 @@ def setup(app: FastAPI) -> None:
             # Promote to AutoscalingDocker, works safely because
             # AutoscalingDocker does not add any new attributes, only methods
             client.__class__ = AutoscalingDocker
+            assert type(client) is AutoscalingDocker  # nosec
         else:
             client = AutoscalingDocker()
 
