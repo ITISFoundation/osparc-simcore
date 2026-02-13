@@ -274,7 +274,7 @@ async def test_interactive_service_in_correct_network(
         assert list_of_services
         assert len(list_of_services) == 1
         docker_service = list_of_services[0]
-        assert docker_service.attrs["Spec"]["Networks"][0]["Target"] == with_docker_network["Id"]
+        assert docker_service.attrs["Spec"]["TaskTemplate"]["Networks"][0]["Target"] == with_docker_network["Id"]
 
 
 async def test_dependent_services_have_common_network(
@@ -293,8 +293,8 @@ async def test_dependent_services_have_common_network(
         assert len(list_of_services) == 2
         # check they have same network
         assert (
-            list_of_services[0].attrs["Spec"]["Networks"][0]["Target"]
-            == list_of_services[1].attrs["Spec"]["Networks"][0]["Target"]
+            list_of_services[0].attrs["Spec"]["TaskTemplate"]["Networks"][0]["Target"]
+            == list_of_services[1].attrs["Spec"]["TaskTemplate"]["Networks"][0]["Target"]
         )
 
 

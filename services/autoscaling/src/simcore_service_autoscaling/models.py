@@ -16,9 +16,14 @@ from types_aiobotocore_ec2.literals import InstanceTypeType
 @dataclass(frozen=True, slots=True, kw_only=True)
 class _TaskAssignmentMixin:
     assigned_tasks: list = field(default_factory=list)
-    available_resources: Resources = field(default_factory=Resources.create_as_empty)
+    available_resources: Resources | None = None
     # Track labels required by assigned tasks (will be applied during activation)
     _pending_label_requirements: dict[DockerLabelKey, str] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        # Fallback 1: If used directly or by a child class without its own logic, default to empty
+        if self.available_resources is None:
+            object.__setattr__(self, "available_resources", Resources.create_as_empty())
 
     def assign_task(
         self,
@@ -27,6 +32,7 @@ class _TaskAssignmentMixin:
         task_required_node_labels: dict[DockerLabelKey, str],
     ) -> None:
         self.assigned_tasks.append(task)
+        assert self.available_resources is not None  # nosec
         object.__setattr__(self, "available_resources", self.available_resources - task_resources)
         if task_required_node_labels:
             object.__setattr__(
@@ -36,6 +42,7 @@ class _TaskAssignmentMixin:
             )
 
     def has_resources_for_task(self, task_resources: Resources) -> bool:
+        assert self.available_resources is not None  # nosec
         return bool(self.available_resources >= task_resources)
 
     def tasks_required_pending_labels(self) -> dict[DockerLabelKey, str]:
@@ -65,12 +72,13 @@ class _BaseInstance(_TaskAssignmentMixin):
     _osparc_custom_node_labels: dict[DockerLabelKey, str] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
-        if self.available_resources == Resources.create_as_empty():
+        if self.available_resources is None:
             object.__setattr__(self, "available_resources", self.ec2_instance.resources)
 
     def has_assigned_tasks_or_resources_in_use(self) -> bool:
         # NOTE: This function is needed because assigned_tasks can be empty while still have used resources (this is not nice and should be changed)
         # see https://github.com/ITISFoundation/osparc-simcore/issues/8559
+        assert self.available_resources is not None  # nosec
         return bool(self.assigned_tasks) or bool(self.available_resources < self.ec2_instance.resources)
 
     @property
