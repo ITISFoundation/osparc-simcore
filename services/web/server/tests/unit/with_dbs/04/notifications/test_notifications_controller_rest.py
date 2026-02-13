@@ -44,7 +44,7 @@ def fake_template_preview_response(faker: Faker) -> TemplatePreviewRpcResponse:
             channel=ChannelType.email,
             template_name="test_template",
         ),
-        content={
+        message_content={
             "subject": faker.sentence(),
             "bodyHtml": faker.text(),
             "bodyText": faker.text(),
@@ -327,7 +327,7 @@ async def test_preview_template_enriches_context_with_product_data(
                 channel=ChannelType.email,
                 template_name="test",
             ),
-            content={"subject": "Test", "bodyHtml": "<p>Test Body</p>", "bodyText": "Test Body"},
+            message_content={"subject": "Test", "bodyHtml": "<p>Test Body</p>", "bodyText": "Test Body"},
         ),
     )
 
