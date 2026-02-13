@@ -11,6 +11,7 @@ from models_library.products import ProductName
 from models_library.users import UserID
 
 from ..db.plugin import get_asyncpg_engine
+from ..invitations import api as invitations_service
 from ..notifications import notifications_service
 from ..notifications._models import EmailContact
 from . import _accounts_repository, _users_repository
@@ -221,9 +222,7 @@ async def approve_user_account(
     pre_registration_email: LowerCaseEmailStr,
     product_name: ProductName,
     reviewer_id: UserID,
-    invitation_extras: Annotated[
-        dict[str, Any] | None, doc("Optional invitation data to store in extras field")
-    ] = None,
+    invitation_url: Annotated[str | None, doc("Optional URL to extract invitation data from")] = None,
     message_content: Annotated[
         dict[str, Any] | None,
         doc("Optional message content to send to the approved user"),
@@ -253,6 +252,16 @@ async def approve_user_account(
     # There should be only one registration matching these criteria
     pre_registration = pre_registrations[0]
     pre_registration_id: int = pre_registration["id"]
+
+    # Extract invitation data if URL is provided
+    invitation_extras: dict[str, Any] | None = None
+    if invitation_url:
+        invitation_result = await invitations_service.extract_invitation(
+            app,
+            invitation_url,
+        )
+        if invitation_result:
+            invitation_extras = {"invitation": invitation_result.model_dump(mode="json")}
 
     # Update the pre-registration status to APPROVED using the reviewer's ID
     await _accounts_repository.review_user_pre_registration(

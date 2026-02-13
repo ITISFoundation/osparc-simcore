@@ -155,18 +155,13 @@ async def approve_user_account(request: web.Request) -> web.Response:
 
     approval_data = await parse_request_body_as(UserAccountApprove, request)
 
-    invitation_result = await invitations_service.extract_invitation(
-        request.app,
-        f"{approval_data.invitation_url}",
-    )
-
     # Approve the user account, passing the current user's ID as the reviewer
     pre_registration_id = await _accounts_service.approve_user_account(
         request.app,
         pre_registration_email=approval_data.email,
         product_name=req_ctx.product_name,
         reviewer_id=req_ctx.user_id,
-        invitation_extras=({"invitation": invitation_result.model_dump(mode="json")} if invitation_result else None),
+        invitation_url=f"{approval_data.invitation_url}" if approval_data.invitation_url else None,
         message_content=approval_data.message_content.model_dump() if approval_data.message_content else None,
     )
     assert pre_registration_id  # nosec
