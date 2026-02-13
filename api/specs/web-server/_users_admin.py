@@ -12,8 +12,10 @@ from fastapi import APIRouter, Depends, status
 from models_library.api_schemas_webserver.users import (
     UserAccountApprove,
     UserAccountGet,
-    UserAccountPreviewApprovalBody,
+    UserAccountPreviewApproval,
     UserAccountPreviewApprovalGet,
+    UserAccountPreviewRejection,
+    UserAccountPreviewRejectionGet,
     UserAccountReject,
     UserAccountSearchQueryParams,
     UsersAccountListQueryParams,
@@ -51,7 +53,7 @@ async def approve_user_account(_body: UserAccountApprove): ...
     response_model=Envelope[UserAccountPreviewApprovalGet],
     tags=_extra_tags,
 )
-async def preview_approval_user_account(_body: UserAccountPreviewApprovalBody): ...
+async def preview_approval_user_account(_body: UserAccountPreviewApproval): ...
 
 
 @router.post(
@@ -60,6 +62,14 @@ async def preview_approval_user_account(_body: UserAccountPreviewApprovalBody): 
     tags=_extra_tags,
 )
 async def reject_user_account(_body: UserAccountReject): ...
+
+
+@router.post(
+    "/admin/user-accounts:preview-rejection",
+    response_model=Envelope[UserAccountPreviewRejectionGet],
+    tags=_extra_tags,
+)
+async def preview_rejection_user_account(_body: UserAccountPreviewRejection): ...
 
 
 @router.get(
