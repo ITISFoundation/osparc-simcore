@@ -211,37 +211,17 @@ async def preview_approval_user_account(request: web.Request) -> web.Response:
 
         invitation_url = invitation_result.invitation_url
 
-        # get pre-registration data
-    found = await _accounts_service.search_users_accounts(
+    # Get preview of approval notification
+    preview_data = await _accounts_service.preview_approval_user_account(
         request.app,
-        filter_by_email_glob=approval_data.email,
+        approval_email=approval_data.email,
         product_name=req_ctx.product_name,
-        include_products=False,
-    )
-    user_account = found[0]
-    assert user_account.email == approval_data.email  # nosec
-
-    preview = await notifications_service.preview_template(
-        app=request.app,
-        product_name=req_ctx.product_name,
-        ref=TemplateRef(
-            channel=ChannelType.email,
-            template_name="account_approved",
-        ),
-        context={
-            "user": {
-                "first_name": user_account.first_name,
-            },
-            "link": invitation_url,
-            "trial_account_days": approval_data.invitation.trial_account_days,
-            "extra_credits_in_usd": approval_data.invitation.extra_credits_in_usd,
-        },
+        invitation_url=f"{invitation_url}",
+        trial_account_days=approval_data.invitation.trial_account_days,
+        extra_credits_in_usd=approval_data.invitation.extra_credits_in_usd,
     )
 
-    response = UserAccountPreviewApprovalGet(
-        invitation_url=invitation_url,
-        message_content=TypeAdapter(MessageContentGet).validate_python(preview.message_content),
-    )
+    response = UserAccountPreviewApprovalGet(**preview_data.model_dump())
 
     return envelope_json_response(response.model_dump(**_RESPONSE_MODEL_MINIMAL_POLICY))
 

@@ -344,7 +344,7 @@ class UserAccountPreviewApproval(InputSchema):
 
 
 class UserAccountPreviewApprovalGet(OutputSchema):
-    invitation_url: HttpUrl | None
+    invitation_url: HttpUrl
     message_content: MessageContentGet | None = None
 
 

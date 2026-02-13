@@ -6,14 +6,16 @@ from annotated_types import doc
 from common_library.users_enums import AccountRequestStatus
 from models_library.api_schemas_webserver.users import UserAccountGet
 from models_library.emails import LowerCaseEmailStr
-from models_library.notifications import ChannelType
+from models_library.notifications import ChannelType, TemplateRef
 from models_library.products import ProductName
 from models_library.users import UserID
+from pydantic import PositiveInt
 
 from ..db.plugin import get_asyncpg_engine
 from ..notifications import notifications_service
 from ..notifications._models import EmailContact
 from . import _accounts_repository, _users_repository
+from ._models import PreviewApproval
 from .exceptions import (
     AlreadyPreRegisteredError,
     PendingPreRegistrationNotFoundError,
@@ -342,3 +344,64 @@ async def reject_user_account(
         )
 
     return pre_registration_id
+
+
+async def preview_approval_user_account(
+    app: web.Application,
+    *,
+    approval_email: str,
+    product_name: ProductName,
+    invitation_url: str,
+    trial_account_days: Annotated[
+        PositiveInt | None,
+        doc("Number of days for trial account validity"),
+    ] = None,
+    extra_credits_in_usd: Annotated[
+        PositiveInt | None,
+        doc("Extra credits to be assigned in USD"),
+    ] = None,
+) -> PreviewApproval:
+    """Preview the approval notification for a user account.
+
+    Retrieves user pre-registration data and generates a preview of the
+    account_approved email template with the provided invitation and credits.
+
+    Raises:
+        PendingPreRegistrationNotFoundError: If no pre-registration is found for the email/product
+    """
+    # Get pre-registration data
+    found = await search_users_accounts(
+        app,
+        filter_by_email_glob=approval_email,
+        product_name=product_name,
+        include_products=False,
+    )
+
+    if not found:
+        raise PendingPreRegistrationNotFoundError(email=approval_email, product_name=product_name)
+
+    user_account = found[0]
+    assert user_account.email == approval_email  # nosec
+
+    # Preview the notification template
+    preview = await notifications_service.preview_template(
+        app=app,
+        product_name=product_name,
+        ref=TemplateRef(
+            channel=ChannelType.email,
+            template_name="account_approved",
+        ),
+        context={
+            "user": {
+                "first_name": user_account.first_name,
+            },
+            "link": invitation_url,
+            "trial_account_days": trial_account_days,
+            "extra_credits_in_usd": extra_credits_in_usd,
+        },
+    )
+
+    return PreviewApproval(
+        invitation_url=invitation_url,
+        message_content=preview.message_content,
+    )
