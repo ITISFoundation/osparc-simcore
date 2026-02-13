@@ -6,10 +6,13 @@ from annotated_types import doc
 from common_library.users_enums import AccountRequestStatus
 from models_library.api_schemas_webserver.users import UserAccountGet
 from models_library.emails import LowerCaseEmailStr
+from models_library.notifications import ChannelType
 from models_library.products import ProductName
 from models_library.users import UserID
 
 from ..db.plugin import get_asyncpg_engine
+from ..notifications import notifications_service
+from ..notifications._models import EmailContact
 from . import _accounts_repository, _users_repository
 from .exceptions import (
     AlreadyPreRegisteredError,
@@ -265,9 +268,12 @@ async def reject_user_account(
     pre_registration_email: LowerCaseEmailStr,
     product_name: ProductName,
     reviewer_id: UserID,
+    message_content: Annotated[
+        dict[str, Any] | None,
+        doc("Optional message content to send to the rejected user"),
+    ] = None,
 ) -> Annotated[int, doc("The ID of the rejected pre-registration record")]:
     """Reject a user account based on their pre-registration email.
-
 
     Raises:
         PendingPreRegistrationNotFoundError: If no pre-registration is found for the email/product
@@ -296,5 +302,17 @@ async def reject_user_account(
         reviewed_by=reviewer_id,
         new_status=AccountRequestStatus.REJECTED,
     )
+
+    # Send email to user if message content is provided
+    if message_content:
+        await notifications_service.send_message(
+            app,
+            user_id=reviewer_id,
+            product_name=product_name,
+            channel=ChannelType.email,
+            group_ids=None,
+            external_contacts=[EmailContact(email=pre_registration_email)],
+            content=message_content,
+        )
 
     return pre_registration_id

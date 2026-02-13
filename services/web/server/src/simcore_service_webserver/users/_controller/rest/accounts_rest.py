@@ -297,20 +297,9 @@ async def reject_user_account(request: web.Request) -> web.Response:
         pre_registration_email=rejection_data.email,
         product_name=req_ctx.product_name,
         reviewer_id=req_ctx.user_id,
+        message_content=rejection_data.message_content.model_dump() if rejection_data.message_content else None,
     )
     assert pre_registration_id  # nosec
-
-    # send email to user
-    if rejection_data.message_content:
-        await notifications_service.send_message(
-            request.app,
-            user_id=req_ctx.user_id,
-            product_name=req_ctx.product_name,
-            channel=ChannelType.email,
-            group_ids=None,
-            external_contacts=[EmailContact(email=rejection_data.email)],
-            content=rejection_data.message_content.model_dump(),
-        )
 
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
 
