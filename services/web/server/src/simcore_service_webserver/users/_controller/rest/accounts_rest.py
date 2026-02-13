@@ -221,10 +221,7 @@ async def preview_approval_user_account(request: web.Request) -> web.Response:
         extra_credits_in_usd=approval_data.invitation.extra_credits_in_usd,
     )
 
-    response = UserAccountPreviewApprovalGet(
-        invitation_url=preview_result.invitation_url,
-        message_content=TypeAdapter(MessageContentGet).validate_python(preview_result.message_content),
-    )
+    response = UserAccountPreviewApprovalGet(**preview_result.model_dump())
 
     return envelope_json_response(response.model_dump(**_RESPONSE_MODEL_MINIMAL_POLICY))
 
