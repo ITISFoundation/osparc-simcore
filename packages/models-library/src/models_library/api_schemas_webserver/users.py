@@ -340,7 +340,7 @@ class UserAccountApprove(InputSchema):
 
 class UserAccountPreviewApproval(InputSchema):
     email: EmailStr
-    invitation: _InvitationDetails | None = None
+    invitation: _InvitationDetails
 
 
 class UserAccountPreviewApprovalGet(OutputSchema):

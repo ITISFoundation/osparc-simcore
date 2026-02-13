@@ -214,39 +214,37 @@ async def preview_approval_user_account(request: web.Request) -> web.Response:
 
     approval_data = await parse_request_body_as(UserAccountPreviewApproval, request)
 
-    invitation_url = None
-    if approval_data.invitation:
-        with log_context(
-            _logger,
-            logging.DEBUG,
-            "User is being approved with invitation %s for user %s",
-            approval_data.invitation.model_dump_json(indent=1),
-            approval_data.email,
-        ):
-            # Generate invitation
-            invitation_params = ApiInvitationInputs(
-                issuer=str(req_ctx.user_id),
-                guest=approval_data.email,
-                trial_account_days=approval_data.invitation.trial_account_days,
-                extra_credits_in_usd=approval_data.invitation.extra_credits_in_usd,
-                product=req_ctx.product_name,
-            )
+    with log_context(
+        _logger,
+        logging.DEBUG,
+        "User is being approved with invitation %s for user %s",
+        approval_data.invitation.model_dump_json(indent=1),
+        approval_data.email,
+    ):
+        # Generate invitation
+        invitation_params = ApiInvitationInputs(
+            issuer=str(req_ctx.user_id),
+            guest=approval_data.email,
+            trial_account_days=approval_data.invitation.trial_account_days,
+            extra_credits_in_usd=approval_data.invitation.extra_credits_in_usd,
+            product=req_ctx.product_name,
+        )
 
-            invitation_result = await invitations_service.generate_invitation(
-                request.app,
-                params=invitation_params,
-                product_origin_url=request.url.origin(),
-            )
+        invitation_result = await invitations_service.generate_invitation(
+            request.app,
+            params=invitation_params,
+            product_origin_url=request.url.origin(),
+        )
 
-            assert (  # nosec
-                invitation_result.extra_credits_in_usd == approval_data.invitation.extra_credits_in_usd
-            )
-            assert (  # nosec
-                invitation_result.trial_account_days == approval_data.invitation.trial_account_days
-            )
-            assert invitation_result.guest == approval_data.email  # nosec
+        assert (  # nosec
+            invitation_result.extra_credits_in_usd == approval_data.invitation.extra_credits_in_usd
+        )
+        assert (  # nosec
+            invitation_result.trial_account_days == approval_data.invitation.trial_account_days
+        )
+        assert invitation_result.guest == approval_data.email  # nosec
 
-            invitation_url = invitation_result.invitation_url
+        invitation_url = invitation_result.invitation_url
 
         # get pre-registration data
     found = await _accounts_service.search_users_accounts(
@@ -270,6 +268,8 @@ async def preview_approval_user_account(request: web.Request) -> web.Response:
                 "first_name": user_account.first_name,
             },
             "link": invitation_url,
+            "trial_account_days": approval_data.invitation.trial_account_days,
+            "extra_credits_in_usd": approval_data.invitation.extra_credits_in_usd,
         },
     )
 
@@ -342,7 +342,7 @@ async def preview_rejection_user_account(request: web.Request) -> web.Response:
         ),
         context={
             "user": {
-                "first_name": user_account.first_name or "User",
+                "first_name": user_account.first_name,
             },
         },
     )

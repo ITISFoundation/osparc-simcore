@@ -7,6 +7,16 @@
   Thank you for your interest in {{ product.display_name }}. We are pleased to provide you with a one-time invitation link to register on the platform.
 </p>
 
+{% if trial_account_days %}
+<p>Your account includes a {{ trial_account_days }}-day trial period.</p>
+{% else %}
+<p>Your account includes unlimited access.</p>
+{% endif %}
+
+{% if extra_credits_in_usd %}
+<p>You also receive {{ extra_credits_in_usd }} in extra USD credits.</p>
+{% endif %}
+
 <p>
   Click <a href="{{ link }}">here</a> to access the registration page.
 </p>
