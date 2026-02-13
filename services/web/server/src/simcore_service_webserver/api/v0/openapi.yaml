@@ -7736,8 +7736,7 @@ paths:
         in: path
         required: true
         schema:
-          type: string
-          title: File Id
+          $ref: '#/components/schemas/StorageFileIDStr'
       responses:
         '200':
           description: Successful Response
@@ -7766,8 +7765,7 @@ paths:
         in: path
         required: true
         schema:
-          type: string
-          title: File Id
+          $ref: '#/components/schemas/StorageFileIDStr'
       - name: link_type
         in: query
         required: false
@@ -7798,8 +7796,7 @@ paths:
         in: path
         required: true
         schema:
-          type: string
-          title: File Id
+          $ref: '#/components/schemas/StorageFileIDStr'
       - name: file_size
         in: query
         required: true
@@ -7851,8 +7848,7 @@ paths:
         in: path
         required: true
         schema:
-          type: string
-          title: File Id
+          $ref: '#/components/schemas/StorageFileIDStr'
       responses:
         '204':
           description: Successful Response
@@ -7876,8 +7872,7 @@ paths:
         in: path
         required: true
         schema:
-          type: string
-          title: File Id
+          $ref: '#/components/schemas/StorageFileIDStr'
       responses:
         '204':
           description: Successful Response
@@ -7899,8 +7894,7 @@ paths:
         in: path
         required: true
         schema:
-          type: string
-          title: File Id
+          $ref: '#/components/schemas/StorageFileIDStr'
       requestBody:
         required: true
         content:
@@ -7932,8 +7926,7 @@ paths:
         in: path
         required: true
         schema:
-          type: string
-          title: File Id
+          $ref: '#/components/schemas/StorageFileIDStr'
       - name: future_id
         in: path
         required: true
@@ -17137,6 +17130,11 @@ components:
             modern=V2).Since legacy services do not have this label it defaults to
             V0.
           default: V0
+        data_mounting_enabled:
+          type: boolean
+          title: Data Mounting Enabled
+          description: True if the service has mounted data volumes
+          default: false
         service_host:
           type: string
           title: Service Host
@@ -17970,6 +17968,8 @@ components:
       - loop_tasks
       - top_tracemalloc
       title: StatusDiagnosticsGet
+    StorageFileIDStr:
+      type: string
     Structure:
       properties:
         key:

@@ -165,6 +165,12 @@
             "description": "Describes how the dynamic services was started (legacy=V0, modern=V2).Since legacy services do not have this label it defaults to V0.",
             "default": "V0"
           },
+          "data_mounting_enabled": {
+            "type": "boolean",
+            "title": "Data Mounting Enabled",
+            "description": "True if the service has mounted data volumes",
+            "default": false
+          },
           "service_host": {
             "type": "string",
             "title": "Service Host",
