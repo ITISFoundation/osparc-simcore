@@ -11,3 +11,5 @@ class User(BaseModel):
 class TemplateContext(BaseTemplateContext):
     user: User
     link: HttpUrl
+    trial_account_days: int | None = None
+    extra_credits_in_usd: int | None = None
