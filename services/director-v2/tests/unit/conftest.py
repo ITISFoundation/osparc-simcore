@@ -11,6 +11,7 @@ from unittest import mock
 import aiodocker
 import pytest
 import respx
+from common_library.serialization import model_dump_with_secrets
 from faker import Faker
 from fastapi import FastAPI
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceCreate
@@ -191,12 +192,10 @@ def fake_s3_settings(faker: Faker) -> S3Settings:
 
 @pytest.fixture
 def fake_s3_envs(fake_s3_settings: S3Settings) -> EnvVarsDict:
-    return fake_s3_settings.model_dump(
-        exclude={"S3_ACCESS_KEY", "S3_SECRET_KEY"},
-    ) | {
-        "S3_ACCESS_KEY": fake_s3_settings.S3_ACCESS_KEY.get_secret_value(),
-        "S3_SECRET_KEY": fake_s3_settings.S3_SECRET_KEY.get_secret_value(),
-    }
+    return model_dump_with_secrets(
+        fake_s3_settings,
+        show_secrets=True,
+    )
 
 
 @pytest.fixture
