@@ -46,8 +46,8 @@ qx.Class.define("osparc.message.Messages", {
           "groupIds": group_ids,
           "content": {
             "subject": subject,
-            "body_html": bodyHtml,
-            "body_text": bodyText,
+            "bodyHtml": bodyHtml,
+            "bodyText": bodyText,
           },
         },
       };

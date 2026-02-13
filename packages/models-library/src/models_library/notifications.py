@@ -21,14 +21,10 @@ class EmailContact(BaseModel):
     email: EmailStr
 
 
-class EmailMessageContentBody(BaseModel):
-    html: str | None = None
-    text: str | None = None
-
-
 class EmailMessageContent(BaseModel):
     subject: Annotated[str, Field(min_length=1, max_length=998)]
-    body: EmailMessageContentBody
+    body_html: str | None = None
+    body_text: str | None = None
 
 
 type NotificationsMessageContent = (
