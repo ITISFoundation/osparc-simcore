@@ -13,7 +13,7 @@
 <p>Your account includes unlimited access.</p>
 {% endif %}
 
-{% if extra_credits_in_usd %}
+{% if extra_credits_in_usd is defined and extra_credits_in_usd %}
 <p>You also receive {{ extra_credits_in_usd }} extra USD credits.</p>
 {% endif %}
 
