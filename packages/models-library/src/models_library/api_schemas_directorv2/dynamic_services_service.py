@@ -107,7 +107,7 @@ class RunningDynamicServiceDetails(ServiceDetails):
                         "project_id": "32fb4eb6-ab30-11ef-9ee4-0242ac140008",
                         "service_uuid": "0cd049ba-cd6b-4a12-b416-a50c9bc8e7bb",
                         "service_basepath": "/x/0cd049ba-cd6b-4a12-b416-a50c9bc8e7bb",
-                        "service_host": "raw-graphs_0cd049bb-cd6b-4a12-b416-a50c9bc8e7bb",
+                        "service_host": "raw-graphs_0cd049ba-cd6b-4a12-b416-a50c9bc8e7bb",
                         "service_port": 4000,
                         "published_port": None,
                         "entry_point": "",
