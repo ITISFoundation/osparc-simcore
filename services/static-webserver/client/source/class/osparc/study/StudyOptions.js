@@ -363,6 +363,7 @@ qx.Class.define("osparc.study.StudyOptions", {
       const win = osparc.form.tag.TagManager.popUpInWindow(tagManager);
       if (this.isPatchStudy()) {
         // this is used when the project was already created and we want to update the tags
+        tagManager.setLiveUpdate(true);
         tagManager.addListener("updateTags", e => {
           win.close();
           const updatedData = e.getData();
@@ -380,6 +381,10 @@ qx.Class.define("osparc.study.StudyOptions", {
           this.__repopulateTags();
         }, this);
       }
+    },
+
+    getSelectedTags: function() {
+      return this.__studyData["tags"] || [];
     },
 
     __addWalletSelector: function() {
