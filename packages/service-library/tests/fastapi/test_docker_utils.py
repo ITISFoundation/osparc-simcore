@@ -96,11 +96,11 @@ async def mocked_progress_cb(mocker: MockerFixture) -> mock.AsyncMock:
 def _assert_progress_report_values(mocked_progress_cb: mock.AsyncMock, *, total: float) -> None:
     # NOTE: we exclude the message part here as this is already tested in servicelib
     # check first progress
-    assert mocked_progress_cb.call_args_list[0].args[0].dict(exclude={"message", "attempt"}) == ProgressReport(
+    assert mocked_progress_cb.call_args_list[0].args[0].model_dump(exclude={"message", "attempt"}) == ProgressReport(
         actual_value=0, total=total, unit="Byte"
     ).model_dump(exclude={"message", "attempt"})
     # check last progress
-    assert mocked_progress_cb.call_args_list[-1].args[0].dict(exclude={"message", "attempt"}) == ProgressReport(
+    assert mocked_progress_cb.call_args_list[-1].args[0].model_dump(exclude={"message", "attempt"}) == ProgressReport(
         actual_value=total, total=total, unit="Byte"
     ).model_dump(exclude={"message", "attempt"})
 
@@ -233,6 +233,7 @@ async def test_pull_image_without_layer_information(
     [
         {"itisfoundation/sleeper:1.0.0", "nginx:latest", "busybox:latest"},
     ],
+    ids=str,
 )
 async def test_pull_images_set(
     remove_images_from_host: Callable[[list[str]], Awaitable[None]],
