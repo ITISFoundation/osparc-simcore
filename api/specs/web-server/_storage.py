@@ -77,7 +77,7 @@ async def list_storage_paths(
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def refresh_files_in_path(_path: Annotated[StoragePathRefreshParams, Depends()]):
-    """triggers a reaload of the files from S3 for a given directory"""
+    """triggers a reload of the files from S3 for a given directory"""
 
 
 @router.post(

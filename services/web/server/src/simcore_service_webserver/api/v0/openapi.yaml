@@ -7541,7 +7541,7 @@ paths:
       tags:
       - storage
       summary: Refresh Files In Path
-      description: triggers a reaload of the files from S3 for a given directory
+      description: triggers a reload of the files from S3 for a given directory
       operationId: refresh_files_in_path
       parameters:
       - name: location_id
