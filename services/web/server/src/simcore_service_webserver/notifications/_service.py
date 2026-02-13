@@ -6,7 +6,7 @@ from celery_library.async_jobs import submit_job
 from common_library.network import NO_REPLY_DISPLAY_NAME, NO_REPLY_LOCAL
 from models_library.api_schemas_async_jobs.async_jobs import AsyncJobGet
 from models_library.groups import GroupID
-from models_library.notifications import ChannelType, NotificationsTemplatePreview, TemplateRef
+from models_library.notifications import ChannelType, TemplatePreview, TemplateRef
 from models_library.notifications_errors import (
     NotificationsNoActiveRecipientsError,
     NotificationsUnsupportedChannelError,
@@ -112,7 +112,7 @@ async def preview_template(
     product_name: ProductName,
     ref: TemplateRef,
     context: dict[str, Any],
-) -> NotificationsTemplatePreview:
+) -> TemplatePreview:
     product_data = get_product_data(app, product_name=product_name)
 
     enriched_context = {**context, "product": asdict(product_data)}
@@ -127,7 +127,7 @@ async def preview_template(
         request=request,
     )
 
-    return NotificationsTemplatePreview(**preview.model_dump())
+    return TemplatePreview(**preview.model_dump())
 
 
 async def send_message(

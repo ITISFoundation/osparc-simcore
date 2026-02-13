@@ -16,19 +16,23 @@ class TemplateRef(BaseModel):
     template_name: TemplateName
 
 
-class NotificationsEmailAddress(BaseModel):
-    display_name: str
-    addr_spec: EmailStr
+class EmailContact(BaseModel):
+    name: str
+    email: EmailStr
 
 
-class NotificationsEmailMessageContent(BaseModel):
-    subject: str
-    body_html: str
-    body_text: str
+class EmailMessageContentBody(BaseModel):
+    html: str | None = None
+    text: str | None = None
+
+
+class EmailMessageContent(BaseModel):
+    subject: Annotated[str, Field(min_length=1, max_length=998)]
+    body: EmailMessageContentBody
 
 
 type NotificationsMessageContent = (
-    NotificationsEmailMessageContent
+    EmailMessageContent
     # add here other channel contents (e.g. | SMSNotificationsContent)
 )
 
@@ -37,13 +41,13 @@ class NotificationsMessage(BaseModel):
     channel: ChannelType
 
 
-class NotificationsEmailMessage(NotificationsMessage):
+class EmailMessage(NotificationsMessage):
     channel: ChannelType = ChannelType.email
-    from_: Annotated[NotificationsEmailAddress, Field(alias="from")]
-    to: list[NotificationsEmailAddress]
-    content: NotificationsEmailMessageContent
+    from_: Annotated[EmailContact, Field(alias="from")]
+    to: list[EmailContact]
+    content: EmailMessageContent
 
 
-class NotificationsTemplatePreview(BaseModel):
+class TemplatePreview(BaseModel):
     ref: TemplateRef
-    content: dict[str, Any]
+    message_content: dict[str, Any]
