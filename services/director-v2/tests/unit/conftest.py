@@ -207,10 +207,14 @@ def mocked_storage_service_api(
     assert settings.DIRECTOR_V2_STORAGE
 
     # Prepare response data with exposed secrets (same as real endpoint)
-    response_data = model_dump_with_secrets(
-        fake_s3_settings,
-        show_secrets=True,
-    )
+    response_data = {
+        "S3_ACCESS_KEY": fake_s3_settings.S3_ACCESS_KEY.get_secret_value(),
+        "S3_SECRET_KEY": fake_s3_settings.S3_SECRET_KEY.get_secret_value(),
+        "S3_BUCKET_NAME": fake_s3_settings.S3_BUCKET_NAME,
+        "S3_REGION": fake_s3_settings.S3_REGION,
+    }
+    if fake_s3_settings.S3_ENDPOINT:
+        response_data["S3_ENDPOINT"] = str(fake_s3_settings.S3_ENDPOINT)
 
     # pylint: disable=not-context-manager
     with respx.mock(  # type: ignore
