@@ -8,8 +8,10 @@ from models_library.api_schemas_webserver.notifications import MessageContentGet
 from models_library.api_schemas_webserver.users import (
     UserAccountApprove,
     UserAccountGet,
-    UserAccountPreviewApprovalBody,
+    UserAccountPreviewApproval,
     UserAccountPreviewApprovalGet,
+    UserAccountPreviewRejection,
+    UserAccountPreviewRejectionGet,
     UserAccountReject,
     UserAccountSearchQueryParams,
     UsersAccountListQueryParams,
@@ -25,10 +27,8 @@ from servicelib.aiohttp.requests_validation import (
 )
 from servicelib.logging_utils import log_context
 from servicelib.rest_constants import RESPONSE_MODEL_POLICY
-from servicelib.utils import fire_and_forget_task
 
 from ...._meta import API_VTAG
-from ....constants import APP_FIRE_AND_FORGET_TASKS_KEY
 from ....invitations import api as invitations_service
 from ....login.decorators import login_required
 from ....notifications import notifications_service
@@ -212,7 +212,7 @@ async def preview_approval_user_account(request: web.Request) -> web.Response:
     req_ctx = UsersRequestContext.model_validate(request)
     assert req_ctx.product_name  # nosec
 
-    approval_data = await parse_request_body_as(UserAccountPreviewApprovalBody, request)
+    approval_data = await parse_request_body_as(UserAccountPreviewApproval, request)
 
     invitation_url = None
     if approval_data.invitation:
@@ -300,36 +300,55 @@ async def reject_user_account(request: web.Request) -> web.Response:
     )
     assert pre_registration_id  # nosec
 
-    # Send rejection email to user
-    with log_context(
-        _logger,
-        logging.INFO,
-        "Sending rejection email to %s ...",
-        rejection_data.email,
-    ):
-        # get pre-registration data
-        found = await _accounts_service.search_users_accounts(
+    # send email to user
+    if rejection_data.message_content:
+        await notifications_service.send_message(
             request.app,
-            filter_by_email_glob=rejection_data.email,
+            user_id=req_ctx.user_id,
             product_name=req_ctx.product_name,
-            include_products=False,
-        )
-        user_account = found[0]
-        assert user_account.pre_registration_id == pre_registration_id  # nosec
-        assert user_account.email == rejection_data.email  # nosec
-
-        # send email to user
-        fire_and_forget_task(
-            _accounts_service.send_rejection_email_to_user(
-                request.app,
-                product_name=req_ctx.product_name,
-                user_email=rejection_data.email,
-                first_name=user_account.first_name or "User",
-                last_name=user_account.last_name or "",
-                host=request.host,
-            ),
-            task_suffix_name=f"{__name__}.send_rejection_email_to_user.{rejection_data.email}",
-            fire_and_forget_tasks_collection=request.app[APP_FIRE_AND_FORGET_TASKS_KEY],
+            channel=ChannelType.email,
+            group_ids=None,
+            external_contacts=[EmailContact(email=rejection_data.email)],
+            content=rejection_data.message_content.model_dump(),
         )
 
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
+
+
+@routes.post(f"/{API_VTAG}/admin/user-accounts:preview-rejection", name="preview_rejection_user_account")
+@login_required
+@permission_required("admin.users.write")
+@handle_rest_requests_exceptions
+async def preview_rejection_user_account(request: web.Request) -> web.Response:
+    req_ctx = UsersRequestContext.model_validate(request)
+    assert req_ctx.product_name  # nosec
+
+    rejection_data = await parse_request_body_as(UserAccountPreviewRejection, request)
+    found = await _accounts_service.search_users_accounts(
+        request.app,
+        filter_by_email_glob=rejection_data.email,
+        product_name=req_ctx.product_name,
+        include_products=False,
+    )
+    user_account = found[0]
+    assert user_account.email == rejection_data.email  # nosec
+
+    preview = await notifications_service.preview_template(
+        app=request.app,
+        product_name=req_ctx.product_name,
+        ref=TemplateRef(
+            channel=ChannelType.email,
+            template_name="account_rejected",
+        ),
+        context={
+            "user": {
+                "first_name": user_account.first_name or "User",
+            },
+        },
+    )
+
+    response = UserAccountPreviewRejectionGet(
+        message_content=TypeAdapter(MessageContentGet).validate_python(preview.message_content),
+    )
+
+    return envelope_json_response(response.model_dump(**_RESPONSE_MODEL_MINIMAL_POLICY))

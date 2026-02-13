@@ -327,13 +327,18 @@ class _InvitationDetails(InputSchema):
     extra_credits_in_usd: WelcomeCreditsAnnotated = None
 
 
+#
+# Account approval
+#
+
+
 class UserAccountApprove(InputSchema):
     email: EmailStr
     invitation_url: HttpUrl
     message_content: MessageContent | None = None
 
 
-class UserAccountPreviewApprovalBody(InputSchema):
+class UserAccountPreviewApproval(InputSchema):
     email: EmailStr
     invitation: _InvitationDetails | None = None
 
@@ -343,8 +348,22 @@ class UserAccountPreviewApprovalGet(OutputSchema):
     message_content: MessageContentGet | None = None
 
 
+#
+# Account rejection
+#
+
+
 class UserAccountReject(InputSchema):
     email: EmailStr
+    message_content: MessageContent | None = None
+
+
+class UserAccountPreviewRejection(InputSchema):
+    email: EmailStr
+
+
+class UserAccountPreviewRejectionGet(OutputSchema):
+    message_content: MessageContentGet | None = None
 
 
 class UserAccountSearchQueryParams(RequestParameters):
