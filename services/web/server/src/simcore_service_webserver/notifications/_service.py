@@ -37,15 +37,18 @@ def _get_user_display_name(user: dict) -> str:
 
 
 async def _collect_active_recipients(app: web.Application, group_ids: list[GroupID]) -> list[EmailContact]:
-    from ..users import users_service  # noqa: PLC0415
+    from ..users._users_service import (  # noqa: PLC0415
+        get_active_users_email_data,
+        get_users_in_group,
+    )
 
     # Collect all unique user IDs from all groups
     all_user_ids: set[UserID] = set()
     for group_id in group_ids:
-        user_ids = await users_service.get_users_in_group(app, gid=group_id)
+        user_ids = await get_users_in_group(app, gid=group_id)
         all_user_ids.update(user_ids)
 
-    active_users = await users_service.get_active_users_email_data(app, user_ids=list(all_user_ids))
+    active_users = await get_active_users_email_data(app, user_ids=list(all_user_ids))
 
     # Deduplicate by email address while preserving order
     recipients_dict: dict[str, EmailContact] = {}

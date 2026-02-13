@@ -16,7 +16,6 @@ from models_library.users import UserID, UserNameID
 from pydantic import EmailStr
 
 from ..products.models import Product
-from ..users import users_service
 from . import _groups_repository
 from .exceptions import GroupNotFoundError, GroupsError
 
@@ -99,7 +98,9 @@ async def get_user_profile_groups(
 
     product_chatbot_primary_group = None
     if product.support_chatbot_user_id:
-        _group_id = await users_service.get_user_primary_group_id(app, user_id=product.support_chatbot_user_id)
+        from .._users._users_service import get_user_primary_group_id  # noqa: PLC0415
+
+        _group_id = await get_user_primary_group_id(app, user_id=product.support_chatbot_user_id)
         product_chatbot_primary_group = await get_group_by_gid(app, _group_id)
 
     return (
@@ -251,7 +252,9 @@ async def is_user_in_group(app: web.Application, *, user_id: UserID, group_id: G
 
 
 async def auto_add_user_to_groups(app: web.Application, user_id: UserID) -> None:
-    user: dict = await users_service.get_user(app, user_id)
+    from .._users._users_service import get_user  # noqa: PLC0415
+
+    user: dict = await get_user(app, user_id)
     return await _groups_repository.auto_add_user_to_groups(app, user=user)
 
 
@@ -299,7 +302,9 @@ async def add_user_in_group(
         new_by_user_id = user.id
 
     if new_by_user_id is not None:
-        new_user = await users_service.get_user(app, new_by_user_id)
+        from .._users._users_service import get_user  # noqa: PLC0415
+
+        new_user = await get_user(app, new_by_user_id)
         new_by_user_name = new_user["name"]
 
     return await _groups_repository.add_new_user_in_group(

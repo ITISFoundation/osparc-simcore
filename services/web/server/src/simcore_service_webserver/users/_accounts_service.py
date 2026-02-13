@@ -12,7 +12,6 @@ from models_library.users import UserID
 from pydantic import PositiveInt
 
 from ..db.plugin import get_asyncpg_engine
-from ..notifications._models import EmailContact
 from . import _accounts_repository, _users_repository
 from ._models import PreviewApproval
 from .exceptions import (
@@ -277,6 +276,7 @@ async def approve_user_account(
     # Send email to user if message content is provided
     if message_content:
         from ..notifications import notifications_service as ns  # noqa: PLC0415
+        from ..notifications._models import EmailContact  # noqa: PLC0415  # noqa: PLC0415
 
         await ns.send_message(
             app,
@@ -335,6 +335,7 @@ async def reject_user_account(
     # Send email to user if message content is provided
     if message_content:
         from ..notifications import notifications_service as ns  # noqa: PLC0415
+        from ..notifications._models import EmailContact  # noqa: PLC0415
 
         await ns.send_message(
             app,
