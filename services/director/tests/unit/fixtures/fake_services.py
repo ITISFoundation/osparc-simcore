@@ -204,7 +204,7 @@ def _clean_registry(list_of_images: list[ServiceInRegistryInfoDict]) -> None:
         registry_url = image["image_path"].split("/")[0]
 
         url = f"http://{registry_url}/v2/{name}/manifests/{tag}"
-        response = requests.get(url, timeout=10)
+        response = requests.get(url, headers=request_headers, timeout=10)
         if response.status_code == 404:
             _logger.warning("Image %s not found in registry, skipping deletion", image["image_path"])
             continue
