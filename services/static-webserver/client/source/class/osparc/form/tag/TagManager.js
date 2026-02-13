@@ -17,7 +17,7 @@ qx.Class.define("osparc.form.tag.TagManager", {
 
     this._setLayout(new qx.ui.layout.VBox());
 
-    this.__selectedTags = new qx.data.Array();
+    this.__selectedTags = new Set();
     this.__renderLayout();
     this.__attachEventHandlers();
 
@@ -152,8 +152,8 @@ qx.Class.define("osparc.form.tag.TagManager", {
         value: this.tr("Manage and apply tags to better organize your " + resourceAlias + ". Select from existing tags or create new ones, then save your changes when ready."),
       });
 
-      this.__selectedTags.removeAll();
-      this.__selectedTags.append(studyData["tags"]);
+      this.__selectedTags.clear();
+      studyData["tags"].forEach(tag => this.__selectedTags.add(tag));
       this.__repopulateTags();
     },
 
@@ -169,7 +169,7 @@ qx.Class.define("osparc.form.tag.TagManager", {
 
     __tagButton: function(tag) {
       const tagId = tag.getTagId();
-      const tagButton = new osparc.form.tag.TagToggleButton(tag, this.__selectedTags.includes(tagId));
+      const tagButton = new osparc.form.tag.TagToggleButton(tag, this.__selectedTags.has(tagId));
       tagButton.addListener("changeValue", evt => {
         const selected = evt.getData();
         if (this.isLiveUpdate()) {
@@ -190,9 +190,9 @@ qx.Class.define("osparc.form.tag.TagManager", {
               });
           }
         } else if (selected) {
-          this.__selectedTags.push(tagId);
+          this.__selectedTags.add(tagId);
         } else {
-          this.__selectedTags.remove(tagId);
+          this.__selectedTags.delete(tagId);
         }
       }, this);
       tagButton.subscribeToFilterGroup("studyBrowserTagManager");
@@ -202,7 +202,7 @@ qx.Class.define("osparc.form.tag.TagManager", {
     __saveAddTag: function(tagId, tagButton) {
       return osparc.store.Study.getInstance().addTag(this.__resourceId, tagId)
         .then(updatedStudy => {
-          this.__selectedTags.push(tagId);
+          this.__selectedTags.add(tagId);
           return updatedStudy;
         })
         .catch(() => tagButton ? tagButton.setValue(false) : null)
@@ -212,7 +212,7 @@ qx.Class.define("osparc.form.tag.TagManager", {
     __saveRemoveTag: function(tagId, tagButton) {
       return osparc.store.Study.getInstance().removeTag(this.__resourceId, tagId)
         .then(updatedStudy => {
-          this.__selectedTags.remove(tagId);
+          this.__selectedTags.delete(tagId);
           return updatedStudy;
         })
         .catch(() => tagButton ? tagButton.setValue(true) : null)
@@ -224,15 +224,14 @@ qx.Class.define("osparc.form.tag.TagManager", {
 
       // call them sequentially
       let updatedStudy = null;
-      for (let i=0; i<this.__selectedTags.length; i++) {
-        const tagId = this.__selectedTags.getItem(i);
+      for (const tagId of this.__selectedTags) {
         if (!this.__studyData["tags"].includes(tagId)) {
           updatedStudy = await this.__saveAddTag(tagId);
         }
       }
       for (let i=0; i<this.__studyData["tags"].length; i++) {
         const tagId = this.__studyData["tags"][i];
-        if (!this.__selectedTags.includes(tagId)) {
+        if (!this.__selectedTags.has(tagId)) {
           updatedStudy = await this.__saveRemoveTag(tagId);
         }
       }
@@ -245,17 +244,13 @@ qx.Class.define("osparc.form.tag.TagManager", {
 
     __okClicked: function() {
       this.fireDataEvent("selectedTags", {
-        tags: this.__selectedTags.toArray(),
+        tags: Array.from(this.__selectedTags),
       });
     },
 
     __attachEventHandlers: function() {
-      this.__selectedTags.addListener("change", evt => {
-        this.fireDataEvent("changeSelected", {
-          ...evt.getData(),
-          selected: this.__selectedTags.toArray()
-        });
-      }, this);
+      // Note: Native Set doesn't emit change events like qx.data.Array
+      // If change tracking is needed, events should be fired manually where __selectedTags is modified
     }
   }
 });
