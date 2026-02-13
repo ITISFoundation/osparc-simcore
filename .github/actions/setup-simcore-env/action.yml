@@ -35,6 +35,10 @@ inputs:
 runs:
   using: 'composite'
   steps:
+    - name: Set up Docker
+      uses: docker/setup-docker-action@v4
+      with:
+        version: latest
     - name: Setup Docker BuildX
       if: inputs.setup-docker == 'true'
       id: buildx
