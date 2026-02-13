@@ -175,9 +175,19 @@ qx.Class.define("osparc.form.tag.TagManager", {
         if (this.isLiveUpdate()) {
           tagButton.setFetching(true);
           if (selected) {
-            this.__saveAddTag(tagId, tagButton);
+            this.__saveAddTag(tagId, tagButton)
+              .then(updatedStudy => {
+                if (updatedStudy) {
+                  this.fireDataEvent("updateTags", updatedStudy);
+                }
+              });
           } else {
-            this.__saveRemoveTag(tagId, tagButton);
+            this.__saveRemoveTag(tagId, tagButton)
+              .then(updatedStudy => {
+                if (updatedStudy) {
+                  this.fireDataEvent("updateTags", updatedStudy);
+                }
+              });
           }
         } else if (selected) {
           this.__selectedTags.push(tagId);
