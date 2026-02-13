@@ -205,7 +205,6 @@ async def _analyze_current_cluster(
                 dataclasses.replace(
                     instance,
                     available_resources=instance.ec2_instance.resources - node_used_resources,
-                    _available_resources_was_set=True,
                 )
             )
         elif utils_docker.is_instance_drained(instance):
