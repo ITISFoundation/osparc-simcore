@@ -17133,7 +17133,7 @@ components:
         data_mounting_enabled:
           type: boolean
           title: Data Mounting Enabled
-          description: True if the service has mounted data volumes
+          description: True if data mounting is enabled
           default: false
         service_host:
           type: string
