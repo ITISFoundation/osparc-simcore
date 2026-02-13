@@ -23,7 +23,6 @@ def app_environment(
     mocked_ec2_server_envs: EnvVarsDict,
     mocked_ssm_server_envs: EnvVarsDict,
     mocked_redis_server: None,
-    monkeypatch: pytest.MonkeyPatch,
 ) -> EnvVarsDict:
     return app_environment
 
