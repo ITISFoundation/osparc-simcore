@@ -203,7 +203,7 @@ def _clean_registry(list_of_images: list[ServiceInRegistryInfoDict]) -> None:
         tag = service_description["version"]
         registry_url = image["image_path"].split("/")[0]
         url = f"http://{registry_url}/v2/{service_description['key']}/manifests/{tag}"
-        response = requests.get(url, headers=request_headers, timeout=10)
+        response = requests.get(url, timeout=10)
         response.raise_for_status()
         _logger.info("Image %s manifest response %s, headers %s", image["image_path"], response.text, response.headers)
         docker_content_digest = response.headers["Docker-Content-Digest"]
