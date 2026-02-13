@@ -12517,6 +12517,11 @@ components:
       - write
       - execute
       title: ExecutableAccessRights
+    ExtraCreditsUsdRangeInt:
+      type: integer
+      exclusiveMaximum: true
+      minimum: 0
+      maximum: 500
     FeaturesDict:
       properties:
         age:
@@ -13343,23 +13348,9 @@ components:
         guest:
           $ref: '#/components/schemas/LowerCaseEmailStr'
         trialAccountDays:
-          anyOf:
-          - type: integer
-            exclusiveMinimum: true
-            minimum: 0
-          - type: 'null'
-          title: Trialaccountdays
-          description: Expiration time in days for trial accounts; `null` means not
-            a trial account
+          $ref: '#/components/schemas/TrialAccountAnnotated'
         extraCreditsInUsd:
-          anyOf:
-          - type: integer
-            exclusiveMaximum: true
-            minimum: 0
-            maximum: 500
-          - type: 'null'
-          title: Extracreditsinusd
-          description: Welcome credits in USD; `null` means no welcome credits
+          $ref: '#/components/schemas/WelcomeCreditsAnnotated'
       type: object
       required:
       - guest
@@ -18468,6 +18459,14 @@ components:
       - url
       - thumbnail
       title: ThirdPartyInfoDict
+    TrialAccountAnnotated:
+      anyOf:
+      - type: integer
+        exclusiveMinimum: true
+        minimum: 0
+      - type: 'null'
+      description: Expiration time in days for trial accounts; `null` means not a
+        trial account
     UnitExtraInfoLicense:
       properties:
         num_of_seats:
@@ -18780,12 +18779,11 @@ components:
           format: email
           title: Email
         invitation:
-          anyOf:
-          - $ref: '#/components/schemas/_InvitationDetails'
-          - type: 'null'
+          $ref: '#/components/schemas/_InvitationDetails'
       type: object
       required:
       - email
+      - invitation
       title: UserAccountPreviewApproval
     UserAccountPreviewApprovalGet:
       properties:
@@ -19269,6 +19267,11 @@ components:
       - ACTIVE
       - INACTIVE
       title: WalletStatus
+    WelcomeCreditsAnnotated:
+      anyOf:
+      - $ref: '#/components/schemas/ExtraCreditsUsdRangeInt'
+      - type: 'null'
+      description: Welcome credits in USD; `null` means no welcome credits
     Widget:
       properties:
         type:
@@ -19494,23 +19497,9 @@ components:
     _InvitationDetails:
       properties:
         trialAccountDays:
-          anyOf:
-          - type: integer
-            exclusiveMinimum: true
-            minimum: 0
-          - type: 'null'
-          title: Trialaccountdays
-          description: Expiration time in days for trial accounts; `null` means not
-            a trial account
+          $ref: '#/components/schemas/TrialAccountAnnotated'
         extraCreditsInUsd:
-          anyOf:
-          - type: integer
-            exclusiveMaximum: true
-            minimum: 0
-            maximum: 500
-          - type: 'null'
-          title: Extracreditsinusd
-          description: Welcome credits in USD; `null` means no welcome credits
+          $ref: '#/components/schemas/WelcomeCreditsAnnotated'
       type: object
       title: _InvitationDetails
     _ItisVipResourceRestData:
