@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import FastAPI
 from models_library.api_schemas_directorv2.dynamic_services import (
     DynamicServiceGet,
@@ -10,17 +12,19 @@ from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
 )
 from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
 from models_library.projects import ProjectID
-from models_library.projects_nodes_io import NodeID
+from models_library.projects_nodes_io import NodeID, StorageFileID
 from models_library.services_types import ServicePortKey
 from models_library.users import UserID
 from pydantic import NonNegativeInt
-from servicelib.rabbitmq import RPCRouter
+from servicelib.rabbitmq import RemoteMethodNotRegisteredError, RPCRouter
 from servicelib.rabbitmq.rpc_interfaces.dynamic_scheduler.errors import (
     ServiceWaitingForManualInterventionError,
     ServiceWasNotFoundError,
 )
 
 from ...services import common_interface
+
+_logger = logging.getLogger(__name__)
 
 router = RPCRouter()
 
@@ -78,3 +82,18 @@ async def retrieve_inputs(
 @router.expose()
 async def update_projects_networks(app: FastAPI, *, project_id: ProjectID) -> None:
     await common_interface.update_projects_networks(app, project_id=project_id)
+
+
+@router.expose()
+async def refresh_containers_files(
+    app: FastAPI, *, node_id: NodeID, s3_directory: StorageFileID, recursive: bool
+) -> None:
+    try:
+        await common_interface.refresh_containers_files(
+            app, node_id=node_id, s3_directory=s3_directory, recursive=recursive
+        )
+    except RemoteMethodNotRegisteredError as e:
+        _logger.debug(
+            "Did not find a remote method '%s'. Service is not running.",
+            e.method_name,  # type: ignore[attr-defined]    #pylint: disable=no-member
+        )
