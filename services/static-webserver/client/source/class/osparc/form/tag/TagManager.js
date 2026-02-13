@@ -19,14 +19,12 @@ qx.Class.define("osparc.form.tag.TagManager", {
 
     this.__selectedTags = new Set();
     this.__renderLayout();
-    this.__attachEventHandlers();
 
     this.setStudyData(studyData);
   },
 
   events: {
     "updateTags": "qx.event.type.Data",
-    "changeSelected": "qx.event.type.Data",
     "selectedTags": "qx.event.type.Data",
   },
 
@@ -247,10 +245,5 @@ qx.Class.define("osparc.form.tag.TagManager", {
         tags: Array.from(this.__selectedTags),
       });
     },
-
-    __attachEventHandlers: function() {
-      // Note: Native Set doesn't emit change events like qx.data.Array
-      // If change tracking is needed, events should be fired manually where __selectedTags is modified
-    }
   }
 });
