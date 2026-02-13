@@ -302,9 +302,9 @@ async def add_user_in_group(
         new_by_user_id = user.id
 
     if new_by_user_id is not None:
-        from .._users._users_service import get_user  # noqa: PLC0415
+        from ..users import _users_service  # noqa: PLC0415
 
-        new_user = await get_user(app, new_by_user_id)
+        new_user = await _users_service.get_user(app, new_by_user_id)
         new_by_user_name = new_user["name"]
 
     return await _groups_repository.add_new_user_in_group(
