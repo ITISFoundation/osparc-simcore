@@ -33,7 +33,6 @@ from models_library.services import (
 )
 from models_library.services_enums import ServiceState
 from models_library.users import UserID
-from models_library.utils._original_fastapi_encoders import jsonable_encoder
 from pydantic import TypeAdapter
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -208,6 +207,16 @@ def mocked_storage_service_api(
     assert settings
     assert settings.DIRECTOR_V2_STORAGE
 
+    # Prepare response data with exposed secrets (same as real endpoint)
+    response_data = {
+        "S3_ACCESS_KEY": fake_s3_settings.S3_ACCESS_KEY.get_secret_value(),
+        "S3_SECRET_KEY": fake_s3_settings.S3_SECRET_KEY.get_secret_value(),
+        "S3_BUCKET_NAME": fake_s3_settings.S3_BUCKET_NAME,
+        "S3_REGION": fake_s3_settings.S3_REGION,
+    }
+    if fake_s3_settings.S3_ENDPOINT:
+        response_data["S3_ENDPOINT"] = str(fake_s3_settings.S3_ENDPOINT)
+
     # pylint: disable=not-context-manager
     with respx.mock(  # type: ignore
         base_url=settings.DIRECTOR_V2_STORAGE.api_base_url,
@@ -217,7 +226,7 @@ def mocked_storage_service_api(
         respx_mock.post(
             "/simcore-s3:access",
             name="get_or_create_temporary_s3_access",
-        ).respond(json=jsonable_encoder({"data": fake_s3_settings}, by_alias=True))
+        ).respond(json={"data": response_data, "error": None})
 
         yield respx_mock
 

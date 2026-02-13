@@ -8,6 +8,7 @@ from unittest import mock
 import pytest
 import requests
 from aiohttp.test_utils import unused_port
+from common_library.serialization import model_dump_with_secrets
 from faker import Faker
 from models_library.utils.fastapi_encoders import jsonable_encoder
 from moto.server import ThreadedMotoServer
@@ -131,10 +132,10 @@ def mocked_s3_server_envs(
     mocked_s3_server_settings: S3Settings,
     monkeypatch: pytest.MonkeyPatch,
 ) -> EnvVarsDict:
-    changed_envs: EnvVarsDict = mocked_s3_server_settings.model_dump(
+    changed_envs: EnvVarsDict = model_dump_with_secrets(
+        mocked_s3_server_settings,
+        show_secrets=True,
         mode="json",
         exclude_unset=True,
     )
-    changed_envs["S3_ACCESS_KEY"] = mocked_s3_server_settings.S3_ACCESS_KEY.get_secret_value()
-    changed_envs["S3_SECRET_KEY"] = mocked_s3_server_settings.S3_SECRET_KEY.get_secret_value()
     return setenvs_from_dict(monkeypatch, {**changed_envs})

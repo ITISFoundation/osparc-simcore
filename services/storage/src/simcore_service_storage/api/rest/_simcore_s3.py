@@ -37,7 +37,19 @@ async def get_or_create_temporary_s3_access(
     # NOTE: the name of the method is not accurate, these are not temporary at all
     # it returns the credentials of the s3 backend!
     s3_settings: S3Settings = await sts.get_or_create_temporary_token_for_user(request.app, query_params.user_id)
-    return Envelope[S3Settings](data=s3_settings)
+
+    # Manually construct the response dict with secrets exposed
+    response_data = {
+        "S3_ACCESS_KEY": s3_settings.S3_ACCESS_KEY.get_secret_value(),
+        "S3_SECRET_KEY": s3_settings.S3_SECRET_KEY.get_secret_value(),
+        "S3_BUCKET_NAME": s3_settings.S3_BUCKET_NAME,
+        "S3_REGION": s3_settings.S3_REGION,
+    }
+    if s3_settings.S3_ENDPOINT:
+        response_data["S3_ENDPOINT"] = str(s3_settings.S3_ENDPOINT)
+
+    # Use model_construct to skip validation and keep secrets as plain strings
+    return Envelope.model_construct(data=response_data, error=None)
 
 
 @router.delete(
