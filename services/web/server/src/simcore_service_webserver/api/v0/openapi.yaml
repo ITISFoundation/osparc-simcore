@@ -18788,12 +18788,10 @@ components:
     UserAccountPreviewApprovalGet:
       properties:
         invitationUrl:
-          anyOf:
-          - type: string
-            maxLength: 2083
-            minLength: 1
-            format: uri
-          - type: 'null'
+          type: string
+          maxLength: 2083
+          minLength: 1
+          format: uri
           title: Invitationurl
         messageContent:
           anyOf:
