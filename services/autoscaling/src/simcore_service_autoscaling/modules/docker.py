@@ -29,17 +29,13 @@ def setup(app: FastAPI) -> None:
     async def on_startup() -> None:
         # Get the remote docker client configured by servicelib
         if settings.AUTOSCALING_DOCKER_API_PROXY:
-            remote_client = get_remote_docker_client(app)
-
-            # Wrap it with AutoscalingDocker to add the ping method
-            client = AutoscalingDocker(
-                url=remote_client.docker_host,
-                connector=remote_client.connector,
-                session=remote_client.session,
-            )
+            client = get_remote_docker_client(app)
+            # Promote to AutoscalingDocker, works safely because
+            # AutoscalingDocker does not add any new attributes, only methods
+            client.__class__ = AutoscalingDocker
         else:
-            # Local docker client
             client = AutoscalingDocker()
+
         app.state.docker_client = client
 
         async for attempt in AsyncRetrying(
