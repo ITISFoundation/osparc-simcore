@@ -295,7 +295,7 @@ class RemoteControlHttpClient:
             post_params["dir"] = dir_to_refresh
         refresh_result = await self._request("POST", "vfs/refresh", post_params=post_params)
 
-        if refresh_result["result"] != {dir_to_refresh: "OK"}:
+        if refresh_result.get("result") != {dir_to_refresh: "OK"}:
             msg = f"Failed to refresh the mount, rclone response: {refresh_result=}"
             raise RuntimeError(msg)
 
