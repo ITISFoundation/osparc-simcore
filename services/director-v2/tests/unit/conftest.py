@@ -192,7 +192,12 @@ def fake_s3_settings(faker: Faker) -> S3Settings:
 
 @pytest.fixture
 def fake_s3_envs(fake_s3_settings: S3Settings) -> EnvVarsDict:
-    return fake_s3_settings.model_dump()
+    return fake_s3_settings.model_dump(
+        exclude={"S3_ACCESS_KEY", "S3_SECRET_KEY"},
+    ) | {
+        "S3_ACCESS_KEY": fake_s3_settings.S3_ACCESS_KEY.get_secret_value(),
+        "S3_SECRET_KEY": fake_s3_settings.S3_SECRET_KEY.get_secret_value(),
+    }
 
 
 @pytest.fixture
