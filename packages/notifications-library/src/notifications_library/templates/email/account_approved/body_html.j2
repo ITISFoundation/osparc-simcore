@@ -7,7 +7,7 @@
   Thank you for your interest in {{ product.display_name }}. We are pleased to provide you with a one-time invitation link to register on the platform.
 </p>
 
-{% if trial_account_days %}
+{% if trial_account_days is defined and trial_account_days %}
 <p>Your account includes a {{ trial_account_days }} day{{ "s" if trial_account_days > 1 }} trial period.</p>
 {% else %}
 <p>Your account includes unlimited access.</p>
