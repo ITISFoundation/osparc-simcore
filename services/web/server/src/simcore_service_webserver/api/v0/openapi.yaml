@@ -10756,34 +10756,6 @@ components:
       title: DownloadLink
       description: I/O port type to hold a generic download link to a file (e.g. S3
         pre-signed link, etc)
-    EmailMessageContentBody:
-      properties:
-        html:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Html
-        text:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Text
-      type: object
-      title: EmailMessageContentBody
-    EmailMessageContentBodyGet:
-      properties:
-        html:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Html
-        text:
-          anyOf:
-          - type: string
-          - type: 'null'
-          title: Text
-      type: object
-      title: EmailMessageContentBodyGet
     EmailTestFailed:
       properties:
         test_name:
@@ -13794,12 +13766,19 @@ components:
           maxLength: 998
           title: Subject
           description: 'Email subject line (RFC 2822: max header line length)'
-        body:
-          $ref: '#/components/schemas/EmailMessageContentBody'
+        bodyHtml:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Bodyhtml
+        bodyText:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Bodytext
       type: object
       required:
       - subject
-      - body
       title: EmailMessageContent
     MessageContentGet:
       properties:
@@ -13808,12 +13787,19 @@ components:
           maxLength: 998
           title: Subject
           description: 'Email subject line (RFC 2822: max header line length)'
-        body:
-          $ref: '#/components/schemas/EmailMessageContentBodyGet'
+        bodyHtml:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Bodyhtml
+        bodyText:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Bodytext
       type: object
       required:
       - subject
-      - body
       title: EmailMessageContentGet
     MyFunctionPermissionsGet:
       properties:

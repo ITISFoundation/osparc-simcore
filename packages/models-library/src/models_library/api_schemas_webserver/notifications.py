@@ -12,24 +12,6 @@ from ..notifications import ChannelType, TemplateName
 #
 
 
-class _EmailMessageContentBodyMixin(BaseModel):
-    html: str | None = None
-    text: str | None = None
-
-    @model_validator(mode="after")
-    def _require_at_least_one_format(self) -> Self:
-        if self.html is None and self.text is None:
-            msg = "At least one of 'html' or 'text' is required"
-            raise ValueError(msg)
-        return self
-
-
-class EmailMessageContentBody(_EmailMessageContentBodyMixin, InputSchema): ...
-
-
-class EmailMessageContentBodyGet(_EmailMessageContentBodyMixin, OutputSchema): ...
-
-
 class _EmailMessageContentMixin(BaseModel):
     subject: Annotated[
         str,
@@ -39,14 +21,21 @@ class _EmailMessageContentMixin(BaseModel):
             description="Email subject line (RFC 2822: max header line length)",
         ),
     ]
+    body_html: str | None = None
+    body_text: str | None = None
+
+    @model_validator(mode="after")
+    def _require_at_least_one_format(self) -> Self:
+        if self.body_html is None and self.body_text is None:
+            msg = "At least one of 'body_html' or 'body_text' is required"
+            raise ValueError(msg)
+        return self
 
 
-class EmailMessageContent(_EmailMessageContentMixin, InputSchema):
-    body: EmailMessageContentBody
+class EmailMessageContent(_EmailMessageContentMixin, InputSchema): ...
 
 
-class EmailMessageContentGet(_EmailMessageContentMixin, OutputSchema):
-    body: EmailMessageContentBodyGet
+class EmailMessageContentGet(_EmailMessageContentMixin, OutputSchema): ...
 
 
 # Message
