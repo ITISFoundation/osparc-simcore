@@ -18829,6 +18829,10 @@ components:
           type: string
           format: email
           title: Email
+        messageContent:
+          anyOf:
+          - $ref: '#/components/schemas/MessageContent'
+          - type: 'null'
       type: object
       required:
       - email
