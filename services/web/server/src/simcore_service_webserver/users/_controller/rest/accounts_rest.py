@@ -32,7 +32,6 @@ from ...._meta import API_VTAG
 from ....invitations import api as invitations_service
 from ....login.decorators import login_required
 from ....notifications import notifications_service
-from ....notifications._models import EmailContact
 from ....security.decorators import (
     group_or_role_permission_required,
     permission_required,
@@ -168,38 +167,9 @@ async def approve_user_account(request: web.Request) -> web.Response:
         product_name=req_ctx.product_name,
         reviewer_id=req_ctx.user_id,
         invitation_extras=({"invitation": invitation_result.model_dump(mode="json")} if invitation_result else None),
+        message_content=approval_data.message_content.model_dump() if approval_data.message_content else None,
     )
     assert pre_registration_id  # nosec
-
-    if invitation_result:
-        with log_context(
-            _logger,
-            logging.INFO,
-            "Sending invitation email to %s ...",
-            approval_data.email,
-        ):
-            # get pre-registration data
-            found = await _accounts_service.search_users_accounts(
-                request.app,
-                filter_by_email_glob=approval_data.email,
-                product_name=req_ctx.product_name,
-                include_products=False,
-            )
-            user_account = found[0]
-            assert user_account.pre_registration_id == pre_registration_id  # nosec
-            assert user_account.email == approval_data.email  # nosec
-
-            # send email to user
-            if approval_data.message_content:
-                await notifications_service.send_message(
-                    request.app,
-                    user_id=req_ctx.user_id,
-                    product_name=req_ctx.product_name,
-                    channel=ChannelType.email,
-                    group_ids=None,
-                    external_contacts=[EmailContact(email=approval_data.email)],
-                    content=approval_data.message_content.model_dump(),
-                )
 
     return web.json_response(status=status.HTTP_204_NO_CONTENT)
 

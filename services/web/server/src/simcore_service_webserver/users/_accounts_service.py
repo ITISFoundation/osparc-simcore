@@ -224,6 +224,10 @@ async def approve_user_account(
     invitation_extras: Annotated[
         dict[str, Any] | None, doc("Optional invitation data to store in extras field")
     ] = None,
+    message_content: Annotated[
+        dict[str, Any] | None,
+        doc("Optional message content to send to the approved user"),
+    ] = None,
 ) -> Annotated[int, doc("The ID of the approved pre-registration record")]:
     """Approve a user account based on their pre-registration email.
 
@@ -258,6 +262,18 @@ async def approve_user_account(
         new_status=AccountRequestStatus.APPROVED,
         invitation_extras=invitation_extras,
     )
+
+    # Send email to user if message content is provided
+    if message_content:
+        await notifications_service.send_message(
+            app,
+            user_id=reviewer_id,
+            product_name=product_name,
+            channel=ChannelType.email,
+            group_ids=None,
+            external_contacts=[EmailContact(email=pre_registration_email)],
+            content=message_content,
+        )
 
     return pre_registration_id
 
