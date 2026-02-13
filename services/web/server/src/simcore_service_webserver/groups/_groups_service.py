@@ -98,10 +98,10 @@ async def get_user_profile_groups(
 
     product_chatbot_primary_group = None
     if product.support_chatbot_user_id:
-        from .._users._users_service import get_user_primary_group_id  # noqa: PLC0415
+        from ..users import _users_service  # noqa: PLC0415
 
-        _group_id = await get_user_primary_group_id(app, user_id=product.support_chatbot_user_id)
-        product_chatbot_primary_group = await get_group_by_gid(app, _group_id)
+        group_id = await _users_service.get_user_primary_group_id(app, user_id=product.support_chatbot_user_id)
+        product_chatbot_primary_group = await get_group_by_gid(app, group_id)
 
     return (
         groups_by_type,
