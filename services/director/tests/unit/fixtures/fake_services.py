@@ -199,16 +199,21 @@ def _clean_registry(list_of_images: list[ServiceInRegistryInfoDict]) -> None:
     request_headers = {"accept": "application/vnd.docker.distribution.manifest.v2+json"}
     for image in list_of_images:
         service_description = image["service_description"]
-        # get the image digest
         tag = service_description["version"]
+        name = service_description["key"]
         registry_url = image["image_path"].split("/")[0]
-        url = f"http://{registry_url}/v2/{service_description['key']}/manifests/{tag}"
+
+        url = f"http://{registry_url}/v2/{name}/manifests/{tag}"
         response = requests.get(url, timeout=10)
+        if response.status_code == 404:
+            _logger.warning("Image %s not found in registry, skipping deletion", image["image_path"])
+            continue
         response.raise_for_status()
+
         _logger.info("Image %s manifest response %s, headers %s", image["image_path"], response.text, response.headers)
         docker_content_digest = response.headers["Docker-Content-Digest"]
         # remove the image from the registry
-        delete_url = f"http://{registry_url}/v2/{service_description['key']}/manifests/{docker_content_digest}"
+        delete_url = f"http://{registry_url}/v2/{name}/manifests/{docker_content_digest}"
         delete_resp = requests.delete(delete_url, headers=request_headers, timeout=5)
         delete_resp.raise_for_status()
 
