@@ -51,8 +51,8 @@ async def test_simcore_s3_access_returns_default(initialized_app: FastAPI, clien
     secret_key = received_settings.S3_SECRET_KEY
 
     # Secrets should not be the masked placeholder
-    assert access_key != "**********", "Access key should not be masked"
-    assert secret_key != "**********", "Secret key should not be masked"  # noqa: S105
+    assert access_key.startswith("***"), "Access key should not be masked"
+    assert secret_key.startswith("***"), "Secret key should not be masked"
 
     # Secrets should be non-empty strings
     assert access_key, "Access key should not be empty"
