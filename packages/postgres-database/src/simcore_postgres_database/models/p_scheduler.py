@@ -126,3 +126,42 @@ ps_runs = sa.Table(
         doc="Whether the run is waiting for manual intervention to proceed",
     ),
 )
+
+
+ps_run_store = sa.Table(
+    f"{_COMMON_TABLE_PREFIX}_run_store",
+    metadata,
+    sa.Column(
+        "run_id",
+        sa.BigInteger,
+        sa.ForeignKey(
+            f"{_COMMON_TABLE_PREFIX}_runs.run_id",
+            name=f"fk_{_COMMON_TABLE_PREFIX}_run_store_run_id_{_COMMON_TABLE_PREFIX}_runs",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.CASCADE,
+        ),
+        nullable=False,
+        doc="Reference to the parent run",
+    ),
+    sa.Column(
+        "key",
+        sa.String,
+        nullable=False,
+        doc="Key identifier for the stored value",
+    ),
+    sa.Column(
+        "updated_at",
+        sa.DateTime(timezone=True),
+        nullable=False,
+        server_default=sa.sql.func.now(),
+        onupdate=sa.sql.func.now(),
+        doc="Timestamp of the last update",
+    ),
+    sa.Column(
+        "value",
+        JSONB,
+        nullable=False,
+        doc="Stored value associated with the key",
+    ),
+    sa.PrimaryKeyConstraint("run_id", "key", name=f"pk_{_COMMON_TABLE_PREFIX}_run_store"),
+)
