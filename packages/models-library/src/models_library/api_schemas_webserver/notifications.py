@@ -40,8 +40,8 @@ class EmailMessageContentGet(_EmailMessageContentMixin, OutputSchema): ...
 
 # Message
 
-type MessageContent = EmailMessageContent  # | OtherMessageContent for other channels
-type MessageContentGet = EmailMessageContentGet  # | OtherMessageContentGet for other channels
+type MessageContent = EmailMessageContent
+type MessageContentGet = EmailMessageContentGet
 
 
 #

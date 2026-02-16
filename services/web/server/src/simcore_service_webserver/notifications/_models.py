@@ -93,4 +93,4 @@ class EmailNotificationMessage(BaseModel):
 
 
 # Clearly indicates the channel-specific contact info
-type Contact = EmailContact  # | SMSRecipient (in future)
+type Contact = EmailContact
