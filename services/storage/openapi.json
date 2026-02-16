@@ -1215,7 +1215,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Envelope_S3Settings_"
+                  "$ref": "#/components/schemas/Envelope_S3SettingsGet_"
                 }
               }
             }
@@ -1832,12 +1832,12 @@
         "type": "object",
         "title": "Envelope[PathTotalSizeCreate]"
       },
-      "Envelope_S3Settings_": {
+      "Envelope_S3SettingsGet_": {
         "properties": {
           "data": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/S3Settings"
+                "$ref": "#/components/schemas/S3SettingsGet"
               },
               {
                 "type": "null"
@@ -1855,7 +1855,7 @@
           }
         },
         "type": "object",
-        "title": "Envelope[S3Settings]"
+        "title": "Envelope[S3SettingsGet]"
       },
       "Envelope_dict_": {
         "properties": {
@@ -2521,17 +2521,15 @@
         ],
         "title": "PathTotalSizeCreate"
       },
-      "S3Settings": {
+      "S3SettingsGet": {
         "properties": {
           "S3_ACCESS_KEY": {
             "type": "string",
-            "maxLength": 50,
-            "minLength": 1,
             "title": "S3 Access Key"
           },
           "S3_BUCKET_NAME": {
             "type": "string",
-            "maxLength": 50,
+            "maxLength": 100,
             "minLength": 1,
             "title": "S3 Bucket Name"
           },
@@ -2551,14 +2549,12 @@
           },
           "S3_REGION": {
             "type": "string",
-            "maxLength": 50,
+            "maxLength": 100,
             "minLength": 1,
             "title": "S3 Region"
           },
           "S3_SECRET_KEY": {
             "type": "string",
-            "maxLength": 50,
-            "minLength": 1,
             "title": "S3 Secret Key"
           }
         },
@@ -2569,7 +2565,7 @@
           "S3_REGION",
           "S3_SECRET_KEY"
         ],
-        "title": "S3Settings"
+        "title": "S3SettingsGet"
       },
       "SoftCopyBody": {
         "properties": {

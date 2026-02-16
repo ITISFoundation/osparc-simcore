@@ -14,6 +14,7 @@ import httpx
 import pytest
 from faker import Faker
 from fastapi import FastAPI
+from models_library.api_schemas_storage.simcore_s3_schemas import S3SettingsGet
 from models_library.api_schemas_storage.storage_schemas import (
     FileMetaDataGet,
 )
@@ -27,7 +28,6 @@ from pydantic import ByteSize, TypeAdapter
 from pytest_simcore.helpers.fastapi import url_from_operation_id
 from pytest_simcore.helpers.httpx_assert_checks import assert_status
 from servicelib.aiohttp import status
-from settings_library.s3 import S3Settings
 from simcore_service_storage.models import SearchFilesQueryParams
 from simcore_service_storage.simcore_s3_dsm import SimcoreS3DataManager
 
@@ -42,9 +42,21 @@ async def test_simcore_s3_access_returns_default(initialized_app: FastAPI, clien
     url = url_from_operation_id(client, initialized_app, "get_or_create_temporary_s3_access").with_query(user_id=1)
 
     response = await client.post(f"{url}")
-    received_settings, error = assert_status(response, status.HTTP_200_OK, S3Settings)
+    received_settings, error = assert_status(response, status.HTTP_200_OK, S3SettingsGet)
     assert not error
     assert received_settings
+
+    # Verify that secrets are not masked - they should be actual credential values
+    access_key = received_settings.S3_ACCESS_KEY
+    secret_key = received_settings.S3_SECRET_KEY
+
+    # Secrets should not be the masked placeholder
+    assert not access_key.startswith("***"), "Access key should not be masked"
+    assert not secret_key.startswith("***"), "Secret key should not be masked"
+
+    # Secrets should be non-empty strings
+    assert access_key, "Access key should not be empty"
+    assert secret_key, "Secret key should not be empty"
 
 
 async def test_connect_to_external(
