@@ -33,6 +33,7 @@ from settings_library.docker_registry import RegistrySettings
             "sha256:a6d9886311721d8d341068361ecf9998a3c7ecb0efb23ebac553602c2eca1f8f",
         ),
     ],
+    ids=str,
 )
 async def test_retrieve_image_layer_information(
     remove_images_from_host: Callable[[list[str]], Awaitable[None]],
@@ -64,6 +65,7 @@ async def test_retrieve_image_layer_information(
         "ubuntu@sha256:81bba8d1dde7fc1883b6e95cd46d6c9f4874374f2b360c8db82620b33f6b5ca1",
         "busybox:latest",
     ],
+    ids=str,
 )
 async def test_retrieve_image_layer_information_from_external_registry(
     remove_images_from_host: Callable[[list[str]], Awaitable[None]],
@@ -108,6 +110,7 @@ def _assert_progress_report_values(mocked_progress_cb: mock.AsyncMock, *, total:
 @pytest.mark.parametrize(
     "image",
     ["itisfoundation/sleeper:1.0.0", "nginx:latest", "busybox:latest"],
+    ids=str,
 )
 async def test_pull_image(
     remove_images_from_host: Callable[[list[str]], Awaitable[None]],
@@ -173,6 +176,7 @@ async def test_pull_image(
 @pytest.mark.parametrize(
     "image",
     ["nginx:latest", "busybox:latest"],
+    ids=str,
 )
 async def test_pull_image_without_layer_information(
     remove_images_from_host: Callable[[list[str]], Awaitable[None]],
