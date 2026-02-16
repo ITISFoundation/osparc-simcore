@@ -81,21 +81,11 @@ class WorkflowManager(SingletonInAppStateMixin):
         return get_repository(self.app, StepsRepository)
 
     async def start_workflow(self, node_id: NodeID) -> None:
-        user_request = await _validate_workflow_creation_preconditions(
-            node_id, self.runs_repo, self.user_requests_repo, DynamicServiceStart
-        )
-
-        assert isinstance(user_request.payload, DynamicServiceStart)  # nosec
-        created_run = await self.runs_repo.create_from_start_request(node_id, user_request.payload)
+        created_run = await self.runs_repo.create_from_start_request(node_id)
         _logger.debug("Added %s workflow for '%s': %s", _START, node_id, created_run)
 
     async def stop_workflow(self, node_id: NodeID) -> None:
-        user_request = await _validate_workflow_creation_preconditions(
-            node_id, self.runs_repo, self.user_requests_repo, DynamicServiceStop
-        )
-
-        assert isinstance(user_request.payload, DynamicServiceStop)  # nosec
-        created_run = await self.runs_repo.create_from_stop_request(node_id, user_request.payload)
+        created_run = await self.runs_repo.create_from_stop_request(node_id)
         _logger.debug("Added %s workflow for '%s': %s", _STOP, node_id, created_run)
 
     async def cancel_workflow(self, node_id: NodeID) -> None:
