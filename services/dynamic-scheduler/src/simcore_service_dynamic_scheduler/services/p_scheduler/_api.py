@@ -11,7 +11,7 @@ from ._workflow_manager import WorkflowManager
 
 async def request_present(app: FastAPI, node_id: NodeID, dynamic_service_start: DynamicServiceStart) -> None:
     user_requests_repo = get_repository(app, UserRequestsRepository)
-    await user_requests_repo.request_service_present(node_id, dynamic_service_start)
+    await user_requests_repo.request_service_present(dynamic_service_start)
 
     notifications_manager = NotificationsManager.get_from_app_state(app)
     await notifications_manager.send_riconciliation_event(node_id)
@@ -19,7 +19,7 @@ async def request_present(app: FastAPI, node_id: NodeID, dynamic_service_start: 
 
 async def request_absent(app: FastAPI, node_id: NodeID, dynamic_service_stop: DynamicServiceStop) -> None:
     user_requests_repo = get_repository(app, UserRequestsRepository)
-    await user_requests_repo.request_service_absent(node_id, dynamic_service_stop)
+    await user_requests_repo.request_service_absent(dynamic_service_stop)
 
     notifications_manager = NotificationsManager.get_from_app_state(app)
     await notifications_manager.send_riconciliation_event(node_id)
