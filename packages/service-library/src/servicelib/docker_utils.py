@@ -90,7 +90,9 @@ class DockerImageMultiArchManifestsV2(BaseModel):
 
 
 class _DockerPullImageProgressDetail(ProgressDetail):
-    units: str | None = None  # if empty or None, the units are in bytes
+    units: str | None = (
+        None  # if empty or None, the units are in bytes https://pkg.go.dev/github.com/moby/moby/pkg/jsonmessage#JSONProgress
+    )
 
     def are_units_bytes(self) -> bool:
         return self.units is None or self.units in ["", "B", "bytes"]
