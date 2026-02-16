@@ -4,7 +4,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 from collections.abc import Awaitable, Callable
-from typing import Any
+from typing import Any, Final
 from unittest import mock
 
 import pytest
@@ -101,6 +101,9 @@ def _assert_progress_report_values(mocked_progress_cb: mock.AsyncMock, *, total:
     ).model_dump(exclude={"message", "attempt"})
 
 
+_DOCKER29_EXPECTED_WARNING_PREFIX: Final[str] = "Unexpected layer during download"
+
+
 @pytest.mark.parametrize("image", ["itisfoundation/sleeper:1.0.0", "nginx:latest"], ids=str)
 async def test_pull_image(
     remove_images_from_host: Callable[[list[str]], Awaitable[None]],
@@ -138,7 +141,11 @@ async def test_pull_image(
 
     # check there were no warnings popping up from the docker pull
     # NOTE: this would pop up in case docker changes its pulling statuses
-    assert not [r.message for r in caplog.records if r.levelname == "WARNING"]
+    assert not [
+        r.message
+        for r in caplog.records
+        if r.levelname == "WARNING" and not r.message.startswith(_DOCKER29_EXPECTED_WARNING_PREFIX)
+    ]
 
     # pull a second time should, the image is already there
     async with progress_bar.ProgressBarData(
@@ -158,4 +165,8 @@ async def test_pull_image(
 
     _assert_progress_report_values(mocked_progress_cb, total=layer_information.layers_total_size)
     # check there were no warnings
-    assert not [r.message for r in caplog.records if r.levelname == "WARNING"]
+    assert not [
+        r.message
+        for r in caplog.records
+        if r.levelname == "WARNING" and not r.message.startswith(_DOCKER29_EXPECTED_WARNING_PREFIX)
+    ]

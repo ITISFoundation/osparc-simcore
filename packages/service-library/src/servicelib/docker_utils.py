@@ -153,7 +153,10 @@ class _PulledStatus:
 
 
 async def _parse_pull_information(  # noqa: C901
-    parsed_progress: _DockerPullImage, *, layer_id_to_size: dict[str, _PulledStatus]
+    parsed_progress: _DockerPullImage,
+    *,
+    layer_id_to_size: dict[str, _PulledStatus],
+    image_information: DockerImageManifestsV2 | None,
 ) -> None:
     match parsed_progress.status.lower():
         case progress_status if any(
@@ -171,6 +174,14 @@ async def _parse_pull_information(  # noqa: C901
             assert parsed_progress.id  # nosec
             assert parsed_progress.progress_detail  # nosec
             assert parsed_progress.progress_detail.current is not None  # nosec
+            if (image_information is not None) and (parsed_progress.id not in layer_id_to_size):
+                _logger.warning(
+                    "Unexpected layer during download: %s (size: %s bytes). This layer "
+                    "is not in the image manifest and will be ignored in the progress.",
+                    f"{parsed_progress.id=}",
+                    f"{parsed_progress.progress_detail.total=}",
+                )
+                return
             if parsed_progress.progress_detail.are_units_bytes():
                 layer_id_to_size.setdefault(
                     parsed_progress.id,
@@ -258,6 +269,11 @@ async def pull_image(
                 layer.digest.removeprefix("sha256:")[:12]: _PulledStatus(layer.size)
                 for layer in image_information.layers
             }
+            _logger.info(
+                "pulling image with layer information for %s. Progress will be accurate and uses %s",
+                f"{image=}",
+                f"{layer_id_to_size=}",
+            )
         else:
             _logger.warning(
                 "pulling image without layer information for %s. Progress will be approximative. "
@@ -291,7 +307,6 @@ async def pull_image(
 
             reported_progress = 0.0
             async for pull_progress in client.images.pull(image, stream=True, auth=registry_auth):
-                _logger.info("pull progress: %s", f"{pull_progress=}")
                 try:
                     parsed_progress = TypeAdapter(_DockerPullImage).validate_python(pull_progress)
                 except ValidationError:
@@ -302,7 +317,9 @@ async def pull_image(
                         f"{pull_progress=}",
                     )
                 else:
-                    await _parse_pull_information(parsed_progress, layer_id_to_size=layer_id_to_size)
+                    await _parse_pull_information(
+                        parsed_progress, layer_id_to_size=layer_id_to_size, image_information=image_information
+                    )
 
                 # compute total progress
                 total_downloaded_size = sum(layer.downloaded for layer in layer_id_to_size.values())
