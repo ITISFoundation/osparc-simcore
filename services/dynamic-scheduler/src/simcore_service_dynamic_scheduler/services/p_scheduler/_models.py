@@ -5,7 +5,9 @@ from typing import TYPE_CHECKING, Any
 
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import DynamicServiceStart, DynamicServiceStop
 from models_library.products import ProductName
+from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
+from models_library.users import UserID
 from models_library.utils.enums import StrAutoEnum
 
 if TYPE_CHECKING:
@@ -67,8 +69,10 @@ class StepState(StrAutoEnum):
 
 @dataclass
 class UserRequest:
-    node_id: NodeID
     product_name: ProductName
+    user_id: UserID
+    project_id: ProjectID
+    node_id: NodeID
 
     requested_at: datetime
     user_desired_state: UserDesiredState
