@@ -49,8 +49,8 @@ async def get_or_create_temporary_s3_access(
     if s3_settings.S3_ENDPOINT:
         response_data["S3_ENDPOINT"] = str(s3_settings.S3_ENDPOINT)
 
-    # Use model_construct to skip validation and keep secrets as plain strings
-    return Envelope.model_construct(data=response_data, error=None)
+    settings_get = S3SettingsGet(**response_data)
+    return Envelope[S3SettingsGet](data=settings_get, error=None)
 
 
 @router.delete(
