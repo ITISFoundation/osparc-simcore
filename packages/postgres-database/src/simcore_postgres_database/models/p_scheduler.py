@@ -80,3 +80,49 @@ ps_user_requests = sa.Table(
         doc="Serialized DynamicServiceStart or DynamicServiceStop payload",
     ),
 )
+
+
+ps_runs = sa.Table(
+    f"{_COMMON_TABLE_PREFIX}_runs",
+    metadata,
+    sa.Column(
+        "run_id",
+        sa.BigInteger,
+        nullable=False,
+        autoincrement=True,
+        primary_key=True,
+        doc="Unique identifier for the run",
+    ),
+    sa.Column(
+        "created_at",
+        sa.DateTime(timezone=True),
+        nullable=False,
+        server_default=sa.sql.func.now(),
+        doc="Timestamp when the run was created",
+    ),
+    sa.Column(
+        "node_id",
+        UUID(as_uuid=True),
+        nullable=False,
+        unique=True,
+        doc="Node identifier, only one active run per node at any time",
+    ),
+    sa.Column(
+        "workflow_name",
+        sa.String,
+        nullable=False,
+        doc="Reference to the workflow DAG being executed",
+    ),
+    sa.Column(
+        "is_reverting",
+        sa.Boolean,
+        nullable=False,
+        doc="Whether the run is reverting (rolling back) its actions",
+    ),
+    sa.Column(
+        "waiting_manual_intervention",
+        sa.Boolean,
+        nullable=False,
+        doc="Whether the run is waiting for manual intervention to proceed",
+    ),
+)
