@@ -135,7 +135,6 @@ def mocked_s3_server_envs(
     changed_envs: EnvVarsDict = model_dump_with_secrets(
         mocked_s3_server_settings,
         show_secrets=True,
-        mode="json",
         exclude_unset=True,
     )
     return setenvs_from_dict(monkeypatch, {**changed_envs})

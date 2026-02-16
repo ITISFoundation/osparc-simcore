@@ -2,6 +2,7 @@ import logging
 from typing import Annotated, cast
 
 from fastapi import APIRouter, Depends, Request
+from models_library.api_schemas_storage.simcore_s3_schemas import S3SettingsGet
 from models_library.api_schemas_storage.storage_schemas import (
     FileMetaDataGet,
 )
@@ -29,7 +30,7 @@ router = APIRouter(
 )
 
 
-@router.post("/simcore-s3:access", response_model=Envelope[S3Settings])
+@router.post("/simcore-s3:access", response_model=Envelope[S3SettingsGet])
 async def get_or_create_temporary_s3_access(
     query_params: Annotated[StorageQueryParamsBase, Depends()],
     request: Request,
@@ -38,7 +39,7 @@ async def get_or_create_temporary_s3_access(
     # it returns the credentials of the s3 backend!
     s3_settings: S3Settings = await sts.get_or_create_temporary_token_for_user(request.app, query_params.user_id)
 
-    # Manually construct the response dict with secrets exposed
+    # Manually construct the response dict with secrets exposed as plain strings
     response_data = {
         "S3_ACCESS_KEY": s3_settings.S3_ACCESS_KEY.get_secret_value(),
         "S3_SECRET_KEY": s3_settings.S3_SECRET_KEY.get_secret_value(),
