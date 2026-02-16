@@ -365,7 +365,6 @@ qx.Class.define("osparc.study.StudyOptions", {
         // this is used when the project was already created and we want to update the tags
         tagManager.setLiveUpdate(true);
         tagManager.addListener("updateTags", e => {
-          win.close();
           const updatedData = e.getData();
           this.__studyData["tags"] = updatedData["tags"];
           this.__repopulateTags();
