@@ -171,6 +171,7 @@ async def _try_handle_step(
         match interrupt_reason:
             case _InterruptReasson.USER_CANCELLATION_REQUESTED | _InterruptReasson.LEASE_EXPIRY | None:
                 await cancel_wait_task(step_runner_task)
+                await steps_repo.step_cancelled(step_id)
 
                 _logger.info(
                     "step_id=%s interrupted because: %s",
