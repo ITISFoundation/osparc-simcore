@@ -126,7 +126,8 @@ def _assert_rabbit_autoscaling_message_sent(
         instances_running=0,
     )
     expected_message = default_message.model_copy(update=message_update_kwargs)
-    # in this mock we get all kind of messages, we just want to assert one of them is the expected one and there is only one
+    # in this mock we get all kind of messages, we just want to assert one of them is the
+    #  expected one and there is only one
     autoscaling_status_messages = [
         call_args.args[1]
         for call_args in mock_rabbitmq_post_message.call_args_list
@@ -235,7 +236,7 @@ def mock_dask_is_worker_connected(mocker: MockerFixture) -> mock.Mock:
 
 @pytest.fixture
 def spy_dask_try_retire_nodes(mocker: MockerFixture) -> mock.Mock:
-    from simcore_service_autoscaling.modules import dask
+    from simcore_service_autoscaling.modules import dask  # noqa: PLC0415
 
     return mocker.spy(dask, "try_retire_nodes")
 
@@ -329,6 +330,7 @@ async def create_tasks_batch(
 )
 async def test_cluster_scaling_with_no_tasks_does_nothing(
     minimal_configuration: None,
+    with_disabled_hot_buffers: EnvVarsDict,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
     mock_launch_instances: mock.Mock,
@@ -362,6 +364,7 @@ async def test_cluster_scaling_with_no_tasks_does_nothing(
 )
 async def test_cluster_scaling_with_disabled_ssm_does_not_block_autoscaling(
     minimal_configuration: None,
+    with_disabled_hot_buffers: EnvVarsDict,
     disabled_ssm: None,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
@@ -395,6 +398,7 @@ async def test_cluster_scaling_with_disabled_ssm_does_not_block_autoscaling(
 )
 async def test_cluster_scaling_with_task_with_too_much_resources_starts_nothing(
     minimal_configuration: None,
+    with_disabled_hot_buffers: EnvVarsDict,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
     create_dask_task: Callable[[DaskTaskResources], distributed.Future],
@@ -483,6 +487,7 @@ async def test_cluster_scaling_with_task_with_too_much_resources_starts_nothing(
 )
 async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
     minimal_configuration: None,
+    with_disabled_hot_buffers: EnvVarsDict,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
     create_tasks_batch: Callable[[_ScaleUpParams], Awaitable[list[distributed.Future]]],
@@ -840,6 +845,7 @@ async def test_cluster_scaling_up_and_down(  # noqa: PLR0915
 )
 async def test_cluster_does_not_scale_up_if_defined_instance_is_not_allowed(
     minimal_configuration: None,
+    with_disabled_hot_buffers: EnvVarsDict,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
     create_dask_task: Callable[[DaskTaskResources], distributed.Future],
@@ -885,6 +891,7 @@ async def test_cluster_does_not_scale_up_if_defined_instance_is_not_allowed(
 )
 async def test_cluster_does_not_scale_up_if_defined_instance_is_not_fitting_resources(
     minimal_configuration: None,
+    with_disabled_hot_buffers: EnvVarsDict,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
     create_dask_task: Callable[[DaskTaskResources], distributed.Future],
@@ -945,6 +952,7 @@ async def test_cluster_does_not_scale_up_if_defined_instance_is_not_fitting_reso
 async def test_cluster_scaling_up_starts_multiple_instances(
     patch_ec2_client_launch_instances_min_number_of_instances: mock.Mock,
     minimal_configuration: None,
+    with_disabled_hot_buffers: EnvVarsDict,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
     create_tasks_batch: Callable[[_ScaleUpParams], Awaitable[list[distributed.Future]]],
@@ -1023,6 +1031,7 @@ async def test_cluster_scaling_up_starts_multiple_instances(
 async def test_cluster_scaling_up_more_than_allowed_max_starts_max_instances_and_not_more(
     patch_ec2_client_launch_instances_min_number_of_instances: mock.Mock,
     minimal_configuration: None,
+    with_disabled_hot_buffers: EnvVarsDict,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
     create_tasks_batch: Callable[[_ScaleUpParams], Awaitable[list[distributed.Future]]],
@@ -1108,6 +1117,7 @@ async def test_cluster_scaling_up_more_than_allowed_max_starts_max_instances_and
 async def test_cluster_scaling_up_more_than_allowed_with_multiple_types_max_starts_max_instances_and_not_more(
     patch_ec2_client_launch_instances_min_number_of_instances: mock.Mock,
     minimal_configuration: None,
+    with_disabled_hot_buffers: EnvVarsDict,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
     create_dask_task: Callable[[DaskTaskResources], distributed.Future],
@@ -1219,6 +1229,7 @@ async def test_cluster_scaling_up_more_than_allowed_with_multiple_types_max_star
 async def test_long_pending_ec2_is_detected_as_broken_terminated_and_restarted(
     with_short_ec2_instances_max_start_time: EnvVarsDict,
     minimal_configuration: None,
+    with_disabled_hot_buffers: EnvVarsDict,
     app_settings: ApplicationSettings,
     initialized_app: FastAPI,
     create_tasks_batch: Callable[[_ScaleUpParams], Awaitable[list[distributed.Future]]],
@@ -1364,9 +1375,10 @@ async def test_long_pending_ec2_is_detected_as_broken_terminated_and_restarted(
         ),
     ],
 )
-async def test_cluster_adapts_machines_on_the_fly(
+async def test_cluster_adapts_machines_on_the_fly(  # noqa: PLR0915
     patch_ec2_client_launch_instances_min_number_of_instances: mock.Mock,
     minimal_configuration: None,
+    with_disabled_hot_buffers: EnvVarsDict,
     ec2_client: EC2Client,
     initialized_app: FastAPI,
     app_settings: ApplicationSettings,
@@ -1568,7 +1580,8 @@ async def test_cluster_adapts_machines_on_the_fly(
     reservation1 = all_instances["Reservations"][0]
     assert "Instances" in reservation1
     assert len(reservation1["Instances"]) == (app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES), (
-        f"expected {app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES} EC2 instances, found {len(reservation1['Instances'])}"
+        f"expected {app_settings.AUTOSCALING_EC2_INSTANCES.EC2_INSTANCES_MAX_INSTANCES} EC2 instances, "
+        f"found {len(reservation1['Instances'])}"
     )
     for instance in reservation1["Instances"]:
         assert "InstanceType" in instance

@@ -1,9 +1,11 @@
+import asyncio
 import logging
 from collections.abc import Iterator
 from contextlib import contextmanager, suppress
 from pathlib import Path
 from typing import Final
 
+from aiocache import cached  # type: ignore[import-untyped]
 from aiodocker import DockerError
 from aiodocker.docker import Docker
 from aiodocker.volumes import DockerVolume
@@ -141,7 +143,7 @@ async def remove_volume(app: FastAPI, docker: Docker, *, volume_name: str, requi
                     f"lazy unmount of stale mountpoint '{mountpoint}' for volume '{volume_name}'",
                     log_duration=True,
                 ):
-                    await _try_lazy_unmount(docker, mountpoint, settings.AGENT_VOLUMES_CLEANUP_R_CLONE_VERSION)
+                    await _try_lazy_unmount(docker, mountpoint)
 
             await volume.delete(force=True)
 
@@ -155,8 +157,23 @@ def _find_volumes_root(path: Path) -> Path:
     return Path(*parts[: first_occurrence + 1])
 
 
-async def _try_lazy_unmount(docker: Docker, mountpoint: Path, r_clone_version: str) -> None:
+@cached()
+async def _get_rclone_version() -> str:
+    proc = await asyncio.create_subprocess_exec(
+        "rclone",
+        "--version",
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    stdout, _ = await proc.communicate()
+    first_line = stdout.decode().split("\n")[0]
+    return first_line.split()[1].lstrip("v")
+
+
+async def _try_lazy_unmount(docker: Docker, mountpoint: Path) -> None:
     volumes_root = _find_volumes_root(mountpoint)
+
+    r_clone_version = await _get_rclone_version()
 
     container = await docker.containers.run(
         config={
