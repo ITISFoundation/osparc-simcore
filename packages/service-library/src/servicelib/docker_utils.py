@@ -145,7 +145,9 @@ class _PulledStatus:
     extracted: int = 0
 
 
-async def _parse_pull_information(parsed_progress: _DockerPullImage, *, layer_id_to_size: dict[str, _PulledStatus]):
+async def _parse_pull_information(  # noqa: C901
+    parsed_progress: _DockerPullImage, *, layer_id_to_size: dict[str, _PulledStatus]
+) -> None:
     match parsed_progress.status.lower():
         case progress_status if any(
             msg in progress_status
@@ -162,11 +164,15 @@ async def _parse_pull_information(parsed_progress: _DockerPullImage, *, layer_id
             assert parsed_progress.id  # nosec
             assert parsed_progress.progress_detail  # nosec
             assert parsed_progress.progress_detail.current  # nosec
-
-            layer_id_to_size.setdefault(
-                parsed_progress.id,
-                _PulledStatus(parsed_progress.progress_detail.total or 0),
-            ).downloaded = parsed_progress.progress_detail.current
+            if parsed_progress.progress_detail.units is None or parsed_progress.progress_detail.units in [
+                "",
+                "B",
+                "bytes",
+            ]:
+                layer_id_to_size.setdefault(
+                    parsed_progress.id,
+                    _PulledStatus(parsed_progress.progress_detail.total or 0),
+                ).downloaded = parsed_progress.progress_detail.current
         case "verifying checksum" | "download complete":
             assert parsed_progress.id  # nosec
             layer_id_to_size.setdefault(parsed_progress.id, _PulledStatus(0)).downloaded = layer_id_to_size.setdefault(
@@ -176,10 +182,15 @@ async def _parse_pull_information(parsed_progress: _DockerPullImage, *, layer_id
             assert parsed_progress.id  # nosec
             assert parsed_progress.progress_detail  # nosec
             assert parsed_progress.progress_detail.current  # nosec
-            layer_id_to_size.setdefault(
-                parsed_progress.id,
-                _PulledStatus(parsed_progress.progress_detail.total or 0),
-            ).extracted = parsed_progress.progress_detail.current
+            if parsed_progress.progress_detail.units is None or parsed_progress.progress_detail.units in [
+                "",
+                "B",
+                "bytes",
+            ]:
+                layer_id_to_size.setdefault(
+                    parsed_progress.id,
+                    _PulledStatus(parsed_progress.progress_detail.total or 0),
+                ).extracted = parsed_progress.progress_detail.current
         case "pull complete":
             assert parsed_progress.id  # nosec
             layer_id_to_size.setdefault(parsed_progress.id, _PulledStatus(0)).extracted = layer_id_to_size[
@@ -250,7 +261,8 @@ async def pull_image(
             }
         else:
             _logger.warning(
-                "pulling image without layer information for %s. Progress will be approximative. TIP: check why this happens",
+                "pulling image without layer information for %s. Progress will be approximative. "
+                "TIP: check why this happens",
                 f"{image=}",
             )
 
@@ -276,12 +288,12 @@ async def pull_image(
                 # for each attempt rest the progress
                 progress_bar.reset()
                 _reset_progress_from_previous_attempt()
-            attempt += 1
-
             _logger.info("attempt '%s' trying to pull image='%s'", attempt, image)
+            attempt += 1
 
             reported_progress = 0.0
             async for pull_progress in client.images.pull(image, stream=True, auth=registry_auth):
+                _logger.info("pull progress: %s", f"{pull_progress=}")
                 try:
                     parsed_progress = TypeAdapter(_DockerPullImage).validate_python(pull_progress)
                 except ValidationError:
@@ -299,6 +311,9 @@ async def pull_image(
                 total_extracted_size = sum(layer.extracted for layer in layer_id_to_size.values())
                 total_progress = (total_downloaded_size + total_extracted_size) / 2.0
                 progress_to_report = total_progress - reported_progress
+                _logger.info(
+                    "reporting progress: %s", f"{progress_to_report=}, {total_progress=}, {reported_progress=}"
+                )
                 await progress_bar.update(progress_to_report)
                 reported_progress = total_progress
 
