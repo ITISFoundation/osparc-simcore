@@ -26,7 +26,7 @@ from ..celery import get_task_manager
 from ..models import WebServerOwnerMetadata
 from ..products import products_service
 from ..rabbitmq import get_rabbitmq_rpc_client
-from ..users._users_service import get_active_users_email_data, get_users_in_group
+from ..users.users_service import get_active_users_email_data, get_users_in_group
 from ._helpers import get_product_data
 from ._models import Contact, EmailContact, EmailContent, EmailNotificationMessage
 
