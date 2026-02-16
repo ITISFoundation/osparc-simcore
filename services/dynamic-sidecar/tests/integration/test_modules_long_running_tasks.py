@@ -106,7 +106,7 @@ def mock_environment(
         "DY_SIDECAR_PROJECT_ID": f"{project_id}",
         "R_CLONE_PROVIDER": "MINIO",
         "DY_SIDECAR_CALLBACKS_MAPPING": "{}",
-        **{k: f"{v}" for k, v in rabbit_service.dict().items()},
+        **{k: f"{v}" for k, v in rabbit_service.model_dump().items()},
         **base_mock_envs,
     }
 
