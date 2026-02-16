@@ -98,8 +98,8 @@ class SimcoreS3API:  # pylint: disable=too-many-public-methods
             session_client = session.client(  # type: ignore[call-overload]
                 "s3",
                 endpoint_url=f"{settings.S3_ENDPOINT}",
-                aws_access_key_id=settings.S3_ACCESS_KEY,
-                aws_secret_access_key=settings.S3_SECRET_KEY,
+                aws_access_key_id=settings.S3_ACCESS_KEY.get_secret_value(),
+                aws_secret_access_key=settings.S3_SECRET_KEY.get_secret_value(),
                 region_name=settings.S3_REGION,
                 config=config,
             )
