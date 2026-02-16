@@ -788,6 +788,7 @@ qx.Class.define("osparc.dashboard.ResourceDetails", {
 
       const lazyLoadContent = () => {
         const tagManager = new osparc.form.tag.TagManager(resourceData);
+        tagManager.setLiveUpdate(true);
         tagManager.addListener("updateTags", e => {
           const updatedData = e.getData();
           tagManager.setStudyData(updatedData);
