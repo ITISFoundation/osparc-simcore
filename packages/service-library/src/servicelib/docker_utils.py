@@ -170,7 +170,7 @@ async def _parse_pull_information(  # noqa: C901
         case "downloading":
             assert parsed_progress.id  # nosec
             assert parsed_progress.progress_detail  # nosec
-            assert parsed_progress.progress_detail.current  # nosec
+            assert parsed_progress.progress_detail.current is not None  # nosec
             if parsed_progress.progress_detail.are_units_bytes():
                 layer_id_to_size.setdefault(
                     parsed_progress.id,
@@ -184,7 +184,7 @@ async def _parse_pull_information(  # noqa: C901
         case "extracting":
             assert parsed_progress.id  # nosec
             assert parsed_progress.progress_detail  # nosec
-            assert parsed_progress.progress_detail.current  # nosec
+            assert parsed_progress.progress_detail.current is not None  # nosec
             if parsed_progress.progress_detail.are_units_bytes():
                 layer_id_to_size.setdefault(
                     parsed_progress.id,
