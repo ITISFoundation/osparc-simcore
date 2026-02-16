@@ -270,6 +270,7 @@ def app_environment(
             ),
             "EC2_INSTANCES_CUSTOM_TAGS": json_dumps(ec2_instance_custom_tags),
             "EC2_INSTANCES_ATTACHED_IAM_PROFILE": faker.pystr(),
+            "EC2_INSTANCES_MAX_INSTANCES": "50",
         },
     )
     return mock_env_devel_environment | envs
