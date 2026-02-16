@@ -852,6 +852,10 @@ qx.Class.define("osparc.dashboard.ResourceBrowserBase", {
                   win.close();
                   const showStudyOptions = false;
                   this._startStudyById(studyId, openCB, cancelCB, showStudyOptions);
+                })
+                .catch(err => {
+                  this._hideLoadingPage();
+                  osparc.FlashMessenger.logError(err);
                 });
             })
             .catch(err => {
