@@ -151,7 +151,8 @@ qx.Class.define("osparc.form.tag.TagManager", {
       });
 
       this.__selectedTags.clear();
-      studyData["tags"].forEach(tag => this.__selectedTags.add(tag));
+      const tags = studyData["tags"] || [];
+      tags.forEach(tag => this.__selectedTags.add(tag));
       this.__repopulateTags();
     },
 
