@@ -25,5 +25,5 @@ class JinjaNotificationsRenderer(NotificationsRenderer):
 
         return NotificationTemplatePreview(
             template_ref=template.ref,
-            content=for_channel(template.ref.channel)(**content),
+            message_content=for_channel(template.ref.channel)(**content),
         )

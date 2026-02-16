@@ -6,15 +6,17 @@ from annotated_types import doc
 from common_library.users_enums import AccountRequestStatus
 from models_library.api_schemas_webserver.users import UserAccountGet
 from models_library.emails import LowerCaseEmailStr
+from models_library.notifications import ChannelType, TemplateRef
 from models_library.products import ProductName
 from models_library.users import UserID
-from notifications_library._email import create_email_session
-from pydantic import HttpUrl
-from settings_library.email import SMTPSettings
+from pydantic import PositiveInt
 
 from ..db.plugin import get_asyncpg_engine
-from ..notifications._helpers import create_user_data, get_product_data
+from ..invitations import api as invitations_service
+from ..notifications import notifications_service
+from ..notifications._models import EmailContact
 from . import _accounts_repository, _users_repository
+from ._models import PreviewApproval
 from .exceptions import (
     AlreadyPreRegisteredError,
     PendingPreRegistrationNotFoundError,
@@ -222,8 +224,10 @@ async def approve_user_account(
     pre_registration_email: LowerCaseEmailStr,
     product_name: ProductName,
     reviewer_id: UserID,
-    invitation_extras: Annotated[
-        dict[str, Any] | None, doc("Optional invitation data to store in extras field")
+    invitation_url: Annotated[str | None, doc("Optional URL to extract invitation data from")] = None,
+    message_content: Annotated[
+        dict[str, Any] | None,
+        doc("Optional message content to send to the approved user"),
     ] = None,
 ) -> Annotated[int, doc("The ID of the approved pre-registration record")]:
     """Approve a user account based on their pre-registration email.
@@ -251,6 +255,16 @@ async def approve_user_account(
     pre_registration = pre_registrations[0]
     pre_registration_id: int = pre_registration["id"]
 
+    # Extract invitation data if URL is provided
+    invitation_extras: dict[str, Any] | None = None
+    if invitation_url:
+        invitation_result = await invitations_service.extract_invitation(
+            app,
+            invitation_url,
+        )
+        if invitation_result:
+            invitation_extras = {"invitation": invitation_result.model_dump(mode="json")}
+
     # Update the pre-registration status to APPROVED using the reviewer's ID
     await _accounts_repository.review_user_pre_registration(
         engine,
@@ -259,6 +273,18 @@ async def approve_user_account(
         new_status=AccountRequestStatus.APPROVED,
         invitation_extras=invitation_extras,
     )
+
+    # Send email to user if message content is provided
+    if message_content:
+        await notifications_service.send_message(
+            app,
+            user_id=reviewer_id,
+            product_name=product_name,
+            channel=ChannelType.email,
+            group_ids=None,
+            external_contacts=[EmailContact(email=pre_registration_email)],
+            content=message_content,
+        )
 
     return pre_registration_id
 
@@ -269,9 +295,12 @@ async def reject_user_account(
     pre_registration_email: LowerCaseEmailStr,
     product_name: ProductName,
     reviewer_id: UserID,
+    message_content: Annotated[
+        dict[str, Any] | None,
+        doc("Optional message content to send to the rejected user"),
+    ] = None,
 ) -> Annotated[int, doc("The ID of the rejected pre-registration record")]:
     """Reject a user account based on their pre-registration email.
-
 
     Raises:
         PendingPreRegistrationNotFoundError: If no pre-registration is found for the email/product
@@ -301,115 +330,77 @@ async def reject_user_account(
         new_status=AccountRequestStatus.REJECTED,
     )
 
+    # Send email to user if message content is provided
+    if message_content:
+        await notifications_service.send_message(
+            app,
+            user_id=reviewer_id,
+            product_name=product_name,
+            channel=ChannelType.email,
+            group_ids=None,
+            external_contacts=[EmailContact(email=pre_registration_email)],
+            content=message_content,
+        )
+
     return pre_registration_id
 
 
-async def send_approval_email_to_user(
+async def preview_approval_user_account(
     app: web.Application,
     *,
+    approval_email: str,
     product_name: ProductName,
-    invitation_link: HttpUrl,
-    user_email: LowerCaseEmailStr,
-    first_name: str,
-    last_name: str,
-) -> None:
-    from notifications_library._email import compose_email  # noqa: PLC0415
-    from notifications_library._email_render import (  # noqa: PLC0415
-        get_support_address,
-        get_user_address,
-        render_email_parts,
-    )
-    from notifications_library._render import (  # noqa: PLC0415
-        create_render_environment_from_notifications_library,
-    )
+    invitation_url: str,
+    trial_account_days: Annotated[
+        PositiveInt | None,
+        doc("Number of days for trial account validity"),
+    ] = None,
+    extra_credits_in_usd: Annotated[
+        PositiveInt | None,
+        doc("Extra credits to be assigned in USD"),
+    ] = None,
+) -> PreviewApproval:
+    """Preview the approval notification for a user account.
 
-    # Create product and user data
-    product_data = get_product_data(app, product_name=product_name)
-    user_data = create_user_data(
-        user_email=user_email,
-        first_name=first_name,
-        last_name=last_name,
-    )
+    Retrieves user pre-registration data and generates a preview of the
+    account_approved email template with the provided invitation and credits.
 
-    # Prepare event data
-    event_extra_data = {
-        "host": str(invitation_link).split("?")[0],
-        "link": str(invitation_link),
-    }
-
-    # Render email parts
-    parts = render_email_parts(
-        env=create_render_environment_from_notifications_library(),
-        template_name="account_approved",
-        user=user_data,
-        product=product_data,
-        **event_extra_data,
+    Raises:
+        PendingPreRegistrationNotFoundError: If no pre-registration is found for the email/product
+    """
+    # Get pre-registration data
+    found = await search_users_accounts(
+        app,
+        filter_by_email_glob=approval_email,
+        product_name=product_name,
+        include_products=False,
     )
 
-    # Compose email
-    msg = compose_email(
-        from_=get_support_address(product_data),
-        to=[get_user_address(user_data)],
-        subject=parts.subject,
-        content_text=parts.text_content,
-        content_html=parts.html_content,
+    if not found:
+        raise PendingPreRegistrationNotFoundError(email=approval_email, product_name=product_name)
+
+    user_account = found[0]
+    assert user_account.email == approval_email  # nosec
+
+    # Preview the notification template
+    preview = await notifications_service.preview_template(
+        app=app,
+        product_name=product_name,
+        ref=TemplateRef(
+            channel=ChannelType.email,
+            template_name="account_approved",
+        ),
+        context={
+            "user": {
+                "first_name": user_account.first_name,
+            },
+            "link": invitation_url,
+            "trial_account_days": trial_account_days,
+            "extra_credits_in_usd": extra_credits_in_usd,
+        },
     )
 
-    # Send email
-    async with create_email_session(settings=SMTPSettings.create_from_envs()) as smtp:
-        await smtp.send_message(msg)
-
-
-async def send_rejection_email_to_user(
-    app: web.Application,
-    *,
-    product_name: ProductName,
-    user_email: LowerCaseEmailStr,
-    first_name: str,
-    last_name: str,
-    host: str,
-) -> None:
-    from notifications_library._email import compose_email  # noqa: PLC0415
-    from notifications_library._email_render import (  # noqa: PLC0415
-        get_support_address,
-        get_user_address,
-        render_email_parts,
+    return PreviewApproval(
+        invitation_url=invitation_url,
+        message_content=preview.message_content,
     )
-    from notifications_library._render import (  # noqa: PLC0415
-        create_render_environment_from_notifications_library,
-    )
-
-    # Create product and user data
-    product_data = get_product_data(app, product_name=product_name)
-    user_data = create_user_data(
-        user_email=user_email,
-        first_name=first_name,
-        last_name=last_name,
-    )
-
-    # Prepare event data (based on test_email_events.py)
-    event_extra_data = {
-        "host": host,
-    }
-
-    # Render email parts
-    parts = render_email_parts(
-        env=create_render_environment_from_notifications_library(),
-        template_name="account_rejected",
-        user=user_data,
-        product=product_data,
-        **event_extra_data,
-    )
-
-    # Compose email
-    msg = compose_email(
-        from_=get_support_address(product_data),
-        to=[get_user_address(user_data)],
-        subject=parts.subject,
-        content_text=parts.text_content,
-        content_html=parts.html_content,
-    )
-
-    # Send email
-    async with create_email_session(settings=SMTPSettings.create_from_envs()) as smtp:
-        await smtp.send_message(msg)
