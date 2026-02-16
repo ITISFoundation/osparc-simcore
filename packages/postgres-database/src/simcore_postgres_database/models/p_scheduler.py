@@ -1,0 +1,82 @@
+import enum
+
+import sqlalchemy as sa
+from sqlalchemy.dialects.postgresql import JSONB, UUID
+
+from ._common import RefActions
+from .base import metadata
+
+_COMMON_TABLE_PREFIX = "ps"
+
+
+class _UserDesiredState(str, enum.Enum):
+    PRESENT = "PRESENT"
+    ABSENT = "ABSENT"
+
+
+ps_user_requests = sa.Table(
+    f"{_COMMON_TABLE_PREFIX}_user_requests",
+    metadata,
+    sa.Column(
+        "product_name",
+        sa.String,
+        sa.ForeignKey(
+            "products.name",
+            name=f"fk_{_COMMON_TABLE_PREFIX}_user_requests_product_name_products",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.CASCADE,
+        ),
+        nullable=False,
+        doc="Product associated with the request",
+    ),
+    sa.Column(
+        "user_id",
+        sa.BigInteger,
+        sa.ForeignKey(
+            "users.id",
+            name=f"fk_{_COMMON_TABLE_PREFIX}_user_requests_user_id_users",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.CASCADE,
+        ),
+        nullable=False,
+        doc="User who made the request",
+    ),
+    sa.Column(
+        "project_id",
+        sa.String,
+        sa.ForeignKey(
+            "projects.uuid",
+            name=f"fk_{_COMMON_TABLE_PREFIX}_user_requests_project_id_projects",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.CASCADE,
+        ),
+        nullable=False,
+        doc="Project associated with the request",
+    ),
+    sa.Column(
+        "node_id",
+        UUID(as_uuid=True),
+        nullable=False,
+        primary_key=True,
+        doc="Unique node identifier, only one request per node at any time",
+    ),
+    sa.Column(
+        "requested_at",
+        sa.DateTime(timezone=True),
+        nullable=False,
+        server_default=sa.sql.func.now(),
+        doc="Timestamp when the user made the request",
+    ),
+    sa.Column(
+        "user_desired_state",
+        sa.Enum(_UserDesiredState),
+        nullable=False,
+        doc="Desired state of the service: PRESENT (start) or ABSENT (stop)",
+    ),
+    sa.Column(
+        "payload",
+        JSONB,
+        nullable=False,
+        doc="Serialized DynamicServiceStart or DynamicServiceStop payload",
+    ),
+)
