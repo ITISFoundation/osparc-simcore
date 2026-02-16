@@ -12,7 +12,7 @@ from ..notifications import ChannelType, TemplateName
 #
 
 
-class _EmailMessageContentMixin(BaseModel):
+class _EmailMessageContentBase(BaseModel):
     subject: Annotated[
         str,
         Field(
@@ -32,10 +32,10 @@ class _EmailMessageContentMixin(BaseModel):
         return self
 
 
-class EmailMessageContent(_EmailMessageContentMixin, InputSchema): ...
+class EmailMessageContent(_EmailMessageContentBase, InputSchema): ...
 
 
-class EmailMessageContentGet(_EmailMessageContentMixin, OutputSchema): ...
+class EmailMessageContentGet(_EmailMessageContentBase, OutputSchema): ...
 
 
 # Message
