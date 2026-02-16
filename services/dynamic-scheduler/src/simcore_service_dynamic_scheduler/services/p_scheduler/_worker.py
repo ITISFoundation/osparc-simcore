@@ -187,7 +187,6 @@ async def _try_handle_step(
                     await steps_repo.step_finished_with_failure(
                         step_id, create_troubleshooting_log_message(user_error_msg=f"step_id={step_id} failed", error=e)
                     )
-
     finally:
         await cancel_wait_task(lease_task)
         await cancellation_notifier.unsubscribe(handler_step_cancellation)

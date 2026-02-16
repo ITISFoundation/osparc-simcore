@@ -106,7 +106,6 @@ class WorkflowManager(SingletonInAppStateMixin):
             _logger.info("No active run to CANCEL found for '%s'", node_id)
             return
 
-        # triggers cooperative cancellation
         await self.runs_repo.cancel_run(current_run.run_id)
         await self.steps_repo.mark_run_steps_as_skipped(self.app, current_run.run_id)
         _logger.debug("CANCELED workflow for '%s': %s", node_id, current_run)
