@@ -287,7 +287,6 @@ async def pull_image(
                 # for each attempt rest the progress
                 progress_bar.reset()
                 _reset_progress_from_previous_attempt()
-            _logger.info("attempt '%s' trying to pull image='%s'", attempt, image)
             attempt += 1
 
             reported_progress = 0.0
@@ -310,9 +309,7 @@ async def pull_image(
                 total_extracted_size = sum(layer.extracted for layer in layer_id_to_size.values())
                 total_progress = (total_downloaded_size + total_extracted_size) / 2.0
                 progress_to_report = total_progress - reported_progress
-                _logger.info(
-                    "reporting progress: %s", f"{progress_to_report=}, {total_progress=}, {reported_progress=}"
-                )
+
                 await progress_bar.update(progress_to_report)
                 reported_progress = total_progress
 
