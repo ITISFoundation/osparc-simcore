@@ -7,6 +7,7 @@ from models_library.notifications_errors import (
     NotificationsTemplateNotFoundError,
 )
 from models_library.rpc.notifications.template import (
+    NotificationsSendFromTemplateRpcRequest,
     NotificationsTemplatePreviewRpcRequest,
     NotificationsTemplatePreviewRpcResponse,
     NotificationsTemplateRefRpc,
@@ -78,3 +79,12 @@ async def search_templates(
         )
         for template in templates
     ]
+
+
+@router.expose()
+async def send_from_template(
+    _app: FastAPI,
+    *,
+    request: NotificationsSendFromTemplateRpcRequest,
+) -> list[NotificationsTemplateRpcResponse]:
+    raise NotImplementedError
