@@ -89,10 +89,17 @@ class DockerImageMultiArchManifestsV2(BaseModel):
     )
 
 
+class _DockerPullImageProgressDetail(ProgressDetail):
+    units: str | None = None  # if empty or None, the units are in bytes
+
+    def are_units_bytes(self) -> bool:
+        return self.units is None or self.units in ["", "B", "bytes"]
+
+
 class _DockerPullImage(BaseModel):
     status: str
     id: str | None = None
-    progress_detail: ProgressDetail | None = None
+    progress_detail: _DockerPullImageProgressDetail | None = None
     progress: str | None = None
     model_config = ConfigDict(
         frozen=True,
@@ -164,11 +171,7 @@ async def _parse_pull_information(  # noqa: C901
             assert parsed_progress.id  # nosec
             assert parsed_progress.progress_detail  # nosec
             assert parsed_progress.progress_detail.current  # nosec
-            if parsed_progress.progress_detail.units is None or parsed_progress.progress_detail.units in [
-                "",
-                "B",
-                "bytes",
-            ]:
+            if parsed_progress.progress_detail.are_units_bytes():
                 layer_id_to_size.setdefault(
                     parsed_progress.id,
                     _PulledStatus(parsed_progress.progress_detail.total or 0),
@@ -182,11 +185,7 @@ async def _parse_pull_information(  # noqa: C901
             assert parsed_progress.id  # nosec
             assert parsed_progress.progress_detail  # nosec
             assert parsed_progress.progress_detail.current  # nosec
-            if parsed_progress.progress_detail.units is None or parsed_progress.progress_detail.units in [
-                "",
-                "B",
-                "bytes",
-            ]:
+            if parsed_progress.progress_detail.are_units_bytes():
                 layer_id_to_size.setdefault(
                     parsed_progress.id,
                     _PulledStatus(parsed_progress.progress_detail.total or 0),
