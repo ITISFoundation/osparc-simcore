@@ -50,7 +50,7 @@ from ...docker_service_specs import (
 )
 from ...docker_service_specs.settings import merge_settings_before_use
 from ._abc import DynamicSchedulerEvent
-from ._events_utils import get_allow_metrics_collection, traced_operation
+from ._events_utils import get_allow_metrics_collection
 
 _logger = logging.getLogger(__name__)
 
@@ -129,15 +129,6 @@ class CreateSidecars(DynamicSchedulerEvent):
 
     @classmethod
     async def action(cls, app: FastAPI, scheduler_data: SchedulerData) -> None:
-        with traced_operation(
-            "dynamic_sidecar.create",
-            scheduler_data,
-            operation="create_sidecars",
-        ):
-            await cls._action_impl(app, scheduler_data)
-
-    @classmethod
-    async def _action_impl(cls, app: FastAPI, scheduler_data: SchedulerData) -> None:
         # instrumentation
         message = InstrumentationRabbitMessage(
             metrics="service_started",

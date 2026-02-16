@@ -131,7 +131,7 @@ def extract_span_links_from_scheduler_data(scheduler_data: SchedulerData) -> lis
     if instrumentation.request_tracestate:
         carrier["tracestate"] = instrumentation.request_tracestate
 
-    _logger.info(
+    _logger.debug(
         "Extracting span link for service %s from traceparent=%s",
         scheduler_data.service_name,
         instrumentation.request_traceparent,
@@ -151,7 +151,7 @@ def extract_span_links_from_scheduler_data(scheduler_data: SchedulerData) -> lis
             "link.span_id": trace.format_span_id(span_context.span_id),
         }
 
-        _logger.info(
+        _logger.debug(
             "Created span link for service %s: trace_id=%s, span_id=%s",
             scheduler_data.service_name,
             trace.format_trace_id(span_context.trace_id),
@@ -188,7 +188,7 @@ def traced_operation(
     # Get links if requested
     links = extract_span_links_from_scheduler_data(scheduler_data) if include_links else []
 
-    _logger.info(
+    _logger.debug(
         "Creating traced span '%s' for service %s with %d link(s)",
         operation_name,
         scheduler_data.service_name,

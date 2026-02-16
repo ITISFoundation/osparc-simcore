@@ -74,7 +74,12 @@ async def _apply_observation_cycle_impl(
     for dynamic_scheduler_event in REGISTERED_EVENTS:
         if await dynamic_scheduler_event.will_trigger(app=app, scheduler_data=scheduler_data):
             # event.action will apply changes to the output_scheduler_data
-            await dynamic_scheduler_event.action(app, scheduler_data)
+            with traced_operation(
+                f"dynamic_sidecar.event.{dynamic_scheduler_event.__name__}",
+                scheduler_data,
+                include_links=False,
+            ):
+                await dynamic_scheduler_event.action(app, scheduler_data)
 
     # check if the status of the services has changed from OK
     if initial_status != scheduler_data.dynamic_sidecar.status:
@@ -131,13 +136,23 @@ async def observing_single_service(
                 # NOTE: saving will fail since there is no dy-sidecar,
                 # and the save was taken care of by support. Disabling it.
                 scheduler_data.dynamic_sidecar.service_removal_state.can_save = False
-                await attempt_pod_removal_and_data_saving(app, scheduler_data)
+                with traced_operation(
+                    "dynamic_sidecar.pod_removal_after_manual_intervention",
+                    scheduler_data,
+                    failure_mode="manual_intervention",
+                ):
+                    await attempt_pod_removal_and_data_saving(app, scheduler_data)
 
             return
 
         # use-cases: 1, 2
         # Cleanup all resources related to the dynamic-sidecar.
-        await attempt_pod_removal_and_data_saving(app, scheduler_data)
+        with traced_operation(
+            "dynamic_sidecar.pod_removal_on_failure",
+            scheduler_data,
+            failure_mode="automatic_cleanup",
+        ):
+            await attempt_pod_removal_and_data_saving(app, scheduler_data)
         return
 
     scheduler_data_copy: SchedulerData = deepcopy(scheduler_data)
