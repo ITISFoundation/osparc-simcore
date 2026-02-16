@@ -113,8 +113,8 @@ class Step:  # pylint: disable=too-many-instance-attributes
     attempt_number: int
 
     state: StepState
-    message: str | None
     finished_at: datetime | None
+    message: str | None
 
 
 @dataclass
