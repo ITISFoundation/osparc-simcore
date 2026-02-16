@@ -134,7 +134,7 @@ class StepLease:
 
 
 @dataclass
-class StepHistory:
+class StepFailHistory:
     step_id: StepId
 
     attempt: int

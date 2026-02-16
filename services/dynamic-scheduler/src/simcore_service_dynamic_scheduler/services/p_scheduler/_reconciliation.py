@@ -30,9 +30,7 @@ from ._models import (
 from ._node_status import StatusManager
 from ._notifications import RK_RECONSILIATION, NotificationsManager
 from ._queue import BoundedPubSubQueue, get_consumer_count
-from ._repositories.runs import RunsRepository
-from ._repositories.steps import StepsRepository
-from ._repositories.user_requests import UserRequestsRepository
+from ._repositories import RunsRepository, StepsRepository, UserRequestsRepository
 from ._workflow_manager import WorkflowManager
 from ._workflow_registry import WorkflowRegistry
 

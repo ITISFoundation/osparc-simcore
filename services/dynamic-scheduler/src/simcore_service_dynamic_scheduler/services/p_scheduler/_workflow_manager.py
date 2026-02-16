@@ -11,9 +11,7 @@ from simcore_service_dynamic_scheduler.services.p_scheduler._models import UserR
 
 from ..base_repository import get_repository
 from ._models import Run, Step, StepId
-from ._repositories.runs import RunsRepository
-from ._repositories.steps import StepsRepository
-from ._repositories.user_requests import UserRequestsRepository
+from ._repositories import RunsRepository, StepsRepository, UserRequestsRepository
 
 _logger = logging.getLogger(__name__)
 

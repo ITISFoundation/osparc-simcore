@@ -22,8 +22,7 @@ from ._metrics import MetricsManager
 from ._models import BaseStep, InData, InDataKeys, OutData, OutDataKeys, Step, StepId
 from ._notifications import RK_STEP_CANCELLED, RK_STEP_READY, NotificationsManager
 from ._queue import BoundedPubSubQueue, get_consumer_count
-from ._repositories import RunsStoreRepository, StepsLeaseRepository
-from ._repositories.steps import StepsRepository
+from ._repositories import RunsStoreRepository, StepFailHistoryRepository, StepsLeaseRepository, StepsRepository
 from ._worker_utils import ChangeNotifier
 from ._workflow_registry import WorkflowRegistry
 
@@ -105,7 +104,7 @@ async def _task_lease_heartbeat(
     app: FastAPI, interrupt_queue: Queue[_InterruptReasson], cancellation_notifier: ChangeNotifier, step_id: StepId
 ) -> None:
     steps_lease_repo = get_repository(app, StepsLeaseRepository)
-    lease_extended = await steps_lease_repo.extend_lease(step_id)
+    lease_extended = await steps_lease_repo.acquire_or_extend_lease(step_id)
     if not lease_extended:
         await cancellation_notifier.notify(step_id)
         await interrupt_queue.put(_InterruptReasson.LEASE_EXPIRY)
@@ -184,9 +183,13 @@ async def _try_handle_step(
                     await steps_repo.step_finished_successfully(step_id)
                 except Exception as e:  # pylint: disable=broad-except
                     _logger.exception("step_id=%s failed", step_id)
-                    await steps_repo.step_finished_with_failure(
-                        step_id, create_troubleshooting_log_message(user_error_msg=f"step_id={step_id} failed", error=e)
+
+                    fail_message = create_troubleshooting_log_message(
+                        user_error_msg=f"step_id={step_id} failed", error=e
                     )
+                    await steps_repo.step_finished_with_failure(step_id, fail_message)
+                    steps_fail_history_repo = get_repository(app, StepFailHistoryRepository)
+                    await steps_fail_history_repo.insert_step_fail_history(step_id, step.attempt_number, fail_message)
     finally:
         await cancel_wait_task(lease_task)
         await cancellation_notifier.unsubscribe(handler_step_cancellation)
