@@ -161,8 +161,8 @@ def extract_span_link_from_trace_carrier(
             }
         )
 
-        _logger.debug(
-            "Created span link: trace_id=%s, span_id=%s",
+        _logger.info(
+            "Created span link: from parenttrace_id=%s, span_id=%s",
             trace.format_trace_id(span_context.trace_id),
             trace.format_span_id(span_context.span_id),
         )
