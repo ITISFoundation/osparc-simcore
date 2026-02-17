@@ -124,11 +124,10 @@ class Step:  # pylint: disable=too-many-instance-attributes
 @dataclass
 class StepLease:
     step_id: StepId
+    owner: WorkerId
+    acquired_at: datetime
 
     renew_count: int
-    owner: WorkerId
-
-    acquired_at: datetime
     last_heartbeat_at: datetime
     expires_at: datetime
 

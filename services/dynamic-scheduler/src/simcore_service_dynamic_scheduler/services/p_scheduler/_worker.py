@@ -6,6 +6,7 @@ from datetime import timedelta
 from enum import auto
 from functools import cached_property, partial
 from typing import Any, Final
+from uuid import uuid4
 
 from common_library.async_tools import cancel_wait_task
 from common_library.logging.logging_errors import create_troubleshooting_log_message
@@ -19,7 +20,7 @@ from servicelib.logging_utils import log_context
 from ..base_repository import get_repository
 from ._lifecycle_protocol import SupportsLifecycle
 from ._metrics import MetricsManager
-from ._models import InData, InDataKeys, OutData, OutDataKeys, Step, StepId
+from ._models import InData, InDataKeys, OutData, OutDataKeys, Step, StepId, WorkerId
 from ._notifications import RK_STEP_CANCELLED, RK_STEP_READY, NotificationsManager
 from ._queue import BoundedPubSubQueue, get_consumer_count
 from ._repositories import RunsStoreRepository, StepsLeaseRepository, StepsRepository
@@ -101,10 +102,14 @@ async def _task_step_runner(app: FastAPI, step: Step, interrupt_queue: Queue[_In
 
 
 async def _task_lease_heartbeat(
-    app: FastAPI, interrupt_queue: Queue[_InterruptReasson], cancellation_notifier: ChangeNotifier, step_id: StepId
+    app: FastAPI,
+    interrupt_queue: Queue[_InterruptReasson],
+    cancellation_notifier: ChangeNotifier,
+    step_id: StepId,
+    worker_id: WorkerId,
 ) -> None:
     steps_lease_repo = get_repository(app, StepsLeaseRepository)
-    lease_extended = await steps_lease_repo.acquire_or_extend_lease(step_id)
+    lease_extended = await steps_lease_repo.acquire_or_extend_lease(step_id, worker_id)
     if not lease_extended:
         await cancellation_notifier.notify(step_id)
         await interrupt_queue.put(_InterruptReasson.LEASE_EXPIRY)
@@ -118,7 +123,12 @@ async def _handler_step_cancellation(
 
 
 async def _try_handle_step(
-    app: FastAPI, cancellation_notifier: ChangeNotifier, *, heartbeat_interval: timedelta, search_step_id: StepId | None
+    app: FastAPI,
+    cancellation_notifier: ChangeNotifier,
+    worker_id: WorkerId,
+    *,
+    heartbeat_interval: timedelta,
+    search_step_id: StepId | None,
 ) -> None:
     """tries to acquire one step at a time, if it succeeds then it starts processing"""
 
@@ -143,6 +153,7 @@ async def _try_handle_step(
         interrupt_queue=interrupt_queue,
         cancellation_notifier=cancellation_notifier,
         step_id=step.step_id,
+        worker_id=worker_id,
     )
 
     # 3. start background task for cancellation monitoring
@@ -223,12 +234,13 @@ class WorkerManager(SingletonInAppStateMixin, SupportsLifecycle):
     def _metrics_manager(self) -> MetricsManager:
         return MetricsManager.get_from_app_state(self.app)
 
-    async def _safe_try_handle_step(self, step_id: StepId | None) -> None:
+    async def _safe_try_handle_step(self, worker_id: WorkerId, step_id: StepId | None) -> None:
         with log_context(_logger, logging.DEBUG, "handling step_id='%s'", step_id):
             try:
                 await _try_handle_step(
                     self.app,
                     self._cancellation_notifier,
+                    worker_id,
                     heartbeat_interval=self.heartbeat_interval,
                     search_step_id=step_id,
                 )
@@ -251,8 +263,8 @@ class WorkerManager(SingletonInAppStateMixin, SupportsLifecycle):
         await self._cancellation_notifier.notify(message)
 
     async def setup(self) -> None:
-        for _ in range(self._consumer_count):
-            self._queue.subscribe(self._safe_try_handle_step)
+        for k in range(self._consumer_count):
+            self._queue.subscribe(partial(self._safe_try_handle_step, f"worker-{k}-{uuid4()}"))
 
         self._notifications_manager.subscribe_handler(
             routing_key=RK_STEP_READY, handler=self._handle_step_ready_notification

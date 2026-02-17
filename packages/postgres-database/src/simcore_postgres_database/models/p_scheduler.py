@@ -309,3 +309,54 @@ ps_step_fail_history = sa.Table(
         name=f"pk_{_COMMON_TABLE_PREFIX}_step_fail_history",
     ),
 )
+
+
+ps_step_lease = sa.Table(
+    f"{_COMMON_TABLE_PREFIX}_step_lease",
+    metadata,
+    sa.Column(
+        "step_id",
+        sa.BigInteger,
+        sa.ForeignKey(
+            f"{_COMMON_TABLE_PREFIX}_steps.step_id",
+            name=f"fk_{_COMMON_TABLE_PREFIX}_step_lease_step_id_{_COMMON_TABLE_PREFIX}_steps",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.CASCADE,
+        ),
+        nullable=False,
+        primary_key=True,
+        doc="Reference to the step being leased",
+    ),
+    sa.Column(
+        "renew_count",
+        sa.Integer,
+        nullable=False,
+        doc="Number of times the lease has been renewed",
+    ),
+    sa.Column(
+        "owner",
+        sa.String,
+        nullable=False,
+        doc="Identifier of the worker that owns the lease",
+    ),
+    sa.Column(
+        "acquired_at",
+        sa.DateTime(timezone=True),
+        nullable=False,
+        server_default=sa.sql.func.now(),
+        doc="Timestamp when the lease was first acquired",
+    ),
+    sa.Column(
+        "last_heartbeat_at",
+        sa.DateTime(timezone=True),
+        nullable=False,
+        server_default=sa.sql.func.now(),
+        doc="Timestamp of the last heartbeat from the owner",
+    ),
+    sa.Column(
+        "expires_at",
+        sa.DateTime(timezone=True),
+        nullable=False,
+        doc="Timestamp when the lease expires if not renewed",
+    ),
+)
