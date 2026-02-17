@@ -234,7 +234,10 @@ class WorkerManager(SingletonInAppStateMixin, SupportsLifecycle):
         with log_context(_logger, logging.DEBUG, "handling step_id='%s'", step_id):
             try:
                 await _try_handle_step(
-                    self.app, self._cancellation_notifier, heartbeat_interval=self.heartbeat_interval, step_id=step_id
+                    self.app,
+                    self._cancellation_notifier,
+                    heartbeat_interval=self.heartbeat_interval,
+                    search_step_id=step_id,
                 )
             except Exception:
                 self._metrics_manager.inc_worker_failures()
