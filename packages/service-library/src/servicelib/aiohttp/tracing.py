@@ -289,6 +289,9 @@ def setup_tracing(
     assert tracing_config.tracer_provider  # nosec
     assert tracing_config.tracing_settings  # nosec
 
+    # Set the tracer provider as the global tracer provider so it's used by trace.get_tracer()
+    trace.set_tracer_provider(tracing_config.tracer_provider)
+
     _startup(
         app=app,
         tracing_settings=tracing_config.tracing_settings,
