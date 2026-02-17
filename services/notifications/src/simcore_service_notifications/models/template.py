@@ -14,7 +14,7 @@ class BaseTemplateContext(BaseModel):
 
 _TEMPLATE_CONTEXT_REGISTRY: dict[tuple[ChannelType, TemplateName], type[BaseTemplateContext]] = {}
 
-_T = TypeVar("_T", bound=type[BaseTemplateContext])
+C = TypeVar("C", bound=type[BaseTemplateContext])
 
 
 @dataclass(frozen=True)
@@ -38,7 +38,7 @@ class Template(ABC):
 def register_template_context(
     channel: ChannelType,
     template_name: TemplateName,
-) -> Callable[[_T], _T]:
+) -> Callable[[C], C]:
     """Decorator to register a template context model.
 
     Args:
@@ -54,7 +54,7 @@ def register_template_context(
             ...
     """
 
-    def decorator(cls: _T) -> _T:
+    def decorator(cls: C) -> C:
         key = (channel, template_name)
         if key in _TEMPLATE_CONTEXT_REGISTRY:
             msg = f"Template context model already registered for {channel}/{template_name}"
