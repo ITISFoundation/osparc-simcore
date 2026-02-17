@@ -21,7 +21,9 @@ qx.Class.define("osparc.po.EmailEditor", {
   construct: function() {
     this.base(arguments);
 
-    this.setLayout(new qx.ui.layout.VBox(10));
+    this._setLayout(new qx.ui.layout.VBox(5));
+
+    this.__selectedGroupIds = [];
 
     this.__buildLayout();
   },
@@ -156,6 +158,10 @@ qx.Class.define("osparc.po.EmailEditor", {
         }, this);
         chipsContainer.add(chip);
       });
+    },
+
+    getSelectedGroupIds: function() {
+      return this.__selectedGroupIds;
     },
   }
 });

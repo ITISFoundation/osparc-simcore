@@ -18,15 +18,7 @@
 qx.Class.define("osparc.po.SendEmail", {
   extend: osparc.po.BaseView,
 
-  construct: function() {
-    this.base(arguments);
-
-    this.__selectedGroupIds = [];
-  },
-
   members: {
-    __selectedGroupIds: null,
-
     _createChildControlImpl: function(id) {
       let control;
       switch (id) {
@@ -123,13 +115,14 @@ qx.Class.define("osparc.po.SendEmail", {
     },
 
     __sendEmailClicked: function() {
+      const emailEditor = this.getChildControl("email-editor");
+      const selectedGroupIds = emailEditor.getSelectedGroupIds();
       // make sure at least one recipient is selected
-      if (!this.__selectedGroupIds.length) {
+      if (!selectedGroupIds.length) {
         osparc.FlashMessenger.logAs(this.tr("Please select at least one recipient"), "WARNING");
         return;
       }
 
-      const emailEditor = this.getChildControl("email-editor");
       // make sure subject is not empty
       const subjectField = emailEditor.getChildControl("subject-field");
       if (!subjectField.getValue()) {
@@ -163,12 +156,13 @@ qx.Class.define("osparc.po.SendEmail", {
       sending();
 
       const emailEditor = this.getChildControl("email-editor");
+      const selectedGroupIds = emailEditor.getSelectedGroupIds();
       const subjectField = emailEditor.getChildControl("subject-field");
       const subject = subjectField.getValue();
       const emailContentEditor = emailEditor.getChildControl("email-content-editor-and-preview");
       const bodyHtml = emailContentEditor.composeWholeHtml();
       const bodyText = emailContentEditor.getBodyText();
-      const sendMessagePromise = osparc.message.Messages.sendMessage(this.__selectedGroupIds, subject, bodyHtml, bodyText);
+      const sendMessagePromise = osparc.message.Messages.sendMessage(selectedGroupIds, subject, bodyHtml, bodyText);
       const pollTasks = osparc.store.PollTasks.getInstance();
       pollTasks.createPollingTask(sendMessagePromise)
         .then(task => {
