@@ -119,13 +119,6 @@ def extract_span_links_from_scheduler_data(scheduler_data: SchedulerData) -> lis
         )
         return []
 
-    if not trace.get_current_span().is_recording():
-        _logger.debug(
-            "Tracing not recording for service %s, skipping link creation",
-            scheduler_data.service_name,
-        )
-        return []
-
     # Reconstruct carrier dict from stored headers
     carrier = {"traceparent": instrumentation.request_traceparent}
     if instrumentation.request_tracestate:
@@ -152,10 +145,11 @@ def extract_span_links_from_scheduler_data(scheduler_data: SchedulerData) -> lis
         }
 
         _logger.debug(
-            "Created span link for service %s: trace_id=%s, span_id=%s",
+            "Created span link for service %s: trace_id=%s, span_id=%s, attributes=%s",
             scheduler_data.service_name,
             trace.format_trace_id(span_context.trace_id),
             trace.format_span_id(span_context.span_id),
+            link_attributes,
         )
         return [Link(span_context, attributes=link_attributes)]
 
@@ -177,8 +171,10 @@ def traced_operation(
     """Context manager for creating traced spans with common attributes.
 
     When tracing is disabled, this becomes a no-op context manager.
+    The span will only record if the global tracer provider has been configured
+    with a proper backend (e.g., OTLP exporter).
     """
-    # Get tracer - will be no-op if tracing is disabled
+    # Get tracer - uses the globally set tracer provider if available, otherwise no-op
     tracer = trace.get_tracer(__name__)
 
     # Prepare attributes
@@ -195,12 +191,21 @@ def traced_operation(
         len(links),
     )
 
-    # This is safe even when tracing is disabled - creates no-op span
+    # Create a span with proper attributes and links
+    # If tracing is disabled, this creates a no-op span
     with tracer.start_as_current_span(
         operation_name,
         links=links,
         attributes=attributes,
-    ):
+    ) as span:
+        # Log debug info only if span is actually recording
+        if span.is_recording():
+            _logger.debug(
+                "Started recording span '%s' for service %s with trace_id=%s",
+                operation_name,
+                scheduler_data.service_name,
+                trace.format_trace_id(span.get_span_context().trace_id),
+            )
         yield
 
 
