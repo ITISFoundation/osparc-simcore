@@ -1,11 +1,21 @@
 {% extends 'email/_base/body_html.j2' %}
 {% block title %} {% include 'email/account_approved/subject.j2' %} {% endblock %}
 {% block content %}
-<p>Dear {{ user.first_name or user.user_name }},</p>
+<p>Dear {{ user.first_name or 'User' }},</p>
 
 <p>
   Thank you for your interest in {{ product.display_name }}. We are pleased to provide you with a one-time invitation link to register on the platform.
 </p>
+
+{% if trial_account_days is defined and trial_account_days %}
+<p>Your account includes {{ trial_account_days }} day{{ "s" if trial_account_days > 1 }} trial period.</p>
+{% else %}
+<p>Your account includes unlimited access.</p>
+{% endif %}
+
+{% if extra_credits_in_usd is defined and extra_credits_in_usd %}
+<p>You also receive {{ extra_credits_in_usd }} extra USD credits.</p>
+{% endif %}
 
 <p>
   Click <a href="{{ link }}">here</a> to access the registration page.

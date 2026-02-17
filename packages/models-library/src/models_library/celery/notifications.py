@@ -7,7 +7,7 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field
 from ..notifications import ChannelType
 
 
-class EmailAddress(BaseModel):
+class EmailContact(BaseModel):
     name: str = ""
     email: EmailStr
 
@@ -26,7 +26,7 @@ class EmailContent(BaseModel):
             max_length=998,
         ),
     ]
-    body_text: str
+    body_text: str | None = None
     body_html: str | None = None
 
 
@@ -36,11 +36,11 @@ class EmailMessage(BaseModel):
     channel: ChannelType = ChannelType.email
 
     # Envelope fields
-    from_: Annotated[EmailAddress, Field(alias="from")]
-    to: Annotated[list[EmailAddress], Field(min_length=1)]
-    reply_to: EmailAddress | None = None
-    cc: list[EmailAddress] | None = None
-    bcc: list[EmailAddress] | None = None
+    from_: Annotated[EmailContact, Field(alias="from")]
+    to: Annotated[list[EmailContact], Field(min_length=1)]
+    reply_to: EmailContact | None = None
+    cc: list[EmailContact] | None = None
+    bcc: list[EmailContact] | None = None
 
     # Content fields
     content: EmailContent
@@ -56,9 +56,9 @@ class EmailMessage(BaseModel):
 class SingleEmailMessage(BaseModel):
     """Payload for single email Celery task (one recipient per task)."""
 
-    from_: Annotated[EmailAddress, Field(alias="from")]
-    to: EmailAddress
-    reply_to: EmailAddress | None = None
+    from_: Annotated[EmailContact, Field(alias="from")]
+    to: EmailContact
+    reply_to: EmailContact | None = None
 
     content: EmailContent
 

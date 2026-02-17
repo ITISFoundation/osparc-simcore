@@ -5,12 +5,9 @@ import logging
 from email.headerregistry import Address
 
 from celery import Task, group, shared_task  # type: ignore[import-untyped]
-from models_library.celery.notifications import (
-    EmailAddress,
-    EmailContent,
-    EmailMessage,
-    SingleEmailMessage,
-)
+from models_library.api_schemas_notifications.message import EmailContent, EmailMessage
+from models_library.celery.notifications import EmailContact as SingleEmailContact
+from models_library.celery.notifications import SingleEmailMessage
 from notifications_library._email import (
     compose_email,
     create_email_session,
@@ -20,8 +17,11 @@ from settings_library.email import SMTPSettings
 
 _logger = logging.getLogger(__name__)
 
+# Rate limit is 12 emails/minute = 1 email every 5 seconds
+_SECONDS_BETWEEN_EMAILS = 5
 
-def _to_address(address: EmailAddress) -> Address:
+
+def _to_address(address: SingleEmailContact) -> Address:
     return Address(display_name=address.name, addr_spec=address.email)
 
 
@@ -45,10 +45,6 @@ def send_single_email(msg: SingleEmailMessage) -> None:
     asyncio.run(_send_single_email_async(msg))
 
 
-# Rate limit is 12 emails/minute = 1 email every 5 seconds
-_SECONDS_BETWEEN_EMAILS = 5
-
-
 def send_email(
     task: Task,
     task_key: TaskKey,
@@ -59,19 +55,17 @@ def send_email(
 
     single_msgs = [
         SingleEmailMessage(
-            from_=EmailAddress(**message.from_.model_dump()),
-            to=EmailAddress(**to.model_dump()),
-            reply_to=EmailAddress(**message.reply_to.model_dump()) if message.reply_to else None,
+            from_=SingleEmailContact(**message.from_.model_dump()),
+            to=SingleEmailContact(**to.model_dump()),
+            reply_to=SingleEmailContact(**message.reply_to.model_dump()) if message.reply_to else None,
             content=EmailContent(**message.content.model_dump()),
         )
         for to in message.to
     ]
 
-    # Use countdown to enforce strict rate limiting from the start,
-    # avoiding the token bucket initial burst behavior
     group(
         [
-            send_single_email.s(single_msg.model_dump()).set(countdown=i * _SECONDS_BETWEEN_EMAILS)
+            send_single_email.s(single_msg.model_dump()).set(countdown=i * _SECONDS_BETWEEN_EMAILS)  # type: ignore
             for i, single_msg in enumerate(single_msgs)
         ]
-    ).apply_async()  # type: ignore
+    ).apply_async()

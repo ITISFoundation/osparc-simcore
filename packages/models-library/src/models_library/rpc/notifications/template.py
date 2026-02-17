@@ -28,6 +28,6 @@ class TemplatePreviewRpcRequest(BaseModel):
 
 class TemplatePreviewRpcResponse(BaseModel):
     ref: TemplateRefRpc
-    content: dict[str, Any]
+    message_content: dict[str, Any]
 
     model_config = ConfigDict(frozen=True)

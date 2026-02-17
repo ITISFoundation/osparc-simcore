@@ -2,7 +2,7 @@ import contextlib
 from datetime import timedelta
 from typing import Any
 
-from pydantic import BaseModel, SecretStr, TypeAdapter, ValidationError
+from pydantic import AnyUrl, BaseModel, SecretStr, TypeAdapter, ValidationError
 from pydantic_core import Url
 
 
@@ -23,10 +23,10 @@ def model_dump_with_secrets(
             data[field_name] = field_data.total_seconds()
 
         elif isinstance(field_data, SecretStr):
-            data[field_name] = field_data.get_secret_value() if show_secrets else str(field_data)
+            data[field_name] = field_data.get_secret_value() if show_secrets else f"{field_data}"
 
-        elif isinstance(field_data, Url):
-            data[field_name] = str(field_data)
+        elif isinstance(field_data, (AnyUrl, Url)):
+            data[field_name] = f"{field_data}"
 
         elif isinstance(field_data, dict):
             possible_pydantic_model = settings_obj.__class__.model_fields[field_name].annotation

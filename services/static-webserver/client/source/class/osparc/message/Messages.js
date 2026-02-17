@@ -39,11 +39,11 @@ qx.Class.define("osparc.message.Messages", {
       return osparc.data.Resources.fetch("notificationTemplates", "previewTemplate", params)
     },
 
-    sendMessage: function(recipients, subject, bodyHtml, bodyText) {
+    sendMessage: function(groupIds, subject, bodyHtml, bodyText) {
       const params = {
         data: {
           "channel": "email",
-          "recipients": recipients,
+          "groupIds": groupIds,
           "content": {
             "subject": subject,
             "bodyHtml": bodyHtml,

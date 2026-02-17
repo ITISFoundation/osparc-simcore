@@ -8,6 +8,7 @@ from collections.abc import AsyncIterator
 import pytest
 import tenacity
 from fakeredis import FakeAsyncRedis
+from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
 from redis.asyncio import Redis, from_url
 from settings_library.basic_types import PortInt
@@ -38,7 +39,7 @@ async def redis_settings(
     # test runner is running on the host computer
     settings = RedisSettings(
         REDIS_HOST=get_localhost_ip(),
-        REDIS_PORT=PortInt(port),
+        REDIS_PORT=TypeAdapter(PortInt).validate_python(port),
         REDIS_PASSWORD=env_vars_for_docker_compose["REDIS_PASSWORD"],
     )
     await wait_till_redis_responsive(settings.build_redis_dsn(RedisDatabase.RESOURCES))
@@ -57,7 +58,9 @@ def redis_service(
     """
     monkeypatch.setenv("REDIS_HOST", redis_settings.REDIS_HOST)
     monkeypatch.setenv("REDIS_PORT", str(redis_settings.REDIS_PORT))
-    monkeypatch.setenv("REDIS_PASSWORD", redis_settings.REDIS_PASSWORD.get_secret_value())
+    monkeypatch.setenv(
+        "REDIS_PASSWORD", redis_settings.REDIS_PASSWORD.get_secret_value() if redis_settings.REDIS_PASSWORD else "null"
+    )
     return redis_settings
 
 

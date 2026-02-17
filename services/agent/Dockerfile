@@ -170,10 +170,9 @@ EXPOSE 8000
 ENTRYPOINT [ "/bin/sh", "services/agent/docker/entrypoint.sh" ]
 CMD ["/bin/sh", "services/agent/docker/boot.sh"]
 
-
 # --------------------------Development stage -------------------
 # Source code accessible in host but runs in container
-# Runs as myu with same gid/uid as host
+# Runs as scu with same gid/uid as host
 # Placed at the end to speed-up the build if images targeting production
 #
 #  + /devel         WORKDIR

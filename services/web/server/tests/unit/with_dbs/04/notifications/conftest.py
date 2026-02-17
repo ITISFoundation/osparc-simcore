@@ -25,6 +25,7 @@ def app_environment(
         {
             **app_environment,
             "WEBSERVER_GARBAGE_COLLECTOR": "null",
+            "WEBSERVER_DEV_FEATURES_ENABLED": "1",
         },
     )
 
@@ -36,11 +37,6 @@ def mocked_notifications_rpc_client(
     """Mock RabbitMQ RPC calls for notifications templates"""
 
     # Mock the RPC interface functions
-    mocker.patch(
-        f"{_rest.__name__}.remote_preview_template",
-        autospec=True,
-    )
-
     mocker.patch(
         f"{_rest.__name__}.remote_search_templates",
         autospec=True,

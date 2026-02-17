@@ -1,6 +1,6 @@
 from datetime import datetime
 from decimal import Decimal
-from typing import Annotated, Any, TypeAlias
+from typing import Annotated, Any
 
 from common_library.basic_types import DEFAULT_FACTORY
 from pydantic import (
@@ -125,15 +125,15 @@ class ProductUIGet(OutputSchema):
     ]
 
 
-ExtraCreditsUsdRangeInt: TypeAlias = Annotated[int, Field(ge=0, lt=500)]
+type ExtraCreditsUsdRangeInt = Annotated[int, Field(ge=0, lt=500)]
 
 
-TrialAccountAnnotated: TypeAlias = Annotated[
+type TrialAccountAnnotated = Annotated[
     PositiveInt | None,
     Field(description="Expiration time in days for trial accounts; `null` means not a trial account"),
 ]
 
-WelcomeCreditsAnnotated: TypeAlias = Annotated[
+type WelcomeCreditsAnnotated = Annotated[
     ExtraCreditsUsdRangeInt | None,
     Field(description="Welcome credits in USD; `null` means no welcome credits"),
 ]

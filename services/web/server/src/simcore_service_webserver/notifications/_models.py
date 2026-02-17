@@ -6,7 +6,7 @@ from models_library.notifications import ChannelType
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
-class EmailAddress(BaseModel):
+class EmailContact(BaseModel):
     name: str = ""
     email: EmailStr
 
@@ -28,26 +28,26 @@ class EmailAddress(BaseModel):
         """Replace the local part and/or display name of the email address.
 
         Args:
+            new_local: New local part (before @). If None, keeps current.
             new_name: Optional custom display name. If None and new_local is provided,
               auto-generates from new_local if original had a display name.
-            new_local: New local part (before @). If None, keeps current.
 
         Returns:
-            New EmailAddress instance with updated values
+            New EmailContact instance with updated values
         """
         if new_local is None:
-            # Only update display_name if provided, otherwise return copy as-is
+            # Only update name if provided, otherwise return copy as-is
             if new_name is not None:
                 return self.model_copy(update={"name": new_name})
             return self
 
-        transformed_email = replace_email_parts(
+        new_email = replace_email_parts(
             self.to_email_str(),
             new_local,
             new_name,
         )
 
-        return type(self).from_email_str(transformed_email)
+        return type(self).from_email_str(new_email)
 
     model_config = ConfigDict(
         frozen=True,
@@ -76,10 +76,10 @@ class EmailContent(BaseModel):
 class EmailNotificationMessage(BaseModel):
     channel: ChannelType = ChannelType.email
 
-    from_: Annotated[EmailAddress, Field(alias="from")]
-    to: list[EmailAddress] | None = None
-    reply_to: EmailAddress | None = None
-    bcc: list[EmailAddress] | None = None
+    from_: Annotated[EmailContact, Field(alias="from")]
+    to: list[EmailContact]
+    reply_to: EmailContact | None = None
+    bcc: list[EmailContact] | None = None
 
     content: EmailContent
 
@@ -90,3 +90,7 @@ class EmailNotificationMessage(BaseModel):
         validate_by_alias=True,
         validate_by_name=True,
     )
+
+
+# Clearly indicates the channel-specific contact info
+type Contact = EmailContact

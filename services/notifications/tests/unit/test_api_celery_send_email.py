@@ -2,11 +2,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 from faker import Faker
-from models_library.celery.notifications import (
-    EmailAddress,
-    EmailContent,
-    EmailMessage,
-)
+from models_library.api_schemas_notifications.message import EmailContact, EmailContent, EmailMessage
 from servicelib.celery.models import ExecutionMetadata, OwnerMetadata, TaskState
 from servicelib.celery.task_manager import TaskManager
 from simcore_service_notifications.api.celery.tasks import (
@@ -52,8 +48,8 @@ async def test_send_mail(
         ),
         owner_metadata=owner_metadata,
         message=EmailMessage(
-            from_=EmailAddress(email=faker.email()),
-            to=[EmailAddress(email=user_email)],
+            from_=EmailContact(email=faker.email()),
+            to=[EmailContact(email=user_email)],
             content=EmailContent(
                 subject="Test Email",
                 body_text="This is a test email sent from the notifications service.",

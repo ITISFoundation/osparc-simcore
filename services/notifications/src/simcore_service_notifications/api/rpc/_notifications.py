@@ -42,7 +42,7 @@ async def preview_template(
 
     return TemplatePreviewRpcResponse(
         ref=request.ref,
-        content=preview.content.model_dump(),
+        message_content=preview.message_content.model_dump(),
     )
 
 
