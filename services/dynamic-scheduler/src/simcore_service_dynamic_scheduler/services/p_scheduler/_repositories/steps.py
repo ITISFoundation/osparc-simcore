@@ -10,6 +10,7 @@ from ...base_repository import BaseRepository
 from .._abc import BaseStep
 from .._models import DagNodeUniqueReference, RunId, Step, StepId, StepState
 from .._notifications import NotificationsManager
+from .step_fail_history import StepFailHistoryRepository
 
 _DEFAULT_AVAILABLE_ATTEMPTS: Final[int] = 3
 _INITIAL_ATTEMPT_NUMBER: Final[int] = 1
@@ -36,8 +37,11 @@ class StepsRepository(BaseRepository):
         async with transaction_context(self.engine) as conn:
             result = await conn.execute(
                 ps_steps.update()
-                .where((ps_steps.c.run_id == run_id) & (ps_steps.c.state.in_([StepState.CREATED, StepState.READY])))
-                .values(state=StepState.CANCELLED, finished_at=sa.func.now())
+                .where(
+                    (ps_steps.c.run_id == run_id)
+                    & (ps_steps.c.state.in_([StepState.CREATED, StepState.READY, StepState.RUNNING]))
+                )
+                .values(state=StepState.CANCELLED)
                 .returning(ps_steps.c.step_id)
             )
             cancelled_step_ids = [row.step_id for row in result.fetchall()]
@@ -81,7 +85,27 @@ class StepsRepository(BaseRepository):
             rows = result.fetchall()
         return {(row.step_type, row.is_reverting): _row_to_step(row) for row in rows}
 
+    async def _push_step_to_history(self, step_id: StepId) -> None:
+        async with pass_or_acquire_connection(self.engine) as conn:
+            result = await conn.execute(
+                sa.select(
+                    ps_steps.c.attempt_number, ps_steps.c.state, ps_steps.c.finished_at, ps_steps.c.message
+                ).where(ps_steps.c.step_id == step_id)
+            )
+            row = result.one()
+
+        step_fail_history_repo = StepFailHistoryRepository(self.engine)
+        await step_fail_history_repo.insert_step_fail_history(
+            step_id=step_id,
+            attempt=row.attempt_number,
+            state=StepState(row.state.value),
+            finished_at=row.finished_at,
+            message=row.message or "",
+        )
+
     async def retry_failed_step(self, step_id: StepId) -> None:
+        await self._push_step_to_history(step_id)
+
         async with transaction_context(self.engine) as conn:
             await conn.execute(
                 ps_steps.update()
@@ -101,7 +125,7 @@ class StepsRepository(BaseRepository):
         notifications_manager = NotificationsManager.get_from_app_state(app)
         await notifications_manager.notify_step_ready(step_id)
 
-    async def get_step(self, step_id: StepId) -> Step | None:
+    async def get_step_for_workflow_manager(self, step_id: StepId) -> Step | None:
         async with pass_or_acquire_connection(self.engine) as conn:
             result = await conn.execute(sa.select(ps_steps).where(ps_steps.c.step_id == step_id))
             row = result.first()
@@ -109,27 +133,26 @@ class StepsRepository(BaseRepository):
             return None
         return _row_to_step(row)
 
-    async def retry_step(self, step_id: StepId) -> None:
+    async def manual_retry_step(self, step_id: StepId) -> None:
+        await self._push_step_to_history(step_id)
+
         async with transaction_context(self.engine) as conn:
             await conn.execute(
                 ps_steps.update()
                 .where(ps_steps.c.step_id == step_id)
                 .values(
                     state=StepState.READY,
-                    available_attempts=ps_steps.c.available_attempts - 1,
                     attempt_number=ps_steps.c.attempt_number + 1,
+                    # add an attempt to make sure there is at least one available
+                    available_attempts=ps_steps.c.available_attempts + 1,
                     finished_at=None,
                     message=None,
                 )
             )
 
-    async def skip_step(self, step_id: StepId) -> None:
+    async def manual_skip_step(self, step_id: StepId) -> None:
         async with transaction_context(self.engine) as conn:
-            await conn.execute(
-                ps_steps.update()
-                .where(ps_steps.c.step_id == step_id)
-                .values(state=StepState.SKIPPED, finished_at=sa.func.now())
-            )
+            await conn.execute(ps_steps.update().where(ps_steps.c.step_id == step_id).values(state=StepState.SKIPPED))
 
     async def get_step_for_worker(self, step_id: StepId | None) -> Step | None:
         async with transaction_context(self.engine) as conn:
@@ -160,11 +183,7 @@ class StepsRepository(BaseRepository):
 
     async def step_cancelled(self, step_id: StepId) -> None:
         async with transaction_context(self.engine) as conn:
-            await conn.execute(
-                ps_steps.update()
-                .where(ps_steps.c.step_id == step_id)
-                .values(state=StepState.CANCELLED, finished_at=sa.func.now())
-            )
+            await conn.execute(ps_steps.update().where(ps_steps.c.step_id == step_id).values(state=StepState.CANCELLED))
 
     async def step_finished_successfully(self, step_id: StepId) -> None:
         async with transaction_context(self.engine) as conn:
