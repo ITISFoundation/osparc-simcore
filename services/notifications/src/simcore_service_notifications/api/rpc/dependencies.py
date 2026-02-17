@@ -2,7 +2,7 @@ from jinja2 import Environment
 from notifications_library._render import create_render_environment_from_notifications_library
 
 from ...renderers import JinjaNotificationsRenderer
-from ...repository import FileTemplatesRepository
+from ...repositories import FileTemplatesRepository
 from ...services import TemplatesService
 
 

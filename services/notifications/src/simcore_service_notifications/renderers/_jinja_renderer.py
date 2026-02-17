@@ -4,7 +4,7 @@ from typing import Any
 from ..models.content import for_channel
 from ..models.preview import TemplatePreview
 from ..models.template import Template
-from ..repository import TemplatesRepository
+from ..repositories import TemplatesRepository
 from ._renderer import Renderer
 
 

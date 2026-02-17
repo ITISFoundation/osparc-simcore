@@ -6,7 +6,7 @@ from jinja2 import Environment
 from models_library.notifications import ChannelType, TemplateName
 from pydantic import TypeAdapter
 from simcore_service_notifications.models.template import TemplateRef
-from simcore_service_notifications.repository import (
+from simcore_service_notifications.repositories import (
     FileTemplatesRepository,
     TemplatesRepository,
     template_path_prefix,
