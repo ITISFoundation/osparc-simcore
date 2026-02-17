@@ -120,8 +120,8 @@ qx.Class.define("osparc.po.SendEmail", {
           });
           break;
         }
-        case "email-editor-and-preview": {
-          control = new osparc.editor.EmailEditor();
+        case "email-content-editor-and-preview": {
+          control = new osparc.editor.EmailContentEditor();
           const container = new qx.ui.container.Scroll();
           container.add(control);
           this._add(container, {
@@ -156,7 +156,7 @@ qx.Class.define("osparc.po.SendEmail", {
       this.getChildControl("add-recipient-button");
       this.getChildControl("recipients-chips");
       this.getChildControl("subject-field");
-      this.getChildControl("email-editor-and-preview");
+      this.getChildControl("email-content-editor-and-preview");
       this.getChildControl("send-email-button");
 
       this.__populateEmailTemplates(selectBox);
@@ -184,7 +184,7 @@ qx.Class.define("osparc.po.SendEmail", {
         .then(template => {
           const subjectField = this.getChildControl("subject-field");
           subjectField.setValue(template["messageContent"]["subject"]);
-          const emailEditor = this.getChildControl("email-editor-and-preview");
+          const emailEditor = this.getChildControl("email-content-editor-and-preview");
           emailEditor.setTemplateEmail(template["messageContent"]["bodyHtml"]);
         });
     },
@@ -247,7 +247,7 @@ qx.Class.define("osparc.po.SendEmail", {
       }
 
       // if the user is not in the preview page, force them there so they can see the final email before sending
-      const previewPage = this.getChildControl("email-editor-and-preview").getChildControl("preview-page");
+      const previewPage = this.getChildControl("email-content-editor-and-preview").getChildControl("preview-page");
       if (!previewPage.isVisible()) {
         const tabView = previewPage.getLayoutParent().getLayoutParent();
         tabView.setSelection([previewPage]);
@@ -273,7 +273,7 @@ qx.Class.define("osparc.po.SendEmail", {
 
       const subjectField = this.getChildControl("subject-field");
       const subject = subjectField.getValue();
-      const emailEditor = this.getChildControl("email-editor-and-preview");
+      const emailEditor = this.getChildControl("email-content-editor-and-preview");
       const bodyHtml = emailEditor.composeWholeHtml();
       const bodyText = emailEditor.getBodyText();
       const sendMessagePromise = osparc.message.Messages.sendMessage(this.__selectedGroupIds, subject, bodyHtml, bodyText);
