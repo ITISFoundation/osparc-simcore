@@ -75,6 +75,11 @@ def product_data(
         support_email=product["support_email"],
         homepage_url=vendor.get("url"),
         ui=product_ui,
+        footer_social_links=vendor.get("footer_social_links", []),
+        footer_share_links=vendor.get("footer_share_links", []),
+        company_name=vendor.get("company_name", ""),
+        company_address=vendor.get("company_address", ""),
+        company_links=vendor.get("company_links", []),
     )
 
 

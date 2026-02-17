@@ -233,6 +233,11 @@ def fake_product_data(faker: Faker) -> dict[str, Any]:
                 logo_url=faker.image_url(),
                 strong_color=faker.color_name(),
             ),
+            footer_social_links=[(faker.word(), faker.url()) for _ in range(3)],
+            footer_share_links=[(faker.word(), faker.word(), faker.url()) for _ in range(3)],
+            company_name=faker.company(),
+            company_address=faker.address(),
+            company_links=[(faker.word(), faker.url()) for _ in range(3)],
         )
     )
 

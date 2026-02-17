@@ -31,7 +31,7 @@ class SharerData:
 @dataclass(frozen=True)
 class ProductUIData:
     logo_url: str | None = (
-        None  # default_logo = "https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/refs/heads/master/services/static-webserver/client/source/resource/osparc/osparc-white.svg" in base.html
+        None  # default_logo = "https://raw.githubusercontent.com/ITISFoundation/osparc-simcore/refs/heads/master/services/static-webserver/client/source/resource/osparc/osparc-white.svg" in base.html  # noqa: E501
     )
     strong_color: str | None = None  # default_strong_color = "rgb(131, 0, 191)" in base.html
 
@@ -44,3 +44,8 @@ class ProductData:
     support_email: str
     homepage_url: str | None  # default_homepage = "https://osparc.io/" in base.html
     ui: ProductUIData
+    footer_social_links: list[tuple[str, str]]  # list of (social_media_name (youtube, linkedin), social_media_url)
+    footer_share_links: list[tuple[str, str, str]]  # list of (share_name, share_label,share_url)
+    company_name: str
+    company_address: str
+    company_links: list[tuple[str, str]]  # list of (link_name, link_url)

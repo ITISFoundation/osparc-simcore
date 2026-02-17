@@ -37,6 +37,11 @@ def get_product_data(
         support_email=product.support_email,
         homepage_url=homepage_url,
         ui=ui_data,
+        footer_social_links=product.vendor.get("footer_social_links", []) if product.vendor else [],
+        footer_share_links=product.vendor.get("footer_share_links", []) if product.vendor else [],
+        company_name=product.vendor.get("company_name", "") if product.vendor else "",
+        company_address=product.vendor.get("company_address", "") if product.vendor else "",
+        company_links=product.vendor.get("company_links", []) if product.vendor else [],
     )
 
 
