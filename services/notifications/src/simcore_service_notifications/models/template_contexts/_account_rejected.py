@@ -1,12 +1,13 @@
 """Context model for the 'account_rejected' email template."""
 
-from notifications_library.context import BaseTemplateContext
 from pydantic import BaseModel
+
+from ..template import BaseTemplateContext
 
 
 class User(BaseModel):
     first_name: str | None = None
 
 
-class TemplateContext(BaseTemplateContext):
+class AccountRejectedTemplateContext(BaseTemplateContext):
     user: User

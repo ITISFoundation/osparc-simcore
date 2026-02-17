@@ -1,14 +1,20 @@
 from abc import ABC
 from dataclasses import dataclass
+from typing import Any
 
 from models_library.notifications import ChannelType, TemplateName
-from notifications_library.context import BaseTemplateContext
+from pydantic import BaseModel
+from pydantic.json_schema import SkipJsonSchema
+
+
+class BaseTemplateContext(BaseModel):
+    product: SkipJsonSchema[dict[str, Any]]
 
 
 @dataclass(frozen=True)
-class NotificationsTemplateRef:
+class TemplateRef:
     """
-    Identifies a template uniquely in the system.
+    Uniquely identifies a template in the system.
     """
 
     channel: ChannelType
@@ -16,8 +22,8 @@ class NotificationsTemplateRef:
 
 
 @dataclass(frozen=True)
-class NotificationsTemplate(ABC):
-    ref: NotificationsTemplateRef
+class Template(ABC):
+    ref: TemplateRef
     context_model: type[BaseTemplateContext]
 
     parts: tuple[str, ...]

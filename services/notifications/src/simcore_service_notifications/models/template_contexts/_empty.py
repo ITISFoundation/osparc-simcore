@@ -1,8 +1,8 @@
 """Context model for the 'empty' email template."""
 
-from notifications_library.context import BaseTemplateContext
+from ..template import BaseTemplateContext
 
 
-class TemplateContext(BaseTemplateContext):
+class EmptyTemplateContext(BaseTemplateContext):
     subject: str | None = None
     body: str | None = None
