@@ -3,6 +3,7 @@
 # pylint: disable=protected-access
 
 
+import asyncio
 import logging
 import re
 from collections.abc import AsyncGenerator, Awaitable, Callable, Iterable, Iterator
@@ -481,16 +482,43 @@ async def test_regression_remove_service_from_observation(
     node_uuid = faker.uuid4(cast_to=None)
     service_name = f"service_{node_uuid}"
     scheduler._inverse_search_mapping[node_uuid] = service_name  # noqa: SLF001
+    scheduler._service_observation_task[service_name] = AsyncMock()  # noqa: SLF001
     if not missing_to_observe_entry:
         scheduler._to_observe[service_name] = AsyncMock()  # noqa: SLF001
 
     await scheduler.remove_service_from_observation(node_uuid)
     # check log message
     assert f"Removed service '{service_name}' from scheduler" in caplog_debug_level.text
+    assert service_name not in scheduler._service_observation_task
 
     if missing_to_observe_entry:
         assert f"Unexpected: '{service_name}' not found in" in caplog_debug_level.text
 
+
+async def test_remove_service_from_observation_cancels_running_observation_task(
+    mocked_app: AsyncMock,
+    faker: Faker,
+) -> None:
+    scheduler = Scheduler(mocked_app)
+
+    node_uuid = faker.uuid4(cast_to=None)
+    service_name = f"service_{node_uuid}"
+
+    scheduler._inverse_search_mapping[node_uuid] = service_name  # noqa: SLF001
+    scheduler._to_observe[service_name] = AsyncMock()  # noqa: SLF001
+
+    blocker = asyncio.Event()
+
+    async def _running_task() -> None:
+        await blocker.wait()
+
+    task = asyncio.create_task(_running_task())
+    scheduler._service_observation_task[service_name] = task  # noqa: SLF001
+
+    await scheduler.remove_service_from_observation(node_uuid)
+
+    assert task.done()
+    assert task.cancelled()
 
 @pytest.mark.parametrize("call_count", [1, 10])
 async def test_mark_all_services_in_wallet_for_removal(

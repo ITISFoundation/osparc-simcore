@@ -396,6 +396,11 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
             del self._inverse_search_mapping[node_uuid]
             self._to_observe.pop(service_name, None)
 
+            service_task = self._service_observation_task.pop(service_name, None)
+
+        if isinstance(service_task, asyncio.Task):
+            await cancel_wait_task(service_task, max_delay=10)
+
         logger.debug("Removed service '%s' from scheduler", service_name)
 
     async def get_stack_status(self, node_uuid: NodeID) -> RunningDynamicServiceDetails:
