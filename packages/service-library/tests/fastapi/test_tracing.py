@@ -304,7 +304,7 @@ async def test_tracing_opentelemetry_sampling_probability_effective(
     tracing_settings = TracingSettings.create_from_envs()
     tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name=faker.pystr())
 
-    async def handler():
+    async def handler() -> PlainTextResponse:
         return PlainTextResponse("ok")
 
     mocked_app.get("/")(handler)
