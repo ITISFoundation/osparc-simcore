@@ -27,8 +27,7 @@ async def _get_config(
         "Entrypoint": ["/bin/sh", "-c", f"{command}"],
         "Env": [
             # GOMEMLIMIT sets a soft memory limit for the Go runtime garbage collector.
-            # This causes rclone to GC more aggressively before hitting the container's
-            # hard memory limit.
+            # This causes more aggressive GC before hitting the container's hard memory limit.
             f"GOMEMLIMIT={int(memory_limit * _MEMORY_SAFETY_MARGIN)}",
         ],
         "ExposedPorts": {"8000/tcp": {}},
