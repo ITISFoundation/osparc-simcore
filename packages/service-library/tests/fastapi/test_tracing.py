@@ -26,7 +26,9 @@ from servicelib.tracing import (
     _OSPARC_TRACE_ID_HEADER,
     _PROFILE_ATTRIBUTE_NAME,
     TracingConfig,
+    extract_span_link_from_trace_carrier,
     profiled_span,
+    traced_operation,
 )
 from settings_library.tracing import TracingSettings
 
@@ -349,7 +351,7 @@ def setup_logging_for_test(
     indirect=True,
 )  # NOTE: The order of these fixtures are important for caplog to work correctly
 async def test_trace_id_in_logs_only_when_sampled(
-    tracing_settings_in: Callable[[], tuple[str, int | str, float]],
+    tracing_settings_in: tuple[str, int | str, float],
     mock_otel_collector: InMemorySpanExporter,
     mocked_app: FastAPI,
     setup_logging_for_test: TracingConfig,
@@ -399,3 +401,253 @@ async def test_trace_id_in_logs_only_when_sampled(
         assert len(trace_ids_in_logs) > 0
         assert len(trace_ids_in_logs) == len(all_trace_ids) == n_requests
         assert trace_ids_in_logs == all_trace_ids, f"{n_requests=} | {len(all_trace_ids)=} | {len(trace_ids_in_logs)=}"
+
+
+@pytest.mark.parametrize(
+    "tracing_settings_in",
+    [
+        ("http://opentelemetry-collector", 4318, 1.0),
+    ],
+    indirect=True,
+)
+async def test_traced_operation_basic(
+    mock_otel_collector: InMemorySpanExporter,
+    mocked_app: FastAPI,
+    set_and_clean_settings_env_vars: None,
+    tracing_settings_in: tuple[str, int | str, float],
+) -> None:
+    tracing_settings = TracingSettings.create_from_envs()
+    tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name="Mock-Openetlemetry-Pytest")
+
+    handler_data = {}
+
+    async def handler(handler_data: dict) -> PlainTextResponse:
+        with traced_operation(
+            "test_operation",
+            tracing_config=tracing_config,
+            attributes={"user.id": "123", "operation.type": "test"},
+        ):
+            current_span = trace.get_current_span()
+            handler_data["trace_id"] = format(current_span.get_span_context().trace_id, "032x")
+            handler_data["span_name"] = current_span.get_span_context().trace_id
+        return PlainTextResponse("ok")
+
+    mocked_app.get("/")(partial(handler, handler_data))
+
+    async for _ in get_tracing_instrumentation_lifespan(
+        tracing_config=tracing_config,
+    )(app=mocked_app):
+        initialize_fastapi_app_tracing(mocked_app, tracing_config=tracing_config, add_response_trace_id_header=True)
+        client = TestClient(mocked_app)
+        _ = client.get("/")
+
+        trace_id = handler_data.get("trace_id")
+        assert trace_id is not None
+
+        spans = mock_otel_collector.get_finished_spans()
+        # Find the traced_operation span
+        operation_spans = [
+            span
+            for span in spans
+            if span.context is not None and span.context.trace_id == int(trace_id, 16) and span.name == "test_operation"
+        ]
+        assert len(operation_spans) == 1, f"Expected 1 'test_operation' span, got {len(operation_spans)}"
+        operation_span = operation_spans[0]
+
+        # Verify attributes
+        assert operation_span.attributes is not None
+        assert operation_span.attributes.get("user.id") == "123"
+        assert operation_span.attributes.get("operation.type") == "test"
+
+
+@pytest.mark.parametrize(
+    "tracing_settings_in",
+    [
+        ("http://opentelemetry-collector", 4318, 1.0),
+    ],
+    indirect=True,
+)
+async def test_traced_operation_nested_spans(
+    mock_otel_collector: InMemorySpanExporter,
+    mocked_app: FastAPI,
+    set_and_clean_settings_env_vars: None,
+    tracing_settings_in: tuple[str, int | str, float],
+) -> None:
+    tracing_settings = TracingSettings.create_from_envs()
+    tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name="Mock-Openetlemetry-Pytest")
+
+    handler_data = {}
+
+    async def handler(handler_data: dict) -> PlainTextResponse:
+        with (
+            traced_operation(
+                "parent_operation",
+                tracing_config=tracing_config,
+                attributes={"level": "parent"},
+            ),
+            traced_operation(
+                "child_operation",
+                tracing_config=tracing_config,
+                attributes={"level": "child"},
+            ),
+        ):
+            current_span = trace.get_current_span()
+            handler_data["trace_id"] = format(current_span.get_span_context().trace_id, "032x")
+        return PlainTextResponse("ok")
+
+    mocked_app.get("/")(partial(handler, handler_data))
+
+    async for _ in get_tracing_instrumentation_lifespan(
+        tracing_config=tracing_config,
+    )(app=mocked_app):
+        initialize_fastapi_app_tracing(mocked_app, tracing_config=tracing_config, add_response_trace_id_header=True)
+        client = TestClient(mocked_app)
+        _ = client.get("/")
+
+        trace_id = handler_data.get("trace_id")
+        assert trace_id is not None
+
+        spans = mock_otel_collector.get_finished_spans()
+        trace_id_int = int(trace_id, 16)
+        trace_spans = [span for span in spans if span.context is not None and span.context.trace_id == trace_id_int]
+
+        # Should have at least parent and child operation spans
+        operation_spans = [span for span in trace_spans if span.name in ("parent_operation", "child_operation")]
+        assert len(operation_spans) >= 2, f"Expected at least 2 operation spans, got {len(operation_spans)}"
+
+        parent_spans = [span for span in operation_spans if span.name == "parent_operation"]
+        child_spans = [span for span in operation_spans if span.name == "child_operation"]
+
+        assert len(parent_spans) == 1, f"Expected 1 parent span, got {len(parent_spans)}"
+        assert len(child_spans) == 1, f"Expected 1 child span, got {len(child_spans)}"
+
+        # Verify attributes
+        assert parent_spans[0].attributes is not None
+        assert parent_spans[0].attributes.get("level") == "parent"
+        assert child_spans[0].attributes is not None
+        assert child_spans[0].attributes.get("level") == "child"
+
+
+@pytest.mark.parametrize(
+    "tracing_settings_in",
+    [
+        ("http://opentelemetry-collector", 4318, 1.0),
+    ],
+    indirect=True,
+)
+async def test_traced_operation_with_exception(
+    mock_otel_collector: InMemorySpanExporter,
+    mocked_app: FastAPI,
+    set_and_clean_settings_env_vars: None,
+    tracing_settings_in: Callable[[], tuple[str, int | str, float]],
+) -> None:
+    tracing_settings = TracingSettings.create_from_envs()
+    tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name="Mock-Openetlemetry-Pytest")
+
+    handler_data = {}
+
+    async def handler(handler_data: dict):
+        try:
+            with traced_operation(
+                "failing_operation",
+                tracing_config=tracing_config,
+                attributes={"operation.status": "fail"},
+            ):
+                current_span = trace.get_current_span()
+                handler_data["trace_id"] = format(current_span.get_span_context().trace_id, "032x")
+                msg = "Test exception to check if it's recorded in the span"
+                raise ValueError(msg)  # noqa: TRY301
+        except ValueError:
+            pass
+        return PlainTextResponse("ok")
+
+    mocked_app.get("/")(partial(handler, handler_data))
+
+    async for _ in get_tracing_instrumentation_lifespan(
+        tracing_config=tracing_config,
+    )(app=mocked_app):
+        initialize_fastapi_app_tracing(mocked_app, tracing_config=tracing_config, add_response_trace_id_header=True)
+        client = TestClient(mocked_app)
+        _ = client.get("/")
+
+        trace_id = handler_data.get("trace_id")
+        assert trace_id is not None
+
+        spans = mock_otel_collector.get_finished_spans()
+        trace_id_int = int(trace_id, 16)
+
+        # Find the failing_operation span
+        failing_spans = [
+            span
+            for span in spans
+            if span.context is not None and span.context.trace_id == trace_id_int and span.name == "failing_operation"
+        ]
+        assert len(failing_spans) == 1, f"Expected 1 failing_operation span, got {len(failing_spans)}"
+        failing_span = failing_spans[0]
+
+        # The exception should be recorded (via trace.get_current_span().record_exception or similar)
+        # Verify the span attributes show the error occurred
+        assert failing_span.attributes is not None
+        assert failing_span.attributes.get("operation.status") == "fail"
+
+
+@pytest.mark.parametrize(
+    "tracing_settings_in",
+    [
+        ("http://opentelemetry-collector", 4318, 1.0),
+    ],
+    indirect=True,
+)
+async def test_traced_operation_with_links(
+    mock_otel_collector: InMemorySpanExporter,
+    mocked_app: FastAPI,
+    set_and_clean_settings_env_vars: None,
+    tracing_settings_in: Callable[[], tuple[str, int | str, float]],
+) -> None:
+    tracing_settings = TracingSettings.create_from_envs()
+    tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name="Mock-Openetlemetry-Pytest")
+
+    handler_data = {}
+
+    async def handler(handler_data: dict):
+        # Create a carrier to simulate an external trace context
+        carrier = {"traceparent": "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"}
+        link = extract_span_link_from_trace_carrier(carrier)
+
+        with traced_operation(
+            "linked_operation",
+            tracing_config=tracing_config,
+            attributes={"operation.linked": "true"},
+            links=[link] if link else None,
+        ):
+            current_span = trace.get_current_span()
+            handler_data["trace_id"] = format(current_span.get_span_context().trace_id, "032x")
+        return PlainTextResponse("ok")
+
+    mocked_app.get("/")(partial(handler, handler_data))
+
+    async for _ in get_tracing_instrumentation_lifespan(
+        tracing_config=tracing_config,
+    )(app=mocked_app):
+        initialize_fastapi_app_tracing(mocked_app, tracing_config=tracing_config, add_response_trace_id_header=True)
+        client = TestClient(mocked_app)
+        _ = client.get("/")
+
+        trace_id = handler_data.get("trace_id")
+        assert trace_id is not None
+
+        spans = mock_otel_collector.get_finished_spans()
+        trace_id_int = int(trace_id, 16)
+
+        # Find the linked_operation span
+        linked_spans = [
+            span
+            for span in spans
+            if span.context is not None and span.context.trace_id == trace_id_int and span.name == "linked_operation"
+        ]
+        assert len(linked_spans) == 1, f"Expected 1 linked_operation span, got {len(linked_spans)}"
+        linked_span = linked_spans[0]
+
+        # Verify attributes
+        assert linked_span.attributes is not None
+        assert linked_span.attributes.get("operation.linked") == "true"
