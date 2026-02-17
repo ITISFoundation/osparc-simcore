@@ -8,6 +8,13 @@
 {%- set header_style = "display: flex; align-items: center; border-bottom: 2px solid #ddd; padding-bottom: 10px; margin-bottom: 20px;" -%}
 {%- set content_style = "color: #353638; font-size: 16px; line-height: 1.5;" -%}
 {%- set footer_style = "margin-top: 20px; padding-top: 15px; border-top: 2px solid #ddd; font-size: 14px; text-align: center; color: #353638;" -%}
+{%- set footer_social_list_style = "display: flex; justify-content: center; gap: 12px; margin: 0 0 12px; padding: 0; list-style: none;" -%}
+{%- set footer_social_link_style = "width: 40px; height: 40px; border-radius: 50%; background-color: #f1f3f5; color: #353638; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; font-weight: 600; text-transform: uppercase;" -%}
+{%- set footer_share_list_style = "display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin: 0 0 18px; padding: 0; list-style: none;" -%}
+{%- set footer_share_link_style = "min-width: 120px; border-radius: 4px; background-color: #e5e7eb; color: #353638; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-weight: 600; padding: 8px 16px;" -%}
+{%- set footer_share_badge_style = "width: 22px; height: 22px; border-radius: 3px; background-color: #353638; color: #ffffff; font-size: 12px; display: inline-flex; align-items: center; justify-content: center;" -%}
+{%- set footer_company_text_style = "margin: 4px 0; color: #6c6d70;" -%}
+{%- set footer_links_separator_style = "margin: 0 8px; color: #c4c4c4;" -%}
 {%- set link_style = "color: #007bff; text-decoration: none;" -%}
 {%- set strong_button_style = "cursor: pointer; background-color: " ~ (product.ui.strong_color | default(default_strong_color)) ~ "; color: white; padding: 10px; border: none; border-radius: 4px; overflow: hidden; white-space: nowrap; user-select: none; touch-action: none; outline: none;" -%}
 {%- set strong_button_link_style = "font-size: 16px; color: white; text-decoration: none; display: block; width: 100%; height: 100%; text-align: center;" -%}
@@ -45,14 +52,41 @@
     </div>
 
     <div class="footer" style="{{ footer_style }}">
-      <p>
-        Visit the <a href="{{ product.homepage_url | default(default_homepage) }}" target="_blank" rel="noopener noreferrer">Platform</a> |
-        Need help? <a href="mailto:{{ product.support_email }}">Support</a> |
-        Powered by oSPARC
-        <a href="https://github.com/ITISFoundation/osparc-simcore" target="_blank" rel="noopener noreferrer">
-          <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" alt="GitHub" style="height:20px; vertical-align: bottom;">
-        </a>
+      {% if product.footer_social_links %}
+      <ul style="{{ footer_social_list_style }}">
+        {% for social_name, social_url in product.footer_social_links %}
+        <li style="list-style: none;">
+          <a href="{{ social_url }}" target="_blank" rel="noopener noreferrer" style="{{ footer_social_link_style }}" title="{{ social_name }}">
+            {{ social_name[:2] | upper }}
+          </a>
+        </li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+
+      {% if product.footer_share_links %}
+      <ul style="{{ footer_share_list_style }}">
+        {% for share_name, share_label, share_url in product.footer_share_links %}
+        <li style="list-style: none;">
+          <a href="{{ share_url }}" target="_blank" rel="noopener noreferrer" style="{{ footer_share_link_style }}" title="{{ share_name }}">
+            <span style="{{ footer_share_badge_style }}">{{ share_name[:1] | upper }}</span>
+            <span>{{ share_label }}</span>
+          </a>
+        </li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+
+      <p style="{{ footer_company_text_style }}">{{ product.company_name }}</p>
+      <p style="{{ footer_company_text_style }}">{{ product.company_address }}</p>
+
+      {% if product.company_links %}
+      <p style="{{ footer_company_text_style }}">
+        {% for link_name, link_url in product.company_links %}
+          <a href="{{ link_url }}" target="_blank" rel="noopener noreferrer" style="{{ link_style }}">{{ link_name }}</a>{% if not loop.last %}<span style="{{ footer_links_separator_style }}">|</span>{% endif %}
+        {% endfor %}
       </p>
+      {% endif %}
     </div>
   </div>
 </body>
