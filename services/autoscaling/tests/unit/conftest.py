@@ -399,6 +399,17 @@ def enabled_rabbitmq(app_environment: EnvVarsDict, rabbit_service: RabbitSetting
     return rabbit_service
 
 
+@pytest.fixture
+def with_10_max_instances(
+    app_environment: EnvVarsDict,
+    monkeypatch: pytest.MonkeyPatch,
+) -> EnvVarsDict:
+    return app_environment | setenvs_from_dict(
+        monkeypatch,
+        {"EC2_INSTANCES_MAX_INSTANCES": "10"},
+    )
+
+
 _LIFESPAN_TIMEOUT: Final[int] = 10
 
 
