@@ -5,7 +5,7 @@ from ..models.preview import TemplatePreview
 from ..models.template import Template
 
 
-class NotificationsRenderer(ABC):
+class Renderer(ABC):
     @abstractmethod
     def preview_template(
         self,

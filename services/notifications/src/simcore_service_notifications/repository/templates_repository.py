@@ -6,7 +6,7 @@ from jinja2 import Template as JinjaTemplate
 from models_library.notifications import ChannelType, TemplateName
 from pydantic import TypeAdapter
 
-# NOTE: The following import riggers decorator-based registration
+# NOTE: The following import triggers decorator-based registration
 from ..models import template_contexts  # pylint: disable=unused-import  # noqa: F401
 from ..models.content import for_channel
 from ..models.template import Template, TemplateRef, get_template_context_model
@@ -47,7 +47,7 @@ def template_path_prefix(template_ref: TemplateRef) -> str:
 
 
 @dataclass(frozen=True)
-class NotificationsTemplatesRepository:
+class TemplatesRepository:
     env: Environment
 
     @staticmethod

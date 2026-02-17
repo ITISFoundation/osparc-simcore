@@ -3,15 +3,15 @@ from notifications_library._render import create_render_environment_from_notific
 
 from ...renderers.jinja_renderer import JinjaNotificationsRenderer
 from ...repository.templates_repository import NotificationsTemplatesRepository
-from ...services.templates_service import NotificationsTemplatesService
+from ...services.templates_service import TemplatesService
 
 
 def get_jinja_env() -> Environment:
     return create_render_environment_from_notifications_library()
 
 
-def get_notifications_templates_service() -> NotificationsTemplatesService:
+def get_notifications_templates_service() -> TemplatesService:
     env = get_jinja_env()
     repository = NotificationsTemplatesRepository(env)
     renderer = JinjaNotificationsRenderer(repository)
-    return NotificationsTemplatesService(repository, renderer)
+    return TemplatesService(repository, renderer)

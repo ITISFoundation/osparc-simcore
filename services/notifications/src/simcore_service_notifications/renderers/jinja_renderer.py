@@ -5,11 +5,11 @@ from ..models.content import for_channel
 from ..models.preview import TemplatePreview
 from ..models.template import Template
 from ..repository.templates_repository import NotificationsTemplatesRepository
-from .renderer import NotificationsRenderer
+from .renderer import Renderer
 
 
 @dataclass(frozen=True)
-class JinjaNotificationsRenderer(NotificationsRenderer):
+class JinjaNotificationsRenderer(Renderer):
     repository: NotificationsTemplatesRepository
 
     def preview_template(

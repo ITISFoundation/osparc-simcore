@@ -1,3 +1,3 @@
-from .templates_repository import NotificationsTemplatesRepository
+from .templates_repository import TemplatesRepository
 
-__all__: tuple[str, ...] = ("NotificationsTemplatesRepository",)
+__all__: tuple[str, ...] = ("TemplatesRepository",)

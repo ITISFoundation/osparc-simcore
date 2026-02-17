@@ -11,16 +11,16 @@ from pydantic import ValidationError
 
 from ..models.preview import TemplatePreview
 from ..models.template import Template, TemplateRef
-from ..renderers.renderer import NotificationsRenderer
-from ..repository import NotificationsTemplatesRepository
+from ..renderers.renderer import Renderer
+from ..repository import TemplatesRepository
 
 _logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
-class NotificationsTemplatesService:
-    repository: NotificationsTemplatesRepository
-    renderer: NotificationsRenderer
+class TemplatesService:
+    repository: TemplatesRepository
+    renderer: Renderer
 
     def preview_template(self, ref: TemplateRef, context: dict[str, Any]) -> TemplatePreview:
         templates = self.repository.search_templates(
