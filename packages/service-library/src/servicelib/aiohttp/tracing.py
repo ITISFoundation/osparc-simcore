@@ -31,6 +31,7 @@ from yarl import URL
 
 from ..logging_utils import log_catch, log_context
 from ..tracing import TracingConfig, get_trace_info_headers
+from .request_keys import RQT_USERID_KEY
 
 _logger = logging.getLogger(__name__)
 
@@ -72,6 +73,31 @@ except ImportError:
     HAS_AIO_PIKA = False
 
 APP_OPENTELEMETRY_INSTRUMENTOR_KEY: Final = web.AppKey("APP_OPENTELEMETRY_INSTRUMENTOR_KEY", dict[str, object])
+
+
+def _collect_custom_request_attributes(request: web.Request) -> dict[str, str]:
+    """Collect custom attributes from the request for tracing.
+
+    Extracts user_id and project_id from request context if available.
+    These are typically set by authentication middleware and route parameters.
+    """
+    attributes = {}
+
+    if user_id := request.get(RQT_USERID_KEY):
+        attributes["user.id"] = str(user_id)
+
+    # Extract project_id from URL path if it matches project routes
+    # Pattern: /v0/projects/{project_id} or /v0/projects/{project_id}:action
+    match = request.match_info
+    if "project_id" in match:
+        attributes["project.id"] = str(match["project_id"])
+
+    # Extract node_id from URL path if it matches node routes
+    # Pattern: /v0/projects/{project_id}/nodes/{node_id}
+    if "node_id" in match:
+        attributes["node.id"] = str(match["node_id"])
+
+    return attributes
 
 
 @web.middleware
@@ -120,6 +146,7 @@ async def aiohttp_server_opentelemetry_middleware(request: web.Request, handler)
     ) as span:
         attributes = collect_request_attributes(request)
         attributes.update(additional_attributes)
+        attributes.update(_collect_custom_request_attributes(request))
         span.set_attributes(attributes)
         start = time.perf_counter()
         active_requests_counter.add(1, active_requests_count_attrs)
