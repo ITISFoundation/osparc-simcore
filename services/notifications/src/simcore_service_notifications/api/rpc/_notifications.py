@@ -7,10 +7,10 @@ from models_library.notifications_errors import (
     NotificationsTemplateNotFoundError,
 )
 from models_library.rpc.notifications.template import (
-    NotificationsTemplatePreviewRpcRequest,
-    NotificationsTemplatePreviewRpcResponse,
-    NotificationsTemplateRefRpc,
-    NotificationsTemplateRpcResponse,
+    TemplatePreviewRpcRequest,
+    TemplatePreviewRpcResponse,
+    TemplateRefRpc,
+    TemplateRpcResponse,
 )
 from servicelib.rabbitmq import RPCRouter
 
@@ -31,8 +31,8 @@ _logger = logging.getLogger(__name__)
 async def preview_template(
     _app: FastAPI,
     *,
-    request: NotificationsTemplatePreviewRpcRequest,
-) -> NotificationsTemplatePreviewRpcResponse:
+    request: TemplatePreviewRpcRequest,
+) -> TemplatePreviewRpcResponse:
     service = get_notifications_templates_service()
 
     preview = service.preview_template(
@@ -40,9 +40,9 @@ async def preview_template(
         context=request.context,
     )
 
-    return NotificationsTemplatePreviewRpcResponse(
+    return TemplatePreviewRpcResponse(
         ref=request.ref,
-        content=preview.content.model_dump(),
+        message_content=preview.message_content.model_dump(),
     )
 
 
@@ -52,7 +52,7 @@ async def search_templates(
     *,
     channel: ChannelType | None,
     template_name: str | None,
-) -> list[NotificationsTemplateRpcResponse]:
+) -> list[TemplateRpcResponse]:
     """
     Searches for notification templates based on the specified channel and template name.
 
@@ -69,8 +69,8 @@ async def search_templates(
     templates = service.search_templates(channel=channel, template_name=template_name)
 
     return [
-        NotificationsTemplateRpcResponse(
-            ref=NotificationsTemplateRefRpc(
+        TemplateRpcResponse(
+            ref=TemplateRefRpc(
                 channel=template.ref.channel,
                 template_name=template.ref.template_name,
             ),

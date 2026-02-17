@@ -3,9 +3,9 @@ import logging
 from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.rpc.notifications import NOTIFICATIONS_RPC_NAMESPACE
 from models_library.rpc.notifications.template import (
-    NotificationsTemplatePreviewRpcRequest,
-    NotificationsTemplatePreviewRpcResponse,
-    NotificationsTemplateRpcResponse,
+    TemplatePreviewRpcRequest,
+    TemplatePreviewRpcResponse,
+    TemplateRpcResponse,
 )
 from pydantic import TypeAdapter, validate_call
 
@@ -20,14 +20,14 @@ _logger = logging.getLogger(__name__)
 async def preview_template(
     rabbitmq_rpc_client: RabbitMQRPCClient,
     *,
-    request: NotificationsTemplatePreviewRpcRequest,
-) -> NotificationsTemplatePreviewRpcResponse:
+    request: TemplatePreviewRpcRequest,
+) -> TemplatePreviewRpcResponse:
     result = await rabbitmq_rpc_client.request(
         NOTIFICATIONS_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("preview_template"),
         request=request,
     )
-    return TypeAdapter(NotificationsTemplatePreviewRpcResponse).validate_python(result)
+    return TypeAdapter(TemplatePreviewRpcResponse).validate_python(result)
 
 
 @log_decorator(_logger, level=logging.DEBUG)
@@ -37,11 +37,11 @@ async def search_templates(
     *,
     channel: str | None = None,
     template_name: str | None = None,
-) -> list[NotificationsTemplateRpcResponse]:
+) -> list[TemplateRpcResponse]:
     result = await rabbitmq_rpc_client.request(
         NOTIFICATIONS_RPC_NAMESPACE,
         TypeAdapter(RPCMethodName).validate_python("search_templates"),
         channel=channel,
         template_name=template_name,
     )
-    return TypeAdapter(list[NotificationsTemplateRpcResponse]).validate_python(result)
+    return TypeAdapter(list[TemplateRpcResponse]).validate_python(result)

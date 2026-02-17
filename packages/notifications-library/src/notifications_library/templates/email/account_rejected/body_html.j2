@@ -1,7 +1,7 @@
 {% extends 'email/_base/body_html.j2' %}
 {% block title %} {% include 'email/account_rejected/subject.j2' %} {% endblock %}
 {% block content %}
-<p>Dear {{ user.first_name or user.user_name }},</p>
+<p>Dear {{ user.first_name or "User"}},</p>
 
 <p>
   Thank you for your interest in {{ product.display_name }}. Unfortunately, your registration is not eligible for participation in this program.
