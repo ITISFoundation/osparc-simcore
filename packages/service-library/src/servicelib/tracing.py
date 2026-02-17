@@ -25,7 +25,6 @@ from settings_library.tracing import TracingSettings
 
 type TracingContext = otcontext.Context | None
 
-_TRACER_NAME: Final[str] = "servicelib.tracing"
 _PROFILE_ATTRIBUTE_NAME: Final[str] = "pyinstrument.profile"
 _OSPARC_TRACE_ID_HEADER: Final[str] = "x-osparc-trace-id"
 _OSPARC_TRACE_SAMPLED_HEADER: Final[str] = "x-osparc-trace-sampled"
