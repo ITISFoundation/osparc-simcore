@@ -79,10 +79,22 @@ class WorkflowManager(SingletonInAppStateMixin):
         return get_repository(self.app, StepsRepository)
 
     async def add_start_workflow(self, node_id: NodeID) -> None:
+        await _validate_workflow_creation_preconditions(
+            node_id=node_id,
+            runs_repo=self.runs_repo,
+            user_requests_repo=self.user_requests_repo,
+            payload_type=DynamicServiceStart,
+        )
         created_run = await self.runs_repo.create_from_start_request(node_id)
         _logger.debug("Added %s workflow for '%s': %s", _START, node_id, created_run)
 
     async def add_stop_workflow(self, node_id: NodeID) -> None:
+        await _validate_workflow_creation_preconditions(
+            node_id=node_id,
+            runs_repo=self.runs_repo,
+            user_requests_repo=self.user_requests_repo,
+            payload_type=DynamicServiceStop,
+        )
         created_run = await self.runs_repo.create_from_stop_request(node_id)
         _logger.debug("Added %s workflow for '%s': %s", _STOP, node_id, created_run)
 
@@ -126,7 +138,7 @@ class WorkflowManager(SingletonInAppStateMixin):
             raise RuntimeError(msg)
 
         # run checks to see if step can be retried
-        step = await self.steps_repo.get_step(step_id)
+        step = await self.steps_repo.get_step_for_workflow_manager(step_id)
         if step is None:
             msg = f"No step found for step_id={step_id}"
             raise RuntimeError(msg)
@@ -135,14 +147,9 @@ class WorkflowManager(SingletonInAppStateMixin):
 
     async def retry_workflow_step(self, node_id: NodeID, step_id: StepId) -> None:
         step = await self._check_preconditions_skip_retry_step(node_id, step_id)
-
-        if step.available_attempts <= 0:
-            msg = f"No available attempts left for step_id={step_id}"
-            raise RuntimeError(msg)
-
-        await self.steps_repo.retry_step(step_id)
+        await self.steps_repo.manual_retry_step(step.step_id)
 
     async def skip_workflow_step(self, node_id: NodeID, step_id: StepId) -> None:
         await self._check_preconditions_skip_retry_step(node_id, step_id)
 
-        await self.steps_repo.skip_step(step_id)
+        await self.steps_repo.manual_skip_step(step_id)
