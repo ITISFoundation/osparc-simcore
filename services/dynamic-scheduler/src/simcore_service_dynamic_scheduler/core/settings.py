@@ -4,9 +4,10 @@ from typing import Annotated, cast
 
 from common_library.basic_types import DEFAULT_FACTORY
 from common_library.logging.logging_utils_filtering import LoggerName, MessageSubstring
-from pydantic import AliasChoices, Field, SecretStr, TypeAdapter, field_validator
+from pydantic import AliasChoices, Field, NonNegativeInt, SecretStr, TypeAdapter, field_validator
 from servicelib.logging_utils import LogLevelInt
 from settings_library.application import BaseApplicationSettings
+from settings_library.base import BaseCustomSettings
 from settings_library.basic_types import LogLevel, VersionTag
 from settings_library.catalog import CatalogSettings
 from settings_library.director_v0 import DirectorV0Settings
@@ -115,6 +116,51 @@ class _BaseApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         return cls.validate_log_level(value)
 
 
+class PScchedulerSettings(BaseCustomSettings):
+    DYNAMIC_SCHEDULER_P_SCCHEDULER_RECONCILIATION_MANAGER_PERIODIC_CHECKS_INTERVAL: Annotated[
+        datetime.timedelta,
+        Field(description=("interval at which to check if a reconciliation is required")),
+    ] = datetime.timedelta(seconds=30)
+    DYNAMIC_SCHEDULER_P_SCCHEDULER_RECONCILIATION_MANAGER_QUEUE_CONSUMER_EXPECTED_RUNTIME_DURATION: Annotated[
+        datetime.timedelta,
+        Field(description=("Used to compute consumer count")),
+    ] = datetime.timedelta(microseconds=200)
+    DYNAMIC_SCHEDULER_P_SCCHEDULER_RECONCILIATION_MANAGER_QUEUE_MAX_BURST: Annotated[
+        NonNegativeInt,
+        Field(description=("Also used to compute consumer count")),
+    ] = 20
+
+    DYNAMIC_SCHEDULER_P_SCCHEDULER_WORKER_MANAGER_CHECK_FOR_STEPS_INTERVAL: Annotated[
+        datetime.timedelta,
+        Field(description=("Interval for checking for steps in the worker manager")),
+    ] = datetime.timedelta(seconds=30)
+    DYNAMIC_SCHEDULER_P_SCCHEDULER_WORKER_MANAGER_HEARTBEAT_INTERVAL: Annotated[
+        datetime.timedelta,
+        Field(description=("Interval at which workers send heartbeats")),
+    ] = datetime.timedelta(seconds=10)
+    DYNAMIC_SCHEDULER_P_SCCHEDULER_WORKER_MANAGER_QUEUE_CONSUMER_EXPECTED_RUNTIME_DURATION: Annotated[
+        datetime.timedelta,
+        Field(description=("Used to compute the consumer count")),
+    ] = datetime.timedelta(seconds=10)
+    DYNAMIC_SCHEDULER_P_SCCHEDULER_WORKER_MANAGER_QUEUE_MAX_BURST: Annotated[
+        NonNegativeInt,
+        Field(description=("Also used to compute the consumer count")),
+    ] = 100
+
+    DYNAMIC_SCHEDULER_P_SCCHEDULER_STATUS_MANAGER_STATUS_TTL: Annotated[
+        datetime.timedelta,
+        Field(description=("Time-to-live for statuses in the status manager")),
+    ] = datetime.timedelta(seconds=10)
+    DYNAMIC_SCHEDULER_P_SCCHEDULER_STATUS_MANAGER_UPDATE_STATUSES_INTERVAL: Annotated[
+        datetime.timedelta,
+        Field(description=("Controls how often the status manager updates the statuses of the steps and services")),
+    ] = datetime.timedelta(seconds=5)
+    DYNAMIC_SCHEDULER_P_SCCHEDULER_STATUS_MANAGER_MAX_PARALLEL_UPDATES: Annotated[
+        NonNegativeInt,
+        Field(description=("Maximum number of parallel status updates in the status manager")),
+    ] = 10
+
+
 class ApplicationSettings(_BaseApplicationSettings):
     """Web app's environment variables
 
@@ -185,6 +231,8 @@ class ApplicationSettings(_BaseApplicationSettings):
             description="settings for postgres service",
         ),
     ]
+
+    P_SCHEDULER: Annotated[PScchedulerSettings, Field(description="settings for the p scheduler")]
 
     @field_validator("DYNAMIC_SCHEDULER_UI_MOUNT_PATH", mode="before")
     @classmethod

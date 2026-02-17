@@ -212,8 +212,8 @@ class WorkerManager(SingletonInAppStateMixin, SupportsLifecycle):
         self,
         app: FastAPI,
         check_for_steps_interval: timedelta,
-        queue_consumer_expected_runtime_duration: timedelta,
         heartbeat_interval: timedelta,
+        queue_consumer_expected_runtime_duration: timedelta,
         queue_max_burst: NonNegativeInt,
     ) -> None:
         self.app = app
