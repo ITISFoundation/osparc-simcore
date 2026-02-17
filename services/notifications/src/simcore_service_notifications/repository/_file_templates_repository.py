@@ -92,8 +92,8 @@ class FileTemplatesRepository(TemplatesRepository):
     def search_templates(
         self,
         *,
-        channel: ChannelType | None = None,
-        template_name: TemplateName | None = None,
+        channel: str | None = None,
+        template_name: str | None = None,
         part: str | None = None,
     ) -> list[Template]:
         """Search for notification templates with wildcard support for template_name and part.
