@@ -118,19 +118,18 @@ async def _handler_step_cancellation(
 
 
 async def _try_handle_step(
-    app: FastAPI, cancellation_notifier: ChangeNotifier, *, heartbeat_interval: timedelta, step_id: StepId | None
+    app: FastAPI, cancellation_notifier: ChangeNotifier, *, heartbeat_interval: timedelta, search_step_id: StepId | None
 ) -> None:
     """tries to acquire one step at a time, if it succeeds then it starts processing"""
 
     # 1. try to acquire a job from the queue (or quit loop if none is available)
     steps_repo = get_repository(app, StepsRepository)
 
-    step = await steps_repo.get_step_for_worker(step_id)
+    step = await steps_repo.get_step_for_worker(search_step_id)
     if step is None:
         return
 
-    assert step_id is not None  # nosec
-    _logger.debug("worker picked up step_id=%s", step_id)
+    _logger.debug("worker picked up step_id=%s", step.step_id)
 
     interrupt_queue = Queue[_InterruptReasson]()
 
@@ -139,15 +138,15 @@ async def _try_handle_step(
     lease_task = create_periodic_task(
         _task_lease_heartbeat,
         interval=heartbeat_interval,
-        task_name=f"_lease_heartbeat_step_{step_id}",
+        task_name=f"_lease_heartbeat_step_{step.step_id}",
         app=app,
         interrupt_queue=interrupt_queue,
         cancellation_notifier=cancellation_notifier,
-        step_id=step_id,
+        step_id=step.step_id,
     )
 
     # 3. start background task for cancellation monitoring
-    handler_step_cancellation = partial(_handler_step_cancellation, interrupt_queue, step_id)
+    handler_step_cancellation = partial(_handler_step_cancellation, interrupt_queue, step.step_id)
 
     await cancellation_notifier.subscribe(handler_step_cancellation)
     # 4. start background task that runs the user's payload
@@ -155,7 +154,7 @@ async def _try_handle_step(
     step_class = workflow_registry.get_base_step(step.step_type)
 
     step_runner_task = create_task(
-        _task_step_runner(app, step_class, step, interrupt_queue), name=f"_step_runner_step_{step_id}"
+        _task_step_runner(app, step_class, step, interrupt_queue), name=f"_step_runner_step_{step.step_id}"
     )
 
     # 5. wait for cancellation or payload completion or cancellation due to lease expiry
@@ -170,26 +169,28 @@ async def _try_handle_step(
         match interrupt_reason:
             case _InterruptReasson.USER_CANCELLATION_REQUESTED | _InterruptReasson.LEASE_EXPIRY | None:
                 await cancel_wait_task(step_runner_task)
-                await steps_repo.step_cancelled(step_id)
+                await steps_repo.step_cancelled(step.step_id)
 
                 _logger.info(
                     "step_id=%s interrupted because: %s",
-                    step_id,
+                    step.step_id,
                     interrupt_reason if interrupt_reason else f"timed out after {timeout=}",
                 )
             case _InterruptReasson.STEP_COMPLETED:
                 try:
                     await step_runner_task
-                    await steps_repo.step_finished_successfully(step_id)
+                    await steps_repo.step_finished_successfully(step.step_id)
                 except Exception as e:  # pylint: disable=broad-except
-                    _logger.exception("step_id=%s failed", step_id)
+                    _logger.exception("step_id=%s failed", step.step_id)
 
                     fail_message = create_troubleshooting_log_message(
-                        user_error_msg=f"step_id={step_id} failed", error=e
+                        user_error_msg=f"step_id={step.step_id} failed", error=e
                     )
-                    await steps_repo.step_finished_with_failure(step_id, fail_message)
+                    await steps_repo.step_finished_with_failure(step.step_id, fail_message)
                     steps_fail_history_repo = get_repository(app, StepFailHistoryRepository)
-                    await steps_fail_history_repo.insert_step_fail_history(step_id, step.attempt_number, fail_message)
+                    await steps_fail_history_repo.insert_step_fail_history(
+                        step.step_id, step.attempt_number, fail_message
+                    )
     finally:
         await cancel_wait_task(lease_task)
         await cancellation_notifier.unsubscribe(handler_step_cancellation)
