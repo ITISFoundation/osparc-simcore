@@ -292,8 +292,7 @@ async def test_with_profile_span(
     ],
     indirect=True,
 )
-# ruff: noqa N802
-async def test_TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY_effective(
+async def test_tracing_opentelemetry_sampling_probability_effective(
     mock_otel_collector: InMemorySpanExporter,
     mocked_app: FastAPI,
     set_and_clean_settings_env_vars: Callable[[], None],
