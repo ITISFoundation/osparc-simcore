@@ -30,8 +30,9 @@ async def _get_config(
             "Devices": [{"PathOnHost": "/dev/fuse", "PathInContainer": "/dev/fuse", "CgroupPermissions": "rwm"}],
             "CapAdd": ["SYS_ADMIN"],
             "SecurityOpt": ["apparmor:unconfined", "seccomp:unconfined"],
-            "Memory": memory_limit,
-            "MemorySwap": memory_limit,
+            "MemoryReservation": memory_limit // 2,  # soft limit: reclaim aggressively
+            "Memory": memory_limit,  # hard limit
+            "MemorySwap": -1,  # allow swap as safety valve
             "NanoCpus": nano_cpus,
         },
     }
