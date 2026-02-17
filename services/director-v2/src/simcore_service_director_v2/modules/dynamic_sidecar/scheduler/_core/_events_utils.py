@@ -104,7 +104,7 @@ def _get_common_span_attributes(scheduler_data: SchedulerData) -> dict[str, str]
     }
 
 
-def extract_span_links_from_scheduler_data(scheduler_data: SchedulerData) -> list[Link]:
+def _extract_span_links_from_scheduler_data(scheduler_data: SchedulerData) -> list[Link]:
     """Extract span links from stored trace context in scheduler_data.
 
     Returns empty list if tracing is disabled or no trace context is stored.
@@ -182,7 +182,7 @@ def traced_operation(
     attributes.update(extra_attributes)
 
     # Get links if requested
-    links = extract_span_links_from_scheduler_data(scheduler_data) if include_links else []
+    links = _extract_span_links_from_scheduler_data(scheduler_data) if include_links else []
 
     _logger.debug(
         "Creating traced span '%s' for service %s with %d link(s)",
