@@ -6,27 +6,19 @@ from jinja2 import Template as JinjaTemplate
 from models_library.notifications import ChannelType, TemplateName
 from pydantic import TypeAdapter
 
+# NOTE: The following import riggers decorator-based registration
+from ..models import template_contexts  # pylint: disable=unused-import  # noqa: F401
 from ..models.content import for_channel
-from ..models.template import BaseTemplateContext, Template, TemplateRef
-from ..models.template_contexts import (
-    AccountApprovedTemplateContext,
-)
+from ..models.template import Template, TemplateRef, get_template_context_model
 
 _TEMPLATE_EXTENSION = ".j2"
 _EXPECTED_PATH_PARTS = 3  # channel/template_name/part
-_TEMPLATE_CONTEXT_MODELS: dict[TemplateRef, type[BaseTemplateContext]] = {}
-
-
-def register_template_context_models() -> None:
-    _TEMPLATE_CONTEXT_MODELS[TemplateRef(channel=ChannelType.email, template_name="account_approved")] = (
-        AccountApprovedTemplateContext
-    )
 
 
 def _build_template(ref: TemplateRef) -> Template:
     return Template(
         ref=ref,
-        context_model=_TEMPLATE_CONTEXT_MODELS.get(TemplateRef(ref.channel, ref.template_name), BaseTemplateContext),
+        context_model=get_template_context_model(ref.channel, ref.template_name),
         parts=for_channel(ref.channel).get_field_names(),
     )
 
@@ -57,9 +49,6 @@ def template_path_prefix(template_ref: TemplateRef) -> str:
 @dataclass(frozen=True)
 class NotificationsTemplatesRepository:
     env: Environment
-
-    def __post_init__(self) -> None:
-        register_template_context_models()
 
     @staticmethod
     def _parse_template_path(template_path: str) -> tuple[str, str, str]:
