@@ -220,7 +220,6 @@ def traced_operation(
     ) as span:
         # Log debug info only if span is actually recording
         if span.is_recording():
-            _logger = logging.getLogger(__name__)
             _logger.debug(
                 "Started recording span '%s' with trace_id=%s, root=%s",
                 operation_name,
