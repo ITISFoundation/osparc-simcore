@@ -262,3 +262,50 @@ ps_steps = sa.Table(
         name=f"uq_{_COMMON_TABLE_PREFIX}_steps_run_id_step_type_is_reverting",
     ),
 )
+
+
+ps_step_fail_history = sa.Table(
+    f"{_COMMON_TABLE_PREFIX}_step_fail_history",
+    metadata,
+    sa.Column(
+        "step_id",
+        sa.BigInteger,
+        sa.ForeignKey(
+            f"{_COMMON_TABLE_PREFIX}_steps.step_id",
+            name=f"fk_{_COMMON_TABLE_PREFIX}_step_fail_history_step_id_{_COMMON_TABLE_PREFIX}_steps",
+            onupdate=RefActions.CASCADE,
+            ondelete=RefActions.CASCADE,
+        ),
+        nullable=False,
+        doc="Reference to the parent step",
+    ),
+    sa.Column(
+        "attempt",
+        sa.Integer,
+        nullable=False,
+        doc="Attempt number when the failure occurred",
+    ),
+    sa.Column(
+        "state",
+        sa.Enum(_StepState),
+        nullable=False,
+        doc="State of the step when the failure was recorded",
+    ),
+    sa.Column(
+        "finished_at",
+        sa.DateTime(timezone=True),
+        nullable=False,
+        doc="Timestamp when the step attempt finished",
+    ),
+    sa.Column(
+        "message",
+        sa.String,
+        nullable=False,
+        doc="Error message or details about the failure",
+    ),
+    sa.PrimaryKeyConstraint(
+        "step_id",
+        "attempt",
+        name=f"pk_{_COMMON_TABLE_PREFIX}_step_fail_history",
+    ),
+)
