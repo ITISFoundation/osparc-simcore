@@ -271,7 +271,7 @@ def profiled_span(*, tracing_config: TracingConfig, span_name: str):
             )
 
 
-def get_standard_attributes(
+def create_standard_attributes(
     *,
     user_id: UserID | None = None,
     project_id: ProjectID | str | None = None,
@@ -279,7 +279,7 @@ def get_standard_attributes(
     product_name: ProductName | None = None,
     wallet_id: WalletID | str | None = None,
 ) -> dict[str, str]:
-    """Helper function to get standard span attributes like user ID."""
+    """Helper function to create standard span attributes like user ID..."""
     attributes = {}
     if user_id:
         attributes["user_id"] = f"{user_id}"

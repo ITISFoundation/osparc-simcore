@@ -30,7 +30,7 @@ from settings_library.tracing import TracingSettings
 from yarl import URL
 
 from ..logging_utils import log_catch, log_context
-from ..tracing import TracingConfig, get_standard_attributes, get_trace_info_headers
+from ..tracing import TracingConfig, create_standard_attributes, get_trace_info_headers
 
 _logger = logging.getLogger(__name__)
 
@@ -85,7 +85,7 @@ def _collect_custom_request_attributes(request: web.Request) -> dict[str, str]:
     # Pattern: /v0/projects/{project_id} or /v0/projects/{project_id}:action
     # Extract node_id from URL path if it matches node routes
     # Pattern: /v0/projects/{project_id}/nodes/{node_id}
-    return get_standard_attributes(
+    return create_standard_attributes(
         project_id=request.match_info.get("project_id"),
         node_id=request.match_info.get("node_id"),
     )

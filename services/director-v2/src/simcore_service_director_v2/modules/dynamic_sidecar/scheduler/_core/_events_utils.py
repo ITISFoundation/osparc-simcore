@@ -38,8 +38,8 @@ from servicelib.rabbitmq.rpc_interfaces.agent.volumes import (
 )
 from servicelib.tracing import (
     TracingConfig,
+    create_standard_attributes,
     extract_span_link_from_trace_carrier,
-    get_standard_attributes,
     traced_operation,
 )
 from servicelib.utils import limited_gather, logged_gather
@@ -99,7 +99,7 @@ _logger = logging.getLogger(__name__)
 
 
 def _get_common_span_attributes(scheduler_data: SchedulerData) -> dict[str, str]:
-    return get_standard_attributes(
+    return create_standard_attributes(
         user_id=scheduler_data.user_id,
         project_id=scheduler_data.project_id,
         node_id=scheduler_data.node_uuid,
