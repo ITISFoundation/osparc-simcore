@@ -182,32 +182,6 @@ def extract_span_link_from_trace_carrier(
 
 
 @contextmanager
-def profiled_span(*, tracing_config: TracingConfig, span_name: str):
-    if not _is_tracing():
-        return
-    tracer = trace.get_tracer(_TRACER_NAME, tracer_provider=tracing_config.tracer_provider)
-    with tracer.start_as_current_span(span_name) as span:
-        profiler = pyinstrument.Profiler(async_mode="enabled")
-        profiler.start()
-
-        try:
-            yield
-
-        except Exception as e:
-            span.record_exception(e)
-            span.set_status(trace.Status(trace.StatusCode.ERROR, f"{e}"))
-            raise
-
-        finally:
-            profiler.stop()
-            renderer = pyinstrument.renderers.ConsoleRenderer(unicode=True, color=False, show_all=True)
-            span.set_attribute(
-                _PROFILE_ATTRIBUTE_NAME,
-                profiler.output(renderer=renderer),
-            )
-
-
-@contextmanager
 def traced_operation(
     operation_name: str,
     *,
@@ -262,6 +236,41 @@ def traced_operation(
                 is_root_span,
             )
         yield
+
+
+@contextmanager
+def profiled_span(*, tracing_config: TracingConfig, span_name: str):
+    """Context manager that creates a traced span with CPU profiling attached.
+
+    Profiles the code block using pyinstrument and attaches the profile output
+    as a span attribute.
+
+    Args:
+        tracing_config: Tracing configuration
+        span_name: Name of the span
+
+    Example:
+        with profiled_span(tracing_config=tracing_config, span_name="my_operation"):
+            # operation code here
+            pass
+    """
+    profiler = pyinstrument.Profiler(async_mode="enabled")
+
+    profiler.start()
+    try:
+        with traced_operation(
+            span_name,
+            tracing_config=tracing_config,
+        ):
+            yield
+    finally:
+        profiler.stop()
+        if trace.get_current_span().is_recording():
+            renderer = pyinstrument.renderers.ConsoleRenderer(unicode=True, color=False, show_all=True)
+            trace.get_current_span().set_attribute(
+                _PROFILE_ATTRIBUTE_NAME,
+                profiler.output(renderer=renderer),
+            )
 
 
 def get_standard_attributes(
