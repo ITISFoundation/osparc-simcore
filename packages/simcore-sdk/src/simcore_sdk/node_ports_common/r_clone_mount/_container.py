@@ -126,7 +126,7 @@ async def _get_rclone_mount_command(
         "1m",
         "--write-back-cache",
         "--vfs-write-back",
-        "10s",
+        "5s",
         "--cache-dir",
         f"{target_cache_path}",
         "--dir-cache-time",
