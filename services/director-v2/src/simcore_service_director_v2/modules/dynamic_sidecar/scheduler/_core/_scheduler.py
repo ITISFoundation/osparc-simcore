@@ -40,13 +40,11 @@ from models_library.service_settings_labels import RestartPolicy, SimcoreService
 from models_library.services_types import ServicePortKey
 from models_library.users import UserID
 from models_library.wallets import WalletID
-from opentelemetry import context as otel_context
-from opentelemetry import trace
-from opentelemetry.propagate import inject
 from pydantic import NonNegativeFloat
 from servicelib.background_task import create_periodic_task
 from servicelib.long_running_tasks.models import ProgressCallback, TaskProgress
 from servicelib.redis import RedisClientsManager, exclusive
+from servicelib.tracing import get_trace_carrier_from_current_context
 from settings_library.redis import RedisDatabase
 
 from .....core.dynamic_services_settings.scheduler import (
@@ -245,21 +243,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
         scheduler_data.dynamic_sidecar.instrumentation.start_requested_at = arrow.utcnow().datetime
 
         # Capture current trace context only if tracing is active
-        if trace.get_current_span().is_recording():
-            carrier: dict[str, str] = {}
-            inject(carrier, context=otel_context.get_current())
-            scheduler_data.dynamic_sidecar.instrumentation.request_traceparent = carrier.get("traceparent")
-            scheduler_data.dynamic_sidecar.instrumentation.request_tracestate = carrier.get("tracestate")
-            _logger.info(
-                "Captured trace context for service %s: traceparent=%s",
-                scheduler_data.service_name,
-                scheduler_data.dynamic_sidecar.instrumentation.request_traceparent,
-            )
-        else:
-            _logger.warning(
-                "Tracing is not recording for service %s, no trace context captured",
-                scheduler_data.service_name,
-            )
+        scheduler_data.dynamic_sidecar.instrumentation.request_trace_carrier = get_trace_carrier_from_current_context()
 
         await self.add_service_from_scheduler_data(scheduler_data)
 

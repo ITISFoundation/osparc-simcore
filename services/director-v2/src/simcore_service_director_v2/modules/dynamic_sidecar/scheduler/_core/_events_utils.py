@@ -36,7 +36,7 @@ from servicelib.rabbitmq.rpc_interfaces.agent.errors import (
 from servicelib.rabbitmq.rpc_interfaces.agent.volumes import (
     remove_volumes_without_backup_for_service,
 )
-from servicelib.tracing import extract_span_link_from_trace_headers, traced_operation
+from servicelib.tracing import extract_span_link_from_trace_carrier, traced_operation
 from servicelib.utils import limited_gather, logged_gather
 from simcore_postgres_database.models.comp_tasks import NodeClass
 from tenacity import RetryError, TryAgain
@@ -113,7 +113,7 @@ def _extract_span_link_from_scheduler_data(scheduler_data: SchedulerData) -> Lin
     instrumentation = scheduler_data.dynamic_sidecar.instrumentation
 
     # Return early if no trace context stored
-    if not instrumentation.request_traceparent:
+    if not instrumentation.request_trace_carrier:
         _logger.debug(
             "No traceparent stored for service %s, skipping link creation",
             scheduler_data.service_name,
@@ -126,9 +126,8 @@ def _extract_span_link_from_scheduler_data(scheduler_data: SchedulerData) -> Lin
     }
 
     # Use generic function to extract link from trace headers
-    link = extract_span_link_from_trace_headers(
-        traceparent=instrumentation.request_traceparent,
-        tracestate=instrumentation.request_tracestate,
+    link = extract_span_link_from_trace_carrier(
+        carrier=instrumentation.request_trace_carrier,
         link_attributes=link_attributes,
     )
 

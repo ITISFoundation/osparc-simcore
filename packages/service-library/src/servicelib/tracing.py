@@ -10,7 +10,7 @@ from opentelemetry import context as otcontext
 from opentelemetry import trace
 from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
 from opentelemetry.instrumentation.logging import LoggingInstrumentor
-from opentelemetry.propagate import extract
+from opentelemetry.propagate import extract, inject
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.sampling import ParentBased, TraceIdRatioBased
@@ -24,6 +24,9 @@ _TRACER_NAME: Final[str] = "servicelib.tracing"
 _PROFILE_ATTRIBUTE_NAME: Final[str] = "pyinstrument.profile"
 _OSPARC_TRACE_ID_HEADER: Final[str] = "x-osparc-trace-id"
 _OSPARC_TRACE_SAMPLED_HEADER: Final[str] = "x-osparc-trace-sampled"
+
+
+_logger = logging.getLogger(__name__)
 
 
 def _is_tracing() -> bool:
@@ -100,9 +103,18 @@ def get_trace_info_headers() -> dict[str, str]:
     return {_OSPARC_TRACE_ID_HEADER: trace_id_hex, _OSPARC_TRACE_SAMPLED_HEADER: f"{trace_sampled}".lower()}
 
 
-def extract_span_link_from_trace_headers(
-    traceparent: str | None,
-    tracestate: str | None = None,
+def get_trace_carrier_from_current_context() -> dict[str, str]:
+    """Generates a carrier dictionary with W3C trace context headers extracted from the current tracing context."""
+    tracing_context = get_context()
+    carrier: dict[str, str] = {}
+    if trace.get_current_span().is_recording():
+        trace.get_current_span()  # Ensure we have a current span to extract context from
+        inject(carrier, context=tracing_context)
+    return carrier
+
+
+def extract_span_link_from_trace_carrier(
+    carrier: dict[str, str],
     link_attributes: dict[str, str] | None = None,
 ) -> Link | None:
     """Extract span link from W3C Trace Context headers.
@@ -111,33 +123,26 @@ def extract_span_link_from_trace_headers(
     Useful for linking to other traces when you have trace context headers.
 
     Args:
-        traceparent: The traceparent header value (required), format: version-trace_id-parent_id-trace_flags
-        tracestate: Optional tracestate header value for vendor-specific trace context
+        carrier: The carrier dictionary containing trace context headers (traceparent and optionally tracestate)
         link_attributes: Optional attributes to add to the created link
 
     Returns:
         A Link if traceparent is valid, None otherwise
 
     Example:
-        link = extract_span_link_from_trace_headers(
-            traceparent=request.headers.get("traceparent"),
+        link = extract_span_link_from_trace_carrier(
+            carrier={"traceparent": request.headers.get("traceparent")},
             link_attributes={"request.id": "123"}
         )
         with traced_operation("my_operation", link=link):
             ...
     """
-    if not traceparent:
+    if not carrier:
         return None
 
-    # Reconstruct carrier dict from W3C Trace Context headers
-    carrier = {"traceparent": traceparent}
-    if tracestate:
-        carrier["tracestate"] = tracestate
-
-    logger = logging.getLogger(__name__)
-    logger.debug(
-        "Extracting span link from traceparent=%s",
-        traceparent,
+    _logger.debug(
+        "Extracting span link from carrier=%s",
+        carrier,
     )
 
     try:
@@ -157,18 +162,18 @@ def extract_span_link_from_trace_headers(
                 }
             )
 
-            logger.debug(
+            _logger.debug(
                 "Created span link: trace_id=%s, span_id=%s",
                 trace.format_trace_id(span_context.trace_id),
                 trace.format_span_id(span_context.span_id),
             )
             return Link(span_context, attributes=attributes)
 
-        logger.warning("Could not create valid span link from traceparent")
+        _logger.warning("Could not create valid span link from carrier")
         return None
 
     except Exception as e:  # pylint: disable=broad-except
-        logger.warning("Failed to extract span link from trace headers: %s", e)
+        _logger.warning("Failed to extract span link from trace headers: %s", e)
         return None
 
 
