@@ -110,8 +110,7 @@ def get_trace_info_headers() -> dict[str, str]:
 def get_trace_carrier_from_current_context() -> dict[str, str]:
     tracing_context = get_context()
     carrier: dict[str, str] = {}
-    if trace.get_current_span().is_recording():
-        inject(carrier, context=tracing_context)
+    inject(carrier, context=tracing_context)
     return carrier
 
 
