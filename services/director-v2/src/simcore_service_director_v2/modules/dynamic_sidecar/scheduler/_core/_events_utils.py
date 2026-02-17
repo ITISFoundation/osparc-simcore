@@ -104,6 +104,7 @@ def _get_common_span_attributes(scheduler_data: SchedulerData) -> dict[str, str]
         project_id=scheduler_data.project_id,
         node_id=scheduler_data.node_uuid,
         product_name=scheduler_data.product_name,
+        wallet_id=scheduler_data.wallet_info.wallet_id if scheduler_data.wallet_info else None,
     ) | {
         "service_key": scheduler_data.key,
         "service_version": scheduler_data.version,

@@ -10,6 +10,7 @@ from models_library.products import ProductName
 from models_library.projects import ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.users import UserID
+from models_library.wallets import WalletID
 from opentelemetry import context as otcontext
 from opentelemetry import trace
 from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
@@ -269,6 +270,7 @@ def get_standard_attributes(
     project_id: ProjectID | str | None = None,
     node_id: NodeID | str | None = None,
     product_name: ProductName | None = None,
+    wallet_id: WalletID | str | None = None,
 ) -> dict[str, str]:
     """Helper function to get standard span attributes like user ID."""
     attributes = {}
@@ -280,4 +282,6 @@ def get_standard_attributes(
         attributes["node_id"] = f"{node_id}"
     if product_name:
         attributes["product_name"] = f"{product_name}"
+    if wallet_id:
+        attributes["wallet_id"] = f"{wallet_id}"
     return attributes
