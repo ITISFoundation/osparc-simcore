@@ -1,5 +1,183 @@
+from typing import Final
+
+import sqlalchemy as sa
+from fastapi import FastAPI
+from simcore_postgres_database.models.p_scheduler import ps_steps
+from simcore_postgres_database.utils_repos import pass_or_acquire_connection, transaction_context
+from sqlalchemy.engine.row import Row
+
 from ...base_repository import BaseRepository
+from .._abc import BaseStep
+from .._models import DagNodeUniqueReference, RunId, Step, StepId, StepState
+from .._notifications import NotificationsManager
+
+_DEFAULT_AVAILABLE_ATTEMPTS: Final[int] = 3
+_INITIAL_ATTEMPT_NUMBER: Final[int] = 1
+
+
+def _row_to_step(row: Row) -> Step:
+    return Step(
+        step_id=row.step_id,
+        created_at=row.created_at,
+        run_id=row.run_id,
+        step_type=row.step_type,
+        is_reverting=row.is_reverting,
+        timeout=row.timeout,
+        available_attempts=row.available_attempts,
+        attempt_number=row.attempt_number,
+        state=StepState(row.state.value),
+        finished_at=row.finished_at,
+        message=row.message,
+    )
 
 
 class StepsRepository(BaseRepository):
-    pass
+    async def mark_run_steps_as_skipped(self, app: FastAPI, run_id: RunId) -> None:
+        async with transaction_context(self.engine) as conn:
+            result = await conn.execute(
+                ps_steps.update()
+                .where((ps_steps.c.run_id == run_id) & (ps_steps.c.state.in_([StepState.CREATED, StepState.READY])))
+                .values(state=StepState.CANCELLED, finished_at=sa.func.now())
+                .returning(ps_steps.c.step_id)
+            )
+            cancelled_step_ids = [row.step_id for row in result.fetchall()]
+
+        notifications_manager = NotificationsManager.get_from_app_state(app)
+        for step_id in cancelled_step_ids:
+            await notifications_manager.notify_step_cancelled(step_id)
+
+    async def get_all_run_tracked_steps(self, run_id: RunId) -> set[tuple[DagNodeUniqueReference, bool]]:
+        async with pass_or_acquire_connection(self.engine) as conn:
+            result = await conn.execute(
+                sa.select(ps_steps.c.step_type, ps_steps.c.is_reverting).where(ps_steps.c.run_id == run_id)
+            )
+            rows = result.fetchall()
+        return {(row.step_type, row.is_reverting) for row in rows}
+
+    async def create_step(
+        self, run_id: RunId, step_type: DagNodeUniqueReference, *, step_class: type[BaseStep], is_reverting: bool
+    ) -> Step:
+        timeout = step_class.get_revert_timeout() if is_reverting else step_class.get_apply_timeout()
+        async with transaction_context(self.engine) as conn:
+            result = await conn.execute(
+                ps_steps.insert()
+                .values(
+                    run_id=run_id,
+                    step_type=step_type,
+                    is_reverting=is_reverting,
+                    timeout=timeout,
+                    available_attempts=_DEFAULT_AVAILABLE_ATTEMPTS,
+                    attempt_number=_INITIAL_ATTEMPT_NUMBER,
+                    state=StepState.CREATED,
+                )
+                .returning(sa.literal_column("*"))
+            )
+            row = result.one()
+        return _row_to_step(row)
+
+    async def get_all_run_tracked_steps_states(self, run_id: RunId) -> dict[tuple[DagNodeUniqueReference, bool], Step]:
+        async with pass_or_acquire_connection(self.engine) as conn:
+            result = await conn.execute(sa.select(ps_steps).where(ps_steps.c.run_id == run_id))
+            rows = result.fetchall()
+        return {(row.step_type, row.is_reverting): _row_to_step(row) for row in rows}
+
+    async def retry_failed_step(self, step_id: StepId) -> None:
+        async with transaction_context(self.engine) as conn:
+            await conn.execute(
+                ps_steps.update()
+                .where(ps_steps.c.step_id == step_id)
+                .values(
+                    state=StepState.CREATED,
+                    attempt_number=ps_steps.c.attempt_number + 1,
+                    available_attempts=ps_steps.c.available_attempts - 1,
+                    finished_at=None,
+                    message=None,
+                )
+            )
+
+    async def set_step_as_ready(self, app: FastAPI, step_id: StepId) -> None:
+        async with transaction_context(self.engine) as conn:
+            await conn.execute(ps_steps.update().where(ps_steps.c.step_id == step_id).values(state=StepState.READY))
+        notifications_manager = NotificationsManager.get_from_app_state(app)
+        await notifications_manager.notify_step_ready(step_id)
+
+    async def get_step(self, step_id: StepId) -> Step | None:
+        async with pass_or_acquire_connection(self.engine) as conn:
+            result = await conn.execute(sa.select(ps_steps).where(ps_steps.c.step_id == step_id))
+            row = result.first()
+        if row is None:
+            return None
+        return _row_to_step(row)
+
+    async def retry_step(self, step_id: StepId) -> None:
+        async with transaction_context(self.engine) as conn:
+            await conn.execute(
+                ps_steps.update()
+                .where(ps_steps.c.step_id == step_id)
+                .values(
+                    state=StepState.READY,
+                    available_attempts=ps_steps.c.available_attempts - 1,
+                    attempt_number=ps_steps.c.attempt_number + 1,
+                    finished_at=None,
+                    message=None,
+                )
+            )
+
+    async def skip_step(self, step_id: StepId) -> None:
+        async with transaction_context(self.engine) as conn:
+            await conn.execute(
+                ps_steps.update()
+                .where(ps_steps.c.step_id == step_id)
+                .values(state=StepState.SKIPPED, finished_at=sa.func.now())
+            )
+
+    async def get_step_for_worker(self, step_id: StepId | None) -> Step | None:
+        async with transaction_context(self.engine) as conn:
+            # Select a READY step and lock it; skip rows already locked by other workers
+            select_query = (
+                sa.select(ps_steps)
+                .where(ps_steps.c.state == StepState.READY)
+                .with_for_update(skip_locked=True)
+                .limit(1)
+            )
+            if step_id is not None:
+                select_query = select_query.where(ps_steps.c.step_id == step_id)
+
+            result = await conn.execute(select_query)
+            row = result.first()
+            if row is None:
+                return None
+
+            # Transition the locked step to RUNNING
+            result = await conn.execute(
+                ps_steps.update()
+                .where(ps_steps.c.step_id == row.step_id)
+                .values(state=StepState.RUNNING)
+                .returning(sa.literal_column("*"))
+            )
+            row = result.one()
+        return _row_to_step(row)
+
+    async def step_cancelled(self, step_id: StepId) -> None:
+        async with transaction_context(self.engine) as conn:
+            await conn.execute(
+                ps_steps.update()
+                .where(ps_steps.c.step_id == step_id)
+                .values(state=StepState.CANCELLED, finished_at=sa.func.now())
+            )
+
+    async def step_finished_successfully(self, step_id: StepId) -> None:
+        async with transaction_context(self.engine) as conn:
+            await conn.execute(
+                ps_steps.update()
+                .where(ps_steps.c.step_id == step_id)
+                .values(state=StepState.SUCCESS, finished_at=sa.func.now())
+            )
+
+    async def step_finished_with_failure(self, step_id: StepId, message: str) -> None:
+        async with transaction_context(self.engine) as conn:
+            await conn.execute(
+                ps_steps.update()
+                .where(ps_steps.c.step_id == step_id)
+                .values(state=StepState.FAILED, finished_at=sa.func.now(), message=message)
+            )
