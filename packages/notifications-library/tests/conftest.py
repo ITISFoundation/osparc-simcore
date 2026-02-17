@@ -13,6 +13,7 @@ from faker import Faker
 from models_library.products import ProductName
 from notifications_library._models import (
     ProductData,
+    ProductFooterData,
     ProductUIData,
     SharerData,
     UserData,
@@ -68,6 +69,14 @@ def product_data(
         strong_color=vendor_ui.get("strong_color"),
     )
 
+    footer_data = ProductFooterData(
+        social_links=vendor.get("footer_social_links", []),
+        share_links=vendor.get("footer_share_links", []),
+        company_name=vendor.get("company_name", ""),
+        company_address=vendor.get("company_address", ""),
+        company_links=vendor.get("company_links", []),
+    )
+
     return ProductData(  # type: ignore
         product_name=product_name,
         display_name=product["display_name"],
@@ -75,11 +84,7 @@ def product_data(
         support_email=product["support_email"],
         homepage_url=vendor.get("url"),
         ui=product_ui,
-        footer_social_links=vendor.get("footer_social_links", []),
-        footer_share_links=vendor.get("footer_share_links", []),
-        company_name=vendor.get("company_name", ""),
-        company_address=vendor.get("company_address", ""),
-        company_links=vendor.get("company_links", []),
+        footer=footer_data,
     )
 
 

@@ -37,6 +37,15 @@ class ProductUIData:
 
 
 @dataclass(frozen=True)
+class ProductFooterData:
+    social_links: list[tuple[str, str]]  # list of (social_media_name, social_media_url)
+    share_links: list[tuple[str, str, str]]  # list of (share_name, share_label, share_url)
+    company_name: str
+    company_address: str
+    company_links: list[tuple[str, str]]  # list of (link_name, link_url)
+
+
+@dataclass(frozen=True)
 class ProductData:
     product_name: ProductName
     display_name: str
@@ -44,8 +53,24 @@ class ProductData:
     support_email: str
     homepage_url: str | None  # default_homepage = "https://osparc.io/" in base.html
     ui: ProductUIData
-    footer_social_links: list[tuple[str, str]]  # list of (social_media_name (youtube, linkedin), social_media_url)
-    footer_share_links: list[tuple[str, str, str]]  # list of (share_name, share_label,share_url)
-    company_name: str
-    company_address: str
-    company_links: list[tuple[str, str]]  # list of (link_name, link_url)
+    footer: ProductFooterData
+
+    @property
+    def footer_social_links(self) -> list[tuple[str, str]]:
+        return self.footer.social_links
+
+    @property
+    def footer_share_links(self) -> list[tuple[str, str, str]]:
+        return self.footer.share_links
+
+    @property
+    def company_name(self) -> str:
+        return self.footer.company_name
+
+    @property
+    def company_address(self) -> str:
+        return self.footer.company_address
+
+    @property
+    def company_links(self) -> list[tuple[str, str]]:
+        return self.footer.company_links

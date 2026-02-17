@@ -3,7 +3,12 @@
 from aiohttp import web
 from models_library.emails import LowerCaseEmailStr
 from models_library.products import ProductName
-from notifications_library._models import ProductData, ProductUIData, UserData
+from notifications_library._models import (
+    ProductData,
+    ProductFooterData,
+    ProductUIData,
+    UserData,
+)
 
 from ..products.products_service import get_product
 
@@ -30,6 +35,14 @@ def get_product_data(
 
     homepage_url = product.vendor.get("url") if product.vendor else None
 
+    footer_data = ProductFooterData(
+        social_links=product.vendor.get("footer_social_links", []) if product.vendor else [],
+        share_links=product.vendor.get("footer_share_links", []) if product.vendor else [],
+        company_name=product.vendor.get("company_name", "") if product.vendor else "",
+        company_address=product.vendor.get("company_address", "") if product.vendor else "",
+        company_links=product.vendor.get("company_links", []) if product.vendor else [],
+    )
+
     return ProductData(
         product_name=product_name,
         display_name=product.display_name,
@@ -37,11 +50,7 @@ def get_product_data(
         support_email=product.support_email,
         homepage_url=homepage_url,
         ui=ui_data,
-        footer_social_links=product.vendor.get("footer_social_links", []) if product.vendor else [],
-        footer_share_links=product.vendor.get("footer_share_links", []) if product.vendor else [],
-        company_name=product.vendor.get("company_name", "") if product.vendor else "",
-        company_address=product.vendor.get("company_address", "") if product.vendor else "",
-        company_links=product.vendor.get("company_links", []) if product.vendor else [],
+        footer=footer_data,
     )
 
 
