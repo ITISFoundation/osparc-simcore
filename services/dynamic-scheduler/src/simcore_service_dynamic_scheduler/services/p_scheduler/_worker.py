@@ -19,10 +19,10 @@ from servicelib.logging_utils import log_context
 from ..base_repository import get_repository
 from ._lifecycle_protocol import SupportsLifecycle
 from ._metrics import MetricsManager
-from ._models import BaseStep, InData, InDataKeys, OutData, OutDataKeys, Step, StepId
+from ._models import InData, InDataKeys, OutData, OutDataKeys, Step, StepId
 from ._notifications import RK_STEP_CANCELLED, RK_STEP_READY, NotificationsManager
 from ._queue import BoundedPubSubQueue, get_consumer_count
-from ._repositories import RunsStoreRepository, StepFailHistoryRepository, StepsLeaseRepository, StepsRepository
+from ._repositories import RunsStoreRepository, StepsLeaseRepository, StepsRepository
 from ._worker_utils import ChangeNotifier
 from ._workflow_registry import WorkflowRegistry
 
@@ -77,10 +77,10 @@ async def _get_input_context(
     return context
 
 
-async def _task_step_runner(
-    app: FastAPI, step_class: type[BaseStep], step: Step, interrupt_queue: Queue[_InterruptReasson]
-) -> None:
+async def _task_step_runner(app: FastAPI, step: Step, interrupt_queue: Queue[_InterruptReasson]) -> None:
     try:
+        workflow_registry = WorkflowRegistry.get_from_app_state(app)
+        step_class = workflow_registry.get_base_step(step.step_type)
         runs_store_repo = get_repository(app, RunsStoreRepository)
 
         if step.is_reverting:
@@ -150,11 +150,9 @@ async def _try_handle_step(
 
     await cancellation_notifier.subscribe(handler_step_cancellation)
     # 4. start background task that runs the user's payload
-    workflow_registry = WorkflowRegistry.get_from_app_state(app)
-    step_class = workflow_registry.get_base_step(step.step_type)
 
     step_runner_task = create_task(
-        _task_step_runner(app, step_class, step, interrupt_queue), name=f"_step_runner_step_{step.step_id}"
+        _task_step_runner(app, step, interrupt_queue), name=f"_step_runner_step_{step.step_id}"
     )
 
     # 5. wait for cancellation or payload completion or cancellation due to lease expiry
@@ -162,9 +160,8 @@ async def _try_handle_step(
         interrupt_reason: _InterruptReasson | None = None
 
         # wait for the result to finish
-        timeout = step_class.get_apply_timeout() if not step.is_reverting else step_class.get_revert_timeout()
         with suppress(asyncio.TimeoutError):
-            interrupt_reason = await asyncio.wait_for(interrupt_queue.get(), timeout=timeout.total_seconds())
+            interrupt_reason = await asyncio.wait_for(interrupt_queue.get(), timeout=step.timeout.total_seconds())
 
         match interrupt_reason:
             case _InterruptReasson.USER_CANCELLATION_REQUESTED | _InterruptReasson.LEASE_EXPIRY | None:
@@ -174,7 +171,7 @@ async def _try_handle_step(
                 _logger.info(
                     "step_id=%s interrupted because: %s",
                     step.step_id,
-                    interrupt_reason if interrupt_reason else f"timed out after {timeout=}",
+                    interrupt_reason if interrupt_reason else f"timed out after {step.timeout=}",
                 )
             case _InterruptReasson.STEP_COMPLETED:
                 try:
@@ -187,10 +184,6 @@ async def _try_handle_step(
                         user_error_msg=f"step_id={step.step_id} failed", error=e
                     )
                     await steps_repo.step_finished_with_failure(step.step_id, fail_message)
-                    steps_fail_history_repo = get_repository(app, StepFailHistoryRepository)
-                    await steps_fail_history_repo.insert_step_fail_history(
-                        step.step_id, step.attempt_number, fail_message
-                    )
     finally:
         await cancel_wait_task(lease_task)
         await cancellation_notifier.unsubscribe(handler_step_cancellation)
