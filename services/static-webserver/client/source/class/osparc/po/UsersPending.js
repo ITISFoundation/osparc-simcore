@@ -376,8 +376,8 @@ qx.Class.define("osparc.po.UsersPending", {
       previewApproval.set({
         invitationUrl,
         email,
-        subject: messageContent.subject,
-        bodyHtml: messageContent.bodyHtml,
+        subject: messageContent["subject"],
+        bodyHtml: messageContent["bodyHtml"],
       });
       osparc.ui.window.Window.popUpInWindow(previewApproval, qx.locale.Manager.tr("Preview email"));
     },
