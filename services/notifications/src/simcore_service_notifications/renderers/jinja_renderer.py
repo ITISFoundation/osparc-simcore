@@ -4,13 +4,13 @@ from typing import Any
 from ..models.content import for_channel
 from ..models.preview import TemplatePreview
 from ..models.template import Template
-from ..repository.templates_repository import NotificationsTemplatesRepository
+from ..repository.templates_repository import TemplatesRepository
 from .renderer import Renderer
 
 
 @dataclass(frozen=True)
 class JinjaNotificationsRenderer(Renderer):
-    repository: NotificationsTemplatesRepository
+    templates_repo: TemplatesRepository
 
     def preview_template(
         self,
@@ -19,7 +19,7 @@ class JinjaNotificationsRenderer(Renderer):
     ) -> TemplatePreview:
         content = {}
         for render_part in template.parts:
-            jinja_template = self.repository.get_jinja_template(template, render_part)
+            jinja_template = self.templates_repo.get_jinja_template(template, render_part)
 
             content[render_part] = jinja_template.render(context)
 

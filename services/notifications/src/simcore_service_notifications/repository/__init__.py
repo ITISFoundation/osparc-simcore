@@ -1,3 +1,3 @@
-from .templates_repository import TemplatesRepository
+from ._file_templates_repository import FileTemplatesRepository
 
-__all__: tuple[str, ...] = ("TemplatesRepository",)
+__all__: tuple[str, ...] = ("FileTemplatesRepository",)

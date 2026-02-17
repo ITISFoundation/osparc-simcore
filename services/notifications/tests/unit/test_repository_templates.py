@@ -6,16 +6,16 @@ from jinja2 import Environment
 from models_library.notifications import ChannelType, TemplateName
 from pydantic import TypeAdapter
 from simcore_service_notifications.models.template import TemplateRef
-from simcore_service_notifications.repository.templates_repository import (
-    TemplatesRepository,
+from simcore_service_notifications.repository._file_templates_repository import (
+    FileTemplatesRepository,
     template_path_prefix,
 )
 
 
 @pytest.fixture
-def templates_repository(mock_jinja_env: Environment) -> TemplatesRepository:
+def templates_repository(mock_jinja_env: Environment) -> FileTemplatesRepository:
     """Create a NotificationsTemplatesRepository instance with mock templates."""
-    return TemplatesRepository(env=mock_jinja_env)
+    return FileTemplatesRepository(env=mock_jinja_env)
 
 
 def test_template_path_prefix() -> None:
@@ -29,7 +29,7 @@ def test_template_path_prefix() -> None:
 
 
 def test_search_templates_no_filters(
-    templates_repository: TemplatesRepository,
+    templates_repository: FileTemplatesRepository,
 ) -> None:
     """Test searching templates without any filters."""
     templates = templates_repository.search_templates()
@@ -37,7 +37,7 @@ def test_search_templates_no_filters(
 
 
 def test_search_templates_by_channel(
-    templates_repository: TemplatesRepository,
+    templates_repository: FileTemplatesRepository,
 ) -> None:
     """Test searching templates by channel."""
     templates = templates_repository.search_templates(channel=ChannelType.email)
@@ -47,7 +47,7 @@ def test_search_templates_by_channel(
 
 
 def test_search_templates_by_template_name(
-    templates_repository: TemplatesRepository,
+    templates_repository: FileTemplatesRepository,
 ) -> None:
     """Test searching templates by template name with exact match."""
     templates = templates_repository.search_templates(template_name="*")
@@ -55,7 +55,7 @@ def test_search_templates_by_template_name(
 
 
 def test_search_templates_by_wildcard_name_prefix(
-    templates_repository: TemplatesRepository,
+    templates_repository: FileTemplatesRepository,
 ) -> None:
     """Test searching templates with wildcard prefix pattern."""
     templates = templates_repository.search_templates(template_name="*_*")
@@ -63,7 +63,7 @@ def test_search_templates_by_wildcard_name_prefix(
 
 
 def test_search_templates_by_wildcard_name_suffix(
-    templates_repository: TemplatesRepository,
+    templates_repository: FileTemplatesRepository,
 ) -> None:
     """Test searching templates with wildcard suffix pattern."""
     templates = templates_repository.search_templates(template_name="account_*")
@@ -71,7 +71,7 @@ def test_search_templates_by_wildcard_name_suffix(
 
 
 def test_search_templates_by_part(
-    templates_repository: TemplatesRepository,
+    templates_repository: FileTemplatesRepository,
 ) -> None:
     """Test searching templates by part name."""
     templates = templates_repository.search_templates(part="subject")
@@ -81,7 +81,7 @@ def test_search_templates_by_part(
 
 
 def test_search_templates_by_part_body(
-    templates_repository: TemplatesRepository,
+    templates_repository: FileTemplatesRepository,
 ) -> None:
     """Test searching templates by part name body_html."""
     templates = templates_repository.search_templates(part="body_html")
@@ -91,7 +91,7 @@ def test_search_templates_by_part_body(
 
 
 def test_search_templates_by_part_wildcard(
-    templates_repository: TemplatesRepository,
+    templates_repository: FileTemplatesRepository,
 ) -> None:
     """Test searching templates by part name with wildcard."""
     templates = templates_repository.search_templates(part="body_*")
@@ -99,7 +99,7 @@ def test_search_templates_by_part_wildcard(
 
 
 def test_search_templates_combined_filters_channel_and_name(
-    templates_repository: TemplatesRepository,
+    templates_repository: FileTemplatesRepository,
 ) -> None:
     """Test searching templates with channel and name filters."""
     templates = templates_repository.search_templates(
@@ -112,7 +112,7 @@ def test_search_templates_combined_filters_channel_and_name(
 
 
 def test_search_templates_combined_filters_all(
-    templates_repository: TemplatesRepository,
+    templates_repository: FileTemplatesRepository,
 ) -> None:
     """Test searching templates with all filters combined."""
     templates = templates_repository.search_templates(
@@ -126,7 +126,7 @@ def test_search_templates_combined_filters_all(
 
 
 def test_search_templates_no_duplicates(
-    templates_repository: TemplatesRepository,
+    templates_repository: FileTemplatesRepository,
 ) -> None:
     """Test that search_templates doesn't return duplicates."""
     templates = templates_repository.search_templates()
@@ -135,7 +135,7 @@ def test_search_templates_no_duplicates(
 
 
 def test_search_templates_returns_template_objects(
-    templates_repository: TemplatesRepository,
+    templates_repository: FileTemplatesRepository,
 ) -> None:
     """Test that search_templates returns proper template objects with all attributes."""
     templates = templates_repository.search_templates(channel=ChannelType.email)
@@ -150,7 +150,7 @@ def test_search_templates_returns_template_objects(
 
 
 def test_search_templates_invalid_channel_returns_empty(
-    templates_repository: TemplatesRepository,
+    templates_repository: FileTemplatesRepository,
 ) -> None:
     """Test that filtering by non-existent channel returns empty list."""
     # Note: ChannelType only has 'email' as defined in models
