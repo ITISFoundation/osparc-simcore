@@ -1,9 +1,9 @@
 from jinja2 import Environment
 from notifications_library._render import create_render_environment_from_notifications_library
 
-from ...renderers.jinja_renderer import JinjaNotificationsRenderer
+from ...renderers import JinjaNotificationsRenderer
 from ...repository import FileTemplatesRepository
-from ...services.templates_service import TemplatesService
+from ...services import TemplatesService
 
 
 def get_jinja_env() -> Environment:

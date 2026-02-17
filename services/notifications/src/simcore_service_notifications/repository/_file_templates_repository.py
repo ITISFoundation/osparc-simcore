@@ -10,7 +10,7 @@ from pydantic import TypeAdapter
 from ..models import template_contexts  # pylint: disable=unused-import  # noqa: F401
 from ..models.content import for_channel
 from ..models.template import Template, TemplateRef, get_template_context_model
-from .templates_repository import TemplatesRepository
+from ._templates_repository import TemplatesRepository
 
 _TEMPLATE_EXTENSION = ".j2"
 _EXPECTED_PATH_PARTS = 3  # channel/template_name/part

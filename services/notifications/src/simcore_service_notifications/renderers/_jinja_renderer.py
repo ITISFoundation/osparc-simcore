@@ -4,8 +4,8 @@ from typing import Any
 from ..models.content import for_channel
 from ..models.preview import TemplatePreview
 from ..models.template import Template
-from ..repository.templates_repository import TemplatesRepository
-from .renderer import Renderer
+from ..repository import TemplatesRepository
+from ._renderer import Renderer
 
 
 @dataclass(frozen=True)
