@@ -7,7 +7,6 @@ import secrets
 import string
 from collections.abc import Callable
 from functools import partial
-from typing import Any
 
 import pip
 import pytest
@@ -38,33 +37,21 @@ def mocked_app() -> FastAPI:
 
 
 @pytest.fixture
-def tracing_settings_in(request: pytest.FixtureRequest) -> dict[str, Any]:
+def tracing_settings_in(request: pytest.FixtureRequest) -> tuple[str, int | str, float]:
     return request.param
 
 
-@pytest.fixture()
+@pytest.fixture
 def set_and_clean_settings_env_vars(
-    monkeypatch: pytest.MonkeyPatch, tracing_settings_in: Callable[[], dict[str, Any]]
+    monkeypatch: pytest.MonkeyPatch, tracing_settings_in: tuple[str, int | str, float]
 ) -> None:
-    endpoint_mocked = False
-    if tracing_settings_in[0]:
-        endpoint_mocked = True
-        monkeypatch.setenv("TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT", f"{tracing_settings_in[0]}")
-    port_mocked = False
-    if tracing_settings_in[1]:
-        port_mocked = True
-        monkeypatch.setenv("TRACING_OPENTELEMETRY_COLLECTOR_PORT", f"{tracing_settings_in[1]}")
-    sampling_probability_mocked = False
-    if tracing_settings_in[2]:
-        sampling_probability_mocked = True
-        monkeypatch.setenv("TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY", f"{tracing_settings_in[2]}")
-    yield
-    if endpoint_mocked:
-        monkeypatch.delenv("TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT")
-    if port_mocked:
-        monkeypatch.delenv("TRACING_OPENTELEMETRY_COLLECTOR_PORT")
-    if sampling_probability_mocked:
-        monkeypatch.delenv("TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY")
+    endpoint, port, sampling_probability = tracing_settings_in
+    if endpoint:
+        monkeypatch.setenv("TRACING_OPENTELEMETRY_COLLECTOR_ENDPOINT", f"{endpoint}")
+    if port:
+        monkeypatch.setenv("TRACING_OPENTELEMETRY_COLLECTOR_PORT", f"{port}")
+    if sampling_probability:
+        monkeypatch.setenv("TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY", f"{sampling_probability}")
 
 
 @pytest.mark.parametrize(
@@ -78,10 +65,10 @@ def set_and_clean_settings_env_vars(
 async def test_valid_tracing_settings(
     mocked_app: FastAPI,
     mock_otel_collector: InMemorySpanExporter,
-    set_and_clean_settings_env_vars: Callable[[], None],
-    tracing_settings_in: Callable[[], dict[str, Any]],
+    set_and_clean_settings_env_vars: None,
+    tracing_settings_in: Callable[[], tuple[str, int | str, float]],
 ):
-    tracing_settings = TracingSettings()
+    tracing_settings = TracingSettings.create_from_envs()
     tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name="Mock-Openetlemetry-Pytest")
     async for _ in get_tracing_instrumentation_lifespan(
         tracing_config=tracing_config,
@@ -112,12 +99,12 @@ async def test_valid_tracing_settings(
 async def test_invalid_tracing_settings(
     mocked_app: FastAPI,
     mock_otel_collector: InMemorySpanExporter,
-    set_and_clean_settings_env_vars: Callable[[], None],
-    tracing_settings_in: Callable[[], dict[str, Any]],
+    set_and_clean_settings_env_vars: None,
+    tracing_settings_in: Callable[[], tuple[str, int | str, float]],
 ):
     app = mocked_app
     with pytest.raises((BaseException, ValidationError, TypeError)):  # noqa: PT012
-        tracing_settings = TracingSettings()
+        tracing_settings = TracingSettings.create_from_envs()
         tracing_config = TracingConfig.create(
             tracing_settings=tracing_settings, service_name="Mock-Openetlemetry-Pytest"
         )
@@ -167,13 +154,13 @@ def manage_package(request):
 async def test_tracing_setup_package_detection(
     mocked_app: FastAPI,
     mock_otel_collector: InMemorySpanExporter,
-    set_and_clean_settings_env_vars: Callable[[], None],
-    tracing_settings_in: Callable[[], dict[str, Any]],
+    set_and_clean_settings_env_vars: None,
+    tracing_settings_in: Callable[[], tuple[str, int | str, float]],
     manage_package,
 ):
     package_name = manage_package
     importlib.import_module(package_name)
-    tracing_settings = TracingSettings()
+    tracing_settings = TracingSettings.create_from_envs()
     tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name="Mock-Openetlemetry-Pytest")
     async for _ in get_tracing_instrumentation_lifespan(
         tracing_config=tracing_config,
@@ -202,11 +189,11 @@ async def test_tracing_setup_package_detection(
 async def test_trace_id_in_response_header(
     mock_otel_collector: InMemorySpanExporter,
     mocked_app: FastAPI,
-    set_and_clean_settings_env_vars: Callable,
-    tracing_settings_in: Callable,
+    set_and_clean_settings_env_vars: None,
+    tracing_settings_in: Callable[[], tuple[str, int | str, float]],
     server_response: PlainTextResponse | HTTPException,
 ) -> None:
-    tracing_settings = TracingSettings()
+    tracing_settings = TracingSettings.create_from_envs()
     tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name="Mock-Openetlemetry-Pytest")
 
     handler_data = {}
@@ -249,11 +236,11 @@ async def test_trace_id_in_response_header(
 async def test_with_profile_span(
     mock_otel_collector: InMemorySpanExporter,
     mocked_app: FastAPI,
-    set_and_clean_settings_env_vars: Callable[[], None],
-    tracing_settings_in: Callable,
+    set_and_clean_settings_env_vars: None,
+    tracing_settings_in: Callable[[], tuple[str, int | str, float]],
     server_response: PlainTextResponse | HTTPException,
 ):
-    tracing_settings = TracingSettings()
+    tracing_settings = TracingSettings.create_from_envs()
     tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name="Mock-Openetlemetry-Pytest")
 
     handler_data = {}
@@ -295,8 +282,8 @@ async def test_with_profile_span(
 async def test_tracing_opentelemetry_sampling_probability_effective(
     mock_otel_collector: InMemorySpanExporter,
     mocked_app: FastAPI,
-    set_and_clean_settings_env_vars: Callable[[], None],
-    tracing_settings_in: Callable[[], dict[str, Any]],
+    set_and_clean_settings_env_vars: None,
+    tracing_settings_in: Callable[[], tuple[str, int | str, float]],
 ):
     """
     This test checks that the TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY setting in TracingSettings
@@ -306,7 +293,7 @@ async def test_tracing_opentelemetry_sampling_probability_effective(
     n_requests = 1000
     tolerance_probability = 0.5
 
-    tracing_settings = TracingSettings()
+    tracing_settings = TracingSettings.create_from_envs()
     tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name="Mock-OpenTelemetry-Pytest")
 
     async def handler():
@@ -335,10 +322,10 @@ async def test_tracing_opentelemetry_sampling_probability_effective(
 
 @pytest.fixture
 def setup_logging_for_test(
-    set_and_clean_settings_env_vars: Callable[[], None],
+    set_and_clean_settings_env_vars: None,
 ) -> TracingConfig:
     """Setup logging with tracing instrumentation before caplog captures logs."""
-    tracing_settings = TracingSettings()
+    tracing_settings = TracingSettings.create_from_envs()
     tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name="Mock-OpenTelemetry-Pytest")
 
     # Setup logging with tracing instrumentation
@@ -362,7 +349,7 @@ def setup_logging_for_test(
     indirect=True,
 )  # NOTE: The order of these fixtures are important for caplog to work correctly
 async def test_trace_id_in_logs_only_when_sampled(
-    tracing_settings_in: Callable[[], dict[str, Any]],
+    tracing_settings_in: Callable[[], tuple[str, int | str, float]],
     mock_otel_collector: InMemorySpanExporter,
     mocked_app: FastAPI,
     setup_logging_for_test: TracingConfig,
