@@ -75,7 +75,7 @@ class SimcoreSDKMountSettings(BaseCustomSettings):
 
     R_CLONE_SIMCORE_SDK_MOUNT_CONTAINER_MEMORY_LIMIT: Annotated[
         ByteSize, Field(description="memory limit for the rclone mount container")
-    ] = TypeAdapter(ByteSize).validate_python("2GiB")
+    ] = TypeAdapter(ByteSize).validate_python("3GiB")
 
     R_CLONE_SIMCORE_SDK_MOUNT_CONTAINER_NANO_CPUS: Annotated[
         NonNegativeInt, Field(description="CPU limit for the rclone mount container")

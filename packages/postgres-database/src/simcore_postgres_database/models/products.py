@@ -61,7 +61,7 @@ class Vendor(TypedDict, total=False):
     ui: VendorUI
 
     footer_social_links: list[tuple[str, str]]  # list of (social_media_name (youtube, linkedin), social_media_url)
-    footer_share_links: list[tuple[str, str, str]]  # list of (share_name, share_label,share_url)
+    footer_share_links: list[tuple[str, str, str]]  # list of (share_name, share_label, share_url)
     company_name: str
     company_address: str
     company_links: list[tuple[str, str]]  # list of (link_name, link_url)

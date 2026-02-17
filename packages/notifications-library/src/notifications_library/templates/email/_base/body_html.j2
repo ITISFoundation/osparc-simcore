@@ -105,8 +105,12 @@
       </ul>
       {% endif %}
 
+      {% if product.company_name %}
       <p style="{{ footer_company_text_style }}">{{ product.company_name }}</p>
+      {% endif %}
+      {% if product.company_address %}
       <p style="{{ footer_company_text_style }}">{{ product.company_address }}</p>
+      {% endif %}
 
       {% if product.company_links %}
       <p style="{{ footer_company_text_style }}">

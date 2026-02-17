@@ -1,5 +1,6 @@
 import logging
 from pathlib import Path
+from typing import Final
 
 from aiodocker.types import JSONObject
 from models_library.basic_types import PortInt
@@ -8,6 +9,8 @@ from pydantic import ByteSize, NonNegativeInt
 from ._models import DelegateInterface
 
 _logger = logging.getLogger(__name__)
+
+_MEMORY_SAFETY_MARGIN: Final[float] = 0.7
 
 
 async def _get_config(
@@ -22,6 +25,11 @@ async def _get_config(
     return {
         "Image": f"rclone/rclone:{r_clone_version}",
         "Entrypoint": ["/bin/sh", "-c", f"{command}"],
+        "Env": [
+            # GOMEMLIMIT sets a soft memory limit for the Go runtime garbage collector.
+            # This causes more aggressive GC before hitting the container's hard memory limit.
+            f"GOMEMLIMIT={int(memory_limit * _MEMORY_SAFETY_MARGIN)}",
+        ],
         "ExposedPorts": {"8000/tcp": {}},
         "HostConfig": {
             "PortBindings": {"8000/tcp": [{"HostPort": str(rc_port)}]},
@@ -30,7 +38,8 @@ async def _get_config(
             "Devices": [{"PathOnHost": "/dev/fuse", "PathInContainer": "/dev/fuse", "CgroupPermissions": "rwm"}],
             "CapAdd": ["SYS_ADMIN"],
             "SecurityOpt": ["apparmor:unconfined", "seccomp:unconfined"],
-            "Memory": memory_limit,
+            "MemoryReservation": memory_limit // 2,  # soft limit: reclaim aggressively
+            "Memory": memory_limit,  # hard limit
             "MemorySwap": memory_limit,
             "NanoCpus": nano_cpus,
         },
