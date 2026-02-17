@@ -10,7 +10,7 @@ from ._models import DelegateInterface
 
 _logger = logging.getLogger(__name__)
 
-_MEMORY_SAFETY_MARGIN: Final[float] = 0.8
+_MEMORY_SAFETY_MARGIN: Final[float] = 0.7
 
 
 async def _get_config(

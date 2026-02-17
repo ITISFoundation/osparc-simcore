@@ -124,7 +124,6 @@ async def _get_rclone_mount_command(
         "5G",
         "--vfs-cache-poll-interval",
         "1m",
-        "--write-back-cache",
         "--vfs-write-back",
         "5s",
         "--cache-dir",
