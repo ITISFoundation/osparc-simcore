@@ -144,7 +144,7 @@ qx.Class.define("osparc.po.EmailEditor", {
         const group = groupsStore.getGroup(gid);
         const chip = new qx.ui.basic.Atom(group.getLabel(), "@FontAwesome5Solid/times/10").set({
           toolTipText: group.getDescription(),
-          padding: [2, 8],
+          padding: [4, 8],
           decorator: "chip",
           cursor: "pointer",
           iconPosition: "right",
