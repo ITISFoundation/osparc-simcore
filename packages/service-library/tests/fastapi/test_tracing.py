@@ -1,5 +1,6 @@
-# pylint: disable=all
-
+# pylint:disable=unused-argument
+# pylint:disable=redefined-outer-name
+# pylint:disable=no-name-in-module
 
 import importlib
 import logging
@@ -10,6 +11,7 @@ from functools import partial
 
 import pip
 import pytest
+from faker import Faker
 from fastapi import FastAPI
 from fastapi.exceptions import HTTPException
 from fastapi.responses import PlainTextResponse
@@ -65,13 +67,14 @@ def set_and_clean_settings_env_vars(
     indirect=True,
 )
 async def test_valid_tracing_settings(
+    faker: Faker,
     mocked_app: FastAPI,
     mock_otel_collector: InMemorySpanExporter,
     set_and_clean_settings_env_vars: None,
     tracing_settings_in: Callable[[], tuple[str, int | str, float]],
 ):
     tracing_settings = TracingSettings.create_from_envs()
-    tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name="Mock-Openetlemetry-Pytest")
+    tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name=faker.pystr())
     async for _ in get_tracing_instrumentation_lifespan(
         tracing_config=tracing_config,
     )(app=mocked_app):
@@ -99,6 +102,7 @@ async def test_valid_tracing_settings(
     indirect=True,
 )
 async def test_invalid_tracing_settings(
+    faker: Faker,
     mocked_app: FastAPI,
     mock_otel_collector: InMemorySpanExporter,
     set_and_clean_settings_env_vars: None,
@@ -107,9 +111,7 @@ async def test_invalid_tracing_settings(
     app = mocked_app
     with pytest.raises((BaseException, ValidationError, TypeError)):  # noqa: PT012
         tracing_settings = TracingSettings.create_from_envs()
-        tracing_config = TracingConfig.create(
-            tracing_settings=tracing_settings, service_name="Mock-Openetlemetry-Pytest"
-        )
+        tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name=faker.pystr())
         async for _ in get_tracing_instrumentation_lifespan(
             tracing_config=tracing_config,
         )(app=app):
@@ -154,6 +156,7 @@ def manage_package(request):
     indirect=True,
 )
 async def test_tracing_setup_package_detection(
+    faker: Faker,
     mocked_app: FastAPI,
     mock_otel_collector: InMemorySpanExporter,
     set_and_clean_settings_env_vars: None,
@@ -163,7 +166,7 @@ async def test_tracing_setup_package_detection(
     package_name = manage_package
     importlib.import_module(package_name)
     tracing_settings = TracingSettings.create_from_envs()
-    tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name="Mock-Openetlemetry-Pytest")
+    tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name=faker.pystr())
     async for _ in get_tracing_instrumentation_lifespan(
         tracing_config=tracing_config,
     )(app=mocked_app):
@@ -194,9 +197,10 @@ async def test_trace_id_in_response_header(
     set_and_clean_settings_env_vars: None,
     tracing_settings_in: Callable[[], tuple[str, int | str, float]],
     server_response: PlainTextResponse | HTTPException,
+    faker: Faker,
 ) -> None:
     tracing_settings = TracingSettings.create_from_envs()
-    tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name="Mock-Openetlemetry-Pytest")
+    tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name=faker.pystr())
 
     handler_data = {}
 
@@ -241,9 +245,10 @@ async def test_with_profile_span(
     set_and_clean_settings_env_vars: None,
     tracing_settings_in: Callable[[], tuple[str, int | str, float]],
     server_response: PlainTextResponse | HTTPException,
+    faker: Faker,
 ):
     tracing_settings = TracingSettings.create_from_envs()
-    tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name="Mock-Openetlemetry-Pytest")
+    tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name=faker.pystr())
 
     handler_data = {}
 
@@ -286,6 +291,7 @@ async def test_tracing_opentelemetry_sampling_probability_effective(
     mocked_app: FastAPI,
     set_and_clean_settings_env_vars: None,
     tracing_settings_in: Callable[[], tuple[str, int | str, float]],
+    faker: Faker,
 ):
     """
     This test checks that the TRACING_OPENTELEMETRY_SAMPLING_PROBABILITY setting in TracingSettings
@@ -296,7 +302,7 @@ async def test_tracing_opentelemetry_sampling_probability_effective(
     tolerance_probability = 0.5
 
     tracing_settings = TracingSettings.create_from_envs()
-    tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name="Mock-OpenTelemetry-Pytest")
+    tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name=faker.pystr())
 
     async def handler():
         return PlainTextResponse("ok")
@@ -325,10 +331,11 @@ async def test_tracing_opentelemetry_sampling_probability_effective(
 @pytest.fixture
 def setup_logging_for_test(
     set_and_clean_settings_env_vars: None,
+    faker: Faker,
 ) -> TracingConfig:
     """Setup logging with tracing instrumentation before caplog captures logs."""
     tracing_settings = TracingSettings.create_from_envs()
-    tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name="Mock-OpenTelemetry-Pytest")
+    tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name=faker.pystr())
 
     # Setup logging with tracing instrumentation
     # This configures logging before caplog adds its handler
@@ -415,9 +422,10 @@ async def test_traced_operation_basic(
     mocked_app: FastAPI,
     set_and_clean_settings_env_vars: None,
     tracing_settings_in: tuple[str, int | str, float],
+    faker: Faker,
 ) -> None:
     tracing_settings = TracingSettings.create_from_envs()
-    tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name="Mock-Openetlemetry-Pytest")
+    tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name=faker.pystr())
 
     handler_data = {}
 
@@ -472,9 +480,10 @@ async def test_traced_operation_nested_spans(
     mocked_app: FastAPI,
     set_and_clean_settings_env_vars: None,
     tracing_settings_in: tuple[str, int | str, float],
+    faker: Faker,
 ) -> None:
     tracing_settings = TracingSettings.create_from_envs()
-    tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name="Mock-Openetlemetry-Pytest")
+    tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name=faker.pystr())
 
     handler_data = {}
 
@@ -540,9 +549,10 @@ async def test_traced_operation_with_exception(
     mocked_app: FastAPI,
     set_and_clean_settings_env_vars: None,
     tracing_settings_in: Callable[[], tuple[str, int | str, float]],
+    faker: Faker,
 ) -> None:
     tracing_settings = TracingSettings.create_from_envs()
-    tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name="Mock-Openetlemetry-Pytest")
+    tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name=faker.pystr())
 
     handler_data = {}
 
@@ -603,9 +613,10 @@ async def test_traced_operation_with_links(
     mocked_app: FastAPI,
     set_and_clean_settings_env_vars: None,
     tracing_settings_in: Callable[[], tuple[str, int | str, float]],
+    faker: Faker,
 ) -> None:
     tracing_settings = TracingSettings.create_from_envs()
-    tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name="Mock-Openetlemetry-Pytest")
+    tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name=faker.pystr())
 
     handler_data = {}
 
