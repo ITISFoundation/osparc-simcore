@@ -78,11 +78,11 @@ class WorkflowManager(SingletonInAppStateMixin):
     def steps_repo(self) -> StepsRepository:
         return get_repository(self.app, StepsRepository)
 
-    async def start_workflow(self, node_id: NodeID) -> None:
+    async def add_start_workflow(self, node_id: NodeID) -> None:
         created_run = await self.runs_repo.create_from_start_request(node_id)
         _logger.debug("Added %s workflow for '%s': %s", _START, node_id, created_run)
 
-    async def stop_workflow(self, node_id: NodeID) -> None:
+    async def add_stop_workflow(self, node_id: NodeID) -> None:
         created_run = await self.runs_repo.create_from_stop_request(node_id)
         _logger.debug("Added %s workflow for '%s': %s", _STOP, node_id, created_run)
 

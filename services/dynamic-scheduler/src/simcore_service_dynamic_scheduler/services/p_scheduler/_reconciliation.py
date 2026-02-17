@@ -58,11 +58,11 @@ async def _enforce_service_presence(  # noqa: C901
         case UserDesiredState.PRESENT:
             match scheduler_service_status:
                 case SchedulerServiceStatus.IS_ABSENT:
-                    await workflow_manager.start_workflow(node_id)
+                    await workflow_manager.add_start_workflow(node_id)
                 case SchedulerServiceStatus.IS_PRESENT:
                     requires_forther_actions = False
                 case SchedulerServiceStatus.IN_ERROR:
-                    await workflow_manager.stop_workflow(node_id)
+                    await workflow_manager.add_stop_workflow(node_id)
                 case SchedulerServiceStatus.TRANSITION_TO_PRESENT:
                     requires_forther_actions = False
                 case SchedulerServiceStatus.TRANSITION_TO_ABSENT:
@@ -74,9 +74,9 @@ async def _enforce_service_presence(  # noqa: C901
                 case SchedulerServiceStatus.IS_ABSENT:
                     requires_forther_actions = False
                 case SchedulerServiceStatus.IS_PRESENT:
-                    await workflow_manager.stop_workflow(node_id)
+                    await workflow_manager.add_stop_workflow(node_id)
                 case SchedulerServiceStatus.IN_ERROR:
-                    await workflow_manager.stop_workflow(node_id)
+                    await workflow_manager.add_stop_workflow(node_id)
                 case SchedulerServiceStatus.TRANSITION_TO_PRESENT:
                     await workflow_manager.cancel_workflow(node_id)
                 case SchedulerServiceStatus.TRANSITION_TO_ABSENT:
