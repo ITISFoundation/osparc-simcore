@@ -14,7 +14,7 @@ from simcore_service_notifications.repository import (
 
 
 @pytest.fixture
-def templates_repository(mock_jinja_env: Environment) -> TemplatesRepository:
+def templates_repo(mock_jinja_env: Environment) -> TemplatesRepository:
     """Create a NotificationsTemplatesRepository instance with mock templates."""
     return FileTemplatesRepository(env=mock_jinja_env)
 
