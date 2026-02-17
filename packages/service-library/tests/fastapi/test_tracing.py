@@ -28,6 +28,7 @@ from servicelib.tracing import (
     _OSPARC_TRACE_ID_HEADER,
     _PROFILE_ATTRIBUTE_NAME,
     TracingConfig,
+    create_standard_attributes,
     extract_span_link_from_trace_carrier,
     profiled_span,
     traced_operation,
@@ -615,6 +616,10 @@ async def test_traced_operation_with_links(
     tracing_settings_in: Callable[[], tuple[str, int | str, float]],
     faker: Faker,
 ) -> None:
+    # just to check
+    carrier = {}
+    assert extract_span_link_from_trace_carrier(carrier) is None
+
     tracing_settings = TracingSettings.create_from_envs()
     tracing_config = TracingConfig.create(tracing_settings=tracing_settings, service_name=faker.pystr())
 
@@ -662,3 +667,20 @@ async def test_traced_operation_with_links(
         # Verify attributes
         assert linked_span.attributes is not None
         assert linked_span.attributes.get("operation.linked") == "true"
+
+
+def test_create_standard_attributes():
+    attributes = create_standard_attributes(
+        user_id=13,
+        project_id="project456",
+        node_id="node789",
+        product_name="product123",
+        wallet_id="wallet321",
+    )
+    assert attributes == {
+        "user_id": "13",
+        "project_id": "project456",
+        "node_id": "node789",
+        "product_name": "product123",
+        "wallet_id": "wallet321",
+    }

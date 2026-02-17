@@ -153,26 +153,21 @@ def extract_span_link_from_trace_carrier(
         span = trace.get_current_span(ctx)
         span_context = span.get_span_context()
 
-        # Create link if we have a valid span context
-        if span_context and span_context.is_valid:
-            # Add standard link attributes
-            attributes = link_attributes or {}
-            attributes.update(
-                {
-                    "link.trace_id": trace.format_trace_id(span_context.trace_id),
-                    "link.span_id": trace.format_span_id(span_context.span_id),
-                }
-            )
+        # Add standard link attributes
+        attributes = link_attributes or {}
+        attributes.update(
+            {
+                "link.trace_id": trace.format_trace_id(span_context.trace_id),
+                "link.span_id": trace.format_span_id(span_context.span_id),
+            }
+        )
 
-            _logger.debug(
-                "Created span link: trace_id=%s, span_id=%s",
-                trace.format_trace_id(span_context.trace_id),
-                trace.format_span_id(span_context.span_id),
-            )
-            return Link(span_context, attributes=attributes)
-
-        _logger.warning("Could not create valid span link from carrier")
-        return None
+        _logger.debug(
+            "Created span link: trace_id=%s, span_id=%s",
+            trace.format_trace_id(span_context.trace_id),
+            trace.format_span_id(span_context.span_id),
+        )
+        return Link(span_context, attributes=attributes)
 
     except Exception as e:  # pylint: disable=broad-except
         _logger.warning("Failed to extract span link from trace headers: %s", e)
