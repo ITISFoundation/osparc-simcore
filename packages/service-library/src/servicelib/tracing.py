@@ -6,6 +6,10 @@ from typing import Final, Self
 import pyinstrument
 import pyinstrument.renderers
 from httpx import AsyncClient, Client
+from models_library.products import ProductName
+from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeID
+from models_library.users import UserID
 from opentelemetry import context as otcontext
 from opentelemetry import trace
 from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
@@ -258,3 +262,23 @@ def traced_operation(
                 is_root_span,
             )
         yield
+
+
+def get_standard_attributes(
+    *,
+    user_id: UserID | None = None,
+    project_id: ProjectID | str | None = None,
+    node_id: NodeID | str | None = None,
+    product_name: ProductName | None = None,
+) -> dict[str, str]:
+    """Helper function to get standard span attributes like user ID."""
+    attributes = {}
+    if user_id:
+        attributes["user_id"] = f"{user_id}"
+    if project_id:
+        attributes["project_id"] = f"{project_id}"
+    if node_id:
+        attributes["node_id"] = f"{node_id}"
+    if product_name:
+        attributes["product_name"] = f"{product_name}"
+    return attributes

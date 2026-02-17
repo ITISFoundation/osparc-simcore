@@ -30,8 +30,7 @@ from settings_library.tracing import TracingSettings
 from yarl import URL
 
 from ..logging_utils import log_catch, log_context
-from ..tracing import TracingConfig, get_trace_info_headers
-from .request_keys import RQT_USERID_KEY
+from ..tracing import TracingConfig, get_standard_attributes, get_trace_info_headers
 
 _logger = logging.getLogger(__name__)
 
@@ -81,23 +80,15 @@ def _collect_custom_request_attributes(request: web.Request) -> dict[str, str]:
     Extracts user_id and project_id from request context if available.
     These are typically set by authentication middleware and route parameters.
     """
-    attributes = {}
-
-    if user_id := request.get(RQT_USERID_KEY):
-        attributes["user.id"] = str(user_id)
 
     # Extract project_id from URL path if it matches project routes
     # Pattern: /v0/projects/{project_id} or /v0/projects/{project_id}:action
-    match = request.match_info
-    if "project_id" in match:
-        attributes["project.id"] = str(match["project_id"])
-
     # Extract node_id from URL path if it matches node routes
     # Pattern: /v0/projects/{project_id}/nodes/{node_id}
-    if "node_id" in match:
-        attributes["node.id"] = str(match["node_id"])
-
-    return attributes
+    return get_standard_attributes(
+        project_id=request.match_info.get("project_id"),
+        node_id=request.match_info.get("node_id"),
+    )
 
 
 @web.middleware

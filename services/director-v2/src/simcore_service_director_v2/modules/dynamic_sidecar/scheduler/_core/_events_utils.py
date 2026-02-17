@@ -36,7 +36,12 @@ from servicelib.rabbitmq.rpc_interfaces.agent.errors import (
 from servicelib.rabbitmq.rpc_interfaces.agent.volumes import (
     remove_volumes_without_backup_for_service,
 )
-from servicelib.tracing import TracingConfig, extract_span_link_from_trace_carrier, traced_operation
+from servicelib.tracing import (
+    TracingConfig,
+    extract_span_link_from_trace_carrier,
+    get_standard_attributes,
+    traced_operation,
+)
 from servicelib.utils import limited_gather, logged_gather
 from simcore_postgres_database.models.comp_tasks import NodeClass
 from tenacity import RetryError, TryAgain
@@ -94,13 +99,15 @@ _logger = logging.getLogger(__name__)
 
 
 def _get_common_span_attributes(scheduler_data: SchedulerData) -> dict[str, str]:
-    return {
-        "service.key": scheduler_data.key,
-        "service.version": scheduler_data.version,
-        "service.node_id": f"{scheduler_data.node_uuid}",
-        "project.id": f"{scheduler_data.project_id}",
-        "user.id": f"{scheduler_data.user_id}",
-        "service.name": scheduler_data.service_name,
+    return get_standard_attributes(
+        user_id=scheduler_data.user_id,
+        project_id=scheduler_data.project_id,
+        node_id=scheduler_data.node_uuid,
+        product_name=scheduler_data.product_name,
+    ) | {
+        "service_key": scheduler_data.key,
+        "service_version": scheduler_data.version,
+        "service_name": scheduler_data.service_name,
     }
 
 
