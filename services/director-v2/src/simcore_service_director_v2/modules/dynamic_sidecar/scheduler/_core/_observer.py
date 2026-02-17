@@ -7,6 +7,7 @@ from math import floor
 from common_library.error_codes import create_error_code
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from fastapi import FastAPI
+from servicelib.fastapi.tracing import get_tracing_config
 
 from .....core.dynamic_services_settings.scheduler import (
     DynamicServicesSchedulerSettings,
@@ -38,7 +39,8 @@ async def _apply_observation_cycle(
     """
     with traced_scheduler_operation(
         "dynamic_sidecar.observation_cycle",
-        scheduler_data,
+        tracing_config=get_tracing_config(scheduler.app),
+        scheduler_data=scheduler_data,
         service_status=scheduler_data.dynamic_sidecar.status.current.value,
     ):
         await _apply_observation_cycle_impl(scheduler, scheduler_data)
@@ -76,7 +78,8 @@ async def _apply_observation_cycle_impl(
             # event.action will apply changes to the output_scheduler_data
             with traced_scheduler_operation(
                 f"dynamic_sidecar.event.{dynamic_scheduler_event.__name__}",
-                scheduler_data,
+                tracing_config=get_tracing_config(app),
+                scheduler_data=scheduler_data,
             ):
                 await dynamic_scheduler_event.action(app, scheduler_data)
 
@@ -137,7 +140,8 @@ async def observing_single_service(
                 scheduler_data.dynamic_sidecar.service_removal_state.can_save = False
                 with traced_scheduler_operation(
                     "dynamic_sidecar.pod_removal_after_manual_intervention",
-                    scheduler_data,
+                    tracing_config=get_tracing_config(scheduler.app),
+                    scheduler_data=scheduler_data,
                     failure_mode="manual_intervention",
                 ):
                     await attempt_pod_removal_and_data_saving(app, scheduler_data)
@@ -148,7 +152,8 @@ async def observing_single_service(
         # Cleanup all resources related to the dynamic-sidecar.
         with traced_scheduler_operation(
             "dynamic_sidecar.pod_removal_on_failure",
-            scheduler_data,
+            tracing_config=get_tracing_config(scheduler.app),
+            scheduler_data=scheduler_data,
             failure_mode="automatic_cleanup",
         ):
             await attempt_pod_removal_and_data_saving(app, scheduler_data)

@@ -5,7 +5,6 @@ from collections.abc import AsyncIterator
 
 from fastapi import FastAPI, Request
 from fastapi_lifespan_manager import State
-from opentelemetry import trace
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
     OTLPSpanExporter as OTLPSpanExporterHTTP,
 )
@@ -207,9 +206,6 @@ def setup_tracing(app: FastAPI, tracing_config: TracingConfig) -> None:
         raise ValueError(msg)
     assert tracing_config.tracing_settings  # nosec
     assert tracing_config.tracer_provider  # nosec
-
-    # Set the tracer provider as the global tracer provider so it's used by trace.get_tracer()
-    trace.set_tracer_provider(tracing_config.tracer_provider)
 
     _startup(
         tracing_settings=tracing_config.tracing_settings,

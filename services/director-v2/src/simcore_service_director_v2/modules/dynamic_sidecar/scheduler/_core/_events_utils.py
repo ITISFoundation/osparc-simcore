@@ -36,7 +36,7 @@ from servicelib.rabbitmq.rpc_interfaces.agent.errors import (
 from servicelib.rabbitmq.rpc_interfaces.agent.volumes import (
     remove_volumes_without_backup_for_service,
 )
-from servicelib.tracing import extract_span_link_from_trace_carrier, traced_operation
+from servicelib.tracing import TracingConfig, extract_span_link_from_trace_carrier, traced_operation
 from servicelib.utils import limited_gather, logged_gather
 from simcore_postgres_database.models.comp_tasks import NodeClass
 from tenacity import RetryError, TryAgain
@@ -143,6 +143,8 @@ def _extract_span_link_from_scheduler_data(scheduler_data: SchedulerData) -> Lin
 @contextmanager
 def traced_scheduler_operation(
     operation_name: str,
+    *,
+    tracing_config: TracingConfig,
     scheduler_data: SchedulerData,
     **extra_attributes: str,
 ):
@@ -180,6 +182,7 @@ def traced_scheduler_operation(
     # Use the generic traced_operation with scheduler-specific attributes and link
     with traced_operation(
         operation_name,
+        tracing_config=tracing_config,
         attributes=attributes,
         links=[link] if link else None,
     ):

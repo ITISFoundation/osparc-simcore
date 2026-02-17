@@ -206,6 +206,8 @@ def profiled_span(*, tracing_config: TracingConfig, span_name: str):
 @contextmanager
 def traced_operation(
     operation_name: str,
+    *,
+    tracing_config: TracingConfig,
     attributes: dict[str, str] | None = None,
     links: list[Link] | None = None,
 ):
@@ -229,7 +231,7 @@ def traced_operation(
             pass
     """
     # Get tracer - uses the globally set tracer provider if available, otherwise no-op
-    tracer = trace.get_tracer(__name__)
+    tracer = trace.get_tracer(__name__, tracer_provider=tracing_config.tracer_provider)
 
     # Prepare attributes with empty dict as default
     span_attributes = attributes or {}
