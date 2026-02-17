@@ -77,7 +77,6 @@ async def _apply_observation_cycle_impl(
             with traced_operation(
                 f"dynamic_sidecar.event.{dynamic_scheduler_event.__name__}",
                 scheduler_data,
-                include_links=False,
             ):
                 await dynamic_scheduler_event.action(app, scheduler_data)
 

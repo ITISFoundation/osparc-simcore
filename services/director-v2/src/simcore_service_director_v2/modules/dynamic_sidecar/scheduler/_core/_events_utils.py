@@ -164,8 +164,6 @@ def _extract_span_links_from_scheduler_data(scheduler_data: SchedulerData) -> li
 def traced_operation(
     operation_name: str,
     scheduler_data: SchedulerData,
-    *,
-    include_links: bool = True,
     **extra_attributes: str,
 ):
     """Context manager for creating traced spans with common attributes.
@@ -173,6 +171,9 @@ def traced_operation(
     When tracing is disabled, this becomes a no-op context manager.
     The span will only record if the global tracer provider has been configured
     with a proper backend (e.g., OTLP exporter).
+
+    Automatically detects if this is a root span (extracts links from request context)
+    or a child span (inherits from active span context).
     """
     # Get tracer - uses the globally set tracer provider if available, otherwise no-op
     tracer = trace.get_tracer(__name__)
@@ -181,13 +182,18 @@ def traced_operation(
     attributes = _get_common_span_attributes(scheduler_data)
     attributes.update(extra_attributes)
 
-    # Get links if requested
-    links = _extract_span_links_from_scheduler_data(scheduler_data) if include_links else []
+    # Only extract links if this is a root span (no active span context)
+    # Child spans automatically inherit the parent context and don't need links
+    current_span = trace.get_current_span()
+    is_root_span = not current_span.is_recording()
+
+    links = _extract_span_links_from_scheduler_data(scheduler_data) if is_root_span else []
 
     _logger.debug(
-        "Creating traced span '%s' for service %s with %d link(s)",
+        "Creating traced span '%s' for service %s (root=%s) with %d link(s)",
         operation_name,
         scheduler_data.service_name,
+        is_root_span,
         len(links),
     )
 
