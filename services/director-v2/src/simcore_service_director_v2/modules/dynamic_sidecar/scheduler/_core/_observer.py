@@ -23,7 +23,7 @@ from ...docker_api import (
 )
 from ...errors import GenericDockerError
 from ._events import REGISTERED_EVENTS
-from ._events_utils import attempt_pod_removal_and_data_saving, traced_operation
+from ._events_utils import attempt_pod_removal_and_data_saving, traced_scheduler_operation
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +36,7 @@ async def _apply_observation_cycle(
     fetches status for service and then processes all the registered events
     and updates the status back
     """
-    with traced_operation(
+    with traced_scheduler_operation(
         "dynamic_sidecar.observation_cycle",
         scheduler_data,
         service_status=scheduler_data.dynamic_sidecar.status.current.value,
@@ -74,7 +74,7 @@ async def _apply_observation_cycle_impl(
     for dynamic_scheduler_event in REGISTERED_EVENTS:
         if await dynamic_scheduler_event.will_trigger(app=app, scheduler_data=scheduler_data):
             # event.action will apply changes to the output_scheduler_data
-            with traced_operation(
+            with traced_scheduler_operation(
                 f"dynamic_sidecar.event.{dynamic_scheduler_event.__name__}",
                 scheduler_data,
             ):
@@ -135,7 +135,7 @@ async def observing_single_service(
                 # NOTE: saving will fail since there is no dy-sidecar,
                 # and the save was taken care of by support. Disabling it.
                 scheduler_data.dynamic_sidecar.service_removal_state.can_save = False
-                with traced_operation(
+                with traced_scheduler_operation(
                     "dynamic_sidecar.pod_removal_after_manual_intervention",
                     scheduler_data,
                     failure_mode="manual_intervention",
@@ -146,7 +146,7 @@ async def observing_single_service(
 
         # use-cases: 1, 2
         # Cleanup all resources related to the dynamic-sidecar.
-        with traced_operation(
+        with traced_scheduler_operation(
             "dynamic_sidecar.pod_removal_on_failure",
             scheduler_data,
             failure_mode="automatic_cleanup",

@@ -1,3 +1,4 @@
+import logging
 from contextlib import contextmanager
 from contextvars import Token
 from typing import Final, Self
@@ -121,3 +122,58 @@ def profiled_span(*, tracing_config: TracingConfig, span_name: str):
                 _PROFILE_ATTRIBUTE_NAME,
                 profiler.output(renderer=renderer),
             )
+
+
+@contextmanager
+def traced_operation(
+    operation_name: str,
+    attributes: dict[str, str] | None = None,
+    links: list | None = None,
+):
+    """Generic context manager for creating traced spans.
+
+    Creates a span with the given operation name and attributes. Automatically detects
+    if this is a root span or child span:
+    - Root spans: No active parent span context (links can be used to connect to other traces)
+    - Child spans: Automatically inherit from active parent span context
+
+    When tracing is disabled, this becomes a no-op context manager.
+
+    Args:
+        operation_name: Name of the span/operation
+        attributes: Optional dict of span attributes (string keys and values)
+        links: Optional list of span links (for connecting to other traces)
+
+    Example:
+        with traced_operation("my_operation", attributes={"user.id": "123"}):
+            # operation code here
+            pass
+    """
+    # Get tracer - uses the globally set tracer provider if available, otherwise no-op
+    tracer = trace.get_tracer(__name__)
+
+    # Prepare attributes with empty dict as default
+    span_attributes = attributes or {}
+
+    # Only use provided links at root level; child spans inherit parent context automatically
+    current_span = trace.get_current_span()
+    is_root_span = not current_span.is_recording()
+    span_links = links if is_root_span else []
+
+    # Create a span with proper attributes and links
+    # If tracing is disabled, this creates a no-op span
+    with tracer.start_as_current_span(
+        operation_name,
+        links=span_links,
+        attributes=span_attributes,
+    ) as span:
+        # Log debug info only if span is actually recording
+        if span.is_recording():
+            _logger = logging.getLogger(__name__)
+            _logger.debug(
+                "Started recording span '%s' with trace_id=%s, root=%s",
+                operation_name,
+                trace.format_trace_id(span.get_span_context().trace_id),
+                is_root_span,
+            )
+        yield

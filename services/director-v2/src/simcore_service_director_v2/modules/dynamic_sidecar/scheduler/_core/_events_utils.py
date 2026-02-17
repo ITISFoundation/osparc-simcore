@@ -37,6 +37,7 @@ from servicelib.rabbitmq.rpc_interfaces.agent.errors import (
 from servicelib.rabbitmq.rpc_interfaces.agent.volumes import (
     remove_volumes_without_backup_for_service,
 )
+from servicelib.tracing import traced_operation
 from servicelib.utils import limited_gather, logged_gather
 from simcore_postgres_database.models.comp_tasks import NodeClass
 from tenacity import RetryError, TryAgain
@@ -161,24 +162,24 @@ def _extract_span_links_from_scheduler_data(scheduler_data: SchedulerData) -> li
 
 
 @contextmanager
-def traced_operation(
+def traced_scheduler_operation(
     operation_name: str,
     scheduler_data: SchedulerData,
     **extra_attributes: str,
 ):
-    """Context manager for creating traced spans with common attributes.
+    """Context manager for creating traced spans with scheduler-specific attributes.
+
+    Specialized version of traced_operation that adds common scheduler_data attributes
+    and extracts span links from the stored request context.
 
     When tracing is disabled, this becomes a no-op context manager.
-    The span will only record if the global tracer provider has been configured
-    with a proper backend (e.g., OTLP exporter).
 
-    Automatically detects if this is a root span (extracts links from request context)
-    or a child span (inherits from active span context).
+    Args:
+        operation_name: Name of the span/operation
+        scheduler_data: Scheduler data containing service context and trace information
+        **extra_attributes: Additional span attributes as kwargs
     """
-    # Get tracer - uses the globally set tracer provider if available, otherwise no-op
-    tracer = trace.get_tracer(__name__)
-
-    # Prepare attributes
+    # Prepare attributes from scheduler_data
     attributes = _get_common_span_attributes(scheduler_data)
     attributes.update(extra_attributes)
 
@@ -197,21 +198,12 @@ def traced_operation(
         len(links),
     )
 
-    # Create a span with proper attributes and links
-    # If tracing is disabled, this creates a no-op span
-    with tracer.start_as_current_span(
+    # Use the generic traced_operation with scheduler-specific attributes and links
+    with traced_operation(
         operation_name,
-        links=links,
         attributes=attributes,
-    ) as span:
-        # Log debug info only if span is actually recording
-        if span.is_recording():
-            _logger.debug(
-                "Started recording span '%s' for service %s with trace_id=%s",
-                operation_name,
-                scheduler_data.service_name,
-                trace.format_trace_id(span.get_span_context().trace_id),
-            )
+        links=links,
+    ):
         yield
 
 
