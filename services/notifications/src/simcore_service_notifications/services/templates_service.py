@@ -2,7 +2,6 @@ import logging
 from dataclasses import dataclass
 from typing import Any
 
-from models_library.notifications import ChannelType
 from models_library.notifications_errors import (
     NotificationsTemplateContextValidationError,
     NotificationsTemplateNotFoundError,
@@ -19,11 +18,11 @@ _logger = logging.getLogger(__name__)
 
 @dataclass(frozen=True)
 class TemplatesService:
-    repository: FileTemplatesRepository
+    templates_repo: FileTemplatesRepository
     renderer: Renderer
 
     def preview_template(self, ref: TemplateRef, context: dict[str, Any]) -> TemplatePreview:
-        templates = self.repository.search_templates(
+        templates = self.templates_repo.search_templates(
             channel=ref.channel,
             template_name=ref.template_name,
         )
@@ -53,5 +52,5 @@ class TemplatesService:
             context=validated_context.model_dump(),
         )
 
-    def search_templates(self, channel: ChannelType | None, template_name: str | None) -> list[Template]:
-        return self.repository.search_templates(channel=channel, template_name=template_name)
+    def search_templates(self, channel: str | None, template_name: str | None) -> list[Template]:
+        return self.templates_repo.search_templates(channel=channel, template_name=template_name)
