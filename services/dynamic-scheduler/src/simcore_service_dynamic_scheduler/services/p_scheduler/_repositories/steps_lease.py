@@ -1,5 +1,4 @@
 from datetime import timedelta
-from typing import Final
 
 import sqlalchemy as sa
 from simcore_postgres_database.models.p_scheduler import ps_step_lease
@@ -9,18 +8,16 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from ...base_repository import BaseRepository
 from .._models import StepId, WorkerId
 
-_LEASE_DURATION: Final[timedelta] = timedelta(seconds=30)
-
 
 class StepsLeaseRepository(BaseRepository):
-    async def acquire_or_extend_lease(self, step_id: StepId, worker_id: WorkerId) -> bool:
+    async def acquire_or_extend_lease(self, step_id: StepId, worker_id: WorkerId, *, lease_duration: timedelta) -> bool:
         """Acquire a new lease or extend an existing one owned by this worker.
 
         Returns True if the lease was acquired/extended, False if another
         worker holds an unexpired lease for this step.
         """
         now = sa.func.now()
-        new_expires_at = now + _LEASE_DURATION
+        new_expires_at = now + lease_duration
 
         async with transaction_context(self.engine) as conn:
             insert_stmt = pg_insert(ps_step_lease).values(

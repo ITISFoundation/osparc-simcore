@@ -107,9 +107,10 @@ async def _task_lease_heartbeat(
     cancellation_notifier: ChangeNotifier,
     step_id: StepId,
     worker_id: WorkerId,
+    lease_duration: timedelta,
 ) -> None:
     steps_lease_repo = get_repository(app, StepsLeaseRepository)
-    lease_extended = await steps_lease_repo.acquire_or_extend_lease(step_id, worker_id)
+    lease_extended = await steps_lease_repo.acquire_or_extend_lease(step_id, worker_id, lease_duration=lease_duration)
     if not lease_extended:
         await cancellation_notifier.notify(step_id)
         await interrupt_queue.put(_InterruptReasson.LEASE_EXPIRY)
@@ -154,6 +155,7 @@ async def _try_handle_step(
         cancellation_notifier=cancellation_notifier,
         step_id=step.step_id,
         worker_id=worker_id,
+        lease_duration=heartbeat_interval * 2,
     )
 
     # 3. start background task for cancellation monitoring
