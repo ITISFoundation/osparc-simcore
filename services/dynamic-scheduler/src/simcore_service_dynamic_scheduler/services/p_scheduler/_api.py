@@ -5,7 +5,7 @@ from models_library.projects_nodes_io import NodeID
 from ..base_repository import get_repository
 from ._models import StepId
 from ._notifications import NotificationsManager
-from ._repositories.user_requests import UserRequestsRepository
+from ._repositories import UserRequestsRepository
 from ._workflow_manager import WorkflowManager
 
 
