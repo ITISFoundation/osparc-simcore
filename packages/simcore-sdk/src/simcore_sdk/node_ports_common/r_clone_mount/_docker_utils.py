@@ -41,7 +41,7 @@ async def _get_config(
             "SecurityOpt": ["apparmor:unconfined", "seccomp:unconfined"],
             "MemoryReservation": memory_limit // 2,  # soft limit: reclaim aggressively
             "Memory": memory_limit,  # hard limit
-            "MemorySwap": -1,  # allow swap as safety valve
+            "MemorySwap": memory_limit,
             "NanoCpus": nano_cpus,
         },
     }
