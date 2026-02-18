@@ -104,22 +104,22 @@ async def test_acquire_or_extend_lease(
     worker_two: WorkerId,
     lease_duration: timedelta,
 ) -> None:
-    # Acquire a new lease
+    # 1.Acquire a new lease
     acquired = await steps_lease_repo.acquire_or_extend_lease(step_id, worker_one, lease_duration=lease_duration)
     assert acquired is True
     await _assert_lease(steps_lease_repo.engine, step_id, expected_owner=worker_one, expected_renew_count=1)
 
-    # Extend the existing lease
+    # 2. Extend the existing lease
     acquired = await steps_lease_repo.acquire_or_extend_lease(step_id, worker_one, lease_duration=lease_duration)
     assert acquired is True
     await _assert_lease(steps_lease_repo.engine, step_id, expected_owner=worker_one, expected_renew_count=2)
 
-    # Another worker should not be able to acquire the lease
+    # 3. Another worker should not be able to acquire the lease
     acquired = await steps_lease_repo.acquire_or_extend_lease(step_id, worker_two, lease_duration=lease_duration)
     assert acquired is False
     await _assert_lease(steps_lease_repo.engine, step_id, expected_owner=worker_one, expected_renew_count=2)
 
-    # After lease expires another worker can acquire it
+    # 4. After lease expires another worker can acquire it
     await asyncio.sleep(lease_duration.total_seconds())
     acquired = await steps_lease_repo.acquire_or_extend_lease(step_id, worker_two, lease_duration=lease_duration)
     assert acquired is True
