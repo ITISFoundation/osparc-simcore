@@ -1,12 +1,14 @@
 from typing import Final
 
 import sqlalchemy as sa
+import sqlalchemy.exc
 from models_library.projects_nodes_io import NodeID
 from simcore_postgres_database.models.p_scheduler import ps_runs
 from simcore_postgres_database.utils_repos import pass_or_acquire_connection, transaction_context
 from sqlalchemy.engine.row import Row
 
 from ...base_repository import BaseRepository
+from .._errors import RunAlreadyExistsError
 from .._models import Run, RunId, WorkflowName
 
 _START_WORKFLOW: Final[WorkflowName] = "START"
@@ -43,36 +45,45 @@ class RunsRepository(BaseRepository):
 
     async def _create_run(self, *, node_id: NodeID, workflow_name: WorkflowName, is_reverting: bool) -> Run:
         async with transaction_context(self.engine) as conn:
-            result = await conn.execute(
-                ps_runs.insert()
-                .values(
-                    node_id=node_id,
-                    workflow_name=workflow_name,
-                    is_reverting=is_reverting,
-                    waiting_manual_intervention=False,
+            try:
+                result = await conn.execute(
+                    ps_runs.insert()
+                    .values(
+                        node_id=node_id,
+                        workflow_name=workflow_name,
+                        is_reverting=is_reverting,
+                        waiting_manual_intervention=False,
+                    )
+                    .returning(sa.literal_column("*"))
                 )
-                .returning(sa.literal_column("*"))
-            )
+            except sqlalchemy.exc.IntegrityError as err:
+                raise RunAlreadyExistsError(node_id=node_id) from err
+
             row = result.one()
         return _row_to_run(row)
 
     async def create_from_start_request(self, node_id: NodeID) -> Run:
+        """raises RunAlreadyExistsError"""
         return await self._create_run(node_id=node_id, workflow_name=_START_WORKFLOW, is_reverting=False)
 
     async def create_from_stop_request(self, node_id: NodeID) -> Run:
+        """raises RunAlreadyExistsError"""
         return await self._create_run(node_id=node_id, workflow_name=_STOP_WORKFLOW, is_reverting=True)
 
     async def cancel_run(self, run_id: RunId) -> None:
+        # NOTE: does not raise if run_id does not exist
         async with transaction_context(self.engine) as conn:
             await conn.execute(ps_runs.update().where(ps_runs.c.run_id == run_id).values(is_reverting=True))
 
     async def set_waiting_manual_intervention(self, run_id: RunId) -> None:
+        # NOTE: does not raise if run_id does not exist
         async with transaction_context(self.engine) as conn:
             await conn.execute(
                 ps_runs.update().where(ps_runs.c.run_id == run_id).values(waiting_manual_intervention=True)
             )
 
     async def remove_run(self, run_id: RunId) -> None:
+        # NOTE: does not raise if run_id does not exist
         async with transaction_context(self.engine) as conn:
             await conn.execute(ps_runs.delete().where(ps_runs.c.run_id == run_id))
 
