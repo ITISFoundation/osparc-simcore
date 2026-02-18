@@ -212,6 +212,21 @@ qx.Class.define("osparc.po.PreviewApproval", {
     },
 
     __approveWithoutEmail: function() {
+      const email = this.getEmail();
+      const invitationUrl = this.getInvitationUrl();
+      const params = {
+        data: {
+          email,
+          invitationUrl,
+          messageContent: null, // this is the trick not to send email
+        }
+      };
+      osparc.data.Resources.fetch("poUsers", "approveUser", params)
+        .then(() => {
+          osparc.FlashMessenger.logAs(this.tr("User approved"), "INFO");
+          this.fireEvent("userApproved");
+        })
+        .catch(err => osparc.FlashMessenger.logError(err));
     },
   }
 });
