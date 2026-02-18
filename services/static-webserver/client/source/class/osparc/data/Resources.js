@@ -1147,9 +1147,17 @@ qx.Class.define("osparc.data.Resources", {
             method: "GET",
             url: statics.API + "/admin/user-accounts?review_status=REVIEWED"
           },
+          previewApproval: {
+            method: "POST",
+            url: statics.API + "/admin/user-accounts:preview-approval"
+          },
           approveUser: {
             method: "POST",
             url: statics.API + "/admin/user-accounts:approve"
+          },
+          previewRejection: {
+            method: "POST",
+            url: statics.API + "/admin/user-accounts:preview-rejection"
           },
           rejectUser: {
             method: "POST",
