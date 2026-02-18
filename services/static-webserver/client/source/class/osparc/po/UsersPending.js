@@ -297,21 +297,7 @@ qx.Class.define("osparc.po.UsersPending", {
 
     __createRejectButton: function(email) {
       const button = new qx.ui.form.Button(qx.locale.Manager.tr("Reject"));
-      button.addListener("execute", () => {
-        const msg = `Are you sure you want to reject ${email}.<br>The operation cannot be reverted`;
-        const win = new osparc.ui.window.Confirmation(msg).set({
-          caption: "Reject User",
-          confirmText: "Reject",
-          confirmAction: "delete",
-        });
-        win.center();
-        win.open();
-        win.addListener("close", () => {
-          if (win.getConfirmed()) {
-            this.__previewRejection(email);
-          }
-        });
-      });
+      button.addListener("execute", () => this.__previewRejection(email));
       return button;
     },
 
