@@ -30,7 +30,7 @@ qx.Class.define("osparc.po.PreviewApprovalRejection", {
     actionMode: {
       check: ["approve", "reject"],
       nullable: false,
-      init: true,
+      init: "approve",
       event: "changeActionMode",
     },
 
