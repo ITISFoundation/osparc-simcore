@@ -3,7 +3,7 @@
 # pylint:disable=unused-argument
 
 
-from typing import Any
+from datetime import UTC, datetime
 
 import pytest
 import sqlalchemy as sa
@@ -16,8 +16,8 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_service_dynamic_scheduler.services.base_repository import (
     get_repository,
 )
-from simcore_service_dynamic_scheduler.services.p_scheduler._models import RunId
-from simcore_service_dynamic_scheduler.services.p_scheduler._repositories import RunsStoreRepository
+from simcore_service_dynamic_scheduler.services.p_scheduler._models import StepId, StepState
+from simcore_service_dynamic_scheduler.services.p_scheduler._repositories import StepFailHistoryRepository
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 pytest_simcore_core_services_selection = [
@@ -59,28 +59,24 @@ def engine(app: FastAPI) -> AsyncEngine:
 
 
 @pytest.fixture()
-def runs_store_repo(app: FastAPI) -> RunsStoreRepository:
-    return get_repository(app, RunsStoreRepository)
+def step_fail_history_repo(app: FastAPI) -> StepFailHistoryRepository:
+    return get_repository(app, StepFailHistoryRepository)
 
 
-@pytest.mark.parametrize(
-    "data, queried_keys",
-    [
-        ({}, set()),
-        ({"k1": "v1", "k2": 2}, {"k1"}),
-        ({"k1": "v1", "k2": 2}, {"k1", "k2"}),
-    ],
-)
-async def test_runs_store_workflow(
-    runs_store_repo: RunsStoreRepository, run_id: RunId, data: dict[str, Any], queried_keys: set[str]
+async def test_insert_step_fail_history(
+    engine: AsyncEngine, step_fail_history_repo: StepFailHistoryRepository, step_id: StepId
 ) -> None:
-    assert await runs_store_repo.get_from_store(run_id, queried_keys) == {}
-    await runs_store_repo.set_to_store(run_id, data)
-    assert await runs_store_repo.get_from_store(run_id, queried_keys) == {
-        k: v for k, v in data.items() if k in queried_keys
-    }
-
-
-async def test_runs_store_missing_run_id(runs_store_repo: RunsStoreRepository, missing_run_id: RunId) -> None:
-    missing_run_id = -42
-    assert await runs_store_repo.get_from_store(missing_run_id, {"k1", "k2"}) == {}
+    await step_fail_history_repo.insert_step_fail_history(
+        step_id=step_id,
+        attempt=1,
+        state=StepState.FAILED,
+        finished_at=datetime.now(tz=UTC),
+        message="test message",
+    )
+    step_fail_history = await step_fail_history_repo.get_step_fail_history(step_id)
+    assert len(step_fail_history) == 1
+    step_fail = step_fail_history[0]
+    assert step_fail.step_id == step_id
+    assert step_fail.attempt == 1
+    assert step_fail.state == StepState.FAILED
+    assert step_fail.message == "test message"

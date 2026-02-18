@@ -723,3 +723,33 @@ def random_ps_run(
     assert set(data.keys()).issubset({c.name for c in ps_runs.columns})
 
     return data
+
+
+def random_ps_step(
+    run_id: int,
+    *,
+    is_reverting: bool = False,
+    step_state: str = "CREATED",
+    finished_at: datetime | None = None,
+    message: str | None = None,
+    fake: Faker = DEFAULT_FAKER,
+) -> dict[str, Any]:
+    from simcore_postgres_database.models.p_scheduler import ps_steps  # noqa: PLC0415
+
+    data = {
+        "step_id": fake.random_int(min=1),
+        "created_at": fake.date_time(),
+        "run_id": run_id,
+        "step_type": fake.word(),
+        "is_reverting": is_reverting,
+        "timeout": timedelta(minutes=fake.random_int(min=1, max=5)),
+        "available_attempts": fake.random_int(min=1, max=5),
+        "attempt_number": 1,
+        "state": step_state,
+        "finished_at": finished_at,
+        "message": message,
+    }
+
+    assert set(data.keys()).issubset({c.name for c in ps_steps.columns})
+
+    return data

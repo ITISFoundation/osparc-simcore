@@ -1,6 +1,5 @@
 # pylint:disable=contextmanager-generator-missing-cleanup
 # pylint:disable=redefined-outer-name
-# pylint:disable=too-many-arguments
 # pylint:disable=unused-argument
 
 from collections.abc import Callable
