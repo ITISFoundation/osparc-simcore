@@ -362,6 +362,34 @@ async def get_image_digest(app: FastAPI, image: str, tag: str) -> str | None:
     return docker_digest
 
 
+async def delete_image(app: FastAPI, image: str, tag: str) -> str:
+    """Deletes an image manifest in the remote registry and returns its digest."""
+
+    path = f"{image}/manifests/{tag}"
+
+    digest: str | None = None
+    for method in ("HEAD", "GET"):
+        _, headers = await registry_request(app, path=path, method=method, use_cache=False)
+        headers = headers or {}
+        digest = headers.get(_DOCKER_CONTENT_DIGEST_HEADER)
+        if digest:
+            break
+
+    if not digest:
+        raise ServiceNotAvailableError(
+            service_name=image,
+            service_tag=tag,
+            msg="Unable to resolve manifest digest in registry response headers",
+        )
+
+    await registry_request(app, path=f"{image}/manifests/{digest}", method="DELETE", use_cache=False)
+
+    cache: SimpleMemoryCache = app.state.registry_cache_memory
+    await cache.clear()
+
+    return digest
+
+
 async def get_image_labels(
     app: FastAPI, image: str, tag: str, *, update_cache=False
 ) -> tuple[dict[str, str], str | None]:

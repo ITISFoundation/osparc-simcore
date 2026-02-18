@@ -183,3 +183,21 @@ async def test_get_service_labels(
         assert not error
 
         assert service["docker_labels"] == labels
+
+
+async def test_delete_service_by_key_and_version(
+    configure_registry_access: EnvVarsDict,
+    client: httpx.AsyncClient,
+    created_services: list[ServiceInRegistryInfoDict],
+    api_version_prefix: str,
+):
+    assert created_services
+
+    service_description = created_services[0]["service_description"]
+    key, version = (quote(service_description[name], safe="") for name in ("key", "version"))
+
+    delete_resp = await client.delete(f"/{api_version_prefix}/services/{key}/{version}")
+    assert delete_resp.status_code == status.HTTP_204_NO_CONTENT, f"Got f{delete_resp.text}"
+
+    get_resp = await client.get(f"/{api_version_prefix}/services/{key}/{version}")
+    assert get_resp.status_code == status.HTTP_404_NOT_FOUND, f"Got f{get_resp.text}"

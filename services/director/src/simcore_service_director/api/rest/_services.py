@@ -52,7 +52,6 @@ async def list_services(
             services = await registry_proxy.list_services(the_app, registry_proxy.ServiceType.DYNAMIC)
         # NOTE: the validation is done in the catalog. This entrypoint IS and MUST BE only used by the catalog!!
         # NOTE2: the catalog will directly talk to the registry see case #2165 [https://github.com/ITISFoundation/osparc-simcore/issues/2165]
-        # services = node_validator.validate_nodes(services)
         return Envelope[list[dict[str, Any]]](data=services)
     except RegistryConnectionError as err:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=f"{err}") from err
@@ -78,6 +77,25 @@ async def list_service_labels(
     except ServiceNotAvailableError as err:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{err}") from err
 
+    except RegistryConnectionError as err:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=f"{err}") from err
+
+
+@router.delete("/services/{service_key:path}/{service_version}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_service(
+    the_app: Annotated[FastAPI, Depends(get_app)],
+    service_key: ServiceKey,
+    service_version: ServiceVersion,
+) -> None:
+    _logger.warning(
+        "Deleting service from registry with service_key %s, service_version %s",
+        service_key,
+        service_version,
+    )
+    try:
+        await registry_proxy.delete_image(the_app, service_key, service_version)
+    except ServiceNotAvailableError as err:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{err}") from err
     except RegistryConnectionError as err:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=f"{err}") from err
 
