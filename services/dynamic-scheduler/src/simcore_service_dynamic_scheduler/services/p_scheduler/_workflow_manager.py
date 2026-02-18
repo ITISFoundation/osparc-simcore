@@ -10,8 +10,8 @@ from servicelib.fastapi.app_state import SingletonInAppStateMixin
 from simcore_service_dynamic_scheduler.services.p_scheduler._models import UserRequest
 
 from ..base_repository import get_repository
-from ._models import Run, Step, StepId
-from ._repositories import RunsRepository, StepsRepository, UserRequestsRepository
+from ._models import Run, Step, StepFailHistory, StepId
+from ._repositories import RunsRepository, StepFailHistoryRepository, StepsRepository, UserRequestsRepository
 
 _logger = logging.getLogger(__name__)
 
@@ -77,6 +77,10 @@ class WorkflowManager(SingletonInAppStateMixin):
     @cached_property
     def steps_repo(self) -> StepsRepository:
         return get_repository(self.app, StepsRepository)
+
+    @cached_property
+    def step_fail_history_repo(self) -> StepFailHistoryRepository:
+        return get_repository(self.app, StepFailHistoryRepository)
 
     async def add_start_workflow(self, node_id: NodeID) -> None:
         await _validate_workflow_creation_preconditions(
@@ -153,3 +157,6 @@ class WorkflowManager(SingletonInAppStateMixin):
         await self._check_preconditions_skip_retry_step(node_id, step_id)
 
         await self.steps_repo.manual_skip_step(step_id)
+
+    async def get_step_fail_history(self, step_id: StepId) -> list[StepFailHistory]:
+        return await self.step_fail_history_repo.get_step_fail_history(step_id)

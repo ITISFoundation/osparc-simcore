@@ -3,7 +3,7 @@ from models_library.api_schemas_dynamic_scheduler.dynamic_services import Dynami
 from models_library.projects_nodes_io import NodeID
 
 from ..base_repository import get_repository
-from ._models import StepId, WorkflowDefinition, WorkflowName
+from ._models import StepFailHistory, StepId, WorkflowDefinition, WorkflowName
 from ._notifications import NotificationsManager
 from ._repositories import UserRequestsRepository
 from ._workflow_manager import WorkflowManager
@@ -27,13 +27,21 @@ async def request_absent(app: FastAPI, node_id: NodeID, dynamic_service_stop: Dy
 
 
 async def retry_step(app: FastAPI, node_id: NodeID, step_id: StepId) -> None:
+    """Used by the admin UI to retry a failed step of a workflow run, in order to unblock the workflow execution."""
     workflow_manager = WorkflowManager.get_from_app_state(app)
     await workflow_manager.retry_workflow_step(node_id, step_id)
 
 
 async def skip_step(app: FastAPI, node_id: NodeID, step_id: StepId) -> None:
+    """Used by the admin UI to skip a failed step of a workflow run, in order to unblock the workflow execution."""
     workflow_manager = WorkflowManager.get_from_app_state(app)
     await workflow_manager.skip_workflow_step(node_id, step_id)
+
+
+async def get_step_fail_history(app: FastAPI, step_id: StepId) -> list[StepFailHistory]:
+    """Used by the admin UI to display information on a failed step of a workflow run"""
+    workflow_manager = WorkflowManager.get_from_app_state(app)
+    return await workflow_manager.get_step_fail_history(step_id)
 
 
 def register_workflow(app: FastAPI, name: WorkflowName, definition: WorkflowDefinition) -> None:
