@@ -5,9 +5,8 @@ import logging
 from email.headerregistry import Address
 
 from celery import Task, group, shared_task  # type: ignore[import-untyped]
-from models_library.api_schemas_notifications.message import EmailMessage
 from models_library.celery.notifications import EmailContact as SingleEmailContact
-from models_library.celery.notifications import EmailContent, SingleEmailMessage
+from models_library.celery.notifications import EmailContent, EmailMessage, SingleEmailMessage
 from notifications_library._email import (
     compose_email,
     create_email_session,
@@ -65,7 +64,7 @@ def send_email(
 
     group(
         [
-            send_single_email.s(single_msg.model_dump()).set(countdown=i * _SECONDS_BETWEEN_EMAILS)  # type: ignore
+            send_single_email.s(single_msg.model_dump()).set(countdown=i * _SECONDS_BETWEEN_EMAILS)  # pyright: ignore[reportCallIssue]
             for i, single_msg in enumerate(single_msgs)
         ]
     ).apply_async()
