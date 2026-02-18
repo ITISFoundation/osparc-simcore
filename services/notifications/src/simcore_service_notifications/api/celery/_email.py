@@ -5,9 +5,9 @@ import logging
 from email.headerregistry import Address
 
 from celery import Task, group, shared_task  # type: ignore[import-untyped]
-from models_library.api_schemas_notifications.message import EmailContent, EmailMessage
+from models_library.api_schemas_notifications.message import EmailMessage
 from models_library.celery.notifications import EmailContact as SingleEmailContact
-from models_library.celery.notifications import SingleEmailMessage
+from models_library.celery.notifications import EmailContent, SingleEmailMessage
 from notifications_library._email import (
     compose_email,
     create_email_session,
