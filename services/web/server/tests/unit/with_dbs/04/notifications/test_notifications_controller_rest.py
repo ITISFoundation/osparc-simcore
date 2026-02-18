@@ -21,9 +21,9 @@ from models_library.api_schemas_webserver.notifications import (
 )
 from models_library.notifications import ChannelType
 from models_library.rpc.notifications.template import (
-    TemplatePreviewRpcResponse,
-    TemplateRefRpc,
-    TemplateRpcResponse,
+    PreviewTemplateResponse,
+    SearchTemplatesResponse,
+    TemplateRef,
 )
 from pydantic import TypeAdapter
 from pytest_mock import MockerFixture
@@ -38,10 +38,10 @@ pytest_simcore_core_services_selection = []
 
 
 @pytest.fixture
-def fake_template_preview_response(faker: Faker) -> TemplatePreviewRpcResponse:
+def fake_template_preview_response(faker: Faker) -> PreviewTemplateResponse:
     """Create a fake template preview response"""
-    return TemplatePreviewRpcResponse(
-        ref=TemplateRefRpc(
+    return PreviewTemplateResponse(
+        ref=TemplateRef(
             channel=ChannelType.email,
             template_name="test_template",
         ),
@@ -54,10 +54,10 @@ def fake_template_preview_response(faker: Faker) -> TemplatePreviewRpcResponse:
 
 
 @pytest.fixture
-def fake_template_response(faker: Faker) -> TemplateRpcResponse:
+def fake_template_response(faker: Faker) -> SearchTemplatesResponse:
     """Create a fake template response"""
-    return TemplateRpcResponse(
-        ref=TemplateRefRpc(
+    return SearchTemplatesResponse(
+        ref=TemplateRef(
             channel=ChannelType.email,
             template_name="test_template",
         ),
@@ -243,7 +243,7 @@ async def test_preview_template_access_control(
     user_role: UserRole,
     expected_status: HTTPStatus,
     mocked_notifications_rpc_client: MockerFixture,
-    fake_template_preview_response: TemplatePreviewRpcResponse,
+    fake_template_preview_response: PreviewTemplateResponse,
 ):
     """Test access control for preview_template endpoint"""
     assert client.app
@@ -276,7 +276,7 @@ async def test_preview_template_success(
     client: TestClient,
     logged_user: UserInfoDict,
     mocked_notifications_rpc_client: MockerFixture,
-    fake_template_preview_response: TemplatePreviewRpcResponse,
+    fake_template_preview_response: PreviewTemplateResponse,
     fake_email_content: dict[str, Any],
 ):
     """Test successful template preview"""
@@ -323,8 +323,8 @@ async def test_preview_template_enriches_context_with_product_data(
     # Spy on the RPC call to verify the enriched context
     mock_rpc_call = mocker.patch(
         f"{_service.__name__}.remote_preview_template",
-        return_value=TemplatePreviewRpcResponse(
-            ref=TemplateRefRpc(
+        return_value=PreviewTemplateResponse(
+            ref=TemplateRef(
                 channel=ChannelType.email,
                 template_name="test",
             ),
@@ -370,7 +370,7 @@ async def test_search_templates_access_control(
     user_role: UserRole,
     expected_status: HTTPStatus,
     mocked_notifications_rpc_client: MockerFixture,
-    fake_template_response: TemplateRpcResponse,
+    fake_template_response: SearchTemplatesResponse,
 ):
     """Test access control for search_templates endpoint"""
     assert client.app
@@ -392,7 +392,7 @@ async def test_search_templates_no_filters(
     client: TestClient,
     logged_user: UserInfoDict,
     mocked_notifications_rpc_client: MockerFixture,
-    fake_template_response: TemplateRpcResponse,
+    fake_template_response: SearchTemplatesResponse,
 ):
     """Test searching templates without filters"""
     assert client.app
@@ -437,7 +437,7 @@ async def test_search_templates_with_filters(
     query_params: dict[str, str],
     expected_status: HTTPStatus,
     mocked_notifications_rpc_client: MockerFixture,
-    fake_template_response: TemplateRpcResponse,
+    fake_template_response: SearchTemplatesResponse,
     mocker: MockerFixture,
 ):
     """Test searching templates with different filter combinations"""

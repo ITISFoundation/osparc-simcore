@@ -5,7 +5,7 @@ from ..models.content import for_channel
 from ..models.preview import TemplatePreview
 from ..models.template import Template
 from ..repositories import TemplatesRepository
-from ._renderer import Renderer
+from . import Renderer
 
 
 @dataclass(frozen=True)

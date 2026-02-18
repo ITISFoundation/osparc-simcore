@@ -6,20 +6,19 @@ from celery_library.async_jobs import submit_job
 from common_library.network import NO_REPLY_LOCAL, replace_email_parts
 from models_library.api_schemas_async_jobs.async_jobs import AsyncJobGet
 from models_library.groups import GroupID
-from models_library.notifications import ChannelType, TemplatePreview, TemplateRef
+from models_library.notifications import ChannelType, Template, TemplatePreview, TemplateRef
 from models_library.notifications_errors import (
     NotificationsNoActiveRecipientsError,
     NotificationsUnsupportedChannelError,
 )
 from models_library.products import ProductName
-from models_library.rpc.notifications.template import (
-    TemplatePreviewRpcRequest,
-    TemplateRefRpc,
-)
 from models_library.users import UserID
 from servicelib.celery.models import ExecutionMetadata, OwnerMetadata
 from servicelib.rabbitmq.rpc_interfaces.notifications.notifications_templates import (
     preview_template as remote_preview_template,
+)
+from servicelib.rabbitmq.rpc_interfaces.notifications.notifications_templates import (
+    search_templates as remote_search_templates,
 )
 
 from ..celery import get_task_manager
@@ -107,17 +106,28 @@ async def preview_template(
 
     enriched_context = {**context, "product": asdict(product_data)}
 
-    request = TemplatePreviewRpcRequest(
-        ref=TemplateRefRpc(**ref.model_dump()),
+    preview = await remote_preview_template(
+        get_rabbitmq_rpc_client(app),
+        ref=ref,
         context=enriched_context,
     )
 
-    preview = await remote_preview_template(
+    return TemplatePreview(**preview.model_dump())
+
+
+async def search_templates(
+    app: web.Application,
+    *,
+    channel: str | None = None,
+    template_name: str | None = None,
+) -> list[Template]:
+    templates = await remote_search_templates(
         get_rabbitmq_rpc_client(app),
-        request=request,
+        channel=channel,
+        template_name=template_name,
     )
 
-    return TemplatePreview(**preview.model_dump())
+    return [Template(**template.model_dump()) for template in templates]
 
 
 async def send_message(
