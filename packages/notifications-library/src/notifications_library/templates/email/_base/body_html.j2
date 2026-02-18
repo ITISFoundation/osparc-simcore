@@ -73,8 +73,22 @@
       {% if product_social_links %}
       <ul style="{{ footer_social_list_style }}">
         {% for social in product_social_links %}
-        {% set social_name = social.name %}
-        {% set social_url = social.url %}
+        {% set social_name = social|attr('name') %}
+        {% if social_name is undefined %}
+          {% if social is mapping %}
+            {% set social_name = social['name'] %}
+          {% else %}
+            {% set social_name = social[0] %}
+          {% endif %}
+        {% endif %}
+        {% set social_url = social|attr('url') %}
+        {% if social_url is undefined %}
+          {% if social is mapping %}
+            {% set social_url = social['url'] %}
+          {% else %}
+            {% set social_url = social[1] %}
+          {% endif %}
+        {% endif %}
         {% set social_key = social_name | lower %}
         {% set social_icon = footer_social_icon_svgs.get(social_key) %}
         <li style="list-style: none;">
@@ -95,9 +109,30 @@
       {% if product_share_links %}
       <ul style="{{ footer_share_list_style }}">
         {% for share in product_share_links %}
-        {% set share_name = share.name %}
-        {% set share_label = share.label %}
-        {% set share_url = share.url %}
+        {% set share_name = share|attr('name') %}
+        {% if share_name is undefined %}
+          {% if share is mapping %}
+            {% set share_name = share['name'] %}
+          {% else %}
+            {% set share_name = share[0] %}
+          {% endif %}
+        {% endif %}
+        {% set share_label = share|attr('label') %}
+        {% if share_label is undefined %}
+          {% if share is mapping %}
+            {% set share_label = share['label'] %}
+          {% else %}
+            {% set share_label = share[1] %}
+          {% endif %}
+        {% endif %}
+        {% set share_url = share|attr('url') %}
+        {% if share_url is undefined %}
+          {% if share is mapping %}
+            {% set share_url = share['url'] %}
+          {% else %}
+            {% set share_url = share[2] %}
+          {% endif %}
+        {% endif %}
         {% set share_key = share_name | lower %}
         {% set share_icon = footer_share_icon_svgs.get(share_key) %}
         <li style="list-style: none;">
@@ -126,7 +161,23 @@
       {% if product_company_links %}
       <p style="{{ footer_company_text_style }}">
         {% for link in product_company_links %}
-          <a href="{{ link.url }}" target="_blank" rel="noopener noreferrer" style="{{ link_style }}">{{ link.name }}</a>{% if not loop.last %}<span style="{{ footer_links_separator_style }}">|</span>{% endif %}
+          {% set link_name = link|attr('name') %}
+          {% if link_name is undefined %}
+            {% if link is mapping %}
+              {% set link_name = link['name'] %}
+            {% else %}
+              {% set link_name = link[0] %}
+            {% endif %}
+          {% endif %}
+          {% set link_url = link|attr('url') %}
+          {% if link_url is undefined %}
+            {% if link is mapping %}
+              {% set link_url = link['url'] %}
+            {% else %}
+              {% set link_url = link[1] %}
+            {% endif %}
+          {% endif %}
+          <a href="{{ link_url }}" target="_blank" rel="noopener noreferrer" style="{{ link_style }}">{{ link_name }}</a>{% if not loop.last %}<span style="{{ footer_links_separator_style }}">|</span>{% endif %}
         {% endfor %}
       </p>
       {% endif %}
