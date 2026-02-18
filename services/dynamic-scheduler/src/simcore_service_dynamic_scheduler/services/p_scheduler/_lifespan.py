@@ -76,16 +76,16 @@ async def p_scheduler_lifespan(app: FastAPI) -> AsyncIterator[State]:
         metrics_manager,
     ]
 
-    for entry in app_state_registration:
-        entry.set_to_app_state(app)
+    for state_entry in app_state_registration:
+        state_entry.set_to_app_state(app)
 
-    for entry in setup_teardown:
-        await entry.setup()
+    for lifecycle_entry in setup_teardown:
+        await lifecycle_entry.setup()
 
     yield {}
 
-    for entry in setup_teardown:
-        await entry.shutdown()
+    for lifecycle_entry in setup_teardown:
+        await lifecycle_entry.shutdown()
 
-    for entry in app_state_registration:
-        entry.pop_from_app_state(app)
+    for state_entry in app_state_registration:
+        state_entry.pop_from_app_state(app)
