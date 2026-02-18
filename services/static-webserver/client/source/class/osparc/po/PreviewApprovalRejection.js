@@ -300,11 +300,9 @@ qx.Class.define("osparc.po.PreviewApprovalRejection", {
 
     __rejectWithoutEmail: function() {
       const email = this.getEmail();
-      const invitationUrl = this.getInvitationUrl();
       const params = {
         data: {
           email,
-          invitationUrl,
           messageContent: null, // this is the trick not to send email
         }
       };
