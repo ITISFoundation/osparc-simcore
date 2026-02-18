@@ -27,7 +27,7 @@ from ..products import products_service
 from ..rabbitmq import get_rabbitmq_rpc_client
 from ..users import users_service
 from ._helpers import get_product_data
-from ._models import Contact, EmailContact, EmailContent, EmailNotificationMessage
+from ._models import Contact, EmailContact, EmailContent, EmailMessage
 
 
 def _get_user_display_name(user: dict) -> str:
@@ -64,7 +64,7 @@ async def _create_email_message(
     group_ids: list[GroupID] | None,
     external_contacts: list[Contact] | None,
     content: dict[str, Any],
-) -> EmailNotificationMessage:
+) -> EmailMessage:
     product = products_service.get_product(app, product_name)
 
     from_ = EmailContact(
@@ -88,7 +88,7 @@ async def _create_email_message(
 
     email_content = EmailContent(**content)
 
-    return EmailNotificationMessage(
+    return EmailMessage(
         from_=from_,
         to=to,
         content=email_content,
