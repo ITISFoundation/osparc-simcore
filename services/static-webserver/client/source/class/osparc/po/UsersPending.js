@@ -383,13 +383,15 @@ qx.Class.define("osparc.po.UsersPending", {
       const previewRejection = new osparc.po.PreviewApprovalRejection().set({
         actionMode: "reject",
       });
+      previewRejection.getChildControl("invitation-url-container").exclude();
       previewRejection.set({
         email,
         subject: messageContent["subject"],
         bodyHtml: messageContent["bodyHtml"],
       });
+
       const win = osparc.ui.window.Window.popUpInWindow(previewRejection, qx.locale.Manager.tr("Preview email"), 700, 670);
-      previewRejection.addListener("userApproved", () => {
+      previewRejection.addListener("userRejected", () => {
         win.close();
         this.__reload();
       });
