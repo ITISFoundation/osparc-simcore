@@ -380,7 +380,10 @@ qx.Class.define("osparc.po.UsersPending", {
         bodyHtml: messageContent["bodyHtml"],
       });
       const win = osparc.ui.window.Window.popUpInWindow(previewApproval, qx.locale.Manager.tr("Preview email"), 700, 670);
-      previewApproval.addListener("userApproved", () => win.close());
+      previewApproval.addListener("userApproved", () => {
+        win.close();
+        this.__reload();
+      });
     },
 
     __rejectUser: function(email) {
