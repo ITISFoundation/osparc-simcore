@@ -9,7 +9,7 @@ from ._models import DagNodeUniqueReference, InDataKeys, KeyConfig, StepsSequenc
 
 
 def _get_step_sequence(definition: WorkflowDefinition) -> StepsSequence:
-    graph = nx.DiGraph()
+    graph: nx.DiGraph = nx.DiGraph()
 
     for step_type, requires_step_types in definition.steps:
         graph.add_node(step_type.get_unique_reference())

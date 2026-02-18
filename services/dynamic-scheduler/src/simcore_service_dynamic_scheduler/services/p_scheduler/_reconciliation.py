@@ -12,9 +12,10 @@ from pydantic import NonNegativeInt
 from servicelib.background_task_utils import exclusive_periodic
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
 from servicelib.logging_utils import log_context
+from settings_library.redis import RedisDatabase
 
 from ..base_repository import get_repository
-from ..redis import RedisDatabase, get_redis_client
+from ..redis import get_redis_client
 from ._lifecycle_protocol import SupportsLifecycle
 from ._metrics import PSchedulerMetrics
 from ._models import (

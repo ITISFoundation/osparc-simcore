@@ -220,7 +220,7 @@ class WorkerManager(SingletonInAppStateMixin, SupportsLifecycle):
         self.check_for_steps_interval = check_for_steps_interval
         self.heartbeat_interval = heartbeat_interval
 
-        self._cancellation_notifier = ChangeNotifier()
+        self._cancellation_notifier: ChangeNotifier = ChangeNotifier()
 
         self._consumer_count = get_consumer_count(queue_consumer_expected_runtime_duration, queue_max_burst)
         _logger.info("worker queue consumers count=%s", self._consumer_count)
