@@ -32,7 +32,6 @@ from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.notifications import _service
-from simcore_service_webserver.notifications._controller import _rest
 
 pytest_simcore_core_services_selection = []
 
@@ -377,7 +376,7 @@ async def test_search_templates_access_control(
 
     # Mock the RPC call
     mocked_notifications_rpc_client.patch(
-        f"{_rest.__name__}.remote_search_templates",
+        f"{_service.__name__}.remote_search_templates",
         return_value=[fake_template_response],
     )
 
@@ -399,7 +398,7 @@ async def test_search_templates_no_filters(
 
     # Mock the RPC call
     mocked_notifications_rpc_client.patch(
-        f"{_rest.__name__}.remote_search_templates",
+        f"{_service.__name__}.remote_search_templates",
         return_value=[fake_template_response],
     )
 
@@ -445,7 +444,7 @@ async def test_search_templates_with_filters(
 
     # Mock the RPC call and spy on it
     mock_rpc = mocker.patch(
-        f"{_rest.__name__}.remote_search_templates",
+        f"{_service.__name__}.remote_search_templates",
         return_value=[fake_template_response],
     )
 
@@ -475,7 +474,7 @@ async def test_search_templates_empty_result(
     assert client.app
 
     mocker.patch(
-        f"{_rest.__name__}.remote_search_templates",
+        f"{_service.__name__}.remote_search_templates",
         return_value=[],
     )
 
