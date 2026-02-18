@@ -142,22 +142,28 @@ qx.Class.define("osparc.po.EmailEditor", {
       const groupsStore = osparc.store.Groups.getInstance();
       this.__selectedGroupIds.forEach((gid, index) => {
         const group = groupsStore.getGroup(gid);
-        const chip = new qx.ui.basic.Atom(group.getLabel(), "@FontAwesome5Solid/times/10").set({
-          toolTipText: group.getDescription(),
-          padding: [4, 8],
-          decorator: "chip",
-          cursor: "pointer",
-          iconPosition: "right",
-          gap: 8,
-          allowGrowY: true,
-          backgroundColor: "background-main-3",
-        });
+        const chip = this.addChip(group.getLabel(), group.getDescription());
         chip.addListener("tap", () => {
           this.__selectedGroupIds.splice(index, 1);
           this.__updateRecipientsChips();
         }, this);
-        chipsContainer.add(chip);
       });
+    },
+
+    addChip: function(label, description) {
+      const chip = new qx.ui.basic.Atom(label, "@FontAwesome5Solid/times/10").set({
+        toolTipText: description,
+        padding: [4, 8],
+        decorator: "chip",
+        cursor: "pointer",
+        iconPosition: "right",
+        gap: 8,
+        allowGrowY: true,
+        backgroundColor: "background-main-3",
+      });
+      const chipsContainer = this.getChildControl("recipients-chips");
+      chipsContainer.add(chip);
+      return chip;
     },
 
     getSelectedGroupIds: function() {

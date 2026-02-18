@@ -135,7 +135,9 @@ qx.Class.define("osparc.po.PreviewApproval", {
 
     __applyEmailAddress: function(value) {
       const emailEditor = this.getChildControl("email-editor");
-      emailEditor.setSelectedGroupIds([value]);
+      const chip = emailEditor.addChip(value, value);
+      chip.setEnabled(false);
+      emailEditor.getChildControl("add-recipient-button").exclude();
     },
 
     __applyInvitationUrl: function(value) {
@@ -152,7 +154,7 @@ qx.Class.define("osparc.po.PreviewApproval", {
     __applyBodyHtml: function(value) {
       const emailEditor = this.getChildControl("email-editor");
       const emailContentEditor = emailEditor.getChildControl("email-content-editor-and-preview");
-      emailContentEditor.setBodyHtml(value);
+      emailContentEditor.setTemplateEmail(value);
     },
   }
 });

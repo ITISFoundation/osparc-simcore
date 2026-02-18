@@ -379,7 +379,7 @@ qx.Class.define("osparc.po.UsersPending", {
         subject: messageContent["subject"],
         bodyHtml: messageContent["bodyHtml"],
       });
-      osparc.ui.window.Window.popUpInWindow(previewApproval, qx.locale.Manager.tr("Preview email"));
+      osparc.ui.window.Window.popUpInWindow(previewApproval, qx.locale.Manager.tr("Preview email"), 700, 670);
     },
 
     __rejectUser: function(email) {
