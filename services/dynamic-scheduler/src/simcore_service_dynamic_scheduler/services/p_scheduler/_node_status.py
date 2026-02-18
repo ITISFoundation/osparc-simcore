@@ -15,9 +15,10 @@ from servicelib.fastapi.app_state import SingletonInAppStateMixin
 from servicelib.logging_utils import log_catch
 from servicelib.redis._utils import handle_redis_returns_union_types
 from servicelib.utils import limited_gather
+from settings_library.redis import RedisDatabase
 
 from ..common_interface import get_service_status
-from ..redis import RedisDatabase, get_redis_client
+from ..redis import get_redis_client
 from ._lifecycle_protocol import SupportsLifecycle
 from ._models import SchedulerServiceStatus
 
