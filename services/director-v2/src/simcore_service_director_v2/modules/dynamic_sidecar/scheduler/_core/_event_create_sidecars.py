@@ -107,6 +107,7 @@ async def _create_proxy_service(
     )
 
     await create_service_and_get_id(
+        app,
         dynamic_sidecar_proxy_create_service_params,
         app_settings.DIRECTOR_V2_DOCKER_HUB_REGISTRY,
     )
@@ -124,6 +125,7 @@ class CreateSidecars(DynamicSchedulerEvent):
 
         settings: DynamicServicesSchedulerSettings = app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
         return await is_dynamic_sidecar_stack_missing(
+            app,
             node_uuid=scheduler_data.node_uuid,
             swarm_stack_name=settings.SWARM_STACK_NAME,
         )
@@ -201,11 +203,11 @@ class CreateSidecars(DynamicSchedulerEvent):
             "Attachable": True,
             "Internal": not user_extra_properties.is_internet_enabled,
         }
-        dynamic_sidecar_network_id = await create_network(network_config)
+        dynamic_sidecar_network_id = await create_network(app, network_config)
 
         # attach the service to the swarm network dedicated to services
         swarm_network: dict[str, Any] = await get_swarm_network(
-            dynamic_services_scheduler_settings.SIMCORE_SERVICES_NETWORK_NAME
+            app, dynamic_services_scheduler_settings.SIMCORE_SERVICES_NETWORK_NAME
         )
         swarm_network_id: NetworkId = swarm_network["Id"]
         swarm_network_name: str = swarm_network["Name"]
@@ -258,6 +260,7 @@ class CreateSidecars(DynamicSchedulerEvent):
         )
         await rabbitmq_client.publish(ProgressRabbitMessageNode.get_channel_name(), sidecar_pull_started_msg)
         dynamic_sidecar_id = await create_service_and_get_id(
+            app,
             dynamic_sidecar_service_final_spec,
             app_settings.DIRECTOR_V2_DOCKER_HUB_REGISTRY,
         )
@@ -274,6 +277,7 @@ class CreateSidecars(DynamicSchedulerEvent):
             )
 
         scheduler_data.dynamic_sidecar.docker_node_id = await get_dynamic_sidecar_placement(
+            app,
             dynamic_sidecar_id,
             dynamic_services_scheduler_settings,
             progress_update=progress_update,
@@ -285,6 +289,7 @@ class CreateSidecars(DynamicSchedulerEvent):
         )
 
         await constrain_service_to_node(
+            app,
             service_name=scheduler_data.service_name,
             docker_node_id=scheduler_data.dynamic_sidecar.docker_node_id,
         )

@@ -54,7 +54,9 @@ async def service_awaits_manual_interventions(scheduler_data: SchedulerData) -> 
 async def discover_running_services(scheduler: "Scheduler") -> None:  # type: ignore  # noqa: F821
     """discover all services which were started before and add them to the scheduler"""
     settings: DynamicServicesSchedulerSettings = scheduler.app.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER
-    services_to_observe: list[SchedulerData] = await get_dynamic_sidecars_to_observe(settings.SWARM_STACK_NAME)
+    services_to_observe: list[SchedulerData] = await get_dynamic_sidecars_to_observe(
+        scheduler.app, settings.SWARM_STACK_NAME
+    )
 
     _logger.info("The following services need to be observed: %s", services_to_observe)
 
@@ -86,6 +88,7 @@ def create_model_from_scheduler_data(
 
 
 async def get_stack_status_from_scheduler_data(
+    app: FastAPI,
     scheduler_data: SchedulerData,
 ) -> RunningDynamicServiceDetails:
     # pylint: disable=too-many-return-statements
@@ -116,7 +119,8 @@ async def get_stack_status_from_scheduler_data(
         sidecar_state, sidecar_message = await get_dynamic_sidecar_state(
             # the service_name is unique and will not collide with other names
             # it can be used in place of the service_id here, as the docker API accepts both
-            service_id=scheduler_data.service_name
+            app,
+            service_id=scheduler_data.service_name,
         )
     except DockerServiceNotFoundError:
         # in this case, the service is starting, so state is pending

@@ -4,6 +4,7 @@
 
 
 import json
+from collections.abc import Callable
 from typing import Any, cast
 from unittest.mock import Mock
 
@@ -57,6 +58,7 @@ def mock_s3_settings() -> S3Settings:
 
 @pytest.fixture
 def mock_env(
+    mock_setup_remote_docker_client: Callable[[str], None],
     monkeypatch: pytest.MonkeyPatch,
     mock_env: EnvVarsDict,
     disable_postgres: None,
@@ -64,6 +66,7 @@ def mock_env(
     faker: Faker,
 ) -> EnvVarsDict:
     """overrides unit/conftest:mock_env fixture"""
+    mock_setup_remote_docker_client("simcore_service_director_v2.core.application.setup_remote_docker_client")
     env_vars = mock_env.copy()
     env_vars.update(
         {

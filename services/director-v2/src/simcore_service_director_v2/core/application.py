@@ -5,6 +5,7 @@ from common_library.json_serialization import json_dumps
 from fastapi import FastAPI, HTTPException, status
 from fastapi.exceptions import RequestValidationError
 from fastapi_lifespan_manager import LifespanManager
+from servicelib.fastapi.docker import setup_remote_docker_client
 from servicelib.fastapi.lifespan_utils import Lifespan
 from servicelib.fastapi.logging_lifespan import create_logging_shutdown_event
 from servicelib.fastapi.openapi import (
@@ -183,6 +184,8 @@ def create_app(  # noqa: C901
             catalog_settings=settings.DIRECTOR_V2_CATALOG,
             tracing_settings=settings.DIRECTOR_V2_TRACING,
         )
+
+    setup_remote_docker_client(app, settings.DIRECTOR_V2_DOCKER_API_PROXY)
 
     db.setup(app, settings.POSTGRES)
 

@@ -18,12 +18,13 @@ from packaging.version import Version
 from servicelib.async_utils import run_sequentially_in_context
 from servicelib.docker_utils import to_datetime
 from servicelib.fastapi.client_session import get_client_session
+from servicelib.fastapi.docker import get_remote_docker_client
 from settings_library.docker_registry import RegistrySettings
 from tenacity import retry, wait_random_exponential
 from tenacity.retry import retry_if_exception_type
 from tenacity.stop import stop_after_attempt
 
-from . import docker_utils, registry_proxy
+from . import registry_proxy
 from .constants import (
     CPU_RESOURCE_LIMIT_KEY,
     MEM_RESOURCE_LIMIT_KEY,
@@ -144,7 +145,7 @@ def _to_simcore_runtime_docker_label_key(key: str) -> str:
 
 
 # pylint: disable=too-many-branches
-async def _create_docker_service_params(
+async def _create_docker_service_params(  # noqa: C901, PLR0912, PLR0913, PLR0915
     app: FastAPI,
     *,
     client: aiodocker.docker.Docker,
@@ -167,7 +168,9 @@ async def _create_docker_service_params(
     _logger.debug("Converting labels to docker runtime parameters")
     service_default_envs = {
         # old services expect POSTGRES_ENDPOINT as hostname:port
-        "POSTGRES_ENDPOINT": f"{app_settings.DIRECTOR_POSTGRES.POSTGRES_HOST}:{app_settings.DIRECTOR_POSTGRES.POSTGRES_PORT}",
+        "POSTGRES_ENDPOINT": (
+            f"{app_settings.DIRECTOR_POSTGRES.POSTGRES_HOST}:{app_settings.DIRECTOR_POSTGRES.POSTGRES_PORT}"
+        ),
         "POSTGRES_USER": app_settings.DIRECTOR_POSTGRES.POSTGRES_USER,
         "POSTGRES_PASSWORD": app_settings.DIRECTOR_POSTGRES.POSTGRES_PASSWORD.get_secret_value(),
         "POSTGRES_DB": app_settings.DIRECTOR_POSTGRES.POSTGRES_DB,
@@ -563,7 +566,7 @@ async def _remove_overlay_network_of_swarm(client: aiodocker.docker.Docker, node
         raise GenericDockerError(err=msg) from err
 
 
-async def _get_service_state(
+async def _get_service_state(  # noqa: C901, PLR0912
     client: aiodocker.docker.Docker, service: dict, app_settings: ApplicationSettings
 ) -> tuple[ServiceState, str]:
     # some times one has to wait until the task info is filled
@@ -711,7 +714,7 @@ async def _find_service_tag(list_of_images: dict, service_key: str, service_tag:
     return tag
 
 
-async def _start_docker_service(
+async def _start_docker_service(  # noqa: PLR0913
     app: FastAPI,
     *,
     client: aiodocker.docker.Docker,
@@ -902,38 +905,39 @@ async def start_service(
         node_base_path,
     )
     # first check the uuid is available
-    async with docker_utils.docker_client() as client:  # pylint: disable=not-async-context-manager
-        await _check_node_uuid_available(client, node_uuid)
-        list_of_images = await _get_repos_from_key(app, service_key)
-        service_tag = await _find_service_tag(list_of_images, service_key, service_tag)
-        _logger.debug("Found service to start %s:%s", service_key, service_tag)
-        list_of_services_to_start = [{"key": service_key, "tag": service_tag}]
-        # find the service dependencies
-        list_of_dependencies = await _get_dependant_repos(app, service_key, service_tag)
-        _logger.debug("Found service dependencies: %s", list_of_dependencies)
-        if list_of_dependencies:
-            list_of_services_to_start.extend(list_of_dependencies)
+    client = get_remote_docker_client(app)
 
-        containers_meta_data = await _create_node(
-            app,
-            client,
-            user_id,
-            project_id,
-            list_of_services_to_start,
-            node_uuid,
-            node_base_path,
-            request_simcore_user_agent,
-        )
-        node_details = containers_meta_data[0]
-        if app_settings.DIRECTOR_MONITORING_ENABLED:
-            get_instrumentation(app).services_started.labels(
-                service_key=service_key,
-                service_tag=service_tag,
-                simcore_user_agent="undefined_user",
-            ).inc()
+    await _check_node_uuid_available(client, node_uuid)
+    list_of_images = await _get_repos_from_key(app, service_key)
+    service_tag = await _find_service_tag(list_of_images, service_key, service_tag)
+    _logger.debug("Found service to start %s:%s", service_key, service_tag)
+    list_of_services_to_start = [{"key": service_key, "tag": service_tag}]
+    # find the service dependencies
+    list_of_dependencies = await _get_dependant_repos(app, service_key, service_tag)
+    _logger.debug("Found service dependencies: %s", list_of_dependencies)
+    if list_of_dependencies:
+        list_of_services_to_start.extend(list_of_dependencies)
 
-        # we return only the info of the main service
-        return node_details
+    containers_meta_data = await _create_node(
+        app,
+        client,
+        user_id,
+        project_id,
+        list_of_services_to_start,
+        node_uuid,
+        node_base_path,
+        request_simcore_user_agent,
+    )
+    node_details = containers_meta_data[0]
+    if app_settings.DIRECTOR_MONITORING_ENABLED:
+        get_instrumentation(app).services_started.labels(
+            service_key=service_key,
+            service_tag=service_tag,
+            simcore_user_agent="undefined_user",
+        ).inc()
+
+    # we return only the info of the main service
+    return node_details
 
 
 async def _get_node_details(app: FastAPI, client: aiodocker.docker.Docker, service: dict) -> dict:
@@ -980,49 +984,49 @@ async def _get_node_details(app: FastAPI, client: aiodocker.docker.Docker, servi
 
 async def get_services_details(app: FastAPI, user_id: str | None, project_id: str | None) -> list[dict]:
     app_settings = get_application_settings(app)
-    async with docker_utils.docker_client() as client:  # pylint: disable=not-async-context-manager
-        try:
-            filters = [
-                f"{_to_simcore_runtime_docker_label_key('type')}=main",
-                f"{_to_simcore_runtime_docker_label_key('swarm_stack_name')}={app_settings.DIRECTOR_SWARM_STACK_NAME}",
-            ]
-            if user_id:
-                filters.append(f"{_to_simcore_runtime_docker_label_key('user_id')}=" + user_id)
-            if project_id:
-                filters.append(f"{_to_simcore_runtime_docker_label_key('project_id')}=" + project_id)
-            list_running_services = await client.services.list(filters={"label": filters})
+    client = get_remote_docker_client(app)
+    try:
+        filters = [
+            f"{_to_simcore_runtime_docker_label_key('type')}=main",
+            f"{_to_simcore_runtime_docker_label_key('swarm_stack_name')}={app_settings.DIRECTOR_SWARM_STACK_NAME}",
+        ]
+        if user_id:
+            filters.append(f"{_to_simcore_runtime_docker_label_key('user_id')}=" + user_id)
+        if project_id:
+            filters.append(f"{_to_simcore_runtime_docker_label_key('project_id')}=" + project_id)
+        list_running_services = await client.services.list(filters={"label": filters})
 
-            return [await _get_node_details(app, client, dict(service)) for service in list_running_services]
-        except aiodocker.DockerError as err:
-            msg = f"Error while accessing container for {user_id=}, {project_id=}"
-            raise GenericDockerError(err=msg) from err
+        return [await _get_node_details(app, client, dict(service)) for service in list_running_services]
+    except aiodocker.DockerError as err:
+        msg = f"Error while accessing container for {user_id=}, {project_id=}"
+        raise GenericDockerError(err=msg) from err
 
 
 async def get_service_details(app: FastAPI, node_uuid: str) -> dict:
     app_settings = get_application_settings(app)
-    async with docker_utils.docker_client() as client:
-        try:
-            list_running_services_with_uuid = await client.services.list(
-                filters={
-                    "label": [
-                        f"{_to_simcore_runtime_docker_label_key('node_id')}={node_uuid}",
-                        f"{_to_simcore_runtime_docker_label_key('type')}=main",
-                        f"{_to_simcore_runtime_docker_label_key('swarm_stack_name')}={app_settings.DIRECTOR_SWARM_STACK_NAME}",
-                    ]
-                }
-            )
-            # error if no service with such an id exists
-            if not list_running_services_with_uuid:
-                raise ServiceUUIDNotFoundError(service_uuid=node_uuid)
+    client = get_remote_docker_client(app)
+    try:
+        list_running_services_with_uuid = await client.services.list(
+            filters={
+                "label": [
+                    f"{_to_simcore_runtime_docker_label_key('node_id')}={node_uuid}",
+                    f"{_to_simcore_runtime_docker_label_key('type')}=main",
+                    f"{_to_simcore_runtime_docker_label_key('swarm_stack_name')}={app_settings.DIRECTOR_SWARM_STACK_NAME}",
+                ]
+            }
+        )
+        # error if no service with such an id exists
+        if not list_running_services_with_uuid:
+            raise ServiceUUIDNotFoundError(service_uuid=node_uuid)
 
-            if len(list_running_services_with_uuid) > 1:
-                # someone did something fishy here
-                raise DirectorRuntimeError(msg="More than one docker service is labeled as main service")
+        if len(list_running_services_with_uuid) > 1:
+            # someone did something fishy here
+            raise DirectorRuntimeError(msg="More than one docker service is labeled as main service")
 
-            return await _get_node_details(app, client, dict(list_running_services_with_uuid[0]))
-        except aiodocker.DockerError as err:
-            msg = f"Error while accessing container {node_uuid=}"
-            raise GenericDockerError(err=msg) from err
+        return await _get_node_details(app, client, dict(list_running_services_with_uuid[0]))
+    except aiodocker.DockerError as err:
+        msg = f"Error while accessing container {node_uuid=}"
+        raise GenericDockerError(err=msg) from err
 
 
 @retry(
@@ -1073,74 +1077,74 @@ async def stop_service(app: FastAPI, *, node_uuid: str, save_state: bool) -> Non
     _logger.debug("stopping service with node_uuid=%s, save_state=%s", node_uuid, save_state)
 
     # get the docker client
-    async with docker_utils.docker_client() as client:  # pylint: disable=not-async-context-manager
-        try:
-            list_running_services_with_uuid = await client.services.list(
-                filters={
-                    "label": [
-                        f"{_to_simcore_runtime_docker_label_key('node_id')}={node_uuid}",
-                        f"{_to_simcore_runtime_docker_label_key('swarm_stack_name')}={app_settings.DIRECTOR_SWARM_STACK_NAME}",
-                    ]
-                }
-            )
-        except aiodocker.DockerError as err:
-            msg = f"Error while stopping container {node_uuid=}"
-            raise GenericDockerError(err=msg) from err
-
-        # error if no service with such an id exists
-        if not list_running_services_with_uuid:
-            raise ServiceUUIDNotFoundError(service_uuid=node_uuid)
-
-        _logger.debug("found service(s) with uuid %s", list_running_services_with_uuid)
-
-        # save the state of the main service if it can
-        service_details = await get_service_details(app, node_uuid)
-        service_host_name = "{}:{}{}".format(
-            service_details["service_host"],
-            (service_details["service_port"] if service_details["service_port"] else "80"),
-            (service_details["service_basepath"] if "3d-viewer" not in service_details["service_host"] else ""),
+    client = get_remote_docker_client(app)
+    try:
+        list_running_services_with_uuid = await client.services.list(
+            filters={
+                "label": [
+                    f"{_to_simcore_runtime_docker_label_key('node_id')}={node_uuid}",
+                    f"{_to_simcore_runtime_docker_label_key('swarm_stack_name')}={app_settings.DIRECTOR_SWARM_STACK_NAME}",
+                ]
+            }
         )
+    except aiodocker.DockerError as err:
+        msg = f"Error while stopping container {node_uuid=}"
+        raise GenericDockerError(err=msg) from err
 
-        # If state save is enforced
-        if save_state:
-            _logger.debug("saving state of service %s...", service_host_name)
-            try:
-                await _save_service_state(service_host_name, session=get_client_session(app))
-            except httpx.HTTPStatusError as err:
-                raise ServiceStateSaveError(
-                    service_uuid=node_uuid,
-                    reason=f"service {service_host_name} rejected to save state, "
-                    f"responded {err.response.text} (status {err.response.status_code})."
-                    "Aborting stop service to prevent data loss.",
-                ) from err
+    # error if no service with such an id exists
+    if not list_running_services_with_uuid:
+        raise ServiceUUIDNotFoundError(service_uuid=node_uuid)
 
-            except httpx.RequestError as err:
-                _logger.warning(
-                    "Could not save state because %s is unreachable [%s].Resuming stop_service.",
-                    service_host_name,
-                    err.request,
-                )
+    _logger.debug("found service(s) with uuid %s", list_running_services_with_uuid)
 
-        # remove the services
+    # save the state of the main service if it can
+    service_details = await get_service_details(app, node_uuid)
+    service_host_name = "{}:{}{}".format(
+        service_details["service_host"],
+        (service_details["service_port"] if service_details["service_port"] else "80"),
+        (service_details["service_basepath"] if "3d-viewer" not in service_details["service_host"] else ""),
+    )
+
+    # If state save is enforced
+    if save_state:
+        _logger.debug("saving state of service %s...", service_host_name)
         try:
-            _logger.debug("removing services ...")
-            for service in list_running_services_with_uuid:
-                _logger.debug("removing %s", service["Spec"]["Name"])
-                await client.services.delete(service["Spec"]["Name"])
+            await _save_service_state(service_host_name, session=get_client_session(app))
+        except httpx.HTTPStatusError as err:
+            raise ServiceStateSaveError(
+                service_uuid=node_uuid,
+                reason=f"service {service_host_name} rejected to save state, "
+                f"responded {err.response.text} (status {err.response.status_code})."
+                "Aborting stop service to prevent data loss.",
+            ) from err
 
-        except aiodocker.DockerError as err:
-            msg = f"Error while removing services {node_uuid=}"
-            raise GenericDockerError(err=msg) from err
+        except httpx.RequestError as err:
+            _logger.warning(
+                "Could not save state because %s is unreachable [%s].Resuming stop_service.",
+                service_host_name,
+                err.request,
+            )
 
-        # remove network(s)
-        _logger.debug("removed services, now removing network...")
-        await _remove_overlay_network_of_swarm(client, node_uuid)
-        _logger.debug("removed network")
+    # remove the services
+    try:
+        _logger.debug("removing services ...")
+        for service in list_running_services_with_uuid:
+            _logger.debug("removing %s", service["Spec"]["Name"])
+            await client.services.delete(service["Spec"]["Name"])
 
-        if app_settings.DIRECTOR_MONITORING_ENABLED:
-            get_instrumentation(app).services_stopped.labels(
-                service_key=service_details["service_key"],
-                service_tag=service_details["service_version"],
-                simcore_user_agent="undefined_user",
-                result="SUCCESS",
-            ).inc()
+    except aiodocker.DockerError as err:
+        msg = f"Error while removing services {node_uuid=}"
+        raise GenericDockerError(err=msg) from err
+
+    # remove network(s)
+    _logger.debug("removed services, now removing network...")
+    await _remove_overlay_network_of_swarm(client, node_uuid)
+    _logger.debug("removed network")
+
+    if app_settings.DIRECTOR_MONITORING_ENABLED:
+        get_instrumentation(app).services_stopped.labels(
+            service_key=service_details["service_key"],
+            service_tag=service_details["service_version"],
+            simcore_user_agent="undefined_user",
+            result="SUCCESS",
+        ).inc()

@@ -3,6 +3,8 @@ from dataclasses import dataclass
 from typing import Any
 
 import sqlalchemy as sa
+from aiodocker import Docker
+from fastapi import FastAPI
 from models_library.projects import ProjectAtDB, ProjectID
 from models_library.projects_nodes_io import NodeID
 from models_library.projects_state import RunningState
@@ -133,3 +135,12 @@ async def assert_comp_tasks_and_comp_run_snapshot_tasks(
 
     # return the original CompTaskAtDB tasks
     return original_tasks, snapshot_tasks
+
+
+async def setup_docker(app: FastAPI) -> None:
+    app.state.remote_docker_client = Docker()
+
+
+async def shutdown_docker(app: FastAPI) -> None:
+    assert isinstance(app.state.remote_docker_client, Docker)
+    await app.state.remote_docker_client.close()

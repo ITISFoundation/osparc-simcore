@@ -1,8 +1,13 @@
 import logging
+from collections.abc import Callable
+from contextlib import AsyncExitStack
 
+import aiodocker
 import pytest
 from aiohttp import BasicAuth, ClientSession, ClientTimeout
+from fastapi import FastAPI
 from pydantic import TypeAdapter
+from pytest_mock.plugin import MockerFixture
 from settings_library.docker_api_proxy import DockerApiProxysettings
 from tenacity import before_sleep_log, retry, stop_after_delay, wait_fixed
 
@@ -58,3 +63,24 @@ async def docker_api_proxy_settings(
     await _wait_till_docker_api_proxy_is_responsive(settings)
 
     return settings
+
+
+@pytest.fixture
+async def mock_setup_remote_docker_client(mocker: MockerFixture) -> Callable[[str], None]:
+    def _(target_setup_to_replace: str) -> None:
+        def _setup(app: FastAPI, settings: DockerApiProxysettings) -> None:
+            _ = settings
+            exit_stack = AsyncExitStack()
+
+            async def on_startup() -> None:
+                app.state.remote_docker_client = await exit_stack.enter_async_context(aiodocker.Docker())
+
+            async def on_shutdown() -> None:
+                await exit_stack.aclose()
+
+            app.add_event_handler("startup", on_startup)
+            app.add_event_handler("shutdown", on_shutdown)
+
+        mocker.patch(target_setup_to_replace, new=_setup)
+
+    return _

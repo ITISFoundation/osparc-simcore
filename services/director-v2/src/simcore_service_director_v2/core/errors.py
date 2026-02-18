@@ -115,7 +115,8 @@ class MissingComputationalResourcesError(TaskSchedulingError):  # pylint: disabl
 
 class InsufficientComputationalResourcesError(TaskSchedulingError):  # pylint: disable=too-many-ancestors
     msg_template: str = (
-        "Insufficient computational resources to run {service_name}:{service_version} with {service_requested_resources} on cluster."
+        "Insufficient computational resources to run {service_name}:{service_version} "
+        "with {service_requested_resources} on cluster."
         "Cluster available workers: {cluster_available_resources}"
         "TIP: Reduce service required resources or contact oSparc support"
     )

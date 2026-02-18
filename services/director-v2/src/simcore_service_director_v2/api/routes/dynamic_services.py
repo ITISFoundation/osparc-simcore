@@ -75,13 +75,13 @@ async def list_tracked_dynamic_services(
 ) -> list[DynamicServiceGet]:
     legacy_running_services = await director_v0_client.get_running_services(user_id, project_id)
 
-    get_stack_status_tasks = [
+    get_stack_statuses_tasks = [
         scheduler.get_stack_status(service_uuid)
         for service_uuid in scheduler.list_services(user_id=user_id, project_id=project_id)
     ]
 
     # NOTE: Review error handling https://github.com/ITISFoundation/osparc-simcore/issues/3194
-    dynamic_sidecar_running_services = await asyncio.gather(*get_stack_status_tasks)
+    dynamic_sidecar_running_services = await asyncio.gather(*get_stack_statuses_tasks)
 
     return legacy_running_services + dynamic_sidecar_running_services
 
@@ -94,6 +94,7 @@ async def list_tracked_dynamic_services(
 )
 @log_decorator(logger=logger)
 async def create_dynamic_service(
+    request: Request,
     service: DynamicServiceCreate,
     catalog_client: Annotated[CatalogClient, Depends(get_catalog_client)],
     director_v0_client: Annotated[DirectorV0Client, Depends(get_director_v0_client)],
@@ -122,7 +123,9 @@ async def create_dynamic_service(
         logger.debug("Redirecting %s", redirect_url_with_query)
         return RedirectResponse(str(redirect_url_with_query))
 
-    if not await is_sidecar_running(service.node_uuid, dynamic_services_settings.DYNAMIC_SCHEDULER.SWARM_STACK_NAME):
+    if not await is_sidecar_running(
+        request.app, service.node_uuid, dynamic_services_settings.DYNAMIC_SCHEDULER.SWARM_STACK_NAME
+    ):
         await scheduler.add_service(
             service=service,
             simcore_service_labels=simcore_service_labels,

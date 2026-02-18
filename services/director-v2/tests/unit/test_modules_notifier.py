@@ -52,12 +52,14 @@ def disable_modules_setup(mock_exclusive: None, mocker: MockerFixture) -> None:
 
 @pytest.fixture
 def mock_env(
+    mock_setup_remote_docker_client: Callable[[str], None],
     disable_modules_setup: None,
     monkeypatch: pytest.MonkeyPatch,
     mock_env: EnvVarsDict,
     rabbit_service: RabbitSettings,
     faker: Faker,
 ) -> EnvVarsDict:
+    mock_setup_remote_docker_client("simcore_service_director_v2.core.application.setup_remote_docker_client")
     setenvs_from_dict(
         monkeypatch,
         {

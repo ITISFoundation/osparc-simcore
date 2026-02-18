@@ -43,17 +43,19 @@ pytest_simcore_core_services_selection = [
     "dask-scheduler",
     "dask-sidecar",
     "director",
+    "docker-api-proxy",
     "migration",
     "postgres",
     "rabbit",
-    "storage",
     "redis",
+    "storage",
 ]
 pytest_simcore_ops_services_selection = ["minio", "adminer"]
 
 
 @pytest.fixture
 def mock_env(
+    setup_docker_api_proxy: None,
     mock_env: EnvVarsDict,
     minimal_configuration: None,
     monkeypatch: pytest.MonkeyPatch,
@@ -478,7 +480,8 @@ async def test_run_partial_computation(
     )
 
     # run it a second time. the tasks are all up-to-date, nothing should be run
-    # FIXME: currently the webserver is the one updating the projects table so we need to fake this by copying the run_hash
+    # NOTE: currently the webserver is the one updating the projects table so we need to fake this
+    # by copying the run_hash
     update_project_workbench_with_comp_tasks(str(sleepers_project.uuid))
 
     with pytest.raises(httpx.HTTPStatusError, match=f"{status.HTTP_422_UNPROCESSABLE_ENTITY}"):
@@ -589,7 +592,8 @@ async def test_run_computation(
         iteration=1,
     )
 
-    # NOTE: currently the webserver is the one updating the projects table so we need to fake this by copying the run_hash
+    # NOTE: currently the webserver is the one updating the projects table so we need to fake this
+    # by copying the run_hash
     update_project_workbench_with_comp_tasks(str(sleepers_project.uuid))
     # run again should return a 422 cause everything is uptodate
     with pytest.raises(httpx.HTTPStatusError, match=f"{status.HTTP_422_UNPROCESSABLE_ENTITY}"):
@@ -623,7 +627,8 @@ async def test_run_computation(
         task_out,
         project=sleepers_project,
         exp_task_state=RunningState.PUBLISHED,
-        exp_pipeline_details=expected_pipeline_details_forced,  # NOTE: here the pipeline already ran so its states are different
+        # NOTE: here the pipeline already ran so its states are different
+        exp_pipeline_details=expected_pipeline_details_forced,
         iteration=2,
     )
 
@@ -712,8 +717,6 @@ async def test_abort_computation(
         wait_for_states=[RunningState.ABORTED],
     )
     assert task_out.state == RunningState.ABORTED
-    # FIXME: Here ideally we should connect to the dask scheduler and check
-    # that the task is really aborted
 
 
 async def test_update_and_delete_computation(

@@ -10,11 +10,15 @@ from unittest.mock import AsyncMock
 import httpx
 import pytest
 import sqlalchemy as sa
+from common_library.json_serialization import json_dumps
+from common_library.serialization import model_dump_with_secrets
 from models_library.api_schemas_directorv2.computations import ComputationGet
 from models_library.projects import ProjectAtDB
 from models_library.users import UserID
 from pytest_mock import MockerFixture
+from pytest_simcore.helpers.monkeypatch_envs import setenvs_from_dict
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from settings_library.docker_api_proxy import DockerApiProxysettings
 from simcore_postgres_database.models.comp_tasks import comp_tasks
 from simcore_postgres_database.models.projects import projects
 from starlette import status
@@ -161,7 +165,8 @@ async def wait_for_catalog_service(
                 timeout=1,
             )
             assert response.status_code == status.HTTP_200_OK, (
-                f"catalog is not ready {response.status_code}:{response.text}, TIP: migration not completed or catalog broken?"
+                f"catalog is not ready {response.status_code}:{response.text}, "
+                "TIP: migration not completed or catalog broken?"
             )
             services = response.json()
             assert services != [], "catalog is not ready: no services available"
@@ -170,3 +175,18 @@ async def wait_for_catalog_service(
         await _ensure_catalog_services_answers()
 
     return _waiter
+
+
+@pytest.fixture
+def setup_docker_api_proxy(
+    docker_api_proxy_settings: DockerApiProxysettings, mock_env: EnvVarsDict, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    setenvs_from_dict(
+        monkeypatch,
+        {
+            **mock_env,
+            "DIRECTOR_V2_DOCKER_API_PROXY": json_dumps(
+                model_dump_with_secrets(docker_api_proxy_settings, show_secrets=True)
+            ),
+        },
+    )

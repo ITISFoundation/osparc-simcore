@@ -106,14 +106,15 @@ from types_aiobotocore_ec2.type_defs import TagTypeDef
 
 pytest_plugins = [
     "pytest_simcore.asyncio_event_loops",
-    "pytest_simcore.aws_server",
     "pytest_simcore.aws_ec2_service",
     "pytest_simcore.aws_iam_service",
+    "pytest_simcore.aws_server",
     "pytest_simcore.aws_ssm_service",
     "pytest_simcore.dask_scheduler",
-    "pytest_simcore.docker",
+    "pytest_simcore.docker_api_proxy",
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_swarm",
+    "pytest_simcore.docker",
     "pytest_simcore.environment_configs",
     "pytest_simcore.logging",
     "pytest_simcore.rabbit_service",
@@ -234,6 +235,7 @@ def external_ec2_instances_allowed_types(
 
 @pytest.fixture
 def app_environment(
+    mock_setup_remote_docker_client: Callable[[str], None],
     mock_env_devel_environment: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
     faker: Faker,
@@ -241,6 +243,7 @@ def app_environment(
     ec2_instance_custom_tags: dict[str, str],
     external_envfile_dict: EnvVarsDict,
 ) -> EnvVarsDict:
+    mock_setup_remote_docker_client("simcore_service_autoscaling.core.application.setup_remote_docker_client")
     # SEE https://faker.readthedocs.io/en/master/providers/faker.providers.internet.html?highlight=internet#faker-providers-internet
     if external_envfile_dict:
         delenvs_from_dict(monkeypatch, mock_env_devel_environment, raising=False)

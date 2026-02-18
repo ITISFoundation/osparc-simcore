@@ -24,6 +24,7 @@ from pydantic_settings import SettingsConfigDict
 from servicelib.logging_utils import LogLevelInt
 from settings_library.application import BaseApplicationSettings
 from settings_library.base import BaseCustomSettings
+from settings_library.docker_api_proxy import DockerApiProxysettings
 from settings_library.docker_registry import RegistrySettings
 from settings_library.ec2 import EC2Settings
 from settings_library.rabbit import RabbitSettings
@@ -364,6 +365,11 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
 
     AUTOSCALING_DASK: Annotated[
         DaskMonitoringSettings | None,
+        Field(json_schema_extra={"auto_default_from_env": True}),
+    ]
+
+    AUTOSCALING_DOCKER_API_PROXY: Annotated[
+        DockerApiProxysettings | None,
         Field(json_schema_extra={"auto_default_from_env": True}),
     ]
 

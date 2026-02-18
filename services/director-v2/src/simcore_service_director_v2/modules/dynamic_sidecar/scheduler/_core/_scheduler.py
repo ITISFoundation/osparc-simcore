@@ -253,9 +253,8 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
 
             if scheduler_data.node_uuid in self._inverse_search_mapping:
                 msg = (
-                    f"node_uuids at a global level collided. A running service for node "
-                    f"{scheduler_data.node_uuid} already exists. "
-                    "Please checkout other projects which may have this issue."
+                    f"node_uuids at a global level collided. A running service for node {scheduler_data.node_uuid} "
+                    "already exists. Please checkout other projects which may have this issue."
                 )
                 raise DynamicSidecarError(msg=msg)
 
@@ -335,7 +334,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
 
             assert can_save is not None  # nosec
             current.dynamic_sidecar.service_removal_state.mark_to_remove(can_save=can_save)
-            await update_scheduler_data_label(current)
+            await update_scheduler_data_label(self.app, current)
 
             # cancel current observation task
             if service_name in self._service_observation_task:
@@ -408,7 +407,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
         service_name = self._inverse_search_mapping[node_uuid]
 
         scheduler_data: SchedulerData = self._to_observe[service_name]
-        return await _scheduler_utils.get_stack_status_from_scheduler_data(scheduler_data)
+        return await _scheduler_utils.get_stack_status_from_scheduler_data(self.app, scheduler_data)
 
     async def retrieve_service_inputs(
         self, node_uuid: NodeID, port_keys: list[ServicePortKey]

@@ -139,10 +139,7 @@ async def parse_output_data(
     ports_errors = []
     for port_key, port_value in data.items():
         value_to_transfer: links.ItemValue | None = None
-        if isinstance(port_value, FileUrl):
-            value_to_transfer = port_value.url
-        else:
-            value_to_transfer = port_value
+        value_to_transfer = port_value.url if isinstance(port_value, FileUrl) else port_value
 
         try:
             await (await ports.outputs)[port_key].set_value(value_to_transfer)
@@ -284,7 +281,8 @@ def compute_task_labels(
             "node_id": node_id,
             "product_name": product_name,
             "simcore_user_agent": run_metadata.get("simcore_user_agent", UNDEFINED_DOCKER_LABEL),
-            "swarm_stack_name": UNDEFINED_DOCKER_LABEL,  # NOTE: there is currently no need for this label in the comp backend
+            # NOTE: there is currently no need for this label in the comp backend
+            "swarm_stack_name": UNDEFINED_DOCKER_LABEL,
             "memory_limit": node_requirements.ram,
             "cpu_limit": node_requirements.cpu,
         }

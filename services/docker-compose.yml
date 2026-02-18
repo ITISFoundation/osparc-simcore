@@ -195,6 +195,12 @@ services:
       AUTOSCALING_EC2_SECRET_ACCESS_KEY: ${AUTOSCALING_EC2_SECRET_ACCESS_KEY}
       AUTOSCALING_EC2_REGION_NAME: ${AUTOSCALING_EC2_REGION_NAME}
 
+      DOCKER_API_PROXY_HOST: ${DOCKER_API_PROXY_HOST}
+      DOCKER_API_PROXY_PASSWORD: ${DOCKER_API_PROXY_PASSWORD}
+      DOCKER_API_PROXY_PORT: ${DOCKER_API_PROXY_PORT}
+      DOCKER_API_PROXY_SECURE: ${DOCKER_API_PROXY_SECURE}
+      DOCKER_API_PROXY_USER: ${DOCKER_API_PROXY_USER}
+
       AUTOSCALING_EC2_INSTANCES: ${AUTOSCALING_EC2_INSTANCES} # used to enable/disable
       EC2_INSTANCES_ALLOWED_TYPES: ${EC2_INSTANCES_ALLOWED_TYPES}
       EC2_INSTANCES_ATTACHED_IAM_PROFILE: ${EC2_INSTANCES_ATTACHED_IAM_PROFILE}
@@ -351,6 +357,12 @@ services:
       DIRECTOR_SERVICES_CUSTOM_LABELS: ${DIRECTOR_SERVICES_CUSTOM_LABELS}
       DIRECTOR_TRACING: ${DIRECTOR_TRACING}
 
+      DOCKER_API_PROXY_HOST: ${DOCKER_API_PROXY_HOST}
+      DOCKER_API_PROXY_PASSWORD: ${DOCKER_API_PROXY_PASSWORD}
+      DOCKER_API_PROXY_PORT: ${DOCKER_API_PROXY_PORT}
+      DOCKER_API_PROXY_SECURE: ${DOCKER_API_PROXY_SECURE}
+      DOCKER_API_PROXY_USER: ${DOCKER_API_PROXY_USER}
+
       SIMCORE_SERVICES_NETWORK_NAME: interactive_services_subnet
       STORAGE_ENDPOINT: ${STORAGE_ENDPOINT}
       SWARM_STACK_NAME: ${SWARM_STACK_NAME}
@@ -411,6 +423,12 @@ services:
       DYNAMIC_SIDECAR_PROMETHEUS_MONITORING_NETWORKS: ${DYNAMIC_SIDECAR_PROMETHEUS_MONITORING_NETWORKS}
       DYNAMIC_SIDECAR_PROMETHEUS_SERVICE_LABELS: ${DYNAMIC_SIDECAR_PROMETHEUS_SERVICE_LABELS}
       DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT: ${DYNAMIC_SIDECAR_API_SAVE_RESTORE_STATE_TIMEOUT}
+
+      DOCKER_API_PROXY_HOST: ${DOCKER_API_PROXY_HOST}
+      DOCKER_API_PROXY_PASSWORD: ${DOCKER_API_PROXY_PASSWORD}
+      DOCKER_API_PROXY_PORT: ${DOCKER_API_PROXY_PORT}
+      DOCKER_API_PROXY_SECURE: ${DOCKER_API_PROXY_SECURE}
+      DOCKER_API_PROXY_USER: ${DOCKER_API_PROXY_USER}
 
       DIRECTOR_V2_LOGLEVEL: ${DIRECTOR_V2_LOGLEVEL}
       MONITORING_ENABLED: ${MONITORING_ENABLED}
@@ -562,7 +580,6 @@ services:
     hostname: "{{.Node.Hostname}}-{{.Task.Slot}}"
     networks:
       - default
-      - docker_api_subnet
     environment:
       <<:
         - *common_logging_environments
@@ -604,7 +621,9 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
-      - docker_api_subnet
+      - autoscaling_subnet
+      - interactive_services_subnet
+      - default
 
   static-webserver:
     image: ${DOCKER_REGISTRY:-itisfoundation}/static-webserver:${DOCKER_IMAGE_TAG:-latest}
@@ -1580,15 +1599,6 @@ networks:
     internal: false
     labels:
       com.simcore.description: "computational services network"
-  docker_api_subnet:
-    name: ${SWARM_STACK_NAME}_docker_api_subnet
-    driver: overlay
-    attachable: true
-    internal: true
-    driver_opts:
-      encrypted: "true"
-    labels:
-      com.simcore.description: "used for internal access to the docker swarm api"
 
 secrets:
   dask_tls_key:

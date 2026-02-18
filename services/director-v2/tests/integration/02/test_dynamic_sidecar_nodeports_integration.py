@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any, NamedTuple, cast
 from uuid import uuid4
 
+import aioboto3
 import aiodocker
 import httpx
 import pytest
@@ -96,6 +97,7 @@ from utils import (
     is_legacy,
     patch_dynamic_service_url,
     run_command,
+    sleep_for,
 )
 from yarl import URL
 
@@ -105,13 +107,14 @@ pytest_simcore_core_services_selection = [
     "dask-scheduler",
     "dask-sidecar",
     "director",
+    "docker-api-proxy",
     "migration",
     "postgres",
     "rabbit",
     "redis",
-    "storage",
-    "sto-worker",
     "redis",
+    "sto-worker",
+    "storage",
 ]
 
 pytest_simcore_ops_services_selection = [
@@ -331,6 +334,7 @@ async def patch_storage_setup(
 
 @pytest.fixture
 def mock_env(
+    setup_docker_api_proxy: None,
     mock_env: EnvVarsDict,
     monkeypatch: pytest.MonkeyPatch,
     network_name: str,
@@ -627,6 +631,34 @@ async def _fetch_data_via_data_manager(
             r_clone_settings=r_clone_settings,
             progress_bar=progress_bar,
         )
+
+    return save_to
+
+
+async def _fetch_data_via_aioboto(
+    r_clone_settings: RCloneSettings,
+    dir_tag: str,
+    temp_dir: Path,
+    node_id: NodeIDStr,
+    project_id: ProjectID,
+) -> Path:
+    save_to = temp_dir / f"aioboto_{dir_tag}_{uuid4()}"
+    save_to.mkdir(parents=True, exist_ok=True)
+
+    session = aioboto3.Session(
+        aws_access_key_id=r_clone_settings.R_CLONE_S3.S3_ACCESS_KEY,
+        aws_secret_access_key=r_clone_settings.R_CLONE_S3.S3_SECRET_KEY,
+    )
+    async with session.resource("s3", endpoint_url=r_clone_settings.R_CLONE_S3.S3_ENDPOINT) as s3:
+        bucket = await s3.Bucket(r_clone_settings.R_CLONE_S3.S3_BUCKET_NAME)
+        async for s3_object in bucket.objects.all():
+            key_path = f"{project_id}/{node_id}/{DY_SERVICES_R_CLONE_DIR_NAME}/"
+            if s3_object.key.startswith(key_path):
+                file_object = await s3_object.get()
+                file_path = save_to / s3_object.key.replace(key_path, "")
+                print(f"Saving file to {file_path}")
+                file_content = await file_object["Body"].read()
+                file_path.write_bytes(file_content)
 
     return save_to
 
@@ -940,11 +972,25 @@ async def test_nodeports_integration(
 
     # STEP 4
 
-    app_settings: AppSettings = async_client._transport.app.state.settings  # type: ignore # noqa: SLF001
+    app_settings: AppSettings = async_client._transport.app.state.settings  # type: ignore  # noqa: SLF001
     r_clone_settings: RCloneSettings = app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_R_CLONE_SETTINGS
 
-    dy_path_volume_before = await _fetch_data_from_container(
-        dir_tag="dy", service_uuid=services_node_uuids.dy, temp_dir=tmp_path
+    if app_settings.DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED:
+        await sleep_for(
+            WAIT_FOR_R_CLONE_VOLUME_TO_SYNC_DATA,
+            "Waiting for rclone to sync data from the docker volume",
+        )
+
+    dy_path_volume_before = (
+        await _fetch_data_via_aioboto(
+            r_clone_settings=r_clone_settings,
+            dir_tag="dy",
+            temp_dir=tmp_path,
+            node_id=services_node_uuids.dy,
+            project_id=current_study.uuid,
+        )
+        if app_settings.DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED
+        else await _fetch_data_from_container(dir_tag="dy", service_uuid=services_node_uuids.dy, temp_dir=tmp_path)
     )
     dy_compose_spec_path_volume_before = await _fetch_data_from_container(
         dir_tag="dy_compose_spec",
@@ -1001,8 +1047,16 @@ async def test_nodeports_integration(
         catalog_url=services_endpoint["catalog"],
     )
 
-    dy_path_volume_after = await _fetch_data_from_container(
-        dir_tag="dy", service_uuid=services_node_uuids.dy, temp_dir=tmp_path
+    dy_path_volume_after = (
+        await _fetch_data_via_aioboto(
+            r_clone_settings=r_clone_settings,
+            dir_tag="dy",
+            temp_dir=tmp_path,
+            node_id=services_node_uuids.dy,
+            project_id=current_study.uuid,
+        )
+        if app_settings.DIRECTOR_V2_DEV_FEATURE_R_CLONE_MOUNTS_ENABLED
+        else await _fetch_data_from_container(dir_tag="dy", service_uuid=services_node_uuids.dy, temp_dir=tmp_path)
     )
     dy_compose_spec_path_volume_after = await _fetch_data_from_container(
         dir_tag="dy_compose_spec",

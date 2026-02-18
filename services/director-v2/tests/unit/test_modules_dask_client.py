@@ -73,7 +73,7 @@ from yarl import URL
 _ALLOW_TIME_FOR_GATEWAY_TO_CREATE_WORKERS = 20
 
 
-async def _assert_wait_for_cb_call(mocked_fct, timeout: int | None = None):
+async def _assert_wait_for_cb_call(mocked_fct, timeout: int | None = None):  # noqa: ASYNC109
     async for attempt in AsyncRetrying(
         stop=stop_after_delay(timeout or 10),
         wait=wait_random(0, 1),
@@ -331,7 +331,7 @@ async def test_dask_does_not_report_asyncio_cancelled_error_in_task(
     dask_client: DaskClient,
 ):
     def fct_that_raise_cancellation_error() -> NoReturn:
-        import asyncio
+        import asyncio  # noqa: PLC0415
 
         cancel_msg = "task was cancelled, but dask does not care..."
         raise asyncio.CancelledError(cancel_msg)
@@ -481,7 +481,9 @@ async def test_send_computation_task(
                 f"{to_simcore_runtime_docker_label_key('cpu-limit')}": f"{node_requirements.cpu}",
                 f"{to_simcore_runtime_docker_label_key('memory-limit')}": f"{node_requirements.ram}",
                 f"{to_simcore_runtime_docker_label_key('product-name')}": f"{comp_run_metadata['product_name']}",
-                f"{to_simcore_runtime_docker_label_key('simcore-user-agent')}": f"{comp_run_metadata['simcore_user_agent']}",
+                f"{to_simcore_runtime_docker_label_key('simcore-user-agent')}": (
+                    f"{comp_run_metadata['simcore_user_agent']}"
+                ),
                 f"{to_simcore_runtime_docker_label_key('swarm-stack-name')}": "undefined-label",
             },  # type: ignore
         ),
@@ -761,7 +763,7 @@ async def test_failed_task_returns_exceptions(
     )
     with pytest.raises(
         ValueError,
-        match="sadly we are failing to execute anything cause we are dumb...",
+        match=r"sadly we are failing to execute anything cause we are dumb...",
     ):
         await dask_client.get_task_result(published_computation_task[0].job_id)
     assert len(await dask_client.backend.client.list_datasets()) > 0  # type: ignore

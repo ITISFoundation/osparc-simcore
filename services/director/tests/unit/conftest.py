@@ -23,10 +23,11 @@ pytest_plugins = [
     "fixtures.fake_services",
     "pytest_simcore.asyncio_event_loops",
     "pytest_simcore.cli_runner",
-    "pytest_simcore.docker",
+    "pytest_simcore.docker_api_proxy",
     "pytest_simcore.docker_compose",
     "pytest_simcore.docker_registry",
     "pytest_simcore.docker_swarm",
+    "pytest_simcore.docker",
     "pytest_simcore.environment_configs",
     "pytest_simcore.faker_projects_data",
     "pytest_simcore.faker_users_data",
@@ -160,11 +161,14 @@ def app_settings(app_environment: EnvVarsDict) -> ApplicationSettings:
 
 
 @pytest.fixture
-async def app(app_settings: ApplicationSettings, is_pdb_enabled: bool) -> AsyncIterator[FastAPI]:
+async def app(
+    mock_setup_remote_docker_client: Callable[[str], None], app_settings: ApplicationSettings, is_pdb_enabled: bool
+) -> AsyncIterator[FastAPI]:
     tracing_config = TracingConfig.create(
         service_name=APP_NAME,
         tracing_settings=None,  # disable tracing in tests
     )
+    mock_setup_remote_docker_client("simcore_service_director.core.application.setup_remote_docker_client")
     the_test_app = create_app(settings=app_settings, tracing_config=tracing_config)
     async with LifespanManager(
         the_test_app,

@@ -8,7 +8,7 @@ import json
 import logging
 import os
 import urllib.parse
-from collections.abc import AsyncIterator, Iterator
+from collections.abc import AsyncIterator, Callable, Iterator
 from contextlib import asynccontextmanager
 from typing import Any, NamedTuple
 from unittest.mock import AsyncMock, Mock
@@ -102,6 +102,7 @@ def dynamic_sidecar_headers() -> dict[str, str]:
 
 @pytest.fixture()
 def mock_env(
+    mock_setup_remote_docker_client: Callable[[str], None],
     mock_env: EnvVarsDict,
     mock_exclusive: None,
     disable_postgres: None,
@@ -110,6 +111,8 @@ def mock_env(
     monkeypatch: pytest.MonkeyPatch,
     faker: Faker,
 ) -> None:
+    mock_setup_remote_docker_client("simcore_service_director_v2.core.application.setup_remote_docker_client")
+
     # Works as below line in docker.compose.yml
     # ${DOCKER_REGISTRY:-itisfoundation}/dynamic-sidecar:${DOCKER_IMAGE_TAG:-latest}
 

@@ -4,6 +4,7 @@ import logging
 from copy import deepcopy
 from math import floor
 
+from aiodocker import DockerError
 from common_library.error_codes import create_error_code
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from fastapi import FastAPI
@@ -21,7 +22,6 @@ from ...docker_api import (
     is_dynamic_sidecar_stack_missing,
     update_scheduler_data_label,
 )
-from ...errors import GenericDockerError
 from ._events import REGISTERED_EVENTS
 from ._events_utils import attempt_pod_removal_and_data_saving
 
@@ -43,6 +43,7 @@ async def _apply_observation_cycle(
     if (  # do not refactor, second part of "and condition" is skipped most times
         scheduler_data.dynamic_sidecar.were_containers_created
         and not await are_sidecar_and_proxy_services_present(
+            app,
             node_uuid=scheduler_data.node_uuid,
             swarm_stack_name=settings.SWARM_STACK_NAME,
         )
@@ -72,12 +73,12 @@ async def _apply_observation_cycle(
 
 def _trigger_every_30_seconds(observation_counter: int, wait_interval: float) -> bool:
     # divisor to figure out if 30 seconds have passed based on the cycle count
-    modulo_divisor = max(1, int(floor(30 / wait_interval)))
+    modulo_divisor = int(max(1, floor(30 / wait_interval)))
     return observation_counter % modulo_divisor == 0
 
 
 async def observing_single_service(
-    scheduler: "DynamicSidecarsScheduler",  # type: ignore
+    scheduler: "DynamicSidecarsScheduler",  # type: ignore[name-defined] # pyright: ignore[reportUndefinedVariable] # noqa: F821
     service_name: ServiceName,
     scheduler_data: SchedulerData,
     dynamic_scheduler: DynamicServicesSchedulerSettings,
@@ -107,7 +108,9 @@ async def observing_single_service(
                     scheduler._observation_counter,  # pylint:disable=protected-access  # noqa: SLF001
                     dynamic_scheduler.DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL.total_seconds(),
                 )
-                and await is_dynamic_sidecar_stack_missing(scheduler_data.node_uuid, dynamic_scheduler.SWARM_STACK_NAME)
+                and await is_dynamic_sidecar_stack_missing(
+                    app, scheduler_data.node_uuid, dynamic_scheduler.SWARM_STACK_NAME
+                )
             ):
                 # if both proxy and sidecar ar missing at this point it
                 # is safe to assume that user manually removed them from
@@ -161,6 +164,6 @@ async def observing_single_service(
     finally:
         if scheduler_data_copy != scheduler_data:
             try:
-                await update_scheduler_data_label(scheduler_data)
-            except GenericDockerError as exc:
+                await update_scheduler_data_label(app, scheduler_data)
+            except DockerError as exc:
                 logger.warning("Skipped labels update, please check:\n %s", f"{exc}")

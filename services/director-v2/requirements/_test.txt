@@ -2,10 +2,33 @@ aio-pika==9.5.8
     # via
     #   -c requirements/_base.txt
     #   -r requirements/_test.in
+aioboto3==15.5.0
+    # via -r requirements/_test.in
+aiobotocore==2.25.1
+    # via aioboto3
+aiofiles==25.1.0
+    # via
+    #   -c requirements/_base.txt
+    #   aioboto3
+aiohappyeyeballs==2.6.1
+    # via
+    #   -c requirements/_base.txt
+    #   aiohttp
+aiohttp==3.13.2
+    # via
+    #   -c requirements/../../../requirements/constraints.txt
+    #   -c requirements/_base.txt
+    #   aiobotocore
+aioitertools==0.13.0
+    # via aiobotocore
 aiormq==6.9.2
     # via
     #   -c requirements/_base.txt
     #   aio-pika
+aiosignal==1.4.0
+    # via
+    #   -c requirements/_base.txt
+    #   aiohttp
 alembic==1.17.2
     # via
     #   -c requirements/_base.txt
@@ -23,9 +46,17 @@ async-asgi-testclient==1.4.11
 attrs==25.4.0
     # via
     #   -c requirements/_base.txt
+    #   aiohttp
     #   pytest-docker
 bokeh==3.8.1
     # via dask
+boto3==1.40.61
+    # via aiobotocore
+botocore==1.40.61
+    # via
+    #   aiobotocore
+    #   boto3
+    #   s3transfer
 certifi==2025.11.12
     # via
     #   -c requirements/../../../requirements/constraints.txt
@@ -70,6 +101,11 @@ fakeredis==2.32.1
     # via -r requirements/_test.in
 flaky==3.8.1
     # via -r requirements/_test.in
+frozenlist==1.8.0
+    # via
+    #   -c requirements/_base.txt
+    #   aiohttp
+    #   aiosignal
 fsspec==2025.10.0
     # via
     #   -c requirements/_base.txt
@@ -109,6 +145,11 @@ jinja2==3.1.6
     #   bokeh
     #   dask
     #   distributed
+jmespath==1.1.0
+    # via
+    #   aiobotocore
+    #   boto3
+    #   botocore
 locket==1.0.0
     # via
     #   -c requirements/_base.txt
@@ -133,6 +174,8 @@ msgpack==1.1.2
 multidict==6.7.0
     # via
     #   -c requirements/_base.txt
+    #   aiobotocore
+    #   aiohttp
     #   async-asgi-testclient
     #   yarl
 mypy==1.18.2
@@ -178,6 +221,7 @@ pprintpp==0.4.0
 propcache==0.4.1
     # via
     #   -c requirements/_base.txt
+    #   aiohttp
     #   yarl
 psutil==7.1.3
     # via
@@ -213,6 +257,8 @@ pytest-xdist==3.8.0
 python-dateutil==2.9.0.post0
     # via
     #   -c requirements/_base.txt
+    #   aiobotocore
+    #   botocore
     #   pandas
 pytz==2025.2
     # via pandas
@@ -235,6 +281,8 @@ requests==2.32.5
     #   docker
 respx==0.22.0
     # via -r requirements/_test.in
+s3transfer==0.14.0
+    # via boto3
 six==1.17.0
     # via
     #   -c requirements/_base.txt
@@ -293,15 +341,21 @@ urllib3==2.6.3
     # via
     #   -c requirements/../../../requirements/constraints.txt
     #   -c requirements/_base.txt
+    #   botocore
     #   distributed
     #   docker
     #   requests
+wrapt==1.17.3
+    # via
+    #   -c requirements/_base.txt
+    #   aiobotocore
 xyzservices==2025.10.0
     # via bokeh
 yarl==1.22.0
     # via
     #   -c requirements/_base.txt
     #   aio-pika
+    #   aiohttp
     #   aiormq
 zict==3.0.0
     # via

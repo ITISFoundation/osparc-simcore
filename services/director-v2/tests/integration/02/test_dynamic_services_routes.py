@@ -55,6 +55,7 @@ pytest_simcore_core_services_selection = [
     "agent",
     "catalog",
     "director",
+    "docker-api-proxy",
     "migration",
     "postgres",
     "rabbit",
@@ -81,18 +82,17 @@ def minimal_configuration(
 
 
 @pytest.fixture
-def mock_env(mock_env: EnvVarsDict, minimal_configuration) -> None: ...
+def mock_env(setup_docker_api_proxy: None, mock_env: EnvVarsDict, minimal_configuration) -> None: ...
 
 
 @pytest.fixture
 def user_db(create_registered_user: Callable[..., dict[str, Any]]) -> dict[str, Any]:
-    user = create_registered_user()
-    return user
+    return create_registered_user()
 
 
 @pytest.fixture
 def user_id(user_db: dict[str, Any]) -> UserID:
-    return UserID(user_db["id"])
+    return int(user_db["id"])
 
 
 @pytest.fixture
@@ -216,9 +216,9 @@ async def ensure_services_stopped(
                     delete_result = await docker_client.services.delete(service_name)
                     assert delete_result is True
                 except aiodocker.exceptions.DockerError as e:
-                    assert e.status == 404, f"Unexpected error when deleting service: {e}"
+                    assert e.status == 404, f"Unexpected error when deleting service: {e}"  # noqa: PT017
 
-        scheduler_interval = director_v2_client.application.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER.DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL
+        scheduler_interval = director_v2_client.application.state.settings.DYNAMIC_SERVICES.DYNAMIC_SCHEDULER.DIRECTOR_V2_DYNAMIC_SCHEDULER_INTERVAL  # noqa: E501
         # sleep enough to ensure the observation cycle properly stopped the service
         await asyncio.sleep(2 * scheduler_interval.total_seconds())
 
@@ -238,7 +238,7 @@ def mock_project_repository(mocker: MockerFixture) -> None:
 
     mocker.patch(
         f"{DIRECTOR_V2_MODULES}.db.repositories.projects.ProjectsRepository.get_project",
-        side_effect=lambda *args, **kwargs: ExtendedMagicMock(),
+        side_effect=lambda *args, **kwargs: ExtendedMagicMock(),  # noqa: ARG005
     )
 
 
@@ -254,7 +254,7 @@ def mock_dynamic_sidecar_api_calls(mocker: MockerFixture) -> None:
         mocker.patch(
             f"{class_path}.{function_name}",
             # pylint: disable=cell-var-from-loop
-            side_effect=lambda *args, **kwargs: return_value,
+            side_effect=lambda *args, **kwargs: return_value,  # noqa: ARG005, B023
         )
 
     # also patch the long_running_tasks client context mangers handling the above

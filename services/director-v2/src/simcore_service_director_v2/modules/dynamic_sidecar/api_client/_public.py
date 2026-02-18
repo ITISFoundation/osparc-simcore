@@ -206,7 +206,9 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
             # the user services are started. It is safe to skip
             return
 
-        network_names_to_ids: dict[str, str] = await get_or_create_networks_ids([project_network], project_id)
+        network_names_to_ids: dict[str, str] = await get_or_create_networks_ids(
+            self._app, [project_network], project_id
+        )
         network_id = network_names_to_ids[project_network]
 
         coroutines: deque[Coroutine] = deque()
@@ -244,7 +246,9 @@ class SidecarsClient:  # pylint: disable=too-many-public-methods
             # there are no containers to detach the network from
             return
 
-        network_names_to_ids: dict[str, str] = await get_or_create_networks_ids([project_network], project_id)
+        network_names_to_ids: dict[str, str] = await get_or_create_networks_ids(
+            self._app, [project_network], project_id
+        )
         network_id = network_names_to_ids[project_network]
 
         await logged_gather(

@@ -189,13 +189,19 @@ async def service_remove_sidecar_proxy_docker_networks_and_volumes(
     app: FastAPI,
     node_uuid: NodeID,
     swarm_stack_name: str,
+    *,
+    set_were_state_and_outputs_saved: bool | None = None,
 ) -> None:
     scheduler_data: SchedulerData = _get_scheduler_data(app, node_uuid)
     rabbit_rpc_client: RabbitMQRPCClient = app.state.rabbitmq_rpc_client
 
+    if set_were_state_and_outputs_saved is not None:
+        scheduler_data.dynamic_sidecar.were_state_and_outputs_saved = True
+
     await task_progress.update(message="removing dynamic sidecar stack", percent=0.1)
 
     await remove_dynamic_sidecar_stack(
+        app,
         node_uuid=scheduler_data.node_uuid,
         swarm_stack_name=swarm_stack_name,
     )
@@ -208,7 +214,7 @@ async def service_remove_sidecar_proxy_docker_networks_and_volumes(
         )
 
     await task_progress.update(message="removing network", percent=0.2)
-    await remove_dynamic_sidecar_network(scheduler_data.dynamic_sidecar_network_name)
+    await remove_dynamic_sidecar_network(app, scheduler_data.dynamic_sidecar_network_name)
 
     if scheduler_data.dynamic_sidecar.docker_node_id:
         # Remove all dy-sidecar associated volumes from node
@@ -233,10 +239,10 @@ async def service_remove_sidecar_proxy_docker_networks_and_volumes(
     )
 
     await task_progress.update(message="removing project networks", percent=0.8)
-    used_projects_networks = await get_projects_networks_containers(project_id=scheduler_data.project_id)
+    used_projects_networks = await get_projects_networks_containers(app, project_id=scheduler_data.project_id)
     await logged_gather(
         *[
-            try_to_remove_network(network_name)
+            try_to_remove_network(app, network_name)
             for network_name, container_count in used_projects_networks.items()
             if container_count == 0
         ]
