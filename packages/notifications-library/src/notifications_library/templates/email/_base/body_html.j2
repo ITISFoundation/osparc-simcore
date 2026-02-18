@@ -66,7 +66,9 @@
     <div class="footer" style="{{ footer_style }}">
       {% if product.footer_social_links %}
       <ul style="{{ footer_social_list_style }}">
-        {% for social_name, social_url in product.footer_social_links %}
+        {% for social in product.footer_social_links %}
+        {% set social_name = social.name %}
+        {% set social_url = social.url %}
         {% set social_key = social_name | lower %}
         {% set social_icon = footer_social_icon_svgs.get(social_key) %}
         <li style="list-style: none;">
@@ -86,7 +88,10 @@
 
       {% if product.footer_share_links %}
       <ul style="{{ footer_share_list_style }}">
-        {% for share_name, share_label, share_url in product.footer_share_links %}
+        {% for share in product.footer_share_links %}
+        {% set share_name = share.name %}
+        {% set share_label = share.label %}
+        {% set share_url = share.url %}
         {% set share_key = share_name | lower %}
         {% set share_icon = footer_share_icon_svgs.get(share_key) %}
         <li style="list-style: none;">
@@ -114,8 +119,8 @@
 
       {% if product.company_links %}
       <p style="{{ footer_company_text_style }}">
-        {% for link_name, link_url in product.company_links %}
-          <a href="{{ link_url }}" target="_blank" rel="noopener noreferrer" style="{{ link_style }}">{{ link_name }}</a>{% if not loop.last %}<span style="{{ footer_links_separator_style }}">|</span>{% endif %}
+        {% for link in product.company_links %}
+          <a href="{{ link.url }}" target="_blank" rel="noopener noreferrer" style="{{ link_style }}">{{ link.name }}</a>{% if not loop.last %}<span style="{{ footer_links_separator_style }}">|</span>{% endif %}
         {% endfor %}
       </p>
       {% endif %}
