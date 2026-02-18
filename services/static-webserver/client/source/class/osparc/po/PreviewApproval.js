@@ -111,14 +111,14 @@ qx.Class.define("osparc.po.PreviewApproval", {
           break;
         }
         case "approve-without-email-button":
-          control = new osparc.ui.form.FetchButton(this.tr("Approve without sending email")).set({
+          control = new osparc.ui.form.FetchButton(this.tr("Approve without Sending Email")).set({
             allowGrowX: false
           });
           control.addListener("execute", () => this.__approveWithoutEmail(), this);
           this.getChildControl("button-bar").add(control);
           break;
-        case "send-email-button":
-          control = new osparc.ui.form.FetchButton(this.tr("Send")).set({
+        case "approve-with-email-button":
+          control = new osparc.ui.form.FetchButton(this.tr("Approve and Send")).set({
             appearance: "strong-button",
             allowGrowX: false
           });
@@ -134,7 +134,7 @@ qx.Class.define("osparc.po.PreviewApproval", {
       this.getChildControl("invitation-url");
       this.getChildControl("copy-invitation-url-button");
       this.getChildControl("approve-without-email-button");
-      this.getChildControl("send-email-button");
+      this.getChildControl("approve-with-email-button");
     },
 
     __applyEmailAddress: function(value) {

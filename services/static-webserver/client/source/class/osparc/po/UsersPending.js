@@ -296,7 +296,7 @@ qx.Class.define("osparc.po.UsersPending", {
     },
 
     __createRejectButton: function(email) {
-      const button = new osparc.ui.form.FetchButton("Reject");
+      const button = new qx.ui.form.Button(qx.locale.Manager.tr("Reject"));
       button.addListener("execute", () => {
         const msg = `Are you sure you want to reject ${email}.<br>The operation cannot be reverted`;
         const win = new osparc.ui.window.Confirmation(msg).set({
@@ -308,14 +308,7 @@ qx.Class.define("osparc.po.UsersPending", {
         win.open();
         win.addListener("close", () => {
           if (win.getConfirmed()) {
-            button.setFetching(true);
-            this.__rejectUser(email)
-              .then(() => {
-                osparc.FlashMessenger.logAs(qx.locale.Manager.tr("User denied"), "INFO");
-                this.__reload();
-              })
-              .catch(err => osparc.FlashMessenger.logError(err))
-              .finally(() => button.setFetching(false));
+            this.__previewRejection(email);
           }
         });
       });
@@ -324,7 +317,7 @@ qx.Class.define("osparc.po.UsersPending", {
 
     __openApproveDialog: function(email) {
       const form = this.self().createInvitationForm(false);
-      const approveBtn = new qx.ui.form.Button(qx.locale.Manager.tr("Approve")).set({
+      const approveBtn = new qx.ui.form.Button(qx.locale.Manager.tr("Preview Approve")).set({
         appearance: "form-button"
       });
       form.addButton(approveBtn);
@@ -386,13 +379,32 @@ qx.Class.define("osparc.po.UsersPending", {
       });
     },
 
-    __rejectUser: function(email) {
+    __previewRejection: function(email) {
       const params = {
         data: {
           email,
-        },
+        }
       };
-      return osparc.data.Resources.fetch("poUsers", "rejectUser", params);
+      osparc.data.Resources.fetch("poUsers", "previewRejection", params)
+        .then(data => {
+          const messageContent = data["messageContent"];
+          this.__openRejectionPreview(email, messageContent);
+        })
+        .catch(err => osparc.FlashMessenger.logError(err));
+    },
+
+    __openRejectionPreview: function(email, messageContent) {
+      const previewApproval = new osparc.po.PreviewApproval();
+      previewApproval.set({
+        email,
+        subject: messageContent["subject"],
+        bodyHtml: messageContent["bodyHtml"],
+      });
+      const win = osparc.ui.window.Window.popUpInWindow(previewApproval, qx.locale.Manager.tr("Preview email"), 700, 670);
+      previewApproval.addListener("userApproved", () => {
+        win.close();
+        this.__reload();
+      });
     },
   }
 });
