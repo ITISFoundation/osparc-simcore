@@ -351,7 +351,7 @@ qx.Class.define("osparc.po.UsersPending", {
     },
 
     __openApprovalPreview: function(email, invitationUrl, messageContent) {
-      const previewApproval = new osparc.po.PreviewApproval();
+      const previewApproval = new osparc.po.PreviewApprovalRejection();
       previewApproval.set({
         invitationUrl,
         email,
@@ -380,14 +380,16 @@ qx.Class.define("osparc.po.UsersPending", {
     },
 
     __openRejectionPreview: function(email, messageContent) {
-      const previewApproval = new osparc.po.PreviewApproval();
-      previewApproval.set({
+      const previewRejection = new osparc.po.PreviewApprovalRejection().set({
+        actionMode: "reject",
+      });
+      previewRejection.set({
         email,
         subject: messageContent["subject"],
         bodyHtml: messageContent["bodyHtml"],
       });
-      const win = osparc.ui.window.Window.popUpInWindow(previewApproval, qx.locale.Manager.tr("Preview email"), 700, 670);
-      previewApproval.addListener("userApproved", () => {
+      const win = osparc.ui.window.Window.popUpInWindow(previewRejection, qx.locale.Manager.tr("Preview email"), 700, 670);
+      previewRejection.addListener("userApproved", () => {
         win.close();
         this.__reload();
       });
