@@ -22,7 +22,7 @@ class StepsLeaseRepository(BaseRepository):
         async with transaction_context(self.engine) as conn:
             insert_stmt = pg_insert(ps_step_lease).values(
                 step_id=step_id,
-                renew_count=0,
+                renew_count=1,
                 owner=worker_id,
                 acquired_at=now,
                 last_heartbeat_at=now,
@@ -34,6 +34,7 @@ class StepsLeaseRepository(BaseRepository):
                     "renew_count": ps_step_lease.c.renew_count + 1,
                     "last_heartbeat_at": now,
                     "expires_at": new_expires_at,
+                    "owner": worker_id,
                 },
                 where=((ps_step_lease.c.owner == worker_id) | (ps_step_lease.c.expires_at < now)),
             ).returning(ps_step_lease.c.step_id)
