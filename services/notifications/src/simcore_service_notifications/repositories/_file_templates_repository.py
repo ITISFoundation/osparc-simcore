@@ -1,25 +1,25 @@
 import fnmatch
-import logging
 from dataclasses import dataclass
 
-from jinja2 import Environment, Template
+from jinja2 import Environment
+from jinja2 import Template as JinjaTemplate
 from models_library.notifications import ChannelType, TemplateName
-from notifications_library.registry import get_context_model
 from pydantic import TypeAdapter
 
+# NOTE: The following import triggers decorator-based registration
+from ..models import template_contexts  # pylint: disable=unused-import  # noqa: F401
 from ..models.content import for_channel
-from ..models.template import NotificationsTemplate, NotificationsTemplateRef
+from ..models.template import Template, TemplateRef, get_template_context_model
+from ._templates_repository import TemplatesRepository
 
 _TEMPLATE_EXTENSION = ".j2"
 _EXPECTED_PATH_PARTS = 3  # channel/template_name/part
 
-_logger = logging.getLogger(__name__)
 
-
-def _build_template(ref: NotificationsTemplateRef) -> NotificationsTemplate:
-    return NotificationsTemplate(
+def _build_template(ref: TemplateRef) -> Template:
+    return Template(
         ref=ref,
-        context_model=get_context_model(ref.channel, ref.template_name),
+        context_model=get_template_context_model(ref.channel, ref.template_name),
         parts=for_channel(ref.channel).get_field_names(),
     )
 
@@ -43,12 +43,12 @@ def _matches_pattern(value: str, pattern: str) -> bool:
     return fnmatch.fnmatch(value, pattern)
 
 
-def template_path_prefix(template_ref: NotificationsTemplateRef) -> str:
+def template_path_prefix(template_ref: TemplateRef) -> str:
     return f"{template_ref.channel}/{template_ref.template_name}"
 
 
 @dataclass(frozen=True)
-class NotificationsTemplatesRepository:
+class FileTemplatesRepository(TemplatesRepository):
     env: Environment
 
     @staticmethod
@@ -83,19 +83,19 @@ class NotificationsTemplatesRepository:
 
     def get_jinja_template(
         self,
-        template: NotificationsTemplate,
+        template: Template,
         part: str,
-    ) -> Template:
+    ) -> JinjaTemplate:
         # NOTE: centralized template naming convention
         return self.env.get_template(f"{template_path_prefix(template.ref)}/{part}{_TEMPLATE_EXTENSION}")
 
     def search_templates(
         self,
         *,
-        channel: ChannelType | None = None,
+        channel: str | None = None,
         template_name: str | None = None,
         part: str | None = None,
-    ) -> list[NotificationsTemplate]:
+    ) -> list[Template]:
         """Search for notification templates with wildcard support for template_name and part.
 
         Template path format: {channel}/{template_name}/{part}.j2
@@ -134,14 +134,14 @@ class NotificationsTemplatesRepository:
             return _matches_pattern(template_name_str, template_name or "*") and _matches_pattern(part_str, part or "*")
 
         # Use dict to deduplicate by (channel, template_name), keeping arbitrary part
-        templates_dict: dict[tuple[str, str], NotificationsTemplate] = {}
+        templates_dict: dict[tuple[str, str], Template] = {}
 
         for template_path in self.env.list_templates(filter_func=filter_func):
             channel_str, template_name_str, _ = self._parse_template_path(template_path)
             key = (channel_str, template_name_str)
 
             if key not in templates_dict:
-                template_ref = NotificationsTemplateRef(
+                template_ref = TemplateRef(
                     channel=ChannelType(channel_str),
                     template_name=TypeAdapter(TemplateName).validate_python(template_name_str),
                 )
