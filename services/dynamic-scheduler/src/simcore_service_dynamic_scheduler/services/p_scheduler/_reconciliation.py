@@ -163,7 +163,7 @@ async def _set_created_steps_as_ready(
 
 async def _cleanup_run_if_completed(
     node_id: NodeID, workflow_manager: WorkflowManager, steps_repo: StepsRepository, current_run: Run
-):
+) -> None:
     """checks if all steps are completed, and if so cleans up the run"""
     run_steps = await steps_repo.get_all_run_tracked_steps_states(current_run.run_id)
     for step in run_steps.values():
