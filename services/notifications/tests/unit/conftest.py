@@ -22,7 +22,14 @@ from faker import Faker
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from jinja2 import DictLoader, Environment, select_autoescape
-from notifications_library._models import ProductData, ProductUIData
+from notifications_library._models import (
+    CompanyLink,
+    ProductData,
+    ProductFooterData,
+    ProductUIData,
+    ShareLink,
+    SocialLink,
+)
 from pydantic import EmailStr
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
@@ -222,6 +229,14 @@ def fake_ipinfo(faker: Faker) -> dict[str, Any]:
 
 @pytest.fixture
 def fake_product_data(faker: Faker) -> dict[str, Any]:
+    footer_data = ProductFooterData(
+        social_links=[SocialLink(name=faker.word(), url=faker.url()) for _ in range(3)],
+        share_links=[ShareLink(name=faker.word(), label=faker.word(), url=faker.url()) for _ in range(3)],
+        company_name=faker.company(),
+        company_address=faker.address(),
+        company_links=[CompanyLink(name=faker.word(), url=faker.url()) for _ in range(3)],
+    )
+
     return asdict(
         ProductData(
             product_name=faker.company(),
@@ -233,6 +248,7 @@ def fake_product_data(faker: Faker) -> dict[str, Any]:
                 logo_url=faker.image_url(),
                 strong_color=faker.color_name(),
             ),
+            footer=footer_data,
         )
     )
 
