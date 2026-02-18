@@ -72,7 +72,7 @@ async def _create_email_message(
         replace_email_parts(
             product.support_email,
             new_local=NO_REPLY_LOCAL,
-            new_display_name=f"{product.name} Support",
+            new_display_name=f"{product.display_name} Support",
         ),
     )
 
