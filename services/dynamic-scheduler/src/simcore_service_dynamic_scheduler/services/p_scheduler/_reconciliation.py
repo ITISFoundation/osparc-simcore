@@ -16,7 +16,7 @@ from servicelib.logging_utils import log_context
 from ..base_repository import get_repository
 from ..redis import RedisDatabase, get_redis_client
 from ._lifecycle_protocol import SupportsLifecycle
-from ._metrics import MetricsManager
+from ._metrics import PSchedulerMetrics
 from ._models import (
     DagNodeUniqueReference,
     Run,
@@ -258,8 +258,8 @@ class ReconciliationManager(SingletonInAppStateMixin, SupportsLifecycle):
         return get_repository(self.app, RunsRepository)
 
     @cached_property
-    def _metrics_manager(self) -> MetricsManager:
-        return MetricsManager.get_from_app_state(self.app)
+    def _metrics_manager(self) -> PSchedulerMetrics:
+        return PSchedulerMetrics.get_from_app_state(self.app)
 
     async def _push_to_queue(self, node_id: NodeID) -> None:
         try:

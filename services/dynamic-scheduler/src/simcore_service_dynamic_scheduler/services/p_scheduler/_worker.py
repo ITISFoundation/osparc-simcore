@@ -19,7 +19,7 @@ from servicelib.logging_utils import log_context
 
 from ..base_repository import get_repository
 from ._lifecycle_protocol import SupportsLifecycle
-from ._metrics import MetricsManager
+from ._metrics import PSchedulerMetrics
 from ._models import InData, InDataKeys, OutData, OutDataKeys, Step, StepId, WorkerId
 from ._notifications import RK_STEP_CANCELLED, RK_STEP_READY, NotificationsManager
 from ._queue import BoundedPubSubQueue, get_consumer_count
@@ -233,8 +233,8 @@ class WorkerManager(SingletonInAppStateMixin, SupportsLifecycle):
         return NotificationsManager.get_from_app_state(self.app)
 
     @cached_property
-    def _metrics_manager(self) -> MetricsManager:
-        return MetricsManager.get_from_app_state(self.app)
+    def _metrics_manager(self) -> PSchedulerMetrics:
+        return PSchedulerMetrics.get_from_app_state(self.app)
 
     async def _safe_try_handle_step(self, worker_id: WorkerId, step_id: StepId | None) -> None:
         with log_context(_logger, logging.DEBUG, "handling step_id='%s'", step_id):

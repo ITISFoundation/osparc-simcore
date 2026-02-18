@@ -4,11 +4,12 @@ from collections.abc import AsyncIterator
 from fastapi import FastAPI
 from fastapi_lifespan_manager import State
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
+from servicelib.fastapi.monitoring import get_prometheus_instrumentation
 
 from ...core.settings import ApplicationSettings, PScchedulerSettings
 from ._fast_stream import FastStreamManager
 from ._lifecycle_protocol import SupportsLifecycle
-from ._metrics import MetricsManager
+from ._metrics import PSchedulerMetrics
 from ._node_status import StatusManager
 from ._notifications import NotificationsManager
 from ._reconciliation import ReconciliationManager
@@ -51,7 +52,8 @@ async def p_scheduler_lifespan(app: FastAPI) -> AsyncIterator[State]:
         handlers=notifications_manager.get_handlers(),
         log_level=logging.INFO,
     )
-    metrics_manager = MetricsManager(app)
+
+    metrics_manager = PSchedulerMetrics(subsystem="p_scheduler", registry=get_prometheus_instrumentation(app))
 
     # lifecycle and state management
 
