@@ -254,7 +254,6 @@ qx.Class.define("osparc.po.PreviewApprovalRejection", {
 
     __rejectWithEmail: function() {
       const email = this.getEmail();
-      const invitationUrl = this.getInvitationUrl();
       const emailEditor = this.getChildControl("email-editor");
       const subjectField = emailEditor.getChildControl("subject-field");
       const subject = subjectField.getValue();
@@ -264,7 +263,6 @@ qx.Class.define("osparc.po.PreviewApprovalRejection", {
       const params = {
         data: {
           email,
-          invitationUrl,
           messageContent: {
             subject,
             bodyHtml,
