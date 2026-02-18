@@ -15,7 +15,7 @@
 
 ************************************************************************ */
 
-qx.Class.define("osparc.editor.EmailEditor", {
+qx.Class.define("osparc.editor.EmailContentEditor", {
   extend: qx.ui.tabview.TabView,
 
   construct: function() {
