@@ -6,7 +6,7 @@ from fastapi_lifespan_manager import State
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
 from servicelib.fastapi.monitoring import get_prometheus_instrumentation
 
-from ...core.settings import ApplicationSettings, PScchedulerSettings
+from ...core.settings import ApplicationSettings, PSchedulerSettings
 from ._fast_stream import FastStreamManager
 from ._lifecycle_protocol import SupportsLifecycle
 from ._metrics import PSchedulerMetrics
@@ -20,7 +20,7 @@ from ._workflow_registry import WorkflowRegistry
 
 async def p_scheduler_lifespan(app: FastAPI) -> AsyncIterator[State]:
     application_settings: ApplicationSettings = app.state.settings
-    settings: PScchedulerSettings = application_settings.P_SCHEDULER
+    settings: PSchedulerSettings = application_settings.P_SCHEDULER
 
     workflow_manager = WorkflowManager(app)
     workflow_registry = WorkflowRegistry()

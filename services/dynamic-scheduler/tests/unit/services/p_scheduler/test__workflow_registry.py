@@ -46,7 +46,7 @@ async def _registry_lifespan(registry: WorkflowRegistry) -> AsyncIterator[None]:
     try:
         yield
     finally:
-        await registry.teardown()
+        await registry.shutdown()
 
 
 def _get_name(base_step: type[BaseStep]) -> str:

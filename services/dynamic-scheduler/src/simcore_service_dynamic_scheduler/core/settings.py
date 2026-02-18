@@ -116,7 +116,7 @@ class _BaseApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         return cls.validate_log_level(value)
 
 
-class PScchedulerSettings(BaseCustomSettings):
+class PSchedulerSettings(BaseCustomSettings):
     DYNAMIC_SCHEDULER_P_SCCHEDULER_RECONCILIATION_MANAGER_PERIODIC_CHECKS_INTERVAL: Annotated[
         datetime.timedelta,
         Field(description=("interval at which to check if a reconciliation is required")),
@@ -232,7 +232,13 @@ class ApplicationSettings(_BaseApplicationSettings):
         ),
     ]
 
-    P_SCHEDULER: Annotated[PScchedulerSettings, Field(description="settings for the p scheduler")]
+    P_SCHEDULER: Annotated[
+        PSchedulerSettings,
+        Field(
+            json_schema_extra={"auto_default_from_env": True},
+            description="settings for the p scheduler",
+        ),
+    ]
 
     @field_validator("DYNAMIC_SCHEDULER_UI_MOUNT_PATH", mode="before")
     @classmethod

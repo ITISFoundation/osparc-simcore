@@ -15,7 +15,7 @@ from models_library.api_schemas_directorv2.dynamic_services import DynamicServic
 from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
 from models_library.projects_nodes_io import NodeID
 from models_library.services_enums import ServiceState
-from pydantic import TypeAdapter
+from pydantic import NonNegativeInt, TypeAdapter
 from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.redis import RedisSettings
@@ -30,6 +30,7 @@ _FAST_STATUS_TTL_CACHE: Final[timedelta] = timedelta(seconds=0.1)
 _TTL_SECONDS = _FAST_STATUS_TTL_CACHE.total_seconds()
 _TTL_MS = int(_TTL_SECONDS * 1000)
 _FAST_UPDATE_STATUSES_INTERVAL: Final[timedelta] = timedelta(seconds=0.15)
+_MAX_PARALLEL_UPDATES: Final[NonNegativeInt] = 20
 
 
 @pytest.fixture
@@ -140,7 +141,10 @@ def app_environment(
 @pytest.fixture
 async def status_manager(app: FastAPI) -> AsyncIterable[StatusManager]:
     manager = StatusManager(
-        app, status_ttl=_FAST_STATUS_TTL_CACHE, update_statuses_interval=_FAST_UPDATE_STATUSES_INTERVAL
+        app,
+        status_ttl=_FAST_STATUS_TTL_CACHE,
+        update_statuses_interval=_FAST_UPDATE_STATUSES_INTERVAL,
+        max_parallel_updates=_MAX_PARALLEL_UPDATES,
     )
     await manager.setup()
     yield manager
@@ -252,7 +256,10 @@ async def status_managers(app: FastAPI) -> AsyncIterable[list[StatusManager]]:
 
     for _ in range(10):
         manager = StatusManager(
-            app, status_ttl=_FAST_STATUS_TTL_CACHE, update_statuses_interval=_FAST_UPDATE_STATUSES_INTERVAL
+            app,
+            status_ttl=_FAST_STATUS_TTL_CACHE,
+            update_statuses_interval=_FAST_UPDATE_STATUSES_INTERVAL,
+            max_parallel_updates=_MAX_PARALLEL_UPDATES,
         )
         managers.append(manager)
 
