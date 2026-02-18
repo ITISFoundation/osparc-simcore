@@ -52,6 +52,8 @@ def send_email(
     assert task  # nosec
     assert task_key  # nosec
 
+    _logger.info("Scheduling email from %s to %d recipients", message.from_, len(message.to))
+
     single_msgs = [
         SingleEmailMessage(
             from_=SingleEmailContact(**message.from_.model_dump()),

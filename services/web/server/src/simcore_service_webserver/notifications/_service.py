@@ -68,11 +68,11 @@ async def _create_email_message(
 ) -> EmailNotificationMessage:
     product = products_service.get_product(app, product_name)
 
-    from_ = EmailContact.from_email_str(
-        replace_email_parts(
+    from_ = EmailContact(
+        name=product.display_name,
+        email=replace_email_parts(
             product.support_email,
             new_local=NO_REPLY_LOCAL,
-            new_display_name=f"{product.display_name} Support",
         ),
     )
 
