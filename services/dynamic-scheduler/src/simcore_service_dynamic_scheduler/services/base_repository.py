@@ -1,5 +1,3 @@
-from typing import cast
-
 from fastapi import FastAPI
 from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -13,4 +11,4 @@ def get_repository[TRepo: BaseRepository](app: FastAPI, base_type: type[TRepo]) 
     assert isinstance(app.state.repositories, dict)  # nosec
     repo = app.state.repositories.get(base_type.__name__)
     assert isinstance(repo, base_type)  # nosec
-    return cast(TRepo, repo)
+    return repo

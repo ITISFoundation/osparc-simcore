@@ -3,9 +3,9 @@ import itertools
 import networkx as nx
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
 
-from ._abc import BaseStep, InDataKeys
+from ._abc import BaseStep
 from ._lifecycle_protocol import SupportsLifecycle
-from ._models import DagNodeUniqueReference, KeyConfig, StepsSequence, WorkflowDefinition, WorkflowName
+from ._models import DagNodeUniqueReference, InDataKeys, KeyConfig, StepsSequence, WorkflowDefinition, WorkflowName
 
 
 def _get_step_sequence(definition: WorkflowDefinition) -> StepsSequence:
