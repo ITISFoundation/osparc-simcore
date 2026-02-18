@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import NamedTuple
 
 from models_library.products import ProductName
 
@@ -36,13 +37,29 @@ class ProductUIData:
     strong_color: str | None = None  # default_strong_color = "rgb(131, 0, 191)" in base.html
 
 
+class SocialLink(NamedTuple):
+    name: str  # e.g. "youtube", "linkedin", "github"
+    url: str  # e.g. "https://youtube.com/@company", "https://www.linkedin.com/@company", "https://github.com/ITISFoundation/osparc-simcore"
+
+
+class ShareLink(NamedTuple):
+    name: str  # e.g. "twitter", "linkedin"
+    label: str  # e.g. "Tweet", "Share"
+    url: str  # e.g. "https://twitter.com/tweet", "https://www.linkedin.com/share"
+
+
+class CompanyLink(NamedTuple):
+    name: str  # e.g. "osparc.io", "sim4life"
+    url: str  # e.g. "https://osparc.io/about/", "https://sim4life.swiss/"
+
+
 @dataclass(frozen=True)
 class ProductFooterData:
-    social_links: list[tuple[str, str]]  # list of (social_media_name, social_media_url)
-    share_links: list[tuple[str, str, str]]  # list of (share_name, share_label, share_url)
+    social_links: list[SocialLink]
+    share_links: list[ShareLink]
     company_name: str
     company_address: str
-    company_links: list[tuple[str, str]]  # list of (link_name, link_url)
+    company_links: list[CompanyLink]
 
 
 @dataclass(frozen=True)
@@ -56,11 +73,11 @@ class ProductData:
     footer: ProductFooterData
 
     @property
-    def footer_social_links(self) -> list[tuple[str, str]]:
+    def footer_social_links(self) -> list[SocialLink]:
         return self.footer.social_links
 
     @property
-    def footer_share_links(self) -> list[tuple[str, str, str]]:
+    def footer_share_links(self) -> list[ShareLink]:
         return self.footer.share_links
 
     @property
@@ -72,5 +89,5 @@ class ProductData:
         return self.footer.company_address
 
     @property
-    def company_links(self) -> list[tuple[str, str]]:
+    def company_links(self) -> list[CompanyLink]:
         return self.footer.company_links
