@@ -119,7 +119,7 @@ qx.Class.define("osparc.po.PreviewApprovalRejection", {
           break;
         }
         case "approve-without-email-button":
-          control = new osparc.ui.form.FetchButton(this.tr("Approve without Sending Email")).set({
+          control = new qx.ui.form.Button(this.tr("Approve without Sending Email")).set({
             allowGrowX: false
           });
           control.addListener("execute", () => this.__approveWithoutEmail(), this);
@@ -129,7 +129,7 @@ qx.Class.define("osparc.po.PreviewApprovalRejection", {
           this.getChildControl("button-bar").add(control);
           break;
         case "approve-with-email-button":
-          control = new osparc.ui.form.FetchButton(this.tr("Approve and Send")).set({
+          control = new qx.ui.form.Button(this.tr("Approve and Send")).set({
             appearance: "strong-button",
             allowGrowX: false
           });
@@ -140,7 +140,7 @@ qx.Class.define("osparc.po.PreviewApprovalRejection", {
           this.getChildControl("button-bar").add(control);
           break;
         case "reject-without-email-button":
-          control = new osparc.ui.form.FetchButton(this.tr("Reject without Sending Email")).set({
+          control = new qx.ui.form.Button(this.tr("Reject without Sending Email")).set({
             allowGrowX: false
           });
           control.addListener("execute", () => this.__rejectWithoutEmail(), this);
@@ -150,7 +150,7 @@ qx.Class.define("osparc.po.PreviewApprovalRejection", {
           this.getChildControl("button-bar").add(control);
           break;
         case "reject-with-email-button":
-          control = new osparc.ui.form.FetchButton(this.tr("Reject and Send")).set({
+          control = new qx.ui.form.Button(this.tr("Reject and Send")).set({
             appearance: "danger-button",
             allowGrowX: false
           });
