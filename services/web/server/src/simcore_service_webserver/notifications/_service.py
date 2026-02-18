@@ -68,8 +68,12 @@ async def _create_email_message(
 ) -> EmailNotificationMessage:
     product = products_service.get_product(app, product_name)
 
-    from_ = EmailContact(
-        email=replace_email_parts(product.support_email, new_local=NO_REPLY_LOCAL),
+    from_ = EmailContact.from_email_str(
+        replace_email_parts(
+            product.support_email,
+            new_local=NO_REPLY_LOCAL,
+            new_display_name=f"{product.name} Support",
+        ),
     )
 
     to: list[EmailContact] = []
@@ -87,13 +91,7 @@ async def _create_email_message(
 
     return EmailNotificationMessage(
         from_=from_,
-        to=[
-            # send to original 'from' but as no-reply
-            from_.replace(
-                new_local=NO_REPLY_LOCAL,
-            ),
-        ],
-        bcc=to,
+        to=to,
         content=email_content,
     )
 
