@@ -56,6 +56,10 @@ qx.Class.define("osparc.po.PreviewApproval", {
     },
   },
 
+  events: {
+    "userApproved": "qx.event.type.Event",
+  },
+
   members: {
     _createChildControlImpl: function(id) {
       let control;
@@ -110,7 +114,7 @@ qx.Class.define("osparc.po.PreviewApproval", {
           control = new osparc.ui.form.FetchButton(this.tr("Approve without sending email")).set({
             allowGrowX: false
           });
-          control.addListener("execute", () => this.fireDataEvent("approveWithoutEmail"), this);
+          control.addListener("execute", () => this.__approveWithoutEmail(), this);
           this.getChildControl("button-bar").add(control);
           break;
         case "send-email-button":
@@ -155,6 +159,59 @@ qx.Class.define("osparc.po.PreviewApproval", {
       const emailEditor = this.getChildControl("email-editor");
       const emailContentEditor = emailEditor.getChildControl("email-content-editor-and-preview");
       emailContentEditor.setTemplateEmail(value);
+    },
+
+    __sendEmailClicked: function() {
+      const emailEditor = this.getChildControl("email-editor");
+
+      // make sure subject is not empty
+      const subjectField = emailEditor.getChildControl("subject-field");
+      if (!subjectField.getValue()) {
+        osparc.FlashMessenger.logAs(this.tr("Please enter a subject"), "WARNING");
+        return;
+      }
+
+      // if the user is not in the preview page, force them there so they can see the final email before sending
+      const previewPage = emailEditor.getChildControl("email-content-editor-and-preview").getChildControl("preview-page");
+      if (!previewPage.isVisible()) {
+        const tabView = previewPage.getLayoutParent().getLayoutParent();
+        tabView.setSelection([previewPage]);
+        osparc.FlashMessenger.logAs(this.tr("Please preview the email before sending"), "WARNING");
+        return;
+      }
+
+      this.__approveWithEmail();
+    },
+
+    __approveWithEmail: function() {
+      const email = this.getEmail();
+      const invitationUrl = this.getInvitationUrl();
+      const emailEditor = this.getChildControl("email-editor");
+      const subjectField = emailEditor.getChildControl("subject-field");
+      const subject = subjectField.getValue();
+      const emailContentEditor = emailEditor.getChildControl("email-content-editor-and-preview");
+      const bodyHtml = emailContentEditor.composeWholeHtml();
+      const bodyText = emailContentEditor.getBodyText();
+      const params = {
+        data: {
+          email,
+          invitationUrl,
+          messageContent: {
+            subject,
+            bodyHtml,
+            bodyText,
+          }
+        }
+      };
+      osparc.data.Resources.fetch("poUsers", "approveUser", params)
+        .then(() => {
+          osparc.FlashMessenger.logAs(this.tr("User approved and email sent"), "INFO");
+          this.fireEvent("userApproved");
+        })
+        .catch(err => osparc.FlashMessenger.logError(err));
+    },
+
+    __approveWithoutEmail: function() {
     },
   }
 });
