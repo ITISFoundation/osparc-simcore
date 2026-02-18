@@ -53,13 +53,19 @@ class CompanyLink(NamedTuple):
     url: str  # e.g. "https://osparc.io/about/", "https://sim4life.swiss/"
 
 
+# --- type aliases (PEP 695) ---
+type FooterSocialLinks = list[SocialLink]
+type FooterShareLinks = list[ShareLink]
+type CompanyLinks = list[CompanyLink]
+
+
 @dataclass(frozen=True)
 class ProductFooterData:
-    social_links: list[SocialLink]
-    share_links: list[ShareLink]
+    social_links: FooterSocialLinks
+    share_links: FooterShareLinks
     company_name: str
     company_address: str
-    company_links: list[CompanyLink]
+    company_links: CompanyLinks
 
 
 @dataclass(frozen=True)
@@ -73,11 +79,11 @@ class ProductData:
     footer: ProductFooterData
 
     @property
-    def footer_social_links(self) -> list[SocialLink]:
+    def footer_social_links(self) -> FooterSocialLinks:
         return self.footer.social_links
 
     @property
-    def footer_share_links(self) -> list[ShareLink]:
+    def footer_share_links(self) -> FooterShareLinks:
         return self.footer.share_links
 
     @property
@@ -89,5 +95,5 @@ class ProductData:
         return self.footer.company_address
 
     @property
-    def company_links(self) -> list[CompanyLink]:
+    def company_links(self) -> CompanyLinks:
         return self.footer.company_links
