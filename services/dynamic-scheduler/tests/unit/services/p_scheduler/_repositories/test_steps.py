@@ -361,7 +361,7 @@ async def test_get_step_for_workflow_manager(
     assert await steps_repo.get_step_for_workflow_manager(missing_step_id) is None
 
 
-async def test_set_acquire_running_step_for_worker(
+async def test_acquire_running_step_for_worker(
     steps_repo: StepsRepository,
     engine: AsyncEngine,
     run_id: RunId,
