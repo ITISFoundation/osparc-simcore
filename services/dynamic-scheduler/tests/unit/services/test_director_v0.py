@@ -7,9 +7,7 @@ from collections.abc import Iterator
 import pytest
 import respx
 from fastapi import FastAPI
-from models_library.api_schemas_directorv2.dynamic_services_service import (
-    RunningDynamicServiceDetails,
-)
+from models_library.api_schemas_webserver.projects_nodes import NodeGet
 from models_library.projects_nodes_io import NodeID
 from pydantic import TypeAdapter
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -35,14 +33,12 @@ def app_environment(
 
 
 @pytest.fixture
-def legacy_service_details() -> RunningDynamicServiceDetails:
-    return TypeAdapter(RunningDynamicServiceDetails).validate_python(
-        RunningDynamicServiceDetails.model_json_schema()["examples"][0]
-    )
+def legacy_service_details() -> NodeGet:
+    return TypeAdapter(NodeGet).validate_python(NodeGet.model_json_schema()["examples"][1])
 
 
 @pytest.fixture
-def mock_director_v0(node_id: NodeID, legacy_service_details: RunningDynamicServiceDetails) -> Iterator[None]:
+def mock_director_v0(node_id: NodeID, legacy_service_details: NodeGet) -> Iterator[None]:
     with respx.mock(
         base_url="http://director:8000",
         assert_all_called=False,
@@ -68,7 +64,7 @@ async def test_get_running_service_details(
     mock_director_v0: None,
     app: FastAPI,
     node_id: NodeID,
-    legacy_service_details: RunningDynamicServiceDetails,
+    legacy_service_details: NodeGet,
 ):
     client = DirectorV0PublicClient.get_from_app_state(app)
     result = await client.get_running_service_details(node_id)
@@ -78,7 +74,7 @@ async def test_get_running_service_details(
 async def test_get_running_services(
     mock_director_v0: None,
     app: FastAPI,
-    legacy_service_details: RunningDynamicServiceDetails,
+    legacy_service_details: NodeGet,
 ):
     client = DirectorV0PublicClient.get_from_app_state(app)
     result = await client.get_running_services()
