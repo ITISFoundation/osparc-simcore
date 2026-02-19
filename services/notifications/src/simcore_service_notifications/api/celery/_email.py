@@ -9,8 +9,8 @@ from celery import (  # type: ignore[import-untyped]
     group,
     shared_task,
 )
-from models_library.celery.notifications import EmailContact as SingleEmailContact
-from models_library.celery.notifications import EmailContent, EmailMessage, SingleEmailMessage
+from models_library.notifications.celery import EmailContact as SingleEmailContact
+from models_library.notifications.celery import EmailContent, EmailMessage, SingleEmailMessage
 from notifications_library._email import (
     compose_email,
     create_email_session,

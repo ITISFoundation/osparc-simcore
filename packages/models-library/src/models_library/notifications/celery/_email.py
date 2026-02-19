@@ -58,3 +58,18 @@ class EmailMessage(BaseModel):
         validate_by_alias=True,
         validate_by_name=True,
     )
+
+
+class SingleEmailMessage(BaseModel):
+    """Payload for single email Celery task (one recipient per task)."""
+
+    from_: Annotated[EmailContact, Field(alias="from")]
+    to: EmailContact
+    reply_to: EmailContact | None = None
+
+    content: EmailContent
+
+    model_config = ConfigDict(
+        validate_by_alias=True,
+        validate_by_name=True,
+    )
