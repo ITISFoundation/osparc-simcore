@@ -4,7 +4,11 @@ import asyncio
 import logging
 from email.headerregistry import Address
 
-from celery import Task, group, shared_task  # type: ignore[import-untyped]
+from celery import (  # type: ignore[import-untyped]
+    Task,  # type: ignore[import-untyped]
+    group,
+    shared_task,
+)
 from models_library.celery.notifications import EmailContact as SingleEmailContact
 from models_library.celery.notifications import EmailContent, EmailMessage, SingleEmailMessage
 from notifications_library._email import (

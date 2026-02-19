@@ -36,8 +36,11 @@ def compose_email(
 
     msg["Subject"] = subject
 
-    # NOTE: the RFC 5322 standard requires that the email message must have a content,
-    # either text or HTML. Validation is enforced at a higher level.
+    if not content_text and not content_html:
+        # NOTE: the RFC 5322 standard requires that the email message must have a content, either text or HTML.
+        err_msg = "At least one of 'content_text' or 'content_html' is required"
+        raise ValueError(err_msg)
+
     if content_text:
         msg.set_content(content_text)
 

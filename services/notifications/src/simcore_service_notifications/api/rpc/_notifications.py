@@ -1,25 +1,23 @@
-import logging
-
 from fastapi import FastAPI
 from models_library.notifications import ChannelType
-from models_library.notifications_errors import (
-    NotificationsTemplateContextValidationError,
-    NotificationsTemplateNotFoundError,
-)
-from models_library.rpc.notifications.template import (
+from models_library.notifications.rpc.template import (
     PreviewTemplateRequest,
     PreviewTemplateResponse,
     SearchTemplatesResponse,
 )
-from models_library.rpc.notifications.template import TemplateRef as TemplateRefRpc
+from models_library.notifications.rpc.template import (
+    TemplateRef as TemplateRefRpc,
+)
+from models_library.notifications_errors import (
+    NotificationsTemplateContextValidationError,
+    NotificationsTemplateNotFoundError,
+)
 from servicelib.rabbitmq import RPCRouter
 
 from ...models.template import TemplateRef
 from .dependencies import get_notifications_templates_service
 
 router = RPCRouter()
-
-_logger = logging.getLogger(__name__)
 
 
 @router.expose(
