@@ -4,7 +4,7 @@ from typing import Any
 from aiohttp import web
 from common_library.network import NO_REPLY_LOCAL, replace_email_parts
 from models_library.groups import GroupID
-from models_library.notifications._notifications import ChannelType, Template, TemplatePreview, TemplateRef
+from models_library.notifications import ChannelType, Template, TemplatePreview, TemplateRef
 from models_library.notifications_errors import (
     NotificationsNoActiveRecipientsError,
     NotificationsUnsupportedChannelError,
