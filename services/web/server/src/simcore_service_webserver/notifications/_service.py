@@ -2,9 +2,7 @@ from dataclasses import asdict
 from typing import Any
 
 from aiohttp import web
-from celery_library.async_jobs import submit_job
 from common_library.network import NO_REPLY_LOCAL, replace_email_parts
-from models_library.api_schemas_async_jobs.async_jobs import AsyncJobGet
 from models_library.groups import GroupID
 from models_library.notifications import ChannelType, Template, TemplatePreview, TemplateRef
 from models_library.notifications_errors import (
@@ -13,7 +11,8 @@ from models_library.notifications_errors import (
 )
 from models_library.products import ProductName
 from models_library.users import UserID
-from servicelib.celery.models import ExecutionMetadata, OwnerMetadata
+from servicelib.celery.async_jobs.notifications import submit_send_message_task
+from servicelib.celery.models import OwnerMetadata, TaskName, TaskUUID
 from servicelib.rabbitmq.rpc_interfaces.notifications.notifications_templates import (
     preview_template as remote_preview_template,
 )
@@ -139,7 +138,7 @@ async def send_message(
     group_ids: list[GroupID] | None,
     external_contacts: list[Contact] | None,
     content: dict[str, Any],  # NOTE: validated internally
-) -> AsyncJobGet:
+) -> tuple[TaskUUID, TaskName]:
     match channel:
         case ChannelType.email:
             message = await _create_email_message(
@@ -152,14 +151,15 @@ async def send_message(
         case _:
             raise NotificationsUnsupportedChannelError(channel=channel)
 
-    return await submit_job(
+    return await submit_send_message_task(
         get_task_manager(app),
-        execution_metadata=ExecutionMetadata(name=f"send_{channel}", queue="notifications"),
         owner_metadata=OwnerMetadata.model_validate(
             WebServerOwnerMetadata(
                 user_id=user_id,
                 product_name=product_name,
             ).model_dump()
         ),
+        user_id=user_id,
+        product_name=product_name,
         message=message.model_dump(),
     )

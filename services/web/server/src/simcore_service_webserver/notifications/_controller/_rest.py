@@ -33,7 +33,7 @@ async def send_message(request: web.Request) -> web.Response:
     req_ctx = AuthenticatedRequestContext.model_validate(request)
     body = await parse_request_body_as(MessageBody, request)
 
-    async_job = await notifications_service.send_message(
+    task_uuid, task_name = await notifications_service.send_message(
         request.app,
         user_id=req_ctx.user_id,
         product_name=req_ctx.product_name,
@@ -44,12 +44,12 @@ async def send_message(request: web.Request) -> web.Response:
         content=body.content.model_dump(),
     )
 
-    task_id = f"{async_job.job_id}"
+    task_id = f"{task_uuid}"
 
     return create_data_response(
         TaskGet(
             task_id=task_id,
-            task_name=async_job.job_name,
+            task_name=task_name,
             status_href=f"{request.url.with_path(str(request.app.router['get_async_job_status'].url_for(task_id=task_id)))}",
             abort_href=f"{request.url.with_path(str(request.app.router['cancel_async_job'].url_for(task_id=task_id)))}",
             result_href=f"{request.url.with_path(str(request.app.router['get_async_job_result'].url_for(task_id=task_id)))}",
