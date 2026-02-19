@@ -56,7 +56,7 @@ services:
     # NOTE: taken from https://docs.rustfs.com/installation/docker/#docker-compose-installation
     security_opt:
       - "no-new-privileges:true"
-    image: rustfs/rustfs@sha256:1cfa82fb394a7c6a4ffc24f5333b52afee608d258503f94b37fcce5cc965c896
+    image: rustfs/rustfs:latest@sha256:1cfa82fb394a7c6a4ffc24f5333b52afee608d258503f94b37fcce5cc965c896
     init: true
     ports:
       - "9001:9001"
