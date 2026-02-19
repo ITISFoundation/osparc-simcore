@@ -133,10 +133,7 @@ class CeleryTaskManager:
                     sigs.append(sig)
                     created.append((task_key, task_uuid))
 
-                # Submit the group and get the GroupResult
                 group_result: GroupResult = group(sigs).apply_async()
-
-                # Save the group so it can be restored later by ID
                 group_result.save()
 
             except CeleryError as exc:
@@ -157,7 +154,6 @@ class CeleryTaskManager:
                 ) from exc
 
             assert group_result.id is not None  # nosec
-
             return group_result.id, [task_uuid for _, task_uuid in created]
 
     @handle_celery_errors
