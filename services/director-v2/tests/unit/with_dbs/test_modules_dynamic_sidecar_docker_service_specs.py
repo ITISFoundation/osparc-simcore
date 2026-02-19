@@ -74,7 +74,7 @@ def mock_env(
             "POSTGRES_PASSWORD": "test",
             "POSTGRES_PORT": "5432",
             "POSTGRES_USER": "test",
-            "R_CLONE_PROVIDER": "MINIO",
+            "R_CLONE_PROVIDER": "RUSTFS",
             "RABBIT_HOST": "rabbit",
             "RABBIT_PASSWORD": "adminadmin",
             "RABBIT_PORT": "5672",
@@ -287,7 +287,7 @@ def expected_dynamic_sidecar_spec(
                     "R_CLONE_SIMCORE_SDK_SYNC_SETTINGS": (
                         '{"R_CLONE_SIMCORE_SDK_SYNC_COMMAND_EDIT_ARGUMENTS":{},"R_CLONE_SIMCORE_SDK_SYNC_COMMAND_REMOVE_ARGUMENTS":[]}'
                     ),
-                    "R_CLONE_PROVIDER": "MINIO",
+                    "R_CLONE_PROVIDER": "RUSTFS",
                     "SC_BOOT_MODE": "production",
                     "SIMCORE_HOST_NAME": "dy-sidecar_75c7f3f4-18f9-4678-8610-54a2ade78eaa",
                     "SSL_CERT_FILE": "",

@@ -27,7 +27,7 @@ from yarl import URL
 
 @pytest.fixture
 def mock_env(mock_env: EnvVarsDict, minio_s3_settings_envs: EnvVarsDict) -> EnvVarsDict:
-    # overwrite to add minio real settings
+    # overwrite to add local S3 real settings
     return mock_env
 
 

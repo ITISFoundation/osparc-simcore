@@ -49,7 +49,7 @@ pytest_simcore_core_services_selection = [
     "storage",
     "redis",
 ]
-pytest_simcore_ops_services_selection = ["minio", "adminer"]
+pytest_simcore_ops_services_selection = ["rustfs", "adminer"]
 
 
 @pytest.fixture
@@ -73,7 +73,7 @@ def mock_env(
             "SIMCORE_SERVICES_NETWORK_NAME": "test_swarm_network_name",
             "SWARM_STACK_NAME": "test_mocked_stack_name",
             "TRAEFIK_SIMCORE_ZONE": "test_mocked_simcore_zone",
-            "R_CLONE_PROVIDER": "MINIO",
+            "R_CLONE_PROVIDER": "RUSTFS",
             "SC_BOOT_MODE": "production",
             "DYNAMIC_SIDECAR_PROMETHEUS_SERVICE_LABELS": "{}",
         },
