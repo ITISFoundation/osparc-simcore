@@ -1,8 +1,8 @@
 """Celery worker task payloads for notifications service."""
 
-from typing import Annotated
+from typing import Annotated, Self
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, model_validator
 
 from .. import ChannelType
 
@@ -28,6 +28,13 @@ class EmailContent(BaseModel):
     ]
     body_text: str | None = None
     body_html: str | None = None
+
+    @model_validator(mode="after")
+    def _ensure_at_least_one_body_format(self) -> Self:
+        if not self.body_text and not self.body_html:
+            msg = "At least one of body_text or body_html must be provided."
+            raise ValueError(msg)
+        return self
 
 
 class EmailMessage(BaseModel):
