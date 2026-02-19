@@ -43,7 +43,7 @@ def mocked_app(monkeypatch: pytest.MonkeyPatch, mock_env: EnvVarsDict, faker: Fa
     monkeypatch.setenv("S3_REGION", faker.pystr())
     monkeypatch.setenv("S3_SECRET_KEY", faker.pystr())
     monkeypatch.setenv("S3_BUCKET_NAME", faker.pystr())
-    monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
+    monkeypatch.setenv("R_CLONE_PROVIDER", "RUSTFS")
 
     monkeypatch.setenv("POSTGRES_HOST", "")
     monkeypatch.setenv("POSTGRES_USER", "")

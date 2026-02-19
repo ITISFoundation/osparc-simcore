@@ -48,7 +48,7 @@ To deploy the application in a single-node swarm
 ##### Data storage
 - [adminer](http://127.0.0.1:18080/?pgsql=postgres&username=simcore&db=simcoredb&ns=): postgres database content viewer
 - [redis-commander](http://172.0.0.1:18081): redis content viewer (analogous to adminer for postgres )
-- [minio](http://127.0.0.1:9001): s3 storage management viewer
+- [rustfs](http://127.0.0.1:9001): s3 storage management viewer
   - ``user=12345678, password=12345678``
 ##### Network
 - [traefik](http://172.0.0.1:8080/dashboard/): reverse proxy dashboard

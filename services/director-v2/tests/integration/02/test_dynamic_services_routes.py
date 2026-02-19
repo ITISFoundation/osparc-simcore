@@ -64,7 +64,7 @@ pytest_simcore_core_services_selection = [
 ]
 pytest_simcore_ops_services_selection = [
     "adminer",
-    "minio",
+    "rustfs",
 ]
 
 
@@ -173,7 +173,7 @@ async def director_v2_client(
             "DYNAMIC_SIDECAR_PROMETHEUS_SERVICE_LABELS": "{}",
             "COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED": "false",
             "COMPUTATIONAL_BACKEND_ENABLED": "false",
-            "R_CLONE_PROVIDER": "MINIO",
+            "R_CLONE_PROVIDER": "RUSTFS",
             "S3_ENDPOINT": faker.url(),
             "S3_ACCESS_KEY": faker.pystr(),
             "S3_REGION": faker.pystr(),

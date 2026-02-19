@@ -56,7 +56,7 @@ pytest_simcore_core_services_selection = [
 ]
 
 pytest_simcore_ops_services_selection = [
-    "minio",
+    "rustfs",
     "adminer",
 ]
 
@@ -104,7 +104,7 @@ def mock_environment(
         "STORAGE_PORT": f"{storage_endpoint.port}",
         "DY_SIDECAR_USER_ID": f"{user_id}",
         "DY_SIDECAR_PROJECT_ID": f"{project_id}",
-        "R_CLONE_PROVIDER": "MINIO",
+        "R_CLONE_PROVIDER": "RUSTFS",
         "DY_SIDECAR_CALLBACKS_MAPPING": "{}",
         **{k: f"{v}" for k, v in rabbit_service.model_dump().items()},
         **base_mock_envs,

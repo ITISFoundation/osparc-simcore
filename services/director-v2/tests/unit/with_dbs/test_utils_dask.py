@@ -228,7 +228,7 @@ def _app_config_with_db(
     postgres_host_config: dict[str, str],
     faker: Faker,
 ):
-    monkeypatch.setenv("R_CLONE_PROVIDER", "MINIO")
+    monkeypatch.setenv("R_CLONE_PROVIDER", "RUSTFS")
     monkeypatch.setenv("S3_ENDPOINT", faker.url())
     monkeypatch.setenv("S3_ACCESS_KEY", faker.pystr())
     monkeypatch.setenv("S3_REGION", faker.pystr())

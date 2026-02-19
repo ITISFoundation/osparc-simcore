@@ -57,7 +57,7 @@ def mock_environment(
             "AGENT_VOLUMES_CLEANUP_S3_ACCESS_KEY": "xxx",
             "AGENT_VOLUMES_CLEANUP_S3_SECRET_KEY": "xxx",
             "AGENT_VOLUMES_CLEANUP_S3_BUCKET": bucket,
-            "AGENT_VOLUMES_CLEANUP_S3_PROVIDER": S3Provider.MINIO,
+            "AGENT_VOLUMES_CLEANUP_S3_PROVIDER": S3Provider.RUSTFS,
             "RABBIT_HOST": "test",
             "RABBIT_PASSWORD": "test",
             "RABBIT_SECURE": "false",

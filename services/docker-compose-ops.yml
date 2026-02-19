@@ -12,7 +12,7 @@
 # $ make ops_disabled=1 up-versioned
 # $ make ops_disabled=1 up-latest
 #
-# Nonetheless, notice that minio is a service used from simcore stack. Therefore, disabling ops stack
+# Nonetheless, notice that rustfs is a service used from simcore stack. Therefore, disabling ops stack
 # is meaningful ONLY when simcore stack is intended to run with the the actual stacks from osparc-ops
 #
 #  NOTE: this stack cannot be called tools because it collides with default network created in services/static-webserver/client/tools/docker-compose.yml
@@ -59,6 +59,7 @@ services:
     image: rustfs/rustfs:latest@sha256:1cfa82fb394a7c6a4ffc24f5333b52afee608d258503f94b37fcce5cc965c896
     init: true
     ports:
+      - "9002:9000"
       - "9001:9001"
     environment:
       - RUSTFS_VOLUMES=/data/rustfs{0..3} # Define 4 storage volumes
@@ -137,8 +138,6 @@ volumes:
     driver: local
   rustfs_data_3:
     driver: local
-  # minio_data:
-  #   name: ops_minio_data
   portainer_data:
     name: ops_portainer_data
 

@@ -116,7 +116,7 @@ pytest_simcore_core_services_selection = [
 
 pytest_simcore_ops_services_selection = [
     "adminer",
-    "minio",
+    "rustfs",
     "portainer",
 ]
 
@@ -379,7 +379,7 @@ def mock_env(
             # this address to reach the rabbit service
             "RABBIT_HOST": f"{get_localhost_ip()}",
             "POSTGRES_HOST": f"{get_localhost_ip()}",
-            "R_CLONE_PROVIDER": "MINIO",
+            "R_CLONE_PROVIDER": "RUSTFS",
             "COMPUTATIONAL_BACKEND_ENABLED": "true",
             "COMPUTATIONAL_BACKEND_DASK_CLIENT_ENABLED": "true",
             "COMPUTATIONAL_BACKEND_DEFAULT_CLUSTER_URL": dask_scheduler_service,

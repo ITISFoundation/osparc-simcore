@@ -49,7 +49,7 @@ def r_clone_settings(faker: Faker) -> RCloneSettings:
                 "S3_SECRET_KEY": faker.pystr(),
                 "S3_BUCKET_NAME": faker.pystr(),
             },
-            "R_CLONE_PROVIDER": S3Provider.MINIO,
+            "R_CLONE_PROVIDER": S3Provider.RUSTFS,
         }
     )
 

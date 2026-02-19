@@ -22,6 +22,7 @@ _PROVIDER_SETTINGS_OPTIONS: dict[S3Provider, dict[str, str]] = {
     },
     S3Provider.CEPH: {"provider": "Ceph", "endpoint": "{endpoint}"},
     S3Provider.MINIO: {"provider": "Minio", "endpoint": "{endpoint}"},
+    S3Provider.RUSTFS: {"provider": "Minio", "endpoint": "{endpoint}"},
 }
 
 
