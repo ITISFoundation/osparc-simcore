@@ -43,8 +43,8 @@ async def _send_single_email_async(msg: SingleEmailMessage) -> None:
         )
 
 
-@shared_task(name="send_single_email", pydantic=True, queue="notifications", rate_limit="12/m")
-def send_single_email(msg: SingleEmailMessage) -> None:
+@shared_task(name="send_single_email_message", pydantic=True, queue="notifications", rate_limit="12/m")
+def send_single_email_message(msg: SingleEmailMessage) -> None:
     asyncio.run(_send_single_email_async(msg))
 
 
@@ -56,8 +56,6 @@ def send_email_message(
     assert task  # nosec
     assert task_key  # nosec
 
-    _logger.info("Scheduling email from %s to %d recipients", message.from_, len(message.to))
-
     single_msgs = [
         SingleEmailMessage(
             from_=SingleEmailContact(**message.from_.model_dump()),
@@ -68,9 +66,11 @@ def send_email_message(
         for to in message.to
     ]
 
-    group(
+    group_res = group(
         [
-            send_single_email.s(single_msg.model_dump()).set(countdown=i * _SECONDS_BETWEEN_EMAILS)  # pyright: ignore[reportCallIssue]
+            send_single_email_message.s(single_msg.model_dump()).set(countdown=i * _SECONDS_BETWEEN_EMAILS)  # pyright: ignore[reportCallIssue]
             for i, single_msg in enumerate(single_msgs)
         ]
     ).apply_async()
+
+    return group_res.id
