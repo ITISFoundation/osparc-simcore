@@ -48,7 +48,7 @@ def send_single_email(msg: SingleEmailMessage) -> None:
     asyncio.run(_send_single_email_async(msg))
 
 
-def send_email(
+def send_email_message(
     task: Task,
     task_key: TaskKey,
     message: EmailMessage,
