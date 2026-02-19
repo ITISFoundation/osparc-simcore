@@ -8,7 +8,7 @@ from ..._notifications import ChannelType
 
 
 class EmailContact(BaseModel):
-    name: str = ""
+    name: str | None = None
     email: EmailStr
 
 
