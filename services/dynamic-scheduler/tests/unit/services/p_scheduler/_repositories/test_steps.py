@@ -385,3 +385,71 @@ async def test_acquire_running_step_for_worker(
     for state in set(StepState) - {StepState.READY}:
         step = await create_step_in_db(state=state)
         assert await steps_repo.acquire_running_step_for_worker(step.step_id) is None
+
+
+@pytest.mark.parametrize("step_state", StepState)
+async def test_set_step_as_cancelled(
+    steps_repo: StepsRepository,
+    engine: AsyncEngine,
+    run_id: RunId,
+    create_step_in_db: Callable[..., Awaitable[Step]],
+    missing_step_id: StepId,
+    step_state: StepState,
+):
+    # 1. step can be set as cancelled if it exists
+    step = await create_step_in_db(state=step_state)
+
+    await steps_repo.set_step_as_cancelled(step.step_id)
+
+    step_row = await _get_step_row(engine, step_id=step.step_id)
+    assert StepState(step_row.state) == StepState.CANCELLED
+
+    # 2. step cannot be set as cancelled if step_id does not exist
+    await steps_repo.set_step_as_cancelled(missing_step_id)
+    await _assert_step_is_missing(engine, missing_step_id)
+
+
+@pytest.mark.parametrize("step_state", StepState)
+async def test_set_step_as_success(
+    steps_repo: StepsRepository,
+    engine: AsyncEngine,
+    run_id: RunId,
+    create_step_in_db: Callable[..., Awaitable[Step]],
+    missing_step_id: StepId,
+    step_state: StepState,
+):
+    # 1. step can be set as success if it exists
+    step = await create_step_in_db(state=step_state)
+
+    await steps_repo.set_step_as_success(step.step_id)
+
+    step_row = await _get_step_row(engine, step_id=step.step_id)
+    assert StepState(step_row.state) == StepState.SUCCESS
+
+    # 2. step cannot be set as success if step_id does not exist
+    await steps_repo.set_step_as_success(missing_step_id)
+    await _assert_step_is_missing(engine, missing_step_id)
+
+
+@pytest.mark.parametrize("step_state", StepState)
+async def test_set_step_as_failed(
+    steps_repo: StepsRepository,
+    engine: AsyncEngine,
+    run_id: RunId,
+    create_step_in_db: Callable[..., Awaitable[Step]],
+    missing_step_id: StepId,
+    step_state: StepState,
+):
+    # 1. step can be set as failed if it exists
+    message = "Step failed for testing"
+    step = await create_step_in_db(state=step_state)
+
+    await steps_repo.set_step_as_failed(step.step_id, message)
+
+    step_row = await _get_step_row(engine, step_id=step.step_id)
+    assert StepState(step_row.state) == StepState.FAILED
+    assert step_row.message == message
+
+    # 2. step cannot be set as failed if step_id does not exist
+    await steps_repo.set_step_as_failed(missing_step_id, message)
+    await _assert_step_is_missing(engine, missing_step_id)
