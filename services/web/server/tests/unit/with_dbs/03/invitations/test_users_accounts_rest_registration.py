@@ -24,7 +24,7 @@ from models_library.api_schemas_webserver.users import (
     UserAccountPreviewRejectionGet,
 )
 from models_library.groups import AccessRightsDict
-from models_library.notifications._notifications import ChannelType, TemplatePreview, TemplateRef
+from models_library.notifications import ChannelType, TemplatePreview, TemplateRef
 from models_library.products import ProductName
 from models_library.rest_pagination import Page
 from pytest_mock import MockerFixture
