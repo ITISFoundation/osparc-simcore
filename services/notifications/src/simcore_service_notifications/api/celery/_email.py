@@ -25,7 +25,7 @@ _SECONDS_BETWEEN_EMAILS = 5
 
 
 def _to_address(address: SingleEmailContact) -> Address:
-    return Address(display_name=address.name, addr_spec=address.email)
+    return Address(display_name=address.name or "", addr_spec=address.email)
 
 
 async def _send_single_email_async(msg: SingleEmailMessage) -> None:
