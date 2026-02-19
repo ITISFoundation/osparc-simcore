@@ -1,12 +1,26 @@
 import sqlalchemy as sa
 from models_library.api_schemas_dynamic_scheduler.dynamic_services import DynamicServiceStart, DynamicServiceStop
 from models_library.projects_nodes_io import NodeID
+from pydantic import TypeAdapter
 from simcore_postgres_database.models.p_scheduler import ps_user_requests
 from simcore_postgres_database.utils_repos import pass_or_acquire_connection, transaction_context
 from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.engine.row import Row
 
 from ...base_repository import BaseRepository
 from .._models import UserDesiredState, UserRequest
+
+
+def _row_to_user_request(row: Row) -> UserRequest:
+    return UserRequest(
+        product_name=row.product_name,
+        user_id=row.user_id,
+        project_id=row.project_id,
+        node_id=row.node_id,
+        requested_at=row.requested_at,
+        user_desired_state=UserDesiredState(row.user_desired_state),
+        payload=TypeAdapter(DynamicServiceStart | DynamicServiceStop).validate_python(row.payload),
+    )
 
 
 class UserRequestsRepository(BaseRepository):
@@ -67,12 +81,4 @@ class UserRequestsRepository(BaseRepository):
         if row is None:
             return None
 
-        return UserRequest(
-            product_name=row.product_name,
-            user_id=row.user_id,
-            project_id=row.project_id,
-            node_id=row.node_id,
-            requested_at=row.requested_at,
-            user_desired_state=UserDesiredState(row.user_desired_state.value),
-            payload=row.payload,
-        )
+        return _row_to_user_request(row)
