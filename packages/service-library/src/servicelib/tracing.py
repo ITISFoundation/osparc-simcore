@@ -1,3 +1,4 @@
+import logging
 from contextlib import contextmanager
 from contextvars import Token
 from typing import Final, Self
@@ -5,22 +6,31 @@ from typing import Final, Self
 import pyinstrument
 import pyinstrument.renderers
 from httpx import AsyncClient, Client
+from models_library.products import ProductName
+from models_library.projects import ProjectID
+from models_library.projects_nodes_io import NodeID
+from models_library.users import UserID
+from models_library.wallets import WalletID
 from opentelemetry import context as otcontext
 from opentelemetry import trace
 from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
 from opentelemetry.instrumentation.logging import LoggingInstrumentor
+from opentelemetry.propagate import extract, inject
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.sampling import ParentBased, TraceIdRatioBased
+from opentelemetry.trace import Link
 from pydantic import BaseModel, ConfigDict, model_validator
 from settings_library.tracing import TracingSettings
 
 type TracingContext = otcontext.Context | None
 
-_TRACER_NAME: Final[str] = "servicelib.tracing"
 _PROFILE_ATTRIBUTE_NAME: Final[str] = "pyinstrument.profile"
 _OSPARC_TRACE_ID_HEADER: Final[str] = "x-osparc-trace-id"
 _OSPARC_TRACE_SAMPLED_HEADER: Final[str] = "x-osparc-trace-sampled"
+
+
+_logger = logging.getLogger(__name__)
 
 
 def _is_tracing() -> bool:
@@ -97,27 +107,181 @@ def get_trace_info_headers() -> dict[str, str]:
     return {_OSPARC_TRACE_ID_HEADER: trace_id_hex, _OSPARC_TRACE_SAMPLED_HEADER: f"{trace_sampled}".lower()}
 
 
+def get_trace_carrier_from_current_context() -> dict[str, str]:
+    tracing_context = get_context()
+    carrier: dict[str, str] = {}
+    inject(carrier, context=tracing_context)
+    return carrier
+
+
+def extract_span_link_from_trace_carrier(
+    carrier: dict[str, str],
+    link_attributes: dict[str, str] | None = None,
+) -> Link | None:
+    """Extract span link from W3C Trace Context headers.
+
+    Creates a span link from traceparent and optional tracestate headers (W3C standard).
+    Useful for linking to other traces when you have trace context headers.
+
+    Args:
+        carrier: The carrier dictionary containing trace context headers (traceparent and optionally tracestate)
+        link_attributes: Optional attributes to add to the created link
+
+    Returns:
+        A Link if traceparent is valid, None otherwise
+
+    Example:
+        link = extract_span_link_from_trace_carrier(
+            carrier={"traceparent": request.headers.get("traceparent")},
+            link_attributes={"request.id": "123"}
+        )
+        with traced_operation("my_operation", link=link):
+            ...
+    """
+    if not carrier:
+        return None
+
+    _logger.debug(
+        "Extracting span link from carrier=%s",
+        carrier,
+    )
+
+    try:
+        # Extract the context from headers
+        ctx = extract(carrier)
+        span = trace.get_current_span(ctx)
+        span_context = span.get_span_context()
+
+        # Add standard link attributes
+        attributes = link_attributes or {}
+        attributes.update(
+            {
+                "trace_id": trace.format_trace_id(span_context.trace_id),
+                "span_id": trace.format_span_id(span_context.span_id),
+            }
+        )
+
+        _logger.info(
+            "Created span link from trace_id=%s, span_id=%s",
+            trace.format_trace_id(span_context.trace_id),
+            trace.format_span_id(span_context.span_id),
+        )
+        return Link(span_context, attributes=attributes)
+
+    except Exception as e:  # pylint: disable=broad-except
+        _logger.warning("Failed to extract span link from trace headers: %s", e)
+        return None
+
+
+@contextmanager
+def traced_operation(
+    operation_name: str,
+    *,
+    tracing_config: TracingConfig,
+    attributes: dict[str, str] | None = None,
+    links: list[Link] | None = None,
+):
+    """Generic context manager for creating traced spans.
+
+    Creates a span with the given operation name and attributes. Automatically detects
+    if this is a root span or child span:
+    - Root spans: No active parent span context (links can be used to connect to other traces)
+    - Child spans: Automatically inherit from active parent span context
+
+    When tracing is disabled, this becomes a no-op context manager.
+
+    Args:
+        operation_name: Name of the span/operation
+        attributes: Optional dict of span attributes (string keys and values)
+        links: Optional list of span links (for connecting to other traces)
+
+    Example:
+        with traced_operation("my_operation", attributes={"user.id": "123"}):
+            # operation code here
+            pass
+    """
+    # Get tracer - uses the globally set tracer provider if available, otherwise no-op
+    tracer = trace.get_tracer(__name__, tracer_provider=tracing_config.tracer_provider)
+
+    # Prepare attributes with empty dict as default
+    span_attributes = attributes or {}
+
+    # Only use provided links at root level; child spans inherit parent context automatically
+    current_span = trace.get_current_span()
+    is_root_span = not current_span.is_recording()
+    span_links = links if is_root_span else []
+
+    # Create a span with proper attributes and links
+    # If tracing is disabled, this creates a no-op span
+    with tracer.start_as_current_span(
+        operation_name,
+        links=span_links,
+        attributes=span_attributes,
+    ) as span:
+        # Log debug info only if span is actually recording
+        if span.is_recording():
+            _logger.debug(
+                "Started recording span '%s' with trace_id=%s, root=%s",
+                operation_name,
+                trace.format_trace_id(span.get_span_context().trace_id),
+                is_root_span,
+            )
+        yield
+
+
 @contextmanager
 def profiled_span(*, tracing_config: TracingConfig, span_name: str):
-    if not _is_tracing():
-        return
-    tracer = trace.get_tracer(_TRACER_NAME, tracer_provider=tracing_config.tracer_provider)
-    with tracer.start_as_current_span(span_name) as span:
-        profiler = pyinstrument.Profiler(async_mode="enabled")
-        profiler.start()
+    """Context manager that creates a traced span with CPU profiling attached.
 
-        try:
+    Profiles the code block using pyinstrument and attaches the profile output
+    as a span attribute.
+
+    Args:
+        tracing_config: Tracing configuration
+        span_name: Name of the span
+
+    Example:
+        with profiled_span(tracing_config=tracing_config, span_name="my_operation"):
+            # operation code here
+            pass
+    """
+    profiler = pyinstrument.Profiler(async_mode="enabled")
+
+    profiler.start()
+    try:
+        with traced_operation(
+            span_name,
+            tracing_config=tracing_config,
+        ):
             yield
-
-        except Exception as e:
-            span.record_exception(e)
-            span.set_status(trace.Status(trace.StatusCode.ERROR, f"{e}"))
-            raise
-
-        finally:
-            profiler.stop()
+    finally:
+        profiler.stop()
+        if trace.get_current_span().is_recording():
             renderer = pyinstrument.renderers.ConsoleRenderer(unicode=True, color=False, show_all=True)
-            span.set_attribute(
+            trace.get_current_span().set_attribute(
                 _PROFILE_ATTRIBUTE_NAME,
                 profiler.output(renderer=renderer),
             )
+
+
+def create_standard_attributes(
+    *,
+    user_id: UserID | None = None,
+    project_id: ProjectID | str | None = None,
+    node_id: NodeID | str | None = None,
+    product_name: ProductName | None = None,
+    wallet_id: WalletID | str | None = None,
+) -> dict[str, str]:
+    """Helper function to create standard span attributes like user ID..."""
+    attributes = {}
+    if user_id:
+        attributes["user_id"] = f"{user_id}"
+    if project_id:
+        attributes["project_id"] = f"{project_id}"
+    if node_id:
+        attributes["node_id"] = f"{node_id}"
+    if product_name:
+        attributes["product_name"] = f"{product_name}"
+    if wallet_id:
+        attributes["wallet_id"] = f"{wallet_id}"
+    return attributes
