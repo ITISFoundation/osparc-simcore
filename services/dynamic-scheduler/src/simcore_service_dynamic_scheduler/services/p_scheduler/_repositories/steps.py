@@ -125,7 +125,8 @@ class StepsRepository(BaseRepository):
             _logger.warning("step_id='%s' failed without providing a message, there should be one!", step_id)
 
     async def retry_failed_step(self, step_id: StepId) -> None:
-        """Attempt to mark a step as READY for retry, only if it's currently in FAILED state.
+        """
+        Attempt to mark a step as READY for retry, only if it's currently in FAILED state.
 
         Raises:
             StepNotInFailedError: if step is not in FAILED state or does not exist
@@ -151,6 +152,12 @@ class StepsRepository(BaseRepository):
                 raise StepNotInFailedError(step_id=step_id, state=state)
 
     async def manual_retry_step(self, step_id: StepId, reason: str) -> None:
+        """
+        Manually retry a step by setting it back to CREATED, regardless of its current state.
+
+        Raises:
+            StepNotFoundError
+        """
         async with transaction_context(self.engine) as conn:
             await self._push_step_to_history(conn, step_id, message=f"Manual RETRY: {reason}")
             result = await conn.execute(
@@ -171,6 +178,12 @@ class StepsRepository(BaseRepository):
                 raise StepNotFoundError(step_id=step_id)
 
     async def manual_skip_step(self, step_id: StepId, reason: str) -> None:
+        """
+        Manually skip a step by setting its state to SKIPPED, regardless of its current state.
+
+        Raises:
+            StepNotFoundError
+        """
         async with transaction_context(self.engine) as conn:
             result = await conn.execute(
                 ps_steps.update()
