@@ -4,7 +4,7 @@ from typing import Annotated
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
-from ..._notifications import ChannelType
+from .. import ChannelType
 
 
 class EmailContact(BaseModel):
