@@ -361,7 +361,7 @@ async def test_get_step_for_workflow_manager(
     assert await steps_repo.get_step_for_workflow_manager(missing_step_id) is None
 
 
-async def test_set_step_as_running_for_worker(
+async def test_set_acquire_running_step_for_worker(
     steps_repo: StepsRepository,
     engine: AsyncEngine,
     run_id: RunId,
@@ -371,17 +371,17 @@ async def test_set_step_as_running_for_worker(
     step = await create_step_in_db(state=StepState.READY)
 
     # 1. Nothing is returns if the steps is missing but a READY step exists
-    assert await steps_repo.set_step_as_running_for_worker(missing_step_id) is None
+    assert await steps_repo.acquire_running_step_for_worker(missing_step_id) is None
 
     # 2. step can be retrieved if it exists
-    retrieved_step = await steps_repo.set_step_as_running_for_worker(step.step_id)
+    retrieved_step = await steps_repo.acquire_running_step_for_worker(step.step_id)
     expected_step = deepcopy(step)
     expected_step.state = StepState.RUNNING
     assert retrieved_step == expected_step
     # no more steps to return
-    assert await steps_repo.set_step_as_running_for_worker(step.step_id) is None
+    assert await steps_repo.acquire_running_step_for_worker(step.step_id) is None
 
     # 3. Not Ready steps are never returned
     for state in set(StepState) - {StepState.READY}:
         step = await create_step_in_db(state=state)
-        assert await steps_repo.set_step_as_running_for_worker(step.step_id) is None
+        assert await steps_repo.acquire_running_step_for_worker(step.step_id) is None

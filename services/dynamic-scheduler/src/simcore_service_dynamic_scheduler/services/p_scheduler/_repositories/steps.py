@@ -211,7 +211,7 @@ class StepsRepository(BaseRepository):
             return None
         return _row_to_step(row)
 
-    async def set_step_as_running_for_worker(self, step_id: StepId | None) -> Step | None:
+    async def acquire_running_step_for_worker(self, step_id: StepId | None) -> Step | None:
         async with transaction_context(self.engine) as conn:
             # Select a READY step and lock it; skip rows already locked by other workers
             select_query = (
