@@ -13,6 +13,7 @@ from models_library.progress_bar import ProgressReport
 from servicelib.celery.models import (
     TASK_DONE_STATES,
     ExecutionMetadata,
+    GroupUUID,
     OwnerMetadata,
     Task,
     TaskKey,
@@ -94,7 +95,7 @@ class CeleryTaskManager:
         executions: Sequence[tuple[ExecutionMetadata, dict[str, Any]]],
         *,
         owner_metadata: OwnerMetadata,
-    ) -> tuple[TaskUUID, list[TaskUUID]]:
+    ) -> tuple[GroupUUID, list[TaskUUID]]:
         """
         Submit a group of tasks in parallel.
 

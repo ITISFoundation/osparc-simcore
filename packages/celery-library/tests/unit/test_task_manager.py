@@ -56,10 +56,6 @@ _TENACITY_RETRY_PARAMS = {
 }
 
 
-class MyOwnerMetadata(OwnerMetadata):
-    user_id: int
-
-
 async def _fake_file_processor(celery_app: Celery, task_name: str, task_key: str, files: list[str]) -> str:
     def sleep_for(seconds: float) -> None:
         time.sleep(seconds)
@@ -143,9 +139,8 @@ def register_celery_tasks() -> Callable[[Celery], None]:
 async def test_submitting_task_calling_async_function_results_with_success_state(
     task_manager: TaskManager,
     with_celery_worker: WorkController,
+    owner_metadata: OwnerMetadata,
 ):
-    owner_metadata = MyOwnerMetadata(user_id=42, owner="test-owner")
-
     task_uuid = await task_manager.submit_task(
         ExecutionMetadata(
             name=fake_file_processor.__name__,
@@ -166,9 +161,8 @@ async def test_submitting_task_calling_async_function_results_with_success_state
 async def test_submitting_task_with_failure_results_with_error(
     task_manager: TaskManager,
     with_celery_worker: WorkController,
+    owner_metadata: OwnerMetadata,
 ):
-    owner_metadata = MyOwnerMetadata(user_id=42, owner="test-owner")
-
     task_uuid = await task_manager.submit_task(
         ExecutionMetadata(
             name=failure_task.__name__,
@@ -188,9 +182,8 @@ async def test_submitting_task_with_failure_results_with_error(
 async def test_cancelling_a_running_task_aborts_and_deletes(
     task_manager: TaskManager,
     with_celery_worker: WorkController,
+    owner_metadata: OwnerMetadata,
 ):
-    owner_metadata = MyOwnerMetadata(user_id=42, owner="test-owner")
-
     task_uuid = await task_manager.submit_task(
         ExecutionMetadata(
             name=dreamer_task.__name__,
@@ -213,9 +206,8 @@ async def test_cancelling_a_running_task_aborts_and_deletes(
 async def test_listing_task_uuids_contains_submitted_task(
     task_manager: CeleryTaskManager,
     with_celery_worker: WorkController,
+    owner_metadata: OwnerMetadata,
 ):
-    owner_metadata = MyOwnerMetadata(user_id=42, owner="test-owner")
-
     task_uuid = await task_manager.submit_task(
         ExecutionMetadata(
             name=dreamer_task.__name__,
@@ -241,13 +233,13 @@ async def test_filtering_listing_tasks(
         product_name: str | Wildcard
 
     user_id = 42
-    _owner = "test-owner"
+    owner = "test-owner"
     expected_task_uuids: set[TaskUUID] = set()
     all_tasks: list[tuple[TaskUUID, MyOwnerMetadata]] = []
 
     try:
         for _ in range(5):
-            owner_metadata = MyOwnerMetadata(user_id=user_id, product_name=_faker.word(), owner=_owner)
+            owner_metadata = MyOwnerMetadata(user_id=user_id, product_name=_faker.word(), owner=owner)
             task_uuid = await task_manager.submit_task(
                 ExecutionMetadata(
                     name=dreamer_task.__name__,
@@ -261,7 +253,7 @@ async def test_filtering_listing_tasks(
             owner_metadata = MyOwnerMetadata(
                 user_id=_faker.pyint(min_value=100, max_value=200),
                 product_name=_faker.word(),
-                owner=_owner,
+                owner=owner,
             )
             task_uuid = await task_manager.submit_task(
                 ExecutionMetadata(
@@ -274,7 +266,7 @@ async def test_filtering_listing_tasks(
         search_owner_metadata = MyOwnerMetadata(
             user_id=user_id,
             product_name="*",
-            owner=_owner,
+            owner=owner,
         )
         tasks = await task_manager.list_tasks(search_owner_metadata)
         assert expected_task_uuids == {task.uuid for task in tasks}
@@ -287,9 +279,8 @@ async def test_filtering_listing_tasks(
 async def test_push_task_result_streams_data_during_execution(
     task_manager: CeleryTaskManager,
     with_celery_worker: WorkController,
+    owner_metadata: OwnerMetadata,
 ):
-    owner_metadata = MyOwnerMetadata(user_id=42, owner="test-owner")
-
     num_results = 3
 
     task_uuid = await task_manager.submit_task(
@@ -331,9 +322,8 @@ async def test_push_task_result_streams_data_during_execution(
 async def test_pull_task_stream_items_with_limit(
     task_manager: CeleryTaskManager,
     with_celery_worker: WorkController,
+    owner_metadata: OwnerMetadata,
 ):
-    owner_metadata = MyOwnerMetadata(user_id=42, owner="test-owner")
-
     # Submit task with fewer results to make it more predictable
     task_uuid = await task_manager.submit_task(
         ExecutionMetadata(
@@ -369,8 +359,9 @@ async def test_pull_task_stream_items_with_limit(
 
 async def test_pull_task_stream_items_from_nonexistent_task_raises_error(
     task_manager: CeleryTaskManager,
+    with_celery_worker: WorkController,
+    owner_metadata: OwnerMetadata,
 ):
-    owner_metadata = MyOwnerMetadata(user_id=42, owner="test-owner")
     fake_task_uuid = TypeAdapter(TaskUUID).validate_python(_faker.uuid4())
 
     with pytest.raises(TaskNotFoundError):
@@ -379,6 +370,7 @@ async def test_pull_task_stream_items_from_nonexistent_task_raises_error(
 
 async def test_push_task_stream_items_to_nonexistent_task_raises_error(
     task_manager: CeleryTaskManager,
+    with_celery_worker: WorkController,
 ):
     not_existing_task_id = "not_existing"
 
@@ -389,9 +381,8 @@ async def test_push_task_stream_items_to_nonexistent_task_raises_error(
 async def test_submit_group_all_tasks_complete_successfully(
     task_manager: CeleryTaskManager,
     with_celery_worker: WorkController,
+    owner_metadata: OwnerMetadata,
 ):
-    owner_metadata = MyOwnerMetadata(user_id=42, owner="test-owner")
-
     # Submit a group of tasks
     num_tasks = 3
     executions = [
@@ -426,9 +417,8 @@ async def test_submit_group_all_tasks_complete_successfully(
 async def test_submit_group_tasks_appear_in_listing(
     task_manager: CeleryTaskManager,
     with_celery_worker: WorkController,
+    owner_metadata: OwnerMetadata,
 ):
-    owner_metadata = MyOwnerMetadata(user_id=42, owner="test-owner")
-
     # Submit a group of tasks
     num_tasks = 4
     executions = [
@@ -461,9 +451,8 @@ async def test_submit_group_tasks_appear_in_listing(
 async def test_submit_group_with_mixed_task_types(
     task_manager: CeleryTaskManager,
     with_celery_worker: WorkController,
+    owner_metadata: OwnerMetadata,
 ):
-    owner_metadata = MyOwnerMetadata(user_id=42, owner="test-owner")
-
     # Submit a group with different task types
     executions = [
         (
@@ -506,9 +495,8 @@ async def test_submit_group_with_mixed_task_types(
 async def test_submit_group_can_cancel_individual_tasks(
     task_manager: CeleryTaskManager,
     with_celery_worker: WorkController,
+    owner_metadata: OwnerMetadata,
 ):
-    owner_metadata = MyOwnerMetadata(user_id=42, owner="test-owner")
-
     # Submit a group of long-running tasks
     num_tasks = 3
     executions = [
@@ -542,9 +530,8 @@ async def test_submit_group_can_cancel_individual_tasks(
 async def test_submit_group_with_failures(
     task_manager: CeleryTaskManager,
     with_celery_worker: WorkController,
+    owner_metadata: OwnerMetadata,
 ):
-    owner_metadata = MyOwnerMetadata(user_id=42, owner="test-owner")
-
     # Submit a group with some failing tasks
     executions = [
         (
@@ -588,9 +575,8 @@ async def test_submit_group_with_failures(
 async def test_submit_group_with_ephemeral_tasks(
     task_manager: CeleryTaskManager,
     with_celery_worker: WorkController,
+    owner_metadata: OwnerMetadata,
 ):
-    owner_metadata = MyOwnerMetadata(user_id=42, owner="test-owner")
-
     # Submit a group with ephemeral tasks
     num_tasks = 2
     executions = [
@@ -619,8 +605,6 @@ async def test_submit_group_with_ephemeral_tasks(
         result = await task_manager.get_task_result(owner_metadata, task_uuid)
         assert result == "archive.zip"
 
-    # Verify tasks are cleaned up after retrieval
-    await asyncio.sleep(0.5)  # Give a moment for cleanup
     for task_uuid in task_uuids:
         # Second attempt to get result should fail as ephemeral tasks are cleaned up
         with pytest.raises(TaskNotFoundError):
@@ -630,10 +614,8 @@ async def test_submit_group_with_ephemeral_tasks(
 async def test_submit_empty_group(
     task_manager: CeleryTaskManager,
     with_celery_worker: WorkController,
+    owner_metadata: OwnerMetadata,
 ):
-    owner_metadata = MyOwnerMetadata(user_id=42, owner="test-owner")
-
-    # Submit an empty group
     _, task_uuids = await task_manager.submit_group(
         [],
         owner_metadata=owner_metadata,

@@ -15,6 +15,7 @@ ModelType = TypeVar("ModelType", bound=BaseModel)
 type TaskKey = str
 type TaskName = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
 type TaskUUID = UUID
+type GroupUUID = UUID
 _TASK_ID_KEY_DELIMITATOR: Final[str] = ":"
 _FORBIDDEN_KEY_CHARS = ("*", _TASK_ID_KEY_DELIMITATOR, "=")
 _FORBIDDEN_VALUE_CHARS = (_TASK_ID_KEY_DELIMITATOR, "=")
