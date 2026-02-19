@@ -31,7 +31,7 @@ from pytest_simcore.helpers.assert_checks import assert_status
 from pytest_simcore.helpers.webserver_users import UserInfoDict
 from servicelib.aiohttp import status
 from simcore_postgres_database.models.users import UserRole
-from simcore_service_webserver.notifications import notifications_service
+from simcore_service_webserver.notifications import _service
 
 pytest_simcore_core_services_selection = []
 
@@ -249,7 +249,7 @@ async def test_preview_template_access_control(
 
     # Mock the RPC call
     mocked_notifications_rpc_client.patch(
-        f"{notifications_service.__name__}.remote_preview_template",
+        f"{_service.__name__}.remote_preview_template",
         return_value=fake_template_preview_response,
     )
 
@@ -283,7 +283,7 @@ async def test_preview_template_success(
 
     # Mock the RPC call
     mocked_notifications_rpc_client.patch(
-        f"{notifications_service.__name__}.remote_preview_template",
+        f"{_service.__name__}.remote_preview_template",
         return_value=fake_template_preview_response,
     )
 
@@ -321,7 +321,7 @@ async def test_preview_template_enriches_context_with_product_data(
 
     # Spy on the RPC call to verify the enriched context
     mock_rpc_call = mocker.patch(
-        f"{notifications_service.__name__}.remote_preview_template",
+        f"{_service.__name__}.remote_preview_template",
         return_value=PreviewTemplateResponse(
             ref=TemplateRef(
                 channel=ChannelType.email,
@@ -376,7 +376,7 @@ async def test_search_templates_access_control(
 
     # Mock the RPC call
     mocked_notifications_rpc_client.patch(
-        f"{notifications_service.__name__}.remote_search_templates",
+        f"{_service.__name__}.remote_search_templates",
         return_value=[fake_template_response],
     )
 
@@ -398,7 +398,7 @@ async def test_search_templates_no_filters(
 
     # Mock the RPC call
     mocked_notifications_rpc_client.patch(
-        f"{notifications_service.__name__}.remote_search_templates",
+        f"{_service.__name__}.remote_search_templates",
         return_value=[fake_template_response],
     )
 
@@ -444,7 +444,7 @@ async def test_search_templates_with_filters(
 
     # Mock the RPC call and spy on it
     mock_rpc = mocker.patch(
-        f"{notifications_service.__name__}.remote_search_templates",
+        f"{_service.__name__}.remote_search_templates",
         return_value=[fake_template_response],
     )
 
@@ -474,7 +474,7 @@ async def test_search_templates_empty_result(
     assert client.app
 
     mocker.patch(
-        f"{notifications_service.__name__}.remote_search_templates",
+        f"{_service.__name__}.remote_search_templates",
         return_value=[],
     )
 
