@@ -1,16 +1,16 @@
-import logging
-
 from fastapi import FastAPI
 from models_library.notifications import ChannelType
+from models_library.notifications.rpc.template import (
+    PreviewTemplateRequest,
+    PreviewTemplateResponse,
+    SearchTemplatesResponse,
+)
+from models_library.notifications.rpc.template import (
+    TemplateRef as TemplateRefRpc,
+)
 from models_library.notifications_errors import (
     NotificationsTemplateContextValidationError,
     NotificationsTemplateNotFoundError,
-)
-from models_library.rpc.notifications.template import (
-    TemplatePreviewRpcRequest,
-    TemplatePreviewRpcResponse,
-    TemplateRefRpc,
-    TemplateRpcResponse,
 )
 from servicelib.rabbitmq import RPCRouter
 
@@ -18,8 +18,6 @@ from ...models.template import TemplateRef
 from .dependencies import get_notifications_templates_service
 
 router = RPCRouter()
-
-_logger = logging.getLogger(__name__)
 
 
 @router.expose(
@@ -31,8 +29,8 @@ _logger = logging.getLogger(__name__)
 async def preview_template(
     _app: FastAPI,
     *,
-    request: TemplatePreviewRpcRequest,
-) -> TemplatePreviewRpcResponse:
+    request: PreviewTemplateRequest,
+) -> PreviewTemplateResponse:
     service = get_notifications_templates_service()
 
     preview = service.preview_template(
@@ -40,7 +38,7 @@ async def preview_template(
         context=request.context,
     )
 
-    return TemplatePreviewRpcResponse(
+    return PreviewTemplateResponse(
         ref=request.ref,
         message_content=preview.message_content.model_dump(),
     )
@@ -52,7 +50,7 @@ async def search_templates(
     *,
     channel: ChannelType | None,
     template_name: str | None,
-) -> list[TemplateRpcResponse]:
+) -> list[SearchTemplatesResponse]:
     """
     Searches for notification templates based on the specified channel and template name.
 
@@ -69,7 +67,7 @@ async def search_templates(
     templates = service.search_templates(channel=channel, template_name=template_name)
 
     return [
-        TemplateRpcResponse(
+        SearchTemplatesResponse(
             ref=TemplateRefRpc(
                 channel=template.ref.channel,
                 template_name=template.ref.template_name,
