@@ -1,11 +1,13 @@
 import logging
+from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime
 from typing import TYPE_CHECKING, Any
 from uuid import uuid4
 
-from celery import Celery  # type: ignore[import-untyped]
+from celery import Celery, group, signature  # type: ignore[import-untyped]
 from celery.exceptions import CeleryError  # type: ignore[import-untyped]
+from celery.result import GroupResult  # type: ignore[import-untyped]
 from common_library.async_tools import make_async
 from models_library.progress_bar import ProgressReport
 from servicelib.celery.models import (
@@ -85,6 +87,78 @@ class CeleryTaskManager:
                 ) from exc
 
             return task_uuid
+
+    @handle_celery_errors
+    async def submit_group(
+        self,
+        executions: Sequence[tuple[ExecutionMetadata, dict[str, Any]]],
+        *,
+        owner_metadata: OwnerMetadata,
+    ) -> tuple[TaskUUID, list[TaskUUID]]:
+        """
+        Submit a group of tasks in parallel.
+
+        Returns: (group_id, list of TaskUUIDs in order)
+        """
+        with log_context(
+            _logger,
+            logging.DEBUG,
+            msg=f"Submit group: {owner_metadata=} items={len(executions)}",
+        ):
+            created: list[tuple[str, TaskUUID]] = []
+
+            try:
+                sigs = []
+
+                for execution_metadata, task_params in executions:
+                    task_uuid = uuid4()
+                    task_key = owner_metadata.model_dump_task_key(task_uuid=task_uuid)
+
+                    expiry = (
+                        self._celery_settings.CELERY_EPHEMERAL_RESULT_EXPIRES
+                        if execution_metadata.ephemeral
+                        else self._celery_settings.CELERY_RESULT_EXPIRES
+                    )
+
+                    await self._task_store.create_task(task_key, execution_metadata, expiry=expiry)
+
+                    sig = signature(
+                        execution_metadata.name,
+                        kwargs={"task_key": task_key} | task_params,
+                        queue=execution_metadata.queue,
+                        task_id=task_key,
+                        immutable=True,
+                        app=self._celery_app,
+                    )
+                    sigs.append(sig)
+                    created.append((task_key, task_uuid))
+
+                # Submit the group and get the GroupResult
+                group_result: GroupResult = group(sigs).apply_async()
+
+                # Save the group so it can be restored later by ID
+                group_result.save()
+
+            except CeleryError as exc:
+                for task_key, _ in created:
+                    try:
+                        await self._task_store.remove_task(task_key)
+                    except CeleryError:
+                        _logger.warning(
+                            "Unable to cleanup task '%s' during group error handling",
+                            task_key,
+                            exc_info=True,
+                        )
+
+                raise TaskSubmissionError(
+                    task_name="celery.group",
+                    task_key=None,
+                    task_params={"submitted": len(created)},
+                ) from exc
+
+            assert group_result.id is not None  # nosec
+
+            return group_result.id, [task_uuid for _, task_uuid in created]
 
     @handle_celery_errors
     async def cancel_task(self, owner_metadata: OwnerMetadata, task_uuid: TaskUUID) -> None:

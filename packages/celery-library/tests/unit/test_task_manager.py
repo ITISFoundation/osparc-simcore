@@ -5,6 +5,7 @@
 # pylint: disable=unused-variable
 
 import asyncio
+import contextlib
 import logging
 import time
 from collections.abc import Callable
@@ -22,6 +23,7 @@ from faker import Faker
 from models_library.progress_bar import ProgressReport
 from pydantic import TypeAdapter
 from servicelib.celery.models import (
+    TASK_DONE_STATES,
     ExecutionMetadata,
     OwnerMetadata,
     TaskKey,
@@ -382,3 +384,259 @@ async def test_push_task_stream_items_to_nonexistent_task_raises_error(
 
     with pytest.raises(TaskNotFoundError):
         await task_manager.push_task_stream_items(not_existing_task_id, TaskStreamItem(data="some-result"))
+
+
+async def test_submit_group_all_tasks_complete_successfully(
+    task_manager: CeleryTaskManager,
+    with_celery_worker: WorkController,
+):
+    owner_metadata = MyOwnerMetadata(user_id=42, owner="test-owner")
+
+    # Submit a group of tasks
+    num_tasks = 3
+    executions = [
+        (
+            ExecutionMetadata(name=fake_file_processor.__name__),
+            {"files": [f"file{i}-{j}" for j in range(2)]},
+        )
+        for i in range(num_tasks)
+    ]
+
+    group_id, task_uuids = await task_manager.submit_group(
+        executions,
+        owner_metadata=owner_metadata,
+    )
+
+    assert group_id is not None
+    assert len(task_uuids) == num_tasks
+
+    # Wait for all tasks to complete
+    for task_uuid in task_uuids:
+        async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
+            with attempt:
+                status = await task_manager.get_task_status(owner_metadata, task_uuid)
+                assert status.task_state == TaskState.SUCCESS
+
+    # Verify all results
+    for task_uuid in task_uuids:
+        result = await task_manager.get_task_result(owner_metadata, task_uuid)
+        assert result == "archive.zip"
+
+
+async def test_submit_group_tasks_appear_in_listing(
+    task_manager: CeleryTaskManager,
+    with_celery_worker: WorkController,
+):
+    owner_metadata = MyOwnerMetadata(user_id=42, owner="test-owner")
+
+    # Submit a group of tasks
+    num_tasks = 4
+    executions = [
+        (
+            ExecutionMetadata(name=dreamer_task.__name__),
+            {},
+        )
+        for _ in range(num_tasks)
+    ]
+
+    try:
+        _, task_uuids = await task_manager.submit_group(
+            executions,
+            owner_metadata=owner_metadata,
+        )
+
+        # Verify all tasks appear in listing
+        async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
+            with attempt:
+                tasks = await task_manager.list_tasks(owner_metadata)
+                task_uuids_from_list = {task.uuid for task in tasks}
+                assert all(uuid in task_uuids_from_list for uuid in task_uuids)
+    finally:
+        # Clean up
+        for task_uuid in task_uuids:
+            with contextlib.suppress(TaskNotFoundError):
+                await task_manager.cancel_task(owner_metadata, task_uuid)
+
+
+async def test_submit_group_with_mixed_task_types(
+    task_manager: CeleryTaskManager,
+    with_celery_worker: WorkController,
+):
+    owner_metadata = MyOwnerMetadata(user_id=42, owner="test-owner")
+
+    # Submit a group with different task types
+    executions = [
+        (
+            ExecutionMetadata(name=fake_file_processor.__name__),
+            {"files": ["file1", "file2"]},
+        ),
+        (
+            ExecutionMetadata(name=fake_file_processor.__name__),
+            {"files": ["file3"]},
+        ),
+        (
+            ExecutionMetadata(name=streaming_results_task.__name__, ephemeral=False),
+            {"num_results": 2},
+        ),
+    ]
+
+    _, task_uuids = await task_manager.submit_group(
+        executions,
+        owner_metadata=owner_metadata,
+    )
+
+    assert len(task_uuids) == 3
+
+    # Wait for all tasks to complete
+    for task_uuid in task_uuids:
+        async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
+            with attempt:
+                status = await task_manager.get_task_status(owner_metadata, task_uuid)
+                assert status.task_state == TaskState.SUCCESS
+
+    # Verify first two tasks return "archive.zip"
+    assert await task_manager.get_task_result(owner_metadata, task_uuids[0]) == "archive.zip"
+    assert await task_manager.get_task_result(owner_metadata, task_uuids[1]) == "archive.zip"
+
+    # Verify streaming task result
+    result = await task_manager.get_task_result(owner_metadata, task_uuids[2])
+    assert result == "completed-2-results"
+
+
+async def test_submit_group_can_cancel_individual_tasks(
+    task_manager: CeleryTaskManager,
+    with_celery_worker: WorkController,
+):
+    owner_metadata = MyOwnerMetadata(user_id=42, owner="test-owner")
+
+    # Submit a group of long-running tasks
+    num_tasks = 3
+    executions = [
+        (
+            ExecutionMetadata(name=dreamer_task.__name__),
+            {},
+        )
+        for _ in range(num_tasks)
+    ]
+
+    _, task_uuids = await task_manager.submit_group(
+        executions,
+        owner_metadata=owner_metadata,
+    )
+
+    # Wait a bit to ensure tasks are running
+    await asyncio.sleep(2.0)
+
+    # Cancel the first task
+    await task_manager.cancel_task(owner_metadata, task_uuids[0])
+
+    # Verify first task is gone
+    with pytest.raises(TaskNotFoundError):
+        await task_manager.get_task_status(owner_metadata, task_uuids[0])
+
+    # Cancel remaining tasks
+    for task_uuid in task_uuids[1:]:
+        await task_manager.cancel_task(owner_metadata, task_uuid)
+
+
+async def test_submit_group_with_failures(
+    task_manager: CeleryTaskManager,
+    with_celery_worker: WorkController,
+):
+    owner_metadata = MyOwnerMetadata(user_id=42, owner="test-owner")
+
+    # Submit a group with some failing tasks
+    executions = [
+        (
+            ExecutionMetadata(name=fake_file_processor.__name__),
+            {"files": ["file1"]},
+        ),
+        (
+            ExecutionMetadata(name=failure_task.__name__),
+            {},
+        ),
+        (
+            ExecutionMetadata(name=fake_file_processor.__name__),
+            {"files": ["file2"]},
+        ),
+    ]
+
+    _, task_uuids = await task_manager.submit_group(
+        executions,
+        owner_metadata=owner_metadata,
+    )
+
+    assert len(task_uuids) == 3
+
+    # Wait for all tasks to finish
+    for task_uuid in task_uuids:
+        async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
+            with attempt:
+                status = await task_manager.get_task_status(owner_metadata, task_uuid)
+                assert status.task_state in TASK_DONE_STATES
+
+    # Verify successful tasks
+    assert await task_manager.get_task_result(owner_metadata, task_uuids[0]) == "archive.zip"
+    assert await task_manager.get_task_result(owner_metadata, task_uuids[2]) == "archive.zip"
+
+    # Verify failed task
+    result = await task_manager.get_task_result(owner_metadata, task_uuids[1])
+    assert isinstance(result, TransferableCeleryError)
+    assert "Something strange happened: BOOM!" in f"{result}"
+
+
+async def test_submit_group_with_ephemeral_tasks(
+    task_manager: CeleryTaskManager,
+    with_celery_worker: WorkController,
+):
+    owner_metadata = MyOwnerMetadata(user_id=42, owner="test-owner")
+
+    # Submit a group with ephemeral tasks
+    num_tasks = 2
+    executions = [
+        (
+            ExecutionMetadata(name=fake_file_processor.__name__, ephemeral=True),
+            {"files": [f"file{i}"]},
+        )
+        for i in range(num_tasks)
+    ]
+
+    _, task_uuids = await task_manager.submit_group(
+        executions,
+        owner_metadata=owner_metadata,
+    )
+
+    assert len(task_uuids) == num_tasks
+
+    # Wait for all tasks to complete and get results (which should clean them up)
+    for task_uuid in task_uuids:
+        async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
+            with attempt:
+                status = await task_manager.get_task_status(owner_metadata, task_uuid)
+                assert status.task_state == TaskState.SUCCESS
+
+        # Getting the result should trigger cleanup for ephemeral tasks
+        result = await task_manager.get_task_result(owner_metadata, task_uuid)
+        assert result == "archive.zip"
+
+    # Verify tasks are cleaned up after retrieval
+    await asyncio.sleep(0.5)  # Give a moment for cleanup
+    for task_uuid in task_uuids:
+        # Second attempt to get result should fail as ephemeral tasks are cleaned up
+        with pytest.raises(TaskNotFoundError):
+            await task_manager.get_task_status(owner_metadata, task_uuid)
+
+
+async def test_submit_empty_group(
+    task_manager: CeleryTaskManager,
+    with_celery_worker: WorkController,
+):
+    owner_metadata = MyOwnerMetadata(user_id=42, owner="test-owner")
+
+    # Submit an empty group
+    _, task_uuids = await task_manager.submit_group(
+        [],
+        owner_metadata=owner_metadata,
+    )
+
+    assert task_uuids == []
