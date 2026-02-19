@@ -197,7 +197,11 @@ class StepsRepository(BaseRepository):
 
     async def set_step_as_ready(self, step_id: StepId) -> None:
         async with transaction_context(self.engine) as conn:
-            await conn.execute(ps_steps.update().where(ps_steps.c.step_id == step_id).values(state=StepState.READY))
+            await conn.execute(
+                ps_steps.update()
+                .where((ps_steps.c.step_id == step_id) & (ps_steps.c.state == StepState.CREATED))
+                .values(state=StepState.READY)
+            )
 
     async def get_step_for_workflow_manager(self, step_id: StepId) -> Step | None:
         async with pass_or_acquire_connection(self.engine) as conn:
@@ -207,7 +211,7 @@ class StepsRepository(BaseRepository):
             return None
         return _row_to_step(row)
 
-    async def get_step_for_worker(self, step_id: StepId | None) -> Step | None:
+    async def set_step_as_running_for_worker(self, step_id: StepId | None) -> Step | None:
         async with transaction_context(self.engine) as conn:
             # Select a READY step and lock it; skip rows already locked by other workers
             select_query = (

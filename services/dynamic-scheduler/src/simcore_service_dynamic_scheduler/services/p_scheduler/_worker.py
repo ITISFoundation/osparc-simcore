@@ -136,7 +136,7 @@ async def _try_handle_step(
     # 1. try to acquire a job from the queue (or quit loop if none is available)
     steps_repo = get_repository(app, StepsRepository)
 
-    step = await steps_repo.get_step_for_worker(search_step_id)
+    step = await steps_repo.set_step_as_running_for_worker(search_step_id)
     if step is None:
         return
 

@@ -58,7 +58,7 @@ def run_id(run_in_db: Run) -> RunId:
 
 @pytest.fixture
 def missing_run_id() -> RunId:
-    return -42
+    return 1_000_000_000
 
 
 @pytest.fixture
@@ -105,4 +105,4 @@ async def step_id(steo_in_db: Step) -> StepId:
 
 @pytest.fixture
 def missing_step_id() -> StepId:
-    return -42
+    return 1_000_000_001

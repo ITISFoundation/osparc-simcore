@@ -4,6 +4,7 @@
 
 import asyncio
 from collections.abc import Awaitable, Callable
+from copy import deepcopy
 from datetime import datetime, timedelta
 from typing import Final
 
@@ -96,6 +97,12 @@ async def _get_step_row(engine: AsyncEngine, *, step_id: StepId | None = None, r
     row = result.first()
     assert row is not None
     return row
+
+
+async def _assert_step_is_missing(engine: AsyncEngine, step_id: StepId) -> None:
+    async with engine.connect() as conn:
+        result = await conn.execute(sa.select("*").where(ps_steps.c.step_id == step_id))
+    assert result.first() is None
 
 
 async def _get_step_fail_history(engine: AsyncEngine, step_id: StepId) -> list[Row]:
@@ -307,3 +314,74 @@ async def test_manual_skip_step(
     # 2. step cannot be skipped if step_id does not exist
     with pytest.raises(StepNotFoundError):
         await steps_repo.manual_skip_step(missing_step_id, reason)
+
+
+async def test_set_step_as_ready(
+    steps_repo: StepsRepository,
+    engine: AsyncEngine,
+    run_id: RunId,
+    create_step_in_db: Callable[..., Awaitable[Step]],
+    missing_step_id: StepId,
+):
+    # 1. step can be set as ready if in CREATED state
+    step = await create_step_in_db(state=StepState.CREATED)
+
+    await steps_repo.set_step_as_ready(step.step_id)
+
+    step_row = await _get_step_row(engine, step_id=step.step_id)
+    assert StepState(step_row.state) == StepState.READY
+
+    # 2. step cannot be set as ready if not in CREATED state
+    for state in set(StepState) - {StepState.CREATED}:
+        step = await create_step_in_db(state=state)
+        await steps_repo.set_step_as_ready(step.step_id)
+
+        step_row = await _get_step_row(engine, step_id=step.step_id)
+        assert StepState(step_row.state) == state
+
+    # 3. step cannot be set as ready if step_id does not exist
+    await steps_repo.set_step_as_ready(missing_step_id)
+    await _assert_step_is_missing(engine, missing_step_id)
+
+
+async def test_get_step_for_workflow_manager(
+    steps_repo: StepsRepository,
+    engine: AsyncEngine,
+    run_id: RunId,
+    create_step_in_db: Callable[..., Awaitable[Step]],
+    missing_step_id: StepId,
+):
+    # 1. step can be retrieved if it exists
+    step = await create_step_in_db()
+
+    retrieved_step = await steps_repo.get_step_for_workflow_manager(step.step_id)
+    assert retrieved_step == step
+
+    # 2. None is returned if step_id does not exist
+    assert await steps_repo.get_step_for_workflow_manager(missing_step_id) is None
+
+
+async def test_set_step_as_running_for_worker(
+    steps_repo: StepsRepository,
+    engine: AsyncEngine,
+    run_id: RunId,
+    create_step_in_db: Callable[..., Awaitable[Step]],
+    missing_step_id: StepId,
+):
+    step = await create_step_in_db(state=StepState.READY)
+
+    # 1. Nothing is returns if the steps is missing but a READY step exists
+    assert await steps_repo.set_step_as_running_for_worker(missing_step_id) is None
+
+    # 2. step can be retrieved if it exists
+    retrieved_step = await steps_repo.set_step_as_running_for_worker(step.step_id)
+    expected_step = deepcopy(step)
+    expected_step.state = StepState.RUNNING
+    assert retrieved_step == expected_step
+    # no more steps to return
+    assert await steps_repo.set_step_as_running_for_worker(step.step_id) is None
+
+    # 3. Not Ready steps are never returned
+    for state in set(StepState) - {StepState.READY}:
+        step = await create_step_in_db(state=state)
+        assert await steps_repo.set_step_as_running_for_worker(step.step_id) is None
