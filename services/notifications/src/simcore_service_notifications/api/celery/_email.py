@@ -41,7 +41,7 @@ async def _send_email(msg: _EmailMessage) -> None:
         await smtp.send_message(msg)
 
 
-async def send_email(
+async def send_email_message(
     task: Task,
     task_key: TaskKey,
     message: EmailMessage,
