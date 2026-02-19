@@ -1,7 +1,7 @@
 from typing import Any, Final
 
-from ...celery.models import ExecutionMetadata, OwnerMetadata, TaskName, TaskUUID
-from ...celery.task_manager import TaskManager
+from ..models import ExecutionMetadata, OwnerMetadata, TaskName, TaskUUID
+from ..task_manager import TaskManager
 
 SEND_MESSAGE_TASK_NAME: Final[TaskName] = "send_{}_message"
 
