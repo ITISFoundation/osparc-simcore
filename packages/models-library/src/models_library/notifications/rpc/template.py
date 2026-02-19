@@ -2,7 +2,7 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict
 
-from .._notifications import ChannelType, TemplateName
+from .. import ChannelType, TemplateName
 
 
 class TemplateRef(BaseModel):
