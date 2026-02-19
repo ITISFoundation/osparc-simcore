@@ -79,6 +79,8 @@ mypy==1.18.2
     # via sqlalchemy
 mypy-extensions==1.1.0
     # via mypy
+numpy==2.4.2
+    # via types-networkx
 packaging==24.2
     # via
     #   -c requirements/_base.txt
@@ -152,6 +154,8 @@ sqlalchemy2-stubs==0.0.2a38
     # via sqlalchemy
 termcolor==3.1.0
     # via pytest-sugar
+types-networkx==3.6.1.20260210
+    # via -r requirements/_test.in
 types-psycopg2==2.9.21.20250915
     # via -r requirements/_test.in
 typing-extensions==4.14.1
