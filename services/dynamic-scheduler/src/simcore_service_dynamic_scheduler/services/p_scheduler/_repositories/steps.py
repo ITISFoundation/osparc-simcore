@@ -1,3 +1,4 @@
+import logging
 from typing import Final
 
 import sqlalchemy as sa
@@ -10,7 +11,8 @@ from .._abc import BaseStep
 from .._models import DagNodeUniqueReference, RunId, Step, StepId, StepState
 from .step_fail_history import StepFailHistoryRepository
 
-_DEFAULT_AVAILABLE_ATTEMPTS: Final[int] = 3
+_logger = logging.getLogger(__name__)
+
 _INITIAL_ATTEMPT_NUMBER: Final[int] = 1
 
 
@@ -35,6 +37,9 @@ class StepsRepository(BaseRepository):
         self, run_id: RunId, step_type: DagNodeUniqueReference, *, step_class: type[BaseStep], is_reverting: bool
     ) -> Step:
         timeout = step_class.get_revert_timeout() if is_reverting else step_class.get_apply_timeout()
+        available_attempts = (
+            step_class.get_revert_available_attempts() if is_reverting else step_class.get_apply_available_attempts()
+        )
         async with transaction_context(self.engine) as conn:
             result = await conn.execute(
                 ps_steps.insert()
@@ -43,7 +48,7 @@ class StepsRepository(BaseRepository):
                     step_type=step_type,
                     is_reverting=is_reverting,
                     timeout=timeout,
-                    available_attempts=_DEFAULT_AVAILABLE_ATTEMPTS,
+                    available_attempts=available_attempts,
                     attempt_number=_INITIAL_ATTEMPT_NUMBER,
                     state=StepState.CREATED,
                 )
@@ -53,6 +58,10 @@ class StepsRepository(BaseRepository):
         return _row_to_step(row)
 
     async def set_run_steps_as_cancelled(self, run_id: RunId) -> set[StepId]:
+        """
+        Only steps steps that are considered cancellable will be transitioned to CANCELLED
+        return: list[StepId] of the steps that were cancelled
+        """
         async with transaction_context(self.engine) as conn:
             result = await conn.execute(
                 ps_steps.update()
@@ -96,6 +105,9 @@ class StepsRepository(BaseRepository):
             finished_at=row.finished_at,
             message=row.message or "",
         )
+
+        if row.message is None:
+            _logger.warning("step_id='%s' failed without providing a message, there should be one!", step_id)
 
     async def retry_failed_step(self, step_id: StepId) -> None:
         await self._push_step_to_history(step_id)

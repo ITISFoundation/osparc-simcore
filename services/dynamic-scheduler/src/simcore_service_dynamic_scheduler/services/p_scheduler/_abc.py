@@ -1,7 +1,10 @@
 from abc import ABC, abstractmethod
 from datetime import timedelta
+from typing import Final
 
 from ._models import DagNodeUniqueReference, InData, InDataKeys, OutData, OutDataKeys
+
+_DEFAULT_AVAILABLE_ATTEMPTS: Final[int] = 3
 
 
 class BaseStep(ABC):
@@ -32,6 +35,11 @@ class BaseStep(ABC):
     def get_apply_timeout(cls) -> timedelta:
         """max amount of time after which the apply step will be cancelled"""
 
+    @classmethod
+    def get_apply_available_attempts(cls) -> int:
+        """number of available attempts for the apply step, after which the step will be considered failed"""
+        return _DEFAULT_AVAILABLE_ATTEMPTS
+
     ### REVERT ###
 
     @classmethod
@@ -53,3 +61,8 @@ class BaseStep(ABC):
     @abstractmethod
     def get_revert_timeout(cls) -> timedelta:
         """max amount of time after which the revert step will be cancelled"""
+
+    @classmethod
+    def get_revert_available_attempts(cls) -> int:
+        """number of available attempts for the revert step, after which the step will be considered failed"""
+        return _DEFAULT_AVAILABLE_ATTEMPTS

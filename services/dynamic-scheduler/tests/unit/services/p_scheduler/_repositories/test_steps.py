@@ -21,9 +21,13 @@ from simcore_service_dynamic_scheduler.services.base_repository import (
     get_repository,
 )
 from simcore_service_dynamic_scheduler.services.p_scheduler import BaseStep
+from simcore_service_dynamic_scheduler.services.p_scheduler._abc import _DEFAULT_AVAILABLE_ATTEMPTS
 from simcore_service_dynamic_scheduler.services.p_scheduler._models import RunId, Step, StepId, StepState
 from simcore_service_dynamic_scheduler.services.p_scheduler._repositories import StepsRepository
-from simcore_service_dynamic_scheduler.services.p_scheduler._repositories.steps import _row_to_step
+from simcore_service_dynamic_scheduler.services.p_scheduler._repositories.steps import (
+    _INITIAL_ATTEMPT_NUMBER,
+    _row_to_step,
+)
 from sqlalchemy.engine.row import Row
 from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -111,9 +115,14 @@ class _AStep(BaseStep):
         return timedelta(seconds=24)
 
 
-async def test_create_step(steps_repo: StepsRepository, run_id: RunId):
-    step = await steps_repo.create_step(run_id, _AStep.get_unique_reference(), step_class=_AStep, is_reverting=False)
+@pytest.mark.parametrize("is_reverting", [False, True])
+async def test_create_step(steps_repo: StepsRepository, run_id: RunId, is_reverting: bool):
+    step = await steps_repo.create_step(
+        run_id, _AStep.get_unique_reference(), step_class=_AStep, is_reverting=is_reverting
+    )
     assert step.run_id == run_id
+    assert step.available_attempts == _DEFAULT_AVAILABLE_ATTEMPTS
+    assert step.attempt_number == _INITIAL_ATTEMPT_NUMBER
 
     step_row = await _get_step_row(steps_repo.engine, step_id=step.step_id)
     assert _row_to_step(step_row) == step
