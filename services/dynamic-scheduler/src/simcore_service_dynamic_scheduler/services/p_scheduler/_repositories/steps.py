@@ -24,34 +24,13 @@ def _row_to_step(row: Row) -> Step:
         timeout=row.timeout,
         available_attempts=row.available_attempts,
         attempt_number=row.attempt_number,
-        state=StepState(row.state.value),
+        state=StepState(row.state),
         finished_at=row.finished_at,
         message=row.message,
     )
 
 
 class StepsRepository(BaseRepository):
-    async def set_run_steps_as_cancelled(self, run_id: RunId) -> set[StepId]:
-        async with transaction_context(self.engine) as conn:
-            result = await conn.execute(
-                ps_steps.update()
-                .where(
-                    (ps_steps.c.run_id == run_id)
-                    & (ps_steps.c.state.in_([StepState.CREATED, StepState.READY, StepState.RUNNING]))
-                )
-                .values(state=StepState.CANCELLED)
-                .returning(ps_steps.c.step_id)
-            )
-        return {row.step_id for row in result.fetchall()}
-
-    async def get_all_run_tracked_steps(self, run_id: RunId) -> set[tuple[DagNodeUniqueReference, bool]]:
-        async with pass_or_acquire_connection(self.engine) as conn:
-            result = await conn.execute(
-                sa.select(ps_steps.c.step_type, ps_steps.c.is_reverting).where(ps_steps.c.run_id == run_id)
-            )
-            rows = result.fetchall()
-        return {(row.step_type, row.is_reverting) for row in rows}
-
     async def create_step(
         self, run_id: RunId, step_type: DagNodeUniqueReference, *, step_class: type[BaseStep], is_reverting: bool
     ) -> Step:
@@ -72,6 +51,27 @@ class StepsRepository(BaseRepository):
             )
             row = result.one()
         return _row_to_step(row)
+
+    async def set_run_steps_as_cancelled(self, run_id: RunId) -> set[StepId]:
+        async with transaction_context(self.engine) as conn:
+            result = await conn.execute(
+                ps_steps.update()
+                .where(
+                    (ps_steps.c.run_id == run_id)
+                    & (ps_steps.c.state.in_([StepState.CREATED, StepState.READY, StepState.RUNNING]))
+                )
+                .values(state=StepState.CANCELLED)
+                .returning(ps_steps.c.step_id)
+            )
+        return {row.step_id for row in result.fetchall()}
+
+    async def get_all_run_tracked_steps(self, run_id: RunId) -> set[tuple[DagNodeUniqueReference, bool]]:
+        async with pass_or_acquire_connection(self.engine) as conn:
+            result = await conn.execute(
+                sa.select(ps_steps.c.step_type, ps_steps.c.is_reverting).where(ps_steps.c.run_id == run_id)
+            )
+            rows = result.fetchall()
+        return {(row.step_type, row.is_reverting) for row in rows}
 
     async def get_all_run_tracked_steps_states(self, run_id: RunId) -> dict[tuple[DagNodeUniqueReference, bool], Step]:
         async with pass_or_acquire_connection(self.engine) as conn:

@@ -4,6 +4,7 @@
 
 import asyncio
 from collections.abc import Awaitable, Callable
+from datetime import timedelta
 from typing import Final
 
 import pytest
@@ -19,8 +20,10 @@ from simcore_postgres_database.models.p_scheduler import ps_steps
 from simcore_service_dynamic_scheduler.services.base_repository import (
     get_repository,
 )
+from simcore_service_dynamic_scheduler.services.p_scheduler import BaseStep
 from simcore_service_dynamic_scheduler.services.p_scheduler._models import RunId, Step, StepId, StepState
 from simcore_service_dynamic_scheduler.services.p_scheduler._repositories import StepsRepository
+from simcore_service_dynamic_scheduler.services.p_scheduler._repositories.steps import _row_to_step
 from sqlalchemy.engine.row import Row
 from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -67,6 +70,11 @@ def steps_repo(app: FastAPI) -> StepsRepository:
     return get_repository(app, StepsRepository)
 
 
+@pytest.fixture
+def number_of_steps() -> NonNegativeInt:
+    return 3
+
+
 async def _get_step_row(engine: AsyncEngine, *, step_id: StepId | None = None, run_id: RunId | None = None) -> Row:
     assert step_id is not None or run_id is not None, "At least one of step_id or run_id must be provided"
 
@@ -93,7 +101,24 @@ async def _assert_step_state(engine: AsyncEngine, run_id: RunId, expected_state:
 _CANCELLABLE_STATES: Final[set[StepState]] = {StepState.CREATED, StepState.READY, StepState.RUNNING}
 
 
-@pytest.mark.parametrize("number_of_steps", [3])
+class _AStep(BaseStep):
+    @classmethod
+    def get_apply_timeout(cls) -> timedelta:
+        return timedelta(seconds=42)
+
+    @classmethod
+    def get_revert_timeout(cls) -> timedelta:
+        return timedelta(seconds=24)
+
+
+async def test_create_step(steps_repo: StepsRepository, run_id: RunId):
+    step = await steps_repo.create_step(run_id, _AStep.get_unique_reference(), step_class=_AStep, is_reverting=False)
+    assert step.run_id == run_id
+
+    step_row = await _get_step_row(steps_repo.engine, step_id=step.step_id)
+    assert _row_to_step(step_row) == step
+
+
 @pytest.mark.parametrize("cancellable_state", _CANCELLABLE_STATES)
 async def test_set_run_steps_as_cancelled_with_cancellable_states(
     engine: AsyncEngine,
@@ -102,7 +127,7 @@ async def test_set_run_steps_as_cancelled_with_cancellable_states(
     create_step_in_db: Callable[..., Awaitable[Step]],
     cancellable_state: StepState,
     number_of_steps: NonNegativeInt,
-) -> None:
+):
     steps = await asyncio.gather(*[create_step_in_db(state=cancellable_state) for _ in range(number_of_steps)])
     await _assert_step_state(engine, run_id, expected_state=cancellable_state)
 
@@ -110,7 +135,6 @@ async def test_set_run_steps_as_cancelled_with_cancellable_states(
     await _assert_step_state(engine, run_id, expected_state=StepState.CANCELLED)
 
 
-@pytest.mark.parametrize("number_of_steps", [3])
 @pytest.mark.parametrize("non_cancellable_state", set(StepState) - _CANCELLABLE_STATES)
 async def test_set_run_steps_as_cancelled_with_non_cancellable_states(
     engine: AsyncEngine,
@@ -119,10 +143,34 @@ async def test_set_run_steps_as_cancelled_with_non_cancellable_states(
     create_step_in_db: Callable[..., Awaitable[Step]],
     non_cancellable_state: StepState,
     number_of_steps: NonNegativeInt,
-) -> None:
+):
     await asyncio.gather(*[create_step_in_db(state=non_cancellable_state) for _ in range(number_of_steps)])
     await create_step_in_db(state=non_cancellable_state)
     await _assert_step_state(engine, run_id, expected_state=non_cancellable_state)
 
     assert await steps_repo.set_run_steps_as_cancelled(run_id) == set()
     await _assert_step_state(engine, run_id, expected_state=non_cancellable_state)
+
+
+async def test_get_all_run_tracked_steps(
+    steps_repo: StepsRepository,
+    run_id: RunId,
+    create_step_in_db: Callable[..., Awaitable[Step]],
+    number_of_steps: NonNegativeInt,
+):
+    steps = await asyncio.gather(*[create_step_in_db() for _ in range(number_of_steps)])
+
+    tracked_steps = await steps_repo.get_all_run_tracked_steps(run_id)
+    assert tracked_steps == {(step.step_type, step.is_reverting) for step in steps}
+
+
+async def test_get_all_run_tracked_steps_states(
+    steps_repo: StepsRepository,
+    run_id: RunId,
+    create_step_in_db: Callable[..., Awaitable[Step]],
+    number_of_steps: NonNegativeInt,
+):
+    steps = await asyncio.gather(*[create_step_in_db() for _ in range(number_of_steps)])
+
+    tracked_steps_states = await steps_repo.get_all_run_tracked_steps_states(run_id)
+    assert tracked_steps_states == {(step.step_type, step.is_reverting): step for step in steps}
