@@ -159,7 +159,5 @@ async def send_message(
                 product_name=product_name,
             ).model_dump()
         ),
-        user_id=user_id,
-        product_name=product_name,
         message=message.model_dump(),
     )

@@ -1,8 +1,5 @@
 from typing import Any, Final
 
-from models_library.products import ProductName
-from models_library.users import UserID
-
 from ...celery.models import ExecutionMetadata, OwnerMetadata, TaskName, TaskUUID
 from ...celery.task_manager import TaskManager
 
@@ -13,8 +10,6 @@ async def submit_send_message_task(
     task_manager: TaskManager,
     *,
     owner_metadata: OwnerMetadata,
-    user_id: UserID,
-    product_name: ProductName,
     message: dict[str, Any],  # NOTE: validated internally
 ) -> tuple[TaskUUID, TaskName]:
     return await task_manager.submit_task(
@@ -23,7 +18,5 @@ async def submit_send_message_task(
             queue="notifications",
         ),
         owner_metadata=owner_metadata,
-        user_id=user_id,
-        product_name=product_name,
         message=message,
     ), SEND_MESSAGE_TASK_NAME.format(message["channel"])
