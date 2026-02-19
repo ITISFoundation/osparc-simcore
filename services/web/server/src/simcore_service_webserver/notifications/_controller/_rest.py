@@ -7,7 +7,7 @@ from models_library.api_schemas_webserver.notifications import (
     TemplatePreviewBody,
     TemplatePreviewGet,
 )
-from models_library.notifications._notifications import TemplateRef
+from models_library.notifications import TemplateRef
 from servicelib.aiohttp import status
 from servicelib.aiohttp.requests_validation import parse_request_body_as, parse_request_query_parameters_as
 from servicelib.aiohttp.rest_responses import create_data_response
