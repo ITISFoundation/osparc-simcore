@@ -138,7 +138,7 @@ async def _if_any_reschedule_failed_steps_or_give_up(
 
 
 async def _set_created_steps_as_ready(
-    app: FastAPI,
+    notifications_manager: NotificationsManager,
     steps_repo: StepsRepository,
     current_run: Run,
     steps_sequence: StepsSequence,
@@ -154,7 +154,8 @@ async def _set_created_steps_as_ready(
                 all_steps_ready = False
 
             if step.state == StepState.CREATED:
-                await steps_repo.set_step_as_ready(app, step.step_id)
+                await steps_repo.set_step_as_ready(step.step_id)
+                await notifications_manager.notify_step_ready(step.step_id)
 
         if not all_steps_ready:
             # stop here, do not schedule more
@@ -221,7 +222,7 @@ async def _reconciliate(app: FastAPI, *, node_id: NodeID) -> None:
     ):
         return None
 
-    await _set_created_steps_as_ready(app, steps_repo, current_run, steps_sequence, run_steps)
+    await _set_created_steps_as_ready(notifications_manager, steps_repo, current_run, steps_sequence, run_steps)
 
     # 4. CLEANUP RUN IF COMPLETED
     return await _cleanup_run_if_completed(node_id, workflow_manager, steps_repo, current_run)

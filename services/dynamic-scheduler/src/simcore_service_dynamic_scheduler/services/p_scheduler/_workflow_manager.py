@@ -11,6 +11,7 @@ from simcore_service_dynamic_scheduler.services.p_scheduler._models import UserR
 
 from ..base_repository import get_repository
 from ._models import Run, Step, StepFailHistory, StepId
+from ._notifications import NotificationsManager
 from ._repositories import RunsRepository, StepFailHistoryRepository, StepsRepository, UserRequestsRepository
 
 _logger = logging.getLogger(__name__)
@@ -82,6 +83,10 @@ class WorkflowManager(SingletonInAppStateMixin):
     def step_fail_history_repo(self) -> StepFailHistoryRepository:
         return get_repository(self.app, StepFailHistoryRepository)
 
+    @cached_property
+    def notifications_manager(self) -> NotificationsManager:
+        return NotificationsManager.get_from_app_state(self.app)
+
     async def add_start_workflow(self, node_id: NodeID) -> None:
         await _validate_workflow_creation_preconditions(
             node_id=node_id,
@@ -111,7 +116,9 @@ class WorkflowManager(SingletonInAppStateMixin):
             return
 
         await self.runs_repo.cancel_run(current_run.run_id)
-        await self.steps_repo.mark_run_steps_as_skipped(self.app, current_run.run_id)
+        steps_to_notify = await self.steps_repo.set_run_steps_as_cancelled(current_run.run_id)
+        for step_id in steps_to_notify:
+            await self.notifications_manager.notify_step_cancelled(step_id)
         _logger.debug("CANCELED workflow for '%s': %s", node_id, current_run)
 
     async def set_waiting_manual_intervention(self, node_id: NodeID) -> None:

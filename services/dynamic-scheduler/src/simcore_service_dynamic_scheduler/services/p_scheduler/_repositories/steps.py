@@ -1,7 +1,6 @@
 from typing import Final
 
 import sqlalchemy as sa
-from fastapi import FastAPI
 from simcore_postgres_database.models.p_scheduler import ps_steps
 from simcore_postgres_database.utils_repos import pass_or_acquire_connection, transaction_context
 from sqlalchemy.engine.row import Row
@@ -9,7 +8,6 @@ from sqlalchemy.engine.row import Row
 from ...base_repository import BaseRepository
 from .._abc import BaseStep
 from .._models import DagNodeUniqueReference, RunId, Step, StepId, StepState
-from .._notifications import NotificationsManager
 from .step_fail_history import StepFailHistoryRepository
 
 _DEFAULT_AVAILABLE_ATTEMPTS: Final[int] = 3
@@ -33,7 +31,7 @@ def _row_to_step(row: Row) -> Step:
 
 
 class StepsRepository(BaseRepository):
-    async def mark_run_steps_as_skipped(self, app: FastAPI, run_id: RunId) -> None:
+    async def set_run_steps_as_cancelled(self, run_id: RunId) -> set[StepId]:
         async with transaction_context(self.engine) as conn:
             result = await conn.execute(
                 ps_steps.update()
@@ -44,11 +42,7 @@ class StepsRepository(BaseRepository):
                 .values(state=StepState.CANCELLED)
                 .returning(ps_steps.c.step_id)
             )
-            cancelled_step_ids = [row.step_id for row in result.fetchall()]
-
-        notifications_manager = NotificationsManager.get_from_app_state(app)
-        for step_id in cancelled_step_ids:
-            await notifications_manager.notify_step_cancelled(step_id)
+        return {row.step_id for row in result.fetchall()}
 
     async def get_all_run_tracked_steps(self, run_id: RunId) -> set[tuple[DagNodeUniqueReference, bool]]:
         async with pass_or_acquire_connection(self.engine) as conn:
@@ -119,11 +113,9 @@ class StepsRepository(BaseRepository):
                 )
             )
 
-    async def set_step_as_ready(self, app: FastAPI, step_id: StepId) -> None:
+    async def set_step_as_ready(self, step_id: StepId) -> None:
         async with transaction_context(self.engine) as conn:
             await conn.execute(ps_steps.update().where(ps_steps.c.step_id == step_id).values(state=StepState.READY))
-        notifications_manager = NotificationsManager.get_from_app_state(app)
-        await notifications_manager.notify_step_ready(step_id)
 
     async def get_step_for_workflow_manager(self, step_id: StepId) -> Step | None:
         async with pass_or_acquire_connection(self.engine) as conn:
