@@ -2,7 +2,7 @@
 # pylint:disable=redefined-outer-name
 # pylint:disable=unused-argument
 
-from collections.abc import Callable
+from collections.abc import AsyncIterator, Callable
 
 import pytest
 import sqlalchemy as sa
@@ -13,6 +13,7 @@ from pytest_simcore.helpers.postgres_tools import (
     PostgresTestConfig,
 )
 from pytest_simcore.helpers.typing_env import EnvVarsDict
+from simcore_postgres_database.models.p_scheduler import ps_runs
 from simcore_service_dynamic_scheduler.services.base_repository import (
     get_repository,
 )
@@ -64,34 +65,50 @@ def runs_repo(app: FastAPI) -> RunsRepository:
     return get_repository(app, RunsRepository)
 
 
+@pytest.fixture
+async def auto_remove_runs(engine: AsyncEngine) -> AsyncIterator[Callable[[Run | RunId], None]]:
+    run_ids_to_remove: list[Run | RunId] = []
+
+    def _(run_id: Run | RunId) -> None:
+        if isinstance(run_id, Run):
+            run_ids_to_remove.append(run_id.run_id)
+        else:
+            run_ids_to_remove.append(run_id)
+
+    yield _
+
+    async with engine.begin() as conn:
+        await conn.execute(ps_runs.delete().where(ps_runs.c.run_id.in_(run_ids_to_remove)))
+
+
 async def test_get_run_from_node_id(
     runs_repo: RunsRepository,
     missing_node_id: NodeID,
     node_id: NodeID,
-    ps_run_in_db: Run,
+    run_in_db: Run,
 ):
     assert await runs_repo.get_run_from_node_id(missing_node_id) is None
-    assert await runs_repo.get_run_from_node_id(node_id) == ps_run_in_db
+    assert await runs_repo.get_run_from_node_id(node_id) == run_in_db
 
 
 async def test_get_run(
     runs_repo: RunsRepository,
     missing_run_id: RunId,
     run_id: RunId,
-    ps_run_in_db: Run,
+    run_in_db: Run,
 ):
     assert await runs_repo.get_run(missing_run_id) is None
-    assert await runs_repo.get_run(run_id) == ps_run_in_db
+    assert await runs_repo.get_run(run_id) == run_in_db
 
 
 async def test_create_from_start_request(
     runs_repo: RunsRepository,
     missing_node_id: NodeID,
-    auto_remove_ps_runs: Callable[[Run | RunId], None],
+    auto_remove_runs: Callable[[Run | RunId], None],
     node_id: NodeID,
 ):
     run = await runs_repo.create_from_start_request(node_id=missing_node_id)
-    auto_remove_ps_runs(run)
+    auto_remove_runs(run)
     assert run.node_id == missing_node_id
     assert run.workflow_name == "START"
     assert run.is_reverting is False
@@ -104,11 +121,11 @@ async def test_create_from_start_request(
 async def test_create_from_stop_request(
     runs_repo: RunsRepository,
     missing_node_id: NodeID,
-    auto_remove_ps_runs: Callable[[Run | RunId], None],
+    auto_remove_runs: Callable[[Run | RunId], None],
     node_id: NodeID,
 ):
     run = await runs_repo.create_from_stop_request(node_id=missing_node_id)
-    auto_remove_ps_runs(run)
+    auto_remove_runs(run)
 
     assert run.node_id == missing_node_id
     assert run.workflow_name == "STOP"
@@ -134,9 +151,9 @@ async def test_remove_run(runs_repo: RunsRepository, missing_run_id: RunId, run_
     await runs_repo.remove_run(run_id)
 
 
-async def test_get_all_runs(runs_repo: RunsRepository, ps_run_in_db: Run):
+async def test_get_all_runs(runs_repo: RunsRepository, run_in_db: Run):
     all_runs = await runs_repo.get_all_runs()
-    assert all_runs == [ps_run_in_db]
+    assert all_runs == [run_in_db]
 
-    await runs_repo.remove_run(ps_run_in_db.run_id)
+    await runs_repo.remove_run(run_in_db.run_id)
     assert await runs_repo.get_all_runs() == []

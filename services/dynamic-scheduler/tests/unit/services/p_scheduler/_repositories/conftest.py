@@ -1,7 +1,8 @@
 # pylint:disable=contextmanager-generator-missing-cleanup
 # pylint: disable=redefined-outer-name
 
-from collections.abc import AsyncIterator, Callable
+from collections.abc import AsyncIterator, Awaitable, Callable
+from contextlib import AsyncExitStack
 from typing import Any
 
 import pytest
@@ -19,46 +20,40 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 
 @pytest.fixture
-def random_ps_run_data(faker: Faker) -> dict[str, Any]:
-    return random_ps_run(fake=faker)
+async def create_run_in_db(engine: AsyncEngine, faker: Faker) -> AsyncIterator[Callable[..., Awaitable[Run]]]:
+    exit_stack = AsyncExitStack()
+
+    async def _create(**overrides: Any) -> Run:
+        data = random_ps_run(fake=faker) | overrides
+        row = await exit_stack.enter_async_context(
+            insert_and_get_row_lifespan(
+                engine,
+                table=ps_runs,
+                values=data,
+                pk_col=ps_runs.c.run_id,
+                pk_value=data["run_id"],
+            )
+        )
+        return Run(**row)
+
+    yield _create
+
+    await exit_stack.aclose()
 
 
 @pytest.fixture
-async def ps_run_in_db(engine: AsyncEngine, random_ps_run_data: dict[str, Any]) -> AsyncIterator[Run]:
-    async with insert_and_get_row_lifespan(
-        engine,
-        table=ps_runs,
-        values=random_ps_run_data,
-        pk_col=ps_runs.c.run_id,
-        pk_value=random_ps_run_data["run_id"],
-    ) as row:
-        yield Run(**row)
+async def run_in_db(create_run_in_db: Callable[..., Awaitable[Run]]) -> Run:
+    return await create_run_in_db()
 
 
 @pytest.fixture
-async def auto_remove_ps_runs(engine: AsyncEngine) -> AsyncIterator[Callable[[Run | RunId], None]]:
-    run_ids_to_remove: list[Run | RunId] = []
-
-    def _(run_id: Run | RunId) -> None:
-        if isinstance(run_id, Run):
-            run_ids_to_remove.append(run_id.run_id)
-        else:
-            run_ids_to_remove.append(run_id)
-
-    yield _
-
-    async with engine.begin() as conn:
-        await conn.execute(ps_runs.delete().where(ps_runs.c.run_id.in_(run_ids_to_remove)))
+def node_id(run_in_db: Run) -> NodeID:
+    return run_in_db.node_id
 
 
 @pytest.fixture
-def node_id(ps_run_in_db: Run) -> NodeID:
-    return ps_run_in_db.node_id
-
-
-@pytest.fixture
-def run_id(ps_run_in_db: Run) -> RunId:
-    return ps_run_in_db.run_id
+def run_id(run_in_db: Run) -> RunId:
+    return run_in_db.run_id
 
 
 @pytest.fixture
@@ -75,22 +70,34 @@ def missing_node_id(faker: Faker) -> NodeID:
 
 
 @pytest.fixture
-async def random_ps_step_data(faker: Faker, ps_run_in_db: Run) -> dict[str, Any]:
-    return random_ps_step(ps_run_in_db.run_id, fake=faker)
+async def create_step_in_db(
+    engine: AsyncEngine, faker: Faker, run_in_db: Run
+) -> AsyncIterator[Callable[..., Awaitable[Step]]]:
+    exit_stack = AsyncExitStack()
+
+    async def _create(**overrides: Any) -> Step:
+        data = random_ps_step(run_in_db.run_id, fake=faker) | overrides
+        row = await exit_stack.enter_async_context(
+            insert_and_get_row_lifespan(
+                engine,
+                table=ps_steps,
+                values=data,
+                pk_col=ps_steps.c.step_id,
+                pk_value=data["step_id"],
+            )
+        )
+        return Step(**row)
+
+    yield _create
+
+    await exit_stack.aclose()
 
 
 @pytest.fixture
-async def ps_step_in_db(engine: AsyncEngine, random_ps_step_data: dict[str, Any]) -> AsyncIterator[Step]:
-    async with insert_and_get_row_lifespan(
-        engine,
-        table=ps_steps,
-        values=random_ps_step_data,
-        pk_col=ps_steps.c.step_id,
-        pk_value=random_ps_step_data["step_id"],
-    ) as row:
-        yield Step(**row)
+async def steo_in_db(create_step_in_db: Callable[..., Awaitable[Step]]) -> Step:
+    return await create_step_in_db()
 
 
 @pytest.fixture
-def step_id(ps_step_in_db: Step) -> StepId:
-    return ps_step_in_db.step_id
+async def step_id(steo_in_db: Step) -> StepId:
+    return steo_in_db.step_id
