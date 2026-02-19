@@ -5,7 +5,7 @@ import logging
 from email.headerregistry import Address
 
 from celery import (  # type: ignore[import-untyped]
-    Task,  # type: ignore[import-untyped]
+    Task,
     group,
     shared_task,
 )
