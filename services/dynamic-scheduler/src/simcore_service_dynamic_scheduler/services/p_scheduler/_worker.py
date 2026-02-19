@@ -179,7 +179,7 @@ async def _try_handle_step(
         match interrupt_reason:
             case _InterruptReasson.USER_CANCELLATION_REQUESTED | _InterruptReasson.LEASE_EXPIRY | None:
                 await cancel_wait_task(step_runner_task)
-                await steps_repo.step_cancelled(step.step_id)
+                await steps_repo.set_step_as_cancelled(step.step_id)
 
                 _logger.info(
                     "step_id=%s interrupted because: %s",
@@ -189,14 +189,14 @@ async def _try_handle_step(
             case _InterruptReasson.STEP_COMPLETED:
                 try:
                     await step_runner_task
-                    await steps_repo.step_finished_successfully(step.step_id)
+                    await steps_repo.set_step_as_success(step.step_id)
                 except Exception as e:  # pylint: disable=broad-except
                     _logger.exception("step_id=%s failed", step.step_id)
 
                     fail_message = create_troubleshooting_log_message(
                         user_error_msg=f"step_id={step.step_id} failed", error=e
                     )
-                    await steps_repo.step_finished_with_failure(step.step_id, fail_message)
+                    await steps_repo.set_step_as_failed(step.step_id, fail_message)
     finally:
         await cancel_wait_task(lease_task)
         await cancellation_notifier.unsubscribe(handler_step_cancellation)

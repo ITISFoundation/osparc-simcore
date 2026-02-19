@@ -238,11 +238,11 @@ class StepsRepository(BaseRepository):
             row = result.one()
         return _row_to_step(row)
 
-    async def step_cancelled(self, step_id: StepId) -> None:
+    async def set_step_as_cancelled(self, step_id: StepId) -> None:
         async with transaction_context(self.engine) as conn:
             await conn.execute(ps_steps.update().where(ps_steps.c.step_id == step_id).values(state=StepState.CANCELLED))
 
-    async def step_finished_successfully(self, step_id: StepId) -> None:
+    async def set_step_as_success(self, step_id: StepId) -> None:
         async with transaction_context(self.engine) as conn:
             await conn.execute(
                 ps_steps.update()
@@ -250,7 +250,7 @@ class StepsRepository(BaseRepository):
                 .values(state=StepState.SUCCESS, finished_at=sa.func.now())
             )
 
-    async def step_finished_with_failure(self, step_id: StepId, message: str) -> None:
+    async def set_step_as_failed(self, step_id: StepId, message: str) -> None:
         async with transaction_context(self.engine) as conn:
             await conn.execute(
                 ps_steps.update()
