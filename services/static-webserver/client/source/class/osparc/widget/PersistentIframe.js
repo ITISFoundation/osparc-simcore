@@ -93,12 +93,8 @@ qx.Class.define("osparc.widget.PersistentIframe", {
     // override
     _createContentElement : function() {
       const iframe = this.__iframe = new qx.ui.embed.Iframe(this.getSource());
-      const persistentIframe = this;
       iframe.addListener("load", () => {
-        const currentTheme = qx.theme.manager.Meta.getInstance().getTheme();
-        if (currentTheme && persistentIframe.postThemeSwitch) {
-          persistentIframe.postThemeSwitch(currentTheme.name);
-        }
+        this.__postLoadSetup();
         this.fireEvent("load");
       });
       iframe.addListener("navigate", e => this.fireDataEvent("navigate", e.getData()));
@@ -262,6 +258,18 @@ qx.Class.define("osparc.widget.PersistentIframe", {
         this.postThemeSwitch(msg.getData());
       };
       qx.event.message.Bus.getInstance().subscribe("themeSwitch", this.themeSwitchHandler);
+    },
+
+    __postLoadSetup: function() {
+      // let the iframe know which theme is currently active
+      const currentTheme = qx.theme.manager.Meta.getInstance().getTheme();
+      if (currentTheme && this.postThemeSwitch) {
+        this.postThemeSwitch(currentTheme.name);
+      }
+      // let the iframe know what's the user's name
+      const username = osparc.auth.Data.getInstance().getFriendlyUserName();
+      const msg = "osparc;username=" + username;
+      this.sendMessageToIframe(msg);
     },
 
     sendMessageToIframe: function(msg) {
