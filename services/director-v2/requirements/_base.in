@@ -23,6 +23,7 @@ aio-pika
 aiocache[redis,msgpack]
 aiodocker
 networkx
+opentelemetry-instrumentation-aiohttp-client
 ordered-set
 orjson
 pydantic
