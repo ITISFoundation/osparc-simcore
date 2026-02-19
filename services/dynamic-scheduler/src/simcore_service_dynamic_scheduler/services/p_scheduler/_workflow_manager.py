@@ -10,6 +10,7 @@ from servicelib.fastapi.app_state import SingletonInAppStateMixin
 from simcore_service_dynamic_scheduler.services.p_scheduler._models import UserRequest
 
 from ..base_repository import get_repository
+from ._errors import NoRunFoundError, RunNotWaitingManualInterventionError, StepNotFoundError
 from ._models import Run, Step, StepFailHistory, StepId
 from ._notifications import NotificationsManager
 from ._repositories import RunsRepository, StepFailHistoryRepository, StepsRepository, UserRequestsRepository
@@ -141,29 +142,29 @@ class WorkflowManager(SingletonInAppStateMixin):
         # run check to see if workflow in appropriate state for step retry
         current_run = await self.runs_repo.get_run_from_node_id(node_id)
         if current_run is None:
-            msg = f"No active run found for {node_id=}"
-            raise RuntimeError(msg)
+            raise NoRunFoundError(node_id=node_id)
 
         if not current_run.waiting_manual_intervention:
-            msg = f"Run {current_run.run_id=} is not waiting for manual intervention"
-            raise RuntimeError(msg)
+            raise RunNotWaitingManualInterventionError(run_id=current_run.run_id)
 
         # run checks to see if step can be retried
         step = await self.steps_repo.get_step_for_workflow_manager(step_id)
         if step is None:
-            msg = f"No step found for step_id={step_id}"
-            raise RuntimeError(msg)
+            raise StepNotFoundError(step_id=step_id)
 
         return step
 
-    async def retry_workflow_step(self, node_id: NodeID, step_id: StepId) -> None:
+    async def retry_workflow_step(self, node_id: NodeID, step_id: StepId, reason: str) -> None:
         step = await self._check_preconditions_skip_retry_step(node_id, step_id)
-        await self.steps_repo.manual_retry_step(step.step_id)
 
-    async def skip_workflow_step(self, node_id: NodeID, step_id: StepId) -> None:
+        await self.steps_repo.manual_retry_step(step.step_id, reason)
+        await self.notifications_manager.send_riconciliation_event(node_id)
+
+    async def skip_workflow_step(self, node_id: NodeID, step_id: StepId, reason: str) -> None:
         await self._check_preconditions_skip_retry_step(node_id, step_id)
 
-        await self.steps_repo.manual_skip_step(step_id)
+        await self.steps_repo.manual_skip_step(step_id, reason)
+        await self.notifications_manager.send_riconciliation_event(node_id)
 
     async def get_step_fail_history(self, step_id: StepId) -> list[StepFailHistory]:
         return await self.step_fail_history_repo.get_step_fail_history(step_id)
