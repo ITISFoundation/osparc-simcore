@@ -2,7 +2,7 @@ from email.utils import parseaddr
 from typing import Annotated, Self
 
 from common_library.network import replace_email_parts
-from models_library.notifications._notifications import ChannelType
+from models_library.notifications import ChannelType
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
