@@ -101,3 +101,8 @@ async def steo_in_db(create_step_in_db: Callable[..., Awaitable[Step]]) -> Step:
 @pytest.fixture
 async def step_id(steo_in_db: Step) -> StepId:
     return steo_in_db.step_id
+
+
+@pytest.fixture
+def missing_step_id() -> StepId:
+    return -42

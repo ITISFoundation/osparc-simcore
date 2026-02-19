@@ -4,7 +4,7 @@
 
 import asyncio
 from collections.abc import Awaitable, Callable
-from datetime import timedelta
+from datetime import datetime, timedelta
 from typing import Final
 
 import pytest
@@ -16,12 +16,13 @@ from pytest_simcore.helpers.postgres_tools import (
     PostgresTestConfig,
 )
 from pytest_simcore.helpers.typing_env import EnvVarsDict
-from simcore_postgres_database.models.p_scheduler import ps_steps
+from simcore_postgres_database.models.p_scheduler import ps_step_fail_history, ps_steps
 from simcore_service_dynamic_scheduler.services.base_repository import (
     get_repository,
 )
 from simcore_service_dynamic_scheduler.services.p_scheduler import BaseStep
 from simcore_service_dynamic_scheduler.services.p_scheduler._abc import _DEFAULT_AVAILABLE_ATTEMPTS
+from simcore_service_dynamic_scheduler.services.p_scheduler._errors import StepNotInFailedError
 from simcore_service_dynamic_scheduler.services.p_scheduler._models import RunId, Step, StepId, StepState
 from simcore_service_dynamic_scheduler.services.p_scheduler._repositories import StepsRepository
 from simcore_service_dynamic_scheduler.services.p_scheduler._repositories.steps import (
@@ -95,6 +96,25 @@ async def _get_step_row(engine: AsyncEngine, *, step_id: StepId | None = None, r
     row = result.first()
     assert row is not None
     return row
+
+
+async def _get_step_fail_history(engine: AsyncEngine, step_id: StepId) -> list[Row]:
+    async with engine.connect() as conn:
+        result = await conn.execute(sa.select("*").where(ps_step_fail_history.c.step_id == step_id))
+    return result.fetchall()
+
+
+async def _set_step_as_failed(engine: AsyncEngine, step_id: StepId) -> None:
+    async with engine.begin() as conn:
+        await conn.execute(
+            ps_steps.update()
+            .where(ps_steps.c.step_id == step_id)
+            .values(
+                state=StepState.FAILED.value,
+                finished_at=sa.func.now(),
+                message="Step failed for testing",
+            )
+        )
 
 
 async def _assert_step_state(engine: AsyncEngine, run_id: RunId, expected_state: StepState) -> None:
@@ -183,3 +203,49 @@ async def test_get_all_run_tracked_steps_states(
 
     tracked_steps_states = await steps_repo.get_all_run_tracked_steps_states(run_id)
     assert tracked_steps_states == {(step.step_type, step.is_reverting): step for step in steps}
+
+
+async def test_retry_failed_step(
+    steps_repo: StepsRepository,
+    engine: AsyncEngine,
+    run_id: RunId,
+    create_step_in_db: Callable[..., Awaitable[Step]],
+    missing_step_id: StepId,
+    number_of_steps: NonNegativeInt,
+):
+    # 1. step can be retried if in FAILED state
+    message = "Step failed for testing retry"
+    step = await create_step_in_db(state=StepState.FAILED, finished_at=sa.func.now(), message=message)
+
+    await steps_repo.retry_failed_step(step.step_id)
+
+    step_row = await _get_step_row(engine, step_id=step.step_id)
+    assert StepState(step_row.state) == StepState.CREATED
+    assert step_row.attempt_number == step.attempt_number + 1
+    assert step_row.available_attempts == step.available_attempts - 1
+    assert step_row.finished_at is None
+    assert step_row.message is None
+
+    fail_history = await _get_step_fail_history(engine, step.step_id)
+    assert len(fail_history) == 1
+    fail_history_entry = fail_history[0]
+    assert fail_history_entry.attempt == step.attempt_number
+    assert StepState(fail_history_entry.state) == StepState.FAILED
+    assert isinstance(fail_history_entry.finished_at, datetime)
+    assert fail_history_entry.message == message
+
+    # 2. step cannot be retried if not in FAILED state
+    with pytest.raises(StepNotInFailedError):
+        await steps_repo.retry_failed_step(step.step_id)
+
+    # 3. step cannot be retried if step_id does not exist
+    with pytest.raises(StepNotInFailedError):
+        await steps_repo.retry_failed_step(missing_step_id)
+
+    # 4. reretrying a failed step adds more entries to history
+    for k in range(number_of_steps):
+        await _set_step_as_failed(engine, step.step_id)
+        await steps_repo.retry_failed_step(step.step_id)
+
+        fail_history = await _get_step_fail_history(engine, step.step_id)
+        assert len(fail_history) == k + 2

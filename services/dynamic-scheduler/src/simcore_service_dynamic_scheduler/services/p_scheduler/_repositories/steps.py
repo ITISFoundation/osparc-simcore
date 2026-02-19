@@ -5,9 +5,11 @@ import sqlalchemy as sa
 from simcore_postgres_database.models.p_scheduler import ps_steps
 from simcore_postgres_database.utils_repos import pass_or_acquire_connection, transaction_context
 from sqlalchemy.engine.row import Row
+from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ...base_repository import BaseRepository
 from .._abc import BaseStep
+from .._errors import StepNotInFailedError
 from .._models import DagNodeUniqueReference, RunId, Step, StepId, StepState
 from .step_fail_history import StepFailHistoryRepository
 
@@ -60,7 +62,8 @@ class StepsRepository(BaseRepository):
     async def set_run_steps_as_cancelled(self, run_id: RunId) -> set[StepId]:
         """
         Only steps steps that are considered cancellable will be transitioned to CANCELLED
-        return: list[StepId] of the steps that were cancelled
+
+        :return: list of the step ids that were cancelled
         """
         async with transaction_context(self.engine) as conn:
             result = await conn.execute(
@@ -88,14 +91,18 @@ class StepsRepository(BaseRepository):
             rows = result.fetchall()
         return {(row.step_type, row.is_reverting): _row_to_step(row) for row in rows}
 
-    async def _push_step_to_history(self, step_id: StepId) -> None:
-        async with pass_or_acquire_connection(self.engine) as conn:
-            result = await conn.execute(
-                sa.select(
-                    ps_steps.c.attempt_number, ps_steps.c.state, ps_steps.c.finished_at, ps_steps.c.message
-                ).where(ps_steps.c.step_id == step_id)
-            )
-            row = result.one()
+    async def _push_step_to_history(
+        self, connection: AsyncConnection, step_id: StepId, *, if_in_state: StepState | None = None
+    ) -> None:
+        query = sa.select(
+            ps_steps.c.attempt_number, ps_steps.c.state, ps_steps.c.finished_at, ps_steps.c.message
+        ).where(ps_steps.c.step_id == step_id)
+        if if_in_state is not None:
+            query = query.where(ps_steps.c.state == if_in_state)
+        result = await connection.execute(query)
+        row = result.first()
+        if row is None:
+            return
 
         step_fail_history_repo = StepFailHistoryRepository(self.engine)
         await step_fail_history_repo.insert_step_fail_history(
@@ -110,12 +117,17 @@ class StepsRepository(BaseRepository):
             _logger.warning("step_id='%s' failed without providing a message, there should be one!", step_id)
 
     async def retry_failed_step(self, step_id: StepId) -> None:
-        await self._push_step_to_history(step_id)
+        """Attempt to mark a step as READY for retry, only if it's currently in FAILED state.
 
+        Raises:
+            StepNotInFailedError: if step is not in FAILED state or does not exist
+        """
         async with transaction_context(self.engine) as conn:
-            await conn.execute(
+            await self._push_step_to_history(conn, step_id, if_in_state=StepState.FAILED)
+
+            result = await conn.execute(
                 ps_steps.update()
-                .where(ps_steps.c.step_id == step_id)
+                .where((ps_steps.c.step_id == step_id) & (ps_steps.c.state == StepState.FAILED))
                 .values(
                     state=StepState.CREATED,
                     attempt_number=ps_steps.c.attempt_number + 1,
@@ -123,7 +135,12 @@ class StepsRepository(BaseRepository):
                     finished_at=None,
                     message=None,
                 )
+                .returning(sa.literal_column("*"))
             )
+            row = result.first()
+            state = StepState(row.state) if row is not None else None
+            if state != StepState.CREATED:
+                raise StepNotInFailedError(step_id=step_id, state=state)
 
     async def set_step_as_ready(self, step_id: StepId) -> None:
         async with transaction_context(self.engine) as conn:
@@ -138,9 +155,8 @@ class StepsRepository(BaseRepository):
         return _row_to_step(row)
 
     async def manual_retry_step(self, step_id: StepId) -> None:
-        await self._push_step_to_history(step_id)
-
         async with transaction_context(self.engine) as conn:
+            await self._push_step_to_history(conn, step_id)
             await conn.execute(
                 ps_steps.update()
                 .where(ps_steps.c.step_id == step_id)
