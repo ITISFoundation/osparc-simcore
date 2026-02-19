@@ -39,6 +39,7 @@ def test_r_clone_config_template_replacement(r_clone_settings: RCloneSettings) -
         (S3Provider.AWS, "AWS"),
         (S3Provider.CEPH, "Ceph"),
         (S3Provider.MINIO, "Minio"),
+        (S3Provider.RUSTFS, "RustFS"),
     ],
 )
 def test_resolve_provider(s3_provider: S3Provider, expected: str) -> None:

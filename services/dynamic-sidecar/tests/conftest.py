@@ -275,7 +275,7 @@ def mock_environment(
             "POSTGRES_HOST": "test",
             "POSTGRES_PASSWORD": "test",
             "POSTGRES_USER": "test",
-            "R_CLONE_PROVIDER": "MINIO",
+            "R_CLONE_PROVIDER": "RUSTFS",
             "RABBIT_HOST": "test",
             "RABBIT_PASSWORD": "test",
             "RABBIT_SECURE": "false",

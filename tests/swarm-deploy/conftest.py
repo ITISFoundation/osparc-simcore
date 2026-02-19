@@ -125,13 +125,12 @@ def simcore_stack_deployed_services(
 
 # OPS stack -----------------------------------
 
-_REQUIRED_OPS_SERVICES = ["minio"]
+_REQUIRED_OPS_SERVICES = ["rustfs"]
 
 
 @pytest.fixture(scope="module")
 def ops_services_selection(ops_docker_compose: ComposeSpec) -> list[ServiceNameStr]:
     ## OVERRIDES packages/pytest-simcore/src/pytest_simcore/docker_compose.py::ops_services_selection
-    # select only minio for these tests
     return _REQUIRED_OPS_SERVICES
 
 

@@ -17,7 +17,7 @@ class S3Config(BaseModel):
     endpoint: str = "https://s3.amazonaws.com"
     provider: S3Provider = Field(
         ...,
-        description='The S3 implementation / provider. Allowed values: "MINIO","CEPH","AWS"',
+        description='The S3 implementation / provider. Allowed values: "MINIO","CEPH","AWS", "RUSTFS"',
     )
     access_key: str
     secret_key: str
