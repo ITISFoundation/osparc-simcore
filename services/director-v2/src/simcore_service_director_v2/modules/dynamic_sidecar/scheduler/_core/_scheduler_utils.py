@@ -71,6 +71,7 @@ def create_model_from_scheduler_data(
     return RunningDynamicServiceDetails.model_validate(
         {
             "boot_type": ServiceBootType.V2,
+            "data_mounting_enabled": scheduler_data.requires_data_mounting,
             "user_id": scheduler_data.user_id,
             "project_id": scheduler_data.project_id,
             "service_uuid": node_uuid,

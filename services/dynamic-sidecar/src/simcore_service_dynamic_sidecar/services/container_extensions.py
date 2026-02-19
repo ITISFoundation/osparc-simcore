@@ -2,7 +2,9 @@ import logging
 
 from aiodocker.networks import DockerNetwork
 from fastapi import FastAPI
+from models_library.projects_nodes_io import StorageFileID
 from models_library.services import ServiceOutput
+from simcore_sdk.node_ports_common.r_clone_mount import NoMountFoundForRemotePathError
 from simcore_sdk.node_ports_v2.port_utils import is_file_type
 
 from ..core.docker_utils import docker_client
@@ -13,6 +15,7 @@ from ..modules.outputs import (
     disable_event_propagation,
     enable_event_propagation,
 )
+from ..modules.r_clone_mount_manager import get_r_clone_mount_manager
 
 _logger = logging.getLogger(__name__)
 
@@ -97,3 +100,10 @@ async def detach_container_from_network(*, container_id: str, network_id: str) -
         # used by a container
         network = DockerNetwork(docker=docker, id_=network_id)
         await network.disconnect({"Container": container_id, "Force": True})
+
+
+async def refresh_containers_files(app: FastAPI, *, s3_directory: StorageFileID, recursive: bool) -> None:
+    try:
+        await get_r_clone_mount_manager(app).refresh_path(s3_directory, recursive=recursive)
+    except NoMountFoundForRemotePathError:
+        _logger.warning("No mount found for path='%s'. TIP: ensure mounting is enabled", s3_directory)

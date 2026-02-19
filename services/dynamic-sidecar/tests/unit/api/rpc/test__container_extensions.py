@@ -19,7 +19,7 @@ from models_library.api_schemas_directorv2.dynamic_services import (
     ContainersCreate,
 )
 from models_library.api_schemas_dynamic_sidecar.containers import ActivityInfo
-from models_library.projects_nodes_io import NodeID
+from models_library.projects_nodes_io import NodeID, StorageFileID
 from models_library.services_creation import CreateServiceMetricsAdditionalParams
 from models_library.services_io import ServiceOutput
 from pydantic import TypeAdapter
@@ -664,10 +664,34 @@ async def test_container_docker_error(
         # inspect container
         with pytest.raises(
             RPCServerError,
-            match=f"An unexpected Docker error occurred status_code={mock_aiodocker_containers_get}, message=aiodocker_mocked_error",
+            match=(
+                f"An unexpected Docker error occurred status_code={mock_aiodocker_containers_get}, "
+                "message=aiodocker_mocked_error"
+            ),
         ):
             await containers.inspect_container(
                 rpc_client,
                 node_id=app_state.settings.DY_SIDECAR_NODE_ID,
                 container_id=container,
             )
+
+
+@pytest.fixture
+def s3_directory(faker: Faker) -> StorageFileID:
+    remote = f"{faker.uuid4()}/{faker.uuid4()}/remote-dir"
+    return TypeAdapter(StorageFileID).validate_python(remote)
+
+
+async def test_refresh_containers_files(
+    app: FastAPI,
+    rpc_client: RabbitMQRPCClient,
+    s3_directory: StorageFileID,
+):
+    app_state = AppState(app)
+
+    await container_extensions.refresh_containers_files(
+        rpc_client,
+        node_id=app_state.settings.DY_SIDECAR_NODE_ID,
+        s3_directory=s3_directory,
+        recursive=True,
+    )
