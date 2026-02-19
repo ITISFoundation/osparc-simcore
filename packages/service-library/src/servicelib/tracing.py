@@ -156,13 +156,13 @@ def extract_span_link_from_trace_carrier(
         attributes = link_attributes or {}
         attributes.update(
             {
-                "link.trace_id": trace.format_trace_id(span_context.trace_id),
-                "link.span_id": trace.format_span_id(span_context.span_id),
+                "trace_id": trace.format_trace_id(span_context.trace_id),
+                "span_id": trace.format_span_id(span_context.span_id),
             }
         )
 
         _logger.info(
-            "Created span link: from parenttrace_id=%s, span_id=%s",
+            "Created span link from trace_id=%s, span_id=%s",
             trace.format_trace_id(span_context.trace_id),
             trace.format_span_id(span_context.span_id),
         )
