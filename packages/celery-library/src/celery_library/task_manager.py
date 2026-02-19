@@ -128,7 +128,7 @@ class CeleryTaskManager:
             return result
 
     async def _get_task_progress_report(self, task_key: TaskKey, task_state: TaskState) -> ProgressReport:
-        if task_state in (TaskState.STARTED, TaskState.RETRY):
+        if task_state in {TaskState.STARTED, TaskState.RETRY}:
             progress = await self._task_store.get_task_progress(task_key)
             if progress is not None:
                 return progress

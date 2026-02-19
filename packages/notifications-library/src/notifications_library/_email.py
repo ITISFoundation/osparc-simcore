@@ -15,7 +15,7 @@ def compose_email(
     from_: Address,
     to: list[Address],
     subject: str,
-    content_text: str,
+    content_text: str | None = None,
     content_html: str | None = None,
     reply_to: Address | None = None,
     bcc: list[Address] | None = None,
@@ -36,7 +36,14 @@ def compose_email(
 
     msg["Subject"] = subject
 
-    msg.set_content(content_text)
+    if not content_text and not content_html:
+        # NOTE: the RFC 5322 standard requires that the email message must have a content, either text or HTML.
+        err_msg = "At least one of 'content_text' or 'content_html' is required"
+        raise ValueError(err_msg)
+
+    if content_text:
+        msg.set_content(content_text)
+
     if content_html:
         msg.add_alternative(content_html, subtype="html")
     return msg

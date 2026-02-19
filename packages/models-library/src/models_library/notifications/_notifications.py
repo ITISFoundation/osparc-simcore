@@ -44,6 +44,11 @@ class EmailMessage(NotificationsMessage):
     content: EmailMessageContent
 
 
+class Template(BaseModel):
+    ref: TemplateRef
+    context_schema: dict[str, Any]
+
+
 class TemplatePreview(BaseModel):
     ref: TemplateRef
     message_content: dict[str, Any]
