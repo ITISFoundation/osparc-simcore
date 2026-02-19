@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field, model_validator
 from models_library.groups import GroupID
 
 from ..api_schemas_webserver._base import InputSchema, OutputSchema
-from ..notifications._notifications import ChannelType, TemplateName
+from ..notifications import ChannelType, TemplateName
 
 #
 # Email Message
