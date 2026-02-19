@@ -23,16 +23,16 @@ def compose_email(
     """Compose an email message.
 
     Note:
-        bcc param is a list and not set because email.headerregistry.Address is not hashable.
+        to and bcc params are lists and not set because email.headerregistry.Address is not hashable.
         Ensure unicity at a higher level, if needed.
     """
     msg = EmailMessage()
     msg["From"] = from_
-    msg["To"] = ", ".join(str(addr) for addr in to)
+    msg["To"] = to
     if reply_to:
         msg["Reply-To"] = reply_to
     if bcc:
-        msg["Bcc"] = ", ".join(str(addr) for addr in bcc)
+        msg["Bcc"] = bcc
 
     msg["Subject"] = subject
 
