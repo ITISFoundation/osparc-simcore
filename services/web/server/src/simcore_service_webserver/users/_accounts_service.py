@@ -6,7 +6,7 @@ from annotated_types import doc
 from common_library.users_enums import AccountRequestStatus
 from models_library.api_schemas_webserver.users import UserAccountGet
 from models_library.emails import LowerCaseEmailStr
-from models_library.notifications import ChannelType, TemplateRef
+from models_library.notifications._notifications import ChannelType, TemplateRef
 from models_library.products import ProductName
 from models_library.users import UserID
 from pydantic import PositiveInt

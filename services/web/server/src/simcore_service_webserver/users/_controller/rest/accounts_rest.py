@@ -16,7 +16,7 @@ from models_library.api_schemas_webserver.users import (
     UserAccountSearchQueryParams,
     UsersAccountListQueryParams,
 )
-from models_library.notifications import ChannelType, TemplateRef
+from models_library.notifications._notifications import ChannelType, TemplateRef
 from models_library.rest_pagination import Page
 from models_library.rest_pagination_utils import paginate_data
 from pydantic import TypeAdapter

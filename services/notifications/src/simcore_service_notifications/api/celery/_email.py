@@ -5,7 +5,7 @@ from email.headerregistry import Address
 from email.message import EmailMessage as _EmailMessage
 
 from celery import Task  # type: ignore[import-untyped]
-from models_library.api_schemas_notifications.message import EmailMessage
+from models_library.notifications.celery import EmailMessage
 from notifications_library._email import (
     add_attachments,
     compose_email,

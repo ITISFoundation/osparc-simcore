@@ -13,7 +13,7 @@ _logger = logging.getLogger(__name__)
 
 def compose_email(
     from_: Address,
-    to: Address,
+    to: list[Address],
     subject: str,
     content_text: str | None = None,
     content_html: str | None = None,
@@ -28,11 +28,11 @@ def compose_email(
     """
     msg = EmailMessage()
     msg["From"] = from_
-    msg["To"] = to
+    msg["To"] = ", ".join(str(addr) for addr in to)
     if reply_to:
         msg["Reply-To"] = reply_to
     if bcc:
-        msg["Bcc"] = bcc
+        msg["Bcc"] = ", ".join(str(addr) for addr in bcc)
 
     msg["Subject"] = subject
 
