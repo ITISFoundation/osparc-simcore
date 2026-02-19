@@ -13,9 +13,9 @@ _logger = logging.getLogger(__name__)
 
 def compose_email(
     from_: Address,
-    to: list[Address],
+    to: Address,
     subject: str,
-    content_text: str,
+    content_text: str | None = None,
     content_html: str | None = None,
     reply_to: Address | None = None,
     bcc: list[Address] | None = None,
@@ -23,7 +23,7 @@ def compose_email(
     """Compose an email message.
 
     Note:
-        to and bcc params are lists and not set because email.headerregistry.Address is not hashable.
+        bcc param is a list and not set because email.headerregistry.Address is not hashable.
         Ensure unicity at a higher level, if needed.
     """
     msg = EmailMessage()
@@ -36,7 +36,11 @@ def compose_email(
 
     msg["Subject"] = subject
 
-    msg.set_content(content_text)
+    # NOTE: the RFC 5322 standard requires that the email message must have a content,
+    # either text or HTML. Validation is enforced at a higher level.
+    if content_text:
+        msg.set_content(content_text)
+
     if content_html:
         msg.add_alternative(content_html, subtype="html")
     return msg
