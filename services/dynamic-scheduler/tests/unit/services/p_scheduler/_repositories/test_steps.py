@@ -22,7 +22,7 @@ from simcore_service_dynamic_scheduler.services.base_repository import (
 )
 from simcore_service_dynamic_scheduler.services.p_scheduler import BaseStep
 from simcore_service_dynamic_scheduler.services.p_scheduler._abc import _DEFAULT_AVAILABLE_ATTEMPTS
-from simcore_service_dynamic_scheduler.services.p_scheduler._errors import StepNotInFailedError
+from simcore_service_dynamic_scheduler.services.p_scheduler._errors import StepNotFoundError, StepNotInFailedError
 from simcore_service_dynamic_scheduler.services.p_scheduler._models import RunId, Step, StepId, StepState
 from simcore_service_dynamic_scheduler.services.p_scheduler._repositories import StepsRepository
 from simcore_service_dynamic_scheduler.services.p_scheduler._repositories.steps import (
@@ -249,3 +249,61 @@ async def test_retry_failed_step(
 
         fail_history = await _get_step_fail_history(engine, step.step_id)
         assert len(fail_history) == k + 2
+
+
+@pytest.mark.parametrize("step_state", StepState)
+async def test_manual_retry_step(
+    steps_repo: StepsRepository,
+    engine: AsyncEngine,
+    run_id: RunId,
+    create_step_in_db: Callable[..., Awaitable[Step]],
+    missing_step_id: StepId,
+    step_state: StepState,
+):
+    # 1. step can be manually retried if in FAILED state
+    reason = "Step needs to be retried for testing"
+    step = await create_step_in_db(state=step_state, finished_at=sa.func.now(), message=reason)
+
+    await steps_repo.manual_retry_step(step.step_id, reason)
+
+    step_row = await _get_step_row(engine, step_id=step.step_id)
+    assert StepState(step_row.state) == StepState.CREATED
+    assert step_row.attempt_number == step.attempt_number + 1
+    assert step_row.available_attempts == step.available_attempts + 1
+    assert step_row.finished_at is None
+
+    fail_history = await _get_step_fail_history(engine, step.step_id)
+    assert len(fail_history) == 1
+    fail_history_entry = fail_history[0]
+    assert fail_history_entry.attempt == step.attempt_number
+    assert StepState(fail_history_entry.state) == step_state
+    assert isinstance(fail_history_entry.finished_at, datetime)
+    assert fail_history_entry.message == f"Manual RETRY: {reason}"
+
+    # 2. step cannot be manually retried if step_id does not exist
+    with pytest.raises(StepNotFoundError):
+        await steps_repo.manual_retry_step(missing_step_id, reason)
+
+
+@pytest.mark.parametrize("step_state", StepState)
+async def test_manual_skip_step(
+    steps_repo: StepsRepository,
+    engine: AsyncEngine,
+    run_id: RunId,
+    create_step_in_db: Callable[..., Awaitable[Step]],
+    missing_step_id: StepId,
+    step_state: StepState,
+):
+    # 1. step can be skipped
+    reason = "Step needs to be skipped for testing"
+    step = await create_step_in_db(state=step_state)
+
+    await steps_repo.manual_skip_step(step.step_id, reason)
+
+    step_row = await _get_step_row(engine, step_id=step.step_id)
+    assert StepState(step_row.state) == StepState.SKIPPED
+    assert step_row.message == f"Manual SKIP: {reason}"
+
+    # 2. step cannot be skipped if step_id does not exist
+    with pytest.raises(StepNotFoundError):
+        await steps_repo.manual_skip_step(missing_step_id, reason)

@@ -1,4 +1,5 @@
 import logging
+from datetime import UTC, datetime
 from typing import Final
 
 import sqlalchemy as sa
@@ -9,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncConnection
 
 from ...base_repository import BaseRepository
 from .._abc import BaseStep
-from .._errors import StepNotInFailedError
+from .._errors import StepNotFoundError, StepNotInFailedError
 from .._models import DagNodeUniqueReference, RunId, Step, StepId, StepState
 from .step_fail_history import StepFailHistoryRepository
 
@@ -92,7 +93,12 @@ class StepsRepository(BaseRepository):
         return {(row.step_type, row.is_reverting): _row_to_step(row) for row in rows}
 
     async def _push_step_to_history(
-        self, connection: AsyncConnection, step_id: StepId, *, if_in_state: StepState | None = None
+        self,
+        connection: AsyncConnection,
+        step_id: StepId,
+        *,
+        if_in_state: StepState | None = None,
+        message: str | None = None,
     ) -> None:
         query = sa.select(
             ps_steps.c.attempt_number, ps_steps.c.state, ps_steps.c.finished_at, ps_steps.c.message
@@ -105,15 +111,17 @@ class StepsRepository(BaseRepository):
             return
 
         step_fail_history_repo = StepFailHistoryRepository(self.engine)
+        history_message = message or row.message or ""
+        history_finished_at = datetime.now(tz=UTC) if message is not None else row.finished_at
         await step_fail_history_repo.insert_step_fail_history(
             step_id=step_id,
             attempt=row.attempt_number,
             state=StepState(row.state.value),
-            finished_at=row.finished_at,
-            message=row.message or "",
+            finished_at=history_finished_at,
+            message=history_message,
         )
 
-        if row.message is None:
+        if history_message == "":
             _logger.warning("step_id='%s' failed without providing a message, there should be one!", step_id)
 
     async def retry_failed_step(self, step_id: StepId) -> None:
@@ -142,6 +150,38 @@ class StepsRepository(BaseRepository):
             if state != StepState.CREATED:
                 raise StepNotInFailedError(step_id=step_id, state=state)
 
+    async def manual_retry_step(self, step_id: StepId, reason: str) -> None:
+        async with transaction_context(self.engine) as conn:
+            await self._push_step_to_history(conn, step_id, message=f"Manual RETRY: {reason}")
+            result = await conn.execute(
+                ps_steps.update()
+                .where(ps_steps.c.step_id == step_id)
+                .values(
+                    state=StepState.CREATED,
+                    attempt_number=ps_steps.c.attempt_number + 1,
+                    # add an attempt to make sure there is at least one available
+                    available_attempts=ps_steps.c.available_attempts + 1,
+                    finished_at=None,
+                    message=None,
+                )
+                .returning(sa.literal_column("*"))
+            )
+            row = result.first()
+            if row is None:
+                raise StepNotFoundError(step_id=step_id)
+
+    async def manual_skip_step(self, step_id: StepId, reason: str) -> None:
+        async with transaction_context(self.engine) as conn:
+            result = await conn.execute(
+                ps_steps.update()
+                .where(ps_steps.c.step_id == step_id)
+                .values(state=StepState.SKIPPED, message=f"Manual SKIP: {reason}")
+                .returning(sa.literal_column("*"))
+            )
+            row = result.first()
+            if row is None:
+                raise StepNotFoundError(step_id=step_id)
+
     async def set_step_as_ready(self, step_id: StepId) -> None:
         async with transaction_context(self.engine) as conn:
             await conn.execute(ps_steps.update().where(ps_steps.c.step_id == step_id).values(state=StepState.READY))
@@ -153,26 +193,6 @@ class StepsRepository(BaseRepository):
         if row is None:
             return None
         return _row_to_step(row)
-
-    async def manual_retry_step(self, step_id: StepId) -> None:
-        async with transaction_context(self.engine) as conn:
-            await self._push_step_to_history(conn, step_id)
-            await conn.execute(
-                ps_steps.update()
-                .where(ps_steps.c.step_id == step_id)
-                .values(
-                    state=StepState.READY,
-                    attempt_number=ps_steps.c.attempt_number + 1,
-                    # add an attempt to make sure there is at least one available
-                    available_attempts=ps_steps.c.available_attempts + 1,
-                    finished_at=None,
-                    message=None,
-                )
-            )
-
-    async def manual_skip_step(self, step_id: StepId) -> None:
-        async with transaction_context(self.engine) as conn:
-            await conn.execute(ps_steps.update().where(ps_steps.c.step_id == step_id).values(state=StepState.SKIPPED))
 
     async def get_step_for_worker(self, step_id: StepId | None) -> Step | None:
         async with transaction_context(self.engine) as conn:

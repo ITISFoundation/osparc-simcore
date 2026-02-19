@@ -13,3 +13,7 @@ class RunAlreadyExistsError(_BasePSchedulerError):
 
 class StepNotInFailedError(_BasePSchedulerError):
     msg_template: str = f"step_id='{{step_id}}' was not found or it's state!='{StepState.FAILED}'"
+
+
+class StepNotFoundError(_BasePSchedulerError):
+    msg_template: str = "step_id='{step_id}' was not found"

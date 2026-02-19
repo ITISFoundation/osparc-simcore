@@ -26,16 +26,16 @@ async def request_absent(app: FastAPI, node_id: NodeID, dynamic_service_stop: Dy
     await notifications_manager.send_riconciliation_event(node_id)
 
 
-async def retry_step(app: FastAPI, node_id: NodeID, step_id: StepId) -> None:
+async def retry_step(app: FastAPI, node_id: NodeID, step_id: StepId, *, reason: str) -> None:
     """Used by the admin UI to retry a failed step of a workflow run, in order to unblock the workflow execution."""
     workflow_manager = WorkflowManager.get_from_app_state(app)
-    await workflow_manager.retry_workflow_step(node_id, step_id)
+    await workflow_manager.retry_workflow_step(node_id, step_id, reason)
 
 
-async def skip_step(app: FastAPI, node_id: NodeID, step_id: StepId) -> None:
+async def skip_step(app: FastAPI, node_id: NodeID, step_id: StepId, *, reason: str) -> None:
     """Used by the admin UI to skip a failed step of a workflow run, in order to unblock the workflow execution."""
     workflow_manager = WorkflowManager.get_from_app_state(app)
-    await workflow_manager.skip_workflow_step(node_id, step_id)
+    await workflow_manager.skip_workflow_step(node_id, step_id, reason)
 
 
 async def get_step_fail_history(app: FastAPI, step_id: StepId) -> list[StepFailHistory]:
