@@ -44,6 +44,7 @@ from pydantic import NonNegativeFloat
 from servicelib.background_task import create_periodic_task
 from servicelib.long_running_tasks.models import ProgressCallback, TaskProgress
 from servicelib.redis import RedisClientsManager, exclusive
+from servicelib.tracing import get_trace_carrier_from_current_context
 from settings_library.redis import RedisDatabase
 
 from .....core.dynamic_services_settings.scheduler import (
@@ -69,7 +70,7 @@ from ._events_utils import (
 )
 from ._observer import observing_single_service
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 _DISABLED_MARK = object()
@@ -93,7 +94,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
 
     async def start(self) -> None:
         # run as a background task
-        logger.info("Starting dynamic-sidecar scheduler")
+        _logger.info("Starting dynamic-sidecar scheduler")
 
         redis_clients_manager: RedisClientsManager = self.app.state.redis_clients_manager
 
@@ -115,7 +116,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
         await _scheduler_utils.discover_running_services(self)
 
     async def shutdown(self) -> None:
-        logger.info("Shutting down dynamic-sidecar scheduler")
+        _logger.info("Shutting down dynamic-sidecar scheduler")
         self._inverse_search_mapping = {}
         self._to_observe = {}
 
@@ -140,12 +141,12 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
                 timeout=_MAX_WAIT_TASKS_SHUTDOWN_S,
             )
             if bad_results := list(filter(lambda r: isinstance(r, Exception), results)):
-                logger.error(
+                _logger.error(
                     "Following observation tasks completed with an unexpected error:%s",
                     f"{bad_results}",
                 )
         except TimeoutError:
-            logger.exception(
+            _logger.exception(
                 "Timed-out waiting for %s to complete. Action: Check why this is blocking",
                 f"{running_tasks=}",
             )
@@ -240,6 +241,10 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
             requires_data_mounting=user_extra_properties.mount_data,
         )
         scheduler_data.dynamic_sidecar.instrumentation.start_requested_at = arrow.utcnow().datetime
+
+        # Capture current trace context only if tracing is active
+        scheduler_data.dynamic_sidecar.instrumentation.request_trace_carrier = get_trace_carrier_from_current_context()
+
         await self.add_service_from_scheduler_data(scheduler_data)
 
     async def add_service_from_scheduler_data(self, scheduler_data: SchedulerData) -> None:
@@ -248,7 +253,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
         # for faster searches.
         async with self._lock:
             if scheduler_data.service_name in self._to_observe:
-                logger.warning("Service %s is already being observed", scheduler_data.service_name)
+                _logger.warning("Service %s is already being observed", scheduler_data.service_name)
                 return
 
             if scheduler_data.node_uuid in self._inverse_search_mapping:
@@ -262,7 +267,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
             self._inverse_search_mapping[scheduler_data.node_uuid] = scheduler_data.service_name
             self._to_observe[scheduler_data.service_name] = scheduler_data
             self._enqueue_observation_from_service_name(scheduler_data.service_name)
-            logger.debug("Added service '%s' to observe", scheduler_data.service_name)
+            _logger.debug("Added service '%s' to observe", scheduler_data.service_name)
 
     def is_service_tracked(self, node_uuid: NodeID) -> bool:
         return node_uuid in self._inverse_search_mapping
@@ -325,7 +330,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
 
             # if service is already being removed no need to force a cancellation and removal of the service
             if current.dynamic_sidecar.service_removal_state.can_remove:
-                logger.debug(
+                _logger.debug(
                     "Service %s is already being removed, will not cancel observation",
                     node_uuid,
                 )
@@ -354,7 +359,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
                 dynamic_scheduler, service_name
             )
 
-        logger.debug("Service '%s' marked for removal from scheduler", service_name)
+        _logger.debug("Service '%s' marked for removal from scheduler", service_name)
 
     async def mark_all_services_in_wallet_for_removal(self, wallet_id: WalletID) -> None:
         async with self._lock:
@@ -386,7 +391,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
 
             service_name = self._inverse_search_mapping[node_uuid]
             if service_name not in self._to_observe:
-                logger.warning(
+                _logger.warning(
                     "Unexpected: '%s' not found in %s, but found in %s",
                     f"{service_name}",
                     f"{self._to_observe=}",
@@ -396,7 +401,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
             del self._inverse_search_mapping[node_uuid]
             self._to_observe.pop(service_name, None)
 
-        logger.debug("Removed service '%s' from scheduler", service_name)
+        _logger.debug("Removed service '%s' from scheduler", service_name)
 
     async def get_stack_status(self, node_uuid: NodeID) -> RunningDynamicServiceDetails:
         """
@@ -432,7 +437,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
             ).observe(get_rate(transferred_bytes, duration))
 
         if scheduler_data.restart_policy == RestartPolicy.ON_INPUTS_DOWNLOADED:
-            logger.info("Will restart containers")
+            _logger.info("Will restart containers")
             await sidecars_client.restart_containers(dynamic_sidecar_endpoint)
 
         return RetrieveDataOutEnveloped.from_transferred_bytes(transferred_bytes)
@@ -514,7 +519,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
                 service_name,
             )
         )
-        logger.debug("created %s for %s", f"{observation_task=}", f"{service_name=}")
+        _logger.debug("created %s for %s", f"{observation_task=}", f"{service_name=}")
         return observation_task
 
     async def _run_trigger_observation_queue_task(self) -> None:
@@ -523,22 +528,22 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
 
         service_name: ServiceName
         while service_name := await self._trigger_observation_queue.get():
-            logger.info("Handling observation for %s", service_name)
+            _logger.info("Handling observation for %s", service_name)
 
             if service_name not in self._to_observe:
-                logger.warning("%s is missing from list of services to observe", f"{service_name=}")
+                _logger.warning("%s is missing from list of services to observe", f"{service_name=}")
                 continue
 
             if self._service_observation_task.get(service_name) is None:
-                logger.info("Create observation task for service %s", service_name)
+                _logger.info("Create observation task for service %s", service_name)
                 self._service_observation_task[service_name] = self.__create_observation_task(
                     dynamic_scheduler, service_name
                 )
 
-        logger.info("Scheduler 'trigger observation queue task' was shut down")
+        _logger.info("Scheduler 'trigger observation queue task' was shut down")
 
     async def _run_scheduler_task(self) -> None:
-        logger.debug("Observing dynamic-sidecars %s", list(self._to_observe.keys()))
+        _logger.debug("Observing dynamic-sidecars %s", list(self._to_observe.keys()))
 
         try:
             # prevent access to self._to_observe
@@ -546,7 +551,7 @@ class Scheduler(  # pylint: disable=too-many-instance-attributes, too-many-publi
                 for service_name in self._to_observe:
                     self._enqueue_observation_from_service_name(service_name)
         except Exception:  # pylint: disable=broad-except
-            logger.exception("Unexpected error while scheduling sidecars observation")
+            _logger.exception("Unexpected error while scheduling sidecars observation")
 
         self._observation_counter += 1
 

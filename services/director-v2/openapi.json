@@ -3282,6 +3282,21 @@
             ],
             "title": "Close Requested At",
             "description": "moment in which the process of stopping the service was requested"
+          },
+          "request_trace_carrier": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Request Trace Carrier",
+            "description": "W3C traceparent and tracestate headers from the originating request for span linking"
           }
         },
         "type": "object",
