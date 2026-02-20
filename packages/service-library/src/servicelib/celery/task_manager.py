@@ -5,6 +5,7 @@ from models_library.progress_bar import ProgressReport
 
 from .models import (
     ExecutionMetadata,
+    GroupUUID,
     OwnerMetadata,
     Task,
     TaskKey,
@@ -17,8 +18,15 @@ from .models import (
 @runtime_checkable
 class TaskManager(Protocol):
     async def submit_task(
-        self, execution_metadata: ExecutionMetadata, *, owner_metadata: OwnerMetadata, **task_param
+        self, execution_metadata: ExecutionMetadata, *, owner_metadata: OwnerMetadata, **task_params: dict[str, Any]
     ) -> TaskUUID: ...
+
+    async def submit_group(
+        self,
+        executions: list[tuple[ExecutionMetadata, dict[str, Any]]],
+        *,
+        owner_metadata: OwnerMetadata,
+    ) -> tuple[GroupUUID, list[TaskUUID]]: ...
 
     async def cancel_task(self, owner_metadata: OwnerMetadata, task_uuid: TaskUUID) -> None: ...
 

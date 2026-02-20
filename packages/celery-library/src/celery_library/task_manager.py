@@ -1,5 +1,4 @@
 import logging
-from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime
 from typing import TYPE_CHECKING, Any
@@ -92,7 +91,7 @@ class CeleryTaskManager:
     @handle_celery_errors
     async def submit_group(
         self,
-        executions: Sequence[tuple[ExecutionMetadata, dict[str, Any]]],
+        executions: list[tuple[ExecutionMetadata, dict[str, Any]]],
         *,
         owner_metadata: OwnerMetadata,
     ) -> tuple[GroupUUID, list[TaskUUID]]:
@@ -199,7 +198,7 @@ class CeleryTaskManager:
             return result
 
     async def _get_task_progress_report(self, task_key: TaskKey, task_state: TaskState) -> ProgressReport:
-        if task_state in (TaskState.STARTED, TaskState.RETRY):
+        if task_state in {TaskState.STARTED, TaskState.RETRY}:
             progress = await self._task_store.get_task_progress(task_key)
             if progress is not None:
                 return progress
