@@ -114,7 +114,7 @@ class OwnerMetadata(BaseModel):
             raise ValueError(msg) from err
 
     @classmethod
-    def get_task_or_group_uuid(cls, task_or_group_key: TaskKey | GroupKey) -> TaskUUID:
+    def get_task_or_group_uuid(cls, task_or_group_key: TaskKey | GroupKey) -> TaskUUID | GroupUUID:
         data = cls._deserialize_task_or_group_key(task_or_group_key)
         try:
             uuid_string = data.get(_UUID_KEY)
