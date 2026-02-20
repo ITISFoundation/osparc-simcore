@@ -6,10 +6,10 @@ from uuid import uuid4
 
 from celery import Celery, group, signature  # type: ignore[import-untyped]
 from celery.exceptions import CeleryError  # type: ignore[import-untyped]
-from celery.result import GroupResult
+from celery.result import GroupResult  # type: ignore[import-untyped]
 from common_library.async_tools import make_async
 from models_library.progress_bar import ProgressReport
-from pydantic import TypeAdapter  # type: ignore[import-untyped]
+from pydantic import TypeAdapter
 from servicelib.celery.models import (
     TASK_DONE_STATES,
     ExecutionMetadata,
@@ -242,16 +242,6 @@ class CeleryTaskManager:
             # Group not found or invalid
             return None
 
-    @make_async()
-    def _is_group_ready(self, group_result: GroupResult) -> bool:  # pylint: disable=no-self-use
-        """Check if all tasks in the group are ready."""
-        return group_result.ready()
-
-    @make_async()
-    def _is_group_successful(self, group_result: GroupResult) -> bool:  # pylint: disable=no-self-use
-        """Check if all tasks in the group completed successfully."""
-        return group_result.successful()
-
     @handle_celery_errors
     async def get_group_status(self, group_uuid: GroupUUID) -> GroupStatus:
         with log_context(
@@ -270,8 +260,8 @@ class CeleryTaskManager:
 
             # Check group status
             successful_count = group_result.completed_count()
-            is_done = await self._is_group_ready(group_result)
-            is_successful = await self._is_group_successful(group_result) if is_done else False
+            is_done = group_result.ready()
+            is_successful = group_result.successful() if is_done else False
 
             return GroupStatus(
                 group_uuid=group_uuid,
