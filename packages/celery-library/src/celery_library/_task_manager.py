@@ -247,11 +247,13 @@ class CeleryTaskManager:
             )
 
     @make_async()
-    def _restore_group_result(self, group_uuid: GroupUUID) -> GroupResult:
+    def _restore_group_result(self, group_uuid: GroupUUID) -> GroupResult | None:
+        """Restore a GroupResult from its ID."""
         try:
             return GroupResult.restore(str(group_uuid), app=self._celery_app)
-        except (KeyError, AttributeError) as exc:
-            raise GroupNotFoundError(group_uuid=group_uuid) from exc
+        except (KeyError, AttributeError):
+            # Group not found or invalid
+            return None
 
     @handle_celery_errors
     async def get_group_status(self, owner_metadata: OwnerMetadata, group_uuid: GroupUUID) -> GroupStatus:
@@ -261,6 +263,9 @@ class CeleryTaskManager:
             msg=f"Getting group status: {owner_metadata=} {group_uuid=}",
         ):
             group_result = await self._restore_group_result(group_uuid)
+
+            if group_result is None:
+                raise GroupNotFoundError(group_uuid=group_uuid, owner_metadata=owner_metadata)
 
             # Get task UUIDs from the group result
             # AsyncResult objects have .id attribute containing the task key

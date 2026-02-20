@@ -5,11 +5,13 @@ from models_library.progress_bar import ProgressReport
 
 from .models import (
     ExecutionMetadata,
+    GroupKey,
     GroupStatus,
     GroupUUID,
     OwnerMetadata,
     Task,
     TaskKey,
+    TaskParams,
     TaskStatus,
     TaskStreamItem,
     TaskUUID,
@@ -19,7 +21,7 @@ from .models import (
 @runtime_checkable
 class TaskManager(Protocol):
     async def submit_task(
-        self, execution_metadata: ExecutionMetadata, *, owner_metadata: OwnerMetadata, **task_param
+        self, execution_metadata: ExecutionMetadata, *, owner_metadata: OwnerMetadata, **task_params: TaskParams
     ) -> TaskUUID: ...
 
     async def submit_group(
@@ -55,4 +57,4 @@ class TaskManager(Protocol):
 
     async def set_task_stream_last_update(self, task_key: TaskKey) -> None: ...
 
-    async def task_exists(self, task_key: TaskKey) -> bool: ...
+    async def task_or_group_exists(self, task_or_group_key: TaskKey | GroupKey) -> bool: ...

@@ -15,7 +15,7 @@ import pytest
 from celery import Celery, Task  # pylint: disable=no-name-in-module
 from celery.worker.worker import WorkController  # pylint: disable=no-name-in-module
 from celery_library._task_manager import CeleryTaskManager
-from celery_library.errors import TaskNotFoundError, TransferableCeleryError
+from celery_library.errors import GroupNotFoundError, TaskNotFoundError, TransferableCeleryError
 from celery_library.task import register_task
 from celery_library.worker.app_server import get_app_server
 from common_library.errors_classes import OsparcErrorMixin
@@ -743,11 +743,12 @@ async def test_get_group_status_successful_false_when_task_fails(
 async def test_get_group_status_with_nonexistent_group_raises_error(
     task_manager: CeleryTaskManager,
     with_celery_worker: WorkController,
+    fake_owner_metadata: OwnerMetadata,
 ):
     fake_group_uuid = TypeAdapter(GroupUUID).validate_python(_faker.uuid4())
 
-    with pytest.raises(TaskNotFoundError):
-        await task_manager.get_group_status(fake_group_uuid)
+    with pytest.raises(GroupNotFoundError):
+        await task_manager.get_group_status(fake_owner_metadata, fake_group_uuid)
 
 
 async def test_get_group_status_tracks_progress(
@@ -775,7 +776,7 @@ async def test_get_group_status_tracks_progress(
         previous_completed = 0
         async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
             with attempt:
-                group_status = await task_manager.get_group_status(group_id)
+                group_status = await task_manager.get_group_status(fake_owner_metadata, group_id)
 
                 # Progress should never go backwards
                 assert group_status.completed_count >= previous_completed
@@ -806,7 +807,7 @@ async def test_get_group_status_with_empty_group(
     )
 
     # Get group status
-    group_status = await task_manager.get_group_status(group_id)
+    group_status = await task_manager.get_group_status(fake_owner_metadata, group_id)
 
     assert group_status.group_uuid == group_id
     assert group_status.task_uuids == []
