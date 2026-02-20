@@ -60,7 +60,7 @@ async def test_task_filter_sorting_key_not_serialized():
     )
     task_uuid = TypeAdapter(TaskUUID).validate_python(_faker.uuid4())
     copy_owner_metadata = owner_metadata.model_dump()
-    copy_owner_metadata.update({"task_uuid": f"{task_uuid}"})
+    copy_owner_metadata.update({"uuid": f"{task_uuid}"})
 
     expected_key = ":".join([f"{k}={json_dumps(v)}" for k, v in sorted(copy_owner_metadata.items())])
     assert owner_metadata.model_dump_key(task_or_group_uuid=task_uuid) == expected_key
