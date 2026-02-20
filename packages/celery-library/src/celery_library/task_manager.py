@@ -28,7 +28,7 @@ from servicelib.celery.task_manager import TaskManager
 from servicelib.logging_utils import log_context
 from settings_library.celery import CelerySettings
 
-from .errors import TaskNotFoundError, TaskSubmissionError, handle_celery_errors
+from .errors import GroupNotFoundError, TaskNotFoundError, TaskSubmissionError, handle_celery_errors
 
 _logger = logging.getLogger(__name__)
 
@@ -252,7 +252,7 @@ class CeleryTaskManager:
             group_result = await self._restore_group_result(group_uuid)
 
             if group_result is None:
-                raise TaskNotFoundError(group_uuid=group_uuid)
+                raise GroupNotFoundError(group_uuid=group_uuid)
 
             # Get task UUIDs from the group result
             # AsyncResult objects have .id attribute containing the task key
