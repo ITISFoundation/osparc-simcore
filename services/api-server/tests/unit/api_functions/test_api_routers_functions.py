@@ -13,7 +13,7 @@ import httpx
 import pytest
 import respx
 from celery import Task
-from celery_library.task_manager import CeleryTaskManager
+from celery_library import CeleryTaskManager
 from faker import Faker
 from fastapi import FastAPI
 from httpx import AsyncClient
