@@ -111,7 +111,7 @@
     }, {
       "beforeClick": {
         "selector": "osparc-test-id=helpNavigationBtn",
-        "action": "open"
+        "event": "tap"
       },
       "anchorEl": "osparc-test-id=helpNavigationMenu",
       "text": "Under the question mark, you can access Help & Support to assist you whenever you need it.",
