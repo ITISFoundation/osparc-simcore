@@ -20,7 +20,7 @@ from pytest_mock import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from settings_library.redis import RedisSettings
 from simcore_service_dynamic_scheduler.services.p_scheduler._models import SchedulerServiceStatus
-from simcore_service_dynamic_scheduler.services.p_scheduler._node_status import (
+from simcore_service_dynamic_scheduler.services.p_scheduler._node_status._manager import (
     _PERIODIC_HANDLING_MESSAGE,
     StatusManager,
     _get_scheduler_service_status,
@@ -46,7 +46,7 @@ def node_id(faker: Faker) -> NodeID:
 @pytest.fixture
 def mock_get_service_status(mocker: MockerFixture, service_status: NodeGet | DynamicServiceGet | NodeGetIdle) -> None:
     mocker.patch(
-        "simcore_service_dynamic_scheduler.services.p_scheduler._node_status.get_service_status",
+        "simcore_service_dynamic_scheduler.services.p_scheduler._node_status._manager.get_service_status",
         return_value=service_status,
     )
 
@@ -118,7 +118,7 @@ def scheduler_status() -> SchedulerServiceStatus:
 @pytest.fixture
 def mock__get_scheduler_service_status(mocker: MockerFixture, scheduler_status: SchedulerServiceStatus) -> None:
     mocker.patch(
-        "simcore_service_dynamic_scheduler.services.p_scheduler._node_status._get_scheduler_service_status",
+        "simcore_service_dynamic_scheduler.services.p_scheduler._node_status._manager._get_scheduler_service_status",
         return_value=scheduler_status,
     )
 

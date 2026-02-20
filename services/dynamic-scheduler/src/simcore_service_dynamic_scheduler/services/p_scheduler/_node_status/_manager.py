@@ -17,10 +17,10 @@ from servicelib.redis._utils import handle_redis_returns_union_types
 from servicelib.utils import limited_gather
 from settings_library.redis import RedisDatabase
 
-from ..common_interface import get_service_status
-from ..redis import get_redis_client
-from ._lifecycle_protocol import SupportsLifecycle
-from ._models import SchedulerServiceStatus
+from ...common_interface import get_service_status
+from ...redis import get_redis_client
+from .._lifecycle_protocol import SupportsLifecycle
+from .._models import SchedulerServiceStatus
 
 _logger = logging.getLogger(__name__)
 
@@ -32,6 +32,10 @@ _PERIODIC_HANDLING_MESSAGE: Final[str] = "Periodic check handled by app_id="
 
 async def _get_scheduler_service_status(app: FastAPI, node_id: NodeID) -> SchedulerServiceStatus:
     """Remaps platform service status to something that the scheduler understands"""
+    # TODO: something is wrong here -> why is the service status coming form the outside?  # noqa: FIX002
+    # TODO: use a different way to compute this these things  # noqa: FIX002
+    # TODO: the source here has to be different  # noqa: FIX002
+    #
     service_status: NodeGet | DynamicServiceGet | NodeGetIdle = await get_service_status(app, node_id=node_id)
 
     if isinstance(service_status, NodeGetIdle):
