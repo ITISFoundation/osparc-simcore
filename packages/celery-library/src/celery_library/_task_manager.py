@@ -69,40 +69,6 @@ class CeleryTaskManager:
         return task_uuid, task_key
 
     @handle_celery_errors
-    async def submit_task(
-        self,
-        execution_metadata: ExecutionMetadata,
-        *,
-        owner_metadata: OwnerMetadata,
-        **task_params,
-    ) -> TaskUUID:
-        with log_context(
-            _logger,
-            logging.DEBUG,
-            msg=f"Submit {execution_metadata.name=}: {owner_metadata=} {task_params=}",
-        ):
-            task_uuid, task_key = self._create_task_ids(owner_metadata)
-            expiry = self._get_task_expiry(execution_metadata)
-
-            try:
-                await self._task_store.create_task(task_key, execution_metadata, expiry=expiry)
-                self._celery_app.send_task(
-                    execution_metadata.name,
-                    task_id=task_key,
-                    kwargs={"task_key": task_key} | task_params,
-                    queue=execution_metadata.queue,
-                )
-            except CeleryError as exc:
-                await self._cleanup_task(task_key)
-                raise TaskSubmissionError(
-                    task_name=execution_metadata.name,
-                    task_key=task_key,
-                    task_params=task_params,
-                ) from exc
-
-            return task_uuid
-
-    @handle_celery_errors
     async def submit_group(
         self,
         executions: list[tuple[ExecutionMetadata, dict[str, Any]]],
@@ -170,6 +136,40 @@ class CeleryTaskManager:
             return TypeAdapter(GroupUUID).validate_python(group_result.id), [
                 TypeAdapter(TaskUUID).validate_python(task_uuid) for _, task_uuid in created
             ]
+
+    @handle_celery_errors
+    async def submit_task(
+        self,
+        execution_metadata: ExecutionMetadata,
+        *,
+        owner_metadata: OwnerMetadata,
+        **task_params,
+    ) -> TaskUUID:
+        with log_context(
+            _logger,
+            logging.DEBUG,
+            msg=f"Submit {execution_metadata.name=}: {owner_metadata=} {task_params=}",
+        ):
+            task_uuid, task_key = self._create_task_ids(owner_metadata)
+            expiry = self._get_task_expiry(execution_metadata)
+
+            try:
+                await self._task_store.create_task(task_key, execution_metadata, expiry=expiry)
+                self._celery_app.send_task(
+                    execution_metadata.name,
+                    task_id=task_key,
+                    kwargs={"task_key": task_key} | task_params,
+                    queue=execution_metadata.queue,
+                )
+            except CeleryError as exc:
+                await self._cleanup_task(task_key)
+                raise TaskSubmissionError(
+                    task_name=execution_metadata.name,
+                    task_key=task_key,
+                    task_params=task_params,
+                ) from exc
+
+            return task_uuid
 
     @handle_celery_errors
     async def cancel_task(self, owner_metadata: OwnerMetadata, task_uuid: TaskUUID) -> None:
