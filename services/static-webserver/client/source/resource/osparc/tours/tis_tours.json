@@ -12,7 +12,7 @@
     },{
       "beforeClick": {
         "selector": "osparc-test-id=notificationsButton",
-        "event": "tap"
+        "action": "toggle"
       },
       "anchorEl": "osparc-test-id=notificationsContainer",
       "text": "By clicking on the Bell, you will see notifications about which Projects, Credits and Organizations have been shared with you.",
@@ -20,7 +20,7 @@
     }, {
       "beforeClick": {
         "selector": "osparc-test-id=helpNavigationBtn",
-        "event": "tap"
+        "action": "toggle"
       },
       "anchorEl": "osparc-test-id=helpNavigationMenu",
       "text": "Under the question mark, you can access Help & Support to assist you whenever you need it.",
@@ -107,7 +107,7 @@
     }, {
       "beforeClick": {
         "selector": "osparc-test-id=creditsIndicatorButton",
-        "event": "tap"
+        "action": "toggle"
       },
       "anchorEl": "osparc-test-id=creditsSummary",
       "title": "Credits Indicator",

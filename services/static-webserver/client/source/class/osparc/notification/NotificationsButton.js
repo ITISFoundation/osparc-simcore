@@ -23,7 +23,7 @@ qx.Class.define("osparc.notification.NotificationsButton", {
 
     this._setLayout(new qx.ui.layout.Canvas());
 
-    osparc.utils.Utils.setIdToWidget(this, "notificationsButton");
+    osparc.utils.Utils.setIdToWidget(this, "notificationsButton"); // "action": "toggle" in the guided tours
 
     this._createChildControlImpl("icon");
     this._createChildControlImpl("number");
@@ -40,6 +40,14 @@ qx.Class.define("osparc.notification.NotificationsButton", {
 
   members: {
     __notificationsContainer: null,
+
+    /**
+     * Public method to toggle the notifications container.
+     * Used by the guided tours via "action": "toggle".
+     */
+    toggle: function() {
+      this.__buttonTapped();
+    },
 
     _createChildControlImpl: function(id) {
       let control;

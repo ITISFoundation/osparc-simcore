@@ -35,6 +35,14 @@ qx.Class.define("osparc.desktop.credits.CreditsIndicatorButton", {
     __creditsContainer: null,
     __tapListener: null,
 
+    /**
+     * Public method to toggle the credits container.
+     * Used by the guided tours via "action": "toggle".
+     */
+    toggle: function() {
+      this.__buttonTapped();
+    },
+
     __buttonTapped: function() {
       if (this.__creditsContainer && this.__creditsContainer.isVisible()) {
         this.__hideCreditsContainer();
