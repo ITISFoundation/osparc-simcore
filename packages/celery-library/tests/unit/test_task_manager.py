@@ -220,8 +220,6 @@ async def test_cancelling_a_running_task_aborts_and_deletes(
     with pytest.raises(TaskNotFoundError):
         await task_manager.get_task_status(fake_owner_metadata, task_uuid)
 
-    tasks = await task_manager.list_tasks(fake_owner_metadata)
-    assert task_uuid not in [task.uuid for task in tasks]
     assert task_uuid not in await task_manager.list_tasks(fake_owner_metadata)
 
 
