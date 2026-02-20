@@ -19,6 +19,7 @@ from servicelib.celery.models import (
     OwnerMetadata,
     Task,
     TaskKey,
+    TaskParams,
     TaskState,
     TaskStatus,
     TaskStore,
@@ -71,7 +72,7 @@ class CeleryTaskManager:
     @handle_celery_errors
     async def submit_group(
         self,
-        executions: list[tuple[ExecutionMetadata, dict[str, Any]]],
+        executions: list[tuple[ExecutionMetadata, TaskParams]],
         *,
         owner_metadata: OwnerMetadata,
     ) -> tuple[GroupUUID, list[TaskUUID]]:
