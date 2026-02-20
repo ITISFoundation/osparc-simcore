@@ -309,7 +309,8 @@ async def _list_repositories_gen(
 
 async def list_image_tags_gen(app: FastAPI, image_key: str, *, update_cache=False) -> AsyncGenerator[list[str]]:
     with log_context(_logger, logging.DEBUG, msg=f"listing image tags in {image_key}"):
-        path = f"{image_key}/tags/list?n={get_application_settings(app).DIRECTOR_REGISTRY_CLIENT_MAX_NUMBER_OF_RETRIEVED_OBJECTS}"
+        _max_objects = get_application_settings(app).DIRECTOR_REGISTRY_CLIENT_MAX_NUMBER_OF_RETRIEVED_OBJECTS
+        path = f"{image_key}/tags/list?n={_max_objects}"
         tags, headers = await registry_request(app, path=path, method="GET", use_cache=not update_cache)  # initial call
         assert "tags" in tags  # nosec
         while True:
@@ -360,34 +361,6 @@ async def get_image_digest(app: FastAPI, image: str, tag: str) -> str | None:
     headers = headers or {}
     docker_digest: str | None = headers.get(_DOCKER_CONTENT_DIGEST_HEADER, None)
     return docker_digest
-
-
-async def delete_image(app: FastAPI, image: str, tag: str) -> str:
-    """Deletes an image manifest in the remote registry and returns its digest."""
-
-    path = f"{image}/manifests/{tag}"
-
-    digest: str | None = None
-    for method in ("HEAD", "GET"):
-        _, headers = await registry_request(app, path=path, method=method, use_cache=False)
-        headers = headers or {}
-        digest = headers.get(_DOCKER_CONTENT_DIGEST_HEADER)
-        if digest:
-            break
-
-    if not digest:
-        raise ServiceNotAvailableError(
-            service_name=image,
-            service_tag=tag,
-            msg="Unable to resolve manifest digest in registry response headers",
-        )
-
-    await registry_request(app, path=f"{image}/manifests/{digest}", method="DELETE", use_cache=False)
-
-    cache: SimpleMemoryCache = app.state.registry_cache_memory
-    await cache.clear()
-
-    return digest
 
 
 async def get_image_labels(

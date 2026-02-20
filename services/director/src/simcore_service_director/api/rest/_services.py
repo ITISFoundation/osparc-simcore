@@ -81,25 +81,6 @@ async def list_service_labels(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=f"{err}") from err
 
 
-@router.delete("/services/{service_key:path}/{service_version}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_service(
-    the_app: Annotated[FastAPI, Depends(get_app)],
-    service_key: ServiceKey,
-    service_version: ServiceVersion,
-) -> None:
-    _logger.warning(
-        "Deleting service from registry with service_key %s, service_version %s",
-        service_key,
-        service_version,
-    )
-    try:
-        await registry_proxy.delete_image(the_app, service_key, service_version)
-    except ServiceNotAvailableError as err:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{err}") from err
-    except RegistryConnectionError as err:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=f"{err}") from err
-
-
 @router.get("/services/{service_key:path}/{service_version}")
 async def get_service(
     the_app: Annotated[FastAPI, Depends(get_app)],
