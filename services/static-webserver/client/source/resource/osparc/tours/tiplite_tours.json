@@ -14,14 +14,6 @@
       "placement": "bottom"
     }, {
       "beforeClick": {
-        "selector": "osparc-test-id=helpNavigationBtn",
-        "action": "toggle"
-      },
-      "anchorEl": "osparc-test-id=helpNavigationMenu",
-      "text": "Under the question mark, you can access Help & Support to assist you whenever you need it.",
-      "placement": "left"
-    }, {
-      "beforeClick": {
         "selector": "osparc-test-id=userMenuBtn",
         "action": "open"
       },

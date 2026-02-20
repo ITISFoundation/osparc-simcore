@@ -42,7 +42,6 @@ qx.Class.define("osparc.notification.NotificationsButton", {
     __notificationsContainer: null,
 
     /**
-     * Public method to toggle the notifications container.
      * Used by the guided tours via "action": "toggle".
      */
     toggle: function() {

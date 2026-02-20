@@ -27,8 +27,6 @@ qx.Class.define("osparc.support.SupportButton", {
       toolTipText: this.tr("Help & Support"),
     });
 
-    osparc.utils.Utils.setIdToWidget(this, "helpNavigationBtn"); // "action": "toggle" in the guided tours
-
     this.getChildControl("icon");
 
     this.__listenToStore();
@@ -54,14 +52,6 @@ qx.Class.define("osparc.support.SupportButton", {
 
   members: {
     __notificationsContainer: null,
-
-    /**
-     * Public method to open the support center.
-     * Used by the guided tours via "action": "toggle".
-     */
-    toggle: function() {
-      osparc.support.SupportCenter.openWindow();
-    },
 
     _createChildControlImpl: function(id) {
       let control;

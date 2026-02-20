@@ -88,14 +88,6 @@
       "placement": "bottom"
     }, {
       "beforeClick": {
-        "selector": "osparc-test-id=helpNavigationBtn",
-        "action": "toggle"
-      },
-      "anchorEl": "osparc-test-id=helpNavigationMenu",
-      "text": "Under the question mark, you find Manuals, Support and ways to give us Feedback. It also provides quick access to other Guided Tours.",
-      "placement": "left"
-    }, {
-      "beforeClick": {
         "selector": "osparc-test-id=userMenuBtn",
         "action": "open"
       },
