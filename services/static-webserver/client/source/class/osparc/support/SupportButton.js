@@ -27,8 +27,6 @@ qx.Class.define("osparc.support.SupportButton", {
       toolTipText: this.tr("Help & Support"),
     });
 
-    osparc.utils.Utils.setIdToWidget(this, "helpNavigationBtn");
-
     this.getChildControl("icon");
 
     this.__listenToStore();
