@@ -20,16 +20,16 @@ from .models import (
 
 @runtime_checkable
 class TaskManager(Protocol):
-    async def submit_task(
-        self, execution_metadata: ExecutionMetadata, *, owner_metadata: OwnerMetadata, **task_params
-    ) -> TaskUUID: ...
-
     async def submit_group(
         self,
         executions: list[tuple[ExecutionMetadata, TaskParams]],
         *,
         owner_metadata: OwnerMetadata,
     ) -> tuple[GroupUUID, list[TaskUUID]]: ...
+
+    async def submit_task(
+        self, execution_metadata: ExecutionMetadata, *, owner_metadata: OwnerMetadata, **task_params
+    ) -> TaskUUID: ...
 
     async def cancel_task(self, owner_metadata: OwnerMetadata, task_uuid: TaskUUID) -> None: ...
 
