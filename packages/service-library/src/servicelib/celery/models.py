@@ -270,7 +270,7 @@ class GroupStatus(BaseModel):
 
     group_uuid: GroupUUID
     task_uuids: list[TaskUUID]
-    successful_count: int
+    completed_count: int
     total_count: int
     is_done: bool
     is_successful: bool

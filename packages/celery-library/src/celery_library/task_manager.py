@@ -259,14 +259,14 @@ class CeleryTaskManager:
             task_uuids = [OwnerMetadata.get_task_uuid(async_result.id) for async_result in (group_result.results or [])]
 
             # Check group status
-            successful_count = group_result.completed_count()
+            completed_count = group_result.completed_count()
             is_done = group_result.ready()
             is_successful = group_result.successful() if is_done else False
 
             return GroupStatus(
                 group_uuid=group_uuid,
                 task_uuids=task_uuids,
-                successful_count=successful_count,
+                completed_count=completed_count,
                 total_count=len(task_uuids),
                 is_done=is_done,
                 is_successful=is_successful,

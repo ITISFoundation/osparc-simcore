@@ -658,8 +658,8 @@ async def test_get_group_status_returns_status_for_running_group(
         assert group_status.group_uuid == group_id
         assert group_status.task_uuids == task_uuids
         assert group_status.total_count == num_tasks
-        assert group_status.successful_count >= 0
-        assert group_status.successful_count <= num_tasks
+        assert group_status.completed_count >= 0
+        assert group_status.completed_count <= num_tasks
     finally:
         # Clean up
         for task_uuid in task_uuids:
@@ -697,7 +697,7 @@ async def test_get_group_status_returns_done_when_all_tasks_complete(
     assert group_status.group_uuid == group_id
     assert group_status.task_uuids == task_uuids
     assert group_status.total_count == num_tasks
-    assert group_status.successful_count == num_tasks
+    assert group_status.completed_count == num_tasks
     assert group_status.is_done
     assert group_status.is_successful
 
@@ -736,7 +736,7 @@ async def test_get_group_status_successful_false_when_task_fails(
     assert group_status.total_count == 2
     assert group_status.is_done
     # NOTE: one task failed
-    assert group_status.successful_count == 1
+    assert group_status.completed_count == 1
     assert not group_status.is_successful
 
 
@@ -778,8 +778,8 @@ async def test_get_group_status_tracks_progress(
                 group_status = await task_manager.get_group_status(group_id)
 
                 # Progress should never go backwards
-                assert group_status.successful_count >= previous_completed
-                previous_completed = group_status.successful_count
+                assert group_status.completed_count >= previous_completed
+                previous_completed = group_status.completed_count
 
                 # Keep retrying until done
                 assert group_status.is_done
@@ -811,6 +811,6 @@ async def test_get_group_status_with_empty_group(
     assert group_status.group_uuid == group_id
     assert group_status.task_uuids == []
     assert group_status.total_count == 0
-    assert group_status.successful_count == 0
+    assert group_status.completed_count == 0
     assert group_status.is_done
     assert group_status.is_successful
