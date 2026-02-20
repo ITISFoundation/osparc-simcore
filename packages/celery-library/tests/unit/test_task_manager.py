@@ -440,6 +440,8 @@ async def test_submit_group_tasks_appear_in_listing(
         for _ in range(num_tasks)
     ]
 
+    task_uuids: list[TaskUUID] = []
+
     try:
         _, task_uuids = await task_manager.submit_group(
             executions,
