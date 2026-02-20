@@ -25,6 +25,7 @@ from pydantic import TypeAdapter
 from servicelib.celery.models import (
     TASK_DONE_STATES,
     ExecutionMetadata,
+    GroupUUID,
     OwnerMetadata,
     TaskKey,
     TaskState,
@@ -625,3 +626,191 @@ async def test_submit_empty_group(
     )
 
     assert task_uuids == []
+
+
+async def test_get_group_status_returns_status_for_running_group(
+    task_manager: CeleryTaskManager,
+    with_celery_worker: WorkController,
+    fake_owner_metadata: OwnerMetadata,
+):
+    # Submit a group of long-running tasks
+    num_tasks = 3
+    executions = [
+        (
+            ExecutionMetadata(name=dreamer_task.__name__),
+            {},
+        )
+        for _ in range(num_tasks)
+    ]
+
+    group_id, task_uuids = await task_manager.submit_group(
+        executions,
+        owner_metadata=fake_owner_metadata,
+    )
+
+    try:
+        # Wait a moment to ensure tasks start
+        await asyncio.sleep(1.0)
+
+        # Get group status while tasks are running
+        group_status = await task_manager.get_group_status(group_id)
+
+        assert group_status.group_uuid == group_id
+        assert group_status.task_uuids == task_uuids
+        assert group_status.total_count == num_tasks
+        assert group_status.successful_count >= 0
+        assert group_status.successful_count <= num_tasks
+    finally:
+        # Clean up
+        for task_uuid in task_uuids:
+            with contextlib.suppress(TaskNotFoundError):
+                await task_manager.cancel_task(fake_owner_metadata, task_uuid)
+
+
+async def test_get_group_status_returns_done_when_all_tasks_complete(
+    task_manager: CeleryTaskManager,
+    with_celery_worker: WorkController,
+    fake_owner_metadata: OwnerMetadata,
+):
+    # Submit a group of fast tasks
+    num_tasks = 2
+    executions = [
+        (
+            ExecutionMetadata(name=fake_file_processor.__name__),
+            {"files": [f"file{i}"]},
+        )
+        for i in range(num_tasks)
+    ]
+
+    group_id, task_uuids = await task_manager.submit_group(
+        executions,
+        owner_metadata=fake_owner_metadata,
+    )
+
+    # Wait for all tasks to complete
+    for task_uuid in task_uuids:
+        await _wait_for_task_success(task_manager, fake_owner_metadata, task_uuid)
+
+    # Get group status
+    group_status = await task_manager.get_group_status(group_id)
+
+    assert group_status.group_uuid == group_id
+    assert group_status.task_uuids == task_uuids
+    assert group_status.total_count == num_tasks
+    assert group_status.successful_count == num_tasks
+    assert group_status.is_done
+    assert group_status.is_successful
+
+
+async def test_get_group_status_successful_false_when_task_fails(
+    task_manager: CeleryTaskManager,
+    with_celery_worker: WorkController,
+    fake_owner_metadata: OwnerMetadata,
+):
+    # Submit a group with one failing task
+    executions = [
+        (
+            ExecutionMetadata(name=fake_file_processor.__name__),
+            {"files": ["file1"]},
+        ),
+        (
+            ExecutionMetadata(name=failure_task.__name__),
+            {},
+        ),
+    ]
+
+    group_id, task_uuids = await task_manager.submit_group(
+        executions,
+        owner_metadata=fake_owner_metadata,
+    )
+
+    # Wait for all tasks to finish
+    for task_uuid in task_uuids:
+        await _wait_for_task_done(task_manager, fake_owner_metadata, task_uuid)
+
+    # Get group status
+    group_status = await task_manager.get_group_status(group_id)
+
+    assert group_status.group_uuid == group_id
+    assert group_status.task_uuids == task_uuids
+    assert group_status.total_count == 2
+    assert group_status.is_done
+    # NOTE: one task failed
+    assert group_status.successful_count == 1
+    assert not group_status.is_successful
+
+
+async def test_get_group_status_with_nonexistent_group_raises_error(
+    task_manager: CeleryTaskManager,
+    with_celery_worker: WorkController,
+):
+    fake_group_uuid = TypeAdapter(GroupUUID).validate_python(_faker.uuid4())
+
+    with pytest.raises(TaskNotFoundError):
+        await task_manager.get_group_status(fake_group_uuid)
+
+
+async def test_get_group_status_tracks_progress(
+    task_manager: CeleryTaskManager,
+    with_celery_worker: WorkController,
+    fake_owner_metadata: OwnerMetadata,
+):
+    # Submit a group of longer-running tasks
+    num_tasks = 4
+    executions = [
+        (
+            ExecutionMetadata(name=fake_file_processor.__name__),
+            {"files": [f"file{i}-{j}" for j in range(3)]},
+        )
+        for i in range(num_tasks)
+    ]
+
+    group_id, task_uuids = await task_manager.submit_group(
+        executions,
+        owner_metadata=fake_owner_metadata,
+    )
+
+    try:
+        # Check status repeatedly until group completes, tracking progress
+        previous_completed = 0
+        async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
+            with attempt:
+                group_status = await task_manager.get_group_status(group_id)
+
+                # Progress should never go backwards
+                assert group_status.successful_count >= previous_completed
+                previous_completed = group_status.successful_count
+
+                # Keep retrying until done
+                assert group_status.is_done
+
+        # Verify final status
+        assert group_status.total_count == num_tasks
+        assert group_status.is_successful
+    finally:
+        # Clean up
+        for task_uuid in task_uuids:
+            with contextlib.suppress(TaskNotFoundError):
+                await task_manager.cancel_task(fake_owner_metadata, task_uuid)
+
+
+async def test_get_group_status_with_empty_group(
+    task_manager: CeleryTaskManager,
+    with_celery_worker: WorkController,
+    fake_owner_metadata: OwnerMetadata,
+):
+    # Submit an empty group
+    group_id, _ = await task_manager.submit_group(
+        [],
+        owner_metadata=fake_owner_metadata,
+    )
+
+    # Get group status
+    group_status = await task_manager.get_group_status(group_id)
+
+    assert group_status.group_uuid == group_id
+    assert group_status.task_uuids == []
+    assert group_status.total_count == 0
+    assert group_status.successful_count == 0
+    assert group_status.is_done
+    assert group_status.is_successful

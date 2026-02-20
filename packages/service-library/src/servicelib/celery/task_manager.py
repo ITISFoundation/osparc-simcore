@@ -5,6 +5,7 @@ from models_library.progress_bar import ProgressReport
 
 from .models import (
     ExecutionMetadata,
+    GroupStatus,
     GroupUUID,
     OwnerMetadata,
     Task,
@@ -33,6 +34,8 @@ class TaskManager(Protocol):
     async def get_task_result(self, owner_metadata: OwnerMetadata, task_uuid: TaskUUID) -> Any: ...
 
     async def get_task_status(self, owner_metadata: OwnerMetadata, task_uuid: TaskUUID) -> TaskStatus: ...
+
+    async def get_group_status(self, group_uuid: GroupUUID) -> GroupStatus: ...
 
     async def list_tasks(self, owner_metadata: OwnerMetadata) -> list[Task]: ...
 

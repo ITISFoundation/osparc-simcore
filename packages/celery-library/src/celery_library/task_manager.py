@@ -6,12 +6,14 @@ from uuid import uuid4
 
 from celery import Celery, group, signature  # type: ignore[import-untyped]
 from celery.exceptions import CeleryError  # type: ignore[import-untyped]
-from celery.result import GroupResult  # type: ignore[import-untyped]
+from celery.result import GroupResult
 from common_library.async_tools import make_async
 from models_library.progress_bar import ProgressReport
+from pydantic import TypeAdapter  # type: ignore[import-untyped]
 from servicelib.celery.models import (
     TASK_DONE_STATES,
     ExecutionMetadata,
+    GroupStatus,
     GroupUUID,
     OwnerMetadata,
     Task,
@@ -152,7 +154,9 @@ class CeleryTaskManager:
                 ) from exc
 
             assert group_result.id is not None  # nosec
-            return group_result.id, [task_uuid for _, task_uuid in created]
+            return TypeAdapter(GroupUUID).validate_python(group_result.id), [
+                TypeAdapter(TaskUUID).validate_python(task_uuid) for _, task_uuid in created
+            ]
 
     @handle_celery_errors
     async def cancel_task(self, owner_metadata: OwnerMetadata, task_uuid: TaskUUID) -> None:
@@ -227,6 +231,55 @@ class CeleryTaskManager:
                 task_uuid=task_uuid,
                 task_state=task_state,
                 progress_report=await self._get_task_progress_report(task_key, task_state),
+            )
+
+    @make_async()
+    def _restore_group_result(self, group_uuid: GroupUUID) -> GroupResult | None:
+        """Restore a GroupResult from its ID."""
+        try:
+            return GroupResult.restore(str(group_uuid), app=self._celery_app)
+        except (KeyError, AttributeError):
+            # Group not found or invalid
+            return None
+
+    @make_async()
+    def _is_group_ready(self, group_result: GroupResult) -> bool:  # pylint: disable=no-self-use
+        """Check if all tasks in the group are ready."""
+        return group_result.ready()
+
+    @make_async()
+    def _is_group_successful(self, group_result: GroupResult) -> bool:  # pylint: disable=no-self-use
+        """Check if all tasks in the group completed successfully."""
+        return group_result.successful()
+
+    @handle_celery_errors
+    async def get_group_status(self, group_uuid: GroupUUID) -> GroupStatus:
+        with log_context(
+            _logger,
+            logging.DEBUG,
+            msg=f"Getting group status: {group_uuid=}",
+        ):
+            group_result = await self._restore_group_result(group_uuid)
+
+            if group_result is None:
+                raise TaskNotFoundError(group_uuid=group_uuid)
+
+            # Get task UUIDs from the group result
+            # AsyncResult objects have .id attribute containing the task key
+            task_uuids = [OwnerMetadata.get_task_uuid(async_result.id) for async_result in (group_result.results or [])]
+
+            # Check group status
+            successful_count = group_result.completed_count()
+            is_done = await self._is_group_ready(group_result)
+            is_successful = await self._is_group_successful(group_result) if is_done else False
+
+            return GroupStatus(
+                group_uuid=group_uuid,
+                task_uuids=task_uuids,
+                successful_count=successful_count,
+                total_count=len(task_uuids),
+                is_done=is_done,
+                is_successful=is_successful,
             )
 
     @handle_celery_errors

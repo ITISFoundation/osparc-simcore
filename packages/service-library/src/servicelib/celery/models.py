@@ -263,3 +263,36 @@ class TaskStatus(BaseModel):
     @property
     def is_done(self) -> bool:
         return self.task_state in TASK_DONE_STATES
+
+
+class GroupStatus(BaseModel):
+    """Status of a group of tasks."""
+
+    group_uuid: GroupUUID
+    task_uuids: list[TaskUUID]
+    successful_count: int
+    total_count: int
+    is_done: bool
+    is_successful: bool
+
+    @staticmethod
+    def _update_json_schema_extra(schema: JsonDict) -> None:
+        schema.update(
+            {
+                "examples": [
+                    {
+                        "group_uuid": "123e4567-e89b-12d3-a456-426614174000",
+                        "task_uuids": [
+                            "223e4567-e89b-12d3-a456-426614174000",
+                            "323e4567-e89b-12d3-a456-426614174000",
+                        ],
+                        "successful_count": 1,
+                        "total_count": 2,
+                        "is_done": False,
+                        "is_successful": False,
+                    }
+                ]
+            }
+        )
+
+    model_config = ConfigDict(json_schema_extra=_update_json_schema_extra)
