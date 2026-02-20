@@ -14,9 +14,9 @@ from random import randint
 import pytest
 from celery import Celery, Task  # pylint: disable=no-name-in-module
 from celery.worker.worker import WorkController  # pylint: disable=no-name-in-module
+from celery_library._task_manager import CeleryTaskManager
 from celery_library.errors import TaskNotFoundError, TransferableCeleryError
 from celery_library.task import register_task
-from celery_library.task_manager import CeleryTaskManager
 from celery_library.worker.app_server import get_app_server
 from common_library.errors_classes import OsparcErrorMixin
 from faker import Faker
@@ -653,7 +653,7 @@ async def test_get_group_status_returns_status_for_running_group(
         await asyncio.sleep(1.0)
 
         # Get group status while tasks are running
-        group_status = await task_manager.get_group_status(group_id)
+        group_status = await task_manager.get_group_status(fake_owner_metadata, group_id)
 
         assert group_status.group_uuid == group_id
         assert group_status.task_uuids == task_uuids
@@ -692,7 +692,7 @@ async def test_get_group_status_returns_done_when_all_tasks_complete(
         await _wait_for_task_success(task_manager, fake_owner_metadata, task_uuid)
 
     # Get group status
-    group_status = await task_manager.get_group_status(group_id)
+    group_status = await task_manager.get_group_status(fake_owner_metadata, group_id)
 
     assert group_status.group_uuid == group_id
     assert group_status.task_uuids == task_uuids
@@ -729,7 +729,7 @@ async def test_get_group_status_successful_false_when_task_fails(
         await _wait_for_task_done(task_manager, fake_owner_metadata, task_uuid)
 
     # Get group status
-    group_status = await task_manager.get_group_status(group_id)
+    group_status = await task_manager.get_group_status(fake_owner_metadata, group_id)
 
     assert group_status.group_uuid == group_id
     assert group_status.task_uuids == task_uuids

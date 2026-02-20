@@ -15,17 +15,19 @@ ModelType = TypeVar("ModelType", bound=BaseModel)
 type TaskKey = str
 type GroupKey = str
 type TaskName = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
+type TaskParams = dict[str, Any]
+
 type TaskUUID = UUID
 type GroupUUID = UUID
-_TASK_ID_KEY_DELIMITATOR: Final[str] = ":"
-_FORBIDDEN_KEY_CHARS = ("*", _TASK_ID_KEY_DELIMITATOR, "=")
-_FORBIDDEN_VALUE_CHARS = (_TASK_ID_KEY_DELIMITATOR, "=")
+_KEY_DELIMITATOR: Final[str] = ":"
+_FORBIDDEN_KEY_CHARS = ("*", _KEY_DELIMITATOR, "=")
+_FORBIDDEN_VALUE_CHARS = (_KEY_DELIMITATOR, "=")
 AllowedTypes = int | float | bool | str | None | list[str] | list[int] | list[float] | list[bool]
 
 type Wildcard = Literal["*"]
 WILDCARD: Final[Wildcard] = "*"
 
-_TASK_UUID_KEY: Final[str] = "task_uuid"
+_UUID_KEY: Final[str] = "uuid"
 
 
 class _TypeValidationModel(BaseModel):
@@ -84,44 +86,44 @@ class OwnerMetadata(BaseModel):
                 msg = f"Invalid filter value for key '{key}': '{value}'"
                 raise ValueError(msg)
 
-        if _TASK_UUID_KEY in self.model_dump():
-            msg = f"'{_TASK_UUID_KEY}' is a reserved key"
+        if _UUID_KEY in self.model_dump():
+            msg = f"'{_UUID_KEY}' is a reserved key"
             raise ValueError(msg)
 
         _validate_type()
         return self
 
-    def model_dump_task_key(self, task_uuid: TaskUUID | Wildcard) -> TaskKey:
+    def model_dump_key(self, task_or_group_uuid: TaskUUID | GroupUUID | Wildcard) -> TaskKey | GroupKey:
         data = self.model_dump(mode="json")
-        data.update({_TASK_UUID_KEY: f"{task_uuid}"})
-        return _TASK_ID_KEY_DELIMITATOR.join([f"{k}={json_dumps(v)}" for k, v in sorted(data.items())])
+        data.update({_UUID_KEY: f"{task_or_group_uuid}"})
+        return _KEY_DELIMITATOR.join([f"{k}={json_dumps(v)}" for k, v in sorted(data.items())])
 
     @classmethod
-    def model_validate_task_key(cls, task_key: TaskKey) -> Self:
-        data = cls._deserialize_task_key(task_key)
-        data.pop(_TASK_UUID_KEY, None)
+    def model_validate_key(cls, task_or_group_key: TaskKey | GroupKey) -> Self:
+        data = cls._deserialize_task_or_group_key(task_or_group_key)
+        data.pop(_UUID_KEY, None)
         return cls.model_validate(data)
 
     @classmethod
-    def _deserialize_task_key(cls, task_key: TaskKey) -> dict[str, AllowedTypes]:
-        key_value_pairs = [item.split("=") for item in task_key.split(_TASK_ID_KEY_DELIMITATOR)]
+    def _deserialize_task_or_group_key(cls, task_or_group_key: TaskKey | GroupKey) -> dict[str, AllowedTypes]:
+        key_value_pairs = [item.split("=") for item in task_or_group_key.split(_KEY_DELIMITATOR)]
         try:
             return {key: json_loads(value) for key, value in key_value_pairs}
         except orjson.JSONDecodeError as err:
-            msg = f"Invalid task_id format: {task_key}"
+            msg = f"Invalid key format: {task_or_group_key}"
             raise ValueError(msg) from err
 
     @classmethod
-    def get_task_uuid(cls, task_key: TaskKey) -> TaskUUID:
-        data = cls._deserialize_task_key(task_key)
+    def get_task_or_group_uuid(cls, task_or_group_key: TaskKey | GroupKey) -> TaskUUID:
+        data = cls._deserialize_task_or_group_key(task_or_group_key)
         try:
-            uuid_string = data.get(_TASK_UUID_KEY)
+            uuid_string = data.get(_UUID_KEY)
             if not isinstance(uuid_string, str):
-                msg = f"Invalid task_id format: {task_key}"
+                msg = f"Invalid task_id format: {task_or_group_key}"
                 raise TypeError(msg)
             return TypeAdapter(TaskUUID).validate_python(uuid_string)
         except ValueError as err:
-            msg = f"Invalid task_id format: {task_key}"
+            msg = f"Invalid task_id format: {task_or_group_key}"
             raise ValueError(msg) from err
 
 
@@ -196,6 +198,13 @@ class Task(BaseModel):
 
 
 class TaskStore(Protocol):
+    async def create_group(
+        self,
+        group_key: GroupKey,
+        executions: list[tuple[TaskKey, ExecutionMetadata]],
+        expiry: timedelta,
+    ) -> None: ...
+
     async def create_task(
         self,
         task_key: TaskKey,
@@ -203,7 +212,7 @@ class TaskStore(Protocol):
         expiry: timedelta,
     ) -> None: ...
 
-    async def task_exists(self, task_key: TaskKey) -> bool: ...
+    async def task_or_group_exists(self, task_or_group_key: TaskKey | GroupKey) -> bool: ...
 
     async def get_task_metadata(self, task_key: TaskKey) -> ExecutionMetadata | None: ...
 
