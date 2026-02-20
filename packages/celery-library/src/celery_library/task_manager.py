@@ -1,6 +1,6 @@
 import logging
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Any
 from uuid import uuid4
 
@@ -41,6 +41,30 @@ class CeleryTaskManager:
     _celery_settings: CelerySettings
     _task_store: TaskStore
 
+    def _get_task_expiry(self, execution_metadata: ExecutionMetadata) -> timedelta:
+        return (
+            self._celery_settings.CELERY_EPHEMERAL_RESULT_EXPIRES
+            if execution_metadata.ephemeral
+            else self._celery_settings.CELERY_RESULT_EXPIRES
+        )
+
+    async def _cleanup_task(self, task_key: TaskKey) -> None:
+        try:
+            await self._task_store.remove_task(task_key)
+        except CeleryError:
+            _logger.warning(
+                "Unable to cleanup task '%s' during error handling",
+                task_key,
+                exc_info=True,
+            )
+
+    @staticmethod
+    def _create_task_ids(owner_metadata: OwnerMetadata) -> tuple[TaskUUID, TaskKey]:
+        """Generate task UUID and task key."""
+        task_uuid = uuid4()
+        task_key = owner_metadata.model_dump_task_key(task_uuid=task_uuid)
+        return task_uuid, task_key
+
     @handle_celery_errors
     async def submit_task(
         self,
@@ -54,14 +78,8 @@ class CeleryTaskManager:
             logging.DEBUG,
             msg=f"Submit {execution_metadata.name=}: {owner_metadata=} {task_params=}",
         ):
-            task_uuid = uuid4()
-            task_key = owner_metadata.model_dump_task_key(task_uuid=task_uuid)
-
-            expiry = (
-                self._celery_settings.CELERY_EPHEMERAL_RESULT_EXPIRES
-                if execution_metadata.ephemeral
-                else self._celery_settings.CELERY_RESULT_EXPIRES
-            )
+            task_uuid, task_key = self._create_task_ids(owner_metadata)
+            expiry = self._get_task_expiry(execution_metadata)
 
             try:
                 await self._task_store.create_task(task_key, execution_metadata, expiry=expiry)
@@ -72,14 +90,7 @@ class CeleryTaskManager:
                     queue=execution_metadata.queue,
                 )
             except CeleryError as exc:
-                try:
-                    await self._task_store.remove_task(task_key)
-                except CeleryError:
-                    _logger.warning(
-                        "Unable to cleanup task '%s' during error handling",
-                        task_key,
-                        exc_info=True,
-                    )
+                await self._cleanup_task(task_key)
                 raise TaskSubmissionError(
                     task_name=execution_metadata.name,
                     task_key=task_key,
@@ -111,14 +122,8 @@ class CeleryTaskManager:
                 sigs = []
 
                 for execution_metadata, task_params in executions:
-                    task_uuid = uuid4()
-                    task_key = owner_metadata.model_dump_task_key(task_uuid=task_uuid)
-
-                    expiry = (
-                        self._celery_settings.CELERY_EPHEMERAL_RESULT_EXPIRES
-                        if execution_metadata.ephemeral
-                        else self._celery_settings.CELERY_RESULT_EXPIRES
-                    )
+                    task_uuid, task_key = self._create_task_ids(owner_metadata)
+                    expiry = self._get_task_expiry(execution_metadata)
 
                     await self._task_store.create_task(task_key, execution_metadata, expiry=expiry)
 
@@ -138,14 +143,7 @@ class CeleryTaskManager:
 
             except CeleryError as exc:
                 for task_key, _ in created:
-                    try:
-                        await self._task_store.remove_task(task_key)
-                    except CeleryError:
-                        _logger.warning(
-                            "Unable to cleanup task '%s' during group error handling",
-                            task_key,
-                            exc_info=True,
-                        )
+                    await self._cleanup_task(task_key)
 
                 raise TaskSubmissionError(
                     task_name="celery.group",
