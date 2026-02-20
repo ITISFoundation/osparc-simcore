@@ -25,7 +25,7 @@ _CELERY_TASK_SCAN_COUNT_PER_BATCH: Final[int] = 1000
 _CELERY_TASK_EXEC_METADATA_KEY: Final[str] = "exec-meta"
 _CELERY_TASK_PROGRESS_KEY: Final[str] = "progress"
 
-### Redis list to store streamed results
+# Redis list to store streamed results
 _CELERY_TASK_STREAM_PREFIX: Final[str] = "celery-task-stream-"
 _CELERY_TASK_STREAM_EXPIRY: Final[timedelta] = timedelta(minutes=3)
 _CELERY_TASK_STREAM_METADATA: Final[str] = "meta"

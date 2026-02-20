@@ -13,6 +13,7 @@ from pydantic.config import JsonDict
 ModelType = TypeVar("ModelType", bound=BaseModel)
 
 type TaskKey = str
+type GroupKey = str
 type TaskName = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
 type TaskUUID = UUID
 type GroupUUID = UUID
