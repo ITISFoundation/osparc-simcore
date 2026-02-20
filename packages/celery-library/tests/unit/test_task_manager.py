@@ -139,88 +139,88 @@ def register_celery_tasks() -> Callable[[Celery], None]:
 async def test_submitting_task_calling_async_function_results_with_success_state(
     task_manager: TaskManager,
     with_celery_worker: WorkController,
-    owner_metadata: OwnerMetadata,
+    fake_owner_metadata: OwnerMetadata,
 ):
     task_uuid = await task_manager.submit_task(
         ExecutionMetadata(
             name=fake_file_processor.__name__,
         ),
-        owner_metadata=owner_metadata,
+        owner_metadata=fake_owner_metadata,
         files=[f"file{n}" for n in range(5)],
     )
 
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
-            status = await task_manager.get_task_status(owner_metadata, task_uuid)
+            status = await task_manager.get_task_status(fake_owner_metadata, task_uuid)
             assert status.task_state == TaskState.SUCCESS
 
-    assert (await task_manager.get_task_status(owner_metadata, task_uuid)).task_state == TaskState.SUCCESS
-    assert (await task_manager.get_task_result(owner_metadata, task_uuid)) == "archive.zip"
+    assert (await task_manager.get_task_status(fake_owner_metadata, task_uuid)).task_state == TaskState.SUCCESS
+    assert (await task_manager.get_task_result(fake_owner_metadata, task_uuid)) == "archive.zip"
 
 
 async def test_submitting_task_with_failure_results_with_error(
     task_manager: TaskManager,
     with_celery_worker: WorkController,
-    owner_metadata: OwnerMetadata,
+    fake_owner_metadata: OwnerMetadata,
 ):
     task_uuid = await task_manager.submit_task(
         ExecutionMetadata(
             name=failure_task.__name__,
         ),
-        owner_metadata=owner_metadata,
+        owner_metadata=fake_owner_metadata,
     )
 
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
-            raw_result = await task_manager.get_task_result(owner_metadata, task_uuid)
+            raw_result = await task_manager.get_task_result(fake_owner_metadata, task_uuid)
             assert isinstance(raw_result, TransferableCeleryError)
 
-    raw_result = await task_manager.get_task_result(owner_metadata, task_uuid)
+    raw_result = await task_manager.get_task_result(fake_owner_metadata, task_uuid)
     assert f"{raw_result}" == "Something strange happened: BOOM!"
 
 
 async def test_cancelling_a_running_task_aborts_and_deletes(
     task_manager: TaskManager,
     with_celery_worker: WorkController,
-    owner_metadata: OwnerMetadata,
+    fake_owner_metadata: OwnerMetadata,
 ):
     task_uuid = await task_manager.submit_task(
         ExecutionMetadata(
             name=dreamer_task.__name__,
         ),
-        owner_metadata=owner_metadata,
+        owner_metadata=fake_owner_metadata,
     )
 
     await asyncio.sleep(3.0)
 
-    await task_manager.cancel_task(owner_metadata, task_uuid)
+    await task_manager.cancel_task(fake_owner_metadata, task_uuid)
 
     with pytest.raises(TaskNotFoundError):
-        await task_manager.get_task_status(owner_metadata, task_uuid)
+        await task_manager.get_task_status(fake_owner_metadata, task_uuid)
 
-    tasks = await task_manager.list_tasks(owner_metadata)
+    tasks = await task_manager.list_tasks(fake_owner_metadata)
     assert task_uuid not in [task.uuid for task in tasks]
-    assert task_uuid not in await task_manager.list_tasks(owner_metadata)
+    assert task_uuid not in await task_manager.list_tasks(fake_owner_metadata)
 
 
 async def test_listing_task_uuids_contains_submitted_task(
     task_manager: CeleryTaskManager,
     with_celery_worker: WorkController,
-    owner_metadata: OwnerMetadata,
+    fake_owner_metadata: OwnerMetadata,
 ):
     task_uuid = await task_manager.submit_task(
         ExecutionMetadata(
             name=dreamer_task.__name__,
         ),
-        owner_metadata=owner_metadata,
+        owner_metadata=fake_owner_metadata,
     )
 
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
-            tasks = await task_manager.list_tasks(owner_metadata)
+            tasks = await task_manager.list_tasks(fake_owner_metadata)
             assert any(task.uuid == task_uuid for task in tasks)
 
-    tasks = await task_manager.list_tasks(owner_metadata)
+    tasks = await task_manager.list_tasks(fake_owner_metadata)
     assert any(task.uuid == task_uuid for task in tasks)
 
 
@@ -279,7 +279,7 @@ async def test_filtering_listing_tasks(
 async def test_push_task_result_streams_data_during_execution(
     task_manager: CeleryTaskManager,
     with_celery_worker: WorkController,
-    owner_metadata: OwnerMetadata,
+    fake_owner_metadata: OwnerMetadata,
 ):
     num_results = 3
 
@@ -288,7 +288,7 @@ async def test_push_task_result_streams_data_during_execution(
             name=streaming_results_task.__name__,
             ephemeral=False,  # Keep task available after completion for result pulling
         ),
-        owner_metadata=owner_metadata,
+        owner_metadata=fake_owner_metadata,
         num_results=num_results,
     )
 
@@ -296,7 +296,7 @@ async def test_push_task_result_streams_data_during_execution(
     results = []
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
-            result, is_done, _ = await task_manager.pull_task_stream_items(owner_metadata, task_uuid, limit=10)
+            result, is_done, _ = await task_manager.pull_task_stream_items(fake_owner_metadata, task_uuid, limit=10)
             results.extend(result)
             assert is_done
 
@@ -306,15 +306,15 @@ async def test_push_task_result_streams_data_during_execution(
     # Wait for task completion
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
-            status = await task_manager.get_task_status(owner_metadata, task_uuid)
+            status = await task_manager.get_task_status(fake_owner_metadata, task_uuid)
             assert status.task_state == TaskState.SUCCESS
 
     # Final task result should be available
-    final_result = await task_manager.get_task_result(owner_metadata, task_uuid)
+    final_result = await task_manager.get_task_result(fake_owner_metadata, task_uuid)
     assert final_result == f"completed-{num_results}-results"
 
     # After task completion, try to pull any remaining results
-    remaining_results, is_done, _ = await task_manager.pull_task_stream_items(owner_metadata, task_uuid, limit=10)
+    remaining_results, is_done, _ = await task_manager.pull_task_stream_items(fake_owner_metadata, task_uuid, limit=10)
     assert remaining_results == []
     assert is_done
 
@@ -322,7 +322,7 @@ async def test_push_task_result_streams_data_during_execution(
 async def test_pull_task_stream_items_with_limit(
     task_manager: CeleryTaskManager,
     with_celery_worker: WorkController,
-    owner_metadata: OwnerMetadata,
+    fake_owner_metadata: OwnerMetadata,
 ):
     # Submit task with fewer results to make it more predictable
     task_uuid = await task_manager.submit_task(
@@ -330,19 +330,19 @@ async def test_pull_task_stream_items_with_limit(
             name=streaming_results_task.__name__,
             ephemeral=False,  # Keep task available after completion for result pulling
         ),
-        owner_metadata=owner_metadata,
+        owner_metadata=fake_owner_metadata,
         num_results=5,
     )
 
     # Wait for task to complete
     async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
         with attempt:
-            status = await task_manager.get_task_status(owner_metadata, task_uuid)
+            status = await task_manager.get_task_status(fake_owner_metadata, task_uuid)
             assert status.task_state == TaskState.SUCCESS
 
     # Pull all results in one go to avoid consumption issues
     all_results, is_done_final, _last_update_final = await task_manager.pull_task_stream_items(
-        owner_metadata,
+        fake_owner_metadata,
         task_uuid,
         limit=20,  # High limit to get all items
     )
@@ -360,12 +360,12 @@ async def test_pull_task_stream_items_with_limit(
 async def test_pull_task_stream_items_from_nonexistent_task_raises_error(
     task_manager: CeleryTaskManager,
     with_celery_worker: WorkController,
-    owner_metadata: OwnerMetadata,
+    fake_owner_metadata: OwnerMetadata,
 ):
     fake_task_uuid = TypeAdapter(TaskUUID).validate_python(_faker.uuid4())
 
     with pytest.raises(TaskNotFoundError):
-        await task_manager.pull_task_stream_items(owner_metadata, fake_task_uuid)
+        await task_manager.pull_task_stream_items(fake_owner_metadata, fake_task_uuid)
 
 
 async def test_push_task_stream_items_to_nonexistent_task_raises_error(
@@ -381,7 +381,7 @@ async def test_push_task_stream_items_to_nonexistent_task_raises_error(
 async def test_submit_group_all_tasks_complete_successfully(
     task_manager: CeleryTaskManager,
     with_celery_worker: WorkController,
-    owner_metadata: OwnerMetadata,
+    fake_owner_metadata: OwnerMetadata,
 ):
     # Submit a group of tasks
     num_tasks = 3
@@ -395,7 +395,7 @@ async def test_submit_group_all_tasks_complete_successfully(
 
     group_id, task_uuids = await task_manager.submit_group(
         executions,
-        owner_metadata=owner_metadata,
+        owner_metadata=fake_owner_metadata,
     )
 
     assert group_id is not None
@@ -405,19 +405,19 @@ async def test_submit_group_all_tasks_complete_successfully(
     for task_uuid in task_uuids:
         async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
             with attempt:
-                status = await task_manager.get_task_status(owner_metadata, task_uuid)
+                status = await task_manager.get_task_status(fake_owner_metadata, task_uuid)
                 assert status.task_state == TaskState.SUCCESS
 
     # Verify all results
     for task_uuid in task_uuids:
-        result = await task_manager.get_task_result(owner_metadata, task_uuid)
+        result = await task_manager.get_task_result(fake_owner_metadata, task_uuid)
         assert result == "archive.zip"
 
 
 async def test_submit_group_tasks_appear_in_listing(
     task_manager: CeleryTaskManager,
     with_celery_worker: WorkController,
-    owner_metadata: OwnerMetadata,
+    fake_owner_metadata: OwnerMetadata,
 ):
     # Submit a group of tasks
     num_tasks = 4
@@ -432,26 +432,26 @@ async def test_submit_group_tasks_appear_in_listing(
     try:
         _, task_uuids = await task_manager.submit_group(
             executions,
-            owner_metadata=owner_metadata,
+            owner_metadata=fake_owner_metadata,
         )
 
         # Verify all tasks appear in listing
         async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
             with attempt:
-                tasks = await task_manager.list_tasks(owner_metadata)
+                tasks = await task_manager.list_tasks(fake_owner_metadata)
                 task_uuids_from_list = {task.uuid for task in tasks}
                 assert all(uuid in task_uuids_from_list for uuid in task_uuids)
     finally:
         # Clean up
         for task_uuid in task_uuids:
             with contextlib.suppress(TaskNotFoundError):
-                await task_manager.cancel_task(owner_metadata, task_uuid)
+                await task_manager.cancel_task(fake_owner_metadata, task_uuid)
 
 
 async def test_submit_group_with_mixed_task_types(
     task_manager: CeleryTaskManager,
     with_celery_worker: WorkController,
-    owner_metadata: OwnerMetadata,
+    fake_owner_metadata: OwnerMetadata,
 ):
     # Submit a group with different task types
     executions = [
@@ -471,7 +471,7 @@ async def test_submit_group_with_mixed_task_types(
 
     _, task_uuids = await task_manager.submit_group(
         executions,
-        owner_metadata=owner_metadata,
+        owner_metadata=fake_owner_metadata,
     )
 
     assert len(task_uuids) == 3
@@ -480,22 +480,22 @@ async def test_submit_group_with_mixed_task_types(
     for task_uuid in task_uuids:
         async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
             with attempt:
-                status = await task_manager.get_task_status(owner_metadata, task_uuid)
+                status = await task_manager.get_task_status(fake_owner_metadata, task_uuid)
                 assert status.task_state == TaskState.SUCCESS
 
     # Verify first two tasks return "archive.zip"
-    assert await task_manager.get_task_result(owner_metadata, task_uuids[0]) == "archive.zip"
-    assert await task_manager.get_task_result(owner_metadata, task_uuids[1]) == "archive.zip"
+    assert await task_manager.get_task_result(fake_owner_metadata, task_uuids[0]) == "archive.zip"
+    assert await task_manager.get_task_result(fake_owner_metadata, task_uuids[1]) == "archive.zip"
 
     # Verify streaming task result
-    result = await task_manager.get_task_result(owner_metadata, task_uuids[2])
+    result = await task_manager.get_task_result(fake_owner_metadata, task_uuids[2])
     assert result == "completed-2-results"
 
 
 async def test_submit_group_can_cancel_individual_tasks(
     task_manager: CeleryTaskManager,
     with_celery_worker: WorkController,
-    owner_metadata: OwnerMetadata,
+    fake_owner_metadata: OwnerMetadata,
 ):
     # Submit a group of long-running tasks
     num_tasks = 3
@@ -509,28 +509,28 @@ async def test_submit_group_can_cancel_individual_tasks(
 
     _, task_uuids = await task_manager.submit_group(
         executions,
-        owner_metadata=owner_metadata,
+        owner_metadata=fake_owner_metadata,
     )
 
     # Wait a bit to ensure tasks are running
     await asyncio.sleep(2.0)
 
     # Cancel the first task
-    await task_manager.cancel_task(owner_metadata, task_uuids[0])
+    await task_manager.cancel_task(fake_owner_metadata, task_uuids[0])
 
     # Verify first task is gone
     with pytest.raises(TaskNotFoundError):
-        await task_manager.get_task_status(owner_metadata, task_uuids[0])
+        await task_manager.get_task_status(fake_owner_metadata, task_uuids[0])
 
     # Cancel remaining tasks
     for task_uuid in task_uuids[1:]:
-        await task_manager.cancel_task(owner_metadata, task_uuid)
+        await task_manager.cancel_task(fake_owner_metadata, task_uuid)
 
 
 async def test_submit_group_with_failures(
     task_manager: CeleryTaskManager,
     with_celery_worker: WorkController,
-    owner_metadata: OwnerMetadata,
+    fake_owner_metadata: OwnerMetadata,
 ):
     # Submit a group with some failing tasks
     executions = [
@@ -550,7 +550,7 @@ async def test_submit_group_with_failures(
 
     _, task_uuids = await task_manager.submit_group(
         executions,
-        owner_metadata=owner_metadata,
+        owner_metadata=fake_owner_metadata,
     )
 
     assert len(task_uuids) == 3
@@ -559,15 +559,15 @@ async def test_submit_group_with_failures(
     for task_uuid in task_uuids:
         async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
             with attempt:
-                status = await task_manager.get_task_status(owner_metadata, task_uuid)
+                status = await task_manager.get_task_status(fake_owner_metadata, task_uuid)
                 assert status.task_state in TASK_DONE_STATES
 
     # Verify successful tasks
-    assert await task_manager.get_task_result(owner_metadata, task_uuids[0]) == "archive.zip"
-    assert await task_manager.get_task_result(owner_metadata, task_uuids[2]) == "archive.zip"
+    assert await task_manager.get_task_result(fake_owner_metadata, task_uuids[0]) == "archive.zip"
+    assert await task_manager.get_task_result(fake_owner_metadata, task_uuids[2]) == "archive.zip"
 
     # Verify failed task
-    result = await task_manager.get_task_result(owner_metadata, task_uuids[1])
+    result = await task_manager.get_task_result(fake_owner_metadata, task_uuids[1])
     assert isinstance(result, TransferableCeleryError)
     assert "Something strange happened: BOOM!" in f"{result}"
 
@@ -575,7 +575,7 @@ async def test_submit_group_with_failures(
 async def test_submit_group_with_ephemeral_tasks(
     task_manager: CeleryTaskManager,
     with_celery_worker: WorkController,
-    owner_metadata: OwnerMetadata,
+    fake_owner_metadata: OwnerMetadata,
 ):
     # Submit a group with ephemeral tasks
     num_tasks = 2
@@ -589,7 +589,7 @@ async def test_submit_group_with_ephemeral_tasks(
 
     _, task_uuids = await task_manager.submit_group(
         executions,
-        owner_metadata=owner_metadata,
+        owner_metadata=fake_owner_metadata,
     )
 
     assert len(task_uuids) == num_tasks
@@ -598,27 +598,27 @@ async def test_submit_group_with_ephemeral_tasks(
     for task_uuid in task_uuids:
         async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
             with attempt:
-                status = await task_manager.get_task_status(owner_metadata, task_uuid)
+                status = await task_manager.get_task_status(fake_owner_metadata, task_uuid)
                 assert status.task_state == TaskState.SUCCESS
 
         # Getting the result should trigger cleanup for ephemeral tasks
-        result = await task_manager.get_task_result(owner_metadata, task_uuid)
+        result = await task_manager.get_task_result(fake_owner_metadata, task_uuid)
         assert result == "archive.zip"
 
     for task_uuid in task_uuids:
         # Second attempt to get result should fail as ephemeral tasks are cleaned up
         with pytest.raises(TaskNotFoundError):
-            await task_manager.get_task_status(owner_metadata, task_uuid)
+            await task_manager.get_task_status(fake_owner_metadata, task_uuid)
 
 
 async def test_submit_empty_group(
     task_manager: CeleryTaskManager,
     with_celery_worker: WorkController,
-    owner_metadata: OwnerMetadata,
+    fake_owner_metadata: OwnerMetadata,
 ):
     _, task_uuids = await task_manager.submit_group(
         [],
-        owner_metadata=owner_metadata,
+        owner_metadata=fake_owner_metadata,
     )
 
     assert task_uuids == []

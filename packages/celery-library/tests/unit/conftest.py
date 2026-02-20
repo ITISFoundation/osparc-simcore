@@ -7,5 +7,5 @@ class MyOwnerMetadata(OwnerMetadata):
 
 
 @pytest.fixture
-def owner_metadata():
+def fake_owner_metadata():
     return MyOwnerMetadata(user_id=42, owner="test-owner")
