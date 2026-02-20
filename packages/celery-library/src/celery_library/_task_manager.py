@@ -41,15 +41,15 @@ _MAX_PROGRESS_VALUE = 1.0
 
 @dataclass(frozen=True)
 class CeleryTaskManager:
-    _celery_app: Celery
-    _celery_settings: CelerySettings
+    _app: Celery
+    _settings: CelerySettings
     _task_store: TaskStore
 
     def _get_task_expiry(self, execution_metadata: ExecutionMetadata) -> timedelta:
         return (
-            self._celery_settings.CELERY_EPHEMERAL_RESULT_EXPIRES
+            self._settings.CELERY_EPHEMERAL_RESULT_EXPIRES
             if execution_metadata.ephemeral
-            else self._celery_settings.CELERY_RESULT_EXPIRES
+            else self._settings.CELERY_RESULT_EXPIRES
         )
 
     async def _cleanup_task(self, task_key: TaskKey) -> None:
@@ -111,13 +111,13 @@ class CeleryTaskManager:
                         queue=execution_metadata.queue,
                         task_id=task_key,
                         immutable=True,
-                        app=self._celery_app,
+                        app=self._app,
                     )
                     sigs.append(sig)
                     created.append((task_key, task_uuid))
 
                 # Create all tasks in the group at once
-                group_expiry = max(expiries) if expiries else self._celery_settings.CELERY_RESULT_EXPIRES
+                group_expiry = max(expiries) if expiries else self._settings.CELERY_RESULT_EXPIRES
                 await self._task_store.create_group(group_key, task_metadata_pairs, expiry=group_expiry)
 
                 group_result: GroupResult = group(sigs).apply_async()
@@ -156,7 +156,7 @@ class CeleryTaskManager:
 
             try:
                 await self._task_store.create_task(task_key, execution_metadata, expiry=expiry)
-                self._celery_app.send_task(
+                self._app.send_task(
                     execution_metadata.name,
                     task_id=task_key,
                     kwargs={"task_key": task_key} | task_params,
@@ -191,7 +191,7 @@ class CeleryTaskManager:
 
     @make_async()
     def _forget_task(self, task_key: TaskKey) -> None:
-        self._celery_app.AsyncResult(task_key).forget()
+        self._app.AsyncResult(task_key).forget()
 
     @handle_celery_errors
     async def get_task_result(self, owner_metadata: OwnerMetadata, task_uuid: TaskUUID) -> Any:
@@ -204,7 +204,7 @@ class CeleryTaskManager:
             if not await self.task_or_group_exists(task_key):
                 raise TaskNotFoundError(task_uuid=task_uuid, owner_metadata=owner_metadata)
 
-            async_result = self._celery_app.AsyncResult(task_key)
+            async_result = self._app.AsyncResult(task_key)
             result = async_result.result
             if async_result.ready():
                 task_metadata = await self._task_store.get_task_metadata(task_key)
@@ -227,7 +227,7 @@ class CeleryTaskManager:
 
     @make_async()
     def _get_task_celery_state(self, task_key: TaskKey) -> TaskState:
-        return TaskState(self._celery_app.AsyncResult(task_key).state)
+        return TaskState(self._app.AsyncResult(task_key).state)
 
     @handle_celery_errors
     async def get_task_status(self, owner_metadata: OwnerMetadata, task_uuid: TaskUUID) -> TaskStatus:
@@ -251,7 +251,7 @@ class CeleryTaskManager:
     def _restore_group_result(self, group_uuid: GroupUUID) -> GroupResult | None:
         """Restore a GroupResult from its ID."""
         try:
-            return GroupResult.restore(str(group_uuid), app=self._celery_app)
+            return GroupResult.restore(str(group_uuid), app=self._app)
         except (KeyError, AttributeError):
             # Group not found or invalid
             return None
