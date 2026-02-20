@@ -18,7 +18,7 @@ from .models import (
 @runtime_checkable
 class TaskManager(Protocol):
     async def submit_task(
-        self, execution_metadata: ExecutionMetadata, *, owner_metadata: OwnerMetadata, **task_params: dict[str, Any]
+        self, execution_metadata: ExecutionMetadata, *, owner_metadata: OwnerMetadata, **task_param
     ) -> TaskUUID: ...
 
     async def submit_group(

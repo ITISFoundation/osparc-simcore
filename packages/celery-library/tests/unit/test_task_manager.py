@@ -136,6 +136,30 @@ def register_celery_tasks() -> Callable[[Celery], None]:
     return _
 
 
+async def _wait_for_task_success(
+    task_manager: TaskManager,
+    owner_metadata: OwnerMetadata,
+    task_uuid: TaskUUID,
+) -> None:
+    """Wait for a task to reach SUCCESS state."""
+    async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
+        with attempt:
+            status = await task_manager.get_task_status(owner_metadata, task_uuid)
+            assert status.task_state == TaskState.SUCCESS
+
+
+async def _wait_for_task_done(
+    task_manager: TaskManager,
+    owner_metadata: OwnerMetadata,
+    task_uuid: TaskUUID,
+) -> None:
+    """Wait for a task to reach any DONE state."""
+    async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
+        with attempt:
+            status = await task_manager.get_task_status(owner_metadata, task_uuid)
+            assert status.task_state in TASK_DONE_STATES
+
+
 async def test_submitting_task_calling_async_function_results_with_success_state(
     task_manager: TaskManager,
     with_celery_worker: WorkController,
@@ -149,10 +173,7 @@ async def test_submitting_task_calling_async_function_results_with_success_state
         files=[f"file{n}" for n in range(5)],
     )
 
-    async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
-        with attempt:
-            status = await task_manager.get_task_status(fake_owner_metadata, task_uuid)
-            assert status.task_state == TaskState.SUCCESS
+    await _wait_for_task_success(task_manager, fake_owner_metadata, task_uuid)
 
     assert (await task_manager.get_task_status(fake_owner_metadata, task_uuid)).task_state == TaskState.SUCCESS
     assert (await task_manager.get_task_result(fake_owner_metadata, task_uuid)) == "archive.zip"
@@ -304,10 +325,7 @@ async def test_push_task_result_streams_data_during_execution(
     assert results == [TaskStreamItem(data=f"result-{i}") for i in range(num_results)]
 
     # Wait for task completion
-    async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
-        with attempt:
-            status = await task_manager.get_task_status(fake_owner_metadata, task_uuid)
-            assert status.task_state == TaskState.SUCCESS
+    await _wait_for_task_success(task_manager, fake_owner_metadata, task_uuid)
 
     # Final task result should be available
     final_result = await task_manager.get_task_result(fake_owner_metadata, task_uuid)
@@ -335,10 +353,7 @@ async def test_pull_task_stream_items_with_limit(
     )
 
     # Wait for task to complete
-    async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
-        with attempt:
-            status = await task_manager.get_task_status(fake_owner_metadata, task_uuid)
-            assert status.task_state == TaskState.SUCCESS
+    await _wait_for_task_success(task_manager, fake_owner_metadata, task_uuid)
 
     # Pull all results in one go to avoid consumption issues
     all_results, is_done_final, _last_update_final = await task_manager.pull_task_stream_items(
@@ -403,10 +418,7 @@ async def test_submit_group_all_tasks_complete_successfully(
 
     # Wait for all tasks to complete
     for task_uuid in task_uuids:
-        async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
-            with attempt:
-                status = await task_manager.get_task_status(fake_owner_metadata, task_uuid)
-                assert status.task_state == TaskState.SUCCESS
+        await _wait_for_task_success(task_manager, fake_owner_metadata, task_uuid)
 
     # Verify all results
     for task_uuid in task_uuids:
@@ -478,10 +490,7 @@ async def test_submit_group_with_mixed_task_types(
 
     # Wait for all tasks to complete
     for task_uuid in task_uuids:
-        async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
-            with attempt:
-                status = await task_manager.get_task_status(fake_owner_metadata, task_uuid)
-                assert status.task_state == TaskState.SUCCESS
+        await _wait_for_task_success(task_manager, fake_owner_metadata, task_uuid)
 
     # Verify first two tasks return "archive.zip"
     assert await task_manager.get_task_result(fake_owner_metadata, task_uuids[0]) == "archive.zip"
@@ -557,10 +566,7 @@ async def test_submit_group_with_failures(
 
     # Wait for all tasks to finish
     for task_uuid in task_uuids:
-        async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
-            with attempt:
-                status = await task_manager.get_task_status(fake_owner_metadata, task_uuid)
-                assert status.task_state in TASK_DONE_STATES
+        await _wait_for_task_done(task_manager, fake_owner_metadata, task_uuid)
 
     # Verify successful tasks
     assert await task_manager.get_task_result(fake_owner_metadata, task_uuids[0]) == "archive.zip"
@@ -596,10 +602,7 @@ async def test_submit_group_with_ephemeral_tasks(
 
     # Wait for all tasks to complete and get results (which should clean them up)
     for task_uuid in task_uuids:
-        async for attempt in AsyncRetrying(**_TENACITY_RETRY_PARAMS):
-            with attempt:
-                status = await task_manager.get_task_status(fake_owner_metadata, task_uuid)
-                assert status.task_state == TaskState.SUCCESS
+        await _wait_for_task_success(task_manager, fake_owner_metadata, task_uuid)
 
         # Getting the result should trigger cleanup for ephemeral tasks
         result = await task_manager.get_task_result(fake_owner_metadata, task_uuid)
