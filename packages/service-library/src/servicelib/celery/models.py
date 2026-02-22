@@ -7,7 +7,7 @@ import orjson
 from common_library.json_serialization import json_dumps, json_loads
 from models_library.celery import DEFAULT_QUEUE
 from models_library.progress_bar import ProgressReport
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints, TypeAdapter, model_validator
+from pydantic import BaseModel, ConfigDict, Field, NonNegativeInt, StringConstraints, TypeAdapter, model_validator
 from pydantic.config import JsonDict
 
 ModelType = TypeVar("ModelType", bound=BaseModel)
@@ -276,12 +276,10 @@ class TaskStatus(BaseModel):
 
 
 class GroupStatus(BaseModel):
-    """Status of a group of tasks."""
-
     group_uuid: GroupUUID
     task_uuids: list[TaskUUID]
-    completed_count: int
-    total_count: int
+    completed_count: NonNegativeInt
+    total_count: NonNegativeInt
     is_done: bool
     is_successful: bool
 

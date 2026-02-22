@@ -1,9 +1,10 @@
 import pytest
+from models_library.users import UserID
 from servicelib.celery.models import OwnerMetadata
 
 
 class MyOwnerMetadata(OwnerMetadata):
-    user_id: int
+    user_id: UserID
 
 
 @pytest.fixture
