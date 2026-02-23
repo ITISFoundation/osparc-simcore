@@ -60,8 +60,8 @@ class Template(BaseModel):
             {
                 "examples": [
                     {
-                        "ref": {"channel": "email", "templateName": "account_approved"},
-                        "contextSchema": {
+                        "ref": {"channel": "email", "template_name": "account_approved"},
+                        "context_schema": {
                             "$defs": {
                                 "User": {
                                     "properties": {
