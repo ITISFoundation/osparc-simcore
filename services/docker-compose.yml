@@ -1177,7 +1177,7 @@ services:
       NOTIFICATIONS_TRACING: "null"
       NOTIFICATIONS_WORKER_NAME: "notifications-worker-{{.Node.Hostname}}-{{.Task.Slot}}-{{.Task.ID}}"
       NOTIFICATIONS_WORKER_MODE: "true"
-      CELERY_CONCURRENCY: 100
+      CELERY_CONCURRENCY: 1
       CELERY_POOL: threads
       CELERY_QUEUES: notifications
     networks: *notifications_networks
