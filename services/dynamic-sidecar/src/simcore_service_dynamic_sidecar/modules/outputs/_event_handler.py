@@ -82,7 +82,6 @@ class _PortKeysEventHandler(SafeFileSystemEventHandler):
                 # messages in this queue (part of the process),
                 # will be consumed by the asyncio thread
                 self.port_key_events_queue.put(port_key_candidate)
-                break
 
 
 class _EventHandlerProcess:
