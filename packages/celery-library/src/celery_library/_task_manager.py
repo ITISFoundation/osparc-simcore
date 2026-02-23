@@ -245,11 +245,23 @@ class CeleryTaskManager:
                 progress_report=await self._get_task_progress_report(task_key, task_state),
             )
 
+    async def get_status(
+        self, owner_metadata: OwnerMetadata, task_or_group_uuid: TaskUUID | GroupUUID
+    ) -> TaskStatus | GroupStatus:
+        task_or_group_key = owner_metadata.model_dump_key(task_or_group_uuid=task_or_group_uuid)
+        if not await self.task_or_group_exists(task_or_group_key):
+            raise TaskNotFoundError(task_uuid=task_or_group_uuid, owner_metadata=owner_metadata)
+
+        if await self._task_store.is_group(task_or_group_key):
+            return await self.get_group_status(owner_metadata, task_or_group_uuid)
+
+        return await self.get_task_status(owner_metadata, task_or_group_uuid)
+
     @make_async()
     def _restore_group_result(self, group_uuid: GroupUUID) -> GroupResult | None:
         """Restore a GroupResult from its ID."""
         try:
-            return GroupResult.restore(str(group_uuid), app=self._app)
+            return GroupResult.restore(f"{group_uuid}", app=self._app)
         except (KeyError, AttributeError):
             # Group not found or invalid
             return None
@@ -284,6 +296,10 @@ class CeleryTaskManager:
                 total_count=len(task_uuids),
                 is_done=is_done,
                 is_successful=is_successful,
+                progress_report=ProgressReport(
+                    actual_value=float(completed_count) / len(task_uuids) if task_uuids else 0,
+                    total=len(task_uuids),
+                ),
             )
 
     @handle_celery_errors
