@@ -89,6 +89,7 @@ async def pull_user_services_input_ports(
             lrt_namespace,
             long_running_tasks.pull_user_services_input_ports.__name__,
             unique=True,
+            unique_args=True,
             port_keys=port_keys,
         )
     except TaskAlreadyRunningError as e:

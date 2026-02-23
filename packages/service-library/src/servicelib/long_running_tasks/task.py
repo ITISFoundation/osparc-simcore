@@ -1,7 +1,9 @@
 import asyncio
 import datetime
 import functools
+import hashlib
 import inspect
+import json
 import logging
 import urllib.parse
 from contextlib import suppress
@@ -142,6 +144,15 @@ async def _get_tasks_to_remove(
             if elapsed_from_last_poll > stale_task_detect_timeout_s:
                 tasks_to_remove.append((tracked_task.task_id, tracked_task.task_context))
     return tasks_to_remove
+
+
+def _get_unique_dict_hash(d: dict[str, Any], *, return_empty: bool) -> str:
+    if return_empty:
+        return ""
+
+    items = sorted(d.items())
+    serialized = json.dumps(items, separators=(",", ":"), sort_keys=True)
+    return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
 
 
 class TasksManager:  # pylint:disable=too-many-instance-attributes
@@ -530,8 +541,10 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
                 with attempt:
                     await self._get_tracked_task(tracked_task.task_id, tracked_task.task_context)
 
-    def _get_task_id(self, task_name: str, *, is_unique: bool) -> TaskId:
-        suffix = "unique" if is_unique else f"{uuid4()}"
+    def _get_task_id(self, task_name: str, *, is_unique: bool, unique_args: bool, **task_kwargs) -> TaskId:
+        suffix = (
+            f"unique_{_get_unique_dict_hash(task_kwargs, return_empty=not unique_args)}" if is_unique else f"{uuid4()}"
+        )
         return f"{self.lrt_namespace}.{task_name}.{suffix}"
 
     async def _update_progress(
@@ -558,6 +571,7 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
         registered_task_name: RegisteredTaskName,
         *,
         unique: bool,
+        unique_args: bool,
         task_context: TaskContext | None,
         task_name: str | None,
         fire_and_forget: bool,
@@ -576,7 +590,7 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
         task_name = task_name or f"{handler_module_name}.{task.__name__}"
         task_name = urllib.parse.quote(task_name, safe="")
 
-        task_id = self._get_task_id(task_name, is_unique=unique)
+        task_id = self._get_task_id(task_name, is_unique=unique, unique_args=unique_args, **task_kwargs)
 
         # only one unique task can be running
         queried_task = await self._tasks_data.get_task_data(task_id)
