@@ -1,10 +1,9 @@
-from ._email import EmailContact, EmailContent, EmailMessage, SingleEmailMessage
+from ._email import EmailContact, EmailContent, EmailMessage
 
 __all__: tuple[str, ...] = (
     "EmailContact",
     "EmailContent",
     "EmailMessage",
-    "SingleEmailMessage",
 )
 
 type Message = EmailMessage

@@ -141,7 +141,7 @@ async def send_message(
     group_ids: list[GroupID] | None,
     external_contacts: list[Contact] | None,
     content: dict[str, Any],  # NOTE: validated internally
-) -> tuple[TaskUUID, TaskName] | tuple[GroupUUID, list[TaskUUID], TaskName]:
+) -> tuple[TaskUUID | GroupUUID, TaskName]:
     match channel:
         case ChannelType.email:
             messages = await _create_email_messages(
@@ -155,7 +155,7 @@ async def send_message(
             raise NotificationsUnsupportedChannelError(channel=channel)
 
     if len(messages) != 1:
-        return await submit_send_messages_task(
+        group_uuid, _, task_name = await submit_send_messages_task(
             get_task_manager(app),
             owner_metadata=OwnerMetadata.model_validate(
                 WebServerOwnerMetadata(
@@ -165,6 +165,7 @@ async def send_message(
             ),
             messages=[message.model_dump() for message in messages],
         )
+        return group_uuid, task_name
 
     return await submit_send_message_task(
         get_task_manager(app),
