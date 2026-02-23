@@ -14,8 +14,8 @@ from celery import Celery
 from celery.contrib.testing.worker import start_worker
 from celery.signals import worker_init, worker_shutdown
 from celery.worker import WorkController
-from celery_library.backends.redis import RedisTaskStore
-from celery_library.task_manager import CeleryTaskManager
+from celery_library import CeleryTaskManager
+from celery_library.backends import RedisTaskStore
 from celery_library.types import register_celery_types
 from celery_library.worker.signals import _worker_init_wrapper, _worker_shutdown_wrapper
 from faker import Faker
