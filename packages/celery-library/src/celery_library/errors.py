@@ -36,6 +36,10 @@ class TaskNotFoundError(OsparcErrorMixin, Exception):
     msg_template = "Task with uuid '{task_uuid}' and owner_metadata '{owner_metadata}' was not found"
 
 
+class GroupNotFoundError(OsparcErrorMixin, Exception):
+    msg_template = "Group with uuid '{group_uuid}' and owner_metadata '{owner_metadata}' was not found"
+
+
 class TaskManagerError(OsparcErrorMixin, Exception):
     msg_template = "An internal error occurred"
 
