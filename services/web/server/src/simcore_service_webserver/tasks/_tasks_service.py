@@ -23,6 +23,7 @@ from pydantic import NonNegativeFloat
 from servicelib.celery.models import (
     OwnerMetadata,
     TaskState,
+    TaskStatus,
     TaskStreamItem,
     TaskUUID,
 )
@@ -52,16 +53,16 @@ async def cancel_task(
         raise JobSchedulerError(exc=f"{exc}") from exc
 
 
-async def get_task_result(
+async def get_result(
     task_manager: TaskManager,
     *,
     owner_metadata: OwnerMetadata,
     task_uuid: TaskUUID,
 ) -> AsyncJobResult:
     try:
-        _status = await task_manager.get_task_status(
+        _status = await task_manager.get_status(
             owner_metadata=owner_metadata,
-            task_uuid=task_uuid,
+            task_or_group_uuid=task_uuid,
         )
         if not _status.is_done:
             raise JobNotDoneError(job_id=task_uuid)
@@ -74,7 +75,7 @@ async def get_task_result(
     except TaskManagerError as exc:
         raise JobSchedulerError(exc=f"{exc}") from exc
 
-    if _status.task_state == TaskState.FAILURE:
+    if isinstance(_status, TaskStatus) and _status.task_state == TaskState.FAILURE:
         # fallback exception to report
         exc_type = type(_result).__name__
         exc_msg = f"{_result}"
@@ -102,9 +103,9 @@ async def get_task_status(
     task_uuid: TaskUUID,
 ) -> AsyncJobStatus:
     try:
-        task_status = await task_manager.get_task_status(
+        task_status = await task_manager.get_status(
             owner_metadata=owner_metadata,
-            task_uuid=task_uuid,
+            task_or_group_uuid=task_uuid,
         )
     except TaskNotFoundError as exc:
         raise JobMissingError(job_id=task_uuid) from exc

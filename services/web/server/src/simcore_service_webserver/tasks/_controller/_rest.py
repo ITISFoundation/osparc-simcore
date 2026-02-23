@@ -156,7 +156,7 @@ async def get_async_job_result(request: web.Request) -> web.Response:
     _req_ctx = AuthenticatedRequestContext.model_validate(request)
     _path_params = parse_request_path_parameters_as(TaskPathParams, request)
 
-    task_result = await _tasks_service.get_task_result(
+    task_result = await _tasks_service.get_result(
         get_task_manager(request.app),
         owner_metadata=OwnerMetadata.model_validate(
             WebServerOwnerMetadata(

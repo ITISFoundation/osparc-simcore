@@ -58,7 +58,7 @@ from simcore_postgres_database.models.users import UserRole
 from simcore_service_webserver.storage._rest import submit_export_data
 from simcore_service_webserver.tasks._tasks_service import (
     cancel_task,
-    get_task_result,
+    get_result,
     get_task_status,
 )
 from yarl import URL
@@ -551,7 +551,7 @@ async def test_cancel_async_jobs(
         (
             "GET",
             "result_href",
-            get_task_result.__name__,
+            get_result.__name__,
             AsyncJobResult(result=None),
             status.HTTP_200_OK,
             TaskResult,

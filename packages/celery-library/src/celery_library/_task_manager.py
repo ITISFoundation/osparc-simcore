@@ -245,6 +245,7 @@ class CeleryTaskManager:
                 progress_report=await self._get_task_progress_report(task_key, task_state),
             )
 
+    @handle_celery_errors
     async def get_status(
         self, owner_metadata: OwnerMetadata, task_or_group_uuid: TaskUUID | GroupUUID
     ) -> TaskStatus | GroupStatus:
@@ -252,8 +253,19 @@ class CeleryTaskManager:
         if not await self.task_or_group_exists(task_or_group_key):
             raise TaskNotFoundError(task_uuid=task_or_group_uuid, owner_metadata=owner_metadata)
 
-        if await self._task_store.is_group(task_or_group_key):
-            return await self.get_group_status(owner_metadata, task_or_group_uuid)
+        is_group = await self._task_store.is_group(task_or_group_key)
+        _logger.exception(
+            "get_status called with UUID %s, is_group=%s",
+            task_or_group_uuid,
+            is_group,
+        )
+        if is_group:
+            status = await self.get_group_status(owner_metadata, task_or_group_uuid)
+            _logger.exception(
+                "get_status called with a group UUID, but expected a task UUID. Returning group status: %s",
+                status,
+            )
+            return status
 
         return await self.get_task_status(owner_metadata, task_or_group_uuid)
 
