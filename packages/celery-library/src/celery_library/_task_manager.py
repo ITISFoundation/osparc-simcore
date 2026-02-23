@@ -89,10 +89,6 @@ class CeleryTaskManager:
             created: list[tuple[str, TaskUUID]] = []
 
             try:
-                # Generate group UUID and key
-                group_uuid = uuid4()
-                group_key = owner_metadata.model_dump_key(task_or_group_uuid=group_uuid)
-
                 # Prepare data for group creation
                 sigs = []
                 task_metadata_pairs: list[tuple[str, ExecutionMetadata]] = []
@@ -116,12 +112,15 @@ class CeleryTaskManager:
                     sigs.append(sig)
                     created.append((task_key, task_uuid))
 
+                group_result: GroupResult = group(sigs).apply_async()
+                group_result.save()
+
+                assert group_result.id is not None  # nosec
+                group_key = owner_metadata.model_dump_key(task_or_group_uuid=group_result.id)
+
                 # Create all tasks in the group at once
                 group_expiry = max(expiries) if expiries else self._settings.CELERY_RESULT_EXPIRES
                 await self._task_store.create_group(group_key, task_metadata_pairs, expiry=group_expiry)
-
-                group_result: GroupResult = group(sigs).apply_async()
-                group_result.save()
 
             except CeleryError as exc:
                 for task_key, _ in created:
@@ -133,7 +132,6 @@ class CeleryTaskManager:
                     task_params={"submitted": len(created)},
                 ) from exc
 
-            assert group_result.id is not None  # nosec
             return TypeAdapter(GroupUUID).validate_python(group_result.id), [
                 TypeAdapter(TaskUUID).validate_python(task_uuid) for _, task_uuid in created
             ]

@@ -60,6 +60,11 @@ class RedisTaskStore:
     ) -> None:
         group_key = _build_redis_task_or_group_key(group_key)
         pipe = self._redis_client_sdk.redis.pipeline()
+        pipe.hset(
+            name=group_key,
+            key=f"{_CELERY_TASK_EXEC_METADATA_KEY}",
+            value="{}",
+        )
         for task_key, execution_metadata in executions:
             pipe.hset(
                 name=_build_redis_task_or_group_key(task_key),
