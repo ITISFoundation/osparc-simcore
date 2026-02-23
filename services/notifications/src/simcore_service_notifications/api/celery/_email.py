@@ -16,9 +16,6 @@ from settings_library.email import SMTPSettings
 
 _logger = logging.getLogger(__name__)
 
-# Rate limit is 12 emails/minute = 1 email every 5 seconds
-_SECONDS_BETWEEN_EMAILS = 5
-
 
 def _to_address(address: EmailContact) -> Address:
     return Address(display_name=address.name or "", addr_spec=address.email)
