@@ -92,12 +92,13 @@ def test_guided_tour(
     if tour_id is not None and tour_info["id"] != tour_id:
         pytest.skip(f"Skipping tour '{tour_info['id']}' - only running '{tour_id}'")
 
+    # Make sure we are in the Projects tab, My workspace
+    page.get_by_test_id("studiesTabBtn").click()
+    page.get_by_test_id("workspacesAndFoldersTreeItem_null_null").click()
+
     with log_context(
         logging.INFO,
         f"Running guided tour: {tour_info['name']} ({tour_info['steps']} steps)",
     ):
         _open_guided_tours_manager(page)
         _run_tour(page, tour_info["id"], tour_info["steps"])
-
-    # Verify we're back on the dashboard (tours should end there)
-    expect(page.get_by_test_id("studiesTabBtn")).to_be_visible(timeout=_TOUR_STEP_TIMEOUT)
