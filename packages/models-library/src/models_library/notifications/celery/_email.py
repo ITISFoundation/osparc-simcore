@@ -44,30 +44,15 @@ class EmailMessage(BaseModel):
 
     # Envelope fields
     from_: Annotated[EmailContact, Field(alias="from")]
-    to: Annotated[list[EmailContact], Field(min_length=1)]
+    to: EmailContact
     reply_to: EmailContact | None = None
-    cc: list[EmailContact] | None = None
-    bcc: list[EmailContact] | None = None
+    cc: EmailContact | None = None
+    bcc: EmailContact | None = None
 
     # Content fields
     content: EmailContent
 
     attachments: list[EmailAttachment] | None = None
-
-    model_config = ConfigDict(
-        validate_by_alias=True,
-        validate_by_name=True,
-    )
-
-
-class SingleEmailMessage(BaseModel):
-    """Payload for single email Celery task (one recipient per task)."""
-
-    from_: Annotated[EmailContact, Field(alias="from")]
-    to: EmailContact
-    reply_to: EmailContact | None = None
-
-    content: EmailContent
 
     model_config = ConfigDict(
         validate_by_alias=True,

@@ -1,16 +1,12 @@
 # pylint: disable=unused-argument
 
-import asyncio
 import logging
 from email.headerregistry import Address
 
 from celery import (  # type: ignore[import-untyped]
     Task,
-    group,
-    shared_task,
 )
-from models_library.notifications.celery import EmailContact as SingleEmailContact
-from models_library.notifications.celery import EmailContent, EmailMessage, SingleEmailMessage
+from models_library.notifications.celery import EmailContact, EmailContent, EmailMessage
 from notifications_library._email import (
     compose_email,
     create_email_session,
@@ -24,11 +20,11 @@ _logger = logging.getLogger(__name__)
 _SECONDS_BETWEEN_EMAILS = 5
 
 
-def _to_address(address: SingleEmailContact) -> Address:
+def _to_address(address: EmailContact) -> Address:
     return Address(display_name=address.name or "", addr_spec=address.email)
 
 
-async def _send_single_email_async(msg: SingleEmailMessage) -> None:
+async def _send_single_email_async(msg: EmailMessage) -> None:
     _logger.info("🚨 Sending email to %s", msg.to.email)
     async with create_email_session(settings=SMTPSettings.create_from_envs()) as smtp:
         await smtp.send_message(
@@ -43,12 +39,7 @@ async def _send_single_email_async(msg: SingleEmailMessage) -> None:
         )
 
 
-@shared_task(name="send_single_email_message", pydantic=True, queue="notifications", rate_limit="12/m")
-def send_single_email_message(msg: SingleEmailMessage) -> None:
-    asyncio.run(_send_single_email_async(msg))
-
-
-def send_email_message(
+async def send_email_message(
     task: Task,
     task_key: TaskKey,
     message: EmailMessage,
@@ -56,21 +47,11 @@ def send_email_message(
     assert task  # nosec
     assert task_key  # nosec
 
-    single_msgs = [
-        SingleEmailMessage(
-            from_=SingleEmailContact(**message.from_.model_dump()),
-            to=SingleEmailContact(**to.model_dump()),
-            reply_to=SingleEmailContact(**message.reply_to.model_dump()) if message.reply_to else None,
+    await _send_single_email_async(
+        EmailMessage(
+            from_=EmailContact(**message.from_.model_dump()),
+            to=EmailContact(**message.to.model_dump()),
+            reply_to=EmailContact(**message.reply_to.model_dump()) if message.reply_to else None,
             content=EmailContent(**message.content.model_dump()),
         )
-        for to in message.to
-    ]
-
-    group_res = group(
-        [
-            send_single_email_message.s(single_msg.model_dump()).set(countdown=i * _SECONDS_BETWEEN_EMAILS)  # pyright: ignore[reportCallIssue]
-            for i, single_msg in enumerate(single_msgs)
-        ]
-    ).apply_async()
-
-    return group_res.id
+    )
