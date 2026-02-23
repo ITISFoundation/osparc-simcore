@@ -95,6 +95,7 @@ qx.Class.define("osparc.store.Support", {
     getGuidedToursButton: function() {
       const guidedToursInfo = this.__getGuidedToursInfo();
       const guidedToursButton = new qx.ui.form.Button(guidedToursInfo.label, guidedToursInfo.icon);
+      osparc.utils.Utils.setIdToWidget(guidedToursButton, "guidedToursBtn");
       guidedToursButton.exclude();
       this.populateGuidedToursButton(guidedToursButton);
       return guidedToursButton;
