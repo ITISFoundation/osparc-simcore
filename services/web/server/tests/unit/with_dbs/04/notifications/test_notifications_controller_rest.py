@@ -348,8 +348,8 @@ async def test_preview_template_enriches_context_with_product_data(
     assert mock_rpc_call.called
     call_args = mock_rpc_call.call_args
     assert "context" in call_args.kwargs
-    request = call_args.kwargs["context"]
-    assert "product" in request
+    context = call_args.kwargs["context"]
+    assert "product" in context
 
 
 @pytest.mark.parametrize(
