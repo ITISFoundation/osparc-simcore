@@ -65,7 +65,7 @@ class EmailAttachment(BaseModel):
 
 class EmailContent(BaseModel):
     subject: str
-    body_text: str
+    body_text: str | None = None
     body_html: str | None = None
 
     model_config = ConfigDict(
@@ -73,7 +73,7 @@ class EmailContent(BaseModel):
     )
 
 
-class EmailNotificationMessage(BaseModel):
+class EmailMessage(BaseModel):
     channel: ChannelType = ChannelType.email
 
     from_: Annotated[EmailContact, Field(alias="from")]
@@ -92,5 +92,5 @@ class EmailNotificationMessage(BaseModel):
     )
 
 
-# Clearly indicates the channel-specific contact info
 type Contact = EmailContact
+type Message = EmailMessage
