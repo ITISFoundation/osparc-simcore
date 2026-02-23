@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from celery_library.task_manager import CeleryTaskManager
+from celery_library import CeleryTaskManager
 from fastapi import Depends, FastAPI
 from servicelib.celery.task_manager import TaskManager
 from servicelib.fastapi.dependencies import get_app
