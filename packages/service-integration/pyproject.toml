@@ -1,0 +1,67 @@
+[project]
+name = "simcore-service-integration"
+version = "1.0.5"
+description = "Core service library for simcore"
+readme = "README.md"
+requires-python = "~=3.13.0"
+authors = [{ name = "osparc", email = "support@osparc.io" }]
+license = { text = "MIT" }
+dependencies = [
+  "simcore-common-library",
+  "simcore-models-library",
+  "click",
+  "cookiecutter",
+  "docker",
+  "jinja2_time",
+  "jsonschema",
+  "pytest",
+  "pyyaml",
+  "typer",
+  "yarl",
+]
+
+[project.optional-dependencies]
+test = [
+  "attrs==25.3.0",
+  "coverage==7.10.7",
+  "iniconfig==2.1.0",
+  "packaging==25.0",
+  "pluggy==1.6.0",
+  "pygments==2.19.2",
+  "pytest-cov==7.0.0",
+  "pytest-instafail==0.5.0",
+  "pytest-runner==6.0.1",
+  "pytest-sugar==1.1.1",
+  "pytest==8.4.2",
+  "referencing==0.35.1",
+  "rpds-py==0.28.0",
+  "termcolor==3.1.0",
+  "types-docker==7.1.0.20250916",
+  "types-jsonschema==4.25.1.20250822",
+  "types-pyyaml==6.0.12.20250915",
+  "types-requests==2.32.4.20250913",
+  "urllib3==2.6.3",
+]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+packages = ["service_integration"]
+include-package-data = true
+
+[tool.setuptools.package-data]
+"*" = ["py.typed"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+markers = [
+  "diagnostics: can be used to run diagnostics against deployed data",
+  "testit: marks test to run during development",
+]
+
+[tool.mypy]
+plugins = ["pydantic.mypy"]

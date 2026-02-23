@@ -1,0 +1,72 @@
+[project]
+name = "simcore-common-library"
+version = "0.2.0"
+description = "Core service library for simcore pydantic common"
+readme = "README.md"
+requires-python = "~=3.13.0"
+authors = [{ name = "Giancarlo Romeo", email = "support@osparc.io" }]
+license = { text = "MIT" }
+classifiers = [
+  "Development Status :: 2 - Pre-Alpha",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Natural Language :: English",
+  "Programming Language :: Python :: 3.13",
+]
+dependencies = [
+  "orjson>=3.9.15",
+  "pydantic>=2.10.0,<2.12.0",
+  "pydantic-extra-types",
+]
+
+[project.optional-dependencies]
+test = [
+  "annotated-types==0.7.0",
+  "coverage==7.10.7",
+  "faker==37.8.0",
+  "icdiff==2.0.7",
+  "iniconfig==2.1.0",
+  "packaging==25.0",
+  "pluggy==1.6.0",
+  "pprintpp==0.4.0",
+  "pydantic==2.11.9",
+  "pydantic-core==2.33.2",
+  "pydantic-settings==2.7.0",
+  "pygments==2.19.2",
+  "pytest==8.4.2",
+  "pytest-asyncio==1.2.0",
+  "pytest-cov==7.0.0",
+  "pytest-icdiff==0.9",
+  "pytest-instafail==0.5.0",
+  "pytest-mock==3.15.1",
+  "pytest-runner==6.0.1",
+  "pytest-sugar==1.1.1",
+  "python-dotenv==1.1.1",
+  "termcolor==3.1.0",
+  "typing-extensions==4.15.0",
+  "typing-inspection==0.4.2",
+  "tzdata==2025.2",
+]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+packages = ["common_library"]
+include-package-data = true
+
+[tool.setuptools.package-data]
+"*" = ["py.typed"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+markers = [
+  "diagnostics: can be used to run diagnostics against deployed data",
+  "testit: marks test to run during development",
+]
+
+[tool.mypy]
+plugins = ["pydantic.mypy"]
