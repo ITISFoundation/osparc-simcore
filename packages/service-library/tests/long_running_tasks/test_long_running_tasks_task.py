@@ -37,6 +37,7 @@ from servicelib.long_running_tasks.models import (
     TaskContext,
     TaskProgress,
     TaskStatus,
+    TaskUniqueness,
 )
 from servicelib.long_running_tasks.task import TaskRegistry
 from servicelib.rabbitmq._client_rpc import RabbitMQRPCClient
@@ -249,7 +250,7 @@ async def test_unique_task_already_running(long_running_manager: LongRunningMana
         long_running_manager.rpc_client,
         long_running_manager.lrt_namespace,
         unique_task.__name__,
-        unique=True,
+        uniqueness=TaskUniqueness.BY_NAME,
         task_context=empty_context,
     )
 
@@ -259,7 +260,7 @@ async def test_unique_task_already_running(long_running_manager: LongRunningMana
             long_running_manager.rpc_client,
             long_running_manager.lrt_namespace,
             unique_task.__name__,
-            unique=True,
+            uniqueness=TaskUniqueness.BY_NAME,
             task_context=empty_context,
         )
     assert "must be unique, found: " in f"{exec_info.value}"
@@ -281,7 +282,7 @@ async def test_unique_task_with_different_unique_args_can_run(
             long_running_manager.rpc_client,
             long_running_manager.lrt_namespace,
             unique_task.__name__,
-            unique=True,
+            uniqueness=TaskUniqueness.BY_NAME_AND_ARGS,
             unique_args=True,
             task_context=empty_context,
             arg=i,
@@ -303,8 +304,7 @@ async def test_unique_task_with_same_unique_args_cannot_run(
         long_running_manager.rpc_client,
         long_running_manager.lrt_namespace,
         unique_task.__name__,
-        unique=True,
-        unique_args=True,
+        uniqueness=TaskUniqueness.BY_NAME_AND_ARGS,
         task_context=empty_context,
         arg=1,
     )
@@ -314,8 +314,7 @@ async def test_unique_task_with_same_unique_args_cannot_run(
             long_running_manager.rpc_client,
             long_running_manager.lrt_namespace,
             unique_task.__name__,
-            unique=True,
-            unique_args=True,
+            uniqueness=TaskUniqueness.BY_NAME_AND_ARGS,
             task_context=empty_context,
             arg=1,
         )
@@ -341,13 +340,12 @@ async def test_start_multiple_not_unique_tasks(long_running_manager: LongRunning
     TaskRegistry.unregister(not_unique_task)
 
 
-@pytest.mark.parametrize("is_unique", [True, False])
-async def test_get_task_id(long_running_manager: LongRunningManager, faker: Faker, is_unique: bool):
+async def test_get_task_id(long_running_manager: LongRunningManager, faker: Faker):
     obj1 = long_running_manager.tasks_manager._get_task_id(  # noqa: SLF001
-        faker.word(), is_unique=is_unique, unique_args=False
+        faker.word(), uniqueness=TaskUniqueness.NONE
     )
     obj2 = long_running_manager.tasks_manager._get_task_id(  # noqa: SLF001
-        faker.word(), is_unique=is_unique, unique_args=False
+        faker.word(), uniqueness=TaskUniqueness.NONE
     )
     assert obj1 != obj2
 

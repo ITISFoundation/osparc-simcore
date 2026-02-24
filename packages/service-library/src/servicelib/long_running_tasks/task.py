@@ -47,6 +47,7 @@ from .models import (
     TaskData,
     TaskId,
     TaskStatus,
+    TaskUniqueness,
 )
 
 _logger = logging.getLogger(__name__)
@@ -149,8 +150,8 @@ async def _get_tasks_to_remove(
     return tasks_to_remove
 
 
-def _get_unique_dict_hash(d: dict[str, Any], *, return_empty: bool) -> str:
-    if return_empty:
+def _get_unique_dict_hash(d: dict[str, Any], *, uniqueness: TaskUniqueness) -> str:
+    if uniqueness != TaskUniqueness.BY_NAME_AND_ARGS:
         return ""
 
     items = sorted(d.items())
@@ -544,9 +545,11 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
                 with attempt:
                     await self._get_tracked_task(tracked_task.task_id, tracked_task.task_context)
 
-    def _get_task_id(self, task_name: str, *, is_unique: bool, unique_args: bool, **task_kwargs) -> TaskId:
+    def _get_task_id(self, task_name: str, *, uniqueness: TaskUniqueness, **task_kwargs) -> TaskId:
         suffix = (
-            f"unique_{_get_unique_dict_hash(task_kwargs, return_empty=not unique_args)}" if is_unique else f"{uuid4()}"
+            f"unique_{_get_unique_dict_hash(task_kwargs, uniqueness=uniqueness)}"
+            if uniqueness != TaskUniqueness.NONE
+            else f"{uuid4()}"
         )
         return f"{self.lrt_namespace}.{task_name}.{suffix}"
 
@@ -573,8 +576,7 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
         self,
         registered_task_name: RegisteredTaskName,
         *,
-        unique: bool,
-        unique_args: bool,
+        uniqueness: TaskUniqueness,
         task_context: TaskContext | None,
         task_name: str | None,
         fire_and_forget: bool,
@@ -593,7 +595,7 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
         task_name = task_name or f"{handler_module_name}.{task.__name__}"
         task_name = urllib.parse.quote(task_name, safe="")
 
-        task_id = self._get_task_id(task_name, is_unique=unique, unique_args=unique_args, **task_kwargs)
+        task_id = self._get_task_id(task_name, uniqueness=uniqueness, **task_kwargs)
 
         # wait for a task being removed to go away before starting a new one
         async for attempt in AsyncRetrying(
@@ -608,7 +610,7 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
 
         # only one unique task can be running
         queried_task = await self._tasks_data.get_task_data(task_id)
-        if unique and queried_task is not None:
+        if uniqueness != TaskUniqueness.NONE and queried_task is not None:
             raise TaskAlreadyRunningError(task_name=task_name, managed_task=queried_task)
 
         context_to_use = task_context or {}
