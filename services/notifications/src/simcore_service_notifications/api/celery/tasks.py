@@ -14,4 +14,4 @@ def register_worker_tasks(app: Celery) -> None:
     register_celery_types()
 
     with log_context(_logger, logging.INFO, msg="worker tasks registration"):
-        register_task(app, send_email_message, rate_limit="1/s")
+        register_task(app, send_email_message, rate_limit="0.2/s")
