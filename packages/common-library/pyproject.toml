@@ -3,7 +3,7 @@ name = "simcore-common-library"
 version = "0.2.0"
 description = "Core service library for simcore pydantic common"
 readme = "README.md"
-requires-python = "~=3.13.0"
+requires-python = ">=3.13"
 authors = [{ name = "Giancarlo Romeo", email = "support@osparc.io" }]
 license = { text = "MIT" }
 classifiers = [
@@ -15,9 +15,9 @@ classifiers = [
   "Operating System :: OS Independent",
 ]
 dependencies = [
-    "orjson>=3.11.4",
-    "pydantic>=2.11.9",
-    "pydantic-extra-types>=2.10.5",
+  "orjson>=3.11.4",
+  "pydantic>=2.11.9",
+  "pydantic-extra-types>=2.10.5",
 ]
 
 
@@ -49,26 +49,26 @@ plugins = ["pydantic.mypy"]
 
 [dependency-groups]
 dev = [
-    "coverage>=7.10.7",
-    "faker>=37.8.0",
-    "mypy>=1.18.2",
-    "pydantic-settings>=2.7.0",
-    "pytest>=8.4.2",
-    "pytest-asyncio>=1.2.0",
-    "pytest-cov>=7.0.0",
-    "pytest-icdiff>=0.9",
-    "pytest-instafail>=0.5.0",
-    "pytest-mock>=3.15.1",
-    "pytest-runner>=6.0.1",
-    "pytest-sugar>=1.1.1",
-    "python-dotenv>=1.1.1",
+  "coverage>=7.10.7",
+  "faker>=37.8.0",
+  "mypy>=1.18.2",
+  "pydantic-settings>=2.7.0",
+  "pytest>=8.4.2",
+  "pytest-asyncio>=1.2.0",
+  "pytest-cov>=7.0.0",
+  "pytest-icdiff>=0.9",
+  "pytest-instafail>=0.5.0",
+  "pytest-mock>=3.15.1",
+  "pytest-runner>=6.0.1",
+  "pytest-sugar>=1.1.1",
+  "python-dotenv>=1.1.1",
 ]
 devtools = [
-    "black>=25.9.0",
-    "bump2version>=1.0.1",
-    "isort>=6.1.0",
-    "mypy>=1.18.2",
-    "pre-commit>=4.3.0",
-    "pylint>=3.3.8",
-    "ruff>=0.13.3",
+  "black>=25.9.0",
+  "bump2version>=1.0.1",
+  "isort>=6.1.0",
+  "mypy>=1.18.2",
+  "pre-commit>=4.3.0",
+  "pylint>=3.3.8",
+  "ruff>=0.13.3",
 ]

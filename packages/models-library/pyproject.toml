@@ -3,7 +3,7 @@ name = "simcore-models-library"
 version = "0.3.0"
 description = "Core service library for simcore pydantic models"
 readme = "README.md"
-requires-python = "~=3.13.0"
+requires-python = ">=3.13"
 authors = [{ name = "Sylvain Anderegg", email = "support@osparc.io" }]
 license = { text = "MIT" }
 classifiers = [
