@@ -22,7 +22,7 @@ type GroupUUID = UUID
 _KEY_DELIMITATOR: Final[str] = ":"
 _FORBIDDEN_KEY_CHARS = ("*", _KEY_DELIMITATOR, "=")
 _FORBIDDEN_VALUE_CHARS = (_KEY_DELIMITATOR, "=")
-AllowedTypes = int | float | bool | str | None | list[str] | list[int] | list[float] | list[bool]
+type AllowedTypes = int | float | bool | str | list[str] | list[int] | list[float] | list[bool] | None
 
 type Wildcard = Literal["*"]
 WILDCARD: Final[Wildcard] = "*"
