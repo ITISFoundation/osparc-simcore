@@ -1,6 +1,7 @@
 from enum import Enum
 from typing import Annotated, Self
 
+from common_library.basic_types import DEFAULT_FACTORY
 from pydantic import model_validator
 from pydantic.fields import Field
 from pydantic.types import SecretStr
@@ -34,6 +35,13 @@ class SMTPSettings(BaseCustomSettings):
 
     SMTP_USERNAME: Annotated[str | None, Field(min_length=1)] = None
     SMTP_PASSWORD: Annotated[SecretStr | None, Field(min_length=1)] = None
+    SMTP_EXTRA_HEADERS: Annotated[
+        dict[str, str],
+        Field(
+            default_factory=dict,
+            description="Extra headers to add to the email, e.g. {'X-Priority': '1 (Highest)'}",
+        ),
+    ] = DEFAULT_FACTORY
 
     @model_validator(mode="after")
     def _both_credentials_must_be_set(self) -> Self:
@@ -59,6 +67,14 @@ class SMTPSettings(BaseCustomSettings):
         if (tls_enabled or starttls_enabled) and not (username or password):
             msg = "when using SMTP_PROTOCOL other than UNENCRYPTED username and password are required"
             raise ValueError(msg)
+        return self
+
+    @model_validator(mode="after")
+    def _extra_headers_must_start_with_x(self) -> Self:
+        for key in self.SMTP_EXTRA_HEADERS:
+            if not key.lower().startswith("x-"):
+                msg = f"Extra header key '{key}' must start with 'X-' or 'x-'"
+                raise ValueError(msg)
         return self
 
     @property
