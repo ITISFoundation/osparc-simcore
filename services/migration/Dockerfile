@@ -70,8 +70,8 @@ WORKDIR /build/packages/postgres-database
 RUN \
   --mount=type=bind,source=packages,target=/build/packages,rw \
   --mount=type=cache,target=/root/.cache/uv \
-  uv sync --locked --compile-bytecode --no-dev --no-editable \
-  && uv pip list
+  uv sync --active --locked --compile-bytecode --no-dev --no-editable \
+  && uv pip list -v
 
 
 # --------------------------------------------
