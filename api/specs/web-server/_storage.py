@@ -121,10 +121,10 @@ async def list_datasets_metadata(
 async def get_files_metadata(
     _path: Annotated[StorageLocationPathParams, Depends()],
     uuid_filter: str = "",
-    expand_dirs: bool = Query(  # noqa: FBT001
-        True,  # noqa: FBT003
-        description=("Automatic directory expansion. This will be replaced by pagination the future"),
-    ),
+    *,
+    expand_dirs: Annotated[
+        bool, Query(description=("Automatic directory expansion. This will be replaced by pagination the future"))
+    ] = True,
 ):
     """returns all the file meta data a user has access to (uuid_filter may be used)"""
 
@@ -137,10 +137,10 @@ async def get_files_metadata(
 async def list_dataset_files_metadata(
     location_id: LocationID,
     dataset_id: str,
-    expand_dirs: bool = Query(  # noqa: FBT001
-        True,  # noqa: FBT003
-        description=("Automatic directory expansion. This will be replaced by pagination the future"),
-    ),
+    *,
+    expand_dirs: Annotated[
+        bool, Query(description=("Automatic directory expansion. This will be replaced by pagination the future"))
+    ] = True,
 ):
     """returns all the file meta data inside dataset with dataset_id"""
 
