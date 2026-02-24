@@ -344,10 +344,10 @@ async def test_start_multiple_not_unique_tasks(long_running_manager: LongRunning
 @pytest.mark.parametrize("is_unique", [True, False])
 async def test_get_task_id(long_running_manager: LongRunningManager, faker: Faker, is_unique: bool):
     obj1 = long_running_manager.tasks_manager._get_task_id(  # noqa: SLF001
-        faker.word(), is_unique=is_unique
+        faker.word(), is_unique=is_unique, unique_args=False
     )
     obj2 = long_running_manager.tasks_manager._get_task_id(  # noqa: SLF001
-        faker.word(), is_unique=is_unique
+        faker.word(), is_unique=is_unique, unique_args=False
     )
     assert obj1 != obj2
 
