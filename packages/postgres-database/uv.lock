@@ -1031,28 +1031,22 @@ version = "0.11.0"
 source = { editable = "." }
 dependencies = [
     { name = "alembic" },
+    { name = "click" },
+    { name = "docker" },
     { name = "orjson" },
     { name = "pydantic" },
     { name = "pydantic-extra-types" },
     { name = "simcore-common-library" },
     { name = "sqlalchemy", extra = ["postgresql-asyncpg", "postgresql-psycopg2binary"] },
-    { name = "yarl" },
-]
-
-[package.optional-dependencies]
-migration = [
-    { name = "alembic" },
-    { name = "click" },
-    { name = "docker" },
     { name = "tenacity" },
     { name = "urllib3" },
+    { name = "yarl" },
 ]
 
 [package.dev-dependencies]
 dev = [
     { name = "aiopg", extra = ["sa"] },
     { name = "arrow" },
-    { name = "click" },
     { name = "coverage" },
     { name = "faker" },
     { name = "mypy" },
@@ -1065,7 +1059,6 @@ dev = [
     { name = "pytest-simcore" },
     { name = "pyyaml" },
     { name = "sqlalchemy", extra = ["mypy"] },
-    { name = "tenacity" },
     { name = "types-docker" },
     { name = "types-psycopg2" },
 ]
@@ -1082,25 +1075,22 @@ devtools = [
 [package.metadata]
 requires-dist = [
     { name = "alembic", specifier = ">=1.16.5" },
-    { name = "alembic", marker = "extra == 'migration'", specifier = ">=1.16.5" },
-    { name = "click", marker = "extra == 'migration'", specifier = ">=8.3.0" },
-    { name = "docker", marker = "extra == 'migration'", specifier = ">=7.1.0" },
+    { name = "click", specifier = ">=8.3.0" },
+    { name = "docker", specifier = ">=7.1.0" },
     { name = "orjson", specifier = ">=3.11.4" },
     { name = "pydantic", specifier = ">=2.11.9" },
     { name = "pydantic-extra-types", specifier = ">=2.10.5" },
     { name = "simcore-common-library", editable = "../common-library" },
     { name = "sqlalchemy", extras = ["postgresql-asyncpg", "postgresql-psycopg2binary"], specifier = ">=1.4.54" },
-    { name = "tenacity", marker = "extra == 'migration'", specifier = ">=9.1.2" },
-    { name = "urllib3", marker = "extra == 'migration'", specifier = ">=2.6.3" },
+    { name = "tenacity", specifier = ">=9.1.2" },
+    { name = "urllib3", specifier = ">=2.6.3" },
     { name = "yarl", specifier = ">=1.20.1" },
 ]
-provides-extras = ["migration"]
 
 [package.metadata.requires-dev]
 dev = [
     { name = "aiopg", extras = ["sa"], specifier = ">=1.4.0" },
     { name = "arrow", specifier = ">=1.3.0" },
-    { name = "click", specifier = ">=8.3.0" },
     { name = "coverage", specifier = ">=7.10.7" },
     { name = "faker", specifier = ">=37.8.0" },
     { name = "mypy", specifier = ">=1.18.2" },
@@ -1113,7 +1103,6 @@ dev = [
     { name = "pytest-simcore", editable = "../pytest-simcore" },
     { name = "pyyaml", specifier = ">=6.0.3" },
     { name = "sqlalchemy", extras = ["mypy"], specifier = ">=1.4.54" },
-    { name = "tenacity", specifier = ">=9.1.2" },
     { name = "types-docker", specifier = ">=7.1.0.20250916" },
     { name = "types-psycopg2", specifier = ">=2.9.21.20250915" },
 ]

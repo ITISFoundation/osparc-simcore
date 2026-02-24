@@ -5,12 +5,9 @@ Contains database **models** served by the ``postgres`` service and adds an exte
 
 ## Usage
 
-To install migration tools add ``[migration]`` extra
+To install
 ```bash
-  pip install .[migration]
-
-  # If you are using zsh
-  pip install '.[migration]' # https://stackoverflow.com/a/30539963/6797695
+  make install-dev
 ```
 and to call the CLI use
 ```bash

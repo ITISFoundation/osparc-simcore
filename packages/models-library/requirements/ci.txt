@@ -13,7 +13,7 @@
 
 # installs this repo's packages
 simcore-common-library @ ../common-library
-simcore-postgres-database[migration] @ ../postgres-database/
+simcore-postgres-database @ ../postgres-database/
 pytest-simcore @ ../pytest-simcore
 
 # current module
