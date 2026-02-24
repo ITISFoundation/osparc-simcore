@@ -65,13 +65,6 @@ simcore-settings-library = { path = "../settings-library", editable = true }
 simcore-service-library = { path = "../service-library", editable = true }
 pytest-simcore = { path = "../pytest-simcore", editable = true }
 
-[tool.setuptools]
-package-dir = { "" = "src" }
-packages = ["aws_library"]
-include-package-data = true
-
-[tool.setuptools.package-data]
-"*" = ["py.typed"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
