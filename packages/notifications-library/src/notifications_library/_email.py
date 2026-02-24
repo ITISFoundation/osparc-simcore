@@ -19,6 +19,7 @@ def compose_email(
     content_html: str | None = None,
     reply_to: Address | None = None,
     bcc: list[Address] | None = None,
+    extra_headers: dict[str, str] | None = None,
 ) -> EmailMessage:
     """Compose an email message.
 
@@ -35,6 +36,10 @@ def compose_email(
         msg["Bcc"] = bcc
 
     msg["Subject"] = subject
+
+    if extra_headers:
+        for name, value in extra_headers.items():
+            msg[name] = value
 
     msg.set_content(content_text)
     if content_html:

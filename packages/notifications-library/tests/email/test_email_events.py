@@ -227,12 +227,15 @@ async def test_email_event(
     assert from_.addr_spec == product_data.support_email
     assert to.addr_spec == user_email
 
+    settings = SMTPSettings.create_from_envs()
+
     msg = compose_email(
         from_,
         [to],
         subject=parts.subject,
         content_text=parts.text_content,
         content_html=parts.html_content,
+        extra_headers=settings.SMTP_EXTRA_HEADERS,
     )
     if template_attachments:
         add_attachments(msg, template_attachments)
@@ -246,7 +249,7 @@ async def test_email_event(
         p = dump_path.with_suffix(".txt")
         p.write_text(parts.text_content)
 
-    async with create_email_session(settings=SMTPSettings.create_from_envs()) as smtp:
+    async with create_email_session(settings=settings) as smtp:
         await smtp.send_message(msg)
 
     # check email was sent
