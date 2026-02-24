@@ -77,6 +77,7 @@ module-name = "servicelib"
 simcore-common-library = { path = "../common-library" }
 simcore-models-library = { path = "../models-library" }
 simcore-settings-library = { path = "../settings-library" }
+pytest-simcore = { path = "../pytest-simcore" }
 
 [tool.setuptools.package-data]
 "*" = ["py.typed", "redis/lua/*.lua", "long_running_tasks/_lua/*.lua"]
@@ -122,6 +123,7 @@ dev = [
     "pytest-instafail>=0.5.0",
     "pytest-mock>=3.15.1",
     "pytest-runner>=6.0.1",
+    "pytest-simcore",
     "pytest-sugar>=1.1.1",
     "pytest-xdist>=3.8.0",
     "python-dotenv>=1.1.1",
