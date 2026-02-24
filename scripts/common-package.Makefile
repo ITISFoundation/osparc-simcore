@@ -89,12 +89,12 @@ install-dev: _check_venv_active ## install all dependencies (dev + devtools grou
 
 .PHONY: install-prod
 install-prod: _check_venv_active ## install only production dependencies
-	@uv sync --active --no-dev
+	@uv sync --active --no-dev --no-editable
 
 
 .PHONY: install-ci
 install-ci: _check_venv_active ## install CI dependencies (dev group only)
-	@uv sync --active --group dev
+	@uv sync --active --group dev --no-editable
 
 
 #
