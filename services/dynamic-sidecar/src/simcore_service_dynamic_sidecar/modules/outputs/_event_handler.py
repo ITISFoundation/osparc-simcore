@@ -77,11 +77,16 @@ class _PortKeysEventHandler(SafeFileSystemEventHandler):
         src_port_key_candidate = _get_first_entry_or_none(src_relative_path_parents)
         dst_port_key_candidate = _get_first_entry_or_none(dst_relative_path_parents)
 
+        detected_port_key_candidates: set[str] = set()
+
         for port_key_candidate in (src_port_key_candidate, dst_port_key_candidate):
             if port_key_candidate in self._outputs_port_keys:
                 # messages in this queue (part of the process),
                 # will be consumed by the asyncio thread
-                self.port_key_events_queue.put(port_key_candidate)
+                detected_port_key_candidates.add(port_key_candidate)
+
+        for port_key_candidate in detected_port_key_candidates:
+            self.port_key_events_queue.put(port_key_candidate)
 
 
 class _EventHandlerProcess:
