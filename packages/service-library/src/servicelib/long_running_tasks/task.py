@@ -604,7 +604,7 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
         ):
             with attempt:
                 if await self._tasks_data.is_marked_for_removal(task_id):
-                    _logger.warning(
+                    _logger.info(
                         "Waiting for task '%s' to be removed before starting a new one with the same id", task_id
                     )
                     raise TryAgain
