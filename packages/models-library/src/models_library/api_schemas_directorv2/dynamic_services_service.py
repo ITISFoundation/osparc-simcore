@@ -31,7 +31,7 @@ class CommonServiceDetails(BaseModel):
 
     user_id: UserID
     project_id: ProjectID
-    node_uuid: Annotated[NodeID, Field(..., alias="service_uuid")]
+    node_uuid: Annotated[NodeID, Field(alias="service_uuid")]
 
 
 class ServiceDetails(CommonServiceDetails):
