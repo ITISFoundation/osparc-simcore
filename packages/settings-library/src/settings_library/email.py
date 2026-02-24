@@ -72,8 +72,8 @@ class SMTPSettings(BaseCustomSettings):
     @model_validator(mode="after")
     def _extra_headers_must_start_with_x(self) -> Self:
         for key in self.SMTP_EXTRA_HEADERS:
-            if not key.startswith("X-"):
-                msg = f"Extra header key '{key}' must start with 'X-'"
+            if not key.lower().startswith("x-"):
+                msg = f"Extra header key '{key}' must start with 'X-' or 'x-'"
                 raise ValueError(msg)
         return self
 
