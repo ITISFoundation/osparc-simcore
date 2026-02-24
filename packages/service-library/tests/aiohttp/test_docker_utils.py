@@ -4,7 +4,7 @@
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
 from collections.abc import Awaitable, Callable
-from typing import Any
+from typing import Any, Final
 from unittest import mock
 
 import pytest
@@ -29,6 +29,7 @@ from settings_library.docker_registry import RegistrySettings
             "sha256:a6d9886311721d8d341068361ecf9998a3c7ecb0efb23ebac553602c2eca1f8f",
         ),
     ],
+    ids=str,
 )
 async def test_retrieve_image_layer_information(
     remove_images_from_host: Callable[[list[str]], Awaitable[None]],
@@ -59,6 +60,7 @@ async def test_retrieve_image_layer_information(
         "nginx:latest",
         "ubuntu@sha256:81bba8d1dde7fc1883b6e95cd46d6c9f4874374f2b360c8db82620b33f6b5ca1",
     ],
+    ids=str,
 )
 async def test_retrieve_image_layer_information_from_external_registry(
     remove_images_from_host: Callable[[list[str]], Awaitable[None]],
@@ -90,19 +92,19 @@ async def mocked_progress_cb(mocker: MockerFixture) -> mock.AsyncMock:
 def _assert_progress_report_values(mocked_progress_cb: mock.AsyncMock, *, total: float) -> None:
     # NOTE: we exclude the message part here as this is already tested in servicelib
     # check first progress
-    assert mocked_progress_cb.call_args_list[0].args[0].dict(exclude={"message", "attempt"}) == ProgressReport(
+    assert mocked_progress_cb.call_args_list[0].args[0].model_dump(exclude={"message", "attempt"}) == ProgressReport(
         actual_value=0, total=total, unit="Byte"
     ).model_dump(exclude={"message", "attempt"})
     # check last progress
-    assert mocked_progress_cb.call_args_list[-1].args[0].dict(exclude={"message", "attempt"}) == ProgressReport(
+    assert mocked_progress_cb.call_args_list[-1].args[0].model_dump(exclude={"message", "attempt"}) == ProgressReport(
         actual_value=total, total=total, unit="Byte"
     ).model_dump(exclude={"message", "attempt"})
 
 
-@pytest.mark.parametrize(
-    "image",
-    ["itisfoundation/sleeper:1.0.0", "nginx:latest"],
-)
+_DOCKER29_EXPECTED_WARNING_PREFIX: Final[str] = "Unexpected layer during download"
+
+
+@pytest.mark.parametrize("image", ["itisfoundation/sleeper:1.0.0", "nginx:latest"], ids=str)
 async def test_pull_image(
     remove_images_from_host: Callable[[list[str]], Awaitable[None]],
     image: DockerGenericTag,
@@ -139,7 +141,11 @@ async def test_pull_image(
 
     # check there were no warnings popping up from the docker pull
     # NOTE: this would pop up in case docker changes its pulling statuses
-    assert not [r.message for r in caplog.records if r.levelname == "WARNING"]
+    assert not [
+        r.message
+        for r in caplog.records
+        if r.levelname == "WARNING" and not r.message.startswith(_DOCKER29_EXPECTED_WARNING_PREFIX)
+    ]
 
     # pull a second time should, the image is already there
     async with progress_bar.ProgressBarData(
@@ -159,4 +165,8 @@ async def test_pull_image(
 
     _assert_progress_report_values(mocked_progress_cb, total=layer_information.layers_total_size)
     # check there were no warnings
-    assert not [r.message for r in caplog.records if r.levelname == "WARNING"]
+    assert not [
+        r.message
+        for r in caplog.records
+        if r.levelname == "WARNING" and not r.message.startswith(_DOCKER29_EXPECTED_WARNING_PREFIX)
+    ]

@@ -2,28 +2,27 @@ import logging
 from dataclasses import dataclass
 from typing import Any
 
-from models_library.notifications import ChannelType
 from models_library.notifications_errors import (
     NotificationsTemplateContextValidationError,
     NotificationsTemplateNotFoundError,
 )
 from pydantic import ValidationError
 
-from ..models.preview import NotificationTemplatePreview
-from ..models.template import NotificationsTemplate, NotificationsTemplateRef
-from ..renderers.renderer import NotificationsRenderer
-from ..repository import NotificationsTemplatesRepository
+from ..models.preview import TemplatePreview
+from ..models.template import Template, TemplateRef
+from ..renderers import Renderer
+from ..repositories import FileTemplatesRepository
 
 _logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
-class NotificationsTemplatesService:
-    repository: NotificationsTemplatesRepository
-    renderer: NotificationsRenderer
+class TemplatesService:
+    templates_repo: FileTemplatesRepository
+    renderer: Renderer
 
-    def preview_template(self, ref: NotificationsTemplateRef, context: dict[str, Any]) -> NotificationTemplatePreview:
-        templates = self.repository.search_templates(
+    def preview_template(self, ref: TemplateRef, context: dict[str, Any]) -> TemplatePreview:
+        templates = self.templates_repo.search_templates(
             channel=ref.channel,
             template_name=ref.template_name,
         )
@@ -53,5 +52,5 @@ class NotificationsTemplatesService:
             context=validated_context.model_dump(),
         )
 
-    def search_templates(self, channel: ChannelType | None, template_name: str | None) -> list[NotificationsTemplate]:
-        return self.repository.search_templates(channel=channel, template_name=template_name)
+    def search_templates(self, channel: str | None, template_name: str | None) -> list[Template]:
+        return self.templates_repo.search_templates(channel=channel, template_name=template_name)

@@ -170,10 +170,10 @@ def _get_environment_variables(
             if app_settings.DIRECTOR_V2_DOCKER_HUB_REGISTRY
             else "null"
         ),
-        "S3_ACCESS_KEY": r_clone_settings.R_CLONE_S3.S3_ACCESS_KEY,
+        "S3_ACCESS_KEY": r_clone_settings.R_CLONE_S3.S3_ACCESS_KEY.get_secret_value(),
         "S3_BUCKET_NAME": r_clone_settings.R_CLONE_S3.S3_BUCKET_NAME,
         "S3_REGION": r_clone_settings.R_CLONE_S3.S3_REGION,
-        "S3_SECRET_KEY": r_clone_settings.R_CLONE_S3.S3_SECRET_KEY,
+        "S3_SECRET_KEY": r_clone_settings.R_CLONE_S3.S3_SECRET_KEY.get_secret_value(),
         "SC_BOOT_MODE": f"{app_settings.DYNAMIC_SERVICES.DYNAMIC_SIDECAR.DYNAMIC_SIDECAR_SC_BOOT_MODE}",
         "SSL_CERT_FILE": app_settings.DIRECTOR_V2_SELF_SIGNED_SSL_FILENAME,
         "DYNAMIC_SIDECAR_TRACING": (

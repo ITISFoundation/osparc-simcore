@@ -1796,6 +1796,26 @@ paths:
       responses:
         '204':
           description: Successful Response
+  /v0/admin/user-accounts:preview-approval:
+    post:
+      tags:
+      - users
+      - admin
+      summary: Preview Approval User Account
+      operationId: preview_approval_user_account
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserAccountPreviewApproval'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_UserAccountPreviewApprovalGet_'
   /v0/admin/user-accounts:reject:
     post:
       tags:
@@ -1812,6 +1832,26 @@ paths:
       responses:
         '204':
           description: Successful Response
+  /v0/admin/user-accounts:preview-rejection:
+    post:
+      tags:
+      - users
+      - admin
+      summary: Preview Rejection User Account
+      operationId: preview_rejection_user_account
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserAccountPreviewRejection'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Envelope_UserAccountPreviewRejectionGet_'
   /v0/admin/user-accounts:search:
     get:
       tags:
@@ -4702,7 +4742,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/NotificationsMessageBody'
+              $ref: '#/components/schemas/MessageBody'
         required: true
       responses:
         '200':
@@ -4736,7 +4776,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/NotificationsTemplatePreviewBody'
+              $ref: '#/components/schemas/TemplatePreviewBody'
         required: true
       responses:
         '200':
@@ -4744,7 +4784,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_NotificationsTemplatePreviewGet_'
+                $ref: '#/components/schemas/Envelope_TemplatePreviewGet_'
   /v0/notifications/templates:search:
     get:
       tags:
@@ -4783,7 +4823,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Envelope_list_NotificationsTemplateGet__'
+                $ref: '#/components/schemas/Envelope_list_TemplateGet__'
   /v0/projects:
     post:
       tags:
@@ -11245,19 +11285,6 @@ components:
           title: Error
       type: object
       title: Envelope[NodeRetrieved]
-    Envelope_NotificationsTemplatePreviewGet_:
-      properties:
-        data:
-          anyOf:
-          - $ref: '#/components/schemas/NotificationsTemplatePreviewGet'
-          - type: 'null'
-        error:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Error
-      type: object
-      title: Envelope[NotificationsTemplatePreviewGet]
     Envelope_PaymentMethodGet_:
       properties:
         data:
@@ -11583,6 +11610,19 @@ components:
           title: Error
       type: object
       title: Envelope[TaskStreamResponse]
+    Envelope_TemplatePreviewGet_:
+      properties:
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/TemplatePreviewGet'
+          - type: 'null'
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[TemplatePreviewGet]
     Envelope_Union_EmailTestFailed__EmailTestPassed__:
       properties:
         data:
@@ -11655,6 +11695,32 @@ components:
           title: Error
       type: object
       title: Envelope[UserAccountGet]
+    Envelope_UserAccountPreviewApprovalGet_:
+      properties:
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/UserAccountPreviewApprovalGet'
+          - type: 'null'
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[UserAccountPreviewApprovalGet]
+    Envelope_UserAccountPreviewRejectionGet_:
+      properties:
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/UserAccountPreviewRejectionGet'
+          - type: 'null'
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[UserAccountPreviewRejectionGet]
     Envelope_WalletGetWithAvailableCredits_:
       properties:
         data:
@@ -12027,22 +12093,6 @@ components:
           title: Error
       type: object
       title: Envelope[list[MyTokenGet]]
-    Envelope_list_NotificationsTemplateGet__:
-      properties:
-        data:
-          anyOf:
-          - items:
-              $ref: '#/components/schemas/NotificationsTemplateGet'
-            type: array
-          - type: 'null'
-          title: Data
-        error:
-          anyOf:
-          - {}
-          - type: 'null'
-          title: Error
-      type: object
-      title: Envelope[list[NotificationsTemplateGet]]
     Envelope_list_PaymentMethodGet__:
       properties:
         data:
@@ -12219,6 +12269,22 @@ components:
           title: Error
       type: object
       title: Envelope[list[TaskGet]]
+    Envelope_list_TemplateGet__:
+      properties:
+        data:
+          anyOf:
+          - items:
+              $ref: '#/components/schemas/TemplateGet'
+            type: array
+          - type: 'null'
+          title: Data
+        error:
+          anyOf:
+          - {}
+          - type: 'null'
+          title: Error
+      type: object
+      title: Envelope[list[TemplateGet]]
     Envelope_list_UserAccountGet__:
       properties:
         data:
@@ -12468,6 +12534,11 @@ components:
       - write
       - execute
       title: ExecutableAccessRights
+    ExtraCreditsUsdRangeInt:
+      type: integer
+      exclusiveMaximum: true
+      minimum: 0
+      maximum: 500
     FeaturesDict:
       properties:
         age:
@@ -13294,23 +13365,9 @@ components:
         guest:
           $ref: '#/components/schemas/LowerCaseEmailStr'
         trialAccountDays:
-          anyOf:
-          - type: integer
-            exclusiveMinimum: true
-            minimum: 0
-          - type: 'null'
-          title: Trialaccountdays
-          description: Expiration time in days for trial accounts; `null` means not
-            a trial account
+          $ref: '#/components/schemas/TrialAccountAnnotated'
         extraCreditsInUsd:
-          anyOf:
-          - type: integer
-            exclusiveMaximum: true
-            minimum: 0
-            maximum: 500
-          - type: 'null'
-          title: Extracreditsinusd
-          description: Welcome credits in USD; `null` means no welcome credits
+          $ref: '#/components/schemas/WelcomeCreditsAnnotated'
       type: object
       required:
       - guest
@@ -13723,6 +13780,68 @@ components:
       required:
       - color
       title: MarkerUI
+    MessageBody:
+      properties:
+        channel:
+          $ref: '#/components/schemas/ChannelType'
+        groupIds:
+          anyOf:
+          - items:
+              type: integer
+              exclusiveMinimum: true
+              minimum: 0
+            type: array
+          - type: 'null'
+          title: Groupids
+        content:
+          $ref: '#/components/schemas/MessageContent'
+      type: object
+      required:
+      - channel
+      - content
+      title: MessageBody
+    MessageContent:
+      properties:
+        subject:
+          type: string
+          maxLength: 998
+          title: Subject
+          description: 'Email subject line (RFC 2822: max header line length)'
+        bodyHtml:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Bodyhtml
+        bodyText:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Bodytext
+      type: object
+      required:
+      - subject
+      title: EmailMessageContent
+    MessageContentGet:
+      properties:
+        subject:
+          type: string
+          maxLength: 998
+          title: Subject
+          description: 'Email subject line (RFC 2822: max header line length)'
+        bodyHtml:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Bodyhtml
+        bodyText:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Bodytext
+      type: object
+      required:
+      - subject
+      title: EmailMessageContentGet
     MyFunctionPermissionsGet:
       properties:
         readFunctions:
@@ -14768,121 +14887,6 @@ components:
       - ANNOTATION_NOTE
       - WALLET_SHARED
       title: NotificationCategory
-    NotificationsContentBody:
-      properties:
-        subject:
-          type: string
-          maxLength: 998
-          title: Subject
-          description: 'Email subject line (RFC 2822: max header line length)'
-        bodyHtml:
-          type: string
-          maxLength: 1048576
-          title: Bodyhtml
-          description: HTML email body (1 MB limit per RFC 5321 SMTP practical limits)
-        bodyText:
-          type: string
-          maxLength: 1048576
-          title: Bodytext
-          description: Plain text email body (1 MB limit per RFC 5321 SMTP practical
-            limits)
-      type: object
-      required:
-      - subject
-      - bodyHtml
-      - bodyText
-      title: NotificationsEmailContentBody
-    NotificationsContentGet:
-      properties:
-        subject:
-          type: string
-          maxLength: 998
-          title: Subject
-          description: 'Email subject line (RFC 2822: max header line length)'
-        bodyHtml:
-          type: string
-          maxLength: 1048576
-          title: Bodyhtml
-          description: HTML email body (1 MB limit per RFC 5321 SMTP practical limits)
-        bodyText:
-          type: string
-          maxLength: 1048576
-          title: Bodytext
-          description: Plain text email body (1 MB limit per RFC 5321 SMTP practical
-            limits)
-      type: object
-      required:
-      - subject
-      - bodyHtml
-      - bodyText
-      title: NotificationsEmailContentGet
-    NotificationsMessageBody:
-      properties:
-        channel:
-          $ref: '#/components/schemas/ChannelType'
-        recipients:
-          items:
-            type: integer
-            exclusiveMinimum: true
-            minimum: 0
-          type: array
-          title: Recipients
-        content:
-          $ref: '#/components/schemas/NotificationsContentBody'
-      type: object
-      required:
-      - channel
-      - recipients
-      - content
-      title: NotificationsMessageBody
-    NotificationsTemplateGet:
-      properties:
-        ref:
-          $ref: '#/components/schemas/NotificationsTemplateRefGet'
-        contextSchema:
-          additionalProperties: true
-          type: object
-          title: Contextschema
-      type: object
-      required:
-      - ref
-      - contextSchema
-      title: NotificationsTemplateGet
-    NotificationsTemplatePreviewBody:
-      properties:
-        ref:
-          $ref: '#/components/schemas/NotificationsTemplateRefGet'
-        context:
-          additionalProperties: true
-          type: object
-          title: Context
-      type: object
-      required:
-      - ref
-      - context
-      title: NotificationsTemplatePreviewBody
-    NotificationsTemplatePreviewGet:
-      properties:
-        ref:
-          $ref: '#/components/schemas/NotificationsTemplateRefGet'
-        content:
-          $ref: '#/components/schemas/NotificationsContentGet'
-      type: object
-      required:
-      - ref
-      - content
-      title: NotificationsTemplatePreviewGet
-    NotificationsTemplateRefGet:
-      properties:
-        channel:
-          $ref: '#/components/schemas/ChannelType'
-        templateName:
-          $ref: '#/components/schemas/TemplateName'
-      type: object
-      required:
-      - channel
-      - templateName
-      title: NotificationsTemplateRefGet
     OsparcCreditsAggregatedByServiceGet:
       properties:
         osparc_credits:
@@ -18354,9 +18358,68 @@ components:
       - items
       - end
       title: TaskStreamResponse
+    TemplateGet:
+      properties:
+        ref:
+          $ref: '#/components/schemas/TemplateRefGet'
+        contextSchema:
+          additionalProperties: true
+          type: object
+          title: Contextschema
+      type: object
+      required:
+      - ref
+      - contextSchema
+      title: TemplateGet
     TemplateName:
       type: string
       minLength: 1
+    TemplatePreviewBody:
+      properties:
+        ref:
+          $ref: '#/components/schemas/TemplateRef'
+        context:
+          additionalProperties: true
+          type: object
+          title: Context
+      type: object
+      required:
+      - ref
+      - context
+      title: TemplatePreviewBody
+    TemplatePreviewGet:
+      properties:
+        ref:
+          $ref: '#/components/schemas/TemplateRefGet'
+        messageContent:
+          $ref: '#/components/schemas/MessageContentGet'
+      type: object
+      required:
+      - ref
+      - messageContent
+      title: TemplatePreviewGet
+    TemplateRef:
+      properties:
+        channel:
+          $ref: '#/components/schemas/ChannelType'
+        templateName:
+          $ref: '#/components/schemas/TemplateName'
+      type: object
+      required:
+      - channel
+      - templateName
+      title: TemplateRef
+    TemplateRefGet:
+      properties:
+        channel:
+          $ref: '#/components/schemas/ChannelType'
+        templateName:
+          $ref: '#/components/schemas/TemplateName'
+      type: object
+      required:
+      - channel
+      - templateName
+      title: TemplateRefGet
     TestEmail:
       properties:
         from_:
@@ -18420,6 +18483,14 @@ components:
       - url
       - thumbnail
       title: ThirdPartyInfoDict
+    TrialAccountAnnotated:
+      anyOf:
+      - type: integer
+        exclusiveMinimum: true
+        minimum: 0
+      - type: 'null'
+      description: Expiration time in days for trial accounts; `null` means not a
+        trial account
     UnitExtraInfoLicense:
       properties:
         num_of_seats:
@@ -18563,13 +18634,20 @@ components:
           type: string
           format: email
           title: Email
-        invitation:
+        invitationUrl:
+          type: string
+          maxLength: 2083
+          minLength: 1
+          format: uri
+          title: Invitationurl
+        messageContent:
           anyOf:
-          - $ref: '#/components/schemas/_InvitationDetails'
+          - $ref: '#/components/schemas/MessageContent'
           - type: 'null'
       type: object
       required:
       - email
+      - invitationUrl
       title: UserAccountApprove
     UserAccountGet:
       properties:
@@ -18718,12 +18796,63 @@ components:
       - accountRequestStatus
       - registered
       title: UserAccountGet
+    UserAccountPreviewApproval:
+      properties:
+        email:
+          type: string
+          format: email
+          title: Email
+        invitation:
+          $ref: '#/components/schemas/_InvitationDetails'
+      type: object
+      required:
+      - email
+      - invitation
+      title: UserAccountPreviewApproval
+    UserAccountPreviewApprovalGet:
+      properties:
+        invitationUrl:
+          type: string
+          maxLength: 2083
+          minLength: 1
+          format: uri
+          title: Invitationurl
+        messageContent:
+          anyOf:
+          - $ref: '#/components/schemas/MessageContentGet'
+          - type: 'null'
+      type: object
+      required:
+      - invitationUrl
+      title: UserAccountPreviewApprovalGet
+    UserAccountPreviewRejection:
+      properties:
+        email:
+          type: string
+          format: email
+          title: Email
+      type: object
+      required:
+      - email
+      title: UserAccountPreviewRejection
+    UserAccountPreviewRejectionGet:
+      properties:
+        messageContent:
+          anyOf:
+          - $ref: '#/components/schemas/MessageContentGet'
+          - type: 'null'
+      type: object
+      title: UserAccountPreviewRejectionGet
     UserAccountReject:
       properties:
         email:
           type: string
           format: email
           title: Email
+        messageContent:
+          anyOf:
+          - $ref: '#/components/schemas/MessageContent'
+          - type: 'null'
       type: object
       required:
       - email
@@ -19160,6 +19289,11 @@ components:
       - ACTIVE
       - INACTIVE
       title: WalletStatus
+    WelcomeCreditsAnnotated:
+      anyOf:
+      - $ref: '#/components/schemas/ExtraCreditsUsdRangeInt'
+      - type: 'null'
+      description: Welcome credits in USD; `null` means no welcome credits
     Widget:
       properties:
         type:
@@ -19385,23 +19519,9 @@ components:
     _InvitationDetails:
       properties:
         trialAccountDays:
-          anyOf:
-          - type: integer
-            exclusiveMinimum: true
-            minimum: 0
-          - type: 'null'
-          title: Trialaccountdays
-          description: Expiration time in days for trial accounts; `null` means not
-            a trial account
+          $ref: '#/components/schemas/TrialAccountAnnotated'
         extraCreditsInUsd:
-          anyOf:
-          - type: integer
-            exclusiveMaximum: true
-            minimum: 0
-            maximum: 500
-          - type: 'null'
-          title: Extracreditsinusd
-          description: Welcome credits in USD; `null` means no welcome credits
+          $ref: '#/components/schemas/WelcomeCreditsAnnotated'
       type: object
       title: _InvitationDetails
     _ItisVipResourceRestData:

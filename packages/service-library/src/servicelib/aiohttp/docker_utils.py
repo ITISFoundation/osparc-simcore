@@ -41,7 +41,15 @@ async def retrieve_image_layer_information(
             manifest_url = image_complete_url.with_path(f"v2/{docker_image_name}/manifests/{docker_image_tag}")
 
             headers = {
-                "Accept": "application/vnd.docker.distribution.manifest.v2+json, application/vnd.oci.image.manifest.v1+json"
+                "Accept": ", ".join(
+                    [
+                        "application/vnd.docker.distribution.manifest.v2+json",
+                        "application/vnd.docker.distribution.manifest.list.v2+json",
+                        # Add OCI media types so registries that serve OCI manifests/indexes are accepted
+                        "application/vnd.oci.image.manifest.v1+json",
+                        "application/vnd.oci.image.index.v1+json",
+                    ]
+                )
             }
             if DOCKER_HUB_HOST in f"{image_complete_url}":
                 # we need the docker hub bearer code (https://stackoverflow.com/questions/57316115/get-manifest-of-a-public-docker-image-hosted-on-docker-hub-using-the-docker-regi)

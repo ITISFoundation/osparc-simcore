@@ -56,7 +56,7 @@ def _async_task_wrapper(
 
                         async def _abort_monitor():
                             while not async_io_task.done():
-                                if not await app_server.task_manager.task_exists(task_key):
+                                if not await app_server.task_manager.task_or_group_exists(task_key):
                                     await cancel_wait_task(
                                         async_io_task,
                                         max_delay=_DEFAULT_CANCEL_TASK_TIMEOUT.total_seconds(),

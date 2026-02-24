@@ -2,19 +2,21 @@ import logging
 
 from fastapi import FastAPI
 from models_library.notifications import ChannelType
+from models_library.notifications.rpc.template import (
+    PreviewTemplateRequest,
+    PreviewTemplateResponse,
+    SearchTemplatesResponse,
+)
+from models_library.notifications.rpc.template import (
+    TemplateRef as TemplateRefRpc,
+)
 from models_library.notifications_errors import (
     NotificationsTemplateContextValidationError,
     NotificationsTemplateNotFoundError,
 )
-from models_library.rpc.notifications.template import (
-    NotificationsTemplatePreviewRpcRequest,
-    NotificationsTemplatePreviewRpcResponse,
-    NotificationsTemplateRefRpc,
-    NotificationsTemplateRpcResponse,
-)
 from servicelib.rabbitmq import RPCRouter
 
-from ...models.template import NotificationsTemplateRef
+from ...models.template import TemplateRef
 from .dependencies import get_notifications_templates_service
 
 router = RPCRouter()
@@ -31,18 +33,18 @@ _logger = logging.getLogger(__name__)
 async def preview_template(
     _app: FastAPI,
     *,
-    request: NotificationsTemplatePreviewRpcRequest,
-) -> NotificationsTemplatePreviewRpcResponse:
+    request: PreviewTemplateRequest,
+) -> PreviewTemplateResponse:
     service = get_notifications_templates_service()
 
     preview = service.preview_template(
-        ref=NotificationsTemplateRef(**request.ref.model_dump()),
+        ref=TemplateRef(**request.ref.model_dump()),
         context=request.context,
     )
 
-    return NotificationsTemplatePreviewRpcResponse(
+    return PreviewTemplateResponse(
         ref=request.ref,
-        content=preview.content.model_dump(),
+        message_content=preview.message_content.model_dump(),
     )
 
 
@@ -52,7 +54,7 @@ async def search_templates(
     *,
     channel: ChannelType | None,
     template_name: str | None,
-) -> list[NotificationsTemplateRpcResponse]:
+) -> list[SearchTemplatesResponse]:
     """
     Searches for notification templates based on the specified channel and template name.
 
@@ -69,8 +71,8 @@ async def search_templates(
     templates = service.search_templates(channel=channel, template_name=template_name)
 
     return [
-        NotificationsTemplateRpcResponse(
-            ref=NotificationsTemplateRefRpc(
+        SearchTemplatesResponse(
+            ref=TemplateRefRpc(
                 channel=template.ref.channel,
                 template_name=template.ref.template_name,
             ),

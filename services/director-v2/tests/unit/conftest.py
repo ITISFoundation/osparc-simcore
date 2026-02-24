@@ -11,6 +11,7 @@ from unittest import mock
 import aiodocker
 import pytest
 import respx
+from common_library.serialization import model_dump_with_secrets
 from faker import Faker
 from fastapi import FastAPI
 from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceCreate
@@ -33,7 +34,6 @@ from models_library.services import (
 )
 from models_library.services_enums import ServiceState
 from models_library.users import UserID
-from models_library.utils._original_fastapi_encoders import jsonable_encoder
 from pydantic import TypeAdapter
 from pytest_mock.plugin import MockerFixture
 from pytest_simcore.helpers.typing_env import EnvVarsDict
@@ -192,7 +192,10 @@ def fake_s3_settings(faker: Faker) -> S3Settings:
 
 @pytest.fixture
 def fake_s3_envs(fake_s3_settings: S3Settings) -> EnvVarsDict:
-    return fake_s3_settings.model_dump()
+    return model_dump_with_secrets(
+        fake_s3_settings,
+        show_secrets=True,
+    )
 
 
 @pytest.fixture
@@ -212,7 +215,7 @@ def mocked_storage_service_api(
         respx_mock.post(
             "/simcore-s3:access",
             name="get_or_create_temporary_s3_access",
-        ).respond(json=jsonable_encoder({"data": fake_s3_settings}, by_alias=True))
+        ).respond(json={"data": model_dump_with_secrets(fake_s3_settings, show_secrets=True), "error": None})
 
         yield respx_mock
 

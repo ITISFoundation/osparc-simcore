@@ -3,15 +3,13 @@ from collections.abc import Awaitable, Callable
 
 import pytest
 from fastapi import FastAPI
-from models_library.notifications import ChannelType
+from models_library.notifications import ChannelType, TemplateRef
+from models_library.notifications.rpc.template import (
+    PreviewTemplateResponse,
+)
 from models_library.notifications_errors import (
     NotificationsTemplateContextValidationError,
     NotificationsTemplateNotFoundError,
-)
-from models_library.rpc.notifications.template import (
-    NotificationsTemplatePreviewRpcRequest,
-    NotificationsTemplatePreviewRpcResponse,
-    NotificationsTemplateRefRpc,
 )
 from servicelib.rabbitmq import RabbitMQRPCClient, RPCServerError
 from servicelib.rabbitmq.rpc_interfaces.notifications.notifications_templates import (
@@ -34,10 +32,10 @@ async def test_search_templates_by_channel(
 
     rpc_client = await rabbitmq_rpc_client("notifications-test-client")
 
-    all_templates = await search_templates(rpc_client)
+    all_templates = await search_templates(rpc_client, channel=None, template_name=None)
     if all_templates:
         channel = ChannelType.email
-        filtered = await search_templates(rpc_client, channel=channel)
+        filtered = await search_templates(rpc_client, channel=channel, template_name=None)
         # Check that all returned templates match the filter
         assert all(t.ref.channel == channel for t in filtered)
         # Check that filtered is a subset of all_templates
@@ -52,7 +50,7 @@ async def test_search_templates_by_ref(
 
     rpc_client = await rabbitmq_rpc_client("notifications-test-client")
 
-    all_templates = await search_templates(rpc_client)
+    all_templates = await search_templates(rpc_client, channel=None, template_name=None)
     if all_templates:
         channel = ChannelType.email
         template_name = "empty"
@@ -72,7 +70,7 @@ async def test_search_templates_non_existent(
 
     rpc_client = await rabbitmq_rpc_client("notifications-test-client")
 
-    filtered = await search_templates(rpc_client, template_name="non_existent_template")
+    filtered = await search_templates(rpc_client, channel=None, template_name="non_existent_template")
     assert filtered == []
 
 
@@ -87,21 +85,17 @@ async def test_preview_template_success(
 
     templates = await search_templates(rpc_client, channel=ChannelType.email, template_name="empty")
     assert len(templates) == 1
-
     template = templates[0]
-    request = NotificationsTemplatePreviewRpcRequest(
-        ref=template.ref,
-        context={
-            "subject": "Test Email",
-            "body": "This is a test email.",
-        }
-        | {"product": fake_product_data},
-    )
+    ref = TemplateRef(**template.ref.model_dump())
+    context = {
+        "subject": "Test Email",
+        "body": "This is a test email.",
+    } | {"product": fake_product_data}
 
-    response = await preview_template(rpc_client, request=request)
-    assert isinstance(response, NotificationsTemplatePreviewRpcResponse)
+    response = await preview_template(rpc_client, ref=ref, context=context)
+    assert isinstance(response, PreviewTemplateResponse)
     assert response.ref == template.ref
-    assert isinstance(response.content, dict)
+    assert isinstance(response.message_content, dict)
 
 
 async def test_preview_template_not_found(
@@ -112,16 +106,14 @@ async def test_preview_template_not_found(
 
     rpc_client = await rabbitmq_rpc_client("notifications-test-client")
 
-    request = NotificationsTemplatePreviewRpcRequest(
-        ref=NotificationsTemplateRefRpc(
-            channel=ChannelType.email,
-            template_name="non_existent_template",
-        ),
-        context={},
+    ref = TemplateRef(
+        channel=ChannelType.email,
+        template_name="non_existent_template",
     )
+    context = {}
 
     with pytest.raises(NotificationsTemplateNotFoundError):
-        await preview_template(rpc_client, request=request)
+        await preview_template(rpc_client, ref=ref, context=context)
 
 
 async def test_preview_template_invalid_context(
@@ -133,13 +125,11 @@ async def test_preview_template_invalid_context(
     rpc_client = await rabbitmq_rpc_client("notifications-test-client")
 
     # Get available templates first
-    templates = await search_templates(rpc_client)
+    templates = await search_templates(rpc_client, channel=None, template_name=None)
     if templates:
         template = templates[0]
-        request = NotificationsTemplatePreviewRpcRequest(
-            ref=template.ref,
-            context={"invalid_key": "invalid_value"},  # Invalid context
-        )
+        ref = TemplateRef(**template.ref.model_dump())
+        context = {"invalid_key": "invalid_value"}  # Invalid context
 
         with pytest.raises((NotificationsTemplateContextValidationError, RPCServerError)):
-            await preview_template(rpc_client, request=request)
+            await preview_template(rpc_client, ref=ref, context=context)

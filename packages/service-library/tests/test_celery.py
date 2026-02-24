@@ -52,14 +52,18 @@ async def test_task_filter_sorting_key_not_serialized():
         b: str | Wildcard
 
     owner_metadata = _OwnerMetadata.model_validate(
-        {"a": _faker.random_int(), "b": _faker.word(), "owner": _faker.word().lower()}
+        {
+            "a": _faker.random_int(),
+            "b": _faker.word(),
+            "owner": _faker.word().lower(),
+        }
     )
     task_uuid = TypeAdapter(TaskUUID).validate_python(_faker.uuid4())
     copy_owner_metadata = owner_metadata.model_dump()
-    copy_owner_metadata.update({"task_uuid": f"{task_uuid}"})
+    copy_owner_metadata.update({"uuid": f"{task_uuid}"})
 
     expected_key = ":".join([f"{k}={json_dumps(v)}" for k, v in sorted(copy_owner_metadata.items())])
-    assert owner_metadata.model_dump_task_key(task_uuid=task_uuid) == expected_key
+    assert owner_metadata.model_dump_key(task_or_group_uuid=task_uuid) == expected_key
 
 
 async def test_task_filter_task_uuid(
@@ -67,8 +71,8 @@ async def test_task_filter_task_uuid(
 ):
     task_filter = _TestOwnerMetadata.model_validate(test_owner_metadata)
     task_uuid = TypeAdapter(TaskUUID).validate_python(_faker.uuid4())
-    task_key = task_filter.model_dump_task_key(task_uuid)
-    assert OwnerMetadata.get_task_uuid(task_key=task_key) == task_uuid
+    task_key = task_filter.model_dump_key(task_uuid)
+    assert OwnerMetadata.get_task_or_group_uuid(task_or_group_key=task_key) == task_uuid
 
 
 async def test_owner_metadata_task_key_dump_and_validate():
@@ -96,8 +100,8 @@ async def test_owner_metadata_task_key_dump_and_validate():
         list_s=["a", "b"],
     )
     task_uuid = TypeAdapter(TaskUUID).validate_python(_faker.uuid4())
-    task_key = mymodel.model_dump_task_key(task_uuid)
-    mymodel_recreated = MyModel.model_validate_task_key(task_key=task_key)
+    task_key = mymodel.model_dump_key(task_uuid)
+    mymodel_recreated = MyModel.model_validate_key(task_or_group_key=task_key)
     assert mymodel_recreated == mymodel
 
 

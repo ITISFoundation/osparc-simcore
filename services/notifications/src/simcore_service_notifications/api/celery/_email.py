@@ -5,7 +5,7 @@ from email.headerregistry import Address
 from email.message import EmailMessage as _EmailMessage
 
 from celery import Task  # type: ignore[import-untyped]
-from models_library.api_schemas_notifications.message import EmailNotificationMessage
+from models_library.notifications.celery import EmailMessage
 from notifications_library._email import (
     add_attachments,
     compose_email,
@@ -17,15 +17,22 @@ from settings_library.email import SMTPSettings
 _logger = logging.getLogger(__name__)
 
 
-def _create_email_message(message: EmailNotificationMessage) -> _EmailMessage:
+def _create_email_message(message: EmailMessage) -> _EmailMessage:
     return compose_email(
-        from_=Address(**message.from_.model_dump()),
-        to=[Address(**addr.model_dump()) for addr in message.to],
+        from_=Address(
+            display_name=message.from_.name or "",
+            addr_spec=message.from_.email,
+        ),
+        to=[Address(display_name=addr.name or "", addr_spec=addr.email) for addr in message.to],
         subject=message.content.subject,
         content_text=message.content.body_text,
         content_html=message.content.body_html,
-        reply_to=Address(**message.reply_to.model_dump()) if message.reply_to else None,
-        bcc=[Address(**addr.model_dump()) for addr in message.bcc] if message.bcc else None,
+        reply_to=Address(display_name=message.reply_to.name or "", addr_spec=message.reply_to.email)
+        if message.reply_to
+        else None,
+        bcc=[Address(display_name=addr.name or "", addr_spec=addr.email) for addr in message.bcc]
+        if message.bcc
+        else None,
     )
 
 
@@ -34,10 +41,10 @@ async def _send_email(msg: _EmailMessage) -> None:
         await smtp.send_message(msg)
 
 
-async def send_email(
+async def send_email_message(
     task: Task,
     task_key: TaskKey,
-    message: EmailNotificationMessage,
+    message: EmailMessage,
 ) -> None:
     assert task  # nosec
     assert task_key  # nosec
