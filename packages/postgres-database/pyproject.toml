@@ -30,19 +30,6 @@ sc-pg = "simcore_postgres_database.cli:main"
 requires = ["uv_build>=0.9.28,<0.10.0"]
 build-backend = "uv_build"
 
-[tool.setuptools]
-package-dir = { "" = "src" }
-packages = ["simcore_postgres_database"]
-include-package-data = true
-
-[tool.setuptools.package-data]
-"*" = [
-  "py.typed",
-  "*.ini",
-  "migration/*.py",
-  "migration/*.mako",
-  "migration/versions/*.py",
-]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
