@@ -111,6 +111,7 @@ qx.Class.define("osparc.tours.Step", {
             allowGrowX: false,
             alignX: "left"
           });
+          osparc.utils.Utils.setIdToWidget(control, "tourStepSkipBtn");
           control.addListener("execute", () => this.fireEvent("skipPressed"), this);
           const bottomLayout = this.getChildControl("bottom-layout");
           bottomLayout.add(control);
@@ -157,6 +158,7 @@ qx.Class.define("osparc.tours.Step", {
             allowGrowX: false,
             alignX: "right"
           });
+          osparc.utils.Utils.setIdToWidget(control, "tourStepNextBtn");
           control.addListener("execute", () => this.__nextRequested(), this);
           const bottomLayout = this.getChildControl("bottom-layout");
           bottomLayout.add(control);
@@ -169,6 +171,7 @@ qx.Class.define("osparc.tours.Step", {
             allowGrowX: false,
             alignX: "right"
           });
+          osparc.utils.Utils.setIdToWidget(control, "tourStepToToursBtn");
           control.addListener("execute", () => this.fireEvent("toTours"), this);
           const bottomLayout = this.getChildControl("bottom-layout");
           bottomLayout.add(control);
