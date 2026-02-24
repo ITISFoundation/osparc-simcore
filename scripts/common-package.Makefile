@@ -32,6 +32,8 @@ SRC_DIR             = $(abspath $(CURDIR)/src/$(PY_PACKAGE_NAME))
 # Package-specific overrides (optional)
 COV_PACKAGE_NAME   ?= $(PY_PACKAGE_NAME)
 PYTEST_OPTS        ?= --keep-docker-up
+UV_EXTRAS          ?=
+PYTEST_EXTRAS      ?=
 
 export PACKAGE_VERSION
 
@@ -84,17 +86,17 @@ requirements: _check_venv_active ## compiles pip requirements (.in -> .txt) [DEP
 
 .PHONY: install-dev
 install-dev: _check_venv_active ## install all dependencies (dev + devtools groups)
-	@uv sync --active --all-groups
+	@uv sync --active --all-groups $(UV_EXTRAS)
 
 
 .PHONY: install-prod
 install-prod: _check_venv_active ## install only production dependencies
-	@uv sync --active --no-dev --no-editable
+	@uv sync --active --no-dev --no-editable $(UV_EXTRAS)
 
 
 .PHONY: install-ci
 install-ci: _check_venv_active ## install CI dependencies (dev group only)
-	@uv sync --active --group dev --no-editable
+	@uv sync --active --group dev --no-editable $(UV_EXTRAS)
 
 
 #
@@ -114,6 +116,7 @@ tests: _check_venv_active ## runs unit tests
 		--failed-first \
 		--pdb \
 		-vv \
+		$(PYTEST_EXTRAS) \
 		$(CURDIR)/tests
 
 
@@ -133,6 +136,7 @@ tests-ci: _check_venv_active ## runs unit tests [ci-mode]
 		--log-format="%(asctime)s %(levelname)s %(message)s" \
 		--verbose \
 		-m "not heavy_load" \
+		$(PYTEST_EXTRAS) \
 		$(CURDIR)/tests
 
 

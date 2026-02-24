@@ -29,42 +29,42 @@ EXTRAS := aiohttp fastapi
 #
 
 .PHONY: install-dev[all]
-install-dev[all]: _check_venv_active ## install dev dependencies with all extras
-	@uv sync --active --all-groups --extra aiohttp --extra fastapi
+install-dev[all]: UV_EXTRAS = --extra aiohttp --extra fastapi
+install-dev[all]: install-dev ## install dev dependencies with all extras
 
 .PHONY: "install-dev[aiohttp]"
-install-dev[aiohttp]: _check_venv_active ## install dev dependencies with aiohttp extra
-	@uv sync --active --all-groups --extra aiohttp
+install-dev[aiohttp]: UV_EXTRAS = --extra aiohttp
+install-dev[aiohttp]: install-dev ## install dev dependencies with aiohttp extra
 
 .PHONY: "install-dev[fastapi]"
-install-dev[fastapi]: _check_venv_active ## install dev dependencies with fastapi extra
-	@uv sync --active --all-groups --extra fastapi
+install-dev[fastapi]: UV_EXTRAS = --extra fastapi
+install-dev[fastapi]: install-dev ## install dev dependencies with fastapi extra
 
 
 .PHONY: install-ci[all]
-install-ci[all]: _check_venv_active ## install CI dependencies with all extras
-	@uv sync --active --group dev --extra aiohttp --extra fastapi --no-editable
+install-ci[all]: UV_EXTRAS = --extra aiohttp --extra fastapi
+install-ci[all]: install-ci ## install CI dependencies with all extras
 
 .PHONY: "install-ci[aiohttp]"
-install-ci[aiohttp]: _check_venv_active ## install CI dependencies with aiohttp extra
-	@uv sync --active --group dev --extra aiohttp --no-editable
+install-ci[aiohttp]: UV_EXTRAS = --extra aiohttp
+install-ci[aiohttp]: install-ci ## install CI dependencies with aiohttp extra
 
 .PHONY: "install-ci[fastapi]"
-install-ci[fastapi]: _check_venv_active ## install CI dependencies with fastapi extra
-	@uv sync --active --group dev --extra fastapi --no-editable
+install-ci[fastapi]: UV_EXTRAS = --extra fastapi
+install-ci[fastapi]: install-ci ## install CI dependencies with fastapi extra
 
 
 .PHONY: install-prod[all]
-install-prod[all]: _check_venv_active ## install prod dependencies with all extras
-	@uv sync --active --no-dev --extra aiohttp --extra fastapi --no-editable
+install-prod[all]: UV_EXTRAS = --extra aiohttp --extra fastapi
+install-prod[all]: install-prod ## install prod dependencies with all extras
 
 .PHONY: "install-prod[aiohttp]"
-install-prod[aiohttp]: _check_venv_active ## install prod dependencies with aiohttp extra
-	@uv sync --active --no-dev --extra aiohttp --no-editable
+install-prod[aiohttp]: UV_EXTRAS = --extra aiohttp
+install-prod[aiohttp]: install-prod ## install prod dependencies with aiohttp extra
 
 .PHONY: "install-prod[fastapi]"
-install-prod[fastapi]: _check_venv_active ## install prod dependencies with fastapi extra
-	@uv sync --active --no-dev --extra fastapi --no-editable
+install-prod[fastapi]: UV_EXTRAS = --extra fastapi
+install-prod[fastapi]: install-prod ## install prod dependencies with fastapi extra
 
 
 #
@@ -72,111 +72,24 @@ install-prod[fastapi]: _check_venv_active ## install prod dependencies with fast
 #
 
 .PHONY: tests[all]
-tests[all]: _check_venv_active ## run tests with all extras
-	@pytest $(PYTEST_OPTS) \
-		--asyncio-mode=auto \
-		--color=yes \
-		--cov-config=../../.coveragerc \
-		--cov-report=term-missing \
-		--cov-report=xml \
-		--cov=$(COV_PACKAGE_NAME) \
-		--durations=10 \
-		--junitxml=junit.xml -o junit_family=legacy \
-		--exitfirst \
-		--failed-first \
-		--pdb \
-		-vv \
-		$(CURDIR)/tests
+tests[all]: tests ## run tests with all extras
 
 .PHONY: "tests[aiohttp]"
-tests[aiohttp]: _check_venv_active ## run tests for aiohttp only
-	@pytest $(PYTEST_OPTS) \
-		--asyncio-mode=auto \
-		--color=yes \
-		--cov-config=../../.coveragerc \
-		--cov-report=term-missing \
-		--cov-report=xml \
-		--cov=$(COV_PACKAGE_NAME) \
-		--durations=10 \
-		--junitxml=junit.xml -o junit_family=legacy \
-		--exitfirst \
-		--failed-first \
-		--ignore=$(CURDIR)/tests/fastapi \
-		--pdb \
-		-vv \
-		$(CURDIR)/tests
+tests[aiohttp]: PYTEST_EXTRAS = --ignore=$(CURDIR)/tests/fastapi
+tests[aiohttp]: tests ## run tests for aiohttp only
 
 .PHONY: "tests[fastapi]"
-tests[fastapi]: _check_venv_active ## run tests for fastapi only
-	@pytest $(PYTEST_OPTS) \
-		--asyncio-mode=auto \
-		--color=yes \
-		--cov-config=../../.coveragerc \
-		--cov-report=term-missing \
-		--cov-report=xml \
-		--cov=$(COV_PACKAGE_NAME) \
-		--durations=10 \
-		--junitxml=junit.xml -o junit_family=legacy \
-		--exitfirst \
-		--failed-first \
-		--ignore=$(CURDIR)/tests/aiohttp \
-		--pdb \
-		-vv \
-		$(CURDIR)/tests
+tests[fastapi]: PYTEST_EXTRAS = --ignore=$(CURDIR)/tests/aiohttp
+tests[fastapi]: tests ## run tests for fastapi only
 
 
 .PHONY: tests-ci[all]
-tests-ci[all]: _check_venv_active ## run CI tests with all extras
-	@pytest $(PYTEST_OPTS) \
-		--asyncio-mode=auto \
-		--color=yes \
-		--cov-append \
-		--cov-config=../../.coveragerc \
-		--cov-report=term-missing \
-		--cov-report=xml \
-		--cov=$(COV_PACKAGE_NAME) \
-		--durations=10 \
-		--junitxml=junit.xml -o junit_family=legacy \
-		--log-date-format="%Y-%m-%d %H:%M:%S" \
-		--log-format="%(asctime)s %(levelname)s %(message)s" \
-		--verbose \
-		-m "not heavy_load" \
-		$(CURDIR)/tests
+tests-ci[all]: tests-ci ## run CI tests with all extras
 
 .PHONY: "tests-ci[aiohttp]"
-tests-ci[aiohttp]: _check_venv_active ## run CI tests for aiohttp only
-	@pytest $(PYTEST_OPTS) \
-		--asyncio-mode=auto \
-		--color=yes \
-		--cov-append \
-		--cov-config=../../.coveragerc \
-		--cov-report=term-missing \
-		--cov-report=xml \
-		--cov=$(COV_PACKAGE_NAME) \
-		--durations=10 \
-		--junitxml=junit.xml -o junit_family=legacy \
-		--ignore=$(CURDIR)/tests/fastapi \
-		--log-date-format="%Y-%m-%d %H:%M:%S" \
-		--log-format="%(asctime)s %(levelname)s %(message)s" \
-		--verbose \
-		-m "not heavy_load" \
-		$(CURDIR)/tests
+tests-ci[aiohttp]: PYTEST_EXTRAS = --ignore=$(CURDIR)/tests/fastapi
+tests-ci[aiohttp]: tests-ci ## run CI tests for aiohttp only
 
 .PHONY: "tests-ci[fastapi]"
-tests-ci[fastapi]: _check_venv_active ## run CI tests for fastapi only
-	@pytest $(PYTEST_OPTS) \
-		--asyncio-mode=auto \
-		--color=yes \
-		--cov-append \
-		--cov-config=../../.coveragerc \
-		--cov-report=term-missing \
-		--cov-report=xml \
-		--cov=$(COV_PACKAGE_NAME) \
-		--durations=10 \
-		--junitxml=junit.xml -o junit_family=legacy \
-		--ignore=$(CURDIR)/tests/aiohttp \
-		--log-date-format="%Y-%m-%d %H:%M:%S" \
-		--log-format="%(asctime)s %(levelname)s %(message)s" \
-		--verbose \
-		-m "not heavy_load" \
-		$(CURDIR)/tests
+tests-ci[fastapi]: PYTEST_EXTRAS = --ignore=$(CURDIR)/tests/aiohttp
+tests-ci[fastapi]: tests-ci ## run CI tests for fastapi only
