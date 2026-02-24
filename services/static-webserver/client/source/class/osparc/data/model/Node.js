@@ -359,6 +359,17 @@ qx.Class.define("osparc.data.model.Node", {
       }
       return Array.from(linkedNodeIds);
     },
+
+    addRTCLock: function(node, userId = null) {
+      node["rtcLock"] = {
+        userId,
+        timestamp: new Date().getTime(),
+      }
+    },
+
+    removeRTCLock: function(node) {
+      delete node["rtcLock"];
+    },
   },
 
   members: {
