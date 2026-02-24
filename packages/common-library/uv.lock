@@ -554,6 +554,17 @@ wheels = [
 ]
 
 [[package]]
+name = "pytest-simcore"
+version = "0.1.0"
+source = { directory = "../pytest-simcore" }
+dependencies = [
+    { name = "pytest" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "pytest", specifier = ">=8.4.2" }]
+
+[[package]]
 name = "pytest-sugar"
 version = "1.1.1"
 source = { registry = "https://pypi.org/simple" }
@@ -669,6 +680,7 @@ dev = [
     { name = "pytest-instafail" },
     { name = "pytest-mock" },
     { name = "pytest-runner" },
+    { name = "pytest-simcore" },
     { name = "pytest-sugar" },
     { name = "python-dotenv" },
 ]
@@ -702,6 +714,7 @@ dev = [
     { name = "pytest-instafail", specifier = ">=0.5.0" },
     { name = "pytest-mock", specifier = ">=3.15.1" },
     { name = "pytest-runner", specifier = ">=6.0.1" },
+    { name = "pytest-simcore", directory = "../pytest-simcore" },
     { name = "pytest-sugar", specifier = ">=1.1.1" },
     { name = "python-dotenv", specifier = ">=1.1.1" },
 ]

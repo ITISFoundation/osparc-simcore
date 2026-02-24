@@ -28,6 +28,9 @@ build-backend = "uv_build"
 [tool.uv.build-backend]
 module-name = "common_library"
 
+[tool.uv.sources]
+pytest-simcore = { path = "../pytest-simcore" }
+
 [tool.setuptools]
 package-dir = { "" = "src" }
 packages = ["common_library"]
@@ -60,6 +63,7 @@ dev = [
   "pytest-instafail>=0.5.0",
   "pytest-mock>=3.15.1",
   "pytest-runner>=6.0.1",
+  "pytest-simcore",
   "pytest-sugar>=1.1.1",
   "python-dotenv>=1.1.1",
 ]
