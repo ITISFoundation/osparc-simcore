@@ -48,6 +48,7 @@ dependencies = [
   "simcore-common-library",
   "simcore-models-library",
   "simcore-settings-library",
+  "simcore-service-library",
 ]
 
 [build-system]
@@ -61,6 +62,7 @@ module-name = "aws_library"
 simcore-common-library = { path = "../common-library" }
 simcore-models-library = { path = "../models-library" }
 simcore-settings-library = { path = "../settings-library" }
+simcore-service-library = { path = "../service-library" }
 
 [tool.setuptools]
 package-dir = { "" = "src" }
