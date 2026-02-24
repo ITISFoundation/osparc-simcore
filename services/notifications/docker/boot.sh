@@ -59,19 +59,19 @@ if [ "${NOTIFICATIONS_WORKER_MODE:-}" = "true" ]; then
       -- \
       celery \
       --app=simcore_service_notifications.modules.celery.worker_main:app \
-      worker --pool="${CELERY_POOL}" \
+      worker --pool="${NOTIFICATIONS_WORKER_CELERY_POOL}" \
       --loglevel="${SERVER_LOG_LEVEL}" \
-      --concurrency="${CELERY_CONCURRENCY}" \
+      --concurrency="${NOTIFICATIONS_WORKER_CELERY_CONCURRENCY}" \
       --hostname="${NOTIFICATIONS_WORKER_NAME}" \
-      --queues="${CELERY_QUEUES:-default}"
+      --queues="${NOTIFICATIONS_WORKER_CELERY_QUEUES}"
   else
     exec celery \
       --app=simcore_service_notifications.modules.celery.worker_main:app \
-      worker --pool="${CELERY_POOL}" \
+      worker --pool="${NOTIFICATIONS_WORKER_CELERY_POOL}" \
       --loglevel="${SERVER_LOG_LEVEL}" \
-      --concurrency="${CELERY_CONCURRENCY}" \
+      --concurrency="${NOTIFICATIONS_WORKER_CELERY_CONCURRENCY}" \
       --hostname="${NOTIFICATIONS_WORKER_NAME}" \
-      --queues="${CELERY_QUEUES:-default}"
+      --queues="${NOTIFICATIONS_WORKER_CELERY_QUEUES}"
   fi
 else
   if [ "${SC_BOOT_MODE}" = "debug" ]; then

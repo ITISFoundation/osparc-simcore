@@ -1178,9 +1178,9 @@ services:
       NOTIFICATIONS_TRACING: "null"
       NOTIFICATIONS_WORKER_NAME: "notifications-worker-{{.Node.Hostname}}-{{.Task.Slot}}-{{.Task.ID}}"
       NOTIFICATIONS_WORKER_MODE: "true"
-      CELERY_CONCURRENCY: 1
-      CELERY_POOL: prefork
-      CELERY_QUEUES: notifications
+      NOTIFICATIONS_WORKER_CELERY_CONCURRENCY: ${NOTIFICATIONS_WORKER_CELERY_CONCURRENCY}
+      NOTIFICATIONS_WORKER_CELERY_POOL: prefork
+      NOTIFICATIONS_WORKER_CELERY_QUEUES: notifications
     networks: *notifications_networks
 
   dask-sidecar:
