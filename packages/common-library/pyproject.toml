@@ -29,7 +29,7 @@ build-backend = "uv_build"
 module-name = "common_library"
 
 [tool.uv.sources]
-pytest-simcore = { path = "../pytest-simcore" }
+pytest-simcore = { path = "../pytest-simcore", editable = true }
 
 [tool.setuptools]
 package-dir = { "" = "src" }

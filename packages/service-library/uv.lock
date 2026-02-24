@@ -2176,7 +2176,7 @@ wheels = [
 [[package]]
 name = "pytest-simcore"
 version = "0.1.0"
-source = { directory = "../pytest-simcore" }
+source = { editable = "../pytest-simcore" }
 dependencies = [
     { name = "pytest" },
 ]
@@ -2539,7 +2539,7 @@ wheels = [
 [[package]]
 name = "simcore-common-library"
 version = "0.2.0"
-source = { directory = "../common-library" }
+source = { editable = "../common-library" }
 dependencies = [
     { name = "orjson" },
     { name = "pydantic" },
@@ -2583,7 +2583,7 @@ devtools = [
 [[package]]
 name = "simcore-models-library"
 version = "0.3.0"
-source = { directory = "../models-library" }
+source = { editable = "../models-library" }
 dependencies = [
     { name = "arrow" },
     { name = "jsonref" },
@@ -2797,9 +2797,9 @@ requires-dist = [
     { name = "pyyaml", specifier = ">=6.0.3" },
     { name = "redis", specifier = ">=6.4.0" },
     { name = "rich", specifier = ">=14.1.0" },
-    { name = "simcore-common-library", directory = "../common-library" },
-    { name = "simcore-models-library", directory = "../models-library" },
-    { name = "simcore-settings-library", directory = "../settings-library" },
+    { name = "simcore-common-library", editable = "../common-library" },
+    { name = "simcore-models-library", editable = "../models-library" },
+    { name = "simcore-settings-library", editable = "../settings-library" },
     { name = "stream-zip", specifier = ">=0.0.84" },
     { name = "tenacity", specifier = ">=9.1.2" },
     { name = "toolz", specifier = ">=1.0.0" },
@@ -2835,7 +2835,7 @@ dev = [
     { name = "pytest-instafail", specifier = ">=0.5.0" },
     { name = "pytest-mock", specifier = ">=3.15.1" },
     { name = "pytest-runner", specifier = ">=6.0.1" },
-    { name = "pytest-simcore", directory = "../pytest-simcore" },
+    { name = "pytest-simcore", editable = "../pytest-simcore" },
     { name = "pytest-sugar", specifier = ">=1.1.1" },
     { name = "pytest-xdist", specifier = ">=3.8.0" },
     { name = "python-dotenv", specifier = ">=1.1.1" },
@@ -2860,7 +2860,7 @@ devtools = [
 [[package]]
 name = "simcore-settings-library"
 version = "0.1.0"
-source = { directory = "../settings-library" }
+source = { editable = "../settings-library" }
 dependencies = [
     { name = "pydantic" },
     { name = "pydantic-settings" },
