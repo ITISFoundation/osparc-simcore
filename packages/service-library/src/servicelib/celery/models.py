@@ -241,6 +241,11 @@ class TaskStore(Protocol):
     ) -> tuple[list[TaskStreamItem], bool, datetime | None]: ...
 
 
+class Status(Protocol):
+    is_done: bool
+    progress_report: ProgressReport
+
+
 class TaskStatus(BaseModel):
     task_uuid: TaskUUID
     task_state: TaskState

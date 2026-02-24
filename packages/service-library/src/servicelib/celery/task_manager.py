@@ -9,6 +9,7 @@ from .models import (
     GroupStatus,
     GroupUUID,
     OwnerMetadata,
+    Status,
     Task,
     TaskKey,
     TaskParams,
@@ -39,9 +40,7 @@ class TaskManager(Protocol):
 
     async def get_group_status(self, owner_metadata: OwnerMetadata, group_uuid: GroupUUID) -> GroupStatus: ...
 
-    async def get_status(
-        self, owner_metadata: OwnerMetadata, task_or_group_uuid: TaskUUID | GroupUUID
-    ) -> TaskStatus | GroupStatus: ...
+    async def get_status(self, owner_metadata: OwnerMetadata, task_or_group_uuid: TaskUUID | GroupUUID) -> Status: ...
 
     async def list_tasks(self, owner_metadata: OwnerMetadata) -> list[Task]: ...
 

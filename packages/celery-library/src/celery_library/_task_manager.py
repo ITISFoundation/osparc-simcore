@@ -17,6 +17,7 @@ from servicelib.celery.models import (
     GroupStatus,
     GroupUUID,
     OwnerMetadata,
+    Status,
     Task,
     TaskKey,
     TaskParams,
@@ -246,9 +247,7 @@ class CeleryTaskManager:
             )
 
     @handle_celery_errors
-    async def get_status(
-        self, owner_metadata: OwnerMetadata, task_or_group_uuid: TaskUUID | GroupUUID
-    ) -> TaskStatus | GroupStatus:
+    async def get_status(self, owner_metadata: OwnerMetadata, task_or_group_uuid: TaskUUID | GroupUUID) -> Status:
         task_or_group_key = owner_metadata.model_dump_key(task_or_group_uuid=task_or_group_uuid)
         if not await self.task_or_group_exists(task_or_group_key):
             raise TaskNotFoundError(task_uuid=task_or_group_uuid, owner_metadata=owner_metadata)
