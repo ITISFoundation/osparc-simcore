@@ -19,7 +19,7 @@ qx.Class.define("osparc.tours.Manager", {
   extend: osparc.ui.window.SingletonWindow,
 
   construct: function() {
-    this.base(arguments, "guided-torus", this.tr("Guided Tours"));
+    this.base(arguments, "guided-tours", this.tr("Guided Tours"));
 
     this.set({
       layout: new qx.ui.layout.VBox(20),
@@ -30,6 +30,8 @@ qx.Class.define("osparc.tours.Manager", {
       showMaximize: false,
       showMinimize: false
     });
+
+    osparc.utils.Utils.setIdToWidget(this, "guidedToursManager");
 
     this.__blankets = [];
     this.__buildLayout();
