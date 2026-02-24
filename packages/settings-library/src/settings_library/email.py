@@ -69,6 +69,14 @@ class SMTPSettings(BaseCustomSettings):
             raise ValueError(msg)
         return self
 
+    @model_validator(mode="after")
+    def _extra_headers_must_start_with_x(self) -> Self:
+        for key in self.SMTP_EXTRA_HEADERS:
+            if not key.startswith("X-"):
+                msg = f"Extra header key '{key}' must start with 'X-'"
+                raise ValueError(msg)
+        return self
+
     @property
     def has_credentials(self) -> bool:
         return self.SMTP_USERNAME is not None and self.SMTP_PASSWORD is not None
