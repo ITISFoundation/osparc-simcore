@@ -64,18 +64,13 @@ RUN uv venv "${VIRTUAL_ENV}"
 ENV UV_COMPILE_BYTECODE=1 \
   UV_LINK_MODE=copy
 
-
-
-
-
 WORKDIR /build/packages/postgres-database
 
 # install only base 3rd party dependencies
 RUN \
   --mount=type=bind,source=packages,target=/build/packages,rw \
   --mount=type=cache,target=/root/.cache/uv \
-  uv pip install \
-  --requirement requirements/prod.txt \
+  uv sync --locked --compile-bytecode --no-dev --no-editable \
   && uv pip list
 
 
