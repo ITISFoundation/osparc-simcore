@@ -151,12 +151,12 @@ async def _get_tasks_to_remove(
 
 
 def _get_unique_dict_hash(d: dict[str, Any], *, uniqueness: TaskUniqueness) -> str:
-    if uniqueness != TaskUniqueness.BY_NAME_AND_ARGS:
-        return ""
+    if uniqueness == TaskUniqueness.BY_NAME_AND_ARGS:
+        items = sorted(d.items())
+        serialized = json_dumps(items, separators=(",", ":"), sort_keys=True)
+        return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
 
-    items = sorted(d.items())
-    serialized = json_dumps(items, separators=(",", ":"), sort_keys=True)
-    return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
+    return ""
 
 
 class TasksManager:  # pylint:disable=too-many-instance-attributes
@@ -547,9 +547,9 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
 
     def _get_task_id(self, task_name: str, *, uniqueness: TaskUniqueness, **task_kwargs) -> TaskId:
         suffix = (
-            f"unique_{_get_unique_dict_hash(task_kwargs, uniqueness=uniqueness)}"
-            if uniqueness != TaskUniqueness.NONE
-            else f"{uuid4()}"
+            f"{uuid4()}"
+            if uniqueness == TaskUniqueness.NONE
+            else f"unique_{_get_unique_dict_hash(task_kwargs, uniqueness=uniqueness)}"
         )
         return f"{self.lrt_namespace}.{task_name}.{suffix}"
 
