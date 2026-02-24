@@ -1,3 +1,4 @@
+import json
 from unittest.mock import MagicMock
 
 import pytest
@@ -27,7 +28,7 @@ def with_smtp_extra_headers(
     monkeypatch: pytest.MonkeyPatch,
 ) -> dict[str, str]:
     headers = {"X-Test-Header": "TestTestTest"}
-    setenvs_from_dict(monkeypatch, {"SMTP_EXTRA_HEADERS": '{"X-Test-Header": "TestTestTest"}'})
+    setenvs_from_dict(monkeypatch, {"SMTP_EXTRA_HEADERS": json.dumps(headers)})
     return headers
 
 
