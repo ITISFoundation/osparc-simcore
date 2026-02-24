@@ -1,6 +1,7 @@
 from enum import Enum
 from typing import Annotated, Self
 
+from common_library.basic_types import DEFAULT_FACTORY
 from pydantic import model_validator
 from pydantic.fields import Field
 from pydantic.types import SecretStr
@@ -34,6 +35,13 @@ class SMTPSettings(BaseCustomSettings):
 
     SMTP_USERNAME: Annotated[str | None, Field(min_length=1)] = None
     SMTP_PASSWORD: Annotated[SecretStr | None, Field(min_length=1)] = None
+    SMTP_EXTRA_HEADERS: Annotated[
+        dict[str, str],
+        Field(
+            default_factory=dict,
+            description="Extra headers to add to the email, e.g. {'X-Priority': '1 (Highest)'}",
+        ),
+    ] = DEFAULT_FACTORY
 
     @model_validator(mode="after")
     def _both_credentials_must_be_set(self) -> Self:
