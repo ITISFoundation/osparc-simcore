@@ -10,9 +10,17 @@ requirements: ## compiles pip requirements (.in -> .txt)
 
 
 .PHONY: install-dev install-prod install-ci
-install-dev install-prod install-ci: _check_venv_active ## install app in development/production or CI mode
-	# installing in $(subst install-,,$@) mode
-	@uv sync $(if $(filter install-dev,$@),--all-groups,)
+install-dev: _check_venv_active ## install app in development mode
+	# installing in development mode
+	@uv sync --active --all-groups
+
+install-prod: _check_venv_active ## install app in production mode
+	# installing in production mode
+	@uv sync --active --no-dev
+
+install-ci: _check_venv_active ## install app in CI mode
+	# installing in CI mode
+	@uv sync --active --group dev
 
 
 .PHONY: tests tests-ci
