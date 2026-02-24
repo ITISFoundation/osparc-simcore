@@ -2949,8 +2949,11 @@ name = "simcore-settings-library"
 version = "0.1.0"
 source = { editable = "../settings-library" }
 dependencies = [
+    { name = "orjson" },
     { name = "pydantic" },
+    { name = "pydantic-extra-types" },
     { name = "pydantic-settings" },
+    { name = "pytest-asyncio" },
     { name = "rich" },
     { name = "simcore-common-library" },
     { name = "typer" },
@@ -2958,28 +2961,39 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "coverage", marker = "extra == 'test'", specifier = "==7.10.7" },
-    { name = "faker", marker = "extra == 'test'", specifier = "==37.8.0" },
-    { name = "iniconfig", marker = "extra == 'test'", specifier = "==2.1.0" },
-    { name = "packaging", marker = "extra == 'test'", specifier = "==25.0" },
-    { name = "pluggy", marker = "extra == 'test'", specifier = "==1.6.0" },
-    { name = "pydantic", specifier = ">=2.10.0,<2.12.0" },
-    { name = "pydantic-settings", specifier = "<2.7.1" },
-    { name = "pygments", marker = "extra == 'test'", specifier = "==2.19.2" },
-    { name = "pytest", marker = "extra == 'test'", specifier = "==8.4.2" },
-    { name = "pytest-cov", marker = "extra == 'test'", specifier = "==7.0.0" },
-    { name = "pytest-instafail", marker = "extra == 'test'", specifier = "==0.5.0" },
-    { name = "pytest-mock", marker = "extra == 'test'", specifier = "==3.15.1" },
-    { name = "pytest-runner", marker = "extra == 'test'", specifier = "==6.0.1" },
-    { name = "pytest-sugar", marker = "extra == 'test'", specifier = "==1.1.1" },
-    { name = "python-dotenv", marker = "extra == 'test'", specifier = "==1.1.1" },
-    { name = "rich" },
-    { name = "simcore-common-library" },
-    { name = "termcolor", marker = "extra == 'test'", specifier = "==3.1.0" },
-    { name = "typer" },
-    { name = "tzdata", marker = "extra == 'test'", specifier = "==2025.2" },
+    { name = "orjson", specifier = ">=3.11.4" },
+    { name = "pydantic", specifier = ">=2.11.9" },
+    { name = "pydantic-extra-types", specifier = ">=2.10.5" },
+    { name = "pydantic-settings", specifier = ">=2.7.0" },
+    { name = "pytest-asyncio", specifier = ">=1.2.0" },
+    { name = "rich", specifier = ">=14.1.0" },
+    { name = "simcore-common-library", editable = "../common-library" },
+    { name = "typer", specifier = ">=0.19.2" },
 ]
-provides-extras = ["test"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "coverage", specifier = ">=7.10.7" },
+    { name = "faker", specifier = ">=37.8.0" },
+    { name = "mypy", specifier = ">=1.18.2" },
+    { name = "pytest", specifier = ">=8.4.2" },
+    { name = "pytest-cov", specifier = ">=7.0.0" },
+    { name = "pytest-instafail", specifier = ">=0.5.0" },
+    { name = "pytest-mock", specifier = ">=3.15.1" },
+    { name = "pytest-runner", specifier = ">=6.0.1" },
+    { name = "pytest-simcore", editable = "../pytest-simcore" },
+    { name = "pytest-sugar", specifier = ">=1.1.1" },
+    { name = "python-dotenv", specifier = ">=1.1.1" },
+]
+devtools = [
+    { name = "black", specifier = ">=25.9.0" },
+    { name = "bump2version", specifier = ">=1.0.1" },
+    { name = "isort", specifier = ">=6.1.0" },
+    { name = "mypy", specifier = ">=1.18.2" },
+    { name = "pre-commit", specifier = ">=4.3.0" },
+    { name = "pylint", specifier = ">=3.3.8" },
+    { name = "ruff", specifier = ">=0.13.3" },
+]
 
 [[package]]
 name = "six"
