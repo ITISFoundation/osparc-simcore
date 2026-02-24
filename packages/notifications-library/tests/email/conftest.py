@@ -23,6 +23,15 @@ def app_environment(
 
 
 @pytest.fixture
+def with_smtp_extra_headers(
+    monkeypatch: pytest.MonkeyPatch,
+) -> dict[str, str]:
+    headers = {"X-Test-Header": "TestTestTest"}
+    setenvs_from_dict(monkeypatch, {"SMTP_EXTRA_HEADERS": '{"X-Test-Header": "TestTestTest"}'})
+    return headers
+
+
+@pytest.fixture
 def smtp_mock_or_none(
     mocker: MockerFixture, is_external_user_email: EmailStr | None, user_email: EmailStr
 ) -> MagicMock | None:
