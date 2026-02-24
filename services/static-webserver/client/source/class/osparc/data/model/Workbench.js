@@ -807,6 +807,11 @@ qx.Class.define("osparc.data.model.Workbench", {
         let patchData = {};
         if (workbenchDiffs[nodeId] instanceof Array) {
           // if workbenchDiffs is an array means that the node was added
+          const node = this.getNode(nodeId);
+          // if the node wasn't added by me, I can skip it because the backend already has the data
+          if (osparc.data.model.Node.isRTCLockedByOthers(node)) {
+            return;
+          }
           patchData = nodeData;
         } else {
           // patch only what was changed

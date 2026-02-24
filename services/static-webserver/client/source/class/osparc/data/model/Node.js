@@ -370,6 +370,10 @@ qx.Class.define("osparc.data.model.Node", {
     removeRTCLock: function(node) {
       delete node["rtcLock"];
     },
+
+    isRTCLockedByOthers: function(node) {
+      return "rtcLock" in node && node["rtcLock"]["userId"] === null;
+    },
   },
 
   members: {
