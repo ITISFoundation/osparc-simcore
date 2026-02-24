@@ -19,6 +19,7 @@ def compose_email(
     content_html: str | None = None,
     reply_to: Address | None = None,
     bcc: list[Address] | None = None,
+    extra_headers: dict[str, str] | None = None,
 ) -> EmailMessage:
     """Compose an email message.
 
@@ -35,6 +36,10 @@ def compose_email(
         msg["Bcc"] = bcc
 
     msg["Subject"] = subject
+
+    if extra_headers:
+        for name, value in extra_headers.items():
+            msg[name] = value
 
     if not content_text and not content_html:
         # NOTE: the RFC 5322 standard requires that the email message must have a content, either text or HTML.
