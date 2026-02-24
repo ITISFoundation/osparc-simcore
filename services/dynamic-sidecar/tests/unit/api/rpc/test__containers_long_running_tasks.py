@@ -500,18 +500,18 @@ async def test_create_containers_task_invalid_yaml_spec(
 @pytest.mark.parametrize(
     "get_task_id_callable, endswith",
     [
-        (_get_task_id_pull_user_services_docker_images_task, "unique_"),
-        (_get_task_id_create_service_containers_task, "unique_"),
-        (_get_task_id_runs_docker_compose_down_task, "unique_"),
-        (_get_task_id_state_restore_task, "unique_"),
-        (_get_task_id_state_save_task, "unique_"),
+        (_get_task_id_pull_user_services_docker_images_task, "unique"),
+        (_get_task_id_create_service_containers_task, "unique"),
+        (_get_task_id_runs_docker_compose_down_task, "unique"),
+        (_get_task_id_state_restore_task, "unique"),
+        (_get_task_id_state_save_task, "unique"),
         (
             _get_task_id_ports_inputs_pull_task,
             "unique_efc820338c0950e8a546297f3ad5ba4cdf403853a3e62c8e79ed47e475c4b1b9",
         ),
-        (_get_task_id_ports_outputs_pull_task, "unique_"),
-        (_get_task_id_ports_outputs_push_task, "unique_"),
-        (_get_task_id_task_containers_restart_task, "unique_"),
+        (_get_task_id_ports_outputs_pull_task, "unique"),
+        (_get_task_id_ports_outputs_push_task, "unique"),
+        (_get_task_id_task_containers_restart_task, "unique"),
     ],
 )
 async def test_same_task_id_is_returned_if_task_exists(

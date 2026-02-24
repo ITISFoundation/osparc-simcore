@@ -150,13 +150,17 @@ async def _get_tasks_to_remove(
     return tasks_to_remove
 
 
-def _get_unique_dict_hash(d: dict[str, Any], *, uniqueness: TaskUniqueness) -> str:
-    if uniqueness == TaskUniqueness.BY_NAME_AND_ARGS:
-        items = sorted(d.items())
-        serialized = json_dumps(items, separators=(",", ":"), sort_keys=True)
-        return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
-
-    return ""
+def _get_suffix(task_kwargs: dict[str, Any], uniqueness: TaskUniqueness) -> str:
+    match uniqueness:
+        case TaskUniqueness.NONE:
+            return f"{uuid4()}"
+        case TaskUniqueness.BY_NAME:
+            return "unique"
+        case TaskUniqueness.BY_NAME_AND_ARGS:
+            items = sorted(task_kwargs.items())
+            serialized = json_dumps(items, separators=(",", ":"), sort_keys=True)
+            hashed_kwargs = hashlib.sha256(serialized.encode("utf-8")).hexdigest()
+            return f"unique_{hashed_kwargs}"
 
 
 class TasksManager:  # pylint:disable=too-many-instance-attributes
@@ -546,12 +550,7 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
                     await self._get_tracked_task(tracked_task.task_id, tracked_task.task_context)
 
     def _get_task_id(self, task_name: str, *, uniqueness: TaskUniqueness, **task_kwargs) -> TaskId:
-        suffix = (
-            f"{uuid4()}"
-            if uniqueness == TaskUniqueness.NONE
-            else f"unique_{_get_unique_dict_hash(task_kwargs, uniqueness=uniqueness)}"
-        )
-        return f"{self.lrt_namespace}.{task_name}.{suffix}"
+        return f"{self.lrt_namespace}.{task_name}.{_get_suffix(task_kwargs, uniqueness)}"
 
     async def _update_progress(
         self,
