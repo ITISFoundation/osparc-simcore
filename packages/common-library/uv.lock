@@ -595,6 +595,7 @@ dependencies = [
 dev = [
     { name = "coverage" },
     { name = "faker" },
+    { name = "mypy" },
     { name = "pydantic-settings" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
@@ -627,6 +628,7 @@ requires-dist = [
 dev = [
     { name = "coverage", specifier = ">=7.10.7" },
     { name = "faker", specifier = ">=37.8.0" },
+    { name = "mypy", specifier = ">=1.18.2" },
     { name = "pydantic-settings", specifier = ">=2.7.0" },
     { name = "pytest", specifier = ">=8.4.2" },
     { name = "pytest-asyncio", specifier = ">=1.2.0" },
