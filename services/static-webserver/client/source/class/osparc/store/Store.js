@@ -547,12 +547,12 @@ qx.Class.define("osparc.store.Store", {
                   });
               })
               .catch(err => {
-                console.error(err);
+                osparc.FlashMessenger.logError(err);
                 reject();
               });
           })
           .catch(err => {
-            console.error(err);
+            osparc.FlashMessenger.logError(err);
             reject();
           });
       });
