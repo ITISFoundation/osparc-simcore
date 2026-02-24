@@ -360,6 +360,11 @@ qx.Class.define("osparc.data.model.Node", {
       return Array.from(linkedNodeIds);
     },
 
+    /** RTC Lock management
+     * These are used to avoid early node creation race conditions in collaborative studies.
+     * The locks are added to the node when it's created and removed after some time, when the node is consolidated.
+     * In case of the File Pickers, to avoid progress race conditions, the lock is removed when the file is uploaded.
+     */
     addRTCLock: function(node, userId = null) {
       node["rtcLock"] = {
         userId,
@@ -374,6 +379,7 @@ qx.Class.define("osparc.data.model.Node", {
     isRTCLockedByOthers: function(node) {
       return "rtcLock" in node && node["rtcLock"]["userId"] === null;
     },
+    /** /RTC Lock management */
   },
 
   members: {
