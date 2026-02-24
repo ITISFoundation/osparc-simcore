@@ -513,17 +513,20 @@ async def test_create_containers_task_invalid_yaml_spec(
 
 
 @pytest.mark.parametrize(
-    "get_task_id_callable",
+    "get_task_id_callable, endswith",
     [
-        _get_task_id_pull_user_servcices_docker_images,
-        _get_task_id_create_service_containers,
-        _get_task_id_docker_compose_down,
-        _get_task_id_state_restore,
-        _get_task_id_state_save,
-        _get_task_id_task_ports_inputs_pull,
-        _get_task_id_task_ports_outputs_pull,
-        _get_task_id_task_ports_outputs_push,
-        _get_task_id_task_containers_restart,
+        (_get_task_id_pull_user_servcices_docker_images, "unique_"),
+        (_get_task_id_create_service_containers, "unique_"),
+        (_get_task_id_docker_compose_down, "unique_"),
+        (_get_task_id_state_restore, "unique_"),
+        (_get_task_id_state_save, "unique_"),
+        (
+            _get_task_id_task_ports_inputs_pull,
+            "unique_efc820338c0950e8a546297f3ad5ba4cdf403853a3e62c8e79ed47e475c4b1b9",
+        ),
+        (_get_task_id_task_ports_outputs_pull, "unique_"),
+        (_get_task_id_task_ports_outputs_push, "unique_"),
+        (_get_task_id_task_containers_restart, "unique_"),
     ],
 )
 async def test_same_task_id_is_returned_if_task_exists(
@@ -531,6 +534,7 @@ async def test_same_task_id_is_returned_if_task_exists(
     http_client: HttpClient,
     mocker: MockerFixture,
     get_task_id_callable: Callable[..., Awaitable],
+    endswith: str,
     mock_stop_heart_beat_task: AsyncMock,
     mock_metrics_params: CreateServiceMetricsAdditionalParams,
     compose_spec: str,
@@ -546,14 +550,14 @@ async def test_same_task_id_is_returned_if_task_exists(
 
     with mock_tasks(mocker):
         task_id = await _get_awaitable()
-        assert task_id.endswith("unique")
+        assert task_id.endswith(endswith)
         async with auto_remove_task(http_client, task_id):
             assert await _get_awaitable() == task_id
 
         # since the previous task was already removed it is again possible
         # to create a task and it will share the same task_id
         new_task_id = await _get_awaitable()
-        assert new_task_id.endswith("unique")
+        assert new_task_id.endswith(endswith)
         assert new_task_id == task_id
         async with auto_remove_task(http_client, task_id):
             pass
