@@ -11,12 +11,9 @@ include ../../scripts/common.Makefile
 include ../../scripts/common-package.Makefile
 
 
-.PHONY: install-dev install-prod install-ci
-install-dev install-prod install-ci: _check_venv_active ## install app in development/production or CI mode
-	# installing in $(subst install-,,$@) mode
-	@uv pip sync requirements/$(subst install-,,$@).txt
-
-.PHONY: tests-unit tests-unit-ci tests-integration tests-integration-ci tests
+#
+# Split test targets (specific to simcore-sdk)
+#
 tests-unit: ## runs unit tests
 	# running unit tests
 	@pytest \

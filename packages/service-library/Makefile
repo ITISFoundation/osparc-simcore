@@ -22,28 +22,6 @@ include ../../scripts/common-package.Makefile
 # Package-specific configuration
 COV_PACKAGE_NAME := servicelib
 EXTRAS := aiohttp fastapi
-PYTEST_OPTS := --keep-docker-up
-
-# Override help to show extras info first, then common targets + package-specific extras
-# This ensures $(MAKEFILE_LIST) includes all Makefiles (common.Makefile + common-package.Makefile + this file)
-.PHONY: help
-help:
-	@echo
-	@echo "ℹ️  Service Library Extras:"
-	@echo "   Targets with brackets require shell quotes: make \"TARGETS[extra]\""
-	@echo "   Examples:"
-	@echo "   ❌ make install-dev[aiohttp]"
-	@echo "   ✅ make \"install-dev[aiohttp]\""
-	@echo
-	@echo "Available extras: $(EXTRAS)"
-	@echo
-	@echo "---"
-	@echo "usage: make [target] ..."
-	@echo ""
-	@echo "Targets for '$(notdir $(CURDIR))':"
-	@echo ""
-	@awk --posix 'BEGIN {FS = ":.*?## "} /^[[:alpha:][:space:]_\[\]-]+:.*?## / {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
-	@echo ""
 
 
 #

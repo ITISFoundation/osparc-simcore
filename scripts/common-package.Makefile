@@ -31,7 +31,7 @@ SRC_DIR             = $(abspath $(CURDIR)/src/$(PY_PACKAGE_NAME))
 
 # Package-specific overrides (optional)
 COV_PACKAGE_NAME   ?= $(PY_PACKAGE_NAME)
-PYTEST_OPTS        ?=
+PYTEST_OPTS        ?= --keep-docker-up
 
 export PACKAGE_VERSION
 
@@ -52,6 +52,25 @@ info: ## displays package info
 	@echo ' PACKAGE_VERSION      : ${PACKAGE_VERSION}'
 	@echo ' PY_PACKAGE_NAME      : ${PY_PACKAGE_NAME}'
 	@echo ' COV_PACKAGE_NAME     : ${COV_PACKAGE_NAME}'
+
+
+.PHONY: help
+help: ## show this help message
+	@echo
+	@echo "📦 $(notdir $(CURDIR)) - Development Targets"
+	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	@echo
+	@echo "🔧 Installation:"
+	@awk 'BEGIN {FS = ":.*?## "} /^install-.*:.*?## / {printf "  \033[36m%-25s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@echo
+	@echo "🧪 Testing:"
+	@awk 'BEGIN {FS = ":.*?## "} /^tests.*:.*?## / {printf "  \033[36m%-25s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@echo
+	@echo "📋 Utility:"
+	@awk 'BEGIN {FS = ":.*?## "} /^(requirements|info|clean|devenv|codeformat|pylint|ruff|mypy|codestyle):.*?## / {printf "  \033[36m%-25s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@echo
+	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+	@echo
 
 
 #
