@@ -230,7 +230,7 @@ async def test_email_event(
 
     settings = SMTPSettings.create_from_envs()
 
-    # Check that settings contain extra headers from conftest
+    # Check that settings contain extra headers
     assert with_smtp_extra_headers == settings.SMTP_EXTRA_HEADERS
 
     msg = compose_email(
