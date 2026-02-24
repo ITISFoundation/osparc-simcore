@@ -166,7 +166,7 @@ async def test_get_async_job_result(
     expected_status: int,
 ):
     mock_handler_in_task_service(
-        _tasks_service.get_result.__name__,
+        _tasks_service.get_task_result.__name__,
         side_effect=backend_result_or_exception,
     )
 

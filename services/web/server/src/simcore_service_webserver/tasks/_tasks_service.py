@@ -53,20 +53,20 @@ async def cancel_task(
         raise JobSchedulerError(exc=f"{exc}") from exc
 
 
-async def get_result(
+async def get_task_result(
     task_manager: TaskManager,
     *,
     owner_metadata: OwnerMetadata,
     task_uuid: TaskUUID,
 ) -> AsyncJobResult:
     try:
-        _status = await task_manager.get_status(
+        status = await task_manager.get_status(
             owner_metadata=owner_metadata,
             task_or_group_uuid=task_uuid,
         )
-        if not _status.is_done:
+        if not status.is_done:
             raise JobNotDoneError(job_id=task_uuid)
-        _result = await task_manager.get_task_result(
+        result = await task_manager.get_task_result(
             owner_metadata=owner_metadata,
             task_uuid=task_uuid,
         )
@@ -75,16 +75,16 @@ async def get_result(
     except TaskManagerError as exc:
         raise JobSchedulerError(exc=f"{exc}") from exc
 
-    if isinstance(_status, TaskStatus) and _status.task_state == TaskState.FAILURE:
+    if isinstance(status, TaskStatus) and status.task_state == TaskState.FAILURE:
         # fallback exception to report
-        exc_type = type(_result).__name__
-        exc_msg = f"{_result}"
+        exc_type = type(result).__name__
+        exc_msg = f"{result}"
 
         # try to recover the original error
         exception = None
         with log_catch(_logger, reraise=False):
-            assert isinstance(_result, TransferableCeleryError)  # nosec
-            exception = decode_celery_transferable_error(_result)
+            assert isinstance(result, TransferableCeleryError)  # nosec
+            exception = decode_celery_transferable_error(result)
             exc_type = type(exception).__name__
             exc_msg = f"{exception}"
 
@@ -93,7 +93,7 @@ async def get_result(
 
         raise JobError(job_id=task_uuid, exc_type=exc_type, exc_msg=exc_msg)
 
-    return AsyncJobResult(result=_result)
+    return AsyncJobResult(result=result)
 
 
 async def get_task_status(
