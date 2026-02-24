@@ -24,6 +24,7 @@ dependencies = [
     "yarl>=1.20.1",
     "simcore-common-library",
     "simcore-models-library",
+    "pytest-asyncio>=1.2.0",
 ]
 
 [build-system]
