@@ -1178,7 +1178,9 @@ services:
       NOTIFICATIONS_TRACING: "null"
       NOTIFICATIONS_WORKER_NAME: "notifications-worker-{{.Node.Hostname}}-{{.Task.Slot}}-{{.Task.ID}}"
       NOTIFICATIONS_WORKER_MODE: "true"
-      CELERY_CONCURRENCY: ${NOTIFICATIONS_WORKER_CELERY_CONCURRENCY:-1}
+      # See: https://docs.celeryq.dev/en/stable/userguide/tasks.html#Task.rate_limit
+      NOTIFICATIONS_EMAIL_RATE_LIMIT: ${NOTIFICATIONS_EMAIL_RATE_LIMIT}
+      CELERY_CONCURRENCY: ${NOTIFICATIONS_WORKER_CELERY_CONCURRENCY}
       CELERY_POOL: prefork
       CELERY_QUEUES: notifications
     networks: *notifications_networks
