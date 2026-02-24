@@ -81,19 +81,11 @@
     "steps": [{
       "beforeClick": {
         "selector": "osparc-test-id=notificationsButton",
-        "event": "tap"
+        "action": "toggle"
       },
       "anchorEl": "osparc-test-id=notificationsContainer",
       "text": "By clicking on the Bell, you will see notifications about which Projects and Organizations have been shared with you.",
       "placement": "bottom"
-    }, {
-      "beforeClick": {
-        "selector": "osparc-test-id=helpNavigationBtn",
-        "action": "open"
-      },
-      "anchorEl": "osparc-test-id=helpNavigationMenu",
-      "text": "Under the question mark, you find Manuals, Support and ways to give us Feedback. It also provides quick access to other Guided Tours.",
-      "placement": "left"
     }, {
       "beforeClick": {
         "selector": "osparc-test-id=userMenuBtn",

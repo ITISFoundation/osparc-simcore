@@ -90,6 +90,7 @@ qx.Class.define("osparc.navigation.UserMenu", {
             label: qx.locale.Manager.tr("Help & Support"),
             icon: "@FontAwesome5Solid/question-circle/16",
           });
+          osparc.utils.Utils.setIdToWidget(control, "userMenuHelpBtn");
           control.addListener("execute", () => osparc.support.SupportCenter.openWindow());
           this.add(control);
           break;
