@@ -41,6 +41,9 @@ dependencies = [
     "toolz>=1.0.0",
     "tqdm>=4.67.1",
     "yarl>=1.20.1",
+    "simcore-common-library",
+    "simcore-models-library",
+    "simcore-settings-library",
 ]
 
 [project.optional-dependencies]
@@ -69,6 +72,11 @@ build-backend = "uv_build"
 
 [tool.uv.build-backend]
 module-name = "servicelib"
+
+[tool.uv.sources]
+simcore-common-library = { path = "../common-library" }
+simcore-models-library = { path = "../models-library" }
+simcore-settings-library = { path = "../settings-library" }
 
 [tool.setuptools.package-data]
 "*" = ["py.typed", "redis/lua/*.lua", "long_running_tasks/_lua/*.lua"]
