@@ -594,7 +594,7 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
 
         # only one unique task can be running
         queried_task = await self._tasks_data.get_task_data(task_id)
-        if unique and queried_task is not None:
+        if unique and queried_task is not None and queried_task.is_done is False:
             raise TaskAlreadyRunningError(task_name=task_name, managed_task=queried_task)
 
         context_to_use = task_context or {}
