@@ -267,6 +267,63 @@ async def test_unique_task_already_running(long_running_manager: LongRunningMana
     TaskRegistry.unregister(unique_task)
 
 
+async def test_unique_task_with_different_unique_args_can_run(
+    long_running_manager: LongRunningManager, empty_context: TaskContext
+):
+    async def unique_task(progress: TaskProgress, arg: int):
+        _ = progress
+        await asyncio.sleep(1)
+
+    TaskRegistry.register(unique_task)
+
+    for i in range(5):
+        await lrt_api.start_task(
+            long_running_manager.rpc_client,
+            long_running_manager.lrt_namespace,
+            unique_task.__name__,
+            unique=True,
+            unique_args=True,
+            task_context=empty_context,
+            arg=i,
+        )
+
+    TaskRegistry.unregister(unique_task)
+
+
+async def test_unique_task_with_same_unique_args_cannot_run(
+    long_running_manager: LongRunningManager, empty_context: TaskContext
+):
+    async def unique_task(progress: TaskProgress, arg: int):
+        _ = progress
+        await asyncio.sleep(1)
+
+    TaskRegistry.register(unique_task)
+
+    await lrt_api.start_task(
+        long_running_manager.rpc_client,
+        long_running_manager.lrt_namespace,
+        unique_task.__name__,
+        unique=True,
+        unique_args=True,
+        task_context=empty_context,
+        arg=1,
+    )
+
+    with pytest.raises(TaskAlreadyRunningError) as exec_info:
+        await lrt_api.start_task(
+            long_running_manager.rpc_client,
+            long_running_manager.lrt_namespace,
+            unique_task.__name__,
+            unique=True,
+            unique_args=True,
+            task_context=empty_context,
+            arg=1,
+        )
+    assert "must be unique, found: " in f"{exec_info.value}"
+
+    TaskRegistry.unregister(unique_task)
+
+
 async def test_start_multiple_not_unique_tasks(long_running_manager: LongRunningManager, empty_context: TaskContext):
     async def not_unique_task(progress: TaskProgress):
         await asyncio.sleep(1)
