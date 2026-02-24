@@ -189,8 +189,9 @@ async def list_paths(request: web.Request) -> web.Response:
 @login_required
 @permission_required("storage.files.*")
 async def refresh_files_in_path(request: web.Request) -> web.Response:
-    # Affects running dynamic service node by making it reload the directory content form S3.
-    # Only works if node was started with data mounting enabled.
+    # Inform backend service that a change occurred in a S3 directory.
+    # This is used by the running dynamic service node to trigger a reload of the files from S3 for a given directory.
+    # If no service is running, no errors are raised and should always be called.
 
     _ = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(StoragePathRefreshParams, request)
