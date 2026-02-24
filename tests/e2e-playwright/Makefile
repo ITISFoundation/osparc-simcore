@@ -133,6 +133,27 @@ test-platform-dev: _check_venv_active  ## runs platform test on local deploy (wi
 		--tracing=on \
 		$(CURDIR)/tests/platform_CI_tests/test_platform.py
 
+.PHONY: test-guided-tours
+test-guided-tours: _check_venv_active ## runs guided tours test on local deploy
+	@pytest \
+		-sxvv \
+		--color=yes \
+		--product-url=http://$(get_my_ip):9081 \
+		--autoregister \
+		--tracing=retain-on-failure \
+		$(CURDIR)/tests/guided_tours/test_guided_tours.py
+
+.PHONY: test-guided-tours-dev
+test-guided-tours-dev: _check_venv_active ## runs guided tours test on local deploy (headed mode)
+	@pytest \
+		-sxvv \
+		--color=yes \
+		--pdb \
+		--product-url=http://$(get_my_ip):9081 \
+		--headed \
+		--autoregister \
+		$(CURDIR)/tests/guided_tours/test_guided_tours.py
+
 
 # Define the files where user input will be saved
 SLEEPERS_INPUT_FILE := .e2e-playwright-sleepers-env.txt
