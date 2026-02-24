@@ -26,7 +26,6 @@ test() {
 typecheck() {
   # shellcheck source=/dev/null
   source .venv/bin/activate
-  uv pip install mypy
   pushd packages/settings-library
   make mypy
   popd
