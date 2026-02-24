@@ -43,6 +43,26 @@ dependencies = [
     "yarl>=1.20.1",
 ]
 
+[project.optional-dependencies]
+aiohttp = [
+    "aiohttp>=3.12.15",
+    "aiopg[sa]>=1.4.0",
+    "attrs>=25.3.0",
+    "jsonschema>=4.25.1",
+    "opentelemetry-instrumentation-aiohttp-client>=0.58b0",
+    "opentelemetry-instrumentation-aiohttp-server>=0.58b0",
+    "opentelemetry-instrumentation-aiopg>=0.58b0",
+    "prometheus-client>=0.23.1",
+    "werkzeug>=3.1.3",
+]
+fastapi = [
+    "asgi-lifespan>=2.1.0",
+    "fastapi-lifespan-manager>=0.1.4",
+    "fastapi[standard]>=0.118.0",
+    "opentelemetry-instrumentation-fastapi>=0.58b0",
+    "prometheus-client>=0.23.1",
+]
+
 [build-system]
 requires = ["uv_build>=0.9.28,<0.10.0"]
 build-backend = "uv_build"
@@ -68,3 +88,49 @@ markers = [
 
 [tool.mypy]
 plugins = ["pydantic.mypy"]
+
+[dependency-groups]
+dev = [
+    "asgi-lifespan>=2.1.0",
+    "botocore>=1.40.60",
+    "coverage>=7.10.7",
+    "docker>=7.1.0",
+    "faker>=37.8.0",
+    "fakeredis[lua]>=2.31.3",
+    "flaky>=3.8.1",
+    "mypy>=1.18.2",
+    "numpy>=2.3.3",
+    "openapi-spec-validator>=0.7.2",
+    "pillow>=12.0.0",
+    "pip>=25.2",
+    "pyleak>=0.1.14",
+    "pytest>=8.4.2",
+    "pytest-aiohttp>=1.1.0",
+    "pytest-asyncio>=1.2.0",
+    "pytest-benchmark>=5.1.0",
+    "pytest-cov>=7.0.0",
+    "pytest-docker>=3.2.3",
+    "pytest-icdiff>=0.9",
+    "pytest-instafail>=0.5.0",
+    "pytest-mock>=3.15.1",
+    "pytest-runner>=6.0.1",
+    "pytest-sugar>=1.1.1",
+    "pytest-xdist>=3.8.0",
+    "python-dotenv>=1.1.1",
+    "respx>=0.22.0",
+    "sqlalchemy[mypy]>=1.4.54",
+    "types-aiofiles>=24.1.0.20250822",
+    "types-psutil>=7.0.0.20251001",
+    "types-psycopg2>=2.9.21.20250915",
+    "types-tqdm>=4.67.0.20250809",
+    "uvloop>=0.21.0",
+]
+devtools = [
+    "black>=25.9.0",
+    "bump2version>=1.0.1",
+    "isort>=6.1.0",
+    "mypy>=1.18.2",
+    "pre-commit>=4.3.0",
+    "pylint>=3.3.8",
+    "ruff>=0.13.3",
+]
