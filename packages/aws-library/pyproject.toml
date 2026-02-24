@@ -45,6 +45,9 @@ dependencies = [
     "types-aiobotocore[ec2,s3,ssm]>=2.25.0",
     "opentelemetry-instrumentation-botocore>=0.58b0",
     "sh>=2.2.2",
+    "simcore-common-library",
+    "simcore-models-library",
+    "simcore-settings-library",
 ]
 
 [build-system]
@@ -53,6 +56,11 @@ build-backend = "uv_build"
 
 [tool.uv.build-backend]
 module-name = "aws_library"
+
+[tool.uv.sources]
+simcore-common-library = { path = "../common-library" }
+simcore-models-library = { path = "../models-library" }
+simcore-settings-library = { path = "../settings-library" }
 
 [tool.setuptools]
 package-dir = { "" = "src" }
