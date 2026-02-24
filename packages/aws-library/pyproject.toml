@@ -59,11 +59,11 @@ build-backend = "uv_build"
 module-name = "aws_library"
 
 [tool.uv.sources]
-simcore-common-library = { path = "../common-library" }
-simcore-models-library = { path = "../models-library" }
-simcore-settings-library = { path = "../settings-library" }
-simcore-service-library = { path = "../service-library" }
-pytest-simcore = { path = "../pytest-simcore" }
+simcore-common-library = { path = "../common-library", editable = true }
+simcore-models-library = { path = "../models-library", editable = true }
+simcore-settings-library = { path = "../settings-library", editable = true }
+simcore-service-library = { path = "../service-library", editable = true }
+pytest-simcore = { path = "../pytest-simcore", editable = true }
 
 [tool.setuptools]
 package-dir = { "" = "src" }
