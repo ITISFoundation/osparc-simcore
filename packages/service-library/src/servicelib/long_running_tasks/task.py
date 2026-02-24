@@ -3,7 +3,6 @@ import datetime
 import functools
 import hashlib
 import inspect
-import json
 import logging
 import urllib.parse
 from contextlib import suppress
@@ -11,6 +10,7 @@ from typing import Any, ClassVar, Final, Protocol
 from uuid import uuid4
 
 from common_library.async_tools import cancel_wait_task
+from common_library.json_serialization import json_dumps
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from models_library.api_schemas_long_running_tasks.base import TaskProgress
 from pydantic import NonNegativeFloat, PositiveFloat
@@ -151,7 +151,7 @@ def _get_unique_dict_hash(d: dict[str, Any], *, return_empty: bool) -> str:
         return ""
 
     items = sorted(d.items())
-    serialized = json.dumps(items, separators=(",", ":"), sort_keys=True)
+    serialized = json_dumps(items, separators=(",", ":"), sort_keys=True)
     return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
 
 
