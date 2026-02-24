@@ -2526,6 +2526,112 @@ wheels = [
 ]
 
 [[package]]
+name = "simcore-common-library"
+version = "0.2.0"
+source = { directory = "../common-library" }
+dependencies = [
+    { name = "orjson" },
+    { name = "pydantic" },
+    { name = "pydantic-extra-types" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "orjson", specifier = ">=3.11.4" },
+    { name = "pydantic", specifier = ">=2.11.9" },
+    { name = "pydantic-extra-types", specifier = ">=2.10.5" },
+]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "coverage", specifier = ">=7.10.7" },
+    { name = "faker", specifier = ">=37.8.0" },
+    { name = "mypy", specifier = ">=1.18.2" },
+    { name = "pydantic-settings", specifier = ">=2.7.0" },
+    { name = "pytest", specifier = ">=8.4.2" },
+    { name = "pytest-asyncio", specifier = ">=1.2.0" },
+    { name = "pytest-cov", specifier = ">=7.0.0" },
+    { name = "pytest-icdiff", specifier = ">=0.9" },
+    { name = "pytest-instafail", specifier = ">=0.5.0" },
+    { name = "pytest-mock", specifier = ">=3.15.1" },
+    { name = "pytest-runner", specifier = ">=6.0.1" },
+    { name = "pytest-sugar", specifier = ">=1.1.1" },
+    { name = "python-dotenv", specifier = ">=1.1.1" },
+]
+devtools = [
+    { name = "black", specifier = ">=25.9.0" },
+    { name = "bump2version", specifier = ">=1.0.1" },
+    { name = "isort", specifier = ">=6.1.0" },
+    { name = "mypy", specifier = ">=1.18.2" },
+    { name = "pre-commit", specifier = ">=4.3.0" },
+    { name = "pylint", specifier = ">=3.3.8" },
+    { name = "ruff", specifier = ">=0.13.3" },
+]
+
+[[package]]
+name = "simcore-models-library"
+version = "0.3.0"
+source = { directory = "../models-library" }
+dependencies = [
+    { name = "arrow" },
+    { name = "jsonref" },
+    { name = "jsonschema" },
+    { name = "orjson" },
+    { name = "pydantic", extra = ["email"] },
+    { name = "pydantic-extra-types" },
+    { name = "pydantic-settings" },
+    { name = "simcore-common-library" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "arrow" },
+    { name = "attrs", marker = "extra == 'test'", specifier = "==25.3.0" },
+    { name = "coverage", marker = "extra == 'test'", specifier = "==7.10.7" },
+    { name = "faker", marker = "extra == 'test'", specifier = "==37.8.0" },
+    { name = "flexcache", marker = "extra == 'test'", specifier = "==0.3" },
+    { name = "flexparser", marker = "extra == 'test'", specifier = "==0.4" },
+    { name = "icdiff", marker = "extra == 'test'", specifier = "==2.0.7" },
+    { name = "idna", marker = "extra == 'test'", specifier = "==3.10" },
+    { name = "iniconfig", marker = "extra == 'test'", specifier = "==2.1.0" },
+    { name = "jsonref" },
+    { name = "jsonschema" },
+    { name = "multidict", marker = "extra == 'test'", specifier = "==6.6.4" },
+    { name = "orjson", specifier = ">=3.9.15" },
+    { name = "packaging", marker = "extra == 'test'", specifier = "==25.0" },
+    { name = "pint", marker = "extra == 'test'", specifier = "==0.25" },
+    { name = "platformdirs", marker = "extra == 'test'", specifier = "==4.4.0" },
+    { name = "pluggy", marker = "extra == 'test'", specifier = "==1.6.0" },
+    { name = "pprintpp", marker = "extra == 'test'", specifier = "==0.4.0" },
+    { name = "propcache", marker = "extra == 'test'", specifier = "==0.3.2" },
+    { name = "psutil", marker = "extra == 'test'", specifier = "==7.1.0" },
+    { name = "pydantic", extras = ["email"], specifier = ">=2.10.0,<2.12.0" },
+    { name = "pydantic-extra-types" },
+    { name = "pydantic-settings", specifier = "<2.7.1" },
+    { name = "pygments", marker = "extra == 'test'", specifier = "==2.19.2" },
+    { name = "pytest", marker = "extra == 'test'", specifier = "==8.4.2" },
+    { name = "pytest-asyncio", marker = "extra == 'test'", specifier = "==1.2.0" },
+    { name = "pytest-cov", marker = "extra == 'test'", specifier = "==7.0.0" },
+    { name = "pytest-icdiff", marker = "extra == 'test'", specifier = "==0.9" },
+    { name = "pytest-instafail", marker = "extra == 'test'", specifier = "==0.5.0" },
+    { name = "pytest-mock", marker = "extra == 'test'", specifier = "==3.15.1" },
+    { name = "pytest-runner", marker = "extra == 'test'", specifier = "==6.0.1" },
+    { name = "pytest-sugar", marker = "extra == 'test'", specifier = "==1.1.1" },
+    { name = "python-dotenv", marker = "extra == 'test'", specifier = "==1.1.1" },
+    { name = "pyyaml", marker = "extra == 'test'", specifier = "==6.0.3" },
+    { name = "referencing", marker = "extra == 'test'", specifier = "==0.35.1" },
+    { name = "rpds-py", marker = "extra == 'test'", specifier = "==0.28.0" },
+    { name = "simcore-common-library" },
+    { name = "termcolor", marker = "extra == 'test'", specifier = "==3.1.0" },
+    { name = "types-jsonschema", marker = "extra == 'test'", specifier = "==4.25.1.20250822" },
+    { name = "types-pyyaml", marker = "extra == 'test'", specifier = "==6.0.12.20250915" },
+    { name = "typing-extensions", marker = "extra == 'test'", specifier = "==4.15.0" },
+    { name = "tzdata", marker = "extra == 'test'", specifier = "==2025.2" },
+    { name = "yarl", marker = "extra == 'test'", specifier = "==1.20.1" },
+]
+provides-extras = ["test"]
+
+[[package]]
 name = "simcore-service-library"
 version = "1.2.0"
 source = { editable = "." }
@@ -2558,6 +2664,9 @@ dependencies = [
     { name = "pyyaml" },
     { name = "redis" },
     { name = "rich" },
+    { name = "simcore-common-library" },
+    { name = "simcore-models-library" },
+    { name = "simcore-settings-library" },
     { name = "stream-zip" },
     { name = "tenacity" },
     { name = "toolz" },
@@ -2675,6 +2784,9 @@ requires-dist = [
     { name = "pyyaml", specifier = ">=6.0.3" },
     { name = "redis", specifier = ">=6.4.0" },
     { name = "rich", specifier = ">=14.1.0" },
+    { name = "simcore-common-library", directory = "../common-library" },
+    { name = "simcore-models-library", directory = "../models-library" },
+    { name = "simcore-settings-library", directory = "../settings-library" },
     { name = "stream-zip", specifier = ">=0.0.84" },
     { name = "tenacity", specifier = ">=9.1.2" },
     { name = "toolz", specifier = ">=1.0.0" },
@@ -2730,6 +2842,43 @@ devtools = [
     { name = "pylint", specifier = ">=3.3.8" },
     { name = "ruff", specifier = ">=0.13.3" },
 ]
+
+[[package]]
+name = "simcore-settings-library"
+version = "0.1.0"
+source = { directory = "../settings-library" }
+dependencies = [
+    { name = "pydantic" },
+    { name = "pydantic-settings" },
+    { name = "rich" },
+    { name = "simcore-common-library" },
+    { name = "typer" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "coverage", marker = "extra == 'test'", specifier = "==7.10.7" },
+    { name = "faker", marker = "extra == 'test'", specifier = "==37.8.0" },
+    { name = "iniconfig", marker = "extra == 'test'", specifier = "==2.1.0" },
+    { name = "packaging", marker = "extra == 'test'", specifier = "==25.0" },
+    { name = "pluggy", marker = "extra == 'test'", specifier = "==1.6.0" },
+    { name = "pydantic", specifier = ">=2.10.0,<2.12.0" },
+    { name = "pydantic-settings", specifier = "<2.7.1" },
+    { name = "pygments", marker = "extra == 'test'", specifier = "==2.19.2" },
+    { name = "pytest", marker = "extra == 'test'", specifier = "==8.4.2" },
+    { name = "pytest-cov", marker = "extra == 'test'", specifier = "==7.0.0" },
+    { name = "pytest-instafail", marker = "extra == 'test'", specifier = "==0.5.0" },
+    { name = "pytest-mock", marker = "extra == 'test'", specifier = "==3.15.1" },
+    { name = "pytest-runner", marker = "extra == 'test'", specifier = "==6.0.1" },
+    { name = "pytest-sugar", marker = "extra == 'test'", specifier = "==1.1.1" },
+    { name = "python-dotenv", marker = "extra == 'test'", specifier = "==1.1.1" },
+    { name = "rich" },
+    { name = "simcore-common-library" },
+    { name = "termcolor", marker = "extra == 'test'", specifier = "==3.1.0" },
+    { name = "typer" },
+    { name = "tzdata", marker = "extra == 'test'", specifier = "==2025.2" },
+]
+provides-extras = ["test"]
 
 [[package]]
 name = "six"
