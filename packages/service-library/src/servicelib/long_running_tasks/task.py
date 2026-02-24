@@ -17,9 +17,11 @@ from pydantic import NonNegativeFloat, PositiveFloat
 from settings_library.redis import RedisDatabase, RedisSettings
 from tenacity import (
     AsyncRetrying,
+    TryAgain,
     retry_unless_exception_type,
     stop_after_delay,
     wait_exponential,
+    wait_fixed,
 )
 
 from ..background_task import create_periodic_task
@@ -55,6 +57,7 @@ _STATUS_UPDATE_CHECK_INTERNAL: Final[datetime.timedelta] = datetime.timedelta(se
 _MAX_EXCLUSIVE_TASK_CANCEL_TIMEOUT: Final[NonNegativeFloat] = 5
 _TASK_REMOVAL_MAX_WAIT: Final[NonNegativeFloat] = 60
 _PARALLEL_TASKS_CANCELLATION: Final[int] = 5
+_AGGRASSIVE_WAIT_FIXED: Final[NonNegativeFloat] = datetime.timedelta(seconds=0.1).total_seconds()
 
 type AllowedErrors = tuple[type[BaseException], ...]
 
@@ -592,9 +595,23 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
 
         task_id = self._get_task_id(task_name, is_unique=unique, unique_args=unique_args, **task_kwargs)
 
+        # if task is being removed, wait for the operation to finish
+        async for attempt in AsyncRetrying(
+            stop=stop_after_delay(_TASK_REMOVAL_MAX_WAIT),
+            reraise=True,
+            # aggressive retry since we want to start the task as soon as possible
+            wait=wait_fixed(_AGGRASSIVE_WAIT_FIXED),
+        ):
+            with attempt:
+                if await self._tasks_data.is_marked_for_removal(task_id):
+                    _logger.warning(
+                        "Waiting for task '%s' to be removed before starting a new one with the same id", task_id
+                    )
+                    raise TryAgain
+
         # only one unique task can be running
         queried_task = await self._tasks_data.get_task_data(task_id)
-        if unique and queried_task is not None and queried_task.is_done is False:
+        if unique and queried_task is not None:
             raise TaskAlreadyRunningError(task_name=task_name, managed_task=queried_task)
 
         context_to_use = task_context or {}
