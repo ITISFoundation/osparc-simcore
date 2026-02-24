@@ -23,7 +23,9 @@ def _to_address(address: EmailContact) -> Address:
 
 async def _send_single_email_async(msg: EmailMessage) -> None:
     _logger.info("🚨 Sending email to %s", msg.to.email)
-    async with create_email_session(settings=SMTPSettings.create_from_envs()) as smtp:
+    settings = SMTPSettings.create_from_envs()
+
+    async with create_email_session(settings=settings) as smtp:
         await smtp.send_message(
             compose_email(
                 from_=_to_address(msg.from_),
@@ -32,6 +34,7 @@ async def _send_single_email_async(msg: EmailMessage) -> None:
                 content_text=msg.content.body_text,
                 content_html=msg.content.body_html,
                 reply_to=_to_address(msg.reply_to) if msg.reply_to else None,
+                extra_headers=settings.SMTP_EXTRA_HEADERS,
             )
         )
 
