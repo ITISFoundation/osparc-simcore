@@ -83,13 +83,13 @@ tests[fastapi]: PYTEST_EXTRAS = --ignore=$(CURDIR)/tests/aiohttp
 tests[fastapi]: tests ## run tests for fastapi only
 
 
-.PHONY: tests-ci[all]
-tests-ci[all]: tests-ci ## run CI tests with all extras
+.PHONY: test-ci[all]
+test-ci[all]: test-ci ## run CI tests with all extras
 
-.PHONY: "tests-ci[aiohttp]"
-tests-ci[aiohttp]: PYTEST_EXTRAS = --ignore=$(CURDIR)/tests/fastapi
-tests-ci[aiohttp]: tests-ci ## run CI tests for aiohttp only
+.PHONY: "test-ci[aiohttp]"
+test-ci[aiohttp]: PYTEST_EXTRAS = --ignore=$(CURDIR)/tests/fastapi
+test-ci[aiohttp]: test-ci ## run CI tests for aiohttp only
 
-.PHONY: "tests-ci[fastapi]"
-tests-ci[fastapi]: PYTEST_EXTRAS = --ignore=$(CURDIR)/tests/aiohttp
-tests-ci[fastapi]: tests-ci ## run CI tests for fastapi only
+.PHONY: "test-ci[fastapi]"
+test-ci[fastapi]: PYTEST_EXTRAS = --ignore=$(CURDIR)/tests/aiohttp
+test-ci[fastapi]: test-ci ## run CI tests for fastapi only
