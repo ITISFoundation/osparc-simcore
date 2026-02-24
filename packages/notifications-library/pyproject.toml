@@ -3,7 +3,7 @@ name = "simcore-notifications-library"
 version = "0.1.0"
 description = "Core service library for simcore notifications"
 readme = "README.md"
-requires-python = "~=3.13.0"
+requires-python = ">=3.13"
 authors = [{ name = "osparc", email = "support@osparc.io" }]
 license = { text = "MIT" }
 dependencies = [

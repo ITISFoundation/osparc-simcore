@@ -3,173 +3,19 @@ name = "simcore-service-library"
 version = "1.2.0"
 description = "Core service library for simcore"
 readme = "README.md"
-requires-python = "~=3.13.0"
+requires-python = ">=3.13"
 authors = [{ name = "osparc", email = "support@osparc.io" }]
 license = { text = "MIT" }
-dependencies = [
-  "simcore-common-library",
-  "simcore-models-library",
-  "simcore-settings-library",
-  "aio-pika",
-  "aiocache",
-  "aiodebug",
-  "aiodocker",
-  "aiofiles",
-  "arrow",
-  "faststream",
-  "httpx[http2]>=0.23.0,!=0.28.0",
-  "opentelemetry-api",
-  "opentelemetry-exporter-otlp",
-  "opentelemetry-instrumentation-aio-pika",
-  "opentelemetry-instrumentation-asyncpg",
-  "opentelemetry-instrumentation-httpx",
-  "opentelemetry-instrumentation-logging",
-  "opentelemetry-instrumentation-redis",
-  "opentelemetry-instrumentation-requests",
-  "opentelemetry-sdk",
-  "psutil",
-  "pydantic>=2.10.0,<2.12.0",
-  "pyinstrument",
-  "pyyaml>=5.4",
-  "redis>=4.5.4",
-  "stream-zip",
-  "tenacity",
-  "toolz",
-  "tqdm",
-  "yarl",
-]
 
-[project.optional-dependencies]
-aiohttp = [
-  "aiohttp>=3.7.4,!=3.11.13",
-  "aiopg[sa]",
-  "attrs",
-  "jsonschema",
-  "opentelemetry-instrumentation-aiohttp-client",
-  "opentelemetry-instrumentation-aiohttp-server",
-  "opentelemetry-instrumentation-aiopg",
-  "prometheus_client",
-  "werkzeug",
-]
+[build-system]
+requires = ["uv_build>=0.9.28,<0.10.0"]
+build-backend = "uv_build"
 
-fastapi = [
-  "asgi-lifespan",
-  "fastapi[standard]",
-  "fastapi-lifespan-manager",
-  "opentelemetry-instrumentation-fastapi",
-  "prometheus-client",
-]
-
-all = [
-  "aiohttp>=3.7.4,!=3.11.13",
-  "aiopg[sa]",
-  "asgi-lifespan",
-  "attrs",
-  "fastapi[standard]",
-  "fastapi-lifespan-manager",
-  "jsonschema",
-  "opentelemetry-instrumentation-aiohttp-client",
-  "opentelemetry-instrumentation-aiohttp-server",
-  "opentelemetry-instrumentation-aiopg",
-  "opentelemetry-instrumentation-fastapi",
-  "prometheus-client",
-  "prometheus_client",
-  "werkzeug",
-]
-
-test = [
-  "aiohappyeyeballs==2.6.1",
-  "aiohttp==3.12.15",
-  "aiosignal==1.4.0",
-  "anyio==4.11.0",
-  "asgi-lifespan==2.1.0",
-  "attrs==25.3.0",
-  "botocore==1.40.60",
-  "certifi==2025.8.3",
-  "charset-normalizer==3.4.3",
-  "coverage==7.10.7",
-  "docker==7.1.0",
-  "exceptiongroup==1.3.0",
-  "execnet==2.1.1",
-  "faker==37.8.0",
-  "fakeredis==2.31.3",
-  "flaky==3.8.1",
-  "frozenlist==1.7.0",
-  "greenlet==3.2.4",
-  "h11==0.16.0",
-  "httpcore==1.0.9",
-  "httpx==0.28.1",
-  "icdiff==2.0.7",
-  "idna==3.10",
-  "iniconfig==2.1.0",
-  "jmespath==1.0.1",
-  "jsonschema-path==0.3.4",
-  "jsonschema-specifications==2025.9.1",
-  "jsonschema==4.25.1",
-  "lazy-object-proxy==1.12.0",
-  "lupa==2.5",
-  "multidict==6.6.4",
-  "mypy-extensions==1.1.0",
-  "mypy==1.18.2",
-  "numpy==2.3.3",
-  "openapi-schema-validator==0.6.3",
-  "openapi-spec-validator==0.7.2",
-  "packaging==25.0",
-  "pathable==0.4.4",
-  "pathspec==0.12.1",
-  "pillow==12.0.0",
-  "pip==25.2",
-  "pluggy==1.6.0",
-  "pprintpp==0.4.0",
-  "propcache==0.3.2",
-  "py-cpuinfo==9.0.0",
-  "pygments==2.19.2",
-  "pyleak==0.1.14",
-  "pytest-aiohttp==1.1.0",
-  "pytest-asyncio==1.2.0",
-  "pytest-benchmark==5.1.0",
-  "pytest-cov==7.0.0",
-  "pytest-docker==3.2.3",
-  "pytest-icdiff==0.9",
-  "pytest-instafail==0.5.0",
-  "pytest-mock==3.15.1",
-  "pytest-runner==6.0.1",
-  "pytest-sugar==1.1.1",
-  "pytest-xdist==3.8.0",
-  "pytest==8.4.2",
-  "python-dateutil==2.9.0.post0",
-  "python-dotenv==1.1.1",
-  "pyyaml==6.0.3",
-  "redis==6.4.0",
-  "referencing==0.35.1",
-  "requests==2.32.5",
-  "respx==0.22.0",
-  "rfc3339-validator==0.1.4",
-  "rpds-py==0.28.0",
-  "six==1.17.0",
-  "sniffio==1.3.1",
-  "sortedcontainers==2.4.0",
-  "sqlalchemy2-stubs==0.0.2a38",
-  "sqlalchemy==1.4.54",
-  "termcolor==3.1.0",
-  "types-aiofiles==24.1.0.20250822",
-  "types-psutil==7.0.0.20251001",
-  "types-psycopg2==2.9.21.20250915",
-  "types-requests==2.32.4.20250913",
-  "types-tqdm==4.67.0.20250809",
-  "typing-extensions==4.15.0",
-  "tzdata==2025.2",
-  "urllib3==2.6.3",
-  "uvloop==0.21.0",
-  "yarl==1.20.1",
-]
+[tool.uv.build-backend]
+module-name = "servicelib"
 
 [tool.setuptools.package-data]
 "*" = ["py.typed", "redis/lua/*.lua", "long_running_tasks/_lua/*.lua"]
-
-[build-system]
-requires = ["setuptools>=61.0"]
-build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
 package-dir = { "" = "src" }

@@ -3,7 +3,7 @@ name = "simcore-service-integration"
 version = "1.0.5"
 description = "Core service library for simcore"
 readme = "README.md"
-requires-python = "~=3.13.0"
+requires-python = ">=3.13"
 authors = [{ name = "osparc", email = "support@osparc.io" }]
 license = { text = "MIT" }
 dependencies = [
