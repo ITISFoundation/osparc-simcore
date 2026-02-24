@@ -66,7 +66,7 @@ help: ## show this help message
 	@awk 'BEGIN {FS = ":.*?## "} /^install-.*:.*?## / {printf "  \033[36m%-25s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 	@echo
 	@echo "🧪 Testing:"
-	@awk 'BEGIN {FS = ":.*?## "} /^tests.*:.*?## / {printf "  \033[36m%-25s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@awk 'BEGIN {FS = ":.*?## "} /^test.*:.*?## / {printf "  \033[36m%-25s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 	@echo
 	@echo "📋 Utility:"
 	@awk 'BEGIN {FS = ":.*?## "} /^(requirements|info|clean|devenv|codeformat|pylint|ruff|mypy|codestyle):.*?## / {printf "  \033[36m%-25s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
