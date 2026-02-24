@@ -103,8 +103,8 @@ install-ci: _check_venv_active ## install CI dependencies (dev group only)
 # TESTING
 #
 
-.PHONY: tests
-tests: _check_venv_active ## runs unit tests
+.PHONY: test
+test: _check_venv_active ## runs unit tests
 	@pytest $(PYTEST_OPTS) \
 		--asyncio-mode=auto \
 		--color=yes \
@@ -120,8 +120,8 @@ tests: _check_venv_active ## runs unit tests
 		$(CURDIR)/tests
 
 
-.PHONY: tests-ci
-tests-ci: _check_venv_active ## runs unit tests [ci-mode]
+.PHONY: test-ci
+test-ci: _check_venv_active ## runs unit tests [ci-mode]
 	@pytest $(PYTEST_OPTS) \
 		--asyncio-mode=auto \
 		--color=yes \

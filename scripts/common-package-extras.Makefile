@@ -35,8 +35,8 @@ endif
 #   install-dev[aiohttp]: _check_venv_active
 #   	@uv sync --active --all-groups --extra aiohttp
 #
-#   .PHONY: tests[aiohttp]
-#   tests[aiohttp]: _check_venv_active
+#   .PHONY: test[aiohttp]
+#   test[aiohttp]: _check_venv_active
 #   	@pytest $(PYTEST_OPTS) ... --ignore=tests/fastapi ...
 #
 # This avoids make portability issues with dynamic target generation.

@@ -19,7 +19,7 @@ test() {
   # shellcheck source=/dev/null
   source .venv/bin/activate
   pushd packages/celery-library
-  make tests-ci
+  make test-ci
   popd
 }
 
