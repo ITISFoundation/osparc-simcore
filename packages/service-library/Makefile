@@ -43,28 +43,28 @@ install-dev[fastapi]: _check_venv_active ## install dev dependencies with fastap
 
 .PHONY: install-ci[all]
 install-ci[all]: _check_venv_active ## install CI dependencies with all extras
-	@uv sync --active --group dev --extra aiohttp --extra fastapi
+	@uv sync --active --group dev --extra aiohttp --extra fastapi --no-editable
 
 .PHONY: "install-ci[aiohttp]"
 install-ci[aiohttp]: _check_venv_active ## install CI dependencies with aiohttp extra
-	@uv sync --active --group dev --extra aiohttp
+	@uv sync --active --group dev --extra aiohttp --no-editable
 
 .PHONY: "install-ci[fastapi]"
 install-ci[fastapi]: _check_venv_active ## install CI dependencies with fastapi extra
-	@uv sync --active --group dev --extra fastapi
+	@uv sync --active --group dev --extra fastapi --no-editable
 
 
 .PHONY: install-prod[all]
 install-prod[all]: _check_venv_active ## install prod dependencies with all extras
-	@uv sync --active --no-dev --extra aiohttp --extra fastapi
+	@uv sync --active --no-dev --extra aiohttp --extra fastapi --no-editable
 
 .PHONY: "install-prod[aiohttp]"
 install-prod[aiohttp]: _check_venv_active ## install prod dependencies with aiohttp extra
-	@uv sync --active --no-dev --extra aiohttp
+	@uv sync --active --no-dev --extra aiohttp --no-editable
 
 .PHONY: "install-prod[fastapi]"
 install-prod[fastapi]: _check_venv_active ## install prod dependencies with fastapi extra
-	@uv sync --active --no-dev --extra fastapi
+	@uv sync --active --no-dev --extra fastapi --no-editable
 
 
 #
