@@ -254,9 +254,9 @@ class CeleryTaskManager:
             raise TaskNotFoundError(task_uuid=task_or_group_uuid, owner_metadata=owner_metadata)
 
         if await self._task_store.is_group(task_or_group_key):
-            return await self.get_group_status(owner_metadata, task_or_group_uuid)
+            return await self.get_group_status(owner_metadata, task_or_group_uuid)  # type: ignore[no-any-return]
 
-        return await self.get_task_status(owner_metadata, task_or_group_uuid)
+        return await self.get_task_status(owner_metadata, task_or_group_uuid)  # type: ignore[no-any-return]
 
     @make_async()
     def _restore_group_result(self, group_uuid: GroupUUID) -> GroupResult | None:
