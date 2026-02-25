@@ -5,20 +5,21 @@
 {# Styles #}
 {%- set body_style = "font-family: 'Open Sans', sans-serif; font-size: 16px; line-height: 1.5; color: #353638; margin: 0; padding: 0; background-color: #ffffff;" -%}
 {%- set email_container_style = "max-width: 600px; margin: 20px auto; background-color: #ffffff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);" -%}
-{%- set header_style = "display: flex; align-items: center; padding-bottom: 10px; margin-bottom: 20px;" -%}
+{%- set header_style = "padding-bottom: 10px; margin-bottom: 20px;" -%}
 {%- set content_style = "color: #353638; font-size: 16px; line-height: 1.5;" -%}
-{%- set footer_style = "margin-top: 20px; padding-top: 15px; font-size: 14px; text-align: center; color: #353638;" -%}
-{%- set footer_social_list_style = "display: flex; justify-content: center; gap: 12px; margin: 0 0 12px; padding: 0; list-style: none;" -%}
-{%- set footer_social_link_style = "width: 28px; height: 28px; border-radius: 50%; background-color: #808080; color: #ffffff; text-decoration: none; display: inline-flex; align-items: center; justify-content: center;" -%}
-{%- set footer_social_icon_wrapper_style = "display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px;" -%}
+{%- set footer_style = "margin-top: 20px; padding-top: 15px; font-size: 14px; color: #353638;" -%}
+{%- set footer_social_link_style = "width: 28px; height: 28px; border-radius: 50%; background-color: #808080; color: #ffffff; text-decoration: none; display: block; text-align: center; line-height: 28px;" -%}
+{%- set footer_social_icon_wrapper_style = "display: block; width: 22px; height: 22px; margin: 3px auto 0;" -%}
+{%- set footer_social_td_style = "padding: 0 6px;" -%}
 {%- set footer_social_icon_svgs = {
   "linkedin": '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 640 640" aria-hidden="true" focusable="false"><!--!Font Awesome Free v7.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.--><path fill="#ffffff" d="M196.3 512L103.4 512L103.4 212.9L196.3 212.9L196.3 512zM149.8 172.1C120.1 172.1 96 147.5 96 117.8C96 103.5 101.7 89.9 111.8 79.8C121.9 69.7 135.6 64 149.8 64C164 64 177.7 69.7 187.8 79.8C197.9 89.9 203.6 103.6 203.6 117.8C203.6 147.5 179.5 172.1 149.8 172.1zM543.9 512L451.2 512L451.2 366.4C451.2 331.7 450.5 287.2 402.9 287.2C354.6 287.2 347.2 324.9 347.2 363.9L347.2 512L254.4 512L254.4 212.9L343.5 212.9L343.5 253.7L344.8 253.7C357.2 230.2 387.5 205.4 432.7 205.4C526.7 205.4 544 267.3 544 347.7L544 512L543.9 512z"/></svg>',
   "youtube": '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 576 512" aria-hidden="true" focusable="false"><!--!Font Awesome Free v7.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.--><path fill="#ffffff" d="M549.7 124.1C543.5 100.4 524.9 81.8 501.4 75.5 458.9 64 288.1 64 288.1 64S117.3 64 74.7 75.5C51.2 81.8 32.7 100.4 26.4 124.1 15 167 15 256.4 15 256.4s0 89.4 11.4 132.3c6.3 23.6 24.8 41.5 48.3 47.8 42.6 11.5 213.4 11.5 213.4 11.5s170.8 0 213.4-11.5c23.5-6.3 42-24.2 48.3-47.8 11.4-42.9 11.4-132.3 11.4-132.3s0-89.4-11.4-132.3zM232.2 337.6l0-162.4 142.7 81.2-142.7 81.2z"/></svg>',
   "github": '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 512 512" aria-hidden="true" focusable="false"><!--!Font Awesome Free v7.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.--><path fill="#ffffff" d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3 .3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5 .3-6.2 2.3zm44.2-1.7c-2.9 .7-4.9 2.6-4.6 4.9 .3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM252.8 8c-138.7 0-244.8 105.3-244.8 244 0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1 100-33.2 167.8-128.1 167.8-239 0-138.7-112.5-244-251.2-244zM105.2 352.9c-1.3 1-1 3.3 .7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3 .3 2.9 2.3 3.9 1.6 1 3.6 .7 4.3-.7 .7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3 .7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3 .7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>'
 } -%}
-{%- set footer_share_list_style = "display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin: 0 0 16px; padding: 0; list-style: none;" -%}
-{%- set footer_share_link_style = "min-width: 80px; border-radius: 4px; background-color: #808080; color: #ffffff; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-weight: 600; padding: 6px 14px;" -%}
-{%- set footer_share_icon_wrapper_style = "display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px;" -%}
+{%- set footer_share_link_style = "min-width: 80px; border-radius: 4px; background-color: #808080; color: #ffffff; text-decoration: none; display: inline-block; font-weight: 600; padding: 6px 14px; white-space: nowrap;" -%}
+{%- set footer_share_icon_wrapper_style = "display: inline-block; width: 20px; height: 20px; vertical-align: middle; margin-right: 6px;" -%}
+{%- set footer_share_label_style = "display: inline-block; vertical-align: middle;" -%}
+{%- set footer_share_td_style = "padding: 4px 5px;" -%}
 {%- set footer_share_badge_style = "width: 22px; height: 22px; border-radius: 3px; background-color: #353638; color: #ffffff; font-size: 12px; display: inline-flex; align-items: center; justify-content: center;" -%}
 {%- set footer_share_icon_svgs = {
   "facebook": '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 320 512" aria-hidden="true" focusable="false"><!--!Font Awesome Free v7.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2026 Fonticons, Inc.--><path fill="#ffffff" d="M80 299.3l0 212.7 116 0 0-212.7 86.5 0 18-97.8-104.5 0 0-34.6c0-51.7 20.3-71.5 72.7-71.5 16.3 0 29.4 .4 37 1.2l0-88.7C291.4 4 256.4 0 236.2 0 129.3 0 80 50.5 80 159.4l0 42.1-66 0 0 97.8 66 0z"/></svg>',
@@ -54,88 +55,104 @@
 <title>{% block title %}{% endblock %}</title>
 </head>
 <body style="{{ body_style }}">
-  <div class="email-container" style="{{ email_container_style }}">
-    <div class="header" style="{{ header_style }}">
-      <a href="{{ product.homepage_url | default(default_homepage) }}" target="_blank" rel="noopener noreferrer">
-        <img src="{{ product.ui.logo_url | default(default_logo) }}" alt="Logo" style="height: 40px;">
-      </a>
-    </div>
+  <table width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color: #ffffff;">
+    <tr>
+      <td align="center">
+        <table width="600" border="0" cellpadding="20" cellspacing="0" style="{{ email_container_style }}">
+          <tr>
+            <td style="{{ header_style }}">
+              <a href="{{ product.homepage_url | default(default_homepage) }}" target="_blank" rel="noopener noreferrer">
+                <img src="{{ product.ui.logo_url | default(default_logo) }}" alt="Logo" style="height: 40px; border: 0; display: block;">
+              </a>
+            </td>
+          </tr>
 
-    <div class="content" style="{{ content_style }}">
-      <style>
-      {{ paragraph_style_block }}
-      </style>
-      {% block content %}
-      {% endblock %}
-    </div>
+          <tr>
+            <td class="content" style="{{ content_style }}">
+              <style>
+              {{ paragraph_style_block }}
+              </style>
+              {% block content %}
+              {% endblock %}
+            </td>
+          </tr>
 
-    <div class="footer" style="{{ footer_style }}">
-      {% if product_social_links %}
-      <ul style="{{ footer_social_list_style }}">
-        {% for social in product_social_links %}
-        {# Support NamedTuple, tuple, and dict - use index access which works for all #}
-        {% set social_name = social[0] if social is not mapping else social['name'] %}
-        {% set social_url = social[1] if social is not mapping else social['url'] %}
-        {% set social_key = social_name | lower %}
-        {% set social_icon = footer_social_icon_svgs.get(social_key) %}
-        <li style="list-style: none;">
-          <a href="{{ social_url }}" target="_blank" rel="noopener noreferrer" style="{{ footer_social_link_style }}" title="{{ social_name }}">
-            <span style="{{ footer_social_icon_wrapper_style }}">
-              {% if social_icon %}
-                {{ social_icon | safe }}
-              {% else %}
-                {{ social_name[:2] | upper }}
+          <tr>
+            <td class="footer" style="{{ footer_style }}">
+              {% if product_social_links %}
+              <table border="0" cellpadding="0" cellspacing="0" align="center" style="margin: 0 auto 12px;">
+                <tr>
+                  {% for social in product_social_links %}
+                  {# Support NamedTuple, tuple, and dict - use index access which works for all #}
+                  {% set social_name = social[0] if social is not mapping else social['name'] %}
+                  {% set social_url = social[1] if social is not mapping else social['url'] %}
+                  {% set social_key = social_name | lower %}
+                  {% set social_icon = footer_social_icon_svgs.get(social_key) %}
+                  <td style="{{ footer_social_td_style }}">
+                    <a href="{{ social_url }}" target="_blank" rel="noopener noreferrer" style="{{ footer_social_link_style }}" title="{{ social_name }}">
+                      <span style="{{ footer_social_icon_wrapper_style }}">
+                        {% if social_icon %}
+                          {{ social_icon | safe }}
+                        {% else %}
+                          {{ social_name[:2] | upper }}
+                        {% endif %}
+                      </span>
+                    </a>
+                  </td>
+                  {% endfor %}
+                </tr>
+              </table>
               {% endif %}
-            </span>
-          </a>
-        </li>
-        {% endfor %}
-      </ul>
-      {% endif %}
 
-      {% if product_share_links %}
-      <ul style="{{ footer_share_list_style }}">
-        {% for share in product_share_links %}
-        {# Support NamedTuple, tuple, and dict - use index access which works for all #}
-        {% set share_name = share[0] if share is not mapping else share['name'] %}
-        {% set share_label = share[1] if share is not mapping else share['label'] %}
-        {% set share_url = share[2] if share is not mapping else share['url'] %}
-        {% set share_key = share_name | lower %}
-        {% set share_icon = footer_share_icon_svgs.get(share_key) %}
-        <li style="list-style: none;">
-          <a href="{{ share_url }}" target="_blank" rel="noopener noreferrer" style="{{ footer_share_link_style }}" title="{{ share_name }}">
-            <span style="{{ footer_share_icon_wrapper_style }}">
-              {% if share_icon %}
-                {{ share_icon | safe }}
-              {% else %}
-                <span style="{{ footer_share_badge_style }}">{{ share_name[:1] | upper }}</span>
+              {% if product_share_links %}
+              <table border="0" cellpadding="0" cellspacing="0" align="center" style="margin: 0 auto 16px;">
+                <tr>
+                  {% for share in product_share_links %}
+                  {# Support NamedTuple, tuple, and dict - use index access which works for all #}
+                  {% set share_name = share[0] if share is not mapping else share['name'] %}
+                  {% set share_label = share[1] if share is not mapping else share['label'] %}
+                  {% set share_url = share[2] if share is not mapping else share['url'] %}
+                  {% set share_key = share_name | lower %}
+                  {% set share_icon = footer_share_icon_svgs.get(share_key) %}
+                  <td style="{{ footer_share_td_style }}">
+                    <a href="{{ share_url }}" target="_blank" rel="noopener noreferrer" style="{{ footer_share_link_style }}" title="{{ share_name }}">
+                      <span style="{{ footer_share_icon_wrapper_style }}">
+                        {% if share_icon %}
+                          {{ share_icon | safe }}
+                        {% else %}
+                          <span style="{{ footer_share_badge_style }}">{{ share_name[:1] | upper }}</span>
+                        {% endif %}
+                      </span>
+                      <span style="{{ footer_share_label_style }}">{{ share_label }}</span>
+                    </a>
+                  </td>
+                  {% endfor %}
+                </tr>
+              </table>
               {% endif %}
-            </span>
-            <span>{{ share_label }}</span>
-          </a>
-        </li>
-        {% endfor %}
-      </ul>
-      {% endif %}
 
-      {% if product_company_name %}
-      <p style="{{ footer_company_text_style }}">{{ product_company_name }}</p>
-      {% endif %}
-      {% if product_company_address %}
-      <p style="{{ footer_company_text_style }}">{{ product_company_address }}</p>
-      {% endif %}
+              {% if product_company_name %}
+              <p style="{{ footer_company_text_style }}; text-align: center;">{{ product_company_name }}</p>
+              {% endif %}
+              {% if product_company_address %}
+              <p style="{{ footer_company_text_style }}; text-align: center;">{{ product_company_address }}</p>
+              {% endif %}
 
-      {% if product_company_links %}
-      <p style="{{ footer_company_text_style }}">
-        {% for link in product_company_links %}
-          {# Support NamedTuple, tuple, and dict - use index access which works for all #}
-          {% set link_name = link[0] if link is not mapping else link['name'] %}
-          {% set link_url = link[1] if link is not mapping else link['url'] %}
-          <a href="{{ link_url }}" target="_blank" rel="noopener noreferrer" style="{{ link_style }}">{{ link_name }}</a>{% if not loop.last %}<span style="{{ footer_links_separator_style }}">|</span>{% endif %}
-        {% endfor %}
-      </p>
-      {% endif %}
-    </div>
-  </div>
+              {% if product_company_links %}
+              <p style="{{ footer_company_text_style }}; text-align: center;">
+                {% for link in product_company_links %}
+                  {# Support NamedTuple, tuple, and dict - use index access which works for all #}
+                  {% set link_name = link[0] if link is not mapping else link['name'] %}
+                  {% set link_url = link[1] if link is not mapping else link['url'] %}
+                  <a href="{{ link_url }}" target="_blank" rel="noopener noreferrer" style="{{ link_style }}">{{ link_name }}</a>{% if not loop.last %}<span style="{{ footer_links_separator_style }}">|</span>{% endif %}
+                {% endfor %}
+              </p>
+              {% endif %}
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
 </body>
 </html>
