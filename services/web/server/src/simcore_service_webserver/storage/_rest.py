@@ -192,7 +192,6 @@ async def refresh_files_in_path(request: web.Request) -> web.Response:
     # Inform backend service that a change occurred in a S3 directory.
     # This is used by the running dynamic service node to trigger a reload of the files from S3 for a given directory.
     # If no service is running, no errors are raised and should always be called.
-
     _ = AuthenticatedRequestContext.model_validate(request)
     path_params = parse_request_path_parameters_as(StoragePathRefreshParams, request)
 

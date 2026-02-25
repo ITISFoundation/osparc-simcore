@@ -140,6 +140,41 @@ async def test_list_storage_paths(
         TypeAdapter(CustomizedPathsCursorPage[PathMetaDataGet]).validate_python(data)
 
 
+@pytest.fixture
+def s3_directory(faker: Faker) -> StorageFileID:
+    remote = f"{faker.uuid4()}/{faker.uuid4()}/remote-dir"
+    return TypeAdapter(StorageFileID).validate_python(remote)
+
+
+@pytest.mark.parametrize(
+    "user_role,expected",
+    [
+        (UserRole.ANONYMOUS, status.HTTP_401_UNAUTHORIZED),
+        (UserRole.GUEST, status.HTTP_204_NO_CONTENT),
+        (UserRole.USER, status.HTTP_204_NO_CONTENT),
+        (UserRole.TESTER, status.HTTP_204_NO_CONTENT),
+    ],
+)
+async def test_refresh_files_in_path(
+    client: TestClient,
+    logged_user: dict[str, Any],
+    expected: int,
+    location_id: LocationID,
+    s3_directory: StorageFileID,
+    mocker: MockerFixture,
+):
+    # Mock refresh_containers_files to prevent actual call
+    mocker.patch("simcore_service_webserver.dynamic_scheduler.api.refresh_containers_files", autospec=True)
+
+    assert client.app
+    url = f"/v0/storage/locations/{location_id}/paths/{quote(str(s3_directory), safe='')}:refresh"
+
+    resp = await client.post(url)
+    data, error = await assert_status(resp, expected)
+    if not error:
+        assert data is None
+
+
 _faker = Faker()
 
 
