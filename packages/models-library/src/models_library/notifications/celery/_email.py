@@ -38,8 +38,6 @@ class EmailContent(BaseModel):
 
 
 class EmailMessage(BaseModel):
-    """Email message with multiple recipients for bulk sending."""
-
     channel: ChannelType = ChannelType.email
 
     # Envelope fields
