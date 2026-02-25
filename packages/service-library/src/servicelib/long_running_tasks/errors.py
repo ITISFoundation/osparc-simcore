@@ -12,6 +12,10 @@ class TaskNotRegisteredError(BaseLongRunningError):
     )
 
 
+class TaskIsBeingRemovedError(BaseLongRunningError):
+    msg_template: str = "'{task_name}' is being removed, wait before starting a new one with the same task_name"
+
+
 class TaskAlreadyRunningError(BaseLongRunningError):
     msg_template: str = "{task_name} must be unique, found: '{managed_task}'"
 
