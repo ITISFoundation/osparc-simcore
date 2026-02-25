@@ -47,7 +47,6 @@ class EmailEnvelope(BaseModel):
     bcc: EmailContact | None = None
 
     model_config = ConfigDict(
-        validate_by_alias=True,
         validate_by_name=True,
     )
 
