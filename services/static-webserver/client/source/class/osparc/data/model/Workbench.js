@@ -368,6 +368,7 @@ qx.Class.define("osparc.data.model.Workbench", {
 
         // Node was added by me
         const node = this.__createNode(key, version, nodeId);
+        osparc.file.FilePicker.addRTCToken(node);
         node.fetchMetadataAndPopulate()
           .then(() => {
             this.__giveUniqueNameToNode(node, node.getLabel());
@@ -801,29 +802,28 @@ qx.Class.define("osparc.data.model.Workbench", {
           // skip if nodeData is undefined or null
           return;
         }
-        // If the node is a file picker, and I don't own the token,
-        // it means that the node was added by someone else, so I can skip it because the backend already has the data
-        // TODO: OM
-        if (node.isFilePicker() && !osparc.file.FilePicker.isRTCTokenMine(node)) {
-          return;
-        }
 
         let patchData = {};
         if (workbenchDiffs[nodeId] instanceof Array) {
           // if workbenchDiffs is an array means that the node was added
           const node = this.getNode(nodeId);
-          // if the node wasn't added by me, I can skip it because the backend already has the data
-          if (osparc.data.model.Node.isRTCLockedByOthers(node)) {
+          // if the file picker wasn't added by me, I can skip it because the backend already has the data
+          if (node.isFilePicker() && !osparc.file.FilePicker.isRTCTokenMine(node)) {
             return;
           }
           patchData = nodeData;
         } else {
           // patch only what was changed
           Object.keys(workbenchDiffs[nodeId]).forEach(changedFieldKey => {
-            if (nodeData[changedFieldKey] !== undefined) {
-              // do not patch if it's undefined
-              patchData[changedFieldKey] = nodeData[changedFieldKey];
+            // do not patch if it's undefined
+            if (nodeData[changedFieldKey] === undefined) {
+              return;
             }
+            // if the progress is not 100% for the file picker, only the one with the token should patch
+            if (node.isFilePicker() && !osparc.file.FilePicker.isRTCTokenMine(node)) {
+              return;
+            }
+            patchData[changedFieldKey] = nodeData[changedFieldKey];
           });
         }
         const params = {
