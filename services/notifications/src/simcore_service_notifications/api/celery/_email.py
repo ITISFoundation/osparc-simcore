@@ -2,46 +2,27 @@
 
 import logging
 from email.headerregistry import Address
-from email.message import EmailMessage as _EmailMessage
 
-from celery import Task  # type: ignore[import-untyped]
-from models_library.api_schemas_notifications.message import EmailMessage
+from celery import (  # type: ignore[import-untyped]
+    Task,
+)
+from models_library.notifications.celery import EmailContact, EmailContent, EmailMessage
 from notifications_library._email import (
-    add_attachments,
     compose_email,
     create_email_session,
 )
 from servicelib.celery.models import TaskKey
+from servicelib.logging_utils import log_context
 from settings_library.email import SMTPSettings
 
 _logger = logging.getLogger(__name__)
 
 
-def _create_email_message(message: EmailMessage) -> _EmailMessage:
-    return compose_email(
-        from_=Address(
-            display_name=message.from_.name or "",
-            addr_spec=message.from_.email,
-        ),
-        to=[Address(display_name=addr.name or "", addr_spec=addr.email) for addr in message.to],
-        subject=message.content.subject,
-        content_text=message.content.body_text,
-        content_html=message.content.body_html,
-        reply_to=Address(display_name=message.reply_to.name or "", addr_spec=message.reply_to.email)
-        if message.reply_to
-        else None,
-        bcc=[Address(display_name=addr.name or "", addr_spec=addr.email) for addr in message.bcc]
-        if message.bcc
-        else None,
-    )
+def _to_address(address: EmailContact) -> Address:
+    return Address(display_name=address.name or "", addr_spec=address.email)
 
 
-async def _send_email(msg: _EmailMessage) -> None:
-    async with create_email_session(settings=SMTPSettings.create_from_envs()) as smtp:
-        await smtp.send_message(msg)
-
-
-async def send_email(
+async def send_email_message(
     task: Task,
     task_key: TaskKey,
     message: EmailMessage,
@@ -49,9 +30,25 @@ async def send_email(
     assert task  # nosec
     assert task_key  # nosec
 
-    msg = _create_email_message(message)
+    msg = EmailMessage(
+        from_=EmailContact(**message.from_.model_dump()),
+        to=EmailContact(**message.to.model_dump()),
+        reply_to=EmailContact(**message.reply_to.model_dump()) if message.reply_to else None,
+        content=EmailContent(**message.content.model_dump()),
+    )
 
-    if message.attachments:
-        add_attachments(msg, [(a.content, a.filename) for a in message.attachments])
+    with log_context(_logger, logging.INFO, "Send email to %s", msg.to.email):
+        settings = SMTPSettings.create_from_envs()
 
-    await _send_email(msg)
+        async with create_email_session(settings=settings) as smtp:
+            await smtp.send_message(
+                compose_email(
+                    from_=_to_address(msg.from_),
+                    to=_to_address(msg.to),
+                    subject=msg.content.subject,
+                    content_text=msg.content.body_text,
+                    content_html=msg.content.body_html,
+                    reply_to=_to_address(msg.reply_to) if msg.reply_to else None,
+                    extra_headers=settings.SMTP_EXTRA_HEADERS,
+                )
+            )

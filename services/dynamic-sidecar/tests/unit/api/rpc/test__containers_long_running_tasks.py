@@ -498,17 +498,20 @@ async def test_create_containers_task_invalid_yaml_spec(
 
 
 @pytest.mark.parametrize(
-    "get_task_id_callable",
+    "get_task_id_callable, endswith",
     [
-        _get_task_id_pull_user_services_docker_images_task,
-        _get_task_id_create_service_containers_task,
-        _get_task_id_runs_docker_compose_down_task,
-        _get_task_id_state_restore_task,
-        _get_task_id_state_save_task,
-        _get_task_id_ports_inputs_pull_task,
-        _get_task_id_ports_outputs_pull_task,
-        _get_task_id_ports_outputs_push_task,
-        _get_task_id_task_containers_restart_task,
+        (_get_task_id_pull_user_services_docker_images_task, "unique"),
+        (_get_task_id_create_service_containers_task, "unique"),
+        (_get_task_id_runs_docker_compose_down_task, "unique"),
+        (_get_task_id_state_restore_task, "unique"),
+        (_get_task_id_state_save_task, "unique"),
+        (
+            _get_task_id_ports_inputs_pull_task,
+            "unique_efc820338c0950e8a546297f3ad5ba4cdf403853a3e62c8e79ed47e475c4b1b9",
+        ),
+        (_get_task_id_ports_outputs_pull_task, "unique"),
+        (_get_task_id_ports_outputs_push_task, "unique"),
+        (_get_task_id_task_containers_restart_task, "unique"),
     ],
 )
 async def test_same_task_id_is_returned_if_task_exists(
@@ -519,6 +522,7 @@ async def test_same_task_id_is_returned_if_task_exists(
     lrt_namespace: LRTNamespace,
     mocker: MockerFixture,
     get_task_id_callable: Callable[..., Awaitable[TaskId]],
+    endswith: str,
     mock_stop_heart_beat_task: AsyncMock,
     mock_metrics_params: CreateServiceMetricsAdditionalParams,
     compose_spec: str,
@@ -538,7 +542,7 @@ async def test_same_task_id_is_returned_if_task_exists(
         await assert_task_is_no_longer_present(get_fastapi_long_running_manager(app), task_id, {})
 
     task_id = await _get_awaitable()
-    assert task_id.endswith("unique")
+    assert task_id.endswith(endswith)
     assert await _get_awaitable() == task_id
 
     await _assert_task_removed(task_id)
@@ -546,7 +550,7 @@ async def test_same_task_id_is_returned_if_task_exists(
     # since the previous task was already removed it is again possible
     # to create a task and it will share the same task_id
     new_task_id = await _get_awaitable()
-    assert new_task_id.endswith("unique")
+    assert new_task_id.endswith(endswith)
     assert new_task_id == task_id
 
     await _assert_task_removed(task_id)

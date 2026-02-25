@@ -158,3 +158,51 @@ def test_smtp_configuration_fails(
 
     assert err_info.value.error_count() == 1
     assert err_info.value.errors()[0]["type"] == error_type
+
+
+@pytest.mark.parametrize(
+    "extra_headers",
+    [
+        {"X-Priority": "1 (Highest)"},
+        {"X-Custom-Header": "value", "x-Another-Header": "another value"},
+        {},  # empty dict is valid
+    ],
+)
+def test_smtp_extra_headers_valid(
+    all_env_devel_undefined: None,
+    monkeypatch: pytest.MonkeyPatch,
+    extra_headers: dict[str, str],
+):
+    cfg = {
+        "SMTP_HOST": "test",
+        "SMTP_PORT": 113,
+        "SMTP_EXTRA_HEADERS": extra_headers,
+    }
+    settings = SMTPSettings(**cfg)
+    assert extra_headers == settings.SMTP_EXTRA_HEADERS
+
+
+@pytest.mark.parametrize(
+    "extra_headers",
+    [
+        {"Priority": "1"},  # missing X- prefix
+        {"X-Valid": "value", "Invalid": "value"},  # one valid, one invalid
+        {"custom-header": "value"},  # lowercase without X-
+    ],
+)
+def test_smtp_extra_headers_invalid(
+    all_env_devel_undefined: None,
+    monkeypatch: pytest.MonkeyPatch,
+    extra_headers: dict[str, str],
+):
+    cfg = {
+        "SMTP_HOST": "test",
+        "SMTP_PORT": 113,
+        "SMTP_EXTRA_HEADERS": extra_headers,
+    }
+    with pytest.raises(ValidationError) as err_info:
+        SMTPSettings(**cfg)
+
+    assert err_info.value.error_count() == 1
+    assert err_info.value.errors()[0]["type"] == "value_error"
+    assert "must start with 'X-'" in str(err_info.value)

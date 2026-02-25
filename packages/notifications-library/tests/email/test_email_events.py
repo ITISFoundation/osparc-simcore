@@ -196,6 +196,7 @@ def template_attachments(
 )
 async def test_email_event(
     app_environment: EnvVarsDict,
+    with_smtp_extra_headers: dict[str, str],
     smtp_mock_or_none: MagicMock | None,
     user_data: UserData,
     user_email: EmailStr,
@@ -227,13 +228,25 @@ async def test_email_event(
     assert from_.addr_spec == product_data.support_email
     assert to.addr_spec == user_email
 
+    settings = SMTPSettings.create_from_envs()
+
+    # Check that settings contain extra headers
+    assert with_smtp_extra_headers == settings.SMTP_EXTRA_HEADERS
+
     msg = compose_email(
         from_,
-        [to],
+        to,
         subject=parts.subject,
         content_text=parts.text_content,
         content_html=parts.html_content,
+        extra_headers=settings.SMTP_EXTRA_HEADERS,
     )
+
+    # Check that headers were injected into the message
+    assert any(header in msg for header in with_smtp_extra_headers)
+    for header, value in with_smtp_extra_headers.items():
+        assert msg[header] == value
+
     if template_attachments:
         add_attachments(msg, template_attachments)
 
@@ -246,7 +259,7 @@ async def test_email_event(
         p = dump_path.with_suffix(".txt")
         p.write_text(parts.text_content)
 
-    async with create_email_session(settings=SMTPSettings.create_from_envs()) as smtp:
+    async with create_email_session(settings=settings) as smtp:
         await smtp.send_message(msg)
 
     # check email was sent
@@ -255,6 +268,12 @@ async def test_email_event(
         assert isinstance(smtp, AsyncMock)
         assert smtp.login.called
         assert smtp.send_message.called
+
+        # Verify the message sent contains the extra headers
+        sent_message = smtp.send_message.call_args[0][0]
+        for header, value in with_smtp_extra_headers.items():
+            assert header in sent_message
+            assert sent_message[header] == value
 
 
 @pytest.mark.parametrize(
@@ -265,6 +284,7 @@ async def test_email_event(
 )
 async def test_email_with_reply_to(
     app_environment: EnvVarsDict,
+    with_smtp_extra_headers: dict[str, str],
     smtp_mock_or_none: MagicMock | None,
     user_data: UserData,
     user_email: EmailStr,
@@ -295,16 +315,27 @@ async def test_email_with_reply_to(
     assert from_.addr_spec == to.addr_spec
     assert to.addr_spec == support_email
 
+    settings = SMTPSettings.create_from_envs()
+
+    # Check that settings contain extra headers from conftest
+    assert with_smtp_extra_headers == settings.SMTP_EXTRA_HEADERS
+
     msg = compose_email(
         from_,
-        [to],
+        to,
         subject=parts.subject,
         content_text=parts.text_content,
         content_html=parts.html_content,
         reply_to=reply_to,
+        extra_headers=settings.SMTP_EXTRA_HEADERS,
     )
 
-    async with create_email_session(settings=SMTPSettings.create_from_envs()) as smtp:
+    # Check that headers were injected into the message
+    assert any(header in msg for header in with_smtp_extra_headers)
+    for header, value in with_smtp_extra_headers.items():
+        assert msg[header] == value
+
+    async with create_email_session(settings=settings) as smtp:
         await smtp.send_message(msg)
 
     # check email was sent
@@ -313,3 +344,8 @@ async def test_email_with_reply_to(
         assert isinstance(smtp, AsyncMock)
         assert smtp.login.called
         assert smtp.send_message.called
+        # Verify the message sent contains the extra headers
+        sent_message = smtp.send_message.call_args[0][0]
+        for header, value in with_smtp_extra_headers.items():
+            assert header in sent_message
+            assert sent_message[header] == value
