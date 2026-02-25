@@ -801,6 +801,12 @@ qx.Class.define("osparc.data.model.Workbench", {
           // skip if nodeData is undefined or null
           return;
         }
+        // If the node is a file picker, and I don't own the token,
+        // it means that the node was added by someone else, so I can skip it because the backend already has the data
+        // TODO: OM
+        if (node.isFilePicker() && !osparc.file.FilePicker.isRTCTokenMine(node)) {
+          return;
+        }
 
         let patchData = {};
         if (workbenchDiffs[nodeId] instanceof Array) {
