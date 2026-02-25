@@ -601,7 +601,7 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
         async for attempt in AsyncRetrying(
             stop=stop_after_delay(_TASK_REMOVAL_MAX_WAIT),
             wait=wait_fixed(_TASK_REMOVED_CHECK_INTERNAL),
-            retry=retry_if_exception_type(AssertionError),
+            retry=retry_if_exception_type(TaskIsBeingRemovedError),
             reraise=True,
         ):
             with attempt:
