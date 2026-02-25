@@ -29,6 +29,8 @@ class EmailContent(BaseModel):
     body_text: str | None = None
     body_html: str | None = None
 
+    attachments: list[EmailAttachment] | None = None
+
     @model_validator(mode="after")
     def _ensure_at_least_one_body_format(self) -> Self:
         if not self.body_text and not self.body_html:
@@ -37,22 +39,21 @@ class EmailContent(BaseModel):
         return self
 
 
-class EmailMessage(BaseModel):
-    channel: ChannelType = ChannelType.email
-
-    # Envelope fields
+class EmailEnvelope(BaseModel):
     from_: Annotated[EmailContact, Field(alias="from")]
     to: EmailContact
     reply_to: EmailContact | None = None
     cc: EmailContact | None = None
     bcc: EmailContact | None = None
 
-    # Content fields
-    content: EmailContent
-
-    attachments: list[EmailAttachment] | None = None
-
     model_config = ConfigDict(
         validate_by_alias=True,
         validate_by_name=True,
     )
+
+
+class EmailMessage(BaseModel):
+    channel: ChannelType = ChannelType.email
+
+    envelope: EmailEnvelope
+    content: EmailContent
