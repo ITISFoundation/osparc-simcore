@@ -17,7 +17,7 @@ from pydantic import NonNegativeFloat, PositiveFloat
 from settings_library.redis import RedisDatabase, RedisSettings
 from tenacity import (
     AsyncRetrying,
-    TryAgain,
+    retry_if_exception_type,
     retry_unless_exception_type,
     stop_after_delay,
     wait_exponential,
@@ -33,6 +33,7 @@ from ._serialization import dumps
 from .errors import (
     TaskAlreadyRunningError,
     TaskCancelledError,
+    TaskIsBeingRemovedError,
     TaskNotCompletedError,
     TaskNotFoundError,
     TaskNotRegisteredError,
@@ -599,13 +600,14 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
         # wait for a task being removed to go away before starting a new one
         async for attempt in AsyncRetrying(
             stop=stop_after_delay(_TASK_REMOVAL_MAX_WAIT),
-            reraise=True,
             wait=wait_fixed(_TASK_REMOVED_CHECK_INTERNAL),
+            retry=retry_if_exception_type(AssertionError),
+            reraise=True,
         ):
             with attempt:
                 if await self._tasks_data.is_marked_for_removal(task_id):
-                    _logger.info("task='%s' waiting to be removed before starting a new one with the same id", task_id)
-                    raise TryAgain
+                    _logger.debug("task='%s' waiting to be removed before starting a new one with the same id", task_id)
+                    raise TaskIsBeingRemovedError(task_name=task_name)
 
         # only one unique task can be running
         queried_task = await self._tasks_data.get_task_data(task_id)
