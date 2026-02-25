@@ -11,8 +11,8 @@ from models_library.notifications_errors import (
 )
 from models_library.products import ProductName
 from models_library.users import UserID
-from servicelib.celery.async_jobs.notifications import submit_send_message_task
-from servicelib.celery.models import OwnerMetadata, TaskName, TaskUUID
+from servicelib.celery.async_jobs.notifications import submit_send_message_task, submit_send_messages_task
+from servicelib.celery.models import GroupUUID, OwnerMetadata, TaskName, TaskUUID
 from servicelib.rabbitmq.rpc_interfaces.notifications.notifications_templates import (
     preview_template as remote_preview_template,
 )
@@ -56,17 +56,17 @@ async def _collect_active_recipients(app: web.Application, group_ids: list[Group
     return list(recipients_dict.values())
 
 
-async def _create_email_message(
+async def _create_email_messages(
     app: web.Application,
     *,
     product_name: ProductName,
     group_ids: list[GroupID] | None,
     external_contacts: list[Contact] | None,
     content: dict[str, Any],
-) -> EmailMessage:
+) -> list[EmailMessage]:
     product = products_service.get_product(app, product_name)
 
-    from_ = EmailContact(
+    from_contact = EmailContact(
         name=f"{product.display_name} Support",
         email=replace_email_parts(
             product.support_email,
@@ -74,24 +74,27 @@ async def _create_email_message(
         ),
     )
 
-    to: list[EmailContact] = []
+    to_contacts: list[EmailContact] = []
 
     if group_ids:
-        to = await _collect_active_recipients(app, group_ids=group_ids)
+        to_contacts = await _collect_active_recipients(app, group_ids=group_ids)
 
     if external_contacts:
-        to.extend(external_contacts)
+        to_contacts.extend(external_contacts)
 
-    if not to:
+    if not to_contacts:
         raise NotificationsNoActiveRecipientsError
 
     email_content = EmailContent(**content)
 
-    return EmailMessage(
-        from_=from_,
-        to=to,
-        content=email_content,
-    )
+    return [
+        EmailMessage(
+            from_=from_contact,
+            to=to_contact,
+            content=email_content,
+        )
+        for to_contact in to_contacts
+    ]
 
 
 async def preview_template(
@@ -138,10 +141,10 @@ async def send_message(
     group_ids: list[GroupID] | None,
     external_contacts: list[Contact] | None,
     content: dict[str, Any],  # NOTE: validated internally
-) -> tuple[TaskUUID, TaskName]:
+) -> tuple[TaskUUID | GroupUUID, TaskName]:
     match channel:
         case ChannelType.email:
-            message = await _create_email_message(
+            messages = await _create_email_messages(
                 app,
                 product_name=product_name,
                 group_ids=group_ids,
@@ -151,6 +154,19 @@ async def send_message(
         case _:
             raise NotificationsUnsupportedChannelError(channel=channel)
 
+    if len(messages) != 1:
+        group_uuid, _, task_name = await submit_send_messages_task(
+            get_task_manager(app),
+            owner_metadata=OwnerMetadata.model_validate(
+                WebServerOwnerMetadata(
+                    user_id=user_id,
+                    product_name=product_name,
+                ).model_dump()
+            ),
+            messages=[message.model_dump() for message in messages],
+        )
+        return group_uuid, task_name
+
     return await submit_send_message_task(
         get_task_manager(app),
         owner_metadata=OwnerMetadata.model_validate(
@@ -159,5 +175,5 @@ async def send_message(
                 product_name=product_name,
             ).model_dump()
         ),
-        message=message.model_dump(),
+        message=messages[0].model_dump(),
     )

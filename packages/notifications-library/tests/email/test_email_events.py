@@ -235,7 +235,7 @@ async def test_email_event(
 
     msg = compose_email(
         from_,
-        [to],
+        to,
         subject=parts.subject,
         content_text=parts.text_content,
         content_html=parts.html_content,
@@ -322,7 +322,7 @@ async def test_email_with_reply_to(
 
     msg = compose_email(
         from_,
-        [to],
+        to,
         subject=parts.subject,
         content_text=parts.text_content,
         content_html=parts.html_content,

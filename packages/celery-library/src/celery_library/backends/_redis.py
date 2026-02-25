@@ -24,6 +24,7 @@ _CELERY_TASK_PREFIX: Final[str] = "celery-task-"
 _CELERY_TASK_ID_KEY_ENCODING: Final[str] = "utf-8"
 _CELERY_TASK_SCAN_COUNT_PER_BATCH: Final[int] = 1000
 _CELERY_TASK_EXEC_METADATA_KEY: Final[str] = "exec-meta"
+_CELERY_TASK_IS_GROUP_METADATA_KEY: Final[str] = "is_group"
 _CELERY_TASK_PROGRESS_KEY: Final[str] = "progress"
 
 # Redis list to store streamed results
@@ -60,6 +61,11 @@ class RedisTaskStore:
     ) -> None:
         group_key = _build_redis_task_or_group_key(group_key)
         pipe = self._redis_client_sdk.redis.pipeline()
+        pipe.hset(
+            name=group_key,
+            key=f"{_CELERY_TASK_IS_GROUP_METADATA_KEY}",
+            value="1",
+        )
         for task_key, execution_metadata in executions:
             pipe.hset(
                 name=_build_redis_task_or_group_key(task_key),
@@ -130,6 +136,16 @@ class RedisTaskStore:
                 f"{exc}",
             )
             return None
+
+    async def is_group(self, task_or_group_key: TaskKey | GroupKey) -> bool:
+        raw_result = await handle_redis_returns_union_types(
+            self._redis_client_sdk.redis.hget(
+                _build_redis_task_or_group_key(task_or_group_key),
+                _CELERY_TASK_IS_GROUP_METADATA_KEY,
+            )
+        )
+
+        return raw_result == "1"
 
     async def list_tasks(self, owner_metadata: OwnerMetadata) -> list[Task]:
         search_key = _CELERY_TASK_PREFIX + owner_metadata.model_dump_key(task_or_group_uuid=WILDCARD)

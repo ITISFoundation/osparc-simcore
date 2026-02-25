@@ -49,7 +49,7 @@ async def test_send_mail(
         owner_metadata=owner_metadata,
         message=EmailMessage(
             from_=EmailContact(email=faker.email()),
-            to=[EmailContact(email=user_email)],
+            to=EmailContact(email=user_email),
             content=EmailContent(
                 subject="Test Email",
                 body_text="This is a test email sent from the notifications service.",
