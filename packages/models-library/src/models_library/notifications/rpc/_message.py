@@ -7,7 +7,7 @@ from ._types import Envelope, TemplateRef
 
 class SendMessageFromTemplateRequest(BaseModel):
     ref: TemplateRef
-    context: dict[str, Any]
+    template_context: dict[str, Any]
 
     envelope: Envelope
 
