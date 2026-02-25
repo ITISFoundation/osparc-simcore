@@ -74,8 +74,8 @@ qx.Class.define("osparc.file.FileUploader", {
       const fileId = file.name;
       const fileUuid = studyId +"/"+ nodeId +"/"+ fileId;
       const fileSize = file.size;
-      const dataStore = osparc.store.Data.getInstance();
       this.getNode().getStatus().setProgress(this.self().PROGRESS_VALUES.FETCHING_PLINK);
+      const dataStore = osparc.store.Data.getInstance();
       dataStore.getPresignedLink(false, locationId, fileUuid, fileSize)
         .then(presignedLinkData => {
           if (presignedLinkData.resp.urls) {
