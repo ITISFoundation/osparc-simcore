@@ -56,7 +56,7 @@ def _async_task_wrapper(
 
                         async def _abort_monitor():
                             while not async_io_task.done():
-                                if not await app_server.task_manager.task_exists(task_key):
+                                if not await app_server.task_manager.task_or_group_exists(task_key):
                                     await cancel_wait_task(
                                         async_io_task,
                                         max_delay=_DEFAULT_CANCEL_TASK_TIMEOUT.total_seconds(),
@@ -138,6 +138,7 @@ def register_task[**P_Task, R_Task](
     app: Celery,
     fn: Callable[Concatenate[Task, TaskKey, P_Task], Coroutine[Any, Any, R_Task]],
     task_name: str | None = None,
+    rate_limit: str | None = None,
     timeout: timedelta | None = _DEFAULT_TASK_TIMEOUT,
     max_retries: NonNegativeInt = _DEFAULT_MAX_RETRIES,
     delay_between_retries: timedelta = _DEFAULT_WAIT_BEFORE_RETRY,
@@ -150,6 +151,7 @@ def register_task[**P_Task, R_Task](
     app: Celery,
     fn: Callable[Concatenate[Task, P_Task], R_Task],
     task_name: str | None = None,
+    rate_limit: str | None = None,
     timeout: timedelta | None = _DEFAULT_TASK_TIMEOUT,
     max_retries: NonNegativeInt = _DEFAULT_MAX_RETRIES,
     delay_between_retries: timedelta = _DEFAULT_WAIT_BEFORE_RETRY,
@@ -161,6 +163,7 @@ def register_task(  # type: ignore[misc]
     app: Celery,
     fn: (Callable[Concatenate[Task, TaskKey, P], Coroutine[Any, Any, R]] | Callable[Concatenate[Task, P], R]),
     task_name: str | None = None,
+    rate_limit: str | None = None,
     timeout: timedelta | None = _DEFAULT_TASK_TIMEOUT,
     max_retries: NonNegativeInt = _DEFAULT_MAX_RETRIES,
     delay_between_retries: timedelta = _DEFAULT_WAIT_BEFORE_RETRY,
@@ -170,13 +173,14 @@ def register_task(  # type: ignore[misc]
 
     Keyword Arguments:
         task_name -- name of the function used in Celery (default: {None} will be generated automatically)
+        rate_limit -- rate limit for the task in celery format (default: {None} means no rate limit)
         timeout -- when None no timeout is enforced, task is allowed to run forever (default: {_DEFAULT_TASK_TIMEOUT})
         max_retries -- number of attempts in case of failuire before giving up (default: {_DEFAULT_MAX_RETRIES})
         delay_between_retries -- dealy between each attempt in case of error (default: {_DEFAULT_WAIT_BEFORE_RETRY})
         dont_autoretry_for -- exceptions that should not be retried when raised by the task
     """
     wrapped_fn: Callable[Concatenate[Task, P], R]
-    if asyncio.iscoroutinefunction(fn):
+    if inspect.iscoroutinefunction(fn):
         wrapped_fn = _async_task_wrapper(app)(fn)
     else:
         assert inspect.isfunction(fn)  # nosec
@@ -193,4 +197,5 @@ def register_task(  # type: ignore[misc]
         bind=True,
         time_limit=None if timeout is None else timeout.total_seconds(),
         pydantic=True,
+        rate_limit=rate_limit,
     )(wrapped_fn)

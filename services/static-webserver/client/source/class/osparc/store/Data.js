@@ -180,8 +180,11 @@ qx.Class.define("osparc.store.Data", {
             fileUuid: encodeURIComponent(fileUuid)
           }
         };
-        if (!download && fileSize) {
+        if (!download && fileSize != null) {
           params.url["fileSize"] = fileSize;
+          if (fileSize === 0) {
+            osparc.FlashMessenger.logAs(qx.locale.Manager.tr("Uploading an empty file"), "WARNING");
+          }
         }
         osparc.data.Resources.fetch("storageLink", download ? "getOne" : "put", params)
           .then(data => {

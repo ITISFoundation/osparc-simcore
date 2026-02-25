@@ -25,6 +25,7 @@ test() {
   source .venv/bin/activate
   pushd tests/e2e-playwright
   make test-sleepers
+  make test-guided-tours
   make test-platform
   popd
 }

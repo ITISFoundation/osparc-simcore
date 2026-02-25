@@ -26,8 +26,8 @@ async def s3_client(s3_settings: S3Settings) -> typing.AsyncIterator[S3Client]:
     session_client = session.client(
         "s3",
         endpoint_url=f"{s3_settings.S3_ENDPOINT}" if s3_settings.S3_ENDPOINT else None,
-        aws_access_key_id=s3_settings.S3_ACCESS_KEY,
-        aws_secret_access_key=s3_settings.S3_SECRET_KEY,
+        aws_access_key_id=s3_settings.S3_ACCESS_KEY.get_secret_value(),
+        aws_secret_access_key=s3_settings.S3_SECRET_KEY.get_secret_value(),
         region_name=s3_settings.S3_REGION,
         config=Config(signature_version="s3v4"),
     )

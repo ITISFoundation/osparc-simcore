@@ -20,8 +20,8 @@ import httpx
 import pytest
 import sqlalchemy as sa
 from celery.worker.worker import WorkController
+from celery_library import CeleryTaskManager
 from celery_library.async_jobs import submit_job, wait_and_get_job_result
-from celery_library.task_manager import CeleryTaskManager
 from faker import Faker
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder

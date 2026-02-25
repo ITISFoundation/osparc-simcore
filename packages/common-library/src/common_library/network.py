@@ -4,7 +4,6 @@ from email.utils import formataddr, parseaddr
 from typing import Final
 
 # Common email parts
-NO_REPLY_DISPLAY_NAME: Final[str] = "No Reply"
 NO_REPLY_LOCAL: Final[str] = "no-reply"
 
 
