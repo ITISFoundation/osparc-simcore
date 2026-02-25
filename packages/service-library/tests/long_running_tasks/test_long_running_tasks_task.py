@@ -283,7 +283,6 @@ async def test_unique_task_with_different_unique_args_can_run(
             long_running_manager.lrt_namespace,
             unique_task.__name__,
             uniqueness=TaskUniqueness.BY_NAME_AND_ARGS,
-            unique_args=True,
             task_context=empty_context,
             arg=i,
         )
