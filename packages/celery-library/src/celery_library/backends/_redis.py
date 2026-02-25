@@ -144,11 +144,6 @@ class RedisTaskStore:
                 _CELERY_TASK_IS_GROUP_METADATA_KEY,
             )
         )
-        _logger.exception(
-            "is_group called with key %s, raw result: %s",
-            task_or_group_key,
-            raw_result,
-        )
 
         return raw_result == "1"
 
