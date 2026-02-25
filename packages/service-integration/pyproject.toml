@@ -27,6 +27,16 @@ dependencies = [
   "pytest-asyncio>=1.2.0",
 ]
 
+[project.scripts]
+ooil = "service_integration.cli:app"
+osparc-service-integrator = "service_integration.cli:app"
+simcore-service = "service_integration.cli:app"
+simcore-service-integrator = "service_integration.cli:app"
+
+[project.entry-points.pytest11]
+simcore_service_integration = "service_integration.pytest_plugin"
+
+
 [build-system]
 requires = ["uv_build>=0.9.28,<0.10.0"]
 build-backend = "uv_build"
