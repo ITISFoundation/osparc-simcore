@@ -4,12 +4,12 @@ from collections.abc import Awaitable, Callable
 import pytest
 from fastapi import FastAPI
 from models_library.notifications import ChannelType, TemplateRef
-from models_library.notifications.rpc.template import (
-    PreviewTemplateResponse,
+from models_library.notifications._errors import (
+    TemplateContextValidationError,
+    TemplateNotFoundError,
 )
-from models_library.notifications_errors import (
-    NotificationsTemplateContextValidationError,
-    NotificationsTemplateNotFoundError,
+from models_library.notifications.rpc._template import (
+    PreviewTemplateResponse,
 )
 from servicelib.rabbitmq import RabbitMQRPCClient, RPCServerError
 from servicelib.rabbitmq.rpc_interfaces.notifications.notifications_templates import (
@@ -112,7 +112,7 @@ async def test_preview_template_not_found(
     )
     context = {}
 
-    with pytest.raises(NotificationsTemplateNotFoundError):
+    with pytest.raises(TemplateNotFoundError):
         await preview_template(rpc_client, ref=ref, context=context)
 
 
@@ -131,5 +131,5 @@ async def test_preview_template_invalid_context(
         ref = TemplateRef(**template.ref.model_dump())
         context = {"invalid_key": "invalid_value"}  # Invalid context
 
-        with pytest.raises((NotificationsTemplateContextValidationError, RPCServerError)):
+        with pytest.raises((TemplateContextValidationError, RPCServerError)):
             await preview_template(rpc_client, ref=ref, context=context)

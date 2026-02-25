@@ -5,9 +5,9 @@ from aiohttp import web
 from common_library.network import NO_REPLY_LOCAL, replace_email_parts
 from models_library.groups import GroupID
 from models_library.notifications import ChannelType, Template, TemplatePreview, TemplateRef
-from models_library.notifications_errors import (
-    NotificationsNoActiveRecipientsError,
-    NotificationsUnsupportedChannelError,
+from models_library.notifications._errors import (
+    NoActiveContactsError,
+    UnsupportedChannelError,
 )
 from models_library.products import ProductName
 from models_library.users import UserID
@@ -83,7 +83,7 @@ async def _create_email_messages(
         to_contacts.extend(external_contacts)
 
     if not to_contacts:
-        raise NotificationsNoActiveRecipientsError
+        raise NoActiveContactsError
 
     email_content = EmailContent(**content)
 
@@ -152,7 +152,7 @@ async def send_message(
                 content=content,
             )
         case _:
-            raise NotificationsUnsupportedChannelError(channel=channel)
+            raise UnsupportedChannelError(channel=channel)
 
     if len(messages) != 1:
         group_uuid, _, task_name = await submit_send_messages_task(

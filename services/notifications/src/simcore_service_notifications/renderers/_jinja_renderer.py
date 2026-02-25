@@ -2,8 +2,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from ..models.content import for_channel
-from ..models.preview import TemplatePreview
-from ..models.template import Template
+from ..models.template import Template, TemplatePreview
 from ..repositories import TemplatesRepository
 from ._renderer import Renderer
 

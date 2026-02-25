@@ -3,12 +3,12 @@ from typing import Any
 
 from models_library.notifications import TemplateRef
 from models_library.notifications.rpc import NOTIFICATIONS_RPC_NAMESPACE
-from models_library.notifications.rpc.template import (
+from models_library.notifications.rpc._template import (
     PreviewTemplateRequest,
     PreviewTemplateResponse,
     SearchTemplatesResponse,
 )
-from models_library.notifications.rpc.template import (
+from models_library.notifications.rpc._template import (
     TemplateRef as TemplateRefRpc,
 )
 from models_library.rabbitmq_basic_types import RPCMethodName

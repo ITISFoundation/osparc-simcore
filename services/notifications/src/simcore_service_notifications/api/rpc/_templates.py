@@ -1,37 +1,42 @@
+from dataclasses import asdict
+
 from fastapi import FastAPI
 from models_library.notifications import ChannelType
-from models_library.notifications.rpc.template import (
+from models_library.notifications._errors import (
+    TemplateContextValidationError,
+    TemplateNotFoundError,
+)
+from models_library.notifications.rpc import (
     PreviewTemplateRequest,
     PreviewTemplateResponse,
     SearchTemplatesResponse,
 )
-from models_library.notifications.rpc.template import (
+from models_library.notifications.rpc import (
     TemplateRef as TemplateRefRpc,
-)
-from models_library.notifications_errors import (
-    NotificationsTemplateContextValidationError,
-    NotificationsTemplateNotFoundError,
 )
 from servicelib.rabbitmq import RPCRouter
 
 from ...models.template import TemplateRef
-from .dependencies import get_notifications_templates_service
+from .dependencies import get_templates_service
 
 router = RPCRouter()
 
 
 @router.expose(
     reraise_if_error_type=(
-        NotificationsTemplateContextValidationError,
-        NotificationsTemplateNotFoundError,
+        TemplateContextValidationError,
+        TemplateNotFoundError,
     )
 )
 async def preview_template(
-    _app: FastAPI,
+    app: FastAPI,
     *,
     request: PreviewTemplateRequest,
 ) -> PreviewTemplateResponse:
-    service = get_notifications_templates_service()
+    """Previews a notification template by rendering it with the provided context."""
+    assert app  # nosec
+
+    service = get_templates_service()
 
     preview = service.preview_template(
         ref=TemplateRef(**request.ref.model_dump()),
@@ -46,7 +51,7 @@ async def preview_template(
 
 @router.expose()
 async def search_templates(
-    _app: FastAPI,
+    app: FastAPI,
     *,
     channel: ChannelType | None,
     template_name: str | None,
@@ -55,7 +60,7 @@ async def search_templates(
     Searches for notification templates based on the specified channel and template name.
 
     Args:
-        _app: The FastAPI application instance.
+        app: The FastAPI application instance.
         channel: The channel type to filter templates. Use `None` to search across all channels.
         template_name: The name of the template to search for.
             Use wildcards (e.g., `*`, `?`) for partial matches. `None` searches for all templates.
@@ -63,15 +68,14 @@ async def search_templates(
     Returns:
         A list of notification template responses matching the search criteria.
     """
-    service = get_notifications_templates_service()
-    templates = service.search_templates(channel=channel, template_name=template_name)
+    assert app  # nosec
+
+    templates_service = get_templates_service()
+    templates = templates_service.search_templates(channel, template_name)
 
     return [
         SearchTemplatesResponse(
-            ref=TemplateRefRpc(
-                channel=template.ref.channel,
-                template_name=template.ref.template_name,
-            ),
+            ref=TemplateRefRpc(**asdict(template.ref)),
             context_schema=template.context_model.model_json_schema(),
         )
         for template in templates
