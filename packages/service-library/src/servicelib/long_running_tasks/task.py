@@ -1,6 +1,7 @@
 import asyncio
 import datetime
 import functools
+import hashlib
 import inspect
 import logging
 import urllib.parse
@@ -9,15 +10,18 @@ from typing import Any, ClassVar, Final, Protocol
 from uuid import uuid4
 
 from common_library.async_tools import cancel_wait_task
+from common_library.json_serialization import json_dumps
 from common_library.logging.logging_errors import create_troubleshooting_log_kwargs
 from models_library.api_schemas_long_running_tasks.base import TaskProgress
 from pydantic import NonNegativeFloat, PositiveFloat
 from settings_library.redis import RedisDatabase, RedisSettings
 from tenacity import (
     AsyncRetrying,
+    retry_if_exception_type,
     retry_unless_exception_type,
     stop_after_delay,
     wait_exponential,
+    wait_fixed,
 )
 
 from ..background_task import create_periodic_task
@@ -29,6 +33,7 @@ from ._serialization import dumps
 from .errors import (
     TaskAlreadyRunningError,
     TaskCancelledError,
+    TaskIsBeingRemovedError,
     TaskNotCompletedError,
     TaskNotFoundError,
     TaskNotRegisteredError,
@@ -43,6 +48,7 @@ from .models import (
     TaskData,
     TaskId,
     TaskStatus,
+    TaskUniqueness,
 )
 
 _logger = logging.getLogger(__name__)
@@ -53,6 +59,7 @@ _STATUS_UPDATE_CHECK_INTERNAL: Final[datetime.timedelta] = datetime.timedelta(se
 _MAX_EXCLUSIVE_TASK_CANCEL_TIMEOUT: Final[NonNegativeFloat] = 5
 _TASK_REMOVAL_MAX_WAIT: Final[NonNegativeFloat] = 60
 _PARALLEL_TASKS_CANCELLATION: Final[int] = 5
+_TASK_REMOVED_CHECK_INTERNAL: Final[NonNegativeFloat] = datetime.timedelta(seconds=0.1).total_seconds()
 
 type AllowedErrors = tuple[type[BaseException], ...]
 
@@ -142,6 +149,19 @@ async def _get_tasks_to_remove(
             if elapsed_from_last_poll > stale_task_detect_timeout_s:
                 tasks_to_remove.append((tracked_task.task_id, tracked_task.task_context))
     return tasks_to_remove
+
+
+def _get_suffix(task_kwargs: dict[str, Any], uniqueness: TaskUniqueness) -> str:
+    match uniqueness:
+        case TaskUniqueness.NONE:
+            return f"{uuid4()}"
+        case TaskUniqueness.BY_NAME:
+            return "unique"
+        case TaskUniqueness.BY_NAME_AND_ARGS:
+            items = sorted(task_kwargs.items())
+            serialized = json_dumps(items, separators=(",", ":"), sort_keys=True)
+            hashed_kwargs = hashlib.sha256(serialized.encode("utf-8")).hexdigest()
+            return f"unique_{hashed_kwargs}"
 
 
 class TasksManager:  # pylint:disable=too-many-instance-attributes
@@ -530,9 +550,8 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
                 with attempt:
                     await self._get_tracked_task(tracked_task.task_id, tracked_task.task_context)
 
-    def _get_task_id(self, task_name: str, *, is_unique: bool) -> TaskId:
-        suffix = "unique" if is_unique else f"{uuid4()}"
-        return f"{self.lrt_namespace}.{task_name}.{suffix}"
+    def _get_task_id(self, task_name: str, *, uniqueness: TaskUniqueness, **task_kwargs) -> TaskId:
+        return f"{self.lrt_namespace}.{task_name}.{_get_suffix(task_kwargs, uniqueness)}"
 
     async def _update_progress(
         self,
@@ -557,7 +576,7 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
         self,
         registered_task_name: RegisteredTaskName,
         *,
-        unique: bool,
+        uniqueness: TaskUniqueness,
         task_context: TaskContext | None,
         task_name: str | None,
         fire_and_forget: bool,
@@ -576,11 +595,23 @@ class TasksManager:  # pylint:disable=too-many-instance-attributes
         task_name = task_name or f"{handler_module_name}.{task.__name__}"
         task_name = urllib.parse.quote(task_name, safe="")
 
-        task_id = self._get_task_id(task_name, is_unique=unique)
+        task_id = self._get_task_id(task_name, uniqueness=uniqueness, **task_kwargs)
+
+        # wait for a task being removed to go away before starting a new one
+        async for attempt in AsyncRetrying(
+            stop=stop_after_delay(_TASK_REMOVAL_MAX_WAIT),
+            wait=wait_fixed(_TASK_REMOVED_CHECK_INTERNAL),
+            retry=retry_if_exception_type(TaskIsBeingRemovedError),
+            reraise=True,
+        ):
+            with attempt:
+                if await self._tasks_data.is_marked_for_removal(task_id):
+                    _logger.debug("task='%s' waiting to be removed before starting a new one with the same id", task_id)
+                    raise TaskIsBeingRemovedError(task_name=task_name)
 
         # only one unique task can be running
         queried_task = await self._tasks_data.get_task_data(task_id)
-        if unique and queried_task is not None:
+        if uniqueness != TaskUniqueness.NONE and queried_task is not None:
             raise TaskAlreadyRunningError(task_name=task_name, managed_task=queried_task)
 
         context_to_use = task_context or {}
