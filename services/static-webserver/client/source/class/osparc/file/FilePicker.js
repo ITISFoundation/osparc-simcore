@@ -252,26 +252,23 @@ qx.Class.define("osparc.file.FilePicker", {
       return output;
     },
 
-    /** RTC Lock management
-     * The lock is used to avoid file picker's file uploading (progress) race conditions in collaborative studies.
-     * The locks is added when the file upload starts and it's removed when the file is uploaded. In this way, the node is locked for all users except the one uploading the file.
-     * In case of the File Pickers, to avoid progress race conditions, the lock is removed when the file is uploaded.
+    /** RTC Token management
+     * The token is used to avoid file picker's file uploading (progress) race conditions in collaborative studies.
+     * The token is added when the file upload starts and it's removed when the file is uploaded. In this way, the node is locked for all users except the one uploading the file.
+     * In case of the File Pickers, to avoid progress race conditions, the token is removed when the file is uploaded.
      */
-    addRTCLock: function(node, userId = null) {
-      node["rtcLock"] = {
-        userId,
-        timestamp: new Date().getTime(),
-      }
+    addRTCToken: function(node) {
+      node["fpRTCToken"] = true;
     },
 
-    removeRTCLock: function(node) {
-      delete node["rtcLock"];
+    removeRTCToken: function(node) {
+      delete node["fpRTCToken"];
     },
 
-    isRTCLockedByOthers: function(node) {
-      return "rtcLock" in node && node["rtcLock"]["userId"] === null;
+    isRTCTokenMine: function(node) {
+      return "fpRTCToken" in node && node["fpRTCToken"] === true;
     },
-    /** /RTC Lock management */
+    /** /RTC Token management */
   },
 
   members: {

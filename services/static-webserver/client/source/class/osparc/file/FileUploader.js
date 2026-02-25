@@ -68,6 +68,8 @@ qx.Class.define("osparc.file.FileUploader", {
         return;
       }
 
+      // take the token to upload the file
+      osparc.file.FilePicker.addRTCToken(this.getNode());
       const locationId = 0;
       const studyId = this.getNode().getStudy().getUuid();
       const nodeId = this.getNode() ? this.getNode().getNodeId() : osparc.utils.Utils.uuidV4();
@@ -213,6 +215,7 @@ qx.Class.define("osparc.file.FileUploader", {
     },
 
     __completeUpload: function() {
+      osparc.file.FilePicker.removeRTCToken(this.getNode());
       this.getNode()["fileUploadAbortRequested"] = false;
 
       this.__presignedLinkData = null;
@@ -220,6 +223,7 @@ qx.Class.define("osparc.file.FileUploader", {
     },
 
     __abortUpload: function() {
+      osparc.file.FilePicker.removeRTCToken(this.getNode());
       this.getNode()["fileUploadAbortRequested"] = false;
 
       const aborted = () => {
