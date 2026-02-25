@@ -71,16 +71,16 @@ install-prod[fastapi]: install-prod ## install prod dependencies with fastapi ex
 # TEST TARGETS WITH EXTRAS
 #
 
-.PHONY: tests[all]
-tests[all]: tests ## run tests with all extras
+.PHONY: test[all]
+test[all]: test ## run tests with all extras
 
-.PHONY: "tests[aiohttp]"
-tests[aiohttp]: PYTEST_EXTRAS = --ignore=$(CURDIR)/tests/fastapi
-tests[aiohttp]: tests ## run tests for aiohttp only
+.PHONY: "test[aiohttp]"
+test[aiohttp]: PYTEST_EXTRAS = --ignore=$(CURDIR)/tests/fastapi
+test[aiohttp]: test ## run tests for aiohttp only
 
-.PHONY: "tests[fastapi]"
-tests[fastapi]: PYTEST_EXTRAS = --ignore=$(CURDIR)/tests/aiohttp
-tests[fastapi]: tests ## run tests for fastapi only
+.PHONY: "test[fastapi]"
+test[fastapi]: PYTEST_EXTRAS = --ignore=$(CURDIR)/tests/aiohttp
+test[fastapi]: test ## run tests for fastapi only
 
 
 .PHONY: test-ci[all]
