@@ -253,8 +253,8 @@ qx.Class.define("osparc.file.FilePicker", {
     },
 
     /** RTC Lock management
-     * These are used to avoid early node creation race conditions in collaborative studies.
-     * The locks are added to the node when it's created and removed after some time, when the node is consolidated.
+     * The lock is used to avoid file picker's file uploading (progress) race conditions in collaborative studies.
+     * The locks is added when the file upload starts and it's removed when the file is uploaded. In this way, the node is locked for all users except the one uploading the file.
      * In case of the File Pickers, to avoid progress race conditions, the lock is removed when the file is uploaded.
      */
     addRTCLock: function(node, userId = null) {
