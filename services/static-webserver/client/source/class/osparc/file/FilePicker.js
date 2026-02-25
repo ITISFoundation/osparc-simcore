@@ -64,6 +64,13 @@ qx.Class.define("osparc.file.FilePicker", {
   },
 
   statics: {
+    POS: {
+      RELOAD: 0,
+      FILES_TREE: 1,
+      TOOLBAR: 2,
+      DOWNLOAD_LINK: 3
+    },
+
     getOutput: function(outputs) {
       const output = outputs.find(out => out.getPortKey() === osparc.data.model.NodePort.FP_PORT_KEY);
       // output can be undefined
@@ -245,12 +252,26 @@ qx.Class.define("osparc.file.FilePicker", {
       return output;
     },
 
-    POS: {
-      RELOAD: 0,
-      FILES_TREE: 1,
-      TOOLBAR: 2,
-      DOWNLOAD_LINK: 3
-    }
+    /** RTC Lock management
+     * These are used to avoid early node creation race conditions in collaborative studies.
+     * The locks are added to the node when it's created and removed after some time, when the node is consolidated.
+     * In case of the File Pickers, to avoid progress race conditions, the lock is removed when the file is uploaded.
+     */
+    addRTCLock: function(node, userId = null) {
+      node["rtcLock"] = {
+        userId,
+        timestamp: new Date().getTime(),
+      }
+    },
+
+    removeRTCLock: function(node) {
+      delete node["rtcLock"];
+    },
+
+    isRTCLockedByOthers: function(node) {
+      return "rtcLock" in node && node["rtcLock"]["userId"] === null;
+    },
+    /** /RTC Lock management */
   },
 
   members: {

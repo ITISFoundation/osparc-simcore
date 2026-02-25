@@ -134,7 +134,9 @@ qx.Class.define("osparc.data.model.Workbench", {
         const nodeUiData = nodesUiData[nodeId];
         // Node deserialized, it was added by me
         const node = this.__createNode(nodeData["key"], nodeData["version"], nodeId);
-        osparc.data.model.Node.addRTCLock(node, osparc.auth.Data.getInstance().getUserId());
+        if (node.isFilePicker()) {
+          osparc.file.FilePicker.addRTCLock(node, null);
+        }
         nodesPromises.push(node.fetchMetadataAndPopulate(nodeData, nodeUiData));
       }
       return Promise.allSettled(nodesPromises);
@@ -369,7 +371,9 @@ qx.Class.define("osparc.data.model.Workbench", {
 
         // Node was added by me
         const node = this.__createNode(key, version, nodeId);
-        osparc.data.model.Node.addRTCLock(node, osparc.auth.Data.getInstance().getUserId());
+        if (node.isFilePicker()) {
+          osparc.file.FilePicker.addRTCLock(node, osparc.auth.Data.getInstance().getUserId());
+        }
         node.fetchMetadataAndPopulate()
           .then(() => {
             this.__giveUniqueNameToNode(node, node.getLabel());
@@ -925,7 +929,9 @@ qx.Class.define("osparc.data.model.Workbench", {
 
         // Node was added by someone else, we need to create it in the frontend
         const node = this.__createNode(nodeData["key"], nodeData["version"], nodeId);
-        osparc.data.model.Node.addRTCLock(node, null);
+        if (node.isFilePicker()) {
+          osparc.file.FilePicker.addRTCLock(node, null);
+        }
         node.fetchMetadataAndPopulate(nodeData, nodeUiData)
           .then(() => {
             this.fireDataEvent("nodeAdded", node);
