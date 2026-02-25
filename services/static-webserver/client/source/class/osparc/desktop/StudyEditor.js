@@ -368,6 +368,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         return;
       }
 
+      console.debug("Received projectDocument:updated", data);
+
       // Always keep the latest version in pending buffer
       if (!this.__pendingProjectData || documentVersion > (this.__pendingProjectData.version || 0)) {
         this.__pendingProjectData = data;
