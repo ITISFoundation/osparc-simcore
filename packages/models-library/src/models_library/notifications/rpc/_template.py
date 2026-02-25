@@ -2,7 +2,7 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict
 
-from ._types import TemplateRef
+from ._common import TemplateRef
 
 
 class PreviewTemplateRequest(BaseModel):

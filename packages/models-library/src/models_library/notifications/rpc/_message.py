@@ -2,7 +2,7 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict
 
-from ._types import Envelope, TemplateRef
+from ._common import Envelope, TemplateRef
 
 
 class SendMessageFromTemplateRequest(BaseModel):
