@@ -1,6 +1,9 @@
 from pydantic import BaseModel, ConfigDict
 
 from .. import ChannelType, TemplateName
+from .channels._email import EmailEnvelope
+
+type Envelope = EmailEnvelope
 
 
 class TemplateRef(BaseModel):

@@ -2,13 +2,12 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict
 
-from . import Envelope
-from ._common import TemplateRef
+from ._types import Envelope, TemplateRef
 
 
 class SendMessageFromTemplateRequest(BaseModel):
     ref: TemplateRef
-    template_context: dict[str, Any]
+    context: dict[str, Any]
 
     envelope: Envelope
 
