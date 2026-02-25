@@ -37,7 +37,7 @@ async def send_email_message(
         content=EmailContent(**message.content.model_dump()),
     )
 
-    with log_context(_logger, logging.INFO, "🚨 Sending email to %s", msg.to.email):
+    with log_context(_logger, logging.INFO, "Send email to %s", msg.to.email):
         settings = SMTPSettings.create_from_envs()
 
         async with create_email_session(settings=settings) as smtp:
