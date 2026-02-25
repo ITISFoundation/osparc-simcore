@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from ._templates_service import TemplatesService
+from ._templates import TemplatesService
 
 
 @dataclass(frozen=True)

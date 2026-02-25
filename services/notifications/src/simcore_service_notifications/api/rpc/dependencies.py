@@ -1,7 +1,7 @@
 from jinja2 import Environment
 from notifications_library._render import create_render_environment_from_notifications_library
 
-from simcore_service_notifications.services._messages_service import MessagesService
+from simcore_service_notifications.services._messages import MessagesService
 
 from ...renderers import JinjaNotificationsRenderer
 from ...repositories import FileTemplatesRepository
