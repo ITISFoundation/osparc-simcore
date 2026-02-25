@@ -809,6 +809,7 @@ qx.Class.define("osparc.data.model.Workbench", {
           const node = this.getNode(nodeId);
           // if the file picker wasn't added by me, I can skip it because the backend already has the data
           if (node.isFilePicker() && !osparc.file.FilePicker.isRTCTokenMine(node)) {
+            console.warn("File picker added by another user, skipping patch");
             return;
           }
           patchData = nodeData;
@@ -820,7 +821,8 @@ qx.Class.define("osparc.data.model.Workbench", {
               return;
             }
             // if the progress is not 100% for the file picker, only the one with the token should patch
-            if (node.isFilePicker() && !osparc.file.FilePicker.isRTCTokenMine(node)) {
+            if (node.isFilePicker() && nodeData["progress"] !== 100 && !osparc.file.FilePicker.isRTCTokenMine(node)) {
+              console.warn("File picker progress changed by another user, skipping patch");
               return;
             }
             patchData[changedFieldKey] = nodeData[changedFieldKey];
