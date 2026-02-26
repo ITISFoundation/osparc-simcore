@@ -295,8 +295,16 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }
     },
 
-    __setLastSyncedProjectDocument: function(studyData) {
+    __setLastSyncedProjectDocument: function(studyData, version = null) {
       this.__lastSyncedProjectDocument = osparc.data.model.Study.deepCloneStudyObject(studyData, true);
+
+      // Initialize or update the version if provided
+      if (version !== null) {
+        this.__lastSyncedProjectVersion = version;
+      } else if (this.__lastSyncedProjectVersion === null) {
+        // Initialize to 0 on first sync (study open) so incoming updates with version > 0 are accepted
+        this.__lastSyncedProjectVersion = 0;
+      }
 
       // remove the runHash, this.__lastSyncedProjectDocument is only used for diff comparison and the frontend doesn't keep it
       Object.keys(this.__lastSyncedProjectDocument["workbench"]).forEach(nodeId => {
@@ -403,12 +411,15 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
     __applyProjectDocument: function(data) {
       console.debug("ProjectDocument applying:", data);
-      this.__lastSyncedProjectVersion = data["version"];
       const updatedProjectDocument = data["document"];
 
       // curate projectDocument:updated document
       this.self().curateBackendProjectDocument(updatedProjectDocument);
 
+      // Update baseline FIRST (after curation) - this sets both document and version
+      this.__setLastSyncedProjectDocument(updatedProjectDocument, data["version"]);
+
+      // Now compute diff and apply patches...
       const myStudy = this.getStudy().serialize();
       // curate myStudy
       this.self().curateFrontendProjectDocument(myStudy);
