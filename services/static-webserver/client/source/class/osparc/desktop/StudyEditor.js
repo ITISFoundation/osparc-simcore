@@ -974,11 +974,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
     __calculateDelta: function(studyA, studyB) {
       const delta = osparc.wrapper.JsonDiffPatch.getInstance().diff(studyA, studyB);
-      this.__curateDelta(delta);
-      return delta;
-    },
-
-    __curateDelta: function(delta) {
+       // curate delta
       if (delta) {
         // lastChangeDate and creationDate should not be taken into account as data change
         delete delta["creationDate"];
@@ -995,6 +991,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
           }
         });
       }
+      return delta;
     },
 
     // didStudyChange takes around 0.5ms
