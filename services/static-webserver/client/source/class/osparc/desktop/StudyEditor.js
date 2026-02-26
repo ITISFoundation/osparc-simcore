@@ -983,15 +983,17 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         // lastChangeDate and creationDate should not be taken into account as data change
         delete delta["creationDate"];
         delete delta["lastChangeDate"];
-        // Handle edge case: empty string vs null for thumbnail is not a real change
-        if (
-          "thumbnail" in delta &&
-          Object.keys(delta["thumbnail"]).length === 2 &&
-          (delta["thumbnail"][0] === "" || delta["thumbnail"][0] === null) &&
-          (delta["thumbnail"][1] === "" || delta["thumbnail"][1] === null)
-        ) {
-          delete delta["thumbnail"];
-        }
+        // Handle edge case: empty string vs null is not a real change
+        ["thumbnail", "description"].forEach(prop => {
+          if (
+            prop in delta &&
+            Object.keys(delta[prop]).length === 2 &&
+            (delta[prop][0] === "" || delta[prop][0] === null) &&
+            (delta[prop][1] === "" || delta[prop][1] === null)
+          ) {
+            delete delta[prop];
+          }
+        });
       }
     },
 
