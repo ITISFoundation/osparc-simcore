@@ -807,10 +807,11 @@ qx.Class.define("osparc.data.model.Workbench", {
         } else {
           // patch only what was changed
           Object.keys(workbenchDiffs[nodeId]).forEach(changedFieldKey => {
-            if (nodeData[changedFieldKey] !== undefined) {
-              // do not patch if it's undefined
-              patchData[changedFieldKey] = nodeData[changedFieldKey];
+            // do not patch if it's undefined
+            if (nodeData[changedFieldKey] === undefined) {
+              return;
             }
+            patchData[changedFieldKey] = nodeData[changedFieldKey];
           });
         }
         const params = {
