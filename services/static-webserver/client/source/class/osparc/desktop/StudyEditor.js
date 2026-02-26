@@ -949,6 +949,15 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         // lastChangeDate and creationDate should not be taken into account as data change
         delete delta["creationDate"];
         delete delta["lastChangeDate"];
+        if (
+          "thumbnail" in delta &&
+          Object.keys(delta["thumbnail"]).length === 2 &&
+          delta["thumbnail"][0] === "" &&
+          delta["thumbnail"][1] === null
+        ) {
+          // it didn't change
+          delete delta["thumbnail"];
+        }
         studyDiffs.delta = delta;
       }
       return studyDiffs;
