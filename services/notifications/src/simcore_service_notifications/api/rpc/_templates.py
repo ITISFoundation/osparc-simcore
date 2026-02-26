@@ -2,7 +2,7 @@ from dataclasses import asdict
 
 from fastapi import FastAPI
 from models_library.notifications import ChannelType
-from models_library.notifications._errors import (
+from models_library.notifications.errors import (
     TemplateContextValidationError,
     TemplateNotFoundError,
 )
