@@ -111,27 +111,27 @@ qx.Class.define("osparc.data.model.Workbench", {
     },
 
     __deserialize: function(workbenchInitData, uiData = {}) {
-      const nodeDatas = {};
-      const nodeUiDatas = {};
+      const nodesData = {};
+      const nodesUiData = {};
       for (const nodeId in workbenchInitData) {
         const nodeData = workbenchInitData[nodeId];
-        nodeDatas[nodeId] = nodeData;
+        nodesData[nodeId] = nodeData;
         if (uiData["workbench"] && nodeId in uiData["workbench"]) {
-          nodeUiDatas[nodeId] = uiData["workbench"][nodeId];
+          nodesUiData[nodeId] = uiData["workbench"][nodeId];
         }
       }
-      this.__deserializeNodes(nodeDatas, nodeUiDatas)
+      this.__deserializeNodes(nodesData, nodesUiData)
         .then(() => {
           this.__deserializeEdges(workbenchInitData);
           this.setDeserialized(true);
         });
     },
 
-    __deserializeNodes: function(nodeDatas, nodeUiDatas) {
+    __deserializeNodes: function(nodesData, nodesUiData) {
       const nodesPromises = [];
-      for (const nodeId in nodeDatas) {
-        const nodeData = nodeDatas[nodeId];
-        const nodeUiData = nodeUiDatas[nodeId];
+      for (const nodeId in nodesData) {
+        const nodeData = nodesData[nodeId];
+        const nodeUiData = nodesUiData[nodeId];
         const node = this.__createNode(nodeData["key"], nodeData["version"], nodeId);
         nodesPromises.push(node.fetchMetadataAndPopulate(nodeData, nodeUiData));
       }
