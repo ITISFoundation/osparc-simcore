@@ -936,6 +936,13 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
     __stopTimers: function() {
       this.__stopIdlingTracker();
+
+      // Clear the pending project document application timer
+      if (this.__applyProjectDocumentTimer) {
+        clearTimeout(this.__applyProjectDocumentTimer);
+        this.__applyProjectDocumentTimer = null;
+      }
+      this.__pendingProjectData = null;
     },
 
     __getStudyDiffs: function() {
