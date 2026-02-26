@@ -68,6 +68,9 @@ MOCK_TEMPLATES = {
     "email/password_reset/subject.j2": "Reset Your Password",
     "email/password_reset/body_html.j2": "<p>Click here to reset your password</p>",
     "email/password_reset/body_text.j2": "Click here to reset your password",
+    "email/empty/subject.j2": "{{ subject }}",
+    "email/empty/body_html.j2": "<p>{{ body }}</p>",
+    "email/empty/body_text.j2": "{{ body }}",
 }
 
 

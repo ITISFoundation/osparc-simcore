@@ -34,7 +34,8 @@ async def send_message_from_template(
         owner_metadata=NotificationsOwnerMetadata(),
         channel=channel,
         message={
-            "envelope": request.envelope.model_dump(),  # NOTE: validated internally
-            "content": template_preview.message_content.model_dump(),  # NOTE: validated internally
+            # NOTE: validated internally
+            "envelope": request.envelope.model_dump(),
+            "content": template_preview.message_content.model_dump(),
         },
     )
