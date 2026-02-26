@@ -41,4 +41,6 @@ async def task_manager_lifespan(app: FastAPI) -> AsyncIterator[State]:
 
 
 def get_task_manager(app: FastAPI) -> TaskManager:
+    assert hasattr(app.state, "task_manager"), "Task manager not setup for this app"  # nosec
+    assert isinstance(app.state.task_manager, CeleryTaskManager)  # nosec
     return app.state.task_manager
