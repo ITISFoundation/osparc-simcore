@@ -976,6 +976,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       const delta = osparc.wrapper.JsonDiffPatch.getInstance().diff(studyA, studyB);
        // curate delta
       if (delta) {
+        delete delta["prjOwner"];
         // lastChangeDate and creationDate should not be taken into account as data change
         delete delta["creationDate"];
         delete delta["lastChangeDate"];
@@ -998,6 +999,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
     didStudyChange: function() {
       const studyDiffs = this.__getStudyDiffs();
       const changed = Boolean(Object.keys(studyDiffs.delta).length);
+      console.log("didStudyChange", changed, studyDiffs.delta);
       this.getStudy().setSavePending(changed);
       return changed;
     },
