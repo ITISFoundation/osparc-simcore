@@ -178,7 +178,7 @@ def mock_celery_worker(
     shutdown_wrapper = _worker_shutdown_wrapper(celery_app)
     worker_shutdown.connect(shutdown_wrapper, weak=False)
 
-    register_worker_tasks(celery_app)
+    register_worker_tasks(ApplicationSettings.create_from_envs(), celery_app)
 
     with start_worker(
         celery_app,

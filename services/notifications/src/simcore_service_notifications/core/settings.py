@@ -51,7 +51,8 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
         Field(
             default_factory=dict,
             validation_alias=AliasChoices("NOTIFICATIONS_LOG_FILTER_MAPPING", "LOG_FILTER_MAPPING"),
-            description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') to a list of log message patterns that should be filtered out.",
+            description="is a dictionary that maps specific loggers (such as 'uvicorn.access' or 'gunicorn.access') "
+            "to a list of log message patterns that should be filtered out.",
         ),
     ] = DEFAULT_FACTORY
 
@@ -81,6 +82,11 @@ class ApplicationSettings(BaseApplicationSettings, MixinLoggingSettings):
     NOTIFICATIONS_PROMETHEUS_INSTRUMENTATION_ENABLED: bool = True
 
     NOTIFICATIONS_WORKER_MODE: Annotated[bool, Field(description="If True, run as a worker")] = False
+
+    NOTIFICATIONS_EMAIL_RATE_LIMIT: Annotated[
+        str,
+        Field(description="Rate limit for sending emails, e.g. '0.2/s' means 1 email every 5 seconds"),
+    ] = "1/s"
 
     @field_validator("LOG_LEVEL")
     @classmethod

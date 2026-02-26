@@ -89,10 +89,6 @@ class CeleryTaskManager:
             created: list[tuple[str, TaskUUID]] = []
 
             try:
-                # Generate group UUID and key
-                group_uuid = uuid4()
-                group_key = owner_metadata.model_dump_key(task_or_group_uuid=group_uuid)
-
                 # Prepare data for group creation
                 sigs = []
                 task_metadata_pairs: list[tuple[str, ExecutionMetadata]] = []
@@ -116,12 +112,15 @@ class CeleryTaskManager:
                     sigs.append(sig)
                     created.append((task_key, task_uuid))
 
+                group_result: GroupResult = group(sigs).apply_async()
+                group_result.save()
+
+                assert group_result.id is not None  # nosec
+                group_key = owner_metadata.model_dump_key(task_or_group_uuid=group_result.id)
+
                 # Create all tasks in the group at once
                 group_expiry = max(expiries) if expiries else self._settings.CELERY_RESULT_EXPIRES
                 await self._task_store.create_group(group_key, task_metadata_pairs, expiry=group_expiry)
-
-                group_result: GroupResult = group(sigs).apply_async()
-                group_result.save()
 
             except CeleryError as exc:
                 for task_key, _ in created:
@@ -133,7 +132,6 @@ class CeleryTaskManager:
                     task_params={"submitted": len(created)},
                 ) from exc
 
-            assert group_result.id is not None  # nosec
             return TypeAdapter(GroupUUID).validate_python(group_result.id), [
                 TypeAdapter(TaskUUID).validate_python(task_uuid) for _, task_uuid in created
             ]
@@ -247,11 +245,24 @@ class CeleryTaskManager:
                 progress_report=await self._get_task_progress_report(task_key, task_state),
             )
 
+    @handle_celery_errors
+    async def get_status(
+        self, owner_metadata: OwnerMetadata, task_or_group_uuid: TaskUUID | GroupUUID
+    ) -> TaskStatus | GroupStatus:
+        task_or_group_key = owner_metadata.model_dump_key(task_or_group_uuid=task_or_group_uuid)
+        if not await self.task_or_group_exists(task_or_group_key):
+            raise TaskNotFoundError(task_uuid=task_or_group_uuid, owner_metadata=owner_metadata)
+
+        if await self._task_store.is_group(task_or_group_key):
+            return await self.get_group_status(owner_metadata, task_or_group_uuid)  # type: ignore[no-any-return]
+
+        return await self.get_task_status(owner_metadata, task_or_group_uuid)  # type: ignore[no-any-return]
+
     @make_async()
     def _restore_group_result(self, group_uuid: GroupUUID) -> GroupResult | None:
         """Restore a GroupResult from its ID."""
         try:
-            return GroupResult.restore(str(group_uuid), app=self._app)
+            return GroupResult.restore(f"{group_uuid}", app=self._app)
         except (KeyError, AttributeError):
             # Group not found or invalid
             return None
@@ -286,6 +297,10 @@ class CeleryTaskManager:
                 total_count=len(task_uuids),
                 is_done=is_done,
                 is_successful=is_successful,
+                progress_report=ProgressReport(
+                    actual_value=float(completed_count) / len(task_uuids) if not is_done else 1.0,
+                    total=len(task_uuids),
+                ),
             )
 
     @handle_celery_errors

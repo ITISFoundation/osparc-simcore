@@ -38,16 +38,14 @@ class EmailContent(BaseModel):
 
 
 class EmailMessage(BaseModel):
-    """Email message with multiple recipients for bulk sending."""
-
     channel: ChannelType = ChannelType.email
 
     # Envelope fields
     from_: Annotated[EmailContact, Field(alias="from")]
-    to: Annotated[list[EmailContact], Field(min_length=1)]
+    to: EmailContact
     reply_to: EmailContact | None = None
-    cc: list[EmailContact] | None = None
-    bcc: list[EmailContact] | None = None
+    cc: EmailContact | None = None
+    bcc: EmailContact | None = None
 
     # Content fields
     content: EmailContent
