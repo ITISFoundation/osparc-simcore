@@ -20,7 +20,7 @@ from models_library.api_schemas_webserver.notifications import (
     TemplatePreviewGet,
 )
 from models_library.notifications import ChannelType
-from models_library.notifications.rpc._template import (
+from models_library.notifications.rpc import (
     PreviewTemplateResponse,
     SearchTemplatesResponse,
     TemplateRef,
