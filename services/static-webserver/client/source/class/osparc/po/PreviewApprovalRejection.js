@@ -104,7 +104,7 @@ qx.Class.define("osparc.po.PreviewApprovalRejection", {
           });
           control.addListener("execute", () => {
             const invitationUrlField = this.getChildControl("invitation-url");
-            osparc.utils.Utils.copyToClipboard(invitationUrlField.getValue());
+            osparc.utils.Utils.copyTextToClipboard(invitationUrlField.getValue());
           }, this);
           this.getChildControl("invitation-url-container").add(control);
           break;
