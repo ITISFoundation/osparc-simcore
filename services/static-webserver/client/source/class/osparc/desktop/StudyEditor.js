@@ -425,7 +425,10 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       this.self().curateFrontendProjectDocument(myStudy);
 
       this.__blockUpdates = true;
-      const delta = osparc.wrapper.JsonDiffPatch.getInstance().diff(myStudy, updatedProjectDocument);
+      const delta = this.__calculateDelta(myStudy, updatedProjectDocument);
+      console.debug("applyProjectDocument source:", updatedProjectDocument);
+      console.debug("applyProjectDocument myStudy:", myStudy);
+      console.debug("applyProjectDocument delta:", delta);
       const jsonPatches = osparc.wrapper.JsonDiffPatch.getInstance().deltaToJsonPatches(delta);
       const uiPatches = [];
       const workbenchPatches = [];
@@ -962,23 +965,34 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         sourceStudy,
         delta: {},
       }
-      const delta = osparc.wrapper.JsonDiffPatch.getInstance().diff(this.__lastSyncedProjectDocument, sourceStudy);
+      const delta = this.__calculateDelta(this.__lastSyncedProjectDocument, sourceStudy);
+      if (delta) {
+        studyDiffs.delta = delta;
+      }
+      return studyDiffs;
+    },
+
+    __calculateDelta: function(studyA, studyB) {
+      const delta = osparc.wrapper.JsonDiffPatch.getInstance().diff(studyA, studyB);
+      this.__curateDelta(delta);
+      return delta;
+    },
+
+    __curateDelta: function(delta) {
       if (delta) {
         // lastChangeDate and creationDate should not be taken into account as data change
         delete delta["creationDate"];
         delete delta["lastChangeDate"];
+        // Handle edge case: empty string vs null for thumbnail is not a real change
         if (
           "thumbnail" in delta &&
           Object.keys(delta["thumbnail"]).length === 2 &&
-          delta["thumbnail"][0] === "" &&
-          delta["thumbnail"][1] === null
+          (delta["thumbnail"][0] === "" || delta["thumbnail"][0] === null) &&
+          (delta["thumbnail"][1] === "" || delta["thumbnail"][1] === null)
         ) {
-          // it didn't change
           delete delta["thumbnail"];
         }
-        studyDiffs.delta = delta;
       }
-      return studyDiffs;
     },
 
     // didStudyChange takes around 0.5ms
