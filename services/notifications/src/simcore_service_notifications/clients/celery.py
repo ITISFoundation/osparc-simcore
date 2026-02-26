@@ -6,6 +6,7 @@ from celery_library.backends import RedisTaskStore
 from celery_library.types import register_celery_types
 from fastapi import FastAPI
 from fastapi_lifespan_manager import State
+from servicelib.celery.task_manager import TaskManager
 from servicelib.redis import RedisClientSDK
 from settings_library.redis import RedisDatabase
 
@@ -37,3 +38,7 @@ async def task_manager_lifespan(app: FastAPI) -> AsyncIterator[State]:
 
     if redis_client_sdk:
         await redis_client_sdk.shutdown()
+
+
+def get_task_manager(app: FastAPI) -> TaskManager:
+    return app.state.task_manager

@@ -2,15 +2,15 @@
 import pytest
 from fastapi import FastAPI
 from models_library.notifications import ChannelType, TemplateRef
-from models_library.notifications._errors import (
+from models_library.notifications.errors import (
     TemplateContextValidationError,
     TemplateNotFoundError,
 )
-from models_library.notifications.rpc._template import (
+from models_library.notifications.rpc import (
     PreviewTemplateResponse,
 )
 from servicelib.rabbitmq import RabbitMQRPCClient, RPCServerError
-from servicelib.rabbitmq.rpc_interfaces.notifications._template import (
+from servicelib.rabbitmq.rpc_interfaces.notifications import (
     preview_template,
     search_templates,
 )
