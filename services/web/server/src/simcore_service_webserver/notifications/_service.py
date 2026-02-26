@@ -13,10 +13,10 @@ from models_library.products import ProductName
 from models_library.users import UserID
 from servicelib.celery.async_jobs.notifications import submit_send_message_task, submit_send_messages_task
 from servicelib.celery.models import GroupUUID, OwnerMetadata, TaskName, TaskUUID
-from servicelib.rabbitmq.rpc_interfaces.notifications.notifications_templates import (
+from servicelib.rabbitmq.rpc_interfaces.notifications._template import (
     preview_template as remote_preview_template,
 )
-from servicelib.rabbitmq.rpc_interfaces.notifications.notifications_templates import (
+from servicelib.rabbitmq.rpc_interfaces.notifications._template import (
     search_templates as remote_search_templates,
 )
 
