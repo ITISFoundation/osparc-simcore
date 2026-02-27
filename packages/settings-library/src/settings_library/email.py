@@ -93,7 +93,7 @@ class SMTPSettings(BaseCustomSettings):
         if disallowed:
             msg = (
                 f"SMTP_EXTRA_HEADERS contains non-permitted headers: {sorted(disallowed)}. "
-                f"Allowed: {sorted(ALLOWED_HEADERS)}"
+                f"Allowed (case-insensitive): {sorted(ALLOWED_HEADERS)}"
             )
             raise ValueError(msg)
         return self
