@@ -68,16 +68,17 @@ qx.Class.define("osparc.file.FileUploader", {
         return;
       }
 
-      const download = false;
+      // take the token to upload the file
+      osparc.file.FilePicker.addRTCToken(this.getNode());
       const locationId = 0;
       const studyId = this.getNode().getStudy().getUuid();
       const nodeId = this.getNode() ? this.getNode().getNodeId() : osparc.utils.Utils.uuidV4();
       const fileId = file.name;
       const fileUuid = studyId +"/"+ nodeId +"/"+ fileId;
       const fileSize = file.size;
-      const dataStore = osparc.store.Data.getInstance();
       this.getNode().getStatus().setProgress(this.self().PROGRESS_VALUES.FETCHING_PLINK);
-      dataStore.getPresignedLink(download, locationId, fileUuid, fileSize)
+      const dataStore = osparc.store.Data.getInstance();
+      dataStore.getPresignedLink(false, locationId, fileUuid, fileSize)
         .then(presignedLinkData => {
           if (presignedLinkData.resp.urls) {
             this.__presignedLinkData = presignedLinkData;
@@ -214,6 +215,7 @@ qx.Class.define("osparc.file.FileUploader", {
     },
 
     __completeUpload: function() {
+      osparc.file.FilePicker.removeRTCToken(this.getNode());
       this.getNode()["fileUploadAbortRequested"] = false;
 
       this.__presignedLinkData = null;
@@ -221,6 +223,7 @@ qx.Class.define("osparc.file.FileUploader", {
     },
 
     __abortUpload: function() {
+      osparc.file.FilePicker.removeRTCToken(this.getNode());
       this.getNode()["fileUploadAbortRequested"] = false;
 
       const aborted = () => {

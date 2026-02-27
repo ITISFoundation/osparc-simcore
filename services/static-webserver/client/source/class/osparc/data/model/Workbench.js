@@ -111,27 +111,28 @@ qx.Class.define("osparc.data.model.Workbench", {
     },
 
     __deserialize: function(workbenchInitData, uiData = {}) {
-      const nodeDatas = {};
-      const nodeUiDatas = {};
+      const nodesData = {};
+      const nodesUiData = {};
       for (const nodeId in workbenchInitData) {
         const nodeData = workbenchInitData[nodeId];
-        nodeDatas[nodeId] = nodeData;
+        nodesData[nodeId] = nodeData;
         if (uiData["workbench"] && nodeId in uiData["workbench"]) {
-          nodeUiDatas[nodeId] = uiData["workbench"][nodeId];
+          nodesUiData[nodeId] = uiData["workbench"][nodeId];
         }
       }
-      this.__deserializeNodes(nodeDatas, nodeUiDatas)
+      this.__deserializeNodes(nodesData, nodesUiData)
         .then(() => {
           this.__deserializeEdges(workbenchInitData);
           this.setDeserialized(true);
         });
     },
 
-    __deserializeNodes: function(nodeDatas, nodeUiDatas) {
+    __deserializeNodes: function(nodesData, nodesUiData) {
       const nodesPromises = [];
-      for (const nodeId in nodeDatas) {
-        const nodeData = nodeDatas[nodeId];
-        const nodeUiData = nodeUiDatas[nodeId];
+      for (const nodeId in nodesData) {
+        const nodeData = nodesData[nodeId];
+        const nodeUiData = nodesUiData[nodeId];
+        // Node deserialized, it was added by me
         const node = this.__createNode(nodeData["key"], nodeData["version"], nodeId);
         nodesPromises.push(node.fetchMetadataAndPopulate(nodeData, nodeUiData));
       }
@@ -365,7 +366,9 @@ qx.Class.define("osparc.data.model.Workbench", {
         const resp = await osparc.data.Resources.fetch("studies", "addNode", params);
         const nodeId = resp["node_id"];
 
+        // Node was added by me
         const node = this.__createNode(key, version, nodeId);
+        osparc.file.FilePicker.addRTCToken(node);
         node.fetchMetadataAndPopulate()
           .then(() => {
             this.__giveUniqueNameToNode(node, node.getLabel());
@@ -803,14 +806,26 @@ qx.Class.define("osparc.data.model.Workbench", {
         let patchData = {};
         if (workbenchDiffs[nodeId] instanceof Array) {
           // if workbenchDiffs is an array means that the node was added
+          const node = this.getNode(nodeId);
+          // if the file picker wasn't added by me, I can skip it because the backend already has the data
+          if (node.isFilePicker() && !osparc.file.FilePicker.isRTCTokenMine(node)) {
+            console.warn("File picker added by another user, skipping patch");
+            return;
+          }
           patchData = nodeData;
         } else {
           // patch only what was changed
           Object.keys(workbenchDiffs[nodeId]).forEach(changedFieldKey => {
-            if (nodeData[changedFieldKey] !== undefined) {
-              // do not patch if it's undefined
-              patchData[changedFieldKey] = nodeData[changedFieldKey];
+            // do not patch if it's undefined
+            if (nodeData[changedFieldKey] === undefined) {
+              return;
             }
+            // if the progress is not 100% for the file picker, only the one with the token should patch
+            if (node.isFilePicker() && nodeData["progress"] !== 100 && !osparc.file.FilePicker.isRTCTokenMine(node)) {
+              console.warn("File picker progress changed by another user, skipping patch");
+              return;
+            }
+            patchData[changedFieldKey] = nodeData[changedFieldKey];
           });
         }
         const params = {
@@ -914,6 +929,7 @@ qx.Class.define("osparc.data.model.Workbench", {
 
         const nodeUiData = workbenchUiPatchesByNode[nodeId] && workbenchUiPatchesByNode[nodeId]["value"] ? workbenchUiPatchesByNode[nodeId]["value"] : {};
 
+        // Node was added by someone else, we need to create it in the frontend
         const node = this.__createNode(nodeData["key"], nodeData["version"], nodeId);
         node.fetchMetadataAndPopulate(nodeData, nodeUiData)
           .then(() => {

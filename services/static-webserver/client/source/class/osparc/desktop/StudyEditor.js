@@ -295,8 +295,16 @@ qx.Class.define("osparc.desktop.StudyEditor", {
       }
     },
 
-    __setLastSyncedProjectDocument: function(studyData) {
+    __setLastSyncedProjectDocument: function(studyData, version = null) {
       this.__lastSyncedProjectDocument = osparc.data.model.Study.deepCloneStudyObject(studyData, true);
+
+      // Initialize or update the version if provided
+      if (version !== null) {
+        this.__lastSyncedProjectVersion = version;
+      } else if (this.__lastSyncedProjectVersion === null) {
+        // Initialize to 0 on first sync (study open) so incoming updates with version > 0 are accepted
+        this.__lastSyncedProjectVersion = 0;
+      }
 
       // remove the runHash, this.__lastSyncedProjectDocument is only used for diff comparison and the frontend doesn't keep it
       Object.keys(this.__lastSyncedProjectDocument["workbench"]).forEach(nodeId => {
@@ -368,6 +376,8 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         return;
       }
 
+      console.debug("Received projectDocument:updated", data);
+
       // Always keep the latest version in pending buffer
       if (!this.__pendingProjectData || documentVersion > (this.__pendingProjectData.version || 0)) {
         this.__pendingProjectData = data;
@@ -401,18 +411,24 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
     __applyProjectDocument: function(data) {
       console.debug("ProjectDocument applying:", data);
-      this.__lastSyncedProjectVersion = data["version"];
       const updatedProjectDocument = data["document"];
 
       // curate projectDocument:updated document
       this.self().curateBackendProjectDocument(updatedProjectDocument);
 
+      // Update baseline FIRST (after curation) - this sets both document and version
+      this.__setLastSyncedProjectDocument(updatedProjectDocument, data["version"]);
+
+      // Now compute diff and apply patches...
       const myStudy = this.getStudy().serialize();
       // curate myStudy
       this.self().curateFrontendProjectDocument(myStudy);
 
       this.__blockUpdates = true;
-      const delta = osparc.wrapper.JsonDiffPatch.getInstance().diff(myStudy, updatedProjectDocument);
+      const delta = this.__calculateDelta(myStudy, updatedProjectDocument);
+      console.debug("applyProjectDocument source:", updatedProjectDocument);
+      console.debug("applyProjectDocument myStudy:", myStudy);
+      console.debug("applyProjectDocument delta:", delta);
       const jsonPatches = osparc.wrapper.JsonDiffPatch.getInstance().deltaToJsonPatches(delta);
       const uiPatches = [];
       const workbenchPatches = [];
@@ -934,6 +950,13 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
     __stopTimers: function() {
       this.__stopIdlingTracker();
+
+      // Clear the pending project document application timer
+      if (this.__applyProjectDocumentTimer) {
+        clearTimeout(this.__applyProjectDocumentTimer);
+        this.__applyProjectDocumentTimer = null;
+      }
+      this.__pendingProjectData = null;
     },
 
     __getStudyDiffs: function() {
@@ -942,20 +965,41 @@ qx.Class.define("osparc.desktop.StudyEditor", {
         sourceStudy,
         delta: {},
       }
-      const delta = osparc.wrapper.JsonDiffPatch.getInstance().diff(this.__lastSyncedProjectDocument, sourceStudy);
+      const delta = this.__calculateDelta(this.__lastSyncedProjectDocument, sourceStudy);
       if (delta) {
-        // lastChangeDate and creationDate should not be taken into account as data change
-        delete delta["creationDate"];
-        delete delta["lastChangeDate"];
         studyDiffs.delta = delta;
       }
       return studyDiffs;
+    },
+
+    __calculateDelta: function(studyA, studyB) {
+      const delta = osparc.wrapper.JsonDiffPatch.getInstance().diff(studyA, studyB);
+       // curate delta
+      if (delta) {
+        delete delta["prjOwner"];
+        // lastChangeDate and creationDate should not be taken into account as data change
+        delete delta["creationDate"];
+        delete delta["lastChangeDate"];
+        // Handle edge case: empty string vs null is not a real change
+        ["thumbnail", "description"].forEach(prop => {
+          if (
+            prop in delta &&
+            Object.keys(delta[prop]).length === 2 &&
+            (delta[prop][0] === "" || delta[prop][0] === null) &&
+            (delta[prop][1] === "" || delta[prop][1] === null)
+          ) {
+            delete delta[prop];
+          }
+        });
+      }
+      return delta;
     },
 
     // didStudyChange takes around 0.5ms
     didStudyChange: function() {
       const studyDiffs = this.__getStudyDiffs();
       const changed = Boolean(Object.keys(studyDiffs.delta).length);
+      console.log("didStudyChange", changed, studyDiffs.delta);
       this.getStudy().setSavePending(changed);
       return changed;
     },
