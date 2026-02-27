@@ -217,7 +217,6 @@ qx.Class.define("osparc.file.FileUploader", {
     },
 
     __completeUpload: function() {
-      osparc.file.FilePicker.removeRTCToken(this.getNode());
       this.getNode()["fileUploadAbortRequested"] = false;
 
       this.__presignedLinkData = null;
@@ -225,7 +224,6 @@ qx.Class.define("osparc.file.FileUploader", {
     },
 
     __abortUpload: function() {
-      osparc.file.FilePicker.removeRTCToken(this.getNode());
       this.getNode()["fileUploadAbortRequested"] = false;
 
       const aborted = () => {
