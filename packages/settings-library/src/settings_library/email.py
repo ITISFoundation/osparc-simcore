@@ -9,6 +9,30 @@ from pydantic.types import SecretStr
 from .base import BaseCustomSettings
 from .basic_types import PortInt
 
+FORBIDDEN_HEADERS = frozenset(
+    {
+        # SMTP envelope — controlled by the mailer, not config
+        "from",
+        "to",
+        "cc",
+        "bcc",
+        "reply-to",
+        # Authentication / security — must never be overridden
+        "dkim-signature",
+        "domainkey-signature",
+        "authentication-results",
+        "received-spf",
+        "arc-seal",
+        "arc-message-signature",
+        # Structural message fields
+        "mime-version",
+        "content-type",
+        "content-transfer-encoding",
+        "message-id",
+        "date",
+    }
+)
+
 
 class EmailProtocol(str, Enum):
     UNENCRYPTED = "UNENCRYPTED"
@@ -70,11 +94,11 @@ class SMTPSettings(BaseCustomSettings):
         return self
 
     @model_validator(mode="after")
-    def _extra_headers_must_start_with_x(self) -> Self:
-        for key in self.SMTP_EXTRA_HEADERS:
-            if not key.lower().startswith("x-"):
-                msg = f"Extra header key '{key}' must start with 'X-' or 'x-'"
-                raise ValueError(msg)
+    def _disallow_dangerous_headers(self) -> Self:
+        forbidden = FORBIDDEN_HEADERS & {k.lower() for k in self.SMTP_EXTRA_HEADERS}
+        if forbidden:
+            msg = f"SMTP_EXTRA_HEADERS contains forbidden headers: {sorted(forbidden)}"
+            raise ValueError(msg)
         return self
 
     @property
