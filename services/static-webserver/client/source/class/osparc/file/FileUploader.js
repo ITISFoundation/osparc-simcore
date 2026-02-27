@@ -44,9 +44,11 @@ qx.Class.define("osparc.file.FileUploader", {
 
   statics: {
     PROGRESS_VALUES: {
+      NOT_STARTED: 0,
       FETCHING_PLINK: 1,
       CHUNKING: 2,
-      COMPLETING: 99
+      COMPLETING: 99,
+      COMPLETED: 100,
     },
 
     createChunk: function(file, fileSize, chunkIdx, chunkSize) {

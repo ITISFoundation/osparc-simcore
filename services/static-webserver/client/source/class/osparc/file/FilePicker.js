@@ -135,7 +135,7 @@ qx.Class.define("osparc.file.FilePicker", {
       } else {
         node.setLabel("File Picker");
       }
-      node.getStatus().setProgress(outputValue ? 100 : 0);
+      node.getStatus().setProgress(outputValue ? osparc.file.FileUploader.PROGRESS_VALUES.COMPLETED : osparc.file.FileUploader.PROGRESS_VALUES.NOT_STARTED);
     },
 
     setOutputValueFromStore: function(node, store, dataset, path, label) {
