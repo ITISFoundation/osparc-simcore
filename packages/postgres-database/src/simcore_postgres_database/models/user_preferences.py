@@ -1,4 +1,5 @@
 import sqlalchemy as sa
+from sqlalchemy.dialects.postgresql import JSONB
 
 from ._common import RefActions
 from .base import metadata
@@ -91,7 +92,7 @@ user_preferences_notifications = sa.Table(
     _preference_name_column(),
     sa.Column(
         "payload",
-        sa.JSON,
+        JSONB,
         nullable=False,
         doc="preference content encoded as json",
     ),
