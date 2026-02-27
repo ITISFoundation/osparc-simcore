@@ -1,5 +1,5 @@
 from enum import StrEnum
-from typing import Annotated, Self
+from typing import Annotated, Final, Self
 
 from common_library.basic_types import DEFAULT_FACTORY
 from pydantic import model_validator
@@ -9,7 +9,7 @@ from pydantic.types import SecretStr
 from .base import BaseCustomSettings
 from .basic_types import PortInt
 
-ALLOWED_HEADERS = frozenset(
+ALLOWED_HEADERS: Final = frozenset(
     {
         # AWS SES routing/configuration
         "x-ses-tenant",
