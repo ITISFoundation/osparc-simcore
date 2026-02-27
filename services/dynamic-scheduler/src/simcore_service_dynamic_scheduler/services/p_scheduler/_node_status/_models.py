@@ -31,8 +31,4 @@ class ServicesPresence(BaseModel):
             msg = f"Cannot have both legacy and new-style (dy_sidecar/dy_proxy) entries {self}"
             raise ValueError(msg)
 
-        if not has_legacy and not has_new_style:
-            msg = f"Must provide either a legacy or new-style (dy_sidecar/dy_proxy) entry {self}"
-            raise ValueError(msg)
-
         return self
