@@ -64,6 +64,13 @@ qx.Class.define("osparc.file.FilePicker", {
   },
 
   statics: {
+    POS: {
+      RELOAD: 0,
+      FILES_TREE: 1,
+      TOOLBAR: 2,
+      DOWNLOAD_LINK: 3
+    },
+
     getOutput: function(outputs) {
       const output = outputs.find(out => out.getPortKey() === osparc.data.model.NodePort.FP_PORT_KEY);
       // output can be undefined
@@ -249,12 +256,23 @@ qx.Class.define("osparc.file.FilePicker", {
       return output;
     },
 
-    POS: {
-      RELOAD: 0,
-      FILES_TREE: 1,
-      TOOLBAR: 2,
-      DOWNLOAD_LINK: 3
-    }
+    /** RTC Token management
+     * The token is used to avoid file picker's file uploading (progress) race conditions in collaborative studies.
+     * The token is added when the file upload starts and it's removed when the file is uploaded. In this way, the node is locked for all users except the one uploading the file.
+     * In case of the File Pickers, to avoid progress race conditions, the token is removed when the file is uploaded.
+     */
+    addRTCToken: function(node) {
+      node["fpRTCToken"] = true;
+    },
+
+    removeRTCToken: function(node) {
+      delete node["fpRTCToken"];
+    },
+
+    isRTCTokenMine: function(node) {
+      return "fpRTCToken" in node && node["fpRTCToken"] === true;
+    },
+    /** /RTC Token management */
   },
 
   members: {
