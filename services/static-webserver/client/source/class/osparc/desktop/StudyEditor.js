@@ -951,7 +951,7 @@ qx.Class.define("osparc.desktop.StudyEditor", {
 
     __calculateDelta: function(studyA, studyB) {
       const delta = osparc.wrapper.JsonDiffPatch.getInstance().diff(studyA, studyB);
-       // curate delta
+      // curate delta
       if (delta) {
         delete delta["prjOwner"];
         // lastChangeDate and creationDate should not be taken into account as data change
