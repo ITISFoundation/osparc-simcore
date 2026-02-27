@@ -3,7 +3,7 @@ name = "pytest-simcore"
 version = "0.1.0"
 description = "pytest plugin with fixtures and test helpers for osparc-simcore repo modules"
 authors = [{ name = "pcrespov" }, { name = "sanderegg" }]
-requires-python = "~=3.13"
+requires-python = ">=3.13"
 dependencies = ["pytest>=8.4.2"]
 classifiers = [
   "Development Status :: 4 - Beta",
@@ -20,8 +20,3 @@ simcore = "pytest_simcore"
 [build-system]
 requires = ["uv_build>=0.9.28,<0.10.0"]
 build-backend = "uv_build"
-
-[tool.setuptools]
-py-modules = ["pytest_simcore"]
-package-dir = { "" = "src" }
-packages = { find = { where = ["src"] } }

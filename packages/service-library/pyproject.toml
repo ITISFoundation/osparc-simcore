@@ -1,0 +1,139 @@
+[project]
+name = "simcore-service-library"
+version = "1.2.0"
+description = "Core service library for simcore"
+readme = "README.md"
+requires-python = ">=3.13"
+authors = [{ name = "osparc", email = "support@osparc.io" }]
+license = { text = "MIT" }
+dependencies = [
+  "arrow>=1.3.0",
+  "jsonref>=1.1.0",
+  "jsonschema>=4.25.1",
+  "orjson>=3.11.4",
+  "pydantic[email]>=2.11.9",
+  "pydantic-extra-types>=2.10.5",
+  "pydantic-settings>=2.7.0",
+  "rich>=14.1.0",
+  "typer>=0.19.2",
+  "aio-pika>=9.5.7",
+  "aiocache>=0.12.3",
+  "aiodebug>=2.3.0",
+  "aiodocker>=0.24.0",
+  "aiofiles>=24.1.0",
+  "faststream>=0.5.48",
+  "httpx[http2]>=0.28.1",
+  "opentelemetry-api>=1.37.0",
+  "opentelemetry-exporter-otlp>=1.37.0",
+  "opentelemetry-instrumentation-aio-pika>=0.58b0",
+  "opentelemetry-instrumentation-asyncpg>=0.58b0",
+  "opentelemetry-instrumentation-httpx>=0.58b0",
+  "opentelemetry-instrumentation-logging>=0.58b0",
+  "opentelemetry-instrumentation-redis>=0.58b0",
+  "opentelemetry-instrumentation-requests>=0.58b0",
+  "opentelemetry-sdk>=1.37.0",
+  "psutil>=7.1.0",
+  "pyinstrument>=5.1.1",
+  "pyyaml>=6.0.3",
+  "redis>=6.4.0",
+  "stream-zip>=0.0.84",
+  "tenacity>=9.1.2",
+  "toolz>=1.0.0",
+  "tqdm>=4.67.1",
+  "yarl>=1.20.1",
+  "simcore-common-library",
+  "simcore-models-library",
+  "simcore-settings-library",
+]
+
+[project.optional-dependencies]
+aiohttp = [
+  "aiohttp>=3.12.15",
+  "aiopg[sa]>=1.4.0",
+  "attrs>=25.3.0",
+  "jsonschema>=4.25.1",
+  "opentelemetry-instrumentation-aiohttp-client>=0.58b0",
+  "opentelemetry-instrumentation-aiohttp-server>=0.58b0",
+  "opentelemetry-instrumentation-aiopg>=0.58b0",
+  "prometheus-client>=0.23.1",
+  "werkzeug>=3.1.3",
+]
+fastapi = [
+  "asgi-lifespan>=2.1.0",
+  "fastapi-lifespan-manager>=0.1.4",
+  "fastapi[standard]>=0.118.0",
+  "opentelemetry-instrumentation-fastapi>=0.58b0",
+  "prometheus-client>=0.23.1",
+]
+
+[build-system]
+requires = ["uv_build>=0.9.28,<0.10.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "servicelib"
+
+[tool.uv.sources]
+simcore-common-library = { path = "../common-library", editable = true }
+simcore-models-library = { path = "../models-library", editable = true }
+simcore-settings-library = { path = "../settings-library", editable = true }
+pytest-simcore = { path = "../pytest-simcore", editable = true }
+
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+markers = [
+  "diagnostics: can be used to run diagnostics against deployed data",
+  "testit: marks test to run during development",
+]
+
+[tool.mypy]
+plugins = ["pydantic.mypy"]
+
+[dependency-groups]
+dev = [
+  "asgi-lifespan>=2.1.0",
+  "botocore>=1.40.60",
+  "coverage>=7.10.7",
+  "docker>=7.1.0",
+  "faker>=37.8.0",
+  "fakeredis[lua]>=2.31.3",
+  "flaky>=3.8.1",
+  "mypy>=1.18.2",
+  "numpy>=2.3.3",
+  "openapi-spec-validator>=0.7.2",
+  "pillow>=12.0.0",
+  "pip>=25.2",
+  "pyleak>=0.1.14",
+  "pytest>=8.4.2",
+  "pytest-aiohttp>=1.1.0",
+  "pytest-asyncio>=1.2.0",
+  "pytest-benchmark>=5.1.0",
+  "pytest-cov>=7.0.0",
+  "pytest-docker>=3.2.3",
+  "pytest-icdiff>=0.9",
+  "pytest-instafail>=0.5.0",
+  "pytest-mock>=3.15.1",
+  "pytest-runner>=6.0.1",
+  "pytest-simcore",
+  "pytest-sugar>=1.1.1",
+  "pytest-xdist>=3.8.0",
+  "python-dotenv>=1.1.1",
+  "respx>=0.22.0",
+  "sqlalchemy[mypy]>=1.4.54",
+  "types-aiofiles>=24.1.0.20250822",
+  "types-psutil>=7.0.0.20251001",
+  "types-psycopg2>=2.9.21.20250915",
+  "types-tqdm>=4.67.0.20250809",
+  "uvloop>=0.21.0",
+]
+devtools = [
+  "black>=25.9.0",
+  "bump2version>=1.0.1",
+  "isort>=6.1.0",
+  "mypy>=1.18.2",
+  "pre-commit>=4.3.0",
+  "pylint>=3.3.8",
+  "ruff>=0.13.3",
+]

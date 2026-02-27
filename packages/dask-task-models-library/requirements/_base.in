@@ -8,5 +8,3 @@
 
 dask[distributed]
 pydantic[email]
-# for the Annotated type
-typing_extensions; python_version < '3.9'

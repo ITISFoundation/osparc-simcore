@@ -40,7 +40,7 @@ ARG GIT_BRANCH
 ARG GIT_REPOSITORY
 
 RUN git clone --single-branch --branch ${GIT_BRANCH} ${GIT_REPOSITORY} osparc-simcore\
-  && uv pip install osparc-simcore/packages/postgres-database[migration]
+  && uv pip install osparc-simcore/packages/postgres-database
 
 FROM base AS production
 
