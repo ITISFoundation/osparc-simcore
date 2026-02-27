@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncConnection
 
 from .models.user_preferences import (
     user_preferences_frontend,
+    user_preferences_notifications,
     user_preferences_user_service,
 )
 
@@ -70,3 +71,7 @@ class FrontendUserPreferencesRepo(BasePreferencesRepo):
 
 class UserServicesUserPreferencesRepo(BasePreferencesRepo):
     model = user_preferences_user_service
+
+
+class NotificationsUserPreferencesRepo(BasePreferencesRepo):
+    model = user_preferences_notifications
