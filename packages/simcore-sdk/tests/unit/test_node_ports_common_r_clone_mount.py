@@ -34,6 +34,9 @@ from simcore_sdk.node_ports_common.r_clone_mount import (
     MountRemoteType,
     RCloneMountManager,
 )
+from simcore_sdk.node_ports_common.r_clone_mount._manager import (
+    _TrackedMount,
+)
 from simcore_sdk.node_ports_common.r_clone_mount._utils import get_mount_id
 from tenacity import (
     AsyncRetrying,
@@ -366,3 +369,74 @@ async def test_container_recovers_and_shutdown_is_emitted(
         with attempt:
             await asyncio.sleep(0)
             mocked_shutdown.assert_called()
+
+
+@pytest.fixture
+def tracked_mount_with_mocked_client(
+    local_mount_path: Path,
+) -> tuple[_TrackedMount, AsyncMock]:
+    """Creates a _TrackedMount with a mocked RemoteControlHttpClient."""
+    mount = object.__new__(_TrackedMount)
+    mount.local_mount_path = local_mount_path
+    mount._consecutive_unresponsive_count = 0  # noqa: SLF001
+
+    mock_is_responsive = AsyncMock()
+    mount._rc_http_client = AsyncMock()  # noqa: SLF001
+    mount._rc_http_client.is_responsive = mock_is_responsive  # noqa: SLF001
+
+    return mount, mock_is_responsive
+
+
+@pytest.mark.parametrize(
+    "is_responsive_sequence, expected_results",
+    [
+        pytest.param(
+            [True],
+            [True],
+            id="single_responsive_returns_true",
+        ),
+        pytest.param(
+            [False],
+            [True],
+            id="single_unresponsive_returns_true_below_threshold",
+        ),
+        pytest.param(
+            [False, False],
+            [True, True],
+            id="two_consecutive_unresponsive_still_true",
+        ),
+        pytest.param(
+            [False, False, False],
+            [True, True, True],
+            id="three_consecutive_unresponsive_returns_true",
+        ),
+        pytest.param(
+            [False, False, False, False],
+            [True, True, True, False],
+            id="four_consecutive_unresponsive_returns_false",
+        ),
+        pytest.param(
+            [False, False, False, True, False, False, False, False],
+            [True, True, True, True, True, True, True, False],
+            id="responsive_in_middle_resets_counter",
+        ),
+        pytest.param(
+            [False, False, False, False, True, False, False, False, False],
+            [True, True, True, False, True, True, True, True, False],
+            id="responsive_in_middle_resets_failing_counter",
+        ),
+    ],
+)
+async def test_check_responsive(
+    tracked_mount_with_mocked_client: tuple[_TrackedMount, AsyncMock],
+    is_responsive_sequence: list[bool],
+    expected_results: list[bool],
+):
+    mount, mock_is_responsive = tracked_mount_with_mocked_client
+
+    for i, (is_resp, expected) in enumerate(zip(is_responsive_sequence, expected_results, strict=True)):
+        mock_is_responsive.return_value = is_resp
+        result = await mount.check_responsive()
+        assert result is expected, (
+            f"Step {i}: is_responsive={is_resp}, expected check_responsive={expected}, got {result}"
+        )
