@@ -86,7 +86,7 @@ async def _prepare_project_copy(
     )
     settings = get_application_settings(app).WEBSERVER_PROJECTS
     assert settings  # nosec
-    if max_bytes := settings.PROJECTS_MAX_COPY_SIZE_BYTES:
+    if deep_copy is True and (max_bytes := settings.PROJECTS_MAX_COPY_SIZE_BYTES):
         # get project total data size
         project_data_size = await get_project_total_size_simcore_s3(app, user_id, src_project_uuid)
         if project_data_size >= max_bytes:
