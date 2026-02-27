@@ -252,12 +252,10 @@ class RemoteControlHttpClient:
         rc_password: str,
         *,
         transfers_completed_timeout: timedelta,
-        update_interval: timedelta = _DEFAULT_UPDATE_INTERVAL,
         r_clone_client_timeout: timedelta = _DEFAULT_R_CLONE_CLIENT_REQUEST_TIMEOUT,
     ) -> None:
         self.transfers_completed_timeout = transfers_completed_timeout
-        self._update_interval_seconds = update_interval.total_seconds()
-        self._r_clone_client_timeout = r_clone_client_timeout
+        self._r_clone_client_timeout_seconds = r_clone_client_timeout.total_seconds()
         self.rc_host = rc_host
         self.rc_port = rc_port
         self._auth = (rc_user, rc_password)
@@ -270,7 +268,7 @@ class RemoteControlHttpClient:
         request_url = f"{self._base_url}/{path}"
         _logger.debug("Sending '%s %s' request", method, request_url)
 
-        async with AsyncClient(timeout=self._r_clone_client_timeout.total_seconds()) as client:
+        async with AsyncClient(timeout=self._r_clone_client_timeout_seconds) as client:
             response = await client.request(method, request_url, auth=self._auth)
             response.raise_for_status()
             dict_response: dict = response.json()
