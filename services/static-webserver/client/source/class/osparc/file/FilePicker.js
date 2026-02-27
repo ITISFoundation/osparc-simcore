@@ -121,7 +121,7 @@ qx.Class.define("osparc.file.FilePicker", {
     },
 
     __setOutputValue: function(node, outputValue) {
-      if (!("eTag" in outputValue)) {
+      if (outputValue && !("eTag" in outputValue)) {
         // add eTag from the beginning to avoid issues with the upload progress bar in case of download links that don't have it
         outputValue["eTag"] = null;
       }
