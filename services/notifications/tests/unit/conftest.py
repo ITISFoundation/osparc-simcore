@@ -2,7 +2,7 @@
 # pylint: disable=unused-argument
 
 import datetime
-from collections.abc import AsyncIterator, Iterator
+from collections.abc import AsyncIterator, Awaitable, Callable, Iterator
 from dataclasses import asdict
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock
@@ -35,6 +35,7 @@ from pytest_mock import MockerFixture
 from pytest_simcore.helpers.monkeypatch_envs import EnvVarsDict, setenvs_from_dict
 from servicelib.celery.task_manager import TaskManager
 from servicelib.fastapi.celery.app_server import FastAPIAppServer
+from servicelib.rabbitmq import RabbitMQRPCClient
 from servicelib.redis import RedisClientSDK
 from settings_library.rabbit import RabbitSettings
 from settings_library.redis import RedisDatabase, RedisSettings
@@ -67,6 +68,9 @@ MOCK_TEMPLATES = {
     "email/password_reset/subject.j2": "Reset Your Password",
     "email/password_reset/body_html.j2": "<p>Click here to reset your password</p>",
     "email/password_reset/body_text.j2": "Click here to reset your password",
+    "email/empty/subject.j2": "{{ subject }}",
+    "email/empty/body_html.j2": "<p>{{ body }}</p>",
+    "email/empty/body_text.j2": "{{ body }}",
 }
 
 
@@ -264,3 +268,10 @@ def smtp_mock_or_none(
         return mock_smtp
     print("🚨 Emails might be sent to", f"{user_email=}")
     return None
+
+
+@pytest.fixture
+async def notifications_rpc_client(
+    rabbitmq_rpc_client: Callable[[str], Awaitable[RabbitMQRPCClient]],
+) -> RabbitMQRPCClient:
+    return await rabbitmq_rpc_client("notifications-test-client")

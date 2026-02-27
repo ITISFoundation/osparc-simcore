@@ -5,18 +5,18 @@ from aiohttp import web
 from common_library.network import NO_REPLY_LOCAL, replace_email_parts
 from models_library.groups import GroupID
 from models_library.notifications import ChannelType, Template, TemplatePreview, TemplateRef
-from models_library.notifications_errors import (
-    NotificationsNoActiveRecipientsError,
-    NotificationsUnsupportedChannelError,
+from models_library.notifications.errors import (
+    NoActiveContactsError,
+    UnsupportedChannelError,
 )
 from models_library.products import ProductName
 from models_library.users import UserID
 from servicelib.celery.async_jobs.notifications import submit_send_message_task, submit_send_messages_task
 from servicelib.celery.models import GroupUUID, OwnerMetadata, TaskName, TaskUUID
-from servicelib.rabbitmq.rpc_interfaces.notifications.notifications_templates import (
+from servicelib.rabbitmq.rpc_interfaces.notifications import (
     preview_template as remote_preview_template,
 )
-from servicelib.rabbitmq.rpc_interfaces.notifications.notifications_templates import (
+from servicelib.rabbitmq.rpc_interfaces.notifications import (
     search_templates as remote_search_templates,
 )
 
@@ -26,7 +26,7 @@ from ..products import products_service
 from ..rabbitmq import get_rabbitmq_rpc_client
 from ..users import users_service
 from ._helpers import get_product_data
-from ._models import Contact, EmailContact, EmailContent, EmailMessage
+from ._models import Contact, EmailContact, EmailContent, EmailEnvelope, EmailMessage
 
 
 def _get_user_display_name(user: dict) -> str:
@@ -83,14 +83,16 @@ async def _create_email_messages(
         to_contacts.extend(external_contacts)
 
     if not to_contacts:
-        raise NotificationsNoActiveRecipientsError
+        raise NoActiveContactsError
 
     email_content = EmailContent(**content)
 
     return [
         EmailMessage(
-            from_=from_contact,
-            to=to_contact,
+            envelope=EmailEnvelope(
+                from_=from_contact,
+                to=to_contact,
+            ),
             content=email_content,
         )
         for to_contact in to_contacts
@@ -152,7 +154,7 @@ async def send_message(
                 content=content,
             )
         case _:
-            raise NotificationsUnsupportedChannelError(channel=channel)
+            raise UnsupportedChannelError(channel=channel)
 
     if len(messages) != 1:
         group_uuid, _, task_name = await submit_send_messages_task(
@@ -163,6 +165,7 @@ async def send_message(
                     product_name=product_name,
                 ).model_dump()
             ),
+            channel=channel,
             messages=[message.model_dump() for message in messages],
         )
         return group_uuid, task_name
@@ -175,5 +178,6 @@ async def send_message(
                 product_name=product_name,
             ).model_dump()
         ),
+        channel=channel,
         message=messages[0].model_dump(),
     )

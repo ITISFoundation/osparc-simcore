@@ -35,6 +35,12 @@ class Template(ABC):
     parts: tuple[str, ...]
 
 
+@dataclass(frozen=True)
+class TemplatePreview[C]:
+    template_ref: TemplateRef
+    message_content: C
+
+
 def register_template_context(
     channel: ChannelType,
     template_name: TemplateName,
