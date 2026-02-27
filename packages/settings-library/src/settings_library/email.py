@@ -9,7 +9,7 @@ from pydantic.types import SecretStr
 from .base import BaseCustomSettings
 from .basic_types import PortInt
 
-ALLOWED_HEADERS: Final = frozenset(
+ALLOWED_HEADERS: Final[frozenset[str]] = frozenset(
     {
         # AWS SES routing/configuration
         "x-ses-tenant",
