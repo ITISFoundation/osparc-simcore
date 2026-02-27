@@ -3,6 +3,7 @@
 # pylint: disable=unused-variable
 # pylint: disable=too-many-arguments
 
+import json
 from enum import Enum
 from typing import Any
 
@@ -163,9 +164,25 @@ def test_smtp_configuration_fails(
 @pytest.mark.parametrize(
     "extra_headers",
     [
+        # AWS SES headers - allowed
+        {"X-SES-Tenant": "tenant-123"},
+        {"X-SES-Configuration-Set": "default"},
+        {"x-ses-source-arn": "arn:aws:ses:us-east-1:123456789012:identity/example.com"},
+        {"X-SES-FROM-ARN": "arn:aws:ses:us-east-1:123456789012:identity/sender@example.com"},
+        {"x-ses-return-path-arn": "arn:aws:ses:us-east-1:123456789012:identity/bounce@example.com"},
+        # Delivery metadata headers - allowed
+        {"Return-Path": "bounce@example.com"},
+        {"X-Mailer": "MyApp 1.0"},
         {"X-Priority": "1 (Highest)"},
-        {"X-Custom-Header": "value", "x-Another-Header": "another value"},
-        {},  # empty dict is valid
+        {"x-priority": "3"},  # case insensitive
+        {"Precedence": "bulk"},
+        {"List-Unsubscribe": "<mailto:unsubscribe@example.com>"},
+        {"list-unsubscribe-post": "List-Unsubscribe=One-Click"},
+        # Multiple allowed headers
+        {"X-SES-Tenant": "tenant-123", "X-Priority": "1"},
+        {"Return-Path": "bounce@example.com", "X-Mailer": "MyApp 1.0", "Precedence": "bulk"},
+        # Empty dict - allowed
+        {},
     ],
 )
 def test_smtp_extra_headers_valid(
@@ -183,17 +200,33 @@ def test_smtp_extra_headers_valid(
 
 
 @pytest.mark.parametrize(
-    "extra_headers",
+    "extra_headers,expected_disallowed",
     [
-        {"Priority": "1"},  # missing X- prefix
-        {"X-Valid": "value", "Invalid": "value"},  # one valid, one invalid
-        {"custom-header": "value"},  # lowercase without X-
+        # Structural/dangerous headers - not allowed
+        ({"From": "sender@example.com"}, ["From"]),
+        ({"To": "recipient@example.com"}, ["To"]),
+        ({"Subject": "Test Email"}, ["Subject"]),
+        ({"Cc": "cc@example.com"}, ["Cc"]),
+        ({"Bcc": "bcc@example.com"}, ["Bcc"]),
+        ({"Date": "Wed, 27 Feb 2026 12:00:00 +0000"}, ["Date"]),
+        ({"Message-ID": "<123@example.com>"}, ["Message-ID"]),
+        ({"MIME-Version": "1.0"}, ["MIME-Version"]),
+        ({"Content-Type": "text/html"}, ["Content-Type"]),
+        # Custom X- headers not in allowed list - not allowed
+        ({"X-Custom-Header": "value"}, ["X-Custom-Header"]),
+        ({"X-My-App-ID": "12345"}, ["X-My-App-ID"]),
+        # Mix of allowed and disallowed
+        ({"X-Priority": "1", "From": "sender@example.com"}, ["From"]),
+        ({"X-SES-Tenant": "tenant", "Subject": "Test", "To": "test@example.com"}, ["Subject", "To"]),
+        # Multiple disallowed
+        ({"From": "sender@example.com", "Subject": "Test"}, ["From", "Subject"]),
     ],
 )
 def test_smtp_extra_headers_invalid(
     all_env_devel_undefined: None,
     monkeypatch: pytest.MonkeyPatch,
     extra_headers: dict[str, str],
+    expected_disallowed: list[str],
 ):
     cfg = {
         "SMTP_HOST": "test",
@@ -205,4 +238,67 @@ def test_smtp_extra_headers_invalid(
 
     assert err_info.value.error_count() == 1
     assert err_info.value.errors()[0]["type"] == "value_error"
-    assert "must start with 'X-'" in str(err_info.value)
+    error_message = str(err_info.value)
+    assert "non-permitted headers" in error_message
+    # Check that all expected disallowed headers are mentioned in the error
+    for header in expected_disallowed:
+        assert header in error_message
+
+
+def test_smtp_extra_headers_case_insensitive_validation(
+    all_env_devel_undefined: None,
+):
+    """Test that header validation is case-insensitive"""
+    # All these variations should be valid
+    valid_variations = [
+        {"x-priority": "1"},
+        {"X-Priority": "1"},
+        {"X-PRIORITY": "1"},
+        {"X-PrIoRiTy": "1"},
+    ]
+
+    for headers in valid_variations:
+        cfg = {
+            "SMTP_HOST": "test",
+            "SMTP_PORT": 113,
+            "SMTP_EXTRA_HEADERS": headers,
+        }
+        settings = SMTPSettings(**cfg)
+        assert headers == settings.SMTP_EXTRA_HEADERS
+
+
+def test_smtp_extra_headers_with_envvars(
+    all_env_devel_undefined: None,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """Test SMTP_EXTRA_HEADERS can be set via environment variables"""
+
+    valid_headers = {
+        "X-SES-Tenant": "tenant-123",
+        "X-Priority": "1",
+    }
+
+    setenvs_from_dict(
+        monkeypatch,
+        {
+            "SMTP_HOST": "test",
+            "SMTP_PORT": "113",
+            "SMTP_EXTRA_HEADERS": json.dumps(valid_headers),
+        },
+    )
+    settings = SMTPSettings.create_from_envs()
+    assert valid_headers == settings.SMTP_EXTRA_HEADERS
+
+    # Test with invalid headers via env vars
+    invalid_headers = {"From": "sender@example.com"}
+    setenvs_from_dict(
+        monkeypatch,
+        {
+            "SMTP_HOST": "test",
+            "SMTP_PORT": "113",
+            "SMTP_EXTRA_HEADERS": json.dumps(invalid_headers),
+        },
+    )
+    with pytest.raises(ValidationError) as err_info:
+        SMTPSettings.create_from_envs()
+    assert "non-permitted headers" in str(err_info.value)
