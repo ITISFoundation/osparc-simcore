@@ -803,12 +803,23 @@ qx.Class.define("osparc.data.model.Workbench", {
         let patchData = {};
         if (workbenchDiffs[nodeId] instanceof Array) {
           // if workbenchDiffs is an array means that the node was added
+          const node = this.getNode(nodeId);
+          // if somebody else is uploading data don't patch it, the backend already knows
+          if (node.isFilePicker() && !osparc.file.FilePicker.isRTCTokenMine(node)) {
+            console.warn("File picker added by another user, skipping patch");
+            return;
+          }
           patchData = nodeData;
         } else {
           // patch only what was changed
           Object.keys(workbenchDiffs[nodeId]).forEach(changedFieldKey => {
             // do not patch if it's undefined
             if (nodeData[changedFieldKey] === undefined) {
+              return;
+            }
+            // if the progress is not 100% somebody else is uploading data don't patch it, the backend already knows
+            if (node.isFilePicker() && nodeData["progress"] !== 100 && !osparc.file.FilePicker.isRTCTokenMine(node)) {
+              console.warn("File picker progress changed by another user, skipping patch");
               return;
             }
             patchData[changedFieldKey] = nodeData[changedFieldKey];
