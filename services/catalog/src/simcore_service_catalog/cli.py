@@ -48,8 +48,8 @@ def echo_dotenv(ctx: typer.Context, *, minimal: bool = True) -> None:
     # The idea here is to have a command that can generate a **valid** `.env` file that can be used
     # to initialized the app. For that reason we fill required fields of the `ApplicationSettings` with
     # "fake" but valid values (e.g. generating a password or adding tags as `replace-with-api-key).
-    # Nonetheless, if the caller of this CLI has already some **valid** env vars in the environment we want to use them ...
-    # and that is why we use `os.environ`.
+    # Nonetheless, if the caller of this CLI has already some **valid** env vars
+    # in the environment we want to use them ... and that is why we use `os.environ`.
 
     settings = ApplicationSettings.create_from_envs(
         CATALOG_POSTGRES=os.environ.get(
