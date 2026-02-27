@@ -266,12 +266,13 @@ class RemoteControlHttpClient:
     def _base_url(self) -> str:
         return f"http://{self.rc_host}:{self.rc_port}"
 
-    async def _request(self, method: str, path: str) -> dict:
+    async def _request(self, method: str, path: str, post_params: dict[str, str] | None = None) -> dict:
         request_url = f"{self._base_url}/{path}"
-        _logger.debug("Sending '%s %s' request", method, request_url)
+        post_params = post_params or {}
+        _logger.debug("Sending '%s %s' request with payload '%s'", method, request_url, post_params)
 
         async with AsyncClient(timeout=self._r_clone_client_timeout.total_seconds()) as client:
-            response = await client.request(method, request_url, auth=self._auth)
+            response = await client.request(method, request_url, auth=self._auth, data=post_params)
             response.raise_for_status()
             dict_response: dict = response.json()
             return dict_response
@@ -282,8 +283,20 @@ class RemoteControlHttpClient:
     async def _post_vfs_queue(self) -> dict:
         return await self._request("POST", "vfs/queue")
 
-    async def _rc_noop(self) -> dict:
+    async def _post_rc_noop(self) -> dict:
         return await self._request("POST", "rc/noop")
+
+    async def post_vfs_refresh(self, dir_to_refresh: str, *, recursive: bool) -> None:
+        post_params = {}
+        if recursive:
+            post_params["recursive"] = "true"
+        if dir_to_refresh != "":
+            post_params["dir"] = dir_to_refresh
+        refresh_result = await self._request("POST", "vfs/refresh", post_params=post_params)
+
+        if refresh_result.get("result") != {dir_to_refresh: "OK"}:
+            msg = f"Failed to refresh the mount, rclone response: {refresh_result=}"
+            raise RuntimeError(msg)
 
     async def get_mount_activity(self) -> MountActivity:
         core_stats, vfs_queue = await asyncio.gather(self._post_core_stats(), self._post_vfs_queue())
@@ -312,7 +325,7 @@ class RemoteControlHttpClient:
 
     async def is_responsive(self) -> bool:
         try:
-            await self._rc_noop()
+            await self._post_rc_noop()
             return True
         except HTTPError:
             return False

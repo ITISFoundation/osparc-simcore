@@ -14,32 +14,37 @@ from ..users import UserID
 
 
 class CommonServiceDetails(BaseModel):
-    key: DynamicServiceKey = Field(
-        ...,
-        description="distinctive name for the node based on the docker registry path",
-        examples=[
-            "simcore/services/dynamic/3dviewer",
-        ],
-        alias="service_key",
-    )
-    version: ServiceVersion = Field(
-        ...,
-        description="semantic version number of the node",
-        examples=["1.0.0", "0.0.1"],
-        alias="service_version",
-    )
+    key: Annotated[
+        DynamicServiceKey,
+        Field(
+            description="distinctive name for the node based on the docker registry path",
+            examples=[
+                "simcore/services/dynamic/3dviewer",
+            ],
+            alias="service_key",
+        ),
+    ]
+    version: Annotated[
+        ServiceVersion,
+        Field(description="semantic version number of the node", examples=["1.0.0", "0.0.1"], alias="service_version"),
+    ]
 
     user_id: UserID
     project_id: ProjectID
-    node_uuid: NodeID = Field(..., alias="service_uuid")
+    node_uuid: Annotated[NodeID, Field(alias="service_uuid")]
 
 
 class ServiceDetails(CommonServiceDetails):
-    basepath: Path | None = Field(
-        default=None,
-        description="predefined path where the dynamic service should be served. If empty, the service shall use the root endpoint.",
-        alias="service_basepath",
-    )
+    basepath: Annotated[
+        Path | None,
+        Field(
+            description=(
+                "predefined path where the dynamic service should be served. "
+                "If empty, the service shall use the root endpoint."
+            ),
+            alias="service_basepath",
+        ),
+    ] = None
     model_config = ConfigDict(
         populate_by_name=True,
         json_schema_extra={
@@ -56,33 +61,34 @@ class ServiceDetails(CommonServiceDetails):
 
 
 class RunningDynamicServiceDetails(ServiceDetails):
-    boot_type: ServiceBootType = Field(
-        default=ServiceBootType.V0,
-        description=(
-            "Describes how the dynamic services was started (legacy=V0, modern=V2)."
-            "Since legacy services do not have this label it defaults to V0."
+    boot_type: Annotated[
+        ServiceBootType,
+        Field(
+            description=(
+                "Describes how the dynamic services was started (legacy=V0, modern=V2)."
+                "Since legacy services do not have this label it defaults to V0."
+            ),
         ),
-    )
+    ] = ServiceBootType.V0
+    data_mounting_enabled: Annotated[bool, Field(description="True if data mounting is enabled")] = False
 
-    host: str = Field(..., description="the service swarm internal host name", alias="service_host")
-    internal_port: PortInt = Field(..., description="the service swarm internal port", alias="service_port")
-    published_port: PortInt | None = Field(
-        default=None,
-        description="the service swarm published port if any",
-        deprecated=True,
-    )
+    host: Annotated[str, Field(description="the service swarm internal host name", alias="service_host")]
+    internal_port: Annotated[PortInt, Field(description="the service swarm internal port", alias="service_port")]
+    published_port: Annotated[
+        PortInt | None, Field(description="the service swarm published port if any", deprecated=True)
+    ] = None
 
-    entry_point: str | None = Field(
-        default=None,
-        description="if empty the service entrypoint is on the root endpoint.",
-        deprecated=True,
-    )
-    state: ServiceState = Field(..., description="service current state", alias="service_state")
-    message: str | None = Field(
-        default=None,
-        description="additional information related to service state",
-        alias="service_message",
-    )
+    entry_point: Annotated[
+        str | None, Field(description="if empty the service entrypoint is on the root endpoint.", deprecated=True)
+    ] = None
+    state: Annotated[ServiceState, Field(description="service current state", alias="service_state")]
+    message: Annotated[
+        str | None,
+        Field(
+            description="additional information related to service state",
+            alias="service_message",
+        ),
+    ] = None
 
     is_collaborative: Annotated[
         bool,
@@ -116,6 +122,7 @@ class RunningDynamicServiceDetails(ServiceDetails):
                         "project_id": "32fb4eb6-ab30-11ef-9ee4-0242ac140008",
                         "service_uuid": "6e3cad3a-eb64-43de-b476-9ac3c413fd9c",
                         "boot_type": "V2",
+                        "data_mounting_enabled": True,
                         "service_host": "dy-sidecar_6e3cad3a-eb64-43de-b476-9ac3c413fd9c",
                         "service_port": 8888,
                         "service_state": "running",

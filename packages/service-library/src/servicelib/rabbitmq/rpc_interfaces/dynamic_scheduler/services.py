@@ -13,7 +13,7 @@ from models_library.api_schemas_dynamic_scheduler.dynamic_services import (
 )
 from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
 from models_library.projects import ProjectID
-from models_library.projects_nodes_io import NodeID
+from models_library.projects_nodes_io import NodeID, StorageFileID
 from models_library.rabbitmq_basic_types import RPCMethodName
 from models_library.services_types import ServicePortKey
 from models_library.users import UserID
@@ -156,6 +156,21 @@ async def update_projects_networks(rabbitmq_rpc_client: RabbitMQRPCClient, *, pr
         DYNAMIC_SCHEDULER_RPC_NAMESPACE,
         _RPC_METHOD_NAME_ADAPTER.validate_python("update_projects_networks"),
         project_id=project_id,
+        timeout_s=_RPC_DEFAULT_TIMEOUT_S,
+    )
+    assert result is None  # nosec
+
+
+@log_decorator(_logger, level=logging.DEBUG)
+async def refresh_containers_files(
+    rabbitmq_rpc_client: RabbitMQRPCClient, *, node_id: NodeID, s3_directory: StorageFileID, recursive: bool = False
+) -> None:
+    result = await rabbitmq_rpc_client.request(
+        DYNAMIC_SCHEDULER_RPC_NAMESPACE,
+        _RPC_METHOD_NAME_ADAPTER.validate_python("refresh_containers_files"),
+        node_id=node_id,
+        s3_directory=s3_directory,
+        recursive=recursive,
         timeout_s=_RPC_DEFAULT_TIMEOUT_S,
     )
     assert result is None  # nosec
