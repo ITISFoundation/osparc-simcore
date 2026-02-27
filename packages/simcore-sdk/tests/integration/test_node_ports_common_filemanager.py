@@ -38,7 +38,7 @@ pytest_simcore_core_services_selection = [
     "sto-worker",
 ]
 
-pytest_simcore_ops_services_selection = ["minio", "adminer"]
+pytest_simcore_ops_services_selection = ["rustfs", "adminer"]
 
 
 class _SyncSettings(BaseModel):

@@ -12,42 +12,61 @@
 # $ make ops_disabled=1 up-versioned
 # $ make ops_disabled=1 up-latest
 #
-# Nonetheless, notice that minio is a service used from simcore stack. Therefore, disabling ops stack
+# Nonetheless, notice that rustfs is a service used from simcore stack. Therefore, disabling ops stack
 # is meaningful ONLY when simcore stack is intended to run with the the actual stacks from osparc-ops
 #
 #  NOTE: this stack cannot be called tools because it collides with default network created in services/static-webserver/client/tools/docker-compose.yml
 #  IMPORTANT: This stack IS NOT used in the deployed version
 
 services:
-  minio:
-    image: minio/minio:RELEASE.2025-04-22T22-12-26Z
+  rustfs:
+    # NOTE: taken from https://docs.rustfs.com/installation/docker/#docker-compose-installation
+    security_opt:
+      - "no-new-privileges:true"
+    image: rustfs/rustfs:latest@sha256:1cfa82fb394a7c6a4ffc24f5333b52afee608d258503f94b37fcce5cc965c896
     init: true
-    environment:
-      MINIO_ACCESS_KEY : ${S3_ACCESS_KEY:?access_key_required}
-      MINIO_SECRET_KEY : ${S3_SECRET_KEY:?secret_key_required}
     ports:
-      - "9001:9000"
-    command: server /data
-    volumes:
-      - minio_data:/data
+      - "9002:9000"
+      - "9001:9001"
+    environment:
+      - RUSTFS_VOLUMES=/data/rustfs{0..3} # Define 4 storage volumes
+      - RUSTFS_ADDRESS=0.0.0.0:9000
+      - RUSTFS_CONSOLE_ADDRESS=0.0.0.0:9001
+      - RUSTFS_CONSOLE_ENABLE=true
+      - RUSTFS_CORS_ALLOWED_ORIGINS=*
+      - RUSTFS_CONSOLE_CORS_ALLOWED_ORIGINS=*
+      - RUSTFS_ACCESS_KEY=${S3_ACCESS_KEY:?access_key_required}
+      - RUSTFS_SECRET_KEY=${S3_SECRET_KEY:?secret_key_required}
+      - RUSTFS_OBS_LOGGER_LEVEL=info
+      - RUSTFS_TLS_PATH=/opt/tls
+      - RUSTFS_OBS_ENDPOINT=http://opentelemetry-collector:4318
+
     networks:
       - simcore_default
       - interactive_services_subnet
+    restart: unless-stopped
     healthcheck:
       test:
         [
           "CMD",
-          "curl",
-          "--fail",
-          "http://localhost:9000/minio/health/live"
+          "sh",
+          "-c",
+          "curl -f http://127.0.0.1:9000/health && curl -f http://127.0.0.1:9001/rustfs/console/health",
         ]
-      interval: 5s
-      timeout: 20s
-      retries: 5
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
 volumes:
-  minio_data:
-    name: ops_minio_data
+  rustfs_data_0:
+    driver: local
+  rustfs_data_1:
+    driver: local
+  rustfs_data_2:
+    driver: local
+  rustfs_data_3:
+    driver: local
 
 networks:
   simcore_default:

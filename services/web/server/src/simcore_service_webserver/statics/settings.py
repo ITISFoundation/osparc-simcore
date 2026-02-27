@@ -50,10 +50,10 @@ _THIRD_PARTY_REFERENCES = [
         thumbnail="https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Octicons-mark-github.svg/2048px-Octicons-mark-github.svg.png",
     ),
     ThirdPartyInfoDict(
-        name="minio",
+        name="rustfs",
         version="-",
-        url="https://min.io/",
-        thumbnail="https://min.io/resources/img/logo.svg",
+        url="https://rustfs.com/",
+        thumbnail="https://avatars.githubusercontent.com/u/151849438?s=48&v=4",
     ),
     ThirdPartyInfoDict(
         name="portainer",

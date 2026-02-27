@@ -16,13 +16,13 @@ from pytest_simcore.helpers.typing_env import EnvVarsDict
 
 @pytest.fixture
 def minio_s3_settings(docker_stack: dict, env_vars_for_docker_compose: EnvVarsDict, faker: Faker) -> S3Settings:
-    assert "pytest-ops_minio" in docker_stack["services"]
+    assert "pytest-ops_rustfs" in docker_stack["services"]
 
     return S3Settings(
         S3_ACCESS_KEY=SecretStr(env_vars_for_docker_compose["S3_ACCESS_KEY"]),
         S3_SECRET_KEY=SecretStr(env_vars_for_docker_compose["S3_SECRET_KEY"]),
         S3_ENDPOINT=TypeAdapter(AnyHttpUrl).validate_python(
-            f"http://{get_localhost_ip()}:{get_service_published_port('minio')}"
+            f"http://{get_localhost_ip()}:{get_service_published_port('rustfs', 9000)}"
         ),
         S3_BUCKET_NAME=env_vars_for_docker_compose["S3_BUCKET_NAME"],
         S3_REGION="us-east-1",

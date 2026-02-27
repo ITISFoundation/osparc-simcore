@@ -77,7 +77,7 @@ pytest_simcore_core_services_selection = [
     "storage",  # NOTE: rebuild!
 ]
 pytest_simcore_ops_services_selection = [
-    "minio",
+    "rustfs",
     "adminer",
     "redis-commander",
 ]
