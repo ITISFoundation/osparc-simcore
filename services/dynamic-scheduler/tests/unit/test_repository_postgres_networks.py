@@ -23,12 +23,12 @@ from pytest_simcore.helpers.postgres_users import (
 )
 from pytest_simcore.helpers.typing_env import EnvVarsDict
 from simcore_postgres_database.models.projects import projects
-from simcore_service_dynamic_scheduler.repository.events import (
-    get_project_networks_repo,
-)
 from simcore_service_dynamic_scheduler.repository.project_networks import (
     ProjectNetworkNotFoundError,
     ProjectNetworksRepo,
+)
+from simcore_service_dynamic_scheduler.services.base_repository import (
+    get_repository,
 )
 from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -52,6 +52,7 @@ def app_environment(
     disable_deferred_manager_lifespan: None,
     disable_notifier_lifespan: None,
     disable_status_monitor_lifespan: None,
+    disable_p_scheduler_lifespan: None,
     monkeypatch: pytest.MonkeyPatch,
 ) -> EnvVarsDict:
     setenvs_from_dict(
@@ -111,7 +112,7 @@ async def project_in_db(
 
 @pytest.fixture()
 def project_networks_repo(app: FastAPI) -> ProjectNetworksRepo:
-    return get_project_networks_repo(app)
+    return get_repository(app, ProjectNetworksRepo)
 
 
 @pytest.fixture
