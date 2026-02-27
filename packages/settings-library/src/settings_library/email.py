@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import StrEnum
 from typing import Annotated, Self
 
 from common_library.basic_types import DEFAULT_FACTORY
@@ -28,7 +28,7 @@ ALLOWED_HEADERS = frozenset(
 )
 
 
-class EmailProtocol(str, Enum):
+class EmailProtocol(StrEnum):
     UNENCRYPTED = "UNENCRYPTED"
     TLS = "TLS"
     STARTTLS = "STARTTLS"
