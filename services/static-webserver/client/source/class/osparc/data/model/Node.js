@@ -1467,7 +1467,7 @@ qx.Class.define("osparc.data.model.Node", {
       const nodePropertyKeys = this.self().getProperties();
       let ignorePatch = false;
       if (this.isFilePicker()) {
-        console.log(`Received file picker patch`, nodePatches);
+        console.debug(`Received file picker patch`, nodePatches);
         nodePatches.forEach(patch => {
           const nodeProperty = patch.path.split("/")[3];
           const value = patch.value;
