@@ -5,10 +5,7 @@ from typing import Final
 
 from common_library.async_tools import cancel_wait_task
 from fastapi import FastAPI
-from models_library.api_schemas_directorv2.dynamic_services import DynamicServiceGet
-from models_library.api_schemas_webserver.projects_nodes import NodeGet, NodeGetIdle
 from models_library.projects_nodes_io import NodeID
-from models_library.services_enums import ServiceState
 from pydantic import NonNegativeInt
 from servicelib.background_task_utils import exclusive_periodic
 from servicelib.fastapi.app_state import SingletonInAppStateMixin
@@ -17,10 +14,10 @@ from servicelib.redis._utils import handle_redis_returns_union_types
 from servicelib.utils import limited_gather
 from settings_library.redis import RedisDatabase
 
-from ...common_interface import get_service_status
 from ...redis import get_redis_client
 from .._lifecycle_protocol import SupportsLifecycle
 from .._models import SchedulerServiceStatus
+from . import _status
 
 _logger = logging.getLogger(__name__)
 
@@ -28,37 +25,6 @@ _PREFIX: Final[str] = "pss"
 _STATUS: Final[str] = "s"
 _TRACKING: Final[str] = "tracked-services"
 _PERIODIC_HANDLING_MESSAGE: Final[str] = "Periodic check handled by app_id="
-
-
-async def _get_scheduler_service_status(app: FastAPI, node_id: NodeID) -> SchedulerServiceStatus:
-    """Remaps platform service status to something that the scheduler understands"""
-    # TODO: something is wrong here -> why is the service status coming form the outside?  # noqa: FIX002
-    # TODO: use a different way to compute this these things  # noqa: FIX002
-    # TODO: the source here has to be different  # noqa: FIX002
-    #
-    service_status: NodeGet | DynamicServiceGet | NodeGetIdle = await get_service_status(app, node_id=node_id)
-
-    if isinstance(service_status, NodeGetIdle):
-        return SchedulerServiceStatus.IS_ABSENT
-
-    state: ServiceState = (
-        service_status.state if isinstance(service_status, DynamicServiceGet) else service_status.service_state
-    )
-
-    match state:
-        case ServiceState.IDLE | ServiceState.COMPLETE:
-            return SchedulerServiceStatus.IS_ABSENT
-        case ServiceState.RUNNING:
-            return SchedulerServiceStatus.IS_PRESENT
-        case ServiceState.PENDING | ServiceState.PULLING | ServiceState.STARTING:
-            return SchedulerServiceStatus.TRANSITION_TO_PRESENT
-        case ServiceState.STOPPING:
-            return SchedulerServiceStatus.TRANSITION_TO_ABSENT
-        case ServiceState.FAILED:
-            return SchedulerServiceStatus.IN_ERROR
-
-    msg = f"Unhandled service {state=} for {service_status=}"
-    raise NotImplementedError(msg)
 
 
 def _get_service_key(node_id: NodeID) -> str:
@@ -117,6 +83,7 @@ class StatusManager(SingletonInAppStateMixin, SupportsLifecycle):
         self._task_scheduler_service_status: Task | None = None
 
     async def set_tracked_services(self, to_track: set[NodeID]) -> None:
+        # TODO: add period call for this one  # noqa: FIX002
         # NOTE: This must be called periodically after querying the DB table for currently tracked services
         # (UserRequests requested.PRESENT).
         currently_tracked = await self.redis_interface.get_all_tracked()
@@ -133,11 +100,11 @@ class StatusManager(SingletonInAppStateMixin, SupportsLifecycle):
             return status
 
         _logger.info("Status for node '%s' not found in redis cache, recovering directly from platform", node_id)
-        return await _get_scheduler_service_status(self.app, node_id)
+        return await _status.get_scheduler_service_status(self.app, node_id)
 
     async def _safe_service_status_update(self, node_id: NodeID) -> None:
         with log_catch(_logger, reraise=False):
-            status = await _get_scheduler_service_status(self.app, node_id)
+            status = await _status.get_scheduler_service_status(self.app, node_id)
             await self.redis_interface.set_status(node_id, status, ttl_milliseconds=self._ttl_ms)
 
     async def _worker_update_scheduler_service_status(self) -> None:
