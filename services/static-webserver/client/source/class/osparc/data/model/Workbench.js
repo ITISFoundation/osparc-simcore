@@ -803,7 +803,6 @@ qx.Class.define("osparc.data.model.Workbench", {
         let patchData = {};
         if (workbenchDiffs[nodeId] instanceof Array) {
           // if workbenchDiffs is an array means that the node was added
-          const node = this.getNode(nodeId);
           // if somebody else is uploading data don't patch it, the backend already knows
           if (node.isFilePicker() && !osparc.file.FilePicker.isRTCTokenMine(node)) {
             console.warn("File picker added by another user, skipping patch");
